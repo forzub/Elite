@@ -57,4 +57,6 @@ private:
 
     bool isSelected(size_t index) const;
 
+    
+
 };

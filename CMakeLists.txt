@@ -20,6 +20,7 @@ add_executable(EliteGame
     src/window/Window.cpp
 
     src/ui/MainMenuState.cpp
+    src/ui/ConfirmExitState.cpp
     # src/ui/TradeMenuState.cpp
     # src/ui/NavigationMenuState.cpp
     # src/ui/ShipyardState.cpp

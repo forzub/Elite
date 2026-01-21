@@ -16,7 +16,9 @@ public:
 
     void applyPendingChanges();
 
-    GameState* current();
+     void renderAll();
+
+    GameState* current() const;
     bool empty() const;
 
 private:

@@ -11,6 +11,7 @@
 
 #include "render/DebugGrid.h"
 #include "game/ShipParams.h"
+#include "ui/ConfirmExitState.h"
 
 #include <iostream>
 
@@ -111,8 +112,7 @@ void SpaceState::handleInput()
         m_ship.liftInput    = 0.0f;
     }
 
-    if (Input::instance().isKeyPressed(GLFW_KEY_ESCAPE))
-        m_states.pop();
+    
 }
 
 // =====================================================================================
@@ -247,4 +247,45 @@ void SpaceState::render()
     glLoadMatrixf(glm::value_ptr(view));
 
     DebugGrid::drawInfinite(m_ship.position, 200.0f, 100);
+}
+
+
+// =====================================================================================
+// wantsConfirmExit
+// =====================================================================================
+
+bool SpaceState::wantsConfirmExit() const
+{
+    
+    return true; // есть активная игровая сессия
+}
+
+
+// =====================================================================================
+// onGlobalEscape
+// =====================================================================================
+
+bool SpaceState::onGlobalEscape()
+{
+
+    
+
+    ConfirmExitOptions opts;
+    opts.canSave = isInSafeZone();
+    opts.canLoad = isInSafeZone();
+
+    m_states.push(std::make_unique<ConfirmExitState>(m_states, opts));
+    return true;
+}
+
+
+// =====================================================================================
+// isInSafeZone
+// =====================================================================================
+
+bool SpaceState::isInSafeZone() const
+{
+    // ВРЕМЕННО:
+    // пока считаем, что игрок ВСЕГДА в безопасной зоне
+    return true;
 }

@@ -29,4 +29,9 @@ private:
 
     ShipParams m_params;
     WorldParams m_world;
+
+    bool wantsConfirmExit() const override;
+    bool onGlobalEscape() override;
+
+    bool isInSafeZone() const;
 };

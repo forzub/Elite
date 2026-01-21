@@ -1,13 +1,35 @@
 #include "ui/MainMenuState.h"
-#include "input/Input.h"
+#include "game/SpaceState.h"
 #include "core/StateStack.h"
+
+#include <cassert>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+
+namespace
+{
+    int toInt(MenuItem item)
+    {
+        return static_cast<int>(item);
+    }
+
+    MenuItem fromInt(int value)
+    {
+        return static_cast<MenuItem>(value);
+    }
+}
+
+
+// =====================================================================================
+// Constructor
+// =====================================================================================
+
 MainMenuState::MainMenuState(StateStack& states)
-    : m_states(states)
+    : GameState(states)
     , m_shouldExit(false)
+    , m_selected(MenuItem::NewGame)
 {
     const float y = 0.0f;
     const float w = 0.45f;
@@ -19,28 +41,66 @@ MainMenuState::MainMenuState(StateStack& states)
         { "LOAD GAME",  0.0f, y, w, h },
         { "EXIT",       0.6f, y, w, h }
     };
+
+    assert(m_buttons.size() == static_cast<size_t>(MenuItem::Count));
 }
+
+
+// =====================================================================================
+// Input
+// =====================================================================================
 
 void MainMenuState::handleInput()
 {
-    auto& input = Input::instance();
+    GLFWwindow* window = glfwGetCurrentContext();
 
-    if (input.isKeyPressed(GLFW_KEY_LEFT))
-        m_selected = (m_selected + m_buttons.size() - 1) % m_buttons.size();
+    bool left  = glfwGetKey(window, GLFW_KEY_LEFT)  == GLFW_PRESS;
+    bool right = glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS;
+    bool enter = glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS;
+    bool esc   = glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS;
 
-    if (input.isKeyPressed(GLFW_KEY_RIGHT))
-        m_selected = (m_selected + 1) % m_buttons.size();
+    // ←
+    if (left && !m_leftPressed)
+        selectPrevious();
 
-    if (input.isKeyPressed(GLFW_KEY_ENTER))
+    // →
+    if (right && !m_rightPressed)
+        selectNext();
+
+    // Enter
+    if (enter && !m_enterPressed)
+    {
         activateSelected();
+    }
 
-    if (input.isKeyPressed(GLFW_KEY_ESCAPE))
-        m_states.clear();   // ← ВАЖНО: m_stack из State
+    // Esc
+    if (esc && !m_escPressed)
+    {
+        m_states.clear();
+    }
+
+    // запоминаем текущее состояние
+    m_leftPressed  = left;
+    m_rightPressed = right;
+    m_enterPressed = enter;
+    m_escPressed   = esc;
 }
+
+
+
+// =====================================================================================
+// Update
+// =====================================================================================
 
 void MainMenuState::update(float)
 {
 }
+
+
+
+// =====================================================================================
+// Render
+// =====================================================================================
 
 void MainMenuState::render()
 {
@@ -58,7 +118,7 @@ void MainMenuState::render()
     for (size_t i = 0; i < m_buttons.size(); ++i)
     {
         const auto& b = m_buttons[i];
-        bool selected = (static_cast<int>(i) == m_selected);
+        bool selected = isSelected(i);
 
         if (selected)
             glColor3f(0.9f, 0.8f, 0.2f);
@@ -79,21 +139,66 @@ void MainMenuState::render()
     }
 }
 
+
+// =====================================================================================
+// activate Selected
+// =====================================================================================
+
 void MainMenuState::activateSelected()
 {
     switch (m_selected)
     {
-        case 0: // NEW GAME
+        case MenuItem::NewGame:
             m_states.pop();
-            // позже: m_states.push(SpaceState)
+            m_states.push(std::make_unique<SpaceState>(m_states));
             break;
 
-        case 1: // LOAD GAME
+        case MenuItem::LoadGame:
             // заглушка
             break;
 
-        case 2: // EXIT
+        case MenuItem::Exit:
             m_states.clear();
             break;
+
+        case MenuItem::Count:
+            break; // технический случай, сюда не должны попадать
     }
+}
+
+
+// =====================================================================================
+// →
+// =====================================================================================
+
+void MainMenuState::selectNext()
+{
+    int index = toInt(m_selected);
+    int count = toInt(MenuItem::Count);
+
+    index = (index + 1) % count;
+    m_selected = fromInt(index);
+}
+
+
+// =====================================================================================
+// ←
+// =====================================================================================
+
+void MainMenuState::selectPrevious()
+{
+    int index = toInt(m_selected);
+    int count = toInt(MenuItem::Count);
+
+    index = (index - 1 + count) % count;
+    m_selected = fromInt(index);
+}
+
+// =====================================================================================
+// Реализация isSelected
+// =====================================================================================
+
+bool MainMenuState::isSelected(size_t index) const
+{
+    return static_cast<MenuItem>(index) == m_selected;
 }

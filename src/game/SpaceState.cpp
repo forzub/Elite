@@ -18,7 +18,7 @@
 // Constructor
 // =====================================================================================
 SpaceState::SpaceState(StateStack& states)
-    : m_states(states)
+    : GameState(states)
     , m_params{
           // angular limits
           90.0f, 60.0f, 120.0f,

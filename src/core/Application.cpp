@@ -30,8 +30,8 @@ void Application::init()
     m_window = new Window(1280, 720, "EliteGame");
     m_running = true;
 
-    // m_states.push(std::make_unique<MainMenuState>(m_states));
-    m_states.push(std::make_unique<SpaceState>(m_states));
+    m_states.push(std::make_unique<MainMenuState>(m_states));
+    // m_states.push(std::make_unique<SpaceState>(m_states));
     m_states.applyPendingChanges();
 }
 

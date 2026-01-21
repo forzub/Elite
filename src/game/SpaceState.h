@@ -23,7 +23,7 @@ public:
     bool m_mouseLook = false;
 
 private:
-    StateStack& m_states;
+    
     ShipTransform m_ship;   // состояние корабля
     Camera        m_camera; // камера, следующая за кораблём
 

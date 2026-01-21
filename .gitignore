@@ -21,9 +21,9 @@ Makefile
 *.a
 
 # Добавим SSH ключи в .gitignore чтобы Git их игнорировал
-echo "id_ed25519*" >> .gitignore
-echo "*.pem" >> .gitignore
-echo "*.key" >> .gitignore
 id_ed25519*
 *.pem
 *.key
+
+*.zip
+*.rar

@@ -6,10 +6,23 @@
 
 class StateStack;
 
+
+enum class MenuItem {
+    NewGame = 0,
+    LoadGame,
+    Exit,
+    Count
+};
+
+
 class MainMenuState : public GameState
 {
+
+
+
 public:
     explicit MainMenuState(StateStack& states);
+    
 
     void handleInput() override;
     void update(float dt) override;
@@ -26,11 +39,22 @@ private:
     };
 
     std::vector<Button> m_buttons;
-    int m_selected = 0;
+
 
 private:
     void activateSelected();
-    StateStack& m_states;
+    
     bool m_shouldExit;
+
+    MenuItem m_selected;
+    void selectNext();
+    void selectPrevious();
+
+    bool m_leftPressed  = false;
+    bool m_rightPressed = false;
+    bool m_enterPressed = false;
+    bool m_escPressed   = false;
+
+    bool isSelected(size_t index) const;
 
 };

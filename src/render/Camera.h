@@ -1,0 +1,31 @@
+#pragma once
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+class Camera
+{
+public:
+
+Camera();
+
+// Установка из внешней логики (корабль)
+void setPosition(const glm::vec3& pos);
+void setOrientation(float pitch, float yaw, float roll);
+
+// Получение матрицы вида
+glm::mat4 viewMatrix() const;
+
+void setVisualLean(float rollOffset, float pitchOffset);
+
+private:
+    glm::vec3 m_position {0.0f, 0.0f, 0.0f};
+
+    float m_pitch = 0.0f;
+    float m_yaw   = 0.0f;
+    float m_roll  = 0.0f;
+
+    // наклон камеры при маневре
+    float m_visualRoll  = 0.0f;
+    float m_visualPitch = 0.0f;
+};

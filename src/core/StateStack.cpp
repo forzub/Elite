@@ -1,9 +1,20 @@
 #include "StateStack.h"
 #include "GameState.h"
 
+#include "core/StateContext.h"
+
+
 #include <iostream>
 
-StateStack::StateStack() = default;
+StateStack::StateStack(StateContext& context)
+    : m_context(context)
+{
+}
+
+StateContext& StateStack::context()
+{
+    return m_context;
+}
 
 // --------------------------------------------------
 
@@ -88,5 +99,13 @@ bool StateStack::empty() const
 void StateStack::renderAll()
 {
     for (auto& state : m_stack)
-        state->render();
+    state->render();
+}
+
+// --------------------------------------------------
+
+void StateStack::submitRenderData()
+{
+    if (!m_stack.empty())
+        m_stack.back()->submitRenderData();
 }

@@ -1,8 +1,11 @@
 #pragma once
 
+#include "core/StateStack.h"
+#include "core/StateContext.h"
 
-class StateStack;   // ← ВАЖНО
 
+// class StateStack;   
+// struct StateContext;
 
 class GameState
 {
@@ -22,7 +25,12 @@ public:
 
     virtual void handleInput() = 0;
     virtual void update(float dt) = 0;
+
+    virtual void submitRenderData() {}
+    virtual void renderHUD() {}
     virtual void render() = 0;
+
+    
 
     // === ГЛОБАЛЬНЫЙ ESC ===
 
@@ -31,4 +39,12 @@ public:
 
     // Если состояние САМО обработало ESC
     virtual bool onGlobalEscape() { return false; }
+
+protected:
+    StateContext& context()
+    {
+        return m_states.context();
+    }
+
+    
 };

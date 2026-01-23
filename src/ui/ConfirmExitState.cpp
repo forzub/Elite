@@ -3,6 +3,7 @@
 #include "core/StateStack.h"
 #include "ui/MainMenuState.h"
 #include "input/Input.h"
+#include "render/TextRenderer.h"
 
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -98,14 +99,24 @@ void ConfirmExitState::render()
                 glMatrixMode(GL_MODELVIEW);
                 glLoadIdentity();
 
-                glColor3f(1.0f, 0.0f, 0.0f); // КРАСНЫЙ
-
+                // тестовый фон
+                glColor3f(0.2f, 0.0f, 0.0f);
                 glBegin(GL_QUADS);
                     glVertex2f(-0.6f, -0.2f);
                     glVertex2f( 0.6f, -0.2f);
                     glVertex2f( 0.6f,  0.2f);
                     glVertex2f(-0.6f,  0.2f);
                 glEnd();
+
+                // ВАЖНО: ТОЛЬКО ВЫЗОВ
+                TextRenderer::instance().textDraw(
+                    "CONFIRM EXIT",
+                    -0.4f,   // x в NDC
+                    0.0f,   // y в NDC
+                    0.002f, // scale — ОЧЕНЬ маленький
+                    {1.0f, 1.0f, 1.0f}
+                );
+
 }
 
 // =====================================================================================

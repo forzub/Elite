@@ -3,17 +3,25 @@
 
 #include "Renderer.h"
 
+// ==========================================================================
 void Renderer::beginFrame()
 {
     glClearColor(0.02f, 0.02f, 0.03f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+
+
+
+// ==========================================================================
 void Renderer::endFrame()
 {
     // swapBuffers делается в Window
 }
 
+
+
+// ==========================================================================
 void Renderer::drawGrid(int size, float step)
 {
     glBegin(GL_LINES);
@@ -31,3 +39,8 @@ void Renderer::drawGrid(int size, float step)
 
     glEnd();
 }
+
+
+
+
+

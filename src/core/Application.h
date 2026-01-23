@@ -1,7 +1,10 @@
 #pragma once
 
+#include "StateContext.h"
 #include "StateStack.h"
 #include "window/Window.h"
+#include "render/Renderer.h"
+
 
 class Application
 {
@@ -18,6 +21,8 @@ private:
 
 private:
     bool m_running;
-    StateStack m_states;
+    Renderer m_renderer;
     Window* m_window;
+    StateContext m_context;
+    StateStack   m_states;
 };

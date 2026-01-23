@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(glfw3 CONFIG REQUIRED)
+find_package(Freetype REQUIRED)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glad)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -21,18 +23,16 @@ add_executable(EliteGame
 
     src/ui/MainMenuState.cpp
     src/ui/ConfirmExitState.cpp
-    # src/ui/TradeMenuState.cpp
-    # src/ui/NavigationMenuState.cpp
-    # src/ui/ShipyardState.cpp
-    # src/ui/EquipmentState.cpp
-    # src/ui/ContractsState.cpp
 
     src/input/Input.cpp
     src/game/SpaceState.cpp
 
     src/render/Camera.cpp
     src/render/DebugGrid.cpp
-
+    src/render/Renderer.cpp
+    src/render/TextRenderer.cpp
+    src/render/ShaderUtils.cpp
+    src/render/Font.cpp
 )
 
 set_source_files_properties(
@@ -41,6 +41,13 @@ set_source_files_properties(
     LANGUAGE C
 )
 
-target_include_directories(EliteGame PRIVATE src glad/include)
-target_link_libraries(EliteGame PRIVATE glfw opengl32)
+target_include_directories(EliteGame PRIVATE
+    src
+    glad/include
+)
 
+target_link_libraries(EliteGame PRIVATE
+    glfw
+    opengl32
+    Freetype::Freetype
+)

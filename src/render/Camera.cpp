@@ -34,3 +34,14 @@ void Camera::setVisualLean(float rollOffset, float pitchOffset)
     m_visualRoll  = rollOffset;
     m_visualPitch = pitchOffset;
 }
+
+void Camera::setAspect(float aspect)
+{
+    if (aspect > 0.0f)
+        m_aspect = aspect;
+}
+
+float Camera::aspect() const
+{
+    return m_aspect;
+}

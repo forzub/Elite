@@ -6,6 +6,10 @@
 #include <GLFW/glfw3.h>
 #include "input/Input.h"
 
+#include "render/TextRenderer.h"
+
+#include <windows.h>
+
 
 // =====================================================================================
 // Constructor
@@ -13,6 +17,7 @@
 Application::Application()
     : m_running(false)
     , m_window(nullptr)
+    , m_states(m_context)
 {
 }
 
@@ -22,6 +27,17 @@ Application::Application()
 // =====================================================================================
 Application::~Application()
 {
+}
+
+static std::string getExecutablePath()
+{
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+
+    std::string path(buffer);
+    size_t pos = path.find_last_of("\\/");
+
+    return (pos == std::string::npos) ? "." : path.substr(0, pos);
 }
 
 
@@ -36,6 +52,9 @@ void Application::run()
 }
 
 
+
+
+
 // =====================================================================================
 // init
 // =====================================================================================
@@ -43,8 +62,22 @@ void Application::init()
 {
     std::cout << "Application init\n";
 
+
     m_window = new Window(1280, 720, "EliteGame");
     m_running = true;
+
+
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_DEPTH_TEST);
+
+    int w, h;
+    glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
+    TextRenderer::instance().setViewportSize(w, h);
+    m_context.aspect = static_cast<float>(w) / static_cast<float>(h);
+
+    TextRenderer::instance().init();
 
     m_states.push(std::make_unique<MainMenuState>(m_states));
     // m_states.push(std::make_unique<SpaceState>(m_states));
@@ -59,9 +92,8 @@ void Application::init()
 void Application::mainLoop()
 {
     std::cout << "Application main loop start\n";
-
-
     double lastTime = glfwGetTime();
+
 
     while (m_running && !m_window->shouldClose() && !m_states.empty())
     {
@@ -99,10 +131,26 @@ void Application::mainLoop()
                 }
             }
 
-        state->handleInput();
-        state->update(dt);
+            
+            
+            state->handleInput();
+            state->update(dt);
+        
+        m_renderer.beginFrame();
+
+        
+        // 1. State отдаёт данные
+        m_states.submitRenderData();
+        
+        if (auto* state = m_states.current())
+            state->renderHUD();
+
+      
+
+        // 3. Старый путь (пока оставляем)
         m_states.renderAll();
-        // state->render();
+
+        m_renderer.endFrame();
 
         m_states.applyPendingChanges();
         m_window->swapBuffers();

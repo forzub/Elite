@@ -15,6 +15,8 @@ void setOrientation(float pitch, float yaw, float roll);
 
 // Получение матрицы вида
 glm::mat4 viewMatrix() const;
+void setAspect(float aspect);
+float aspect() const;
 
 void setVisualLean(float rollOffset, float pitchOffset);
 
@@ -28,4 +30,5 @@ private:
     // наклон камеры при маневре
     float m_visualRoll  = 0.0f;
     float m_visualPitch = 0.0f;
+    float m_aspect = 16.0f / 9.0f; // безопасный дефолт
 };

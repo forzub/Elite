@@ -28,6 +28,9 @@ public:
     ConfirmExitState(StateStack& states, const ConfirmExitOptions& options);
     ~ConfirmExitState();
 
+    bool isModal() const override { return true; }
+    void renderUI() override;
+
     void handleInput() override;
     void update(float dt) override;
     void render() override;

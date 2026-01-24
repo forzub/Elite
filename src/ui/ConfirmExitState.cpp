@@ -81,8 +81,9 @@ void ConfirmExitState::update(float)
 // =====================================================================================
 // Render (пока пустые)
 // =====================================================================================
+void ConfirmExitState::render(){}
 
-void ConfirmExitState::render()
+void ConfirmExitState::renderUI()
 {
     
     // Пока пусто.

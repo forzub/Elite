@@ -26,6 +26,7 @@ public:
 
     void handleInput() override;
     void update(float dt) override;
+    void renderUI() override;
     void render() override;
 
 private:

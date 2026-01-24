@@ -24,6 +24,8 @@ public:
 
 
     GameState* current() const;
+    GameState* current();
+    GameState* previous();
     bool empty() const;
 
 private:

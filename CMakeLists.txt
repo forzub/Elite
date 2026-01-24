@@ -23,14 +23,20 @@ add_executable(EliteGame
 
     src/ui/MainMenuState.cpp
     src/ui/ConfirmExitState.cpp
+    src/ui/HudRenderer.cpp
 
     src/input/Input.cpp
+
     src/game/SpaceState.cpp
+    src/game/SignalReceiver.cpp
+
 
     src/render/Camera.cpp
     src/render/DebugGrid.cpp
     src/render/Renderer.cpp
     src/render/TextRenderer.cpp
+    src/render/WorldLabelRenderer.cpp
+    src/render/ScreenUtils.cpp
     src/render/ShaderUtils.cpp
     src/render/Font.cpp
 )

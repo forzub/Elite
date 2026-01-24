@@ -1,14 +1,20 @@
-#include "Application.h"
-#include "ui/MainMenuState.h"
-#include "game/SpaceState.h"
-
 #include <iostream>
 #include <GLFW/glfw3.h>
+
+#include "Application.h"
+
+#include "ui/MainMenuState.h"
+
+#include "game/SpaceState.h"
+
 #include "input/Input.h"
 
 #include "render/TextRenderer.h"
 
 #include <windows.h>
+
+
+
 
 
 // =====================================================================================
@@ -66,6 +72,8 @@ void Application::init()
     m_window = new Window(1280, 720, "EliteGame");
     m_running = true;
 
+    
+
 
 
     glEnable(GL_BLEND);
@@ -81,6 +89,7 @@ void Application::init()
 
     m_states.push(std::make_unique<MainMenuState>(m_states));
     // m_states.push(std::make_unique<SpaceState>(m_states));
+
     m_states.applyPendingChanges();
 }
 
@@ -98,8 +107,8 @@ void Application::mainLoop()
     while (m_running && !m_window->shouldClose() && !m_states.empty())
     {
         static int frame = 0;
-        
         double currentTime = glfwGetTime();
+        
         float dt = static_cast<float>(currentTime - lastTime);
         lastTime = currentTime;
         
@@ -109,15 +118,11 @@ void Application::mainLoop()
 
         GameState* state = m_states.current();
 
-
          if (Input::instance().isKeyPressedOnce(GLFW_KEY_ESCAPE))
             {
-                
-
                 // 1. Если состояние само обрабатывает ESC
                 if (state->onGlobalEscape())
                 {
-                    
                     m_states.applyPendingChanges();
                     m_window->swapBuffers();
                     continue;
@@ -125,30 +130,26 @@ void Application::mainLoop()
 
                 // 2. Если нет — но оно хочет confirm-exit
                 if (state->wantsConfirmExit())
-                {
-                    
+                {  
                     // В твоей реализации это уже внутри onGlobalEscape SpaceState
                 }
             }
 
-            
-            
             state->handleInput();
             state->update(dt);
         
         m_renderer.beginFrame();
 
-        
-        // 1. State отдаёт данные
-        m_states.submitRenderData();
-        
-        if (auto* state = m_states.current())
-            state->renderHUD();
+        GameState* top = m_states.current();
+        GameState* below = m_states.previous();
 
-      
-
-        // 3. Старый путь (пока оставляем)
-        m_states.renderAll();
+        // --- render world ---
+        if (top)
+        {
+            if (top->isModal() && below) below->renderUI();
+            top->renderUI();
+        }
+        if (top)top->renderHUD();
 
         m_renderer.endFrame();
 

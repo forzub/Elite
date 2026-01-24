@@ -107,5 +107,26 @@ void StateStack::renderAll()
 void StateStack::submitRenderData()
 {
     if (!m_stack.empty())
-        m_stack.back()->submitRenderData();
+    m_stack.back()->renderUI();
 }
+
+// --------------------------------------------------
+
+GameState* StateStack::current()
+{
+    return m_stack.empty() ? nullptr : m_stack.back().get();
+}
+
+
+// --------------------------------------------------
+
+GameState* StateStack::previous()
+{
+    if (m_stack.size() < 2)
+        return nullptr;
+
+    return m_stack[m_stack.size() - 2].get();
+}
+
+
+

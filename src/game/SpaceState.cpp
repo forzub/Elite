@@ -1,66 +1,29 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
-
-#include "SpaceState.h"
-
-#include "core/StateStack.h"
-#include "input/Input.h"
+#include <iostream>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "SpaceState.h"
+
+#include "core/StateStack.h"
+
+#include "input/Input.h"
+
+
 #include "render/DebugGrid.h"
+// #include "render/ScreenUtils.h"
+
 #include "game/ShipParams.h"
+#include "game/SignalPolicy.h"
+
 #include "ui/ConfirmExitState.h"
-
-#include <iostream>
-
-
-static void drawLine(
-    const glm::vec2& a,
-    const glm::vec2& b,
-    const glm::vec3& color
-)
-{
-    glColor3f(color.r, color.g, color.b);
-
-    glBegin(GL_LINES);
-        glVertex2f(a.x, a.y);
-        glVertex2f(b.x, b.y);
-    glEnd();
-}
+#include "ui/HudRenderer.h"
 
 
-static bool projectToScreen(
-    const glm::vec3& worldPos,
-    const glm::mat4& view,
-    const glm::mat4& proj,
-    int screenW,
-    int screenH,
-    glm::vec2& outScreen
-)
-{
-    glm::vec4 clip = proj * view * glm::vec4(worldPos, 1.0f);
-
-    if (clip.w <= 0.0f)
-        return false; // за камерой
-
-    glm::vec3 ndc = glm::vec3(clip) / clip.w;
-
-    if (ndc.x < -1 || ndc.x > 1 ||
-        ndc.y < -1 || ndc.y > 1 ||
-        ndc.z <  0 || ndc.z > 1)
-        return false;
-
-    outScreen.x = (ndc.x * 0.5f + 0.5f) * screenW;
-    outScreen.y = (1.0f - (ndc.y * 0.5f + 0.5f)) * screenH;
-
-    return true;
-}
-
-
-
+// bool signalAllowsDistance(const WorldSignal& sig, float dist); - в SignalPolicy
 
 
 // =====================================================================================
@@ -88,14 +51,19 @@ SpaceState::SpaceState(StateStack& states)
           20.0f, 6.0f, 50.0f
       }
 {
+
+    m_hudRenderer.init();
+    m_worldLabelRenderer.init();
+
     m_ship.position = {0.0f, 5.0f, 10.0f};
     m_camera.setPosition(m_ship.position);
+
 
     // world = vacuum
     m_world.linearDrag   = 0.0f;
     m_world.maxSafeDecel = 50.0f;
 
-     m_camera.setAspect(context().aspect);
+    m_camera.setAspect(context().aspect);
 
     WorldObject station;
     station.position = glm::vec3(0.0f, 0.0f, -500.0f);
@@ -109,6 +77,48 @@ SpaceState::SpaceState(StateStack& states)
 
 
 
+    // тест сигналов 
+    m_worldSignals.clear(); 
+    
+    // Планета 
+    m_worldSignals.push_back(
+        { SignalType::Planets, 
+        { 1'500'000.0f, 0.0f, 0.0f }, 
+        1e6f, 
+        1e7f, 
+        true, 
+        "Asterion IV" 
+        }); 
+        
+        // Станция 
+        m_worldSignals.push_back({ 
+            SignalType::StationClass, 
+            { -200000.0f, 100000.0f, 0.0f }, 
+            5e5f, 
+            5e6f, 
+            true, 
+            "Orbital Station" 
+        }); 
+            
+        // SOS древний 
+        m_worldSignals.push_back({ 
+            SignalType::SOSAntic, 
+            { -400'000.0f, 0.0f, -12'900'000.0f }, 
+            2e5f, 
+            2e7f, 
+            true, 
+            "???" 
+        }); 
+        
+        // Пиратский транспондер 
+        m_worldSignals.push_back({ 
+            SignalType::PirateTransponder, 
+            { 400'000.0f, 0.0f, -2'150'000.0f }, 
+            3e5f, 
+            5e6f, 
+            true, 
+            "Unknown Vessel" 
+        });
         
 
     
@@ -187,6 +197,13 @@ void SpaceState::handleInput()
 // =====================================================================================
 void SpaceState::update(float dt)
 {
+
+    m_signalReceiver.update(
+        dt,
+        m_ship.position,
+        m_worldSignals
+    );
+
     // -------------------------------------------------------------------------
     // Rotation physics
     // -------------------------------------------------------------------------
@@ -294,11 +311,11 @@ void SpaceState::update(float dt)
 // =====================================================================================
 // Render
 // =====================================================================================
-void SpaceState::submitRenderData()
+void SpaceState::render(){}
+
+void SpaceState::renderUI()
 {
     
-
-
     glm::mat4 projection = glm::perspective(
         glm::radians(70.0f),
         1280.0f / 720.0f,
@@ -317,189 +334,118 @@ void SpaceState::submitRenderData()
 }
 
 
+
+// =====================================================================================
+// Render HUD
+// =====================================================================================
 void SpaceState::renderHUD()
 {
-
-    glm::mat4 view = m_camera.viewMatrix();
-    glm::mat4 proj = glm::perspective(
-        glm::radians(70.0f),
-        context().aspect,
-        0.1f,
-        5000.0f
-    );
-
-    int screenW = TextRenderer::instance().viewportWidth();
-    int screenH = TextRenderer::instance().viewportHeight();
-
-    const WorldObject& obj = m_worldObjects[0];
-
-    glm::vec2 screenPos;
-    bool visible = projectToScreen(
-        obj.position,
-        view,
-        proj,
-        screenW,
-        screenH,
-        screenPos
-    );
-
-    float dist = glm::length(obj.position - m_ship.position);
+    m_hudStatics.clear(); 
+    m_hudRects.clear(); 
+    
+    m_hudRects.push_back({ 
+        { 20.0f / 1280.0f, 20.0f / 720.0f }, 
+        { 180.0f / 1280.0f, 60.0f / 720.0f }, 
+        { 0.0f, 1.0f, 0.0f } }); 
+    
+    m_hudStatics.push_back({ 
+        "HUD ONLINE", 
+        { 30.0f / 1280.0f, 40.0f / 720.0f }, // временно, 1:1 с текущим 
+        { 0.0f, 1.0f, 0.0f } }); 
 
 
 
-    // Ортографическая проекция
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, 1280, 720, 0, -1, 1);
+        
+    glm::mat4 view = m_camera.viewMatrix(); 
+    glm::mat4 proj = m_camera.projectionMatrix(); 
+    
+    
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    // Простейший HUD-примитив (индикатор/рамка)
+    glMatrixMode(GL_PROJECTION); glLoadIdentity(); 
+    glOrtho(0, 1280, 720, 0, -1, 1); 
+    glMatrixMode(GL_MODELVIEW); 
+    glLoadIdentity(); // Простейший HUD-примитив (индикатор/рамка) 
     glDisable(GL_DEPTH_TEST);
 
-    glBegin(GL_LINE_LOOP);
-        glVertex2f(20, 20);
-        glVertex2f(200, 20);
-        glVertex2f(200, 80);
-        glVertex2f(20, 80);
+    glBegin(GL_LINE_LOOP); 
+        glVertex2f(20, 20); 
+        glVertex2f(200, 20); 
+        glVertex2f(200, 80); 
+        glVertex2f(20, 80); 
     glEnd();
 
-     
-    static Font hudFont("assets/fonts/Roboto-Light.ttf", 18);
-    TextRenderer::instance().textDraw(
-        hudFont,              // КОНКРЕТНЫЙ шрифт
-        "HUD ONLINE",
-        30.0f,                // X
-        40.0f,                // BASELINE Y
-        glm::vec3(0.0f, 1.0f, 0.0f)
-    );
 
 
+    const auto& detected = m_signalReceiver.detected();
+
+    for (const DetectedSignal& ds : detected)
+    {
+        if (!ds.visible)
+        continue;
+
+        if (!ds.hasDirection)
+            continue;
+
+        WorldLabel lbl;
+
+        // --- позиция ---
+        // if (ds.hasDistance)
+        // {
+        //     // расстояние известно → реальная позиция
+        //     lbl.worldPos = ds.source->position;
+        //     lbl.distance = glm::length(ds.source->position - m_ship.position);
+        // }
+        // else
+        // {
+        //     // distance неизвестна → проецируем направление
+        //     float fakeDist = 3000.0f; // ВРЕМЕННО, внутри far plane
+        //     lbl.worldPos = m_ship.position + ds.direction * fakeDist;
+        //     lbl.distance = -1.0f; // маркер "нет дистанции"
+        // }
+
+        float realDist = glm::length(ds.source->position - m_ship.position);
+
+        if (signalAllowsDistance(*ds.source, realDist))
+        {
+            lbl.worldPos = ds.source->position;
+            lbl.distance = realDist;
+        }
+        else
+        {
+            float fakeDist = 800.0f;
+            lbl.worldPos = m_ship.position + ds.direction * fakeDist;
+            lbl.distance = -1.0f; // будет "--"
+        }
+
+
+        lbl.label = ds.source->label;
+        lbl.hasDistance = ds.hasDistance;
+        lbl.stability   = ds.stability;
+
+        m_worldLabelRenderer.render(
+            lbl,
+            view,
+            proj,
+            TextRenderer::instance().viewportWidth(),
+            TextRenderer::instance().viewportHeight()
+        );
+    }
+    
     
 
-    if (visible && dist >= 80.0f)
-{
-    // -------------------------------------------------
-    // distance string
-    // -------------------------------------------------
-    char distBuf[32];
-    if (dist >= 1000.0f)
-        std::snprintf(distBuf, sizeof(distBuf), "%.1f km", dist / 1000.0f);
-    else
-        std::snprintf(distBuf, sizeof(distBuf), "%.0f m", dist);
-
-    TextRenderer& tr = TextRenderer::instance();
-
-    // ВРЕМЕННО: используем один font
-    static Font labelFont("assets/fonts/Roboto-Light.ttf", 12);
-    static Font distFont ("assets/fonts/Roboto-Light.ttf", 11);
-
-    // -------------------------------------------------
-    // label TOP position (экранная логика)
-    // -------------------------------------------------
-    glm::vec2 labelTopPos = screenPos + glm::vec2(40.0f, -30.0f);
-
-    // -------------------------------------------------
-    // font metrics
-    // -------------------------------------------------
-    float labelWidth  = labelFont.measureText(obj.label);
-    float labelAscent = labelFont.ascent();
-    float labelHeight = labelFont.lineHeight();
-
-    // -------------------------------------------------
-    // BASELINE
-    // -------------------------------------------------
-    float labelBaselineY = labelTopPos.y + labelAscent;
-
-    // -------------------------------------------------
-    // bounding box (для линий)
-    // -------------------------------------------------
-    float boxX = labelTopPos.x;
-    float boxY = labelTopPos.y;
-    float boxH = labelHeight;
-
-    // -------------------------------------------------
-    // anchor для линии (центр левого ребра текста)
-    // -------------------------------------------------
-    glm::vec2 boxAnchor = {
-        boxX,
-        boxY + boxH * 0.5f
-    };
-
-    glm::vec2 elbow = boxAnchor + glm::vec2(-10.0f, 0.0f);
-
-    drawLine(screenPos, elbow, {0.6f, 0.8f, 1.0f});
-    drawLine(elbow, boxAnchor, {0.6f, 0.8f, 1.0f});
-
-    // -------------------------------------------------
-    // LABEL TEXT (baseline-based)
-    // -------------------------------------------------
-    tr.textDraw(
-        labelFont,
-        obj.label,
-        boxX + 6.0f,
-        labelBaselineY,
-        {0.7f, 0.9f, 1.0f}
-    );
-
-    // -------------------------------------------------
-    // underline
-    // -------------------------------------------------
-    float underlineY = labelBaselineY + 2.0f;
-
-    drawLine(
-        { boxX, underlineY },
-        { boxX + labelWidth, underlineY },
-        { 0.7f, 0.9f, 1.0f }
-    );
-
-    // -------------------------------------------------
-    // distance text
-    // -------------------------------------------------
-    float distWidth = distFont.measureText(distBuf);
-    float distBaselineY = underlineY + distFont.ascent() + 4.0f;
-
-    float distX = boxX + (labelWidth - distWidth) * 0.5f;
-
-    tr.textDraw(
-        distFont,
-        distBuf,
-        distX,
-        distBaselineY,
-        {0.6f, 0.8f, 1.0f}
-    );
-}
 
 
- 
+
+    m_hudRenderer.renderRects(m_hudRects); 
+    m_hudRenderer.renderText(m_hudStatics); 
     glEnable(GL_DEPTH_TEST);
-
 }
 
 
 
 
-void SpaceState::render()
-{
-    
 
-    // glm::mat4 projection = glm::perspective(
-    //     glm::radians(70.0f),
-    //     1280.0f / 720.0f,
-    //     0.1f,
-    //     5000.0f
-    // );
 
-    // glm::mat4 view = m_camera.viewMatrix();
-
-    // glMatrixMode(GL_PROJECTION);
-    // glLoadMatrixf(glm::value_ptr(projection));
-    // glMatrixMode(GL_MODELVIEW);
-    // glLoadMatrixf(glm::value_ptr(view));
-
-    // DebugGrid::drawInfinite(m_ship.position, 200.0f, 100);
-}
 
 
 // =====================================================================================

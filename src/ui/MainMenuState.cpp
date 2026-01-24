@@ -102,7 +102,9 @@ void MainMenuState::update(float)
 // Render
 // =====================================================================================
 
-void MainMenuState::render()
+void MainMenuState::render(){}
+
+void MainMenuState::renderUI()
 {
     glDisable(GL_DEPTH_TEST);
 

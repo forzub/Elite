@@ -53,7 +53,7 @@ SpaceState::SpaceState(StateStack& states)
 {
 
     m_hudRenderer.init();
-    m_worldLabelRenderer.init();
+    m_worldLabelRenderer.init(context());
 
     m_ship.position = {0.0f, 5.0f, 10.0f};
     m_camera.setPosition(m_ship.position);
@@ -107,7 +107,7 @@ SpaceState::SpaceState(StateStack& states)
             2e5f, 
             2e7f, 
             true, 
-            "???" 
+            "? Unknown" 
         }); 
         
         // Пиратский транспондер 
@@ -380,28 +380,12 @@ void SpaceState::renderHUD()
 
     for (const DetectedSignal& ds : detected)
     {
-        if (!ds.visible)
-        continue;
-
+        
         if (!ds.hasDirection)
             continue;
 
         WorldLabel lbl;
 
-        // --- позиция ---
-        // if (ds.hasDistance)
-        // {
-        //     // расстояние известно → реальная позиция
-        //     lbl.worldPos = ds.source->position;
-        //     lbl.distance = glm::length(ds.source->position - m_ship.position);
-        // }
-        // else
-        // {
-        //     // distance неизвестна → проецируем направление
-        //     float fakeDist = 3000.0f; // ВРЕМЕННО, внутри far plane
-        //     lbl.worldPos = m_ship.position + ds.direction * fakeDist;
-        //     lbl.distance = -1.0f; // маркер "нет дистанции"
-        // }
 
         float realDist = glm::length(ds.source->position - m_ship.position);
 
@@ -421,6 +405,8 @@ void SpaceState::renderHUD()
         lbl.label = ds.source->label;
         lbl.hasDistance = ds.hasDistance;
         lbl.stability   = ds.stability;
+        lbl.visibility = ds.visibility;
+
 
         m_worldLabelRenderer.render(
             lbl,
@@ -429,6 +415,9 @@ void SpaceState::renderHUD()
             TextRenderer::instance().viewportWidth(),
             TextRenderer::instance().viewportHeight()
         );
+
+       
+            
     }
     
     

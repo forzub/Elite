@@ -22,4 +22,6 @@ struct DetectedSignal
     float stability = 0.0f; // 0..1 — устойчивость приёма
     bool  visible   = false;
     float flickerTimer = 0.0f;
+    float visibility = 0.0f; // визуальная видимость (fade)
+
 };

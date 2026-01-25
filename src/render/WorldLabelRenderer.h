@@ -4,13 +4,15 @@
 
 #include "WorldLabel.h"
 
+
 class Font;
+struct StateContext;
 
 
 class WorldLabelRenderer
 {
 public:
-    void init();
+    void init(StateContext& context);
 
     void render(
         const WorldLabel& lbl,
@@ -23,6 +25,8 @@ public:
 private:
     Font* m_labelFont = nullptr;
     Font* m_distFont  = nullptr;
+    StateContext* m_context = nullptr;
+    
 
     void renderDirectionOnly(
         const WorldLabel& lbl,
@@ -33,4 +37,5 @@ private:
         const WorldLabel& lbl,
         const glm::vec2& screenPos
     );
+
 };

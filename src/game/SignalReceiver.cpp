@@ -76,6 +76,18 @@ void SignalReceiver::update(
             stableRange *= 0.1f; // 10% от нормальной stable-зоны
         }
 
+        const float fadeInSpeed  = 10.0f; // чем больше — тем быстрее появляется
+        const float fadeOutSpeed = 10.2f; // чем больше — тем быстрее гаснет
+
+        float target = ds->visible ? 1.0f : 0.0f;
+        float speed  = ds->visible ? fadeInSpeed : fadeOutSpeed;
+
+        ds->visibility += (target - ds->visibility) * speed * dt;
+        ds->visibility = glm::clamp(ds->visibility, 0.0f, 1.0f);
+
+
+
+
         // TODO: SignalEnvironment
         // stableRange *= (1.0f - env.noise - env.interference);
         // weakRange   *= (1.0f - env.noise - env.interference);
@@ -102,8 +114,8 @@ void SignalReceiver::update(
             );
 
             // --- Фликер: даже при высокой stability сигнал иногда пропадает ---
-            // скорость мерцания (секунды между проверками)
-            float minInterval = 0.3f; // быстро
+            // скорость мерцания (секунды между проверками)----------------------
+            float minInterval = 0.2f; // быстро
             float maxInterval = 1.5f; // медленно
 
             // чем выше stability — тем реже меняется состояние
@@ -130,6 +142,9 @@ void SignalReceiver::update(
             ds->visible   = false;
         }
 
+
+
+        
         // ----------------------------------------------------
         // сила сигнала (для информации / HUD)
         // ----------------------------------------------------

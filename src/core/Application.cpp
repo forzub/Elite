@@ -110,6 +110,8 @@ void Application::mainLoop()
         double currentTime = glfwGetTime();
         
         float dt = static_cast<float>(currentTime - lastTime);
+        m_context.dt = dt;
+
         lastTime = currentTime;
         
         // Input::instance().update();

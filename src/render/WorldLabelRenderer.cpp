@@ -1,10 +1,12 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <iostream>
 
+#include "core/StateContext.h"
 #include "render/WorldLabelRenderer.h"
 #include "render/TextRenderer.h"
-#include "render/Font.h"
 #include "render/ScreenUtils.h"
+#include "render/Font.h"
 
 // ВАЖНО: объявлены где-то у тебя
 bool projectToScreen(
@@ -22,8 +24,10 @@ void drawLine(
     const glm::vec3& color
 );
 
-void WorldLabelRenderer::init()
+
+void WorldLabelRenderer::init(StateContext& context)
 {
+    m_context = &context;
     if (!m_labelFont)
         m_labelFont = new Font("assets/fonts/Roboto-Light.ttf", 12);
 
@@ -177,6 +181,8 @@ void WorldLabelRenderer::renderDirectionOnly(
     const float baseSpeed   = 25.0f; // px/sec
     const float minAlpha    = 0.05f;
 
+    float a = lbl.visibility;
+
     // чем ниже stability — тем медленнее и "шире" волны
     float speed = baseSpeed * (0.3f + lbl.stability);
     float radiusScale = 0.6f + lbl.stability * 0.8f;
@@ -192,6 +198,9 @@ void WorldLabelRenderer::renderDirectionOnly(
 
     // мягче
     textAlpha *= textAlpha;
+                                                    textAlpha *= a;
+                                                    if (lbl.visibility < 0.15f)
+                                                        return; // не рождаем новые волны, только догорание
 
     // зависимость от уверенности сигнала
     textAlpha *= (0.3f + lbl.stability * 0.7f);
@@ -238,11 +247,30 @@ void WorldLabelRenderer::renderDirectionOnly(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void WorldLabelRenderer::renderPreciseLabel(
     const WorldLabel& lbl,
     const glm::vec2& screenPos
 )
 {
+    if (lbl.visibility < 0.02f)
+        return; // текст и линии полностью погасли
+
+    float a = lbl.visibility;
+
     // ---- distance string ----
     char distBuf[32];
     if (lbl.distance < 0.0f)
@@ -292,8 +320,8 @@ void WorldLabelRenderer::renderPreciseLabel(
 
     glm::vec2 elbow = boxAnchor + glm::vec2(-10.0f, 0.0f);
 
-    drawLine(screenPos, elbow, {0.6f, 0.8f, 1.0f});
-    drawLine(elbow, boxAnchor, {0.6f, 0.8f, 1.0f});
+    drawLine(screenPos, elbow, {0.6f * a, 0.8f * a, 1.0f * a});
+    drawLine(elbow, boxAnchor, {0.6f * a, 0.8f * a, 1.0f * a});
 
     // -------------------------------------------------
     // label text
@@ -303,14 +331,14 @@ void WorldLabelRenderer::renderPreciseLabel(
         lbl.label,
         labelTopPos.x + 6.0f,
         labelBaselineY,
-        {0.7f, 0.9f, 1.0f}
+        {0.7f * a, 0.9f * a, 1.0f * a}
     );
 
     // underline
     drawLine(
         { labelTopPos.x, underlineY },
         { labelTopPos.x + labelWidth, underlineY },
-        { 0.7f, 0.9f, 1.0f }
+        {0.7f * a, 0.9f * a, 1.0f * a}
     );
 
     // -------------------------------------------------
@@ -325,7 +353,7 @@ void WorldLabelRenderer::renderPreciseLabel(
         distBuf,
         distX,
         distBaselineY,
-        {0.6f, 0.8f, 1.0f}
+        {0.7f * a, 0.9f * a, 1.0f * a}
     );
 }
 

@@ -10,5 +10,10 @@ struct WorldLabel
     float distance;
 
     bool hasDistance = false;
-    float stability = 0.0f; // понадобится для анимации кругов
+    float stability = 0.0f;     // понадобится для анимации кругов
+   
+    // --- визуал ---
+    float visibility = 1.0f;
+
+
 };

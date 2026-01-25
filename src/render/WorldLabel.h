@@ -3,6 +3,8 @@
 #include <string>
 #include <glm/glm.hpp>
 
+#include "render/SignalWave.h"
+
 struct WorldLabel
 {
     glm::vec3 worldPos;
@@ -15,5 +17,7 @@ struct WorldLabel
     // --- визуал ---
     float visibility = 1.0f;
 
+    const SignalWave* waves = nullptr;
+    int waveCount = 0;
 
 };

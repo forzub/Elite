@@ -22,7 +22,8 @@ public:
         int screenH
     );
 
-private:
+private: 
+
     Font* m_labelFont = nullptr;
     Font* m_distFont  = nullptr;
     StateContext* m_context = nullptr;

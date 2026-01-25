@@ -39,6 +39,7 @@ add_executable(EliteGame
     src/render/ScreenUtils.cpp
     src/render/ShaderUtils.cpp
     src/render/Font.cpp
+
 )
 
 set_source_files_properties(

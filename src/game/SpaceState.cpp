@@ -406,6 +406,8 @@ void SpaceState::renderHUD()
         lbl.hasDistance = ds.hasDistance;
         lbl.stability   = ds.stability;
         lbl.visibility = ds.visibility;
+        lbl.waves = ds.waves;
+        lbl.waveCount = ds.MaxWaves;
 
 
         m_worldLabelRenderer.render(
@@ -420,10 +422,6 @@ void SpaceState::renderHUD()
             
     }
     
-    
-
-
-
 
     m_hudRenderer.renderRects(m_hudRects); 
     m_hudRenderer.renderText(m_hudStatics); 

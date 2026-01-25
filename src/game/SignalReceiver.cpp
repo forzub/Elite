@@ -2,12 +2,16 @@
 #include <glm/glm.hpp>
 #include <cstdlib>
 
+#include "render/VisualTuning.h"
  
 
 static float rand01()
 {
     return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
 }
+
+
+
 
 
 static bool isDirectionOnly(SignalType t)
@@ -17,6 +21,11 @@ static bool isDirectionOnly(SignalType t)
 }
 
 
+
+
+// ============================================================================================
+//     update
+// ============================================================================================
 
 void SignalReceiver::update(
     float dt,
@@ -56,6 +65,13 @@ void SignalReceiver::update(
             ds->stability  = 0.0f;
             ds->visible    = false;
             ds->confidence = 0.0f;
+// ----------------------debug----------------------
+            for (int i = 0; i < DetectedSignal::MaxWaves; ++i)
+            {
+                ds->waves[i].alive  = false;
+                ds->waves[i].radius = 0.0f;
+            }
+// ----------------------debug----------------------            
         }
 
         // ----------------------------------------------------
@@ -76,8 +92,14 @@ void SignalReceiver::update(
             stableRange *= 0.1f; // 10% от нормальной stable-зоны
         }
 
-        const float fadeInSpeed  = 10.0f; // чем больше — тем быстрее появляется
-        const float fadeOutSpeed = 10.2f; // чем больше — тем быстрее гаснет
+
+        // const float fadeInSpeed  = 10.0f; // чем больше — тем быстрее появляется
+        // const float fadeOutSpeed = 10.2f; // чем больше — тем быстрее гаснет
+
+        const float fadeInSpeed  = VisualTuning::FadeInSpeed;   // чем больше — тем быстрее появляется
+        const float fadeOutSpeed = VisualTuning::FadeOutSpeed;  // чем больше — тем быстрее гаснет
+
+
 
         float target = ds->visible ? 1.0f : 0.0f;
         float speed  = ds->visible ? fadeInSpeed : fadeOutSpeed;
@@ -85,12 +107,53 @@ void SignalReceiver::update(
         ds->visibility += (target - ds->visibility) * speed * dt;
         ds->visibility = glm::clamp(ds->visibility, 0.0f, 1.0f);
 
+  
+
+// constexpr float WaveSpeed    = 25.0f; // м/с (условно, для HUD)
+// constexpr float WaveMaxRadius = 60.0f;
 
 
+constexpr float WaveSpeed    = VisualTuning::WaveSpeed;         // м/с (условно, для HUD)
+constexpr float WaveMaxRadius = VisualTuning::WaveMaxRadius;
 
-        // TODO: SignalEnvironment
-        // stableRange *= (1.0f - env.noise - env.interference);
-        // weakRange   *= (1.0f - env.noise - env.interference);
+
+ds->waveCooldown -= dt;
+
+
+for (int i = 0; i < DetectedSignal::MaxWaves; ++i)
+{
+    SignalWave& w = ds->waves[i];
+
+    if (!w.alive)
+        continue;
+
+    w.radius += WaveSpeed * dt;
+
+    if (w.radius >= WaveMaxRadius)
+    {
+        w.alive  = false;
+        w.radius = 0.0f;
+    }
+}
+
+if (ds->visible && ds->waveCooldown <= 0.0f)
+{
+    // ищем свободный слот
+    for (int i = 0; i < DetectedSignal::MaxWaves; ++i)
+    {
+        SignalWave& w = ds->waves[i];
+
+        if (!w.alive)
+        {
+            w.alive  = true;
+            w.radius = 0.1f; // старт не с нуля
+            // ds->waveCooldown = 0.6f; // период волн
+            ds->waveCooldown = VisualTuning::WaveSpawnPeriod; // период волн
+            break;
+        }
+    }
+}
+
 
         // ----------------------------------------------------
         // устойчивость и видимость
@@ -179,7 +242,9 @@ void SignalReceiver::update(
 
 
 
-
+// ============================================================================================
+//     detected
+// ============================================================================================
 
 const std::vector<DetectedSignal>& SignalReceiver::detected() const
 {
@@ -188,6 +253,10 @@ const std::vector<DetectedSignal>& SignalReceiver::detected() const
 
 
 
+
+// ============================================================================================
+//     computeSignalStrength
+// ============================================================================================
 float SignalReceiver::computeSignalStrength(
     const WorldSignal& sig,
     const glm::vec3& receiverPos

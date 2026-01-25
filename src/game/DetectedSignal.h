@@ -1,6 +1,11 @@
 #pragma once
 
 #include "WorldSignal.h"
+// ----------------------debug----------------------
+#include "render/SignalWave.h"
+#include "render/VisualTuning.h"
+
+// ----------------------debug----------------------
 
 struct DetectedSignal
 {
@@ -24,4 +29,9 @@ struct DetectedSignal
     float flickerTimer = 0.0f;
     float visibility = 0.0f; // визуальная видимость (fade)
 
+    // ----------------------debug----------------------
+    float waveCooldown = 0.0f;
+    static constexpr int MaxWaves = VisualTuning::MaxWaves; 
+    SignalWave waves[MaxWaves];
+    // ----------------------debug----------------------
 };

@@ -3,10 +3,16 @@
 #include <iostream>
 
 #include "core/StateContext.h"
+
 #include "render/WorldLabelRenderer.h"
 #include "render/TextRenderer.h"
 #include "render/ScreenUtils.h"
 #include "render/Font.h"
+
+#include "render/VisualTuning.h"
+
+
+
 
 // ВАЖНО: объявлены где-то у тебя
 bool projectToScreen(
@@ -34,6 +40,9 @@ void WorldLabelRenderer::init(StateContext& context)
     if (!m_distFont)
         m_distFont = new Font("assets/fonts/Roboto-Light.ttf", 11);
 }
+
+
+
 
 
 
@@ -73,183 +82,90 @@ void WorldLabelRenderer::render(
         return;
     }
 
-    // ---- distance string ----
-    bool showDistance = (lbl.distance >= 0.0f);
-
-    char distBuf[32];
-    
-    if (lbl.distance < 0.0f)
-    {
-        std::snprintf(distBuf, sizeof(distBuf), "--");
-    }
-    else if (lbl.distance >= 1000.0f)
-    {
-        std::snprintf(
-            distBuf,
-            sizeof(distBuf),
-            "%.1f km",
-            lbl.distance / 1000.0f
-        );
-    }
-    else
-    {
-        std::snprintf(
-            distBuf,
-            sizeof(distBuf),
-            "%.0f m",
-            lbl.distance
-        );
-    }
-
-    
-
-    auto& tr = TextRenderer::instance();
-
-    glm::vec2 labelTopPos = screenPos + glm::vec2(40.0f, -30.0f);
-
-    float labelWidth  = m_labelFont->measureText(lbl.label);
-    float labelAscent = m_labelFont->ascent();
-    float labelHeight = m_labelFont->lineHeight();
-
-    float labelBaselineY = labelTopPos.y + labelAscent;
-    float underlineY = labelBaselineY + 2.0f;
-
-    if (showDistance)
-    {
-        float distWidth = m_distFont->measureText(distBuf);
-        float distBaselineY = underlineY + m_distFont->ascent() + 4.0f;
-        float distX = labelTopPos.x + (labelWidth - distWidth) * 0.5f;
-
-        tr.textDraw(
-            *m_distFont,
-            distBuf,
-            distX,
-            distBaselineY,
-            {0.6f, 0.8f, 1.0f}
-        );
-    }
-
-    glm::vec2 boxAnchor = {
-        labelTopPos.x,
-        labelTopPos.y + labelHeight * 0.5f
-    };
-
-    glm::vec2 elbow = boxAnchor + glm::vec2(-10.0f, 0.0f);
-
-    drawLine(screenPos, elbow, {0.6f, 0.8f, 1.0f});
-    drawLine(elbow, boxAnchor, {0.6f, 0.8f, 1.0f});
-
-    tr.textDraw(
-        *m_labelFont,
-        lbl.label,
-        labelTopPos.x + 6.0f,
-        labelBaselineY,
-        {0.7f, 0.9f, 1.0f}
-    );
-
-    drawLine(
-        { labelTopPos.x, underlineY },
-        { labelTopPos.x + labelWidth, underlineY },
-        { 0.7f, 0.9f, 1.0f }
-    );
-
-    float distWidth = m_distFont->measureText(distBuf);
-    float distBaselineY = underlineY + m_distFont->ascent() + 4.0f;
-    float distX = labelTopPos.x + (labelWidth - distWidth) * 0.5f;
-
-    tr.textDraw(
-        *m_distFont,
-        distBuf,
-        distX,
-        distBaselineY,
-        {0.6f, 0.8f, 1.0f}
-    );
-
     
 }
 
 
 
+
+
+
+
+
+
+// ----------------------debug---------------------- 
 
 void WorldLabelRenderer::renderDirectionOnly(
     const WorldLabel& lbl,
     const glm::vec2& center
 )
 {
-    const int   waveCount   = 3;
-    const float maxRadius   = 60.0f;
-    const float baseSpeed   = 25.0f; // px/sec
-    const float minAlpha    = 0.05f;
+    
+    
+    // const float maxRadius = 60.0f;
+    // const float minAlpha  = 0.05f;
 
-    float a = lbl.visibility;
-
-    // чем ниже stability — тем медленнее и "шире" волны
-    float speed = baseSpeed * (0.3f + lbl.stability);
-    float radiusScale = 0.6f + lbl.stability * 0.8f;
-
-    float time = static_cast<float>(glfwGetTime());
-   
-    // фаза волны (0..1)
-    // float textPhase = std::fmod(time, 3.0f) / 3.0f;
-    float textPhase = std::fmod(time - 0.5f, 3.0f) / 3.0f;
-
-    // альфа текста: появляется → держится → исчезает
-    float textAlpha = 1.0f - std::abs(textPhase * 2.0f - 1.0f);
-
-    // мягче
-    textAlpha *= textAlpha;
-                                                    textAlpha *= a;
-                                                    if (lbl.visibility < 0.15f)
-                                                        return; // не рождаем новые волны, только догорание
-
-    // зависимость от уверенности сигнала
-    textAlpha *= (0.3f + lbl.stability * 0.7f);
+    const float maxRadius = VisualTuning::WaveMaxRadius;
+    const float minAlpha  = VisualTuning::MinWaveAlpha;
 
     glDisable(GL_DEPTH_TEST);
 
-    for (int i = 0; i < waveCount; ++i)
+    for (int i = 0; i < lbl.waveCount; ++i)
     {
-        // каждая волна сдвинута во времени
-        float t = std::fmod(time - i * 0.6f, 3.0f);
-        if (t < 0.0f)
+        const SignalWave& w = lbl.waves[i];
+
+        if (!w.alive)
             continue;
 
-        float r = t * speed * radiusScale;
+        float r = w.radius;
+// ----------------------debug----------------------
+        // if (r <= 0.0f || r > maxRadius)
         if (r > maxRadius)
             continue;
-
-        // альфа убывает по мере роста
+// ----------------------debug----------------------
         float alpha = 1.0f - (r / maxRadius);
-        alpha *= alpha; // мягче
+        alpha *= alpha;
         alpha = std::max(alpha, minAlpha);
+// ----------------------debug---------------------- 
+        // glColor4f(0.6f, 0.8f, 1.0f, alpha);
 
-        glColor4f(0.6f, 0.8f, 1.0f, alpha);
+        const float colors[3][3] = {
+            {0.6f, 0.8f, 1.0f},
+            {0.4f, 0.7f, 1.0f},
+            {0.3f, 0.6f, 1.0f}
+        };
+
+        glColor4f(
+            colors[i][0],
+            colors[i][1],
+            colors[i][2],
+            alpha
+        );
+// ----------------------debug----------------------         
         drawCircle(center, r);
     }
 
-    // ---- имя сигнала ----
-    float textY = center.y - maxRadius - 16.0f;
+    // ---- имя сигнала (fade по visibility) ----
+    float a = lbl.visibility;
+    if (a > 0.02f)
+    {
+        float textY = center.y - maxRadius - 16.0f;
 
-    TextRenderer::instance().textDraw(
-        *m_labelFont,
-        lbl.label,
-        center.x + 6.0f,
-        textY,
-        {
-            0.7f * textAlpha,
-            0.9f * textAlpha,
-            1.0f * textAlpha
-        }
-    );
+        TextRenderer::instance().textDraw(
+            *m_labelFont,
+            lbl.label,
+            center.x + 6.0f,
+            textY,
+            {
+                0.7f * a,
+                0.9f * a,
+                1.0f * a
+            }
+        );
+    }
 
     glEnable(GL_DEPTH_TEST);
 }
-
-
-
-
-
-
 
 
 

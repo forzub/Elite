@@ -2,7 +2,7 @@
 
 #include "ui/HudRenderer.h"
 
-#include "render/TextRenderer.h"
+#include "render/HUD/TextRenderer.h"
 #include "render/Font.h"
 
 void HudRenderer::init()

@@ -31,7 +31,7 @@
 // // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
-#include "render/TextRenderer.h"
+#include "render/HUD/TextRenderer.h"
 
 #include <glad/gl.h>
 #include <iostream>
@@ -80,12 +80,19 @@ void TextRenderer::init()
         #version 330 core
         in vec2 TexCoords;
         out vec4 FragColor;
+
         uniform sampler2D text;
-        uniform vec3 textColor;
+        uniform vec4 textColor;   // ← теперь vec4
+
         void main()
         {
-            float alpha = texture(text, TexCoords).a;
-            FragColor = vec4(textColor, alpha);
+            float glyphAlpha = texture(text, TexCoords).a;
+
+            // итоговая альфа = глиф * visibility
+            FragColor = vec4(
+                textColor.rgb,
+                glyphAlpha * textColor.a
+            );
         }
     )";
 
@@ -140,13 +147,13 @@ void TextRenderer::textDraw(
     const std::string& text,
     float x,
     float baselineY,
-    const glm::vec3& color
+    const glm::vec4& color   // ← RGBA
 )
 {
     glUseProgram(m_shader);
-    glUniform3f(
+        glUniform4f(
         glGetUniformLocation(m_shader, "textColor"),
-        color.x, color.y, color.z
+        color.r, color.g, color.b, color.a
     );
 
     glActiveTexture(GL_TEXTURE0);

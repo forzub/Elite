@@ -1,7 +1,44 @@
 #include "render/ShaderUtils.h"
 
 #include <glad/gl.h>
+
 #include <iostream>
+#include <fstream>        // ← ОБЯЗАТЕЛЬНО
+#include <sstream>        // ← ОБЯЗАТЕЛЬНО
+
+static std::string loadTextFile(const std::string& path)
+{
+    std::ifstream file(path);
+    if (!file)
+    {
+        std::cerr << "[ShaderUtils] Failed to open: " << path << std::endl;
+        return {};
+    }
+
+    std::stringstream ss;
+    ss << file.rdbuf();
+    return ss.str();
+}
+
+
+unsigned int compileShaderFromFiles(
+    const std::string& vertexPath,
+    const std::string& fragmentPath
+)
+{
+    std::string vertSrc = loadTextFile(vertexPath);
+    std::string fragSrc = loadTextFile(fragmentPath);
+
+    if (vertSrc.empty() || fragSrc.empty())
+    {
+        std::cerr << "[ShaderUtils] Empty shader source\n";
+        return 0;
+    }
+
+    return compileShader(vertSrc.c_str(), fragSrc.c_str());
+}
+
+
 
 static unsigned int compileSingle(GLenum type, const char* src)
 {

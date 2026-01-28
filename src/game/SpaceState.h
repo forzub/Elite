@@ -1,27 +1,30 @@
 #pragma once
 
+#include <unordered_map>
+
 #include "core/GameState.h"
 
 #include "render/Camera.h"
-#include "render/TextRenderer.h"  
-#include "render/WorldLabelRenderer.h" 
+#include "render/HUD/TextRenderer.h"  
+#include "render/HUD/WorldLabelRenderer.h" 
 
-#include "game/ShipTransform.h"
 #include "game/ShipParams.h"
-#include "game/SignalReceiver.h"
+#include "game/ShipTransform.h"
+
+#include "game/signals/SignalReceiver.h"
 
 #include "world/WorldParams.h"
+#include "world/WorldObject.h"
+#include "world/Planet.h"
+#include "world/InterferenceSource.h"
+
 
 #include "ui/HudTypes.h"
 #include "ui/HudRenderer.h"
  
 // #include "render/Camera.h"
 
-struct WorldObject
-{
-    glm::vec3 position;
-    std::string label;
-};
+
 
 class StateStack;
 
@@ -45,12 +48,19 @@ private:
 
     ShipParams m_params;
     WorldParams m_world;
+    float m_receiverNoiseFloor;                             // допустимый уровень шума для приемника
 
     bool wantsConfirmExit() const override;
     bool onGlobalEscape() override;
     bool isInSafeZone() const;
 
-    std::vector<WorldObject> m_worldObjects;
+    std::vector<WorldObject> m_worldObjects;                        // "world/WorldParams.h"
+    std::vector<Planet> m_planets;                                  // "world/Planet.h"
+    std::vector<SignalReceptionResult> m_signalResults;             // "world/WorldSignal.h"
+    std::vector<WorldSignal> m_worldSignals;                        // "world/WorldSignal.h"
+    std::vector<InterferenceSource> m_interferenceSources;          // "world/InterferenceSource.h" - источники помех
+
+    std::unordered_map<const WorldSignal*, WorldLabel> m_worldLabels;
     
     // --- HUD ---
     std::vector<HudStaticItem> m_hudStatics;
@@ -59,8 +69,8 @@ private:
     HudRenderer m_hudRenderer;
     
     
-    std::vector<WorldSignal> m_worldSignals;
     SignalReceiver m_signalReceiver;
     WorldLabelRenderer m_worldLabelRenderer;
 
+    WorldLabel& getOrCreateWorldLabel(const SignalReceptionResult& result);
 };

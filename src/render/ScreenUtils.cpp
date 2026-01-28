@@ -1,6 +1,11 @@
 #include "render/ScreenUtils.h"
 #include <glad/gl.h>
 
+
+
+// ===================================================================
+// project To Screen
+// ===================================================================
 bool projectToScreen(
     const glm::vec3& worldPos,
     const glm::mat4& view,
@@ -27,6 +32,9 @@ bool projectToScreen(
     return true;
 }
 
+// ===================================================================
+// draw Line
+// ===================================================================
 void drawLine(
     const glm::vec2& a,
     const glm::vec2& b,
@@ -40,6 +48,10 @@ void drawLine(
     glEnd();
 }
 
+
+// ===================================================================
+// draw Circle
+// ===================================================================
 void drawCircle(const glm::vec2& center, float radius)
 {
     const int segments = 32;

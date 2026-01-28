@@ -3,8 +3,9 @@
 #include "core/StateStack.h"
 #include "ui/MainMenuState.h"
 #include "input/Input.h"
-#include "render/TextRenderer.h"
+#include "render/HUD/TextRenderer.h"
 
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
 

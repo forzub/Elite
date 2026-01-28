@@ -9,7 +9,7 @@
 
 #include "input/Input.h"
 
-#include "render/TextRenderer.h"
+#include "render/HUD/TextRenderer.h"
 
 #include <windows.h>
 

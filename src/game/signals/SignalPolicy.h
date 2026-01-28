@@ -1,6 +1,6 @@
 #pragma once
 
-#include "game/WorldSignal.h"
+#include "world/WorldSignal.h"
 
 inline bool signalAllowsDistance(const WorldSignal& sig, float dist)
 {

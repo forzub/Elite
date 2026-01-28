@@ -28,8 +28,20 @@ public:
         const std::string& text,
         float x,
         float baselineY,
-        const glm::vec3& color
+        const glm::vec4& color   // ← RGBA
     );
+
+    // --- Адаптер для старого кода (RGB → RGBA) ---
+    inline void textDraw(
+        const Font& font,
+        const std::string& text,
+        float x,
+        float baselineY,
+        const glm::vec3& color
+    )
+    {
+        textDraw(font, text, x, baselineY, glm::vec4(color, 1.0f));
+    }
 
     // ------------------------------------------------------------
     // LEGACY API (НЕ ЛОМАЕМ ПРОЕКТ)

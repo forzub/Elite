@@ -14,10 +14,12 @@
 
 
 #include "render/DebugGrid.h"
-// #include "render/ScreenUtils.h"
+#include "render/ScreenUtils.h"
 
 #include "game/ShipParams.h"
-#include "game/SignalPolicy.h"
+#include "game/signals/SignalPolicy.h"
+#include "game/signals/WorldLabelSystem.h"
+#include "game/signals/WorldSignalWaves.h"
 
 #include "ui/ConfirmExitState.h"
 #include "ui/HudRenderer.h"
@@ -75,55 +77,111 @@ SpaceState::SpaceState(StateStack& states)
         "RELAY BEACON 3766"
     });
 
+   
+    // m_planets.push_back({
+    //     glm::vec3(0.0f, 0.0f, 0.0f),
+    //     6000.0f
+    // });
 
+    m_receiverNoiseFloor = VisualTuning::receiverBaseNoise;
 
     // тест сигналов 
     m_worldSignals.clear(); 
     
-    // Планета 
-    m_worldSignals.push_back(
-        { SignalType::Planets, 
-        { 1'500'000.0f, 0.0f, 0.0f }, 
-        1e6f, 
-        1e7f, 
-        true, 
-        "Asterion IV" 
-        }); 
         
-        // Станция 
-        m_worldSignals.push_back({ 
-            SignalType::StationClass, 
-            { -200000.0f, 100000.0f, 0.0f }, 
-            5e5f, 
-            5e6f, 
-            true, 
-            "Orbital Station" 
-        }); 
-            
-        // SOS древний 
-        m_worldSignals.push_back({ 
-            SignalType::SOSAntic, 
-            { -400'000.0f, 0.0f, -12'900'000.0f }, 
-            2e5f, 
-            2e7f, 
-            true, 
-            "? Unknown" 
-        }); 
-        
-        // Пиратский транспондер 
-        m_worldSignals.push_back({ 
-            SignalType::PirateTransponder, 
-            { 400'000.0f, 0.0f, -2'150'000.0f }, 
-            3e5f, 
-            5e6f, 
-            true, 
-            "Unknown Vessel" 
-        });
-        
+    // Планета (высоко над плоскостью, дальняя, всегда стабильная)
+    m_worldSignals.push_back({
+        SignalType::Planets,
+        SignalDisplayClass::Global,
+        { 0.0f, 800.0f, -900.0f }, // 2 км вперед, 800 м вверх
+        300.0f,   // minRange (слышна)
+        1200.0f,   // maxRange
+        true,
+        "Asterion IV"
+    });
+
+    // Станция (ближе, устойчивая)
+    m_worldSignals.push_back({
+        SignalType::StationClass,
+        SignalDisplayClass::Global,
+        { -300.0f, 200.0f, -900.0f }, // 800 м вперед
+        300.0f,
+        1200.0f,
+        true,
+        "Orbital Station"
+    });
+
+    // SOS древний (далеко, нестабильный)
+    m_worldSignals.push_back({
+        SignalType::SOSAntic,
+        SignalDisplayClass::Local,
+        { 200.0f, 0.0f, -900.0f }, // 1.8 км
+        300.0f,
+        1200.0f,
+        true,
+        "? Unknown"
+    });
+
+    // Пиратский транспондер (средняя дистанция)
+    m_worldSignals.push_back({
+        SignalType::PirateTransponder,
+        SignalDisplayClass::Local,
+        { -150.0f, 0.0f, -900.0f }, // 900 м
+        300.0f,
+        1200.0f,
+        true,
+        "Unknown Vessel"
+    });
+
+
+
+    // -------------------------- test block -----------------------------
+    m_worldSignals.clear(); 
+
+    m_worldSignals.push_back({
+        SignalType::Beacon,
+        SignalDisplayClass::Local,
+        {0, 0, -70}, 
+        500.0f,   
+        1000.0f,   
+        true,
+        "TEST_SIGNAL"
+    });
+
+
+
+    InterferenceSource jammer;
+    jammer.type     = InterferenceType::Active;
+    jammer.position = {0, 0, 155};
+    jammer.power    = 300.0f;
+    jammer.radius   = 100.0f;
+    jammer.enabled  = false;
+
+    // m_interferenceSources.push_back(jammer);
+
+
+    
+    m_planets.clear();
+
+    // m_planets.push_back({
+    //     {0, 10, 50},
+    //     20
+    // });
+
+
+
+
+
 
     
         
 }
+
+
+
+
+
+
 
 // =====================================================================================
 // Input
@@ -192,6 +250,22 @@ void SpaceState::handleInput()
     
 }
 
+
+
+
+
+
+//   _   _          _       _           
+//  | | | | _ __  | |_  __| | ___  ___ 
+//  | | | || '_ \ | __|/ _` |/ _ \/ __|
+//  | |_| || |_) || |_| (_| |  __/\__ \
+//   \___/ | .__/  \__|\__,_|\___||___/
+//         |_|                         
+
+
+
+
+
 // =====================================================================================
 // Update
 // =====================================================================================
@@ -201,9 +275,81 @@ void SpaceState::update(float dt)
     m_signalReceiver.update(
         dt,
         m_ship.position,
-        m_worldSignals
+        m_worldSignals,
+        m_planets,
+        m_interferenceSources,
+        m_receiverNoiseFloor,
+        m_signalResults
     );
 
+
+
+    for (const SignalReceptionResult& result : m_signalResults)
+    {
+        WorldLabel& label = getOrCreateWorldLabel(result); // как у тебя реализовано
+
+        // --- 1. Семантика (data)
+        label.data.worldPos             = result.sourceWorldPos;
+        label.data.semanticState        = result.semanticState;
+        label.data.signalToNoiseRatio   = result.signalToNoiseRatio;
+        label.data.receivedPower        = result.receivedPower;
+        label.data.stability            = result.stability;
+        label.data.displayClass         = result.source->displayClass;
+
+        if (result.semanticState == SignalSemanticState::Decoded)
+        {
+            label.data.displayName = result.source->label; // или из WorldSignal
+            label.data.distance = result.distance;
+            label.data.hasDistance = true;
+            label.visual.visibility = 1.0;
+            label.visual.presence = SignalPresence::Present;
+        }
+        else
+        {
+            label.data.displayName = "undefined";
+            label.data.hasDistance = false;
+        }     
+        
+        // --- 2. Визуальная инерция
+
+        WorldLabelSystem::updateVisualState(
+            dt,
+            result.semanticState,
+            result.signalToNoiseRatio,
+            label.visual
+        );
+
+        // std::cout
+        // << "[Label] src=" << result.source
+        // << " presence=" << (int)label.visual.presence
+        // << " vis=" << label.visual.visibility
+        // << " state=" << (int)label.data.semanticState
+        // << " snr=" << label.data.signalToNoiseRatio
+        // << std::endl;
+        
+        bool allowWaveSpawn =
+        ((label.data.semanticState == SignalSemanticState::Noise) && 
+        (label.data.displayClass != SignalDisplayClass::Global) &&
+        (label.visual.presence != SignalPresence::FadingOut) &&
+        (label.visual.presence != SignalPresence::Absent));
+
+        if(label.data.semanticState == SignalSemanticState::Decoded && label.data.displayClass == SignalDisplayClass::Other)
+            allowWaveSpawn = true;
+
+            
+        
+        updateWorldSignalWaves(
+            label.visual,
+            dt,
+            allowWaveSpawn
+        );
+
+    }
+
+
+
+
+    
     // -------------------------------------------------------------------------
     // Rotation physics
     // -------------------------------------------------------------------------
@@ -308,6 +454,8 @@ void SpaceState::update(float dt)
     m_camera.setOrientation(m_ship.pitch, m_ship.yaw, m_ship.roll);
 }
 
+
+
 // =====================================================================================
 // Render
 // =====================================================================================
@@ -340,98 +488,68 @@ void SpaceState::renderUI()
 // =====================================================================================
 void SpaceState::renderHUD()
 {
-    m_hudStatics.clear(); 
-    m_hudRects.clear(); 
-    
-    m_hudRects.push_back({ 
-        { 20.0f / 1280.0f, 20.0f / 720.0f }, 
-        { 180.0f / 1280.0f, 60.0f / 720.0f }, 
-        { 0.0f, 1.0f, 0.0f } }); 
-    
-    m_hudStatics.push_back({ 
-        "HUD ONLINE", 
-        { 30.0f / 1280.0f, 40.0f / 720.0f }, // временно, 1:1 с текущим 
-        { 0.0f, 1.0f, 0.0f } }); 
 
-
-
-        
-    glm::mat4 view = m_camera.viewMatrix(); 
-    glm::mat4 proj = m_camera.projectionMatrix(); 
-    
-    
-
-    glMatrixMode(GL_PROJECTION); glLoadIdentity(); 
-    glOrtho(0, 1280, 720, 0, -1, 1); 
-    glMatrixMode(GL_MODELVIEW); 
-    glLoadIdentity(); // Простейший HUD-примитив (индикатор/рамка) 
+    // -------------------------------------------------
+    // сразу ставим ортографию и больше её не трогаем - это для 2D графики
+    // -------------------------------------------------
     glDisable(GL_DEPTH_TEST);
 
-    glBegin(GL_LINE_LOOP); 
-        glVertex2f(20, 20); 
-        glVertex2f(200, 20); 
-        glVertex2f(200, 80); 
-        glVertex2f(20, 80); 
-    glEnd();
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, 1280, 720, 0, -1, 1);
 
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
+    // -------------------------------------------------
+    // 1. Статический HUD (рамки, текст)
+    // -------------------------------------------------
+    m_hudStatics.clear();
+    m_hudRects.clear();
 
-    const auto& detected = m_signalReceiver.detected();
+    m_hudRects.push_back({
+        { 20.0f / 1280.0f, 20.0f / 720.0f },
+        { 180.0f / 1280.0f, 60.0f / 720.0f },
+        { 0.0f, 1.0f, 0.0f }
+    });
 
-    for (const DetectedSignal& ds : detected)
+    m_hudStatics.push_back({
+        "HUD ONLINE",
+        { 30.0f / 1280.0f, 40.0f / 720.0f },
+        { 0.0f, 1.0f, 0.0f }
+    });
+
+    m_hudRenderer.renderRects(m_hudRects);
+    m_hudRenderer.renderText(m_hudStatics);
+
+    // -------------------------------------------------
+    // 2. Подготовка матриц для меток
+    // -------------------------------------------------
+
+    // --- camera matrices нужны ТОЛЬКО здесь ---
+    glm::mat4 view = m_camera.viewMatrix();
+    glm::mat4 proj = m_camera.projectionMatrix();
+
+    for (auto& [signal, lbl] : m_worldLabels)
     {
-        
-        if (!ds.hasDirection)
-            continue;
-
-        WorldLabel lbl;
-
-
-        float realDist = glm::length(ds.source->position - m_ship.position);
-
-        if (signalAllowsDistance(*ds.source, realDist))
-        {
-            lbl.worldPos = ds.source->position;
-            lbl.distance = realDist;
-        }
-        else
-        {
-            float fakeDist = 800.0f;
-            lbl.worldPos = m_ship.position + ds.direction * fakeDist;
-            lbl.distance = -1.0f; // будет "--"
-        }
-
-
-        lbl.label = ds.source->label;
-        lbl.hasDistance = ds.hasDistance;
-        lbl.stability   = ds.stability;
-        lbl.visibility = ds.visibility;
-        lbl.waves = ds.waves;
-        lbl.waveCount = ds.MaxWaves;
-
-
-        m_worldLabelRenderer.render(
-            lbl,
+        lbl.onScreen = projectToScreen(
+            lbl.data.worldPos,
             view,
             proj,
             TextRenderer::instance().viewportWidth(),
-            TextRenderer::instance().viewportHeight()
+            TextRenderer::instance().viewportHeight(),
+            lbl.screenPos
         );
 
-       
-            
+    
+        if (!lbl.onScreen)
+                continue;
+
+        m_worldLabelRenderer.renderHUD(lbl);
     }
     
-
-    m_hudRenderer.renderRects(m_hudRects); 
-    m_hudRenderer.renderText(m_hudStatics); 
     glEnable(GL_DEPTH_TEST);
 }
-
-
-
-
-
 
 
 
@@ -473,4 +591,27 @@ bool SpaceState::isInSafeZone() const
     // ВРЕМЕННО:
     // пока считаем, что игрок ВСЕГДА в безопасной зоне
     return true;
+}
+
+
+// =====================================================================================
+// get Or Create WorldLabel
+// =====================================================================================
+WorldLabel& SpaceState::getOrCreateWorldLabel(const SignalReceptionResult& result)
+{
+    const WorldSignal* key = result.source;
+
+    auto it = m_worldLabels.find(key);
+    if (it != m_worldLabels.end())
+        return it->second;
+
+    // --- создаём новый WorldLabel
+    WorldLabel label;
+    label.visual.presence = SignalPresence::Absent;
+    label.visual.visibility = 0.0f;
+    label.visual.presenceTimer = 0.0f;
+    label.visual.noisePhase = 0.0f;
+
+    auto [newIt, inserted] = m_worldLabels.emplace(key, std::move(label));
+    return newIt->second;
 }

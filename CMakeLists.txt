@@ -5,6 +5,8 @@ project(EliteGame LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
+
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 
@@ -28,14 +30,17 @@ add_executable(EliteGame
     src/input/Input.cpp
 
     src/game/SpaceState.cpp
-    src/game/SignalReceiver.cpp
+    src/game/signals/SignalReceiver.cpp
+    src/game/signals/WorldLabelSystem.cpp
+    src/game/signals/WorldSignalWaves.cpp
+    
 
 
     src/render/Camera.cpp
     src/render/DebugGrid.cpp
     src/render/Renderer.cpp
-    src/render/TextRenderer.cpp
-    src/render/WorldLabelRenderer.cpp
+    src/render/HUD/TextRenderer.cpp
+    src/render/HUD/WorldLabelRenderer.cpp
     src/render/ScreenUtils.cpp
     src/render/ShaderUtils.cpp
     src/render/Font.cpp
@@ -47,6 +52,8 @@ set_source_files_properties(
     PROPERTIES
     LANGUAGE C
 )
+
+target_compile_definitions(EliteGame PRIVATE GLFW_INCLUDE_NONE)
 
 target_include_directories(EliteGame PRIVATE
     src

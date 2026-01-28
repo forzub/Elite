@@ -1,8 +1,8 @@
 #pragma once
 
-#include "WorldSignal.h"
+#include "world/WorldSignal.h"
 // ----------------------debug----------------------
-#include "render/SignalWave.h"
+// #include "render/SignalWave.h"
 #include "render/VisualTuning.h"
 
 // ----------------------debug----------------------
@@ -11,6 +11,8 @@ struct DetectedSignal
 {
     const WorldSignal* source = nullptr;
 
+
+    std::string label;
     float confidence = 0.0f;   // 0..1
     float strength   = 0.0f;
 
@@ -29,9 +31,14 @@ struct DetectedSignal
     float flickerTimer = 0.0f;
     float visibility = 0.0f; // визуальная видимость (fade)
 
+    float nameDecisionTimer     = 0.0f;
+    float distanceDecisionTimer = 0.0f;
+
     // ----------------------debug----------------------
-    float waveCooldown = 0.0f;
-    static constexpr int MaxWaves = VisualTuning::MaxWaves; 
-    SignalWave waves[MaxWaves];
+    // float waveCooldown = 0.0f;
+    // static constexpr int MaxWaves = VisualTuning::MaxWaves; 
+    // SignalWave waves[MaxWaves];
+
+    float detectTimer = 0.0f;
     // ----------------------debug----------------------
 };

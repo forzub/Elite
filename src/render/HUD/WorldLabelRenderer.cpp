@@ -106,28 +106,28 @@ void WorldLabelRenderer::render(
 {
     
 
-    glm::vec2 screenPos;
-    bool onScreen = projectToScreen(
-        label.data.worldPos,
-        view,
-        proj,
-        TextRenderer::instance().viewportWidth(),
-        TextRenderer::instance().viewportHeight(),
-        screenPos
-    );
+    // glm::vec2 screenPos;
+    // bool onScreen = projectToScreen(
+    //     label.data.worldPos,
+    //     view,
+    //     proj,
+    //     TextRenderer::instance().viewportWidth(),
+    //     TextRenderer::instance().viewportHeight(),
+    //     screenPos
+    // );
 
-    glDisable(GL_DEPTH_TEST);
+    // glDisable(GL_DEPTH_TEST);
 
-    if (onScreen)
-    {
-        renderOnScreen(label, screenPos);
-    }
-    else
-    {
-        renderOffScreen(label, view, proj, screenW, screenH);
-    }
+    // if (onScreen)
+    // {
+    //     renderOnScreen(label, screenPos);
+    // }
+    // else
+    // {
+    //     renderOffScreen(label, view, proj, screenW, screenH);
+    // }
 
-    glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_DEPTH_TEST);
 
 }
 
@@ -222,6 +222,8 @@ void WorldLabelRenderer::renderWaves(
     const glm::vec2& center
 )
 {
+    
+        
     // -------------------------------------------------
     // HUD render state (фиксированный)
     // -------------------------------------------------
@@ -239,8 +241,14 @@ void WorldLabelRenderer::renderWaves(
     // -------------------------------------------------
     // Viewport (ЕДИНЫЙ источник истины)
     // -------------------------------------------------
-    const float vw = (float)TextRenderer::instance().viewportWidth();
-    const float vh = (float)TextRenderer::instance().viewportHeight();
+    assert(m_context && "HudRenderer: context not set");
+
+    const Viewport& vp = m_context->viewport();
+    const float vw = (float)vp.width;
+    const float vh = (float)vp.height;
+
+    // const float vw = (float)TextRenderer::instance().viewportWidth();
+    // const float vh = (float)TextRenderer::instance().viewportHeight();
 
     const GLint locCenter   = glGetUniformLocation(m_waveProgram, "uCenterPx");
     const GLint locViewport = glGetUniformLocation(m_waveProgram, "uViewport");
@@ -293,6 +301,8 @@ void WorldLabelRenderer::renderWaves(
     // RSSI / SNR text (HUD, screen-space)
     // -------------------------------------------------
     {
+        const Viewport& vp = m_context->viewport();
+
         char bufRSSI[32];
         char bufSNR[32];
 
@@ -334,6 +344,7 @@ void WorldLabelRenderer::renderWaves(
                 VisualTuning::Waves::color.b,
                 v
             }
+            
         );
 
         tr.textDraw(
@@ -508,6 +519,10 @@ void WorldLabelRenderer::renderTextLabel(
     const float v = label.visual.visibility;
     if (v < 0.02f)
         return;
+
+
+    assert(m_context && "HudRenderer: context not set");
+    const Viewport& vp = m_context->viewport();
 
     // -------------------------------------------------
     // Цвет (единый для линий и текста)

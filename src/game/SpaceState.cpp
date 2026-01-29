@@ -9,6 +9,7 @@
 #include "SpaceState.h"
 
 #include "core/StateStack.h"
+#include "core/Log.h"
 
 #include "input/Input.h"
 
@@ -54,7 +55,9 @@ SpaceState::SpaceState(StateStack& states)
       }
 {
 
-    m_hudRenderer.init();
+    LOG("[SpaceState] ctor");
+
+    m_hudRenderer.init(context());
     m_worldLabelRenderer.init(context());
 
     m_ship.position = {0.0f, 5.0f, 10.0f};
@@ -65,7 +68,7 @@ SpaceState::SpaceState(StateStack& states)
     m_world.linearDrag   = 0.0f;
     m_world.maxSafeDecel = 50.0f;
 
-    m_camera.setAspect(context().aspect);
+    m_camera.setAspect(context().aspect());
 
     WorldObject station;
     station.position = glm::vec3(0.0f, 0.0f, -500.0f);
@@ -167,17 +170,17 @@ SpaceState::SpaceState(StateStack& states)
     //     {0, 00, -50},
     //     20
     // });
-
-
-
-
-
-
-    
-        
+       
 }
 
 
+
+
+
+SpaceState::~SpaceState()
+{
+    LOG("[SpaceState] dtor");
+}
 
 
 
@@ -271,7 +274,7 @@ void SpaceState::handleInput()
 // =====================================================================================
 void SpaceState::update(float dt)
 {
-
+    LOG("[SpaceState] update begin");
     m_signalReceiver.update(
         dt,
         m_ship.position,
@@ -452,6 +455,8 @@ void SpaceState::update(float dt)
 
     m_camera.setPosition(m_ship.position);
     m_camera.setOrientation(m_ship.pitch, m_ship.yaw, m_ship.roll);
+
+    LOG("[SpaceState] update end");
 }
 
 
@@ -463,10 +468,17 @@ void SpaceState::render(){}
 
 void SpaceState::renderUI()
 {
+    const Viewport& vp = context().viewport();
+
+    int vx = vp.width;
+    int vy = vp.height;
+
+    float fx = (float)vp.width;
+    float fy = (float)vp.height;
     
     glm::mat4 projection = glm::perspective(
         glm::radians(70.0f),
-        1280.0f / 720.0f,
+        fx / fy,
         0.1f,
         5000.0f
     );
@@ -488,6 +500,14 @@ void SpaceState::renderUI()
 // =====================================================================================
 void SpaceState::renderHUD()
 {
+    LOG("[SpaceState] renderHUD begin");
+    const Viewport& vp = context().viewport();
+
+    int vx = vp.width;
+    int vy = vp.height;
+
+    float fx = (float)vp.width;
+    float fy = (float)vp.height;
 
     // -------------------------------------------------
     // сразу ставим ортографию и больше её не трогаем - это для 2D графики
@@ -496,7 +516,7 @@ void SpaceState::renderHUD()
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, 1280, 720, 0, -1, 1);
+    glOrtho(0, vx, vy, 0, -1, 1);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -508,18 +528,21 @@ void SpaceState::renderHUD()
     m_hudRects.clear();
 
     m_hudRects.push_back({
-        { 20.0f / 1280.0f, 20.0f / 720.0f },
-        { 180.0f / 1280.0f, 60.0f / 720.0f },
+        { 20.0f / fx, 20.0f / fy },
+        { 180.0f / fx, 60.0f / fy },
         { 0.0f, 1.0f, 0.0f }
     });
 
     m_hudStatics.push_back({
         "HUD ONLINE",
-        { 30.0f / 1280.0f, 40.0f / 720.0f },
+        { 30.0f / fx, 40.0f / fy },
         { 0.0f, 1.0f, 0.0f }
     });
 
+    LOG("[SpaceState] renderHUD after rects");
     m_hudRenderer.renderRects(m_hudRects);
+
+    LOG("[SpaceState] renderHUD after text");
     m_hudRenderer.renderText(m_hudStatics);
 
     // -------------------------------------------------
@@ -530,14 +553,16 @@ void SpaceState::renderHUD()
     glm::mat4 view = m_camera.viewMatrix();
     glm::mat4 proj = m_camera.projectionMatrix();
 
+    
+
     for (auto& [signal, lbl] : m_worldLabels)
     {
         lbl.onScreen = projectToScreen(
             lbl.data.worldPos,
             view,
             proj,
-            TextRenderer::instance().viewportWidth(),
-            TextRenderer::instance().viewportHeight(),
+            vp.width,
+            vp.height,
             lbl.screenPos
         );
 
@@ -549,6 +574,7 @@ void SpaceState::renderHUD()
     }
     
     glEnable(GL_DEPTH_TEST);
+    LOG("[SpaceState] renderHUD after text");
 }
 
 

@@ -1,8 +1,19 @@
 #pragma once
 
+#include "render/types/Viewport.h"
+
+struct Application;
+
+
 struct StateContext
 {
-    float aspect = 16.0f / 9.0f;
-
+    Application* app = nullptr;
     float dt = 0.0f;
+
+    Viewport viewport() const;
+    
+    float aspect() const;
+
 };
+
+extern StateContext* g_stateContext;

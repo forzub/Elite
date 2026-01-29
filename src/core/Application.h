@@ -6,6 +6,7 @@
 #include "render/Renderer.h"
 
 
+
 class Application
 {
 public:
@@ -13,6 +14,7 @@ public:
     ~Application();
 
     void run();
+    Viewport viewport() const;
 
 private:
     void init();

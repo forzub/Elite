@@ -1,12 +1,17 @@
 #include <glad/gl.h>
 
+#include "core/Log.h"
+
 #include "ui/HudRenderer.h"
 
 #include "render/HUD/TextRenderer.h"
 #include "render/Font.h"
 
-void HudRenderer::init()
+void HudRenderer::init(StateContext& context)
 {
+
+    m_context = &context;
+
     if (!m_font)
         m_font = new Font("assets/fonts/Roboto-Light.ttf", 18);
 }
@@ -14,15 +19,22 @@ void HudRenderer::init()
 
 void HudRenderer::renderText(const std::vector<HudStaticItem>& items)
 {
+
+    LOG("[HudRenderer] renderText");
+    LOG("  m_context = " << static_cast<void*>(m_context));
+
+    assert(m_context && "HudRenderer: context not set");
     TextRenderer& tr = TextRenderer::instance();
-
-    int w = tr.viewportWidth();
-    int h = tr.viewportHeight();
-
+    
+    const Viewport& vp = m_context->viewport();
+    int w = vp.width;
+    int h = vp.height;
+    
     for (const auto& it : items)
     {
         if (!m_font) return;
-
+        
+        LOG("[HudRenderer] about to draw text: " << it.text);
         tr.textDraw(
             *m_font,
             it.text,
@@ -38,9 +50,14 @@ void HudRenderer::renderText(const std::vector<HudStaticItem>& items)
 
 void HudRenderer::renderRects(const std::vector<HudLineRect>& rects)
 {
-    TextRenderer& tr = TextRenderer::instance();
-    int w = tr.viewportWidth();
-    int h = tr.viewportHeight();
+    LOG("[HudRenderer] renderRects");
+    LOG("  m_context = " << static_cast<void*>(m_context));
+
+    assert(m_context && "HudRenderer: context not set");
+
+    const Viewport& vp = m_context->viewport();
+    int w = vp.width;
+    int h = vp.height;
 
     glDisable(GL_DEPTH_TEST);
 

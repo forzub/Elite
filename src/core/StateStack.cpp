@@ -2,6 +2,7 @@
 #include "GameState.h"
 
 #include "core/StateContext.h"
+#include "core/Log.h"
 
 
 #include <iostream>
@@ -20,7 +21,7 @@ StateContext& StateStack::context()
 
 void StateStack::push(std::unique_ptr<GameState> state)
 {
-    
+    LOG("[StateStack] push");
     m_pending.push_back({ ActionType::Push, std::move(state) });
 }
 
@@ -28,7 +29,7 @@ void StateStack::push(std::unique_ptr<GameState> state)
 
 void StateStack::pop()
 {
-    
+    LOG("[StateStack] popState");
     m_pending.push_back({ ActionType::Pop, nullptr });
 }
 

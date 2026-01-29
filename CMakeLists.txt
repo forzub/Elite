@@ -20,6 +20,8 @@ add_executable(EliteGame
 
     src/core/Application.cpp
     src/core/StateStack.cpp
+    src/core/StateContext.cpp
+
 
     src/window/Window.cpp
 

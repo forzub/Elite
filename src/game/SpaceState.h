@@ -32,6 +32,7 @@ class SpaceState : public GameState
 {
 public:
     explicit SpaceState(StateStack& states);
+    ~SpaceState();
     
     void renderUI() override;
     void renderHUD() override;
@@ -43,34 +44,35 @@ public:
 
 private:
     
-    ShipTransform m_ship;   // состояние корабля
-    Camera        m_camera; // камера, следующая за кораблём
+    ShipTransform                               m_ship;   // состояние корабля
+    Camera                                      m_camera; // камера, следующая за кораблём
 
-    ShipParams m_params;
-    WorldParams m_world;
-    float m_receiverNoiseFloor;                             // допустимый уровень шума для приемника
+    ShipParams                                  m_params;
+    WorldParams                                 m_world;
+    float                                       m_receiverNoiseFloor; // допустимый уровень шума для приемника
 
     bool wantsConfirmExit() const override;
     bool onGlobalEscape() override;
     bool isInSafeZone() const;
 
-    std::vector<WorldObject> m_worldObjects;                        // "world/WorldParams.h"
-    std::vector<Planet> m_planets;                                  // "world/Planet.h"
-    std::vector<SignalReceptionResult> m_signalResults;             // "world/WorldSignal.h"
-    std::vector<WorldSignal> m_worldSignals;                        // "world/WorldSignal.h"
-    std::vector<InterferenceSource> m_interferenceSources;          // "world/InterferenceSource.h" - источники помех
+    std::vector<WorldObject>                    m_worldObjects;             // "world/WorldParams.h"
+    std::vector<Planet>                         m_planets;                  // "world/Planet.h"
+    std::vector<SignalReceptionResult>          m_signalResults;            // "world/WorldSignal.h"
+    std::vector<WorldSignal>                    m_worldSignals;             // "world/WorldSignal.h"
+    std::vector<InterferenceSource>             m_interferenceSources;      // "world/InterferenceSource.h" - источники помех
 
-    std::unordered_map<const WorldSignal*, WorldLabel> m_worldLabels;
+    std::unordered_map<const WorldSignal*, 
+            WorldLabel>                         m_worldLabels;
     
     // --- HUD ---
-    std::vector<HudStaticItem> m_hudStatics;
-    std::vector<HudLineRect> m_hudRects;
-    HudMessage* m_activeMessage = nullptr;
-    HudRenderer m_hudRenderer;
+    std::vector<HudStaticItem>                  m_hudStatics;
+    std::vector<HudLineRect>                    m_hudRects;
+    HudMessage*                                 m_activeMessage = nullptr;
+    HudRenderer                                 m_hudRenderer;
     
     
-    SignalReceiver m_signalReceiver;
-    WorldLabelRenderer m_worldLabelRenderer;
+    SignalReceiver                              m_signalReceiver;
+    WorldLabelRenderer                          m_worldLabelRenderer;
 
     WorldLabel& getOrCreateWorldLabel(const SignalReceptionResult& result);
 };

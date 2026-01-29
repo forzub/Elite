@@ -3,6 +3,8 @@
 
 #include "Application.h"
 
+#include "core/Log.h"
+
 #include "ui/MainMenuState.h"
 
 #include "game/SpaceState.h"
@@ -52,9 +54,26 @@ static std::string getExecutablePath()
 // =====================================================================================
 void Application::run()
 {
+    LOG("[App] init");
     init();
+
+    LOG("[App] main loop start");
     mainLoop();
+
+    LOG("[App] shutdown");
     shutdown();
+}
+
+
+
+// =====================================================================================
+// run
+// =====================================================================================
+Viewport Application::viewport() const
+{
+    int w, h;
+    glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
+    return { w, h };
 }
 
 
@@ -68,13 +87,10 @@ void Application::init()
 {
     std::cout << "Application init\n";
 
+    m_context.app = this;   
 
     m_window = new Window(1280, 720, "EliteGame");
     m_running = true;
-
-    
-
-
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -82,8 +98,8 @@ void Application::init()
 
     int w, h;
     glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
-    TextRenderer::instance().setViewportSize(w, h);
-    m_context.aspect = static_cast<float>(w) / static_cast<float>(h);
+
+    g_stateContext = &m_context;
 
     TextRenderer::instance().init();
 
@@ -91,6 +107,7 @@ void Application::init()
     // m_states.push(std::make_unique<SpaceState>(m_states));
 
     m_states.applyPendingChanges();
+
 }
 
 

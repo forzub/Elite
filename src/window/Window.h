@@ -13,6 +13,7 @@ public:
     void swapBuffers();
 
     GLFWwindow* nativeHandle() const;
+    
 
 private:
     GLFWwindow* m_window;

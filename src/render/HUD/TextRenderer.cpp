@@ -30,11 +30,17 @@
 // // glEnable(GL_BLEND);
 // // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+#include "core/Log.h"
+#include "core/StateContext.h"
 
 #include "render/HUD/TextRenderer.h"
+#include "render/ShaderUtils.h"
 
 #include <glad/gl.h>
 #include <iostream>
+
+
+
 
 // ================================================================
 // singleton
@@ -45,98 +51,77 @@ TextRenderer& TextRenderer::instance()
     return inst;
 }
 
-// ================================================================
-// init
-// ================================================================
+
+
 void TextRenderer::init()
 {
-    // ---------------- VAO / VBO ----------------
+    // -------------------------------------------------
+    // VAO / VBO
+    // -------------------------------------------------
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo);
 
     glBindVertexArray(m_vao);
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, nullptr, GL_DYNAMIC_DRAW);
+
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        sizeof(float) * 6 * 4,
+        nullptr,
+        GL_DYNAMIC_DRAW
+    );
 
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
+    glVertexAttribPointer(
+        0,
+        4,
+        GL_FLOAT,
+        GL_FALSE,
+        4 * sizeof(float),
+        nullptr
+    );
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    // ---------------- shaders ----------------
-    const char* vs = R"(
-        #version 330 core
-        layout (location = 0) in vec4 vertex;
-        out vec2 TexCoords;
-        void main()
-        {
-            gl_Position = vec4(vertex.xy, 0.0, 1.0);
-            TexCoords = vertex.zw;
-        }
-    )";
+    // -------------------------------------------------
+    // Shader program (FROM FILES)
+    // -------------------------------------------------
+    m_shader = compileShaderFromFiles(
+        "assets/shaders/hud/textRenderer.vert",
+        "assets/shaders/hud/textRenderer.frag"
+    );
 
-    const char* fs = R"(
-        #version 330 core
-        in vec2 TexCoords;
-        out vec4 FragColor;
-
-        uniform sampler2D text;
-        uniform vec4 textColor;   // ← теперь vec4
-
-        void main()
-        {
-            float glyphAlpha = texture(text, TexCoords).a;
-
-            // итоговая альфа = глиф * visibility
-            FragColor = vec4(
-                textColor.rgb,
-                glyphAlpha * textColor.a
-            );
-        }
-    )";
-
-    auto compile = [](GLenum type, const char* src) -> GLuint
+    if (!m_shader)
     {
-        GLuint s = glCreateShader(type);
-        glShaderSource(s, 1, &src, nullptr);
-        glCompileShader(s);
+        std::cerr << "[TextRenderer] Failed to load text shaders\n";
+        return;
+    }
 
-        GLint ok = 0;
-        glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
-        if (!ok)
-        {
-            char log[512];
-            glGetShaderInfoLog(s, 512, nullptr, log);
-            std::cerr << "Shader error:\n" << log << "\n";
-        }
-        return s;
-    };
-
-    GLuint v = compile(GL_VERTEX_SHADER, vs);
-    GLuint f = compile(GL_FRAGMENT_SHADER, fs);
-
-    m_shader = glCreateProgram();
-    glAttachShader(m_shader, v);
-    glAttachShader(m_shader, f);
-    glLinkProgram(m_shader);
-
-    glDeleteShader(v);
-    glDeleteShader(f);
-
+    // -------------------------------------------------
+    // Shader defaults
+    // -------------------------------------------------
     glUseProgram(m_shader);
-    glUniform1i(glGetUniformLocation(m_shader, "text"), 0);
+    glUniform1i(
+        glGetUniformLocation(m_shader, "text"),
+        0
+    );
     glUseProgram(0);
 }
 
 // ================================================================
 // viewport
 // ================================================================
-void TextRenderer::setViewportSize(int w, int h)
-{
-    m_viewportW = (w > 0) ? w : 1;
-    m_viewportH = (h > 0) ? h : 1;
-}
+// void TextRenderer::setViewportSize(int w, int h)
+// {
+//     m_viewportW = (w > 0) ? w : 1;
+//     m_viewportH = (h > 0) ? h : 1;
+// }
+
+
+
+
+
 
 // ================================================================
 // NEW API — Font based
@@ -150,6 +135,12 @@ void TextRenderer::textDraw(
     const glm::vec4& color   // ← RGBA
 )
 {
+    LOG("[TextRenderer] textDraw begin");
+    LOG("  shader = " << m_shader);
+    LOG("  vao = " << m_vao << " vbo = " << m_vbo);
+
+    
+
     glUseProgram(m_shader);
         glUniform4f(
         glGetUniformLocation(m_shader, "textColor"),
@@ -159,12 +150,22 @@ void TextRenderer::textDraw(
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(m_vao);
 
-    float screenW = static_cast<float>(m_viewportW);
-    float screenH = static_cast<float>(m_viewportH);
+    // float screenW = static_cast<float>(m_viewportW);
+    // float screenH = static_cast<float>(m_viewportH);
+
+    extern StateContext* g_stateContext;
+    const Viewport& vp = g_stateContext->viewport();
+
+    float screenW = static_cast<float>(vp.width);
+    float screenH = static_cast<float>(vp.height);
+
+    LOG("[TextRenderer] text length = " << text.size());
 
     for (char c : text)
     {
+        LOG("  glyph char = '" << c << "' (" << int(c) << ")");
         const Character& ch = font.glyph(c);
+        LOG("    textureID = " << ch.textureID);
 
         float xpos = x + ch.bearing.x;
         float ypos = baselineY - ch.bearing.y;

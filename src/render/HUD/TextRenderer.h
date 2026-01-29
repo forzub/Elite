@@ -4,20 +4,24 @@
 #include <glm/glm.hpp>
 
 #include "render/Font.h"
+#include "render/types/Viewport.h"
 
 class TextRenderer
 {
 public:
     static TextRenderer& instance();
 
+    // void setViewportSize(int width, int height);
+    // int viewportWidth()  const { return m_viewportW; }
+    // int viewportHeight() const { return m_viewportH; }
+
+
+
     // ------------------------------------------------------------
     // lifecycle
     // ------------------------------------------------------------
     void init(); // ТОЛЬКО шейдеры и VAO/VBO
-    void setViewportSize(int width, int height);
 
-    int viewportWidth()  const { return m_viewportW; }
-    int viewportHeight() const { return m_viewportH; }
 
     // ------------------------------------------------------------
     // NEW API (ПРАВИЛЬНЫЙ)
@@ -29,6 +33,7 @@ public:
         float x,
         float baselineY,
         const glm::vec4& color   // ← RGBA
+
     );
 
     // --- Адаптер для старого кода (RGB → RGBA) ---
@@ -53,7 +58,10 @@ public:
         float y,
         float scale,
         const glm::vec3& color
+        
     );
+
+    
 
 private:
     TextRenderer() = default;
@@ -63,6 +71,6 @@ private:
     unsigned int m_vbo    = 0;
     unsigned int m_shader = 0;
 
-    int m_viewportW = 1;
-    int m_viewportH = 1;
+    // int m_viewportW;
+    // int m_viewportH;
 };

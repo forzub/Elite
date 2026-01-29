@@ -133,7 +133,13 @@ void WorldLabelRenderer::render(
 
 
 
-
+//                                ###
+//                                 ##
+//  ######    ####    #####        ##    ####    ######
+//   ##  ##  ##  ##   ##  ##    #####   ##  ##    ##  ##
+//   ##      ######   ##  ##   ##  ##   ######    ##
+//   ##      ##       ##  ##   ##  ##   ##        ##
+//  ####      #####   ##  ##    ######   #####   ####
 
 // ===========================================================================
 // renderHUD
@@ -141,10 +147,13 @@ void WorldLabelRenderer::render(
 void WorldLabelRenderer::renderHUD(const WorldLabel& label)
 {
    
-    
 
-    // if (label.visual.presence == SignalPresence::Absent)
-    //     return;
+    if (!label.onScreen)
+    {
+        renderEdgeArrow(label);
+        return;
+    }
+
 
     if ((label.data.semanticState == SignalSemanticState::Noise ||
         label.data.displayClass == SignalDisplayClass::Other) &&
@@ -154,20 +163,9 @@ void WorldLabelRenderer::renderHUD(const WorldLabel& label)
             return;
         }
 
+
     if (label.data.semanticState == SignalSemanticState::Decoded ||
         label.data.displayClass == SignalDisplayClass::Global){
-
-
-            // std::cout
-            // << "[Label] name=" << label.data.displayName
-            // << " dist=" << label.data.distance
-            // << " state=" << (int)label.data.semanticState
-            // << " presence=" << (int)label.visual.presence
-            // << " snr=" << label.data.signalToNoiseRatio
-            // << std::endl;
-
-
-            
 
             renderTextLabel(label, label.screenPos);
             return;
@@ -177,43 +175,117 @@ void WorldLabelRenderer::renderHUD(const WorldLabel& label)
 
 
 
-// ===========================================================================
-// render On Screen
-// ===========================================================================
-void WorldLabelRenderer::renderOnScreen(
-    const WorldLabel& label,
-    const glm::vec2& screenPos
-)
+//              ###
+//               ##
+//   ####        ##    ### ##   ####              ####    ######   ######    ####    ##   ##
+//  ##  ##    #####   ##  ##   ##  ##                ##    ##  ##   ##  ##  ##  ##   ## # ##
+//  ######   ##  ##   ##  ##   ######             #####    ##       ##      ##  ##   #######
+//  ##       ##  ##    #####   ##                ##  ##    ##       ##      ##  ##   #######
+//   #####    ######      ##    #####             #####   ####     ####      ####     ## ##
+//                    #####
+
+void WorldLabelRenderer::renderEdgeArrow(const WorldLabel& label)
 {
-    // --- Волны ---
-    if (label.data.semanticState == SignalSemanticState::Noise || 
-        label.data.displayClass == SignalDisplayClass::Other)
-    {
-        renderWaves(label.data,label.visual, screenPos);
+    const float v = label.visual.visibility;
+    if (v < 0.02f)
         return;
+
+    // -------------------------------------------------
+    // Нам нужна direction, КОТОРУЮ ТЫ УЖЕ СЧИТАЛ
+    // ВАЖНО: она должна быть сохранена в label
+    // -------------------------------------------------
+
+    // 👉 если ты ещё не сохранил:
+    // добавь в WorldLabel:
+    // glm::vec2 edgeDir;
+
+    const glm::vec2 normal = glm::normalize(label.edgeDir);
+    const glm::vec2 tangent(-normal.y, normal.x);
+
+    const glm::vec2 anchor = label.screenPos;
+
+    // -------------------------------------------------
+    // Arrow geometry
+    // -------------------------------------------------
+    constexpr float ARROW_LENGTH = 9.0f;
+    constexpr float ARROW_WIDTH  = 8.0f;
+
+    const glm::vec2 tip  = anchor + normal * ARROW_LENGTH;
+    const glm::vec2 base = anchor - normal * 6.0f;
+
+    const glm::vec2 left  = base + tangent * (ARROW_WIDTH * 0.5f);
+    const glm::vec2 right = base - tangent * (ARROW_WIDTH * 0.5f);
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glColor4f(
+        0.7f,
+        0.9f,
+        1.0f,
+        v
+    );
+
+    glBegin(GL_TRIANGLES);
+        glVertex2f(tip.x,   tip.y);
+        glVertex2f(left.x,  left.y);
+        glVertex2f(right.x, right.y);
+    glEnd();
+
+    // -------------------------------------------------
+    // Text (против направления)
+    // -------------------------------------------------
+
+    const char* name =
+        (label.data.displayName.empty() ||
+         label.data.displayName == "undefined")
+        ? "UNDEF"
+        : label.data.displayName.c_str();
+
+    float textWidth = m_labelFont->measureText(name);
+    float textHeight = m_labelFont->lineHeight();
+
+    // normal.x > 0 → цель справа → стрелка справа → текст рисуем влево
+    bool textOnLeftSide = (normal.x > 0.3f);
+    bool textOnRightSide = (normal.x < -0.3f);
+
+    glm::vec2 textPos =
+        anchor - normal * 18.0f + tangent * 6.0f;
+
+    if (textOnLeftSide)
+    {
+        // стрелка справа → текст влево → сдвигаем на ширину
+        textPos.x -= textWidth;
+    }
+    else if (!textOnRightSide)
+    {
+        // верх / низ → центрируем
+        textPos.x -= textWidth * 0.5f;
     }
 
-    // --- Текст ---
-    if (label.data.semanticState == SignalSemanticState::Decoded ||
-        label.data.displayClass == SignalDisplayClass::Global)
-    {
-        // std::cout
-        // << "[WorldLabelRenderer::renderHUD] "
-        // << " semanticState=" << (int)label.data.semanticState
-        // << " displayClass=" << (int)label.data.displayClass
-        // << std::endl;
+    
 
-
-
-        renderTextLabel(label, screenPos);
-        return;
-    }
+    TextRenderer::instance().textDraw(
+        *m_labelFont,
+        name,
+        textPos.x,
+        textPos.y,
+        glm::vec4(0.7f, 0.9f, 1.0f, v)
+    );
 }
 
 
 
 
 
+
+
+//  ##   ##   ####    ##  ##    ####
+//  ## # ##      ##   ##  ##   ##  ##
+//  #######   #####   ##  ##   ######
+//  #######  ##  ##    ####    ##
+//   ## ##    #####     ##      #####
 
 
 void WorldLabelRenderer::renderWaves(
@@ -508,7 +580,13 @@ void WorldLabelRenderer::renderWaves(
 
 
 
-
+//    ##                         ##               ###              ###                ###
+//    ##                         ##                ##               ##                 ##
+//   #####    ####    ##  ##    #####              ##      ####     ##       ####      ##
+//    ##     ##  ##    ####      ##                ##         ##    #####   ##  ##     ##
+//    ##     ######     ##       ##                ##      #####    ##  ##  ######     ##
+//    ## ##  ##        ####      ## ##             ##     ##  ##    ##  ##  ##         ##
+//     ###    #####   ##  ##      ###             ####     #####   ######    #####    ####
 
 
 void WorldLabelRenderer::renderTextLabel(
@@ -585,22 +663,6 @@ void WorldLabelRenderer::renderTextLabel(
 
 
 
-
-// ===========================================================================
-// render Off Screen
-// ===========================================================================
-void WorldLabelRenderer::renderOffScreen(
-    const WorldLabel& label,
-    const glm::mat4& /*view*/,
-    const glm::mat4& /*proj*/,
-    int /*screenW*/,
-    int /*screenH*/
-)
-{
-    // TODO:
-    // Off-screen indicators будут реализованы позже.
-    // Пока — ничего не рисуем.
-}
 
 
 

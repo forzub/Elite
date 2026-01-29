@@ -7,11 +7,12 @@
 #include "render/Camera.h"
 #include "render/HUD/TextRenderer.h"  
 #include "render/HUD/WorldLabelRenderer.h" 
+#include "render/camera/ShipCameraController.h" 
 
-#include "game/ShipParams.h"
-#include "game/ShipTransform.h"
 
 #include "game/signals/SignalReceiver.h"
+#include "game/ship/ShipInstance.h"
+
 
 #include "world/WorldParams.h"
 #include "world/WorldObject.h"
@@ -21,6 +22,9 @@
 
 #include "ui/HudTypes.h"
 #include "ui/HudRenderer.h"
+#include "ui/hud/HudEdgeMapper.h"
+
+
  
 // #include "render/Camera.h"
 
@@ -44,10 +48,10 @@ public:
 
 private:
     
-    ShipTransform                               m_ship;   // состояние корабля
+    // ShipTransform                               m_ship;   // состояние корабля
     Camera                                      m_camera; // камера, следующая за кораблём
 
-    ShipParams                                  m_params;
+    // ShipParams                                  m_params;
     WorldParams                                 m_world;
     float                                       m_receiverNoiseFloor; // допустимый уровень шума для приемника
 
@@ -75,4 +79,12 @@ private:
     WorldLabelRenderer                          m_worldLabelRenderer;
 
     WorldLabel& getOrCreateWorldLabel(const SignalReceptionResult& result);
+
+
+    // перенос в отдельные сучности
+    // ShipController                          m_shipController;
+    // ShipCameraController                    m_cameraController;
+    // HudEdgeMapper                           m_hudEdgeMapper;
+    // ShipDescriptor                          m_shipDescriptor;
+    ShipInstance                            m_playerShip;
 };

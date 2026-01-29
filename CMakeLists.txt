@@ -28,6 +28,8 @@ add_executable(EliteGame
     src/ui/MainMenuState.cpp
     src/ui/ConfirmExitState.cpp
     src/ui/HudRenderer.cpp
+    src/ui/hud/HudEdgeMapper.cpp
+
 
     src/input/Input.cpp
 
@@ -35,17 +37,20 @@ add_executable(EliteGame
     src/game/signals/SignalReceiver.cpp
     src/game/signals/WorldLabelSystem.cpp
     src/game/signals/WorldSignalWaves.cpp
+    src/game/ship/ShipController.cpp
+    src/game/ship/descriptors/EliteCobraMk1.cpp
     
 
 
     src/render/Camera.cpp
     src/render/DebugGrid.cpp
     src/render/Renderer.cpp
-    src/render/HUD/TextRenderer.cpp
-    src/render/HUD/WorldLabelRenderer.cpp
     src/render/ScreenUtils.cpp
     src/render/ShaderUtils.cpp
     src/render/Font.cpp
+    src/render/HUD/TextRenderer.cpp
+    src/render/HUD/WorldLabelRenderer.cpp
+    src/render/camera/ShipCameraController.cpp
 
 )
 

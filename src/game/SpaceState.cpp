@@ -17,59 +17,63 @@
 #include "render/DebugGrid.h"
 #include "render/ScreenUtils.h"
 
-#include "game/ShipParams.h"
+
 #include "game/signals/SignalPolicy.h"
 #include "game/signals/WorldLabelSystem.h"
 #include "game/signals/WorldSignalWaves.h"
+#include "game/ship/descriptors/EliteCobraMk1.h"
+
 
 #include "ui/ConfirmExitState.h"
 #include "ui/HudRenderer.h"
 
 
-// bool signalAllowsDistance(const WorldSignal& sig, float dist); - в SignalPolicy
 
-
+//                                        ##                                  ##
+//                                        ##                                  ##
+//   ####     ####    #####     #####    #####   ######   ##  ##    ####     #####    ####    ######
+//  ##  ##   ##  ##   ##  ##   ##         ##      ##  ##  ##  ##   ##  ##     ##     ##  ##    ##  ##
+//  ##       ##  ##   ##  ##    #####     ##      ##      ##  ##   ##         ##     ##  ##    ##
+//  ##  ##   ##  ##   ##  ##        ##    ## ##   ##      ##  ##   ##  ##     ## ##  ##  ##    ##
+//   ####     ####    ##  ##   ######      ###   ####      ######   ####       ###    ####    ####
 // =====================================================================================
 // Constructor
 // =====================================================================================
 SpaceState::SpaceState(StateStack& states)
     : GameState(states)
-    , m_params{
-          // angular limits
-          90.0f, 60.0f, 120.0f,
-
-          // angular dynamics
-          1000.0f,  // angularAccel
-          9.0f,     // angularDamping
-
-          // linear movement
-          500.0f,    // maxCombatSpeed (m/s)
-          10000.0f,  // maxCruiseSpeed (game-scaled)
-          5.0f,      // throttleAccel
-
-          // stabilization
-          0.0f,
-
-          // manoeuvre thrusters
-          20.0f, 6.0f, 50.0f
-      }
 {
 
     LOG("[SpaceState] ctor");
 
+    
+    // =======================================================================
+    // устанавливает ограничение HUD для меток за экраном
+    // =======================================================================
+    const Viewport& vp = context().viewport();
+
+    m_playerShip.initialize(
+        getEliteCobraMk1(),
+        vp.width,
+        vp.height
+    );
+    // начальная позиция
+    m_playerShip.transform.position = {0.0f, 5.0f, 10.0f};
+    m_camera.setPosition(m_playerShip.transform.position);
+    m_camera.setAspect(context().aspect());
+
+
+    // инициализация параметров рендера
     m_hudRenderer.init(context());
     m_worldLabelRenderer.init(context());
-
-    m_ship.position = {0.0f, 5.0f, 10.0f};
-    m_camera.setPosition(m_ship.position);
 
 
     // world = vacuum
     m_world.linearDrag   = 0.0f;
     m_world.maxSafeDecel = 50.0f;
 
-    m_camera.setAspect(context().aspect());
 
+
+    // описание физических и сигнальных объектов
     WorldObject station;
     station.position = glm::vec3(0.0f, 0.0f, -500.0f);
     station.label = "LAVE STATION";
@@ -96,7 +100,7 @@ SpaceState::SpaceState(StateStack& states)
     m_worldSignals.push_back({
         SignalType::Planets,
         SignalDisplayClass::Global,
-        { 0.0f, 800.0f, -900.0f }, // 2 км вперед, 800 м вверх
+        { 0.0f, 800.0f, 900.0f }, // 2 км вперед, 800 м вверх
         300.0f,   // minRange (слышна)
         1200.0f,   // maxRange
         true,
@@ -107,8 +111,8 @@ SpaceState::SpaceState(StateStack& states)
     m_worldSignals.push_back({
         SignalType::StationClass,
         SignalDisplayClass::Global,
-        { -300.0f, 200.0f, -900.0f }, // 800 м вперед
-        300.0f,
+        { 300.0f, -200.0f, 900.0f }, // 800 м вперед
+        700.0f,
         1200.0f,
         true,
         "Orbital Station"
@@ -118,9 +122,9 @@ SpaceState::SpaceState(StateStack& states)
     m_worldSignals.push_back({
         SignalType::SOSAntic,
         SignalDisplayClass::Local,
-        { 200.0f, 0.0f, -900.0f }, // 1.8 км
-        300.0f,
-        1200.0f,
+        { -200.0f, 0.0f, -900.0f }, // 1.8 км
+        70000.0f,
+        120000.0f,
         true,
         "? Unknown"
     });
@@ -130,7 +134,7 @@ SpaceState::SpaceState(StateStack& states)
         SignalType::PirateTransponder,
         SignalDisplayClass::Local,
         { -150.0f, 0.0f, -900.0f }, // 900 м
-        300.0f,
+        700.0f,
         1200.0f,
         true,
         "Unknown Vessel"
@@ -139,7 +143,7 @@ SpaceState::SpaceState(StateStack& states)
 
 
     // -------------------------- test block -----------------------------
-    m_worldSignals.clear(); 
+    // m_worldSignals.clear(); 
 
     m_worldSignals.push_back({
         SignalType::Beacon,
@@ -177,6 +181,15 @@ SpaceState::SpaceState(StateStack& states)
 
 
 
+
+//     ###                       ##                                  ##
+//      ##                       ##                                  ##
+//      ##    ####     #####    #####   ######   ##  ##    ####     #####    ####    ######
+//   #####   ##  ##   ##         ##      ##  ##  ##  ##   ##  ##     ##     ##  ##    ##  ##
+//  ##  ##   ######    #####     ##      ##      ##  ##   ##         ##     ##  ##    ##
+//  ##  ##   ##            ##    ## ##   ##      ##  ##   ##  ##     ## ##  ##  ##    ##
+//   ######   #####   ######      ###   ####      ######   ####       ###    ####    ####
+
 SpaceState::~SpaceState()
 {
     LOG("[SpaceState] dtor");
@@ -186,6 +199,15 @@ SpaceState::~SpaceState()
 
 
 
+
+//   ##                                  ##
+//                                        ##
+//   ###     #####    ######   ##  ##    #####
+//    ##     ##  ##    ##  ##  ##  ##     ##
+//    ##     ##  ##    ##  ##  ##  ##     ##
+//    ##     ##  ##    #####   ##  ##     ## ##
+//   ####    ##  ##    ##       ######     ###
+//                    ####
 // =====================================================================================
 // Input
 // =====================================================================================
@@ -193,61 +215,65 @@ void SpaceState::handleInput()
 {
 
     // --- Cruise (hold J) ---
-    m_ship.cruiseActive = Input::instance().isKeyPressed(GLFW_KEY_J);
+
+    auto& ctrl = m_playerShip.control;
+    ctrl = ShipControlState{};
+
+    ctrl.cruiseActive = Input::instance().isKeyPressed(GLFW_KEY_J);
 
     // --- Rotation (disabled in cruise) ---
-    if (!m_ship.cruiseActive)
+    if (!ctrl.cruiseActive)
     {
-        m_ship.pitchInput =
+        ctrl.pitchInput =
             (Input::instance().isKeyPressed(GLFW_KEY_W) ? 1.0f : 0.0f) -
             (Input::instance().isKeyPressed(GLFW_KEY_S) ? 1.0f : 0.0f);
 
-        m_ship.rollInput =
+        ctrl.rollInput =
             (Input::instance().isKeyPressed(GLFW_KEY_A) ? 1.0f : 0.0f) -
             (Input::instance().isKeyPressed(GLFW_KEY_D) ? 1.0f : 0.0f);
 
-        m_ship.yawInput =
+        ctrl.yawInput =
             (Input::instance().isKeyPressed(GLFW_KEY_Q) ? 1.0f : 0.0f) -
             (Input::instance().isKeyPressed(GLFW_KEY_E) ? 1.0f : 0.0f);
     }
     else
     {
-        m_ship.pitchInput = 0.0f;
-        m_ship.rollInput  = 0.0f;
-        m_ship.yawInput   = 0.0f;
+        ctrl.pitchInput = 0.0f;
+        ctrl.rollInput  = 0.0f;
+        ctrl.yawInput   = 0.0f;
     }
 
     // --- Target speed control ---
-    m_ship.targetSpeedRate = 0.0f;
+    ctrl.targetSpeedRate = 0.0f;
 
     if (Input::instance().isKeyPressed(GLFW_KEY_KP_ADD) ||
         Input::instance().isKeyPressed(GLFW_KEY_EQUAL))
-        m_ship.targetSpeedRate = +1.0f;
+        ctrl.targetSpeedRate = +1.0f;
 
     if (Input::instance().isKeyPressed(GLFW_KEY_KP_SUBTRACT) ||
         Input::instance().isKeyPressed(GLFW_KEY_MINUS))
-        m_ship.targetSpeedRate = -1.0f;
+        ctrl.targetSpeedRate = -1.0f;
 
     // --- Manoeuvre thrusters (disabled in cruise) ---
-    if (!m_ship.cruiseActive)
+    if (!ctrl.cruiseActive)
     {
-        m_ship.strafeInput =
+        ctrl.strafeInput =
             (Input::instance().isKeyPressed(GLFW_KEY_KP_6) ? 1.0f : 0.0f) -
             (Input::instance().isKeyPressed(GLFW_KEY_KP_4) ? 1.0f : 0.0f);
 
-        m_ship.forwardInput =
+        ctrl.forwardInput =
             (Input::instance().isKeyPressed(GLFW_KEY_KP_8) ? 1.0f : 0.0f) -
             (Input::instance().isKeyPressed(GLFW_KEY_KP_2) ? 1.0f : 0.0f);
 
-        m_ship.liftInput =
+        ctrl.liftInput =
             (Input::instance().isKeyPressed(GLFW_KEY_KP_9) ? 1.0f : 0.0f) -
             (Input::instance().isKeyPressed(GLFW_KEY_KP_3) ? 1.0f : 0.0f);
     }
     else
     {
-        m_ship.strafeInput  = 0.0f;
-        m_ship.forwardInput = 0.0f;
-        m_ship.liftInput    = 0.0f;
+        ctrl.strafeInput  = 0.0f;
+        ctrl.forwardInput = 0.0f;
+        ctrl.liftInput    = 0.0f;
     }
 
     
@@ -258,15 +284,14 @@ void SpaceState::handleInput()
 
 
 
-//   _   _          _       _           
-//  | | | | _ __  | |_  __| | ___  ___ 
-//  | | | || '_ \ | __|/ _` |/ _ \/ __|
-//  | |_| || |_) || |_| (_| |  __/\__ \
-//   \___/ | .__/  \__|\__,_|\___||___/
-//         |_|                         
-
-
-
+//                       ###              ##
+//                        ##              ##
+//  ##  ##   ######       ##    ####     #####    ####
+//  ##  ##    ##  ##   #####       ##     ##     ##  ##
+//  ##  ##    ##  ##  ##  ##    #####     ##     ######
+//  ##  ##    #####   ##  ##   ##  ##     ## ##  ##
+//   ######   ##       ######   #####      ###    #####
+//           ####
 
 
 // =====================================================================================
@@ -277,7 +302,7 @@ void SpaceState::update(float dt)
     LOG("[SpaceState] update begin");
     m_signalReceiver.update(
         dt,
-        m_ship.position,
+        m_playerShip.transform.position,
         m_worldSignals,
         m_planets,
         m_interferenceSources,
@@ -351,116 +376,39 @@ void SpaceState::update(float dt)
 
 
 
+    // // -------------------------------------------------------------------------
+    // // Rotation physics
+    // // -------------------------------------------------------------------------
+    // m_shipController.update(
+    //     dt,
+    //     m_params,
+    //     m_ship,
+    //     m_world
+    // );
 
-    
-    // -------------------------------------------------------------------------
-    // Rotation physics
-    // -------------------------------------------------------------------------
-    m_ship.pitchRate += m_ship.pitchInput * m_params.angularAccel * dt;
-    m_ship.yawRate   += m_ship.yawInput   * m_params.angularAccel * dt;
-    m_ship.rollRate  += m_ship.rollInput  * m_params.angularAccel * dt;
 
-    m_ship.pitchRate = glm::clamp(m_ship.pitchRate, -m_params.maxPitchRate, m_params.maxPitchRate);
-    m_ship.yawRate   = glm::clamp(m_ship.yawRate,   -m_params.maxYawRate,   m_params.maxYawRate);
-    m_ship.rollRate  = glm::clamp(m_ship.rollRate,  -m_params.maxRollRate,  m_params.maxRollRate);
+    // // -------------------------------------------------------------------------
+    // // Camera
+    // // -------------------------------------------------------------------------
+    // m_cameraController.update(dt, m_ship, m_camera);
+    // LOG("[SpaceState] update end");
 
-    m_ship.pitch += m_ship.pitchRate * dt;
-    m_ship.yaw   += m_ship.yawRate   * dt;
-    m_ship.roll  += m_ship.rollRate  * dt;
-
-    float angDamp = std::exp(-m_params.angularDamping * dt);
-    m_ship.pitchRate *= angDamp;
-    m_ship.yawRate   *= angDamp;
-    m_ship.rollRate  *= angDamp;
-
-    // -------------------------------------------------------------------------
-    // Orientation vectors
-    // -------------------------------------------------------------------------
-    glm::mat4 rot(1.0f);
-    rot = glm::rotate(rot, glm::radians(m_ship.yaw),   {0,1,0});
-    rot = glm::rotate(rot, glm::radians(m_ship.pitch),{1,0,0});
-    rot = glm::rotate(rot, glm::radians(m_ship.roll), {0,0,1});
-
-    glm::vec3 forward = glm::normalize(glm::vec3(rot * glm::vec4(0,0,-1,0)));
-    glm::vec3 right   = glm::normalize(glm::vec3(rot * glm::vec4(1,0,0,0)));
-    glm::vec3 up      = glm::normalize(glm::vec3(rot * glm::vec4(0,1,0,0)));
-
-    // -------------------------------------------------------------------------
-    // Manoeuvre thrusters physics
-    // -------------------------------------------------------------------------
-    m_ship.localVelocity.x += m_ship.strafeInput  * m_params.strafeAccel * dt;
-    m_ship.localVelocity.y += m_ship.liftInput    * m_params.strafeAccel * dt;
-    m_ship.localVelocity.z += m_ship.forwardInput * m_params.strafeAccel * dt;
-
-    m_ship.localVelocity = glm::clamp(
-        m_ship.localVelocity,
-        glm::vec3(-m_params.maxStrafeSpeed),
-        glm::vec3( m_params.maxStrafeSpeed)
-    );
-
-    float strafeDamp = std::exp(-m_params.strafeDamping * dt);
-    m_ship.localVelocity *= strafeDamp;
-
-    // -------------------------------------------------------------------------
-    // Linear speed control (NOT used in cruise)
-    // -------------------------------------------------------------------------
-    if (!m_ship.cruiseActive)
-    {
-        const float targetSpeedAccel = 200.0f;
-
-        m_ship.targetSpeed += m_ship.targetSpeedRate * targetSpeedAccel * dt;
-        m_ship.targetSpeed = glm::clamp(m_ship.targetSpeed, 0.0f, m_params.maxCombatSpeed);
-
-        float speedError  = m_ship.targetSpeed - m_ship.forwardVelocity;
-        float engineAccel = speedError * m_params.throttleAccel;
-        float drag        = -m_ship.forwardVelocity * m_world.linearDrag;
-
-        m_ship.forwardVelocity += (engineAccel + drag) * dt;
-        m_ship.forwardVelocity  = glm::max(m_ship.forwardVelocity, 0.0f);
-    }
-
-    // -------------------------------------------------------------------------
-    // Position integration
-    // -------------------------------------------------------------------------
-    if (m_ship.cruiseActive)
-    {
-        m_ship.position += forward * m_params.maxCruiseSpeed * dt;
-    }
-    else
-    {
-        glm::vec3 worldVel =
-            forward * m_ship.forwardVelocity +
-            right   * m_ship.localVelocity.x +
-            up      * m_ship.localVelocity.y;
-
-        m_ship.position += worldVel * dt;
-    }
-
-    // -------------------------------------------------------------------------
-    // Camera
-    // -------------------------------------------------------------------------
-    float leanRoll  = 0.0f;
-    float leanPitch = 0.0f;
-
-    if (!m_ship.cruiseActive)
-    {
-        leanRoll  = -m_ship.localVelocity.x * 0.05f;
-        leanPitch =  m_ship.localVelocity.z * 0.03f;
-    }
-
-    m_camera.setVisualLean(
-        glm::clamp(leanRoll,  -3.0f, 3.0f),
-        glm::clamp(leanPitch, -2.0f, 2.0f)
-    );
-
-    m_camera.setPosition(m_ship.position);
-    m_camera.setOrientation(m_ship.pitch, m_ship.yaw, m_ship.roll);
-
-    LOG("[SpaceState] update end");
+    m_playerShip.update(dt, m_world);
+    m_playerShip.updateCamera(m_camera);
 }
 
 
 
+
+
+
+//                                ###
+//                                 ##
+//  ######    ####    #####        ##    ####    ######
+//   ##  ##  ##  ##   ##  ##    #####   ##  ##    ##  ##
+//   ##      ######   ##  ##   ##  ##   ######    ##
+//   ##      ##       ##  ##   ##  ##   ##        ##
+//  ####      #####   ##  ##    ######   #####   ####
 // =====================================================================================
 // Render
 // =====================================================================================
@@ -490,7 +438,8 @@ void SpaceState::renderUI()
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf(glm::value_ptr(view));
 
-    DebugGrid::drawInfinite(m_ship.position, 200.0f, 100);
+    // DebugGrid::drawInfinite(m_ship.position, 200.0f, 100);
+    DebugGrid::drawInfinite(m_playerShip.transform.position, 200.0f, 100);
 }
 
 
@@ -545,8 +494,39 @@ void SpaceState::renderHUD()
     LOG("[SpaceState] renderHUD after text");
     m_hudRenderer.renderText(m_hudStatics);
 
+
     // -------------------------------------------------
-    // 2. Подготовка матриц для меток
+    // 2. HUD ограничитель
+    // -------------------------------------------------
+    {
+        const auto& contour = m_playerShip.hudEdgeMapper.boundaryPx();
+        if (contour.size() >= 2)
+        {
+            glDisable(GL_TEXTURE_2D);
+            glDisable(GL_DEPTH_TEST);
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            glColor4f(0.2f, 0.8f, 1.0f, 0.25f); // голубой, ~25% прозрачности
+
+            glBegin(GL_LINE_LOOP);
+            for (const auto& p : contour)
+            {
+                glVertex2f(p.x, p.y);
+            }
+            glEnd();
+        }
+    }
+
+    // если произошел ресайз окна
+    // m_playerShip.hudEdgeMapper.setBoundary(
+    //     m_playerShip.desc->hud.edgeBoundary.contour,
+    //     vp.width,
+    //     vp.height
+    // );
+
+    // -------------------------------------------------
+    // 3. Подготовка матриц для меток
     // -------------------------------------------------
 
     // --- camera matrices нужны ТОЛЬКО здесь ---
@@ -554,21 +534,64 @@ void SpaceState::renderHUD()
     glm::mat4 proj = m_camera.projectionMatrix();
 
     
+    
+    glm::vec2 screenCenter(vp.width  * 0.5f,vp.height * 0.5f);
+
 
     for (auto& [signal, lbl] : m_worldLabels)
     {
-        lbl.onScreen = projectToScreen(
+        glm::vec2 projectedPos;
+
+        bool projected = projectToScreen(
             lbl.data.worldPos,
             view,
             proj,
             vp.width,
             vp.height,
-            lbl.screenPos
+            projectedPos
         );
 
-    
-        if (!lbl.onScreen)
-                continue;
+        glm::vec3 toTarget =
+            glm::normalize(lbl.data.worldPos - m_playerShip.transform.position);
+
+        glm::vec4 viewDir4 = view * glm::vec4(toTarget, 0.0f);
+        glm::vec2 dir2D(viewDir4.x, -viewDir4.y);
+
+        if (glm::length(dir2D) < 1e-4f)
+            continue;
+
+        dir2D = glm::normalize(dir2D);
+
+        lbl.edgeDir = dir2D;
+
+        // --- решаем, обычная метка или edge ---
+        bool insideHud = false;
+
+        if (projected)
+        {
+            insideHud = m_playerShip.hudEdgeMapper.isInsideBoundary(projectedPos);
+        }
+
+        if (projected && insideHud)
+        {
+            // обычная метка
+            lbl.onScreen  = true;
+            lbl.screenPos = projectedPos;
+        }
+        else
+        {
+            // edge-метка
+            glm::vec2 edgePos;
+            if (m_playerShip.hudEdgeMapper.projectDirection(
+                    screenCenter,
+                    dir2D,
+                    edgePos))
+            {
+                lbl.onScreen  = false;
+                lbl.screenPos = edgePos;
+            }
+        }
+
 
         m_worldLabelRenderer.renderHUD(lbl);
     }

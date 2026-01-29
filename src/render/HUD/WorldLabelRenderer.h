@@ -39,7 +39,7 @@ private:
     int m_screenH = 0;
     
 
-     
+    void renderEdgeArrow(const WorldLabel& label); 
 
     void renderWaves(
         const WorldLabelData&           data,
@@ -53,17 +53,17 @@ private:
     );
 
 
-    void renderOnScreen(
-        const WorldLabel& label,
-        const glm::vec2& screenPos
-    );
+    // void renderOnScreen(
+    //     const WorldLabel& label,
+    //     const glm::vec2& screenPos
+    // );
 
-    void renderOffScreen(
-        const WorldLabel& label,
-        const glm::mat4& view,
-        const glm::mat4& proj,
-        int screenW,
-        int screenH
-    );
+    // void renderOffScreen(
+    //     const WorldLabel& label,
+    //     const glm::mat4& view,
+    //     const glm::mat4& proj,
+    //     int screenW,
+    //     int screenH
+    // );
 
 };

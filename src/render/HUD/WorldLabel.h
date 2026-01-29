@@ -77,4 +77,6 @@ struct WorldLabel
 
     glm::vec2 screenPos;
     bool onScreen;
+    // НАПРАВЛЕНИЕ edge-метки в screen-space (нормализованное)
+    glm::vec2 edgeDir {0.0f, 0.0f};
 };

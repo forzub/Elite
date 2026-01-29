@@ -140,7 +140,7 @@ SpaceState::SpaceState(StateStack& states)
 
     m_worldSignals.push_back({
         SignalType::Beacon,
-        SignalDisplayClass::Local,
+        SignalDisplayClass::Other,
         {0, 0, -70}, 
         500.0f,   
         1000.0f,   
@@ -164,7 +164,7 @@ SpaceState::SpaceState(StateStack& states)
     m_planets.clear();
 
     // m_planets.push_back({
-    //     {0, 10, 50},
+    //     {0, 00, -50},
     //     20
     // });
 
@@ -296,7 +296,7 @@ void SpaceState::update(float dt)
         label.data.stability            = result.stability;
         label.data.displayClass         = result.source->displayClass;
 
-        if (result.semanticState == SignalSemanticState::Decoded)
+        if (result.semanticState == SignalSemanticState::Decoded || label.data.displayClass == SignalDisplayClass::Global)
         {
             label.data.displayName = result.source->label; // или из WorldSignal
             label.data.distance = result.distance;

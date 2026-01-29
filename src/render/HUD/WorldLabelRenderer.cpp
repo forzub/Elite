@@ -146,8 +146,9 @@ void WorldLabelRenderer::renderHUD(const WorldLabel& label)
     // if (label.visual.presence == SignalPresence::Absent)
     //     return;
 
-    if (label.data.semanticState == SignalSemanticState::Noise ||
-        label.data.displayClass == SignalDisplayClass::Other){
+    if ((label.data.semanticState == SignalSemanticState::Noise ||
+        label.data.displayClass == SignalDisplayClass::Other) &&
+         (label.data.displayClass != SignalDisplayClass::Global)){
 
             renderWaves(label.data,label.visual, label.screenPos);
             return;
@@ -155,6 +156,18 @@ void WorldLabelRenderer::renderHUD(const WorldLabel& label)
 
     if (label.data.semanticState == SignalSemanticState::Decoded ||
         label.data.displayClass == SignalDisplayClass::Global){
+
+
+            // std::cout
+            // << "[Label] name=" << label.data.displayName
+            // << " dist=" << label.data.distance
+            // << " state=" << (int)label.data.semanticState
+            // << " presence=" << (int)label.visual.presence
+            // << " snr=" << label.data.signalToNoiseRatio
+            // << std::endl;
+
+
+            
 
             renderTextLabel(label, label.screenPos);
             return;
@@ -184,11 +197,13 @@ void WorldLabelRenderer::renderOnScreen(
     if (label.data.semanticState == SignalSemanticState::Decoded ||
         label.data.displayClass == SignalDisplayClass::Global)
     {
-        std::cout
-        << "[WorldLabelRenderer::renderHUD] "
-        << " semanticState=" << (int)label.data.semanticState
-        << " displayClass=" << (int)label.data.displayClass
-        << std::endl;
+        // std::cout
+        // << "[WorldLabelRenderer::renderHUD] "
+        // << " semanticState=" << (int)label.data.semanticState
+        // << " displayClass=" << (int)label.data.displayClass
+        // << std::endl;
+
+
 
         renderTextLabel(label, screenPos);
         return;
@@ -530,7 +545,8 @@ void WorldLabelRenderer::renderTextLabel(
     // -------------------------------------------------
     // Дистанция (только для Decoded)
     // -------------------------------------------------
-    if (label.data.semanticState == SignalSemanticState::Decoded &&
+    if ((label.data.semanticState == SignalSemanticState::Decoded || 
+        label.data.displayClass == SignalDisplayClass::Global) &&
         label.data.distance >= 0.0f)
     {
         char buf[32];

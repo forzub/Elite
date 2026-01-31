@@ -1,17 +1,22 @@
+// ShipState что с ним сейчас#pragma once
+// состояние корабля в настоящий момент
+// Это единственный mutable-блок.
 #pragma once
+
 #include <glm/glm.hpp>
 
 
 struct ShipTransform
 {
 
-
+    // режимы
     bool cruiseActive = false;   // маршевый (удержание J)
     bool jumpActive   = false;   // прыжковый (отдельно)
     
+    // позиция
     glm::vec3 position {0, 5, 10};
     
-
+    // ориентация
     float pitch = 0.0f; // W/S
     float yaw   = 0.0f; // Q/E
     float roll  = 0.0f; // A/D

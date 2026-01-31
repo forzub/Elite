@@ -4,24 +4,24 @@
 #include "game/ship/ShipTransform.h"
 #include "game/ship/ShipController.h"
 #include "game/ship/ShipControlState.h"
+#include "game/ship/ShipCameraController.h"
 
 
-#include "render/camera/ShipCameraController.h"
 
 #include "ui/hud/HudEdgeMapper.h"
 
 struct ShipInstance
 {
     // --- описание типа ---
-    const ShipDescriptor* desc = nullptr;
+    const ShipDescriptor*                       desc = nullptr;
 
     // --- состояние ---
-    ShipTransform transform;    // - перемещение
-    ShipControlState control;   // - управление
+    ShipTransform                               transform;    // - перемещение
+    ShipControlState                            control;   // - управление
 
     // --- подсистемы ---
-    ShipController       controller;        // - функции движения
-    ShipCameraController cameraController;  // - контроль камеры
+    ShipController                              controller;        // - функции движения
+    ShipCameraController                        cameraController;  // - контроль камеры
 
     // --- HUD ---
     HudEdgeMapper hudEdgeMapper;

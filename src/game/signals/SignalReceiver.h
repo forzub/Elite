@@ -4,6 +4,7 @@
 #include <glm/vec3.hpp>
 
 #include "DetectedSignal.h"
+#include "game/ship/equipment/ReceiverModule.h"
 
 
 class Planet;
@@ -15,10 +16,10 @@ public:
     void update(
         float dt,
         const glm::vec3& receiverPos,
+        const ReceiverModule& receiver,
         const std::vector<WorldSignal>& worldSignals,
         const std::vector<Planet>& planets,
         const std::vector<InterferenceSource>& interferenceSources,
-        float receiverNoiseFloor,
         std::vector<SignalReceptionResult>& outResults
     );
 

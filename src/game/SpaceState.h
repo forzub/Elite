@@ -7,11 +7,13 @@
 #include "render/Camera.h"
 #include "render/HUD/TextRenderer.h"  
 #include "render/HUD/WorldLabelRenderer.h" 
-#include "render/camera/ShipCameraController.h" 
 
 
 #include "game/signals/SignalReceiver.h"
+#include "game/ship/ShipCameraController.h" 
 #include "game/ship/ShipInstance.h"
+
+#include "src/game/ship/Ship.h"
 
 
 #include "world/WorldParams.h"
@@ -49,11 +51,11 @@ public:
 private:
     
     // ShipTransform                               m_ship;   // состояние корабля
-    Camera                                      m_camera; // камера, следующая за кораблём
+    
 
     // ShipParams                                  m_params;
     WorldParams                                 m_world;
-    float                                       m_receiverNoiseFloor; // допустимый уровень шума для приемника
+    // float                                       m_receiverNoiseFloor; // допустимый уровень шума для приемника
 
     bool wantsConfirmExit() const override;
     bool onGlobalEscape() override;
@@ -61,12 +63,12 @@ private:
 
     std::vector<WorldObject>                    m_worldObjects;             // "world/WorldParams.h"
     std::vector<Planet>                         m_planets;                  // "world/Planet.h"
-    std::vector<SignalReceptionResult>          m_signalResults;            // "world/WorldSignal.h"
+    // std::vector<SignalReceptionResult>          m_signalResults;            // "world/WorldSignal.h"
     std::vector<WorldSignal>                    m_worldSignals;             // "world/WorldSignal.h"
     std::vector<InterferenceSource>             m_interferenceSources;      // "world/InterferenceSource.h" - источники помех
 
-    std::unordered_map<const WorldSignal*, 
-            WorldLabel>                         m_worldLabels;
+    // std::unordered_map<const WorldSignal*, 
+    //         WorldLabel>                         m_worldLabels;
     
     // --- HUD ---
     std::vector<HudStaticItem>                  m_hudStatics;
@@ -75,10 +77,10 @@ private:
     HudRenderer                                 m_hudRenderer;
     
     
-    SignalReceiver                              m_signalReceiver;
+    // SignalReceiver                              m_signalReceiver;
     WorldLabelRenderer                          m_worldLabelRenderer;
 
-    WorldLabel& getOrCreateWorldLabel(const SignalReceptionResult& result);
+    // WorldLabel& getOrCreateWorldLabel(const SignalReceptionResult& result);
 
 
     // перенос в отдельные сучности
@@ -86,5 +88,8 @@ private:
     // ShipCameraController                    m_cameraController;
     // HudEdgeMapper                           m_hudEdgeMapper;
     // ShipDescriptor                          m_shipDescriptor;
-    ShipInstance                            m_playerShip;
+    // ShipInstance                            m_playerShip;            // корабль игрока
+    Ship                                        m_playerShip;
+    Camera                                      m_camera;               // камера, следующая за кораблём
+    // std::vector<Ship>                           m_npcShips;          // корабли NPC
 };

@@ -35,10 +35,10 @@ static bool isDirectionOnly(SignalType t)
 void SignalReceiver::update(
     float dt,
     const glm::vec3& receiverPos,
+    const ReceiverModule& receiver,
     const std::vector<WorldSignal>& worldSignals,
     const std::vector<Planet>& planets,
     const std::vector<InterferenceSource>& interferenceSources,
-    float receiverNoiseFloor,
     std::vector<SignalReceptionResult>& outResults
 )
 {
@@ -101,9 +101,15 @@ void SignalReceiver::update(
         // TODO: учёт jammer-объектов как физических источников
 
         // === БЛОК 5. Шум приёмника ===
-        float noiseFloor = receiverNoiseFloor;
+        // float noiseFloor = receiverNoiseFloor;
 
-        float totalNoise = noiseFloor + interferencePower;
+        float effectiveNoiseFloor =
+        receiver.isOperational()
+        ? VisualTuning::receiverBaseNoise / receiver.sensitivity
+        : VisualTuning::receiverBaseNoise * 10.0f;
+
+        float totalNoise = effectiveNoiseFloor + interferencePower;
+
 
         // === БЛОК 6. SNR и устойчивость ===
         float snr = 0.0f;
@@ -154,7 +160,7 @@ void SignalReceiver::update(
         result.emittedPower = signal.power;
         result.receivedPower = receivedPower;
 
-        result.noiseFloor = noiseFloor;
+        result.noiseFloor = effectiveNoiseFloor;
         result.interferencePower = interferencePower;
 
         result.occlusionFactor = occlusionFactor;

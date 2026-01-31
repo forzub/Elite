@@ -39,6 +39,10 @@ add_executable(EliteGame
     src/game/signals/WorldSignalWaves.cpp
     src/game/ship/ShipController.cpp
     src/game/ship/descriptors/EliteCobraMk1.cpp
+    src/game/ship/ShipCameraController.cpp
+    src/game/ship/Ship.cpp
+
+    src/game/ship/sensors/ShipSignalPresentation.cpp
     
 
 
@@ -50,7 +54,6 @@ add_executable(EliteGame
     src/render/Font.cpp
     src/render/HUD/TextRenderer.cpp
     src/render/HUD/WorldLabelRenderer.cpp
-    src/render/camera/ShipCameraController.cpp
 
 )
 

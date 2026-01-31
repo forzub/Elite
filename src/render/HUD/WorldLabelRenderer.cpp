@@ -58,78 +58,41 @@ void WorldLabelRenderer::init(StateContext& context)
     }
 
 
-    float quadVerts[] = {
-    -1.2f, -1.2f,
-     1.2f, -1.2f,
-     1.2f,  1.2f,
-    -1.2f,  1.2f
-};
+        float quadVerts[] = {
+        -1.2f, -1.2f,
+        1.2f, -1.2f,
+        1.2f,  1.2f,
+        -1.2f,  1.2f
+    };
 
-glGenVertexArrays(1, &m_waveVAO);
-glBindVertexArray(m_waveVAO);
+    glGenVertexArrays(1, &m_waveVAO);
+    glBindVertexArray(m_waveVAO);
 
-glGenBuffers(1, &m_waveVBO);
-glBindBuffer(GL_ARRAY_BUFFER, m_waveVBO);
-glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerts), quadVerts, GL_STATIC_DRAW);
+    glGenBuffers(1, &m_waveVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_waveVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerts), quadVerts, GL_STATIC_DRAW);
 
-// ВАЖНО: VAO должен быть привязан ПРЯМО СЕЙЧАС
-glEnableVertexAttribArray(0);
-glVertexAttribPointer(
-    0,                  // location = 0
-    2,                  // vec2
-    GL_FLOAT,
-    GL_FALSE,
-    2 * sizeof(float),
-    (void*)0
-);
+    // ВАЖНО: VAO должен быть привязан ПРЯМО СЕЙЧАС
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+        0,                  // location = 0
+        2,                  // vec2
+        GL_FLOAT,
+        GL_FALSE,
+        2 * sizeof(float),
+        (void*)0
+    );
 
-// Сбрасываем
-glBindBuffer(GL_ARRAY_BUFFER, 0);
-glBindVertexArray(0);
+    // Сбрасываем
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
     
-
 
 }
 
 
-// ===========================================================================
-// RENDER
-// ===========================================================================
 
-void WorldLabelRenderer::render(
-    const WorldLabel& label,
-    const glm::mat4& view,
-    const glm::mat4& proj,
-    int screenW,
-    int screenH
-)
-{
-    
 
-    // glm::vec2 screenPos;
-    // bool onScreen = projectToScreen(
-    //     label.data.worldPos,
-    //     view,
-    //     proj,
-    //     TextRenderer::instance().viewportWidth(),
-    //     TextRenderer::instance().viewportHeight(),
-    //     screenPos
-    // );
-
-    // glDisable(GL_DEPTH_TEST);
-
-    // if (onScreen)
-    // {
-    //     renderOnScreen(label, screenPos);
-    // }
-    // else
-    // {
-    //     renderOffScreen(label, view, proj, screenW, screenH);
-    // }
-
-    // glEnable(GL_DEPTH_TEST);
-
-}
 
 
 
@@ -205,13 +168,13 @@ void WorldLabelRenderer::renderEdgeArrow(const WorldLabel& label)
     const glm::vec2 anchor = label.screenPos;
 
     // -------------------------------------------------
-    // Arrow geometry
+    // Arrow geometry  - маркер - отображение
     // -------------------------------------------------
-    constexpr float ARROW_LENGTH = 9.0f;
-    constexpr float ARROW_WIDTH  = 8.0f;
+    constexpr float ARROW_LENGTH = VisualTuning::wl_edge::ARROW_LENGTH;         // 9.0f;
+    constexpr float ARROW_WIDTH  = VisualTuning::wl_edge::ARROW_WIDTH;          // 8.0f;
 
     const glm::vec2 tip  = anchor + normal * ARROW_LENGTH;
-    const glm::vec2 base = anchor - normal * 6.0f;
+    const glm::vec2 base = anchor - normal * VisualTuning::wl_edge::DISTANCE;   // 6.0f;
 
     const glm::vec2 left  = base + tangent * (ARROW_WIDTH * 0.5f);
     const glm::vec2 right = base - tangent * (ARROW_WIDTH * 0.5f);
@@ -431,143 +394,7 @@ void WorldLabelRenderer::renderWaves(
                 v
             }
         );
-
-
-        // char DebugText[32];
-
-        // switch ((int)visual.presence){
-        //     case 0: 
-        //         std::snprintf(
-        //             DebugText,
-        //             sizeof(DebugText),
-        //             "Absent"
-        //         );
-        //         break;
-        //     case 1:
-        //         std::snprintf(
-        //             DebugText,
-        //             sizeof(DebugText),
-        //             "FadingIn"
-        //         );
-        //         break;
-        //     case 2:
-        //         std::snprintf(
-        //             DebugText,
-        //             sizeof(DebugText),
-        //             "Present"
-        //         );
-        //         break;
-        //     case 3:
-        //         std::snprintf(
-        //             DebugText,
-        //             sizeof(DebugText),
-        //             "FadingOut"
-        //         );
-        //         break;
-            
-        //     default:
-        //         break;
-        //     }
-
-        // tr.textDraw(
-        //     *m_distFont,
-        //     DebugText,
-        //     textX,
-        //     textY + 24.0f,
-        //     {
-        //         VisualTuning::Waves::color.r ,
-        //         VisualTuning::Waves::color.g ,
-        //         VisualTuning::Waves::color.b ,
-        //         v
-        //     }
-        // );
-
-
-        // char DebugText2[32];
-
-        // switch ((int)labelData.displayClass){
-        //     case 0: 
-        //         std::snprintf(
-        //             DebugText2,
-        //             sizeof(DebugText),
-        //             "Global"
-        //         );
-        //         break;
-        //     case 1:
-        //         std::snprintf(
-        //             DebugText2,
-        //             sizeof(DebugText),
-        //             "Local"
-        //         );
-        //         break;
-        //     case 2:
-        //         std::snprintf(
-        //             DebugText2,
-        //             sizeof(DebugText),
-        //             "Other"
-        //         );
-        //         break;
-        //     default:
-        //         break;
-        //     }
-
-        // tr.textDraw(
-        //     *m_distFont,
-        //     DebugText2,
-        //     textX,
-        //     textY + 36.0f,
-        //     {
-        //         VisualTuning::Waves::color.r ,
-        //         VisualTuning::Waves::color.g ,
-        //         VisualTuning::Waves::color.b ,
-        //         v
-        //     }
-        // );
-
-
-        // char DebugText3[32];
-
-        // switch ((int)labelData.semanticState){
-        //     case 0: 
-        //         std::snprintf(
-        //             DebugText3,
-        //             sizeof(DebugText),
-        //             "None"
-        //         );
-        //         break;
-        //     case 1:
-        //         std::snprintf(
-        //             DebugText3,
-        //             sizeof(DebugText),
-        //             "Noise"
-        //         );
-        //         break;
-        //     case 2:
-        //         std::snprintf(
-        //             DebugText3,
-        //             sizeof(DebugText),
-        //             "Decoded"
-        //         );
-        //         break;
-        //     default:
-        //         break;
-        //     }
-
-        // tr.textDraw(
-        //     *m_distFont,
-        //     DebugText3,
-        //     textX,
-        //     textY + 48.0f,
-        //     {
-        //         VisualTuning::Waves::color.r ,
-        //         VisualTuning::Waves::color.g ,
-        //         VisualTuning::Waves::color.b ,
-        //         v
-        //     }
-        // );
-
-
-        
+       
     }           
 
     // -------------------------------------------------

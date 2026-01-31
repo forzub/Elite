@@ -35,6 +35,12 @@ const ShipDescriptor& getEliteCobraMk1()
             {0.10f, 0.88f},
             {0.04f, 0.50f}
         };
+
+        // приёмник
+        desc.receiver.sensitivity = 1.0f;
+
+        // передатчик (пока не используется)
+        desc.transmitter.txPower = 0.0f;
     }
 
     return desc;

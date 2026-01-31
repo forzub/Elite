@@ -15,14 +15,6 @@ class WorldLabelRenderer
 public:
     void init(StateContext& context);
 
-    void render(
-        const WorldLabel& lbl,
-        const glm::mat4& view,
-        const glm::mat4& projection,
-        int screenW,
-        int screenH
-    );
-
     void renderHUD(const WorldLabel& label);
 
 private: 
@@ -53,17 +45,6 @@ private:
     );
 
 
-    // void renderOnScreen(
-    //     const WorldLabel& label,
-    //     const glm::vec2& screenPos
-    // );
-
-    // void renderOffScreen(
-    //     const WorldLabel& label,
-    //     const glm::mat4& view,
-    //     const glm::mat4& proj,
-    //     int screenW,
-    //     int screenH
-    // );
+ 
 
 };

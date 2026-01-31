@@ -22,6 +22,7 @@
 #include "game/signals/WorldLabelSystem.h"
 #include "game/signals/WorldSignalWaves.h"
 #include "game/ship/descriptors/EliteCobraMk1.h"
+#include "game/ship/ShipRole.h"
 
 
 #include "ui/ConfirmExitState.h"
@@ -51,15 +52,22 @@ SpaceState::SpaceState(StateStack& states)
     // =======================================================================
     const Viewport& vp = context().viewport();
 
-    m_playerShip.initialize(
-        getEliteCobraMk1(),
-        vp.width,
-        vp.height
-    );
+    
     // начальная позиция
-    m_playerShip.transform.position = {0.0f, 5.0f, 10.0f};
-    m_camera.setPosition(m_playerShip.transform.position);
-    m_camera.setAspect(context().aspect());
+    // m_playerShip.transform.position = {0.0f, 5.0f, 10.0f};
+    m_playerShip.init(
+        ShipRole::Player,
+        context(),
+        getEliteCobraMk1(),
+        {0.0f, 5.0f, 10.0f}
+    );
+
+
+
+
+
+
+
 
 
     // инициализация параметров рендера
@@ -67,9 +75,14 @@ SpaceState::SpaceState(StateStack& states)
     m_worldLabelRenderer.init(context());
 
 
+
+
+
     // world = vacuum
     m_world.linearDrag   = 0.0f;
     m_world.maxSafeDecel = 50.0f;
+
+
 
 
 
@@ -90,7 +103,7 @@ SpaceState::SpaceState(StateStack& states)
     //     6000.0f
     // });
 
-    m_receiverNoiseFloor = VisualTuning::receiverBaseNoise;
+    // m_receiverNoiseFloor = VisualTuning::receiverBaseNoise;
 
     // тест сигналов 
     m_worldSignals.clear(); 
@@ -147,7 +160,7 @@ SpaceState::SpaceState(StateStack& states)
 
     m_worldSignals.push_back({
         SignalType::Beacon,
-        SignalDisplayClass::Other,
+        SignalDisplayClass::Local,
         {0, 0, -70}, 
         500.0f,   
         1000.0f,   
@@ -214,67 +227,7 @@ SpaceState::~SpaceState()
 void SpaceState::handleInput()
 {
 
-    // --- Cruise (hold J) ---
-
-    auto& ctrl = m_playerShip.control;
-    ctrl = ShipControlState{};
-
-    ctrl.cruiseActive = Input::instance().isKeyPressed(GLFW_KEY_J);
-
-    // --- Rotation (disabled in cruise) ---
-    if (!ctrl.cruiseActive)
-    {
-        ctrl.pitchInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_W) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_S) ? 1.0f : 0.0f);
-
-        ctrl.rollInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_A) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_D) ? 1.0f : 0.0f);
-
-        ctrl.yawInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_Q) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_E) ? 1.0f : 0.0f);
-    }
-    else
-    {
-        ctrl.pitchInput = 0.0f;
-        ctrl.rollInput  = 0.0f;
-        ctrl.yawInput   = 0.0f;
-    }
-
-    // --- Target speed control ---
-    ctrl.targetSpeedRate = 0.0f;
-
-    if (Input::instance().isKeyPressed(GLFW_KEY_KP_ADD) ||
-        Input::instance().isKeyPressed(GLFW_KEY_EQUAL))
-        ctrl.targetSpeedRate = +1.0f;
-
-    if (Input::instance().isKeyPressed(GLFW_KEY_KP_SUBTRACT) ||
-        Input::instance().isKeyPressed(GLFW_KEY_MINUS))
-        ctrl.targetSpeedRate = -1.0f;
-
-    // --- Manoeuvre thrusters (disabled in cruise) ---
-    if (!ctrl.cruiseActive)
-    {
-        ctrl.strafeInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_6) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_4) ? 1.0f : 0.0f);
-
-        ctrl.forwardInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_8) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_2) ? 1.0f : 0.0f);
-
-        ctrl.liftInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_9) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_3) ? 1.0f : 0.0f);
-    }
-    else
-    {
-        ctrl.strafeInput  = 0.0f;
-        ctrl.forwardInput = 0.0f;
-        ctrl.liftInput    = 0.0f;
-    }
+    m_playerShip.handleInput();
 
     
 }
@@ -300,101 +253,15 @@ void SpaceState::handleInput()
 void SpaceState::update(float dt)
 {
     LOG("[SpaceState] update begin");
-    m_signalReceiver.update(
-        dt,
-        m_playerShip.transform.position,
-        m_worldSignals,
-        m_planets,
-        m_interferenceSources,
-        m_receiverNoiseFloor,
-        m_signalResults
-    );
 
-
-
-    for (const SignalReceptionResult& result : m_signalResults)
-    {
-        WorldLabel& label = getOrCreateWorldLabel(result); // как у тебя реализовано
-
-        // --- 1. Семантика (data)
-        label.data.worldPos             = result.sourceWorldPos;
-        label.data.semanticState        = result.semanticState;
-        label.data.signalToNoiseRatio   = result.signalToNoiseRatio;
-        label.data.receivedPower        = result.receivedPower;
-        label.data.stability            = result.stability;
-        label.data.displayClass         = result.source->displayClass;
-
-        if (result.semanticState == SignalSemanticState::Decoded || label.data.displayClass == SignalDisplayClass::Global)
-        {
-            label.data.displayName = result.source->label; // или из WorldSignal
-            label.data.distance = result.distance;
-            label.data.hasDistance = true;
-            label.visual.visibility = 1.0;
-            label.visual.presence = SignalPresence::Present;
-        }
-        else
-        {
-            label.data.displayName = "undefined";
-            label.data.hasDistance = false;
-        }     
-        
-        // --- 2. Визуальная инерция
-
-        WorldLabelSystem::updateVisualState(
+    m_playerShip.update(
             dt,
-            result.semanticState,
-            result.signalToNoiseRatio,
-            label.visual
+            m_world,
+            m_worldSignals,
+            m_planets,
+            m_interferenceSources
         );
-
-        // std::cout
-        // << "[Label] src=" << result.source
-        // << " presence=" << (int)label.visual.presence
-        // << " vis=" << label.visual.visibility
-        // << " state=" << (int)label.data.semanticState
-        // << " snr=" << label.data.signalToNoiseRatio
-        // << std::endl;
-        
-        bool allowWaveSpawn =
-        ((label.data.semanticState == SignalSemanticState::Noise) && 
-        (label.data.displayClass != SignalDisplayClass::Global) &&
-        (label.visual.presence != SignalPresence::FadingOut) &&
-        (label.visual.presence != SignalPresence::Absent));
-
-        if(label.data.semanticState == SignalSemanticState::Decoded && label.data.displayClass == SignalDisplayClass::Other)
-            allowWaveSpawn = true;
-
-            
-        
-        updateWorldSignalWaves(
-            label.visual,
-            dt,
-            allowWaveSpawn
-        );
-
-    }
-
-
-
-    // // -------------------------------------------------------------------------
-    // // Rotation physics
-    // // -------------------------------------------------------------------------
-    // m_shipController.update(
-    //     dt,
-    //     m_params,
-    //     m_ship,
-    //     m_world
-    // );
-
-
-    // // -------------------------------------------------------------------------
-    // // Camera
-    // // -------------------------------------------------------------------------
-    // m_cameraController.update(dt, m_ship, m_camera);
-    // LOG("[SpaceState] update end");
-
-    m_playerShip.update(dt, m_world);
-    m_playerShip.updateCamera(m_camera);
+   
 }
 
 
@@ -416,14 +283,15 @@ void SpaceState::render(){}
 
 void SpaceState::renderUI()
 {
-    const Viewport& vp = context().viewport();
 
-    int vx = vp.width;
-    int vy = vp.height;
+     const Viewport& vp = context().viewport();
 
     float fx = (float)vp.width;
     float fy = (float)vp.height;
-    
+
+    // -------------------------------
+    // 3D ПРОЕКЦИЯ
+    // -------------------------------
     glm::mat4 projection = glm::perspective(
         glm::radians(70.0f),
         fx / fy,
@@ -431,15 +299,24 @@ void SpaceState::renderUI()
         5000.0f
     );
 
-    glm::mat4 view = m_camera.viewMatrix();
+    glm::mat4 view = m_playerShip.camera.viewMatrix();
+
+    glEnable(GL_DEPTH_TEST);
 
     glMatrixMode(GL_PROJECTION);
     glLoadMatrixf(glm::value_ptr(projection));
+
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf(glm::value_ptr(view));
 
-    // DebugGrid::drawInfinite(m_ship.position, 200.0f, 100);
-    DebugGrid::drawInfinite(m_playerShip.transform.position, 200.0f, 100);
+    // -------------------------------
+    // 3D МИР
+    // -------------------------------
+    DebugGrid::drawInfinite(
+        m_playerShip.transform.position,
+        200.0f,
+        100
+    );
 }
 
 
@@ -530,71 +407,68 @@ void SpaceState::renderHUD()
     // -------------------------------------------------
 
     // --- camera matrices нужны ТОЛЬКО здесь ---
-    glm::mat4 view = m_camera.viewMatrix();
-    glm::mat4 proj = m_camera.projectionMatrix();
+    glm::mat4 view = m_playerShip.camera.viewMatrix();
+    glm::mat4 proj = m_playerShip.camera.projectionMatrix();
+    // glm::mat4 view = m_camera.viewMatrix();
+    // glm::mat4 proj = m_camera.projectionMatrix();
 
     
     
     glm::vec2 screenCenter(vp.width  * 0.5f,vp.height * 0.5f);
 
 
-    for (auto& [signal, lbl] : m_worldLabels)
+    for (auto& [signal, label] :
+     m_playerShip.signalPresentation.labels())
+{
+    glm::vec2 projectedPos;
+
+    bool projected = projectToScreen(
+        label.data.worldPos,
+        view,
+        proj,
+        vp.width,
+        vp.height,
+        projectedPos
+    );
+
+    glm::vec3 toTarget =
+        glm::normalize(label.data.worldPos - m_playerShip.transform.position);
+
+    glm::vec4 viewDir4 = view * glm::vec4(toTarget, 0.0f);
+    glm::vec2 dir2D(viewDir4.x, -viewDir4.y);
+
+    if (glm::length(dir2D) < 1e-4f)
+        continue;
+
+    dir2D = glm::normalize(dir2D);
+    label.edgeDir = dir2D;
+
+    bool insideHud = false;
+
+    if (projected)
+        insideHud = m_playerShip.hudEdgeMapper.isInsideBoundary(projectedPos);
+
+    if (projected && insideHud)
     {
-        glm::vec2 projectedPos;
-
-        bool projected = projectToScreen(
-            lbl.data.worldPos,
-            view,
-            proj,
-            vp.width,
-            vp.height,
-            projectedPos
-        );
-
-        glm::vec3 toTarget =
-            glm::normalize(lbl.data.worldPos - m_playerShip.transform.position);
-
-        glm::vec4 viewDir4 = view * glm::vec4(toTarget, 0.0f);
-        glm::vec2 dir2D(viewDir4.x, -viewDir4.y);
-
-        if (glm::length(dir2D) < 1e-4f)
-            continue;
-
-        dir2D = glm::normalize(dir2D);
-
-        lbl.edgeDir = dir2D;
-
-        // --- решаем, обычная метка или edge ---
-        bool insideHud = false;
-
-        if (projected)
-        {
-            insideHud = m_playerShip.hudEdgeMapper.isInsideBoundary(projectedPos);
-        }
-
-        if (projected && insideHud)
-        {
-            // обычная метка
-            lbl.onScreen  = true;
-            lbl.screenPos = projectedPos;
-        }
-        else
-        {
-            // edge-метка
-            glm::vec2 edgePos;
-            if (m_playerShip.hudEdgeMapper.projectDirection(
-                    screenCenter,
-                    dir2D,
-                    edgePos))
-            {
-                lbl.onScreen  = false;
-                lbl.screenPos = edgePos;
-            }
-        }
-
-
-        m_worldLabelRenderer.renderHUD(lbl);
+        label.onScreen  = true;
+        label.screenPos = projectedPos;
     }
+    else
+    {
+        glm::vec2 edgePos;
+        if (m_playerShip.hudEdgeMapper.projectDirection(
+                screenCenter,
+                dir2D,
+                edgePos))
+        {
+            label.onScreen  = false;
+            label.screenPos = edgePos;
+        }
+    }
+
+    m_worldLabelRenderer.renderHUD(label);
+}
+
     
     glEnable(GL_DEPTH_TEST);
     LOG("[SpaceState] renderHUD after text");
@@ -643,24 +517,3 @@ bool SpaceState::isInSafeZone() const
 }
 
 
-// =====================================================================================
-// get Or Create WorldLabel
-// =====================================================================================
-WorldLabel& SpaceState::getOrCreateWorldLabel(const SignalReceptionResult& result)
-{
-    const WorldSignal* key = result.source;
-
-    auto it = m_worldLabels.find(key);
-    if (it != m_worldLabels.end())
-        return it->second;
-
-    // --- создаём новый WorldLabel
-    WorldLabel label;
-    label.visual.presence = SignalPresence::Absent;
-    label.visual.visibility = 0.0f;
-    label.visual.presenceTimer = 0.0f;
-    label.visual.noisePhase = 0.0f;
-
-    auto [newIt, inserted] = m_worldLabels.emplace(key, std::move(label));
-    return newIt->second;
-}

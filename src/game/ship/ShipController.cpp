@@ -1,6 +1,5 @@
 #include "src/game/ship/ShipController.h"
 
-#include "ShipController.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 

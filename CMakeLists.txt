@@ -34,17 +34,29 @@ add_executable(EliteGame
     src/input/Input.cpp
 
     src/game/SpaceState.cpp
-    src/game/signals/SignalReceiver.cpp
-    src/game/signals/WorldLabelSystem.cpp
-    src/game/signals/WorldSignalWaves.cpp
-    src/game/signals/WorldSignalSystem.cpp
+
+    src/game/equipment/signalNode/processing/SignalReceiver.cpp
+    src/game/equipment/signalNode/processing/WorldSignalTxSystem.cpp
+
+    src/game/equipment/data/transmitters.cpp
+    src/game/equipment/data/receivers.cpp
+    src/game/equipment/data/jammers.cpp
+
+    src/game/ship/hud/worldlabels/WorldLabelSystem.cpp
+    src/game/ship/hud/worldlabels/WorldSignalWaves.cpp
+
     src/game/signals/SignalPattern.cpp
     src/game/signals/SignalPatternLibrary.cpp
 
-    src/game/ship/ShipController.cpp
+
     src/game/ship/descriptors/EliteCobraMk1.cpp
+
+    src/game/ship/ShipController.cpp
     src/game/ship/ShipCameraController.cpp
     src/game/ship/Ship.cpp
+    src/game/ship/ShipSignalProfile.cpp
+    src/game/ship/ShipSignalController.cpp
+ 
 
     src/game/ship/sensors/ShipSignalPresentation.cpp
     

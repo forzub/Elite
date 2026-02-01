@@ -1,5 +1,10 @@
 #include "EliteCobraMk1.h"
 
+#include "src/game/equipment/data/receivers.h"
+#include "src/game/equipment/data/transmitters.h"
+#include "src/game/equipment/data/jammers.h"
+#include "src/game/signals/SignalPatternLibrary.h"
+
 const ShipDescriptor& getEliteCobraMk1()
 {
     static ShipDescriptor desc;
@@ -36,25 +41,45 @@ const ShipDescriptor& getEliteCobraMk1()
             {0.04f, 0.50f}
         };
 
-        // приёмник
-        desc.receiver.sensitivity = 1.0f;
 
-        // передатчик (пока не используется)
-        auto& tx = desc.transmitter;
-        tx.txPower   = 1000.0f;
-        tx.baseRange = 2000.0f;
-        tx.activeMode = 1;
+        // --- ОБОРУДОВАНИЕ (ВОТ ТУТ ТЕПЕРЬ ВСЁ РЕШАЕТСЯ) ---
+        desc.equipment.receiver    = &STANDARD_RECEIVER;
+        desc.equipment.transmitter = &WSDR_TX13;
+        desc.equipment.jammer      = nullptr; // нет с завода но место под него - есть
 
-        tx.modes = {
-            { SignalType::Transponder },
-            { SignalType::SOSModern },
-            { SignalType::Beacon },
-            { SignalType::Unknown }
+        // --- СИГНАЛЫ (ВОТ ТУТ ВСЁ РЕШАЕТСЯ) ---
+        desc.signalProfile.availableSignals = {
+            SignalType::Transponder,
+            SignalType::Beacon,
+            SignalType::SOSModern
         };
 
+        // опционально: переопределяем паттерн
+        // desc.signalProfile.customPatterns[SignalType::SOSModern] =
+        //     &SignalPatternLibrary::instance().get(SignalType::SOSModern);
+
+
+
+
+        // приёмник
+        // desc.receiver.sensitivity = 1.0f;
+
+        // передатчик (пока не используется)
+        // auto& tx = desc.transmitter;
+        // tx.txPower   = 1000.0f;
+        // tx.baseRange = 2000.0f;
+        // tx.activeMode = 1;
+
+        // tx.modes = {
+        //     { SignalType::Transponder },
+        //     { SignalType::SOSModern },
+        //     { SignalType::Beacon },
+        //     { SignalType::Unknown }
+        // };
+
         // постановщик помех
-        desc.jammer.jammingPower = 1.0f;
-        desc.jammer.radius = 1000.0f;
+        // desc.jammer.jammingPower = 1.0f;
+        // desc.jammer.radius = 1000.0f;
     }
 
     return desc;

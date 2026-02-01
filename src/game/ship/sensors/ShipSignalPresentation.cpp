@@ -1,7 +1,9 @@
 #include "ShipSignalPresentation.h"
 
-#include "game/signals/WorldLabelSystem.h"
-#include "game/signals/WorldSignalWaves.h"
+#include "game/ship/hud/worldlabels/WorldLabelSystem.h"
+#include "game/ship/hud/worldlabels/WorldSignalWaves.h"
+
+
 
 
 WorldLabel& ShipSignalPresentation::getOrCreateLabel(

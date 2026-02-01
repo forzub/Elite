@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "world/WorldSignal.h"
+#include "src/world/types/SignalReceptionResult.h"
 
 #include "render/HUD/WorldLabel.h"
 

@@ -1,8 +1,12 @@
 #include "Ship.h"
+#include <iostream>
 
 #include "src/input/Input.h"
 #include "core/StateStack.h"
-#include "game/signals/SignalPatternLibrary.h"
+#include "src/game/signals/SignalPatternLibrary.h"
+#include "src/game/equipment/EquipmentSlot.h"
+
+
 
 
 // -------------------------------------------------
@@ -15,13 +19,18 @@
 //   ####    ##  ##    ####       ###
 // -------------------------------------------------
 void Ship::init(
-    ShipRole inRole,
     StateContext& context, 
+    ShipRole inRole,
     const ShipDescriptor& descriptor, 
     glm::vec3 position
 )
 {
-    role = inRole;
+    // устанавливаем роль корабля - ИГРОК / НПС
+    // общий контекст - глобальные данные, viewport etc
+    // геттер из файла описания корабля (f.e. Cobra MKIII)
+    // позиция корабля в пространстве
+
+    role = inRole;  
     desc = &descriptor;
     transform.position = position;
     
@@ -41,23 +50,29 @@ void Ship::init(
         );
     }
 
+
     // оборудование
-    equipment.receiver      = desc->receiver;
-    equipment.transmitter   = desc->transmitter;
-    equipment.jammer        = desc->jammer;
+    if (desc->equipment.receiver)
+        equipment.receiver.init(*desc->equipment.receiver);
 
-    equipment.transmitter.enabled = true;
-    equipment.transmitter.health  = 1.0f;
+    if (desc->equipment.transmitter)
+        equipment.transmitter.init(*desc->equipment.transmitter);
 
-    equipment.receiver.enabled = true;
-    equipment.receiver.health  = 1.0f;
+    if (desc->equipment.jammer)
+        equipment.jammer.init(*desc->equipment.jammer);
 
+
+    // 2. контроллер сигналов
+    signalController.init(desc->signalProfile);
+
+
+    // 3. базовое состояние
     auto& tx  = equipment.transmitter;
     auto& sig = emittedSignal;
 
-    sig.type         = tx.currentMode().type;
-    sig.displayClass = tx.displayClass;
     sig.position     = transform.position;
+    sig.type         = SignalType::SOSModern;
+    sig.displayClass = tx.displayClass;
     sig.power        = tx.txPower;
     sig.maxRange     = tx.baseRange;
     sig.pattern = &getDefaultSignalPattern(sig.type);
@@ -65,6 +80,7 @@ void Ship::init(
     sig.enabled      = true;
     sig.owner        = this;
     sig.label        = desc->name;
+
 
 }
 
@@ -145,6 +161,57 @@ void Ship::handleInput()
         ctrl.forwardInput = 0.0f;
         ctrl.liftInput    = 0.0f;
     }
+
+    if (Input::instance().isKeyPressed(GLFW_KEY_7)){
+        std::cout
+        << "[GLFW_KEY_7] start: "
+        << "enabled=" << emittedSignal.enabled
+        << " type=" << static_cast<int>(emittedSignal.type)
+        << std::endl;
+
+        signalController.requestSignal(SignalType::Transponder);
+
+        std::cout
+        << "[GLFW_KEY_7] done: "
+        << "enabled=" << emittedSignal.enabled
+        << " type=" << static_cast<int>(emittedSignal.type)
+        << std::endl;
+    }
+
+    if (Input::instance().isKeyPressed(GLFW_KEY_8)){
+        std::cout
+        << "[GLFW_KEY_8] start: "
+        << "enabled=" << emittedSignal.enabled
+        << " type=" << static_cast<int>(emittedSignal.type)
+        << std::endl;
+
+        signalController.requestSignal(SignalType::Beacon);
+
+        std::cout
+        << "[GLFW_KEY_8] done: "
+        << "enabled=" << emittedSignal.enabled
+        << " type=" << static_cast<int>(emittedSignal.type)
+        << std::endl;
+    }
+
+    if (Input::instance().isKeyPressed(GLFW_KEY_9)){
+        std::cout
+        << "[GLFW_KEY_9] start: "
+        << "enabled=" << emittedSignal.enabled
+        << " type=" << static_cast<int>(emittedSignal.type)
+        << std::endl;
+
+        signalController.requestSignal(SignalType::SOSModern);
+
+        std::cout
+        << "[GLFW_KEY_9] done: "
+        << "enabled=" << emittedSignal.enabled
+        << " type=" << static_cast<int>(emittedSignal.type)
+        << std::endl;
+        }
+
+    if (Input::instance().isKeyPressed(GLFW_KEY_0))
+        signalController.disableSignal();
 }
 
 
@@ -164,27 +231,45 @@ void Ship::handleInput()
 void Ship::update(
     float dt,
     const WorldParams& world,
+    const std::vector<WorldSignal>& worldSignals,
     const std::vector<Planet>& planets,
     const std::vector<InterferenceSource>& interferenceSources
 )
 {
     updateControlIntent();        // ① откуда intent
     updatePhysics(dt, world);     // ② движение
-    // updateSignals(
-    //         dt,
-    //         world.signals,   // ← если есть в WorldParams
-    //         planets,
-    //         interferenceSources
-    //     );
-    updatePerception(dt);         // ④ осмысление
+   
+    // std::cout
+    // << "[Ship] BEFORE update: "
+    // << "enabled=" << emittedSignal.enabled
+    // << " type=" << static_cast<int>(emittedSignal.type)
+    // << std::endl;
+
+    // формирование сигнала передатчика
+    signalController.update(dt, emittedSignal);
+
+    if (emittedSignal.enabled)
+    {
+        emittedSignal.position     = transform.position;
+    }
+
+
+    if (equipment.receiver.enabled)
+    {
+        updateSignals(
+            dt,
+            worldSignals,
+            planets,
+            interferenceSources
+        );
+    }
+
+
+    //  4. HUD / AI — по роли
+    updatePerception(dt);         // ④ осмысление - ветвление игрок / нпс
+
     updateCamera(dt);             // ⑤ камера (только Player)
 }
-
-
-
-
-
-
 
 
 

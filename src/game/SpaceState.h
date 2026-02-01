@@ -9,9 +9,9 @@
 #include "render/HUD/WorldLabelRenderer.h" 
 
 
-#include "game/signals/SignalReceiver.h"
+#include "src/game/equipment/signalNode/processing/SignalReceiver.h"
 #include "game/ship/ShipCameraController.h" 
-#include "game/ship/ShipInstance.h"
+// #include "game/ship/ShipInstance.h"
 
 #include "src/game/ship/Ship.h"
 

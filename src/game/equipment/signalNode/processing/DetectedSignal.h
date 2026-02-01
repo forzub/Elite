@@ -1,11 +1,11 @@
 #pragma once
 
 #include "world/WorldSignal.h"
-// ----------------------debug----------------------
-// #include "render/SignalWave.h"
+#include "src/world/types/SignalReceptionResult.h"
+
 #include "render/VisualTuning.h"
 
-// ----------------------debug----------------------
+
 
 
 struct DetectedSignal

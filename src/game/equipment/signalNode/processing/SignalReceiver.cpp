@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "game/signals/SignalReceiver.h"
+#include "game/equipment/signalNode/processing/SignalReceiver.h"
  
 
 #include "render/VisualTuning.h"

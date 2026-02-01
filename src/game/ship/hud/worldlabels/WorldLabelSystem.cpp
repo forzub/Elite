@@ -1,4 +1,4 @@
-#include "game/signals/WorldLabelSystem.h"
+#include "game/ship/hud/worldlabels/WorldLabelSystem.h"
 #include "render/VisualTuning.h"
 
 #include <glm/common.hpp>

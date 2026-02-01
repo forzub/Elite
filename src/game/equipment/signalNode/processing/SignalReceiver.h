@@ -4,7 +4,8 @@
 #include <glm/vec3.hpp>
 
 #include "DetectedSignal.h"
-#include "game/ship/equipment/ReceiverModule.h"
+#include "game/equipment/signalNode/ReceiverModule.h"
+
 
 
 

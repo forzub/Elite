@@ -18,10 +18,11 @@
 #include "render/ScreenUtils.h"
 
 
-#include "game/signals/SignalPolicy.h"
-#include "game/signals/WorldLabelSystem.h"
-#include "game/signals/WorldSignalWaves.h"
-#include "game/signals/WorldSignalSystem.h"
+#include "src/game/equipment/signalNode/processing/SignalPolicy.h"
+
+#include "game/ship/hud/worldlabels/WorldLabelSystem.h"
+#include "game/ship/hud/worldlabels/WorldSignalWaves.h"
+#include "game/equipment/signalNode/processing/WorldSignalTxSystem.h"
 
 #include "game/ship/descriptors/EliteCobraMk1.h"
 #include "game/ship/ShipRole.h"
@@ -58,8 +59,8 @@ SpaceState::SpaceState(StateStack& states)
     // начальная позиция
     // m_playerShip.transform.position = {0.0f, 5.0f, 10.0f};
     m_playerShip.init(
-        ShipRole::Player,
         context(),
+        ShipRole::Player,
         getEliteCobraMk1(),
         {0.0f, 5.0f, 10.0f}
     );
@@ -68,8 +69,8 @@ SpaceState::SpaceState(StateStack& states)
     // --- NPC #1 ---
     m_npcShips.emplace_back();
     m_npcShips.back().init(
-        ShipRole::NPC,
         context(),
+        ShipRole::NPC,
         getEliteCobraMk1(),
         {20.0f, 0.0f, -50.0f}
     );
@@ -77,8 +78,8 @@ SpaceState::SpaceState(StateStack& states)
     // --- NPC #2 ---
     m_npcShips.emplace_back();
     m_npcShips.back().init(
-        ShipRole::NPC,
         context(),
+        ShipRole::NPC,
         getEliteCobraMk1(),
         {-70.0f, 50.0f, -70.0f}
     );
@@ -183,10 +184,7 @@ SpaceState::~SpaceState()
 // =====================================================================================
 void SpaceState::handleInput()
 {
-
     m_playerShip.handleInput();
-
-    
 }
 
 
@@ -212,28 +210,31 @@ void SpaceState::update(float dt)
     LOG("[SpaceState] update begin");
     
 
-    std::vector<Ship*> ships;
-    ships.push_back(&m_playerShip);
-    for (auto& npc : m_npcShips)
-        ships.push_back(&npc);
+    std::vector<Ship*> worlds_signals_ships;
+    worlds_signals_ships.push_back(&m_playerShip);
 
-    WorldSignalSystem::collectFromShips(
-        ships,
+    for (auto& npc : m_npcShips)
+        worlds_signals_ships.push_back(&npc);
+
+
+    WorldSignalTxSystem::collectFromShips(
+        worlds_signals_ships,
         m_worldSignals
     );
 
-    m_playerShip.updateSignals(
-        dt,
-        m_worldSignals,
-        m_planets,
-        m_interferenceSources
-    );
 
+    // m_playerShip.updateSignals(
+    //     dt,
+    //     m_worldSignals,
+    //     m_planets,
+    //     m_interferenceSources
+    // );
 
 
     m_playerShip.update(
         dt,
         m_world,
+        m_worldSignals,
         m_planets,
         m_interferenceSources
     );
@@ -245,6 +246,7 @@ void SpaceState::update(float dt)
         npc.update(
             dt,
             m_world,
+            m_worldSignals,
             m_planets,
             m_interferenceSources
         );

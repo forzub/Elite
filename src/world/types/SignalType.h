@@ -2,11 +2,12 @@
 
 enum class SignalType
 {
-    Planets,              // навигационный, стабильный
-    StationClass,         // станции
-    SOSModern,             // точный, но ограниченный
-    SOSAntic,              // древний, направление только
-    Beacon,                // стабильный маяк
-    Transponder,
-    Unknown                // аномалия, направление
+    Planets,                // 0 - навигационный, стабильный
+    StationClass,           // 1 - станции
+    SOSModern,              // 2 - точный, но ограниченный
+    SOSAntic,               // 3 - древний, направление только
+    Beacon,                 // 4 - стабильный маяк
+    Transponder,            // 5 - 
+    Unknown,                // 6 - аномалия, направление
+    None
 };

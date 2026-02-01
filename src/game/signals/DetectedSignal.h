@@ -7,6 +7,7 @@
 
 // ----------------------debug----------------------
 
+
 struct DetectedSignal
 {
     const WorldSignal* source = nullptr;

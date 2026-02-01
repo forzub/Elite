@@ -19,11 +19,15 @@
 
 #include "src/game/signals/SignalReceiver.h"
 
+#include "world/WorldSignal.h" 
+
 #include "src/render/Camera.h"
 
 #include "src/ui/hud/HudEdgeMapper.h"
 
 #include "core/StateContext.h"
+
+
 
 struct Ship
 {
@@ -54,6 +58,7 @@ struct Ship
 
     // оборудование
     ShipEquipment                           equipment;
+    WorldSignal                             emittedSignal; 
 
     // восприятие связи NPC
     NpcSignalAwareness                      npcAwareness;
@@ -71,7 +76,6 @@ struct Ship
     void update(
         float dt,
         const WorldParams& world,
-        const std::vector<WorldSignal>& signals,
         const std::vector<Planet>& planets,
         const std::vector<InterferenceSource>& interferenceSources
     );

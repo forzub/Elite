@@ -1,10 +1,12 @@
 #pragma once
 
-#include "ReceiverModule.h"
-#include "TransmitterModule.h"
+#include "SignalEmitterModule.h"
+#include "JammerModule.h"
+#include "ReceiverModule.h"   // уже есть
 
 struct ShipEquipment
 {
     ReceiverModule      receiver;
-    TransmitterModule   transmitter;
+    SignalEmitterModule transmitter;
+    JammerModule        jammer;
 };

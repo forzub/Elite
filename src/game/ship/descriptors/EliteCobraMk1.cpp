@@ -40,7 +40,21 @@ const ShipDescriptor& getEliteCobraMk1()
         desc.receiver.sensitivity = 1.0f;
 
         // передатчик (пока не используется)
-        desc.transmitter.txPower = 0.0f;
+        auto& tx = desc.transmitter;
+        tx.txPower   = 1000.0f;
+        tx.baseRange = 2000.0f;
+        tx.activeMode = 1;
+
+        tx.modes = {
+            { SignalType::Transponder },
+            { SignalType::SOSModern },
+            { SignalType::Beacon },
+            { SignalType::Unknown }
+        };
+
+        // постановщик помех
+        desc.jammer.jammingPower = 1.0f;
+        desc.jammer.radius = 1000.0f;
     }
 
     return desc;

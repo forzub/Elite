@@ -37,6 +37,10 @@ add_executable(EliteGame
     src/game/signals/SignalReceiver.cpp
     src/game/signals/WorldLabelSystem.cpp
     src/game/signals/WorldSignalWaves.cpp
+    src/game/signals/WorldSignalSystem.cpp
+    src/game/signals/SignalPattern.cpp
+    src/game/signals/SignalPatternLibrary.cpp
+
     src/game/ship/ShipController.cpp
     src/game/ship/descriptors/EliteCobraMk1.cpp
     src/game/ship/ShipCameraController.cpp

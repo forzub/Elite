@@ -21,6 +21,8 @@
 #include "game/signals/SignalPolicy.h"
 #include "game/signals/WorldLabelSystem.h"
 #include "game/signals/WorldSignalWaves.h"
+#include "game/signals/WorldSignalSystem.h"
+
 #include "game/ship/descriptors/EliteCobraMk1.h"
 #include "game/ship/ShipRole.h"
 
@@ -63,7 +65,23 @@ SpaceState::SpaceState(StateStack& states)
     );
 
 
+    // --- NPC #1 ---
+    m_npcShips.emplace_back();
+    m_npcShips.back().init(
+        ShipRole::NPC,
+        context(),
+        getEliteCobraMk1(),
+        {20.0f, 0.0f, -50.0f}
+    );
 
+    // --- NPC #2 ---
+    m_npcShips.emplace_back();
+    m_npcShips.back().init(
+        ShipRole::NPC,
+        context(),
+        getEliteCobraMk1(),
+        {-70.0f, 50.0f, -70.0f}
+    );
 
 
 
@@ -86,16 +104,16 @@ SpaceState::SpaceState(StateStack& states)
 
 
 
-    // описание физических и сигнальных объектов
-    WorldObject station;
-    station.position = glm::vec3(0.0f, 0.0f, -500.0f);
-    station.label = "LAVE STATION";
-    m_worldObjects.push_back(station);
+    // // описание физических и сигнальных объектов
+    // WorldObject station;
+    // station.position = glm::vec3(0.0f, 0.0f, -500.0f);
+    // station.label = "LAVE STATION";
+    // m_worldObjects.push_back(station);
 
-    m_worldObjects.push_back({
-        glm::vec3(0.0f, 0.0f, -200.0f),
-        "RELAY BEACON 3766"
-    });
+    // m_worldObjects.push_back({
+    //     glm::vec3(0.0f, 0.0f, -200.0f),
+    //     "RELAY BEACON 3766"
+    // });
 
    
     // m_planets.push_back({
@@ -103,70 +121,9 @@ SpaceState::SpaceState(StateStack& states)
     //     6000.0f
     // });
 
-    // m_receiverNoiseFloor = VisualTuning::receiverBaseNoise;
-
-    // тест сигналов 
-    m_worldSignals.clear(); 
     
-        
-    // Планета (высоко над плоскостью, дальняя, всегда стабильная)
-    m_worldSignals.push_back({
-        SignalType::Planets,
-        SignalDisplayClass::Global,
-        { 0.0f, 800.0f, 900.0f }, // 2 км вперед, 800 м вверх
-        300.0f,   // minRange (слышна)
-        1200.0f,   // maxRange
-        true,
-        "Asterion IV"
-    });
 
-    // Станция (ближе, устойчивая)
-    m_worldSignals.push_back({
-        SignalType::StationClass,
-        SignalDisplayClass::Global,
-        { 300.0f, -200.0f, 900.0f }, // 800 м вперед
-        700.0f,
-        1200.0f,
-        true,
-        "Orbital Station"
-    });
-
-    // SOS древний (далеко, нестабильный)
-    m_worldSignals.push_back({
-        SignalType::SOSAntic,
-        SignalDisplayClass::Local,
-        { -200.0f, 0.0f, -900.0f }, // 1.8 км
-        70000.0f,
-        120000.0f,
-        true,
-        "? Unknown"
-    });
-
-    // Пиратский транспондер (средняя дистанция)
-    m_worldSignals.push_back({
-        SignalType::PirateTransponder,
-        SignalDisplayClass::Local,
-        { -150.0f, 0.0f, -900.0f }, // 900 м
-        700.0f,
-        1200.0f,
-        true,
-        "Unknown Vessel"
-    });
-
-
-
-    // -------------------------- test block -----------------------------
-    // m_worldSignals.clear(); 
-
-    m_worldSignals.push_back({
-        SignalType::Beacon,
-        SignalDisplayClass::Local,
-        {0, 0, -70}, 
-        500.0f,   
-        1000.0f,   
-        true,
-        "TEST_SIGNAL"
-    });
+    
 
 
 
@@ -253,14 +210,45 @@ void SpaceState::handleInput()
 void SpaceState::update(float dt)
 {
     LOG("[SpaceState] update begin");
+    
+
+    std::vector<Ship*> ships;
+    ships.push_back(&m_playerShip);
+    for (auto& npc : m_npcShips)
+        ships.push_back(&npc);
+
+    WorldSignalSystem::collectFromShips(
+        ships,
+        m_worldSignals
+    );
+
+    m_playerShip.updateSignals(
+        dt,
+        m_worldSignals,
+        m_planets,
+        m_interferenceSources
+    );
+
+
 
     m_playerShip.update(
+        dt,
+        m_world,
+        m_planets,
+        m_interferenceSources
+    );
+
+
+
+    for (auto& npc : m_npcShips)
+    {
+        npc.update(
             dt,
             m_world,
-            m_worldSignals,
             m_planets,
             m_interferenceSources
         );
+    }
    
 }
 

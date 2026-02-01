@@ -7,6 +7,7 @@
 #include "game/ship/equipment/ReceiverModule.h"
 
 
+
 class Planet;
 class InterferenceSource;
 
@@ -20,7 +21,8 @@ public:
         const std::vector<WorldSignal>& worldSignals,
         const std::vector<Planet>& planets,
         const std::vector<InterferenceSource>& interferenceSources,
-        std::vector<SignalReceptionResult>& outResults
+        std::vector<SignalReceptionResult>& outResults,
+        const Ship* ownerShip
     );
 
     const std::vector<DetectedSignal>& detected() const;

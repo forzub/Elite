@@ -2,6 +2,7 @@
 
 #include "src/input/Input.h"
 #include "core/StateStack.h"
+#include "game/signals/SignalPatternLibrary.h"
 
 
 // -------------------------------------------------
@@ -41,8 +42,29 @@ void Ship::init(
     }
 
     // оборудование
-    equipment.receiver    = desc->receiver;
-    equipment.transmitter = desc->transmitter;
+    equipment.receiver      = desc->receiver;
+    equipment.transmitter   = desc->transmitter;
+    equipment.jammer        = desc->jammer;
+
+    equipment.transmitter.enabled = true;
+    equipment.transmitter.health  = 1.0f;
+
+    equipment.receiver.enabled = true;
+    equipment.receiver.health  = 1.0f;
+
+    auto& tx  = equipment.transmitter;
+    auto& sig = emittedSignal;
+
+    sig.type         = tx.currentMode().type;
+    sig.displayClass = tx.displayClass;
+    sig.position     = transform.position;
+    sig.power        = tx.txPower;
+    sig.maxRange     = tx.baseRange;
+    sig.pattern = &getDefaultSignalPattern(sig.type);
+    sig.patternTime  = 0.0f;
+    sig.enabled      = true;
+    sig.owner        = this;
+    sig.label        = desc->name;
 
 }
 
@@ -142,19 +164,18 @@ void Ship::handleInput()
 void Ship::update(
     float dt,
     const WorldParams& world,
-    const std::vector<WorldSignal>& worldSignals,
     const std::vector<Planet>& planets,
     const std::vector<InterferenceSource>& interferenceSources
 )
 {
     updateControlIntent();        // ① откуда intent
     updatePhysics(dt, world);     // ② движение
-    updateSignals(                // ③ физика сигналов
-        dt,
-        worldSignals,
-        planets,
-        interferenceSources
-    );
+    // updateSignals(
+    //         dt,
+    //         world.signals,   // ← если есть в WorldParams
+    //         planets,
+    //         interferenceSources
+    //     );
     updatePerception(dt);         // ④ осмысление
     updateCamera(dt);             // ⑤ камера (только Player)
 }
@@ -179,14 +200,15 @@ void Ship::updateSignals(
     signalResults.clear();
 
     signalReceiver.update(
-            dt,
-            transform.position,
-            equipment.receiver,
-            worldSignals,
-            planets,
-            interferenceSources,
-            signalResults
-        );
+        dt,
+        transform.position,
+        equipment.receiver,
+        worldSignals,
+        planets,
+        interferenceSources,
+        signalResults,
+        this
+    );
 }
 
 

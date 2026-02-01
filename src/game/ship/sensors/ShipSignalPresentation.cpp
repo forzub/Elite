@@ -4,8 +4,6 @@
 #include "game/signals/WorldSignalWaves.h"
 
 
-
-
 WorldLabel& ShipSignalPresentation::getOrCreateLabel(
     const SignalReceptionResult& result)
 {
@@ -28,6 +26,14 @@ WorldLabel& ShipSignalPresentation::getOrCreateLabel(
 
 
 
+//                       ###              ##
+//                        ##              ##
+//  ##  ##   ######       ##    ####     #####    ####
+//  ##  ##    ##  ##   #####       ##     ##     ##  ##
+//  ##  ##    ##  ##  ##  ##    #####     ##     ######
+//  ##  ##    #####   ##  ##   ##  ##     ## ##  ##
+//   ######   ##       ######   #####      ###    #####
+//           ####
 
 void ShipSignalPresentation::update(
     float dt,

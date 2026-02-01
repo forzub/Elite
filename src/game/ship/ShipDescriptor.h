@@ -10,7 +10,9 @@
 #include "game/ship/ShipHudProfile.h"
 
 #include "game/ship/equipment/ReceiverModule.h"
-#include "game/ship/equipment/TransmitterModule.h"
+#include "game/ship/equipment/SignalEmitterModule.h"
+#include "game/ship/equipment/JammerModule.h"
+
 
 struct ShipDescriptor
 {      
@@ -21,7 +23,8 @@ struct ShipDescriptor
     // ShipSignalProfile  signals;
     // ShipCombatProfile  combat;
     // ShipCargoProfile   cargo;
-    ShipHudProfile      hud;         // HUD / кабина
-    ReceiverModule      receiver;
-    TransmitterModule   transmitter;
+    ShipHudProfile          hud;         // HUD / кабина
+    ReceiverModule          receiver;
+    SignalEmitterModule     transmitter;
+    JammerModule            jammer;
 };

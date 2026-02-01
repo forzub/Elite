@@ -60,8 +60,8 @@ private:
     bool wantsConfirmExit() const override;
     bool onGlobalEscape() override;
     bool isInSafeZone() const;
-
-    std::vector<WorldObject>                    m_worldObjects;             // "world/WorldParams.h"
+    
+    
     std::vector<Planet>                         m_planets;                  // "world/Planet.h"
     // std::vector<SignalReceptionResult>          m_signalResults;            // "world/WorldSignal.h"
     std::vector<WorldSignal>                    m_worldSignals;             // "world/WorldSignal.h"
@@ -89,7 +89,7 @@ private:
     // HudEdgeMapper                           m_hudEdgeMapper;
     // ShipDescriptor                          m_shipDescriptor;
     // ShipInstance                            m_playerShip;            // корабль игрока
-    Ship                                        m_playerShip;
     Camera                                      m_camera;               // камера, следующая за кораблём
-    // std::vector<Ship>                           m_npcShips;          // корабли NPC
+    Ship                                        m_playerShip;
+    std::vector<Ship>                           m_npcShips;             // корабли NPC и remote players
 };

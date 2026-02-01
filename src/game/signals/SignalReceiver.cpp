@@ -28,9 +28,15 @@ static bool isDirectionOnly(SignalType t)
 
 
 
-// ============================================================================================
-//     update
-// ============================================================================================
+//                       ###              ##
+//                        ##              ##
+//  ##  ##   ######       ##    ####     #####    ####
+//  ##  ##    ##  ##   #####       ##     ##     ##  ##
+//  ##  ##    ##  ##  ##  ##    #####     ##     ######
+//  ##  ##    #####   ##  ##   ##  ##     ## ##  ##
+//   ######   ##       ######   #####      ###    #####
+//           ####
+
 
 void SignalReceiver::update(
     float dt,
@@ -39,19 +45,19 @@ void SignalReceiver::update(
     const std::vector<WorldSignal>& worldSignals,
     const std::vector<Planet>& planets,
     const std::vector<InterferenceSource>& interferenceSources,
-    std::vector<SignalReceptionResult>& outResults
+    std::vector<SignalReceptionResult>& outResults,
+    const Ship* ownerShip
 )
 {
-    
-
-    
+       
     outResults.clear();
-
-    // static bool debugPrinted = false;
 
     // === БЛОК 1. Обход всех источников сигналов ===
     for (const WorldSignal& signal : worldSignals)
     {
+
+        if (signal.owner == ownerShip)
+            continue;
 
         if (!signal.enabled)
             continue;
@@ -141,15 +147,6 @@ void SignalReceiver::update(
         }
 
 
-
-        // std::cout
-        // << "[semantic block] semanticState= " << (int)semanticState
-        // << " receivedPower=" << (float)receivedPower
-        // << " totalNoise=" << (float)totalNoise
-        // << std::endl;
-
-
-
         // === БЛОК 8. Формирование результата ===
         SignalReceptionResult result;
         result.source = &signal;
@@ -170,38 +167,10 @@ void SignalReceiver::update(
 
         result.semanticState = semanticState;
 
-        
-        // === БЛОК 9. ЛОГ (временно, для отладки) ===
-
-        // if (debugPrinted)
-        //     return;
-        
-        //     std::cout
-        //     << "[SignalReceiver] receiverPos=("
-        //     << receiverPos.x << ", "
-        //     << receiverPos.y << ", "
-        //     << receiverPos.z << ") "
-        //     << "signalPos=("
-        //     << signal.position.x << ", "
-        //     << signal.position.y << ", "
-        //     << signal.position.z << ")"
-        //     << std::endl;
-
-        // std::cout
-        //     << "[SignalReceiver]"
-        //     << " dist=" << distance
-        //     << " recvPower=" << receivedPower
-        //     << " noise=" << VisualTuning::receiverBaseNoise
-        //     << " interference=" << interferencePower
-        //     << " totalNoise=" << (VisualTuning::receiverBaseNoise + interferencePower)
-        //     << " SNR=" << snr
-        //     << " state=" << (int)semanticState
-        //     << " occluded=" << (occlusionFactor < 1.0f)
-        //     << std::endl;
 
         outResults.push_back(result);
 
-        // debugPrinted = true;
+     
     }
     
 }

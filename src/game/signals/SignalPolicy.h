@@ -11,8 +11,7 @@ inline bool signalAllowsDistance(const WorldSignal& sig, float dist)
         case SignalType::Beacon:
             return true;
 
-        case SignalType::CivilianTransponder:
-        case SignalType::PirateTransponder:
+        case SignalType::Transponder:
         case SignalType::SOSModern:
             return dist < sig.maxRange * 0.6f;
 

@@ -3,6 +3,8 @@
 #include "src/game/equipment/data/receivers.h"
 #include "src/game/equipment/data/transmitters.h"
 #include "src/game/equipment/data/jammers.h"
+#include "src/game/equipment/data/decryptors.h"
+
 #include "src/game/signals/SignalPatternLibrary.h"
 
 const ShipDescriptor& getEliteCobraMk1()
@@ -46,7 +48,10 @@ const ShipDescriptor& getEliteCobraMk1()
         desc.equipment.receiver    = &STANDARD_RECEIVER;
         desc.equipment.transmitter = &WSDR_TX13;
         desc.equipment.jammer      = nullptr; // нет с завода но место под него - есть
+        desc.equipment.decryptor   = &Decryptor_Standard; 
 
+
+        
         // --- СИГНАЛЫ (ВОТ ТУТ ВСЁ РЕШАЕТСЯ) ---
         desc.signalProfile.availableSignals = {
             SignalType::Transponder,

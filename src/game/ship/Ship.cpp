@@ -61,6 +61,9 @@ void Ship::init(
     if (desc->equipment.jammer)
         equipment.jammer.init(*desc->equipment.jammer);
 
+    if (desc->equipment.decryptor)
+        equipment.decryptor.init(*desc->equipment.decryptor);    
+
 
     // 2. базовое состояние
     auto& tx  = equipment.transmitter;

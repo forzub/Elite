@@ -42,6 +42,7 @@ add_executable(EliteGame
     src/game/equipment/data/transmitters.cpp
     src/game/equipment/data/receivers.cpp
     src/game/equipment/data/jammers.cpp
+    src/game/equipment/data/decryptors.cpp
 
     src/game/ship/hud/worldlabels/WorldLabelSystem.cpp
     src/game/ship/hud/worldlabels/WorldSignalWaves.cpp

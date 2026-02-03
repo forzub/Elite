@@ -1,9 +1,9 @@
 #pragma once
 
 #include "src/game/equipment/jammer/JammerModule.h"
-
 #include "src/game/equipment/signalNode/SignalTransmitterModule.h"
 #include "src/game/equipment/signalNode/ReceiverModule.h" 
+#include "src/game/equipment/decryptor/DecryptorModule.h" 
 
 #include "ShipEquipmentDesc.h" 
 
@@ -17,7 +17,7 @@ struct ShipEquipment
     ReceiverModule              receiver;
     SignalTransmitterModule     transmitter;
     JammerModule                jammer;
-    
+    DecryptorModule             decryptor;
 
 
     auto asTuple()

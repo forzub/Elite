@@ -12,6 +12,7 @@
 #include "game/equipment/signalNode/ReceiverModule.h"
 #include "game/equipment/signalNode/SignalTransmitterModule.h"
 #include "game/equipment/jammer/JammerModule.h"
+#include "game/equipment/decryptor/DecryptorModule.h"
 
 
 
@@ -37,13 +38,16 @@ struct ShipDescriptor
     // описание оборудования equipment
     ReceiverModule              receiver;
     SignalTransmitterModule     transmitter;
-    // JammerModule                jammer;
+    JammerModule                jammer;
+    DecryptorModule             decryptor;
 
     struct EquipmentSlots
     {
         const ReceiverDesc*             receiver     = nullptr;
         const SignalTransmitterDesc*    transmitter  = nullptr;
-        const JammerDesc*               jammer        = nullptr;
+        const JammerDesc*               jammer       = nullptr;
+        const DecryptorDesc*            decryptor    = nullptr;
+
     } equipment;
 
     struct SignalProfile

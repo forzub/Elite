@@ -9,5 +9,6 @@ enum class SignalType
     Beacon,                 // 4 - стабильный маяк
     Transponder,            // 5 - 
     Unknown,                // 6 - аномалия, направление
+    Message,
     None
 };

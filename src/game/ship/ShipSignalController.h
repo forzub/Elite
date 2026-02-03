@@ -26,30 +26,30 @@
 
 #include "world/types/SignalType.h"
 #include "world/WorldSignal.h"
-#include "src/game/signals/SignalPattern.h"
-#include "ShipSignalProfile.h"
+
+
+
+
 
 class ShipSignalController
 {
 public:
-    void init(const ShipSignalProfile& profile);
+    void init(WorldSignal& emmitSig);
 
-    // управление извне (Input / AI / UI)
-    void requestSignal(SignalType type);
+    void requestSignal(SignalType type);   // вызывается из input / AI
+    void update(float dt, WorldSignal& sig);
     void disableSignal();
 
-    // вызывается каждый кадр
-    void update(float dt, WorldSignal& outSignal);
-
 private:
-    const ShipSignalProfile*        profile = nullptr;
 
-    SignalType                      requestedSignal = SignalType::None;
-    SignalType                      activeSignal    = SignalType::None;
+    SignalType              activeSignal = SignalType::None;
+    float                   signalControllTimer = 0.0f;
+    std::string             ActiveLabel;
 
-    const SignalPattern*            currentPattern = nullptr;
-    float                           patternTime = 0.0f;
+    
+    // const SignalPattern* getPattern(SignalType type) const;
+    // const SignalPattern*    currentPattern = nullptr;
+    // кастомное переопределения паттернов
+    // std::unordered_map<SignalType, const SignalPattern*>    customPatterns;
 
-    bool                            isSignalAllowed(SignalType type) const;
 };
-

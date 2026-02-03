@@ -62,26 +62,21 @@ void Ship::init(
         equipment.jammer.init(*desc->equipment.jammer);
 
 
-    // 2. контроллер сигналов
-    signalController.init(desc->signalProfile);
-
-
-    // 3. базовое состояние
+    // 2. базовое состояние
     auto& tx  = equipment.transmitter;
     auto& sig = emittedSignal;
 
     sig.position     = transform.position;
-    sig.type         = SignalType::SOSModern;
+    sig.type         = SignalType::Transponder;
     sig.displayClass = tx.displayClass;
     sig.power        = tx.txPower;
     sig.maxRange     = tx.baseRange;
-    sig.pattern = &getDefaultSignalPattern(sig.type);
-    sig.patternTime  = 0.0f;
     sig.enabled      = true;
     sig.owner        = this;
     sig.label        = desc->name;
 
-
+    // 3. контроллер сигналов
+    signalController.init(emittedSignal);
 }
 
 
@@ -239,14 +234,9 @@ void Ship::update(
     updateControlIntent();        // ① откуда intent
     updatePhysics(dt, world);     // ② движение
    
-    // std::cout
-    // << "[Ship] BEFORE update: "
-    // << "enabled=" << emittedSignal.enabled
-    // << " type=" << static_cast<int>(emittedSignal.type)
-    // << std::endl;
-
     // формирование сигнала передатчика
     signalController.update(dt, emittedSignal);
+
 
     if (emittedSignal.enabled)
     {

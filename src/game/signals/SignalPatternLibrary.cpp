@@ -4,8 +4,8 @@ static SignalPattern makeBeacon()
 {
     return {
         {
-            {0.2f, true},
-            {0.8f, false}
+            {2.0f, true},
+            {4.0f, false}
         },
         true
     };
@@ -15,10 +15,10 @@ static SignalPattern makeTransponder()
 {
     return {
         {
-            {0.1f, true},
-            {0.1f, false},
-            {0.1f, true},
-            {0.6f, false}
+            {1.1f, true},
+            {1.1f, false},
+            {1.1f, true},
+            {6.0f, false}
         },
         true
     };
@@ -28,9 +28,17 @@ static SignalPattern makeSOS()
 {
     return {
         {
-            {3.3f, true}, {3.3f, false},
-            {3.3f, true}, {3.3f, false},
-            {3.3f, true}, {3.6f, false},
+            {3.3f, true}, {1.0f, false},
+            {3.3f, true}, {1.0f, false},
+            {3.3f, true}, {1.0f, false},
+
+            {1.3f, true}, {1.0f, false},
+            {1.3f, true}, {1.0f, false},
+            {1.3f, true}, {1.0f, false},
+
+            {3.3f, true}, {1.0f, false},
+            {3.3f, true}, {1.0f, false},
+            {3.3f, true}, {1.0f, false},
         },
         true
     };
@@ -55,12 +63,12 @@ const SignalPattern& getDefaultSignalPattern(SignalType type)
 
     switch (type)
     {
-        case SignalType::Beacon:       return beacon;
-        case SignalType::Transponder:  return transponder;
-        case SignalType::SOSModern:
-        case SignalType::SOSAntic:     return sos;
+        case SignalType::Beacon:        return beacon;
+        case SignalType::Transponder:   return transponder;
+        case SignalType::SOSModern:     return sos;
+        case SignalType::SOSAntic:    
         case SignalType::Planets:
-        case SignalType::StationClass: return constant;
-        default:                       return beacon;
+        case SignalType::StationClass:  return constant;
+        default:                        return beacon;
     }
 }

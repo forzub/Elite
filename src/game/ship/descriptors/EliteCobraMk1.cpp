@@ -54,10 +54,7 @@ const ShipDescriptor& getEliteCobraMk1()
             SignalType::SOSModern
         };
 
-        // опционально: переопределяем паттерн
-        // desc.signalProfile.customPatterns[SignalType::SOSModern] =
-        //     &SignalPatternLibrary::instance().get(SignalType::SOSModern);
-
+        
 
 
 

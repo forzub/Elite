@@ -27,6 +27,8 @@
 #include "game/ship/descriptors/EliteCobraMk1.h"
 #include "game/ship/ShipRole.h"
 
+#include "src/galaxy/GalaxyDatabase.h"
+
 
 #include "ui/ConfirmExitState.h"
 #include "ui/HudRenderer.h"
@@ -49,6 +51,21 @@ SpaceState::SpaceState(StateStack& states)
 
     LOG("[SpaceState] ctor");
 
+    // =======================================================================
+    // galaxy test
+    // =======================================================================
+
+    GalaxyDatabase galaxy;
+
+    galaxy.loadFromDirectory("assets/data/galaxy");
+
+    galaxy.validate();
+
+    std::cout
+    << "Actors:  " << galaxy.actorCount()  << "\n"
+    << "Systems: " << galaxy.systemCount() << "\n"
+    << "Nodes:   " << galaxy.nodeCount()   << "\n"
+    << "Routes:  " << galaxy.routeCount()  << "\n";
     
     // =======================================================================
     // устанавливает ограничение HUD для меток за экраном

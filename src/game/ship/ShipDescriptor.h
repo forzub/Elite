@@ -13,7 +13,7 @@
 #include "game/equipment/signalNode/SignalTransmitterModule.h"
 #include "game/equipment/jammer/JammerModule.h"
 
-#include "ShipSignalProfile.h"
+
 
 
 struct ShipDescriptor
@@ -29,7 +29,7 @@ struct ShipDescriptor
 
     // физические параметры
     ShipParams                  physics;                // лётные характеристики
-   
+                
     
     // HUD / кабина
     ShipHudProfile              hud;                
@@ -46,6 +46,12 @@ struct ShipDescriptor
         const JammerDesc*               jammer        = nullptr;
     } equipment;
 
-    // управление передатчиком 
-    ShipSignalProfile                   signalProfile;
+    struct SignalProfile
+    {
+        std::vector<SignalType> availableSignals;
+    };
+
+    SignalProfile signalProfile;
+
+    
 };

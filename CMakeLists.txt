@@ -5,13 +5,14 @@ project(EliteGame LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
-
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Freetype REQUIRED)
 
+find_package(nlohmann_json REQUIRED)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glad)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 
 add_executable(EliteGame
     src/main.cpp
@@ -54,11 +55,12 @@ add_executable(EliteGame
     src/game/ship/ShipController.cpp
     src/game/ship/ShipCameraController.cpp
     src/game/ship/Ship.cpp
-    src/game/ship/ShipSignalProfile.cpp
     src/game/ship/ShipSignalController.cpp
  
 
     src/game/ship/sensors/ShipSignalPresentation.cpp
+
+    src/galaxy/GalaxyDatabase.cpp
     
 
 
@@ -90,4 +92,5 @@ target_link_libraries(EliteGame PRIVATE
     glfw
     opengl32
     Freetype::Freetype
+    nlohmann_json::nlohmann_json
 )

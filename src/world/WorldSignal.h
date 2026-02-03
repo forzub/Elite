@@ -26,8 +26,7 @@ struct WorldSignal
     bool                    enabled;
     std::string             label;
     const Ship*             owner = nullptr;
-    const SignalPattern*    pattern = nullptr;
-    float                   patternTime = 0.0f;   // текущая фаза
+    
 };
 
 

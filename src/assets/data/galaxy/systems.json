@@ -1,0 +1,453 @@
+{
+  "systems": [
+
+  
+
+    {
+      "id": 0,
+      "name": "Солнце",
+      "position": [0.0, 0.0, 0.0],
+      "distance": 0.0,
+      "kind": 4,
+      "dominantActor": 0,
+      "description": "Колыбель человечества. Политически нейтральная, историческая система.",
+      "tags": ["origin", "historical"]
+    },
+
+  
+
+    {
+      "id": 1,
+      "name": "Тау Кита",
+      "position": [-3.9, -8.58, 2.46],
+      "distance": 9.7,
+      "kind": 0,
+      "dominantActor": 1,
+      "description": "Столичная система Когниума.",
+      "tags": ["capital", "superpower"]
+    },
+    {
+      "id": 2,
+      "name": "Эпсилон Эридана",
+      "position": [-6.38, -2.75, 7.17],
+      "distance": 10.5,
+      "kind": 0,
+      "dominantActor": 2,
+      "description": "Столичная система Синь Хэ.",
+      "tags": ["capital", "superpower"]
+    },
+    {
+      "id": 3,
+      "name": "Эпсилон Индейца",
+      "position": [-4.0, -10.8, -1.2],
+      "distance": 11.8,
+      "kind": 0,
+      "dominantActor": 3,
+      "description": "Столичная система Уджамаа-Джахи.",
+      "tags": ["capital", "superpower"]
+    },
+    {
+      "id": 4,
+      "name": "Вольф 359",
+      "position": [-1.93, 6.24, 3.84],
+      "distance": 7.9,
+      "kind": 0,
+      "dominantActor": 4,
+      "description": "Система-крепость Скьёльдбурга.",
+      "tags": ["capital", "military"]
+    },
+    {
+      "id": 5,
+      "name": "Эта Кассиопеи",
+      "position": [-17.4, 9.1, -8.9],
+      "distance": 21.4,
+      "kind": 0,
+      "dominantActor": 5,
+      "description": "Торговая столица Агор-Прим.",
+      "tags": ["capital", "trade_hub"]
+    },
+    {
+      "id": 6,
+      "name": "61 Лебедя",
+      "position": [-3.5, 10.4, 5.2],
+      "distance": 11.4,
+      "kind": 0,
+      "dominantActor": 6,
+      "description": "Административная столица Проспектората Керн.",
+      "tags": ["capital", "corporate"]
+    },
+    {
+      "id": 7,
+      "name": "Лаланд 21185",
+      "position": [-1.54, 7.48, 1.97],
+      "distance": 8.3,
+      "kind": 0,
+      "dominantActor": 7,
+      "description": "Духовная столица Ильм-аль-Нуджум.",
+      "tags": ["capital", "religious"]
+    },
+    {
+      "id": 8,
+      "name": "Дельта Павлина",
+      "position": [-19.8, 0.1, -7.2],
+      "distance": 21.0,
+      "kind": 0,
+      "dominantActor": 8,
+      "description": "Орбитальная столица Дхарма-Мандалы.",
+      "tags": ["capital", "split_state"]
+    },
+    {
+      "id": 9,
+      "name": "82 Эридана",
+      "position": [-19.3, -5.8, 0.8],
+      "distance": 20.2,
+      "kind": 0,
+      "dominantActor": 9,
+      "description": "Изолированная столица Вердензальба.",
+      "tags": ["capital", "isolation"]
+    },
+    {
+      "id": 10,
+      "name": "GJ 667 C",
+      "position": [-3.1, -8.4, -1.2],
+      "distance": 9.1,
+      "kind": 0,
+      "dominantActor": 10,
+      "description": "Ледяная система Ново-Фиваиды.",
+      "tags": ["capital", "isolation"]
+    },
+    {
+      "id": 11,
+      "name": "GJ 581",
+      "position": [-6.3, -19.2, -3.5],
+      "distance": 20.3,
+      "kind": 0,
+      "dominantActor": 11,
+      "description": "Столичная система Рестауроса.",
+      "tags": ["capital", "stagnation"]
+    },
+    {
+      "id": 12,
+      "name": "HD 69830",
+      "position": [-18.5, -24.2, -8.3],
+      "distance": 31.6,
+      "kind": 0,
+      "dominantActor": 13,
+      "description": "Лесная система Сельта-Верде.",
+      "tags": ["capital", "bioworld"]
+    },
+    {
+      "id": 13,
+      "name": "GJ 876",
+      "position": [-1.1, -10.5, 2.3],
+      "distance": 10.7,
+      "kind": 2,
+      "dominantActor": 0,
+      "description": "Опасный религиозно-культовый узел.",
+      "tags": ["hub", "danger", "cult_activity"]
+    },
+    {
+      "id": 14,
+      "name": "GJ 1061",
+      "position": [-3.7, -7.1, 1.9],
+      "distance": 8.1,
+      "kind": 1,
+      "dominantActor": 1,
+      "description": "Научная колония Когниума.",
+      "tags": ["colony", "research"]
+    },
+
+   
+
+    {
+      "id": 15,
+      "name": "YZ Кита",
+      "position": [-4.9, -9.1, 1.2],
+      "distance": 10.4,
+      "kind": 1,
+      "dominantActor": 1,
+      "description": "Инженерно-добывающая колония Когниума.",
+      "tags": ["colony", "industry"]
+    },
+    {
+      "id": 16,
+      "name": "Глизе 687",
+      "position": [-1.5, 9.5, 0.8],
+      "distance": 9.6,
+      "kind": 1,
+      "dominantActor": 2,
+      "description": "Сельскохозяйственная колония Синь Хэ.",
+      "tags": ["colony", "agriculture"]
+    },
+    {
+      "id": 17,
+      "name": "Глизе 674",
+      "position": [-4.3, -10.9, 1.1],
+      "distance": 11.7,
+      "kind": 1,
+      "dominantActor": 2,
+      "description": "Пенитенциарная колония Синь Хэ.",
+      "tags": ["colony", "prison"]
+    },
+    {
+      "id": 18,
+      "name": "Глизе 832",
+      "position": [-1.1, -15.8, -1.0],
+      "distance": 16.1,
+      "kind": 1,
+      "dominantActor": 3,
+      "description": "Колония Уджамаа, зона конфликтов интересов.",
+      "tags": ["colony", "hotspot"]
+    },
+    {
+      "id": 19,
+      "name": "Глизе 445",
+      "position": [-1.9, -11.0, -9.3],
+      "distance": 14.2,
+      "kind": 1,
+      "dominantActor": 3,
+      "description": "Ресурсная колония Уджамаа.",
+      "tags": ["colony", "extraction"]
+    },
+    {
+      "id": 20,
+      "name": "Глизе 785",
+      "position": [-22.5, -35.0, -12.5],
+      "distance": 43.5,
+      "kind": 1,
+      "dominantActor": 6,
+      "description": "Удалённая колония Проспектората Керн.",
+      "tags": ["colony", "remote"]
+    },
+    {
+      "id": 21,
+      "name": "Проксима Центавра",
+      "position": [-1.5, -1.7, -3.9],
+      "distance": 4.2,
+      "kind": 1,
+      "dominantActor": 7,
+      "description": "Научно-миссионерская база Ильм-аль-Нуджум.",
+      "tags": ["colony", "research"]
+    },
+
+   
+
+    {
+      "id": 22,
+      "name": "Глизе 86",
+      "position": [-5.2, -9.8, 1.1],
+      "distance": 11.2,
+      "kind": 2,
+      "dominantActor": 5,
+      "description": "Крупный торговый хаб Агор-Прим.",
+      "tags": ["hub", "trade"]
+    },
+    {
+      "id": 23,
+      "name": "Глизе 15",
+      "position": [-2.4, 8.9, 4.1],
+      "distance": 10.0,
+      "kind": 2,
+      "dominantActor": 6,
+      "description": "Корпоративный логистический узел.",
+      "tags": ["hub", "logistics"]
+    },
+    {
+      "id": 24,
+      "name": "Луйтен 726-8",
+      "position": [1.3, 8.1, -3.4],
+      "distance": 8.7,
+      "kind": 2,
+      "dominantActor": 4,
+      "description": "Военный транзитный узел Скьёльдбурга.",
+      "tags": ["hub", "military"]
+    },
+    {
+      "id": 25,
+      "name": "GJ 273",
+      "position": [-3.8, 6.9, -1.2],
+      "distance": 7.8,
+      "kind": 2,
+      "dominantActor": 7,
+      "description": "Научно-торговый перекрёсток.",
+      "tags": ["hub", "science"]
+    },
+    {
+      "id": 26,
+      "name": "HD 40307",
+      "position": [-12.2, -8.7, -4.5],
+      "distance": 15.0,
+      "kind": 2,
+      "dominantActor": 2,
+      "description": "Региональный транспортный узел.",
+      "tags": ["hub", "regional"]
+    },
+    {
+      "id": 27,
+      "name": "GJ 832",
+      "position": [-2.8, -16.1, -0.9],
+      "distance": 16.3,
+      "kind": 2,
+      "dominantActor": 3,
+      "description": "Колониальный узел Уджамаа.",
+      "tags": ["hub", "colonial"]
+    },
+    {
+      "id": 28,
+      "name": "GJ 1002",
+      "position": [3.4, 9.9, 2.1],
+      "distance": 10.7,
+      "kind": 2,
+      "dominantActor": 1,
+      "description": "Вспомогательный хаб Когниума.",
+      "tags": ["hub", "support"]
+    },
+    {
+      "id": 29,
+      "name": "Ross 128",
+      "position": [-2.1, -8.2, 0.3],
+      "distance": 11.0,
+      "kind": 2,
+      "dominantActor": 5,
+      "description": "Свободный торговый перекрёсток.",
+      "tags": ["hub", "free_trade"]
+    },
+    {
+      "id": 30,
+      "name": "Kapteyn's Star",
+      "position": [8.9, -2.3, 1.5],
+      "distance": 12.8,
+      "kind": 2,
+      "dominantActor": 0,
+      "description": "Нейтральный транзитный узел.",
+      "tags": ["hub", "neutral"]
+    },
+    {
+      "id": 31,
+      "name": "Teegarden's Star",
+      "position": [3.6, -9.7, -2.1],
+      "distance": 12.5,
+      "kind": 2,
+      "dominantActor": 9,
+      "description": "Изолированный биотехнический хаб.",
+      "tags": ["hub", "biotech"]
+    },
+
+    
+
+    {
+      "id": 32,
+      "name": "FAR-REACH-1",
+      "position": [-28.0, 42.0, -19.0],
+      "distance": 53.1,
+      "kind": 5,
+      "dominantActor": 0,
+      "description": "Цель экспедиции. Корабль считается пропавшим.",
+      "tags": ["target", "lost_ship"]
+    },
+    {
+      "id": 33,
+      "name": "LEGACY-1",
+      "position": [-35.0, 28.0, -14.0],
+      "distance": 47.2,
+      "kind": 5,
+      "dominantActor": 0,
+      "description": "Сигналы древнего корабля.",
+      "tags": ["target", "ancient"]
+    },
+    {
+      "id": 34,
+      "name": "VOID-WALKER-1",
+      "position": [-41.0, 31.0, 22.0],
+      "distance": 56.0,
+      "kind": 5,
+      "dominantActor": 0,
+      "description": "Неизвестный источник сигналов.",
+      "tags": ["target", "mystery"]
+    },
+    {
+      "id": 35,
+      "name": "DEEP-SIGNAL",
+      "position": [-48.0, 12.0, 18.0],
+      "distance": 52.5,
+      "kind": 5,
+      "dominantActor": 14,
+      "description": "Чуждый биосигнал.",
+      "tags": ["alien", "signal"]
+    },
+    {
+      "id": 36,
+      "name": "BLACK-FRAME",
+      "position": [-55.0, 18.0, 26.0],
+      "distance": 63.0,
+      "kind": 5,
+      "dominantActor": 14,
+      "description": "Аномальный объект неизвестной геометрии.",
+      "tags": ["anomaly", "alien"]
+    },
+    {
+      "id": 37,
+      "name": "DEAD-ROUTE",
+      "position": [-60.0, 5.0, 30.0],
+      "distance": 67.0,
+      "kind": 5,
+      "dominantActor": 0,
+      "description": "Разорванный маршрут, навигация невозможна.",
+      "tags": ["anomaly", "navigation_failure"]
+    },
+    {
+      "id": 38,
+      "name": "VOID-ZONE",
+      "position": [-50.0, 15.0, 30.0],
+      "distance": 59.2,
+      "kind": 5,
+      "dominantActor": 14,
+      "description": "Карантинная аномальная область.",
+      "tags": ["anomaly", "alien", "quarantine"]
+    },
+
+    {
+  "id": 39,
+  "name": "Хаб «Врата Пустоты»",
+  "position": [-15.0, -20.0, -5.0],
+  "kind": 4,
+  "dominantActor": 0
+  },
+  {
+    "id": 40,
+    "name": "Хаб «Дальний Рубеж-2»",
+    "position": [10.0, -25.0, -10.0],
+    "kind": 4,
+    "dominantActor": 0
+  },
+  {
+    "id": 41,
+    "name": "Хаб «Северный Путь»",
+    "position": [-25.0, 10.0, -12.0],
+    "kind": 4,
+    "dominantActor": 0
+  },
+  {
+    "id": 42,
+    "name": "Хаб «Южный Крест»",
+    "position": [-10.0, -30.0, 0.0],
+    "kind": 4,
+    "dominantActor": 0
+  },
+  {
+    "id": 43,
+    "name": "Хаб «Восточный Фронтир»",
+    "position": [20.0, -15.0, 8.0],
+    "kind": 4,
+    "dominantActor": 0
+  },
+  {
+    "id": 44,
+    "name": "Хаб «Западная Глубина»",
+    "position": [-35.0, 5.0, -8.0],
+    "kind": 4,
+    "dominantActor": 0
+  }
+
+  ]
+}

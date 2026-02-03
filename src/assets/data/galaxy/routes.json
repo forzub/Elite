@@ -1,0 +1,147 @@
+{
+  "routes": [
+
+    
+
+    { "id": 1,  "a": 1,  "b": 22, "distance": 0.0, "restricted": false, "dangerLevel": 0.1,
+      "description": "Технократический коридор: Тау Кита ↔ Глизе 86",
+      "tags": ["trade", "high_frequency", "technocratic"] },
+
+    { "id": 2,  "a": 22, "b": 25, "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
+      "description": "Технократический коридор: Глизе 86 ↔ Глизе 783",
+      "tags": ["trade", "hub"] },
+
+    { "id": 3,  "a": 25, "b": 2,  "distance": 0.0, "restricted": false, "dangerLevel": 0.1,
+      "description": "Технократический коридор: Глизе 783 ↔ Эпсилон Эридана",
+      "tags": ["trade", "high_frequency"] },
+
+    { "id": 4,  "a": 22, "b": 14, "distance": 0.0, "restricted": false, "dangerLevel": 0.1,
+      "description": "Ответвление к научной базе Когниума (GJ 1061)",
+      "tags": ["research"] },
+
+    { "id": 5,  "a": 22, "b": 15, "distance": 0.0, "restricted": false, "dangerLevel": 0.1,
+      "description": "Ответвление к инженерному полигону Когниума (YZ Кита)",
+      "tags": ["industry"] },
+
+    { "id": 6,  "a": 25, "b": 26, "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
+      "description": "Северное ответвление: Глизе 783 ↔ Глизе 725",
+      "tags": ["north", "transit"] },
+
+  
+
+    { "id": 7,  "a": 3,  "b": 22, "distance": 0.0, "restricted": false, "dangerLevel": 0.3,
+      "description": "Демографический фронт: Эпсилон Индейца ↔ Глизе 86",
+      "tags": ["migration", "supply"] },
+
+    { "id": 8,  "a": 22, "b": 18, "distance": 0.0, "restricted": false, "dangerLevel": 0.5,
+      "description": "Демографический фронт: Глизе 86 ↔ Глизе 832 (Ньянга)",
+      "tags": ["frontier", "conflict_zone"] },
+
+    { "id": 9,  "a": 18, "b": 29, "distance": 0.0, "restricted": false, "dangerLevel": 0.4,
+      "description": "Южное ответвление Ньянги",
+      "tags": ["frontier"] },
+
+    { "id": 10, "a": 29, "b": 19, "distance": 0.0, "restricted": false, "dangerLevel": 0.5,
+      "description": "Связь Ньянга ↔ Мото",
+      "tags": ["resource", "danger"] },
+
+   
+
+    { "id": 11, "a": 4,  "b": 26, "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
+      "description": "Северный альянс: Вольф 359 ↔ Глизе 725",
+      "tags": ["military", "alliance"] },
+
+    { "id": 12, "a": 26, "b": 25, "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
+      "description": "Северный альянс: Глизе 725 ↔ Глизе 783",
+      "tags": ["military", "hub"] },
+
+    { "id": 13, "a": 25, "b": 28, "distance": 0.0, "restricted": false, "dangerLevel": 0.3,
+      "description": "Северный альянс: Глизе 783 ↔ Глизе 628",
+      "tags": ["trade", "north"] },
+
+    { "id": 14, "a": 28, "b": 6,  "distance": 0.0, "restricted": false, "dangerLevel": 0.3,
+      "description": "Северный альянс: Глизе 628 ↔ 61 Лебедя",
+      "tags": ["trade", "corporate"] },
+
+    { "id": 15, "a": 28, "b": 16, "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
+      "description": "Связь к колонии Синь Хэ (Глизе 687)",
+      "tags": ["colony"] },
+
+    { "id": 16, "a": 7,  "b": 26, "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
+      "description": "Доступ Ильм-аль-Нуджум к Северному альянсу",
+      "tags": ["religious", "science"] },
+
+    
+
+    { "id": 17, "a": 5,  "b": 23, "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
+      "description": "Западное кольцо: Агора ↔ HD 20794",
+      "tags": ["trade"] },
+
+    { "id": 18, "a": 23, "b": 9,  "distance": 0.0, "restricted": true,  "dangerLevel": 0.3,
+      "description": "Доступ к Вердензальбу (по разрешению)",
+      "tags": ["restricted", "isolation"] },
+
+    { "id": 19, "a": 5,  "b": 8,  "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
+      "description": "Ответвление к Дхарма-Мандале",
+      "tags": ["trade", "religious"] },
+
+    { "id": 20, "a": 23, "b": 24, "distance": 0.0, "restricted": false, "dangerLevel": 0.3,
+      "description": "Южное продолжение Западного кольца",
+      "tags": ["trade"] },
+
+    { "id": 21, "a": 24, "b": 11, "distance": 0.0, "restricted": false, "dangerLevel": 0.4,
+      "description": "Доступ к Рестауросу",
+      "tags": ["trade", "stagnation"] },
+
+   
+
+    { "id": 22, "a": 6,  "b": 28, "distance": 0.0, "restricted": false, "dangerLevel": 0.4,
+      "description": "Дальний путь: 61 Лебедя ↔ Глизе 628",
+      "tags": ["long_route"] },
+
+    { "id": 23, "a": 25, "b": 24, "distance": 0.0, "restricted": false, "dangerLevel": 0.5,
+      "description": "Дальний путь: Глизе 783 ↔ Глизе 570",
+      "tags": ["pirates"] },
+
+    { "id": 24, "a": 24, "b": 30, "distance": 0.0, "restricted": false, "dangerLevel": 0.6,
+      "description": "Дальний путь: Глизе 570 ↔ Глизе 682",
+      "tags": ["pirates"] },
+
+    { "id": 25, "a": 30, "b": 31, "distance": 0.0, "restricted": false, "dangerLevel": 0.6,
+      "description": "Дальний путь: Глизе 682 ↔ Глизе 754",
+      "tags": ["pirates"] },
+
+    { "id": 26, "a": 31, "b": 20, "distance": 0.0, "restricted": false, "dangerLevel": 0.7,
+      "description": "Подход к Керн-Прайм",
+      "tags": ["pirates", "corporate"] },
+
+   
+
+    { "id": 27, "a": 0,  "b": 25, "distance": 0.0, "restricted": false, "dangerLevel": 0.1,
+      "description": "Исторический маршрут от Солнца",
+      "tags": ["core"] },
+
+    { "id": 28, "a": 0,  "b": 21, "distance": 0.0, "restricted": false, "dangerLevel": 0.2,
+      "description": "Исследовательский маршрут к Проксиме Центавра",
+      "tags": ["research"] },
+
+    { "id": 29, "a": 25, "b": 39, "distance": 0.0, "restricted": false, "dangerLevel": 0.4,
+      "description": "Выход к Хабу «Врата Пустоты»",
+      "tags": ["deep_space"] },
+
+    { "id": 30, "a": 39, "b": 32, "distance": 0.0, "restricted": false, "dangerLevel": 0.6,
+      "description": "Экспедиция FAR-REACH-1 к LHS 1140",
+      "tags": ["far_reach"] },
+    {
+        "id": 31,
+        "a": 18,
+        "b": 29,
+        "distance": 0.0,
+        "restricted": false,
+        "dangerLevel": 0.4,
+        "description": "Южное ответвление: Ньянга ↔ Глизе 229",
+        "tags": ["frontier", "conflict_zone"]
+        }
+
+  ]
+}

@@ -1,73 +1,85 @@
 #include "ShipSignalController.h"
-#include <algorithm>
 
 #include <iostream>
 
 
-//    ##                ##       ##
-//                               ##
-//   ###     #####     ###      #####
-//    ##     ##  ##     ##       ##
-//    ##     ##  ##     ##       ##
-//    ##     ##  ##     ##       ## ##
-//   ####    ##  ##    ####       ###
 
-void ShipSignalController::init(const ShipSignalProfile& p)
+// //    ##                ##       ##
+// //                               ##
+// //   ###     #####     ###      #####
+// //    ##     ##  ##     ##       ##
+// //    ##     ##  ##     ##       ##
+// //    ##     ##  ##     ##       ## ##
+// //   ####    ##  ##    ####       ###
+
+void ShipSignalController::init(WorldSignal& sig)
 {
-    profile = &p;
+    // // Теперь можем обращаться к дескриптору через owner
+
+
+
+    activeSignal = sig.type;
+    // ActiveLabel = sig.owner->desc->name;
+    signalControllTimer = 0.0f;
 }
 
 
 
 
-//    ##                                  ##                                 ###
-//                                                                            ##
-//   ###      #####             #####    ###      ### ##  #####     ####      ##      #####
-//    ##     ##                ##         ##     ##  ##   ##  ##       ##     ##     ##
-//    ##      #####             #####     ##     ##  ##   ##  ##    #####     ##      #####
-//    ##          ##                ##    ##      #####   ##  ##   ##  ##     ##          ##
-//   ####    ######            ######    ####        ##   ##  ##    #####    ####    ######
-//                                               #####
-bool ShipSignalController::isSignalAllowed(SignalType type) const
-{
-    return std::find(
-        profile->availableSignals.begin(),
-        profile->availableSignals.end(),
-        type
-    ) != profile->availableSignals.end();
-}
+// //    ##                                  ##                                 ###
+// //                                                                            ##
+// //   ###      #####             #####    ###      ### ##  #####     ####      ##      #####
+// //    ##     ##                ##         ##     ##  ##   ##  ##       ##     ##     ##
+// //    ##      #####             #####     ##     ##  ##   ##  ##    #####     ##      #####
+// //    ##          ##                ##    ##      #####   ##  ##   ##  ##     ##          ##
+// //   ####    ######            ######    ####        ##   ##  ##    #####    ####    ######
+// //                                               #####
+// bool ShipSignalController::isSignalAllowed(SignalType type) const
+// {
+//     return std::find(
+//         profile->availableSignals.begin(),
+//         profile->availableSignals.end(),
+//         type
+//     ) != profile->availableSignals.end();
+// }
 
 
 
-//                                                          ##
-//                                                          ##
-//  ######    ####     ######  ##  ##    ####     #####    #####
-//   ##  ##  ##  ##   ##  ##   ##  ##   ##  ##   ##         ##
-//   ##      ######   ##  ##   ##  ##   ######    #####     ##
-//   ##      ##        #####   ##  ##   ##            ##    ## ##
-//  ####      #####       ##    ######   #####   ######      ###
-//                       ####
+// //                                                          ##
+// //                                                          ##
+// //  ######    ####     ######  ##  ##    ####     #####    #####
+// //   ##  ##  ##  ##   ##  ##   ##  ##   ##  ##   ##         ##
+// //   ##      ######   ##  ##   ##  ##   ######    #####     ##
+// //   ##      ##        #####   ##  ##   ##            ##    ## ##
+// //  ####      #####       ##    ######   #####   ######      ###
+// //                       ####
 void ShipSignalController::requestSignal(SignalType type)
 {
-    if (type == SignalType::None || isSignalAllowed(type))
-        requestedSignal = type;
+    if (type == activeSignal)
+        return;
+
+    activeSignal = type;
+    
+
+    signalControllTimer = 0.0f;
 }
 
 
 
 
 
-//     ###     ##                       ###       ###
-//      ##                               ##        ##
-//      ##    ###      #####    ####     ##        ##      ####
-//   #####     ##     ##           ##    #####     ##     ##  ##
-//  ##  ##     ##      #####    #####    ##  ##    ##     ######
-//  ##  ##     ##          ##  ##  ##    ##  ##    ##     ##
-//   ######   ####    ######    #####   ######    ####     #####
+// //     ###     ##                       ###       ###
+// //      ##                               ##        ##
+// //      ##    ###      #####    ####     ##        ##      ####
+// //   #####     ##     ##           ##    #####     ##     ##  ##
+// //  ##  ##     ##      #####    #####    ##  ##    ##     ######
+// //  ##  ##     ##          ##  ##  ##    ##  ##    ##     ##
+// //   ######   ####    ######    #####   ######    ####     #####
 
 void ShipSignalController::disableSignal()
 {
-    requestedSignal = SignalType::None;
+    activeSignal = SignalType::None;
+    
 }
 
 
@@ -75,44 +87,41 @@ void ShipSignalController::disableSignal()
 
 
 
-//                       ###              ##
-//                        ##              ##
-//  ##  ##   ######       ##    ####     #####    ####
-//  ##  ##    ##  ##   #####       ##     ##     ##  ##
-//  ##  ##    ##  ##  ##  ##    #####     ##     ######
-//  ##  ##    #####   ##  ##   ##  ##     ## ##  ##
-//   ######   ##       ######   #####      ###    #####
-//           ####
+// //                       ###              ##
+// //                        ##              ##
+// //  ##  ##   ######       ##    ####     #####    ####
+// //  ##  ##    ##  ##   #####       ##     ##     ##  ##
+// //  ##  ##    ##  ##  ##  ##    #####     ##     ######
+// //  ##  ##    #####   ##  ##   ##  ##     ## ##  ##
+// //   ######   ##       ######   #####      ###    #####
+// //           ####
 void ShipSignalController::update(float dt, WorldSignal& sig)
 {
 
-    
-    if (requestedSignal != activeSignal)
-    {
-        activeSignal = requestedSignal;
-        patternTime = 0.0f;
-
-        if (activeSignal != SignalType::None)
-            currentPattern = profile->getPattern(activeSignal);
-        else
-            currentPattern = nullptr;
-    }
-
-    // if (activeSignal == SignalType::None || !currentPattern)
     if (activeSignal == SignalType::None)
     {
         sig.enabled = false;
+        sig.type = SignalType::None;
         return;
     }
 
-    patternTime += dt;
-    // bool phaseActive = currentPattern->isActive(patternTime);
-    // sig.enabled = phaseActive;
+    // 
 
-    sig.type    = activeSignal;
-    
-    
+    signalControllTimer += dt;
+
+    // пока без реальной модуляции
     sig.enabled = true;
-    // sig.enabled = true;
-    // sig.pattern = currentPattern;
+    sig.type = activeSignal;
+    
 }
+
+
+
+
+
+    // std::cout
+    // << "[ShipSignalController::update] inside: "
+    // << "enabled=" << sig.enabled
+    // << " SignalType=" << static_cast<int>(sig.type)
+    // << " activeSignal=" << static_cast<int>(activeSignal)
+    // << std::endl;

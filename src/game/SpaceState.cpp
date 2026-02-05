@@ -24,7 +24,6 @@
 #include "game/ship/hud/worldlabels/WorldSignalWaves.h"
 #include "game/equipment/signalNode/processing/WorldSignalTxSystem.h"
 
-#include "game/ship/descriptors/EliteCobraMk1.h"
 #include "game/ship/ShipRole.h"
 
 #include "src/galaxy/GalaxyDatabase.h"
@@ -32,6 +31,8 @@
 
 #include "ui/ConfirmExitState.h"
 #include "ui/HudRenderer.h"
+
+#include "src/game/ship/descriptors/EliteCobraMk1.h"
 
 
 
@@ -74,13 +75,20 @@ SpaceState::SpaceState(StateStack& states)
 
     
     // начальная позиция
-    // m_playerShip.transform.position = {0.0f, 5.0f, 10.0f};
+    // m_playerShip
+    ShipIdentity playerIdentity = {
+        .shipType = "cobra MK1",
+        .shipName = "Jeraya"
+    };
+
     m_playerShip.init(
         context(),
         ShipRole::Player,
-        getEliteCobraMk1(),
-        {0.0f, 5.0f, 10.0f}
+        EliteCobraMk1::EliteCobraMk1Descriptor(),
+        {0.0f, 5.0f, 10.0f},
+        &playerIdentity
     );
+    
 
 
     // --- NPC #1 ---
@@ -88,8 +96,9 @@ SpaceState::SpaceState(StateStack& states)
     m_npcShips.back().init(
         context(),
         ShipRole::NPC,
-        getEliteCobraMk1(),
-        {20.0f, 0.0f, -50.0f}
+        EliteCobraMk1::EliteCobraMk1Descriptor(),
+        {20.0f, 0.0f, -50.0f},
+        nullptr
     );
 
     // --- NPC #2 ---
@@ -97,8 +106,9 @@ SpaceState::SpaceState(StateStack& states)
     m_npcShips.back().init(
         context(),
         ShipRole::NPC,
-        getEliteCobraMk1(),
-        {-70.0f, 50.0f, -70.0f}
+        EliteCobraMk1::EliteCobraMk1Descriptor(),
+        {-70.0f, 50.0f, -70.0f},
+        nullptr
     );
 
 

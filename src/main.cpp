@@ -1,10 +1,15 @@
 #include <iostream>
 #include "core/Application.h"
 
+#include <clocale>
+
+
 int main()
 {
+
     try
     {
+        std::setlocale(LC_ALL, "");
         Application app;
         app.run();
     }

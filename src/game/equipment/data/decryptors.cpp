@@ -1,7 +1,8 @@
-#include "decryptors.h"
+#include "src/game/equipment/data/decryptors.h"
 
-const DecryptorDesc Decryptor_Standard =
+const DecryptorDesc DECRYPTOR_STANDARD =
 {   
+    
     .base = {
         "CRYPTONEXUS/2",
         "GalCom",
@@ -11,7 +12,7 @@ const DecryptorDesc Decryptor_Standard =
     .slotCount = 2
 };
 
-const DecryptorDesc Decryptor_Advanced =
+const DecryptorDesc DECRYPTOR_ADVANCED =
 {
     .base = {
         "AEGIS-CRYPT 4C-DeLuxe",
@@ -22,7 +23,7 @@ const DecryptorDesc Decryptor_Advanced =
     .slotCount = 4
 };
 
-const DecryptorDesc Decryptor_Military =
+const DecryptorDesc DECRYPTOR_MILITARY =
 {
     .base = {
         "MIL-F.L.A.P.P.E.R. 8",
@@ -33,7 +34,7 @@ const DecryptorDesc Decryptor_Military =
     .slotCount = 8
 };
 
-const DecryptorDesc Decryptor_Quest =
+const DecryptorDesc DECRYPTOR_QUEST =
 {
     .base = {
         "COBBLER/16",

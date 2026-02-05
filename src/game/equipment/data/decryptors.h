@@ -2,7 +2,8 @@
 
 #include "src/game/equipment/decryptor/DecryptorDesc.h"
 
-extern const DecryptorDesc Decryptor_Standard;
-extern const DecryptorDesc Decryptor_Advanced;
-extern const DecryptorDesc Decryptor_Military;
-extern const DecryptorDesc Decryptor_Quest;
+
+extern const DecryptorDesc DECRYPTOR_STANDARD;
+extern const DecryptorDesc DECRYPTOR_ADVANCED; 
+extern const DecryptorDesc DECRYPTOR_MILITARY; 
+extern const DecryptorDesc DECRYPTOR_QUEST;

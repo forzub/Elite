@@ -10,5 +10,6 @@ enum class SignalType
     Transponder,            // 5 - 
     Unknown,                // 6 - аномалия, направление
     Message,
+    Silence,
     None
 };

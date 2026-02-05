@@ -1,7 +1,10 @@
 // game/ship/Ship.h
 #pragma once
+#include <vector>
 
-#pragma once
+
+#include "game/ship/CargoBay.h"
+#include "game/ship/ShipInventory.h"
 
 #include "src/game/ship/ShipCameraController.h"
 #include "src/game/ship/ShipDescriptor.h"
@@ -18,6 +21,9 @@
 #include "src/game/equipment/ShipEquipmentDesc.h"
 
 
+// #include "game/equipment/decryptor/DecryptorModule.h"
+#include "src/game/equipment/decryptor/DecryptorDesc.h"
+
 #include "game/ship/sensors/ShipSignalPresentation.h"
 #include "game/ship/sensors/NpcSignalAwareness.h"
 
@@ -30,6 +36,31 @@
 #include "src/ui/hud/HudEdgeMapper.h"
 
 #include "core/StateContext.h"
+#include "game/core/QuantitySlot.h"
+
+
+
+
+struct ShipSystemState
+{
+    QuantitySlot reactor;
+    QuantitySlot engine;
+    QuantitySlot radar;
+    QuantitySlot weapon;
+    QuantitySlot decryptor;
+    QuantitySlot jammer;
+    QuantitySlot dockingComputer;
+    QuantitySlot receiver;
+    QuantitySlot transmitter;
+    QuantitySlot utility;
+};
+
+struct ShipDockState
+{
+    QuantitySlot fighter;
+    QuantitySlot shuttle;
+    QuantitySlot drone;
+};
 
 // главный класс описания корабля, общий для всех летающих
 // описание находится в папке description
@@ -40,26 +71,30 @@ struct Ship
     // ShipRole role = ShipRole::Player;
     ShipRole                                role = ShipRole::NPC;
 
+    // персональные данные корабля. тип, имя и т.п.
+    ShipIdentity                            identity;
 
     // --- описание типа ---
     const ShipDescriptor*                   desc = nullptr;
 
+    // ───────────────
+    // Хранилища
+    // ───────────────
+    CargoBay        cargo;
+    ShipInventory  inventory;
 
     // --- состояние ---
-    ShipTransform                           transform;    // - перемещение
-    ShipControlState                        control;   // - управление
-
-
+    ShipTransform                           transform;          // - перемещение
+    ShipControlState                        control;            // - управление
+    
     // --- подсистемы ---
-    ShipController                          controller;        // - функции движения
-    Camera                                  camera;            // камера, следующая за кораблём
-    ShipCameraController                    cameraController;  // - контроль камеры
-
-
+    ShipController                          controller;         // - функции движения
+    Camera                                  camera;             // камера, следующая за кораблём
+    ShipCameraController                    cameraController;   // - контроль камеры
+    
     // --- HUD ---
     HudEdgeMapper                           hudEdgeMapper;
     ShipHudProfile                          hudProfile;
-
 
     // работа со связью
     // RX
@@ -69,21 +104,23 @@ struct Ship
     // TX
     WorldSignal                             emittedSignal; 
     ShipSignalController                    signalController;
-
+    
     // оборудование
     ShipEquipment                           equipment;
-
+    
+    ShipSystemState                         systems;
+    ShipDockState                           docks;
 
     // восприятие связи NPC
     NpcSignalAwareness                      npcAwareness;
-
 
     // --- lifecycle ---
     void init(
         StateContext& context, 
         ShipRole role,
         const ShipDescriptor& descriptor, 
-        glm::vec3 position
+        glm::vec3 position,
+        const ShipIdentity* customIdentity = nullptr
     );
     
     void handleInput();
@@ -109,6 +146,46 @@ struct Ship
     );
 
     const WorldSignal& getEmittedSignal() const { return emittedSignal; }
+
+
+    // ───────────────
+    // Инициализация
+    // ───────────────
+    void initShipSlotsFromDescriptor(const ShipDescriptor& descriptor);
+    // decryptor API
+    bool installDecryptor(const DecryptorDesc& desc);
+    bool removeDecryptor();
+    bool hasDecryptor() const;
+
+    // ───────────────
+    // Cargo API
+    // ───────────────
+    int  freeCargoMass() const;
+    int  freeCargoVolume() const;
+    bool addCargo(int mass, int volume);
+    bool removeCargo(int mass, int volume);
+
+
+
+    // ───────────────
+    // Инициализация оборудования
+    // ───────────────   
+    void installDefaultEquipment(const ShipDescriptor& descriptor);
+
+    template<typename ModuleType, typename DescType>
+    bool installEquipment(
+        const char* equipmentName,
+        QuantitySlot& slot,
+        ModuleType& module,
+        const DescType& desc
+    );
+    
+    template<typename ModuleType>
+    bool removeEquipment(
+        const char* equipmentName,
+        QuantitySlot& slot,
+        ModuleType& module
+    );
 
 };
 

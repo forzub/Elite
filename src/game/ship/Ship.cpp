@@ -6,6 +6,8 @@
 #include "src/game/signals/SignalPatternLibrary.h"
 #include "src/game/equipment/EquipmentSlot.h"
 
+#include "src/game/ship/descriptors/EliteCobraMk1.h"
+
 
 
 
@@ -22,7 +24,8 @@ void Ship::init(
     StateContext& context, 
     ShipRole inRole,
     const ShipDescriptor& descriptor, 
-    glm::vec3 position
+    glm::vec3 position,
+    const ShipIdentity* customIdentity
 )
 {
     // устанавливаем роль корабля - ИГРОК / НПС
@@ -49,20 +52,20 @@ void Ship::init(
             vp.height
         );
     }
+    
+    // собираем корабль
+    // Устанавливаем оборудование по умолчанию из дескриптора
+    initShipSlotsFromDescriptor(descriptor);
+    installDefaultEquipment(descriptor);
 
-
-    // оборудование
-    if (desc->equipment.receiver)
-        equipment.receiver.init(*desc->equipment.receiver);
-
-    if (desc->equipment.transmitter)
-        equipment.transmitter.init(*desc->equipment.transmitter);
-
-    if (desc->equipment.jammer)
-        equipment.jammer.init(*desc->equipment.jammer);
-
-    if (desc->equipment.decryptor)
-        equipment.decryptor.init(*desc->equipment.decryptor);    
+    // Устанавливаем identity
+    if (customIdentity) {
+        // Используем кастомное имя (например, от игрока)
+        this->identity = *customIdentity;
+    } else {
+        // Используем имя из дескриптора
+        this->identity = descriptor.identity;
+    }
 
 
     // 2. базовое состояние
@@ -76,7 +79,7 @@ void Ship::init(
     sig.maxRange     = tx.baseRange;
     sig.enabled      = true;
     sig.owner        = this;
-    sig.label        = desc->name;
+    sig.label        = desc->identity.shipName;
 
     // 3. контроллер сигналов
     signalController.init(emittedSignal);
@@ -366,4 +369,248 @@ void Ship::updateCamera(float dt)
         transform,
         camera
     );
+}
+
+
+
+// ─────────────────────────
+// Cargo API
+// ─────────────────────────
+
+int Ship::freeCargoMass() const
+{
+    return cargo.mass.free();
+}
+
+int Ship::freeCargoVolume() const
+{
+    return cargo.volume.free();
+}
+
+bool Ship::addCargo(int mass, int volume)
+{
+    if (!cargo.mass.canAdd(mass)) return false;
+    if (!cargo.volume.canAdd(volume)) return false;
+
+    cargo.mass.add(mass);
+    cargo.volume.add(volume);
+    return true;
+}
+
+bool Ship::removeCargo(int mass, int volume)
+{
+    if (!cargo.mass.canRemove(mass)) return false;
+    if (!cargo.volume.canRemove(volume)) return false;
+
+    cargo.mass.remove(mass);
+    cargo.volume.remove(volume);
+    return true;
+}
+
+
+
+//            ###                ##                         ##                ##       ##
+//             ##                ##                                                    ##
+//   #####     ##      ####     #####    #####             ###     #####     ###      #####
+//  ##         ##     ##  ##     ##     ##                  ##     ##  ##     ##       ##
+//   #####     ##     ##  ##     ##      #####              ##     ##  ##     ##       ##
+//       ##    ##     ##  ##     ## ##       ##             ##     ##  ##     ##       ## ##
+//  ######    ####     ####       ###   ######             ####    ##  ##    ####       ###
+
+
+void Ship::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
+{
+    desc = &descriptor;
+
+    // Cargo
+    cargo.mass.capacity   = desc->storage.cargoMass;
+    cargo.mass.value      = 0;
+    cargo.volume.capacity = desc->storage.cargoVolume;
+    cargo.volume.value    = 0;
+
+    // System slots
+    systems.reactor.capacity            = desc->systems.reactorSlots;
+    systems.engine.capacity             = desc->systems.engineSlots;
+    systems.radar.capacity              = desc->systems.radarSlots;
+    systems.weapon.capacity             = desc->systems.weaponSlots;
+    systems.dockingComputer.capacity    = desc->systems.dockingComputerSlots;
+    systems.decryptor.capacity          = desc->systems.decryptorSlots;
+    systems.jammer.capacity             = desc->systems.jammerSlots;
+    systems.receiver.capacity           = desc->systems.receiverSlots;
+    systems.transmitter.capacity        = desc->systems.transmitterSlots;
+    systems.utility.capacity            = desc->systems.utilitySlots;
+
+    // Dock slots
+    docks.fighter.capacity              = desc->docks.fighterSlots;
+    docks.shuttle.capacity              = desc->docks.shuttleSlots;
+    docks.drone.capacity                = desc->docks.droneSlots;
+
+
+}
+
+
+
+
+bool Ship::installDecryptor(const DecryptorDesc& desc)
+{
+    // 1. есть ли вообще слот
+    if (systems.decryptor.capacity <= 0)
+        return false;
+
+    // 2. есть ли свободный
+    if (systems.decryptor.value >= systems.decryptor.capacity)
+        return false;
+
+    // 3. не установлен ли уже
+    if (equipment.decryptor.enabled)
+        return false;
+
+    // 4. установка
+    equipment.decryptor.init(desc);
+    systems.decryptor.value++;
+
+    return true;
+}
+
+
+
+bool Ship::removeDecryptor()
+{
+    if (!equipment.decryptor.enabled)
+        return false;
+
+    equipment.decryptor.enabled = false;
+    equipment.decryptor.health  = 0.0f;
+
+    systems.decryptor.value--;
+    return true;
+}
+
+
+
+
+bool Ship::hasDecryptor() const
+{
+    return equipment.decryptor.enabled;
+}
+
+
+
+
+
+//    ##                         ##               ###      ###                                           ##                                           ##
+//                               ##                ##       ##                                                                                        ##
+//   ###     #####     #####    #####    ####      ##       ##               ####     ######  ##  ##    ###     ######   ##  ##    ####    #####     #####
+//    ##     ##  ##   ##         ##         ##     ##       ##              ##  ##   ##  ##   ##  ##     ##      ##  ##  #######  ##  ##   ##  ##     ##
+//    ##     ##  ##    #####     ##      #####     ##       ##              ######   ##  ##   ##  ##     ##      ##  ##  ## # ##  ######   ##  ##     ##
+//    ##     ##  ##        ##    ## ##  ##  ##     ##       ##              ##        #####   ##  ##     ##      #####   ##   ##  ##       ##  ##     ## ##
+//   ####    ##  ##   ######      ###    #####    ####     ####              #####       ##    ######   ####     ##      ##   ##   #####   ##  ##      ###
+//                                                                                      ####                    ####
+
+
+template<typename ModuleType, typename DescType>
+bool Ship::installEquipment(
+    const char* equipmentName,
+    QuantitySlot& slot,
+    ModuleType& module,
+    const DescType& desc
+) {
+
+    // 1. Проверяем наличие слота
+    if (slot.capacity <= 0) {
+        printf("[ERROR] No slot for %s\n", equipmentName);
+        return false;
+    }
+    
+    // 2. Проверяем свободный слот
+    if (slot.value >= slot.capacity) {
+        printf("[ERROR] No free slots for %s\n", equipmentName);
+        return false;
+    }
+    
+    
+    // 3. Устанавливаем
+    module.init(desc);
+    slot.value++;
+    
+    printf("[INFO] %s installed successfully\n", equipmentName);
+    return true;
+}
+
+//                                                                                              ##                                           ##
+//                                                                                                                                           ##
+//  ######    ####    ##  ##    ####    ##  ##    ####              ####     ######  ##  ##    ###     ######   ##  ##    ####    #####     #####
+//   ##  ##  ##  ##   #######  ##  ##   ##  ##   ##  ##            ##  ##   ##  ##   ##  ##     ##      ##  ##  #######  ##  ##   ##  ##     ##
+//   ##      ######   ## # ##  ##  ##   ##  ##   ######            ######   ##  ##   ##  ##     ##      ##  ##  ## # ##  ######   ##  ##     ##
+//   ##      ##       ##   ##  ##  ##    ####    ##                ##        #####   ##  ##     ##      #####   ##   ##  ##       ##  ##     ## ##
+//  ####      #####   ##   ##   ####      ##      #####             #####       ##    ######   ####     ##      ##   ##   #####   ##  ##      ###
+//                                                                             ####                    ####
+
+template<typename ModuleType>
+bool Ship::removeEquipment(
+    const char* equipmentName,
+    QuantitySlot& slot,
+    ModuleType& module
+) {
+    if (!module.enabled) {
+        printf("[ERROR] %s {} not installed\n", equipmentName);
+        return false;
+    }
+    
+    module.enabled = false;
+    slot.value--;
+    printf("[ERROR] %s {} removed successfully\n", equipmentName);
+    return true;
+}
+
+
+
+//    ##                         ##               ###      ###                                           ##                          ###              ###
+//                               ##                ##       ##                                                                        ##             ## ##
+//   ###     #####     #####    #####    ####      ##       ##               ####     ######  ##  ##    ###     ######                ##    ####      #
+//    ##     ##  ##   ##         ##         ##     ##       ##              ##  ##   ##  ##   ##  ##     ##      ##  ##            #####   ##  ##   ####
+//    ##     ##  ##    #####     ##      #####     ##       ##              ######   ##  ##   ##  ##     ##      ##  ##           ##  ##   ######    ##
+//    ##     ##  ##        ##    ## ##  ##  ##     ##       ##              ##        #####   ##  ##     ##      #####            ##  ##   ##        ##
+//   ####    ##  ##   ######      ###    #####    ####     ####              #####       ##    ######   ####     ##                ######   #####   ####
+//                                                                                      ####                    ####
+
+void Ship::installDefaultEquipment(const ShipDescriptor& descriptor)
+{
+    const auto& presets = descriptor.defaultEquipment;
+    
+    // Устанавливаем оборудование, если оно есть в пресетах
+    if (presets.decryptor.has_value()) {
+
+        installEquipment("decryptor", 
+        systems.decryptor, 
+        equipment.decryptor, 
+        *presets.decryptor);
+    }
+    
+    if (presets.jammer.has_value()) {
+
+        installEquipment("jammer", 
+        systems.jammer, 
+        equipment.jammer, 
+        *presets.jammer);
+    }
+    
+    if (presets.receiver.has_value()) {
+        
+        installEquipment("receiver", 
+        systems.receiver, 
+        equipment.receiver, 
+        *presets.receiver);
+    }
+    
+    if (presets.transmitter.has_value()) {
+
+        installEquipment("transmitter", 
+        systems.transmitter, 
+        equipment.transmitter, 
+        *presets.transmitter);
+    }
+
+    
+   
 }

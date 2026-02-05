@@ -11,6 +11,11 @@ void WorldSignalTxSystem::collectFromShips(
 {
     outSignals.clear();
 
+        // printf(
+        //     "[TX] collectFromShips: ships=%zu\n",
+        //     ships.size()
+        // );
+
     for (const Ship* ship : ships)
     {
         const auto& tx = ship->equipment.transmitter;
@@ -19,25 +24,37 @@ void WorldSignalTxSystem::collectFromShips(
             continue;
 
         const WorldSignal& sig = ship->emittedSignal;
-        if (!sig.enabled)
-            continue;
-
-        // if (!ship->getEmittedSignal().enabled)
-        //     continue;
 
 
-        // WorldSignal sig;
-        // sig = ship->getEmittedSignal();
-        // sig.displayClass = tx.displayClass;
-        // sig.position     = ship->transform.position;
-        // sig.power        = tx.txPower;
-        // sig.maxRange     = tx.baseRange;
-        // sig.enabled      = true;
-        // sig.label        = ship->desc->name;
-        // sig.owner        = ship;
+        // printf(
+        //     "[TX] ship=%p enabled=%d type=%d power=%.2f range=%.2f owner=%p label=%s\n",
+        //     (void*)ship,
+        //     sig.enabled,
+        //     (int)sig.type,
+        //     sig.power,
+        //     sig.maxRange,
+        //     (void*)sig.owner,
+        //     sig.label.c_str()
+        // );
 
-        outSignals.push_back(sig);
+
+
+        if (sig.enabled)
+        {
+            outSignals.push_back(sig);
+                // printf("[TX]   -> pushed\n");
+        }
+        else
+        {
+                // printf("[TX]   -> skipped (disabled)\n");
+        }
+
     }
+
+    // printf(
+    //     "[TX] collectFromShips done: outSignals=%zu\n",
+    //     outSignals.size()
+    // );
 }
 
 

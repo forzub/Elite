@@ -1,6 +1,6 @@
 #pragma once
 #include "JammerDesc.h"
-
+#include "src/game/equipment/EquipmentModule.h"
 
 
 struct JammerModule : public EquipmentModule
@@ -13,6 +13,7 @@ struct JammerModule : public EquipmentModule
         this->desc = desc.base;
         jammingPower = desc.jammingPower;
         radius = desc.radius;
+
         enabled = true;
         health = 1.0f;
     }

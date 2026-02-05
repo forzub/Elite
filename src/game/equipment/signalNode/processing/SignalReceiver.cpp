@@ -52,9 +52,17 @@ void SignalReceiver::update(
        
     outResults.clear();
 
+    // printf(
+    //     "[RX] update: worldSignals=%zu receiver.enabled=%d pos=(%.1f %.1f %.1f)\n",
+    //     worldSignals.size(),
+    //     receiver.enabled,
+    //     receiverPos.x, receiverPos.y, receiverPos.z
+    // );
+
     // === БЛОК 1. Обход всех источников сигналов ===
     for (const WorldSignal& signal : worldSignals)
     {
+
 
         if (signal.owner == ownerShip)
             continue;
@@ -64,6 +72,13 @@ void SignalReceiver::update(
 
         // --- Геометрия ---
         float distance = glm::distance(receiverPos, signal.position);
+
+        // printf(
+        //     "[RX] signal from %s dist=%.1f power=%.1f\n",
+        //     signal.label.c_str(),
+        //     distance,
+        //     signal.power
+        // );
 
         // Жёсткая отсечка по максимальной дальности
         if (distance > signal.maxRange)

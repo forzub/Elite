@@ -48,6 +48,7 @@ public:
     void render() override;
     bool m_mouseLook = false;
 
+
 private:
     
     // ShipTransform                               m_ship;   // состояние корабля

@@ -1,22 +1,29 @@
-#include "EliteCobraMk1.h"
 
-#include "src/game/equipment/data/receivers.h"
-#include "src/game/equipment/data/transmitters.h"
-#include "src/game/equipment/data/jammers.h"
+#include "src/game/ship/descriptors/EliteCobraMk1.h"
+#include "src/game/equipment/decryptor/DecryptorDesc.h"
+
 #include "src/game/equipment/data/decryptors.h"
+#include "src/game/equipment/data/transmitters.h"
+#include "src/game/equipment/data/receivers.h" 
+#include "src/game/equipment/data/jammers.h"
 
-#include "src/game/signals/SignalPatternLibrary.h"
 
-const ShipDescriptor& getEliteCobraMk1()
+const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
 {
     static ShipDescriptor desc;
-
     static bool initialized = false;
+
     if (!initialized)
     {
         initialized = true;
 
-        desc.name = "Elite Cobra Mk I";
+        // ─────────────────────────
+        // Identity
+        // ─────────────────────────
+        desc.identity = {
+            "cobra mk1",
+            "COBRA MK1"
+        };
 
         // -------------------------
         // Physics
@@ -32,7 +39,7 @@ const ShipDescriptor& getEliteCobraMk1()
         // -------------------------
         // HUD profile (ВОТ ТУТ)
         // -------------------------
-        desc.hud.name = "Elite Mk1 Cockpit";
+        desc.hud.name = "Cobra Mk1";
 
         desc.hud.edgeBoundary.contour = {
             {0.10f, 0.12f},
@@ -43,46 +50,90 @@ const ShipDescriptor& getEliteCobraMk1()
             {0.04f, 0.50f}
         };
 
-
-        // --- ОБОРУДОВАНИЕ (ВОТ ТУТ ТЕПЕРЬ ВСЁ РЕШАЕТСЯ) ---
-        desc.equipment.receiver    = &STANDARD_RECEIVER;
-        desc.equipment.transmitter = &WSDR_TX13;
-        desc.equipment.jammer      = nullptr; // нет с завода но место под него - есть
-        desc.equipment.decryptor   = &Decryptor_Standard; 
-
-
+        // ─────────────────────────
+        // System slots
+        // ─────────────────────────
+        desc.systems.reactorSlots           = 1;
+        desc.systems.engineSlots            = 1;
+        desc.systems.radarSlots             = 1;
+        desc.systems.weaponSlots            = 2;
+        desc.systems.decryptorSlots         = 1;
+        desc.systems.jammerSlots            = 0;
+        desc.systems.receiverSlots          = 1;
+        desc.systems.transmitterSlots       = 1;
+        desc.systems.utilitySlots           = 1;
+        desc.systems.dockingComputerSlots   = 1;
         
-        // --- СИГНАЛЫ (ВОТ ТУТ ВСЁ РЕШАЕТСЯ) ---
-        desc.signalProfile.availableSignals = {
-            SignalType::Transponder,
-            SignalType::Beacon,
-            SignalType::SOSModern
-        };
-
-        
-
-
-
-        // приёмник
-        // desc.receiver.sensitivity = 1.0f;
-
-        // передатчик (пока не используется)
-        // auto& tx = desc.transmitter;
-        // tx.txPower   = 1000.0f;
-        // tx.baseRange = 2000.0f;
-        // tx.activeMode = 1;
-
-        // tx.modes = {
-        //     { SignalType::Transponder },
-        //     { SignalType::SOSModern },
-        //     { SignalType::Beacon },
-        //     { SignalType::Unknown }
+        // desc.systems = {
+        //     .reactorSlots       = 1,
+        //     .engineSlots        = 1,
+        //     .radarSlots         = 1,
+        //     .weaponSlots        = 2,
+        //     .decryptorSlots     = 1,
+        //     .jammerSlots        = 0,
+        //     .dockingComputer    = 1,
+        //     .RX                 = 1,
+        //     .TX                 = 1,
+        //     .utilitySlots       = 1,
         // };
 
-        // постановщик помех
-        // desc.jammer.jammingPower = 1.0f;
-        // desc.jammer.radius = 1000.0f;
+        // ─────────────────────────
+        // Docking
+        // ─────────────────────────
+        desc.docks = {
+            .fighterSlots = 0,
+            .shuttleSlots = 0,
+            .droneSlots   = 0
+        };
+
+
+        // ─────────────────────────
+        // Storage
+        // ─────────────────────────
+        desc.storage = {
+            .cargoMass       = 50,
+            .cargoVolume     = 30,
+            .missileCapacity = 4
+        };
+
+        // ─────────────────────────
+        // Survival
+        // ─────────────────────────
+        desc.survival = {
+            .hasEscapePod  = true,
+            .hasNanokitBay = true
+        };
+
+        // ─────────────────────────
+        // Signal capabilities
+        // ─────────────────────────
+        desc.signalProfile.supportedSignals = {
+            SignalType::Silence,
+            SignalType::Transponder,
+            SignalType::SOSModern,
+            SignalType::Beacon,
+            SignalType::Message,
+            SignalType::None
+
+        };
+
+
+        // ─────────────────────────
+        // Equipment default presets 
+        // ─────────────────────────
+        desc.defaultEquipment = {
+            .decryptor        = DECRYPTOR_STANDARD,      
+            .jammer           = std::nullopt,
+            .receiver         = STANDARD_RECEIVER,      
+            .transmitter      = WSDR_TX13    
+        };
+
+
     }
 
     return desc;
 }
+
+
+
+

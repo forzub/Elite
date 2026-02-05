@@ -18,11 +18,14 @@ struct DecryptorModule : public EquipmentModule
 
     void init(const DecryptorDesc& desc)
     {
+        
         this->desc = desc.base;
         slotCount = desc.slotCount;
         
         enabled = true;
         health = 1.0f;
+        
+        printf("[DEBUG DecryptorModule] %s: name=%d, enabled=%d \n",desc.base.id, enabled);
     }
 
     

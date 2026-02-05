@@ -53,6 +53,8 @@ struct ShipSystemState
     QuantitySlot receiver;
     QuantitySlot transmitter;
     QuantitySlot utility;
+    QuantitySlot fuelScop;
+    QuantitySlot tractorBeam;
 };
 
 struct ShipDockState
@@ -80,8 +82,8 @@ struct Ship
     // ───────────────
     // Хранилища
     // ───────────────
-    CargoBay        cargo;
-    ShipInventory  inventory;
+    CargoBay                                cargo;
+    ShipInventory                           inventory;
 
     // --- состояние ---
     ShipTransform                           transform;          // - перемещение
@@ -127,10 +129,10 @@ struct Ship
 
     void update(
         float dt,
-        const WorldParams& world,
-        const std::vector<WorldSignal>& worldSignals,
-        const std::vector<Planet>& planets,
-        const std::vector<InterferenceSource>& interferenceSources
+        const WorldParams&                          world,
+        const std::vector<WorldSignal>&             worldSignals,
+        const std::vector<Planet>&                  planets,
+        const std::vector<InterferenceSource>&      interferenceSources
     );
 
     void updateControlIntent();
@@ -149,23 +151,18 @@ struct Ship
 
 
     // ───────────────
-    // Инициализация
-    // ───────────────
-    void initShipSlotsFromDescriptor(const ShipDescriptor& descriptor);
-    // decryptor API
-    bool installDecryptor(const DecryptorDesc& desc);
-    bool removeDecryptor();
-    bool hasDecryptor() const;
-
-    // ───────────────
     // Cargo API
     // ───────────────
     int  freeCargoMass() const;
     int  freeCargoVolume() const;
     bool addCargo(int mass, int volume);
     bool removeCargo(int mass, int volume);
-
-
+    
+    
+    // ───────────────
+    // Инициализация корабля
+    // ───────────────
+    void initShipSlotsFromDescriptor(const ShipDescriptor& descriptor);
 
     // ───────────────
     // Инициализация оборудования
@@ -186,6 +183,13 @@ struct Ship
         QuantitySlot& slot,
         ModuleType& module
     );
+
+
+    // ───────────────
+    // перенос криптокарт из shipInventory в decryptor и обратно
+    // ─────────────── 
+    bool installCryptoCard(CryptoCard* card);
+    bool removeCryptoCard(CryptoCard* card);
 
 };
 

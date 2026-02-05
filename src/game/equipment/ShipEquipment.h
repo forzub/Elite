@@ -7,7 +7,7 @@
 
 #include "ShipEquipmentDesc.h" 
 
-#include <tuple>
+
 
 // перечисляем все оборудование, которое может быть установлено в корабле. 
 // что из этого точно там будет - описанов в файле корабля.
@@ -18,11 +18,5 @@ struct ShipEquipment
     SignalTransmitterModule     transmitter;
     JammerModule                jammer;
     DecryptorModule             decryptor;
-
-
-    auto asTuple()
-    {
-        return std::tie(receiver, transmitter, jammer);
-    }
     
 };

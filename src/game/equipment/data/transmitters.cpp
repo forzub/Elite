@@ -11,6 +11,8 @@ const SignalTransmitterDesc WSDR_TX13 = {
     .displayClass = SignalDisplayClass::Local
 };
 
+
+
 const SignalTransmitterDesc ORBITAL_BEACON_TX = {
     .base = {
         "ORB-TX-88",

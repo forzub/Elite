@@ -63,6 +63,8 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.systems.transmitterSlots       = 1;
         desc.systems.utilitySlots           = 1;
         desc.systems.dockingComputerSlots   = 1;
+        desc.systems.fuelScopSlots          = 1;
+        desc.systems.tractorBeamSlots       = 1;
         
         // desc.systems = {
         //     .reactorSlots       = 1,

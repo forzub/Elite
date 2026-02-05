@@ -1,5 +1,6 @@
 #pragma once
 
+
 struct QuantitySlot
 {
     int capacity = 0;

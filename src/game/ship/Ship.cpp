@@ -72,14 +72,18 @@ void Ship::init(
     auto& tx  = equipment.transmitter;
     auto& sig = emittedSignal;
 
-    sig.position     = transform.position;
-    sig.type         = SignalType::Transponder;
-    sig.displayClass = tx.displayClass;
-    sig.power        = tx.txPower;
-    sig.maxRange     = tx.baseRange;
-    sig.enabled      = true;
-    sig.owner        = this;
-    sig.label        = desc->identity.shipName;
+    sig.displayClass        = tx.displayClass;
+    sig.power               = tx.txPower;
+    sig.maxRange            = tx.baseRange;
+    
+    sig.position            = transform.position;
+    sig.type                = SignalType::Transponder;
+    sig.enabled             = true;
+    sig.owner               = this;
+    sig.label               = desc->identity.shipName;
+
+    sig.address.actor       = 0xFFFFFFFF;
+    sig.address.channel     = 0; // пока всегда публично
 
     // 3. контроллер сигналов
     signalController.init(emittedSignal);
@@ -439,6 +443,8 @@ void Ship::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
     systems.receiver.capacity           = desc->systems.receiverSlots;
     systems.transmitter.capacity        = desc->systems.transmitterSlots;
     systems.utility.capacity            = desc->systems.utilitySlots;
+    systems.fuelScop.capacity           = desc->systems.fuelScopSlots;
+    systems.tractorBeam.capacity        = desc->systems.tractorBeamSlots;
 
     // Dock slots
     docks.fighter.capacity              = desc->docks.fighterSlots;
@@ -451,48 +457,48 @@ void Ship::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
 
 
 
-bool Ship::installDecryptor(const DecryptorDesc& desc)
-{
-    // 1. есть ли вообще слот
-    if (systems.decryptor.capacity <= 0)
-        return false;
+// bool Ship::installDecryptor(const DecryptorDesc& desc)
+// {
+//     // 1. есть ли вообще слот
+//     if (systems.decryptor.capacity <= 0)
+//         return false;
 
-    // 2. есть ли свободный
-    if (systems.decryptor.value >= systems.decryptor.capacity)
-        return false;
+//     // 2. есть ли свободный
+//     if (systems.decryptor.value >= systems.decryptor.capacity)
+//         return false;
 
-    // 3. не установлен ли уже
-    if (equipment.decryptor.enabled)
-        return false;
+//     // 3. не установлен ли уже
+//     if (equipment.decryptor.enabled)
+//         return false;
 
-    // 4. установка
-    equipment.decryptor.init(desc);
-    systems.decryptor.value++;
+//     // 4. установка
+//     equipment.decryptor.init(desc);
+//     systems.decryptor.value++;
 
-    return true;
-}
-
-
-
-bool Ship::removeDecryptor()
-{
-    if (!equipment.decryptor.enabled)
-        return false;
-
-    equipment.decryptor.enabled = false;
-    equipment.decryptor.health  = 0.0f;
-
-    systems.decryptor.value--;
-    return true;
-}
+//     return true;
+// }
 
 
 
+// bool Ship::removeDecryptor()
+// {
+//     if (!equipment.decryptor.enabled)
+//         return false;
 
-bool Ship::hasDecryptor() const
-{
-    return equipment.decryptor.enabled;
-}
+//     equipment.decryptor.enabled = false;
+//     equipment.decryptor.health  = 0.0f;
+
+//     systems.decryptor.value--;
+//     return true;
+// }
+
+
+
+
+// bool Ship::hasDecryptor() const
+// {
+//     return equipment.decryptor.enabled;
+// }
 
 
 
@@ -611,6 +617,42 @@ void Ship::installDefaultEquipment(const ShipDescriptor& descriptor)
         *presets.transmitter);
     }
 
-    
-   
+}
+
+
+    // ───────────────
+    // перенос криптокарт из shipInventory в decryptor и обратно
+    // ──────────────
+
+    bool Ship::installCryptoCard(CryptoCard* card)
+{
+    if (!card) return false;
+
+    // карта должна быть в инвентаре
+    if (!inventory.contains(card))
+        return false;
+
+    // decryptor — объект, проверяем состояние
+    if (!equipment.decryptor.enabled)
+        return false;
+
+    if (!equipment.decryptor.install(card))
+        return false;
+
+    inventory.remove(card);
+    return true;
+}
+
+bool Ship::removeCryptoCard(CryptoCard* card)
+{
+    if (!card) return false;
+
+    if (!equipment.decryptor.enabled)
+        return false;
+
+    if (!equipment.decryptor.remove(card))
+        return false;
+
+    inventory.add(card);
+    return true;
 }

@@ -21,4 +21,9 @@ struct ShipInventory
         items.erase(it);
         return true;
     }
+
+    bool contains(Item* item) const
+    {
+        return std::find(items.begin(), items.end(), item) != items.end();
+    }
 };

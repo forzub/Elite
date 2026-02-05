@@ -76,7 +76,7 @@ SpaceState::SpaceState(StateStack& states)
     
     // начальная позиция
     // m_playerShip
-    ShipIdentity playerIdentity = {
+    ShipIdentity shipIdentity = {
         .shipType = "cobra MK1",
         .shipName = "Jeraya"
     };
@@ -86,29 +86,37 @@ SpaceState::SpaceState(StateStack& states)
         ShipRole::Player,
         EliteCobraMk1::EliteCobraMk1Descriptor(),
         {0.0f, 5.0f, 10.0f},
-        &playerIdentity
+        &shipIdentity
     );
     
 
 
     // --- NPC #1 ---
+    shipIdentity = {
+        .shipType = "cobra MK1-1",
+        .shipName = "Scarlet Hawk Moth"
+    };
     m_npcShips.emplace_back();
     m_npcShips.back().init(
         context(),
         ShipRole::NPC,
         EliteCobraMk1::EliteCobraMk1Descriptor(),
         {20.0f, 0.0f, -50.0f},
-        nullptr
+        &shipIdentity
     );
 
     // --- NPC #2 ---
+    shipIdentity = {
+        .shipType = "cobra MK1-2",
+        .shipName = "Hooded snake"
+    };
     m_npcShips.emplace_back();
     m_npcShips.back().init(
         context(),
         ShipRole::NPC,
         EliteCobraMk1::EliteCobraMk1Descriptor(),
         {-70.0f, 50.0f, -70.0f},
-        nullptr
+        &shipIdentity
     );
 
 

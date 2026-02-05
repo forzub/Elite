@@ -49,6 +49,8 @@ struct ShipSystemSlots
     int receiverSlots               = 0;  
     int transmitterSlots            = 0;  
     int utilitySlots                = 0;  // сборщик мусора, нанокиты, спецсистемы
+    int fuelScopSlots               = 0;  // заборщик топлива
+    int tractorBeamSlots            = 0;  // буксировочный луч
     
     
 

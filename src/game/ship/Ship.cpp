@@ -25,7 +25,7 @@ void Ship::init(
     ShipRole inRole,
     const ShipDescriptor& descriptor, 
     glm::vec3 position,
-    const ShipIdentity* customIdentity
+    const ShipInitData& initData
 )
 {
     // устанавливаем роль корабля - ИГРОК / НПС
@@ -58,14 +58,54 @@ void Ship::init(
     initShipSlotsFromDescriptor(descriptor);
     installDefaultEquipment(descriptor);
 
-    // Устанавливаем identity
-    if (customIdentity) {
-        // Используем кастомное имя (например, от игрока)
-        this->identity = *customIdentity;
-    } else {
-        // Используем имя из дескриптора
-        this->identity = descriptor.identity;
+    // visual / UI
+    visual = initData.visual;
+
+    // registry / legal
+    registry = initData.registry;
+
+    // стартовый инвентарь
+    for (Item* item : initData.initialInventory)
+    {
+        inventory.add(item);
     }
+
+    // Автоматическая установка криптокарт в декрипторы
+        if (!equipment.decryptors.modules.empty())
+        {
+            // ВАЖНО: аккуратно, т.к. мы будем удалять элементы
+            for (size_t i = 0; i < inventory.items.size(); )
+            {
+                Item* item = inventory.items[i];
+                auto* card = dynamic_cast<CryptoCard*>(item);
+
+                if (!card)
+                {
+                    ++i;
+                    continue;
+                }
+
+                bool installed = false;
+
+                // пробуем установить карту в любой декриптор
+                for (auto& decryptor : equipment.decryptors.modules)
+                {
+                    if (!decryptor.enabled)
+                        continue;
+
+                    if (decryptor.install(card))
+                    {
+                        inventory.remove(card);
+                        installed = true;
+                        break;
+                    }
+                }
+
+                // если карта не установилась — идём дальше
+                if (!installed)
+                    ++i;
+            }
+        }
 
 
     // 2. базовое состояние
@@ -518,6 +558,40 @@ template<typename ModuleType, typename DescType>
 bool Ship::installEquipment(
     const char* equipmentName,
     QuantitySlot& slot,
+    std::vector<ModuleType>& modules,
+    const DescType& desc
+) {
+
+    // 1. Проверяем наличие слота
+    if (slot.capacity <= 0) {
+        printf("[ERROR] No slot for %s\n", equipmentName);
+        return false;
+    }
+    
+    // 2. Проверяем свободный слот
+    if (slot.value >= slot.capacity) {
+        printf("[ERROR] No free slots for %s\n", equipmentName);
+        return false;
+    }
+    
+    
+    // 3. Устанавливаем
+    // module.init(desc);
+    modules.emplace_back();
+    modules.back().init(desc);
+    slot.value++;
+    
+    printf("[INFO] %s installed successfully\n", equipmentName);
+    return true;
+}
+
+
+
+
+template<typename ModuleType, typename DescType>
+bool Ship::installEquipment(
+    const char* equipmentName,
+    QuantitySlot& slot,
     ModuleType& module,
     const DescType& desc
 ) {
@@ -589,7 +663,8 @@ void Ship::installDefaultEquipment(const ShipDescriptor& descriptor)
 
         installEquipment("decryptor", 
         systems.decryptor, 
-        equipment.decryptor, 
+        // equipment.decryptor,
+        equipment.decryptors.modules, 
         *presets.decryptor);
     }
     
@@ -620,39 +695,100 @@ void Ship::installDefaultEquipment(const ShipDescriptor& descriptor)
 }
 
 
-    // ───────────────
-    // перенос криптокарт из shipInventory в decryptor и обратно
-    // ──────────────
 
-    bool Ship::installCryptoCard(CryptoCard* card)
+
+
+//    ##                         ##                                                    ##                                            ###
+//                               ##                                                    ##                                             ##
+//   ###     #####     #####    #####             ####    ######   ##  ##   ######    #####             ####     ####    ######       ##
+//    ##     ##  ##   ##         ##              ##  ##    ##  ##  ##  ##    ##  ##    ##              ##  ##       ##    ##  ##   #####
+//    ##     ##  ##    #####     ##              ##        ##      ##  ##    ##  ##    ##              ##        #####    ##      ##  ##
+//    ##     ##  ##        ##    ## ##           ##  ##    ##       #####    #####     ## ##           ##  ##   ##  ##    ##      ##  ##
+//   ####    ##  ##   ######      ###             ####    ####         ##    ##         ###             ####     #####   ####      ######
+//                                                                 #####    ####
+
+bool Ship::installCryptoCard(CryptoCard* card)
 {
     if (!card) return false;
+    if (!inventory.contains(card)) return false;
 
-    // карта должна быть в инвентаре
-    if (!inventory.contains(card))
-        return false;
+    for (auto& d : equipment.decryptors.modules)
+    {
+        if (!d.enabled) continue;
 
-    // decryptor — объект, проверяем состояние
-    if (!equipment.decryptor.enabled)
-        return false;
+        if (d.install(card))
+        {
+            inventory.remove(card);
+            return true;
+        }
+    }
 
-    if (!equipment.decryptor.install(card))
-        return false;
-
-    inventory.remove(card);
-    return true;
+    return false;
 }
+
+
+
+//                                                                                                       ##                                            ###
+//                                                                                                       ##                                             ##
+//  ######    ####    ##  ##    ####    ##  ##    ####              ####    ######   ##  ##   ######    #####             ####     ####    ######       ##
+//   ##  ##  ##  ##   #######  ##  ##   ##  ##   ##  ##            ##  ##    ##  ##  ##  ##    ##  ##    ##              ##  ##       ##    ##  ##   #####
+//   ##      ######   ## # ##  ##  ##   ##  ##   ######            ##        ##      ##  ##    ##  ##    ##              ##        #####    ##      ##  ##
+//   ##      ##       ##   ##  ##  ##    ####    ##                ##  ##    ##       #####    #####     ## ##           ##  ##   ##  ##    ##      ##  ##
+//  ####      #####   ##   ##   ####      ##      #####             ####    ####         ##    ##         ###             ####     #####   ####      ######
+//                                                                                   #####    ####
 
 bool Ship::removeCryptoCard(CryptoCard* card)
 {
     if (!card) return false;
 
-    if (!equipment.decryptor.enabled)
+    for (auto& d : equipment.decryptors.modules)
+    {
+        if (d.remove(card))
+        {
+            inventory.add(card);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+//              ###      ###              ##       ##
+//               ##       ##                       ##
+//   ####        ##       ##             ###      #####    ####    ##  ##    #####
+//      ##    #####    #####              ##       ##     ##  ##   #######  ##
+//   #####   ##  ##   ##  ##              ##       ##     ######   ## # ##   #####
+//  ##  ##   ##  ##   ##  ##              ##       ## ##  ##       ##   ##       ##
+//   #####    ######   ######            ####       ###    #####   ##   ##  ######
+
+
+bool Ship::addItem(Item* item)
+{
+    if (!item) return false;
+
+    if (item->usesCargoSpace())
+    {
+        if (!addCargo(item->cargoMass(), item->cargoVolume()))
+            return false;
+    }
+
+    inventory.add(item);
+    return true;
+}
+
+
+bool Ship::REMOVEItem(Item* item)
+{
+    if (!item) return false;
+
+    if (!inventory.remove(item))
         return false;
 
-    if (!equipment.decryptor.remove(card))
-        return false;
+    if (item->usesCargoSpace())
+    {
+        removeCargo(item->cargoMass(), item->cargoVolume());
+    }
 
-    inventory.add(card);
     return true;
 }

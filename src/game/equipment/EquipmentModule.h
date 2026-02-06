@@ -8,8 +8,6 @@ struct EquipmentModule
 
     float                           health      = 1.0f;     // работоспособность 0..1
     bool                            enabled     = true;     // включено пилотом / ИИ
-    bool                            isPresent   = false;    // существует в конфигурации корабля
-    bool                            canPresent  = false;    // может быть установлено и использовано.
 
     bool isOperational() const
     {

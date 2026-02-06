@@ -7,11 +7,12 @@
 struct CryptoCard : public Item
 {
     ActorCode           code;        // КОНКРЕТНЫЙ КЛЮЧ
+    ActorId             actor;       // ЧЕЙ это код (для UI / лора / проверки)
     std::string         label;    // чисто UI / лор
     
     bool                installed = false;
-
-    CryptoCard(ActorCode c, std::string l)
-        : code(c), label(std::move(l)) {}
+    
+    bool usesCargoSpace() const override { return false; }
+    CryptoCard(ActorCode c, std::string l): code(c), label(std::move(l)) {}
 };
 

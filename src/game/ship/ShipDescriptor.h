@@ -22,8 +22,9 @@
 
 struct ShipIdentity
 {
-    std::string shipType;      // "elite_cobra_mk1" 
-    std::string shipName;       // "Джерайя" (HUD / меню)
+    std::string         shipType;      // "elite_cobra_mk1" 
+    std::string         shipName;       // "Джерайя" (HUD / меню)
+    
 };
 
 
@@ -34,6 +35,7 @@ struct EquipmentPresets
     std::optional<ReceiverDesc>                 receiver;
     std::optional<SignalTransmitterDesc>        transmitter;
 };
+
 
 
 // Equipment / Systems slots
@@ -96,8 +98,10 @@ struct SignalProfile
     ShipStorageCaps     storage;
     ShipSurvivalCaps    survival;
     SignalProfile       signalProfile;
+    
 
     // НОВОЕ: пресеты оборудования по умолчанию
     EquipmentPresets    defaultEquipment;
+
     
 };

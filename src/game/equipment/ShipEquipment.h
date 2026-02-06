@@ -1,5 +1,8 @@
 #pragma once
 
+#include "src/game/core/ModuleArray.h"
+
+
 #include "src/game/equipment/jammer/JammerModule.h"
 #include "src/game/equipment/signalNode/SignalTransmitterModule.h"
 #include "src/game/equipment/signalNode/ReceiverModule.h" 
@@ -17,6 +20,7 @@ struct ShipEquipment
     ReceiverModule              receiver;
     SignalTransmitterModule     transmitter;
     JammerModule                jammer;
-    DecryptorModule             decryptor;
-    
+    // DecryptorModule             decryptor;
+
+    ModuleArray<DecryptorModule> decryptors;
 };

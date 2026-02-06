@@ -15,13 +15,20 @@
 #include "src/game/ship/ShipController.h"
 #include "src/game/ship/ShipRole.h"
 #include "src/game/ship/ShipSignalController.h"
+#include "src/game/ship/ShipVisualIdentity.h"
+#include "src/game/ship/ShipRegistry.h"
+#include "src/game/ship/ShipInitData.h"
+
+#include "src/game/items/Item.h"
+
+// #include "src/game/ship/ShipRegistry.h"
 
 
 #include "src/game/equipment/ShipEquipment.h"
 #include "src/game/equipment/ShipEquipmentDesc.h"
 
 
-// #include "game/equipment/decryptor/DecryptorModule.h"
+
 #include "src/game/equipment/decryptor/DecryptorDesc.h"
 
 #include "game/ship/sensors/ShipSignalPresentation.h"
@@ -74,7 +81,9 @@ struct Ship
     ShipRole                                role = ShipRole::NPC;
 
     // персональные данные корабля. тип, имя и т.п.
-    ShipIdentity                            identity;
+    ShipVisualIdentity                      visual;
+    ShipRegistry                            registry;
+    // ShipRegistry                            registry;
 
     // --- описание типа ---
     const ShipDescriptor*                   desc = nullptr;
@@ -122,7 +131,7 @@ struct Ship
         ShipRole role,
         const ShipDescriptor& descriptor, 
         glm::vec3 position,
-        const ShipIdentity* customIdentity = nullptr
+       const ShipInitData& initData
     );
     
     void handleInput();
@@ -173,6 +182,14 @@ struct Ship
     bool installEquipment(
         const char* equipmentName,
         QuantitySlot& slot,
+        std::vector<ModuleType>& modules,
+        const DescType& desc
+    );
+
+    template<typename ModuleType, typename DescType>
+    bool installEquipment(
+        const char* equipmentName,
+        QuantitySlot& slot,
         ModuleType& module,
         const DescType& desc
     );
@@ -190,6 +207,9 @@ struct Ship
     // ─────────────── 
     bool installCryptoCard(CryptoCard* card);
     bool removeCryptoCard(CryptoCard* card);
+
+    bool addItem(Item* item);
+    bool REMOVEItem(Item* item);
 
 };
 

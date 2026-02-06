@@ -1,38 +1,26 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
 #include "SpaceState.h"
-
 #include "core/StateStack.h"
 #include "core/Log.h"
-
 #include "input/Input.h"
-
-
 #include "render/DebugGrid.h"
 #include "render/ScreenUtils.h"
-
-
 #include "src/game/equipment/signalNode/processing/SignalPolicy.h"
-
-#include "game/ship/hud/worldlabels/WorldLabelSystem.h"
-#include "game/ship/hud/worldlabels/WorldSignalWaves.h"
-#include "game/equipment/signalNode/processing/WorldSignalTxSystem.h"
-
-#include "game/ship/ShipRole.h"
-
-#include "src/galaxy/GalaxyDatabase.h"
-
-
+#include "src/game/ship/hud/worldlabels/WorldLabelSystem.h"
+#include "src/game/ship/hud/worldlabels/WorldSignalWaves.h"
+#include "src/game/ship/ShipRole.h"
+#include "src/game/equipment/signalNode/processing/WorldSignalTxSystem.h"
+#include "src/game/ship/descriptors/EliteCobraMk1.h"
+#include "src/game/player/ActorIdProvider.h"
+#include "src/game/player/ActorCodeGenerator.h"
 #include "ui/ConfirmExitState.h"
 #include "ui/HudRenderer.h"
-
-#include "src/game/ship/descriptors/EliteCobraMk1.h"
+#include "src/galaxy/GalaxyDatabase.h"
 
 
 
@@ -76,47 +64,115 @@ SpaceState::SpaceState(StateStack& states)
     
     // начальная позиция
     // m_playerShip
-    ShipIdentity shipIdentity = {
-        .shipType = "cobra MK1",
+    ShipVisualIdentity visualIdentity = {
+        .shipType = "Cobra MK1",
         .shipName = "Jeraya"
     };
+
+    ShipRegistry registry = {
+        .instanceId      = 1,                  // пока вручную, потом генератор
+        .ownerName       = "Jeraya",
+        .ownerActor      = ActorIds::Player(),        // или конкретный ActorId
+        .registrationId  = "PL-0001",
+        .homePort        = "Lave",
+        .shipRole        = ShipRoleType::Civilian
+    };
+
+    auto* playerCard = new CryptoCard(
+    generateActorCode(),
+    "Player Access Card" );
+    playerCard->actor = ActorIds::Player();
+
+    ShipInitData initData;
+    initData.visual = visualIdentity;
+    initData.registry = registry;
+    initData.initialInventory = {playerCard};
 
     m_playerShip.init(
         context(),
         ShipRole::Player,
         EliteCobraMk1::EliteCobraMk1Descriptor(),
         {0.0f, 5.0f, 10.0f},
-        &shipIdentity
+        initData
     );
     
 
 
-    // --- NPC #1 ---
-    shipIdentity = {
-        .shipType = "cobra MK1-1",
+
+
+
+
+    visualIdentity = {
+        .shipType = "Cobra MK3",
         .shipName = "Scarlet Hawk Moth"
     };
+
+    registry = {
+        .instanceId      = 2,                  // пока вручную, потом генератор
+        .ownerName       = "Digital Lion",
+        .ownerActor      =  ActorIds::Player(),        // или конкретный ActorId
+        .registrationId  = "PL-0002",
+        .homePort        = "Lave",
+        .shipRole        = ShipRoleType::Civilian
+    };
+
+    auto* playerNPC1Card = new CryptoCard(
+    generateActorCode(),
+    "Player Access Card" );
+    playerNPC1Card->actor = ActorIds::Player();
+
+    
+    initData.visual = visualIdentity;
+    initData.registry = registry;
+    initData.initialInventory = { playerNPC1Card };
+    // --- NPC #1 ---
+  
     m_npcShips.emplace_back();
     m_npcShips.back().init(
         context(),
         ShipRole::NPC,
         EliteCobraMk1::EliteCobraMk1Descriptor(),
         {20.0f, 0.0f, -50.0f},
-        &shipIdentity
+        initData
     );
 
-    // --- NPC #2 ---
-    shipIdentity = {
-        .shipType = "cobra MK1-2",
+
+
+
+    visualIdentity = {
+        .shipType = "Cobra MK3",
         .shipName = "Hooded snake"
     };
+
+    registry = {
+        .instanceId      = 3,                  // пока вручную, потом генератор
+        .ownerName       = "Pipito Karnelio",
+        .ownerActor      = ActorIds::Player(),        // или конкретный ActorId
+        .registrationId  = "PL-0003",
+        .homePort        = "Lave",
+        .shipRole        = ShipRoleType::Civilian
+    };
+
+    auto* playerNPC2Card = new CryptoCard(
+    generateActorCode(),
+    "Player Access Card" );
+    playerNPC2Card->actor = ActorIds::Player();
+
+    
+    initData.visual = visualIdentity;
+    initData.registry = registry;
+    initData.initialInventory = { playerNPC2Card };
+
+
+    // --- NPC #2 ---
+    
     m_npcShips.emplace_back();
     m_npcShips.back().init(
         context(),
         ShipRole::NPC,
         EliteCobraMk1::EliteCobraMk1Descriptor(),
         {-70.0f, 50.0f, -70.0f},
-        &shipIdentity
+        initData
     );
 
 

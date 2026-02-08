@@ -12,6 +12,7 @@
 #include "render/ScreenUtils.h"
 
 #include "game/ship/cockpit/CockpitMeshBuilder.h"
+#include "game/ship/cockpit/CockpitStrokeBuilder.h"
 
 
 #include "src/game/equipment/signalNode/processing/SignalPolicy.h"
@@ -106,9 +107,12 @@ SpaceState::SpaceState(StateStack& states)
 
     for (const auto& poly : geo.polygons)
     {
-        Mesh2D mesh = buildMeshFromPolygon01(poly);
-        cockpitPass.addMesh(mesh);
-        // cockpitPass.setMesh(mesh); // ПОКА один за другим
+        cockpitPass.addMesh(buildMeshFromPolygon01(poly));
+    }
+
+    for (const auto& stroke : geo.strokes)
+    {
+        cockpitPass.addMesh(buildStrokeMesh(stroke));
     }
 
 

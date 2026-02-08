@@ -65,6 +65,7 @@ add_executable(EliteGame
     src/galaxy/GalaxyDatabase.cpp
 
     src/game/ship/cockpit/CockpitMeshBuilder.cpp
+    src/game/ship/cockpit/CockpitStrokeBuilder.cpp
     
 
 

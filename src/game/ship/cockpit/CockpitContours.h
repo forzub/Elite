@@ -4,25 +4,46 @@
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
-// Один закрашенный многоугольник кабины
+// --------------------------------------------
+// Закрашенный многоугольник кабины
+// --------------------------------------------
 struct CockpitPolygon
 {
-    std::vector<glm::vec2>      contour01; // координаты [0..1] в SVG-пространстве
-    glm::vec4                   color;                  // базовый цвет заливки
+    std::vector<glm::vec2> contour01; // [0..1]
+    glm::vec4              color;
 };
 
-// Полная геометрия кабины корабля
+// --------------------------------------------
+// Линия / обводка кабины
+// --------------------------------------------
+struct CockpitStroke
+{
+    std::vector<glm::vec2> path01;    // [0..1], НЕ замкнута
+    glm::vec4              color;
+    float                  thickness;
+    bool                   extend;
+};
+
+// --------------------------------------------
+// Полная геометрия кабины
+// --------------------------------------------
 struct CockpitGeometry
 {
     std::vector<CockpitPolygon> polygons;
     std::vector<CockpitStroke>  strokes;
 };
 
-// Одна линия кабины (обводка, ребро, линия интерфейса)
-struct CockpitStroke
+enum class CockpitRenderType
 {
-    std::vector<glm::vec2> path01;     // [0..1], НЕ замкнута
-    glm::vec4              color;      // цвет линии
-    float                  thickness;  // толщина в NDC (например 0.003f)
-    bool                   extend;     // продолжать за экран
+    Polygon,
+    Stroke
+};
+
+struct CockpitRenderItem
+{
+    CockpitRenderType type;
+
+    // один из них используется
+    CockpitPolygon polygon;
+    CockpitStroke  stroke;
 };

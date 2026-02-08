@@ -140,6 +140,7 @@ void RenderCockpitPass::render()
     glDisable(GL_DEPTH_TEST);
     glUseProgram(shader);
 
+
     for (const auto& m : glMeshes)
     {
         glBindVertexArray(m.vao);
@@ -147,6 +148,7 @@ void RenderCockpitPass::render()
     }
 
     glBindVertexArray(0);
+    glUseProgram(0);          // <=== КРИТИЧЕСКИ ВАЖНО
     glEnable(GL_DEPTH_TEST);
 }
 

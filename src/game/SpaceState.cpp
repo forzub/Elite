@@ -10,6 +10,10 @@
 #include "input/Input.h"
 #include "render/DebugGrid.h"
 #include "render/ScreenUtils.h"
+
+#include "game/ship/cockpit/CockpitMeshBuilder.h"
+
+
 #include "src/game/equipment/signalNode/processing/SignalPolicy.h"
 #include "src/game/ship/hud/worldlabels/WorldLabelSystem.h"
 #include "src/game/ship/hud/worldlabels/WorldSignalWaves.h"
@@ -45,9 +49,7 @@ SpaceState::SpaceState(StateStack& states)
     // =======================================================================
 
     GalaxyDatabase galaxy;
-
     galaxy.loadFromDirectory("assets/data/galaxy");
-
     galaxy.validate();
 
     std::cout
@@ -55,6 +57,9 @@ SpaceState::SpaceState(StateStack& states)
     << "Systems: " << galaxy.systemCount() << "\n"
     << "Nodes:   " << galaxy.nodeCount()   << "\n"
     << "Routes:  " << galaxy.routeCount()  << "\n";
+
+
+    cockpitPass.init();
     
     // =======================================================================
     // устанавливает ограничение HUD для меток за экраном
@@ -95,7 +100,18 @@ SpaceState::SpaceState(StateStack& states)
         {0.0f, 5.0f, 10.0f},
         initData
     );
-    
+
+    EliteCobraMk1 cobra;
+    CockpitGeometry geo = cobra.createCockpitGeometry();
+
+    for (const auto& poly : geo.polygons)
+    {
+        Mesh2D mesh = buildMeshFromPolygon01(poly);
+        cockpitPass.addMesh(mesh);
+        // cockpitPass.setMesh(mesh); // ПОКА один за другим
+    }
+
+
 
 
 
@@ -365,10 +381,20 @@ void SpaceState::render(){}
 void SpaceState::renderUI()
 {
 
+    static int once = 0;
+    if (once == 0)
+    {
+        printf("SpaceState::render()\n");
+        once = 1;
+    }
+
      const Viewport& vp = context().viewport();
 
     float fx = (float)vp.width;
     float fy = (float)vp.height;
+
+
+    
 
     // -------------------------------
     // 3D ПРОЕКЦИЯ
@@ -390,6 +416,8 @@ void SpaceState::renderUI()
     glMatrixMode(GL_MODELVIEW);
     glLoadMatrixf(glm::value_ptr(view));
 
+
+    
     // -------------------------------
     // 3D МИР
     // -------------------------------
@@ -398,6 +426,9 @@ void SpaceState::renderUI()
         200.0f,
         100
     );
+    
+    
+    
 }
 
 
@@ -453,10 +484,14 @@ void SpaceState::renderHUD()
     m_hudRenderer.renderText(m_hudStatics);
 
 
+    
+
+
     // -------------------------------------------------
     // 2. HUD ограничитель
     // -------------------------------------------------
     {
+
         const auto& contour = m_playerShip.hudEdgeMapper.boundaryPx();
         if (contour.size() >= 2)
         {
@@ -476,13 +511,7 @@ void SpaceState::renderHUD()
         }
     }
 
-    // если произошел ресайз окна
-    // m_playerShip.hudEdgeMapper.setBoundary(
-    //     m_playerShip.desc->hud.edgeBoundary.contour,
-    //     vp.width,
-    //     vp.height
-    // );
-
+    
     // -------------------------------------------------
     // 3. Подготовка матриц для меток
     // -------------------------------------------------
@@ -490,9 +519,7 @@ void SpaceState::renderHUD()
     // --- camera matrices нужны ТОЛЬКО здесь ---
     glm::mat4 view = m_playerShip.camera.viewMatrix();
     glm::mat4 proj = m_playerShip.camera.projectionMatrix();
-    // glm::mat4 view = m_camera.viewMatrix();
-    // glm::mat4 proj = m_camera.projectionMatrix();
-
+    
     
     
     glm::vec2 screenCenter(vp.width  * 0.5f,vp.height * 0.5f);
@@ -500,57 +527,58 @@ void SpaceState::renderHUD()
 
     for (auto& [signal, label] :
      m_playerShip.signalPresentation.labels())
-{
-    glm::vec2 projectedPos;
-
-    bool projected = projectToScreen(
-        label.data.worldPos,
-        view,
-        proj,
-        vp.width,
-        vp.height,
-        projectedPos
-    );
-
-    glm::vec3 toTarget =
-        glm::normalize(label.data.worldPos - m_playerShip.transform.position);
-
-    glm::vec4 viewDir4 = view * glm::vec4(toTarget, 0.0f);
-    glm::vec2 dir2D(viewDir4.x, -viewDir4.y);
-
-    if (glm::length(dir2D) < 1e-4f)
-        continue;
-
-    dir2D = glm::normalize(dir2D);
-    label.edgeDir = dir2D;
-
-    bool insideHud = false;
-
-    if (projected)
-        insideHud = m_playerShip.hudEdgeMapper.isInsideBoundary(projectedPos);
-
-    if (projected && insideHud)
     {
-        label.onScreen  = true;
-        label.screenPos = projectedPos;
-    }
-    else
-    {
-        glm::vec2 edgePos;
-        if (m_playerShip.hudEdgeMapper.projectDirection(
-                screenCenter,
-                dir2D,
-                edgePos))
+        glm::vec2 projectedPos;
+
+        bool projected = projectToScreen(
+            label.data.worldPos,
+            view,
+            proj,
+            vp.width,
+            vp.height,
+            projectedPos
+        );
+
+        glm::vec3 toTarget =
+            glm::normalize(label.data.worldPos - m_playerShip.transform.position);
+
+        glm::vec4 viewDir4 = view * glm::vec4(toTarget, 0.0f);
+        glm::vec2 dir2D(viewDir4.x, -viewDir4.y);
+
+        if (glm::length(dir2D) < 1e-4f)
+            continue;
+
+        dir2D = glm::normalize(dir2D);
+        label.edgeDir = dir2D;
+
+        bool insideHud = false;
+
+        if (projected)
+            insideHud = m_playerShip.hudEdgeMapper.isInsideBoundary(projectedPos);
+
+        if (projected && insideHud)
         {
-            label.onScreen  = false;
-            label.screenPos = edgePos;
+            label.onScreen  = true;
+            label.screenPos = projectedPos;
         }
+        else
+        {
+            glm::vec2 edgePos;
+            if (m_playerShip.hudEdgeMapper.projectDirection(
+                    screenCenter,
+                    dir2D,
+                    edgePos))
+            {
+                label.onScreen  = false;
+                label.screenPos = edgePos;
+            }
+        }
+
+        m_worldLabelRenderer.renderHUD(label);
     }
 
-    m_worldLabelRenderer.renderHUD(label);
-}
+    cockpitPass.render();
 
-    
     glEnable(GL_DEPTH_TEST);
     LOG("[SpaceState] renderHUD after text");
 }

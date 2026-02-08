@@ -43,8 +43,8 @@ void HudEdgeMapper::setBoundary(
     for (const auto& p : normalizedBoundary)
     {
         m_boundaryPx.emplace_back(
-            p.x * viewportW,
-            p.y * viewportH
+            (p.x ) * viewportW,
+            (p.y ) * viewportH
         );
     }
 }

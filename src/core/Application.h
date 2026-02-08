@@ -4,6 +4,7 @@
 #include "StateStack.h"
 #include "window/Window.h"
 #include "render/Renderer.h"
+#include "render/RenderContext.h"
 
 
 
@@ -27,4 +28,5 @@ private:
     Window* m_window;
     StateContext m_context;
     StateStack   m_states;
+    RenderContext renderContext;
 };

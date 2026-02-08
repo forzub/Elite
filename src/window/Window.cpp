@@ -46,45 +46,6 @@ Window::Window(int width, int height, const char* title)
     
     glEnable(GL_DEPTH_TEST);
     
-   
-    // glfwSetKeyCallback(
-    //     m_window,
-    //     [](GLFWwindow*, int key, int, int action, int)
-    //     {
-    //         if (action == GLFW_PRESS)
-    //             Input::instance().setKey(key, true);
-    //         else if (action == GLFW_RELEASE)
-    //             Input::instance().setKey(key, false);
-    //     }
-    // );
-
-    // glfwSetCursorPosCallback(
-    //     m_window,
-    //     [](GLFWwindow*, double xpos, double ypos)
-    //     {
-    //         static double lastX = xpos;
-    //         static double lastY = ypos;
-
-    //         double dx = xpos - lastX;
-    //         double dy = lastY - ypos;
-
-    //         lastX = xpos;
-    //         lastY = ypos;
-
-    //         Input::instance().setMouseDelta(dx, dy);
-    //     }
-    // );
-
-    // glfwSetMouseButtonCallback(
-    //     m_window,
-    //     [](GLFWwindow*, int button, int action, int)
-    //     {
-    //         if (action == GLFW_PRESS)
-    //             Input::instance().setMouseButton(button, true);
-    //         else if (action == GLFW_RELEASE)
-    //             Input::instance().setMouseButton(button, false);
-    //     }
-    // );
 
 }
 

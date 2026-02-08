@@ -52,6 +52,7 @@ add_executable(EliteGame
 
 
     src/game/ship/descriptors/EliteCobraMk1.cpp
+    src/game/ship/descriptors/EliteCobraMk1_Cockpit.cpp
 
     src/game/ship/ShipController.cpp
     src/game/ship/ShipCameraController.cpp
@@ -62,6 +63,8 @@ add_executable(EliteGame
     src/game/ship/sensors/ShipSignalPresentation.cpp
 
     src/galaxy/GalaxyDatabase.cpp
+
+    src/game/ship/cockpit/CockpitMeshBuilder.cpp
     
 
 
@@ -73,6 +76,8 @@ add_executable(EliteGame
     src/render/Font.cpp
     src/render/HUD/TextRenderer.cpp
     src/render/HUD/WorldLabelRenderer.cpp
+    src/render/RenderCockpitPass.cpp
+  
 
 )
 

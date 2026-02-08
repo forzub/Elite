@@ -7,6 +7,8 @@
 #include "render/Camera.h"
 #include "render/HUD/TextRenderer.h"  
 #include "render/HUD/WorldLabelRenderer.h" 
+#include "render/RenderCockpitPass.h"
+#include "render/RenderContext.h"
 
 
 #include "src/game/equipment/signalNode/processing/SignalReceiver.h"
@@ -93,4 +95,8 @@ private:
     Camera                                      m_camera;               // камера, следующая за кораблём
     Ship                                        m_playerShip;
     std::vector<Ship>                           m_npcShips;             // корабли NPC и remote players
+
+
+    // ==================================== renders ==============================
+    RenderCockpitPass                           cockpitPass;
 };

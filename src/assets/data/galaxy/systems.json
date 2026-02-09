@@ -404,50 +404,49 @@
       "dominantActor": 14,
       "description": "Карантинная аномальная область.",
       "tags": ["anomaly", "alien", "quarantine"]
-    },
-
+      },
+      {
+      "id": 39,
+      "name": "Хаб «Врата Пустоты»",
+      "position": [-15.0, -20.0, -5.0],
+      "kind": 4,
+      "dominantActor": 0
+      },
     {
-  "id": 39,
-  "name": "Хаб «Врата Пустоты»",
-  "position": [-15.0, -20.0, -5.0],
-  "kind": 4,
-  "dominantActor": 0
-  },
-  {
-    "id": 40,
-    "name": "Хаб «Дальний Рубеж-2»",
-    "position": [10.0, -25.0, -10.0],
-    "kind": 4,
-    "dominantActor": 0
-  },
-  {
-    "id": 41,
-    "name": "Хаб «Северный Путь»",
-    "position": [-25.0, 10.0, -12.0],
-    "kind": 4,
-    "dominantActor": 0
-  },
-  {
-    "id": 42,
-    "name": "Хаб «Южный Крест»",
-    "position": [-10.0, -30.0, 0.0],
-    "kind": 4,
-    "dominantActor": 0
-  },
-  {
-    "id": 43,
-    "name": "Хаб «Восточный Фронтир»",
-    "position": [20.0, -15.0, 8.0],
-    "kind": 4,
-    "dominantActor": 0
-  },
-  {
-    "id": 44,
-    "name": "Хаб «Западная Глубина»",
-    "position": [-35.0, 5.0, -8.0],
-    "kind": 4,
-    "dominantActor": 0
-  }
+      "id": 40,
+      "name": "Хаб «Дальний Рубеж-2»",
+      "position": [10.0, -25.0, -10.0],
+      "kind": 4,
+      "dominantActor": 0
+    },
+    {
+      "id": 41,
+      "name": "Хаб «Северный Путь»",
+      "position": [-25.0, 10.0, -12.0],
+      "kind": 4,
+      "dominantActor": 0
+    },
+    {
+      "id": 42,
+      "name": "Хаб «Южный Крест»",
+      "position": [-10.0, -30.0, 0.0],
+      "kind": 4,
+      "dominantActor": 0
+    },
+    {
+      "id": 43,
+      "name": "Хаб «Восточный Фронтир»",
+      "position": [20.0, -15.0, 8.0],
+      "kind": 4,
+      "dominantActor": 0
+    },
+    {
+      "id": 44,
+      "name": "Хаб «Западная Глубина»",
+      "position": [-35.0, 5.0, -8.0],
+      "kind": 4,
+      "dominantActor": 0
+    }
 
   ]
 }

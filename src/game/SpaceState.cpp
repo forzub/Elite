@@ -104,16 +104,10 @@ SpaceState::SpaceState(StateStack& states)
 
     EliteCobraMk1 cobra;
     CockpitGeometry geo = cobra.createCockpitGeometry();
+    cockpitPass.setGeometry(geo);
 
-    for (const auto& poly : geo.polygons)
-    {
-        cockpitPass.addMesh(buildMeshFromPolygon01(poly));
-    }
 
-    for (const auto& stroke : geo.strokes)
-    {
-        cockpitPass.addMesh(buildStrokeMesh(stroke));
-    }
+
 
 
 

@@ -156,8 +156,8 @@ void Ship::handleInput()
     if (!ctrl.cruiseActive)
     {
         ctrl.pitchInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_W) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_S) ? 1.0f : 0.0f);
+            (Input::instance().isKeyPressed(GLFW_KEY_S) ? 1.0f : 0.0f) -
+            (Input::instance().isKeyPressed(GLFW_KEY_W) ? 1.0f : 0.0f);
 
         ctrl.rollInput =
             (Input::instance().isKeyPressed(GLFW_KEY_A) ? 1.0f : 0.0f) -

@@ -8,6 +8,7 @@
 struct Vertex2D
 {
     glm::vec2 position;   // NDC или screen-space
+    glm::vec2 local01;    // ЛОКАЛЬНЫЕ координаты объекта [0..1]
     glm::vec4 color;      // RGBA
 };
 

@@ -3,6 +3,7 @@
 out vec4 FragColor;
 uniform vec4 uStrokeColor;
 
+
 void main()
 {
     FragColor = uStrokeColor;

@@ -45,9 +45,35 @@ void RenderCockpitPass::init()
     uColorB   = glGetUniformLocation(fillShader, "uColorB");
     uGradFrom = glGetUniformLocation(fillShader, "uGradFrom");
     uGradTo   = glGetUniformLocation(fillShader, "uGradTo");
+    uStrokeColor = glGetUniformLocation(strokeShader, "uStrokeColor");
+    uFillAmount = glGetUniformLocation(fillShader, "uFillAmount");      // --- для полосатых индикаторов -----
+    uRotationDeg = glGetUniformLocation(fillShader, "uRotationDeg");    // ---- для стрелочного индикатора ---
+    uPivot       = glGetUniformLocation(fillShader, "uPivot");
     glUseProgram(0);
+
+
+//     std::cout << "uFillAmount location = " << uFillAmount << std::endl;
    
-   
+//    GLint linked;
+//     glGetProgramiv(fillShader, GL_LINK_STATUS, &linked);
+
+//     std::cout << "Fill shader linked = " << linked << std::endl;
+
+//     GLint count;
+//     glGetProgramiv(fillShader, GL_ACTIVE_UNIFORMS, &count);
+
+//     std::cout << "Active uniforms: " << count << std::endl;
+
+    // for (int i = 0; i < count; ++i)
+    // {
+    //     char name[256];
+    //     GLsizei length;
+    //     GLint size;
+    //     GLenum type;
+
+    //     glGetActiveUniform(fillShader, i, 256, &length, &size, &type, name);
+    //     std::cout << "Uniform #" << i << " = " << name << std::endl;
+    // }
   
 }
 
@@ -61,7 +87,7 @@ void RenderCockpitPass::init()
 //   ##      ##       ##  ##   ##  ##   ##        ##
 //  ####      #####   ##  ##    ######   #####   ####
 
-void RenderCockpitPass::render()
+void RenderCockpitPass::render(const ShipCockpitState& state)
 {
     if (commands.empty())
         return;
@@ -70,39 +96,64 @@ void RenderCockpitPass::render()
 
     for (const auto& cmd : commands)
     {
+        const CockpitVisualOverride* ov = nullptr;
+
+        auto it = state.overrides.find(cmd.id);
+        if (it != state.overrides.end())
+            ov = &it->second;
+
+
+        if (ov && !ov->visible)
+            continue;
+
+        
+        //======= стрелочное =========================
+        glm::vec2 pivotNDC(0.0f);
+
+        if (cmd.hasPivot)
+        {
+            pivotNDC.x = cmd.pivot01.x * 2.0f - 1.0f;
+            pivotNDC.y = 1.0f - cmd.pivot01.y * 2.0f;
+        }
+        glUniform2fv(uPivot, 1, &pivotNDC.x);
+
+
+        //  ============ заливочное =======================
+
         if (cmd.type == CockpitDrawType::Fill)
         {
             glUseProgram(fillShader);
+            glm::vec4 colorA = cmd.colorA;
+            float fillAmount = 1.0f;
+            if (ov && ov->overrideFill)
+                fillAmount = ov->fill01;
 
-            
+            glUniform1f(uFillAmount, fillAmount);
+            if (ov && ov->overrideColor)
+                colorA = ov->color;
+            if (ov && ov->overrideAlpha)
+                colorA.a *= ov->alpha;
 
+            glUniform4fv(uColorA, 1, &colorA.x);
+            glUniform4fv(uColorB, 1, &cmd.colorB.x);
             glUniform1i(uFillType, (int)cmd.fillType);
-
-            // glUniform1i(uFillType, 1);
-
-            glUniform4fv(uColorA, 1, &cmd.colorA[0]);
-            glUniform4fv(uColorB, 1, &cmd.colorB[0]);
-            glUniform2fv(uGradFrom, 1, &cmd.gradFrom[0]);
-            glUniform2fv(uGradTo,   1, &cmd.gradTo[0]);
+            glUniform2fv(uGradFrom, 1, &cmd.gradFrom.x);
+            glUniform2fv(uGradTo,   1, &cmd.gradTo.x);
         }
-        else // Stroke
+        else
         {
-           
             glUseProgram(strokeShader);
 
-            GLint loc = glGetUniformLocation(strokeShader, "uStrokeColor");
-            glUniform4fv(loc, 1, &cmd.strokeColor[0]);
+            glm::vec4 color = cmd.strokeColor;
+            if (ov && ov->overrideColor)
+                color = ov->color;
+
+            glUniform4fv(uStrokeColor, 1, &color.x);
 
         }
 
         glBindVertexArray(cmd.mesh.vao);
-
-        glDrawElements(
-            GL_TRIANGLES,
-            cmd.mesh.indexCount,
-            GL_UNSIGNED_INT,
-            nullptr
-        );
+        glDrawElements(GL_TRIANGLES, cmd.mesh.indexCount, GL_UNSIGNED_INT, nullptr);
     }
 
     glBindVertexArray(0);
@@ -111,11 +162,73 @@ void RenderCockpitPass::render()
 }
 
 
+// void RenderCockpitPass::render(const ShipCockpitState* state = nullptr)
+// {
+//     if (commands.empty())
+//         return;
 
-   
+//     glDisable(GL_DEPTH_TEST);
+
+//     for (const auto& cmd : commands)
+//     {
+//         const CockpitVisualOverride* ov = nullptr;
+
+//         if (state)
+//         {
+//             auto it = state->overrides.find(cmd.id);
+//             if (it != state->overrides.end())
+//                 ov = &it->second;
+//         }
+
+
+//          if (ov && !ov->visible)
+//             continue;
+
+
+//         if (cmd.type == CockpitDrawType::Fill)
+//         {
+//             glUseProgram(fillShader);
+//             glUniform1i(uFillType, (int)cmd.fillType);
+//             glUniform4fv(uColorA, 1, &cmd.colorA[0]);
+//             glUniform4fv(uColorB, 1, &cmd.colorB[0]);
+//             glUniform2fv(uGradFrom, 1, &cmd.gradFrom[0]);
+//             glUniform2fv(uGradTo,   1, &cmd.gradTo[0]);
+//         }
+//         else // Stroke
+//         {
+           
+//             glUseProgram(strokeShader);
+
+//             GLint loc = glGetUniformLocation(strokeShader, "uStrokeColor");
+//             glUniform4fv(loc, 1, &cmd.strokeColor[0]);
+
+//         }
+
+//         glBindVertexArray(cmd.mesh.vao);
+
+//         glDrawElements(
+//             GL_TRIANGLES,
+//             cmd.mesh.indexCount,
+//             GL_UNSIGNED_INT,
+//             nullptr
+//         );
+//     }
+
+//     glBindVertexArray(0);
+//     glUseProgram(0);
+//     glEnable(GL_DEPTH_TEST);
+// }
 
 
 
+//                      ##                                                             ##
+//                      ##                                                             ##
+//   ### ##   ####     #####             ### ##   ####     ####    ##  ##    ####     #####   ######   ##  ##
+//  ##  ##   ##  ##     ##              ##  ##   ##  ##   ##  ##   #######  ##  ##     ##      ##  ##  ##  ##
+//  ##  ##   ######     ##              ##  ##   ######   ##  ##   ## # ##  ######     ##      ##      ##  ##
+//   #####   ##         ## ##            #####   ##       ##  ##   ##   ##  ##         ## ##   ##       #####
+//      ##    #####      ###                ##    #####    ####    ##   ##   #####      ###   ####         ##
+//  #####                               #####                                                          #####
 
 
 void RenderCockpitPass::setGeometry(const CockpitGeometry& geometry)
@@ -133,6 +246,7 @@ void RenderCockpitPass::setGeometry(const CockpitGeometry& geometry)
     {
         CockpitGLCommand cmd;
         cmd.type = draw.type;
+        cmd.id = draw.id;
 
         if (draw.type == CockpitDrawType::Fill)
         {
@@ -160,6 +274,17 @@ void RenderCockpitPass::setGeometry(const CockpitGeometry& geometry)
         commands.push_back(cmd);
     }
 }
+
+
+
+//                     ###                          ###                                       ###
+//                      ##                           ##                                        ##
+//  ##  ##   ######     ##      ####     ####        ##            ##  ##    ####     #####    ##
+//  ##  ##    ##  ##    ##     ##  ##       ##    #####            #######  ##  ##   ##        #####
+//  ##  ##    ##  ##    ##     ##  ##    #####   ##  ##            ## # ##  ######    #####    ##  ##
+//  ##  ##    #####     ##     ##  ##   ##  ##   ##  ##            ##   ##  ##            ##   ##  ##
+//   ######   ##       ####     ####     #####    ######           ##   ##   #####   ######   ###  ##
+//           ####
 
 
 GLMesh RenderCockpitPass::uploadMesh(const Mesh2D& mesh)

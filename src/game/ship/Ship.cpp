@@ -5,8 +5,9 @@
 #include "core/StateStack.h"
 #include "src/game/signals/SignalPatternLibrary.h"
 #include "src/game/equipment/EquipmentSlot.h"
-
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
+#include "src/render/bitmap/TextureLoader.h"
+
 
 
 
@@ -108,6 +109,15 @@ void Ship::init(
         }
 
 
+    if (desc->cockpit)
+    {
+        m_hasCockpit = true;
+        m_cockpitGeometry = desc->cockpit->geometry;
+        m_cockpitBaseTex = TextureLoader::load2D(desc->cockpit->baseTexturePath, false);
+        m_cockpitGlassTex = TextureLoader::load2D(desc->cockpit->glassTexturePath, false);
+    }
+
+
     // 2. базовое состояние
     auto& tx  = equipment.transmitter;
     auto& sig = emittedSignal;
@@ -127,6 +137,8 @@ void Ship::init(
 
     // 3. контроллер сигналов
     signalController.init(emittedSignal);
+
+    
 }
 
 
@@ -307,8 +319,9 @@ void Ship::update(
 
     //  4. HUD / AI — по роли
     updatePerception(dt);         // ④ осмысление - ветвление игрок / нпс
-
     updateCamera(dt);             // ⑤ камера (только Player)
+
+    updateCockpitState();
 }
 
 
@@ -791,4 +804,113 @@ bool Ship::REMOVEItem(Item* item)
     }
 
     return true;
+}
+
+
+
+//                       ###              ##                                                  ###                 ##       ##                ##                ##
+//                        ##              ##                                                   ##                          ##                ##                ##
+//  ##  ##   ######       ##    ####     #####    ####              ####     ####     ####     ##  ##  ######    ###      #####    #####    #####    ####     #####    ####
+//  ##  ##    ##  ##   #####       ##     ##     ##  ##            ##  ##   ##  ##   ##  ##    ## ##    ##  ##    ##       ##     ##         ##         ##     ##     ##  ##
+//  ##  ##    ##  ##  ##  ##    #####     ##     ######            ##       ##  ##   ##        ####     ##  ##    ##       ##      #####     ##      #####     ##     ######
+//  ##  ##    #####   ##  ##   ##  ##     ## ##  ##                ##  ##   ##  ##   ##  ##    ## ##    #####     ##       ## ##       ##    ## ##  ##  ##     ## ##  ##
+//   ######   ##       ######   #####      ###    #####             ####     ####     ####     ##  ##   ##       ####       ###   ######      ###    #####      ###    #####
+//           ####                                                                                      ####
+
+void Ship::updateCockpitState()
+{
+    // ===== SPEED BAR =====
+
+    float maxSpeed = desc->physics.maxCombatSpeed ;
+    float currentSpeed = transform.forwardVelocity;
+    float speed01 = glm::clamp(currentSpeed / maxSpeed, 0.0f, 1.0f);
+
+    auto& barOv  = m_cockpitState.overrides["speed_bar_fill"];
+
+    barOv .visible = true;
+    barOv .overrideFill = true;
+    barOv .fill01 = speed01;
+
+
+    // ========= вращение как спидометр ============
+    float speedneedle01 = transform.forwardVelocity /
+                desc->physics.maxCombatSpeed;
+
+    speedneedle01 = glm::clamp(speedneedle01, 0.0f, 1.0f);
+
+    auto& needle = m_cockpitState.overrides["speed_needle"];
+    needle.visible = true;
+    needle.overrideRotation = true;
+    needle.rotationDeg = -90.0f + speedneedle01 * 180.0f;
+
+
+    //======== дешефратор и его слоты ===============
+    int moduleIndex = 0;
+
+    for (auto& decryptor : equipment.decryptors.modules)
+    {
+        // ───────── внешний модуль ─────────
+        {
+            std::string moduleId =
+                "decryptor_module_" + std::to_string(moduleIndex);
+
+            auto& ov = m_cockpitState.overrides[moduleId];
+
+            ov.visible = true;
+            ov.overrideColor = true;
+            ov.color = {0.0f, 0.3f, 0.7f, 1.0f};
+        }
+
+        // ───────── внутренние слоты ─────────
+
+        int installedCount = static_cast<int>(decryptor.m_cards.size());
+        int maxSlots       = decryptor.slotCount;
+
+        for (int j = 0; j < 16; ++j) // 16 — максимум, как в геометрии
+        {
+            std::string slotId =
+                "decryptor_" + std::to_string(moduleIndex) +
+                "_slot_" + std::to_string(j);
+
+            auto& ov = m_cockpitState.overrides[slotId];
+
+            if (j < maxSlots)
+            {
+                ov.visible = true;
+                ov.overrideColor = true;
+
+                if (j < installedCount)
+                {
+                    // заполненный слот
+                    ov.color = {0.0f, 0.9f, 0.4f, 1.0f};
+                }
+                else
+                {
+                    // пустой слот
+                    ov.color = {0.2f, 0.2f, 0.25f, 1.0f};
+                }
+            }
+            else
+            {
+                ov.visible = false;
+            }
+        }
+
+        moduleIndex++;
+        
+    }
+}
+
+//                      ##                                         ###                 ##       ##                ##                ##
+//                      ##                                          ##                          ##                ##                ##
+//   ### ##   ####     #####             ####     ####     ####     ##  ##  ######    ###      #####    #####    #####    ####     #####    ####
+//  ##  ##   ##  ##     ##              ##  ##   ##  ##   ##  ##    ## ##    ##  ##    ##       ##     ##         ##         ##     ##     ##  ##
+//  ##  ##   ######     ##              ##       ##  ##   ##        ####     ##  ##    ##       ##      #####     ##      #####     ##     ######
+//   #####   ##         ## ##           ##  ##   ##  ##   ##  ##    ## ##    #####     ##       ## ##       ##    ## ##  ##  ##     ## ##  ##
+//      ##    #####      ###             ####     ####     ####     ##  ##   ##       ####       ###   ######      ###    #####      ###    #####
+//  #####                                                                   ####
+
+const ShipCockpitState& Ship::getCockpitState() const
+{
+    return m_cockpitState;
 }

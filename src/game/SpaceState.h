@@ -7,8 +7,9 @@
 #include "render/Camera.h"
 #include "render/HUD/TextRenderer.h"  
 #include "render/HUD/WorldLabelRenderer.h" 
-#include "render/RenderCockpitPass.h"
 #include "render/RenderContext.h"
+#include "render/RenderCockpitPass.h"
+#include "render/RenderCockpitBitmapPass.h"
 
 
 #include "src/game/equipment/signalNode/processing/SignalReceiver.h"
@@ -99,4 +100,5 @@ private:
 
     // ==================================== renders ==============================
     RenderCockpitPass                           cockpitPass;
+    RenderCockpitBitmapPass                     cockpitBitmapPass;
 };

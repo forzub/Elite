@@ -66,6 +66,7 @@ add_executable(EliteGame
 
     src/game/ship/cockpit/CockpitMeshBuilder.cpp
     src/game/ship/cockpit/CockpitStrokeBuilder.cpp
+    src/game/ship/cockpit/ShipCockpitUpdater.cpp
     
 
 
@@ -78,9 +79,19 @@ add_executable(EliteGame
     src/render/HUD/TextRenderer.cpp
     src/render/HUD/WorldLabelRenderer.cpp
     src/render/RenderCockpitPass.cpp
+    src/render/RenderCockpitBitmapPass.cpp
+    src/render/bitmap/TextureLoader.cpp
   
 
 )
+
+add_custom_target(copy_assets ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/src/assets
+            ${CMAKE_BINARY_DIR}/assets)
+
+add_dependencies(EliteGame copy_assets)
+
 
 set_source_files_properties(
     glad/src/gl.c

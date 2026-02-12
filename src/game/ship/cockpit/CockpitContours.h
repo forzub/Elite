@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 
@@ -44,10 +45,7 @@ struct CockpitPolygon
 // --------------------------------------------
 struct CockpitStroke
 {
-    // std::vector<glm::vec2> path01;    // [0..1], НЕ замкнута
-    // glm::vec4              color;
-    // float                  thickness;
-    // bool                   extend;
+
     std::vector<glm::vec2> path01;
     float thickness = 0.002f;   
     glm::vec4 color = {1,1,1,1};
@@ -58,10 +56,14 @@ struct CockpitStroke
 struct CockpitDrawCommand
 {
     CockpitDrawType type;
+    std::string id;
 
     // Только одно из двух используется
     CockpitPolygon polygon;
     CockpitStroke  stroke;
+
+    glm::vec2 pivot01;
+    bool hasPivot = false;
 };
 
 
@@ -70,9 +72,6 @@ struct CockpitDrawCommand
 // --------------------------------------------
 struct CockpitGeometry
 {
-    // std::vector<CockpitPolygon> polygons;
-    // std::vector<CockpitStroke>  strokes;
-
     std::vector<CockpitDrawCommand> drawList;
 };
 

@@ -4,12 +4,15 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
 #include "SpaceState.h"
 #include "core/StateStack.h"
 #include "core/Log.h"
 #include "input/Input.h"
+
 #include "render/DebugGrid.h"
 #include "render/ScreenUtils.h"
+#include "render/bitmap/TextureLoader.h"
 
 #include "game/ship/cockpit/CockpitMeshBuilder.h"
 #include "game/ship/cockpit/CockpitStrokeBuilder.h"
@@ -23,6 +26,7 @@
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/player/ActorIdProvider.h"
 #include "src/game/player/ActorCodeGenerator.h"
+
 #include "ui/ConfirmExitState.h"
 #include "ui/HudRenderer.h"
 #include "src/galaxy/GalaxyDatabase.h"
@@ -60,6 +64,7 @@ SpaceState::SpaceState(StateStack& states)
     << "Routes:  " << galaxy.routeCount()  << "\n";
 
 
+    cockpitBitmapPass.init();
     cockpitPass.init();
     
     // =======================================================================
@@ -97,16 +102,19 @@ SpaceState::SpaceState(StateStack& states)
     m_playerShip.init(
         context(),
         ShipRole::Player,
-        EliteCobraMk1::EliteCobraMk1Descriptor(),
-        {0.0f, 5.0f, 10.0f},
+        EliteCobraMk1::EliteCobraMk1Descriptor(ShipRole::Player),
+        {0.0f, 50.0f, 10.0f},
         initData
     );
 
-    EliteCobraMk1 cobra;
-    CockpitGeometry geo = cobra.createCockpitGeometry();
-    cockpitPass.setGeometry(geo);
+    if (m_playerShip.role == ShipRole::Player)
+    {
+        cockpitPass.setGeometry(m_playerShip.getCockpitGeometry());
+        cockpitBitmapPass.setBaseTexture(m_playerShip.getCockpitBaseTex());
+        cockpitBitmapPass.setGlassTexture(m_playerShip.getCockpitGlassTex());
+    }
 
-
+    
 
 
 
@@ -145,7 +153,7 @@ SpaceState::SpaceState(StateStack& states)
     m_npcShips.back().init(
         context(),
         ShipRole::NPC,
-        EliteCobraMk1::EliteCobraMk1Descriptor(),
+        EliteCobraMk1::EliteCobraMk1Descriptor(ShipRole::NPC),
         {20.0f, 0.0f, -50.0f},
         initData
     );
@@ -184,7 +192,7 @@ SpaceState::SpaceState(StateStack& states)
     m_npcShips.back().init(
         context(),
         ShipRole::NPC,
-        EliteCobraMk1::EliteCobraMk1Descriptor(),
+        EliteCobraMk1::EliteCobraMk1Descriptor(ShipRole::NPC),
         {-70.0f, 50.0f, -70.0f},
         initData
     );
@@ -392,8 +400,6 @@ void SpaceState::renderUI()
     float fy = (float)vp.height;
 
 
-    
-
     // -------------------------------
     // 3D ПРОЕКЦИЯ
     // -------------------------------
@@ -421,10 +427,9 @@ void SpaceState::renderUI()
     // -------------------------------
     DebugGrid::drawInfinite(
         m_playerShip.transform.position,
-        200.0f,
+        20000.0f,
         100
     );
-    
     
     
 }
@@ -575,7 +580,19 @@ void SpaceState::renderHUD()
         m_worldLabelRenderer.renderHUD(label);
     }
 
-    cockpitPass.render();
+    // cockpitPass.render();
+    // 1. корпус кабины
+    cockpitBitmapPass.renderBase();
+
+
+    // 2. стекло
+    cockpitBitmapPass.setGlassIntensity(1.0f);
+    cockpitBitmapPass.renderGlass();
+
+    // 3. векторные приборы
+    cockpitPass.render(m_playerShip.getCockpitState());
+
+
 
     glEnable(GL_DEPTH_TEST);
     LOG("[SpaceState] renderHUD after text");
@@ -622,5 +639,8 @@ bool SpaceState::isInSafeZone() const
     // пока считаем, что игрок ВСЕГДА в безопасной зоне
     return true;
 }
+
+
+
 
 

@@ -11,6 +11,8 @@
 #include "game/ship/ShipParams.h"
 #include "game/ship/ShipHudProfile.h"
 
+#include "game/ship/cockpit/CockpitContours.h"
+
 #include "src/world/types/SignalType.h"
 
 
@@ -52,9 +54,7 @@ struct ShipSystemSlots
     int transmitterSlots            = 0;  
     int utilitySlots                = 0;  // сборщик мусора, нанокиты, спецсистемы
     int fuelScopSlots               = 0;  // заборщик топлива
-    int tractorBeamSlots            = 0;  // буксировочный луч
-    
-    
+    int tractorBeamSlots            = 0;  // буксировочный луч   
 
 };
 
@@ -86,6 +86,15 @@ struct SignalProfile
     std::vector<SignalType> supportedSignals;
 };
 
+struct CockpitData
+    {
+        bool enabled = false;
+
+        CockpitGeometry geometry;
+        std::string baseTexturePath;
+        std::string glassTexturePath;
+    };
+
 
     struct ShipDescriptor
 {
@@ -101,7 +110,10 @@ struct SignalProfile
     
 
     // НОВОЕ: пресеты оборудования по умолчанию
-    EquipmentPresets    defaultEquipment;
 
+    
+
+    EquipmentPresets                defaultEquipment;
+    std::optional<CockpitData>      cockpit;
     
 };

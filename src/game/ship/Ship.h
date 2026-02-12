@@ -3,12 +3,11 @@
 #include <vector>
 
 
-#include "game/ship/CargoBay.h"
-#include "game/ship/ShipInventory.h"
-
+#include "src/game/ship/CargoBay.h"
+#include "src/game/ship/ShipInventory.h"
 #include "src/game/ship/ShipCameraController.h"
 #include "src/game/ship/ShipDescriptor.h"
-#include "src/game/ship/ShipParams.h"
+// #include "src/game/ship/ShipParams.h"
 #include "src/game/ship/ShipTransform.h"
 #include "src/game/ship/ShipHudProfile.h"
 #include "src/game/ship/ShipControlState.h"
@@ -19,33 +18,35 @@
 #include "src/game/ship/ShipRegistry.h"
 #include "src/game/ship/ShipInitData.h"
 
+#include "src/game/ship/cockpit/ShipCockpitState.h"
+#include "src/game/ship/cockpit/CockpitContours.h"
+
 #include "src/game/items/Item.h"
-
-// #include "src/game/ship/ShipRegistry.h"
-
 
 #include "src/game/equipment/ShipEquipment.h"
 #include "src/game/equipment/ShipEquipmentDesc.h"
 
-
-
 #include "src/game/equipment/decryptor/DecryptorDesc.h"
+#include "src/game/equipment/signalNode/processing/SignalReceiver.h"
 
 #include "game/ship/sensors/ShipSignalPresentation.h"
 #include "game/ship/sensors/NpcSignalAwareness.h"
 
-#include "src/game/equipment/signalNode/processing/SignalReceiver.h"
 
 #include "world/WorldSignal.h" 
 
 #include "src/render/Camera.h"
-
 #include "src/ui/hud/HudEdgeMapper.h"
 
 #include "core/StateContext.h"
 #include "game/core/QuantitySlot.h"
 
-
+struct CockpitSetup
+{
+    CockpitGeometry geometry;
+    std::string baseTexturePath;
+    std::string glassTexturePath;
+};
 
 
 struct ShipSystemState
@@ -83,16 +84,9 @@ struct Ship
     // персональные данные корабля. тип, имя и т.п.
     ShipVisualIdentity                      visual;
     ShipRegistry                            registry;
-    // ShipRegistry                            registry;
 
     // --- описание типа ---
     const ShipDescriptor*                   desc = nullptr;
-
-    // ───────────────
-    // Хранилища
-    // ───────────────
-    CargoBay                                cargo;
-    ShipInventory                           inventory;
 
     // --- состояние ---
     ShipTransform                           transform;          // - перемещение
@@ -100,6 +94,7 @@ struct Ship
     
     // --- подсистемы ---
     ShipController                          controller;         // - функции движения
+    
     Camera                                  camera;             // камера, следующая за кораблём
     ShipCameraController                    cameraController;   // - контроль камеры
     
@@ -115,15 +110,22 @@ struct Ship
     // TX
     WorldSignal                             emittedSignal; 
     ShipSignalController                    signalController;
-    
+
+    // ───────────────
+    // Хранилища
+    // ───────────────
+    CargoBay                                cargo;
+    ShipInventory                           inventory;
     // оборудование
     ShipEquipment                           equipment;
-    
     ShipSystemState                         systems;
     ShipDockState                           docks;
+    ShipCockpitState                        m_cockpitState;
 
     // восприятие связи NPC
     NpcSignalAwareness                      npcAwareness;
+
+    
 
     // --- lifecycle ---
     void init(
@@ -151,9 +153,9 @@ struct Ship
 
     void updateSignals(
         float dt,
-        const std::vector<WorldSignal>& worldSignals,
-        const std::vector<Planet>& planets,
-        const std::vector<InterferenceSource>& interferenceSources
+        const std::vector<WorldSignal>&         worldSignals,
+        const std::vector<Planet>&              planets,
+        const std::vector<InterferenceSource>&  interferenceSources
     );
 
     const WorldSignal& getEmittedSignal() const { return emittedSignal; }
@@ -196,9 +198,9 @@ struct Ship
     
     template<typename ModuleType>
     bool removeEquipment(
-        const char* equipmentName,
-        QuantitySlot& slot,
-        ModuleType& module
+        const char*     equipmentName,
+        QuantitySlot&   slot,
+        ModuleType&     module
     );
 
 
@@ -210,6 +212,32 @@ struct Ship
 
     bool addItem(Item* item);
     bool REMOVEItem(Item* item);
+
+
+    bool m_hasCockpit = false;
+    CockpitGeometry m_cockpitGeometry;
+    unsigned int m_cockpitBaseTex = 0;
+    unsigned int m_cockpitGlassTex = 0;
+
+    const ShipCockpitState& getCockpitState() const;
+    void updateCockpitState();
+
+    bool hasCockpit() const { return m_hasCockpit; }
+
+    const CockpitGeometry& getCockpitGeometry() const
+    {
+        return m_cockpitGeometry;
+    }
+
+    unsigned int getCockpitBaseTex() const
+    {
+        return m_cockpitBaseTex;
+    }
+
+    unsigned int getCockpitGlassTex() const
+    {
+        return m_cockpitGlassTex;
+    }
 
 };
 

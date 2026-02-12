@@ -16,6 +16,7 @@ uniform vec4 uColorB;
 // В SVG-пространстве [0..1]
 uniform vec2 uGradFrom;
 uniform vec2 uGradTo;
+uniform float uFillAmount;
 
 float saturate(float x)
 {
@@ -24,10 +25,14 @@ float saturate(float x)
 
 void main()
 {
+
+    
+    float mask = step(vLocal.x, uFillAmount);
+    
     // ---------------- SOLID ----------------
     if (uFillType == 0)
     {
-        FragColor = uColorA;
+        FragColor = vec4(uColorA.rgb, uColorA.a * mask);
         return;
     }
 

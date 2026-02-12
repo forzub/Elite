@@ -90,6 +90,7 @@ void Application::init()
     m_context.app = this;   
 
     m_window = new Window(1280, 720, "EliteGame");
+    // m_window = new Window(1920, 1080, "EliteGame");
     m_running = true;
 
     glEnable(GL_BLEND);
@@ -159,16 +160,16 @@ void Application::mainLoop()
         
         m_renderer.beginFrame();
 
-        GameState* top = m_states.current();
-        GameState* below = m_states.previous();
+            GameState* top = m_states.current();
+            GameState* below = m_states.previous();
 
-        // --- render world ---
-        if (top)
-        {
-            if (top->isModal() && below) below->renderUI();
-            top->renderUI();
-        }
-        if (top)top->renderHUD();
+            // --- render world ---
+            if (top)
+            {
+                if (top->isModal() && below) below->renderUI();
+                top->renderUI();
+            }
+            if (top)top->renderHUD();
 
         m_renderer.endFrame();
 

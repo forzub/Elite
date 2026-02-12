@@ -30,4 +30,5 @@ struct ShipParams
 struct ShipPhysicsProfile
 {
     ShipParams params;
+    
 };

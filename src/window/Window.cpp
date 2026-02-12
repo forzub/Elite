@@ -2,7 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include "Window.h"
-
+#include <iostream>
 #include <stdexcept>
 
 
@@ -18,8 +18,17 @@ Window::Window(int width, int height, const char* title)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-
+    glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_TRUE);
+    
     m_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
+
+
+            if (glfwGetWindowAttrib(m_window, GLFW_SRGB_CAPABLE))
+                std::cout << "sRGB framebuffer OK\n";
+            else
+                std::cout << "NO sRGB framebuffer\n";
+
+
 
     if (!m_window)
     {
@@ -27,9 +36,6 @@ Window::Window(int width, int height, const char* title)
         throw std::runtime_error("Failed to create GLFW window");
     }
 
-    
-
-    
         glfwMakeContextCurrent(m_window);
 
         // 1️⃣ СНАЧАЛА загружаем функции OpenGL
@@ -41,8 +47,6 @@ Window::Window(int width, int height, const char* title)
         glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);
         glViewport(0, 0, fbWidth, fbHeight);
     
-
-
     
     glEnable(GL_DEPTH_TEST);
     

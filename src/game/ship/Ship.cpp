@@ -1,3 +1,4 @@
+
 #include "Ship.h"
 #include <iostream>
 
@@ -29,116 +30,20 @@ void Ship::init(
     const ShipInitData& initData
 )
 {
-    // устанавливаем роль корабля - ИГРОК / НПС
-    // общий контекст - глобальные данные, viewport etc
-    // геттер из файла описания корабля (f.e. Cobra MKIII)
-    // позиция корабля в пространстве
 
-    role = inRole;  
-    desc = &descriptor;
-    transform.position = position;
-    
-    if (role == ShipRole::Player){
-        
-        // камера
-        camera.setAspect(context.aspect());
-        camera.setPosition(transform.position);
-        
-        const Viewport& vp = context.viewport();
+    core.init(
+        context,
+        inRole,
+        descriptor,
+        position,
+        initData
+    );
 
-        // HUD boundary
-        hudEdgeMapper.setBoundary(
-            desc->hud.edgeBoundary.contour,
-            vp.width,
-            vp.height
-        );
-    }
-    
-    // собираем корабль
-    // Устанавливаем оборудование по умолчанию из дескриптора
-    initShipSlotsFromDescriptor(descriptor);
-    installDefaultEquipment(descriptor);
-
-    // visual / UI
-    visual = initData.visual;
-
-    // registry / legal
-    registry = initData.registry;
-
-    // стартовый инвентарь
-    for (Item* item : initData.initialInventory)
+    if (core.role() == ShipRole::Player)
     {
-        inventory.add(item);
+        view.init(context, &descriptor, core.transform());
     }
 
-    // Автоматическая установка криптокарт в декрипторы
-        if (!equipment.decryptors.modules.empty())
-        {
-            // ВАЖНО: аккуратно, т.к. мы будем удалять элементы
-            for (size_t i = 0; i < inventory.items.size(); )
-            {
-                Item* item = inventory.items[i];
-                auto* card = dynamic_cast<CryptoCard*>(item);
-
-                if (!card)
-                {
-                    ++i;
-                    continue;
-                }
-
-                bool installed = false;
-
-                // пробуем установить карту в любой декриптор
-                for (auto& decryptor : equipment.decryptors.modules)
-                {
-                    if (!decryptor.enabled)
-                        continue;
-
-                    if (decryptor.install(card))
-                    {
-                        inventory.remove(card);
-                        installed = true;
-                        break;
-                    }
-                }
-
-                // если карта не установилась — идём дальше
-                if (!installed)
-                    ++i;
-            }
-        }
-
-
-    if (desc->cockpit)
-    {
-        m_hasCockpit = true;
-        m_cockpitGeometry = desc->cockpit->geometry;
-        m_cockpitBaseTex = TextureLoader::load2D(desc->cockpit->baseTexturePath, false);
-        m_cockpitGlassTex = TextureLoader::load2D(desc->cockpit->glassTexturePath, false);
-    }
-
-
-    // 2. базовое состояние
-    auto& tx  = equipment.transmitter;
-    auto& sig = emittedSignal;
-
-    sig.displayClass        = tx.displayClass;
-    sig.power               = tx.txPower;
-    sig.maxRange            = tx.baseRange;
-    
-    sig.position            = transform.position;
-    sig.type                = SignalType::Transponder;
-    sig.enabled             = true;
-    sig.owner               = this;
-    sig.label               = desc->identity.shipName;
-
-    sig.address.actor       = 0xFFFFFFFF;
-    sig.address.channel     = 0; // пока всегда публично
-
-    // 3. контроллер сигналов
-    signalController.init(emittedSignal);
-
-    
 }
 
 
@@ -155,120 +60,11 @@ void Ship::init(
 
 void Ship::handleInput()
 {
-    if (role != ShipRole::Player)
+    if (core.role() != ShipRole::Player)
         return;
 
+    inputMapper.update(control);
 
-    auto& ctrl = control;
-    ctrl = ShipControlState{};
-
-    ctrl.cruiseActive = Input::instance().isKeyPressed(GLFW_KEY_J);
-
-    // --- Rotation (disabled in cruise) ---
-    if (!ctrl.cruiseActive)
-    {
-        ctrl.pitchInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_S) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_W) ? 1.0f : 0.0f);
-
-        ctrl.rollInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_A) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_D) ? 1.0f : 0.0f);
-
-        ctrl.yawInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_Q) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_E) ? 1.0f : 0.0f);
-    }
-    else
-    {
-        ctrl.pitchInput = 0.0f;
-        ctrl.rollInput  = 0.0f;
-        ctrl.yawInput   = 0.0f;
-    }
-
-    // --- Target speed control ---
-    ctrl.targetSpeedRate = 0.0f;
-
-    if (Input::instance().isKeyPressed(GLFW_KEY_KP_ADD) ||
-        Input::instance().isKeyPressed(GLFW_KEY_EQUAL))
-        ctrl.targetSpeedRate = +1.0f;
-
-    if (Input::instance().isKeyPressed(GLFW_KEY_KP_SUBTRACT) ||
-        Input::instance().isKeyPressed(GLFW_KEY_MINUS))
-        ctrl.targetSpeedRate = -1.0f;
-
-    // --- Manoeuvre thrusters (disabled in cruise) ---
-    if (!ctrl.cruiseActive)
-    {
-        ctrl.strafeInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_6) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_4) ? 1.0f : 0.0f);
-
-        ctrl.forwardInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_8) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_2) ? 1.0f : 0.0f);
-
-        ctrl.liftInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_9) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_KP_3) ? 1.0f : 0.0f);
-    }
-    else
-    {
-        ctrl.strafeInput  = 0.0f;
-        ctrl.forwardInput = 0.0f;
-        ctrl.liftInput    = 0.0f;
-    }
-
-    if (Input::instance().isKeyPressed(GLFW_KEY_7)){
-        std::cout
-        << "[GLFW_KEY_7] start: "
-        << "enabled=" << emittedSignal.enabled
-        << " type=" << static_cast<int>(emittedSignal.type)
-        << std::endl;
-
-        signalController.requestSignal(SignalType::Transponder);
-
-        std::cout
-        << "[GLFW_KEY_7] done: "
-        << "enabled=" << emittedSignal.enabled
-        << " type=" << static_cast<int>(emittedSignal.type)
-        << std::endl;
-    }
-
-    if (Input::instance().isKeyPressed(GLFW_KEY_8)){
-        std::cout
-        << "[GLFW_KEY_8] start: "
-        << "enabled=" << emittedSignal.enabled
-        << " type=" << static_cast<int>(emittedSignal.type)
-        << std::endl;
-
-        signalController.requestSignal(SignalType::Beacon);
-
-        std::cout
-        << "[GLFW_KEY_8] done: "
-        << "enabled=" << emittedSignal.enabled
-        << " type=" << static_cast<int>(emittedSignal.type)
-        << std::endl;
-    }
-
-    if (Input::instance().isKeyPressed(GLFW_KEY_9)){
-        std::cout
-        << "[GLFW_KEY_9] start: "
-        << "enabled=" << emittedSignal.enabled
-        << " type=" << static_cast<int>(emittedSignal.type)
-        << std::endl;
-
-        signalController.requestSignal(SignalType::SOSModern);
-
-        std::cout
-        << "[GLFW_KEY_9] done: "
-        << "enabled=" << emittedSignal.enabled
-        << " type=" << static_cast<int>(emittedSignal.type)
-        << std::endl;
-        }
-
-    if (Input::instance().isKeyPressed(GLFW_KEY_0))
-        signalController.disableSignal();
 }
 
 
@@ -294,116 +90,62 @@ void Ship::update(
 )
 {
     updateControlIntent();        // ① откуда intent
-    updatePhysics(dt, world);     // ② движение
+    core.updatePhysics(dt, world);     // ② движение
    
     // формирование сигнала передатчика
-    signalController.update(dt, emittedSignal);
+    core.m_signalController.update(dt, core.emittedSignal());
 
 
-    if (emittedSignal.enabled)
-    {
-        emittedSignal.position     = transform.position;
-    }
+    if (core.emittedSignal().enabled)
+        {
+            core.emittedSignal().position = core.transform().position;
+        }
 
-
-    if (equipment.receiver.enabled)
-    {
-        updateSignals(
-            dt,
-            worldSignals,
-            planets,
-            interferenceSources
-        );
-    }
-
-
-    //  4. HUD / AI — по роли
-    updatePerception(dt);         // ④ осмысление - ветвление игрок / нпс
-    updateCamera(dt);             // ⑤ камера (только Player)
-
-    updateCockpitState();
-}
-
-
-
-
-
-void Ship::updateSignals(
-        float dt,
-        const std::vector<WorldSignal>& worldSignals,
-        const std::vector<Planet>& planets,
-        const std::vector<InterferenceSource>& interferenceSources
-    )
-{
-    signalResults.clear();
-
-    signalReceiver.update(
+    // ⬇ ВОТ ЭТОГО НЕ ХВАТАЕТ
+    core.updateSignals(
         dt,
-        transform.position,
-        equipment.receiver,
         worldSignals,
         planets,
-        interferenceSources,
-        signalResults,
-        this
+        interferenceSources
     );
+
+    //  4. HUD / AI — по роли
+    core.updatePerception(dt);          // ④ осмысление - ветвление игрок / нпс
+    updateCamera(dt);                   // ⑤ камера (только Player)
+
+    view.updateCockpitState(core.role(), &core.desc(), core.transform(), core.equipment());
 }
+
+
 
 
 void Ship::updateControlIntent()
 {
-    if (role == ShipRole::Player)
+    if (core.role() == ShipRole::Player)
     {
         // control уже заполнен в handleInput()
-        transform.cruiseActive    = control.cruiseActive;
-        transform.pitchInput      = control.pitchInput;
-        transform.yawInput        = control.yawInput;
-        transform.rollInput       = control.rollInput;
-        transform.targetSpeedRate = control.targetSpeedRate;
-        transform.strafeInput     = control.strafeInput;
-        transform.liftInput       = control.liftInput;
-        transform.forwardInput    = control.forwardInput;
+        core.transform().cruiseActive    = control.cruiseActive;
+        core.transform().pitchInput      = control.pitchInput;
+        core.transform().yawInput        = control.yawInput;
+        core.transform().rollInput       = control.rollInput;
+        core.transform().targetSpeedRate = control.targetSpeedRate;
+        core.transform().strafeInput     = control.strafeInput;
+        core.transform().liftInput       = control.liftInput;
+        core.transform().forwardInput    = control.forwardInput;
     }
     else
     {
         // NPC: control будет заполняться AI (пока нули)
-        transform.cruiseActive    = false;
-        transform.pitchInput      = 0.0f;
-        transform.yawInput        = 0.0f;
-        transform.rollInput       = 0.0f;
-        transform.targetSpeedRate = 0.0f;
-        transform.strafeInput     = 0.0f;
-        transform.liftInput       = 0.0f;
-        transform.forwardInput    = 0.0f;
+        core.transform().cruiseActive    = false;
+        core.transform().pitchInput      = 0.0f;
+        core.transform().yawInput        = 0.0f;
+        core.transform().rollInput       = 0.0f;
+        core.transform().targetSpeedRate = 0.0f;
+        core.transform().strafeInput     = 0.0f;
+        core.transform().liftInput       = 0.0f;
+        core.transform().forwardInput    = 0.0f;
     }
 }
-
-
-void Ship::updatePhysics(float dt, const WorldParams& world)
-{
-    controller.update(
-        dt,
-        desc->physics,
-        transform,
-        world
-    );
-}
-
-
-void Ship::updatePerception(float dt)
-{
-    if (role == ShipRole::Player)
-    {
-        // HUD / визуальная семантика
-        signalPresentation.update(dt, signalResults);
-    }
-    else
-    {
-        // AI-восприятие
-        npcAwareness.update(signalResults);
-    }
-}
-
 
 
 
@@ -418,295 +160,8 @@ void Ship::updatePerception(float dt)
 
 void Ship::updateCamera(float dt)
 {
-    if (role != ShipRole::Player)
-        return;
-
-    cameraController.update(
-        dt,
-        transform,
-        camera
-    );
+    view.update(dt, core.role(), core.transform());
 }
-
-
-
-// ─────────────────────────
-// Cargo API
-// ─────────────────────────
-
-int Ship::freeCargoMass() const
-{
-    return cargo.mass.free();
-}
-
-int Ship::freeCargoVolume() const
-{
-    return cargo.volume.free();
-}
-
-bool Ship::addCargo(int mass, int volume)
-{
-    if (!cargo.mass.canAdd(mass)) return false;
-    if (!cargo.volume.canAdd(volume)) return false;
-
-    cargo.mass.add(mass);
-    cargo.volume.add(volume);
-    return true;
-}
-
-bool Ship::removeCargo(int mass, int volume)
-{
-    if (!cargo.mass.canRemove(mass)) return false;
-    if (!cargo.volume.canRemove(volume)) return false;
-
-    cargo.mass.remove(mass);
-    cargo.volume.remove(volume);
-    return true;
-}
-
-
-
-//            ###                ##                         ##                ##       ##
-//             ##                ##                                                    ##
-//   #####     ##      ####     #####    #####             ###     #####     ###      #####
-//  ##         ##     ##  ##     ##     ##                  ##     ##  ##     ##       ##
-//   #####     ##     ##  ##     ##      #####              ##     ##  ##     ##       ##
-//       ##    ##     ##  ##     ## ##       ##             ##     ##  ##     ##       ## ##
-//  ######    ####     ####       ###   ######             ####    ##  ##    ####       ###
-
-
-void Ship::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
-{
-    desc = &descriptor;
-
-    // Cargo
-    cargo.mass.capacity   = desc->storage.cargoMass;
-    cargo.mass.value      = 0;
-    cargo.volume.capacity = desc->storage.cargoVolume;
-    cargo.volume.value    = 0;
-
-    // System slots
-    systems.reactor.capacity            = desc->systems.reactorSlots;
-    systems.engine.capacity             = desc->systems.engineSlots;
-    systems.radar.capacity              = desc->systems.radarSlots;
-    systems.weapon.capacity             = desc->systems.weaponSlots;
-    systems.dockingComputer.capacity    = desc->systems.dockingComputerSlots;
-    systems.decryptor.capacity          = desc->systems.decryptorSlots;
-    systems.jammer.capacity             = desc->systems.jammerSlots;
-    systems.receiver.capacity           = desc->systems.receiverSlots;
-    systems.transmitter.capacity        = desc->systems.transmitterSlots;
-    systems.utility.capacity            = desc->systems.utilitySlots;
-    systems.fuelScop.capacity           = desc->systems.fuelScopSlots;
-    systems.tractorBeam.capacity        = desc->systems.tractorBeamSlots;
-
-    // Dock slots
-    docks.fighter.capacity              = desc->docks.fighterSlots;
-    docks.shuttle.capacity              = desc->docks.shuttleSlots;
-    docks.drone.capacity                = desc->docks.droneSlots;
-
-
-}
-
-
-
-
-// bool Ship::installDecryptor(const DecryptorDesc& desc)
-// {
-//     // 1. есть ли вообще слот
-//     if (systems.decryptor.capacity <= 0)
-//         return false;
-
-//     // 2. есть ли свободный
-//     if (systems.decryptor.value >= systems.decryptor.capacity)
-//         return false;
-
-//     // 3. не установлен ли уже
-//     if (equipment.decryptor.enabled)
-//         return false;
-
-//     // 4. установка
-//     equipment.decryptor.init(desc);
-//     systems.decryptor.value++;
-
-//     return true;
-// }
-
-
-
-// bool Ship::removeDecryptor()
-// {
-//     if (!equipment.decryptor.enabled)
-//         return false;
-
-//     equipment.decryptor.enabled = false;
-//     equipment.decryptor.health  = 0.0f;
-
-//     systems.decryptor.value--;
-//     return true;
-// }
-
-
-
-
-// bool Ship::hasDecryptor() const
-// {
-//     return equipment.decryptor.enabled;
-// }
-
-
-
-
-
-//    ##                         ##               ###      ###                                           ##                                           ##
-//                               ##                ##       ##                                                                                        ##
-//   ###     #####     #####    #####    ####      ##       ##               ####     ######  ##  ##    ###     ######   ##  ##    ####    #####     #####
-//    ##     ##  ##   ##         ##         ##     ##       ##              ##  ##   ##  ##   ##  ##     ##      ##  ##  #######  ##  ##   ##  ##     ##
-//    ##     ##  ##    #####     ##      #####     ##       ##              ######   ##  ##   ##  ##     ##      ##  ##  ## # ##  ######   ##  ##     ##
-//    ##     ##  ##        ##    ## ##  ##  ##     ##       ##              ##        #####   ##  ##     ##      #####   ##   ##  ##       ##  ##     ## ##
-//   ####    ##  ##   ######      ###    #####    ####     ####              #####       ##    ######   ####     ##      ##   ##   #####   ##  ##      ###
-//                                                                                      ####                    ####
-
-
-template<typename ModuleType, typename DescType>
-bool Ship::installEquipment(
-    const char* equipmentName,
-    QuantitySlot& slot,
-    std::vector<ModuleType>& modules,
-    const DescType& desc
-) {
-
-    // 1. Проверяем наличие слота
-    if (slot.capacity <= 0) {
-        printf("[ERROR] No slot for %s\n", equipmentName);
-        return false;
-    }
-    
-    // 2. Проверяем свободный слот
-    if (slot.value >= slot.capacity) {
-        printf("[ERROR] No free slots for %s\n", equipmentName);
-        return false;
-    }
-    
-    
-    // 3. Устанавливаем
-    // module.init(desc);
-    modules.emplace_back();
-    modules.back().init(desc);
-    slot.value++;
-    
-    printf("[INFO] %s installed successfully\n", equipmentName);
-    return true;
-}
-
-
-
-
-template<typename ModuleType, typename DescType>
-bool Ship::installEquipment(
-    const char* equipmentName,
-    QuantitySlot& slot,
-    ModuleType& module,
-    const DescType& desc
-) {
-
-    // 1. Проверяем наличие слота
-    if (slot.capacity <= 0) {
-        printf("[ERROR] No slot for %s\n", equipmentName);
-        return false;
-    }
-    
-    // 2. Проверяем свободный слот
-    if (slot.value >= slot.capacity) {
-        printf("[ERROR] No free slots for %s\n", equipmentName);
-        return false;
-    }
-    
-    
-    // 3. Устанавливаем
-    module.init(desc);
-    slot.value++;
-    
-    printf("[INFO] %s installed successfully\n", equipmentName);
-    return true;
-}
-
-//                                                                                              ##                                           ##
-//                                                                                                                                           ##
-//  ######    ####    ##  ##    ####    ##  ##    ####              ####     ######  ##  ##    ###     ######   ##  ##    ####    #####     #####
-//   ##  ##  ##  ##   #######  ##  ##   ##  ##   ##  ##            ##  ##   ##  ##   ##  ##     ##      ##  ##  #######  ##  ##   ##  ##     ##
-//   ##      ######   ## # ##  ##  ##   ##  ##   ######            ######   ##  ##   ##  ##     ##      ##  ##  ## # ##  ######   ##  ##     ##
-//   ##      ##       ##   ##  ##  ##    ####    ##                ##        #####   ##  ##     ##      #####   ##   ##  ##       ##  ##     ## ##
-//  ####      #####   ##   ##   ####      ##      #####             #####       ##    ######   ####     ##      ##   ##   #####   ##  ##      ###
-//                                                                             ####                    ####
-
-template<typename ModuleType>
-bool Ship::removeEquipment(
-    const char* equipmentName,
-    QuantitySlot& slot,
-    ModuleType& module
-) {
-    if (!module.enabled) {
-        printf("[ERROR] %s {} not installed\n", equipmentName);
-        return false;
-    }
-    
-    module.enabled = false;
-    slot.value--;
-    printf("[ERROR] %s {} removed successfully\n", equipmentName);
-    return true;
-}
-
-
-
-//    ##                         ##               ###      ###                                           ##                          ###              ###
-//                               ##                ##       ##                                                                        ##             ## ##
-//   ###     #####     #####    #####    ####      ##       ##               ####     ######  ##  ##    ###     ######                ##    ####      #
-//    ##     ##  ##   ##         ##         ##     ##       ##              ##  ##   ##  ##   ##  ##     ##      ##  ##            #####   ##  ##   ####
-//    ##     ##  ##    #####     ##      #####     ##       ##              ######   ##  ##   ##  ##     ##      ##  ##           ##  ##   ######    ##
-//    ##     ##  ##        ##    ## ##  ##  ##     ##       ##              ##        #####   ##  ##     ##      #####            ##  ##   ##        ##
-//   ####    ##  ##   ######      ###    #####    ####     ####              #####       ##    ######   ####     ##                ######   #####   ####
-//                                                                                      ####                    ####
-
-void Ship::installDefaultEquipment(const ShipDescriptor& descriptor)
-{
-    const auto& presets = descriptor.defaultEquipment;
-    
-    // Устанавливаем оборудование, если оно есть в пресетах
-    if (presets.decryptor.has_value()) {
-
-        installEquipment("decryptor", 
-        systems.decryptor, 
-        // equipment.decryptor,
-        equipment.decryptors.modules, 
-        *presets.decryptor);
-    }
-    
-    if (presets.jammer.has_value()) {
-
-        installEquipment("jammer", 
-        systems.jammer, 
-        equipment.jammer, 
-        *presets.jammer);
-    }
-    
-    if (presets.receiver.has_value()) {
-        
-        installEquipment("receiver", 
-        systems.receiver, 
-        equipment.receiver, 
-        *presets.receiver);
-    }
-    
-    if (presets.transmitter.has_value()) {
-
-        installEquipment("transmitter", 
-        systems.transmitter, 
-        equipment.transmitter, 
-        *presets.transmitter);
-    }
-
-}
-
 
 
 
@@ -723,15 +178,15 @@ void Ship::installDefaultEquipment(const ShipDescriptor& descriptor)
 bool Ship::installCryptoCard(CryptoCard* card)
 {
     if (!card) return false;
-    if (!inventory.contains(card)) return false;
+    if (!core.inventory().contains(card)) return false;
 
-    for (auto& d : equipment.decryptors.modules)
+    for (auto& d : core.equipment().decryptors.modules)
     {
         if (!d.enabled) continue;
 
         if (d.install(card))
         {
-            inventory.remove(card);
+            core.inventory().remove(card);
             return true;
         }
     }
@@ -754,11 +209,11 @@ bool Ship::removeCryptoCard(CryptoCard* card)
 {
     if (!card) return false;
 
-    for (auto& d : equipment.decryptors.modules)
+    for (auto& d : core.equipment().decryptors.modules)
     {
         if (d.remove(card))
         {
-            inventory.add(card);
+            core.inventory().add(card);
             return true;
         }
     }
@@ -782,11 +237,11 @@ bool Ship::addItem(Item* item)
 
     if (item->usesCargoSpace())
     {
-        if (!addCargo(item->cargoMass(), item->cargoVolume()))
+        if (!core.addCargo(item->cargoMass(), item->cargoVolume()))
             return false;
     }
 
-    inventory.add(item);
+    core.inventory().add(item);
     return true;
 }
 
@@ -795,122 +250,14 @@ bool Ship::REMOVEItem(Item* item)
 {
     if (!item) return false;
 
-    if (!inventory.remove(item))
+    if (!core.inventory().remove(item))
         return false;
 
     if (item->usesCargoSpace())
     {
-        removeCargo(item->cargoMass(), item->cargoVolume());
+        core.removeCargo(item->cargoMass(), item->cargoVolume());
     }
 
     return true;
 }
 
-
-
-//                       ###              ##                                                  ###                 ##       ##                ##                ##
-//                        ##              ##                                                   ##                          ##                ##                ##
-//  ##  ##   ######       ##    ####     #####    ####              ####     ####     ####     ##  ##  ######    ###      #####    #####    #####    ####     #####    ####
-//  ##  ##    ##  ##   #####       ##     ##     ##  ##            ##  ##   ##  ##   ##  ##    ## ##    ##  ##    ##       ##     ##         ##         ##     ##     ##  ##
-//  ##  ##    ##  ##  ##  ##    #####     ##     ######            ##       ##  ##   ##        ####     ##  ##    ##       ##      #####     ##      #####     ##     ######
-//  ##  ##    #####   ##  ##   ##  ##     ## ##  ##                ##  ##   ##  ##   ##  ##    ## ##    #####     ##       ## ##       ##    ## ##  ##  ##     ## ##  ##
-//   ######   ##       ######   #####      ###    #####             ####     ####     ####     ##  ##   ##       ####       ###   ######      ###    #####      ###    #####
-//           ####                                                                                      ####
-
-void Ship::updateCockpitState()
-{
-    // ===== SPEED BAR =====
-
-    float maxSpeed = desc->physics.maxCombatSpeed ;
-    float currentSpeed = transform.forwardVelocity;
-    float speed01 = glm::clamp(currentSpeed / maxSpeed, 0.0f, 1.0f);
-
-    auto& barOv  = m_cockpitState.overrides["speed_bar_fill"];
-
-    barOv .visible = true;
-    barOv .overrideFill = true;
-    barOv .fill01 = speed01;
-
-
-    // ========= вращение как спидометр ============
-    float speedneedle01 = transform.forwardVelocity /
-                desc->physics.maxCombatSpeed;
-
-    speedneedle01 = glm::clamp(speedneedle01, 0.0f, 1.0f);
-
-    auto& needle = m_cockpitState.overrides["speed_needle"];
-    needle.visible = true;
-    needle.overrideRotation = true;
-    needle.rotationDeg = -90.0f + speedneedle01 * 180.0f;
-
-
-    //======== дешефратор и его слоты ===============
-    int moduleIndex = 0;
-
-    for (auto& decryptor : equipment.decryptors.modules)
-    {
-        // ───────── внешний модуль ─────────
-        {
-            std::string moduleId =
-                "decryptor_module_" + std::to_string(moduleIndex);
-
-            auto& ov = m_cockpitState.overrides[moduleId];
-
-            ov.visible = true;
-            ov.overrideColor = true;
-            ov.color = {0.0f, 0.3f, 0.7f, 1.0f};
-        }
-
-        // ───────── внутренние слоты ─────────
-
-        int installedCount = static_cast<int>(decryptor.m_cards.size());
-        int maxSlots       = decryptor.slotCount;
-
-        for (int j = 0; j < 16; ++j) // 16 — максимум, как в геометрии
-        {
-            std::string slotId =
-                "decryptor_" + std::to_string(moduleIndex) +
-                "_slot_" + std::to_string(j);
-
-            auto& ov = m_cockpitState.overrides[slotId];
-
-            if (j < maxSlots)
-            {
-                ov.visible = true;
-                ov.overrideColor = true;
-
-                if (j < installedCount)
-                {
-                    // заполненный слот
-                    ov.color = {0.0f, 0.9f, 0.4f, 1.0f};
-                }
-                else
-                {
-                    // пустой слот
-                    ov.color = {0.2f, 0.2f, 0.25f, 1.0f};
-                }
-            }
-            else
-            {
-                ov.visible = false;
-            }
-        }
-
-        moduleIndex++;
-        
-    }
-}
-
-//                      ##                                         ###                 ##       ##                ##                ##
-//                      ##                                          ##                          ##                ##                ##
-//   ### ##   ####     #####             ####     ####     ####     ##  ##  ######    ###      #####    #####    #####    ####     #####    ####
-//  ##  ##   ##  ##     ##              ##  ##   ##  ##   ##  ##    ## ##    ##  ##    ##       ##     ##         ##         ##     ##     ##  ##
-//  ##  ##   ######     ##              ##       ##  ##   ##        ####     ##  ##    ##       ##      #####     ##      #####     ##     ######
-//   #####   ##         ## ##           ##  ##   ##  ##   ##  ##    ## ##    #####     ##       ## ##       ##    ## ##  ##  ##     ## ##  ##
-//      ##    #####      ###             ####     ####     ####     ##  ##   ##       ####       ###   ######      ###    #####      ###    #####
-//  #####                                                                   ####
-
-const ShipCockpitState& Ship::getCockpitState() const
-{
-    return m_cockpitState;
-}

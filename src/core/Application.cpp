@@ -87,20 +87,23 @@ void Application::init()
 {
     std::cout << "Application init\n";
 
-    m_context.app = this;   
+    m_context.app           = this;   
 
-    m_window = new Window(1280, 720, "EliteGame");
-    // m_window = new Window(1920, 1080, "EliteGame");
-    m_running = true;
+    glfwWindowHint(GLFW_STENCIL_BITS, 8);
+    m_window                = new Window(1280, 720, "EliteGame");
+
+    // m_window                 = new Window(1920, 1080, "EliteGame");
+    m_running               = true;
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
+    
 
     int w, h;
     glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
 
-    g_stateContext = &m_context;
+    g_stateContext          = &m_context;
 
     TextRenderer::instance().init();
 
@@ -124,13 +127,12 @@ void Application::mainLoop()
 
     while (m_running && !m_window->shouldClose() && !m_states.empty())
     {
-        static int frame = 0;
-        double currentTime = glfwGetTime();
-        
-        float dt = static_cast<float>(currentTime - lastTime);
-        m_context.dt = dt;
+        static int frame        = 0;
+        double currentTime      = glfwGetTime();
+        float dt                = static_cast<float>(currentTime - lastTime);
 
-        lastTime = currentTime;
+        m_context.dt            = dt;
+        lastTime                = currentTime;
         
         // Input::instance().update();
         m_window->pollEvents();
@@ -159,6 +161,10 @@ void Application::mainLoop()
             state->update(dt);
         
         m_renderer.beginFrame();
+           
+            glClear(GL_COLOR_BUFFER_BIT |
+            GL_DEPTH_BUFFER_BIT |
+            GL_STENCIL_BUFFER_BIT);
 
             GameState* top = m_states.current();
             GameState* below = m_states.previous();

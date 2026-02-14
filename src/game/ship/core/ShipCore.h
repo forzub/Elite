@@ -1,0 +1,178 @@
+#pragma once
+#include "core/StateContext.h"
+
+#include "src/game/ship/ShipDescriptor.h"
+#include "src/game/ship/ShipVisualIdentity.h"
+#include "src/game/ship/ShipRegistry.h"
+
+#include "src/game/ship/core/ShipTransform.h"
+#include "src/game/ship/core/ShipControlState.h"
+#include "src/game/ship/core/ShipParams.h"
+
+#include "src/game/ship/core/ShipInventory.h"
+#include "src/game/ship/core/CargoBay.h"
+
+#include "src/game/ship/core/ShipSignalController.h"
+#include "src/game/ship/core/ShipSlotsState.h"
+#include "src/game/ship/core/ShipRole.h"
+
+#include "src/game/ship/sensors/ShipSignalPresentation.h"
+#include "src/game/ship/sensors/NpcSignalAwareness.h"
+
+#include "src/game/ship/ShipInitData.h"
+
+#include "src/game/equipment/signalNode/processing/SignalReceiver.h"
+
+#include "src/game/equipment/ShipEquipment.h"
+
+#include "src/world/WorldParams.h"
+
+#include "src/game/ship/ShipController.h"
+
+
+#include <vector>
+
+class ShipCore
+{
+public:
+    ShipCore() = default;
+
+    
+    void init(
+        StateContext& context,
+        ShipRole role,
+        const ShipDescriptor& descriptor,
+        glm::vec3 position,
+        const ShipInitData& initData
+    );
+
+    // void update(
+    //     float dt,
+    //     const WorldParams& world,
+    //     const std::vector<WorldSignal>& worldSignals,
+    //     const std::vector<Planet>& planets,
+    //     const std::vector<InterferenceSource>& interferenceSources
+    // );
+
+    // // ───────────────
+    // // Фазы апдейта
+    // // ───────────────
+    // void updateControlIntent();
+    // void updatePhysics(float dt, const WorldParams& world);
+    void updatePerception(float dt);
+    void updateSignals(
+        float dt,
+        const std::vector<WorldSignal>& worldSignals,
+        const std::vector<Planet>& planets,
+        const std::vector<InterferenceSource>& interferenceSources
+    );
+
+    // // ───────────────
+    // // Cargo API
+    // // ───────────────
+    int  freeCargoMass() const;
+    int  freeCargoVolume() const;
+    bool addCargo(int mass, int volume);
+    bool removeCargo(int mass, int volume);
+
+    // // ───────────────
+    // // Equipment API
+    // // ───────────────
+    void initShipSlotsFromDescriptor(const ShipDescriptor& descriptor);
+    void installDefaultEquipment(const ShipDescriptor& descriptor);
+
+    template<typename ModuleType, typename DescType>
+    bool installEquipment(
+        const char* equipmentName,
+        QuantitySlot& slot,
+        std::vector<ModuleType>& modules,
+        const DescType& desc
+    );
+
+    template<typename ModuleType, typename DescType>
+    bool installEquipment(
+        const char* equipmentName,
+        QuantitySlot& slot,
+        ModuleType& module,
+        const DescType& desc
+    );
+    
+    template<typename ModuleType>
+    bool removeEquipment(
+        const char*     equipmentName,
+        QuantitySlot&   slot,
+        ModuleType&     module
+    );
+
+    void updatePhysics(float dt, const WorldParams& world);
+
+
+    
+    // ───────────────
+    // Доступ к состоянию
+    // ───────────────
+    ShipTransform&              transform()                         { return m_transform; }
+    const ShipTransform&        transform() const                   { return m_transform; }
+
+    ShipControlState&           control()                           { return m_control; }
+    const ShipControlState&     control() const                     { return m_control; }
+
+    ShipEquipment&              equipment()                         { return m_equipment; }
+    const ShipEquipment&        equipment() const                   { return m_equipment; }
+
+    ShipInventory&              inventory()                         { return m_inventory; }
+    CargoBay&                   cargo()                             { return m_cargo; }
+
+    WorldSignal&                emittedSignal()                     { return m_emittedSignal; }
+    const WorldSignal&          emittedSignal() const               { return m_emittedSignal; }
+
+    ShipRole role() const                                           { return m_role; }
+    const ShipSignalPresentation& signalPresentation() const        { return m_signalPresentation; }
+
+    const std::vector<SignalReceptionResult>& signalResults() const {return m_signalResults;} 
+
+    const ShipDescriptor&       desc() const                  { return *m_desc; }
+                                                                    
+                                                                
+
+    ShipSignalController                        m_signalController;
+    NpcSignalAwareness                          m_npcAwareness;                                                            
+
+private:
+
+    // ───────────────
+    // Идентичность
+    // ───────────────
+    ShipRole                                    m_role = ShipRole::NPC;
+    ShipVisualIdentity                          m_visual;
+    ShipRegistry                                m_registry;
+    const ShipDescriptor*                       m_desc = nullptr;
+
+    // ───────────────
+    // Состояние
+    // ───────────────
+    ShipTransform                               m_transform;
+    ShipControlState                            m_control;
+    ShipParams                                  m_params;
+    ShipController                              m_controller;
+
+    // ───────────────
+    // Сигналы
+    // ───────────────
+    // RX
+    SignalReceiver                              m_signalReceiver;
+    std::vector<SignalReceptionResult>          m_signalResults;
+    ShipSignalPresentation                      m_signalPresentation;
+    // TX
+    WorldSignal                                 m_emittedSignal;
+    
+
+    // ───────────────
+    // Хранилища
+    // ───────────────
+    CargoBay                                    m_cargo;
+    ShipInventory                               m_inventory;
+    ShipEquipment                               m_equipment;
+    ShipSystemState                             m_systems;
+    ShipDockState                               m_docks;
+};

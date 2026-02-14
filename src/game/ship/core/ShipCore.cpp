@@ -1,0 +1,487 @@
+#include "ShipCore.h"
+#include <iostream>
+
+
+
+// // -------------------------------------------------
+// //    ##                ##       ##
+// //                               ##
+// //   ###     #####     ###      #####
+// //    ##     ##  ##     ##       ##
+// //    ##     ##  ##     ##       ##
+// //    ##     ##  ##     ##       ## ##
+// //   ####    ##  ##    ####       ###
+// // -------------------------------------------------
+void ShipCore::init(
+    StateContext&           context, 
+    ShipRole                inRole,
+    const ShipDescriptor&   descriptor, 
+    glm::vec3               position,
+    const ShipInitData&     initData
+)
+{
+    // устанавливаем роль корабля - ИГРОК / НПС
+    // общий контекст - глобальные данные, viewport etc
+    // геттер из файла описания корабля (f.e. Cobra MKIII)
+    // позиция корабля в пространстве
+
+    m_role = inRole;  
+    m_desc = &descriptor;
+    m_transform.position = position;
+    
+    
+    // собираем корабль
+    // Устанавливаем оборудование по умолчанию из дескриптора
+    initShipSlotsFromDescriptor(descriptor);
+    installDefaultEquipment(descriptor);
+
+    // visual / UI
+    m_visual = initData.visual;
+
+    // registry / legal
+    m_registry = initData.registry;
+
+    // стартовый инвентарь
+    for (Item* item : initData.initialInventory)
+    {
+        m_inventory.add(item);
+    }
+
+    // Автоматическая установка криптокарт в декрипторы
+        if (!m_equipment.decryptors.modules.empty())
+        {
+            // ВАЖНО: аккуратно, т.к. мы будем удалять элементы
+            for (size_t i = 0; i < m_inventory.items.size(); )
+            {
+                Item* item = m_inventory.items[i];
+                auto* card = dynamic_cast<CryptoCard*>(item);
+
+                if (!card)
+                {
+                    ++i;
+                    continue;
+                }
+
+                bool installed = false;
+
+                // пробуем установить карту в любой декриптор
+                for (auto& decryptor : m_equipment.decryptors.modules)
+                {
+                    if (!decryptor.enabled)
+                        continue;
+
+                    if (decryptor.install(card))
+                    {
+                        m_inventory.remove(card);
+                        installed = true;
+                        break;
+                    }
+                }
+
+                // если карта не установилась — идём дальше
+                if (!installed)
+                    ++i;
+            }
+        }
+
+
+    // 2. базовое состояние
+    auto& tx  = equipment().transmitter;
+    auto& sig = m_emittedSignal;
+
+    sig.displayClass        = tx.displayClass;
+    sig.power               = tx.txPower;
+    sig.maxRange            = tx.baseRange;
+    
+    sig.position            = transform().position;
+    sig.type                = SignalType::Transponder;
+    sig.enabled             = true;
+    sig.owner               = this;
+    sig.label               = m_desc->identity.shipName;
+
+    sig.address.actor       = 0xFFFFFFFF;
+    sig.address.channel     = 0; // пока всегда публично
+
+    // 3. контроллер сигналов
+    m_signalController.init(m_emittedSignal);
+
+    
+}
+
+
+
+// // -------------------------------------------------
+// //                       ###              ##
+// //                        ##              ##
+// //  ##  ##   ######       ##    ####     #####    ####
+// //  ##  ##    ##  ##   #####       ##     ##     ##  ##
+// //  ##  ##    ##  ##  ##  ##    #####     ##     ######
+// //  ##  ##    #####   ##  ##   ##  ##     ## ##  ##
+// //   ######   ##       ######   #####      ###    #####
+// //           ####
+
+void ShipCore::updatePhysics(float dt, const WorldParams& world)
+{
+    m_controller.update(
+        dt,
+        m_desc->physics,
+        m_transform,
+        world
+    );
+}
+
+// // -------------------------------------------------
+// void ShipCore::update(
+//     float dt,
+//     const WorldParams& world,
+//     const std::vector<WorldSignal>& worldSignals,
+//     const std::vector<Planet>& planets,
+//     const std::vector<InterferenceSource>& interferenceSources
+// )
+// {
+//     updateControlIntent();        // ① откуда intent
+//     updatePhysics(dt, world);     // ② движение
+   
+//     // формирование сигнала передатчика
+//     signalController.update(dt, emittedSignal);
+
+
+//     if (emittedSignal.enabled)
+//     {
+//         emittedSignal.position     = transform.position;
+//     }
+
+
+//     if (equipment.receiver.enabled)
+//     {
+//         updateSignals(
+//             dt,
+//             worldSignals,
+//             planets,
+//             interferenceSources
+//         );
+//     }
+
+
+//     //  4. HUD / AI — по роли
+//     updatePerception(dt);         // ④ осмысление - ветвление игрок / нпс
+//     updateCamera(dt);             // ⑤ камера (только Player)
+//     updateCockpitState();
+// }
+
+
+// void ShipCore::updateControlIntent()
+// {
+//     if (role == ShipRole::Player)
+//     {
+//         // control уже заполнен в handleInput()
+//         transform.cruiseActive    = control.cruiseActive;
+//         transform.pitchInput      = control.pitchInput;
+//         transform.yawInput        = control.yawInput;
+//         transform.rollInput       = control.rollInput;
+//         transform.targetSpeedRate = control.targetSpeedRate;
+//         transform.strafeInput     = control.strafeInput;
+//         transform.liftInput       = control.liftInput;
+//         transform.forwardInput    = control.forwardInput;
+//     }
+//     else
+//     {
+//         // NPC: control будет заполняться AI (пока нули)
+//         transform.cruiseActive    = false;
+//         transform.pitchInput      = 0.0f;
+//         transform.yawInput        = 0.0f;
+//         transform.rollInput       = 0.0f;
+//         transform.targetSpeedRate = 0.0f;
+//         transform.strafeInput     = 0.0f;
+//         transform.liftInput       = 0.0f;
+//         transform.forwardInput    = 0.0f;
+//     }
+// }
+
+
+// void ShipCore::updatePhysics(float dt, const WorldParams& world)
+// {
+//     controller.update(
+//         dt,
+//         desc->physics,
+//         transform,
+//         world
+//     );
+// }
+
+
+void ShipCore::updatePerception(float dt)
+{
+    if (m_role == ShipRole::Player)
+    {
+        // HUD / визуальная семантика
+        m_signalPresentation.update(dt, m_signalResults);
+    }
+    else
+    {
+        // AI-восприятие
+        m_npcAwareness.update(m_signalResults);
+    }
+}
+
+
+
+//                                        ##                                 ###
+//                                                                            ##
+//  ##  ##   ######             #####    ###      ### ##  #####     ####      ##      #####
+//  ##  ##    ##  ##           ##         ##     ##  ##   ##  ##       ##     ##     ##
+//  ##  ##    ##  ##            #####     ##     ##  ##   ##  ##    #####     ##      #####
+//  ##  ##    #####                 ##    ##      #####   ##  ##   ##  ##     ##          ##
+//   ######   ##               ######    ####        ##   ##  ##    #####    ####    ######
+//           ####                                #####
+
+void ShipCore::updateSignals(
+        float dt,
+        const std::vector<WorldSignal>& worldSignals,
+        const std::vector<Planet>& planets,
+        const std::vector<InterferenceSource>& interferenceSources
+    )
+{
+    m_signalResults.clear();
+
+    m_signalReceiver.update(
+        dt,
+        m_transform.position,
+        m_equipment.receiver,
+        worldSignals,
+        planets,
+        interferenceSources,
+        m_signalResults,
+        this
+    );
+}
+
+                                                                            
+
+//                                                          ##     ######    ####
+//                                                         ####     ##  ##    ##
+//   ####     ####    ######    ### ##   ####             ##  ##    ##  ##    ##
+//  ##  ##       ##    ##  ##  ##  ##   ##  ##            ##  ##    #####     ##
+//  ##        #####    ##      ##  ##   ##  ##            ######    ##        ##
+//  ##  ##   ##  ##    ##       #####   ##  ##            ##  ##    ##        ##
+//   ####     #####   ####         ##    ####             ##  ##   ####      ####
+//                             #####
+
+
+int ShipCore::freeCargoMass() const
+{
+    return m_cargo.mass.free();
+}
+
+int ShipCore::freeCargoVolume() const
+{
+    return m_cargo.volume.free();
+}
+
+bool ShipCore::addCargo(int mass, int volume)
+{
+    if (!m_cargo.mass.canAdd(mass)) return false;
+    if (!m_cargo.volume.canAdd(volume)) return false;
+
+    m_cargo.mass.add(mass);
+    m_cargo.volume.add(volume);
+    return true;
+}
+
+bool ShipCore::removeCargo(int mass, int volume)
+{
+    if (!m_cargo.mass.canRemove(mass)) return false;
+    if (!m_cargo.volume.canRemove(volume)) return false;
+
+    m_cargo.mass.remove(mass);
+    m_cargo.volume.remove(volume);
+    return true;
+}
+
+// //            ###                ##                         ##                ##       ##
+// //             ##                ##                                                    ##
+// //   #####     ##      ####     #####    #####             ###     #####     ###      #####
+// //  ##         ##     ##  ##     ##     ##                  ##     ##  ##     ##       ##
+// //   #####     ##     ##  ##     ##      #####              ##     ##  ##     ##       ##
+// //       ##    ##     ##  ##     ## ##       ##             ##     ##  ##     ##       ## ##
+// //  ######    ####     ####       ###   ######             ####    ##  ##    ####       ###
+
+
+void ShipCore::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
+{
+    m_desc = &descriptor;
+
+    // Cargo
+    m_cargo.mass.capacity   = m_desc->storage.cargoMass;
+    m_cargo.mass.value      = 0;
+    m_cargo.volume.capacity = m_desc->storage.cargoVolume;
+    m_cargo.volume.value    = 0;
+
+    // System slots
+    m_systems.reactor.capacity            = m_desc->systems.reactorSlots;
+    m_systems.engine.capacity             = m_desc->systems.engineSlots;
+    m_systems.radar.capacity              = m_desc->systems.radarSlots;
+    m_systems.weapon.capacity             = m_desc->systems.weaponSlots;
+    m_systems.dockingComputer.capacity    = m_desc->systems.dockingComputerSlots;
+    m_systems.decryptor.capacity          = m_desc->systems.decryptorSlots;
+    m_systems.jammer.capacity             = m_desc->systems.jammerSlots;
+    m_systems.receiver.capacity           = m_desc->systems.receiverSlots;
+    m_systems.transmitter.capacity        = m_desc->systems.transmitterSlots;
+    m_systems.utility.capacity            = m_desc->systems.utilitySlots;
+    m_systems.fuelScop.capacity           = m_desc->systems.fuelScopSlots;
+    m_systems.tractorBeam.capacity        = m_desc->systems.tractorBeamSlots;
+
+    // Dock slots
+    m_docks.fighter.capacity              = m_desc->docks.fighterSlots;
+    m_docks.shuttle.capacity              = m_desc->docks.shuttleSlots;
+    m_docks.drone.capacity                = m_desc->docks.droneSlots;
+}
+
+
+// //    ##                         ##               ###      ###                                           ##                          ###              ###
+// //                               ##                ##       ##                                                                        ##             ## ##
+// //   ###     #####     #####    #####    ####      ##       ##               ####     ######  ##  ##    ###     ######                ##    ####      #
+// //    ##     ##  ##   ##         ##         ##     ##       ##              ##  ##   ##  ##   ##  ##     ##      ##  ##            #####   ##  ##   ####
+// //    ##     ##  ##    #####     ##      #####     ##       ##              ######   ##  ##   ##  ##     ##      ##  ##           ##  ##   ######    ##
+// //    ##     ##  ##        ##    ## ##  ##  ##     ##       ##              ##        #####   ##  ##     ##      #####            ##  ##   ##        ##
+// //   ####    ##  ##   ######      ###    #####    ####     ####              #####       ##    ######   ####     ##                ######   #####   ####
+// //                                                                                      ####                    ####
+
+void ShipCore::installDefaultEquipment(const ShipDescriptor& descriptor)
+{
+    const auto& presets = descriptor.defaultEquipment;
+    
+    // Устанавливаем оборудование, если оно есть в пресетах
+    if (presets.decryptor.has_value()) {
+
+        installEquipment("decryptor", 
+        m_systems.decryptor, 
+        // equipment.decryptor,
+        m_equipment.decryptors.modules, 
+        *presets.decryptor);
+    }
+    
+    if (presets.jammer.has_value()) {
+
+        installEquipment("jammer", 
+        m_systems.jammer, 
+        m_equipment.jammer, 
+        *presets.jammer);
+    }
+    
+    if (presets.receiver.has_value()) {
+        
+        installEquipment("receiver", 
+        m_systems.receiver, 
+        m_equipment.receiver, 
+        *presets.receiver);
+    }
+    
+    if (presets.transmitter.has_value()) {
+
+        installEquipment("transmitter", 
+        m_systems.transmitter, 
+        m_equipment.transmitter, 
+        *presets.transmitter);
+    }
+
+}
+
+// //    ##                         ##               ###      ###                                           ##                                           ##
+// //                               ##                ##       ##                                                                                        ##
+// //   ###     #####     #####    #####    ####      ##       ##               ####     ######  ##  ##    ###     ######   ##  ##    ####    #####     #####
+// //    ##     ##  ##   ##         ##         ##     ##       ##              ##  ##   ##  ##   ##  ##     ##      ##  ##  #######  ##  ##   ##  ##     ##
+// //    ##     ##  ##    #####     ##      #####     ##       ##              ######   ##  ##   ##  ##     ##      ##  ##  ## # ##  ######   ##  ##     ##
+// //    ##     ##  ##        ##    ## ##  ##  ##     ##       ##              ##        #####   ##  ##     ##      #####   ##   ##  ##       ##  ##     ## ##
+// //   ####    ##  ##   ######      ###    #####    ####     ####              #####       ##    ######   ####     ##      ##   ##   #####   ##  ##      ###
+// //                                                                                      ####                    ####
+
+
+template<typename ModuleType, typename DescType>
+bool ShipCore::installEquipment(
+    const char* equipmentName,
+    QuantitySlot& slot,
+    std::vector<ModuleType>& modules,
+    const DescType& desc
+) {
+
+    // 1. Проверяем наличие слота
+    if (slot.capacity <= 0) {
+        printf("[ERROR] No slot for %s\n", equipmentName);
+        return false;
+    }
+    
+    // 2. Проверяем свободный слот
+    if (slot.value >= slot.capacity) {
+        printf("[ERROR] No free slots for %s\n", equipmentName);
+        return false;
+    }
+    
+    
+    // 3. Устанавливаем
+    // module.init(desc);
+    modules.emplace_back();
+    modules.back().init(desc);
+    slot.value++;
+    
+    printf("[INFO] %s installed successfully\n", equipmentName);
+    return true;
+}
+
+
+
+
+template<typename ModuleType, typename DescType>
+bool ShipCore::installEquipment(
+    const char* equipmentName,
+    QuantitySlot& slot,
+    ModuleType& module,
+    const DescType& desc
+) {
+
+    // 1. Проверяем наличие слота
+    if (slot.capacity <= 0) {
+        printf("[ERROR] No slot for %s\n", equipmentName);
+        return false;
+    }
+    
+    // 2. Проверяем свободный слот
+    if (slot.value >= slot.capacity) {
+        printf("[ERROR] No free slots for %s\n", equipmentName);
+        return false;
+    }
+    
+    
+    // 3. Устанавливаем
+    module.init(desc);
+    slot.value++;
+    
+    printf("[INFO] %s installed successfully\n", equipmentName);
+    return true;
+}
+
+// //                                                                                              ##                                           ##
+// //                                                                                                                                           ##
+// //  ######    ####    ##  ##    ####    ##  ##    ####              ####     ######  ##  ##    ###     ######   ##  ##    ####    #####     #####
+// //   ##  ##  ##  ##   #######  ##  ##   ##  ##   ##  ##            ##  ##   ##  ##   ##  ##     ##      ##  ##  #######  ##  ##   ##  ##     ##
+// //   ##      ######   ## # ##  ##  ##   ##  ##   ######            ######   ##  ##   ##  ##     ##      ##  ##  ## # ##  ######   ##  ##     ##
+// //   ##      ##       ##   ##  ##  ##    ####    ##                ##        #####   ##  ##     ##      #####   ##   ##  ##       ##  ##     ## ##
+// //  ####      #####   ##   ##   ####      ##      #####             #####       ##    ######   ####     ##      ##   ##   #####   ##  ##      ###
+// //                                                                             ####                    ####
+
+template<typename ModuleType>
+bool ShipCore::removeEquipment(
+    const char* equipmentName,
+    QuantitySlot& slot,
+    ModuleType& module
+) {
+    if (!module.enabled) {
+        printf("[ERROR] %s {} not installed\n", equipmentName);
+        return false;
+    }
+    
+    module.enabled = false;
+    slot.value--;
+    printf("[ERROR] %s {} removed successfully\n", equipmentName);
+    return true;
+}

@@ -7,33 +7,23 @@ void Camera::setPosition(const glm::vec3& pos)
     m_position = pos;
 }
 
-void Camera::setOrientation(float pitch, float yaw, float roll)
-{
-    m_pitch = pitch;
-    m_yaw   = yaw;
-    m_roll  = roll;
-}
 
 glm::mat4 Camera::viewMatrix() const
 {
-    glm::mat4 view(1.0f);
+    glm::mat4 world =
+        glm::translate(glm::mat4(1.0f), m_position) *
+        m_orientation;
 
-    // Обратные вращения (камера)
-    view = glm::rotate(view, glm::radians(-(m_roll + m_visualRoll)),  {0,0,1});
-    view = glm::rotate(view, glm::radians(-(m_pitch + m_visualPitch)), {1,0,0});
-    view = glm::rotate(view, glm::radians(-m_yaw),   {0,1,0});
-
-    // Обратное смещение
-    view = glm::translate(view, -m_position);
-
-    return view;
+    return glm::inverse(world);
 }
 
-void Camera::setVisualLean(float rollOffset, float pitchOffset)
+
+void Camera::setOrientationMatrix(const glm::mat4& orientation)
 {
-    m_visualRoll  = rollOffset;
-    m_visualPitch = pitchOffset;
+    m_orientation = orientation;
 }
+
+
 
 void Camera::setAspect(float aspect)
 {
@@ -62,3 +52,4 @@ glm::mat4 Camera::projectionMatrix() const
         m_far
     );
 }
+

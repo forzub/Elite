@@ -1,36 +1,36 @@
 #include <glad/gl.h>
-#include <GLFW/glfw3.h>
 #include <iostream>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+
+// #include <GLFW/glfw3.h>
+// #include <glm/glm.hpp>
+// #include <glm/gtc/matrix_transform.hpp>
+// #include <glm/gtc/type_ptr.hpp>
+// #include "render/ScreenUtils.h"
+// #include "render/bitmap/TextureLoader.h"
+// #include "game/ship/cockpit/CockpitMeshBuilder.h"
+// #include "game/ship/cockpit/CockpitStrokeBuilder.h"
+// #include "src/game/equipment/signalNode/processing/SignalPolicy.h"
+// #include "src/game/ship/hud/worldlabels/WorldLabelSystem.h"
+// #include "src/game/ship/hud/worldlabels/WorldSignalWaves.h"
+// #include "src/game/ship/core/ShipRole.h"
+// #include "ui/HudRenderer.h"
 
 #include "SpaceState.h"
 #include "core/StateStack.h"
 #include "core/Log.h"
 #include "input/Input.h"
 
+
 #include "render/DebugGrid.h"
-#include "render/ScreenUtils.h"
-#include "render/bitmap/TextureLoader.h"
-
-#include "game/ship/cockpit/CockpitMeshBuilder.h"
-#include "game/ship/cockpit/CockpitStrokeBuilder.h"
-
-
-#include "src/game/equipment/signalNode/processing/SignalPolicy.h"
-#include "src/game/ship/hud/worldlabels/WorldLabelSystem.h"
-#include "src/game/ship/hud/worldlabels/WorldSignalWaves.h"
-#include "src/game/ship/ShipRole.h"
 #include "src/game/equipment/signalNode/processing/WorldSignalTxSystem.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include "src/game/player/ActorIdProvider.h"
 #include "src/game/player/ActorCodeGenerator.h"
-
 #include "ui/ConfirmExitState.h"
-#include "ui/HudRenderer.h"
 #include "src/galaxy/GalaxyDatabase.h"
 
+#include "src/render/camera/RenderCameraViewport.h"
+#include "ui/components/UIText.h"
 
 
 //                                        ##                                  ##
@@ -46,6 +46,59 @@
 SpaceState::SpaceState(StateStack& states)
     : GameState(states)
 {
+    const Viewport& vp = context().viewport();
+
+    uiRoot = std::make_unique<UIContainer>();
+
+    // ================== задняя камера =========================
+
+    auto rear = std::make_unique<UICameraView>();
+    
+    rear->id                    = "rear_camera";
+    rear->position              = {0.72f, 0.05f};
+    rear->size                  = {0.25f, 0.18f};
+    rear->cornerRadiusRel       = 0.12f;
+    rear->borderThicknessRel    = 0.008f;
+    rear->camera                = &m_playerShip.view.camera(ShipCameraMode::Rear);
+    rear->borderColor           = {0.2f, 0.8f, 1.0f};
+
+    rear->drawCallback =
+        [&](const glm::mat4&, const glm::mat4&)
+    {
+        DebugGrid::drawInfinite(
+            m_playerShip.core.transform().position,
+            20000.0f,
+            100
+        );
+    };
+
+    rearView = rear.get();          // ← сохраняем raw pointer если нужен
+    uiRoot->addChild(std::move(rear));   // ← теперь отдаём владение
+
+
+    auto labelMiniViewText = std::make_unique<UIText>();
+    labelMiniViewText->id = "rear_label";
+    labelMiniViewText->label = "REAR";
+    labelMiniViewText->fontPath = "assets/fonts/Roboto-Light.ttf";
+    labelMiniViewText->fontSizeRel = 0.025f; // относительный размер от высоты экрана 2.5% от высоты
+    labelMiniViewText->color = {0.2f, 0.8f, 1.0f, 0.5f};
+    labelMiniViewText->position = {0.03f, 0.15f};
+
+    
+
+    rearView->addChild(std::move(labelMiniViewText));
+
+    // ================== текст передней камеры =========================
+
+    auto labelMainViewText = std::make_unique<UIText>();
+    labelMainViewText->id = "main_label";
+    labelMainViewText->label = "FRONT";
+    labelMainViewText->fontPath = "assets/fonts/Roboto-BOLD.ttf";
+    labelMainViewText->fontSizeRel = 0.03f; // относительный размер от высоты экрана 2.5% от высоты
+    labelMainViewText->color = {0.2f, 0.8f, 1.0f, 0.1f};
+    labelMainViewText->position = {0.06f, 0.13f};
+
+    uiRoot->addChild(std::move(labelMainViewText));
 
     LOG("[SpaceState] ctor");
 
@@ -64,15 +117,12 @@ SpaceState::SpaceState(StateStack& states)
     << "Routes:  " << galaxy.routeCount()  << "\n";
 
 
-    cockpitBitmapPass.init();
-    cockpitPass.init();
+    
     
     // =======================================================================
     // устанавливает ограничение HUD для меток за экраном
     // =======================================================================
-    const Viewport& vp = context().viewport();
-
-    
+   
     // начальная позиция
     // m_playerShip
     ShipVisualIdentity visualIdentity = {
@@ -107,22 +157,10 @@ SpaceState::SpaceState(StateStack& states)
         initData
     );
 
-    if (m_playerShip.role == ShipRole::Player)
-    {
-        cockpitPass.setGeometry(m_playerShip.getCockpitGeometry());
-        cockpitBitmapPass.setBaseTexture(m_playerShip.getCockpitBaseTex());
-        cockpitBitmapPass.setGlassTexture(m_playerShip.getCockpitGlassTex());
-    }
+
+
 
     
-
-
-
-
-
-
-
-
 
     visualIdentity = {
         .shipType = "Cobra MK3",
@@ -297,6 +335,21 @@ SpaceState::~SpaceState()
 // =====================================================================================
 void SpaceState::handleInput()
 {
+
+    // режимы управления камерой
+    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F1))
+    m_layout = ScreenLayout::Front_Main_Rear_Mini;
+
+    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F2))
+        m_layout = ScreenLayout::Rear_Main_Front_Mini;
+
+    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F3))
+        m_layout = ScreenLayout::Front_Main_Drone_Mini;
+
+    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F4))
+        m_layout = ScreenLayout::Drone_Main_Front_Mini;
+
+    // управление кораблем
     m_playerShip.handleInput();
 }
 
@@ -386,51 +439,100 @@ void SpaceState::render(){}
 
 void SpaceState::renderUI()
 {
+    Camera*                                     mainCam = nullptr;
+    Camera*                                     miniCam = nullptr;
 
-    static int once = 0;
-    if (once == 0)
+
+    switch (m_layout)
     {
-        printf("SpaceState::render()\n");
-        once = 1;
+        case ScreenLayout::Front_Main_Rear_Mini:
+            mainCam = &m_playerShip.view.camera(ShipCameraMode::Cockpit);
+            miniCam = &m_playerShip.view.camera(ShipCameraMode::Rear);
+            m_activeCameraMode = ShipCameraMode::Cockpit;
+            if (auto* comp = uiRoot->findById("main_label"))
+            {
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "FRONT";}
+            }
+            if (auto* comp = uiRoot->findById("rear_label"))
+            {
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "REAR";}
+            }
+            break;
+
+        case ScreenLayout::Rear_Main_Front_Mini:
+            mainCam = &m_playerShip.view.camera(ShipCameraMode::Rear);
+            miniCam = &m_playerShip.view.camera(ShipCameraMode::Cockpit);
+            m_activeCameraMode = ShipCameraMode::Rear;
+            if (auto* comp = uiRoot->findById("main_label"))
+            {
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "REAR";}
+            }
+            if (auto* comp = uiRoot->findById("rear_label"))
+            {
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "FRONT";}
+            }
+            break;
+
+        case ScreenLayout::Front_Main_Drone_Mini:
+            mainCam = &m_playerShip.view.camera(ShipCameraMode::Cockpit);
+            miniCam = &m_playerShip.view.camera(ShipCameraMode::Drone);
+            m_activeCameraMode = ShipCameraMode::Cockpit;
+            if (auto* comp = uiRoot->findById("main_label"))
+            {
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "FRONT";}
+            }
+            if (auto* comp = uiRoot->findById("rear_label"))
+            {
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "DRONE";}
+            }
+            break;
+
+        case ScreenLayout::Drone_Main_Front_Mini:
+            mainCam = &m_playerShip.view.camera(ShipCameraMode::Drone);
+            miniCam = &m_playerShip.view.camera(ShipCameraMode::Cockpit);
+            m_activeCameraMode = ShipCameraMode::Drone;
+            if (auto* comp = uiRoot->findById("main_label"))
+            {
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "DRONE";}
+            }
+            if (auto* comp = uiRoot->findById("rear_label"))
+            {
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "FRONT";}
+            }
+            break;
     }
 
-     const Viewport& vp = context().viewport();
+    m_activeMainCamera = mainCam;
+  
 
-    float fx = (float)vp.width;
-    float fy = (float)vp.height;
-
-
+    const Viewport& vp = context().viewport();
     // -------------------------------
     // 3D ПРОЕКЦИЯ
     // -------------------------------
-    glm::mat4 projection = glm::perspective(
-        glm::radians(70.0f),
-        fx / fy,
-        0.1f,
-        5000.0f
+
+    RenderCameraViewport::render(
+        *mainCam,
+        vp,
+        0,
+        0,
+        vp.width,
+        vp.height,
+        [&](auto view, auto proj)
+        {
+            DebugGrid::drawInfinite(
+                m_playerShip.core.transform().position,
+                20000.0f,
+                100
+            );
+        }
     );
 
-    glm::mat4 view = m_playerShip.camera.viewMatrix();
-
-    glEnable(GL_DEPTH_TEST);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(glm::value_ptr(projection));
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf(glm::value_ptr(view));
-
-
-    
     // -------------------------------
-    // 3D МИР
+    // Rear - камера корабля.
     // -------------------------------
-    DebugGrid::drawInfinite(
-        m_playerShip.transform.position,
-        20000.0f,
-        100
-    );
-    
+
+    rearView->camera = miniCam;
+    rearView->renderToTexture(vp, rearView->drawCallback);
     
 }
 
@@ -465,137 +567,74 @@ void SpaceState::renderHUD()
     // -------------------------------------------------
     // 1. Статический HUD (рамки, текст)
     // -------------------------------------------------
-    m_hudStatics.clear();
-    m_hudRects.clear();
+    // m_hudStatics.clear();
+    // m_hudRects.clear();
 
-    m_hudRects.push_back({
-        { 20.0f / fx, 20.0f / fy },
-        { 180.0f / fx, 60.0f / fy },
-        { 0.0f, 1.0f, 0.0f }
-    });
+    // m_hudRects.push_back({
+    //     { 20.0f / fx, 20.0f / fy },
+    //     { 180.0f / fx, 60.0f / fy },
+    //     { 0.0f, 1.0f, 0.0f }
+    // });
 
-    m_hudStatics.push_back({
-        "HUD ONLINE",
-        { 30.0f / fx, 40.0f / fy },
-        { 0.0f, 1.0f, 0.0f }
-    });
+    // m_hudStatics.push_back({
+    //     "HUD ONLINE",
+    //     { 30.0f / fx, 40.0f / fy },
+    //     { 0.0f, 1.0f, 0.0f }
+    // });
 
-    LOG("[SpaceState] renderHUD after rects");
-    m_hudRenderer.renderRects(m_hudRects);
+    // --- рамка мини-камеры ---
+    {
+        // const Viewport& vp = context().viewport();
 
-    LOG("[SpaceState] renderHUD after text");
-    m_hudRenderer.renderText(m_hudStatics);
+        // int miniW = 300;
+        // int miniH = 200;
+        // int miniX = vp.width - miniW - 20;
+        // int miniY = 20;
 
+        // glDisable(GL_DEPTH_TEST);
+
+        // glColor3f(0.2f, 0.8f, 1.0f);
+
+        // glBegin(GL_LINE_LOOP);
+        // glVertex2f(miniX, miniY);
+        // glVertex2f(miniX + miniW, miniY);
+        // glVertex2f(miniX + miniW, miniY + miniH);
+        // glVertex2f(miniX, miniY + miniH);
+        // glEnd();
+    }
 
     
-
-
     // -------------------------------------------------
     // 2. HUD ограничитель
     // -------------------------------------------------
-    {
-
-        const auto& contour = m_playerShip.hudEdgeMapper.boundaryPx();
-        if (contour.size() >= 2)
-        {
-            glDisable(GL_TEXTURE_2D);
-            glDisable(GL_DEPTH_TEST);
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-            glColor4f(0.2f, 0.8f, 1.0f, 0.25f); // голубой, ~25% прозрачности
-
-            glBegin(GL_LINE_LOOP);
-            for (const auto& p : contour)
-            {
-                glVertex2f(p.x, p.y);
-            }
-            glEnd();
-        }
-    }
-
+    
+    m_playerShip.view.renderHudBoundary();
     
     // -------------------------------------------------
     // 3. Подготовка матриц для меток
     // -------------------------------------------------
-
-    // --- camera matrices нужны ТОЛЬКО здесь ---
-    glm::mat4 view = m_playerShip.camera.viewMatrix();
-    glm::mat4 proj = m_playerShip.camera.projectionMatrix();
     
-    
-    
-    glm::vec2 screenCenter(vp.width  * 0.5f,vp.height * 0.5f);
-
-
-    for (auto& [signal, label] :
-     m_playerShip.signalPresentation.labels())
+    if (m_activeCameraMode != ShipCameraMode::Drone)
     {
-        glm::vec2 projectedPos;
-
-        bool projected = projectToScreen(
-            label.data.worldPos,
-            view,
-            proj,
-            vp.width,
-            vp.height,
-            projectedPos
+        m_playerShip.view.renderWorldLabels(
+            m_playerShip.core.signalPresentation().labels(),
+            m_playerShip.core.transform().position,
+            m_activeMainCamera->viewMatrix(),
+            m_activeMainCamera->projectionMatrix(),
+            vp
         );
-
-        glm::vec3 toTarget =
-            glm::normalize(label.data.worldPos - m_playerShip.transform.position);
-
-        glm::vec4 viewDir4 = view * glm::vec4(toTarget, 0.0f);
-        glm::vec2 dir2D(viewDir4.x, -viewDir4.y);
-
-        if (glm::length(dir2D) < 1e-4f)
-            continue;
-
-        dir2D = glm::normalize(dir2D);
-        label.edgeDir = dir2D;
-
-        bool insideHud = false;
-
-        if (projected)
-            insideHud = m_playerShip.hudEdgeMapper.isInsideBoundary(projectedPos);
-
-        if (projected && insideHud)
-        {
-            label.onScreen  = true;
-            label.screenPos = projectedPos;
-        }
-        else
-        {
-            glm::vec2 edgePos;
-            if (m_playerShip.hudEdgeMapper.projectDirection(
-                    screenCenter,
-                    dir2D,
-                    edgePos))
-            {
-                label.onScreen  = false;
-                label.screenPos = edgePos;
-            }
-        }
-
-        m_worldLabelRenderer.renderHUD(label);
     }
 
-    // cockpitPass.render();
-    // 1. корпус кабины
-    cockpitBitmapPass.renderBase();
+    m_playerShip.view.renderCockpit();
 
 
-    // 2. стекло
-    cockpitBitmapPass.setGlassIntensity(1.0f);
-    cockpitBitmapPass.renderGlass();
+    uiRoot->render(vp);
 
-    // 3. векторные приборы
-    cockpitPass.render(m_playerShip.getCockpitState());
-
-
+    // // 3. векторные приборы
+    // cockpitPass.render(m_playerShip.view.getCockpitState());
 
     glEnable(GL_DEPTH_TEST);
-    LOG("[SpaceState] renderHUD after text");
+
 }
 
 

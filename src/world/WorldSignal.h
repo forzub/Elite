@@ -15,7 +15,7 @@
 
 
 
-struct Ship;
+// struct Ship;
 
 
 struct WorldSignal
@@ -28,7 +28,7 @@ struct WorldSignal
     float                   maxRange;   // максимальная дальность
     bool                    enabled;
     std::string             label;
-    const Ship*             owner = nullptr;
+    const void*             owner = nullptr;
     
 };
 

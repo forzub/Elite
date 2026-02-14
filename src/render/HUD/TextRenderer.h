@@ -11,12 +11,6 @@ class TextRenderer
 public:
     static TextRenderer& instance();
 
-    // void setViewportSize(int width, int height);
-    // int viewportWidth()  const { return m_viewportW; }
-    // int viewportHeight() const { return m_viewportH; }
-
-
-
     // ------------------------------------------------------------
     // lifecycle
     // ------------------------------------------------------------

@@ -8,7 +8,8 @@
 #include <string>
 #include <optional>
 
-#include "game/ship/ShipParams.h"
+#include "game/ship/core/ShipParams.h"
+
 #include "game/ship/ShipHudProfile.h"
 
 #include "game/ship/cockpit/CockpitContours.h"

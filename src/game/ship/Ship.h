@@ -1,76 +1,22 @@
-// game/ship/Ship.h
+
+
+
 #pragma once
 #include <vector>
 
-
-#include "src/game/ship/CargoBay.h"
-#include "src/game/ship/ShipInventory.h"
-#include "src/game/ship/ShipCameraController.h"
-#include "src/game/ship/ShipDescriptor.h"
-// #include "src/game/ship/ShipParams.h"
-#include "src/game/ship/ShipTransform.h"
-#include "src/game/ship/ShipHudProfile.h"
-#include "src/game/ship/ShipControlState.h"
-#include "src/game/ship/ShipController.h"
-#include "src/game/ship/ShipRole.h"
-#include "src/game/ship/ShipSignalController.h"
-#include "src/game/ship/ShipVisualIdentity.h"
-#include "src/game/ship/ShipRegistry.h"
-#include "src/game/ship/ShipInitData.h"
-
-#include "src/game/ship/cockpit/ShipCockpitState.h"
-#include "src/game/ship/cockpit/CockpitContours.h"
-
-#include "src/game/items/Item.h"
-
-#include "src/game/equipment/ShipEquipment.h"
-#include "src/game/equipment/ShipEquipmentDesc.h"
-
-#include "src/game/equipment/decryptor/DecryptorDesc.h"
-#include "src/game/equipment/signalNode/processing/SignalReceiver.h"
-
-#include "game/ship/sensors/ShipSignalPresentation.h"
-#include "game/ship/sensors/NpcSignalAwareness.h"
+#include "src/game/ship/core/ShipCore.h"
+#include "src/game/ship/view/PlayerShipView.h"
+#include "src/game/ship/controller/PlayerInputMapper.h"
 
 
-#include "world/WorldSignal.h" 
-
-#include "src/render/Camera.h"
-#include "src/ui/hud/HudEdgeMapper.h"
-
-#include "core/StateContext.h"
-#include "game/core/QuantitySlot.h"
-
-struct CockpitSetup
-{
-    CockpitGeometry geometry;
-    std::string baseTexturePath;
-    std::string glassTexturePath;
-};
+// struct CockpitSetup
+// {
+//     CockpitGeometry geometry;
+//     std::string baseTexturePath;
+//     std::string glassTexturePath;
+// };
 
 
-struct ShipSystemState
-{
-    QuantitySlot reactor;
-    QuantitySlot engine;
-    QuantitySlot radar;
-    QuantitySlot weapon;
-    QuantitySlot decryptor;
-    QuantitySlot jammer;
-    QuantitySlot dockingComputer;
-    QuantitySlot receiver;
-    QuantitySlot transmitter;
-    QuantitySlot utility;
-    QuantitySlot fuelScop;
-    QuantitySlot tractorBeam;
-};
-
-struct ShipDockState
-{
-    QuantitySlot fighter;
-    QuantitySlot shuttle;
-    QuantitySlot drone;
-};
 
 // главный класс описания корабля, общий для всех летающих
 // описание находится в папке description
@@ -78,64 +24,26 @@ struct ShipDockState
 
 struct Ship
 {
-    // ShipRole role = ShipRole::Player;
-    ShipRole                                role = ShipRole::NPC;
-
-    // персональные данные корабля. тип, имя и т.п.
-    ShipVisualIdentity                      visual;
-    ShipRegistry                            registry;
-
-    // --- описание типа ---
-    const ShipDescriptor*                   desc = nullptr;
-
-    // --- состояние ---
-    ShipTransform                           transform;          // - перемещение
+    // ─────────────────────
+    // Агрегированные части
+    // ─────────────────────
+    ShipCore               core;
+    PlayerShipView         view;
     ShipControlState                        control;            // - управление
+    // --- состояние ---
+    PlayerInputMapper                       inputMapper;
     
-    // --- подсистемы ---
-    ShipController                          controller;         // - функции движения
     
-    Camera                                  camera;             // камера, следующая за кораблём
-    ShipCameraController                    cameraController;   // - контроль камеры
-    
-    // --- HUD ---
-    HudEdgeMapper                           hudEdgeMapper;
-    ShipHudProfile                          hudProfile;
-
-    // работа со связью
-    // RX
-    SignalReceiver                          signalReceiver;
-    std::vector<SignalReceptionResult>      signalResults;
-    ShipSignalPresentation                  signalPresentation;
-    // TX
-    WorldSignal                             emittedSignal; 
-    ShipSignalController                    signalController;
-
-    // ───────────────
-    // Хранилища
-    // ───────────────
-    CargoBay                                cargo;
-    ShipInventory                           inventory;
-    // оборудование
-    ShipEquipment                           equipment;
-    ShipSystemState                         systems;
-    ShipDockState                           docks;
-    ShipCockpitState                        m_cockpitState;
-
-    // восприятие связи NPC
-    NpcSignalAwareness                      npcAwareness;
-
-    
-
     // --- lifecycle ---
     void init(
-        StateContext& context, 
-        ShipRole role,
-        const ShipDescriptor& descriptor, 
-        glm::vec3 position,
-       const ShipInitData& initData
+        StateContext&                       context, 
+        ShipRole                            role,
+        const ShipDescriptor&               descriptor, 
+        glm::vec3                           position,
+       const ShipInitData&                  initData
     );
-    
+
+
     void handleInput();
 
     void update(
@@ -146,62 +54,11 @@ struct Ship
         const std::vector<InterferenceSource>&      interferenceSources
     );
 
+
     void updateControlIntent();
-    void updatePhysics(float dt, const WorldParams& world);
-    void updatePerception(float dt);
     void updateCamera(float dt);
 
-    void updateSignals(
-        float dt,
-        const std::vector<WorldSignal>&         worldSignals,
-        const std::vector<Planet>&              planets,
-        const std::vector<InterferenceSource>&  interferenceSources
-    );
-
-    const WorldSignal& getEmittedSignal() const { return emittedSignal; }
-
-
-    // ───────────────
-    // Cargo API
-    // ───────────────
-    int  freeCargoMass() const;
-    int  freeCargoVolume() const;
-    bool addCargo(int mass, int volume);
-    bool removeCargo(int mass, int volume);
     
-    
-    // ───────────────
-    // Инициализация корабля
-    // ───────────────
-    void initShipSlotsFromDescriptor(const ShipDescriptor& descriptor);
-
-    // ───────────────
-    // Инициализация оборудования
-    // ───────────────   
-    void installDefaultEquipment(const ShipDescriptor& descriptor);
-
-    template<typename ModuleType, typename DescType>
-    bool installEquipment(
-        const char* equipmentName,
-        QuantitySlot& slot,
-        std::vector<ModuleType>& modules,
-        const DescType& desc
-    );
-
-    template<typename ModuleType, typename DescType>
-    bool installEquipment(
-        const char* equipmentName,
-        QuantitySlot& slot,
-        ModuleType& module,
-        const DescType& desc
-    );
-    
-    template<typename ModuleType>
-    bool removeEquipment(
-        const char*     equipmentName,
-        QuantitySlot&   slot,
-        ModuleType&     module
-    );
 
 
     // ───────────────
@@ -213,31 +70,6 @@ struct Ship
     bool addItem(Item* item);
     bool REMOVEItem(Item* item);
 
-
-    bool m_hasCockpit = false;
-    CockpitGeometry m_cockpitGeometry;
-    unsigned int m_cockpitBaseTex = 0;
-    unsigned int m_cockpitGlassTex = 0;
-
     const ShipCockpitState& getCockpitState() const;
-    void updateCockpitState();
-
-    bool hasCockpit() const { return m_hasCockpit; }
-
-    const CockpitGeometry& getCockpitGeometry() const
-    {
-        return m_cockpitGeometry;
-    }
-
-    unsigned int getCockpitBaseTex() const
-    {
-        return m_cockpitBaseTex;
-    }
-
-    unsigned int getCockpitGlassTex() const
-    {
-        return m_cockpitGlassTex;
-    }
-
 };
 

@@ -54,11 +54,16 @@ add_executable(EliteGame
     src/game/ship/descriptors/EliteCobraMk1.cpp
     src/game/ship/descriptors/EliteCobraMk1_Cockpit.cpp
 
+    src/game/ship/controller/PlayerInputMapper.cpp
+    
     src/game/ship/ShipController.cpp
-    src/game/ship/ShipCameraController.cpp
     src/game/ship/Ship.cpp
-    src/game/ship/ShipSignalController.cpp
- 
+    
+    src/game/ship/core/ShipSignalController.cpp
+    src/game/ship/core/ShipCore.cpp
+    
+    src/game/ship/view/PlayerShipView.cpp
+    src/game/ship/view/ShipCameraController.cpp
 
     src/game/ship/sensors/ShipSignalPresentation.cpp
 
@@ -81,6 +86,12 @@ add_executable(EliteGame
     src/render/RenderCockpitPass.cpp
     src/render/RenderCockpitBitmapPass.cpp
     src/render/bitmap/TextureLoader.cpp
+    src/render/camera/RenderCameraViewport.cpp
+
+    src/ui/components/UICameraView.cpp
+    src/ui/components/UIComponent.cpp
+    src/ui/components/UIContainer.cpp
+    src/ui/components/UIText.cpp
   
 
 )

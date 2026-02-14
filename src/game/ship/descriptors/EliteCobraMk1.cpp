@@ -29,13 +29,41 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor(ShipRole role)
         // -------------------------
         // Physics
         // -------------------------
-        desc.physics = {
-            90.0f, 60.0f, 120.0f,   // angular limits
-            1000.0f, 9.0f,          // angular accel/damp
-            500.0f, 10000.0f, 5.0f, // speeds
-            0.0f,                   // auto-level
-            20.0f, 6.0f, 50.0f      // strafe
-        };
+        // desc.physics = {
+        //     90.0f, 60.0f, 120.0f,   // angular limits
+        //     1000.0f, 9.0f,          // angular accel/damp
+        //     500.0f, 10000.0f, 5.0f, // speeds
+        //     0.0f,                   // auto-level
+        //     20.0f, 6.0f, 50.0f    // strafe
+        // };
+
+        // desc.physics.maxPitchRate           = 90.0f;
+        // desc.physics.maxYawRate             = 60.0f;
+        // desc.physics.maxRollRate            = 120.0f;
+        
+        // desc.physics.angularAccel           = 1000.0f;
+        // desc.physics.angularDamping         = 9.0f;
+
+        desc.physics.angularAccel           = 3.0f;
+        desc.physics.angularDamping         = 2.5f;
+
+        desc.physics.maxPitchRate           = 2.5f;   // рад/сек
+        desc.physics.maxYawRate             = 2.5f;
+        desc.physics.maxRollRate            = 3.0f;
+        
+        desc.physics.maxCombatSpeed         = 500.0f;
+        desc.physics.maxCruiseSpeed         = 10000.0f;
+        desc.physics.throttleAccel          = 5.0f;
+        
+        desc.physics.autoLevelStrength      = 0.0f;
+        
+        desc.physics.strafeAccel            = 20.0f;
+        desc.physics.strafeDamping          = 6.0f;
+        desc.physics.maxStrafeSpeed         = 50.0f;
+
+        desc.physics.maxGs                  = 5.0f;
+        desc.physics.turnRadius             = 20.0f;
+
 
         // -------------------------
         // HUD profile (ВОТ ТУТ)

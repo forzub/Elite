@@ -1,7 +1,7 @@
 #pragma once
 
-#include "game/ship/ShipParams.h"
-#include "game/ship/ShipTransform.h"
+#include "game/ship/core/ShipParams.h"
+#include "game/ship/core/ShipTransform.h"
 #include "world/WorldParams.h"
 
 class ShipController

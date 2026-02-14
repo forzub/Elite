@@ -46,7 +46,7 @@ void SignalReceiver::update(
     const std::vector<Planet>& planets,
     const std::vector<InterferenceSource>& interferenceSources,
     std::vector<SignalReceptionResult>& outResults,
-    const Ship* ownerShip
+    const void* ownerShip
 )
 {
        

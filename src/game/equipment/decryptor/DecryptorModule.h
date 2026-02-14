@@ -1,10 +1,12 @@
 #pragma once
+#include "DecryptorDesc.h"
 
 #include <vector>
+#include <algorithm>
+
 #include "src/game/equipment/EquipmentModule.h"
-#include "DecryptorDesc.h"
-#include "src/galaxy/Actors.h"
 #include "src/game/items/cryptocard/CryptoCard.h"
+#include "src/galaxy/Actors.h"
 
 
 struct CipherCard

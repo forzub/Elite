@@ -1,4 +1,4 @@
-#include "src/game/ship/ShipController.h"
+#include "ShipController.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -22,24 +22,45 @@ void ShipController::update(
     ship.yawRate   = glm::clamp(ship.yawRate,   -params.maxYawRate,   params.maxYawRate);
     ship.rollRate  = glm::clamp(ship.rollRate,  -params.maxRollRate,  params.maxRollRate);
 
-    ship.pitch += ship.pitchRate * dt;
-    ship.yaw   += ship.yawRate   * dt;
-    ship.roll  += ship.rollRate  * dt;
+    
 
+    // локальные оси
+    glm::vec3 right   = glm::vec3(ship.orientation * glm::vec4(1,0,0,0));
+    glm::vec3 up      = glm::vec3(ship.orientation * glm::vec4(0,1,0,0));
+    glm::vec3 forward = glm::vec3(ship.orientation * glm::vec4(0,0,-1,0));
+
+    // вращения
+    glm::mat4 yawRot   = glm::rotate(glm::mat4(1.0f), ship.yawRate   * dt, up);
+    glm::mat4 pitchRot = glm::rotate(glm::mat4(1.0f), ship.pitchRate * dt, right);
+    glm::mat4 rollRot  = glm::rotate(glm::mat4(1.0f), ship.rollRate  * dt, forward);
+
+    ship.orientation = yawRot * pitchRot * rollRot * ship.orientation;
+
+    // угловое демпфирование (инерционное затухание)
     float angDamp = std::exp(-params.angularDamping * dt);
-    ship.pitchRate *= angDamp;
-    ship.yawRate   *= angDamp;
-    ship.rollRate  *= angDamp;
 
-    // ---------------- orientation ----------------
-    glm::mat4 rot(1.0f);
-    rot = glm::rotate(rot, glm::radians(ship.yaw),   {0,1,0});
-    rot = glm::rotate(rot, glm::radians(ship.pitch),{1,0,0});
-    rot = glm::rotate(rot, glm::radians(ship.roll), {0,0,1});
+    if (std::abs(ship.pitchInput) < 0.001f)
+        ship.pitchRate *= angDamp;
 
-    glm::vec3 forward = glm::normalize(glm::vec3(rot * glm::vec4(0,0,-1,0)));
-    glm::vec3 right   = glm::normalize(glm::vec3(rot * glm::vec4(1,0,0,0)));
-    glm::vec3 up      = glm::normalize(glm::vec3(rot * glm::vec4(0,1,0,0)));
+    if (std::abs(ship.yawInput) < 0.001f)
+        ship.yawRate *= angDamp;
+
+    if (std::abs(ship.rollInput) < 0.001f)
+        ship.rollRate *= angDamp;
+
+    // демпфирование
+    // float angDamp = std::exp(-params.angularDamping * dt);
+    const float g = 9.81f;
+    float maxAngularSpeed = std::sqrt((params.maxGs * g) / params.turnRadius);
+
+
+    // обновляем локальные оси после поворота
+    forward = glm::vec3(ship.orientation * glm::vec4(0,0,-1,0));
+    right   = glm::vec3(ship.orientation * glm::vec4(1,0,0,0));
+    up      = glm::vec3(ship.orientation * glm::vec4(0,1,0,0));
+
+
+
 
     // ---------------- manoeuvre thrusters ----------------
     ship.localVelocity.x += ship.strafeInput  * params.strafeAccel * dt;

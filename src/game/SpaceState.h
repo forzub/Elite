@@ -1,41 +1,39 @@
 #pragma once
 
 #include <unordered_map>
-
 #include "core/GameState.h"
 
-#include "render/Camera.h"
-#include "render/HUD/TextRenderer.h"  
-#include "render/HUD/WorldLabelRenderer.h" 
-#include "render/RenderContext.h"
-#include "render/RenderCockpitPass.h"
-#include "render/RenderCockpitBitmapPass.h"
-
-
-#include "src/game/equipment/signalNode/processing/SignalReceiver.h"
-#include "game/ship/ShipCameraController.h" 
-// #include "game/ship/ShipInstance.h"
+// #include "render/Camera.h"
+// #include "render/HUD/TextRenderer.h"  
+// #include "render/HUD/WorldLabelRenderer.h" 
+// #include "render/RenderContext.h"
+// #include "src/game/equipment/signalNode/processing/SignalReceiver.h"
+// #include "src/game/ship/view/ShipCameraController.h" 
+// #include "world/WorldParams.h"
+// #include "ui/HudTypes.h"
+// #include "ui/hud/HudEdgeMapper.h"
 
 #include "src/game/ship/Ship.h"
-
-
-#include "world/WorldParams.h"
-#include "world/WorldObject.h"
 #include "world/Planet.h"
 #include "world/InterferenceSource.h"
-
-
-#include "ui/HudTypes.h"
 #include "ui/HudRenderer.h"
-#include "ui/hud/HudEdgeMapper.h"
 
+// ============== components ==============
+#include "ui/components/UIContainer.h"
+#include "ui/components/UICameraView.h"
 
  
-// #include "render/Camera.h"
-
-
 
 class StateStack;
+
+enum class ScreenLayout
+{
+    Front_Main_Rear_Mini,
+    Rear_Main_Front_Mini,
+    Front_Main_Drone_Mini,
+    Drone_Main_Front_Mini
+};
+
 
 class SpaceState : public GameState
 {
@@ -53,52 +51,32 @@ public:
 
 
 private:
-    
-    // ShipTransform                               m_ship;   // состояние корабля
-    
 
-    // ShipParams                                  m_params;
     WorldParams                                 m_world;
-    // float                                       m_receiverNoiseFloor; // допустимый уровень шума для приемника
 
     bool wantsConfirmExit() const override;
     bool onGlobalEscape() override;
     bool isInSafeZone() const;
     
-    
     std::vector<Planet>                         m_planets;                  // "world/Planet.h"
-    // std::vector<SignalReceptionResult>          m_signalResults;            // "world/WorldSignal.h"
     std::vector<WorldSignal>                    m_worldSignals;             // "world/WorldSignal.h"
     std::vector<InterferenceSource>             m_interferenceSources;      // "world/InterferenceSource.h" - источники помех
 
-    // std::unordered_map<const WorldSignal*, 
-    //         WorldLabel>                         m_worldLabels;
-    
     // --- HUD ---
     std::vector<HudStaticItem>                  m_hudStatics;
     std::vector<HudLineRect>                    m_hudRects;
     HudMessage*                                 m_activeMessage = nullptr;
     HudRenderer                                 m_hudRenderer;
     
-    
-    // SignalReceiver                              m_signalReceiver;
     WorldLabelRenderer                          m_worldLabelRenderer;
 
-    // WorldLabel& getOrCreateWorldLabel(const SignalReceptionResult& result);
-
-
-    // перенос в отдельные сучности
-    // ShipController                          m_shipController;
-    // ShipCameraController                    m_cameraController;
-    // HudEdgeMapper                           m_hudEdgeMapper;
-    // ShipDescriptor                          m_shipDescriptor;
-    // ShipInstance                            m_playerShip;            // корабль игрока
-    Camera                                      m_camera;               // камера, следующая за кораблём
+    // Camera                                      m_camera;               // камера, следующая за кораблём
     Ship                                        m_playerShip;
     std::vector<Ship>                           m_npcShips;             // корабли NPC и remote players
 
-
-    // ==================================== renders ==============================
-    RenderCockpitPass                           cockpitPass;
-    RenderCockpitBitmapPass                     cockpitBitmapPass;
+    std::unique_ptr<UIContainer>                uiRoot;
+    UICameraView*                               rearView = nullptr; 
+    ScreenLayout                                m_layout = ScreenLayout::Front_Main_Rear_Mini; //  режими отображения камеры
+    Camera*                                     m_activeMainCamera = nullptr;
+    ShipCameraMode                              m_activeCameraMode = ShipCameraMode::Cockpit;
 };

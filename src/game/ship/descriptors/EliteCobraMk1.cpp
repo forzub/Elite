@@ -9,7 +9,7 @@
 #include "src/game/equipment/data/jammers.h"
 
 
-const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor(ShipRole role)
+const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
 {
     static ShipDescriptor desc;
     static bool initialized = false;
@@ -17,6 +17,8 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor(ShipRole role)
     if (!initialized)
     {
         initialized = true;
+
+        desc.typeId = ShipTypeId::CobraMk1;
 
         // ─────────────────────────
         // Identity
@@ -29,20 +31,6 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor(ShipRole role)
         // -------------------------
         // Physics
         // -------------------------
-        // desc.physics = {
-        //     90.0f, 60.0f, 120.0f,   // angular limits
-        //     1000.0f, 9.0f,          // angular accel/damp
-        //     500.0f, 10000.0f, 5.0f, // speeds
-        //     0.0f,                   // auto-level
-        //     20.0f, 6.0f, 50.0f    // strafe
-        // };
-
-        // desc.physics.maxPitchRate           = 90.0f;
-        // desc.physics.maxYawRate             = 60.0f;
-        // desc.physics.maxRollRate            = 120.0f;
-        
-        // desc.physics.angularAccel           = 1000.0f;
-        // desc.physics.angularDamping         = 9.0f;
 
         desc.physics.angularAccel           = 3.0f;
         desc.physics.angularDamping         = 2.5f;
@@ -174,24 +162,18 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor(ShipRole role)
         // -----------------------------
         // загружаем текстуру кабины или модель корабля
         // -----------------------------
-        if (role == ShipRole::Player)
-            {
-                CockpitData cp;
 
+                CockpitData cp;
                 cp.enabled = true;
                 cp.geometry = createCockpitGeometry(desc);
                 cp.baseTexturePath  = "assets/img/cobra-mk1-2560x1440-cockpits.png";
                 cp.glassTexturePath = "assets/img/cobra-mk1-2560x1440-glass.png";
-
                 desc.cockpit = cp;
-            }
-            else
-            {
-                desc.cockpit = std::nullopt;
+
 
                 // здесь можно задать 3D модель
                 // desc.modelPath = "assets/models/cobra.obj";
-            }
+
 
     }
 

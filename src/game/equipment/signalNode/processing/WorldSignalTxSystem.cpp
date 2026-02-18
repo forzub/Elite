@@ -18,12 +18,12 @@ void WorldSignalTxSystem::collectFromShips(
 
     for (const Ship* ship : ships)
     {
-        const auto& tx = ship->core.equipment().transmitter;
+        const auto& tx = ship->core().equipment().transmitter;
 
         if (!tx.isOperational())
             continue;
 
-        const WorldSignal& sig = ship->core.emittedSignal();
+        const WorldSignal& sig = ship->core().emittedSignal();
 
 
         // printf(

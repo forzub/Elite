@@ -1,9 +1,10 @@
 
 #include "Ship.h"
 #include <iostream>
+#include <cstdio>
 
 #include "src/input/Input.h"
-#include "core/StateStack.h"
+
 #include "src/game/signals/SignalPatternLibrary.h"
 #include "src/game/equipment/EquipmentSlot.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
@@ -22,8 +23,7 @@
 //    ##     ##  ##     ##       ## ##
 //   ####    ##  ##    ####       ###
 // -------------------------------------------------
-void Ship::init(
-    StateContext& context, 
+void Ship::init( 
     ShipRole inRole,
     const ShipDescriptor& descriptor, 
     glm::vec3 position,
@@ -31,40 +31,15 @@ void Ship::init(
 )
 {
 
-    core.init(
-        context,
+    m_core.init(
         inRole,
         descriptor,
         position,
         initData
     );
 
-    if (core.role() == ShipRole::Player)
-    {
-        view.init(context, &descriptor, core.transform());
-    }
-
-}
-
-
-
-
-//  ###                           ###              ##                                  ##
-//   ##                            ##                                                  ##
-//   ##       ####    #####        ##             ###     #####    ######   ##  ##    #####
-//   #####       ##   ##  ##    #####              ##     ##  ##    ##  ##  ##  ##     ##
-//   ##  ##   #####   ##  ##   ##  ##              ##     ##  ##    ##  ##  ##  ##     ##
-//   ##  ##  ##  ##   ##  ##   ##  ##              ##     ##  ##    #####   ##  ##     ## ##
-//  ###  ##   #####   ##  ##    ######            ####    ##  ##    ##       ######     ###
-//                                                                 ####
-
-void Ship::handleInput()
-{
-    if (core.role() != ShipRole::Player)
-        return;
-
-    inputMapper.update(control);
-
+    m_core.emittedSignal().owner = m_id;
+    
 }
 
 
@@ -80,88 +55,60 @@ void Ship::handleInput()
 //   ######   ##       ######   #####      ###    #####
 //           ####
 
-// -------------------------------------------------
-void Ship::update(
+
+void Ship::applyControl()
+{
+    updateControlIntent();
+}
+
+void Ship::updatePhysics(float dt, const WorldParams& world)
+{
+    m_core.updatePhysics(dt, world);
+
+    m_core.m_signalController.update(dt, m_core.emittedSignal());
+
+    if (m_core.emittedSignal().enabled)
+        m_core.emittedSignal().position = m_core.transform().position;
+}
+
+
+void Ship::updateSignals(
     float dt,
-    const WorldParams& world,
     const std::vector<WorldSignal>& worldSignals,
     const std::vector<Planet>& planets,
     const std::vector<InterferenceSource>& interferenceSources
 )
 {
-    updateControlIntent();        // ① откуда intent
-    core.updatePhysics(dt, world);     // ② движение
-   
-    // формирование сигнала передатчика
-    core.m_signalController.update(dt, core.emittedSignal());
-
-
-    if (core.emittedSignal().enabled)
-        {
-            core.emittedSignal().position = core.transform().position;
-        }
-
-    // ⬇ ВОТ ЭТОГО НЕ ХВАТАЕТ
-    core.updateSignals(
-        dt,
-        worldSignals,
-        planets,
-        interferenceSources
-    );
-
-    //  4. HUD / AI — по роли
-    core.updatePerception(dt);          // ④ осмысление - ветвление игрок / нпс
-    updateCamera(dt);                   // ⑤ камера (только Player)
-
-    view.updateCockpitState(core.role(), &core.desc(), core.transform(), core.equipment());
+    m_core.updateSignals(dt, worldSignals, planets, interferenceSources);
 }
+
+
+void Ship::updatePerception(float dt)
+{
+    m_core.updatePerception(dt);
+}
+
+
+
 
 
 
 
 void Ship::updateControlIntent()
 {
-    if (core.role() == ShipRole::Player)
-    {
+        
         // control уже заполнен в handleInput()
-        core.transform().cruiseActive    = control.cruiseActive;
-        core.transform().pitchInput      = control.pitchInput;
-        core.transform().yawInput        = control.yawInput;
-        core.transform().rollInput       = control.rollInput;
-        core.transform().targetSpeedRate = control.targetSpeedRate;
-        core.transform().strafeInput     = control.strafeInput;
-        core.transform().liftInput       = control.liftInput;
-        core.transform().forwardInput    = control.forwardInput;
-    }
-    else
-    {
-        // NPC: control будет заполняться AI (пока нули)
-        core.transform().cruiseActive    = false;
-        core.transform().pitchInput      = 0.0f;
-        core.transform().yawInput        = 0.0f;
-        core.transform().rollInput       = 0.0f;
-        core.transform().targetSpeedRate = 0.0f;
-        core.transform().strafeInput     = 0.0f;
-        core.transform().liftInput       = 0.0f;
-        core.transform().forwardInput    = 0.0f;
-    }
+        m_core.transform().cruiseActive    = m_control.cruiseActive;
+        m_core.transform().pitchInput      = m_control.pitchInput;
+        m_core.transform().yawInput        = m_control.yawInput;
+        m_core.transform().rollInput       = m_control.rollInput;
+        m_core.transform().targetSpeedRate = m_control.targetSpeedRate;
+        m_core.transform().strafeInput     = m_control.strafeInput;
+        m_core.transform().liftInput       = m_control.liftInput;
+        m_core.transform().forwardInput    = m_control.forwardInput;
+    
 }
 
-
-
-//                       ###              ##
-                    //    ##              ##
-//  ##  ##   ######       ##    ####     #####    ####              ####     ####    ##  ##    ####    ######    ####
-//  ##  ##    ##  ##   #####       ##     ##     ##  ##            ##  ##       ##   #######  ##  ##    ##  ##      ##
-//  ##  ##    ##  ##  ##  ##    #####     ##     ######            ##        #####   ## # ##  ######    ##       #####
-//  ##  ##    #####   ##  ##   ##  ##     ## ##  ##                ##  ##   ##  ##   ##   ##  ##        ##      ##  ##
-//   ######   ##       ######   #####      ###    #####             ####     #####   ##   ##   #####   ####      #####
-//           ####
-
-void Ship::updateCamera(float dt)
-{
-    view.update(dt, core.role(), core.transform());
-}
 
 
 
@@ -178,15 +125,15 @@ void Ship::updateCamera(float dt)
 bool Ship::installCryptoCard(CryptoCard* card)
 {
     if (!card) return false;
-    if (!core.inventory().contains(card)) return false;
+    if (!m_core.inventory().contains(card)) return false;
 
-    for (auto& d : core.equipment().decryptors.modules)
+    for (auto& d : m_core.equipment().decryptors.modules)
     {
         if (!d.enabled) continue;
 
         if (d.install(card))
         {
-            core.inventory().remove(card);
+            m_core.inventory().remove(card);
             return true;
         }
     }
@@ -209,11 +156,11 @@ bool Ship::removeCryptoCard(CryptoCard* card)
 {
     if (!card) return false;
 
-    for (auto& d : core.equipment().decryptors.modules)
+    for (auto& d : m_core.equipment().decryptors.modules)
     {
         if (d.remove(card))
         {
-            core.inventory().add(card);
+            m_core.inventory().add(card);
             return true;
         }
     }
@@ -237,27 +184,33 @@ bool Ship::addItem(Item* item)
 
     if (item->usesCargoSpace())
     {
-        if (!core.addCargo(item->cargoMass(), item->cargoVolume()))
+        if (!m_core.addCargo(item->cargoMass(), item->cargoVolume()))
             return false;
     }
 
-    core.inventory().add(item);
+    m_core.inventory().add(item);
     return true;
 }
 
 
-bool Ship::REMOVEItem(Item* item)
+bool Ship::removeItem(Item* item)
 {
     if (!item) return false;
 
-    if (!core.inventory().remove(item))
+    if (!m_core.inventory().remove(item))
         return false;
 
     if (item->usesCargoSpace())
     {
-        core.removeCargo(item->cargoMass(), item->cargoVolume());
+        m_core.removeCargo(item->cargoMass(), item->cargoVolume());
     }
 
     return true;
 }
 
+void Ship::setControlState(const ShipControlState& newControl)
+{
+    
+
+    m_control = newControl;
+}

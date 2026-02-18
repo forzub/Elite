@@ -58,6 +58,7 @@ add_executable(EliteGame
     
     src/game/ship/ShipController.cpp
     src/game/ship/Ship.cpp
+    src/game/ship/ShipDescriptorRegistry.cpp
     
     src/game/ship/core/ShipSignalController.cpp
     src/game/ship/core/ShipCore.cpp
@@ -73,8 +74,6 @@ add_executable(EliteGame
     src/game/ship/cockpit/CockpitStrokeBuilder.cpp
     src/game/ship/cockpit/ShipCockpitUpdater.cpp
     
-
-
     src/render/Camera.cpp
     src/render/DebugGrid.cpp
     src/render/Renderer.cpp
@@ -92,7 +91,21 @@ add_executable(EliteGame
     src/ui/components/UIComponent.cpp
     src/ui/components/UIContainer.cpp
     src/ui/components/UIText.cpp
+
+    src/game/simulation/GameSimulation.cpp
+    src/game/simulation/NpcAiSystem.cpp
+
+    src/game/client/ClientWorldState.cpp
+    src/game/server/GameServer.cpp
   
+    # src/network/ClientNetworkLayer.cpp
+    # src/network/InputCommandPacket.cpp
+    # src/network/LocalTransport.cpp
+    # src/network/SnapshotPacket.cpp
+
+    src/game/client/GameClient.cpp
+    src/game/network/LocalLoopbackTransport.cpp
+    src/game/shared/SharedShipPhysics.cpp
 
 )
 

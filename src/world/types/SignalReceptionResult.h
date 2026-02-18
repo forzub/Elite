@@ -1,12 +1,13 @@
 #pragma once
 
 #include "world/types/SignalSemanticState.h"
+#include "src/scene/EntityID.h"
 
 
 struct SignalReceptionResult
 {
     const WorldSignal* source;   // <-- ВАЖНО
-    
+    EntityId                        owner;
     // --- Геометрия
     glm::vec3 sourceWorldPos;
     float distance;                  // физическая дистанция

@@ -57,7 +57,7 @@ struct PlayerShipView
     unsigned int                    m_cockpitBaseTex = 0;
     unsigned int                    m_cockpitGlassTex = 0;
     ShipCockpitState                m_cockpitState;
-
+    std::vector<WorldLabel>         m_worldLabels;
 
 
     void updateCockpitState(
@@ -76,7 +76,7 @@ struct PlayerShipView
     void renderCockpit();
 
     void renderWorldLabels(
-        const std::unordered_map<const WorldSignal*, WorldLabel>& labels,
+        const std::vector<WorldLabel>& labels,
         const glm::vec3& shipPosition,
         const glm::mat4& viewMatrix,
         const glm::mat4& projectionMatrix,
@@ -88,7 +88,15 @@ struct PlayerShipView
     void update(
         float dt,
         ShipRole role,
-        ShipTransform& transform
+        const glm::vec3& position,
+        const glm::mat4& orientation
+    );
+
+    void updateCockpitStateFromSnapshot(
+        float forwardVelocity,
+        float targetSpeed,
+        bool cruiseActive,
+        const std::vector<WorldLabel>& labels
     );
     
     
@@ -139,6 +147,11 @@ struct PlayerShipView
     void setMainCamera(ShipCameraMode mode)
     {
         mainCamera = mode;
+    }
+
+    const std::vector<WorldLabel>& worldLabels() const
+    {
+        return m_worldLabels;
     }
 };
 

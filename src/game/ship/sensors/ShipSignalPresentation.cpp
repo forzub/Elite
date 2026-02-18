@@ -3,13 +3,14 @@
 #include "game/ship/hud/worldlabels/WorldLabelSystem.h"
 #include "game/ship/hud/worldlabels/WorldSignalWaves.h"
 
-
+#include "src/scene/EntityID.h"
 
 
 WorldLabel& ShipSignalPresentation::getOrCreateLabel(
     const SignalReceptionResult& result)
 {
-    const WorldSignal* key = result.source;
+    // const WorldSignal* key1 = result.source;
+    EntityId key = result.owner;
 
     auto it = m_labels.find(key);
     if (it != m_labels.end())
@@ -67,6 +68,8 @@ void ShipSignalPresentation::update(
             label.data.hasDistance = false;
         }
 
+
+        
         // --- VISUAL INERTIA ---
         WorldLabelSystem::updateVisualState(
             dt,
@@ -93,13 +96,13 @@ void ShipSignalPresentation::update(
 
 
 
-std::unordered_map<const WorldSignal*, WorldLabel>&
+std::unordered_map<EntityId, WorldLabel>&
 ShipSignalPresentation::labels()
 {
     return m_labels;
 }
 
-const std::unordered_map<const WorldSignal*, WorldLabel>&
+const std::unordered_map<EntityId, WorldLabel>&
 ShipSignalPresentation::labels() const
 {
     return m_labels;

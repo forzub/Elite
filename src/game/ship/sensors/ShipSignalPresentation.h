@@ -7,7 +7,7 @@
 #include "src/world/types/SignalReceptionResult.h"
 
 #include "render/HUD/WorldLabel.h"
-
+#include "src/scene/EntityID.h"
 
 
 
@@ -16,8 +16,8 @@ class ShipSignalPresentation
 public:
     // визуальное представление сигналов
     // std::unordered_map<const WorldSignal*, WorldLabel> labels;
-    const std::unordered_map<const WorldSignal*, WorldLabel>& labels() const;
-    std::unordered_map<const WorldSignal*, WorldLabel>& labels();
+    const std::unordered_map<EntityId, WorldLabel>& labels() const;
+    std::unordered_map<EntityId, WorldLabel>& labels();
 
     void update(
         float dt,
@@ -26,5 +26,5 @@ public:
 
 private:
     WorldLabel& getOrCreateLabel(const SignalReceptionResult& result);
-    std::unordered_map<const WorldSignal*, WorldLabel> m_labels;
+    std::unordered_map<EntityId, WorldLabel> m_labels;
 };

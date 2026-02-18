@@ -1,5 +1,5 @@
 #pragma once
-#include "core/StateContext.h"
+
 
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/ShipVisualIdentity.h"
@@ -39,7 +39,6 @@ public:
 
     
     void init(
-        StateContext& context,
         ShipRole role,
         const ShipDescriptor& descriptor,
         glm::vec3 position,

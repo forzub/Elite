@@ -8,6 +8,7 @@
 #include "render/VisualTuning.h"
 #include "world/Planet.h"
 #include "world/InterferenceSource.h"
+#include "src/scene/EntityID.h"
 
 
 static float rand01()
@@ -46,7 +47,7 @@ void SignalReceiver::update(
     const std::vector<Planet>& planets,
     const std::vector<InterferenceSource>& interferenceSources,
     std::vector<SignalReceptionResult>& outResults,
-    const void* ownerShip
+    const EntityId ownerShip
 )
 {
        
@@ -165,6 +166,7 @@ void SignalReceiver::update(
         // === БЛОК 8. Формирование результата ===
         SignalReceptionResult result;
         result.source = &signal;
+        result.owner = signal.owner;
         
         result.sourceWorldPos = signal.position;
         result.distance = distance;

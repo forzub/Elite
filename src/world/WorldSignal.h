@@ -10,12 +10,8 @@
 
 
 #include "src/game/signals/SignalPattern.h"
+#include "src/scene/EntityID.h"
 
-
-
-
-
-// struct Ship;
 
 
 struct WorldSignal
@@ -28,7 +24,7 @@ struct WorldSignal
     float                   maxRange;   // максимальная дальность
     bool                    enabled;
     std::string             label;
-    const void*             owner = nullptr;
+    EntityId                owner;
     
 };
 

@@ -23,7 +23,7 @@ public:
         const std::vector<Planet>& planets,
         const std::vector<InterferenceSource>& interferenceSources,
         std::vector<SignalReceptionResult>& outResults,
-        const void* ownerShip
+        const EntityId ownerShip
     );
 
     const std::vector<DetectedSignal>& detected() const;

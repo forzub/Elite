@@ -183,7 +183,7 @@ void PlayerShipView::renderCockpit()
 
 
 void PlayerShipView::renderWorldLabels(
-    const std::unordered_map<const WorldSignal*, WorldLabel>& labels,
+    const std::vector<WorldLabel>& labels,
     const glm::vec3& shipPosition,
     const glm::mat4& viewMatrix,
     const glm::mat4& projectionMatrix,
@@ -195,7 +195,7 @@ void PlayerShipView::renderWorldLabels(
         vp.height * 0.5f
     );
 
-    for (const auto& [signal, label] : labels)
+    for (const auto& label : labels)
     {
         glm::vec2 projectedPos;
 
@@ -287,34 +287,57 @@ void PlayerShipView::renderHudBoundary()
 
 
 void PlayerShipView::update(
-    float dt,
-    ShipRole role,
-    ShipTransform& transform
+        float dt,
+        ShipRole role,
+        const glm::vec3& position,
+        const glm::mat4& orientation
 )
 {
     if (role != ShipRole::Player)
         return;
 
+    ShipTransform tempTransform;
+    tempTransform.position = position;
+    tempTransform.orientation = orientation;
+
     cameraController.updateMode(
         ShipCameraMode::Cockpit,
         dt,
-        transform,
+        tempTransform,
         m_cameras[ShipCameraMode::Cockpit]
     );
 
     cameraController.updateMode(
         ShipCameraMode::Rear,
         dt,
-        transform,
+        tempTransform,
         m_cameras[ShipCameraMode::Rear]
     );
 
     cameraController.updateMode(
         ShipCameraMode::Drone,
         dt,
-        transform,
+        tempTransform,
         m_cameras[ShipCameraMode::Drone]
     );
+}
+
+
+
+
+
+void PlayerShipView::updateCockpitStateFromSnapshot(
+    float forwardVelocity,
+    float targetSpeed,
+    bool cruiseActive,
+    const std::vector<WorldLabel>& labels
+)
+{
+    m_cockpitState.forwardVelocity = forwardVelocity;
+    m_cockpitState.targetSpeed     = targetSpeed;
+    m_cockpitState.cruiseActive    = cruiseActive;
+
+    m_worldLabels = labels;
 }
 
 

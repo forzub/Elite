@@ -9,8 +9,8 @@
 #include <optional>
 
 #include "game/ship/core/ShipParams.h"
-
 #include "game/ship/ShipHudProfile.h"
+#include "game/ship/ShipTypeId.h"
 
 #include "game/ship/cockpit/CockpitContours.h"
 
@@ -99,6 +99,7 @@ struct CockpitData
 
     struct ShipDescriptor
 {
+    ShipTypeId          typeId;
     ShipIdentity        identity;
     ShipParams          physics;
     ShipHudProfile      hud;

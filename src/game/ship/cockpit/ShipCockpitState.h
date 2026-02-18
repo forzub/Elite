@@ -20,10 +20,15 @@ struct CockpitVisualOverride
     // на будущее
     bool overrideFill = false;
     float fill01 = 1.0f;
+
 };
 
 
 struct ShipCockpitState
 {
+    float forwardVelocity = 0.0f;
+    float targetSpeed     = 0.0f;
+    bool  cruiseActive    = false;
+    
     std::unordered_map<std::string, CockpitVisualOverride> overrides;
 };

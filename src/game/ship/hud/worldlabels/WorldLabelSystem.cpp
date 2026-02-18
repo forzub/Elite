@@ -14,6 +14,12 @@ static float rand01()
     return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 }
 
+
+
+
+
+
+
 //
 // Обновляет ВИЗУАЛЬНОЕ состояние метки сигнала.
 // ❗ НЕ физика, ❗ НЕ рендер.
@@ -29,6 +35,10 @@ static float rand01()
 // snr                     — отношение сигнал/шум (влияет на шанс появления)
 // visual                  — текущее визуальное состояние метки
 //
+
+
+
+
 void WorldLabelSystem::updateVisualState(
     float dt,
     SignalSemanticState semanticState,

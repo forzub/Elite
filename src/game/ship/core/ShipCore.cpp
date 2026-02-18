@@ -1,6 +1,6 @@
 #include "ShipCore.h"
 #include <iostream>
-
+#include "src/game/shared/SharedShipPhysics.h"
 
 
 // // -------------------------------------------------
@@ -13,7 +13,6 @@
 // //   ####    ##  ##    ####       ###
 // // -------------------------------------------------
 void ShipCore::init(
-    StateContext&           context, 
     ShipRole                inRole,
     const ShipDescriptor&   descriptor, 
     glm::vec3               position,
@@ -84,6 +83,22 @@ void ShipCore::init(
             }
         }
 
+    
+
+    m_transform.orientation = glm::mat4(1.0f);
+
+    m_transform.pitchRate = 0.0f;
+    m_transform.yawRate   = 0.0f;
+    m_transform.rollRate  = 0.0f;
+
+    m_transform.forwardVelocity = 0.0f;
+    m_transform.localVelocity   = glm::vec3(0.0f);
+    m_transform.targetSpeed     = 0.0f;
+
+    // m_velocity = glm::vec3(0.0f);
+    // m_acceleration = glm::vec3(0.0f);
+    // m_angularVelocity = glm::vec3(0.0f);
+
 
     // 2. базовое состояние
     auto& tx  = equipment().transmitter;
@@ -92,11 +107,9 @@ void ShipCore::init(
     sig.displayClass        = tx.displayClass;
     sig.power               = tx.txPower;
     sig.maxRange            = tx.baseRange;
-    
     sig.position            = transform().position;
     sig.type                = SignalType::Transponder;
     sig.enabled             = true;
-    sig.owner               = this;
     sig.label               = m_desc->identity.shipName;
 
     sig.address.actor       = 0xFFFFFFFF;
@@ -122,92 +135,26 @@ void ShipCore::init(
 
 void ShipCore::updatePhysics(float dt, const WorldParams& world)
 {
+    
+    
     m_controller.update(
         dt,
         m_desc->physics,
         m_transform,
         world
     );
+    
+  
+
+    SharedShipPhysics::integrate(
+        m_transform,
+        m_desc->physics,
+        m_control,
+        world,
+        dt
+        );
 }
 
-// // -------------------------------------------------
-// void ShipCore::update(
-//     float dt,
-//     const WorldParams& world,
-//     const std::vector<WorldSignal>& worldSignals,
-//     const std::vector<Planet>& planets,
-//     const std::vector<InterferenceSource>& interferenceSources
-// )
-// {
-//     updateControlIntent();        // ① откуда intent
-//     updatePhysics(dt, world);     // ② движение
-   
-//     // формирование сигнала передатчика
-//     signalController.update(dt, emittedSignal);
-
-
-//     if (emittedSignal.enabled)
-//     {
-//         emittedSignal.position     = transform.position;
-//     }
-
-
-//     if (equipment.receiver.enabled)
-//     {
-//         updateSignals(
-//             dt,
-//             worldSignals,
-//             planets,
-//             interferenceSources
-//         );
-//     }
-
-
-//     //  4. HUD / AI — по роли
-//     updatePerception(dt);         // ④ осмысление - ветвление игрок / нпс
-//     updateCamera(dt);             // ⑤ камера (только Player)
-//     updateCockpitState();
-// }
-
-
-// void ShipCore::updateControlIntent()
-// {
-//     if (role == ShipRole::Player)
-//     {
-//         // control уже заполнен в handleInput()
-//         transform.cruiseActive    = control.cruiseActive;
-//         transform.pitchInput      = control.pitchInput;
-//         transform.yawInput        = control.yawInput;
-//         transform.rollInput       = control.rollInput;
-//         transform.targetSpeedRate = control.targetSpeedRate;
-//         transform.strafeInput     = control.strafeInput;
-//         transform.liftInput       = control.liftInput;
-//         transform.forwardInput    = control.forwardInput;
-//     }
-//     else
-//     {
-//         // NPC: control будет заполняться AI (пока нули)
-//         transform.cruiseActive    = false;
-//         transform.pitchInput      = 0.0f;
-//         transform.yawInput        = 0.0f;
-//         transform.rollInput       = 0.0f;
-//         transform.targetSpeedRate = 0.0f;
-//         transform.strafeInput     = 0.0f;
-//         transform.liftInput       = 0.0f;
-//         transform.forwardInput    = 0.0f;
-//     }
-// }
-
-
-// void ShipCore::updatePhysics(float dt, const WorldParams& world)
-// {
-//     controller.update(
-//         dt,
-//         desc->physics,
-//         transform,
-//         world
-//     );
-// }
 
 
 void ShipCore::updatePerception(float dt)
@@ -252,7 +199,7 @@ void ShipCore::updateSignals(
         planets,
         interferenceSources,
         m_signalResults,
-        this
+        m_emittedSignal.owner
     );
 }
 

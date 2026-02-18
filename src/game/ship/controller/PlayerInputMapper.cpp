@@ -28,14 +28,6 @@ void PlayerInputMapper::update(ShipControlState& control){
             (Input::instance().isKeyPressed(GLFW_KEY_E) ? 1.0f : 0.0f);
 
 
-        // if (Input::instance().isKeyPressed(GLFW_KEY_F1))
-        //     view.setCameraMode(ShipCameraMode::Cockpit);
-
-        // if (Input::instance().isKeyPressed(GLFW_KEY_F2))
-        //     view.setCameraMode(ShipCameraMode::Rear);
-
-        // if (Input::instance().isKeyPressed(GLFW_KEY_F3))
-        //     view.setCameraMode(ShipCameraMode::Drone);
     }
     else
     {

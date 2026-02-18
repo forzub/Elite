@@ -1,8 +1,9 @@
 #include "ShipController.h"
+#include <cstdio>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
+#include <iostream>
 
 
 
@@ -13,6 +14,7 @@ void ShipController::update(
     const WorldParams& world
 )
 {
+    
     // ---------------- rotation ----------------
     ship.pitchRate += ship.pitchInput * params.angularAccel * dt;
     ship.yawRate   += ship.yawInput   * params.angularAccel * dt;
@@ -100,10 +102,12 @@ void ShipController::update(
     else
     {
         glm::vec3 worldVel =
-            forward * ship.forwardVelocity +
+            forward * (ship.forwardVelocity + ship.forwardInput) +
             right   * ship.localVelocity.x +
             up      * ship.localVelocity.y;
 
         ship.position += worldVel * dt;
     }
+
+   
 }

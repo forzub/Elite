@@ -1,75 +1,67 @@
-
-
-
 #pragma once
 #include <vector>
 
 #include "src/game/ship/core/ShipCore.h"
-#include "src/game/ship/view/PlayerShipView.h"
-#include "src/game/ship/controller/PlayerInputMapper.h"
-
-
-// struct CockpitSetup
-// {
-//     CockpitGeometry geometry;
-//     std::string baseTexturePath;
-//     std::string glassTexturePath;
-// };
+#include "src/scene/EntityID.h"
+#include "ShipTypeId.h"
 
 
 
-// главный класс описания корабля, общий для всех летающих
-// описание находится в папке description
-// связь с файлом описания через структуру - ShipDecription
 
-struct Ship
+class Ship
 {
-    // ─────────────────────
-    // Агрегированные части
-    // ─────────────────────
-    ShipCore               core;
-    PlayerShipView         view;
-    ShipControlState                        control;            // - управление
-    // --- состояние ---
-    PlayerInputMapper                       inputMapper;
-    
-    
-    // --- lifecycle ---
+public:
+
     void init(
-        StateContext&                       context, 
-        ShipRole                            role,
-        const ShipDescriptor&               descriptor, 
-        glm::vec3                           position,
-       const ShipInitData&                  initData
+        ShipRole role,
+        const ShipDescriptor& descriptor,
+        glm::vec3 position,
+        const ShipInitData& initData
     );
-
-
-    void handleInput();
 
     void update(
         float dt,
-        const WorldParams&                          world,
-        const std::vector<WorldSignal>&             worldSignals,
-        const std::vector<Planet>&                  planets,
-        const std::vector<InterferenceSource>&      interferenceSources
+        const WorldParams& world,
+        const std::vector<WorldSignal>& worldSignals,
+        const std::vector<Planet>& planets,
+        const std::vector<InterferenceSource>& interferenceSources
     );
 
+    void setControlState(const ShipControlState& newControl);
 
-    void updateControlIntent();
-    void updateCamera(float dt);
-
-    
-
-
-    // ───────────────
-    // перенос криптокарт из shipInventory в decryptor и обратно
-    // ─────────────── 
     bool installCryptoCard(CryptoCard* card);
     bool removeCryptoCard(CryptoCard* card);
 
     bool addItem(Item* item);
-    bool REMOVEItem(Item* item);
+    bool removeItem(Item* item);
 
-    const ShipCockpitState& getCockpitState() const;
+    // === безопасный доступ ===
+    const ShipCore& core() const { return m_core; }
+    ShipCore& core() { return m_core; }
+
+    EntityId id() const { return m_id; }
+    void setId(EntityId id) { m_id = id; }
+
+    void applyControl();
+    void updatePhysics(float dt, const WorldParams& world);
+    void updateSignals(
+        float dt,
+        const std::vector<WorldSignal>& worldSignals,
+        const std::vector<Planet>& planets,
+        const std::vector<InterferenceSource>& interferenceSources
+    );
+    void updatePerception(float dt);
+    void setTypeId(ShipTypeId id) { m_typeId = id; }
+    ShipTypeId typeId() const { return m_typeId; }
+
+private:
+
+    ShipCore            m_core;
+    ShipControlState    m_control;
+    EntityId            m_id;
+    ShipTypeId          m_typeId;
+
+    void updateControlIntent();
 };
+
 

@@ -22,15 +22,21 @@
 
 
 #include "render/DebugGrid.h"
+
 #include "src/game/equipment/signalNode/processing/WorldSignalTxSystem.h"
+
+#include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
+
 #include "src/game/player/ActorIdProvider.h"
 #include "src/game/player/ActorCodeGenerator.h"
+
 #include "ui/ConfirmExitState.h"
 #include "src/galaxy/GalaxyDatabase.h"
 
 #include "src/render/camera/RenderCameraViewport.h"
 #include "ui/components/UIText.h"
+#include "src/game/network/LocalLoopbackTransport.h"
 
 
 //                                        ##                                  ##
@@ -48,6 +54,54 @@ SpaceState::SpaceState(StateStack& states)
 {
     const Viewport& vp = context().viewport();
 
+    m_server = std::make_unique<GameServer>();
+    m_playerId = m_server->playerId();
+     
+    m_transport = std::make_unique<LocalLoopbackTransport>(
+        m_server.get()
+    );
+
+    m_client = std::make_unique<GameClient>(
+        m_transport.get(),
+        m_playerId
+    );
+
+
+    // Сначала обновляем сервер один тик
+    m_server->update(0.0f);
+
+    const auto& snap = m_server->snapshot();
+
+    for (const auto& s : snap.ships)
+    {
+        if (s.id == m_playerId)
+        {
+            const ShipDescriptor& desc =
+                ShipDescriptorRegistry::get(s.typeId);
+
+            ShipTransform initialTransform;
+            initialTransform = s.transform;
+
+            m_playerView = std::make_unique<PlayerShipView>();
+
+            m_playerView->init(
+                context(),
+                &desc,
+                initialTransform
+            );
+
+            break;
+        }
+    }
+
+
+    if (!m_playerView)
+    {
+        std::cout << "PLAYER VIEW NOT CREATED\n";
+    }
+    
+    
+    
     uiRoot = std::make_unique<UIContainer>();
 
     // ================== задняя камера =========================
@@ -59,18 +113,25 @@ SpaceState::SpaceState(StateStack& states)
     rear->size                  = {0.25f, 0.18f};
     rear->cornerRadiusRel       = 0.12f;
     rear->borderThicknessRel    = 0.008f;
-    rear->camera                = &m_playerShip.view.camera(ShipCameraMode::Rear);
+    rear->camera                = &m_playerView->camera(ShipCameraMode::Rear);
     rear->borderColor           = {0.2f, 0.8f, 1.0f};
 
+ 
     rear->drawCallback =
         [&](const glm::mat4&, const glm::mat4&)
-    {
-        DebugGrid::drawInfinite(
-            m_playerShip.core.transform().position,
-            20000.0f,
-            100
-        );
-    };
+        {
+            const auto& ships = m_client->world().ships();
+
+            auto it = ships.find(m_playerId.value);
+            if (it == ships.end())
+                return;
+
+            DebugGrid::drawInfinite(
+                it->second.transform.position,
+                20000.0f,
+                100
+            );
+        };
 
     rearView = rear.get();          // ← сохраняем raw pointer если нужен
     uiRoot->addChild(std::move(rear));   // ← теперь отдаём владение
@@ -102,195 +163,53 @@ SpaceState::SpaceState(StateStack& states)
 
     LOG("[SpaceState] ctor");
 
-    // =======================================================================
-    // galaxy test
-    // =======================================================================
 
+    // =======================================================================
+    // load galaxy database + test
+    // =======================================================================
+    
     GalaxyDatabase galaxy;
     galaxy.loadFromDirectory("assets/data/galaxy");
     galaxy.validate();
-
+    
     std::cout
     << "Actors:  " << galaxy.actorCount()  << "\n"
     << "Systems: " << galaxy.systemCount() << "\n"
     << "Nodes:   " << galaxy.nodeCount()   << "\n"
     << "Routes:  " << galaxy.routeCount()  << "\n";
-
-
+    
     
     
     // =======================================================================
-    // устанавливает ограничение HUD для меток за экраном
-    // =======================================================================
-   
-    // начальная позиция
-    // m_playerShip
-    ShipVisualIdentity visualIdentity = {
-        .shipType = "Cobra MK1",
-        .shipName = "Jeraya"
-    };
-
-    ShipRegistry registry = {
-        .instanceId      = 1,                  // пока вручную, потом генератор
-        .ownerName       = "Jeraya",
-        .ownerActor      = ActorIds::Player(),        // или конкретный ActorId
-        .registrationId  = "PL-0001",
-        .homePort        = "Lave",
-        .shipRole        = ShipRoleType::Civilian
-    };
-
-    auto* playerCard = new CryptoCard(
-    generateActorCode(),
-    "Player Access Card" );
-    playerCard->actor = ActorIds::Player();
-
-    ShipInitData initData;
-    initData.visual = visualIdentity;
-    initData.registry = registry;
-    initData.initialInventory = {playerCard};
-
-    m_playerShip.init(
-        context(),
-        ShipRole::Player,
-        EliteCobraMk1::EliteCobraMk1Descriptor(ShipRole::Player),
-        {0.0f, 50.0f, 10.0f},
-        initData
-    );
-
-
-
-
-    
-
-    visualIdentity = {
-        .shipType = "Cobra MK3",
-        .shipName = "Scarlet Hawk Moth"
-    };
-
-    registry = {
-        .instanceId      = 2,                  // пока вручную, потом генератор
-        .ownerName       = "Digital Lion",
-        .ownerActor      =  ActorIds::Player(),        // или конкретный ActorId
-        .registrationId  = "PL-0002",
-        .homePort        = "Lave",
-        .shipRole        = ShipRoleType::Civilian
-    };
-
-    auto* playerNPC1Card = new CryptoCard(
-    generateActorCode(),
-    "Player Access Card" );
-    playerNPC1Card->actor = ActorIds::Player();
-
-    
-    initData.visual = visualIdentity;
-    initData.registry = registry;
-    initData.initialInventory = { playerNPC1Card };
-    // --- NPC #1 ---
-  
-    m_npcShips.emplace_back();
-    m_npcShips.back().init(
-        context(),
-        ShipRole::NPC,
-        EliteCobraMk1::EliteCobraMk1Descriptor(ShipRole::NPC),
-        {20.0f, 0.0f, -50.0f},
-        initData
-    );
-
-
-
-
-    visualIdentity = {
-        .shipType = "Cobra MK3",
-        .shipName = "Hooded snake"
-    };
-
-    registry = {
-        .instanceId      = 3,                  // пока вручную, потом генератор
-        .ownerName       = "Pipito Karnelio",
-        .ownerActor      = ActorIds::Player(),        // или конкретный ActorId
-        .registrationId  = "PL-0003",
-        .homePort        = "Lave",
-        .shipRole        = ShipRoleType::Civilian
-    };
-
-    auto* playerNPC2Card = new CryptoCard(
-    generateActorCode(),
-    "Player Access Card" );
-    playerNPC2Card->actor = ActorIds::Player();
-
-    
-    initData.visual = visualIdentity;
-    initData.registry = registry;
-    initData.initialInventory = { playerNPC2Card };
-
-
-    // --- NPC #2 ---
-    
-    m_npcShips.emplace_back();
-    m_npcShips.back().init(
-        context(),
-        ShipRole::NPC,
-        EliteCobraMk1::EliteCobraMk1Descriptor(ShipRole::NPC),
-        {-70.0f, 50.0f, -70.0f},
-        initData
-    );
-
-
-
-
-
-
     // инициализация параметров рендера
+    // =======================================================================
     m_hudRenderer.init(context());
     m_worldLabelRenderer.init(context());
-
-
-
-
-
+    
+    
+    // =======================================================================
     // world = vacuum
-    m_world.linearDrag   = 0.0f;
-    m_world.maxSafeDecel = 50.0f;
+    // =======================================================================
+
+    m_server->world().linearDrag = 0.0f;
+    m_server->world().maxSafeDecel = 50.0f;
 
 
 
 
 
-    // // описание физических и сигнальных объектов
-    // WorldObject station;
-    // station.position = glm::vec3(0.0f, 0.0f, -500.0f);
-    // station.label = "LAVE STATION";
-    // m_worldObjects.push_back(station);
-
-    // m_worldObjects.push_back({
-    //     glm::vec3(0.0f, 0.0f, -200.0f),
-    //     "RELAY BEACON 3766"
-    // });
-
-   
-    // m_planets.push_back({
-    //     glm::vec3(0.0f, 0.0f, 0.0f),
-    //     6000.0f
-    // });
-
-    
-
-    
-
-
-
-    InterferenceSource jammer;
-    jammer.type     = InterferenceType::Active;
-    jammer.position = {0, 0, 155};
-    jammer.power    = 300.0f;
-    jammer.radius   = 100.0f;
-    jammer.enabled  = false;
+    // InterferenceSource jammer;
+    // jammer.type     = InterferenceType::Active;
+    // jammer.position = {0, 0, 155};
+    // jammer.power    = 300.0f;
+    // jammer.radius   = 100.0f;
+    // jammer.enabled  = false;
 
     // m_interferenceSources.push_back(jammer);
 
 
     
-    m_planets.clear();
+    // m_simulation->planets().clear();
 
     // m_planets.push_back({
     //     {0, 00, -50},
@@ -336,9 +255,8 @@ SpaceState::~SpaceState()
 void SpaceState::handleInput()
 {
 
-    // режимы управления камерой
     if (Input::instance().isKeyPressedOnce(GLFW_KEY_F1))
-    m_layout = ScreenLayout::Front_Main_Rear_Mini;
+        m_layout = ScreenLayout::Front_Main_Rear_Mini;
 
     if (Input::instance().isKeyPressedOnce(GLFW_KEY_F2))
         m_layout = ScreenLayout::Rear_Main_Front_Mini;
@@ -349,8 +267,19 @@ void SpaceState::handleInput()
     if (Input::instance().isKeyPressedOnce(GLFW_KEY_F4))
         m_layout = ScreenLayout::Drone_Main_Front_Mini;
 
-    // управление кораблем
-    m_playerShip.handleInput();
+    // === управление кораблём ===
+    m_inputMapper.update(m_playerControl);
+
+
+    m_localTick++;
+
+    m_playerControl.controlTick = m_localTick;
+
+    m_sentInputs.push_back(m_playerControl);
+
+    m_server->submitCommand(m_playerId, m_playerControl);
+
+    m_client->submitInput(m_playerControl);
 }
 
 
@@ -374,50 +303,51 @@ void SpaceState::handleInput()
 void SpaceState::update(float dt)
 {
     LOG("[SpaceState] update begin");
-    
+    m_simAccumulator += dt;
 
-    std::vector<Ship*> worlds_signals_ships;
-    worlds_signals_ships.push_back(&m_playerShip);
+    // m_simulation->setPlayerControl(m_playerControl);
 
-    for (auto& npc : m_npcShips)
-        worlds_signals_ships.push_back(&npc);
-
-
-    WorldSignalTxSystem::collectFromShips(
-        worlds_signals_ships,
-        m_worldSignals
-    );
-
-
-    // m_playerShip.updateSignals(
-    //     dt,
-    //     m_worldSignals,
-    //     m_planets,
-    //     m_interferenceSources
-    // );
-
-
-    m_playerShip.update(
-        dt,
-        m_world,
-        m_worldSignals,
-        m_planets,
-        m_interferenceSources
-    );
-
-
-
-    for (auto& npc : m_npcShips)
+    while (m_simAccumulator >= SIM_FIXED_DT)
     {
-        npc.update(
-            dt,
-            m_world,
-            m_worldSignals,
-            m_planets,
-            m_interferenceSources
-        );
+        
+        m_transport->update(SIM_FIXED_DT);
+        m_server->update(SIM_FIXED_DT);
+        m_transport->update(0.0f);
+        m_simAccumulator -= SIM_FIXED_DT;
     }
-   
+
+    m_client->update(
+        dt,
+        m_server->world(),
+        SIM_FIXED_DT
+    );
+
+
+
+
+    const auto& ships = m_client->world().ships();
+
+    auto it = ships.find(m_playerId.value);
+    if (it == ships.end())
+        return;
+
+    const auto& ship = it->second;
+
+
+     m_playerView->update(
+        dt,
+        ship.role,
+        ship.renderTransform.position,
+        ship.renderTransform.orientation
+    );
+
+    m_playerView->updateCockpitStateFromSnapshot(
+        ship.transform.forwardVelocity,
+        ship.transform.targetSpeed,
+        ship.transform.cruiseActive,
+        ship.labels
+    );    
+
 }
 
 
@@ -446,8 +376,8 @@ void SpaceState::renderUI()
     switch (m_layout)
     {
         case ScreenLayout::Front_Main_Rear_Mini:
-            mainCam = &m_playerShip.view.camera(ShipCameraMode::Cockpit);
-            miniCam = &m_playerShip.view.camera(ShipCameraMode::Rear);
+            mainCam = &m_playerView->camera(ShipCameraMode::Cockpit);
+            miniCam = &m_playerView->camera(ShipCameraMode::Rear);
             m_activeCameraMode = ShipCameraMode::Cockpit;
             if (auto* comp = uiRoot->findById("main_label"))
             {
@@ -460,8 +390,8 @@ void SpaceState::renderUI()
             break;
 
         case ScreenLayout::Rear_Main_Front_Mini:
-            mainCam = &m_playerShip.view.camera(ShipCameraMode::Rear);
-            miniCam = &m_playerShip.view.camera(ShipCameraMode::Cockpit);
+            mainCam = &m_playerView->camera(ShipCameraMode::Rear);
+            miniCam = &m_playerView->camera(ShipCameraMode::Cockpit);
             m_activeCameraMode = ShipCameraMode::Rear;
             if (auto* comp = uiRoot->findById("main_label"))
             {
@@ -474,8 +404,8 @@ void SpaceState::renderUI()
             break;
 
         case ScreenLayout::Front_Main_Drone_Mini:
-            mainCam = &m_playerShip.view.camera(ShipCameraMode::Cockpit);
-            miniCam = &m_playerShip.view.camera(ShipCameraMode::Drone);
+            mainCam = &m_playerView->camera(ShipCameraMode::Cockpit);
+            miniCam = &m_playerView->camera(ShipCameraMode::Drone);
             m_activeCameraMode = ShipCameraMode::Cockpit;
             if (auto* comp = uiRoot->findById("main_label"))
             {
@@ -488,8 +418,8 @@ void SpaceState::renderUI()
             break;
 
         case ScreenLayout::Drone_Main_Front_Mini:
-            mainCam = &m_playerShip.view.camera(ShipCameraMode::Drone);
-            miniCam = &m_playerShip.view.camera(ShipCameraMode::Cockpit);
+            mainCam = &m_playerView->camera(ShipCameraMode::Drone);
+            miniCam = &m_playerView->camera(ShipCameraMode::Cockpit);
             m_activeCameraMode = ShipCameraMode::Drone;
             if (auto* comp = uiRoot->findById("main_label"))
             {
@@ -510,6 +440,27 @@ void SpaceState::renderUI()
     // 3D ПРОЕКЦИЯ
     // -------------------------------
 
+                // glm::mat4 view = m_activeMainCamera->viewMatrix();
+
+                // // Позиция камеры из обратной матрицы
+                // glm::mat4 invView = glm::inverse(view);
+                // glm::vec3 camPos = glm::vec3(invView[3]);
+
+                // std::cout << "CAM POS: "
+                //         << camPos.x << " "
+                //         << camPos.y << " "
+                //         << camPos.z << "\n";
+
+                // // Forward = -Z ось view matrix
+                // glm::vec3 camForward = glm::normalize(
+                //     glm::vec3(-view[0][2], -view[1][2], -view[2][2])
+                // );
+
+                // std::cout << "CAM FWD: "
+                //         << camForward.x << " "
+                //         << camForward.y << " "
+                //         << camForward.z << "\n";
+    
     RenderCameraViewport::render(
         *mainCam,
         vp,
@@ -519,11 +470,23 @@ void SpaceState::renderUI()
         vp.height,
         [&](auto view, auto proj)
         {
-            DebugGrid::drawInfinite(
-                m_playerShip.core.transform().position,
-                20000.0f,
-                100
-            );
+            EntityId playerId = m_playerId;
+
+            const auto& ships = m_client->world().ships();
+            auto it = ships.find(playerId.value);
+
+            if (it != ships.end())
+            {
+                auto it = m_client->world().ships().find(m_playerId.value);
+                if (it != m_client->world().ships().end())
+                {
+                    DebugGrid::drawInfinite(
+                        it->second.renderTransform.position,
+                        2000.0f,
+                        100
+                    );
+                }
+            }
         }
     );
 
@@ -552,6 +515,8 @@ void SpaceState::renderHUD()
     float fx = (float)vp.width;
     float fy = (float)vp.height;
 
+    
+
     // -------------------------------------------------
     // сразу ставим ортографию и больше её не трогаем - это для 2D графики
     // -------------------------------------------------
@@ -567,48 +532,21 @@ void SpaceState::renderHUD()
     // -------------------------------------------------
     // 1. Статический HUD (рамки, текст)
     // -------------------------------------------------
-    // m_hudStatics.clear();
-    // m_hudRects.clear();
+      
 
-    // m_hudRects.push_back({
-    //     { 20.0f / fx, 20.0f / fy },
-    //     { 180.0f / fx, 60.0f / fy },
-    //     { 0.0f, 1.0f, 0.0f }
-    // });
+    const auto& ships = m_client->world().ships();
+    auto it = ships.find(m_playerId.value);
+    if (it == ships.end())
+        return;
 
-    // m_hudStatics.push_back({
-    //     "HUD ONLINE",
-    //     { 30.0f / fx, 40.0f / fy },
-    //     { 0.0f, 1.0f, 0.0f }
-    // });
-
-    // --- рамка мини-камеры ---
-    {
-        // const Viewport& vp = context().viewport();
-
-        // int miniW = 300;
-        // int miniH = 200;
-        // int miniX = vp.width - miniW - 20;
-        // int miniY = 20;
-
-        // glDisable(GL_DEPTH_TEST);
-
-        // glColor3f(0.2f, 0.8f, 1.0f);
-
-        // glBegin(GL_LINE_LOOP);
-        // glVertex2f(miniX, miniY);
-        // glVertex2f(miniX + miniW, miniY);
-        // glVertex2f(miniX + miniW, miniY + miniH);
-        // glVertex2f(miniX, miniY + miniH);
-        // glEnd();
-    }
+    const glm::vec3 playerPos = it->second.renderTransform.position;
 
     
     // -------------------------------------------------
     // 2. HUD ограничитель
     // -------------------------------------------------
     
-    m_playerShip.view.renderHudBoundary();
+    m_playerView->renderHudBoundary();
     
     // -------------------------------------------------
     // 3. Подготовка матриц для меток
@@ -616,16 +554,30 @@ void SpaceState::renderHUD()
     
     if (m_activeCameraMode != ShipCameraMode::Drone)
     {
-        m_playerShip.view.renderWorldLabels(
-            m_playerShip.core.signalPresentation().labels(),
-            m_playerShip.core.transform().position,
-            m_activeMainCamera->viewMatrix(),
-            m_activeMainCamera->projectionMatrix(),
-            vp
-        );
+       
+        auto it = m_client->world().ships().find(m_playerId.value);
+        if (it != m_client->world().ships().end())
+        {
+            const auto& shipState = it->second;
+
+            // Найдём snapshot игрока (для labels)
+            auto it = m_client->world().ships().find(m_playerId.value);
+            if (it != m_client->world().ships().end())
+            {
+                const auto& ship = it->second;
+
+                m_playerView->renderWorldLabels(
+                    ship.labels,
+                    ship.renderTransform.position,
+                    m_activeMainCamera->viewMatrix(),
+                    m_activeMainCamera->projectionMatrix(),
+                    vp
+                );
+            }
+        }
     }
 
-    m_playerShip.view.renderCockpit();
+    m_playerView->renderCockpit();
 
 
     uiRoot->render(vp);
@@ -678,6 +630,8 @@ bool SpaceState::isInSafeZone() const
     // пока считаем, что игрок ВСЕГДА в безопасной зоне
     return true;
 }
+
+
 
 
 

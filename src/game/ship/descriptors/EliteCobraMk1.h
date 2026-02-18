@@ -11,7 +11,7 @@ struct CockpitLayout {
 
 struct EliteCobraMk1{
 
-    static const ShipDescriptor& EliteCobraMk1Descriptor(ShipRole role);  // Статический метод
+    static const ShipDescriptor& EliteCobraMk1Descriptor();  // Статический метод
     // static CockpitLayout cockpitLayout(const ShipDescriptor& desc);
     static CockpitGeometry createCockpitGeometry(const ShipDescriptor& desc);
     

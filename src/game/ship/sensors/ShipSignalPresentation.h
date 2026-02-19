@@ -21,10 +21,11 @@ public:
 
     void update(
         float dt,
-        const std::vector<SignalReceptionResult>& signalResults
+        const std::vector<SignalReceptionResult>& receptions
     );
+    std::vector<WorldLabel> labelsVector() const;
 
 private:
     WorldLabel& getOrCreateLabel(const SignalReceptionResult& result);
-    std::unordered_map<EntityId, WorldLabel> m_labels;
+    std::unordered_map<EntityId, WorldLabel>             m_labels;
 };

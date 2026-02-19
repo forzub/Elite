@@ -112,6 +112,7 @@ void GameSimulation::update(double dt)
 
     
     float fdt = static_cast<float>(dt);
+    m_serverTime += dt;
 
     // === 1. AI phase ===
     for (auto& [id, ship] : m_ships)
@@ -141,8 +142,11 @@ void GameSimulation::update(double dt)
     for (auto& [id, ship] : m_ships)
         ship.updatePerception(fdt);
 
+
+    m_snapshot.serverTime = m_serverTime;
     m_snapshot.ships.clear();
     m_snapshot.signals = m_worldSignals;
+
 
     for (auto& [id, ship] : m_ships)
     {
@@ -156,14 +160,11 @@ void GameSimulation::update(double dt)
 
         s.transform = tr;
 
-        const auto& mapLabels = ship.core().signalPresentation().labels();
 
-        s.labels.clear();
-        for (const auto& [_, label] : mapLabels)
-        {
-            s.labels.push_back(label);
-        }
-        
+ 
+        const auto& receptions = ship.core().signalResults();
+        s.receptions = receptions;
+        s.receptions = ship.core().signalResults();
         
         m_snapshot.ships.push_back(s);
     }

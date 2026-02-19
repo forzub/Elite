@@ -47,7 +47,7 @@ public:
     const SimulationSnapshot& snapshot() const;
     void setTick(uint32_t tick);
     EntityId playerId() const { return m_playerId; }
-    
+    double serverTime() const { return m_serverTime; }
 
 private:
     uint32_t                            m_nextEntityId = 1;
@@ -62,7 +62,7 @@ private:
     ShipControlState                    m_playerControlState;
     NpcAiSystem                         m_npcAiSystem;
     SimulationSnapshot                  m_snapshot;
-    
+    double                              m_serverTime = 0.0;
     
     EntityId generateEntityId();
 };

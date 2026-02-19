@@ -345,7 +345,7 @@ void SpaceState::update(float dt)
         ship.transform.forwardVelocity,
         ship.transform.targetSpeed,
         ship.transform.cruiseActive,
-        ship.labels
+        ship.signalPresentation.labelsVector()
     );    
 
 }
@@ -567,7 +567,7 @@ void SpaceState::renderHUD()
                 const auto& ship = it->second;
 
                 m_playerView->renderWorldLabels(
-                    ship.labels,
+                    ship.signalPresentation.labelsVector(),
                     ship.renderTransform.position,
                     m_activeMainCamera->viewMatrix(),
                     m_activeMainCamera->projectionMatrix(),

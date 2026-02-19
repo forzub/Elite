@@ -162,7 +162,7 @@ void ShipCore::updatePerception(float dt)
     if (m_role == ShipRole::Player)
     {
         // HUD / визуальная семантика
-        m_signalPresentation.update(dt, m_signalResults);
+        // m_signalPresentation.update(dt, m_signalResults);
     }
     else
     {

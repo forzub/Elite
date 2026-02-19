@@ -40,9 +40,9 @@ WorldLabel& ShipSignalPresentation::getOrCreateLabel(
 
 void ShipSignalPresentation::update(
     float dt,
-    const std::vector<SignalReceptionResult>& signalResults)
+    const std::vector<SignalReceptionResult>& receptions)
 {
-    for (const SignalReceptionResult& result : signalResults)
+    for (const SignalReceptionResult& result : receptions)
     {
         WorldLabel& label = getOrCreateLabel(result);
 
@@ -107,3 +107,17 @@ ShipSignalPresentation::labels() const
 {
     return m_labels;
 }
+
+
+std::vector<WorldLabel>
+ShipSignalPresentation::labelsVector() const
+{
+    std::vector<WorldLabel> out;
+    out.reserve(m_labels.size());
+
+    for (const auto& [_, label] : m_labels)
+        out.push_back(label);
+
+    return out;
+}
+

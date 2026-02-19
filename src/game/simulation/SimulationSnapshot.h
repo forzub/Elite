@@ -7,6 +7,7 @@
 #include "render/HUD/WorldLabel.h"
 #include "src/game/ship/ShipTypeId.h"
 #include "game/ship/core/ShipTransform.h"
+#include "src/world/types/SignalReceptionResult.h"
 
 struct ShipSnapshot
 {
@@ -15,11 +16,12 @@ struct ShipSnapshot
     ShipTypeId typeId;
     
     ShipTransform transform;
-    std::vector<WorldLabel> labels;
+    std::vector<SignalReceptionResult> receptions;
 };
 
 struct SimulationSnapshot
 {
+    double                      serverTime = 0.0; 
     uint32_t                    snapshotTick;       //---Это копия m_serverTick в snapshot.---
     std::vector<ShipSnapshot>   ships;
     std::vector<WorldSignal>    signals;

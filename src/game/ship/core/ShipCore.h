@@ -28,6 +28,7 @@
 #include "src/world/WorldParams.h"
 
 #include "src/game/ship/ShipController.h"
+#include "src/world/types/SignalReceptionResult.h"
 
 
 #include <vector>
@@ -125,8 +126,8 @@ public:
     WorldSignal&                emittedSignal()                     { return m_emittedSignal; }
     const WorldSignal&          emittedSignal() const               { return m_emittedSignal; }
 
-    ShipRole role() const                                           { return m_role; }
-    const ShipSignalPresentation& signalPresentation() const        { return m_signalPresentation; }
+    ShipRole                    role() const                        { return m_role; }
+    // const ShipSignalPresentation& signalPresentation() const        { return m_signalPresentation; }
 
     const std::vector<SignalReceptionResult>& signalResults() const {return m_signalResults;} 
 
@@ -161,7 +162,7 @@ private:
     // RX
     SignalReceiver                              m_signalReceiver;
     std::vector<SignalReceptionResult>          m_signalResults;
-    ShipSignalPresentation                      m_signalPresentation;
+    // ShipSignalPresentation                      m_signalPresentation;
     // TX
     WorldSignal                                 m_emittedSignal;
     

@@ -4,6 +4,14 @@
 #include "src/game/ship/ShipDescriptorRegistry.h"
 
 
+//                              ###                                                                    ###                 ##
+//                               ##                                                                     ##                 ##
+//   ####    ######   ######     ##     ##  ##             #####   #####     ####    ######    #####    ##       ####     #####
+//      ##    ##  ##   ##  ##    ##     ##  ##            ##       ##  ##       ##    ##  ##  ##        #####   ##  ##     ##
+//   #####    ##  ##   ##  ##    ##     ##  ##             #####   ##  ##    #####    ##  ##   #####    ##  ##  ##  ##     ##
+//  ##  ##    #####    #####     ##      #####                 ##  ##  ##   ##  ##    #####        ##   ##  ##  ##  ##     ## ##
+//   #####    ##       ##       ####        ##            ######   ##  ##    #####    ##      ######   ###  ##   ####       ###
+//           ####     ####              #####                                        ####
 
 void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 {
@@ -24,18 +32,26 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.transform       = s.transform;
             state.renderTransform = s.transform;
 
-            state.labels = s.labels;
-
+            // state.labels = s.labels;
             m_ships[s.id.value] = state;
+            state.receptions = s.receptions;
         }
         else
         {
             auto& state = it->second;
-
             state.transform = s.transform;
-            state.labels    = s.labels;
+            state.receptions = s.receptions;
+            // state.labels    = s.labels;
         }
+
     }
+
+    m_snapshotBuffer.push_back(snapshot);
+
+    while (m_snapshotBuffer.size() > 20)
+        m_snapshotBuffer.pop_front();
+
+    
 }
 
 
@@ -44,24 +60,101 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
 
 
-
+//                       ###              ##
+//                        ##              ##
+//  ##  ##   ######       ##    ####     #####    ####
+//  ##  ##    ##  ##   #####       ##     ##     ##  ##
+//  ##  ##    ##  ##  ##  ##    #####     ##     ######
+//  ##  ##    #####   ##  ##   ##  ##     ## ##  ##
+//   ######   ##       ######   #####      ###    #####
+//           ####
 
 void ClientWorldState::update(float dt)
 {
-    const float interpSpeed = 12.0f;
+    m_clientTime += dt;
+
+    double renderTime = m_clientTime - m_renderDelay;
+
+    SimulationSnapshot* older = nullptr;
+    SimulationSnapshot* newer = nullptr;
+
+    if (m_snapshotBuffer.size() >= 2)
+    {
+        for (size_t i = 0; i + 1 < m_snapshotBuffer.size(); ++i)
+        {
+            if (m_snapshotBuffer[i].serverTime <= renderTime &&
+                m_snapshotBuffer[i+1].serverTime >= renderTime)
+            {
+                older = &m_snapshotBuffer[i];
+                newer = &m_snapshotBuffer[i+1];
+                break;
+            }
+        }
+    }
 
     for (auto& [id, ship] : m_ships)
     {
-        ship.renderTransform.position =
-            glm::mix(
-                ship.renderTransform.position,
-                ship.transform.position,
-                dt * interpSpeed
-            );
+        // ===== 1️⃣ ИГРОК — ВСЕГДА PREDICTION =====
+        if (ship.role == ShipRole::Player)
+        {
+            ship.renderTransform = ship.transform;
+        }
+        else
+        {
+            // ===== 2️⃣ NPC — INTERPOLATION =====
+            if (older && newer)
+            {
+                double span = newer->serverTime - older->serverTime;
 
-        // ориентацию пока жёстко копируем
-        ship.renderTransform.orientation =
-            ship.transform.orientation;
+                if (span > 0.0)
+                {
+                    float t = float((renderTime - older->serverTime) / span);
+                    t = glm::clamp(t, 0.0f, 1.0f);
+
+                    auto itOld = std::find_if(
+                        older->ships.begin(),
+                        older->ships.end(),
+                        [&](const ShipSnapshot& s){ return s.id.value == id; });
+
+                    auto itNew = std::find_if(
+                        newer->ships.begin(),
+                        newer->ships.end(),
+                        [&](const ShipSnapshot& s){ return s.id.value == id; });
+
+                    if (itOld != older->ships.end() &&
+                        itNew != newer->ships.end())
+                    {
+                        ship.renderTransform.position =
+                            glm::mix(
+                                itOld->transform.position,
+                                itNew->transform.position,
+                                t
+                            );
+
+                        ship.renderTransform.orientation =
+                            itOld->transform.orientation;
+                    }
+                    else
+                    {
+                        ship.renderTransform = ship.transform;
+                    }
+                }
+                else
+                {
+                    ship.renderTransform = ship.transform;
+                }
+            }
+            else
+            {
+                ship.renderTransform = ship.transform;
+            }
+        }
+
+        // ===== 3️⃣ PRESENTATION — ВСЕГДА =====
+        ship.signalPresentation.update(
+            dt,
+            ship.receptions
+        );
     }
 }
 
@@ -77,6 +170,15 @@ ClientWorldState::ships() const
 }
 
 
+
+//                                ###     ##                ##
+//                                 ##                       ##
+//  ######   ######    ####        ##    ###      ####     #####
+//   ##  ##   ##  ##  ##  ##    #####     ##     ##  ##     ##
+//   ##  ##   ##      ######   ##  ##     ##     ##         ##
+//   #####    ##      ##       ##  ##     ##     ##  ##     ## ##
+//   ##      ####      #####    ######   ####     ####       ###
+//  ####
 
 
 void ClientWorldState::predict(
@@ -101,6 +203,14 @@ void ClientWorldState::predict(
 }
 
 
+
+//    ###                                                            ##                ##
+//   ## ##                                                           ##                ##
+//    #       ####    ######    ####     ####              #####    #####    ####     #####    ####
+//  ####     ##  ##    ##  ##  ##  ##   ##  ##            ##         ##         ##     ##     ##  ##
+//   ##      ##  ##    ##      ##       ######             #####     ##      #####     ##     ######
+//   ##      ##  ##    ##      ##  ##   ##                     ##    ## ##  ##  ##     ## ##  ##
+//  ####      ####    ####      ####     #####            ######      ###    #####      ###    #####
 
 
 void ClientWorldState::forceState(

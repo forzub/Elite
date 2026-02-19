@@ -13,6 +13,8 @@
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/world/WorldParams.h"
 #include "src/game/ship/ShipDescriptor.h"
+#include "src/world/types/SignalReceptionResult.h"
+#include "src/game/ship/sensors/ShipSignalPresentation.h"
 
 struct PendingCommand
 {
@@ -30,7 +32,9 @@ struct ClientShipState
     ShipTransform renderTransform;
     const ShipDescriptor* descriptor = nullptr;
 
-    std::vector<WorldLabel> labels;
+    // std::vector<WorldLabel> labels;
+    ShipSignalPresentation signalPresentation; 
+    std::vector<SignalReceptionResult>  receptions;
 };
 
 class ClientWorldState
@@ -56,6 +60,11 @@ public:
 private:
 
     std::unordered_map<uint32_t, ClientShipState> m_ships;
-    std::deque<SimulationSnapshot> m_snapshotBuffer;
+    std::deque<SimulationSnapshot>      m_snapshotBuffer;
+    ShipSignalPresentation              signalPresentation;
     
+
+    
+    double m_renderDelay = 0.1; // 100 ms
+    double m_clientTime = 0.0;
 };

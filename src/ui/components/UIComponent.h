@@ -1,46 +1,3 @@
-// #pragma once
-// #include <string>
-// #include <vector>
-// #include <memory>
-// #include <glm/glm.hpp>
-// #include "core/StateContext.h"
-
-// class UIComponent
-// {
-// public:
-//     virtual ~UIComponent() = default;
-
-//     std::string id;
-//     bool visible = true;
-
-//     // относительные координаты
-//     glm::vec2 position {0.0f, 0.0f};
-//     glm::vec2 size     {1.0f, 1.0f};
-
-//     float cornerRadius = 0.0f;
-
-//     // --- children ---
-//     void addChild(std::unique_ptr<UIComponent> child);
-    
-//     virtual void renderToTexture(const Viewport& vp);
-//     virtual void render(
-//         const Viewport& vp,
-//         float parentX,
-//         float parentY,
-//         float parentW,
-//         float parentH
-//     );
-//     void render(const Viewport& vp) override
-//         {
-//             render(vp, 0, 0, vp.width, vp.height);
-//         }
-
-// protected:
-//     std::vector<std::unique_ptr<UIComponent>> children;
-
-//     void renderChildren(const Viewport& vp);
-// };
-
 
 #pragma once
 #include <string>
@@ -49,18 +6,30 @@
 #include <glm/glm.hpp>
 #include "render/types/Viewport.h"
 
+
+
+enum class UIAnchor
+{
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+    Center
+};
+
+
 class UIComponent
 {
 public:
     virtual ~UIComponent() = default;
 
-    std::string id;
-    bool visible = true;
+    std::string         id;
+    bool                visible = true;
+    glm::vec2           position {0.0f, 0.0f};
+    glm::vec2           size     {1.0f, 1.0f};
+    float               cornerRadius = 0.0f;
+    UIAnchor            anchor = UIAnchor::TopLeft;
 
-    glm::vec2 position {0.0f, 0.0f};
-    glm::vec2 size     {1.0f, 1.0f};
-
-    float cornerRadius = 0.0f;
 
     // ---- children ----
     void addChild(std::unique_ptr<UIComponent> child)
@@ -68,11 +37,16 @@ public:
         children.push_back(std::move(child));
     }
 
+
+
+
     // ---- entry point ----
-    void render(const Viewport& vp)
+    virtual void render(const Viewport& vp)
     {
         render(vp, 0.0f, 0.0f, (float)vp.width, (float)vp.height);
     }
+
+
 
     virtual UIComponent* findById(const std::string& searchId)
     {
@@ -86,6 +60,13 @@ public:
         }
 
         return nullptr;
+    }
+
+
+    virtual void update(float dt)
+    {
+        for (auto& child : children)
+            child->update(dt);
     }
 
 protected:
@@ -106,6 +87,20 @@ protected:
         float h
     );
 
+    protected:
+
+    void computeLayout(
+        float parentX,
+        float parentY,
+        float parentW,
+        float parentH,
+        float& outX,
+        float& outY,
+        float& outW,
+        float& outH
+    ) const;
+
 private:
-    std::vector<std::unique_ptr<UIComponent>> children;
+    std::vector<std::unique_ptr<UIComponent>>   children;
+    
 };

@@ -38,7 +38,7 @@ void Ship::init(
         initData
     );
 
-    m_core.emittedSignal().owner = m_id;
+    // m_core.emittedSignal().owner = m_id;
     
 }
 
@@ -65,10 +65,10 @@ void Ship::updatePhysics(float dt, const WorldParams& world)
 {
     m_core.updatePhysics(dt, world);
 
-    m_core.m_signalController.update(dt, m_core.emittedSignal());
+    // m_core.m_signalController.update(dt, m_core.emittedSignal());
 
-    if (m_core.emittedSignal().enabled)
-        m_core.emittedSignal().position = m_core.transform().position;
+    // if (m_core.emittedSignal().enabled)
+    //     m_core.emittedSignal().position = m_core.transform().position;
 }
 
 
@@ -79,15 +79,17 @@ void Ship::updateSignals(
     const std::vector<InterferenceSource>& interferenceSources
 )
 {
-    m_core.updateSignals(dt, worldSignals, planets, interferenceSources);
+    m_core.updateSignals(dt, worldSignals, planets, interferenceSources, m_id);
 }
 
 
-void Ship::updatePerception(float dt)
+void Ship::updatePerception(
+    float dt,
+    const std::vector<world::RadarContactInput>& radarInputs
+)
 {
-    m_core.updatePerception(dt);
+    m_core.updatePerception(dt, radarInputs);
 }
-
 
 
 
@@ -112,61 +114,6 @@ void Ship::updateControlIntent()
 
 
 
-
-//    ##                         ##                                                    ##                                            ###
-//                               ##                                                    ##                                             ##
-//   ###     #####     #####    #####             ####    ######   ##  ##   ######    #####             ####     ####    ######       ##
-//    ##     ##  ##   ##         ##              ##  ##    ##  ##  ##  ##    ##  ##    ##              ##  ##       ##    ##  ##   #####
-//    ##     ##  ##    #####     ##              ##        ##      ##  ##    ##  ##    ##              ##        #####    ##      ##  ##
-//    ##     ##  ##        ##    ## ##           ##  ##    ##       #####    #####     ## ##           ##  ##   ##  ##    ##      ##  ##
-//   ####    ##  ##   ######      ###             ####    ####         ##    ##         ###             ####     #####   ####      ######
-//                                                                 #####    ####
-
-bool Ship::installCryptoCard(CryptoCard* card)
-{
-    if (!card) return false;
-    if (!m_core.inventory().contains(card)) return false;
-
-    for (auto& d : m_core.equipment().decryptors.modules)
-    {
-        if (!d.enabled) continue;
-
-        if (d.install(card))
-        {
-            m_core.inventory().remove(card);
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
-
-//                                                                                                       ##                                            ###
-//                                                                                                       ##                                             ##
-//  ######    ####    ##  ##    ####    ##  ##    ####              ####    ######   ##  ##   ######    #####             ####     ####    ######       ##
-//   ##  ##  ##  ##   #######  ##  ##   ##  ##   ##  ##            ##  ##    ##  ##  ##  ##    ##  ##    ##              ##  ##       ##    ##  ##   #####
-//   ##      ######   ## # ##  ##  ##   ##  ##   ######            ##        ##      ##  ##    ##  ##    ##              ##        #####    ##      ##  ##
-//   ##      ##       ##   ##  ##  ##    ####    ##                ##  ##    ##       #####    #####     ## ##           ##  ##   ##  ##    ##      ##  ##
-//  ####      #####   ##   ##   ####      ##      #####             ####    ####         ##    ##         ###             ####     #####   ####      ######
-//                                                                                   #####    ####
-
-bool Ship::removeCryptoCard(CryptoCard* card)
-{
-    if (!card) return false;
-
-    for (auto& d : m_core.equipment().decryptors.modules)
-    {
-        if (d.remove(card))
-        {
-            m_core.inventory().add(card);
-            return true;
-        }
-    }
-
-    return false;
-}
 
 
 //              ###      ###              ##       ##
@@ -210,7 +157,16 @@ bool Ship::removeItem(Item* item)
 
 void Ship::setControlState(const ShipControlState& newControl)
 {
-    
-
     m_control = newControl;
+}
+
+
+std::optional<WorldSignal> Ship::emitSignal() const
+{
+    const auto& tx = m_core.equipment().transmitter;
+
+    return tx.emit(
+        m_core.transform().position,
+        m_id
+    );
 }

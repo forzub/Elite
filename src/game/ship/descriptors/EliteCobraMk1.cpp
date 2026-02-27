@@ -7,6 +7,9 @@
 #include "src/game/equipment/data/transmitters.h"
 #include "src/game/equipment/data/receivers.h" 
 #include "src/game/equipment/data/jammers.h"
+#include "src/game/equipment/data/radars.h"
+
+#include "src/game/equipment/types/RadarVisualProfile.h"
 
 
 const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
@@ -147,32 +150,53 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
 
         };
 
+        desc.radarCrossSection = 1.5;
+
+        // ─────────────────────────
+        // CoreSystems params 
+        // ─────────────────────────
+        desc.core = {
+            100.0,   // reactorMaxOutputMW
+            500.0,   // thermalMass
+            100.0,   // maxSafeTemperature
+            2.0      // baseCoolingRate
+        };
+
+        RadarMountPoint mount;
+        mount.normalizedPosition    = {0.5f, 0.81f};
+        mount.normalizedSize        = {0.3515f, 0.2083f};
+        mount.maxSupportedMountSize = 1.0;
+        mount.allowedProfiles = {
+            game::RadarVisualProfile::CRT
+            // ,game::RadarVisualProfile::DigitalFlat список допустимых типов радара
+        };
+
+        desc.radarMount = mount;
 
         // ─────────────────────────
         // Equipment default presets 
         // ─────────────────────────
-        desc.defaultEquipment = {
-            .decryptor        = DECRYPTOR_STANDARD,      
-            .jammer           = std::nullopt,
-            .receiver         = STANDARD_RECEIVER,      
-            .transmitter      = WSDR_TX13    
-        };
+        desc.defaultEquipment.decryptor     = std::nullopt;
+        desc.defaultEquipment.jammer        = std::nullopt;
+        desc.defaultEquipment.receiver      = game::STANDARD_RECEIVER;
+        desc.defaultEquipment.transmitter   = WSDR_TX13;
+        desc.defaultEquipment.radar         = game::CRT_RADAR;
 
 
         // -----------------------------
         // загружаем текстуру кабины или модель корабля
         // -----------------------------
 
-                CockpitData cp;
-                cp.enabled = true;
-                cp.geometry = createCockpitGeometry(desc);
-                cp.baseTexturePath  = "assets/img/cobra-mk1-2560x1440-cockpits.png";
-                cp.glassTexturePath = "assets/img/cobra-mk1-2560x1440-glass.png";
-                desc.cockpit = cp;
+        CockpitData cp;
+        cp.enabled = true;
+        cp.geometry = createCockpitGeometry(desc);
+        cp.baseTexturePath  = "assets/img/cobra-mk1-2560x1440-cockpits.png";
+        cp.glassTexturePath = "assets/img/cobra-mk1-2560x1440-glass.png";
+        desc.cockpit = cp;
 
 
-                // здесь можно задать 3D модель
-                // desc.modelPath = "assets/models/cobra.obj";
+        // здесь можно задать 3D модель
+        // desc.modelPath = "assets/models/cobra.obj";
 
 
     }

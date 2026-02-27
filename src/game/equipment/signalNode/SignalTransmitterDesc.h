@@ -30,4 +30,7 @@ struct SignalTransmitterDesc
 
     std::vector<SignalType>     modes;
     SignalDisplayClass          displayClass;
+
+    double                      powerConsumption = 0.0;
+    double                      heatGeneration   = 0.0;
 };

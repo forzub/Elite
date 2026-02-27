@@ -15,7 +15,7 @@ struct JammerModule : public EquipmentModule
         radius = desc.radius;
 
         enabled = true;
-        health = 1.0f;
+        // health = 1.0f;
     }
 
     

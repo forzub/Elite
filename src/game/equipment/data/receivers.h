@@ -2,8 +2,10 @@
 
 #include "src/game/equipment/signalNode/ReceiverDesc.h"
 
+namespace game {
 // Базовый гражданский приёмник
 extern const ReceiverDesc STANDARD_RECEIVER;
 
 // Военный приёмник повышенной чувствительности
 extern const ReceiverDesc MILITARY_RECEIVER;
+}

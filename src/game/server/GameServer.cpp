@@ -20,8 +20,9 @@ void GameServer::update(double dt)
     m_serverTick++;
 
     // 1. Применяем команды
-    for (auto& [id, ship] : m_simulation.ships())
+    for (auto& [id, shipPtr] : m_simulation.ships())
     {
+        Ship& ship = *shipPtr;
         auto it = m_pendingCommands.find(id.value);
         if (it == m_pendingCommands.end())
             continue;

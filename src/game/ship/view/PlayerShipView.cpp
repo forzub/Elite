@@ -65,7 +65,7 @@ void PlayerShipView::init(
 void PlayerShipView::updateCockpitState(ShipRole role,
     const ShipDescriptor* desc,
     const ShipTransform& transform,
-    const ShipEquipment& equipment)
+    const game::ShipEquipment& equipment)
 {
     if (role != ShipRole::Player || !desc)
         return;
@@ -94,62 +94,6 @@ void PlayerShipView::updateCockpitState(ShipRole role,
     needle.overrideRotation = true;
     needle.rotationDeg = -90.0f + speedneedle01 * 180.0f;
 
-
-    //======== дешефратор и его слоты ===============
-    int moduleIndex = 0;
-
-    for (auto& decryptor : equipment.decryptors.modules)
-    {
-        // ───────── внешний модуль ─────────
-        {
-            std::string moduleId =
-                "decryptor_module_" + std::to_string(moduleIndex);
-
-            auto& ov = m_cockpitState.overrides[moduleId];
-
-            ov.visible = true;
-            ov.overrideColor = true;
-            ov.color = {0.0f, 0.3f, 0.7f, 1.0f};
-        }
-
-        // ───────── внутренние слоты ─────────
-
-        int installedCount = static_cast<int>(decryptor.m_cards.size());
-        int maxSlots       = decryptor.slotCount;
-
-        for (int j = 0; j < 16; ++j) // 16 — максимум, как в геометрии
-        {
-            std::string slotId =
-                "decryptor_" + std::to_string(moduleIndex) +
-                "_slot_" + std::to_string(j);
-
-            auto& ov = m_cockpitState.overrides[slotId];
-
-            if (j < maxSlots)
-            {
-                ov.visible = true;
-                ov.overrideColor = true;
-
-                if (j < installedCount)
-                {
-                    // заполненный слот
-                    ov.color = {0.0f, 0.9f, 0.4f, 1.0f};
-                }
-                else
-                {
-                    // пустой слот
-                    ov.color = {0.2f, 0.2f, 0.25f, 1.0f};
-                }
-            }
-            else
-            {
-                ov.visible = false;
-            }
-        }
-
-        moduleIndex++;
-        
-    }
 }
 
 
@@ -320,6 +264,7 @@ void PlayerShipView::update(
         tempTransform,
         m_cameras[ShipCameraMode::Drone]
     );
+
 }
 
 

@@ -35,9 +35,10 @@ add_executable(EliteGame
     src/input/Input.cpp
 
     src/game/SpaceState.cpp
+    src/game/SpaceState-Init.cpp
 
     src/game/equipment/signalNode/processing/SignalReceiver.cpp
-    src/game/equipment/signalNode/processing/WorldSignalTxSystem.cpp
+    src/world/WorldSignalTxSystem.cpp
 
     src/game/equipment/data/transmitters.cpp
     src/game/equipment/data/receivers.cpp
@@ -97,15 +98,29 @@ add_executable(EliteGame
 
     src/game/client/ClientWorldState.cpp
     src/game/server/GameServer.cpp
-  
-    # src/network/ClientNetworkLayer.cpp
-    # src/network/InputCommandPacket.cpp
-    # src/network/LocalTransport.cpp
-    # src/network/SnapshotPacket.cpp
 
     src/game/client/GameClient.cpp
     src/game/network/LocalLoopbackTransport.cpp
     src/game/shared/SharedShipPhysics.cpp
+
+    src/game/equipment/DamageModel.cpp
+    src/game/equipment/radar/RadarModule.cpp
+
+    src/game/equipment/signalNode/ReceiverModule.cpp
+    src/game/equipment/EquipmentModule.cpp
+
+    src/game/ship/core/PowerBus.cpp
+    src/game/ship/core/ThermalSystem.cpp
+    src/game/ship/core/ReactorSystem.cpp
+
+    src/game/equipment/data/radars.cpp
+    src/game/equipment/signalNode/SignalTransmitterModule.cpp
+
+    src/ui/components/RadarWidgetBase.cpp
+    src/ui/components/RadarWidgetFactory.cpp
+    src/ui/components/RadarCRTWidget.cpp
+
+    src/scene/SceneRenderer.cpp
 
 )
 

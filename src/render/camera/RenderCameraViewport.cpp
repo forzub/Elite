@@ -14,6 +14,7 @@ void RenderCameraViewport::render(
 
     glEnable(GL_DEPTH_TEST);
 
+    if (height <= 0) return;
     float aspect = (float)width / (float)height;
 
     glm::mat4 projection = glm::perspective(

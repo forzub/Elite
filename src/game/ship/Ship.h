@@ -2,15 +2,24 @@
 #include <vector>
 
 #include "src/game/ship/core/ShipCore.h"
+using game::ship::core::ShipCore;
+
+
 #include "src/scene/EntityID.h"
 #include "ShipTypeId.h"
+#include "src/game/items/cryptocard/CryptoCard.h"
+#include "src/world/ITransmitterSource.h"
+#include "src/world/types/RadarContactInput.h"
 
 
-
-
-class Ship
+class Ship : public ITransmitterSource
 {
 public:
+    Ship() = default; 
+
+    Ship(const Ship&) = delete;
+    Ship& operator=(const Ship&) = delete;
+
 
     void init(
         ShipRole role,
@@ -29,8 +38,7 @@ public:
 
     void setControlState(const ShipControlState& newControl);
 
-    bool installCryptoCard(CryptoCard* card);
-    bool removeCryptoCard(CryptoCard* card);
+ 
 
     bool addItem(Item* item);
     bool removeItem(Item* item);
@@ -50,12 +58,13 @@ public:
         const std::vector<Planet>& planets,
         const std::vector<InterferenceSource>& interferenceSources
     );
-    void updatePerception(float dt);
+    void updatePerception(float dt, const std::vector<world::RadarContactInput>& radarInputs);
     void setTypeId(ShipTypeId id) { m_typeId = id; }
     ShipTypeId typeId() const { return m_typeId; }
 
-private:
+    std::optional<WorldSignal> emitSignal() const override;
 
+private:
     ShipCore            m_core;
     ShipControlState    m_control;
     EntityId            m_id;

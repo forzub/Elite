@@ -29,6 +29,7 @@ void setOrientationMatrix(const glm::mat4& orientation);
 float fov() const { return m_fov; }
 float nearPlane() const { return m_near; }
 float farPlane() const { return m_far; }
+glm::vec3 position() const { return m_position; }
 
 private:
     glm::vec3 m_position {0.0f, 0.0f, 0.0f};

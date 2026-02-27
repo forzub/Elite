@@ -1,5 +1,7 @@
 #pragma once
 #include <cstdint>
+#include <functional>
+#include <ostream>
 
 struct EntityId
 {
@@ -10,6 +12,12 @@ struct EntityId
         return value == other.value;
     }
 };
+
+// 👇 ВНЕ структуры
+inline std::ostream& operator<<(std::ostream& os, const EntityId& id)
+{
+    return os << id.value;
+}
 
 namespace std
 {

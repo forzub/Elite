@@ -42,7 +42,7 @@ static bool isDirectionOnly(SignalType t)
 void SignalReceiver::update(
     float dt,
     const glm::vec3& receiverPos,
-    const ReceiverModule& receiver,
+    const game::ReceiverModule& receiver,
     const std::vector<WorldSignal>& worldSignals,
     const std::vector<Planet>& planets,
     const std::vector<InterferenceSource>& interferenceSources,
@@ -127,7 +127,7 @@ void SignalReceiver::update(
 
         float effectiveNoiseFloor =
         receiver.isOperational()
-        ? VisualTuning::receiverBaseNoise / receiver.sensitivity
+        ? VisualTuning::receiverBaseNoise / receiver.sensitivity()
         : VisualTuning::receiverBaseNoise * 10.0f;
 
         float totalNoise = effectiveNoiseFloor + interferencePower;

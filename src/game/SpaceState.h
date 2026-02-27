@@ -35,7 +35,8 @@
 #include "src/game/client/GameClient.h"
 #include "src/game/network/ITransport.h"
 #include "src/game/network/LocalLoopbackTransport.h"
- 
+#include "src/ui/components/RadarWidgetBase.h" 
+#include "src/scene/SceneRenderer.h"
 
 class StateStack;
 
@@ -61,6 +62,10 @@ public:
     void update(float dt) override;
     void render() override;
     bool m_mouseLook = false;
+
+    void initServer();
+    void initClient();
+    void initHUD();
 
 
 private:
@@ -115,4 +120,10 @@ private:
     // =======================================
     float                                           m_simAccumulator = 0.0f;
     static constexpr float                          SIM_FIXED_DT = 0.02f;           // 50 Hz
+
+    // =======================================
+    //  ===========       HUD       ==========
+    // =======================================
+    RadarWidgetBase*                                m_radarWidget = nullptr;
+    SceneRenderer                                   m_sceneRenderer;
 };

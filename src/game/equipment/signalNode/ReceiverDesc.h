@@ -1,9 +1,12 @@
 #pragma once
 
-#include "src/game/equipment/EquipmentDescriptor.h"
+namespace game {
 
 struct ReceiverDesc
 {
-    EquipmentDescriptor base;
-    float sensitivity = 1.0f;
+    double powerConsumption = 0.0;
+    double heatGeneration   = 0.0;
+    double sensitivity      = 1.0;
 };
+
+}

@@ -1,19 +1,17 @@
 #include "receivers.h"
 
+namespace game {
+
 const ReceiverDesc STANDARD_RECEIVER = {
-    .base = {
-        "RX-CIV-01",
-        "Weyland Signal Division",
-        "Гражданский приёмник ближнего и среднего радиуса"
-    },
-    .sensitivity = 1.0f
+    5.0,   // powerConsumption
+    0.2,   // heatGeneration
+    1.0    // sensitivity
 };
 
 const ReceiverDesc MILITARY_RECEIVER = {
-    .base = {
-        "RX-MIL-07",
-        "Aegis Dynamics",
-        "Военный приёмник с повышенной чувствительностью и фильтрацией"
-    },
-    .sensitivity = 2.5f
+    8.0,
+    0.4,
+    1.5
 };
+
+}

@@ -25,6 +25,7 @@ struct WorldSignal
     bool                    enabled;
     std::string             label;
     EntityId                owner;
+
     
 };
 

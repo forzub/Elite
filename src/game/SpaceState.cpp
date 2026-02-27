@@ -20,13 +20,10 @@
 #include "core/Log.h"
 #include "input/Input.h"
 
-
 #include "render/DebugGrid.h"
 
-#include "src/game/equipment/signalNode/processing/WorldSignalTxSystem.h"
-
-#include "src/game/ship/ShipDescriptorRegistry.h"
-#include "src/game/ship/descriptors/EliteCobraMk1.h"
+// #include "src/game/ship/ShipDescriptorRegistry.h"
+// #include "src/game/ship/descriptors/EliteCobraMk1.h"
 
 #include "src/game/player/ActorIdProvider.h"
 #include "src/game/player/ActorCodeGenerator.h"
@@ -37,6 +34,10 @@
 #include "src/render/camera/RenderCameraViewport.h"
 #include "ui/components/UIText.h"
 #include "src/game/network/LocalLoopbackTransport.h"
+#include "src/game/equipment/radar/RadarDesc.h"
+// #include "src/ui/components/RadarWidgetFactory.h"
+#include "ui/components/RadarWidgetBase.h"
+
 
 
 //                                        ##                                  ##
@@ -52,118 +53,12 @@
 SpaceState::SpaceState(StateStack& states)
     : GameState(states)
 {
-    const Viewport& vp = context().viewport();
-
-    m_server = std::make_unique<GameServer>();
-    m_playerId = m_server->playerId();
-     
-    m_transport = std::make_unique<LocalLoopbackTransport>(
-        m_server.get()
-    );
-
-    m_client = std::make_unique<GameClient>(
-        m_transport.get(),
-        m_playerId
-    );
-
-
-    // Сначала обновляем сервер один тик
-    m_server->update(0.0f);
-
-    const auto& snap = m_server->snapshot();
-
-    for (const auto& s : snap.ships)
-    {
-        if (s.id == m_playerId)
-        {
-            const ShipDescriptor& desc =
-                ShipDescriptorRegistry::get(s.typeId);
-
-            ShipTransform initialTransform;
-            initialTransform = s.transform;
-
-            m_playerView = std::make_unique<PlayerShipView>();
-
-            m_playerView->init(
-                context(),
-                &desc,
-                initialTransform
-            );
-
-            break;
-        }
-    }
-
-
-    if (!m_playerView)
-    {
-        std::cout << "PLAYER VIEW NOT CREATED\n";
-    }
     
-    
-    
-    uiRoot = std::make_unique<UIContainer>();
-
-    // ================== задняя камера =========================
-
-    auto rear = std::make_unique<UICameraView>();
-    
-    rear->id                    = "rear_camera";
-    rear->position              = {0.72f, 0.05f};
-    rear->size                  = {0.25f, 0.18f};
-    rear->cornerRadiusRel       = 0.12f;
-    rear->borderThicknessRel    = 0.008f;
-    rear->camera                = &m_playerView->camera(ShipCameraMode::Rear);
-    rear->borderColor           = {0.2f, 0.8f, 1.0f};
-
- 
-    rear->drawCallback =
-        [&](const glm::mat4&, const glm::mat4&)
-        {
-            const auto& ships = m_client->world().ships();
-
-            auto it = ships.find(m_playerId.value);
-            if (it == ships.end())
-                return;
-
-            DebugGrid::drawInfinite(
-                it->second.transform.position,
-                20000.0f,
-                100
-            );
-        };
-
-    rearView = rear.get();          // ← сохраняем raw pointer если нужен
-    uiRoot->addChild(std::move(rear));   // ← теперь отдаём владение
-
-
-    auto labelMiniViewText = std::make_unique<UIText>();
-    labelMiniViewText->id = "rear_label";
-    labelMiniViewText->label = "REAR";
-    labelMiniViewText->fontPath = "assets/fonts/Roboto-Light.ttf";
-    labelMiniViewText->fontSizeRel = 0.025f; // относительный размер от высоты экрана 2.5% от высоты
-    labelMiniViewText->color = {0.2f, 0.8f, 1.0f, 0.5f};
-    labelMiniViewText->position = {0.03f, 0.15f};
+    initServer();
+    initClient();
+    initHUD();
 
     
-
-    rearView->addChild(std::move(labelMiniViewText));
-
-    // ================== текст передней камеры =========================
-
-    auto labelMainViewText = std::make_unique<UIText>();
-    labelMainViewText->id = "main_label";
-    labelMainViewText->label = "FRONT";
-    labelMainViewText->fontPath = "assets/fonts/Roboto-BOLD.ttf";
-    labelMainViewText->fontSizeRel = 0.03f; // относительный размер от высоты экрана 2.5% от высоты
-    labelMainViewText->color = {0.2f, 0.8f, 1.0f, 0.1f};
-    labelMainViewText->position = {0.06f, 0.13f};
-
-    uiRoot->addChild(std::move(labelMainViewText));
-
-    LOG("[SpaceState] ctor");
-
-
     // =======================================================================
     // load galaxy database + test
     // =======================================================================
@@ -179,23 +74,13 @@ SpaceState::SpaceState(StateStack& states)
     << "Routes:  " << galaxy.routeCount()  << "\n";
     
     
-    
-    // =======================================================================
-    // инициализация параметров рендера
-    // =======================================================================
-    m_hudRenderer.init(context());
-    m_worldLabelRenderer.init(context());
-    
-    
+
     // =======================================================================
     // world = vacuum
     // =======================================================================
 
     m_server->world().linearDrag = 0.0f;
     m_server->world().maxSafeDecel = 50.0f;
-
-
-
 
 
     // InterferenceSource jammer;
@@ -302,10 +187,9 @@ void SpaceState::handleInput()
 // =====================================================================================
 void SpaceState::update(float dt)
 {
-    LOG("[SpaceState] update begin");
-    m_simAccumulator += dt;
+    // LOG("[SpaceState] update begin");
 
-    // m_simulation->setPlayerControl(m_playerControl);
+    m_simAccumulator += dt;
 
     while (m_simAccumulator >= SIM_FIXED_DT)
     {
@@ -346,8 +230,41 @@ void SpaceState::update(float dt)
         ship.transform.targetSpeed,
         ship.transform.cruiseActive,
         ship.signalPresentation.labelsVector()
-    );    
+    );   
+    
 
+
+    // const auto& o = ship.renderTransform.orientation;
+
+    
+    // ========= обновление радара ====================
+    if (m_radarWidget)
+    {
+        m_radarWidget->setPlayerTransform(
+            ship.renderTransform.position,
+            ship.renderTransform.orientation
+        );
+
+        std::vector<RadarContactView> views;
+
+        for (const auto& c : ship.radarContacts)
+        {
+            views.push_back({
+                c.id,
+                c.localPosition
+            });
+        }
+
+        m_radarWidget->setContacts(views);
+    }
+
+    // ========= обновление UI ====================
+    uiRoot->update(dt);
+
+
+
+    
+    
 }
 
 
@@ -433,34 +350,19 @@ void SpaceState::renderUI()
     }
 
     m_activeMainCamera = mainCam;
+
+
+    // std::cout << "CAMERA POS: "
+    //       << m_activeMainCamera->position().x << " "
+    //       << m_activeMainCamera->position().y << " "
+    //       << m_activeMainCamera->position().z
+    //       << std::endl;
   
 
     const Viewport& vp = context().viewport();
     // -------------------------------
     // 3D ПРОЕКЦИЯ
-    // -------------------------------
-
-                // glm::mat4 view = m_activeMainCamera->viewMatrix();
-
-                // // Позиция камеры из обратной матрицы
-                // glm::mat4 invView = glm::inverse(view);
-                // glm::vec3 camPos = glm::vec3(invView[3]);
-
-                // std::cout << "CAM POS: "
-                //         << camPos.x << " "
-                //         << camPos.y << " "
-                //         << camPos.z << "\n";
-
-                // // Forward = -Z ось view matrix
-                // glm::vec3 camForward = glm::normalize(
-                //     glm::vec3(-view[0][2], -view[1][2], -view[2][2])
-                // );
-
-                // std::cout << "CAM FWD: "
-                //         << camForward.x << " "
-                //         << camForward.y << " "
-                //         << camForward.z << "\n";
-    
+    // -------------------------------    
     RenderCameraViewport::render(
         *mainCam,
         vp,
@@ -470,23 +372,11 @@ void SpaceState::renderUI()
         vp.height,
         [&](auto view, auto proj)
         {
-            EntityId playerId = m_playerId;
+            m_sceneRenderer.render(
+                m_client->world(),
+                m_playerId
+            );
 
-            const auto& ships = m_client->world().ships();
-            auto it = ships.find(playerId.value);
-
-            if (it != ships.end())
-            {
-                auto it = m_client->world().ships().find(m_playerId.value);
-                if (it != m_client->world().ships().end())
-                {
-                    DebugGrid::drawInfinite(
-                        it->second.renderTransform.position,
-                        2000.0f,
-                        100
-                    );
-                }
-            }
         }
     );
 
@@ -529,6 +419,7 @@ void SpaceState::renderHUD()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
+
     // -------------------------------------------------
     // 1. Статический HUD (рамки, текст)
     // -------------------------------------------------
@@ -538,8 +429,15 @@ void SpaceState::renderHUD()
     auto it = ships.find(m_playerId.value);
     if (it == ships.end())
         return;
-
+        
     const glm::vec3 playerPos = it->second.renderTransform.position;
+
+
+    
+    const auto& playerShip = it->second;    
+    const auto& radarContacts = playerShip.radarContacts;
+
+
 
     
     // -------------------------------------------------
@@ -578,13 +476,10 @@ void SpaceState::renderHUD()
     }
 
     m_playerView->renderCockpit();
-
-
     uiRoot->render(vp);
 
-    // // 3. векторные приборы
-    // cockpitPass.render(m_playerShip.view.getCockpitState());
 
+    // // 3. векторные приборы
     glEnable(GL_DEPTH_TEST);
 
 }

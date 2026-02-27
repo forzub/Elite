@@ -2,13 +2,14 @@
 
 #include <vector>
 #include <unordered_map>
+#include <memory>
 
 #include "game/ship/Ship.h"
 #include "world/WorldParams.h"
 #include "world/WorldSignal.h"
 #include "world/Planet.h"
 #include "world/InterferenceSource.h"
-#include "game/equipment/signalNode/processing/WorldSignalTxSystem.h"
+#include "world/WorldSignalTxSystem.h"
 #include "game/simulation/NpcAiSystem.h"
 #include "game/simulation/SimulationSnapshot.h"
 
@@ -34,7 +35,7 @@ public:
     Ship* playerShip();
     const Ship* playerShip() const;
 
-    std::unordered_map<EntityId, Ship>& ships();
+    
     EntityId spawnShip(
         ShipRole role,
         const ShipDescriptor& descriptor,
@@ -48,11 +49,12 @@ public:
     void setTick(uint32_t tick);
     EntityId playerId() const { return m_playerId; }
     double serverTime() const { return m_serverTime; }
+    std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships();
 
 private:
     uint32_t                            m_nextEntityId = 1;
 
-    std::unordered_map<EntityId, Ship>  m_ships;
+    std::unordered_map<EntityId, std::unique_ptr<Ship>> m_ships;
     EntityId                            m_playerId;
     WorldParams                         m_world;
 

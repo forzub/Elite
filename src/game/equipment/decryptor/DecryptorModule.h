@@ -26,10 +26,14 @@ struct DecryptorModule : public EquipmentModule
         slotCount = desc.slotCount;
         
         enabled = true;
-        health = 1.0f;
+        // health = 1.0f;
         
         printf("[DEBUG DecryptorModule] %s: name=%d, enabled=%d \n",desc.base.id, enabled);
     }
+
+
+
+
 
     bool install(CryptoCard* card)
     {
@@ -45,6 +49,8 @@ struct DecryptorModule : public EquipmentModule
     };
 
 
+
+
     bool remove(CryptoCard* card)
     {
         auto it = std::find(m_cards.begin(), m_cards.end(), card);
@@ -57,6 +63,8 @@ struct DecryptorModule : public EquipmentModule
     };
 
 
+
+    
     bool canDecode(ActorCode code) const
     {
         if (code == 0) return false;

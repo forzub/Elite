@@ -18,7 +18,7 @@ public:
     void update(
         float dt,
         const glm::vec3& receiverPos,
-        const ReceiverModule& receiver,
+        const game::ReceiverModule& receiver,
         const std::vector<WorldSignal>& worldSignals,
         const std::vector<Planet>& planets,
         const std::vector<InterferenceSource>& interferenceSources,

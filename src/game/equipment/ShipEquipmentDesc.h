@@ -5,10 +5,13 @@
 #include "src/game/equipment/signalNode/ReceiverModule.h" 
 #include "src/game/equipment/decryptor/DecryptorModule.h"
 
-struct ShipEquipmentDesc
+namespace game
 {
-    ReceiverDesc                receiver;
-    SignalTransmitterDesc       transmitter;
-    JammerDesc                  jammer;
-    DecryptorModule             decryptor;
-};
+    struct ShipEquipmentDesc
+    {
+        ReceiverDesc                receiver;
+        SignalTransmitterDesc       transmitter;
+        JammerDesc                  jammer;
+        DecryptorDesc               decryptor;
+    };
+}

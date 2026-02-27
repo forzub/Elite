@@ -1,5 +1,5 @@
 #include "GameSimulation.h"
-
+#include <iostream>
 
 #include "game/ship/ShipInitData.h"
 #include "game/ship/ShipRoleType.h"
@@ -10,6 +10,8 @@
 #include "src/game/player/ActorIdProvider.h"
 #include "game/ship/ShipRegistry.h"
 #include "game/ship/ShipVisualIdentity.h"
+
+#include "game/equipment/radar/RadarModule.h"
 
 GameSimulation::GameSimulation()
 {
@@ -98,6 +100,7 @@ GameSimulation::GameSimulation()
 
 
 
+
 //                       ###              ##
 //                        ##              ##
 //  ##  ##   ######       ##    ####     #####    ####
@@ -110,13 +113,24 @@ GameSimulation::GameSimulation()
 void GameSimulation::update(double dt)
 {
 
+
     
+    static bool initialized = false;
+
+    if (!initialized)
+    {
+        initialized = true;
+    }
+
+    // Режим 1: нормальная мощность
+      
     float fdt = static_cast<float>(dt);
     m_serverTime += dt;
 
     // === 1. AI phase ===
-    for (auto& [id, ship] : m_ships)
-    {        
+    for (auto& [id, shipPtr] : m_ships)
+    {
+        Ship& ship = *shipPtr;        
         if (id == m_playerId)
             continue;
 
@@ -124,23 +138,56 @@ void GameSimulation::update(double dt)
         ship.setControlState(aiControl);
     }
 
-    for (auto& [id, ship] : m_ships)
+    for (auto& [id, shipPtr] : m_ships)
+    {
+        Ship& ship = *shipPtr;
         ship.applyControl();
+    }
 
-    for (auto& [id, ship] : m_ships)
+    for (auto& [id, shipPtr] : m_ships)
+    {
+        Ship& ship = *shipPtr;
         ship.updatePhysics(fdt, m_world);
+    }
 
-    std::vector<Ship*> signalShips;
-    for (auto& [id, ship] : m_ships)
-        signalShips.push_back(&ship);
+    std::vector<ITransmitterSource*> signalSources;
+    for (auto& [id, shipPtr] : m_ships)
+    signalSources.push_back(shipPtr.get());
 
-    WorldSignalTxSystem::collectFromShips(signalShips, m_worldSignals);
+    WorldSignalTxSystem::collectFromSources(signalSources, m_worldSignals);
 
-    for (auto& [id, ship] : m_ships)
+    for (auto& [id, shipPtr] : m_ships)
+    {
+        Ship& ship = *shipPtr;
         ship.updateSignals(fdt, m_worldSignals, m_planets, m_interferenceSources);
+    }
 
-    for (auto& [id, ship] : m_ships)
-        ship.updatePerception(fdt);
+    for (auto& [id, shipPtr] : m_ships)
+    {
+        Ship& ship = *shipPtr;
+
+        std::vector<world::RadarContactInput> inputs;
+
+        for (auto& [otherId, otherPtr] : m_ships)
+        {
+            if (id == otherId)
+                continue;
+
+            Ship& other = *otherPtr;
+            const auto& otherTransform = other.core().transform();
+            glm::vec3 otherPos = otherTransform.position;
+
+            inputs.push_back({
+                otherId,
+                otherPos,
+                other.core().desc().radarCrossSection
+            });
+        }
+
+
+
+        ship.updatePerception(fdt, inputs);
+    }
 
 
     m_snapshot.serverTime = m_serverTime;
@@ -148,8 +195,9 @@ void GameSimulation::update(double dt)
     m_snapshot.signals = m_worldSignals;
 
 
-    for (auto& [id, ship] : m_ships)
+    for (auto& [id, shipPtr] : m_ships)
     {
+        Ship& ship = *shipPtr;
         ShipSnapshot s;
 
         const auto& tr = ship.core().transform();
@@ -166,8 +214,14 @@ void GameSimulation::update(double dt)
         s.receptions = receptions;
         s.receptions = ship.core().signalResults();
         
+
+        s.radarContacts = ship.core().radar().getContacts();
+
+
         m_snapshot.ships.push_back(s);
+
     }
+
 }
 
 
@@ -203,13 +257,16 @@ EntityId GameSimulation::spawnShip(
     const ShipInitData& initData
 )
 {
-    Ship ship;
+    // Ship ship;
+    auto ship = std::make_unique<Ship>();
 
     EntityId id = generateEntityId();
-    ship.setId(id);
+    ship->setId(id);
 
-    ship.init(role, descriptor, position, initData);
+    // ship.init(role, descriptor, position, initData);
+    ship->init(role, descriptor, position, initData);
 
+    // m_ships[id] = std::move(ship);
     m_ships[id] = std::move(ship);
 
     return id;
@@ -265,7 +322,7 @@ Ship* GameSimulation::getShip(EntityId id)
     auto it = m_ships.find(id);
     if (it == m_ships.end())
         return nullptr;
-    return &it->second;
+    return it->second.get();
 }
 
 const Ship* GameSimulation::getShip(EntityId id) const
@@ -273,7 +330,7 @@ const Ship* GameSimulation::getShip(EntityId id) const
     auto it = m_ships.find(id);
     if (it == m_ships.end())
         return nullptr;
-    return &it->second;
+    return it->second.get();
 }
 
 Ship* GameSimulation::playerShip()
@@ -286,10 +343,6 @@ const Ship* GameSimulation::playerShip() const
     return getShip(m_playerId);
 }
 
-std::unordered_map<EntityId, Ship>& GameSimulation::ships()
-{
-    return m_ships;
-}
 
 void GameSimulation::setPlayerControl(const ShipControlState& control)
 {
@@ -299,4 +352,9 @@ void GameSimulation::setPlayerControl(const ShipControlState& control)
 const SimulationSnapshot& GameSimulation::snapshot() const
 {
     return m_snapshot;
+}
+
+std::unordered_map<EntityId, std::unique_ptr<Ship>>& GameSimulation::ships()
+{
+    return m_ships;
 }

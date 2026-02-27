@@ -1,21 +1,69 @@
+// #pragma once
+
+// #include "Integrity.h"
+
+// namespace game
+// {
+
+// class EquipmentModule
+// {
+// public:
+//     virtual ~EquipmentModule() = default;
+
+//     virtual void update(double dt)
+//     {
+//         // базовая деградация при перегреве
+//         if (m_integrity.thermal > 0.8)
+//             m_integrity.degradeFunction(dt * 0.05);
+//     }
+
+//     const Integrity& getIntegrity() const
+//     {
+//         return m_integrity;
+//     }
+
+//     bool isOperational() const
+//     {
+//         return m_integrity.isOperational();
+//     }
+
+// protected:
+//     Integrity m_integrity;
+// };
+
+// }
+
 #pragma once
-#include "src/game/equipment/EquipmentDescriptor.h"
 
+#include "Integrity.h"
 
-struct EquipmentModule
+namespace game
 {
-    EquipmentDescriptor             desc;
 
-    float                           health      = 1.0f;     // работоспособность 0..1
-    bool                            enabled     = true;     // включено пилотом / ИИ
+class EquipmentModule
+{
+public:
+    virtual ~EquipmentModule() = default;
+
+    virtual void update(double dt)
+    {
+        // пока пусто
+    }
+
+    void setEnabled(bool value) { m_enabled = value; }
+    bool isEnabled() const { return m_enabled; }
 
     bool isOperational() const
     {
-        return health > 0.2f;
+        return m_enabled && m_integrity.isOperational();
     }
+
+    Integrity& integrity() { return m_integrity; }
+    const Integrity& integrity() const { return m_integrity; }
+
+protected:
+    bool        m_enabled = false;
+    Integrity   m_integrity;
 };
 
-
-
-// equipment.receiver.health -= damage * 0.3f;
-// equipment.jammer.health   -= damage * 0.6f;
+}

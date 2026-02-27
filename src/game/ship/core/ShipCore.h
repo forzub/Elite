@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/ShipVisualIdentity.h"
@@ -30,8 +31,16 @@
 #include "src/game/ship/ShipController.h"
 #include "src/world/types/SignalReceptionResult.h"
 
+#include "ReactorSystem.h"
+#include "ThermalSystem.h"
+#include "PowerBus.h"
 
-#include <vector>
+#include "src/world/types/RadarContactInput.h"
+#include "src/game/equipment/radar/RadarDesc.h"
+
+
+namespace game::ship::core
+{
 
 class ShipCore
 {
@@ -46,25 +55,22 @@ public:
         const ShipInitData& initData
     );
 
-    // void update(
-    //     float dt,
-    //     const WorldParams& world,
-    //     const std::vector<WorldSignal>& worldSignals,
-    //     const std::vector<Planet>& planets,
-    //     const std::vector<InterferenceSource>& interferenceSources
-    // );
-
+    
     // // ───────────────
     // // Фазы апдейта
     // // ───────────────
-    // void updateControlIntent();
-    // void updatePhysics(float dt, const WorldParams& world);
-    void updatePerception(float dt);
+ 
+    void updatePerception(
+        float dt,
+        const std::vector<world::RadarContactInput>& radarInputs
+    );
+
     void updateSignals(
         float dt,
         const std::vector<WorldSignal>& worldSignals,
         const std::vector<Planet>& planets,
-        const std::vector<InterferenceSource>& interferenceSources
+        const std::vector<InterferenceSource>& interferenceSources,
+        EntityId ownerId
     );
 
     // // ───────────────
@@ -105,35 +111,36 @@ public:
     );
 
     void updatePhysics(float dt, const WorldParams& world);
+    bool canInstallRadar(
+        const ShipDescriptor& shipDesc,
+        const RadarDesc& radarDesc
+    ) const;
 
 
     
     // ───────────────
     // Доступ к состоянию
     // ───────────────
-    ShipTransform&              transform()                         { return m_transform; }
-    const ShipTransform&        transform() const                   { return m_transform; }
+    ShipTransform&                              transform()                 { return m_transform; }
+    const ShipTransform&                        transform() const           { return m_transform; }
 
-    ShipControlState&           control()                           { return m_control; }
-    const ShipControlState&     control() const                     { return m_control; }
+    ShipControlState&                           control()                   { return m_control; }
+    const ShipControlState&                     control() const             { return m_control; }
 
-    ShipEquipment&              equipment()                         { return m_equipment; }
-    const ShipEquipment&        equipment() const                   { return m_equipment; }
+    game::ShipEquipment&                        equipment()                 { return m_equipment; }
+    const game::ShipEquipment&                  equipment() const           { return m_equipment; }
 
-    ShipInventory&              inventory()                         { return m_inventory; }
-    CargoBay&                   cargo()                             { return m_cargo; }
+    ShipInventory&                              inventory()                 { return m_inventory; }
+    CargoBay&                                   cargo()                     { return m_cargo; }
 
-    WorldSignal&                emittedSignal()                     { return m_emittedSignal; }
-    const WorldSignal&          emittedSignal() const               { return m_emittedSignal; }
+    ShipRole                                    role() const                { return m_role; }
 
-    ShipRole                    role() const                        { return m_role; }
-    // const ShipSignalPresentation& signalPresentation() const        { return m_signalPresentation; }
+    const std::vector<SignalReceptionResult>&   signalResults() const       {return m_signalResults;} 
 
-    const std::vector<SignalReceptionResult>& signalResults() const {return m_signalResults;} 
-
-    const ShipDescriptor&       desc() const                  { return *m_desc; }
+    const ShipDescriptor&                       desc() const                { return *m_desc; }
+    const RadarModule&                          radar() const               { return m_equipment.radar; }                                                           
                                                                     
-                                                                
+    void                                        debugPrintCoreSystems() const; 
 
     ShipSignalController                        m_signalController;
     NpcSignalAwareness                          m_npcAwareness;                                                            
@@ -164,7 +171,7 @@ private:
     std::vector<SignalReceptionResult>          m_signalResults;
     // ShipSignalPresentation                      m_signalPresentation;
     // TX
-    WorldSignal                                 m_emittedSignal;
+    // WorldSignal                                 m_emittedSignal;
     
 
     // ───────────────
@@ -172,7 +179,21 @@ private:
     // ───────────────
     CargoBay                                    m_cargo;
     ShipInventory                               m_inventory;
-    ShipEquipment                               m_equipment;
+    game::ShipEquipment                         m_equipment;
     ShipSystemState                             m_systems;
     ShipDockState                               m_docks;
+    
+    
+    // ───────────────
+    // CoreSystem
+    // ───────────────
+    ReactorSystem                               m_reactor;      // 100 MW
+    ThermalSystem                               m_thermal; // инерция + предел
+    game::ship::core::PowerBus                  m_powerBus;
+
+    double                                      m_radarDebugTimer = 0.0;
+    
 };
+
+
+}

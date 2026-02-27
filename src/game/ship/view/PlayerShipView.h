@@ -30,10 +30,11 @@
 
 #include "src/game/ship/view/ShipCameraMode.h"
 
-
+#include "src/game/equipment/ShipEquipment.h"
 
 struct ShipDescriptor;
-struct ShipEquipment;
+
+
 
 struct PlayerShipView
 {
@@ -64,7 +65,7 @@ struct PlayerShipView
         ShipRole role,
         const ShipDescriptor* desc,
         const ShipTransform& transform,
-        const ShipEquipment& equipment
+        const game::ShipEquipment& equipment
     );
 
     void init(

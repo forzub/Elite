@@ -15,6 +15,7 @@
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/world/types/SignalReceptionResult.h"
 #include "src/game/ship/sensors/ShipSignalPresentation.h"
+#include "src/game/equipment/radar/RadarContact.h"
 
 struct PendingCommand
 {
@@ -25,16 +26,17 @@ struct PendingCommand
 
 struct ClientShipState
 {
-    EntityId id;
-    ShipRole role;
+    EntityId                                        id;
+    ShipRole                                        role;
 
-    ShipTransform transform;      // 🔥 единственный источник sim state
-    ShipTransform renderTransform;
-    const ShipDescriptor* descriptor = nullptr;
+    ShipTransform                                   transform;      // 🔥 единственный источник sim state
+    ShipTransform                                   renderTransform;
+    const ShipDescriptor*                           descriptor = nullptr;
 
     // std::vector<WorldLabel> labels;
-    ShipSignalPresentation signalPresentation; 
-    std::vector<SignalReceptionResult>  receptions;
+    ShipSignalPresentation                          signalPresentation; 
+    std::vector<SignalReceptionResult>              receptions;
+    std::vector<game::RadarContact>                 radarContacts;
 };
 
 class ClientWorldState
@@ -59,9 +61,9 @@ public:
 
 private:
 
-    std::unordered_map<uint32_t, ClientShipState> m_ships;
-    std::deque<SimulationSnapshot>      m_snapshotBuffer;
-    ShipSignalPresentation              signalPresentation;
+    std::unordered_map<uint32_t, ClientShipState>   m_ships;
+    std::deque<SimulationSnapshot>                  m_snapshotBuffer;
+    ShipSignalPresentation                          signalPresentation;
     
 
     

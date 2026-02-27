@@ -230,6 +230,7 @@ void UICameraView::renderToTexture(
     glClearColor(0.02f, 0.02f, 0.04f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    if (fboHeight <= 0) return;
     float aspect = (float)fboWidth / (float)fboHeight;
     camera->setAspect(aspect);
 

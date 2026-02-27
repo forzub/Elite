@@ -1,7 +1,12 @@
 #include "ShipCore.h"
 #include <iostream>
-#include "src/game/shared/SharedShipPhysics.h"
 
+#include "core/Log.h"
+#include "src/game/shared/SharedShipPhysics.h"
+#include "src/game/equipment/radar/RadarDesc.h"
+
+namespace game::ship::core
+{
 
 // // -------------------------------------------------
 // //    ##                ##       ##
@@ -27,63 +32,38 @@ void ShipCore::init(
     m_role = inRole;  
     m_desc = &descriptor;
     m_transform.position = position;
+
+
+
+    m_reactor = ReactorSystem(descriptor.core.reactorMaxOutputMW);
+    m_thermal = ThermalSystem(
+        descriptor.core.thermalMass,
+        descriptor.core.maxSafeTemperature
+    );
+    m_thermal.setCoolingRate(descriptor.core.baseCoolingRate);
+    m_powerBus = game::ship::core::PowerBus(m_reactor);
     
+    m_reactor.setThrottle(1.0);
     
     // собираем корабль
     // Устанавливаем оборудование по умолчанию из дескриптора
     initShipSlotsFromDescriptor(descriptor);
     installDefaultEquipment(descriptor);
 
+    
     // visual / UI
-    m_visual = initData.visual;
-
     // registry / legal
-    m_registry = initData.registry;
-
     // стартовый инвентарь
+    
+    m_visual = initData.visual;
+    m_registry = initData.registry;
     for (Item* item : initData.initialInventory)
     {
         m_inventory.add(item);
     }
 
     // Автоматическая установка криптокарт в декрипторы
-        if (!m_equipment.decryptors.modules.empty())
-        {
-            // ВАЖНО: аккуратно, т.к. мы будем удалять элементы
-            for (size_t i = 0; i < m_inventory.items.size(); )
-            {
-                Item* item = m_inventory.items[i];
-                auto* card = dynamic_cast<CryptoCard*>(item);
-
-                if (!card)
-                {
-                    ++i;
-                    continue;
-                }
-
-                bool installed = false;
-
-                // пробуем установить карту в любой декриптор
-                for (auto& decryptor : m_equipment.decryptors.modules)
-                {
-                    if (!decryptor.enabled)
-                        continue;
-
-                    if (decryptor.install(card))
-                    {
-                        m_inventory.remove(card);
-                        installed = true;
-                        break;
-                    }
-                }
-
-                // если карта не установилась — идём дальше
-                if (!installed)
-                    ++i;
-            }
-        }
-
-    
+       
 
     m_transform.orientation = glm::mat4(1.0f);
 
@@ -95,30 +75,20 @@ void ShipCore::init(
     m_transform.localVelocity   = glm::vec3(0.0f);
     m_transform.targetSpeed     = 0.0f;
 
-    // m_velocity = glm::vec3(0.0f);
-    // m_acceleration = glm::vec3(0.0f);
-    // m_angularVelocity = glm::vec3(0.0f);
-
 
     // 2. базовое состояние
-    auto& tx  = equipment().transmitter;
-    auto& sig = m_emittedSignal;
+    SignalPayload payload;
+    payload.type   = SignalType::Transponder;
+    payload.actor  = m_registry.ownerActor;
+    payload.channel = 0;
+    payload.setMessage(m_desc->identity.shipName);
 
-    sig.displayClass        = tx.displayClass;
-    sig.power               = tx.txPower;
-    sig.maxRange            = tx.baseRange;
-    sig.position            = transform().position;
-    sig.type                = SignalType::Transponder;
-    sig.enabled             = true;
-    sig.label               = m_desc->identity.shipName;
-
-    sig.address.actor       = 0xFFFFFFFF;
-    sig.address.channel     = 0; // пока всегда публично
-
-    // 3. контроллер сигналов
-    m_signalController.init(m_emittedSignal);
-
+    equipment().transmitter.setPayload(payload);
+    equipment().transmitter.enableSignal();
     
+    
+
+    debugPrintCoreSystems();
 }
 
 
@@ -153,12 +123,42 @@ void ShipCore::updatePhysics(float dt, const WorldParams& world)
         world,
         dt
         );
+
+
+    m_reactor.update(dt);
+    m_powerBus.update();
+    m_thermal.addHeat(m_reactor.heatGeneration());
+
+    if (m_powerBus.overloaded()) 
+    {    
+        m_thermal.addHeat(5.0 * dt);
+    }
+
+    m_thermal.update(dt);
+
 }
 
 
 
-void ShipCore::updatePerception(float dt)
+void ShipCore::updatePerception(
+    float dt,
+    const std::vector<world::RadarContactInput>& radarInputs
+)
 {
+    if (m_equipment.radar.isOperational())
+    {
+        m_equipment.radar.update(
+            dt,
+            radarInputs,
+            m_transform.position,
+            m_transform.orientation
+        );
+
+        const auto& contacts = m_equipment.radar.getContacts();
+
+        m_radarDebugTimer += dt;
+    }
+
     if (m_role == ShipRole::Player)
     {
         // HUD / визуальная семантика
@@ -183,10 +183,11 @@ void ShipCore::updatePerception(float dt)
 //           ####                                #####
 
 void ShipCore::updateSignals(
-        float dt,
+         float dt,
         const std::vector<WorldSignal>& worldSignals,
         const std::vector<Planet>& planets,
-        const std::vector<InterferenceSource>& interferenceSources
+        const std::vector<InterferenceSource>& interferenceSources,
+        EntityId ownerId
     )
 {
     m_signalResults.clear();
@@ -199,7 +200,7 @@ void ShipCore::updateSignals(
         planets,
         interferenceSources,
         m_signalResults,
-        m_emittedSignal.owner
+        ownerId
     );
 }
 
@@ -294,45 +295,70 @@ void ShipCore::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
 // //   ####    ##  ##   ######      ###    #####    ####     ####              #####       ##    ######   ####     ##                ######   #####   ####
 // //                                                                                      ####                    ####
 
-void ShipCore::installDefaultEquipment(const ShipDescriptor& descriptor)
-{
-    const auto& presets = descriptor.defaultEquipment;
+    void ShipCore::installDefaultEquipment(const ShipDescriptor& descriptor)
+    {
+        const auto& presets = descriptor.defaultEquipment;
     
-    // Устанавливаем оборудование, если оно есть в пресетах
-    if (presets.decryptor.has_value()) {
+        // Устанавливаем оборудование, если оно есть в пресетах
+        // if (presets.decryptor.has_value()) {
 
-        installEquipment("decryptor", 
-        m_systems.decryptor, 
-        // equipment.decryptor,
-        m_equipment.decryptors.modules, 
-        *presets.decryptor);
-    }
-    
-    if (presets.jammer.has_value()) {
-
-        installEquipment("jammer", 
-        m_systems.jammer, 
-        m_equipment.jammer, 
-        *presets.jammer);
-    }
-    
-    if (presets.receiver.has_value()) {
+        //     installEquipment("decryptor", 
+        //     m_systems.decryptor, 
+        //     // equipment.decryptor,
+        //     m_equipment.decryptors.modules, 
+        //     *presets.decryptor);
+        // }
         
-        installEquipment("receiver", 
-        m_systems.receiver, 
-        m_equipment.receiver, 
-        *presets.receiver);
-    }
+        // if (presets.jammer.has_value()) {
+
+        //     installEquipment("jammer", 
+        //     m_systems.jammer, 
+        //     m_equipment.jammer, 
+        //     *presets.jammer);
+        // }
     
-    if (presets.transmitter.has_value()) {
+        if (presets.receiver.has_value()) {
+            
+            installEquipment("receiver", 
+            m_systems.receiver, 
+            m_equipment.receiver, 
+            *presets.receiver);
+        }
+        
+        if (presets.transmitter.has_value()) {
 
-        installEquipment("transmitter", 
-        m_systems.transmitter, 
-        m_equipment.transmitter, 
-        *presets.transmitter);
+            installEquipment("transmitter", 
+            m_systems.transmitter, 
+            m_equipment.transmitter, 
+            *presets.transmitter);
+        }
+
+
+
+
+        if (presets.radar.has_value())
+        {
+            const RadarDesc& radarDesc = *presets.radar;
+
+            if (canInstallRadar(descriptor, radarDesc))
+            {
+                installEquipment(
+                    "radar",
+                    m_systems.radar,
+                    m_equipment.radar,
+                    radarDesc
+                );
+
+                m_powerBus.registerConsumer(&m_equipment.radar);
+            }
+            else
+            {
+                LOG("[ShipCore] Radar incompatible with platform");
+            }
+        }
+
+
     }
-
-}
 
 // //    ##                         ##               ###      ###                                           ##                                           ##
 // //                               ##                ##       ##                                                                                        ##
@@ -344,68 +370,68 @@ void ShipCore::installDefaultEquipment(const ShipDescriptor& descriptor)
 // //                                                                                      ####                    ####
 
 
-template<typename ModuleType, typename DescType>
-bool ShipCore::installEquipment(
-    const char* equipmentName,
-    QuantitySlot& slot,
-    std::vector<ModuleType>& modules,
-    const DescType& desc
-) {
+    template<typename ModuleType, typename DescType>
+    bool ShipCore::installEquipment(
+        const char* equipmentName,
+        QuantitySlot& slot,
+        std::vector<ModuleType>& modules,
+        const DescType& desc
+    ) {
 
-    // 1. Проверяем наличие слота
-    if (slot.capacity <= 0) {
-        printf("[ERROR] No slot for %s\n", equipmentName);
-        return false;
+        // 1. Проверяем наличие слота
+        if (slot.capacity <= 0) {
+            printf("[ERROR] No slot for %s\n", equipmentName);
+            return false;
+        }
+        
+        // 2. Проверяем свободный слот
+        if (slot.value >= slot.capacity) {
+            printf("[ERROR] No free slots for %s\n", equipmentName);
+            return false;
+        }
+        
+        
+        // 3. Устанавливаем
+        // module.init(desc);
+        modules.emplace_back();
+        modules.back().init(desc);
+        slot.value++;
+        
+        printf("[INFO] %s installed successfully\n", equipmentName);
+        return true;
     }
-    
-    // 2. Проверяем свободный слот
-    if (slot.value >= slot.capacity) {
-        printf("[ERROR] No free slots for %s\n", equipmentName);
-        return false;
+
+
+
+
+    template<typename ModuleType, typename DescType>
+    bool ShipCore::installEquipment(
+        const char* equipmentName,
+        QuantitySlot& slot,
+        ModuleType& module,
+        const DescType& desc
+    ) {
+
+        // 1. Проверяем наличие слота
+        if (slot.capacity <= 0) {
+            printf("[ERROR] No slot for %s\n", equipmentName);
+            return false;
+        }
+        
+        // 2. Проверяем свободный слот
+        if (slot.value >= slot.capacity) {
+            printf("[ERROR] No free slots for %s\n", equipmentName);
+            return false;
+        }
+        
+        
+        // 3. Устанавливаем
+        module.init(desc);
+        slot.value++;
+        
+        printf("[INFO] %s installed successfully\n", equipmentName);
+        return true;
     }
-    
-    
-    // 3. Устанавливаем
-    // module.init(desc);
-    modules.emplace_back();
-    modules.back().init(desc);
-    slot.value++;
-    
-    printf("[INFO] %s installed successfully\n", equipmentName);
-    return true;
-}
-
-
-
-
-template<typename ModuleType, typename DescType>
-bool ShipCore::installEquipment(
-    const char* equipmentName,
-    QuantitySlot& slot,
-    ModuleType& module,
-    const DescType& desc
-) {
-
-    // 1. Проверяем наличие слота
-    if (slot.capacity <= 0) {
-        printf("[ERROR] No slot for %s\n", equipmentName);
-        return false;
-    }
-    
-    // 2. Проверяем свободный слот
-    if (slot.value >= slot.capacity) {
-        printf("[ERROR] No free slots for %s\n", equipmentName);
-        return false;
-    }
-    
-    
-    // 3. Устанавливаем
-    module.init(desc);
-    slot.value++;
-    
-    printf("[INFO] %s installed successfully\n", equipmentName);
-    return true;
-}
 
 // //                                                                                              ##                                           ##
 // //                                                                                                                                           ##
@@ -416,19 +442,73 @@ bool ShipCore::installEquipment(
 // //  ####      #####   ##   ##   ####      ##      #####             #####       ##    ######   ####     ##      ##   ##   #####   ##  ##      ###
 // //                                                                             ####                    ####
 
-template<typename ModuleType>
-bool ShipCore::removeEquipment(
-    const char* equipmentName,
-    QuantitySlot& slot,
-    ModuleType& module
-) {
-    if (!module.enabled) {
-        printf("[ERROR] %s {} not installed\n", equipmentName);
-        return false;
+    template<typename ModuleType>
+    bool ShipCore::removeEquipment(
+        const char* equipmentName,
+        QuantitySlot& slot,
+        ModuleType& module
+    ) {
+        if (!module.enabled) {
+            printf("[ERROR] %s {} not installed\n", equipmentName);
+            return false;
+        }
+        
+        module.enabled = false;
+        slot.value--;
+        printf("[ERROR] %s {} removed successfully\n", equipmentName);
+        return true;
     }
-    
-    module.enabled = false;
-    slot.value--;
-    printf("[ERROR] %s {} removed successfully\n", equipmentName);
-    return true;
+
+
+
+
+    void ShipCore::debugPrintCoreSystems() const
+    {
+        std::cout << "\n[ShipCore] CoreSystems initialized:\n";
+
+        std::cout << "  |- Reactor\n";
+        std::cout << "       maxOutput: " << m_reactor.maxOutput() << " MW\n";
+        std::cout << "       throttle : " << m_reactor.throttle() << "\n";
+        std::cout << "       integrity: " << m_reactor.structuralIntegrity() << "\n";
+
+        std::cout << "  |- ThermalSystem\n";
+        std::cout << "       temperature : " << m_thermal.temperature() << "\n";
+        std::cout << "       maxSafeTemp : " << m_thermal.maxSafeTemperature() << "\n";
+        std::cout << "       integrity   : " << m_thermal.integrity() << "\n";
+
+        std::cout << "  |- PowerBus\n";
+        std::cout << "       availablePower: " << m_powerBus.availablePower() << "\n";
+        std::cout << "       overloaded    : "
+                << (m_powerBus.overloaded() ? "YES" : "NO") << "\n";
+
+        std::cout << "[Radar] Installed\n";
+        std::cout << "  |- maxRange: " << m_equipment.radar.getDesc().maxRange << "\n";
+        std::cout << "  |- power   : " << m_equipment.radar.getDesc().powerConsumption << "\n";
+
+        std::cout << std::endl;
+    }
+
+
+
+    bool ShipCore::canInstallRadar(
+        const ShipDescriptor& shipDesc,
+        const RadarDesc& radarDesc
+    ) const
+    {
+        const auto& mount = shipDesc.radarMount;
+
+        if (radarDesc.requiredMountSize > mount.maxSupportedMountSize)
+            return false;
+
+        if (std::find(
+                mount.allowedProfiles.begin(),
+                mount.allowedProfiles.end(),
+                radarDesc.visualProfile
+            ) == mount.allowedProfiles.end())
+            return false;
+
+        return true;
+    }
+
+
 }

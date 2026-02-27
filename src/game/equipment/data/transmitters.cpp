@@ -6,9 +6,11 @@ const SignalTransmitterDesc WSDR_TX13 = {
         "Weyland Signal Division",
         "Стандартный корабельный передатчик общего назначения"
     },
-    .txPower   = 1000.0f,        // SNR = 1 на baseRange
-    .baseRange = 50'000.0f,   // 50 км
-    .displayClass = SignalDisplayClass::Local
+    .txPower   = 10000.0f,        // SNR = 1 на baseRange
+    .baseRange = 500'000.0f,   // 50 км
+    .displayClass = SignalDisplayClass::Local,
+    .powerConsumption = 5.0,
+    .heatGeneration   = 0.2
 };
 
 
@@ -21,5 +23,7 @@ const SignalTransmitterDesc ORBITAL_BEACON_TX = {
     },
     .txPower   = 9.0f,
     .baseRange = 300'000.0f,  // 300 км
-    .displayClass = SignalDisplayClass::Global
+    .displayClass = SignalDisplayClass::Global,
+    .powerConsumption = 5.0,
+    .heatGeneration   = 0.2
 };

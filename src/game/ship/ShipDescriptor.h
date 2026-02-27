@@ -21,6 +21,8 @@
 #include "game/equipment/decryptor/DecryptorDesc.h"
 #include "game/equipment/signalNode/ReceiverDesc.h"
 #include "game/equipment/signalNode/SignalTransmitterDesc.h"
+#include "game/equipment/radar/RadarDesc.h"
+#include "src/game/equipment/types/RadarMountPoint.h"
 
 
 struct ShipIdentity
@@ -35,8 +37,18 @@ struct EquipmentPresets
 {
     std::optional<DecryptorDesc>                decryptor;
     std::optional<JammerDesc>                   jammer;
-    std::optional<ReceiverDesc>                 receiver;
+    std::optional<game::ReceiverDesc>           receiver;
     std::optional<SignalTransmitterDesc>        transmitter;
+    std::optional<game::RadarDesc>                    radar;
+};
+
+
+struct CoreConfig
+{
+    double reactorMaxOutputMW;     // максимальная мощность реактора
+    double thermalMass;            // тепловая инерция корабля
+    double maxSafeTemperature;     // безопасная температура
+    double baseCoolingRate;        // базовое охлаждение (радиаторы)
 };
 
 
@@ -114,8 +126,11 @@ struct CockpitData
     // НОВОЕ: пресеты оборудования по умолчанию
 
     
-
+    CoreConfig                      core;
     EquipmentPresets                defaultEquipment;
     std::optional<CockpitData>      cockpit;
-    
+
+    double                          radarCrossSection = 1.0; // коэфициент отражающей поверхности корпуса
+    double                          radarSignatureModifier = 1.0; // 1.0 = без изменений для Stealth-эффект через RCS
+    RadarMountPoint                 radarMount;
 };

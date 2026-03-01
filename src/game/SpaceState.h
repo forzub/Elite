@@ -35,8 +35,8 @@
 #include "src/game/client/GameClient.h"
 #include "src/game/network/ITransport.h"
 #include "src/game/network/LocalLoopbackTransport.h"
-#include "src/ui/components/RadarWidgetBase.h" 
 #include "src/scene/SceneRenderer.h"
+#include "src/ui/components/radar/RadarWidgetBase.h" 
 
 class StateStack;
 

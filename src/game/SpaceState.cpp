@@ -36,7 +36,7 @@
 #include "src/game/network/LocalLoopbackTransport.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 // #include "src/ui/components/RadarWidgetFactory.h"
-#include "ui/components/RadarWidgetBase.h"
+#include "ui/components/radar/RadarWidgetBase.h"
 
 
 

@@ -10,5 +10,5 @@ struct RadarMountPoint
 
     double maxSupportedMountSize;
 
-    std::vector<game::RadarVisualProfile> allowedProfiles;
+    std::vector<game::RadarType> allowedProfiles;
 };

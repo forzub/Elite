@@ -8,15 +8,17 @@
 
 #include "render/DebugGrid.h"
 #include "src/render/camera/RenderCameraViewport.h"
-#include "ui/components/UIText.h"
+#include "src/ui/components/UIText.h"
 #include "src/game/network/LocalLoopbackTransport.h"
-#include "src/game/equipment/radar/RadarDesc.h"
-#include "src/ui/components/RadarWidgetFactory.h"
-#include "ui/components/RadarWidgetBase.h"
 
 #include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
+
+#include "src/game/equipment/radar/RadarDesc.h"
 #include "src/game/equipment/radar/IRadarVisualConfig.h"
+
+#include "src/ui/components/radar/RadarWidgetFactory.h"
+#include "src/ui/components/radar/RadarWidgetBase.h"
 
 
 
@@ -152,11 +154,18 @@ void SpaceState::initHUD()
     const game::RadarDesc& radarDesc =
                 desc.defaultEquipment.radar.value();
 
-    auto radar = RadarWidgetFactory::create(radarDesc.visualProfile);
+    auto radar = RadarWidgetFactory::create(radarDesc.type, radarDesc.visualProfile);
+    
+    
     
     if (radarDesc.visual)
         radar->applyVisualConfig(*radarDesc.visual);
-
+    
+    if (radarDesc.effects) 
+        radar->applyEffectsConfig(*radarDesc.effects);
+        
+     
+    radar->id       = "radar";
     radar->position = desc.radarMount.normalizedPosition;
     radar->size     = desc.radarMount.normalizedSize;
     radar->anchor   = UIAnchor::Center;

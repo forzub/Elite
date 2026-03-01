@@ -107,58 +107,6 @@ void UICameraView::render(
 
     renderChildren(vp, px, py, pw, ph);
 }
-// void UICameraView::render(
-//     const Viewport& vp,
-//     float parentX,
-//     float parentY,
-//     float parentW,
-//     float parentH
-// )
-// {
-//     if (!visible)
-//         return;
-
-//     float px = parentX + position.x * parentW;
-//     float py = parentY + position.y * parentH;
-//     float pw = size.x * parentW;
-//     float ph = size.y * parentH;
-
-//     glDisable(GL_DEPTH_TEST);
-//     glDisable(GL_BLEND);
-//     glColor4f(1,1,1,1);
-
-//     glEnable(GL_TEXTURE_2D);
-//     glBindTexture(GL_TEXTURE_2D, colorTex);
-
-//     glBegin(GL_QUADS);
-//         glTexCoord2f(0,1); glVertex2f(px,py);
-//         glTexCoord2f(1,1); glVertex2f(px+pw,py);
-//         glTexCoord2f(1,0); glVertex2f(px+pw,py+ph);
-//         glTexCoord2f(0,0); glVertex2f(px,py+ph);
-//     glEnd();
-
-//     glDisable(GL_TEXTURE_2D);
-
-//     // рамка
-//     glColor3f(borderColor.r, borderColor.g, borderColor.b);
-//     glLineWidth(borderThickness);
-
-//     glBegin(GL_LINE_LOOP);
-//         glVertex2f(px, py);
-//         glVertex2f(px + pw, py);
-//         glVertex2f(px + pw, py + ph);
-//         glVertex2f(px, py + ph);
-//     glEnd();
-
-//     glEnable(GL_BLEND);
-
-//     renderChildren(vp, px, py, pw, ph);
-// }
-
-
-
-
-
 
 
 void UICameraView::initFBO(int width, int height)

@@ -51,20 +51,21 @@ void RadarWidgetBase::render(
     computeLayout(parentX, parentY, parentW, parentH,
                   px, py, pw, ph);
 
+
     m_centerX = px + pw * 0.5f;
     m_centerY = py + ph * 0.5f;
     m_radius  = std::max(pw, ph) * 0.45f;
 
-    renderBackground(); 
-    renderSweep();
-    renderContacts();
-    renderOverlay();
+    renderRadarContent(px, py, pw, ph);
 
     renderChildren(vp, px, py, pw, ph);
 
     
 
 }
+
+
+
 
 
 
@@ -143,5 +144,9 @@ void RadarWidgetBase::configureFromDesc(
 
 void RadarWidgetBase::applyVisualConfig(
     const IRadarVisualConfig& cfg)
+    {
+    }
+void RadarWidgetBase::applyEffectsConfig(
+    const game::IRadarEffectsConfig& effects)
     {
     }

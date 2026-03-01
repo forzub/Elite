@@ -4,21 +4,23 @@
 namespace game {
 
 // Минимальный навигационный
-extern const RadarDesc CRT_RADAR;
+extern const RadarDesc PPI_CRT_RADAR;
+// Минимальный навигационный
+extern const RadarDesc PPI_LCD_RADAR;
 
 // Минимальный навигационный
-extern const RadarDesc YACHT_RADAR;
+// extern const RadarDesc YACHT_RADAR;
 
-// Гражданский транспортный
-extern const RadarDesc CIVIL_RADAR;
+// // Гражданский транспортный
+// extern const RadarDesc CIVIL_RADAR;
 
-// Истребительный
-extern const RadarDesc FIGHTER_RADAR;
+// // Истребительный
+// extern const RadarDesc FIGHTER_RADAR;
 
-// Торгово-боевой
-extern const RadarDesc COMBAT_RADAR;
+// // Торгово-боевой
+// extern const RadarDesc COMBAT_RADAR;
 
-// Носитель / крупный корабль
-extern const RadarDesc CARRIER_RADAR;
+// // Носитель / крупный корабль
+// extern const RadarDesc CARRIER_RADAR;
 
 }

@@ -9,6 +9,7 @@
 #include "src/game/equipment/data/jammers.h"
 #include "src/game/equipment/data/radars.h"
 
+#include "src/game/equipment/types/RadarType.h"
 #include "src/game/equipment/types/RadarVisualProfile.h"
 
 
@@ -167,7 +168,7 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         mount.normalizedSize        = {0.3515f, 0.2083f};
         mount.maxSupportedMountSize = 1.0;
         mount.allowedProfiles = {
-            game::RadarVisualProfile::CRT
+            game::RadarType::PPI
             // ,game::RadarVisualProfile::DigitalFlat список допустимых типов радара
         };
 
@@ -180,7 +181,8 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.defaultEquipment.jammer        = std::nullopt;
         desc.defaultEquipment.receiver      = game::STANDARD_RECEIVER;
         desc.defaultEquipment.transmitter   = WSDR_TX13;
-        desc.defaultEquipment.radar         = game::CRT_RADAR;
+        // desc.defaultEquipment.radar         = game::PPI_CRT_RADAR;
+        desc.defaultEquipment.radar         = game::PPI_LCD_RADAR;
 
 
         // -----------------------------

@@ -503,7 +503,7 @@ void ShipCore::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
         if (std::find(
                 mount.allowedProfiles.begin(),
                 mount.allowedProfiles.end(),
-                radarDesc.visualProfile
+                radarDesc.type
             ) == mount.allowedProfiles.end())
             return false;
 

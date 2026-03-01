@@ -49,6 +49,8 @@ void UIComponent::computeLayout(
     float pw = size.x * parentW;
     float ph = size.y * parentH;
 
+
+    
     switch (anchor)
     {
         case UIAnchor::TopLeft:

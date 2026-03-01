@@ -109,7 +109,6 @@ void PlayerShipView::updateCockpitState(ShipRole role,
 void PlayerShipView::renderCockpit()
 {
     cockpitBitmapPass.renderBase();
-
     cockpitBitmapPass.setGlassIntensity(1.0f);
     cockpitBitmapPass.renderGlass();
 

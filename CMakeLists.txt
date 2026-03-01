@@ -116,11 +116,15 @@ add_executable(EliteGame
     src/game/equipment/data/radars.cpp
     src/game/equipment/signalNode/SignalTransmitterModule.cpp
 
-    src/ui/components/RadarWidgetBase.cpp
-    src/ui/components/RadarWidgetFactory.cpp
-    src/ui/components/RadarCRTWidget.cpp
-
     src/scene/SceneRenderer.cpp
+    
+    src/ui/components/radar/RadarWidgetBase.cpp
+    src/ui/components/radar/RadarWidgetFactory.cpp
+    src/ui/components/radar/RadarRenderTarget.cpp
+    src/ui/components/radar/ppi/RadarPPIWidget.cpp
+
+    src/ui/components/radar/ppi/effects/LCDEffect.cpp
+    src/ui/components/radar/ppi/effects/CRTEffect.cpp
 
 )
 

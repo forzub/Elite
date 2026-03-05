@@ -1,5 +1,6 @@
 #include "LocalLoopbackTransport.h"
 #include "src/game/server/GameServer.h"
+#include "src/game/network/ClientMessage.h"
 #include <iostream>
 
 
@@ -60,4 +61,15 @@ void LocalLoopbackTransport::update(float dt)
         m_incoming.push(m_latencyBuffer.front().snapshot);
         m_latencyBuffer.erase(m_latencyBuffer.begin());
     }
+}
+
+
+
+
+
+void LocalLoopbackTransport::sendClientMessage(
+    EntityId playerId,
+    const game::network::ClientMessage& msg)
+{
+    m_server->receiveClientMessage(playerId, msg);
 }

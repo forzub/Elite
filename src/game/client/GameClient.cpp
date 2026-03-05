@@ -1,7 +1,8 @@
+#include <iostream>
 #include "GameClient.h"
 #include "src/game/server/GameServer.h"
 #include "src/game/client/ClientWorldState.h"
-#include <iostream>
+#include "src/game/network/ClientMessage.h"
 
 // GameClient::GameClient(GameServer* server, EntityId playerId)
 GameClient::GameClient(ITransport* transport, EntityId playerId)
@@ -26,8 +27,24 @@ void GameClient::submitInput(const ShipControlState& control)
     m_pendingInputs.push_back({ m_clientTick, c });
 
     // m_server->submitCommand(m_playerId, c);
-    m_transport->sendInput(m_playerId, c);
 
+
+
+    game::network::ClientMessage msg;
+    msg.clientTick = m_clientTick;
+    msg.type = game::network::ClientMessageType::ControlInput;
+    msg.payload = c;
+
+    m_transport->sendClientMessage(m_playerId, msg);
+    // m_transport->sendInput(m_playerId, c);
+
+}
+
+
+
+void GameClient::sendMessage(const game::network::ClientMessage& msg)
+{
+    m_transport->sendClientMessage(m_playerId, msg);
 }
 
 
@@ -79,16 +96,6 @@ m_world.update(dt);
 
 
 
-
-
-// void GameClient::reconcile(const SimulationSnapshot& snapshot)
-// {
-//     while (!m_pendingInputs.empty() &&
-//            m_pendingInputs.front().controlTick <= snapshot.snapshotTick)
-//     {
-//         m_pendingInputs.pop_front();
-//     }
-// }
 
 
 void GameClient::reconcile(

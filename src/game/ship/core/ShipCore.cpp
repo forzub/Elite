@@ -8,6 +8,10 @@
 namespace game::ship::core
 {
 
+
+
+
+
 // // -------------------------------------------------
 // //    ##                ##       ##
 // //                               ##
@@ -34,22 +38,41 @@ void ShipCore::init(
     m_transform.position = position;
 
 
-
-    m_reactor = ReactorSystem(descriptor.core.reactorMaxOutputMW);
-    m_thermal = ThermalSystem(
-        descriptor.core.thermalMass,
-        descriptor.core.maxSafeTemperature
-    );
-    m_thermal.setCoolingRate(descriptor.core.baseCoolingRate);
-    m_powerBus = game::ship::core::PowerBus(m_reactor);
-    
-    m_reactor.setThrottle(1.0);
-    
     // собираем корабль
     // Устанавливаем оборудование по умолчанию из дескриптора
     initShipSlotsFromDescriptor(descriptor);
     installDefaultEquipment(descriptor);
 
+
+
+
+    // ===============================================
+    // --------------- сердце корабля ----------------
+    // ===============================================
+    m_reactor = ReactorSystem(descriptor.reactor);
+    m_reactor.setThrottle(0.8);
+
+    m_thermal = ThermalSystem(descriptor.thermal);
+
+    m_cooling.init(
+        descriptor.cooling.radiatorArea,    // 1600 м²
+        descriptor.cooling.panelCount,      // 160 панелей
+        descriptor.cooling.emissivity,      // 0.85
+        descriptor.cooling.maxTransferPower // 90 МВт
+    );
+
+    m_powerBus = game::ship::core::PowerBus(m_reactor);
+    m_powerBus.registerConsumer(&m_cooling);
+    m_powerBus.registerConsumer(&m_lifeSupport);
+    m_powerBus.registerConsumer(&m_avionics);
+    m_powerBus.registerConsumer(&m_radiationShield);
+
+    m_powerBus.registerConsumer(&m_equipment.radar);
+
+
+
+    
+    
     
     // visual / UI
     // registry / legal
@@ -125,9 +148,70 @@ void ShipCore::updatePhysics(float dt, const WorldParams& world)
         );
 
 
-    m_reactor.update(dt);
+    // ================================================
+    // --------------- сердце корабля ----------------
+    // ================================================
+
+    // 1. Сбрасываем счетчики
+    m_thermal.resetHeatVolume();
+
+
+    // 2. определение желаний потребителей.
+    m_cooling.setReactorState(
+        m_reactor.getTemperature(),
+        m_reactor.getWorkTemp(),
+        m_reactor.getDeltaTemp(),
+        m_reactor.getWarningTemp(),
+        m_thermal.getTemperature(),
+        m_thermal.getCriticalTemp()
+    );
+    m_cooling.calcRequestedPower();
+    // 3. PowerBus распределяет энергию (определяет, сколько получит насос)
+    // опрашивает потребителей
+    // задает throttle
+    // распределяет энергию согласно возможностей
     m_powerBus.update();
-    m_thermal.addHeat(m_reactor.heatGeneration());
+
+    // 3. Реактор работает и отдает тепло в антифриз
+    m_cooling.update(dt, m_thermal);
+
+    //    ВНУТРИ reactor.update() уже вызывается m_thermal.addHeat()
+    m_reactor.update(dt, m_thermal, m_cooling.getPumpCapacity());
+
+    // 4. Тепло от ВСЕХ потребителей (кроме реактора и охлаждения)
+    //    НЕ включая охлаждение - его тепло от насосов учтем отдельно
+    for (auto* consumer : m_powerBus.getConsumers())
+    {
+        // Пропускаем охлаждение - уже учтено в update
+        if (consumer == &m_cooling) continue;
+        
+        auto* heatSource = dynamic_cast<game::equipment::IHeatSource*>(consumer);
+        if (heatSource) {
+            double heatMW = heatSource->getHeatGeneration();
+            if (heatMW > 0) {
+                m_thermal.addHeat(heatMW * dt);
+            }
+        }
+    }
+
+    // 6. Система охлаждения забирает тепло из антифриза
+    //    ВНУТРИ cooling.update() вызывается m_thermal.removeHeat()
+    m_cooling.update(dt, m_thermal);
+
+    // 7. Обновляем остальные системы (они могут менять свое состояние)
+    m_lifeSupport.update(dt);
+    m_avionics.update(dt);
+    m_radiationShield.update(dt);
+
+    // 8. НЕ добавляем тепло от них снова! Они уже учтены в п.4
+
+    
+    
+    
+
+
+
+
 
     if (m_powerBus.overloaded()) 
     {    
@@ -349,7 +433,7 @@ void ShipCore::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
                     radarDesc
                 );
 
-                m_powerBus.registerConsumer(&m_equipment.radar);
+                
             }
             else
             {
@@ -468,14 +552,14 @@ void ShipCore::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
 
         std::cout << "  |- Reactor\n";
         std::cout << "       maxOutput: " << m_reactor.maxOutput() << " MW\n";
-        std::cout << "       throttle : " << m_reactor.throttle() << "\n";
+        std::cout << "       throttle : " << m_reactor.getThrottle() << "\n";
         std::cout << "       integrity: " << m_reactor.structuralIntegrity() << "\n";
+        std::cout << "       temp     : " << m_reactor.getTemperature() << " K\n";
 
         std::cout << "  |- ThermalSystem\n";
-        std::cout << "       temperature : " << m_thermal.temperature() << "\n";
-        std::cout << "       maxSafeTemp : " << m_thermal.maxSafeTemperature() << "\n";
-        std::cout << "       integrity   : " << m_thermal.integrity() << "\n";
-
+        std::cout << "       temperature : " << m_thermal.getTemperature() << " K\n";
+        // Убираем вызовы maxSafeTemperature и integrity - их больше нет!
+        
         std::cout << "  |- PowerBus\n";
         std::cout << "       availablePower: " << m_powerBus.availablePower() << "\n";
         std::cout << "       overloaded    : "
@@ -509,6 +593,165 @@ void ShipCore::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
 
         return true;
     }
+
+
+
+
+game::ShipCoreStatus ShipCore::getCoreStatus() const
+{
+    game::ShipCoreStatus status;
+    
+    // ----- Реактор (все методы есть) -----
+    status.reactor.temperature = m_reactor.getTemperature();
+    status.reactor.criticalTemp = m_reactor.getCriticalTemperature();
+    status.reactor.outputMW = m_reactor.getCurrentOutput();
+    status.reactor.maxOutputMW = m_reactor.getMaxOutput();
+    status.reactor.throttle = m_reactor.getThrottle();
+    status.reactor.instability = m_reactor.getInstability();
+    status.reactor.status = static_cast<uint8_t>(m_reactor.getStatus());
+    status.reactor.integrity = m_reactor.structuralIntegrity();
+    status.reactor.generatedHeat = m_reactor.getHeatVolume();
+    status.reactor.heatGenerationMW = m_reactor.getGeneratedHeatMJ();
+    
+    // ----- Thermal (все методы есть) -----
+    status.thermal.temperature = m_thermal.getTemperature();
+    status.thermal.thermalMass = m_thermal.getThermalMass();
+    status.thermal.heatVolume = m_thermal.getHeatVolume();
+    status.thermal.storedHeat = m_thermal.getStoredHeat(); // пока 0
+    status.thermal.thermalCriticalTemp = m_thermal.getCriticalTemp(); // пока 0
+
+    
+    // ----- Cooling (только то, что реально есть) -----
+    status.cooling.coolantTemp = m_thermal.getTemperature(); // берем из thermal
+    status.cooling.totalEfficiency = m_cooling.getTotalEfficiency();
+    status.cooling.allocatedPowerMW = m_cooling.getAllocatedPower();
+    status.cooling.requestedPowerMW = m_cooling.getRequestedPower();
+    status.cooling.radiatedPowerMW = m_cooling.getLastRadiatedPower();
+    status.cooling.pumpCapacity = m_cooling.getPumpCapacity();
+    status.cooling.pumpHeatMJ = m_cooling.getPumpHeatMJ();
+    status.cooling.dt = m_cooling.getDT();
+    
+    // Панели
+    int panelCount = m_cooling.getPanelCount();
+    status.cooling.damagedPanelCount = 0;
+    status.cooling.criticalPanelCount = 0;
+    
+    for (int i = 0; i < panelCount; ++i) {
+        game::RadiatorPanelStatus panel;
+        panel.health = m_cooling.getPanelHealth(i);
+        panel.efficiency = m_cooling.getPanelEfficiency(i);
+        status.cooling.panels.push_back(panel);
+        
+        if (panel.health < 0.7 && panel.health >= 0.3) 
+            status.cooling.damagedPanelCount++;
+        if (panel.health < 0.3) {
+            status.cooling.criticalPanelCount++;
+            status.cooling.failedPanelIndices.push_back(i);
+        }
+    }
+    
+    // ----- PowerBus -----
+    status.powerBus.availablePowerMW = m_powerBus.availablePower();
+    status.powerBus.overloaded = m_powerBus.overloaded();
+    
+    // Считаем totalRequested сами
+    status.powerBus.totalRequestedMW = 0.0;
+    for (auto* c : m_powerBus.getConsumers()) {
+        game::PowerConsumerStatus cs;
+        cs.name = c->getLabel();
+        cs.requestedPowerMW = c->getRequestedPower();
+        cs.allocatedPowerMW = c->getAvailablePower();
+        cs.priority = static_cast<int>(c->getPriority());
+        cs.operational = true;
+        status.powerBus.consumers.push_back(cs);
+        status.powerBus.totalRequestedMW += cs.requestedPowerMW;
+    }
+    
+    // ----- Алерты -----
+    
+    // Реактор горячий
+    if (status.reactor.temperature > status.reactor.criticalTemp * 0.85) {
+        game::AlertStatus alert;
+        alert.severity = status.reactor.temperature > status.reactor.criticalTemp * 0.95 ? 2 : 1;
+        alert.system = "Reactor";
+        alert.message = status.reactor.temperature > status.reactor.criticalTemp * 0.95 
+            ? "CRITICAL TEMPERATURE" : "High temperature";
+        alert.value = status.reactor.temperature;
+        alert.threshold = status.reactor.criticalTemp * 0.85;
+        status.alerts.push_back(alert);
+        status.warningSystems.push_back("Reactor");
+        
+        if (alert.severity == 2) {
+            status.criticalSystems.push_back("Reactor");
+        }
+    }
+    
+    // Антифриз горячий (лимит 900K)
+    if (status.thermal.temperature > 850.0) {
+        game::AlertStatus alert;
+        alert.severity = status.thermal.temperature > 900.0 ? 2 : 1;
+        alert.system = "Coolant";
+        alert.message = status.thermal.temperature > 900.0 
+            ? "COOLANT SATURATED" : "Coolant high";
+        alert.value = status.thermal.temperature;
+        alert.threshold = 900.0;
+        status.alerts.push_back(alert);
+        status.warningSystems.push_back("Coolant");
+        
+        if (alert.severity == 2) {
+            status.criticalSystems.push_back("Coolant");
+        }
+    }
+    
+    // Повреждения панелей
+    if (status.cooling.criticalPanelCount > 0) {
+        game::AlertStatus alert;
+        alert.severity = 2;
+        alert.system = "Radiators";
+        alert.message = std::to_string(status.cooling.criticalPanelCount) + " panels critical";
+        alert.value = status.cooling.criticalPanelCount;
+        alert.threshold = 0;
+        status.alerts.push_back(alert);
+        status.criticalSystems.push_back("Radiators");
+    } else if (status.cooling.damagedPanelCount > 0) {
+        game::AlertStatus alert;
+        alert.severity = 1;
+        alert.system = "Radiators";
+        alert.message = std::to_string(status.cooling.damagedPanelCount) + " panels damaged";
+        alert.value = status.cooling.damagedPanelCount;
+        alert.threshold = 0;
+        status.alerts.push_back(alert);
+        status.warningSystems.push_back("Radiators");
+    }
+    
+    // Перегрузка энергосистемы
+    if (status.powerBus.overloaded) {
+        game::AlertStatus alert;
+        alert.severity = 1;
+        alert.system = "Power";
+        alert.message = "Power bus overloaded";
+        alert.value = status.powerBus.totalRequestedMW;
+        alert.threshold = status.powerBus.availablePowerMW;
+        status.alerts.push_back(alert);
+        status.warningSystems.push_back("Power");
+    }
+    
+    return status;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 }

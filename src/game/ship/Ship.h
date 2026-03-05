@@ -10,7 +10,7 @@ using game::ship::core::ShipCore;
 #include "src/game/items/cryptocard/CryptoCard.h"
 #include "src/world/ITransmitterSource.h"
 #include "src/world/types/RadarContactInput.h"
-
+#include "src/game/network/ClientShipCommand.h"
 
 class Ship : public ITransmitterSource
 {
@@ -63,6 +63,8 @@ public:
     ShipTypeId typeId() const { return m_typeId; }
 
     std::optional<WorldSignal> emitSignal() const override;
+
+    void applyCommand(const ClientShipCommand& cmd);
 
 private:
     ShipCore            m_core;

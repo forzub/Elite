@@ -40,6 +40,11 @@ public:
     const RadarDesc& getDesc() const { return m_desc; }
     const std::vector<RadarContact>& getContacts() const;
 
+    double getAvailablePower() const override;
+
+    std::string getLabel() const override { return m_label; }
+    
+
 private:
     RadarDesc                   m_desc;
     double                      m_availablePower = 0.0;
@@ -47,6 +52,8 @@ private:
     bool                        m_hasLock = false;
     std::vector<RadarContact>   m_detected;
     double                      m_scanTimer = 0.0;
+
+    std::string                 m_label = "radar";
 };
 
 }

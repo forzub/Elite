@@ -27,29 +27,44 @@ void PowerBus::registerConsumer(game::equipment::IPowerConsumer* consumer)
 
 void PowerBus::update()
 {
-    double available = m_reactor->currentOutput();
+
+  
+    // Устанавливаем запрос для насоса (охлаждения)
+    // Пока нет прямого доступа к насосу, делаем через consumer
+    
+    // 1. Собираем запросы
     double totalRequested = 0.0;
+    for (auto* c : m_consumers) {
+        double req = c->getRequestedPower();
+        totalRequested += req;
+    }
 
-    for (auto* c : m_consumers)
-        totalRequested += c->getRequestedPower();
+    // 2. устанавливаем мощ реакора 
+    double maxOutput = m_reactor->getMaxOutput();
+    double throttle = totalRequested / maxOutput * 1.025; // что бы не было - оверлоад
 
-    if (totalRequested <= available)
-    {
+    if (throttle > 1.0)
+        throttle = 1.0;
+
+    m_reactor->setThrottle(throttle);
+    
+    // 3. Распределяем энергию
+    // double available = m_reactor->getCurrentOutput();    
+
+    double available = m_reactor->getCurrentOutput();
+    
+    if (totalRequested <= available) {
         for (auto* c : m_consumers)
             c->setAvailablePower(c->getRequestedPower());
-
         m_overloaded = false;
-    }
-    else
-    {
+    } else {
         double ratio = available / totalRequested;
-
         for (auto* c : m_consumers)
             c->setAvailablePower(c->getRequestedPower() * ratio);
-
         m_overloaded = true;
     }
-  
+
+    
 }
 
 
@@ -59,7 +74,7 @@ void PowerBus::update()
 
 double PowerBus::availablePower() const
 {
-    return m_reactor->currentOutput();
+    return m_reactor->getCurrentOutput();
 }
 
 

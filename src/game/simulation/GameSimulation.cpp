@@ -195,6 +195,8 @@ void GameSimulation::update(double dt)
     m_snapshot.signals = m_worldSignals;
 
 
+    // ----- тут собираем snapshot для кораблей ----------
+
     for (auto& [id, shipPtr] : m_ships)
     {
         Ship& ship = *shipPtr;
@@ -216,7 +218,7 @@ void GameSimulation::update(double dt)
         
 
         s.radarContacts = ship.core().radar().getContacts();
-
+        s.shipCoreStatus = ship.core().getCoreStatus();
 
         m_snapshot.ships.push_back(s);
 

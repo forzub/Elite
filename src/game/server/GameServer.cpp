@@ -1,4 +1,5 @@
 #include "GameServer.h"
+#include "src/game/network/ClientMessage.h"
 #include <iostream>
 
 
@@ -36,6 +37,26 @@ void GameServer::update(double dt)
             ship.setControlState(cmd);
             queue.pop_front();
         }
+
+
+        // --- Обработка событийных ShipCommand ---
+        auto cmdIt = m_pendingClientShipCommands.find(id.value);
+        if (cmdIt != m_pendingClientShipCommands.end())
+        {
+            auto& cmdQueue = cmdIt->second;
+
+            while (!cmdQueue.empty())
+            {
+                const auto& shipCmd = cmdQueue.front();
+
+                std::cout << "GameServer::update  - ClientShipCommand received: "
+                        << shipCmd.type << "\n";
+
+                ship.applyCommand(shipCmd);
+
+                cmdQueue.pop_front();
+            }
+        }
     }
 
 
@@ -55,6 +76,38 @@ void GameServer::update(double dt)
 void GameServer::submitCommand(EntityId id,const ShipControlState& control)
 {
     m_pendingCommands[id.value].push_back(control);
+}
+
+
+
+
+
+void GameServer::receiveClientMessage(
+    EntityId playerId,
+    const game::network::ClientMessage& msg)
+{
+    
+    switch (msg.type)
+    {
+        case game::network::ClientMessageType::ControlInput:
+        {
+            const auto& control =
+                std::get<ShipControlState>(msg.payload);
+
+            submitCommand(playerId, control);
+            break;
+        }
+
+        case game::network::ClientMessageType::ClientShipCommand:
+{
+            
+            const auto& cmd =
+                std::get<ClientShipCommand>(msg.payload);
+
+            m_pendingClientShipCommands[playerId.value].push_back(cmd);
+            break;
+        }
+    }
 }
 
 

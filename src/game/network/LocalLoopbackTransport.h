@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ITransport.h"
+#include "src/game/network/ClientMessage.h"
 #include <queue>
 
 class GameServer;
@@ -26,6 +27,10 @@ public:
         SimulationSnapshot& outSnapshot) override;
 
     void update(float dt) override;
+
+    void sendClientMessage(
+        EntityId playerId,
+        const game::network::ClientMessage& msg) override;
 
 private:
     GameServer* m_server;

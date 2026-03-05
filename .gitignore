@@ -2,6 +2,7 @@
 /build/
 /out/
 /bin/
+/third_party/
 
 # cmake
 CMakeFiles/

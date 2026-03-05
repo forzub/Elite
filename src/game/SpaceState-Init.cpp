@@ -156,8 +156,6 @@ void SpaceState::initHUD()
 
     auto radar = RadarWidgetFactory::create(radarDesc.type, radarDesc.visualProfile);
     
-    
-    
     if (radarDesc.visual)
         radar->applyVisualConfig(*radarDesc.visual);
     
@@ -178,6 +176,8 @@ void SpaceState::initHUD()
 
     uiRoot->addChild(std::move(radar));
 
+    
+
 
 
 
@@ -192,4 +192,132 @@ void SpaceState::initHUD()
     m_hudRenderer.init(context());
     m_worldLabelRenderer.init(context());
 
+
+
+
+
+    initServerAndClient();
+
+}
+
+
+
+
+
+void SpaceState::initServerAndClient()
+{
+    
+    
+    m_debugServer = std::make_unique<game::debug::DebugServer>();
+    m_debugServer->start(8080);
+    
+    m_debugServer->onDamageRadiator([this](int index) {
+
+    
+
+        std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
+    
+        ClientShipCommand cmd;
+        cmd.type = ClientShipCommand::DamageRadiator;
+        cmd.index = index;
+        cmd.amount = 0.3;
+        m_debugCommands.push_back(cmd);
+    });
+
+    m_debugServer->onRepairAllPanels([this]() {
+
+       
+
+        std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
+        
+        ClientShipCommand cmd;
+        cmd.type = ClientShipCommand::RepairAllPanels;
+        // index и amount остаются 0 по умолчанию
+        m_debugCommands.push_back(cmd);
+    });
+    
+}
+
+
+
+
+json SpaceState::shipCoreStatusToJson(const game::ShipCoreStatus& status)
+{
+    json j;
+    
+    // ----- Реактор -----
+    j["reactor"]["temperature"] = status.reactor.temperature;
+    j["reactor"]["criticalTemp"] = status.reactor.criticalTemp;
+    j["reactor"]["output"] = status.reactor.outputMW;
+    j["reactor"]["maxOutput"] = status.reactor.maxOutputMW;
+    j["reactor"]["throttle"] = status.reactor.throttle;
+    j["reactor"]["instability"] = status.reactor.instability;
+    
+    const char* statusNames[] = {"Normal", "Overheating", "Critical", "Shutdown"};
+    j["reactor"]["status"] = statusNames[status.reactor.status];
+    j["reactor"]["integrity"] = status.reactor.integrity;
+    
+    j["reactor"]["heatMJ"] = status.reactor.generatedHeat;
+    j["reactor"]["heatMW"] = status.reactor.heatGenerationMW;
+    
+    // ----- Thermal -----
+    j["thermal"]["temperature"] = status.thermal.temperature;
+    j["thermal"]["thermalMass"] = status.thermal.thermalMass;
+    j["thermal"]["storedHeat"] = status.thermal.storedHeat;
+    j["thermal"]["heatVolume"] = status.thermal.heatVolume;
+    j["thermal"]["criticalTemp"] = status.thermal.thermalCriticalTemp;
+    
+    // ----- Cooling (только то, что есть) -----
+    j["cooling"]["coolantTemp"] = status.cooling.coolantTemp;
+    j["cooling"]["totalEfficiency"] = status.cooling.totalEfficiency;
+    j["cooling"]["allocatedPower"] = status.cooling.allocatedPowerMW;
+    j["cooling"]["requestedPower"] = status.cooling.requestedPowerMW;
+    j["cooling"]["radiatedPower"] = status.cooling.radiatedPowerMW;
+    j["cooling"]["pumpCapacity"] = status.cooling.pumpCapacity;
+    j["cooling"]["pumpHeatMJ"] = status.cooling.pumpHeatMJ;
+    j["cooling"]["dt"] = status.cooling.dt;
+    
+    // Панели
+    j["cooling"]["panels"]["count"] = status.cooling.panels.size();
+    j["cooling"]["panels"]["damagedCount"] = status.cooling.damagedPanelCount;
+    j["cooling"]["panels"]["criticalCount"] = status.cooling.criticalPanelCount;
+    
+    // Сетка для визуализации
+    for (const auto& panel : status.cooling.panels) {
+        j["cooling"]["panels"]["grid"].push_back(panel.health);
+    }
+    
+    // ----- PowerBus -----
+    j["powerBus"]["available"] = status.powerBus.availablePowerMW;
+    j["powerBus"]["overloaded"] = status.powerBus.overloaded;
+    j["powerBus"]["totalRequested"] = status.powerBus.totalRequestedMW;
+
+    
+    // Потребители
+    for (const auto& consumer : status.powerBus.consumers) {
+        json c;
+        c["name"] = consumer.name;
+        c["requested"] = consumer.requestedPowerMW;
+        c["allocated"] = consumer.allocatedPowerMW;
+        c["priority"] = consumer.priority;
+        c["operational"] = consumer.operational;
+        j["powerBus"]["consumers"].push_back(c);
+    }
+    
+    // ----- Алерты -----
+    for (const auto& alert : status.alerts) {
+        json a;
+        a["severity"] = alert.severity;
+        a["system"] = alert.system;
+        a["message"] = alert.message;
+        a["value"] = alert.value;
+        a["threshold"] = alert.threshold;
+        j["alerts"].push_back(a);
+    }
+    
+    j["warningSystems"] = status.warningSystems;
+    j["criticalSystems"] = status.criticalSystems;
+    j["timestamp"] = std::time(nullptr);
+    
+    return j;
 }

@@ -13,6 +13,7 @@
 #include "src/game/equipment/types/RadarVisualProfile.h"
 
 
+
 const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
 {
     static ShipDescriptor desc;
@@ -36,25 +37,25 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // Physics
         // -------------------------
 
-        desc.physics.angularAccel           = 3.0f;
-        desc.physics.angularDamping         = 2.5f;
+        desc.physics.angularAccel           = 3.0f;     // Угловое ускорение (рад/с²)	Масса 260т, инерция вращения
+        desc.physics.angularDamping         = 2.5f;     // Затухание вращения	Стабилизация после маневра
 
-        desc.physics.maxPitchRate           = 2.5f;   // рад/сек
-        desc.physics.maxYawRate             = 2.5f;
-        desc.physics.maxRollRate            = 3.0f;
+        desc.physics.maxPitchRate           = 2.5f;     // Макс. скорость тангажа (рад/с) 
+        desc.physics.maxYawRate             = 2.5f;     // Макс. скорость рысканья (рад/с)
+        desc.physics.maxRollRate            = 3.0f;     // Макс. скорость крена (рад/с)
         
-        desc.physics.maxCombatSpeed         = 500.0f;
-        desc.physics.maxCruiseSpeed         = 10000.0f;
-        desc.physics.throttleAccel          = 5.0f;
+        desc.physics.maxCombatSpeed         = 350.0f;   // Боевая скорость (м/с) = 1260 км/ч
+        desc.physics.maxCruiseSpeed         = 13500.0f; // Крейсерская (м/с) = 48000 км/ч
+        desc.physics.throttleAccel          = 5.0f;     // Рывок дросселя
         
-        desc.physics.autoLevelStrength      = 0.0f;
+        desc.physics.autoLevelStrength      = 0.0f;     // Автовыравнивание (отключено)
         
-        desc.physics.strafeAccel            = 20.0f;
-        desc.physics.strafeDamping          = 6.0f;
-        desc.physics.maxStrafeSpeed         = 50.0f;
+        desc.physics.strafeAccel            = 20.0f;    // Ускорение стрейфа
+        desc.physics.strafeDamping          = 6.0f;     // Затухание стрейфа
+        desc.physics.maxStrafeSpeed         = 80.0f;    // Макс. скорость стрейфа
 
-        desc.physics.maxGs                  = 5.0f;
-        desc.physics.turnRadius             = 20.0f;
+        desc.physics.maxGs                  = 5.0f;     // Макс. перегрузка (для пилота)
+        desc.physics.turnRadius             = 20.0f;    // Радиус поворота (м)
 
 
         // -------------------------
@@ -125,9 +126,9 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // Storage
         // ─────────────────────────
         desc.storage = {
-            .cargoMass       = 50,
-            .cargoVolume     = 30,
-            .missileCapacity = 4
+            .cargoMass       = 50,                          // Грузоподъемность (тонн)
+            .cargoVolume     = 140,                         // Объем груза (м³)
+            .missileCapacity = 4                            // Ракет
         };
 
         // ─────────────────────────
@@ -156,12 +157,40 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // ─────────────────────────
         // CoreSystems params 
         // ─────────────────────────
-        desc.core = {
-            100.0,   // reactorMaxOutputMW
-            500.0,   // thermalMass
-            100.0,   // maxSafeTemperature
-            2.0      // baseCoolingRate
-        };
+        desc.reactor.nominalPowerMW = 2500.0;           // Номинальная мощность (МВт)
+        desc.reactor.peakPowerMW    = 3200.0;           // Пиковая мощность (МВт)
+        
+        // desc.reactor.heatFactor     = 2.2;              // Коэф. тепловыделения При КПД 45%: 1/0.45 - 1 ≈ 1.22, плюс запас
+
+        desc.reactor.optimalTempK = 3500;               // 3500 — температура ядра, при которой КПД макс
+        desc.reactor.minTempK = 2500;                   // 2500 — мин. рабочая температура
+        desc.reactor.maxTempK = 4500;                   // 4500 — макс. до разрушения
+        
+
+        desc.reactor.temperature        = 300.0;           // Начальная температура (K)
+        desc.reactor.thermalMass  = 120.0;            // Теплоемкость (МДж/К)	Масса реактора 25т, теплоемкость стали ~0.5 МДж/т/К ×25т ×10 = 125
+        
+        desc.reactor.efficiencyMinTemp      =  0.35;            // 0.35 — мин КПД (при мин/макс температуре)
+        desc.reactor.efficiencyPeak         =  0.45;            // 0.45 — макс КПД
+        desc.reactor.efficiencyMaxTemp      =  0.4;             // 0.40 — мин КПД (при мин/макс температуре)
+
+       
+        // ─────────────────────────
+        // ThermalSystems params 
+        // ─────────────────────────
+        desc.thermal.thermalMassMJperK      = 100.0;    // Теплоемкость корпуса (МДж/К)	Масса корпуса 65т, теплоемкость композита ~0.8 МДж/т/К ×65т ×7 = 364 
+        desc.thermal.initialTempK           = 293.0;    // Начальная температура (K)	20°C
+
+        // ─────────────────────────
+        // CoolingSystems params                       Полная площадь корпуса: ~635 м²
+        // ─────────────────────────
+        desc.cooling.radiatorArea       = 380.0;    // Площадь радиаторов (м²)	Из ТТХ - 380 м²
+        desc.cooling.panelCount         = 40;       // количество панелей (160)
+        desc.cooling.emissivity         = 0.88;     // Коэф. черноты	Карбид кремния
+        desc.cooling.maxTransferPower   = 180,0;    // Макс. теплоперенос (МВт)
+        desc.cooling.nominalPower       = 2.0;      // Мощность насосов номинал (МВт)
+        desc.cooling.peakPower          = 4.5;      // Мощность насосов пик (МВт)
+
 
         RadarMountPoint mount;
         mount.normalizedPosition    = {0.5f, 0.81f};

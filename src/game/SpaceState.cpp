@@ -37,6 +37,7 @@
 #include "src/game/equipment/radar/RadarDesc.h"
 // #include "src/ui/components/RadarWidgetFactory.h"
 #include "ui/components/radar/RadarWidgetBase.h"
+#include "src/game/network/ClientMessage.h"
 
 
 
@@ -155,6 +156,8 @@ void SpaceState::handleInput()
     // === управление кораблём ===
     m_inputMapper.update(m_playerControl);
 
+    
+
 
     m_localTick++;
 
@@ -208,7 +211,6 @@ void SpaceState::update(float dt)
 
 
 
-
     const auto& ships = m_client->world().ships();
 
     auto it = ships.find(m_playerId.value);
@@ -230,7 +232,52 @@ void SpaceState::update(float dt)
         ship.transform.targetSpeed,
         ship.transform.cruiseActive,
         ship.signalPresentation.labelsVector()
-    );   
+    ); 
+    
+    
+    // --------------------------------------------------
+    // DEBUG: Обрабатываем отладочные команды из очереди
+    // --------------------------------------------------
+    {
+        std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
+        for (const auto& cmd : m_debugCommands)
+        {
+             
+            switch (cmd.type)
+            {
+                case ClientShipCommand::DamageRadiator:
+                {
+                    ClientShipCommand ship_cmd;
+                    ship_cmd.type = ClientShipCommand::DamageRadiator;
+                    ship_cmd.index = cmd.index;
+                    ship_cmd.amount = cmd.amount;
+
+                    game::network::ClientMessage  msg;
+                    msg.clientTick = 0;
+                    msg.type = game::network::ClientMessageType::ClientShipCommand;
+                    msg.payload = ship_cmd;
+                    m_client->sendMessage(msg);
+
+                    break;
+                }
+                case ClientShipCommand::RepairAllPanels:
+                {
+                    ClientShipCommand ship_cmd;
+                    ship_cmd.type = ClientShipCommand::RepairAllPanels;
+
+                    game::network::ClientMessage  msg;
+                    msg.clientTick = 0;
+                    msg.type = game::network::ClientMessageType::ClientShipCommand;
+                    msg.payload = ship_cmd;
+                    m_client->sendMessage(msg);
+                    break;
+                }
+                // ... другие команды
+            }
+        }
+        m_debugCommands.clear();
+    }
+    // --------------------------------------------------
     
 
 
@@ -263,6 +310,28 @@ void SpaceState::update(float dt)
 
 
 
+
+
+
+    
+
+
+    // DEBUG: отправляем состояние корабля в браузер
+    static float debugTimer = 0;
+    debugTimer += dt;
+    if (debugTimer > 0.1f)
+    {
+        debugTimer = 0;
+        
+        // Используем coreStatus, а не core()
+        const auto& status = ship.shipCoreStatus;  // ← вот так правильно
+        
+        // Конвертируем в JSON и отправляем
+        json j = shipCoreStatusToJson(status);
+        
+        if (m_debugServer)
+            m_debugServer->broadcastState(j.dump());
+    }
     
     
 }

@@ -115,12 +115,12 @@ const RadarDesc PPI_CRT_RADAR = []()
        
     RadarDesc desc;
 
-    desc.powerConsumption = 8.0;   
-    desc.heatGeneration = 0.4;     
-    desc.maxRange = 1000.0;           
-    desc.trackingSpeed = 0.0;      
-    desc.jamResistance = 0.0;      
-    desc.scanInterval = 0.0;        
+    desc.powerConsumption = 8.0;                    // Потребление (МВт)	0.3% от реактора
+    desc.heatGeneration = 0.4;                      // Тепловыделение (МВт)	5% от потребления (КПД 95%)
+    desc.maxRange = 1000.0;                         // Дальность (м)	Для FRN-U
+    desc.trackingSpeed = 0.0;                       // Не используется
+    desc.jamResistance = 0.0;                       // Не используется
+    desc.scanInterval = 0.0;                        // Не используется        
     
     // требования к платформе
     desc.requiredPowerCapacity = 50.0;
@@ -214,7 +214,7 @@ const RadarDesc PPI_LCD_RADAR = []()
     lcd_effects->digitalNoise.noiseParams.amount = 5.2f;
 
     // Параметры случайности
-    lcd_effects->lcdTearing.active = true;
+    lcd_effects->lcdTearing.active = false;
     lcd_effects->lcdTearing.minInterval = 0.0f;
     lcd_effects->lcdTearing.maxInterval = 0.0f;
     lcd_effects->lcdTearing.minDuration = 0.5f;
@@ -251,12 +251,12 @@ const RadarDesc PPI_LCD_RADAR = []()
 
     RadarDesc desc;
 
-    desc.powerConsumption = 8.0;   
-    desc.heatGeneration = 0.4;     
-    desc.maxRange = 1000.0;           
-    desc.trackingSpeed = 0.0;      
-    desc.jamResistance = 0.0;      
-    desc.scanInterval = 0.0;        
+    desc.powerConsumption = 8.0;                    // Потребление (МВт)	0.3% от реактора
+    desc.heatGeneration = 0.4;                      // Тепловыделение (МВт)	40% от потребления (КПД 60%)
+    desc.maxRange = 1000.0;                         // Дальность (м)	Для FRN-U
+    desc.trackingSpeed = 0.0;                       // Не используется
+    desc.jamResistance = 0.0;                       // Не используется
+    desc.scanInterval = 0.0;                        // Не используется
     
     // требования к платформе
     desc.requiredPowerCapacity = 50.0;

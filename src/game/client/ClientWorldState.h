@@ -16,6 +16,7 @@
 #include "src/world/types/SignalReceptionResult.h"
 #include "src/game/ship/sensors/ShipSignalPresentation.h"
 #include "src/game/equipment/radar/RadarContact.h"
+#include "src/game/simulation/ShipCoreStatus.h"
 
 struct PendingCommand
 {
@@ -37,7 +38,10 @@ struct ClientShipState
     ShipSignalPresentation                          signalPresentation; 
     std::vector<SignalReceptionResult>              receptions;
     std::vector<game::RadarContact>                 radarContacts;
+    game::ShipCoreStatus                            shipCoreStatus;
 };
+
+
 
 class ClientWorldState
 {
@@ -45,7 +49,9 @@ public:
 
     void applySnapshot(const SimulationSnapshot& snapshot);
     void update(float dt);
+
     const std::unordered_map<uint32_t, ClientShipState>& ships() const;
+    
     void predict(
         EntityId id,
         const ShipControlState& control,

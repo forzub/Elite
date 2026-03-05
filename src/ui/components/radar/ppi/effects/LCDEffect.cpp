@@ -40,7 +40,7 @@ void LCDEffect::updateGlitchState(game::PPILCDEffectsConfig::GlitchState& glitch
             (glitch.maxIntensity - glitch.minIntensity);
         
         glitch.elapsed = 0.0f;
-        printf("LCD Glitch STARTED! intensity=%.2f\n", glitch.intensity);
+        // printf("LCD Glitch STARTED! intensity=%.2f\n", glitch.intensity);
     }
     
     // Обновление активного глюка
@@ -51,7 +51,7 @@ void LCDEffect::updateGlitchState(game::PPILCDEffectsConfig::GlitchState& glitch
             glitch.timer = glitch.minInterval + 
                 (rand() / (float)RAND_MAX) * 
                 (glitch.maxInterval - glitch.minInterval);
-            printf("LCD Glitch ENDED\n");
+           
         }
     } else {
         glitch.timer -= dt;
@@ -129,64 +129,7 @@ void LCDEffect::applyToShader(unsigned int shaderProgram, float time,
                 m_data.freeze.freezeParams.flickerSpeed);
 }
 
-// void LCDEffect::applyToShader(unsigned int shaderProgram, float time,
-//                               float centerX, float centerY, 
-//                               float radiusX, float radiusY)
-// {   
-//     // Постоянные эффекты
-//     glUniform1f(glGetUniformLocation(shaderProgram, "backlightFlickerIntensity"), 
-//                 m_data.backlightFlicker.intensity);
-//     glUniform1f(glGetUniformLocation(shaderProgram, "pixelResponseIntensity"), 
-//                 m_data.pixelResponse.intensity);
-    
-//     // Cable Lines
-//     glUniform1f(glGetUniformLocation(shaderProgram, "cableLineIntensity"), 
-//                 m_data.cableLines.intensity);
-    
-//     // ===== TEARING =====
-//     glUniform1f(glGetUniformLocation(shaderProgram, "lcdTearingIntensity"), 
-//                 m_data.lcdTearing.intensity);
-    
-//     // Генерируем позиции разрывов
-//     float t = time * 0.1;
-//     glUniform1f(glGetUniformLocation(shaderProgram, "tearingLine1"), 0.3 + 0.1 * sin(t));
-//     glUniform1f(glGetUniformLocation(shaderProgram, "tearingLine2"), 0.6 + 0.1 * cos(t * 1.3));
-//     glUniform1f(glGetUniformLocation(shaderProgram, "tearingLine3"), 0.8 + 0.1 * sin(t * 0.7));
-    
-//     glUniform1f(glGetUniformLocation(shaderProgram, "tearingShift1"), 30.0 * m_data.lcdTearing.intensity);
-//     glUniform1f(glGetUniformLocation(shaderProgram, "tearingShift2"), 15.0 * m_data.lcdTearing.intensity);
-//     glUniform1f(glGetUniformLocation(shaderProgram, "tearingShift3"), 45.0 * m_data.lcdTearing.intensity);
-    
-    
-//     glUniform1f(glGetUniformLocation(shaderProgram, "interferenceIntensity"), 
-//                 m_data.interference.intensity);
-//     glUniform1f(glGetUniformLocation(shaderProgram, "interferenceSpeed"), 
-//                 m_data.interference.interferenceParams.speed);
-//     glUniform1f(glGetUniformLocation(shaderProgram, "interferenceAmplitude"), 
-//                 m_data.interference.interferenceParams.amplitude);
-    
-//     // Digital Noise
-//     glUniform1f(glGetUniformLocation(shaderProgram, "noiseIntensity"), 
-//                 m_data.digitalNoise.intensity);
-//     glUniform1f(glGetUniformLocation(shaderProgram, "noiseAmount"), 
-//                 m_data.digitalNoise.noiseParams.amount);
-    
-//     // Image Retention
-//     glUniform1f(glGetUniformLocation(shaderProgram, "retentionIntensity"), 
-//                 m_data.imageRetention.intensity);
-    
-//     // Freeze
-//     glUniform1f(glGetUniformLocation(shaderProgram, "freezeIntensity"), 
-//                 m_data.freeze.intensity);
-//     glUniform1i(glGetUniformLocation(shaderProgram, "freezeMode"), 
-//                 m_data.freeze.freezeParams.mode);
-//     glUniform1f(glGetUniformLocation(shaderProgram, "freezeHoldStrength"), 
-//                 m_data.freeze.freezeParams.holdStrength);
-//     glUniform1f(glGetUniformLocation(shaderProgram, "freezeStripCount"), 
-//                 m_data.freeze.freezeParams.stripCount);
-//     glUniform1f(glGetUniformLocation(shaderProgram, "freezeFlickerSpeed"), 
-//                 m_data.freeze.freezeParams.flickerSpeed);
-// }
+
 
 void LCDEffect::resetGlitches()
 {

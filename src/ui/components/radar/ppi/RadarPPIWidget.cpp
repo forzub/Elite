@@ -31,9 +31,9 @@ void RadarPPIWidget::init(game::RadarVisualProfile type)
 
     if (auto* lcd = dynamic_cast<LCDEffect*>(m_effect.get())) {
     // Включаем все с максимальной интенсивностью
-    // lcd->enableCableLines(true);
+    lcd->enableCableLines(false);
     // lcd->enableDigitalNoise(true);
-    lcd->enableTearing(true);
+    // lcd->enableTearing(true);
     // lcd->enableInterference(true);
     }
     // m_freezeTestEnabled = true;

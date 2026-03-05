@@ -61,6 +61,8 @@ void Ship::applyControl()
     updateControlIntent();
 }
 
+
+
 void Ship::updatePhysics(float dt, const WorldParams& world)
 {
     m_core.updatePhysics(dt, world);
@@ -169,4 +171,25 @@ std::optional<WorldSignal> Ship::emitSignal() const
         m_core.transform().position,
         m_id
     );
+}
+
+
+void Ship::applyCommand(const ClientShipCommand& cmd){
+    switch (cmd.type)
+    {
+        case ClientShipCommand::Type::DamageRadiator: // пример
+        {
+            core().damageRadiatorPanel(cmd.index, cmd.amount);
+            break;
+        }
+
+        case ClientShipCommand::Type::RepairAllPanels: // пример
+        {
+            core().repairAllRadiatorPanels();
+            break;
+        }
+
+        default:
+            break;
+    }
 }

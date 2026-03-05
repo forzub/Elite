@@ -34,9 +34,16 @@
 #include "ReactorSystem.h"
 #include "ThermalSystem.h"
 #include "PowerBus.h"
+#include "CoolingSystem.h"
 
 #include "src/world/types/RadarContactInput.h"
 #include "src/game/equipment/radar/RadarDesc.h"
+
+#include "src/game/simulation/ShipCoreStatus.h"
+
+#include "src/game/ship/core/systems/CoreSystem.h"
+// #include "src/game/network/ClientShipCommand.h"
+
 
 
 namespace game::ship::core
@@ -46,7 +53,6 @@ class ShipCore
 {
 public:
     ShipCore() = default;
-
     
     void init(
         ShipRole role,
@@ -117,6 +123,21 @@ public:
     ) const;
 
 
+
+
+    void damageRadiatorPanel(int index, double amount) {
+        m_cooling.damagePanel(index, amount);
+    }
+        
+    void repairAllRadiatorPanels() {
+        m_cooling.repairAllPanels();
+    }
+
+
+    
+
+    game::ShipCoreStatus getCoreStatus() const;
+    
     
     // ───────────────
     // Доступ к состоянию
@@ -138,12 +159,15 @@ public:
     const std::vector<SignalReceptionResult>&   signalResults() const       {return m_signalResults;} 
 
     const ShipDescriptor&                       desc() const                { return *m_desc; }
-    const RadarModule&                          radar() const               { return m_equipment.radar; }                                                           
+    const RadarModule&                          radar() const               { return m_equipment.radar; }   
+
+    const ReactorSystem&                        reactor() const               { return m_reactor; }                                                           
                                                                     
     void                                        debugPrintCoreSystems() const; 
 
     ShipSignalController                        m_signalController;
-    NpcSignalAwareness                          m_npcAwareness;                                                            
+    NpcSignalAwareness                          m_npcAwareness;       
+    
 
 private:
 
@@ -169,9 +193,7 @@ private:
     // RX
     SignalReceiver                              m_signalReceiver;
     std::vector<SignalReceptionResult>          m_signalResults;
-    // ShipSignalPresentation                      m_signalPresentation;
-    // TX
-    // WorldSignal                                 m_emittedSignal;
+
     
 
     // ───────────────
@@ -187,12 +209,16 @@ private:
     // ───────────────
     // CoreSystem
     // ───────────────
-    ReactorSystem                               m_reactor;      // 100 MW
-    ThermalSystem                               m_thermal; // инерция + предел
-    game::ship::core::PowerBus                  m_powerBus;
+    ReactorSystem                               m_reactor;  // временный пустой дескриптор
+    ThermalSystem                               m_thermal;        // значения по умолчанию
+    CoolingSystem                               m_cooling;                        // будет инициализирован позже
+    PowerBus                                    m_powerBus;                       // будет инициализирован позже
 
     double                                      m_radarDebugTimer = 0.0;
     
+    CoreSystem                           m_lifeSupport{0.01, "lifeSupport"}; // 5 МВт
+    CoreSystem                           m_avionics{0.02, "Avionics"};
+    CoreSystem                           m_radiationShield{35.0, "Radiation Shield"};
 };
 
 

@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 project(EliteGame LANGUAGES C CXX)
 
+include_directories(
+    ${CMAKE_SOURCE_DIR}/third_party/websocketpp
+    ${CMAKE_SOURCE_DIR}/third_party/asio/asio/include  # добавили /asio
+)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -126,6 +131,12 @@ add_executable(EliteGame
     src/ui/components/radar/ppi/effects/LCDEffect.cpp
     src/ui/components/radar/ppi/effects/CRTEffect.cpp
 
+    src/game/ship/core/CoolingSystem.cpp
+
+
+    src/WebSocket/DebugServer.cpp
+    src/game/ship/core/systems/CoreSystem.cpp
+
 )
 
 add_custom_target(copy_assets ALL
@@ -154,4 +165,15 @@ target_link_libraries(EliteGame PRIVATE
     opengl32
     Freetype::Freetype
     nlohmann_json::nlohmann_json
+    
+    # Библиотеки для ASIO/WebSocket
+    ws2_32      # уже есть
+    mswsock     # НУЖНО ДОБАВИТЬ (для AcceptEx)
+    iphlpapi    # можно добавить на всякий случай
+    pthread     # уже есть
+    
+    # Порядок важен - сначала наши, потом системные
+    ${FREETYPE_LIBRARY}
+    glfw3
+    opengl32
 )

@@ -25,6 +25,8 @@
 #include "src/game/equipment/types/RadarMountPoint.h"
 
 
+
+
 struct ShipIdentity
 {
     std::string         shipType;      // "elite_cobra_mk1" 
@@ -108,6 +110,44 @@ struct CockpitData
         std::string glassTexturePath;
     };
 
+struct ReactorDescriptor
+{
+    double nominalPowerMW;      // 2500 — пик КПД
+    double peakPowerMW;         // 3200 — макс эл.
+    
+
+    // double heatFactor;       
+    
+    double optimalTempK;        // 3500 — температура ядра, при которой КПД макс
+    double minTempK;            // 2500 — мин. рабочая температура
+    double maxTempK;            // 4500 — макс. до разрушения
+    
+    
+    double temperature;          
+    double thermalMass;          
+    
+    double efficiencyMinTemp;           // 0.35 — мин КПД (при мин температуре)
+    double efficiencyPeak;              // 0.45 — макс КПД
+    double efficiencyMaxTemp;           // 0.40 — мин КПД (при макс температуре)          
+};
+
+struct CoolingDescriptor
+{
+    double radiatorArea;        // м² (1600 для Cobra)
+    int panelCount;             // количество панелей (160)
+    double emissivity;          // 0.85
+    double maxTransferPower;    // МВт (90)
+    double nominalPower;        // МВт (2)
+    double peakPower;           // МВт (4)
+    
+};
+
+struct ThermalDescriptor
+{
+    double thermalMassMJperK    = 850.0;   // теплоемкость корпуса
+    double initialTempK         = 293.0;
+};
+
 
     struct ShipDescriptor
 {
@@ -126,7 +166,9 @@ struct CockpitData
     // НОВОЕ: пресеты оборудования по умолчанию
 
     
-    CoreConfig                      core;
+    ReactorDescriptor               reactor;
+    CoolingDescriptor               cooling;
+    ThermalDescriptor               thermal;
     EquipmentPresets                defaultEquipment;
     std::optional<CockpitData>      cockpit;
 

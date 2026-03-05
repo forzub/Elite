@@ -1,56 +1,34 @@
 #include "ThermalSystem.h"
-#include <algorithm>
 
 namespace game::ship::core
 {
 
-ThermalSystem::ThermalSystem(double thermalMass,
-                             double maxSafeTemp)
-    : m_thermalMass(thermalMass),
-      m_maxSafeTemperature(maxSafeTemp)
+
+
+ThermalSystem::ThermalSystem(const ThermalDescriptor& desc)
+    : m_temperature(desc.initialTempK)
+    , m_thermalMass(desc.thermalMassMJperK)
 {
 }
 
-void ThermalSystem::addHeat(double amount)
+
+void ThermalSystem::addHeat(double energyMJ)
 {
-    m_temperature += amount / m_thermalMass;
+    if (m_thermalMass > 0.0) {
+            m_temperature += energyMJ / m_thermalMass;
+            m_storedHeat += energyMJ;   // накопленное от всех тепло - отведенное на радиаторы, MJ
+            m_heatVolume += energyMJ;   // общее количество накопленного тепла, MJ
+        }
+
 }
 
-void ThermalSystem::setCoolingRate(double rate)
-{
-    m_coolingRate = rate;
-}
 
-void ThermalSystem::update(double dt)
-{
-    // охлаждение
-    m_temperature -= m_coolingRate * dt;
-
-    if (m_temperature < 0.0)
-        m_temperature = 0.0;
-
-    // если перегрев — деградация
-    if (m_temperature > m_maxSafeTemperature)
-    {
-        double overload = m_temperature - m_maxSafeTemperature;
-        m_structuralIntegrity -= overload * 0.0001 * dt;
-        m_structuralIntegrity = std::max(0.0, m_structuralIntegrity);
+void ThermalSystem::removeHeat(double energyMJ) {
+        if (m_thermalMass > 0.0) {
+            m_temperature -= energyMJ / m_thermalMass;
+            m_storedHeat -= energyMJ;
+            if (m_temperature < 0.0) m_temperature = 0.0;
+        }
     }
-}
-
-double ThermalSystem::temperature() const
-{
-    return m_temperature;
-}
-
-double ThermalSystem::maxSafeTemperature() const
-{
-    return m_maxSafeTemperature;
-}
-
-double ThermalSystem::integrity() const
-{
-    return m_structuralIntegrity;
-}
 
 }

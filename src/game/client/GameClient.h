@@ -7,6 +7,7 @@
 // #include "src/game/SpaceState.h"
 #include "src/scene/EntityID.h"
 #include "src/game/network/ITransport.h"
+#include "src/game/network/ClientMessage.h"
 
 class GameServer;
 
@@ -24,6 +25,7 @@ public:
     const ClientWorldState& world() const;
     ClientWorldState& world();
     
+    void sendMessage(const game::network::ClientMessage& msg);
 
 
 
@@ -35,18 +37,18 @@ private:
 
 private:
     // GameServer* m_server;
-    ITransport* m_transport;
-    EntityId    m_playerId;
+    ITransport*                     m_transport;
+    EntityId                        m_playerId;
 
-    ClientWorldState m_world;
+    ClientWorldState                m_world;
 
     struct TimedInput
     {
-        uint32_t controlTick;
-        ShipControlState control;
+        uint32_t                    controlTick;
+        ShipControlState            control;
     };
 
-    std::deque<TimedInput> m_pendingInputs;
-    float m_accumulator = 0.0f;
-    uint32_t m_clientTick = 0;
+    std::deque<TimedInput>          m_pendingInputs;
+    float                           m_accumulator = 0.0f;
+    uint32_t                        m_clientTick = 0;
 };

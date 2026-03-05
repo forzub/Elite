@@ -100,7 +100,10 @@ void RadarModule::setAvailablePower(double power)
 }
 
 
-
+double RadarModule::getAvailablePower() const 
+{
+    return m_availablePower;
+}
 
 
 
@@ -111,7 +114,7 @@ double RadarModule::getHeatGeneration() const
     if (!isOperational())
         return 0.0;
 
-    return m_desc.heatGeneration;
+    return m_availablePower * m_desc.heatGeneration;
 }
 
 

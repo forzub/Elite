@@ -38,7 +38,15 @@
 #include "src/scene/SceneRenderer.h"
 #include "src/ui/components/radar/RadarWidgetBase.h" 
 
+#include "src/WebSocket/DebugServer.h" 
+#include "src/game/network/ClientShipCommand.h"
+
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
+
 class StateStack;
+
 
 enum class ScreenLayout
 {
@@ -68,6 +76,10 @@ public:
     void initHUD();
 
 
+
+    void initServerAndClient();
+    json shipCoreStatusToJson(const game::ShipCoreStatus& status);
+
 private:
 
     
@@ -90,9 +102,7 @@ private:
     
     WorldLabelRenderer                          m_worldLabelRenderer;
 
-    // Camera                                      m_camera;               // камера, следующая за кораблём
-    // Ship                                        m_playerShip;
-    // std::vector<Ship>                           m_npcShips;             // корабли NPC и remote players
+
 
     std::unique_ptr<UIContainer>                uiRoot;
     UICameraView*                               rearView = nullptr; 
@@ -108,10 +118,10 @@ private:
     std::unique_ptr<ClientWorldState>               m_clientWorld;
 
     PlayerInputMapper                               m_inputMapper;
-    ShipControlState                                m_playerControl;
     std::unique_ptr<PlayerShipView>                 m_playerView;
     EntityId                                        m_playerId;
     
+    ShipControlState                                m_playerControl;
     std::deque<ShipControlState>                    m_sentInputs;
     uint32_t m_localTick = 0;
 
@@ -126,4 +136,9 @@ private:
     // =======================================
     RadarWidgetBase*                                m_radarWidget = nullptr;
     SceneRenderer                                   m_sceneRenderer;
+
+
+    std::unique_ptr<game::debug::DebugServer>       m_debugServer;
+    std::vector<ClientShipCommand>                  m_debugCommands;
+    std::mutex                                      m_debugCommandsMutex;                // для защиты очереди
 };

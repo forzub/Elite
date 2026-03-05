@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include "src/game/ship/core/ShipControlState.h"
+ 
 
 struct ShipControlState
 {
@@ -18,4 +18,5 @@ struct ShipControlState
     float forwardInput = 0.0f;
 
     uint32_t controlTick;
+
 };

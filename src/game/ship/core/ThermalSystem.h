@@ -1,4 +1,5 @@
 #pragma once
+#include "src/game/ship/ShipDescriptor.h"
 
 namespace game::ship::core
 {
@@ -6,26 +7,38 @@ namespace game::ship::core
 class ThermalSystem
 {
 public:
-    ThermalSystem(double thermalMass, double maxSafeTemp);
     ThermalSystem() = default;
+    explicit ThermalSystem(const ThermalDescriptor& desc);
 
-    void addHeat(double amount);
-    void setCoolingRate(double rate);   // базовое охлаждение
+    void addHeat(double energyMJ);
+    void removeHeat(double energyMJ);
 
-    void update(double dt);
+    void setTemperature(double tempK) { m_temperature = tempK; }
+    double getTemperature() const { return m_temperature; }
+    
+    void setThermalMass(double mass) { m_thermalMass = mass; }
+    double getThermalMass() const { return m_thermalMass; }
+    
+    void update(double dt) { } // пока пусто
+    double getStoredHeat() const { return m_storedHeat; }
 
-    double temperature() const;
-    double maxSafeTemperature() const;
 
-    double integrity() const; // структурная целостность
+    void resetHeatVolume() { m_heatVolume = 0; m_storedHeat = 0;}
+    double getHeatVolume() const { return m_heatVolume; } 
+    double getCriticalTemp() const { return m_thermalCriticalTemp; } 
+
+    
+
 
 private:
-    double m_temperature = 0.0;
-    double m_thermalMass = 1.0;         // инерция нагрева
-    double m_coolingRate = 0.0;
+    double m_thermalMass = 100.0;
+    double m_temperature = 293.0;
+    double m_recomendTemp = 1100.0;
+    double m_thermalCriticalTemp = 1350.0;
 
-    double m_maxSafeTemperature = 100.0;
-    double m_structuralIntegrity = 1.0;
+    double m_storedHeat = 0;
+    double m_heatVolume = 0;
+    
 };
 
 }

@@ -64,6 +64,8 @@ public:
 protected:
     bool        m_enabled = false;
     Integrity   m_integrity;
+
+
 };
 
 }

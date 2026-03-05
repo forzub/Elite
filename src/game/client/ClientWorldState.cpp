@@ -33,9 +33,9 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.renderTransform = s.transform;
             state.radarContacts = s.radarContacts;
 
-            // state.labels = s.labels;
             m_ships[s.id.value] = state;
             state.receptions = s.receptions;
+            state.shipCoreStatus = s.shipCoreStatus;
         }
         else
         {
@@ -43,7 +43,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.transform = s.transform;
             state.receptions = s.receptions;
             state.radarContacts   = s.radarContacts;
-            // state.labels    = s.labels;
+            state.shipCoreStatus = s.shipCoreStatus;
         }
 
     }

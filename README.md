@@ -34,6 +34,39 @@ if (it == m_ships.end())
         }
   ```
 ### передача сообщение с клиента на сервер
+
+- сервер, активация, прием команд:
+``` cpp
+void SpaceState::initServerAndClient()
+{    
+    m_debugServer = std::make_unique<game::debug::DebugServer>();
+    m_debugServer->start(8080);
+    
+    m_debugServer->onDamageRadiator([this](int index) {
+
+    
+
+        std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
+    
+        ClientShipCommand cmd;
+        cmd.type = ClientShipCommand::DamageRadiator;
+        cmd.index = index;
+        cmd.amount = 0.3;
+        m_debugCommands.push_back(cmd);
+    });
+
+    m_debugServer->onRepairAllPanels([this]() {
+
+        std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
+        
+        ClientShipCommand cmd;
+        cmd.type = ClientShipCommand::RepairAllPanels;
+        // index и amount остаются 0 по умолчанию
+        m_debugCommands.push_back(cmd);
+    });
+    
+}
+```
 - src\game\network\ClientShipCommand.h
 - src\game\network\ClientMessage.h  - описание создания сообщения.
 - void SpaceState::update(float dt) - отправка сообщений:
@@ -103,3 +136,7 @@ if (it == m_ships.end())
             }
         }
 ```
+### передача данных на телеметрию:
+- src\game\simulation\ShipCoreStatus.h - то, что передается.
+- game::ShipCoreStatus ShipCore::getCoreStatus() const - сбор данных
+- json SpaceState::shipCoreStatusToJson(const game::ShipCoreStatus& status) - поля для json

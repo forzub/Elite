@@ -1,22 +1,28 @@
 #pragma once
 
-#include "DamageType.h"
-#include "DamageSeverity.h"
+#include <glm/vec3.hpp>
 
 namespace game::damage
 {
 
+enum class DamageType
+{
+    Laser,
+    Explosion,
+    Collision,
+    Radiation,
+    EMP
+};
+
 struct DamageEvent
 {
-    DamageType      type;
-    DamageSeverity  severity;
+    DamageType type;
 
-    // 0.0f = постоянное воздействие
-    // > 0.0f = временное (секунды)
-    float           duration = 0.0f;
+    double energy;          // энергия воздействия
 
-    // внутренняя служебная величина
-    float           elapsed = 0.0f;
+    glm::vec3 position;     // точка удара (world space)
+
+    glm::vec3 direction;    // направление удара
 };
 
 }

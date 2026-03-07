@@ -53,6 +53,7 @@ struct PowerConsumerStatus {
     double allocatedPowerMW = 0.0;
     int priority = 0; // 0=Critical, 1=Combat, 2=Mobility, 3=Support, 4=Comfort
     bool operational = true;
+    double heatTransfer = 0.0f;
 };
 
 struct PowerBusStatus {

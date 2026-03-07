@@ -13,10 +13,12 @@ void RadarModule::init(const RadarDesc& desc)
 {
     m_desc = desc;
     setEnabled(true);
+    m_priority = game::equipment::PowerPriority::Comfort;
 
     std::cout << "[INFO] radar installed\n";
     std::cout << "  |- maxRange: " << m_desc.maxRange << "\n";
     std::cout << "  |- power   : " << m_desc.powerConsumption << "\n";
+    
 
 }
 

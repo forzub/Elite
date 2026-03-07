@@ -293,6 +293,17 @@
             overflow-y: auto;
         }
 
+        .heat-grid {
+            display: flex;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-top: 5px;
+            font-size: 11px;
+                width: 100%;
+            overflow-y: auto;
+            flex-direction: column;
+        }
+
         #alerts-list {
     min-height: 60px;
     overflow-y: auto;
@@ -397,11 +408,15 @@
                     <span class="stats-label">Saturation:</span>
                     <span class="stats-value" id="coolant-saturation">-</span>
                 </div>
+                <div class="stats-row">
+                    <span class="stats-label">Heat-list:</span>
+                    <div id="heat-list" class="heat-grid"></div>
+                </div>
             </div>
             
             <!-- ========== НАСОСЫ ========== -->
             <div class="card">
-                <h2>🔥 PUMPS</h2>
+                <h2>🔥 PUMPS - transfer from the reactor</h2>
                 
                 <div class="stats-row">
                     <span class="stats-label">Power (alloc/req):</span>
@@ -644,7 +659,7 @@
                 // Temperature
                 const tempEl = document.getElementById('coolant-temp');
                 tempEl.textContent = formatNumber(t.temperature, 1) + ' / ' + formatNumber(t.criticalTemp, 1) + ' K';
-                tempEl.style.color = t.temperature > 900 ? '#f00' : (t.temperature > 800 ? '#ff0' : '#0f0');
+                tempEl.style.color = t.temperature > 1300 ? '#f00' : (t.temperature > 1210 ? '#ff0' : '#0f0');
                 
                 const criticalTemp = t.criticalTemp || 1350;
                 const tempRatio = (t.temperature / criticalTemp) * 100;
@@ -674,6 +689,33 @@
                     Math.min(saturation, 100).toFixed(1) + '%';
                 
                 document.getElementById('raw-thermal').textContent = JSON.stringify(t, null, 2);
+
+                if (data.powerBus) {
+                    const pb = data.powerBus;
+                    // Heat list
+                    if (pb.consumers && pb.consumers.length) {
+                        let consumersHtml = '';
+                        pb.consumers.forEach(c => {
+                            const percent = c.requested > 0 ? (c.allocated / c.requested * 100) : 0;
+                            const color = percent < 50 ? '#f90' : '#0f0';
+                            
+                            let priorityIcon = '';
+                            if (c.priority === 0) priorityIcon = '⚡';
+                            else if (c.priority === 1) priorityIcon = '🔫';
+                            else if (c.priority === 2) priorityIcon = '🚀';
+                            else priorityIcon = '💨';
+                            
+                            consumersHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                                <span><span style="color:#888;">${priorityIcon}</span> ${c.name || '?'}:</span>
+                                <span style="color:${color}">${formatNumber(c.heatTransfer * udt)} / ${formatNumber(c.heatTransfer)}</span>
+                            </div>`;
+                        });
+                        document.getElementById('heat-list').innerHTML = consumersHtml;
+                    }
+                }
+
+
+
             }
             
             // ========== COOLING ==========

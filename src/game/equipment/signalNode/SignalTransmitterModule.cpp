@@ -12,6 +12,9 @@ double SignalTransmitterModule::getRequestedPower() const
 void SignalTransmitterModule::setAvailablePower(double power)
 {
     m_availablePower = power;
+    if (m_availablePower > 0.0){
+        setEnabled(true);
+    }
 }
 
 double SignalTransmitterModule::getHeatGeneration() const

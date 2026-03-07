@@ -24,6 +24,8 @@
 #include "game/equipment/radar/RadarDesc.h"
 #include "src/game/equipment/types/RadarMountPoint.h"
 
+// ------ DAMAGE -------
+#include "game/damage/HitVolume.h"
 
 
 
@@ -149,6 +151,28 @@ struct ThermalDescriptor
 };
 
 
+// ------- DAMAGE -------
+struct HitVolumeDescriptor
+{
+    game::damage::HitZoneType zone;
+    std::string label;
+    int priority = 0;
+    glm::vec3 center;
+    glm::vec3 size;
+    bool destructible = false;
+    int meshChunk = -1;
+};
+
+struct RadiatorDescriptor
+{
+    int panelCount;
+    float width;
+    float height;
+    glm::vec3 center;
+    bool procedural = true; // = true - панели генерируются, false - используем vector панелей
+};
+
+
     struct ShipDescriptor
 {
     ShipTypeId          typeId;
@@ -175,4 +199,8 @@ struct ThermalDescriptor
     double                          radarCrossSection = 1.0; // коэфициент отражающей поверхности корпуса
     double                          radarSignatureModifier = 1.0; // 1.0 = без изменений для Stealth-эффект через RCS
     RadarMountPoint                 radarMount;
+
+    // -------- DAMAGE -------
+    std::vector<HitVolumeDescriptor>        hitVolumes;
+    RadiatorDescriptor                      radiator;
 };

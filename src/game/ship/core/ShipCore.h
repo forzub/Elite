@@ -28,6 +28,8 @@
 
 #include "src/world/WorldParams.h"
 
+#include "src/game/math/MathTransform.h"
+
 #include "src/game/ship/ShipController.h"
 #include "src/world/types/SignalReceptionResult.h"
 
@@ -44,6 +46,8 @@
 #include "src/game/ship/core/systems/CoreSystem.h"
 // #include "src/game/network/ClientShipCommand.h"
 
+#include "game/damage/HitComponent.h"
+#include "src/game/ship/damage/ShipDamageHandler.h"
 
 
 namespace game::ship::core
@@ -134,10 +138,9 @@ public:
     }
 
 
-    
-
     game::ShipCoreStatus getCoreStatus() const;
-    
+
+
     
     // ───────────────
     // Доступ к состоянию
@@ -166,8 +169,18 @@ public:
     void                                        debugPrintCoreSystems() const; 
 
     ShipSignalController                        m_signalController;
-    NpcSignalAwareness                          m_npcAwareness;       
+    NpcSignalAwareness                          m_npcAwareness;    
     
+    
+    // --------- DAMAGE --------
+    game::damage::HitComponent& getHitComponent(){ return m_hitComponent; }
+    const game::damage::HitComponent& getHitComponent() const{ return m_hitComponent; }
+    void applyDamage(const game::damage::DamageEvent& event);
+
+    void exportHitVolumes() const;
+    void restoreVolume(int index);
+
+
 
 private:
 
@@ -186,6 +199,12 @@ private:
     ShipControlState                            m_control;
     ShipParams                                  m_params;
     ShipController                              m_controller;
+
+    // ───────────────
+    // Math
+    // ───────────────
+    game::math::MathTransform                   m_mathTransform;
+
 
     // ───────────────
     // Сигналы
@@ -216,9 +235,15 @@ private:
 
     double                                      m_radarDebugTimer = 0.0;
     
-    CoreSystem                           m_lifeSupport{0.01, "lifeSupport"}; // 5 МВт
-    CoreSystem                           m_avionics{0.02, "Avionics"};
-    CoreSystem                           m_radiationShield{35.0, "Radiation Shield"};
+    CoreSystem                           m_lifeSupport{0.01, "lifeSupport", game::equipment::PowerPriority::Critical}; // 5 МВт
+    CoreSystem                           m_avionics{0.02, "Avionics", game::equipment::PowerPriority::Critical};
+    CoreSystem                           m_radiationShield{53.0, "Radiation Shield", game::equipment::PowerPriority::Combat};
+
+    
+    // --------- DAMAGE --------
+    game::damage::HitComponent          m_hitComponent;
+    ShipDamageHandler                   m_damageHandler;
+
 };
 
 

@@ -23,6 +23,11 @@ void ReactorSystem::init(const ReactorDescriptor& desc)
     m_structuralIntegrity = 1.0;
     m_status = ReactorStatus::Normal;
     m_workTemp = 1500.0;
+
+
+    m_emergencyMode = false;
+    m_emergencyPowerLimit = 12.0; // Можно сделать параметром дескриптора
+    m_emergencyHysteresis = 50.0;
 }
 
 
@@ -38,8 +43,14 @@ double ReactorSystem::getCurrentOutput() const
 {
     if (m_status == ReactorStatus::Shutdown)
         return 0.0;
+
+    double baseOutput = m_throttle * getMaxOutput();
+    if (m_emergencyMode)
+    {
+        return std::min(baseOutput, m_emergencyPowerLimit);
+    }
     
-    return m_throttle * getMaxOutput();
+    return baseOutput;
 }
 
 
@@ -98,8 +109,11 @@ void ReactorSystem::update(double dt, ThermalSystem& coolant, double pumpCapacit
     m_temperature -= transferredMJ / m_thermalMass;
     coolant.addHeat(transferredMJ);
 
-    m_heatVolume =  P_heat;
-    m_heatGenerationMW =  P_heat * dt;
+    m_heatVolume =  pumpCapacityMW;
+    m_heatGenerationMW =  transferredMJ;
+
+    updateEmergencyMode();
+    updateStatus();
 }
 
 
@@ -123,6 +137,34 @@ void ReactorSystem::updateStatus()
         m_status = ReactorStatus::Critical;
     }
 }
+
+
+
+
+
+void ReactorSystem::updateEmergencyMode()
+{
+    // Логика входа в аварийный режим
+    if (!m_emergencyMode)
+    {
+        // Входим в аварийный режим при достижении Warning температуры
+        if (m_temperature >= m_maxWarringTemp)
+        {
+            m_emergencyMode = true;
+            
+        }
+    }
+    else // Мы в аварийном режиме
+    {
+        // Выходим из аварийного режима, когда температура упала ниже рабочей с гистерезисом
+        if (m_temperature <= m_workTemp)
+        {
+            m_emergencyMode = false;
+           
+        }
+    }
+}
+
 
 
 

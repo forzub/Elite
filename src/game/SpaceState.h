@@ -41,6 +41,8 @@
 #include "src/WebSocket/DebugServer.h" 
 #include "src/game/network/ClientShipCommand.h"
 
+#include "game/damage/TestDamageHandler.h"
+
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
@@ -79,6 +81,8 @@ public:
 
     void initServerAndClient();
     json shipCoreStatusToJson(const game::ShipCoreStatus& status);
+
+    void testDamageSystem();
 
 private:
 
@@ -141,4 +145,7 @@ private:
     std::unique_ptr<game::debug::DebugServer>       m_debugServer;
     std::vector<ClientShipCommand>                  m_debugCommands;
     std::mutex                                      m_debugCommandsMutex;                // для защиты очереди
+
+
+    game::damage::TestDamageHandler handler;
 };

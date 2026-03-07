@@ -44,6 +44,9 @@ public:
 
     std::string getLabel() const override { return m_label; }
     
+    game::equipment::PowerPriority getPriority() const override { 
+        return m_priority; 
+    }
 
 private:
     RadarDesc                   m_desc;
@@ -54,6 +57,7 @@ private:
     double                      m_scanTimer = 0.0;
 
     std::string                 m_label = "radar";
+    game::equipment::PowerPriority m_priority = game::equipment::PowerPriority::Comfort;
 };
 
 }

@@ -1,28 +1,3 @@
-// #pragma once
-
-// #include "src/game/equipment/EquipmentModule.h"
-// #include "ReceiverDesc.h"
-
-// namespace game
-// {
-
-// struct ReceiverModule : public EquipmentModule
-// {
-//     EquipmentDescriptor desc;   // ← ТЫ ЗАБЫЛ ЭТО ПОЛЕ
-//     float sensitivity = 1.0f;
-
-//     void init(const ReceiverDesc& d)
-//     {
-//         desc = d.base;
-//         sensitivity = d.sensitivity;
-
-//         enabled = true;
-//     }
-// };
-
-// }
-
-
 #pragma once
 
 #include "src/game/equipment/EquipmentModule.h"
@@ -48,10 +23,18 @@ public:
     double getHeatGeneration() const override;
 
     double sensitivity() const { return m_desc.sensitivity; }
+    std::string getLabel() const override { return m_label; }
+
+    game::equipment::PowerPriority getPriority() const override { 
+        return m_priority; 
+    }
 
 private:
     ReceiverDesc m_desc;
     double m_availablePower = 0.0;
+
+    std::string                     m_label = "receiver";
+    game::equipment::PowerPriority  m_priority = game::equipment::PowerPriority::Critical;
 };
 
 }

@@ -1,4 +1,5 @@
 #include "ThermalSystem.h"
+#include <iostream>
 
 namespace game::ship::core
 {
@@ -20,6 +21,9 @@ void ThermalSystem::addHeat(double energyMJ)
             m_heatVolume += energyMJ;   // общее количество накопленного тепла, MJ
         }
 
+        // std::cout << "energyMJ " <<  energyMJ << "\n";
+        // std::cout << "m_storedHeat " <<  m_storedHeat << "\n";
+
 }
 
 
@@ -29,6 +33,9 @@ void ThermalSystem::removeHeat(double energyMJ) {
             m_storedHeat -= energyMJ;
             if (m_temperature < 0.0) m_temperature = 0.0;
         }
+
+        // std::cout << "-m_storedHeat " <<  m_storedHeat << "\n\n";
+    
     }
 
 }

@@ -23,7 +23,7 @@ public:
     };
 
 public:
-    explicit CoreSystem(double nominalPowerMW, std::string label);
+    explicit CoreSystem(double nominalPowerMW, std::string label, game::equipment::PowerPriority priority);
 
     void update(double dt);
 
@@ -33,6 +33,9 @@ public:
     double getRequestedPower() const override;
     void setAvailablePower(double powerMW) override;
     double  getAvailablePower() const override;
+    game::equipment::PowerPriority getPriority() const override { 
+        return m_priority; 
+    }
 
     // ---- IHeatSource ----
     double getHeatGeneration() const override;
@@ -42,6 +45,7 @@ private:
     double m_nominalPowerMW;     // Номинальная мощность
     double m_allocatedPowerMW;   // Выделенная мощность
     double m_heatGeneratedMW;    // Генерируемое тепло
+    game::equipment::PowerPriority m_priority = game::equipment::PowerPriority::Critical;
 
     std::string m_label;
 

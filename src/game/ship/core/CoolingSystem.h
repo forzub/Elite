@@ -19,7 +19,7 @@ struct PrimaryCircuit {
     // ==========================
     // ----------- НАСОС - первый контур ------
     // ==========================
-    double maxPumpPower = 6.0;          // МВт (эл. макс насоса)
+    double maxPumpPower = 8.0;          // МВт (эл. макс насоса)
     double maxHeatTransfer = 180.0;     // МВт (макс тепла от насоса)
     double lastReactorTemp = 0;         // сохраняем последнюю температуру реактора.
     double powerSteep = 1;              // шаг уеличения мощности насоса
@@ -35,6 +35,7 @@ struct PrimaryCircuit {
     // коэфиуиент теплообмена 1 контура
     double m_heatExchangeCoeff  = 10.0;   // МВт/К
     bool isPumpActive           = false;
+    bool coolantOverheatFlag    = false;
 };
 
 struct SecondaryCircuit
@@ -43,7 +44,7 @@ struct SecondaryCircuit
     // ----------- ПАНЕЛИ - второй контур------
     // ==========================
     std::vector<RadiatorPanel> panels;
-    double emissivity = 0.95;           // 0..1
+    double emissivity = 1.2;           // 0..1
     double maxCoolantTemp = 900.0;      // K (макс температура антифриза)
 };
 
@@ -75,7 +76,7 @@ public:
     void setAvailablePower(double power) override;
     double getAvailablePower() const override { return m_primaryCircuit.allocatedPower; }
     game::equipment::PowerPriority getPriority() const override { 
-        return game::equipment::PowerPriority::Critical; 
+        return m_priority; 
     }
     std::string getLabel() const override { return "CoolingSystem"; }
     
@@ -151,6 +152,8 @@ private:
     double getEffectiveArea() const;
 
     PrimaryCircuit      m_primaryCircuit;
+    game::equipment::PowerPriority m_priority = game::equipment::PowerPriority::Critical;
+    
     SecondaryCircuit    m_secondaryCircuit;
     ReactorState        m_reactorState;
     
@@ -158,10 +161,12 @@ private:
     double m_coolantTemp = 293.0;
     double m_dt = 0.0;
 
+    
     // Константы
     static constexpr double STEFAN_BOLTZMANN = 5.67e-14;    // МВт/м²/К⁴
     static constexpr double SPACE_TEMP = 2.725;             // K
     static constexpr double PUMP_EFFICIENCY = 20.0;         // 1 МВт эл = 20 МВт тепла
+    static constexpr double RADIATOR_EFFECTIVENESS = 2.5;   // вводим для баланса по теплоохлаждению через панели (не реальное)
 };
 
 }

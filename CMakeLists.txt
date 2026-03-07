@@ -137,6 +137,13 @@ add_executable(EliteGame
     src/WebSocket/DebugServer.cpp
     src/game/ship/core/systems/CoreSystem.cpp
 
+    src/game/damage/DamageTestObject.cpp
+    src/game/damage/DamageSystem.cpp
+    src/game/ship/damage/ShipDamageHandler.cpp
+    src/game/ship/core/ShipHitBuilder.cpp
+
+    src/game/damage/TestDamageHandler.cpp
+
 )
 
 add_custom_target(copy_assets ALL

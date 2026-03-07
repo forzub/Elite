@@ -21,7 +21,13 @@
 #include "src/ui/components/radar/RadarWidgetBase.h"
 
 
+#include "game/damage/DamageTestObject.h"
+#include "game/damage/DamageSystem.h"
 
+
+
+using namespace game::damage;
+using namespace game::debug;
 
 
 void SpaceState::initServer()
@@ -176,15 +182,7 @@ void SpaceState::initHUD()
 
     uiRoot->addChild(std::move(radar));
 
-    
-
-
-
-
-
-
-
-
+ 
 
     // =======================================================================
     // инициализация параметров рендера
@@ -194,10 +192,10 @@ void SpaceState::initHUD()
 
 
 
-
-
     initServerAndClient();
 
+
+    
 }
 
 
@@ -256,7 +254,7 @@ json SpaceState::shipCoreStatusToJson(const game::ShipCoreStatus& status)
     const char* statusNames[] = {"Normal", "Overheating", "Critical", "Shutdown"};
     j["reactor"]["status"] = statusNames[status.reactor.status];
     j["reactor"]["integrity"] = status.reactor.integrity;
-    
+
     j["reactor"]["heatMJ"] = status.reactor.generatedHeat;
     j["reactor"]["heatMW"] = status.reactor.heatGenerationMW;
     
@@ -301,6 +299,7 @@ json SpaceState::shipCoreStatusToJson(const game::ShipCoreStatus& status)
         c["allocated"] = consumer.allocatedPowerMW;
         c["priority"] = consumer.priority;
         c["operational"] = consumer.operational;
+        c["heatTransfer"] = consumer.heatTransfer;
         j["powerBus"]["consumers"].push_back(c);
     }
     
@@ -320,4 +319,38 @@ json SpaceState::shipCoreStatusToJson(const game::ShipCoreStatus& status)
     j["timestamp"] = std::time(nullptr);
     
     return j;
+}
+
+
+// SpaceState::
+
+void SpaceState::testDamageSystem()
+{
+    DamageTestObject obj;
+
+    TestDamageHandler handler;
+
+    obj.handler = &handler;
+
+    DamageEvent event;
+
+    event.type = DamageType::Laser;
+    event.energy = 10.0;
+
+    event.position = {1,2,3};
+    event.direction = {0,0,-1};
+
+    DamageSystem::applyDamage(obj, event);
+
+    event.position = {2,2,2};
+    DamageSystem::applyDamage(obj, event);
+
+    event.position = {100,0,0};
+    DamageSystem::applyDamage(obj, event);
+
+    event.position = {0,0,-2};
+    DamageSystem::applyDamage(obj, event);
+
+    event.position = {0,0,-4};
+    DamageSystem::applyDamage(obj, event);
 }

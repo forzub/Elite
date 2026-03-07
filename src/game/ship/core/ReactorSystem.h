@@ -73,7 +73,10 @@ public:
     double getDeltaTemp() const { return m_deltaTemp; }
     double getWarningTemp() const { return m_maxWarringTemp; }
 
-     
+    bool isEmergencyMode() const { return m_emergencyMode; }
+    void setEmergencyPowerLimit(double limit) { m_emergencyPowerLimit = limit; } 
+
+    void updateEmergencyMode();
 
 private:
     void updateStatus();
@@ -109,6 +112,12 @@ private:
     double m_instability = 0.0;     // 0..1
     double m_heatVolume = 0.0;      // MJ за последний dt
     double m_heatGenerationMW = 0.0;
+
+
+
+    double m_emergencyPowerLimit = 12.0;     // МВт - лимит в аварийном режиме
+    bool m_emergencyMode = false;             // Флаг аварийного режима
+    double m_emergencyHysteresis = 50.0;      // K гистерезис для выхода из аварии
 };
 
 }

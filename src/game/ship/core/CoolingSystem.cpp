@@ -39,7 +39,7 @@ double CoolingSystem::calculateRadiatedPower(double temperature) const
 {
     double T4 = std::pow(temperature, 4);
     double Tspace4 = std::pow(SPACE_TEMP, 4);
-    double radiated = m_secondaryCircuit.emissivity * STEFAN_BOLTZMANN * 
+    double radiated = RADIATOR_EFFECTIVENESS * m_secondaryCircuit.emissivity * STEFAN_BOLTZMANN * 
                       getEffectiveArea() * (T4 - Tspace4);
     
     return std::max(0.0, radiated);
@@ -101,6 +101,7 @@ void CoolingSystem::update(double dt, ThermalSystem& coolant)
     // 4. Реально отводимая мощность = из возможностей радиаторов
     double actualRemovedPower =  maxRadiatedPower;
     double heatRemovedMJ = actualRemovedPower * dt;
+
     
     // 5. Забираем тепло из антифриза
     if (heatRemovedMJ > 0.0) {
@@ -171,38 +172,9 @@ void CoolingSystem::setReactorState(
 
 
 
-    // void CoolingSystem::calcRequestedPower(){
 
-    //     // если температура реактора меньше рабочей
 
-    //     if(m_reactorState.reactorT < m_reactorState.reactorWorkT + m_reactorState.reactorDeltaT)   
-    //         return 0;
-
-    //     if(m_reactorState.coolantT >= m_reactorState.coolantCritT)
-    //         return 0;
-
-        
-        
-    //     // то, что физически может быть передано от реактора в антифриз
-    //     // необходимая для этого мощность насоса.
-    //     double deltaT = m_reactorState.reactorT - m_reactorState.coolantT;
-    //     double heatExchangePower = 0;
-    //     if (deltaT > 0.0){
-    //         heatExchangePower = m_primaryCircuit.m_heatExchangeCoeff * deltaT / PUMP_EFFICIENCY; 
-    //     }
-        
-    //     // смотрим, что бы мощность насоса не не превышала физику и была не больше максимума
-    //     double requeistedPower = m_primaryCircuit.allocatedPower;
-    //     if(m_reactorState.reactorT - m_primaryCircuit.lastReactorTemp > 0)
-    //         {
-    //             requeistedPower += m_primaryCircuit.powerSteep;
-    //             requeistedPower = std::min(requeistedPower,heatExchangePower);
-    //             requeistedPower = std::min(requeistedPower,m_primaryCircuit.maxPumpPower);
-    //         }
-    //     m_primaryCircuit.requeistedPower = requeistedPower;
-    // }
-
-    void CoolingSystem::calcRequestedPower()
+void CoolingSystem::calcRequestedPower()
 {
     double reactorT = m_reactorState.reactorT;
     double coolantT = m_reactorState.coolantT;
@@ -210,7 +182,7 @@ void CoolingSystem::setReactorState(
     double workT = m_reactorState.reactorWorkT;
     double delta = m_reactorState.reactorDeltaT;
 
-    // ===== ГИСТЕРЕЗИС ВКЛЮЧЕНИЯ НАСОСА =====
+    // ===== ГИСТЕРЕЗИС ВКЛЮЧЕНИЯ НАСОСА ПО ТЕМПЕРАТУРЕ РЕАКТОРА =====
 
     if (!m_primaryCircuit.isPumpActive)
     {
@@ -229,7 +201,24 @@ void CoolingSystem::setReactorState(
         return;
     }
 
+    // ===== ГИСТЕРЕЗИС ПО КРИТИЧЕСКОЙ ТЕМПЕРАТУРЕ АНТИФРИЗА =====
+    
     if (coolantT >= m_reactorState.coolantCritT)
+    {
+        // Достигли критической температуры - выключаем насос и устанавливаем флаг
+        m_primaryCircuit.requeistedPower = 0.0;
+        m_primaryCircuit.coolantOverheatFlag = true;
+        return;
+    }
+    else if (m_primaryCircuit.coolantOverheatFlag && 
+             coolantT <= m_reactorState.coolantCritT - 2.0 * delta)
+    {
+        // Остыли на 2*delta ниже критической - сбрасываем флаг
+        m_primaryCircuit.coolantOverheatFlag = false;
+    }
+    
+    // Если флаг перегрева установлен - насос не работает
+    if (m_primaryCircuit.coolantOverheatFlag)
     {
         m_primaryCircuit.requeistedPower = 0.0;
         return;
@@ -266,6 +255,12 @@ void CoolingSystem::setReactorState(
     m_primaryCircuit.requeistedPower = requestedPower;
 
     m_primaryCircuit.lastReactorTemp = reactorT;
+
+    if(reactorT >= m_reactorState.reactorWarringT){
+        m_primaryCircuit.requeistedPower = m_primaryCircuit.maxPumpPower;
+    }
 }
+
+
 
 }

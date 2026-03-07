@@ -5,6 +5,8 @@
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 
+#include "game/ship/core/ShipHitBuilder.h"
+
 namespace game::ship::core
 {
 
@@ -68,6 +70,9 @@ void ShipCore::init(
     m_powerBus.registerConsumer(&m_radiationShield);
 
     m_powerBus.registerConsumer(&m_equipment.radar);
+    
+    m_powerBus.registerConsumer(&m_equipment.transmitter);
+    m_powerBus.registerConsumer(&m_equipment.receiver);
 
 
 
@@ -112,6 +117,13 @@ void ShipCore::init(
     
 
     debugPrintCoreSystems();
+
+
+
+    // -------- DAMAGE ZONE -----------
+    m_damageHandler.ship = this;
+    ShipHitBuilder::build(m_hitComponent, descriptor);  
+    
 }
 
 
@@ -171,9 +183,6 @@ void ShipCore::updatePhysics(float dt, const WorldParams& world)
     // задает throttle
     // распределяет энергию согласно возможностей
     m_powerBus.update();
-
-    // 3. Реактор работает и отдает тепло в антифриз
-    m_cooling.update(dt, m_thermal);
 
     //    ВНУТРИ reactor.update() уже вызывается m_thermal.addHeat()
     m_reactor.update(dt, m_thermal, m_cooling.getPumpCapacity());
@@ -617,8 +626,8 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     status.thermal.temperature = m_thermal.getTemperature();
     status.thermal.thermalMass = m_thermal.getThermalMass();
     status.thermal.heatVolume = m_thermal.getHeatVolume();
-    status.thermal.storedHeat = m_thermal.getStoredHeat(); // пока 0
-    status.thermal.thermalCriticalTemp = m_thermal.getCriticalTemp(); // пока 0
+    status.thermal.storedHeat = m_thermal.getStoredHeat(); 
+    status.thermal.thermalCriticalTemp = m_thermal.getCriticalTemp(); 
 
     
     // ----- Cooling (только то, что реально есть) -----
@@ -627,6 +636,7 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     status.cooling.allocatedPowerMW = m_cooling.getAllocatedPower();
     status.cooling.requestedPowerMW = m_cooling.getRequestedPower();
     status.cooling.radiatedPowerMW = m_cooling.getLastRadiatedPower();
+    
     status.cooling.pumpCapacity = m_cooling.getPumpCapacity();
     status.cooling.pumpHeatMJ = m_cooling.getPumpHeatMJ();
     status.cooling.dt = m_cooling.getDT();
@@ -663,6 +673,15 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
         cs.allocatedPowerMW = c->getAvailablePower();
         cs.priority = static_cast<int>(c->getPriority());
         cs.operational = true;
+        
+        // Пытаемся привести к IHeatSource
+        auto* heatSource = dynamic_cast<game::equipment::IHeatSource*>(c);
+        if (heatSource) {
+            cs.heatTransfer = heatSource->getHeatGeneration();
+        } else {
+            cs.heatTransfer = 1.0;
+        }
+
         status.powerBus.consumers.push_back(cs);
         status.powerBus.totalRequestedMW += cs.requestedPowerMW;
     }
@@ -687,14 +706,14 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
     }
     
     // Антифриз горячий (лимит 900K)
-    if (status.thermal.temperature > 850.0) {
+    if (status.thermal.temperature > 1100.0) {
         game::AlertStatus alert;
-        alert.severity = status.thermal.temperature > 900.0 ? 2 : 1;
+        alert.severity = status.thermal.temperature > 1250.0 ? 2 : 1;
         alert.system = "Coolant";
-        alert.message = status.thermal.temperature > 900.0 
+        alert.message = status.thermal.temperature > 1250.0 
             ? "COOLANT SATURATED" : "Coolant high";
         alert.value = status.thermal.temperature;
-        alert.threshold = 900.0;
+        alert.threshold = 1250.0;
         status.alerts.push_back(alert);
         status.warningSystems.push_back("Coolant");
         
@@ -741,13 +760,51 @@ game::ShipCoreStatus ShipCore::getCoreStatus() const
 
 
 
+// ------------ DAMAGE -----------
+void ShipCore::applyDamage(const game::damage::DamageEvent& event)
+{
+    using namespace game::damage;
+
+    DamageEvent localEvent = event;
+
+    // перевод world → local
+    localEvent.position = m_mathTransform.worldToLocal(event.position);
+
+    auto result = m_hitComponent.resolve(localEvent);
+
+    m_damageHandler.handleDamage(result);
+}
+
+
+void ShipCore::exportHitVolumes() const
+{
+    for (const auto& v : m_hitComponent.volumes)
+    {
+        std::cout
+            << "HIT_VOLUME "
+            << v.m_label << " "
+            << v.center.x << " "
+            << v.center.y << " "
+            << v.center.z << " "
+            << v.halfSize.x << " "
+            << v.halfSize.y << " "
+            << v.halfSize.z
+            << std::endl;
+    }
+}
 
 
 
+void ShipCore::restoreVolume(int index)
+{
+    if (index < 0 || index >= m_hitComponent.volumes.size())
+        return;
 
+    auto& v = m_hitComponent.volumes[index];
 
-
-
+    v.health = 1.0f;
+    v.destroyed = false;
+}
 
 
 

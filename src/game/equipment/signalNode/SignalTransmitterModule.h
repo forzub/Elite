@@ -23,7 +23,7 @@ public:
         m_baseRange     = desc.baseRange;
         m_displayClass  = desc.displayClass;
 
-        setEnabled(true);
+        
     }
 
     void update(double dt) override
@@ -103,6 +103,11 @@ public:
         return m_baseRange * m_integrity.functional;
     }
 
+    game::equipment::PowerPriority getPriority() const override { 
+        return m_priority; 
+    }
+    std::string getLabel() const override { return m_label; }
+
 private:
 
     float                               m_txPower   = 0.0f;
@@ -113,5 +118,8 @@ private:
     bool                                m_signalEnabled = false;
     SignalPayload                       m_payload;
     SignalTransmitterDesc               m_desc;
+
+    std::string                     m_label = "transmitter";
+    game::equipment::PowerPriority  m_priority = game::equipment::PowerPriority::Critical;
 
 };

@@ -5,9 +5,10 @@ namespace game::ship::core
 {
 
 
-CoreSystem::CoreSystem(double nominalPowerMW, std::string label)
+CoreSystem::CoreSystem(double nominalPowerMW, std::string label, game::equipment::PowerPriority priority)
     : m_nominalPowerMW(nominalPowerMW)
     , m_label(label)
+    , m_priority(priority)
 {
 }
 

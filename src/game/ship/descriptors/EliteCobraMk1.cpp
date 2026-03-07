@@ -12,6 +12,7 @@
 #include "src/game/equipment/types/RadarType.h"
 #include "src/game/equipment/types/RadarVisualProfile.h"
 
+#include "game/damage/HitVolume.h"
 
 
 const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
@@ -179,14 +180,14 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // ThermalSystems params 
         // ─────────────────────────
         desc.thermal.thermalMassMJperK      = 100.0;    // Теплоемкость корпуса (МДж/К)	Масса корпуса 65т, теплоемкость композита ~0.8 МДж/т/К ×65т ×7 = 364 
-        desc.thermal.initialTempK           = 293.0;    // Начальная температура (K)	20°C
+        desc.thermal.initialTempK           = 1000.0;    // Начальная температура (K)	20°C
 
         // ─────────────────────────
         // CoolingSystems params                       Полная площадь корпуса: ~635 м²
         // ─────────────────────────
         desc.cooling.radiatorArea       = 380.0;    // Площадь радиаторов (м²)	Из ТТХ - 380 м²
         desc.cooling.panelCount         = 40;       // количество панелей (160)
-        desc.cooling.emissivity         = 0.88;     // Коэф. черноты	Карбид кремния
+        desc.cooling.emissivity         = 1.2;     // Коэф. черноты	Карбид кремния
         desc.cooling.maxTransferPower   = 180,0;    // Макс. теплоперенос (МВт)
         desc.cooling.nominalPower       = 2.0;      // Мощность насосов номинал (МВт)
         desc.cooling.peakPower          = 4.5;      // Мощность насосов пик (МВт)
@@ -228,6 +229,20 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
 
         // здесь можно задать 3D модель
         // desc.modelPath = "assets/models/cobra.obj";
+
+        // ----- DAMAGE --------
+        desc.hitVolumes =
+        {
+            { game::damage::HitZoneType::Cockpit, "cockpit", 100, {0,0.5f,6.0f}, {4,2,4}, false, -1 },
+
+            { game::damage::HitZoneType::Cargo, "cargo", 60, {0,0,1.0f}, {8,3,7}, false, -1 },
+
+            { game::damage::HitZoneType::Reactor, "reactor", 110, {0,0,-2.0f}, {5,3,4}, true, 1 },
+
+            { game::damage::HitZoneType::Engine, "engine", 120, {0,0,-6.5f}, {7,3,4}, true, 3 },
+
+            { game::damage::HitZoneType::Hull, "hull", 0, {0,0,0}, {14,5.8f,16.5f}, false, -1 }
+        };
 
 
     }

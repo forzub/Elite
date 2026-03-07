@@ -32,7 +32,7 @@ public:
 
 private:
     double m_thermalMass = 100.0;
-    double m_temperature = 293.0;
+    double m_temperature = 900.0;
     double m_recomendTemp = 1100.0;
     double m_thermalCriticalTemp = 1350.0;
 

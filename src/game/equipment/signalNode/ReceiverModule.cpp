@@ -26,6 +26,7 @@ double ReceiverModule::getRequestedPower() const
 void ReceiverModule::setAvailablePower(double power)
 {
     m_availablePower = power;
+    if(m_availablePower > 0) setEnabled(true);
 }
 
 double ReceiverModule::getHeatGeneration() const

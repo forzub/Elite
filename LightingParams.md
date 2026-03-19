@@ -1,593 +1,574 @@
-# Инструкция по файлу `LightingParams.h`
+# Инструкция по работе с LightingParams
 
-## Общая структура
-
-`LightingParams` — это универсальная структура для управления визуальными параметрами объектов. Содержит настройки освещения, процедурной сетки, тумана и отрисовки ребер.
+## 📋 Содержание
+1. [Структура LightingParams](#структура-lightingparams)
+2. [Параметры освещения](#параметры-освещения)
+3. [Параметры корпуса](#параметры-корпуса)
+4. [Дистанции и зоны](#дистанции-и-зоны)
+5. [Эффекты поверхности](#эффекты-поверхности)
+6. [Сетка (Grid)](#сетка-grid)
+7. [Ребра (Edge)](#ребра-edge)
+8. [Туман (Fog)](#туман-fog)
+9. [Пресеты](#пресеты)
+10. [Uniform Applicators](#uniform-applicators)
+11. [Как работать с шейдерами](#как-работать-с-шейдерами)
+12. [Практические примеры](#практические-примеры)
 
 ---
 
-## 1. Базовое освещение (Fill Pass)
+## Структура LightingParams
+
+`LightingParams` - это структура, которая хранит все параметры освещения и визуальных эффектов для объектов в сцене. Она используется для передачи данных в шейдеры.
 
 ```cpp
-glm::vec3 lightDir = glm::vec3(0.4f, 0.7f, 0.5f);   // направление света
-glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);  // цвет света
+struct LightingParams {
+    // Все параметры сгруппированы по функциональности
+};
+```
+
+---
+
+## Параметры освещения
+
+```cpp
+glm::vec3 lightDir = glm::vec3(0.4f, 0.7f, 0.5f);  // направление света
+glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f); // цвет света
 glm::vec3 ambientColor = glm::vec3(0.3f, 0.3f, 0.35f); // фоновое освещение
 ```
 
-**`lightDir`**  
-Направление основного источника света. Вектор не обязательно нормализовать — это сделает шейдер.  
-*Пример:* `(0, 1, 0)` — свет сверху.
+### 📌 lightDir
+- **Что это**: Направление, откуда идет основной свет
+- **Формат**: Нормализованный вектор (x, y, z)
+- **Как работает**: Чем ближе нормаль поверхности к направлению света, тем ярче освещение
+- **Пример**: `(0.4, 0.7, 0.5)` - свет сверху-сбоку
 
-**`lightColor`**  
-Цвет света. Влияет на итоговый оттенок освещенных частей.
+### 📌 lightColor
+- **Что это**: Цвет и интенсивность основного света
+- **Формат**: (R, G, B) от 0.0 до 1.0
+- **Как работает**: Умножается на цвет поверхности и на освещенность
+- **Пример**: 
+  - `(1.0, 1.0, 1.0)` - белый свет
+  - `(1.0, 0.8, 0.6)` - теплый желтоватый
 
-**`ambientColor`**  
-Цвет фонового освещения (тени не будут абсолютно черными).
+### 📌 ambientColor
+- **Что это**: Фоновое освещение (свет, который есть всегда)
+- **Формат**: (R, G, B) от 0.0 до 1.0
+- **Как работает**: Добавляется к освещению даже в тенях
+- **Важно**: Используется с коэффициентом 0.1-0.3, чтобы не пересвечивать тени
 
 ---
 
-## 2. Fake Light эффекты
+## Параметры корпуса
 
 ```cpp
-float fresnelPower = 2.0f;      // степень эффекта Френеля
-float rimIntensity = 0.5f;       // интенсивность подсветки краев
-float edgeIntensity = 0.3f;      // не используется в текущей реализации
-float normalBlend = 0.15f;       // примешивание цвета нормали
+glm::vec3 hullColor = glm::vec3(0.8f, 0.8f, 0.9f);        // основной цвет
+glm::vec3 detailColor = glm::vec3(0.6f, 0.6f, 0.8f);      // цвет деталей
+glm::vec3 glowColor = glm::vec3(0.5f, 0.7f, 1.0f);        // цвет свечения
 ```
 
-**`fresnelPower`**  
-Управляет "резкостью" rim-эффекта. Больше значение → подсвечиваются только самые края.
+### 📌 hullColor
+- **Что это**: Основной цвет корпуса
+- **Где используется**: В шейдере `mesh_fill` для кораблей
 
-**`rimIntensity`**  
-Насколько сильно подсвечиваются края объекта.
+### 📌 detailColor
+- **Что это**: Цвет деталей (сейчас не используется)
+- **Запас**: Для будущего использования
 
-**`normalBlend`**  
-Добавляет легкий оттенок в зависимости от ориентации поверхности. Полезно для визуального разнообразия больших плоскостей.
+### 📌 glowColor
+- **Что это**: Цвет свечения (сейчас не используется)
+- **Запас**: Для будущего использования
 
 ---
 
-## 3. Основные цвета объекта
+## Дистанции и зоны
 
 ```cpp
-glm::vec3 hullColor = glm::vec3(0.8f, 0.8f, 0.9f);    // основной цвет
-glm::vec3 detailColor = glm::vec3(0.6f, 0.6f, 0.8f);  // цвет деталей
-glm::vec3 glowColor = glm::vec3(0.5f, 0.7f, 1.0f);    // цвет свечения
+struct Distances {
+    float close = 500.0f;      // близкая зона
+    float medium = 5000.0f;     // средняя зона
+    float far = 20000.0f;       // дальняя зона
+    float horizon = 40000.0f;   // горизонт
+} dist;
+
+glm::vec3 hullColorNear;  // цвет в близкой зоне
+glm::vec3 hullColorMid;   // цвет в средней зоне
+glm::vec3 hullColorFar;    // цвет в дальней зоне
 ```
 
-**`hullColor`**  
-Базовый цвет поверхности. В шейдере смешивается с `vColor` из вершин.
+### 📌 Как работают дистанции
+В шейдере `large_object_fill` цвет корпуса меняется в зависимости от расстояния до камеры:
 
-**`detailColor`**, **`glowColor`**  
-Зарезервированы для будущих эффектов.
+```glsl
+if (dist < distClose) {
+    hullColor = hullColorNear;           // близко - темный
+} else if (dist < distMedium) {
+    // Плавный переход
+    float t = (dist - distClose) / (distMedium - distClose);
+    hullColor = mix(hullColorNear, hullColorMid, t);
+} else if (dist < distFar) {
+    // Плавный переход
+    float t = (dist - distMedium) / (distFar - distMedium);
+    hullColor = mix(hullColorMid, hullColorFar, t);
+} else {
+    // Дальняя зона
+    float t = min((dist - distFar) / (distHorizon - distFar), 1.0);
+    hullColor = mix(hullColorFar, hullColorFar * 1.5, t);
+}
+```
+
+### 📌 Алгоритм работы
+1. **Близко** (< close) - используем `hullColorNear`
+2. **Средняя зона** (close - medium) - плавный переход от Near к Mid
+3. **Далеко** (medium - far) - плавный переход от Mid к Far
+4. **Горизонт** (> far) - плавное осветление до горизонта
 
 ---
 
-## 4. Процедурная сетка (для больших объектов)
+## Эффекты поверхности
 
 ```cpp
-struct ProceduralGrid {
-    bool enabled = false;
-    float cellSize = 100.0f;
-    float lineThickness = 1.0f;
-    glm::vec3 lineColor = glm::vec3(0.3f, 0.3f, 0.4f);
-    float lineAlpha = 0.3f;
-    bool fadeWithDistance = true;
-    float gridGlow = 0.2f;
-    glm::vec3 cellSizeXYZ = glm::vec3(100.0f);
-    glm::vec3 gridOffset = glm::vec3(0.0f);
+float fresnelPower = 2.0f;     // степень френеля
+float rimIntensity = 0.5f;      // интенсивность подсветки краев
+float edgeIntensity = 0.3f;     // интенсивность ребер (не используется)
+float normalBlend = 0.15f;      // смешивание с цветом нормалей
+```
+
+### 📌 fresnelPower
+- **Что это**: Степень эффекта Френеля (подсветка краев)
+- **Диапазон**: 1.0 - 10.0
+- **Как работает**: Чем выше значение, тем уже полоса подсветки на краях
+
+### 📌 rimIntensity
+- **Что это**: Интенсивность подсветки краев
+- **Диапазон**: 0.0 - 1.0
+- **Как работает**: Умножается на результат Френеля
+
+### 📌 normalBlend
+- **Что это**: Смешивание с "цветом нормалей" (визуализация нормалей)
+- **Диапазон**: 0.0 - 1.0
+- **Как работает**: 0 - только освещение, 1 - только нормали
+
+---
+
+## Сетка (Grid)
+
+```cpp
+struct Grid {
+    bool enabled = false;           // включена ли сетка
+    float cellSize = 100.0f;         // размер ячейки
+    float lineWidth = 1.0f;          // толщина линий
+    glm::vec3 lineColor = glm::vec3(0.93f, 0.93f, 0.94f); // цвет линий
+    float lineAlpha = 0.3f;          // прозрачность линий
+    float glow = 0.2f;                // свечение линий
+    glm::vec3 cellSizeXYZ = glm::vec3(100.0f); // размер по осям
+    glm::vec3 offset = glm::vec3(0.0f);         // смещение
 } grid;
 ```
 
-**`enabled`**  
-Включает/выключает отрисовку сетки.
+### 📌 Как работает сетка
+Сетка проецируется на поверхность объекта в локальных координатах:
 
-**`cellSize`**  
-Размер ячейки в мировых единицах (если все оси одинаковы).
+1. **Планарное проецирование**: Сетка накладывается на поверхность
+2. **Адаптивная толщина**: Толщина линий меняется с расстоянием
+3. **Свечение**: Линии могут светиться
 
-**`cellSizeXYZ`**  
-Позволяет задать разный шаг по осям.  
-*Пример:* `glm::vec3(200, 100, 50)` — вытянутые ячейки.
+### 📌 Алгоритм сетки
+```glsl
+// 1. Локальные координаты с учетом смещения
+vec3 localPos = vObjectPos + gridOffset;
 
-**`lineThickness`**  
-Толщина линий в пикселях.
+// 2. Построение базиса для проецирования
+vec3 tangent = normalize(cross(n, vec3(0.0, 1.0, 0.0)));
+vec3 bitangent = normalize(cross(n, tangent));
 
-**`lineColor`**  
-Цвет линий сетки.
+// 3. 2D координаты на поверхности
+vec2 planarPos = vec2(dot(localPos, tangent), dot(localPos, bitangent));
 
-**`lineAlpha`**  
-Прозрачность линий (0 — полностью прозрачные, 1 — непрозрачные).
-
-**`fadeWithDistance`**  
-Автоматически уменьшать прозрачность сетки с расстоянием.
-
-**`gridGlow`**  
-Добавляет мягкое свечение вокруг линий. Полезно для темных объектов.
-
-**`gridOffset`**  
-Сдвиг сетки. Можно использовать для анимации или выравнивания.
-
----
-
-## 5. Distance Fade (прозрачность с расстоянием)
-
-```cpp
-struct DistanceFade {
-    bool enabled = true;
-    float startDistance = 500.0f;
-    float endDistance = 2000.0f;
-    float minAlpha = 0.0f;
-    float scaleFactor = 1.0f;
-} distanceFade;
+// 4. Расчет расстояния до линий сетки
+vec2 gridCoords = planarPos / vec2(cellSize.x, cellSize.y);
+vec2 distToLine = min(fract(gridCoords), 1.0 - fract(gridCoords)) * cellSize;
 ```
 
-**`enabled`**  
-Включает эффект.
-
-**`startDistance`**  
-Расстояние, на котором объект начинает становиться прозрачным.
-
-**`endDistance`**  
-Расстояние полного исчезновения (`minAlpha`).
-
-**`minAlpha`**  
-Минимальная прозрачность (0 — полностью невидим, 0.2 — слегка виден).
-
-**`scaleFactor`**  
-Множитель для учета размера объекта. Для планет можно сделать < 1, чтобы они медленнее исчезали.
-
 ---
 
-## 6. Depth Fog (туман по глубине)
+## Ребра (Edge)
 
 ```cpp
-struct DepthFog {
-    bool enabled = true;
-    float startDistance = 300.0f;
-    float endDistance = 3000.0f;
-    glm::vec3 fogColor = glm::vec3(0.05f, 0.05f, 0.1f);
-    bool useObjectScale = true;
-} depthFog;
+glm::vec3 edgeColor = glm::vec3(1.0f, 1.0f, 1.0f);  // цвет ребер
+float edgeAlpha = 1.0f;                              // прозрачность
+float edgeThickness = 1.0f;                          // толщина в пикселях
+float edgeFadeStart = 500.0f;                        // начало затухания
+float edgeFadeEnd = 5000.0f;                          // конец затухания
 ```
 
-**`enabled`**  
-Включает туман.
+### 📌 edgeColor
+- **Что это**: Цвет ребер (линий)
+- **Формат**: (R, G, B) от 0.0 до 1.0
 
-**`startDistance`**  
-Расстояние начала смешивания с цветом фона.
+### 📌 edgeAlpha
+- **Что это**: Прозрачность ребер
+- **Диапазон**: 0.0 (прозрачные) - 1.0 (непрозрачные)
 
-**`endDistance`**  
-Расстояние полного смешивания.
+### 📌 edgeThickness
+- **Что это**: Толщина линий в пикселях
+- **Диапазон**: 0.5 - 5.0 (обычно 1.0-2.0)
 
-**`fogColor`**  
-Цвет тумана (обычно цвет фона сцены).
-
-**`useObjectScale`**  
-Адаптировать дистанции под размер объекта.
+### 📌 edgeFadeStart / edgeFadeEnd
+- **Что это**: Дистанции затухания ребер
+- **Алгоритм**: 
+  - До `fadeStart` - ребра видны полностью
+  - От `fadeStart` до `fadeEnd` - плавно исчезают
+  - После `fadeEnd` - не видны
 
 ---
 
-## 7. Atmospheric Grid (для линий)
+## Туман (Fog)
 
 ```cpp
-struct AtmosphericGrid {
-    bool enabled = true;
-    float startDistance = 200.0f;
-    float endDistance = 2000.0f;
-    float minAlpha = 0.1f;
-    float maxAlpha = 1.0f;
-    bool applyToLargeObjects = true;
-} atmosphericGrid;
+struct Fog {
+    bool enabled = true;                    // включен ли туман
+    float startDistance = 300.0f;            // начало тумана
+    float endDistance = 3000.0f;              // конец тумана
+    glm::vec3 nearColor = glm::vec3(0.05f, 0.05f, 0.1f);  // цвет вблизи
+    glm::vec3 farColor = glm::vec3(0.0f, 0.0f, 0.02f);     // цвет вдали
+    float intensity = 0.5f;                   // интенсивность
+} fog;
 ```
 
-*Применяется к edge-линиям, а не к процедурной сетке.*
+### 📌 Алгоритм тумана
+```glsl
+// Расстояние до объекта
+float dist = length(vWorldPos - cameraPos);
 
-**`enabled`**  
-Включает эффект.
+// Фактор тумана (0 - нет тумана, 1 - полный туман)
+float fogFactor = clamp((dist - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
+fogFactor *= fogIntensity;
 
-**`startDistance`**  
-Расстояние, с которого линии начинают бледнеть.
+// Цвет тумана с переходом
+vec3 fogColor = mix(fogNearColor, fogFarColor, fogFactor);
 
-**`endDistance`**  
-Расстояние, на котором линии достигают `minAlpha`.
-
-**`minAlpha`**, **`maxAlpha`**  
-Диапазон прозрачности линий.
-
-**`applyToLargeObjects`**  
-Применять ли эффект к большим объектам.
-
----
-
-## 8. Edge Pass (линии)
-
-```cpp
-glm::vec3 edgeColor = glm::vec3(0.6f, 0.7f, 1.0f);
+// Смешивание цвета объекта с туманом
+finalColor = mix(finalColor, fogColor, fogFactor);
 ```
 
-**`edgeColor`**  
-Базовый цвет всех линий (используется в glowPass и linePass, если не переопределен).
+### 📌 Параметры тумана
+- **startDistance**: Расстояние, с которого начинается туман
+- **endDistance**: Расстояние, на котором туман полностью скрывает объект
+- **nearColor**: Цвет тумана вблизи (обычно темный)
+- **farColor**: Цвет тумана вдали (обычно черный)
+- **intensity**: Общая интенсивность тумана (0-1)
 
 ---
 
-### Glow Pass
+## Пресеты
 
+### station()
 ```cpp
-struct GlowPass {
-    float thickness = 3.0f;
-    float alpha = 0.15f;
-    bool enabled = true;
-    bool applyFade = true;
-} glowPass;
-```
-
-Широкое полупрозрачное свечение вокруг объекта.
-
----
-
-### Line Pass
-
-```cpp
-struct LinePass {
-    float thickness = 1.0f;
-    float alpha = 1.0f;
-    bool enabled = true;
-    bool applyFade = true;
-} linePass;
-```
-
-Основные контурные линии.
-
----
-
-### Outline Pass
-
-```cpp
-struct OutlinePass {
-    float thickness = 0.5f;
-    float alpha = 0.8f;
-    glm::vec3 color = glm::vec3(0.2f, 0.2f, 0.3f);
-    bool enabled = false;
-    bool applyFade = true;
-} outlinePass;
-```
-
-Тонкий контур, обычно темнее основного.
-
----
-
-## Примеры настройки
-
-### 1. Черные корабли с легким fake light (темные линии)
-
-```cpp
-LightingParams blackShip() {
+static LightingParams station() {
     LightingParams p;
     
-    // Основной цвет — почти черный с легким синим оттенком
-    p.hullColor = glm::vec3(0.1f, 0.1f, 0.15f);
+    // Яркое освещение
+    p.lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    p.ambientColor = glm::vec3(1.0f, 0.3f, 0.35f);  // красноватый амбиент
     
-    // Ребра — яркие, контрастные
-    p.edgeColor = glm::vec3(0.8f, 0.9f, 1.0f);
+    // Большие дистанции (станции большие)
+    p.dist.close = 500.0f;
+    p.dist.medium = 5000.0f;
+    p.dist.far = 100000.0f;
+    p.dist.horizon = 200000.0f;
     
-    // Fake light эффекты
-    p.rimIntensity = 0.3f;           // легкая подсветка краев
-    p.fresnelPower = 4.0f;            // только самые края
-    p.normalBlend = 0.05f;            // минимум примешивания нормалей
+    // Цвета корпуса по зонам
+    p.hullColorNear = glm::vec3(0.1f, 0.1f, 0.14f);
+    p.hullColorMid = glm::vec3(0.3f, 0.3f, 0.35f);
+    p.hullColorFar = glm::vec3(0.5f, 0.5f, 0.6f);
     
-    // Свет — холодный
-    p.lightColor = glm::vec3(0.8f, 0.9f, 1.0f);
-    p.ambientColor = glm::vec3(0.05f, 0.05f, 0.1f);
+    // Ребра видны далеко
+    p.edgeFadeStart = 500.0f;
+    p.edgeFadeEnd = 7000.0f;
     
-    // Glow — минимальный
-    p.glowPass.alpha = 0.1f;
-    p.glowPass.thickness = 2.0f;
+    // Туман на больших расстояниях
+    p.fog.startDistance = 100.0f;
+    p.fog.endDistance = 60000.0f;
     
     return p;
 }
 ```
 
-### 2. Светлые корабли с темными ребрами (как сейчас)
-
+### ship()
 ```cpp
-LightingParams lightShip() {
+static LightingParams ship() {
     LightingParams p;
     
-    // Основной цвет — светлый
-    p.hullColor = glm::vec3(0.9f, 0.9f, 1.0f);
+    // Освещение
+    p.lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    p.ambientColor = glm::vec3(1.0f, 0.3f, 0.35f);  // легкий оттенок
     
-    // Ребра — темные, контрастные
-    p.edgeColor = glm::vec3(0.2f, 0.2f, 0.3f);
+    // Основной цвет
+    p.hullColor = glm::vec3(0.04f, 0.04f, 0.08f);  // темно-синий
     
-    // Fake light
-    p.rimIntensity = 0.6f;
+    // Ребра (ближе к кораблю)
+    p.edgeColor = glm::vec3(0.50f, 0.5f, 0.55f);
+    p.edgeFadeStart = 100.0f;
+    p.edgeFadeEnd = 1000.0f;
+    
+    // Эффекты поверхности
     p.fresnelPower = 2.0f;
+    p.rimIntensity = 0.5f;
     p.normalBlend = 0.15f;
     
-    // Glow — едва заметный
-    p.glowPass.alpha = 0.1f;
-    p.glowPass.thickness = 2.0f;
-    
-    return p;
-}
-```
-
-### 3. Корабль-невидимка (stealth)
-
-```cpp
-LightingParams stealthShip() {
-    LightingParams p;
-    
-    p.hullColor = glm::vec3(0.05f, 0.05f, 0.05f);
-    p.edgeColor = glm::vec3(0.1f, 0.1f, 0.15f);  // почти невидимые ребра
-    
-    p.rimIntensity = 0.1f;
-    p.normalBlend = 0.0f;
-    
-    p.glowPass.enabled = false;       // без свечения
-    p.linePass.alpha = 0.5f;           // полупрозрачные линии
-    p.glowPass.alpha = 0.0f;
-    
-    return p;
-}
-```
-
-### 4. Энергетический корабль (glow эффект)
-
-```cpp
-LightingParams energyShip() {
-    LightingParams p;
-    
-    p.hullColor = glm::vec3(0.2f, 0.3f, 0.6f);
-    p.edgeColor = glm::vec3(0.0f, 0.8f, 1.0f);  // ярко-голубые
-    
-    p.rimIntensity = 1.0f;               // максимум rim light
-    p.fresnelPower = 1.5f;
-    
-    p.glowPass.alpha = 0.4f;              // сильное свечение
-    p.glowPass.thickness = 5.0f;
-    
-    p.linePass.alpha = 0.8f;
-    
-    p.lightColor = glm::vec3(0.7f, 0.9f, 1.2f);  // холодный свет
-    
-    return p;
-}
-```
-
-### 5. Крупный астероид с сеткой
-
-```cpp
-LightingParams asteroid(float size) {
-    LightingParams p = LightingParams::largeObject(size);
-    
-    p.hullColor = glm::vec3(0.4f, 0.35f, 0.3f);
-    p.edgeColor = glm::vec3(0.5f, 0.45f, 0.4f);
-    
-    // Процедурная сетка
-    p.grid.enabled = true;
-    p.grid.cellSize = size * 0.15f;
-    p.grid.lineColor = glm::vec3(0.3f, 0.3f, 0.25f);
-    p.grid.lineAlpha = 0.2f;
-    p.grid.gridGlow = 0.1f;
-    
     // Туман
-    p.depthFog.startDistance = size * 0.5f;
-    p.depthFog.endDistance = size * 3.0f;
+    p.fog.startDistance = 100.0f;
+    p.fog.endDistance = 3000.0f;
     
     return p;
 }
 ```
 
-## Советы по настройке
-
-1. **Контраст между корпусом и ребрами** создает "технический" вид:
-   - Светлый корпус + темные ребра → четкие линии
-   - Темный корпус + светлые ребра → светящийся контур
-
-2. **Rim intensity** лучше держать в пределах 0.3–0.8. Выше 1.0 дает неестественное свечение.
-
-3. **Fresnel power**:
-   - 1.0–2.0 — мягкий переход
-   - 3.0–5.0 — резкие края
-
-4. **Normal blend** > 0.3 создает "радужный" эффект, подходит только для специальных случаев.
-
-5. Для **очень больших объектов** всегда увеличивайте дистанции fog и fade пропорционально размеру.
-
-
-
-### ☀️🌅⛈️😨🔥🧪👻✨ Давайте создадим целую палитру атмосферных настроений от уютных до мрачных. Вот полный набор с комментариями:
-
+### asteroid()
 ```cpp
-// ============================================================
-// АТМОСФЕРНЫЕ НАСТРОЙКИ ДЛЯ РАЗНЫХ НАСТРОЕНИЙ
-// ============================================================
-
-// ------------------------------------------------------------
-// 1. ☀️ СОЛНЕЧНЫЙ ДЕНЬ НА ПЛАНЕТЕ - тепло, уютно, безопасно
-// ------------------------------------------------------------
-LightingParams sunnyDayParams;
-sunnyDayParams.hullColor = glm::vec3(0.7f, 0.6f, 0.5f);     // теплый светлый корпус
-sunnyDayParams.grid.lineColor = glm::vec3(1.0f, 0.95f, 0.8f); // золотистая сетка
-sunnyDayParams.grid.lineAlpha = 0.9f;
-sunnyDayParams.grid.gridGlow = 0.3f;                         // мягкое свечение
-
-// Легкая дымка, как в летний день
-sunnyDayParams.depthFog.enabled = true;
-sunnyDayParams.depthFog.startDistance = 500.0f;              // далеко начинается
-sunnyDayParams.depthFog.endDistance = 3000.0f;               // очень далеко заканчивается
-sunnyDayParams.depthFog.fogColor = glm::vec3(0.7f, 0.75f, 0.8f); // светлая голубоватая дымка
-
-// ------------------------------------------------------------
-// 2. 🌅 ЗОЛОТОЙ ЧАС (ЗАКАТ) - романтично, спокойно
-// ------------------------------------------------------------
-LightingParams goldenHourParams;
-goldenHourParams.hullColor = glm::vec3(0.6f, 0.4f, 0.2f);    // теплый оранжевый корпус
-goldenHourParams.grid.lineColor = glm::vec3(1.0f, 0.7f, 0.3f); // ярко-оранжевая сетка
-goldenHourParams.grid.lineAlpha = 0.85f;
-goldenHourParams.grid.gridGlow = 0.6f;                        // теплое свечение
-
-// Золотистый туман
-goldenHourParams.depthFog.enabled = true;
-goldenHourParams.depthFog.startDistance = 200.0f;
-goldenHourParams.depthFog.endDistance = 2000.0f;
-goldenHourParams.depthFog.fogColor = glm::vec3(0.8f, 0.5f, 0.2f); // золотисто-оранжевый
-
-// ------------------------------------------------------------
-// 3. 🌙 ЛУННАЯ НОЧЬ - таинственно, тихо, прохладно
-// ------------------------------------------------------------
-LightingParams moonNightParams;
-moonNightParams.hullColor = glm::vec3(0.2f, 0.2f, 0.3f);     // темно-синий корпус
-moonNightParams.grid.lineColor = glm::vec3(0.6f, 0.7f, 1.0f); // холодный голубой
-moonNightParams.grid.lineAlpha = 0.8f;
-moonNightParams.grid.gridGlow = 0.5f;
-
-// Легкий синеватый туман
-moonNightParams.depthFog.enabled = true;
-moonNightParams.depthFog.startDistance = 150.0f;
-moonNightParams.depthFog.endDistance = 1800.0f;
-moonNightParams.depthFog.fogColor = glm::vec3(0.1f, 0.15f, 0.3f); // темно-синий
-
-// ------------------------------------------------------------
-// 4. ⛈️ ГРОЗА (ШТОРМ) - тревожно, напряженно
-// ------------------------------------------------------------
-LightingParams stormParams;
-stormParams.hullColor = glm::vec3(0.15f, 0.15f, 0.2f);       // очень темный корпус
-stormParams.grid.lineColor = glm::vec3(0.9f, 0.9f, 1.0f);    // бело-голубая сетка (как молнии)
-stormParams.grid.lineAlpha = 0.7f;
-stormParams.grid.gridGlow = 1.2f;                             // пульсирующее свечение
-
-// Густой серый туман
-stormParams.depthFog.enabled = true;
-stormParams.depthFog.startDistance = 80.0f;                   // туман начинается совсем рядом
-stormParams.depthFog.endDistance = 800.0f;                    // быстро сгущается
-stormParams.depthFog.fogColor = glm::vec3(0.2f, 0.2f, 0.25f); // темно-серый
-
-// ------------------------------------------------------------
-// 5. 😨 ПОЛНАЯ БЕЗНАДЕЖНОСТЬ - холод, пустота, смерть
-// ------------------------------------------------------------
-LightingParams despairParams;
-despairParams.hullColor = glm::vec3(0.01f, 0.01f, 0.02f);    // почти черный корпус
-despairParams.grid.lineColor = glm::vec3(0.3f, 0.3f, 0.4f);   // тусклая серая сетка
-despairParams.grid.lineAlpha = 0.4f;                          // полупрозрачная
-despairParams.grid.gridGlow = 0.1f;                           // почти нет свечения
-
-// Густой черный туман, поглощающий все
-despairParams.depthFog.enabled = true;
-despairParams.depthFog.startDistance = 50.0f;                 // туман начинается сразу
-despairParams.depthFog.endDistance = 400.0f;                  // очень быстро исчезает
-despairParams.depthFog.fogColor = glm::vec3(0.02f, 0.02f, 0.03f); // почти черный
-
-// Дополнительно: отключаем сетку на дальних дистанциях
-despairParams.distanceFade.startDistance = 100.0f;
-despairParams.distanceFade.endDistance = 350.0f;
-despairParams.grid.fadeWithDistance = true;
-
-// ------------------------------------------------------------
-// 6. 🔥 ПОСТ-АПОКАЛИПСИС - огонь, разрушение, смог
-// ------------------------------------------------------------
-LightingParams apocalypseParams;
-apocalypseParams.hullColor = glm::vec3(0.3f, 0.1f, 0.05f);    // ржаво-красный корпус
-apocalypseParams.grid.lineColor = glm::vec3(1.0f, 0.4f, 0.1f); // оранжево-красная сетка
-apocalypseParams.grid.lineAlpha = 0.8f;
-apocalypseParams.grid.gridGlow = 1.5f;                         // сильное свечение
-
-// Густой оранжевый смог
-apocalypseParams.depthFog.enabled = true;
-apocalypseParams.depthFog.startDistance = 70.0f;
-apocalypseParams.depthFog.endDistance = 600.0f;
-apocalypseParams.depthFog.fogColor = glm::vec3(0.3f, 0.15f, 0.05f); // ржаво-оранжевый
-
-// ------------------------------------------------------------
-// 7. 🧪 ЛАБОРАТОРИЯ/НАУЧНАЯ СТАНЦИЯ - стерильно, холодно, искусственно
-// ------------------------------------------------------------
-LightingParams labParams;
-labParams.hullColor = glm::vec3(0.7f, 0.75f, 0.8f);           // светло-серый, металлический
-labParams.grid.lineColor = glm::vec3(0.0f, 0.8f, 0.3f);       // неоново-зеленый (как осциллограф)
-labParams.grid.lineAlpha = 0.9f;
-labParams.grid.gridGlow = 0.8f;                                // холодное свечение
-
-// Легкая дымка, как в кондиционируемом помещении
-labParams.depthFog.enabled = true;
-labParams.depthFog.startDistance = 300.0f;
-labParams.depthFog.endDistance = 2500.0f;
-labParams.depthFog.fogColor = glm::vec3(0.8f, 0.85f, 0.9f);    // очень светлый, стерильный
-
-// ------------------------------------------------------------
-// 8. 👻 ЗАБРОШЕННО - пыльно, старо, забыто
-// ------------------------------------------------------------
-LightingParams abandonedParams;
-abandonedParams.hullColor = glm::vec3(0.25f, 0.2f, 0.15f);    // коричневато-серый (пыль)
-abandonedParams.grid.lineColor = glm::vec3(0.5f, 0.45f, 0.4f); // тусклая серая сетка
-abandonedParams.grid.lineAlpha = 0.5f;                          // полупрозрачная
-abandonedParams.grid.gridGlow = 0.2f;                           // едва заметное свечение
-
-// Пыльная дымка
-abandonedParams.depthFog.enabled = true;
-abandonedParams.depthFog.startDistance = 100.0f;
-abandonedParams.depthFog.endDistance = 1200.0f;
-abandonedParams.depthFog.fogColor = glm::vec3(0.2f, 0.18f, 0.15f); // серо-коричневый
-
-// ------------------------------------------------------------
-// 9. ✨ МАГИЧЕСКОЕ/МИСТИЧЕСКОЕ - фиолетовые тона, мерцание
-// ------------------------------------------------------------
-LightingParams magicalParams;
-magicalParams.hullColor = glm::vec3(0.2f, 0.1f, 0.3f);        // темно-фиолетовый корпус
-magicalParams.grid.lineColor = glm::vec3(0.8f, 0.4f, 1.0f);    // ярко-фиолетовая сетка
-magicalParams.grid.lineAlpha = 0.9f;
-magicalParams.grid.gridGlow = 1.8f;                            // сильное магическое свечение
-
-// Фиолетовый туман
-magicalParams.depthFog.enabled = true;
-magicalParams.depthFog.startDistance = 150.0f;
-magicalParams.depthFog.endDistance = 1500.0f;
-magicalParams.depthFog.fogColor = glm::vec3(0.2f, 0.1f, 0.3f); // фиолетовый
-
-// ------------------------------------------------------------
-// 10. 🏭 ИНДУСТРИАЛЬНЫЙ РАЙОН - грязно, дымно, механически
-// ------------------------------------------------------------
-LightingParams industrialParams;
-industrialParams.hullColor = glm::vec3(0.3f, 0.25f, 0.2f);     // грязно-серый корпус
-industrialParams.grid.lineColor = glm::vec3(0.9f, 0.6f, 0.1f); // оранжево-желтый (как огни)
-industrialParams.grid.lineAlpha = 0.85f;
-industrialParams.grid.gridGlow = 0.9f;
-
-// Желтоватый смог
-industrialParams.depthFog.enabled = true;
-industrialParams.depthFog.startDistance = 120.0f;
-industrialParams.depthFog.endDistance = 1000.0f;
-industrialParams.depthFog.fogColor = glm::vec3(0.3f, 0.25f, 0.15f); // желто-коричневый
+static LightingParams asteroid() {
+    LightingParams p;
+    
+    // Маленькие дистанции (астероиды мелкие)
+    p.dist.close = 300.0f;
+    p.dist.medium = 3000.0f;
+    p.dist.far = 10000.0f;
+    
+    // Землистые цвета
+    p.hullColorNear = glm::vec3(0.5f, 0.4f, 0.3f);
+    p.hullColorMid = glm::vec3(0.6f, 0.5f, 0.4f);
+    p.hullColorFar = glm::vec3(0.7f, 0.6f, 0.5f);
+    
+    // Сетка включена
+    p.grid.enabled = true;
+    p.grid.lineColor = glm::vec3(0.6f, 0.5f, 0.4f);
+    
+    return p;
+}
 ```
 
-## Как использовать:
+### planet()
+```cpp
+static LightingParams planet() {
+    LightingParams p;
+    
+    // Огромные дистанции
+    p.dist.close = 2000.0f;
+    p.dist.medium = 20000.0f;
+    p.dist.far = 100000.0f;
+    p.dist.horizon = 200000.0f;
+    
+    // Голубоватые тона
+    p.hullColorNear = glm::vec3(0.2f, 0.3f, 0.6f);
+    p.hullColorMid = glm::vec3(0.3f, 0.4f, 0.7f);
+    p.hullColorFar = glm::vec3(0.4f, 0.5f, 0.8f);
+    
+    return p;
+}
+```
+
+---
+
+## Uniform Applicators
+
+### applyLargeObjectUniforms()
+**Для кого**: Станции, астероиды, планеты (шейдер `large_object_fill`)
 
 ```cpp
-// В зависимости от сектора/ситуации выбираем нужную атмосферу
-LightingParams currentAtmosphere;
+void applyLargeObjectUniforms(GLuint shader, const glm::mat4& mvp, 
+                             const glm::mat4& model, const glm::vec3& cameraPos) const;
+```
 
-switch (currentSector.atmosphere) {
-    case AtmosphereType::Sunny:
-        currentAtmosphere = sunnyDayParams;
-        break;
-    case AtmosphereType::Despair:
-        currentAtmosphere = despairParams;
-        break;
-    case AtmosphereType::Magical:
-        currentAtmosphere = magicalParams;
-        break;
-    // ... и так далее
-}
+**Что передает**:
+- Матрицы (MVP, M, normalMat)
+- Позицию камеры
+- Параметры освещения
+- Дистанции и цвета по зонам
+- Параметры сетки
+- Параметры тумана
 
-// Применяем к объектам
-m_meshRenderer.draw(
-    *gpu,
-    largeObjectShader,
-    edgeShader,
-    mvp,
-    model,
-    currentAtmosphere,  // ← подставляем нужную атмосферу
-    cameraPos
+### applyShipUniforms()
+**Для кого**: Корабли (шейдер `mesh_fill`)
+
+```cpp
+void applyShipUniforms(GLuint shader, const glm::mat4& mvp, 
+                      const glm::mat4& model, const glm::vec3& cameraPos) const;
+```
+
+**Что передает**:
+- Матрицы
+- Позицию камеры
+- Параметры освещения
+- Цвет корпуса
+- Эффекты поверхности (fresnel, rim, normalBlend)
+- Параметры тумана
+
+### applyEdgeUniforms()
+**Для кого**: Ребра (шейдер `edge_shader`)
+
+```cpp
+void applyEdgeUniforms(GLuint shader, const glm::mat4& mvp, 
+                      const glm::vec3& cameraPos,
+                      int viewportWidth, int viewportHeight) const;
+```
+
+**Что передает**:
+- Матрицу MVP
+- Позицию камеры
+- Размер вьюпорта (для толщины линий)
+- Цвет, прозрачность, толщину ребер
+- Параметры затухания
+
+---
+
+## Как работать с шейдерами
+
+### 1. Инициализация шейдеров
+```cpp
+// В InitShaders.cpp
+shaders.load(
+    "mesh_fill",
+    "assets/shaders/mesh/mesh_fill.vert",
+    "assets/shaders/mesh/mesh_fill.frag",
+    ShaderProgram::MeshFill  // ← указываем тип!
 );
 ```
 
-Теперь можно создавать совершенно разные настроения от уютного солнечного дня до полной безнадежности, просто меняя параметры освещения и тумана!
+### 2. Получение шейдера
+```cpp
+GLuint fillShader = ShaderLibrary::instance().get("mesh_fill");
+GLuint edgeShader = ShaderLibrary::instance().get("edge_shader");
+```
+
+### 3. Создание параметров
+```cpp
+LightingParams params = LightingParams::ship();  // или station(), planet()
+
+// Можно изменить отдельные параметры
+params.hullColor = glm::vec3(0.1f, 0.2f, 0.3f);
+params.rimIntensity = 0.3f;
+```
+
+### 4. Рендеринг объекта
+```cpp
+m_meshRenderer.draw(
+    *gpuMesh,           // меш объекта
+    fillShader,         // шейдер для корпуса
+    edgeShader,         // шейдер для ребер
+    mvp,                // матрица MVP
+    model,              // матрица модели
+    params,             // параметры освещения
+    cameraPos           // позиция камеры
+);
+```
+
+### 5. В MeshRenderer.cpp автоматически определяется тип шейдера
+```cpp
+ShaderProgram shaderType = ShaderLibrary::instance().getType(meshShader);
+
+if (shaderType == ShaderProgram::MeshFill) {
+    params.applyShipUniforms(meshShader, mvp, model, cameraPos);
+} else if (shaderType == ShaderProgram::LargeObjectFill) {
+    params.applyLargeObjectUniforms(meshShader, mvp, model, cameraPos);
+}
+```
+
+---
+
+## Практические примеры
+
+### Пример 1: Темный корабль с легкой подсветкой краев
+```cpp
+static LightingParams stealthShip() {
+    LightingParams p;
+    
+    // Очень темное освещение
+    p.lightColor = glm::vec3(0.3f, 0.3f, 0.4f);
+    p.ambientColor = glm::vec3(0.05f, 0.05f, 0.1f);
+    
+    // Черный корпус
+    p.hullColor = glm::vec3(0.02f, 0.02f, 0.03f);
+    
+    // Едва заметные края
+    p.rimIntensity = 0.1f;
+    p.fresnelPower = 3.0f;
+    
+    // Тонкие темные ребра
+    p.edgeColor = glm::vec3(0.2f, 0.2f, 0.25f);
+    p.edgeAlpha = 0.5f;
+    p.edgeFadeStart = 50.0f;
+    p.edgeFadeEnd = 500.0f;
+    
+    return p;
+}
+```
+
+### Пример 2: Яркая станция с сеткой
+```cpp
+static LightingParams researchStation() {
+    LightingParams p = LightingParams::station();
+    
+    // Яркое освещение
+    p.lightColor = glm::vec3(1.2f, 1.2f, 1.2f);
+    
+    // Белый корпус с голубым отливом
+    p.hullColorNear = glm::vec3(0.9f, 0.95f, 1.0f);
+    p.hullColorMid = glm::vec3(0.8f, 0.85f, 0.9f);
+    p.hullColorFar = glm::vec3(0.7f, 0.75f, 0.8f);
+    
+    // Синие ребра
+    p.edgeColor = glm::vec3(0.3f, 0.6f, 1.0f);
+    
+    // Сетка для техно-стиля
+    p.grid.enabled = true;
+    p.grid.lineColor = glm::vec3(0.2f, 0.5f, 1.0f);
+    p.grid.lineAlpha = 0.5f;
+    p.grid.glow = 0.3f;
+    
+    return p;
+}
+```
+
+### Пример 3: Астероид с красным свечением
+```cpp
+static LightingParams redAsteroid() {
+    LightingParams p = LightingParams::asteroid();
+    
+    // Красноватое освещение
+    p.lightColor = glm::vec3(1.0f, 0.7f, 0.6f);
+    p.ambientColor = glm::vec3(0.3f, 0.1f, 0.1f);
+    
+    // Красноватые тона
+    p.hullColorNear = glm::vec3(0.7f, 0.3f, 0.2f);
+    p.hullColorMid = glm::vec3(0.8f, 0.4f, 0.3f);
+    p.hullColorFar = glm::vec3(0.9f, 0.5f, 0.4f);
+    
+    // Сетка с красным свечением
+    p.grid.lineColor = glm::vec3(1.0f, 0.3f, 0.2f);
+    p.grid.glow = 0.5f;
+    
+    return p;
+}
+```
+
+---
+
+## Важные замечания
+
+### 🔥 Ключевые принципы
+1. **Ambient должен быть слабым** (0.1-0.3), иначе тени будут "светиться"
+2. **Rim и Specular** лучше умножать, а не складывать
+3. **Дистанции** должны соответствовать размеру объекта
+4. **Цвета в шейдере** всегда в диапазоне 0.0-1.0
+
+### 🚫 Частые ошибки
+1. Использование `ambientColor.r` вместо полного вектора
+2. Слишком яркий ambient в тенях
+3. Неправильные дистанции для размера объекта
+4. Забытый тип шейдера при загрузке
+
+### ✅ Правильный подход
+1. Начинать с простого цвета (Блок 0)
+2. Добавлять освещение поэтапно
+3. Использовать отладочный вывод uniform'ов
+4. Тестировать на разных расстояниях

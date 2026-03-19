@@ -22,7 +22,7 @@
 
 // ============== components ==============
 #include "ui/components/UIContainer.h"
-#include "ui/components/UICameraView.h"
+#include "ui/components/minicamera/UICameraView.h"
 
 // =========== симулейшен ==================
 
@@ -39,9 +39,16 @@
 #include "src/ui/components/radar/RadarWidgetBase.h" 
 
 #include "src/WebSocket/DebugServer.h" 
+#include "src/debug/FrustumDebugData.h"
+
 #include "src/game/network/ClientShipCommand.h"
 
 #include "game/damage/TestDamageHandler.h"
+
+
+
+
+
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
@@ -83,6 +90,8 @@ public:
     json shipCoreStatusToJson(const game::ShipCoreStatus& status);
 
     void testDamageSystem();
+
+    void handleResize(int width, int height);
 
 private:
 
@@ -142,10 +151,14 @@ private:
     SceneRenderer                                   m_sceneRenderer;
 
 
-    std::unique_ptr<game::debug::DebugServer>       m_debugServer;
+    // std::unique_ptr<game::debug::DebugServer>       m_debugServer;
+    std::unique_ptr<game::debug::DebugServer>       m_coreStatusServer;
+    std::unique_ptr<game::debug::DebugServer>       m_frustumDebugServer;
+
     std::vector<ClientShipCommand>                  m_debugCommands;
     std::mutex                                      m_debugCommandsMutex;                // для защиты очереди
 
 
-    game::damage::TestDamageHandler handler;
+    game::damage::TestDamageHandler                 handler;
+    
 };

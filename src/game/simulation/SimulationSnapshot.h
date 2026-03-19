@@ -1,9 +1,11 @@
 #pragma once
 #include <vector>
 #include <glm/glm.hpp>
-#include "ShipSnapshot.h"
-#include "world/WorldSignal.h"
-#include "render/HUD/WorldLabel.h"
+
+#include "src/game/simulation/ShipSnapshot.h"
+#include "src/game/simulation/ObjectSnapshot.h"
+#include "src/world/WorldSignal.h"
+#include "src/render/HUD/WorldLabel.h"
 
 
 
@@ -13,4 +15,5 @@ struct SimulationSnapshot
     uint32_t                    snapshotTick;       //---Это копия m_serverTick в snapshot.---
     std::vector<ShipSnapshot>   ships;
     std::vector<WorldSignal>    signals;
+    std::vector<ObjectSnapshot> objects;
 };

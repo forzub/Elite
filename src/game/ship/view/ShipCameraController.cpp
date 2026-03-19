@@ -69,7 +69,12 @@ void ShipCameraController::updateDrone(
             glm::vec3(0,1,0)
         );
 
-    camera.setOrientationMatrix(glm::inverse(look));
+    // camera.setOrientationMatrix(glm::inverse(look));
+    glm::mat4 world = glm::inverse(look);
+
+    // берём только вращение
+    glm::mat4 rotation = glm::mat4(glm::mat3(world));
+    camera.setOrientationMatrix(rotation);
 }
 
 

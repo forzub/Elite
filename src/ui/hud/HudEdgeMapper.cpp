@@ -1,6 +1,7 @@
 #include "HudEdgeMapper.h"
 #include <limits>
 #include <cmath>
+#include <iostream>
 
 // Пересечение луча и отрезка
 static bool intersectRaySegment(
@@ -55,6 +56,8 @@ bool HudEdgeMapper::projectDirection(
     glm::vec2& outPoint
 ) const
 {
+    
+
     float bestT = std::numeric_limits<float>::max();
     bool found = false;
 

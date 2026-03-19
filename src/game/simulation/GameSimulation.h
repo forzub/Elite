@@ -13,6 +13,9 @@
 #include "game/simulation/NpcAiSystem.h"
 #include "game/simulation/SimulationSnapshot.h"
 
+#include "src/world/objects/StaticObject.h"
+#include "src/world/types/ObjectType.h"
+
 
 class StateContext;
 
@@ -35,6 +38,9 @@ public:
     Ship* playerShip();
     const Ship* playerShip() const;
 
+
+
+
     
     EntityId spawnShip(
         ShipRole role,
@@ -42,6 +48,15 @@ public:
         glm::vec3 position,
         const ShipInitData& initData
     );
+
+    EntityId spawnStation(
+        ObjectType type,
+        const glm::vec3& position
+    );
+
+
+
+
 
     void setPlayerControl(const ShipControlState& control);
     void applyControl(EntityId id, const ShipControlState& control);
@@ -55,6 +70,8 @@ private:
     uint32_t                            m_nextEntityId = 1;
 
     std::unordered_map<EntityId, std::unique_ptr<Ship>> m_ships;
+    std::unordered_map<EntityId, StaticObject> m_staticObjects;
+
     EntityId                            m_playerId;
     WorldParams                         m_world;
 

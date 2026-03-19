@@ -31,7 +31,7 @@ public:
     virtual void render() = 0;
 
     virtual bool isModal() const { return false; }
-
+    virtual void handleResize(int width, int height) {}
     
 
     // === ГЛОБАЛЬНЫЙ ESC ===

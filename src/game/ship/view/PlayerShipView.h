@@ -60,6 +60,12 @@ struct PlayerShipView
     ShipCockpitState                m_cockpitState;
     std::vector<WorldLabel>         m_worldLabels;
 
+    
+    const ShipDescriptor* m_shipDesc = nullptr;
+
+
+    static bool g_debugLogNextFrame;
+
 
     void updateCockpitState(
         ShipRole role,
@@ -100,9 +106,9 @@ struct PlayerShipView
         const std::vector<WorldLabel>& labels
     );
     
-    
+    void resize(int width, int height);
 
-
+    void updateBoundary(int width, int height);
 
     
 //   ####     ####     ####     ####     #####    #####    ####    ######    #####

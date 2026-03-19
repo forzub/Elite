@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frustum Debug Viewer</title>
+    <style>
+        * { 
+            box-sizing: border-box; 
+            margin: 0;
+            padding: 0;
+        }
+        
+        body { 
+            margin: 0; 
+            padding: 15px; 
+            font-family: 'Courier New', monospace; 
+            background: #111; 
+            color: #ddd;
+            min-width: 320px;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        h2 { 
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            margin-bottom: 15px;
+            color: #ffaa00;
+            letter-spacing: 1px;
+        }
+        
+        #container { 
+            display: flex; 
+            flex-wrap: wrap;
+            gap: 15px; 
+            height: calc(100vh - 70px);
+        }
+        
+        .canvas-section {
+            flex: 1 1 500px;
+            min-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .canvas-container {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .canvas-header {
+            background: #222;
+            padding: 8px 12px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        
+        .canvas-title {
+            color: #ffaa00;
+            font-weight: bold;
+        }
+        
+        .canvas-scale {
+            color: #888;
+            font-size: 0.8rem;
+            background: #2a2a2a;
+            padding: 2px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .canvas-scale:hover {
+            background: #444;
+            color: #ffaa00;
+        }
+        
+        .canvas-wrapper {
+            padding: 10px;
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .canvas-wrapper canvas {
+            width: 100%;
+            height: auto;
+            max-width: 500px;
+            max-height: 500px;
+            aspect-ratio: 1/1;
+            display: block;
+            background: #0a0a0a;
+            border-radius: 4px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        
+        .canvas-footer {
+            background: #1e1e1e;
+            padding: 6px 12px;
+            border-top: 1px solid #333;
+            font-size: 0.8rem;
+            color: #888;
+            display: flex;
+            gap: 15px;
+        }
+        
+        .coord-info {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .coord-info span {
+            color: #ffaa00;
+        }
+        
+        #stats { 
+            flex: 0 0 350px;
+            min-width: 300px;
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            overflow-y: auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .stat-panel {
+            background: #222;
+            border-radius: 4px;
+            padding: 12px;
+            border-left: 3px solid #ffaa00;
+        }
+        
+        .stat-panel h3 {
+            color: #ffaa00;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #2a2a2a;
+            font-size: 0.9rem;
+        }
+        
+        .stat-label {
+            color: #888;
+        }
+        
+        .stat-value {
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .camera-selector {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .camera-btn {
+            flex: 1;
+            background: #333;
+            border: 1px solid #555;
+            color: #ddd;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .camera-btn.active {
+            background: #ffaa00;
+            color: #000;
+            border-color: #ffaa00;
+            font-weight: bold;
+        }
+        
+        .camera-btn:hover {
+            background: #444;
+        }
+        
+        .camera-btn.active:hover {
+            background: #ffbb22;
+        }
+        
+        .camera-badge {
+            background: #ffaa00;
+            color: #000;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .zoom-btn {
+            flex: 1;
+            background: #333;
+            border: 1px solid #555;
+            color: #ddd;
+            padding: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+        
+        .zoom-btn:hover {
+            background: #444;
+            border-color: #ffaa00;
+        }
+        
+        .priority-note {
+            background: #2a2a2a;
+            color: #ffaa00;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 5px;
+        }
+        
+        #connectionStatus {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #connectionStatus.connected {
+            background: #1a3a1a;
+            color: #0f0;
+            border-left: 3px solid #0f0;
+        }
+        
+        #connectionStatus.disconnected {
+            background: #3a1a1a;
+            color: #f00;
+            border-left: 3px solid #f00;
+        }
+        
+        #shipList {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        .ship-entry {
+            padding: 6px 8px;
+            margin: 2px 0;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .ship-entry.visible {
+            background: #1a3a1a;
+            border-left: 3px solid #0f0;
+        }
+        
+        .ship-entry.hidden {
+            background: #3a1a1a;
+            border-left: 3px solid #f00;
+        }
+        
+        .ship-entry:hover {
+            filter: brightness(1.2);
+        }
+        
+        .ship-id {
+            font-weight: bold;
+        }
+        
+        .ship-dist {
+            background: #00000040;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        
+        .toggle-debug {
+            background: #333;
+            border: 1px solid #555;
+            color: #ddd;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        
+        .toggle-debug:hover {
+            background: #444;
+            border-color: #ffaa00;
+        }
+        
+        #debug-console {
+            background: #0a0a0a;
+            color: #0f0;
+            padding: 10px;
+            font-size: 0.7rem;
+            border-radius: 4px;
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            display: none;
+        }
+        
+        @media (max-width: 900px) {
+            body { padding: 10px; }
+            #container { 
+                flex-direction: column;
+                height: auto;
+                overflow: auto;
+            }
+            .canvas-wrapper canvas {
+                max-width: 400px;
+                max-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2>FRUSTUM DEBUG VISUALIZER</h2>
+        <button class="toggle-debug" onclick="toggleDebug()">DEBUG CONSOLE</button>
+    </div>
+    
+    <div id="container">
+        <div class="canvas-section">
+            <div class="canvas-container">
+                <div class="canvas-header">
+                    <span class="canvas-title">AZIMUTH VIEW (X/Z)</span>
+                    <span class="canvas-scale" id="azimuthScale" onclick="resetScale()">Scale: ship priority</span>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="canvasAzimuth" width="500" height="500"></canvas>
+                </div>
+                <div class="canvas-footer">
+                    <div class="coord-info">
+                        <span>X</span> left/right
+                    </div>
+                    <div class="coord-info">
+                        <span>Z</span> forward
+                    </div>
+                    <div style="margin-left: auto;">Range: 150u</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="canvas-section">
+            <div class="canvas-container">
+                <div class="canvas-header">
+                    <span class="canvas-title">ELEVATION X/Y</span>
+                    <span class="canvas-scale" id="elevationXYScale">Scale: ship priority</span>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="canvasElevationXY" width="500" height="500"></canvas>
+                </div>
+                <div class="canvas-footer">
+                    <div class="coord-info">
+                        <span>X</span> left/right
+                    </div>
+                    <div class="coord-info">
+                        <span>Y</span> up/down
+                    </div>
+                    <div style="margin-left: auto;">Range: 150u</div>
+                </div>
+            </div>
+            
+            <div class="canvas-container">
+                <div class="canvas-header">
+                    <span class="canvas-title">ELEVATION Y/Z</span>
+                    <span class="canvas-scale" id="elevationYZScale">Scale: ship priority</span>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="canvasElevationYZ" width="500" height="500"></canvas>
+                </div>
+                <div class="canvas-footer">
+                    <div class="coord-info">
+                        <span>Y</span> up/down
+                    </div>
+                    <div class="coord-info">
+                        <span>Z</span> forward
+                    </div>
+                    <div style="margin-left: auto;">Range: 150u</div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="stats">
+            <div id="connectionStatus" class="disconnected">
+                <span>⏳</span> CONNECTING...
+            </div>
+            
+            <div class="camera-selector">
+                <button id="cameraBtn0" class="camera-btn active" onclick="selectCamera(0)">FRONT (MAIN)</button>
+                <button id="cameraBtn1" class="camera-btn" onclick="selectCamera(1)">REAR (MINI)</button>
+            </div>
+            
+            <div class="priority-note">
+                ⚡ Priority: show ships within 150u
+            </div>
+            
+            <div class="stat-panel">
+                <h3>CAMERA <span id="cameraName" class="camera-badge">FRONT</span></h3>
+                <div class="stat-row">
+                    <span class="stat-label">Camera ID:</span>
+                    <span class="stat-value" id="cameraId">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Position:</span>
+                    <span class="stat-value" id="camPos">0, 0, 0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Direction:</span>
+                    <span class="stat-value" id="camDir">0, 0, -1</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">FOV / Aspect:</span>
+                    <span class="stat-value" id="camFov">45° / 1.0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Near/Far:</span>
+                    <span class="stat-value" id="camNearFar">0.1 / 1000</span>
+                </div>
+            </div>
+            
+            <div class="stat-panel">
+                <h3>FRUSTUM</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Near plane:</span>
+                    <span class="stat-value" id="nearPlaneSize">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Far plane:</span>
+                    <span class="stat-value" id="farPlaneSize">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Volume:</span>
+                    <span class="stat-value" id="frustumVolume">-</span>
+                </div>
+            </div>
+            
+            <div class="stat-panel">
+                <h3>SHIPS</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Total:</span>
+                    <span class="stat-value" id="shipCount">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Visible:</span>
+                    <span class="stat-value" id="visibleCount" style="color: #0f0;">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Hidden:</span>
+                    <span class="stat-value" id="hiddenCount" style="color: #f00;">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">In range (150u):</span>
+                    <span class="stat-value" id="inRangeCount">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Nearest:</span>
+                    <span class="stat-value" id="nearestDist">-</span>
+                </div>
+                
+                <div id="shipList"></div>
+            </div>
+            
+            <div id="debug-console"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let debugEnabled = false;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        
+        // Данные для камер
+        let cameraData = {
+            0: null, // front
+            1: null  // rear
+        };
+        
+        let selectedCameraId = 0;
+        
+        // Фиксированная дальность для приоритета кораблей
+        const SHIP_PRIORITY_RANGE = 150;
+        
+        const canvasAz = document.getElementById('canvasAzimuth');
+        const canvasXY = document.getElementById('canvasElevationXY');
+        const canvasYZ = document.getElementById('canvasElevationYZ');
+        const ctxAz = canvasAz.getContext('2d');
+        const ctxXY = canvasXY.getContext('2d');
+        const ctxYZ = canvasYZ.getContext('2d');
+        const debugConsole = document.getElementById('debug-console');
+        
+        // Fixed grid size in world units
+        const GRID_SIZE = 25; // Уменьшил сетку для лучшей детализации
+        const GRID_EXTENT = 6; // -6 to +6 grid lines (покрывает 150u)
+        
+        function logDebug(...args) {
+            console.log(...args);
+            if (!debugEnabled) return;
+            
+            const msg = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg
+            ).join(' ');
+            
+            debugConsole.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${msg}</div>`;
+            debugConsole.scrollTop = debugConsole.scrollHeight;
+        }
+        
+        function toggleDebug() {
+            debugEnabled = !debugEnabled;
+            debugConsole.style.display = debugEnabled ? 'block' : 'none';
+            logDebug('Debug mode', debugEnabled ? 'enabled' : 'disabled');
+        }
+        
+        function selectCamera(cameraId) {
+            selectedCameraId = cameraId;
+            
+            document.getElementById('cameraBtn0').classList.remove('active');
+            document.getElementById('cameraBtn1').classList.remove('active');
+            document.getElementById(`cameraBtn${cameraId}`).classList.add('active');
+            
+            if (cameraData[cameraId]) {
+                updateDisplay(cameraData[cameraId]);
+            } else {
+                clearCanvases();
+                document.getElementById('cameraName').innerHTML = 
+                    cameraId === 0 ? 'FRONT' : 'REAR';
+            }
+            
+            logDebug('Selected camera:', cameraId);
+        }
+        
+        function resetScale() {
+            // Просто перерисовываем с текущими данными
+            if (cameraData[selectedCameraId]) {
+                drawAzimuth(cameraData[selectedCameraId]);
+                drawElevationXY(cameraData[selectedCameraId]);
+                drawElevationYZ(cameraData[selectedCameraId]);
+            }
+        }
+        
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.hostname || 'localhost';
+            const port = '8081';
+            const wsUrl = `${protocol}//${host}:${port}`;
+            
+            logDebug('Connecting to:', wsUrl);
+            
+            try {
+                ws = new WebSocket(wsUrl);
+            } catch(e) {
+                logDebug('WebSocket creation error:', e);
+                setTimeout(connect, 2000);
+                return;
+            }
+            
+            ws.onopen = () => {
+                logDebug('WebSocket connected');
+                document.getElementById('connectionStatus').className = 'connected';
+                document.getElementById('connectionStatus').innerHTML = '<span>✅</span> CONNECTED';
+                reconnectAttempts = 0;
+            };
+            
+            ws.onclose = () => {
+                logDebug('WebSocket closed');
+                document.getElementById('connectionStatus').className = 'disconnected';
+                document.getElementById('connectionStatus').innerHTML = '<span>❌</span> DISCONNECTED';
+                
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    reconnectAttempts++;
+                    setTimeout(connect, 2000);
+                }
+            };
+            
+            ws.onerror = (error) => {
+                logDebug('WebSocket error:', error);
+            };
+            
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'frustum_debug') {
+                        const cameraId = data.camera?.cameraId;
+                        
+                        if (cameraId === 0 || cameraId === 1) {
+                            cameraData[cameraId] = data;
+                            logDebug(`Received data for camera ${cameraId} (${data.camera?.cameraName})`);
+                            
+                            if (cameraId === selectedCameraId) {
+                                updateDisplay(data);
+                            }
+                        } else {
+                            logDebug('Received data without cameraId or invalid ID!', data);
+                        }
+                    }
+                } catch(e) {
+                    logDebug('Parse error:', e);
+                }
+            };
+        }
+        
+        function updateDisplay(data) {
+            if (!data) return;
+            
+            const camera = data.camera;
+            if (!camera) return;
+            
+            document.getElementById('cameraId').innerHTML = camera.cameraId !== undefined ? camera.cameraId : '?';
+            document.getElementById('cameraName').innerHTML = 
+                camera.cameraName?.toUpperCase() || (camera.cameraId === 0 ? 'FRONT' : 'REAR');
+            
+            document.getElementById('camPos').innerHTML = 
+                `${camera.position?.[0]?.toFixed(0) || 0}, ${camera.position?.[1]?.toFixed(0) || 0}, ${camera.position?.[2]?.toFixed(0) || 0}`;
+            
+            document.getElementById('camDir').innerHTML = 
+                `${camera.direction?.[0]?.toFixed(2) || 0}, ${camera.direction?.[1]?.toFixed(2) || 0}, ${camera.direction?.[2]?.toFixed(2) || 0}`;
+            
+            document.getElementById('camFov').innerHTML = 
+                `${camera.fov || 45}° / ${camera.aspect?.toFixed(2) || 1.0}`;
+            
+            document.getElementById('camNearFar').innerHTML = 
+                `${camera.near || 0.1} / ${camera.far || 1000}`;
+            
+            if (camera.frustumCorners) {
+                const corners = camera.frustumCorners;
+                
+                const nearWidth = Math.sqrt(
+                    Math.pow(corners[1][0] - corners[0][0], 2) +
+                    Math.pow(corners[1][1] - corners[0][1], 2) +
+                    Math.pow(corners[1][2] - corners[0][2], 2)
+                );
+                
+                const nearHeight = Math.sqrt(
+                    Math.pow(corners[3][0] - corners[0][0], 2) +
+                    Math.pow(corners[3][1] - corners[0][1], 2) +
+                    Math.pow(corners[3][2] - corners[0][2], 2)
+                );
+                
+                const farWidth = Math.sqrt(
+                    Math.pow(corners[5][0] - corners[4][0], 2) +
+                    Math.pow(corners[5][1] - corners[4][1], 2) +
+                    Math.pow(corners[5][2] - corners[4][2], 2)
+                );
+                
+                const farHeight = Math.sqrt(
+                    Math.pow(corners[7][0] - corners[4][0], 2) +
+                    Math.pow(corners[7][1] - corners[4][1], 2) +
+                    Math.pow(corners[7][2] - corners[4][2], 2)
+                );
+                
+                document.getElementById('nearPlaneSize').innerHTML = 
+                    `${nearWidth.toFixed(1)} x ${nearHeight.toFixed(1)}`;
+                document.getElementById('farPlaneSize').innerHTML = 
+                    `${farWidth.toFixed(1)} x ${farHeight.toFixed(1)}`;
+                
+                const depth = camera.far - camera.near;
+                const volume = (nearWidth * nearHeight + farWidth * farHeight) / 2 * depth;
+                document.getElementById('frustumVolume').innerHTML = volume.toFixed(0);
+            }
+            
+            if (data.ships && Array.isArray(data.ships)) {
+                const total = data.ships.length;
+                const visible = data.ships.filter(s => s.visible).length;
+                const hidden = total - visible;
+                const inRange = data.ships.filter(s => s.distance <= SHIP_PRIORITY_RANGE).length;
+                
+                document.getElementById('shipCount').innerHTML = total;
+                document.getElementById('visibleCount').innerHTML = visible;
+                document.getElementById('hiddenCount').innerHTML = hidden;
+                document.getElementById('inRangeCount').innerHTML = inRange;
+                
+                let nearest = Infinity;
+                data.ships.forEach(ship => {
+                    if (ship.distance) {
+                        nearest = Math.min(nearest, ship.distance);
+                    }
+                });
+                
+                document.getElementById('nearestDist').innerHTML = 
+                    nearest !== Infinity ? nearest.toFixed(1) + 'u' : '-';
+                
+                let shipHtml = '';
+                data.ships.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+                
+                data.ships.forEach(ship => {
+                    const shipClass = ship.visible ? 'visible' : 'hidden';
+                    const inRangeClass = ship.distance <= SHIP_PRIORITY_RANGE ? 'in-range' : '';
+                    shipHtml += `
+                        <div class="ship-entry ${shipClass}" 
+                             onclick="highlightShip(${ship.id})"
+                             title="ID: ${ship.id}\nPos: (${ship.position[0].toFixed(0)}, ${ship.position[1].toFixed(0)}, ${ship.position[2].toFixed(0)})\nRadius: ${ship.radius}">
+                            <span class="ship-id">${ship.id}</span>
+                            <span class="ship-dist">${ship.distance?.toFixed(1) || '?'}u</span>
+                        </div>
+                    `;
+                });
+                
+                document.getElementById('shipList').innerHTML = shipHtml || '<div style="padding: 10px; color: #888;">No ships detected</div>';
+            }
+            
+            if (camera && camera.frustumCorners) {
+                drawAzimuth(data);
+                drawElevationXY(data);
+                drawElevationYZ(data);
+            }
+        }
+        
+        function clearCanvases() {
+            [ctxAz, ctxXY, ctxYZ].forEach(ctx => {
+                ctx.clearRect(0, 0, 500, 500);
+                ctx.fillStyle = '#888';
+                ctx.font = '14px monospace';
+                ctx.fillText('No data for this camera', 50, 250);
+            });
+        }
+        
+        function calculateScale() {
+            // Фиксированный масштаб для отображения 150u
+            const canvasSize = 500;
+            const margin = 50;
+            const availableSize = canvasSize - 2 * margin;
+            
+            // Хотим видеть 150u в обе стороны от центра
+            return availableSize / (SHIP_PRIORITY_RANGE * 2);
+        }
+        
+        function drawGrid(ctx, centerX, centerY, scale, xLabel, yLabel) {
+            ctx.save();
+            
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            
+            for (let i = -GRID_EXTENT; i <= GRID_EXTENT; i++) {
+                const pos = i * GRID_SIZE * scale;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX + pos, 0);
+                ctx.lineTo(centerX + pos, 500);
+                ctx.strokeStyle = i === 0 ? '#666' : '#333';
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, centerY - pos);
+                ctx.lineTo(500, centerY - pos);
+                ctx.strokeStyle = i === 0 ? '#666' : '#333';
+                ctx.stroke();
+                
+                ctx.fillStyle = '#666';
+                ctx.font = '10px monospace';
+                if (i !== 0 && Math.abs(i * GRID_SIZE) <= SHIP_PRIORITY_RANGE + GRID_SIZE) {
+                    ctx.fillText(`${i * GRID_SIZE}`, centerX + pos + 5, centerY - 5);
+                    ctx.fillText(`${i * GRID_SIZE}`, centerX + 5, centerY - pos - 5);
+                }
+            }
+            
+            // Highlight the priority range (150u)
+            ctx.strokeStyle = '#ffaa0040';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            
+            // Circle at 150u radius
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, SHIP_PRIORITY_RANGE * scale, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            ctx.setLineDash([]);
+            
+            ctx.beginPath();
+            ctx.strokeStyle = '#ffaa00';
+            ctx.lineWidth = 2;
+            
+            ctx.moveTo(centerX - GRID_EXTENT * GRID_SIZE * scale, centerY);
+            ctx.lineTo(centerX + GRID_EXTENT * GRID_SIZE * scale, centerY);
+            
+            ctx.moveTo(centerX, centerY - GRID_EXTENT * GRID_SIZE * scale);
+            ctx.lineTo(centerX, centerY + GRID_EXTENT * GRID_SIZE * scale);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#ffaa00';
+            ctx.font = '12px bold monospace';
+            ctx.fillText(xLabel, centerX + GRID_EXTENT * GRID_SIZE * scale - 20, centerY - 10);
+            ctx.fillText(yLabel, centerX + 10, centerY - GRID_EXTENT * GRID_SIZE * scale + 20);
+            
+            ctx.restore();
+        }
+        
+        function drawAzimuth(data) {
+            ctxAz.clearRect(0, 0, canvasAz.width, canvasAz.height);
+            
+            if (!data.camera || !data.camera.frustumCorners) {
+                ctxAz.fillStyle = '#888';
+                ctxAz.font = '14px monospace';
+                ctxAz.fillText('No frustum data', 50, 250);
+                return;
+            }
+            
+            const size = canvasAz.width;
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const scale = calculateScale();
+            
+            document.getElementById('azimuthScale').innerHTML = `Range: ${SHIP_PRIORITY_RANGE}u`;
+            
+            drawGrid(ctxAz, centerX, centerY, scale, 'X', 'Z');
+            
+            const corners = data.camera.frustumCorners;
+            
+            // Draw connecting lines (clipped to range)
+            ctxAz.strokeStyle = '#ffaa0040';
+            ctxAz.lineWidth = 1;
+            ctxAz.beginPath();
+            for(let i = 0; i < 4; i++) {
+                const x1 = centerX + corners[i][0] * scale;
+                const y1 = centerY - corners[i][2] * scale;
+                const x2 = centerX + corners[i+4][0] * scale;
+                const y2 = centerY - corners[i+4][2] * scale;
+                
+                // Only draw if within visible area
+                if (Math.abs(x1 - centerX) < SHIP_PRIORITY_RANGE * scale * 1.2 &&
+                    Math.abs(y1 - centerY) < SHIP_PRIORITY_RANGE * scale * 1.2) {
+                    ctxAz.moveTo(x1, y1);
+                    ctxAz.lineTo(x2, y2);
+                }
+            }
+            ctxAz.stroke();
+            
+            // Draw near plane
+            ctxAz.strokeStyle = '#ffaa00';
+            ctxAz.lineWidth = 3;
+            ctxAz.beginPath();
+            ctxAz.moveTo(centerX + corners[0][0] * scale, centerY - corners[0][2] * scale);
+            ctxAz.lineTo(centerX + corners[1][0] * scale, centerY - corners[1][2] * scale);
+            ctxAz.lineTo(centerX + corners[2][0] * scale, centerY - corners[2][2] * scale);
+            ctxAz.lineTo(centerX + corners[3][0] * scale, centerY - corners[3][2] * scale);
+            ctxAz.closePath();
+            ctxAz.stroke();
+            ctxAz.fillStyle = '#ffaa0020';
+            ctxAz.fill();
+            
+            // Draw far plane (only if within range)
+            if (Math.abs(corners[4][2]) < SHIP_PRIORITY_RANGE * 1.2) {
+                ctxAz.strokeStyle = '#ffaa00';
+                ctxAz.lineWidth = 2;
+                ctxAz.beginPath();
+                ctxAz.moveTo(centerX + corners[4][0] * scale, centerY - corners[4][2] * scale);
+                ctxAz.lineTo(centerX + corners[5][0] * scale, centerY - corners[5][2] * scale);
+                ctxAz.lineTo(centerX + corners[6][0] * scale, centerY - corners[6][2] * scale);
+                ctxAz.lineTo(centerX + corners[7][0] * scale, centerY - corners[7][2] * scale);
+                ctxAz.closePath();
+                ctxAz.stroke();
+                ctxAz.fillStyle = '#ffaa0010';
+                ctxAz.fill();
+            }
+            
+            // Draw camera
+            ctxAz.fillStyle = '#fff';
+            ctxAz.beginPath();
+            ctxAz.arc(centerX, centerY, 8, 0, 2*Math.PI);
+            ctxAz.fill();
+            ctxAz.fillStyle = '#ffaa00';
+            ctxAz.beginPath();
+            ctxAz.arc(centerX, centerY, 4, 0, 2*Math.PI);
+            ctxAz.fill();
+            
+            // Draw direction line
+            ctxAz.strokeStyle = '#ff0';
+            ctxAz.lineWidth = 3;
+            ctxAz.beginPath();
+            ctxAz.moveTo(centerX, centerY);
+            const dirX = data.camera.direction?.[0] || 0;
+            const dirZ = data.camera.direction?.[2] || 0;
+            ctxAz.lineTo(centerX + dirX * 50 * scale, centerY - dirZ * 50 * scale);
+            ctxAz.stroke();
+            
+            // Draw FOV lines
+            ctxAz.strokeStyle = '#ffaa0040';
+            ctxAz.lineWidth = 1;
+            ctxAz.beginPath();
+            ctxAz.moveTo(centerX, centerY);
+            ctxAz.lineTo(centerX + corners[4][0] * scale, centerY - corners[4][2] * scale);
+            ctxAz.moveTo(centerX, centerY);
+            ctxAz.lineTo(centerX + corners[5][0] * scale, centerY - corners[5][2] * scale);
+            ctxAz.stroke();
+            
+            // Draw ships
+            if (data.ships) {
+                data.ships.forEach(ship => {
+                    if (!ship.position) return;
+                    
+                    const x = centerX + ship.position[0] * scale;
+                    const y = centerY - ship.position[2] * scale;
+                    
+                    // Only draw if within range (with some margin)
+                    if (Math.abs(x - centerX) > SHIP_PRIORITY_RANGE * scale * 1.2 ||
+                        Math.abs(y - centerY) > SHIP_PRIORITY_RANGE * scale * 1.2) {
+                        return;
+                    }
+                    
+                    const radius = Math.max(8, (ship.radius || 5) * scale * 2);
+                    
+                    ctxAz.beginPath();
+                    ctxAz.arc(x, y, radius, 0, 2*Math.PI);
+                    
+                    if (ship.visible) {
+                        ctxAz.fillStyle = '#0f0';
+                        ctxAz.shadowColor = '#0f0';
+                        ctxAz.shadowBlur = 15;
+                    } else {
+                        ctxAz.fillStyle = '#f00';
+                        ctxAz.shadowColor = '#f00';
+                        ctxAz.shadowBlur = 10;
+                    }
+                    ctxAz.fill();
+                    ctxAz.shadowBlur = 0;
+                    
+                    ctxAz.fillStyle = '#fff';
+                    ctxAz.font = 'bold 12px monospace';
+                    ctxAz.fillText(ship.id, x + radius + 2, y - 5);
+                    
+                    // Draw distance line for ships in range
+                    if (ship.distance <= SHIP_PRIORITY_RANGE) {
+                        ctxAz.strokeStyle = '#ffffff40';
+                        ctxAz.lineWidth = 1;
+                        ctxAz.beginPath();
+                        ctxAz.moveTo(centerX, centerY);
+                        ctxAz.lineTo(x, y);
+                        ctxAz.stroke();
+                    }
+                });
+            }
+        }
+        
+        function drawElevationXY(data) {
+            ctxXY.clearRect(0, 0, canvasXY.width, canvasXY.height);
+            
+            if (!data.camera || !data.camera.frustumCorners) {
+                ctxXY.fillStyle = '#888';
+                ctxXY.font = '14px monospace';
+                ctxXY.fillText('No frustum data', 50, 250);
+                return;
+            }
+            
+            const size = canvasXY.width;
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const scale = calculateScale();
+            
+            document.getElementById('elevationXYScale').innerHTML = `Range: ${SHIP_PRIORITY_RANGE}u`;
+            
+            drawGrid(ctxXY, centerX, centerY, scale, 'X', 'Y');
+            
+            const corners = data.camera.frustumCorners;
+            
+            // Draw connecting lines
+            ctxXY.strokeStyle = '#ffaa0040';
+            ctxXY.lineWidth = 1;
+            ctxXY.beginPath();
+            for(let i = 0; i < 4; i++) {
+                const x1 = centerX + corners[i][0] * scale;
+                const y1 = centerY - corners[i][1] * scale;
+                const x2 = centerX + corners[i+4][0] * scale;
+                const y2 = centerY - corners[i+4][1] * scale;
+                
+                if (Math.abs(x1 - centerX) < SHIP_PRIORITY_RANGE * scale * 1.2 &&
+                    Math.abs(y1 - centerY) < SHIP_PRIORITY_RANGE * scale * 1.2) {
+                    ctxXY.moveTo(x1, y1);
+                    ctxXY.lineTo(x2, y2);
+                }
+            }
+            ctxXY.stroke();
+            
+            // Draw near plane
+            ctxXY.strokeStyle = '#ffaa00';
+            ctxXY.lineWidth = 3;
+            ctxXY.beginPath();
+            ctxXY.moveTo(centerX + corners[0][0] * scale, centerY - corners[0][1] * scale);
+            ctxXY.lineTo(centerX + corners[1][0] * scale, centerY - corners[1][1] * scale);
+            ctxXY.lineTo(centerX + corners[2][0] * scale, centerY - corners[2][1] * scale);
+            ctxXY.lineTo(centerX + corners[3][0] * scale, centerY - corners[3][1] * scale);
+            ctxXY.closePath();
+            ctxXY.stroke();
+            ctxXY.fillStyle = '#ffaa0020';
+            ctxXY.fill();
+            
+            // Draw far plane
+            if (Math.abs(corners[4][2]) < SHIP_PRIORITY_RANGE * 1.2) {
+                ctxXY.strokeStyle = '#ffaa00';
+                ctxXY.lineWidth = 2;
+                ctxXY.beginPath();
+                ctxXY.moveTo(centerX + corners[4][0] * scale, centerY - corners[4][1] * scale);
+                ctxXY.lineTo(centerX + corners[5][0] * scale, centerY - corners[5][1] * scale);
+                ctxXY.lineTo(centerX + corners[6][0] * scale, centerY - corners[6][1] * scale);
+                ctxXY.lineTo(centerX + corners[7][0] * scale, centerY - corners[7][1] * scale);
+                ctxXY.closePath();
+                ctxXY.stroke();
+                ctxXY.fillStyle = '#ffaa0010';
+                ctxXY.fill();
+            }
+            
+            // Draw camera
+            ctxXY.fillStyle = '#fff';
+            ctxXY.beginPath();
+            ctxXY.arc(centerX, centerY, 8, 0, 2*Math.PI);
+            ctxXY.fill();
+            ctxXY.fillStyle = '#ffaa00';
+            ctxXY.beginPath();
+            ctxXY.arc(centerX, centerY, 4, 0, 2*Math.PI);
+            ctxXY.fill();
+            
+            // Draw ships
+            if (data.ships) {
+                data.ships.forEach(ship => {
+                    if (!ship.position) return;
+                    
+                    const x = centerX + ship.position[0] * scale;
+                    const y = centerY - ship.position[1] * scale;
+                    
+                    if (Math.abs(x - centerX) > SHIP_PRIORITY_RANGE * scale * 1.2 ||
+                        Math.abs(y - centerY) > SHIP_PRIORITY_RANGE * scale * 1.2) {
+                        return;
+                    }
+                    
+                    const radius = Math.max(8, (ship.radius || 5) * scale * 2);
+                    
+                    ctxXY.beginPath();
+                    ctxXY.arc(x, y, radius, 0, 2*Math.PI);
+                    
+                    if (ship.visible) {
+                        ctxXY.fillStyle = '#0f0';
+                        ctxXY.shadowColor = '#0f0';
+                        ctxXY.shadowBlur = 15;
+                    } else {
+                        ctxXY.fillStyle = '#f00';
+                        ctxXY.shadowColor = '#f00';
+                        ctxXY.shadowBlur = 10;
+                    }
+                    ctxXY.fill();
+                    ctxXY.shadowBlur = 0;
+                    
+                    ctxXY.fillStyle = '#fff';
+                    ctxXY.font = 'bold 12px monospace';
+                    ctxXY.fillText(ship.id, x + radius + 2, y - 5);
+                });
+            }
+        }
+        
+        function drawElevationYZ(data) {
+            ctxYZ.clearRect(0, 0, canvasYZ.width, canvasYZ.height);
+            
+            if (!data.camera || !data.camera.frustumCorners) {
+                ctxYZ.fillStyle = '#888';
+                ctxYZ.font = '14px monospace';
+                ctxYZ.fillText('No frustum data', 50, 250);
+                return;
+            }
+            
+            const size = canvasYZ.width;
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const scale = calculateScale();
+            
+            document.getElementById('elevationYZScale').innerHTML = `Range: ${SHIP_PRIORITY_RANGE}u`;
+            
+            drawGrid(ctxYZ, centerX, centerY, scale, 'Z', 'Y');
+            
+            const corners = data.camera.frustumCorners;
+            
+            // Draw connecting lines
+            ctxYZ.strokeStyle = '#ffaa0040';
+            ctxYZ.lineWidth = 1;
+            ctxYZ.beginPath();
+            for(let i = 0; i < 4; i++) {
+                const x1 = centerX + corners[i][2] * scale;
+                const y1 = centerY - corners[i][1] * scale;
+                const x2 = centerX + corners[i+4][2] * scale;
+                const y2 = centerY - corners[i+4][1] * scale;
+                
+                if (Math.abs(x1 - centerX) < SHIP_PRIORITY_RANGE * scale * 1.2 &&
+                    Math.abs(y1 - centerY) < SHIP_PRIORITY_RANGE * scale * 1.2) {
+                    ctxYZ.moveTo(x1, y1);
+                    ctxYZ.lineTo(x2, y2);
+                }
+            }
+            ctxYZ.stroke();
+            
+            // Draw near plane
+            ctxYZ.strokeStyle = '#ffaa00';
+            ctxYZ.lineWidth = 3;
+            ctxYZ.beginPath();
+            ctxYZ.moveTo(centerX + corners[0][2] * scale, centerY - corners[0][1] * scale);
+            ctxYZ.lineTo(centerX + corners[1][2] * scale, centerY - corners[1][1] * scale);
+            ctxYZ.lineTo(centerX + corners[2][2] * scale, centerY - corners[2][1] * scale);
+            ctxYZ.lineTo(centerX + corners[3][2] * scale, centerY - corners[3][1] * scale);
+            ctxYZ.closePath();
+            ctxYZ.stroke();
+            ctxYZ.fillStyle = '#ffaa0020';
+            ctxYZ.fill();
+            
+            // Draw far plane
+            if (Math.abs(corners[4][2]) < SHIP_PRIORITY_RANGE * 1.2) {
+                ctxYZ.strokeStyle = '#ffaa00';
+                ctxYZ.lineWidth = 2;
+                ctxYZ.beginPath();
+                ctxYZ.moveTo(centerX + corners[4][2] * scale, centerY - corners[4][1] * scale);
+                ctxYZ.lineTo(centerX + corners[5][2] * scale, centerY - corners[5][1] * scale);
+                ctxYZ.lineTo(centerX + corners[6][2] * scale, centerY - corners[6][1] * scale);
+                ctxYZ.lineTo(centerX + corners[7][2] * scale, centerY - corners[7][1] * scale);
+                ctxYZ.closePath();
+                ctxYZ.stroke();
+                ctxYZ.fillStyle = '#ffaa0010';
+                ctxYZ.fill();
+            }
+            
+            // Draw camera
+            ctxYZ.fillStyle = '#fff';
+            ctxYZ.beginPath();
+            ctxYZ.arc(centerX, centerY, 8, 0, 2*Math.PI);
+            ctxYZ.fill();
+            ctxYZ.fillStyle = '#ffaa00';
+            ctxYZ.beginPath();
+            ctxYZ.arc(centerX, centerY, 4, 0, 2*Math.PI);
+            ctxYZ.fill();
+            
+            // Draw ships
+            if (data.ships) {
+                data.ships.forEach(ship => {
+                    if (!ship.position) return;
+                    
+                    const x = centerX + ship.position[2] * scale;
+                    const y = centerY - ship.position[1] * scale;
+                    
+                    if (Math.abs(x - centerX) > SHIP_PRIORITY_RANGE * scale * 1.2 ||
+                        Math.abs(y - centerY) > SHIP_PRIORITY_RANGE * scale * 1.2) {
+                        return;
+                    }
+                    
+                    const radius = Math.max(8, (ship.radius || 5) * scale * 2);
+                    
+                    ctxYZ.beginPath();
+                    ctxYZ.arc(x, y, radius, 0, 2*Math.PI);
+                    
+                    if (ship.visible) {
+                        ctxYZ.fillStyle = '#0f0';
+                        ctxYZ.shadowColor = '#0f0';
+                        ctxYZ.shadowBlur = 15;
+                    } else {
+                        ctxYZ.fillStyle = '#f00';
+                        ctxYZ.shadowColor = '#f00';
+                        ctxYZ.shadowBlur = 10;
+                    }
+                    ctxYZ.fill();
+                    ctxYZ.shadowBlur = 0;
+                    
+                    ctxYZ.fillStyle = '#fff';
+                    ctxYZ.font = 'bold 12px monospace';
+                    ctxYZ.fillText(ship.id, x + radius + 2, y - 5);
+                });
+            }
+        }
+        
+        function highlightShip(id) {
+            logDebug('Highlight ship:', id);
+        }
+        
+        window.addEventListener('resize', () => {
+            if (cameraData[selectedCameraId]) {
+                drawAzimuth(cameraData[selectedCameraId]);
+                drawElevationXY(cameraData[selectedCameraId]);
+                drawElevationYZ(cameraData[selectedCameraId]);
+            }
+        });
+        
+        connect();
+    </script>
+</body>
+</html>

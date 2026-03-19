@@ -25,6 +25,38 @@
             color: #00ff00;
             border-bottom: 1px solid #333;
             padding-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .h1-controls {
+            display: flex;
+            gap: 5px;
+            margin-left: auto;
+        }
+        
+        .icon-button {
+            background: #222;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            width: 28px;
+            height: 28px;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .icon-button:hover {
+            background: #333;
+        }
+        
+        .icon-button.active {
+            background: #0f0;
+            color: #000;
         }
         
         .toolbar {
@@ -32,6 +64,7 @@
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            align-items: center;
         }
         
         button { 
@@ -50,6 +83,62 @@
         }
         
         button.active {
+            background: #0f0;
+            color: #000;
+        }
+        
+        button.danger {
+            border-color: #ff4444;
+            color: #ff4444;
+        }
+        
+        button.danger:hover {
+            background: #300;
+        }
+        
+        button.success {
+            border-color: #44ff44;
+            color: #44ff44;
+        }
+        
+        button.success:hover {
+            background: #030;
+        }
+        
+        button.warning {
+            border-color: #ffaa44;
+            color: #ffaa44;
+        }
+        
+        button.warning:hover {
+            background: #330;
+        }
+        
+        .view-buttons {
+            display: flex;
+            gap: 2px;
+            background: #1a1a1a;
+            padding: 2px;
+            border-radius: 3px;
+            border: 1px solid #333;
+        }
+        
+        .view-btn {
+            background: #222;
+            color: #888;
+            border: none;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+        
+        .view-btn:hover {
+            background: #333;
+            color: #0f0;
+        }
+        
+        .view-btn.active {
             background: #0f0;
             color: #000;
         }
@@ -86,7 +175,80 @@
             border-radius: 5px;
             padding: 10px;
             font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .card.raw-data-card {
+            display: none;
+            max-height: 400px;
+            overflow: auto;
+        }
+        
+        .card.raw-data-card.visible {
+            display: block;
+        }
+        
+        /* Закладки */
+        .tab-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .tab-headers {
+            display: flex;
+            gap: 2px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 10px;
+        }
+        
+        .tab-header {
+            background: #222;
+            color: #888;
+            border: 1px solid #333;
+            border-bottom: none;
+            padding: 6px 12px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 3px 3px 0 0;
+            font-weight: bold;
+        }
+        
+        .tab-header:hover {
+            background: #333;
+            color: #0f0;
+        }
+        
+        .tab-header.active {
+            background: #1a1a1a;
+            color: #0f0;
+            border-bottom: 1px solid #1a1a1a;
+            margin-bottom: -1px;
+        }
+        
+        .tab-header.highlight {
+            border-color: #44aaff;
+            color: #44aaff;
+        }
+        
+        .tab-content {
+            flex: 1;
             overflow-y: auto;
+            min-height: 0;
+            padding: 5px 0;
+        }
+        
+        .tab-pane {
+            display: none;
+            height: 100%;
+            overflow-y: auto;
+        }
+        
+        .tab-pane.active {
+            display: block;
         }
         
         h2 { 
@@ -104,6 +266,7 @@
             overflow: hidden;
             position: relative;
             min-height: 400px;
+            cursor: crosshair;
         }
         
         canvas {
@@ -188,7 +351,7 @@
         .slider-group label {
             color: #888;
             font-size: 11px;
-            min-width: 100px;
+            min-width: 80px;
         }
         
         .slider-row {
@@ -219,7 +382,6 @@
         
         .hit-volumes-container {
             overflow-y: auto;
-            max-height: 350px;
             padding-right: 5px;
         }
         
@@ -245,10 +407,27 @@
             background: #333;
         }
         
+        .hit-volume-header.selected {
+            background: #3a3a3a;
+            border-left: 3px solid #00ff00;
+        }
+        
         .hit-volume-name {
             font-weight: bold;
             color: #00ff00;
             font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .hit-volume-name-input {
+            background: #111;
+            border: 1px solid #333;
+            color: #00ff00;
+            font-size: 11px;
+            padding: 2px 4px;
+            width: 80px;
         }
         
         .hit-volume-badges {
@@ -266,6 +445,11 @@
         .badge.critical {
             background: #300;
             color: #ff0000;
+        }
+        
+        .badge.selected-face {
+            background: #44aaff;
+            color: #000;
         }
         
         .hit-volume-content {
@@ -340,6 +524,100 @@
             height: 16px;
             border-radius: 3px;
             border: 1px solid #333;
+            cursor: pointer;
+        }
+        
+        .color-picker-popup {
+            position: absolute;
+            background: #222;
+            border: 1px solid #00ff00;
+            border-radius: 3px;
+            padding: 5px;
+            z-index: 100;
+            display: none;
+        }
+        
+        .delete-btn {
+            background: #300;
+            color: #ff4444;
+            border: 1px solid #ff4444;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-size: 10px;
+            cursor: pointer;
+            margin-left: auto;
+        }
+        
+        .delete-btn:hover {
+            background: #400;
+        }
+        
+        .face-info {
+            background: #1a1a1a;
+            border-left: 3px solid #44aaff;
+            padding: 8px;
+            margin-bottom: 10px;
+            font-size: 11px;
+            border-radius: 3px;
+        }
+        
+        .face-info-title {
+            color: #44aaff;
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .face-info-content {
+            color: #888;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+        
+        .face-info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .face-info-label {
+            color: #666;
+            font-size: 9px;
+        }
+        
+        .face-info-value {
+            color: #44aaff;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .toolbar-small {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .segment-count {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #1a1a1a;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #333;
+        }
+        
+        .segment-count input {
+            width: 50px;
+            background: #111;
+            border: 1px solid #333;
+            color: #00ff00;
+            font-size: 11px;
+            padding: 2px 4px;
+            text-align: center;
         }
         
         .raw-data {
@@ -347,7 +625,7 @@
             padding: 8px;
             border-radius: 3px;
             font-size: 10px;
-            max-height: 100px;
+            max-height: 350px;
             overflow: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
@@ -428,20 +706,99 @@
             visibility: visible;
         }
         
+        .rotation-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .rotation-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .rotation-input label {
+            color: #666;
+            font-size: 8px;
+        }
+        
+        .rotation-input input {
+            width: 100%;
+            background: #111;
+            border: 1px solid #333;
+            color: #00ff00;
+            font-size: 10px;
+            padding: 2px;
+            text-align: center;
+        }
+        
+        .projection-indicator {
+            color: #ffaa00;
+            font-size: 10px;
+            margin-left: 10px;
+        }
+        
+        .mode-indicator {
+            background: #44aaff;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
         #connection-status {
             font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <h1>🛸 COBRA MK.I - HIT VOLUMES [3D EDITOR]</h1>
+    <h1>
+        🛸 COBRA MK.I - HIT VOLUMES [3D EDITOR]
+        <div class="h1-controls">
+            <button class="icon-button" onclick="app.toggleRawData()" id="raw-data-btn" title="Toggle RAW Data">📋</button>
+            <button class="icon-button" onclick="app.saveToJson()" title="Save to JSON">💾</button>
+        </div>
+    </h1>
     
     <div class="toolbar">
         <button onclick="app.loadSampleModel()" class="tooltip">📦 SAMPLE MODEL
-            <span class="tooltip-text">Loads a simple test model (cube 1.0 x 1.0 x 1.0)</span>
+            <span class="tooltip-text">Loads a simple test model with triangles</span>
         </button>
         <button onclick="app.resetView()">🎯 RESET VIEW</button>
         <button onclick="app.toggleWireframe()" id="wireframe-btn">🔲 WIREFRAME</button>
+        
+        <!-- Виды проекций -->
+        <div class="view-buttons">
+            <button class="view-btn" onclick="app.setView('front')" id="view-front" title="Front view (Z+)">⬆️ Front</button>
+            <button class="view-btn" onclick="app.setView('back')" id="view-back" title="Back view (Z-)">⬇️ Back</button>
+            <button class="view-btn" onclick="app.setView('left')" id="view-left" title="Left view (X-)">⬅️ Left</button>
+            <button class="view-btn" onclick="app.setView('right')" id="view-right" title="Right view (X+)">➡️ Right</button>
+            <button class="view-btn" onclick="app.setView('top')" id="view-top" title="Top view (Y+)">⬆️ Top</button>
+            <button class="view-btn" onclick="app.setView('bottom')" id="view-bottom" title="Bottom view (Y-)">⬇️ Bottom</button>
+        </div>
+        
+        <div class="checkbox-group">
+            <input type="checkbox" id="ortho-mode" onchange="app.toggleOrthographic()">
+            <label>Orthographic</label>
+        </div>
+        
+        <!-- Режим выбора граней -->
+        <button onclick="app.toggleFaceSelectionMode()" id="face-select-btn" class="warning">🔷 FACE SELECT: OFF</button>
+        
+        <!-- Кнопка генерации для выбранной грани с выбором количества сегментов -->
+        <div class="segment-count">
+            <span>Segments:</span>
+            <input type="number" id="segment-count" value="0" min="0" max="20" step="1">
+            <span>(0=auto)</span>
+        </div>
+        <button onclick="app.generateFromSelectedFace()" id="gen-face-btn" disabled class="success">⚡ GENERATE FROM FACE</button>
+        
+        <span id="mode-indicator" class="mode-indicator" style="display: none;">SELECT FACE MODE</span>
+        
         <div class="file-input">
             <label for="obj-file">📁 LOAD OBJ</label>
             <input type="file" id="obj-file" accept=".obj,.txt">
@@ -462,9 +819,36 @@
             <div class="stats-row">
                 <span class="stats-label">HIT VOLUMES: <span id="hit-count">0</span></span>
                 <span class="stats-label">MODEL: <span id="model-info">not loaded</span></span>
+                <span id="projection-indicator" class="projection-indicator"></span>
             </div>
             <div class="canvas-container">
                 <canvas id="hit-volumes-canvas"></canvas>
+            </div>
+            
+            <!-- Информация о выбранной грани -->
+            <div id="selected-face-info" class="face-info" style="display: none;">
+                <div class="face-info-title">
+                    <span>🔷 SELECTED FACE</span>
+                    <span id="face-index-display">#0</span>
+                </div>
+                <div class="face-info-content">
+                    <div class="face-info-item">
+                        <span class="face-info-label">Vertices</span>
+                        <span class="face-info-value" id="face-vertices">0</span>
+                    </div>
+                    <div class="face-info-item">
+                        <span class="face-info-label">Area</span>
+                        <span class="face-info-value" id="face-area">0.0000</span>
+                    </div>
+                    <div class="face-info-item">
+                        <span class="face-info-label">Center</span>
+                        <span class="face-info-value" id="face-center">0,0,0</span>
+                    </div>
+                    <div class="face-info-item">
+                        <span class="face-info-label">Normal</span>
+                        <span class="face-info-value" id="face-normal">0,0,0</span>
+                    </div>
+                </div>
             </div>
             
             <!-- Информация о масштабировании -->
@@ -492,56 +876,119 @@
                 <div class="legend-item"><span class="color-box" style="background:#ff4444;"></span> Hit Volumes</div>
                 <div class="legend-item"><span class="color-box" style="background:#00ff00;"></span> Model Edges</div>
                 <div class="legend-item"><span class="color-box" style="background:#888888;"></span> Wireframe</div>
+                <div class="legend-item"><span class="color-box" style="background:#44aaff; opacity:0.3;"></span> Faces</div>
+                <div class="legend-item"><span class="color-box" style="background:#ffaa44; opacity:0.6;"></span> Selected Face</div>
             </div>
         </div>
         
-        <!-- ПРАВАЯ ПАНЕЛЬ - НАСТРОЙКИ -->
+        <!-- ПРАВАЯ ПАНЕЛЬ - НАСТРОЙКИ С ЗАКЛАДКАМИ -->
         <div class="right-panel">
-            <!-- НАСТРОЙКИ ОТОБРАЖЕНИЯ -->
             <div class="card">
-                <h2>🎨 DISPLAY SETTINGS</h2>
-                
-                <div class="slider-group">
-                    <label>Model line thickness:</label>
-                    <div class="slider-row">
-                        <input type="range" id="model-width" min="0.1" max="3" value="1" step="0.1">
-                        <span class="value-display" id="model-width-value">1.0</span>
-                    </div>
-                </div>
-                
-                <div class="slider-group">
-                    <label>Hit volume line thickness:</label>
-                    <div class="slider-row">
-                        <input type="range" id="hit-width" min="0.1" max="3" value="1.5" step="0.1">
-                        <span class="value-display" id="hit-width-value">1.5</span>
-                    </div>
-                </div>
-                
-                <div style="display: flex; gap: 15px; margin-top: 8px;">
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="show-labels" checked>
-                        <label>Show labels</label>
+                <div class="tab-container">
+                    <div class="tab-headers">
+                        <div class="tab-header active" onclick="app.switchTab('rotation')">🔄 ROTATION</div>
+                        <div class="tab-header" onclick="app.switchTab('display')">🎨 DISPLAY</div>
+                        <div class="tab-header" onclick="app.switchTab('volumes')" id="volumes-tab">📋 VOLUMES</div>
                     </div>
                     
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="show-grid" checked>
-                        <label>Show grid</label>
+                    <!-- Вкладка Rotation -->
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="tab-rotation">
+                            <h2>SHIP ROTATION (Euler Angles)</h2>
+                            <div class="rotation-controls">
+                                <div class="rotation-input">
+                                    <label>ROLL (X)</label>
+                                    <input type="number" id="ship-roll" value="0" step="1" min="-180" max="180" onchange="app.updateShipRotation()">
+                                </div>
+                                <div class="rotation-input">
+                                    <label>PITCH (Y)</label>
+                                    <input type="number" id="ship-pitch" value="0" step="1" min="-180" max="180" onchange="app.updateShipRotation()">
+                                </div>
+                                <div class="rotation-input">
+                                    <label>YAW (Z)</label>
+                                    <input type="number" id="ship-yaw" value="0" step="1" min="-180" max="180" onchange="app.updateShipRotation()">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Вкладка Display -->
+                        <div class="tab-pane" id="tab-display">
+                            <h2>DISPLAY SETTINGS</h2>
+                            
+                            <div class="slider-group">
+                                <label>Model color:</label>
+                                <div class="slider-row">
+                                    <input type="color" id="model-color" value="#00ff00" onchange="app.updateModelColor()">
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label>Default hit color:</label>
+                                <div class="slider-row">
+                                    <input type="color" id="hit-color" value="#ff4444" onchange="app.updateHitVolumesColor()">
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label>Selected opacity:</label>
+                                <div class="slider-row">
+                                    <input type="range" id="selected-opacity" min="0.1" max="0.8" value="0.3" step="0.1" onchange="app.updateSelectedOpacity()">
+                                    <span class="value-display" id="selected-opacity-value">0.3</span>
+                                </div>
+                            </div>
+                            
+                            <div class="slider-group">
+                                <label>Face opacity:</label>
+                                <div class="slider-row">
+                                    <input type="range" id="face-opacity" min="0.1" max="0.5" value="0.2" step="0.05" onchange="app.updateFaceOpacity()">
+                                    <span class="value-display" id="face-opacity-value">0.2</span>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 15px; margin-top: 8px; flex-wrap: wrap;">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="show-labels" checked onchange="app.toggleLabels()">
+                                    <label>Show labels</label>
+                                </div>
+                                
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="show-grid" checked onchange="app.toggleGrid()">
+                                    <label>Show grid</label>
+                                </div>
+                                
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="show-faces" checked onchange="app.toggleFaces()">
+                                    <label>Show faces</label>
+                                </div>
+                                
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="highlight-selected" checked onchange="app.toggleHighlightSelected()">
+                                    <label>Highlight selected</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Вкладка Volumes -->
+                        <div class="tab-pane" id="tab-volumes">
+                            <div class="toolbar-small">
+                                <button onclick="app.addNewVolume()" class="success">➕ NEW VOLUME</button>
+                                <button onclick="app.toggleAllVisibility()">👁️ Toggle All</button>
+                                <button onclick="app.hideAllVisibility()">🔴 Hide All</button>
+                                <button onclick="app.showAllVisibility()">🟢 Show All</button>
+                            </div>
+                            <h2>HIT VOLUMES EDITOR</h2>
+                            <div id="hit-volumes-list" class="hit-volumes-container"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- СПИСОК HIT VOLUMES -->
-            <div class="card" style="flex: 1;">
-                <h2>📋 HIT VOLUMES EDITOR</h2>
-                <div id="hit-volumes-list" class="hit-volumes-container"></div>
-            </div>
-            
-            <!-- RAW DATA -->
-            <div class="card">
-                <h2>📊 RAW DATA</h2>
-                <pre id="raw-hit-data" class="raw-data">No data</pre>
-            </div>
         </div>
+    </div>
+    
+    <!-- RAW DATA (скрыто по умолчанию) -->
+    <div class="card raw-data-card" id="raw-data-card">
+        <h2>📊 RAW DATA</h2>
+        <pre id="raw-hit-data" class="raw-data">No data</pre>
     </div>
 
     <!-- Импорт Three.js -->
@@ -568,17 +1015,34 @@
             gridHelper: null,
             hitVolumesData: [],
             hitVolumeMeshes: [],
+            modelGroup: new THREE.Group(),
             modelEdges: null,
             modelWireframe: null,
+            faceMeshes: [], // Меши граней для выбора
+            showFaces: true,
+            faceOpacity: 0.2,
             labels: [],
             showLabels: true,
             showGrid: true,
             showWireframe: false,
-            modelWidth: 1.0,
-            hitWidth: 1.5,
+            highlightSelected: true,
+            selectedOpacity: 0.3,
+            modelColor: '#00ff00',
+            hitColor: '#ff4444',
             bgColor: '#111111',
             modelOriginalMaxDim: null,
-            modelScale: 1.0
+            modelScale: 1.0,
+            shipRotation: { x: 0, y: 0, z: 0 },
+            selectedVolumeIndex: -1,
+            selectedFaceIndex: -1,
+            faceSelectionMode: false,
+            orthographic: false,
+            currentView: 'perspective',
+            modelVertices: [],
+            modelFacesIndices: [],
+            raycaster: new THREE.Raycaster(),
+            mouse: new THREE.Vector2(),
+            defaultSegmentHeight: 0.03
         };
 
         // Показ ошибок
@@ -605,7 +1069,7 @@
                 
                 // Камера
                 state.camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-                state.camera.position.set(2, 1.5, 3); // Меньше расстояние, так как масштаб 0-1
+                state.camera.position.set(2, 1.5, 3);
                 state.camera.lookAt(0, 0, 0);
                 
                 // Рендерер
@@ -625,10 +1089,13 @@
                 dirLight2.position.set(-1, 1, -1);
                 state.scene.add(dirLight2);
                 
-                // Сетка (теперь в масштабе 0-1)
+                // Сетка
                 state.gridHelper = new THREE.GridHelper(3, 20, 0x00ff00, 0x333333);
                 state.gridHelper.position.y = -0.2;
                 state.scene.add(state.gridHelper);
+                
+                // Добавляем группу для модели
+                state.scene.add(state.modelGroup);
                 
                 // Контролы
                 state.controls = new OrbitControls(state.camera, state.renderer.domElement);
@@ -636,6 +1103,10 @@
                 state.controls.dampingFactor = 0.05;
                 state.controls.screenSpacePanning = true;
                 state.controls.maxPolarAngle = Math.PI / 2;
+                
+                // Добавляем обработчик клика для выбора граней
+                state.renderer.domElement.addEventListener('click', onClick);
+                state.renderer.domElement.addEventListener('mousemove', onMouseMove);
                 
                 // Запуск анимации
                 animate();
@@ -675,33 +1146,694 @@
             state.renderer.setSize(width, height);
         }
 
+        // Обработка движения мыши для подсветки при наведении
+        function onMouseMove(event) {
+            if (!state.faceSelectionMode || state.faceMeshes.length === 0) return;
+            
+            const rect = state.renderer.domElement.getBoundingClientRect();
+            state.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            state.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        }
+
+        // Обработка клика для выбора грани
+        function onClick(event) {
+            if (!state.faceSelectionMode || state.faceMeshes.length === 0) return;
+            
+            const rect = state.renderer.domElement.getBoundingClientRect();
+            const mouse = new THREE.Vector2(
+                ((event.clientX - rect.left) / rect.width) * 2 - 1,
+                -((event.clientY - rect.top) / rect.height) * 2 + 1
+            );
+            
+            state.raycaster.setFromCamera(mouse, state.camera);
+            
+            // Проверяем пересечения с гранями
+            const intersects = state.raycaster.intersectObjects(state.faceMeshes);
+            
+            if (intersects.length > 0) {
+                // Берем первый пересеченный объект
+                const faceMesh = intersects[0].object;
+                const faceIndex = faceMesh.userData.faceIndex;
+                selectFace(faceIndex);
+                console.log('Face selected:', faceIndex + 1);
+            }
+        }
+
+        // Выбор грани
+        function selectFace(index) {
+            // Снимаем выделение с предыдущей грани
+            if (state.selectedFaceIndex !== -1 && state.faceMeshes[state.selectedFaceIndex]) {
+                state.faceMeshes[state.selectedFaceIndex].material.color.setHex(0x44aaff);
+                state.faceMeshes[state.selectedFaceIndex].material.emissive.setHex(0x000000);
+            }
+            
+            state.selectedFaceIndex = index;
+            
+            if (index !== -1 && state.faceMeshes[index]) {
+                state.faceMeshes[index].material.color.setHex(0xffaa44);
+                state.faceMeshes[index].material.emissive.setHex(0x442200);
+                
+                // Обновляем информацию о грани
+                updateFaceInfo(index);
+                
+                // Активируем кнопку генерации
+                document.getElementById('gen-face-btn').disabled = false;
+                
+                // Подсвечиваем вкладку
+                document.getElementById('volumes-tab').classList.add('highlight');
+            } else {
+                document.getElementById('selected-face-info').style.display = 'none';
+                document.getElementById('gen-face-btn').disabled = true;
+                document.getElementById('volumes-tab').classList.remove('highlight');
+            }
+        }
+
+        // Обновление информации о выбранной грани
+        function updateFaceInfo(index) {
+            const faceIndices = state.modelFacesIndices[index];
+            const vertices = faceIndices.map(idx => state.modelVertices[idx]);
+            
+            // Вычисляем центр грани
+            const center = new THREE.Vector3(0, 0, 0);
+            vertices.forEach(v => center.add(v));
+            center.divideScalar(vertices.length);
+            
+            // Вычисляем нормаль
+            let normal = new THREE.Vector3(0, 1, 0);
+            if (vertices.length >= 3) {
+                const a = vertices[0];
+                const b = vertices[1];
+                const c = vertices[2];
+                const ab = new THREE.Vector3().subVectors(b, a);
+                const ac = new THREE.Vector3().subVectors(c, a);
+                normal = new THREE.Vector3().crossVectors(ab, ac).normalize();
+            }
+            
+            // Вычисляем площадь
+            let area = 0;
+            if (vertices.length >= 3) {
+                for (let i = 1; i < vertices.length - 1; i++) {
+                    const a = vertices[0];
+                    const b = vertices[i];
+                    const c = vertices[i + 1];
+                    const ab = new THREE.Vector3().subVectors(b, a);
+                    const ac = new THREE.Vector3().subVectors(c, a);
+                    area += 0.5 * new THREE.Vector3().crossVectors(ab, ac).length();
+                }
+            }
+            
+            document.getElementById('face-index-display').textContent = `#${index + 1}`;
+            document.getElementById('face-vertices').textContent = vertices.length;
+            document.getElementById('face-area').textContent = area.toFixed(4);
+            document.getElementById('face-center').textContent = 
+                `${center.x.toFixed(3)}, ${center.y.toFixed(3)}, ${center.z.toFixed(3)}`;
+            document.getElementById('face-normal').textContent = 
+                `${normal.x.toFixed(3)}, ${normal.y.toFixed(3)}, ${normal.z.toFixed(3)}`;
+            
+            document.getElementById('selected-face-info').style.display = 'block';
+        }
+
+        // Переключение режима выбора граней
+        function toggleFaceSelectionMode() {
+            state.faceSelectionMode = !state.faceSelectionMode;
+            const btn = document.getElementById('face-select-btn');
+            const indicator = document.getElementById('mode-indicator');
+            
+            if (state.faceSelectionMode) {
+                btn.textContent = '🔷 FACE SELECT: ON';
+                btn.classList.add('active');
+                indicator.style.display = 'inline-block';
+                document.body.style.cursor = 'crosshair';
+            } else {
+                btn.textContent = '🔷 FACE SELECT: OFF';
+                btn.classList.remove('active');
+                indicator.style.display = 'none';
+                document.body.style.cursor = 'default';
+                // Снимаем выделение с грани
+                selectFace(-1);
+            }
+        }
+
+        // Обновление прозрачности граней
+        function updateFaceOpacity() {
+            const opacity = parseFloat(document.getElementById('face-opacity').value);
+            state.faceOpacity = opacity;
+            document.getElementById('face-opacity-value').textContent = opacity.toFixed(2);
+            
+            state.faceMeshes.forEach(mesh => {
+                mesh.material.opacity = opacity;
+            });
+        }
+
+        // Показать/скрыть грани
+        function toggleFaces() {
+            state.showFaces = document.getElementById('show-faces').checked;
+            state.faceMeshes.forEach(mesh => {
+                mesh.visible = state.showFaces;
+            });
+        }
+
+        // Добавление нового пустого volume
+        function addNewVolume() {
+            const newVolume = {
+                type: "Custom",
+                label: `VOLUME_${state.hitVolumesData.length + 1}`,
+                health: 100,
+                position: [0, 0, 0],
+                size: [0.2, 0.2, 0.2],
+                rotation: [0, 0, 0],
+                critical: false,
+                priority: 50,
+                color: "#44aaff",
+                description: "Custom volume"
+            };
+            
+            state.hitVolumesData.push(newVolume);
+            loadHitVolumes(state.hitVolumesData);
+        }
+
+        // Обновление цвета volume
+        function updateVolumeColor(index, color) {
+            const volume = state.hitVolumesData[index];
+            
+            if (Array.isArray(volume)) {
+                // Для массива не храним цвет отдельно
+                if (volume.length > 7) volume[7] = color;
+            } else {
+                volume.color = color;
+            }
+            
+            // Обновляем меш
+            const group = state.hitVolumeMeshes[index];
+            if (group) {
+                group.userData.line.material.color.set(color);
+                group.userData.faces.material.color.set(color);
+            }
+            
+            // Обновляем raw data
+            document.getElementById('raw-hit-data').textContent = JSON.stringify(state.hitVolumesData, null, 2);
+        }
+
+        // Генерация hit volumes из выбранной грани
+        function generateFromSelectedFace() {
+            if (state.selectedFaceIndex === -1) {
+                showError('No face selected');
+                return;
+            }
+            
+            try {
+                const faceIndices = state.modelFacesIndices[state.selectedFaceIndex];
+                const vertices = faceIndices.map(idx => state.modelVertices[idx]);
+                
+                // Получаем количество сегментов из поля ввода
+                const segmentCountInput = document.getElementById('segment-count');
+                const userSegments = parseInt(segmentCountInput.value);
+                
+                // Для треугольной грани
+                if (vertices.length === 3) {
+                    if (userSegments > 0) {
+                        generateSegmentsForTriangleWithCount(vertices, userSegments);
+                    } else {
+                        generateSegmentsForTriangle(vertices);
+                    }
+                } else {
+                    // Для многоугольников - триангулируем
+                    for (let i = 1; i < vertices.length - 1; i++) {
+                        const triVerts = [vertices[0], vertices[i], vertices[i + 1]];
+                        if (userSegments > 0) {
+                            generateSegmentsForTriangleWithCount(triVerts, userSegments);
+                        } else {
+                            generateSegmentsForTriangle(triVerts);
+                        }
+                    }
+                }
+                
+                // Переключаемся на вкладку Volumes
+                switchTab('volumes');
+                
+            } catch (err) {
+                showError('Failed to generate hit volume: ' + err.message);
+            }
+        }
+
+// Генерация сегментов с заданным количеством (исправлено - примитивы шире треугольника)
+function generateSegmentsForTriangleWithCount(vertices, numSegments) {
+    if (vertices.length !== 3) return;
+    
+    const [v0, v1, v2] = vertices;
+    
+    // Вычисляем нормаль плоскости грани
+    const a = new THREE.Vector3().subVectors(v1, v0);
+    const b = new THREE.Vector3().subVectors(v2, v0);
+    const normal = new THREE.Vector3().crossVectors(a, b).normalize();
+    
+    // Находим центр треугольника (для локальной системы координат)
+    const center = new THREE.Vector3(
+        (v0.x + v1.x + v2.x) / 3,
+        (v0.y + v1.y + v2.y) / 3,
+        (v0.z + v1.z + v2.z) / 3
+    );
+    
+    // Создаем локальную систему координат
+    const zAxis = normal.clone();
+    let xAxis = new THREE.Vector3().subVectors(v1, v0).normalize();
+    const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+    xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis).normalize();
+    
+    // Проецируем вершины в локальные координаты
+    const projectToLocal = (v) => {
+        const rel = new THREE.Vector3().subVectors(v, center);
+        return {
+            x: rel.dot(xAxis),
+            y: rel.dot(yAxis),
+            z: rel.dot(zAxis)
+        };
+    };
+    
+    const localVerts = vertices.map(v => projectToLocal(v));
+    
+    // Находим мин/макс по Y
+    let minY = Math.min(...localVerts.map(v => v.y));
+    let maxY = Math.max(...localVerts.map(v => v.y));
+    
+    // Сортируем вершины по Y для интерполяции
+    const sortedVerts = [...localVerts].sort((a, b) => a.y - b.y);
+    
+    const totalHeight = maxY - minY;
+    const segmentHeight = totalHeight / numSegments;
+    
+    console.log(`=== Разбиение треугольника на ${numSegments} сегментов (примитивы шире треугольника) ===`);
+    
+    for (let i = 0; i < numSegments; i++) {
+        // Границы сегмента
+        const segBottomY = minY + i * segmentHeight;
+        const segTopY = minY + (i + 1) * segmentHeight;
+        const segCenterY = (segBottomY + segTopY) / 2;
+        
+        // Находим точки пересечения с ребрами на уровне ЦЕНТРА сегмента
+        // Это даст нам ширину между ребрами в середине сегмента
+        const edges = [
+            [sortedVerts[0], sortedVerts[1]],
+            [sortedVerts[1], sortedVerts[2]],
+            [sortedVerts[2], sortedVerts[0]]
+        ];
+        
+        const intersections = [];
+        edges.forEach(([p1, p2]) => {
+            if ((p1.y <= segCenterY && p2.y >= segCenterY) || 
+                (p2.y <= segCenterY && p1.y >= segCenterY)) {
+                const t = (segCenterY - p1.y) / (p2.y - p1.y);
+                const x = p1.x + t * (p2.x - p1.x);
+                intersections.push(x);
+            }
+        });
+        
+        intersections.sort((a, b) => a - b);
+        
+        if (intersections.length >= 2) {
+            const leftX = intersections[0];
+            const rightX = intersections[intersections.length - 1];
+            
+            // Делаем примитив ШИРЕ, чем расстояние между ребрами
+            // Добавляем по 10% с каждой стороны
+            const width = rightX - leftX;
+            const expandedWidth = width * 1.2; // +20% к ширине
+            
+            // Центр оставляем тем же (между ребрами)
+            const centerX = (leftX + rightX) / 2;
+            
+            // Создаем volume с расширенной шириной
+            const worldPos = new THREE.Vector3().copy(center);
+            worldPos.addScaledVector(xAxis, centerX);
+            worldPos.addScaledVector(yAxis, segCenterY);
+            
+            const rotationMatrix = new THREE.Matrix4();
+            rotationMatrix.makeBasis(xAxis, yAxis, zAxis);
+            const euler = new THREE.Euler().setFromRotationMatrix(rotationMatrix);
+            
+            const newVolume = {
+                type: "Face",
+                label: `FACE_${state.selectedFaceIndex + 1}_${i + 1}`,
+                health: 100,
+                position: [worldPos.x, worldPos.y, worldPos.z],
+                size: [expandedWidth, segmentHeight, 0.03],
+                rotation: [euler.x, euler.y, euler.z],
+                critical: false,
+                priority: 50,
+                color: "#44aaff",
+                description: `Segment ${i + 1} of face ${state.selectedFaceIndex + 1}`
+            };
+            
+            state.hitVolumesData.push(newVolume);
+            
+            console.log(`Сегмент ${i + 1}: Y=${segCenterY.toFixed(3)}, базовая ширина=${width.toFixed(3)}, расширенная=${expandedWidth.toFixed(3)}`);
+        }
+    }
+    
+    loadHitVolumes(state.hitVolumesData);
+}
+
+// Генерация сегментов с автоматическим определением количества (исправлено - примитивы шире треугольника)
+function generateSegmentsForTriangle(vertices) {
+    if (vertices.length !== 3) return;
+    
+    const [v0, v1, v2] = vertices;
+    
+    // Вычисляем нормаль плоскости грани
+    const a = new THREE.Vector3().subVectors(v1, v0);
+    const b = new THREE.Vector3().subVectors(v2, v0);
+    const normal = new THREE.Vector3().crossVectors(a, b).normalize();
+    
+    // Находим центр треугольника
+    const center = new THREE.Vector3(
+        (v0.x + v1.x + v2.x) / 3,
+        (v0.y + v1.y + v2.y) / 3,
+        (v0.z + v1.z + v2.z) / 3
+    );
+    
+    // Создаем локальную систему координат
+    const zAxis = normal.clone();
+    let xAxis = new THREE.Vector3().subVectors(v1, v0).normalize();
+    const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+    xAxis = new THREE.Vector3().crossVectors(yAxis, zAxis).normalize();
+    
+    // Проецируем вершины в локальные координаты
+    const projectToLocal = (v) => {
+        const rel = new THREE.Vector3().subVectors(v, center);
+        return {
+            x: rel.dot(xAxis),
+            y: rel.dot(yAxis),
+            z: rel.dot(zAxis)
+        };
+    };
+    
+    const localVerts = vertices.map(v => projectToLocal(v));
+    
+    // Находим мин/макс по Y
+    let minY = Math.min(...localVerts.map(v => v.y));
+    let maxY = Math.max(...localVerts.map(v => v.y));
+    
+    // Сортируем вершины по Y
+    const sortedVerts = [...localVerts].sort((a, b) => a.y - b.y);
+    
+    const totalHeight = maxY - minY;
+    const segmentHeight = state.defaultSegmentHeight;
+    
+    // Вычисляем количество сегментов
+    let numSegments = Math.floor(totalHeight / segmentHeight);
+    const remainder = totalHeight - numSegments * segmentHeight;
+    if (remainder > segmentHeight * 0.3) {
+        numSegments++;
+    }
+    
+    if (numSegments < 1) numSegments = 1;
+    
+    console.log(`=== Автоматическое разбиение треугольника ===`);
+    console.log(`Высота: ${totalHeight}, сегментов: ${numSegments}`);
+    
+    for (let i = 0; i < numSegments; i++) {
+        // Границы сегмента
+        const segBottomY = minY + (i / numSegments) * totalHeight;
+        const segTopY = minY + ((i + 1) / numSegments) * totalHeight;
+        const segCenterY = (segBottomY + segTopY) / 2;
+        
+        // Находим точки пересечения с ребрами на уровне ЦЕНТРА сегмента
+        const edges = [
+            [sortedVerts[0], sortedVerts[1]],
+            [sortedVerts[1], sortedVerts[2]],
+            [sortedVerts[2], sortedVerts[0]]
+        ];
+        
+        const intersections = [];
+        edges.forEach(([p1, p2]) => {
+            if ((p1.y <= segCenterY && p2.y >= segCenterY) || 
+                (p2.y <= segCenterY && p1.y >= segCenterY)) {
+                const t = (segCenterY - p1.y) / (p2.y - p1.y);
+                const x = p1.x + t * (p2.x - p1.x);
+                intersections.push(x);
+            }
+        });
+        
+        intersections.sort((a, b) => a - b);
+        
+        if (intersections.length >= 2) {
+            const leftX = intersections[0];
+            const rightX = intersections[intersections.length - 1];
+            
+            // Базовая ширина между ребрами
+            const width = rightX - leftX;
+            
+            // Расширяем на 20% (по 10% с каждой стороны)
+            const expandedWidth = width * 1.2;
+            
+            // Центр оставляем между ребрами
+            const centerX = (leftX + rightX) / 2;
+            
+            // Проверяем, насколько сильно выходят края за треугольник
+            // (просто для информации, не корректируем)
+            const leftEdge = centerX - expandedWidth/2;
+            const rightEdge = centerX + expandedWidth/2;
+            
+            // Создаем volume с расширенной шириной
+            const worldPos = new THREE.Vector3().copy(center);
+            worldPos.addScaledVector(xAxis, centerX);
+            worldPos.addScaledVector(yAxis, segCenterY);
+            
+            const rotationMatrix = new THREE.Matrix4();
+            rotationMatrix.makeBasis(xAxis, yAxis, zAxis);
+            const euler = new THREE.Euler().setFromRotationMatrix(rotationMatrix);
+            
+            const newVolume = {
+                type: "Face",
+                label: `FACE_${state.selectedFaceIndex + 1}_${i + 1}`,
+                health: 100,
+                position: [worldPos.x, worldPos.y, worldPos.z],
+                size: [expandedWidth, segmentHeight, 0.03],
+                rotation: [euler.x, euler.y, euler.z],
+                critical: false,
+                priority: 50,
+                color: "#44aaff",
+                description: `Segment ${i + 1} of face ${state.selectedFaceIndex + 1}`
+            };
+            
+            state.hitVolumesData.push(newVolume);
+            
+            console.log(`Сегмент ${i + 1}: Y=${segCenterY.toFixed(3)}, базовая ширина=${width.toFixed(3)}, расширенная=${expandedWidth.toFixed(3)}`);
+        }
+    }
+    
+    loadHitVolumes(state.hitVolumesData);
+}
+        // Проверка, находится ли точка внутри треугольника (в локальных координатах)
+        function pointInTriangleLocal(point, triangle) {
+            const [v0, v1, v2] = triangle;
+            
+            const v0v1 = new THREE.Vector2(v1.x - v0.x, v1.y - v0.y);
+            const v0v2 = new THREE.Vector2(v2.x - v0.x, v2.y - v0.y);
+            const v0p = new THREE.Vector2(point.x - v0.x, point.y - v0.y);
+            
+            const dot00 = v0v1.dot(v0v1);
+            const dot01 = v0v1.dot(v0v2);
+            const dot02 = v0v1.dot(v0p);
+            const dot11 = v0v2.dot(v0v2);
+            const dot12 = v0v2.dot(v0p);
+            
+            const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+            const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+            
+            return (u >= 0) && (v >= 0) && (u + v <= 1);
+        }
+
+        // Переключение между закладками
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-header').forEach(header => header.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+            
+            document.querySelector(`.tab-header[onclick*="${tabName}"]`).classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // Переключение между перспективной и ортографической проекцией
+        function toggleOrthographic() {
+            const isOrtho = document.getElementById('ortho-mode').checked;
+            state.orthographic = isOrtho;
+            
+            const canvas = document.getElementById('hit-volumes-canvas');
+            const aspect = canvas.clientWidth / canvas.clientHeight;
+            
+            if (isOrtho) {
+                const pos = state.camera.position;
+                const size = 2.5;
+                
+                state.camera = new THREE.OrthographicCamera(
+                    -size * aspect, size * aspect,
+                    size, -size,
+                    0.1, 1000
+                );
+                
+                state.camera.position.copy(pos);
+                state.camera.lookAt(0, 0, 0);
+                
+                document.getElementById('projection-indicator').textContent = '[ORTHO]';
+            } else {
+                const pos = state.camera.position;
+                
+                state.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+                state.camera.position.copy(pos);
+                state.camera.lookAt(0, 0, 0);
+                
+                document.getElementById('projection-indicator').textContent = '';
+            }
+            
+            state.controls.object = state.camera;
+        }
+
+        // Установка вида
+        function setView(view) {
+            state.currentView = view;
+            
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`view-${view}`).classList.add('active');
+            
+            const distance = 3;
+            let position;
+            
+            switch(view) {
+                case 'front': position = new THREE.Vector3(0, 0, distance); break;
+                case 'back': position = new THREE.Vector3(0, 0, -distance); break;
+                case 'left': position = new THREE.Vector3(-distance, 0, 0); break;
+                case 'right': position = new THREE.Vector3(distance, 0, 0); break;
+                case 'top': position = new THREE.Vector3(0, distance, 0); break;
+                case 'bottom': position = new THREE.Vector3(0, -distance, 0); break;
+            }
+            
+            state.camera.position.copy(position);
+            state.camera.lookAt(0, 0, 0);
+            state.controls.target.set(0, 0, 0);
+            state.controls.update();
+        }
+
+        // Обновление поворота корабля
+        function updateShipRotation() {
+            const roll = parseFloat(document.getElementById('ship-roll').value) * Math.PI / 180;
+            const pitch = parseFloat(document.getElementById('ship-pitch').value) * Math.PI / 180;
+            const yaw = parseFloat(document.getElementById('ship-yaw').value) * Math.PI / 180;
+            
+            state.shipRotation = { x: roll, y: pitch, z: yaw };
+            
+            state.modelGroup.rotation.x = roll;
+            state.modelGroup.rotation.y = pitch;
+            state.modelGroup.rotation.z = yaw;
+        }
+
         // Создание куба для hit volume
-        function createHitVolumeMesh(volume, lineWidth) {
+        function createHitVolumeMesh(volume) {
             const [x, y, z] = volume.position;
             const [w, h, d] = volume.size;
+            const [rotX, rotY, rotZ] = volume.rotation || [0, 0, 0];
+            
+            const group = new THREE.Group();
+            
+            const faceMaterial = new THREE.MeshPhongMaterial({
+                color: volume.color || (volume.critical ? '#ff0000' : state.hitColor),
+                transparent: true,
+                opacity: 0,
+                side: THREE.DoubleSide
+            });
+            
+            const faces = new THREE.Mesh(
+                new THREE.BoxGeometry(w, h, d),
+                faceMaterial
+            );
             
             const geometry = new THREE.BoxGeometry(w, h, d);
             const edges = new THREE.EdgesGeometry(geometry);
             
-            // Используем цвет в зависимости от critical
-            const color = volume.critical ? '#ff0000' : '#ff4444';
-            
             const line = new THREE.LineSegments(
                 edges, 
                 new THREE.LineBasicMaterial({ 
-                    color: color,
-                    linewidth: lineWidth || state.hitWidth
+                    color: volume.color || (volume.critical ? '#ff0000' : state.hitColor)
                 })
             );
             
-            line.position.set(x, y, z);
-            line.userData = { 
+            group.add(faces);
+            group.add(line);
+            
+            group.rotation.x = rotX;
+            group.rotation.y = rotY;
+            group.rotation.z = rotZ;
+            group.position.set(x, y, z);
+            
+            group.userData = { 
                 type: 'hitVolume', 
                 volume: volume,
-                index: volume.index 
+                index: volume.index,
+                faces: faces,
+                line: line
             };
             
-            return line;
+            return { group, faces, line };
+        }
+
+        // Обновление выделения volume
+        function selectVolume(index) {
+            if (state.selectedVolumeIndex !== -1) {
+                const prevHeader = document.querySelector(`.hit-volume-header[data-index="${state.selectedVolumeIndex}"]`);
+                if (prevHeader) prevHeader.classList.remove('selected');
+                
+                if (state.hitVolumeMeshes[state.selectedVolumeIndex]) {
+                    const prevGroup = state.hitVolumeMeshes[state.selectedVolumeIndex];
+                    if (prevGroup.userData.faces) {
+                        prevGroup.userData.faces.material.opacity = 0;
+                    }
+                }
+            }
+            
+            state.selectedVolumeIndex = index;
+            
+            if (index !== -1 && state.highlightSelected) {
+                const header = document.querySelector(`.hit-volume-header[data-index="${index}"]`);
+                if (header) header.classList.add('selected');
+                
+                if (state.hitVolumeMeshes[index]) {
+                    const group = state.hitVolumeMeshes[index];
+                    if (group.userData.faces) {
+                        group.userData.faces.material.opacity = state.selectedOpacity;
+                    }
+                }
+            }
+        }
+
+        // Обновление прозрачности выделенного volume
+        function updateSelectedOpacity() {
+            const opacity = parseFloat(document.getElementById('selected-opacity').value);
+            state.selectedOpacity = opacity;
+            document.getElementById('selected-opacity-value').textContent = opacity.toFixed(1);
+            
+            if (state.selectedVolumeIndex !== -1 && state.highlightSelected) {
+                const group = state.hitVolumeMeshes[state.selectedVolumeIndex];
+                if (group && group.userData.faces) {
+                    group.userData.faces.material.opacity = opacity;
+                }
+            }
+        }
+
+        // Включение/выключение подсветки выделенного
+        function toggleHighlightSelected() {
+            state.highlightSelected = document.getElementById('highlight-selected').checked;
+            
+            if (!state.highlightSelected && state.selectedVolumeIndex !== -1) {
+                const group = state.hitVolumeMeshes[state.selectedVolumeIndex];
+                if (group && group.userData.faces) {
+                    group.userData.faces.material.opacity = 0;
+                }
+            } else if (state.highlightSelected && state.selectedVolumeIndex !== -1) {
+                const group = state.hitVolumeMeshes[state.selectedVolumeIndex];
+                if (group && group.userData.faces) {
+                    group.userData.faces.material.opacity = state.selectedOpacity;
+                }
+            }
         }
 
         // Создание текстовой метки
@@ -727,44 +1859,149 @@
             const material = new THREE.SpriteMaterial({ map: texture });
             const sprite = new THREE.Sprite(material);
             
-            sprite.scale.set(0.2, 0.1, 0.1); // Меньше в масштабе 0-1
+            sprite.scale.set(0.2, 0.1, 0.1);
             sprite.position.set(position[0], position[1] + 0.2, position[2]);
             
             return sprite;
         }
 
-        // Обновление толщины линий
-        function updateHitVolumesThickness() {
-            const width = parseFloat(document.getElementById('hit-width').value);
-            state.hitWidth = width;
+        // Обновление цвета hit volumes (глобальный)
+        function updateHitVolumesColor() {
+            const color = document.getElementById('hit-color').value;
+            state.hitColor = color;
             
-            state.hitVolumeMeshes.forEach(mesh => {
-                if (mesh.material) {
-                    mesh.material.linewidth = width;
+            state.hitVolumeMeshes.forEach(group => {
+                const volume = group.userData.volume;
+                // Меняем только те, у которых нет своего цвета
+                if (!volume.color) {
+                    group.userData.line.material.color.set(color);
+                    group.userData.faces.material.color.set(color);
                 }
             });
-            
-            document.getElementById('hit-width-value').textContent = width.toFixed(1);
         }
 
-        // Обновление модели
-        function updateModelStyle() {
-            const width = parseFloat(document.getElementById('model-width').value);
-            state.modelWidth = width;
+        // Обновление цвета модели
+        function updateModelColor() {
+            const color = document.getElementById('model-color').value;
+            state.modelColor = color;
             
             if (state.modelEdges) {
-                state.modelEdges.material.linewidth = width;
+                state.modelEdges.material.color.set(color);
             }
-            
-            document.getElementById('model-width-value').textContent = width.toFixed(1);
         }
 
-        // Обновление позиции и размера volume
+        // Обновление label volume
+        function updateVolumeLabel(index, newLabel) {
+            try {
+                const volume = state.hitVolumesData[index];
+                
+                if (Array.isArray(volume)) {
+                    volume[1] = newLabel;
+                } else {
+                    volume.label = newLabel;
+                }
+                
+                if (state.labels[index]) {
+                    state.modelGroup.remove(state.labels[index]);
+                    
+                    const pos = Array.isArray(volume) ? volume[3] : volume.position;
+                    const critical = Array.isArray(volume) ? volume[5] : volume.critical;
+                    const color = Array.isArray(volume) ? '#ff4444' : (volume.color || (critical ? '#ff0000' : '#ff4444'));
+                    const newSprite = createLabel(newLabel, pos, color);
+                    
+                    state.labels[index] = newSprite;
+                    if (state.showLabels) {
+                        state.modelGroup.add(newSprite);
+                    }
+                }
+                
+                document.getElementById('raw-hit-data').textContent = JSON.stringify(state.hitVolumesData, null, 2);
+                
+            } catch (err) {
+                showError('Failed to update label: ' + err.message);
+            }
+        }
+
+        // Удаление volume
+        function deleteVolume(index) {
+            try {
+                if (state.hitVolumeMeshes[index]) {
+                    state.modelGroup.remove(state.hitVolumeMeshes[index]);
+                }
+                if (state.labels[index]) {
+                    state.modelGroup.remove(state.labels[index]);
+                }
+                
+                state.hitVolumeMeshes.splice(index, 1);
+                state.labels.splice(index, 1);
+                state.hitVolumesData.splice(index, 1);
+                
+                state.hitVolumeMeshes.forEach((mesh, i) => {
+                    mesh.userData.index = i;
+                    if (mesh.userData.volume) {
+                        mesh.userData.volume.index = i;
+                    }
+                });
+                
+                if (state.selectedVolumeIndex === index) {
+                    state.selectedVolumeIndex = -1;
+                } else if (state.selectedVolumeIndex > index) {
+                    state.selectedVolumeIndex--;
+                }
+                
+                document.getElementById('hit-count').textContent = state.hitVolumesData.length;
+                updateHitVolumesList(state.hitVolumesData);
+                document.getElementById('raw-hit-data').textContent = JSON.stringify(state.hitVolumesData, null, 2);
+                
+            } catch (err) {
+                showError('Failed to delete volume: ' + err.message);
+            }
+        }
+
+        // Переключение видимости всех volume
+        function toggleAllVisibility() {
+            const anyVisible = state.hitVolumeMeshes.some(mesh => mesh.visible);
+            const newState = !anyVisible;
+            
+            state.hitVolumeMeshes.forEach((mesh, index) => {
+                mesh.visible = newState;
+                if (state.labels[index]) {
+                    state.labels[index].visible = newState && state.showLabels;
+                }
+                const checkbox = document.getElementById(`vol-${index}-visible`);
+                if (checkbox) checkbox.checked = newState;
+            });
+        }
+
+        // Скрыть все volume
+        function hideAllVisibility() {
+            state.hitVolumeMeshes.forEach((mesh, index) => {
+                mesh.visible = false;
+                if (state.labels[index]) {
+                    state.labels[index].visible = false;
+                }
+                const checkbox = document.getElementById(`vol-${index}-visible`);
+                if (checkbox) checkbox.checked = false;
+            });
+        }
+
+        // Показать все volume
+        function showAllVisibility() {
+            state.hitVolumeMeshes.forEach((mesh, index) => {
+                mesh.visible = true;
+                if (state.labels[index]) {
+                    state.labels[index].visible = state.showLabels;
+                }
+                const checkbox = document.getElementById(`vol-${index}-visible`);
+                if (checkbox) checkbox.checked = true;
+            });
+        }
+
+        // Обновление позиции, размера и поворота volume
         function updateVolumeFromUI(index) {
             try {
                 const volume = state.hitVolumesData[index];
                 
-                // Читаем значения из полей ввода
                 const posX = parseFloat(document.getElementById(`vol-${index}-pos-x`).value) || 0;
                 const posY = parseFloat(document.getElementById(`vol-${index}-pos-y`).value) || 0;
                 const posZ = parseFloat(document.getElementById(`vol-${index}-pos-z`).value) || 0;
@@ -773,34 +2010,43 @@
                 const sizeY = parseFloat(document.getElementById(`vol-${index}-size-y`).value) || 0.1;
                 const sizeZ = parseFloat(document.getElementById(`vol-${index}-size-z`).value) || 0.1;
                 
-                // Обновляем данные
+                const rotX = parseFloat(document.getElementById(`vol-${index}-rot-x`).value) || 0;
+                const rotY = parseFloat(document.getElementById(`vol-${index}-rot-y`).value) || 0;
+                const rotZ = parseFloat(document.getElementById(`vol-${index}-rot-z`).value) || 0;
+                
                 if (Array.isArray(volume)) {
                     volume[3] = [posX, posY, posZ];
                     volume[4] = [sizeX, sizeY, sizeZ];
+                    if (volume.length <= 6) volume.push([rotX, rotY, rotZ]);
+                    else volume[6] = [rotX, rotY, rotZ];
                 } else {
                     volume.position = [posX, posY, posZ];
                     volume.size = [sizeX, sizeY, sizeZ];
+                    volume.rotation = [rotX, rotY, rotZ];
                 }
                 
-                // Обновляем меш
-                const mesh = state.hitVolumeMeshes[index];
-                if (mesh) {
-                    mesh.position.set(posX, posY, posZ);
+                const group = state.hitVolumeMeshes[index];
+                if (group) {
+                    group.position.set(posX, posY, posZ);
+                    group.rotation.x = rotX;
+                    group.rotation.y = rotY;
+                    group.rotation.z = rotZ;
                     
-                    // Пересоздаем геометрию с новым размером
                     const geometry = new THREE.BoxGeometry(sizeX, sizeY, sizeZ);
                     const edges = new THREE.EdgesGeometry(geometry);
-                    mesh.geometry.dispose();
-                    mesh.geometry = edges;
+                    
+                    group.userData.line.geometry.dispose();
+                    group.userData.line.geometry = edges;
+                    
+                    group.userData.faces.geometry.dispose();
+                    group.userData.faces.geometry = geometry;
                 }
                 
-                // Обновляем метку
                 const label = state.labels[index];
                 if (label) {
                     label.position.set(posX, posY + 0.2, posZ);
                 }
                 
-                // Обновляем raw data
                 document.getElementById('raw-hit-data').textContent = JSON.stringify(state.hitVolumesData, null, 2);
                 
             } catch (err) {
@@ -811,56 +2057,67 @@
         // Загрузка hit volumes
         function loadHitVolumes(volumesData) {
             try {
-                // Сохраняем данные
                 state.hitVolumesData = volumesData;
                 
-                // Очищаем старые
-                state.hitVolumeMeshes.forEach(mesh => state.scene.remove(mesh));
-                state.labels.forEach(label => state.scene.remove(label));
+                state.hitVolumeMeshes.forEach(mesh => state.modelGroup.remove(mesh));
+                state.labels.forEach(label => state.modelGroup.remove(label));
                 state.hitVolumeMeshes = [];
                 state.labels = [];
                 
-                // Создаем новые
                 volumesData.forEach((vol, index) => {
-                    let type, label, hp, pos, size, critical;
+                    let type, label, health, pos, size, rotation, critical, priority, color, description;
                     
                     if (Array.isArray(vol)) {
-                        [type, label, hp, pos, size, critical] = vol;
+                        [type, label, health, pos, size, critical, priority] = vol;
+                        rotation = [0, 0, 0];
+                        color = critical ? '#ff0000' : state.hitColor;
                     } else {
                         type = vol.type;
                         label = vol.label;
-                        hp = vol.hp;
+                        health = vol.health || vol.hp;
                         pos = vol.position;
                         size = vol.size;
-                        critical = vol.critical;
+                        rotation = vol.rotation || [0, 0, 0];
+                        critical = vol.critical || false;
+                        priority = vol.priority;
+                        color = vol.color || (critical ? '#ff0000' : state.hitColor);
+                        description = vol.description;
                     }
                     
                     const volume = {
                         type,
                         label,
-                        hp,
+                        health,
                         position: pos,
                         size,
+                        rotation,
                         critical,
+                        priority,
+                        color,
+                        description,
                         index
                     };
                     
-                    const mesh = createHitVolumeMesh(volume);
-                    state.hitVolumeMeshes.push(mesh);
-                    state.scene.add(mesh);
+                    const { group, faces, line } = createHitVolumeMesh(volume);
+                    group.userData.volume = volume;
+                    group.userData.faces = faces;
+                    group.userData.line = line;
                     
-                    // Создаем метку
-                    const labelSprite = createLabel(label, pos, critical ? '#ff0000' : '#ff4444');
+                    state.hitVolumeMeshes.push(group);
+                    state.modelGroup.add(group);
+                    
+                    const labelSprite = createLabel(label, pos, color);
                     state.labels.push(labelSprite);
                     if (state.showLabels) {
-                        state.scene.add(labelSprite);
+                        state.modelGroup.add(labelSprite);
                     }
                 });
                 
-                // Обновляем UI
                 document.getElementById('hit-count').textContent = volumesData.length;
                 updateHitVolumesList(volumesData);
                 document.getElementById('raw-hit-data').textContent = JSON.stringify(volumesData, null, 2);
+                
+                state.selectedVolumeIndex = -1;
                 
                 console.log('Hit volumes loaded:', volumesData.length);
             } catch (err) {
@@ -874,27 +2131,36 @@
             let html = '';
             
             volumes.forEach((vol, index) => {
-                let type, label, hp, pos, size, critical;
+                let type, label, health, pos, size, rotation, critical, priority, color;
                 
                 if (Array.isArray(vol)) {
-                    [type, label, hp, pos, size, critical] = vol;
+                    [type, label, health, pos, size, critical, priority] = vol;
+                    rotation = [0, 0, 0];
+                    color = critical ? '#ff0000' : state.hitColor;
                 } else {
                     type = vol.type;
                     label = vol.label;
-                    hp = vol.hp;
+                    health = vol.health || vol.hp;
                     pos = vol.position;
                     size = vol.size;
-                    critical = vol.critical;
+                    rotation = vol.rotation || [0, 0, 0];
+                    critical = vol.critical || false;
+                    priority = vol.priority;
+                    color = vol.color || (critical ? '#ff0000' : state.hitColor);
                 }
                 
                 const criticalClass = critical ? 'critical' : '';
                 
                 html += `
                     <div class="hit-volume-item">
-                        <div class="hit-volume-header" onclick="app.toggleVolume(${index})">
-                            <span class="hit-volume-name">${label}</span>
+                        <div class="hit-volume-header" data-index="${index}" onclick="app.selectVolume(${index})">
+                            <div class="hit-volume-name">
+                                <input type="text" class="hit-volume-name-input" value="${label}" 
+                                       onchange="app.updateVolumeLabel(${index}, this.value)" 
+                                       onclick="event.stopPropagation()">
+                            </div>
                             <div class="hit-volume-badges">
-                                <span class="badge ${criticalClass}">HP:${hp}</span>
+                                <span class="badge ${criticalClass}">HP:${health}</span>
                                 <span class="badge">${type}</span>
                             </div>
                         </div>
@@ -937,14 +2203,34 @@
                                 </div>
                             </div>
                             
+                            <!-- ROTATION -->
+                            <div class="compact-control">
+                                <span class="compact-label">🔄ROT</span>
+                                <div class="compact-inputs">
+                                    <div class="compact-input-group">
+                                        <span>X</span>
+                                        <input type="number" class="compact-input" id="vol-${index}-rot-x" value="${rotation[0]}" step="0.01" min="-3.14" max="3.14" onchange="app.updateVolumeFromUI(${index})">
+                                    </div>
+                                    <div class="compact-input-group">
+                                        <span>Y</span>
+                                        <input type="number" class="compact-input" id="vol-${index}-rot-y" value="${rotation[1]}" step="0.01" min="-3.14" max="3.14" onchange="app.updateVolumeFromUI(${index})">
+                                    </div>
+                                    <div class="compact-input-group">
+                                        <span>Z</span>
+                                        <input type="number" class="compact-input" id="vol-${index}-rot-z" value="${rotation[2]}" step="0.01" min="-3.14" max="3.14" onchange="app.updateVolumeFromUI(${index})">
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Footer -->
                             <div class="volume-footer">
                                 <div class="checkbox-group">
                                     <input type="checkbox" id="vol-${index}-visible" checked onchange="app.toggleVolumeVisible(${index}, this.checked)">
                                     <label>Show</label>
                                 </div>
-                                <div class="color-indicator" style="background: ${critical ? '#ff0000' : '#ff4444'};"></div>
+                                <div class="color-indicator" style="background: ${color};" onclick="app.showColorPicker(${index}, event)"></div>
                                 ${critical ? '<span style="color:#ff0000; font-size:9px;">⚠️CRITICAL</span>' : ''}
+                                <button class="delete-btn" onclick="app.deleteVolume(${index}); event.stopPropagation();">✖</button>
                             </div>
                         </div>
                     </div>
@@ -954,18 +2240,48 @@
             listEl.innerHTML = html;
         }
 
+        // Показать цветовой picker (упрощенная версия - используем стандартный input)
+        function showColorPicker(index, event) {
+            event.stopPropagation();
+            
+            // Создаем временный input
+            const input = document.createElement('input');
+            input.type = 'color';
+            input.value = state.hitVolumeMeshes[index].userData.line.material.color.getStyle();
+            input.style.position = 'absolute';
+            input.style.left = event.pageX + 'px';
+            input.style.top = event.pageY + 'px';
+            input.style.zIndex = '1000';
+            
+            input.onchange = (e) => {
+                updateVolumeColor(index, e.target.value);
+                document.body.removeChild(input);
+            };
+            
+            input.onblur = () => {
+                document.body.removeChild(input);
+            };
+            
+            document.body.appendChild(input);
+            input.click();
+        }
+
         // Загрузка OBJ модели
         function loadObjModel(objData) {
             try {
                 // Очищаем старую модель
                 if (state.modelEdges) {
-                    state.scene.remove(state.modelEdges);
+                    state.modelGroup.remove(state.modelEdges);
                     state.modelEdges = null;
                 }
                 if (state.modelWireframe) {
-                    state.scene.remove(state.modelWireframe);
+                    state.modelGroup.remove(state.modelWireframe);
                     state.modelWireframe = null;
                 }
+                
+                // Очищаем меши граней
+                state.faceMeshes.forEach(mesh => state.modelGroup.remove(mesh));
+                state.faceMeshes = [];
                 
                 if (!objData) return;
                 
@@ -1017,19 +2333,12 @@
                     maxZ = Math.max(maxZ, v.z);
                 });
                 
-                const origWidth = maxX - minX;
-                const origHeight = maxY - minY;
-                const origDepth = maxZ - minZ;
-                const maxDim = Math.max(origWidth, origHeight, origDepth);
-                
-                // Масштабируем так, чтобы максимальный размер стал 1.0
+                const maxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
                 const scale = 1 / maxDim;
                 
-                // Сохраняем информацию о масштабировании
                 state.modelOriginalMaxDim = maxDim;
                 state.modelScale = scale;
                 
-                // Показываем информацию о размерах
                 document.getElementById('dimensions-display').style.display = 'grid';
                 document.getElementById('orig-max-dim').textContent = maxDim.toFixed(2) + 'm';
                 document.getElementById('scale-factor').textContent = `1 : ${(1/scale).toFixed(1)}`;
@@ -1038,19 +2347,26 @@
                 const centerY = (minY + maxY) / 2;
                 const centerZ = (minZ + maxZ) / 2;
                 
-                // Создаем геометрию
-                const geometry = new THREE.BufferGeometry();
+                // Масштабируем вершины
+                const scaledVertices = vertices.map(v => new THREE.Vector3(
+                    (v.x - centerX) * scale,
+                    (v.y - centerY) * scale,
+                    (v.z - centerZ) * scale
+                ));
+                
+                // Сохраняем для генерации
+                state.modelVertices = scaledVertices;
+                state.modelFacesIndices = faces;
+                
+                // Создаем геометрию для ребер модели
+                const edgeGeometry = new THREE.BufferGeometry();
                 const positionArray = [];
                 
-                vertices.forEach(v => {
-                    positionArray.push(
-                        (v.x - centerX) * scale,
-                        (v.y - centerY) * scale,
-                        (v.z - centerZ) * scale
-                    );
+                scaledVertices.forEach(v => {
+                    positionArray.push(v.x, v.y, v.z);
                 });
                 
-                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positionArray, 3));
+                edgeGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positionArray, 3));
                 
                 // Создаем индексы для ребер
                 const edges = [];
@@ -1071,15 +2387,50 @@
                 });
                 
                 if (edges.length > 0) {
-                    geometry.setIndex(edges);
+                    edgeGeometry.setIndex(edges);
                     
-                    // Создаем ребра модели
                     state.modelEdges = new THREE.LineSegments(
-                        geometry,
-                        new THREE.LineBasicMaterial({ color: '#00ff00', linewidth: state.modelWidth })
+                        edgeGeometry,
+                        new THREE.LineBasicMaterial({ color: state.modelColor })
                     );
-                    state.scene.add(state.modelEdges);
+                    state.modelGroup.add(state.modelEdges);
                 }
+                
+                // Создаем меши граней для выбора (каждая грань отдельно)
+                faces.forEach((face, faceIndex) => {
+                    // Триангулируем грань (разбиваем на треугольники)
+                    for (let i = 1; i < face.length - 1; i++) {
+                        const triIndices = [face[0], face[i], face[i + 1]];
+                        const triVertices = triIndices.map(idx => scaledVertices[idx]);
+                        
+                        const geometry = new THREE.BufferGeometry();
+                        const positions = [];
+                        triVertices.forEach(v => {
+                            positions.push(v.x, v.y, v.z);
+                        });
+                        
+                        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+                        geometry.setIndex([0, 1, 2]);
+                        geometry.computeVertexNormals();
+                        
+                        const material = new THREE.MeshPhongMaterial({
+                            color: 0x44aaff,
+                            transparent: true,
+                            opacity: state.faceOpacity,
+                            side: THREE.DoubleSide,
+                            emissive: 0x112233
+                        });
+                        
+                        const mesh = new THREE.Mesh(geometry, material);
+                        mesh.userData.faceIndex = faceIndex;
+                        mesh.userData.isTriangle = true;
+                        
+                        state.faceMeshes.push(mesh);
+                        if (state.showFaces) {
+                            state.modelGroup.add(mesh);
+                        }
+                    }
+                });
                 
                 // Создаем вайрфрейм
                 if (faces.length > 0) {
@@ -1108,15 +2459,44 @@
                         );
                         
                         if (state.showWireframe) {
-                            state.scene.add(state.modelWireframe);
+                            state.modelGroup.add(state.modelWireframe);
                         }
                     }
                 }
                 
-                document.getElementById('model-info').textContent = `loaded (${(maxDim).toFixed(1)}m max)`;
-                console.log('Model loaded successfully, scale:', scale);
+                document.getElementById('model-info').textContent = `loaded (${(maxDim).toFixed(1)}m max, ${faces.length} faces)`;
+                console.log('Model loaded successfully, faces:', faces.length);
+                
             } catch (err) {
                 showError('Failed to load OBJ model: ' + err.message);
+            }
+        }
+
+        // Toggle raw data visibility
+        function toggleRawData() {
+            const card = document.getElementById('raw-data-card');
+            const btn = document.getElementById('raw-data-btn');
+            
+            card.classList.toggle('visible');
+            btn.classList.toggle('active');
+        }
+
+        // Save to JSON
+        function saveToJson() {
+            try {
+                const data = state.hitVolumesData;
+                const jsonStr = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'hit-volumes.json';
+                a.click();
+                
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                showError('Failed to save JSON: ' + err.message);
             }
         }
 
@@ -1148,9 +2528,9 @@
             }
             
             if (state.showWireframe && state.modelWireframe && !state.modelWireframe.parent) {
-                state.scene.add(state.modelWireframe);
+                state.modelGroup.add(state.modelWireframe);
             } else if (!state.showWireframe && state.modelWireframe && state.modelWireframe.parent) {
-                state.scene.remove(state.modelWireframe);
+                state.modelGroup.remove(state.modelWireframe);
             }
         }
 
@@ -1161,14 +2541,6 @@
             }
             if (state.labels[index]) {
                 state.labels[index].visible = visible && state.showLabels;
-            }
-        }
-
-        // Скрыть/показать панель управления volume
-        function toggleVolume(index) {
-            const controls = document.getElementById(`volume-${index}`);
-            if (controls) {
-                controls.style.display = controls.style.display === 'none' ? 'block' : 'none';
             }
         }
 
@@ -1184,7 +2556,7 @@
 
         // Загрузка тестовой модели
         function loadSampleModel() {
-            const sampleObj = `# Simple test model - a cube (1.0 x 1.0 x 1.0)
+            const sampleObj = `# Simple test model with triangular faces
 v -0.5 -0.5 -0.5
 v 0.5 -0.5 -0.5
 v 0.5 0.5 -0.5
@@ -1194,15 +2566,32 @@ v 0.5 -0.5 0.5
 v 0.5 0.5 0.5
 v -0.5 0.5 0.5
 
-f 1 2 3 4
-f 5 6 7 8
-f 1 2 6 5
-f 2 3 7 6
-f 3 4 8 7
-f 4 1 5 8`;
+# Front face
+f 1 2 3
+f 1 3 4
+
+# Back face
+f 5 6 7
+f 5 7 8
+
+# Left face
+f 1 4 8
+f 1 8 5
+
+# Right face
+f 2 3 7
+f 2 7 6
+
+# Top face
+f 4 3 7
+f 4 7 8
+
+# Bottom face
+f 1 2 6
+f 1 6 5`;
             
             loadObjModel(sampleObj);
-            document.getElementById('model-info').textContent = 'sample cube (1.0)';
+            document.getElementById('model-info').textContent = 'sample model (triangles)';
         }
 
         // Создаем глобальный объект приложения
@@ -1210,37 +2599,71 @@ f 4 1 5 8`;
             loadSampleModel,
             resetView,
             toggleWireframe,
-            updateModelStyle,
-            updateHitVolumesThickness,
+            toggleOrthographic,
+            setView,
+            updateModelColor,
+            updateHitVolumesColor,
+            updateShipRotation,
+            updateSelectedOpacity,
+            updateFaceOpacity,
+            toggleHighlightSelected,
             toggleLabels,
+            toggleGrid,
+            toggleFaces,
             toggleVolumeVisible,
-            toggleVolume,
+            selectVolume,
             updateVolumeFromUI,
-            loadHitVolumes
+            updateVolumeLabel,
+            updateVolumeColor,
+            deleteVolume,
+            toggleAllVisibility,
+            hideAllVisibility,
+            showAllVisibility,
+            toggleFaceSelectionMode,
+            generateFromSelectedFace,
+            addNewVolume,
+            showColorPicker,
+            loadHitVolumes,
+            toggleRawData,
+            saveToJson,
+            switchTab
         };
 
         // Инициализация после загрузки страницы
         document.addEventListener('DOMContentLoaded', () => {
-            // Инициализируем сцену
             initScene();
             
-            // Загружаем тестовые hit volumes в масштабе 0-1
+            // Загружаем тестовые hit volumes
             const sampleHitVolumes = [
-                ['Cockpit', 'COCKPIT', 100, [0, 0.15, 0.36], [0.24, 0.15, 0.24], false],
-                ['Reactor', 'REACTOR', 250, [0, 0, -0.18], [0.36, 0.24, 0.3], true],
-                ['Engine', 'ENGINE', 150, [0, 0, -0.42], [0.42, 0.18, 0.24], true],
-                ['Cargo', 'CARGO', 80, [0, -0.1, 0.12], [0.6, 0.18, 0.48], false],
-                ['Hull', 'HULL', 0, [0, 0, 0], [0.85, 0.35, 1.0], false]
+                {
+                    type: "Cockpit",
+                    label: "COCKPIT",
+                    health: 100,
+                    position: [0, 0.15, 0.36],
+                    size: [0.24, 0.15, 0.24],
+                    rotation: [0, 0, 0],
+                    critical: false,
+                    priority: 60,
+                    color: "#44ff44",
+                    description: "Кабина пилота"
+                },
+                {
+                    type: "Reactor",
+                    label: "REACTOR",
+                    health: 250,
+                    position: [0, 0, -0.18],
+                    size: [0.36, 0.24, 0.3],
+                    rotation: [0, 0, 0],
+                    critical: true,
+                    priority: 1,
+                    color: "#ff4444",
+                    description: "Главный реактор"
+                }
             ];
             
             loadHitVolumes(sampleHitVolumes);
             
             // Назначаем обработчики событий
-            document.getElementById('model-width').addEventListener('input', updateModelStyle);
-            document.getElementById('hit-width').addEventListener('input', updateHitVolumesThickness);
-            document.getElementById('show-labels').addEventListener('change', toggleLabels);
-            document.getElementById('show-grid').addEventListener('change', toggleGrid);
-            
             document.getElementById('obj-file').addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (!file) return;

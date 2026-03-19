@@ -7,6 +7,9 @@
 
 #include "src/render/bitmap/TextureLoader.h"
 
+bool PlayerShipView::g_debugLogNextFrame = false;
+
+
 
 
 void PlayerShipView::init(
@@ -15,16 +18,38 @@ void PlayerShipView::init(
         const ShipTransform& transform
     )
     {
+
+        const Viewport& vp = context.viewport();
+        float aspect = (float)vp.width / (float)vp.height;
+
+        m_shipDesc = desc;
+
         m_cameras[ShipCameraMode::Cockpit] = Camera();
         m_cameras[ShipCameraMode::Rear]    = Camera();
         m_cameras[ShipCameraMode::Drone]   = Camera();
+
+
+        // Устанавливаем проекционные матрицы для каждой камеры
+        // Предполагаем, что у Camera есть метод setPerspective
+        float fov = 70.0f; // или другое значение из настроек
+        float nearPlane = 0.1f;
+        float farPlane = 500000.0f;
+        
+        m_cameras[ShipCameraMode::Cockpit].setPerspective(fov, nearPlane, farPlane);
+        m_cameras[ShipCameraMode::Cockpit].setAspect(aspect);
+        
+        m_cameras[ShipCameraMode::Rear].setPerspective(fov, nearPlane, farPlane);
+        m_cameras[ShipCameraMode::Rear].setAspect(aspect);
+        
+        m_cameras[ShipCameraMode::Drone].setPerspective(fov, nearPlane, farPlane);
+        m_cameras[ShipCameraMode::Drone].setAspect(aspect);
 
         mainCamera = ShipCameraMode::Cockpit;
 
         // camera.setAspect(context.aspect());
         // camera.setPosition(transform.position);
 
-        const Viewport& vp = context.viewport();
+        
 
 
         if (desc && desc->cockpit)
@@ -97,6 +122,30 @@ void PlayerShipView::updateCockpitState(ShipRole role,
 }
 
 
+
+
+
+
+
+void PlayerShipView::updateBoundary(int width, int height)
+{
+    // Предполагаем, что у вас есть доступ к ShipDescriptor
+    // Если нет - нужно передавать его при обновлении
+    if (!m_shipDesc) return; // нужно добавить поле m_shipDesc
+    
+    hudEdgeMapper.setBoundary(
+        m_shipDesc->hud.edgeBoundary.contour,
+        width,
+        height
+    );
+}
+
+
+
+
+
+
+
 //                                                                 ###                 ##       ##
 //                                                                  ##                          ##
 //  ######    ####    #####              ####     ####     ####     ##  ##  ######    ###      #####
@@ -133,6 +182,8 @@ void PlayerShipView::renderWorldLabels(
     const Viewport& vp
 )
 {
+   
+
     glm::vec2 screenCenter(
         vp.width * 0.5f,
         vp.height * 0.5f
@@ -141,7 +192,8 @@ void PlayerShipView::renderWorldLabels(
     for (const auto& label : labels)
     {
         glm::vec2 projectedPos;
-
+        
+        
         bool projected = projectToScreen(
             label.data.worldPos,
             viewMatrix,
@@ -151,13 +203,19 @@ void PlayerShipView::renderWorldLabels(
             projectedPos
         );
 
+
+
         glm::vec3 toTarget =
             glm::normalize(label.data.worldPos - shipPosition);
+
 
         glm::vec4 viewDir4 =
             viewMatrix * glm::vec4(toTarget, 0.0f);
 
         glm::vec2 dir2D(viewDir4.x, -viewDir4.y);
+
+
+
 
         if (glm::length(dir2D) < 1e-4f)
             continue;
@@ -229,6 +287,9 @@ void PlayerShipView::renderHudBoundary()
 }
 
 
+
+
+
 void PlayerShipView::update(
         float dt,
         ShipRole role,
@@ -242,6 +303,7 @@ void PlayerShipView::update(
     ShipTransform tempTransform;
     tempTransform.position = position;
     tempTransform.orientation = orientation;
+
 
     cameraController.updateMode(
         ShipCameraMode::Cockpit,
@@ -264,6 +326,7 @@ void PlayerShipView::update(
         m_cameras[ShipCameraMode::Drone]
     );
 
+
 }
 
 
@@ -285,5 +348,15 @@ void PlayerShipView::updateCockpitStateFromSnapshot(
 }
 
 
-
+void PlayerShipView::resize(int width, int height)
+{
+    float aspect = (float)width / (float)height;
+    
+    // Просто обновляем aspect ratio у всех камер
+    // Не нужно переустанавливать перспективу, только aspect
+    for (auto& [mode, camera] : m_cameras)
+    {
+        camera.setAspect(aspect);
+    }
+}
 

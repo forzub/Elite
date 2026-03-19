@@ -2,13 +2,33 @@
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 #include <stdexcept>
 
-const ShipDescriptor& ShipDescriptorRegistry::get(ShipTypeId id)
-{
-    switch (id)
-    {
-        case ShipTypeId::CobraMk1:
-            return EliteCobraMk1::EliteCobraMk1Descriptor();
-    }
+#include "src/world/descriptors/ObjectDescriptorRegistry.h"
 
-    throw std::runtime_error("Unknown ShipTypeId");
+
+// const ShipDescriptor& ShipDescriptorRegistry::get(ObjectType id)
+// {
+//     std::cout << "[ShipDescriptorRegistry] type: " << static_cast<uint16_t>(id) << "\n";
+//     switch (id)
+//     {
+//         case ObjectType::CobraMk1:
+//             return EliteCobraMk1::EliteCobraMk1Descriptor();
+//     }
+
+//     throw std::runtime_error("[ShipDescriptorRegistry] Unknown ObjectType");
+// }
+
+
+const ShipDescriptor& ShipDescriptorRegistry::get(ObjectType id)
+{
+    std::cout << "[ShipDescriptorRegistry] type: " << static_cast<uint16_t>(id) << "\n";
+    
+    const auto& base = ObjectDescriptorRegistry::get(id);
+    
+    auto* shipDesc = dynamic_cast<const ShipDescriptor*>(&base);
+
+    if (!shipDesc)
+        throw std::runtime_error("Object is not ShipDescriptor");
+
+    return *shipDesc;
 }
+

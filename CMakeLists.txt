@@ -18,6 +18,7 @@ find_package(nlohmann_json REQUIRED)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glad)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 
 add_executable(EliteGame
     src/main.cpp
@@ -93,7 +94,7 @@ add_executable(EliteGame
     src/render/bitmap/TextureLoader.cpp
     src/render/camera/RenderCameraViewport.cpp
 
-    src/ui/components/UICameraView.cpp
+    src/ui/components/minicamera/UICameraView.cpp
     src/ui/components/UIComponent.cpp
     src/ui/components/UIContainer.cpp
     src/ui/components/UIText.cpp
@@ -143,6 +144,22 @@ add_executable(EliteGame
     src/game/ship/core/ShipHitBuilder.cpp
 
     src/game/damage/TestDamageHandler.cpp
+
+    src/render/ship/ShipMeshRenderer.cpp
+    
+    src/game/geometry/ObjLoader.cpp
+    src/game/geometry/MeshLibrary.cpp
+    
+    src/render/ShaderLibrary.cpp
+    src/render/InitShaders.cpp
+
+    src/render/renderers/MeshRenderer.cpp
+    src/render/renderers/DebugRenderer.cpp
+
+    src/render/frustum/Frustum.cpp
+    src/debug/FrustumDebugData.cpp
+
+    src/world/descriptors/ObjectDescriptorRegistry.cpp
 
 )
 

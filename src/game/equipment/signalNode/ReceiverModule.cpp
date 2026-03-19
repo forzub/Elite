@@ -17,8 +17,6 @@ void ReceiverModule::update(double dt)
 
 double ReceiverModule::getRequestedPower() const
 {
-    if (!isOperational())
-        return 0.0;
 
     return m_desc.powerConsumption;
 }

@@ -3,18 +3,29 @@
 
 #include "game/ship/ShipInitData.h"
 #include "game/ship/ShipRoleType.h"
+#include "game/ship/ShipRegistry.h"
+#include "game/ship/ShipVisualIdentity.h"
 #include "game/ship/descriptors/EliteCobraMk1.h"
 
 #include "game/items/cryptocard/CryptoCard.h"
 #include "game/player/ActorCodeGenerator.h"
 #include "src/game/player/ActorIdProvider.h"
-#include "game/ship/ShipRegistry.h"
-#include "game/ship/ShipVisualIdentity.h"
+
+#include "src/world/descriptors/ObjectDescriptorRegistry.h"
+#include "src/world/types/ObjectType.h"
+
 
 #include "game/equipment/radar/RadarModule.h"
 
 GameSimulation::GameSimulation()
 {
+    // ===================== ObjectDescriptor =========================
+
+    ObjectDescriptorRegistry::init();
+
+
+
+
     // ========================= PLAYER =========================
 
     ShipVisualIdentity visualIdentity = {
@@ -96,6 +107,11 @@ GameSimulation::GameSimulation()
         {-20.0f, 50.0f, -50.0f},
         initData
     );
+
+
+    // ================= Stantion Lexie Liu =========================
+    spawnStation(ObjectType::Station, {0, 0, -1000});
+
 }
 
 
@@ -192,6 +208,7 @@ void GameSimulation::update(double dt)
 
     m_snapshot.serverTime = m_serverTime;
     m_snapshot.ships.clear();
+    m_snapshot.objects.clear();
     m_snapshot.signals = m_worldSignals;
 
 
@@ -219,9 +236,28 @@ void GameSimulation::update(double dt)
 
         s.radarContacts = ship.core().radar().getContacts();
         s.shipCoreStatus = ship.core().getCoreStatus();
+        
+        s.mesh = std::shared_ptr<game::ship::geometry::MeshData>(
+            &ship.core().mesh().mesh,
+            [](auto*){}
+        );
 
         m_snapshot.ships.push_back(s);
+    }
 
+
+    // ----- тут собираем snapshot для объектов ----------
+
+    for (auto& [id, obj] : m_staticObjects)
+    {
+        ObjectSnapshot o;
+
+        o.id = id;
+        o.type = obj.type;
+        o.position = obj.position;
+        o.rotation = obj.rotation;
+
+        m_snapshot.objects.push_back(o);
     }
 
 }
@@ -273,6 +309,35 @@ EntityId GameSimulation::spawnShip(
 
     return id;
 }
+
+
+
+EntityId GameSimulation::spawnStation(
+    ObjectType type,
+    const glm::vec3& position
+)
+{
+    EntityId id = generateEntityId();
+
+    auto& obj = m_staticObjects[id];
+
+    obj.id = id;
+    obj.type = type; // ← ключевое изменение
+    obj.position = position;
+
+    return id;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 void GameSimulation::applyControl(EntityId id, const ShipControlState& control)

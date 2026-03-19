@@ -24,7 +24,7 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
     {
         initialized = true;
 
-        desc.typeId = ShipTypeId::CobraMk1;
+        desc.typeId = ObjectType::CobraMk1;
 
         // ─────────────────────────
         // Identity
@@ -94,6 +94,15 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
                 {0.049211f, 0.101576f},
             }
             };
+
+        // ─────────────────────────
+        // Real Mesh Size, m
+        // ─────────────────────────
+        desc.meshSizeMeters = glm::vec3(
+                24.81f,
+                5.5f,
+                15.1f
+            );
 
 
         // ─────────────────────────
@@ -169,7 +178,7 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         
 
         desc.reactor.temperature        = 300.0;           // Начальная температура (K)
-        desc.reactor.thermalMass  = 120.0;            // Теплоемкость (МДж/К)	Масса реактора 25т, теплоемкость стали ~0.5 МДж/т/К ×25т ×10 = 125
+        desc.reactor.thermalMass        = 120.0;            // Теплоемкость (МДж/К)	Масса реактора 25т, теплоемкость стали ~0.5 МДж/т/К ×25т ×10 = 125
         
         desc.reactor.efficiencyMinTemp      =  0.35;            // 0.35 — мин КПД (при мин/макс температуре)
         desc.reactor.efficiencyPeak         =  0.45;            // 0.45 — макс КПД
@@ -191,6 +200,8 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.cooling.maxTransferPower   = 180,0;    // Макс. теплоперенос (МВт)
         desc.cooling.nominalPower       = 2.0;      // Мощность насосов номинал (МВт)
         desc.cooling.peakPower          = 4.5;      // Мощность насосов пик (МВт)
+
+
 
 
         RadarMountPoint mount;
@@ -231,16 +242,37 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // desc.modelPath = "assets/models/cobra.obj";
 
         // ----- DAMAGE --------
+        desc.boundingEllipsoid.center = {0,0,0};
+        desc.boundingEllipsoid.radius = {0.5,0.15,0.35};
+
+
+        // desc.meshSections =
+        // {
+        //     {
+        //         "nose",
+        //         {-0.3f,-0.1f,-0.35f},
+        //         { 0.3f, 0.1f,-0.1f}
+        //     },
+
+        //     {
+        //         "mid",
+        //         {-0.35f,-0.1f,-0.1f},
+        //         { 0.35f, 0.1f, 0.15f}
+        //     },
+
+        //     {
+        //         "rear",
+        //         {-0.3f,-0.1f, 0.15f},
+        //         { 0.3f, 0.1f, 0.35f}
+        //     }
+        // };
+
         desc.hitVolumes =
         {
             { game::damage::HitZoneType::Cockpit, "cockpit", 100, {0,0.5f,6.0f}, {4,2,4}, false, -1 },
-
             { game::damage::HitZoneType::Cargo, "cargo", 60, {0,0,1.0f}, {8,3,7}, false, -1 },
-
             { game::damage::HitZoneType::Reactor, "reactor", 110, {0,0,-2.0f}, {5,3,4}, true, 1 },
-
             { game::damage::HitZoneType::Engine, "engine", 120, {0,0,-6.5f}, {7,3,4}, true, 3 },
-
             { game::damage::HitZoneType::Hull, "hull", 0, {0,0,0}, {14,5.8f,16.5f}, false, -1 }
         };
 

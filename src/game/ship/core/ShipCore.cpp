@@ -7,9 +7,11 @@
 
 #include "game/ship/core/ShipHitBuilder.h"
 
+#include "src/game/geometry/ObjLoader.h"
+using namespace game::ship::geometry;
+
 namespace game::ship::core
 {
-
 
 
 
@@ -118,7 +120,18 @@ void ShipCore::init(
 
     debugPrintCoreSystems();
 
+    
+    
+    // -------- SHIP MESH -------------
+    std::string objPath = "assets/models/cobra-mk1.obj";
+    // std::string objPath = "assets/models/cobramk1T.obj";
+    // std::string objPath = "assets/models/sphere.obj";
+    // std::string objPath = "assets/models/cube.obj";
 
+    if (ObjLoader::load(objPath, m_mesh.mesh))
+    {
+        m_mesh.loaded = true;
+    }
 
     // -------- DAMAGE ZONE -----------
     m_damageHandler.ship = this;

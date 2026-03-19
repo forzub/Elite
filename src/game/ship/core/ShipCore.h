@@ -49,6 +49,9 @@
 #include "game/damage/HitComponent.h"
 #include "src/game/ship/damage/ShipDamageHandler.h"
 
+#include "src/game/geometry/ObjLoader.h"
+#include "src/game/geometry/MeshComponent.h"
+
 
 namespace game::ship::core
 {
@@ -164,7 +167,10 @@ public:
     const ShipDescriptor&                       desc() const                { return *m_desc; }
     const RadarModule&                          radar() const               { return m_equipment.radar; }   
 
-    const ReactorSystem&                        reactor() const               { return m_reactor; }                                                           
+    const ReactorSystem&                        reactor() const               { return m_reactor; }  
+    
+    game::ship::geometry::MeshComponent&        mesh()                 { return m_mesh; }
+    const game::ship::geometry::MeshComponent&  mesh() const           { return m_mesh; }
                                                                     
     void                                        debugPrintCoreSystems() const; 
 
@@ -239,10 +245,12 @@ private:
     CoreSystem                           m_avionics{0.02, "Avionics", game::equipment::PowerPriority::Critical};
     CoreSystem                           m_radiationShield{53.0, "Radiation Shield", game::equipment::PowerPriority::Combat};
 
+    // --------- MESH ----------
+    game::ship::geometry::MeshComponent     m_mesh;
     
     // --------- DAMAGE --------
-    game::damage::HitComponent          m_hitComponent;
-    ShipDamageHandler                   m_damageHandler;
+    game::damage::HitComponent                  m_hitComponent;
+    game::ship::ShipDamageHandler               m_damageHandler{&m_hitComponent}; 
 
 };
 

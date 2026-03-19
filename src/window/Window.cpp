@@ -15,6 +15,8 @@ Window::Window(int width, int height, const char* title)
         throw std::runtime_error("Failed to initialize GLFW");
     }
 
+    glfwWindowHint(GLFW_SAMPLES, 4);
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
@@ -42,6 +44,8 @@ Window::Window(int width, int height, const char* title)
         if (!gladLoadGL(glfwGetProcAddress))
             throw std::runtime_error("GLAD init failed");
 
+        glEnable(GL_MULTISAMPLE);
+        
         // 2️⃣ ТОЛЬКО ПОТОМ используем gl*
         int fbWidth, fbHeight;
         glfwGetFramebufferSize(m_window, &fbWidth, &fbHeight);

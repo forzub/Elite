@@ -75,10 +75,13 @@ void RadarPPIWidget::switchEffect(game::RadarVisualProfile type)
 void RadarPPIWidget::initShader(const std::string& fragPath)
 {
     std::string vertexPath = "assets/shaders/hud/passthrough.vert";
-    printf("Loading shader: %s and %s\n", vertexPath.c_str(), fragPath.c_str());   
+
+        printf("[PPI radar] Loading shader: %s and %s\n", vertexPath.c_str(), fragPath.c_str());
+           
     m_postShader = compileShaderFromFiles(vertexPath, fragPath);
-    m_shaderEnabled = (m_postShader != 0);   
-    printf("Shader load result: program=%d, enabled=%d\n", m_postShader, m_shaderEnabled);
+    m_shaderEnabled = (m_postShader != 0);
+
+        printf("[PPI radar] Shader load result: program=%d, enabled=%d\n", m_postShader, m_shaderEnabled);
 }
 
 

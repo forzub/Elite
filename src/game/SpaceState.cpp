@@ -1,29 +1,12 @@
 #include <glad/gl.h>
 #include <iostream>
 
-// #include <GLFW/glfw3.h>
-// #include <glm/glm.hpp>
-// #include <glm/gtc/matrix_transform.hpp>
-// #include <glm/gtc/type_ptr.hpp>
-// #include "render/ScreenUtils.h"
-// #include "render/bitmap/TextureLoader.h"
-// #include "game/ship/cockpit/CockpitMeshBuilder.h"
-// #include "game/ship/cockpit/CockpitStrokeBuilder.h"
-// #include "src/game/equipment/signalNode/processing/SignalPolicy.h"
-// #include "src/game/ship/hud/worldlabels/WorldLabelSystem.h"
-// #include "src/game/ship/hud/worldlabels/WorldSignalWaves.h"
-// #include "src/game/ship/core/ShipRole.h"
-// #include "ui/HudRenderer.h"
-
 #include "SpaceState.h"
 #include "core/StateStack.h"
 #include "core/Log.h"
 #include "input/Input.h"
 
 #include "render/DebugGrid.h"
-
-// #include "src/game/ship/ShipDescriptorRegistry.h"
-// #include "src/game/ship/descriptors/EliteCobraMk1.h"
 
 #include "src/game/player/ActorIdProvider.h"
 #include "src/game/player/ActorCodeGenerator.h"
@@ -35,9 +18,14 @@
 #include "ui/components/UIText.h"
 #include "src/game/network/LocalLoopbackTransport.h"
 #include "src/game/equipment/radar/RadarDesc.h"
-// #include "src/ui/components/RadarWidgetFactory.h"
+
 #include "ui/components/radar/RadarWidgetBase.h"
 #include "src/game/network/ClientMessage.h"
+
+#include "src/render/InitShaders.h"
+
+
+#include "src/game/ship/view/PlayerShipView.h"
 
 
 
@@ -59,6 +47,8 @@ SpaceState::SpaceState(StateStack& states)
     
     initServer();
     initClient();
+
+    InitShaders();
     initHUD();
 
     
@@ -146,17 +136,25 @@ SpaceState::~SpaceState()
 void SpaceState::handleInput()
 {
 
-    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F1))
+    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F1)){
+        PlayerShipView::g_debugLogNextFrame = true;
         m_layout = ScreenLayout::Front_Main_Rear_Mini;
+    }
 
-    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F2))
+    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F2)){
+        PlayerShipView::g_debugLogNextFrame = true;
         m_layout = ScreenLayout::Rear_Main_Front_Mini;
+    }
 
-    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F3))
+    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F3)){
+        PlayerShipView::g_debugLogNextFrame = true;
         m_layout = ScreenLayout::Front_Main_Drone_Mini;
+    }
 
-    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F4))
+    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F4)){
+        PlayerShipView::g_debugLogNextFrame = true;
         m_layout = ScreenLayout::Drone_Main_Front_Mini;
+    }
 
     // === управление кораблём ===
     m_inputMapper.update(m_playerControl);
@@ -223,7 +221,6 @@ void SpaceState::update(float dt)
         return;
 
     const auto& ship = it->second;
-
 
      m_playerView->update(
         dt,
@@ -314,14 +311,8 @@ void SpaceState::update(float dt)
     uiRoot->update(dt);
 
 
-
-
-
-
-    
-
-
     // DEBUG: отправляем состояние корабля в браузер
+    // --------------------------------------------
     static float debugTimer = 0;
     debugTimer += dt;
     if (debugTimer > 0.1f)
@@ -334,8 +325,8 @@ void SpaceState::update(float dt)
         // Конвертируем в JSON и отправляем
         json j = shipCoreStatusToJson(status);
         
-        if (m_debugServer)
-            m_debugServer->broadcastState(j.dump());
+        if (m_coreStatusServer)
+            m_coreStatusServer->broadcastState(j.dump());
     }
     
     
@@ -363,6 +354,7 @@ void SpaceState::renderUI()
     Camera*                                     mainCam = nullptr;
     Camera*                                     miniCam = nullptr;
 
+    
 
     switch (m_layout)
     {
@@ -425,15 +417,16 @@ void SpaceState::renderUI()
 
     m_activeMainCamera = mainCam;
 
-
-    // std::cout << "CAMERA POS: "
-    //       << m_activeMainCamera->position().x << " "
-    //       << m_activeMainCamera->position().y << " "
-    //       << m_activeMainCamera->position().z
-    //       << std::endl;
-  
-
     const Viewport& vp = context().viewport();
+    float aspect = (float)vp.width / (float)vp.height;
+
+    if (mainCam)
+    {
+        mainCam->setAspect(aspect);
+    }
+
+
+    
     // -------------------------------
     // 3D ПРОЕКЦИЯ
     // -------------------------------    
@@ -448,11 +441,17 @@ void SpaceState::renderUI()
         {
             m_sceneRenderer.render(
                 m_client->world(),
-                m_playerId
+                m_playerId,
+                view,
+                proj,
+                0,
+                "mainCam"
             );
 
         }
     );
+
+
 
     // -------------------------------
     // Rear - камера корабля.
@@ -460,6 +459,7 @@ void SpaceState::renderUI()
 
     rearView->camera = miniCam;
     rearView->renderToTexture(vp, rearView->drawCallback);
+
     
 }
 
@@ -602,7 +602,16 @@ bool SpaceState::isInSafeZone() const
 
 
 
-
+void SpaceState::handleResize(int width, int height)
+{
+    if (m_playerView)
+    {
+        m_playerView->resize(width, height);
+        m_playerView->updateBoundary(width, height);
+        
+        
+    }
+}
 
 
 

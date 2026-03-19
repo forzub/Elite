@@ -23,6 +23,9 @@ private:
     void shutdown();
 
 private:
+    static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+    void handleResize(int width, int height);
+    
     bool m_running;
     Renderer m_renderer;
     Window* m_window;

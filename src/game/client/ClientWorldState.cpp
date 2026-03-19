@@ -2,6 +2,8 @@
 #include "src/game/shared/SharedShipPhysics.h"
 #include <iostream>
 #include "src/game/ship/ShipDescriptorRegistry.h"
+#include "src/world/descriptors/ObjectDescriptorRegistry.h"
+#include "src/game/geometry/MeshLibrary.h"
 
 
 //                              ###                                                                    ###                 ##
@@ -15,27 +17,26 @@
 
 void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 {
+
+    // ------- передача ShipSnapshot ------
     for (const auto& s : snapshot.ships)
     {
         auto it = m_ships.find(s.id.value);
 
         if (it == m_ships.end())
         {
-            ClientShipState state;
-
+            auto& state = m_ships[s.id.value];
             state.id   = s.id;
             state.role = s.role;
-
             state.descriptor =
                 &ShipDescriptorRegistry::get(s.typeId);
+                // &ObjectDescriptorRegistry::get(s.typeId);
 
             state.transform       = s.transform;
             state.renderTransform = s.transform;
-            state.radarContacts = s.radarContacts;
 
-            m_ships[s.id.value] = state;
-            state.receptions = s.receptions;
-            state.shipCoreStatus = s.shipCoreStatus;
+            state.gpuMesh =
+                &render::MeshLibrary::get(s.typeId);
         }
         else
         {
@@ -48,6 +49,38 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
     }
 
+
+    // ------- передача ObjectSnapshot ------
+    for (const auto& o : snapshot.objects)
+    {
+        auto it = m_objects.find(o.id.value);
+
+        if (it == m_objects.end())
+        {
+            auto& state = m_objects[o.id.value];
+
+            state.id   = o.id;
+            state.type = o.type;
+
+            state.position = o.position;
+            state.rotation = o.rotation;
+
+            state.renderPosition = o.position;
+            state.renderRotation = o.rotation;
+            
+            const auto& desc = ObjectDescriptorRegistry::get(o.type);
+            state.gpuMesh = &render::MeshLibrary::get(o.type);
+        }
+        else
+        {
+            auto& state = it->second;
+
+            state.position = o.position;
+            state.rotation = o.rotation;
+        }
+    }
+
+    // ------- передача в буфер Snapshot ------
     m_snapshotBuffer.push_back(snapshot);
 
     while (m_snapshotBuffer.size() > 20)
@@ -165,11 +198,6 @@ void ClientWorldState::update(float dt)
 
 
 
-const std::unordered_map<uint32_t, ClientShipState>&
-ClientWorldState::ships() const
-{
-    return m_ships;
-}
 
 
 

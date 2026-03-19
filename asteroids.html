@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 Генератор материка на планете</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            pointer-events: none;
+            z-index: 10;
+            border: 2px solid #44aaff;
+            box-shadow: 0 0 30px rgba(68,170,255,0.3);
+        }
+        #controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            pointer-events: all;
+            z-index: 20;
+            border: 2px solid #44aaff;
+            width: 320px;
+            max-height: 90vh;
+            overflow-y: auto;
+            backdrop-filter: blur(5px);
+        }
+        .control-group {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 15px;
+        }
+        .control-group h3 {
+            margin: 0 0 15px 0;
+            color: #44aaff;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .slider-container {
+            margin-bottom: 15px;
+        }
+        .slider-container label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ddd;
+            font-size: 13px;
+        }
+        input[type=range] {
+            width: 100%;
+            margin: 5px 0;
+            background: #333;
+            height: 4px;
+            border-radius: 2px;
+            -webkit-appearance: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #44aaff;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 0 10px #44aaff;
+        }
+        .value-display {
+            float: right;
+            color: #44aaff;
+            font-weight: bold;
+            background: #222;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        .seed-display {
+            background: #222;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 24px;
+            border: 2px solid #44aaff;
+            color: #44aaff;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+        .seed-display:hover {
+            background: #2a2a2a;
+            border-color: #88ccff;
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(68,170,255,0.5);
+        }
+        button {
+            background: #44aaff;
+            color: black;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            font-size: 16px;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #66ccff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(68,170,255,0.5);
+        }
+        #stats {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            color: #ccc;
+            padding: 15px 25px;
+            border-radius: 40px;
+            font-size: 16px;
+            z-index: 15;
+            border: 2px solid #44aaff;
+            backdrop-filter: blur(5px);
+        }
+        .stat {
+            color: #44aaff;
+            font-weight: bold;
+        }
+        .color-display {
+            width: 100%;
+            height: 30px;
+            border-radius: 5px;
+            margin-top: 5px;
+            background: linear-gradient(90deg, #224466, #44aaff, #88ddff, #aaddff);
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h2 style="margin:0; color:#44aaff; font-size:24px;">🌍 Генератор материка</h2>
+        <p style="margin:5px 0; font-size:14px;">Горы • Равнины • Береговая линия • Океан</p>
+    </div>
+
+    <div id="controls">
+        <div class="seed-display" id="seedDisplay">424242</div>
+        <button id="randomSeed">🎲 СЛУЧАЙНЫЙ SEED</button>
+        <button id="regenerate">🔄 СГЕНЕРИРОВАТЬ</button>
+
+        <div class="control-group">
+            <h3>📐 ФОРМА МАТЕРИКА</h3>
+            <div class="slider-container">
+                <label>Размер <span id="sizeVal" class="value-display">1.0</span></label>
+                <input type="range" id="size" min="0.5" max="2.0" step="0.05" value="1.0">
+            </div>
+            <div class="slider-container">
+                <label>Изрезанность берега <span id="roughnessVal" class="value-display">0.5</span></label>
+                <input type="range" id="roughness" min="0.1" max="1.5" step="0.05" value="0.5">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h3>🏔️ ГОРЫ И РЕЛЬЕФ</h3>
+            <div class="slider-container">
+                <label>Высота гор <span id="mountainHeightVal" class="value-display">0.3</span></label>
+                <input type="range" id="mountainHeight" min="0" max="0.8" step="0.05" value="0.3">
+            </div>
+            <div class="slider-container">
+                <label>Частота гор <span id="mountainFreqVal" class="value-display">2.0</span></label>
+                <input type="range" id="mountainFreq" min="1" max="5" step="0.1" value="2.0">
+            </div>
+            <div class="slider-container">
+                <label>Равнины (плоскость) <span id="plainsVal" class="value-display">0.4</span></label>
+                <input type="range" id="plains" min="0" max="1" step="0.05" value="0.4">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h3>💧 ОКЕАН</h3>
+            <div class="slider-container">
+                <label>Уровень воды <span id="waterLevelVal" class="value-display">0.2</span></label>
+                <input type="range" id="waterLevel" min="0" max="0.5" step="0.02" value="0.2">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h3>⚡ ПРЕСЕТЫ</h3>
+            <button class="preset-btn" id="presetEarth">🌍 Земля</button>
+            <button class="preset-btn" id="presetMars">🔴 Марс</button>
+            <button class="preset-btn" id="presetMoon">🌑 Луна</button>
+            <button class="preset-btn" id="presetFantasy">✨ Фэнтези</button>
+        </div>
+
+        <div class="color-display"></div>
+        <p style="text-align:center; margin:5px 0; color:#aaa; font-size:12px;">
+            Синий - океан | Голубой - мелководье | Зеленый - равнины | Коричневый - горы | Белый - вершины
+        </p>
+    </div>
+
+    <div id="stats">
+        <span>ВЕРШИН: <span id="vertexCount" class="stat">0</span></span> | 
+        <span>ТРЕУГОЛЬНИКОВ: <span id="triCount" class="stat">0</span></span> |
+        <span>SEED: <span id="currentSeed" class="stat">424242</span></span>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- ГЕНЕРАТОР СЛУЧАЙНЫХ ЧИСЕЛ ---
+        class Random {
+            constructor(seed) {
+                this.seed = seed;
+                this.state = (seed * 1664525 + 1013904223) >>> 0;
+            }
+            next() {
+                this.state = (this.state * 1664525 + 1013904223) >>> 0;
+                return (this.state & 0xFFFFFF) / 0xFFFFFF;
+            }
+            range(min, max) {
+                return min + this.next() * (max - min);
+            }
+        }
+
+        // --- ШУМ ДЛЯ РЕЛЬЕФА ---
+        class Noise {
+            constructor(seed) {
+                this.seed = seed;
+            }
+            
+            noise(x, y, offset = 0) {
+                // Простой шум на основе синусов с разными частотами
+                const s = this.seed + offset;
+                return Math.sin(x * 1.3 + s) * Math.cos(y * 1.7 + s * 2) * 0.5 +
+                       Math.sin(x * 2.7 + s * 3) * Math.cos(y * 3.1 + s * 4) * 0.3 +
+                       Math.sin(x * 5.3 + s * 5) * Math.cos(y * 4.9 + s * 6) * 0.2;
+            }
+            
+            fbm(x, y, octaves, persistence, scale, offset) {
+                let value = 0;
+                let amp = 1;
+                let maxAmp = 0;
+                
+                for (let i = 0; i < octaves; i++) {
+                    value += this.noise(x * scale * Math.pow(2, i), y * scale * Math.pow(2, i), offset + i * 10) * amp;
+                    maxAmp += amp;
+                    amp *= persistence;
+                }
+                
+                return value / maxAmp;
+            }
+        }
+
+        // --- ГЕНЕРАТОР ПЛАНЕТЫ ---
+        function generatePlanet(seed, params) {
+            const rng = new Random(seed);
+            const noise = new Noise(seed);
+            
+            // Создаем сферу с высоким разрешением
+            const geometry = new THREE.SphereGeometry(1, 128, 64);
+            const positions = geometry.attributes.position.array;
+            const normals = geometry.attributes.normal.array;
+            
+            // Создаем массив для цветов вершин
+            const colors = new Float32Array(positions.length);
+            
+            // Считаем треугольники
+            const triCount = 128 * 64 * 2;
+            document.getElementById('triCount').innerText = triCount.toLocaleString();
+            document.getElementById('vertexCount').innerText = (positions.length / 3).toLocaleString();
+            
+            // Континентальный шум (определяет форму материка)
+            const continentScale = 1.5;
+            const continentNoise = new Array(positions.length / 3);
+            
+            // Для каждой вершины
+            for (let i = 0; i < positions.length; i += 3) {
+                const ix = i / 3;
+                
+                // Нормализованные координаты на сфере
+                const nx = positions[i];
+                const ny = positions[i+1];
+                const nz = positions[i+2];
+                
+                // Преобразуем в сферические координаты для карты
+                const theta = Math.atan2(nz, nx); // долгота (-PI to PI)
+                const phi = Math.acos(ny); // широта (0 to PI)
+                
+                // Нормализуем в [0, 1]
+                const u = (theta / Math.PI + 1) / 2;
+                const v = phi / Math.PI;
+                
+                // --- КОНТИНЕНТАЛЬНЫЙ ШУМ (где суша) ---
+                // Используем несколько октав для естественной формы материка
+                let continent = 0;
+                
+                // Крупная форма
+                continent += noise.fbm(u * 2, v * 2, 3, 0.6, 1.0, 100) * 1.0;
+                
+                // Средние детали (полуострова, заливы)
+                continent += noise.fbm(u * 5, v * 5, 2, 0.5, 1.0, 200) * 0.5;
+                
+                // Мелкие детали береговой линии
+                continent += noise.fbm(u * 12, v * 12, 1, 0.5, 1.0, 300) * 0.3;
+                
+                // Нормализуем и центрируем
+                continent = (continent - 0.5) * 2;
+                
+                // Применяем изрезанность
+                continent = continent * params.roughness + (1 - params.roughness) * 0.5;
+                
+                // Добавляем круговую маску для одного большого материка
+                const centerX = 0.5 + Math.sin(seed) * 0.2;
+                const centerY = 0.5 + Math.cos(seed * 2) * 0.2;
+                const dx = u - centerX;
+                const dy = v - centerY;
+                const dist = Math.sqrt(dx*dx + dy*dy) * 2;
+                
+                // Материк формируется вокруг центра
+                let mask = Math.max(0, 1 - dist * 1.5);
+                mask = Math.pow(mask, 1.5);
+                
+                // Комбинируем маску с шумом
+                continent = continent * 0.7 + mask * 0.3;
+                
+                // --- ВЫСОТА (рельеф) ---
+                let height = 0;
+                
+                // Горы там, где континент высокий и есть дополнительный шум
+                if (continent > 0.4) {
+                    // Горный шум
+                    const mountainNoise = noise.fbm(u * params.mountainFreq * 3, 
+                                                    v * params.mountainFreq * 3, 
+                                                    4, 0.6, 1.0, 400);
+                    
+                    // Горы выше в центре материка
+                    const mountainFactor = Math.pow(Math.max(0, (continent - 0.4) / 0.6), 1.5);
+                    height += mountainNoise * params.mountainHeight * mountainFactor * 2;
+                    
+                    // Плато (равнины)
+                    const plainNoise = noise.fbm(u * 2, v * 2, 2, 0.5, 1.0, 500);
+                    height += (plainNoise * 0.3 + 0.5) * params.plains * mountainFactor * 0.5;
+                }
+                
+                // Береговая линия - плавный переход
+                if (continent > 0.2 && continent < 0.5) {
+                    const coastT = (continent - 0.2) / 0.3;
+                    height *= coastT;
+                }
+                
+                // Финальный радиус
+                let r = 1.0;
+                
+                // Суша поднимается над уровнем моря
+                if (continent > 0.25) {
+                    const landHeight = (continent - 0.25) / 0.75; // 0-1
+                    r += height * 0.3 + landHeight * 0.2;
+                } else {
+                    // Океан (дно)
+                    r += (continent - 0.25) * 0.1;
+                }
+                
+                // Применяем размер
+                r *= params.size;
+                
+                // Новая позиция
+                positions[i] = nx * r;
+                positions[i+1] = ny * r;
+                positions[i+2] = nz * r;
+                
+                // --- ЦВЕТ НА ОСНОВЕ ВЫСОТЫ И ТИПА ---
+                const waterLevel = params.waterLevel;
+                
+                let rCol, gCol, bCol;
+                
+                if (r < 1.0 + waterLevel - 0.05) {
+                    // Глубокий океан
+                    const depth = (1.0 + waterLevel - r) / 0.2;
+                    rCol = 0.1 + depth * 0.1;
+                    gCol = 0.2 + depth * 0.2;
+                    bCol = 0.5 + depth * 0.3;
+                } else if (r < 1.0 + waterLevel + 0.05) {
+                    // Мелководье
+                    const t = (r - (1.0 + waterLevel - 0.05)) / 0.1;
+                    rCol = 0.2 + t * 0.3;
+                    gCol = 0.4 + t * 0.4;
+                    bCol = 0.8 - t * 0.3;
+                } else if (r < 1.2) {
+                    // Равнины
+                    const t = (r - (1.0 + waterLevel + 0.05)) / 0.15;
+                    rCol = 0.3 + t * 0.2;
+                    gCol = 0.5 + t * 0.3;
+                    bCol = 0.3 - t * 0.1;
+                } else if (r < 1.4) {
+                    // Горы
+                    const t = (r - 1.2) / 0.2;
+                    rCol = 0.5 + t * 0.3;
+                    gCol = 0.4 + t * 0.2;
+                    bCol = 0.2;
+                } else {
+                    // Снежные вершины
+                    rCol = 0.9;
+                    gCol = 0.9;
+                    bCol = 0.9;
+                }
+                
+                colors[i] = rCol;
+                colors[i+1] = gCol;
+                colors[i+2] = bCol;
+            }
+            
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.computeVertexNormals();
+            
+            return geometry;
+        }
+
+        // --- ИНИЦИАЛИЗАЦИЯ THREE.JS ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x03030a);
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(3, 1.5, 5);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.body.appendChild(renderer.domElement);
+        
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.8;
+        controls.enableZoom = true;
+        
+        // Освещение
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        
+        const sunLight = new THREE.DirectionalLight(0xffeedd, 1.5);
+        sunLight.position.set(5, 10, 7);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        scene.add(sunLight);
+        
+        // Звезды
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsPositions = new Float32Array(2000 * 3);
+        for (let i = 0; i < 2000; i++) {
+            const r = 10 + Math.random() * 20;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            starsPositions[i*3] = r * Math.sin(phi) * Math.cos(theta);
+            starsPositions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+            starsPositions[i*3+2] = r * Math.cos(phi);
+        }
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
+        const stars = new THREE.Points(starsGeometry, new THREE.PointsMaterial({ color: 0xaaccff, size: 0.1 }));
+        scene.add(stars);
+        
+        // Текущая планета
+        let currentPlanet = null;
+        let isGenerating = false;
+        
+        function updatePlanet() {
+            if (isGenerating) return;
+            isGenerating = true;
+            
+            const seed = parseInt(document.getElementById('seedDisplay').innerText);
+            
+            const params = {
+                size: parseFloat(document.getElementById('size').value),
+                roughness: parseFloat(document.getElementById('roughness').value),
+                mountainHeight: parseFloat(document.getElementById('mountainHeight').value),
+                mountainFreq: parseFloat(document.getElementById('mountainFreq').value),
+                plains: parseFloat(document.getElementById('plains').value),
+                waterLevel: parseFloat(document.getElementById('waterLevel').value)
+            };
+            
+            document.getElementById('regenerate').innerHTML = '⏳ ГЕНЕРАЦИЯ...';
+            
+            setTimeout(() => {
+                try {
+                    const geometry = generatePlanet(seed, params);
+                    
+                    document.getElementById('currentSeed').innerText = seed;
+                    
+                    const material = new THREE.MeshStandardMaterial({
+                        vertexColors: true,
+                        roughness: 0.5,
+                        metalness: 0.1,
+                        emissive: 0x000000,
+                        flatShading: false,
+                        side: THREE.DoubleSide
+                    });
+                    
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    
+                    if (currentPlanet) {
+                        scene.remove(currentPlanet);
+                    }
+                    
+                    scene.add(mesh);
+                    currentPlanet = mesh;
+                    
+                    document.getElementById('regenerate').innerHTML = '🔄 СГЕНЕРИРОВАТЬ';
+                    isGenerating = false;
+                    
+                } catch (e) {
+                    console.error(e);
+                    document.getElementById('regenerate').innerHTML = '❌ ОШИБКА';
+                    isGenerating = false;
+                }
+            }, 50);
+        }
+        
+        // --- UI ---
+        const sliders = ['size', 'roughness', 'mountainHeight', 'mountainFreq', 'plains', 'waterLevel'];
+        
+        sliders.forEach(id => {
+            const slider = document.getElementById(id);
+            const span = document.getElementById(id + 'Val');
+            slider.addEventListener('input', () => {
+                span.innerText = parseFloat(slider.value).toFixed(2);
+            });
+        });
+        
+        document.getElementById('seedDisplay').addEventListener('click', () => {
+            navigator.clipboard.writeText(document.getElementById('seedDisplay').innerText);
+            alert('Seed скопирован!');
+        });
+        
+        document.getElementById('randomSeed').addEventListener('click', () => {
+            document.getElementById('seedDisplay').innerText = Math.floor(Math.random() * 1000000);
+            updatePlanet();
+        });
+        
+        document.getElementById('regenerate').addEventListener('click', updatePlanet);
+        
+        // Пресеты
+        document.getElementById('presetEarth').addEventListener('click', () => {
+            document.getElementById('size').value = 1.0;
+            document.getElementById('roughness').value = 0.6;
+            document.getElementById('mountainHeight').value = 0.3;
+            document.getElementById('mountainFreq').value = 2.2;
+            document.getElementById('plains').value = 0.5;
+            document.getElementById('waterLevel').value = 0.2;
+            sliders.forEach(id => {
+                document.getElementById(id + 'Val').innerText = document.getElementById(id).value;
+            });
+            updatePlanet();
+        });
+        
+        document.getElementById('presetMars').addEventListener('click', () => {
+            document.getElementById('size').value = 1.0;
+            document.getElementById('roughness').value = 0.4;
+            document.getElementById('mountainHeight').value = 0.5;
+            document.getElementById('mountainFreq').value = 1.5;
+            document.getElementById('plains').value = 0.3;
+            document.getElementById('waterLevel').value = 0.05;
+            sliders.forEach(id => {
+                document.getElementById(id + 'Val').innerText = document.getElementById(id).value;
+            });
+            updatePlanet();
+        });
+        
+        document.getElementById('presetMoon').addEventListener('click', () => {
+            document.getElementById('size').value = 1.0;
+            document.getElementById('roughness').value = 0.8;
+            document.getElementById('mountainHeight').value = 0.2;
+            document.getElementById('mountainFreq').value = 3.0;
+            document.getElementById('plains').value = 0.2;
+            document.getElementById('waterLevel').value = 0.0;
+            sliders.forEach(id => {
+                document.getElementById(id + 'Val').innerText = document.getElementById(id).value;
+            });
+            updatePlanet();
+        });
+        
+        document.getElementById('presetFantasy').addEventListener('click', () => {
+            document.getElementById('size').value = 1.2;
+            document.getElementById('roughness').value = 1.2;
+            document.getElementById('mountainHeight').value = 0.6;
+            document.getElementById('mountainFreq').value = 2.8;
+            document.getElementById('plains').value = 0.3;
+            document.getElementById('waterLevel').value = 0.25;
+            sliders.forEach(id => {
+                document.getElementById(id + 'Val').innerText = document.getElementById(id).value;
+            });
+            updatePlanet();
+        });
+        
+        // Первая генерация
+        updatePlanet();
+        
+        // Анимация
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            stars.rotation.y += 0.0001;
+            renderer.render(scene, camera);
+        }
+        animate();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

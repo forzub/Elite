@@ -90,15 +90,17 @@ void Application::init()
     m_context.app           = this;   
 
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
-    m_window                = new Window(1280, 720, "EliteGame");
+    m_window = new Window(1280, 720, "EliteGame");
 
-    // m_window                 = new Window(1920, 1080, "EliteGame");
-    m_running               = true;
+    glfwSetWindowUserPointer(m_window->nativeHandle(), this);
+    glfwSetFramebufferSizeCallback(m_window->nativeHandle(), framebuffer_size_callback);
+
+    // m_window  = new Window(1920, 1080, "EliteGame");
+    m_running = true;
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
-    
 
     int w, h;
     glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
@@ -195,4 +197,28 @@ void Application::shutdown()
     m_states.applyPendingChanges();
 
     delete m_window;
+}
+
+
+// Добавьте в начало файла или после других методов
+void Application::framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    // Получаем указатель на Application из GLFW window user pointer
+    Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+    if (app)
+    {
+        app->handleResize(width, height);
+    }
+}
+
+void Application::handleResize(int width, int height)
+{
+    // Обновляем вьюпорт в контексте
+    glViewport(0, 0, width, height);
+    
+    GameState* currentState = m_states.current();
+    if (currentState)
+    {
+        currentState->handleResize(width, height);
+    }
 }

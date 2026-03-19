@@ -2,15 +2,17 @@
 #include <vector>
 
 #include "src/game/ship/core/ShipCore.h"
+
 using game::ship::core::ShipCore;
 
-
 #include "src/scene/EntityID.h"
-#include "ShipTypeId.h"
+#include "src/world/types/ObjectType.h"
 #include "src/game/items/cryptocard/CryptoCard.h"
 #include "src/world/ITransmitterSource.h"
 #include "src/world/types/RadarContactInput.h"
 #include "src/game/network/ClientShipCommand.h"
+
+#include "src/game/ship/damage/ShipDamageHandler.h"
 
 class Ship : public ITransmitterSource
 {
@@ -22,10 +24,10 @@ public:
 
 
     void init(
-        ShipRole role,
-        const ShipDescriptor& descriptor,
-        glm::vec3 position,
-        const ShipInitData& initData
+        ShipRole                role,
+        const ShipDescriptor&   descriptor,
+        glm::vec3               position,
+        const ShipInitData&     initData
     );
 
     void update(
@@ -59,8 +61,8 @@ public:
         const std::vector<InterferenceSource>& interferenceSources
     );
     void updatePerception(float dt, const std::vector<world::RadarContactInput>& radarInputs);
-    void setTypeId(ShipTypeId id) { m_typeId = id; }
-    ShipTypeId typeId() const { return m_typeId; }
+    void setTypeId(ObjectType id) { m_typeId = id; }
+    ObjectType typeId() const { return m_typeId; }
 
     std::optional<WorldSignal> emitSignal() const override;
 
@@ -70,7 +72,7 @@ private:
     ShipCore            m_core;
     ShipControlState    m_control;
     EntityId            m_id;
-    ShipTypeId          m_typeId;
+    ObjectType          m_typeId;
 
     void updateControlIntent();
 };

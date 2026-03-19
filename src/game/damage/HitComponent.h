@@ -32,28 +32,55 @@ public:
 
 
     DamageResult resolve(const DamageEvent& event) const
-{
-    const HitVolume* best = nullptr;
-
-    int bestPriority = std::numeric_limits<int>::min();
-
-    for (const auto& v : volumes)
     {
-        if (v.destroyed)
-            continue;
+        const HitVolume* best = nullptr;
 
-        if (!v.contains(event.position))
-            continue;
+        int bestPriority = std::numeric_limits<int>::min();
 
-        if (v.priority > bestPriority)
+        for (const auto& v : volumes)
         {
-            bestPriority = v.priority;
-            best = &v;
+            if (v.destroyed)
+                continue;
+
+            if (!v.contains(event.position))
+                continue;
+
+            if (v.priority > bestPriority)
+            {
+                bestPriority = v.priority;
+                best = &v;
+            }
         }
+
+        return { &event, best };
     }
 
-    return { &event, best };
-}
+
+
+    int findVolume(const glm::vec3& point) const
+    {
+        int best = -1;
+        int bestPriority = -1;
+
+        for (size_t i = 0; i < volumes.size(); ++i)
+        {
+            const auto& v = volumes[i];
+
+            if (v.destroyed)
+                continue;
+
+            if (!v.contains(point))
+                continue;
+
+            if (v.priority > bestPriority)
+            {
+                bestPriority = v.priority;
+                best = (int)i;
+            }
+        }
+
+        return best;
+    }
 
 
 

@@ -4,13 +4,16 @@
 // один дескриптор → много экземпляров
 
 #pragma once
-
+#include <glm/glm.hpp>
 #include <string>
 #include <optional>
 
+#include "src/world/descriptors/IObjectDescriptor.h"
+
 #include "game/ship/core/ShipParams.h"
 #include "game/ship/ShipHudProfile.h"
-#include "game/ship/ShipTypeId.h"
+
+#include "src/world/types/ObjectType.h"
 
 #include "game/ship/cockpit/CockpitContours.h"
 
@@ -150,6 +153,18 @@ struct ThermalDescriptor
     double initialTempK         = 293.0;
 };
 
+// -------- MESH MODEL ------
+
+struct ShipMeshPart
+{
+    std::string name;
+
+    std::vector<glm::vec3> vertices;
+    std::vector<unsigned int> indices;
+
+    int sectionIndex = 0;
+};
+
 
 // ------- DAMAGE -------
 struct HitVolumeDescriptor
@@ -163,6 +178,22 @@ struct HitVolumeDescriptor
     int meshChunk = -1;
 };
 
+struct ShipBoundingEllipsoid
+{
+    glm::vec3 center {0.0f};
+    glm::vec3 radius {1.0f};
+};
+
+
+struct ShipMeshSection
+{
+    std::string name;
+    glm::vec3 minBounds;
+    glm::vec3 maxBounds;
+    std::vector<int> triangleIndices;
+};
+
+
 struct RadiatorDescriptor
 {
     int panelCount;
@@ -173,9 +204,17 @@ struct RadiatorDescriptor
 };
 
 
-    struct ShipDescriptor
+
+class  ShipDescriptor : public IObjectDescriptor
 {
-    ShipTypeId          typeId;
+
+public:
+    const std::string& meshId() const override { return m_meshId; }
+    bool isLargeObject() const override { return false; }
+    glm::vec3 getMeshSizeMeters() const override { return meshSizeMeters;}
+    
+
+    ObjectType          typeId;
     ShipIdentity        identity;
     ShipParams          physics;
     ShipHudProfile      hud;
@@ -200,7 +239,17 @@ struct RadiatorDescriptor
     double                          radarSignatureModifier = 1.0; // 1.0 = без изменений для Stealth-эффект через RCS
     RadarMountPoint                 radarMount;
 
+    // -------- MESH MODEL ---
+    glm::vec3                               meshSizeMeters {1.0f,1.0f,1.0f};
+    std::vector<ShipMeshPart>               meshParts;
+    
+
     // -------- DAMAGE -------
+    ShipBoundingEllipsoid                   boundingEllipsoid;
     std::vector<HitVolumeDescriptor>        hitVolumes;
+    std::vector<ShipMeshSection>            meshSections;
     RadiatorDescriptor                      radiator;
+
+private:
+    std::string         m_meshId;
 };

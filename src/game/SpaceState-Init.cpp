@@ -57,9 +57,6 @@ void SpaceState::initClient()
 
 
 
-
-
-
 void SpaceState::initHUD()
 {
     const Viewport& vp = context().viewport();
@@ -87,6 +84,8 @@ void SpaceState::initHUD()
     m_playerView->init(context(), &desc, initialTransform);
 
 
+
+
     // -------------------  UI контенер -------------------------
     uiRoot = std::make_unique<UIContainer>();
 
@@ -103,7 +102,7 @@ void SpaceState::initHUD()
 
  
     rear->drawCallback =
-        [&](const glm::mat4&, const glm::mat4&)
+        [&](const glm::mat4& view, const glm::mat4& proj)
         {
             // const auto& ships = m_client->world().ships();
 
@@ -118,7 +117,11 @@ void SpaceState::initHUD()
             // );
              m_sceneRenderer.render(
                 m_client->world(),
-                m_playerId
+                m_playerId,
+                view,
+                proj,
+                1,
+                "secondCam"
             );
         };
 
@@ -206,15 +209,25 @@ void SpaceState::initServerAndClient()
 {
     
     
-    m_debugServer = std::make_unique<game::debug::DebugServer>();
-    m_debugServer->start(8080);
-    
-    m_debugServer->onDamageRadiator([this](int index) {
+    // m_debugServer = std::make_unique<game::debug::DebugServer>();
+    // m_debugServer->start(8080);
 
+    m_coreStatusServer = std::make_unique<game::debug::DebugServer>();
+    m_coreStatusServer->start(8080, "core_status", 
+        { "D:/__elite/work/src/WebSocket/debug/shipcore_viewer.html" });
     
+    // Сервис 2: Frustum Debug (WebSocket + HTML)
+    m_frustumDebugServer = std::make_unique<game::debug::DebugServer>();
+    m_frustumDebugServer->start(8081, "frustum_debug", 
+        {"D:/__elite/work/src/WebSocket/debug/frustum_viewer.html"});
 
+
+    // ============================================================
+    // Колбэки для Core Status
+    // ============================================================
+    
+    m_coreStatusServer->onDamageRadiator([this](int index) {
         std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
-    
         ClientShipCommand cmd;
         cmd.type = ClientShipCommand::DamageRadiator;
         cmd.index = index;
@@ -222,18 +235,28 @@ void SpaceState::initServerAndClient()
         m_debugCommands.push_back(cmd);
     });
 
-    m_debugServer->onRepairAllPanels([this]() {
-
-       
-
+    m_coreStatusServer->onRepairAllPanels([this]() {
         std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
-        
         ClientShipCommand cmd;
         cmd.type = ClientShipCommand::RepairAllPanels;
-        // index и amount остаются 0 по умолчанию
         m_debugCommands.push_back(cmd);
     });
     
+    // ============================================================
+    // Колбэк для Frustum Debug данных
+    // ============================================================
+    m_sceneRenderer.setDebugCallback([this](const DebugFrameData& data)
+    {
+        if(m_frustumDebugServer)
+        {
+            json j = data.toJson();
+            j["type"] = "frustum_debug";
+            m_frustumDebugServer->broadcastState(j.dump());
+        }
+    });
+    
+
+
 }
 
 
@@ -326,31 +349,31 @@ json SpaceState::shipCoreStatusToJson(const game::ShipCoreStatus& status)
 
 void SpaceState::testDamageSystem()
 {
-    DamageTestObject obj;
+    // DamageTestObject obj;
 
-    TestDamageHandler handler;
+    // TestDamageHandler handler;
 
-    obj.handler = &handler;
+    // obj.handler = &handler;
 
-    DamageEvent event;
+    // DamageEvent event;
 
-    event.type = DamageType::Laser;
-    event.energy = 10.0;
+    // event.type = DamageType::Laser;
+    // event.energy = 10.0;
 
-    event.position = {1,2,3};
-    event.direction = {0,0,-1};
+    // event.position = {1,2,3};
+    // event.direction = {0,0,-1};
 
-    DamageSystem::applyDamage(obj, event);
+    // DamageSystem::applyDamage(obj, event);
 
-    event.position = {2,2,2};
-    DamageSystem::applyDamage(obj, event);
+    // event.position = {2,2,2};
+    // DamageSystem::applyDamage(obj, event);
 
-    event.position = {100,0,0};
-    DamageSystem::applyDamage(obj, event);
+    // event.position = {100,0,0};
+    // DamageSystem::applyDamage(obj, event);
 
-    event.position = {0,0,-2};
-    DamageSystem::applyDamage(obj, event);
+    // event.position = {0,0,-2};
+    // DamageSystem::applyDamage(obj, event);
 
-    event.position = {0,0,-4};
-    DamageSystem::applyDamage(obj, event);
+    // event.position = {0,0,-4};
+    // DamageSystem::applyDamage(obj, event);
 }

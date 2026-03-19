@@ -10,3 +10,9 @@ unsigned int compileShaderFromFiles(
     const std::string& vertexPath,
     const std::string& fragmentPath
 );
+
+unsigned int compileShaderFromFiles(
+    const std::string& vertexPath,
+    const std::string& geometryPath,
+    const std::string& fragmentPath
+);

@@ -33,11 +33,14 @@ uniform float fogIntensity;
 
 uniform vec3 cameraPos;
 
+
 void main()
 {
     vec3 n = normalize(vNormal);
     vec3 l = normalize(lightDir);
     vec3 viewDir = normalize(-vViewPos);
+
+
 
     vec3 finalColor = hullColor;
     
@@ -64,14 +67,30 @@ void main()
 
     vec3 normalColor = n * 0.5 + 0.5;
     finalColor = mix(litColor, normalColor, normalBlend * 0.1);  // normalBlend тоже уменьшил
+ 
     
     // Туман
+    /*
     if (fogEnabled) {
         float dist = length(vWorldPos - cameraPos);
         float fogFactor = clamp((dist - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
         fogFactor *= fogIntensity;
         vec3 finalFogColor = mix(fogNearColor, fogFarColor, fogFactor);
         finalColor = mix(finalColor, finalFogColor, fogFactor);
+    }
+    */
+
+    if (fogEnabled) {
+        float dist = length(vWorldPos - cameraPos);
+        float fogFactor = clamp((dist - fogStart) / max(fogEnd - fogStart, 0.001), 0.0, 1.0);
+        fogFactor *= fogIntensity;
+
+        vec3 finalFogColor = mix(fogNearColor, fogFarColor, fogFactor);
+
+        float luma = dot(finalColor, vec3(0.299, 0.587, 0.114));
+        vec3 softColor = mix(finalColor, vec3(luma), fogFactor * 0.18);
+
+        finalColor = mix(softColor, finalFogColor, fogFactor);
     }
     
     

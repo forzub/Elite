@@ -5,14 +5,14 @@
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/geometry/MeshLibrary.h"
 #include "src/render/renderers/MeshRenderer.h"
-#include "src/render/renderers/DebugRenderer.h"
-#include "src/render/renderers/DebugLineRenderer.h"
+#include "src/debug/render/DebugRenderer.h"
+#include "src/debug/render/DebugLineRenderer.h"
 #include "src/render/frustum/Frustum.h"
 
 
 #include "src/debug/FrustumDebugData.h"
 #include <functional>
-
+#include "src/debug/DebugSettings.h"
 
 // Forward declaration
 class DebugLineRenderer;
@@ -36,6 +36,9 @@ public:
     {
         m_debugCallback = callback;
     }
+
+
+
 
 private:
     

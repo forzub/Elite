@@ -8,49 +8,50 @@ using json = nlohmann::json;
 
 struct DebugShipInfo
 {
-    uint64_t id;
-    glm::vec3 position;
-    float radius;
-    bool visible;
-    float distance;      // дистанция от камеры
-    std::string type;    // тип корабля (для отладки)
+    uint64_t id = 0;
+    glm::vec3 position {0.0f, 0.0f, 0.0f};
+    glm::vec3 forward {0.0f, 0.0f, -1.0f};
+    glm::vec3 up      {0.0f, 1.0f, 0.0f};
+    glm::vec3 right   {1.0f, 0.0f, 0.0f};
+    float radius = 0.0f;
+    bool visible = false;
+    float distance = 0.0f;
+    std::string type;
 };
 
 struct DebugCameraInfo
 {
-    glm::vec3 position;
-    glm::vec3 direction;
-    glm::vec3 up;
-    float fov;
-    float aspect;
-    float nearPlane;
-    float farPlane;
-    int cameraId;        // 0 = front, 1 = rear, 2 = drone etc
-    std::string cameraName; // "front", "rear", "drone"
-    
-    // Плоскости фрустума в world space для отрисовки
+    glm::vec3 position {0.0f, 0.0f, 0.0f};
+    glm::vec3 direction {0.0f, 0.0f, -1.0f};
+    glm::vec3 up {0.0f, 1.0f, 0.0f};
+    float fov = 45.0f;
+    float aspect = 1.0f;
+    float nearPlane = 0.1f;
+    float farPlane = 1000.0f;
+    int cameraId = 0;
+    std::string cameraName;
     glm::vec3 frustumCorners[8];
 };
 
-
 struct DebugObjectInfo
 {
-    uint32_t id;
-    glm::vec3 position;
+    uint32_t id = 0;
+    glm::vec3 position {0.0f, 0.0f, 0.0f};
+    glm::vec3 forward {0.0f, 0.0f, -1.0f};
+    glm::vec3 up      {0.0f, 1.0f, 0.0f};
+    glm::vec3 right   {1.0f, 0.0f, 0.0f};
     std::string type;
-    float distance;
-    bool visible;
+    float distance = 0.0f;
+    bool visible = false;
 };
-
-
 
 struct DebugFrameData
 {
-    uint64_t frameNumber;
-    float timestamp;
+    uint64_t frameNumber = 0;
+    float timestamp = 0.0f;
     DebugCameraInfo camera;
     std::vector<DebugShipInfo> ships;
     std::vector<DebugObjectInfo> objects;
-    
+
     json toJson() const;
-};
+};  

@@ -2,6 +2,10 @@
 
 #include <vector>
 
+#include <unordered_map>
+#include <string>
+#include "src/world/modules/ObjectModuleRuntime.h"
+
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/ShipVisualIdentity.h"
 #include "src/game/ship/ShipRegistry.h"
@@ -28,9 +32,10 @@
 
 #include "src/world/WorldParams.h"
 
-#include "src/game/math/MathTransform.h"
+// #include "src/game/math/MathTransform.h"
+// #include "src/game/ship/ShipController.h"
+// #include "src/game/network/ClientShipCommand.h"
 
-#include "src/game/ship/ShipController.h"
 #include "src/world/types/SignalReceptionResult.h"
 
 #include "ReactorSystem.h"
@@ -44,14 +49,11 @@
 #include "src/game/simulation/ShipCoreStatus.h"
 
 #include "src/game/ship/core/systems/CoreSystem.h"
-// #include "src/game/network/ClientShipCommand.h"
 
 #include "game/damage/HitComponent.h"
 #include "src/game/ship/damage/ShipDamageHandler.h"
 
-#include "src/game/geometry/ObjLoader.h"
-#include "src/game/geometry/MeshComponent.h"
-
+#include "src/world/modules/ObjectAssemblyRuntime.h"
 
 namespace game::ship::core
 {
@@ -65,7 +67,8 @@ public:
         ShipRole role,
         const ShipDescriptor& descriptor,
         glm::vec3 position,
-        const ShipInitData& initData
+        const ShipInitData& initData,
+        const glm::mat4& orientation
     );
 
     
@@ -140,6 +143,10 @@ public:
         m_cooling.repairAllPanels();
     }
 
+    const world::modules::ObjectAssemblyRuntime& assemblyRuntime() const { return m_assemblyRuntime; }
+    world::modules::ObjectAssemblyRuntime& assemblyRuntime() { return m_assemblyRuntime; }
+    void updateAssemblyRuntime(double dt);
+
 
     game::ShipCoreStatus getCoreStatus() const;
 
@@ -165,12 +172,10 @@ public:
     const std::vector<SignalReceptionResult>&   signalResults() const       {return m_signalResults;} 
 
     const ShipDescriptor&                       desc() const                { return *m_desc; }
+    const ShipDescriptor&                       descriptor() const           { return *m_desc; }
     const RadarModule&                          radar() const               { return m_equipment.radar; }   
 
     const ReactorSystem&                        reactor() const               { return m_reactor; }  
-    
-    game::ship::geometry::MeshComponent&        mesh()                 { return m_mesh; }
-    const game::ship::geometry::MeshComponent&  mesh() const           { return m_mesh; }
                                                                     
     void                                        debugPrintCoreSystems() const; 
 
@@ -187,6 +192,16 @@ public:
     void restoreVolume(int index);
 
 
+    const world::modules::ObjectModuleRuntime& moduleRuntime() const { return m_moduleRuntime; }
+    world::modules::ObjectModuleRuntime& moduleRuntime() { return m_moduleRuntime; }
+
+    void initModuleRuntime();
+    void syncDestroyedModulesFromHitVolumes();
+
+    const game::damage::HitComponent& hitComponent() const { return m_hitComponent; }
+    game::damage::HitComponent& hitComponent() { return m_hitComponent; }
+    
+    
 
 private:
 
@@ -204,12 +219,12 @@ private:
     ShipTransform                               m_transform;
     ShipControlState                            m_control;
     ShipParams                                  m_params;
-    ShipController                              m_controller;
+    // ShipController                              m_controller;
 
     // ───────────────
     // Math
     // ───────────────
-    game::math::MathTransform                   m_mathTransform;
+    // game::math::MathTransform                   m_mathTransform;
 
 
     // ───────────────
@@ -245,13 +260,14 @@ private:
     CoreSystem                           m_avionics{0.02, "Avionics", game::equipment::PowerPriority::Critical};
     CoreSystem                           m_radiationShield{53.0, "Radiation Shield", game::equipment::PowerPriority::Combat};
 
-    // --------- MESH ----------
-    game::ship::geometry::MeshComponent     m_mesh;
     
     // --------- DAMAGE --------
     game::damage::HitComponent                  m_hitComponent;
     game::ship::ShipDamageHandler               m_damageHandler{&m_hitComponent}; 
 
+    // --------- MODULE RUNTIME --------
+    world::modules::ObjectModuleRuntime m_moduleRuntime;
+    world::modules::ObjectAssemblyRuntime m_assemblyRuntime;
 };
 
 

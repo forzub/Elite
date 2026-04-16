@@ -8,16 +8,41 @@
 // #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "render/DebugGrid.h"
 #include "src/render/ship/ShipMeshRenderer.h"
 #include "src/render/ShaderLibrary.h"  // Используем существующий ShaderLibrary
-#include "src/game/geometry/MeshLibrary.h"
-#include "src/render/renderers/DebugLineRenderer.h"
+// #include "src/game/geometry/MeshLibrary.h"
+
+#include "src/debug/render/DebugLineRenderer.h"
+#include "src/debug/DebugSettings.h"
 
 #include "src/render/frustum/Frustum.h"
-
 #include "src/render/renderers/LightingParams.h"
+#include "src/debug/render/DebugHitVolumeRenderer.h"
+#include "src/debug/DebugSettings.h"
+#include "src/debug/render/ServerHitVolumeRenderer.h"
+
+#include "src/game/math/OrientationBasis.h"
+
+namespace
+{
+    float findAssemblyModuleAngleRad(
+        const std::vector<game::simulation::ObjectAssemblyModuleSnapshot>& modules,
+        const std::string& moduleId
+    )
+    {
+        for (const auto& m : modules)
+        {
+            if (m.moduleId == moduleId)
+                return m.rotationAngleRad;
+        }
+
+        return 0.0f;
+    }
+
+}
 
 
 
@@ -42,6 +67,7 @@ void SceneRenderer::render(
 )
 {
     // --- browser DEBUG ---
+    const auto& dbg = debug::get().render;
     m_frameCounter++;
 
     static float debugTimer = 0;
@@ -98,7 +124,8 @@ void SceneRenderer::render(
     }
 
     // Получаем позицию камеры
-    glm::vec3 cameraPos = glm::vec3(glm::inverse(view)[3]);
+    glm::vec3 cameraPos = glm::vec3(glm::inverse(view)[3]); 
+
 
     const auto& ships = world.ships();
     const auto& objects = world.objects(); // Добавить этот метод в ClientWorldState
@@ -127,69 +154,213 @@ void SceneRenderer::render(
     glm::mat4 vp = proj * view;
     frustum.update(vp);
 
+
+    const bool drawWorldAxes = dbg.shouldDrawWorldAxes();
+    const bool drawObjectAxes = dbg.shouldDrawObjectAxes();
+
+    if (drawWorldAxes)
+    {
+        m_debugRenderer.renderAxes(
+            glm::mat4(1.0f),
+            view,
+            proj,
+            dbg.worldAxisLength
+        );
+    }
+
     // ============================================================
     // 1. РЕНДЕРИНГ КОРАБЛЕЙ (кроме игрока)
     // ============================================================
     for (const auto& pair : ships)
     {
-        if (pair.first == playerId.value)
-            continue;
+        // if (pair.first == playerId.value)
+        //     continue;
+
 
         const auto& ship = pair.second;
-        auto* gpu = ship.gpuMesh;
 
-        if (!gpu)
-            continue;
-
-        glm::mat4 model =
+        glm::mat4 shipModel =
             glm::translate(glm::mat4(1.0f), ship.renderTransform.position) *
             glm::mat4(ship.renderTransform.orientation);
 
-        glm::mat4 mvp = proj * view * model;
 
-        // Параметры освещения для кораблей
+        const glm::vec3 shipForward = ship.renderTransform.forward();
+        const glm::vec3 shipUp      = ship.renderTransform.up();
+        const glm::vec3 shipRight   = ship.renderTransform.right();
+
+        // Параметры освещения
         LightingParams shipParams = LightingParams::ship();
-        
-        // Динамически меняем параметры в зависимости от расстояния
-        float distToShip = glm::length(ship.renderTransform.position - cameraPos);
-        if (distToShip > 200.0f) {
-            shipParams.fog.startDistance = 100.0f;
-            shipParams.fog.nearColor = glm::vec3(0.1f, 0.1f, 0.15f);
-            shipParams.fog.farColor = glm::vec3(0.05f, 0.05f, 0.1f);
-        }
 
-        const auto& meshData = render::MeshLibrary::getMeshData(ship.descriptor->typeId);
-
-        // Проверка видимости через фрустум
-        bool visible = frustum.sphereVisible(meshData.boundCenter, meshData.boundRadius, model);
-
-        // DEBUG Browser
-        if(shouldDebug)
+        // ===== НОВОЕ: модульная сборка =====
+                // ===== НОВОЕ: модульная сборка =====
+        if (ship.assembly)
         {
-            DebugShipInfo info;
-            info.id = pair.first;
-            info.position = glm::vec3(model * glm::vec4(meshData.boundCenter, 1));
-            info.radius = meshData.boundRadius;
-            info.visible = visible;
-            info.distance = glm::length(info.position - debugData.camera.position);
-            info.type = std::to_string(static_cast<int>(pair.second.descriptor->typeId));
-            debugData.ships.push_back(info);
-        }
+            bool visible = frustum.sphereVisible(
+                ship.assembly->boundCenter,
+                ship.assembly->boundRadius,
+                shipModel
+            );
 
-        if(!visible)
+
+            if (shouldDebug && dbg.publishObjectOrientation)
+            {
+                DebugShipInfo shipInfo;
+                shipInfo.id = pair.first;
+                shipInfo.position = ship.renderTransform.position;
+                shipInfo.forward = shipForward;
+                shipInfo.up = shipUp;
+                shipInfo.right = shipRight;
+                shipInfo.radius = ship.assembly->boundRadius;
+                shipInfo.visible = visible;
+                shipInfo.distance = glm::length(ship.renderTransform.position - cameraPos);
+                shipInfo.type = "Ship";
+
+                debugData.ships.push_back(shipInfo);
+            }
+
+
+
+
+            if (!visible)
+                continue;
+
+
+            if (drawObjectAxes)
+            {
+                m_debugRenderer.renderAxes(
+                    shipModel,
+                    view,
+                    proj,
+                    dbg.shipAxisLength
+                );
+            }
+
+            
+
+            for (const auto& module : ship.assembly->modules)
+            {
+                glm::mat4 moduleBaseModel = shipModel;
+                moduleBaseModel = glm::translate(moduleBaseModel, module.localPosition);
+
+                moduleBaseModel = glm::rotate(
+                    moduleBaseModel,
+                    glm::radians(module.localRotationDeg.x),
+                    glm::vec3(1.0f, 0.0f, 0.0f)
+                );
+
+                moduleBaseModel = glm::rotate(
+                    moduleBaseModel,
+                    glm::radians(module.localRotationDeg.y),
+                    glm::vec3(0.0f, 1.0f, 0.0f)
+                );
+
+                moduleBaseModel = glm::rotate(
+                    moduleBaseModel,
+                    glm::radians(module.localRotationDeg.z),
+                    glm::vec3(0.0f, 0.0f, 1.0f)
+                );
+
+                glm::mat4 moduleModel = moduleBaseModel;
+
+                if (module.rotates)
+                {
+                    float angle = findAssemblyModuleAngleRad(
+                        ship.assemblyModules,
+                        module.id
+                    );
+
+                    moduleModel =
+                        moduleModel *
+                        glm::translate(glm::mat4(1.0f), module.pivot) *
+                        glm::rotate(glm::mat4(1.0f), angle, module.rotationAxis) *
+                        glm::translate(glm::mat4(1.0f), -module.pivot);
+                }
+
+                glm::vec3 moduleWorldPos = glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
+                float distToModule = glm::length(moduleWorldPos - cameraPos);
+                bool useLod1 = (distToModule >= ship.assembly->lodSwitchDistance);
+
+                if (dbg.shouldDrawMeshes())
+                {
+                    for (const auto& part : module.meshes)
+                    {
+                        if (ship.hiddenPartIds.find(part.id) != ship.hiddenPartIds.end())
+                            continue;
+
+                        glm::mat4 partModel = glm::translate(moduleModel, part.localOffset);
+                        glm::mat4 partMvp   = proj * view * partModel;
+
+                        const render::MeshGPU& gpu = useLod1 ? part.lod1Gpu : part.lod0Gpu;
+
+                        m_meshRenderer.draw(
+                            gpu,
+                            largeObjectShader,
+                            edgeShader,
+                            partMvp,
+                            partModel,
+                            shipParams,
+                            cameraPos
+                        );
+                    }
+                }
+
+
+
+                    if (dbg.drawModulePivots)
+                    {
+                        glm::vec3 moduleOriginWorld = glm::vec3(moduleBaseModel[3]);
+
+                        glm::mat4 pivotAxesModel =
+                            moduleModel * glm::translate(glm::mat4(1.0f), module.pivot);
+
+                        glm::vec3 pivotWorld = glm::vec3(pivotAxesModel[3]);
+
+                        glm::vec3 rotationAxisWorld =
+                            glm::normalize(glm::mat3(moduleModel) * module.rotationAxis);
+
+                        m_debugRenderer.renderCross(
+                            moduleOriginWorld,
+                            dbg.moduleCrossSize,
+                            dbg.moduleOriginColor,
+                            view,
+                            proj
+                        );
+
+                        m_debugRenderer.renderCross(
+                            pivotWorld,
+                            dbg.moduleCrossSize,
+                            dbg.modulePivotColor,
+                            view,
+                            proj
+                        );
+
+                        m_debugRenderer.renderAxes(
+                            pivotAxesModel,
+                            view,
+                            proj,
+                            dbg.moduleAxisLength
+                        );
+
+                        m_debugRenderer.renderLine(
+                            pivotWorld,
+                            pivotWorld + rotationAxisWorld * dbg.rotAxisLength,
+                            dbg.rotationAxisColor,
+                            view,
+                            proj
+                        );
+                    }
+            }
+
+            debug::render::ServerHitVolumeRenderer::render(
+                *m_debugLines,
+                ship.debugHitVolumes,
+                shipModel,
+                view,
+                proj
+            );
+
             continue;
-
-        m_debugRenderer.renderAxes(model, view, proj);
-
-        m_meshRenderer.draw(
-            *ship.gpuMesh,
-            fillShader,
-            edgeShader,
-            mvp,
-            model,
-            shipParams,
-            cameraPos
-        );
+        }
     }
 
 
@@ -198,94 +369,253 @@ void SceneRenderer::render(
 // ============================================================
 
 
-// В цикле рендеринга объектов:
 for (const auto& pair : objects)
 {
     const auto& obj = pair.second;
-    auto* gpu = obj.gpuMesh;
 
-    if (!gpu)
-        continue;
-
-    // Создаем модель-матрицу для объекта
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), obj.renderPosition);
-    
-    // Если есть вращение, добавляем его
-    if (glm::length(obj.renderRotation) > 0.001f) {
-        model = glm::rotate(model, obj.renderRotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::rotate(model, obj.renderRotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::rotate(model, obj.renderRotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-    }
-
-    glm::mat4 mvp = proj * view * model;
-
-    // Получаем meshData для проверки видимости
-    const auto& meshData = render::MeshLibrary::getMeshData(obj.type);
-
-    // Проверка видимости через фрустум (оставляем как есть)
-    bool visible = frustum.sphereVisible(meshData.boundCenter, meshData.boundRadius, model);
-    
-    if (!visible)
-        continue;
-
-    // Выбираем параметры освещения в зависимости от типа объекта
-    LightingParams params;
-    switch (obj.type)
+    // --------------------------------------------------------
+    // 1. OBJECT ASSEMBLY PATH
+    // --------------------------------------------------------
+    if (obj.assembly)
     {
-        case ObjectType::Station:
-            params = LightingParams::station();
-            break;
-        case ObjectType::Asteroid:
-            params = LightingParams::asteroid();
-            break;
-        case ObjectType::Planet:
-            params = LightingParams::planet();
-            break;
-        default:
-            // Для неизвестных объектов
-      
-            break;
+        glm::mat4 objectBaseModel =
+            glm::translate(glm::mat4(1.0f), obj.renderPosition) *
+            obj.renderOrientation;
+
+        const glm::vec3 objectForward = game::math::forwardFromOrientation(obj.renderOrientation);
+        const glm::vec3 objectUp      = game::math::upFromOrientation(obj.renderOrientation);
+        const glm::vec3 objectRight   = game::math::rightFromOrientation(obj.renderOrientation);
+
+        // glm::mat4 objectBaseModel = glm::translate(glm::mat4(1.0f), obj.renderPosition);
+
+        // if (glm::length(obj.renderRotation) > 0.001f)
+        // {
+        //     objectBaseModel = glm::rotate(objectBaseModel, obj.renderRotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
+        //     objectBaseModel = glm::rotate(objectBaseModel, obj.renderRotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
+        //     objectBaseModel = glm::rotate(objectBaseModel, obj.renderRotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
+        // }
+
+        // if (obj.descriptor)
+        // {
+        //     objectBaseModel = objectBaseModel * buildVisualBasisFix(obj.descriptor->visualBasisRotationDeg());
+        // }
+
+        bool visible = frustum.sphereVisible(
+            obj.assembly->boundCenter,
+            obj.assembly->boundRadius,
+            objectBaseModel
+        );
+
+        if (shouldDebug && dbg.publishObjectOrientation)
+        {
+            DebugObjectInfo objInfo;
+            objInfo.id = pair.first;
+            objInfo.position = obj.renderPosition;
+            objInfo.forward = objectForward;
+            objInfo.up = objectUp;
+            objInfo.right = objectRight;
+            objInfo.type = std::to_string(static_cast<int>(obj.type));
+            objInfo.distance = glm::length(obj.renderPosition - cameraPos);
+            objInfo.visible = visible;
+
+            debugData.objects.push_back(objInfo);
+        }
+
+        if (!visible)
+            continue;
+
+        if (drawObjectAxes)
+        {
+            m_debugRenderer.renderAxes(
+                objectBaseModel,
+                view,
+                proj,
+                dbg.objectAxisLength
+            );
+        }
+
+
+        LightingParams params;
+        switch (obj.type)
+        {
+            case ObjectType::Station:
+                params = LightingParams::station();
+                break;
+            case ObjectType::Asteroid:
+                params = LightingParams::asteroid();
+                break;
+            case ObjectType::Planet:
+                params = LightingParams::planet();
+                break;
+            default:
+                break;
+        }
+
+        for (const auto& module : obj.assembly->modules)
+        {
+            glm::mat4 moduleBaseModel = objectBaseModel;
+            moduleBaseModel = glm::translate(moduleBaseModel, module.localPosition);
+
+            moduleBaseModel = glm::rotate(
+                moduleBaseModel,
+                glm::radians(module.localRotationDeg.x),
+                glm::vec3(1.0f, 0.0f, 0.0f)
+            );
+
+            moduleBaseModel = glm::rotate(
+                moduleBaseModel,
+                glm::radians(module.localRotationDeg.y),
+                glm::vec3(0.0f, 1.0f, 0.0f)
+            );
+
+            moduleBaseModel = glm::rotate(
+                moduleBaseModel,
+                glm::radians(module.localRotationDeg.z),
+                glm::vec3(0.0f, 0.0f, 1.0f)
+            );
+
+            glm::mat4 moduleModel = moduleBaseModel;
+
+            if (module.rotates)
+            {
+                float angle = findAssemblyModuleAngleRad(
+                    obj.assemblyModules,
+                    module.id
+                );
+
+                moduleModel =
+                    moduleModel *
+                    glm::translate(glm::mat4(1.0f), module.pivot) *
+                    glm::rotate(glm::mat4(1.0f), angle, module.rotationAxis) *
+                    glm::translate(glm::mat4(1.0f), -module.pivot);
+            }
+
+            glm::vec3 moduleWorldPos = glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
+            float distToModule = glm::length(moduleWorldPos - cameraPos);
+            bool useLod1 = (distToModule >= obj.assembly->lodSwitchDistance);
+
+            
+
+
+            if (dbg.shouldDrawMeshes())
+            {
+                for (const auto& part : module.meshes)
+                {
+                    glm::mat4 partModel = glm::translate(moduleModel, part.localOffset);
+                    glm::mat4 partMvp   = proj * view * partModel;
+
+                    if (obj.hiddenPartIds.find(part.id) != obj.hiddenPartIds.end())
+                        continue;
+
+                    const render::MeshGPU& gpu = useLod1 ? part.lod1Gpu : part.lod0Gpu;
+
+                    m_meshRenderer.draw(
+                        gpu,
+                        largeObjectShader,
+                        edgeShader,
+                        partMvp,
+                        partModel,
+                        params,
+                        cameraPos
+                    );
+                }
+            }
+
+
+
+            if (dbg.drawModulePivots)
+            {
+                glm::vec3 moduleOriginWorld = glm::vec3(moduleBaseModel[3]);
+
+                glm::mat4 pivotAxesModel =
+                    moduleModel * glm::translate(glm::mat4(1.0f), module.pivot);
+
+                glm::vec3 pivotWorld = glm::vec3(pivotAxesModel[3]);
+
+                glm::vec3 rotationAxisWorld =
+                    glm::normalize(glm::mat3(moduleModel) * module.rotationAxis);
+
+                m_debugRenderer.renderCross(
+                    moduleOriginWorld,
+                    dbg.moduleCrossSize,
+                    dbg.moduleOriginColor,
+                    view,
+                    proj
+                );
+
+                m_debugRenderer.renderCross(
+                    pivotWorld,
+                    dbg.moduleCrossSize,
+                    dbg.modulePivotColor,
+                    view,
+                    proj
+                );
+
+                m_debugRenderer.renderAxes(
+                    pivotAxesModel,
+                    view,
+                    proj,
+                    dbg.moduleAxisLength
+                );
+
+                m_debugRenderer.renderLine(
+                    pivotWorld,
+                    pivotWorld + rotationAxisWorld * dbg.rotAxisLength,
+                    dbg.rotationAxisColor,
+                    view,
+                    proj
+                );
+            }
+
+        }
+
+
+
+
+        // if (shouldDebug)
+        // {
+        //     DebugObjectInfo objInfo;
+        //     objInfo.id = pair.first;
+        //     objInfo.position = obj.renderPosition;
+        //     objInfo.type = std::to_string(static_cast<int>(obj.type));
+        //     objInfo.visible = true;
+        //     debugData.objects.push_back(objInfo);
+        // }
+
+
+
+       
+            debug::render::ServerHitVolumeRenderer::render(
+                *m_debugLines,
+                obj.debugHitVolumes,
+                objectBaseModel,
+                view,
+                proj
+            );
+        
+
+        continue;
     }
 
+ 
 
-
-    // Рендерим объект
-    m_meshRenderer.draw(
-        *gpu,
-        largeObjectShader,
-        edgeShader,
-        mvp,
-        model,
-        params,
-        cameraPos
-    );
-
-    // DEBUG Browser для объектов
-    if(shouldDebug)
-    {
-        DebugObjectInfo objInfo;
-        objInfo.id = pair.first;
-        objInfo.position = obj.renderPosition;
-        objInfo.type = std::to_string(static_cast<int>(obj.type));
-        objInfo.visible = true;
-        debugData.objects.push_back(objInfo);
-    }
+    // if (shouldDebug)
+    // {
+    //     DebugObjectInfo objInfo;
+    //     objInfo.id = pair.first;
+    //     objInfo.position = obj.renderPosition;
+    //     objInfo.type = std::to_string(static_cast<int>(obj.type));
+    //     objInfo.visible = true;
+    //     debugData.objects.push_back(objInfo);
+    // }
 }
+
+
 
     // ============================================================
     // 3. ОТЛАДОЧНАЯ ИНФОРМАЦИЯ ДЛЯ КОРАБЛЯ ИГРОКА
     // ============================================================
     auto it = ships.find(playerId.value);
-    // if (it != ships.end() && m_debugLines->isInitialized())
-    // {
-    //     const auto& t = it->second.renderTransform;
-        
-    //     glm::mat4 debugModel = glm::translate(glm::mat4(1.0f), t.position) * 
-    //                            glm::mat4(t.orientation) *
-    //                            glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -20.0f, -20.0f));
-
-    //     m_debugRenderer.renderPlayerGrid(debugModel, view, proj);
-    // }
 
     // Отправляем отладочные данные
     if(shouldDebug && m_debugCallback)

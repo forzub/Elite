@@ -12,17 +12,27 @@
 #include "src/game/player/ActorIdProvider.h"
 
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
+#include "src/game/geometry/ObjectAssemblyRegistry.h"
 #include "src/world/types/ObjectType.h"
 
 
 #include "game/equipment/radar/RadarModule.h"
+#include "src/world/modules/ObjectHitBuilder.h"
+#include "src/game/geometry/AssemblyMeshLibrary.h"
+
+#include "src/world/modules/ObjectRuntimeHitBuilder.h"
+#include "src/world/modules/HitVolumeSnapshotBuilder.h"
+
+
+
+
 
 GameSimulation::GameSimulation()
 {
     // ===================== ObjectDescriptor =========================
 
     ObjectDescriptorRegistry::init();
-
+    game::ship::geometry::ObjectAssemblyRegistry::init();
 
 
 
@@ -143,6 +153,49 @@ void GameSimulation::update(double dt)
     float fdt = static_cast<float>(dt);
     m_serverTime += dt;
 
+
+    for (auto& [id, ship] : m_ships)
+    {
+        if (ship)
+            ship->core().updateAssemblyRuntime(dt);
+    }
+
+    for (auto& [id, obj] : m_staticObjects)
+    {
+        obj.assemblyRuntime.update(dt);
+    }
+
+    for (auto& [id, ship] : m_ships)
+    {
+        if (!ship)
+            continue;
+
+        auto& shipObj = *ship;
+        auto& core = shipObj.core();
+        const auto& desc = shipObj.core().descriptor();
+
+        world::modules::ObjectRuntimeHitBuilder::rebuild(
+            core.hitComponent(),
+            desc.typeId,
+            desc,
+            core.assemblyRuntime()
+        );
+    }
+
+    for (auto& [id, obj] : m_staticObjects)
+    {
+        const auto& desc = ObjectDescriptorRegistry::get(obj.type);
+
+        world::modules::ObjectRuntimeHitBuilder::rebuild(
+            obj.hitComponent,
+            obj.type,
+            desc,
+            obj.assemblyRuntime
+        );
+    }
+
+
+
     // === 1. AI phase ===
     for (auto& [id, shipPtr] : m_ships)
     {
@@ -236,11 +289,26 @@ void GameSimulation::update(double dt)
 
         s.radarContacts = ship.core().radar().getContacts();
         s.shipCoreStatus = ship.core().getCoreStatus();
-        
-        s.mesh = std::shared_ptr<game::ship::geometry::MeshData>(
-            &ship.core().mesh().mesh,
-            [](auto*){}
+
+        s.modules.clear();
+        for (const auto& mod : ship.core().moduleRuntime().modules())
+        {
+            game::simulation::ObjectModuleSnapshot ms;
+            ms.moduleId = mod.moduleId;
+            ms.state = static_cast<uint8_t>(mod.state);
+            ms.health = mod.health;
+            s.modules.push_back(std::move(ms));
+        }
+
+        s.assemblyModules = ship.core().assemblyRuntime().buildSnapshots();
+        s.debugHitVolumes = world::modules::HitVolumeSnapshotBuilder::build(
+            ship.core().hitComponent()
         );
+        
+        // s.mesh = std::shared_ptr<game::ship::geometry::MeshData>(
+        //     &ship.core().mesh().mesh,
+        //     [](auto*){}
+        // );
 
         m_snapshot.ships.push_back(s);
     }
@@ -255,7 +323,22 @@ void GameSimulation::update(double dt)
         o.id = id;
         o.type = obj.type;
         o.position = obj.position;
-        o.rotation = obj.rotation;
+        // o.rotation = obj.rotation;
+        o.orientation = obj.orientation;
+
+        o.modules.clear();
+        for (const auto& mod : obj.moduleRuntime.modules())
+        {
+            game::simulation::ObjectModuleSnapshot ms;
+            ms.moduleId = mod.moduleId;
+            ms.state = static_cast<uint8_t>(mod.state);
+            ms.health = mod.health;
+            o.modules.push_back(std::move(ms));
+        }
+        o.assemblyModules = obj.assemblyRuntime.buildSnapshots();
+        o.debugHitVolumes = world::modules::HitVolumeSnapshotBuilder::build(
+            obj.hitComponent
+        );
 
         m_snapshot.objects.push_back(o);
     }
@@ -292,7 +375,8 @@ EntityId GameSimulation::spawnShip(
     ShipRole role,
     const ShipDescriptor& descriptor,
     glm::vec3 position,
-    const ShipInitData& initData
+    const ShipInitData& initData,
+    const glm::mat4& orientation
 )
 {
     // Ship ship;
@@ -302,7 +386,7 @@ EntityId GameSimulation::spawnShip(
     ship->setId(id);
 
     // ship.init(role, descriptor, position, initData);
-    ship->init(role, descriptor, position, initData);
+    ship->init(role, descriptor, position, initData, orientation);
 
     // m_ships[id] = std::move(ship);
     m_ships[id] = std::move(ship);
@@ -314,7 +398,8 @@ EntityId GameSimulation::spawnShip(
 
 EntityId GameSimulation::spawnStation(
     ObjectType type,
-    const glm::vec3& position
+    const glm::vec3& position,
+    const glm::mat4& orientation
 )
 {
     EntityId id = generateEntityId();
@@ -324,6 +409,21 @@ EntityId GameSimulation::spawnStation(
     obj.id = id;
     obj.type = type; // ← ключевое изменение
     obj.position = position;
+    obj.orientation = orientation;
+
+    const auto& baseDesc = ObjectDescriptorRegistry::get(type);
+
+    obj.moduleRuntime.init(baseDesc.moduleDescriptors());
+    world::modules::ObjectHitBuilder::build(
+        obj.hitComponent,
+        type,
+        baseDesc
+    );
+    if (game::ship::geometry::AssemblyMeshLibrary::has(type))
+    {
+        const auto& assembly = game::ship::geometry::AssemblyMeshLibrary::get(type);
+        obj.assemblyRuntime.init(assembly);
+    }
 
     return id;
 }

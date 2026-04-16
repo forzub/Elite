@@ -1,107 +1,126 @@
 #include "ShipHitBuilder.h"
-#include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
+#include <iostream>
+#include <unordered_set>
+#include <limits>
+
+#include "game/geometry/AssemblyMeshLibrary.h"
 
 using namespace game::damage;
+using namespace game::ship::geometry;
 
 namespace game::ship
 {
 
-        void ShipHitBuilder::build(
-            HitComponent& hitComponent,
-            const ShipDescriptor& descriptor)
-        {
-            hitComponent.volumes.clear();
+static bool collectBoundsForDescriptor(
+    const ObjectAssembly& assembly,
+    const ModuleDescriptor& desc,
+    glm::vec3& outMin,
+    glm::vec3& outMax
+)
+{
+    if (desc.meshPartIds.empty())
+        return false;
 
-            // --- structural volumes из descriptor ---
-            for (const auto& desc : descriptor.hitVolumes)
+    std::unordered_set<std::string> wanted(
+        desc.meshPartIds.begin(),
+        desc.meshPartIds.end()
+    );
+
+    bool found = false;
+    glm::vec3 minV(0.0f);
+    glm::vec3 maxV(0.0f);
+
+    for (const auto& module : assembly.modules)
+    {
+        for (const auto& part : module.meshes)
+        {
+            if (wanted.find(part.id) == wanted.end())
+                continue;
+
+            if (!found)
             {
-                HitVolume v;
-                v.zone = desc.zone;
-                v.priority = desc.priority;
-                v.m_label = desc.label;
-                v.center = desc.center;
-                v.halfSize = desc.size * 0.5f;
-                v.destructible = desc.destructible;
-                v.meshChunk = desc.meshChunk;
-                hitComponent.volumes.push_back(v);
+                minV = part.minBounds;
+                maxV = part.maxBounds;
+                found = true;
             }
-
-            // --- генерация радиаторных панелей ---
-            buildRadiatorPanels(hitComponent, descriptor);
-        }
-
-
-
-        void ShipHitBuilder::buildRadiatorPanels(
-            HitComponent& hitComponent,
-            const ShipDescriptor& descriptor)
-        {
-            const auto& rad = descriptor.radiator;
-
-            if (!rad.procedural)
-                return;
-
-            if (rad.panelCount <= 0)
-                return;
-
-            float panelWidth = rad.width / rad.panelCount;
-            for (int i = 0; i < rad.panelCount; i++)
+            else
             {
-                HitVolume panel;
-                panel.zone = HitZoneType::Radiator;
-                panel.priority = 120;
-                panel.panelIndex = i;
-                panel.destructible = true;
-                panel.m_label = "radiator_" + std::to_string(i);
-                panel.halfSize =
-                {
-                    panelWidth * 0.5f,
-                    rad.height * 0.5f,
-                    0.1f
-                };
-
-                float x = -rad.width * 0.5f + panelWidth * (i + 0.5f);
-                panel.center =
-                {
-                    rad.center.x + x,
-                    rad.center.y,
-                    rad.center.z
-                };
-                hitComponent.volumes.push_back(panel);
+                minV = glm::min(minV, part.minBounds);
+                maxV = glm::max(maxV, part.maxBounds);
             }
         }
+    }
 
+    if (!found)
+        return false;
 
-        void ShipHitBuilder::loadVolumes(
-            game::damage::HitComponent& component,
-            const json& data
-        )
-        {
-            for (const auto& v : data)
-            {
-                HitVolume vol;
-
-                vol.center = glm::vec3(
-                    v["position"][0].get<float>(),
-                    v["position"][1].get<float>(),
-                    v["position"][2].get<float>()
-                );
-
-                vol.halfSize = glm::vec3(
-                    v["size"][0].get<float>() * 0.5f,
-                    v["size"][1].get<float>() * 0.5f,
-                    v["size"][2].get<float>() * 0.5f
-                );
-
-                vol.priority = v.value("priority", 0);
-                vol.health = v.value("health", 100.0f);
-                vol.m_label = v.value("label", "");
-                vol.destructible = true;
-                component.volumes.push_back(vol);
-            }
-        }
-
+    outMin = minV;
+    outMax = maxV;
+    return true;
 }
 
+void ShipHitBuilder::build(
+    HitComponent& hitComponent,
+    const ShipDescriptor& descriptor
+)
+{
+    hitComponent.volumes.clear();
+
+    if (!AssemblyMeshLibrary::has(descriptor.typeId))
+    {
+        std::cout << "[ShipHitBuilder] no assembly for type "
+                  << static_cast<int>(descriptor.typeId) << "\n";
+        return;
+    }
+
+    const auto& assembly = AssemblyMeshLibrary::get(descriptor.typeId);
+
+    for (const auto& modDesc : descriptor.modules)
+    {
+        if (!modDesc.enabled)
+            continue;
+
+        glm::vec3 minV(0.0f);
+        glm::vec3 maxV(0.0f);
+
+        if (!collectBoundsForDescriptor(assembly, modDesc, minV, maxV))
+        {
+            std::cout << "[ShipHitBuilder] no mesh parts found for descriptor "
+                      << modDesc.moduleId << "\n";
+            continue;
+        }
+
+        HitVolume v;
+        v.zone = modDesc.zone;
+        v.priority = modDesc.hitPriority;
+        v.layerIndex = modDesc.layerIndex;
+
+        v.center = (minV + maxV) * 0.5f;
+        v.halfSize = (maxV - minV) * 0.5f;
+
+        v.m_label = modDesc.moduleId;
+        v.moduleId = modDesc.moduleId;
+        v.subsystemId = modDesc.subsystemId;
+
+        v.destructible = modDesc.destructible;
+        v.health = modDesc.maxHealth;
+        v.maxHealth = modDesc.maxHealth;
+
+        v.armor = modDesc.armor;
+        v.penetrationResistance = modDesc.penetrationResistance;
+
+        hitComponent.volumes.push_back(v);
+
+        std::cout << "[ShipHitBuilder] volume module=" << v.moduleId
+                  << " center=("
+                  << v.center.x << "," << v.center.y << "," << v.center.z << ")"
+                  << " half=("
+                  << v.halfSize.x << "," << v.halfSize.y << "," << v.halfSize.z << ")"
+                  << " layer=" << v.layerIndex
+                  << " hp=" << v.health
+                  << "\n";
+    }
+}
+
+} // namespace game::ship

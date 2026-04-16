@@ -5,7 +5,7 @@
 #include "window/Window.h"
 #include "render/Renderer.h"
 #include "render/RenderContext.h"
-
+#include "ui/html/HtmlUiManager.h"
 
 
 class Application
@@ -16,6 +16,9 @@ public:
 
     void run();
     Viewport viewport() const;
+    
+    HtmlUiManager& htmlUi() { return m_htmlUi; }
+    const HtmlUiManager& htmlUi() const { return m_htmlUi; }
 
 private:
     void init();
@@ -32,4 +35,5 @@ private:
     StateContext m_context;
     StateStack   m_states;
     RenderContext renderContext;
+    HtmlUiManager m_htmlUi;
 };

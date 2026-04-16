@@ -11,7 +11,11 @@
 #include "src/game/equipment/radar/RadarContact.h"
 #include "src/game/damage/DamageEvent.h"
 #include "src/game/simulation/ShipCoreStatus.h"
-#include "src/game/geometry/MeshData.h"
+// #include "src/game/geometry/MeshData.h"
+
+#include "src/game/simulation/ObjectModuleSnapshot.h"
+#include "src/game/simulation/ObjectAssemblyModuleSnapshot.h"
+#include "src/game/simulation/DebugHitVolumeSnapshot.h"
 
 struct ShipSnapshot
 {
@@ -24,7 +28,10 @@ struct ShipSnapshot
     std::vector<game::RadarContact>                     radarContacts;
     std::vector<game::damage::DamageEvent>              damageEvents;
     
-    std::shared_ptr<game::ship::geometry::MeshData>     mesh;
+    // std::shared_ptr<game::ship::geometry::MeshData>     mesh;
     
     game::ShipCoreStatus                                shipCoreStatus;
+    std::vector<game::simulation::ObjectModuleSnapshot>   modules;
+    std::vector<game::simulation::ObjectAssemblyModuleSnapshot> assemblyModules;
+    std::vector<game::simulation::DebugHitVolumeSnapshot> debugHitVolumes;
 };

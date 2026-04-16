@@ -31,6 +31,9 @@
 #include "src/game/ship/view/ShipCameraMode.h"
 
 #include "src/game/equipment/ShipEquipment.h"
+#include "game/debug/AttachmentEditorData.h"
+
+
 
 struct ShipDescriptor;
 
@@ -116,6 +119,11 @@ struct PlayerShipView
 //   #####   ##       ##       ######    #####    #####   ##  ##    ##       #####
 //  ##  ##   ##  ##   ##  ##   ##            ##       ##  ##  ##    ##           ##
 //   #####    ####     ####     #####   ######   ######    ####    ####     ######
+
+    void setAttachmentOverrides(const ShipAttachmentOverrideMap* overrides)
+    {
+        cameraController.setAttachmentOverrides(overrides);
+    }
 
 
     const ShipCockpitState& getCockpitState() const

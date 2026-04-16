@@ -23,23 +23,21 @@
 //    ##     ##  ##     ##       ## ##
 //   ####    ##  ##    ####       ###
 // -------------------------------------------------
-void Ship::init( 
+void Ship::init(
     ShipRole inRole,
-    const ShipDescriptor& descriptor, 
+    const ShipDescriptor& descriptor,
     glm::vec3 position,
-    const ShipInitData& initData
+    const ShipInitData& initData,
+    const glm::mat4& orientation
 )
 {
-
     m_core.init(
         inRole,
         descriptor,
         position,
-        initData
+        initData,
+        orientation
     );
-
-    // m_core.emittedSignal().owner = m_id;
-    
 }
 
 
@@ -102,15 +100,16 @@ void Ship::updateControlIntent()
 {
         
         // control уже заполнен в handleInput()
-        m_core.transform().cruiseActive    = m_control.cruiseActive;
-        m_core.transform().pitchInput      = m_control.pitchInput;
-        m_core.transform().yawInput        = m_control.yawInput;
-        m_core.transform().rollInput       = m_control.rollInput;
-        m_core.transform().targetSpeedRate = m_control.targetSpeedRate;
-        m_core.transform().strafeInput     = m_control.strafeInput;
-        m_core.transform().liftInput       = m_control.liftInput;
-        m_core.transform().forwardInput    = m_control.forwardInput;
+        // m_core.transform().cruiseActive    = m_control.cruiseActive;
+        // m_core.transform().pitchInput      = m_control.pitchInput;
+        // m_core.transform().yawInput        = m_control.yawInput;
+        // m_core.transform().rollInput       = m_control.rollInput;
+        // m_core.transform().targetSpeedRate = m_control.targetSpeedRate;
+        // m_core.transform().strafeInput     = m_control.strafeInput;
+        // m_core.transform().liftInput       = m_control.liftInput;
+        // m_core.transform().forwardInput    = m_control.forwardInput;
     
+        m_core.control() = m_control;
 }
 
 

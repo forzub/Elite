@@ -7,6 +7,10 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+#include "ui/html/HtmlUiManager.h"
+#include "ui/html/HtmlUiMessage.h"
+#include "ui/html/HtmlUiPanelId.h"
+
 
 namespace
 {
@@ -94,6 +98,14 @@ void MainMenuState::handleInput()
 
 void MainMenuState::update(float)
 {
+
+    if (!m_htmlInitialized)
+    {
+        pushMainMenuState();
+        m_htmlInitialized = true;
+    }
+
+    processHtmlCommands();
 }
 
 
@@ -203,4 +215,68 @@ void MainMenuState::selectPrevious()
 bool MainMenuState::isSelected(size_t index) const
 {
     return static_cast<MenuItem>(index) == m_selected;
+}
+
+
+void MainMenuState::pushMainMenuState()
+{
+    json payload;
+    payload["title"] = "ELITE GAME";
+    payload["items"] = json::array({
+        {
+            { "id", "new_game" },
+            { "label", "NEW GAME" }
+        },
+        {
+            { "id", "load_game" },
+            { "label", "LOAD GAME" }
+        },
+        {
+            { "id", "exit" },
+            { "label", "EXIT" }
+        }
+    });
+
+    context().htmlUi().setActivePanel(HtmlUiPanelId::MainMenu);
+    context().htmlUi().broadcastState(HtmlUiPanelId::MainMenu, payload);
+}
+
+
+void MainMenuState::processHtmlCommands()
+{
+    auto cmds = context().htmlUi().popCommands();
+
+    for (const auto& msg : cmds)
+    {
+        if (msg.panel != HtmlUiPanelId::MainMenu)
+            continue;
+
+        if (msg.type == HtmlUiMessageType::Subscribe)
+        {
+            pushMainMenuState();
+            continue;
+        }
+
+        if (msg.type != HtmlUiMessageType::Command)
+            continue;
+
+        if (msg.command == "new_game")
+        {
+            m_states.pop();
+            m_states.push(std::make_unique<SpaceState>(m_states));
+            return;
+        }
+
+        if (msg.command == "load_game")
+        {
+            // TODO
+            return;
+        }
+
+        if (msg.command == "exit")
+        {
+            m_states.clear();
+            return;
+        }
+    }
 }

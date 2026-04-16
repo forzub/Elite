@@ -9,6 +9,10 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+#include "ui/html/HtmlUiPanelId.h"
+#include "ui/html/HtmlUiManager.h"
+#include "ui/html/HtmlUiMessage.h"
+
 // =====================================================================================
 // Constructor
 // =====================================================================================
@@ -76,6 +80,13 @@ void ConfirmExitState::handleInput()
 
 void ConfirmExitState::update(float)
 {
+    if (!m_htmlInitialized)
+    {
+        pushHtmlState();
+        m_htmlInitialized = true;
+    }
+
+    processHtmlCommands();
 }
 
 
@@ -217,5 +228,85 @@ bool ConfirmExitState::onGlobalEscape()
 // {
 //     return false;
 // }
+
+
+void ConfirmExitState::pushHtmlState()
+{
+    json payload;
+    payload["title"] = "CONFIRM EXIT";
+    payload["items"] = json::array({
+        {
+            { "id", "continue" },
+            { "label", "CONTINUE" },
+            { "enabled", true }
+        },
+        {
+            { "id", "save" },
+            { "label", "SAVE" },
+            { "enabled", m_options.canSave }
+        },
+        {
+            { "id", "load" },
+            { "label", "LOAD" },
+            { "enabled", m_options.canLoad }
+        },
+        {
+            { "id", "exit_to_menu" },
+            { "label", "EXIT TO MENU" },
+            { "enabled", true }
+        }
+    });
+
+    context().htmlUi().setActivePanel(HtmlUiPanelId::ConfirmExit);
+    context().htmlUi().broadcastState(HtmlUiPanelId::ConfirmExit, payload);
+}
+
+
+void ConfirmExitState::processHtmlCommands()
+{
+    auto cmds = context().htmlUi().popCommands();
+
+    for (const auto& msg : cmds)
+    {
+        if (msg.panel != HtmlUiPanelId::ConfirmExit)
+            continue;
+
+        if (msg.type == HtmlUiMessageType::Subscribe)
+        {
+            pushHtmlState();
+            continue;
+        }
+
+        if (msg.type != HtmlUiMessageType::Command)
+            continue;
+
+        if (msg.command == "continue")
+        {
+            m_states.pop();
+            return;
+        }
+
+        if (msg.command == "save")
+        {
+            // TODO: сохранить игру
+            return;
+        }
+
+        if (msg.command == "load")
+        {
+            // TODO: загрузить игру
+            return;
+        }
+
+        if (msg.command == "exit_to_menu")
+        {
+            while (!m_states.empty())
+                m_states.pop();
+
+            m_states.push(std::make_unique<MainMenuState>(m_states));
+            return;
+        }
+    }
+}
 
 

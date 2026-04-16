@@ -5,9 +5,12 @@
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 
-#include "game/ship/core/ShipHitBuilder.h"
+#include "src/world/modules/ObjectHitBuilder.h"
 
 #include "src/game/geometry/ObjLoader.h"
+#include "src/game/geometry/AssemblyMeshLibrary.h"
+
+
 using namespace game::ship::geometry;
 
 namespace game::ship::core
@@ -27,9 +30,10 @@ namespace game::ship::core
 // // -------------------------------------------------
 void ShipCore::init(
     ShipRole                inRole,
-    const ShipDescriptor&   descriptor, 
+    const ShipDescriptor&   descriptor,
     glm::vec3               position,
-    const ShipInitData&     initData
+    const ShipInitData&     initData,
+    const glm::mat4&        orientation
 )
 {
     // устанавливаем роль корабля - ИГРОК / НПС
@@ -95,7 +99,8 @@ void ShipCore::init(
     // Автоматическая установка криптокарт в декрипторы
        
 
-    m_transform.orientation = glm::mat4(1.0f);
+    // m_transform.orientation = glm::mat4(1.0f);
+    m_transform.orientation = orientation;
 
     m_transform.pitchRate = 0.0f;
     m_transform.yawRate   = 0.0f;
@@ -120,22 +125,21 @@ void ShipCore::init(
 
     debugPrintCoreSystems();
 
-    
-    
-    // -------- SHIP MESH -------------
-    std::string objPath = "assets/models/cobra-mk1.obj";
-    // std::string objPath = "assets/models/cobramk1T.obj";
-    // std::string objPath = "assets/models/sphere.obj";
-    // std::string objPath = "assets/models/cube.obj";
-
-    if (ObjLoader::load(objPath, m_mesh.mesh))
-    {
-        m_mesh.loaded = true;
-    }
 
     // -------- DAMAGE ZONE -----------
     m_damageHandler.ship = this;
-    ShipHitBuilder::build(m_hitComponent, descriptor);  
+    world::modules::ObjectHitBuilder::build(
+        m_hitComponent,
+        descriptor.typeId,
+        descriptor
+    );  
+
+    initModuleRuntime();
+    if (game::ship::geometry::AssemblyMeshLibrary::has(descriptor.typeId))
+    {
+        const auto& assembly = game::ship::geometry::AssemblyMeshLibrary::get(descriptor.typeId);
+        m_assemblyRuntime.init(assembly);
+    }
     
 }
 
@@ -155,12 +159,12 @@ void ShipCore::updatePhysics(float dt, const WorldParams& world)
 {
     
     
-    m_controller.update(
-        dt,
-        m_desc->physics,
-        m_transform,
-        world
-    );
+    // m_controller.update(
+    //     dt,
+    //     m_desc->physics,
+    //     m_transform,
+    //     world
+    // );
     
   
 
@@ -406,22 +410,6 @@ void ShipCore::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
         const auto& presets = descriptor.defaultEquipment;
     
         // Устанавливаем оборудование, если оно есть в пресетах
-        // if (presets.decryptor.has_value()) {
-
-        //     installEquipment("decryptor", 
-        //     m_systems.decryptor, 
-        //     // equipment.decryptor,
-        //     m_equipment.decryptors.modules, 
-        //     *presets.decryptor);
-        // }
-        
-        // if (presets.jammer.has_value()) {
-
-        //     installEquipment("jammer", 
-        //     m_systems.jammer, 
-        //     m_equipment.jammer, 
-        //     *presets.jammer);
-        // }
     
         if (presets.receiver.has_value()) {
             
@@ -781,11 +769,11 @@ void ShipCore::applyDamage(const game::damage::DamageEvent& event)
     DamageEvent localEvent = event;
 
     // перевод world → local
-    localEvent.position = m_mathTransform.worldToLocal(event.position);
+    localEvent.position = m_transform.worldToLocal(event.position);
 
     auto result = m_hitComponent.resolve(localEvent);
-
     m_damageHandler.handleDamage(result);
+    syncDestroyedModulesFromHitVolumes();
 }
 
 
@@ -821,6 +809,45 @@ void ShipCore::restoreVolume(int index)
 
 
 
+
+
+
+
+
+
+void ShipCore::initModuleRuntime()
+{
+    if (!m_desc)
+        return;
+
+    m_moduleRuntime.init(m_desc->moduleDescriptors());
+}
+
+
+
+
+
+
+void ShipCore::syncDestroyedModulesFromHitVolumes()
+{
+    for (const auto& volume : m_hitComponent.volumes)
+    {
+        m_moduleRuntime.setModuleHealth(volume.moduleId, volume.health);
+
+        if (volume.destroyed)
+        {
+            m_moduleRuntime.markModuleDestroyed(volume.moduleId, volume.health);
+        }
+    }
+}
+
+
+
+
+void ShipCore::updateAssemblyRuntime(double dt)
+{
+    m_assemblyRuntime.update(dt);
+}
 
 
 

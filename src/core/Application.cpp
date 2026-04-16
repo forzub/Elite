@@ -91,18 +91,31 @@ void Application::init()
 
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
     m_window = new Window(1280, 720, "EliteGame");
+    
+    // m_window  = new Window(1920, 1080, "EliteGame");
+    
+    // ---------------------------------------------------
+            std::string exeDir = getExecutablePath();
+            std::string webUiRoot = exeDir + "/assets/webui";
+
+            m_htmlUi.start(8090, webUiRoot);
+
+            int w, h;
+            glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
+            m_htmlUi.setViewport(w, h);
+    // ---------------------------------------------------
+
 
     glfwSetWindowUserPointer(m_window->nativeHandle(), this);
     glfwSetFramebufferSizeCallback(m_window->nativeHandle(), framebuffer_size_callback);
 
-    // m_window  = new Window(1920, 1080, "EliteGame");
     m_running = true;
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
 
-    int w, h;
+    
     glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
 
     g_stateContext          = &m_context;
@@ -195,6 +208,7 @@ void Application::shutdown()
 
     m_states.clear();
     m_states.applyPendingChanges();
+    m_htmlUi.stop();
 
     delete m_window;
 }
@@ -221,4 +235,6 @@ void Application::handleResize(int width, int height)
     {
         currentState->handleResize(width, height);
     }
+
+    m_htmlUi.setViewport(width, height);
 }

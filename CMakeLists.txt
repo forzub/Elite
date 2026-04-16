@@ -135,7 +135,7 @@ add_executable(EliteGame
     src/game/ship/core/CoolingSystem.cpp
 
 
-    src/WebSocket/DebugServer.cpp
+    # src/WebSocket/DebugServer.cpp
     src/game/ship/core/systems/CoreSystem.cpp
 
     src/game/damage/DamageTestObject.cpp
@@ -148,19 +148,40 @@ add_executable(EliteGame
     src/render/ship/ShipMeshRenderer.cpp
     
     src/game/geometry/ObjLoader.cpp
-    src/game/geometry/MeshLibrary.cpp
+    # src/game/geometry/MeshLibrary.cpp
     
     src/render/ShaderLibrary.cpp
     src/render/InitShaders.cpp
 
     src/render/renderers/MeshRenderer.cpp
-    src/render/renderers/DebugRenderer.cpp
+    src/debug/render/DebugRenderer.cpp
 
     src/render/frustum/Frustum.cpp
     src/debug/FrustumDebugData.cpp
 
     src/world/descriptors/ObjectDescriptorRegistry.cpp
+    src/game/geometry/ObjectAssemblyRegistry.cpp
+    src/game/geometry/AssemblyMeshLibrary.cpp
 
+    src/world/modules/ObjectModuleRuntime.cpp
+    src/world/modules/ObjectHitBuilder.cpp
+    src/world/objects/StaticObjectDamage.cpp
+    src/debug/render/DebugHitVolumeRenderer.cpp
+    src/debug/DebugSettings.cpp
+    src/world/modules/ObjectAssemblyRuntime.cpp
+    src/world/modules/HitVolumeSnapshotBuilder.cpp
+    src/world/modules/ObjectRuntimeHitBuilder.cpp
+
+    src/debug/render/ServerHitVolumeRenderer.cpp
+    src/game/ship/view/ShipAttachmentResolver.cpp
+
+    src/ui/html/HtmlUiServer.cpp
+    src/ui/html/HtmlUiCommandQueue.cpp
+    src/ui/html/HtmlUiBridge.cpp
+    src/ui/html/HtmlUiManager.cpp
+
+    src/game/debug/AttachmentEditorPayload.cpp
+    src/game/debug/AttachmentEditorResolve.cpp
 )
 
 add_custom_target(copy_assets ALL

@@ -15,3 +15,8 @@ float StateContext::aspect() const
             ? float(vp.width) / float(vp.height)
             : 1.0f;
 }
+
+HtmlUiManager& StateContext::htmlUi() const
+{
+    return app->htmlUi();
+}

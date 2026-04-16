@@ -29,6 +29,10 @@ public:
     void renderUI() override;
     void render() override;
 
+    bool m_htmlInitialized = false;
+    void processHtmlCommands();
+    void pushMainMenuState();
+
 private:
     struct Button
     {

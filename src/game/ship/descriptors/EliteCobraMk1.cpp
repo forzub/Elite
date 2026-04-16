@@ -11,8 +11,9 @@
 
 #include "src/game/equipment/types/RadarType.h"
 #include "src/game/equipment/types/RadarVisualProfile.h"
+#include "src/world/descriptors/LogicalDimensions.h"
 
-#include "game/damage/HitVolume.h"
+// #include "game/damage/HitVolume.h"
 
 
 const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
@@ -30,8 +31,8 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // Identity
         // ─────────────────────────
         desc.identity = {
-            "cobra mk1",
-            "COBRA MK1"
+            "cobretty-fnr1",
+            "COBRETTY-FNR1"
         };
 
         // -------------------------
@@ -103,6 +104,29 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
                 5.5f,
                 15.1f
             );
+
+            
+
+        // Смысловые размеры Cobra в логическом игровом базисе:
+        // length = nose -> tail
+        // width  = left -> right
+        // height = bottom -> top
+        desc.logicalDimensionsValue.length = 22.2f;
+        desc.logicalDimensionsValue.width  = 26.0f;
+        desc.logicalDimensionsValue.height = 5.00f;
+        desc.logicalDimensionsValue.scaleReference = ScaleReference::Length;
+        desc.logicalDimensionsValue.enabled = true;
+
+
+        // Авторский базис меша Cobra (Blender / OBJ):
+        // -X = forward
+        // +Z = up
+        // +Y = right
+        desc.meshForwardAxisValue = glm::vec3(-1.0f, 0.0f, 0.0f);
+        desc.meshUpAxisValue      = glm::vec3( 0.0f, 1.0f, 0.0f);
+
+        // LEGACY: оставляем временно только для старого single-mesh fallback path
+        desc.visualBasisRotationDegValue = glm::vec3(0.0f, -90.0f, 0.0f);    
 
 
         // ─────────────────────────
@@ -246,35 +270,952 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.boundingEllipsoid.radius = {0.5,0.15,0.35};
 
 
-        // desc.meshSections =
-        // {
-        //     {
-        //         "nose",
-        //         {-0.3f,-0.1f,-0.35f},
-        //         { 0.3f, 0.1f,-0.1f}
-        //     },
-
-        //     {
-        //         "mid",
-        //         {-0.35f,-0.1f,-0.1f},
-        //         { 0.35f, 0.1f, 0.15f}
-        //     },
-
-        //     {
-        //         "rear",
-        //         {-0.3f,-0.1f, 0.15f},
-        //         { 0.3f, 0.1f, 0.35f}
-        //     }
-        // };
-
-        desc.hitVolumes =
+                desc.modules =
         {
-            { game::damage::HitZoneType::Cockpit, "cockpit", 100, {0,0.5f,6.0f}, {4,2,4}, false, -1 },
-            { game::damage::HitZoneType::Cargo, "cargo", 60, {0,0,1.0f}, {8,3,7}, false, -1 },
-            { game::damage::HitZoneType::Reactor, "reactor", 110, {0,0,-2.0f}, {5,3,4}, true, 1 },
-            { game::damage::HitZoneType::Engine, "engine", 120, {0,0,-6.5f}, {7,3,4}, true, 3 },
-            { game::damage::HitZoneType::Hull, "hull", 0, {0,0,0}, {14,5.8f,16.5f}, false, -1 }
+            // =====================================================
+            // FRONT AVIONICS / COCKPIT
+            // =====================================================
+
+            ModuleDescriptor{
+                .moduleId = "ship_cockpit",
+                .parentModuleId = "ship_frame_CF",
+                .subsystemId = "avionics_front",
+                .meshPartIds = { "ship_cockpit" },
+                .zone = game::damage::HitZoneType::Cockpit,
+                .enabled = true,
+                .destructible = true,
+                .detachable = false,
+                .salvageable = false,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::Never,
+                .destroyPolicy = ModuleDestroyPolicy::DisableOnly,
+                .attachmentType = ModuleAttachmentType::Internal,
+                .layerIndex = 1,
+                .hitPriority = 120,
+                .maxHealth = 90.0f,
+                .armor = 10.0f,
+                .penetrationResistance = 16.0f,
+                .isCritical = true,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = true
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_radar",
+                .parentModuleId = "ship_frame_CF",
+                .subsystemId = "sensor_radar",
+                .meshPartIds = { "ship_radar" },
+                .zone = game::damage::HitZoneType::Generic,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 80,
+                .maxHealth = 25.0f,
+                .armor = 4.0f,
+                .penetrationResistance = 6.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_control_unit_L",
+                .parentModuleId = "ship_frame_FL",
+                .subsystemId = "flight_control",
+                .meshPartIds = { "ship_control_unit_L" },
+                .zone = game::damage::HitZoneType::Generic,
+                .enabled = true,
+                .destructible = true,
+                .detachable = false,
+                .salvageable = false,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::Never,
+                .destroyPolicy = ModuleDestroyPolicy::DisableOnly,
+                .attachmentType = ModuleAttachmentType::Internal,
+                .layerIndex = 1,
+                .hitPriority = 95,
+                .maxHealth = 40.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = true,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = true
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_control_unit_R",
+                .parentModuleId = "ship_frame_FR",
+                .subsystemId = "flight_control",
+                .meshPartIds = { "ship_control_unit_R" },
+                .zone = game::damage::HitZoneType::Generic,
+                .enabled = true,
+                .destructible = true,
+                .detachable = false,
+                .salvageable = false,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::Never,
+                .destroyPolicy = ModuleDestroyPolicy::DisableOnly,
+                .attachmentType = ModuleAttachmentType::Internal,
+                .layerIndex = 1,
+                .hitPriority = 95,
+                .maxHealth = 40.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = true,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = true
+            },
+
+            // =====================================================
+            // WEAPONS
+            // =====================================================
+
+            ModuleDescriptor{
+                .moduleId = "ship_laser_L",
+                .parentModuleId = "ship_frame_FL",
+                .subsystemId = "weapon_mounts",
+                .meshPartIds = { "ship_laser_L" },
+                .zone = game::damage::HitZoneType::Generic,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::Hardpoint,
+                .layerIndex = 0,
+                .hitPriority = 90,
+                .maxHealth = 35.0f,
+                .armor = 6.0f,
+                .penetrationResistance = 8.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_laser_R",
+                .parentModuleId = "ship_frame_FR",
+                .subsystemId = "weapon_mounts",
+                .meshPartIds = { "ship_laser_R" },
+                .zone = game::damage::HitZoneType::Generic,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::Hardpoint,
+                .layerIndex = 0,
+                .hitPriority = 90,
+                .maxHealth = 35.0f,
+                .armor = 6.0f,
+                .penetrationResistance = 8.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            // =====================================================
+            // OUTER SKIN PANELS
+            // =====================================================
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_bottom_LB",
+                .parentModuleId = "ship_frame_CB",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_bottom_LB" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 20,
+                .maxHealth = 28.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_bottom_LF",
+                .parentModuleId = "ship_frame_FL",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_bottom_LF" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 20,
+                .maxHealth = 28.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_bottom_RB",
+                .parentModuleId = "ship_frame_CB",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_bottom_RB" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 20,
+                .maxHealth = 28.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_bottom_RF",
+                .parentModuleId = "ship_frame_FR",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_bottom_RF" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 20,
+                .maxHealth = 28.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_bottom_C",
+                .parentModuleId = "ship_frame_CF",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_bottom_C" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 20,
+                .maxHealth = 32.0f,
+                .armor = 9.0f,
+                .penetrationResistance = 11.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_side_LB",
+                .parentModuleId = "ship_frame_CB",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_side_LB" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 22,
+                .maxHealth = 30.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_side_LF",
+                .parentModuleId = "ship_frame_FL",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_side_LF" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 22,
+                .maxHealth = 30.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_side_RB",
+                .parentModuleId = "ship_frame_CB",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_side_RB" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 22,
+                .maxHealth = 30.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_side_RF",
+                .parentModuleId = "ship_frame_FR",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_side_RF" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 22,
+                .maxHealth = 30.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_back",
+                .parentModuleId = "ship_frame_CB",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_back" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 30,
+                .maxHealth = 36.0f,
+                .armor = 10.0f,
+                .penetrationResistance = 12.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_top_CB",
+                .parentModuleId = "ship_frame_CB",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_top_CB" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 24,
+                .maxHealth = 30.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_top_CF",
+                .parentModuleId = "ship_frame_CF",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_top_CF" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 24,
+                .maxHealth = 30.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_top_LB",
+                .parentModuleId = "ship_frame_CB",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_top_LB" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 24,
+                .maxHealth = 30.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_top_LF",
+                .parentModuleId = "ship_frame_FL",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_top_LF" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 24,
+                .maxHealth = 30.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_top_RB",
+                .parentModuleId = "ship_frame_CB",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_top_RB" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 24,
+                .maxHealth = 30.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_panel_top_RF",
+                .parentModuleId = "ship_frame_FR",
+                .subsystemId = "outer_skin",
+                .meshPartIds = { "ship_panel_top_RF" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::SurfaceMounted,
+                .layerIndex = 0,
+                .hitPriority = 24,
+                .maxHealth = 30.0f,
+                .armor = 8.0f,
+                .penetrationResistance = 10.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            // =====================================================
+            // MAIN STRUCTURE
+            // =====================================================
+
+            ModuleDescriptor{
+                .moduleId = "ship_frame_CB",
+                .parentModuleId = "",
+                .subsystemId = "main_frame",
+                .meshPartIds = { "ship_frame_CB" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = false,
+                .salvageable = false,
+                .repairable = false,
+                .detachPolicy = ModuleDetachPolicy::Never,
+                .destroyPolicy = ModuleDestroyPolicy::DisableOnly,
+                .attachmentType = ModuleAttachmentType::Structural,
+                .layerIndex = 2,
+                .hitPriority = 70,
+                .maxHealth = 160.0f,
+                .armor = 28.0f,
+                .penetrationResistance = 36.0f,
+                .isCritical = true,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = true,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = true
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_frame_CF",
+                .parentModuleId = "ship_frame_CB",
+                .subsystemId = "main_frame",
+                .meshPartIds = { "ship_frame_CF" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = false,
+                .salvageable = false,
+                .repairable = false,
+                .detachPolicy = ModuleDetachPolicy::Never,
+                .destroyPolicy = ModuleDestroyPolicy::DisableOnly,
+                .attachmentType = ModuleAttachmentType::Structural,
+                .layerIndex = 2,
+                .hitPriority = 75,
+                .maxHealth = 170.0f,
+                .armor = 30.0f,
+                .penetrationResistance = 38.0f,
+                .isCritical = true,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = true,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = true
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_frame_FL",
+                .parentModuleId = "ship_frame_CF",
+                .subsystemId = "main_frame",
+                .meshPartIds = { "ship_frame_FL" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = false,
+                .repairable = false,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::Structural,
+                .layerIndex = 2,
+                .hitPriority = 85,
+                .maxHealth = 145.0f,
+                .armor = 26.0f,
+                .penetrationResistance = 34.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = true,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = true
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_frame_FR",
+                .parentModuleId = "ship_frame_CF",
+                .subsystemId = "main_frame",
+                .meshPartIds = { "ship_frame_FR" },
+                .zone = game::damage::HitZoneType::Hull,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = false,
+                .repairable = false,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::Structural,
+                .layerIndex = 2,
+                .hitPriority = 85,
+                .maxHealth = 145.0f,
+                .armor = 26.0f,
+                .penetrationResistance = 34.0f,
+                .isCritical = false,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = true,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = true
+            },
+
+            // =====================================================
+            // REAR PROPULSION BLOCK
+            // =====================================================
+
+            ModuleDescriptor{
+                .moduleId = "ship_frame_reactor",
+                .parentModuleId = "ship_frame_CB",
+                .subsystemId = "propulsion_block",
+                .meshPartIds = { "ship_frame_reactor" },
+                .zone = game::damage::HitZoneType::Reactor,
+                .enabled = true,
+                .destructible = true,
+                .detachable = false,
+                .salvageable = false,
+                .repairable = false,
+                .detachPolicy = ModuleDetachPolicy::Never,
+                .destroyPolicy = ModuleDestroyPolicy::DisableOnly,
+                .attachmentType = ModuleAttachmentType::Structural,
+                .layerIndex = 3,
+                .hitPriority = 110,
+                .maxHealth = 180.0f,
+                .armor = 34.0f,
+                .penetrationResistance = 44.0f,
+                .isCritical = true,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = true,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = true
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_engine_L",
+                .parentModuleId = "ship_frame_reactor",
+                .subsystemId = "propulsion_block",
+                .meshPartIds = { "ship_engine_L" },
+                .zone = game::damage::HitZoneType::Engine,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::Hardpoint,
+                .layerIndex = 3,
+                .hitPriority = 100,
+                .maxHealth = 90.0f,
+                .armor = 16.0f,
+                .penetrationResistance = 20.0f,
+                .isCritical = true,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_engine_R",
+                .parentModuleId = "ship_frame_reactor",
+                .subsystemId = "propulsion_block",
+                .meshPartIds = { "ship_engine_R" },
+                .zone = game::damage::HitZoneType::Engine,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = true,
+                .repairable = true,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::Hardpoint,
+                .layerIndex = 3,
+                .hitPriority = 100,
+                .maxHealth = 90.0f,
+                .armor = 16.0f,
+                .penetrationResistance = 20.0f,
+                .isCritical = true,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_tank_L",
+                .parentModuleId = "ship_frame_reactor",
+                .subsystemId = "fuel_system",
+                .meshPartIds = { "ship_tank_L" },
+                .zone = game::damage::HitZoneType::Cargo,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = false,
+                .repairable = false,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::Internal,
+                .layerIndex = 3,
+                .hitPriority = 96,
+                .maxHealth = 65.0f,
+                .armor = 10.0f,
+                .penetrationResistance = 14.0f,
+                .isCritical = true,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            },
+
+            ModuleDescriptor{
+                .moduleId = "ship_tank_R",
+                .parentModuleId = "ship_frame_reactor",
+                .subsystemId = "fuel_system",
+                .meshPartIds = { "ship_tank_R" },
+                .zone = game::damage::HitZoneType::Cargo,
+                .enabled = true,
+                .destructible = true,
+                .detachable = true,
+                .salvageable = false,
+                .repairable = false,
+                .detachPolicy = ModuleDetachPolicy::OnDestroyed,
+                .destroyPolicy = ModuleDestroyPolicy::Detach,
+                .attachmentType = ModuleAttachmentType::Internal,
+                .layerIndex = 3,
+                .hitPriority = 96,
+                .maxHealth = 65.0f,
+                .armor = 10.0f,
+                .penetrationResistance = 14.0f,
+                .isCritical = true,
+                .destroysParentIfCatastrophic = false,
+                .destroysWholeObjectIfCatastrophic = false,
+                .detachChildrenOnLoss = false,
+                .destroyChildrenOnLoss = false,
+                .disableChildrenOnLoss = false
+            }
         };
+
+
+        desc.attachments =
+        {
+            ShipAttachmentPoint{
+                .id = "camera_cockpit_main",
+                .parentModuleId = "ship_cockpit",
+                .kind = ShipAttachmentKind::CameraCockpit,
+                .localPosition = glm::vec3(0.0f, 1.5f, -11.0f),
+                .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+                .enabled = true
+            },
+
+            ShipAttachmentPoint{
+                .id = "camera_rear_main",
+                .parentModuleId = "ship_frame_CB",
+                .kind = ShipAttachmentKind::CameraRear,
+                .localPosition = glm::vec3(0.0f, 5.0f, -7.0f),
+                .localRotationDeg = glm::vec3(3.0f, 180.0f, 0.0f),
+                .enabled = true
+            },
+
+            ShipAttachmentPoint{
+                .id = "camera_drone_default",
+                .parentModuleId = "ship_frame_CB",
+                .kind = ShipAttachmentKind::CameraDrone,
+                .localPosition = glm::vec3(0.0f, 4.0f, -12.0f),
+                .localRotationDeg = glm::vec3(10.0f, 0.0f, 0.0f),
+                .enabled = true
+            },
+
+            ShipAttachmentPoint{
+                .id = "drone_dock_main",
+                .parentModuleId = "ship_frame_CB",
+                .kind = ShipAttachmentKind::DroneDock,
+                .localPosition = glm::vec3(0.0f, -1.2f, -5.5f),
+                .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+                .enabled = true
+            },
+
+            ShipAttachmentPoint{
+                .id = "weapon_muzzle_L",
+                .parentModuleId = "ship_laser_L",
+                .kind = ShipAttachmentKind::WeaponMuzzle,
+                .localPosition = glm::vec3(0.0f, 0.0f, 1.2f),
+                .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+                .enabled = true
+            },
+
+            ShipAttachmentPoint{
+                .id = "weapon_muzzle_R",
+                .parentModuleId = "ship_laser_R",
+                .kind = ShipAttachmentKind::WeaponMuzzle,
+                .localPosition = glm::vec3(0.0f, 0.0f, 1.2f),
+                .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+                .enabled = true
+            },
+
+            ShipAttachmentPoint{
+                .id = "missile_rack_L",
+                .parentModuleId = "ship_frame_FL",
+                .kind = ShipAttachmentKind::MissileRack,
+                .localPosition = glm::vec3(-1.2f, -0.35f, -1.0f),
+                .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+                .enabled = true
+            },
+
+            ShipAttachmentPoint{
+                .id = "missile_rack_R",
+                .parentModuleId = "ship_frame_FR",
+                .kind = ShipAttachmentKind::MissileRack,
+                .localPosition = glm::vec3(1.2f, -0.35f, -1.0f),
+                .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+                .enabled = true
+            },
+
+            ShipAttachmentPoint{
+                .id = "container_mount_center",
+                .parentModuleId = "ship_frame_CB",
+                .kind = ShipAttachmentKind::ContainerMount,
+                .localPosition = glm::vec3(0.0f, -1.5f, 0.0f),
+                .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+                .enabled = true
+            }
+        };
+
+        
 
 
     }

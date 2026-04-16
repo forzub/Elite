@@ -37,11 +37,15 @@ uniform float fogIntensity;
 
 uniform vec3 cameraPos;
 
+
+
 void main()
 {
     vec3 n = normalize(vNormal);
     vec3 l = normalize(lightDir);
     vec3 viewDir = normalize(-vViewPos);
+
+
     
     float NdotL = max(dot(n, l), 0.0);
     
@@ -74,6 +78,7 @@ void main()
     }
     
     vec3 finalColor = hullColor * lighting * lightColor;
+
     
     // ===== СЕТКА =====
     if (gridEnabled) {
@@ -109,10 +114,26 @@ void main()
     }
     
     // ===== ТУМАН =====
-    if (fogEnabled) {
+    /*if (fogEnabled) {
         float fogFactor = clamp((dist - fogStart) / (fogEnd - fogStart), 0.0, 1.0);
         vec3 fogColor = mix(fogNearColor, fogFarColor, fogFactor);
         finalColor = mix(finalColor, fogColor, fogFactor * fogIntensity);
+    }*/
+
+    if (fogEnabled) {
+        float fogFactor = clamp((dist - fogStart) / max(fogEnd - fogStart, 0.001), 0.0, 1.0);
+
+        // обычная дымка
+        vec3 fogColor = mix(fogNearColor, fogFarColor, fogFactor);
+
+        // дальняя поверхность становится менее контрастной
+        float luma = dot(finalColor, vec3(0.299, 0.587, 0.114));
+        vec3 lowContrastColor = mix(finalColor, vec3(luma), fogFactor * 0.35);
+
+        // дальние части немного светлеют
+        vec3 liftedColor = mix(lowContrastColor, fogColor, fogFactor * fogIntensity);
+
+        finalColor = liftedColor;
     }
     
     FragColor = vec4(finalColor, 1.0);

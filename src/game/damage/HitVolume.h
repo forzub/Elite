@@ -27,17 +27,31 @@ enum class HitZoneType
 
 struct HitVolume
 {
-    HitZoneType zone;
+    HitZoneType zone = HitZoneType::Generic;
+
     int priority = 0;
-    glm::vec3 center;
-    glm::vec3 halfSize;
+
+    // 0 = внешний слой, 1 = глубже и т.д.
+    int layerIndex = 0;
+
+    glm::vec3 center {0.0f};
+    glm::vec3 halfSize {0.5f};
     glm::mat3 orientation {1.0f};
-    
+
     std::string m_label;
+    std::string moduleId;
+    std::string subsystemId;
+
     int panelIndex = -1;
     bool destructible = false;
     int meshChunk = -1;
+
     float health = 1.0f;
+    float maxHealth = 1.0f;
+
+    float armor = 0.0f;
+    float penetrationResistance = 0.0f;
+
     bool destroyed = false;
 
     bool contains(const glm::vec3& point) const
@@ -45,10 +59,10 @@ struct HitVolume
         glm::vec3 local = glm::transpose(orientation) * (point - center);
 
         return
-            abs(local.x) <= halfSize.x &&
-            abs(local.y) <= halfSize.y &&
-            abs(local.z) <= halfSize.z;
+            std::abs(local.x) <= halfSize.x &&
+            std::abs(local.y) <= halfSize.y &&
+            std::abs(local.z) <= halfSize.z;
     }
 };
 
-}
+} // namespace game::damage

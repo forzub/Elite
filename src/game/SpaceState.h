@@ -2,22 +2,11 @@
 
 #include <unordered_map>
 #include <deque>
+#include <mutex>
 
 #include "core/GameState.h"
 
-// #include "render/Camera.h"
-// #include "render/HUD/TextRenderer.h"  
-// #include "render/HUD/WorldLabelRenderer.h" 
-// #include "render/RenderContext.h"
-// #include "src/game/equipment/signalNode/processing/SignalReceiver.h"
-// #include "src/game/ship/view/ShipCameraController.h" 
-// #include "world/WorldParams.h"
-// #include "ui/HudTypes.h"
-// #include "ui/hud/HudEdgeMapper.h"
-
 #include "src/game/ship/Ship.h"
-// #include "world/Planet.h"
-// #include "world/InterferenceSource.h"
 #include "ui/HudRenderer.h"
 
 // ============== components ==============
@@ -38,13 +27,13 @@
 #include "src/scene/SceneRenderer.h"
 #include "src/ui/components/radar/RadarWidgetBase.h" 
 
-#include "src/WebSocket/DebugServer.h" 
+// #include "src/WebSocket/DebugServer.h" 
 #include "src/debug/FrustumDebugData.h"
 
 #include "src/game/network/ClientShipCommand.h"
 
 #include "game/damage/TestDamageHandler.h"
-
+#include "game/debug/AttachmentEditorData.h"
 
 
 
@@ -92,6 +81,17 @@ public:
     void testDamageSystem();
 
     void handleResize(int width, int height);
+
+    const ShipAttachmentOverrideMap& attachmentEditorOverrides() const { return m_attachmentEditorOverrides; }
+    ShipAttachmentOverrideMap& attachmentEditorOverrides() { return m_attachmentEditorOverrides; }
+
+    void pushAttachmentEditorState();
+    // void processAttachmentEditorCommands();
+    void processHtmlCommands();
+    void pushShipCoreState();
+    void pushFrustumDebugState(const nlohmann::json& payload);
+    void pushDebugControlState();
+    void applyDebugControlPayload(const nlohmann::json& payload);
 
 private:
 
@@ -152,13 +152,13 @@ private:
 
 
     // std::unique_ptr<game::debug::DebugServer>       m_debugServer;
-    std::unique_ptr<game::debug::DebugServer>       m_coreStatusServer;
-    std::unique_ptr<game::debug::DebugServer>       m_frustumDebugServer;
+    // std::unique_ptr<game::debug::DebugServer>       m_coreStatusServer;
+    // std::unique_ptr<game::debug::DebugServer>       m_frustumDebugServer;
 
     std::vector<ClientShipCommand>                  m_debugCommands;
     std::mutex                                      m_debugCommandsMutex;                // для защиты очереди
 
 
     game::damage::TestDamageHandler                 handler;
-    
+    ShipAttachmentOverrideMap                       m_attachmentEditorOverrides;
 };

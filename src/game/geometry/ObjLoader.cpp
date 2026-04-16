@@ -14,7 +14,8 @@ using namespace game::ship::geometry;
 
 bool ObjLoader::load(
     const std::string& path,
-    MeshData& mesh
+    MeshData& mesh,
+    bool centerModel
 )
 {
 
@@ -38,7 +39,7 @@ bool ObjLoader::load(
         triangulate
     );
 
-    if(!warn.empty()) std::cout << "[ObjectLoader] OBJ WARNING: " << warn << std::endl;
+    // if(!warn.empty()) std::cout << "[ObjectLoader] OBJ WARNING: " << warn << std::endl;
     if(!err.empty()) std::cout << "[ObjectLoader] OBJ ERROR: " << err << std::endl;
 
     if(!ok)
@@ -72,25 +73,48 @@ bool ObjLoader::load(
     // НОВОЕ: Центрирование модели
     // ============================================================
     // Вычисляем bounding box
-    glm::vec3 minBound = glm::vec3(1e9f);
-    glm::vec3 maxBound = glm::vec3(-1e9f);
+    // glm::vec3 minBound = glm::vec3(1e9f);
+    // glm::vec3 maxBound = glm::vec3(-1e9f);
     
-    for (const auto& vert : mesh.vertices) {
-        minBound = glm::min(minBound, vert.position);
-        maxBound = glm::max(maxBound, vert.position);
-    }
+    // for (const auto& vert : mesh.vertices) {
+    //     minBound = glm::min(minBound, vert.position);
+    //     maxBound = glm::max(maxBound, vert.position);
+    // }
     
-    // Вычисляем центр
-    glm::vec3 center = (minBound + maxBound) * 0.5f;
+    // // Вычисляем центр
+    // glm::vec3 center = (minBound + maxBound) * 0.5f;
     
-    // std::cout << "[ObjLoader] Model \"" << path << "\" original bounds:"
-    //           << " min(" << minBound.x << ", " << minBound.y << ", " << minBound.z << ")"
-    //           << " max(" << maxBound.x << ", " << maxBound.y << ", " << maxBound.z << ")"
-    //           << " center(" << center.x << ", " << center.y << ", " << center.z << ")" << std::endl;
+    // // std::cout << "[ObjLoader] Model \"" << path << "\" original bounds:"
+    // //           << " min(" << minBound.x << ", " << minBound.y << ", " << minBound.z << ")"
+    // //           << " max(" << maxBound.x << ", " << maxBound.y << ", " << maxBound.z << ")"
+    // //           << " center(" << center.x << ", " << center.y << ", " << center.z << ")" << std::endl;
     
-    // Сдвигаем все вершины так, чтобы центр оказался в (0,0,0)
-    for (auto& vert : mesh.vertices) {
-        vert.position -= center;
+    // // Сдвигаем все вершины так, чтобы центр оказался в (0,0,0)
+    // for (auto& vert : mesh.vertices) {
+    //     vert.position -= center;
+    // }
+
+
+    // ============================================================
+    // Опциональное центрирование модели
+    // ============================================================
+    if (centerModel)
+    {
+        glm::vec3 minBound = glm::vec3(1e9f);
+        glm::vec3 maxBound = glm::vec3(-1e9f);
+
+        for (const auto& vert : mesh.vertices)
+        {
+            minBound = glm::min(minBound, vert.position);
+            maxBound = glm::max(maxBound, vert.position);
+        }
+
+        glm::vec3 center = (minBound + maxBound) * 0.5f;
+
+        for (auto& vert : mesh.vertices)
+        {
+            vert.position -= center;
+        }
     }
 
 

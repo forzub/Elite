@@ -38,6 +38,11 @@ public:
     bool wantsConfirmExit() const override { return false; }
     bool onGlobalEscape() override;
 
+   
+
+    void pushHtmlState();
+    void processHtmlCommands();
+
 private:
     void activateSelected();
     bool isActionEnabled(ExitAction action) const;
@@ -57,6 +62,8 @@ private:
     bool m_rightPressed = false;
     bool m_enterPressed = false;
     bool m_escPressed   = false;
+
+    bool m_htmlInitialized = false;
 
 };
 

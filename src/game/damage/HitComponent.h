@@ -11,10 +11,7 @@ namespace game::damage
 class HitComponent
 {
 public:
-
     std::vector<HitVolume> volumes;
-
-
 
     const HitVolume* findHit(const glm::vec3& point) const
     {
@@ -29,12 +26,11 @@ public:
         return nullptr;
     }
 
-
-
     DamageResult resolve(const DamageEvent& event) const
     {
         const HitVolume* best = nullptr;
 
+        int bestLayer = std::numeric_limits<int>::max();
         int bestPriority = std::numeric_limits<int>::min();
 
         for (const auto& v : volumes)
@@ -45,7 +41,16 @@ public:
             if (!v.contains(event.position))
                 continue;
 
-            if (v.priority > bestPriority)
+            // Сначала внешний слой
+            if (v.layerIndex < bestLayer)
+            {
+                bestLayer = v.layerIndex;
+                bestPriority = v.priority;
+                best = &v;
+                continue;
+            }
+
+            if (v.layerIndex == bestLayer && v.priority > bestPriority)
             {
                 bestPriority = v.priority;
                 best = &v;
@@ -55,12 +60,11 @@ public:
         return { &event, best };
     }
 
-
-
     int findVolume(const glm::vec3& point) const
     {
         int best = -1;
-        int bestPriority = -1;
+        int bestLayer = std::numeric_limits<int>::max();
+        int bestPriority = std::numeric_limits<int>::min();
 
         for (size_t i = 0; i < volumes.size(); ++i)
         {
@@ -72,7 +76,15 @@ public:
             if (!v.contains(point))
                 continue;
 
-            if (v.priority > bestPriority)
+            if (v.layerIndex < bestLayer)
+            {
+                bestLayer = v.layerIndex;
+                bestPriority = v.priority;
+                best = (int)i;
+                continue;
+            }
+
+            if (v.layerIndex == bestLayer && v.priority > bestPriority)
             {
                 bestPriority = v.priority;
                 best = (int)i;
@@ -82,18 +94,10 @@ public:
         return best;
     }
 
-
-
-
     void load(const std::vector<HitVolume>& v)
     {
         volumes = v;
     }
-
-
-
 };
 
-
-}
-
+} // namespace game::damage

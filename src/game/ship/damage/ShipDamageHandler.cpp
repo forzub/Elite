@@ -14,75 +14,143 @@ using namespace game::damage;
 namespace game::ship
 {
 
+    // void ShipDamageHandler::handleDamage(const DamageResult& result)
+    // {
+    //     if (!result.volume || !result.event)
+    //         return;
+
+    //     // ВНИМАНИЕ:
+    //     // result.volume приходит как const, поэтому нужен const_cast
+    //     HitVolume* volume = const_cast<HitVolume*>(result.volume);
+
+    //     if (!volume)
+    //         return;
+
+    //     double energy = result.event->energy;
+
+    //     // --- Лог попадания ---
+    //     switch (volume->zone)
+    //     {
+    //         case HitZoneType::Reactor:
+    //             std::cout << "[ShipDamage] reactor hit energy=" << energy << "\n";
+    //             break;
+
+    //         case HitZoneType::Engine:
+    //             std::cout << "[ShipDamage] engine hit energy=" << energy << "\n";
+    //             break;
+
+    //         case HitZoneType::Radiator:
+    //             std::cout << "[ShipDamage] radiator hit energy=" << energy << "\n";
+    //             break;
+
+    //         case HitZoneType::Hull:
+    //             std::cout << "[ShipDamage] hull hit energy=" << energy << "\n";
+    //             break;
+
+    //         default:
+    //             std::cout << "[ShipDamage] generic hit energy=" << energy << "\n";
+    //             break;
+    //     }
+
+    //     if (volume->health <= 0.0f)
+    //     {
+    //         volume->destroyed = true;
+
+    //         std::cout << "[ShipDamage] volume destroyed: "
+    //                 << volume->m_label << "\n";
+    //     }
+
+    //     // --- если volume нельзя разрушить ---
+    //     if (!volume->destructible)
+    //         return;
+
+    //     // --- если уже уничтожен ---
+    //     if (volume->destroyed)
+    //         return;
+
+    //     // --- наносим урон ---
+    //      float effectiveDamage =
+    //         static_cast<float>(energy * 0.1) - volume->armor;
+
+    //     if (effectiveDamage < 0.0f)
+    //         effectiveDamage = 0.0f;
+
+    //     volume->health -= effectiveDamage;
+
+
+
+
+    //     std::cout << "[ShipDamage] volume " << volume->m_label
+    //             << " health=" << volume->health << "\n";
+
+    //     // --- уничтожение ---
+    //     if (volume->health <= 0.0f)
+    //     {
+    //         volume->destroyed = true;
+
+    //         std::cout << "[ShipDamage] volume destroyed: "
+    //                 << volume->m_label << "\n";
+    //     }  
+    // }
+
+
+
     void ShipDamageHandler::handleDamage(const DamageResult& result)
+{
+    if (!result.volume || !result.event)
+        return;
+
+    HitVolume* volume = const_cast<HitVolume*>(result.volume);
+    if (!volume)
+        return;
+
+    if (!volume->destructible)
+        return;
+
+    if (volume->destroyed)
+        return;
+
+    double energy = result.event->energy;
+
+    switch (volume->zone)
     {
-        if (!result.volume || !result.event)
-            return;
-
-        // ВНИМАНИЕ:
-        // result.volume приходит как const, поэтому нужен const_cast
-        HitVolume* volume = const_cast<HitVolume*>(result.volume);
-
-        if (!volume)
-            return;
-
-        double energy = result.event->energy;
-
-        // --- Лог попадания ---
-        switch (volume->zone)
-        {
-            case HitZoneType::Reactor:
-                std::cout << "[ShipDamage] reactor hit energy=" << energy << "\n";
-                break;
-
-            case HitZoneType::Engine:
-                std::cout << "[ShipDamage] engine hit energy=" << energy << "\n";
-                break;
-
-            case HitZoneType::Radiator:
-                std::cout << "[ShipDamage] radiator hit energy=" << energy << "\n";
-                break;
-
-            case HitZoneType::Hull:
-                std::cout << "[ShipDamage] hull hit energy=" << energy << "\n";
-                break;
-
-            default:
-                std::cout << "[ShipDamage] generic hit energy=" << energy << "\n";
-                break;
-        }
-
-        if (volume->health <= 0.0f)
-        {
-            volume->destroyed = true;
-
-            std::cout << "[ShipDamage] volume destroyed: "
-                    << volume->m_label << "\n";
-        }
-
-        // --- если volume нельзя разрушить ---
-        if (!volume->destructible)
-            return;
-
-        // --- если уже уничтожен ---
-        if (volume->destroyed)
-            return;
-
-        // --- наносим урон ---
-        volume->health -= static_cast<float>(energy * 0.1f);
-
-        std::cout << "[ShipDamage] volume " << volume->m_label
-                << " health=" << volume->health << "\n";
-
-        // --- уничтожение ---
-        if (volume->health <= 0.0f)
-        {
-            volume->destroyed = true;
-
-            std::cout << "[ShipDamage] volume destroyed: "
-                    << volume->m_label << "\n";
-        }  
+        case HitZoneType::Reactor:
+            std::cout << "[ShipDamage] reactor hit energy=" << energy << "\n";
+            break;
+        case HitZoneType::Engine:
+            std::cout << "[ShipDamage] engine hit energy=" << energy << "\n";
+            break;
+        case HitZoneType::Radiator:
+            std::cout << "[ShipDamage] radiator hit energy=" << energy << "\n";
+            break;
+        case HitZoneType::Hull:
+            std::cout << "[ShipDamage] hull hit energy=" << energy << "\n";
+            break;
+        default:
+            std::cout << "[ShipDamage] generic hit energy=" << energy << "\n";
+            break;
     }
+
+    float effectiveDamage =
+        static_cast<float>(energy * 0.1) - volume->armor;
+
+    if (effectiveDamage < 0.0f)
+        effectiveDamage = 0.0f;
+
+    volume->health -= effectiveDamage;
+
+    std::cout << "[ShipDamage] volume " << volume->m_label
+              << " health=" << volume->health << "\n";
+
+    if (volume->health <= 0.0f)
+    {
+        volume->health = 0.0f;
+        volume->destroyed = true;
+
+        std::cout << "[ShipDamage] volume destroyed: "
+                  << volume->m_label << "\n";
+    }
+}
 
 
 
@@ -99,7 +167,13 @@ namespace game::ship
 
         auto& volume = hit.volumes[id];
 
-        volume.health -= event.energy;
+        float effectiveDamage =
+            static_cast<float>(event.energy) - volume.armor;
+
+        if (effectiveDamage < 0.0f)
+            effectiveDamage = 0.0f;
+
+        volume.health -= effectiveDamage;
 
         if (volume.health <= 0)
         {

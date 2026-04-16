@@ -84,12 +84,84 @@ MeshGPU& MeshLibrary::get(ObjectType typeId)
 
     glm::vec3 targetSize =
         desc.getMeshSizeMeters();
-    
-    float scaleX = targetSize.x / currentSize.x;
-    float scaleY = targetSize.y / currentSize.y;
-    float scaleZ = targetSize.z / currentSize.z;
 
-    float uniformScale = std::max(scaleX, std::max(scaleY, scaleZ));
+    std::cout
+        << "[MeshLibrary] NORMALIZE currentSize = "
+        << currentSize.x << ", " << currentSize.y << ", " << currentSize.z
+        << " targetSize = "
+        << targetSize.x << ", " << targetSize.y << ", " << targetSize.z
+        << std::endl;
+
+
+
+    
+    const LogicalDimensions& dims = desc.logicalDimensions();
+
+    float uniformScale = 1.0f;
+
+    const float measuredWidth  = currentSize.x;
+    const float measuredHeight = currentSize.y;
+    const float measuredLength = currentSize.z;
+
+    if (dims.enabled)
+    {
+        switch (dims.scaleReference)
+        {
+            case ScaleReference::Length:
+            {
+                if (measuredLength > 1e-6f)
+                    uniformScale = dims.length / measuredLength;
+                break;
+            }
+
+            case ScaleReference::Width:
+            {
+                if (measuredWidth > 1e-6f)
+                    uniformScale = dims.width / measuredWidth;
+                break;
+            }
+
+            case ScaleReference::Height:
+            {
+                if (measuredHeight > 1e-6f)
+                    uniformScale = dims.height / measuredHeight;
+                break;
+            }
+
+            case ScaleReference::None:
+            default:
+            {
+                uniformScale = 1.0f;
+                break;
+            }
+        }
+
+        std::cout
+            << "[MeshLibrary] NORMALIZE logical currentSize (W,H,L) = "
+            << measuredWidth << ", " << measuredHeight << ", " << measuredLength
+            << " target (W,H,L) = "
+            << dims.width << ", " << dims.height << ", " << dims.length
+            << " chosen = " << uniformScale
+            << std::endl;
+    }
+    else
+    {
+        const glm::vec3 targetSize = desc.getMeshSizeMeters();
+
+        float scaleX = targetSize.x / currentSize.x;
+        float scaleY = targetSize.y / currentSize.y;
+        float scaleZ = targetSize.z / currentSize.z;
+
+        uniformScale = std::max(scaleX, std::max(scaleY, scaleZ));
+
+        std::cout
+            << "[MeshLibrary] NORMALIZE LEGACY scales = "
+            << scaleX << ", " << scaleY << ", " << scaleZ
+            << " chosen = " << uniformScale
+            << std::endl;
+    }
+
+
 
     for(auto& v : mesh.vertices)
     {

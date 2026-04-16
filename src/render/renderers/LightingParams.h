@@ -33,7 +33,7 @@ struct LightingParams {
     struct Distances {
         float close = 500.0f;
         float medium = 5000.0f;
-        float far = 20000.0f;
+        float farDist = 20000.0f;
         float horizon = 40000.0f;
     } dist;
     
@@ -51,10 +51,14 @@ struct LightingParams {
     
     // ===== РЕБРА =====
     glm::vec3 edgeColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::vec3 edgeFarColor = glm::vec3(0.85f, 0.85f, 0.92f);
     float edgeAlpha = 1.0f;
     float edgeThickness = 1.0f;
     float edgeFadeStart = 500.0f;
     float edgeFadeEnd = 5000.0f;
+    float edgeFadePower = 1.35f;
+
+
     
     // ===== ТУМАН =====
     struct Fog {
@@ -103,7 +107,7 @@ struct LightingParams {
         // Дистанции (для будущего использования)
         setUniform1f(shader, "distClose", dist.close);
         setUniform1f(shader, "distMedium", dist.medium);
-        setUniform1f(shader, "distFar", dist.far);
+        setUniform1f(shader, "distFar", dist.farDist);
         setUniform1f(shader, "distHorizon", dist.horizon);
         
         // Цвета корпуса по зонам (для будущего использования)
@@ -120,6 +124,7 @@ struct LightingParams {
         setUniform1f(shader, "gridGlow", grid.glow);
         setUniformVec3(shader, "gridCellSizeXYZ", grid.cellSizeXYZ);
         setUniformVec3(shader, "gridOffset", grid.offset);
+
         
         // Туман
         setUniform1i(shader, "fogEnabled", fog.enabled);
@@ -131,21 +136,28 @@ struct LightingParams {
     }
     
 
-    void applyEdgeUniforms(GLuint shader, const glm::mat4& mvp, 
-                           const glm::vec3& cameraPos,
-                           int viewportWidth, int viewportHeight) const {
+    void applyEdgeUniforms(GLuint shader,
+                       const glm::mat4& mvp,
+                       const glm::mat4& model,
+                       const glm::vec3& cameraPos,
+                       int viewportWidth,
+                       int viewportHeight) const
+     {
         glUseProgram(shader);
         
         setUniformMat4(shader, "MVP", mvp);
+        setUniformMat4(shader, "M", model);
         setUniform2f(shader, "viewport", (float)viewportWidth, (float)viewportHeight);
         setUniformVec3(shader, "cameraPos", cameraPos);
         
         // Параметры ребер
         setUniformVec3(shader, "color", edgeColor);
+        setUniformVec3(shader, "farColor", edgeFarColor);
         setUniform1f(shader, "alpha", edgeAlpha);
         setUniform1f(shader, "thickness", edgeThickness);
         setUniform1f(shader, "fadeStart", edgeFadeStart);
         setUniform1f(shader, "fadeEnd", edgeFadeEnd);
+        setUniform1f(shader, "fadePower", edgeFadePower);
     }
 
 
@@ -180,6 +192,7 @@ struct LightingParams {
                 setUniform1f(shader, "rimIntensity", rimIntensity);
                 setUniform1f(shader, "edgeIntensity", edgeIntensity);
                 setUniform1f(shader, "normalBlend", normalBlend);
+
                 
                 // Туман
                 setUniform1i(shader, "fogEnabled", fog.enabled);
@@ -231,7 +244,7 @@ public:
         
         p.dist.close = 300.0f;
         p.dist.medium = 3000.0f;
-        p.dist.far = 10000.0f;
+        p.dist.farDist = 10000.0f;
         
         p.hullColorNear = glm::vec3(0.5f, 0.4f, 0.3f);
         p.hullColorMid = glm::vec3(0.6f, 0.5f, 0.4f);
@@ -250,7 +263,7 @@ public:
         
         p.dist.close = 2000.0f;
         p.dist.medium = 20000.0f;
-        p.dist.far = 100000.0f;
+        p.dist.farDist = 100000.0f;
         p.dist.horizon = 200000.0f;
         
         p.hullColorNear = glm::vec3(0.2f, 0.3f, 0.6f);
@@ -263,89 +276,178 @@ public:
     }
 
 
-    static LightingParams station() {
-    LightingParams p;
+//     static LightingParams station() {
+//     LightingParams p;
     
-    // ===== ОСВЕЩЕНИЕ =====
+//     // ===== ОСВЕЩЕНИЕ =====
+//     p.lightDir = glm::vec3(0.4f, 0.7f, 0.5f);
+//     p.lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+//     p.ambientColor = glm::vec3(1.0f, 0.3f, 0.35f);
+    
+//     // ===== ДИСТАНЦИИ =====
+//     p.dist.close = 500.0f;
+//     p.dist.medium = 5000.0f;
+//     p.dist.far = 100000.0f;
+//     p.dist.horizon = 200000.0f;
+    
+//     // ===== ЦВЕТА КОРПУСА ПО ЗОНАМ =====
+//     p.hullColorNear = glm::vec3(0.1f, 0.1f, 0.14f);
+//     p.hullColorMid = glm::vec3(0.3f, 0.3f, 0.35f);
+//     p.hullColorFar = glm::vec3(0.5f, 0.5f, 0.6f);
+
+//     // ===== РЕБРА (для edge-шейдера) =====
+//     p.edgeColor = glm::vec3(0.50f, 0.50f, 0.55f);  // светло-серые
+//     p.edgeAlpha = 1.0f;
+//     p.edgeThickness = 1.0f;
+//     p.edgeFadeStart = 500.0f;
+//     p.edgeFadeEnd = 7000.0f;
+    
+//     // ===== СЕТКА =====
+//     p.grid.enabled = false;        // по умолчанию выключена
+//     p.grid.lineColor = glm::vec3(0.4f, 0.4f, 0.5f);
+//     p.grid.cellSizeXYZ = glm::vec3(100.0f);
+//     p.grid.lineWidth = 1.0f;
+//     p.grid.lineAlpha = 0.3f;
+//     p.grid.glow = 0.2f;
+    
+//     // ===== ТУМАН =====
+//     p.fog.enabled = true;
+//     p.fog.startDistance = 100.0f;
+//     p.fog.endDistance = 60000.0f;
+//     p.fog.nearColor = glm::vec3(0.03f, 0.03f, 0.05f);
+//     p.fog.farColor = glm::vec3(0.0f, 0.0f, 0.02f);
+//     p.fog.intensity = 0.5f;
+    
+//     // Эти параметры не используются в large_object_fill, но могут быть нужны для других шейдеров
+//     p.hullColor = glm::vec3(0.8f, 0.8f, 0.9f);  // дефолт
+    
+//     return p;
+// }
+
+
+static LightingParams station() {
+    LightingParams p;
+
     p.lightDir = glm::vec3(0.4f, 0.7f, 0.5f);
     p.lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    p.ambientColor = glm::vec3(1.0f, 0.3f, 0.35f);
-    
-    // ===== ДИСТАНЦИИ =====
-    p.dist.close = 500.0f;
-    p.dist.medium = 5000.0f;
-    p.dist.far = 100000.0f;
-    p.dist.horizon = 200000.0f;
-    
-    // ===== ЦВЕТА КОРПУСА ПО ЗОНАМ =====
-    p.hullColorNear = glm::vec3(0.1f, 0.1f, 0.14f);
-    p.hullColorMid = glm::vec3(0.3f, 0.3f, 0.35f);
-    p.hullColorFar = glm::vec3(0.5f, 0.5f, 0.6f);
+    p.ambientColor = glm::vec3(0.30f, 0.30f, 0.34f);
 
-    // ===== РЕБРА (для edge-шейдера) =====
-    p.edgeColor = glm::vec3(0.50f, 0.50f, 0.55f);  // светло-серые
-    p.edgeAlpha = 1.0f;
-    p.edgeThickness = 1.0f;
-    p.edgeFadeStart = 500.0f;
-    p.edgeFadeEnd = 7000.0f;
-    
-    // ===== СЕТКА =====
-    p.grid.enabled = false;        // по умолчанию выключена
-    p.grid.lineColor = glm::vec3(0.4f, 0.4f, 0.5f);
-    p.grid.cellSizeXYZ = glm::vec3(100.0f);
-    p.grid.lineWidth = 1.0f;
-    p.grid.lineAlpha = 0.3f;
-    p.grid.glow = 0.2f;
-    
-    // ===== ТУМАН =====
-    p.fog.enabled = true;
-    p.fog.startDistance = 100.0f;
-    p.fog.endDistance = 60000.0f;
-    p.fog.nearColor = glm::vec3(0.03f, 0.03f, 0.05f);
-    p.fog.farColor = glm::vec3(0.0f, 0.0f, 0.02f);
-    p.fog.intensity = 0.5f;
-    
-    // Эти параметры не используются в large_object_fill, но могут быть нужны для других шейдеров
-    p.hullColor = glm::vec3(0.8f, 0.8f, 0.9f);  // дефолт
-    
+    // Дистанции читаемости именно для станции
+    p.dist.close   = 150.0f;
+    p.dist.medium  = 1200.0f;
+    p.dist.farDist     = 4000.0f;
+    p.dist.horizon = 12000.0f;
+
+    // Поверхность ближе темнее, дальше светлее
+    p.hullColorNear = glm::vec3(0.08f, 0.08f, 0.11f);
+    p.hullColorMid  = glm::vec3(0.18f, 0.18f, 0.22f);
+    p.hullColorFar  = glm::vec3(0.34f, 0.34f, 0.40f);
+
+    // Ребра
+    p.edgeThickness  = 1.0f;
+    p.edgeColor      = glm::vec3(0.58f, 0.60f, 0.66f);
+    p.edgeFarColor   = glm::vec3(0.18f, 0.20f, 0.26f);
+    p.edgeAlpha      = 0.95f;
+    p.edgeFadeStart  = 120.0f;
+    p.edgeFadeEnd    = 1600.0f;
+    p.edgeFadePower  = 1.9f;
+
+    // ===== СИЛУЭТНЫЙ КОНТУР =====
+    // p.contourColor = glm::vec3(0.90f, 0.93f, 1.0f);
+    // p.contourIntensity = 0.35f;
+    // p.contourStart = 0.16f;
+    // p.contourEnd = 0.40f;
+
+    p.grid.enabled = false;
+
+    // Перцептивная дымка, не "туман вакуума"
+    p.fog.enabled       = true;
+    p.fog.startDistance = 150.0f;
+    p.fog.endDistance   = 12000.0f;
+    p.fog.nearColor     = glm::vec3(0.05f, 0.05f, 0.08f);
+    p.fog.farColor      = glm::vec3(0.16f, 0.16f, 0.22f);
+    p.fog.intensity     = 0.85f;
+
     return p;
 }
 
 
 
 
+// static LightingParams ship() {
+//     LightingParams p;
+    
+//     // ===== ОСВЕЩЕНИЕ =====
+//     p.lightDir = glm::vec3(0.4f, 0.7f, 0.5f);
+//     p.lightColor = glm::vec3(1.0f, 1.0f, 1.0f);  // пока оставим белый свет для тестов
+//     p.ambientColor = glm::vec3(1.0f, 0.3f, 0.35f);
+    
+//     // ===== ЦВЕТ КОРПУСА =====
+//     p.hullColor = glm::vec3(0.04f, 0.04f, 0.08f);  // основной цвет
+    
+//     // ===== РЕБРА (для edge-шейдера) =====
+//     p.edgeColor = glm::vec3(0.50f, 0.5f, 0.55f);
+//     p.edgeAlpha = 1.0f;
+//     p.edgeThickness = 1.0f;
+//     p.edgeFadeStart = 100.0f;
+//     p.edgeFadeEnd = 1000.0f;
+
+//     // ===== ЭФФЕКТЫ ПОВЕРХНОСТИ =====
+//     p.fresnelPower = 2.0f;
+//     p.rimIntensity = 0.5f;
+//     p.normalBlend = 0.15f;
+    
+//     // ===== ТУМАН =====
+//     p.fog.enabled = true;
+//     p.fog.startDistance = 100.0f;
+//     p.fog.endDistance = 3000.0f;
+//     p.fog.nearColor = glm::vec3(0.05f, 0.05f, 0.1f);
+//     p.fog.farColor = glm::vec3(0.0f, 0.0f, 0.02f);
+//     p.fog.intensity = 0.5f;
+    
+    
+//     return p;
+// }
+
 static LightingParams ship() {
     LightingParams p;
-    
+
     // ===== ОСВЕЩЕНИЕ =====
     p.lightDir = glm::vec3(0.4f, 0.7f, 0.5f);
-    p.lightColor = glm::vec3(1.0f, 1.0f, 1.0f);  // пока оставим белый свет для тестов
-    p.ambientColor = glm::vec3(1.0f, 0.3f, 0.35f);
-    
+    p.lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    p.ambientColor = glm::vec3(0.22f, 0.22f, 0.26f);
+
     // ===== ЦВЕТ КОРПУСА =====
-    p.hullColor = glm::vec3(0.04f, 0.04f, 0.08f);  // основной цвет
-    
+    p.hullColor = glm::vec3(0.05f, 0.05f, 0.08f);
+
     // ===== РЕБРА (для edge-шейдера) =====
-    p.edgeColor = glm::vec3(0.50f, 0.5f, 0.55f);
-    p.edgeAlpha = 1.0f;
-    p.edgeThickness = 1.0f;
-    p.edgeFadeStart = 100.0f;
-    p.edgeFadeEnd = 1000.0f;
+    p.edgeThickness  = 1.0f;
+    p.edgeColor      = glm::vec3(0.58f, 0.60f, 0.66f);
+    p.edgeFarColor   = glm::vec3(0.16f, 0.18f, 0.24f);
+    p.edgeAlpha      = 0.95f;
+    p.edgeFadeStart  = 60.0f;
+    p.edgeFadeEnd    = 700.0f;
+    p.edgeFadePower  = 1.8f;
 
     // ===== ЭФФЕКТЫ ПОВЕРХНОСТИ =====
     p.fresnelPower = 2.0f;
     p.rimIntensity = 0.5f;
-    p.normalBlend = 0.15f;
-    
+    p.normalBlend  = 0.15f;
+
+    // ===== СИЛУЭТНЫЙ КОНТУР =====
+    // p.contourColor = glm::vec3(0.90f, 0.93f, 1.0f);
+    // p.contourIntensity = 0.35f;
+    // p.contourStart = 0.16f;
+    // p.contourEnd = 0.40f;
+
     // ===== ТУМАН =====
-    p.fog.enabled = true;
-    p.fog.startDistance = 100.0f;
-    p.fog.endDistance = 3000.0f;
-    p.fog.nearColor = glm::vec3(0.05f, 0.05f, 0.1f);
-    p.fog.farColor = glm::vec3(0.0f, 0.0f, 0.02f);
-    p.fog.intensity = 0.5f;
-    
-    
+    p.fog.enabled       = true;
+    p.fog.startDistance = 120.0f;
+    p.fog.endDistance   = 2200.0f;
+    p.fog.nearColor     = glm::vec3(0.05f, 0.05f, 0.08f);
+    p.fog.farColor      = glm::vec3(0.12f, 0.12f, 0.18f);
+    p.fog.intensity     = 0.65f;
+
     return p;
 }
     

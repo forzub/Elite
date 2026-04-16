@@ -23,8 +23,11 @@
 #include "scene/EntityID.h"
 #include "src/world/types/ObjectType.h"
 
-#include "src/game/geometry/MeshData.h"
-#include "src/game/geometry/MeshGPU.h"
+
+#include "src/game/geometry/ObjectAssembly.h"
+
+#include <unordered_set>
+#include "src/game/simulation/ObjectModuleSnapshot.h"
 
 struct PendingCommand
 {
@@ -47,10 +50,15 @@ struct ClientShipState
     std::vector<SignalReceptionResult>              receptions;
     std::vector<game::RadarContact>                 radarContacts;
     
-    std::shared_ptr<game::ship::geometry::MeshData> mesh;
-    render::MeshGPU*                                gpuMesh = nullptr;
+    const game::ship::geometry::ObjectAssembly*     assembly = nullptr;
     
     game::ShipCoreStatus                            shipCoreStatus;
+
+    std::vector<game::simulation::ObjectModuleSnapshot> modules;
+    std::vector<game::simulation::ObjectAssemblyModuleSnapshot> assemblyModules;
+    std::unordered_set<std::string>                     hiddenPartIds;
+    std::vector<game::simulation::DebugHitVolumeSnapshot> debugHitVolumes;
+    
 };
 
 
@@ -60,12 +68,21 @@ struct ClientObjectState
     EntityId                                        id;
     ObjectType                                      type;
     glm::vec3                                       position;
-    glm::vec3                                       rotation;
-
+    
+    // glm::vec3                                       rotation;
+    // glm::vec3                                       renderRotation;
+    glm::mat4 orientation {1.0f};
+    glm::mat4 renderOrientation {1.0f}; 
+    
     // текущие (для рендера)
     glm::vec3                                       renderPosition;
-    glm::vec3                                       renderRotation;
-    render::MeshGPU*                                gpuMesh = nullptr;
+    const game::ship::geometry::ObjectAssembly*     assembly = nullptr;
+
+    const IObjectDescriptor*                                        descriptor = nullptr;
+    std::vector<game::simulation::ObjectModuleSnapshot>             modules;
+    std::vector<game::simulation::ObjectAssemblyModuleSnapshot>     assemblyModules;
+    std::unordered_set<std::string>                                 hiddenPartIds;
+    std::vector<game::simulation::DebugHitVolumeSnapshot>           debugHitVolumes;
 };
 
 

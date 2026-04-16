@@ -32,7 +32,7 @@ void PlayerShipView::init(
         // Устанавливаем проекционные матрицы для каждой камеры
         // Предполагаем, что у Camera есть метод setPerspective
         float fov = 70.0f; // или другое значение из настроек
-        float nearPlane = 0.1f;
+        float nearPlane = 1.0f;
         float farPlane = 500000.0f;
         
         m_cameras[ShipCameraMode::Cockpit].setPerspective(fov, nearPlane, farPlane);
@@ -308,6 +308,7 @@ void PlayerShipView::update(
     cameraController.updateMode(
         ShipCameraMode::Cockpit,
         dt,
+        m_shipDesc,
         tempTransform,
         m_cameras[ShipCameraMode::Cockpit]
     );
@@ -315,6 +316,7 @@ void PlayerShipView::update(
     cameraController.updateMode(
         ShipCameraMode::Rear,
         dt,
+        m_shipDesc,
         tempTransform,
         m_cameras[ShipCameraMode::Rear]
     );
@@ -322,6 +324,7 @@ void PlayerShipView::update(
     cameraController.updateMode(
         ShipCameraMode::Drone,
         dt,
+        m_shipDesc,
         tempTransform,
         m_cameras[ShipCameraMode::Drone]
     );

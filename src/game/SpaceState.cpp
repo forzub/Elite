@@ -24,9 +24,36 @@
 
 #include "src/render/InitShaders.h"
 
-
 #include "src/game/ship/view/PlayerShipView.h"
 
+#include "game/debug/AttachmentEditorPayload.h"
+#include "ui/html/HtmlUiManager.h"
+#include "ui/html/HtmlUiPanelId.h"
+#include "ui/html/HtmlUiMessage.h"
+#include <mutex>
+
+
+
+namespace
+{
+    json vec4ToJson(const glm::vec4& v)
+    {
+        return json::array({ v.x, v.y, v.z, v.w });
+    }
+
+    glm::vec4 jsonToVec4(const json& j, const glm::vec4& fallback)
+    {
+        if (!j.is_array() || j.size() < 4)
+            return fallback;
+
+        return glm::vec4(
+            j[0].get<float>(),
+            j[1].get<float>(),
+            j[2].get<float>(),
+            j[3].get<float>()
+        );
+    }
+}
 
 
 
@@ -156,6 +183,12 @@ void SpaceState::handleInput()
         m_layout = ScreenLayout::Drone_Main_Front_Mini;
     }
 
+
+    // дебажная обработка F8
+    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F8)) {
+        pushAttachmentEditorState();
+    }
+
     // === управление кораблём ===
     m_inputMapper.update(m_playerControl);
 
@@ -193,7 +226,13 @@ void SpaceState::handleInput()
 // =====================================================================================
 void SpaceState::update(float dt)
 {
-    // LOG("[SpaceState] update begin");
+   
+
+    // команды для отображения во внешнем браузере.
+    processHtmlCommands();
+    // processHtmlDebugCommands();
+
+
 
     m_simAccumulator += dt;
 
@@ -313,21 +352,21 @@ void SpaceState::update(float dt)
 
     // DEBUG: отправляем состояние корабля в браузер
     // --------------------------------------------
-    static float debugTimer = 0;
+    static float debugTimer = 0.0f;
     debugTimer += dt;
     if (debugTimer > 0.1f)
     {
-        debugTimer = 0;
-        
-        // Используем coreStatus, а не core()
-        const auto& status = ship.shipCoreStatus;  // ← вот так правильно
-        
-        // Конвертируем в JSON и отправляем
+        debugTimer = 0.0f;
+
+        const auto& status = ship.shipCoreStatus;
         json j = shipCoreStatusToJson(status);
-        
-        if (m_coreStatusServer)
-            m_coreStatusServer->broadcastState(j.dump());
+
+        context().htmlUi().broadcastState(HtmlUiPanelId::ShipCore, j);
     }
+
+
+
+    
     
     
 }
@@ -615,3 +654,224 @@ void SpaceState::handleResize(int width, int height)
 
 
 
+void SpaceState::pushAttachmentEditorState()
+{
+    context().htmlUi().setActivePanel(HtmlUiPanelId::AttachmentEditor);
+    context().htmlUi().broadcastState(
+        HtmlUiPanelId::AttachmentEditor,
+        buildAttachmentEditorPayload(*this)
+    );
+}
+
+void SpaceState::processHtmlCommands()
+{
+    auto cmds = context().htmlUi().popCommands();
+
+    for (const auto& msg : cmds)
+    {
+        // ------------------------------
+        // ATTACHMENT EDITOR
+        // ------------------------------
+        if (msg.panel == HtmlUiPanelId::AttachmentEditor)
+        {
+            if (msg.type == HtmlUiMessageType::Subscribe)
+            {
+                pushAttachmentEditorState();
+                continue;
+            }
+
+            if (msg.type == HtmlUiMessageType::Command)
+            {
+                if (msg.command == "request_snapshot")
+                {
+                    pushAttachmentEditorState();
+                    continue;
+                }
+
+                if (msg.command == "update_attachment")
+                {
+                    const std::string attachmentId = msg.payload.value("attachmentId", "");
+                    if (attachmentId.empty())
+                        continue;
+
+                    const auto posArr = msg.payload.value("localPosition", std::vector<float>{0,0,0});
+                    const auto rotArr = msg.payload.value("localRotationDeg", std::vector<float>{0,0,0});
+                    const bool enabled = msg.payload.value("enabled", true);
+
+                    if (posArr.size() < 3 || rotArr.size() < 3)
+                        continue;
+
+                    auto& ov = m_attachmentEditorOverrides[attachmentId];
+                    ov.localPosition = glm::vec3(posArr[0], posArr[1], posArr[2]);
+                    ov.localRotationDeg = glm::vec3(rotArr[0], rotArr[1], rotArr[2]);
+                    ov.enabled = enabled;
+
+                    std::cout
+                        << "[AttachmentEditor APPLY] id=" << attachmentId
+                        << " pos=("
+                        << ov.localPosition.x << ", "
+                        << ov.localPosition.y << ", "
+                        << ov.localPosition.z << ") rot=("
+                        << ov.localRotationDeg.x << ", "
+                        << ov.localRotationDeg.y << ", "
+                        << ov.localRotationDeg.z << ") enabled="
+                        << (ov.enabled ? "true" : "false")
+                        << " overridesCount=" << m_attachmentEditorOverrides.size()
+                        << "\n";
+
+                    pushAttachmentEditorState();
+                    continue;
+                }
+            }
+        }
+
+        // ------------------------------
+        // DEBUG CONTROL
+        // ------------------------------
+        if (msg.panel == HtmlUiPanelId::DebugControl)
+        {
+            if (msg.type == HtmlUiMessageType::Subscribe)
+            {
+                pushDebugControlState();
+                continue;
+            }
+
+            if (msg.type == HtmlUiMessageType::Command)
+            {
+                if (msg.command == "request_snapshot")
+                {
+                    pushDebugControlState();
+                    continue;
+                }
+
+                if (msg.command == "apply_settings")
+                {
+                    applyDebugControlPayload(msg.payload);
+                    pushDebugControlState();
+                    continue;
+                }
+            }
+        }
+
+        // ------------------------------
+        // SHIP CORE
+        // ------------------------------
+        if (msg.panel == HtmlUiPanelId::ShipCore)
+        {
+            if (msg.type == HtmlUiMessageType::Subscribe)
+            {
+                pushShipCoreState();
+                continue;
+            }
+
+            if (msg.type == HtmlUiMessageType::Command &&
+                msg.command == "request_snapshot")
+            {
+                pushShipCoreState();
+                continue;
+            }
+        }
+
+        // ------------------------------
+        // FRUSTUM DEBUG
+        // ------------------------------
+        if (msg.panel == HtmlUiPanelId::FrustumDebug)
+        {
+            if (msg.type == HtmlUiMessageType::Subscribe)
+            {
+                context().htmlUi().setActivePanel(HtmlUiPanelId::FrustumDebug);
+                continue;
+            }
+
+            if (msg.type == HtmlUiMessageType::Command &&
+                msg.command == "request_snapshot")
+            {
+                context().htmlUi().setActivePanel(HtmlUiPanelId::FrustumDebug);
+                continue;
+            }
+        }
+    }
+}
+
+
+void SpaceState::pushShipCoreState()
+{
+    context().htmlUi().setActivePanel(HtmlUiPanelId::ShipCore);
+}
+
+
+void SpaceState::pushFrustumDebugState(const json& payload)
+{
+    context().htmlUi().setActivePanel(HtmlUiPanelId::FrustumDebug);
+    context().htmlUi().broadcastState(HtmlUiPanelId::FrustumDebug, payload);
+}
+
+
+void SpaceState::pushDebugControlState()
+{
+    const auto& dbg = debug::get().render;
+
+    json payload;
+    payload["drawMeshes"] = dbg.drawMeshes;
+    payload["drawAxes"] = dbg.drawAxes;
+    payload["drawWorldAxes"] = dbg.drawWorldAxes;
+    payload["drawObjectAxes"] = dbg.drawObjectAxes;
+    payload["drawModulePivots"] = dbg.drawModulePivots;
+    payload["drawHitVolumes"] = dbg.drawHitVolumes;
+    payload["publishObjectOrientation"] = dbg.publishObjectOrientation;
+    payload["hitVolumesOverlay"] = dbg.hitVolumesOverlay;
+    payload["hideMeshesWhenDrawingHitVolumes"] = dbg.hideMeshesWhenDrawingHitVolumes;
+
+    payload["worldAxisLength"] = dbg.worldAxisLength;
+    payload["shipAxisLength"] = dbg.shipAxisLength;
+    payload["objectAxisLength"] = dbg.objectAxisLength;
+    payload["moduleAxisLength"] = dbg.moduleAxisLength;
+    payload["moduleCrossSize"] = dbg.moduleCrossSize;
+    payload["rotAxisLength"] = dbg.rotAxisLength;
+
+    payload["axesOverlay"] = dbg.axesOverlay;
+    payload["crossesOverlay"] = dbg.crossesOverlay;
+    payload["linesOverlay"] = dbg.linesOverlay;
+
+    payload["axisXColor"] = vec4ToJson(dbg.axisXColor);
+    payload["axisYColor"] = vec4ToJson(dbg.axisYColor);
+    payload["axisZColor"] = vec4ToJson(dbg.axisZColor);
+    payload["moduleOriginColor"] = vec4ToJson(dbg.moduleOriginColor);
+    payload["modulePivotColor"] = vec4ToJson(dbg.modulePivotColor);
+    payload["rotationAxisColor"] = vec4ToJson(dbg.rotationAxisColor);
+
+    context().htmlUi().broadcastState(HtmlUiPanelId::DebugControl, payload);
+}
+
+void SpaceState::applyDebugControlPayload(const json& payload)
+{
+    auto& dbg = debug::get().render;
+
+    dbg.drawMeshes = payload.value("drawMeshes", dbg.drawMeshes);
+    dbg.drawAxes = payload.value("drawAxes", dbg.drawAxes);
+    dbg.drawWorldAxes = payload.value("drawWorldAxes", dbg.drawWorldAxes);
+    dbg.drawObjectAxes = payload.value("drawObjectAxes", dbg.drawObjectAxes);
+    dbg.drawModulePivots = payload.value("drawModulePivots", dbg.drawModulePivots);
+    dbg.drawHitVolumes = payload.value("drawHitVolumes", dbg.drawHitVolumes);
+    dbg.publishObjectOrientation = payload.value("publishObjectOrientation", dbg.publishObjectOrientation);
+    dbg.hitVolumesOverlay = payload.value("hitVolumesOverlay", dbg.hitVolumesOverlay);
+    dbg.hideMeshesWhenDrawingHitVolumes = payload.value("hideMeshesWhenDrawingHitVolumes", dbg.hideMeshesWhenDrawingHitVolumes);
+
+    dbg.worldAxisLength = payload.value("worldAxisLength", dbg.worldAxisLength);
+    dbg.shipAxisLength = payload.value("shipAxisLength", dbg.shipAxisLength);
+    dbg.objectAxisLength = payload.value("objectAxisLength", dbg.objectAxisLength);
+    dbg.moduleAxisLength = payload.value("moduleAxisLength", dbg.moduleAxisLength);
+    dbg.moduleCrossSize = payload.value("moduleCrossSize", dbg.moduleCrossSize);
+    dbg.rotAxisLength = payload.value("rotAxisLength", dbg.rotAxisLength);
+
+    dbg.axesOverlay = payload.value("axesOverlay", dbg.axesOverlay);
+    dbg.crossesOverlay = payload.value("crossesOverlay", dbg.crossesOverlay);
+    dbg.linesOverlay = payload.value("linesOverlay", dbg.linesOverlay);
+
+    if (payload.contains("axisXColor"))         dbg.axisXColor = jsonToVec4(payload["axisXColor"], dbg.axisXColor);
+    if (payload.contains("axisYColor"))         dbg.axisYColor = jsonToVec4(payload["axisYColor"], dbg.axisYColor);
+    if (payload.contains("axisZColor"))         dbg.axisZColor = jsonToVec4(payload["axisZColor"], dbg.axisZColor);
+    if (payload.contains("moduleOriginColor"))  dbg.moduleOriginColor = jsonToVec4(payload["moduleOriginColor"], dbg.moduleOriginColor);
+    if (payload.contains("modulePivotColor"))   dbg.modulePivotColor = jsonToVec4(payload["modulePivotColor"], dbg.modulePivotColor);
+    if (payload.contains("rotationAxisColor"))  dbg.rotationAxisColor = jsonToVec4(payload["rotationAxisColor"], dbg.rotationAxisColor);
+}

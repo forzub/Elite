@@ -113,7 +113,9 @@ private:
                        const glm::vec3& cameraPos);
     
     void setupEdgePass(GLuint shader, const LightingParams& lighting,
-                                 const render::MeshGPU& mesh, const glm::mat4& mvp,
-                                 const glm::vec3& cameraPos,
-                                 int viewportWidth, int viewportHeight);  // добавили параметры
+                   const render::MeshGPU& mesh,
+                   const glm::mat4& mvp,
+                   const glm::mat4& model,
+                   const glm::vec3& cameraPos,
+                   int viewportWidth, int viewportHeight);  // добавили параметры
 };

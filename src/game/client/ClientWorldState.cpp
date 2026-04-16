@@ -3,7 +3,47 @@
 #include <iostream>
 #include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
-#include "src/game/geometry/MeshLibrary.h"
+#include "src/game/geometry/AssemblyMeshLibrary.h"
+#include "src/game/geometry/ObjectAssemblyRegistry.h"
+#include <algorithm>
+
+
+
+
+
+namespace
+{
+    bool isModuleVisible(uint8_t state)
+    {
+        return state == 0; // Attached
+    }
+
+    template<typename TState>
+    void rebuildHiddenPartIds(TState& state)
+    {
+        state.hiddenPartIds.clear();
+
+        if (!state.descriptor)
+            return;
+
+        std::unordered_set<std::string> hiddenModuleIds;
+
+        for (const auto& modSnap : state.modules)
+        {
+            if (!isModuleVisible(modSnap.state))
+                hiddenModuleIds.insert(modSnap.moduleId);
+        }
+
+        for (const auto& modDesc : state.descriptor->moduleDescriptors())
+        {
+            if (hiddenModuleIds.find(modDesc.moduleId) == hiddenModuleIds.end())
+                continue;
+
+            for (const auto& partId : modDesc.meshPartIds)
+                state.hiddenPartIds.insert(partId);
+        }
+    }
+}
 
 
 //                              ###                                                                    ###                 ##
@@ -34,17 +74,40 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
             state.transform       = s.transform;
             state.renderTransform = s.transform;
+            state.modules = s.modules;
+            state.assemblyModules = s.assemblyModules;
+            state.debugHitVolumes = s.debugHitVolumes;
 
-            state.gpuMesh =
-                &render::MeshLibrary::get(s.typeId);
+            // state.gpuMesh = &render::MeshLibrary::get(s.typeId);
+
+            if (!game::ship::geometry::AssemblyMeshLibrary::has(s.typeId))
+            {
+                throw std::runtime_error(
+                    "[ClientWorldState] missing assembly for ship typeId=" +
+                    std::to_string(static_cast<int>(s.typeId))
+                );
+            }
+
+            state.assembly =
+                &game::ship::geometry::AssemblyMeshLibrary::get(s.typeId);
+
+            rebuildHiddenPartIds(state);
+
+            
         }
         else
         {
             auto& state = it->second;
+
             state.transform = s.transform;
             state.receptions = s.receptions;
-            state.radarContacts   = s.radarContacts;
+            state.radarContacts = s.radarContacts;
             state.shipCoreStatus = s.shipCoreStatus;
+            state.modules = s.modules;
+            state.assemblyModules = s.assemblyModules;
+            state.debugHitVolumes = s.debugHitVolumes;
+
+            rebuildHiddenPartIds(state);
         }
 
     }
@@ -62,21 +125,47 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.id   = o.id;
             state.type = o.type;
 
+            state.descriptor = &ObjectDescriptorRegistry::get(o.type);
+
             state.position = o.position;
-            state.rotation = o.rotation;
+
+            state.orientation = o.orientation;
+            state.renderOrientation = o.orientation;
+
+            state.modules = o.modules;
+            state.assemblyModules = o.assemblyModules;
+            state.debugHitVolumes = o.debugHitVolumes;
 
             state.renderPosition = o.position;
-            state.renderRotation = o.rotation;
             
             const auto& desc = ObjectDescriptorRegistry::get(o.type);
-            state.gpuMesh = &render::MeshLibrary::get(o.type);
+            
+            if (!game::ship::geometry::AssemblyMeshLibrary::has(o.type))
+            {
+                throw std::runtime_error(
+                    "[ClientWorldState] missing assembly for object type=" +
+                    std::to_string(static_cast<int>(o.type))
+                );
+            }
+
+            state.assembly =
+                &game::ship::geometry::AssemblyMeshLibrary::get(o.type);
+
+            rebuildHiddenPartIds(state);
         }
         else
         {
             auto& state = it->second;
 
             state.position = o.position;
-            state.rotation = o.rotation;
+            // state.rotation = o.rotation;
+            state.orientation = o.orientation;
+
+            state.modules = o.modules;
+            state.assemblyModules = o.assemblyModules;
+            state.debugHitVolumes = o.debugHitVolumes;
+
+            rebuildHiddenPartIds(state);
         }
     }
 
@@ -190,6 +279,14 @@ void ClientWorldState::update(float dt)
             dt,
             ship.receptions
         );
+    }
+
+
+    for (auto& [id, obj] : m_objects)
+    {
+        obj.renderPosition = obj.position;
+        // obj.renderRotation = obj.rotation;
+        obj.renderOrientation = obj.orientation;
     }
 }
 

@@ -9,23 +9,29 @@ void MeshRenderer::setupMeshPass(GLuint shader, const glm::mat4& mvp,
                                  const glm::mat4& model, const LightingParams& lighting,
                                  const glm::vec3& cameraPos) {
     glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(1.0f, 1.0f);
+    glPolygonOffset(4.0f, 4.0f);
     
 }
 
 void MeshRenderer::setupEdgePass(GLuint shader, const LightingParams& lighting,
-                                 const render::MeshGPU& mesh, const glm::mat4& mvp,
-                                 const glm::vec3& cameraPos,
-                                 int viewportWidth, int viewportHeight) {
+                                const render::MeshGPU& mesh,
+                                const glm::mat4& mvp,
+                                const glm::mat4& model,
+                                const glm::vec3& cameraPos,
+                                int viewportWidth, int viewportHeight) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    lighting.applyEdgeUniforms(shader, mvp, cameraPos, viewportWidth, viewportHeight);
-    
+
+    lighting.applyEdgeUniforms(shader, mvp, model, cameraPos, viewportWidth, viewportHeight);
+
     glDepthMask(GL_FALSE);
+    glDepthFunc(GL_LEQUAL);
+
     mesh.drawEdges();
+
+    glDepthFunc(GL_LESS);
     glDepthMask(GL_TRUE);
-    
+
     glDisable(GL_BLEND);
 }
 
@@ -62,8 +68,7 @@ void MeshRenderer::draw(
     
 
     if (edgeShader) {
-        setupEdgePass(edgeShader, lighting, mesh, mvp, cameraPos, 
-                      viewportWidth, viewportHeight);
+        setupEdgePass(edgeShader, lighting, mesh, mvp, model, cameraPos, viewportWidth, viewportHeight);
     }
     
     glUseProgram(0);

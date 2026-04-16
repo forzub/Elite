@@ -24,10 +24,11 @@ public:
 
 
     void init(
-        ShipRole                role,
-        const ShipDescriptor&   descriptor,
-        glm::vec3               position,
-        const ShipInitData&     initData
+        ShipRole inRole,
+        const ShipDescriptor& descriptor,
+        glm::vec3 position,
+        const ShipInitData& initData,
+        const glm::mat4& orientation
     );
 
     void update(
@@ -67,6 +68,7 @@ public:
     std::optional<WorldSignal> emitSignal() const override;
 
     void applyCommand(const ClientShipCommand& cmd);
+    
 
 private:
     ShipCore            m_core;

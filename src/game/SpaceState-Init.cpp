@@ -83,6 +83,8 @@ void SpaceState::initHUD()
     m_playerView = std::make_unique<PlayerShipView>();
     m_playerView->init(context(), &desc, initialTransform);
 
+    m_playerView->setAttachmentOverrides(&m_attachmentEditorOverrides);
+
 
 
 
@@ -212,48 +214,49 @@ void SpaceState::initServerAndClient()
     // m_debugServer = std::make_unique<game::debug::DebugServer>();
     // m_debugServer->start(8080);
 
-    m_coreStatusServer = std::make_unique<game::debug::DebugServer>();
-    m_coreStatusServer->start(8080, "core_status", 
-        { "D:/__elite/work/src/WebSocket/debug/shipcore_viewer.html" });
+    // m_coreStatusServer = std::make_unique<game::debug::DebugServer>();
+    // m_coreStatusServer->start(8080, "core_status", 
+    //     { "D:/__elite/work/src/WebSocket/debug/shipcore_viewer.html" });
     
     // Сервис 2: Frustum Debug (WebSocket + HTML)
-    m_frustumDebugServer = std::make_unique<game::debug::DebugServer>();
-    m_frustumDebugServer->start(8081, "frustum_debug", 
-        {"D:/__elite/work/src/WebSocket/debug/frustum_viewer.html"});
+    // m_frustumDebugServer = std::make_unique<game::debug::DebugServer>();
+    // m_frustumDebugServer->start(8081, "frustum_debug", 
+    //     {"D:/__elite/work/src/WebSocket/debug/frustum_viewer.html"});
 
 
     // ============================================================
     // Колбэки для Core Status
     // ============================================================
     
-    m_coreStatusServer->onDamageRadiator([this](int index) {
-        std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
-        ClientShipCommand cmd;
-        cmd.type = ClientShipCommand::DamageRadiator;
-        cmd.index = index;
-        cmd.amount = 0.3;
-        m_debugCommands.push_back(cmd);
-    });
+    // m_coreStatusServer->onDamageRadiator([this](int index) {
+    //     std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
+    //     ClientShipCommand cmd;
+    //     cmd.type = ClientShipCommand::DamageRadiator;
+    //     cmd.index = index;
+    //     cmd.amount = 0.3;
+    //     m_debugCommands.push_back(cmd);
+    // });
 
-    m_coreStatusServer->onRepairAllPanels([this]() {
-        std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
-        ClientShipCommand cmd;
-        cmd.type = ClientShipCommand::RepairAllPanels;
-        m_debugCommands.push_back(cmd);
-    });
+    // m_coreStatusServer->onRepairAllPanels([this]() {
+    //     std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
+    //     ClientShipCommand cmd;
+    //     cmd.type = ClientShipCommand::RepairAllPanels;
+    //     m_debugCommands.push_back(cmd);
+    // });
     
     // ============================================================
     // Колбэк для Frustum Debug данных
     // ============================================================
     m_sceneRenderer.setDebugCallback([this](const DebugFrameData& data)
     {
-        if(m_frustumDebugServer)
-        {
+        
+        
             json j = data.toJson();
             j["type"] = "frustum_debug";
-            m_frustumDebugServer->broadcastState(j.dump());
-        }
+            pushFrustumDebugState(j);
+        
     });
+    
     
 
 

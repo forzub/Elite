@@ -3,7 +3,7 @@
 #include "render/types/Viewport.h"
 
 struct Application;
-
+class HtmlUiManager;
 
 struct StateContext
 {
@@ -13,6 +13,8 @@ struct StateContext
     Viewport viewport() const;
     
     float aspect() const;
+    HtmlUiManager& htmlUi() const;
+
 
 };
 

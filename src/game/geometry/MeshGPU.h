@@ -43,6 +43,18 @@ public:
             v2.debugColor = color;
 
 
+            
+            glm::vec3 p0 = v0.position;
+            glm::vec3 p1 = v1.position;
+            glm::vec3 p2 = v2.position;
+
+            glm::vec3 faceNormal = glm::normalize(glm::cross(p1 - p0, p2 - p0));
+
+            v0.normal = faceNormal;
+            v1.normal = faceNormal;
+            v2.normal = faceNormal;
+
+
 
             gpuVerts.push_back(v0);
             gpuVerts.push_back(v1);
@@ -153,24 +165,24 @@ public:
 
         glBindVertexArray(0);
 
-        std::cout
-            << "[MeshGPU] V=" << mesh.vertices.size()
-            << " T=" << mesh.triangles.size()
-            << " E=" << mesh.edges.size()
-            << std::endl;
+        // std::cout
+        //     << "[MeshGPU] V=" << mesh.vertices.size()
+        //     << " T=" << mesh.triangles.size()
+        //     << " E=" << mesh.edges.size()
+        //     << std::endl;
 
-        std::cout
-            << "[MeshGPU] GPU vertices="
-            << gpuVerts.size()
-            << std::endl;
+        // std::cout
+        //     << "[MeshGPU] GPU vertices="
+        //     << gpuVerts.size()
+        //     << std::endl;
 
-        std::cout
-            << "[MeshGPU] ShipVertex size: "
-            << sizeof(game::ship::geometry::MeshVertex)
-            << std::endl;
+        // std::cout
+        //     << "[MeshGPU] ShipVertex size: "
+        //     << sizeof(game::ship::geometry::MeshVertex)
+        //     << std::endl;
         
-        std::cout << "Edge VBO created: " << edgeVBO << std::endl;
-        std::cout << "Edge VAO created: " << vaoEdges << std::endl;
+        // std::cout << "Edge VBO created: " << edgeVBO << std::endl;
+        // std::cout << "Edge VAO created: " << vaoEdges << std::endl;
     }
 
 
@@ -196,7 +208,7 @@ public:
         // std::cout << "Drawing edges - edgeVertexCount: " << edgeVertexCount << std::endl;
         // std::cout << "  vaoEdges: " << vaoEdges << ", edgeVBO: " << edgeVBO << std::endl;
 
-        glEnable(GL_POLYGON_OFFSET_LINE);
+        // glEnable(GL_POLYGON_OFFSET_LINE);
         glPolygonOffset(-1.0f, -1.0f);
 
         glBindVertexArray(vaoEdges);

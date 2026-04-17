@@ -5,4 +5,7 @@
 
 class SpaceState;
 
-nlohmann::json buildAttachmentEditorPayload(const SpaceState& state);
+nlohmann::json buildAttachmentEditorPreviewForType(
+    const SpaceState& state,
+    const std::string& shipTypeId
+);

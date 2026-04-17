@@ -53,6 +53,27 @@ namespace
             j[3].get<float>()
         );
     }
+
+    template<typename TShipMap>
+    uint64_t findAnyShipEntityId(const TShipMap& ships)
+    {
+        if (ships.empty())
+            return 0;
+
+        return ships.begin()->first;
+    }
+
+    template<typename TShipMap>
+    uint64_t findPlayerShipEntityId(const TShipMap& ships)
+    {
+        for (const auto& [id, ship] : ships)
+        {
+            if (ship.role == ShipRole::Player)
+                return id;
+        }
+
+        return findAnyShipEntityId(ships);
+    }
 }
 
 
@@ -357,12 +378,19 @@ void SpaceState::update(float dt)
     if (debugTimer > 0.1f)
     {
         debugTimer = 0.0f;
-
-        const auto& status = ship.shipCoreStatus;
-        json j = shipCoreStatusToJson(status);
-
-        context().htmlUi().broadcastState(HtmlUiPanelId::ShipCore, j);
+        pushShipCoreState();
     }
+    // static float debugTimer = 0.0f;
+    // debugTimer += dt;
+    // if (debugTimer > 0.1f)
+    // {
+    //     debugTimer = 0.0f;
+
+    //     const auto& status = ship.shipCoreStatus;
+    //     json j = shipCoreStatusToJson(status);
+
+    //     context().htmlUi().broadcastState(HtmlUiPanelId::ShipCore, j);
+    // }
 
 
 
@@ -656,12 +684,63 @@ void SpaceState::handleResize(int width, int height)
 
 void SpaceState::pushAttachmentEditorState()
 {
-    context().htmlUi().setActivePanel(HtmlUiPanelId::AttachmentEditor);
-    context().htmlUi().broadcastState(
-        HtmlUiPanelId::AttachmentEditor,
-        buildAttachmentEditorPayload(*this)
-    );
+    json payload;
+    payload["shipTypes"] = json::array();
+    payload["selectedShipTypeId"] = m_attachmentEditorSelectedShipTypeId;
+
+    // =========================================================
+    // 1. List of editable ship types
+    // =========================================================
+    // Здесь добавь реальные типы из своего registry/descriptors.
+    // Ниже пример структуры.
+    //
+    // payload["shipTypes"].push_back({
+    //     {"typeId", "cobra_mk1"},
+    //     {"displayName", "Cobra Mk1"}
+    // });
+    //
+    // payload["shipTypes"].push_back({
+    //     {"typeId", "station01"},
+    //     {"displayName", "Station 01"}
+    // });
+
+    // ======= ПРИМЕР: если у тебя пока только Cobra =======
+    payload["shipTypes"].push_back({
+        {"typeId", "cobra_mk1"},
+        {"displayName", "Cobra Mk1"}
+    });
+
+    // =========================================================
+    // 2. Preview ship for selected type
+    // =========================================================
+    //
+    // Здесь надо собрать exactly тот же JSON, который сейчас
+    // attachment_editor уже умеет рисовать:
+    // {
+    //   shipId,
+    //   displayName,
+    //   meshParts,
+    //   attachments,
+    //   visualBasisRotationDeg, ...
+    // }
+    //
+    // Но НЕ из runtime ship, а из descriptor/type preview.
+    //
+    // Ниже логика:
+    //
+    // json preview = buildAttachmentEditorPreviewForType(m_attachmentEditorSelectedShipTypeId);
+    // payload["selectedShip"] = preview;
+
+    // Пока назови поле именно selectedShip
+    // чтобы потом HTML не таскал массив objects[0].
+    payload["selectedShip"] = buildAttachmentEditorPreviewForType(*this, m_attachmentEditorSelectedShipTypeId);
+
+    context().htmlUi().broadcastState(HtmlUiPanelId::AttachmentEditor, payload);
 }
+
+
+
+
 
 void SpaceState::processHtmlCommands()
 {
@@ -684,6 +763,15 @@ void SpaceState::processHtmlCommands()
             {
                 if (msg.command == "request_snapshot")
                 {
+                    pushAttachmentEditorState();
+                    continue;
+                }
+
+                if (msg.command == "select_ship_type")
+                {
+                    m_attachmentEditorSelectedShipTypeId =
+                        msg.payload.value("shipTypeId", m_attachmentEditorSelectedShipTypeId);
+
                     pushAttachmentEditorState();
                     continue;
                 }
@@ -764,11 +852,22 @@ void SpaceState::processHtmlCommands()
                 continue;
             }
 
-            if (msg.type == HtmlUiMessageType::Command &&
-                msg.command == "request_snapshot")
+            if (msg.type == HtmlUiMessageType::Command)
             {
-                pushShipCoreState();
-                continue;
+                if (msg.command == "request_snapshot")
+                {
+                    pushShipCoreState();
+                    continue;
+                }
+
+                if (msg.command == "select_ship_entity")
+                {
+                    m_shipCoreSelectedShipEntityId =
+                        msg.payload.value("entityId", m_shipCoreSelectedShipEntityId);
+
+                    pushShipCoreState();
+                    continue;
+                }
             }
         }
 
@@ -797,6 +896,43 @@ void SpaceState::processHtmlCommands()
 void SpaceState::pushShipCoreState()
 {
     context().htmlUi().setActivePanel(HtmlUiPanelId::ShipCore);
+
+    const auto& ships = m_client->world().ships();
+    if (ships.empty())
+        return;
+
+    if (m_shipCoreSelectedShipEntityId == 0 || ships.find(m_shipCoreSelectedShipEntityId) == ships.end())
+    {
+        auto itPlayer = ships.find(m_playerId.value);
+        if (itPlayer != ships.end())
+            m_shipCoreSelectedShipEntityId = itPlayer->first;
+        else
+            m_shipCoreSelectedShipEntityId = ships.begin()->first;
+    }
+
+    auto it = ships.find(m_shipCoreSelectedShipEntityId);
+    if (it == ships.end())
+        return;
+
+    const auto& ship = it->second;
+
+    json payload = shipCoreStatusToJson(ship.shipCoreStatus);
+
+    // список доступных кораблей для будущего selector в HTML
+    payload["ships"] = json::array();
+    for (const auto& [id, s] : ships)
+    {
+        json item;
+        item["entityId"] = id;
+        item["displayName"] = std::string("Ship #") + std::to_string(id);
+        item["role"] = (s.role == ShipRole::Player) ? "Player" : "Npc";
+        item["isPlayer"] = (s.role == ShipRole::Player);
+        payload["ships"].push_back(item);
+    }
+
+    payload["selectedShipEntityId"] = m_shipCoreSelectedShipEntityId;
+
+    context().htmlUi().broadcastState(HtmlUiPanelId::ShipCore, payload);
 }
 
 

@@ -322,6 +322,8 @@
         <button disabled>SIMULATE FAILURE</button>
         <span style="flex:1"></span>
         <span id="connection-status" style="color:#0f0; font-size:12px;">● CONNECTED</span>
+        <label for="ship-select" style="align-self:center;">Ship:</label>
+        <select id="ship-select" onchange="selectShipEntity()" style="background:#222;color:#0f0;border:1px solid #0f0;padding:4px;"></select>
     </div>
     
     <div class="dashboard">
@@ -565,6 +567,43 @@
     let ws = null;
     let selectedPanel = -1;
     let lastData = null;
+    let shipList = [];
+    let selectedShipEntityId = 0;
+
+
+function rebuildShipSelect() {
+    const sel = document.getElementById('ship-select');
+    if (!sel) return;
+
+    sel.innerHTML = '';
+
+    for (const item of shipList) {
+        const opt = document.createElement('option');
+        opt.value = item.entityId;
+        opt.textContent = item.displayName || (`Ship #${item.entityId}`);
+        if (item.entityId === selectedShipEntityId) {
+            opt.selected = true;
+        }
+        sel.appendChild(opt);
+    }
+}
+
+function selectShipEntity() {
+    const sel = document.getElementById('ship-select');
+    if (!ws || !sel) return;
+
+    ws.send(JSON.stringify({
+        type: 'command',
+        panel: 'ship_core',
+        command: 'select_ship_entity',
+        payload: {
+            entityId: Number(sel.value)
+        }
+    }));
+}
+
+
+
 
     function connect() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -610,6 +649,14 @@
 
             const data = msg.payload || {};
             lastData = data;
+
+
+
+            shipList = data.ships || [];
+            selectedShipEntityId = data.selectedShipEntityId || 0;
+            rebuildShipSelect();
+
+
             updateUI(data);
         };
     }

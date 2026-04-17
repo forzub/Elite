@@ -11,91 +11,103 @@
 using json = nlohmann::json;
 using namespace game::ship::geometry;
 
-static std::string attachmentKindToString(ShipAttachmentKind kind)
+namespace
 {
-    switch (kind)
+    static std::string attachmentKindToString(ShipAttachmentKind kind)
     {
-        case ShipAttachmentKind::CameraCockpit: return "CameraCockpit";
-        case ShipAttachmentKind::CameraRear: return "CameraRear";
-        case ShipAttachmentKind::CameraDrone: return "CameraDrone";
-        case ShipAttachmentKind::WeaponMuzzle: return "WeaponMuzzle";
-        case ShipAttachmentKind::MissileRack: return "MissileRack";
-        case ShipAttachmentKind::ContainerMount: return "ContainerMount";
-        case ShipAttachmentKind::DroneDock: return "DroneDock";
-        default: return "Unknown";
-    }
-}
-
-static json buildMeshPartsJson(const ObjectAssembly& assembly)
-{
-    json out = json::array();
-
-    for (const auto& module : assembly.modules)
-    {
-        for (const auto& part : module.meshes)
+        switch (kind)
         {
-            json p;
-            p["id"] = part.id;
-            p["moduleId"] = module.id;
-
-            p["moduleLocalPosition"] = {
-                module.localPosition.x,
-                module.localPosition.y,
-                module.localPosition.z
-            };
-
-            p["moduleLocalRotationDeg"] = {
-                module.localRotationDeg.x,
-                module.localRotationDeg.y,
-                module.localRotationDeg.z
-            };
-
-            p["localOffset"] = {
-                part.localOffset.x,
-                part.localOffset.y,
-                part.localOffset.z
-            };
-
-            json vertices = json::array();
-            for (const auto& v : part.lod0Mesh.vertices)
-            {
-                vertices.push_back({
-                    v.position.x,
-                    v.position.y,
-                    v.position.z
-                });
-            }
-
-            json triangles = json::array();
-            for (const auto& t : part.lod0Mesh.triangles)
-            {
-                triangles.push_back({ t.v0, t.v1, t.v2 });
-            }
-
-            p["vertices"] = vertices;
-            p["triangles"] = triangles;
-
-            out.push_back(p);
+            case ShipAttachmentKind::CameraCockpit: return "CameraCockpit";
+            case ShipAttachmentKind::CameraRear: return "CameraRear";
+            case ShipAttachmentKind::CameraDrone: return "CameraDrone";
+            case ShipAttachmentKind::WeaponMuzzle: return "WeaponMuzzle";
+            case ShipAttachmentKind::MissileRack: return "MissileRack";
+            case ShipAttachmentKind::ContainerMount: return "ContainerMount";
+            case ShipAttachmentKind::DroneDock: return "DroneDock";
+            default: return "Unknown";
         }
     }
 
-    return out;
+    static ObjectType objectTypeFromString(const std::string& shipTypeId)
+    {
+        if (shipTypeId == "cobra_mk1")
+            return ObjectType::CobraMk1;
+
+        // fallback
+        return ObjectType::CobraMk1;
+    }
+
+    static json buildMeshPartsJson(const ObjectAssembly& assembly)
+    {
+        json out = json::array();
+
+        for (const auto& module : assembly.modules)
+        {
+            for (const auto& part : module.meshes)
+            {
+                json p;
+                p["id"] = part.id;
+                p["moduleId"] = module.id;
+
+                p["moduleLocalPosition"] = {
+                    module.localPosition.x,
+                    module.localPosition.y,
+                    module.localPosition.z
+                };
+
+                p["moduleLocalRotationDeg"] = {
+                    module.localRotationDeg.x,
+                    module.localRotationDeg.y,
+                    module.localRotationDeg.z
+                };
+
+                p["localOffset"] = {
+                    part.localOffset.x,
+                    part.localOffset.y,
+                    part.localOffset.z
+                };
+
+                json vertices = json::array();
+                for (const auto& v : part.lod0Mesh.vertices)
+                {
+                    vertices.push_back({
+                        v.position.x,
+                        v.position.y,
+                        v.position.z
+                    });
+                }
+
+                json triangles = json::array();
+                for (const auto& t : part.lod0Mesh.triangles)
+                {
+                    triangles.push_back({ t.v0, t.v1, t.v2 });
+                }
+
+                p["vertices"] = vertices;
+                p["triangles"] = triangles;
+
+                out.push_back(p);
+            }
+        }
+
+        return out;
+    }
 }
 
-nlohmann::json buildAttachmentEditorPayload(const SpaceState& state)
+json buildAttachmentEditorPreviewForType(
+    const SpaceState& state,
+    const std::string& shipTypeId
+)
 {
-    json payload;
-    payload["objects"] = json::array();
-
-    const ObjectType typeId = ObjectType::CobraMk1;
+    const ObjectType typeId = objectTypeFromString(shipTypeId);
 
     const ShipDescriptor& desc = ShipDescriptorRegistry::get(typeId);
     const ObjectAssembly& assembly = AssemblyMeshLibrary::get(typeId);
 
     json ship;
-    ship["shipId"] = "player_ship";
+    ship["shipId"] = shipTypeId;
     ship["displayName"] = "Cobra Mk.I";
-    ship["typeId"] = static_cast<int>(typeId);
+    ship["typeId"] = shipTypeId;
     ship["visualBasisRotationDeg"] = {
         desc.visualBasisRotationDeg().x,
         desc.visualBasisRotationDeg().y,
@@ -125,6 +137,5 @@ nlohmann::json buildAttachmentEditorPayload(const SpaceState& state)
         ship["attachments"].push_back(a);
     }
 
-    payload["objects"].push_back(ship);
-    return payload;
+    return ship;
 }

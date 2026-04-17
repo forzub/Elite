@@ -161,4 +161,10 @@ private:
 
     game::damage::TestDamageHandler                 handler;
     ShipAttachmentOverrideMap                       m_attachmentEditorOverrides;
+
+    // =========================
+    // HTML UI selections
+    // =========================
+    std::string m_attachmentEditorSelectedShipTypeId = "cobra_mk1";
+    uint64_t    m_shipCoreSelectedShipEntityId = 0;
 };

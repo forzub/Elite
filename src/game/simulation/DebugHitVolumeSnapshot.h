@@ -23,6 +23,11 @@ struct DebugHitVolumeSnapshot
 
     float health = 0.0f;
     float maxHealth = 0.0f;
-};
 
-} // namespace game::simulation
+    // support-link debug markers
+    bool supportLinkVolume = false;
+    std::string supportLinkId;
+    std::string supportModuleId;
+};
+    
+} // namespace game::simulation     

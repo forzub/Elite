@@ -27,12 +27,13 @@
 #include "src/game/ship/view/PlayerShipView.h"
 
 #include "game/debug/AttachmentEditorPayload.h"
+#include "game/debug/VolumeViewerPayload.h"
 #include "ui/html/HtmlUiManager.h"
 #include "ui/html/HtmlUiPanelId.h"
 #include "ui/html/HtmlUiMessage.h"
 #include <mutex>
 
-
+#include "src/core/Application.h"
 
 namespace
 {
@@ -205,10 +206,64 @@ void SpaceState::handleInput()
     }
 
 
+
     // дебажная обработка F8
-    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F8)) {
-        pushAttachmentEditorState();
-    }
+if (Input::instance().isKeyPressedOnce(GLFW_KEY_F8)) {
+    pushAttachmentEditorState();
+}
+
+// Emergency cockpit capsule ejection.
+const bool leftCtrlDown =
+    Input::instance().isKeyPressed(GLFW_KEY_LEFT_CONTROL);
+
+const bool ejectPressed =
+    leftCtrlDown &&
+    Input::instance().isKeyPressedOnce(GLFW_KEY_Q);
+
+if (Input::instance().isKeyPressedOnce(GLFW_KEY_Q))
+{
+    std::cout
+        << "[SpaceState] Q pressed. leftCtrl="
+        << leftCtrlDown
+        << "\n";
+}
+
+
+if (ejectPressed)
+{
+    const bool ok = m_server->ejectShipCockpitCapsule(m_playerId);
+
+    m_server->debugRefreshSnapshot();
+
+    std::cout
+        << "[SpaceState] LEFT_CTRL + Q cockpit ejection requested, ok="
+        << ok
+        << "\n";
+
+    return;
+}
+
+
+
+const bool ctrlDown =
+    Input::instance().isKeyPressed(GLFW_KEY_LEFT_CONTROL) ||
+    Input::instance().isKeyPressed(GLFW_KEY_RIGHT_CONTROL);
+
+if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
+{
+    const bool ok = m_server->startBestRepairJobForFirstMissingSlot(
+        m_playerId
+    );
+
+    m_server->debugRefreshSnapshot();
+
+    std::cout
+    << "[SpaceState] CTRL + R repair first missing slot requested, ok="
+    << ok
+    << "\n";
+
+    return;
+}
 
     // === управление кораблём ===
     m_inputMapper.update(m_playerControl);
@@ -286,7 +341,8 @@ void SpaceState::update(float dt)
         dt,
         ship.role,
         ship.renderTransform.position,
-        ship.renderTransform.orientation
+        ship.renderTransform.orientation,
+        ship.detachedFragments
     );
 
     m_playerView->updateCockpitStateFromSnapshot(
@@ -380,17 +436,19 @@ void SpaceState::update(float dt)
         debugTimer = 0.0f;
         pushShipCoreState();
     }
-    // static float debugTimer = 0.0f;
-    // debugTimer += dt;
-    // if (debugTimer > 0.1f)
-    // {
-    //     debugTimer = 0.0f;
 
-    //     const auto& status = ship.shipCoreStatus;
-    //     json j = shipCoreStatusToJson(status);
+    
+    static float structureDebugTimer = 0.0f;
+    structureDebugTimer += dt;
+    if (structureDebugTimer > 0.25f)
+    {
+        structureDebugTimer = 0.0f;
 
-    //     context().htmlUi().broadcastState(HtmlUiPanelId::ShipCore, j);
-    // }
+        if (context().htmlUi().state().activePanel == HtmlUiPanelId::StructureDebug)
+        {
+            pushStructureDebugState();
+        }
+    }
 
 
 
@@ -812,6 +870,35 @@ void SpaceState::processHtmlCommands()
                 }
             }
         }
+                // ------------------------------
+        // VOLUME VIEWER
+        // ------------------------------
+        if (msg.panel == HtmlUiPanelId::VolumeViewer)
+        {
+            if (msg.type == HtmlUiMessageType::Subscribe)
+            {
+                pushVolumeViewerState();
+                continue;
+            }
+
+            if (msg.type == HtmlUiMessageType::Command)
+            {
+                if (msg.command == "request_snapshot")
+                {
+                    pushVolumeViewerState();
+                    continue;
+                }
+
+                if (msg.command == "select_ship_type")
+                {
+                    m_attachmentEditorSelectedShipTypeId =
+                        msg.payload.value("shipTypeId", m_attachmentEditorSelectedShipTypeId);
+
+                    pushVolumeViewerState();
+                    continue;
+                }
+            }
+        }
 
         // ------------------------------
         // DEBUG CONTROL
@@ -840,6 +927,198 @@ void SpaceState::processHtmlCommands()
                 }
             }
         }
+
+
+
+                // ------------------------------
+        // STRUCTURE DEBUG
+        // ------------------------------
+        if (msg.panel == HtmlUiPanelId::StructureDebug)
+        {
+            if (msg.type == HtmlUiMessageType::Subscribe)
+            {
+                context().htmlUi().setActivePanel(HtmlUiPanelId::StructureDebug);
+                pushStructureDebugState();
+                continue;
+            }
+
+            if (msg.type == HtmlUiMessageType::Command)
+            {
+                if (msg.command == "request_snapshot")
+                {
+                    context().htmlUi().setActivePanel(HtmlUiPanelId::StructureDebug);
+                    pushStructureDebugState();
+                    continue;
+                }
+
+                if (msg.command == "select_ship_entity")
+                {
+                    m_structureDebugSelectedShipEntityId =
+                        msg.payload.value("entityId", m_structureDebugSelectedShipEntityId);
+
+                    context().htmlUi().setActivePanel(HtmlUiPanelId::StructureDebug);
+                    pushStructureDebugState();
+                    continue;
+                }
+
+if (msg.command == "destroy_module")
+{
+    const uint64_t entityId =
+        msg.payload.value("entityId", m_structureDebugSelectedShipEntityId);
+
+    const std::string moduleId =
+        msg.payload.value("moduleId", std::string{});
+
+    if (!moduleId.empty())
+    {
+        EntityId id{ static_cast<uint32_t>(entityId) };
+
+        m_server->debugDestroyShipModule(id, moduleId);
+        m_server->debugRefreshSnapshot();
+    }
+
+    pushStructureDebugState();
+    continue;
+}
+
+
+
+if (msg.command == "detach_module")
+{
+    const uint64_t entityId =
+        msg.payload.value("entityId", m_structureDebugSelectedShipEntityId);
+
+    const std::string moduleId =
+        msg.payload.value("moduleId", std::string{});
+
+    if (!moduleId.empty())
+    {
+        EntityId id{ static_cast<uint32_t>(entityId) };
+
+        m_server->debugDetachShipModule(id, moduleId);
+        m_server->debugRefreshSnapshot();
+    }
+
+    pushStructureDebugState();
+    continue;
+}
+
+
+
+if (msg.command == "hang_module")
+{
+    const uint64_t entityId =
+        msg.payload.value("entityId", m_structureDebugSelectedShipEntityId);
+
+    const std::string moduleId =
+        msg.payload.value("moduleId", std::string{});
+
+    if (!moduleId.empty())
+    {
+        EntityId id{ static_cast<uint32_t>(entityId) };
+
+        m_server->debugHangShipModule(id, moduleId);
+        m_server->debugRefreshSnapshot();
+    }
+
+    pushStructureDebugState();
+    continue;
+}
+
+
+
+if (msg.command == "reevaluate_structure")
+{
+    const uint64_t entityId =
+        msg.payload.value("entityId", m_structureDebugSelectedShipEntityId);
+
+    EntityId id{ static_cast<uint32_t>(entityId) };
+
+    m_server->debugReevaluateShipStructure(id);
+    m_server->debugRefreshSnapshot();
+
+    pushStructureDebugState();
+    continue;
+}
+
+
+
+if (msg.command == "restore_module")
+{
+    const uint64_t entityId =
+        msg.payload.value("entityId", m_structureDebugSelectedShipEntityId);
+
+    const std::string moduleId =
+        msg.payload.value("moduleId", std::string{});
+
+    if (!moduleId.empty())
+    {
+        EntityId id{ static_cast<uint32_t>(entityId) };
+
+        m_server->debugRestoreShipModule(id, moduleId);
+        m_server->debugRefreshSnapshot();
+    }
+
+    pushStructureDebugState();
+    continue;
+}
+
+
+                if (msg.command == "set_link_health")
+                    {
+                        const uint64_t entityId =
+                            msg.payload.value("entityId", m_structureDebugSelectedShipEntityId);
+
+                        const std::string linkId =
+                            msg.payload.value("linkId", std::string{});
+
+                        const float health =
+                            msg.payload.value("health", 0.0f);
+
+                        const bool destroyed =
+                            msg.payload.value("destroyed", health <= 0.0f);
+
+                        if (!linkId.empty())
+                        {
+                            EntityId id{ static_cast<uint32_t>(entityId) };
+                            m_server->debugSetShipStructuralLinkHealth(
+                                id,
+                                linkId,
+                                health,
+                                destroyed
+                            );
+                            m_server->debugRefreshSnapshot();
+                        }
+
+                        pushStructureDebugState();
+                        continue;
+                    }
+
+if (msg.command == "reset_ship")
+{
+    const uint64_t entityId =
+        msg.payload.value("entityId", m_structureDebugSelectedShipEntityId);
+
+    EntityId id{ static_cast<uint32_t>(entityId) };
+
+    m_server->debugResetShipStructure(id);
+    m_server->debugRefreshSnapshot();
+
+    pushStructureDebugState();
+    continue;
+}
+
+if (msg.command == "reset_all_ships")
+{
+    m_server->debugResetAllShipStructures();
+    m_server->debugRefreshSnapshot();
+
+    pushStructureDebugState();
+    continue;
+}
+            }
+        }
+
 
         // ------------------------------
         // SHIP CORE
@@ -890,6 +1169,166 @@ void SpaceState::processHtmlCommands()
             }
         }
     }
+}
+
+
+void SpaceState::pushStructureDebugState()
+{
+    context().htmlUi().setActivePanel(HtmlUiPanelId::StructureDebug);
+
+    json payload;
+    payload["ships"] = json::array();
+    payload["selectedShipEntityId"] = 0;
+    payload["modules"] = json::array();
+    payload["links"] = json::array();
+    payload["hasData"] = false;
+    payload["reason"] = "no_server_ships";
+
+    m_server->debugRefreshSnapshot();
+
+    const auto& snapshot = m_server->snapshot();
+
+    if (snapshot.ships.empty())
+    {
+        context().htmlUi().broadcastState(HtmlUiPanelId::StructureDebug, payload);
+        return;
+    }
+
+    payload["hasData"] = true;
+    payload["reason"] = "ok";
+
+    const ShipSnapshot* selectedShip = nullptr;
+
+    for (const auto& s : snapshot.ships)
+    {
+        if (s.id.value == m_structureDebugSelectedShipEntityId)
+        {
+            selectedShip = &s;
+            break;
+        }
+    }
+
+    if (!selectedShip)
+    {
+        for (const auto& s : snapshot.ships)
+        {
+            if (s.id.value == m_playerId.value)
+            {
+                selectedShip = &s;
+                m_structureDebugSelectedShipEntityId = s.id.value;
+                break;
+            }
+        }
+    }
+
+    if (!selectedShip)
+    {
+        selectedShip = &snapshot.ships.front();
+        m_structureDebugSelectedShipEntityId = selectedShip->id.value;
+    }
+
+    const auto& ship = *selectedShip;
+
+    payload["selectedShipEntityId"] = m_structureDebugSelectedShipEntityId;
+
+    for (const auto& s : snapshot.ships)
+    {
+        const uint64_t id = s.id.value;
+
+        json item;
+        item["entityId"] = id;
+        item["displayName"] = std::string("Ship #") + std::to_string(id);
+        item["role"] = (s.role == ShipRole::Player) ? "Player" : "Npc";
+        item["isPlayer"] = (s.role == ShipRole::Player);
+
+        payload["ships"].push_back(std::move(item));
+    }
+
+    for (const auto& mod : ship.modules)
+    {
+        json m;
+
+        m["moduleId"] = mod.moduleId;
+        m["parentModuleId"] = mod.parentModuleId;
+        m["subsystemId"] = mod.subsystemId;
+
+        m["state"] = mod.state;
+        m["health"] = mod.health;
+        m["maxHealth"] = mod.maxHealth;
+
+        m["destructible"] = mod.destructible;
+        m["detachable"] = mod.detachable;
+        m["hangable"] = mod.hangable;
+
+        m["destroyPolicy"] = mod.destroyPolicy;
+        m["detachPolicy"] = mod.detachPolicy;
+        m["attachmentType"] = mod.attachmentType;
+
+        m["meshPartIds"] = mod.meshPartIds;
+        m["supportModuleIds"] = mod.supportModuleIds;
+
+        m["minSupportsForAttached"] = mod.minSupportsForAttached;
+        m["minSupportsForStable"] = mod.minSupportsForStable;
+        m["aliveSupportCount"] = mod.aliveSupportCount;
+
+        m["localPosition"] = json::array({ 0.0f, 0.0f, 0.0f });
+        m["localRotationDeg"] = json::array({ 0.0f, 0.0f, 0.0f });
+
+        payload["modules"].push_back(std::move(m));
+    }
+
+    for (const auto& link : ship.structuralLinks)
+    {
+        json l;
+
+        l["id"] = link.id;
+        l["ownerModuleId"] = link.ownerModuleId;
+        l["moduleAId"] = link.moduleAId;
+        l["moduleBId"] = link.moduleBId;
+        l["kind"] = link.kind;
+
+        l["health"] = link.health;
+        l["maxHealth"] = link.maxHealth;
+        l["impulseTolerance"] = link.impulseTolerance;
+
+        l["loadBearing"] = link.loadBearing;
+        l["destroyed"] = link.destroyed;
+        l["autoGenerated"] = link.autoGenerated;
+
+        l["center"] = json::array({
+            link.center.x,
+            link.center.y,
+            link.center.z
+        });
+
+        l["halfSize"] = json::array({
+            link.halfSize.x,
+            link.halfSize.y,
+            link.halfSize.z
+        });
+
+        l["orientation"] = json::array({
+            json::array({
+                link.orientation[0].x,
+                link.orientation[0].y,
+                link.orientation[0].z
+            }),
+            json::array({
+                link.orientation[1].x,
+                link.orientation[1].y,
+                link.orientation[1].z
+            }),
+            json::array({
+                link.orientation[2].x,
+                link.orientation[2].y,
+                link.orientation[2].z
+            })
+        });
+
+        payload["links"].push_back(std::move(l));
+    }
+
+    context().htmlUi().broadcastState(HtmlUiPanelId::StructureDebug, payload);
 }
 
 
@@ -952,8 +1391,10 @@ void SpaceState::pushDebugControlState()
     payload["drawAxes"] = dbg.drawAxes;
     payload["drawWorldAxes"] = dbg.drawWorldAxes;
     payload["drawObjectAxes"] = dbg.drawObjectAxes;
+
     payload["drawModulePivots"] = dbg.drawModulePivots;
     payload["drawHitVolumes"] = dbg.drawHitVolumes;
+    payload["hitVolumeFilterMode"] = dbg.hitVolumeFilterMode;
     payload["publishObjectOrientation"] = dbg.publishObjectOrientation;
     payload["hitVolumesOverlay"] = dbg.hitVolumesOverlay;
     payload["hideMeshesWhenDrawingHitVolumes"] = dbg.hideMeshesWhenDrawingHitVolumes;
@@ -987,8 +1428,10 @@ void SpaceState::applyDebugControlPayload(const json& payload)
     dbg.drawAxes = payload.value("drawAxes", dbg.drawAxes);
     dbg.drawWorldAxes = payload.value("drawWorldAxes", dbg.drawWorldAxes);
     dbg.drawObjectAxes = payload.value("drawObjectAxes", dbg.drawObjectAxes);
+
     dbg.drawModulePivots = payload.value("drawModulePivots", dbg.drawModulePivots);
     dbg.drawHitVolumes = payload.value("drawHitVolumes", dbg.drawHitVolumes);
+    dbg.hitVolumeFilterMode = payload.value("hitVolumeFilterMode", dbg.hitVolumeFilterMode); 
     dbg.publishObjectOrientation = payload.value("publishObjectOrientation", dbg.publishObjectOrientation);
     dbg.hitVolumesOverlay = payload.value("hitVolumesOverlay", dbg.hitVolumesOverlay);
     dbg.hideMeshesWhenDrawingHitVolumes = payload.value("hideMeshesWhenDrawingHitVolumes", dbg.hideMeshesWhenDrawingHitVolumes);
@@ -1010,4 +1453,29 @@ void SpaceState::applyDebugControlPayload(const json& payload)
     if (payload.contains("moduleOriginColor"))  dbg.moduleOriginColor = jsonToVec4(payload["moduleOriginColor"], dbg.moduleOriginColor);
     if (payload.contains("modulePivotColor"))   dbg.modulePivotColor = jsonToVec4(payload["modulePivotColor"], dbg.modulePivotColor);
     if (payload.contains("rotationAxisColor"))  dbg.rotationAxisColor = jsonToVec4(payload["rotationAxisColor"], dbg.rotationAxisColor);
+}
+
+void SpaceState::pushVolumeViewerState()
+{
+    json payload;
+
+    if (m_attachmentEditorSelectedShipTypeId.empty())
+        m_attachmentEditorSelectedShipTypeId = "cobra_mk1";
+
+    payload["shipTypes"] = json::array({
+        {
+            {"typeId", "cobra_mk1"},
+            {"displayName", "Cobra Mk1"}
+        },
+        {
+            {"typeId", "station_01"},
+            {"displayName", "Station 01"}
+        }
+    });
+
+    payload["selectedShipTypeId"] = m_attachmentEditorSelectedShipTypeId;
+    payload["selectedShip"] =
+        buildVolumeViewerPreviewForType(*this, m_attachmentEditorSelectedShipTypeId);
+
+    context().htmlUi().broadcastState(HtmlUiPanelId::VolumeViewer, payload);
 }

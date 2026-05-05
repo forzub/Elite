@@ -5,6 +5,8 @@
 #include "src/game/ship/view/ShipCameraMode.h"
 #include "src/game/ship/ShipDescriptor.h"
 #include "game/debug/AttachmentEditorData.h"
+#include <vector>
+#include "src/game/simulation/ObjectDetachedFragmentSnapshot.h"
 
 class ShipCameraController
 {
@@ -19,7 +21,8 @@ public:
         float dt,
         const ShipDescriptor* desc,
         const ShipTransform& transform,
-        Camera& camera
+        Camera& camera,
+        const std::vector<game::simulation::ObjectDetachedFragmentSnapshot>* detachedFragments = nullptr
     );
 
 private:

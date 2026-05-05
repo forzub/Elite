@@ -86,9 +86,10 @@ public:
     ShipAttachmentOverrideMap& attachmentEditorOverrides() { return m_attachmentEditorOverrides; }
 
     void pushAttachmentEditorState();
-    // void processAttachmentEditorCommands();
     void processHtmlCommands();
     void pushShipCoreState();
+    void pushStructureDebugState();
+    void pushVolumeViewerState();
     void pushFrustumDebugState(const nlohmann::json& payload);
     void pushDebugControlState();
     void applyDebugControlPayload(const nlohmann::json& payload);
@@ -167,4 +168,5 @@ private:
     // =========================
     std::string m_attachmentEditorSelectedShipTypeId = "cobra_mk1";
     uint64_t    m_shipCoreSelectedShipEntityId = 0;
+    uint64_t    m_structureDebugSelectedShipEntityId = 0;
 };

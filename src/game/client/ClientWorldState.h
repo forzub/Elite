@@ -28,6 +28,8 @@
 
 #include <unordered_set>
 #include "src/game/simulation/ObjectModuleSnapshot.h"
+#include "src/game/simulation/ObjectDetachedFragmentSnapshot.h"
+#include "src/game/simulation/ObjectRepairJobSnapshot.h"
 
 struct PendingCommand
 {
@@ -55,8 +57,12 @@ struct ClientShipState
     game::ShipCoreStatus                            shipCoreStatus;
 
     std::vector<game::simulation::ObjectModuleSnapshot> modules;
+    std::vector<game::simulation::StructuralLinkSnapshot> structuralLinks;
     std::vector<game::simulation::ObjectAssemblyModuleSnapshot> assemblyModules;
+    std::vector<game::simulation::ObjectDetachedFragmentSnapshot> detachedFragments;
+    std::vector<game::simulation::ObjectRepairJobSnapshot> repairJobs;
     std::unordered_set<std::string>                     hiddenPartIds;
+    std::unordered_map<std::string, float> detachedVisualAge;
     std::vector<game::simulation::DebugHitVolumeSnapshot> debugHitVolumes;
     
 };
@@ -80,8 +86,11 @@ struct ClientObjectState
 
     const IObjectDescriptor*                                        descriptor = nullptr;
     std::vector<game::simulation::ObjectModuleSnapshot>             modules;
+    std::vector<game::simulation::StructuralLinkSnapshot> structuralLinks;
     std::vector<game::simulation::ObjectAssemblyModuleSnapshot>     assemblyModules;
+    std::vector<game::simulation::ObjectDetachedFragmentSnapshot> detachedFragments;
     std::unordered_set<std::string>                                 hiddenPartIds;
+    std::unordered_map<std::string, float> detachedVisualAge;
     std::vector<game::simulation::DebugHitVolumeSnapshot>           debugHitVolumes;
 };
 

@@ -1,15 +1,19 @@
 #include "ShipCore.h"
 #include <iostream>
+#include <algorithm>
 
 #include "core/Log.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 
 #include "src/world/modules/ObjectHitBuilder.h"
+#include "src/world/modules/ObjectRuntimeHitBuilder.h"
 
 #include "src/game/geometry/ObjLoader.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 
+#include "src/game/geometry/AssemblyMeshLibrary.h"
+#include "src/world/modules/ObjectAssemblyTransformUtils.h"
 
 using namespace game::ship::geometry;
 
@@ -126,20 +130,27 @@ void ShipCore::init(
     debugPrintCoreSystems();
 
 
-    // -------- DAMAGE ZONE -----------
+    // -------- DAMAGE / MODULE / ASSEMBLY -----------
     m_damageHandler.ship = this;
-    world::modules::ObjectHitBuilder::build(
-        m_hitComponent,
-        descriptor.typeId,
-        descriptor
-    );  
 
     initModuleRuntime();
+
     if (game::ship::geometry::AssemblyMeshLibrary::has(descriptor.typeId))
     {
         const auto& assembly = game::ship::geometry::AssemblyMeshLibrary::get(descriptor.typeId);
         m_assemblyRuntime.init(assembly);
     }
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent,
+        descriptor.typeId,
+        descriptor,
+        m_moduleRuntime,
+        m_structuralLinkRuntime,
+        m_assemblyRuntime
+    );
+
+    m_hitVolumesDirty = false;
     
 }
 
@@ -774,7 +785,125 @@ void ShipCore::applyDamage(const game::damage::DamageEvent& event)
     auto result = m_hitComponent.resolve(localEvent);
     m_damageHandler.handleDamage(result);
     syncDestroyedModulesFromHitVolumes();
+
+    if (m_desc)
+    {
+        world::modules::ObjectRuntimeHitBuilder::rebuild(
+            m_hitComponent,
+            m_desc->typeId,
+            *m_desc,
+            m_moduleRuntime,
+            m_structuralLinkRuntime,
+            m_assemblyRuntime
+        );
+
+        m_hitVolumesDirty = false;
+    }
 }
+
+
+
+bool ShipCore::debugDestroyModuleById(const std::string& moduleId)
+{
+    if (!m_desc)
+        return false;
+
+    auto* mod = m_moduleRuntime.findModule(moduleId);
+    if (!mod)
+    {
+        std::cout
+            << "[ShipCore] debugDestroyModuleById: module not found: "
+            << moduleId << "\n";
+        return false;
+    }
+
+    m_moduleRuntime.markModuleDestroyed(moduleId, 0.0f);
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent,
+        m_desc->typeId,
+        *m_desc,
+        m_moduleRuntime,
+        m_structuralLinkRuntime,
+        m_assemblyRuntime
+    );
+
+    m_hitVolumesDirty = false;
+
+    std::cout
+        << "[ShipCore] debugDestroyModuleById: destroyed moduleId="
+        << moduleId << "\n";
+
+    return true;
+}
+
+
+bool ShipCore::debugRestoreModuleById(const std::string& moduleId)
+{
+    if (!m_desc)
+        return false;
+
+    auto* mod = m_moduleRuntime.findModule(moduleId);
+    if (!mod)
+    {
+        std::cout
+            << "[ShipCore] debugRestoreModuleById: module not found: "
+            << moduleId << "\n";
+        return false;
+    }
+
+    m_moduleRuntime.restoreModuleBranch(moduleId);
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent,
+        m_desc->typeId,
+        *m_desc,
+        m_moduleRuntime,
+        m_structuralLinkRuntime,
+        m_assemblyRuntime
+    );
+
+    m_hitVolumesDirty = false;
+
+    std::cout
+        << "[ShipCore] debugRestoreModuleById: restored moduleId="
+        << moduleId << "\n";
+
+    return true;
+}
+
+bool ShipCore::debugResetStructure()
+{
+    if (!m_desc)
+        return false;
+
+    m_moduleRuntime.init(m_desc->moduleDescriptors());
+    m_structuralLinkRuntime.init(m_desc->moduleDescriptors());
+    m_detachedFragmentRuntime.clear();
+    m_repairJobRuntime.clear();
+
+    if (game::ship::geometry::AssemblyMeshLibrary::has(m_desc->typeId))
+    {
+        const auto& assembly =
+            game::ship::geometry::AssemblyMeshLibrary::get(m_desc->typeId);
+        m_assemblyRuntime.init(assembly);
+    }
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent,
+        m_desc->typeId,
+        *m_desc,
+        m_moduleRuntime,
+        m_structuralLinkRuntime,
+        m_assemblyRuntime
+    );
+
+    m_hitVolumesDirty = false;
+
+    std::cout << "[ShipCore] debugResetStructure\n";
+    return true;
+}
+
 
 
 void ShipCore::exportHitVolumes() const
@@ -821,6 +950,9 @@ void ShipCore::initModuleRuntime()
         return;
 
     m_moduleRuntime.init(m_desc->moduleDescriptors());
+    m_structuralLinkRuntime.init(m_desc->moduleDescriptors());
+
+    m_moduleRuntime.reevaluateStructuralStates(&m_structuralLinkRuntime);
 }
 
 
@@ -830,8 +962,33 @@ void ShipCore::initModuleRuntime()
 
 void ShipCore::syncDestroyedModulesFromHitVolumes()
 {
+    bool supportChanged = false;
+
     for (const auto& volume : m_hitComponent.volumes)
     {
+        if (volume.supportLinkVolume)
+        {
+            if (m_structuralLinkRuntime.setLinkHealth(
+                    volume.supportLinkId,
+                    volume.health,
+                    volume.destroyed))
+            {
+                supportChanged = true;
+            }
+
+            // legacy mirror: пока оставляем для совместимости
+            if (m_moduleRuntime.setSupportLinkHealth(
+                    volume.moduleId,
+                    volume.supportLinkId,
+                    volume.health,
+                    volume.destroyed))
+            {
+                supportChanged = true;
+            }
+
+            continue;
+        }
+
         m_moduleRuntime.setModuleHealth(volume.moduleId, volume.health);
 
         if (volume.destroyed)
@@ -839,6 +996,12 @@ void ShipCore::syncDestroyedModulesFromHitVolumes()
             m_moduleRuntime.markModuleDestroyed(volume.moduleId, volume.health);
         }
     }
+
+    if (supportChanged)
+{
+    m_moduleRuntime.reevaluateStructuralStates(&m_structuralLinkRuntime);
+}
+    syncDetachedFragmentsFromModuleRuntime();
 }
 
 
@@ -846,9 +1009,533 @@ void ShipCore::syncDestroyedModulesFromHitVolumes()
 
 void ShipCore::updateAssemblyRuntime(double dt)
 {
+    // Обычная анимация/вращение модулей не должна пересобирать hit-volumes.
+    // Rebuild нужен только при структурных изменениях:
+    // damage, detach, restore, descriptor/assembly edit.
     m_assemblyRuntime.update(dt);
 }
 
+
+
+bool ShipCore::debugReattachModuleById(const std::string& moduleId)
+{
+    if (!m_desc)
+        return false;
+
+    if (!m_detachedFragmentRuntime.hasFragment(moduleId))
+    {
+        std::cout
+            << "[ShipCore] debugReattachModuleById failed: no detached fragment for moduleId="
+            << moduleId << "\n";
+        return false;
+    }
+
+    if (!m_moduleRuntime.reattachModule(moduleId))
+    {
+        std::cout
+            << "[ShipCore] debugReattachModuleById failed: module runtime rejected moduleId="
+            << moduleId << "\n";
+        return false;
+    }
+
+    const int restoredLinks =
+        m_structuralLinkRuntime.restoreLinksTouchingModule(moduleId);
+
+    m_detachedFragmentRuntime.removeFragment(moduleId);
+
+    m_moduleRuntime.reevaluateStructuralStates(&m_structuralLinkRuntime);
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent,
+        m_desc->typeId,
+        *m_desc,
+        m_moduleRuntime,
+        m_structuralLinkRuntime,
+        m_assemblyRuntime
+    );
+
+    m_hitVolumesDirty = false;
+
+    std::cout
+        << "[ShipCore] debugReattachModuleById moduleId="
+        << moduleId
+        << " restoredLinks=" << restoredLinks
+        << "\n";
+
+    return true;
+}
+
+
+
+
+
+
+bool ShipCore::startRepairJobForModule(const std::string& moduleId)
+{
+    if (!m_desc)
+        return false;
+
+    const glm::mat4 ownerModel =
+        glm::translate(glm::mat4(1.0f), m_transform.position) *
+        m_transform.orientation;
+
+    const bool ok = m_repairJobRuntime.startJob(
+        moduleId,
+        ownerModel,
+        m_detachedFragmentRuntime
+    );
+
+    std::cout
+        << "[ShipCore] startRepairJobForModule moduleId="
+        << moduleId
+        << " ok=" << ok
+        << "\n";
+
+    return ok;
+}
+
+
+
+
+std::vector<world::modules::ObjectMissingPartRequest>
+ShipCore::buildMissingPartRequests() const
+{
+    std::vector<world::modules::ObjectMissingPartRequest> out;
+
+    if (!m_desc)
+        return out;
+
+    if (!game::ship::geometry::AssemblyMeshLibrary::has(m_desc->typeId))
+        return out;
+
+    const auto& assembly =
+        game::ship::geometry::AssemblyMeshLibrary::get(m_desc->typeId);
+
+    for (const auto& module : m_moduleRuntime.modules())
+    {
+        const bool missing =
+            module.state == world::modules::ObjectModuleRuntimeState::Detached ||
+            module.state == world::modules::ObjectModuleRuntimeState::Destroyed;
+
+        if (!missing)
+            continue;
+
+        if (!module.repairable && !module.salvageable)
+            continue;
+
+        const auto* assemblyModule =
+            world::modules::findAssemblyModuleById(
+                assembly,
+                module.moduleId
+            );
+
+        if (!assemblyModule)
+            continue;
+
+        world::modules::ObjectMissingPartRequest req;
+        req.targetModuleId = module.moduleId;
+
+        req.moduleClass = module.moduleClass;
+        if (req.moduleClass.empty())
+            req.moduleClass = module.moduleId;
+
+        req.acceptedReplacementTags = module.acceptedReplacementTags;
+        if (req.acceptedReplacementTags.empty())
+            req.acceptedReplacementTags.push_back(module.moduleId);
+
+        req.homeLocalModel =
+            world::modules::buildAssemblyModuleHierarchicalLocalModel(
+                assembly,
+                m_assemblyRuntime,
+                module.moduleId
+            );
+
+        out.push_back(std::move(req));
+    }
+
+    return out;
+}
+
+bool ShipCore::startRepairJobForClaimedReplacement(
+    const std::string& targetModuleId,
+    world::modules::ObjectDetachedFragmentRuntime& sourceRuntime,
+    const std::string& sourceModuleId
+)
+{
+    if (!m_desc)
+        return false;
+
+    const auto requests = buildMissingPartRequests();
+
+    const world::modules::ObjectMissingPartRequest* targetRequest = nullptr;
+
+    for (const auto& req : requests)
+    {
+        if (req.targetModuleId == targetModuleId)
+        {
+            targetRequest = &req;
+            break;
+        }
+    }
+
+    if (!targetRequest)
+    {
+        std::cout
+            << "[ShipCore] repair failed: no missing slot targetModuleId="
+            << targetModuleId << "\n";
+        return false;
+    }
+
+    if (!m_detachedFragmentRuntime.claimFragmentAsReplacement(
+            sourceRuntime,
+            sourceModuleId,
+            targetModuleId,
+            targetRequest->homeLocalModel))
+    {
+        return false;
+    }
+
+    // Важно: repair job теперь всегда работает с targetModuleId
+    // внутри runtime целевого корабля.
+    return startRepairJobForModule(targetModuleId);
+}
+
+
+
+
+
+
+
+bool ShipCore::debugDetachModuleById(const std::string& moduleId)
+{
+    if (!m_desc)
+        return false;
+
+    if (!m_moduleRuntime.debugForceDetach(moduleId))
+        return false;
+
+    syncDetachedFragmentsFromModuleRuntime();
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent,
+        m_desc->typeId,
+        *m_desc,
+        m_moduleRuntime,
+        m_structuralLinkRuntime,
+        m_assemblyRuntime
+    );
+
+    m_hitVolumesDirty = false;
+
+    std::cout << "[ShipCore] debugDetachModuleById: moduleId="
+              << moduleId << "\n";
+    return true;
+}
+
+
+
+
+bool ShipCore::ejectCockpitCapsule()
+{
+    if (!m_desc)
+        return false;
+
+    constexpr const char* COCKPIT_MODULE_ID = "ship_cockpit";
+
+    auto* cockpit = m_moduleRuntime.findModule(COCKPIT_MODULE_ID);
+    if (!cockpit)
+    {
+        std::cout
+            << "[ShipCore] ejectCockpitCapsule failed: cockpit module not found\n";
+        return false;
+    }
+
+    if (!cockpit->detachable)
+    {
+        std::cout
+            << "[ShipCore] ejectCockpitCapsule failed: cockpit is not detachable\n";
+        return false;
+    }
+
+    if (cockpit->state == world::modules::ObjectModuleRuntimeState::Detached)
+    {
+        std::cout
+            << "[ShipCore] ejectCockpitCapsule ignored: cockpit already detached\n";
+        return false;
+    }
+
+    if (!m_moduleRuntime.debugForceDetach(COCKPIT_MODULE_ID))
+    {
+        std::cout
+            << "[ShipCore] ejectCockpitCapsule failed: detach rejected\n";
+        return false;
+    }
+
+    syncDetachedFragmentsFromModuleRuntime();
+
+    const glm::vec3 forward = m_transform.forward();
+
+    // Скорость подбери потом по вкусу.
+    // Сейчас это именно "катапульта", не медленный отпад.
+    const glm::vec3 ejectVelocity = forward * 35.0f;
+
+    const glm::vec3 ejectAngularVelocity =
+        glm::vec3(0.0f, 0.15f, 0.0f);
+
+    if (!m_detachedFragmentRuntime.setFragmentMotion(
+            COCKPIT_MODULE_ID,
+            ejectVelocity,
+            ejectAngularVelocity))
+    {
+        std::cout
+            << "[ShipCore] ejectCockpitCapsule failed: detached fragment was not spawned\n";
+        return false;
+    }
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent,
+        m_desc->typeId,
+        *m_desc,
+        m_moduleRuntime,
+        m_structuralLinkRuntime,
+        m_assemblyRuntime
+    );
+
+    m_hitVolumesDirty = false;
+
+    std::cout
+        << "[ShipCore] COCKPIT CAPSULE EJECTED forward=("
+        << forward.x << ", "
+        << forward.y << ", "
+        << forward.z << ")"
+        << "\n";
+
+    return true;
+}
+
+
+
+
+
+bool ShipCore::debugHangModuleById(const std::string& moduleId)
+{
+    if (!m_desc)
+        return false;
+
+    if (!m_moduleRuntime.debugForceHang(moduleId))
+        return false;
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent,
+        m_desc->typeId,
+        *m_desc,
+        m_moduleRuntime,
+        m_structuralLinkRuntime,
+        m_assemblyRuntime
+    );
+
+    m_hitVolumesDirty = false;
+
+    std::cout << "[ShipCore] debugHangModuleById: moduleId="
+              << moduleId << "\n";
+    return true;
+}
+
+bool ShipCore::debugReevaluateStructure()
+{
+    if (!m_desc)
+        return false;
+
+    m_moduleRuntime.reevaluateStructuralStates(&m_structuralLinkRuntime);
+syncDetachedFragmentsFromModuleRuntime();
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent,
+        m_desc->typeId,
+        *m_desc,
+        m_moduleRuntime,
+        m_structuralLinkRuntime,
+        m_assemblyRuntime
+    );
+
+    m_hitVolumesDirty = false;
+
+    std::cout << "[ShipCore] debugReevaluateStructure\n";
+    return true;
+}
+
+
+
+
+bool ShipCore::debugSetStructuralLinkHealth(
+    const std::string& linkId,
+    float health,
+    bool destroyed
+)
+{
+    if (!m_desc)
+        return false;
+
+    // if (!m_structuralLinkRuntime.setLinkHealth(linkId, health, destroyed))
+    //     return false;
+
+    if (!m_structuralLinkRuntime.setLinkHealth(linkId, health, destroyed))
+{
+    std::cout
+        << "[ShipCore] debugSetStructuralLinkHealth FAILED linkId="
+        << linkId << "\n";
+    return false;
+}
+
+if (const auto* link = m_structuralLinkRuntime.findById(linkId))
+{
+    std::cout
+        << "[ShipCore] set structural link health:"
+        << " id=" << link->id
+        << " A=" << link->moduleAId
+        << " B=" << link->moduleBId
+        << " kind=" << static_cast<int>(link->kind)
+        << " health=" << link->health
+        << " destroyed=" << link->destroyed
+        << " loadBearing=" << link->loadBearing
+        << "\n";
+}
+
+
+    for (auto& v : m_hitComponent.volumes)
+    {
+        if (v.supportLinkVolume && v.supportLinkId == linkId)
+        {
+            v.health = std::max(0.0f, health);
+            v.destroyed = destroyed || v.health <= 0.0f;
+        }
+    }
+
+    m_moduleRuntime.reevaluateStructuralStates(&m_structuralLinkRuntime);
+    syncDetachedFragmentsFromModuleRuntime();
+
+
+    if (const auto* link = m_structuralLinkRuntime.findById(linkId))
+        {
+            const auto* a = m_moduleRuntime.findModule(link->moduleAId);
+            const auto* b = m_moduleRuntime.findModule(link->moduleBId);
+
+            if (a)
+            {
+                std::cout
+                    << "[ShipCore] module after link damage:"
+                    << " module=" << a->moduleId
+                    << " state=" << static_cast<int>(a->state)
+                    << " aliveSupports=" << a->aliveSupportCount
+                    << " detachable=" << a->detachable
+                    << "\n";
+            }
+
+            if (b)
+            {
+                std::cout
+                    << "[ShipCore] module after link damage:"
+                    << " module=" << b->moduleId
+                    << " state=" << static_cast<int>(b->state)
+                    << " aliveSupports=" << b->aliveSupportCount
+                    << " detachable=" << b->detachable
+                    << "\n";
+            }
+        }
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        m_hitComponent,
+        m_desc->typeId,
+        *m_desc,
+        m_moduleRuntime,
+        m_structuralLinkRuntime,
+        m_assemblyRuntime
+    );
+
+    m_hitVolumesDirty = false;
+
+    return true;
+}
+
+
+
+
+
+
+
+void ShipCore::syncDetachedFragmentsFromModuleRuntime()
+{
+    if (!m_desc)
+        return;
+
+    if (!game::ship::geometry::AssemblyMeshLibrary::has(m_desc->typeId))
+        return;
+
+    const auto& assembly =
+        game::ship::geometry::AssemblyMeshLibrary::get(m_desc->typeId);
+
+    const glm::mat4 ownerModel =
+        glm::translate(glm::mat4(1.0f), m_transform.position) *
+        m_transform.orientation;
+
+    m_detachedFragmentRuntime.syncFromDetachedModules(
+        ownerModel,
+        assembly,
+        m_assemblyRuntime,
+        m_moduleRuntime,
+        m_hitComponent
+    );
+}
+
+void ShipCore::updateDetachedFragments(float dt)
+{
+    m_detachedFragmentRuntime.update(dt);
+}
+
+
+void ShipCore::updateRepairJobs(float dt)
+{
+    if (!m_desc)
+        return;
+
+    const glm::mat4 ownerModel =
+        glm::translate(glm::mat4(1.0f), m_transform.position) *
+        m_transform.orientation;
+
+    const auto completed =
+        m_repairJobRuntime.update(
+            dt,
+            ownerModel,
+            m_detachedFragmentRuntime
+        );
+
+    for (const auto& moduleId : completed)
+    {
+        debugReattachModuleById(moduleId);
+    }
+}
+
+
+
+
+
+std::vector<game::simulation::ObjectRepairJobSnapshot>
+ShipCore::buildRepairJobSnapshots() const
+{
+    const glm::mat4 ownerModel =
+        glm::translate(glm::mat4(1.0f), m_transform.position) *
+        m_transform.orientation;
+
+    return m_repairJobRuntime.buildSnapshots(
+        ownerModel,
+        m_detachedFragmentRuntime
+    );
+}
+
+int ShipCore::activeRepairJobCount() const
+{
+    return m_repairJobRuntime.activeJobCount();
+}
 
 
 }

@@ -26,7 +26,35 @@ public:
 
     WorldParams& world();
 
+    bool debugDestroyShipModule(EntityId shipId, const std::string& moduleId);
+    bool debugRestoreShipModule(EntityId shipId, const std::string& moduleId);
+    bool debugResetShipStructure(EntityId shipId);
+    void debugResetAllShipStructures();
+
+    bool debugDetachShipModule(EntityId id, const std::string& moduleId);
+    bool debugReattachShipModule(EntityId id, const std::string& moduleId);
+    bool startShipRepairJob(EntityId id, const std::string& moduleId);
+
+    bool ejectShipCockpitCapsule(EntityId id);
+    bool debugHangShipModule(EntityId id, const std::string& moduleId);
+    bool debugReevaluateShipStructure(EntityId id);
+
     void receiveClientMessage(EntityId playerId, const game::network::ClientMessage& msg);
+    bool startBestRepairJobForFirstMissingSlot(EntityId targetShipId);
+
+    bool startBestRepairJobForMissingSlot(
+        EntityId targetShipId,
+        const std::string& targetModuleId
+    );
+
+    bool debugSetShipStructuralLinkHealth(
+        EntityId id,
+        const std::string& linkId,
+        float health,
+        bool destroyed
+    );
+
+    void debugRefreshSnapshot();
 
 private:
 

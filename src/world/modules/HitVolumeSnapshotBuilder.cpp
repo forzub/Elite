@@ -12,6 +12,8 @@ HitVolumeSnapshotBuilder::build(const game::damage::HitComponent& hitComponent)
     for (const auto& v : hitComponent.volumes)
     {
         game::simulation::DebugHitVolumeSnapshot s;
+        if (v.supportLinkVolume && v.destroyed)
+            continue;
         s.moduleId = v.moduleId;
         s.subsystemId = v.subsystemId;
         s.layerIndex = v.layerIndex;
@@ -23,10 +25,15 @@ HitVolumeSnapshotBuilder::build(const game::damage::HitComponent& hitComponent)
         s.destroyed = v.destroyed;
         s.health = v.health;
         s.maxHealth = v.maxHealth;
+
+        s.supportLinkVolume = v.supportLinkVolume;
+        s.supportLinkId = v.supportLinkId;
+        s.supportModuleId = v.supportModuleId;
+
         out.push_back(std::move(s));
     }
 
     return out;
 }
 
-} // namespace world::modules
+} // namespace world::modules     

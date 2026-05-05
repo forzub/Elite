@@ -23,9 +23,13 @@ void PlayerInputMapper::update(ShipControlState& control){
             (Input::instance().isKeyPressed(GLFW_KEY_D) ? 1.0f : 0.0f) -
             (Input::instance().isKeyPressed(GLFW_KEY_A) ? 1.0f : 0.0f);
 
+        const bool ctrlDown =
+            Input::instance().isKeyPressed(GLFW_KEY_LEFT_CONTROL) ||
+            Input::instance().isKeyPressed(GLFW_KEY_RIGHT_CONTROL);
+
         ctrl.yawInput =
-            (Input::instance().isKeyPressed(GLFW_KEY_Q) ? 1.0f : 0.0f) -
-            (Input::instance().isKeyPressed(GLFW_KEY_E) ? 1.0f : 0.0f);
+            (!ctrlDown && Input::instance().isKeyPressed(GLFW_KEY_Q) ? 1.0f : 0.0f) -
+            (!ctrlDown && Input::instance().isKeyPressed(GLFW_KEY_E) ? 1.0f : 0.0f);
 
 
     }

@@ -1,5 +1,10 @@
 #include "StaticObjectDamage.h"
 
+#include "src/world/descriptors/ObjectDescriptorRegistry.h"
+#include "src/world/modules/ObjectRuntimeHitBuilder.h"
+#include "src/game/geometry/AssemblyMeshLibrary.h"
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace world::objects
 {
 
@@ -32,6 +37,38 @@ void applyDamage(StaticObject& obj, const game::damage::DamageEvent& event)
     else
     {
         obj.moduleRuntime.setModuleHealth(volume->moduleId, volume->health);
+    }
+
+    obj.hitVolumesDirty = true;
+
+    const auto& desc = ObjectDescriptorRegistry::get(obj.type);
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        obj.hitComponent,
+        obj.type,
+        desc,
+        obj.moduleRuntime,
+        obj.structuralLinkRuntime,
+        obj.assemblyRuntime
+    );
+
+    obj.hitVolumesDirty = false;
+    if (game::ship::geometry::AssemblyMeshLibrary::has(obj.type))
+    {
+        const auto& assembly =
+            game::ship::geometry::AssemblyMeshLibrary::get(obj.type);
+
+        const glm::mat4 ownerModel =
+            glm::translate(glm::mat4(1.0f), obj.position) *
+            obj.orientation;
+
+        obj.detachedFragmentRuntime.syncFromDetachedModules(
+            ownerModel,
+            assembly,
+            obj.assemblyRuntime,
+            obj.moduleRuntime,
+            obj.hitComponent
+        );
     }
 }
 

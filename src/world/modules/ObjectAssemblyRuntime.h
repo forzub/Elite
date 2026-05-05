@@ -13,6 +13,9 @@ namespace world::modules
 struct ObjectAssemblyModuleRuntimeState
 {
     std::string moduleId;
+    std::string parentModuleId;
+    int parentIndex = -1;
+
     bool rotates = false;
     float rotationSpeed = 0.0f;
     float rotationAngleRad = 0.0f;
@@ -22,8 +25,10 @@ class ObjectAssemblyRuntime
 {
 public:
     void init(const game::ship::geometry::ObjectAssembly& assembly);
-    void update(double dt);
+    bool update(double dt);
 
+    bool hasModule(const std::string& moduleId) const;
+    int findModuleIndex(const std::string& moduleId) const;
     float getModuleRotationAngleRad(const std::string& moduleId) const;
 
     const std::vector<ObjectAssemblyModuleRuntimeState>& modules() const { return m_modules; }

@@ -16,6 +16,9 @@
 #include "src/game/simulation/ObjectModuleSnapshot.h"
 #include "src/game/simulation/ObjectAssemblyModuleSnapshot.h"
 #include "src/game/simulation/DebugHitVolumeSnapshot.h"
+#include "src/game/simulation/StructuralLinkSnapshot.h"
+#include "src/game/simulation/ObjectDetachedFragmentSnapshot.h"
+#include "src/game/simulation/ObjectRepairJobSnapshot.h"
 
 struct ShipSnapshot
 {
@@ -32,6 +35,9 @@ struct ShipSnapshot
     
     game::ShipCoreStatus                                shipCoreStatus;
     std::vector<game::simulation::ObjectModuleSnapshot>   modules;
+    std::vector<game::simulation::StructuralLinkSnapshot> structuralLinks;
     std::vector<game::simulation::ObjectAssemblyModuleSnapshot> assemblyModules;
+    std::vector<game::simulation::ObjectDetachedFragmentSnapshot> detachedFragments;
+    std::vector<game::simulation::ObjectRepairJobSnapshot> repairJobs;
     std::vector<game::simulation::DebugHitVolumeSnapshot> debugHitVolumes;
 };

@@ -102,6 +102,16 @@
     <div class="row"><label>Draw object axes</label><input id="drawObjectAxes" type="checkbox"></div>
     <div class="row"><label>Draw module pivots</label><input id="drawModulePivots" type="checkbox"></div>
     <div class="row"><label>Draw hit volumes</label><input id="drawHitVolumes" type="checkbox"></div>
+
+    <div class="row">
+      <label>Hit volume filter</label>
+      <select id="hitVolumeFilterMode">
+        <option value="0">All hit volumes</option>
+        <option value="1">Primary only</option>
+        <option value="2">Support-link only</option>
+      </select>
+    </div>
+
     <div class="row"><label>Publish object orientation</label><input id="publishObjectOrientation" type="checkbox"></div>
     <div class="row"><label>Hit volumes overlay</label><input id="hitVolumesOverlay" type="checkbox"></div>
     <div class="row"><label>Hide meshes when drawing hit volumes</label><input id="hideMeshesWhenDrawingHitVolumes" type="checkbox"></div>
@@ -218,9 +228,12 @@
       document.getElementById('drawAxes').checked = !!p.drawAxes;
       document.getElementById('drawWorldAxes').checked = !!p.drawWorldAxes;
       document.getElementById('drawObjectAxes').checked = !!p.drawObjectAxes;
+
       document.getElementById('drawModulePivots').checked = !!p.drawModulePivots;
       document.getElementById('drawHitVolumes').checked = !!p.drawHitVolumes;
+      document.getElementById('hitVolumeFilterMode').value = String(p.hitVolumeFilterMode ?? 0);
       document.getElementById('publishObjectOrientation').checked = !!p.publishObjectOrientation;
+
       document.getElementById('hitVolumesOverlay').checked = !!p.hitVolumesOverlay;
       document.getElementById('hideMeshesWhenDrawingHitVolumes').checked = !!p.hideMeshesWhenDrawingHitVolumes;
 
@@ -249,8 +262,10 @@
         drawAxes: document.getElementById('drawAxes').checked,
         drawWorldAxes: document.getElementById('drawWorldAxes').checked,
         drawObjectAxes: document.getElementById('drawObjectAxes').checked,
+
         drawModulePivots: document.getElementById('drawModulePivots').checked,
         drawHitVolumes: document.getElementById('drawHitVolumes').checked,
+        hitVolumeFilterMode: parseInt(document.getElementById('hitVolumeFilterMode').value, 10) || 0,
         publishObjectOrientation: document.getElementById('publishObjectOrientation').checked,
         hitVolumesOverlay: document.getElementById('hitVolumesOverlay').checked,
         hideMeshesWhenDrawingHitVolumes: document.getElementById('hideMeshesWhenDrawingHitVolumes').checked,

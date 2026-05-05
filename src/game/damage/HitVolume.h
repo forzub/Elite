@@ -30,8 +30,6 @@ struct HitVolume
     HitZoneType zone = HitZoneType::Generic;
 
     int priority = 0;
-
-    // 0 = внешний слой, 1 = глубже и т.д.
     int layerIndex = 0;
 
     glm::vec3 center {0.0f};
@@ -53,6 +51,12 @@ struct HitVolume
     float penetrationResistance = 0.0f;
 
     bool destroyed = false;
+
+    // Новый слой: support-link hit volumes
+    bool supportLinkVolume = false;
+    std::string supportLinkId;
+    std::string supportModuleId;
+    float impulseTolerance = 0.0f;
 
     bool contains(const glm::vec3& point) const
     {

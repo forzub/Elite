@@ -1,13 +1,14 @@
 #include "ShipAttachmentResolver.h"
-#include <iostream>
+
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "src/game/ship/ShipAttachmentUtils.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 
+
 using namespace game::ship::geometry;
 
-static glm::mat4 buildModuleLocalModel(
+static glm::mat4 buildAssemblyModuleOwnStaticLocalModel(
     const AssemblyModule& module
 )
 {
@@ -36,11 +37,45 @@ static glm::mat4 buildModuleLocalModel(
     return m;
 }
 
+static const AssemblyModule* findAssemblyModuleByIdLocal(
+    const ObjectAssembly& assembly,
+    const std::string& moduleId
+)
+{
+    for (const auto& module : assembly.modules)
+    {
+        if (module.id == moduleId)
+            return &module;
+    }
+    return nullptr;
+}
+
+static glm::mat4 buildAssemblyModuleHierarchicalStaticLocalModel(
+    const ObjectAssembly& assembly,
+    const std::string& moduleId
+)
+{
+    const AssemblyModule* module = findAssemblyModuleByIdLocal(assembly, moduleId);
+    if (!module)
+        return glm::mat4(1.0f);
+
+    glm::mat4 own = buildAssemblyModuleOwnStaticLocalModel(*module);
+
+    if (module->parentModuleId.empty())
+        return own;
+
+    return buildAssemblyModuleHierarchicalStaticLocalModel(
+               assembly,
+               module->parentModuleId
+           ) * own;
+}
+
 std::optional<ShipAttachmentResolved> resolveShipAttachment(
     const ShipDescriptor* desc,
     const ShipTransform& shipTransform,
     const std::string& attachmentId,
-    const ShipAttachmentOverrideMap* overrides
+    const ShipAttachmentOverrideMap* overrides,
+    const std::vector<game::simulation::ObjectDetachedFragmentSnapshot>* detachedFragments
 )
 {
     if (!desc)
@@ -63,8 +98,6 @@ std::optional<ShipAttachmentResolved> resolveShipAttachment(
         }
     }
 
-        
-
     if (!resolvedPoint.enabled)
         return std::nullopt;
 
@@ -73,42 +106,71 @@ std::optional<ShipAttachmentResolved> resolveShipAttachment(
         shipTransform.orientation;
 
     glm::mat4 parentModel = shipModel;
+    // Если attachment сидит на модуле, который уже оторвался,
+    // берём parent transform от detached fragment, а не от корпуса корабля.
+    if (detachedFragments && !resolvedPoint.parentModuleId.empty())
+    {
+        for (const auto& fragment : *detachedFragments)
+        {
+            if (fragment.moduleId != resolvedPoint.parentModuleId)
+                continue;
+
+            parentModel =
+                glm::translate(glm::mat4(1.0f), fragment.position) *
+                fragment.orientation;
+
+            goto found_parent;
+        }
+    }
+
+    
 
     if (!resolvedPoint.parentModuleId.empty() &&
         AssemblyMeshLibrary::has(desc->typeId))
     {
         const auto& assembly = AssemblyMeshLibrary::get(desc->typeId);
 
-        bool found = false;
+        const AssemblyModule* module = findAssemblyModuleByIdLocal(
+            assembly,
+            resolvedPoint.parentModuleId
+        );
 
-        for (const auto& module : assembly.modules)
+        if (module)
         {
-            // 1) сначала пробуем как module.id
-            if (module.id == resolvedPoint.parentModuleId)
+            glm::mat4 moduleModel =
+                buildAssemblyModuleHierarchicalStaticLocalModel(
+                    assembly,
+                    module->id
+                );
+
+            parentModel = shipModel * moduleModel;
+        }
+        else
+        {
+            for (const auto& mod : assembly.modules)
             {
-                parentModel = shipModel * buildModuleLocalModel(module);
-                found = true;
-                break;
+                for (const auto& part : mod.meshes)
+                {
+                    if (part.id != resolvedPoint.parentModuleId)
+                        continue;
+
+                    glm::mat4 moduleModel =
+                        buildAssemblyModuleHierarchicalStaticLocalModel(
+                            assembly,
+                            mod.id
+                        );
+
+                    glm::mat4 partModel =
+                        moduleModel * glm::translate(glm::mat4(1.0f), part.localOffset);
+
+                    parentModel = shipModel * partModel;
+                    goto found_parent;
+                }
             }
-
-            // 2) потом пробуем как mesh part.id
-            for (const auto& part : module.meshes)
-            {
-                if (part.id != resolvedPoint.parentModuleId)
-                    continue;
-
-                glm::mat4 partModel = buildModuleLocalModel(module);
-                partModel = glm::translate(partModel, part.localOffset);
-
-                parentModel = shipModel * partModel;
-                found = true;
-                break;
-            }
-
-            if (found)
-                break;
         }
     }
+
+found_parent:
 
     glm::mat4 local(1.0f);
     local = glm::translate(local, resolvedPoint.localPosition);
@@ -134,9 +196,6 @@ std::optional<ShipAttachmentResolved> resolveShipAttachment(
     ShipAttachmentResolved out;
     out.worldPosition = glm::vec3(world[3]);
     out.worldOrientation = glm::mat4(glm::mat3(world));
-
-    
-
 
     return out;
 }

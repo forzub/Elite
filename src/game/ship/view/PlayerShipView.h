@@ -32,7 +32,7 @@
 
 #include "src/game/equipment/ShipEquipment.h"
 #include "game/debug/AttachmentEditorData.h"
-
+#include "src/game/simulation/ObjectDetachedFragmentSnapshot.h"
 
 
 struct ShipDescriptor;
@@ -99,7 +99,8 @@ struct PlayerShipView
         float dt,
         ShipRole role,
         const glm::vec3& position,
-        const glm::mat4& orientation
+        const glm::mat4& orientation,
+        const std::vector<game::simulation::ObjectDetachedFragmentSnapshot>& detachedFragments
     );
 
     void updateCockpitStateFromSnapshot(

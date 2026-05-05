@@ -17,13 +17,15 @@
 
 
 #include "game/equipment/radar/RadarModule.h"
-#include "src/world/modules/ObjectHitBuilder.h"
+// #include "src/world/modules/ObjectHitBuilder.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 
 #include "src/world/modules/ObjectRuntimeHitBuilder.h"
 #include "src/world/modules/HitVolumeSnapshotBuilder.h"
 
-
+#include <limits>
+#include <glm/gtx/norm.hpp>
+#include "src/world/modules/ObjectMissingPartRequest.h"
 
 
 
@@ -120,7 +122,7 @@ GameSimulation::GameSimulation()
 
 
     // ================= Stantion Lexie Liu =========================
-    spawnStation(ObjectType::Station, {0, 0, -1000});
+    // spawnStation(ObjectType::Station, {0, 0, -1000});
 
 }
 
@@ -138,7 +140,13 @@ GameSimulation::GameSimulation()
 
 void GameSimulation::update(double dt)
 {
+    static float npcRepairThinkTimer = 0.0f;
+    npcRepairThinkTimer += static_cast<float>(dt);
 
+    const bool npcRepairThinkTick = npcRepairThinkTimer >= 15.0f;
+
+    if (npcRepairThinkTick)
+        npcRepairThinkTimer = 0.0f;
 
     
     static bool initialized = false;
@@ -154,44 +162,75 @@ void GameSimulation::update(double dt)
     m_serverTime += dt;
 
 
-    for (auto& [id, ship] : m_ships)
-    {
-        if (ship)
-            ship->core().updateAssemblyRuntime(dt);
-    }
-
-    for (auto& [id, obj] : m_staticObjects)
-    {
-        obj.assemblyRuntime.update(dt);
-    }
-
-    for (auto& [id, ship] : m_ships)
+        for (auto& [id, ship] : m_ships)
     {
         if (!ship)
             continue;
 
-        auto& shipObj = *ship;
-        auto& core = shipObj.core();
-        const auto& desc = shipObj.core().descriptor();
+        ship->core().updateAssemblyRuntime(dt);
+        ship->core().updateDetachedFragments(fdt);
+        ship->core().updateRepairJobs(fdt);
 
-        world::modules::ObjectRuntimeHitBuilder::rebuild(
-            core.hitComponent(),
-            desc.typeId,
-            desc,
-            core.assemblyRuntime()
-        );
+
+        if (npcRepairThinkTick &&
+            ship->core().role() != ShipRole::Player &&
+            ship->core().activeRepairJobCount() == 0)
+        {
+            const auto missing =
+                ship->core().buildMissingPartRequests();
+
+            if (!missing.empty())
+            {
+                // Пока тупо первая недостающая деталь.
+                // Позже добавим приоритет: cockpit > engine > weapon > panel.
+                startBestRepairJobForMissingSlot(
+                    id,
+                    missing.front().targetModuleId
+                );
+            }
+        }
+
+        auto& core = ship->core();
+        if (core.hitVolumesDirty())
+        {
+            const auto& desc = core.descriptor();
+
+            world::modules::ObjectRuntimeHitBuilder::rebuild(
+                core.hitComponent(),
+                desc.typeId,
+                desc,
+                core.moduleRuntime(),
+                core.structuralLinkRuntime(),
+                core.assemblyRuntime()
+            );
+
+            core.clearHitVolumesDirty();
+        }
     }
 
     for (auto& [id, obj] : m_staticObjects)
     {
-        const auto& desc = ObjectDescriptorRegistry::get(obj.type);
+        // Вращение/анимация модулей НЕ требует полного rebuild hit-volumes.
+        // Геометрия hit-volume уже посчитана в локальных координатах.
+        // При движении/вращении должен меняться только transform, а не структура volume.
+        obj.assemblyRuntime.update(dt);
+        obj.detachedFragmentRuntime.update(fdt);
 
-        world::modules::ObjectRuntimeHitBuilder::rebuild(
-            obj.hitComponent,
-            obj.type,
-            desc,
-            obj.assemblyRuntime
-        );
+        if (obj.hitVolumesDirty)
+        {
+            const auto& desc = ObjectDescriptorRegistry::get(obj.type);
+
+            world::modules::ObjectRuntimeHitBuilder::rebuild(
+                obj.hitComponent,
+                obj.type,
+                desc,
+                obj.moduleRuntime,
+                obj.structuralLinkRuntime,
+                obj.assemblyRuntime
+            );
+
+            obj.hitVolumesDirty = false;
+        }
     }
 
 
@@ -290,25 +329,109 @@ void GameSimulation::update(double dt)
         s.radarContacts = ship.core().radar().getContacts();
         s.shipCoreStatus = ship.core().getCoreStatus();
 
+        // s.modules.clear();
+        // for (const auto& mod : ship.core().moduleRuntime().modules())
+        // {
+        //     game::simulation::ObjectModuleSnapshot ms;
+        //     ms.moduleId = mod.moduleId;
+        //     ms.state = static_cast<uint8_t>(mod.state);
+        //     ms.health = mod.health;
+        //     s.modules.push_back(std::move(ms));
+        // }
+
+                
         s.modules.clear();
-        for (const auto& mod : ship.core().moduleRuntime().modules())
+
+        const auto& runtimeModules = ship.core().moduleRuntime().modules();
+        const auto& descModules = ship.core().desc().moduleDescriptors();
+
+        std::unordered_map<std::string, const world::modules::ObjectModuleState*> runtimeById;
+        runtimeById.reserve(runtimeModules.size());
+        for (const auto& mod : runtimeModules)
+        {
+            runtimeById[mod.moduleId] = &mod;
+        }
+
+        for (const auto& descMod : descModules)
         {
             game::simulation::ObjectModuleSnapshot ms;
-            ms.moduleId = mod.moduleId;
-            ms.state = static_cast<uint8_t>(mod.state);
-            ms.health = mod.health;
+
+            ms.moduleId = descMod.moduleId;
+            ms.parentModuleId = descMod.parentModuleId;
+            ms.subsystemId = descMod.subsystemId;
+
+            ms.maxHealth = descMod.maxHealth;
+            ms.destructible = descMod.destructible;
+            ms.detachable = descMod.detachable;
+            ms.hangable = descMod.hangable;
+
+            ms.destroyPolicy = static_cast<int>(descMod.destroyPolicy);
+            ms.detachPolicy = static_cast<int>(descMod.detachPolicy);
+            ms.attachmentType = static_cast<int>(descMod.attachmentType);
+
+            ms.meshPartIds = descMod.meshPartIds;
+            ms.supportModuleIds = descMod.supportModuleIds;
+            ms.minSupportsForAttached = descMod.minSupportsForAttached;
+            ms.minSupportsForStable = descMod.minSupportsForStable;
+
+            auto itRt = runtimeById.find(descMod.moduleId);
+            if (itRt != runtimeById.end() && itRt->second)
+            {
+                const auto* rt = itRt->second;
+                ms.state = static_cast<uint8_t>(rt->state);
+                ms.health = rt->health;
+                ms.aliveSupportCount = rt->aliveSupportCount;
+            }
+            else
+            {
+                ms.state = 0;
+                ms.health = descMod.maxHealth;
+                ms.aliveSupportCount = 0;
+            }
+
             s.modules.push_back(std::move(ms));
         }
 
+
+
+
+        s.structuralLinks.clear();
+
+        for (const auto& link : ship.core().structuralLinkRuntime().links())
+        {
+            game::simulation::StructuralLinkSnapshot ls;
+
+            ls.id = link.id;
+            ls.ownerModuleId = link.ownerModuleId;
+            ls.moduleAId = link.moduleAId;
+            ls.moduleBId = link.moduleBId;
+            ls.kind = static_cast<int>(link.kind);
+
+            ls.health = link.health;
+            ls.maxHealth = link.maxHealth;
+            ls.impulseTolerance = link.impulseTolerance;
+
+            ls.loadBearing = link.loadBearing;
+            ls.destroyed = link.destroyed;
+            ls.autoGenerated = link.autoGenerated;
+
+            ls.center = link.center;
+            ls.halfSize = link.halfSize;
+            ls.orientation = link.orientation;
+
+            s.structuralLinks.push_back(std::move(ls));
+        }
+
+
+
+
+
         s.assemblyModules = ship.core().assemblyRuntime().buildSnapshots();
+        s.detachedFragments = ship.core().detachedFragmentRuntime().buildSnapshots();
+        s.repairJobs = ship.core().buildRepairJobSnapshots();
         s.debugHitVolumes = world::modules::HitVolumeSnapshotBuilder::build(
             ship.core().hitComponent()
         );
-        
-        // s.mesh = std::shared_ptr<game::ship::geometry::MeshData>(
-        //     &ship.core().mesh().mesh,
-        //     [](auto*){}
-        // );
 
         m_snapshot.ships.push_back(s);
     }
@@ -327,15 +450,92 @@ void GameSimulation::update(double dt)
         o.orientation = obj.orientation;
 
         o.modules.clear();
-        for (const auto& mod : obj.moduleRuntime.modules())
+
+        const auto& objDesc = ObjectDescriptorRegistry::get(obj.type);
+        const auto& runtimeModules = obj.moduleRuntime.modules();
+        const auto& descModules = objDesc.moduleDescriptors();
+
+        std::unordered_map<std::string, const world::modules::ObjectModuleState*> runtimeById;
+        runtimeById.reserve(runtimeModules.size());
+        for (const auto& mod : runtimeModules)
+        {
+            runtimeById[mod.moduleId] = &mod;
+        }
+
+        for (const auto& descMod : descModules)
         {
             game::simulation::ObjectModuleSnapshot ms;
-            ms.moduleId = mod.moduleId;
-            ms.state = static_cast<uint8_t>(mod.state);
-            ms.health = mod.health;
+
+            ms.moduleId = descMod.moduleId;
+            ms.parentModuleId = descMod.parentModuleId;
+            ms.subsystemId = descMod.subsystemId;
+
+            ms.maxHealth = descMod.maxHealth;
+            ms.destructible = descMod.destructible;
+            ms.detachable = descMod.detachable;
+            ms.hangable = descMod.hangable;
+
+            ms.destroyPolicy = static_cast<int>(descMod.destroyPolicy);
+            ms.detachPolicy = static_cast<int>(descMod.detachPolicy);
+            ms.attachmentType = static_cast<int>(descMod.attachmentType);
+
+            ms.meshPartIds = descMod.meshPartIds;
+            ms.supportModuleIds = descMod.supportModuleIds;
+            ms.minSupportsForAttached = descMod.minSupportsForAttached;
+            ms.minSupportsForStable = descMod.minSupportsForStable;
+
+            auto itRt = runtimeById.find(descMod.moduleId);
+            if (itRt != runtimeById.end() && itRt->second)
+            {
+                const auto* rt = itRt->second;
+                ms.state = static_cast<uint8_t>(rt->state);
+                ms.health = rt->health;
+                ms.aliveSupportCount = rt->aliveSupportCount;
+            }
+            else
+            {
+                ms.state = 0;
+                ms.health = descMod.maxHealth;
+                ms.aliveSupportCount = 0;
+            }
+
             o.modules.push_back(std::move(ms));
         }
+
+
+
+
+        o.structuralLinks.clear();
+
+        for (const auto& link : obj.structuralLinkRuntime.links())
+        {
+            game::simulation::StructuralLinkSnapshot ls;
+
+            ls.id = link.id;
+            ls.ownerModuleId = link.ownerModuleId;
+            ls.moduleAId = link.moduleAId;
+            ls.moduleBId = link.moduleBId;
+            ls.kind = static_cast<int>(link.kind);
+
+            ls.health = link.health;
+            ls.maxHealth = link.maxHealth;
+            ls.impulseTolerance = link.impulseTolerance;
+
+            ls.loadBearing = link.loadBearing;
+            ls.destroyed = link.destroyed;
+            ls.autoGenerated = link.autoGenerated;
+
+            ls.center = link.center;
+            ls.halfSize = link.halfSize;
+            ls.orientation = link.orientation;
+
+            o.structuralLinks.push_back(std::move(ls));
+        }
+
+
+
         o.assemblyModules = obj.assemblyRuntime.buildSnapshots();
+        o.detachedFragments = obj.detachedFragmentRuntime.buildSnapshots();
         o.debugHitVolumes = world::modules::HitVolumeSnapshotBuilder::build(
             obj.hitComponent
         );
@@ -414,16 +614,25 @@ EntityId GameSimulation::spawnStation(
     const auto& baseDesc = ObjectDescriptorRegistry::get(type);
 
     obj.moduleRuntime.init(baseDesc.moduleDescriptors());
-    world::modules::ObjectHitBuilder::build(
-        obj.hitComponent,
-        type,
-        baseDesc
-    );
+    obj.structuralLinkRuntime.init(baseDesc.moduleDescriptors());
+    obj.moduleRuntime.reevaluateStructuralStates(&obj.structuralLinkRuntime);   
+
     if (game::ship::geometry::AssemblyMeshLibrary::has(type))
     {
         const auto& assembly = game::ship::geometry::AssemblyMeshLibrary::get(type);
         obj.assemblyRuntime.init(assembly);
+        obj.detachedFragmentRuntime.clear();
     }
+
+    world::modules::ObjectRuntimeHitBuilder::rebuild(
+        obj.hitComponent,
+        type,
+        baseDesc,
+        obj.moduleRuntime,
+        obj.structuralLinkRuntime,
+        obj.assemblyRuntime
+    );
+    obj.hitVolumesDirty = false;
 
     return id;
 }
@@ -452,7 +661,23 @@ void GameSimulation::applyControl(EntityId id, const ShipControlState& control)
 
 
 
+bool GameSimulation::debugSetShipStructuralLinkHealth(
+    EntityId id,
+    const std::string& linkId,
+    float health,
+    bool destroyed
+)
+{
+    Ship* ship = getShip(id);
+    if (!ship)
+        return false;
 
+    return ship->core().debugSetStructuralLinkHealth(
+        linkId,
+        health,
+        destroyed
+    );
+}
 
 
 
@@ -511,6 +736,140 @@ const Ship* GameSimulation::playerShip() const
 }
 
 
+bool GameSimulation::debugDestroyShipModule(EntityId id, const std::string& moduleId)
+{
+    Ship* ship = getShip(id);
+    if (!ship)
+    {
+        std::cout
+            << "[GameSimulation] debugDestroyShipModule: ship not found, entityId="
+            << id.value << "\n";
+        return false;
+    }
+
+    return ship->core().debugDestroyModuleById(moduleId);
+}
+
+
+bool GameSimulation::debugDetachShipModule(EntityId id, const std::string& moduleId)
+{
+    Ship* ship = getShip(id);
+    if (!ship)
+        return false;
+
+    return ship->core().debugDetachModuleById(moduleId);
+}
+
+
+
+bool GameSimulation::debugReattachShipModule(
+    EntityId id,
+    const std::string& moduleId
+)
+{
+    Ship* ship = getShip(id);
+    if (!ship)
+        return false;
+
+    return ship->core().debugReattachModuleById(moduleId);
+}
+
+
+
+
+bool GameSimulation::startShipRepairJob(
+    EntityId id,
+    const std::string& moduleId
+)
+{
+    Ship* ship = getShip(id);
+    if (!ship)
+        return false;
+
+    return ship->core().startRepairJobForModule(moduleId);
+}
+
+
+
+
+bool GameSimulation::ejectShipCockpitCapsule(EntityId id)
+{
+    Ship* ship = getShip(id);
+    if (!ship)
+    {
+        std::cout
+            << "[GameSimulation] ejectShipCockpitCapsule: ship not found, entityId="
+            << id.value << "\n";
+        return false;
+    }
+
+    return ship->core().ejectCockpitCapsule();
+}
+
+
+
+
+
+
+bool GameSimulation::debugHangShipModule(EntityId id, const std::string& moduleId)
+{
+    Ship* ship = getShip(id);
+    if (!ship)
+        return false;
+
+    return ship->core().debugHangModuleById(moduleId);
+}
+
+bool GameSimulation::debugReevaluateShipStructure(EntityId id)
+{
+    Ship* ship = getShip(id);
+    if (!ship)
+        return false;
+
+    return ship->core().debugReevaluateStructure();
+}
+
+
+bool GameSimulation::debugRestoreShipModule(EntityId id, const std::string& moduleId)
+{
+    Ship* ship = getShip(id);
+    if (!ship)
+    {
+        std::cout
+            << "[GameSimulation] debugRestoreShipModule: ship not found, entityId="
+            << id.value << "\n";
+        return false;
+    }
+
+    return ship->core().debugRestoreModuleById(moduleId);
+}
+
+bool GameSimulation::debugResetShipStructure(EntityId id)
+{
+    Ship* ship = getShip(id);
+    if (!ship)
+    {
+        std::cout
+            << "[GameSimulation] debugResetShipStructure: ship not found, entityId="
+            << id.value << "\n";
+        return false;
+    }
+
+    return ship->core().debugResetStructure();
+}
+
+void GameSimulation::debugResetAllShipStructures()
+{
+    for (auto& [id, ship] : m_ships)
+    {
+        if (ship)
+            ship->core().debugResetStructure();
+    }
+
+    std::cout << "[GameSimulation] debugResetAllShipStructures\n";
+}
+
+
 void GameSimulation::setPlayerControl(const ShipControlState& control)
 {
     m_playerControlState = control;
@@ -524,4 +883,143 @@ const SimulationSnapshot& GameSimulation::snapshot() const
 std::unordered_map<EntityId, std::unique_ptr<Ship>>& GameSimulation::ships()
 {
     return m_ships;
+}
+
+
+bool GameSimulation::startBestRepairJobForMissingSlot(
+    EntityId targetShipId,
+    const std::string& targetModuleId
+)
+{
+    Ship* targetShip = getShip(targetShipId);
+    if (!targetShip)
+        return false;
+
+    const auto requests =
+        targetShip->core().buildMissingPartRequests();
+
+    const world::modules::ObjectMissingPartRequest* targetRequest = nullptr;
+
+    for (const auto& req : requests)
+    {
+        if (req.targetModuleId == targetModuleId)
+        {
+            targetRequest = &req;
+            break;
+        }
+    }
+
+    if (!targetRequest)
+    {
+        std::cout
+            << "[GameSimulation] no missing slot targetModuleId="
+            << targetModuleId << "\n";
+        return false;
+    }
+
+    Ship* bestSourceShip = nullptr;
+    std::string bestSourceModuleId;
+    float bestDistance2 = std::numeric_limits<float>::max();
+
+    const glm::vec3 targetShipPos =
+        targetShip->core().transform().position;
+
+    for (auto& [sourceId, sourceShipPtr] : m_ships)
+    {
+        if (!sourceShipPtr)
+            continue;
+
+        Ship* sourceShip = sourceShipPtr.get();
+
+        for (const auto& fragment :
+             sourceShip->core().detachedFragmentRuntime().fragments())
+        {
+            if (!fragment.salvageable && !fragment.repairable)
+                continue;
+
+            if (fragment.moduleClass != targetRequest->moduleClass)
+                continue;
+
+            if (!world::modules::replacementTagsCompatible(
+                    targetRequest->acceptedReplacementTags,
+                    fragment.providedReplacementTags))
+            {
+                continue;
+            }
+
+            const float dist2 =
+                glm::length2(fragment.position - targetShipPos);
+
+            if (dist2 < bestDistance2)
+            {
+                bestDistance2 = dist2;
+                bestSourceShip = sourceShip;
+                bestSourceModuleId = fragment.moduleId;
+            }
+        }
+    }
+
+    if (!bestSourceShip)
+    {
+        std::cout
+            << "[GameSimulation] no compatible detached part for targetModuleId="
+            << targetModuleId
+            << " moduleClass="
+            << targetRequest->moduleClass
+            << "\n";
+        return false;
+    }
+
+    std::cout
+        << "[GameSimulation] repair missing slot:"
+        << " targetShipId=" << targetShipId.value
+        << " targetModuleId=" << targetModuleId
+        << " sourceModuleId=" << bestSourceModuleId
+        << "\n";
+
+    return targetShip->core().startRepairJobForClaimedReplacement(
+        targetModuleId,
+        bestSourceShip->core().detachedFragmentRuntime(),
+        bestSourceModuleId
+    );
+}
+
+
+
+
+bool GameSimulation::startBestRepairJobForFirstMissingSlot(EntityId targetShipId)
+{
+    Ship* targetShip = getShip(targetShipId);
+    if (!targetShip)
+        return false;
+
+    const auto missing =
+        targetShip->core().buildMissingPartRequests();
+
+    if (missing.empty())
+    {
+        std::cout
+            << "[GameSimulation] no missing slots for shipId="
+            << targetShipId.value << "\n";
+        return false;
+    }
+
+    for (const auto& req : missing)
+    {
+        if (startBestRepairJobForMissingSlot(
+                targetShipId,
+                req.targetModuleId))
+        {
+            std::cout
+                << "[GameSimulation] started repair for first available missing slot moduleId="
+                << req.targetModuleId << "\n";
+            return true;
+        }
+    }
+
+    std::cout
+        << "[GameSimulation] no compatible parts for any missing slot shipId="
+        << targetShipId.value << "\n";
+
+    return false;
 }

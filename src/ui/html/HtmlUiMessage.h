@@ -72,6 +72,8 @@ struct HtmlUiMessage
         else if (panel == "pause_menu")       msg.panel = HtmlUiPanelId::PauseMenu;
         else if (panel == "attachment_editor") msg.panel = HtmlUiPanelId::AttachmentEditor;
         else if (panel == "debug_control")     msg.panel = HtmlUiPanelId::DebugControl;
+        else if (panel == "structure_debug")   msg.panel = HtmlUiPanelId::StructureDebug;
+        else if (panel == "volume_viewer")     msg.panel = HtmlUiPanelId::VolumeViewer;
         else                                   msg.panel = HtmlUiPanelId::None;
 
         msg.command = j.value("command", "");

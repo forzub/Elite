@@ -130,14 +130,10 @@ ObjectAssembly AssemblyMeshLibrary::loadAssembly(ObjectType typeId)
 
         AssemblyModule module;
         module.id = modDesc.moduleId;
+        module.parentModuleId = modDesc.parentModuleId;
         module.subsystemId = modDesc.subsystemId;
 
-        // module.localPosition = modDesc.localPosition;
-        // module.localRotationDeg = modDesc.localRotationDeg;
-        // module.pivot = modDesc.pivot;
-        // module.rotates = modDesc.rotates;
-        // module.rotationAxis = modDesc.rotationAxis;
-        // module.rotationSpeed = modDesc.rotationSpeed;
+       
 
         module.localPosition = transformPoint(meshToLogical, modDesc.localPosition);
         module.localRotationDeg = modDesc.localRotationDeg; // пока оставляем как есть

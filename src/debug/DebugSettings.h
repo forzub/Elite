@@ -1,9 +1,22 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <glm/glm.hpp>
 
 namespace debug
 {
+
+struct DebugSeamProxy
+{
+    glm::vec3 centerWorld {0.0f};
+    glm::vec3 halfSize {0.1f};
+    glm::mat3 orientationWorld {1.0f};
+
+    float score = 0.0f;
+    std::string neighborModuleId;
+};
 
 struct DebugRenderSettings
 {
@@ -17,6 +30,10 @@ struct DebugRenderSettings
     bool drawObjectAxes = false;
     bool drawModulePivots = false;
     bool drawHitVolumes = false;
+    bool drawSeamDebug = true;
+
+    // 0 = all, 1 = primary only, 2 = support-link only
+    int hitVolumeFilterMode = 0;
 
     bool publishObjectOrientation = false;
 
@@ -51,6 +68,9 @@ struct DebugRenderSettings
     bool axesOverlay = true;
     bool crossesOverlay = true;
     bool linesOverlay = true;
+
+    bool captureSeamDebug = true;
+    std::vector<DebugSeamProxy> seamDebugProxies;
 
     bool shouldDrawMeshes() const
     {

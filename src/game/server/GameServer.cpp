@@ -115,6 +115,14 @@ void GameServer::receiveClientMessage(
 
 
 
+
+void GameServer::debugRefreshSnapshot()
+{
+    m_simulation.setTick(m_serverTick);
+    m_lastSnapshot = m_simulation.snapshot();
+}
+
+
 const SimulationSnapshot& GameServer::snapshot() const
 {
     // return m_simulation.snapshot();
@@ -129,4 +137,183 @@ EntityId GameServer::playerId() const
 WorldParams& GameServer::world()
 {
     return m_simulation.world();
+}
+
+bool GameServer::debugDestroyShipModule(EntityId shipId, const std::string& moduleId)
+{
+    const bool ok = m_simulation.debugDestroyShipModule(shipId, moduleId);
+
+    std::cout
+        << "[GameServer] debugDestroyShipModule entityId="
+        << shipId.value
+        << " moduleId=" << moduleId
+        << " result=" << (ok ? "OK" : "FAIL")
+        << "\n";
+
+    return ok;
+}
+
+
+bool GameServer::debugSetShipStructuralLinkHealth(
+    EntityId id,
+    const std::string& linkId,
+    float health,
+    bool destroyed
+)
+{
+    return m_simulation.debugSetShipStructuralLinkHealth(
+        id,
+        linkId,
+        health,
+        destroyed
+    );
+}
+
+
+bool GameServer::debugDetachShipModule(EntityId id, const std::string& moduleId)
+{
+    return m_simulation.debugDetachShipModule(id, moduleId);
+}
+
+
+bool GameServer::debugReattachShipModule(
+    EntityId id,
+    const std::string& moduleId
+)
+{
+    const bool ok = m_simulation.debugReattachShipModule(id, moduleId);
+
+    std::cout
+        << "[GameServer] debugReattachShipModule entityId="
+        << id.value
+        << " moduleId=" << moduleId
+        << " ok=" << ok
+        << "\n";
+
+    return ok;
+}
+
+
+
+bool GameServer::startShipRepairJob(
+    EntityId id,
+    const std::string& moduleId
+)
+{
+    const bool ok =
+        m_simulation.startShipRepairJob(id, moduleId);
+
+    std::cout
+        << "[GameServer] startShipRepairJob entityId="
+        << id.value
+        << " moduleId=" << moduleId
+        << " ok=" << ok
+        << "\n";
+
+    return ok;
+}
+
+
+bool GameServer::startBestRepairJobForMissingSlot(
+    EntityId targetShipId,
+    const std::string& targetModuleId
+)
+{
+    const bool ok =
+        m_simulation.startBestRepairJobForMissingSlot(
+            targetShipId,
+            targetModuleId
+        );
+
+    std::cout
+        << "[GameServer] startBestRepairJobForMissingSlot shipId="
+        << targetShipId.value
+        << " targetModuleId="
+        << targetModuleId
+        << " ok="
+        << ok
+        << "\n";
+
+    return ok;
+}
+
+
+bool GameServer::startBestRepairJobForFirstMissingSlot(EntityId targetShipId)
+{
+    const bool ok =
+        m_simulation.startBestRepairJobForFirstMissingSlot(targetShipId);
+
+    std::cout
+        << "[GameServer] startBestRepairJobForFirstMissingSlot shipId="
+        << targetShipId.value
+        << " ok=" << ok
+        << "\n";
+
+    return ok;
+}
+
+
+
+
+
+bool GameServer::ejectShipCockpitCapsule(EntityId id)
+{
+    const bool ok = m_simulation.ejectShipCockpitCapsule(id);
+
+    std::cout
+        << "[GameServer] ejectShipCockpitCapsule entityId="
+        << id.value
+        << " ok=" << ok
+        << "\n";
+
+    return ok;
+}
+
+
+
+
+bool GameServer::debugHangShipModule(EntityId id, const std::string& moduleId)
+{
+    return m_simulation.debugHangShipModule(id, moduleId);
+}
+
+bool GameServer::debugReevaluateShipStructure(EntityId id)
+{
+    return m_simulation.debugReevaluateShipStructure(id);
+}
+
+
+
+bool GameServer::debugRestoreShipModule(EntityId shipId, const std::string& moduleId)
+{
+    const bool ok = m_simulation.debugRestoreShipModule(shipId, moduleId);
+
+    std::cout
+        << "[GameServer] debugRestoreShipModule entityId="
+        << shipId.value
+        << " moduleId=" << moduleId
+        << " result=" << (ok ? "OK" : "FAIL")
+        << "\n";
+
+    return ok;
+}
+
+bool GameServer::debugResetShipStructure(EntityId shipId)
+{
+    const bool ok = m_simulation.debugResetShipStructure(shipId);
+
+    std::cout
+        << "[GameServer] debugResetShipStructure entityId="
+        << shipId.value
+        << " result=" << (ok ? "OK" : "FAIL")
+        << "\n";
+
+    return ok;
+}
+
+void GameServer::debugResetAllShipStructures()
+{
+    m_simulation.debugResetAllShipStructures();
+
+    std::cout << "[GameServer] debugResetAllShipStructures\n";
 }

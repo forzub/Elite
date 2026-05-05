@@ -42,6 +42,161 @@ namespace
         return 0.0f;
     }
 
+
+const game::simulation::ObjectModuleSnapshot* findModuleSnapshotById(
+    const std::vector<game::simulation::ObjectModuleSnapshot>& modules,
+    const std::string& moduleId
+)
+{
+    for (const auto& m : modules)
+    {
+        if (m.moduleId == moduleId)
+            return &m;
+    }
+
+    return nullptr;
+}
+
+bool isDetachedVisualState(uint8_t state)
+{
+    return state == 3 || state == 4; // Detached / Hanging
+}
+
+glm::mat4 buildAssemblyModuleModel(
+    const glm::mat4& ownerModel,
+    const game::ship::geometry::AssemblyModule& module,
+    const std::vector<game::simulation::ObjectAssemblyModuleSnapshot>& assemblyModules
+)
+{
+    glm::mat4 moduleBaseModel = ownerModel;
+    moduleBaseModel = glm::translate(moduleBaseModel, module.localPosition);
+
+    moduleBaseModel = glm::rotate(
+        moduleBaseModel,
+        glm::radians(module.localRotationDeg.x),
+        glm::vec3(1.0f, 0.0f, 0.0f)
+    );
+
+    moduleBaseModel = glm::rotate(
+        moduleBaseModel,
+        glm::radians(module.localRotationDeg.y),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    moduleBaseModel = glm::rotate(
+        moduleBaseModel,
+        glm::radians(module.localRotationDeg.z),
+        glm::vec3(0.0f, 0.0f, 1.0f)
+    );
+
+    glm::mat4 moduleModel = moduleBaseModel;
+
+    if (module.rotates)
+    {
+        const float angle = findAssemblyModuleAngleRad(
+            assemblyModules,
+            module.id
+        );
+
+        moduleModel =
+            moduleModel *
+            glm::translate(glm::mat4(1.0f), module.pivot) *
+            glm::rotate(glm::mat4(1.0f), angle, module.rotationAxis) *
+            glm::translate(glm::mat4(1.0f), -module.pivot);
+    }
+
+    return moduleModel;
+}
+
+
+
+template<typename TOwner>
+void renderDetachedAssemblyModules(
+    MeshRenderer& meshRenderer,
+    DebugLineRenderer* debugLines,
+    const TOwner& owner,
+    const glm::mat4& ownerModel,
+    const glm::mat4& view,
+    const glm::mat4& proj,
+    const glm::vec3& cameraPos,
+    GLuint largeObjectShader,
+    GLuint edgeShader,
+    const LightingParams& params
+)
+{
+    if (!owner.assembly)
+        return;
+
+    for (const auto& fragment : owner.detachedFragments)
+    {
+        const game::ship::geometry::AssemblyModule* detachedModule = nullptr;
+
+        for (const auto& module : owner.assembly->modules)
+        {
+            if (module.id == fragment.moduleId)
+            {
+                detachedModule = &module;
+                break;
+            }
+        }
+
+        if (!detachedModule)
+            continue;
+
+        glm::mat4 moduleModel =
+            glm::translate(glm::mat4(1.0f), fragment.position) *
+            fragment.orientation;
+
+        const glm::vec3 moduleWorldPos =
+            glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
+
+        const float distToModule =
+            glm::length(moduleWorldPos - cameraPos);
+
+        const bool useLod1 =
+            distToModule >= owner.assembly->lodSwitchDistance;
+
+        for (const auto& part : detachedModule->meshes)
+        {
+            const glm::mat4 partModel =
+                glm::translate(moduleModel, part.localOffset);
+
+            const glm::mat4 partMvp =
+                proj * view * partModel;
+
+            const render::MeshGPU& gpu =
+                useLod1 ? part.lod1Gpu : part.lod0Gpu;
+
+            meshRenderer.draw(
+                gpu,
+                largeObjectShader,
+                edgeShader,
+                partMvp,
+                partModel,
+                params,
+                cameraPos
+            );
+        }
+
+        if (debugLines)
+        {
+            debug::render::ServerHitVolumeRenderer::render(
+                *debugLines,
+                fragment.debugHitVolumes,
+                moduleModel,
+                view,
+                proj
+            );
+        }
+
+
+    }
+}
+
+
+
+
+
 }
 
 
@@ -351,6 +506,26 @@ void SceneRenderer::render(
                     }
             }
 
+
+
+if (dbg.shouldDrawMeshes())
+{
+    renderDetachedAssemblyModules(
+    m_meshRenderer,
+    m_debugLines.get(),
+    ship,
+        shipModel,
+        view,
+        proj,
+        cameraPos,
+        largeObjectShader,
+        edgeShader,
+        shipParams
+    );
+}
+
+
+
             debug::render::ServerHitVolumeRenderer::render(
                 *m_debugLines,
                 ship.debugHitVolumes,
@@ -358,6 +533,54 @@ void SceneRenderer::render(
                 view,
                 proj
             );
+
+
+
+
+for (const auto& job : ship.repairJobs)
+{
+    const glm::vec4 droneColor(0.2f, 1.0f, 0.2f, 1.0f);
+    const glm::vec4 towColor(0.2f, 0.8f, 1.0f, 1.0f);
+    const glm::vec4 homeColor(1.0f, 0.8f, 0.2f, 1.0f);
+
+    m_debugRenderer.renderCross(
+        job.dronePosition,
+        0.6f,
+        droneColor,
+        view,
+        proj
+    );
+
+    m_debugRenderer.renderLine(
+        job.dronePosition,
+        job.fragmentPosition,
+        towColor,
+        view,
+        proj
+    );
+
+    m_debugRenderer.renderLine(
+        job.fragmentPosition,
+        job.homePosition,
+        homeColor,
+        view,
+        proj
+    );
+
+    m_debugRenderer.renderCross(
+        job.homePosition,
+        0.4f,
+        homeColor,
+        view,
+        proj
+    );
+}
+
+
+
+
+
+
 
             continue;
         }
@@ -571,18 +794,21 @@ for (const auto& pair : objects)
 
 
 
-
-        // if (shouldDebug)
-        // {
-        //     DebugObjectInfo objInfo;
-        //     objInfo.id = pair.first;
-        //     objInfo.position = obj.renderPosition;
-        //     objInfo.type = std::to_string(static_cast<int>(obj.type));
-        //     objInfo.visible = true;
-        //     debugData.objects.push_back(objInfo);
-        // }
-
-
+if (dbg.shouldDrawMeshes())
+{
+    renderDetachedAssemblyModules(
+    m_meshRenderer,
+    m_debugLines.get(),
+    obj,
+        objectBaseModel,
+        view,
+        proj,
+        cameraPos,
+        largeObjectShader,
+        edgeShader,
+        params
+    );
+}
 
        
             debug::render::ServerHitVolumeRenderer::render(

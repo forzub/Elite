@@ -8,6 +8,8 @@
 #include "src/game/simulation/ObjectModuleSnapshot.h"
 #include "src/game/simulation/ObjectAssemblyModuleSnapshot.h"
 #include "src/game/simulation/DebugHitVolumeSnapshot.h"
+#include "src/game/simulation/StructuralLinkSnapshot.h"
+#include "src/game/simulation/ObjectDetachedFragmentSnapshot.h"
 
 struct ObjectSnapshot
 {
@@ -19,6 +21,8 @@ struct ObjectSnapshot
     // glm::vec3 rotation;
 
     std::vector<game::simulation::ObjectModuleSnapshot> modules;
+    std::vector<game::simulation::StructuralLinkSnapshot> structuralLinks;
     std::vector<game::simulation::ObjectAssemblyModuleSnapshot> assemblyModules;
+    std::vector<game::simulation::ObjectDetachedFragmentSnapshot> detachedFragments;
     std::vector<game::simulation::DebugHitVolumeSnapshot> debugHitVolumes;
 };

@@ -16,7 +16,9 @@ enum class HtmlUiPanelId
     WorldInfo,
     PauseMenu,
     DebugControl,
-    AttachmentEditor
+    AttachmentEditor,
+    StructureDebug,
+    VolumeViewer
 };
 
 inline std::string_view toString(HtmlUiPanelId id)
@@ -33,7 +35,9 @@ inline std::string_view toString(HtmlUiPanelId id)
         case HtmlUiPanelId::WorldInfo:    return "world_info";
         case HtmlUiPanelId::PauseMenu:    return "pause_menu";
         case HtmlUiPanelId::AttachmentEditor: return "attachment_editor";
-        case HtmlUiPanelId::DebugControl: return "debug_control";
+        case HtmlUiPanelId::DebugControl:     return "debug_control";
+        case HtmlUiPanelId::StructureDebug:   return "structure_debug";
+        case HtmlUiPanelId::VolumeViewer:     return "volume_viewer";
         default:                          return "none";
     }
 }

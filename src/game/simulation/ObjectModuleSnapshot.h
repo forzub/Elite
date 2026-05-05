@@ -1,16 +1,8 @@
 #pragma once
 
-#include <string>
-#include <cstdint>
+#include "src/game/shared/module/ModuleViewData.h"
 
 namespace game::simulation
 {
-
-struct ObjectModuleSnapshot
-{
-    std::string moduleId;
-    uint8_t state = 0;
-    float health = 0.0f;
-};
-
-} // namespace game::simulation
+    using ObjectModuleSnapshot = game::shared::ModuleViewData;
+}

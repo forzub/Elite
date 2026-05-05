@@ -38,8 +38,30 @@ public:
     Ship* playerShip();
     const Ship* playerShip() const;
 
+    bool debugDestroyShipModule(EntityId id, const std::string& moduleId);
+    bool debugRestoreShipModule(EntityId id, const std::string& moduleId);
+    bool debugResetShipStructure(EntityId id);
+    void debugResetAllShipStructures();
 
+    bool debugDetachShipModule(EntityId id, const std::string& moduleId);
+    bool debugReattachShipModule(EntityId id, const std::string& moduleId);
+    bool startShipRepairJob(EntityId id, const std::string& moduleId);
 
+    bool ejectShipCockpitCapsule(EntityId id);
+    bool debugHangShipModule(EntityId id, const std::string& moduleId);
+    bool debugReevaluateShipStructure(EntityId id);
+
+    bool startBestRepairJobForMissingSlot(
+        EntityId targetShipId,
+        const std::string& targetModuleId
+    );
+
+    bool debugSetShipStructuralLinkHealth(
+        EntityId id,
+        const std::string& linkId,
+        float health,
+        bool destroyed
+    );
 
     
     EntityId spawnShip(
@@ -57,7 +79,7 @@ public:
     );
 
 
-
+    bool startBestRepairJobForFirstMissingSlot(EntityId targetShipId);
 
 
     void setPlayerControl(const ShipControlState& control);

@@ -13,9 +13,16 @@
 
 namespace
 {
-    bool isModuleVisible(uint8_t state)
+    bool isModuleLocallyVisible(uint8_t state)
     {
         return state == 0; // Attached
+    }
+
+    bool isModuleDetachedVisible(uint8_t state)
+    {
+        // 3 = Detached, 4 = Hanging.
+        // Destroyed/Disabled пока не рисуем как отдельные фрагменты.
+        return state == 3 || state == 4;
     }
 
     template<typename TState>
@@ -26,17 +33,52 @@ namespace
         if (!state.descriptor)
             return;
 
-        std::unordered_set<std::string> hiddenModuleIds;
+        std::unordered_map<std::string, uint8_t> stateById;
+        stateById.reserve(state.modules.size());
 
         for (const auto& modSnap : state.modules)
+            stateById[modSnap.moduleId] = modSnap.state;
+
+        std::unordered_map<std::string, std::string> parentById;
+        parentById.reserve(state.descriptor->moduleDescriptors().size());
+
+        for (const auto& modDesc : state.descriptor->moduleDescriptors())
+            parentById[modDesc.moduleId] = modDesc.parentModuleId;
+
+        auto isEffectivelyVisible = [&](const std::string& moduleId) -> bool
         {
-            if (!isModuleVisible(modSnap.state))
-                hiddenModuleIds.insert(modSnap.moduleId);
-        }
+            std::string current = moduleId;
+            int guard = 0;
+
+            while (!current.empty())
+            {
+                auto itState = stateById.find(current);
+                if (itState != stateById.end())
+                {
+                    if (!isModuleLocallyVisible(itState->second))
+                        return false;
+                }
+
+                auto itParent = parentById.find(current);
+                if (itParent == parentById.end())
+                    break;
+
+                current = itParent->second;
+                ++guard;
+
+                if (guard > static_cast<int>(parentById.size()) + 1)
+                {
+                    // fail-safe: если цикл, модуль считаем скрытым
+                    return false;
+                }
+            }
+
+            return true;
+        };
 
         for (const auto& modDesc : state.descriptor->moduleDescriptors())
         {
-            if (hiddenModuleIds.find(modDesc.moduleId) == hiddenModuleIds.end())
+            if (isEffectivelyVisible(modDesc.moduleId))
                 continue;
 
             for (const auto& partId : modDesc.meshPartIds)
@@ -75,7 +117,11 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.transform       = s.transform;
             state.renderTransform = s.transform;
             state.modules = s.modules;
+            
+            state.structuralLinks = s.structuralLinks;
             state.assemblyModules = s.assemblyModules;
+            state.detachedFragments = s.detachedFragments;
+            state.repairJobs = s.repairJobs;
             state.debugHitVolumes = s.debugHitVolumes;
 
             // state.gpuMesh = &render::MeshLibrary::get(s.typeId);
@@ -105,6 +151,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.shipCoreStatus = s.shipCoreStatus;
             state.modules = s.modules;
             state.assemblyModules = s.assemblyModules;
+            state.detachedFragments = s.detachedFragments;
+            state.repairJobs = s.repairJobs;
             state.debugHitVolumes = s.debugHitVolumes;
 
             rebuildHiddenPartIds(state);
@@ -133,7 +181,9 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.renderOrientation = o.orientation;
 
             state.modules = o.modules;
+            state.structuralLinks = o.structuralLinks;
             state.assemblyModules = o.assemblyModules;
+            state.detachedFragments = o.detachedFragments;
             state.debugHitVolumes = o.debugHitVolumes;
 
             state.renderPosition = o.position;
@@ -163,6 +213,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
             state.modules = o.modules;
             state.assemblyModules = o.assemblyModules;
+            state.detachedFragments = o.detachedFragments;
             state.debugHitVolumes = o.debugHitVolumes;
 
             rebuildHiddenPartIds(state);

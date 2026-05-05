@@ -294,7 +294,8 @@ void PlayerShipView::update(
         float dt,
         ShipRole role,
         const glm::vec3& position,
-        const glm::mat4& orientation
+        const glm::mat4& orientation,
+        const std::vector<game::simulation::ObjectDetachedFragmentSnapshot>& detachedFragments
 )
 {
     if (role != ShipRole::Player)
@@ -310,7 +311,8 @@ void PlayerShipView::update(
         dt,
         m_shipDesc,
         tempTransform,
-        m_cameras[ShipCameraMode::Cockpit]
+        m_cameras[ShipCameraMode::Cockpit],
+        &detachedFragments
     );
 
     cameraController.updateMode(
@@ -318,7 +320,8 @@ void PlayerShipView::update(
         dt,
         m_shipDesc,
         tempTransform,
-        m_cameras[ShipCameraMode::Rear]
+        m_cameras[ShipCameraMode::Rear],
+        &detachedFragments
     );
 
     cameraController.updateMode(
@@ -326,7 +329,8 @@ void PlayerShipView::update(
         dt,
         m_shipDesc,
         tempTransform,
-        m_cameras[ShipCameraMode::Drone]
+        m_cameras[ShipCameraMode::Drone],
+        &detachedFragments
     );
 
 

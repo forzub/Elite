@@ -6,7 +6,43 @@
 namespace debug::render
 {
 
-glm::vec4 ServerHitVolumeRenderer::colorForLayer(int layerIndex, bool destroyed)
+static void addOrientedBox(
+    DebugLineRenderer& lineRenderer,
+    const glm::vec3& center,
+    const glm::vec3& halfSize,
+    const glm::mat3& orientation,
+    const glm::vec4& color
+)
+{
+    std::array<glm::vec3, 8> p =
+    {{
+        {-halfSize.x, -halfSize.y, -halfSize.z},
+        { halfSize.x, -halfSize.y, -halfSize.z},
+        { halfSize.x,  halfSize.y, -halfSize.z},
+        {-halfSize.x,  halfSize.y, -halfSize.z},
+
+        {-halfSize.x, -halfSize.y,  halfSize.z},
+        { halfSize.x, -halfSize.y,  halfSize.z},
+        { halfSize.x,  halfSize.y,  halfSize.z},
+        {-halfSize.x,  halfSize.y,  halfSize.z},
+    }};
+
+    for (auto& v : p)
+    {
+        v = center + orientation * v;
+    }
+
+    auto L = [&](int a, int b)
+    {
+        lineRenderer.addLine(p[a], p[b], color);
+    };
+
+    L(0,1); L(1,2); L(2,3); L(3,0);
+    L(4,5); L(5,6); L(6,7); L(7,4);
+    L(0,4); L(1,5); L(2,6); L(3,7);
+}
+
+glm::vec4 ServerHitVolumeRenderer::colorForLayer(int layerIndex, bool destroyed, bool supportLinkVolume)
 {
     glm::vec4 c;
 
@@ -17,6 +53,11 @@ glm::vec4 ServerHitVolumeRenderer::colorForLayer(int layerIndex, bool destroyed)
         case 2: c = glm::vec4(0.2f, 1.0f, 0.3f, 1.0f); break;
         case 3: c = glm::vec4(0.2f, 0.7f, 1.0f, 1.0f); break;
         default: c = glm::vec4(0.9f, 0.2f, 1.0f, 1.0f); break;
+    }
+
+    if (supportLinkVolume)
+    {
+        c = glm::vec4(0.2f, 1.0f, 1.0f, 1.0f);
     }
 
     if (destroyed)
@@ -67,8 +108,6 @@ void ServerHitVolumeRenderer::addBox(
     L(0,4); L(1,5); L(2,6); L(3,7);
 }
 
-
-
 void ServerHitVolumeRenderer::render(
     DebugLineRenderer& lineRenderer,
     const std::vector<game::simulation::DebugHitVolumeSnapshot>& volumes,
@@ -78,7 +117,7 @@ void ServerHitVolumeRenderer::render(
 )
 {
     const auto& dbg = debug::get().render;
-    
+
     if (!dbg.drawHitVolumes)
         return;
 
@@ -91,7 +130,15 @@ void ServerHitVolumeRenderer::render(
 
     for (const auto& v : volumes)
     {
-                glm::vec4 color = colorForLayer(v.layerIndex, v.destroyed);
+        // 0 = all, 1 = primary only, 2 = support-link only
+        if (dbg.hitVolumeFilterMode == 1 && v.supportLinkVolume)
+            continue;
+
+        if (dbg.hitVolumeFilterMode == 2 && !v.supportLinkVolume)
+            continue;
+
+        glm::vec4 color = colorForLayer(v.layerIndex, v.destroyed, v.supportLinkVolume);
+
         addBox(
             lineRenderer,
             v.center,
@@ -101,6 +148,22 @@ void ServerHitVolumeRenderer::render(
             color
         );
     }
+
+    // if (dbg.drawSeamDebug)
+    // {
+    //     for (const auto& s : dbg.seamDebugProxies)
+    //     {
+    //         glm::vec4 color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+
+    //         addOrientedBox(
+    //             lineRenderer,
+    //             s.centerWorld,
+    //             s.halfSize,
+    //             s.orientationWorld,
+    //             color
+    //         );
+    //     }
+    // }
 
     if (dbg.hitVolumesOverlay)
         lineRenderer.endOverlay(mvp);

@@ -37,7 +37,7 @@ void ObjectAssemblyRegistry::init()
         return mesh(id, path, path, localOffset);
     };
 
-    auto module = [](
+        auto module = [](
         const std::string& id,
         const std::vector<AssemblyMeshPartDesc>& meshes,
         bool rotates = false,
@@ -46,11 +46,13 @@ void ObjectAssemblyRegistry::init()
         const glm::vec3& localPosition = glm::vec3(0.0f),
         const glm::vec3& localRotationDeg = glm::vec3(0.0f),
         const glm::vec3& pivot = glm::vec3(0.0f),
-        const std::string& subsystemId = ""
+        const std::string& subsystemId = "",
+        const std::string& parentModuleId = ""
     ) -> AssemblyModuleDesc
     {
         AssemblyModuleDesc d;
         d.moduleId = id;
+        d.parentModuleId = parentModuleId;
         d.subsystemId = subsystemId;
         d.enabled = true;
         d.localPosition = localPosition;
@@ -65,8 +67,8 @@ void ObjectAssemblyRegistry::init()
 
     // =========================================================
     // COBRA MK1
-    // Теперь корабль тоже описывается через логические модули.
-    // Пока pivot у всех модулей = 0, вращения нет.
+    // Assembly теперь повторяет логические moduleId из ShipDescriptor.
+    // Это устраняет разрыв между descriptor hierarchy и geometry hierarchy.
     // =========================================================
     {
         ObjectAssemblyDesc cobramk1;
@@ -74,11 +76,14 @@ void ObjectAssemblyRegistry::init()
         cobramk1.lodSwitchDistance = DEFAULT_ASSEMBLY_LOD_SWITCH_DISTANCE;
 
         cobramk1.modules = {
+            // =====================================================
+            // FRAME / STRUCTURE
+            // =====================================================
+
             module(
-                "ship_cockpit_module",
+                "ship_frame_CB",
                 {
-                    sameMesh("ship_cockpit", "assets/models/ships/cobrettymk1/LOD0/ship_cockpit.obj"),
-                    sameMesh("ship_radar",   "assets/models/ships/cobrettymk1/LOD0/ship_radar.obj")
+                    sameMesh("ship_frame_CB", "assets/models/ships/cobrettymk1/LOD0/ship_frame_CB.obj")
                 },
                 false,
                 glm::vec3(0.0f, 0.0f, 1.0f),
@@ -86,25 +91,14 @@ void ObjectAssemblyRegistry::init()
                 glm::vec3(0.0f),
                 glm::vec3(0.0f),
                 glm::vec3(0.0f),
-                "avionics_front"
+                "structural_frame",
+                ""
             ),
 
             module(
-                "ship_control_module",
+                "ship_frame_CF",
                 {
-                    sameMesh("ship_control_unit_L", "assets/models/ships/cobrettymk1/LOD0/ship_control_unit_L.obj"),
-                    sameMesh("ship_control_unit_R", "assets/models/ships/cobrettymk1/LOD0/ship_control_unit_R.obj")
-                }
-            ),
-
-            module(
-                "ship_engine_module",
-                {
-                    sameMesh("ship_engine_L",      "assets/models/ships/cobrettymk1/LOD0/ship_engine_L.obj"),
-                    sameMesh("ship_engine_R",      "assets/models/ships/cobrettymk1/LOD0/ship_engine_R.obj"),
-                    sameMesh("ship_frame_reactor", "assets/models/ships/cobrettymk1/LOD0/ship_frame_reactor.obj"),
-                    sameMesh("ship_tank_L",        "assets/models/ships/cobrettymk1/LOD0/ship_tank_L.obj"),
-                    sameMesh("ship_tank_R",        "assets/models/ships/cobrettymk1/LOD0/ship_tank_R.obj")
+                    sameMesh("ship_frame_CF", "assets/models/ships/cobrettymk1/LOD0/ship_frame_CF.obj")
                 },
                 false,
                 glm::vec3(0.0f, 0.0f, 1.0f),
@@ -112,23 +106,145 @@ void ObjectAssemblyRegistry::init()
                 glm::vec3(0.0f),
                 glm::vec3(0.0f),
                 glm::vec3(0.0f),
-                "propulsion_block"
+                "structural_frame",
+                "ship_frame_CB"
             ),
 
             module(
-                "ship_frame_module",
+                "ship_frame_FL",
                 {
-                    sameMesh("ship_frame_CB", "assets/models/ships/cobrettymk1/LOD0/ship_frame_CB.obj"),
-                    sameMesh("ship_frame_CF", "assets/models/ships/cobrettymk1/LOD0/ship_frame_CF.obj"),
-                    sameMesh("ship_frame_FL", "assets/models/ships/cobrettymk1/LOD0/ship_frame_FL.obj"),
+                    sameMesh("ship_frame_FL", "assets/models/ships/cobrettymk1/LOD0/ship_frame_FL.obj")
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "structural_frame",
+                "ship_frame_CF"
+            ),
+
+            module(
+                "ship_frame_FR",
+                {
                     sameMesh("ship_frame_FR", "assets/models/ships/cobrettymk1/LOD0/ship_frame_FR.obj")
-                }
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "structural_frame",
+                "ship_frame_CF"
             ),
 
             module(
-                "ship_weapon_module",
+                "ship_frame_reactor",
                 {
-                    sameMesh("ship_laser_L", "assets/models/ships/cobrettymk1/LOD0/ship_laser_L.obj"),
+                    sameMesh("ship_frame_reactor", "assets/models/ships/cobrettymk1/LOD0/ship_frame_reactor.obj")
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "propulsion_block",
+                "ship_frame_CB"
+            ),
+
+            // =====================================================
+            // FRONT AVIONICS / COCKPIT
+            // =====================================================
+
+            module(
+                "ship_cockpit",
+                {
+                    sameMesh("ship_cockpit", "assets/models/ships/cobrettymk1/LOD0/ship_cockpit.obj")
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "avionics_front",
+                "ship_frame_CF"
+            ),
+
+            module(
+                "ship_radar",
+                {
+                    sameMesh("ship_radar", "assets/models/ships/cobrettymk1/LOD0/ship_radar.obj")
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "sensor_radar",
+                "ship_frame_CF"
+            ),
+
+            // =====================================================
+            // FLIGHT CONTROL
+            // =====================================================
+
+            module(
+                "ship_control_unit_L",
+                {
+                    sameMesh("ship_control_unit_L", "assets/models/ships/cobrettymk1/LOD0/ship_control_unit_L.obj")
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "flight_control",
+                "ship_frame_FL"
+            ),
+
+            module(
+                "ship_control_unit_R",
+                {
+                    sameMesh("ship_control_unit_R", "assets/models/ships/cobrettymk1/LOD0/ship_control_unit_R.obj")
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "flight_control",
+                "ship_frame_FR"
+            ),
+
+            // =====================================================
+            // WEAPONS
+            // =====================================================
+
+            module(
+                "ship_laser_L",
+                {
+                    sameMesh("ship_laser_L", "assets/models/ships/cobrettymk1/LOD0/ship_laser_L.obj")
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "weapon_mounts",
+                "ship_frame_FL"
+            ),
+
+            module(
+                "ship_laser_R",
+                {
                     sameMesh("ship_laser_R", "assets/models/ships/cobrettymk1/LOD0/ship_laser_R.obj")
                 },
                 false,
@@ -137,31 +253,236 @@ void ObjectAssemblyRegistry::init()
                 glm::vec3(0.0f),
                 glm::vec3(0.0f),
                 glm::vec3(0.0f),
-                "weapon_mounts"
+                "weapon_mounts",
+                "ship_frame_FR"
+            ),
+
+            // =====================================================
+            // OUTER SKIN PANELS
+            // =====================================================
+
+            module(
+                "ship_panel_bottom_LB",
+                {
+                    sameMesh("ship_panel_bottom_LB", "assets/models/ships/cobrettymk1/LOD0/ship_panel_bottom_LB.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_CB"
             ),
 
             module(
-                "ship_skin_module",
+                "ship_panel_bottom_LF",
                 {
-                    sameMesh("ship_panel_bottom_LB", "assets/models/ships/cobrettymk1/LOD0/ship_panel_bottom_LB.obj"),
-                    sameMesh("ship_panel_bottom_LF", "assets/models/ships/cobrettymk1/LOD0/ship_panel_bottom_LF.obj"),
-                    sameMesh("ship_panel_bottom_RB", "assets/models/ships/cobrettymk1/LOD0/ship_panel_bottom_RB.obj"),
-                    sameMesh("ship_panel_bottom_RF", "assets/models/ships/cobrettymk1/LOD0/ship_panel_bottom_RF.obj"),
-                    sameMesh("ship_panel_bottom_C",  "assets/models/ships/cobrettymk1/LOD0/ship_panel_bottom_C.obj"),
+                    sameMesh("ship_panel_bottom_LF", "assets/models/ships/cobrettymk1/LOD0/ship_panel_bottom_LF.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_FL"
+            ),
 
-                    sameMesh("ship_panel_side_LB",   "assets/models/ships/cobrettymk1/LOD0/ship_panel_side_LB.obj"),
-                    sameMesh("ship_panel_side_LF",   "assets/models/ships/cobrettymk1/LOD0/ship_panel_side_LF.obj"),
-                    sameMesh("ship_panel_side_RB",   "assets/models/ships/cobrettymk1/LOD0/ship_panel_side_RB.obj"),
-                    sameMesh("ship_panel_side_RF",   "assets/models/ships/cobrettymk1/LOD0/ship_panel_side_RF.obj"),
-                    sameMesh("ship_panel_back",      "assets/models/ships/cobrettymk1/LOD0/ship_panel_back.obj"),
+            module(
+                "ship_panel_bottom_RB",
+                {
+                    sameMesh("ship_panel_bottom_RB", "assets/models/ships/cobrettymk1/LOD0/ship_panel_bottom_RB.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_CB"
+            ),
 
-                    sameMesh("ship_panel_top_CB",    "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_CB.obj"),
-                    sameMesh("ship_panel_top_CF",    "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_CF.obj"),
-                    sameMesh("ship_panel_top_LB",    "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_LB.obj"),
-                    sameMesh("ship_panel_top_LF",    "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_LF.obj"),
-                    sameMesh("ship_panel_top_RB",    "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_RB.obj"),
-                    sameMesh("ship_panel_top_RF",    "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_RF.obj")
-                }
+            module(
+                "ship_panel_bottom_RF",
+                {
+                    sameMesh("ship_panel_bottom_RF", "assets/models/ships/cobrettymk1/LOD0/ship_panel_bottom_RF.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_FR"
+            ),
+
+            module(
+                "ship_panel_bottom_C",
+                {
+                    sameMesh("ship_panel_bottom_C", "assets/models/ships/cobrettymk1/LOD0/ship_panel_bottom_C.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_CF"
+            ),
+
+            module(
+                "ship_panel_side_LB",
+                {
+                    sameMesh("ship_panel_side_LB", "assets/models/ships/cobrettymk1/LOD0/ship_panel_side_LB.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_CB"
+            ),
+
+            module(
+                "ship_panel_side_LF",
+                {
+                    sameMesh("ship_panel_side_LF", "assets/models/ships/cobrettymk1/LOD0/ship_panel_side_LF.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_FL"
+            ),
+
+            module(
+                "ship_panel_side_RB",
+                {
+                    sameMesh("ship_panel_side_RB", "assets/models/ships/cobrettymk1/LOD0/ship_panel_side_RB.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_CB"
+            ),
+
+            module(
+                "ship_panel_side_RF",
+                {
+                    sameMesh("ship_panel_side_RF", "assets/models/ships/cobrettymk1/LOD0/ship_panel_side_RF.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_FR"
+            ),
+
+            module(
+                "ship_panel_back",
+                {
+                    sameMesh("ship_panel_back", "assets/models/ships/cobrettymk1/LOD0/ship_panel_back.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_CB"
+            ),
+
+            module(
+                "ship_panel_top_CB",
+                {
+                    sameMesh("ship_panel_top_CB", "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_CB.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_CB"
+            ),
+
+            module(
+                "ship_panel_top_CF",
+                {
+                    sameMesh("ship_panel_top_CF", "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_CF.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_CF"
+            ),
+
+            module(
+                "ship_panel_top_LB",
+                {
+                    sameMesh("ship_panel_top_LB", "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_LB.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_CB"
+            ),
+
+            module(
+                "ship_panel_top_LF",
+                {
+                    sameMesh("ship_panel_top_LF", "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_LF.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_FL"
+            ),
+
+            module(
+                "ship_panel_top_RB",
+                {
+                    sameMesh("ship_panel_top_RB", "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_RB.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_CB"
+            ),
+
+            module(
+                "ship_panel_top_RF",
+                {
+                    sameMesh("ship_panel_top_RF", "assets/models/ships/cobrettymk1/LOD0/ship_panel_top_RF.obj")
+                },
+                false, glm::vec3(0.0f, 0.0f, 1.0f), 0.0f,
+                glm::vec3(0.0f), glm::vec3(0.0f), glm::vec3(0.0f),
+                "outer_skin", "ship_frame_FR"
+            ),
+
+            // =====================================================
+            // PROPULSION
+            // =====================================================
+
+            module(
+                "ship_engine_L",
+                {
+                    sameMesh("ship_engine_L", "assets/models/ships/cobrettymk1/LOD0/ship_engine_L.obj")
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "propulsion_block",
+                "ship_frame_reactor"
+            ),
+
+            module(
+                "ship_engine_R",
+                {
+                    sameMesh("ship_engine_R", "assets/models/ships/cobrettymk1/LOD0/ship_engine_R.obj")
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "propulsion_block",
+                "ship_frame_reactor"
+            ),
+
+            module(
+                "ship_tank_L",
+                {
+                    sameMesh("ship_tank_L", "assets/models/ships/cobrettymk1/LOD0/ship_tank_L.obj")
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "propulsion_block",
+                "ship_frame_reactor"
+            ),
+
+            module(
+                "ship_tank_R",
+                {
+                    sameMesh("ship_tank_R", "assets/models/ships/cobrettymk1/LOD0/ship_tank_R.obj")
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "propulsion_block",
+                "ship_frame_reactor"
             )
         };
 

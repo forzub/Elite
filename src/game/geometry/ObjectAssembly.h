@@ -26,6 +26,7 @@ struct AssemblyMeshPartDesc
 struct AssemblyModuleDesc
 {
     std::string moduleId;
+    std::string parentModuleId;
     std::string subsystemId;
 
     bool enabled = true;
@@ -61,7 +62,6 @@ struct AssemblyMeshPart
 
     glm::vec3 localOffset  {0.0f};
 
-    // bounds part после загрузки/масштабирования
     glm::vec3 minBounds {0.0f};
     glm::vec3 maxBounds {0.0f};
     glm::vec3 boundCenter {0.0f};
@@ -77,6 +77,7 @@ struct AssemblyMeshPart
 struct AssemblyModule
 {
     std::string id;
+    std::string parentModuleId;
     std::string subsystemId;
 
     glm::vec3 localPosition    {0.0f};
@@ -87,7 +88,6 @@ struct AssemblyModule
     glm::vec3 rotationAxis {0.0f, 0.0f, 1.0f};
     float rotationSpeed = 0.0f;
 
-    // bounds логического модуля в локальных координатах объекта
     glm::vec3 minBounds {0.0f};
     glm::vec3 maxBounds {0.0f};
     glm::vec3 boundCenter {0.0f};

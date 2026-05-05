@@ -54,6 +54,14 @@
 #include "src/game/ship/damage/ShipDamageHandler.h"
 
 #include "src/world/modules/ObjectAssemblyRuntime.h"
+#include "src/world/modules/ObjectStructuralLinkRuntime.h"
+#include "src/world/modules/ObjectDetachedFragmentRuntime.h"
+
+#include "src/world/modules/ObjectRepairJobRuntime.h"
+#include "src/world/modules/ObjectMissingPartRequest.h"
+#include "src/game/simulation/ObjectRepairJobSnapshot.h"
+
+
 
 namespace game::ship::core
 {
@@ -133,6 +141,27 @@ public:
     ) const;
 
 
+    std::vector<world::modules::ObjectMissingPartRequest>
+    buildMissingPartRequests() const;
+
+    bool startRepairJobForClaimedReplacement(
+        const std::string& targetModuleId,
+        world::modules::ObjectDetachedFragmentRuntime& sourceRuntime,
+        const std::string& sourceModuleId
+    );
+
+    world::modules::ObjectDetachedFragmentRuntime& detachedFragmentRuntime()
+    {
+        return m_detachedFragmentRuntime;
+    }
+
+    const world::modules::ObjectDetachedFragmentRuntime& detachedFragmentRuntime() const
+    {
+        return m_detachedFragmentRuntime;
+    }
+
+    void syncDetachedFragmentsFromModuleRuntime();
+    void updateDetachedFragments(float dt);
 
 
     void damageRadiatorPanel(int index, double amount) {
@@ -146,6 +175,11 @@ public:
     const world::modules::ObjectAssemblyRuntime& assemblyRuntime() const { return m_assemblyRuntime; }
     world::modules::ObjectAssemblyRuntime& assemblyRuntime() { return m_assemblyRuntime; }
     void updateAssemblyRuntime(double dt);
+
+    std::vector<game::simulation::ObjectRepairJobSnapshot>
+    buildRepairJobSnapshots() const;
+
+    int activeRepairJobCount() const;
 
 
     game::ShipCoreStatus getCoreStatus() const;
@@ -188,6 +222,10 @@ public:
     const game::damage::HitComponent& getHitComponent() const{ return m_hitComponent; }
     void applyDamage(const game::damage::DamageEvent& event);
 
+    bool debugDestroyModuleById(const std::string& moduleId);
+    bool debugRestoreModuleById(const std::string& moduleId);
+    bool debugResetStructure();
+
     void exportHitVolumes() const;
     void restoreVolume(int index);
 
@@ -200,8 +238,35 @@ public:
 
     const game::damage::HitComponent& hitComponent() const { return m_hitComponent; }
     game::damage::HitComponent& hitComponent() { return m_hitComponent; }
+
+    bool hitVolumesDirty() const { return m_hitVolumesDirty; }
+    void markHitVolumesDirty() { m_hitVolumesDirty = true; }
+    void clearHitVolumesDirty() { m_hitVolumesDirty = false; }
     
-    
+    bool debugDetachModuleById(const std::string& moduleId);
+    bool debugReattachModuleById(const std::string& moduleId);
+    bool startRepairJobForModule(const std::string& moduleId);
+    void updateRepairJobs(float dt);
+
+    bool debugHangModuleById(const std::string& moduleId);
+    bool debugReevaluateStructure();
+    bool ejectCockpitCapsule();
+
+    world::modules::ObjectStructuralLinkRuntime& structuralLinkRuntime()
+    {
+        return m_structuralLinkRuntime;
+    }
+
+    const world::modules::ObjectStructuralLinkRuntime& structuralLinkRuntime() const
+    {
+        return m_structuralLinkRuntime;
+    }
+
+    bool debugSetStructuralLinkHealth(
+        const std::string& linkId,
+        float health,
+        bool destroyed
+    );
 
 private:
 
@@ -266,8 +331,15 @@ private:
     game::ship::ShipDamageHandler               m_damageHandler{&m_hitComponent}; 
 
     // --------- MODULE RUNTIME --------
-    world::modules::ObjectModuleRuntime m_moduleRuntime;
-    world::modules::ObjectAssemblyRuntime m_assemblyRuntime;
+    world::modules::ObjectModuleRuntime             m_moduleRuntime;
+    world::modules::ObjectStructuralLinkRuntime     m_structuralLinkRuntime;
+    world::modules::ObjectDetachedFragmentRuntime m_detachedFragmentRuntime;
+    world::modules::ObjectRepairJobRuntime m_repairJobRuntime;
+
+
+    world::modules::ObjectAssemblyRuntime           m_assemblyRuntime;
+    bool                                            m_hitVolumesDirty = true;
+
 };
 
 

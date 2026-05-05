@@ -182,6 +182,14 @@ add_executable(EliteGame
 
     src/game/debug/AttachmentEditorPayload.cpp
     src/game/debug/AttachmentEditorResolve.cpp
+
+    src/world/modules/ObjectAssemblyTransformUtils.cpp
+    src/game/debug/VolumeViewerPayload.cpp
+
+    src/world/modules/ObjectStructuralLinkRuntime.cpp
+    src/world/modules/ObjectDetachedFragmentRuntime.cpp
+    src/world/modules/ObjectRepairJobRuntime.cpp
+    
 )
 
 add_custom_target(copy_assets ALL

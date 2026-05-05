@@ -7,6 +7,8 @@
 #include "src/world/modules/ObjectModuleRuntime.h"
 #include "src/game/damage/HitComponent.h"
 #include "src/world/modules/ObjectAssemblyRuntime.h"
+#include "src/world/modules/ObjectStructuralLinkRuntime.h"
+#include "src/world/modules/ObjectDetachedFragmentRuntime.h"
 
 struct StaticObject
 {
@@ -21,6 +23,9 @@ struct StaticObject
     glm::vec3 linearVelocity  {0.0f, 0.0f, 0.0f};
 
     world::modules::ObjectModuleRuntime moduleRuntime;
+    world::modules::ObjectStructuralLinkRuntime structuralLinkRuntime;
     world::modules::ObjectAssemblyRuntime assemblyRuntime;
+    world::modules::ObjectDetachedFragmentRuntime detachedFragmentRuntime;
     game::damage::HitComponent hitComponent;
+    bool hitVolumesDirty = true;
 };

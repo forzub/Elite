@@ -22,7 +22,7 @@ public:
     );
 
 private:
-    static glm::vec4 colorForLayer(int layerIndex, bool destroyed);
+    static glm::vec4 colorForLayer(int layerIndex, bool destroyed, bool supportLinkVolume);
     static void addBox(
         DebugLineRenderer& lineRenderer,
         const glm::vec3& center,

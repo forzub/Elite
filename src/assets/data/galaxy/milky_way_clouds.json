@@ -1,0 +1,2541 @@
+{
+  "version": 1,
+  "name": "EliteGame Milky Way Cloud Model",
+  "units": "light_years",
+  "coordinate_basis": {
+    "source_basis": "HYG equatorial Cartesian / J2000, same basis as real_star_catalog.json",
+    "x": "+X toward RA 0h Dec 0",
+    "y": "+Y toward RA 6h Dec 0",
+    "z": "+Z toward north celestial pole",
+    "scale": "1 engine unit = 1 light year"
+  },
+  "galactic_reference": {
+    "galactic_center_ra_deg": 266.4,
+    "galactic_center_dec_deg": -28.94,
+    "north_galactic_pole_ra_deg": 192.85,
+    "north_galactic_pole_dec_deg": 27.13,
+    "sun_to_galactic_center_distance_ly": 26000.0,
+    "plane_x_toward_galactic_center": [
+      -0.055045008,
+      -0.873421808,
+      -0.483843355
+    ],
+    "plane_y_galactic_rotation_side": [
+      0.494056892,
+      -0.444924909,
+      0.746960248
+    ],
+    "plane_z_north_galactic_pole": [
+      -0.867685331,
+      -0.197929712,
+      0.456010959
+    ]
+  },
+  "rendering_notes": {
+    "description": "Low-cost visual cloud controls for Milky Way haze. These are not individual stars.",
+    "recommended_rebuild_threshold_ly": 1.0,
+    "cloud_count": 119,
+    "intended_render": "transparent soft quads/sprites on sky sphere, projected from cloud position relative to observer"
+  },
+  "clouds": [
+    {
+      "id": "MWC_000",
+      "role": "main_band",
+      "galactic_longitude_deg": -170.0,
+      "galactic_latitude_deg": 0.777,
+      "distance_ly": 14293.665,
+      "position_ly": [
+        -619.616705,
+        13359.461864,
+        5044.770114
+      ],
+      "size_x_deg": 12.8048,
+      "size_y_deg": 2.3031,
+      "rotation_deg": -7.2861,
+      "alpha": 0.02778,
+      "color": [
+        0.2782,
+        0.3282,
+        0.4491
+      ]
+    },
+    {
+      "id": "MWC_001",
+      "role": "main_band",
+      "galactic_longitude_deg": -164.603,
+      "galactic_latitude_deg": -2.611,
+      "distance_ly": 12861.368,
+      "position_ly": [
+        -495.14342,
+        12452.670243,
+        3178.146238
+      ],
+      "size_x_deg": 10.6809,
+      "size_y_deg": 1.3911,
+      "rotation_deg": 3.3093,
+      "alpha": 0.0366,
+      "color": [
+        0.2633,
+        0.3133,
+        0.4417
+      ]
+    },
+    {
+      "id": "MWC_002",
+      "role": "main_band",
+      "galactic_longitude_deg": -159.206,
+      "galactic_latitude_deg": 2.302,
+      "distance_ly": 12494.085,
+      "position_ly": [
+        -1982.522246,
+        12066.121852,
+        2565.240581
+      ],
+      "size_x_deg": 10.1985,
+      "size_y_deg": 2.988,
+      "rotation_deg": -0.1586,
+      "alpha": 0.03881,
+      "color": [
+        0.2615,
+        0.3115,
+        0.4408
+      ]
+    },
+    {
+      "id": "MWC_003",
+      "role": "main_band",
+      "galactic_longitude_deg": -153.81,
+      "galactic_latitude_deg": -3.222,
+      "distance_ly": 12116.38,
+      "position_ly": [
+        -1449.455349,
+        11991.519174,
+        953.526516
+      ],
+      "size_x_deg": 12.215,
+      "size_y_deg": 2.1636,
+      "rotation_deg": -4.9052,
+      "alpha": 0.03974,
+      "color": [
+        0.2887,
+        0.3387,
+        0.4543
+      ]
+    },
+    {
+      "id": "MWC_004",
+      "role": "main_band",
+      "galactic_longitude_deg": -148.413,
+      "galactic_latitude_deg": 1.649,
+      "distance_ly": 10872.324,
+      "position_ly": [
+        -2574.348808,
+        10556.673721,
+        369.857502
+      ],
+      "size_x_deg": 9.3955,
+      "size_y_deg": 2.633,
+      "rotation_deg": -11.0514,
+      "alpha": 0.03794,
+      "color": [
+        0.2653,
+        0.3153,
+        0.4427
+      ]
+    },
+    {
+      "id": "MWC_005",
+      "role": "main_band",
+      "galactic_longitude_deg": -143.016,
+      "galactic_latitude_deg": 1.291,
+      "distance_ly": 9668.205,
+      "position_ly": [
+        -2636.908144,
+        9287.760052,
+        -508.348763
+      ],
+      "size_x_deg": 10.9715,
+      "size_y_deg": 1.8217,
+      "rotation_deg": -7.5997,
+      "alpha": 0.03391,
+      "color": [
+        0.2689,
+        0.3189,
+        0.4444
+      ]
+    },
+    {
+      "id": "MWC_006",
+      "role": "main_band",
+      "galactic_longitude_deg": -137.619,
+      "galactic_latitude_deg": -3.331,
+      "distance_ly": 9107.236,
+      "position_ly": [
+        -2198.91826,
+        8697.301104,
+        -1569.541599
+      ],
+      "size_x_deg": 11.7863,
+      "size_y_deg": 1.6694,
+      "rotation_deg": -8.7302,
+      "alpha": 0.03664,
+      "color": [
+        0.2855,
+        0.3355,
+        0.4528
+      ]
+    },
+    {
+      "id": "MWC_007",
+      "role": "main_band",
+      "galactic_longitude_deg": -132.222,
+      "galactic_latitude_deg": 3.019,
+      "distance_ly": 9617.865,
+      "position_ly": [
+        -3598.268996,
+        8701.630577,
+        -1958.933135
+      ],
+      "size_x_deg": 10.0573,
+      "size_y_deg": 2.8602,
+      "rotation_deg": -12.9905,
+      "alpha": 0.03038,
+      "color": [
+        0.2602,
+        0.3102,
+        0.4401
+      ]
+    },
+    {
+      "id": "MWC_008",
+      "role": "main_band",
+      "galactic_longitude_deg": -126.825,
+      "galactic_latitude_deg": -0.44,
+      "distance_ly": 10375.854,
+      "position_ly": [
+        -3691.772411,
+        9142.709504,
+        -3231.103917
+      ],
+      "size_x_deg": 7.445,
+      "size_y_deg": 2.9041,
+      "rotation_deg": -2.8895,
+      "alpha": 0.02531,
+      "color": [
+        0.2874,
+        0.3374,
+        0.4537
+      ]
+    },
+    {
+      "id": "MWC_009",
+      "role": "main_band",
+      "galactic_longitude_deg": -121.429,
+      "galactic_latitude_deg": -3.599,
+      "distance_ly": 10278.998,
+      "position_ly": [
+        -3470.574649,
+        8694.59051,
+        -4244.644971
+      ],
+      "size_x_deg": 10.8783,
+      "size_y_deg": 2.3328,
+      "rotation_deg": -3.4521,
+      "alpha": 0.03253,
+      "color": [
+        0.2714,
+        0.3214,
+        0.4457
+      ]
+    },
+    {
+      "id": "MWC_010",
+      "role": "main_band",
+      "galactic_longitude_deg": -116.032,
+      "galactic_latitude_deg": 3.506,
+      "distance_ly": 8121.242,
+      "position_ly": [
+        -3833.623464,
+        6249.59831,
+        -3492.909823
+      ],
+      "size_x_deg": 13.1029,
+      "size_y_deg": 1.9216,
+      "rotation_deg": -4.3737,
+      "alpha": 0.03655,
+      "color": [
+        0.2898,
+        0.3398,
+        0.4549
+      ]
+    },
+    {
+      "id": "MWC_011",
+      "role": "main_band",
+      "galactic_longitude_deg": -110.635,
+      "galactic_latitude_deg": 5.884,
+      "distance_ly": 7915.246,
+      "position_ly": [
+        -4191.791824,
+        5541.282563,
+        -3791.329725
+      ],
+      "size_x_deg": 12.4131,
+      "size_y_deg": 1.759,
+      "rotation_deg": -9.5939,
+      "alpha": 0.02834,
+      "color": [
+        0.2819,
+        0.3319,
+        0.4509
+      ]
+    },
+    {
+      "id": "MWC_012",
+      "role": "main_band",
+      "galactic_longitude_deg": -105.238,
+      "galactic_latitude_deg": 1.484,
+      "distance_ly": 9405.46,
+      "position_ly": [
+        -4557.329137,
+        6146.430595,
+        -5469.443452
+      ],
+      "size_x_deg": 12.0297,
+      "size_y_deg": 1.6084,
+      "rotation_deg": -4.4822,
+      "alpha": 0.02803,
+      "color": [
+        0.2682,
+        0.3182,
+        0.4441
+      ]
+    },
+    {
+      "id": "MWC_013",
+      "role": "main_band",
+      "galactic_longitude_deg": -99.841,
+      "galactic_latitude_deg": -0.223,
+      "distance_ly": 9708.318,
+      "position_ly": [
+        -4601.676663,
+        5712.659675,
+        -6359.365083
+      ],
+      "size_x_deg": 9.8743,
+      "size_y_deg": 2.2949,
+      "rotation_deg": -6.1387,
+      "alpha": 0.03128,
+      "color": [
+        0.2905,
+        0.3405,
+        0.4552
+      ]
+    },
+    {
+      "id": "MWC_014",
+      "role": "main_band",
+      "galactic_longitude_deg": -94.444,
+      "galactic_latitude_deg": -1.92,
+      "distance_ly": 9890.209,
+      "position_ly": [
+        -4539.221473,
+        5119.31935,
+        -7141.728076
+      ],
+      "size_x_deg": 12.2355,
+      "size_y_deg": 1.7513,
+      "rotation_deg": -15.6217,
+      "alpha": 0.03261,
+      "color": [
+        0.2853,
+        0.3353,
+        0.4526
+      ]
+    },
+    {
+      "id": "MWC_015",
+      "role": "main_band",
+      "galactic_longitude_deg": -89.048,
+      "galactic_latitude_deg": 5.287,
+      "distance_ly": 8307.128,
+      "position_ly": [
+        -4757.970075,
+        3408.206057,
+        -5895.270995
+      ],
+      "size_x_deg": 7.2396,
+      "size_y_deg": 1.5014,
+      "rotation_deg": -11.38,
+      "alpha": 0.03561,
+      "color": [
+        0.2843,
+        0.3343,
+        0.4521
+      ]
+    },
+    {
+      "id": "MWC_016",
+      "role": "main_band",
+      "galactic_longitude_deg": -83.651,
+      "galactic_latitude_deg": -1.472,
+      "distance_ly": 9848.108,
+      "position_ly": [
+        -4674.483821,
+        3452.519864,
+        -7950.75768
+      ],
+      "size_x_deg": 10.0252,
+      "size_y_deg": 1.9099,
+      "rotation_deg": -5.0967,
+      "alpha": 0.03511,
+      "color": [
+        0.2863,
+        0.3363,
+        0.4532
+      ]
+    },
+    {
+      "id": "MWC_017",
+      "role": "main_band",
+      "galactic_longitude_deg": -78.254,
+      "galactic_latitude_deg": 0.719,
+      "distance_ly": 8245.379,
+      "position_ly": [
+        -4170.279189,
+        2105.018249,
+        -6794.405095
+      ],
+      "size_x_deg": 8.0241,
+      "size_y_deg": 2.7247,
+      "rotation_deg": -0.7032,
+      "alpha": 0.02782,
+      "color": [
+        0.2777,
+        0.3277,
+        0.4489
+      ]
+    },
+    {
+      "id": "MWC_018",
+      "role": "main_band",
+      "galactic_longitude_deg": -72.857,
+      "galactic_latitude_deg": 0.697,
+      "distance_ly": 9497.045,
+      "position_ly": [
+        -4737.61332,
+        1569.788868,
+        -8079.891819
+      ],
+      "size_x_deg": 8.7947,
+      "size_y_deg": 1.3667,
+      "rotation_deg": -0.3423,
+      "alpha": 0.03128,
+      "color": [
+        0.2889,
+        0.3389,
+        0.4544
+      ]
+    },
+    {
+      "id": "MWC_019",
+      "role": "main_band",
+      "galactic_longitude_deg": -67.46,
+      "galactic_latitude_deg": 1.908,
+      "distance_ly": 10662.811,
+      "position_ly": [
+        -5395.804652,
+        741.114803,
+        -9166.87391
+      ],
+      "size_x_deg": 12.2323,
+      "size_y_deg": 1.7654,
+      "rotation_deg": 0.1099,
+      "alpha": 0.02233,
+      "color": [
+        0.2845,
+        0.3345,
+        0.4523
+      ]
+    },
+    {
+      "id": "MWC_020",
+      "role": "main_band",
+      "galactic_longitude_deg": -62.063,
+      "galactic_latitude_deg": -2.054,
+      "distance_ly": 10975.717,
+      "position_ly": [
+        -4729.216484,
+        -98.911975,
+        -9904.094199
+      ],
+      "size_x_deg": 12.516,
+      "size_y_deg": 1.6445,
+      "rotation_deg": -12.2568,
+      "alpha": 0.01645,
+      "color": [
+        0.2921,
+        0.3421,
+        0.4561
+      ]
+    },
+    {
+      "id": "MWC_021",
+      "role": "main_band",
+      "galactic_longitude_deg": -56.667,
+      "galactic_latitude_deg": -0.353,
+      "distance_ly": 10517.87,
+      "position_ly": [
+        -4603.350523,
+        -1125.430016,
+        -9389.790098
+      ],
+      "size_x_deg": 9.7448,
+      "size_y_deg": 2.8095,
+      "rotation_deg": -1.7426,
+      "alpha": 0.01477,
+      "color": [
+        0.2991,
+        0.3491,
+        0.4596
+      ]
+    },
+    {
+      "id": "MWC_022",
+      "role": "main_band",
+      "galactic_longitude_deg": -51.27,
+      "galactic_latitude_deg": 1.528,
+      "distance_ly": 11399.582,
+      "position_ly": [
+        -5048.159537,
+        -2332.113939,
+        -9951.271118
+      ],
+      "size_x_deg": 9.8562,
+      "size_y_deg": 1.6601,
+      "rotation_deg": -6.4979,
+      "alpha": 0.01717,
+      "color": [
+        0.2977,
+        0.3477,
+        0.4589
+      ]
+    },
+    {
+      "id": "MWC_023",
+      "role": "main_band",
+      "galactic_longitude_deg": -45.873,
+      "galactic_latitude_deg": -0.284,
+      "distance_ly": 11602.19,
+      "position_ly": [
+        -4509.269966,
+        -3338.769599,
+        -10155.290306
+      ],
+      "size_x_deg": 12.6062,
+      "size_y_deg": 3.3335,
+      "rotation_deg": -11.6517,
+      "alpha": 0.02546,
+      "color": [
+        0.2952,
+        0.3452,
+        0.4576
+      ]
+    },
+    {
+      "id": "MWC_024",
+      "role": "main_band",
+      "galactic_longitude_deg": -40.476,
+      "galactic_latitude_deg": 1.307,
+      "distance_ly": 15807.756,
+      "position_ly": [
+        -6042.94595,
+        -6006.835383,
+        -13314.874898
+      ],
+      "size_x_deg": 7.7227,
+      "size_y_deg": 2.8143,
+      "rotation_deg": -7.1363,
+      "alpha": 0.03226,
+      "color": [
+        0.288,
+        0.338,
+        0.454
+      ]
+    },
+    {
+      "id": "MWC_025",
+      "role": "main_band",
+      "galactic_longitude_deg": -35.079,
+      "galactic_latitude_deg": -1.631,
+      "distance_ly": 18611.71,
+      "position_ly": [
+        -5660.849028,
+        -8435.715821,
+        -15594.52621
+      ],
+      "size_x_deg": 7.524,
+      "size_y_deg": 3.0216,
+      "rotation_deg": 0.3491,
+      "alpha": 0.04504,
+      "color": [
+        0.3036,
+        0.3536,
+        0.4618
+      ]
+    },
+    {
+      "id": "MWC_026",
+      "role": "main_band",
+      "galactic_longitude_deg": -29.683,
+      "galactic_latitude_deg": -3.338,
+      "distance_ly": 19332.819,
+      "position_ly": [
+        -4668.025676,
+        -10170.042357,
+        -15765.077846
+      ],
+      "size_x_deg": 8.1704,
+      "size_y_deg": 3.1644,
+      "rotation_deg": 2.9016,
+      "alpha": 0.05826,
+      "color": [
+        0.3286,
+        0.3786,
+        0.4743
+      ]
+    },
+    {
+      "id": "MWC_027",
+      "role": "main_band",
+      "galactic_longitude_deg": -24.286,
+      "galactic_latitude_deg": -2.794,
+      "distance_ly": 18855.135,
+      "position_ly": [
+        -3974.084711,
+        -11365.091178,
+        -14510.598849
+      ],
+      "size_x_deg": 11.4104,
+      "size_y_deg": 1.7589,
+      "rotation_deg": -3.0153,
+      "alpha": 0.05707,
+      "color": [
+        0.3368,
+        0.3868,
+        0.4784
+      ]
+    },
+    {
+      "id": "MWC_028",
+      "role": "main_band",
+      "galactic_longitude_deg": -18.889,
+      "galactic_latitude_deg": 0.525,
+      "distance_ly": 24159.317,
+      "position_ly": [
+        -5314.080333,
+        -16528.183373,
+        -16800.365854
+      ],
+      "size_x_deg": 13.5089,
+      "size_y_deg": 3.1878,
+      "rotation_deg": 2.7785,
+      "alpha": 0.06354,
+      "color": [
+        0.3405,
+        0.3905,
+        0.4802
+      ]
+    },
+    {
+      "id": "MWC_029",
+      "role": "main_band",
+      "galactic_longitude_deg": -13.492,
+      "galactic_latitude_deg": 0.228,
+      "distance_ly": 26394.549,
+      "position_ly": [
+        -4546.520847,
+        -19698.112593,
+        -16970.142809
+      ],
+      "size_x_deg": 10.804,
+      "size_y_deg": 3.4073,
+      "rotation_deg": -3.8023,
+      "alpha": 0.07229,
+      "color": [
+        0.351,
+        0.401,
+        0.4855
+      ]
+    },
+    {
+      "id": "MWC_030",
+      "role": "main_band",
+      "galactic_longitude_deg": -8.095,
+      "galactic_latitude_deg": 0.392,
+      "distance_ly": 27915.534,
+      "position_ly": [
+        -3629.138357,
+        -22427.350841,
+        -16220.984128
+      ],
+      "size_x_deg": 14.0624,
+      "size_y_deg": 2.5385,
+      "rotation_deg": -1.0678,
+      "alpha": 0.07614,
+      "color": [
+        0.3527,
+        0.4027,
+        0.4863
+      ]
+    },
+    {
+      "id": "MWC_031",
+      "role": "main_band",
+      "galactic_longitude_deg": -2.698,
+      "galactic_latitude_deg": 0.377,
+      "distance_ly": 30339.855,
+      "position_ly": [
+        -2547.011783,
+        -25873.535739,
+        -15639.044032
+      ],
+      "size_x_deg": 8.7766,
+      "size_y_deg": 3.9198,
+      "rotation_deg": 0.2891,
+      "alpha": 0.07601,
+      "color": [
+        0.3396,
+        0.3896,
+        0.4798
+      ]
+    },
+    {
+      "id": "MWC_032",
+      "role": "main_band",
+      "galactic_longitude_deg": 2.698,
+      "galactic_latitude_deg": 0.41,
+      "distance_ly": 24218.371,
+      "position_ly": [
+        -918.772881,
+        -21670.461237,
+        -10773.879658
+      ],
+      "size_x_deg": 10.2887,
+      "size_y_deg": 2.0482,
+      "rotation_deg": 8.108,
+      "alpha": 0.07888,
+      "color": [
+        0.3566,
+        0.4066,
+        0.4883
+      ]
+    },
+    {
+      "id": "MWC_033",
+      "role": "main_band",
+      "galactic_longitude_deg": 8.095,
+      "galactic_latitude_deg": 2.238,
+      "distance_ly": 26945.041,
+      "position_ly": [
+        -506.959358,
+        -25177.268207,
+        -9585.581239
+      ],
+      "size_x_deg": 11.5672,
+      "size_y_deg": 1.738,
+      "rotation_deg": 8.4597,
+      "alpha": 0.06824,
+      "color": [
+        0.3393,
+        0.3893,
+        0.4796
+      ]
+    },
+    {
+      "id": "MWC_034",
+      "role": "main_band",
+      "galactic_longitude_deg": 13.492,
+      "galactic_latitude_deg": 0.276,
+      "distance_ly": 25419.811,
+      "position_ly": [
+        1463.068782,
+        -24252.198123,
+        -7473.76071
+      ],
+      "size_x_deg": 16.6271,
+      "size_y_deg": 2.5695,
+      "rotation_deg": 0.3262,
+      "alpha": 0.06901,
+      "color": [
+        0.3332,
+        0.3832,
+        0.4766
+      ]
+    },
+    {
+      "id": "MWC_035",
+      "role": "main_band",
+      "galactic_longitude_deg": 18.889,
+      "galactic_latitude_deg": 3.315,
+      "distance_ly": 25294.425,
+      "position_ly": [
+        1454.686089,
+        -24794.73023,
+        -4786.77073
+      ],
+      "size_x_deg": 10.6054,
+      "size_y_deg": 2.7211,
+      "rotation_deg": 9.4596,
+      "alpha": 0.05192,
+      "color": [
+        0.3341,
+        0.3841,
+        0.477
+      ]
+    },
+    {
+      "id": "MWC_036",
+      "role": "main_band",
+      "galactic_longitude_deg": 24.286,
+      "galactic_latitude_deg": 3.614,
+      "distance_ly": 22729.373,
+      "position_ly": [
+        2228.016323,
+        -22494.141392,
+        -2382.007904
+      ],
+      "size_x_deg": 13.2697,
+      "size_y_deg": 1.6779,
+      "rotation_deg": 8.2649,
+      "alpha": 0.03564,
+      "color": [
+        0.3287,
+        0.3787,
+        0.4744
+      ]
+    },
+    {
+      "id": "MWC_037",
+      "role": "main_band",
+      "galactic_longitude_deg": 29.683,
+      "galactic_latitude_deg": 3.769,
+      "distance_ly": 17620.833,
+      "position_ly": [
+        2455.853575,
+        -17445.159089,
+        -359.132753
+      ],
+      "size_x_deg": 8.093,
+      "size_y_deg": 2.7245,
+      "rotation_deg": -0.3036,
+      "alpha": 0.01826,
+      "color": [
+        0.3256,
+        0.3756,
+        0.4728
+      ]
+    },
+    {
+      "id": "MWC_038",
+      "role": "main_band",
+      "galactic_longitude_deg": 35.079,
+      "galactic_latitude_deg": 0.013,
+      "distance_ly": 14424.2,
+      "position_ly": [
+        3443.028089,
+        -13998.948716,
+        482.23086
+      ],
+      "size_x_deg": 15.3148,
+      "size_y_deg": 3.1295,
+      "rotation_deg": 11.6099,
+      "alpha": 0.01243,
+      "color": [
+        0.3054,
+        0.3554,
+        0.4627
+      ]
+    },
+    {
+      "id": "MWC_039",
+      "role": "main_band",
+      "galactic_longitude_deg": 40.476,
+      "galactic_latitude_deg": 1.239,
+      "distance_ly": 13844.953,
+      "position_ly": [
+        3599.910979,
+        -13253.239609,
+        1753.567001
+      ],
+      "size_x_deg": 11.0072,
+      "size_y_deg": 2.0395,
+      "rotation_deg": -2.2587,
+      "alpha": 0.01884,
+      "color": [
+        0.3111,
+        0.3611,
+        0.4656
+      ]
+    },
+    {
+      "id": "MWC_040",
+      "role": "main_band",
+      "galactic_longitude_deg": 45.873,
+      "galactic_latitude_deg": 2.124,
+      "distance_ly": 12016.424,
+      "position_ly": [
+        3411.784399,
+        -11225.584081,
+        2596.236389
+      ],
+      "size_x_deg": 13.0038,
+      "size_y_deg": 3.1197,
+      "rotation_deg": 4.201,
+      "alpha": 0.02432,
+      "color": [
+        0.2921,
+        0.3421,
+        0.4561
+      ]
+    },
+    {
+      "id": "MWC_041",
+      "role": "main_band",
+      "galactic_longitude_deg": 51.27,
+      "galactic_latitude_deg": -0.146,
+      "distance_ly": 11873.63,
+      "position_ly": [
+        4193.577313,
+        -10603.611814,
+        3310.653268
+      ],
+      "size_x_deg": 12.3566,
+      "size_y_deg": 2.6612,
+      "rotation_deg": 2.2123,
+      "alpha": 0.0319,
+      "color": [
+        0.2944,
+        0.3444,
+        0.4572
+      ]
+    },
+    {
+      "id": "MWC_042",
+      "role": "main_band",
+      "galactic_longitude_deg": 56.667,
+      "galactic_latitude_deg": 2.721,
+      "distance_ly": 11465.29,
+      "position_ly": [
+        3908.676505,
+        -9861.49646,
+        4350.404531
+      ],
+      "size_x_deg": 12.1773,
+      "size_y_deg": 3.2846,
+      "rotation_deg": 6.4495,
+      "alpha": 0.03562,
+      "color": [
+        0.2786,
+        0.3286,
+        0.4493
+      ]
+    },
+    {
+      "id": "MWC_043",
+      "role": "main_band",
+      "galactic_longitude_deg": 62.063,
+      "galactic_latitude_deg": -3.228,
+      "distance_ly": 10271.899,
+      "position_ly": [
+        4713.739114,
+        -8113.278291,
+        4179.387719
+      ],
+      "size_x_deg": 9.6835,
+      "size_y_deg": 2.6886,
+      "rotation_deg": 13.2659,
+      "alpha": 0.03705,
+      "color": [
+        0.2928,
+        0.3428,
+        0.4564
+      ]
+    },
+    {
+      "id": "MWC_044",
+      "role": "main_band",
+      "galactic_longitude_deg": 67.46,
+      "galactic_latitude_deg": 2.359,
+      "distance_ly": 8539.478,
+      "position_ly": [
+        3408.418913,
+        -6432.416502,
+        4464.234019
+      ],
+      "size_x_deg": 13.6622,
+      "size_y_deg": 2.2405,
+      "rotation_deg": 1.4606,
+      "alpha": 0.03102,
+      "color": [
+        0.2649,
+        0.3149,
+        0.4425
+      ]
+    },
+    {
+      "id": "MWC_045",
+      "role": "main_band",
+      "galactic_longitude_deg": 72.857,
+      "galactic_latitude_deg": 1.196,
+      "distance_ly": 8528.073,
+      "position_ly": [
+        3732.461909,
+        -5855.267018,
+        4951.021145
+      ],
+      "size_x_deg": 11.5147,
+      "size_y_deg": 1.5585,
+      "rotation_deg": 1.5011,
+      "alpha": 0.02953,
+      "color": [
+        0.2719,
+        0.3219,
+        0.4459
+      ]
+    },
+    {
+      "id": "MWC_046",
+      "role": "main_band",
+      "galactic_longitude_deg": 78.254,
+      "galactic_latitude_deg": 1.53,
+      "distance_ly": 9027.126,
+      "position_ly": [
+        4054.694843,
+        -5583.09978,
+        5820.433486
+      ],
+      "size_x_deg": 13.2226,
+      "size_y_deg": 1.5717,
+      "rotation_deg": 7.0822,
+      "alpha": 0.02794,
+      "color": [
+        0.2835,
+        0.3335,
+        0.4518
+      ]
+    },
+    {
+      "id": "MWC_047",
+      "role": "main_band",
+      "galactic_longitude_deg": 83.651,
+      "galactic_latitude_deg": 0.843,
+      "distance_ly": 10182.092,
+      "position_ly": [
+        4807.151133,
+        -5515.028996,
+        7081.71911
+      ],
+      "size_x_deg": 11.3717,
+      "size_y_deg": 2.3476,
+      "rotation_deg": 11.8338,
+      "alpha": 0.01828,
+      "color": [
+        0.2735,
+        0.3235,
+        0.4468
+      ]
+    },
+    {
+      "id": "MWC_048",
+      "role": "main_band",
+      "galactic_longitude_deg": 89.048,
+      "galactic_latitude_deg": -2.506,
+      "distance_ly": 8289.227,
+      "position_ly": [
+        4397.754247,
+        -3732.539137,
+        5953.083097
+      ],
+      "size_x_deg": 9.5764,
+      "size_y_deg": 2.429,
+      "rotation_deg": 3.5754,
+      "alpha": 0.0212,
+      "color": [
+        0.2844,
+        0.3344,
+        0.4522
+      ]
+    },
+    {
+      "id": "MWC_049",
+      "role": "main_band",
+      "galactic_longitude_deg": 94.444,
+      "galactic_latitude_deg": 3.68,
+      "distance_ly": 8315.43,
+      "position_ly": [
+        3659.753341,
+        -3224.999801,
+        6734.385955
+      ],
+      "size_x_deg": 13.0429,
+      "size_y_deg": 2.1916,
+      "rotation_deg": 0.6672,
+      "alpha": 0.01724,
+      "color": [
+        0.281,
+        0.331,
+        0.4505
+      ]
+    },
+    {
+      "id": "MWC_050",
+      "role": "main_band",
+      "galactic_longitude_deg": 99.841,
+      "galactic_latitude_deg": -0.95,
+      "distance_ly": 8196.952,
+      "position_ly": [
+        4184.684405,
+        -2342.450486,
+        6647.658673
+      ],
+      "size_x_deg": 9.0413,
+      "size_y_deg": 2.5198,
+      "rotation_deg": 7.4931,
+      "alpha": 0.01974,
+      "color": [
+        0.2784,
+        0.3284,
+        0.4492
+      ]
+    },
+    {
+      "id": "MWC_051",
+      "role": "main_band",
+      "galactic_longitude_deg": 105.238,
+      "galactic_latitude_deg": -2.706,
+      "distance_ly": 9621.928,
+      "position_ly": [
+        5114.682379,
+        -1829.651667,
+        7941.908066
+      ],
+      "size_x_deg": 11.7588,
+      "size_y_deg": 1.3196,
+      "rotation_deg": 10.2411,
+      "alpha": 0.01613,
+      "color": [
+        0.2763,
+        0.3263,
+        0.4482
+      ]
+    },
+    {
+      "id": "MWC_052",
+      "role": "main_band",
+      "galactic_longitude_deg": 110.635,
+      "galactic_latitude_deg": -1.332,
+      "distance_ly": 8549.742,
+      "position_ly": [
+        4290.305551,
+        -888.6984,
+        7341.769495
+      ],
+      "size_x_deg": 9.4281,
+      "size_y_deg": 1.5471,
+      "rotation_deg": 13.0984,
+      "alpha": 0.02003,
+      "color": [
+        0.289,
+        0.339,
+        0.4545
+      ]
+    },
+    {
+      "id": "MWC_053",
+      "role": "main_band",
+      "galactic_longitude_deg": 116.032,
+      "galactic_latitude_deg": -1.909,
+      "distance_ly": 8293.731,
+      "position_ly": [
+        4119.791744,
+        -81.840489,
+        7197.680029
+      ],
+      "size_x_deg": 7.9643,
+      "size_y_deg": 1.4552,
+      "rotation_deg": 4.6435,
+      "alpha": 0.02995,
+      "color": [
+        0.2752,
+        0.3252,
+        0.4476
+      ]
+    },
+    {
+      "id": "MWC_054",
+      "role": "main_band",
+      "galactic_longitude_deg": 121.429,
+      "galactic_latitude_deg": -2.025,
+      "distance_ly": 10220.637,
+      "position_ly": [
+        4912.659005,
+        845.556592,
+        8922.568726
+      ],
+      "size_x_deg": 12.5945,
+      "size_y_deg": 1.3275,
+      "rotation_deg": 6.3842,
+      "alpha": 0.02273,
+      "color": [
+        0.2722,
+        0.3222,
+        0.4461
+      ]
+    },
+    {
+      "id": "MWC_055",
+      "role": "main_band",
+      "galactic_longitude_deg": 126.825,
+      "galactic_latitude_deg": 0.274,
+      "distance_ly": 8234.881,
+      "position_ly": [
+        3494.214348,
+        1370.41334,
+        7329.781973
+      ],
+      "size_x_deg": 11.3373,
+      "size_y_deg": 2.6205,
+      "rotation_deg": 5.1022,
+      "alpha": 0.02386,
+      "color": [
+        0.2915,
+        0.3415,
+        0.4558
+      ]
+    },
+    {
+      "id": "MWC_056",
+      "role": "main_band",
+      "galactic_longitude_deg": 132.222,
+      "galactic_latitude_deg": -3.405,
+      "distance_ly": 9339.087,
+      "position_ly": [
+        4237.057273,
+        2509.994195,
+        7935.100596
+      ],
+      "size_x_deg": 7.3662,
+      "size_y_deg": 1.8513,
+      "rotation_deg": 4.5652,
+      "alpha": 0.03158,
+      "color": [
+        0.2866,
+        0.3366,
+        0.4533
+      ]
+    },
+    {
+      "id": "MWC_057",
+      "role": "main_band",
+      "galactic_longitude_deg": 137.619,
+      "galactic_latitude_deg": -2.21,
+      "distance_ly": 9468.398,
+      "position_ly": [
+        3852.407379,
+        3339.039529,
+        7978.742148
+      ],
+      "size_x_deg": 11.6306,
+      "size_y_deg": 2.9218,
+      "rotation_deg": -0.061,
+      "alpha": 0.03121,
+      "color": [
+        0.2809,
+        0.3309,
+        0.4505
+      ]
+    },
+    {
+      "id": "MWC_058",
+      "role": "main_band",
+      "galactic_longitude_deg": 143.016,
+      "galactic_latitude_deg": 1.966,
+      "distance_ly": 9819.446,
+      "position_ly": [
+        3056.014854,
+        4153.460018,
+        8356.498274
+      ],
+      "size_x_deg": 13.2554,
+      "size_y_deg": 1.9586,
+      "rotation_deg": 6.894,
+      "alpha": 0.03247,
+      "color": [
+        0.2829,
+        0.3329,
+        0.4514
+      ]
+    },
+    {
+      "id": "MWC_059",
+      "role": "main_band",
+      "galactic_longitude_deg": 148.413,
+      "galactic_latitude_deg": -1.976,
+      "distance_ly": 12760.129,
+      "position_ly": [
+        4279.822609,
+        6603.207829,
+        10044.981396
+      ],
+      "size_x_deg": 11.8129,
+      "size_y_deg": 2.7388,
+      "rotation_deg": 9.0891,
+      "alpha": 0.0308,
+      "color": [
+        0.2707,
+        0.3207,
+        0.4454
+      ]
+    },
+    {
+      "id": "MWC_060",
+      "role": "main_band",
+      "galactic_longitude_deg": 153.81,
+      "galactic_latitude_deg": -2.884,
+      "distance_ly": 12629.108,
+      "position_ly": [
+        3924.773978,
+        7534.452719,
+        9344.652557
+      ],
+      "size_x_deg": 6.7986,
+      "size_y_deg": 2.9664,
+      "rotation_deg": 1.3861,
+      "alpha": 0.02755,
+      "color": [
+        0.2877,
+        0.3377,
+        0.4539
+      ]
+    },
+    {
+      "id": "MWC_061",
+      "role": "main_band",
+      "galactic_longitude_deg": 159.206,
+      "galactic_latitude_deg": -1.358,
+      "distance_ly": 13363.872,
+      "position_ly": [
+        3305.637005,
+        8861.429774,
+        9441.445376
+      ],
+      "size_x_deg": 12.305,
+      "size_y_deg": 1.8421,
+      "rotation_deg": -2.0419,
+      "alpha": 0.03425,
+      "color": [
+        0.2786,
+        0.3286,
+        0.4493
+      ]
+    },
+    {
+      "id": "MWC_062",
+      "role": "main_band",
+      "galactic_longitude_deg": 164.603,
+      "galactic_latitude_deg": -1.924,
+      "distance_ly": 14298.334,
+      "position_ly": [
+        3049.347997,
+        10440.38983,
+        9281.277006
+      ],
+      "size_x_deg": 8.7956,
+      "size_y_deg": 1.5718,
+      "rotation_deg": -2.1403,
+      "alpha": 0.02957,
+      "color": [
+        0.2732,
+        0.3232,
+        0.4466
+      ]
+    },
+    {
+      "id": "MWC_063",
+      "role": "main_band",
+      "galactic_longitude_deg": 170.0,
+      "galactic_latitude_deg": 1.395,
+      "distance_ly": 14725.518,
+      "position_ly": [
+        1750.007207,
+        11454.142156,
+        9087.407144
+      ],
+      "size_x_deg": 8.2962,
+      "size_y_deg": 2.9863,
+      "rotation_deg": 1.9874,
+      "alpha": 0.02782,
+      "color": [
+        0.2616,
+        0.3116,
+        0.4408
+      ]
+    },
+    {
+      "id": "MWC_064",
+      "role": "central_knot",
+      "galactic_longitude_deg": 9.186,
+      "galactic_latitude_deg": -0.634,
+      "distance_ly": 26245.694,
+      "position_ly": [
+        895.695289,
+        -24434.801655,
+        -9538.062847
+      ],
+      "size_x_deg": 6.5527,
+      "size_y_deg": 1.7246,
+      "rotation_deg": -9.9184,
+      "alpha": 0.0803,
+      "color": [
+        0.6069,
+        0.3897,
+        0.4024
+      ]
+    },
+    {
+      "id": "MWC_065",
+      "role": "central_knot",
+      "galactic_longitude_deg": -29.706,
+      "galactic_latitude_deg": 0.136,
+      "distance_ly": 31978.256,
+      "position_ly": [
+        -9423.744303,
+        -17224.352202,
+        -25241.307326
+      ],
+      "size_x_deg": 6.8943,
+      "size_y_deg": 1.5957,
+      "rotation_deg": 1.9483,
+      "alpha": 0.06843,
+      "color": [
+        0.4354,
+        0.4585,
+        0.3412
+      ]
+    },
+    {
+      "id": "MWC_066",
+      "role": "central_knot",
+      "galactic_longitude_deg": -8.806,
+      "galactic_latitude_deg": 1.46,
+      "distance_ly": 26895.949,
+      "position_ly": [
+        -4090.986977,
+        -21511.321025,
+        -15617.904961
+      ],
+      "size_x_deg": 4.7797,
+      "size_y_deg": 1.9648,
+      "rotation_deg": -2.7828,
+      "alpha": 0.0803,
+      "color": [
+        0.4714,
+        0.4592,
+        0.3222
+      ]
+    },
+    {
+      "id": "MWC_067",
+      "role": "central_knot",
+      "galactic_longitude_deg": -22.061,
+      "galactic_latitude_deg": -2.602,
+      "distance_ly": 24172.765,
+      "position_ly": [
+        -4760.573254,
+        -15294.410438,
+        -18103.604945
+      ],
+      "size_x_deg": 5.2727,
+      "size_y_deg": 2.4928,
+      "rotation_deg": 0.3033,
+      "alpha": 0.06367,
+      "color": [
+        0.5042,
+        0.4268,
+        0.3774
+      ]
+    },
+    {
+      "id": "MWC_068",
+      "role": "central_knot",
+      "galactic_longitude_deg": -22.089,
+      "galactic_latitude_deg": -5.281,
+      "distance_ly": 20038.029,
+      "position_ly": [
+        -3124.580199,
+        -12444.784714,
+        -15391.131579
+      ],
+      "size_x_deg": 6.4916,
+      "size_y_deg": 2.9028,
+      "rotation_deg": 3.3207,
+      "alpha": 0.08557,
+      "color": [
+        0.5105,
+        0.4305,
+        0.3093
+      ]
+    },
+    {
+      "id": "MWC_069",
+      "role": "central_knot",
+      "galactic_longitude_deg": -19.269,
+      "galactic_latitude_deg": -1.188,
+      "distance_ly": 29147.226,
+      "position_ly": [
+        -5741.086216,
+        -19628.226574,
+        -20768.568046
+      ],
+      "size_x_deg": 5.0635,
+      "size_y_deg": 2.4683,
+      "rotation_deg": -8.667,
+      "alpha": 0.05698,
+      "color": [
+        0.58,
+        0.4215,
+        0.4195
+      ]
+    },
+    {
+      "id": "MWC_070",
+      "role": "central_knot",
+      "galactic_longitude_deg": -11.008,
+      "galactic_latitude_deg": 1.592,
+      "distance_ly": 23405.385,
+      "position_ly": [
+        -4035.754672,
+        -18199.849219,
+        -14152.392295
+      ],
+      "size_x_deg": 4.4507,
+      "size_y_deg": 2.2159,
+      "rotation_deg": 7.7696,
+      "alpha": 0.06089,
+      "color": [
+        0.5902,
+        0.4856,
+        0.3263
+      ]
+    },
+    {
+      "id": "MWC_071",
+      "role": "central_knot",
+      "galactic_longitude_deg": -25.069,
+      "galactic_latitude_deg": -0.726,
+      "distance_ly": 29161.256,
+      "position_ly": [
+        -7237.042145,
+        -17498.820683,
+        -22176.459371
+      ],
+      "size_x_deg": 6.3289,
+      "size_y_deg": 2.8666,
+      "rotation_deg": 6.1693,
+      "alpha": 0.07121,
+      "color": [
+        0.4566,
+        0.4684,
+        0.3233
+      ]
+    },
+    {
+      "id": "MWC_072",
+      "role": "central_knot",
+      "galactic_longitude_deg": -4.463,
+      "galactic_latitude_deg": -0.186,
+      "distance_ly": 26785.83,
+      "position_ly": [
+        -2424.518882,
+        -22379.636,
+        -14517.378642
+      ],
+      "size_x_deg": 8.1389,
+      "size_y_deg": 2.8838,
+      "rotation_deg": 7.938,
+      "alpha": 0.0679,
+      "color": [
+        0.5627,
+        0.484,
+        0.3493
+      ]
+    },
+    {
+      "id": "MWC_073",
+      "role": "central_knot",
+      "galactic_longitude_deg": 15.57,
+      "galactic_latitude_deg": -0.728,
+      "distance_ly": 23305.137,
+      "position_ly": [
+        2111.523342,
+        -22331.095056,
+        -6324.009197
+      ],
+      "size_x_deg": 7.3206,
+      "size_y_deg": 2.3603,
+      "rotation_deg": 8.6473,
+      "alpha": 0.05443,
+      "color": [
+        0.5682,
+        0.4139,
+        0.3075
+      ]
+    },
+    {
+      "id": "MWC_074",
+      "role": "central_knot",
+      "galactic_longitude_deg": -11.61,
+      "galactic_latitude_deg": 0.609,
+      "distance_ly": 30112.191,
+      "position_ly": [
+        -4895.034054,
+        -23128.43074,
+        -18650.961592
+      ],
+      "size_x_deg": 6.1772,
+      "size_y_deg": 2.7549,
+      "rotation_deg": 7.0919,
+      "alpha": 0.08375,
+      "color": [
+        0.6073,
+        0.4495,
+        0.4128
+      ]
+    },
+    {
+      "id": "MWC_075",
+      "role": "central_knot",
+      "galactic_longitude_deg": 32.749,
+      "galactic_latitude_deg": -1.165,
+      "distance_ly": 25798.524,
+      "position_ly": [
+        6154.682487,
+        -25051.661111,
+        -313.030595
+      ],
+      "size_x_deg": 8.0828,
+      "size_y_deg": 1.5412,
+      "rotation_deg": -4.071,
+      "alpha": 0.1042,
+      "color": [
+        0.6135,
+        0.4103,
+        0.4092
+      ]
+    },
+    {
+      "id": "MWC_076",
+      "role": "central_knot",
+      "galactic_longitude_deg": -18.338,
+      "galactic_latitude_deg": -0.852,
+      "distance_ly": 22467.686,
+      "position_ly": [
+        -4375.979117,
+        -15414.253691,
+        -15749.555481
+      ],
+      "size_x_deg": 7.3712,
+      "size_y_deg": 2.2409,
+      "rotation_deg": 7.8165,
+      "alpha": 0.07571,
+      "color": [
+        0.5962,
+        0.4775,
+        0.3675
+      ]
+    },
+    {
+      "id": "MWC_077",
+      "role": "central_knot",
+      "galactic_longitude_deg": -6.708,
+      "galactic_latitude_deg": -1.583,
+      "distance_ly": 21187.35,
+      "position_ly": [
+        -1872.426045,
+        -17155.176716,
+        -12292.181702
+      ],
+      "size_x_deg": 4.2102,
+      "size_y_deg": 3.2548,
+      "rotation_deg": 9.1606,
+      "alpha": 0.07366,
+      "color": [
+        0.5436,
+        0.4651,
+        0.3924
+      ]
+    },
+    {
+      "id": "MWC_078",
+      "role": "central_knot",
+      "galactic_longitude_deg": 32.144,
+      "galactic_latitude_deg": -0.466,
+      "distance_ly": 21293.994,
+      "position_ly": [
+        4755.035328,
+        -20753.508586,
+        -340.125993
+      ],
+      "size_x_deg": 8.4841,
+      "size_y_deg": 3.2558,
+      "rotation_deg": -1.3308,
+      "alpha": 0.09827,
+      "color": [
+        0.5403,
+        0.4552,
+        0.3654
+      ]
+    },
+    {
+      "id": "MWC_079",
+      "role": "central_knot",
+      "galactic_longitude_deg": -1.599,
+      "galactic_latitude_deg": 2.662,
+      "distance_ly": 18142.738,
+      "position_ly": [
+        -1978.251915,
+        -15764.753478,
+        -8758.880717
+      ],
+      "size_x_deg": 8.3673,
+      "size_y_deg": 1.9685,
+      "rotation_deg": 3.2996,
+      "alpha": 0.07999,
+      "color": [
+        0.5921,
+        0.44,
+        0.3635
+      ]
+    },
+    {
+      "id": "MWC_080",
+      "role": "central_knot",
+      "galactic_longitude_deg": 6.731,
+      "galactic_latitude_deg": 1.979,
+      "distance_ly": 27291.477,
+      "position_ly": [
+        -729.458632,
+        -25267.480075,
+        -10288.199762
+      ],
+      "size_x_deg": 6.4664,
+      "size_y_deg": 3.1349,
+      "rotation_deg": -5.7092,
+      "alpha": 0.10657,
+      "color": [
+        0.5514,
+        0.3958,
+        0.3787
+      ]
+    },
+    {
+      "id": "MWC_081",
+      "role": "central_knot",
+      "galactic_longitude_deg": 29.232,
+      "galactic_latitude_deg": 2.571,
+      "distance_ly": 22032.96,
+      "position_ly": [
+        3395.713223,
+        -21754.489731,
+        -814.024878
+      ],
+      "size_x_deg": 7.2881,
+      "size_y_deg": 3.226,
+      "rotation_deg": 7.4157,
+      "alpha": 0.06192,
+      "color": [
+        0.6198,
+        0.4642,
+        0.3658
+      ]
+    },
+    {
+      "id": "MWC_082",
+      "role": "central_knot",
+      "galactic_longitude_deg": -24.074,
+      "galactic_latitude_deg": -3.641,
+      "distance_ly": 27563.203,
+      "position_ly": [
+        -5407.535125,
+        -16597.134541,
+        -21331.287829
+      ],
+      "size_x_deg": 7.9887,
+      "size_y_deg": 1.7289,
+      "rotation_deg": 5.4638,
+      "alpha": 0.06834,
+      "color": [
+        0.5617,
+        0.5181,
+        0.4081
+      ]
+    },
+    {
+      "id": "MWC_083",
+      "role": "central_knot",
+      "galactic_longitude_deg": 15.717,
+      "galactic_latitude_deg": -2.211,
+      "distance_ly": 19419.818,
+      "position_ly": [
+        2218.951014,
+        -18505.906092,
+        -5453.168162
+      ],
+      "size_x_deg": 4.1925,
+      "size_y_deg": 3.0301,
+      "rotation_deg": -2.8735,
+      "alpha": 0.041,
+      "color": [
+        0.4992,
+        0.4928,
+        0.3957
+      ]
+    },
+    {
+      "id": "MWC_084",
+      "role": "central_knot",
+      "galactic_longitude_deg": 35.065,
+      "galactic_latitude_deg": -1.522,
+      "distance_ly": 19339.813,
+      "position_ly": [
+        5061.994731,
+        -18661.189603,
+        405.69699
+      ],
+      "size_x_deg": 8.4388,
+      "size_y_deg": 2.898,
+      "rotation_deg": 6.0032,
+      "alpha": 0.05505,
+      "color": [
+        0.5454,
+        0.4082,
+        0.3618
+      ]
+    },
+    {
+      "id": "MWC_085",
+      "role": "central_knot",
+      "galactic_longitude_deg": 36.257,
+      "galactic_latitude_deg": 4.84,
+      "distance_ly": 25311.938,
+      "position_ly": [
+        4397.10223,
+        -24823.019625,
+        2275.383246
+      ],
+      "size_x_deg": 5.0503,
+      "size_y_deg": 1.7827,
+      "rotation_deg": 3.1303,
+      "alpha": 0.05421,
+      "color": [
+        0.5271,
+        0.4953,
+        0.3271
+      ]
+    },
+    {
+      "id": "MWC_086",
+      "role": "central_knot",
+      "galactic_longitude_deg": 20.957,
+      "galactic_latitude_deg": 0.419,
+      "distance_ly": 28792.694,
+      "position_ly": [
+        3425.017682,
+        -28107.435452,
+        -5221.165546
+      ],
+      "size_x_deg": 5.7145,
+      "size_y_deg": 1.4864,
+      "rotation_deg": 3.4731,
+      "alpha": 0.07066,
+      "color": [
+        0.4266,
+        0.469,
+        0.3056
+      ]
+    },
+    {
+      "id": "MWC_087",
+      "role": "central_knot",
+      "galactic_longitude_deg": -1.389,
+      "galactic_latitude_deg": 1.106,
+      "distance_ly": 31798.089,
+      "position_ly": [
+        -2662.765253,
+        -27538.479302,
+        -15673.555112
+      ],
+      "size_x_deg": 7.0277,
+      "size_y_deg": 2.0928,
+      "rotation_deg": 5.5638,
+      "alpha": 0.06937,
+      "color": [
+        0.5904,
+        0.4145,
+        0.3314
+      ]
+    },
+    {
+      "id": "MWC_088",
+      "role": "central_knot",
+      "galactic_longitude_deg": 3.279,
+      "galactic_latitude_deg": -0.265,
+      "distance_ly": 30266.066,
+      "position_ly": [
+        -686.244153,
+        -27134.017827,
+        -13390.627083
+      ],
+      "size_x_deg": 7.7202,
+      "size_y_deg": 3.112,
+      "rotation_deg": 11.2186,
+      "alpha": 0.03911,
+      "color": [
+        0.4704,
+        0.4398,
+        0.3399
+      ]
+    },
+    {
+      "id": "MWC_089",
+      "role": "central_knot",
+      "galactic_longitude_deg": 32.174,
+      "galactic_latitude_deg": -1.436,
+      "distance_ly": 26725.163,
+      "position_ly": [
+        6365.095136,
+        -25948.700617,
+        -620.333996
+      ],
+      "size_x_deg": 5.5678,
+      "size_y_deg": 1.9176,
+      "rotation_deg": -8.0873,
+      "alpha": 0.0497,
+      "color": [
+        0.5288,
+        0.4022,
+        0.4001
+      ]
+    },
+    {
+      "id": "MWC_090",
+      "role": "central_knot",
+      "galactic_longitude_deg": -31.084,
+      "galactic_latitude_deg": -2.661,
+      "distance_ly": 22541.825,
+      "position_ly": [
+        -5897.040822,
+        -11463.585874,
+        -18491.754071
+      ],
+      "size_x_deg": 4.8006,
+      "size_y_deg": 2.7652,
+      "rotation_deg": 8.4222,
+      "alpha": 0.05219,
+      "color": [
+        0.4976,
+        0.5211,
+        0.364
+      ]
+    },
+    {
+      "id": "MWC_091",
+      "role": "central_knot",
+      "galactic_longitude_deg": -45.535,
+      "galactic_latitude_deg": 3.249,
+      "distance_ly": 24050.382,
+      "position_ly": [
+        -10575.238126,
+        -7335.728908,
+        -20316.798039
+      ],
+      "size_x_deg": 8.1984,
+      "size_y_deg": 1.9775,
+      "rotation_deg": 4.3428,
+      "alpha": 0.06444,
+      "color": [
+        0.5975,
+        0.3945,
+        0.343
+      ]
+    },
+    {
+      "id": "MWC_092",
+      "role": "central_knot",
+      "galactic_longitude_deg": -53.801,
+      "galactic_latitude_deg": 1.552,
+      "distance_ly": 25575.58,
+      "position_ly": [
+        -11625.013551,
+        -4145.488714,
+        -22400.542345
+      ],
+      "size_x_deg": 7.905,
+      "size_y_deg": 3.0774,
+      "rotation_deg": 5.8247,
+      "alpha": 0.05816,
+      "color": [
+        0.541,
+        0.4271,
+        0.3139
+      ]
+    },
+    {
+      "id": "MWC_093",
+      "role": "central_knot",
+      "galactic_longitude_deg": -40.695,
+      "galactic_latitude_deg": -0.944,
+      "distance_ly": 20912.532,
+      "position_ly": [
+        -7309.674651,
+        -7712.594087,
+        -18011.622905
+      ],
+      "size_x_deg": 6.0237,
+      "size_y_deg": 1.9324,
+      "rotation_deg": 7.1239,
+      "alpha": 0.0447,
+      "color": [
+        0.5716,
+        0.4084,
+        0.3881
+      ]
+    },
+    {
+      "id": "MWC_094",
+      "role": "central_knot",
+      "galactic_longitude_deg": -46.455,
+      "galactic_latitude_deg": 0.237,
+      "distance_ly": 25695.327,
+      "position_ly": [
+        -10268.037138,
+        -7195.911087,
+        -22428.46635
+      ],
+      "size_x_deg": 6.0699,
+      "size_y_deg": 1.7685,
+      "rotation_deg": -7.4162,
+      "alpha": 0.05513,
+      "color": [
+        0.5833,
+        0.4567,
+        0.3751
+      ]
+    },
+    {
+      "id": "MWC_095",
+      "role": "split_wisp",
+      "galactic_longitude_deg": -1.45,
+      "galactic_latitude_deg": -4.214,
+      "distance_ly": 18134.898,
+      "position_ly": [
+        -65.024183,
+        -15324.090004,
+        -9697.554438
+      ],
+      "size_x_deg": 6.4784,
+      "size_y_deg": 1.3071,
+      "rotation_deg": 6.9345,
+      "alpha": 0.02207,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_096",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 98.358,
+      "galactic_latitude_deg": 6.74,
+      "distance_ly": 11054.655,
+      "position_ly": [
+        4328.375196,
+        -3695.608899,
+        9476.974668
+      ],
+      "size_x_deg": 7.9694,
+      "size_y_deg": 1.4733,
+      "rotation_deg": -9.3787,
+      "alpha": 0.01031,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_097",
+      "role": "split_wisp",
+      "galactic_longitude_deg": -91.814,
+      "galactic_latitude_deg": -6.621,
+      "distance_ly": 12798.336,
+      "position_ly": [
+        -4975.316167,
+        6297.013207,
+        -9969.516914
+      ],
+      "size_x_deg": 8.3996,
+      "size_y_deg": 1.728,
+      "rotation_deg": 11.3877,
+      "alpha": 0.0144,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_098",
+      "role": "split_wisp",
+      "galactic_longitude_deg": -88.766,
+      "galactic_latitude_deg": 5.121,
+      "distance_ly": 12372.731,
+      "position_ly": [
+        -7059.852043,
+        5031.32486,
+        -8827.724977
+      ],
+      "size_x_deg": 6.2659,
+      "size_y_deg": 1.0247,
+      "rotation_deg": -5.3804,
+      "alpha": 0.0141,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_099",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 11.165,
+      "galactic_latitude_deg": -8.499,
+      "distance_ly": 12425.274,
+      "position_ly": [
+        2105.464228,
+        -11225.39804,
+        -4893.351533
+      ],
+      "size_x_deg": 8.8653,
+      "size_y_deg": 1.5683,
+      "rotation_deg": 13.2613,
+      "alpha": 0.01505,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_100",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 1.771,
+      "galactic_latitude_deg": 4.211,
+      "distance_ly": 21865.755,
+      "position_ly": [
+        -2259.875974,
+        -19655.008632,
+        -9310.469129
+      ],
+      "size_x_deg": 9.7788,
+      "size_y_deg": 1.098,
+      "rotation_deg": 12.1337,
+      "alpha": 0.01144,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_101",
+      "role": "split_wisp",
+      "galactic_longitude_deg": -115.496,
+      "galactic_latitude_deg": -7.163,
+      "distance_ly": 21071.92,
+      "position_ly": [
+        -6548.145005,
+        16776.924942,
+        -10939.94531
+      ],
+      "size_x_deg": 10.0311,
+      "size_y_deg": 1.2832,
+      "rotation_deg": -10.5906,
+      "alpha": 0.02245,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_102",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 49.42,
+      "galactic_latitude_deg": 8.428,
+      "distance_ly": 18925.29,
+      "position_ly": [
+        3947.504565,
+        -17511.841489,
+        5993.26562
+      ],
+      "size_x_deg": 7.5575,
+      "size_y_deg": 1.5108,
+      "rotation_deg": -19.6761,
+      "alpha": 0.01283,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_103",
+      "role": "split_wisp",
+      "galactic_longitude_deg": -81.434,
+      "galactic_latitude_deg": -5.883,
+      "distance_ly": 18170.959,
+      "position_ly": [
+        -7362.762989,
+        5969.602699,
+        -15502.816921
+      ],
+      "size_x_deg": 8.6878,
+      "size_y_deg": 1.5722,
+      "rotation_deg": -2.6106,
+      "alpha": 0.01394,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_104",
+      "role": "split_wisp",
+      "galactic_longitude_deg": -117.266,
+      "galactic_latitude_deg": 3.773,
+      "distance_ly": 19161.266,
+      "position_ly": [
+        -9008.631092,
+        14962.559501,
+        -7881.654971
+      ],
+      "size_x_deg": 5.4254,
+      "size_y_deg": 1.5543,
+      "rotation_deg": 13.8216,
+      "alpha": 0.02225,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_105",
+      "role": "split_wisp",
+      "galactic_longitude_deg": -109.965,
+      "galactic_latitude_deg": -10.382,
+      "distance_ly": 13351.797,
+      "position_ly": [
+        -3764.033461,
+        9884.965179,
+        -8148.006192
+      ],
+      "size_x_deg": 10.9205,
+      "size_y_deg": 1.767,
+      "rotation_deg": -2.0364,
+      "alpha": 0.01626,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_106",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 100.645,
+      "galactic_latitude_deg": 5.701,
+      "distance_ly": 16334.353,
+      "position_ly": [
+        6649.307818,
+        -4806.020797,
+        14124.445174
+      ],
+      "size_x_deg": 10.0091,
+      "size_y_deg": 0.8156,
+      "rotation_deg": -3.7169,
+      "alpha": 0.01269,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_107",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 128.54,
+      "galactic_latitude_deg": -7.09,
+      "distance_ly": 19892.064,
+      "position_ly": [
+        10435.611392,
+        4358.635137,
+        16364.428547
+      ],
+      "size_x_deg": 10.1882,
+      "size_y_deg": 1.6103,
+      "rotation_deg": -4.908,
+      "alpha": 0.01145,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_108",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 27.981,
+      "galactic_latitude_deg": 5.169,
+      "distance_ly": 15893.073,
+      "position_ly": [
+        1657.218296,
+        -15796.406069,
+        -562.989335
+      ],
+      "size_x_deg": 6.747,
+      "size_y_deg": 1.4677,
+      "rotation_deg": 16.2358,
+      "alpha": 0.02469,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_109",
+      "role": "split_wisp",
+      "galactic_longitude_deg": -10.048,
+      "galactic_latitude_deg": -6.343,
+      "distance_ly": 22462.73,
+      "position_ly": [
+        -981.101047,
+        -16975.927581,
+        -14677.518377
+      ],
+      "size_x_deg": 5.6892,
+      "size_y_deg": 1.3263,
+      "rotation_deg": -8.5344,
+      "alpha": 0.01872,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_110",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 18.92,
+      "galactic_latitude_deg": 7.608,
+      "distance_ly": 13066.177,
+      "position_ly": [
+        -100.702984,
+        -12911.476129,
+        -2002.15392
+      ],
+      "size_x_deg": 6.6742,
+      "size_y_deg": 1.4734,
+      "rotation_deg": 9.1256,
+      "alpha": 0.02452,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_111",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 12.62,
+      "galactic_latitude_deg": -8.249,
+      "distance_ly": 19285.136,
+      "position_ly": [
+        3435.948728,
+        -17574.644217,
+        -7158.393801
+      ],
+      "size_x_deg": 5.4963,
+      "size_y_deg": 0.8459,
+      "rotation_deg": -14.6972,
+      "alpha": 0.02183,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_112",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 82.191,
+      "galactic_latitude_deg": 6.549,
+      "distance_ly": 17071.085,
+      "position_ly": [
+        6485.025218,
+        -9873.874669,
+        12323.675303
+      ],
+      "size_x_deg": 6.9562,
+      "size_y_deg": 1.2102,
+      "rotation_deg": -5.8823,
+      "alpha": 0.02189,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_113",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 114.262,
+      "galactic_latitude_deg": -5.28,
+      "distance_ly": 23239.417,
+      "position_ly": [
+        12801.972624,
+        -658.29901,
+        19384.185299
+      ],
+      "size_x_deg": 7.171,
+      "size_y_deg": 1.7179,
+      "rotation_deg": 19.8247,
+      "alpha": 0.0241,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_114",
+      "role": "split_wisp",
+      "galactic_longitude_deg": -54.11,
+      "galactic_latitude_deg": 4.26,
+      "distance_ly": 14732.271,
+      "position_ly": [
+        -7304.043181,
+        -2443.478151,
+        -12558.669555
+      ],
+      "size_x_deg": 7.4783,
+      "size_y_deg": 1.5116,
+      "rotation_deg": -0.6355,
+      "alpha": 0.01529,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_115",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 62.783,
+      "galactic_latitude_deg": -4.552,
+      "distance_ly": 18505.654,
+      "position_ly": [
+        8914.87647,
+        -14377.383393,
+        7501.669788
+      ],
+      "size_x_deg": 7.7785,
+      "size_y_deg": 1.3383,
+      "rotation_deg": -5.0288,
+      "alpha": 0.02462,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_116",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 15.086,
+      "galactic_latitude_deg": 6.71,
+      "distance_ly": 12567.899,
+      "position_ly": [
+        -332.520809,
+        -12262.223402,
+        -2734.84716
+      ],
+      "size_x_deg": 10.3439,
+      "size_y_deg": 1.7333,
+      "rotation_deg": 2.043,
+      "alpha": 0.02421,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_117",
+      "role": "split_wisp",
+      "galactic_longitude_deg": 106.621,
+      "galactic_latitude_deg": -6.544,
+      "distance_ly": 10677.033,
+      "position_ly": [
+        6244.562608,
+        -1631.323436,
+        8505.484091
+      ],
+      "size_x_deg": 8.0877,
+      "size_y_deg": 1.1038,
+      "rotation_deg": -1.0581,
+      "alpha": 0.02251,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    },
+    {
+      "id": "MWC_118",
+      "role": "split_wisp",
+      "galactic_longitude_deg": -60.341,
+      "galactic_latitude_deg": 3.931,
+      "distance_ly": 20148.951,
+      "position_ly": [
+        -10376.170359,
+        -1189.335484,
+        -17230.809928
+      ],
+      "size_x_deg": 8.4363,
+      "size_y_deg": 0.8318,
+      "rotation_deg": -14.5573,
+      "alpha": 0.02224,
+      "color": [
+        0.16,
+        0.2,
+        0.32
+      ]
+    }
+  ]
+}

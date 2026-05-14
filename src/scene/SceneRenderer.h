@@ -8,11 +8,14 @@
 #include "src/debug/render/DebugRenderer.h"
 #include "src/debug/render/DebugLineRenderer.h"
 #include "src/render/frustum/Frustum.h"
+#include "src/render/starfield/GalaxyStarfieldRenderer.h"
 
 
 #include "src/debug/FrustumDebugData.h"
 #include <functional>
 #include "src/debug/DebugSettings.h"
+
+#include "src/render/Font.h"
 
 // Forward declaration
 class DebugLineRenderer;
@@ -37,7 +40,12 @@ public:
         m_debugCallback = callback;
     }
 
+     void renderStarSystemLabels(
+        const glm::mat4& view,
+        const glm::mat4& proj
+    );
 
+    std::unique_ptr<Font> m_starLabelFont;
 
 
 private:
@@ -46,6 +54,7 @@ private:
     bool                                m_initialized;
     MeshRenderer                        m_meshRenderer;
     DebugRenderer                       m_debugRenderer;
+    GalaxyStarfieldRenderer             m_starfieldRenderer;
     
     // --- DEBUG ---
     std::function<void(const DebugFrameData&)> m_debugCallback;

@@ -49,6 +49,31 @@ void InitShaders()
     );
 
     shaders.load(
+        "galaxy_starfield",
+        "assets/shaders/starfield/galaxy_starfield.vert",
+        "assets/shaders/starfield/galaxy_starfield.frag",
+        ShaderProgram::Starfield
+    );
+
+
+
+
+shaders.load(
+    "galaxy_haze",
+    "assets/shaders/starfield/galaxy_haze.vert",
+    "assets/shaders/starfield/galaxy_haze.frag",
+    ShaderProgram::Starfield
+);
+
+
+
+
+
+
+
+
+
+    shaders.load(
         "ship_wire",
         "assets/shaders/wiremesh/ship_wire.vert",
         "assets/shaders/wiremesh/ship_wire.frag",

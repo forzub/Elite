@@ -1,0 +1,15 @@
+{
+  "version": 3,
+
+  "orientation": {
+    "galactic_center_dir": [-0.0549, -0.8734, -0.4838],
+    "galactic_north_dir": [-0.8676, -0.1981, 0.4559]
+  },
+
+  "appearance": {
+    "band_width_deg": 10.5,
+    "core_width_deg": 34.0,
+    "intensity": 0.42,
+    "dust_strength": 0.74
+  }
+}

@@ -122,7 +122,7 @@ GameSimulation::GameSimulation()
 
 
     // ================= Stantion Lexie Liu =========================
-    // spawnStation(ObjectType::Station, {0, 0, -1000});
+     spawnStation(ObjectType::Station, {0, 0, -1000});
 
 }
 

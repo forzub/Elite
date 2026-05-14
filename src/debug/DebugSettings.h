@@ -24,6 +24,12 @@ struct DebugRenderSettings
     // FLAGS
     // =========================
     bool drawMeshes = true;
+    bool renderCockpit = true;
+    bool renderShipUi = true;
+    bool renderStarfield = true;
+    bool renderRearCamera = true;
+    bool showStarLabels = true;
+    bool showAllStarLabels = false;
 
     bool drawAxes = false;          // legacy alias
     bool drawWorldAxes = false;
@@ -71,6 +77,26 @@ struct DebugRenderSettings
 
     bool captureSeamDebug = true;
     std::vector<DebugSeamProxy> seamDebugProxies;
+
+    bool shouldRenderCockpit() const
+    {
+        return renderCockpit && renderShipUi;
+    }
+
+    bool shouldRenderShipUi() const
+    {
+        return renderShipUi;
+    }
+
+    bool shouldRenderRearCamera() const
+    {
+        return renderShipUi && renderRearCamera;
+    }
+
+    bool shouldRenderStarfield() const
+    {
+        return renderStarfield;
+    }
 
     bool shouldDrawMeshes() const
     {

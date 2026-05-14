@@ -1,0 +1,148 @@
+#include "ShipDamageHandler.h"
+#include "game/damage/HitVolume.h"
+#include "game/ship/Ship.h"
+#include "game/damage/HitComponent.h"
+#include "game/damage/DamageEvent.h"
+
+#include <iostream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+using namespace game::damage;
+
+namespace game::ship
+{
+
+   
+
+void ShipDamageHandler::handleDamage(const DamageResult& result)
+{
+    if (!result.volume || !result.event)
+        return;
+
+    HitVolume* volume = const_cast<HitVolume*>(result.volume);
+    if (!volume)
+        return;
+
+    if (!volume->destructible)
+        return;
+
+    if (volume->destroyed)
+        return;
+
+    const auto& evt = *result.event;
+    double energy = evt.energy;
+
+    switch (volume->zone)
+    {
+        case HitZoneType::Reactor:
+            std::cout << "[ShipDamage] reactor hit energy=" << energy << "\n";
+            break;
+        case HitZoneType::Engine:
+            std::cout << "[ShipDamage] engine hit energy=" << energy << "\n";
+            break;
+        case HitZoneType::Radiator:
+            std::cout << "[ShipDamage] radiator hit energy=" << energy << "\n";
+            break;
+        case HitZoneType::Hull:
+            std::cout << "[ShipDamage] hull hit energy=" << energy << "\n";
+            break;
+        default:
+            std::cout << "[ShipDamage] generic hit energy=" << energy << "\n";
+            break;
+    }
+
+    // Support-link volume: удар/взрыв могут сорвать крепление мгновенно
+    if (volume->supportLinkVolume &&
+        (evt.type == DamageType::Explosion || evt.type == DamageType::Collision) &&
+        energy >= volume->impulseTolerance)
+    {
+        volume->health = 0.0f;
+        volume->destroyed = true;
+
+        std::cout << "[ShipDamage] support link impulse break: "
+                  << volume->supportLinkId
+                  << " energy=" << energy
+                  << " tol=" << volume->impulseTolerance << "\n";
+        return;
+    }
+
+    float effectiveDamage =
+        static_cast<float>(energy * 0.1) - volume->armor;
+
+    if (effectiveDamage < 0.0f)
+        effectiveDamage = 0.0f;
+
+    volume->health -= effectiveDamage;
+
+    std::cout << "[ShipDamage] volume " << volume->m_label
+              << " health=" << volume->health << "\n";
+
+    if (volume->health <= 0.0f)
+    {
+        volume->health = 0.0f;
+        volume->destroyed = true;
+
+        std::cout << "[ShipDamage] volume destroyed: "
+                  << volume->m_label << "\n";
+    }
+}
+
+
+
+    void ShipDamageHandler::handleImpact(
+        damage::HitComponent& hit,
+        const glm::vec3& impactPoint,
+        const damage::DamageEvent& event
+    )
+    {
+        int id = hit.findVolume(impactPoint);
+
+        if (id < 0)
+            return;
+
+        auto& volume = hit.volumes[id];
+
+        float effectiveDamage =
+            static_cast<float>(event.energy) - volume.armor;
+
+        if (effectiveDamage < 0.0f)
+            effectiveDamage = 0.0f;
+
+        volume.health -= effectiveDamage;
+
+        if (volume.health <= 0)
+        {
+            volume.destroyed = true;
+        }
+    }
+
+
+
+    void ShipDamageHandler::applyDamage(
+        const damage::DamageEvent& event
+    )
+    {
+        if (event.type == DamageType::Laser)
+        {
+            handleLaser(event);
+        }
+
+        if (event.type == DamageType::Collision)
+        {
+            handleImpact(*m_hit, event.position, event);
+        }
+    }
+
+
+
+    void ShipDamageHandler::handleLaser(
+        const damage::DamageEvent& event
+    )
+    {
+       
+        handleImpact(*m_hit, event.position, event);
+    }
+
+}

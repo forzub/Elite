@@ -15,6 +15,7 @@
 #include "src/galaxy/GalaxyDatabase.h"
 
 #include "src/render/camera/RenderCameraViewport.h"
+#include "src/debug/DebugSettings.h"
 #include "ui/components/UIText.h"
 #include "src/game/network/LocalLoopbackTransport.h"
 #include "src/game/equipment/radar/RadarDesc.h"
@@ -582,8 +583,11 @@ void SpaceState::renderUI()
     // Rear - камера корабля.
     // -------------------------------
 
+    if (debug::get().render.shouldRenderRearCamera())
+{
     rearView->camera = miniCam;
     rearView->renderToTexture(vp, rearView->drawCallback);
+}
 
     
 }
@@ -640,24 +644,20 @@ void SpaceState::renderHUD()
 
     
     // -------------------------------------------------
-    // 2. HUD ограничитель
+    // 2. Ship UI / HUD layer
     // -------------------------------------------------
-    
-    m_playerView->renderHudBoundary();
-    
-    // -------------------------------------------------
-    // 3. Подготовка матриц для меток
-    // -------------------------------------------------
-    
-    if (m_activeCameraMode != ShipCameraMode::Drone)
+    // One switch for everything drawn as the player's ship interface:
+    // HUD boundary, world labels/markers, cockpit overlay, rear/miniview UI, radar.
+    if (debug::get().render.shouldRenderShipUi())
     {
-       
-        auto it = m_client->world().ships().find(m_playerId.value);
-        if (it != m_client->world().ships().end())
-        {
-            const auto& shipState = it->second;
+        m_playerView->renderHudBoundary();
 
-            // Найдём snapshot игрока (для labels)
+        // -------------------------------------------------
+        // 3. Подготовка матриц для меток
+        // -------------------------------------------------
+
+        if (m_activeCameraMode != ShipCameraMode::Drone)
+        {
             auto it = m_client->world().ships().find(m_playerId.value);
             if (it != m_client->world().ships().end())
             {
@@ -672,14 +672,21 @@ void SpaceState::renderHUD()
                 );
             }
         }
-    }
 
-    m_playerView->renderCockpit();
-    uiRoot->render(vp);
+        if (debug::get().render.shouldRenderCockpit())
+        {
+            m_playerView->renderCockpit();
+        }
+
+        uiRoot->render(vp);
+    }
 
 
     // // 3. векторные приборы
     glEnable(GL_DEPTH_TEST);
+
+
+   
 
 }
 
@@ -1388,6 +1395,13 @@ void SpaceState::pushDebugControlState()
 
     json payload;
     payload["drawMeshes"] = dbg.drawMeshes;
+    payload["renderCockpit"] = dbg.renderCockpit;
+    payload["renderShipUi"] = dbg.renderShipUi;
+    payload["renderStarfield"] = dbg.renderStarfield;
+    payload["showStarLabels"] = dbg.showStarLabels;
+    payload["showAllStarLabels"] = dbg.showAllStarLabels;
+    payload["renderRearCamera"] = dbg.renderRearCamera;
+    
     payload["drawAxes"] = dbg.drawAxes;
     payload["drawWorldAxes"] = dbg.drawWorldAxes;
     payload["drawObjectAxes"] = dbg.drawObjectAxes;
@@ -1425,6 +1439,12 @@ void SpaceState::applyDebugControlPayload(const json& payload)
     auto& dbg = debug::get().render;
 
     dbg.drawMeshes = payload.value("drawMeshes", dbg.drawMeshes);
+    dbg.renderCockpit = payload.value("renderCockpit", dbg.renderCockpit);
+    dbg.renderShipUi = payload.value("renderShipUi", dbg.renderShipUi);
+    dbg.renderStarfield = payload.value("renderStarfield", dbg.renderStarfield);
+    dbg.showStarLabels = payload.value("showStarLabels", dbg.showStarLabels);
+    dbg.showAllStarLabels = payload.value("showAllStarLabels", dbg.showAllStarLabels);
+    dbg.renderRearCamera = payload.value("renderRearCamera", dbg.renderRearCamera);
     dbg.drawAxes = payload.value("drawAxes", dbg.drawAxes);
     dbg.drawWorldAxes = payload.value("drawWorldAxes", dbg.drawWorldAxes);
     dbg.drawObjectAxes = payload.value("drawObjectAxes", dbg.drawObjectAxes);
@@ -1479,3 +1499,7 @@ void SpaceState::pushVolumeViewerState()
 
     context().htmlUi().broadcastState(HtmlUiPanelId::VolumeViewer, payload);
 }
+
+
+
+

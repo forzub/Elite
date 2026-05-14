@@ -189,7 +189,18 @@ add_executable(EliteGame
     src/world/modules/ObjectStructuralLinkRuntime.cpp
     src/world/modules/ObjectDetachedFragmentRuntime.cpp
     src/world/modules/ObjectRepairJobRuntime.cpp
+    src/world/navigation/ObstacleAvoidance.cpp
+    src/world/navigation/SmallCraftNavigation.cpp
+
+    src/world/navigation/TacticalCollisionMonitor.cpp
+    src/world/navigation/NavigationContactAdapters.cpp
+    src/world/navigation/ObstaclePathPlanner.cpp
+
+    src/world/navigation/NavigationBodyAdapter.cpp
     
+    src/render/starfield/GalaxyStarfieldRenderer.cpp
+    src/render/starfield/MilkyWayRenderer.cpp
+
 )
 
 add_custom_target(copy_assets ALL

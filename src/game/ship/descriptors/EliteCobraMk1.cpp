@@ -1035,8 +1035,8 @@ for (auto& m : desc.modules)
                 .id = "camera_drone_default",
                 .parentModuleId = "ship_frame_CB",
                 .kind = ShipAttachmentKind::CameraDrone,
-                .localPosition = glm::vec3(0.0f, 4.0f, -12.0f),
-                .localRotationDeg = glm::vec3(10.0f, 0.0f, 0.0f),
+                .localPosition = glm::vec3(-9.0f, 1.0f, 0.0f),
+                .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
                 .enabled = true
             },
 
@@ -1044,10 +1044,115 @@ for (auto& m : desc.modules)
                 .id = "drone_dock_main",
                 .parentModuleId = "ship_frame_CB",
                 .kind = ShipAttachmentKind::DroneDock,
-                .localPosition = glm::vec3(0.0f, -1.2f, -5.5f),
+                .localPosition = glm::vec3(-9.0f, 1.0f, 0.0f),
                 .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
                 .enabled = true
             },
+
+            ShipAttachmentPoint{
+                .id = "drone_launch_main",
+                .parentModuleId = "ship_frame_CB",
+                .kind = ShipAttachmentKind::DroneLaunch,
+                .localPosition = glm::vec3(-9.0f, -4.0f, 0.0f),
+                .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+                .enabled = true
+            },
+
+
+
+ShipAttachmentPoint{
+    .id = "repair_drone_dock_main",
+    .parentModuleId = "ship_frame_CB",
+    .kind = ShipAttachmentKind::DroneDock,
+    .localPosition = glm::vec3( 9.0f, 1.0f, 0.0f),
+    .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+    .enabled = true
+},
+
+ShipAttachmentPoint{
+    .id = "repair_drone_launch_main",
+    .parentModuleId = "ship_frame_CB",
+    .kind = ShipAttachmentKind::DroneLaunch,
+    .localPosition = glm::vec3(9.0f, -4.0f, 0.0f),
+    .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+    .enabled = true
+},
+
+ShipAttachmentPoint{
+    .id = "repair_drone_recovery_main",
+    .parentModuleId = "ship_frame_CB",
+    .kind = ShipAttachmentKind::DroneRecovery,
+    .localPosition = glm::vec3(9.0f, -4.0f, 0.0f),
+    .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+    .enabled = true
+},
+
+
+
+
+
+ShipAttachmentPoint{
+    .id = "drone_recovery_main",
+    .parentModuleId = "ship_frame_CB",
+    .kind = ShipAttachmentKind::DroneRecovery,
+    .localPosition = glm::vec3(9.0f, 1.0f, 0.0f),
+    .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+    .enabled = true
+},
+
+ShipAttachmentPoint{
+    .id = "repair_work_top",
+    .parentModuleId = "",
+    .kind = ShipAttachmentKind::RepairWorkPoint,
+    .localPosition = glm::vec3(0.0f, 8.0f, 0.0f),
+    .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+    .enabled = true
+},
+
+ShipAttachmentPoint{
+    .id = "repair_work_bottom",
+    .parentModuleId = "",
+    .kind = ShipAttachmentKind::RepairWorkPoint,
+    .localPosition = glm::vec3(0.0f, -8.0f, 0.0f),
+    .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+    .enabled = true
+},
+
+ShipAttachmentPoint{
+    .id = "repair_work_left",
+    .parentModuleId = "",
+    .kind = ShipAttachmentKind::RepairWorkPoint,
+    .localPosition = glm::vec3(-8.0f, 0.0f, 0.0f),
+    .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+    .enabled = true
+},
+
+ShipAttachmentPoint{
+    .id = "repair_work_right",
+    .parentModuleId = "",
+    .kind = ShipAttachmentKind::RepairWorkPoint,
+    .localPosition = glm::vec3(8.0f, 0.0f, 0.0f),
+    .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+    .enabled = true
+},
+
+ShipAttachmentPoint{
+    .id = "repair_work_front",
+    .parentModuleId = "",
+    .kind = ShipAttachmentKind::RepairWorkPoint,
+    .localPosition = glm::vec3(0.0f, 0.0f, -12.0f),
+    .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+    .enabled = true
+},
+
+ShipAttachmentPoint{
+    .id = "repair_work_back",
+    .parentModuleId = "",
+    .kind = ShipAttachmentKind::RepairWorkPoint,
+    .localPosition = glm::vec3(0.0f, 0.0f, 8.0f),
+    .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
+    .enabled = true
+},
 
             ShipAttachmentPoint{
                 .id = "weapon_muzzle_L",

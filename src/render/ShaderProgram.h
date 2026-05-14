@@ -5,5 +5,6 @@ enum class ShaderProgram {
     MeshFill,
     LargeObjectFill,
     Edge,
-    DebugLines
+    DebugLines,
+    Starfield
 };

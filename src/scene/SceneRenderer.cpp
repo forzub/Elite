@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <memory>
 
 // #define GLM_ENABLE_EXPERIMENTAL
@@ -25,6 +26,9 @@
 #include "src/debug/render/ServerHitVolumeRenderer.h"
 
 #include "src/game/math/OrientationBasis.h"
+
+#include "src/render/HUD/TextRenderer.h"
+#include <cstdio>
 
 namespace
 {
@@ -291,11 +295,36 @@ void SceneRenderer::render(
     
     // Включаем необходимые состояния
     glDepthFunc(GL_LESS);
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // ============================================================
+    // 0. BACKGROUND: STARFIELD
+    // ============================================================
+    // Рисуем первым. Он не пишет в depth buffer.
+    // Потом станция/корабли просто перерисуют его поверх.
+    if (dbg.shouldRenderStarfield() && cameraName == "mainCam")
+    {
+        if (!m_starfieldRenderer.isInitialized())
+        {
+            m_starfieldRenderer.initialize();
+        }
+
+        m_starfieldRenderer.render(view, proj);
+    }
+
+    // Возвращаем нормальный state для мира.
     glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Starfield is rendered later, after world geometry, as a depth-tested
+    // background pass. That makes it immune to accidental clears/background
+    // passes and prevents it from covering ships or large objects.
     
     GLuint fillShader = ShaderLibrary::instance().get("mesh_fill");
     GLuint largeObjectShader = ShaderLibrary::instance().get("large_object_shader");
@@ -322,6 +351,19 @@ void SceneRenderer::render(
             dbg.worldAxisLength
         );
     }
+
+
+
+    if (cameraName == "mainCam")
+    {
+        renderStarSystemLabels(view, proj);
+    }
+
+
+
+
+
+
 
     // ============================================================
     // 1. РЕНДЕРИНГ КОРАБЛЕЙ (кроме игрока)
@@ -825,21 +867,16 @@ if (dbg.shouldDrawMeshes())
 
  
 
-    // if (shouldDebug)
-    // {
-    //     DebugObjectInfo objInfo;
-    //     objInfo.id = pair.first;
-    //     objInfo.position = obj.renderPosition;
-    //     objInfo.type = std::to_string(static_cast<int>(obj.type));
-    //     objInfo.visible = true;
-    //     debugData.objects.push_back(objInfo);
-    // }
+   
 }
 
 
 
+
+
+
     // ============================================================
-    // 3. ОТЛАДОЧНАЯ ИНФОРМАЦИЯ ДЛЯ КОРАБЛЯ ИГРОКА
+    // 4. ОТЛАДОЧНАЯ ИНФОРМАЦИЯ ДЛЯ КОРАБЛЯ ИГРОКА
     // ============================================================
     auto it = ships.find(playerId.value);
 
@@ -848,4 +885,183 @@ if (dbg.shouldDrawMeshes())
     {
         m_debugCallback(debugData);
     }
+}
+
+
+
+
+
+void SceneRenderer::renderStarSystemLabels(
+    const glm::mat4& view,
+    const glm::mat4& proj
+)
+{
+    const auto& dbg = debug::get().render;
+
+    if (!dbg.showStarLabels)
+        return;
+
+    if (!m_starfieldRenderer.isInitialized())
+        return;
+
+    if (!m_starLabelFont)
+    {
+        m_starLabelFont = std::make_unique<Font>(
+            "assets/fonts/Roboto-Light.ttf",
+            12
+        );
+    }
+
+    const auto& stars = m_starfieldRenderer.getRealStars();
+    const glm::vec3 observerLy = m_starfieldRenderer.getObserverPositionLy();
+
+    const glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(view));
+    const float skyRadius = m_starfieldRenderer.renderRadius();
+
+    GLint viewport[4] = {0, 0, 1, 1};
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    const float screenW = static_cast<float>(viewport[2]);
+    const float screenH = static_cast<float>(viewport[3]);
+
+    const glm::vec2 screenCenter(screenW * 0.5f, screenH * 0.5f);
+
+    // Радиус "прицела" в пикселях.
+    // Чем меньше — тем строже надо навести центр экрана.
+    constexpr float kFocusRadiusPx = 70.0f;
+
+    struct LabelCandidate
+    {
+        const GalaxyStarfieldRenderer::RealStar* star = nullptr;
+        glm::vec2 screen {0.0f};
+        float distLy = 0.0f;
+        float centerDistPx = 999999.0f;
+    };
+
+    std::vector<LabelCandidate> candidates;
+    candidates.reserve(64);
+
+    for (const auto& star : stars)
+    {
+        if (!star.isGameSystem)
+            continue;
+
+        const glm::vec3 rel = star.positionLy - observerLy;
+        const float distLy = glm::length(rel);
+
+        if (distLy < 0.001f)
+            continue;
+
+        const glm::vec3 dir = rel / distLy;
+        const glm::vec3 skyPos = dir * skyRadius;
+
+        const glm::vec4 clip =
+            proj * viewNoTranslation * glm::vec4(skyPos, 1.0f);
+
+        if (clip.w <= 0.0001f)
+            continue;
+
+        const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+
+        if (std::abs(ndc.x) > 1.0f || std::abs(ndc.y) > 1.0f)
+            continue;
+
+        const float screenX = (ndc.x * 0.5f + 0.5f) * screenW;
+        const float screenY = (1.0f - (ndc.y * 0.5f + 0.5f)) * screenH;
+
+        const glm::vec2 screenPos(screenX, screenY);
+        const float centerDist = glm::length(screenPos - screenCenter);
+
+        LabelCandidate candidate;
+        candidate.star = &star;
+        candidate.screen = screenPos;
+        candidate.distLy = distLy;
+        candidate.centerDistPx = centerDist;
+
+        candidates.push_back(candidate);
+    }
+
+    if (candidates.empty())
+        return;
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    auto drawCandidate = [&](const LabelCandidate& candidate, float extraAlpha)
+    {
+        const auto& star = *candidate.star;
+
+        char text[160];
+        std::snprintf(
+            text,
+            sizeof(text),
+            "%s  %.1f ly",
+            star.name.empty() ? star.id.c_str() : star.name.c_str(),
+            candidate.distLy
+        );
+
+        float alpha =
+            std::max(0.18f, std::min(0.62f, 1.0f - candidate.distLy / 90.0f));
+
+        alpha *= extraAlpha;
+
+        TextRenderer::instance().textDraw(
+            *m_starLabelFont,
+            text,
+            candidate.screen.x + 8.0f,
+            candidate.screen.y - 6.0f,
+            glm::vec4(0.65f, 0.82f, 1.0f, alpha)
+        );
+    };
+
+    if (dbg.showAllStarLabels)
+    {
+        std::sort(
+            candidates.begin(),
+            candidates.end(),
+            [](const LabelCandidate& a, const LabelCandidate& b)
+            {
+                if (a.distLy != b.distLy)
+                    return a.distLy < b.distLy;
+
+                return a.centerDistPx < b.centerDistPx;
+            }
+        );
+
+        constexpr int kMaxLabels = 24;
+
+        int rendered = 0;
+        for (const LabelCandidate& candidate : candidates)
+        {
+            drawCandidate(candidate, 1.0f);
+
+            ++rendered;
+            if (rendered >= kMaxLabels)
+                break;
+        }
+    }
+    else
+    {
+        const auto bestIt = std::min_element(
+            candidates.begin(),
+            candidates.end(),
+            [](const LabelCandidate& a, const LabelCandidate& b)
+            {
+                return a.centerDistPx < b.centerDistPx;
+            }
+        );
+
+        if (bestIt != candidates.end() && bestIt->centerDistPx <= kFocusRadiusPx)
+        {
+            const float focusAlpha =
+                1.0f - std::min(1.0f, bestIt->centerDistPx / kFocusRadiusPx);
+
+            drawCandidate(*bestIt, 0.35f + focusAlpha * 0.65f);
+        }
+    }
+
+    glEnable(GL_DEPTH_TEST);
 }

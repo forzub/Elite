@@ -94,9 +94,19 @@
   </div>
 
   <div class="section">
-    <div class="title">Flags</div>
+    <div class="title">Render</div>
 
     <div class="row"><label>Draw meshes</label><input id="drawMeshes" type="checkbox"></div>
+    <div class="row"><label>Render ship UI</label><input id="renderShipUi" type="checkbox"></div>
+    <div class="row"><label>Render starfield</label><input id="renderStarfield" type="checkbox"></div>
+    <div class="row"><label>Show star labels</label><input id="showStarLabels" type="checkbox"></div>
+    <div class="row"><label>Show all star labels</label><input id="showAllStarLabels" type="checkbox"></div>
+    <div class="row"><label>Render cockpit inside ship UI</label><input id="renderCockpit" type="checkbox"></div>
+    <div class="row"><label>Render rear camera</label><input id="renderRearCamera" type="checkbox"></div>
+  </div>
+
+  <div class="section">
+    <div class="title">Debug flags</div>
     <div class="row"><label>Draw axes (legacy)</label><input id="drawAxes" type="checkbox"></div>
     <div class="row"><label>Draw world axes</label><input id="drawWorldAxes" type="checkbox"></div>
     <div class="row"><label>Draw object axes</label><input id="drawObjectAxes" type="checkbox"></div>
@@ -225,6 +235,12 @@
 
     function applyPayload(p) {
       document.getElementById('drawMeshes').checked = !!p.drawMeshes;
+      document.getElementById('renderShipUi').checked = p.renderShipUi !== false;
+      document.getElementById('renderCockpit').checked = p.renderCockpit !== false;
+      document.getElementById('renderStarfield').checked = p.renderStarfield !== false;
+      document.getElementById('showStarLabels').checked = p.showStarLabels !== false;
+      document.getElementById('showAllStarLabels').checked = p.showAllStarLabels === true;
+      document.getElementById('renderRearCamera').checked = p.renderRearCamera !== false;
       document.getElementById('drawAxes').checked = !!p.drawAxes;
       document.getElementById('drawWorldAxes').checked = !!p.drawWorldAxes;
       document.getElementById('drawObjectAxes').checked = !!p.drawObjectAxes;
@@ -259,6 +275,12 @@
     function buildPayload() {
       return {
         drawMeshes: document.getElementById('drawMeshes').checked,
+        renderShipUi: document.getElementById('renderShipUi').checked,
+        renderCockpit: document.getElementById('renderCockpit').checked,
+        renderStarfield: document.getElementById('renderStarfield').checked,
+        showStarLabels: document.getElementById('showStarLabels').checked,
+        showAllStarLabels: document.getElementById('showAllStarLabels').checked,
+        renderRearCamera: document.getElementById('renderRearCamera').checked,
         drawAxes: document.getElementById('drawAxes').checked,
         drawWorldAxes: document.getElementById('drawWorldAxes').checked,
         drawObjectAxes: document.getElementById('drawObjectAxes').checked,

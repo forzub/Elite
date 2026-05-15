@@ -1,17 +1,18 @@
 #version 330 core
-        in vec2 TexCoords;
-        out vec4 FragColor;
 
-        uniform sampler2D text;
-        uniform vec4 textColor;   // ← теперь vec4
+in vec2 TexCoords;
+in vec4 GlyphColor;
 
-        void main()
-        {
-            float glyphAlpha = texture(text, TexCoords).a;
+out vec4 FragColor;
 
-            // итоговая альфа = глиф * visibility
-            FragColor = vec4(
-                textColor.rgb,
-                glyphAlpha * textColor.a
-            );
-        }
+uniform sampler2D text;
+
+void main()
+{
+    float glyphAlpha = texture(text, TexCoords).a;
+
+    FragColor = vec4(
+        GlyphColor.rgb,
+        glyphAlpha * GlyphColor.a
+    );
+}

@@ -66,6 +66,15 @@ bool isDetachedVisualState(uint8_t state)
     return state == 3 || state == 4; // Detached / Hanging
 }
 
+
+float safeRadiusFromHalfSize(const glm::vec3& halfSize)
+{
+    const float r = glm::length(halfSize);
+    return r > 0.001f ? r : 1.0f;
+}
+
+
+
 glm::mat4 buildAssemblyModuleModel(
     const glm::mat4& ownerModel,
     const game::ship::geometry::AssemblyModule& module,
@@ -229,11 +238,13 @@ void SceneRenderer::render(
     const auto& dbg = debug::get().render;
     m_frameCounter++;
 
+    m_lastStats.reset();
+
     static float debugTimer = 0;
     debugTimer += 0.016f; // примерно dt, но лучше передавать dt параметром
     
     bool shouldDebug = false;
-    if(m_debugCallback)
+    if(m_debugCallback  && cameraName == "mainCam")
     {
         // Отправляем раз в 5 кадров для производительности
         shouldDebug = (m_frameCounter % 5 == 0);
@@ -477,6 +488,18 @@ void SceneRenderer::render(
                 float distToModule = glm::length(moduleWorldPos - cameraPos);
                 bool useLod1 = (distToModule >= ship.assembly->lodSwitchDistance);
 
+                const float moduleRadius = safeRadiusFromHalfSize(module.boundHalfSize);
+
+                if (!frustum.sphereVisible(module.boundCenter, moduleRadius, moduleModel))
+                {
+                    m_lastStats.modulesCulled++;
+                    continue;
+                }
+
+                m_lastStats.modulesDrawn++;
+
+
+
                 if (dbg.shouldDrawMeshes())
                 {
                     for (const auto& part : module.meshes)
@@ -485,7 +508,19 @@ void SceneRenderer::render(
                             continue;
 
                         glm::mat4 partModel = glm::translate(moduleModel, part.localOffset);
-                        glm::mat4 partMvp   = proj * view * partModel;
+
+                        const float partRadius = safeRadiusFromHalfSize(part.boundHalfSize);
+
+                        if (!frustum.sphereVisible(part.boundCenter, partRadius, partModel))
+                        {
+                            m_lastStats.partsCulled++;
+                            continue;
+                        }
+
+                        m_lastStats.partsDrawn++;
+                        m_lastStats.drawCalls += 2; // fill + edge
+
+                        glm::mat4 partMvp = proj * view * partModel;
 
                         const render::MeshGPU& gpu = useLod1 ? part.lod1Gpu : part.lod0Gpu;
 
@@ -578,44 +613,46 @@ if (dbg.shouldDrawMeshes())
 
 
 
-
-for (const auto& job : ship.repairJobs)
+if (dbg.drawModulePivots)
 {
-    const glm::vec4 droneColor(0.2f, 1.0f, 0.2f, 1.0f);
-    const glm::vec4 towColor(0.2f, 0.8f, 1.0f, 1.0f);
-    const glm::vec4 homeColor(1.0f, 0.8f, 0.2f, 1.0f);
+    for (const auto& job : ship.repairJobs)
+    {
+        const glm::vec4 droneColor(0.2f, 1.0f, 0.2f, 1.0f);
+        const glm::vec4 towColor(0.2f, 0.8f, 1.0f, 1.0f);
+        const glm::vec4 homeColor(1.0f, 0.8f, 0.2f, 1.0f);
 
-    m_debugRenderer.renderCross(
-        job.dronePosition,
-        0.6f,
-        droneColor,
-        view,
-        proj
-    );
+        m_debugRenderer.renderCross(
+            job.dronePosition,
+            0.6f,
+            droneColor,
+            view,
+            proj
+        );
 
-    m_debugRenderer.renderLine(
-        job.dronePosition,
-        job.fragmentPosition,
-        towColor,
-        view,
-        proj
-    );
+        m_debugRenderer.renderLine(
+            job.dronePosition,
+            job.fragmentPosition,
+            towColor,
+            view,
+            proj
+        );
 
-    m_debugRenderer.renderLine(
-        job.fragmentPosition,
-        job.homePosition,
-        homeColor,
-        view,
-        proj
-    );
+        m_debugRenderer.renderLine(
+            job.fragmentPosition,
+            job.homePosition,
+            homeColor,
+            view,
+            proj
+        );
 
-    m_debugRenderer.renderCross(
-        job.homePosition,
-        0.4f,
-        homeColor,
-        view,
-        proj
-    );
+        m_debugRenderer.renderCross(
+            job.homePosition,
+            0.4f,
+            homeColor,
+            view,
+            proj
+        );
+    }
 }
 
 
@@ -759,6 +796,16 @@ for (const auto& pair : objects)
             float distToModule = glm::length(moduleWorldPos - cameraPos);
             bool useLod1 = (distToModule >= obj.assembly->lodSwitchDistance);
 
+            const float moduleRadius = safeRadiusFromHalfSize(module.boundHalfSize);
+
+            if (!frustum.sphereVisible(module.boundCenter, moduleRadius, moduleModel))
+            {
+                m_lastStats.modulesCulled++;
+                continue;
+            }
+
+            m_lastStats.modulesDrawn++;
+
             
 
 
@@ -767,7 +814,19 @@ for (const auto& pair : objects)
                 for (const auto& part : module.meshes)
                 {
                     glm::mat4 partModel = glm::translate(moduleModel, part.localOffset);
-                    glm::mat4 partMvp   = proj * view * partModel;
+
+                    const float partRadius = safeRadiusFromHalfSize(part.boundHalfSize);
+
+                    if (!frustum.sphereVisible(part.boundCenter, partRadius, partModel))
+                    {
+                        m_lastStats.partsCulled++;
+                        continue;
+                    }
+
+                    m_lastStats.partsDrawn++;
+                    m_lastStats.drawCalls += 2; // fill + edge
+
+                    glm::mat4 partMvp = proj * view * partModel;
 
                     if (obj.hiddenPartIds.find(part.id) != obj.hiddenPartIds.end())
                         continue;

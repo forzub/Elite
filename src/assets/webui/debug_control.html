@@ -22,6 +22,89 @@
       align-items: center;
       margin-bottom: 12px;
     }
+    .layout {
+  display: grid;
+  grid-template-columns: minmax(520px, 820px) minmax(420px, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.leftPanel {
+  min-width: 0;
+}
+
+.rightPanel {
+  min-width: 0;
+  position: sticky;
+  top: 12px;
+}
+
+.logBox {
+  height: calc(100vh - 96px);
+  min-height: 420px;
+  background: #080c11;
+  border: 1px solid #263444;
+  border-radius: 6px;
+  padding: 10px;
+  overflow: auto;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #b8c7d9;
+  white-space: pre-wrap;
+}
+
+.logLine {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  padding: 3px 0;
+}
+
+.logTime {
+  color: #6f879f;
+}
+
+.logInfo {
+  color: #9fd3ff;
+}
+
+.logWarn {
+  color: #ffd27a;
+}
+
+.logError {
+  color: #ff7a7a;
+}
+
+.perfGrid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 12px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+}
+
+.perfKey {
+  color: #8fa3b8;
+}
+
+.perfValue {
+  color: #d7dde8;
+  text-align: right;
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .rightPanel {
+    position: static;
+  }
+
+  .logBox {
+    height: 360px;
+  }
+}
     .status {
       margin-left: auto;
       opacity: 0.8;
@@ -86,12 +169,15 @@
   </style>
 </head>
 <body>
-  <div class="topbar">
+    <div class="topbar">
     <strong>Debug Control</strong>
     <button onclick="app.requestSnapshot()">Reload</button>
     <button onclick="app.apply()">Apply</button>
     <span class="status" id="status">offline</span>
   </div>
+
+  <div class="layout">
+    <div class="leftPanel">
 
   <div class="section">
     <div class="title">Render</div>
@@ -206,12 +292,124 @@
     </div>
   </div>
 
-  <div class="section small">
+    <div class="section small">
     Эта страница управляет debug-настройками движка в реальном времени.
+  </div>
+
+    </div>
+
+    <div class="rightPanel">
+      <div class="section">
+        <div class="title">Performance</div>
+        <div class="perfGrid" id="perfGrid">
+          <div class="perfKey">Frame index</div><div class="perfValue" id="perfFrameIndex">—</div>
+          <div class="perfKey">FPS</div><div class="perfValue" id="perfFps">—</div>
+          <div class="perfKey">Frame ms</div><div class="perfValue" id="perfFrameMs">—</div>
+
+          <div class="perfKey">Update total</div><div class="perfValue" id="perfUpdateMs">—</div>
+          <div class="perfKey">processHtml</div><div class="perfValue" id="perfProcessHtmlMs">—</div>
+          <div class="perfKey">Fixed simulation</div><div class="perfValue" id="perfFixedSimMs">—</div>
+          <div class="perfKey">Client update</div><div class="perfValue" id="perfClientUpdateMs">—</div>
+          <div class="perfKey">PlayerView update</div><div class="perfValue" id="perfPlayerViewMs">—</div>
+          <div class="perfKey">UI root update</div><div class="perfValue" id="perfUiRootUpdateMs">—</div>
+
+          <div class="perfKey">Main render</div><div class="perfValue" id="perfMainRenderMs">—</div>
+          <div class="perfKey">Rear camera</div><div class="perfValue" id="perfRearCameraMs">—</div>
+          <div class="perfKey">Render UI total</div><div class="perfValue" id="perfRenderUiMs">—</div>
+          <div class="perfKey">HUD</div><div class="perfValue" id="perfHudMs">—</div>
+          <div class="perfKey">Draw calls</div><div class="perfValue" id="perfDrawCalls">—</div>
+          <div class="perfKey">Modules drawn / culled</div><div class="perfValue" id="perfModules">—</div>
+          <div class="perfKey">Parts drawn / culled</div><div class="perfValue" id="perfParts">—</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="title">Debug log</div>
+        <div class="logBox" id="debugLog"></div>
+      </div>
+    </div>
   </div>
 
   <script>
     const state = { ws: null };
+    const MAX_LOG_LINES = 300;
+
+function nowStamp() {
+  const d = new Date();
+  return d.toLocaleTimeString('en-GB', { hour12: false });
+}
+
+function logLine(text, kind = 'info') {
+  const box = document.getElementById('debugLog');
+  if (!box) return;
+
+  const line = document.createElement('div');
+  line.className = 'logLine';
+
+  const kindClass =
+    kind === 'error' ? 'logError' :
+    kind === 'warn'  ? 'logWarn'  :
+                       'logInfo';
+
+  line.innerHTML =
+    `<span class="logTime">[${nowStamp()}]</span> ` +
+    `<span class="${kindClass}">${escapeHtml(text)}</span>`;
+
+  box.appendChild(line);
+
+  while (box.children.length > MAX_LOG_LINES) {
+    box.removeChild(box.firstChild);
+  }
+
+  box.scrollTop = box.scrollHeight;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function applyPerformancePayload(p) {
+  if (!p) return;
+
+  setText('perfFrameIndex', p.frameIndex ?? '—');
+
+  setText('perfFps', p.fps != null ? Number(p.fps).toFixed(1) : '—');
+  setText('perfFrameMs', p.frameMs != null ? Number(p.frameMs).toFixed(2) + ' ms' : '—');
+  setText('perfUpdateMs', p.updateMs != null ? Number(p.updateMs).toFixed(2) + ' ms' : '—');
+  setText('perfProcessHtmlMs', p.processHtmlMs != null ? Number(p.processHtmlMs).toFixed(2) + ' ms' : '—');
+  setText('perfFixedSimMs', p.fixedSimMs != null ? Number(p.fixedSimMs).toFixed(2) + ' ms' : '—');
+  setText('perfClientUpdateMs', p.clientUpdateMs != null ? Number(p.clientUpdateMs).toFixed(2) + ' ms' : '—');
+  setText('perfPlayerViewMs', p.playerViewMs != null ? Number(p.playerViewMs).toFixed(2) + ' ms' : '—');
+  setText('perfUiRootUpdateMs', p.uiRootUpdateMs != null ? Number(p.uiRootUpdateMs).toFixed(2) + ' ms' : '—');
+  setText('perfMainRenderMs', p.mainRenderMs != null ? Number(p.mainRenderMs).toFixed(2) + ' ms' : '—');
+  setText('perfRearCameraMs', p.rearCameraMs != null ? Number(p.rearCameraMs).toFixed(2) + ' ms' : '—');
+  setText('perfRenderUiMs', p.renderUiMs != null ? Number(p.renderUiMs).toFixed(2) + ' ms' : '—');
+  setText('perfHudMs', p.hudMs != null ? Number(p.hudMs).toFixed(2) + ' ms' : '—');
+  setText('perfDrawCalls', p.drawCalls ?? '—');
+
+  const modules =
+    p.modulesDrawn != null || p.modulesCulled != null
+      ? `${p.modulesDrawn ?? 0} / ${p.modulesCulled ?? 0}`
+      : '—';
+
+  const parts =
+    p.partsDrawn != null || p.partsCulled != null
+      ? `${p.partsDrawn ?? 0} / ${p.partsCulled ?? 0}`
+      : '—';
+
+  setText('perfModules', modules);
+  setText('perfParts', parts);
+}
 
     function setStatus(text) {
       document.getElementById('status').textContent = text;
@@ -318,6 +516,8 @@
 
       state.ws.addEventListener('open', () => {
         setStatus('connected');
+        logLine('WebSocket connected');
+
         state.ws.send(JSON.stringify({
           type: 'subscribe',
           panel: 'debug_control',
@@ -325,17 +525,50 @@
         }));
       });
 
-      state.ws.addEventListener('close', () => setStatus('disconnected'));
-      state.ws.addEventListener('error', () => setStatus('error'));
+      state.ws.addEventListener('close', () => {
+        setStatus('disconnected');
+        logLine('WebSocket disconnected', 'warn');
+      });
+
+      state.ws.addEventListener('error', () => {
+        setStatus('error');
+        logLine('WebSocket error', 'error');
+      });
 
       state.ws.addEventListener('message', (event) => {
-        const msg = JSON.parse(event.data);
+      let msg = null;
 
-        if (msg.type !== 'state_update') return;
-        if (msg.panel !== 'debug_control') return;
+      try {
+        msg = JSON.parse(event.data);
+      } catch (e) {
+        logLine('Invalid JSON message from engine', 'error');
+        return;
+      }
 
+      if (msg.panel !== 'debug_control') return;
+
+      if (msg.type === 'state_update') {
         applyPayload(msg.payload || {});
-      });
+
+        if (msg.payload && msg.payload.performance) {
+          applyPerformancePayload(msg.payload.performance);
+        }
+
+        logLine('Debug state updated');
+        return;
+      }
+
+      if (msg.type === 'debug_log') {
+        const p = msg.payload || {};
+        logLine(p.message || '(empty log message)', p.level || 'info');
+        return;
+      }
+
+      if (msg.type === 'performance_update') {
+        applyPerformancePayload(msg.payload || {});
+        return;
+      }
+    });
     }
 
     window.app = {

@@ -1,6 +1,11 @@
 #include "UICameraView.h"
+
 #include <glad/gl.h>
+
 #include <algorithm>
+#include <cmath>
+
+#include <glm/gtc/constants.hpp>
 
 
 
@@ -27,174 +32,201 @@ void UICameraView::render(
     if (!visible || !colorTex)
         return;
 
-    float px = parentX + position.x * parentW;
-    float py = parentY + position.y * parentH;
-    float pw = size.x * parentW;
-    float ph = size.y * parentH;
+    const float px = parentX + position.x * parentW;
+    const float py = parentY + position.y * parentH;
+    const float pw = size.x * parentW;
+    const float ph = size.y * parentH;
 
-    float minSide = std::min(pw, ph);
-    float radius = cornerRadiusRel * minSide;
-    float borderThickness = borderThicknessRel * minSide;
-    radius = std::clamp(radius, 0.0f, minSide * 0.5f);
+    const float minSide = std::min(pw, ph);
+
+    float radius =
+        cornerRadiusRel * minSide;
+
+    float borderThickness =
+        borderThicknessRel * minSide;
+
+    radius = std::clamp(
+        radius,
+        0.0f,
+        minSide * 0.5f
+    );
+
+    const float innerLeft   = px + radius;
+    const float innerRight  = px + pw - radius;
+    const float innerTop    = py + radius;
+    const float innerBottom = py + ph - radius;
+
+    auto texU = [&](float x) -> float
+    {
+        return (x - px) / pw;
+    };
+
+    // ВАЖНО:
+    // UI-координата Y растёт сверху вниз,
+    // а FBO texture coordinate Y в OpenGL растёт снизу вверх.
+    // Поэтому здесь нужен flip.
+    auto texV = [&](float y) -> float
+    {
+        return 1.0f - ((y - py) / ph);
+    };
+
+    auto texturedVertex = [&](float x, float y)
+    {
+        glTexCoord2f(texU(x), texV(y));
+        glVertex2f(x, y);
+    };
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-    glColor4f(1, 1, 1, 1);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, colorTex);
 
+    // -------------------------------------------------
+    // Центральный прямоугольник
+    // -------------------------------------------------
+    glBegin(GL_QUADS);
+
+    texturedVertex(innerLeft,  innerTop);
+    texturedVertex(innerRight, innerTop);
+    texturedVertex(innerRight, innerBottom);
+    texturedVertex(innerLeft,  innerBottom);
+
+    glEnd();
+
+    // -------------------------------------------------
+    // Верхняя полоса
+    // -------------------------------------------------
+    glBegin(GL_QUADS);
+
+    texturedVertex(innerLeft,  py);
+    texturedVertex(innerRight, py);
+    texturedVertex(innerRight, innerTop);
+    texturedVertex(innerLeft,  innerTop);
+
+    glEnd();
+
+    // -------------------------------------------------
+    // Нижняя полоса
+    // -------------------------------------------------
+    glBegin(GL_QUADS);
+
+    texturedVertex(innerLeft,  innerBottom);
+    texturedVertex(innerRight, innerBottom);
+    texturedVertex(innerRight, py + ph);
+    texturedVertex(innerLeft,  py + ph);
+
+    glEnd();
+
+    // -------------------------------------------------
+    // Левая полоса
+    // -------------------------------------------------
+    glBegin(GL_QUADS);
+
+    texturedVertex(px,        innerTop);
+    texturedVertex(innerLeft, innerTop);
+    texturedVertex(innerLeft, innerBottom);
+    texturedVertex(px,        innerBottom);
+
+    glEnd();
+
+    // -------------------------------------------------
+    // Правая полоса
+    // -------------------------------------------------
+    glBegin(GL_QUADS);
+
+    texturedVertex(innerRight, innerTop);
+    texturedVertex(px + pw,   innerTop);
+    texturedVertex(px + pw,   innerBottom);
+    texturedVertex(innerRight, innerBottom);
+
+    glEnd();
+
+    // -------------------------------------------------
+    // Скруглённые углы
+    // -------------------------------------------------
     const int segments = 16;
 
-    // ---- Рисуем скругленный quad как 4 отдельных угла + центр ----
-    // Внутренний прямоугольник (без скруглений)
-    float innerLeft = px + radius;
-    float innerRight = px + pw - radius;
-    float innerTop = py + radius;
-    float innerBottom = py + ph - radius;
-    
-    // Центральная часть (прямоугольник)
-    glBegin(GL_QUADS);
-    // Левый верхний внутренний угол
-    glTexCoord2f(radius/pw, radius/ph);
-    glVertex2f(innerLeft, innerTop);
-    
-    glTexCoord2f((pw-radius)/pw, radius/ph);
-    glVertex2f(innerRight, innerTop);
-    
-    glTexCoord2f((pw-radius)/pw, (ph-radius)/ph);
-    glVertex2f(innerRight, innerBottom);
-    
-    glTexCoord2f(radius/pw, (ph-radius)/ph);
-    glVertex2f(innerLeft, innerBottom);
-    glEnd();
-    
-    // Верхняя полоса
-    glBegin(GL_QUADS);
-    glTexCoord2f(radius/pw, 0);
-    glVertex2f(innerLeft, py);
-    
-    glTexCoord2f((pw-radius)/pw, 0);
-    glVertex2f(innerRight, py);
-    
-    glTexCoord2f((pw-radius)/pw, radius/ph);
-    glVertex2f(innerRight, innerTop);
-    
-    glTexCoord2f(radius/pw, radius/ph);
-    glVertex2f(innerLeft, innerTop);
-    glEnd();
-    
-    // Нижняя полоса
-    glBegin(GL_QUADS);
-    glTexCoord2f(radius/pw, (ph-radius)/ph);
-    glVertex2f(innerLeft, innerBottom);
-    
-    glTexCoord2f((pw-radius)/pw, (ph-radius)/ph);
-    glVertex2f(innerRight, innerBottom);
-    
-    glTexCoord2f((pw-radius)/pw, 1);
-    glVertex2f(innerRight, py + ph);
-    
-    glTexCoord2f(radius/pw, 1);
-    glVertex2f(innerLeft, py + ph);
-    glEnd();
-    
-    // Левая полоса
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, radius/ph);
-    glVertex2f(px, innerTop);
-    
-    glTexCoord2f(radius/pw, radius/ph);
-    glVertex2f(innerLeft, innerTop);
-    
-    glTexCoord2f(radius/pw, (ph-radius)/ph);
-    glVertex2f(innerLeft, innerBottom);
-    
-    glTexCoord2f(0, (ph-radius)/ph);
-    glVertex2f(px, innerBottom);
-    glEnd();
-    
-    // Правая полоса
-    glBegin(GL_QUADS);
-    glTexCoord2f((pw-radius)/pw, radius/ph);
-    glVertex2f(innerRight, innerTop);
-    
-    glTexCoord2f(1, radius/ph);
-    glVertex2f(px + pw, innerTop);
-    
-    glTexCoord2f(1, (ph-radius)/ph);
-    glVertex2f(px + pw, innerBottom);
-    
-    glTexCoord2f((pw-radius)/pw, (ph-radius)/ph);
-    glVertex2f(innerRight, innerBottom);
-    glEnd();
-    
-    // 4 скругленных угла (как треугольные вееры)
-    auto drawCorner = [&](float cx, float cy, float startAngle, float texCX, float texCY)
+    auto drawCorner =
+        [&](float cx, float cy, float startAngle)
     {
         glBegin(GL_TRIANGLE_FAN);
-        // Центр угла
-        glTexCoord2f(texCX, texCY);
-        glVertex2f(cx, cy);
-        
+
+        texturedVertex(cx, cy);
+
         for (int i = 0; i <= segments; ++i)
         {
-            float a = startAngle + (glm::half_pi<float>() * i / segments);
-            float x = cx + cos(a) * radius;
-            float y = cy + sin(a) * radius;
-            
-            // Текстурные координаты для точки на дуге
-            float tx = (x - px) / pw;
-            float ty = 1.0f - (y - py) / ph;  // Инвертируем Y для OpenGL
-            glTexCoord2f(tx, ty);
-            glVertex2f(x, y);
+            const float a =
+                startAngle +
+                glm::half_pi<float>() *
+                static_cast<float>(i) /
+                static_cast<float>(segments);
+
+            const float x =
+                cx + std::cos(a) * radius;
+
+            const float y =
+                cy + std::sin(a) * radius;
+
+            texturedVertex(x, y);
         }
+
         glEnd();
     };
-    
-    // Левый верхний угол
-    drawCorner(innerLeft, innerTop, glm::pi<float>(), 
-               radius/pw, radius/ph);
-    
-    // Правый верхний угол
-    drawCorner(innerRight, innerTop, -glm::half_pi<float>(), 
-               (pw-radius)/pw, radius/ph);
-    
-    // Правый нижний угол
-    drawCorner(innerRight, innerBottom, 0.0f, 
-               (pw-radius)/pw, (ph-radius)/ph);
-    
-    // Левый нижний угол
-    drawCorner(innerLeft, innerBottom, glm::half_pi<float>(), 
-               radius/pw, (ph-radius)/ph);
 
+    drawCorner(innerLeft,  innerTop,    glm::pi<float>());
+    drawCorner(innerRight, innerTop,   -glm::half_pi<float>());
+    drawCorner(innerRight, innerBottom, 0.0f);
+    drawCorner(innerLeft,  innerBottom, glm::half_pi<float>());
+
+    glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_TEXTURE_2D);
 
-    // ---- Рамка (без изменений) ----
-    glColor3f(borderColor.r, borderColor.g, borderColor.b);
+    // -------------------------------------------------
+    // Рамка
+    // -------------------------------------------------
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glColor3f(
+        borderColor.r,
+        borderColor.g,
+        borderColor.b
+    );
+
     glLineWidth(borderThickness);
 
     glBegin(GL_LINE_LOOP);
 
-    auto drawBorderCorner = [&](float cx, float cy, float startAngle)
+    auto drawBorderCorner =
+        [&](float cx, float cy, float startAngle)
     {
         for (int i = 0; i <= segments; ++i)
         {
-            float a = startAngle + (glm::half_pi<float>() * i / segments);
-            float x = cx + cos(a) * radius;
-            float y = cy + sin(a) * radius;
+            const float a =
+                startAngle +
+                glm::half_pi<float>() *
+                static_cast<float>(i) /
+                static_cast<float>(segments);
+
+            const float x =
+                cx + std::cos(a) * radius;
+
+            const float y =
+                cy + std::sin(a) * radius;
+
             glVertex2f(x, y);
         }
     };
 
-    drawBorderCorner(innerRight, innerTop, -glm::half_pi<float>());
-    drawBorderCorner(innerRight, innerBottom, 0.0f);
-    drawBorderCorner(innerLeft, innerBottom, glm::half_pi<float>());
-    drawBorderCorner(innerLeft, innerTop, glm::pi<float>());
+    drawBorderCorner(innerRight, innerTop,    -glm::half_pi<float>());
+    drawBorderCorner(innerRight, innerBottom,  0.0f);
+    drawBorderCorner(innerLeft,  innerBottom,  glm::half_pi<float>());
+    drawBorderCorner(innerLeft,  innerTop,     glm::pi<float>());
 
     glEnd();
 
-    glEnable(GL_BLEND);
     renderChildren(vp, px, py, pw, ph);
 }
 

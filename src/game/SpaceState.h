@@ -169,4 +169,29 @@ private:
     std::string m_attachmentEditorSelectedShipTypeId = "cobra_mk1";
     uint64_t    m_shipCoreSelectedShipEntityId = 0;
     uint64_t    m_structureDebugSelectedShipEntityId = 0;
+
+
+
+
+    double m_perfFps = 0.0;
+    double m_perfFrameMs = 0.0;
+    double m_perfMainRenderMs = 0.0;
+    double m_perfRearCameraMs = 0.0;
+    double m_perfRenderUiMs = 0.0;
+
+    float m_perfPushTimer = 0.0f;
+
+    SceneRenderStats m_perfMainStats;
+    SceneRenderStats m_perfRearStats;
+
+
+    uint64_t m_perfFrameIndex = 0;
+
+    double m_perfUpdateMs = 0.0;
+    double m_perfProcessHtmlMs = 0.0;
+    double m_perfFixedSimMs = 0.0;
+    double m_perfClientUpdateMs = 0.0;
+    double m_perfPlayerViewMs = 0.0;
+    double m_perfUiRootUpdateMs = 0.0;
+    double m_perfHudMs = 0.0;
 };

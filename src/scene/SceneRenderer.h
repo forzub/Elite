@@ -20,6 +20,49 @@
 // Forward declaration
 class DebugLineRenderer;
 
+
+
+
+
+struct SceneRenderStats
+{
+    uint32_t drawCalls = 0;
+
+    uint32_t modulesDrawn = 0;
+    uint32_t modulesCulled = 0;
+
+    uint32_t partsDrawn = 0;
+    uint32_t partsCulled = 0;
+
+    void reset()
+    {
+        drawCalls = 0;
+        modulesDrawn = 0;
+        modulesCulled = 0;
+        partsDrawn = 0;
+        partsCulled = 0;
+    }
+
+    void add(const SceneRenderStats& other)
+    {
+        drawCalls += other.drawCalls;
+        modulesDrawn += other.modulesDrawn;
+        modulesCulled += other.modulesCulled;
+        partsDrawn += other.partsDrawn;
+        partsCulled += other.partsCulled;
+    }
+};
+
+
+
+
+
+
+
+
+
+
+
 class SceneRenderer
 {
 public:
@@ -47,6 +90,11 @@ public:
 
     std::unique_ptr<Font> m_starLabelFont;
 
+    const SceneRenderStats& lastStats() const
+    {
+        return m_lastStats;
+    }
+
 
 private:
     
@@ -59,5 +107,7 @@ private:
     // --- DEBUG ---
     std::function<void(const DebugFrameData&)> m_debugCallback;
     uint64_t m_frameCounter = 0;
+
+    SceneRenderStats m_lastStats;
     
 };

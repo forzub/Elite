@@ -7,6 +7,10 @@
 
 #include "src/render/bitmap/TextureLoader.h"
 
+#include <algorithm>
+#include <cmath>
+#include <vector>
+
 bool PlayerShipView::g_debugLogNextFrame = false;
 
 
@@ -182,19 +186,58 @@ void PlayerShipView::renderWorldLabels(
     const Viewport& vp
 )
 {
-   
+    if (labels.empty())
+        return;
 
-    glm::vec2 screenCenter(
+    struct Candidate
+    {
+        WorldLabel label;
+        float score = 0.0f;
+    };
+
+    constexpr size_t MAX_TEXT_LABELS = 24;
+    constexpr size_t MAX_WAVE_LABELS = 18;
+    constexpr size_t MAX_EDGE_LABELS = 24;
+
+    std::vector<Candidate> textLabels;
+    std::vector<Candidate> waveLabels;
+    std::vector<Candidate> edgeLabels;
+
+    textLabels.reserve(MAX_TEXT_LABELS);
+    waveLabels.reserve(MAX_WAVE_LABELS);
+    edgeLabels.reserve(MAX_EDGE_LABELS);
+
+    const glm::vec2 screenCenter(
         vp.width * 0.5f,
         vp.height * 0.5f
     );
 
     for (const auto& label : labels)
     {
+        if (label.visual.visibility < 0.02f)
+            continue;
+
+        const glm::vec3 toTargetWorld = label.data.worldPos - shipPosition;
+        const float dist2 = glm::dot(toTargetWorld, toTargetWorld);
+
+        if (dist2 < 0.0001f)
+            continue;
+
+        const glm::vec3 toTarget = glm::normalize(toTargetWorld);
+
+        glm::vec4 viewDir4 =
+            viewMatrix * glm::vec4(toTarget, 0.0f);
+
+        // Если объект глубоко позади камеры, оставляем только edge marker.
+        glm::vec2 dir2D(viewDir4.x, -viewDir4.y);
+
+        if (glm::length(dir2D) < 1e-4f)
+            continue;
+
+        dir2D = glm::normalize(dir2D);
+
         glm::vec2 projectedPos;
-        
-        
-        bool projected = projectToScreen(
+        const bool projected = projectToScreen(
             label.data.worldPos,
             viewMatrix,
             projectionMatrix,
@@ -203,28 +246,7 @@ void PlayerShipView::renderWorldLabels(
             projectedPos
         );
 
-
-
-        glm::vec3 toTarget =
-            glm::normalize(label.data.worldPos - shipPosition);
-
-
-        glm::vec4 viewDir4 =
-            viewMatrix * glm::vec4(toTarget, 0.0f);
-
-        glm::vec2 dir2D(viewDir4.x, -viewDir4.y);
-
-
-
-
-        if (glm::length(dir2D) < 1e-4f)
-            continue;
-
-        dir2D = glm::normalize(dir2D);
-
-        // --- создаём копию для рендера ---
         WorldLabel renderLabel = label;
-
         renderLabel.edgeDir = dir2D;
 
         bool insideHud = false;
@@ -234,26 +256,112 @@ void PlayerShipView::renderWorldLabels(
 
         if (projected && insideHud)
         {
-            renderLabel.onScreen  = true;
+            renderLabel.onScreen = true;
             renderLabel.screenPos = projectedPos;
         }
         else
         {
             glm::vec2 edgePos;
 
-            if (hudEdgeMapper.projectDirection(
+            if (!hudEdgeMapper.projectDirection(
                     screenCenter,
                     dir2D,
                     edgePos))
             {
-                renderLabel.onScreen  = false;
-                renderLabel.screenPos = edgePos;
+                continue;
             }
+
+            renderLabel.onScreen = false;
+            renderLabel.screenPos = edgePos;
         }
 
-        m_worldLabelRenderer.renderHUD(renderLabel);
+        // Приоритет: ближе + видимее = важнее.
+        const float distanceScore = 1.0f / (1.0f + std::sqrt(dist2) * 0.001f);
+        const float score =
+            renderLabel.visual.visibility * 2.0f +
+            distanceScore;
+
+        const bool isText =
+            renderLabel.data.semanticState == SignalSemanticState::Decoded ||
+            renderLabel.data.displayClass == SignalDisplayClass::Global;
+
+        const bool isWave =
+            !isText &&
+            (
+                renderLabel.data.semanticState == SignalSemanticState::Noise ||
+                renderLabel.data.displayClass == SignalDisplayClass::Other
+            );
+
+        Candidate candidate;
+        candidate.label = renderLabel;
+        candidate.score = score;
+
+        if (!renderLabel.onScreen)
+        {
+            edgeLabels.push_back(std::move(candidate));
+        }
+        else if (isText)
+        {
+            textLabels.push_back(std::move(candidate));
+        }
+        else if (isWave)
+        {
+            waveLabels.push_back(std::move(candidate));
+        }
     }
-  
+
+    auto byScoreDesc = [](const Candidate& a, const Candidate& b)
+    {
+        return a.score > b.score;
+    };
+
+    std::sort(textLabels.begin(), textLabels.end(), byScoreDesc);
+    std::sort(waveLabels.begin(), waveLabels.end(), byScoreDesc);
+    std::sort(edgeLabels.begin(), edgeLabels.end(), byScoreDesc);
+
+    if (textLabels.size() > MAX_TEXT_LABELS)
+        textLabels.resize(MAX_TEXT_LABELS);
+
+    if (waveLabels.size() > MAX_WAVE_LABELS)
+        waveLabels.resize(MAX_WAVE_LABELS);
+
+    if (edgeLabels.size() > MAX_EDGE_LABELS)
+        edgeLabels.resize(MAX_EDGE_LABELS);
+
+    std::vector<WorldLabel> batchedLabels;
+
+    batchedLabels.reserve(
+        textLabels.size() +
+        waveLabels.size() +
+        edgeLabels.size()
+    );
+
+    for (const auto& item : textLabels)
+        batchedLabels.push_back(item.label);
+
+    for (const auto& item : waveLabels)
+        batchedLabels.push_back(item.label);
+
+    for (const auto& item : edgeLabels)
+        batchedLabels.push_back(item.label);
+
+    m_worldLabelRenderer.renderHUDBatch(batchedLabels);
+
+
+        static int dbgCounter = 0;
+        dbgCounter++;
+
+        if (dbgCounter % 60 == 0)
+        {
+            std::cout
+                << "[Labels] text=" << textLabels.size()
+                << " wave=" << waveLabels.size()
+                << " edge=" << edgeLabels.size()
+                << "\n";
+        }
+
+
+
 }
 
 //                                      ###                                    ###

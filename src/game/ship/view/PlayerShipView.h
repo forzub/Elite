@@ -64,6 +64,8 @@ struct PlayerShipView
     std::vector<WorldLabel>         m_worldLabels;
 
     
+
+    
     const ShipDescriptor* m_shipDesc = nullptr;
 
 

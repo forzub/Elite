@@ -125,6 +125,8 @@ void SpaceState::initHUD()
                 1,
                 "secondCam"
             );
+
+            m_perfRearStats = m_sceneRenderer.lastStats();
         };
 
     rearView = rear.get();                  // ← сохраняем raw pointer если нужен

@@ -36,8 +36,20 @@
 
 #include "src/core/Application.h"
 
+#include <chrono>
+
 namespace
 {
+
+    double nowMs()
+    {
+        using clock = std::chrono::high_resolution_clock;
+        return std::chrono::duration<double, std::milli>(
+            clock::now().time_since_epoch()
+        ).count();
+    }
+
+
     json vec4ToJson(const glm::vec4& v)
     {
         return json::array({ v.x, v.y, v.z, v.w });
@@ -303,24 +315,36 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
 // =====================================================================================
 void SpaceState::update(float dt)
 {
-   
+    const double updateStartMs = nowMs();
+    m_perfFrameIndex++;
 
-    // команды для отображения во внешнем браузере.
+    const double htmlStartMs = nowMs();
     processHtmlCommands();
-    // processHtmlDebugCommands();
+    m_perfProcessHtmlMs = nowMs() - htmlStartMs;
 
 
+
+    const double simStartMs = nowMs();
 
     m_simAccumulator += dt;
 
-    while (m_simAccumulator >= SIM_FIXED_DT)
+    // while (m_simAccumulator >= SIM_FIXED_DT)
+    int maxSteps = 2; // или 3 максимум
+    int steps = 0;
+
+    while (m_simAccumulator >= SIM_FIXED_DT && steps < maxSteps)
     {
-        
+    
         m_transport->update(SIM_FIXED_DT);
         m_server->update(SIM_FIXED_DT);
         m_transport->update(0.0f);
         m_simAccumulator -= SIM_FIXED_DT;
+        steps++;
     }
+
+    m_perfFixedSimMs = nowMs() - simStartMs;
+
+        const double clientStartMs = nowMs();
 
     m_client->update(
         dt,
@@ -328,6 +352,7 @@ void SpaceState::update(float dt)
         SIM_FIXED_DT
     );
 
+    m_perfClientUpdateMs = nowMs() - clientStartMs;
 
 
     const auto& ships = m_client->world().ships();
@@ -338,7 +363,9 @@ void SpaceState::update(float dt)
 
     const auto& ship = it->second;
 
-     m_playerView->update(
+     const double playerViewStartMs = nowMs();
+
+    m_playerView->update(
         dt,
         ship.role,
         ship.renderTransform.position,
@@ -351,7 +378,9 @@ void SpaceState::update(float dt)
         ship.transform.targetSpeed,
         ship.transform.cruiseActive,
         ship.signalPresentation.labelsVector()
-    ); 
+    );
+
+    m_perfPlayerViewMs = nowMs() - playerViewStartMs;
     
     
     // --------------------------------------------------
@@ -425,17 +454,24 @@ void SpaceState::update(float dt)
     }
 
     // ========= обновление UI ====================
+    const double uiRootStartMs = nowMs();
     uiRoot->update(dt);
+    m_perfUiRootUpdateMs = nowMs() - uiRootStartMs;
 
 
     // DEBUG: отправляем состояние корабля в браузер
     // --------------------------------------------
-    static float debugTimer = 0.0f;
-    debugTimer += dt;
-    if (debugTimer > 0.1f)
+    static float shipCoreTimer = 0.0f;
+    shipCoreTimer += dt;
+
+    if (shipCoreTimer > 0.25f)
     {
-        debugTimer = 0.0f;
-        pushShipCoreState();
+        shipCoreTimer = 0.0f;
+
+        if (context().htmlUi().state().activePanel == HtmlUiPanelId::ShipCore)
+        {
+            pushShipCoreState();
+        }
     }
 
     
@@ -453,8 +489,27 @@ void SpaceState::update(float dt)
 
 
 
+    m_perfFrameMs = static_cast<double>(dt) * 1000.0;
+
+    if (dt > 0.00001f)
+        m_perfFps = 1.0 / static_cast<double>(dt);
+
+    m_perfPushTimer += dt;
+
+    if (m_perfPushTimer >= 0.25f)
+    {
+        m_perfPushTimer = 0.0f;
+
+        if (context().htmlUi().state().activePanel == HtmlUiPanelId::DebugControl)
+        {
+            pushDebugControlState();
+        }
+    }
+
+
+
     
-    
+    m_perfUpdateMs = nowMs() - updateStartMs;
     
 }
 
@@ -477,6 +532,8 @@ void SpaceState::render(){}
 
 void SpaceState::renderUI()
 {
+    const double renderUiStartMs = nowMs();
+
     Camera*                                     mainCam = nullptr;
     Camera*                                     miniCam = nullptr;
 
@@ -552,7 +609,8 @@ void SpaceState::renderUI()
     }
 
 
-    
+    const double mainRenderStartMs = nowMs();
+
     // -------------------------------
     // 3D ПРОЕКЦИЯ
     // -------------------------------    
@@ -574,22 +632,33 @@ void SpaceState::renderUI()
                 "mainCam"
             );
 
+            m_perfMainStats = m_sceneRenderer.lastStats();
+
         }
     );
 
-
+    m_perfMainRenderMs = nowMs() - mainRenderStartMs;
 
     // -------------------------------
     // Rear - камера корабля.
     // -------------------------------
 
     if (debug::get().render.shouldRenderRearCamera())
-{
-    rearView->camera = miniCam;
-    rearView->renderToTexture(vp, rearView->drawCallback);
-}
+    {
+        const double rearStartMs = nowMs();
 
-    
+        rearView->camera = miniCam;
+        rearView->renderToTexture(vp, rearView->drawCallback);
+
+        m_perfRearCameraMs = nowMs() - rearStartMs;
+    }
+    else
+    {
+        m_perfRearCameraMs = 0.0;
+        m_perfRearStats.reset();
+    }
+
+   m_perfRenderUiMs = nowMs() - renderUiStartMs; 
 }
 
 
@@ -599,7 +668,8 @@ void SpaceState::renderUI()
 // =====================================================================================
 void SpaceState::renderHUD()
 {
-    LOG("[SpaceState] renderHUD begin");
+    const double hudStartMs = nowMs();
+
     const Viewport& vp = context().viewport();
 
     int vx = vp.width;
@@ -664,7 +734,7 @@ void SpaceState::renderHUD()
                 const auto& ship = it->second;
 
                 m_playerView->renderWorldLabels(
-                    ship.signalPresentation.labelsVector(),
+                    m_playerView->worldLabels(),
                     ship.renderTransform.position,
                     m_activeMainCamera->viewMatrix(),
                     m_activeMainCamera->projectionMatrix(),
@@ -687,7 +757,7 @@ void SpaceState::renderHUD()
 
 
    
-
+    m_perfHudMs = nowMs() - hudStartMs;
 }
 
 
@@ -914,6 +984,7 @@ void SpaceState::processHtmlCommands()
         {
             if (msg.type == HtmlUiMessageType::Subscribe)
             {
+                context().htmlUi().setActivePanel(HtmlUiPanelId::DebugControl);
                 pushDebugControlState();
                 continue;
             }
@@ -1134,6 +1205,7 @@ if (msg.command == "reset_all_ships")
         {
             if (msg.type == HtmlUiMessageType::Subscribe)
             {
+                context().htmlUi().setActivePanel(HtmlUiPanelId::ShipCore);
                 pushShipCoreState();
                 continue;
             }
@@ -1142,6 +1214,7 @@ if (msg.command == "reset_all_ships")
             {
                 if (msg.command == "request_snapshot")
                 {
+                    context().htmlUi().setActivePanel(HtmlUiPanelId::ShipCore);
                     pushShipCoreState();
                     continue;
                 }
@@ -1181,7 +1254,6 @@ if (msg.command == "reset_all_ships")
 
 void SpaceState::pushStructureDebugState()
 {
-    context().htmlUi().setActivePanel(HtmlUiPanelId::StructureDebug);
 
     json payload;
     payload["ships"] = json::array();
@@ -1341,8 +1413,6 @@ void SpaceState::pushStructureDebugState()
 
 void SpaceState::pushShipCoreState()
 {
-    context().htmlUi().setActivePanel(HtmlUiPanelId::ShipCore);
-
     const auto& ships = m_client->world().ships();
     if (ships.empty())
         return;
@@ -1430,6 +1500,35 @@ void SpaceState::pushDebugControlState()
     payload["moduleOriginColor"] = vec4ToJson(dbg.moduleOriginColor);
     payload["modulePivotColor"] = vec4ToJson(dbg.modulePivotColor);
     payload["rotationAxisColor"] = vec4ToJson(dbg.rotationAxisColor);
+
+    SceneRenderStats totalStats = m_perfMainStats;
+    totalStats.add(m_perfRearStats);
+
+    json perf;
+    perf["frameIndex"] = m_perfFrameIndex;
+
+    perf["fps"] = m_perfFps;
+    perf["frameMs"] = m_perfFrameMs;
+
+    perf["updateMs"] = m_perfUpdateMs;
+    perf["processHtmlMs"] = m_perfProcessHtmlMs;
+    perf["fixedSimMs"] = m_perfFixedSimMs;
+    perf["clientUpdateMs"] = m_perfClientUpdateMs;
+    perf["playerViewMs"] = m_perfPlayerViewMs;
+    perf["uiRootUpdateMs"] = m_perfUiRootUpdateMs;
+
+    perf["mainRenderMs"] = m_perfMainRenderMs;
+    perf["rearCameraMs"] = m_perfRearCameraMs;
+    perf["renderUiMs"] = m_perfRenderUiMs;
+    perf["hudMs"] = m_perfHudMs;
+
+    perf["drawCalls"] = totalStats.drawCalls;
+    perf["modulesDrawn"] = totalStats.modulesDrawn;
+    perf["modulesCulled"] = totalStats.modulesCulled;
+    perf["partsDrawn"] = totalStats.partsDrawn;
+    perf["partsCulled"] = totalStats.partsCulled;
+
+    payload["performance"] = perf;
 
     context().htmlUi().broadcastState(HtmlUiPanelId::DebugControl, payload);
 }

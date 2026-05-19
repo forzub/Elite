@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/vec3.hpp>
+#include <vector>
 #include <glm/mat4x4.hpp>
 #include "src/world/types/ObjectType.h"
 #include "src/scene/EntityId.h"
@@ -9,6 +10,9 @@
 #include "src/world/modules/ObjectAssemblyRuntime.h"
 #include "src/world/modules/ObjectStructuralLinkRuntime.h"
 #include "src/world/modules/ObjectDetachedFragmentRuntime.h"
+#include "src/game/simulation/ObjectModuleSnapshot.h"
+#include "src/game/simulation/StructuralLinkSnapshot.h"
+#include "src/game/simulation/DebugHitVolumeSnapshot.h"
 
 struct StaticObject
 {
@@ -28,4 +32,12 @@ struct StaticObject
     world::modules::ObjectDetachedFragmentRuntime detachedFragmentRuntime;
     game::damage::HitComponent hitComponent;
     bool hitVolumesDirty = true;
+
+    // Static snapshot payload cache.
+    // Rotation changes every tick, but modules / structural links / debug hit volumes
+    // usually do not. Rebuilding and copying them every frame causes CPU spikes.
+    bool staticSnapshotPayloadDirty = true;
+    std::vector<game::simulation::ObjectModuleSnapshot> cachedModuleSnapshots;
+    std::vector<game::simulation::StructuralLinkSnapshot> cachedStructuralLinkSnapshots;
+    std::vector<game::simulation::DebugHitVolumeSnapshot> cachedDebugHitVolumeSnapshots;
 };

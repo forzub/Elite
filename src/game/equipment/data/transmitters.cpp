@@ -6,8 +6,8 @@ const SignalTransmitterDesc WSDR_TX13 = {
         "Weyland Signal Division",
         "Стандартный корабельный передатчик общего назначения"
     },
-    .txPower   = 10000.0f,        // SNR = 1 на baseRange
-    .baseRange = 500'000.0f,   // 50 км
+    .txPower   = 30'000'000.0f,        // SNR = 1 на baseRange
+    .baseRange = 12'000.0f,   // 50 км
     .displayClass = SignalDisplayClass::Local,
     .powerConsumption = 5.0,
     .heatGeneration   = 0.2

@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <memory>
 
 #include "game/ship/Ship.h"
@@ -15,6 +16,9 @@
 
 #include "src/world/objects/StaticObject.h"
 #include "src/world/types/ObjectType.h"
+
+#include "game/promo/PromoFlybyScenario.h"
+
 
 
 class StateContext;
@@ -85,6 +89,7 @@ public:
     void setPlayerControl(const ShipControlState& control);
     void applyControl(EntityId id, const ShipControlState& control);
     const SimulationSnapshot& snapshot() const;
+    void debugForceFullShipGraphPayload();
     void setTick(uint32_t tick);
     EntityId playerId() const { return m_playerId; }
     double serverTime() const { return m_serverTime; }
@@ -105,7 +110,27 @@ private:
     ShipControlState                    m_playerControlState;
     NpcAiSystem                         m_npcAiSystem;
     SimulationSnapshot                  m_snapshot;
+
+    // Snapshot graph payload control.
+    // Heavy structural data is sent only on first sight / explicit dirty events.
+    std::unordered_set<EntityId>        m_initializedShipGraphIds;
+    std::unordered_map<EntityId, int>   m_shipGraphPayloadFramesRemaining;
+    std::unordered_set<EntityId>        m_shipsWithDetachedFragmentPayload;
+    std::unordered_set<EntityId>        m_shipsWithRepairJobPayload;
+
     double                              m_serverTime = 0.0;
     
     EntityId generateEntityId();
+    void markShipGraphDirty(EntityId id);
+
+    game::promo::PromoFlybyScenario m_promoFlybyScenario;
+    void updatePromoPlayerTracking(float dt);
+
+    glm::mat4 makePromoLookOrientation(
+        const glm::vec3& forward,
+        const glm::vec3& upHint
+    ) const;
+
+    glm::vec3 promoWingCenterAtTime(float time) const;
+  
 };

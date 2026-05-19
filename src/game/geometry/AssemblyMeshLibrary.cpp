@@ -211,6 +211,41 @@ ObjectAssembly AssemblyMeshLibrary::loadAssembly(ObjectType typeId)
         }
     }
 
+
+
+    if (!desc.wholeShipProxyPath.empty())
+    {
+        assembly.wholeShipProxyPath = desc.wholeShipProxyPath;
+
+        if (!ObjLoader::load(
+                assembly.wholeShipProxyPath,
+                assembly.wholeShipProxyMesh,
+                false
+            ))
+        {
+            throw std::runtime_error(
+                "[AssemblyMeshLibrary] failed to load whole ship proxy mesh: " +
+                assembly.wholeShipProxyPath
+            );
+        }
+
+        applyBasisToMesh(assembly.wholeShipProxyMesh, meshToLogical);
+
+        assembly.hasWholeShipProxy = true;
+
+        assembly.wholeShipProxyBoundCenter =
+            assembly.wholeShipProxyMesh.boundCenter;
+
+        assembly.wholeShipProxyBoundRadius =
+            assembly.wholeShipProxyMesh.boundRadius;
+    }
+
+
+
+
+
+
+
     computeAssemblyBounds(assembly);
     normalizeAssemblyToDescriptorSize(assembly);
     computeAssemblyBounds(assembly);
@@ -224,6 +259,28 @@ ObjectAssembly AssemblyMeshLibrary::loadAssembly(ObjectType typeId)
             part.lod1Gpu.upload(part.lod1Mesh);
         }
     }
+
+
+
+
+        if (assembly.hasWholeShipProxy)
+    {
+        assembly.wholeShipProxyGpu.upload(assembly.wholeShipProxyMesh);
+
+        std::cout
+            << "[AssemblyMeshLibrary] WHOLE SHIP PROXY loaded: "
+            << assembly.wholeShipProxyPath
+            << " vertices="
+            << assembly.wholeShipProxyMesh.vertices.size()
+            << " triangles="
+            << assembly.wholeShipProxyMesh.triangles.size()
+            << std::endl;
+    }
+
+
+    
+
+
 
     glm::vec3 finalSize = assembly.maxBounds - assembly.minBounds;
     std::cout << "[AssemblyMeshLibrary] FINAL SIZE "
@@ -499,6 +556,35 @@ void AssemblyMeshLibrary::normalizeAssemblyToDescriptorSize(ObjectAssembly& asse
             part.lod1Mesh.computeBoundingSphere();
         }
     }
+
+
+    if (assembly.hasWholeShipProxy)
+    {
+        for (auto& v : assembly.wholeShipProxyMesh.vertices)
+            v.position *= uniformScale;
+
+        for (auto& e : assembly.wholeShipProxyMesh.edges)
+        {
+            e.a *= uniformScale;
+            e.b *= uniformScale;
+        }
+
+        assembly.wholeShipProxyMesh.computeBounds();
+        assembly.wholeShipProxyMesh.computeBoundingSphere();
+
+        assembly.wholeShipProxyBoundCenter =
+            assembly.wholeShipProxyMesh.boundCenter;
+
+        assembly.wholeShipProxyBoundRadius =
+            assembly.wholeShipProxyMesh.boundRadius;
+    }
+
+
+
+
+
+
+
 
      for (auto& module : assembly.modules)
     {

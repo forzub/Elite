@@ -5,12 +5,18 @@
 #include "src/render/ShaderLibrary.h"
 #include "src/game/geometry/MeshGPU.h"
 
-void MeshRenderer::setupMeshPass(GLuint shader, const glm::mat4& mvp, 
+void MeshRenderer::setupMeshPass(GLuint shader, const glm::mat4& mvp,
                                  const glm::mat4& model, const LightingParams& lighting,
-                                 const glm::vec3& cameraPos) {
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(4.0f, 4.0f);
-    
+                                 const glm::vec3& cameraPos)
+{
+    // Fill-pass должен писать настоящую глубину корпуса.
+    // Иначе обшивка уезжает назад в depth-buffer,
+    // а внутренние ребра двигателя начинают просвечивать.
+    glDisable(GL_POLYGON_OFFSET_FILL);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
 }
 
 void MeshRenderer::setupEdgePass(GLuint shader, const LightingParams& lighting,
@@ -22,15 +28,34 @@ void MeshRenderer::setupEdgePass(GLuint shader, const LightingParams& lighting,
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    if (viewportWidth <= 0 || viewportHeight <= 0)
+    {
+        GLint vp[4] = {0, 0, 800, 600};
+        glGetIntegerv(GL_VIEWPORT, vp);
+        viewportWidth = vp[2];
+        viewportHeight = vp[3];
+    }
+
     lighting.applyEdgeUniforms(shader, mvp, model, cameraPos, viewportWidth, viewportHeight);
 
-    glDepthMask(GL_FALSE);
-    glDepthFunc(GL_LEQUAL);
+    glEnable(GL_DEPTH_TEST);
 
-    mesh.drawEdges();
+// Ребра не должны перезаписывать depth,
+// но должны честно проверяться по уже нарисованной обшивке.
+glDepthMask(GL_FALSE);
+glDepthFunc(GL_LESS);
 
-    glDepthFunc(GL_LESS);
-    glDepthMask(GL_TRUE);
+// Линии слегка вытягиваем к камере только для собственных ребер поверхности,
+// не для того, чтобы они пролезали сквозь корпус.
+glEnable(GL_POLYGON_OFFSET_LINE);
+glPolygonOffset(-0.5f, -0.5f);
+
+mesh.drawEdges();
+
+glDisable(GL_POLYGON_OFFSET_LINE);
+
+glDepthFunc(GL_LESS);
+glDepthMask(GL_TRUE);
 
     glDisable(GL_BLEND);
 }

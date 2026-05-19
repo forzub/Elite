@@ -180,6 +180,22 @@
     <div class="leftPanel">
 
   <div class="section">
+    <div class="title">Scene mode</div>
+
+    <div class="row">
+      <label>Mode</label>
+      <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end;">
+        <label style="width:auto; display:flex; gap:5px; align-items:center;">
+          <input name="sceneMode" id="sceneModeGame" type="radio" value="game"> Game
+        </label>
+        <label style="width:auto; display:flex; gap:5px; align-items:center;">
+          <input name="sceneMode" id="sceneModePromo1" type="radio" value="promo1"> Promo 1
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
     <div class="title">Render</div>
 
     <div class="row"><label>Draw meshes</label><input id="drawMeshes" type="checkbox"></div>
@@ -187,6 +203,8 @@
     <div class="row"><label>Render starfield</label><input id="renderStarfield" type="checkbox"></div>
     <div class="row"><label>Show star labels</label><input id="showStarLabels" type="checkbox"></div>
     <div class="row"><label>Show all star labels</label><input id="showAllStarLabels" type="checkbox"></div>
+    <div class="row"><label>Show constellation hover</label><input id="showConstellationHover" type="checkbox"></div>
+    <div class="row"><label>Constellation hover radius px</label><input id="constellationHoverRadiusPx" type="number" step="1" min="10"></div>
     <div class="row"><label>Render cockpit inside ship UI</label><input id="renderCockpit" type="checkbox"></div>
     <div class="row"><label>Render rear camera</label><input id="renderRearCamera" type="checkbox"></div>
   </div>
@@ -320,6 +338,11 @@
           <div class="perfKey">Draw calls</div><div class="perfValue" id="perfDrawCalls">—</div>
           <div class="perfKey">Modules drawn / culled</div><div class="perfValue" id="perfModules">—</div>
           <div class="perfKey">Parts drawn / culled</div><div class="perfValue" id="perfParts">—</div>
+          <div class="perfKey">Real ships</div><div class="perfValue" id="perfRealShips">—</div>
+          <div class="perfKey">Real ship parts</div><div class="perfValue" id="perfRealShipParts">—</div>
+          <div class="perfKey">Visual ships drawn / culled</div><div class="perfValue" id="perfVisualShips">—</div>
+          <div class="perfKey">Visual proxy / full</div><div class="perfValue" id="perfVisualProxyFull">—</div>
+          <div class="perfKey">Visual ship parts</div><div class="perfValue" id="perfVisualShipParts">—</div>
         </div>
       </div>
 
@@ -407,8 +430,26 @@ function applyPerformancePayload(p) {
       ? `${p.partsDrawn ?? 0} / ${p.partsCulled ?? 0}`
       : '—';
 
-  setText('perfModules', modules);
+    setText('perfModules', modules);
   setText('perfParts', parts);
+
+  setText('perfRealShips', p.realShipsDrawn ?? '—');
+  setText('perfRealShipParts', p.realShipPartsDrawn ?? '—');
+
+  const visualShips =
+    p.visualShipsDrawn != null || p.visualShipsCulled != null
+      ? `${p.visualShipsDrawn ?? 0} / ${p.visualShipsCulled ?? 0}`
+      : '—';
+
+  const visualProxyFull =
+    p.visualProxyShipsDrawn != null || p.visualFullShipsDrawn != null
+      ? `${p.visualProxyShipsDrawn ?? 0} / ${p.visualFullShipsDrawn ?? 0}`
+      : '—';
+
+  setText('perfVisualShips', visualShips);
+  setText('perfVisualProxyFull', visualProxyFull);
+  setText('perfVisualShipParts', p.visualShipPartsDrawn ?? '—');
+
 }
 
     function setStatus(text) {
@@ -437,7 +478,13 @@ function applyPerformancePayload(p) {
       document.getElementById('renderCockpit').checked = p.renderCockpit !== false;
       document.getElementById('renderStarfield').checked = p.renderStarfield !== false;
       document.getElementById('showStarLabels').checked = p.showStarLabels !== false;
+      const sceneMode = p.sceneMode || 'game';
+      document.getElementById('sceneModeGame').checked = sceneMode !== 'promo1';
+      document.getElementById('sceneModePromo1').checked = sceneMode === 'promo1';
+
       document.getElementById('showAllStarLabels').checked = p.showAllStarLabels === true;
+      document.getElementById('showConstellationHover').checked = p.showConstellationHover === true;
+      document.getElementById('constellationHoverRadiusPx').value = p.constellationHoverRadiusPx ?? 140;
       document.getElementById('renderRearCamera').checked = p.renderRearCamera !== false;
       document.getElementById('drawAxes').checked = !!p.drawAxes;
       document.getElementById('drawWorldAxes').checked = !!p.drawWorldAxes;
@@ -478,6 +525,9 @@ function applyPerformancePayload(p) {
         renderStarfield: document.getElementById('renderStarfield').checked,
         showStarLabels: document.getElementById('showStarLabels').checked,
         showAllStarLabels: document.getElementById('showAllStarLabels').checked,
+        sceneMode: document.querySelector('input[name="sceneMode"]:checked')?.value || 'game',
+        showConstellationHover: document.getElementById('showConstellationHover').checked,
+        constellationHoverRadiusPx: Number(document.getElementById('constellationHoverRadiusPx').value) || 140,
         renderRearCamera: document.getElementById('renderRearCamera').checked,
         drawAxes: document.getElementById('drawAxes').checked,
         drawWorldAxes: document.getElementById('drawWorldAxes').checked,

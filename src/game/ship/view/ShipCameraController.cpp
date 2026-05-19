@@ -32,7 +32,7 @@ void ShipCameraController::updateMode(
             if (resolved)
             {
 
-                camera.setPosition(resolved->worldPosition);
+                camera.setPosition(resolved->worldPosition - transform.position);
                 camera.setOrientationMatrix(resolved->worldOrientation);
             }
             else
@@ -56,7 +56,7 @@ void ShipCameraController::updateMode(
             if (resolved)
             {
 
-                camera.setPosition(resolved->worldPosition);
+                camera.setPosition(resolved->worldPosition - transform.position);
                 camera.setOrientationMatrix(resolved->worldOrientation);
             }
             else
@@ -89,12 +89,12 @@ void ShipCameraController::updateMode(
             {
                 
 
-                glm::vec3 pos = resolved->worldPosition;
+                glm::vec3 pos = resolved->worldPosition - transform.position;
 
                 glm::mat4 look =
                     glm::lookAt(
                         pos,
-                        transform.position,
+                        glm::vec3(0.0f),
                         glm::vec3(0,1,0)
                     );
 
@@ -113,7 +113,7 @@ void ShipCameraController::updateMode(
                 glm::mat4 look =
                     glm::lookAt(
                         pos,
-                        transform.position,
+                        glm::vec3(0.0f),
                         glm::vec3(0,1,0)
                     );
 

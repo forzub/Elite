@@ -47,6 +47,10 @@ struct ObjectAssemblyDesc
     ObjectType typeId = ObjectType::None;
     std::vector<AssemblyModuleDesc> modules;
     float lodSwitchDistance = -1.0f;
+
+    // Цельный mesh всего корабля для дальнего рендера.
+    // Это НЕ part LOD, а whole-ship proxy.
+    std::string wholeShipProxyPath;
 };
 
 struct AssemblyMeshPart
@@ -108,6 +112,16 @@ struct ObjectAssembly
     glm::vec3 maxBounds   {0.0f};
     glm::vec3 boundCenter {0.0f};
     float     boundRadius = 0.0f;
+
+    // Дальний цельный mesh всего корабля.
+    bool hasWholeShipProxy = false;
+    std::string wholeShipProxyPath;
+
+    MeshData wholeShipProxyMesh;
+    render::MeshGPU wholeShipProxyGpu;
+
+    glm::vec3 wholeShipProxyBoundCenter {0.0f};
+    float wholeShipProxyBoundRadius = 1.0f;
 };
 
 } // namespace game::ship::geometry

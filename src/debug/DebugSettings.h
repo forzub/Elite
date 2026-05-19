@@ -31,6 +31,16 @@ struct DebugRenderSettings
     bool showStarLabels = true;
     bool showAllStarLabels = false;
 
+    // Scene mode selected from debug UI.
+    // "game"   = normal update, no scripted promo wing.
+    // "promo1" = first scripted flyby scene.
+    std::string sceneMode = "game";
+
+    // Debug-only sky overlay: when enabled, hovering the mouse near
+    // a known constellation draws its stick lines and label.
+    bool showConstellationHover = false;
+    float constellationHoverRadiusPx = 140.0f;
+
     bool drawAxes = false;          // legacy alias
     bool drawWorldAxes = false;
     bool drawObjectAxes = false;

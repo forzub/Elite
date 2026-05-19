@@ -5,6 +5,8 @@
 #include <vector>
 #include <algorithm>
 #include <memory>
+#include <cmath>
+#include <utility>
 
 // #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
@@ -30,6 +32,11 @@
 #include "src/render/HUD/TextRenderer.h"
 #include <cstdio>
 
+#include "src/game/visual/VisualShip.h"
+#include "src/world/coordinates/WorldFrame.h"
+#include "src/game/drone/descriptors/RepairDroneDescriptor.h"
+
+
 namespace
 {
     float findAssemblyModuleAngleRad(
@@ -45,6 +52,54 @@ namespace
 
         return 0.0f;
     }
+
+
+
+render::MeshGPU& getRepairDroneDebugMeshGpu()
+{
+    static bool loaded = false;
+    static render::MeshGPU gpu;
+
+    if (loaded)
+        return gpu;
+
+    const auto& desc =
+        game::drone::getDefaultRepairDroneDescriptor();
+
+    game::ship::geometry::MeshData mesh;
+
+    if (!game::ship::geometry::ObjLoader::load(desc.meshPath, mesh))
+    {
+        std::cout
+            << "[SceneRenderer] failed to load repair drone debug mesh: "
+            << desc.meshPath
+            << "\n";
+
+        loaded = true;
+        return gpu;
+    }
+
+    mesh.computeBounds();
+    mesh.computeBoundingSphere();
+
+    gpu.upload(mesh);
+
+    loaded = true;
+
+    std::cout
+        << "[SceneRenderer] repair drone debug mesh loaded: "
+        << desc.meshPath
+        << "\n";
+
+    return gpu;
+}
+
+
+
+
+
+
+
 
 
 const game::simulation::ObjectModuleSnapshot* findModuleSnapshotById(
@@ -71,6 +126,174 @@ float safeRadiusFromHalfSize(const glm::vec3& halfSize)
 {
     const float r = glm::length(halfSize);
     return r > 0.001f ? r : 1.0f;
+}
+
+struct QueuedMeshDraw
+{
+    const render::MeshGPU* gpu = nullptr;
+    glm::mat4 mvp = glm::mat4(1.0f);
+    glm::mat4 model = glm::mat4(1.0f);
+};
+
+
+
+
+
+
+
+constexpr float kCelestialNearPlane = 10000.0f;
+constexpr float kCelestialFarPlane  = 500000000.0f;
+
+constexpr float kFarStationNearPlane = 1000.0f;
+constexpr float kFarStationFarPlane  = 20000000.0f;
+
+// Ближе этой дистанции станция рисуется полной модульной сборкой.
+// Дальше — только дальний proxy-силуэт.
+constexpr float kStationFullRenderDistance = 450000.0f;
+
+void addCircleXz(
+    DebugLineRenderer& lines,
+    const glm::vec3& center,
+    float radius,
+    int segments,
+    const glm::vec4& color
+)
+{
+    constexpr float pi = 3.14159265358979323846f;
+
+    for (int i = 0; i < segments; ++i)
+    {
+        const float a0 = 2.0f * pi * float(i) / float(segments);
+        const float a1 = 2.0f * pi * float(i + 1) / float(segments);
+
+        lines.addLine(
+            {
+                center.x + std::cos(a0) * radius,
+                center.y,
+                center.z + std::sin(a0) * radius
+            },
+            {
+                center.x + std::cos(a1) * radius,
+                center.y,
+                center.z + std::sin(a1) * radius
+            },
+            color
+        );
+    }
+}
+
+void addCircleXy(
+    DebugLineRenderer& lines,
+    const glm::vec3& center,
+    float radius,
+    int segments,
+    const glm::vec4& color
+)
+{
+    constexpr float pi = 3.14159265358979323846f;
+
+    for (int i = 0; i < segments; ++i)
+    {
+        const float a0 = 2.0f * pi * float(i) / float(segments);
+        const float a1 = 2.0f * pi * float(i + 1) / float(segments);
+
+        lines.addLine(
+            {
+                center.x + std::cos(a0) * radius,
+                center.y + std::sin(a0) * radius,
+                center.z
+            },
+            {
+                center.x + std::cos(a1) * radius,
+                center.y + std::sin(a1) * radius,
+                center.z
+            },
+            color
+        );
+    }
+}
+
+void addCircleYz(
+    DebugLineRenderer& lines,
+    const glm::vec3& center,
+    float radius,
+    int segments,
+    const glm::vec4& color
+)
+{
+    constexpr float pi = 3.14159265358979323846f;
+
+    for (int i = 0; i < segments; ++i)
+    {
+        const float a0 = 2.0f * pi * float(i) / float(segments);
+        const float a1 = 2.0f * pi * float(i + 1) / float(segments);
+
+        lines.addLine(
+            {
+                center.x,
+                center.y + std::cos(a0) * radius,
+                center.z + std::sin(a0) * radius
+            },
+            {
+                center.x,
+                center.y + std::cos(a1) * radius,
+                center.z + std::sin(a1) * radius
+            },
+            color
+        );
+    }
+}
+
+
+
+
+
+
+
+
+void drawQueuedMeshPasses(
+    MeshRenderer& meshRenderer,
+    const std::vector<QueuedMeshDraw>& draws,
+    GLuint fillShader,
+    GLuint edgeShader,
+    const LightingParams& params,
+    const glm::vec3& cameraPos
+)
+{
+    // Важно: сначала все fill-проходы всех деталей пишут depth.
+    // Только после этого рисуем edges. Иначе внутренние ребра двигателей/рам
+    // успевают попасть в кадр до того, как обшивка закрыла их depth-буфером.
+    for (const QueuedMeshDraw& draw : draws)
+    {
+        if (!draw.gpu)
+            continue;
+
+        meshRenderer.draw(
+            *draw.gpu,
+            fillShader,
+            0,
+            draw.mvp,
+            draw.model,
+            params,
+            cameraPos
+        );
+    }
+
+    for (const QueuedMeshDraw& draw : draws)
+    {
+        if (!draw.gpu)
+            continue;
+
+        meshRenderer.draw(
+            *draw.gpu,
+            0,
+            edgeShader,
+            draw.mvp,
+            draw.model,
+            params,
+            cameraPos
+        );
+    }
 }
 
 
@@ -132,11 +355,15 @@ void renderDetachedAssemblyModules(
     const glm::mat4& view,
     const glm::mat4& proj,
     const glm::vec3& cameraPos,
+    const world::coordinates::WorldFrame& frame,
     GLuint largeObjectShader,
     GLuint edgeShader,
     const LightingParams& params
 )
 {
+    const glm::mat4 renderView =
+                world::coordinates::makeRenderView(view);
+
     if (!owner.assembly)
         return;
 
@@ -155,16 +382,21 @@ void renderDetachedAssemblyModules(
 
         if (!detachedModule)
             continue;
+        
+        
 
         glm::mat4 moduleModel =
-            glm::translate(glm::mat4(1.0f), fragment.position) *
+            glm::translate(
+                glm::mat4(1.0f),
+                world::coordinates::toLocal(fragment.position, frame)
+            ) *
             fragment.orientation;
 
         const glm::vec3 moduleWorldPos =
             glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
 
         const float distToModule =
-            glm::length(moduleWorldPos - cameraPos);
+            glm::length(moduleWorldPos);
 
         const bool useLod1 =
             distToModule >= owner.assembly->lodSwitchDistance;
@@ -175,7 +407,7 @@ void renderDetachedAssemblyModules(
                 glm::translate(moduleModel, part.localOffset);
 
             const glm::mat4 partMvp =
-                proj * view * partModel;
+                proj * renderView * partModel;
 
             const render::MeshGPU& gpu =
                 useLod1 ? part.lod1Gpu : part.lod0Gpu;
@@ -197,7 +429,7 @@ void renderDetachedAssemblyModules(
                 *debugLines,
                 fragment.debugHitVolumes,
                 moduleModel,
-                view,
+                renderView,
                 proj
             );
         }
@@ -225,6 +457,169 @@ SceneRenderer::SceneRenderer()
 
 
 
+
+glm::mat4 SceneRenderer::makePerspectiveForCurrentViewport(
+    float fovDeg,
+    float nearPlane,
+    float farPlane
+) const
+{
+    GLint viewport[4] = {0, 0, 1, 1};
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    const float aspect =
+        viewport[3] > 0
+            ? float(viewport[2]) / float(viewport[3])
+            : 16.0f / 9.0f;
+
+    return glm::perspective(
+        glm::radians(fovDeg),
+        aspect,
+        nearPlane,
+        farPlane
+    );
+}
+
+void SceneRenderer::renderCelestialPass(
+    const glm::mat4& view,
+    const glm::vec3& cameraPos,
+    float timeSeconds
+)
+{
+    if (!m_planetRenderer.isInitialized())
+    {
+        m_planetRenderer.initialize();
+    }
+
+    const glm::mat4 celestialProj =
+        makePerspectiveForCurrentViewport(
+            70.0f,
+            kCelestialNearPlane,
+            kCelestialFarPlane
+        );
+
+    const glm::mat4 renderView =
+        world::coordinates::makeRenderView(view);
+
+    const float earthRadiusM = 6371000.0f;
+    const float stationAltitudeM = 1200000.0f;
+
+    const glm::vec3 earthCenter {
+        0.0f,
+        -(earthRadiusM + stationAltitudeM),
+        2450.0f
+    };
+
+    world::coordinates::WorldFrame frame =
+            world::coordinates::makeLegacyFrame(cameraPos);
+
+    const glm::vec3 earthCenterLocal =
+        world::coordinates::toLocal(earthCenter, frame);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
+
+    m_planetRenderer.render(
+        renderView,
+        celestialProj,
+        earthCenterLocal,
+        timeSeconds
+    );
+
+    m_lastStats.drawCalls += 2;
+}
+
+void SceneRenderer::renderFarStationProxyPass(
+    const ClientWorldState& world,
+    const glm::mat4& view,
+    const glm::vec3& cameraPos
+)
+{
+    if (!m_debugLines || !m_debugLines->isInitialized())
+        return;
+
+    const glm::mat4 farStationProj =
+        makePerspectiveForCurrentViewport(
+            70.0f,
+            kFarStationNearPlane,
+            kFarStationFarPlane
+        );
+
+    const glm::mat4 renderView =
+        world::coordinates::makeRenderView(view);
+
+    const glm::mat4 vp =
+        farStationProj * renderView;
+
+    const glm::vec4 stationColor {0.20f, 0.70f, 1.00f, 0.42f};
+
+    m_debugLines->begin();
+
+    for (const auto& pair : world.objects())
+    {
+        const auto& obj = pair.second;
+
+        if (obj.type != ObjectType::Station)
+            continue;
+
+        if (!obj.assembly)
+            continue;
+
+        const float distance =
+            glm::length(obj.renderPosition - cameraPos);
+
+        if (distance <= kStationFullRenderDistance)
+            continue;
+
+    world::coordinates::WorldFrame frame =
+            world::coordinates::makeLegacyFrame(cameraPos);
+
+    const glm::vec3 center =
+        world::coordinates::toLocal(
+            obj.renderPosition + obj.assembly->boundCenter,
+            frame
+        );
+
+        const float radius =
+            std::max(obj.assembly->boundRadius, 1000.0f);
+
+        addCircleXz(*m_debugLines, center, radius, 96, stationColor);
+        addCircleXy(*m_debugLines, center, radius, 96, stationColor);
+        addCircleYz(*m_debugLines, center, radius, 96, stationColor);
+
+        const float cross = radius * 0.20f;
+
+        m_debugLines->addLine(
+            center + glm::vec3(-cross, 0.0f, 0.0f),
+            center + glm::vec3( cross, 0.0f, 0.0f),
+            stationColor
+        );
+
+        m_debugLines->addLine(
+            center + glm::vec3(0.0f, -cross, 0.0f),
+            center + glm::vec3(0.0f,  cross, 0.0f),
+            stationColor
+        );
+
+        m_debugLines->addLine(
+            center + glm::vec3(0.0f, 0.0f, -cross),
+            center + glm::vec3(0.0f, 0.0f,  cross),
+            stationColor
+        );
+
+        m_lastStats.drawCalls += 1;
+    }
+
+    m_debugLines->end(vp);
+}
+
+
+
+
+
+
+
 void SceneRenderer::render(
     const ClientWorldState& world,
     EntityId playerId,
@@ -234,6 +629,10 @@ void SceneRenderer::render(
     const std::string& cameraName
 )
 {
+    const auto& ships = world.ships();
+    const auto& objects = world.objects();
+
+
     // --- browser DEBUG ---
     const auto& dbg = debug::get().render;
     m_frameCounter++;
@@ -294,15 +693,23 @@ void SceneRenderer::render(
     }
 
     // Получаем позицию камеры
-    glm::vec3 cameraPos = glm::vec3(glm::inverse(view)[3]); 
+glm::vec3 cameraPos = glm::vec3(glm::inverse(view)[3]);
 
 
-    const auto& ships = world.ships();
-    const auto& objects = world.objects(); // Добавить этот метод в ClientWorldState
-    
-    auto itPlayer = ships.find(playerId.value);
-    if (itPlayer == ships.end())
-        return;
+
+auto itPlayer = ships.find(playerId.value);
+if (itPlayer == ships.end())
+    return;
+
+world::coordinates::WorldFrame frame;
+
+frame.origin = itPlayer->second.renderTransform.worldPosition;
+
+const glm::mat4 renderView =
+    world::coordinates::makeRenderView(view);
+   
+
+
     
     // Включаем необходимые состояния
     glDepthFunc(GL_LESS);
@@ -315,14 +722,14 @@ void SceneRenderer::render(
     // ============================================================
     // Рисуем первым. Он не пишет в depth buffer.
     // Потом станция/корабли просто перерисуют его поверх.
-    if (dbg.shouldRenderStarfield() && cameraName == "mainCam")
+    if (dbg.shouldRenderStarfield())
     {
         if (!m_starfieldRenderer.isInitialized())
         {
             m_starfieldRenderer.initialize();
         }
 
-        m_starfieldRenderer.render(view, proj);
+        m_starfieldRenderer.render(renderView, proj);
     }
 
     // Возвращаем нормальный state для мира.
@@ -332,6 +739,46 @@ void SceneRenderer::render(
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
+
+
+
+    // ============================================================
+    // 0.5. FAR PASSES
+    // ============================================================
+    // Дальние объекты рисуются отдельными projection-матрицами.
+    // Потом depth очищается, чтобы они не портили точность ближнего мира.
+    renderCelestialPass(
+        view,
+        cameraPos,
+        static_cast<float>(glfwGetTime())
+    );
+
+    renderFarStationProxyPass(
+        world,
+        view,
+        cameraPos
+    );
+
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(GL_TRUE);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // Starfield is rendered later, after world geometry, as a depth-tested
     // background pass. That makes it immune to accidental clears/background
@@ -346,7 +793,7 @@ void SceneRenderer::render(
     
     // обновляем frustum
     Frustum frustum;
-    glm::mat4 vp = proj * view;
+    glm::mat4 vp = proj * renderView;
     frustum.update(vp);
 
 
@@ -357,7 +804,7 @@ void SceneRenderer::render(
     {
         m_debugRenderer.renderAxes(
             glm::mat4(1.0f),
-            view,
+            renderView,
             proj,
             dbg.worldAxisLength
         );
@@ -367,7 +814,8 @@ void SceneRenderer::render(
 
     if (cameraName == "mainCam")
     {
-        renderStarSystemLabels(view, proj);
+        renderStarSystemLabels(renderView, proj);
+        renderConstellationHoverOverlay(renderView, proj);
     }
 
 
@@ -388,7 +836,10 @@ void SceneRenderer::render(
         const auto& ship = pair.second;
 
         glm::mat4 shipModel =
-            glm::translate(glm::mat4(1.0f), ship.renderTransform.position) *
+            glm::translate(
+                glm::mat4(1.0f),
+                world::coordinates::toLocal(ship.renderTransform.worldPosition, frame)
+            ) *
             glm::mat4(ship.renderTransform.orientation);
 
 
@@ -398,6 +849,7 @@ void SceneRenderer::render(
 
         // Параметры освещения
         LightingParams shipParams = LightingParams::ship();
+            
 
         // ===== НОВОЕ: модульная сборка =====
                 // ===== НОВОЕ: модульная сборка =====
@@ -433,17 +885,21 @@ void SceneRenderer::render(
                 continue;
 
 
+            m_lastStats.realShipsDrawn++;
+
             if (drawObjectAxes)
             {
                 m_debugRenderer.renderAxes(
                     shipModel,
-                    view,
+                    renderView,
                     proj,
                     dbg.shipAxisLength
                 );
             }
 
             
+
+            std::vector<QueuedMeshDraw> queuedShipMeshDraws;
 
             for (const auto& module : ship.assembly->modules)
             {
@@ -485,7 +941,7 @@ void SceneRenderer::render(
                 }
 
                 glm::vec3 moduleWorldPos = glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
-                float distToModule = glm::length(moduleWorldPos - cameraPos);
+                float distToModule = glm::length(moduleWorldPos);
                 bool useLod1 = (distToModule >= ship.assembly->lodSwitchDistance);
 
                 const float moduleRadius = safeRadiusFromHalfSize(module.boundHalfSize);
@@ -518,20 +974,19 @@ void SceneRenderer::render(
                         }
 
                         m_lastStats.partsDrawn++;
+                        m_lastStats.realShipPartsDrawn++;
                         m_lastStats.drawCalls += 2; // fill + edge
 
-                        glm::mat4 partMvp = proj * view * partModel;
+                        glm::mat4 partMvp = proj * renderView * partModel;
 
                         const render::MeshGPU& gpu = useLod1 ? part.lod1Gpu : part.lod0Gpu;
 
-                        m_meshRenderer.draw(
-                            gpu,
-                            largeObjectShader,
-                            edgeShader,
-                            partMvp,
-                            partModel,
-                            shipParams,
-                            cameraPos
+                        queuedShipMeshDraws.push_back(
+                            QueuedMeshDraw{
+                                &gpu,
+                                partMvp,
+                                partModel
+                            }
                         );
                     }
                 }
@@ -554,7 +1009,7 @@ void SceneRenderer::render(
                             moduleOriginWorld,
                             dbg.moduleCrossSize,
                             dbg.moduleOriginColor,
-                            view,
+                            renderView,
                             proj
                         );
 
@@ -562,13 +1017,13 @@ void SceneRenderer::render(
                             pivotWorld,
                             dbg.moduleCrossSize,
                             dbg.modulePivotColor,
-                            view,
+                            renderView,
                             proj
                         );
 
                         m_debugRenderer.renderAxes(
                             pivotAxesModel,
-                            view,
+                            renderView,
                             proj,
                             dbg.moduleAxisLength
                         );
@@ -577,25 +1032,77 @@ void SceneRenderer::render(
                             pivotWorld,
                             pivotWorld + rotationAxisWorld * dbg.rotAxisLength,
                             dbg.rotationAxisColor,
-                            view,
+                            renderView,
                             proj
                         );
                     }
+
+                    for (const auto& job : ship.repairJobs)
+                    {
+                        const auto& droneDesc =
+                            world::modules::getDefaultRepairDroneDescriptor();
+
+                        const glm::vec3 droneLocal =
+                            world::coordinates::toLocal(job.dronePosition, frame);
+
+                        glm::mat4 droneModel =
+                            glm::translate(glm::mat4(1.0f), droneLocal) *
+                            glm::scale(glm::mat4(1.0f), droneDesc.visualScale);
+
+                        const glm::mat4 droneMvp =
+                            proj * renderView * droneModel;
+
+                        m_meshRenderer.draw(
+                            getRepairDroneDebugMeshGpu(),
+                            fillShader,
+                            edgeShader,
+                            droneMvp,
+                            droneModel,
+                            shipParams,
+                            cameraPos
+                        );
+                    }
+
+
+
+
+
             }
 
 
 
 if (dbg.shouldDrawMeshes())
 {
+    // drawQueuedMeshPasses(
+    //     m_meshRenderer,
+    //     queuedShipMeshDraws,
+    //     largeObjectShader,
+    //     edgeShader,
+    //     shipParams,
+    //     cameraPos
+    // );
+
+    drawQueuedMeshPasses(
+        m_meshRenderer,
+        queuedShipMeshDraws,
+        fillShader,
+        edgeShader,
+        shipParams,
+        cameraPos
+    );
+
+
+
     renderDetachedAssemblyModules(
-    m_meshRenderer,
-    m_debugLines.get(),
-    ship,
+        m_meshRenderer,
+        m_debugLines.get(),
+        ship,
         shipModel,
         view,
         proj,
         cameraPos,
-        largeObjectShader,
+        frame,
+        fillShader,
         edgeShader,
         shipParams
     );
@@ -607,7 +1114,7 @@ if (dbg.shouldDrawMeshes())
                 *m_debugLines,
                 ship.debugHitVolumes,
                 shipModel,
-                view,
+                renderView,
                 proj
             );
 
@@ -621,35 +1128,44 @@ if (dbg.drawModulePivots)
         const glm::vec4 towColor(0.2f, 0.8f, 1.0f, 1.0f);
         const glm::vec4 homeColor(1.0f, 0.8f, 0.2f, 1.0f);
 
+        const glm::vec3 droneLocal =
+            world::coordinates::toLocal(job.dronePosition, frame);
+
+        const glm::vec3 fragmentLocal =
+            world::coordinates::toLocal(job.fragmentPosition, frame);
+
+        const glm::vec3 homeLocal =
+            world::coordinates::toLocal(job.homePosition, frame);
+
         m_debugRenderer.renderCross(
-            job.dronePosition,
+            droneLocal,
             0.6f,
             droneColor,
-            view,
+            renderView,
             proj
         );
 
         m_debugRenderer.renderLine(
-            job.dronePosition,
-            job.fragmentPosition,
+            droneLocal,
+            fragmentLocal,
             towColor,
-            view,
+            renderView,
             proj
         );
 
         m_debugRenderer.renderLine(
-            job.fragmentPosition,
-            job.homePosition,
+            fragmentLocal,
+            homeLocal,
             homeColor,
-            view,
+            renderView,
             proj
         );
 
         m_debugRenderer.renderCross(
-            job.homePosition,
+            homeLocal,
             0.4f,
             homeColor,
-            view,
+            renderView,
             proj
         );
     }
@@ -665,10 +1181,27 @@ if (dbg.drawModulePivots)
         }
     }
 
+// ============================================================
+    // 1.5. РЕНДЕРИНГ ЛЁГКИХ ВИЗУАЛЬНЫХ КОРАБЛЕЙ
+    // ============================================================
+    
+
+    renderVisualShips(
+        world,
+        frustum,
+        view,
+        proj,
+        cameraPos,
+        frame,
+        fillShader,
+        edgeShader
+    );
+
 
 // ============================================================
 // 2. РЕНДЕРИНГ СТАЦИОНАРНЫХ ОБЪЕКТОВ (станции, астероиды, планеты)
 // ============================================================
+
 
 
 for (const auto& pair : objects)
@@ -681,26 +1214,29 @@ for (const auto& pair : objects)
     if (obj.assembly)
     {
         glm::mat4 objectBaseModel =
-            glm::translate(glm::mat4(1.0f), obj.renderPosition) *
+            glm::translate(
+                glm::mat4(1.0f),
+                world::coordinates::toLocal(obj.renderPosition, frame)
+            ) *
             obj.renderOrientation;
+
+        const float objectDistance =
+            glm::length(obj.renderPosition - cameraPos);
+
+        // if (
+        //     obj.type == ObjectType::Station &&
+        //     objectDistance > kStationFullRenderDistance
+        // )
+        // {
+        //     // Дальняя станция уже нарисована в far station proxy pass.
+        //     // Полную модульную сборку на таком расстоянии не рисуем.
+        //     continue;
+        // }
 
         const glm::vec3 objectForward = game::math::forwardFromOrientation(obj.renderOrientation);
         const glm::vec3 objectUp      = game::math::upFromOrientation(obj.renderOrientation);
         const glm::vec3 objectRight   = game::math::rightFromOrientation(obj.renderOrientation);
 
-        // glm::mat4 objectBaseModel = glm::translate(glm::mat4(1.0f), obj.renderPosition);
-
-        // if (glm::length(obj.renderRotation) > 0.001f)
-        // {
-        //     objectBaseModel = glm::rotate(objectBaseModel, obj.renderRotation.x, glm::vec3(1.0f, 0.0f, 0.0f));
-        //     objectBaseModel = glm::rotate(objectBaseModel, obj.renderRotation.y, glm::vec3(0.0f, 1.0f, 0.0f));
-        //     objectBaseModel = glm::rotate(objectBaseModel, obj.renderRotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
-        // }
-
-        // if (obj.descriptor)
-        // {
-        //     objectBaseModel = objectBaseModel * buildVisualBasisFix(obj.descriptor->visualBasisRotationDeg());
-        // }
 
         bool visible = frustum.sphereVisible(
             obj.assembly->boundCenter,
@@ -730,7 +1266,7 @@ for (const auto& pair : objects)
         {
             m_debugRenderer.renderAxes(
                 objectBaseModel,
-                view,
+                renderView,
                 proj,
                 dbg.objectAxisLength
             );
@@ -752,6 +1288,8 @@ for (const auto& pair : objects)
             default:
                 break;
         }
+
+        std::vector<QueuedMeshDraw> queuedObjectMeshDraws;
 
         for (const auto& module : obj.assembly->modules)
         {
@@ -793,7 +1331,7 @@ for (const auto& pair : objects)
             }
 
             glm::vec3 moduleWorldPos = glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
-            float distToModule = glm::length(moduleWorldPos - cameraPos);
+            float distToModule = glm::length(moduleWorldPos);
             bool useLod1 = (distToModule >= obj.assembly->lodSwitchDistance);
 
             const float moduleRadius = safeRadiusFromHalfSize(module.boundHalfSize);
@@ -826,21 +1364,19 @@ for (const auto& pair : objects)
                     m_lastStats.partsDrawn++;
                     m_lastStats.drawCalls += 2; // fill + edge
 
-                    glm::mat4 partMvp = proj * view * partModel;
+                    glm::mat4 partMvp = proj * renderView * partModel;
 
                     if (obj.hiddenPartIds.find(part.id) != obj.hiddenPartIds.end())
                         continue;
 
                     const render::MeshGPU& gpu = useLod1 ? part.lod1Gpu : part.lod0Gpu;
 
-                    m_meshRenderer.draw(
-                        gpu,
-                        largeObjectShader,
-                        edgeShader,
-                        partMvp,
-                        partModel,
-                        params,
-                        cameraPos
+                    queuedObjectMeshDraws.push_back(
+                        QueuedMeshDraw{
+                            &gpu,
+                            partMvp,
+                            partModel
+                        }
                     );
                 }
             }
@@ -863,7 +1399,7 @@ for (const auto& pair : objects)
                     moduleOriginWorld,
                     dbg.moduleCrossSize,
                     dbg.moduleOriginColor,
-                    view,
+                    renderView,
                     proj
                 );
 
@@ -871,13 +1407,13 @@ for (const auto& pair : objects)
                     pivotWorld,
                     dbg.moduleCrossSize,
                     dbg.modulePivotColor,
-                    view,
+                    renderView,
                     proj
                 );
 
                 m_debugRenderer.renderAxes(
                     pivotAxesModel,
-                    view,
+                    renderView,
                     proj,
                     dbg.moduleAxisLength
                 );
@@ -886,7 +1422,7 @@ for (const auto& pair : objects)
                     pivotWorld,
                     pivotWorld + rotationAxisWorld * dbg.rotAxisLength,
                     dbg.rotationAxisColor,
-                    view,
+                    renderView,
                     proj
                 );
             }
@@ -897,6 +1433,15 @@ for (const auto& pair : objects)
 
 if (dbg.shouldDrawMeshes())
 {
+    drawQueuedMeshPasses(
+        m_meshRenderer,
+        queuedObjectMeshDraws,
+        largeObjectShader,
+        edgeShader,
+        params,
+        cameraPos
+    );
+
     renderDetachedAssemblyModules(
     m_meshRenderer,
     m_debugLines.get(),
@@ -916,7 +1461,7 @@ if (dbg.shouldDrawMeshes())
                 *m_debugLines,
                 obj.debugHitVolumes,
                 objectBaseModel,
-                view,
+                renderView,
                 proj
             );
         
@@ -945,6 +1490,269 @@ if (dbg.shouldDrawMeshes())
         m_debugCallback(debugData);
     }
 }
+
+
+
+
+
+
+void SceneRenderer::renderVisualShips(
+    const ClientWorldState& world,
+    const Frustum& frustum,
+    const glm::mat4& view,
+    const glm::mat4& proj,
+    const glm::vec3& cameraPos,
+    const world::coordinates::WorldFrame& frame,
+    unsigned int fillShader,
+    unsigned int edgeShader
+)
+{
+    const auto& dbg = debug::get().render;
+
+    if (!dbg.shouldDrawMeshes())
+        return;
+
+
+int trafficCount = 0;
+int promoCount = 0;
+int otherCount = 0;
+
+for (const auto& ship : world.visualShips())
+{
+    if (ship.id >= 800000u && ship.id < 900000u)
+        trafficCount++;
+    else if (ship.id >= 900000u && ship.id < 910000u)
+        promoCount++;
+    else
+        otherCount++;
+}
+
+static int frameCounter = 0;
+frameCounter++;
+
+if (frameCounter % 120 == 0)
+{
+    std::cerr
+        << "[VisualShips] total=" << world.visualShips().size()
+        << " traffic=" << trafficCount
+        << " promo=" << promoCount
+        << " other=" << otherCount
+        << std::endl;
+}
+
+
+
+    LightingParams shipParams = LightingParams::ship();
+
+    
+
+    const glm::mat4 renderView =
+        world::coordinates::makeRenderView(view);
+
+    
+
+    for (const auto& ship : world.visualShips())
+    {
+        if (!ship.visible)
+            continue;
+
+        if (!ship.descriptor || !ship.assembly)
+            continue;
+
+        glm::mat4 shipModel =
+            glm::translate(
+                glm::mat4(1.0f),
+                world::coordinates::toLocal(ship.renderTransform.worldPosition, frame)
+            ) *
+            glm::mat4(ship.renderTransform.orientation);
+
+        if (ship.visualScale != 1.0f)
+        {
+            shipModel =
+                glm::scale(
+                    shipModel,
+                    glm::vec3(ship.visualScale)
+                );
+        }
+
+        const bool visible =
+            frustum.sphereVisible(
+                ship.assembly->boundCenter,
+                ship.assembly->boundRadius,
+                shipModel
+            );
+
+        if (!visible)
+        {
+            m_lastStats.visualShipsCulled++;
+            continue;
+        }
+
+        m_lastStats.visualShipsDrawn++;
+
+
+
+        const float distToShip =
+            glm::length(ship.renderTransform.position - cameraPos);
+
+        const bool useWholeShipProxy =
+            ship.assembly->hasWholeShipProxy &&
+            distToShip > 250.0f;
+
+        // const bool useWholeShipProxy =
+        //     ship.assembly->hasWholeShipProxy;
+
+
+
+        if (useWholeShipProxy)
+        {
+            m_lastStats.visualProxyShipsDrawn++;
+
+            glm::mat4 proxyMvp = proj * renderView * shipModel;
+
+            std::vector<QueuedMeshDraw> proxyDraws;
+            proxyDraws.push_back(
+                QueuedMeshDraw{
+                    &ship.assembly->wholeShipProxyGpu,
+                    proxyMvp,
+                    shipModel
+                }
+            );
+
+                m_lastStats.partsDrawn++;
+                m_lastStats.visualShipPartsDrawn++;
+                m_lastStats.drawCalls += 2;
+
+            drawQueuedMeshPasses(
+                m_meshRenderer,
+                proxyDraws,
+                fillShader,
+                edgeShader,
+                shipParams,
+                cameraPos
+            );
+
+            continue;
+        }
+
+
+        m_lastStats.visualFullShipsDrawn++;
+
+        std::vector<QueuedMeshDraw> queuedVisualShipMeshDraws;
+
+        for (const auto& module : ship.assembly->modules)
+        {
+            glm::mat4 moduleBaseModel = shipModel;
+
+            moduleBaseModel =
+                glm::translate(
+                    moduleBaseModel,
+                    module.localPosition
+                );
+
+            moduleBaseModel =
+                glm::rotate(
+                    moduleBaseModel,
+                    glm::radians(module.localRotationDeg.x),
+                    glm::vec3(1.0f, 0.0f, 0.0f)
+                );
+
+            moduleBaseModel =
+                glm::rotate(
+                    moduleBaseModel,
+                    glm::radians(module.localRotationDeg.y),
+                    glm::vec3(0.0f, 1.0f, 0.0f)
+                );
+
+            moduleBaseModel =
+                glm::rotate(
+                    moduleBaseModel,
+                    glm::radians(module.localRotationDeg.z),
+                    glm::vec3(0.0f, 0.0f, 1.0f)
+                );
+
+            glm::mat4 moduleModel = moduleBaseModel;
+
+            // VisualShip не имеет runtime assemblyModules.
+            // Если модуль вращающийся — пока рисуем его в базовом положении.
+            // Позже можно добавить visual animation time отдельно.
+            const float moduleRadius =
+                safeRadiusFromHalfSize(module.boundHalfSize);
+
+            if (!frustum.sphereVisible(
+                    module.boundCenter,
+                    moduleRadius,
+                    moduleModel
+                ))
+            {
+                m_lastStats.modulesCulled++;
+                continue;
+            }
+
+            m_lastStats.modulesDrawn++;
+
+            glm::vec3 moduleWorldPos =
+                glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
+
+            const float distToModule =
+                glm::length(moduleWorldPos);
+
+            bool useLod1 =
+                distToModule >= ship.assembly->lodSwitchDistance;
+
+            // Для visual ships можно быть агрессивнее:
+            // если не крупный план — сразу LOD1.
+            if (distToModule > 350.0f)
+                useLod1 = true;
+
+            for (const auto& part : module.meshes)
+            {
+                glm::mat4 partModel =
+                    glm::translate(moduleModel, part.localOffset);
+
+                const float partRadius =
+                    safeRadiusFromHalfSize(part.boundHalfSize);
+
+                if (!frustum.sphereVisible(
+                        part.boundCenter,
+                        partRadius,
+                        partModel
+                    ))
+                {
+                    m_lastStats.partsCulled++;
+                    continue;
+                }
+
+                m_lastStats.partsDrawn++;
+                m_lastStats.drawCalls += 2;
+
+                glm::mat4 partMvp = proj * renderView * partModel;
+
+                const render::MeshGPU& gpu =
+                    useLod1 ? part.lod1Gpu : part.lod0Gpu;
+
+                queuedVisualShipMeshDraws.push_back(
+                    QueuedMeshDraw{
+                        &gpu,
+                        partMvp,
+                        partModel
+                    }
+                );
+            }
+        }
+
+        drawQueuedMeshPasses(
+            m_meshRenderer,
+            queuedVisualShipMeshDraws,
+            fillShader,
+            edgeShader,
+            shipParams,
+            cameraPos
+        );
+    }
+}
+
+
 
 
 
@@ -1121,6 +1929,329 @@ void SceneRenderer::renderStarSystemLabels(
             drawCandidate(*bestIt, 0.35f + focusAlpha * 0.65f);
         }
     }
+
+    glEnable(GL_DEPTH_TEST);
+}
+
+
+void SceneRenderer::renderConstellationHoverOverlay(
+    const glm::mat4& view,
+    const glm::mat4& proj
+)
+{
+    const auto& dbg = debug::get().render;
+
+    if (!dbg.showConstellationHover)
+        return;
+
+    if (!m_starfieldRenderer.isInitialized())
+        return;
+
+    if (!m_debugLines || !m_debugLines->isInitialized())
+        return;
+
+    GLFWwindow* window = glfwGetCurrentContext();
+    if (!window)
+        return;
+
+    double mouseX = 0.0;
+    double mouseY = 0.0;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+
+    GLint viewport[4] = {0, 0, 1, 1};
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    const float screenW = static_cast<float>(viewport[2]);
+    const float screenH = static_cast<float>(viewport[3]);
+
+    if (screenW <= 1.0f || screenH <= 1.0f)
+        return;
+
+    if (mouseX < 0.0 || mouseY < 0.0 || mouseX > screenW || mouseY > screenH)
+        return;
+
+    struct ConstellationDef
+    {
+        const char* id;
+        const char* label;
+        std::vector<std::pair<const char*, const char*>> edges;
+    };
+
+    static const std::vector<ConstellationDef> kConstellations =
+    {
+        {
+            "Ori",
+            "Orion",
+            {
+                {"Betelgeuse", "Bellatrix"},
+                {"Bellatrix", "Mintaka"},
+                {"Mintaka", "Alnilam"},
+                {"Alnilam", "Alnitak"},
+                {"Alnitak", "Saiph"},
+                {"Saiph", "Rigel"},
+                {"Rigel", "Mintaka"}
+            }
+        },
+        {
+            "UMa",
+            "Ursa Major",
+            {
+                {"Dubhe", "Merak"},
+                {"Merak", "Phecda"},
+                {"Phecda", "Megrez"},
+                {"Megrez", "Alioth"},
+                {"Alioth", "Mizar"},
+                {"Mizar", "Alkaid"}
+            }
+        },
+        {
+            "Cyg",
+            "Cygnus",
+            {
+                {"Deneb", "Sadr"},
+                {"Sadr", "Aljanah"},
+                {"Sadr", "Fawaris"},
+                {"Sadr", "Albireo"}
+            }
+        },
+        {
+            "Cas",
+            "Cassiopeia",
+            {
+                {"Caph", "Schedar"},
+                {"Schedar", "Cih"},
+                {"Cih", "Ruchbah"},
+                {"Ruchbah", "Segin"}
+            }
+        },
+        {
+            "Cru",
+            "Crux",
+            {
+                {"Gacrux", "Acrux"},
+                {"Mimosa", "Imai"}
+            }
+        },
+        {
+            "Leo",
+            "Leo",
+            {
+                {"Regulus", "Algieba"},
+                {"Algieba", "Zosma"},
+                {"Zosma", "Denebola"},
+                {"Zosma", "Chertan"}
+            }
+        },
+        {
+            "Gem",
+            "Gemini",
+            {
+                {"Castor", "Pollux"},
+                {"Castor", "Mebsuta"},
+                {"Mebsuta", "Alhena"},
+                {"Pollux", "Wasat"},
+                {"Wasat", "Alhena"}
+            }
+        },
+        {
+            "Sco",
+            "Scorpius",
+            {
+                {"Dschubba", "Antares"},
+                {"Antares", "Larawag"},
+                {"Larawag", "Shaula"},
+                {"Shaula", "Lesath"},
+                {"Shaula", "Sargas"}
+            }
+        }
+    };
+
+    struct ScreenStar
+    {
+        const GalaxyStarfieldRenderer::RealStar* star = nullptr;
+        glm::vec2 screen {0.0f};
+    };
+
+    const auto& stars = m_starfieldRenderer.getRealStars();
+    const glm::vec3 observerLy = m_starfieldRenderer.getObserverPositionLy();
+    const glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(view));
+    const float skyRadius = m_starfieldRenderer.renderRadius();
+
+    std::vector<ScreenStar> projected;
+    projected.reserve(stars.size());
+
+    auto projectStar = [&](const GalaxyStarfieldRenderer::RealStar& star, glm::vec2& outScreen) -> bool
+    {
+        const glm::vec3 rel = star.positionLy - observerLy;
+        const float distLy = glm::length(rel);
+
+        if (distLy < 0.001f)
+            return false;
+
+        const glm::vec3 dir = rel / distLy;
+        const glm::vec3 skyPos = dir * skyRadius;
+
+        const glm::vec4 clip =
+            proj * viewNoTranslation * glm::vec4(skyPos, 1.0f);
+
+        if (clip.w <= 0.0001f)
+            return false;
+
+        const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+
+        if (std::abs(ndc.x) > 1.15f || std::abs(ndc.y) > 1.15f)
+            return false;
+
+        outScreen.x = (ndc.x * 0.5f + 0.5f) * screenW;
+        outScreen.y = (1.0f - (ndc.y * 0.5f + 0.5f)) * screenH;
+
+        return true;
+    };
+
+    for (const auto& star : stars)
+    {
+        glm::vec2 screen;
+        if (!projectStar(star, screen))
+            continue;
+
+        projected.push_back(ScreenStar{&star, screen});
+    }
+
+    auto findByName = [&](const char* name) -> const ScreenStar*
+    {
+        for (const auto& s : projected)
+        {
+            if (!s.star)
+                continue;
+
+            if (s.star->name == name)
+                return &s;
+        }
+
+        return nullptr;
+    };
+
+    const glm::vec2 mouse(
+        static_cast<float>(mouseX),
+        static_cast<float>(mouseY)
+    );
+
+    const ConstellationDef* bestConstellation = nullptr;
+    float bestDistance = 999999.0f;
+
+    for (const auto& c : kConstellations)
+    {
+        float minDistance = 999999.0f;
+        int visibleEdges = 0;
+
+        for (const auto& edge : c.edges)
+        {
+            const ScreenStar* a = findByName(edge.first);
+            const ScreenStar* b = findByName(edge.second);
+
+            if (!a || !b)
+                continue;
+
+            const glm::vec2 ab = b->screen - a->screen;
+            const float abLen2 = glm::dot(ab, ab);
+
+            if (abLen2 < 0.0001f)
+                continue;
+
+            const float t =
+                std::max(
+                    0.0f,
+                    std::min(
+                        1.0f,
+                        glm::dot(mouse - a->screen, ab) / abLen2
+                    )
+                );
+
+            const glm::vec2 closest = a->screen + ab * t;
+            const float d = glm::length(mouse - closest);
+
+            minDistance = std::min(minDistance, d);
+            ++visibleEdges;
+        }
+
+        if (visibleEdges <= 0)
+            continue;
+
+        if (minDistance < bestDistance)
+        {
+            bestDistance = minDistance;
+            bestConstellation = &c;
+        }
+    }
+
+    if (!bestConstellation)
+        return;
+
+    if (bestDistance > dbg.constellationHoverRadiusPx)
+        return;
+
+    if (!m_starLabelFont)
+    {
+        m_starLabelFont = std::make_unique<Font>(
+            "assets/fonts/Roboto-Light.ttf",
+            12
+        );
+    }
+
+    auto pxToNdc = [&](const glm::vec2& p) -> glm::vec3
+    {
+        return glm::vec3(
+            (p.x / screenW) * 2.0f - 1.0f,
+            1.0f - (p.y / screenH) * 2.0f,
+            0.0f
+        );
+    };
+
+    m_debugLines->begin();
+
+    const glm::vec4 lineColor(0.45f, 0.78f, 1.0f, 0.72f);
+
+    glm::vec2 labelAnchor(0.0f);
+    int labelCount = 0;
+
+    for (const auto& edge : bestConstellation->edges)
+    {
+        const ScreenStar* a = findByName(edge.first);
+        const ScreenStar* b = findByName(edge.second);
+
+        if (!a || !b)
+            continue;
+
+        m_debugLines->addLine(
+            pxToNdc(a->screen),
+            pxToNdc(b->screen),
+            lineColor
+        );
+
+        labelAnchor += a->screen;
+        labelAnchor += b->screen;
+        labelCount += 2;
+    }
+
+    m_debugLines->endOverlay(glm::mat4(1.0f));
+
+    if (labelCount > 0)
+        labelAnchor /= static_cast<float>(labelCount);
+    else
+        labelAnchor = mouse;
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    TextRenderer::instance().textDraw(
+        *m_starLabelFont,
+        bestConstellation->label,
+        labelAnchor.x + 12.0f,
+        labelAnchor.y - 12.0f,
+        glm::vec4(0.65f, 0.86f, 1.0f, 0.92f)
+    );
 
     glEnable(GL_DEPTH_TEST);
 }

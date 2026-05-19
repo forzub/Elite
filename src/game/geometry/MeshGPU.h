@@ -44,15 +44,54 @@ public:
 
 
             
-            glm::vec3 p0 = v0.position;
-            glm::vec3 p1 = v1.position;
-            glm::vec3 p2 = v2.position;
 
-            glm::vec3 faceNormal = glm::normalize(glm::cross(p1 - p0, p2 - p0));
 
-            v0.normal = faceNormal;
-            v1.normal = faceNormal;
-            v2.normal = faceNormal;
+
+
+// ВАЖНО:
+// Не перезаписываем нормали faceNormal'ом.
+// ObjLoader уже посчитал сглаженные vertex normals.
+//
+// Если здесь поставить одну normal на весь треугольник,
+// корпус будет выглядеть как лоскутное одеяло:
+// каждый треугольник ловит свет отдельно.
+auto safeNormalize = [](const glm::vec3& n) -> glm::vec3
+{
+    float len = glm::length(n);
+
+    if (len < 1e-6f)
+        return glm::vec3(0.0f, 0.0f, 1.0f);
+
+    return n / len;
+};
+
+v0.normal = safeNormalize(v0.normal);
+v1.normal = safeNormalize(v1.normal);
+v2.normal = safeNormalize(v2.normal);
+
+
+
+
+            // glm::vec3 p0 = v0.position;
+            // glm::vec3 p1 = v1.position;
+            // glm::vec3 p2 = v2.position;
+
+            // glm::vec3 faceNormal = glm::normalize(glm::cross(p1 - p0, p2 - p0));
+
+            // v0.normal = faceNormal;
+            // v1.normal = faceNormal;
+            // v2.normal = faceNormal;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -203,25 +242,18 @@ public:
 
 
 
-    void drawEdges() const
-    {
-        // std::cout << "Drawing edges - edgeVertexCount: " << edgeVertexCount << std::endl;
-        // std::cout << "  vaoEdges: " << vaoEdges << ", edgeVBO: " << edgeVBO << std::endl;
+   void drawEdges() const
+{
+    glBindVertexArray(vaoEdges);
 
-        // glEnable(GL_POLYGON_OFFSET_LINE);
-        glPolygonOffset(-1.0f, -1.0f);
+    glDrawArrays(
+        GL_LINES,
+        0,
+        edgeVertexCount
+    );
 
-        glBindVertexArray(vaoEdges);
-
-        glDrawArrays(
-            GL_LINES,
-            0,
-            edgeVertexCount
-        );
-
-        glBindVertexArray(0);
-        glDisable(GL_POLYGON_OFFSET_LINE);
-    }
+    glBindVertexArray(0);
+}
 
 
 

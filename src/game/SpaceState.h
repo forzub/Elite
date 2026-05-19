@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <deque>
 #include <mutex>
+#include <glm/gtc/quaternion.hpp>
 
 #include "core/GameState.h"
 
@@ -35,8 +36,8 @@
 #include "game/damage/TestDamageHandler.h"
 #include "game/debug/AttachmentEditorData.h"
 
-
-
+#include "src/game/promo/PromoSceneScenario.h"
+#include "src/game/traffic/StationTrafficSystem.h"
 
 
 #include <nlohmann/json.hpp>
@@ -194,4 +195,17 @@ private:
     double m_perfPlayerViewMs = 0.0;
     double m_perfUiRootUpdateMs = 0.0;
     double m_perfHudMs = 0.0;
+
+
+    game::promo::PromoSceneScenario m_promoSceneScenario;
+    game::traffic::StationTrafficSystem m_stationTrafficSystem;
+    void updatePromoPlayerShipTracking(float dt);
+
+    bool m_promoTrackingInitialized = false;
+    glm::quat m_promoPlayerOrientation {1.0f, 0.0f, 0.0f, 0.0f};
+
+    bool m_promoRollStarted = false;
+    bool m_promoRollFinished = false;
+
+    float m_promoRollAngle = 0.0f;
 };

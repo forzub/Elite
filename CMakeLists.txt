@@ -201,6 +201,14 @@ add_executable(EliteGame
     src/render/starfield/GalaxyStarfieldRenderer.cpp
     src/render/starfield/MilkyWayRenderer.cpp
 
+    src/game/promo/PromoFlybyScenario.cpp
+    src/game/promo/PromoSceneScenario.cpp
+
+    src/game/scene/GameSceneSetup.cpp
+    src/game/traffic/StationTrafficSystem.cpp
+
+    src/render/planet/PlanetWireRenderer.cpp
+
 )
 
 add_custom_target(copy_assets ALL

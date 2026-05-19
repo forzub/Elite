@@ -98,8 +98,8 @@ public:
         const glm::mat4& model,
         const LightingParams& lighting = LightingParams(),
         const glm::vec3& cameraPos = glm::vec3(0.0f),
-        int viewportWidth = 800,    // добавили параметры viewport
-        int viewportHeight = 600
+        int viewportWidth = 0,
+        int viewportHeight = 0
     );
     
     void setDefaultParams(const LightingParams& params) { m_defaultParams = params; }

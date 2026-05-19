@@ -74,6 +74,8 @@ void ObjectAssemblyRegistry::init()
         ObjectAssemblyDesc cobramk1;
         cobramk1.typeId = ObjectType::CobraMk1;
         cobramk1.lodSwitchDistance = DEFAULT_ASSEMBLY_LOD_SWITCH_DISTANCE;
+        cobramk1.wholeShipProxyPath =
+            "assets/models/ships/cobrettymk1/LOD1/Cobretti-mk1-cr-LOD1.obj";
 
         cobramk1.modules = {
             // =====================================================

@@ -52,7 +52,7 @@ void ShipCore::init(
 
     m_role = inRole;  
     m_desc = &descriptor;
-    m_transform.position = position;
+    m_transform.setWorldPositionMeters(glm::dvec3(position));
 
 
     // собираем корабль

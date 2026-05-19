@@ -1,5 +1,6 @@
 #include <iostream>
 #include "core/Application.h"
+#include "core/ConsoleOutput.h"
 
 #include <clocale>
 
@@ -10,6 +11,7 @@ int main()
     try
     {
         std::setlocale(LC_ALL, "");
+        core::disableRuntimeStdoutNoise();
         Application app;
         app.run();
     }

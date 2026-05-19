@@ -186,6 +186,16 @@ struct LightingParams {
                 setUniformVec3(shader, "hullColor", hullColor);
                 setUniformVec3(shader, "detailColor", detailColor);
                 setUniformVec3(shader, "glowColor", glowColor);
+
+                // Дистанционная читаемость корпуса.
+                // mesh_fill.frag уже использует эти uniform'ы; если их не передать,
+                // OpenGL оставляет нули, и fill-проход у кораблей проваливается в черный.
+                setUniform1f(shader, "distClose", dist.close);
+                setUniform1f(shader, "distMedium", dist.medium);
+                setUniform1f(shader, "distFar", dist.farDist);
+                setUniformVec3(shader, "hullColorNear", hullColorNear);
+                setUniformVec3(shader, "hullColorMid", hullColorMid);
+                setUniformVec3(shader, "hullColorFar", hullColorFar);
                 
                 // Эффекты поверхности
                 setUniform1f(shader, "fresnelPower", fresnelPower);
@@ -415,19 +425,29 @@ static LightingParams ship() {
     // ===== ОСВЕЩЕНИЕ =====
     p.lightDir = glm::vec3(0.4f, 0.7f, 0.5f);
     p.lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    p.ambientColor = glm::vec3(0.22f, 0.22f, 0.26f);
+    p.ambientColor = glm::vec3(0.26f, 0.26f, 0.30f);
 
     // ===== ЦВЕТ КОРПУСА =====
-    p.hullColor = glm::vec3(0.05f, 0.05f, 0.08f);
+    // Близко сохраняем исходную художественную палитру.
+    // Дальше корпус мягко светлеет, но не уходит в молочно-белый.
+    p.hullColor = glm::vec3(0.065f, 0.065f, 0.095f);
+    p.hullColorNear = p.hullColor;
+    p.hullColorMid  = glm::vec3(0.13f, 0.14f, 0.18f);
+    p.hullColorFar  = glm::vec3(0.24f, 0.26f, 0.32f);
+
+    p.dist.close   = 140.0f;
+    p.dist.medium  = 900.0f;
+    p.dist.farDist = 2600.0f;
+    p.dist.horizon = 7000.0f;
 
     // ===== РЕБРА (для edge-шейдера) =====
-    p.edgeThickness  = 1.0f;
-    p.edgeColor      = glm::vec3(0.58f, 0.60f, 0.66f);
-    p.edgeFarColor   = glm::vec3(0.16f, 0.18f, 0.24f);
-    p.edgeAlpha      = 0.95f;
-    p.edgeFadeStart  = 60.0f;
-    p.edgeFadeEnd    = 700.0f;
-    p.edgeFadePower  = 1.8f;
+    p.edgeThickness  = 0.58f;
+    p.edgeColor      = glm::vec3(0.34f, 0.37f, 0.44f);
+    p.edgeFarColor   = glm::vec3(0.42f, 0.45f, 0.52f);
+    p.edgeAlpha      = 0.62f;
+    p.edgeFadeStart  = 220.0f;
+    p.edgeFadeEnd    = 1900.0f;
+    p.edgeFadePower  = 1.15f;
 
     // ===== ЭФФЕКТЫ ПОВЕРХНОСТИ =====
     p.fresnelPower = 2.0f;
@@ -443,10 +463,10 @@ static LightingParams ship() {
     // ===== ТУМАН =====
     p.fog.enabled       = true;
     p.fog.startDistance = 120.0f;
-    p.fog.endDistance   = 2200.0f;
+    p.fog.endDistance   = 3200.0f;
     p.fog.nearColor     = glm::vec3(0.05f, 0.05f, 0.08f);
-    p.fog.farColor      = glm::vec3(0.12f, 0.12f, 0.18f);
-    p.fog.intensity     = 0.65f;
+    p.fog.farColor      = glm::vec3(0.18f, 0.18f, 0.24f);
+    p.fog.intensity     = 0.42f;
 
     return p;
 }

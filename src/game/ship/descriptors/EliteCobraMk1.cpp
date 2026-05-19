@@ -47,7 +47,8 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.physics.maxRollRate            = 3.0f;     // Макс. скорость крена (рад/с)
         
         desc.physics.maxCombatSpeed         = 350.0f;   // Боевая скорость (м/с) = 1260 км/ч
-        desc.physics.maxCruiseSpeed         = 13500.0f; // Крейсерская (м/с) = 48000 км/ч
+        // desc.physics.maxCruiseSpeed         = 13500.0f; // Крейсерская (м/с) = 48000 км/ч
+        desc.physics.maxCruiseSpeed         = 29979245.0f; // Крейсерская (м/с) = 0.1с
         desc.physics.throttleAccel          = 5.0f;     // Рывок дросселя
         
         desc.physics.autoLevelStrength      = 0.0f;     // Автовыравнивание (отключено)
@@ -1017,7 +1018,7 @@ for (auto& m : desc.modules)
                 .id = "camera_cockpit_main",
                 .parentModuleId = "ship_cockpit",
                 .kind = ShipAttachmentKind::CameraCockpit,
-                .localPosition = glm::vec3(0.0f, 1.5f, -11.0f),
+                .localPosition = glm::vec3(0.0f, 1.5f, -11.35f),
                 .localRotationDeg = glm::vec3(0.0f, 0.0f, 0.0f),
                 .enabled = true
             },

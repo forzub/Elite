@@ -315,89 +315,210 @@ bool ObjLoader::load(
     // -------------------------
     // ФУНКЦИЯ ПРОВЕРКИ КОМПЛАНАРНОСТИ
     // -------------------------
-    auto areTrianglesCoplanar = [&](int triA, int triB) -> bool {
-        const auto& tA = mesh.triangles[triA];
-        const auto& tB = mesh.triangles[triB];
+    // auto areTrianglesCoplanar = [&](int triA, int triB) -> bool {
+    //     const auto& tA = mesh.triangles[triA];
+    //     const auto& tB = mesh.triangles[triB];
         
-        // Берем три точки из первого треугольника
-        glm::vec3 a1 = mesh.vertices[tA.v0].position;
-        glm::vec3 a2 = mesh.vertices[tA.v1].position;
-        glm::vec3 a3 = mesh.vertices[tA.v2].position;
+    //     // Берем три точки из первого треугольника
+    //     glm::vec3 a1 = mesh.vertices[tA.v0].position;
+    //     glm::vec3 a2 = mesh.vertices[tA.v1].position;
+    //     glm::vec3 a3 = mesh.vertices[tA.v2].position;
         
-        // Вычисляем нормаль первого треугольника (ненормализованную)
-        glm::vec3 nA = faceNormals[triA];
-        float lenA = glm::length(nA);
-        if(lenA < 1e-6f) return false;
+    //     // Вычисляем нормаль первого треугольника (ненормализованную)
+    //     glm::vec3 nA = faceNormals[triA];
+    //     float lenA = glm::length(nA);
+    //     if(lenA < 1e-6f) return false;
         
-        // Проверяем все три вершины второго треугольника
-        int bIndices[3] = { tB.v0, tB.v1, tB.v2 };
+    //     // Проверяем все три вершины второго треугольника
+    //     int bIndices[3] = { tB.v0, tB.v1, tB.v2 };
         
-        for(int i = 0; i < 3; i++)
-        {
-            glm::vec3 b = mesh.vertices[bIndices[i]].position;
+    //     for(int i = 0; i < 3; i++)
+    //     {
+    //         glm::vec3 b = mesh.vertices[bIndices[i]].position;
             
-            // Объем параллелепипеда = |(b - a1) · nA|
-            // Если точка b лежит в плоскости, то смешанное произведение = 0
-            float volume = std::abs(glm::dot(b - a1, nA));
+    //         // Объем параллелепипеда = |(b - a1) · nA|
+    //         // Если точка b лежит в плоскости, то смешанное произведение = 0
+    //         float volume = std::abs(glm::dot(b - a1, nA));
             
-            // Допуск: объем должен быть мал относительно размера треугольника
-            if(volume > lenA * 0.001f) 
-            {
-                return false; // Точка не в плоскости
-            }
-        }
+    //         // Допуск: объем должен быть мал относительно размера треугольника
+    //         if(volume > lenA * 0.001f) 
+    //         {
+    //             return false; // Точка не в плоскости
+    //         }
+    //     }
         
-        return true; // Все три точки в плоскости
-    };
+    //     return true; // Все три точки в плоскости
+    // };
+
+
+    
 
     // -------------------------
     // ОПРЕДЕЛЕНИЕ ВИДИМЫХ РЁБЕР (ИСПРАВЛЕННАЯ ВЕРСИЯ)
     // -------------------------
-    mesh.edges.clear();
+    // mesh.edges.clear();
 
-    for(const auto& kv : edgeMap)
-    {
-        const EdgeKey& key = kv.first;
-        const EdgeInfo& info = kv.second;
+    // for(const auto& kv : edgeMap)
+    // {
+    //     const EdgeKey& key = kv.first;
+    //     const EdgeInfo& info = kv.second;
 
-        // Случай 1: Граничное ребро (только один треугольник) - всегда рисуем
-        if(info.triB == -1)
-        {
-            MeshEdge e;
-            e.a = mesh.vertices[key.a].position;
-            e.b = mesh.vertices[key.b].position;
-            mesh.edges.push_back(e);
-            continue;
-        }
+    //     // Случай 1: Граничное ребро (только один треугольник) - всегда рисуем
+    //     if(info.triB == -1)
+    //     {
+    //         MeshEdge e;
+    //         e.a = mesh.vertices[key.a].position;
+    //         e.b = mesh.vertices[key.b].position;
+    //         mesh.edges.push_back(e);
+    //         continue;
+    //     }
 
-        // Случай 2: Диагональ внутри одного полигона - никогда не рисуем
-        if(info.polyA == info.polyB)
-        {
-            continue;
-        }
+    //     // Случай 2: Диагональ внутри одного полигона - никогда не рисуем
+    //     if(info.polyA == info.polyB)
+    //     {
+    //         continue;
+    //     }
 
-        // Случай 3: Ребро между двумя разными полигонами
-        // Проверяем, лежат ли треугольники в одной геометрической плоскости
-        if(areTrianglesCoplanar(info.triA, info.triB))
-        {
-            // В одной плоскости - не рисуем (это внутреннее ребро)
-            continue;
-        }
+    //     // Случай 3: Ребро между двумя разными полигонами
+    //     // Проверяем, лежат ли треугольники в одной геометрической плоскости
+    //     if(areTrianglesCoplanar(info.triA, info.triB))
+    //     {
+    //         // В одной плоскости - не рисуем (это внутреннее ребро)
+    //         continue;
+    //     }
 
         
 
 
 
 
-        // Если треугольники в разных плоскостях - рисуем ребро (это граница)
-        MeshEdge e;
-        e.a = mesh.vertices[key.a].position;
-        e.b = mesh.vertices[key.b].position;
-        mesh.edges.push_back(e);
+    //     // Если треугольники в разных плоскостях - рисуем ребро (это граница)
+    //     MeshEdge e;
+    //     e.a = mesh.vertices[key.a].position;
+    //     e.b = mesh.vertices[key.b].position;
+    //     mesh.edges.push_back(e);
+    // }
+
+    // mesh.computeBounds();
+    // mesh.computeBoundingSphere();
+
+    // return true;
+
+
+    // -------------------------
+// Фильтрация видимых рёбер
+// -------------------------
+
+auto safeFaceNormal = [&](int triIndex) -> glm::vec3
+{
+    if (triIndex < 0 || triIndex >= static_cast<int>(mesh.triangles.size()))
+        return glm::vec3(0.0f, 0.0f, 1.0f);
+
+    glm::vec3 n = faceNormals[triIndex];
+    float len = glm::length(n);
+
+    if (len < 1e-6f)
+        return glm::vec3(0.0f, 0.0f, 1.0f);
+
+    return n / len;
+};
+
+auto areTrianglesSamePlane = [&](int triA, int triB) -> bool
+{
+    if (triA < 0 || triB < 0)
+        return false;
+
+    const auto& a = mesh.triangles[triA];
+    const auto& b = mesh.triangles[triB];
+
+    glm::vec3 nA = safeFaceNormal(triA);
+    glm::vec3 nB = safeFaceNormal(triB);
+
+    // Если нормали почти одинаковые — это кандидат на одну плоскость.
+    // Порог маленький: примерно до 3 градусов.
+    constexpr float SamePlaneCos = 0.9986f;
+
+    if (glm::dot(nA, nB) < SamePlaneCos)
+        return false;
+
+    const glm::vec3 p0 = mesh.vertices[a.v0].position;
+
+    int bIds[3] = { b.v0, b.v1, b.v2 };
+
+    // Проверяем, что вершины второго треугольника лежат в плоскости первого.
+    // Это убирает диагонали на одной панели, даже если OBJ уже был нарезан треугольниками.
+    constexpr float PlaneEps = 0.0025f;
+
+    for (int i = 0; i < 3; ++i)
+    {
+        const glm::vec3 p = mesh.vertices[bIds[i]].position;
+        float d = std::abs(glm::dot(p - p0, nA));
+
+        if (d > PlaneEps)
+            return false;
     }
 
-    mesh.computeBounds();
-    mesh.computeBoundingSphere();
-
     return true;
+};
+
+auto shouldKeepEdge = [&](const EdgeInfo& info) -> bool
+{
+    // Один соседний треугольник — это край геометрии.
+    // Такое ребро оставляем.
+    if (info.triA == -1)
+        return false;
+
+    if (info.triB == -1)
+        return true;
+
+    // Если оба треугольника получились из одного исходного OBJ-полигона,
+    // это точно внутренняя диагональ триангуляции.
+    if (info.polyA == info.polyB)
+        return false;
+
+    // Если два разных треугольника лежат в одной плоскости,
+    // это тоже внутренняя диагональ/стык разрезанной плоскости.
+    if (areTrianglesSamePlane(info.triA, info.triB))
+        return false;
+
+    glm::vec3 nA = safeFaceNormal(info.triA);
+    glm::vec3 nB = safeFaceNormal(info.triB);
+
+    float d = glm::clamp(glm::dot(nA, nB), -1.0f, 1.0f);
+
+    // Рисуем только заметные переломы корпуса.
+    // 25 градусов — хороший старт.
+    // Если ребер мало: уменьши до 18.
+    // Если треугольников всё еще много: увеличь до 35.
+    constexpr float HardEdgeAngleDeg = 25.0f;
+    const float hardEdgeCos = std::cos(glm::radians(HardEdgeAngleDeg));
+
+    return d < hardEdgeCos;
+};
+
+// -------------------------
+// Сборка финального списка рёбер
+// -------------------------
+
+mesh.edges.clear();
+
+for (const auto& kv : edgeMap)
+{
+    const EdgeKey& key = kv.first;
+    const EdgeInfo& info = kv.second;
+
+    if (!shouldKeepEdge(info))
+        continue;
+
+    MeshEdge e;
+    e.a = mesh.vertices[key.a].position;
+    e.b = mesh.vertices[key.b].position;
+
+    mesh.edges.push_back(e);
+}
+
+mesh.computeBounds();
+mesh.computeBoundingSphere();
+
+return true;
 }

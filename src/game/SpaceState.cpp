@@ -5,6 +5,7 @@
 #include "core/StateStack.h"
 #include "core/Log.h"
 #include "input/Input.h"
+#include <glm/gtx/norm.hpp>
 
 #include "render/DebugGrid.h"
 
@@ -37,6 +38,15 @@
 #include "src/core/Application.h"
 
 #include <chrono>
+#include <algorithm>
+#include <cmath>
+
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtc/constants.hpp>
+
+
+#include <algorithm>
 
 namespace
 {
@@ -68,6 +78,11 @@ namespace
         );
     }
 
+    bool isPromo1SceneMode()
+    {
+        return debug::get().render.sceneMode == "promo1";
+    }
+
     template<typename TShipMap>
     uint64_t findAnyShipEntityId(const TShipMap& ships)
     {
@@ -88,7 +103,153 @@ namespace
 
         return findAnyShipEntityId(ships);
     }
+
+
+
+
+    glm::mat4 makeCameraLookOrientation(
+    const glm::vec3& cameraPos,
+    const glm::vec3& target,
+    const glm::vec3& upHint = glm::vec3(0.0f, 1.0f, 0.0f)
+)
+{
+    glm::vec3 forward =
+        target - cameraPos;
+
+    if (glm::length2(forward) < 0.000001f)
+        forward = glm::vec3(0.0f, 0.0f, -1.0f);
+
+    forward =
+        glm::normalize(forward);
+
+    glm::vec3 right =
+        glm::cross(forward, upHint);
+
+    if (glm::length2(right) < 0.000001f)
+        right = glm::cross(forward, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    right =
+        glm::normalize(right);
+
+    glm::vec3 up =
+        glm::normalize(glm::cross(right, forward));
+
+    glm::mat4 orientation(1.0f);
+
+    orientation[0] = glm::vec4(right, 0.0f);
+    orientation[1] = glm::vec4(up, 0.0f);
+    orientation[2] = glm::vec4(-forward, 0.0f);
+    orientation[3] = glm::vec4(0, 0, 0, 1);
+
+    return orientation;
 }
+
+
+
+
+glm::vec3 safeNormalizePromo(
+    const glm::vec3& v,
+    const glm::vec3& fallback
+)
+{
+    if (glm::length2(v) < 0.000001f)
+        return fallback;
+
+    return glm::normalize(v);
+}
+
+float smootherStepPromo(float x)
+{
+    x = std::clamp(x, 0.0f, 1.0f);
+    return x * x * x * (x * (x * 6.0f - 15.0f) + 10.0f);
+}
+
+glm::mat4 makePromoLookOrientationClient(
+    const glm::vec3& forward
+)
+{
+    const glm::vec3 f =
+        safeNormalizePromo(
+            forward,
+            glm::vec3(0.0f, 0.0f, 1.0f)
+        );
+
+    const glm::vec3 worldUp =
+        glm::vec3(0.0f, 1.0f, 0.0f);
+
+    glm::vec3 right =
+        glm::cross(f, worldUp);
+
+    if (glm::length2(right) < 0.000001f)
+    {
+        right =
+            glm::cross(
+                f,
+                glm::vec3(1.0f, 0.0f, 0.0f)
+            );
+    }
+
+    right =
+        glm::normalize(right);
+
+    glm::vec3 up =
+        glm::normalize(glm::cross(right, f));
+
+    glm::mat4 m(1.0f);
+
+    // Engine convention:
+    // +X = right
+    // +Y = up
+    // -Z = forward
+    m[0] = glm::vec4(right, 0.0f);
+    m[1] = glm::vec4(up, 0.0f);
+    m[2] = glm::vec4(-f, 0.0f);
+    m[3] = glm::vec4(0, 0, 0, 1);
+
+    return m;
+}
+
+
+glm::mat4 makePromoPitchOnlyOrientationClient(
+    const glm::vec3& toTarget
+)
+{
+    // Promo rule: player ship may only pitch while tracking the wing.
+    // X/right axis is fixed, so no yaw/roll can leak from look-at/slerp.
+    glm::vec3 f = glm::vec3(0.0f, toTarget.y, toTarget.z);
+
+    if (glm::length2(f) < 0.000001f)
+        f = glm::vec3(0.0f, 0.0f, -1.0f);
+
+    f = glm::normalize(f);
+
+    const glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
+    const glm::vec3 up = glm::normalize(glm::cross(right, f));
+
+    glm::mat4 m(1.0f);
+
+    // Engine convention:
+    // +X = right
+    // +Y = up
+    // -Z = forward
+    m[0] = glm::vec4(right, 0.0f);
+    m[1] = glm::vec4(up, 0.0f);
+    m[2] = glm::vec4(-f, 0.0f);
+    m[3] = glm::vec4(0, 0, 0, 1);
+
+    return m;
+}
+
+
+} // namespace
+
+
+
+
+
+
+
+
 
 
 
@@ -122,7 +283,7 @@ SpaceState::SpaceState(StateStack& states)
     galaxy.loadFromDirectory("assets/data/galaxy");
     galaxy.validate();
     
-    std::cout
+    std::cerr
     << "Actors:  " << galaxy.actorCount()  << "\n"
     << "Systems: " << galaxy.systemCount() << "\n"
     << "Nodes:   " << galaxy.nodeCount()   << "\n"
@@ -233,13 +394,7 @@ const bool ejectPressed =
     leftCtrlDown &&
     Input::instance().isKeyPressedOnce(GLFW_KEY_Q);
 
-if (Input::instance().isKeyPressedOnce(GLFW_KEY_Q))
-{
-    std::cout
-        << "[SpaceState] Q pressed. leftCtrl="
-        << leftCtrlDown
-        << "\n";
-}
+
 
 
 if (ejectPressed)
@@ -247,11 +402,6 @@ if (ejectPressed)
     const bool ok = m_server->ejectShipCockpitCapsule(m_playerId);
 
     m_server->debugRefreshSnapshot();
-
-    std::cout
-        << "[SpaceState] LEFT_CTRL + Q cockpit ejection requested, ok="
-        << ok
-        << "\n";
 
     return;
 }
@@ -270,10 +420,7 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
 
     m_server->debugRefreshSnapshot();
 
-    std::cout
-    << "[SpaceState] CTRL + R repair first missing slot requested, ok="
-    << ok
-    << "\n";
+
 
     return;
 }
@@ -326,59 +473,105 @@ void SpaceState::update(float dt)
 
     const double simStartMs = nowMs();
 
-    m_simAccumulator += dt;
+// Не даём стартовому лагу/фризу накопить огромный долг симуляции.
+// Иначе первые секунды сервер будет "догонять время",
+// делая по 2 fixed-step за кадр, и станция визуально крутится быстрее.
+const float clampedFrameDt = std::min(dt, 0.05f);
 
-    // while (m_simAccumulator >= SIM_FIXED_DT)
-    int maxSteps = 2; // или 3 максимум
-    int steps = 0;
+m_simAccumulator += clampedFrameDt;
 
-    while (m_simAccumulator >= SIM_FIXED_DT && steps < maxSteps)
-    {
-    
-        m_transport->update(SIM_FIXED_DT);
-        m_server->update(SIM_FIXED_DT);
-        m_transport->update(0.0f);
-        m_simAccumulator -= SIM_FIXED_DT;
-        steps++;
-    }
+constexpr int MAX_SIM_STEPS_PER_FRAME = 1;
+
+int steps = 0;
+
+while (m_simAccumulator >= SIM_FIXED_DT && steps < MAX_SIM_STEPS_PER_FRAME)
+{
+    m_transport->update(SIM_FIXED_DT);
+    m_server->update(SIM_FIXED_DT);
+    m_transport->update(0.0f);
+
+    m_simAccumulator -= SIM_FIXED_DT;
+    steps++;
+}
+
+// Если симуляция не успела догнать — не тащим долг дальше.
+// Лучше потерять кусок времени, чем первые секунды жить в ускоренной вселенной.
+if (m_simAccumulator >= SIM_FIXED_DT)
+{
+    m_simAccumulator = 0.0;
+}
 
     m_perfFixedSimMs = nowMs() - simStartMs;
 
         const double clientStartMs = nowMs();
 
     m_client->update(
-        dt,
+        clampedFrameDt,
         m_server->world(),
         SIM_FIXED_DT
     );
 
+    if constexpr (game::promo::PromoSceneScenario::Enabled)
+    {
+        if (isPromo1SceneMode())
+        {
+            m_promoSceneScenario.setup(m_client->world());
+            m_promoSceneScenario.update(
+                m_client->world(),
+                dt
+            );
+        }
+    }
+
+    // Client-side station traffic.
+    // Это не настоящие ShipCore-корабли, а лёгкий визуальный трафик.
+    // Он не попадает в server snapshot и не грузит GameSimulation.
+    if (!isPromo1SceneMode())
+    {
+
+
+
+        m_stationTrafficSystem.setup(m_client->world());
+        m_stationTrafficSystem.update(
+            m_client->world(),
+            dt
+        );
+    }
+
     m_perfClientUpdateMs = nowMs() - clientStartMs;
 
 
-    const auto& ships = m_client->world().ships();
+    // Сначала двигаем visual ships и поворачиваем renderTransform игрока.
+// Только потом PlayerShipView получает уже финальный transform кадра.
+if (isPromo1SceneMode())
+{
+    updatePromoPlayerShipTracking(static_cast<float>(dt));
+}
 
-    auto it = ships.find(m_playerId.value);
-    if (it == ships.end())
-        return;
+const auto& ships = m_client->world().ships();
 
-    const auto& ship = it->second;
+auto it = ships.find(m_playerId.value);
+if (it == ships.end())
+    return;
 
-     const double playerViewStartMs = nowMs();
+const auto& ship = it->second;
 
-    m_playerView->update(
-        dt,
-        ship.role,
-        ship.renderTransform.position,
-        ship.renderTransform.orientation,
-        ship.detachedFragments
-    );
+const double playerViewStartMs = nowMs();
 
-    m_playerView->updateCockpitStateFromSnapshot(
-        ship.transform.forwardVelocity,
-        ship.transform.targetSpeed,
-        ship.transform.cruiseActive,
-        ship.signalPresentation.labelsVector()
-    );
+m_playerView->update(
+    dt,
+    ship.role,
+    ship.renderTransform.position,
+    ship.renderTransform.orientation,
+    ship.detachedFragments
+);
+
+m_playerView->updateCockpitStateFromSnapshot(
+    ship.transform.forwardVelocity,
+    ship.transform.targetSpeed,
+    ship.transform.cruiseActive,
+    ship.signalPresentation.labelsVector()
+);
 
     m_perfPlayerViewMs = nowMs() - playerViewStartMs;
     
@@ -929,7 +1122,7 @@ void SpaceState::processHtmlCommands()
                     ov.localRotationDeg = glm::vec3(rotArr[0], rotArr[1], rotArr[2]);
                     ov.enabled = enabled;
 
-                    std::cout
+                    std::cerr
                         << "[AttachmentEditor APPLY] id=" << attachmentId
                         << " pos=("
                         << ov.localPosition.x << ", "
@@ -1323,88 +1516,94 @@ void SpaceState::pushStructureDebugState()
         payload["ships"].push_back(std::move(item));
     }
 
-    for (const auto& mod : ship.modules)
+    if (ship.graph.hasModules)
     {
-        json m;
+        for (const auto& mod : ship.graph.modules)
+        {
+            json m;
 
-        m["moduleId"] = mod.moduleId;
-        m["parentModuleId"] = mod.parentModuleId;
-        m["subsystemId"] = mod.subsystemId;
+            m["moduleId"] = mod.moduleId;
+            m["parentModuleId"] = mod.parentModuleId;
+            m["subsystemId"] = mod.subsystemId;
 
-        m["state"] = mod.state;
-        m["health"] = mod.health;
-        m["maxHealth"] = mod.maxHealth;
+            m["state"] = mod.state;
+            m["health"] = mod.health;
+            m["maxHealth"] = mod.maxHealth;
 
-        m["destructible"] = mod.destructible;
-        m["detachable"] = mod.detachable;
-        m["hangable"] = mod.hangable;
+            m["destructible"] = mod.destructible;
+            m["detachable"] = mod.detachable;
+            m["hangable"] = mod.hangable;
 
-        m["destroyPolicy"] = mod.destroyPolicy;
-        m["detachPolicy"] = mod.detachPolicy;
-        m["attachmentType"] = mod.attachmentType;
+            m["destroyPolicy"] = mod.destroyPolicy;
+            m["detachPolicy"] = mod.detachPolicy;
+            m["attachmentType"] = mod.attachmentType;
 
-        m["meshPartIds"] = mod.meshPartIds;
-        m["supportModuleIds"] = mod.supportModuleIds;
+            m["meshPartIds"] = mod.meshPartIds;
+            m["supportModuleIds"] = mod.supportModuleIds;
 
-        m["minSupportsForAttached"] = mod.minSupportsForAttached;
-        m["minSupportsForStable"] = mod.minSupportsForStable;
-        m["aliveSupportCount"] = mod.aliveSupportCount;
+            m["minSupportsForAttached"] = mod.minSupportsForAttached;
+            m["minSupportsForStable"] = mod.minSupportsForStable;
+            m["aliveSupportCount"] = mod.aliveSupportCount;
 
-        m["localPosition"] = json::array({ 0.0f, 0.0f, 0.0f });
-        m["localRotationDeg"] = json::array({ 0.0f, 0.0f, 0.0f });
+            m["localPosition"] = json::array({ 0.0, 0.0, 0.0 });
+            m["localRotationDeg"] = json::array({ 0.0, 0.0, 0.0 });
 
-        payload["modules"].push_back(std::move(m));
+            payload["modules"].push_back(std::move(m));
+        }
     }
 
-    for (const auto& link : ship.structuralLinks)
+    if (ship.graph.hasStructuralLinks)
     {
-        json l;
+        for (const auto& link : ship.graph.structuralLinks)
+        {
+            json l;
 
-        l["id"] = link.id;
-        l["ownerModuleId"] = link.ownerModuleId;
-        l["moduleAId"] = link.moduleAId;
-        l["moduleBId"] = link.moduleBId;
-        l["kind"] = link.kind;
+            l["id"] = link.id;
+            l["ownerModuleId"] = link.ownerModuleId;
+            l["moduleAId"] = link.moduleAId;
+            l["moduleBId"] = link.moduleBId;
+            l["kind"] = link.kind;
 
-        l["health"] = link.health;
-        l["maxHealth"] = link.maxHealth;
-        l["impulseTolerance"] = link.impulseTolerance;
+            l["health"] = link.health;
+            l["maxHealth"] = link.maxHealth;
+            l["impulseTolerance"] = link.impulseTolerance;
 
-        l["loadBearing"] = link.loadBearing;
-        l["destroyed"] = link.destroyed;
-        l["autoGenerated"] = link.autoGenerated;
+            l["loadBearing"] = link.loadBearing;
+            l["destroyed"] = link.destroyed;
+            l["autoGenerated"] = link.autoGenerated;
 
-        l["center"] = json::array({
-            link.center.x,
-            link.center.y,
-            link.center.z
-        });
+            l["center"] = json::array({
+                double(link.center.x),
+                double(link.center.y),
+                double(link.center.z)
+            });
 
-        l["halfSize"] = json::array({
-            link.halfSize.x,
-            link.halfSize.y,
-            link.halfSize.z
-        });
+            l["halfSize"] = json::array({
+                double(link.halfSize.x),
+                double(link.halfSize.y),
+                double(link.halfSize.z)
+            });
 
-        l["orientation"] = json::array({
-            json::array({
-                link.orientation[0].x,
-                link.orientation[0].y,
-                link.orientation[0].z
-            }),
-            json::array({
-                link.orientation[1].x,
-                link.orientation[1].y,
-                link.orientation[1].z
-            }),
-            json::array({
-                link.orientation[2].x,
-                link.orientation[2].y,
-                link.orientation[2].z
-            })
-        });
+            json orientation = json::array();
+            orientation.push_back(json::array({
+                double(link.orientation[0].x),
+                double(link.orientation[0].y),
+                double(link.orientation[0].z)
+            }));
+            orientation.push_back(json::array({
+                double(link.orientation[1].x),
+                double(link.orientation[1].y),
+                double(link.orientation[1].z)
+            }));
+            orientation.push_back(json::array({
+                double(link.orientation[2].x),
+                double(link.orientation[2].y),
+                double(link.orientation[2].z)
+            }));
+            l["orientation"] = std::move(orientation);
 
-        payload["links"].push_back(std::move(l));
+            payload["links"].push_back(std::move(l));
+        }
     }
 
     context().htmlUi().broadcastState(HtmlUiPanelId::StructureDebug, payload);
@@ -1470,6 +1669,9 @@ void SpaceState::pushDebugControlState()
     payload["renderStarfield"] = dbg.renderStarfield;
     payload["showStarLabels"] = dbg.showStarLabels;
     payload["showAllStarLabels"] = dbg.showAllStarLabels;
+    payload["sceneMode"] = dbg.sceneMode;
+    payload["showConstellationHover"] = dbg.showConstellationHover;
+    payload["constellationHoverRadiusPx"] = dbg.constellationHoverRadiusPx;
     payload["renderRearCamera"] = dbg.renderRearCamera;
     
     payload["drawAxes"] = dbg.drawAxes;
@@ -1528,6 +1730,17 @@ void SpaceState::pushDebugControlState()
     perf["partsDrawn"] = totalStats.partsDrawn;
     perf["partsCulled"] = totalStats.partsCulled;
 
+
+    perf["realShipsDrawn"] = totalStats.realShipsDrawn;
+    perf["realShipPartsDrawn"] = totalStats.realShipPartsDrawn;
+
+    perf["visualShipsDrawn"] = totalStats.visualShipsDrawn;
+    perf["visualShipsCulled"] = totalStats.visualShipsCulled;
+
+    perf["visualProxyShipsDrawn"] = totalStats.visualProxyShipsDrawn;
+    perf["visualFullShipsDrawn"] = totalStats.visualFullShipsDrawn;
+    perf["visualShipPartsDrawn"] = totalStats.visualShipPartsDrawn;
+
     payload["performance"] = perf;
 
     context().htmlUi().broadcastState(HtmlUiPanelId::DebugControl, payload);
@@ -1543,6 +1756,23 @@ void SpaceState::applyDebugControlPayload(const json& payload)
     dbg.renderStarfield = payload.value("renderStarfield", dbg.renderStarfield);
     dbg.showStarLabels = payload.value("showStarLabels", dbg.showStarLabels);
     dbg.showAllStarLabels = payload.value("showAllStarLabels", dbg.showAllStarLabels);
+
+    const std::string previousSceneMode = dbg.sceneMode;
+    dbg.sceneMode = payload.value("sceneMode", dbg.sceneMode);
+    if (dbg.sceneMode != "game" && dbg.sceneMode != "promo1")
+        dbg.sceneMode = "game";
+
+    if (dbg.sceneMode != previousSceneMode)
+    {
+        if (m_client)
+            m_promoSceneScenario.reset(m_client->world());
+
+        m_promoTrackingInitialized = false;
+        m_promoPlayerOrientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+    }
+
+    dbg.showConstellationHover = payload.value("showConstellationHover", dbg.showConstellationHover);
+    dbg.constellationHoverRadiusPx = payload.value("constellationHoverRadiusPx", dbg.constellationHoverRadiusPx);
     dbg.renderRearCamera = payload.value("renderRearCamera", dbg.renderRearCamera);
     dbg.drawAxes = payload.value("drawAxes", dbg.drawAxes);
     dbg.drawWorldAxes = payload.value("drawWorldAxes", dbg.drawWorldAxes);
@@ -1601,4 +1831,95 @@ void SpaceState::pushVolumeViewerState()
 
 
 
+void SpaceState::updatePromoPlayerShipTracking(float dt)
+{
+    if constexpr (!game::promo::PromoSceneScenario::Enabled)
+        return;
 
+    if (!m_promoSceneScenario.cameraTargetValid(m_client->world()))
+        return;
+
+    auto& ships =
+        m_client->world().ships();
+
+    auto it =
+        ships.find(m_playerId.value);
+
+    if (it == ships.end())
+        return;
+
+    ClientShipState& playerShip =
+        it->second;
+
+    const glm::vec3 playerPos =
+        glm::vec3(0.0f, 50.0f, 0.0f);
+
+    const glm::vec3 target =
+        m_promoSceneScenario.cameraTarget(m_client->world());
+
+    glm::vec3 toTarget =
+        target - playerPos;
+
+    if (glm::length2(toTarget) < 0.000001f)
+        return;
+
+    const glm::vec3 forward =
+        glm::normalize(toTarget);
+
+    glm::mat4 targetOrientation =
+        makePromoPitchOnlyOrientationClient(toTarget);
+
+    
+
+    glm::quat targetQ =
+        glm::quat_cast(targetOrientation);
+
+    if (glm::dot(m_promoPlayerOrientation, targetQ) < 0.0f)
+    {
+        targetQ = -targetQ;
+    }
+
+    if (!m_promoTrackingInitialized)
+    {
+        m_promoPlayerOrientation =
+            targetQ;
+
+        m_promoTrackingInitialized = true;
+    }
+
+    // Плавное сопровождение.
+    // Теперь цель — реальное звено, а не прогноз по времени,
+    // поэтому можно держать response выше без "обгона".
+    const float response =
+        2.6f;
+
+    const float blend =
+        1.0f - std::exp(-response * dt);
+
+    m_promoPlayerOrientation =
+        glm::slerp(
+            m_promoPlayerOrientation,
+            targetQ,
+            blend
+        );
+
+    m_promoPlayerOrientation =
+        glm::normalize(m_promoPlayerOrientation);
+
+    playerShip.transform.setWorldPositionMeters(glm::dvec3(playerPos));
+    playerShip.renderTransform.setWorldPosition(playerShip.transform.worldPosition);
+
+    playerShip.transform.orientation =
+        glm::toMat4(m_promoPlayerOrientation);
+
+    playerShip.renderTransform.orientation =
+        glm::toMat4(m_promoPlayerOrientation);
+
+    playerShip.transform.forwardVelocity = 0.0f;
+    playerShip.transform.targetSpeed = 0.0f;
+    playerShip.transform.localVelocity = glm::vec3(0.0f);
+
+    playerShip.renderTransform.forwardVelocity = 0.0f;
+    playerShip.renderTransform.targetSpeed = 0.0f;
+    playerShip.renderTransform.localVelocity = glm::vec3(0.0f);
+}

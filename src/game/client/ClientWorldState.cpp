@@ -7,8 +7,10 @@
 #include "src/game/geometry/ObjectAssemblyRegistry.h"
 #include <algorithm>
 
-
-
+#include <cmath>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/common.hpp>
 
 
 namespace
@@ -23,6 +25,131 @@ namespace
         // 3 = Detached, 4 = Hanging.
         // Destroyed/Disabled пока не рисуем как отдельные фрагменты.
         return state == 3 || state == 4;
+    }
+
+float renderSmoothingAlpha(float dt, float responsiveness)
+{
+    dt = glm::clamp(dt, 0.0f, 0.05f);
+    return 1.0f - std::exp(-responsiveness * dt);
+}
+
+glm::mat4 smoothOrientationMatrix(
+    const glm::mat4& current,
+    const glm::mat4& target,
+    float alpha
+)
+{
+    glm::quat a = glm::normalize(glm::quat_cast(current));
+    glm::quat b = glm::normalize(glm::quat_cast(target));
+
+    glm::quat q =
+        glm::slerp(
+            a,
+            b,
+            glm::clamp(alpha, 0.0f, 1.0f)
+        );
+
+    return glm::mat4_cast(glm::normalize(q));
+}
+
+ShipTransform smoothShipRenderTransform(
+    const ShipTransform& current,
+    const ShipTransform& target,
+    float dt
+)
+{
+    ShipTransform out = target;
+
+    const float error =
+        glm::length(target.position - current.position);
+
+    // Если это телепорт/первичная инициализация — не размазываем.
+    if (error > 500.0f)
+    {
+        out.setWorldPosition(target.worldPosition);
+        out.orientation = target.orientation;
+        return out;
+    }
+
+    const float posAlpha =
+        renderSmoothingAlpha(dt, 18.0f);
+
+    const float rotAlpha =
+        renderSmoothingAlpha(dt, 22.0f);
+
+    out.position =
+        glm::mix(
+            current.position,
+            target.position,
+            posAlpha
+        );
+
+    out.orientation =
+        smoothOrientationMatrix(
+            current.orientation,
+            target.orientation,
+            rotAlpha
+        );
+
+    out.setWorldPosition(target.worldPosition);
+
+    return out;
+}
+
+    
+
+    
+
+
+    static void applyGraphSnapshot(
+        const game::simulation::ObjectGraphSnapshot& graph,
+        std::vector<game::simulation::ObjectModuleSnapshot>& modules,
+        std::vector<game::simulation::StructuralLinkSnapshot>& structuralLinks,
+        std::vector<game::simulation::ObjectAssemblyModuleSnapshot>& assemblyModules,
+        std::vector<game::simulation::ObjectDetachedFragmentSnapshot>& detachedFragments,
+        std::vector<game::simulation::ObjectRepairJobSnapshot>& repairJobs,
+        std::vector<game::simulation::DebugHitVolumeSnapshot>& debugHitVolumes
+    )
+    {
+        if (graph.hasModules)
+            modules = graph.modules;
+
+        if (graph.hasStructuralLinks)
+            structuralLinks = graph.structuralLinks;
+
+        if (graph.hasAssemblyModules)
+            assemblyModules = graph.assemblyModules;
+
+        if (graph.hasDetachedFragments)
+            detachedFragments = graph.detachedFragments;
+
+        if (graph.hasRepairJobs)
+            repairJobs = graph.repairJobs;
+
+        if (graph.hasDebugHitVolumes)
+            debugHitVolumes = graph.debugHitVolumes;
+    }
+
+    static void applyGraphSnapshot(
+        const game::simulation::ObjectGraphSnapshot& graph,
+        std::vector<game::simulation::ObjectModuleSnapshot>& modules,
+        std::vector<game::simulation::StructuralLinkSnapshot>& structuralLinks,
+        std::vector<game::simulation::ObjectAssemblyModuleSnapshot>& assemblyModules,
+        std::vector<game::simulation::ObjectDetachedFragmentSnapshot>& detachedFragments,
+        std::vector<game::simulation::DebugHitVolumeSnapshot>& debugHitVolumes
+    )
+    {
+        static std::vector<game::simulation::ObjectRepairJobSnapshot> ignoredRepairJobs;
+
+        applyGraphSnapshot(
+            graph,
+            modules,
+            structuralLinks,
+            assemblyModules,
+            detachedFragments,
+            ignoredRepairJobs,
+            debugHitVolumes
+        );
     }
 
     template<typename TState>
@@ -116,13 +243,15 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
             state.transform       = s.transform;
             state.renderTransform = s.transform;
-            state.modules = s.modules;
-            
-            state.structuralLinks = s.structuralLinks;
-            state.assemblyModules = s.assemblyModules;
-            state.detachedFragments = s.detachedFragments;
-            state.repairJobs = s.repairJobs;
-            state.debugHitVolumes = s.debugHitVolumes;
+            applyGraphSnapshot(
+                s.graph,
+                state.modules,
+                state.structuralLinks,
+                state.assemblyModules,
+                state.detachedFragments,
+                state.repairJobs,
+                state.debugHitVolumes
+            );
 
             // state.gpuMesh = &render::MeshLibrary::get(s.typeId);
 
@@ -149,11 +278,15 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.receptions = s.receptions;
             state.radarContacts = s.radarContacts;
             state.shipCoreStatus = s.shipCoreStatus;
-            state.modules = s.modules;
-            state.assemblyModules = s.assemblyModules;
-            state.detachedFragments = s.detachedFragments;
-            state.repairJobs = s.repairJobs;
-            state.debugHitVolumes = s.debugHitVolumes;
+            applyGraphSnapshot(
+                s.graph,
+                state.modules,
+                state.structuralLinks,
+                state.assemblyModules,
+                state.detachedFragments,
+                state.repairJobs,
+                state.debugHitVolumes
+            );
 
             rebuildHiddenPartIds(state);
         }
@@ -180,11 +313,14 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.orientation = o.orientation;
             state.renderOrientation = o.orientation;
 
-            state.modules = o.modules;
-            state.structuralLinks = o.structuralLinks;
-            state.assemblyModules = o.assemblyModules;
-            state.detachedFragments = o.detachedFragments;
-            state.debugHitVolumes = o.debugHitVolumes;
+            applyGraphSnapshot(
+                o.graph,
+                state.modules,
+                state.structuralLinks,
+                state.assemblyModules,
+                state.detachedFragments,
+                state.debugHitVolumes
+            );
 
             state.renderPosition = o.position;
             
@@ -208,15 +344,24 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             auto& state = it->second;
 
             state.position = o.position;
-            // state.rotation = o.rotation;
             state.orientation = o.orientation;
 
-            state.modules = o.modules;
-            state.assemblyModules = o.assemblyModules;
-            state.detachedFragments = o.detachedFragments;
-            state.debugHitVolumes = o.debugHitVolumes;
+            // Static object payload is sparse: for a rotating station the server sends
+            // only graph.assemblyModules every tick. Heavy module/debug payload arrives
+            // only on first snapshot or after structural changes.
+            const bool modulesChanged = o.graph.hasModules;
 
-            rebuildHiddenPartIds(state);
+            applyGraphSnapshot(
+                o.graph,
+                state.modules,
+                state.structuralLinks,
+                state.assemblyModules,
+                state.detachedFragments,
+                state.debugHitVolumes
+            );
+
+            if (modulesChanged)
+                rebuildHiddenPartIds(state);
         }
     }
 
@@ -272,7 +417,12 @@ void ClientWorldState::update(float dt)
         // ===== 1️⃣ ИГРОК — ВСЕГДА PREDICTION =====
         if (ship.role == ShipRole::Player)
         {
-            ship.renderTransform = ship.transform;
+            ship.renderTransform =
+                smoothShipRenderTransform(
+                    ship.renderTransform,
+                    ship.transform,
+                    dt
+                );
         }
         else
         {
@@ -306,8 +456,10 @@ void ClientWorldState::update(float dt)
                                 t
                             );
 
-                        ship.renderTransform.orientation =
-                            itOld->transform.orientation;
+                        ship.renderTransform.worldPosition = itNew->transform.worldPosition;
+
+                        ship.renderTransform.worldPosition = itNew->transform.worldPosition;
+                        ship.renderTransform.orientation = itOld->transform.orientation;
                     }
                     else
                     {
@@ -336,8 +488,9 @@ void ClientWorldState::update(float dt)
     for (auto& [id, obj] : m_objects)
     {
         obj.renderPosition = obj.position;
-        // obj.renderRotation = obj.rotation;
         obj.renderOrientation = obj.orientation;
+
+       
     }
 }
 

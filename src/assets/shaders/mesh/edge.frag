@@ -20,6 +20,7 @@ void main()
     float t = 0.0;
     if (dist > fadeStart) {
         t = clamp((dist - fadeStart) / max(fadeEnd - fadeStart, 0.001), 0.0, 1.0);
+        t = t * t * (3.0 - 2.0 * t);
         t = pow(t, fadePower);
     }
 

@@ -16,6 +16,8 @@
 #include "src/debug/DebugSettings.h"
 
 #include "src/render/Font.h"
+#include "src/render/planet/PlanetWireRenderer.h"
+#include "src/world/coordinates/WorldFrame.h"
 
 // Forward declaration
 class DebugLineRenderer;
@@ -34,22 +36,56 @@ struct SceneRenderStats
     uint32_t partsDrawn = 0;
     uint32_t partsCulled = 0;
 
+    uint32_t realShipsDrawn = 0;
+    uint32_t realShipPartsDrawn = 0;
+
+    uint32_t visualShipsDrawn = 0;
+    uint32_t visualShipsCulled = 0;
+
+    uint32_t visualProxyShipsDrawn = 0;
+    uint32_t visualFullShipsDrawn = 0;
+    uint32_t visualShipPartsDrawn = 0;
+
     void reset()
     {
         drawCalls = 0;
+
         modulesDrawn = 0;
         modulesCulled = 0;
+
         partsDrawn = 0;
         partsCulled = 0;
+
+        realShipsDrawn = 0;
+        realShipPartsDrawn = 0;
+
+        visualShipsDrawn = 0;
+        visualShipsCulled = 0;
+
+        visualProxyShipsDrawn = 0;
+        visualFullShipsDrawn = 0;
+        visualShipPartsDrawn = 0;
     }
 
     void add(const SceneRenderStats& other)
     {
         drawCalls += other.drawCalls;
+
         modulesDrawn += other.modulesDrawn;
         modulesCulled += other.modulesCulled;
+
         partsDrawn += other.partsDrawn;
         partsCulled += other.partsCulled;
+
+        realShipsDrawn += other.realShipsDrawn;
+        realShipPartsDrawn += other.realShipPartsDrawn;
+
+        visualShipsDrawn += other.visualShipsDrawn;
+        visualShipsCulled += other.visualShipsCulled;
+
+        visualProxyShipsDrawn += other.visualProxyShipsDrawn;
+        visualFullShipsDrawn += other.visualFullShipsDrawn;
+        visualShipPartsDrawn += other.visualShipPartsDrawn;
     }
 };
 
@@ -83,7 +119,12 @@ public:
         m_debugCallback = callback;
     }
 
-     void renderStarSystemLabels(
+    void renderStarSystemLabels(
+        const glm::mat4& view,
+        const glm::mat4& proj
+    );
+
+    void renderConstellationHoverOverlay(
         const glm::mat4& view,
         const glm::mat4& proj
     );
@@ -97,6 +138,35 @@ public:
 
 
 private:
+
+    glm::mat4 makePerspectiveForCurrentViewport(
+        float fovDeg,
+        float nearPlane,
+        float farPlane
+    ) const;
+
+    void renderCelestialPass(
+        const glm::mat4& view,
+        const glm::vec3& cameraPos,
+        float timeSeconds
+    );
+
+    void renderFarStationProxyPass(
+        const ClientWorldState& world,
+        const glm::mat4& view,
+        const glm::vec3& cameraPos
+    );
+
+    void renderVisualShips(
+        const ClientWorldState& world,
+        const Frustum& frustum,
+        const glm::mat4& view,
+        const glm::mat4& proj,
+        const glm::vec3& cameraPos,
+        const world::coordinates::WorldFrame& frame,
+        unsigned int fillShader,
+        unsigned int edgeShader
+    );
     
     std::unique_ptr<DebugLineRenderer>  m_debugLines;;
     bool                                m_initialized;
@@ -109,5 +179,6 @@ private:
     uint64_t m_frameCounter = 0;
 
     SceneRenderStats m_lastStats;
+    PlanetWireRenderer m_planetRenderer;
     
 };

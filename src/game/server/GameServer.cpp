@@ -118,6 +118,11 @@ void GameServer::receiveClientMessage(
 
 void GameServer::debugRefreshSnapshot()
 {
+    // Debug panels are allowed to request heavy structural data.
+    // This keeps regular published snapshots lightweight, while
+    // structure_debug.html still receives modules/links on demand.
+    m_simulation.debugForceFullShipGraphPayload();
+    m_simulation.update(0.0);
     m_simulation.setTick(m_serverTick);
     m_lastSnapshot = m_simulation.snapshot();
 }

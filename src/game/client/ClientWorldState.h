@@ -31,6 +31,8 @@
 #include "src/game/simulation/ObjectDetachedFragmentSnapshot.h"
 #include "src/game/simulation/ObjectRepairJobSnapshot.h"
 
+#include "src/game/visual/VisualShip.h"
+
 struct PendingCommand
 {
     uint32_t tick;
@@ -64,6 +66,8 @@ struct ClientShipState
     std::unordered_set<std::string>                     hiddenPartIds;
     std::unordered_map<std::string, float> detachedVisualAge;
     std::vector<game::simulation::DebugHitVolumeSnapshot> debugHitVolumes;
+
+    
     
 };
 
@@ -105,6 +109,26 @@ public:
 
     const std::unordered_map<uint32_t, ClientShipState>& ships() const {return m_ships;}
     const std::unordered_map<uint32_t, ClientObjectState>& objects() const {return m_objects;}
+
+    std::unordered_map<uint32_t, ClientShipState>& ships()
+    {
+        return m_ships;
+    }
+
+    std::vector<game::visual::VisualShip>& visualShips()
+    {
+        return m_visualShips;
+    }
+
+    const std::vector<game::visual::VisualShip>& visualShips() const
+    {
+        return m_visualShips;
+    }
+
+    void clearVisualShips()
+    {
+        m_visualShips.clear();
+    }
     
     void predict(
         EntityId id,
@@ -123,10 +147,12 @@ private:
 
     std::unordered_map<uint32_t, ClientShipState>   m_ships;
     std::unordered_map<uint32_t, ClientObjectState> m_objects;
+    std::vector<game::visual::VisualShip> m_visualShips;
     std::deque<SimulationSnapshot>                  m_snapshotBuffer;
     ShipSignalPresentation                          signalPresentation;
 
     
     double m_renderDelay = 0.1; // 100 ms
     double m_clientTime = 0.0;
+
 };

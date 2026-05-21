@@ -687,8 +687,9 @@ void SceneRenderer::render(
         }
     }
 
-    // Получаем позицию камеры
-glm::vec3 cameraPos = glm::vec3(glm::inverse(view)[3]);
+// В render-frame камера находится в локальном нуле.
+// Все world objects уже переведены через WorldFrame -> render-local.
+const glm::vec3 cameraLocalPosition(0.0f);
 
 
 
@@ -762,7 +763,7 @@ const glm::mat4 renderView =
         renderFarStationProxyPass(
             world,
             view,
-            cameraPos,
+            cameraLocalPosition,
             frame
         );
     }
@@ -884,7 +885,7 @@ const glm::mat4 renderView =
                 shipInfo.right = shipRight;
                 shipInfo.radius = ship.assembly->boundRadius;
                 shipInfo.visible = visible;
-                shipInfo.distance = glm::length(shipLocalPosition - cameraPos);
+                shipInfo.distance = glm::length(shipLocalPosition - cameraLocalPosition);
                 shipInfo.type = "Ship";
 
                 debugData.ships.push_back(shipInfo);
@@ -932,7 +933,7 @@ const glm::mat4 renderView =
                 
 
                 glm::vec3 moduleWorldPos = glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
-                float distToModule = glm::length(moduleWorldPos - cameraPos);
+                float distToModule = glm::length(moduleWorldPos - cameraLocalPosition);
                 bool useLod1 = (distToModule >= ship.assembly->lodSwitchDistance);
 
                 const float moduleRadius = safeRadiusFromHalfSize(module.boundHalfSize);
@@ -1055,7 +1056,7 @@ if (dbg.shouldDrawMeshes())
         fillShader,
         edgeShader,
         shipParams,
-        cameraPos
+        cameraLocalPosition
     );
 
 
@@ -1067,7 +1068,7 @@ if (dbg.shouldDrawMeshes())
         shipModel,
         view,
         proj,
-        cameraPos,
+        cameraLocalPosition,
         frame,
         fillShader,
         edgeShader,
@@ -1160,7 +1161,7 @@ if (dbg.drawModulePivots)
         frustum,
         view,
         proj,
-        cameraPos,
+        cameraLocalPosition,
         frame,
         fillShader,
         edgeShader,
@@ -1178,7 +1179,7 @@ renderVisualDrones(
     frustum,
     view,
     proj,
-    cameraPos,
+    cameraLocalPosition,
     frame,
     fillShader,
     edgeShader
@@ -1220,7 +1221,7 @@ for (const auto& pair : objects)
         );
 
     const float objectDistance =
-        glm::length(objectLocalPosition - cameraPos);
+        glm::length(objectLocalPosition - cameraLocalPosition);
 
         // if (
         //     obj.type == ObjectType::Station &&
@@ -1306,7 +1307,7 @@ for (const auto& pair : objects)
                 );
 
             glm::vec3 moduleWorldPos = glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
-            float distToModule = glm::length(moduleWorldPos - cameraPos);
+            float distToModule = glm::length(moduleWorldPos - cameraLocalPosition);
             bool useLod1 = (distToModule >= obj.assembly->lodSwitchDistance);
 
             const float moduleRadius = safeRadiusFromHalfSize(module.boundHalfSize);
@@ -1414,7 +1415,7 @@ if (dbg.shouldDrawMeshes())
         largeObjectShader,
         edgeShader,
         params,
-        cameraPos
+        cameraLocalPosition
     );
 
     renderDetachedAssemblyModules(
@@ -1424,7 +1425,7 @@ if (dbg.shouldDrawMeshes())
         objectBaseModel,
         view,
         proj,
-        cameraPos,
+        cameraLocalPosition,
         frame,
         largeObjectShader,
         edgeShader,

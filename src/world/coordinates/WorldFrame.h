@@ -13,8 +13,6 @@ struct WorldFrame
     WorldPosition origin;
 };
 
-
-
 inline WorldFrame makeWorldFrameFromOrigin(
     const WorldPosition& origin
 )
@@ -31,10 +29,6 @@ inline WorldFrame makeRenderFrameFromCamera(
     return makeWorldFrameFromOrigin(cameraWorldPosition);
 }
 
-
-
-
-
 // Единственный правильный путь:
 // WorldPosition -> render-local float.
 inline glm::vec3 toRenderLocal(
@@ -45,29 +39,12 @@ inline glm::vec3 toRenderLocal(
     return relativeMetersFloat(worldPosition, frame.origin);
 }
 
-// Совместимость для уже написанного кода.
-// Позже заменим вызовы toLocal(...) на toRenderLocal(...).
-inline glm::vec3 toLocal(
-    const WorldPosition& worldPosition,
-    const WorldFrame& frame
+inline glm::mat4 makeRenderView(
+    const glm::mat4& cameraView
 )
-{
-    return toRenderLocal(worldPosition, frame);
-}
-
-// ВАЖНО:
-// glm::vec3 НЕ является глобальной мировой координатой.
-// Поэтому перегрузку toLocal(glm::vec3, WorldFrame) не вводим.
-// Иначе снова получим старый яд: owner-local смешается с world-local.
-
-inline glm::mat4 makeRenderView(const glm::mat4& cameraView)
 {
     return cameraView;
 }
-
-
-
-
 
 inline glm::mat4 makeRenderModelMatrix(
     const WorldPosition& worldPosition,
@@ -80,10 +57,5 @@ inline glm::mat4 makeRenderModelMatrix(
         toRenderLocal(worldPosition, frame)
     ) * orientation;
 }
-
-
-
-
-
 
 } // namespace world::coordinates

@@ -1,8 +1,7 @@
 #pragma once
 
-#include "WorldFrame.h"
-#include "WorldPosition.h"
-#include <functional>
+#include "src/world/coordinates/WorldFrame.h"
+#include "src/world/coordinates/WorldPosition.h"
 
 namespace world::coordinates
 {
@@ -12,40 +11,38 @@ class FrameManager
 public:
     FrameManager() = default;
 
-    const WorldFrame& frame() const { return m_frame; }
+    const WorldFrame& frame() const
+    {
+        return m_frame;
+    }
 
-    // Принудительно установить Origin
+    const WorldPosition& origin() const
+    {
+        return m_frame.origin;
+    }
+
     void setOrigin(const WorldPosition& origin)
     {
         m_frame.origin = origin;
     }
 
-    // Проверить, не пора ли сдвинуть Origin
-    bool rebaseIfNeeded(
-        const WorldPosition& cameraWorldPos,
-        double thresholdMeters = 1'000'000.0  // 1000 км
-    )
+    // Пока делаем максимально безопасно:
+    // render-frame всегда привязан к камере / игроку.
+    //
+    // ВАЖНО:
+    // здесь НЕ двигаем объекты;
+    // здесь НЕ обновляем legacy position;
+    // здесь НЕ вызываем callbacks.
+    //
+    // WorldFrame — это только система отсчёта для рендера.
+    bool updateFromCamera(const WorldPosition& cameraWorldPosition)
     {
-        double dist = distanceMeters(cameraWorldPos, m_frame.origin);
-        
-        if (dist < thresholdMeters)
-            return false;
-        
-        // Запоминаем старый Origin
-        WorldPosition oldOrigin = m_frame.origin;
-        
-        // Сдвигаем Origin к камере
-        m_frame.origin = cameraWorldPos;
-        
-        // Вызываем callback, если он установлен
-        if (onFrameChanged)
-            onFrameChanged(oldOrigin, m_frame.origin);
-        
-        return true;
-    }
+        const bool changed =
+            distanceMeters(cameraWorldPosition, m_frame.origin) > 0.001;
 
-    // Событие при смене Origin
-    std::function<void(const WorldPosition& oldOrigin, const WorldPosition& newOrigin)> onFrameChanged;
+        m_frame.origin = cameraWorldPosition;
+        return changed;
+    }
 
 private:
     WorldFrame m_frame;

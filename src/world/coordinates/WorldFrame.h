@@ -13,7 +13,31 @@ struct WorldFrame
     WorldPosition origin;
 };
 
-inline glm::vec3 toLocal(
+
+
+inline WorldFrame makeWorldFrameFromOrigin(
+    const WorldPosition& origin
+)
+{
+    WorldFrame frame;
+    frame.origin = origin;
+    return frame;
+}
+
+inline WorldFrame makeRenderFrameFromCamera(
+    const WorldPosition& cameraWorldPosition
+)
+{
+    return makeWorldFrameFromOrigin(cameraWorldPosition);
+}
+
+
+
+
+
+// Единственный правильный путь:
+// WorldPosition -> render-local float.
+inline glm::vec3 toRenderLocal(
     const WorldPosition& worldPosition,
     const WorldFrame& frame
 )
@@ -21,40 +45,23 @@ inline glm::vec3 toLocal(
     return relativeMetersFloat(worldPosition, frame.origin);
 }
 
-// Временно для старых glm::vec3, которые ещё не переведены.
-inline glm::vec3 toLocal(const glm::vec3& worldPosition, const WorldFrame& frame)
-{
-    // Считаем полную позицию Origin в метрах как double
-    glm::dvec3 originFullMeters(
-        static_cast<double>(frame.origin.cell.x) * GalacticCellSizeM,
-        static_cast<double>(frame.origin.cell.y) * GalacticCellSizeM,
-        static_cast<double>(frame.origin.cell.z) * GalacticCellSizeM
-    );
-    originFullMeters += frame.origin.localMeters;
-    
-    // Вычитаем из worldPosition (который в float) полные метры Origin
-    return glm::vec3(glm::dvec3(worldPosition) - originFullMeters);
-}
-
-
-inline WorldFrame makeLegacyFrame(const glm::vec3& cameraPos)
-{
-    WorldFrame frame;
-    frame.origin = makeWorldPositionFromMeters(glm::dvec3(cameraPos));
-    return frame;
-}
-
-
-
-
-
-inline glm::mat4 makeRenderView(
-    const glm::mat4& cameraView
+// Совместимость для уже написанного кода.
+// Позже заменим вызовы toLocal(...) на toRenderLocal(...).
+inline glm::vec3 toLocal(
+    const WorldPosition& worldPosition,
+    const WorldFrame& frame
 )
 {
-    // ВАЖНО:
-    // view пока оставляем с локальной трансляцией камеры.
-    // Камера теперь хранит позицию относительно игрока.
+    return toRenderLocal(worldPosition, frame);
+}
+
+// ВАЖНО:
+// glm::vec3 НЕ является глобальной мировой координатой.
+// Поэтому перегрузку toLocal(glm::vec3, WorldFrame) не вводим.
+// Иначе снова получим старый яд: owner-local смешается с world-local.
+
+inline glm::mat4 makeRenderView(const glm::mat4& cameraView)
+{
     return cameraView;
 }
 

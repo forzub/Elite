@@ -673,9 +673,10 @@ auto itPlayer = ships.find(playerId.value);
 if (itPlayer == ships.end())
     return;
 
-world::coordinates::WorldFrame frame;
-
-frame.origin = itPlayer->second.renderTransform.worldPosition;
+const world::coordinates::WorldFrame frame =
+    world::coordinates::makeRenderFrameFromCamera(
+        itPlayer->second.renderTransform.worldPosition
+    );
 
 const glm::mat4 renderView =
     world::coordinates::makeRenderView(view);

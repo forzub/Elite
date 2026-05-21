@@ -819,17 +819,17 @@ const glm::mat4 renderView =
         const auto& ship = pair.second;
 
         const glm::vec3 shipLocalPosition =
-            world::coordinates::toLocal(
+            world::coordinates::toRenderLocal(
                 ship.renderTransform.worldPosition,
                 frame
             );
 
         glm::mat4 shipModel =
-            glm::translate(
-                glm::mat4(1.0f),
-                shipLocalPosition
-            ) *
-            glm::mat4(ship.renderTransform.orientation);
+            world::coordinates::makeRenderModelMatrix(
+                ship.renderTransform.worldPosition,
+                glm::mat4(ship.renderTransform.orientation),
+                frame
+            );
 
 
         const glm::vec3 shipForward = ship.renderTransform.forward();

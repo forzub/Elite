@@ -65,4 +65,25 @@ inline glm::mat4 makeRenderView(const glm::mat4& cameraView)
     return cameraView;
 }
 
+
+
+
+
+inline glm::mat4 makeRenderModelMatrix(
+    const WorldPosition& worldPosition,
+    const glm::mat4& orientation,
+    const WorldFrame& frame
+)
+{
+    return glm::translate(
+        glm::mat4(1.0f),
+        toRenderLocal(worldPosition, frame)
+    ) * orientation;
+}
+
+
+
+
+
+
 } // namespace world::coordinates

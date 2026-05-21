@@ -352,11 +352,11 @@ void renderDetachedAssemblyModules(
         
 
         glm::mat4 moduleModel =
-            glm::translate(
-                glm::mat4(1.0f),
-                world::coordinates::toLocal(fragment.worldPosition, frame)
-            ) *
-            fragment.orientation;
+            world::coordinates::makeRenderModelMatrix(
+                fragment.worldPosition,
+                fragment.orientation,
+                frame
+            );
 
         const glm::vec3 moduleWorldPos =
             glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
@@ -480,7 +480,7 @@ void SceneRenderer::renderCelestialPass(
     );
 
     const glm::vec3 earthCenterLocal =
-        world::coordinates::toLocal(
+        world::coordinates::toRenderLocal(
             earthWorldPosition,
             frame
         );
@@ -537,7 +537,7 @@ void SceneRenderer::renderFarStationProxyPass(
             continue;
 
         const glm::vec3 objectLocalPosition =
-            world::coordinates::toLocal(
+            world::coordinates::toRenderLocal(
                 obj.renderWorldPosition,
                 frame
             );
@@ -1094,13 +1094,13 @@ if (dbg.drawModulePivots)
         const glm::vec4 homeColor(1.0f, 0.8f, 0.2f, 1.0f);
 
         const glm::vec3 droneLocal =
-            world::coordinates::toLocal(job.droneWorldPosition, frame);
+            world::coordinates::toRenderLocal(job.droneWorldPosition, frame);
 
         const glm::vec3 fragmentLocal =
-            world::coordinates::toLocal(job.fragmentWorldPosition, frame);
+            world::coordinates::toRenderLocal(job.fragmentWorldPosition, frame);
 
         const glm::vec3 homeLocal =
-            world::coordinates::toLocal(job.homeWorldPosition, frame);
+            world::coordinates::toRenderLocal(job.homeWorldPosition, frame);
 
         m_debugRenderer.renderCross(
             droneLocal,
@@ -1205,17 +1205,17 @@ for (const auto& pair : objects)
     {
 
     const glm::vec3 objectLocalPosition =
-        world::coordinates::toLocal(
+        world::coordinates::toRenderLocal(
             obj.renderWorldPosition,
             frame
         );
 
     glm::mat4 objectBaseModel =
-        glm::translate(
-            glm::mat4(1.0f),
-            objectLocalPosition
-        ) *
-        obj.renderOrientation;
+        world::coordinates::makeRenderModelMatrix(
+            obj.renderWorldPosition,
+            obj.renderOrientation,
+            frame
+        );
 
     const float objectDistance =
         glm::length(objectLocalPosition - cameraPos);
@@ -1573,17 +1573,17 @@ if (frameCounter % 120 == 0)
         }
 
         const glm::vec3 shipLocalPosition =
-            world::coordinates::toLocal(
+            world::coordinates::toRenderLocal(
                 ship.renderTransform.worldPosition,
                 frame
             );
 
         glm::mat4 shipModel =
-            glm::translate(
-                glm::mat4(1.0f),
-                shipLocalPosition
-            ) *
-            glm::mat4(ship.renderTransform.orientation);
+            world::coordinates::makeRenderModelMatrix(
+                ship.renderTransform.worldPosition,
+                glm::mat4(ship.renderTransform.orientation),
+                frame
+            );
 
         if (ship.visualScale != 1.0f)
         {
@@ -2304,14 +2304,11 @@ void SceneRenderer::renderVisualDrones(
             continue;
 
         glm::mat4 droneModel =
-            glm::translate(
-                glm::mat4(1.0f),
-                world::coordinates::toLocal(
-                    drone.renderTransform.worldPosition,
-                    frame
-                )
-            ) *
-            glm::mat4(drone.renderTransform.orientation);
+            world::coordinates::makeRenderModelMatrix(
+                drone.renderTransform.worldPosition,
+                glm::mat4(drone.renderTransform.orientation),
+                frame
+            );
 
         if (drone.visualScale != 1.0f)
         {

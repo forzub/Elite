@@ -218,7 +218,7 @@ void drawQueuedMeshPasses(
     GLuint fillShader,
     GLuint edgeShader,
     const LightingParams& params,
-    const glm::vec3& cameraPos
+    const glm::vec3& cameraLocalPosition
 )
 {
     // Важно: сначала все fill-проходы всех деталей пишут depth.
@@ -236,7 +236,7 @@ void drawQueuedMeshPasses(
             draw.mvp,
             draw.model,
             params,
-            cameraPos
+            cameraLocalPosition
         );
     }
 
@@ -252,7 +252,7 @@ void drawQueuedMeshPasses(
             draw.mvp,
             draw.model,
             params,
-            cameraPos
+            cameraLocalPosition
         );
     }
 }
@@ -338,7 +338,7 @@ void renderDetachedAssemblyModules(
     const glm::mat4& ownerModel,
     const glm::mat4& view,
     const glm::mat4& proj,
-    const glm::vec3& cameraPos,
+    const glm::vec3& cameraLocalPosition,
     const world::coordinates::WorldFrame& frame,
     GLuint largeObjectShader,
     GLuint edgeShader,
@@ -408,7 +408,7 @@ void renderDetachedAssemblyModules(
                 partMvp,
                 partModel,
                 params,
-                cameraPos
+                cameraLocalPosition
             );
         }
 
@@ -525,7 +525,7 @@ void SceneRenderer::renderCelestialPass(
 void SceneRenderer::renderFarStationProxyPass(
     const ClientWorldState& world,
     const glm::mat4& view,
-    const glm::vec3& cameraPos,
+    const glm::vec3& cameraLocalPosition,
     const world::coordinates::WorldFrame& frame
 )
 {
@@ -566,7 +566,7 @@ void SceneRenderer::renderFarStationProxyPass(
             );
 
 const float distance =
-    glm::length(objectLocalPosition - cameraPos);
+    glm::length(objectLocalPosition - cameraLocalPosition);
 
         if (distance <= kStationFullRenderDistance)
             continue;
@@ -1047,7 +1047,7 @@ if (dbg.shouldDrawMeshes())
     //     largeObjectShader,
     //     edgeShader,
     //     shipParams,
-    //     cameraPos
+    //     cameraLocalPosition
     // );
 
     drawQueuedMeshPasses(
@@ -1478,7 +1478,7 @@ void SceneRenderer::renderVisualShips(
     const Frustum& frustum,
     const glm::mat4& view,
     const glm::mat4& proj,
-    const glm::vec3& cameraPos,
+    const glm::vec3& cameraLocalPosition,
     const world::coordinates::WorldFrame& frame,
     unsigned int fillShader,
     unsigned int edgeShader,
@@ -1591,7 +1591,7 @@ if (frameCounter % 120 == 0)
 
 
         const float distToShip =
-            glm::length(shipLocalPosition - cameraPos);
+            glm::length(shipLocalPosition - cameraLocalPosition);
 
         const bool useWholeShipProxy =
             ship.assembly->hasWholeShipProxy &&
@@ -1627,7 +1627,7 @@ if (frameCounter % 120 == 0)
                 fillShader,
                 edgeShader,
                 shipParams,
-                cameraPos
+                cameraLocalPosition
             );
 
             continue;
@@ -1674,7 +1674,7 @@ if (frameCounter % 120 == 0)
                 glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
 
             const float distToModule =
-                glm::length(moduleLocalPosition - cameraPos);
+                glm::length(moduleLocalPosition - cameraLocalPosition);
 
             bool useLod1 =
                 distToModule >= ship.assembly->lodSwitchDistance;
@@ -1726,7 +1726,7 @@ if (frameCounter % 120 == 0)
             fillShader,
             edgeShader,
             shipParams,
-            cameraPos
+            cameraLocalPosition
         );
     }
 }
@@ -2242,7 +2242,7 @@ void SceneRenderer::renderVisualDrones(
     const Frustum& frustum,
     const glm::mat4& view,
     const glm::mat4& proj,
-    const glm::vec3& cameraPos,
+    const glm::vec3& cameraLocalPosition,
     const world::coordinates::WorldFrame& frame,
     unsigned int fillShader,
     unsigned int edgeShader
@@ -2364,7 +2364,7 @@ void SceneRenderer::renderVisualDrones(
             fillShader,
             edgeShader,
             droneParams,
-            cameraPos
+            cameraLocalPosition
         );
     }
 }

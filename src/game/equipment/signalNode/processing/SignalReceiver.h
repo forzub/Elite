@@ -6,7 +6,7 @@
 #include "DetectedSignal.h"
 #include "game/equipment/signalNode/ReceiverModule.h"
 
-
+#include "src/world/coordinates/WorldPosition.h"
 
 
 class Planet;
@@ -17,7 +17,7 @@ class SignalReceiver
 public:
     void update(
         float dt,
-        const glm::vec3& receiverPos,
+        const world::coordinates::WorldPosition& receiverWorldPosition,
         const game::ReceiverModule& receiver,
         const std::vector<WorldSignal>& worldSignals,
         const std::vector<Planet>& planets,
@@ -33,7 +33,7 @@ private:
 
     float computeSignalStrength(
         const WorldSignal& sig,
-        const glm::vec3& receiverPos
+        const world::coordinates::WorldPosition& receiverWorldPosition
     ) const;
 
     bool isOccludedByPlanet(

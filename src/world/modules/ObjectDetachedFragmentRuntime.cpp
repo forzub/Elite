@@ -7,6 +7,8 @@
 
 #include "src/world/modules/ObjectAssemblyTransformUtils.h"
 #include "src/world/modules/ObjectModuleState.h"
+#include "src/world/coordinates/WorldPosition.h"
+
 
 namespace world::modules
 {
@@ -198,7 +200,10 @@ void ObjectDetachedFragmentRuntime::syncFromDetachedModules(
                 moduleState.moduleId
             );
 
-        const glm::mat4 worldModuleModel = ownerModel * localModuleModel;
+        // ownerModel здесь теперь owner-local модель, без глобальной трансляции.
+        // Для корабля обычно это просто orientation.
+        // Поэтому moduleModel тоже остаётся в локальной системе владельца.
+        const glm::mat4 localDetachedModuleModel = ownerModel * localModuleModel;
 
         ObjectDetachedFragmentRuntimeState f;
         f.moduleId = moduleState.moduleId;
@@ -215,13 +220,18 @@ void ObjectDetachedFragmentRuntime::syncFromDetachedModules(
 
         f.homeLocalModel = localModuleModel;
 
-        f.position = glm::vec3(worldModuleModel * glm::vec4(0, 0, 0, 1));
+        f.position =
+            glm::vec3(localDetachedModuleModel * glm::vec4(0, 0, 0, 1));
 
-        f.orientation = worldModuleModel;
+        f.orientation = localDetachedModuleModel;
         f.orientation[3] = glm::vec4(0, 0, 0, 1);
 
-        glm::vec3 ownerPos = glm::vec3(ownerModel * glm::vec4(0, 0, 0, 1));
-        glm::vec3 dir = f.position - ownerPos;
+        // В owner-local системе центр владельца находится в точке ownerModel * 0.
+        // Для корабля это обычно (0,0,0), но оставляем общий вариант.
+        const glm::vec3 ownerLocalCenter =
+            glm::vec3(ownerModel * glm::vec4(0, 0, 0, 1));
+
+        glm::vec3 dir = f.position - ownerLocalCenter;
 
         if (glm::length(dir) < 0.001f)
             dir = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -291,7 +301,9 @@ void ObjectDetachedFragmentRuntime::syncFromDetachedModules(
 }
 
 std::vector<game::simulation::ObjectDetachedFragmentSnapshot>
-ObjectDetachedFragmentRuntime::buildSnapshots() const
+ObjectDetachedFragmentRuntime::buildSnapshots(
+    const world::coordinates::WorldPosition& ownerWorldPosition
+) const
 {
     std::vector<game::simulation::ObjectDetachedFragmentSnapshot> out;
     out.reserve(m_fragments.size());
@@ -303,7 +315,16 @@ ObjectDetachedFragmentRuntime::buildSnapshots() const
         s.originalModuleId = f.originalModuleId;
         s.moduleClass = f.moduleClass;
         s.providedReplacementTags = f.providedReplacementTags;
+        // Legacy mirror теперь хранит локальную позицию относительно владельца.
+        // Не использовать как глобальную координату.
         s.position = f.position;
+
+        // Глобальная позиция для рендера/debug строится из ownerWorldPosition + local.
+        s.worldPosition =
+            world::coordinates::translated(
+                ownerWorldPosition,
+                glm::dvec3(f.position)
+            );
         s.orientation = f.orientation;
         s.homeLocalModel = f.homeLocalModel;
         s.homeCenterLocal = f.homeCenterLocal;

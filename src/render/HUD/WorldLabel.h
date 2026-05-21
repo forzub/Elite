@@ -6,7 +6,7 @@
 #include "world/types/SignalDisplayClass.h"
 #include "world/types/SignalSemanticState.h"
 
-
+#include "src/world/coordinates/WorldPosition.h"
 
 enum class SignalPresence
 {
@@ -25,7 +25,12 @@ struct SignalWave
 struct WorldLabelData
 {
     // --- Пространство
+    world::coordinates::WorldPosition worldPosition;
+
+    // Legacy/render-local position.
+    // Для старого HUD может хранить позицию относительно игрока/приёмника.
     glm::vec3 worldPos{0.0f};
+    
     float distance = 0.0f;                 // валидно только для Decoded
 
     // --- Семантика

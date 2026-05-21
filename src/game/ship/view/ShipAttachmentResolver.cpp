@@ -4,7 +4,7 @@
 
 #include "src/game/ship/ShipAttachmentUtils.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
-
+#include "src/world/coordinates/WorldPosition.h"
 
 using namespace game::ship::geometry;
 
@@ -101,11 +101,16 @@ std::optional<ShipAttachmentResolved> resolveShipAttachment(
     if (!resolvedPoint.enabled)
         return std::nullopt;
 
-    glm::mat4 shipModel =
-        glm::translate(glm::mat4(1.0f), shipTransform.position) *
+    // ВАЖНО:
+    // Resolver теперь работает в локальном frame игрока.
+    // Сам корабль игрока находится в (0,0,0), а не в полном world-float.
+    glm::mat4 shipLocalModel =
         shipTransform.orientation;
 
-    glm::mat4 parentModel = shipModel;
+    glm::mat4 parentModel = shipLocalModel;
+
+
+
     // Если attachment сидит на модуле, который уже оторвался,
     // берём parent transform от detached fragment, а не от корпуса корабля.
     if (detachedFragments && !resolvedPoint.parentModuleId.empty())
@@ -115,8 +120,14 @@ std::optional<ShipAttachmentResolved> resolveShipAttachment(
             if (fragment.moduleId != resolvedPoint.parentModuleId)
                 continue;
 
+            const glm::vec3 fragmentLocalPosition =
+                world::coordinates::relativeMetersFloat(
+                    fragment.worldPosition,
+                    shipTransform.worldPosition
+                );
+
             parentModel =
-                glm::translate(glm::mat4(1.0f), fragment.position) *
+                glm::translate(glm::mat4(1.0f), fragmentLocalPosition) *
                 fragment.orientation;
 
             goto found_parent;
@@ -143,7 +154,7 @@ std::optional<ShipAttachmentResolved> resolveShipAttachment(
                     module->id
                 );
 
-            parentModel = shipModel * moduleModel;
+            parentModel = shipLocalModel * moduleModel;
         }
         else
         {
@@ -163,7 +174,7 @@ std::optional<ShipAttachmentResolved> resolveShipAttachment(
                     glm::mat4 partModel =
                         moduleModel * glm::translate(glm::mat4(1.0f), part.localOffset);
 
-                    parentModel = shipModel * partModel;
+                    parentModel = shipLocalModel * partModel;
                     goto found_parent;
                 }
             }
@@ -191,11 +202,20 @@ found_parent:
         glm::vec3(0.0f, 0.0f, 1.0f)
     );
 
-    glm::mat4 world = parentModel * local;
+    glm::mat4 resolvedLocal = parentModel * local;
 
     ShipAttachmentResolved out;
-    out.worldPosition = glm::vec3(world[3]);
-    out.worldOrientation = glm::mat4(glm::mat3(world));
+
+    out.localPosition = glm::vec3(resolvedLocal[3]);
+
+    out.worldPosition =
+        world::coordinates::translated(
+            shipTransform.worldPosition,
+            glm::dvec3(out.localPosition)
+        );
+
+    out.worldOrientation =
+        glm::mat4(glm::mat3(resolvedLocal));
 
     return out;
 }

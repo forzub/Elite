@@ -1,5 +1,7 @@
 #include <glad/gl.h>
 #include <iostream>
+#include <cstdio>
+#include <cmath>
 
 #include "SpaceState.h"
 #include "core/StateStack.h"
@@ -39,14 +41,13 @@
 
 #include <chrono>
 #include <algorithm>
-#include <cmath>
+
 
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/constants.hpp>
 
 
-#include <algorithm>
 
 namespace
 {
@@ -561,8 +562,7 @@ const double playerViewStartMs = nowMs();
 m_playerView->update(
     dt,
     ship.role,
-    ship.renderTransform.position,
-    ship.renderTransform.orientation,
+    ship.renderTransform,
     ship.detachedFragments
 );
 
@@ -793,6 +793,79 @@ void SpaceState::renderUI()
 
     m_activeMainCamera = mainCam;
 
+
+    // -------------------------------------------------
+    // HUD telemetry: player global coordinates + speed
+    // -------------------------------------------------
+    {
+        auto setText =
+            [&](const std::string& id, const std::string& value)
+            {
+                if (auto* comp = uiRoot->findById(id))
+                {
+                    if (auto* text = dynamic_cast<UIText*>(comp))
+                        text->label = value;
+                }
+            };
+
+        const auto& ships = m_client->world().ships();
+        auto it = ships.find(m_playerId.value);
+
+        if (it != ships.end())
+        {
+            const auto& ship = it->second;
+            const auto& wp = ship.renderTransform.worldPosition;
+
+            const glm::dvec3 globalMeters =
+                glm::dvec3(
+                    static_cast<double>(wp.cell.x),
+                    static_cast<double>(wp.cell.y),
+                    static_cast<double>(wp.cell.z)
+                ) * world::coordinates::GalacticCellSizeM +
+                wp.localMeters;
+
+            double speedMps =
+                glm::length(glm::dvec3(ship.renderTransform.localVelocity));
+
+            if (std::abs(static_cast<double>(ship.renderTransform.forwardVelocity)) > speedMps)
+                speedMps = std::abs(static_cast<double>(ship.renderTransform.forwardVelocity));
+
+            char buf[128];
+
+            std::snprintf(
+                buf,
+                sizeof(buf),
+                "CELL %lld %lld %lld",
+                static_cast<long long>(wp.cell.x),
+                static_cast<long long>(wp.cell.y),
+                static_cast<long long>(wp.cell.z)
+            );
+
+            setText("main_coord_cell", buf);
+            
+
+            std::snprintf(buf, sizeof(buf), "X %.3e m", globalMeters.x);
+            setText("main_coord_x", buf);
+            
+
+            std::snprintf(buf, sizeof(buf), "Y %.3e m", globalMeters.y);
+            setText("main_coord_y", buf);
+            
+
+            std::snprintf(buf, sizeof(buf), "Z %.3e m", globalMeters.z);
+            setText("main_coord_z", buf);
+            
+
+            std::snprintf(buf, sizeof(buf), "V %.1f m/s", speedMps);
+            setText("main_coord_v", buf);
+            
+        }
+    }
+
+
+
+
+
     const Viewport& vp = context().viewport();
     float aspect = (float)vp.width / (float)vp.height;
 
@@ -836,7 +909,16 @@ void SpaceState::renderUI()
     // Rear - камера корабля.
     // -------------------------------
 
-    if (debug::get().render.shouldRenderRearCamera())
+    static uint32_t rearCameraFrameCounter = 0;
+rearCameraFrameCounter++;
+
+if (debug::get().render.shouldRenderRearCamera())
+{
+    // Рендерим заднюю камеру не каждый кадр.
+    // 2 = через кадр. 3 = каждый третий кадр.
+    constexpr uint32_t kRearCameraFrameStride = 3;
+
+    if ((rearCameraFrameCounter % kRearCameraFrameStride) == 0)
     {
         const double rearStartMs = nowMs();
 
@@ -845,11 +927,12 @@ void SpaceState::renderUI()
 
         m_perfRearCameraMs = nowMs() - rearStartMs;
     }
-    else
-    {
-        m_perfRearCameraMs = 0.0;
-        m_perfRearStats.reset();
-    }
+}
+else
+{
+    m_perfRearCameraMs = 0.0;
+    m_perfRearStats.reset();
+}
 
    m_perfRenderUiMs = nowMs() - renderUiStartMs; 
 }

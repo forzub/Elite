@@ -111,14 +111,14 @@ void GameClient::reconcile(
     }
 
     // 2️⃣ Найти authoritative позицию игрока в snapshot
-    glm::vec3 authoritativePos{};
+    world::coordinates::WorldPosition authoritativeWorldPosition;
     bool found = false;
 
     for (const auto& s : snapshot.ships)
     {
         if (s.id == m_playerId)
         {
-            authoritativePos = s.transform.position;
+            authoritativeWorldPosition = s.transform.worldPosition;
             found = true;
             break;
         }
@@ -138,18 +138,21 @@ void GameClient::reconcile(
     // 4️⃣ Посчитать ошибку
     
 
-    float error = glm::distance(
-        clientShip.transform.position,
-        authoritativePos
-        );
+    const double error =
+    glm::length(
+        world::coordinates::relativeMeters(
+            authoritativeWorldPosition,
+            clientShip.transform.worldPosition
+        )
+    );
 
-        if (error > 0.01f)
-        {
-            m_world.applySoftCorrection(
-                m_playerId,
-                authoritativePos
-            );
-        }
+    if (error > 0.01)
+    {
+        m_world.applySoftCorrection(
+            m_playerId,
+            authoritativeWorldPosition
+        );
+    }
 
 
 

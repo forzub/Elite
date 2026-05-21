@@ -304,7 +304,7 @@ void PromoFlybyScenario::applyShipPose(
     const glm::vec3 f =
         safeNormalize(forward, tr.forward());
 
-    tr.position = position;
+    tr.setWorldPositionMeters(glm::dvec3(position));
     tr.orientation = makeOrientation(f, up);
 
     tr.forwardVelocity = speed;

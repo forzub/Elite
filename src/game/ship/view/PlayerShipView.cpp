@@ -401,17 +401,14 @@ void PlayerShipView::renderHudBoundary()
 void PlayerShipView::update(
         float dt,
         ShipRole role,
-        const glm::vec3& position,
-        const glm::mat4& orientation,
+        const ShipTransform& transform,
         const std::vector<game::simulation::ObjectDetachedFragmentSnapshot>& detachedFragments
 )
 {
     if (role != ShipRole::Player)
         return;
 
-    ShipTransform tempTransform;
-    tempTransform.position = position;
-    tempTransform.orientation = orientation;
+    const ShipTransform& tempTransform = transform;
 
 
     cameraController.updateMode(

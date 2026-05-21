@@ -13,14 +13,32 @@
 #include "src/game/simulation/ObjectModuleSnapshot.h"
 #include "src/game/simulation/StructuralLinkSnapshot.h"
 #include "src/game/simulation/DebugHitVolumeSnapshot.h"
+#include "src/world/coordinates/WorldPosition.h"
 
 struct StaticObject
 {
     EntityId id;
     ObjectType type;
 
+    world::coordinates::WorldPosition worldPosition;
+
+    // Legacy mirror.
+    // Не источник истины. Не использовать в рендере / дистанциях / origin shifting.
     glm::vec3 position {0.0f, 0.0f, 0.0f};
-    // glm::vec3 rotation {0.0f, 0.0f, 0.0f};
+
+    void setWorldPosition(const world::coordinates::WorldPosition& p)
+    {
+        worldPosition = p;
+        position = world::coordinates::legacyFloatMeters(worldPosition);
+    }
+
+    void setWorldPositionMeters(const glm::dvec3& meters)
+    {
+        setWorldPosition(
+            world::coordinates::makeWorldPositionFromMeters(meters)
+        );
+    }
+    
     glm::mat4 orientation {1.0f};
 
     glm::vec3 angularVelocity {0.0f, 0.0f, 0.0f};

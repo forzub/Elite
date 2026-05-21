@@ -91,6 +91,19 @@ void SpaceState::initHUD()
     // -------------------  UI контенер -------------------------
     uiRoot = std::make_unique<UIContainer>();
 
+    auto makeTelemetryText =
+    [](const std::string& id, glm::vec2 pos) -> std::unique_ptr<UIText>
+    {
+        auto t = std::make_unique<UIText>();
+        t->id = id;
+        t->label = "";
+        t->fontPath = "assets/fonts/Roboto-Light.ttf";
+        t->fontSizeRel = 0.014f;
+        t->color = {0.2f, 0.8f, 1.0f, 0.32f};
+        t->position = pos;
+        return t;
+    };
+
     // ================== задняя камера =========================
     auto rear = std::make_unique<UICameraView>();
 
@@ -144,6 +157,8 @@ void SpaceState::initHUD()
 
     rearView->addChild(std::move(labelMiniViewText));
 
+
+
     // ================== текст передней камеры =========================
 
     auto labelMainViewText = std::make_unique<UIText>();
@@ -155,6 +170,21 @@ void SpaceState::initHUD()
     labelMainViewText->position = {0.06f, 0.13f};
 
     uiRoot->addChild(std::move(labelMainViewText));
+
+
+    // ================== Main camera coordinates / speed =========================
+
+
+    const float mainTelemetryX = 0.06f;
+    const float mainTelemetryY = 0.175f;
+    const float mainTelemetryStep = 0.020f;
+
+    uiRoot->addChild(makeTelemetryText("main_coord_cell", {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 0.0f}));
+    uiRoot->addChild(makeTelemetryText("main_coord_x",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 1.0f}));
+    uiRoot->addChild(makeTelemetryText("main_coord_y",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 2.0f}));
+    uiRoot->addChild(makeTelemetryText("main_coord_z",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 3.0f}));
+    uiRoot->addChild(makeTelemetryText("main_coord_v",    {mainTelemetryX, mainTelemetryY + mainTelemetryStep * 4.0f}));
+
 
     // ================== Radar HUD creation =========================
 

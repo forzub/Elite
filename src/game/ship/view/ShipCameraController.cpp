@@ -32,12 +32,14 @@ void ShipCameraController::updateMode(
             if (resolved)
             {
 
-                camera.setPosition(resolved->worldPosition - transform.position);
+                camera.setPosition(resolved->localPosition);
                 camera.setOrientationMatrix(resolved->worldOrientation);
             }
             else
             {
-                camera.setPosition(transform.position);
+                // Камера теперь живёт в локальном player-frame.
+                // Корабль игрока в рендере находится около (0,0,0).
+                camera.setPosition(glm::vec3(0.0f));
                 camera.setOrientationMatrix(transform.orientation);
             }
             break;
@@ -56,7 +58,7 @@ void ShipCameraController::updateMode(
             if (resolved)
             {
 
-                camera.setPosition(resolved->worldPosition - transform.position);
+                camera.setPosition(resolved->localPosition);
                 camera.setOrientationMatrix(resolved->worldOrientation);
             }
             else
@@ -69,7 +71,7 @@ void ShipCameraController::updateMode(
                         glm::vec3(0,1,0)
                     );
 
-                camera.setPosition(transform.position);
+                camera.setPosition(glm::vec3(0.0f));
                 camera.setOrientationMatrix(rearOrientation);
             }
             break;
@@ -89,7 +91,7 @@ void ShipCameraController::updateMode(
             {
                 
 
-                glm::vec3 pos = resolved->worldPosition - transform.position;
+                glm::vec3 pos = resolved->localPosition;
 
                 glm::mat4 look =
                     glm::lookAt(
@@ -106,7 +108,7 @@ void ShipCameraController::updateMode(
             }
             else
             {
-                glm::vec3 pos = transform.position + glm::vec3(0.0f, 30.0f, 0.0f);
+                glm::vec3 pos = glm::vec3(0.0f, 30.0f, 0.0f);
 
                 camera.setPosition(pos);
 

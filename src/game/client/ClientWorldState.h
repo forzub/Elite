@@ -32,6 +32,8 @@
 #include "src/game/simulation/ObjectRepairJobSnapshot.h"
 
 #include "src/game/visual/VisualShip.h"
+#include "src/game/visual/VisualDrone.h"
+#include "src/world/coordinates/WorldPosition.h"
 
 struct PendingCommand
 {
@@ -77,7 +79,8 @@ struct ClientObjectState
 {
     EntityId                                        id;
     ObjectType                                      type;
-    glm::vec3                                       position;
+    world::coordinates::WorldPosition worldPosition;
+    glm::vec3 position;
     
     // glm::vec3                                       rotation;
     // glm::vec3                                       renderRotation;
@@ -85,7 +88,9 @@ struct ClientObjectState
     glm::mat4 renderOrientation {1.0f}; 
     
     // текущие (для рендера)
-    glm::vec3                                       renderPosition;
+    world::coordinates::WorldPosition renderWorldPosition;
+    glm::vec3 renderPosition;
+    
     const game::ship::geometry::ObjectAssembly*     assembly = nullptr;
 
     const IObjectDescriptor*                                        descriptor = nullptr;
@@ -120,6 +125,21 @@ public:
         return m_visualShips;
     }
 
+    std::vector<game::visual::VisualDrone>& visualDrones()
+    {
+        return m_visualDrones;
+    }
+
+    const std::vector<game::visual::VisualDrone>& visualDrones() const
+    {
+        return m_visualDrones;
+    }
+
+    void clearVisualDrones()
+    {
+        m_visualDrones.clear();
+    }
+
     const std::vector<game::visual::VisualShip>& visualShips() const
     {
         return m_visualShips;
@@ -140,14 +160,15 @@ public:
 
     void applySoftCorrection(
         EntityId id,
-        const glm::vec3& authoritativePos
+        const world::coordinates::WorldPosition& authoritativeWorldPosition
     );
 
 private:
 
     std::unordered_map<uint32_t, ClientShipState>   m_ships;
     std::unordered_map<uint32_t, ClientObjectState> m_objects;
-    std::vector<game::visual::VisualShip> m_visualShips;
+    std::vector<game::visual::VisualShip>           m_visualShips;
+    std::vector<game::visual::VisualDrone>          m_visualDrones;
     std::deque<SimulationSnapshot>                  m_snapshotBuffer;
     ShipSignalPresentation                          signalPresentation;
 

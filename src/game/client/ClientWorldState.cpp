@@ -12,6 +12,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/common.hpp>
 
+#include "src/world/coordinates/WorldPosition.h"
 
 namespace
 {
@@ -60,11 +61,15 @@ ShipTransform smoothShipRenderTransform(
 {
     ShipTransform out = target;
 
-    const float error =
-        glm::length(target.position - current.position);
+    const glm::dvec3 worldDelta =
+        world::coordinates::relativeMeters(
+            target.worldPosition,
+            current.worldPosition
+        );
 
-    // Если это телепорт/первичная инициализация — не размазываем.
-    if (error > 500.0f)
+    const double error = glm::length(worldDelta);
+
+    if (error > 500.0)
     {
         out.setWorldPosition(target.worldPosition);
         out.orientation = target.orientation;
@@ -77,12 +82,13 @@ ShipTransform smoothShipRenderTransform(
     const float rotAlpha =
         renderSmoothingAlpha(dt, 22.0f);
 
-    out.position =
-        glm::mix(
-            current.position,
-            target.position,
-            posAlpha
+    const world::coordinates::WorldPosition smoothedWorld =
+        world::coordinates::translated(
+            current.worldPosition,
+            worldDelta * static_cast<double>(posAlpha)
         );
+
+    out.setWorldPosition(smoothedWorld);
 
     out.orientation =
         smoothOrientationMatrix(
@@ -90,8 +96,6 @@ ShipTransform smoothShipRenderTransform(
             target.orientation,
             rotAlpha
         );
-
-    out.setWorldPosition(target.worldPosition);
 
     return out;
 }
@@ -302,13 +306,15 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         if (it == m_objects.end())
         {
             auto& state = m_objects[o.id.value];
-
             state.id   = o.id;
             state.type = o.type;
-
             state.descriptor = &ObjectDescriptorRegistry::get(o.type);
 
-            state.position = o.position;
+            // Новая истинная позиция
+            state.worldPosition = o.worldPosition;
+
+            // Legacy mirror — пересчитываем через relativeMetersFloat
+            state.position = world::coordinates::legacyFloatMeters(o.worldPosition);
 
             state.orientation = o.orientation;
             state.renderOrientation = o.orientation;
@@ -322,7 +328,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
                 state.debugHitVolumes
             );
 
-            state.renderPosition = o.position;
+            state.renderWorldPosition = o.worldPosition;
+            state.renderPosition = world::coordinates::legacyFloatMeters(o.worldPosition);  
             
             const auto& desc = ObjectDescriptorRegistry::get(o.type);
             
@@ -343,7 +350,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         {
             auto& state = it->second;
 
-            state.position = o.position;
+            state.worldPosition = o.worldPosition;
+            state.position = world::coordinates::legacyFloatMeters(o.worldPosition);
             state.orientation = o.orientation;
 
             // Static object payload is sparse: for a rotating station the server sends
@@ -364,6 +372,53 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
                 rebuildHiddenPartIds(state);
         }
     }
+
+
+    m_visualDrones.clear();
+
+    for (const auto& shipPair : m_ships)
+    {
+        const ClientShipState& ship = shipPair.second;
+
+        uint32_t droneIndex = 0;
+
+        for (const auto& job : ship.repairJobs)
+        {
+            game::visual::VisualDrone drone;
+
+            drone.id =
+                700000u +
+                ship.id.value * 100u +
+                droneIndex++;
+
+            drone.kind = game::visual::VisualDroneKind::Repair;
+            drone.type = ObjectType::RepairDroneDebug;
+
+            if (!game::ship::geometry::AssemblyMeshLibrary::has(drone.type))
+            {
+                continue;
+            }
+
+            drone.assembly =
+                &game::ship::geometry::AssemblyMeshLibrary::get(drone.type);
+
+            drone.transform.setWorldPosition(job.droneWorldPosition);
+            drone.renderTransform = drone.transform;
+
+            drone.visible = true;
+            drone.visualScale = 1.0f;
+
+            m_visualDrones.push_back(drone);
+        }
+    }
+
+
+
+
+
+
+
+
 
     // ------- передача в буфер Snapshot ------
     m_snapshotBuffer.push_back(snapshot);
@@ -449,17 +504,25 @@ void ClientWorldState::update(float dt)
                     if (itOld != older->ships.end() &&
                         itNew != newer->ships.end())
                     {
-                        ship.renderTransform.position =
-                            glm::mix(
-                                itOld->transform.position,
-                                itNew->transform.position,
-                                t
-                            );
+                        const glm::dvec3 delta =
+                        world::coordinates::relativeMeters(
+                            itNew->transform.worldPosition,
+                            itOld->transform.worldPosition
+                        );
 
-                        ship.renderTransform.worldPosition = itNew->transform.worldPosition;
+                    const auto interpolatedWorld =
+                        world::coordinates::translated(
+                            itOld->transform.worldPosition,
+                            delta * static_cast<double>(t)
+                        );
 
-                        ship.renderTransform.worldPosition = itNew->transform.worldPosition;
-                        ship.renderTransform.orientation = itOld->transform.orientation;
+                    ship.renderTransform.setWorldPosition(interpolatedWorld);
+                    ship.renderTransform.orientation =
+                        smoothOrientationMatrix(
+                            itOld->transform.orientation,
+                            itNew->transform.orientation,
+                            t
+                        );
                     }
                     else
                     {
@@ -487,7 +550,8 @@ void ClientWorldState::update(float dt)
 
     for (auto& [id, obj] : m_objects)
     {
-        obj.renderPosition = obj.position;
+        obj.renderWorldPosition = obj.worldPosition;
+        obj.renderPosition = world::coordinates::legacyFloatMeters(obj.worldPosition);
         obj.renderOrientation = obj.orientation;
 
        
@@ -566,7 +630,8 @@ void ClientWorldState::forceState(
 
 void ClientWorldState::applySoftCorrection(
     EntityId id,
-    const glm::vec3& authoritativePos)
+    const world::coordinates::WorldPosition& authoritativeWorldPosition
+)
 {
     auto it = m_ships.find(id.value);
     if (it == m_ships.end())
@@ -574,8 +639,23 @@ void ClientWorldState::applySoftCorrection(
 
     auto& ship = it->second;
 
-    glm::vec3 delta =
-        authoritativePos - ship.transform.position;
+    const glm::dvec3 delta =
+        world::coordinates::relativeMeters(
+            authoritativeWorldPosition,
+            ship.transform.worldPosition
+        );
 
-    ship.transform.position += delta * 0.1f;
+    const double error = glm::length(delta);
+
+    if (error <= 0.001)
+        return;
+
+    const world::coordinates::WorldPosition corrected =
+        world::coordinates::translated(
+            ship.transform.worldPosition,
+            delta * 0.1
+        );
+
+    ship.transform.setWorldPosition(corrected);
+    ship.renderTransform.setWorldPosition(corrected);
 }

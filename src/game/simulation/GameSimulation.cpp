@@ -34,6 +34,8 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+#include "src/world/coordinates/WorldPosition.h"
+
 namespace
 {
     game::simulation::ObjectModuleSnapshot buildModuleSnapshot(
@@ -397,7 +399,7 @@ void GameSimulation::update(double dt)
 
             inputs.push_back({
                 otherId,
-                otherPos,
+                otherTransform.worldPosition,
                 other.core().desc().radarCrossSection
             });
         }
@@ -511,7 +513,12 @@ void GameSimulation::update(double dt)
             ship.core().clearHitVolumesDirty();
         }
 
-        auto detachedFragments = ship.core().detachedFragmentRuntime().buildSnapshots();
+        auto detachedFragments =
+            ship.core().detachedFragmentRuntime().buildSnapshots(
+                ship.core().transform().worldPosition
+            );
+
+
         const bool hadDetachedFragments =
             m_shipsWithDetachedFragmentPayload.find(id) != m_shipsWithDetachedFragmentPayload.end();
 
@@ -553,7 +560,13 @@ void GameSimulation::update(double dt)
 
         o.id = id;
         o.type = obj.type;
-        o.position = obj.position;
+
+        // Теперь obj.worldPosition — это настоящая double-позиция
+        // (её нужно будет добавить в структуру StaticObjectData)
+        // Истина — obj.worldPosition.
+        // position оставляем только как legacy mirror.
+        o.worldPosition = obj.worldPosition;
+        o.position = world::coordinates::legacyFloatMeters(obj.worldPosition);
         o.orientation = obj.orientation;
 
         // Вращение станции меняет только assemblyModules.
@@ -666,7 +679,10 @@ void GameSimulation::update(double dt)
         graph.hasDetachedFragments = true;
 
         graph.assemblyModules = obj.assemblyRuntime.buildSnapshots();
-        graph.detachedFragments = obj.detachedFragmentRuntime.buildSnapshots();
+        graph.detachedFragments =
+            obj.detachedFragmentRuntime.buildSnapshots(
+                obj.worldPosition
+            );
 
         m_snapshot.objects.push_back(o);
     }
@@ -761,7 +777,7 @@ EntityId GameSimulation::spawnStation(
 
     obj.id = id;
     obj.type = type; // ← ключевое изменение
-    obj.position = position;
+    obj.setWorldPositionMeters(glm::dvec3(position));
     obj.orientation = orientation;
 
     const auto& baseDesc = ObjectDescriptorRegistry::get(type);
@@ -1326,7 +1342,7 @@ void GameSimulation::updatePromoPlayerTracking(float dt)
     // Фиксируем игрока как операторскую платформу.
     const glm::vec3 playerPos {0.0f, 50.0f, 0.0f};
 
-    tr.position = playerPos;
+    tr.setWorldPositionMeters(glm::dvec3(playerPos));
     tr.forwardVelocity = 0.0f;
     tr.targetSpeed = 0.0f;
     tr.localVelocity = glm::vec3(0.0f);

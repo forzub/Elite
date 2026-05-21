@@ -11,6 +11,7 @@
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
 
+#include "src/world/coordinates/WorldPosition.h"
 namespace game::promo
 {
 
@@ -147,7 +148,7 @@ void PromoSceneScenario::spawnWing(ClientWorldState& world)
             const glm::vec3 pos =
                 computeShipPosition(group, slot, 0.0f);
 
-            ship.transform.position = pos;
+            ship.transform.setWorldPositionMeters(glm::dvec3(pos));
             ship.transform.orientation =
                 makeOrientation(
                     m_flightDir,
@@ -348,7 +349,7 @@ void PromoSceneScenario::update(
                 m_flightDir
             );
 
-        ship.transform.position = posNow;
+        ship.transform.setWorldPositionMeters(glm::dvec3(posNow));
         ship.transform.orientation =
             makeOrientation(
                 forward,
@@ -407,7 +408,9 @@ glm::vec3 PromoSceneScenario::cameraTarget(
         {
             if (ref.id == ship.id && ref.groupIndex == 1)
             {
-                sum += ship.renderTransform.position;
+                sum += world::coordinates::legacyFloatMeters(
+                    ship.renderTransform.worldPosition
+                );
                 ++count;
                 break;
             }

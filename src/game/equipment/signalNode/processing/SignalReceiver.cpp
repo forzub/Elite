@@ -10,6 +10,8 @@
 #include "world/InterferenceSource.h"
 #include "src/scene/EntityID.h"
 
+#include "src/world/coordinates/WorldPosition.h"
+
 
 static float rand01()
 {
@@ -41,7 +43,7 @@ static bool isDirectionOnly(SignalType t)
 
 void SignalReceiver::update(
     float dt,
-    const glm::vec3& receiverPos,
+    const world::coordinates::WorldPosition& receiverWorldPosition,
     const game::ReceiverModule& receiver,
     const std::vector<WorldSignal>& worldSignals,
     const std::vector<Planet>& planets,
@@ -72,14 +74,20 @@ void SignalReceiver::update(
             continue;
 
         // --- Геометрия ---
-        float distance = glm::distance(receiverPos, signal.position);
+        const glm::dvec3 signalDeltaD =
+            world::coordinates::relativeMeters(
+                signal.worldPosition,
+                receiverWorldPosition
+            );
 
-        // printf(
-        //     "[RX] signal from %s dist=%.1f power=%.1f\n",
-        //     signal.label.c_str(),
-        //     distance,
-        //     signal.power
-        // );
+        const float distance =
+            static_cast<float>(glm::length(signalDeltaD));
+
+        const glm::vec3 signalLocalToReceiver =
+            glm::vec3(signalDeltaD);
+
+      
+            
 
         // Жёсткая отсечка по максимальной дальности
         if (distance > signal.maxRange)
@@ -93,32 +101,23 @@ void SignalReceiver::update(
         // === БЛОК 3. Проверка экранирования планетами ===
         float occlusionFactor = 1.0f;
 
+        // TODO double-coordinates:
+        // Planet пока хранит glm::vec3 position. Не смешиваем его с WorldSignal.
+        // Когда Planet получит WorldPosition, вернём точную проверку occlusion.
         for (const Planet& planet : planets)
         {
-            if (isOccludedByPlanet(signal.position, receiverPos, planet))
-            {
-                occlusionFactor = 0.0f;
-                break;
-            }
+            (void)planet;
         }
 
         receivedPower *= occlusionFactor;
 
         // === БЛОК. Активные и пассивные помехи ===
         float interferencePower = 0.0f;
-        for (const InterferenceSource& src : interferenceSources)
-        {
-            // --- активные помехи можно отключить
-            if (src.type == InterferenceType::Active && !src.enabled)
-                continue;
 
-            float d = glm::distance(receiverPos, src.position);
-            if (d > src.radius)
-                continue;
-
-            // затухание помех — как у сигнала
-            interferencePower += src.power / (d * d + 1.0f);
-        }
+        // TODO double-coordinates:
+        // InterferenceSource пока хранит legacy glm::vec3.
+        // Чтобы не смешивать координатные системы, временно не учитываем помехи.
+        (void)interferenceSources;
 
         // TODO: учёт jammer-объектов как физических источников
 
@@ -168,7 +167,12 @@ void SignalReceiver::update(
         result.source = &signal;
         result.owner = signal.owner;
         
-        result.sourceWorldPos = signal.position;
+        result.sourceWorldPosition = signal.worldPosition;
+
+        // Legacy mirror: позиция источника относительно приёмника.
+        // Для старого HUD это безопаснее, чем глобальный float.
+        result.sourceWorldPos = signalLocalToReceiver;
+
         result.distance = distance;
 
         result.emittedPower = signal.power;
@@ -220,15 +224,23 @@ const std::vector<DetectedSignal>& SignalReceiver::detected() const
 // ============================================================================================
 float SignalReceiver::computeSignalStrength(
     const WorldSignal& sig,
-    const glm::vec3& receiverPos
+    const world::coordinates::WorldPosition& receiverWorldPosition
 ) const
 {
-    float dist = glm::length(sig.position - receiverPos);
-    if (dist <= 0.0f)
+    const glm::dvec3 deltaD =
+        world::coordinates::relativeMeters(
+            sig.worldPosition,
+            receiverWorldPosition
+        );
+
+    const double dist = glm::length(deltaD);
+
+    if (dist <= 0.0)
         return sig.power;
 
-    // простое затухание 1/r^2
-    return sig.power / (dist * dist);
+    return static_cast<float>(
+        sig.power / (dist * dist)
+    );
 }
 
 

@@ -47,6 +47,7 @@ void ShipSignalPresentation::update(
         WorldLabel& label = getOrCreateLabel(result);
 
         // --- DATA ---
+        label.data.worldPosition      = result.sourceWorldPosition;
         label.data.worldPos           = result.sourceWorldPos;
         label.data.semanticState      = result.semanticState;
         label.data.signalToNoiseRatio = result.signalToNoiseRatio;

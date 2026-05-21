@@ -147,17 +147,31 @@ private:
 
     void renderCelestialPass(
         const glm::mat4& view,
-        const glm::vec3& cameraPos,
+        const world::coordinates::WorldFrame& frame,
         float timeSeconds
     );
 
     void renderFarStationProxyPass(
         const ClientWorldState& world,
         const glm::mat4& view,
-        const glm::vec3& cameraPos
+        const glm::vec3& cameraPos,
+        const world::coordinates::WorldFrame& frame
     );
 
     void renderVisualShips(
+    const ClientWorldState& world,
+    const Frustum& frustum,
+    const glm::mat4& view,
+    const glm::mat4& proj,
+    const glm::vec3& cameraPos,
+    const world::coordinates::WorldFrame& frame,
+    unsigned int fillShader,
+    unsigned int edgeShader,
+    int maxVisualShipsToDraw
+);
+
+
+    void renderVisualDrones(
         const ClientWorldState& world,
         const Frustum& frustum,
         const glm::mat4& view,

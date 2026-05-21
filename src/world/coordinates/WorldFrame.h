@@ -22,12 +22,18 @@ inline glm::vec3 toLocal(
 }
 
 // Временно для старых glm::vec3, которые ещё не переведены.
-inline glm::vec3 toLocal(
-    const glm::vec3& worldPosition,
-    const WorldFrame& frame
-)
+inline glm::vec3 toLocal(const glm::vec3& worldPosition, const WorldFrame& frame)
 {
-    return worldPosition - glm::vec3(frame.origin.localMeters);
+    // Считаем полную позицию Origin в метрах как double
+    glm::dvec3 originFullMeters(
+        static_cast<double>(frame.origin.cell.x) * GalacticCellSizeM,
+        static_cast<double>(frame.origin.cell.y) * GalacticCellSizeM,
+        static_cast<double>(frame.origin.cell.z) * GalacticCellSizeM
+    );
+    originFullMeters += frame.origin.localMeters;
+    
+    // Вычитаем из worldPosition (который в float) полные метры Origin
+    return glm::vec3(glm::dvec3(worldPosition) - originFullMeters);
 }
 
 

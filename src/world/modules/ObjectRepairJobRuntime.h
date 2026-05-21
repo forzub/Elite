@@ -11,6 +11,7 @@
 #include "src/world/navigation/NavigationObstacle.h"
 #include "src/world/modules/ObjectRepairProgram.h"
 
+#include "src/world/coordinates/WorldPosition.h"
 namespace world::modules
 {
 
@@ -37,6 +38,9 @@ struct ObjectRepairJobRuntimeState
     
     ObjectRepairJobState state = ObjectRepairJobState::MovingToFragment;
     
+    // Все позиции repair runtime теперь owner-local.
+    // Это НЕ глобальный world-float.
+    // Глобальные координаты собираются только в snapshots.
     glm::vec3 dronePosition {0.0f};
     
     glm::vec3 droneVelocity {0.0f};
@@ -133,7 +137,8 @@ public:
     }
 
     std::vector<game::simulation::ObjectRepairJobSnapshot> buildSnapshots(
-        const glm::mat4& ownerModel,
+        const glm::mat4& ownerLocalModel,
+        const world::coordinates::WorldPosition& ownerWorldPosition,
         const ObjectDetachedFragmentRuntime& detachedRuntime
     ) const;
 

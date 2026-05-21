@@ -2,7 +2,7 @@
 
 #include <string>
 #include <glm/vec3.hpp>
-
+#include "src/world/coordinates/WorldPosition.h"
 
 #include "src/world/types/SignalDisplayClass.h"
 #include "src/world/types/SignalType.h"
@@ -19,7 +19,10 @@ struct WorldSignal
     SignalType              type;
     SignalDisplayClass      displayClass;
     SignalAddress           address;
-    glm::vec3               position;
+    world::coordinates::WorldPosition worldPosition;
+
+    // Legacy mirror. Не источник истины.
+    glm::vec3 position {0.0f};
     float                   power;      // базовая мощность сигнала
     float                   maxRange;   // максимальная дальность
     bool                    enabled;

@@ -3,14 +3,18 @@
 #include "world/types/SignalSemanticState.h"
 #include "src/scene/EntityID.h"
 #include "src/world/WorldSignal.h"
-
+#include "src/world/coordinates/WorldPosition.h"
 
 struct SignalReceptionResult
 {
     const WorldSignal*              source;   // <-- ВАЖНО
     EntityId                        owner;
     // --- Геометрия
-    glm::vec3                       sourceWorldPos;
+    world::coordinates::WorldPosition sourceWorldPosition;
+
+    // Legacy local/source mirror for old HUD code.
+    glm::vec3 sourceWorldPos {0.0f};
+    
     float                           distance;                  // физическая дистанция
 
     // --- Сырой сигнал

@@ -576,7 +576,57 @@ void ObjectAssemblyRegistry::init()
 
         s_registry[static_cast<uint16_t>(station.typeId)] = std::move(station);
     }
+
+    // =========================================================
+    // REPAIR DRONE DEBUG
+    // +X right, +Y up, -Z forward
+    // =========================================================
+    {
+        ObjectAssemblyDesc drone;
+        drone.typeId = ObjectType::RepairDroneDebug;
+        drone.lodSwitchDistance = DEFAULT_ASSEMBLY_LOD_SWITCH_DISTANCE;
+
+        drone.modules = {
+            module(
+                "repair_drone_body",
+                {
+                    sameMesh(
+                        "repair_drone_debug",
+                        "assets/models/drones/repair_drone_debug.obj"
+                    )
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "repair_drone"
+            )
+        };
+
+        s_registry[static_cast<uint16_t>(drone.typeId)] = std::move(drone);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 }
+
+
+
+
+
+
+
 
 bool ObjectAssemblyRegistry::has(ObjectType typeId)
 {

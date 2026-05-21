@@ -167,7 +167,7 @@ std::optional<WorldSignal> Ship::emitSignal() const
     const auto& tx = m_core.equipment().transmitter;
 
     return tx.emit(
-        m_core.transform().position,
+        m_core.transform().worldPosition,
         m_id
     );
 }

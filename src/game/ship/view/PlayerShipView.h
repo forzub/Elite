@@ -100,8 +100,7 @@ struct PlayerShipView
     void update(
         float dt,
         ShipRole role,
-        const glm::vec3& position,
-        const glm::mat4& orientation,
+        const ShipTransform& transform,
         const std::vector<game::simulation::ObjectDetachedFragmentSnapshot>& detachedFragments
     );
 

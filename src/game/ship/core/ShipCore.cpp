@@ -276,7 +276,7 @@ void ShipCore::updatePerception(
         m_equipment.radar.update(
             dt,
             radarInputs,
-            m_transform.position,
+            m_transform.worldPosition,
             m_transform.orientation
         );
 
@@ -320,7 +320,7 @@ void ShipCore::updateSignals(
 
     m_signalReceiver.update(
         dt,
-        m_transform.position,
+        m_transform.worldPosition,
         m_equipment.receiver,
         worldSignals,
         planets,
@@ -1080,8 +1080,9 @@ bool ShipCore::startRepairJobForModule(const std::string& moduleId)
     if (!m_desc)
         return false;
 
+    // Repair runtime работает в локальной системе корабля.
+    // Никакой глобальной трансляции сюда передавать нельзя.
     const glm::mat4 ownerModel =
-        glm::translate(glm::mat4(1.0f), m_transform.position) *
         m_transform.orientation;
 
         
@@ -1101,12 +1102,13 @@ bool ShipCore::startRepairJobForModule(const std::string& moduleId)
                 nullptr,
                 nullptr))
     {
-        dockWorldPosition = dock->worldPosition;
+        dockWorldPosition =
+            glm::vec3(ownerModel * glm::vec4(dock->localPosition, 1.0f));
     }
 
 
     glm::vec3 launchWorldPosition = dockWorldPosition;
-glm::vec3 recoveryWorldPosition = dockWorldPosition;
+    glm::vec3 recoveryWorldPosition = dockWorldPosition;
 
 if (const auto launch =
         resolveShipAttachment(
@@ -1116,7 +1118,8 @@ if (const auto launch =
             nullptr,
             nullptr))
 {
-    launchWorldPosition = launch->worldPosition;
+    launchWorldPosition =
+        glm::vec3(ownerModel * glm::vec4(launch->localPosition, 1.0f));
 }
 
 if (const auto recovery =
@@ -1127,7 +1130,8 @@ if (const auto recovery =
             nullptr,
             nullptr))
 {
-    recoveryWorldPosition = recovery->worldPosition;
+    recoveryWorldPosition =
+        glm::vec3(ownerModel * glm::vec4(recovery->localPosition, 1.0f));
 }
 
 
@@ -1151,7 +1155,9 @@ for (const auto* point :
                 nullptr,
                 nullptr))
     {
-        repairWorkWorldPoints.push_back(resolved->worldPosition);
+        repairWorkWorldPoints.push_back(
+            glm::vec3(ownerModel * glm::vec4(resolved->localPosition, 1.0f))
+        );
     }
 }
 
@@ -1626,9 +1632,7 @@ void ShipCore::syncDetachedFragmentsFromModuleRuntime()
     const auto& assembly =
         game::ship::geometry::AssemblyMeshLibrary::get(m_desc->typeId);
 
-    const glm::mat4 ownerModel =
-        glm::translate(glm::mat4(1.0f), m_transform.position) *
-        m_transform.orientation;
+    const glm::mat4 ownerModel =    m_transform.orientation;
 
     m_detachedFragmentRuntime.syncFromDetachedModules(
         ownerModel,
@@ -1653,9 +1657,7 @@ void ShipCore::updateRepairJobs(float dt)
     if (m_repairJobRuntime.activeJobCount() <= 0)
         return;
 
-    const glm::mat4 ownerModel =
-        glm::translate(glm::mat4(1.0f), m_transform.position) *
-        m_transform.orientation;
+    const glm::mat4 ownerModel =   m_transform.orientation;
 
     std::vector<world::navigation::NavigationObstacle> obstacles =
         buildNavigationObstaclesForRepair("");
@@ -1682,11 +1684,11 @@ std::vector<game::simulation::ObjectRepairJobSnapshot>
 ShipCore::buildRepairJobSnapshots() const
 {
     const glm::mat4 ownerModel =
-        glm::translate(glm::mat4(1.0f), m_transform.position) *
-        m_transform.orientation;
+    m_transform.orientation;
 
     return m_repairJobRuntime.buildSnapshots(
         ownerModel,
+        m_transform.worldPosition,
         m_detachedFragmentRuntime
     );
 }
@@ -1714,8 +1716,7 @@ ShipCore::buildNavigationObstaclesForRepair(
         world::navigation::buildNavigationBodiesForShip(*this);
 
     const glm::mat4 ownerModel =
-        glm::translate(glm::mat4(1.0f), m_transform.position) *
-        m_transform.orientation;
+    m_transform.orientation;
 
     const glm::mat3 ownerRotation =
         glm::mat3(ownerModel);

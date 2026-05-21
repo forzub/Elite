@@ -5,7 +5,7 @@
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 
-
+#include "src/world/coordinates/WorldPosition.h"
 
 namespace game {
 
@@ -29,7 +29,7 @@ void RadarModule::init(const RadarDesc& desc)
 void RadarModule::update(
     double dt,
     const std::vector<world::RadarContactInput>& worldObjects,
-    const glm::vec3& myWorldPos,
+    const world::coordinates::WorldPosition& myWorldPosition,
     const glm::mat4& myOrientation
 )
 {
@@ -51,9 +51,17 @@ void RadarModule::update(
 
     for (const auto& obj : worldObjects)
     {
-        glm::vec3 delta = obj.worldPosition - myWorldPos;
+        const glm::dvec3 deltaD =
+            world::coordinates::relativeMeters(
+                obj.worldPosition,
+                myWorldPosition
+            );
 
-        double distance = glm::length(delta);
+        const double distance =
+            glm::length(deltaD);
+
+        const glm::vec3 delta =
+            glm::vec3(deltaD);
 
         if (distance > m_desc.maxRange)
             continue;

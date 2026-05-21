@@ -58,8 +58,9 @@ void applyDamage(StaticObject& obj, const game::damage::DamageEvent& event)
         const auto& assembly =
             game::ship::geometry::AssemblyMeshLibrary::get(obj.type);
 
+        // Detached runtime работает в локальной системе объекта.
+        // Глобальную трансляцию сюда нельзя подмешивать.
         const glm::mat4 ownerModel =
-            glm::translate(glm::mat4(1.0f), obj.position) *
             obj.orientation;
 
         obj.detachedFragmentRuntime.syncFromDetachedModules(

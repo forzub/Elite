@@ -1,16 +1,19 @@
 #pragma once
 
 #include "src/scene/EntityId.h"
-#include <glm/vec3.hpp>
+#include "src/world/coordinates/WorldPosition.h"
 
 namespace world
 {
 
 struct RadarContactInput
 {
-    EntityId            id;
-    glm::vec3           worldPosition;
-    double              radarCrossSection;
+    EntityId id;
+
+    // Истинная глобальная позиция цели.
+    world::coordinates::WorldPosition worldPosition;
+
+    double radarCrossSection = 1.0;
 };
 
 }

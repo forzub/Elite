@@ -13,6 +13,8 @@
 #include "src/game/damage/HitComponent.h"
 #include "src/game/simulation/DebugHitVolumeSnapshot.h"
 
+#include "src/world/coordinates/WorldPosition.h"
+
 namespace world::modules
 {
 
@@ -27,6 +29,11 @@ struct ObjectDetachedFragmentRuntimeState
     std::vector<std::string> providedReplacementTags;
 
 
+    // ВАЖНО:
+    // position теперь НЕ глобальная world-float координата.
+    // Это локальная позиция фрагмента в системе владельца:
+    // ship-local / object-local.
+    // Глобальный WorldPosition строится только при сборке snapshot.
     glm::vec3 position {0.0f};
     glm::mat4 orientation {1.0f};
 
@@ -91,7 +98,9 @@ bool claimFragmentAsReplacement(
     const glm::vec3& targetHomeCenterLocal
 );
 
-    std::vector<game::simulation::ObjectDetachedFragmentSnapshot> buildSnapshots() const;
+    std::vector<game::simulation::ObjectDetachedFragmentSnapshot> buildSnapshots(
+        const world::coordinates::WorldPosition& ownerWorldPosition
+    ) const;
     
 
 private:

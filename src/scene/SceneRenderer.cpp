@@ -16,7 +16,6 @@
 #include "render/DebugGrid.h"
 #include "src/render/ship/ShipMeshRenderer.h"
 #include "src/render/ShaderLibrary.h"  // Используем существующий ShaderLibrary
-// #include "src/game/geometry/MeshLibrary.h"
 
 #include "src/debug/render/DebugLineRenderer.h"
 #include "src/debug/DebugSettings.h"
@@ -34,7 +33,6 @@
 
 #include "src/game/visual/VisualShip.h"
 #include "src/world/coordinates/WorldFrame.h"
-#include "src/game/drone/descriptors/RepairDroneDescriptor.h"
 
 
 namespace
@@ -55,44 +53,7 @@ namespace
 
 
 
-render::MeshGPU& getRepairDroneDebugMeshGpu()
-{
-    static bool loaded = false;
-    static render::MeshGPU gpu;
 
-    if (loaded)
-        return gpu;
-
-    const auto& desc =
-        game::drone::getDefaultRepairDroneDescriptor();
-
-    game::ship::geometry::MeshData mesh;
-
-    if (!game::ship::geometry::ObjLoader::load(desc.meshPath, mesh))
-    {
-        std::cout
-            << "[SceneRenderer] failed to load repair drone debug mesh: "
-            << desc.meshPath
-            << "\n";
-
-        loaded = true;
-        return gpu;
-    }
-
-    mesh.computeBounds();
-    mesh.computeBoundingSphere();
-
-    gpu.upload(mesh);
-
-    loaded = true;
-
-    std::cout
-        << "[SceneRenderer] repair drone debug mesh loaded: "
-        << desc.meshPath
-        << "\n";
-
-    return gpu;
-}
 
 
 
@@ -373,7 +334,12 @@ void renderDetachedAssemblyModules(
 
         for (const auto& module : owner.assembly->modules)
         {
-            if (module.id == fragment.moduleId)
+            const std::string meshModuleId =
+                fragment.originalModuleId.empty()
+                    ? fragment.moduleId
+                    : fragment.originalModuleId;
+
+            if (module.id == meshModuleId)
             {
                 detachedModule = &module;
                 break;
@@ -388,7 +354,7 @@ void renderDetachedAssemblyModules(
         glm::mat4 moduleModel =
             glm::translate(
                 glm::mat4(1.0f),
-                world::coordinates::toLocal(fragment.position, frame)
+                world::coordinates::toLocal(fragment.worldPosition, frame)
             ) *
             fragment.orientation;
 
@@ -482,7 +448,7 @@ glm::mat4 SceneRenderer::makePerspectiveForCurrentViewport(
 
 void SceneRenderer::renderCelestialPass(
     const glm::mat4& view,
-    const glm::vec3& cameraPos,
+    const world::coordinates::WorldFrame& frame,
     float timeSeconds
 )
 {
@@ -504,17 +470,20 @@ void SceneRenderer::renderCelestialPass(
     const float earthRadiusM = 6371000.0f;
     const float stationAltitudeM = 1200000.0f;
 
-    const glm::vec3 earthCenter {
-        0.0f,
-        -(earthRadiusM + stationAltitudeM),
-        2450.0f
-    };
-
-    world::coordinates::WorldFrame frame =
-            world::coordinates::makeLegacyFrame(cameraPos);
+    const world::coordinates::WorldPosition earthWorldPosition =
+    world::coordinates::makeWorldPositionFromMeters(
+        glm::dvec3(
+            0.0,
+            -static_cast<double>(earthRadiusM + stationAltitudeM),
+            2450.0
+        )
+    );
 
     const glm::vec3 earthCenterLocal =
-        world::coordinates::toLocal(earthCenter, frame);
+        world::coordinates::toLocal(
+            earthWorldPosition,
+            frame
+        );
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
@@ -533,7 +502,8 @@ void SceneRenderer::renderCelestialPass(
 void SceneRenderer::renderFarStationProxyPass(
     const ClientWorldState& world,
     const glm::mat4& view,
-    const glm::vec3& cameraPos
+    const glm::vec3& cameraPos,
+    const world::coordinates::WorldFrame& frame
 )
 {
     if (!m_debugLines || !m_debugLines->isInitialized())
@@ -566,20 +536,22 @@ void SceneRenderer::renderFarStationProxyPass(
         if (!obj.assembly)
             continue;
 
-        const float distance =
-            glm::length(obj.renderPosition - cameraPos);
+        const glm::vec3 objectLocalPosition =
+            world::coordinates::toLocal(
+                obj.renderWorldPosition,
+                frame
+            );
+
+const float distance =
+    glm::length(objectLocalPosition - cameraPos);
 
         if (distance <= kStationFullRenderDistance)
             continue;
 
-    world::coordinates::WorldFrame frame =
-            world::coordinates::makeLegacyFrame(cameraPos);
 
-    const glm::vec3 center =
-        world::coordinates::toLocal(
-            obj.renderPosition + obj.assembly->boundCenter,
-            frame
-        );
+
+    const glm::vec3 center = 
+        objectLocalPosition + obj.assembly->boundCenter;
 
         const float radius =
             std::max(obj.assembly->boundRadius, 1000.0f);
@@ -749,17 +721,27 @@ const glm::mat4 renderView =
     // ============================================================
     // Дальние объекты рисуются отдельными projection-матрицами.
     // Потом depth очищается, чтобы они не портили точность ближнего мира.
+    const bool isRearMonitor = (cameraName == "secondCam");
+
+    // Планеты / sky / celestial objects должны быть видны во всех камерах,
+    // включая задний монитор. Иначе при взгляде назад пропадает планета.
     renderCelestialPass(
         view,
-        cameraPos,
+        frame,
         static_cast<float>(glfwGetTime())
     );
 
-    renderFarStationProxyPass(
-        world,
-        view,
-        cameraPos
-    );
+    // Дальний proxy станции можно отключать только для маленького rear-monitor,
+    // но не для обычного главного вида, даже если он смотрит назад.
+    if (!isRearMonitor)
+    {
+        renderFarStationProxyPass(
+            world,
+            view,
+            cameraPos,
+            frame
+        );
+    }
 
     glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -835,10 +817,16 @@ const glm::mat4 renderView =
 
         const auto& ship = pair.second;
 
+        const glm::vec3 shipLocalPosition =
+            world::coordinates::toLocal(
+                ship.renderTransform.worldPosition,
+                frame
+            );
+
         glm::mat4 shipModel =
             glm::translate(
                 glm::mat4(1.0f),
-                world::coordinates::toLocal(ship.renderTransform.worldPosition, frame)
+                shipLocalPosition
             ) *
             glm::mat4(ship.renderTransform.orientation);
 
@@ -862,17 +850,17 @@ const glm::mat4 renderView =
             );
 
 
-            if (shouldDebug && dbg.publishObjectOrientation)
+           if (shouldDebug && dbg.publishObjectOrientation)
             {
                 DebugShipInfo shipInfo;
                 shipInfo.id = pair.first;
-                shipInfo.position = ship.renderTransform.position;
+                shipInfo.position = shipLocalPosition;
                 shipInfo.forward = shipForward;
                 shipInfo.up = shipUp;
                 shipInfo.right = shipRight;
                 shipInfo.radius = ship.assembly->boundRadius;
                 shipInfo.visible = visible;
-                shipInfo.distance = glm::length(ship.renderTransform.position - cameraPos);
+                shipInfo.distance = glm::length(shipLocalPosition - cameraPos);
                 shipInfo.type = "Ship";
 
                 debugData.ships.push_back(shipInfo);
@@ -941,7 +929,7 @@ const glm::mat4 renderView =
                 }
 
                 glm::vec3 moduleWorldPos = glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
-                float distToModule = glm::length(moduleWorldPos);
+                float distToModule = glm::length(moduleWorldPos - cameraPos);
                 bool useLod1 = (distToModule >= ship.assembly->lodSwitchDistance);
 
                 const float moduleRadius = safeRadiusFromHalfSize(module.boundHalfSize);
@@ -1037,31 +1025,7 @@ const glm::mat4 renderView =
                         );
                     }
 
-                    for (const auto& job : ship.repairJobs)
-                    {
-                        const auto& droneDesc =
-                            world::modules::getDefaultRepairDroneDescriptor();
-
-                        const glm::vec3 droneLocal =
-                            world::coordinates::toLocal(job.dronePosition, frame);
-
-                        glm::mat4 droneModel =
-                            glm::translate(glm::mat4(1.0f), droneLocal) *
-                            glm::scale(glm::mat4(1.0f), droneDesc.visualScale);
-
-                        const glm::mat4 droneMvp =
-                            proj * renderView * droneModel;
-
-                        m_meshRenderer.draw(
-                            getRepairDroneDebugMeshGpu(),
-                            fillShader,
-                            edgeShader,
-                            droneMvp,
-                            droneModel,
-                            shipParams,
-                            cameraPos
-                        );
-                    }
+                    
 
 
 
@@ -1129,13 +1093,13 @@ if (dbg.drawModulePivots)
         const glm::vec4 homeColor(1.0f, 0.8f, 0.2f, 1.0f);
 
         const glm::vec3 droneLocal =
-            world::coordinates::toLocal(job.dronePosition, frame);
+            world::coordinates::toLocal(job.droneWorldPosition, frame);
 
         const glm::vec3 fragmentLocal =
-            world::coordinates::toLocal(job.fragmentPosition, frame);
+            world::coordinates::toLocal(job.fragmentWorldPosition, frame);
 
         const glm::vec3 homeLocal =
-            world::coordinates::toLocal(job.homePosition, frame);
+            world::coordinates::toLocal(job.homeWorldPosition, frame);
 
         m_debugRenderer.renderCross(
             droneLocal,
@@ -1186,6 +1150,8 @@ if (dbg.drawModulePivots)
     // ============================================================
     
 
+    
+
     renderVisualShips(
         world,
         frustum,
@@ -1194,8 +1160,31 @@ if (dbg.drawModulePivots)
         cameraPos,
         frame,
         fillShader,
-        edgeShader
+        edgeShader,
+        isRearMonitor ? 64 : -1
     );
+
+
+// ============================================================
+// 1.6. РЕНДЕРИНГ Дронов
+// ============================================================
+
+
+renderVisualDrones(
+    world,
+    frustum,
+    view,
+    proj,
+    cameraPos,
+    frame,
+    fillShader,
+    edgeShader
+);
+
+
+
+
+
 
 
 // ============================================================
@@ -1213,15 +1202,22 @@ for (const auto& pair : objects)
     // --------------------------------------------------------
     if (obj.assembly)
     {
-        glm::mat4 objectBaseModel =
-            glm::translate(
-                glm::mat4(1.0f),
-                world::coordinates::toLocal(obj.renderPosition, frame)
-            ) *
-            obj.renderOrientation;
 
-        const float objectDistance =
-            glm::length(obj.renderPosition - cameraPos);
+    const glm::vec3 objectLocalPosition =
+        world::coordinates::toLocal(
+            obj.renderWorldPosition,
+            frame
+        );
+
+    glm::mat4 objectBaseModel =
+        glm::translate(
+            glm::mat4(1.0f),
+            objectLocalPosition
+        ) *
+        obj.renderOrientation;
+
+    const float objectDistance =
+        glm::length(objectLocalPosition - cameraPos);
 
         // if (
         //     obj.type == ObjectType::Station &&
@@ -1248,12 +1244,12 @@ for (const auto& pair : objects)
         {
             DebugObjectInfo objInfo;
             objInfo.id = pair.first;
-            objInfo.position = obj.renderPosition;
+            objInfo.position = objectLocalPosition;
             objInfo.forward = objectForward;
             objInfo.up = objectUp;
             objInfo.right = objectRight;
             objInfo.type = std::to_string(static_cast<int>(obj.type));
-            objInfo.distance = glm::length(obj.renderPosition - cameraPos);
+            objInfo.distance = objectDistance;
             objInfo.visible = visible;
 
             debugData.objects.push_back(objInfo);
@@ -1331,7 +1327,7 @@ for (const auto& pair : objects)
             }
 
             glm::vec3 moduleWorldPos = glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
-            float distToModule = glm::length(moduleWorldPos);
+            float distToModule = glm::length(moduleWorldPos - cameraPos);
             bool useLod1 = (distToModule >= obj.assembly->lodSwitchDistance);
 
             const float moduleRadius = safeRadiusFromHalfSize(module.boundHalfSize);
@@ -1450,6 +1446,7 @@ if (dbg.shouldDrawMeshes())
         view,
         proj,
         cameraPos,
+        frame,
         largeObjectShader,
         edgeShader,
         params
@@ -1504,7 +1501,8 @@ void SceneRenderer::renderVisualShips(
     const glm::vec3& cameraPos,
     const world::coordinates::WorldFrame& frame,
     unsigned int fillShader,
-    unsigned int edgeShader
+    unsigned int edgeShader,
+    int maxVisualShipsToDraw
 )
 {
     const auto& dbg = debug::get().render;
@@ -1516,6 +1514,13 @@ void SceneRenderer::renderVisualShips(
 int trafficCount = 0;
 int promoCount = 0;
 int otherCount = 0;
+
+
+
+
+
+
+int visualShipsActuallyDrawn = 0;
 
 for (const auto& ship : world.visualShips())
 {
@@ -1559,10 +1564,23 @@ if (frameCounter % 120 == 0)
         if (!ship.descriptor || !ship.assembly)
             continue;
 
+        if (maxVisualShipsToDraw >= 0 &&
+            visualShipsActuallyDrawn >= maxVisualShipsToDraw)
+        {
+            m_lastStats.visualShipsCulled++;
+            continue;
+        }
+
+        const glm::vec3 shipLocalPosition =
+            world::coordinates::toLocal(
+                ship.renderTransform.worldPosition,
+                frame
+            );
+
         glm::mat4 shipModel =
             glm::translate(
                 glm::mat4(1.0f),
-                world::coordinates::toLocal(ship.renderTransform.worldPosition, frame)
+                shipLocalPosition
             ) *
             glm::mat4(ship.renderTransform.orientation);
 
@@ -1589,11 +1607,11 @@ if (frameCounter % 120 == 0)
         }
 
         m_lastStats.visualShipsDrawn++;
-
+        visualShipsActuallyDrawn++;
 
 
         const float distToShip =
-            glm::length(ship.renderTransform.position - cameraPos);
+            glm::length(shipLocalPosition - cameraPos);
 
         const bool useWholeShipProxy =
             ship.assembly->hasWholeShipProxy &&
@@ -1691,11 +1709,11 @@ if (frameCounter % 120 == 0)
 
             m_lastStats.modulesDrawn++;
 
-            glm::vec3 moduleWorldPos =
+            const glm::vec3 moduleLocalPosition =
                 glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
 
             const float distToModule =
-                glm::length(moduleWorldPos);
+                glm::length(moduleLocalPosition - cameraPos);
 
             bool useLod1 =
                 distToModule >= ship.assembly->lodSwitchDistance;
@@ -2254,4 +2272,160 @@ void SceneRenderer::renderConstellationHoverOverlay(
     );
 
     glEnable(GL_DEPTH_TEST);
+}
+
+
+
+void SceneRenderer::renderVisualDrones(
+    const ClientWorldState& world,
+    const Frustum& frustum,
+    const glm::mat4& view,
+    const glm::mat4& proj,
+    const glm::vec3& cameraPos,
+    const world::coordinates::WorldFrame& frame,
+    unsigned int fillShader,
+    unsigned int edgeShader
+)
+{
+    const auto& dbg = debug::get().render;
+
+    if (!dbg.shouldDrawMeshes())
+        return;
+
+    const glm::mat4 renderView =
+        world::coordinates::makeRenderView(view);
+
+    LightingParams droneParams = LightingParams::ship();
+
+    for (const auto& drone : world.visualDrones())
+    {
+        if (!drone.visible || !drone.assembly)
+            continue;
+
+        glm::mat4 droneModel =
+            glm::translate(
+                glm::mat4(1.0f),
+                world::coordinates::toLocal(
+                    drone.renderTransform.worldPosition,
+                    frame
+                )
+            ) *
+            glm::mat4(drone.renderTransform.orientation);
+
+        if (drone.visualScale != 1.0f)
+        {
+            droneModel =
+                glm::scale(
+                    droneModel,
+                    glm::vec3(drone.visualScale)
+                );
+        }
+
+        if (!frustum.sphereVisible(
+                drone.assembly->boundCenter,
+                drone.assembly->boundRadius,
+                droneModel
+            ))
+        {
+            continue;
+        }
+
+        std::vector<QueuedMeshDraw> queuedDroneDraws;
+
+        for (const auto& module : drone.assembly->modules)
+        {
+            glm::mat4 moduleBaseModel = droneModel;
+
+            moduleBaseModel =
+                glm::translate(
+                    moduleBaseModel,
+                    module.localPosition
+                );
+
+            moduleBaseModel =
+                glm::rotate(
+                    moduleBaseModel,
+                    glm::radians(module.localRotationDeg.x),
+                    glm::vec3(1.0f, 0.0f, 0.0f)
+                );
+
+            moduleBaseModel =
+                glm::rotate(
+                    moduleBaseModel,
+                    glm::radians(module.localRotationDeg.y),
+                    glm::vec3(0.0f, 1.0f, 0.0f)
+                );
+
+            moduleBaseModel =
+                glm::rotate(
+                    moduleBaseModel,
+                    glm::radians(module.localRotationDeg.z),
+                    glm::vec3(0.0f, 0.0f, 1.0f)
+                );
+
+            glm::mat4 moduleModel = moduleBaseModel;
+
+            const float moduleRadius =
+                safeRadiusFromHalfSize(module.boundHalfSize);
+
+            if (!frustum.sphereVisible(
+                    module.boundCenter,
+                    moduleRadius,
+                    moduleModel
+                ))
+            {
+                continue;
+            }
+
+            const glm::vec3 moduleWorldPos =
+                glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
+
+            const float distToModule =
+                glm::length(moduleWorldPos);
+
+            const bool useLod1 =
+                distToModule >= drone.assembly->lodSwitchDistance;
+
+            for (const auto& part : module.meshes)
+            {
+                const glm::mat4 partModel =
+                    glm::translate(moduleModel, part.localOffset);
+
+                const float partRadius =
+                    safeRadiusFromHalfSize(part.boundHalfSize);
+
+                if (!frustum.sphereVisible(
+                        part.boundCenter,
+                        partRadius,
+                        partModel
+                    ))
+                {
+                    continue;
+                }
+
+                const glm::mat4 partMvp =
+                    proj * renderView * partModel;
+
+                const render::MeshGPU& gpu =
+                    useLod1 ? part.lod1Gpu : part.lod0Gpu;
+
+                queuedDroneDraws.push_back(
+                    QueuedMeshDraw{
+                        &gpu,
+                        partMvp,
+                        partModel
+                    }
+                );
+            }
+        }
+
+        drawQueuedMeshPasses(
+            m_meshRenderer,
+            queuedDroneDraws,
+            fillShader,
+            edgeShader,
+            droneParams,
+            cameraPos
+        );
+    }
 }

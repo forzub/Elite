@@ -17,6 +17,8 @@
 #include "src/world/navigation/TacticalCollisionMonitor.h"
 #include "src/world/navigation/ObstaclePathPlanner.h"
 
+#include "src/world/coordinates/WorldPosition.h"
+
 namespace world::modules
 {
 
@@ -178,7 +180,7 @@ static float computeAllowedSpeedForDistance(
 
 
 
-static glm::mat4 buildFragmentWorldModel(
+static glm::mat4 buildFragmentLocalModel(
     const ObjectDetachedFragmentRuntimeState& fragment
 )
 {
@@ -201,7 +203,7 @@ static glm::vec3 getFragmentCenterWorld(
 )
 {
     return glm::vec3(
-        buildFragmentWorldModel(fragment) *
+        buildFragmentLocalModel(fragment) *
         glm::vec4(getFragmentCenterLocal(fragment), 1.0f)
     );
 }
@@ -1821,7 +1823,8 @@ int ObjectRepairJobRuntime::activeJobCount() const
 
 std::vector<game::simulation::ObjectRepairJobSnapshot>
 ObjectRepairJobRuntime::buildSnapshots(
-    const glm::mat4& ownerModel,
+    const glm::mat4& ownerLocalModel,
+    const world::coordinates::WorldPosition& ownerWorldPosition,
     const ObjectDetachedFragmentRuntime& detachedRuntime
 ) const
 {
@@ -1835,21 +1838,53 @@ ObjectRepairJobRuntime::buildSnapshots(
 
 game::simulation::ObjectRepairJobSnapshot s;
 s.moduleId = job.moduleId;
+// Legacy mirror: owner-local.
 s.dronePosition = job.dronePosition;
+
+// Global WorldPosition для рендера/debug.
+s.droneWorldPosition =
+    world::coordinates::translated(
+        ownerWorldPosition,
+        glm::dvec3(job.dronePosition)
+    );
+
 s.state = static_cast<uint8_t>(job.state);
 
 if (fragment)
 {
-    s.fragmentPosition =
-        getFragmentCenterWorld(*fragment);
+    // Legacy mirrors: owner-local.
+s.fragmentPosition =
+    getFragmentCenterWorld(*fragment);
 
-    s.homePosition =
-        glm::vec3(ownerModel * glm::vec4(fragment->homeCenterLocal, 1.0f));
+s.homePosition =
+    glm::vec3(ownerLocalModel * glm::vec4(fragment->homeCenterLocal, 1.0f));
+
+// Global WorldPosition для рендера/debug.
+s.fragmentWorldPosition =
+    world::coordinates::translated(
+        ownerWorldPosition,
+        glm::dvec3(s.fragmentPosition)
+    );
+
+s.homeWorldPosition =
+    world::coordinates::translated(
+        ownerWorldPosition,
+        glm::dvec3(s.homePosition)
+    );
 }
 else
 {
-    s.fragmentPosition = job.dronePosition;
-    s.homePosition = job.dockWorldPosition;
+s.fragmentWorldPosition =
+    world::coordinates::translated(
+        ownerWorldPosition,
+        glm::dvec3(s.fragmentPosition)
+    );
+
+s.homeWorldPosition =
+    world::coordinates::translated(
+        ownerWorldPosition,
+        glm::dvec3(s.homePosition)
+    );
 }
 
 out.push_back(std::move(s));

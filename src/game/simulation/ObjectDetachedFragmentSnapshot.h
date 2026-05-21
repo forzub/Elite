@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include "src/game/simulation/DebugHitVolumeSnapshot.h"
+#include "src/world/coordinates/WorldPosition.h"
 
 namespace game::simulation
 {
@@ -15,7 +16,9 @@ struct ObjectDetachedFragmentSnapshot
     std::string moduleClass;
     std::vector<std::string> providedReplacementTags;
 
-    glm::vec3 position {0.0f};
+    world::coordinates::WorldPosition worldPosition;
+    glm::vec3 position {0.0f}; // legacy mirror 
+    
     glm::mat4 orientation {1.0f};
 
     glm::vec3 linearVelocity {0.0f};

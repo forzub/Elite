@@ -54,6 +54,31 @@ inline WorldPosition makeWorldPositionFromMeters(const glm::dvec3& meters)
     return p;
 }
 
+
+
+
+inline glm::dvec3 fullMeters(const WorldPosition& p)
+{
+    return glm::dvec3(
+        static_cast<double>(p.cell.x),
+        static_cast<double>(p.cell.y),
+        static_cast<double>(p.cell.z)
+    ) * GalacticCellSizeM + p.localMeters;
+}
+
+inline glm::vec3 legacyFloatMeters(const WorldPosition& p)
+{
+    // Только временный bridge для старого кода.
+    // Не использовать для рендера и точной логики.
+    return glm::vec3(p.localMeters);
+}
+
+
+
+
+
+
+
 inline WorldPosition translated(const WorldPosition& p, const glm::dvec3& deltaMeters)
 {
     WorldPosition out = p;

@@ -52,9 +52,12 @@ MeshGPU& MeshLibrary::get(ObjectType typeId)
         case ObjectType::Station:
             objPath = "assets/models/stantion-01.obj";
             break;
+        case ObjectType::RepairDroneDebug:
+        objPath = "assets/models/drones/repair_drone_debug.obj";
+        break;
 
         default:
-            std::cout << "[MeshLibrary] Unknown ship type\n";
+            std::cout << "[MeshLibrary] Unknown object type\n";
             break;
     }
 

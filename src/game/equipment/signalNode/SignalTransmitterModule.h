@@ -6,6 +6,7 @@
 #include "src/world/WorldSignal.h"
 #include "src/game/equipment/capabilities/IHeatSource.h"
 #include "src/game/equipment/capabilities/IPowerConsumer.h"
+#include "src/world/coordinates/WorldPosition.h"
 
 #include <optional>
 
@@ -57,7 +58,7 @@ public:
     // ───────────────
 
     std::optional<WorldSignal> emit(
-        const glm::vec3& position,
+        const world::coordinates::WorldPosition& worldPosition,
         EntityId owner
     ) const
     {
@@ -78,7 +79,8 @@ public:
         sig.address.actor   = m_payload.actor;
         sig.address.channel = m_payload.channel;
 
-        sig.position = position;
+        sig.worldPosition = worldPosition;
+        sig.position = world::coordinates::legacyFloatMeters(worldPosition);
         sig.power    = effectivePower();
         sig.maxRange = effectiveRange();
 

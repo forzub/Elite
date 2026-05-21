@@ -11,6 +11,7 @@
 #include "RadarDesc.h"
 #include "RadarContact.h"
 
+#include "src/world/coordinates/WorldPosition.h"
 
 namespace game {
 
@@ -25,7 +26,7 @@ public:
     void update(
         double dt,
         const std::vector<world::RadarContactInput>& worldObjects,
-        const glm::vec3& myWorldPos,
+        const world::coordinates::WorldPosition& myWorldPosition,
         const glm::mat4& myOrientation
     );
 

@@ -21,6 +21,10 @@ struct MathTransform
 
     void syncLegacyPositionFromWorld()
     {
+        // ВАЖНО:
+        // position больше НЕ полные глобальные метры.
+        // Это только legacy mirror внутри текущей WorldPosition cell.
+        // Нельзя использовать для рендера, дистанций, камеры, LOD.
         position = glm::vec3(worldPosition.localMeters);
     }
 
@@ -42,6 +46,43 @@ struct MathTransform
         syncLegacyPositionFromWorld();
     }
 
+
+glm::dvec3 fullWorldMeters() const
+{
+    return world::coordinates::fullMeters(worldPosition);
+}
+
+glm::vec3 localCellMeters() const
+{
+    return glm::vec3(worldPosition.localMeters);
+}
+
+glm::vec3 worldPositionToLocalCell(
+    const world::coordinates::WorldPosition& p
+) const
+{
+    return world::coordinates::relativeMetersFloat(
+        p,
+        worldPosition
+    );
+}
+
+world::coordinates::WorldPosition localCellToWorldPosition(
+    const glm::vec3& local
+) const
+{
+    return world::coordinates::translated(
+        worldPosition,
+        glm::dvec3(local)
+    );
+}
+
+
+
+
+
+
+
     glm::vec3 forward() const
     {
         return glm::normalize(glm::vec3(orientation * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)));
@@ -57,12 +98,21 @@ struct MathTransform
         return glm::normalize(glm::vec3(orientation * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f)));
     }
 
+    // LEGACY FLOAT ONLY.
+    // Не использовать для глобального мира.
+    // Только для старых локальных hit/damage/signal мест.
+
     glm::vec3 worldToLocal(const glm::vec3& world) const
     {
         const glm::vec3 relative = world - position;
         const glm::mat4 invOrientation = glm::inverse(orientation);
         return glm::vec3(invOrientation * glm::vec4(relative, 1.0f));
     }
+
+
+    // LEGACY FLOAT ONLY.
+    // Не использовать для глобального мира.
+    // Только для старых локальных hit/damage/signal мест.
 
     glm::vec3 localToWorld(const glm::vec3& local) const
     {

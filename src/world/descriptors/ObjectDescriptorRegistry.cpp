@@ -4,7 +4,7 @@
 #include "game/ship/descriptors/EliteCobraMk1.h"
 #include "game/station/descriptors/Station01.h"
 
-
+#include "src/game/drone/descriptors/RepairDroneDescriptor.h"
 
 std::unordered_map<ObjectType, std::unique_ptr<IObjectDescriptor>>
     ObjectDescriptorRegistry::registry;
@@ -30,5 +30,10 @@ void ObjectDescriptorRegistry::init()
         auto desc = std::make_unique<StationDescriptor>();
         Station1::apply(*desc);  // ← вот это ключевая строка
         registry[ObjectType::Station] = std::move(desc);
+    }
+    // ===== REPAIR DRONE DEBUG =====
+    {
+        auto desc = std::make_unique<game::drone::RepairDroneDescriptor>();
+        registry[ObjectType::RepairDroneDebug] = std::move(desc);
     }
 }

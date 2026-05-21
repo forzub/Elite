@@ -259,14 +259,17 @@ void drawQueuedMeshPasses(
 
 
 
-glm::mat4 buildAssemblyModuleModel(
+glm::mat4 buildAssemblyModuleBaseModel(
     const glm::mat4& ownerModel,
-    const game::ship::geometry::AssemblyModule& module,
-    const std::vector<game::simulation::ObjectAssemblyModuleSnapshot>& assemblyModules
+    const game::ship::geometry::AssemblyModule& module
 )
 {
     glm::mat4 moduleBaseModel = ownerModel;
-    moduleBaseModel = glm::translate(moduleBaseModel, module.localPosition);
+
+    moduleBaseModel = glm::translate(
+        moduleBaseModel,
+        module.localPosition
+    );
 
     moduleBaseModel = glm::rotate(
         moduleBaseModel,
@@ -286,11 +289,26 @@ glm::mat4 buildAssemblyModuleModel(
         glm::vec3(0.0f, 0.0f, 1.0f)
     );
 
-    glm::mat4 moduleModel = moduleBaseModel;
+    return moduleBaseModel;
+}
+
+
+
+
+
+
+glm::mat4 buildAssemblyModuleModel(
+    const glm::mat4& ownerModel,
+    const game::ship::geometry::AssemblyModule& module,
+    const std::vector<game::simulation::ObjectAssemblyModuleSnapshot>& assemblyModules
+)
+{
+    glm::mat4 moduleModel =
+        buildAssemblyModuleBaseModel(ownerModel, module);
 
     if (module.rotates)
     {
-        const float angle = findAssemblyModuleAngleRad(
+        float angle = findAssemblyModuleAngleRad(
             assemblyModules,
             module.id
         );
@@ -304,6 +322,11 @@ glm::mat4 buildAssemblyModuleModel(
 
     return moduleModel;
 }
+
+
+
+
+
 
 
 
@@ -892,42 +915,21 @@ const glm::mat4 renderView =
 
             for (const auto& module : ship.assembly->modules)
             {
-                glm::mat4 moduleBaseModel = shipModel;
-                moduleBaseModel = glm::translate(moduleBaseModel, module.localPosition);
-
-                moduleBaseModel = glm::rotate(
-                    moduleBaseModel,
-                    glm::radians(module.localRotationDeg.x),
-                    glm::vec3(1.0f, 0.0f, 0.0f)
-                );
-
-                moduleBaseModel = glm::rotate(
-                    moduleBaseModel,
-                    glm::radians(module.localRotationDeg.y),
-                    glm::vec3(0.0f, 1.0f, 0.0f)
-                );
-
-                moduleBaseModel = glm::rotate(
-                    moduleBaseModel,
-                    glm::radians(module.localRotationDeg.z),
-                    glm::vec3(0.0f, 0.0f, 1.0f)
-                );
-
-                glm::mat4 moduleModel = moduleBaseModel;
-
-                if (module.rotates)
-                {
-                    float angle = findAssemblyModuleAngleRad(
-                        ship.assemblyModules,
-                        module.id
+                glm::mat4 moduleBaseModel =
+                    buildAssemblyModuleBaseModel(
+                        shipModel,
+                        module
                     );
 
-                    moduleModel =
-                        moduleModel *
-                        glm::translate(glm::mat4(1.0f), module.pivot) *
-                        glm::rotate(glm::mat4(1.0f), angle, module.rotationAxis) *
-                        glm::translate(glm::mat4(1.0f), -module.pivot);
-                }
+                glm::mat4 moduleModel =
+                    buildAssemblyModuleModel(
+                        shipModel,
+                        module,
+                        ship.assemblyModules
+                    );
+
+                
+                
 
                 glm::vec3 moduleWorldPos = glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
                 float distToModule = glm::length(moduleWorldPos - cameraPos);
@@ -1290,42 +1292,18 @@ for (const auto& pair : objects)
 
         for (const auto& module : obj.assembly->modules)
         {
-            glm::mat4 moduleBaseModel = objectBaseModel;
-            moduleBaseModel = glm::translate(moduleBaseModel, module.localPosition);
-
-            moduleBaseModel = glm::rotate(
-                moduleBaseModel,
-                glm::radians(module.localRotationDeg.x),
-                glm::vec3(1.0f, 0.0f, 0.0f)
-            );
-
-            moduleBaseModel = glm::rotate(
-                moduleBaseModel,
-                glm::radians(module.localRotationDeg.y),
-                glm::vec3(0.0f, 1.0f, 0.0f)
-            );
-
-            moduleBaseModel = glm::rotate(
-                moduleBaseModel,
-                glm::radians(module.localRotationDeg.z),
-                glm::vec3(0.0f, 0.0f, 1.0f)
-            );
-
-            glm::mat4 moduleModel = moduleBaseModel;
-
-            if (module.rotates)
-            {
-                float angle = findAssemblyModuleAngleRad(
-                    obj.assemblyModules,
-                    module.id
+            glm::mat4 moduleBaseModel =
+                buildAssemblyModuleBaseModel(
+                    objectBaseModel,
+                    module
                 );
 
-                moduleModel =
-                    moduleModel *
-                    glm::translate(glm::mat4(1.0f), module.pivot) *
-                    glm::rotate(glm::mat4(1.0f), angle, module.rotationAxis) *
-                    glm::translate(glm::mat4(1.0f), -module.pivot);
-            }
+            glm::mat4 moduleModel =
+                buildAssemblyModuleModel(
+                    objectBaseModel,
+                    module,
+                    obj.assemblyModules
+                );
 
             glm::vec3 moduleWorldPos = glm::vec3(moduleModel * glm::vec4(0, 0, 0, 1));
             float distToModule = glm::length(moduleWorldPos - cameraPos);
@@ -1661,36 +1639,17 @@ if (frameCounter % 120 == 0)
 
         for (const auto& module : ship.assembly->modules)
         {
-            glm::mat4 moduleBaseModel = shipModel;
-
-            moduleBaseModel =
-                glm::translate(
-                    moduleBaseModel,
-                    module.localPosition
+            glm::mat4 moduleBaseModel =
+                buildAssemblyModuleBaseModel(
+                    shipModel,
+                    module
                 );
 
-            moduleBaseModel =
-                glm::rotate(
-                    moduleBaseModel,
-                    glm::radians(module.localRotationDeg.x),
-                    glm::vec3(1.0f, 0.0f, 0.0f)
+            glm::mat4 moduleModel =
+                buildAssemblyModuleBaseModel(
+                    shipModel,
+                    module
                 );
-
-            moduleBaseModel =
-                glm::rotate(
-                    moduleBaseModel,
-                    glm::radians(module.localRotationDeg.y),
-                    glm::vec3(0.0f, 1.0f, 0.0f)
-                );
-
-            moduleBaseModel =
-                glm::rotate(
-                    moduleBaseModel,
-                    glm::radians(module.localRotationDeg.z),
-                    glm::vec3(0.0f, 0.0f, 1.0f)
-                );
-
-            glm::mat4 moduleModel = moduleBaseModel;
 
             // VisualShip не имеет runtime assemblyModules.
             // Если модуль вращающийся — пока рисуем его в базовом положении.
@@ -2332,36 +2291,17 @@ void SceneRenderer::renderVisualDrones(
 
         for (const auto& module : drone.assembly->modules)
         {
-            glm::mat4 moduleBaseModel = droneModel;
-
-            moduleBaseModel =
-                glm::translate(
-                    moduleBaseModel,
-                    module.localPosition
+            glm::mat4 moduleBaseModel =
+                buildAssemblyModuleBaseModel(
+                    droneModel,
+                    module
                 );
 
-            moduleBaseModel =
-                glm::rotate(
-                    moduleBaseModel,
-                    glm::radians(module.localRotationDeg.x),
-                    glm::vec3(1.0f, 0.0f, 0.0f)
+            glm::mat4 moduleModel =
+                buildAssemblyModuleBaseModel(
+                    droneModel,
+                    module
                 );
-
-            moduleBaseModel =
-                glm::rotate(
-                    moduleBaseModel,
-                    glm::radians(module.localRotationDeg.y),
-                    glm::vec3(0.0f, 1.0f, 0.0f)
-                );
-
-            moduleBaseModel =
-                glm::rotate(
-                    moduleBaseModel,
-                    glm::radians(module.localRotationDeg.z),
-                    glm::vec3(0.0f, 0.0f, 1.0f)
-                );
-
-            glm::mat4 moduleModel = moduleBaseModel;
 
             const float moduleRadius =
                 safeRadiusFromHalfSize(module.boundHalfSize);

@@ -60,7 +60,9 @@ void DamageTestObject::applyDamage(const DamageEvent& event)
 {
     DamageEvent localEvent = event;
 
-    localEvent.position = transform.worldToLocal(event.position);
+    localEvent.setLocalPositionForResolve(
+        transform.worldPositionToLocalCell(event.worldPosition)
+    );
 
     auto result = hitComponent.resolve(localEvent);
 

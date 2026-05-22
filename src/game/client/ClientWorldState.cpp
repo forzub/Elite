@@ -311,7 +311,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.descriptor = &ObjectDescriptorRegistry::get(o.type);
 
             // Новая истинная позиция
-            state.worldPosition = o.worldPosition;
+            // state.worldPosition = o.worldPosition;
 
             // Legacy mirror — пересчитываем через relativeMetersFloat
             state.setWorldPosition(o.worldPosition);
@@ -328,8 +328,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
                 state.debugHitVolumes
             );
 
-            state.renderWorldPosition = o.worldPosition;
-            state.renderPosition = world::coordinates::legacyFloatMeters(o.worldPosition);  
+              
             
             const auto& desc = ObjectDescriptorRegistry::get(o.type);
             
@@ -350,7 +349,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         {
             auto& state = it->second;
 
-            state.worldPosition = o.worldPosition;
+            // state.worldPosition = o.worldPosition;
             state.setWorldPosition(o.worldPosition);
             state.orientation = o.orientation;
 

@@ -80,7 +80,9 @@ struct ClientObjectState
     EntityId                                        id;
     ObjectType                                      type;
     world::coordinates::WorldPosition worldPosition;
-    glm::vec3 position;
+    // Legacy mirror of worldPosition.
+    // Do not use as source of truth.
+    glm::vec3 position {0.0f};
     
     // glm::vec3                                       rotation;
     // glm::vec3                                       renderRotation;

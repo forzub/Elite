@@ -35,7 +35,9 @@ struct ObjectDetachedFragmentRuntimeState
     // ship-local / object-local.
     // Глобальный WorldPosition строится только при сборке snapshot.
     
-    glm::vec3 position {0.0f}; // legacy mirror
+    // Owner-local detached fragment position.
+    // NOT global world position.
+    glm::vec3 position {0.0f};
     glm::mat4 orientation {1.0f};
 
     glm::vec3 linearVelocity {0.0f};

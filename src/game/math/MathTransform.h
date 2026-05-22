@@ -10,12 +10,11 @@ namespace game::math
 
 struct MathTransform
 {
-    // Legacy mirror. Используется старым кодом и камерой.
-    // Это НЕ глобальная истина.
-    glm::vec3 position {0.0f, 0.0f, 0.0f};
-
-    // Новая настоящая координата мира.
     world::coordinates::WorldPosition worldPosition;
+
+    // Legacy mirror of worldPosition.
+    // Do not use as source of truth.
+    glm::vec3 position {0.0f, 0.0f, 0.0f};
 
     glm::mat4 orientation {1.0f};
 

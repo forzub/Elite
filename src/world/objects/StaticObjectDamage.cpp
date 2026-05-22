@@ -10,6 +10,16 @@ namespace world::objects
 
 void applyDamage(StaticObject& obj, const game::damage::DamageEvent& event)
 {
+    game::damage::DamageEvent localEvent = event;
+
+    localEvent.setLocalPositionForResolve(
+        world::coordinates::relativeMetersFloat(
+            event.worldPosition,
+            obj.worldPosition
+        )
+    );
+
+
     auto result = obj.hitComponent.resolve(event);
 
     if (!result.volume || !result.event)

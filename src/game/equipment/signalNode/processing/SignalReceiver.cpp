@@ -102,7 +102,6 @@ void SignalReceiver::update(
         float occlusionFactor = 1.0f;
 
         // TODO double-coordinates:
-        // Planet пока хранит glm::vec3 position. Не смешиваем его с WorldSignal.
         // Когда Planet получит WorldPosition, вернём точную проверку occlusion.
         for (const Planet& planet : planets)
         {

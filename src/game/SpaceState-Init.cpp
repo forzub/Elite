@@ -119,17 +119,7 @@ void SpaceState::initHUD()
     rear->drawCallback =
         [&](const glm::mat4& view, const glm::mat4& proj)
         {
-            // const auto& ships = m_client->world().ships();
 
-            // auto it = ships.find(m_playerId.value);
-            // if (it == ships.end())
-            //     return;
-
-            // DebugGrid::drawInfinite(
-            //     it->second.transform.position,
-            //     20000.0f,
-            //     100
-            // );
              m_sceneRenderer.render(
                 m_client->world(),
                 m_playerId,
@@ -384,31 +374,5 @@ json SpaceState::shipCoreStatusToJson(const game::ShipCoreStatus& status)
 
 void SpaceState::testDamageSystem()
 {
-    // DamageTestObject obj;
-
-    // TestDamageHandler handler;
-
-    // obj.handler = &handler;
-
-    // DamageEvent event;
-
-    // event.type = DamageType::Laser;
-    // event.energy = 10.0;
-
-    // event.position = {1,2,3};
-    // event.direction = {0,0,-1};
-
-    // DamageSystem::applyDamage(obj, event);
-
-    // event.position = {2,2,2};
-    // DamageSystem::applyDamage(obj, event);
-
-    // event.position = {100,0,0};
-    // DamageSystem::applyDamage(obj, event);
-
-    // event.position = {0,0,-2};
-    // DamageSystem::applyDamage(obj, event);
-
-    // event.position = {0,0,-4};
-    // DamageSystem::applyDamage(obj, event);
+    
 }

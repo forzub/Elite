@@ -1125,9 +1125,6 @@ bool GameSimulation::startBestRepairJobForMissingSlot(
     std::string bestSourceModuleId;
     float bestDistance2 = std::numeric_limits<float>::max();
 
-    // const glm::vec3 targetShipPos =
-    //     targetShip->core().transform().position;
-
     for (auto& [sourceId, sourceShipPtr] : m_ships)
     {
         if (!sourceShipPtr)

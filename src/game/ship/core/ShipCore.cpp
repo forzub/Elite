@@ -784,8 +784,9 @@ void ShipCore::applyDamage(const game::damage::DamageEvent& event)
 
     DamageEvent localEvent = event;
 
-    // перевод world → local
-    localEvent.position = m_transform.worldToLocal(event.position);
+    localEvent.setLocalPositionForResolve(
+        m_transform.worldPositionToLocalCell(event.worldPosition)
+    );
 
     auto result = m_hitComponent.resolve(localEvent);
     m_damageHandler.handleDamage(result);

@@ -629,7 +629,9 @@ m_playerView->updateCockpitStateFromSnapshot(
     if (m_radarWidget)
     {
         m_radarWidget->setPlayerTransform(
-            ship.renderTransform.position,
+            world::coordinates::legacyFloatMeters(
+                ship.renderTransform.worldPosition
+            ),
             ship.renderTransform.orientation
         );
 
@@ -979,7 +981,7 @@ void SpaceState::renderHUD()
     if (it == ships.end())
         return;
         
-    const glm::vec3 playerPos = it->second.renderTransform.position;
+    
 
 
     
@@ -1011,7 +1013,9 @@ void SpaceState::renderHUD()
 
                 m_playerView->renderWorldLabels(
                     m_playerView->worldLabels(),
-                    ship.renderTransform.position,
+                    world::coordinates::legacyFloatMeters(
+                        ship.renderTransform.worldPosition
+                    ),
                     m_activeMainCamera->viewMatrix(),
                     m_activeMainCamera->projectionMatrix(),
                     vp

@@ -41,8 +41,8 @@ struct ObjectRepairJobRuntimeState
     // Все позиции repair runtime теперь owner-local.
     // Это НЕ глобальный world-float.
     // Глобальные координаты собираются только в snapshots.
-    glm::vec3 dronePosition {0.0f};
-    
+
+    glm::vec3 dronePosition {0.0f}; // legacy mirror / owner-local repair runtime
     glm::vec3 droneVelocity {0.0f};
     glm::vec3 inheritedOwnerVelocity {0.0f};
     
@@ -103,6 +103,11 @@ struct ObjectRepairJobRuntimeState
     float captureApproachDistance = 0.5f;
     float captureFinalDistance = 0.25f;
     glm::vec3 towOffsetWorld {0.0f};
+
+
+
+
+    
 
 };
 

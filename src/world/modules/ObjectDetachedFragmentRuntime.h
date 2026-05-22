@@ -34,7 +34,7 @@ struct ObjectDetachedFragmentRuntimeState
     // Это локальная позиция фрагмента в системе владельца:
     // ship-local / object-local.
     // Глобальный WorldPosition строится только при сборке snapshot.
-    world::coordinates::WorldPosition worldPosition;
+    
     glm::vec3 position {0.0f}; // legacy mirror
     glm::mat4 orientation {1.0f};
 
@@ -53,23 +53,6 @@ struct ObjectDetachedFragmentRuntimeState
 
 
 
-
-    void setWorldPosition(
-        const world::coordinates::WorldPosition& p
-    )
-    {
-        worldPosition = p;
-        position = world::coordinates::legacyFloatMeters(worldPosition);
-    }
-
-    void setWorldPositionMeters(
-        const glm::dvec3& meters
-    )
-    {
-        setWorldPosition(
-            world::coordinates::makeWorldPositionFromMeters(meters)
-        );
-    }
 };
 
 class ObjectDetachedFragmentRuntime

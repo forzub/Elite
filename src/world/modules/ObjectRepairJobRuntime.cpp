@@ -232,7 +232,47 @@ static void moveFragmentCenterToWorld(
     const glm::vec3 currentCenterWorld =
         getFragmentCenterWorld(fragment);
 
-    fragment.position += desiredCenterWorld - currentCenterWorld;
+    const glm::vec3 newPosition =
+        fragment.position + (desiredCenterWorld - currentCenterWorld);
+    
+    // Fragment runtime is owner-local.
+    // Global WorldPosition is produced only in snapshots.
+    fragment.position = newPosition;
+}
+
+
+
+
+
+
+static void setDronePositionLocal(
+    ObjectRepairJobRuntimeState& job,
+    const glm::vec3& position
+)
+{
+    job.dronePosition = position;
+}
+
+static void moveDronePositionLocal(
+    ObjectRepairJobRuntimeState& job,
+    const glm::vec3& nextPosition,
+    float dt
+)
+{
+    const glm::vec3 oldPosition =
+        job.dronePosition;
+
+    job.dronePosition = nextPosition;
+
+    if (dt > 0.000001f)
+    {
+        job.droneVelocity =
+            (job.dronePosition - oldPosition) / dt;
+    }
+    else
+    {
+        job.droneVelocity = glm::vec3(0.0f);
+    }
 }
 
 
@@ -650,15 +690,23 @@ static bool updateFlyToPoint(
         }
     }
 
-    return world::navigation::updateSmallCraftNavigation(
-        job.dronePosition,
-        job.droneVelocity,
-        job.droneNav,
-        speed,
-        acceleration,
-        arrivalRadius,
-        ctx.dt
-    );
+    glm::vec3 nextDronePosition =
+    job.dronePosition;
+
+    const bool arrived =
+        world::navigation::updateSmallCraftNavigation(
+            nextDronePosition,
+            job.droneVelocity,
+            job.droneNav,
+            speed,
+            acceleration,
+            arrivalRadius,
+            ctx.dt
+        );
+
+    setDronePositionLocal(job, nextDronePosition);
+
+    return arrived;
 }
 
 
@@ -677,9 +725,12 @@ static bool updateDroneAlongCurrentPath(
     const glm::vec3 oldPosition =
         job.dronePosition;
 
+    glm::vec3 nextDronePosition =
+    job.dronePosition;
+
     const bool arrived =
         world::navigation::updateSmallCraftNavigation(
-            job.dronePosition,
+            nextDronePosition,
             job.droneVelocity,
             job.droneNav,
             maxSpeed,
@@ -687,6 +738,8 @@ static bool updateDroneAlongCurrentPath(
             arrivalRadius,
             ctx.dt
         );
+
+    setDronePositionLocal(job, nextDronePosition);
 
     if (ctx.obstacles)
     {
@@ -730,7 +783,7 @@ static bool updateDronePursuitToMovingPoint(
 
     if (distance <= arrivalRadius)
     {
-        job.dronePosition = targetPoint;
+        setDronePositionLocal(job, targetPoint);
         job.droneVelocity = glm::vec3(0.0f);
         job.droneNav.clear();
         return true;
@@ -775,7 +828,10 @@ static bool updateDronePursuitToMovingPoint(
             job.droneVelocity / speedNow * maxSpeed;
     }
 
-    job.dronePosition += job.droneVelocity * ctx.dt;
+    setDronePositionLocal(
+        job,
+        job.dronePosition + job.droneVelocity * ctx.dt
+    );
 
     return false;
 }
@@ -847,22 +903,19 @@ static bool updateTowFragmentToPoint(
     const auto& wp =
         job.droneNav.waypoints[job.droneNav.currentWaypoint];
 
-    const glm::vec3 oldDronePosition = job.dronePosition;
 
     const float maxStep =
         glm::max(0.0f, speed * ctx.dt);
 
-    job.dronePosition =
+    moveDronePositionLocal(
+        job,
         moveTowardsPoint(
             job.dronePosition,
             wp.position,
             maxStep
-        );
-
-    if (ctx.dt > 0.000001f)
-        job.droneVelocity = (job.dronePosition - oldDronePosition) / ctx.dt;
-    else
-        job.droneVelocity = glm::vec3(0.0f);
+        ),
+        ctx.dt
+    );
 
     const float dist2 =
         glm::length2(wp.position - job.dronePosition);
@@ -872,7 +925,7 @@ static bool updateTowFragmentToPoint(
 
     if (dist2 <= effectiveArrivalRadius * effectiveArrivalRadius)
     {
-        job.dronePosition = wp.position;
+        setDronePositionLocal(job, wp.position);
         job.droneVelocity = glm::vec3(0.0f);
 
         ++job.droneNav.currentWaypoint;
@@ -961,25 +1014,11 @@ static bool updateAlignFragmentToMount(
             desiredCenterWorld
         );
 
-    const glm::vec3 oldDronePosition =
-        job.dronePosition;
-
-    // Keep the drone attached to the fragment using the real latch offset.
-    // Do not recompute a synthetic mount standoff here: if the computed normal
-    // or hardcoded distance differs even slightly from the capture offset,
-    // the drone visibly snaps/"bounces" at the start of mounting.
-    job.dronePosition =
-        desiredCenterWorld - job.towOffsetWorld;
-
-    if (ctx.dt > 0.000001f)
-    {
-        job.droneVelocity =
-            (job.dronePosition - oldDronePosition) / ctx.dt;
-    }
-    else
-    {
-        job.droneVelocity = glm::vec3(0.0f);
-    }
+    moveDronePositionLocal(
+        job,
+        desiredCenterWorld - job.towOffsetWorld,
+        ctx.dt
+    );
 
     return t >= 1.0f;
 }
@@ -1013,24 +1052,11 @@ static bool updateFinalMounting(
         newCenterWorld
     );
 
-    const glm::vec3 oldDronePosition =
-        job.dronePosition;
-
-    // During final mounting the drone must remain mechanically attached to the
-    // fragment. The actual capture offset was measured when the latch happened,
-    // so reuse it instead of jumping to a new hardcoded standoff.
-    job.dronePosition =
-        newCenterWorld - job.towOffsetWorld;
-
-    if (ctx.dt > 0.000001f)
-    {
-        job.droneVelocity =
-            (job.dronePosition - oldDronePosition) / ctx.dt;
-    }
-    else
-    {
-        job.droneVelocity = glm::vec3(0.0f);
-    }
+    moveDronePositionLocal(
+        job,
+        newCenterWorld - job.towOffsetWorld,
+        ctx.dt
+    );
 
     const float dist2 =
         glm::length2(newCenterWorld - ctx.homeCenterWorld);
@@ -1092,7 +1118,7 @@ bool ObjectRepairJobRuntime::startJob(
 
     // Первый закон Ньютона:
     // дрон наследует скорость корабля при отделении.
-    job.dronePosition = dockWorldPosition;
+    setDronePositionLocal(job, dockWorldPosition);
     job.droneVelocity = ownerLinearVelocity;
     job.inheritedOwnerVelocity = ownerLinearVelocity;
 
@@ -1282,7 +1308,7 @@ for (auto& job : m_jobs)
 
     if (docked)
     {
-        job.dronePosition = job.dockWorldPosition;
+        setDronePositionLocal(job, job.dockWorldPosition);
         job.droneVelocity = glm::vec3(0.0f);
         job.droneNav.clear();
 
@@ -1596,20 +1622,15 @@ case ObjectRepairJobState::CapturingFragment:
     const glm::vec3 latchPointWorld =
         fragmentCenterWorld + outsideNormal * latchDistance;
 
-    const glm::vec3 oldDronePosition =
-        job.dronePosition;
-
-    job.dronePosition =
+    moveDronePositionLocal(
+        job,
         moveTowardsPoint(
             job.dronePosition,
             latchPointWorld,
             glm::max(job.captureAttachSpeed, job.droneSpeed * 1.5f) * ctx.dt
-        );
-
-    if (ctx.dt > 0.000001f)
-        job.droneVelocity = (job.dronePosition - oldDronePosition) / ctx.dt;
-    else
-        job.droneVelocity = glm::vec3(0.0f);
+        ),
+        ctx.dt
+    );
 
     const float dist2 =
         glm::length2(job.dronePosition - latchPointWorld);
@@ -1622,7 +1643,7 @@ case ObjectRepairJobState::CapturingFragment:
     // Жёстко фиксируем дрон в точке захвата.
     fragment->linearVelocity = glm::vec3(0.0f);
     fragment->angularVelocity = glm::vec3(0.0f);
-    job.dronePosition = latchPointWorld;
+    setDronePositionLocal(job, latchPointWorld);
     job.droneVelocity = glm::vec3(0.0f);
 
     // КРИТИЧЕСКОЕ МЕСТО:

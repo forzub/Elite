@@ -265,7 +265,16 @@ bool SignalReceiver::isOccludedByPlanet(
     rayDir = glm::normalize(rayDir);
 
     // Вектор от источника сигнала к центру планеты
-    glm::vec3 toPlanet = planet.position - signalPos;
+    const world::coordinates::WorldPosition signalWorld =
+        world::coordinates::makeWorldPositionFromMeters(
+            glm::dvec3(signalPos)
+        );
+
+    glm::vec3 toPlanet =
+        world::coordinates::relativeMetersFloat(
+            planet.worldPosition,
+            signalWorld
+        );
 
     // Проекция на луч
     float projection = glm::dot(toPlanet, rayDir);
@@ -276,7 +285,19 @@ bool SignalReceiver::isOccludedByPlanet(
 
     // Кратчайшее расстояние от центра планеты до луча
     glm::vec3 closestPoint = signalPos + rayDir * projection;
-    float distanceToPlanet = glm::distance(closestPoint, planet.position);
+        const world::coordinates::WorldPosition closestPointWorld =
+        world::coordinates::translated(
+            signalWorld,
+            glm::dvec3(closestPoint - signalPos)
+        );
+
+    float distanceToPlanet =
+        glm::length(
+            world::coordinates::relativeMetersFloat(
+                planet.worldPosition,
+                closestPointWorld
+            )
+        );
 
     // Если луч проходит через сферу — экранирование
     return distanceToPlanet < planet.radius;

@@ -16,6 +16,9 @@ enum class SmallCraftWaypointKind
 
 struct SmallCraftWaypoint
 {
+    // Local navigation-space position.
+    // Usually owner-local / repair-local.
+    // NOT global world position.
     glm::vec3 position {0.0f};
     SmallCraftWaypointKind kind = SmallCraftWaypointKind::Transit;
 };
@@ -64,6 +67,9 @@ glm::vec3 steerVelocityTowards(
     float dt
 );
 
+// Updates navigation in local float space.
+// This function must not be used for global world-coordinate movement.
+// Convert WorldPosition -> local space before calling it.
 bool updateSmallCraftNavigation(
     glm::vec3& position,
     glm::vec3& velocity,

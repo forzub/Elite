@@ -1512,18 +1512,6 @@ for (const auto& ship : world.visualShips())
         otherCount++;
 }
 
-static int frameCounter = 0;
-frameCounter++;
-
-if (frameCounter % 120 == 0)
-{
-    std::cerr
-        << "[VisualShips] total=" << world.visualShips().size()
-        << " traffic=" << trafficCount
-        << " promo=" << promoCount
-        << " other=" << otherCount
-        << std::endl;
-}
 
 
 

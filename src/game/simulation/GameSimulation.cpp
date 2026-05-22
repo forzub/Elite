@@ -394,8 +394,8 @@ void GameSimulation::update(double dt)
                 continue;
 
             Ship& other = *otherPtr;
+            
             const auto& otherTransform = other.core().transform();
-            glm::vec3 otherPos = otherTransform.position;
 
             inputs.push_back({
                 otherId,

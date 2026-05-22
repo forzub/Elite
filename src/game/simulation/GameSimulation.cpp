@@ -1151,9 +1151,15 @@ bool GameSimulation::startBestRepairJobForMissingSlot(
                 continue;
             }
 
+            const world::coordinates::WorldPosition fragmentWorldPosition =
+                world::coordinates::translated(
+                    sourceShip->core().transform().worldPosition,
+                    glm::dvec3(fragment.position)
+                );
+
             const float dist2 =
                 targetShip->core().transform().distanceSquaredToWorldPosition(
-                    fragment.worldPosition
+                    fragmentWorldPosition
                 );
 
             if (dist2 < bestDistance2)
@@ -1374,8 +1380,13 @@ void GameSimulation::updatePromoPlayerTracking(float dt)
     const glm::vec3 target =
         promoWingCenterAtTime(localTime);
 
+    const world::coordinates::WorldPosition targetWorldPosition =
+        world::coordinates::makeWorldPositionFromMeters(
+            glm::dvec3(target)
+        );
+
     glm::vec3 forward =
-        target - tr.position;
+        tr.worldPositionToLocalCell(targetWorldPosition);
 
     if (glm::length2(forward) < 0.000001f)
         forward = glm::vec3(0.0f, 0.0f, -1.0f);

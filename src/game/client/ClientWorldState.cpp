@@ -314,7 +314,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.worldPosition = o.worldPosition;
 
             // Legacy mirror — пересчитываем через relativeMetersFloat
-            state.position = world::coordinates::legacyFloatMeters(o.worldPosition);
+            state.setWorldPosition(o.worldPosition);
 
             state.orientation = o.orientation;
             state.renderOrientation = o.orientation;
@@ -351,7 +351,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             auto& state = it->second;
 
             state.worldPosition = o.worldPosition;
-            state.position = world::coordinates::legacyFloatMeters(o.worldPosition);
+            state.setWorldPosition(o.worldPosition);
             state.orientation = o.orientation;
 
             // Static object payload is sparse: for a rotating station the server sends

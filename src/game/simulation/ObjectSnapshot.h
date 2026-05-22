@@ -20,4 +20,13 @@ struct ObjectSnapshot
     // glm::vec3 rotation;
 
     game::simulation::ObjectGraphSnapshot graph;
+
+
+    void setWorldPosition(
+        const world::coordinates::WorldPosition& p
+    )
+    {
+        worldPosition = p;
+        position = world::coordinates::legacyFloatMeters(worldPosition);
+    }
 };

@@ -101,6 +101,15 @@ struct ClientObjectState
     std::unordered_set<std::string>                                 hiddenPartIds;
     std::unordered_map<std::string, float> detachedVisualAge;
     std::vector<game::simulation::DebugHitVolumeSnapshot>           debugHitVolumes;
+
+
+    void setWorldPosition(
+        const world::coordinates::WorldPosition& p
+    )
+    {
+        worldPosition = p;
+        position = world::coordinates::legacyFloatMeters(worldPosition);
+    }
 };
 
 

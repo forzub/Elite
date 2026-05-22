@@ -566,7 +566,7 @@ void GameSimulation::update(double dt)
         // Истина — obj.worldPosition.
         // position оставляем только как legacy mirror.
         o.worldPosition = obj.worldPosition;
-        o.position = world::coordinates::legacyFloatMeters(obj.worldPosition);
+        o.setWorldPosition(obj.worldPosition);
         o.orientation = obj.orientation;
 
         // Вращение станции меняет только assemblyModules.

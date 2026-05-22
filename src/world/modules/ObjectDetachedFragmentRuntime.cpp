@@ -145,7 +145,9 @@ void ObjectDetachedFragmentRuntime::update(float dt)
 
     for (auto& f : m_fragments)
     {
-        f.position += f.linearVelocity * dt;
+        f.setWorldPositionMeters(
+            glm::dvec3(f.position + f.linearVelocity * dt)
+        );
 
         const float wx = f.angularVelocity.x * dt;
         const float wy = f.angularVelocity.y * dt;
@@ -220,8 +222,8 @@ void ObjectDetachedFragmentRuntime::syncFromDetachedModules(
 
         f.homeLocalModel = localModuleModel;
 
-        f.position =
-            glm::vec3(localDetachedModuleModel * glm::vec4(0, 0, 0, 1));
+        f.setWorldPositionMeters(glm::vec3(localDetachedModuleModel * glm::vec4(0, 0, 0, 1)));
+            
 
         f.orientation = localDetachedModuleModel;
         f.orientation[3] = glm::vec4(0, 0, 0, 1);
@@ -317,14 +319,9 @@ ObjectDetachedFragmentRuntime::buildSnapshots(
         s.providedReplacementTags = f.providedReplacementTags;
         // Legacy mirror теперь хранит локальную позицию относительно владельца.
         // Не использовать как глобальную координату.
-        s.position = f.position;
+        s.setWorldPosition(f.worldPosition);
 
-        // Глобальная позиция для рендера/debug строится из ownerWorldPosition + local.
-        s.worldPosition =
-            world::coordinates::translated(
-                ownerWorldPosition,
-                glm::dvec3(f.position)
-            );
+
         s.orientation = f.orientation;
         s.homeLocalModel = f.homeLocalModel;
         s.homeCenterLocal = f.homeCenterLocal;

@@ -67,6 +67,39 @@ glm::vec3 worldPositionToLocalCell(
     );
 }
 
+
+glm::dvec3 worldPositionToLocalMetersDouble(
+    const world::coordinates::WorldPosition& p
+) const
+{
+    return world::coordinates::fullMeters(p)
+         - world::coordinates::fullMeters(worldPosition);
+}
+
+float distanceToWorldPosition(
+    const world::coordinates::WorldPosition& p
+) const
+{
+    return glm::length(
+        worldPositionToLocalCell(p)
+    );
+}
+
+float distanceSquaredToWorldPosition(
+    const world::coordinates::WorldPosition& p
+) const
+{
+    const glm::vec3 local =
+        worldPositionToLocalCell(p);
+
+    return glm::dot(local, local);
+}
+
+
+
+
+
+
 world::coordinates::WorldPosition localCellToWorldPosition(
     const glm::vec3& local
 ) const
@@ -99,8 +132,10 @@ world::coordinates::WorldPosition localCellToWorldPosition(
     }
 
     // LEGACY FLOAT ONLY.
-    // Не использовать для глобального мира.
-    // Только для старых локальных hit/damage/signal мест.
+    // Использовать только для owner-local hit/damage кода,
+    // где входные точки уже находятся в той же локальной float-системе.
+    // Запрещено использовать для глобальных world-distance,
+    // navigation, camera, render, radar, LOD.
 
     glm::vec3 worldToLocal(const glm::vec3& world) const
     {
@@ -111,8 +146,10 @@ world::coordinates::WorldPosition localCellToWorldPosition(
 
 
     // LEGACY FLOAT ONLY.
-    // Не использовать для глобального мира.
-    // Только для старых локальных hit/damage/signal мест.
+    // Использовать только для owner-local hit/damage кода,
+    // где входные точки уже находятся в той же локальной float-системе.
+    // Запрещено использовать для глобальных world-distance,
+    // navigation, camera, render, radar, LOD.
 
     glm::vec3 localToWorld(const glm::vec3& local) const
     {

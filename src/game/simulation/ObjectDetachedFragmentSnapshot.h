@@ -31,6 +31,16 @@ struct ObjectDetachedFragmentSnapshot
     std::vector<game::simulation::DebugHitVolumeSnapshot> debugHitVolumes;
     glm::mat4 homeLocalModel {1.0f};
     glm::vec3 homeCenterLocal {0.0f};
+
+
+
+    void setWorldPosition(
+        const world::coordinates::WorldPosition& p
+    )
+    {
+        worldPosition = p;
+        position = world::coordinates::legacyFloatMeters(worldPosition);
+    }
 };
 
 } // namespace game::simulation

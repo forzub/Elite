@@ -394,7 +394,7 @@ void GameSimulation::update(double dt)
                 continue;
 
             Ship& other = *otherPtr;
-            
+
             const auto& otherTransform = other.core().transform();
 
             inputs.push_back({
@@ -1125,8 +1125,8 @@ bool GameSimulation::startBestRepairJobForMissingSlot(
     std::string bestSourceModuleId;
     float bestDistance2 = std::numeric_limits<float>::max();
 
-    const glm::vec3 targetShipPos =
-        targetShip->core().transform().position;
+    // const glm::vec3 targetShipPos =
+    //     targetShip->core().transform().position;
 
     for (auto& [sourceId, sourceShipPtr] : m_ships)
     {
@@ -1152,7 +1152,9 @@ bool GameSimulation::startBestRepairJobForMissingSlot(
             }
 
             const float dist2 =
-                glm::length2(fragment.position - targetShipPos);
+                targetShip->core().transform().distanceSquaredToWorldPosition(
+                    fragment.worldPosition
+                );
 
             if (dist2 < bestDistance2)
             {

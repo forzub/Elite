@@ -54,9 +54,9 @@ struct LightingParams {
     glm::vec3 edgeFarColor = glm::vec3(0.85f, 0.85f, 0.92f);
     float edgeAlpha = 1.0f;
     float edgeThickness = 1.0f;
-    float edgeFadeStart = 500.0f;
-    float edgeFadeEnd = 5000.0f;
-    float edgeFadePower = 1.35f;
+    float edgeFadeStart = 2500.0f;
+    float edgeFadeEnd = 12000.0f;
+    float edgeFadePower = 1.15f;
 
 
     

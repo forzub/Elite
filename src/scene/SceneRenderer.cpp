@@ -179,6 +179,10 @@ namespace
         // Ближе этой дистанции станция рисуется полной модульной сборкой.
         // Дальше — только дальний proxy-силуэт.
         constexpr float kStationFullRenderDistance = 450000.0f;
+        constexpr float kVisualShipProxyRenderDistance  = 450.0f;
+        constexpr float kVisualShipFullPrepareDistance  = 520.0f;
+        constexpr float kVisualShipEdgeFullAlphaDistance = 260.0f;
+        constexpr float kVisualShipEdgeZeroAlphaDistance = 450.0f;
 
         void addCircleXz(
             DebugLineRenderer& lines,
@@ -308,21 +312,138 @@ namespace
                 );
             }
 
-            // for (const QueuedMeshDraw& draw : draws)
-            // {
-            //     if (!draw.gpu)
-            //         continue;
+            for (const QueuedMeshDraw& draw : draws)
+            {
+                if (!draw.gpu)
+                    continue;
 
-            //     meshRenderer.draw(
-            //         *draw.gpu,
-            //         0,
-            //         edgeShader,
-            //         draw.mvp,
-            //         draw.model,
-            //         params,
-            //         cameraLocalPosition
-            //     );
-            // }
+                meshRenderer.draw(
+                    *draw.gpu,
+                    0,
+                    edgeShader,
+                    draw.mvp,
+                    draw.model,
+                    params,
+                    cameraLocalPosition
+                );
+            }
+
+        }
+
+
+
+
+        void drawQueuedMeshFillOnly(
+            MeshRenderer& meshRenderer,
+            const std::vector<QueuedMeshDraw>& draws,
+            GLuint fillShader,
+            const LightingParams& params,
+            const glm::vec3& cameraLocalPosition
+        )
+        {
+            for (const QueuedMeshDraw& draw : draws)
+            {
+                if (!draw.gpu)
+                    continue;
+
+                meshRenderer.draw(
+                    *draw.gpu,
+                    fillShader,
+                    0,
+                    draw.mvp,
+                    draw.model,
+                    params,
+                    cameraLocalPosition
+                );
+            }
+        }
+
+
+
+        float smoothStep01(float x)
+        {
+            x = std::clamp(x, 0.0f, 1.0f);
+            return x * x * (3.0f - 2.0f * x);
+        }
+
+        float visualShipEdgeAlphaByDistance(float distance)
+        {
+            const float a = kVisualShipEdgeFullAlphaDistance;
+            const float b = kVisualShipEdgeZeroAlphaDistance;
+
+            if (distance <= a)
+                return 1.0f;
+
+            if (distance >= b)
+                return 0.0f;
+
+            const float t =
+                (distance - a) / (b - a);
+
+            return 1.0f - smoothStep01(t);
+        }
+
+
+
+
+
+        void drawQueuedVisualShipMeshPasses(
+            MeshRenderer& meshRenderer,
+            const std::vector<QueuedMeshDraw>& draws,
+            GLuint fillShader,
+            GLuint edgeShader,
+            const LightingParams& params,
+            const glm::vec3& cameraLocalPosition
+        )
+        {
+            // Fill рисуем всегда.
+            for (const QueuedMeshDraw& draw : draws)
+            {
+                if (!draw.gpu)
+                    continue;
+
+                meshRenderer.draw(
+                    *draw.gpu,
+                    fillShader,
+                    0,
+                    draw.mvp,
+                    draw.model,
+                    params,
+                    cameraLocalPosition
+                );
+            }
+
+            // Edges рисуем только в ближней зоне и с плавной прозрачностью.
+            for (const QueuedMeshDraw& draw : draws)
+            {
+                if (!draw.gpu)
+                    continue;
+
+                const glm::vec3 localPos =
+                    glm::vec3(draw.model * glm::vec4(0, 0, 0, 1));
+
+                const float distance =
+                    glm::length(localPos - cameraLocalPosition);
+
+                const float alpha =
+                    visualShipEdgeAlphaByDistance(distance);
+
+                if (alpha <= 0.01f)
+                    continue;
+
+                LightingParams edgeParams = params;
+                edgeParams.edgeAlpha *= alpha;
+
+                meshRenderer.draw(
+                    *draw.gpu,
+                    0,
+                    edgeShader,
+                    draw.mvp,
+                    draw.model,
+                    edgeParams,
+                    cameraLocalPosition
+                );
+            }
         }
 
 
@@ -907,9 +1028,11 @@ PreparedScene SceneRenderer::prepareScene(
             const float distToShip =
                 glm::length(shipLocalPosition);
 
+            
+
             const bool willUseWholeShipProxy =
                 ship.assembly->hasWholeShipProxy &&
-                distToShip > 250.0f;
+                distToShip > kVisualShipFullPrepareDistance;
 
             if (willUseWholeShipProxy)
                 continue;
@@ -1722,9 +1845,11 @@ profileAfterSetupMs = renderProfileNowMs();
                 std::unordered_map<const render::MeshGPU*, std::vector<glm::mat4>> proxyInstanceGroups;
                 proxyInstanceGroups.reserve(8);
 
-
-                std::unordered_map<const render::MeshGPU*, std::vector<glm::mat4>> proxyEdgeInstanceGroups;
-                proxyEdgeInstanceGroups.reserve(8);
+                // Proxy edges временно отключены.
+                // Полная edge-сетка proxy-меша на дальних кораблях даёт "медуз".
+                // Для proxy пока оставляем только instanced fill.
+                // std::unordered_map<const render::MeshGPU*, std::vector<glm::mat4>> proxyEdgeInstanceGroups;
+                // proxyEdgeInstanceGroups.reserve(8);
 
                 // Дальше этого расстояния edges для proxy ships вообще не рисуем.
                 // Не делаем коротким: пусть силуэт держится достаточно долго.
@@ -1759,9 +1884,11 @@ profileAfterSetupMs = renderProfileNowMs();
                     const float distToShip =
                         glm::length(shipLocalPosition - cameraLocalPosition);
 
+                    
+
                     const bool useWholeShipProxy =
                         ship.hasWholeShipProxy &&
-                        distToShip > 250.0f;
+                        distToShip > kVisualShipProxyRenderDistance;
 
                     visualShipVisible[i] = 1;
                     visualShipUseProxy[i] = useWholeShipProxy ? 1 : 0;
@@ -1774,10 +1901,13 @@ profileAfterSetupMs = renderProfileNowMs();
                         m_lastStats.visualProxyShipsDrawn++;
 
                         proxyInstanceGroups[ship.wholeShipProxyGpu].push_back(ship.model);
-                        if (distToShip <= kProxyEdgeFadeEnd)
-                        {
-                            proxyEdgeInstanceGroups[ship.wholeShipProxyGpu].push_back(ship.model);
-                        }
+                        
+                        // Proxy edge-pass отключён намеренно.
+                        // Дальние proxy с полной edge-сеткой выглядят как артефактные "медузы".
+                        // if (distToShip <= kProxyEdgeFadeEnd)
+                        // {
+                        //     proxyEdgeInstanceGroups[ship.wholeShipProxyGpu].push_back(ship.model);
+                        // }
 
                             m_lastStats.partsDrawn++;
                             m_lastStats.visualShipPartsDrawn++;
@@ -1826,32 +1956,32 @@ profileAfterSetupMs = renderProfileNowMs();
 
 
 
-                        GLuint instancedEdgeShader =
-                            ShaderLibrary::instance().get("edge_shader_instanced");
+                        // GLuint instancedEdgeShader =
+                        //     ShaderLibrary::instance().get("edge_shader_instanced");
 
-                        if (instancedEdgeShader != 0)
-                        {
-                            for (const auto& group : proxyEdgeInstanceGroups)
-                            {
-                                const render::MeshGPU* gpu = group.first;
-                                const std::vector<glm::mat4>& models = group.second;
+                        // if (instancedEdgeShader != 0)
+                        // {
+                        //     for (const auto& group : proxyEdgeInstanceGroups)
+                        //     {
+                        //         const render::MeshGPU* gpu = group.first;
+                        //         const std::vector<glm::mat4>& models = group.second;
 
-                                if (!gpu || models.empty())
-                                    continue;
+                        //         if (!gpu || models.empty())
+                        //             continue;
 
-                                m_meshRenderer.drawEdgesInstanced(
-                                    *gpu,
-                                    instancedEdgeShader,
-                                    vpInstanced,
-                                    models,
-                                    cameraLocalPosition,
-                                    kProxyEdgeFadeStart,
-                                    kProxyEdgeFadeEnd,
-                                    glm::vec3(0.18f, 0.78f, 1.0f),
-                                    0.72f
-                                );
-                            }
-                        }
+                        //         m_meshRenderer.drawEdgesInstanced(
+                        //             *gpu,
+                        //             instancedEdgeShader,
+                        //             vpInstanced,
+                        //             models,
+                        //             cameraLocalPosition,
+                        //             kProxyEdgeFadeStart,
+                        //             kProxyEdgeFadeEnd,
+                        //             glm::vec3(0.18f, 0.78f, 1.0f),
+                        //             0.72f
+                        //         );
+                        //     }
+                        // }
                 }
                 else
                 {
@@ -1877,11 +2007,10 @@ profileAfterSetupMs = renderProfileNowMs();
                         }
                     }
 
-                    drawQueuedMeshPasses(
+                    drawQueuedMeshFillOnly(
                         m_meshRenderer,
                         queuedProxyDraws,
                         fillShader,
-                        edgeShader,
                         shipParams,
                         cameraLocalPosition
                     );
@@ -1959,7 +2088,7 @@ profileAfterSetupMs = renderProfileNowMs();
                     m_lastStats.drawCalls += 2;
                 }
 
-                drawQueuedMeshPasses(
+                drawQueuedVisualShipMeshPasses(
                     m_meshRenderer,
                     queuedVisualShipMeshDraws,
                     fillShader,
@@ -2690,11 +2819,10 @@ for (const auto& ship : world.visualShips())
                 m_lastStats.visualShipPartsDrawn++;
                 m_lastStats.drawCalls += 2;
 
-            drawQueuedMeshPasses(
+            drawQueuedMeshFillOnly(
                 m_meshRenderer,
                 proxyDraws,
                 fillShader,
-                edgeShader,
                 shipParams,
                 cameraLocalPosition
             );
@@ -2790,11 +2918,10 @@ for (const auto& ship : world.visualShips())
             }
         }
 
-        drawQueuedMeshPasses(
+        drawQueuedMeshFillOnly(
             m_meshRenderer,
             queuedVisualShipMeshDraws,
             fillShader,
-            edgeShader,
             shipParams,
             cameraLocalPosition
         );

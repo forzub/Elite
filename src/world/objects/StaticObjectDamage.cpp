@@ -20,7 +20,7 @@ void applyDamage(StaticObject& obj, const game::damage::DamageEvent& event)
     );
 
 
-    auto result = obj.hitComponent.resolve(event);
+    auto result = obj.hitComponent.resolve(localEvent);
 
     if (!result.volume || !result.event)
         return;
@@ -30,7 +30,7 @@ void applyDamage(StaticObject& obj, const game::damage::DamageEvent& event)
         return;
 
     float effectiveDamage =
-        static_cast<float>(event.energy * 0.1) - volume->armor;
+        static_cast<float>(localEvent.energy * 0.1) - volume->armor;
 
     if (effectiveDamage < 0.0f)
         effectiveDamage = 0.0f;

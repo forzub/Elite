@@ -115,19 +115,39 @@ void SpaceState::initHUD()
     rear->camera                = &m_playerView->camera(ShipCameraMode::Rear);
     rear->borderColor           = {0.2f, 0.8f, 1.0f};
 
+
+    SceneRenderPolicy rearPolicy;
+    rearPolicy.drawLabels = false;
+    rearPolicy.drawDebug = false;
+    rearPolicy.drawFarStationProxy = false;
+    rearPolicy.maxVisualShipsToDraw = 64;
+
  
     rear->drawCallback =
         [&](const glm::mat4& view, const glm::mat4& proj)
         {
 
-             m_sceneRenderer.render(
-                m_client->world(),
-                m_playerId,
-                view,
-                proj,
-                1,
-                "secondCam"
-            );
+            //  m_sceneRenderer.render(
+            //     m_client->world(),
+            //     m_playerId,
+            //     view,
+            //     proj,
+            //     1,
+            //     "secondCam",
+            //     rearPolicy
+            // );
+
+            SceneCameraParams rearCamera;
+                rearCamera.view = view;
+                rearCamera.proj = proj;
+                rearCamera.cameraId = 1;
+                rearCamera.cameraName = "secondCam";
+
+                m_sceneRenderer.renderPrepared(
+                    m_preparedScene,
+                    rearCamera,
+                    rearPolicy
+                );
 
             m_perfRearStats = m_sceneRenderer.lastStats();
         };

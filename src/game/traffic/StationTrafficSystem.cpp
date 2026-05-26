@@ -3,6 +3,7 @@
 #include <cmath>
 #include <string>
 #include <algorithm>
+#include <fstream>
 
 #include <glm/gtx/norm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -17,7 +18,7 @@ namespace game::traffic
 
 namespace
 {
-constexpr int TrafficShipCount = 500;
+constexpr int TrafficShipCount = 1500;
 
 constexpr float TwoPi = 6.28318530718f;
 
@@ -133,6 +134,8 @@ void StationTrafficSystem::spawnTraffic(ClientWorldState& world)
 {
     auto& visualShips = world.visualShips();
 
+    
+
     std::cout
         << "[StationTraffic] spawnTraffic BEGIN visualShips="
         << visualShips.size()
@@ -198,7 +201,10 @@ void StationTrafficSystem::spawnTraffic(ClientWorldState& world)
         const glm::vec3 forward =
             computeForward(traffic);
 
+
+               
         visual.transform.setWorldPositionMeters(glm::dvec3(pos));
+
         visual.renderTransform.setWorldPosition(visual.transform.worldPosition);
 
         visual.transform.orientation =
@@ -207,8 +213,10 @@ void StationTrafficSystem::spawnTraffic(ClientWorldState& world)
         visual.renderTransform = visual.transform;
         visual.velocity = forward * traffic.linearSpeed;
 
+        traffic.visualIndex = visualShips.size();
         visualShips.push_back(visual);
         m_ships.push_back(traffic);
+
     }
 
 
@@ -232,95 +240,99 @@ auto& visualShips = world.visualShips();
 
 for (auto& traffic : m_ships)
 {
+    if (traffic.visualIndex >= visualShips.size())
+        continue;
+
+    auto& visual =
+        visualShips[traffic.visualIndex];
+
+    // Защита на случай, если visualShips был пересобран/почищен,
+    // а индексы traffic ещё не обновлены.
+    if (visual.id != traffic.id)
+        continue;
+
     const float safeRadius =
         std::max(traffic.radius, 1.0f);
 
     const float angularSpeed =
         traffic.linearSpeed / safeRadius;
 
-    traffic.phase =
-        std::fmod(
-            traffic.basePhase +
-            static_cast<float>(m_trafficTime) * angularSpeed,
-            TwoPi
+    traffic.phase +=
+        static_cast<double>(angularSpeed) *
+        static_cast<double>(dt);
+
+    const glm::vec3 pos =
+        computePosition(traffic);
+
+    const glm::vec3 forward =
+        computeForward(traffic);
+
+    const glm::mat4 targetOrientation =
+        makeOrientation(
+            forward,
+            {0.0f, 1.0f, 0.0f}
         );
 
-        const glm::vec3 pos =
-            computePosition(traffic);
+    visual.transform.setWorldPositionMeters(
+        glm::dvec3(pos)
+    );
 
-        const glm::vec3 forward =
-            computeForward(traffic);
+    visual.transform.orientation =
+        targetOrientation;
 
-        for (auto& visual : visualShips)
-        {
-            if (visual.id != traffic.id)
-                continue;
+    visual.renderTransform =
+        visual.transform;
 
-            const glm::mat4 targetOrientation =
-                makeOrientation(forward, {0.0f, 1.0f, 0.0f});
+    visual.velocity =
+        forward * traffic.linearSpeed;
+}
 
-            visual.transform.setWorldPositionMeters(glm::dvec3(pos));
-            visual.transform.orientation = targetOrientation;
-
-            visual.renderTransform = visual.transform;
-            visual.velocity = forward * traffic.linearSpeed;
-
-            // Для локального visual traffic нет сетевой интерполяции.
-            // Сглаживание тут создаёт резиновый лаг при сближении с камерой.
-
-
-
-
-                        break;
-                    }
-    }
 }
 
 glm::vec3 StationTrafficSystem::computePosition(
     const TrafficShip& ship
 ) const
 {
-    const float a =
+    const double a =
         ship.phase + ship.laneOffset;
 
-    const float x =
-        std::cos(a) * ship.radius;
+    const double x =
+    std::cos(a) * static_cast<double>(ship.radius);
 
-    const float z =
-        std::sin(a) * ship.radius;
+const double z =
+    std::sin(a) * static_cast<double>(ship.radius);
 
-    float y =
-        ship.height + std::sin(a * 2.0f + ship.laneTilt) * 180.0f;
+double y =
+    static_cast<double>(ship.height) +
+    std::sin(a * 2.0 + static_cast<double>(ship.laneTilt)) * 180.0;
 
-    if (ship.routeType == 1)
-    {
-        y += std::sin(a * 0.5f) * 420.0f;
-    }
-    else if (ship.routeType == 2)
-    {
-        y += std::cos(a * 0.75f) * 260.0f;
-    }
+if (ship.routeType == 1)
+{
+    y += std::sin(a * 0.5) * 420.0;
+}
+else if (ship.routeType == 2)
+{
+    y += std::cos(a * 0.75) * 260.0;
+}
 
-    // Станция у тебя сейчас стоит около {0, 2150, 2450}.
-    // Трафик строим вокруг неё.
-    return {
-        x,
-        2150.0f + y,
-        2450.0f + z
-    };
+return {
+    static_cast<float>(x),
+    static_cast<float>(2150.0 + y),
+    static_cast<float>(2450.0 + z)
+};
 }
 
 glm::vec3 StationTrafficSystem::computeForward(
     const TrafficShip& ship
 ) const
 {
-    const float a =
+    const double  a =
         ship.phase + ship.laneOffset;
 
     glm::vec3 tangent {
-        -std::sin(a),
-        0.05f * std::cos(a * 2.0f + ship.laneTilt),
-        std::cos(a)
+        static_cast<float>(-std::sin(a)),
+        static_cast<float>(0.05 * std::cos(a * 2.0 + static_cast<double>(ship.laneTilt))),
+        static_cast<float>(std::cos(a))
     };
 
     if (ship.routeType == 1)

@@ -19,6 +19,17 @@ void InitShaders()
         ShaderProgram::MeshFill
     );
 
+
+
+    shaders.load(
+        "mesh_fill_instanced",
+        "assets/shaders/mesh/mesh_fill_instanced.vert",
+        "assets/shaders/mesh/mesh_fill.frag",
+        ShaderProgram::MeshFill
+    );
+
+
+
     shaders.load(
         "edge_shader",
         "assets/shaders/mesh/edge.vert",
@@ -26,6 +37,15 @@ void InitShaders()
         "assets/shaders/mesh/edge.frag",
         ShaderProgram::Edge
     );
+
+
+    shaders.load(
+        "edge_shader_instanced",
+        "assets/shaders/mesh/edge_instanced.vert",
+        "assets/shaders/mesh/edge_instanced.frag",
+        ShaderProgram::MeshFill
+    );
+
 
     shaders.load(
         "large_object_shader",

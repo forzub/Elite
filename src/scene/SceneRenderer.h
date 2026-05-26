@@ -19,6 +19,9 @@
 #include "src/render/planet/PlanetWireRenderer.h"
 #include "src/world/coordinates/WorldFrame.h"
 
+
+#include "src/scene/PreparedScene.h"
+
 // Forward declaration
 class DebugLineRenderer;
 
@@ -93,7 +96,19 @@ struct SceneRenderStats
 
 
 
+struct SceneRenderPolicy
+{
+    bool drawStarfield = true;
+    bool drawCelestial = true;
+    bool drawFarStationProxy = true;
+    bool drawLabels = true;
+    bool drawDebug = true;
+    bool drawVisualShips = true;
+    bool drawVisualDrones = true;
+    bool drawObjects = true;
 
+    int maxVisualShipsToDraw = -1;
+};
 
 
 
@@ -104,14 +119,31 @@ class SceneRenderer
 public:
     SceneRenderer();
     ~SceneRenderer() = default;
+
+    bool initializeStaticResources();
+
+
+    PreparedScene prepareScene(
+        const ClientWorldState& world,
+        EntityId playerId
+    );
+
+    void renderPrepared(
+        const PreparedScene& prepared,
+        const SceneCameraParams& camera,
+        const SceneRenderPolicy& policy
+    );
+
+
     
     void render(const ClientWorldState& world,
-                EntityId playerId,
-                const glm::mat4& view,
-                const glm::mat4& proj,
-                int cameraId,           
-                const std::string& cameraName
-            );
+            EntityId playerId,
+            const glm::mat4& view,
+            const glm::mat4& proj,
+            int cameraId,
+            const std::string& cameraName,
+            const SceneRenderPolicy& policy
+        );  
 
     // --- DEBUG ---
     void setDebugCallback(std::function<void(const DebugFrameData&)> callback)
@@ -144,6 +176,18 @@ private:
         float nearPlane,
         float farPlane
     ) const;
+
+
+    void renderInternal(
+    const PreparedScene& prepared,
+    const glm::mat4& view,
+    const glm::mat4& proj,
+    int cameraId,
+    const std::string& cameraName,
+    const SceneRenderPolicy& policy
+);
+
+
 
     void renderCelestialPass(
         const glm::mat4& view,

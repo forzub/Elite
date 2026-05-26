@@ -1,6 +1,7 @@
 #include "MeshRenderer.h"
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
+
 #include "src/render/ShaderProgram.h"
 #include "src/render/ShaderLibrary.h"
 #include "src/game/geometry/MeshGPU.h"
@@ -102,3 +103,146 @@ void MeshRenderer::draw(
 
 
 
+void MeshRenderer::drawInstanced(
+    const render::MeshGPU& mesh,
+    GLuint meshShader,
+    const glm::mat4& vp,
+    const std::vector<glm::mat4>& models,
+    const LightingParams& lighting,
+    const glm::vec3& cameraPos
+)
+{
+    if (!meshShader || models.empty())
+        return;
+
+    // Переиспользуем lighting uniforms от обычного mesh_fill.
+    // MVP/M/normalMat он тоже выставит, но instanced shader их не использует.
+    lighting.applyShipUniforms(
+        meshShader,
+        glm::mat4(1.0f),
+        glm::mat4(1.0f),
+        cameraPos
+    );
+
+    glUseProgram(meshShader);
+
+    GLint vpLoc =
+        glGetUniformLocation(meshShader, "VP");
+
+    if (vpLoc != -1)
+    {
+        glUniformMatrix4fv(
+            vpLoc,
+            1,
+            GL_FALSE,
+            glm::value_ptr(vp)
+        );
+    }
+
+    glDisable(GL_POLYGON_OFFSET_FILL);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
+
+    mesh.drawInstanced(models);
+
+    glUseProgram(0);
+}
+
+
+
+
+
+void MeshRenderer::drawEdgesInstanced(
+    const render::MeshGPU& mesh,
+    GLuint edgeShader,
+    const glm::mat4& vp,
+    const std::vector<glm::mat4>& models,
+    const glm::vec3& cameraPos,
+    float edgeFadeStart,
+    float edgeFadeEnd,
+    const glm::vec3& edgeColor,
+    float edgeIntensity
+)
+{
+    if (!edgeShader || models.empty())
+        return;
+
+    glUseProgram(edgeShader);
+
+    GLint vpLoc =
+        glGetUniformLocation(edgeShader, "VP");
+
+    if (vpLoc != -1)
+    {
+        glUniformMatrix4fv(
+            vpLoc,
+            1,
+            GL_FALSE,
+            glm::value_ptr(vp)
+        );
+    }
+
+    GLint cameraLoc =
+        glGetUniformLocation(edgeShader, "cameraPos");
+
+    if (cameraLoc != -1)
+    {
+        glUniform3fv(
+            cameraLoc,
+            1,
+            glm::value_ptr(cameraPos)
+        );
+    }
+
+    GLint fadeStartLoc =
+        glGetUniformLocation(edgeShader, "edgeFadeStart");
+
+    if (fadeStartLoc != -1)
+    {
+        glUniform1f(fadeStartLoc, edgeFadeStart);
+    }
+
+    GLint fadeEndLoc =
+        glGetUniformLocation(edgeShader, "edgeFadeEnd");
+
+    if (fadeEndLoc != -1)
+    {
+        glUniform1f(fadeEndLoc, edgeFadeEnd);
+    }
+
+    GLint colorLoc =
+        glGetUniformLocation(edgeShader, "edgeColor");
+
+    if (colorLoc != -1)
+    {
+        glUniform3fv(
+            colorLoc,
+            1,
+            glm::value_ptr(edgeColor)
+        );
+    }
+
+    GLint intensityLoc =
+        glGetUniformLocation(edgeShader, "edgeIntensity");
+
+    if (intensityLoc != -1)
+    {
+        glUniform1f(intensityLoc, edgeIntensity);
+    }
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glDepthMask(GL_FALSE);
+
+    mesh.drawEdgesInstanced(models);
+
+    glDepthMask(GL_TRUE);
+
+    glUseProgram(0);
+}

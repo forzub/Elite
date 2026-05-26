@@ -13,6 +13,8 @@
 #include <glm/common.hpp>
 
 #include "src/world/coordinates/WorldPosition.h"
+#include <fstream>
+#include <iomanip>
 
 namespace
 {
@@ -28,77 +30,77 @@ namespace
         return state == 3 || state == 4;
     }
 
-float renderSmoothingAlpha(float dt, float responsiveness)
-{
-    dt = glm::clamp(dt, 0.0f, 0.05f);
-    return 1.0f - std::exp(-responsiveness * dt);
-}
-
-glm::mat4 smoothOrientationMatrix(
-    const glm::mat4& current,
-    const glm::mat4& target,
-    float alpha
-)
-{
-    glm::quat a = glm::normalize(glm::quat_cast(current));
-    glm::quat b = glm::normalize(glm::quat_cast(target));
-
-    glm::quat q =
-        glm::slerp(
-            a,
-            b,
-            glm::clamp(alpha, 0.0f, 1.0f)
-        );
-
-    return glm::mat4_cast(glm::normalize(q));
-}
-
-ShipTransform smoothShipRenderTransform(
-    const ShipTransform& current,
-    const ShipTransform& target,
-    float dt
-)
-{
-    ShipTransform out = target;
-
-    const glm::dvec3 worldDelta =
-        world::coordinates::relativeMeters(
-            target.worldPosition,
-            current.worldPosition
-        );
-
-    const double error = glm::length(worldDelta);
-
-    if (error > 500.0)
+    float renderSmoothingAlpha(float dt, float responsiveness)
     {
-        out.setWorldPosition(target.worldPosition);
-        out.orientation = target.orientation;
-        return out;
+        dt = glm::clamp(dt, 0.0f, 0.05f);
+        return 1.0f - std::exp(-responsiveness * dt);
     }
 
-    const float posAlpha =
-        renderSmoothingAlpha(dt, 18.0f);
+    glm::mat4 smoothOrientationMatrix(
+        const glm::mat4& current,
+        const glm::mat4& target,
+        float alpha
+    )
+    {
+        glm::quat a = glm::normalize(glm::quat_cast(current));
+        glm::quat b = glm::normalize(glm::quat_cast(target));
 
-    const float rotAlpha =
-        renderSmoothingAlpha(dt, 22.0f);
+        glm::quat q =
+            glm::slerp(
+                a,
+                b,
+                glm::clamp(alpha, 0.0f, 1.0f)
+            );
 
-    const world::coordinates::WorldPosition smoothedWorld =
-        world::coordinates::translated(
-            current.worldPosition,
-            worldDelta * static_cast<double>(posAlpha)
-        );
+        return glm::mat4_cast(glm::normalize(q));
+    }
 
-    out.setWorldPosition(smoothedWorld);
+    ShipTransform smoothShipRenderTransform(
+        const ShipTransform& current,
+        const ShipTransform& target,
+        float dt
+    )
+    {
+        ShipTransform out = target;
 
-    out.orientation =
-        smoothOrientationMatrix(
-            current.orientation,
-            target.orientation,
-            rotAlpha
-        );
+        const glm::dvec3 worldDelta =
+            world::coordinates::relativeMeters(
+                target.worldPosition,
+                current.worldPosition
+            );
 
-    return out;
-}
+        const double error = glm::length(worldDelta);
+
+        if (error > 500.0)
+        {
+            out.setWorldPosition(target.worldPosition);
+            out.orientation = target.orientation;
+            return out;
+        }
+
+        const float posAlpha =
+            renderSmoothingAlpha(dt, 18.0f);
+
+        const float rotAlpha =
+            renderSmoothingAlpha(dt, 22.0f);
+
+        const world::coordinates::WorldPosition smoothedWorld =
+            world::coordinates::translated(
+                current.worldPosition,
+                worldDelta * static_cast<double>(posAlpha)
+            );
+
+        out.setWorldPosition(smoothedWorld);
+
+        out.orientation =
+            smoothOrientationMatrix(
+                current.orientation,
+                target.orientation,
+                rotAlpha
+            );
+
+        return out;
+    }
 
     
 
@@ -216,7 +218,117 @@ ShipTransform smoothShipRenderTransform(
                 state.hiddenPartIds.insert(partId);
         }
     }
+
+
+
+
+
+const game::simulation::ObjectAssemblyModuleSnapshot* findAssemblyModuleById(
+    const std::vector<game::simulation::ObjectAssemblyModuleSnapshot>& modules,
+    const std::string& moduleId
+)
+{
+    for (const auto& m : modules)
+    {
+        if (m.moduleId == moduleId)
+            return &m;
+    }
+
+    return nullptr;
 }
+
+float interpolateAngleRad(
+    float from,
+    float to,
+    float t
+)
+{
+    const float delta =
+        std::atan2(
+            std::sin(to - from),
+            std::cos(to - from)
+        );
+
+    return from + delta * glm::clamp(t, 0.0f, 1.0f);
+}
+
+std::vector<game::simulation::ObjectAssemblyModuleSnapshot>
+interpolateAssemblyModules(
+    const std::vector<game::simulation::ObjectAssemblyModuleSnapshot>& olderModules,
+    const std::vector<game::simulation::ObjectAssemblyModuleSnapshot>& newerModules,
+    const std::vector<game::simulation::ObjectAssemblyModuleSnapshot>& fallbackModules,
+    float t
+)
+{
+    std::vector<game::simulation::ObjectAssemblyModuleSnapshot> out =
+        fallbackModules.empty()
+            ? newerModules
+            : fallbackModules;
+
+    for (auto& dst : out)
+    {
+        const auto* oldModule =
+            findAssemblyModuleById(
+                olderModules,
+                dst.moduleId
+            );
+
+        const auto* newModule =
+            findAssemblyModuleById(
+                newerModules,
+                dst.moduleId
+            );
+
+        if (!oldModule || !newModule)
+            continue;
+
+        dst.rotationAngleRad =
+            interpolateAngleRad(
+                oldModule->rotationAngleRad,
+                newModule->rotationAngleRad,
+                t
+            );
+    }
+
+    return out;
+}
+
+
+
+
+
+
+static float findAssemblyAngleRad(
+    const std::vector<game::simulation::ObjectAssemblyModuleSnapshot>& modules,
+    const std::string& moduleId
+)
+{
+    for (const auto& m : modules)
+    {
+        if (m.moduleId == moduleId)
+            return m.rotationAngleRad;
+    }
+
+    return 0.0f;
+}
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
 
 
 //                              ###                                                                    ###                 ##
@@ -256,6 +368,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
                 state.repairJobs,
                 state.debugHitVolumes
             );
+
+            
 
             // state.gpuMesh = &render::MeshLibrary::get(s.typeId);
 
@@ -328,7 +442,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
                 state.debugHitVolumes
             );
 
-              
+             state.renderAssemblyModules = state.assemblyModules; 
             
             const auto& desc = ObjectDescriptorRegistry::get(o.type);
             
@@ -366,6 +480,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
                 state.detachedFragments,
                 state.debugHitVolumes
             );
+
+            state.renderAssemblyModules = state.assemblyModules;
 
             if (modulesChanged)
                 rebuildHiddenPartIds(state);
@@ -448,6 +564,20 @@ void ClientWorldState::update(float dt)
     m_clientTime += dt;
 
     double renderTime = m_clientTime - m_renderDelay;
+
+    if (!m_snapshotBuffer.empty())
+    {
+        const double oldest = m_snapshotBuffer.front().serverTime;
+        const double newest = m_snapshotBuffer.back().serverTime;
+
+        // Если renderTime вылетает за диапазон —
+        // зажимаем его внутрь буфера
+        if (renderTime < oldest)
+            renderTime = oldest;
+
+        if (renderTime > newest)
+            renderTime = newest;
+    }
 
     SimulationSnapshot* older = nullptr;
     SimulationSnapshot* newer = nullptr;
@@ -549,12 +679,124 @@ void ClientWorldState::update(float dt)
 
     for (auto& [id, obj] : m_objects)
     {
-        obj.renderWorldPosition = obj.worldPosition;
-        obj.renderPosition = world::coordinates::legacyFloatMeters(obj.worldPosition);
-        obj.renderOrientation = obj.orientation;
 
-       
+        bool usedInterpolation = false;
+        bool usedFallback = false;
+        float debugT = -1.0f;
+
+
+
+        if (older && newer)
+        {
+            double span = newer->serverTime - older->serverTime;
+
+            if (span > 0.0)
+            {
+                float t = float((renderTime - older->serverTime) / span);
+                t = glm::clamp(t, 0.0f, 1.0f);
+
+                debugT = t;
+
+                auto itOld = std::find_if(
+                    older->objects.begin(),
+                    older->objects.end(),
+                    [&](const ObjectSnapshot& s)
+                    {
+                        return s.id.value == id;
+                    }
+                );
+
+                auto itNew = std::find_if(
+                    newer->objects.begin(),
+                    newer->objects.end(),
+                    [&](const ObjectSnapshot& s)
+                    {
+                        return s.id.value == id;
+                    }
+                );
+
+                if (itOld != older->objects.end() &&
+                    itNew != newer->objects.end())
+                {
+                    const glm::dvec3 delta =
+                        world::coordinates::relativeMeters(
+                            itNew->worldPosition,
+                            itOld->worldPosition
+                        );
+
+                    obj.renderWorldPosition =
+                        world::coordinates::translated(
+                            itOld->worldPosition,
+                            delta * static_cast<double>(t)
+                        );
+
+                    obj.renderOrientation =
+                        smoothOrientationMatrix(
+                            itOld->orientation,
+                            itNew->orientation,
+                            t
+                        );
+
+
+                if (itOld->graph.hasAssemblyModules &&
+                    itNew->graph.hasAssemblyModules)
+                {
+                    obj.renderAssemblyModules =
+                        interpolateAssemblyModules(
+                            itOld->graph.assemblyModules,
+                            itNew->graph.assemblyModules,
+                            obj.assemblyModules,
+                            t
+                        );
+
+                    usedInterpolation = true;
+                }
+                else
+                {
+                    obj.renderAssemblyModules = obj.assemblyModules;
+                }
+
+
+                }
+                else
+                {
+                    obj.renderWorldPosition = obj.worldPosition;
+                    obj.renderOrientation = obj.orientation;
+                    obj.renderAssemblyModules = obj.assemblyModules;
+                    usedFallback = true;
+                }
+            }
+            else
+            {
+                obj.renderWorldPosition = obj.worldPosition;
+                obj.renderOrientation = obj.orientation;
+                obj.renderAssemblyModules = obj.assemblyModules;
+                usedFallback = true;
+            }
+        }
+        else
+        {
+            obj.renderWorldPosition = obj.worldPosition;
+            obj.renderOrientation = obj.orientation;
+            obj.renderAssemblyModules = obj.assemblyModules;
+            usedFallback = true;
+        }
+
+
+
+
+
+
+        
+
+
+
+
     }
+
+
+
+   
 }
 
 
@@ -652,9 +894,12 @@ void ClientWorldState::applySoftCorrection(
     const world::coordinates::WorldPosition corrected =
         world::coordinates::translated(
             ship.transform.worldPosition,
-            delta * 0.1
+            delta * 0.02
         );
 
     ship.transform.setWorldPosition(corrected);
-    ship.renderTransform.setWorldPosition(corrected);
+
+    // renderTransform НЕ дёргаем напрямую.
+    // Его сгладит ClientWorldState::update() через smoothShipRenderTransform.
+    // Если двигать оба transform сразу, камера получает видимый микропинок.
 }

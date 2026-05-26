@@ -60,37 +60,37 @@ void GameClient::update(
 {
     m_accumulator += dt;
 
-SimulationSnapshot snapshot;
+    SimulationSnapshot snapshot;
 
-while (m_transport->receiveSnapshot(snapshot))
-{
-    m_world.applySnapshot(snapshot);
-
-    while (!m_pendingInputs.empty() &&
-           m_pendingInputs.front().controlTick <= snapshot.snapshotTick)
+    while (m_transport->receiveSnapshot(snapshot))
     {
-        m_pendingInputs.pop_front();
-    }
-}
+        m_world.applySnapshot(snapshot);
 
-while (m_accumulator >= fixedDt)
-{
-    if (!m_pendingInputs.empty())
-    {
-        const auto& last = m_pendingInputs.back();
-
-        m_world.predict(
-            m_playerId,
-            last.control,
-            world,
-            fixedDt
-        );
+        while (!m_pendingInputs.empty() &&
+               m_pendingInputs.front().controlTick <= snapshot.snapshotTick)
+        {
+            m_pendingInputs.pop_front();
+        }
     }
 
-    m_accumulator -= fixedDt;
-}
+    while (m_accumulator >= fixedDt)
+    {
+        if (!m_pendingInputs.empty())
+        {
+            const auto& last = m_pendingInputs.back();
 
-m_world.update(dt);
+            m_world.predict(
+                m_playerId,
+                last.control,
+                world,
+                fixedDt
+            );
+        }
+
+        m_accumulator -= fixedDt;
+    }
+
+    m_world.update(dt);
 }
 
 

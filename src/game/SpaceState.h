@@ -149,8 +149,9 @@ private:
     // =======================================
     //  ===========       HUD       ==========
     // =======================================
-    RadarWidgetBase*                                m_radarWidget = nullptr;
-    SceneRenderer                                   m_sceneRenderer;
+    RadarWidgetBase* m_radarWidget = nullptr;
+    SceneRenderer m_sceneRenderer;
+    PreparedScene m_preparedScene;
 
 
     // std::unique_ptr<game::debug::DebugServer>       m_debugServer;
@@ -208,4 +209,5 @@ private:
     bool m_promoRollFinished = false;
 
     float m_promoRollAngle = 0.0f;
+    
 };

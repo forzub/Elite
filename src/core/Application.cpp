@@ -1,22 +1,15 @@
 #include <iostream>
 #include <GLFW/glfw3.h>
-
 #include "Application.h"
 
 #include "core/Log.h"
-
 #include "ui/MainMenuState.h"
-
 #include "game/SpaceState.h"
-
 #include "input/Input.h"
-
 #include "render/HUD/TextRenderer.h"
-
 #include <windows.h>
-
-
-
+#include <filesystem>
+#include "ui/html/HtmlUiPanelId.h"
 
 
 // =====================================================================================
@@ -47,6 +40,37 @@ static std::string getExecutablePath()
 
     return (pos == std::string::npos) ? "." : path.substr(0, pos);
 }
+
+
+
+
+static std::string findGameUiFile(const std::string& relativeFile)
+{
+    namespace fs = std::filesystem;
+
+    fs::path cwd = fs::current_path();
+
+    std::vector<fs::path> candidates =
+    {
+        cwd / "assets" / "webui" / relativeFile,
+        cwd.parent_path() / "assets" / "webui" / relativeFile,
+        cwd.parent_path() / "src" / "assets" / "webui" / relativeFile,
+        fs::path("D:/__elite/work/src/assets/webui") / relativeFile
+    };
+
+    for (const auto& p : candidates)
+    {
+        if (fs::exists(p))
+            return p.string();
+    }
+
+    std::cout << "[App] GameUI file not found: " << relativeFile << "\n";
+    return (cwd / "assets" / "webui" / relativeFile).string();
+}
+
+
+
+
 
 
 // =====================================================================================
@@ -93,6 +117,9 @@ void Application::init()
     m_window = new Window(1280, 720, "EliteGame");
     
     // m_window  = new Window(1920, 1080, "EliteGame");
+
+   
+
     
     // ---------------------------------------------------
             std::string exeDir = getExecutablePath();
@@ -121,6 +148,20 @@ void Application::init()
     g_stateContext          = &m_context;
 
     TextRenderer::instance().init();
+
+     #ifdef _WIN32
+        int uiW = 1280;
+        int uiH = 720;
+        glfwGetFramebufferSize(m_window->nativeHandle(), &uiW, &uiH);
+
+        m_gameWebView.start(
+            m_window->nativeWin32Handle(),
+            "EliteGame UI",
+            uiW,
+            uiH,
+            findGameUiFile("main_menu.html")
+        );
+    #endif
 
     m_states.push(std::make_unique<MainMenuState>(m_states));
     // m_states.push(std::make_unique<SpaceState>(m_states));
@@ -152,6 +193,65 @@ void Application::mainLoop()
         // Input::instance().update();
         m_window->pollEvents();
         Input::instance().update(m_window->nativeHandle());
+
+
+
+        bool stateChangedFromWebView = false;
+
+        #ifdef _WIN32
+                std::string webCommand;
+                while (m_gameWebView.pollCommand(webCommand))
+                {
+                    std::cout << "[App] WebView command: " << webCommand << "\n";
+
+                    if (webCommand == "new_game")
+                    {
+                        std::cout << "[App] new_game requested, switching to loading screen\n";
+
+                        m_gameWebView.setVisible(true);
+                        m_gameWebView.navigate(findGameUiFile("loading.html"));
+                        m_gameWebView.evalScript("setLoadingProgress(0.10, 'OPENING LOADING SCREEN');");
+
+                        m_pendingNewGameLoad = true;
+                        m_newGameLoadStartTime = glfwGetTime();
+
+                        break;
+                    }
+
+                    if (webCommand == "load_game")
+                    {
+                        std::cout << "[App] load_game not implemented yet\n";
+                    }
+
+                    if (webCommand == "shipyard")
+                    {
+                        std::cout << "[App] shipyard not implemented yet\n";
+                    }
+
+                    if (webCommand == "exit")
+                    {
+                        m_states.clear();
+                        m_states.applyPendingChanges();
+                        m_running = false;
+                        break;
+                    }
+                }
+        #endif
+
+
+        updatePendingNewGameLoad();
+
+        if (m_pendingNewGameLoad)
+        {
+            m_window->swapBuffers();
+            continue;
+        }
+
+        
+
+
+
+
 
         GameState* state = m_states.current();
 
@@ -208,6 +308,12 @@ void Application::shutdown()
 
     m_states.clear();
     m_states.applyPendingChanges();
+
+    #ifdef _WIN32
+        m_gameWebView.stop();
+    #endif
+
+
     m_htmlUi.stop();
 
     delete m_window;
@@ -237,4 +343,58 @@ void Application::handleResize(int width, int height)
     }
 
     m_htmlUi.setViewport(width, height);
+
+    #ifdef _WIN32
+        m_gameWebView.resize(width, height);
+    #endif
+}
+
+
+
+
+void Application::updatePendingNewGameLoad()
+{
+#ifndef _WIN32
+    return;
+#else
+    if (!m_pendingNewGameLoad)
+        return;
+
+    const double now = glfwGetTime();
+    const double elapsed = now - m_newGameLoadStartTime;
+
+    if (elapsed < 0.10)
+    {
+        return;
+    }
+
+    m_gameWebView.evalScript("setLoadingProgress(0.25, 'PREPARING WORLD');");
+
+    m_states.clear();
+    m_states.push(std::make_unique<SpaceState>(m_states));
+
+    m_gameWebView.evalScript("setLoadingProgress(0.80, 'APPLYING GAME STATE');");
+
+    m_states.applyPendingChanges();
+
+    m_gameWebView.evalScript("setLoadingProgress(1.00, 'READY');");
+
+    m_htmlUi.setActivePanel(HtmlUiPanelId::None);
+
+    Input::instance().reset();
+
+    m_gameWebView.setVisible(false);
+
+    m_window->focus();
+
+    glfwSetInputMode(
+        m_window->nativeHandle(),
+        GLFW_CURSOR,
+        GLFW_CURSOR_NORMAL
+    );
+
+    m_pendingNewGameLoad = false;
+
+    std::cout << "[App] New game loaded, WebView hidden\n";
+#endif
 }

@@ -119,35 +119,44 @@ void SpaceState::initHUD()
     SceneRenderPolicy rearPolicy;
     rearPolicy.drawLabels = false;
     rearPolicy.drawDebug = false;
-    rearPolicy.drawFarStationProxy = false;
+
+    rearPolicy.drawStarfield = true;
+    rearPolicy.drawCelestial = true;
+    rearPolicy.drawFarStationProxy = true;
+    rearPolicy.drawObjects = true;
+    rearPolicy.drawVisualShips = true;
+    rearPolicy.drawVisualDrones = true;
+
+    // Ограничиваем только декоративные visual-ships,
+    // а не станцию, планеты, звёзды и реальные объекты.
     rearPolicy.maxVisualShipsToDraw = 64;
 
  
     rear->drawCallback =
-        [&](const glm::mat4& view, const glm::mat4& proj)
+        [this, rearPolicy](const glm::mat4& view, const glm::mat4& proj)
         {
 
-            //  m_sceneRenderer.render(
-            //     m_client->world(),
-            //     m_playerId,
-            //     view,
-            //     proj,
-            //     1,
-            //     "secondCam",
-            //     rearPolicy
-            // );
+             m_sceneRenderer.render(
+                m_client->world(),
+                m_playerId,
+                view,
+                proj,
+                1,
+                "secondCam",
+                rearPolicy
+            );
 
-            SceneCameraParams rearCamera;
-                rearCamera.view = view;
-                rearCamera.proj = proj;
-                rearCamera.cameraId = 1;
-                rearCamera.cameraName = "secondCam";
+            // SceneCameraParams rearCamera;
+            //     rearCamera.view = view;
+            //     rearCamera.proj = proj;
+            //     rearCamera.cameraId = 1;
+            //     rearCamera.cameraName = "secondCam";
 
-                m_sceneRenderer.renderPrepared(
-                    m_preparedScene,
-                    rearCamera,
-                    rearPolicy
-                );
+            //     m_sceneRenderer.renderPrepared(
+            //         m_preparedScene,
+            //         rearCamera,
+            //         rearPolicy
+            //     );
 
             m_perfRearStats = m_sceneRenderer.lastStats();
         };

@@ -12,7 +12,13 @@ public:
     void pollEvents();
     void swapBuffers();
 
+    void focus();
+
     GLFWwindow* nativeHandle() const;
+
+    #ifdef _WIN32
+        void* nativeWin32Handle() const;
+    #endif
     
 
 private:

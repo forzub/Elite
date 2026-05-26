@@ -111,6 +111,16 @@ private:
         float radius
     );
 
+    void buildEarthTopography(
+        std::vector<PlanetLineVertex>& out,
+        float radius
+    );
+
+    void buildEarthMountainRanges(
+        std::vector<PlanetLineVertex>& out,
+        float radius
+    );
+
     void buildCloudLayer(
         std::vector<PlanetLineVertex>& out,
         float radius
@@ -123,4 +133,19 @@ private:
     ) const;
 
     float planetNoise(const glm::vec3& p) const;
+
+    float earthField(
+        float latitudeDeg,
+        float longitudeDeg
+    ) const;
+
+    float earthHeight(
+        float latitudeDeg,
+        float longitudeDeg
+    ) const;
+
+    bool isEarthLand(
+        float latitudeDeg,
+        float longitudeDeg
+    ) const;
 };

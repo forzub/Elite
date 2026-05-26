@@ -118,6 +118,12 @@ void MainMenuState::render(){}
 
 void MainMenuState::renderUI()
 {
+    #ifdef _WIN32
+        glClearColor(0.007f, 0.010f, 0.020f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        return;
+    #endif
+
     glDisable(GL_DEPTH_TEST);
 
     // glClearColor(0.02f, 0.02f, 0.05f, 1.0f);
@@ -160,6 +166,10 @@ void MainMenuState::renderUI()
 
 void MainMenuState::activateSelected()
 {
+    #ifdef _WIN32
+        return;
+    #endif
+    
     switch (m_selected)
     {
         case MenuItem::NewGame:

@@ -1,6 +1,11 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+#endif
+
 #include "Window.h"
 #include <iostream>
 #include <stdexcept>
@@ -81,10 +86,39 @@ void Window::swapBuffers()
     glfwSwapBuffers(m_window);
 }
 
+
+void Window::focus()
+{
+    if (!m_window)
+        return;
+
+    glfwFocusWindow(m_window);
+
+#ifdef _WIN32
+    HWND hwnd = glfwGetWin32Window(m_window);
+
+    if (hwnd)
+    {
+        ShowWindow(hwnd, SW_SHOW);
+        BringWindowToTop(hwnd);
+        SetForegroundWindow(hwnd);
+        SetActiveWindow(hwnd);
+        SetFocus(hwnd);
+    }
+#endif
+}
+
+
+
 GLFWwindow* Window::nativeHandle() const
 {
     return m_window;
 }
 
 
-
+#ifdef _WIN32
+void* Window::nativeWin32Handle() const
+{
+    return glfwGetWin32Window(m_window);
+}
+#endif

@@ -1,6 +1,21 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(EliteGame LANGUAGES C CXX)
+include(FetchContent)
+
+set(WEBVIEW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(WEBVIEW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(WEBVIEW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(WEBVIEW_BUILD_STATIC_LIBRARY ON CACHE BOOL "" FORCE)
+set(WEBVIEW_BUILD_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
+set(WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL ON CACHE BOOL "" FORCE)
+set(WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK ON CACHE BOOL "" FORCE)
+
+add_subdirectory(third_party/webview)
+
+
+
+
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/third_party/websocketpp
@@ -208,6 +223,7 @@ add_executable(EliteGame
     src/game/traffic/StationTrafficSystem.cpp
 
     src/render/planet/PlanetWireRenderer.cpp
+    src/ui/browser/GameWebView.cpp
 
 )
 
@@ -217,6 +233,8 @@ add_custom_target(copy_assets ALL
             ${CMAKE_BINARY_DIR}/assets)
 
 add_dependencies(EliteGame copy_assets)
+
+
 
 
 set_source_files_properties(
@@ -237,6 +255,8 @@ target_link_libraries(EliteGame PRIVATE
     opengl32
     Freetype::Freetype
     nlohmann_json::nlohmann_json
+    webview::core_static
+    
     
     # Библиотеки для ASIO/WebSocket
     ws2_32      # уже есть
@@ -244,8 +264,18 @@ target_link_libraries(EliteGame PRIVATE
     iphlpapi    # можно добавить на всякий случай
     pthread     # уже есть
     
+    advapi32
+    ole32
+    shell32
+    shlwapi
+    user32
+    version
+
     # Порядок важен - сначала наши, потом системные
     ${FREETYPE_LIBRARY}
     glfw3
     opengl32
+
+
+
 )

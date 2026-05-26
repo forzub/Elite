@@ -1,116 +1,103 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8">
-  <title>Main Menu</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EliteGame Main Menu</title>
   <style>
     html, body {
       margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
-      background: #080b12;
-      color: #d7dde8;
-      font-family: Arial, sans-serif;
       overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(55, 95, 155, 0.25), transparent 34%),
+        linear-gradient(180deg, #070a10 0%, #010208 100%);
+      color: #dce7ff;
+      font-family: Arial, sans-serif;
     }
 
-    .root {
+    .screen {
       width: 100vw;
       height: 100vh;
       display: flex;
-      flex-direction: column;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+    }
+
+    .panel {
+      width: 460px;
+      padding: 44px;
+      border: 1px solid rgba(140, 180, 255, 0.35);
+      border-radius: 18px;
+      background: rgba(5, 10, 20, 0.88);
+      box-shadow: 0 0 80px rgba(60, 120, 255, 0.18);
+      text-align: center;
     }
 
     h1 {
-      margin-bottom: 40px;
-      letter-spacing: 4px;
+      margin: 0 0 8px;
+      letter-spacing: 0.28em;
+      font-size: 44px;
+      font-weight: 500;
     }
 
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      width: min(420px, 70vw);
+    .subtitle {
+      margin-bottom: 34px;
+      color: #7f8da8;
+      font-size: 13px;
+      letter-spacing: 0.12em;
     }
 
     button {
+      display: block;
       width: 100%;
-      padding: 18px 24px;
-      font-size: clamp(18px, 2vw, 28px);
-      background: #101826;
-      color: #f0f4ff;
-      border: 1px solid #2c466d;
+      margin: 14px 0;
+      padding: 16px 20px;
+      border: 1px solid rgba(150, 190, 255, 0.45);
+      border-radius: 10px;
+      background: rgba(18, 35, 65, 0.9);
+      color: #e8eefc;
+      font-size: 17px;
+      letter-spacing: 0.08em;
       cursor: pointer;
     }
 
     button:hover {
-      background: #162338;
+      background: rgba(45, 80, 135, 0.98);
+      box-shadow: 0 0 24px rgba(70, 130, 255, 0.25);
     }
 
-    .status {
-      position: fixed;
-      right: 14px;
-      bottom: 12px;
-      opacity: 0.65;
+    .hint {
+      margin-top: 28px;
+      color: #58647a;
       font-size: 12px;
     }
   </style>
 </head>
+
 <body>
-  <div class="root">
-    <h1 id="title">ELITE GAME</h1>
-    <div class="menu" id="menu"></div>
+  <div class="screen">
+    <div class="panel">
+      <h1>ELITE</h1>
+      <div class="subtitle">HTML GAME UI PROTOTYPE</div>
+
+      <button onclick="sendCommand('new_game')">NEW GAME</button>
+      <button onclick="sendCommand('load_game')">LOAD GAME</button>
+      <button onclick="sendCommand('shipyard')">SHIPYARD</button>
+      <button onclick="sendCommand('exit')">EXIT</button>
+
+      <div class="hint">WebView layer. Not the debug browser.</div>
+    </div>
   </div>
-  <div class="status" id="status">offline</div>
 
   <script>
-    const statusEl = document.getElementById('status');
-    const menuEl = document.getElementById('menu');
-    const titleEl = document.getElementById('title');
-
-    const ws = new WebSocket(`ws://${location.host}`);
-
-    ws.addEventListener('open', () => {
-      statusEl.textContent = 'connected';
-      ws.send(JSON.stringify({
-        type: 'subscribe',
-        panel: 'main_menu',
-        payload: {}
-      }));
-    });
-
-    ws.addEventListener('close', () => {
-      statusEl.textContent = 'disconnected';
-    });
-
-    ws.addEventListener('message', (ev) => {
-      const msg = JSON.parse(ev.data);
-
-      if (msg.type !== 'state_update') return;
-      if (msg.panel !== 'main_menu') return;
-
-      const data = msg.payload || {};
-      titleEl.textContent = data.title || 'ELITE GAME';
-
-      menuEl.innerHTML = '';
-      for (const item of (data.items || [])) {
-        const btn = document.createElement('button');
-        btn.textContent = item.label || item.id;
-        btn.onclick = () => {
-          ws.send(JSON.stringify({
-            type: 'command',
-            panel: 'main_menu',
-            command: item.id,
-            payload: {}
-          }));
-        };
-        menuEl.appendChild(btn);
+    async function sendCommand(command) {
+      if (window.gameCommand) {
+        await window.gameCommand(command);
+      } else {
+        console.log("gameCommand bridge not found:", command);
       }
-    });
+    }
   </script>
 </body>
 </html>

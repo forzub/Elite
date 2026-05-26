@@ -7,6 +7,11 @@
 #include "render/RenderContext.h"
 #include "ui/html/HtmlUiManager.h"
 
+#ifdef _WIN32
+#include "ui/browser/GameWebView.h"
+#endif
+
+
 
 class Application
 {
@@ -19,6 +24,8 @@ public:
     
     HtmlUiManager& htmlUi() { return m_htmlUi; }
     const HtmlUiManager& htmlUi() const { return m_htmlUi; }
+
+    void updatePendingNewGameLoad();
 
 private:
     void init();
@@ -36,4 +43,11 @@ private:
     StateStack   m_states;
     RenderContext renderContext;
     HtmlUiManager m_htmlUi;
+
+    bool m_pendingNewGameLoad = false;
+    double m_newGameLoadStartTime = 0.0;
+
+    #ifdef _WIN32
+        GameWebView m_gameWebView;
+    #endif
 };

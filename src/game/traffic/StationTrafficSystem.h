@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <cstddef>
 
 #include <glm/glm.hpp>
 
@@ -25,13 +26,14 @@ private:
     struct TrafficShip
     {
         game::visual::VisualShipId id = 0;
+        std::size_t visualIndex = 0;
 
         // Стартовая фаза маршрута.
         // Не накапливаем phase += dt бесконечно — это даёт микродрожание.
-        float basePhase = 0.0f;
+        double  basePhase = 0.0f;
 
         // Текущая фаза, вычисляется от общего времени.
-        float phase = 0.0f;
+        double  phase = 0.0f;
         // Желаемая линейная скорость в world units/sec.
         // Угловая скорость вычисляется как linearSpeed / radius.
         float linearSpeed = 80.0f;
@@ -40,7 +42,7 @@ private:
         float height = 0.0f;
 
         float laneTilt = 0.0f;
-        float laneOffset = 0.0f;
+        double  laneOffset = 0.0f;
 
         int routeType = 0;
     };

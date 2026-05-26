@@ -66,6 +66,22 @@ inline glm::dvec3 fullMeters(const WorldPosition& p)
     ) * GalacticCellSizeM + p.localMeters;
 }
 
+
+
+// Legacy bridge only.
+// Allowed:
+// - old UI/debug/HUD mirrors
+// - temporary compatibility snapshots
+//
+// Forbidden:
+// - rendering model matrices
+// - physics
+// - navigation
+// - distance checks
+// - damage resolution
+//
+// For render use relativeMetersFloat(worldPosition, frame.origin).
+// For object-local logic use relativeMetersFloat(worldPosition, owner.worldPosition).
 inline glm::vec3 legacyFloatMeters(const WorldPosition& p)
 {
     // Только временный bridge для старого кода.

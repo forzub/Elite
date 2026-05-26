@@ -50,8 +50,6 @@ void PlayerShipView::init(
 
         mainCamera = ShipCameraMode::Cockpit;
 
-        // camera.setAspect(context.aspect());
-        // camera.setPosition(transform.position);
 
         
 

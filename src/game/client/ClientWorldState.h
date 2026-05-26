@@ -63,6 +63,7 @@ struct ClientShipState
     std::vector<game::simulation::ObjectModuleSnapshot> modules;
     std::vector<game::simulation::StructuralLinkSnapshot> structuralLinks;
     std::vector<game::simulation::ObjectAssemblyModuleSnapshot> assemblyModules;
+    
     std::vector<game::simulation::ObjectDetachedFragmentSnapshot> detachedFragments;
     std::vector<game::simulation::ObjectRepairJobSnapshot> repairJobs;
     std::unordered_set<std::string>                     hiddenPartIds;
@@ -91,7 +92,7 @@ struct ClientObjectState
     
     // текущие (для рендера)
     world::coordinates::WorldPosition renderWorldPosition;
-    glm::vec3 renderPosition;
+    
     
     const game::ship::geometry::ObjectAssembly*     assembly = nullptr;
 
@@ -99,6 +100,9 @@ struct ClientObjectState
     std::vector<game::simulation::ObjectModuleSnapshot>             modules;
     std::vector<game::simulation::StructuralLinkSnapshot> structuralLinks;
     std::vector<game::simulation::ObjectAssemblyModuleSnapshot>     assemblyModules;
+    // Presentation/interpolated assembly module state.
+    // Used only for rendering rotating modules smoothly.
+    std::vector<game::simulation::ObjectAssemblyModuleSnapshot> renderAssemblyModules;
     std::vector<game::simulation::ObjectDetachedFragmentSnapshot> detachedFragments;
     std::unordered_set<std::string>                                 hiddenPartIds;
     std::unordered_map<std::string, float> detachedVisualAge;
@@ -184,7 +188,7 @@ private:
     ShipSignalPresentation                          signalPresentation;
 
     
-    double m_renderDelay = 0.1; // 100 ms
+    double m_renderDelay = 0.45; // 100 ms
     double m_clientTime = 0.0;
 
 };

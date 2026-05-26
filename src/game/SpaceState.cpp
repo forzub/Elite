@@ -3,6 +3,12 @@
 #include <cstdio>
 #include <cmath>
 
+#include <chrono>
+#include <algorithm>
+
+#include <fstream>
+#include <iomanip>
+
 #include "SpaceState.h"
 #include "core/StateStack.h"
 #include "core/Log.h"
@@ -273,6 +279,11 @@ SpaceState::SpaceState(StateStack& states)
     initClient();
 
     InitShaders();
+
+    // Важно: после InitShaders(), потому что starfield renderer использует
+    // galaxy_starfield / galaxy_haze shader paths.
+    m_sceneRenderer.initializeStaticResources();
+
     initHUD();
 
     
@@ -428,19 +439,13 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
 
     // === управление кораблём ===
     m_inputMapper.update(m_playerControl);
-
-    
-
-
     m_localTick++;
-
     m_playerControl.controlTick = m_localTick;
-
     m_sentInputs.push_back(m_playerControl);
-
     m_server->submitCommand(m_playerId, m_playerControl);
-
     m_client->submitInput(m_playerControl);
+
+
 }
 
 
@@ -465,6 +470,9 @@ void SpaceState::update(float dt)
 {
     const double updateStartMs = nowMs();
     m_perfFrameIndex++;
+
+    const float rawFrameDt = dt;
+    int debugFixedSteps = 0;
 
     const double htmlStartMs = nowMs();
     processHtmlCommands();
@@ -493,6 +501,7 @@ while (m_simAccumulator >= SIM_FIXED_DT && steps < MAX_SIM_STEPS_PER_FRAME)
 
     m_simAccumulator -= SIM_FIXED_DT;
     steps++;
+    debugFixedSteps++;
 }
 
 // Если симуляция не успела догнать — не тащим долг дальше.
@@ -559,12 +568,70 @@ const auto& ship = it->second;
 
 const double playerViewStartMs = nowMs();
 
+const float viewDt =
+    std::min(dt, 0.02f); // ограничиваем визуальный dt
+
 m_playerView->update(
-    dt,
+    viewDt,
     ship.role,
     ship.renderTransform,
     ship.detachedFragments
 );
+
+
+
+
+
+{
+    static bool initialized = false;
+    static int rows = 0;
+
+    if (rows < 1500)
+    {
+        std::ofstream out(
+            "frame_motion_log.csv",
+            initialized ? std::ios::app : std::ios::out
+        );
+
+        if (!initialized)
+        {
+            out << "row,"
+                << "rawDt,clampedFrameDt,simAccumulator,fixedSteps,"
+                << "processHtmlMs,fixedSimMs,clientUpdateMs,playerViewMs,"
+                << "forwardX,forwardY,forwardZ,"
+                << "upX,upY,upZ,"
+                << "rightX,rightY,rightZ\n";
+
+            initialized = true;
+        }
+
+        const glm::vec3 f = ship.renderTransform.forward();
+        const glm::vec3 u = ship.renderTransform.up();
+        const glm::vec3 r = ship.renderTransform.right();
+
+        out << rows++ << ","
+            << std::fixed << std::setprecision(6)
+            << rawFrameDt << ","
+            << clampedFrameDt << ","
+            << m_simAccumulator << ","
+            << debugFixedSteps << ","
+            << m_perfProcessHtmlMs << ","
+            << m_perfFixedSimMs << ","
+            << m_perfClientUpdateMs << ","
+            << m_perfPlayerViewMs << ","
+            << f.x << "," << f.y << "," << f.z << ","
+            << u.x << "," << u.y << "," << u.z << ","
+            << r.x << "," << r.y << "," << r.z
+            << "\n";
+    }
+}
+
+
+
+
+
+
+
 
 m_playerView->updateCockpitStateFromSnapshot(
     ship.transform.forwardVelocity,
@@ -881,7 +948,17 @@ void SpaceState::renderUI()
 
     // -------------------------------
     // 3D ПРОЕКЦИЯ
-    // -------------------------------    
+    // ------------------------------- 
+    
+    SceneRenderPolicy mainPolicy; 
+    m_preparedScene =
+        m_sceneRenderer.prepareScene(
+            m_client->world(),
+            m_playerId
+        );
+
+
+
     RenderCameraViewport::render(
         *mainCam,
         vp,
@@ -891,21 +968,88 @@ void SpaceState::renderUI()
         vp.height,
         [&](auto view, auto proj)
         {
-            m_sceneRenderer.render(
-                m_client->world(),
-                m_playerId,
-                view,
-                proj,
-                0,
-                "mainCam"
+            SceneCameraParams mainCamera;
+            mainCamera.view = view;
+            mainCamera.proj = proj;
+            mainCamera.cameraId = 0;
+            mainCamera.cameraName = "mainCam";
+
+            m_sceneRenderer.renderPrepared(
+                m_preparedScene,
+                mainCamera,
+                mainPolicy
             );
 
             m_perfMainStats = m_sceneRenderer.lastStats();
-
         }
     );
 
     m_perfMainRenderMs = nowMs() - mainRenderStartMs;
+
+
+    // ------------------------------------------------------------
+// DEBUG: render spike log
+// Ловим фризы при входе крупного объекта в кадр.
+// Пишем только подозрительные кадры, чтобы сам лог не создавал фризы.
+// ------------------------------------------------------------
+{
+    static bool initialized = false;
+    static int rows = 0;
+
+    const auto& s = m_perfMainStats;
+
+    const bool suspiciousFrame =
+        m_perfMainRenderMs > 6.0 ||
+        s.drawCalls > 700 ||
+        s.partsDrawn > 350 ||
+        s.modulesDrawn > 140;
+
+    if (suspiciousFrame && rows < 600)
+    {
+        std::ofstream out(
+            "render_spike_log.csv",
+            initialized ? std::ios::app : std::ios::out
+        );
+
+        if (!initialized)
+        {
+            out << "row,"
+                << "perfFrameIndex,"
+                << "mainRenderMs,"
+                << "drawCalls,"
+                << "modulesDrawn,modulesCulled,"
+                << "partsDrawn,partsCulled,"
+                << "realShips,realShipParts,"
+                << "visualShipsDrawn,visualShipsCulled,"
+                << "visualProxy,visualFull,"
+                << "visualShipParts,"
+                << "rearCameraMs,"
+                << "renderUiMs\n";
+
+            initialized = true;
+        }
+
+        out << rows++ << ","
+            << m_perfFrameIndex << ","
+            << std::fixed << std::setprecision(4)
+            << m_perfMainRenderMs << ","
+            << s.drawCalls << ","
+            << s.modulesDrawn << ","
+            << s.modulesCulled << ","
+            << s.partsDrawn << ","
+            << s.partsCulled << ","
+            << s.realShipsDrawn << ","
+            << s.realShipPartsDrawn << ","
+            << s.visualShipsDrawn << ","
+            << s.visualShipsCulled << ","
+            << s.visualProxyShipsDrawn << ","
+            << s.visualFullShipsDrawn << ","
+            << s.visualShipPartsDrawn << ","
+            << m_perfRearCameraMs << ","
+            << m_perfRenderUiMs
+            << "\n";
+    }
+}
 
     // -------------------------------
     // Rear - камера корабля.
@@ -918,7 +1062,7 @@ if (debug::get().render.shouldRenderRearCamera())
 {
     // Рендерим заднюю камеру не каждый кадр.
     // 2 = через кадр. 3 = каждый третий кадр.
-    constexpr uint32_t kRearCameraFrameStride = 3;
+    constexpr uint32_t kRearCameraFrameStride = 2;
 
     if ((rearCameraFrameCounter % kRearCameraFrameStride) == 0)
     {
@@ -935,6 +1079,66 @@ else
     m_perfRearCameraMs = 0.0;
     m_perfRearStats.reset();
 }
+
+// ------------------------------------------------------------
+// DEBUG: full render frame log after rear camera
+// Пишем каждый кадр, но ограниченно: 1000 строк.
+// Потом по нему видно, совпадают ли фризы с rear camera/full objects.
+// ------------------------------------------------------------
+{
+    static bool initialized = false;
+    static int rows = 0;
+
+    if (rows < 1000)
+    {
+        std::ofstream out(
+            "render_frame_log.csv",
+            initialized ? std::ios::app : std::ios::out
+        );
+
+        if (!initialized)
+        {
+            out << "row,"
+                << "perfFrameIndex,"
+                << "mainRenderMs,"
+                << "rearCameraMs,"
+                << "mainDrawCalls,"
+                << "mainModulesDrawn,mainModulesCulled,"
+                << "mainPartsDrawn,mainPartsCulled,"
+                << "mainRealShips,mainRealShipParts,"
+                << "mainVisualShipsDrawn,mainVisualShipsCulled,"
+                << "mainVisualProxy,mainVisualFull,"
+                << "mainVisualShipParts\n";
+
+            initialized = true;
+        }
+
+        const auto& s = m_perfMainStats;
+
+        out << rows++ << ","
+            << m_perfFrameIndex << ","
+            << std::fixed << std::setprecision(4)
+            << m_perfMainRenderMs << ","
+            << m_perfRearCameraMs << ","
+            << s.drawCalls << ","
+            << s.modulesDrawn << ","
+            << s.modulesCulled << ","
+            << s.partsDrawn << ","
+            << s.partsCulled << ","
+            << s.realShipsDrawn << ","
+            << s.realShipPartsDrawn << ","
+            << s.visualShipsDrawn << ","
+            << s.visualShipsCulled << ","
+            << s.visualProxyShipsDrawn << ","
+            << s.visualFullShipsDrawn << ","
+            << s.visualShipPartsDrawn
+            << "\n";
+    }
+}
+
+
+
+
 
    m_perfRenderUiMs = nowMs() - renderUiStartMs; 
 }

@@ -8,6 +8,8 @@
 #include <vector>
 #include "src/game/simulation/ObjectDetachedFragmentSnapshot.h"
 
+
+
 class ShipCameraController
 {
 public:
@@ -27,4 +29,5 @@ public:
 
 private:
     const ShipAttachmentOverrideMap* m_attachmentOverrides = nullptr;
+
 };

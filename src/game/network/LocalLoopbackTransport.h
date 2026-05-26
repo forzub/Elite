@@ -37,5 +37,9 @@ private:
     std::queue<SimulationSnapshot> m_incoming;
     std::vector<DelayedSnapshot> m_latencyBuffer;
     float m_fakeLatency = 0.1f; // 100ms
-    float m_packetLoss = 0.1f;
+    float m_packetLoss = 0.0f;
+
+    bool m_hasLastQueuedSnapshot = false;
+    uint32_t m_lastQueuedSnapshotTick = 0;
+    double m_lastQueuedServerTime = -1.0;
 };

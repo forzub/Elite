@@ -989,7 +989,7 @@ void GalaxyStarfieldRenderer::render(
     float sizeScale
 )
 {
-    static bool s_loggedFirstRender = false;
+    
     static bool s_loggedEmpty = false;
     static bool s_loggedMissingShader = false;
 
@@ -1024,18 +1024,7 @@ void GalaxyStarfieldRenderer::render(
         return;
     }
 
-    if (!s_loggedFirstRender)
-    {
-        std::cout
-            << "[Starfield] first GPU quad render"
-            << " shader=" << shader
-            << " vertices=" << m_vertices.size()
-            << " vao=" << m_vao
-            << " radius=" << m_renderRadius
-            << std::endl;
-
-        s_loggedFirstRender = true;
-    }
+    
 
     // Убираем перемещение камеры.
     // Небо должно только вращаться, но не иметь параллакса от движения корабля.

@@ -1,4 +1,7 @@
 #include "Camera.h"
+#include <fstream>
+#include <iomanip>
+
 
 Camera::Camera() = default;
 
@@ -6,6 +9,11 @@ void Camera::setPosition(const glm::vec3& pos)
 {
     m_position = pos;
 }
+
+
+
+
+
 
 
 glm::mat4 Camera::viewMatrix() const
@@ -16,6 +24,16 @@ glm::mat4 Camera::viewMatrix() const
 
     return glm::inverse(world);
 }
+
+
+
+
+
+
+
+
+
+
 
 
 void Camera::setOrientationMatrix(const glm::mat4& orientation)

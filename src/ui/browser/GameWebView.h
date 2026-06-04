@@ -26,6 +26,7 @@ public:
 
     bool pollCommand(std::string& outCommand);
     void resize(int width, int height);
+    void setBounds(int x, int y, int width, int height);
 
     
     void navigate(const std::string& htmlFile);

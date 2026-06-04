@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <cstddef>
+#include <string>
 
 #include <glm/glm.hpp>
 
@@ -19,6 +20,16 @@ public:
         float timeSeconds
     );
 
+    void renderSphereOnly(
+        const glm::mat4& view,
+        const glm::mat4& proj,
+        const glm::vec3& center,
+        float radiusScale,
+        const glm::vec3& baseColor,
+        const glm::vec3& litColor,
+        float emission
+    );
+
     bool isInitialized() const
     {
         return m_initialized;
@@ -31,11 +42,32 @@ private:
         glm::vec4 color;
     };
 
+
+    struct PlanetSolidVertex
+    {
+        glm::vec3 position;
+        glm::vec3 normal;
+    };
+
 private:
     bool m_initialized = false;
 
     GLuint m_shader = 0;
     GLint  m_mvpLocation = -1;
+
+    GLuint m_solidShader = 0;
+
+    GLint m_solidModelLocation = -1;
+    GLint m_solidViewLocation = -1;
+    GLint m_solidProjLocation = -1;
+    GLint m_solidCameraPosLocation = -1;
+    GLint m_solidLightDirLocation = -1;
+
+    GLint m_solidBaseColorLocation = -1;
+    GLint m_solidLitColorLocation = -1;
+    GLint m_solidEmissionLocation = -1;
+
+
 
     GLuint m_staticVao = 0;
     GLuint m_staticVbo = 0;
@@ -45,8 +77,19 @@ private:
     GLuint m_cloudVbo = 0;
     GLsizei m_cloudVertexCount = 0;
 
+    GLuint m_solidVao = 0;
+    GLuint m_solidVbo = 0;
+    GLuint m_solidIbo = 0;
+    GLsizei m_solidIndexCount = 0;
+
 private:
     void buildMeshes();
+    void buildSolidSphere();
+    void drawSolidSphere(
+        const glm::mat4& model,
+        const glm::mat4& view,
+        const glm::mat4& proj
+    );
 
     void uploadBuffer(
         GLuint& vao,
@@ -111,6 +154,12 @@ private:
         float radius
     );
 
+    void buildEarthCoastlinesFromJson(
+        std::vector<PlanetLineVertex>& out,
+        float radius,
+        const std::string& filePath
+    );
+
     void buildEarthTopography(
         std::vector<PlanetLineVertex>& out,
         float radius
@@ -122,6 +171,22 @@ private:
     );
 
     void buildCloudLayer(
+        std::vector<PlanetLineVertex>& out,
+        float radius
+    );
+
+    void addGeoLine(
+        std::vector<PlanetLineVertex>& out,
+        float radius,
+        float latA,
+        float lonA,
+        float latB,
+        float lonB,
+        const glm::vec4& color,
+        int segments
+    ) ;
+
+    void buildEarthCoastlinesFromData(
         std::vector<PlanetLineVertex>& out,
         float radius
     );

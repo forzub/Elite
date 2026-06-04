@@ -74,19 +74,39 @@ void HtmlUiServer::setOnMessage(std::function<void(const std::string&)> callback
     m_onMessage = std::move(callback);
 }
 
+
+
+
 void HtmlUiServer::broadcastText(const std::string& text)
 {
-    for (auto& hdl : m_connections)
-{
-    try
+    if (!m_running)
+        return;
+
+    m_server.get_io_service().post([this, text]()
     {
-        m_server.send(hdl, text, websocketpp::frame::opcode::text);
-    }
-    catch (...)
-    {
-    }
+        std::vector<websocketpp::connection_hdl> dead;
+
+        for (const auto& hdl : m_connections)
+        {
+            try
+            {
+                m_server.send(hdl, text, websocketpp::frame::opcode::text);
+            }
+            catch (...)
+            {
+                dead.push_back(hdl);
+            }
+        }
+
+        for (const auto& hdl : dead)
+        {
+            m_connections.erase(hdl);
+        }
+    });
 }
-}
+
+
+
 
 void HtmlUiServer::onMessage(websocketpp::connection_hdl, WebSocketServer::message_ptr msg)
 {
@@ -141,6 +161,7 @@ std::string HtmlUiServer::getContentType(const std::string& filename)
     if (endsWith(filename, ".html")) return "text/html";
     if (endsWith(filename, ".css"))  return "text/css";
     if (endsWith(filename, ".js"))   return "application/javascript";
+    if (endsWith(filename, ".json")) return "application/json";
     if (endsWith(filename, ".png"))  return "image/png";
     if (endsWith(filename, ".jpg"))  return "image/jpeg";
     if (endsWith(filename, ".jpeg")) return "image/jpeg";

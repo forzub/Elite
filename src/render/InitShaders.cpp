@@ -69,6 +69,13 @@ void InitShaders()
     );
 
     shaders.load(
+        "planet_solid",
+        "assets/shaders/planet/planet_solid.vert",
+        "assets/shaders/planet/planet_solid.frag",
+        ShaderProgram::Unknown
+    );
+
+    shaders.load(
         "galaxy_starfield",
         "assets/shaders/starfield/galaxy_starfield.vert",
         "assets/shaders/starfield/galaxy_starfield.frag",
@@ -76,14 +83,27 @@ void InitShaders()
     );
 
 
+    shaders.load(
+        "system_map_lines",
+        "assets/shaders/system_map/map_lines.vert",
+        "assets/shaders/system_map/map_lines.frag",
+        ShaderProgram::DebugLines
+    );
+
+    shaders.load(
+        "system_map_background",
+        "assets/shaders/system_map/map_background.vert",
+        "assets/shaders/system_map/map_background.frag",
+        ShaderProgram::Unknown
+    );
 
 
-shaders.load(
-    "galaxy_haze",
-    "assets/shaders/starfield/galaxy_haze.vert",
-    "assets/shaders/starfield/galaxy_haze.frag",
-    ShaderProgram::Starfield
-);
+    shaders.load(
+        "galaxy_haze",
+        "assets/shaders/starfield/galaxy_haze.vert",
+        "assets/shaders/starfield/galaxy_haze.frag",
+        ShaderProgram::Starfield
+    );
 
 
 

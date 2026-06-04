@@ -39,6 +39,23 @@ void GameWebView::stop()
         m_thread.detach();
 }
 
+
+
+
+
+static bool isUri(const std::string& value)
+{
+    return value.rfind("http://", 0) == 0 ||
+           value.rfind("https://", 0) == 0 ||
+           value.rfind("file://", 0) == 0;
+}
+
+
+
+
+
+
+
 void GameWebView::setCommandCallback(CommandCallback cb)
 {
     m_commandCallback = std::move(cb);
@@ -71,6 +88,18 @@ void GameWebView::resize(int width, int height)
 
 
 
+void GameWebView::setBounds(int x, int y, int width, int height)
+{
+    HWND hwnd = static_cast<HWND>(m_webviewHwnd);
+
+    if (!hwnd)
+        return;
+
+    MoveWindow(hwnd, x, y, width, height, TRUE);
+}
+
+
+
 void GameWebView::setVisible(bool visible)
 {
     HWND hwnd = static_cast<HWND>(m_webviewHwnd);
@@ -92,6 +121,28 @@ void GameWebView::setVisible(bool visible)
             0,
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE
         );
+
+        HWND parent = static_cast<HWND>(m_parentHwnd);
+        if (parent)
+        {
+            SetForegroundWindow(parent);
+            SetActiveWindow(parent);
+            SetFocus(parent);
+        }
+    }
+    else
+    {
+        SetWindowPos(
+            hwnd,
+            HWND_TOP,
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE
+        );
+
+        SetFocus(hwnd);
     }
 }
 
@@ -112,8 +163,19 @@ void GameWebView::navigate(const std::string& htmlFile)
 
     auto* w = static_cast<webview::webview*>(raw);
 
-    std::filesystem::path htmlPath = std::filesystem::absolute(htmlFile);
-    const std::string uri = filePathToUri(htmlPath.string());
+    std::string uri;
+
+    if (isUri(htmlFile))
+    {
+        uri = htmlFile;
+    }
+    else
+    {
+        std::filesystem::path htmlPath =
+            std::filesystem::absolute(htmlFile);
+
+        uri = filePathToUri(htmlPath.string());
+    }
 
     std::cout << "[GameWebView] navigate request: " << uri << "\n";
 
@@ -252,16 +314,28 @@ void GameWebView::threadMain(void* parentHwnd, std::string title, int width, int
             nullptr
         );
 
-        std::filesystem::path htmlPath = std::filesystem::absolute(htmlFile);
+        std::string uri;
 
-        std::cout << "[GameWebView] HTML path: " << htmlPath.string() << "\n";
-        std::cout << "[GameWebView] HTML exists: "
-                << (std::filesystem::exists(htmlPath) ? "YES" : "NO")
-                << "\n";
+        if (isUri(htmlFile))
+        {
+            uri = htmlFile;
 
-            const std::string uri = filePathToUri(htmlPath.string());
+            std::cout << "[GameWebView] Navigate URI: " << uri << "\n";
+            w.navigate(uri);
+        }
+        else
+        {
+            std::filesystem::path htmlPath =
+                std::filesystem::absolute(htmlFile);
 
-            std::cout << "[GameWebView] Navigate: " << uri << "\n";
+            std::cout << "[GameWebView] HTML path: " << htmlPath.string() << "\n";
+            std::cout << "[GameWebView] HTML exists: "
+                    << (std::filesystem::exists(htmlPath) ? "YES" : "NO")
+                    << "\n";
+
+            uri = filePathToUri(htmlPath.string());
+
+            std::cout << "[GameWebView] Navigate file: " << uri << "\n";
 
             if (std::filesystem::exists(htmlPath))
             {
@@ -274,11 +348,12 @@ void GameWebView::threadMain(void* parentHwnd, std::string title, int width, int
                     <html>
                     <body style="background:#111;color:#eee;font-family:Arial;padding:32px">
                         <h1>GameWebView works</h1>
-                        <p>main_menu.html not found.</p>
+                        <p>HTML file not found.</p>
                     </body>
                     </html>
                 )HTML");
             }
+        }
 
         w.run();
 

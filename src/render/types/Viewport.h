@@ -2,6 +2,9 @@
 
 struct Viewport
 {
-    int width  = 0;
-    int height = 0;
+    int width = 1;
+    int height = 1;
+
+    int x = 0;
+    int y = 0;
 };

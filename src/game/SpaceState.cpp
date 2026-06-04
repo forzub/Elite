@@ -5,9 +5,11 @@
 
 #include <chrono>
 #include <algorithm>
+#include <functional>
 
 #include <fstream>
 #include <iomanip>
+#include <unordered_map>
 
 #include "SpaceState.h"
 #include "core/StateStack.h"
@@ -52,11 +54,30 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/constants.hpp>
-
+#include "core/Application.h"
 
 
 namespace
 {
+    double stableBodyPhaseRadians(const std::string& id)
+{
+    uint32_t h = 2166136261u;
+
+    for (unsigned char c : id)
+    {
+        h ^= c;
+        h *= 16777619u;
+    }
+
+    const double t =
+        static_cast<double>(h % 10000u) / 10000.0;
+
+    return t * glm::two_pi<double>();
+}
+
+
+
+
 
     double nowMs()
     {
@@ -248,6 +269,62 @@ glm::mat4 makePromoPitchOnlyOrientationClient(
 }
 
 
+
+
+json celestialDefinitionToJson(
+    const world::celestial::CelestialSystemDefinition& system
+)
+{
+    json bodies = json::array();
+
+    std::unordered_map<std::string, glm::dvec3> positions;
+
+    int index = 0;
+
+    for (const auto& b : system.bodies)
+    {
+        glm::dvec3 pos = b.staticPositionAu;
+
+        if (b.distanceAu > 0.0)
+        {
+            glm::dvec3 parentPos(0.0);
+
+            auto parentIt = positions.find(b.parentId);
+            if (parentIt != positions.end())
+                parentPos = parentIt->second;
+
+            const double phase = double(index) * 0.77;
+
+            pos = parentPos + glm::dvec3(
+                std::cos(phase) * b.distanceAu,
+                0.0,
+                std::sin(phase) * b.distanceAu
+            );
+        }
+
+        positions[b.id] = pos;
+
+        json item;
+        item["id"] = b.id;
+        item["name"] = b.name;
+        item["type"] = world::celestial::toString(b.type);
+        item["parentId"] = b.parentId;
+        item["radiusKm"] = b.radiusKm;
+
+        item["positionAu"] = {
+            {"x", pos.x},
+            {"y", pos.y},
+            {"z", pos.z}
+        };
+
+        bodies.push_back(std::move(item));
+        ++index;
+    }
+
+    return bodies;
+}
+
+
 } // namespace
 
 
@@ -283,6 +360,9 @@ SpaceState::SpaceState(StateStack& states)
     // Важно: после InitShaders(), потому что starfield renderer использует
     // galaxy_starfield / galaxy_haze shader paths.
     m_sceneRenderer.initializeStaticResources();
+    m_systemMapRenderer.init();
+
+    requestGalaxyMapSnapshotOnce();
 
     initHUD();
 
@@ -335,7 +415,38 @@ SpaceState::SpaceState(StateStack& states)
 }
 
 
+void SpaceState::requestGalaxyMapSnapshotOnce()
+{
+    if (!m_server)
+        return;
 
+    if (m_hasGalaxyMapSnapshot)
+        return;
+
+    m_galaxyMapSnapshot =
+        m_server->buildGalaxyMapSnapshot();
+
+    m_hasGalaxyMapSnapshot = true;
+}
+
+
+void SpaceState::requestSystemMapSnapshot(int systemId)
+{
+    if (!m_server)
+        return;
+
+    if (m_hasSystemMapSnapshot &&
+        m_loadedSystemMapId == systemId)
+    {
+        return;
+    }
+
+    m_systemMapSnapshot =
+        m_server->buildSystemMapSnapshot(systemId);
+
+    m_loadedSystemMapId = systemId;
+    m_hasSystemMapSnapshot = true;
+}
 
 
 
@@ -370,6 +481,31 @@ SpaceState::~SpaceState()
 // =====================================================================================
 void SpaceState::handleInput()
 {
+    if (context().app &&
+        context().app->gameUiMode() == GameUiMode::SystemMap)
+    {
+        if (m_server)
+        {
+            const Viewport& fullVp = context().viewport();
+
+            const float panelRatio = 0.28f;
+
+            Viewport mapVp = fullVp;
+            mapVp.x = fullVp.x;
+            mapVp.y = fullVp.y;
+            mapVp.width = static_cast<int>(
+                static_cast<float>(fullVp.width) * (1.0f - panelRatio)
+            );
+            mapVp.height = fullVp.height;
+
+            m_systemMapRenderer.handleInput(
+                mapVp,
+                m_galaxyMapSnapshot
+            );
+        }
+
+        return;
+    }
 
     if (Input::instance().isKeyPressedOnce(GLFW_KEY_F1)){
         PlayerShipView::g_debugLogNextFrame = true;
@@ -397,6 +533,12 @@ void SpaceState::handleInput()
 if (Input::instance().isKeyPressedOnce(GLFW_KEY_F8)) {
     pushAttachmentEditorState();
 }
+
+// if (Input::instance().isKeyPressedOnce(GLFW_KEY_F11))
+// {
+//     toggleSystemMap();
+//     return;
+// }
 
 // Emergency cockpit capsule ejection.
 const bool leftCtrlDown =
@@ -737,6 +879,8 @@ m_playerView->updateCockpitStateFromSnapshot(
     }
 
     
+
+    
     static float structureDebugTimer = 0.0f;
     structureDebugTimer += dt;
     if (structureDebugTimer > 0.25f)
@@ -765,6 +909,12 @@ m_playerView->updateCockpitStateFromSnapshot(
         if (context().htmlUi().state().activePanel == HtmlUiPanelId::DebugControl)
         {
             pushDebugControlState();
+        }
+
+        if (context().app &&
+            context().app->gameUiMode() == GameUiMode::SystemMap)
+        {
+            pushSystemMapPanelState();
         }
     }
 
@@ -795,6 +945,18 @@ void SpaceState::render(){}
 void SpaceState::renderUI()
 {
     const double renderUiStartMs = nowMs();
+
+
+        if (context().app &&
+        context().app->gameUiMode() == GameUiMode::SystemMap)
+    {
+        // System map is a full-screen tactical/navigation mode.
+        // Do not render cockpit/world cameras under it.
+        m_perfRenderUiMs = nowMs() - renderUiStartMs;
+        return;
+    }
+
+
 
     Camera*                                     mainCam = nullptr;
     Camera*                                     miniCam = nullptr;
@@ -962,8 +1124,8 @@ void SpaceState::renderUI()
     RenderCameraViewport::render(
         *mainCam,
         vp,
-        0,
-        0,
+        vp.x,
+        vp.y,
         vp.width,
         vp.height,
         [&](auto view, auto proj)
@@ -1154,11 +1316,69 @@ void SpaceState::renderHUD()
 
     const Viewport& vp = context().viewport();
 
+        if (context().app &&
+        context().app->gameUiMode() == GameUiMode::SystemMap &&
+        m_server)
+    {
+        glDisable(GL_DEPTH_TEST);
+
+        Viewport mapVp = vp;
+
+        const float panelRatio = 0.28f;
+        mapVp.x = vp.x;
+        mapVp.y = vp.y;
+        mapVp.width = static_cast<int>(static_cast<float>(vp.width) * (1.0f - panelRatio));
+        mapVp.height = vp.height;
+
+        m_systemMapRenderer.setRightPanelRatio(panelRatio);
+
+        
+
+
+
+
+
+
+        if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System)
+        {
+            const int focusedId =
+                m_systemMapRenderer.focusedSystemId() >= 0
+                    ? m_systemMapRenderer.focusedSystemId()
+                    : m_server->playerNavigation().currentSystemId;
+
+            requestSystemMapSnapshot(focusedId);
+        }
+
+        m_systemMapRenderer.render(
+            mapVp,
+            m_galaxyMapSnapshot,
+            m_systemMapSnapshot,
+            m_server->playerNavigation()
+        );
+
+
+
+        glEnable(GL_DEPTH_TEST);
+
+        m_perfHudMs = nowMs() - hudStartMs;
+        return;
+    }
+
+
+
+
+
+
     int vx = vp.width;
     int vy = vp.height;
 
     float fx = (float)vp.width;
     float fy = (float)vp.height;
+
+    glViewport(vp.x, vp.y, vp.width, vp.height);
+    glScissor(vp.x, vp.y, vp.width, vp.height);
+
+
 
     
 
@@ -1239,7 +1459,7 @@ void SpaceState::renderHUD()
     // // 3. векторные приборы
     glEnable(GL_DEPTH_TEST);
 
-
+    
    
     m_perfHudMs = nowMs() - hudStartMs;
 }
@@ -1363,10 +1583,56 @@ void SpaceState::pushAttachmentEditorState()
 
 void SpaceState::processHtmlCommands()
 {
+
+
+
+
+
     auto cmds = context().htmlUi().popCommands();
 
     for (const auto& msg : cmds)
     {
+        
+        // ------------------------------
+        // SYSTEM MAP
+        // ------------------------------
+        if (msg.panel == HtmlUiPanelId::SystemMap)
+        {
+            if (msg.type == HtmlUiMessageType::Subscribe)
+            {
+                if (context().htmlUi().state().activePanel != HtmlUiPanelId::SystemMap)
+                {
+                    context().htmlUi().setActivePanel(HtmlUiPanelId::SystemMap);
+                }
+
+                pushSystemMapState();
+                continue;
+            }
+
+            if (msg.type == HtmlUiMessageType::Command)
+            {
+                if (msg.command == "request_snapshot")
+                {
+                    pushSystemMapState();
+                    continue;
+                }
+
+                if (msg.command == "close")
+                {
+                    if (Application* app = context().app)
+                    {
+                        app->closeGameUi();
+                    }
+
+                    continue;
+                }
+            }
+        }
+        
+        
+        
+         
+        
         // ------------------------------
         // ATTACHMENT EDITOR
         // ------------------------------
@@ -2213,4 +2479,345 @@ void SpaceState::updatePromoPlayerShipTracking(float dt)
     playerShip.renderTransform.forwardVelocity = 0.0f;
     playerShip.renderTransform.targetSpeed = 0.0f;
     playerShip.renderTransform.localVelocity = glm::vec3(0.0f);
+}
+
+
+
+
+
+
+
+
+
+
+
+void SpaceState::pushSystemMapState()
+{
+    if (!m_server)
+        return;
+
+    const auto& atlas = m_server->starAtlas();
+    const auto& celestial = m_server->celestialSnapshot();
+    const auto& nav = m_server->playerNavigation();
+
+    json payload;
+
+    payload["universeTimeSeconds"] =
+        m_server->universeClock().timeSeconds();
+
+    payload["universeDate"] =
+        m_server->universeClock().dateTimeString();
+
+    payload["universeTimeScale"] =
+        m_server->universeClock().timeScale();
+
+    payload["currentSystemId"] = nav.currentSystemId;
+    payload["system"]["id"] = celestial.systemId;
+    payload["system"]["name"] = celestial.systemName;
+    payload["simTimeSeconds"] = celestial.simTimeSeconds;
+
+    payload["player"]["positionAu"] = {
+        {"x", nav.systemLocalAu.x},
+        {"y", nav.systemLocalAu.y},
+        {"z", nav.systemLocalAu.z}
+    };
+
+    payload["player"]["forward"] = {
+        {"x", nav.forward.x},
+        {"y", nav.forward.y},
+        {"z", nav.forward.z}
+    };
+
+    payload["systems"] = json::array();
+
+    const world::celestial::GalaxyMapSystem* currentSystem = nullptr;
+
+
+
+for (const auto& s : m_galaxyMapSnapshot.systems)
+{
+    if (s.id == nav.currentSystemId)
+    {
+        currentSystem = &s;
+        break;
+    }
+}
+
+auto distanceFromPlayerLy =
+    [&](const world::celestial::GalaxyMapSystem& s) -> double
+{
+    if (!currentSystem)
+        return 0.0;
+
+    const double dx = s.positionLy.x - currentSystem->positionLy.x;
+    const double dy = s.positionLy.y - currentSystem->positionLy.y;
+    const double dz = s.positionLy.z - currentSystem->positionLy.z;
+
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
+};
+
+auto jurisdictionForSystem =
+    [](int systemId) -> std::string
+{
+    if (systemId == 0)
+        return "Sol Authority";
+
+    if (systemId >= 1 && systemId <= 9)
+        return "Core Jurisdiction";
+
+    if (systemId >= 10 && systemId <= 29)
+        return "Colonial Administration";
+
+    if (systemId >= 30 && systemId <= 44)
+        return "Frontier / Independent";
+
+    return "Unregistered";
+};
+
+const int selectedId =
+    m_systemMapRenderer.selectedSystemId() >= 0
+        ? m_systemMapRenderer.selectedSystemId()
+        : nav.currentSystemId;
+
+for (const auto& s : m_galaxyMapSnapshot.systems)
+{
+    json item;
+    item["id"] = s.id;
+    item["name"] = s.name;
+    item["starType"] = s.starType;
+    item["starsCount"] = s.starsCount;
+    item["xLy"] = s.positionLy.x;
+    item["yLy"] = s.positionLy.y;
+    item["zLy"] = s.positionLy.z;
+    item["current"] = (s.id == nav.currentSystemId);
+    item["selected"] = (s.id == selectedId);
+
+    item["distanceFromPlayerLy"] = distanceFromPlayerLy(s);
+    item["jurisdiction"] = jurisdictionForSystem(s.id);
+
+    payload["systems"].push_back(std::move(item));
+}
+
+    payload["systemBodiesById"] = json::object();
+
+    for (const auto& s : m_galaxyMapSnapshot.systems)
+    {
+        const auto* def = atlas.findSystem(s.id);
+        if (!def)
+            continue;
+
+        payload["systemBodiesById"][std::to_string(s.id)] =
+            celestialDefinitionToJson(*def);
+    }
+
+    payload["bodies"] = json::array();
+
+    for (const auto& b : celestial.bodies)
+    {
+        json item;
+        item["id"] = b.id;
+        item["name"] = b.name;
+        item["type"] = world::celestial::toString(b.type);
+        item["parentId"] = b.parentId;
+
+        item["positionAu"] = {
+            {"x", b.positionAu.x},
+            {"y", b.positionAu.y},
+            {"z", b.positionAu.z}
+        };
+
+        item["radiusKm"] = b.radiusKm;
+        item["orbitalPhaseRad"] = b.orbitalPhaseRad;
+        item["rotationPhaseRad"] = b.rotationPhaseRad;
+
+        item["rings"] = json::array();
+
+        for (const auto& r : b.rings)
+        {
+            item["rings"].push_back({
+                {"name", r.name},
+                {"innerRadiusKm", r.innerRadiusKm},
+                {"outerRadiusKm", r.outerRadiusKm},
+                {"composition", r.composition}
+            });
+        }
+
+        payload["bodies"].push_back(std::move(item));
+    }
+
+    context().htmlUi().broadcastState(HtmlUiPanelId::SystemMap, payload);
+}
+
+
+
+void SpaceState::selectSystemMapSystem(int systemId)
+{
+    if (!m_server)
+        return;
+
+    m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Galaxy);
+
+    m_systemMapRenderer.focusGalaxySystem(
+        systemId,
+        m_galaxyMapSnapshot
+    );
+
+    pushSystemMapPanelState();
+}
+
+void SpaceState::setSystemMapGalaxyMode()
+{
+    requestGalaxyMapSnapshotOnce();
+
+    m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Galaxy);
+
+    pushSystemMapPanelState();
+}
+
+
+
+void SpaceState::setSystemMapCurrentSystemMode()
+{
+    if (!m_server)
+        return;
+
+    const int selectedId =
+        m_systemMapRenderer.selectedSystemId() >= 0
+            ? m_systemMapRenderer.selectedSystemId()
+            : m_server->playerNavigation().currentSystemId;
+
+    m_systemMapRenderer.focusGalaxySystem(
+        selectedId,
+        m_galaxyMapSnapshot
+    );
+
+    requestSystemMapSnapshot(selectedId);
+
+    m_systemMapRenderer.setMode(SystemMapRenderer::Mode::System);
+
+    pushSystemMapPanelState();
+}
+
+
+
+
+void SpaceState::pushSystemMapPanelState()
+{
+    requestGalaxyMapSnapshotOnce();
+
+    if (!m_server || !context().app)
+        return;
+
+    const auto& atlas = m_server->starAtlas();
+    const auto& celestial = m_server->celestialSnapshot();
+    const auto& nav = m_server->playerNavigation();
+
+    json payload;
+
+    payload["universeTimeSeconds"] =
+        m_server->universeClock().timeSeconds();
+
+    payload["universeDate"] =
+        m_server->universeClock().dateTimeString();
+
+    payload["universeTimeScale"] =
+        m_server->universeClock().timeScale();
+
+    payload["mode"] =
+        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Galaxy
+            ? "Galaxy"
+            : "System";
+
+    payload["systemsCount"] = m_galaxyMapSnapshot.systems.size();
+    payload["currentSystemId"] = nav.currentSystemId;
+    payload["currentSystemName"] = celestial.systemName;
+
+    const int selectedId =
+        m_systemMapRenderer.selectedSystemId() >= 0
+            ? m_systemMapRenderer.selectedSystemId()
+            : nav.currentSystemId;
+
+    payload["selectedSystemId"] = selectedId;
+
+    payload["systems"] = json::array();
+
+const world::celestial::GalaxyMapSystem* currentSystem = nullptr;
+
+for (const auto& s : m_galaxyMapSnapshot.systems)
+{
+    if (s.id == nav.currentSystemId)
+    {
+        currentSystem = &s;
+        break;
+    }
+}
+
+// fallback: если currentSystemId не найден — считаем от Sol
+if (!currentSystem)
+{
+    for (const auto& s : m_galaxyMapSnapshot.systems)
+    {
+        if (s.id == 0)
+        {
+            currentSystem = &s;
+            break;
+        }
+    }
+}
+
+auto distanceFromPlayerLy =
+    [&](const world::celestial::GalaxyMapSystem& s) -> double
+{
+    if (!currentSystem)
+        return 0.0;
+
+    const double dx = s.positionLy.x - currentSystem->positionLy.x;
+    const double dy = s.positionLy.y - currentSystem->positionLy.y;
+    const double dz = s.positionLy.z - currentSystem->positionLy.z;
+
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
+};
+
+auto jurisdictionForSystem =
+    [](int systemId) -> std::string
+{
+    if (systemId == 0)
+        return "Sol Authority";
+
+    if (systemId >= 1 && systemId <= 9)
+        return "Core Jurisdiction";
+
+    if (systemId >= 10 && systemId <= 29)
+        return "Colonial Administration";
+
+    if (systemId >= 30 && systemId <= 44)
+        return "Frontier / Independent";
+
+    return "Unregistered";
+};
+
+for (const auto& s : m_galaxyMapSnapshot.systems)
+{
+    json item;
+    item["id"] = s.id;
+    item["name"] = s.name;
+    item["starType"] = s.starType;
+    item["starsCount"] = s.starsCount;
+    item["xLy"] = s.positionLy.x;
+    item["yLy"] = s.positionLy.y;
+    item["zLy"] = s.positionLy.z;
+    item["current"] = (s.id == nav.currentSystemId);
+    item["selected"] = (s.id == selectedId);
+
+    item["distanceFromPlayerLy"] = distanceFromPlayerLy(s);
+    item["jurisdiction"] = jurisdictionForSystem(s.id);
+
+    payload["systems"].push_back(std::move(item));
+}
+
+    context().app->evalGameUiScript(
+        "if (window.setSystemMapPanel) window.setSystemMapPanel(" +
+        payload.dump() +
+        ");"
+    );
 }

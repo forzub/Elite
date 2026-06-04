@@ -1,6 +1,7 @@
 #include <iostream>
 #include <GLFW/glfw3.h>
 #include "Application.h"
+#include <algorithm>
 
 #include "core/Log.h"
 #include "ui/MainMenuState.h"
@@ -11,6 +12,7 @@
 #include <filesystem>
 #include "ui/html/HtmlUiPanelId.h"
 
+#include "render/ViewportUtils.h"
 
 // =====================================================================================
 // Constructor
@@ -73,6 +75,59 @@ static std::string findGameUiFile(const std::string& relativeFile)
 
 
 
+static std::string findGameUiRoot()
+{
+    namespace fs = std::filesystem;
+
+    fs::path cwd = fs::current_path();
+
+    std::vector<fs::path> candidates =
+    {
+        cwd / "assets" / "webui",
+        cwd.parent_path() / "assets" / "webui",
+        cwd.parent_path() / "src" / "assets" / "webui",
+        fs::path("D:/__elite/work/src/assets/webui")
+    };
+
+    for (const auto& p : candidates)
+    {
+        if (fs::exists(p / "main_menu.html") ||
+            fs::exists(p / "system_map.html"))
+        {
+            std::cout << "[App] GameUI root: " << p.string() << "\n";
+            return p.string();
+        }
+    }
+
+    std::cout << "[App] GameUI root fallback used\n";
+    return (cwd / "assets" / "webui").string();
+}
+
+static std::string makeGameUiHttpUrl(const std::string& relativeFile)
+{
+    return "http://localhost:8090/" + relativeFile;
+}
+
+
+static constexpr float TargetGameAspect = 16.0f / 9.0f;
+
+
+static int systemMapPanelWidth(int framebufferWidth)
+{
+    const float w = static_cast<float>(framebufferWidth);
+
+    // 28% экрана, но с разумными границами.
+    // 1280 -> ~358
+    // 1920 -> ~538
+    // 2560 -> ~716, но ограничим.
+    return std::clamp(
+        static_cast<int>(w * 0.28f),
+        360,
+        640
+    );
+}
+
+
 // =====================================================================================
 // run
 // =====================================================================================
@@ -95,9 +150,15 @@ void Application::run()
 // =====================================================================================
 Viewport Application::viewport() const
 {
-    int w, h;
+    int w = 1;
+    int h = 1;
+
     glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
-    return { w, h };
+
+    const auto lb =
+        makeLetterboxedViewport(w, h, TargetGameAspect);
+
+    return toViewport(lb);
 }
 
 
@@ -122,8 +183,7 @@ void Application::init()
 
     
     // ---------------------------------------------------
-            std::string exeDir = getExecutablePath();
-            std::string webUiRoot = exeDir + "/assets/webui";
+            std::string webUiRoot = findGameUiRoot();
 
             m_htmlUi.start(8090, webUiRoot);
 
@@ -159,8 +219,11 @@ void Application::init()
             "EliteGame UI",
             uiW,
             uiH,
-            findGameUiFile("main_menu.html")
+            makeGameUiHttpUrl("main_menu.html")
         );
+        m_gameUi.forceMode(GameUiMode::MainMenu);
+        m_gameUi.markLoaded(GameUiMode::MainMenu);
+        m_htmlUi.setActivePanel(HtmlUiPanelId::None);
     #endif
 
     m_states.push(std::make_unique<MainMenuState>(m_states));
@@ -193,6 +256,26 @@ void Application::mainLoop()
         // Input::instance().update();
         m_window->pollEvents();
         Input::instance().update(m_window->nativeHandle());
+        
+        
+        #ifdef _WIN32
+        {
+            const bool f11Down =
+                (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
+
+            if (m_gameUi.consumeF11Press(f11Down))
+            {
+                if (dynamic_cast<SpaceState*>(m_states.current()))
+                {
+                    toggleSystemMapUi();
+
+                    Input::instance().reset();
+                    m_window->swapBuffers();
+                    continue;
+                }
+            }
+        }
+        #endif
 
 
 
@@ -202,14 +285,67 @@ void Application::mainLoop()
                 std::string webCommand;
                 while (m_gameWebView.pollCommand(webCommand))
                 {
-                    std::cout << "[App] WebView command: " << webCommand << "\n";
+                    // std::cout << "[App] WebView command: " << webCommand << "\n";
+                    if (webCommand.rfind("system_map_select:", 0) == 0)
+                    {
+                        const std::string idText =
+                            webCommand.substr(std::string("system_map_select:").size());
+
+                        try
+                        {
+                            const int systemId = std::stoi(idText);
+
+                            if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
+                            {
+                                space->selectSystemMapSystem(systemId);
+                            }
+                        }
+                        catch (...)
+                        {
+                            std::cout << "[App] bad system_map_select command: "
+                                    << webCommand << "\n";
+                        }
+
+                        continue;
+                    }
+
+                    if (webCommand == "system_map_galaxy")
+                    {
+                        if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
+                        {
+                            space->setSystemMapGalaxyMode();
+                        }
+
+                        continue;
+                    }
+
+                    if (webCommand == "system_map_current_system")
+                    {
+                        if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
+                        {
+                            space->setSystemMapCurrentSystemMode();
+                        }
+
+                        continue;
+                    }
+                    
+                    if (webCommand == "close_system_map")
+                    {
+                        closeGameUi();
+                        continue;
+                    }
 
                     if (webCommand == "new_game")
                     {
                         std::cout << "[App] new_game requested, switching to loading screen\n";
 
+                        m_gameUi.forceMode(GameUiMode::Loading);
+                        m_gameUi.markLoaded(GameUiMode::Loading);
+
+                        m_htmlUi.setActivePanel(HtmlUiPanelId::None);
+
                         m_gameWebView.setVisible(true);
-                        m_gameWebView.navigate(findGameUiFile("loading.html"));
+                        m_gameWebView.navigate(makeGameUiHttpUrl("loading.html"));
                         m_gameWebView.evalScript("setLoadingProgress(0.10, 'OPENING LOADING SCREEN');");
 
                         m_pendingNewGameLoad = true;
@@ -276,10 +412,37 @@ void Application::mainLoop()
             state->update(dt);
         
         m_renderer.beginFrame();
-           
-            glClear(GL_COLOR_BUFFER_BIT |
+
+        int fbW = 1;
+        int fbH = 1;
+        glfwGetFramebufferSize(m_window->nativeHandle(), &fbW, &fbH);
+
+        const auto lb =
+            makeLetterboxedViewport(fbW, fbH, TargetGameAspect);
+
+        // Сначала очищаем весь framebuffer в чёрный.
+        // Это создаёт black bars.
+        glViewport(0, 0, fbW, fbH);
+        glScissor(0, 0, fbW, fbH);
+        glEnable(GL_SCISSOR_TEST);
+
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(
+            GL_COLOR_BUFFER_BIT |
             GL_DEPTH_BUFFER_BIT |
-            GL_STENCIL_BUFFER_BIT);
+            GL_STENCIL_BUFFER_BIT
+        );
+
+        // Теперь ограничиваем рендер игровой областью.
+        glViewport(lb.x, lb.y, lb.width, lb.height);
+        glScissor(lb.x, lb.y, lb.width, lb.height);
+
+        glClearColor(0.002f, 0.006f, 0.014f, 1.0f);
+        glClear(
+            GL_COLOR_BUFFER_BIT |
+            GL_DEPTH_BUFFER_BIT |
+            GL_STENCIL_BUFFER_BIT
+        );
 
             GameState* top = m_states.current();
             GameState* below = m_states.previous();
@@ -293,6 +456,7 @@ void Application::mainLoop()
             if (top)top->renderHUD();
 
         m_renderer.endFrame();
+        glDisable(GL_SCISSOR_TEST);
 
         m_states.applyPendingChanges();
         m_window->swapBuffers();
@@ -333,21 +497,236 @@ void Application::framebuffer_size_callback(GLFWwindow* window, int width, int h
 
 void Application::handleResize(int width, int height)
 {
-    // Обновляем вьюпорт в контексте
-    glViewport(0, 0, width, height);
-    
+    const auto lb =
+        makeLetterboxedViewport(width, height, TargetGameAspect);
+
+    glViewport(lb.x, lb.y, lb.width, lb.height);
+
     GameState* currentState = m_states.current();
     if (currentState)
     {
-        currentState->handleResize(width, height);
+        currentState->handleResize(lb.width, lb.height);
     }
 
-    m_htmlUi.setViewport(width, height);
+    m_htmlUi.setViewport(lb.width, lb.height);
 
-    #ifdef _WIN32
-        m_gameWebView.resize(width, height);
-    #endif
+#ifdef _WIN32
+    if (m_gameUi.isMode(GameUiMode::SystemMap))
+    {
+        const int panelW =
+            systemMapPanelWidth(lb.width);
+
+        m_gameWebView.setBounds(
+            lb.x + std::max(0, lb.width - panelW),
+            lb.y,
+            panelW,
+            lb.height
+        );
+    }
+    else
+    {
+        m_gameWebView.setBounds(
+            lb.x,
+            lb.y,
+            lb.width,
+            lb.height
+        );
+    }
+#endif
 }
+
+
+
+
+
+void Application::navigateGameUi(GameUiMode mode)
+{
+#ifndef _WIN32
+    (void)mode;
+    return;
+#else
+    switch (mode)
+    {
+        case GameUiMode::MainMenu:
+            m_gameWebView.navigate(makeGameUiHttpUrl("main_menu.html"));
+            break;
+
+        case GameUiMode::Loading:
+            m_gameWebView.navigate(makeGameUiHttpUrl("loading.html"));
+            break;
+
+        case GameUiMode::SystemMap:
+            m_gameWebView.navigate(makeGameUiHttpUrl("system_map_panel.html"));
+            break;
+
+        case GameUiMode::None:
+        default:
+            break;
+    }
+#endif
+}
+
+
+
+
+void Application::openGameUi(GameUiMode mode)
+{
+    if (!m_gameUi.open(mode))
+        return;
+
+    switch (mode)
+    {
+        case GameUiMode::SystemMap:
+        {
+            m_htmlUi.setActivePanel(HtmlUiPanelId::None);
+
+#ifdef _WIN32
+            int w = 1280;
+            int h = 720;
+
+            glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
+
+            const auto lb =
+                makeLetterboxedViewport(w, h, TargetGameAspect);
+
+            const int panelW =
+                systemMapPanelWidth(lb.width);
+
+            if (!m_gameUi.isLoaded(GameUiMode::SystemMap))
+            {
+                navigateGameUi(GameUiMode::SystemMap);
+                m_gameUi.markLoaded(GameUiMode::SystemMap);
+            }
+
+            m_gameWebView.setBounds(
+                lb.x + std::max(0, lb.width - panelW),
+                lb.y,
+                panelW,
+                lb.height
+            );
+
+            m_gameWebView.setVisible(true);
+#endif
+            break;
+        }
+
+        case GameUiMode::MainMenu:
+        {
+            m_htmlUi.setActivePanel(HtmlUiPanelId::None);
+
+#ifdef _WIN32
+            if (!m_gameUi.isLoaded(GameUiMode::MainMenu))
+            {
+                navigateGameUi(GameUiMode::MainMenu);
+                m_gameUi.markLoaded(GameUiMode::MainMenu);
+            }
+
+            int w = 1280;
+            int h = 720;
+            glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
+
+            const auto lb =
+                makeLetterboxedViewport(w, h, TargetGameAspect);
+
+            m_gameWebView.setBounds(lb.x, lb.y, lb.width, lb.height);
+            m_gameWebView.setVisible(true);
+#endif
+            break;
+        }
+
+        case GameUiMode::Loading:
+        {
+            m_htmlUi.setActivePanel(HtmlUiPanelId::None);
+
+#ifdef _WIN32
+            if (!m_gameUi.isLoaded(GameUiMode::Loading))
+            {
+                navigateGameUi(GameUiMode::Loading);
+                m_gameUi.markLoaded(GameUiMode::Loading);
+            }
+
+            int w = 1280;
+            int h = 720;
+            glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
+
+            const auto lb =
+                makeLetterboxedViewport(w, h, TargetGameAspect);
+
+            m_gameWebView.setBounds(lb.x, lb.y, lb.width, lb.height);
+            m_gameWebView.setVisible(true);
+#endif
+            break;
+        }
+
+        case GameUiMode::None:
+        default:
+            closeGameUi();
+            break;
+    }
+}
+
+
+
+
+
+
+void Application::evalGameUiScript(const std::string& script)
+{
+#ifdef _WIN32
+    m_gameWebView.evalScript(script);
+#else
+    (void)script;
+#endif
+}
+
+
+
+
+
+
+
+void Application::closeGameUi()
+{
+    if (!m_gameUi.close())
+        return;
+
+    m_htmlUi.setActivePanel(HtmlUiPanelId::None);
+
+#ifdef _WIN32
+    m_gameWebView.setVisible(false);
+#endif
+}
+
+void Application::toggleSystemMapUi()
+{
+    if (m_gameUi.isMode(GameUiMode::SystemMap))
+    {
+        closeGameUi();
+        return;
+    }
+
+    openGameUi(GameUiMode::SystemMap);
+}
+
+GameUiMode Application::gameUiMode() const
+{
+    return m_gameUi.mode();
+}
+
+bool Application::isGameUiOpen() const
+{
+    return m_gameUi.isOpen();
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -379,11 +758,9 @@ void Application::updatePendingNewGameLoad()
 
     m_gameWebView.evalScript("setLoadingProgress(1.00, 'READY');");
 
-    m_htmlUi.setActivePanel(HtmlUiPanelId::None);
-
+    closeGameUi();
+    m_gameUi.clearLoaded();
     Input::instance().reset();
-
-    m_gameWebView.setVisible(false);
 
     m_window->focus();
 

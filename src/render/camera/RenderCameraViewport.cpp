@@ -34,5 +34,5 @@ void RenderCameraViewport::render(
 
     drawScene(view, projection);
 
-    glViewport(0, 0, fullVp.width, fullVp.height);
+    glViewport(fullVp.x, fullVp.y, fullVp.width, fullVp.height);
 }

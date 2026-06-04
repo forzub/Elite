@@ -38,11 +38,11 @@
 
 #include "src/game/promo/PromoSceneScenario.h"
 #include "src/game/traffic/StationTrafficSystem.h"
-
+#include "src/game/system_map/SystemMapRenderer.h"
+#include "src/world/celestial/SystemMapTypes.h"
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
-
 
 class StateStack;
 
@@ -93,7 +93,16 @@ public:
     void pushVolumeViewerState();
     void pushFrustumDebugState(const nlohmann::json& payload);
     void pushDebugControlState();
+    void pushSystemMapState();
+    void pushSystemMapPanelState();
+    void selectSystemMapSystem(int systemId);
+    void setSystemMapGalaxyMode();
+    void setSystemMapCurrentSystemMode();
+
     void applyDebugControlPayload(const nlohmann::json& payload);
+
+    void requestGalaxyMapSnapshotOnce();
+    void requestSystemMapSnapshot(int systemId);
 
 private:
 
@@ -152,6 +161,7 @@ private:
     RadarWidgetBase* m_radarWidget = nullptr;
     SceneRenderer m_sceneRenderer;
     PreparedScene m_preparedScene;
+    SystemMapRenderer m_systemMapRenderer;
 
 
     // std::unique_ptr<game::debug::DebugServer>       m_debugServer;
@@ -209,5 +219,13 @@ private:
     bool m_promoRollFinished = false;
 
     float m_promoRollAngle = 0.0f;
+
+
+    world::celestial::GalaxyMapSnapshot m_galaxyMapSnapshot;
+
+    world::celestial::SystemMapSnapshot m_systemMapSnapshot;
+    int m_loadedSystemMapId = -1;
+    bool m_hasGalaxyMapSnapshot = false;
+    bool m_hasSystemMapSnapshot = false;
     
 };

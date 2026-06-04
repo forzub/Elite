@@ -18,7 +18,8 @@ enum class HtmlUiPanelId
     DebugControl,
     AttachmentEditor,
     StructureDebug,
-    VolumeViewer
+    VolumeViewer,
+    SystemMap
 };
 
 inline std::string_view toString(HtmlUiPanelId id)
@@ -38,6 +39,7 @@ inline std::string_view toString(HtmlUiPanelId id)
         case HtmlUiPanelId::DebugControl:     return "debug_control";
         case HtmlUiPanelId::StructureDebug:   return "structure_debug";
         case HtmlUiPanelId::VolumeViewer:     return "volume_viewer";
+        case HtmlUiPanelId::SystemMap: return "system_map";
         default:                          return "none";
     }
 }

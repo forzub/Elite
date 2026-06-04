@@ -37,6 +37,12 @@ void UICameraView::render(
     const float pw = size.x * parentW;
     const float ph = size.y * parentH;
 
+    const float localX = px;
+    const float localY = py;
+
+    // const float px = static_cast<float>(vp.x) + localX;
+    // const float py = static_cast<float>(vp.y) + localY;
+
     const float minSide = std::min(pw, ph);
 
     float radius =
@@ -227,7 +233,7 @@ void UICameraView::render(
 
     glEnd();
 
-    renderChildren(vp, px, py, pw, ph);
+    renderChildren(vp, localX, localY, pw, ph);
 }
 
 
@@ -294,9 +300,16 @@ void UICameraView::renderToTexture(
     if (fbo == 0) return;
 
     // Сохраняем состояние
-    GLint oldFBO;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFBO);
-    glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
+
+GLint oldFBO;
+glGetIntegerv(GL_FRAMEBUFFER_BINDING, &oldFBO);
+
+GLboolean oldScissorEnabled = glIsEnabled(GL_SCISSOR_TEST);
+GLint oldScissorBox[4] = {0, 0, 0, 0};
+glGetIntegerv(GL_SCISSOR_BOX, oldScissorBox);
+
+glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
+   
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glMatrixMode(GL_MODELVIEW);
@@ -307,6 +320,11 @@ void UICameraView::renderToTexture(
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
     glViewport(0, 0, fboWidth, fboHeight);
+
+    // ВАЖНО:
+    // Application держит GL_SCISSOR_TEST для letterbox.
+    // При рендере в FBO этот scissor становится неверным и режет текстуру.
+    glDisable(GL_SCISSOR_TEST);
 
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
@@ -331,10 +349,8 @@ void UICameraView::renderToTexture(
     drawScene(view, proj);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glViewport(0, 0, vp.width, vp.height);
-
-    glEnable(GL_BLEND);   // возвращаем глобальный режим
+    glViewport(vp.x, vp.y, vp.width, vp.height);
+    glEnable(GL_BLEND);
 
 
     // Восстанавливаем состояние
@@ -343,6 +359,21 @@ void UICameraView::renderToTexture(
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
     glPopAttrib();
+
+    if (oldScissorEnabled)
+    {
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(
+            oldScissorBox[0],
+            oldScissorBox[1],
+            oldScissorBox[2],
+            oldScissorBox[3]
+        );
+    }
+    else
+    {
+        glDisable(GL_SCISSOR_TEST);
+    }
     
     glBindFramebuffer(GL_FRAMEBUFFER, oldFBO);
 }

@@ -171,7 +171,7 @@ namespace
 
 
         constexpr float kCelestialNearPlane = 10000.0f;
-        constexpr float kCelestialFarPlane  = 500000000.0f;
+        constexpr float kCelestialFarPlane  = 200000000000.0f;
 
         constexpr float kFarStationNearPlane = 1000.0f;
         constexpr float kFarStationFarPlane  = 20000000.0f;
@@ -709,7 +709,20 @@ void SceneRenderer::renderCelestialPass(
     const world::coordinates::WorldFrame& frame,
     float timeSeconds
 )
-{
+{   
+    static int enterCelestialCounter = 0;
+
+    if ((enterCelestialCounter++ % 120) == 0)
+    {
+        std::cerr
+            << "[CelestialPass] ENTER initialized="
+            << m_planetRenderer.isInitialized()
+            << std::endl;
+    }
+
+
+
+
     if (!m_planetRenderer.isInitialized())
         return;
 
@@ -723,17 +736,33 @@ void SceneRenderer::renderCelestialPass(
     const glm::mat4 renderView =
         world::coordinates::makeRenderView(view);
 
-    const float earthRadiusM = 6371000.0f;
-    const float stationAltitudeM = 1200000.0f;
+    const double AU = 149597870700.0;
+    const double MoonDistanceM = 384400000.0;
+
+    const float EarthRadiusM = 6371000.0f;
+    const float MoonRadiusM = 1737400.0f;
+    const float SunRadiusM = 696340000.0f;
+
+    const world::coordinates::WorldPosition sunWorldPosition =
+        world::coordinates::makeWorldPositionFromMeters(
+            glm::dvec3(0.0, 0.0, 0.0)
+        );
 
     const world::coordinates::WorldPosition earthWorldPosition =
-    world::coordinates::makeWorldPositionFromMeters(
-        glm::dvec3(
-            0.0,
-            -static_cast<double>(earthRadiusM + stationAltitudeM),
-            2450.0
-        )
-    );
+        world::coordinates::makeWorldPositionFromMeters(
+            glm::dvec3(AU, 0.0, 0.0)
+        );
+
+    const world::coordinates::WorldPosition moonWorldPosition =
+        world::coordinates::makeWorldPositionFromMeters(
+            glm::dvec3(AU, 0.0, MoonDistanceM)
+        );
+
+    const glm::vec3 sunCenterLocal =
+        world::coordinates::toRenderLocal(
+            sunWorldPosition,
+            frame
+        );
 
     const glm::vec3 earthCenterLocal =
         world::coordinates::toRenderLocal(
@@ -741,10 +770,51 @@ void SceneRenderer::renderCelestialPass(
             frame
         );
 
+    const glm::vec3 moonCenterLocal =
+        world::coordinates::toRenderLocal(
+            moonWorldPosition,
+            frame
+        );
+
+    static int celestialLogCounter = 0;
+
+    if ((celestialLogCounter++ % 120) == 0)
+    {
+        std::cout
+            << "[CelestialPass] "
+            << "sunLocal=("
+            << sunCenterLocal.x << ", "
+            << sunCenterLocal.y << ", "
+            << sunCenterLocal.z << ") "
+            << "earthLocal=("
+            << earthCenterLocal.x << ", "
+            << earthCenterLocal.y << ", "
+            << earthCenterLocal.z << ") "
+            << "moonLocal=("
+            << moonCenterLocal.x << ", "
+            << moonCenterLocal.y << ", "
+            << moonCenterLocal.z << ") "
+            << "sunDist=" << glm::length(sunCenterLocal)
+            << " moonDist=" << glm::length(moonCenterLocal)
+            << std::endl;
+    }
+
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     glDepthFunc(GL_LESS);
 
+    // Солнце в 0,0,0.
+    m_planetRenderer.renderSphereOnly(
+        renderView,
+        celestialProj,
+        sunCenterLocal,
+        SunRadiusM / EarthRadiusM,
+        glm::vec3(1.0f, 0.92f, 0.70f),
+        glm::vec3(1.0f, 0.98f, 0.88f),
+        1.5f
+    );
+
+    // Земля на 1 AU.
     m_planetRenderer.render(
         renderView,
         celestialProj,
@@ -752,8 +822,25 @@ void SceneRenderer::renderCelestialPass(
         timeSeconds
     );
 
-    m_lastStats.drawCalls += 2;
+    // Луна рядом с Землёй.
+   m_planetRenderer.renderSphereOnly(
+        renderView,
+        celestialProj,
+        moonCenterLocal,
+        MoonRadiusM / EarthRadiusM,
+        glm::vec3(0.025f, 0.025f, 0.028f),
+        glm::vec3(0.18f, 0.18f, 0.19f),
+        0.0f
+    );
+
+    m_lastStats.drawCalls += 4;
 }
+
+
+
+
+
+
 
 void SceneRenderer::renderFarStationProxyPass(
     const ClientWorldState& world,
@@ -1319,14 +1406,7 @@ profileAfterSetupMs = renderProfileNowMs();
 
     // Планеты / sky / celestial objects должны быть видны во всех камерах,
     // включая задний монитор. Иначе при взгляде назад пропадает планета.
-    if (policy.drawCelestial)
-    {
-        renderCelestialPass(
-            view,
-            frame,
-            static_cast<float>(glfwGetTime())
-        );
-    }
+    
 
     // Дальний proxy станции можно отключать только для маленького rear-monitor,
     // но не для обычного главного вида, даже если он смотрит назад.

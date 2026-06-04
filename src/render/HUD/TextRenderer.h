@@ -16,6 +16,10 @@ public:
     void init();
 
     void beginFrame();
+    void beginFrameForViewport(
+        int width,
+        int height
+    );
     void endFrame();
 
     void textDrawBatched(
@@ -32,6 +36,15 @@ public:
         float x,
         float baselineY,
         const glm::vec4& color
+    );
+
+    void textDraw(
+        Font& font,
+        const std::string& text,
+        float x,
+        float y,
+        const glm::vec4& color,
+        float scale
     );
 
     inline void textDraw(
@@ -51,6 +64,30 @@ public:
         float y,
         float scale,
         const glm::vec3& color
+    );
+
+    void textDraw(
+        const std::string& text,
+        float x,
+        float y,
+        float scale,
+        const glm::vec4& color
+    );
+
+    void textDrawPx(
+        const std::string& text,
+        float x,
+        float y,
+        float pixelHeight,
+        const glm::vec4& color
+    );  
+
+    void textDrawPx(
+        const std::string& text,
+        float x,
+        float y,
+        int pixelSize,
+        const glm::vec4& color
     );
 
 private:

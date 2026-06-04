@@ -71,14 +71,14 @@ public:
     EntityId spawnShip(
         ShipRole role,
         const ShipDescriptor& descriptor,
-        glm::vec3 position,
+        const glm::dvec3& positionMeters,
         const ShipInitData& initData,
         const glm::mat4& orientation = glm::mat4(1.0f)
     );
 
     EntityId spawnStation(
         ObjectType type,
-        const glm::vec3& position,
+        const glm::dvec3& positionMeters,
         const glm::mat4& orientation = glm::mat4(1.0f)
     );
 

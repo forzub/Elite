@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>System Map Panel</title>
+
+<style>
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: rgba(4, 9, 18, 0.96);
+    color: #d7e4f7;
+    font-family: "Segoe UI", "Noto Sans", "Microsoft YaHei UI", "Meiryo", sans-serif;
+}
+
+#panel {
+    position: fixed;
+    inset: 0;
+    box-sizing: border-box;
+    border-left: 1px solid rgba(92, 142, 190, 0.36);
+    background:
+        radial-gradient(circle at 20% 0%, rgba(42, 147, 190, 0.10), transparent 42%),
+        linear-gradient(180deg, rgba(9, 22, 41, 0.96), rgba(3, 7, 15, 0.98));
+}
+
+#header {
+    padding: clamp(18px, 2.2vw, 34px) clamp(18px, 1.8vw, 30px) clamp(14px, 1.4vw, 24px);
+    border-bottom: 1px solid rgba(92, 142, 190, 0.22);
+}
+
+#title {
+    font-size: clamp(24px, 2.1vw, 42px);
+    letter-spacing: 0.055em;
+    font-weight: 300;
+    color: #ffb36a;
+    line-height: 1.0;
+}
+
+#subtitle {
+    margin-top: 8px;
+    color: #8eb2d4;
+    font-size: clamp(11px, 0.85vw, 18px);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+#body {
+    padding: clamp(16px, 1.8vw, 28px) clamp(18px, 1.8vw, 30px);
+    font-size: clamp(12px, 0.9vw, 18px);
+    line-height: 1.55;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 34% 1fr;
+    gap: 0.8em;
+    margin-bottom: 8px;
+}
+
+.key {
+    color: #7398bb;
+}
+
+.value {
+    color: #dce8f8;
+    overflow-wrap: anywhere;
+}
+
+.sep {
+    height: 1px;
+    background: rgba(92, 142, 190, 0.22);
+    margin: 18px 0;
+}
+
+
+.sectionTitle {
+    margin-bottom: 10px;
+    color: #ffb36a;
+    font-size: clamp(12px, 0.9vw, 17px);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.detailsBlock {
+    margin-bottom: 18px;
+}
+
+.value.accent {
+    color: #ffb36a;
+}
+
+.selectBlock {
+    margin-top: 18px;
+}
+
+.selectTitle {
+    color: #ffb36a;
+    font-size: clamp(12px, 0.9vw, 17px);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.dropdownButton {
+    width: 100%;
+    height: 42px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border: 1px solid rgba(92, 172, 220, 0.42);
+    background: rgba(3, 10, 20, 0.86);
+    color: rgba(210, 234, 255, 0.88);
+    font: inherit;
+    font-size: clamp(12px, 0.9vw, 17px);
+    text-align: left;
+    padding: 0 38px 0 12px;
+    cursor: pointer;
+}
+
+.dropdownArrow {
+    position: absolute;
+    right: 13px;
+    color: rgba(110, 195, 255, 0.82);
+}
+
+.dropdownMenu {
+    display: none;
+    position: absolute;
+    z-index: 20;
+    top: 48px;
+    left: 0;
+    right: 0;
+    max-height: clamp(220px, 42vh, 420px);
+    overflow-y: auto;
+    border-radius: 10px;
+    border: 1px solid rgba(92, 172, 220, 0.36);
+    background: rgba(3, 10, 20, 0.96);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+.dropdown.open .dropdownMenu {
+    display: block;
+}
+
+.dropdownItem {
+    padding: 8px 12px;
+    color: rgba(210, 234, 255, 0.72);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdownItem:hover {
+    background: rgba(60, 150, 220, 0.18);
+    color: rgba(235, 248, 255, 0.96);
+}
+
+.dropdownItem.current {
+    color: rgba(255, 179, 106, 0.95);
+}
+
+.dropdownItem.selected {
+    background: rgba(70, 180, 255, 0.18);
+    color: rgba(145, 225, 255, 0.98);
+}
+
+.dropdownItem.current.selected {
+    background: rgba(255, 179, 106, 0.18);
+    color: rgba(255, 210, 150, 0.98);
+}
+
+#selectedSystemValue {
+    color: #ffb36a;
+}
+
+#actions {
+    position: absolute;
+    left: clamp(18px, 1.8vw, 30px);
+    right: clamp(18px, 1.8vw, 30px);
+    bottom: clamp(18px, 1.8vw, 30px);
+    display: grid;
+    gap: 10px;
+}
+
+button {
+    height: clamp(36px, 3.2vw, 54px);
+    font-size: clamp(12px, 0.9vw, 18px);
+    border-radius: 8px;
+    border: 1px solid rgba(92, 172, 220, 0.42);
+    background: rgba(10, 24, 42, 0.92);
+    color: #dce8f8;
+    font: inherit;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+}
+
+button:hover {
+    background: rgba(30, 64, 94, 0.96);
+}
+
+.hint {
+    color: #7999bb;
+    font-size: 13px;
+    line-height: 1.45;
+}
+</style>
+</head>
+
+<body>
+<div id="panel">
+    <div id="header">
+        <div id="title" data-i18n="title">STAR ATLAS</div>
+        <div id="subtitle" data-i18n="subtitle">Navigation interface</div>
+    </div>
+
+    <div id="body">
+        <div class="row">
+            <div class="key" data-i18n="mode">Mode</div>
+            <div class="value" id="modeValue">Galaxy</div>
+        </div>
+        <div class="row">
+            <div class="key">Universe time</div>
+            <div class="value" id="universeTimeValue">—</div>
+        </div>
+
+        <div class="row">
+            <div class="key" data-i18n="systems">Systems</div>
+            <div class="value" id="systemsValue">—</div>
+        </div>
+
+        <div class="row">
+            <div class="key" data-i18n="currentSystem">Current system</div>
+            <div class="value" id="currentSystemValue">—</div>
+        </div>
+        <div class="sep"></div>
+
+        <div class="detailsBlock">
+            <div class="sectionTitle">Selected system</div>
+
+            <div class="row">
+                <div class="key">Name</div>
+                <div class="value accent" id="selectedNameValue">—</div>
+            </div>
+
+            <div class="row">
+                <div class="key">Star</div>
+                <div class="value" id="selectedStarValue">—</div>
+            </div>
+
+            <div class="row">
+                <div class="key">Jurisdiction</div>
+                <div class="value" id="selectedJurisdictionValue">—</div>
+            </div>
+
+            <div class="row">
+                <div class="key">Distance</div>
+                <div class="value" id="selectedDistanceValue">—</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="key">Selected</div>
+            <div class="value" id="selectedSystemValue">—</div>
+        </div>
+
+        <div class="selectBlock">
+            <div class="selectTitle">System list</div>
+
+            <div id="systemDropdown" class="dropdown">
+                <button id="systemDropdownButton" class="dropdownButton" type="button">
+                    <span id="systemDropdownLabel">—</span>
+                    <span class="dropdownArrow">▾</span>
+                </button>
+
+                <div id="systemDropdownMenu" class="dropdownMenu"></div>
+            </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="hint" id="hintText" data-i18n="hint">
+            F11 closes the map. Selection and route plotting will be added here.
+        </div>
+    </div>
+
+    <div id="actions">
+        <button id="btnToggleMode">SHOW SYSTEM</button>
+        <button id="btnClose" data-i18n="btnClose">CLOSE</button>
+    </div>
+</div>
+
+<script>
+const LANG = "en";
+
+const I18N = {
+    en: {
+        title: "STAR ATLAS",
+        subtitle: "Navigation interface",
+        mode: "Mode",
+        systems: "Systems",
+        currentSystem: "Current system",
+        hint: "F11 closes the map. Selection and route plotting will be added here.",
+        btnGalaxy: "GALAXY",
+        btnSystem: "CURRENT SYSTEM",
+        btnClose: "CLOSE"
+    },
+    ru: {
+        title: "ЗВЁЗДНЫЙ АТЛАС",
+        subtitle: "Навигационный интерфейс",
+        mode: "Режим",
+        systems: "Системы",
+        currentSystem: "Текущая система",
+        hint: "F11 закрывает карту. Выбор цели и прокладка маршрута будут добавлены здесь.",
+        btnGalaxy: "ГАЛАКТИКА",
+        btnSystem: "ТЕКУЩАЯ СИСТЕМА",
+        btnClose: "ЗАКРЫТЬ"
+    },
+    es: {
+        title: "ATLAS ESTELAR",
+        subtitle: "Interfaz de navegación",
+        mode: "Modo",
+        systems: "Sistemas",
+        currentSystem: "Sistema actual",
+        hint: "F11 cierra el mapa. La selección y el trazado de rutas se añadirán aquí.",
+        btnGalaxy: "GALAXIA",
+        btnSystem: "SISTEMA ACTUAL",
+        btnClose: "CERRAR"
+    },
+    zh: {
+        title: "星图",
+        subtitle: "导航界面",
+        mode: "模式",
+        systems: "星系",
+        currentSystem: "当前星系",
+        hint: "按 F11 关闭星图。目标选择和航线规划将在这里添加。",
+        btnGalaxy: "银河",
+        btnSystem: "当前星系",
+        btnClose: "关闭"
+    },
+    ja: {
+        title: "スターアトラス",
+        subtitle: "航法インターフェース",
+        mode: "モード",
+        systems: "星系",
+        currentSystem: "現在の星系",
+        hint: "F11でマップを閉じます。目標選択と航路設定はここに追加されます。",
+        btnClose: "閉じる"
+    }
+};
+
+function applyLanguage(lang) {
+    const dict = I18N[lang] || I18N.en;
+
+    document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (dict[key]) el.textContent = dict[key];
+    });
+}
+
+function closeMap() {
+    if (window.gameCommand) {
+        window.gameCommand("close_system_map");
+    }
+}
+
+document.getElementById("btnClose").addEventListener("click", closeMap);
+
+let currentMode = "Galaxy";
+
+function sendGameCommand(command) {
+    if (window.gameCommand) {
+        window.gameCommand(command);
+        return;
+    }
+
+    if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(command);
+    }
+}
+
+document.getElementById("btnToggleMode").addEventListener("click", () => {
+    if (currentMode === "Galaxy") {
+        sendGameCommand("system_map_current_system");
+    } else {
+        sendGameCommand("system_map_galaxy");
+    }
+});
+
+const systemDropdown = document.getElementById("systemDropdown");
+const systemDropdownButton = document.getElementById("systemDropdownButton");
+const systemDropdownLabel = document.getElementById("systemDropdownLabel");
+const systemDropdownMenu = document.getElementById("systemDropdownMenu");
+
+let cachedSystems = [];
+let currentSystemId = null;
+let selectedSystemId = null;
+let dropdownOpen = false;
+
+
+    function formatLy(v) {
+    if (v === null || v === undefined || v === "") {
+        return "—";
+    }
+
+    const n = Number(v);
+
+    if (!Number.isFinite(n))
+        return "—";
+
+    if (n < 0.01)
+        return `${n.toFixed(4)} ly`;
+
+    if (n < 10.0)
+        return `${n.toFixed(2)} ly`;
+
+    return `${n.toFixed(1)} ly`;
+}
+
+function systemLabel(s) {
+    const current = String(s.id) === String(currentSystemId);
+    const selected = String(s.id) === String(selectedSystemId);
+
+    let prefix = "";
+
+    if (current) prefix += "● ";
+    if (selected) prefix += "◆ ";
+
+    const type = s.starType ? ` [${s.starType}]` : "";
+
+    return `${prefix}${s.name}${type}`;
+}
+
+function setDropdownOpen(open) {
+    dropdownOpen = open;
+    systemDropdown.classList.toggle("open", dropdownOpen);
+}
+
+systemDropdownButton.addEventListener("click", () => {
+    setDropdownOpen(!dropdownOpen);
+});
+
+document.addEventListener("click", (event) => {
+    if (!systemDropdown.contains(event.target)) {
+        setDropdownOpen(false);
+    }
+});
+
+function renderSystemDropdown() {
+    systemDropdownMenu.innerHTML = "";
+
+    const selectedSystem = cachedSystems.find(s =>
+        String(s.id) === String(selectedSystemId)
+    );
+
+    systemDropdownLabel.textContent =
+        selectedSystem ? systemLabel(selectedSystem) : "Select system";
+
+    for (const s of cachedSystems) {
+        const item = document.createElement("div");
+
+        item.className = "dropdownItem";
+        item.dataset.id = String(s.id);
+        item.textContent = systemLabel(s);
+
+        if (String(s.id) === String(currentSystemId)) {
+            item.classList.add("current");
+        }
+
+        if (String(s.id) === String(selectedSystemId)) {
+            item.classList.add("selected");
+        }
+
+        item.addEventListener("click", () => {
+            selectedSystemId = s.id;
+
+            renderSystemDropdown();
+            setDropdownOpen(false);
+
+            sendGameCommand(`system_map_select:${s.id}`);
+        });
+
+        systemDropdownMenu.appendChild(item);
+    }
+}
+
+window.setSystemMapPanel = function(payload) {
+    if (!payload) return;
+
+    currentMode = payload.mode || "Galaxy";
+
+    document.getElementById("modeValue").textContent = currentMode;
+    document.getElementById("universeTimeValue").textContent =
+        payload.universeDate || "—";
+
+    document.getElementById("btnToggleMode").textContent =
+        currentMode === "Galaxy"
+            ? "SHOW SYSTEM"
+            : "GALAXY";
+
+    document.getElementById("systemsValue").textContent =
+        payload.systemsCount ?? "—";
+
+    document.getElementById("currentSystemValue").textContent =
+        payload.currentSystemName || "—";
+
+    cachedSystems = Array.isArray(payload.systems)
+        ? payload.systems
+        : [];
+
+    currentSystemId = payload.currentSystemId ?? null;
+    selectedSystemId =
+        payload.selectedSystemId ?? payload.currentSystemId ?? null;
+
+    const selectedSystem = cachedSystems.find(s =>
+        String(s.id) === String(selectedSystemId)
+    );
+
+    document.getElementById("selectedNameValue").textContent =
+        selectedSystem ? selectedSystem.name : "—";
+
+    document.getElementById("selectedStarValue").textContent =
+        selectedSystem ? (selectedSystem.starType || "Unknown") : "—";
+
+    document.getElementById("selectedJurisdictionValue").textContent =
+        selectedSystem ? (selectedSystem.jurisdiction || "Unregistered") : "—";
+
+    const distanceLy =
+        selectedSystem?.distanceFromPlayerLy ??
+        selectedSystem?.distanceLy ??
+        selectedSystem?.distance ??
+        null;
+
+    document.getElementById("selectedDistanceValue").textContent =
+        selectedSystem
+            ? formatLy(distanceLy)
+            : "—";
+
+  
+
+    renderSystemDropdown();
+
+    // ВАЖНО:
+    // не скроллим к selected item каждый push.
+    // Именно это и давало "прыжок" списка после прокрутки.
+};
+
+applyLanguage(LANG);
+</script>
+</body>
+</html>

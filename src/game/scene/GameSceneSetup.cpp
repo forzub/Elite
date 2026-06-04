@@ -1,5 +1,6 @@
 #include "game/scene/GameSceneSetup.h"
 
+#include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
 
@@ -65,6 +66,91 @@ glm::mat4 makeLookOrientation(
     return m;
 }
 
+
+
+namespace SolarTestScene
+{
+    constexpr double AU = 149597870700.0;
+
+    constexpr double EarthRadiusM = 6371000.0;
+    constexpr double MoonDistanceM = 384400000.0;
+    constexpr double StationAltitudeM = 420000.0;
+
+    constexpr double DegToRad = 3.14159265358979323846 / 180.0;
+
+    constexpr double EarthAxialTiltDeg = 23.439281;
+    constexpr double IssInclinationDeg = 51.64;
+
+    const glm::dvec3 SunPositionM =
+        glm::dvec3(0.0, 0.0, 0.0);
+
+    const glm::dvec3 EarthPositionM =
+        glm::dvec3(AU, 0.0, 0.0);
+
+    // Вектор оси Земли.
+    // Земная орбита лежит в XZ, нормаль к эклиптике — +Y.
+    // Наклоняем земную ось на 23.44°.
+    const glm::dvec3 EarthAxis =
+        glm::normalize(glm::dvec3(
+            0.0,
+            std::cos(EarthAxialTiltDeg * DegToRad),
+            std::sin(EarthAxialTiltDeg * DegToRad)
+        ));
+
+    // Условная позиция Луны в плоскости земной орбиты.
+    // Потом сделаем полноценную лунную орбиту.
+    const glm::dvec3 MoonPositionM =
+        EarthPositionM + glm::dvec3(0.0, 0.0, MoonDistanceM);
+
+    // Точка на орбите МКС.
+    // Не полюс. Орбита наклонена к экватору Земли на 51.64°.
+    inline glm::dvec3 makeIssLikeOrbitDirection()
+    {
+        const double inc = IssInclinationDeg * DegToRad;
+
+        glm::dvec3 equatorX = glm::normalize(glm::dvec3(1.0, 0.0, 0.0));
+        glm::dvec3 equatorZ = glm::normalize(glm::cross(EarthAxis, equatorX));
+
+        // Берём не 0°, чтобы станция не висела на “идеальной математической точке”.
+        const double phase = 35.0 * DegToRad;
+
+        glm::dvec3 inEquator =
+            std::cos(phase) * equatorX +
+            std::sin(phase) * equatorZ;
+
+        glm::dvec3 tilted =
+            std::cos(inc) * inEquator +
+            std::sin(inc) * EarthAxis;
+
+        return glm::normalize(tilted);
+    }
+
+    const glm::dvec3 StationPositionM =
+        EarthPositionM +
+        makeIssLikeOrbitDirection() *
+            (EarthRadiusM + StationAltitudeM);
+
+    const glm::dvec3 PlayerPositionM =
+        StationPositionM + glm::dvec3(0.0, 2500.0, -9000.0);
+
+    const glm::dvec3 Npc1PositionM =
+        StationPositionM + glm::dvec3(-900.0, 2700.0, -8200.0);
+
+    const glm::dvec3 Npc2PositionM =
+        StationPositionM + glm::dvec3(1100.0, 2900.0, -8600.0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 EntityId spawnPromoPlayer(GameSimulation& sim)
 {
     ShipVisualIdentity visualIdentity {
@@ -95,8 +181,8 @@ EntityId spawnPromoPlayer(GameSimulation& sim)
     initData.registry = registry;
     initData.initialInventory = {playerCard};
 
-    const glm::vec3 playerPos =
-        {0.0f, 50.0f, 0.0f};
+    const glm::dvec3 playerPos =
+        SolarTestScene::PlayerPositionM;
 
     // Игрок смотрит туда, откуда прилетают кобры.
     // Кобры летят с +Z в сторону -Z.
@@ -119,8 +205,8 @@ void spawnPromoStation(GameSimulation& sim)
     // Звено появляется со стороны +Z и летит через игрока в -Z.
     // Станция стоит высоко впереди по +Z, чтобы попадать в кадр
     // во время начального сопровождения звена.
-    const glm::vec3 stationPos =
-        {0.0f, 2150.0f, 2450.0f};
+    const glm::dvec3 stationPos =
+        SolarTestScene::StationPositionM;
 
     // Пока identity. Если длинная ось станции окажется не вдоль Z,
     // позже добавим поворот здесь, а не в GameSimulation.
@@ -143,12 +229,11 @@ EntityId buildGameScene(GameSimulation& sim)
     // Игровой режим: два NPC сразу в поле зрения игрока.
     // Игрок сейчас стоит в {0, 50, 0} и смотрит в +Z,
     // поэтому NPC ставим впереди по +Z, с небольшим разносом по X/Y.
-    const glm::vec3 playerPos =
-        {0.0f, 50.0f, 0.0f};
+    const glm::dvec3 playerPos = SolarTestScene::PlayerPositionM;
 
     ShipVisualIdentity visualIdentity {
-        .shipType = "Cobra MK3",
-        .shipName = "Scarlet Hawk Moth"
+        .shipType = "Scarlet Hawk Moth",
+        .shipName = "Cobra MK3"
     };
 
     ShipRegistry registry {
@@ -174,19 +259,18 @@ EntityId buildGameScene(GameSimulation& sim)
     initData.registry = registry;
     initData.initialInventory = {npc1Card};
 
-    const glm::vec3 npc1Pos =
-        {-65.0f, 35.0f, 260.0f};
+    const glm::dvec3 npc1Pos = SolarTestScene::Npc1PositionM;
 
     sim.spawnShip(
         ShipRole::NPC,
         EliteCobraMk1::EliteCobraMk1Descriptor(),
         npc1Pos,
         initData,
-        makeLookOrientation(playerPos - npc1Pos)
+        makeLookOrientation(glm::vec3(playerPos - npc1Pos))
     );
 
-    visualIdentity.shipType = "Cobra MK3";
-    visualIdentity.shipName = "Hooded snake";
+    visualIdentity.shipType = "Hooded snake";
+    visualIdentity.shipName = "Cobra MK3";
 
     registry.instanceId = 3;
     registry.ownerName = "Hooded snake";
@@ -205,15 +289,14 @@ EntityId buildGameScene(GameSimulation& sim)
     initData.registry = registry;
     initData.initialInventory = {npc2Card};
 
-    const glm::vec3 npc2Pos =
-        {80.0f, 85.0f, 340.0f};
+    const glm::dvec3 npc2Pos = SolarTestScene::Npc2PositionM;
 
     sim.spawnShip(
         ShipRole::NPC,
         EliteCobraMk1::EliteCobraMk1Descriptor(),
         npc2Pos,
         initData,
-        makeLookOrientation(playerPos - npc2Pos)
+        makeLookOrientation(glm::vec3(playerPos - npc2Pos))
     );
 
     spawnPromoStation(sim);

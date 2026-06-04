@@ -742,21 +742,28 @@ EntityId GameSimulation::generateEntityId()
 EntityId GameSimulation::spawnShip(
     ShipRole role,
     const ShipDescriptor& descriptor,
-    glm::vec3 position,
+    const glm::dvec3& positionMeters,
     const ShipInitData& initData,
     const glm::mat4& orientation
 )
 {
-    // Ship ship;
     auto ship = std::make_unique<Ship>();
 
     EntityId id = generateEntityId();
     ship->setId(id);
 
-    // ship.init(role, descriptor, position, initData);
-    ship->init(role, descriptor, position, initData, orientation);
+    // Пока Ship::init принимает vec3, но сразу внутри переводит в WorldPosition.
+    // Поэтому здесь НЕ кастуем AU в float до последнего момента.
+    ship->init(
+        role,
+        descriptor,
+        glm::vec3(positionMeters - positionMeters), // временно ноль
+        initData,
+        orientation
+    );
 
-    // m_ships[id] = std::move(ship);
+    ship->core().transform().setWorldPositionMeters(positionMeters);
+
     m_ships[id] = std::move(ship);
     markShipGraphDirty(id);
 
@@ -767,7 +774,7 @@ EntityId GameSimulation::spawnShip(
 
 EntityId GameSimulation::spawnStation(
     ObjectType type,
-    const glm::vec3& position,
+    const glm::dvec3& positionMeters,
     const glm::mat4& orientation
 )
 {
@@ -776,15 +783,15 @@ EntityId GameSimulation::spawnStation(
     auto& obj = m_staticObjects[id];
 
     obj.id = id;
-    obj.type = type; // ← ключевое изменение
-    obj.setWorldPositionMeters(glm::dvec3(position));
+    obj.type = type;
+    obj.setWorldPositionMeters(positionMeters);
     obj.orientation = orientation;
 
     const auto& baseDesc = ObjectDescriptorRegistry::get(type);
 
     obj.moduleRuntime.init(baseDesc.moduleDescriptors());
     obj.structuralLinkRuntime.init(baseDesc.moduleDescriptors());
-    obj.moduleRuntime.reevaluateStructuralStates(&obj.structuralLinkRuntime);   
+    obj.moduleRuntime.reevaluateStructuralStates(&obj.structuralLinkRuntime);
 
     if (game::ship::geometry::AssemblyMeshLibrary::has(type))
     {
@@ -801,6 +808,7 @@ EntityId GameSimulation::spawnStation(
         obj.structuralLinkRuntime,
         obj.assemblyRuntime
     );
+
     obj.hitVolumesDirty = false;
     obj.staticSnapshotPayloadDirty = true;
 

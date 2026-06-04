@@ -181,6 +181,9 @@ void RadarRenderTarget::bind()
     m_previousViewport[2] = currentViewport[2];
     m_previousViewport[3] = currentViewport[3];
 
+    m_previousScissorEnabled = glIsEnabled(GL_SCISSOR_TEST);
+    glGetIntegerv(GL_SCISSOR_BOX, m_previousScissorBox);
+
     // Сохраняем текущий FBO для восстановления
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &m_previousFBO);
 
@@ -189,7 +192,11 @@ void RadarRenderTarget::bind()
     
     // Устанавливаем viewport на весь размер FBO
     glViewport(0, 0, m_width, m_height);
-    
+
+    // ВАЖНО:
+    // Экранный letterbox-scissor не должен резать offscreen FBO радара.
+    glDisable(GL_SCISSOR_TEST);
+
     // Очищаем с прозрачным фоном
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -207,6 +214,21 @@ void RadarRenderTarget::unbind()
     // Восстанавливаем предыдущий viewport
     glViewport(m_previousViewport[0], m_previousViewport[1], 
                m_previousViewport[2], m_previousViewport[3]);
+
+    if (m_previousScissorEnabled)
+    {
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(
+            m_previousScissorBox[0],
+            m_previousScissorBox[1],
+            m_previousScissorBox[2],
+            m_previousScissorBox[3]
+        );
+    }
+    else
+    {
+        glDisable(GL_SCISSOR_TEST);
+    }
 }
 
 

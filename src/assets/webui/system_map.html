@@ -1,0 +1,910 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>System Map</title>
+
+<style>
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #02050c;
+    color: #d7e4f7;
+    font-family: "Segoe UI", Consolas, sans-serif;
+}
+
+#app {
+    position: fixed;
+    inset: 0;
+    background: #02050c;
+}
+
+#map3d {
+    position: absolute;
+    left: 0;
+    top: 64px;
+    right: 400px;
+    bottom: 0;
+    overflow: hidden;
+}
+
+#toolbar {
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    right: 14px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 20;
+}
+
+button {
+    background: rgba(12, 24, 40, 0.92);
+    color: #dce6f5;
+    border: 1px solid rgba(120, 180, 255, 0.35);
+    border-radius: 9px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font: inherit;
+}
+
+button:hover {
+    background: rgba(35, 70, 110, 0.95);
+}
+
+#title {
+    color: #ffb36a;
+    font-weight: 700;
+    margin-right: 10px;
+    letter-spacing: 0.04em;
+}
+
+#status {
+    margin-left: auto;
+    color: #8fe6a0;
+    font-size: 13px;
+}
+
+#infoPanel {
+    position: absolute;
+    right: 14px;
+    top: 72px;
+    bottom: 14px;
+    width: 360px;
+    z-index: 15;
+    background: rgba(4, 9, 18, 0.88);
+    border: 1px solid rgba(95, 122, 167, 0.34);
+    border-radius: 16px;
+    box-shadow: 0 12px 36px rgba(0,0,0,0.35);
+    backdrop-filter: blur(8px);
+    display: grid;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
+}
+
+#infoPanel h3 {
+    margin: 0;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #ffb36a;
+    border-bottom: 1px solid rgba(95, 122, 167, 0.22);
+}
+
+#infoBody {
+    padding: 12px 14px;
+    overflow: auto;
+    font-size: 13px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+
+.label {
+    color: #dce6f5;
+    font-size: 11px;
+    font-family: Consolas, monospace;
+    white-space: nowrap;
+    text-shadow: 0 0 6px rgba(0,0,0,0.95);
+    background: rgba(4, 9, 18, 0.65);
+    border: 1px solid rgba(120,180,255,0.20);
+    border-radius: 999px;
+    padding: 2px 7px;
+    transform: translate(-50%, 0);
+    pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+}
+
+.label.current {
+    color: #fff;
+    border-color: rgba(255, 220, 140, 0.65);
+    background: rgba(60, 42, 14, 0.76);
+}
+
+.hint {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    color: #93a6c4;
+    font-size: 12px;
+    z-index: 20;
+    background: rgba(4, 9, 18, 0.65);
+    border: 1px solid rgba(95, 122, 167, 0.25);
+    border-radius: 10px;
+    padding: 8px 10px;
+}
+</style>
+</head>
+
+<body>
+<div id="app">
+    <div id="map3d"></div>
+
+    <div id="toolbar">
+        <div id="title">STAR ATLAS</div>
+        <button id="btnMode">SYSTEM</button>
+        <button id="btnCurrent">CURRENT SYSTEM</button>
+        <button id="btnExit">EXIT</button>
+        <div id="status">waiting data...</div>
+    </div>
+
+    <div id="infoPanel">
+        <h3 id="infoTitle">Selection</h3>
+        <div id="infoBody">No data yet.</div>
+    </div>
+
+    <div class="hint">
+        LMB rotate · Wheel zoom · Click selects · Double click opens system
+    </div>
+</div>
+
+<script type="module">
+import * as THREE from "./vendor/three/three.module.js";
+import { OrbitControls } from "./vendor/three/examples/jsm/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "./vendor/three/examples/jsm/renderers/CSS2DRenderer.js";
+
+const AU_KM = 149597870.7;
+
+let latest = null;
+let mode = "galaxy";
+let selectedSystemId = null;
+let socket = null;
+
+const container = document.getElementById("map3d");
+const statusEl = document.getElementById("status");
+const infoTitle = document.getElementById("infoTitle");
+const infoBody = document.getElementById("infoBody");
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x02050c);
+
+function viewportWidth()  { return Math.max(1, container.clientWidth); }
+function viewportHeight() { return Math.max(1, container.clientHeight); }
+
+const camera = new THREE.PerspectiveCamera(60, viewportWidth() / viewportHeight(), 0.1, 10000);
+camera.position.set(0, 28, 60);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+const MAP_PIXEL_RATIO = Math.min(window.devicePixelRatio || 1, 1.25);
+renderer.setPixelRatio(MAP_PIXEL_RATIO);    
+renderer.setSize(viewportWidth(), viewportHeight());
+container.appendChild(renderer.domElement);
+
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(viewportWidth(), viewportHeight());
+labelRenderer.domElement.style.position = "absolute";
+labelRenderer.domElement.style.inset = "0";
+labelRenderer.domElement.style.pointerEvents = "none";
+container.appendChild(labelRenderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.zoomSpeed = 1.1;
+controls.panSpeed = 0.6;
+controls.rotateSpeed = 0.85;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dir = new THREE.DirectionalLight(0xffffff, 0.75);
+dir.position.set(20, 30, 20);
+scene.add(dir);
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+const root = new THREE.Group();
+scene.add(root);
+
+const pickables = [];
+const labelItems = [];
+const detailObjects = [];
+
+function disposeObject(obj) {
+    obj.traverse?.(child => {
+        if (child.element?.parentNode) child.element.parentNode.removeChild(child.element);
+        child.geometry?.dispose?.();
+
+        if (child.material) {
+            if (Array.isArray(child.material)) child.material.forEach(m => m.dispose?.());
+            else child.material.dispose?.();
+        }
+    });
+}
+
+function clearRoot() {
+    while (root.children.length > 0) {
+        const obj = root.children.pop();
+        disposeObject(obj);
+    }
+
+    labelRenderer.domElement.innerHTML = "";
+    pickables.length = 0;
+    labelItems.length = 0;
+    detailObjects.length = 0;
+}
+
+function makeLabel(text, className = "", onClick = null, onDoubleClick = null, options = {}) {
+    const div = document.createElement("div");
+    div.className = `label ${className}`;
+    div.textContent = text;
+    div.style.pointerEvents = "auto";
+
+    if (onClick) {
+        div.addEventListener("click", ev => {
+            ev.stopPropagation();
+            onClick(ev);
+        });
+    }
+
+    if (onDoubleClick) {
+        div.addEventListener("dblclick", ev => {
+            ev.stopPropagation();
+            onDoubleClick(ev);
+        });
+    }
+
+    const obj = new CSS2DObject(div);
+    obj.center.set(0.5, -0.15);
+
+    labelItems.push({
+        object: obj,
+        element: div,
+        baseOffset: new THREE.Vector3(),
+        kind: options.kind || "major",
+        parentPos: options.parentPos ? options.parentPos.clone() : null
+    });
+
+    return obj;
+}
+
+function starColorByType(starType = "") {
+    const t = String(starType).toUpperCase();
+    if (t.startsWith("O")) return 0x9bb0ff;
+    if (t.startsWith("B")) return 0xaabfff;
+    if (t.startsWith("A")) return 0xdde7ff;
+    if (t.startsWith("F")) return 0xf8f7ff;
+    if (t.startsWith("G")) return 0xfff1b8;
+    if (t.startsWith("K")) return 0xffd29a;
+    if (t.startsWith("M")) return 0xffa36a;
+    return 0xffddbb;
+}
+
+function bodyColor(type) {
+    if (type === "star") return 0xfff1b8;
+    if (type === "planet") return 0x75b7ff;
+    if (type === "moon") return 0xb8bbc5;
+    if (type === "asteroid_belt") return 0x777777;
+    return 0x9fdcff;
+}
+
+function addBackgroundStars() {
+    const count = 1800;
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; ++i) {
+        pos[i * 3 + 0] = (Math.random() - 0.5) * 900;
+        pos[i * 3 + 1] = (Math.random() - 0.5) * 500;
+        pos[i * 3 + 2] = (Math.random() - 0.5) * 900;
+    }
+
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+
+    const mat = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.22,
+        transparent: true,
+        opacity: 0.45,
+        depthWrite: false
+    });
+
+    root.add(new THREE.Points(geo, mat));
+}
+
+function selectedSystemSummary() {
+    return (latest?.systems || []).find(s => String(s.id) === String(selectedSystemId)) || null;
+}
+
+function bodiesForSelectedSystem() {
+    if (!latest) return [];
+
+    if (String(selectedSystemId) === String(latest.currentSystemId)) {
+        return latest.bodies || [];
+    }
+
+    const byId = latest.systemBodiesById || {};
+    return byId[String(selectedSystemId)] || [];
+}
+
+function systemNameById(id) {
+    const s = (latest?.systems || []).find(x => String(x.id) === String(id));
+    return s?.name || `System ${id}`;
+}
+
+function openSystem(systemId) {
+    selectedSystemId = systemId;
+    mode = "system";
+    rebuild();
+}
+
+function showGalaxyInfo() {
+    const systems = latest?.systems || [];
+    infoTitle.textContent = "Galaxy";
+    infoBody.textContent =
+        `Systems: ${systems.length}\n` +
+        `Current system: ${latest?.system?.name || "unknown"}\n\n` +
+        `Click label or star to select.\n` +
+        `Double click to open selected system.`;
+}
+
+function selectSystem(s) {
+    selectedSystemId = s.id;
+
+    infoTitle.textContent = s.name || `System ${s.id}`;
+    infoBody.textContent =
+        `ID: ${s.id}\n` +
+        `Type: ${s.starType || "unknown"}\n` +
+        `Stars: ${s.starsCount || 1}\n` +
+        `Position LY:\n` +
+        `  x: ${Number(s.xLy || 0).toFixed(2)}\n` +
+        `  y: ${Number(s.yLy || 0).toFixed(2)}\n` +
+        `  z: ${Number(s.zLy || 0).toFixed(2)}\n\n` +
+        `Double click to open system map.`;
+}
+
+function buildGalaxy() {
+    clearRoot();
+    addBackgroundStars();
+
+    const systems = latest?.systems || [];
+    if (!systems.length) {
+        statusEl.textContent = "no systems";
+        return;
+    }
+
+    const scale = 2.2;
+
+    for (const s of systems) {
+        const isCurrent = String(s.id) === String(latest.currentSystemId);
+        const color = isCurrent ? 0xffffff : starColorByType(s.starType);
+
+        const star = new THREE.Mesh(
+            new THREE.SphereGeometry(isCurrent ? 0.42 : 0.22, 16, 12),
+            new THREE.MeshStandardMaterial({
+                color,
+                emissive: color,
+                emissiveIntensity: isCurrent ? 0.55 : 0.28,
+                roughness: 0.45,
+                metalness: 0.0
+            })
+        );
+
+        star.position.set((s.xLy || 0) * scale, (s.yLy || 0) * scale, (s.zLy || 0) * scale);
+        star.userData = { kind: "system", system: s, systemId: s.id };
+        root.add(star);
+
+        const pick = new THREE.Mesh(
+            new THREE.SphereGeometry(1.25, 16, 12),
+            new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0, depthWrite: false })
+        );
+        pick.position.copy(star.position);
+        pick.userData = star.userData;
+        root.add(pick);
+        pickables.push(pick);
+
+        const label = makeLabel(
+            s.name || `System ${s.id}`,
+            isCurrent ? "current" : "",
+            () => selectSystem(s),
+            () => openSystem(s.id)
+        );
+        label.position.set(0, isCurrent ? 0.9 : 0.55, 0);
+        star.add(label);
+
+        if (isCurrent) {
+            const ring = new THREE.Mesh(
+                new THREE.RingGeometry(0.7, 0.78, 48),
+                new THREE.MeshBasicMaterial({
+                    color: 0xffdd88,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.75
+                })
+            );
+            ring.rotation.x = Math.PI / 2;
+            star.add(ring);
+        }
+    }
+
+    const grid = new THREE.GridHelper(140, 28, 0x2f5f88, 0x163047);
+    grid.material.transparent = true;
+    grid.material.opacity = 0.28;
+    root.add(grid);
+
+    camera.position.set(0, 38, 78);
+    controls.target.set(0, 0, 0);
+    controls.update();
+
+    statusEl.textContent = `galaxy systems: ${systems.length}`;
+    showGalaxyInfo();
+}
+
+function maxOrbitAu(bodies) {
+    let maxAu = 1.0;
+    for (const b of bodies) {
+        const p = b.positionAu || {};
+        const r = Math.hypot(Number(p.x || 0), Number(p.z || 0));
+        if (Number.isFinite(r)) maxAu = Math.max(maxAu, r);
+    }
+    return maxAu;
+}
+
+function visualBodyRadius(body, distanceScale) {
+    const radiusKm = Number(body.radiusKm || 0);
+    if (radiusKm <= 0) return 0.04;
+
+    // Расстояния рисуются пропорционально. Радиусы тел усилены, иначе Земля/Луна исчезнут.
+    const radiusAu = radiusKm / AU_KM;
+    const boost = body.type === "star" ? 7.0 : 42.0;
+    const raw = radiusAu * distanceScale * boost;
+
+    if (body.type === "star") return Math.min(Math.max(raw, 0.16), 1.1);
+    if (body.type === "moon") return Math.min(Math.max(raw, 0.045), 0.22);
+    if (body.type === "planet") return Math.min(Math.max(raw, 0.07), 0.55);
+    return Math.min(Math.max(raw, 0.035), 0.12);
+}
+
+function bodyWorldPos(body, scale) {
+    const p = body.positionAu || {};
+    return new THREE.Vector3(Number(p.x || 0) * scale, Number(p.y || 0) * scale, Number(p.z || 0) * scale);
+}
+
+function addOrbitRing(center, radius, color, opacity) {
+    if (radius <= 0.04) return null;
+
+    const ring = new THREE.Mesh(
+        new THREE.RingGeometry(radius, radius + 0.014, 192),
+        new THREE.MeshBasicMaterial({
+            color,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity,
+            depthWrite: false
+        })
+    );
+
+    ring.rotation.x = Math.PI / 2;
+    ring.position.copy(center);
+    root.add(ring);
+    return ring;
+}
+
+function buildSystem() {
+    clearRoot();
+
+    const bodies = bodiesForSelectedSystem();
+    const summary = selectedSystemSummary();
+
+    if (!bodies.length) {
+        statusEl.textContent = `${systemNameById(selectedSystemId)}: no bodies`;
+        infoTitle.textContent = systemNameById(selectedSystemId);
+        infoBody.textContent =
+            `No body data for this system.\n\n` +
+            `Server must send payload.systemBodiesById["${selectedSystemId}"].`;
+        return;
+    }
+
+    const maxAu = maxOrbitAu(bodies);
+    const scale = 32.0 / maxAu;
+
+    const byId = new Map();
+    for (const b of bodies) byId.set(String(b.id), b);
+
+    for (const b of bodies) {
+        if (b.type !== "planet" && b.type !== "moon" && b.type !== "asteroid_belt") continue;
+
+        const pos = bodyWorldPos(b, scale);
+        let center = new THREE.Vector3(0, 0, 0);
+
+        if (b.parentId && byId.has(String(b.parentId))) {
+            center = bodyWorldPos(byId.get(String(b.parentId)), scale);
+        }
+
+        const radius = pos.clone().sub(center).length();
+        const orbit = addOrbitRing(
+            center,
+            radius,
+            b.type === "asteroid_belt" ? 0x555555 : 0x315f88,
+            b.type === "asteroid_belt" ? 0.28 : 0.20
+        );
+
+        if (orbit && b.type === "moon") {
+            orbit.userData.detailKind = "moon";
+            orbit.userData.parentPos = center.clone();
+            detailObjects.push(orbit);
+        }
+    }
+
+    for (const b of bodies) {
+        const visualRadius = visualBodyRadius(b, scale);
+
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(visualRadius, 24, 16),
+            new THREE.MeshBasicMaterial({ color: bodyColor(b.type) })
+        );
+
+        mesh.position.copy(bodyWorldPos(b, scale));
+        mesh.userData = { kind: "body", body: b };
+        root.add(mesh);
+        pickables.push(mesh);
+
+        let parentPosForDetail = null;
+        if (b.parentId && byId.has(String(b.parentId))) {
+            parentPosForDetail = bodyWorldPos(byId.get(String(b.parentId)), scale);
+        }
+
+        if (b.type === "moon") {
+            mesh.userData.detailKind = "moon";
+            mesh.userData.parentPos = parentPosForDetail ? parentPosForDetail.clone() : null;
+            detailObjects.push(mesh);
+        }
+
+        if (Array.isArray(b.rings)) {
+            for (const r of b.rings) {
+                const innerAu = Number(r.innerRadiusKm || 0) / AU_KM;
+                const outerAu = Number(r.outerRadiusKm || 0) / AU_KM;
+
+                let inner = Math.max(innerAu * scale * 42.0, visualRadius * 1.25);
+                let outer = Math.max(outerAu * scale * 42.0, inner + visualRadius * 0.35);
+
+                const ring = new THREE.Mesh(
+                    new THREE.RingGeometry(inner, outer, 128),
+                    new THREE.MeshBasicMaterial({
+                        color: 0xaeb8c8,
+                        side: THREE.DoubleSide,
+                        transparent: true,
+                        opacity: 0.34,
+                        depthWrite: false
+                    })
+                );
+
+                ring.rotation.x = Math.PI / 2;
+                mesh.add(ring);
+            }
+        }
+
+        if (b.type === "star" || b.type === "planet" || b.type === "moon") {
+            const isMoon = b.type === "moon";
+            const label = makeLabel(
+                b.name || b.id,
+                "",
+                () => selectBody(b),
+                null,
+                {
+                    kind: isMoon ? "moon" : "major",
+                    parentPos: isMoon ? parentPosForDetail : null
+                }
+            );
+            label.position.set(visualRadius + 0.16, visualRadius + 0.22, 0);
+            mesh.add(label);
+        }
+    }
+
+    addPlayerCross(scale);
+
+    const grid = new THREE.GridHelper(75, 30, 0x2f5f88, 0x163047);
+    grid.material.transparent = true;
+    grid.material.opacity = 0.18;
+    root.add(grid);
+
+    camera.position.set(0, 42, 58);
+    controls.target.set(0, 0, 0);
+    controls.update();
+
+    const systemName = summary?.name || latest?.system?.name || "System";
+    statusEl.textContent = `${systemName} bodies: ${bodies.length}`;
+
+    infoTitle.textContent = systemName;
+    infoBody.textContent =
+        `Bodies: ${bodies.length}\n` +
+        `System ID: ${selectedSystemId}\n` +
+        `Current player system: ${latest?.system?.name || "unknown"}\n\n` +
+        `Distances: proportional AU.\n` +
+        `Body radii: proportional but visually amplified.`;
+}
+
+function selectBody(b) {
+    infoTitle.textContent = b.name || b.id;
+    infoBody.textContent =
+        `ID: ${b.id}\n` +
+        `Type: ${b.type}\n` +
+        `Parent: ${b.parentId || "-"}\n` +
+        `Radius: ${Number(b.radiusKm || 0).toFixed(0)} km\n` +
+        `Position AU:\n` +
+        `  x: ${Number(b.positionAu?.x || 0).toFixed(4)}\n` +
+        `  y: ${Number(b.positionAu?.y || 0).toFixed(4)}\n` +
+        `  z: ${Number(b.positionAu?.z || 0).toFixed(4)}`;
+}
+
+function addPlayerCross(scale) {
+    const p = latest?.player?.positionAu;
+    if (!p) return;
+
+    const cross = new THREE.Group();
+    const mat = new THREE.LineBasicMaterial({ color: 0xffdd88 });
+
+    const lines = [
+        [new THREE.Vector3(-0.35, 0, 0), new THREE.Vector3(0.35, 0, 0)],
+        [new THREE.Vector3(0, -0.35, 0), new THREE.Vector3(0, 0.35, 0)],
+        [new THREE.Vector3(0, 0, -0.35), new THREE.Vector3(0, 0, 0.35)]
+    ];
+
+    for (const pair of lines) {
+        cross.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pair), mat));
+    }
+
+    cross.position.set(Number(p.x || 0) * scale, Number(p.y || 0) * scale, Number(p.z || 0) * scale);
+
+    const label = makeLabel("PLAYER", "current");
+    label.position.set(0.45, 0.45, 0);
+    cross.add(label);
+
+    root.add(cross);
+}
+
+function pick(ev) {
+    const rect = renderer.domElement.getBoundingClientRect();
+
+    mouse.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+
+    const hits = raycaster.intersectObjects(pickables, true);
+    if (!hits.length) return null;
+
+    let obj = hits[0].object;
+    while (obj && !obj.userData.kind) obj = obj.parent;
+    return obj;
+}
+
+renderer.domElement.addEventListener("click", ev => {
+    const obj = pick(ev);
+    if (!obj) return;
+
+    if (obj.userData.kind === "system") selectSystem(obj.userData.system);
+    if (obj.userData.kind === "body") selectBody(obj.userData.body);
+});
+
+renderer.domElement.addEventListener("dblclick", ev => {
+    const obj = pick(ev);
+    if (obj?.userData.kind === "system") openSystem(obj.userData.systemId);
+});
+
+function updateModeButton() {
+    const btn = document.getElementById("btnMode");
+    if (btn) btn.textContent = mode === "galaxy" ? "SYSTEM" : "GALAXY";
+}
+
+function rebuild() {
+    if (!latest) return;
+
+    if (mode === "galaxy") buildGalaxy();
+    else buildSystem();
+
+    updateModeButton();
+    resizeMap();
+}
+
+document.getElementById("btnMode").onclick = () => {
+    if (mode === "galaxy") openSystem(selectedSystemId ?? latest?.currentSystemId ?? 0);
+    else {
+        mode = "galaxy";
+        rebuild();
+    }
+};
+
+document.getElementById("btnCurrent").onclick = () => {
+    openSystem(latest?.currentSystemId ?? 0);
+};
+
+document.getElementById("btnExit").onclick = async () => {
+    if (window.gameCommand) await window.gameCommand("close_system_map");
+    else sendCommand("close");
+};
+
+window.addEventListener("keydown", async ev => {
+    if (ev.key !== "Escape") return;
+
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    if (window.gameCommand) await window.gameCommand("close_system_map");
+    else sendCommand("close");
+}, true);
+
+function sendCommand(command, payload = {}) {
+    if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+    socket.send(JSON.stringify({
+        type: "command",
+        panel: "system_map",
+        command,
+        payload
+    }));
+}
+
+function connect() {
+    const host = location.host && location.host.length > 0 ? location.host : "localhost:8090";
+    socket = new WebSocket(`ws://${host}`);
+
+    socket.onopen = () => {
+        statusEl.textContent = "connected";
+
+        socket.send(JSON.stringify({
+            type: "subscribe",
+            panel: "system_map",
+            payload: {}
+        }));
+    };
+
+    let lastSnapshotKey = "";
+
+    socket.onmessage = ev => {
+        let msg;
+        try { msg = JSON.parse(ev.data); } catch { return; }
+
+        if (msg.type !== "state_update" || msg.panel !== "system_map") return;
+
+        latest = msg.payload;
+
+        if (selectedSystemId == null) selectedSystemId = latest.currentSystemId;
+
+        const snapshotKey =
+            `${latest.currentSystemId}|${latest.system?.id}|${latest.bodies?.length}|${latest.systems?.length}|${Object.keys(latest.systemBodiesById || {}).length}`;
+
+        if (snapshotKey !== lastSnapshotKey) {
+            lastSnapshotKey = snapshotKey;
+            rebuild();
+        }
+    };
+
+    socket.onerror = () => {
+        statusEl.textContent = "websocket error";
+    };
+
+    socket.onclose = () => {
+        statusEl.textContent = "disconnected";
+        setTimeout(connect, 1000);
+    };
+}
+
+function resizeMap() {
+    camera.aspect = viewportWidth() / viewportHeight();
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(viewportWidth(), viewportHeight());
+    labelRenderer.setSize(viewportWidth(), viewportHeight());
+}
+
+window.addEventListener("resize", resizeMap);
+setTimeout(resizeMap, 0);
+
+function updateDetailVisibility() {
+    if (mode !== "system") return;
+
+    const detailDistance = 8.0;
+
+    for (const obj of detailObjects) {
+        const parentPos = obj.userData?.parentPos;
+        if (!parentPos) {
+            obj.visible = false;
+            continue;
+        }
+
+        const cameraClose = camera.position.distanceTo(parentPos) < detailDistance;
+        const targetClose = controls.target.distanceTo(parentPos) < detailDistance * 0.55;
+        obj.visible = cameraClose || targetClose;
+    }
+
+    for (const item of labelItems) {
+        if (item.kind !== "moon") {
+            item.object.visible = true;
+            item.element.style.display = "block";
+            continue;
+        }
+
+        const parentPos = item.parentPos;
+        if (!parentPos) {
+            item.object.visible = false;
+            item.element.style.display = "none";
+            continue;
+        }
+
+        const cameraClose = camera.position.distanceTo(parentPos) < detailDistance;
+        const targetClose = controls.target.distanceTo(parentPos) < detailDistance * 0.55;
+        const visible = cameraClose || targetClose;
+
+        item.object.visible = visible;
+        item.element.style.display = visible ? "block" : "none";
+    }
+}
+
+function layoutLabels() {
+    const labels = Array.from(labelRenderer.domElement.querySelectorAll(".label"))
+        .filter(el => el.style.display !== "none");
+    const placed = [];
+
+    for (const el of labels) {
+        el.style.marginTop = "0px";
+        el.style.marginLeft = "0px";
+
+        for (let attempt = 0; attempt < 16; ++attempt) {
+            const r = el.getBoundingClientRect();
+
+            const hit = placed.some(p =>
+                !(r.right < p.left || r.left > p.right || r.bottom < p.top || r.top > p.bottom)
+            );
+
+            if (!hit) break;
+
+            const angle = attempt * 2.399963;
+            const radius = 10 + attempt * 5;
+            el.style.marginLeft = `${Math.cos(angle) * radius}px`;
+            el.style.marginTop = `${Math.sin(angle) * radius}px`;
+        }
+
+        placed.push(el.getBoundingClientRect());
+    }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    updateDetailVisibility();
+    renderer.render(scene, camera);
+    
+    if (labelRenderFrame++ % 2 === 0) {
+        labelRenderer.render(scene, camera);
+    }
+    if (labelLayoutFrame++ % 10 === 0) {
+        layoutLabels();
+    }
+}
+
+document.body.tabIndex = 0;
+document.body.focus();
+window.addEventListener("load", () => document.body.focus());
+document.addEventListener("pointerdown", () => document.body.focus(), true);
+
+connect();
+
+let labelRenderFrame = 0;
+let labelLayoutFrame = 0;
+animate();
+</script>
+</body>
+</html>

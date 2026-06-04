@@ -74,6 +74,7 @@ struct HtmlUiMessage
         else if (panel == "debug_control")     msg.panel = HtmlUiPanelId::DebugControl;
         else if (panel == "structure_debug")   msg.panel = HtmlUiPanelId::StructureDebug;
         else if (panel == "volume_viewer")     msg.panel = HtmlUiPanelId::VolumeViewer;
+        else if (panel == "system_map") msg.panel = HtmlUiPanelId::SystemMap;
         else                                   msg.panel = HtmlUiPanelId::None;
 
         msg.command = j.value("command", "");

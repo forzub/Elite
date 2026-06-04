@@ -7,6 +7,11 @@
 
 #include <cstdint>
 #include <iostream>
+#include <fstream>
+
+#include <memory>
+#include <unordered_map>
+#include <algorithm>
 
 namespace
 {
@@ -143,6 +148,16 @@ void TextRenderer::init()
     glUseProgram(0);
 }
 
+
+
+
+
+
+
+
+
+
+
 void TextRenderer::beginFrame()
 {
     if (m_batchActive)
@@ -154,10 +169,45 @@ void TextRenderer::beginFrame()
     m_screenW = static_cast<float>(vp.width);
     m_screenH = static_cast<float>(vp.height);
 
+
     m_batches.clear();
 
     m_batchActive = true;
 }
+
+
+
+
+
+
+void TextRenderer::beginFrameForViewport(
+    int width,
+    int height
+)
+{
+    if (m_batchActive)
+        return;
+
+    m_screenW = static_cast<float>(width);
+    m_screenH = static_cast<float>(height);
+
+    m_batches.clear();
+
+    m_batchActive = true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void TextRenderer::endFrame()
 {
@@ -312,21 +362,135 @@ void TextRenderer::textDraw(
     Font& font,
     const std::string& text,
     float x,
-    float baselineY,
+    float y,
     const glm::vec4& color
 )
 {
-    beginFrame();
+    textDraw(font, text, x, y, color, 1.0f);
+}
 
-    textDrawBatched(
-        font,
-        text,
-        x,
-        baselineY,
-        color
-    );
+void TextRenderer::textDraw(
+    Font& font,
+    const std::string& text,
+    float x,
+    float y,
+    const glm::vec4& color,
+    float scale
+)
+{
+    if (!m_batchActive)
+        beginFrame();
 
-    endFrame();
+
+
+
+
+
+
+
+
+
+
+
+
+    TextBatch& batch = batchForTexture(font.atlasTexture());
+
+    size_t i = 0;
+
+    while (i < text.size())
+    {
+        const uint32_t cp = nextUtf8Codepoint(text, i);
+        Character& ch = font.glyph(cp);
+
+        const float xpos =
+            x + static_cast<float>(ch.bearing.x) * scale;
+
+        const float ypos =
+            y - static_cast<float>(ch.bearing.y) * scale;
+
+        const float w =
+            static_cast<float>(ch.size.x) * scale;
+
+        const float h =
+            static_cast<float>(ch.size.y) * scale;
+
+        const float x0 = (2.0f * xpos / m_screenW) - 1.0f;
+        const float y0 = 1.0f - (2.0f * ypos / m_screenH);
+
+        const float x1 = (2.0f * (xpos + w) / m_screenW) - 1.0f;
+        const float y1 = 1.0f - (2.0f * (ypos + h) / m_screenH);
+
+
+
+
+
+
+
+{
+    static int glyphDebugCount = 0;
+
+    if (glyphDebugCount < 200)
+    {
+        std::ofstream dbg(
+            "system_map_draw_pipeline_debug.txt",
+            std::ios::app
+        );
+
+        dbg
+            << "[TEXT GLYPH] "
+            << "text=\"" << text << "\" "
+            << "cp=" << cp << " "
+            << "xpos=" << xpos << " "
+            << "ypos=" << ypos << " "
+            << "w=" << w << " "
+            << "h=" << h << " "
+            << "ndc=(" << x0 << "," << y0 << ")-("
+                      << x1 << "," << y1 << ")"
+            << "\n";
+
+        ++glyphDebugCount;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        const float u0 = ch.uv0.x;
+        const float v0 = ch.uv0.y;
+        const float u1 = ch.uv1.x;
+        const float v1 = ch.uv1.y;
+
+        const TextVertex verts[6] =
+        {
+            { x0, y1, u0, v1, color.r, color.g, color.b, color.a },
+            { x0, y0, u0, v0, color.r, color.g, color.b, color.a },
+            { x1, y0, u1, v0, color.r, color.g, color.b, color.a },
+
+            { x0, y1, u0, v1, color.r, color.g, color.b, color.a },
+            { x1, y0, u1, v0, color.r, color.g, color.b, color.a },
+            { x1, y1, u1, v1, color.r, color.g, color.b, color.a }
+        };
+
+        batch.vertices.insert(
+            batch.vertices.end(),
+            std::begin(verts),
+            std::end(verts)
+        );
+
+        x += static_cast<float>(ch.advance >> 6) * scale;
+    }
 }
 
 void TextRenderer::textDraw(
@@ -337,16 +501,123 @@ void TextRenderer::textDraw(
     const glm::vec3& color
 )
 {
+    textDraw(text, x, y, scale, glm::vec4(color, 1.0f));
+}
+
+void TextRenderer::textDraw(
+    const std::string& text,
+    float x,
+    float y,
+    float scale,
+    const glm::vec4& color
+)
+{
     static Font* fallbackFont = nullptr;
 
     if (!fallbackFont)
         fallbackFont = new Font("assets/fonts/Roboto-Light.ttf", 48);
 
+    if (!m_batchActive)
+        beginFrame();
+
+    TextBatch& batch = batchForTexture(fallbackFont->atlasTexture());
+
+    size_t i = 0;
+
+    while (i < text.size())
+    {
+        const uint32_t cp = nextUtf8Codepoint(text, i);
+        Character& ch = fallbackFont->glyph(cp);
+
+        const float advance =
+            static_cast<float>(ch.advance >> 6) * scale;
+
+        if (ch.size.x <= 0 || ch.size.y <= 0)
+        {
+            x += advance;
+            continue;
+        }
+
+        const float xpos =
+            x + static_cast<float>(ch.bearing.x) * scale;
+
+        const float ypos =
+            y - static_cast<float>(ch.bearing.y) * scale;
+
+        const float w =
+            static_cast<float>(ch.size.x) * scale;
+
+        const float h =
+            static_cast<float>(ch.size.y) * scale;
+
+        const float x0 = (2.0f * xpos / m_screenW) - 1.0f;
+        const float y0 = 1.0f - (2.0f * ypos / m_screenH);
+
+        const float x1 = (2.0f * (xpos + w) / m_screenW) - 1.0f;
+        const float y1 = 1.0f - (2.0f * (ypos + h) / m_screenH);
+
+        const float u0 = ch.uv0.x;
+        const float v0 = ch.uv0.y;
+        const float u1 = ch.uv1.x;
+        const float v1 = ch.uv1.y;
+
+        const TextVertex verts[6] = {
+            { x0, y1, u0, v1, color.r, color.g, color.b, color.a },
+            { x0, y0, u0, v0, color.r, color.g, color.b, color.a },
+            { x1, y0, u1, v0, color.r, color.g, color.b, color.a },
+
+            { x0, y1, u0, v1, color.r, color.g, color.b, color.a },
+            { x1, y0, u1, v0, color.r, color.g, color.b, color.a },
+            { x1, y1, u1, v1, color.r, color.g, color.b, color.a }
+        };
+
+        batch.vertices.insert(
+            batch.vertices.end(),
+            std::begin(verts),
+            std::end(verts)
+        );
+
+        x += advance;
+    }
+}
+
+
+void TextRenderer::textDrawPx(
+    const std::string& text,
+    float x,
+    float y,
+    int pixelSize,
+    const glm::vec4& color
+)
+{
+    
+    
+
+
+
+    pixelSize = std::clamp(pixelSize, 8, 48);
+
+    static std::unordered_map<int, std::unique_ptr<Font>> fonts;
+
+    auto it = fonts.find(pixelSize);
+
+    if (it == fonts.end())
+    {
+        auto font = std::make_unique<Font>(
+            "assets/fonts/Roboto-Medium.ttf",
+            pixelSize
+        );
+
+        it = fonts.emplace(pixelSize, std::move(font)).first;
+    }
+
     textDraw(
-        *fallbackFont,
+        *it->second,
         text,
         x,
         y,
-        glm::vec4(color, 1.0f)
+        color
     );
 }
+
+

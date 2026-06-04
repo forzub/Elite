@@ -225,6 +225,11 @@ add_executable(EliteGame
     src/render/planet/PlanetWireRenderer.cpp
     src/ui/browser/GameWebView.cpp
 
+    src/world/celestial/StarAtlasDatabase.cpp
+    src/world/celestial/CelestialSystemRuntime.cpp
+
+    src/game/system_map/SystemMapRenderer.cpp
+
 )
 
 add_custom_target(copy_assets ALL

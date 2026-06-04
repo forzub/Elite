@@ -32,6 +32,8 @@ private:
 
     GLint m_previousFBO = 0;
     GLint m_previousViewport[4] = {0, 0, 0, 0};
+    GLboolean m_previousScissorEnabled = GL_FALSE;
+    GLint m_previousScissorBox[4] = {0, 0, 0, 0};
 };
 
 // 1. bind FBO

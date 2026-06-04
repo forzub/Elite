@@ -312,14 +312,20 @@ void RadarPPIWidget::renderRadarContent(float px, float py, float pw, float ph)
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         
-        // Рисуем текущую текстуру в тестовый FBO
+        const float screenX =
+            static_cast<float>(previousViewport[0]) + px;
+
+        const float screenY =
+            static_cast<float>(previousViewport[1]) + py;
+
+        // Рисуем текстуру
         glBindTexture(GL_TEXTURE_2D, m_renderTarget.texture());
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         glBegin(GL_QUADS);
-            glTexCoord2f(0, 0); glVertex2f(0, 0);
-            glTexCoord2f(1, 0); glVertex2f(fboW, 0);
-            glTexCoord2f(1, 1); glVertex2f(fboW, fboH);
-            glTexCoord2f(0, 1); glVertex2f(0, fboH);
+            glTexCoord2f(0, 0); glVertex2f(screenX,      screenY);
+            glTexCoord2f(1, 0); glVertex2f(screenX + pw, screenY);
+            glTexCoord2f(1, 1); glVertex2f(screenX + pw, screenY + ph);
+            glTexCoord2f(0, 1); glVertex2f(screenX,      screenY + ph);
         glEnd();
         
         m_freezeTestTarget.unbind();

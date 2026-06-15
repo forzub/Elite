@@ -102,7 +102,13 @@ public:
     void applyDebugControlPayload(const nlohmann::json& payload);
 
     void requestGalaxyMapSnapshotOnce();
-    void requestSystemMapSnapshot(int systemId);
+    void requestSystemMapSnapshot(
+        int systemId,
+        bool forceRefresh = false
+    );
+
+    void updateSystemMapLiveFlags();
+    bool shouldRefreshSystemMapSnapshot() const;
 
 private:
 
@@ -227,5 +233,10 @@ private:
     int m_loadedSystemMapId = -1;
     bool m_hasGalaxyMapSnapshot = false;
     bool m_hasSystemMapSnapshot = false;
+    double m_systemMapLiveRefreshTimer = 0.0;
+
+    bool m_systemMapVisible = false;
+    bool m_systemMapLiveSnapshotsEnabled = false;
+    int m_liveSystemMapId = -1;
     
 };

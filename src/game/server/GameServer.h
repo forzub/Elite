@@ -92,6 +92,10 @@ public:
         int systemId
     ) const;
 
+    void setDebugFastUniverseTime(bool enabled);
+    bool debugFastUniverseTime() const;
+    double debugUniverseTimeScale() const;
+
 private:
 
     GameSimulation                                                          m_simulation;
@@ -107,4 +111,11 @@ private:
     world::celestial::StarAtlasDatabase      m_starAtlas;
     world::celestial::CelestialSystemRuntime m_celestialRuntime;
     world::celestial::PlayerNavigationState  m_playerNavigation;
+
+    bool m_debugFastUniverseTime = false;
+    double m_debugFastUniverseTimeScale = 10000.0;
+    int m_debugFastUniverseTimeTraceFrames = 0;
+
+
+    void applyCelestialOrbitParentParameters();
 };

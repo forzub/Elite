@@ -31,6 +31,25 @@ struct DebugRenderSettings
     bool showStarLabels = true;
     bool showAllStarLabels = false;
 
+    // Scene object visibility.
+    // Эти флаги нужны для быстрой диагностики FPS.
+    bool renderPlayerShip = true;
+    bool renderNpcShips = true;
+    bool renderTrafficShips = true;
+    bool renderRealShips = true;
+    bool renderVisualShips = true;
+    bool renderHubs = true;
+    bool renderLargeObjects = true;
+    bool renderCelestialBodies = true;
+    bool renderSystemMapObjects = true;
+
+    // Debug UI behaviour.
+    // Не выключает WebSocket/HTML-сервер. Только останавливает автопуш state_update.
+    bool debugControlAutoUpdates = true;
+
+    // System map live refresh interval.
+    float systemMapLiveRefreshSec = 0.25f;
+
     // Scene mode selected from debug UI.
     // "game"   = normal update, no scripted promo wing.
     // "promo1" = first scripted flyby scene.
@@ -127,6 +146,22 @@ struct DebugRenderSettings
     bool shouldDrawObjectAxes() const
     {
         return drawAxes || drawObjectAxes;
+    }
+
+    bool shouldRenderVisualShips() const
+    {
+        return shouldDrawMeshes() && renderVisualShips;
+    }
+
+    bool shouldRenderCelestialBodies() const
+    {
+        return renderCelestialBodies;
+    }
+
+    bool shouldRenderObjects() const
+    {
+        return shouldDrawMeshes() &&
+            (renderHubs || renderLargeObjects);
     }
 };
 

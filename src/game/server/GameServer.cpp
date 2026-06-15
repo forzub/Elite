@@ -1,6 +1,8 @@
 #include "GameServer.h"
 #include "src/game/network/ClientMessage.h"
 #include <iostream>
+#include <fstream>
+#include <iomanip>
 
 #include "src/world/coordinates/WorldPosition.h"
 #include <cmath>
@@ -8,6 +10,111 @@
 #include <unordered_map>
 
 #include "src/world/celestial/SystemMapTypes.h"
+
+
+
+
+namespace {
+    constexpr double AU_KM_LOCAL = 149597870.7;
+
+    glm::vec4 fallbackBodyColor(
+        world::celestial::BodyType type
+    )
+    {
+        using world::celestial::BodyType;
+
+        switch (type)
+        {
+            case BodyType::Star:
+                return {1.00f, 0.93f, 0.62f, 1.00f};
+
+            case BodyType::Planet:
+                return {0.36f, 0.68f, 1.00f, 1.00f};
+
+            case BodyType::Moon:
+                return {0.70f, 0.72f, 0.78f, 1.00f};
+
+            case BodyType::AsteroidBelt:
+                return {0.55f, 0.55f, 0.55f, 0.70f};
+
+            default:
+                return {0.60f, 0.82f, 1.00f, 1.00f};
+        }
+    }
+
+    std::string jurisdictionForSystemId(int systemId)
+    {
+        if (systemId == 0)
+            return "Sol Authority";
+
+        if (systemId >= 1 && systemId <= 9)
+            return "Core Jurisdiction";
+
+        if (systemId >= 10 && systemId <= 29)
+            return "Colonial Administration";
+
+        if (systemId >= 30 && systemId <= 44)
+            return "Frontier / Independent";
+
+        return "Unregistered";
+    }
+
+    double stablePhaseRadians(const std::string& id)
+    {
+        uint32_t h = 2166136261u;
+
+        for (unsigned char c : id)
+        {
+            h ^= c;
+            h *= 16777619u;
+        }
+
+        const double t =
+            static_cast<double>(h % 10000u) / 10000.0;
+
+        return t * glm::two_pi<double>();
+    }
+
+
+
+    const world::celestial::CelestialBodyDefinition*
+        findBodyById(
+            const world::celestial::CelestialSystemDefinition* system,
+            const std::string& bodyId
+        )
+        {
+            if (!system)
+                return nullptr;
+
+            for (const auto& body : system->bodies)
+            {
+                if (body.id == bodyId)
+                    return &body;
+            }
+
+            return nullptr;
+        }
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 GameServer::GameServer(){
 
@@ -34,14 +141,154 @@ GameServer::GameServer(){
             m_starAtlas.findSystem(m_playerNavigation.currentSystemId);
 
         m_celestialRuntime.setSystem(sol);
-        m_celestialRuntime.update(0.0);
 
 
-    m_simulation.update(0.0);
-    m_simulation.setTick(0);
 
-    m_lastSnapshot = m_simulation.snapshot();
+
+const double universeTime =
+    m_universeClock.timeSeconds();
+
+constexpr double kinematicSampleDtSeconds =
+    1.0;
+
+auto collectCelestialPositionsAu =
+    [this]()
+    {
+        std::unordered_map<std::string, glm::dvec3> result;
+
+        for (const auto& state : m_celestialRuntime.snapshot().bodies)
+        {
+            result[state.id] =
+                state.positionAu;
+        }
+
+        return result;
+    };
+
+// Сэмпл на секунду раньше.
+m_celestialRuntime.update(
+    universeTime - kinematicSampleDtSeconds
+);
+
+const auto previousCelestialPositionsAu =
+    collectCelestialPositionsAu();
+
+// Текущий сэмпл.
+m_celestialRuntime.update(
+    universeTime
+);
+
+const auto currentCelestialPositionsAu =
+    collectCelestialPositionsAu();
+
+m_simulation.setOrbitalUniverseTimeSeconds(
+    universeTime
+);
+
+m_simulation.setCelestialBodyKinematicStateAu(
+    currentCelestialPositionsAu,
+    previousCelestialPositionsAu,
+    kinematicSampleDtSeconds
+);
+
+
+
+
+
+
+
+
+
+
+
+        m_simulation.buildInitialScene();
+
+        applyCelestialOrbitParentParameters();
+
+        // Готовим хабы, станции и reference frames до размещения игрока.
+        // Это не полный update и не создаёт грязный стартовый snapshot.
+        m_simulation.prepareReferenceFramesForSpawn();
+
+        game::navigation::ReferenceFrame playerStartFrame;
+
+
+
+
+
+
+
+
+
+        playerStartFrame.type =
+            game::navigation::ReferenceFrameType::OrbitalHub;
+
+        playerStartFrame.hubId =
+            "earth_orbital_hub";
+
+        playerStartFrame.localOffsetMeters =
+            glm::dvec3(-10000.0, 2500.0, 0.0);
+
+        m_simulation.placeShipInReferenceFrame(
+            m_simulation.playerId(),
+            playerStartFrame
+        );
+
+        m_simulation.update(0.0);
+        m_simulation.setTick(0);
+
+
+
+
+
+
+        m_lastSnapshot = m_simulation.snapshot();
+
+
 }
+
+
+
+
+
+
+
+void GameServer::applyCelestialOrbitParentParameters()
+{
+    const int systemId =
+        m_playerNavigation.currentSystemId;
+
+    const auto* system =
+        m_starAtlas.findSystem(systemId);
+
+    if (!system)
+        return;
+
+    for (const auto& body : system->bodies)
+    {
+        if (body.gravitationalParameterM3s2 <= 0.0)
+            continue;
+
+        if (body.radiusKm <= 0.0)
+            continue;
+
+        m_simulation.updateStaticObjectOrbitParentParameters(
+            body.id,
+            body.radiusKm * 1000.0,
+            body.gravitationalParameterM3s2,
+            true
+        );
+    }
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -50,6 +297,9 @@ GameServer::GameServer(){
 
 void GameServer::update(double dt)
 {
+
+
+
     m_universeClock.update(dt);
     m_serverTick++;
 
@@ -93,16 +343,33 @@ void GameServer::update(double dt)
     }
 
 
-    m_simulation.update(dt);
-    m_simulation.setTick(m_serverTick);
+const double universeTime =
+    m_universeClock.timeSeconds();
+
+m_celestialRuntime.update(universeTime);
+
+m_simulation.setOrbitalUniverseTimeSeconds(
+    universeTime
+);
 
 
 
 
-    const double universeTime =
-        m_universeClock.timeSeconds();
+std::unordered_map<std::string, glm::dvec3> celestialPositionsAu;
 
-    m_celestialRuntime.update(universeTime);
+for (const auto& state : m_celestialRuntime.snapshot().bodies)
+{
+    celestialPositionsAu[state.id] = state.positionAu;
+}
+
+m_simulation.setCelestialBodyWorldPositionsAu(
+    celestialPositionsAu
+);
+
+m_simulation.update(dt);
+m_simulation.setTick(m_serverTick);
+
+
 
     if (const Ship* player = m_simulation.playerShip())
     {
@@ -143,11 +410,11 @@ void GameServer::update(double dt)
 
 
 
-void GameServer::submitCommand(EntityId id,const ShipControlState& control)
+void GameServer::submitCommand(EntityId id, const ShipControlState& control)
 {
+
     m_pendingCommands[id.value].push_back(control);
 }
-
 
 
 
@@ -396,68 +663,8 @@ void GameServer::debugResetAllShipStructures()
 
 
 
-namespace
-{
-    constexpr double AU_KM_LOCAL = 149597870.7;
 
-    glm::vec4 fallbackBodyColor(
-        world::celestial::BodyType type
-    )
-    {
-        using world::celestial::BodyType;
 
-        switch (type)
-        {
-            case BodyType::Star:
-                return {1.00f, 0.93f, 0.62f, 1.00f};
-
-            case BodyType::Planet:
-                return {0.36f, 0.68f, 1.00f, 1.00f};
-
-            case BodyType::Moon:
-                return {0.70f, 0.72f, 0.78f, 1.00f};
-
-            case BodyType::AsteroidBelt:
-                return {0.55f, 0.55f, 0.55f, 0.70f};
-
-            default:
-                return {0.60f, 0.82f, 1.00f, 1.00f};
-        }
-    }
-
-    std::string jurisdictionForSystemId(int systemId)
-    {
-        if (systemId == 0)
-            return "Sol Authority";
-
-        if (systemId >= 1 && systemId <= 9)
-            return "Core Jurisdiction";
-
-        if (systemId >= 10 && systemId <= 29)
-            return "Colonial Administration";
-
-        if (systemId >= 30 && systemId <= 44)
-            return "Frontier / Independent";
-
-        return "Unregistered";
-    }
-
-    double stablePhaseRadians(const std::string& id)
-    {
-        uint32_t h = 2166136261u;
-
-        for (unsigned char c : id)
-        {
-            h ^= c;
-            h *= 16777619u;
-        }
-
-        const double t =
-            static_cast<double>(h % 10000u) / 10000.0;
-
-        return t * glm::two_pi<double>();
-    }
-}
 
 
 
@@ -470,6 +677,19 @@ world::celestial::GalaxyMapSnapshot GameServer::buildGalaxyMapSnapshot() const
 
     out.universeDate =
         m_universeClock.dateTimeString();
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     for (const auto& s : m_starAtlas.systems())
     {
@@ -512,46 +732,151 @@ GameServer::buildSystemMapSnapshot(
     out.universeDate =
         m_universeClock.dateTimeString();
 
-    for (const auto& body : system->bodies)
+
+
+
+
+
+
+    
+world::celestial::CelestialSystemRuntime runtime;
+
+runtime.setSystem(system);
+runtime.update(out.universeTimeSeconds);
+
+const auto& runtimeSnapshot =
+    runtime.snapshot();
+
+std::unordered_map<std::string, glm::dvec3> runtimePositionById;
+
+for (const auto& state : runtimeSnapshot.bodies)
+{
+    runtimePositionById[state.id] = state.positionAu;
+}
+
+
+
+for (const auto& body : system->bodies)
+{
+    world::celestial::SystemMapBody item;
+
+    item.id = body.id;
+    item.name = body.name;
+    item.alternativeNames = body.alternativeNames;
+
+    item.parentId = body.parentId;
+    item.type = body.type;
+    item.radiusKm = body.radiusKm;
+
+    auto stateIt =
+        runtimePositionById.find(body.id);
+
+    if (stateIt != runtimePositionById.end())
+        item.positionAu = stateIt->second;
+    else
+        item.positionAu = body.staticPositionAu;
+
+    if (!body.parentId.empty())
     {
-        world::celestial::SystemMapBody item;
+        auto parentIt =
+            runtimePositionById.find(body.parentId);
 
-        item.id = body.id;
-        item.name = body.name;
-        item.parentId = body.parentId;
-        item.type = body.type;
-
-        item.radiusKm = body.radiusKm;
-
-        item.positionAu =
-            body.staticPositionAu;
-
-        item.orbitCenterAu =
-            glm::dvec3(0.0);
-
-        item.orbitRadiusAu =
-            body.distanceAu;
-
-        item.drawOrbit =
-            body.distanceAu > 0.0;
-
-        for (const auto& ring : body.rings)
-        {
-            world::celestial::SystemMapRing r;
-
-            r.innerRadiusKm =
-                ring.innerRadiusKm;
-
-            r.outerRadiusKm =
-                ring.outerRadiusKm;
-
-            item.rings.push_back(r);
-        }
-
-        out.bodies.push_back(
-            std::move(item)
-        );
+        if (parentIt != runtimePositionById.end())
+            item.orbitCenterAu = parentIt->second;
+        else
+            item.orbitCenterAu = glm::dvec3(0.0);
+    }
+    else
+    {
+        item.orbitCenterAu = glm::dvec3(0.0);
     }
 
+    item.orbitRadiusAu = body.distanceAu;
+    item.drawOrbit = body.distanceAu > 0.0;
+
+    for (const auto& ring : body.rings)
+    {
+        world::celestial::SystemMapRing r;
+
+        r.name = ring.name;
+        r.innerRadiusKm = ring.innerRadiusKm;
+        r.outerRadiusKm = ring.outerRadiusKm;
+        r.composition = ring.composition;
+
+        item.rings.push_back(std::move(r));
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+    out.bodies.push_back(std::move(item));
+}
+
+
+
+
+
+for (const auto& [id, obj] : m_simulation.staticObjects())
+{
+    if (obj.mapSystemId != systemId)
+        continue;
+
+    world::celestial::SystemMapObject mapObj;
+
+    mapObj.id = id;
+    mapObj.name = obj.displayName;
+    mapObj.owner = obj.ownerName;
+    mapObj.systemId = obj.mapSystemId;
+    mapObj.parentBodyId = obj.mapParentBodyId;
+
+    if (obj.type == ObjectType::Station)
+        mapObj.kind = world::celestial::SystemMapObjectKind::Station;
+    else
+        mapObj.kind = world::celestial::SystemMapObjectKind::Unknown;
+
+    const glm::dvec3 meters =
+        world::coordinates::fullMeters(obj.worldPosition);
+
+    mapObj.positionAu =
+        meters / world::celestial::MetersPerAu;
+
+
+
+
+    out.objects.push_back(std::move(mapObj));
+}
+
     return out;
+}
+
+
+
+
+void GameServer::setDebugFastUniverseTime(bool enabled)
+{
+    m_debugFastUniverseTime = enabled;
+
+    m_universeClock.setTimeScale(
+        enabled
+            ? m_debugFastUniverseTimeScale
+            : 1.0
+    );
+}
+
+bool GameServer::debugFastUniverseTime() const
+{
+    return m_debugFastUniverseTime;
+}
+
+double GameServer::debugUniverseTimeScale() const
+{
+    return m_universeClock.timeScale();
 }

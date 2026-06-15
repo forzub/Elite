@@ -24,17 +24,20 @@ namespace world::time
         void reset()
         {
             m_timeScale = 1.0;
+            m_currentTimeSeconds = realSecondsSinceEpoch();
         }
 
-        void update(double)
+        void update(double realDtSeconds)
         {
-            // Нам больше не нужен накопитель от запуска.
-            // Время берётся сквозняком от system_clock.
+            const double safeDt =
+                std::max(0.0, realDtSeconds);
+
+            m_currentTimeSeconds += safeDt * m_timeScale;
         }
 
         double timeSeconds() const
         {
-            return realSecondsSinceEpoch() * m_timeScale;
+            return m_currentTimeSeconds;
         }
 
         double timeScale() const
@@ -195,5 +198,6 @@ namespace world::time
 
     private:
         double m_timeScale = 1.0;
+        double m_currentTimeSeconds = 0.0;
     };
 }

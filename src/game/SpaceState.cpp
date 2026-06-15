@@ -55,25 +55,26 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/constants.hpp>
 #include "core/Application.h"
-
+#include "game/scene/GameSceneSetup.h"
+#include "render/HUD/TextRenderer.h"
 
 namespace
 {
     double stableBodyPhaseRadians(const std::string& id)
-{
-    uint32_t h = 2166136261u;
-
-    for (unsigned char c : id)
     {
-        h ^= c;
-        h *= 16777619u;
+        uint32_t h = 2166136261u;
+
+        for (unsigned char c : id)
+        {
+            h ^= c;
+            h *= 16777619u;
+        }
+
+        const double t =
+            static_cast<double>(h % 10000u) / 10000.0;
+
+        return t * glm::two_pi<double>();
     }
-
-    const double t =
-        static_cast<double>(h % 10000u) / 10000.0;
-
-    return t * glm::two_pi<double>();
-}
 
 
 
@@ -136,193 +137,220 @@ namespace
 
 
     glm::mat4 makeCameraLookOrientation(
-    const glm::vec3& cameraPos,
-    const glm::vec3& target,
-    const glm::vec3& upHint = glm::vec3(0.0f, 1.0f, 0.0f)
-)
-{
-    glm::vec3 forward =
-        target - cameraPos;
-
-    if (glm::length2(forward) < 0.000001f)
-        forward = glm::vec3(0.0f, 0.0f, -1.0f);
-
-    forward =
-        glm::normalize(forward);
-
-    glm::vec3 right =
-        glm::cross(forward, upHint);
-
-    if (glm::length2(right) < 0.000001f)
-        right = glm::cross(forward, glm::vec3(0.0f, 0.0f, 1.0f));
-
-    right =
-        glm::normalize(right);
-
-    glm::vec3 up =
-        glm::normalize(glm::cross(right, forward));
-
-    glm::mat4 orientation(1.0f);
-
-    orientation[0] = glm::vec4(right, 0.0f);
-    orientation[1] = glm::vec4(up, 0.0f);
-    orientation[2] = glm::vec4(-forward, 0.0f);
-    orientation[3] = glm::vec4(0, 0, 0, 1);
-
-    return orientation;
-}
-
-
-
-
-glm::vec3 safeNormalizePromo(
-    const glm::vec3& v,
-    const glm::vec3& fallback
-)
-{
-    if (glm::length2(v) < 0.000001f)
-        return fallback;
-
-    return glm::normalize(v);
-}
-
-float smootherStepPromo(float x)
-{
-    x = std::clamp(x, 0.0f, 1.0f);
-    return x * x * x * (x * (x * 6.0f - 15.0f) + 10.0f);
-}
-
-glm::mat4 makePromoLookOrientationClient(
-    const glm::vec3& forward
-)
-{
-    const glm::vec3 f =
-        safeNormalizePromo(
-            forward,
-            glm::vec3(0.0f, 0.0f, 1.0f)
-        );
-
-    const glm::vec3 worldUp =
-        glm::vec3(0.0f, 1.0f, 0.0f);
-
-    glm::vec3 right =
-        glm::cross(f, worldUp);
-
-    if (glm::length2(right) < 0.000001f)
+        const glm::vec3& cameraPos,
+        const glm::vec3& target,
+        const glm::vec3& upHint = glm::vec3(0.0f, 1.0f, 0.0f)
+    )
     {
+        glm::vec3 forward =
+            target - cameraPos;
+
+        if (glm::length2(forward) < 0.000001f)
+            forward = glm::vec3(0.0f, 0.0f, -1.0f);
+
+        forward =
+            glm::normalize(forward);
+
+        glm::vec3 right =
+            glm::cross(forward, upHint);
+
+        if (glm::length2(right) < 0.000001f)
+            right = glm::cross(forward, glm::vec3(0.0f, 0.0f, 1.0f));
+
         right =
-            glm::cross(
-                f,
-                glm::vec3(1.0f, 0.0f, 0.0f)
-            );
+            glm::normalize(right);
+
+        glm::vec3 up =
+            glm::normalize(glm::cross(right, forward));
+
+        glm::mat4 orientation(1.0f);
+
+        orientation[0] = glm::vec4(right, 0.0f);
+        orientation[1] = glm::vec4(up, 0.0f);
+        orientation[2] = glm::vec4(-forward, 0.0f);
+        orientation[3] = glm::vec4(0, 0, 0, 1);
+
+        return orientation;
     }
 
-    right =
-        glm::normalize(right);
-
-    glm::vec3 up =
-        glm::normalize(glm::cross(right, f));
-
-    glm::mat4 m(1.0f);
-
-    // Engine convention:
-    // +X = right
-    // +Y = up
-    // -Z = forward
-    m[0] = glm::vec4(right, 0.0f);
-    m[1] = glm::vec4(up, 0.0f);
-    m[2] = glm::vec4(-f, 0.0f);
-    m[3] = glm::vec4(0, 0, 0, 1);
-
-    return m;
-}
-
-
-glm::mat4 makePromoPitchOnlyOrientationClient(
-    const glm::vec3& toTarget
-)
-{
-    // Promo rule: player ship may only pitch while tracking the wing.
-    // X/right axis is fixed, so no yaw/roll can leak from look-at/slerp.
-    glm::vec3 f = glm::vec3(0.0f, toTarget.y, toTarget.z);
-
-    if (glm::length2(f) < 0.000001f)
-        f = glm::vec3(0.0f, 0.0f, -1.0f);
-
-    f = glm::normalize(f);
-
-    const glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
-    const glm::vec3 up = glm::normalize(glm::cross(right, f));
-
-    glm::mat4 m(1.0f);
-
-    // Engine convention:
-    // +X = right
-    // +Y = up
-    // -Z = forward
-    m[0] = glm::vec4(right, 0.0f);
-    m[1] = glm::vec4(up, 0.0f);
-    m[2] = glm::vec4(-f, 0.0f);
-    m[3] = glm::vec4(0, 0, 0, 1);
-
-    return m;
-}
 
 
 
-
-json celestialDefinitionToJson(
-    const world::celestial::CelestialSystemDefinition& system
-)
-{
-    json bodies = json::array();
-
-    std::unordered_map<std::string, glm::dvec3> positions;
-
-    int index = 0;
-
-    for (const auto& b : system.bodies)
+    glm::vec3 safeNormalizePromo(
+        const glm::vec3& v,
+        const glm::vec3& fallback
+    )
     {
-        glm::dvec3 pos = b.staticPositionAu;
+        if (glm::length2(v) < 0.000001f)
+            return fallback;
 
-        if (b.distanceAu > 0.0)
-        {
-            glm::dvec3 parentPos(0.0);
+        return glm::normalize(v);
+    }
 
-            auto parentIt = positions.find(b.parentId);
-            if (parentIt != positions.end())
-                parentPos = parentIt->second;
+    float smootherStepPromo(float x)
+    {
+        x = std::clamp(x, 0.0f, 1.0f);
+        return x * x * x * (x * (x * 6.0f - 15.0f) + 10.0f);
+    }
 
-            const double phase = double(index) * 0.77;
-
-            pos = parentPos + glm::dvec3(
-                std::cos(phase) * b.distanceAu,
-                0.0,
-                std::sin(phase) * b.distanceAu
+    glm::mat4 makePromoLookOrientationClient(
+        const glm::vec3& forward
+    )
+    {
+        const glm::vec3 f =
+            safeNormalizePromo(
+                forward,
+                glm::vec3(0.0f, 0.0f, 1.0f)
             );
+
+        const glm::vec3 worldUp =
+            glm::vec3(0.0f, 1.0f, 0.0f);
+
+        glm::vec3 right =
+            glm::cross(f, worldUp);
+
+        if (glm::length2(right) < 0.000001f)
+        {
+            right =
+                glm::cross(
+                    f,
+                    glm::vec3(1.0f, 0.0f, 0.0f)
+                );
         }
 
-        positions[b.id] = pos;
+        right =
+            glm::normalize(right);
 
-        json item;
-        item["id"] = b.id;
-        item["name"] = b.name;
-        item["type"] = world::celestial::toString(b.type);
-        item["parentId"] = b.parentId;
-        item["radiusKm"] = b.radiusKm;
+        glm::vec3 up =
+            glm::normalize(glm::cross(right, f));
 
-        item["positionAu"] = {
-            {"x", pos.x},
-            {"y", pos.y},
-            {"z", pos.z}
-        };
+        glm::mat4 m(1.0f);
 
-        bodies.push_back(std::move(item));
-        ++index;
+        // Engine convention:
+        // +X = right
+        // +Y = up
+        // -Z = forward
+        m[0] = glm::vec4(right, 0.0f);
+        m[1] = glm::vec4(up, 0.0f);
+        m[2] = glm::vec4(-f, 0.0f);
+        m[3] = glm::vec4(0, 0, 0, 1);
+
+        return m;
     }
 
-    return bodies;
-}
+
+    glm::mat4 makePromoPitchOnlyOrientationClient(
+        const glm::vec3& toTarget
+    )
+    {
+        // Promo rule: player ship may only pitch while tracking the wing.
+        // X/right axis is fixed, so no yaw/roll can leak from look-at/slerp.
+        glm::vec3 f = glm::vec3(0.0f, toTarget.y, toTarget.z);
+
+        if (glm::length2(f) < 0.000001f)
+            f = glm::vec3(0.0f, 0.0f, -1.0f);
+
+        f = glm::normalize(f);
+
+        const glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
+        const glm::vec3 up = glm::normalize(glm::cross(right, f));
+
+        glm::mat4 m(1.0f);
+
+        // Engine convention:
+        // +X = right
+        // +Y = up
+        // -Z = forward
+        m[0] = glm::vec4(right, 0.0f);
+        m[1] = glm::vec4(up, 0.0f);
+        m[2] = glm::vec4(-f, 0.0f);
+        m[3] = glm::vec4(0, 0, 0, 1);
+
+        return m;
+    }
+
+
+
+
+    json celestialDefinitionToJson(
+        const world::celestial::CelestialSystemDefinition& system
+    )
+    {
+        json bodies = json::array();
+
+        std::unordered_map<std::string, glm::dvec3> positions;
+
+        int index = 0;
+
+        for (const auto& b : system.bodies)
+        {
+            glm::dvec3 pos = b.staticPositionAu;
+
+            if (b.distanceAu > 0.0)
+            {
+                glm::dvec3 parentPos(0.0);
+
+                auto parentIt = positions.find(b.parentId);
+                if (parentIt != positions.end())
+                    parentPos = parentIt->second;
+
+                const double phase = double(index) * 0.77;
+
+                pos = parentPos + glm::dvec3(
+                    std::cos(phase) * b.distanceAu,
+                    0.0,
+                    std::sin(phase) * b.distanceAu
+                );
+            }
+
+            positions[b.id] = pos;
+
+            json item;
+            item["id"] = b.id;
+            item["name"] = b.name;
+            item["type"] = world::celestial::toString(b.type);
+            item["parentId"] = b.parentId;
+            item["radiusKm"] = b.radiusKm;
+
+            item["positionAu"] = {
+                {"x", pos.x},
+                {"y", pos.y},
+                {"z", pos.z}
+            };
+
+            bodies.push_back(std::move(item));
+            ++index;
+        }
+
+        return bodies;
+    }
+
+
+
+    std::string fmtMeters0(double v)
+    {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(0) << v;
+        return ss.str();
+    }
+
+    std::string fmtKm2(double meters)
+    {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(2) << (meters / 1000.0);
+        return ss.str();
+    }
+
+    glm::dvec3 worldPositionToMeters(
+        const world::coordinates::WorldPosition& wp
+    )
+    {
+        return glm::dvec3(
+            static_cast<double>(wp.cell.x),
+            static_cast<double>(wp.cell.y),
+            static_cast<double>(wp.cell.z)
+        ) * world::coordinates::GalacticCellSizeM + wp.localMeters;
+    }
 
 
 } // namespace
@@ -430,12 +458,19 @@ void SpaceState::requestGalaxyMapSnapshotOnce()
 }
 
 
-void SpaceState::requestSystemMapSnapshot(int systemId)
+
+
+
+void SpaceState::requestSystemMapSnapshot(
+    int systemId,
+    bool forceRefresh
+)
 {
     if (!m_server)
         return;
 
-    if (m_hasSystemMapSnapshot &&
+    if (!forceRefresh &&
+        m_hasSystemMapSnapshot &&
         m_loadedSystemMapId == systemId)
     {
         return;
@@ -447,6 +482,72 @@ void SpaceState::requestSystemMapSnapshot(int systemId)
     m_loadedSystemMapId = systemId;
     m_hasSystemMapSnapshot = true;
 }
+
+
+
+
+
+
+
+
+
+void SpaceState::updateSystemMapLiveFlags()
+{
+    m_systemMapVisible =
+        context().app &&
+        context().app->gameUiMode() == GameUiMode::SystemMap;
+
+    m_systemMapLiveSnapshotsEnabled =
+        m_systemMapVisible &&
+        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System;
+
+    if (!m_systemMapLiveSnapshotsEnabled)
+    {
+        m_liveSystemMapId = -1;
+        m_systemMapLiveRefreshTimer = 0.0;
+        return;
+    }
+
+    if (m_systemMapRenderer.focusedSystemId() >= 0)
+    {
+        m_liveSystemMapId =
+            m_systemMapRenderer.focusedSystemId();
+    }
+    else if (m_server)
+    {
+        m_liveSystemMapId =
+            m_server->playerNavigation().currentSystemId;
+    }
+    else
+    {
+        m_liveSystemMapId = -1;
+    }
+}
+
+bool SpaceState::shouldRefreshSystemMapSnapshot() const
+{
+    return
+        m_systemMapLiveSnapshotsEnabled &&
+        m_liveSystemMapId >= 0 &&
+        m_server != nullptr;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -581,11 +682,17 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
 
     // === управление кораблём ===
     m_inputMapper.update(m_playerControl);
-    m_localTick++;
-    m_playerControl.controlTick = m_localTick;
-    m_sentInputs.push_back(m_playerControl);
-    m_server->submitCommand(m_playerId, m_playerControl);
-    m_client->submitInput(m_playerControl);
+m_localTick++;
+m_playerControl.controlTick = m_localTick;
+
+m_sentInputs.push_back(m_playerControl);
+
+m_server->submitCommand(m_playerId, m_playerControl);
+
+// ВРЕМЕННО отключаем, чтобы не было двойной системы ввода.
+// Если клиентский loopback тоже шлёт команду на сервер,
+// он может перетирать/дублировать состояние.
+ // m_client->submitInput(m_playerControl);
 
 
 }
@@ -693,9 +800,11 @@ if (m_simAccumulator >= SIM_FIXED_DT)
     m_perfClientUpdateMs = nowMs() - clientStartMs;
 
 
-    // Сначала двигаем visual ships и поворачиваем renderTransform игрока.
+// Сначала двигаем visual ships и поворачиваем renderTransform игрока.
 // Только потом PlayerShipView получает уже финальный transform кадра.
-if (isPromo1SceneMode())
+// Promo tracking отключён для нормального старта возле станции.
+// Иначе клиент насильно возвращает игрока в старую promo-позицию.
+if (isPromo1SceneMode() && game::scene::GameSceneSetupConfig::PromoScene)
 {
     updatePromoPlayerShipTracking(static_cast<float>(dt));
 }
@@ -720,53 +829,6 @@ m_playerView->update(
     ship.detachedFragments
 );
 
-
-
-
-
-{
-    static bool initialized = false;
-    static int rows = 0;
-
-    if (rows < 1500)
-    {
-        std::ofstream out(
-            "frame_motion_log.csv",
-            initialized ? std::ios::app : std::ios::out
-        );
-
-        if (!initialized)
-        {
-            out << "row,"
-                << "rawDt,clampedFrameDt,simAccumulator,fixedSteps,"
-                << "processHtmlMs,fixedSimMs,clientUpdateMs,playerViewMs,"
-                << "forwardX,forwardY,forwardZ,"
-                << "upX,upY,upZ,"
-                << "rightX,rightY,rightZ\n";
-
-            initialized = true;
-        }
-
-        const glm::vec3 f = ship.renderTransform.forward();
-        const glm::vec3 u = ship.renderTransform.up();
-        const glm::vec3 r = ship.renderTransform.right();
-
-        out << rows++ << ","
-            << std::fixed << std::setprecision(6)
-            << rawFrameDt << ","
-            << clampedFrameDt << ","
-            << m_simAccumulator << ","
-            << debugFixedSteps << ","
-            << m_perfProcessHtmlMs << ","
-            << m_perfFixedSimMs << ","
-            << m_perfClientUpdateMs << ","
-            << m_perfPlayerViewMs << ","
-            << f.x << "," << f.y << "," << f.z << ","
-            << u.x << "," << u.y << "," << u.z << ","
-            << r.x << "," << r.y << "," << r.z
-            << "\n";
-    }
-}
 
 
 
@@ -906,7 +968,8 @@ m_playerView->updateCockpitStateFromSnapshot(
     {
         m_perfPushTimer = 0.0f;
 
-        if (context().htmlUi().state().activePanel == HtmlUiPanelId::DebugControl)
+        if (context().htmlUi().state().activePanel == HtmlUiPanelId::DebugControl &&
+            debug::get().render.debugControlAutoUpdates)
         {
             pushDebugControlState();
         }
@@ -917,6 +980,30 @@ m_playerView->updateCockpitStateFromSnapshot(
             pushSystemMapPanelState();
         }
     }
+
+
+
+updateSystemMapLiveFlags();
+
+if (shouldRefreshSystemMapSnapshot())
+{
+    m_systemMapLiveRefreshTimer += dt;
+
+    const double refreshSec =
+        static_cast<double>(debug::get().render.systemMapLiveRefreshSec);
+
+    if (m_systemMapLiveRefreshTimer >= refreshSec)
+    {
+        m_systemMapLiveRefreshTimer = 0.0;
+
+        requestSystemMapSnapshot(
+            m_liveSystemMapId,
+            true
+        );
+    }
+}
+
+
 
 
 
@@ -1075,15 +1162,13 @@ void SpaceState::renderUI()
             setText("main_coord_cell", buf);
             
 
-            std::snprintf(buf, sizeof(buf), "X %.3e m", globalMeters.x);
+            std::snprintf(buf, sizeof(buf), "X %.0f m", globalMeters.x);
             setText("main_coord_x", buf);
-            
 
-            std::snprintf(buf, sizeof(buf), "Y %.3e m", globalMeters.y);
+            std::snprintf(buf, sizeof(buf), "Y %.0f m", globalMeters.y);
             setText("main_coord_y", buf);
-            
 
-            std::snprintf(buf, sizeof(buf), "Z %.3e m", globalMeters.z);
+            std::snprintf(buf, sizeof(buf), "Z %.0f m", globalMeters.z);
             setText("main_coord_z", buf);
             
 
@@ -1113,6 +1198,20 @@ void SpaceState::renderUI()
     // ------------------------------- 
     
     SceneRenderPolicy mainPolicy; 
+
+
+    const auto& dbg = debug::get().render;
+
+    mainPolicy.drawStarfield = dbg.renderStarfield;
+    mainPolicy.drawCelestial = dbg.renderCelestialBodies;
+    mainPolicy.drawFarStationProxy = dbg.renderHubs;
+    mainPolicy.drawObjects = dbg.renderHubs || dbg.renderLargeObjects;
+    mainPolicy.drawVisualShips = dbg.renderVisualShips;
+    mainPolicy.drawVisualDrones = dbg.renderVisualShips;
+
+
+
+
     m_preparedScene =
         m_sceneRenderer.prepareScene(
             m_client->world(),
@@ -1149,69 +1248,7 @@ void SpaceState::renderUI()
     m_perfMainRenderMs = nowMs() - mainRenderStartMs;
 
 
-    // ------------------------------------------------------------
-// DEBUG: render spike log
-// Ловим фризы при входе крупного объекта в кадр.
-// Пишем только подозрительные кадры, чтобы сам лог не создавал фризы.
-// ------------------------------------------------------------
-{
-    static bool initialized = false;
-    static int rows = 0;
 
-    const auto& s = m_perfMainStats;
-
-    const bool suspiciousFrame =
-        m_perfMainRenderMs > 6.0 ||
-        s.drawCalls > 700 ||
-        s.partsDrawn > 350 ||
-        s.modulesDrawn > 140;
-
-    if (suspiciousFrame && rows < 600)
-    {
-        std::ofstream out(
-            "render_spike_log.csv",
-            initialized ? std::ios::app : std::ios::out
-        );
-
-        if (!initialized)
-        {
-            out << "row,"
-                << "perfFrameIndex,"
-                << "mainRenderMs,"
-                << "drawCalls,"
-                << "modulesDrawn,modulesCulled,"
-                << "partsDrawn,partsCulled,"
-                << "realShips,realShipParts,"
-                << "visualShipsDrawn,visualShipsCulled,"
-                << "visualProxy,visualFull,"
-                << "visualShipParts,"
-                << "rearCameraMs,"
-                << "renderUiMs\n";
-
-            initialized = true;
-        }
-
-        out << rows++ << ","
-            << m_perfFrameIndex << ","
-            << std::fixed << std::setprecision(4)
-            << m_perfMainRenderMs << ","
-            << s.drawCalls << ","
-            << s.modulesDrawn << ","
-            << s.modulesCulled << ","
-            << s.partsDrawn << ","
-            << s.partsCulled << ","
-            << s.realShipsDrawn << ","
-            << s.realShipPartsDrawn << ","
-            << s.visualShipsDrawn << ","
-            << s.visualShipsCulled << ","
-            << s.visualProxyShipsDrawn << ","
-            << s.visualFullShipsDrawn << ","
-            << s.visualShipPartsDrawn << ","
-            << m_perfRearCameraMs << ","
-            << m_perfRenderUiMs
-            << "\n";
-    }
-}
 
     // -------------------------------
     // Rear - камера корабля.
@@ -1247,56 +1284,7 @@ else
 // Пишем каждый кадр, но ограниченно: 1000 строк.
 // Потом по нему видно, совпадают ли фризы с rear camera/full objects.
 // ------------------------------------------------------------
-{
-    static bool initialized = false;
-    static int rows = 0;
 
-    if (rows < 1000)
-    {
-        std::ofstream out(
-            "render_frame_log.csv",
-            initialized ? std::ios::app : std::ios::out
-        );
-
-        if (!initialized)
-        {
-            out << "row,"
-                << "perfFrameIndex,"
-                << "mainRenderMs,"
-                << "rearCameraMs,"
-                << "mainDrawCalls,"
-                << "mainModulesDrawn,mainModulesCulled,"
-                << "mainPartsDrawn,mainPartsCulled,"
-                << "mainRealShips,mainRealShipParts,"
-                << "mainVisualShipsDrawn,mainVisualShipsCulled,"
-                << "mainVisualProxy,mainVisualFull,"
-                << "mainVisualShipParts\n";
-
-            initialized = true;
-        }
-
-        const auto& s = m_perfMainStats;
-
-        out << rows++ << ","
-            << m_perfFrameIndex << ","
-            << std::fixed << std::setprecision(4)
-            << m_perfMainRenderMs << ","
-            << m_perfRearCameraMs << ","
-            << s.drawCalls << ","
-            << s.modulesDrawn << ","
-            << s.modulesCulled << ","
-            << s.partsDrawn << ","
-            << s.partsCulled << ","
-            << s.realShipsDrawn << ","
-            << s.realShipPartsDrawn << ","
-            << s.visualShipsDrawn << ","
-            << s.visualShipsCulled << ","
-            << s.visualProxyShipsDrawn << ","
-            << s.visualFullShipsDrawn << ","
-            << s.visualShipPartsDrawn
-            << "\n";
-    }
-}
 
 
 
@@ -1339,15 +1327,22 @@ void SpaceState::renderHUD()
 
 
 
-        if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System)
-        {
-            const int focusedId =
-                m_systemMapRenderer.focusedSystemId() >= 0
-                    ? m_systemMapRenderer.focusedSystemId()
-                    : m_server->playerNavigation().currentSystemId;
+if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System)
+{
+    const int focusedId =
+        m_systemMapRenderer.focusedSystemId() >= 0
+            ? m_systemMapRenderer.focusedSystemId()
+            : m_server->playerNavigation().currentSystemId;
 
-            requestSystemMapSnapshot(focusedId);
-        }
+    requestSystemMapSnapshot(
+        focusedId,
+        false
+    );
+}
+
+
+
+
 
         m_systemMapRenderer.render(
             mapVp,
@@ -1452,7 +1447,193 @@ void SpaceState::renderHUD()
             m_playerView->renderCockpit();
         }
 
+        TextRenderer::instance().beginFrameForViewport(
+            vp.width,
+            vp.height
+        );
+
         uiRoot->render(vp);
+
+
+
+        TextRenderer::instance().endFrame();
+
+        
+
+
+
+
+
+
+
+
+
+        // -------------------------------------------------
+// DEBUG: координатная таблица ключевых объектов
+// -------------------------------------------------
+if (m_server)
+{
+    const auto& ships = m_client->world().ships();
+    auto playerIt = ships.find(m_playerId.value);
+
+    if (playerIt != ships.end())
+    {
+        const auto& playerShip = playerIt->second;
+
+        const glm::dvec3 playerM =
+            worldPositionToMeters(
+                playerShip.renderTransform.worldPosition
+            );
+
+        const auto systemSnapshot =
+            m_server->buildSystemMapSnapshot(
+                m_server->playerNavigation().currentSystemId
+            );
+
+        bool haveEarth = false;
+        bool haveMoon = false;
+        bool haveHub = false;
+
+        glm::dvec3 earthM {0.0};
+        glm::dvec3 moonM {0.0};
+        glm::dvec3 hubM {0.0};
+
+        for (const auto& b : systemSnapshot.bodies)
+        {
+            const glm::dvec3 bodyM =
+                b.positionAu * world::celestial::MetersPerAu;
+
+            if (b.id == "system_0.Sol.Земля")
+            {
+                earthM = bodyM;
+                haveEarth = true;
+            }
+
+            if (b.name == "Луна" ||
+                b.id.find("Луна") != std::string::npos)
+            {
+                moonM = bodyM;
+                haveMoon = true;
+            }
+        }
+
+        for (const auto& obj : systemSnapshot.objects)
+        {
+            if (obj.name.find("Earth High Orbital") != std::string::npos)
+            {
+                hubM =
+                    obj.positionAu * world::celestial::MetersPerAu;
+
+                haveHub = true;
+                break;
+            }
+        }
+
+        const double distPlayerEarthM =
+            haveEarth ? glm::length(playerM - earthM) : -1.0;
+
+        const double distPlayerMoonM =
+            haveMoon ? glm::length(playerM - moonM) : -1.0;
+
+        const double distPlayerHubM =
+            haveHub ? glm::length(playerM - hubM) : -1.0;
+
+       
+
+        // -------------------------------------------------
+        // SCREEN OVERLAY: то же самое на HUD
+        // -------------------------------------------------
+        auto& text = TextRenderer::instance();
+
+        text.beginFrameForViewport(
+            vp.width,
+            vp.height
+        );
+
+        float x = 24.0f;
+        float y = 230.0f;
+        const float line = 15.0f;
+
+        auto drawLine =
+            [&](const std::string& s, const glm::vec4& color)
+            {
+                text.textDrawPx(
+                    s,
+                    x,
+                    y,
+                    11,
+                    color
+                );
+
+                y += line;
+            };
+
+        const glm::vec4 headerColor {1.0f, 0.78f, 0.35f, 0.95f};
+        const glm::vec4 normalColor {0.45f, 0.82f, 1.0f, 0.78f};
+        const glm::vec4 warnColor   {1.0f, 0.38f, 0.28f, 0.90f};
+
+        drawLine("COORD DEBUG", headerColor);
+
+        drawLine(
+            "PLAYER X " + fmtMeters0(playerM.x) +
+            " Y " + fmtMeters0(playerM.y) +
+            " Z " + fmtMeters0(playerM.z),
+            normalColor
+        );
+
+        if (haveEarth)
+        {
+            drawLine(
+                "DIST PLAYER-EARTH " +
+                fmtKm2(distPlayerEarthM) +
+                " km",
+                distPlayerEarthM < 6371000.0 ? warnColor : normalColor
+            );
+        }
+        else
+        {
+            drawLine("EARTH NOT FOUND", warnColor);
+        }
+
+        if (haveMoon)
+        {
+            drawLine(
+                "DIST PLAYER-MOON " +
+                fmtKm2(distPlayerMoonM) +
+                " km",
+                normalColor
+            );
+        }
+        else
+        {
+            drawLine("MOON NOT FOUND", warnColor);
+        }
+
+        if (haveHub)
+        {
+            drawLine(
+                "DIST PLAYER-HUB " +
+                fmtKm2(distPlayerHubM) +
+                " km",
+                distPlayerHubM > 50000.0 ? warnColor : normalColor
+            );
+        }
+        else
+        {
+            drawLine("HUB NOT FOUND", warnColor);
+        }
+
+        text.endFrame();
+    }
+}
+
+
+
+
+
+
+
+
     }
 
 
@@ -2230,6 +2411,18 @@ void SpaceState::pushDebugControlState()
     payload["showConstellationHover"] = dbg.showConstellationHover;
     payload["constellationHoverRadiusPx"] = dbg.constellationHoverRadiusPx;
     payload["renderRearCamera"] = dbg.renderRearCamera;
+
+    payload["renderPlayerShip"] = dbg.renderPlayerShip;
+    payload["renderNpcShips"] = dbg.renderNpcShips;
+    payload["renderTrafficShips"] = dbg.renderTrafficShips;
+    payload["renderRealShips"] = dbg.renderRealShips;
+    payload["renderVisualShips"] = dbg.renderVisualShips;
+    payload["renderHubs"] = dbg.renderHubs;
+    payload["renderLargeObjects"] = dbg.renderLargeObjects;
+    payload["renderCelestialBodies"] = dbg.renderCelestialBodies;
+    payload["renderSystemMapObjects"] = dbg.renderSystemMapObjects;
+    payload["debugControlAutoUpdates"] = dbg.debugControlAutoUpdates;
+    payload["systemMapLiveRefreshSec"] = dbg.systemMapLiveRefreshSec;
     
     payload["drawAxes"] = dbg.drawAxes;
     payload["drawWorldAxes"] = dbg.drawWorldAxes;
@@ -2299,6 +2492,23 @@ void SpaceState::pushDebugControlState()
     perf["visualShipPartsDrawn"] = totalStats.visualShipPartsDrawn;
 
     payload["performance"] = perf;
+    payload["debugFastUniverseTime"] =
+        m_server
+            ? m_server->debugFastUniverseTime()
+            : false;
+    payload["debugUniverseTimeScale"] =
+    m_server
+        ? m_server->debugUniverseTimeScale()
+        : 1.0;
+
+    payload["systemMapVisible"] =
+        m_systemMapVisible;
+
+    payload["systemMapLiveSnapshotsEnabled"] =
+        m_systemMapLiveSnapshotsEnabled;
+
+    payload["liveSystemMapId"] =
+        m_liveSystemMapId;
 
     context().htmlUi().broadcastState(HtmlUiPanelId::DebugControl, payload);
 }
@@ -2331,6 +2541,25 @@ void SpaceState::applyDebugControlPayload(const json& payload)
     dbg.showConstellationHover = payload.value("showConstellationHover", dbg.showConstellationHover);
     dbg.constellationHoverRadiusPx = payload.value("constellationHoverRadiusPx", dbg.constellationHoverRadiusPx);
     dbg.renderRearCamera = payload.value("renderRearCamera", dbg.renderRearCamera);
+
+    dbg.renderPlayerShip = payload.value("renderPlayerShip", dbg.renderPlayerShip);
+    dbg.renderNpcShips = payload.value("renderNpcShips", dbg.renderNpcShips);
+    dbg.renderTrafficShips = payload.value("renderTrafficShips", dbg.renderTrafficShips);
+    dbg.renderRealShips = payload.value("renderRealShips", dbg.renderRealShips);
+    dbg.renderVisualShips = payload.value("renderVisualShips", dbg.renderVisualShips);
+    dbg.renderHubs = payload.value("renderHubs", dbg.renderHubs);
+    dbg.renderLargeObjects = payload.value("renderLargeObjects", dbg.renderLargeObjects);
+    dbg.renderCelestialBodies = payload.value("renderCelestialBodies", dbg.renderCelestialBodies);
+    dbg.renderSystemMapObjects = payload.value("renderSystemMapObjects", dbg.renderSystemMapObjects);
+    dbg.debugControlAutoUpdates = payload.value("debugControlAutoUpdates", dbg.debugControlAutoUpdates);
+    dbg.systemMapLiveRefreshSec = payload.value("systemMapLiveRefreshSec", dbg.systemMapLiveRefreshSec);
+
+    if (dbg.systemMapLiveRefreshSec < 0.02f)
+        dbg.systemMapLiveRefreshSec = 0.02f;
+
+    if (dbg.systemMapLiveRefreshSec > 5.0f)
+        dbg.systemMapLiveRefreshSec = 5.0f;
+
     dbg.drawAxes = payload.value("drawAxes", dbg.drawAxes);
     dbg.drawWorldAxes = payload.value("drawWorldAxes", dbg.drawWorldAxes);
     dbg.drawObjectAxes = payload.value("drawObjectAxes", dbg.drawObjectAxes);
@@ -2359,7 +2588,25 @@ void SpaceState::applyDebugControlPayload(const json& payload)
     if (payload.contains("moduleOriginColor"))  dbg.moduleOriginColor = jsonToVec4(payload["moduleOriginColor"], dbg.moduleOriginColor);
     if (payload.contains("modulePivotColor"))   dbg.modulePivotColor = jsonToVec4(payload["modulePivotColor"], dbg.modulePivotColor);
     if (payload.contains("rotationAxisColor"))  dbg.rotationAxisColor = jsonToVec4(payload["rotationAxisColor"], dbg.rotationAxisColor);
+
+
+    if (m_server)
+    {
+        m_server->setDebugFastUniverseTime(
+            payload.value(
+                "debugFastUniverseTime",
+                m_server->debugFastUniverseTime()
+            )
+        );
+
+
+            
+    }
+
+
 }
+
+
 
 void SpaceState::pushVolumeViewerState()
 {
@@ -2655,15 +2902,36 @@ void SpaceState::selectSystemMapSystem(int systemId)
     if (!m_server)
         return;
 
-    m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Galaxy);
+    requestGalaxyMapSnapshotOnce();
 
     m_systemMapRenderer.focusGalaxySystem(
         systemId,
         m_galaxyMapSnapshot
     );
 
+    if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Galaxy)
+    {
+        // В режиме галактики список систем только выбирает систему,
+        // ставит метку и центрирует камеру на выбранной звезде.
+        pushSystemMapPanelState();
+        return;
+    }
+
+    // В режиме системной карты список систем переключает
+    // содержимое карты на выбранную систему.
+    requestSystemMapSnapshot(
+        systemId,
+        true
+    );
+
+    m_systemMapRenderer.setMode(SystemMapRenderer::Mode::System);
+
     pushSystemMapPanelState();
 }
+
+
+
+
 
 void SpaceState::setSystemMapGalaxyMode()
 {
@@ -2691,7 +2959,10 @@ void SpaceState::setSystemMapCurrentSystemMode()
         m_galaxyMapSnapshot
     );
 
-    requestSystemMapSnapshot(selectedId);
+    requestSystemMapSnapshot(
+    selectedId,
+    true
+);
 
     m_systemMapRenderer.setMode(SystemMapRenderer::Mode::System);
 

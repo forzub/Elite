@@ -2,6 +2,7 @@
 #include "Ship.h"
 #include <iostream>
 #include <cstdio>
+#include <fstream>
 
 #include "src/input/Input.h"
 
@@ -110,6 +111,10 @@ void Ship::updateControlIntent()
         // m_core.transform().forwardInput    = m_control.forwardInput;
     
         m_core.control() = m_control;
+
+
+
+       
 }
 
 
@@ -158,6 +163,7 @@ bool Ship::removeItem(Item* item)
 
 void Ship::setControlState(const ShipControlState& newControl)
 {
+
     m_control = newControl;
 }
 

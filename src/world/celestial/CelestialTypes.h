@@ -14,6 +14,8 @@ namespace world::celestial
 
 inline constexpr double MetersPerAu = 149597870700.0;
 inline constexpr double SecondsPerDay = 86400.0;
+inline constexpr double GravitationalConstant = 6.67430e-11;
+
 
 enum class BodyType
 {
@@ -58,16 +60,30 @@ struct CelestialRingDefinition
     std::string composition;
 };
 
+
+struct CelestialBodyDisplayName
+    {
+        std::string name;
+        std::vector<std::string> actors;
+    };
+
 struct CelestialBodyDefinition
 {
+
     std::string id;
     std::string name;
+
+
     BodyType type = BodyType::Unknown;
 
     std::string parentId;
 
     double radiusKm = 0.0;
     double diameterKm = 0.0;
+    double massKg = 0.0;
+    double gravitationalParameterM3s2 = 0.0;
+  
+
 
     double distanceAu = 0.0;
     double orbitalPeriodDays = 0.0;
@@ -75,8 +91,9 @@ struct CelestialBodyDefinition
 
     glm::dvec3 staticPositionAu {0.0};
 
-    std::vector<std::string> alternativeNames;
+    std::vector<CelestialBodyDisplayName> alternativeNames;
     std::vector<CelestialRingDefinition> rings;
+
 };
 
 struct CelestialSystemDefinition

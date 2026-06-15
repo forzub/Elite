@@ -120,6 +120,8 @@ void SpaceState::initHUD()
     rearPolicy.drawLabels = false;
     rearPolicy.drawDebug = false;
 
+    // Эти значения будут дополнительно уточняться при рендере,
+    // но стартовые оставляем безопасными.
     rearPolicy.drawStarfield = true;
     rearPolicy.drawCelestial = true;
     rearPolicy.drawFarStationProxy = true;
@@ -135,28 +137,27 @@ void SpaceState::initHUD()
     rear->drawCallback =
         [this, rearPolicy](const glm::mat4& view, const glm::mat4& proj)
         {
+        SceneRenderPolicy policy = rearPolicy;
+        const auto& dbg = debug::get().render;
 
-             m_sceneRenderer.render(
+        policy.drawStarfield = dbg.renderStarfield;
+        policy.drawCelestial = dbg.renderCelestialBodies;
+        policy.drawFarStationProxy = dbg.renderHubs;
+        policy.drawObjects = dbg.renderHubs || dbg.renderLargeObjects;
+        policy.drawVisualShips = dbg.renderVisualShips;
+        policy.drawVisualDrones = dbg.renderVisualShips;
+             
+        
+        m_sceneRenderer.render(
                 m_client->world(),
                 m_playerId,
                 view,
                 proj,
                 1,
                 "secondCam",
-                rearPolicy
+                policy
             );
 
-            // SceneCameraParams rearCamera;
-            //     rearCamera.view = view;
-            //     rearCamera.proj = proj;
-            //     rearCamera.cameraId = 1;
-            //     rearCamera.cameraName = "secondCam";
-
-            //     m_sceneRenderer.renderPrepared(
-            //         m_preparedScene,
-            //         rearCamera,
-            //         rearPolicy
-            //     );
 
             m_perfRearStats = m_sceneRenderer.lastStats();
         };

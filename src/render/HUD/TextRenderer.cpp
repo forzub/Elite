@@ -426,31 +426,7 @@ void TextRenderer::textDraw(
 
 
 
-{
-    static int glyphDebugCount = 0;
 
-    if (glyphDebugCount < 200)
-    {
-        std::ofstream dbg(
-            "system_map_draw_pipeline_debug.txt",
-            std::ios::app
-        );
-
-        dbg
-            << "[TEXT GLYPH] "
-            << "text=\"" << text << "\" "
-            << "cp=" << cp << " "
-            << "xpos=" << xpos << " "
-            << "ypos=" << ypos << " "
-            << "w=" << w << " "
-            << "h=" << h << " "
-            << "ndc=(" << x0 << "," << y0 << ")-("
-                      << x1 << "," << y1 << ")"
-            << "\n";
-
-        ++glyphDebugCount;
-    }
-}
 
 
 

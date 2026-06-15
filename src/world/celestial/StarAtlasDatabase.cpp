@@ -43,6 +43,13 @@ std::string safeIdPart(std::string s)
     return s;
 }
 
+
+
+
+
+
+
+
 void readAlternativeNames(
     const json& src,
     CelestialBodyDefinition& out
@@ -53,10 +60,64 @@ void readAlternativeNames(
 
     for (const auto& n : src["alternative_names"])
     {
+        CelestialBodyDisplayName displayName;
+
         if (n.is_string())
-            out.alternativeNames.push_back(n.get<std::string>());
+        {
+            displayName.name = n.get<std::string>();
+        }
+        else if (n.is_object())
+        {
+            displayName.name = n.value("name", "");
+
+            if (n.contains("actors") && n["actors"].is_array())
+            {
+                for (const auto& actor : n["actors"])
+                {
+                    if (actor.is_string())
+                        displayName.actors.push_back(actor.get<std::string>());
+                }
+            }
+        }
+
+        if (!displayName.name.empty())
+            out.alternativeNames.push_back(std::move(displayName));
     }
+
 }
+
+
+
+
+void readGravityFields(
+        const json& j,
+        world::celestial::CelestialBodyDefinition& body
+    )
+    {
+        body.massKg =
+            j.value("mass_kg", 0.0);
+
+        body.gravitationalParameterM3s2 =
+            j.value("gravitational_parameter_m3s2", 0.0);
+
+        if (body.gravitationalParameterM3s2 <= 0.0 &&
+            body.massKg > 0.0)
+        {
+            body.gravitationalParameterM3s2 =
+                world::celestial::GravitationalConstant *
+                body.massKg;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -112,13 +173,27 @@ void addMoonDefinitions(
         CelestialBodyDefinition body;
         body.name = moon.value("name", "Moon");
         body.id = parentPlanetId + "." + safeIdPart(body.name);
+       
+
         body.type = BodyType::Moon;
         body.parentId = parentPlanetId;
 
         body.diameterKm = moon.value("diameter_km", 0.0);
         body.radiusKm = body.diameterKm * 0.5;
 
+        readGravityFields(moon, body);
+
         body.distanceAu = moon.value("distance_au", 0.0);
+
+        if (body.distanceAu <= 0.0)
+        {
+            const double distanceKm =
+                moon.value("distance_from_planet_km", 0.0);
+
+            if (distanceKm > 0.0)
+                body.distanceAu = distanceKm / MetersPerAu * 1000.0;
+        }
+
         body.orbitalPeriodDays = moon.value("orbital_period_days", 0.0);
         body.dayLengthHours = moon.value("day_length_hours", 0.0);
 
@@ -145,13 +220,19 @@ void addPlanetDefinitions(
         CelestialBodyDefinition body;
         body.name = planet.value("name", "Planet");
         body.id = parentStarId + "." + safeIdPart(body.name);
+        
+
         body.type = BodyType::Planet;
         body.parentId = parentStarId;
 
         body.diameterKm = planet.value("diameter_km", 0.0);
         body.radiusKm = body.diameterKm * 0.5;
 
+        readGravityFields(planet, body);
+
         body.distanceAu = planet.value("distance_au", 0.0);
+
+
         body.orbitalPeriodDays = planet.value("orbital_period_days", 0.0);
         body.dayLengthHours = planet.value("day_length_hours", 0.0);
 
@@ -185,10 +266,16 @@ void addAsteroidBelts(
         CelestialBodyDefinition body;
         body.name = belt.value("name", "Asteroid Belt");
         body.id = parentId + ".belt_" + std::to_string(index++);
+        
+
         body.type = BodyType::AsteroidBelt;
         body.parentId = parentId;
 
-        body.distanceAu = belt.value("distance_au", 0.0);
+        body.distanceAu =
+            belt.value(
+                "distance_au",
+                belt.value("distance_from_star_au", 0.0)
+            );
         body.orbitalPeriodDays = belt.value("orbital_period_days", 0.0);
 
         system.bodies.push_back(std::move(body));
@@ -300,11 +387,15 @@ bool StarAtlasDatabase::loadSystemDetails(const std::string& path)
                 CelestialBodyDefinition body;
                 body.name = star.value("name", "Star");
                 body.id = "system_" + std::to_string(system.systemId) + "." + safeIdPart(body.name);
+              
+
                 body.type = BodyType::Star;
                 body.parentId.clear();
 
                 body.diameterKm = star.value("diameter_km", 0.0);
                 body.radiusKm = body.diameterKm * 0.5;
+
+                readGravityFields(star, body);
 
                 if (star.contains("position_au"))
                     body.staticPositionAu = readAuPosition(star["position_au"]);

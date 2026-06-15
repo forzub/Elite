@@ -14,11 +14,25 @@
 #include "src/game/simulation/StructuralLinkSnapshot.h"
 #include "src/game/simulation/DebugHitVolumeSnapshot.h"
 #include "src/world/coordinates/WorldPosition.h"
+#include "src/world/orbits/OrbitalMotion.h"
+#include <string>
+
+
 
 struct StaticObject
 {
     EntityId id;
     ObjectType type;
+    std::string displayName = "Object";
+    std::string ownerName = "Independent";
+    std::string mapParentBodyId;
+    int mapSystemId = -1;
+    std::string hubId;
+    std::string hubModuleId;
+    bool attachedToHub = false;
+    glm::dvec3 hubLocalOffsetMeters {0.0};
+    bool inheritHubOrientation = true;
+
 
     world::coordinates::WorldPosition worldPosition;
 
@@ -40,6 +54,7 @@ struct StaticObject
     }
     
     glm::mat4 orientation {1.0f};
+    world::orbits::OrbitalMotion orbitalMotion;
 
     glm::vec3 angularVelocity {0.0f, 0.0f, 0.0f};
     glm::vec3 linearVelocity  {0.0f, 0.0f, 0.0f};

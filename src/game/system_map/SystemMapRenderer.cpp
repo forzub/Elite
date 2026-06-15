@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <fstream>
 #include <GLFW/glfw3.h>
+#include <chrono>
+#include <cmath>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -306,6 +308,112 @@ void SystemMapRenderer::addSphereWire(
 
 
 
+void SystemMapRenderer::beginSolids()
+{
+    m_solidVertices.clear();
+}
+
+void SystemMapRenderer::addBillboardBall(
+    const glm::vec3& center,
+    float radius,
+    const glm::vec4& color,
+    const glm::mat4& view,
+    int segments
+)
+{
+    if (radius <= 0.0f || segments < 8)
+        return;
+
+    const glm::vec3 right {
+        view[0][0],
+        view[1][0],
+        view[2][0]
+    };
+
+    const glm::vec3 up {
+        view[0][1],
+        view[1][1],
+        view[2][1]
+    };
+
+    const glm::vec4 coreColor {
+        color.r,
+        color.g,
+        color.b,
+        std::min(color.a, 0.92f)
+    };
+
+    const glm::vec4 edgeColor {
+        color.r,
+        color.g,
+        color.b,
+        std::min(color.a * 0.55f, 0.55f)
+    };
+
+    for (int i = 0; i < segments; ++i)
+    {
+        const float a0 =
+            6.28318530718f * static_cast<float>(i) / static_cast<float>(segments);
+
+        const float a1 =
+            6.28318530718f * static_cast<float>(i + 1) / static_cast<float>(segments);
+
+        const glm::vec3 p0 =
+            center + (std::cos(a0) * right + std::sin(a0) * up) * radius;
+
+        const glm::vec3 p1 =
+            center + (std::cos(a1) * right + std::sin(a1) * up) * radius;
+
+        m_solidVertices.push_back({ center, coreColor });
+        m_solidVertices.push_back({ p0, edgeColor });
+        m_solidVertices.push_back({ p1, edgeColor });
+    }
+}
+
+void SystemMapRenderer::flushSolids(const glm::mat4& mvp)
+{
+    if (!m_shader || !m_vao || !m_vbo || m_solidVertices.empty())
+        return;
+
+    GLboolean depthWasEnabled = glIsEnabled(GL_DEPTH_TEST);
+    GLboolean blendWasEnabled = glIsEnabled(GL_BLEND);
+
+    glUseProgram(m_shader);
+    glUniformMatrix4fv(m_mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+
+    glBindVertexArray(m_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        static_cast<GLsizeiptr>(m_solidVertices.size() * sizeof(Vertex)),
+        m_solidVertices.data(),
+        GL_DYNAMIC_DRAW
+    );
+
+    glDisable(GL_DEPTH_TEST);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_solidVertices.size()));
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    glUseProgram(0);
+
+    if (depthWasEnabled) glEnable(GL_DEPTH_TEST);
+    else glDisable(GL_DEPTH_TEST);
+
+    if (blendWasEnabled) glEnable(GL_BLEND);
+    else glDisable(GL_BLEND);
+}
+
+
+
+
+
+
 
 
 
@@ -416,7 +524,7 @@ glm::vec4 SystemMapRenderer::colorForBodyType(world::celestial::BodyType type) c
 }
 
 float SystemMapRenderer::bodyVisualRadius(
-    const world::celestial::CelestialBodyState& body,
+    const world::celestial::SystemMapBody& body,
     float distanceScale
 ) const
 {
@@ -434,7 +542,8 @@ float SystemMapRenderer::bodyVisualRadius(
         body.type == BodyType::Moon ? 36.0f :
                                       42.0f;
 
-    const float raw = static_cast<float>(radiusAu) * distanceScale * boost;
+    const float raw =
+        static_cast<float>(radiusAu) * distanceScale * boost;
 
     if (body.type == BodyType::Star)
         return std::clamp(raw, 0.16f, 1.10f);
@@ -443,10 +552,22 @@ float SystemMapRenderer::bodyVisualRadius(
         return std::clamp(raw, 0.045f, 0.22f);
 
     if (body.type == BodyType::Planet)
-        return std::clamp(raw, 0.07f, 0.55f);
+    {
+        const float earthRadiusKm = 6371.0f;
+
+        const float relative =
+            static_cast<float>(body.radiusKm / earthRadiusKm);
+
+        const float compressed =
+            std::pow(relative, 0.55f) * 0.09f;
+
+        return std::clamp(compressed, 0.055f, 0.55f);
+    }
 
     return std::clamp(raw, 0.035f, 0.12f);
 }
+
+
 
 void SystemMapRenderer::render(
     const Viewport& vp,
@@ -774,7 +895,7 @@ void SystemMapRenderer::handleInput(
 
                 m_systemCamera.distance *= factor;
                 m_systemCamera.distance =
-                    std::clamp(m_systemCamera.distance, 6.0f, 800.0f);
+                    std::clamp(m_systemCamera.distance, 3.0f, 800.0f);
             }
         }
 
@@ -1191,29 +1312,7 @@ for (const auto& l : labels)
             ? glm::vec4(0.98f, 0.72f, 0.34f, 0.55f)
             : glm::vec4(0.46f, 0.78f, 1.00f, 0.32f);
 
-    {
-        static int lineDebugCount = 0;
-
-        if (lineDebugCount < 200)
-        {
-            std::ofstream dbg(
-                "system_map_draw_pipeline_debug.txt",
-                std::ios::app
-            );
-
-            dbg
-                << "[LINE INPUT] "
-                << "title=\"" << l.title << "\" "
-                << "vp=(" << vp.x << "," << vp.y << ","
-                          << vp.width << "," << vp.height << ") "
-                << "star=(" << l.screen.x << "," << l.screen.y << ") "
-                << "lineEnd=(" << l.lineEnd.x << "," << l.lineEnd.y << ") "
-                << "text=(" << l.textPos.x << "," << l.textPos.y << ")"
-                << "\n";
-
-            ++lineDebugCount;
-        }
-    }
+    
 
     addLine(
         glm::vec3(l.screen.x, l.screen.y, 0.0f),
@@ -1245,25 +1344,7 @@ const glm::mat4 labelOrtho =
 
 
 
-{
-    std::ofstream dbg(
-        "system_map_draw_pipeline_debug.txt",
-        std::ios::app
-    );
 
-    GLint currentVp[4] = {0, 0, 0, 0};
-    glGetIntegerv(GL_VIEWPORT, currentVp);
-
-    dbg
-        << "[LINE FLUSH] "
-        << "glViewport=("
-        << currentVp[0] << "," << currentVp[1] << ","
-        << currentVp[2] << "," << currentVp[3] << ") "
-        << "ortho=(0.." << vp.width
-        << ",0.." << vp.height << ") "
-        << "vertices=" << m_vertices.size()
-        << "\n";
-}
 
 flushLines(labelOrtho);
 
@@ -1341,9 +1422,6 @@ for (const auto& l : labels)
 }
 
 text.endFrame();
-
-
-
     
 }
 
@@ -1352,12 +1430,154 @@ text.endFrame();
 
 
 
+void SystemMapRenderer::drawSystemLabels(
+    const Viewport& vp,
+    const world::celestial::SystemMapSnapshot& system,
+    const glm::mat4& mvp,
+    const std::unordered_map<std::string, glm::vec3>& posById,
+    const std::unordered_map<std::string, float>& drawRadiusById
+)
+{
+    using world::celestial::BodyType;
+
+    auto& text = TextRenderer::instance();
+
+    text.beginFrameForViewport(vp.width, vp.height);
+
+    const bool showMoons =
+        m_systemCamera.distance < 7.0f;
+
+    for (const auto& b : system.bodies)
+    {
+        if (b.type != BodyType::Planet &&
+            b.type != BodyType::AsteroidBelt &&
+            !(showMoons && b.type == BodyType::Moon))
+        {
+            continue;
+        }
+
+        auto posIt = posById.find(b.id);
+        if (posIt == posById.end())
+            continue;
+
+        auto radiusIt = drawRadiusById.find(b.id);
+
+        const float r =
+            radiusIt != drawRadiusById.end()
+                ? radiusIt->second
+                : 0.1f;
+
+        bool visible = false;
+        float depth = 1.0f;
+
+        const glm::vec2 screen =
+            projectToScreen(posIt->second, mvp, vp, visible, depth);
+
+        if (!visible)
+            continue;
+
+        std::string subtitle;
+
+        for (size_t i = 0; i < b.alternativeNames.size(); ++i)
+        {
+            const auto& alt = b.alternativeNames[i];
+
+            if (alt.name.empty())
+                continue;
+
+            if (!subtitle.empty())
+                subtitle += ", ";
+
+            subtitle += alt.name;
+
+            if (!alt.actors.empty())
+            {
+                subtitle += " (";
+
+                for (size_t a = 0; a < alt.actors.size(); ++a)
+                {
+                    if (a > 0)
+                        subtitle += ", ";
+
+                    subtitle += alt.actors[a];
+                }
+
+                subtitle += ")";
+            }
+        }
+
+        const float x = screen.x + r * 10.0f + 8.0f;
+        const float y = screen.y - 6.0f;
+
+        text.textDrawPx(
+            b.name,
+            x,
+            y,
+            14,
+            glm::vec4(0.62f, 0.84f, 1.0f, 0.88f)
+        );
+
+        if (!subtitle.empty())
+        {
+            text.textDrawPx(
+                "(" + subtitle + ")",
+                x,
+                y + 16.0f,
+                10,
+                glm::vec4(0.55f, 0.67f, 0.78f, 0.62f)
+            );
+        }
+    }
+
+    text.endFrame();
+}
 
 
 
 
+float SystemMapRenderer::smoothingAlpha() const
+{
+    using Clock = std::chrono::steady_clock;
 
+    static double lastTime = 0.0;
 
+    const auto now = Clock::now().time_since_epoch();
+    const double nowSec =
+        std::chrono::duration<double>(now).count();
+
+    if (lastTime <= 0.0)
+    {
+        lastTime = nowSec;
+        return 1.0f;
+    }
+
+    const double dt = std::clamp(nowSec - lastTime, 0.0, 0.1);
+    lastTime = nowSec;
+
+    // Чем больше число, тем быстрее карта догоняет новую позицию.
+    constexpr double smoothSpeed = 6.0;
+
+    return static_cast<float>(
+        1.0 - std::exp(-smoothSpeed * dt)
+    );
+}
+
+glm::vec3 SystemMapRenderer::smoothVec3(
+    SmoothPoint& point,
+    const glm::vec3& target,
+    float alpha
+)
+{
+    if (!point.initialized)
+    {
+        point.visual = target;
+        point.initialized = true;
+        return target;
+    }
+
+    point.visual += (target - point.visual) * alpha;
+    return point.visual;
+}
 
 
 
@@ -1404,27 +1624,111 @@ void SystemMapRenderer::renderSystem(
     const glm::mat4 view = systemViewMatrix();
     const glm::mat4 mvp = proj * view;
 
-    std::unordered_map<std::string, glm::vec3> posById;
+    
 
-    for (const auto& b : bodies)
+
+
+
+
+    using world::celestial::BodyType;
+
+    
+    const float alpha = smoothingAlpha();
+
+std::unordered_map<std::string, glm::vec3> rawPosById;
+std::unordered_map<std::string, glm::vec3> targetPosById;
+std::unordered_map<std::string, glm::vec3> posById;
+
+for (const auto& b : bodies)
+{
+    rawPosById[b.id] = {
+        static_cast<float>(b.positionAu.x) * systemScale,
+        static_cast<float>(b.positionAu.y) * systemScale,
+        static_cast<float>(b.positionAu.z) * systemScale
+    };
+
+    targetPosById[b.id] = rawPosById[b.id];
+}
+
+
+std::unordered_map<std::string, const world::celestial::SystemMapBody*> bodyById;
+std::unordered_map<std::string, float> drawRadiusById;
+
+for (const auto& b : bodies)
+{
+    bodyById[b.id] = &b;
+    drawRadiusById[b.id] = bodyVisualRadius(b, systemScale);
+}
+
+// Визуально выносим луны наружу.
+// Важно: направление считаем по RAW-позициям из snapshot,
+// а сглаживаем только уже готовую визуальную позицию.
+for (const auto& b : bodies)
+{
+    if (b.type != BodyType::Moon)
+        continue;
+
+    auto parentRawIt = rawPosById.find(b.parentId);
+    auto moonRawIt = rawPosById.find(b.id);
+    auto parentRadiusIt = drawRadiusById.find(b.parentId);
+    auto moonRadiusIt = drawRadiusById.find(b.id);
+
+    if (parentRawIt == rawPosById.end() ||
+        moonRawIt == rawPosById.end() ||
+        parentRadiusIt == drawRadiusById.end() ||
+        moonRadiusIt == drawRadiusById.end())
     {
-        posById[b.id] = {
-            static_cast<float>(b.positionAu.x) * systemScale,
-            static_cast<float>(b.positionAu.y) * systemScale,
-            static_cast<float>(b.positionAu.z) * systemScale
-        };
+        continue;
     }
-    std::unordered_map<
-        std::string,
-        const world::celestial::SystemMapBody*
-        > bodyById;
 
-        for (const auto& b : bodies)
-        {
-            bodyById[b.id] = &b;
-        }
+    glm::vec3 dir =
+        moonRawIt->second - parentRawIt->second;
+
+    if (glm::length(dir) < 0.000001f)
+        dir = glm::vec3(1.0f, 0.0f, 0.0f);
+    else
+        dir = glm::normalize(dir);
+
+    const float minVisualDistance =
+        parentRadiusIt->second * 1.75f +
+        moonRadiusIt->second * 1.40f;
+
+    const float realVisualDistance =
+        glm::length(moonRawIt->second - parentRawIt->second);
+
+    const float finalDistance =
+        std::max(realVisualDistance, minVisualDistance);
+
+    targetPosById[b.id] =
+        parentRawIt->second + dir * finalDistance;
+}
+
+for (const auto& b : bodies)
+{
+    posById[b.id] =
+        smoothVec3(
+            m_smoothBodyPositions[b.id],
+            targetPosById[b.id],
+            alpha
+        );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     beginLines();
+    beginSolids();
 
     const glm::vec4 gridColor { 0.10f, 0.28f, 0.43f, 0.18f };
 
@@ -1436,14 +1740,13 @@ void SystemMapRenderer::renderSystem(
         addLine({ v, 0.0f, -100.0f }, { v, 0.0f, 100.0f }, gridColor);
     }
 
-    using world::celestial::BodyType;
+    
 
     // Орбиты планет, лун и астероидных поясов.
     for (const auto& b : bodies)
     {
         if (b.type != BodyType::Planet &&
-            b.type != BodyType::Moon &&
-            b.type != BodyType::AsteroidBelt)
+            b.type != BodyType::Moon)
         {
             continue;
         }
@@ -1469,8 +1772,23 @@ void SystemMapRenderer::renderSystem(
                 center = posIt->second;
         }
 
-        const float orbitR =
+        float orbitR =
             static_cast<float>(b.orbitRadiusAu) * systemScale;
+
+        if (b.type == BodyType::Moon)
+        {
+            auto parentRadiusIt = drawRadiusById.find(b.parentId);
+            auto moonRadiusIt = drawRadiusById.find(b.id);
+
+            if (parentRadiusIt != drawRadiusById.end() &&
+                moonRadiusIt != drawRadiusById.end())
+            {
+                const float minVisualOrbit =
+                    parentRadiusIt->second * 1.75f + moonRadiusIt->second * 1.40f;
+
+                orbitR = std::max(orbitR, minVisualOrbit);
+            }
+        }
 
 
 
@@ -1495,34 +1813,8 @@ void SystemMapRenderer::renderSystem(
     {
         const glm::vec3 p = posById[b.id];
         const glm::vec4 c = colorForBodyType(b.type);
+        const float r = drawRadiusById[b.id];
 
-        double radiusAu =
-    b.radiusKm > 0.0
-        ? b.radiusKm / AU_KM
-        : 0.0;
-
-float r =
-    static_cast<float>(radiusAu) * systemScale;
-
-if (b.type == BodyType::Star)
-{
-    // Звёзды огромные, но на карте всё равно сжатые.
-    r = std::clamp(r * 260.0f, 1.4f, 5.5f);
-}
-else if (b.type == BodyType::Planet)
-{
-    // Планеты пропорциональны радиусу, но усилены.
-    r = std::clamp(r * 4200.0f, 0.22f, 1.65f);
-}
-else if (b.type == BodyType::Moon)
-{
-    // Луны меньше планет, но не исчезают.
-    r = std::clamp(r * 5200.0f, 0.10f, 0.55f);
-}
-else if (b.type == BodyType::AsteroidBelt)
-{
-    r = 0.10f;
-}
 
         if (b.type == BodyType::AsteroidBelt)
         {
@@ -1534,21 +1826,14 @@ else if (b.type == BodyType::AsteroidBelt)
 
             const float beltR = static_cast<float>(b.orbitRadiusAu) * systemScale;
 
-            addCircleXZ(center, beltR - 0.25f, {0.65f, 0.68f, 0.72f, 0.20f}, 160);
-            addCircleXZ(center, beltR,          {0.65f, 0.68f, 0.72f, 0.36f}, 160);
-            addCircleXZ(center, beltR + 0.25f, {0.65f, 0.68f, 0.72f, 0.20f}, 160);
+            addCircleXZ(center, beltR - 0.12f, {0.65f, 0.68f, 0.72f, 0.12f}, 160);
+            addCircleXZ(center, beltR,         {0.65f, 0.68f, 0.72f, 0.24f}, 160);
+            addCircleXZ(center, beltR + 0.12f, {0.65f, 0.68f, 0.72f, 0.12f}, 160);
 
             continue;
         }
 
-        addSphereWire(p, r, c);
-
-        addCircleXZ(
-            p,
-            r,
-            glm::vec4(c.r, c.g, c.b, std::min(c.a, 0.85f)),
-            80
-        );
+        addBillboardBall(p, r, c, view, 32);
 
         for (const auto& ring : b.rings)
         {
@@ -1584,7 +1869,56 @@ else if (b.type == BodyType::AsteroidBelt)
         addCircleXZ(player, 1.25f, {1.0f, 0.82f, 0.35f, 0.55f}, 48);
     }
 
+
+std::unordered_map<uint32_t, glm::vec3> objectVisualPosById;
+
+for (const auto& obj : system.objects)
+{
+    const glm::vec3 target =
+        systemObjectVisualPosition(
+            system,
+            obj,
+            posById,
+            drawRadiusById,
+            systemScale
+        );
+
+    const glm::vec3 p =
+        smoothVec3(
+            m_smoothObjectPositions[obj.id.value],
+            target,
+            alpha
+        );
+
+    objectVisualPosById[obj.id.value] = p;
+
+    addMapObjectCube(
+        p,
+        0.018f,
+        glm::vec4(1.0f, 0.78f, 0.30f, 0.95f)
+    );
+}
+
+    
+
     flushLines(mvp);
+
+    drawSystemLabels(
+        vp,
+        system,
+        mvp,
+        posById,
+        drawRadiusById
+    );
+
+    drawSystemObjectLabels(
+        vp,
+        system,
+        mvp,
+        objectVisualPosById
+    );
+
+    flushSolids(mvp);
 }   
 
 
@@ -1807,3 +2141,171 @@ void SystemMapRenderer::debugLabelTraceToFile(
         << m_galaxyCamera.target.z << ")"
         << "\n";
 }
+
+
+
+
+
+glm::vec3 SystemMapRenderer::systemObjectVisualPosition(
+    const world::celestial::SystemMapSnapshot& system,
+    const world::celestial::SystemMapObject& obj,
+    const std::unordered_map<std::string, glm::vec3>& posById,
+    const std::unordered_map<std::string, float>& drawRadiusById,
+    float systemScale
+) const
+{
+    // Если объект не привязан к телу, рисуем по абсолютной AU-позиции.
+    if (obj.parentBodyId.empty())
+    {
+        return glm::vec3 {
+            static_cast<float>(obj.positionAu.x) * systemScale,
+            static_cast<float>(obj.positionAu.y) * systemScale,
+            static_cast<float>(obj.positionAu.z) * systemScale
+        };
+    }
+
+    auto parentDrawIt =
+        posById.find(obj.parentBodyId);
+
+    if (parentDrawIt == posById.end())
+    {
+        return glm::vec3 {
+            static_cast<float>(obj.positionAu.x) * systemScale,
+            static_cast<float>(obj.positionAu.y) * systemScale,
+            static_cast<float>(obj.positionAu.z) * systemScale
+        };
+    }
+
+    glm::dvec3 parentPhysicalAu {0.0};
+
+    bool foundParentPhysical = false;
+
+    for (const auto& body : system.bodies)
+    {
+        if (body.id == obj.parentBodyId)
+        {
+            parentPhysicalAu = body.positionAu;
+            foundParentPhysical = true;
+            break;
+        }
+    }
+
+    glm::vec3 dir {1.0f, 0.0f, 0.0f};
+
+    if (foundParentPhysical)
+    {
+        const glm::dvec3 deltaAu =
+            obj.positionAu - parentPhysicalAu;
+
+        if (glm::length(deltaAu) > 0.0)
+        {
+            dir = glm::normalize(glm::vec3(deltaAu));
+        }
+    }
+
+    auto radiusIt =
+        drawRadiusById.find(obj.parentBodyId);
+
+    const float parentDrawRadius =
+        radiusIt != drawRadiusById.end()
+            ? radiusIt->second
+            : 0.18f;
+
+    // Визуальная дистанция от центра планеты.
+    // Это НЕ физика, только карта.
+    const float objectOrbitVisualRadius =
+        parentDrawRadius + 0.20f;
+
+    return parentDrawIt->second + dir * objectOrbitVisualRadius;
+}
+
+
+
+
+
+
+
+
+void SystemMapRenderer::addMapObjectCube(
+    const glm::vec3& center,
+    float size,
+    const glm::vec4& color
+)
+{
+    const glm::vec3 p000 = center + glm::vec3(-size, -size, -size);
+    const glm::vec3 p001 = center + glm::vec3(-size, -size,  size);
+    const glm::vec3 p010 = center + glm::vec3(-size,  size, -size);
+    const glm::vec3 p011 = center + glm::vec3(-size,  size,  size);
+
+    const glm::vec3 p100 = center + glm::vec3( size, -size, -size);
+    const glm::vec3 p101 = center + glm::vec3( size, -size,  size);
+    const glm::vec3 p110 = center + glm::vec3( size,  size, -size);
+    const glm::vec3 p111 = center + glm::vec3( size,  size,  size);
+
+    addLine(p000, p001, color);
+    addLine(p001, p011, color);
+    addLine(p011, p010, color);
+    addLine(p010, p000, color);
+
+    addLine(p100, p101, color);
+    addLine(p101, p111, color);
+    addLine(p111, p110, color);
+    addLine(p110, p100, color);
+
+    addLine(p000, p100, color);
+    addLine(p001, p101, color);
+    addLine(p010, p110, color);
+    addLine(p011, p111, color);
+}
+
+
+void SystemMapRenderer::drawSystemObjectLabels(
+    const Viewport& vp,
+    const world::celestial::SystemMapSnapshot& system,
+    const glm::mat4& mvp,
+    const std::unordered_map<uint32_t, glm::vec3>& objectVisualPosById
+)
+{
+    auto& text = TextRenderer::instance();
+    text.beginFrameForViewport(vp.width, vp.height);
+
+    for (const auto& obj : system.objects)
+    {
+        auto posIt = objectVisualPosById.find(obj.id.value);
+
+        if (posIt == objectVisualPosById.end())
+            continue;
+
+        const glm::vec3 p = posIt->second;
+
+        bool visible = false;
+        float depth = 1.0f;
+
+        const glm::vec2 screen =
+            projectToScreen(p, mvp, vp, visible, depth);
+
+        if (!visible)
+            continue;
+
+        text.textDrawPx(
+            obj.name,
+            screen.x + 8.0f,
+            screen.y - 7.0f,
+            13,
+            glm::vec4(1.0f, 0.86f, 0.42f, 0.88f)
+        );
+
+        if (!obj.owner.empty())
+        {
+            text.textDrawPx(
+                "(" + obj.owner + ")",
+                screen.x + 8.0f,
+                screen.y + 9.0f,
+                10,
+                glm::vec4(0.75f, 0.72f, 0.58f, 0.62f)
+            );
+        }
+    }
+
+    text.endFrame();
+}   

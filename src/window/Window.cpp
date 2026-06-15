@@ -9,6 +9,7 @@
 #include "Window.h"
 #include <iostream>
 #include <stdexcept>
+#include "input/Input.h"
 
 
 Window::Window(int width, int height, const char* title)
@@ -44,6 +45,8 @@ Window::Window(int width, int height, const char* title)
     }
 
         glfwMakeContextCurrent(m_window);
+
+        glfwSetScrollCallback(m_window, Input::scrollCallback);
 
         // 1️⃣ СНАЧАЛА загружаем функции OpenGL
         if (!gladLoadGL(glfwGetProcAddress))

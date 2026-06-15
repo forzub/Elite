@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     * { box-sizing: border-box; }
+
     html, body {
       margin: 0;
       padding: 0;
@@ -13,103 +14,41 @@
       color: #d7dde8;
       font-family: Arial, sans-serif;
     }
+
     body {
       padding: 12px;
     }
+
     .topbar {
       display: flex;
       gap: 10px;
       align-items: center;
       margin-bottom: 12px;
     }
-    .layout {
-  display: grid;
-  grid-template-columns: minmax(520px, 820px) minmax(420px, 1fr);
-  gap: 12px;
-  align-items: start;
-}
 
-.leftPanel {
-  min-width: 0;
-}
-
-.rightPanel {
-  min-width: 0;
-  position: sticky;
-  top: 12px;
-}
-
-.logBox {
-  height: calc(100vh - 96px);
-  min-height: 420px;
-  background: #080c11;
-  border: 1px solid #263444;
-  border-radius: 6px;
-  padding: 10px;
-  overflow: auto;
-  font-family: Consolas, "Courier New", monospace;
-  font-size: 12px;
-  line-height: 1.35;
-  color: #b8c7d9;
-  white-space: pre-wrap;
-}
-
-.logLine {
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  padding: 3px 0;
-}
-
-.logTime {
-  color: #6f879f;
-}
-
-.logInfo {
-  color: #9fd3ff;
-}
-
-.logWarn {
-  color: #ffd27a;
-}
-
-.logError {
-  color: #ff7a7a;
-}
-
-.perfGrid {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6px 12px;
-  font-family: Consolas, "Courier New", monospace;
-  font-size: 12px;
-}
-
-.perfKey {
-  color: #8fa3b8;
-}
-
-.perfValue {
-  color: #d7dde8;
-  text-align: right;
-}
-
-@media (max-width: 1100px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
-  .rightPanel {
-    position: static;
-  }
-
-  .logBox {
-    height: 360px;
-  }
-}
     .status {
       margin-left: auto;
       opacity: 0.8;
       font-size: 12px;
     }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(760px, 1.35fr) minmax(420px, 0.65fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .leftPanel,
+    .rightPanel {
+      min-width: 0;
+    }
+
+    .rightPanel {
+      position: sticky;
+      top: 12px;
+    }
+
     .section {
       background: #121821;
       border: 1px solid #2a3442;
@@ -117,34 +56,75 @@
       padding: 12px;
       margin-bottom: 12px;
     }
+
     .title {
       font-weight: bold;
       margin-bottom: 10px;
       color: #9fd3ff;
     }
+
+    .sectionGrid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(260px, 1fr));
+      gap: 8px 18px;
+      align-items: start;
+    }
+
+    .sectionGrid.three {
+      grid-template-columns: repeat(3, minmax(220px, 1fr));
+    }
+
     .row {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) auto;
       gap: 10px;
       align-items: center;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
+      min-height: 28px;
     }
+
+    .row.wide {
+      grid-column: 1 / -1;
+    }
+
     .row label {
-      min-width: 220px;
       font-size: 13px;
       color: #9aa7b8;
+      min-width: 0;
     }
-    input[type="number"], input[type="text"] {
+
+    .inlineControls {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .inlineChoice {
+      width: auto;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      color: #d7dde8;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
       padding: 4px 6px;
       background: #0f141c;
       color: #d7dde8;
       border: 1px solid #304055;
       border-radius: 4px;
       min-width: 100px;
+      max-width: 220px;
     }
-    input[type="checkbox"] {
+
+    input[type="checkbox"],
+    input[type="radio"] {
       transform: scale(1.1);
     }
+
     button {
       padding: 8px 10px;
       background: #1b2736;
@@ -153,23 +133,101 @@
       border-radius: 4px;
       cursor: pointer;
     }
+
     button:hover {
       background: #223246;
     }
-    .triple {
-      display: grid;
-      grid-template-columns: repeat(4, 90px);
-      gap: 6px;
-      align-items: center;
+
+    .hint {
+      color: #6f879f;
+      font-size: 12px;
+      margin-top: 8px;
+      line-height: 1.35;
     }
+
     .small {
       font-size: 12px;
       opacity: 0.8;
     }
+
+    .triple {
+      display: grid;
+      grid-template-columns: repeat(4, 78px);
+      gap: 6px;
+      align-items: center;
+    }
+
+    .logBox {
+      height: calc(100vh - 96px);
+      min-height: 420px;
+      background: #080c11;
+      border: 1px solid #263444;
+      border-radius: 6px;
+      padding: 10px;
+      overflow: auto;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.35;
+      color: #b8c7d9;
+      white-space: pre-wrap;
+    }
+
+    .logLine {
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      padding: 3px 0;
+    }
+
+    .logTime { color: #6f879f; }
+    .logInfo { color: #9fd3ff; }
+    .logWarn { color: #ffd27a; }
+    .logError { color: #ff7a7a; }
+
+    .perfGrid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px 12px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 12px;
+    }
+
+    .perfKey { color: #8fa3b8; }
+    .perfValue {
+      color: #d7dde8;
+      text-align: right;
+    }
+
+    @media (max-width: 1280px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .rightPanel {
+        position: static;
+      }
+
+      .logBox {
+        height: 360px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .sectionGrid,
+      .sectionGrid.three {
+        grid-template-columns: 1fr;
+      }
+
+      .row {
+        grid-template-columns: minmax(160px, 1fr) auto;
+      }
+
+      .triple {
+        grid-template-columns: repeat(2, 78px);
+      }
+    }
   </style>
 </head>
 <body>
-    <div class="topbar">
+  <div class="topbar">
     <strong>Debug Control</strong>
     <button onclick="app.requestSnapshot()">Reload</button>
     <button onclick="app.apply()">Apply</button>
@@ -179,141 +237,181 @@
   <div class="layout">
     <div class="leftPanel">
 
-  <div class="section">
-    <div class="title">Scene mode</div>
-
-    <div class="row">
-      <label>Mode</label>
-      <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end;">
-        <label style="width:auto; display:flex; gap:5px; align-items:center;">
-          <input name="sceneMode" id="sceneModeGame" type="radio" value="game"> Game
-        </label>
-        <label style="width:auto; display:flex; gap:5px; align-items:center;">
-          <input name="sceneMode" id="sceneModePromo1" type="radio" value="promo1"> Promo 1
-        </label>
+      <div class="section">
+        <div class="title">Scene mode</div>
+        <div class="sectionGrid">
+          <div class="row">
+            <label>Mode</label>
+            <div class="inlineControls">
+              <label class="inlineChoice">
+                <input name="sceneMode" id="sceneModeGame" type="radio" value="game"> Game
+              </label>
+              <label class="inlineChoice">
+                <input name="sceneMode" id="sceneModePromo1" type="radio" value="promo1"> Promo 1
+              </label>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <div class="section">
-    <div class="title">Render</div>
-
-    <div class="row"><label>Draw meshes</label><input id="drawMeshes" type="checkbox"></div>
-    <div class="row"><label>Render ship UI</label><input id="renderShipUi" type="checkbox"></div>
-    <div class="row"><label>Render starfield</label><input id="renderStarfield" type="checkbox"></div>
-    <div class="row"><label>Show star labels</label><input id="showStarLabels" type="checkbox"></div>
-    <div class="row"><label>Show all star labels</label><input id="showAllStarLabels" type="checkbox"></div>
-    <div class="row"><label>Show constellation hover</label><input id="showConstellationHover" type="checkbox"></div>
-    <div class="row"><label>Constellation hover radius px</label><input id="constellationHoverRadiusPx" type="number" step="1" min="10"></div>
-    <div class="row"><label>Render cockpit inside ship UI</label><input id="renderCockpit" type="checkbox"></div>
-    <div class="row"><label>Render rear camera</label><input id="renderRearCamera" type="checkbox"></div>
-  </div>
-
-  <div class="section">
-    <div class="title">Debug flags</div>
-    <div class="row"><label>Draw axes (legacy)</label><input id="drawAxes" type="checkbox"></div>
-    <div class="row"><label>Draw world axes</label><input id="drawWorldAxes" type="checkbox"></div>
-    <div class="row"><label>Draw object axes</label><input id="drawObjectAxes" type="checkbox"></div>
-    <div class="row"><label>Draw module pivots</label><input id="drawModulePivots" type="checkbox"></div>
-    <div class="row"><label>Draw hit volumes</label><input id="drawHitVolumes" type="checkbox"></div>
-
-    <div class="row">
-      <label>Hit volume filter</label>
-      <select id="hitVolumeFilterMode">
-        <option value="0">All hit volumes</option>
-        <option value="1">Primary only</option>
-        <option value="2">Support-link only</option>
-      </select>
-    </div>
-
-    <div class="row"><label>Publish object orientation</label><input id="publishObjectOrientation" type="checkbox"></div>
-    <div class="row"><label>Hit volumes overlay</label><input id="hitVolumesOverlay" type="checkbox"></div>
-    <div class="row"><label>Hide meshes when drawing hit volumes</label><input id="hideMeshesWhenDrawingHitVolumes" type="checkbox"></div>
-
-    <div class="row"><label>Axes overlay</label><input id="axesOverlay" type="checkbox"></div>
-    <div class="row"><label>Crosses overlay</label><input id="crossesOverlay" type="checkbox"></div>
-    <div class="row"><label>Lines overlay</label><input id="linesOverlay" type="checkbox"></div>
-  </div>
-
-  <div class="section">
-    <div class="title">Lengths</div>
-
-    <div class="row"><label>World axis length</label><input id="worldAxisLength" type="number" step="1"></div>
-    <div class="row"><label>Ship axis length</label><input id="shipAxisLength" type="number" step="1"></div>
-    <div class="row"><label>Object axis length</label><input id="objectAxisLength" type="number" step="1"></div>
-    <div class="row"><label>Module axis length</label><input id="moduleAxisLength" type="number" step="1"></div>
-    <div class="row"><label>Module cross size</label><input id="moduleCrossSize" type="number" step="0.1"></div>
-    <div class="row"><label>Rotation axis length</label><input id="rotAxisLength" type="number" step="1"></div>
-  </div>
-
-  <div class="section">
-    <div class="title">Colors (RGBA 0..1)</div>
-
-    <div class="row">
-      <label>Axis X color</label>
-      <div class="triple">
-        <input id="axisXColor-0" type="number" step="0.01">
-        <input id="axisXColor-1" type="number" step="0.01">
-        <input id="axisXColor-2" type="number" step="0.01">
-        <input id="axisXColor-3" type="number" step="0.01">
+      <div class="section">
+        <div class="title">Render layers</div>
+        <div class="sectionGrid three">
+          <div class="row"><label>Draw meshes</label><input id="drawMeshes" type="checkbox"></div>
+          <div class="row"><label>Render starfield</label><input id="renderStarfield" type="checkbox"></div>
+          <div class="row"><label>Render ship UI</label><input id="renderShipUi" type="checkbox"></div>
+          <div class="row"><label>Render cockpit inside ship UI</label><input id="renderCockpit" type="checkbox"></div>
+          <div class="row"><label>Render rear camera</label><input id="renderRearCamera" type="checkbox"></div>
+          <div class="row"><label>Show star labels</label><input id="showStarLabels" type="checkbox"></div>
+          <div class="row"><label>Show all star labels</label><input id="showAllStarLabels" type="checkbox"></div>
+          <div class="row"><label>Show constellation hover</label><input id="showConstellationHover" type="checkbox"></div>
+          <div class="row"><label>Constellation hover radius px</label><input id="constellationHoverRadiusPx" type="number" step="1" min="10"></div>
+        </div>
+        <div class="hint">
+          Общие слои рендера. Быстрые выключатели для проверки FPS без изменения игровой логики.
+        </div>
       </div>
-    </div>
 
-    <div class="row">
-      <label>Axis Y color</label>
-      <div class="triple">
-        <input id="axisYColor-0" type="number" step="0.01">
-        <input id="axisYColor-1" type="number" step="0.01">
-        <input id="axisYColor-2" type="number" step="0.01">
-        <input id="axisYColor-3" type="number" step="0.01">
+      <div class="section">
+        <div class="title">Scene object visibility</div>
+        <div class="sectionGrid three">
+          <div class="row"><label>Render player ship</label><input id="renderPlayerShip" type="checkbox"></div>
+          <div class="row"><label>Render NPC ships</label><input id="renderNpcShips" type="checkbox"></div>
+          <div class="row"><label>Render traffic ships</label><input id="renderTrafficShips" type="checkbox"></div>
+          <div class="row"><label>Render real ships</label><input id="renderRealShips" type="checkbox"></div>
+          <div class="row"><label>Render visual ships</label><input id="renderVisualShips" type="checkbox"></div>
+          <div class="row"><label>Render hubs / stations</label><input id="renderHubs" type="checkbox"></div>
+          <div class="row"><label>Render large objects</label><input id="renderLargeObjects" type="checkbox"></div>
+          <div class="row"><label>Render celestial bodies</label><input id="renderCelestialBodies" type="checkbox"></div>
+          <div class="row"><label>Render system map objects</label><input id="renderSystemMapObjects" type="checkbox"></div>
+        </div>
+        <div class="hint">
+          Новые диагностические флаги. Сейчас HTML уже отправляет их в payload; C++-обработчики добавим следующим шагом.
+        </div>
       </div>
-    </div>
 
-    <div class="row">
-      <label>Axis Z color</label>
-      <div class="triple">
-        <input id="axisZColor-0" type="number" step="0.01">
-        <input id="axisZColor-1" type="number" step="0.01">
-        <input id="axisZColor-2" type="number" step="0.01">
-        <input id="axisZColor-3" type="number" step="0.01">
+      <div class="section">
+        <div class="title">Debug geometry</div>
+        <div class="sectionGrid three">
+          <div class="row"><label>Draw axes (legacy)</label><input id="drawAxes" type="checkbox"></div>
+          <div class="row"><label>Draw world axes</label><input id="drawWorldAxes" type="checkbox"></div>
+          <div class="row"><label>Draw object axes</label><input id="drawObjectAxes" type="checkbox"></div>
+          <div class="row"><label>Draw module pivots</label><input id="drawModulePivots" type="checkbox"></div>
+          <div class="row"><label>Draw hit volumes</label><input id="drawHitVolumes" type="checkbox"></div>
+          <div class="row"><label>Publish object orientation</label><input id="publishObjectOrientation" type="checkbox"></div>
+          <div class="row"><label>Hit volumes overlay</label><input id="hitVolumesOverlay" type="checkbox"></div>
+          <div class="row"><label>Hide meshes with hit volumes</label><input id="hideMeshesWhenDrawingHitVolumes" type="checkbox"></div>
+          <div class="row"><label>Axes overlay</label><input id="axesOverlay" type="checkbox"></div>
+          <div class="row"><label>Crosses overlay</label><input id="crossesOverlay" type="checkbox"></div>
+          <div class="row"><label>Lines overlay</label><input id="linesOverlay" type="checkbox"></div>
+          <div class="row">
+            <label>Hit volume filter</label>
+            <select id="hitVolumeFilterMode">
+              <option value="0">All hit volumes</option>
+              <option value="1">Primary only</option>
+              <option value="2">Support-link only</option>
+            </select>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div class="row">
-      <label>Module origin color</label>
-      <div class="triple">
-        <input id="moduleOriginColor-0" type="number" step="0.01">
-        <input id="moduleOriginColor-1" type="number" step="0.01">
-        <input id="moduleOriginColor-2" type="number" step="0.01">
-        <input id="moduleOriginColor-3" type="number" step="0.01">
+      <div class="section">
+        <div class="title">Universe / system map</div>
+        <div class="sectionGrid three">
+          <div class="row"><label>Fast universe time x10000</label><input id="debugFastUniverseTime" type="checkbox"></div>
+          <div class="row"><label>Universe time scale</label><span id="debugUniverseTimeScale">—</span></div>
+          <div class="row"><label>System map visible</label><span id="systemMapVisible">—</span></div>
+          <div class="row"><label>System map live snapshots</label><span id="systemMapLiveSnapshotsEnabled">—</span></div>
+          <div class="row"><label>Live system id</label><span id="liveSystemMapId">—</span></div>
+          <div class="row"><label>Map live refresh sec</label><input id="systemMapLiveRefreshSec" type="number" step="0.01" min="0.02"></div>
+          <div class="row"><label>Debug Control auto updates</label><input id="debugControlAutoUpdates" type="checkbox"></div>
+        </div>
+        <div class="hint">
+          Refresh interval пока тоже уйдёт в payload. Если C++ ещё не читает поле — оно просто будет проигнорировано до следующего шага.
+        </div>
       </div>
-    </div>
 
-    <div class="row">
-      <label>Module pivot color</label>
-      <div class="triple">
-        <input id="modulePivotColor-0" type="number" step="0.01">
-        <input id="modulePivotColor-1" type="number" step="0.01">
-        <input id="modulePivotColor-2" type="number" step="0.01">
-        <input id="modulePivotColor-3" type="number" step="0.01">
+      <div class="section">
+        <div class="title">Lengths</div>
+        <div class="sectionGrid three">
+          <div class="row"><label>World axis length</label><input id="worldAxisLength" type="number" step="1"></div>
+          <div class="row"><label>Ship axis length</label><input id="shipAxisLength" type="number" step="1"></div>
+          <div class="row"><label>Object axis length</label><input id="objectAxisLength" type="number" step="1"></div>
+          <div class="row"><label>Module axis length</label><input id="moduleAxisLength" type="number" step="1"></div>
+          <div class="row"><label>Module cross size</label><input id="moduleCrossSize" type="number" step="0.1"></div>
+          <div class="row"><label>Rotation axis length</label><input id="rotAxisLength" type="number" step="1"></div>
+        </div>
       </div>
-    </div>
 
-    <div class="row">
-      <label>Rotation axis color</label>
-      <div class="triple">
-        <input id="rotationAxisColor-0" type="number" step="0.01">
-        <input id="rotationAxisColor-1" type="number" step="0.01">
-        <input id="rotationAxisColor-2" type="number" step="0.01">
-        <input id="rotationAxisColor-3" type="number" step="0.01">
+      <div class="section">
+        <div class="title">Colors (RGBA 0..1)</div>
+
+        <div class="sectionGrid">
+          <div class="row wide">
+            <label>Axis X color</label>
+            <div class="triple">
+              <input id="axisXColor-0" type="number" step="0.01">
+              <input id="axisXColor-1" type="number" step="0.01">
+              <input id="axisXColor-2" type="number" step="0.01">
+              <input id="axisXColor-3" type="number" step="0.01">
+            </div>
+          </div>
+
+          <div class="row wide">
+            <label>Axis Y color</label>
+            <div class="triple">
+              <input id="axisYColor-0" type="number" step="0.01">
+              <input id="axisYColor-1" type="number" step="0.01">
+              <input id="axisYColor-2" type="number" step="0.01">
+              <input id="axisYColor-3" type="number" step="0.01">
+            </div>
+          </div>
+
+          <div class="row wide">
+            <label>Axis Z color</label>
+            <div class="triple">
+              <input id="axisZColor-0" type="number" step="0.01">
+              <input id="axisZColor-1" type="number" step="0.01">
+              <input id="axisZColor-2" type="number" step="0.01">
+              <input id="axisZColor-3" type="number" step="0.01">
+            </div>
+          </div>
+
+          <div class="row wide">
+            <label>Module origin color</label>
+            <div class="triple">
+              <input id="moduleOriginColor-0" type="number" step="0.01">
+              <input id="moduleOriginColor-1" type="number" step="0.01">
+              <input id="moduleOriginColor-2" type="number" step="0.01">
+              <input id="moduleOriginColor-3" type="number" step="0.01">
+            </div>
+          </div>
+
+          <div class="row wide">
+            <label>Module pivot color</label>
+            <div class="triple">
+              <input id="modulePivotColor-0" type="number" step="0.01">
+              <input id="modulePivotColor-1" type="number" step="0.01">
+              <input id="modulePivotColor-2" type="number" step="0.01">
+              <input id="modulePivotColor-3" type="number" step="0.01">
+            </div>
+          </div>
+
+          <div class="row wide">
+            <label>Rotation axis color</label>
+            <div class="triple">
+              <input id="rotationAxisColor-0" type="number" step="0.01">
+              <input id="rotationAxisColor-1" type="number" step="0.01">
+              <input id="rotationAxisColor-2" type="number" step="0.01">
+              <input id="rotationAxisColor-3" type="number" step="0.01">
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-    <div class="section small">
-    Эта страница управляет debug-настройками движка в реальном времени.
-  </div>
-
+      <div class="section small">
+        Эта страница управляет debug-настройками движка в реальном времени.
+      </div>
     </div>
 
     <div class="rightPanel">
@@ -357,100 +455,114 @@
     const state = { ws: null };
     const MAX_LOG_LINES = 300;
 
-function nowStamp() {
-  const d = new Date();
-  return d.toLocaleTimeString('en-GB', { hour12: false });
-}
+    let debugSettingsInitialized = false;
+    let debugSettingsDirty = false;
 
-function logLine(text, kind = 'info') {
-  const box = document.getElementById('debugLog');
-  if (!box) return;
+    function nowStamp() {
+      const d = new Date();
+      return d.toLocaleTimeString('en-GB', { hour12: false });
+    }
 
-  const line = document.createElement('div');
-  line.className = 'logLine';
+    function setChecked(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.checked = !!value;
+    }
 
-  const kindClass =
-    kind === 'error' ? 'logError' :
-    kind === 'warn'  ? 'logWarn'  :
-                       'logInfo';
+    function setValue(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.value = value;
+    }
 
-  line.innerHTML =
-    `<span class="logTime">[${nowStamp()}]</span> ` +
-    `<span class="${kindClass}">${escapeHtml(text)}</span>`;
+    function markDebugSettingsDirty() {
+      debugSettingsDirty = true;
+    }
 
-  box.appendChild(line);
+    function logLine(text, kind = 'info') {
+      const box = document.getElementById('debugLog');
+      if (!box) return;
 
-  while (box.children.length > MAX_LOG_LINES) {
-    box.removeChild(box.firstChild);
-  }
+      const line = document.createElement('div');
+      line.className = 'logLine';
 
-  box.scrollTop = box.scrollHeight;
-}
+      const kindClass =
+        kind === 'error' ? 'logError' :
+        kind === 'warn'  ? 'logWarn'  :
+                           'logInfo';
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;');
-}
+      line.innerHTML =
+        `<span class="logTime">[${nowStamp()}]</span> ` +
+        `<span class="${kindClass}">${escapeHtml(text)}</span>`;
 
-function setText(id, value) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = value;
-}
+      box.appendChild(line);
 
-function applyPerformancePayload(p) {
-  if (!p) return;
+      while (box.children.length > MAX_LOG_LINES) {
+        box.removeChild(box.firstChild);
+      }
 
-  setText('perfFrameIndex', p.frameIndex ?? '—');
+      box.scrollTop = box.scrollHeight;
+    }
 
-  setText('perfFps', p.fps != null ? Number(p.fps).toFixed(1) : '—');
-  setText('perfFrameMs', p.frameMs != null ? Number(p.frameMs).toFixed(2) + ' ms' : '—');
-  setText('perfUpdateMs', p.updateMs != null ? Number(p.updateMs).toFixed(2) + ' ms' : '—');
-  setText('perfProcessHtmlMs', p.processHtmlMs != null ? Number(p.processHtmlMs).toFixed(2) + ' ms' : '—');
-  setText('perfFixedSimMs', p.fixedSimMs != null ? Number(p.fixedSimMs).toFixed(2) + ' ms' : '—');
-  setText('perfClientUpdateMs', p.clientUpdateMs != null ? Number(p.clientUpdateMs).toFixed(2) + ' ms' : '—');
-  setText('perfPlayerViewMs', p.playerViewMs != null ? Number(p.playerViewMs).toFixed(2) + ' ms' : '—');
-  setText('perfUiRootUpdateMs', p.uiRootUpdateMs != null ? Number(p.uiRootUpdateMs).toFixed(2) + ' ms' : '—');
-  setText('perfMainRenderMs', p.mainRenderMs != null ? Number(p.mainRenderMs).toFixed(2) + ' ms' : '—');
-  setText('perfRearCameraMs', p.rearCameraMs != null ? Number(p.rearCameraMs).toFixed(2) + ' ms' : '—');
-  setText('perfRenderUiMs', p.renderUiMs != null ? Number(p.renderUiMs).toFixed(2) + ' ms' : '—');
-  setText('perfHudMs', p.hudMs != null ? Number(p.hudMs).toFixed(2) + ' ms' : '—');
-  setText('perfDrawCalls', p.drawCalls ?? '—');
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
 
-  const modules =
-    p.modulesDrawn != null || p.modulesCulled != null
-      ? `${p.modulesDrawn ?? 0} / ${p.modulesCulled ?? 0}`
-      : '—';
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
 
-  const parts =
-    p.partsDrawn != null || p.partsCulled != null
-      ? `${p.partsDrawn ?? 0} / ${p.partsCulled ?? 0}`
-      : '—';
+    function applyPerformancePayload(p) {
+      if (!p) return;
 
-    setText('perfModules', modules);
-  setText('perfParts', parts);
+      setText('perfFrameIndex', p.frameIndex ?? '—');
+      setText('perfFps', p.fps != null ? Number(p.fps).toFixed(1) : '—');
+      setText('perfFrameMs', p.frameMs != null ? Number(p.frameMs).toFixed(2) + ' ms' : '—');
+      setText('perfUpdateMs', p.updateMs != null ? Number(p.updateMs).toFixed(2) + ' ms' : '—');
+      setText('perfProcessHtmlMs', p.processHtmlMs != null ? Number(p.processHtmlMs).toFixed(2) + ' ms' : '—');
+      setText('perfFixedSimMs', p.fixedSimMs != null ? Number(p.fixedSimMs).toFixed(2) + ' ms' : '—');
+      setText('perfClientUpdateMs', p.clientUpdateMs != null ? Number(p.clientUpdateMs).toFixed(2) + ' ms' : '—');
+      setText('perfPlayerViewMs', p.playerViewMs != null ? Number(p.playerViewMs).toFixed(2) + ' ms' : '—');
+      setText('perfUiRootUpdateMs', p.uiRootUpdateMs != null ? Number(p.uiRootUpdateMs).toFixed(2) + ' ms' : '—');
+      setText('perfMainRenderMs', p.mainRenderMs != null ? Number(p.mainRenderMs).toFixed(2) + ' ms' : '—');
+      setText('perfRearCameraMs', p.rearCameraMs != null ? Number(p.rearCameraMs).toFixed(2) + ' ms' : '—');
+      setText('perfRenderUiMs', p.renderUiMs != null ? Number(p.renderUiMs).toFixed(2) + ' ms' : '—');
+      setText('perfHudMs', p.hudMs != null ? Number(p.hudMs).toFixed(2) + ' ms' : '—');
+      setText('perfDrawCalls', p.drawCalls ?? '—');
 
-  setText('perfRealShips', p.realShipsDrawn ?? '—');
-  setText('perfRealShipParts', p.realShipPartsDrawn ?? '—');
+      const modules =
+        p.modulesDrawn != null || p.modulesCulled != null
+          ? `${p.modulesDrawn ?? 0} / ${p.modulesCulled ?? 0}`
+          : '—';
 
-  const visualShips =
-    p.visualShipsDrawn != null || p.visualShipsCulled != null
-      ? `${p.visualShipsDrawn ?? 0} / ${p.visualShipsCulled ?? 0}`
-      : '—';
+      const parts =
+        p.partsDrawn != null || p.partsCulled != null
+          ? `${p.partsDrawn ?? 0} / ${p.partsCulled ?? 0}`
+          : '—';
 
-  const visualProxyFull =
-    p.visualProxyShipsDrawn != null || p.visualFullShipsDrawn != null
-      ? `${p.visualProxyShipsDrawn ?? 0} / ${p.visualFullShipsDrawn ?? 0}`
-      : '—';
+      setText('perfModules', modules);
+      setText('perfParts', parts);
+      setText('perfRealShips', p.realShipsDrawn ?? '—');
+      setText('perfRealShipParts', p.realShipPartsDrawn ?? '—');
 
-  setText('perfVisualShips', visualShips);
-  setText('perfVisualProxyFull', visualProxyFull);
-  setText('perfVisualShipParts', p.visualShipPartsDrawn ?? '—');
+      const visualShips =
+        p.visualShipsDrawn != null || p.visualShipsCulled != null
+          ? `${p.visualShipsDrawn ?? 0} / ${p.visualShipsCulled ?? 0}`
+          : '—';
 
-}
+      const visualProxyFull =
+        p.visualProxyShipsDrawn != null || p.visualFullShipsDrawn != null
+          ? `${p.visualProxyShipsDrawn ?? 0} / ${p.visualFullShipsDrawn ?? 0}`
+          : '—';
+
+      setText('perfVisualShips', visualShips);
+      setText('perfVisualProxyFull', visualProxyFull);
+      setText('perfVisualShipParts', p.visualShipPartsDrawn ?? '—');
+    }
 
     function setStatus(text) {
       document.getElementById('status').textContent = text;
@@ -468,46 +580,82 @@ function applyPerformancePayload(p) {
     function setColor(prefix, arr) {
       const v = Array.isArray(arr) ? arr : [0,0,0,1];
       for (let i = 0; i < 4; i++) {
-        document.getElementById(prefix + '-' + i).value = Number(v[i] ?? 0).toFixed(2);
+        const el = document.getElementById(prefix + '-' + i);
+        if (el) el.value = Number(v[i] ?? 0).toFixed(2);
       }
     }
 
     function applyPayload(p) {
-      document.getElementById('drawMeshes').checked = !!p.drawMeshes;
-      document.getElementById('renderShipUi').checked = p.renderShipUi !== false;
-      document.getElementById('renderCockpit').checked = p.renderCockpit !== false;
-      document.getElementById('renderStarfield').checked = p.renderStarfield !== false;
-      document.getElementById('showStarLabels').checked = p.showStarLabels !== false;
+      if (!p) return;
+
+      if (!debugSettingsInitialized && !debugSettingsDirty) {
+        applySettingsPayload(p);
+        debugSettingsInitialized = true;
+      }
+
+      if (p.performance) {
+        applyPerformancePayload(p.performance);
+      }
+
+      setText('debugUniverseTimeScale', p.debugUniverseTimeScale ?? '—');
+      setText('systemMapVisible', p.systemMapVisible ? 'yes' : 'no');
+      setText('systemMapLiveSnapshotsEnabled', p.systemMapLiveSnapshotsEnabled ? 'yes' : 'no');
+      setText('liveSystemMapId', p.liveSystemMapId ?? '—');
+    }
+
+    function applySettingsPayload(p) {
+      setChecked('drawMeshes', !!p.drawMeshes);
+      setChecked('renderShipUi', p.renderShipUi !== false);
+      setChecked('renderCockpit', p.renderCockpit !== false);
+      setChecked('renderStarfield', p.renderStarfield !== false);
+      setChecked('showStarLabels', p.showStarLabels !== false);
+      setChecked('debugControlAutoUpdates', p.debugControlAutoUpdates !== false);
+
       const sceneMode = p.sceneMode || 'game';
-      document.getElementById('sceneModeGame').checked = sceneMode !== 'promo1';
-      document.getElementById('sceneModePromo1').checked = sceneMode === 'promo1';
+      setChecked('sceneModeGame', sceneMode !== 'promo1');
+      setChecked('sceneModePromo1', sceneMode === 'promo1');
 
-      document.getElementById('showAllStarLabels').checked = p.showAllStarLabels === true;
-      document.getElementById('showConstellationHover').checked = p.showConstellationHover === true;
-      document.getElementById('constellationHoverRadiusPx').value = p.constellationHoverRadiusPx ?? 140;
-      document.getElementById('renderRearCamera').checked = p.renderRearCamera !== false;
-      document.getElementById('drawAxes').checked = !!p.drawAxes;
-      document.getElementById('drawWorldAxes').checked = !!p.drawWorldAxes;
-      document.getElementById('drawObjectAxes').checked = !!p.drawObjectAxes;
+      setChecked('showAllStarLabels', p.showAllStarLabels === true);
+      setChecked('showConstellationHover', p.showConstellationHover === true);
+      setValue('constellationHoverRadiusPx', p.constellationHoverRadiusPx ?? 140);
+      setChecked('renderRearCamera', p.renderRearCamera !== false);
 
-      document.getElementById('drawModulePivots').checked = !!p.drawModulePivots;
-      document.getElementById('drawHitVolumes').checked = !!p.drawHitVolumes;
-      document.getElementById('hitVolumeFilterMode').value = String(p.hitVolumeFilterMode ?? 0);
-      document.getElementById('publishObjectOrientation').checked = !!p.publishObjectOrientation;
+      setChecked('renderPlayerShip', p.renderPlayerShip !== false);
+      setChecked('renderNpcShips', p.renderNpcShips !== false);
+      setChecked('renderTrafficShips', p.renderTrafficShips !== false);
+      setChecked('renderRealShips', p.renderRealShips !== false);
+      setChecked('renderVisualShips', p.renderVisualShips !== false);
+      setChecked('renderHubs', p.renderHubs !== false);
+      setChecked('renderLargeObjects', p.renderLargeObjects !== false);
+      setChecked('renderCelestialBodies', p.renderCelestialBodies !== false);
+      setChecked('renderSystemMapObjects', p.renderSystemMapObjects !== false);
 
-      document.getElementById('hitVolumesOverlay').checked = !!p.hitVolumesOverlay;
-      document.getElementById('hideMeshesWhenDrawingHitVolumes').checked = !!p.hideMeshesWhenDrawingHitVolumes;
+      setChecked('drawAxes', !!p.drawAxes);
+      setChecked('drawWorldAxes', !!p.drawWorldAxes);
+      setChecked('drawObjectAxes', !!p.drawObjectAxes);
+      setChecked('drawModulePivots', !!p.drawModulePivots);
+      setChecked('drawHitVolumes', !!p.drawHitVolumes);
+      setChecked('debugFastUniverseTime', !!p.debugFastUniverseTime);
 
-      document.getElementById('axesOverlay').checked = !!p.axesOverlay;
-      document.getElementById('crossesOverlay').checked = !!p.crossesOverlay;
-      document.getElementById('linesOverlay').checked = !!p.linesOverlay;
+      setValue('systemMapLiveRefreshSec', p.systemMapLiveRefreshSec ?? 0.25);
 
-      document.getElementById('worldAxisLength').value = p.worldAxisLength ?? 120;
-      document.getElementById('shipAxisLength').value = p.shipAxisLength ?? 18;
-      document.getElementById('objectAxisLength').value = p.objectAxisLength ?? 30;
-      document.getElementById('moduleAxisLength').value = p.moduleAxisLength ?? 30;
-      document.getElementById('moduleCrossSize').value = p.moduleCrossSize ?? 2;
-      document.getElementById('rotAxisLength').value = p.rotAxisLength ?? 30;
+      const filter = document.getElementById('hitVolumeFilterMode');
+      if (filter) filter.value = String(p.hitVolumeFilterMode ?? 0);
+
+      setChecked('publishObjectOrientation', !!p.publishObjectOrientation);
+      setChecked('hitVolumesOverlay', !!p.hitVolumesOverlay);
+      setChecked('hideMeshesWhenDrawingHitVolumes', !!p.hideMeshesWhenDrawingHitVolumes);
+
+      setChecked('axesOverlay', !!p.axesOverlay);
+      setChecked('crossesOverlay', !!p.crossesOverlay);
+      setChecked('linesOverlay', !!p.linesOverlay);
+
+      setValue('worldAxisLength', p.worldAxisLength ?? 120);
+      setValue('shipAxisLength', p.shipAxisLength ?? 18);
+      setValue('objectAxisLength', p.objectAxisLength ?? 30);
+      setValue('moduleAxisLength', p.moduleAxisLength ?? 30);
+      setValue('moduleCrossSize', p.moduleCrossSize ?? 2);
+      setValue('rotAxisLength', p.rotAxisLength ?? 30);
 
       setColor('axisXColor', p.axisXColor);
       setColor('axisYColor', p.axisYColor);
@@ -529,12 +677,26 @@ function applyPerformancePayload(p) {
         showConstellationHover: document.getElementById('showConstellationHover').checked,
         constellationHoverRadiusPx: Number(document.getElementById('constellationHoverRadiusPx').value) || 140,
         renderRearCamera: document.getElementById('renderRearCamera').checked,
+
+        renderPlayerShip: document.getElementById('renderPlayerShip').checked,
+        renderNpcShips: document.getElementById('renderNpcShips').checked,
+        renderTrafficShips: document.getElementById('renderTrafficShips').checked,
+        renderRealShips: document.getElementById('renderRealShips').checked,
+        renderVisualShips: document.getElementById('renderVisualShips').checked,
+        renderHubs: document.getElementById('renderHubs').checked,
+        renderLargeObjects: document.getElementById('renderLargeObjects').checked,
+        renderCelestialBodies: document.getElementById('renderCelestialBodies').checked,
+        renderSystemMapObjects: document.getElementById('renderSystemMapObjects').checked,
+
         drawAxes: document.getElementById('drawAxes').checked,
         drawWorldAxes: document.getElementById('drawWorldAxes').checked,
         drawObjectAxes: document.getElementById('drawObjectAxes').checked,
-
         drawModulePivots: document.getElementById('drawModulePivots').checked,
         drawHitVolumes: document.getElementById('drawHitVolumes').checked,
+        debugFastUniverseTime: document.getElementById('debugFastUniverseTime').checked,
+        debugControlAutoUpdates: document.getElementById('debugControlAutoUpdates').checked,
+        systemMapLiveRefreshSec: Number(document.getElementById('systemMapLiveRefreshSec').value) || 0.25,
+
         hitVolumeFilterMode: parseInt(document.getElementById('hitVolumeFilterMode').value, 10) || 0,
         publishObjectOrientation: document.getElementById('publishObjectOrientation').checked,
         hitVolumesOverlay: document.getElementById('hitVolumesOverlay').checked,
@@ -586,39 +748,33 @@ function applyPerformancePayload(p) {
       });
 
       state.ws.addEventListener('message', (event) => {
-      let msg = null;
+        let msg = null;
 
-      try {
-        msg = JSON.parse(event.data);
-      } catch (e) {
-        logLine('Invalid JSON message from engine', 'error');
-        return;
-      }
-
-      if (msg.panel !== 'debug_control') return;
-
-      if (msg.type === 'state_update') {
-        applyPayload(msg.payload || {});
-
-        if (msg.payload && msg.payload.performance) {
-          applyPerformancePayload(msg.payload.performance);
+        try {
+          msg = JSON.parse(event.data);
+        } catch (e) {
+          logLine('Invalid JSON message from engine', 'error');
+          return;
         }
 
-        logLine('Debug state updated');
-        return;
-      }
+        if (msg.panel !== 'debug_control') return;
 
-      if (msg.type === 'debug_log') {
-        const p = msg.payload || {};
-        logLine(p.message || '(empty log message)', p.level || 'info');
-        return;
-      }
+        if (msg.type === 'state_update') {
+          applyPayload(msg.payload || {});
+          return;
+        }
 
-      if (msg.type === 'performance_update') {
-        applyPerformancePayload(msg.payload || {});
-        return;
-      }
-    });
+        if (msg.type === 'debug_log') {
+          const p = msg.payload || {};
+          logLine(p.message || '(empty log message)', p.level || 'info');
+          return;
+        }
+
+        if (msg.type === 'performance_update') {
+          applyPerformancePayload(msg.payload || {});
+          return;
+        }
+      });
     }
 
     window.app = {
@@ -634,14 +790,31 @@ function applyPerformancePayload(p) {
 
       apply() {
         if (!state.ws) return;
+
         state.ws.send(JSON.stringify({
           type: 'command',
           panel: 'debug_control',
           command: 'apply_settings',
           payload: buildPayload()
         }));
+
+        debugSettingsDirty = false;
+        debugSettingsInitialized = false;
+
+        logLine('Debug settings applied');
       }
     };
+
+    document.addEventListener('change', (event) => {
+      const target = event.target;
+
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLSelectElement
+      ) {
+        markDebugSettingsDirty();
+      }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
       connectWs();

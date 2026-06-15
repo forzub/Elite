@@ -17,6 +17,9 @@
 #include "src/game/player/ActorIdProvider.h"
 
 #include "src/world/types/ObjectType.h"
+#include "src/world/orbits/OrbitalMotion.h"
+#include "src/world/hubs/OrbitalHubRuntime.h"
+#include "src/world/coordinates/WorldPosition.h"
 
 namespace game::scene
 {
@@ -138,7 +141,227 @@ namespace SolarTestScene
 
     const glm::dvec3 Npc2PositionM =
         StationPositionM + glm::dvec3(1100.0, 2900.0, -8600.0);
+
+
+    
 }
+
+
+
+bool resolveParentBodyForInitialWorldState(
+    const GameSimulation& sim,
+    const std::string& parentBodyId,
+    glm::dvec3& centerMeters,
+    double& parentRadiusMeters
+)
+{
+    return sim.resolveCelestialBodyMeters(
+        parentBodyId,
+        centerMeters,
+        parentRadiusMeters
+    );
+}
+
+
+
+
+    void spawnOrbitalHubFromInitialState(
+            GameSimulation& sim,
+            const game::world_state::InitialWorldStateOrbitalHub& hub
+        )
+        {
+            glm::dvec3 parentCenterMeters {0.0};
+            double parentRadiusMeters = 0.0;
+
+            if (!resolveParentBodyForInitialWorldState(
+                    sim,
+                    hub.parentBodyId,
+                    parentCenterMeters,
+                    parentRadiusMeters
+                ))
+            {
+                return;
+            }
+
+            world::orbits::OrbitalMotion motion;
+
+motion.enabled = true;
+motion.centerMeters = parentCenterMeters;
+motion.parentRadiusMeters = parentRadiusMeters;
+motion.altitudeMeters =
+    hub.motion.altitudeKm * 1000.0;
+
+motion.orbitalPeriodSeconds =
+    hub.motion.orbitalPeriodSeconds;
+
+motion.selfRotationPeriodSeconds =
+    hub.motion.selfRotationPeriodSeconds;
+
+motion.inclinationDeg =
+    hub.motion.inclinationDeg;
+
+motion.longitudeOfAscendingNodeDeg =
+    hub.motion.longitudeOfAscendingNodeDeg;
+
+motion.argumentOfPeriapsisDeg =
+    hub.motion.argumentOfPeriapsisDeg;
+
+motion.initialPhaseDeg =
+    hub.motion.initialPhaseDeg;
+
+motion.epochSeconds =
+    hub.motion.epochSeconds;
+
+const glm::dvec3 hubCenterMeters =
+    world::orbits::computeOrbitPositionMeters(
+        motion,
+        0.0
+    );
+
+const glm::mat4 hubOrientation =
+    world::orbits::computeSelfRotation(
+        motion,
+        0.0
+    );
+
+world::hubs::OrbitalHubRuntime runtimeHub;
+
+runtimeHub.id = hub.id;
+runtimeHub.name = hub.name;
+runtimeHub.owner = hub.owner;
+runtimeHub.systemId = hub.systemId;
+runtimeHub.parentBodyId = hub.parentBodyId;
+runtimeHub.motion = motion;
+
+runtimeHub.worldPosition =
+    world::coordinates::makeWorldPositionFromMeters(
+        hubCenterMeters
+    );
+
+runtimeHub.orientation =
+    hubOrientation;
+
+sim.registerOrbitalHub(runtimeHub);
+
+
+
+
+            for (const auto& module : hub.modules)
+            {
+                if (!module.exists)
+                    continue;
+
+                
+
+                ObjectType objectType =
+                    ObjectType::Station;
+
+                // Первый слой: command_station -> Station.
+                // Позже добавим ObjectType::Buoy, Relay, Mine, Dock и т.д.
+                if (module.type == "command_station")
+                    objectType = ObjectType::Station;
+
+                const glm::dvec3 modulePositionMeters =
+                    hubCenterMeters + module.offsetMeters;
+
+                const EntityId objectId =
+                    sim.spawnStation(
+                        objectType,
+                        modulePositionMeters,
+                        hubOrientation
+                    );
+
+                const bool isMapRepresentative =
+                    !hub.mapObjectModuleId.empty() &&
+                    module.id == hub.mapObjectModuleId;
+
+                if (isMapRepresentative)
+                {
+                    std::string mapName = module.name;
+
+                    if (hub.modules.size() > 1)
+                        mapName += " (Hub)";
+
+                    sim.setStaticObjectMapInfo(
+                        objectId,
+                        mapName,
+                        hub.owner,
+                        hub.systemId,
+                        hub.parentBodyId,
+                        hub.id,
+                        module.id
+                    );
+                }
+
+               sim.attachStaticObjectToHub(
+                    objectId,
+                    hub.id,
+                    module.id,
+                    module.offsetMeters,
+                    true
+                );
+            }
+        }
+
+
+
+
+
+bool spawnInitialWorldStateObjects(
+    GameSimulation& sim
+)
+{
+    game::world_state::InitialWorldState state;
+
+    if (!game::world_state::loadInitialWorldStateWithFallbacks(state))
+        return false;
+
+    for (const auto& hub : state.orbitalHubs)
+    {
+        if (hub.systemId != 0)
+            continue;
+
+        spawnOrbitalHubFromInitialState(
+            sim,
+            hub
+        );
+    }
+
+    return true;
+}
+
+
+
+
+
+
+bool findEarthHighOrbitalPositionMeters(
+    const GameSimulation& sim,
+    glm::dvec3& outPositionMeters
+)
+{
+    for (const auto& [id, obj] : sim.staticObjects())
+    {
+        if (obj.hubId != "earth_orbital_hub")
+            continue;
+
+        if (obj.hubModuleId != "earth_high_orbital")
+            continue;
+
+        outPositionMeters =
+            world::coordinates::fullMeters(
+                obj.worldPosition
+            );
+
+        return true;
+    }
+
+    return false;
+}
+
+
+
+
 
 
 
@@ -201,115 +424,151 @@ EntityId spawnPromoPlayer(GameSimulation& sim)
 
 void spawnPromoStation(GameSimulation& sim)
 {
-    // Игрок смотрит в +Z.
-    // Звено появляется со стороны +Z и летит через игрока в -Z.
-    // Станция стоит высоко впереди по +Z, чтобы попадать в кадр
-    // во время начального сопровождения звена.
+    world::orbits::OrbitalMotion motion;
+
+    motion.enabled = true;
+
+    motion.centerMeters =
+        SolarTestScene::EarthPositionM;
+
+    motion.parentRadiusMeters =
+        SolarTestScene::EarthRadiusM;
+
+    motion.altitudeMeters =
+        SolarTestScene::StationAltitudeM;
+
+    // Примерно низкая орбита, около МКС.
+    motion.orbitalPeriodSeconds = 5400.0;
+
+    // Собственное вращение станции.
+    // Пока условно: один оборот за 180 секунд.
+    motion.selfRotationPeriodSeconds = 180.0;
+
+    motion.inclinationDeg = 51.64;
+    motion.longitudeOfAscendingNodeDeg = 0.0;
+    motion.argumentOfPeriapsisDeg = 0.0;
+    motion.initialPhaseDeg = 35.0;
+
+    motion.epochSeconds = 0.0;
+
     const glm::dvec3 stationPos =
-        SolarTestScene::StationPositionM;
+        world::orbits::computeOrbitPositionMeters(
+            motion,
+            0.0
+        );
 
-    // Пока identity. Если длинная ось станции окажется не вдоль Z,
-    // позже добавим поворот здесь, а не в GameSimulation.
     const glm::mat4 stationOrientation =
-        glm::mat4(1.0f);
+        world::orbits::computeSelfRotation(
+            motion,
+            0.0
+        );
 
-    sim.spawnStation(
-        ObjectType::Station,
-        stationPos,
-        stationOrientation
+    const EntityId stationId =
+        sim.spawnStation(
+            ObjectType::Station,
+            stationPos,
+            stationOrientation
+        );
+
+    sim.setStaticObjectMapInfo(
+        stationId,
+        "Earth High Orbital",
+        "Sol Authority",
+        0,
+        "system_0.Sol.Земля",
+        "earth_orbital_hub",
+        "earth_high_orbital"
+    );
+
+    sim.setStaticObjectOrbitalMotion(
+        stationId,
+        motion
     );
 }
 
 
 EntityId buildGameScene(GameSimulation& sim)
 {
-    EntityId playerId =
-        spawnPromoPlayer(sim);
+    if (!spawnInitialWorldStateObjects(sim))
+    {
+        spawnPromoStation(sim);
+    }
 
-    // Игровой режим: два NPC сразу в поле зрения игрока.
-    // Игрок сейчас стоит в {0, 50, 0} и смотрит в +Z,
-    // поэтому NPC ставим впереди по +Z, с небольшим разносом по X/Y.
-    const glm::dvec3 playerPos = SolarTestScene::PlayerPositionM;
+    glm::dvec3 stationPos =
+        SolarTestScene::StationPositionM;
 
-    ShipVisualIdentity visualIdentity {
-        .shipType = "Scarlet Hawk Moth",
-        .shipName = "Cobra MK3"
+    findEarthHighOrbitalPositionMeters(
+        sim,
+        stationPos
+    );
+
+    const glm::dvec3 playerPos =
+        stationPos + glm::dvec3(0.0, 2500.0, -9000.0);
+
+    ShipVisualIdentity playerVisual {
+        .shipType = "Cobra MK1",
+        .shipName = "Jeraya"
     };
 
-    ShipRegistry registry {
-        .instanceId      = 2,
-        .ownerName       = "Scarlet Hawk Moth",
+    ShipRegistry playerRegistry {
+        .instanceId      = 1,
+        .ownerName       = "Jeraya",
         .ownerActor      = ActorIds::Player(),
-        .registrationId  = "NPC-0002",
-        .homePort        = "Lave",
+        .registrationId  = "PL-0001",
+        .homePort        = "Earth High Orbital",
         .shipRole        = ShipRoleType::Civilian
     };
 
-    auto* npc1Card =
+    auto* playerCard =
         new CryptoCard(
             generateActorCode(),
             "Player Access Card"
         );
 
-    npc1Card->actor =
+    playerCard->actor =
         ActorIds::Player();
 
-    ShipInitData initData;
-    initData.visual = visualIdentity;
-    initData.registry = registry;
-    initData.initialInventory = {npc1Card};
+    ShipInitData playerInitData;
+    playerInitData.visual = playerVisual;
+    playerInitData.registry = playerRegistry;
+    playerInitData.initialInventory = {playerCard};
 
-    const glm::dvec3 npc1Pos = SolarTestScene::Npc1PositionM;
-
-    sim.spawnShip(
-        ShipRole::NPC,
-        EliteCobraMk1::EliteCobraMk1Descriptor(),
-        npc1Pos,
-        initData,
-        makeLookOrientation(glm::vec3(playerPos - npc1Pos))
-    );
-
-    visualIdentity.shipType = "Hooded snake";
-    visualIdentity.shipName = "Cobra MK3";
-
-    registry.instanceId = 3;
-    registry.ownerName = "Hooded snake";
-    registry.registrationId = "NPC-0003";
-
-    auto* npc2Card =
-        new CryptoCard(
-            generateActorCode(),
-            "Player Access Card"
+    const EntityId playerId =
+        sim.spawnShip(
+            ShipRole::Player,
+            EliteCobraMk1::EliteCobraMk1Descriptor(),
+            playerPos,
+            playerInitData,
+            makeLookOrientation(glm::vec3(stationPos - playerPos))
         );
-
-    npc2Card->actor =
-        ActorIds::Player();
-
-    initData.visual = visualIdentity;
-    initData.registry = registry;
-    initData.initialInventory = {npc2Card};
-
-    const glm::dvec3 npc2Pos = SolarTestScene::Npc2PositionM;
-
-    sim.spawnShip(
-        ShipRole::NPC,
-        EliteCobraMk1::EliteCobraMk1Descriptor(),
-        npc2Pos,
-        initData,
-        makeLookOrientation(glm::vec3(playerPos - npc2Pos))
-    );
-
-    spawnPromoStation(sim);
 
     return playerId;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 EntityId buildPromoScene(GameSimulation& sim)
 {
     EntityId playerId =
         spawnPromoPlayer(sim);
 
-    spawnPromoStation(sim);
+    if (!spawnInitialWorldStateObjects(sim))
+    {
+        spawnPromoStation(sim);
+    }
 
     return playerId;
 }

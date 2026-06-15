@@ -210,6 +210,29 @@ button:hover {
     font-size: 13px;
     line-height: 1.45;
 }
+.objects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.object-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #d8e8ff;
+}
+
+.object-row input {
+    accent-color: #ffd36a;
+}
+
+.object-owner {
+    color: rgba(210, 220, 230, 0.55);
+    font-size: 10px;
+}
 </style>
 </head>
 
@@ -230,10 +253,7 @@ button:hover {
             <div class="value" id="universeTimeValue">—</div>
         </div>
 
-        <div class="row">
-            <div class="key" data-i18n="systems">Systems</div>
-            <div class="value" id="systemsValue">—</div>
-        </div>
+
 
         <div class="row">
             <div class="key" data-i18n="currentSystem">Current system</div>
@@ -266,7 +286,7 @@ button:hover {
         </div>
 
         <div class="row">
-            <div class="key">Selected</div>
+            <div class="key">Map target</div>
             <div class="value" id="selectedSystemValue">—</div>
         </div>
 
@@ -283,10 +303,18 @@ button:hover {
             </div>
         </div>
 
+
+        <div class="section">
+            <div class="section-title">Objects</div>
+            <div id="systemObjectsList" class="objects-list"></div>
+        </div>
+
+
+
         <div class="sep"></div>
 
         <div class="hint" id="hintText" data-i18n="hint">
-            F11 closes the map. Selection and route plotting will be added here.
+            F11 closes the map. Select a system from the list to open its system map.
         </div>
     </div>
 
@@ -504,8 +532,7 @@ window.setSystemMapPanel = function(payload) {
             ? "SHOW SYSTEM"
             : "GALAXY";
 
-    document.getElementById("systemsValue").textContent =
-        payload.systemsCount ?? "—";
+
 
     document.getElementById("currentSystemValue").textContent =
         payload.currentSystemName || "—";
@@ -542,13 +569,61 @@ window.setSystemMapPanel = function(payload) {
             ? formatLy(distanceLy)
             : "—";
 
-  
+    document.getElementById("selectedSystemValue").textContent =
+        selectedSystem
+            ? `${selectedSystem.name} / ${currentMode}`
+            : "—";
 
     renderSystemDropdown();
 
     // ВАЖНО:
     // не скроллим к selected item каждый push.
     // Именно это и давало "прыжок" списка после прокрутки.
+
+    const objectsList = document.getElementById("systemObjectsList");
+
+    if (objectsList) {
+        objectsList.innerHTML = "";
+
+        const objects = payload.objects || [];
+
+        if (objects.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "object-owner";
+            empty.textContent = "No large objects";
+            objectsList.appendChild(empty);
+        } else {
+            for (const obj of objects) {
+                const row = document.createElement("label");
+                row.className = "object-row";
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.dataset.objectId = obj.id;
+
+                checkbox.addEventListener("change", () => {
+                    if (window.chrome?.webview) {
+                        window.chrome.webview.postMessage({
+                            type: "system_map_object_marker_changed",
+                            objectId: obj.id,
+                            enabled: checkbox.checked
+                        });
+                    }
+                });
+
+                const text = document.createElement("div");
+                text.innerHTML =
+                    `<div>${obj.name || "Object"}</div>` +
+                    `<div class="object-owner">${obj.owner || "Independent"}</div>`;
+
+                row.appendChild(checkbox);
+                row.appendChild(text);
+                objectsList.appendChild(row);
+            }
+        }
+    }
+
+
 };
 
 applyLanguage(LANG);

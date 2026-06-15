@@ -2689,63 +2689,7 @@ if (policy.drawObjects)
         labelsMs > 4.0 ||
         debugCallbackMs > 4.0;
 
-    if (suspicious)
-    {
-        static bool initialized = false;
-        static int rows = 0;
-
-        if (rows < 800)
-        {
-            std::ofstream out(
-                "scene_render_breakdown_log.csv",
-                initialized ? std::ios::app : std::ios::out
-            );
-
-            if (!initialized)
-            {
-                out << "row,"
-                    << "frame,cameraName,totalMs,"
-                    << "setupMs,starfieldMs,farPassesMs,labelsMs,"
-                    << "realShipsMs,visualShipsMs,visualDronesMs,objectsMs,debugCallbackMs,"
-                    << "drawCalls,"
-                    << "modulesDrawn,modulesCulled,"
-                    << "partsDrawn,partsCulled,"
-                    << "realShips,realShipParts,"
-                    << "visualShipsDrawn,visualShipsCulled,"
-                    << "visualProxy,visualFull,visualShipParts\n";
-
-                initialized = true;
-            }
-
-            out << rows++ << ","
-                << m_frameCounter << ","
-                << cameraName << ","
-                << std::fixed << std::setprecision(4)
-                << totalMs << ","
-                << setupMs << ","
-                << starfieldMs << ","
-                << farPassesMs << ","
-                << labelsMs << ","
-                << realShipsMs << ","
-                << visualShipsMs << ","
-                << visualDronesMs << ","
-                << objectsMs << ","
-                << debugCallbackMs << ","
-                << m_lastStats.drawCalls << ","
-                << m_lastStats.modulesDrawn << ","
-                << m_lastStats.modulesCulled << ","
-                << m_lastStats.partsDrawn << ","
-                << m_lastStats.partsCulled << ","
-                << m_lastStats.realShipsDrawn << ","
-                << m_lastStats.realShipPartsDrawn << ","
-                << m_lastStats.visualShipsDrawn << ","
-                << m_lastStats.visualShipsCulled << ","
-                << m_lastStats.visualProxyShipsDrawn << ","
-                << m_lastStats.visualFullShipsDrawn << ","
-                << m_lastStats.visualShipPartsDrawn
-                << "\n";
-        }
-    }
+    
 
 
 

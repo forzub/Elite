@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Debug Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #0b0f14;
+      color: #d7dde8;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      padding: 12px;
+    }
+    .topbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .layout {
+  display: grid;
+  grid-template-columns: minmax(520px, 820px) minmax(420px, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.leftPanel {
+  min-width: 0;
+}
+
+.rightPanel {
+  min-width: 0;
+  position: sticky;
+  top: 12px;
+}
+
+.logBox {
+  height: calc(100vh - 96px);
+  min-height: 420px;
+  background: #080c11;
+  border: 1px solid #263444;
+  border-radius: 6px;
+  padding: 10px;
+  overflow: auto;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #b8c7d9;
+  white-space: pre-wrap;
+}
+
+.logLine {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  padding: 3px 0;
+}
+
+.logTime {
+  color: #6f879f;
+}
+
+.logInfo {
+  color: #9fd3ff;
+}
+
+.logWarn {
+  color: #ffd27a;
+}
+
+.logError {
+  color: #ff7a7a;
+}
+
+.perfGrid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 12px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+}
+
+.perfKey {
+  color: #8fa3b8;
+}
+
+.perfValue {
+  color: #d7dde8;
+  text-align: right;
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .rightPanel {
+    position: static;
+  }
+
+  .logBox {
+    height: 360px;
+  }
+}
+    .status {
+      margin-left: auto;
+      opacity: 0.8;
+      font-size: 12px;
+    }
+    .section {
+      background: #121821;
+      border: 1px solid #2a3442;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #9fd3ff;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .row label {
+      min-width: 220px;
+      font-size: 13px;
+      color: #9aa7b8;
+    }
+    input[type="number"], input[type="text"] {
+      padding: 4px 6px;
+      background: #0f141c;
+      color: #d7dde8;
+      border: 1px solid #304055;
+      border-radius: 4px;
+      min-width: 100px;
+    }
+    input[type="checkbox"] {
+      transform: scale(1.1);
+    }
+    button {
+      padding: 8px 10px;
+      background: #1b2736;
+      color: #d7dde8;
+      border: 1px solid #35506f;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #223246;
+    }
+    .triple {
+      display: grid;
+      grid-template-columns: repeat(4, 90px);
+      gap: 6px;
+      align-items: center;
+    }
+    .small {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+    <div class="topbar">
+    <strong>Debug Control</strong>
+    <button onclick="app.requestSnapshot()">Reload</button>
+    <button onclick="app.apply()">Apply</button>
+    <span class="status" id="status">offline</span>
+  </div>
+
+  <div class="layout">
+    <div class="leftPanel">
+
+  <div class="section">
+    <div class="title">Scene mode</div>
+
+    <div class="row">
+      <label>Mode</label>
+      <div style="display:flex; gap:12px; align-items:center; justify-content:flex-end;">
+        <label style="width:auto; display:flex; gap:5px; align-items:center;">
+          <input name="sceneMode" id="sceneModeGame" type="radio" value="game"> Game
+        </label>
+        <label style="width:auto; display:flex; gap:5px; align-items:center;">
+          <input name="sceneMode" id="sceneModePromo1" type="radio" value="promo1"> Promo 1
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="title">Render</div>
+
+    <div class="row"><label>Draw meshes</label><input id="drawMeshes" type="checkbox"></div>
+    <div class="row"><label>Render ship UI</label><input id="renderShipUi" type="checkbox"></div>
+    <div class="row"><label>Render starfield</label><input id="renderStarfield" type="checkbox"></div>
+    <div class="row"><label>Show star labels</label><input id="showStarLabels" type="checkbox"></div>
+    <div class="row"><label>Show all star labels</label><input id="showAllStarLabels" type="checkbox"></div>
+    <div class="row"><label>Show constellation hover</label><input id="showConstellationHover" type="checkbox"></div>
+    <div class="row"><label>Constellation hover radius px</label><input id="constellationHoverRadiusPx" type="number" step="1" min="10"></div>
+    <div class="row"><label>Render cockpit inside ship UI</label><input id="renderCockpit" type="checkbox"></div>
+    <div class="row"><label>Render rear camera</label><input id="renderRearCamera" type="checkbox"></div>
+  </div>
+
+  <div class="section">
+    <div class="title">Debug flags</div>
+    <div class="row"><label>Draw axes (legacy)</label><input id="drawAxes" type="checkbox"></div>
+    <div class="row"><label>Draw world axes</label><input id="drawWorldAxes" type="checkbox"></div>
+    <div class="row"><label>Draw object axes</label><input id="drawObjectAxes" type="checkbox"></div>
+    <div class="row"><label>Draw module pivots</label><input id="drawModulePivots" type="checkbox"></div>
+    <div class="row"><label>Draw hit volumes</label><input id="drawHitVolumes" type="checkbox"></div>
+    <div class="row">
+      <label>Fast universe time x10000</label>
+      <input id="debugFastUniverseTime" type="checkbox">
+    </div>
+    <div class="row">
+      <label>Universe time scale</label>
+      <span id="debugUniverseTimeScale">—</span>
+    </div>
+
+    <div class="row">
+      <label>System map visible</label>
+      <span id="systemMapVisible">—</span>
+    </div>
+
+    <div class="row">
+      <label>System map live snapshots</label>
+      <span id="systemMapLiveSnapshotsEnabled">—</span>
+    </div>
+
+    <div class="row">
+      <label>Live system id</label>
+      <span id="liveSystemMapId">—</span>
+    </div>
+
+    <div class="row">
+      <label>Hit volume filter</label>
+      <select id="hitVolumeFilterMode">
+        <option value="0">All hit volumes</option>
+        <option value="1">Primary only</option>
+        <option value="2">Support-link only</option>
+      </select>
+    </div>
+
+    <div class="row"><label>Publish object orientation</label><input id="publishObjectOrientation" type="checkbox"></div>
+    <div class="row"><label>Hit volumes overlay</label><input id="hitVolumesOverlay" type="checkbox"></div>
+    <div class="row"><label>Hide meshes when drawing hit volumes</label><input id="hideMeshesWhenDrawingHitVolumes" type="checkbox"></div>
+
+    <div class="row"><label>Axes overlay</label><input id="axesOverlay" type="checkbox"></div>
+    <div class="row"><label>Crosses overlay</label><input id="crossesOverlay" type="checkbox"></div>
+    <div class="row"><label>Lines overlay</label><input id="linesOverlay" type="checkbox"></div>
+  </div>
+
+  <div class="section">
+    <div class="title">Lengths</div>
+
+    <div class="row"><label>World axis length</label><input id="worldAxisLength" type="number" step="1"></div>
+    <div class="row"><label>Ship axis length</label><input id="shipAxisLength" type="number" step="1"></div>
+    <div class="row"><label>Object axis length</label><input id="objectAxisLength" type="number" step="1"></div>
+    <div class="row"><label>Module axis length</label><input id="moduleAxisLength" type="number" step="1"></div>
+    <div class="row"><label>Module cross size</label><input id="moduleCrossSize" type="number" step="0.1"></div>
+    <div class="row"><label>Rotation axis length</label><input id="rotAxisLength" type="number" step="1"></div>
+  </div>
+
+  <div class="section">
+    <div class="title">Colors (RGBA 0..1)</div>
+
+    <div class="row">
+      <label>Axis X color</label>
+      <div class="triple">
+        <input id="axisXColor-0" type="number" step="0.01">
+        <input id="axisXColor-1" type="number" step="0.01">
+        <input id="axisXColor-2" type="number" step="0.01">
+        <input id="axisXColor-3" type="number" step="0.01">
+      </div>
+    </div>
+
+    <div class="row">
+      <label>Axis Y color</label>
+      <div class="triple">
+        <input id="axisYColor-0" type="number" step="0.01">
+        <input id="axisYColor-1" type="number" step="0.01">
+        <input id="axisYColor-2" type="number" step="0.01">
+        <input id="axisYColor-3" type="number" step="0.01">
+      </div>
+    </div>
+
+    <div class="row">
+      <label>Axis Z color</label>
+      <div class="triple">
+        <input id="axisZColor-0" type="number" step="0.01">
+        <input id="axisZColor-1" type="number" step="0.01">
+        <input id="axisZColor-2" type="number" step="0.01">
+        <input id="axisZColor-3" type="number" step="0.01">
+      </div>
+    </div>
+
+    <div class="row">
+      <label>Module origin color</label>
+      <div class="triple">
+        <input id="moduleOriginColor-0" type="number" step="0.01">
+        <input id="moduleOriginColor-1" type="number" step="0.01">
+        <input id="moduleOriginColor-2" type="number" step="0.01">
+        <input id="moduleOriginColor-3" type="number" step="0.01">
+      </div>
+    </div>
+
+    <div class="row">
+      <label>Module pivot color</label>
+      <div class="triple">
+        <input id="modulePivotColor-0" type="number" step="0.01">
+        <input id="modulePivotColor-1" type="number" step="0.01">
+        <input id="modulePivotColor-2" type="number" step="0.01">
+        <input id="modulePivotColor-3" type="number" step="0.01">
+      </div>
+    </div>
+
+    <div class="row">
+      <label>Rotation axis color</label>
+      <div class="triple">
+        <input id="rotationAxisColor-0" type="number" step="0.01">
+        <input id="rotationAxisColor-1" type="number" step="0.01">
+        <input id="rotationAxisColor-2" type="number" step="0.01">
+        <input id="rotationAxisColor-3" type="number" step="0.01">
+      </div>
+    </div>
+  </div>
+
+    <div class="section small">
+    Эта страница управляет debug-настройками движка в реальном времени.
+  </div>
+
+    </div>
+
+    <div class="rightPanel">
+      <div class="section">
+        <div class="title">Performance</div>
+        <div class="perfGrid" id="perfGrid">
+          <div class="perfKey">Frame index</div><div class="perfValue" id="perfFrameIndex">—</div>
+          <div class="perfKey">FPS</div><div class="perfValue" id="perfFps">—</div>
+          <div class="perfKey">Frame ms</div><div class="perfValue" id="perfFrameMs">—</div>
+
+          <div class="perfKey">Update total</div><div class="perfValue" id="perfUpdateMs">—</div>
+          <div class="perfKey">processHtml</div><div class="perfValue" id="perfProcessHtmlMs">—</div>
+          <div class="perfKey">Fixed simulation</div><div class="perfValue" id="perfFixedSimMs">—</div>
+          <div class="perfKey">Client update</div><div class="perfValue" id="perfClientUpdateMs">—</div>
+          <div class="perfKey">PlayerView update</div><div class="perfValue" id="perfPlayerViewMs">—</div>
+          <div class="perfKey">UI root update</div><div class="perfValue" id="perfUiRootUpdateMs">—</div>
+
+          <div class="perfKey">Main render</div><div class="perfValue" id="perfMainRenderMs">—</div>
+          <div class="perfKey">Rear camera</div><div class="perfValue" id="perfRearCameraMs">—</div>
+          <div class="perfKey">Render UI total</div><div class="perfValue" id="perfRenderUiMs">—</div>
+          <div class="perfKey">HUD</div><div class="perfValue" id="perfHudMs">—</div>
+          <div class="perfKey">Draw calls</div><div class="perfValue" id="perfDrawCalls">—</div>
+          <div class="perfKey">Modules drawn / culled</div><div class="perfValue" id="perfModules">—</div>
+          <div class="perfKey">Parts drawn / culled</div><div class="perfValue" id="perfParts">—</div>
+          <div class="perfKey">Real ships</div><div class="perfValue" id="perfRealShips">—</div>
+          <div class="perfKey">Real ship parts</div><div class="perfValue" id="perfRealShipParts">—</div>
+          <div class="perfKey">Visual ships drawn / culled</div><div class="perfValue" id="perfVisualShips">—</div>
+          <div class="perfKey">Visual proxy / full</div><div class="perfValue" id="perfVisualProxyFull">—</div>
+          <div class="perfKey">Visual ship parts</div><div class="perfValue" id="perfVisualShipParts">—</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="title">Debug log</div>
+        <div class="logBox" id="debugLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+
+
+    const state = { ws: null };
+    const MAX_LOG_LINES = 300;
+
+    let debugSettingsInitialized = false;
+    let debugSettingsDirty = false;
+
+    function nowStamp() {
+      const d = new Date();
+      return d.toLocaleTimeString('en-GB', { hour12: false });
+    }
+
+
+
+    function setChecked(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.checked = !!value;
+    }
+
+    function setValue(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.value = value;
+    }
+
+    function markDebugSettingsDirty() {
+        debugSettingsDirty = true;
+    }
+
+
+
+
+
+    function logLine(text, kind = 'info') {
+      const box = document.getElementById('debugLog');
+      if (!box) return;
+
+      const line = document.createElement('div');
+      line.className = 'logLine';
+
+      const kindClass =
+        kind === 'error' ? 'logError' :
+        kind === 'warn'  ? 'logWarn'  :
+                          'logInfo';
+
+      line.innerHTML =
+        `<span class="logTime">[${nowStamp()}]</span> ` +
+        `<span class="${kindClass}">${escapeHtml(text)}</span>`;
+
+      box.appendChild(line);
+
+      while (box.children.length > MAX_LOG_LINES) {
+        box.removeChild(box.firstChild);
+      }
+
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+function applyPerformancePayload(p) {
+  if (!p) return;
+
+  setText('perfFrameIndex', p.frameIndex ?? '—');
+
+  setText('perfFps', p.fps != null ? Number(p.fps).toFixed(1) : '—');
+  setText('perfFrameMs', p.frameMs != null ? Number(p.frameMs).toFixed(2) + ' ms' : '—');
+  setText('perfUpdateMs', p.updateMs != null ? Number(p.updateMs).toFixed(2) + ' ms' : '—');
+  setText('perfProcessHtmlMs', p.processHtmlMs != null ? Number(p.processHtmlMs).toFixed(2) + ' ms' : '—');
+  setText('perfFixedSimMs', p.fixedSimMs != null ? Number(p.fixedSimMs).toFixed(2) + ' ms' : '—');
+  setText('perfClientUpdateMs', p.clientUpdateMs != null ? Number(p.clientUpdateMs).toFixed(2) + ' ms' : '—');
+  setText('perfPlayerViewMs', p.playerViewMs != null ? Number(p.playerViewMs).toFixed(2) + ' ms' : '—');
+  setText('perfUiRootUpdateMs', p.uiRootUpdateMs != null ? Number(p.uiRootUpdateMs).toFixed(2) + ' ms' : '—');
+  setText('perfMainRenderMs', p.mainRenderMs != null ? Number(p.mainRenderMs).toFixed(2) + ' ms' : '—');
+  setText('perfRearCameraMs', p.rearCameraMs != null ? Number(p.rearCameraMs).toFixed(2) + ' ms' : '—');
+  setText('perfRenderUiMs', p.renderUiMs != null ? Number(p.renderUiMs).toFixed(2) + ' ms' : '—');
+  setText('perfHudMs', p.hudMs != null ? Number(p.hudMs).toFixed(2) + ' ms' : '—');
+  setText('perfDrawCalls', p.drawCalls ?? '—');
+
+  const modules =
+    p.modulesDrawn != null || p.modulesCulled != null
+      ? `${p.modulesDrawn ?? 0} / ${p.modulesCulled ?? 0}`
+      : '—';
+
+  const parts =
+    p.partsDrawn != null || p.partsCulled != null
+      ? `${p.partsDrawn ?? 0} / ${p.partsCulled ?? 0}`
+      : '—';
+
+    setText('perfModules', modules);
+  setText('perfParts', parts);
+
+  setText('perfRealShips', p.realShipsDrawn ?? '—');
+  setText('perfRealShipParts', p.realShipPartsDrawn ?? '—');
+
+  const visualShips =
+    p.visualShipsDrawn != null || p.visualShipsCulled != null
+      ? `${p.visualShipsDrawn ?? 0} / ${p.visualShipsCulled ?? 0}`
+      : '—';
+
+  const visualProxyFull =
+    p.visualProxyShipsDrawn != null || p.visualFullShipsDrawn != null
+      ? `${p.visualProxyShipsDrawn ?? 0} / ${p.visualFullShipsDrawn ?? 0}`
+      : '—';
+
+  setText('perfVisualShips', visualShips);
+  setText('perfVisualProxyFull', visualProxyFull);
+  setText('perfVisualShipParts', p.visualShipPartsDrawn ?? '—');
+
+}
+
+    function setStatus(text) {
+      document.getElementById('status').textContent = text;
+    }
+
+    function getColor(prefix) {
+      return [
+        parseFloat(document.getElementById(prefix + '-0').value) || 0,
+        parseFloat(document.getElementById(prefix + '-1').value) || 0,
+        parseFloat(document.getElementById(prefix + '-2').value) || 0,
+        parseFloat(document.getElementById(prefix + '-3').value) || 0
+      ];
+    }
+
+    function setColor(prefix, arr) {
+      const v = Array.isArray(arr) ? arr : [0,0,0,1];
+      for (let i = 0; i < 4; i++) {
+        document.getElementById(prefix + '-' + i).value = Number(v[i] ?? 0).toFixed(2);
+      }
+    }
+
+
+
+
+    function applyPayload(p) {
+      if (!p) return;
+
+      if (!debugSettingsInitialized && !debugSettingsDirty) {
+        applySettingsPayload(p);
+        debugSettingsInitialized = true;
+      }
+
+      if (p.performance) {
+        applyPerformancePayload(p.performance);
+      }
+
+      setText(
+        'debugUniverseTimeScale',
+        p.debugUniverseTimeScale ?? '—'
+      );
+
+      setText(
+        'systemMapVisible',
+        p.systemMapVisible ? 'yes' : 'no'
+      );
+
+      setText(
+        'systemMapLiveSnapshotsEnabled',
+        p.systemMapLiveSnapshotsEnabled ? 'yes' : 'no'
+      );
+
+      setText(
+        'liveSystemMapId',
+        p.liveSystemMapId ?? '—'
+      );
+    }
+
+
+
+
+
+  function applySettingsPayload(p) {
+  document.getElementById('drawMeshes').checked = !!p.drawMeshes;
+  document.getElementById('renderShipUi').checked = p.renderShipUi !== false;
+  document.getElementById('renderCockpit').checked = p.renderCockpit !== false;
+  document.getElementById('renderStarfield').checked = p.renderStarfield !== false;
+  document.getElementById('showStarLabels').checked = p.showStarLabels !== false;
+
+  const sceneMode = p.sceneMode || 'game';
+  document.getElementById('sceneModeGame').checked = sceneMode !== 'promo1';
+  document.getElementById('sceneModePromo1').checked = sceneMode === 'promo1';
+
+  document.getElementById('showAllStarLabels').checked = p.showAllStarLabels === true;
+  document.getElementById('showConstellationHover').checked = p.showConstellationHover === true;
+  document.getElementById('constellationHoverRadiusPx').value = p.constellationHoverRadiusPx ?? 140;
+  document.getElementById('renderRearCamera').checked = p.renderRearCamera !== false;
+
+  document.getElementById('drawAxes').checked = !!p.drawAxes;
+  document.getElementById('drawWorldAxes').checked = !!p.drawWorldAxes;
+  document.getElementById('drawObjectAxes').checked = !!p.drawObjectAxes;
+  document.getElementById('drawModulePivots').checked = !!p.drawModulePivots;
+  document.getElementById('drawHitVolumes').checked = !!p.drawHitVolumes;
+  document.getElementById('debugFastUniverseTime').checked = !!p.debugFastUniverseTime;
+
+  document.getElementById('hitVolumeFilterMode').value = String(p.hitVolumeFilterMode ?? 0);
+  document.getElementById('publishObjectOrientation').checked = !!p.publishObjectOrientation;
+  document.getElementById('hitVolumesOverlay').checked = !!p.hitVolumesOverlay;
+  document.getElementById('hideMeshesWhenDrawingHitVolumes').checked = !!p.hideMeshesWhenDrawingHitVolumes;
+
+  document.getElementById('axesOverlay').checked = !!p.axesOverlay;
+  document.getElementById('crossesOverlay').checked = !!p.crossesOverlay;
+  document.getElementById('linesOverlay').checked = !!p.linesOverlay;
+
+  document.getElementById('worldAxisLength').value = p.worldAxisLength ?? 120;
+  document.getElementById('shipAxisLength').value = p.shipAxisLength ?? 18;
+  document.getElementById('objectAxisLength').value = p.objectAxisLength ?? 30;
+  document.getElementById('moduleAxisLength').value = p.moduleAxisLength ?? 30;
+  document.getElementById('moduleCrossSize').value = p.moduleCrossSize ?? 2;
+  document.getElementById('rotAxisLength').value = p.rotAxisLength ?? 30;
+
+  setColor('axisXColor', p.axisXColor);
+  setColor('axisYColor', p.axisYColor);
+  setColor('axisZColor', p.axisZColor);
+  setColor('moduleOriginColor', p.moduleOriginColor);
+  setColor('modulePivotColor', p.modulePivotColor);
+  setColor('rotationAxisColor', p.rotationAxisColor);
+}
+
+
+
+    function buildPayload() {
+      return {
+        drawMeshes: document.getElementById('drawMeshes').checked,
+        renderShipUi: document.getElementById('renderShipUi').checked,
+        renderCockpit: document.getElementById('renderCockpit').checked,
+        renderStarfield: document.getElementById('renderStarfield').checked,
+        showStarLabels: document.getElementById('showStarLabels').checked,
+        showAllStarLabels: document.getElementById('showAllStarLabels').checked,
+        sceneMode: document.querySelector('input[name="sceneMode"]:checked')?.value || 'game',
+        showConstellationHover: document.getElementById('showConstellationHover').checked,
+        constellationHoverRadiusPx: Number(document.getElementById('constellationHoverRadiusPx').value) || 140,
+        renderRearCamera: document.getElementById('renderRearCamera').checked,
+        drawAxes: document.getElementById('drawAxes').checked,
+        drawWorldAxes: document.getElementById('drawWorldAxes').checked,
+        drawObjectAxes: document.getElementById('drawObjectAxes').checked,
+
+        drawModulePivots: document.getElementById('drawModulePivots').checked,
+        drawHitVolumes: document.getElementById('drawHitVolumes').checked,
+        debugFastUniverseTime: document.getElementById('debugFastUniverseTime').checked,
+        hitVolumeFilterMode: parseInt(document.getElementById('hitVolumeFilterMode').value, 10) || 0,
+        publishObjectOrientation: document.getElementById('publishObjectOrientation').checked,
+        hitVolumesOverlay: document.getElementById('hitVolumesOverlay').checked,
+        hideMeshesWhenDrawingHitVolumes: document.getElementById('hideMeshesWhenDrawingHitVolumes').checked,
+
+        axesOverlay: document.getElementById('axesOverlay').checked,
+        crossesOverlay: document.getElementById('crossesOverlay').checked,
+        linesOverlay: document.getElementById('linesOverlay').checked,
+
+        worldAxisLength: parseFloat(document.getElementById('worldAxisLength').value) || 120,
+        shipAxisLength: parseFloat(document.getElementById('shipAxisLength').value) || 18,
+        objectAxisLength: parseFloat(document.getElementById('objectAxisLength').value) || 30,
+        moduleAxisLength: parseFloat(document.getElementById('moduleAxisLength').value) || 30,
+        moduleCrossSize: parseFloat(document.getElementById('moduleCrossSize').value) || 2,
+        rotAxisLength: parseFloat(document.getElementById('rotAxisLength').value) || 30,
+
+        axisXColor: getColor('axisXColor'),
+        axisYColor: getColor('axisYColor'),
+        axisZColor: getColor('axisZColor'),
+        moduleOriginColor: getColor('moduleOriginColor'),
+        modulePivotColor: getColor('modulePivotColor'),
+        rotationAxisColor: getColor('rotationAxisColor')
+      };
+    }
+
+    function connectWs() {
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      state.ws = new WebSocket(`${protocol}//${location.host}`);
+
+      state.ws.addEventListener('open', () => {
+        setStatus('connected');
+        logLine('WebSocket connected');
+
+        state.ws.send(JSON.stringify({
+          type: 'subscribe',
+          panel: 'debug_control',
+          payload: {}
+        }));
+      });
+
+      state.ws.addEventListener('close', () => {
+        setStatus('disconnected');
+        logLine('WebSocket disconnected', 'warn');
+      });
+
+      state.ws.addEventListener('error', () => {
+        setStatus('error');
+        logLine('WebSocket error', 'error');
+      });
+
+      state.ws.addEventListener('message', (event) => {
+      let msg = null;
+
+      try {
+        msg = JSON.parse(event.data);
+      } catch (e) {
+        logLine('Invalid JSON message from engine', 'error');
+        return;
+      }
+
+      if (msg.panel !== 'debug_control') return;
+
+      if (msg.type === 'state_update') {
+        applyPayload(msg.payload || {});
+        return;
+      }
+
+      if (msg.type === 'debug_log') {
+        const p = msg.payload || {};
+        logLine(p.message || '(empty log message)', p.level || 'info');
+        return;
+      }
+
+      if (msg.type === 'performance_update') {
+        applyPerformancePayload(msg.payload || {});
+        return;
+      }
+    });
+    }
+
+    window.app = {
+      requestSnapshot() {
+        if (!state.ws) return;
+        state.ws.send(JSON.stringify({
+          type: 'command',
+          panel: 'debug_control',
+          command: 'request_snapshot',
+          payload: {}
+        }));
+      },
+
+      apply() {
+        if (!state.ws) return;
+
+        state.ws.send(JSON.stringify({
+          type: 'command',
+          panel: 'debug_control',
+          command: 'apply_settings',
+          payload: buildPayload()
+        }));
+
+        debugSettingsDirty = false;
+        debugSettingsInitialized = false;
+
+        logLine('Debug settings applied');
+      }
+    };
+
+    document.addEventListener('change', (event) => {
+      const target = event.target;
+
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLSelectElement
+      ) {
+        markDebugSettingsDirty();
+      }
+    });
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+      connectWs();
+    });
+  </script>
+</body>
+</html>

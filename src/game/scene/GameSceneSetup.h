@@ -1,6 +1,8 @@
 #pragma once
 
 #include "src/scene/EntityID.h"
+#include "src/world/orbits/OrbitalMotion.h"
+#include "src/game/world_state/InitialWorldState.h"
 
 class GameSimulation;
 

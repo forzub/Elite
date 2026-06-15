@@ -1,5 +1,6 @@
 #include "src/game/ship/controller/PlayerInputMapper.h"
-
+#include <fstream>
+#include <iomanip>
 #include "src/input/Input.h"
 
 
@@ -74,5 +75,13 @@ void PlayerInputMapper::update(ShipControlState& control){
     }
 
     
+
+
+
+
+
+
+
+
 
     }

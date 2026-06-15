@@ -135,6 +135,19 @@ private:
     );
 
 
+    void beginSolids();
+
+    void addBillboardBall(
+        const glm::vec3& center,
+        float radius,
+        const glm::vec4& color,
+        const glm::mat4& view,
+        int segments = 32
+    );
+
+    void flushSolids(const glm::mat4& mvp);
+
+
 
 
 
@@ -150,6 +163,8 @@ private:
         const world::celestial::GalaxyMapSnapshot& galaxy,
         const world::celestial::PlayerNavigationState& nav
     );
+
+
 
     void renderSystem(
         const Viewport& vp,
@@ -167,9 +182,10 @@ private:
     glm::vec4 colorForBodyType(world::celestial::BodyType type) const;
 
     float bodyVisualRadius(
-        const world::celestial::CelestialBodyState& body,
+        const world::celestial::SystemMapBody& body,
         float distanceScale
     ) const;
+
         glm::mat4 galaxyViewMatrix() const;
     glm::mat4 galaxyProjectionMatrix(const Viewport& vp) const;
 
@@ -201,6 +217,14 @@ private:
         const glm::mat4& mvp
     );
 
+    void drawSystemLabels(
+        const Viewport& vp,
+        const world::celestial::SystemMapSnapshot& system,
+        const glm::mat4& mvp,
+        const std::unordered_map<std::string, glm::vec3>& posById,
+        const std::unordered_map<std::string, float>& drawRadiusById
+    );
+
 
 
     void drawNavigationLayerPlaceholder();
@@ -216,6 +240,27 @@ private:
         const glm::vec2& screen,
         const glm::vec2& pos
     ) const;
+
+    void addMapObjectCube(
+        const glm::vec3& center,
+        float size,
+        const glm::vec4& color
+    );
+
+    glm::vec3 systemObjectVisualPosition(
+        const world::celestial::SystemMapSnapshot& system,
+        const world::celestial::SystemMapObject& obj,
+        const std::unordered_map<std::string, glm::vec3>& posById,
+        const std::unordered_map<std::string, float>& drawRadiusById,
+        float systemScale
+    ) const;
+
+    void drawSystemObjectLabels(
+        const Viewport& vp,
+        const world::celestial::SystemMapSnapshot& system,
+        const glm::mat4& mvp,
+        const std::unordered_map<uint32_t, glm::vec3>& objectVisualPosById
+    );
 
     
 
@@ -233,6 +278,7 @@ private:
     GLuint m_bgShader = 0;
 
     std::vector<Vertex> m_vertices;
+    std::vector<Vertex> m_solidVertices;
 
     Mode m_mode = Mode::Galaxy;
     float m_rightPanelRatio = 0.28f;
@@ -245,4 +291,23 @@ private:
     bool m_comboOpen = false;
 
     std::vector<ScreenPoint> m_lastGalaxyScreenPoints;
+
+    struct SmoothPoint
+    {
+        glm::vec3 visual {0.0f};
+        bool initialized = false;
+    };
+
+    std::unordered_map<std::string, SmoothPoint> m_smoothBodyPositions;
+    std::unordered_map<uint32_t, SmoothPoint> m_smoothObjectPositions;
+
+    double m_lastSmoothTimeSeconds = 0.0;
+
+    float smoothingAlpha() const;
+    glm::vec3 smoothVec3(
+        SmoothPoint& point,
+        const glm::vec3& target,
+        float alpha
+    );
+    
 };

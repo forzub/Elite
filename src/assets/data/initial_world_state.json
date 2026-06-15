@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "description": "Initial dynamic world state. Orbital hubs own orbital motion; modules are local children of hubs. Save-game state may override this baseline.",
+  "epoch_universe_time_seconds": 0,
+  "orbital_hubs": [
+    {
+      "id": "earth_orbital_hub",
+      "name": "Earth Orbital Hub",
+      "owner": "Sol Authority",
+      "system_id": 0,
+      "parent_body_id": "system_0.Sol.Земля",
+      "map_object_module_id": "earth_high_orbital",
+      "motion": {
+        "type": "parent_orbit",
+        "altitude_km": 420,
+        "orbital_period_seconds": 0,
+        "self_rotation_period_seconds": 180,
+        "inclination_deg": 51.64,
+        "longitude_of_ascending_node_deg": 0,
+        "argument_of_periapsis_deg": 0,
+        "initial_phase_deg": 35,
+        "epoch_seconds": 0,
+        "orbital_period_mode": "kepler"
+      },
+      "modules": [
+        {
+          "id": "earth_high_orbital",
+          "type": "command_station",
+          "name": "Earth High Orbital",
+          "offset_m": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "state": {
+            "exists": true,
+            "hull": 1.0,
+            "power": 1.0
+          },
+          "parent_hub_id": "earth_orbital_hub",
+          "local_rotation_deg": {
+            "pitch": 0,
+            "yaw": 0,
+            "roll": 0
+          },
+          "map_object": true,
+          "infrastructure_role": "command_station"
+        }
+      ],
+      "routes": [],
+      "traffic_zones": [
+        {
+          "id": "earth_orbit_debug_traffic",
+          "enabled": true,
+          "debug": true,
+          "max_ships": 500,
+          "radius_m": 12000,
+          "roles": [
+            "trader",
+            "patrol",
+            "worker"
+          ]
+        }
+      ],
+      "hub_kind": "orbital_hub",
+      "map_label_suffix": "Hub"
+    }
+  ],
+  "unique_npcs": [
+    {
+      "id": "npc_test_alpha",
+      "name": "Test NPC Alpha",
+      "actor": "Civilian",
+      "system_id": 0,
+      "home_hub_id": "earth_orbital_hub",
+      "state": {
+        "exists": true,
+        "hull": 1.0,
+        "current_order": "idle"
+      }
+    },
+    {
+      "id": "npc_test_beta",
+      "name": "Test NPC Beta",
+      "actor": "Civilian",
+      "system_id": 0,
+      "home_hub_id": "earth_orbital_hub",
+      "state": {
+        "exists": true,
+        "hull": 1.0,
+        "current_order": "idle"
+      }
+    }
+  ]
+}

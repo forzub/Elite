@@ -107,6 +107,11 @@ struct SceneRenderPolicy
     bool drawVisualDrones = true;
     bool drawObjects = true;
 
+    bool drawRealShips = true;
+    bool drawPlayerShip = true;
+    bool drawNpcShips = true;
+    bool drawTrafficShips = true;
+
     int maxVisualShipsToDraw = -1;
 };
 

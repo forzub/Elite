@@ -4,7 +4,7 @@
 #include <vector>
 
 #include <glm/glm.hpp>
-
+#include "src/scene/EntityId.h"
 #include "src/world/celestial/CelestialTypes.h"
 
 namespace world::celestial
@@ -44,6 +44,8 @@ namespace world::celestial
     {
         std::string id;
         std::string name;
+        std::vector<CelestialBodyDisplayName> alternativeNames;
+  
         std::string parentId;
 
         BodyType type = BodyType::Unknown;
@@ -65,14 +67,34 @@ namespace world::celestial
         std::vector<SystemMapRing> rings;
     };
 
+    enum class SystemMapObjectKind
+    {
+        Unknown,
+        Station,
+        Mine,
+        Buoy,
+        Relay,
+        Ship
+    };
+
+    struct SystemMapObject
+    {
+        EntityId id {};
+        std::string name;
+        std::string owner;
+        std::string parentBodyId;
+        SystemMapObjectKind kind = SystemMapObjectKind::Unknown;
+        glm::dvec3 positionAu {0.0};
+        int systemId = -1;
+    };
+
     struct SystemMapSnapshot
     {
         int systemId = -1;
         std::string systemName;
-
         double universeTimeSeconds = 0.0;
         std::string universeDate;
-
         std::vector<SystemMapBody> bodies;
+        std::vector<SystemMapObject> objects;
     };
 }

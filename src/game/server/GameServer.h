@@ -92,6 +92,18 @@ public:
         int systemId
     ) const;
 
+    world::celestial::PlanetMapSnapshot buildPlanetMapSnapshot(
+        int systemId,
+        const std::string& planetBodyId
+    ) const;
+
+
+    world::celestial::HubMapSnapshot buildHubMapSnapshot(
+        int systemId,
+        const std::string& hubId
+    ) const;
+
+
     void setDebugFastUniverseTime(bool enabled);
     bool debugFastUniverseTime() const;
     double debugUniverseTimeScale() const;

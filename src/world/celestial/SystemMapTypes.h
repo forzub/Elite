@@ -97,4 +97,140 @@ namespace world::celestial
         std::vector<SystemMapBody> bodies;
         std::vector<SystemMapObject> objects;
     };
+
+
+    struct PlanetMapAxisSet
+{
+    glm::dvec3 x {1.0, 0.0, 0.0};
+    glm::dvec3 y {0.0, 1.0, 0.0};
+    glm::dvec3 z {0.0, 0.0, 1.0};
+};
+
+struct PlanetMapOrbit
+{
+    std::string id;
+    std::string name;
+    std::string parentBodyId;
+
+    glm::dvec3 centerMeters {0.0};
+    glm::dvec3 positionMeters {0.0};
+    glm::dvec3 velocityMps {0.0};
+
+    double radiusMeters = 0.0;
+    double altitudeMeters = 0.0;
+    double speedMps = 0.0;
+
+    glm::dvec3 radialAxis {0.0};
+    glm::dvec3 progradeAxis {0.0};
+    glm::dvec3 normalAxis {0.0};
+
+    bool valid = false;
+};
+
+struct PlanetMapObject
+{
+    EntityId id {};
+    std::string stableId;
+    std::string name;
+    std::string kind;
+
+    glm::dvec3 positionMeters {0.0};
+    glm::dvec3 velocityMps {0.0};
+
+    PlanetMapAxisSet axes;
+
+    bool valid = false;
+};
+
+struct PlanetMapSnapshot
+{
+    bool valid = false;
+
+    int systemId = -1;
+
+    std::string planetBodyId;
+    std::string planetName;
+
+    glm::dvec3 planetCenterMeters {0.0};
+
+    double planetRadiusMeters = 0.0;
+    double gravitationalParameterM3s2 = 0.0;
+    double universeTimeSeconds = 0.0;
+
+    std::vector<PlanetMapOrbit> hubOrbits;
+    std::vector<PlanetMapOrbit> playerOrbits;
+
+    std::vector<PlanetMapObject> hubs;
+    std::vector<PlanetMapObject> stations;
+    std::vector<PlanetMapObject> ships;
+};
+
+
+struct HubMapModule
+{
+    EntityId id {};
+    std::string stableId;
+    std::string name;
+    std::string kind;
+
+    glm::dvec3 localPositionMeters {0.0};
+    PlanetMapAxisSet localAxes;
+
+    glm::dvec3 sizeMeters {80.0, 30.0, 30.0};
+
+    bool prime = false;
+    bool valid = false;
+};
+
+struct HubMapShip
+{
+    EntityId id {};
+    std::string name;
+
+    glm::dvec3 localPositionMeters {0.0};
+    glm::dvec3 localVelocityMps {0.0};
+
+    PlanetMapAxisSet localAxes;
+
+    bool player = false;
+    bool valid = false;
+};
+
+struct HubMapSnapshot
+{
+    bool valid = false;
+
+    int systemId = -1;
+
+    std::string hubId;
+    std::string parentBodyId;
+    std::string displayName;
+
+    glm::dvec3 hubWorldPositionMeters {0.0};
+    glm::dvec3 hubWorldVelocityMps {0.0};
+
+    PlanetMapAxisSet hubAxes;
+
+    std::vector<HubMapModule> modules;
+    std::vector<HubMapShip> ships;
+
+    double universeTimeSeconds = 0.0;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

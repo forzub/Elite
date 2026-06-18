@@ -320,6 +320,8 @@ button:hover {
 
     <div id="actions">
         <button id="btnToggleMode">SHOW SYSTEM</button>
+        <button id="btnDetail">DETAIL</button>
+        <button id="btnHub">HUB</button>
         <button id="btnClose" data-i18n="btnClose">CLOSE</button>
     </div>
 </div>
@@ -413,13 +415,44 @@ function sendGameCommand(command) {
     }
 }
 
+
+
+
 document.getElementById("btnToggleMode").addEventListener("click", () => {
     if (currentMode === "Galaxy") {
         sendGameCommand("system_map_current_system");
-    } else {
+        return;
+    }
+
+    if (currentMode === "System") {
         sendGameCommand("system_map_galaxy");
+        return;
+    }
+
+    if (currentMode === "Planet" || currentMode === "Detail") {
+        sendGameCommand("system_map_current_system");
+        return;
+    }
+
+    if (currentMode === "Hub") {
+        sendGameCommand("system_map_detail");
+        return;
     }
 });
+
+
+
+
+document.getElementById("btnDetail").addEventListener("click", () => {
+    sendGameCommand("system_map_detail");
+});
+
+
+document.getElementById("btnHub").addEventListener("click", () => {
+    sendGameCommand("system_map_hub");
+});
+
+
 
 const systemDropdown = document.getElementById("systemDropdown");
 const systemDropdownButton = document.getElementById("systemDropdownButton");
@@ -527,12 +560,49 @@ window.setSystemMapPanel = function(payload) {
     document.getElementById("universeTimeValue").textContent =
         payload.universeDate || "—";
 
-    document.getElementById("btnToggleMode").textContent =
-        currentMode === "Galaxy"
-            ? "SHOW SYSTEM"
-            : "GALAXY";
 
 
+let modeButtonText = "SYSTEM";
+
+if (currentMode === "Galaxy") {
+    modeButtonText = "SYSTEM";
+} else if (currentMode === "System") {
+    modeButtonText = "GALAXY";
+} else if (currentMode === "Planet" || currentMode === "Detail") {
+    modeButtonText = "SYSTEM";
+} else if (currentMode === "Hub") {
+    modeButtonText = "DETAIL";
+}
+
+document.getElementById("btnToggleMode").textContent = modeButtonText;
+
+
+const btnHub = document.getElementById("btnHub");
+
+if (currentMode === "Planet" || currentMode === "Detail") {
+    btnHub.style.display = "inline-block";
+    btnHub.disabled = false;
+} else {
+    btnHub.style.display = "none";
+    btnHub.disabled = true;
+}
+
+
+
+    const btnDetail = document.getElementById("btnDetail");
+
+    if (currentMode === "System" && payload.canOpenDetail) {
+        btnDetail.style.display = "inline-block";
+        btnDetail.disabled = false;
+    } else {
+        btnDetail.style.display = "none";
+        btnDetail.disabled = true;
+    }
+
+    // if (currentMode === "Hub") {
+    //     sendGameCommand("system_map_detail");
+    //     return;
+    // }   
 
     document.getElementById("currentSystemValue").textContent =
         payload.currentSystemName || "—";

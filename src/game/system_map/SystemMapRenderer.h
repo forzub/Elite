@@ -19,16 +19,20 @@ public:
     enum class Mode
     {
         Galaxy,
-        System
+        System,
+        Planet,
+        Hub
     };
 
 public:
     void init();
     void setRightPanelRatio(float ratio);
     void render(
-        const Viewport& vp,
+        const Viewport& viewport,
         const world::celestial::GalaxyMapSnapshot& galaxy,
         const world::celestial::SystemMapSnapshot& system,
+        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::HubMapSnapshot& hub,
         const world::celestial::PlayerNavigationState& nav
     );
 
@@ -41,14 +45,16 @@ public:
 
     int selectedSystemId() const;
 
-void handleInput(
-    const Viewport& vp,
-    const world::celestial::GalaxyMapSnapshot& galaxy
-);
+    void handleInput(
+        const Viewport& vp,
+        const world::celestial::GalaxyMapSnapshot& galaxy
+    );
 
     void setMode(Mode mode);
     Mode mode() const;
     int focusedSystemId() const;
+
+    const std::string& selectedBodyId() const;
 
 private:
     struct Vertex
@@ -62,6 +68,16 @@ private:
         int systemId = -1;
         std::string name;
         glm::vec3 world {0.0f};
+        glm::vec2 screen {0.0f};
+        float depth = 0.0f;
+        bool visible = false;
+    };
+
+
+    struct BodyScreenPoint
+    {
+        std::string bodyId;
+        std::string name;
         glm::vec2 screen {0.0f};
         float depth = 0.0f;
         bool visible = false;
@@ -96,6 +112,67 @@ private:
         bool panning = false;
     };
 
+    struct PlanetCamera
+    {
+        double yaw = 0.6;
+        double pitch = 0.35;
+        double zoom = 1.0;
+        glm::dvec2 pan {0.0};
+
+        bool rotating = false;
+        bool panning = false;
+        double lastMouseX = 0.0;
+        double lastMouseY = 0.0;
+    };
+
+    PlanetCamera m_planetCamera;
+
+    void drawPlanetSphereGrid(
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx
+    );
+
+    void drawPlanetFilledDisk(
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx
+    );
+
+    void renderHubMap(
+        const Viewport& viewport,
+        const world::celestial::HubMapSnapshot& hub
+    );
+
+    glm::dvec2 hubMapProject(
+        const glm::dvec3& localMeters,
+        double scale,
+        const glm::dvec2& centerPx
+    ) const;
+
+    void drawHubMapBox(
+        const glm::dvec3& center,
+        const world::celestial::PlanetMapAxisSet& axes,
+        const glm::dvec3& size,
+        double scale,
+        const glm::dvec2& centerPx
+    );
+
+    void drawHubMapAxes(
+        const glm::dvec3& center,
+        const world::celestial::PlanetMapAxisSet& axes,
+        double axisLenMeters,
+        double scale,
+        const glm::dvec2& centerPx
+    );
+
+    void drawHubMapVelocityArrow(
+        const glm::dvec3& center,
+        const glm::dvec3& velocity,
+        double lenMeters,
+        double scale,
+        const glm::dvec2& centerPx
+    );
     
 
 private:
@@ -148,7 +225,51 @@ private:
     void flushSolids(const glm::mat4& mvp);
 
 
+    void renderPlanetMap(
+        const Viewport& viewport,
+        const world::celestial::PlanetMapSnapshot& planet
+    );
 
+    glm::dvec2 planetMapProject(
+        const glm::dvec3& worldMeters,
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx
+    ) const;
+
+    void drawPlanetMapCircle(
+        const glm::dvec2& center,
+        double radiusPx,
+        int segments
+    );
+
+    void drawPlanetMapLine(
+        const glm::dvec2& a,
+        const glm::dvec2& b
+    );
+
+    void drawPlanetMapCross(
+        const glm::dvec2& p,
+        float size
+    );
+
+    void drawPlanetMapAxes(
+        const glm::dvec3& originMeters,
+        const world::celestial::PlanetMapAxisSet& axes,
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx,
+        double axisLenMeters
+    );
+
+    void drawPlanetMapVelocityArrow(
+        const glm::dvec3& originMeters,
+        const glm::dvec3& velocityMps,
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx,
+        double lenMeters
+    );
 
 
     void addCross(
@@ -186,7 +307,7 @@ private:
         float distanceScale
     ) const;
 
-        glm::mat4 galaxyViewMatrix() const;
+    glm::mat4 galaxyViewMatrix() const;
     glm::mat4 galaxyProjectionMatrix(const Viewport& vp) const;
 
     glm::mat4 systemViewMatrix() const;
@@ -225,6 +346,11 @@ private:
         const std::unordered_map<std::string, float>& drawRadiusById
     );
 
+    int pickSystemBody(
+        double mouseX,
+        double mouseY
+    ) const;
+
 
 
     void drawNavigationLayerPlaceholder();
@@ -261,6 +387,16 @@ private:
         const glm::mat4& mvp,
         const std::unordered_map<uint32_t, glm::vec3>& objectVisualPosById
     );
+
+    void drawPlanetMapOrbit3D(
+        const world::celestial::PlanetMapOrbit& orbit,
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx,
+        int segments
+    );
+
+
 
     
 
@@ -309,5 +445,10 @@ private:
         const glm::vec3& target,
         float alpha
     );
+
+    std::string m_selectedBodyId;
+    std::vector<BodyScreenPoint> m_lastSystemBodyScreenPoints;
     
 };
+
+

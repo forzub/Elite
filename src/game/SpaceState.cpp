@@ -489,6 +489,133 @@ void SpaceState::requestSystemMapSnapshot(
 
 
 
+void SpaceState::requestPlanetMapSnapshot(
+    int systemId,
+    const std::string& planetBodyId,
+    bool forceRefresh
+)
+{
+    if (!m_server)
+        return;
+
+    if (planetBodyId.empty())
+        return;
+
+    if (!forceRefresh &&
+        m_hasPlanetMapSnapshot &&
+        m_loadedPlanetMapSystemId == systemId &&
+        m_loadedPlanetMapBodyId == planetBodyId)
+    {
+        return;
+    }
+
+    m_planetMapSnapshot =
+        m_server->buildPlanetMapSnapshot(
+            systemId,
+            planetBodyId
+        );
+
+    m_loadedPlanetMapSystemId =
+        systemId;
+
+    m_loadedPlanetMapBodyId =
+        planetBodyId;
+
+    m_hasPlanetMapSnapshot =
+        true;
+}
+
+
+
+
+
+void SpaceState::requestHubMapSnapshot(
+    int systemId,
+    const std::string& hubId,
+    bool forceRefresh
+)
+{
+    if (!m_server)
+        return;
+
+    if (hubId.empty())
+        return;
+
+    if (!forceRefresh &&
+        m_hasHubMapSnapshot &&
+        m_loadedHubMapSystemId == systemId &&
+        m_loadedHubMapHubId == hubId)
+    {
+        return;
+    }
+
+    m_hubMapSnapshot =
+        m_server->buildHubMapSnapshot(
+            systemId,
+            hubId
+        );
+
+    m_loadedHubMapSystemId =
+        systemId;
+
+    m_loadedHubMapHubId =
+        hubId;
+
+    m_hasHubMapSnapshot =
+        true;
+}
+
+
+
+
+
+
+
+
+void SpaceState::setSystemMapHubMode()
+{
+
+
+    if (!m_server)
+        return;
+
+    const int selectedId =
+        m_systemMapRenderer.selectedSystemId() >= 0
+            ? m_systemMapRenderer.selectedSystemId()
+            : m_server->playerNavigation().currentSystemId;
+
+    // Пока первый тестовый хаб.
+    // Позже будем брать selectedHubId из Planet/Detail map.
+    const std::string hubId =
+        "earth_orbital_hub";
+
+    requestHubMapSnapshot(
+        selectedId,
+        hubId,
+        true
+    );
+
+
+
+    m_systemMapRenderer.setMode(
+        SystemMapRenderer::Mode::Hub
+    );
+
+   
+
+    pushSystemMapPanelState();
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 void SpaceState::updateSystemMapLiveFlags()
@@ -604,6 +731,24 @@ void SpaceState::handleInput()
                 m_galaxyMapSnapshot
             );
         }
+
+
+
+        if (Input::instance().isKeyPressedOnce(GLFW_KEY_P))
+        {
+            setSystemMapPlanetMode();
+            return;
+        }
+
+        if (Input::instance().isKeyPressedOnce(GLFW_KEY_BACKSPACE))
+        {
+            setSystemMapCurrentSystemMode();
+            return;
+        }
+
+
+
+
 
         return;
     }
@@ -1325,8 +1470,6 @@ void SpaceState::renderHUD()
 
 
 
-
-
 if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System)
 {
     const int focusedId =
@@ -1340,17 +1483,58 @@ if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System)
     );
 }
 
+if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Planet)
+{
+    const int focusedId =
+        m_systemMapRenderer.focusedSystemId() >= 0
+            ? m_systemMapRenderer.focusedSystemId()
+            : m_server->playerNavigation().currentSystemId;
 
+    requestPlanetMapSnapshot(
+        focusedId,
+        m_loadedPlanetMapBodyId.empty()
+            ? std::string("system_0.Sol.Земля")
+            : m_loadedPlanetMapBodyId,
+        true
+    );
+}
 
+if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Hub)
+{
+    std::cerr
+            << "[HUD] render hub branch\n";
 
+    const int focusedId =
+        m_systemMapRenderer.focusedSystemId() >= 0
+            ? m_systemMapRenderer.focusedSystemId()
+            : m_server->playerNavigation().currentSystemId;
 
-        m_systemMapRenderer.render(
-            mapVp,
-            m_galaxyMapSnapshot,
-            m_systemMapSnapshot,
-            m_server->playerNavigation()
-        );
+    requestHubMapSnapshot(
+        focusedId,
+        m_loadedHubMapHubId.empty()
+            ? std::string("earth_orbital_hub")
+            : m_loadedHubMapHubId,
+        true
+    );
+}
 
+std::cerr
+    << "[HUD] mode="
+    << static_cast<int>(
+        m_systemMapRenderer.mode()
+    )
+    << "\n";
+
+m_systemMapRenderer.render(
+    mapVp,
+    m_galaxyMapSnapshot,
+    m_systemMapSnapshot,
+    m_planetMapSnapshot,
+    m_hubMapSnapshot,
+    m_server->playerNavigation()
+);
+
+        
 
 
         glEnable(GL_DEPTH_TEST);
@@ -1792,6 +1976,9 @@ void SpaceState::processHtmlCommands()
 
             if (msg.type == HtmlUiMessageType::Command)
             {
+                
+
+
                 if (msg.command == "request_snapshot")
                 {
                     pushSystemMapState();
@@ -2960,14 +3147,82 @@ void SpaceState::setSystemMapCurrentSystemMode()
     );
 
     requestSystemMapSnapshot(
-    selectedId,
-    true
-);
+        selectedId,
+        true
+    );
+
+    requestPlanetMapSnapshot(
+        selectedId,
+        "system_0.Sol.Земля",
+        true
+    );
 
     m_systemMapRenderer.setMode(SystemMapRenderer::Mode::System);
 
     pushSystemMapPanelState();
 }
+
+
+
+
+
+
+void SpaceState::setSystemMapPlanetMode()
+{
+  
+
+    if (!m_server)
+        return;
+
+    const int selectedId =
+        m_systemMapRenderer.selectedSystemId() >= 0
+            ? m_systemMapRenderer.selectedSystemId()
+            : m_server->playerNavigation().currentSystemId;
+
+    const std::string bodyId =
+        m_systemMapRenderer.selectedBodyId();
+
+    if (bodyId.empty())
+        return;
+
+    requestPlanetMapSnapshot(
+        selectedId,
+        bodyId,
+        true
+    );
+
+    m_systemMapRenderer.setMode(
+        SystemMapRenderer::Mode::Planet
+    );
+
+    pushSystemMapPanelState();
+}
+
+
+
+
+
+
+void SpaceState::setSystemMapLoadedPlanetMode()
+{
+   
+    if (!m_server)
+        return;
+
+    if (!m_hasPlanetMapSnapshot)
+        return;
+
+    m_systemMapRenderer.setMode(
+        SystemMapRenderer::Mode::Planet
+    );
+
+    pushSystemMapPanelState();
+}
+
+
+
+
+
 
 
 
@@ -2994,10 +3249,23 @@ void SpaceState::pushSystemMapPanelState()
     payload["universeTimeScale"] =
         m_server->universeClock().timeScale();
 
-    payload["mode"] =
-        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Galaxy
-            ? "Galaxy"
-            : "System";
+    if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Galaxy)
+    {
+        payload["mode"] = "Galaxy";
+    }
+    else if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Planet)
+    {
+        payload["mode"] = "Planet";
+    }
+    else if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Hub)
+    {
+        
+        payload["mode"] = "Hub";
+    }
+    else
+    {
+        payload["mode"] = "System";
+    }
 
     payload["systemsCount"] = m_galaxyMapSnapshot.systems.size();
     payload["currentSystemId"] = nav.currentSystemId;
@@ -3011,6 +3279,14 @@ void SpaceState::pushSystemMapPanelState()
     payload["selectedSystemId"] = selectedId;
 
     payload["systems"] = json::array();
+    payload["selectedBodyId"] =
+        m_systemMapRenderer.selectedBodyId();
+
+    payload["canOpenDetail"] =
+        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System &&
+        !m_systemMapRenderer.selectedBodyId().empty();
+
+
 
 const world::celestial::GalaxyMapSystem* currentSystem = nullptr;
 

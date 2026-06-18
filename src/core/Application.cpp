@@ -328,6 +328,40 @@ void Application::mainLoop()
 
                         continue;
                     }
+
+                    if (webCommand == "system_map_hub")
+                    {
+                        std::cerr
+                            << "[WEB] system_map_hub\n";
+                        if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
+                        {
+                            space->setSystemMapHubMode();
+                        }
+
+                        continue;
+                    }
+
+                    if (webCommand == "system_map_detail")
+                    {
+                        std::cerr
+                            << "[WEB] system_map_detail\n";
+                        if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
+                        {
+                            space->setSystemMapLoadedPlanetMode();
+                        }
+
+                        continue;
+                    }
+
+                    if (webCommand == "system_map_planet")
+                    {
+                        if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
+                        {
+                            space->setSystemMapPlanetMode();
+                        }
+
+                        continue;
+                    }
                     
                     if (webCommand == "close_system_map")
                     {

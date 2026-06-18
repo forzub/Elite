@@ -110,6 +110,22 @@ public:
     void updateSystemMapLiveFlags();
     bool shouldRefreshSystemMapSnapshot() const;
 
+    void requestPlanetMapSnapshot(
+        int systemId,
+        const std::string& planetBodyId,
+        bool forceRefresh = false
+    );
+
+    void setSystemMapPlanetMode();
+
+    void requestHubMapSnapshot(
+        int systemId,
+        const std::string& hubId,
+        bool forceRefresh = false
+    );
+
+    void setSystemMapHubMode();
+    void setSystemMapLoadedPlanetMode();
 private:
 
     
@@ -230,6 +246,17 @@ private:
     world::celestial::GalaxyMapSnapshot m_galaxyMapSnapshot;
 
     world::celestial::SystemMapSnapshot m_systemMapSnapshot;
+    world::celestial::PlanetMapSnapshot m_planetMapSnapshot;
+    world::celestial::HubMapSnapshot m_hubMapSnapshot;
+
+    bool m_hasHubMapSnapshot = false;
+    int m_loadedHubMapSystemId = -1;
+    std::string m_loadedHubMapHubId;
+
+    bool m_hasPlanetMapSnapshot = false;
+    int m_loadedPlanetMapSystemId = -1;
+    std::string m_loadedPlanetMapBodyId;
+
     int m_loadedSystemMapId = -1;
     bool m_hasGalaxyMapSnapshot = false;
     bool m_hasSystemMapSnapshot = false;

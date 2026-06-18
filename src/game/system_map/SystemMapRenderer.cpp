@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
 #include <fstream>
 #include <GLFW/glfw3.h>
@@ -130,7 +132,7 @@ void SystemMapRenderer::ensureShader()
 
     if (!m_shader)
     {
-        std::cerr << "[SystemMapRenderer] missing shader: system_map_lines\n";
+        
         return;
     }
 
@@ -570,14 +572,19 @@ float SystemMapRenderer::bodyVisualRadius(
 
 
 void SystemMapRenderer::render(
-    const Viewport& vp,
+    const Viewport& viewport,
     const world::celestial::GalaxyMapSnapshot& galaxy,
     const world::celestial::SystemMapSnapshot& system,
+    const world::celestial::PlanetMapSnapshot& planet,
+    const world::celestial::HubMapSnapshot& hub,
     const world::celestial::PlayerNavigationState& nav
 )
 {
+    
+        
     if (!m_initialized)
         init();
+    const Viewport& vp = viewport;
 
     glViewport(vp.x, vp.y, vp.width, vp.height);
     glScissor(vp.x, vp.y, vp.width, vp.height);
@@ -591,6 +598,27 @@ void SystemMapRenderer::render(
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    if (m_mode == Mode::Planet)
+    {
+        renderPlanetMap(
+            viewport,
+            planet
+        );
+
+        return;
+    }
+
+    if (m_mode == Mode::Hub)
+    {
+        renderHubMap(
+            viewport,
+            hub
+        );
+
+        return;
+    }
+
 
     if (m_mode == Mode::Galaxy)
         renderGalaxy(vp, galaxy, nav);
@@ -791,8 +819,13 @@ void SystemMapRenderer::handleInput(
     const world::celestial::GalaxyMapSnapshot& galaxy
 )
 {
-    if (m_mode != Mode::Galaxy && m_mode != Mode::System)
+    if (m_mode != Mode::Galaxy &&
+        m_mode != Mode::System &&
+        m_mode != Mode::Planet &&
+        m_mode != Mode::Hub)
+    {
         return;
+    }
 
     GLFWwindow* window = glfwGetCurrentContext();
     if (!window)
@@ -801,6 +834,12 @@ void SystemMapRenderer::handleInput(
     double mx = 0.0;
     double my = 0.0;
     glfwGetCursorPos(window, &mx, &my);
+
+    const double localMx =
+        mx - static_cast<double>(vp.x);
+
+    const double localMy =
+        my - static_cast<double>(vp.y);
 
     const bool inside =
         mx >= vp.x &&
@@ -823,7 +862,22 @@ void SystemMapRenderer::handleInput(
     if (m_mode == Mode::System)
     {
         if (inside && leftDown && !m_galaxyCamera.leftWasDown)
-            m_systemCamera.rotating = true;
+        {
+            const int pickedBody =
+                pickSystemBody(localMx, localMy);
+
+            if (pickedBody >= 0)
+            {
+                m_selectedBodyId =
+                    m_lastSystemBodyScreenPoints[pickedBody].bodyId;
+
+                m_systemCamera.rotating = false;
+            }
+            else
+            {
+                m_systemCamera.rotating = true;
+            }
+        }
 
         if (!leftDown)
             m_systemCamera.rotating = false;
@@ -908,6 +962,83 @@ void SystemMapRenderer::handleInput(
     }
 
     // =========================================================
+    // DETAILS MODE INPUT
+    // =========================================================
+
+        if (m_mode == Mode::Planet ||
+            m_mode == Mode::Hub)
+        {
+            double wheel = 0.0;
+
+            if (inside && g_systemMapScrollY != 0.0)
+            {
+                wheel = g_systemMapScrollY;
+                g_systemMapScrollY = 0.0;
+            }
+
+        if (leftDown && !m_planetCamera.rotating)
+        {
+            m_planetCamera.rotating = true;
+            m_planetCamera.lastMouseX = mx;
+            m_planetCamera.lastMouseY = my;
+        }
+
+        if (!leftDown)
+            m_planetCamera.rotating = false;
+
+        if (rightDown && !m_planetCamera.panning)
+        {
+            m_planetCamera.panning = true;
+            m_planetCamera.lastMouseX = mx;
+            m_planetCamera.lastMouseY = my;
+        }
+
+        if (!rightDown)
+            m_planetCamera.panning = false;
+
+        const double dx = mx - m_planetCamera.lastMouseX;
+        const double dy = my - m_planetCamera.lastMouseY;
+
+        if (m_planetCamera.rotating)
+        {
+            m_planetCamera.yaw += dx * 0.008;
+            m_planetCamera.pitch += dy * 0.008;
+
+            m_planetCamera.pitch =
+                std::clamp(
+                    m_planetCamera.pitch,
+                    -1.45,
+                    1.45
+                );
+        }
+
+        if (m_planetCamera.panning)
+        {
+            m_planetCamera.pan.x += dx;
+            m_planetCamera.pan.y += dy;
+        }
+
+        if (std::abs(wheel) > 0.001)
+        {
+            m_planetCamera.zoom *=
+                std::pow(1.12, wheel);
+
+            m_planetCamera.zoom =
+                std::clamp(
+                    m_planetCamera.zoom,
+                    0.15,
+                    12.0
+                );
+        }
+
+        m_planetCamera.lastMouseX = mx;
+        m_planetCamera.lastMouseY = my;
+
+        return;
+    }
+
+
+    // =========================================================
     // GALAXY MODE INPUT
     // =========================================================
 
@@ -938,7 +1069,7 @@ void SystemMapRenderer::handleInput(
             if (move < 2.0)
             {
                 const int picked =
-                    pickGalaxySystem(vp, galaxy, mx, my);
+                    pickGalaxySystem(vp, galaxy, localMx, localMy);
 
                 if (picked >= 0)
                 {
@@ -1592,6 +1723,8 @@ void SystemMapRenderer::renderSystem(
 {
     const auto& bodies = system.bodies;
 
+    m_lastSystemBodyScreenPoints.clear();
+
     if (bodies.empty())
         return;
 
@@ -1812,6 +1945,24 @@ for (const auto& b : bodies)
     for (const auto& b : bodies)
     {
         const glm::vec3 p = posById[b.id];
+
+
+        {
+            BodyScreenPoint bp;
+            bp.bodyId = b.id;
+            bp.name = b.name;
+            bp.screen = projectToScreen(
+                p,
+                mvp,
+                vp,
+                bp.visible,
+                bp.depth
+            );
+
+            m_lastSystemBodyScreenPoints.push_back(bp);
+        }
+
+
         const glm::vec4 c = colorForBodyType(b.type);
         const float r = drawRadiusById[b.id];
 
@@ -1834,6 +1985,17 @@ for (const auto& b : bodies)
         }
 
         addBillboardBall(p, r, c, view, 32);
+
+        if (b.id == m_selectedBodyId)
+        {
+            addCircleXZ(
+                p,
+                r * 1.8f,
+                glm::vec4(1.0f, 0.82f, 0.25f, 0.95f),
+                64
+            );
+        }
+
 
         for (const auto& ring : b.rings)
         {
@@ -1990,7 +2152,7 @@ void SystemMapRenderer::ensureBackground()
 
     if (!m_bgShader)
     {
-        std::cerr << "[SystemMapRenderer] missing shader: system_map_background\n";
+        
         return;
     }
 
@@ -2308,4 +2470,1051 @@ void SystemMapRenderer::drawSystemObjectLabels(
     }
 
     text.endFrame();
-}   
+} 
+
+
+
+
+glm::dvec2 SystemMapRenderer::planetMapProject(
+    const glm::dvec3& worldMeters,
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx
+) const
+{
+    glm::dvec3 p =
+        worldMeters - planet.planetCenterMeters;
+
+    const double cy = std::cos(m_planetCamera.yaw);
+    const double sy = std::sin(m_planetCamera.yaw);
+    const double cp = std::cos(m_planetCamera.pitch);
+    const double sp = std::sin(m_planetCamera.pitch);
+
+    // yaw вокруг Y
+    glm::dvec3 a;
+    a.x = p.x * cy - p.z * sy;
+    a.y = p.y;
+    a.z = p.x * sy + p.z * cy;
+
+    // pitch вокруг X
+    glm::dvec3 b;
+    b.x = a.x;
+    b.y = a.y * cp - a.z * sp;
+    b.z = a.y * sp + a.z * cp;
+
+    const double finalScale =
+        scale * m_planetCamera.zoom;
+
+    return glm::dvec2(
+        centerPx.x + m_planetCamera.pan.x + b.x * finalScale,
+        centerPx.y + m_planetCamera.pan.y - b.y * finalScale
+    );
+}
+
+
+
+
+
+void SystemMapRenderer::drawPlanetMapLine(
+    const glm::dvec2& a,
+    const glm::dvec2& b
+)
+{
+    glBegin(GL_LINES);
+    glVertex2d(a.x, a.y);
+    glVertex2d(b.x, b.y);
+    glEnd();
+}
+
+
+void SystemMapRenderer::drawPlanetMapCross(
+    const glm::dvec2& p,
+    float size
+)
+{
+    glBegin(GL_LINES);
+    glVertex2d(p.x - size, p.y);
+    glVertex2d(p.x + size, p.y);
+    glVertex2d(p.x, p.y - size);
+    glVertex2d(p.x, p.y + size);
+    glEnd();
+}
+
+
+void SystemMapRenderer::drawPlanetMapCircle(
+    const glm::dvec2& center,
+    double radiusPx,
+    int segments
+)
+{
+    if (segments < 8)
+        segments = 8;
+
+    glBegin(GL_LINE_LOOP);
+
+    for (int i = 0; i < segments; ++i)
+    {
+        const double a =
+            glm::two_pi<double>() *
+            static_cast<double>(i) /
+            static_cast<double>(segments);
+
+        glVertex2d(
+            center.x + std::cos(a) * radiusPx,
+            center.y + std::sin(a) * radiusPx
+        );
+    }
+
+    glEnd();
+}
+
+
+void SystemMapRenderer::drawPlanetMapAxes(
+    const glm::dvec3& originMeters,
+    const world::celestial::PlanetMapAxisSet& axes,
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx,
+    double axisLenMeters
+)
+{
+    const glm::dvec2 o =
+        planetMapProject(
+            originMeters,
+            planet,
+            scale,
+            centerPx
+        );
+
+    const glm::dvec2 x =
+        planetMapProject(
+            originMeters + axes.x * axisLenMeters,
+            planet,
+            scale,
+            centerPx
+        );
+
+    const glm::dvec2 y =
+        planetMapProject(
+            originMeters + axes.y * axisLenMeters,
+            planet,
+            scale,
+            centerPx
+        );
+
+    const glm::dvec2 z =
+        planetMapProject(
+            originMeters + axes.z * axisLenMeters,
+            planet,
+            scale,
+            centerPx
+        );
+
+    glColor4f(1.0f, 0.25f, 0.25f, 0.9f);
+    drawPlanetMapLine(o, x);
+
+    glColor4f(0.25f, 1.0f, 0.25f, 0.9f);
+    drawPlanetMapLine(o, y);
+
+    glColor4f(0.25f, 0.55f, 1.0f, 0.9f);
+    drawPlanetMapLine(o, z);
+}
+
+
+void SystemMapRenderer::drawPlanetMapVelocityArrow(
+    const glm::dvec3& originMeters,
+    const glm::dvec3& velocityMps,
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx,
+    double lenMeters
+)
+{
+    const double speed =
+        glm::length(velocityMps);
+
+    if (speed < 0.001)
+        return;
+
+    const glm::dvec3 dir =
+        velocityMps / speed;
+
+    const glm::dvec2 a =
+        planetMapProject(
+            originMeters,
+            planet,
+            scale,
+            centerPx
+        );
+
+    const glm::dvec2 b =
+        planetMapProject(
+            originMeters + dir * lenMeters,
+            planet,
+            scale,
+            centerPx
+        );
+
+    glColor4f(1.0f, 0.92f, 0.25f, 0.95f);
+    drawPlanetMapLine(a, b);
+
+    drawPlanetMapCross(
+        b,
+        4.0f
+    );
+}
+
+
+void SystemMapRenderer::renderPlanetMap(
+    const Viewport& viewport,
+    const world::celestial::PlanetMapSnapshot& planet
+)
+{
+    glViewport(
+        viewport.x,
+        viewport.y,
+        viewport.width,
+        viewport.height
+    );
+
+    glScissor(
+        viewport.x,
+        viewport.y,
+        viewport.width,
+        viewport.height
+    );
+
+    glDisable(GL_DEPTH_TEST);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    glOrtho(
+        0.0,
+        viewport.width,
+        viewport.height,
+        0.0,
+        -1.0,
+        1.0
+    );
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glColor4f(0.02f, 0.025f, 0.035f, 1.0f);
+
+    glBegin(GL_QUADS);
+    glVertex2f(0.0f, 0.0f);
+    glVertex2f(static_cast<float>(viewport.width), 0.0f);
+    glVertex2f(static_cast<float>(viewport.width), static_cast<float>(viewport.height));
+    glVertex2f(0.0f, static_cast<float>(viewport.height));
+    glEnd();
+
+    if (!planet.valid)
+        return;
+
+    const glm::dvec2 centerPx(
+        static_cast<double>(viewport.width) * 0.5,
+        static_cast<double>(viewport.height) * 0.5
+    );
+
+    double maxRadiusMeters =
+        planet.planetRadiusMeters;
+
+    for (const auto& o : planet.hubOrbits)
+    {
+        if (o.valid)
+            maxRadiusMeters = std::max(maxRadiusMeters, o.radiusMeters);
+    }
+
+    for (const auto& o : planet.playerOrbits)
+    {
+        if (o.valid)
+            maxRadiusMeters = std::max(maxRadiusMeters, o.radiusMeters);
+    }
+
+    const double mapHalfPx =
+        std::min(
+            viewport.width,
+            viewport.height
+        ) * 0.42;
+
+    const double scale =
+        mapHalfPx / std::max(1.0, maxRadiusMeters);
+
+    // Сначала тело планеты, потом сетка поверх.
+    drawPlanetFilledDisk(
+        planet,
+        scale,
+        centerPx
+    );
+
+    drawPlanetSphereGrid(
+        planet,
+        scale,
+        centerPx
+    );
+
+    // Орбиты хабов.
+    glColor4f(0.45f, 0.78f, 1.0f, 0.75f);
+
+    for (const auto& orbit : planet.hubOrbits)
+    {
+        if (!orbit.valid)
+            continue;
+
+        drawPlanetMapOrbit3D(
+            orbit,
+            planet,
+            scale,
+            centerPx,
+            192
+        );
+    }
+
+    // Орбита игрока.
+    glColor4f(1.0f, 0.75f, 0.25f, 0.9f);
+
+    for (const auto& orbit : planet.playerOrbits)
+    {
+        if (!orbit.valid)
+            continue;
+
+        drawPlanetMapOrbit3D(
+            orbit,
+            planet,
+            scale,
+            centerPx,
+            192
+        );
+    }
+
+    const double axisLenMeters =
+        std::max(
+            50000.0,
+            maxRadiusMeters * 0.035
+        );
+
+    const double velocityArrowLenMeters =
+        std::max(
+            70000.0,
+            maxRadiusMeters * 0.05
+        );
+
+    // Хабы.
+    for (const auto& hub : planet.hubs)
+    {
+        if (!hub.valid)
+            continue;
+
+        const glm::dvec2 p =
+            planetMapProject(
+                hub.positionMeters,
+                planet,
+                scale,
+                centerPx
+            );
+
+        glColor4f(0.3f, 0.9f, 1.0f, 1.0f);
+        drawPlanetMapCross(p, 7.0f);
+
+        drawPlanetMapAxes(
+            hub.positionMeters,
+            hub.axes,
+            planet,
+            scale,
+            centerPx,
+            axisLenMeters
+        );
+
+        drawPlanetMapVelocityArrow(
+            hub.positionMeters,
+            hub.velocityMps,
+            planet,
+            scale,
+            centerPx,
+            velocityArrowLenMeters
+        );
+    }
+
+    // Станции.
+    for (const auto& station : planet.stations)
+    {
+        if (!station.valid)
+            continue;
+
+        const glm::dvec2 p =
+            planetMapProject(
+                station.positionMeters,
+                planet,
+                scale,
+                centerPx
+            );
+
+        glColor4f(0.8f, 0.95f, 1.0f, 1.0f);
+        drawPlanetMapCross(p, 6.0f);
+
+        drawPlanetMapAxes(
+            station.positionMeters,
+            station.axes,
+            planet,
+            scale,
+            centerPx,
+            axisLenMeters
+        );
+
+        drawPlanetMapVelocityArrow(
+            station.positionMeters,
+            station.velocityMps,
+            planet,
+            scale,
+            centerPx,
+            velocityArrowLenMeters * 0.8
+        );
+    }
+
+    // Корабли.
+    for (const auto& ship : planet.ships)
+    {
+        if (!ship.valid)
+            continue;
+
+        const glm::dvec2 p =
+            planetMapProject(
+                ship.positionMeters,
+                planet,
+                scale,
+                centerPx
+            );
+
+        glColor4f(1.0f, 0.85f, 0.25f, 1.0f);
+        drawPlanetMapCross(p, 8.0f);
+
+        drawPlanetMapAxes(
+            ship.positionMeters,
+            ship.axes,
+            planet,
+            scale,
+            centerPx,
+            axisLenMeters
+        );
+
+        drawPlanetMapVelocityArrow(
+            ship.positionMeters,
+            ship.velocityMps,
+            planet,
+            scale,
+            centerPx,
+            velocityArrowLenMeters
+        );
+    }
+
+    glEnable(GL_DEPTH_TEST);
+}
+
+
+
+const std::string& SystemMapRenderer::selectedBodyId() const
+{
+    return m_selectedBodyId;
+}
+
+
+
+int SystemMapRenderer::pickSystemBody(
+    double mouseX,
+    double mouseY
+) const
+{
+    int bestIndex = -1;
+    float bestDist = 999999.0f;
+
+    for (int i = 0; i < static_cast<int>(m_lastSystemBodyScreenPoints.size()); ++i)
+    {
+        const auto& p = m_lastSystemBodyScreenPoints[i];
+
+        if (!p.visible)
+            continue;
+
+        const float dx = p.screen.x - static_cast<float>(mouseX);
+        const float dy = p.screen.y - static_cast<float>(mouseY);
+        const float d = std::sqrt(dx * dx + dy * dy);
+
+        if (d < 16.0f && d < bestDist)
+        {
+            bestDist = d;
+            bestIndex = i;
+        }
+    }
+
+    return bestIndex;
+}
+
+
+
+void SystemMapRenderer::drawPlanetSphereGrid(
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx
+)
+{
+    const double r =
+        planet.planetRadiusMeters;
+
+    if (r <= 1.0)
+        return;
+
+    glColor4f(0.18f, 0.42f, 0.85f, 0.75f);
+
+    // Широты
+    for (int latDeg = -60; latDeg <= 60; latDeg += 30)
+    {
+        const double lat =
+            glm::radians(static_cast<double>(latDeg));
+
+        const double y =
+            std::sin(lat) * r;
+
+        const double rr =
+            std::cos(lat) * r;
+
+        glBegin(GL_LINE_LOOP);
+
+        for (int i = 0; i < 144; ++i)
+        {
+            const double a =
+                glm::two_pi<double>() *
+                static_cast<double>(i) / 144.0;
+
+            const glm::dvec3 p =
+                planet.planetCenterMeters +
+                glm::dvec3(
+                    std::cos(a) * rr,
+                    y,
+                    std::sin(a) * rr
+                );
+
+            const glm::dvec2 s =
+                planetMapProject(
+                    p,
+                    planet,
+                    scale,
+                    centerPx
+                );
+
+            glVertex2d(s.x, s.y);
+        }
+
+        glEnd();
+    }
+
+    // Долготы
+    for (int lonDeg = 0; lonDeg < 180; lonDeg += 30)
+    {
+        const double lon =
+            glm::radians(static_cast<double>(lonDeg));
+
+        glBegin(GL_LINE_LOOP);
+
+        for (int i = 0; i < 144; ++i)
+        {
+            const double a =
+                glm::two_pi<double>() *
+                static_cast<double>(i) / 144.0;
+
+            const glm::dvec3 p =
+                planet.planetCenterMeters +
+                glm::dvec3(
+                    std::cos(lon) * std::cos(a) * r,
+                    std::sin(a) * r,
+                    std::sin(lon) * std::cos(a) * r
+                );
+
+            const glm::dvec2 s =
+                planetMapProject(
+                    p,
+                    planet,
+                    scale,
+                    centerPx
+                );
+
+            glVertex2d(s.x, s.y);
+        }
+
+        glEnd();
+    }
+
+    // Ось вращения условно Y.
+    const glm::dvec2 north =
+        planetMapProject(
+            planet.planetCenterMeters +
+            glm::dvec3(0.0, r * 1.25, 0.0),
+            planet,
+            scale,
+            centerPx
+        );
+
+    const glm::dvec2 south =
+        planetMapProject(
+            planet.planetCenterMeters -
+            glm::dvec3(0.0, r * 1.25, 0.0),
+            planet,
+            scale,
+            centerPx
+        );
+
+    glColor4f(0.55f, 0.8f, 1.0f, 0.95f);
+    drawPlanetMapLine(south, north);
+
+    drawPlanetMapCross(north, 5.0f);
+    drawPlanetMapCross(south, 5.0f);
+}
+
+
+void SystemMapRenderer::drawPlanetFilledDisk(
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx
+)
+{
+    const double r =
+        planet.planetRadiusMeters *
+        scale *
+        m_planetCamera.zoom;
+
+    const glm::dvec2 c {
+        centerPx.x + m_planetCamera.pan.x,
+        centerPx.y + m_planetCamera.pan.y
+    };
+
+    glColor4f(0.035f, 0.09f, 0.18f, 0.92f);
+
+    glBegin(GL_TRIANGLE_FAN);
+
+    glVertex2d(c.x, c.y);
+
+    for (int i = 0; i <= 192; ++i)
+    {
+        const double a =
+            glm::two_pi<double>() *
+            static_cast<double>(i) /
+            192.0;
+
+        glVertex2d(
+            c.x + std::cos(a) * r,
+            c.y + std::sin(a) * r
+        );
+    }
+
+    glEnd();
+}
+
+
+void SystemMapRenderer::drawPlanetMapOrbit3D(
+    const world::celestial::PlanetMapOrbit& orbit,
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx,
+    int segments
+)
+{
+    if (!orbit.valid || orbit.radiusMeters <= 1.0)
+        return;
+
+    segments =
+        std::max(segments, 32);
+
+    glm::dvec3 radial =
+        orbit.radialAxis;
+
+    glm::dvec3 prograde =
+        orbit.progradeAxis;
+
+    glm::dvec3 normal =
+        orbit.normalAxis;
+
+    if (glm::length(radial) < 0.001)
+        radial = glm::dvec3(1.0, 0.0, 0.0);
+
+    if (glm::length(prograde) < 0.001)
+        prograde = glm::dvec3(0.0, 0.0, 1.0);
+
+    radial =
+        glm::normalize(radial);
+
+    prograde =
+        glm::normalize(
+            prograde -
+            radial * glm::dot(prograde, radial)
+        );
+
+    glBegin(GL_LINE_LOOP);
+
+    for (int i = 0; i < segments; ++i)
+    {
+        const double a =
+            glm::two_pi<double>() *
+            static_cast<double>(i) /
+            static_cast<double>(segments);
+
+        const glm::dvec3 p =
+            orbit.centerMeters +
+            radial * std::cos(a) * orbit.radiusMeters +
+            prograde * std::sin(a) * orbit.radiusMeters;
+
+        const glm::dvec2 s =
+            planetMapProject(
+                p,
+                planet,
+                scale,
+                centerPx
+            );
+
+        glVertex2d(s.x, s.y);
+    }
+
+    glEnd();
+}
+
+
+
+glm::dvec2 SystemMapRenderer::hubMapProject(
+    const glm::dvec3& localMeters,
+    double scale,
+    const glm::dvec2& centerPx
+) const
+{
+    glm::dvec3 p =
+        localMeters;
+
+    const double cy = std::cos(m_planetCamera.yaw);
+    const double sy = std::sin(m_planetCamera.yaw);
+    const double cp = std::cos(m_planetCamera.pitch);
+    const double sp = std::sin(m_planetCamera.pitch);
+
+    glm::dvec3 a;
+    a.x = p.x * cy - p.z * sy;
+    a.y = p.y;
+    a.z = p.x * sy + p.z * cy;
+
+    glm::dvec3 b;
+    b.x = a.x;
+    b.y = a.y * cp - a.z * sp;
+    b.z = a.y * sp + a.z * cp;
+
+    const double finalScale =
+        scale * m_planetCamera.zoom;
+
+    return glm::dvec2(
+        centerPx.x + m_planetCamera.pan.x + b.x * finalScale,
+        centerPx.y + m_planetCamera.pan.y - b.y * finalScale
+    );
+}
+
+
+
+
+void SystemMapRenderer::drawHubMapBox(
+    const glm::dvec3& center,
+    const world::celestial::PlanetMapAxisSet& axes,
+    const glm::dvec3& size,
+    double scale,
+    const glm::dvec2& centerPx
+)
+{
+    const glm::dvec3 hx = axes.x * (size.x * 0.5);
+    const glm::dvec3 hy = axes.y * (size.y * 0.5);
+    const glm::dvec3 hz = axes.z * (size.z * 0.5);
+
+    glm::dvec3 p[8];
+
+    p[0] = center - hx - hy - hz;
+    p[1] = center + hx - hy - hz;
+    p[2] = center + hx + hy - hz;
+    p[3] = center - hx + hy - hz;
+
+    p[4] = center - hx - hy + hz;
+    p[5] = center + hx - hy + hz;
+    p[6] = center + hx + hy + hz;
+    p[7] = center - hx + hy + hz;
+
+    auto line =
+        [&](int a, int b)
+        {
+            const glm::dvec2 sa =
+                hubMapProject(p[a], scale, centerPx);
+
+            const glm::dvec2 sb =
+                hubMapProject(p[b], scale, centerPx);
+
+            drawPlanetMapLine(sa, sb);
+        };
+
+    line(0, 1);
+    line(1, 2);
+    line(2, 3);
+    line(3, 0);
+
+    line(4, 5);
+    line(5, 6);
+    line(6, 7);
+    line(7, 4);
+
+    line(0, 4);
+    line(1, 5);
+    line(2, 6);
+    line(3, 7);
+}
+
+
+
+void SystemMapRenderer::drawHubMapAxes(
+    const glm::dvec3& center,
+    const world::celestial::PlanetMapAxisSet& axes,
+    double axisLenMeters,
+    double scale,
+    const glm::dvec2& centerPx
+)
+{
+    const glm::dvec2 o =
+        hubMapProject(center, scale, centerPx);
+
+    glColor4f(1.0f, 0.2f, 0.2f, 0.95f);
+    drawPlanetMapLine(
+        o,
+        hubMapProject(center + axes.x * axisLenMeters, scale, centerPx)
+    );
+
+    glColor4f(0.2f, 1.0f, 0.2f, 0.95f);
+    drawPlanetMapLine(
+        o,
+        hubMapProject(center + axes.y * axisLenMeters, scale, centerPx)
+    );
+
+    glColor4f(0.25f, 0.55f, 1.0f, 0.95f);
+    drawPlanetMapLine(
+        o,
+        hubMapProject(center + axes.z * axisLenMeters, scale, centerPx)
+    );
+}
+
+
+
+void SystemMapRenderer::drawHubMapVelocityArrow(
+    const glm::dvec3& center,
+    const glm::dvec3& velocity,
+    double lenMeters,
+    double scale,
+    const glm::dvec2& centerPx
+)
+{
+    const double speed =
+        glm::length(velocity);
+
+    if (speed < 0.001)
+        return;
+
+    const glm::dvec3 dir =
+        velocity / speed;
+
+    glColor4f(1.0f, 0.9f, 0.25f, 0.95f);
+
+    drawPlanetMapLine(
+        hubMapProject(center, scale, centerPx),
+        hubMapProject(center + dir * lenMeters, scale, centerPx)
+    );
+}
+
+
+
+void SystemMapRenderer::renderHubMap(
+    const Viewport& viewport,
+    const world::celestial::HubMapSnapshot& hub
+)
+{
+   
+
+    glViewport(
+        viewport.x,
+        viewport.y,
+        viewport.width,
+        viewport.height
+    );
+
+    glScissor(
+        viewport.x,
+        viewport.y,
+        viewport.width,
+        viewport.height
+    );
+
+    glDisable(GL_DEPTH_TEST);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    glOrtho(
+        0.0,
+        viewport.width,
+        viewport.height,
+        0.0,
+        -1.0,
+        1.0
+    );
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glColor4f(0.015f, 0.020f, 0.030f, 1.0f);
+
+    glBegin(GL_QUADS);
+    glVertex2f(0.0f, 0.0f);
+    glVertex2f(static_cast<float>(viewport.width), 0.0f);
+    glVertex2f(static_cast<float>(viewport.width), static_cast<float>(viewport.height));
+    glVertex2f(0.0f, static_cast<float>(viewport.height));
+    glEnd();
+
+    if (!hub.valid)
+        return;
+
+    const glm::dvec2 centerPx(
+        static_cast<double>(viewport.width) * 0.5,
+        static_cast<double>(viewport.height) * 0.5
+    );
+
+    double maxDist =
+        1000.0;
+
+    for (const auto& m : hub.modules)
+    {
+        if (m.valid)
+        {
+            maxDist =
+                std::max(
+                    maxDist,
+                    glm::length(m.localPositionMeters) +
+                    glm::length(m.sizeMeters)
+                );
+        }
+    }
+
+    for (const auto& s : hub.ships)
+    {
+        if (s.valid)
+        {
+            maxDist =
+                std::max(
+                    maxDist,
+                    glm::length(s.localPositionMeters) + 500.0
+                );
+        }
+    }
+
+    const double halfPx =
+        std::min(
+            viewport.width,
+            viewport.height
+        ) * 0.40;
+
+    const double scale =
+        halfPx / std::max(1.0, maxDist);
+
+    // Grid вокруг хаба.
+    glColor4f(0.12f, 0.28f, 0.38f, 0.35f);
+
+    const double gridStep =
+        1000.0;
+
+    const int gridN =
+        12;
+
+    for (int i = -gridN; i <= gridN; ++i)
+    {
+        const double v =
+            static_cast<double>(i) * gridStep;
+
+        drawPlanetMapLine(
+            hubMapProject(glm::dvec3(-gridN * gridStep, 0.0, v), scale, centerPx),
+            hubMapProject(glm::dvec3( gridN * gridStep, 0.0, v), scale, centerPx)
+        );
+
+        drawPlanetMapLine(
+            hubMapProject(glm::dvec3(v, 0.0, -gridN * gridStep), scale, centerPx),
+            hubMapProject(glm::dvec3(v, 0.0,  gridN * gridStep), scale, centerPx)
+        );
+    }
+
+    // Оси хаба.
+    drawHubMapAxes(
+        glm::dvec3(0.0),
+        hub.hubAxes,
+        1200.0,
+        scale,
+        centerPx
+    );
+
+    // Модули.
+    for (const auto& mod : hub.modules)
+    {
+        if (!mod.valid)
+            continue;
+
+        if (mod.prime || mod.kind == "station")
+            glColor4f(0.65f, 0.92f, 1.0f, 0.95f);
+        else
+            glColor4f(0.45f, 0.65f, 0.85f, 0.75f);
+
+        drawHubMapBox(
+            mod.localPositionMeters,
+            mod.localAxes,
+            mod.sizeMeters,
+            scale,
+            centerPx
+        );
+
+        drawHubMapAxes(
+            mod.localPositionMeters,
+            mod.localAxes,
+            350.0,
+            scale,
+            centerPx
+        );
+    }
+
+    // Игрок / корабли.
+    for (const auto& ship : hub.ships)
+    {
+        if (!ship.valid)
+            continue;
+
+        glColor4f(1.0f, 0.78f, 0.25f, 1.0f);
+
+        drawHubMapBox(
+            ship.localPositionMeters,
+            ship.localAxes,
+            glm::dvec3(90.0, 35.0, 160.0),
+            scale,
+            centerPx
+        );
+
+        drawHubMapAxes(
+            ship.localPositionMeters,
+            ship.localAxes,
+            450.0,
+            scale,
+            centerPx
+        );
+
+        drawHubMapVelocityArrow(
+            ship.localPositionMeters,
+            ship.localVelocityMps,
+            800.0,
+            scale,
+            centerPx
+        );
+    }
+
+    glEnable(GL_DEPTH_TEST);
+}
+
+

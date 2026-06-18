@@ -182,6 +182,13 @@ public:
         const std::string& hubId
     ) const;
 
+
+    const std::unordered_map<std::string, world::hubs::OrbitalHubRuntime>&
+    orbitalHubs() const
+    {
+        return m_orbitalHubs;
+    }
+
     void rebuildHubNavigationFrames(double dt);
     void prepareReferenceFramesForSpawn();
 

@@ -101,7 +101,47 @@ namespace {
 }
 
 
+namespace
+{
+    world::celestial::PlanetMapAxisSet axesToHubLocal(
+        const glm::mat4& worldOrientation,
+        const game::navigation::HubNavigationFrame& frame
+    )
+    {
+        world::celestial::PlanetMapAxisSet axes;
 
+        auto convert =
+            [&](const glm::dvec3& worldAxis)
+            {
+                return glm::dvec3(
+                    glm::dot(worldAxis, frame.progradeAxis),
+                    glm::dot(worldAxis, frame.radialAxis),
+                    glm::dot(worldAxis, frame.normalAxis)
+                );
+            };
+
+        axes.x = convert(glm::dvec3(worldOrientation[0]));
+        axes.y = convert(glm::dvec3(worldOrientation[1]));
+        axes.z = convert(glm::dvec3(worldOrientation[2]));
+
+        return axes;
+    }
+
+    glm::dvec3 velocityToHubLocal(
+        const glm::dvec3& worldVelocity,
+        const game::navigation::HubNavigationFrame& frame
+    )
+    {
+        const glm::dvec3 relative =
+            worldVelocity - frame.velocityMetersPerSecond;
+
+        return glm::dvec3(
+            glm::dot(relative, frame.progradeAxis),
+            glm::dot(relative, frame.radialAxis),
+            glm::dot(relative, frame.normalAxis)
+        );
+    }
+}
 
 
 
@@ -710,6 +750,59 @@ world::celestial::GalaxyMapSnapshot GameServer::buildGalaxyMapSnapshot() const
 
 
 
+
+
+
+namespace
+{
+    glm::dvec3 safeNormalizePlanetMap(
+        const glm::dvec3& v,
+        const glm::dvec3& fallback
+    )
+    {
+        const double len2 =
+            glm::dot(v, v);
+
+        if (len2 < 1e-12)
+            return fallback;
+
+        return v / std::sqrt(len2);
+    }
+
+    world::celestial::PlanetMapAxisSet planetMapAxesFromOrientation(
+        const glm::mat4& m
+    )
+    {
+        world::celestial::PlanetMapAxisSet axes;
+
+        axes.x = glm::dvec3(m[0]);
+        axes.y = glm::dvec3(m[1]);
+        axes.z = glm::dvec3(m[2]);
+
+        return axes;
+    }
+
+    double planetMapMuForBodyId(
+        const std::string& bodyId
+    )
+    {
+        if (bodyId == "system_0.Sol.Земля")
+            return 3.986004418e14;
+
+        return 0.0;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
 world::celestial::SystemMapSnapshot
 GameServer::buildSystemMapSnapshot(
     int systemId
@@ -739,123 +832,550 @@ GameServer::buildSystemMapSnapshot(
 
 
     
-world::celestial::CelestialSystemRuntime runtime;
+    world::celestial::CelestialSystemRuntime runtime;
 
-runtime.setSystem(system);
-runtime.update(out.universeTimeSeconds);
+    runtime.setSystem(system);
+    runtime.update(out.universeTimeSeconds);
 
-const auto& runtimeSnapshot =
-    runtime.snapshot();
+    const auto& runtimeSnapshot =
+        runtime.snapshot();
 
-std::unordered_map<std::string, glm::dvec3> runtimePositionById;
+    std::unordered_map<std::string, glm::dvec3> runtimePositionById;
 
-for (const auto& state : runtimeSnapshot.bodies)
-{
-    runtimePositionById[state.id] = state.positionAu;
-}
-
-
-
-for (const auto& body : system->bodies)
-{
-    world::celestial::SystemMapBody item;
-
-    item.id = body.id;
-    item.name = body.name;
-    item.alternativeNames = body.alternativeNames;
-
-    item.parentId = body.parentId;
-    item.type = body.type;
-    item.radiusKm = body.radiusKm;
-
-    auto stateIt =
-        runtimePositionById.find(body.id);
-
-    if (stateIt != runtimePositionById.end())
-        item.positionAu = stateIt->second;
-    else
-        item.positionAu = body.staticPositionAu;
-
-    if (!body.parentId.empty())
+    for (const auto& state : runtimeSnapshot.bodies)
     {
-        auto parentIt =
-            runtimePositionById.find(body.parentId);
+        runtimePositionById[state.id] = state.positionAu;
+    }
 
-        if (parentIt != runtimePositionById.end())
-            item.orbitCenterAu = parentIt->second;
+
+
+    for (const auto& body : system->bodies)
+    {
+        world::celestial::SystemMapBody item;
+
+        item.id = body.id;
+        item.name = body.name;
+        item.alternativeNames = body.alternativeNames;
+
+        item.parentId = body.parentId;
+        item.type = body.type;
+        item.radiusKm = body.radiusKm;
+
+        auto stateIt =
+            runtimePositionById.find(body.id);
+
+        if (stateIt != runtimePositionById.end())
+            item.positionAu = stateIt->second;
         else
+            item.positionAu = body.staticPositionAu;
+
+        if (!body.parentId.empty())
+        {
+            auto parentIt =
+                runtimePositionById.find(body.parentId);
+
+            if (parentIt != runtimePositionById.end())
+                item.orbitCenterAu = parentIt->second;
+            else
+                item.orbitCenterAu = glm::dvec3(0.0);
+        }
+        else
+        {
             item.orbitCenterAu = glm::dvec3(0.0);
+        }
+
+        item.orbitRadiusAu = body.distanceAu;
+        item.drawOrbit = body.distanceAu > 0.0;
+
+        for (const auto& ring : body.rings)
+        {
+            world::celestial::SystemMapRing r;
+
+            r.name = ring.name;
+            r.innerRadiusKm = ring.innerRadiusKm;
+            r.outerRadiusKm = ring.outerRadiusKm;
+            r.composition = ring.composition;
+
+            item.rings.push_back(std::move(r));
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+        out.bodies.push_back(std::move(item));
     }
-    else
+
+
+
+
+
+    for (const auto& [id, obj] : m_simulation.staticObjects())
     {
-        item.orbitCenterAu = glm::dvec3(0.0);
+        if (obj.mapSystemId != systemId)
+            continue;
+
+        world::celestial::SystemMapObject mapObj;
+
+        mapObj.id = id;
+        mapObj.name = obj.displayName;
+        mapObj.owner = obj.ownerName;
+        mapObj.systemId = obj.mapSystemId;
+        mapObj.parentBodyId = obj.mapParentBodyId;
+
+        if (obj.type == ObjectType::Station)
+            mapObj.kind = world::celestial::SystemMapObjectKind::Station;
+        else
+            mapObj.kind = world::celestial::SystemMapObjectKind::Unknown;
+
+        const glm::dvec3 meters =
+            world::coordinates::fullMeters(obj.worldPosition);
+
+        mapObj.positionAu =
+            meters / world::celestial::MetersPerAu;
+
+
+
+
+        out.objects.push_back(std::move(mapObj));
     }
-
-    item.orbitRadiusAu = body.distanceAu;
-    item.drawOrbit = body.distanceAu > 0.0;
-
-    for (const auto& ring : body.rings)
-    {
-        world::celestial::SystemMapRing r;
-
-        r.name = ring.name;
-        r.innerRadiusKm = ring.innerRadiusKm;
-        r.outerRadiusKm = ring.outerRadiusKm;
-        r.composition = ring.composition;
-
-        item.rings.push_back(std::move(r));
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-    out.bodies.push_back(std::move(item));
-}
-
-
-
-
-
-for (const auto& [id, obj] : m_simulation.staticObjects())
-{
-    if (obj.mapSystemId != systemId)
-        continue;
-
-    world::celestial::SystemMapObject mapObj;
-
-    mapObj.id = id;
-    mapObj.name = obj.displayName;
-    mapObj.owner = obj.ownerName;
-    mapObj.systemId = obj.mapSystemId;
-    mapObj.parentBodyId = obj.mapParentBodyId;
-
-    if (obj.type == ObjectType::Station)
-        mapObj.kind = world::celestial::SystemMapObjectKind::Station;
-    else
-        mapObj.kind = world::celestial::SystemMapObjectKind::Unknown;
-
-    const glm::dvec3 meters =
-        world::coordinates::fullMeters(obj.worldPosition);
-
-    mapObj.positionAu =
-        meters / world::celestial::MetersPerAu;
-
-
-
-
-    out.objects.push_back(std::move(mapObj));
-}
 
     return out;
 }
+
+
+
+
+
+
+
+
+world::celestial::PlanetMapSnapshot
+GameServer::buildPlanetMapSnapshot(
+    int systemId,
+    const std::string& planetBodyId
+) const
+{
+    using namespace world::celestial;
+
+    PlanetMapSnapshot out;
+
+    out.systemId =
+        systemId;
+
+    out.planetBodyId =
+        planetBodyId;
+
+    out.universeTimeSeconds =
+        m_universeClock.timeSeconds();
+
+    const auto* system =
+        m_starAtlas.findSystem(systemId);
+
+    if (!system)
+        return out;
+
+    const auto& celestial =
+        m_celestialRuntime.snapshot();
+
+    bool foundPlanet = false;
+
+    for (const auto& body : celestial.bodies)
+    {
+        if (body.id != planetBodyId)
+            continue;
+
+        out.planetName =
+            body.name;
+
+        out.planetCenterMeters =
+            body.positionAu *
+            world::celestial::MetersPerAu;
+
+        out.planetRadiusMeters =
+            body.radiusKm * 1000.0;
+
+        out.gravitationalParameterM3s2 =
+            planetMapMuForBodyId(
+                body.id
+            );
+
+        foundPlanet = true;
+        break;
+    }
+
+    if (!foundPlanet)
+        return out;
+
+    // -----------------------------
+    // Hubs + hub rail orbits
+    // -----------------------------
+    for (const auto& [hubId, hub] : m_simulation.orbitalHubs())
+    {
+        if (hub.parentBodyId != planetBodyId)
+            continue;
+
+        const auto* frame =
+            m_simulation.hubNavigationFrame(hubId);
+
+        if (!frame || !frame->valid)
+            continue;
+
+        PlanetMapObject hubObj;
+
+        hubObj.stableId =
+            hubId;
+
+        hubObj.name =
+            hub.id;
+
+        hubObj.kind =
+            "hub";
+
+        hubObj.positionMeters =
+            frame->originMeters;
+
+        hubObj.velocityMps =
+            frame->velocityMetersPerSecond;
+
+        hubObj.axes.x =
+            frame->normalAxis;
+
+        hubObj.axes.y =
+            frame->radialAxis;
+
+        hubObj.axes.z =
+            -frame->progradeAxis;
+
+        hubObj.valid =
+            true;
+
+        out.hubs.push_back(
+            hubObj
+        );
+
+        PlanetMapOrbit orbit;
+
+        orbit.id =
+            hubId + "_rail_orbit";
+
+        orbit.name =
+            hub.id + " rail orbit";
+
+        orbit.parentBodyId =
+            planetBodyId;
+
+        orbit.centerMeters =
+            out.planetCenterMeters;
+
+        orbit.positionMeters =
+            frame->originMeters;
+
+        orbit.velocityMps =
+            frame->velocityMetersPerSecond;
+
+        const glm::dvec3 fromPlanet =
+            orbit.positionMeters -
+            out.planetCenterMeters;
+
+        orbit.radiusMeters =
+            glm::length(fromPlanet);
+
+        orbit.altitudeMeters =
+            orbit.radiusMeters -
+            out.planetRadiusMeters;
+
+        orbit.speedMps =
+            glm::length(orbit.velocityMps);
+
+        orbit.radialAxis =
+            frame->radialAxis;
+
+        orbit.progradeAxis =
+            frame->progradeAxis;
+
+        orbit.normalAxis =
+            frame->normalAxis;
+
+        orbit.valid =
+            true;
+
+        out.hubOrbits.push_back(
+            orbit
+        );
+    }
+
+    // -----------------------------
+    // Static objects near this planet
+    // -----------------------------
+    for (const auto& [id, obj] : m_simulation.staticObjects())
+    {
+        if (obj.mapSystemId != systemId)
+            continue;
+
+        if (obj.mapParentBodyId != planetBodyId)
+            continue;
+
+        PlanetMapObject item;
+
+        item.id =
+            id;
+
+        item.stableId =
+            std::to_string(id.value);
+
+        item.name =
+            obj.displayName.empty()
+                ? "Object"
+                : obj.displayName;
+
+        if (obj.type == ObjectType::Station)
+            item.kind = "station";
+        else
+            item.kind = "static";
+
+        item.positionMeters =
+            world::coordinates::fullMeters(
+                obj.worldPosition
+            );
+
+        const auto* frame =
+            m_simulation.hubNavigationFrame(
+                obj.hubId
+            );
+
+        if (frame && frame->valid)
+        {
+            item.velocityMps =
+                frame->velocityMetersPerSecond;
+        }
+
+        item.axes =
+            planetMapAxesFromOrientation(
+                obj.orientation
+            );
+
+        item.valid =
+            true;
+
+        if (item.kind == "station")
+            out.stations.push_back(item);
+    }
+
+    // -----------------------------
+    // Player ship
+    // -----------------------------
+    const Ship* player =
+        m_simulation.playerShip();
+
+    if (player)
+    {
+        const auto& tr =
+            player->core().transform();
+
+        const glm::dvec3 playerMeters =
+            world::coordinates::fullMeters(
+                tr.worldPosition
+            );
+
+        const glm::dvec3 fromPlanet =
+            playerMeters -
+            out.planetCenterMeters;
+
+        const double playerDistance =
+            glm::length(fromPlanet);
+
+        // Пока фильтр простой:
+        // если игрок внутри 100 000 км от планеты,
+        // считаем его релевантным для planet map.
+        const double planetMapRadiusMeters =
+            100000000.0;
+
+        if (playerDistance <= planetMapRadiusMeters)
+        {
+            PlanetMapObject shipObj;
+
+            shipObj.id =
+                m_simulation.playerId();
+
+            shipObj.stableId =
+                "player";
+
+            shipObj.name =
+                "Player";
+
+            shipObj.kind =
+                "player";
+
+            shipObj.positionMeters =
+                playerMeters;
+
+            shipObj.velocityMps =
+                tr.motion.worldVelocityMps;
+
+            shipObj.axes =
+                planetMapAxesFromOrientation(
+                    tr.orientation
+                );
+
+            shipObj.valid =
+                true;
+
+            out.ships.push_back(
+                shipObj
+            );
+
+            PlanetMapOrbit playerOrbit;
+
+            playerOrbit.id =
+                "player_physical_orbit";
+
+            playerOrbit.name =
+                "Player physical orbit";
+
+            playerOrbit.parentBodyId =
+                planetBodyId;
+
+            playerOrbit.centerMeters =
+                out.planetCenterMeters;
+
+            playerOrbit.positionMeters =
+                playerMeters;
+
+            playerOrbit.velocityMps =
+                tr.motion.worldVelocityMps;
+
+            playerOrbit.radiusMeters =
+                playerDistance;
+
+            playerOrbit.altitudeMeters =
+                playerDistance -
+                out.planetRadiusMeters;
+
+            playerOrbit.speedMps =
+                glm::length(
+                    tr.motion.worldVelocityMps
+                );
+
+            playerOrbit.radialAxis =
+                safeNormalizePlanetMap(
+                    fromPlanet,
+                    glm::dvec3(0.0, 1.0, 0.0)
+                );
+
+            const glm::dvec3 tangentialVelocity =
+                tr.motion.worldVelocityMps -
+                playerOrbit.radialAxis *
+                glm::dot(
+                    tr.motion.worldVelocityMps,
+                    playerOrbit.radialAxis
+                );
+
+            playerOrbit.progradeAxis =
+                safeNormalizePlanetMap(
+                    tangentialVelocity,
+                    glm::dvec3(1.0, 0.0, 0.0)
+                );
+
+            playerOrbit.normalAxis =
+                safeNormalizePlanetMap(
+                    glm::cross(
+                        playerOrbit.progradeAxis,
+                        playerOrbit.radialAxis
+                    ),
+                    glm::dvec3(0.0, 0.0, 1.0)
+                );
+
+            playerOrbit.valid =
+                true;
+
+            out.playerOrbits.push_back(
+                playerOrbit
+            );
+        }
+    }
+
+    out.valid = true;
+
+
+
+
+
+
+
+
+{
+    static int row = 0;
+
+    if (row < 300)
+    {
+        std::ofstream dbg(
+            "planet_map_snapshot_debug.csv",
+            row == 0 ? std::ios::out : std::ios::app
+        );
+
+        if (row == 0)
+        {
+            dbg
+                << "row,systemId,planetBodyId,valid,"
+                << "hubCount,stationCount,shipCount,"
+                << "hubOrbitCount,playerOrbitCount\n";
+        }
+
+        dbg
+            << row << ","
+            << out.systemId << ","
+            << out.planetBodyId << ","
+            << (out.valid ? 1 : 0) << ","
+            << out.hubs.size() << ","
+            << out.stations.size() << ","
+            << out.ships.size() << ","
+            << out.hubOrbits.size() << ","
+            << out.playerOrbits.size()
+            << "\n";
+
+        ++row;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+    return out;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -879,4 +1399,172 @@ bool GameServer::debugFastUniverseTime() const
 double GameServer::debugUniverseTimeScale() const
 {
     return m_universeClock.timeScale();
+}
+
+
+
+
+world::celestial::HubMapSnapshot
+GameServer::buildHubMapSnapshot(
+    int systemId,
+    const std::string& hubId
+) const
+{
+    using namespace world::celestial;
+
+    HubMapSnapshot out;
+
+    out.systemId = systemId;
+    out.hubId = hubId;
+    out.universeTimeSeconds = m_universeClock.timeSeconds();
+
+    auto hubIt =
+        m_simulation.orbitalHubs().find(hubId);
+
+    if (hubIt == m_simulation.orbitalHubs().end())
+        return out;
+
+    const auto& hub =
+        hubIt->second;
+
+    const auto* frame =
+        m_simulation.hubNavigationFrame(hubId);
+
+    if (!frame || !frame->valid)
+        return out;
+
+    out.parentBodyId =
+        hub.parentBodyId;
+
+    out.displayName =
+        hub.id;
+
+    out.hubWorldPositionMeters =
+        frame->originMeters;
+
+    out.hubWorldVelocityMps =
+        frame->velocityMetersPerSecond;
+
+    // Hub local convention:
+    // X = prograde
+    // Y = radial
+    // Z = normal
+    out.hubAxes.x = glm::dvec3(1.0, 0.0, 0.0);
+    out.hubAxes.y = glm::dvec3(0.0, 1.0, 0.0);
+    out.hubAxes.z = glm::dvec3(0.0, 0.0, 1.0);
+
+    // -----------------------------
+    // Modules / station objects
+    // -----------------------------
+    for (const auto& [id, obj] : m_simulation.staticObjects())
+    {
+        if (obj.hubId != hubId)
+            continue;
+
+        HubMapModule mod;
+
+        mod.id = id;
+        mod.stableId = std::to_string(id.value);
+
+        mod.name =
+            obj.displayName.empty()
+                ? "Hub module"
+                : obj.displayName;
+
+        mod.kind =
+            obj.type == ObjectType::Station
+                ? "station"
+                : "module";
+
+        const glm::dvec3 worldMeters =
+            world::coordinates::fullMeters(
+                obj.worldPosition
+            );
+
+        mod.localPositionMeters =
+            frame->worldToLocalPosition(
+                worldMeters
+            );
+
+        mod.localAxes =
+            axesToHubLocal(
+                obj.orientation,
+                *frame
+            );
+
+        // Первый вариант: prime/station рисуем длиннее.
+        if (obj.type == ObjectType::Station)
+        {
+            mod.sizeMeters =
+                glm::dvec3(450.0, 70.0, 70.0);
+        }
+        else
+        {
+            mod.sizeMeters =
+                glm::dvec3(120.0, 60.0, 60.0);
+        }
+
+        mod.prime =
+            !hub.modules.empty() &&
+            hub.modules.front().value == id.value;
+
+        mod.valid = true;
+
+        out.modules.push_back(
+            mod
+        );
+    }
+
+    // -----------------------------
+    // Player ship
+    // -----------------------------
+    const Ship* player =
+        m_simulation.playerShip();
+
+    if (player)
+    {
+        const auto& tr =
+            player->core().transform();
+
+        const glm::dvec3 playerWorld =
+            world::coordinates::fullMeters(
+                tr.worldPosition
+            );
+
+        HubMapShip ship;
+
+        ship.id =
+            m_simulation.playerId();
+
+        ship.name =
+            "Player";
+
+        ship.localPositionMeters =
+            frame->worldToLocalPosition(
+                playerWorld
+            );
+
+        ship.localVelocityMps =
+            velocityToHubLocal(
+                tr.motion.worldVelocityMps,
+                *frame
+            );
+
+        ship.localAxes =
+            axesToHubLocal(
+                tr.orientation,
+                *frame
+            );
+
+        ship.player = true;
+        ship.valid = true;
+
+        out.ships.push_back(
+            ship
+        );
+    }
+
+    out.valid = true;
+
+    return out;
 }

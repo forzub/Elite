@@ -1,0 +1,15 @@
+{
+  "preset_id": "desert_world",
+  "system_folder_name": "sol",
+  "body_folder_name": "mars",
+  "display_name": "Mars",
+  "source_system_id": "0",
+  "source_body_id": "system_0.Sol.Mars",
+  "surface_source_kind": "ImportedRealData",
+  "source_catalog_path": "src/assets/data/celestial/source_catalog/sol/mars.source.json",
+  "data_confidence": "authoritative",
+  "notes": "Mars should be imported from curated source assets rather than generated procedurally.",
+  "has_atmosphere": true,
+  "has_cloud_layer": true,
+  "has_emission": false
+}

@@ -126,6 +126,43 @@ private:
     };
 
     PlanetCamera m_planetCamera;
+    // Hub map orbit pivot.
+    // This is the local-space point that should remain visually fixed
+    // while the 3D hub map rotates.
+    glm::dvec3 m_hubMapOrbitPivotLocalMeters {0.0, 0.0, 0.0};
+
+    // Screen position where the orbit pivot was captured.
+    // Kept for future picking/debug; current compensation uses project-before/project-after.
+    glm::dvec2 m_hubMapOrbitPivotScreenPx {0.0, 0.0};
+
+    // Last rendered hub map scale.
+    // Input code needs this to convert mouse pixels back to hub-local meters.
+    double m_lastHubMapScale = 1.0;
+
+    glm::dvec2 m_lastHubMapCenterPx {0.0, 0.0};
+
+    struct HubMapPickable
+    {
+        glm::dvec3 localCenterMeters {0.0, 0.0, 0.0};
+        glm::dvec2 screenCenterPx {0.0, 0.0};
+
+        double screenRadiusPx = 16.0;
+
+        // Чем выше priority, тем охотнее выбираем объект.
+        // Например: player > ship > station module.
+        int priority = 0;
+
+        std::string label;
+    };
+
+    std::vector<HubMapPickable> m_lastHubMapPickables;
+
+    bool pickHubMapOrbitPivot(
+        const glm::dvec2& mousePx,
+        glm::dvec3& outPivotLocalMeters
+    ) const;
+
+    
 
     void drawPlanetSphereGrid(
         const world::celestial::PlanetMapSnapshot& planet,
@@ -150,6 +187,13 @@ private:
         const glm::dvec2& centerPx
     ) const;
 
+    glm::dvec3 hubMapUnprojectCursorToLocal(
+        const glm::dvec2& mousePx,
+        double scale,
+        const glm::dvec2& centerPx
+    ) const;
+
+
     void drawHubMapBox(
         const glm::dvec3& center,
         const world::celestial::PlanetMapAxisSet& axes,
@@ -173,6 +217,46 @@ private:
         double scale,
         const glm::dvec2& centerPx
     );
+
+    glm::dvec3 hubMapObjectLocalToHubLocal(
+        const glm::dvec3& objectCenter,
+        const world::celestial::PlanetMapAxisSet& objectAxes,
+        const glm::dvec3& localPoint
+    ) const;
+
+    bool drawHubMapAssemblyWire(
+        ObjectType typeId,
+        const glm::dvec3& objectCenter,
+        const world::celestial::PlanetMapAxisSet& objectAxes,
+        double scale,
+        const glm::dvec2& centerPx
+    );
+
+    void drawHubMapCircleLocalXY(
+        const glm::dvec3& center,
+        double radiusMeters,
+        double scale,
+        const glm::dvec2& centerPx,
+        int segments = 192
+    );
+
+    void drawHubMapPlanetSurfaceHint(
+        const world::celestial::HubMapSnapshot& hub,
+        double scale,
+        const glm::dvec2& centerPx
+    );
+
+    void drawHubMapAdaptiveGrid(
+        const Viewport& viewport,
+        double scale,
+        const glm::dvec2& centerPx,
+        double worldRadiusMeters
+    );
+
+    glm::dvec3 visualSizeForHubShip(
+        const world::celestial::HubMapShip& ship,
+        double scale
+    ) const;
     
 
 private:
@@ -395,6 +479,10 @@ private:
         const glm::dvec2& centerPx,
         int segments
     );
+
+
+    
+
 
 
 

@@ -298,6 +298,7 @@ sim.registerOrbitalHub(runtimeHub);
                     hub.id,
                     module.id,
                     module.offsetMeters,
+                    module.localRotationDeg,
                     true
                 );
             }

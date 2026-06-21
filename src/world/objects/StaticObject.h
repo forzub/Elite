@@ -29,8 +29,14 @@ struct StaticObject
     int mapSystemId = -1;
     std::string hubId;
     std::string hubModuleId;
+    
     bool attachedToHub = false;
     glm::dvec3 hubLocalOffsetMeters {0.0};
+
+    // Local placement rotation inside the hub.
+    // Degrees. Applied after hub orientation.
+    glm::dvec3 hubLocalRotationDeg {0.0};
+
     bool inheritHubOrientation = true;
 
 

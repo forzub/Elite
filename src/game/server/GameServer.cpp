@@ -10,7 +10,7 @@
 #include <unordered_map>
 
 #include "src/world/celestial/SystemMapTypes.h"
-
+#include "src/game/geometry/AssemblyMeshLibrary.h"
 
 
 
@@ -791,6 +791,35 @@ namespace
 
         return 0.0;
     }
+
+
+
+
+
+    glm::dvec3 assemblySizeMetersForType(
+        ObjectType typeId
+    )
+    {
+        using game::ship::geometry::AssemblyMeshLibrary;
+
+        if (typeId == ObjectType::None)
+            return glm::dvec3(1.0);
+
+        if (!AssemblyMeshLibrary::has(typeId))
+            return glm::dvec3(1.0);
+
+        const auto& assembly =
+            AssemblyMeshLibrary::get(typeId);
+
+        const glm::vec3 size =
+            assembly.maxBounds - assembly.minBounds;
+
+        return glm::dvec3(
+            std::max(1.0f, size.x),
+            std::max(1.0f, size.y),
+            std::max(1.0f, size.z)
+        );
+    }
 }
 
 
@@ -1453,6 +1482,33 @@ GameServer::buildHubMapSnapshot(
     out.hubAxes.y = glm::dvec3(0.0, 1.0, 0.0);
     out.hubAxes.z = glm::dvec3(0.0, 0.0, 1.0);
 
+
+    out.parentPlanetRadiusMeters =
+        hub.motion.parentRadiusMeters;
+
+    out.hubAltitudeMeters =
+        hub.motion.altitudeMeters;
+
+    out.hubOrbitRadiusMeters =
+        hub.motion.parentRadiusMeters +
+        hub.motion.altitudeMeters;
+
+    out.hubOrbitalPeriodSeconds =
+        hub.motion.orbitalPeriodSeconds;
+
+    // В локальной карте хаба хаб находится в нуле.
+    // Ось Y считается радиальной наружу от планеты.
+    // Значит центр планеты находится вниз по -Y на радиус орбиты.
+    if (out.hubOrbitRadiusMeters > 0.0)
+    {
+        out.parentPlanetCenterLocalMeters =
+            glm::dvec3(
+                0.0,
+                -out.hubOrbitRadiusMeters,
+                0.0
+            );
+    }
+
     // -----------------------------
     // Modules / station objects
     // -----------------------------
@@ -1464,6 +1520,7 @@ GameServer::buildHubMapSnapshot(
         HubMapModule mod;
 
         mod.id = id;
+        mod.typeId = obj.type;
         mod.stableId = std::to_string(id.value);
 
         mod.name =
@@ -1493,16 +1550,10 @@ GameServer::buildHubMapSnapshot(
             );
 
         // Первый вариант: prime/station рисуем длиннее.
-        if (obj.type == ObjectType::Station)
-        {
-            mod.sizeMeters =
-                glm::dvec3(450.0, 70.0, 70.0);
-        }
-        else
-        {
-            mod.sizeMeters =
-                glm::dvec3(120.0, 60.0, 60.0);
-        }
+        mod.sizeMeters =
+            assemblySizeMetersForType(
+                obj.type
+            );
 
         mod.prime =
             !hub.modules.empty() &&
@@ -1536,6 +1587,9 @@ GameServer::buildHubMapSnapshot(
         ship.id =
             m_simulation.playerId();
 
+        ship.typeId =
+            player->typeId();
+
         ship.name =
             "Player";
 
@@ -1555,6 +1609,9 @@ GameServer::buildHubMapSnapshot(
                 tr.orientation,
                 *frame
             );
+
+        ship.sizeMeters =
+            assemblySizeMetersForType(ship.typeId);
 
         ship.player = true;
         ship.valid = true;

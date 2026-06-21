@@ -1,0 +1,15 @@
+{
+  "preset_id": "rocky_ice",
+  "system_folder_name": "sol",
+  "body_folder_name": "umbriel",
+  "display_name": "Umbriel",
+  "source_system_id": "0",
+  "source_body_id": "system_0.Sol.Uranus.Umbriel",
+  "surface_source_kind": "ImportedRealData",
+  "source_catalog_path": "src/assets/data/celestial/source_catalog/sol/umbriel.source.json",
+  "data_confidence": "provisional",
+  "notes": "Umbriel is imported from source assets. Source quality may be upgraded later without changing the pipeline contract.",
+  "has_atmosphere": false,
+  "has_cloud_layer": false,
+  "has_emission": false
+}

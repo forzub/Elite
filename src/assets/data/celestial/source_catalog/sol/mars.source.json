@@ -1,0 +1,23 @@
+{
+  "system_id": "sol",
+  "body_id": "mars",
+  "body_name": "Mars",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/mars/albedo_source.*"
+  },
+  "optional_assets": {
+    "height": "src/assets/source/celestial/sol/mars/height_source.*",
+    "clouds": "src/assets/source/celestial/sol/mars/clouds_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/mars/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/mars/normal.tga",
+    "material": "src/assets/generated/celestial/sol/mars/material.tga",
+    "clouds": "src/assets/generated/celestial/sol/mars/clouds.tga",
+    "preview": "src/assets/generated/celestial/sol/mars/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/mars/meta.json"
+  }
+}

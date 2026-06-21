@@ -1501,8 +1501,7 @@ if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Planet)
 
 if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Hub)
 {
-    std::cerr
-            << "[HUD] render hub branch\n";
+ 
 
     const int focusedId =
         m_systemMapRenderer.focusedSystemId() >= 0
@@ -1518,12 +1517,7 @@ if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Hub)
     );
 }
 
-std::cerr
-    << "[HUD] mode="
-    << static_cast<int>(
-        m_systemMapRenderer.mode()
-    )
-    << "\n";
+
 
 m_systemMapRenderer.render(
     mapVp,

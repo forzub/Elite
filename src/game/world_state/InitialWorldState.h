@@ -41,6 +41,12 @@ struct InitialWorldStateHubModule
 
     glm::dvec3 offsetMeters {0.0};
 
+    // Local placement rotation inside hub coordinates.
+    // pitch = rotation around local X
+    // yaw   = rotation around local Y
+    // roll  = rotation around local Z
+    glm::dvec3 localRotationDeg {0.0};
+
     bool exists = true;
     double hull = 1.0;
     double power = 1.0;
@@ -78,6 +84,20 @@ inline glm::dvec3 readDvec3Meters(
         j.value("z", 0.0)
     );
 }
+
+
+inline glm::dvec3 readEulerDeg(
+    const nlohmann::json& j
+)
+{
+    return glm::dvec3(
+        j.value("pitch", 0.0),
+        j.value("yaw",   0.0),
+        j.value("roll",  0.0)
+    );
+}
+
+
 
 inline InitialWorldStateMotion readMotion(
     const nlohmann::json& j
@@ -138,6 +158,15 @@ inline InitialWorldStateHubModule readHubModule(
 
     if (j.contains("offset_m") && j["offset_m"].is_object())
         out.offsetMeters = readDvec3Meters(j["offset_m"]);
+
+    if (j.contains("local_rotation_deg") &&
+        j["local_rotation_deg"].is_object())
+    {
+        out.localRotationDeg =
+            readEulerDeg(
+                j["local_rotation_deg"]
+            );
+    }
 
     if (j.contains("state") && j["state"].is_object())
     {

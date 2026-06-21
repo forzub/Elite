@@ -1,0 +1,180 @@
+{
+  "assets": [
+    {
+      "system": "sol",
+      "body": "earth",
+      "asset_type": "albedo",
+      "path": "src/assets/source/celestial/sol/earth/albedo_source.jpg",
+      "source_name": "NASA Blue Marble / Visible Earth",
+      "source_organization": "NASA",
+      "source_url": "PASTE_SOURCE_URL_HERE",
+      "license_note": "NASA media usage guidelines apply. Use does not imply NASA endorsement.",
+      "modifications": [
+        "Converted/resized for celestial texture pipeline"
+      ],
+      "retrieved_date": "2026-06-20"
+    },
+    {
+      "system": "sol",
+      "body": "earth",
+      "asset_type": "height",
+      "path": "src/assets/source/celestial/sol/earth/height_source.png",
+      "source_name": "ETOPO Global Relief Model",
+      "source_organization": "NOAA/NCEI",
+      "source_url": "https://www.ncei.noaa.gov/products/etopo-global-relief-model",
+      "license_note": "NOAA public data; cite NCEI as source.",
+      "modifications": [
+        "Normalized to grayscale",
+        "Resized to match Earth albedo source resolution"
+      ],
+      "retrieved_date": "2026-06-20"
+    },
+    {
+      "system": "sol",
+      "body": "earth",
+      "asset_type": "clouds",
+      "path": "src/assets/source/celestial/sol/earth/clouds_source.png",
+      "source_name": "NASA SVS Equirectangular Projected Earth for LARGEST",
+      "source_organization": "NASA/GSFC SVS",
+      "source_url": "https://svs.gsfc.nasa.gov/3615/",
+      "license_note": "NASA media usage guidelines apply. Use does not imply NASA endorsement.",
+      "modifications": [
+        "Derived cloud mask from clouded and no-cloud Earth renders",
+        "Resized to match Earth albedo source resolution"
+      ],
+      "retrieved_date": "2026-06-20"
+    },
+    {
+      "system": "sol",
+      "body": "earth",
+      "asset_type": "emission",
+      "path": "src/assets/source/celestial/sol/earth/emission_source.png",
+      "source_name": "NASA Black Marble 2016 Night Lights",
+      "source_organization": "NASA Earth Observatory",
+      "source_url": "https://science.nasa.gov/earth/earth-observatory/earth-at-night/maps/",
+      "license_note": "NASA media usage guidelines apply. Use does not imply NASA endorsement.",
+      "modifications": [
+        "Converted/resized for emission texture source"
+      ],
+      "retrieved_date": "2026-06-20"
+    },
+    {
+      "system": "sol",
+      "body": "moon",
+      "asset_type": "albedo",
+      "path": "src/assets/source/celestial/sol/moon/albedo_source.jpg",
+      "source_name": "NASA CGI Moon Kit Color Map",
+      "source_organization": "NASA/GSFC SVS",
+      "source_url": "https://svs.gsfc.nasa.gov/4720/",
+      "license_note": "NASA media usage guidelines apply. Use does not imply NASA endorsement.",
+      "modifications": [
+        "Converted/resized for celestial texture pipeline"
+      ],
+      "retrieved_date": "2026-06-20"
+    },
+    {
+      "system": "sol",
+      "body": "moon",
+      "asset_type": "height",
+      "path": "src/assets/source/celestial/sol/moon/height_source.png",
+      "source_name": "NASA CGI Moon Kit Displacement Map / LOLA",
+      "source_organization": "NASA/GSFC SVS",
+      "source_url": "https://svs.gsfc.nasa.gov/4720/",
+      "license_note": "NASA media usage guidelines apply. Use does not imply NASA endorsement.",
+      "modifications": [
+        "Converted from displacement TIFF",
+        "Normalized to grayscale",
+        "Resized to match Moon albedo source resolution"
+      ],
+      "retrieved_date": "2026-06-20"
+    },
+    {
+      "system": "sol",
+      "body": "mars",
+      "asset_type": "albedo",
+      "path": "src/assets/source/celestial/sol/mars/albedo_source.jpg",
+      "source_name": "USGS Mars Viking Global Color Mosaic",
+      "source_organization": "USGS Astrogeology",
+      "source_url": "https://astrogeology.usgs.gov/search/map/mars_viking_global_color_mosaic_925m",
+      "license_note": "USGS public domain data unless otherwise noted.",
+      "modifications": [
+        "Converted/resized for celestial texture pipeline"
+      ],
+      "retrieved_date": "2026-06-20"
+    },
+    {
+      "system": "sol",
+      "body": "mars",
+      "asset_type": "height",
+      "path": "src/assets/source/celestial/sol/mars/height_source.png",
+      "source_name": "Mars MGS MOLA DEM 463m",
+      "source_organization": "USGS Astrogeology / NASA PDS",
+      "source_url": "https://astrogeology.usgs.gov/search/map/mars_mgs_mola_dem_463m",
+      "license_note": "CC0/public domain; use constraints none.",
+      "modifications": [
+        "Converted from DEM/topography source",
+        "Normalized to grayscale",
+        "Resized to match Mars albedo source resolution"
+      ],
+      "retrieved_date": "2026-06-20"
+    },
+    {
+      "system": "sol",
+      "body": "phobos",
+      "asset_type": "albedo",
+      "path": "src/assets/source/celestial/sol/phobos/albedo_source.jpg",
+      "source_name": "Prepared Phobos albedo source",
+      "source_organization": "TO_FILL",
+      "source_url": "TO_FILL",
+      "license_note": "TO_VERIFY",
+      "modifications": [
+        "Converted/resized for celestial texture pipeline"
+      ],
+      "retrieved_date": "2026-06-20"
+    },
+    {
+      "system": "sol",
+      "body": "phobos",
+      "asset_type": "mesh",
+      "path": "src/assets/source/celestial/sol/phobos/shape_model_source.obj",
+      "source_name": "NASA Phobos 3D Model",
+      "source_organization": "NASA/JPL-Caltech",
+      "source_url": "PASTE_NASA_PHOBOS_3D_MODEL_URL_HERE",
+      "license_note": "NASA media usage guidelines apply. Use does not imply NASA endorsement.",
+      "modifications": [
+        "Converted from glTF/GLB to OBJ",
+        "Normalized for celestial mesh pipeline"
+      ],
+      "retrieved_date": "2026-06-20"
+    },
+    {
+      "system": "sol",
+      "body": "deimos",
+      "asset_type": "albedo",
+      "path": "src/assets/source/celestial/sol/deimos/albedo_source.jpg",
+      "source_name": "Prepared Deimos albedo source",
+      "source_organization": "TO_FILL",
+      "source_url": "TO_FILL",
+      "license_note": "TO_VERIFY",
+      "modifications": [
+        "Converted/resized for celestial texture pipeline"
+      ],
+      "retrieved_date": "2026-06-20"
+    },
+    {
+      "system": "sol",
+      "body": "deimos",
+      "asset_type": "mesh",
+      "path": "src/assets/source/celestial/sol/deimos/shape_model_source.obj",
+      "source_name": "NASA Deimos 3D Model",
+      "source_organization": "NASA/JPL-Caltech",
+      "source_url": "PASTE_NASA_DEIMOS_3D_MODEL_URL_HERE",
+      "license_note": "NASA media usage guidelines apply. Use does not imply NASA endorsement.",
+      "modifications": [
+        "Converted from glTF/GLB to OBJ",
+        "Normalized for celestial mesh pipeline"
+      ],
+      "retrieved_date": "2026-06-20"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "system_id": "sol",
+  "body_id": "proteus",
+  "body_name": "Proteus",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/proteus/albedo_source.*"
+  },
+  "optional_assets": {
+    "height": "src/assets/source/celestial/sol/proteus/height_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/proteus/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/proteus/normal.tga",
+    "material": "src/assets/generated/celestial/sol/proteus/material.tga",
+    "preview": "src/assets/generated/celestial/sol/proteus/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/proteus/meta.json"
+  }
+}

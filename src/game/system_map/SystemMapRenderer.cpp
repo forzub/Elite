@@ -11,13 +11,14 @@
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include <cmath>
+#include <limits>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "render/HUD/TextRenderer.h"
 #include "src/render/ShaderLibrary.h"
-
+#include "src/game/geometry/AssemblyMeshLibrary.h"
 
 namespace
 {
@@ -192,7 +193,27 @@ int SystemMapRenderer::focusedSystemId() const
 
 void SystemMapRenderer::setMode(Mode mode)
 {
+    if (m_mode == mode)
+        return;
+
     m_mode = mode;
+
+    if (m_mode == Mode::Hub)
+    {
+        m_planetCamera.yaw = 0.0;
+        m_planetCamera.pitch = 0.0;
+        m_planetCamera.zoom = 1.0;
+        m_planetCamera.pan = glm::dvec2(0.0);
+
+        m_planetCamera.rotating = false;
+        m_planetCamera.panning = false;
+
+        m_hubMapOrbitPivotLocalMeters =
+            glm::dvec3(0.0, 0.0, 0.0);
+
+        m_hubMapOrbitPivotScreenPx =
+            glm::dvec2(0.0, 0.0);
+            }
 }
 
 
@@ -976,12 +997,73 @@ void SystemMapRenderer::handleInput(
                 g_systemMapScrollY = 0.0;
             }
 
-        if (leftDown && !m_planetCamera.rotating)
-        {
-            m_planetCamera.rotating = true;
-            m_planetCamera.lastMouseX = mx;
-            m_planetCamera.lastMouseY = my;
-        }
+        
+
+            if (leftDown && !m_planetCamera.rotating)
+            {
+                m_planetCamera.rotating = true;
+                m_planetCamera.lastMouseX = mx;
+                m_planetCamera.lastMouseY = my;
+
+                if (m_mode == Mode::Hub)
+                {
+                    const glm::dvec2 centerPx(
+                        static_cast<double>(vp.width) * 0.5,
+                        static_cast<double>(vp.height) * 0.5
+                    );
+
+                    const glm::dvec2 mousePx(
+                        localMx,
+                        localMy
+                    );
+
+                    const double safeScale =
+                        std::max(
+                            0.000001,
+                            m_lastHubMapScale
+                        );
+
+                    glm::dvec3 pickedPivotLocalMeters {0.0, 0.0, 0.0};
+
+                const bool pickedObject =
+                    pickHubMapOrbitPivot(
+                        mousePx,
+                        pickedPivotLocalMeters
+                    );
+
+                if (pickedObject)
+                {
+                    m_hubMapOrbitPivotLocalMeters =
+                        pickedPivotLocalMeters;
+                }
+                else
+                {
+                    // Fallback для пустоты.
+                    // Да, тут глубина условная, но это лучше,
+                    // чем вообще не иметь вращения.
+                    m_hubMapOrbitPivotLocalMeters =
+                        hubMapUnprojectCursorToLocal(
+                            mousePx,
+                            safeScale,
+                            centerPx
+                        );
+                }
+
+                m_hubMapOrbitPivotScreenPx =
+                    hubMapProject(
+                        m_hubMapOrbitPivotLocalMeters,
+                        safeScale,
+                        centerPx
+                    );
+                }
+            }
+
+
+
+
+
+
+
 
         if (!leftDown)
             m_planetCamera.rotating = false;
@@ -999,17 +1081,65 @@ void SystemMapRenderer::handleInput(
         const double dx = mx - m_planetCamera.lastMouseX;
         const double dy = my - m_planetCamera.lastMouseY;
 
+
+
         if (m_planetCamera.rotating)
         {
-            m_planetCamera.yaw += dx * 0.008;
-            m_planetCamera.pitch += dy * 0.008;
-
-            m_planetCamera.pitch =
-                std::clamp(
-                    m_planetCamera.pitch,
-                    -1.45,
-                    1.45
+            if (m_mode == Mode::Hub)
+            {
+                const glm::dvec2 centerPx(
+                    static_cast<double>(vp.width) * 0.5,
+                    static_cast<double>(vp.height) * 0.5
                 );
+
+                const double safeScale =
+                    std::max(
+                        0.000001,
+                        m_lastHubMapScale
+                    );
+
+                const glm::dvec2 pivotScreenBefore =
+                    hubMapProject(
+                        m_hubMapOrbitPivotLocalMeters,
+                        safeScale,
+                        centerPx
+                    );
+
+                m_planetCamera.yaw += dx * 0.008;
+                m_planetCamera.pitch += dy * 0.008;
+
+                m_planetCamera.pitch =
+                    std::clamp(
+                        m_planetCamera.pitch,
+                        -1.45,
+                        1.45
+                    );
+
+                const glm::dvec2 pivotScreenAfter =
+                    hubMapProject(
+                        m_hubMapOrbitPivotLocalMeters,
+                        safeScale,
+                        centerPx
+                    );
+
+                // Компенсируем pan так, чтобы pivot остался
+                // на том же экранном месте. Вот это и есть
+                // настоящее вращение вокруг точки под курсором.
+                m_planetCamera.pan +=
+                    pivotScreenBefore - pivotScreenAfter;
+            }
+            else
+            {
+                m_planetCamera.yaw += dx * 0.008;
+                m_planetCamera.pitch += dy * 0.008;
+
+                m_planetCamera.pitch =
+                    std::clamp(
+                        m_planetCamera.pitch,
+                        -1.45,
+                        1.45
+                    );
+            }
         }
 
         if (m_planetCamera.panning)
@@ -1018,18 +1148,51 @@ void SystemMapRenderer::handleInput(
             m_planetCamera.pan.y += dy;
         }
 
+
+
+
+
         if (std::abs(wheel) > 0.001)
         {
-            m_planetCamera.zoom *=
-                std::pow(1.12, wheel);
+            const double oldZoom =
+                m_planetCamera.zoom;
 
-            m_planetCamera.zoom =
+            const double newZoom =
                 std::clamp(
-                    m_planetCamera.zoom,
+                    oldZoom * std::pow(1.12, wheel),
                     0.15,
-                    12.0
+                    64.0
                 );
+
+            if (std::abs(newZoom - oldZoom) > 0.000001)
+            {
+                const glm::dvec2 centerPx(
+                    static_cast<double>(vp.width) * 0.5,
+                    static_cast<double>(vp.height) * 0.5
+                );
+
+                const glm::dvec2 mousePx(
+                    localMx,
+                    localMy
+                );
+
+                const double zoomFactor =
+                    newZoom / oldZoom;
+
+                // Keep the world point under the cursor stable.
+                m_planetCamera.pan =
+                    mousePx -
+                    centerPx -
+                    (mousePx - centerPx - m_planetCamera.pan) * zoomFactor;
+
+                m_planetCamera.zoom =
+                    newZoom;
+            }
         }
+
+
+
+
 
         m_planetCamera.lastMouseX = mx;
         m_planetCamera.lastMouseY = my;
@@ -3178,6 +3341,17 @@ void SystemMapRenderer::drawPlanetMapOrbit3D(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 glm::dvec2 SystemMapRenderer::hubMapProject(
     const glm::dvec3& localMeters,
     double scale,
@@ -3210,6 +3384,148 @@ glm::dvec2 SystemMapRenderer::hubMapProject(
         centerPx.y + m_planetCamera.pan.y - b.y * finalScale
     );
 }
+
+
+
+
+
+    bool SystemMapRenderer::pickHubMapOrbitPivot(
+        const glm::dvec2& mousePx,
+        glm::dvec3& outPivotLocalMeters
+    ) const
+    {
+        if (m_lastHubMapPickables.empty())
+            return false;
+
+        const HubMapPickable* best = nullptr;
+
+        double bestScore =
+            std::numeric_limits<double>::max();
+
+        for (const auto& p : m_lastHubMapPickables)
+        {
+            const double dx =
+                mousePx.x - p.screenCenterPx.x;
+
+            const double dy =
+                mousePx.y - p.screenCenterPx.y;
+
+            const double dist =
+                std::sqrt(dx * dx + dy * dy);
+
+            // Не даём огромной станции захватывать весь экран.
+            // Но и не требуем попадания в пиксель.
+            const double pickRadius =
+                std::clamp(
+                    p.screenRadiusPx,
+                    18.0,
+                    140.0
+                );
+
+            // Разрешаем брать ближайший объект чуть за пределами радиуса,
+            // иначе при wireframe-модели будет раздражающе трудно попасть.
+            const double softLimit =
+                pickRadius + 80.0;
+
+            if (dist > softLimit)
+                continue;
+
+            // priority слегка улучшает счёт.
+            // Игрок/корабли выигрывают у станции при близком расстоянии.
+            const double priorityBonus =
+                static_cast<double>(p.priority) * 18.0;
+
+            const double score =
+                dist - priorityBonus;
+
+            if (score < bestScore)
+            {
+                bestScore = score;
+                best = &p;
+            }
+        }
+
+        if (!best)
+            return false;
+
+        outPivotLocalMeters =
+            best->localCenterMeters;
+
+        return true;
+    }
+
+
+
+
+
+
+
+
+
+glm::dvec3 SystemMapRenderer::hubMapUnprojectCursorToLocal(
+    const glm::dvec2& mousePx,
+    double scale,
+    const glm::dvec2& centerPx
+) const
+{
+    const double finalScale =
+        scale * m_planetCamera.zoom;
+
+    if (std::abs(finalScale) < 0.000001)
+        return glm::dvec3(0.0);
+
+    // hubMapProject:
+    //
+    // screen.x = center.x + pan.x + b.x * finalScale
+    // screen.y = center.y + pan.y - b.y * finalScale
+    //
+    // Reverse that first.
+    const double bx =
+        (mousePx.x - centerPx.x - m_planetCamera.pan.x) /
+        finalScale;
+
+    const double by =
+        -(mousePx.y - centerPx.y - m_planetCamera.pan.y) /
+        finalScale;
+
+    // No real depth information under cursor yet.
+    // We choose the current view plane depth = 0.
+    const glm::dvec3 b(
+        bx,
+        by,
+        0.0
+    );
+
+    const double cy = std::cos(m_planetCamera.yaw);
+    const double sy = std::sin(m_planetCamera.yaw);
+    const double cp = std::cos(m_planetCamera.pitch);
+    const double sp = std::sin(m_planetCamera.pitch);
+
+    // Inverse pitch.
+    glm::dvec3 a;
+    a.x = b.x;
+    a.y = b.y * cp + b.z * sp;
+    a.z = -b.y * sp + b.z * cp;
+
+    // Inverse yaw.
+    glm::dvec3 p;
+    p.x = a.x * cy + a.z * sy;
+    p.y = a.y;
+    p.z = -a.x * sy + a.z * cy;
+
+    return p;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3327,13 +3643,476 @@ void SystemMapRenderer::drawHubMapVelocityArrow(
 
 
 
+
+
+
+
+glm::dvec3 SystemMapRenderer::hubMapObjectLocalToHubLocal(
+    const glm::dvec3& objectCenter,
+    const world::celestial::PlanetMapAxisSet& objectAxes,
+    const glm::dvec3& localPoint
+) const
+{
+    return
+        objectCenter +
+        objectAxes.x * localPoint.x +
+        objectAxes.y * localPoint.y +
+        objectAxes.z * localPoint.z;
+}
+
+
+
+bool SystemMapRenderer::drawHubMapAssemblyWire(
+    ObjectType typeId,
+    const glm::dvec3& objectCenter,
+    const world::celestial::PlanetMapAxisSet& objectAxes,
+    double scale,
+    const glm::dvec2& centerPx
+)
+{
+    using game::ship::geometry::AssemblyMeshLibrary;
+
+    if (typeId == ObjectType::None)
+        return false;
+
+    if (!AssemblyMeshLibrary::has(typeId))
+        return false;
+
+    const auto& assembly =
+        AssemblyMeshLibrary::get(typeId);
+
+    bool drewAnything = false;
+
+    // Для маленьких кораблей лучше цельный proxy, если он есть.
+    // Это быстрее и чище на карте.
+    if (assembly.hasWholeShipProxy)
+    {
+        const auto& mesh =
+            assembly.wholeShipProxyMesh;
+
+        for (const auto& edge : mesh.edges)
+        {
+            const glm::dvec3 a =
+                hubMapObjectLocalToHubLocal(
+                    objectCenter,
+                    objectAxes,
+                    glm::dvec3(edge.a)
+                );
+
+            const glm::dvec3 b =
+                hubMapObjectLocalToHubLocal(
+                    objectCenter,
+                    objectAxes,
+                    glm::dvec3(edge.b)
+                );
+
+            drawPlanetMapLine(
+                hubMapProject(a, scale, centerPx),
+                hubMapProject(b, scale, centerPx)
+            );
+
+            drewAnything = true;
+        }
+
+        if (drewAnything)
+            return true;
+    }
+
+    // Для станции рисуем модульную LOD1-сборку.
+    // Это как раз "цветок со стеблем", а не кирпич.
+    for (const auto& module : assembly.modules)
+    {
+        for (const auto& part : module.meshes)
+        {
+            const auto& mesh =
+                part.lod1Mesh.edges.empty()
+                    ? part.lod0Mesh
+                    : part.lod1Mesh;
+
+            for (const auto& edge : mesh.edges)
+            {
+                const glm::dvec3 localA =
+                    glm::dvec3(module.localPosition) +
+                    glm::dvec3(part.localOffset) +
+                    glm::dvec3(edge.a);
+
+                const glm::dvec3 localB =
+                    glm::dvec3(module.localPosition) +
+                    glm::dvec3(part.localOffset) +
+                    glm::dvec3(edge.b);
+
+                const glm::dvec3 a =
+                    hubMapObjectLocalToHubLocal(
+                        objectCenter,
+                        objectAxes,
+                        localA
+                    );
+
+                const glm::dvec3 b =
+                    hubMapObjectLocalToHubLocal(
+                        objectCenter,
+                        objectAxes,
+                        localB
+                    );
+
+                drawPlanetMapLine(
+                    hubMapProject(a, scale, centerPx),
+                    hubMapProject(b, scale, centerPx)
+                );
+
+                drewAnything = true;
+            }
+        }
+    }
+
+    return drewAnything;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void SystemMapRenderer::drawHubMapCircleLocalXY(
+    const glm::dvec3& center,
+    double radiusMeters,
+    double scale,
+    const glm::dvec2& centerPx,
+    int segments
+)
+{
+    if (radiusMeters <= 0.0)
+        return;
+
+    segments =
+        std::max(
+            24,
+            segments
+        );
+
+    glBegin(GL_LINE_LOOP);
+
+    for (int i = 0; i < segments; ++i)
+    {
+        const double a =
+            glm::two_pi<double>() *
+            static_cast<double>(i) /
+            static_cast<double>(segments);
+
+        const glm::dvec3 p =
+            center +
+            glm::dvec3(
+                std::cos(a) * radiusMeters,
+                std::sin(a) * radiusMeters,
+                0.0
+            );
+
+        const glm::dvec2 s =
+            hubMapProject(
+                p,
+                scale,
+                centerPx
+            );
+
+        glVertex2d(
+            s.x,
+            s.y
+        );
+    }
+
+    glEnd();
+}
+
+
+
+void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
+    const world::celestial::HubMapSnapshot& hub,
+    double scale,
+    const glm::dvec2& centerPx
+)
+{
+    if (hub.parentPlanetRadiusMeters <= 0.0 ||
+        hub.hubOrbitRadiusMeters <= 0.0)
+    {
+        return;
+    }
+
+    const glm::dvec3 planetCenter =
+        hub.parentPlanetCenterLocalMeters;
+
+    const glm::dvec2 planetCenterPx =
+        hubMapProject(
+            planetCenter,
+            scale,
+            centerPx
+        );
+
+    const double planetRadiusPx =
+        hub.parentPlanetRadiusMeters *
+        scale *
+        m_planetCamera.zoom;
+
+    // Если планета слишком огромная и центр далеко за экраном,
+    // всё равно рисуем только геометрически корректную дугу/край.
+    // Это дает глазу "низ", не превращая карту в синий блин.
+    glColor4f(
+        0.08f,
+        0.22f,
+        0.32f,
+        0.22f
+    );
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2d(
+        planetCenterPx.x,
+        planetCenterPx.y
+    );
+
+    constexpr int fillSegments = 160;
+
+    for (int i = 0; i <= fillSegments; ++i)
+    {
+        const double a =
+            glm::two_pi<double>() *
+            static_cast<double>(i) /
+            static_cast<double>(fillSegments);
+
+        glVertex2d(
+            planetCenterPx.x + std::cos(a) * planetRadiusPx,
+            planetCenterPx.y + std::sin(a) * planetRadiusPx
+        );
+    }
+
+    glEnd();
+
+    // Контур поверхности.
+    glColor4f(
+        0.22f,
+        0.58f,
+        0.78f,
+        0.75f
+    );
+
+    drawPlanetMapCircle(
+        planetCenterPx,
+        planetRadiusPx,
+        192
+    );
+
+    // Орбита хаба вокруг планеты.
+    glColor4f(
+        0.95f,
+        0.82f,
+        0.32f,
+        0.42f
+    );
+
+    drawHubMapCircleLocalXY(
+        planetCenter,
+        hub.hubOrbitRadiusMeters,
+        scale,
+        centerPx,
+        256
+    );
+
+    // Радиальная линия: центр планеты -> поверхность -> хаб.
+    const glm::dvec3 surfacePoint =
+        planetCenter +
+        glm::dvec3(
+            0.0,
+            hub.parentPlanetRadiusMeters,
+            0.0
+        );
+
+    glColor4f(
+        0.35f,
+        0.85f,
+        1.0f,
+        0.45f
+    );
+
+    drawPlanetMapLine(
+        hubMapProject(surfacePoint, scale, centerPx),
+        hubMapProject(glm::dvec3(0.0), scale, centerPx)
+    );
+
+    // Маленькая отметка точки под хабом на поверхности.
+    glColor4f(
+        0.65f,
+        0.95f,
+        1.0f,
+        0.85f
+    );
+
+    drawPlanetMapCross(
+        hubMapProject(surfacePoint, scale, centerPx),
+        5.0f
+    );
+}
+
+
+
+void SystemMapRenderer::drawHubMapAdaptiveGrid(
+    const Viewport& viewport,
+    double scale,
+    const glm::dvec2& centerPx,
+    double worldRadiusMeters
+)
+{
+    if (scale <= 0.0)
+        return;
+
+    const double visibleMeters =
+        std::max(
+            1000.0,
+            worldRadiusMeters
+        );
+
+    double gridStep =
+        100.0;
+
+    while ((gridStep * scale * m_planetCamera.zoom) < 28.0)
+        gridStep *= 2.0;
+
+    while ((gridStep * scale * m_planetCamera.zoom) > 90.0 &&
+           gridStep > 25.0)
+    {
+        gridStep *= 0.5;
+    }
+
+    const int gridN =
+        static_cast<int>(
+            std::ceil(
+                visibleMeters / gridStep
+            )
+        ) + 2;
+
+    glColor4f(
+        0.12f,
+        0.28f,
+        0.38f,
+        0.30f
+    );
+
+    for (int i = -gridN; i <= gridN; ++i)
+    {
+        const double v =
+            static_cast<double>(i) *
+            gridStep;
+
+        drawPlanetMapLine(
+            hubMapProject(glm::dvec3(-gridN * gridStep, 0.0, v), scale, centerPx),
+            hubMapProject(glm::dvec3( gridN * gridStep, 0.0, v), scale, centerPx)
+        );
+
+        drawPlanetMapLine(
+            hubMapProject(glm::dvec3(v, 0.0, -gridN * gridStep), scale, centerPx),
+            hubMapProject(glm::dvec3(v, 0.0,  gridN * gridStep), scale, centerPx)
+        );
+    }
+
+    // Главные оси плоскости хаба.
+    glColor4f(
+        0.20f,
+        0.55f,
+        0.75f,
+        0.45f
+    );
+
+    drawPlanetMapLine(
+        hubMapProject(glm::dvec3(-gridN * gridStep, 0.0, 0.0), scale, centerPx),
+        hubMapProject(glm::dvec3( gridN * gridStep, 0.0, 0.0), scale, centerPx)
+    );
+
+    drawPlanetMapLine(
+        hubMapProject(glm::dvec3(0.0, 0.0, -gridN * gridStep), scale, centerPx),
+        hubMapProject(glm::dvec3(0.0, 0.0,  gridN * gridStep), scale, centerPx)
+    );
+}
+
+
+
+glm::dvec3 SystemMapRenderer::visualSizeForHubShip(
+    const world::celestial::HubMapShip& ship,
+    double scale
+) const
+{
+    // Реальный корабль можно держать маленьким, но на карте он не должен
+    // превращаться в субатомную пыль. Поэтому размер физический,
+    // но с минимальным экранным размером.
+    glm::dvec3 physicalSizeMeters(
+        90.0,
+        35.0,
+        160.0
+    );
+
+    if (ship.player)
+    {
+        physicalSizeMeters =
+            glm::dvec3(
+                130.0,
+                50.0,
+                210.0
+            );
+    }
+
+    const double pixelsPerMeter =
+        scale *
+        m_planetCamera.zoom;
+
+    if (pixelsPerMeter <= 0.0)
+        return physicalSizeMeters;
+
+    const double longestPx =
+        std::max(
+            physicalSizeMeters.x,
+            std::max(
+                physicalSizeMeters.y,
+                physicalSizeMeters.z
+            )
+        ) * pixelsPerMeter;
+
+    constexpr double minPlayerLongestPx = 18.0;
+    constexpr double minOtherLongestPx = 11.0;
+
+    const double minPx =
+        ship.player
+            ? minPlayerLongestPx
+            : minOtherLongestPx;
+
+    if (longestPx >= minPx)
+        return physicalSizeMeters;
+
+    const double factor =
+        minPx /
+        std::max(
+            1.0,
+            longestPx
+        );
+
+    return physicalSizeMeters * factor;
+}
+
+
+
+
+
+
+
 void SystemMapRenderer::renderHubMap(
     const Viewport& viewport,
     const world::celestial::HubMapSnapshot& hub
 )
 {
-   
-
     glViewport(
         viewport.x,
         viewport.y,
@@ -3365,7 +4144,12 @@ void SystemMapRenderer::renderHubMap(
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    glColor4f(0.015f, 0.020f, 0.030f, 1.0f);
+    glColor4f(
+        0.015f,
+        0.020f,
+        0.030f,
+        1.0f
+    );
 
     glBegin(GL_QUADS);
     glVertex2f(0.0f, 0.0f);
@@ -3387,98 +4171,196 @@ void SystemMapRenderer::renderHubMap(
 
     for (const auto& m : hub.modules)
     {
-        if (m.valid)
-        {
-            maxDist =
-                std::max(
-                    maxDist,
-                    glm::length(m.localPositionMeters) +
-                    glm::length(m.sizeMeters)
-                );
-        }
+        if (!m.valid)
+            continue;
+
+        maxDist =
+            std::max(
+                maxDist,
+                glm::length(m.localPositionMeters) +
+                glm::length(m.sizeMeters)
+            );
     }
 
     for (const auto& s : hub.ships)
     {
-        if (s.valid)
-        {
-            maxDist =
-                std::max(
-                    maxDist,
-                    glm::length(s.localPositionMeters) + 500.0
-                );
-        }
+        if (!s.valid)
+            continue;
+
+        maxDist =
+            std::max(
+                maxDist,
+                glm::length(s.localPositionMeters) +
+                800.0
+            );
     }
+
+    // Планета и орбита не должны раздувать масштаб карты до состояния:
+    // "станция стала точкой, поздравляем, вы снова ничего не видите".
+    //
+    // Поэтому масштаб выбираем по объектам хаба, а планету рисуем как
+    // ориентир в том же масштабе. Если центр планеты далеко за экраном,
+    // видна будет дуга поверхности/орбиты — именно это и нужно.
+    maxDist =
+        std::max(
+            maxDist,
+            2500.0
+        );
 
     const double halfPx =
         std::min(
             viewport.width,
             viewport.height
-        ) * 0.40;
+        ) * 0.38;
 
     const double scale =
-        halfPx / std::max(1.0, maxDist);
-
-    // Grid вокруг хаба.
-    glColor4f(0.12f, 0.28f, 0.38f, 0.35f);
-
-    const double gridStep =
-        1000.0;
-
-    const int gridN =
-        12;
-
-    for (int i = -gridN; i <= gridN; ++i)
-    {
-        const double v =
-            static_cast<double>(i) * gridStep;
-
-        drawPlanetMapLine(
-            hubMapProject(glm::dvec3(-gridN * gridStep, 0.0, v), scale, centerPx),
-            hubMapProject(glm::dvec3( gridN * gridStep, 0.0, v), scale, centerPx)
+        halfPx /
+        std::max(
+            1.0,
+            maxDist
         );
 
-        drawPlanetMapLine(
-            hubMapProject(glm::dvec3(v, 0.0, -gridN * gridStep), scale, centerPx),
-            hubMapProject(glm::dvec3(v, 0.0,  gridN * gridStep), scale, centerPx)
-        );
-    }
+    m_lastHubMapScale = scale;
+    m_lastHubMapCenterPx = centerPx;
+    m_lastHubMapPickables.clear();
+
+    drawHubMapPlanetSurfaceHint(
+        hub,
+        scale,
+        centerPx
+    );
+
+    drawHubMapAdaptiveGrid(
+        viewport,
+        scale,
+        centerPx,
+        maxDist
+    );
 
     // Оси хаба.
     drawHubMapAxes(
         glm::dvec3(0.0),
         hub.hubAxes,
-        1200.0,
+        900.0,
         scale,
         centerPx
     );
 
-    // Модули.
+    // Центр хаба / текущая орбитальная точка.
+    glColor4f(
+        1.0f,
+        0.86f,
+        0.35f,
+        0.95f
+    );
+
+    drawPlanetMapCross(
+        hubMapProject(glm::dvec3(0.0), scale, centerPx),
+        6.0f
+    );
+
+    // Модули станции.
     for (const auto& mod : hub.modules)
     {
         if (!mod.valid)
             continue;
 
-        if (mod.prime || mod.kind == "station")
-            glColor4f(0.65f, 0.92f, 1.0f, 0.95f);
-        else
-            glColor4f(0.45f, 0.65f, 0.85f, 0.75f);
+        {
+            const glm::dvec2 screen =
+                hubMapProject(
+                    mod.localPositionMeters,
+                    scale,
+                    centerPx
+                );
 
-        drawHubMapBox(
-            mod.localPositionMeters,
-            mod.localAxes,
-            mod.sizeMeters,
-            scale,
-            centerPx
-        );
+            const double objectRadiusMeters =
+                glm::length(mod.sizeMeters) * 0.5;
+
+            HubMapPickable pickable;
+            pickable.localCenterMeters =
+                mod.localPositionMeters;
+
+            pickable.screenCenterPx =
+                screen;
+
+            pickable.screenRadiusPx =
+                objectRadiusMeters *
+                scale *
+                m_planetCamera.zoom;
+
+            pickable.priority =
+                mod.prime ? 20 : 10;
+
+            pickable.label =
+                mod.name;
+
+            m_lastHubMapPickables.push_back(
+                pickable
+            );
+        }
+
+
+
+
+
+
+
+        if (mod.prime || mod.kind == "station")
+        {
+            glColor4f(
+                0.65f,
+                0.92f,
+                1.0f,
+                0.95f
+            );
+        }
+        else
+        {
+            glColor4f(
+                0.45f,
+                0.65f,
+                0.85f,
+                0.75f
+            );
+        }
+
+
+        const bool modelDrawn =
+            drawHubMapAssemblyWire(
+                mod.typeId,
+                mod.localPositionMeters,
+                mod.localAxes,
+                scale,
+                centerPx
+            );
+
+        if (!modelDrawn)
+        {
+            drawHubMapBox(
+                mod.localPositionMeters,
+                mod.localAxes,
+                mod.sizeMeters,
+                scale,
+                centerPx
+            );
+        }
+
+        const double moduleAxisLen =
+            std::max(
+                350.0,
+                glm::length(mod.sizeMeters) * 0.08
+            );
 
         drawHubMapAxes(
             mod.localPositionMeters,
             mod.localAxes,
-            350.0,
+            moduleAxisLen,
             scale,
             centerPx
         );
+
+
+        
     }
 
     // Игрок / корабли.
@@ -3487,20 +4369,102 @@ void SystemMapRenderer::renderHubMap(
         if (!ship.valid)
             continue;
 
-        glColor4f(1.0f, 0.78f, 0.25f, 1.0f);
+    {
+        const glm::dvec2 screen =
+            hubMapProject(
+                ship.localPositionMeters,
+                scale,
+                centerPx
+            );
 
-        drawHubMapBox(
-            ship.localPositionMeters,
-            ship.localAxes,
-            glm::dvec3(90.0, 35.0, 160.0),
-            scale,
-            centerPx
+        const double objectRadiusMeters =
+            glm::length(ship.sizeMeters) * 0.5;
+
+        HubMapPickable pickable;
+        pickable.localCenterMeters =
+            ship.localPositionMeters;
+
+        pickable.screenCenterPx =
+            screen;
+
+        pickable.screenRadiusPx =
+            std::max(
+                18.0,
+                objectRadiusMeters *
+                scale *
+                m_planetCamera.zoom
+            );
+
+        pickable.priority =
+            ship.player ? 100 : 50;
+
+        pickable.label =
+            ship.player
+                ? "PLAYER"
+                : ship.name;
+
+        m_lastHubMapPickables.push_back(
+            pickable
         );
+    }
+
+
+        if (ship.player)
+        {
+            glColor4f(
+                1.0f,
+                0.78f,
+                0.25f,
+                1.0f
+            );
+        }
+        else
+        {
+            glColor4f(
+                0.95f,
+                0.65f,
+                0.35f,
+                0.85f
+            );
+        }
+
+        const glm::dvec3 shipSize =
+            visualSizeForHubShip(
+                ship,
+                scale
+            );
+
+
+        const bool shipModelDrawn =
+            drawHubMapAssemblyWire(
+                ship.typeId,
+                ship.localPositionMeters,
+                ship.localAxes,
+                scale,
+                centerPx
+            );
+
+        if (!shipModelDrawn)
+        {
+            drawHubMapBox(
+                ship.localPositionMeters,
+                ship.localAxes,
+                ship.sizeMeters,
+                scale,
+                centerPx
+            );
+        }
+
+        const double shipAxisLen =
+            std::max(
+                12.0,
+                glm::length(ship.sizeMeters) * 0.85
+            );
 
         drawHubMapAxes(
             ship.localPositionMeters,
             ship.localAxes,
-            450.0,
+            shipAxisLen,
             scale,
             centerPx
         );
@@ -3508,11 +4472,98 @@ void SystemMapRenderer::renderHubMap(
         drawHubMapVelocityArrow(
             ship.localPositionMeters,
             ship.localVelocityMps,
-            800.0,
+            std::max(80.0, shipAxisLen * 2.0),
             scale,
             centerPx
         );
     }
+
+
+
+
+
+
+
+        {
+            auto& text =
+                TextRenderer::instance();
+
+            text.beginFrameForViewport(
+                viewport.width,
+                viewport.height
+            );
+
+            for (const auto& mod : hub.modules)
+            {
+                if (!mod.valid)
+                    continue;
+
+                const glm::dvec2 p =
+                    hubMapProject(
+                        mod.localPositionMeters,
+                        scale,
+                        centerPx
+                    );
+
+                text.textDrawPx(
+                    mod.name,
+                    static_cast<float>(p.x + 10.0),
+                    static_cast<float>(p.y - 8.0),
+                    13,
+                    glm::vec4(0.65f, 0.92f, 1.0f, 0.88f)
+                );
+
+                if (!mod.kind.empty())
+                {
+                    text.textDrawPx(
+                        mod.kind,
+                        static_cast<float>(p.x + 10.0),
+                        static_cast<float>(p.y + 8.0),
+                        10,
+                        glm::vec4(0.55f, 0.72f, 0.82f, 0.62f)
+                    );
+                }
+            }
+
+            for (const auto& ship : hub.ships)
+            {
+                if (!ship.valid)
+                    continue;
+
+                const glm::dvec2 p =
+                    hubMapProject(
+                        ship.localPositionMeters,
+                        scale,
+                        centerPx
+                    );
+
+                const std::string label =
+                    ship.player
+                        ? "PLAYER"
+                        : ship.name;
+
+                text.textDrawPx(
+                    label,
+                    static_cast<float>(p.x + 10.0),
+                    static_cast<float>(p.y - 8.0),
+                    13,
+                    glm::vec4(1.0f, 0.78f, 0.25f, 0.92f)
+                );
+            }
+
+            text.endFrame();
+        }
+
+
+
+
+
+
+
+
+
+
+
 
     glEnable(GL_DEPTH_TEST);
 }

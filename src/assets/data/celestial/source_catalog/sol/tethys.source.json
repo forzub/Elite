@@ -1,0 +1,21 @@
+{
+  "system_id": "sol",
+  "body_id": "tethys",
+  "body_name": "Tethys",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/tethys/albedo_source.*"
+  },
+  "optional_assets": {
+    "height": "src/assets/source/celestial/sol/tethys/height_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/tethys/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/tethys/normal.tga",
+    "material": "src/assets/generated/celestial/sol/tethys/material.tga",
+    "preview": "src/assets/generated/celestial/sol/tethys/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/tethys/meta.json"
+  }
+}

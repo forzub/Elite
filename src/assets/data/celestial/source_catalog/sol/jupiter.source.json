@@ -1,0 +1,22 @@
+{
+  "system_id": "sol",
+  "body_id": "jupiter",
+  "body_name": "Jupiter",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/jupiter/albedo_source.*"
+  },
+  "optional_assets": {
+    "clouds": "src/assets/source/celestial/sol/jupiter/clouds_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/jupiter/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/jupiter/normal.tga",
+    "material": "src/assets/generated/celestial/sol/jupiter/material.tga",
+    "clouds": "src/assets/generated/celestial/sol/jupiter/clouds.tga",
+    "preview": "src/assets/generated/celestial/sol/jupiter/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/jupiter/meta.json"
+  }
+}

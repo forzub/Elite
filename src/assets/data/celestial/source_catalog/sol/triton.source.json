@@ -1,0 +1,21 @@
+{
+  "system_id": "sol",
+  "body_id": "triton",
+  "body_name": "Triton",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/triton/albedo_source.*"
+  },
+  "optional_assets": {
+    "height": "src/assets/source/celestial/sol/triton/height_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/triton/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/triton/normal.tga",
+    "material": "src/assets/generated/celestial/sol/triton/material.tga",
+    "preview": "src/assets/generated/celestial/sol/triton/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/triton/meta.json"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "system_id": "sol",
+  "body_id": "titan",
+  "body_name": "Titan",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/titan/albedo_source.*"
+  },
+  "optional_assets": {
+    "height": "src/assets/source/celestial/sol/titan/height_source.*",
+    "clouds": "src/assets/source/celestial/sol/titan/clouds_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/titan/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/titan/normal.tga",
+    "material": "src/assets/generated/celestial/sol/titan/material.tga",
+    "clouds": "src/assets/generated/celestial/sol/titan/clouds.tga",
+    "preview": "src/assets/generated/celestial/sol/titan/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/titan/meta.json"
+  }
+}

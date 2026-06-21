@@ -1,0 +1,25 @@
+{
+  "system_id": "sol",
+  "body_id": "earth",
+  "body_name": "Earth",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/earth/albedo_source.*"
+  },
+  "optional_assets": {
+    "height": "src/assets/source/celestial/sol/earth/height_source.*",
+    "clouds": "src/assets/source/celestial/sol/earth/clouds_source.*",
+    "emission": "src/assets/source/celestial/sol/earth/emission_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/earth/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/earth/normal.tga",
+    "material": "src/assets/generated/celestial/sol/earth/material.tga",
+    "clouds": "src/assets/generated/celestial/sol/earth/clouds.tga",
+    "emission": "src/assets/generated/celestial/sol/earth/emission.tga",
+    "preview": "src/assets/generated/celestial/sol/earth/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/earth/meta.json"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "preset_id": "rocky_barren",
+  "system_folder_name": "sol",
+  "body_folder_name": "phobos",
+  "display_name": "Phobos",
+  "source_system_id": "0",
+  "source_body_id": "system_0.Sol.Mars.Phobos",
+  "surface_source_kind": "ImportedRealData",
+  "source_catalog_path": "src/assets/data/celestial/source_catalog/sol/phobos.source.json",
+  "data_confidence": "authoritative",
+  "notes": "Phobos requires a real irregular shape model and matching surface texture. Do not generate it as a sphere.",
+  "has_atmosphere": false,
+  "has_cloud_layer": false,
+  "has_emission": false
+}

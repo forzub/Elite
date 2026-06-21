@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 #include "src/scene/EntityId.h"
 #include "src/world/celestial/CelestialTypes.h"
+#include "src/world/types/ObjectType.h"
 
 namespace world::celestial
 {
@@ -169,6 +170,8 @@ struct PlanetMapSnapshot
 struct HubMapModule
 {
     EntityId id {};
+    ObjectType typeId = ObjectType::None;
+    
     std::string stableId;
     std::string name;
     std::string kind;
@@ -185,12 +188,16 @@ struct HubMapModule
 struct HubMapShip
 {
     EntityId id {};
+    ObjectType typeId = ObjectType::None;
+
     std::string name;
 
     glm::dvec3 localPositionMeters {0.0};
     glm::dvec3 localVelocityMps {0.0};
 
     PlanetMapAxisSet localAxes;
+
+    glm::dvec3 sizeMeters {1.0, 1.0, 1.0};
 
     bool player = false;
     bool valid = false;
@@ -209,7 +216,19 @@ struct HubMapSnapshot
     glm::dvec3 hubWorldPositionMeters {0.0};
     glm::dvec3 hubWorldVelocityMps {0.0};
 
+    // Локальная система карты хаба:
+    // X = prograde, Y = radial, Z = normal.
     PlanetMapAxisSet hubAxes;
+
+    // Родительская планета в локальных координатах хаба.
+    // Для круговой орбиты хаб стоит в (0,0,0),
+    // а центр планеты находится примерно по -Y.
+    glm::dvec3 parentPlanetCenterLocalMeters {0.0};
+
+    double parentPlanetRadiusMeters = 0.0;
+    double hubAltitudeMeters = 0.0;
+    double hubOrbitRadiusMeters = 0.0;
+    double hubOrbitalPeriodSeconds = 0.0;
 
     std::vector<HubMapModule> modules;
     std::vector<HubMapShip> ships;

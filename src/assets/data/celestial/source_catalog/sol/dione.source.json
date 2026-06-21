@@ -1,0 +1,21 @@
+{
+  "system_id": "sol",
+  "body_id": "dione",
+  "body_name": "Dione",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/dione/albedo_source.*"
+  },
+  "optional_assets": {
+    "height": "src/assets/source/celestial/sol/dione/height_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/dione/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/dione/normal.tga",
+    "material": "src/assets/generated/celestial/sol/dione/material.tga",
+    "preview": "src/assets/generated/celestial/sol/dione/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/dione/meta.json"
+  }
+}

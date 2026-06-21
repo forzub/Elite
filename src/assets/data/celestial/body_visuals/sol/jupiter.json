@@ -1,0 +1,15 @@
+{
+  "preset_id": "gas_giant",
+  "system_folder_name": "sol",
+  "body_folder_name": "jupiter",
+  "display_name": "Jupiter",
+  "source_system_id": "0",
+  "source_body_id": "system_0.Sol.Jupiter",
+  "surface_source_kind": "ImportedRealData",
+  "source_catalog_path": "src/assets/data/celestial/source_catalog/sol/jupiter.source.json",
+  "data_confidence": "provisional",
+  "notes": "Jupiter is imported from source assets. Source quality may be upgraded later without changing the pipeline contract.",
+  "has_atmosphere": true,
+  "has_cloud_layer": true,
+  "has_emission": false
+}

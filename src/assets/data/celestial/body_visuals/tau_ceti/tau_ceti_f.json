@@ -1,0 +1,40 @@
+{
+  "preset_id": "desert_world",
+  "system_folder_name": "tau_ceti",
+  "body_folder_name": "tau_ceti_f",
+  "display_name": "Tau Ceti f",
+  "source_system_id": "8",
+  "source_body_id": "system_8.Tau_Ceti.Tau_Ceti_f",
+  "surface_source_kind": "ProceduralGeneric",
+  "notes": "Existing catalog body from Tau Ceti. Procedural dry world visual test with stronger ridges, basins and relief.",
+  "has_atmosphere": true,
+  "has_cloud_layer": false,
+  "has_emission": false,
+  "surface": {
+    "seed": 8003,
+    "desertness": 0.88,
+    "ice_coverage": 0.1,
+    "ocean_level": 0.04,
+    "crater_density": 0.26,
+    "crater_strength": 0.28,
+    "crater_small_density": 0.24,
+    "crater_large_density": 0.08,
+    "macro_noise_scale": 1.3,
+    "detail_noise_scale": 1.8,
+    "continent_frequency": 0.78,
+    "continent_warp": 0.055,
+    "mountain_amount": 1.15,
+    "canyon_amount": 0.42,
+    "albedo_variation": 0.2
+  },
+  "texture_profile": {
+    "width": 4096,
+    "height": 2048,
+    "auto_from_radius": true,
+    "max_width": 8192,
+    "max_height": 4096,
+    "target_meters_per_texel": 4200.0,
+    "detail_target_meters_per_texel": 220.0,
+    "min_meaningful_altitude_km": 140.0
+  }
+}

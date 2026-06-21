@@ -1,0 +1,21 @@
+{
+  "system_id": "sol",
+  "body_id": "oberon",
+  "body_name": "Oberon",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/oberon/albedo_source.*"
+  },
+  "optional_assets": {
+    "height": "src/assets/source/celestial/sol/oberon/height_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/oberon/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/oberon/normal.tga",
+    "material": "src/assets/generated/celestial/sol/oberon/material.tga",
+    "preview": "src/assets/generated/celestial/sol/oberon/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/oberon/meta.json"
+  }
+}

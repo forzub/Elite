@@ -1,0 +1,340 @@
+{
+  "presets": [
+    {
+      "preset_id": "rocky_barren",
+      "visual_class": "RockyBarren",
+      "has_atmosphere": false,
+      "has_cloud_layer": false,
+      "has_emission": false,
+      "color_style": {
+        "tint": [0.92, 0.92, 0.94],
+        "saturation": 0.07,
+        "contrast": 1.06,
+        "brightness": 1.00
+      },
+      "surface": {
+        "seed": 1,
+        "macro_noise_scale": 1.00,
+        "detail_noise_scale": 1.40,
+        "roughness": 0.78,
+        "ridge_strength": 0.20,
+        "erosion": 0.08,
+        "crater_density": 0.45,
+        "crater_strength": 0.65,
+        "ocean_level": 0.00,
+        "ice_coverage": 0.00,
+        "desertness": 0.00,
+        "lava_coverage": 0.00,
+        "banding_strength": 0.00,
+        "storm_strength": 0.00
+      },
+      "texture_profile": {
+        "width": 2048,
+        "height": 1024
+      }
+    },
+    {
+      "preset_id": "rocky_ice",
+      "visual_class": "RockyIce",
+      "has_atmosphere": false,
+      "has_cloud_layer": false,
+      "has_emission": false,
+      "color_style": {
+        "tint": [0.88, 0.93, 0.98],
+        "saturation": 0.10,
+        "contrast": 1.04,
+        "brightness": 1.03
+      },
+      "surface": {
+        "seed": 2,
+        "macro_noise_scale": 0.90,
+        "detail_noise_scale": 1.25,
+        "roughness": 0.64,
+        "ridge_strength": 0.30,
+        "erosion": 0.12,
+        "crater_density": 0.14,
+        "crater_strength": 0.20,
+        "ocean_level": 0.00,
+        "ice_coverage": 0.72,
+        "desertness": 0.00,
+        "lava_coverage": 0.00,
+        "banding_strength": 0.00,
+        "storm_strength": 0.00,
+        "crater_small_density": 0.08,
+        "crater_large_density": 0.02,
+        "continent_frequency": 1.0,
+        "continent_warp": 0.018,
+        "mountain_amount": 0.55,
+        "canyon_amount": 0.08,
+        "albedo_variation": 0.10
+      },
+      "texture_profile": {
+        "width": 2048,
+        "height": 1024,
+        "auto_from_radius": true,
+        "max_width": 4096,
+        "max_height": 2048,
+        "target_meters_per_texel": 2500.0,
+        "detail_target_meters_per_texel": 150.0,
+        "min_meaningful_altitude_km": 80.0
+        }
+    },
+    {
+      "preset_id": "terrestrial",
+      "visual_class": "Terrestrial",
+      "has_atmosphere": true,
+      "has_cloud_layer": false,
+      "has_emission": false,
+      "color_style": {
+        "tint": [0.80, 0.88, 0.94],
+        "saturation": 0.12,
+        "contrast": 1.05,
+        "brightness": 1.00
+      },
+      "surface": {
+        "seed": 3,
+        "macro_noise_scale": 1.00,
+        "detail_noise_scale": 1.20,
+        "roughness": 0.52,
+        "ridge_strength": 0.42,
+        "erosion": 0.35,
+        "crater_density": 0.05,
+        "crater_strength": 0.08,
+        "ocean_level": 0.52,
+        "ice_coverage": 0.18,
+        "desertness": 0.15,
+        "lava_coverage": 0.00,
+        "banding_strength": 0.00,
+        "storm_strength": 0.00
+      },
+      "texture_profile": {
+        "width": 2048,
+        "height": 1024
+      }
+    },
+    {
+      "preset_id": "ocean_world",
+      "visual_class": "OceanWorld",
+      "has_atmosphere": true,
+      "has_cloud_layer": false,
+      "has_emission": false,
+      "color_style": {
+        "tint": [0.78, 0.88, 0.95],
+        "saturation": 0.10,
+        "contrast": 1.03,
+        "brightness": 1.02
+      },
+      "surface": {
+        "seed": 4,
+        "macro_noise_scale": 0.85,
+        "detail_noise_scale": 1.10,
+        "roughness": 0.40,
+        "ridge_strength": 0.22,
+        "erosion": 0.28,
+        "crater_density": 0.02,
+        "crater_strength": 0.03,
+        "ocean_level": 0.66,
+        "ice_coverage": 0.10,
+        "desertness": 0.02,
+        "lava_coverage": 0.00,
+        "banding_strength": 0.00,
+        "storm_strength": 0.00,
+        "crater_small_density": 0.02,
+        "crater_large_density": 0.005,
+        "continent_frequency": 1.10,
+        "continent_warp": 0.040,
+        "mountain_amount": 0.70,
+        "canyon_amount": 0.18,
+        "albedo_variation": 0.12
+      },
+      "texture_profile": {
+        "width": 4096,
+        "height": 2048,
+        "auto_from_radius": true,
+        "max_width": 8192,
+        "max_height": 4096,
+        "target_meters_per_texel": 4500.0,
+        "detail_target_meters_per_texel": 250.0,
+        "min_meaningful_altitude_km": 180.0
+        }
+    },
+    {
+      "preset_id": "desert_world",
+      "visual_class": "DesertWorld",
+      "has_atmosphere": true,
+      "has_cloud_layer": false,
+      "has_emission": false,
+      "color_style": {
+        "tint": [0.93, 0.86, 0.77],
+        "saturation": 0.10,
+        "contrast": 1.08,
+        "brightness": 1.00
+      },
+      "surface": {
+        "seed": 5,
+        "macro_noise_scale": 1.10,
+        "detail_noise_scale": 1.45,
+        "roughness": 0.72,
+        "ridge_strength": 0.25,
+        "erosion": 0.46,
+        "crater_density": 0.16,
+        "crater_strength": 0.18,
+        "ocean_level": 0.14,
+        "ice_coverage": 0.06,
+        "desertness": 0.85,
+        "lava_coverage": 0.00,
+        "banding_strength": 0.00,
+        "storm_strength": 0.00,
+        "crater_small_density": 0.18,
+        "crater_large_density": 0.06,
+        "continent_frequency": 0.95,
+        "continent_warp": 0.030,
+        "mountain_amount": 0.85,
+        "canyon_amount": 0.28,
+        "albedo_variation": 0.14
+      },
+      "texture_profile": {
+        "width": 4096,
+        "height": 2048,
+        "auto_from_radius": true,
+        "max_width": 8192,
+        "max_height": 4096,
+        "target_meters_per_texel": 4500.0,
+        "detail_target_meters_per_texel": 250.0,
+        "min_meaningful_altitude_km": 150.0
+      }
+    },
+    {
+      "preset_id": "venusian",
+      "visual_class": "Venusian",
+      "has_atmosphere": true,
+      "has_cloud_layer": false,
+      "has_emission": false,
+      "color_style": {
+        "tint": [0.95, 0.90, 0.78],
+        "saturation": 0.08,
+        "contrast": 1.02,
+        "brightness": 1.00
+      },
+      "surface": {
+        "seed": 6,
+        "macro_noise_scale": 0.95,
+        "detail_noise_scale": 1.00,
+        "roughness": 0.58,
+        "ridge_strength": 0.12,
+        "erosion": 0.35,
+        "crater_density": 0.02,
+        "crater_strength": 0.02,
+        "ocean_level": 0.00,
+        "ice_coverage": 0.00,
+        "desertness": 0.35,
+        "lava_coverage": 0.00,
+        "banding_strength": 0.00,
+        "storm_strength": 0.00
+      },
+      "texture_profile": {
+        "width": 2048,
+        "height": 1024
+      }
+    },
+    {
+      "preset_id": "gas_giant",
+      "visual_class": "GasGiant",
+      "has_atmosphere": true,
+      "has_cloud_layer": false,
+      "has_emission": false,
+      "color_style": {
+        "tint": [0.94, 0.91, 0.84],
+        "saturation": 0.08,
+        "contrast": 1.03,
+        "brightness": 1.00
+      },
+      "surface": {
+        "seed": 7,
+        "macro_noise_scale": 0.80,
+        "detail_noise_scale": 1.25,
+        "roughness": 0.95,
+        "ridge_strength": 0.00,
+        "erosion": 0.00,
+        "crater_density": 0.00,
+        "crater_strength": 0.00,
+        "ocean_level": 0.00,
+        "ice_coverage": 0.00,
+        "desertness": 0.00,
+        "lava_coverage": 0.00,
+        "banding_strength": 0.72,
+        "storm_strength": 0.55
+      },
+      "texture_profile": {
+        "width": 2048,
+        "height": 1024
+      }
+    },
+    {
+      "preset_id": "ice_giant",
+      "visual_class": "IceGiant",
+      "has_atmosphere": true,
+      "has_cloud_layer": false,
+      "has_emission": false,
+      "color_style": {
+        "tint": [0.80, 0.90, 0.98],
+        "saturation": 0.10,
+        "contrast": 1.02,
+        "brightness": 1.02
+      },
+      "surface": {
+        "seed": 8,
+        "macro_noise_scale": 0.82,
+        "detail_noise_scale": 1.18,
+        "roughness": 0.95,
+        "ridge_strength": 0.00,
+        "erosion": 0.00,
+        "crater_density": 0.00,
+        "crater_strength": 0.00,
+        "ocean_level": 0.00,
+        "ice_coverage": 0.00,
+        "desertness": 0.00,
+        "lava_coverage": 0.00,
+        "banding_strength": 0.34,
+        "storm_strength": 0.24
+      },
+      "texture_profile": {
+        "width": 2048,
+        "height": 1024
+      }
+    },
+    {
+      "preset_id": "lava_world",
+      "visual_class": "LavaWorld",
+      "has_atmosphere": false,
+      "has_cloud_layer": false,
+      "has_emission": false,
+      "color_style": {
+        "tint": [0.95, 0.72, 0.58],
+        "saturation": 0.10,
+        "contrast": 1.10,
+        "brightness": 0.96
+      },
+      "surface": {
+        "seed": 9,
+        "macro_noise_scale": 1.10,
+        "detail_noise_scale": 1.65,
+        "roughness": 0.90,
+        "ridge_strength": 0.40,
+        "erosion": 0.05,
+        "crater_density": 0.08,
+        "crater_strength": 0.10,
+        "ocean_level": 0.00,
+        "ice_coverage": 0.00,
+        "desertness": 0.00,
+        "lava_coverage": 0.68,
+        "banding_strength": 0.00,
+        "storm_strength": 0.00
+      },
+      "texture_profile": {
+        "width": 2048,
+        "height": 1024
+      }
+    }
+  ]
+}

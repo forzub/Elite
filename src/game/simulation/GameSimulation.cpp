@@ -57,6 +57,69 @@ namespace
     }
 
 
+
+
+    glm::mat4 localEulerDegToMatrix(
+        const glm::dvec3& deg
+    )
+    {
+        glm::mat4 r(1.0f);
+
+        if (std::abs(deg.x) > 0.000001)
+        {
+            r =
+                glm::rotate(
+                    r,
+                    glm::radians(static_cast<float>(deg.x)),
+                    glm::vec3(1.0f, 0.0f, 0.0f)
+                );
+        }
+
+        if (std::abs(deg.y) > 0.000001)
+        {
+            r =
+                glm::rotate(
+                    r,
+                    glm::radians(static_cast<float>(deg.y)),
+                    glm::vec3(0.0f, 1.0f, 0.0f)
+                );
+        }
+
+        if (std::abs(deg.z) > 0.000001)
+        {
+            r =
+                glm::rotate(
+                    r,
+                    glm::radians(static_cast<float>(deg.z)),
+                    glm::vec3(0.0f, 0.0f, 1.0f)
+                );
+        }
+
+        return r;
+    }
+
+
+
+    glm::mat4 makeHubAttachedObjectOrientation(
+        const glm::mat4& hubOrientation,
+        const glm::dvec3& localRotationDeg
+    )
+    {
+        return
+            hubOrientation *
+            localEulerDegToMatrix(
+                localRotationDeg
+            );
+    }
+
+
+
+
+
+
+
+
+
     glm::dvec3 safeNormalizeD(
         const glm::dvec3& v,
         const glm::dvec3& fallback
@@ -615,20 +678,11 @@ m_previousHubPositionMeters[hubId] =
 
                 if (obj.inheritHubOrientation)
                 {
-                    glm::mat4 localTilt(1.0f);
-
-                    // DEBUG/initial layout:
-                    // наклон станции внутри хаба на 45 градусов.
-                    // Ось можно потом вынести в HubModulePlacement.
-                    localTilt =
-                        glm::rotate(
-                            glm::mat4(1.0f),
-                            glm::radians(45.0f),
-                            glm::vec3(0.0f, 0.0f, 1.0f)
-                        );
-
                     obj.orientation =
-                        hub.orientation * localTilt;
+                        makeHubAttachedObjectOrientation(
+                            hub.orientation,
+                            obj.hubLocalRotationDeg
+                        );
                 }
 
 
@@ -1306,6 +1360,10 @@ EntityId GameSimulation::spawnShip(
     EntityId id = generateEntityId();
     ship->setId(id);
 
+    ship->setTypeId(
+        descriptor.typeId
+    );
+
     // Пока Ship::init принимает vec3, но сразу внутри переводит в WorldPosition.
     // Поэтому здесь НЕ кастуем AU в float до последнего момента.
     ship->init(
@@ -1709,17 +1767,11 @@ void GameSimulation::prepareReferenceFramesForSpawn()
 
         if (obj.inheritHubOrientation)
         {
-            glm::mat4 localTilt(1.0f);
-
-            localTilt =
-                glm::rotate(
-                    glm::mat4(1.0f),
-                    glm::radians(45.0f),
-                    glm::vec3(0.0f, 0.0f, 1.0f)
-                );
-
             obj.orientation =
-                hub.orientation * localTilt;
+                makeHubAttachedObjectOrientation(
+                    hub.orientation,
+                    obj.hubLocalRotationDeg
+                );
         }
     }
 
@@ -1840,6 +1892,7 @@ bool GameSimulation::attachStaticObjectToHub(
     const std::string& hubId,
     const std::string& hubModuleId,
     const glm::dvec3& localOffsetMeters,
+    const glm::dvec3& localRotationDeg,
     bool inheritHubOrientation
 )
 {
@@ -1862,6 +1915,7 @@ bool GameSimulation::attachStaticObjectToHub(
     obj.hubId = hubId;
     obj.hubModuleId = hubModuleId;
     obj.hubLocalOffsetMeters = localOffsetMeters;
+    obj.hubLocalRotationDeg = localRotationDeg;
     obj.inheritHubOrientation = inheritHubOrientation;
 
     obj.orbitalMotion.enabled = false;

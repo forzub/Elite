@@ -1,0 +1,23 @@
+{
+  "system_id": "sol",
+  "body_id": "io",
+  "body_name": "Io",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/io/albedo_source.*"
+  },
+  "optional_assets": {
+    "height": "src/assets/source/celestial/sol/io/height_source.*",
+    "emission": "src/assets/source/celestial/sol/io/emission_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/io/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/io/normal.tga",
+    "material": "src/assets/generated/celestial/sol/io/material.tga",
+    "emission": "src/assets/generated/celestial/sol/io/emission.tga",
+    "preview": "src/assets/generated/celestial/sol/io/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/io/meta.json"
+  }
+}

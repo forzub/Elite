@@ -1,0 +1,21 @@
+{
+  "system_id": "sol",
+  "body_id": "mimas",
+  "body_name": "Mimas",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/mimas/albedo_source.*"
+  },
+  "optional_assets": {
+    "height": "src/assets/source/celestial/sol/mimas/height_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/mimas/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/mimas/normal.tga",
+    "material": "src/assets/generated/celestial/sol/mimas/material.tga",
+    "preview": "src/assets/generated/celestial/sol/mimas/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/mimas/meta.json"
+  }
+}

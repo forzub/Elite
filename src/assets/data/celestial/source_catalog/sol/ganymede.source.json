@@ -1,0 +1,21 @@
+{
+  "system_id": "sol",
+  "body_id": "ganymede",
+  "body_name": "Ganymede",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "sphere",
+  "projection": "equirectangular",
+  "required_assets": {
+    "albedo": "src/assets/source/celestial/sol/ganymede/albedo_source.*"
+  },
+  "optional_assets": {
+    "height": "src/assets/source/celestial/sol/ganymede/height_source.*"
+  },
+  "derived_outputs": {
+    "albedo": "src/assets/generated/celestial/sol/ganymede/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/ganymede/normal.tga",
+    "material": "src/assets/generated/celestial/sol/ganymede/material.tga",
+    "preview": "src/assets/generated/celestial/sol/ganymede/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/ganymede/meta.json"
+  }
+}

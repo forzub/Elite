@@ -39,7 +39,7 @@
           },
           "parent_hub_id": "earth_orbital_hub",
           "local_rotation_deg": {
-            "pitch": 0,
+            "pitch": 45,
             "yaw": 0,
             "roll": 0
           },

@@ -1,0 +1,21 @@
+{
+  "system_id": "sol",
+  "body_id": "deimos",
+  "body_name": "Deimos",
+  "source_policy": "authoritative_import_required",
+  "body_shape": "irregular_mesh",
+  "projection": "mesh_uv",
+  "required_assets": {
+    "mesh": "src/assets/source/celestial/sol/deimos/shape_model_source.*",
+    "albedo": "src/assets/source/celestial/sol/deimos/albedo_source.*"
+  },
+  "optional_assets": {},
+  "derived_outputs": {
+    "mesh": "src/assets/generated/celestial/sol/deimos/shape_model.obj",
+    "albedo": "src/assets/generated/celestial/sol/deimos/albedo.tga",
+    "normal": "src/assets/generated/celestial/sol/deimos/normal.tga",
+    "material": "src/assets/generated/celestial/sol/deimos/material.tga",
+    "preview": "src/assets/generated/celestial/sol/deimos/preview.tga",
+    "meta": "src/assets/generated/celestial/sol/deimos/meta.json"
+  }
+}

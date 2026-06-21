@@ -1,0 +1,35 @@
+{
+  "preset_id": "ocean_world",
+  "system_folder_name": "tau_ceti",
+  "body_folder_name": "tau_ceti_e",
+  "display_name": "Tau Ceti e",
+  "source_system_id": "8",
+  "source_body_id": "system_8.Tau_Ceti.Tau_Ceti_e",
+  "surface_source_kind": "ProceduralGeneric",
+  "notes": "Existing catalog body from Tau Ceti. Procedural ocean-world visual test with stronger continents and relief.",
+  "has_atmosphere": true,
+  "has_cloud_layer": false,
+  "has_emission": false,
+  "surface": {
+    "seed": 8001,
+    "ocean_level": 0.48,
+    "ice_coverage": 0.06,
+    "macro_noise_scale": 1.1,
+    "detail_noise_scale": 1.45,
+    "continent_frequency": 0.82,
+    "continent_warp": 0.075,
+    "mountain_amount": 1.05,
+    "canyon_amount": 0.28,
+    "albedo_variation": 0.18
+  },
+  "texture_profile": {
+    "width": 4096,
+    "height": 2048,
+    "auto_from_radius": true,
+    "max_width": 8192,
+    "max_height": 4096,
+    "target_meters_per_texel": 4500.0,
+    "detail_target_meters_per_texel": 250.0,
+    "min_meaningful_altitude_km": 180.0
+  }
+}

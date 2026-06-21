@@ -104,6 +104,7 @@ public:
         const std::string& hubId,
         const std::string& hubModuleId,
         const glm::dvec3& localOffsetMeters,
+        const glm::dvec3& localRotationDeg = glm::dvec3(0.0),
         bool inheritHubOrientation = true
     );
 

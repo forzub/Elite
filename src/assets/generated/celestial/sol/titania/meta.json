@@ -1,0 +1,124 @@
+{
+    "baker_mode": "ImportedRealDataContract",
+    "body_folder_name": "titania",
+    "color_style": {
+        "brightness": 1.0299999713897705,
+        "contrast": 1.0399999618530273,
+        "saturation": 0.10000000149011612,
+        "tint": [
+            0.8799999952316284,
+            0.9300000071525574,
+            0.9800000190734863
+        ]
+    },
+    "data_confidence": "provisional",
+    "display_name": "Titania",
+    "generated_outputs_resolved": {
+        "albedo": "src/assets/generated/celestial/sol/titania/albedo.tga",
+        "material": "src/assets/generated/celestial/sol/titania/material.tga",
+        "normal": "src/assets/generated/celestial/sol/titania/normal.tga",
+        "preview": "src/assets/generated/celestial/sol/titania/preview.tga",
+        "preview_flat": "src/assets/generated/celestial/sol/titania/preview_flat.tga"
+    },
+    "generated_textures": {
+        "albedo": "src/assets/generated/celestial/sol/titania/albedo.tga",
+        "clouds": "",
+        "emission": "",
+        "material": "src/assets/generated/celestial/sol/titania/material.tga",
+        "meta": "src/assets/generated/celestial/sol/titania/meta.json",
+        "normal": "src/assets/generated/celestial/sol/titania/normal.tga",
+        "preview": "src/assets/generated/celestial/sol/titania/preview.tga",
+        "preview_flat": "src/assets/generated/celestial/sol/titania/preview_flat.tga",
+        "shape_model": ""
+    },
+    "has_atmosphere": false,
+    "has_cloud_layer": false,
+    "has_emission": false,
+    "notes": "Titania is imported from source assets. Source quality may be upgraded later without changing the pipeline contract.",
+    "notes_runtime": "Imported source catalog was used as the body texture contract. Missing optional maps are allowed; missing required maps are fatal.",
+    "reference_radius_km": 789.0,
+    "reference_radius_source": {
+        "authoritative_layer": "star_atlas/system_details.json",
+        "derivation": "reference_radius_km = diameter_km * 0.5",
+        "source_field": "diameter_km",
+        "source_path": "src/assets/data/star_atlas/system_details.json"
+    },
+    "render_lod": {
+        "global": {
+            "albedo": "src/assets/generated/celestial/sol/titania/lod/global/albedo_2048.tga",
+            "clouds": "",
+            "emission": "",
+            "material": "src/assets/generated/celestial/sol/titania/lod/global/material_2048.tga",
+            "normal": "src/assets/generated/celestial/sol/titania/lod/global/normal_2048.tga"
+        },
+        "map": {
+            "flat_1024": "src/assets/generated/celestial/sol/titania/lod/map/flat_1024.tga",
+            "preview_512": "src/assets/generated/celestial/sol/titania/lod/map/preview_512.tga"
+        },
+        "tiles": {
+            "channels": [
+                "albedo",
+                "normal",
+                "material"
+            ],
+            "enabled": true,
+            "max_zoom": 2,
+            "root": "src/assets/generated/celestial/sol/titania/lod/tiles",
+            "tile_size": 512
+        }
+    },
+    "resolved_source_assets": {
+        "albedo": "src/assets/source/celestial/sol/titania/albedo_source.jpg",
+        "height": "src/assets/source/celestial/sol/titania/height_source.png"
+    },
+    "runtime_texture_strategy": "Use lod/map for system-map and UI, lod/global for far-orbit rendering, and lod/tiles for close-orbit rendering where enabled.",
+    "source_body_id": "system_0.Sol.Uranus.Titania",
+    "source_catalog_contract": {
+        "body_id": "titania",
+        "body_name": "Titania",
+        "body_shape": "sphere",
+        "catalog_path": "src/assets/data/celestial/source_catalog/sol/titania.source.json",
+        "projection": "equirectangular",
+        "source_policy": "authoritative_import_required",
+        "system_id": "sol"
+    },
+    "source_catalog_path": "src/assets/data/celestial/source_catalog/sol/titania.source.json",
+    "source_system_id": "0",
+    "surface": {
+        "albedo_variation": 0.10000000149011612,
+        "banding_strength": 0.0,
+        "canyon_amount": 0.07999999821186066,
+        "continent_frequency": 1.0,
+        "continent_warp": 0.017999999225139618,
+        "crater_density": 0.14000000059604645,
+        "crater_large_density": 0.019999999552965164,
+        "crater_small_density": 0.07999999821186066,
+        "crater_strength": 0.20000000298023224,
+        "desertness": 0.0,
+        "detail_noise_scale": 1.25,
+        "erosion": 0.11999999731779099,
+        "ice_coverage": 0.7200000286102295,
+        "lava_coverage": 0.0,
+        "macro_noise_scale": 0.8999999761581421,
+        "mountain_amount": 0.550000011920929,
+        "ocean_level": 0.0,
+        "ridge_strength": 0.30000001192092896,
+        "roughness": 0.6399999856948853,
+        "seed": 2,
+        "storm_strength": 0.0
+    },
+    "surface_reference_path": "",
+    "surface_source_kind": "ImportedRealData",
+    "system_folder_name": "sol",
+    "texture_profile": {
+        "auto_from_radius": true,
+        "detail_target_meters_per_texel": 150.0,
+        "height": 1024,
+        "max_height": 2048,
+        "max_width": 4096,
+        "min_meaningful_altitude_km": 80.0,
+        "target_meters_per_texel": 2500.0,
+        "width": 2048
+    },
+    "visual_class": "RockyIce"
+}

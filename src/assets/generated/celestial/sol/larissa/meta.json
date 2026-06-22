@@ -1,0 +1,124 @@
+{
+    "baker_mode": "ImportedRealDataContract",
+    "body_folder_name": "larissa",
+    "color_style": {
+        "brightness": 1.0,
+        "contrast": 1.059999942779541,
+        "saturation": 0.07000000029802322,
+        "tint": [
+            0.9200000166893005,
+            0.9200000166893005,
+            0.9399999976158142
+        ]
+    },
+    "data_confidence": "provisional",
+    "display_name": "Larissa",
+    "generated_outputs_resolved": {
+        "albedo": "src/assets/generated/celestial/sol/larissa/albedo.tga",
+        "material": "src/assets/generated/celestial/sol/larissa/material.tga",
+        "normal": "src/assets/generated/celestial/sol/larissa/normal.tga",
+        "preview": "src/assets/generated/celestial/sol/larissa/preview.tga",
+        "preview_flat": "src/assets/generated/celestial/sol/larissa/preview_flat.tga"
+    },
+    "generated_textures": {
+        "albedo": "src/assets/generated/celestial/sol/larissa/albedo.tga",
+        "clouds": "",
+        "emission": "",
+        "material": "src/assets/generated/celestial/sol/larissa/material.tga",
+        "meta": "src/assets/generated/celestial/sol/larissa/meta.json",
+        "normal": "src/assets/generated/celestial/sol/larissa/normal.tga",
+        "preview": "src/assets/generated/celestial/sol/larissa/preview.tga",
+        "preview_flat": "src/assets/generated/celestial/sol/larissa/preview_flat.tga",
+        "shape_model": ""
+    },
+    "has_atmosphere": false,
+    "has_cloud_layer": false,
+    "has_emission": false,
+    "notes": "Larissa is imported from source assets. Source quality may be upgraded later without changing the pipeline contract.",
+    "notes_runtime": "Imported source catalog was used as the body texture contract. Missing optional maps are allowed; missing required maps are fatal.",
+    "reference_radius_km": 97.0,
+    "reference_radius_source": {
+        "authoritative_layer": "star_atlas/system_details.json",
+        "derivation": "reference_radius_km = diameter_km * 0.5",
+        "source_field": "diameter_km",
+        "source_path": "src/assets/data/star_atlas/system_details.json"
+    },
+    "render_lod": {
+        "global": {
+            "albedo": "src/assets/generated/celestial/sol/larissa/lod/global/albedo_2048.tga",
+            "clouds": "",
+            "emission": "",
+            "material": "src/assets/generated/celestial/sol/larissa/lod/global/material_2048.tga",
+            "normal": "src/assets/generated/celestial/sol/larissa/lod/global/normal_2048.tga"
+        },
+        "map": {
+            "flat_1024": "src/assets/generated/celestial/sol/larissa/lod/map/flat_1024.tga",
+            "preview_512": "src/assets/generated/celestial/sol/larissa/lod/map/preview_512.tga"
+        },
+        "tiles": {
+            "channels": [
+                "albedo",
+                "normal",
+                "material"
+            ],
+            "enabled": false,
+            "max_zoom": 0,
+            "root": "",
+            "tile_size": 512
+        }
+    },
+    "resolved_source_assets": {
+        "albedo": "src/assets/source/celestial/sol/larissa/albedo_source.jpg",
+        "height": "src/assets/source/celestial/sol/larissa/height_source.png"
+    },
+    "runtime_texture_strategy": "Use lod/map for system-map and UI, lod/global for far-orbit rendering, and lod/tiles for close-orbit rendering where enabled.",
+    "source_body_id": "system_0.Sol.Neptune.Larissa",
+    "source_catalog_contract": {
+        "body_id": "larissa",
+        "body_name": "Larissa",
+        "body_shape": "sphere",
+        "catalog_path": "src/assets/data/celestial/source_catalog/sol/larissa.source.json",
+        "projection": "equirectangular",
+        "source_policy": "authoritative_import_required",
+        "system_id": "sol"
+    },
+    "source_catalog_path": "src/assets/data/celestial/source_catalog/sol/larissa.source.json",
+    "source_system_id": "0",
+    "surface": {
+        "albedo_variation": 0.0,
+        "banding_strength": 0.0,
+        "canyon_amount": 0.0,
+        "continent_frequency": 1.0,
+        "continent_warp": 0.0,
+        "crater_density": 0.44999998807907104,
+        "crater_large_density": 0.0,
+        "crater_small_density": 0.0,
+        "crater_strength": 0.6499999761581421,
+        "desertness": 0.0,
+        "detail_noise_scale": 1.399999976158142,
+        "erosion": 0.07999999821186066,
+        "ice_coverage": 0.0,
+        "lava_coverage": 0.0,
+        "macro_noise_scale": 1.0,
+        "mountain_amount": 0.0,
+        "ocean_level": 0.0,
+        "ridge_strength": 0.20000000298023224,
+        "roughness": 0.7799999713897705,
+        "seed": 1,
+        "storm_strength": 0.0
+    },
+    "surface_reference_path": "",
+    "surface_source_kind": "ImportedRealData",
+    "system_folder_name": "sol",
+    "texture_profile": {
+        "auto_from_radius": false,
+        "detail_target_meters_per_texel": 250.0,
+        "height": 1024,
+        "max_height": 4096,
+        "max_width": 8192,
+        "min_meaningful_altitude_km": 300.0,
+        "target_meters_per_texel": 4000.0,
+        "width": 2048
+    },
+    "visual_class": "RockyBarren"
+}

@@ -1,0 +1,127 @@
+{
+    "baker_mode": "ImportedRealDataContract",
+    "body_folder_name": "venus",
+    "color_style": {
+        "brightness": 1.0,
+        "contrast": 1.0199999809265137,
+        "saturation": 0.07999999821186066,
+        "tint": [
+            0.949999988079071,
+            0.8999999761581421,
+            0.7799999713897705
+        ]
+    },
+    "data_confidence": "provisional",
+    "display_name": "Venus",
+    "generated_outputs_resolved": {
+        "albedo": "src/assets/generated/celestial/sol/venus/albedo.tga",
+        "clouds": "src/assets/generated/celestial/sol/venus/clouds.tga",
+        "material": "src/assets/generated/celestial/sol/venus/material.tga",
+        "normal": "src/assets/generated/celestial/sol/venus/normal.tga",
+        "preview": "src/assets/generated/celestial/sol/venus/preview.tga",
+        "preview_flat": "src/assets/generated/celestial/sol/venus/preview_flat.tga"
+    },
+    "generated_textures": {
+        "albedo": "src/assets/generated/celestial/sol/venus/albedo.tga",
+        "clouds": "src/assets/generated/celestial/sol/venus/clouds.tga",
+        "emission": "",
+        "material": "src/assets/generated/celestial/sol/venus/material.tga",
+        "meta": "src/assets/generated/celestial/sol/venus/meta.json",
+        "normal": "src/assets/generated/celestial/sol/venus/normal.tga",
+        "preview": "src/assets/generated/celestial/sol/venus/preview.tga",
+        "preview_flat": "src/assets/generated/celestial/sol/venus/preview_flat.tga",
+        "shape_model": ""
+    },
+    "has_atmosphere": true,
+    "has_cloud_layer": true,
+    "has_emission": false,
+    "notes": "Venus is imported from source assets. Source quality may be upgraded later without changing the pipeline contract.",
+    "notes_runtime": "Imported source catalog was used as the body texture contract. Missing optional maps are allowed; missing required maps are fatal.",
+    "reference_radius_km": 6052.0,
+    "reference_radius_source": {
+        "authoritative_layer": "star_atlas/system_details.json",
+        "derivation": "reference_radius_km = diameter_km * 0.5",
+        "source_field": "diameter_km",
+        "source_path": "src/assets/data/star_atlas/system_details.json"
+    },
+    "render_lod": {
+        "global": {
+            "albedo": "src/assets/generated/celestial/sol/venus/lod/global/albedo_2048.tga",
+            "clouds": "src/assets/generated/celestial/sol/venus/lod/global/clouds_2048.tga",
+            "emission": "",
+            "material": "src/assets/generated/celestial/sol/venus/lod/global/material_2048.tga",
+            "normal": "src/assets/generated/celestial/sol/venus/lod/global/normal_2048.tga"
+        },
+        "map": {
+            "flat_1024": "src/assets/generated/celestial/sol/venus/lod/map/flat_1024.tga",
+            "preview_512": "src/assets/generated/celestial/sol/venus/lod/map/preview_512.tga"
+        },
+        "tiles": {
+            "channels": [
+                "albedo",
+                "normal",
+                "material",
+                "clouds"
+            ],
+            "enabled": true,
+            "max_zoom": 2,
+            "root": "src/assets/generated/celestial/sol/venus/lod/tiles",
+            "tile_size": 512
+        }
+    },
+    "resolved_source_assets": {
+        "albedo": "src/assets/source/celestial/sol/venus/albedo_source.jpg",
+        "clouds": "src/assets/source/celestial/sol/venus/clouds_source.png",
+        "height": "src/assets/source/celestial/sol/venus/height_source.png"
+    },
+    "runtime_texture_strategy": "Use lod/map for system-map and UI, lod/global for far-orbit rendering, and lod/tiles for close-orbit rendering where enabled.",
+    "source_body_id": "system_0.Sol.Venus",
+    "source_catalog_contract": {
+        "body_id": "venus",
+        "body_name": "Venus",
+        "body_shape": "sphere",
+        "catalog_path": "src/assets/data/celestial/source_catalog/sol/venus.source.json",
+        "projection": "equirectangular",
+        "source_policy": "authoritative_import_required",
+        "system_id": "sol"
+    },
+    "source_catalog_path": "src/assets/data/celestial/source_catalog/sol/venus.source.json",
+    "source_system_id": "0",
+    "surface": {
+        "albedo_variation": 0.0,
+        "banding_strength": 0.0,
+        "canyon_amount": 0.0,
+        "continent_frequency": 1.0,
+        "continent_warp": 0.0,
+        "crater_density": 0.019999999552965164,
+        "crater_large_density": 0.0,
+        "crater_small_density": 0.0,
+        "crater_strength": 0.019999999552965164,
+        "desertness": 0.3499999940395355,
+        "detail_noise_scale": 1.0,
+        "erosion": 0.3499999940395355,
+        "ice_coverage": 0.0,
+        "lava_coverage": 0.0,
+        "macro_noise_scale": 0.949999988079071,
+        "mountain_amount": 0.0,
+        "ocean_level": 0.0,
+        "ridge_strength": 0.11999999731779099,
+        "roughness": 0.5799999833106995,
+        "seed": 6,
+        "storm_strength": 0.0
+    },
+    "surface_reference_path": "",
+    "surface_source_kind": "ImportedRealData",
+    "system_folder_name": "sol",
+    "texture_profile": {
+        "auto_from_radius": false,
+        "detail_target_meters_per_texel": 250.0,
+        "height": 1024,
+        "max_height": 4096,
+        "max_width": 8192,
+        "min_meaningful_altitude_km": 300.0,
+        "target_meters_per_texel": 4000.0,
+        "width": 2048
+    },
+    "visual_class": "Venusian"
+}

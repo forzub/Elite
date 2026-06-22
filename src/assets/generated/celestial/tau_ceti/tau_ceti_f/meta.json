@@ -1,0 +1,69 @@
+{
+    "body_folder_name": "tau_ceti_f",
+    "color_style": {
+        "brightness": 1.0,
+        "contrast": 1.0800000429153442,
+        "saturation": 0.10000000149011612,
+        "tint": [
+            0.9300000071525574,
+            0.8600000143051147,
+            0.7699999809265137
+        ]
+    },
+    "data_confidence": "placeholder",
+    "display_name": "Tau Ceti f",
+    "generated_textures": {
+        "albedo": "D:/__elite/work/src/assets/generated/celestial/tau_ceti/tau_ceti_f/albedo.tga",
+        "clouds": "",
+        "emission": "",
+        "material": "D:/__elite/work/src/assets/generated/celestial/tau_ceti/tau_ceti_f/material.tga",
+        "meta": "D:/__elite/work/src/assets/generated/celestial/tau_ceti/tau_ceti_f/meta.json",
+        "normal": "D:/__elite/work/src/assets/generated/celestial/tau_ceti/tau_ceti_f/normal.tga",
+        "preview": "D:/__elite/work/src/assets/generated/celestial/tau_ceti/tau_ceti_f/preview.tga"
+    },
+    "has_atmosphere": true,
+    "has_cloud_layer": false,
+    "has_emission": false,
+    "notes": "Existing catalog body from Tau Ceti. Procedural dry world visual test with stronger ridges, basins and relief.",
+    "reference_radius_km": 5100.0,
+    "source_body_id": "system_8.Tau_Ceti.Tau_Ceti_f",
+    "source_catalog_path": "",
+    "source_system_id": "8",
+    "surface": {
+        "albedo_variation": 0.20000000298023224,
+        "banding_strength": 0.0,
+        "canyon_amount": 0.41999998688697815,
+        "continent_frequency": 0.7799999713897705,
+        "continent_warp": 0.054999999701976776,
+        "crater_density": 0.25999999046325684,
+        "crater_large_density": 0.07999999821186066,
+        "crater_small_density": 0.23999999463558197,
+        "crater_strength": 0.2800000011920929,
+        "desertness": 0.8799999952316284,
+        "detail_noise_scale": 1.7999999523162842,
+        "erosion": 0.46000000834465027,
+        "ice_coverage": 0.10000000149011612,
+        "lava_coverage": 0.0,
+        "macro_noise_scale": 1.2999999523162842,
+        "mountain_amount": 1.149999976158142,
+        "ocean_level": 0.03999999910593033,
+        "ridge_strength": 0.25,
+        "roughness": 0.7200000286102295,
+        "seed": 8003,
+        "storm_strength": 0.0
+    },
+    "surface_reference_path": "",
+    "surface_source_kind": "ProceduralFromClassSeed",
+    "system_folder_name": "tau_ceti",
+    "texture_profile": {
+        "auto_from_radius": true,
+        "detail_target_meters_per_texel": 220.0,
+        "height": 2048,
+        "max_height": 4096,
+        "max_width": 8192,
+        "min_meaningful_altitude_km": 140.0,
+        "target_meters_per_texel": 4200.0,
+        "width": 4096
+    },
+    "visual_class": "DesertWorld"
+}

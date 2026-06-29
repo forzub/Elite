@@ -431,6 +431,82 @@ bool bodyMatchesFilter(
     return true;
 }
 
+
+
+std::string normalizeGeneratedAssetSlashes(
+    std::string s
+)
+{
+    for (char& c : s)
+    {
+        if (c == '\\')
+            c = '/';
+    }
+
+    return s;
+}
+
+std::string rebaseGeneratedAssetPathToMetaBodyRoot(
+    const std::filesystem::path& metaPath,
+    const std::string& assetPath
+)
+{
+    namespace fs = std::filesystem;
+
+    if (assetPath.empty())
+        return "";
+
+    const fs::path bodyRoot =
+        metaPath.parent_path();
+
+    const std::string systemFolder =
+        bodyRoot.parent_path().filename().generic_string();
+
+    const std::string bodyFolder =
+        bodyRoot.filename().generic_string();
+
+    if (systemFolder.empty() || bodyFolder.empty())
+        return assetPath;
+
+    const std::string normalized =
+        normalizeGeneratedAssetSlashes(assetPath);
+
+    const std::string marker =
+        "/" + systemFolder + "/" + bodyFolder + "/";
+
+    std::size_t pos =
+        normalized.find(marker);
+
+    std::string suffix;
+
+    if (pos != std::string::npos)
+    {
+        suffix =
+            normalized.substr(pos + marker.size());
+    }
+    else
+    {
+        const std::string markerAtStart =
+            systemFolder + "/" + bodyFolder + "/";
+
+        if (normalized.rfind(markerAtStart, 0) == 0)
+        {
+            suffix =
+                normalized.substr(markerAtStart.size());
+        }
+    }
+
+    if (suffix.empty())
+        return assetPath;
+
+    return
+        (bodyRoot / fs::path(suffix))
+            .lexically_normal()
+            .generic_string();
+}
+
+
+
 bool readAssetMeta(
     const std::filesystem::path& metaPath,
     CelestialGeneratedAssetSet& out
@@ -545,6 +621,66 @@ bool readAssetMeta(
 
     out.tiles.channels =
         jsonStringArray(tiles, "channels");
+
+        auto rebase =
+        [&](const std::string& path) -> std::string
+        {
+            return rebaseGeneratedAssetPathToMetaBodyRoot(
+                metaPath,
+                path
+            );
+        };
+
+    out.base.albedoPath =
+        rebase(out.base.albedoPath);
+
+    out.base.normalPath =
+        rebase(out.base.normalPath);
+
+    out.base.materialPath =
+        rebase(out.base.materialPath);
+
+    out.base.cloudsPath =
+        rebase(out.base.cloudsPath);
+
+    out.base.emissionPath =
+        rebase(out.base.emissionPath);
+
+    out.base.previewPath =
+        rebase(out.base.previewPath);
+
+    out.base.previewFlatPath =
+        rebase(out.base.previewFlatPath);
+
+    out.base.shapeModelPath =
+        rebase(out.base.shapeModelPath);
+
+    out.base.metaPath =
+        rebase(out.base.metaPath);
+
+    out.map.preview512Path =
+        rebase(out.map.preview512Path);
+
+    out.map.flat1024Path =
+        rebase(out.map.flat1024Path);
+
+    out.global.albedoPath =
+        rebase(out.global.albedoPath);
+
+    out.global.normalPath =
+        rebase(out.global.normalPath);
+
+    out.global.materialPath =
+        rebase(out.global.materialPath);
+
+    out.global.cloudsPath =
+        rebase(out.global.cloudsPath);
+
+    out.global.emissionPath =
+        rebase(out.global.emissionPath);
+
+    out.tiles.rootPath =
+        rebase(out.tiles.rootPath);
 
     return true;
 }

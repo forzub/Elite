@@ -11,8 +11,11 @@ void main()
 {
     vec4 texel = texture(uTexture, vUv);
 
-    if (texel.a < 0.02)
-        discard;
-
-    FragColor = texel * vColor;
+    // System-map body textures are treated as opaque color maps.
+    // Some generated preview/albedo images may contain garbage or mask-like
+    // alpha rows. That alpha must not cut holes through planets/moons.
+    FragColor = vec4(
+        texel.rgb * vColor.rgb,
+        vColor.a
+    );
 }

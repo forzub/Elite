@@ -78,10 +78,12 @@ struct CelestialBodyDefinition
 
     std::string parentId;
 
-    double radiusKm = 0.0;
     double diameterKm = 0.0;
     double massKg = 0.0;
     double gravitationalParameterM3s2 = 0.0;
+
+    double radiusKm = 0.0;
+    std::vector<CelestialRingDefinition> rings;
   
 
 
@@ -89,10 +91,20 @@ struct CelestialBodyDefinition
     double orbitalPeriodDays = 0.0;
     double dayLengthHours = 0.0;
 
+    // Body orientation convention:
+    // +Y = north pole.
+    // XZ = equatorial plane.
+    // +X = prime meridian at rotation phase 0.
+    // Equirectangular texture: top=north, bottom=south.
+    double axialTiltDeg = 0.0;
+    double axisNodeDeg = 0.0;
+    double rotationOffsetDeg = 0.0;
+    double textureLongitudeOffsetDeg = 0.0;
+
     glm::dvec3 staticPositionAu {0.0};
 
     std::vector<CelestialBodyDisplayName> alternativeNames;
-    std::vector<CelestialRingDefinition> rings;
+    
 
 };
 
@@ -120,8 +132,16 @@ struct CelestialBodyState
     glm::dvec3 worldMeters {0.0};
 
     double radiusKm = 0.0;
+
     double orbitalPhaseRad = 0.0;
     double rotationPhaseRad = 0.0;
+
+    double dayLengthHours = 0.0;
+
+    double axialTiltDeg = 0.0;
+    double axisNodeDeg = 0.0;
+    double textureLongitudeOffsetDeg = 0.0;
+
     std::vector<CelestialRingDefinition> rings;
 };
 

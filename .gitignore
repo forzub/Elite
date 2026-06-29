@@ -33,3 +33,5 @@ id_ed25519*
 # Или более точечно (рекомендую):
 src/assets/generated/**/*.tga
 src/assets/generated/**/*.TGA
+/assets/
+/build/assets/generated/

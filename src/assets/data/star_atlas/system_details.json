@@ -137,6 +137,10 @@
               "land_water_ratio": "29/71",
               "ocean_composition": "Вода (H₂O)",
               "mining_appeal": "Низкая (заповедная зона)",
+              "axial_tilt_deg": 23.44,
+              "axis_node_deg": 0.0,
+              "rotation_offset_deg": 0.0,
+              "texture_longitude_offset_deg": 0.0,
               "moons": [
                 {
                   "name": "Луна",

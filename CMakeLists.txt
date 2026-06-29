@@ -233,13 +233,48 @@ add_executable(EliteGame
 
     src/world/celestial/visual/CelestialVisualLibrary.cpp
     src/world/celestial/visual/CelestialTextureBaker.cpp
+    src/world/celestial/visual/CelestialGeneratedAssetLibrary.cpp
 
+    src/render/celestial/CelestialShapeMesh.cpp
+)
+
+
+set(ELITE_STATIC_ASSETS_DIR
+    "${CMAKE_SOURCE_DIR}/src/assets"
+)
+
+set(ELITE_EXTERNAL_ASSETS_DIR
+    "${CMAKE_SOURCE_DIR}/assets"
+)
+
+set(ELITE_RUNTIME_ASSETS_DIR
+    "${CMAKE_BINARY_DIR}/assets"
 )
 
 add_custom_target(copy_assets ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+            "${ELITE_RUNTIME_ASSETS_DIR}"
+
+    # Lightweight bundled assets: shaders, data, small configs.
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_SOURCE_DIR}/src/assets
-            ${CMAKE_BINARY_DIR}/assets)
+            "${ELITE_STATIC_ASSETS_DIR}"
+            "${ELITE_RUNTIME_ASSETS_DIR}"
+
+    COMMENT "Copying bundled assets to build/assets"
+)
+
+if(EXISTS "${ELITE_EXTERNAL_ASSETS_DIR}")
+    add_custom_command(
+        TARGET copy_assets
+        POST_BUILD
+
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "${ELITE_EXTERNAL_ASSETS_DIR}"
+                "${ELITE_RUNTIME_ASSETS_DIR}"
+
+        COMMENT "Copying external assets to build/assets"
+    )
+endif()
 
 add_dependencies(EliteGame copy_assets)
 

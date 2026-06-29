@@ -14,7 +14,7 @@ struct CelestialTextureBakeOptions
         "src/assets/data/celestial/body_visuals";
 
     std::string outputRoot =
-        "src/assets/generated/celestial";
+        "img_tmp/celestial";
 
     // Optional filters.
     //

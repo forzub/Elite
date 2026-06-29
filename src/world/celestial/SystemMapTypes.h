@@ -60,6 +60,12 @@ namespace world::celestial
         bool drawOrbit = false;
 
         double radiusKm = 0.0;
+        double rotationPhaseRad = 0.0;
+        double dayLengthHours = 0.0;
+
+        double axialTiltDeg = 0.0;
+        double axisNodeDeg = 0.0;
+        double textureLongitudeOffsetDeg = 0.0;
 
         // Пока цвет fallback-овый.
         // Потом можно брать из system_details.json, если поле цвета есть.
@@ -87,6 +93,18 @@ namespace world::celestial
         SystemMapObjectKind kind = SystemMapObjectKind::Unknown;
         glm::dvec3 positionAu {0.0};
         int systemId = -1;
+
+        // Optional orbital metadata for map rendering.
+        // Renderer must not invent this from a single current position.
+        bool hasOrbit = false;
+
+        glm::dvec3 orbitCenterAu {0.0};
+
+        double orbitRadiusAu = 0.0;
+
+        double orbitInclinationDeg = 0.0;
+        double orbitLongitudeOfAscendingNodeDeg = 0.0;
+        double orbitArgumentOfPeriapsisDeg = 0.0;
     };
 
     struct SystemMapSnapshot
@@ -157,6 +175,13 @@ struct PlanetMapSnapshot
     double planetRadiusMeters = 0.0;
     double gravitationalParameterM3s2 = 0.0;
     double universeTimeSeconds = 0.0;
+
+    double planetRotationPhaseRad = 0.0;
+    double planetDayLengthHours = 0.0;
+
+    double planetAxialTiltDeg = 0.0;
+    double planetAxisNodeDeg = 0.0;
+    double planetTextureLongitudeOffsetDeg = 0.0;
 
     std::vector<PlanetMapOrbit> hubOrbits;
     std::vector<PlanetMapOrbit> playerOrbits;

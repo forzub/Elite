@@ -44,6 +44,19 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
         state.type = body.type;
         state.parentId = body.parentId;
         state.radiusKm = body.radiusKm;
+
+        state.dayLengthHours =
+            body.dayLengthHours;
+
+        state.axialTiltDeg =
+            body.axialTiltDeg;
+
+        state.axisNodeDeg =
+            body.axisNodeDeg;
+
+        state.textureLongitudeOffsetDeg =
+            body.textureLongitudeOffsetDeg;
+
         state.rings = body.rings;
 
         glm::dvec3 parentAu {0.0};
@@ -77,6 +90,11 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
                     simTimeSeconds / (body.dayLengthHours * 3600.0),
                     1.0
                 ) * TwoPi;
+
+            state.rotationPhaseRad +=
+                body.rotationOffsetDeg *
+                TwoPi /
+                360.0;
         }
 
         worldAuById[state.id] = state.positionAu;

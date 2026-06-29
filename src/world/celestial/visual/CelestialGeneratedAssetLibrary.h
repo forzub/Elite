@@ -98,7 +98,7 @@ struct CelestialGeneratedAssetSet
 struct CelestialGeneratedAssetLibraryOptions
 {
     std::string generatedRoot =
-        "src/assets/generated/celestial";
+        "assets/generated/celestial";
 
     std::string systemFilter;
     std::string bodyFilter;

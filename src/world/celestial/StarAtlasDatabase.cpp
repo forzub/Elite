@@ -112,7 +112,23 @@ void readGravityFields(
 
 
 
+void readOrientationFields(
+    const json& j,
+    world::celestial::CelestialBodyDefinition& body
+)
+{
+    body.axialTiltDeg =
+        j.value("axial_tilt_deg", 0.0);
 
+    body.axisNodeDeg =
+        j.value("axis_node_deg", 0.0);
+
+    body.rotationOffsetDeg =
+        j.value("rotation_offset_deg", 0.0);
+
+    body.textureLongitudeOffsetDeg =
+        j.value("texture_longitude_offset_deg", 0.0);
+}
 
 
 
@@ -197,6 +213,7 @@ void addMoonDefinitions(
         body.orbitalPeriodDays = moon.value("orbital_period_days", 0.0);
         body.dayLengthHours = moon.value("day_length_hours", 0.0);
 
+        readOrientationFields(moon, body);
         readAlternativeNames(moon, body);
 
         system.bodies.push_back(std::move(body));
@@ -236,6 +253,7 @@ void addPlanetDefinitions(
         body.orbitalPeriodDays = planet.value("orbital_period_days", 0.0);
         body.dayLengthHours = planet.value("day_length_hours", 0.0);
 
+        readOrientationFields(planet, body);
         readAlternativeNames(planet, body);
         readRings(planet, body);
 

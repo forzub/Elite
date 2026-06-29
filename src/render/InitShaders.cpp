@@ -97,6 +97,13 @@ void InitShaders()
         ShaderProgram::Unknown
     );
 
+    shaders.load(
+        "system_map_body_preview",
+        "assets/shaders/system_map/map_body_preview.vert",
+        "assets/shaders/system_map/map_body_preview.frag",
+        ShaderProgram::Unknown
+    );
+
 
     shaders.load(
         "galaxy_haze",

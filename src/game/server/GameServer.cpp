@@ -42,6 +42,88 @@ namespace {
         }
     }
 
+
+
+    void appendSystemMapMotionDebugCsv(
+        const world::celestial::SystemMapSnapshot& snapshot
+    )
+    {
+        static double lastLoggedUniverseTime = -1.0;
+
+        // Логируем не чаще одного раза на 1 секунду universe time,
+        // чтобы не засрать файл.
+        if (lastLoggedUniverseTime >= 0.0 &&
+            std::abs(snapshot.universeTimeSeconds - lastLoggedUniverseTime) < 1.0)
+        {
+            return;
+        }
+
+        lastLoggedUniverseTime =
+            snapshot.universeTimeSeconds;
+
+        const char* path =
+            "system_map_motion.csv";
+
+        std::ifstream check(path);
+        const bool needHeader =
+            !check.good();
+        check.close();
+
+        std::ofstream out(
+            path,
+            std::ios::app
+        );
+
+        if (!out.is_open())
+            return;
+
+        if (needHeader)
+        {
+            out
+                << "universe_time,system_id,body_id,body_name,type,"
+                << "x_au,y_au,z_au,orbit_radius_au,draw_orbit\n";
+        }
+
+        for (const auto& body : snapshot.bodies)
+        {
+            if (body.type != world::celestial::BodyType::Planet &&
+                body.type != world::celestial::BodyType::Moon)
+            {
+                continue;
+            }
+
+            out
+                << std::fixed
+                << std::setprecision(6)
+                << snapshot.universeTimeSeconds
+                << ","
+                << snapshot.systemId
+                << ",\""
+                << body.id
+                << "\",\""
+                << body.name
+                << "\","
+                << world::celestial::toString(body.type)
+                << ","
+                << std::setprecision(12)
+                << body.positionAu.x
+                << ","
+                << body.positionAu.y
+                << ","
+                << body.positionAu.z
+                << ","
+                << body.orbitRadiusAu
+                << ","
+                << (body.drawOrbit ? 1 : 0)
+                << "\n";
+        }
+    }
+
+
+
+
+
+
     std::string jurisdictionForSystemId(int systemId)
     {
         if (systemId == 0)
@@ -869,11 +951,15 @@ GameServer::buildSystemMapSnapshot(
     const auto& runtimeSnapshot =
         runtime.snapshot();
 
-    std::unordered_map<std::string, glm::dvec3> runtimePositionById;
+    std::unordered_map<
+    std::string,
+    world::celestial::CelestialBodyState
+    > runtimeStateById;
 
     for (const auto& state : runtimeSnapshot.bodies)
     {
-        runtimePositionById[state.id] = state.positionAu;
+        runtimeStateById[state.id] =
+            state;
     }
 
 
@@ -890,21 +976,66 @@ GameServer::buildSystemMapSnapshot(
         item.type = body.type;
         item.radiusKm = body.radiusKm;
 
-        auto stateIt =
-            runtimePositionById.find(body.id);
+        item.rotationPhaseRad =
+            body.rotationOffsetDeg *
+            3.14159265358979323846 /
+            180.0;
 
-        if (stateIt != runtimePositionById.end())
-            item.positionAu = stateIt->second;
+        item.dayLengthHours =
+            body.dayLengthHours;
+
+        item.axialTiltDeg =
+            body.axialTiltDeg;
+
+        item.axisNodeDeg =
+            body.axisNodeDeg;
+
+        item.textureLongitudeOffsetDeg =
+            body.textureLongitudeOffsetDeg;
+
+        auto stateIt =
+            runtimeStateById.find(body.id);
+
+        if (stateIt != runtimeStateById.end())
+        {
+            const auto& state =
+                stateIt->second;
+
+            item.positionAu =
+                state.positionAu;
+
+            item.rotationPhaseRad =
+                state.rotationPhaseRad;
+
+            item.dayLengthHours =
+                state.dayLengthHours;
+
+            item.axialTiltDeg =
+                state.axialTiltDeg;
+
+            item.axisNodeDeg =
+                state.axisNodeDeg;
+
+            item.textureLongitudeOffsetDeg =
+                state.textureLongitudeOffsetDeg;
+        }
         else
-            item.positionAu = body.staticPositionAu;
+        {
+            item.positionAu =
+                body.staticPositionAu;
+        }
+
+
+
+
 
         if (!body.parentId.empty())
         {
             auto parentIt =
-                runtimePositionById.find(body.parentId);
+                runtimeStateById.find(body.parentId);
 
-            if (parentIt != runtimePositionById.end())
-                item.orbitCenterAu = parentIt->second;
+            if (parentIt != runtimeStateById.end())
+                item.orbitCenterAu = parentIt->second.positionAu;
             else
                 item.orbitCenterAu = glm::dvec3(0.0);
         }
@@ -928,17 +1059,6 @@ GameServer::buildSystemMapSnapshot(
             item.rings.push_back(std::move(r));
         }
 
-
-
-
-
-
-
-
-
-
-
-
         out.bodies.push_back(std::move(item));
     }
 
@@ -954,27 +1074,95 @@ GameServer::buildSystemMapSnapshot(
         world::celestial::SystemMapObject mapObj;
 
         mapObj.id = id;
+
         mapObj.name = obj.displayName;
+
         mapObj.owner = obj.ownerName;
+
         mapObj.systemId = obj.mapSystemId;
+
         mapObj.parentBodyId = obj.mapParentBodyId;
 
         if (obj.type == ObjectType::Station)
+        {
             mapObj.kind = world::celestial::SystemMapObjectKind::Station;
+        }
         else
+        {
             mapObj.kind = world::celestial::SystemMapObjectKind::Unknown;
+        }
 
         const glm::dvec3 meters =
-            world::coordinates::fullMeters(obj.worldPosition);
+            world::coordinates::fullMeters(
+                obj.worldPosition
+            );
 
         mapObj.positionAu =
-            meters / world::celestial::MetersPerAu;
+            meters /
+            world::celestial::MetersPerAu;
 
+        // If this static map object represents a hub module,
+        // the actual orbit belongs to the owning OrbitalHubRuntime.
+        if (!obj.hubId.empty())
+        {
+            auto hubIt =
+                m_simulation.orbitalHubs().find(
+                    obj.hubId
+                );
 
+            if (hubIt != m_simulation.orbitalHubs().end())
+            {
+                const auto& hub = hubIt->second;
 
+                if (hub.motion.enabled)
+                {
+                    mapObj.hasOrbit = true;
 
-        out.objects.push_back(std::move(mapObj));
+                    mapObj.orbitCenterAu =
+                        hub.motion.centerMeters /
+                        world::celestial::MetersPerAu;
+
+                    mapObj.orbitRadiusAu =
+                        (
+                            hub.motion.parentRadiusMeters +
+                            hub.motion.altitudeMeters
+                        ) /
+                        world::celestial::MetersPerAu;
+
+                    mapObj.orbitInclinationDeg = hub.motion.inclinationDeg;
+                    mapObj.orbitLongitudeOfAscendingNodeDeg = hub.motion.longitudeOfAscendingNodeDeg;
+                    mapObj.orbitArgumentOfPeriapsisDeg = hub.motion.argumentOfPeriapsisDeg;
+                }
+            }
+        }
+        else if (obj.orbitalMotion.enabled)
+        {
+            mapObj.hasOrbit = true;
+
+            mapObj.orbitCenterAu =
+                obj.orbitalMotion.centerMeters /
+                world::celestial::MetersPerAu;
+
+            mapObj.orbitRadiusAu =
+                (
+                    obj.orbitalMotion.parentRadiusMeters +
+                    obj.orbitalMotion.altitudeMeters
+                ) /
+                world::celestial::MetersPerAu;
+
+            mapObj.orbitInclinationDeg = obj.orbitalMotion.inclinationDeg;
+            mapObj.orbitLongitudeOfAscendingNodeDeg = obj.orbitalMotion.longitudeOfAscendingNodeDeg;
+            mapObj.orbitArgumentOfPeriapsisDeg = obj.orbitalMotion.argumentOfPeriapsisDeg;
+        }
+
+        out.objects.push_back(
+            std::move(mapObj)
+        );
     }
+
+
+
+    appendSystemMapMotionDebugCsv(out);
 
     return out;
 }
@@ -1011,8 +1199,18 @@ GameServer::buildPlanetMapSnapshot(
     if (!system)
         return out;
 
+    world::celestial::CelestialSystemRuntime planetMapRuntime;
+
+    planetMapRuntime.setSystem(
+        system
+    );
+
+    planetMapRuntime.update(
+        out.universeTimeSeconds
+    );
+
     const auto& celestial =
-        m_celestialRuntime.snapshot();
+        planetMapRuntime.snapshot();
 
     bool foundPlanet = false;
 
@@ -1030,6 +1228,21 @@ GameServer::buildPlanetMapSnapshot(
 
         out.planetRadiusMeters =
             body.radiusKm * 1000.0;
+
+        out.planetRotationPhaseRad =
+            body.rotationPhaseRad;
+
+        out.planetDayLengthHours =
+            body.dayLengthHours;
+
+        out.planetAxialTiltDeg =
+            body.axialTiltDeg;
+
+        out.planetAxisNodeDeg =
+            body.axisNodeDeg;
+
+        out.planetTextureLongitudeOffsetDeg =
+            body.textureLongitudeOffsetDeg;
 
         out.gravitationalParameterM3s2 =
             planetMapMuForBodyId(

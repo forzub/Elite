@@ -444,7 +444,10 @@ document.getElementById("btnToggleMode").addEventListener("click", () => {
 
 
 document.getElementById("btnDetail").addEventListener("click", () => {
-    sendGameCommand("system_map_detail");
+    // Open detail for the currently selected system-map body.
+    // Do NOT use system_map_detail here: that command returns to the
+    // already loaded planet detail from Hub mode.
+    sendGameCommand("system_map_planet");
 });
 
 

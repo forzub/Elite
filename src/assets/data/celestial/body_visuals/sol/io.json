@@ -1,5 +1,6 @@
 {
   "preset_id": "lava_world",
+  "environment_preset_id": "airless_volcanic",
   "system_folder_name": "sol",
   "body_folder_name": "io",
   "display_name": "Io",

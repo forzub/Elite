@@ -1,5 +1,6 @@
 {
   "preset_id": "desert_world",
+  "environment_preset_id": "cold_co2_world",
   "system_folder_name": "sol",
   "body_folder_name": "mars",
   "display_name": "Mars",

@@ -1,0 +1,90 @@
+{
+  "schema": "elite.celestial.environment_preset.v2",
+  "preset_id": "thin_nitrogen_ice_world",
+  "classification": "icy body with a very thin nitrogen atmosphere",
+  "data_quality": "generic_physical_model",
+  "notes": "Triton-like default. Atmosphere is visible mainly as a very weak limb; clouds disabled by default.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "thin nitrogen methane",
+    "physical": {
+      "surface_pressure_pa": 1.5,
+      "scale_height_km": 20,
+      "outer_height_km": 100
+    },
+    "visual_intensity": 0.2,
+    "radius_scale": 1.004,
+    "haze": {
+      "center_strength": 0.001,
+      "limb_strength": 0.18,
+      "contrast_loss": 0.12,
+      "desaturation": 0.06,
+      "distortion_strength": 0.004
+    },
+    "colors": {
+      "surface_haze": [
+        0.5,
+        0.52,
+        0.54,
+        0.02
+      ],
+      "limb_core": [
+        0.68,
+        0.7,
+        0.72,
+        0.045
+      ],
+      "near_atmosphere": [
+        0.44,
+        0.46,
+        0.48,
+        0.02
+      ],
+      "outer_atmosphere": [
+        0.28,
+        0.3,
+        0.32,
+        0.01
+      ]
+    }
+  },
+  "clouds": {
+    "enabled": false,
+    "pattern": "none",
+    "global_coverage": 0.02,
+    "appearance": {
+      "base_color": [
+        0.72,
+        0.72,
+        0.72
+      ],
+      "shadow_color": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "saturation": 0.04,
+      "contrast": 1.1
+    },
+    "layers": [],
+    "circulation": {
+      "model": "none",
+      "zones": []
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 9203,
+      "weather_scale": 8,
+      "mass_scale": 18,
+      "erosion_scale": 34,
+      "detail_scale": 76,
+      "domain_warp_strength": 0.03,
+      "billow_strength": 0.55,
+      "worley_erosion_strength": 0.4,
+      "edge_fragment_strength": 0.3,
+      "edge_fragment_scale": 62,
+      "detached_fragment_probability": 0.1,
+      "soft_edge_width": 0.07
+    }
+  }
+}

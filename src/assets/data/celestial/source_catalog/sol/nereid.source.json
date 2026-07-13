@@ -6,16 +6,16 @@
   "body_shape": "sphere",
   "projection": "equirectangular",
   "required_assets": {
-    "albedo": "src/assets/source/celestial/sol/nereid/albedo_source.*"
+    "albedo": "assets/source/celestial/sol/nereid/albedo_source.*"
   },
   "optional_assets": {
-    "height": "src/assets/source/celestial/sol/nereid/height_source.*"
+    "height": "assets/source/celestial/sol/nereid/height_source.*"
   },
   "derived_outputs": {
-    "albedo": "src/assets/generated/celestial/sol/nereid/albedo.tga",
-    "normal": "src/assets/generated/celestial/sol/nereid/normal.tga",
-    "material": "src/assets/generated/celestial/sol/nereid/material.tga",
-    "preview": "src/assets/generated/celestial/sol/nereid/preview.tga",
-    "meta": "src/assets/generated/celestial/sol/nereid/meta.json"
+    "albedo": "assets/generated/celestial/sol/nereid/albedo.tga",
+    "normal": "assets/generated/celestial/sol/nereid/normal.tga",
+    "material": "assets/generated/celestial/sol/nereid/material.tga",
+    "preview": "assets/generated/celestial/sol/nereid/preview.tga",
+    "meta": "assets/generated/celestial/sol/nereid/meta.json"
   }
 }

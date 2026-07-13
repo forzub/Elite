@@ -1,5 +1,6 @@
 {
   "preset_id": "terrestrial",
+  "environment_preset_id": "terrestrial_temperate",
   "system_folder_name": "sol",
   "body_folder_name": "earth",
   "display_name": "Earth",

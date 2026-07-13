@@ -6,16 +6,16 @@
   "body_shape": "sphere",
   "projection": "equirectangular",
   "required_assets": {
-    "albedo": "src/assets/source/celestial/sol/amalthea/albedo_source.*"
+    "albedo": "assets/source/celestial/sol/amalthea/albedo_source.*"
   },
   "optional_assets": {
-    "height": "src/assets/source/celestial/sol/amalthea/height_source.*"
+    "height": "assets/source/celestial/sol/amalthea/height_source.*"
   },
   "derived_outputs": {
-    "albedo": "src/assets/generated/celestial/sol/amalthea/albedo.tga",
-    "normal": "src/assets/generated/celestial/sol/amalthea/normal.tga",
-    "material": "src/assets/generated/celestial/sol/amalthea/material.tga",
-    "preview": "src/assets/generated/celestial/sol/amalthea/preview.tga",
-    "meta": "src/assets/generated/celestial/sol/amalthea/meta.json"
+    "albedo": "assets/generated/celestial/sol/amalthea/albedo.tga",
+    "normal": "assets/generated/celestial/sol/amalthea/normal.tga",
+    "material": "assets/generated/celestial/sol/amalthea/material.tga",
+    "preview": "assets/generated/celestial/sol/amalthea/preview.tga",
+    "meta": "assets/generated/celestial/sol/amalthea/meta.json"
   }
 }

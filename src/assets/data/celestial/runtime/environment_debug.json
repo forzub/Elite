@@ -1,0 +1,18 @@
+{
+  "schema": "elite.celestial.environment_runtime.v1",
+  "notes": "Debug/runtime multipliers are deliberately separate from physical environment source data.",
+  "wind_time_scale": {
+    "physical": 1.0,
+    "preview_slow": 60.0,
+    "preview_fast": 600.0,
+    "debug_extreme": 3600.0,
+    "default_debug": 20000.0
+  },
+  "weather_evolution_time_scale": {
+    "physical": 1.0,
+    "preview": 120.0,
+    "debug": 600.0,
+    "default_debug": 120.0
+  },
+  "application_rule": "effective_motion_seconds = universe_delta_seconds * selected_runtime_multiplier; never rewrite wind speeds in body JSON files."
+}

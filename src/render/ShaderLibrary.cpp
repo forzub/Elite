@@ -29,9 +29,34 @@ GLuint ShaderLibrary::load(
     std::cout << "[LIBRARY Loading shader:] " << name 
               << " (" << vert << ", " << frag << ")" << std::endl;
 
-    GLuint program = compileShaderFromFiles(vert, frag);
-    m_shaders[name] = {program, type, name};
-    return program;
+    const GLuint program =
+    compileShaderFromFiles(
+        vert,
+        frag
+    );
+
+if (program == 0)
+{
+    std::cerr
+        << "[ShaderLibrary ERROR] Failed to load shader: "
+        << name
+        << '\n';
+
+    m_shaders.erase(
+        name
+    );
+
+    return 0;
+}
+
+m_shaders[name] =
+{
+    program,
+    type,
+    name
+};
+
+return program;
 }
 
 GLuint ShaderLibrary::load(

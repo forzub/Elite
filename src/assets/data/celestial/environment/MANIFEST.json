@@ -1,0 +1,54 @@
+{
+  "profile_count": 39,
+  "systems": {
+    "sol": {
+      "count": 36,
+      "bodies": [
+        "amalthea",
+        "ariel",
+        "callisto",
+        "deimos",
+        "dione",
+        "earth",
+        "elara",
+        "enceladus",
+        "europa",
+        "ganymede",
+        "himalia",
+        "iapetus",
+        "io",
+        "jupiter",
+        "larissa",
+        "mars",
+        "mercury",
+        "mimas",
+        "miranda",
+        "moon",
+        "neptune",
+        "nereid",
+        "oberon",
+        "pasiphae",
+        "phobos",
+        "phoebe",
+        "proteus",
+        "rhea",
+        "saturn",
+        "tethys",
+        "titan",
+        "titania",
+        "triton",
+        "umbriel",
+        "uranus",
+        "venus"
+      ]
+    },
+    "tau_ceti": {
+      "count": 3,
+      "bodies": [
+        "tau_ceti_e",
+        "tau_ceti_e_i",
+        "tau_ceti_f"
+      ]
+    }
+  }
+}

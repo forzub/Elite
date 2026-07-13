@@ -13,7 +13,17 @@
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/world/celestial/visual/CelestialGeneratedAssetLibrary.h"
+#include "src/world/celestial/visual/CelestialEnvironmentProfile.h"
+
 #include "src/render/celestial/CelestialShapeMesh.h"
+#include "src/render/celestial/ProceduralCloudLayer.h"
+#include "src/render/celestial/HubSphericalGridRenderer.h"
+#include "src/render/celestial/HubPlanetSurfaceRenderer.h"
+#include "src/render/starfield/GalaxyStarfieldRenderer.h"
+
+
+#include "src/render/celestial/clouds/HubBackdropCloudRenderer.h"
+#include "src/render/celestial/rings/PlanetRingRenderer.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
@@ -98,6 +108,26 @@ private:
         float depth = 0.0f;
         bool visible = false;
         float screenRadiusPx = 0.0f;
+    };
+
+    struct SystemBodyVisualMetrics
+    {
+        // Реальный радиус тела в map-world units.
+        float physicalRadiusWorld = 0.0f;
+
+        // Реальный экранный радиус тела.
+        float physicalRadiusPx = 0.0f;
+
+        // Радиус навигационного маркера.
+        // Это НЕ физический размер тела.
+        float markerRadiusPx = 0.0f;
+        float markerRadiusWorld = 0.0f;
+
+        // Радиус для mouse picking.
+        float pickRadiusPx = 0.0f;
+
+        bool drawPhysicalBody = false;
+        bool drawMarker = false;
     };
 
     struct GalaxyCamera
@@ -194,10 +224,20 @@ private:
 
     struct SystemControlSettings
     {
-        // Минимальный экранный размер для малых лун в system map.
-        // Фобос/Деймос не должны рисоваться OBJ-мешем на карте системы,
-        // но должны быть видимыми навигационными маркерами.
+        // Экранный радиус навигационного маркера для малых лун.
+        // ВАЖНО: это не физический радиус тела.
         float tinyMoonProxyRadiusPx = 4.0f;
+
+        // Ниже этого размера физическое тело не рисуем как сферу.
+        // Вместо этого рисуется marker overlay.
+        float minPhysicalBodyRadiusPx = 0.70f;
+
+        // Маркеры для тел, которые физически меньше удобного экранного размера.
+        float starMarkerRadiusPx = 3.0f;
+        float planetMarkerRadiusPx = 3.5f;
+
+        // Минимальный radius для мышиного выбора.
+        float pickMinBodyRadiusPx = 6.0f;
 
         float rotateSensitivity = 0.008f;
         float pitchLimitRad = 1.52f;
@@ -331,6 +371,31 @@ private:
         const world::celestial::SystemMapBody& body
     );
 
+    GLuint globalNormalTextureForGeneratedAsset(
+        const world::celestial::visual::CelestialGeneratedAssetSet& asset
+    );
+
+    GLuint globalNormalTextureForHubSnapshot(
+        const world::celestial::HubMapSnapshot& hub
+    );
+
+
+
+
+
+    GLuint globalAlbedoTextureForHubSnapshot(
+        const world::celestial::HubMapSnapshot& hub
+    );
+
+    GLuint globalCloudsTextureForGeneratedAsset(
+        const world::celestial::visual::CelestialGeneratedAssetSet& asset
+    );
+
+    GLuint globalCloudsTextureForHubSnapshot(
+        const world::celestial::HubMapSnapshot& hub
+    );
+
+
 
 
 
@@ -418,6 +483,19 @@ private:
         const glm::dvec2& centerPx
     );
 
+
+
+    void drawHubMapScreenMarker(
+        const glm::dvec2& screenPx,
+        double radiusPx,
+        const glm::vec4& color,
+        bool drawCross,
+        int segments = 32
+    );
+
+
+
+
     glm::dvec3 hubMapObjectLocalToHubLocal(
         const glm::dvec3& objectCenter,
         const world::celestial::PlanetMapAxisSet& objectAxes,
@@ -440,11 +518,136 @@ private:
         int segments = 192
     );
 
-    void drawHubMapPlanetSurfaceHint(
-        const world::celestial::HubMapSnapshot& hub,
-        double scale,
-        const glm::dvec2& centerPx
-    );
+    
+
+
+
+    
+    
+    void drawHubMapTexturedSphereDiskLayer(
+    GLuint texture,
+    const glm::dvec2& centerPx,
+    double radiusPx,
+    const glm::vec4& color,
+    double uOffset = 0.0,
+    int gridX = 120,
+    int gridY = 120
+);
+
+void drawHubMapPlanetHorizonBand(
+    const glm::dvec2& centerPx,
+    double radiusPx,
+    const glm::vec4& innerColor,
+    const glm::vec4& outerColor,
+    double innerRadiusFactor,
+    double outerRadiusFactor,
+    int segments = 192
+);
+
+
+
+
+
+struct HubPlanetAtmosphereStyle
+{
+    bool enabled = false;
+    
+
+    float visualIntensity = 1.0f;
+    float radiusScale = 1.018f;
+
+    glm::vec4 oceanInner {
+        0.006f,
+        0.035f,
+        0.090f,
+        0.96f
+    };
+
+    glm::vec4 oceanOuter {
+        0.025f,
+        0.095f,
+        0.170f,
+        0.96f
+    };
+
+    glm::vec4 surfaceHaze {
+        0.68f,
+        0.84f,
+        1.00f,
+        0.22f
+    };
+
+    glm::vec4 limbCore {
+        0.88f,
+        0.97f,
+        1.00f,
+        0.16f
+    };
+
+    glm::vec4 nearAtmosphere {
+        0.30f,
+        0.64f,
+        1.00f,
+        0.16f
+    };
+
+    glm::vec4 outerAtmosphere {
+        0.12f,
+        0.34f,
+        0.78f,
+        0.075f
+    };
+};
+
+
+
+HubPlanetAtmosphereStyle hubPlanetAtmosphereStyleForHub(
+    const world::celestial::HubMapSnapshot& hub
+) const;
+
+
+
+
+void drawHubMapPlanetSoftBand(
+    const glm::dvec2& planetCenterPx,
+    double planetRadiusPx,
+    const glm::vec4& peakColor,
+    double startRadiusFactor,
+    double peakRadiusFactor,
+    double endRadiusFactor,
+    int radialSteps = 24,
+    int segments = 256
+);
+
+
+
+
+void drawHubMapPlanetAtmosphereStack(
+    const glm::dvec2& planetCenterPx,
+    double planetRadiusPx,
+    const HubPlanetAtmosphereStyle& style
+);
+
+
+
+
+
+void drawHubMapPlanetSurfaceHint(
+    const world::celestial::HubMapSnapshot& hub,
+    double scale,
+    const glm::dvec2& centerPx
+); 
+    
+    
+    
+    
+
+
+
+
+
+
+
 
     void drawHubMapAdaptiveGrid(
         const Viewport& viewport,
@@ -467,6 +670,55 @@ private:
     void ensureTexturedShader();
 
     void ensureGeneratedCelestialAssets();
+
+
+
+
+
+    void ensureEnvironmentProfiles();
+
+    void beginEnvironmentRenderSessionIfNeeded(
+        Mode mode,
+        int systemId,
+        const std::string& bodyId
+    );
+
+    world::celestial::visual::CelestialEnvironmentProfile
+    resolvedEnvironmentProfileForBody(
+        int systemId,
+        const std::string& bodyId,
+        const std::string& displayName,
+        const std::string& environmentPresetId
+    ) const;
+
+
+
+    std::vector<
+        render::celestial::ProceduralCloudStyle
+    >
+    cloudStylesForBody(
+        int systemId,
+        const std::string& bodyId,
+        const std::string& displayName,
+        const std::string& environmentPresetId,
+        double planetRadiusMeters,
+        int textureWidth,
+        int textureHeight
+    ) const;
+
+
+
+    HubPlanetAtmosphereStyle atmosphereStyleForBody(
+        int systemId,
+        const std::string& bodyId,
+        const std::string& displayName,
+        const std::string& environmentPresetId
+    ) const;
+
+
+
+
+
 
     void ensureBackground();
     void drawBackground(); 
@@ -515,6 +767,14 @@ private:
     void beginSolids();
 
     void addBillboardBall(
+        const glm::vec3& center,
+        float radius,
+        const glm::vec4& color,
+        const glm::mat4& view,
+        int segments = 32
+    );
+
+    void addSystemBodyMarker(
         const glm::vec3& center,
         float radius,
         const glm::vec4& color,
@@ -646,6 +906,12 @@ private:
     float bodyVisualRadius(
         const world::celestial::SystemMapBody& body,
         float distanceScale
+    ) const;
+
+    SystemBodyVisualMetrics computeSystemBodyVisualMetrics(
+        const world::celestial::SystemMapBody& body,
+        float physicalRadiusWorld,
+        double worldUnitsPerPixel
     ) const;
 
     glm::mat4 galaxyViewMatrix() const;
@@ -813,21 +1079,101 @@ private:
     );
 
  
+    std::vector<
+        render::celestial::ProceduralCloudStyle
+    >
+    hubPlanetCloudStylesForHub(
+        const world::celestial::HubMapSnapshot& hub
+    ) const;
+
+
+
+    std::vector<
+        render::celestial::ProceduralCloudStyle
+    >
+    planetCloudStylesForPlanet(
+        const world::celestial::PlanetMapSnapshot& planet
+    ) const;
+
+
+
+    HubPlanetAtmosphereStyle planetAtmosphereStyleForPlanet(
+        const world::celestial::PlanetMapSnapshot& planet
+    ) const;
+
+    void drawPlanetEnvironmentLayers(
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx
+    );
+
+    void drawPlanetAnimatedCloudLayers(
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx,
+        const render::celestial::ProceduralCloudStyle& baseStyle
+    );
+
+    void drawPlanetProceduralCloudGlobeLayer(
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx,
+        double cloudRadiusScale,
+        double longitudeOffset,
+        double timeSeconds,
+        const render::celestial::ProceduralCloudStyle& style
+    );
+
+
+    void drawPlanetAtmosphereInterior(
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx,
+        const HubPlanetAtmosphereStyle& style
+    );
+
+    void drawPlanetAtmosphereLimb(
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx,
+        const HubPlanetAtmosphereStyle& style
+    );
+
+
 
  
 
    
+    render::celestial::HubSphericalGridStyle hubSphericalGridStyleForHub(
+        const world::celestial::HubMapSnapshot& hub
+    ) const;
 
 
 
 
+    void drawMapStarfield(
+        const Viewport& viewport,
+        const glm::dvec3& observerPositionLy
+    );
+
+
+
+    render::celestial::rings::PlanetRingRenderContext
+    planetRingRenderContext(
+        const world::celestial::PlanetMapSnapshot& planet,
+        double scale,
+        const glm::dvec2& centerPx,
+        std::vector<
+            world::celestial::SystemMapRing
+        >& normalizedBands
+    ) const;
 
 
 
 
-    
-
-   
+   double environmentVisualTimeSeconds(
+        double sourceTimeSeconds
+    );
 
     
 
@@ -909,16 +1255,37 @@ private:
     bool m_generatedCelestialAssetsAttempted = false;
     bool m_generatedCelestialAssetsLoaded = false;
 
+
+    world::celestial::visual::CelestialEnvironmentProfileLibrary m_environmentProfiles;
+
+    bool m_environmentProfilesAttempted = false;
+    bool m_environmentProfilesLoaded = false;
+
+    std::uint32_t m_environmentMapOpenSeed = 0u;
+    std::string m_environmentRenderSessionKey;
+
+
+
     std::unordered_map<std::string, GLuint> m_mapPreviewTextureByAssetKey;
     std::unordered_map<std::string, GLuint> m_globalAlbedoTextureByAssetKey;
+    std::unordered_map<std::string, GLuint> m_globalNormalTextureByAssetKey;
+    std::unordered_map<std::string, GLuint> m_globalCloudsTextureByAssetKey;
     std::unordered_map<std::string, glm::dvec3> m_lastSystemBodyAbsolutePosById;
+    render::celestial::HubBackdropCloudRenderer m_hubBackdropCloudRenderer;
 
     render::celestial::CelestialShapeMeshLibrary m_celestialShapeMeshes;
+    render::celestial::HubPlanetSurfaceRenderer m_hubPlanetSurfaceRenderer;
+    render::celestial::rings::PlanetRingRenderer m_planetRingRenderer;
+    GalaxyStarfieldRenderer m_mapStarfieldRenderer;
 
+    double m_environmentVisualTimeSeconds = 0.0;
+    double m_environmentLastSourceTimeSeconds = 0.0;
+    double m_environmentLastWallClockSeconds = 0.0;
+    bool m_environmentVisualTimeInitialized = false;
 
+    bool m_mapStarfieldInitialized = false;
     float m_lastSystemScale = 1.0f;
     
-
     glm::dvec3 m_systemOrbitPivotAbsolute {0.0, 0.0, 0.0};
     bool m_systemOrbitPivotActive = false;
 
@@ -927,6 +1294,13 @@ private:
 
     double m_galaxyMouseDownX = 0.0;
     double m_galaxyMouseDownY = 0.0;
+
+    render::celestial::ProceduralCloudLayer m_proceduralCloudLayer;
+    render::celestial::HubSphericalGridRenderer m_hubSphericalGridRenderer;
+    
+
+    double m_lastHubPlanetVisualRadiusPx = 0.0;
+    glm::dvec2 m_lastHubPlanetVisualCenterPx {0.0, 0.0};
 };
 
 

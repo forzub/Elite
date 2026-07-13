@@ -1,0 +1,345 @@
+{
+  "schema": "elite.celestial.environment.v2",
+  "system_folder_name": "sol",
+  "body_folder_name": "venus",
+  "display_name": "Venus",
+  "authoring_note": "Source-of-truth environment profile. Do not place manual copies in build/assets/generated.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "carbon_dioxide_sulfuric_haze",
+    "visual_intensity": 1.25,
+    "radius_scale": 1.024,
+    "horizon_fade_start": 0.025,
+    "horizon_fade_end": 0.34,
+    "colors": {
+      "surface_haze": [
+        1.0,
+        0.82,
+        0.46,
+        0.34
+      ],
+      "limb_core": [
+        1.0,
+        0.94,
+        0.68,
+        0.24
+      ],
+      "near_atmosphere": [
+        1.0,
+        0.62,
+        0.25,
+        0.18
+      ],
+      "outer_atmosphere": [
+        0.78,
+        0.34,
+        0.12,
+        0.095
+      ]
+    },
+    "physical": {
+      "surface_pressure_pa": 9200000.0,
+      "scale_height_km": 15.9,
+      "outer_height_km": 120,
+      "bulk_composition": [
+        {
+          "species": "CO2",
+          "fraction": 0.965
+        },
+        {
+          "species": "N2",
+          "fraction": 0.035
+        }
+      ]
+    },
+    "haze": {
+      "center_strength": 0.18,
+      "limb_strength": 0.85,
+      "contrast_loss": 0.78,
+      "desaturation": 0.45,
+      "distortion_strength": 0.06,
+      "limb_power": 2.2,
+      "colors": {
+        "surface_haze": [
+          1.0,
+          0.82,
+          0.46,
+          0.34
+        ],
+        "limb_core": [
+          1.0,
+          0.94,
+          0.68,
+          0.24
+        ],
+        "near_atmosphere": [
+          1.0,
+          0.62,
+          0.25,
+          0.18
+        ],
+        "outer_atmosphere": [
+          0.78,
+          0.34,
+          0.12,
+          0.095
+        ]
+      }
+    }
+  },
+  "clouds": {
+    "enabled": true,
+    "pattern": "dense_overcast",
+    "seed_policy": "random_on_map_open",
+    "seed_base": 9012,
+    "coverage_threshold": 0.34,
+    "density": 1.0,
+    "opacity": 0.46,
+    "edge_sharpness": 0.24,
+    "detail_strength": 0.18,
+    "macro_scale": 1.15,
+    "cell_scale": 5.2,
+    "detail_scale": 18.0,
+    "wind": {
+      "longitude_drift_speed": 0.006,
+      "latitudinal_drift_speed": 0.0,
+      "shear": 0.22
+    },
+    "animation": {
+      "weather_change_speed": 0.55,
+      "weather_cycle_seconds": 720.0,
+      "density_variation": 0.12
+    },
+    "colors": {
+      "cloud": [
+        1.0,
+        0.86,
+        0.55
+      ],
+      "shadow": [
+        0.7,
+        0.48,
+        0.24
+      ]
+    },
+    "cyclones": {
+      "enabled": false,
+      "probability": 0.0,
+      "strength": 0.0,
+      "notes": "Disabled until vortex is integrated into the procedural cloud texture rather than drawn as a separate screen-space patch."
+    },
+    "notes": "Permanent global sulfuric-acid cloud deck; surface should be fully hidden.",
+    "global_coverage": 1.0,
+    "appearance": {
+      "base_color": [
+        0.83,
+        0.78,
+        0.64
+      ],
+      "shadow_color": [
+        0.42,
+        0.38,
+        0.29
+      ],
+      "saturation": 0.08,
+      "contrast": 0.92
+    },
+    "layers": [
+      {
+        "id": "main_sulfuric_deck",
+        "type": "sulfuric_acid",
+        "base_height_km": 50,
+        "top_height_km": 57,
+        "coverage": 1.0,
+        "density": 1.0,
+        "opacity": 1.0,
+        "particle_scale": 1.0,
+        "wind": {
+          "speed_range_mps": [
+            20,
+            70
+          ],
+          "predominant_direction_deg": 270,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "measured_range"
+        },
+        "notes": "",
+        "render_role": "primary_opaque_deck",
+        "appearance": {
+          "base_color": [
+            0.88,
+            0.82,
+            0.66
+          ],
+          "shadow_color": [
+            0.48,
+            0.42,
+            0.31
+          ],
+          "opacity_scale": 1.0
+        }
+      },
+      {
+        "id": "lower_sulfuric_haze",
+        "type": "sulfuric_acid",
+        "base_height_km": 47,
+        "top_height_km": 50,
+        "coverage": 0.88,
+        "density": 0.68,
+        "opacity": 0.2,
+        "particle_scale": 1.4,
+        "wind": {
+          "speed_range_mps": [
+            0.3,
+            8
+          ],
+          "predominant_direction_deg": 270,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "measured_range"
+        },
+        "notes": "",
+        "render_role": "slow_haze_overlay",
+        "appearance": {
+          "base_color": [
+            0.72,
+            0.65,
+            0.52
+          ],
+          "shadow_color": [
+            0.38,
+            0.32,
+            0.24
+          ],
+          "opacity_scale": 1.0
+        }
+      },
+      {
+        "id": "upper_sulfuric_clouds",
+        "type": "sulfuric_acid",
+        "base_height_km": 57,
+        "top_height_km": 70,
+        "coverage": 0.7,
+        "density": 0.56,
+        "opacity": 0.27,
+        "particle_scale": 0.55,
+        "wind": {
+          "speed_range_mps": [
+            60,
+            110
+          ],
+          "predominant_direction_deg": 270,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "measured_range"
+        },
+        "notes": "Cloud-top superrotation, predominantly westward.",
+        "render_role": "fast_streak_overlay",
+        "appearance": {
+          "base_color": [
+            0.98,
+            0.91,
+            0.73
+          ],
+          "shadow_color": [
+            0.58,
+            0.49,
+            0.34
+          ],
+          "opacity_scale": 1.0
+        }
+      }
+    ],
+    "circulation": {
+      "model": "global_superrotation",
+      "zones": [
+        {
+          "id": "equatorial_superrotation",
+          "latitude_center_deg": 0,
+          "half_width_deg": 30,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.22,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 270
+        },
+        {
+          "id": "north_midlat_vortex",
+          "latitude_center_deg": 55,
+          "half_width_deg": 25,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.05,
+          "fragmentation": 0.35,
+          "zonal_stretch": 1.4,
+          "wind_speed_multiplier": 0.9,
+          "predominant_direction_deg": 270
+        },
+        {
+          "id": "south_midlat_vortex",
+          "latitude_center_deg": -55,
+          "half_width_deg": 25,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.05,
+          "fragmentation": 0.35,
+          "zonal_stretch": 1.4,
+          "wind_speed_multiplier": 0.9,
+          "predominant_direction_deg": 270
+        }
+      ]
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 1337,
+      "weather_scale": 4,
+      "mass_scale": 9,
+      "erosion_scale": 20,
+      "detail_scale": 48,
+      "domain_warp_strength": 0.04,
+      "billow_strength": 0.66,
+      "worley_erosion_strength": 0.28,
+      "edge_fragment_strength": 0.3,
+      "edge_fragment_scale": 42,
+      "detached_fragment_probability": 0.12,
+      "soft_edge_width": 0.14
+    },
+    "source_motion_is_physical": true,
+    "runtime_speed_multiplier_not_stored_here": true
+  },
+  "data_quality": "measured_with_render_approximations",
+  "provenance": {
+    "sources": [
+      "nasa_venus"
+    ],
+    "notes": "Permanent sulfuric-acid cloud deck; surface should remain obscured."
+  },
+  "rendering": {
+    "visual_class": "venusian_cloud_deck",
+    "surface_visibility": "hidden",
+    "load_surface_textures": false,
+    "base_render_mode": "procedural_primary_cloud_deck",
+    "primary_layer_id": "main_sulfuric_deck",
+    "primary_layer_must_cover_surface": true,
+    "primary_layer_opacity_floor": 0.999,
+    "overlay_layer_ids": [
+      "lower_sulfuric_haze",
+      "upper_sulfuric_clouds"
+    ],
+    "maximum_dynamic_overlay_layers": 2,
+    "map_generation_resolution": [
+      1536,
+      768
+    ],
+    "game_generation_resolution": [
+      512,
+      256
+    ],
+    "game_update_policy": {
+      "primary_layer": "cached_and_time_blended",
+      "overlay_layers": "time_sliced_one_generation_per_frame",
+      "far_lod": "single_cached_primary_layer",
+      "offscreen": "do_not_update"
+    }
+  }
+}

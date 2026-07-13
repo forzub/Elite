@@ -1,0 +1,176 @@
+{
+  "schema": "elite.celestial.environment_preset.v2",
+  "preset_id": "methane_haze_world",
+  "classification": "cold world with dense nitrogen methane haze",
+  "data_quality": "generic_physical_model",
+  "notes": "Titan-like default: persistent photochemical haze with intermittent methane clouds.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "dense nitrogen methane organic_haze",
+    "physical": {
+      "surface_pressure_pa": 146700,
+      "scale_height_km": 20,
+      "outer_height_km": 600
+    },
+    "visual_intensity": 1.05,
+    "radius_scale": 1.045,
+    "haze": {
+      "center_strength": 0.18,
+      "limb_strength": 0.88,
+      "contrast_loss": 0.78,
+      "desaturation": 0.68,
+      "distortion_strength": 0.05
+    },
+    "colors": {
+      "surface_haze": [
+        0.56,
+        0.5,
+        0.42,
+        0.28
+      ],
+      "limb_core": [
+        0.72,
+        0.64,
+        0.5,
+        0.25
+      ],
+      "near_atmosphere": [
+        0.5,
+        0.42,
+        0.34,
+        0.2
+      ],
+      "outer_atmosphere": [
+        0.3,
+        0.25,
+        0.21,
+        0.11
+      ]
+    }
+  },
+  "clouds": {
+    "enabled": true,
+    "pattern": "broken_fields",
+    "global_coverage": 0.35,
+    "appearance": {
+      "base_color": [
+        0.7,
+        0.66,
+        0.58
+      ],
+      "shadow_color": [
+        0.3,
+        0.28,
+        0.25
+      ],
+      "saturation": 0.04,
+      "contrast": 1.1
+    },
+    "layers": [
+      {
+        "id": "organic_haze",
+        "type": "organic_aerosol",
+        "base_height_km": 80,
+        "top_height_km": 300,
+        "coverage": 0.95,
+        "density": 0.38,
+        "opacity": 0.44,
+        "particle_scale": 0.25,
+        "wind": {
+          "speed_range_mps": [
+            5,
+            30
+          ],
+          "predominant_direction_deg": 260,
+          "data_status": "generic_range"
+        }
+      },
+      {
+        "id": "methane_low",
+        "type": "methane",
+        "base_height_km": 8,
+        "top_height_km": 30,
+        "coverage": 0.18,
+        "density": 0.52,
+        "opacity": 0.34,
+        "particle_scale": 0.7,
+        "wind": {
+          "speed_range_mps": [
+            1,
+            15
+          ],
+          "predominant_direction_deg": 260,
+          "data_status": "generic_range"
+        }
+      },
+      {
+        "id": "methane_polar",
+        "type": "methane",
+        "base_height_km": 20,
+        "top_height_km": 60,
+        "coverage": 0.12,
+        "density": 0.45,
+        "opacity": 0.3,
+        "particle_scale": 0.55,
+        "wind": {
+          "speed_range_mps": [
+            5,
+            35
+          ],
+          "predominant_direction_deg": 270,
+          "data_status": "generic_range"
+        }
+      }
+    ],
+    "circulation": {
+      "model": "latitude_bands",
+      "zones": [
+        {
+          "id": "equatorial_haze",
+          "latitude_center_deg": 0,
+          "half_width_deg": 40,
+          "coverage_multiplier": 1,
+          "density_multiplier": 1,
+          "fragmentation": 0.22,
+          "zonal_stretch": 1.4,
+          "drift_speed_multiplier": 1
+        },
+        {
+          "id": "north_polar_clouds",
+          "latitude_center_deg": 70,
+          "half_width_deg": 22,
+          "coverage_multiplier": 1.35,
+          "density_multiplier": 1.15,
+          "fragmentation": 0.58,
+          "zonal_stretch": 0.9,
+          "drift_speed_multiplier": 1.2
+        },
+        {
+          "id": "south_polar_clouds",
+          "latitude_center_deg": -70,
+          "half_width_deg": 22,
+          "coverage_multiplier": 1.35,
+          "density_multiplier": 1.15,
+          "fragmentation": 0.58,
+          "zonal_stretch": 0.9,
+          "drift_speed_multiplier": 1.2
+        }
+      ]
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 6209,
+      "weather_scale": 5,
+      "mass_scale": 12,
+      "erosion_scale": 26,
+      "detail_scale": 64,
+      "domain_warp_strength": 0.055,
+      "billow_strength": 0.68,
+      "worley_erosion_strength": 0.32,
+      "edge_fragment_strength": 0.48,
+      "edge_fragment_scale": 54,
+      "detached_fragment_probability": 0.22,
+      "soft_edge_width": 0.12
+    }
+  }
+}

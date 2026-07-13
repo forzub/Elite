@@ -6,16 +6,16 @@
   "body_shape": "irregular_mesh",
   "projection": "mesh_uv",
   "required_assets": {
-    "mesh": "src/assets/source/celestial/sol/deimos/shape_model_source.*",
-    "albedo": "src/assets/source/celestial/sol/deimos/albedo_source.*"
+    "mesh": "assets/source/celestial/sol/deimos/shape_model_source.*",
+    "albedo": "assets/source/celestial/sol/deimos/albedo_source.*"
   },
   "optional_assets": {},
   "derived_outputs": {
-    "mesh": "src/assets/generated/celestial/sol/deimos/shape_model.obj",
-    "albedo": "src/assets/generated/celestial/sol/deimos/albedo.tga",
-    "normal": "src/assets/generated/celestial/sol/deimos/normal.tga",
-    "material": "src/assets/generated/celestial/sol/deimos/material.tga",
-    "preview": "src/assets/generated/celestial/sol/deimos/preview.tga",
-    "meta": "src/assets/generated/celestial/sol/deimos/meta.json"
+    "mesh": "assets/generated/celestial/sol/deimos/shape_model.obj",
+    "albedo": "assets/generated/celestial/sol/deimos/albedo.tga",
+    "normal": "assets/generated/celestial/sol/deimos/normal.tga",
+    "material": "assets/generated/celestial/sol/deimos/material.tga",
+    "preview": "assets/generated/celestial/sol/deimos/preview.tga",
+    "meta": "assets/generated/celestial/sol/deimos/meta.json"
   }
 }

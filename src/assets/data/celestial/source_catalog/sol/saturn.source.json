@@ -6,17 +6,17 @@
   "body_shape": "sphere",
   "projection": "equirectangular",
   "required_assets": {
-    "albedo": "src/assets/source/celestial/sol/saturn/albedo_source.*"
+    "albedo": "assets/source/celestial/sol/saturn/albedo_source.*"
   },
   "optional_assets": {
-    "clouds": "src/assets/source/celestial/sol/saturn/clouds_source.*"
+    "clouds": "assets/source/celestial/sol/saturn/clouds_source.*"
   },
   "derived_outputs": {
-    "albedo": "src/assets/generated/celestial/sol/saturn/albedo.tga",
-    "normal": "src/assets/generated/celestial/sol/saturn/normal.tga",
-    "material": "src/assets/generated/celestial/sol/saturn/material.tga",
-    "clouds": "src/assets/generated/celestial/sol/saturn/clouds.tga",
-    "preview": "src/assets/generated/celestial/sol/saturn/preview.tga",
-    "meta": "src/assets/generated/celestial/sol/saturn/meta.json"
+    "albedo": "assets/generated/celestial/sol/saturn/albedo.tga",
+    "normal": "assets/generated/celestial/sol/saturn/normal.tga",
+    "material": "assets/generated/celestial/sol/saturn/material.tga",
+    "clouds": "assets/generated/celestial/sol/saturn/clouds.tga",
+    "preview": "assets/generated/celestial/sol/saturn/preview.tga",
+    "meta": "assets/generated/celestial/sol/saturn/meta.json"
   }
 }

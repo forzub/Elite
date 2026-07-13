@@ -1,0 +1,165 @@
+{
+  "system_folder_name": "sol",
+  "body_folder_name": "larissa",
+  "display_name": "Larissa",
+  "atmosphere": {
+    "enabled": false,
+    "kind": "airless_or_negligible_exosphere",
+    "visual_intensity": 0.0,
+    "radius_scale": 1.0,
+    "horizon_fade_start": 0.025,
+    "horizon_fade_end": 0.34,
+    "colors": {
+      "surface_haze": [
+        0.55,
+        0.55,
+        0.55,
+        0.04
+      ],
+      "limb_core": [
+        0.75,
+        0.75,
+        0.75,
+        0.06
+      ],
+      "near_atmosphere": [
+        0.45,
+        0.45,
+        0.45,
+        0.035
+      ],
+      "outer_atmosphere": [
+        0.25,
+        0.25,
+        0.25,
+        0.018
+      ]
+    },
+    "physical": {
+      "surface_pressure_pa": 0.0,
+      "scale_height_km": 0.0,
+      "outer_height_km": 0.0,
+      "bulk_composition": []
+    },
+    "haze": {
+      "center_strength": 0.01,
+      "limb_strength": 0.55,
+      "contrast_loss": 0.38,
+      "desaturation": 0.25,
+      "distortion_strength": 0.01,
+      "limb_power": 2.8,
+      "colors": {
+        "surface_haze": [
+          0.55,
+          0.55,
+          0.55,
+          0.04
+        ],
+        "limb_core": [
+          0.75,
+          0.75,
+          0.75,
+          0.06
+        ],
+        "near_atmosphere": [
+          0.45,
+          0.45,
+          0.45,
+          0.035
+        ],
+        "outer_atmosphere": [
+          0.25,
+          0.25,
+          0.25,
+          0.018
+        ]
+      }
+    }
+  },
+  "clouds": {
+    "enabled": false,
+    "pattern": "none",
+    "seed_policy": "none",
+    "seed_base": 0,
+    "coverage_threshold": 0.9,
+    "density": 0,
+    "opacity": 0,
+    "edge_sharpness": 0.18,
+    "detail_strength": 0.3,
+    "macro_scale": 2,
+    "cell_scale": 12,
+    "detail_scale": 38,
+    "wind": {
+      "longitude_drift_speed": 0,
+      "latitudinal_drift_speed": 0.0,
+      "shear": 0
+    },
+    "animation": {
+      "weather_change_speed": 0.0,
+      "weather_cycle_seconds": 420.0,
+      "density_variation": 0.0
+    },
+    "colors": {
+      "cloud": [
+        0.78,
+        0.8,
+        0.82
+      ],
+      "shadow": [
+        0.28,
+        0.3,
+        0.34
+      ]
+    },
+    "cyclones": {
+      "enabled": false,
+      "probability": 0.0,
+      "strength": 0.0
+    },
+    "global_coverage": 0.0,
+    "appearance": {
+      "base_color": [
+        0.72,
+        0.74,
+        0.76
+      ],
+      "shadow_color": [
+        0.24,
+        0.27,
+        0.31
+      ],
+      "saturation": 0.06,
+      "contrast": 1.1
+    },
+    "layers": [],
+    "circulation": {
+      "model": "none",
+      "zones": []
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 1337,
+      "weather_scale": 6,
+      "mass_scale": 14,
+      "erosion_scale": 28,
+      "detail_scale": 72,
+      "domain_warp_strength": 0.055,
+      "billow_strength": 0.78,
+      "worley_erosion_strength": 0.34,
+      "edge_fragment_strength": 0.52,
+      "edge_fragment_scale": 56,
+      "detached_fragment_probability": 0.28,
+      "soft_edge_width": 0.1
+    },
+    "source_motion_is_physical": true,
+    "runtime_speed_multiplier_not_stored_here": true
+  },
+  "schema": "elite.celestial.environment.v2",
+  "data_quality": "measured_or_constrained",
+  "provenance": {
+    "sources": [
+      "nasa_planetary_atmospheres"
+    ],
+    "notes": "No visually significant atmosphere or stable cloud deck is enabled."
+  }
+}

@@ -1,5 +1,6 @@
 {
   "preset_id": "rocky_ice",
+  "environment_preset_id": "airless_icy",
   "system_folder_name": "tau_ceti",
   "body_folder_name": "tau_ceti_e_i",
   "display_name": "Tau Ceti e-I",

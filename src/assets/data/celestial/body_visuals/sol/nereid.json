@@ -1,5 +1,6 @@
 {
   "preset_id": "rocky_ice",
+  "environment_preset_id": "airless_icy",
   "system_folder_name": "sol",
   "body_folder_name": "nereid",
   "display_name": "Nereid",

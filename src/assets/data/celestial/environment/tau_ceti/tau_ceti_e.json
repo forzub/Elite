@@ -1,0 +1,303 @@
+{
+  "schema": "elite.celestial.environment.v2",
+  "system_folder_name": "tau_ceti",
+  "body_folder_name": "tau_ceti_e",
+  "display_name": "Tau Ceti e",
+  "authoring_note": "Source-of-truth environment profile. Do not place manual copies in build/assets/generated.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "fictional_ocean_world_blue",
+    "visual_intensity": 0.92,
+    "radius_scale": 1.018,
+    "horizon_fade_start": 0.025,
+    "horizon_fade_end": 0.34,
+    "colors": {
+      "surface_haze": [
+        0.68,
+        0.84,
+        1.0,
+        0.2
+      ],
+      "limb_core": [
+        0.88,
+        0.97,
+        1.0,
+        0.16
+      ],
+      "near_atmosphere": [
+        0.3,
+        0.64,
+        1.0,
+        0.16
+      ],
+      "outer_atmosphere": [
+        0.12,
+        0.34,
+        0.78,
+        0.075
+      ]
+    },
+    "physical": {
+      "surface_pressure_pa": 130000,
+      "scale_height_km": 9.5,
+      "outer_height_km": 120,
+      "bulk_composition": [
+        {
+          "species": "N2",
+          "fraction": 0.76
+        },
+        {
+          "species": "O2",
+          "fraction": 0.2
+        },
+        {
+          "species": "H2O",
+          "fraction": 0.02
+        }
+      ]
+    },
+    "haze": {
+      "center_strength": 0.025,
+      "limb_strength": 0.68,
+      "contrast_loss": 0.48,
+      "desaturation": 0.34,
+      "distortion_strength": 0.025,
+      "limb_power": 2.7,
+      "colors": {
+        "surface_haze": [
+          0.68,
+          0.84,
+          1.0,
+          0.2
+        ],
+        "limb_core": [
+          0.88,
+          0.97,
+          1.0,
+          0.16
+        ],
+        "near_atmosphere": [
+          0.3,
+          0.64,
+          1.0,
+          0.16
+        ],
+        "outer_atmosphere": [
+          0.12,
+          0.34,
+          0.78,
+          0.075
+        ]
+      }
+    }
+  },
+  "clouds": {
+    "enabled": true,
+    "pattern": "broken_fields",
+    "seed_policy": "random_on_map_open",
+    "seed_base": 88001,
+    "coverage_threshold": 0.56,
+    "density": 0.72,
+    "opacity": 0.24,
+    "edge_sharpness": 0.18,
+    "detail_strength": 0.38,
+    "macro_scale": 2.3,
+    "cell_scale": 13.0,
+    "detail_scale": 42.0,
+    "wind": {
+      "longitude_drift_speed": 0.0085,
+      "latitudinal_drift_speed": 0.0,
+      "shear": 0.11
+    },
+    "animation": {
+      "weather_change_speed": 2.0,
+      "weather_cycle_seconds": 180.0,
+      "density_variation": 0.55
+    },
+    "colors": {
+      "cloud": [
+        0.94,
+        0.98,
+        1.0
+      ],
+      "shadow": [
+        0.52,
+        0.62,
+        0.72
+      ]
+    },
+    "cyclones": {
+      "enabled": false,
+      "probability": 0.0,
+      "strength": 0.0,
+      "notes": "Disabled until vortex is integrated into the procedural cloud texture rather than drawn as a separate screen-space patch."
+    },
+    "notes": "Fictional ocean-world weather profile; active but slightly less cloudy than Earth.",
+    "global_coverage": 0.62,
+    "appearance": {
+      "base_color": [
+        0.94,
+        0.98,
+        1.0
+      ],
+      "shadow_color": [
+        0.52,
+        0.62,
+        0.72
+      ],
+      "saturation": 0.05,
+      "contrast": 1.12
+    },
+    "layers": [
+      {
+        "id": "low_water",
+        "type": "water_liquid",
+        "base_height_km": 0.8,
+        "top_height_km": 3.0,
+        "coverage": 0.38,
+        "density": 0.82,
+        "opacity": 0.76,
+        "particle_scale": 1.0,
+        "wind": {
+          "speed_range_mps": [
+            3,
+            22
+          ],
+          "predominant_direction_deg": 270,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "artistic_physical_assumption"
+        },
+        "notes": ""
+      },
+      {
+        "id": "mid_water",
+        "type": "water_liquid_ice",
+        "base_height_km": 3,
+        "top_height_km": 8,
+        "coverage": 0.22,
+        "density": 0.58,
+        "opacity": 0.52,
+        "particle_scale": 0.65,
+        "wind": {
+          "speed_range_mps": [
+            8,
+            42
+          ],
+          "predominant_direction_deg": 270,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "artistic_physical_assumption"
+        },
+        "notes": ""
+      },
+      {
+        "id": "high_ice",
+        "type": "ice",
+        "base_height_km": 8,
+        "top_height_km": 15,
+        "coverage": 0.15,
+        "density": 0.32,
+        "opacity": 0.3,
+        "particle_scale": 0.35,
+        "wind": {
+          "speed_range_mps": [
+            20,
+            85
+          ],
+          "predominant_direction_deg": 270,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "artistic_physical_assumption"
+        },
+        "notes": ""
+      }
+    ],
+    "circulation": {
+      "model": "earthlike_latitude_bands",
+      "zones": [
+        {
+          "id": "equatorial_convergence",
+          "latitude_center_deg": 0,
+          "half_width_deg": 12,
+          "coverage_multiplier": 1.4,
+          "density_multiplier": 1.15,
+          "fragmentation": 0.6,
+          "zonal_stretch": 0.9,
+          "wind_speed_multiplier": 0.9,
+          "predominant_direction_deg": 270
+        },
+        {
+          "id": "north_subtropical_dry",
+          "latitude_center_deg": 28,
+          "half_width_deg": 14,
+          "coverage_multiplier": 0.55,
+          "density_multiplier": 0.72,
+          "fragmentation": 0.4,
+          "zonal_stretch": 0.6,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 90
+        },
+        {
+          "id": "south_subtropical_dry",
+          "latitude_center_deg": -28,
+          "half_width_deg": 14,
+          "coverage_multiplier": 0.55,
+          "density_multiplier": 0.72,
+          "fragmentation": 0.4,
+          "zonal_stretch": 0.6,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 90
+        },
+        {
+          "id": "north_storm_track",
+          "latitude_center_deg": 55,
+          "half_width_deg": 18,
+          "coverage_multiplier": 1.25,
+          "density_multiplier": 1.08,
+          "fragmentation": 0.8,
+          "zonal_stretch": 1.4,
+          "wind_speed_multiplier": 1.4,
+          "predominant_direction_deg": 270
+        },
+        {
+          "id": "south_storm_track",
+          "latitude_center_deg": -55,
+          "half_width_deg": 18,
+          "coverage_multiplier": 1.25,
+          "density_multiplier": 1.08,
+          "fragmentation": 0.8,
+          "zonal_stretch": 1.4,
+          "wind_speed_multiplier": 1.4,
+          "predominant_direction_deg": 270
+        }
+      ]
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 1337,
+      "weather_scale": 6,
+      "mass_scale": 14,
+      "erosion_scale": 28,
+      "detail_scale": 72,
+      "domain_warp_strength": 0.055,
+      "billow_strength": 0.78,
+      "worley_erosion_strength": 0.34,
+      "edge_fragment_strength": 0.52,
+      "edge_fragment_scale": 56,
+      "detached_fragment_probability": 0.28,
+      "soft_edge_width": 0.1
+    },
+    "source_motion_is_physical": true,
+    "runtime_speed_multiplier_not_stored_here": true
+  },
+  "data_quality": "artistic_assumption_atmosphere_unobserved",
+  "provenance": {
+    "sources": [
+      "tau_ceti_2017",
+      "tau_ceti_dynamite",
+      "tau_ceti_composition"
+    ],
+    "notes": "Tau Ceti e atmosphere and even planetary status are not observationally established; values are game-design assumptions for the project ocean world."
+  }
+}

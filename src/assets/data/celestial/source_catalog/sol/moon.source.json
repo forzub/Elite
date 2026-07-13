@@ -6,16 +6,16 @@
   "body_shape": "sphere",
   "projection": "equirectangular",
   "required_assets": {
-    "albedo": "src/assets/source/celestial/sol/moon/albedo_source.*"
+    "albedo": "assets/source/celestial/sol/moon/albedo_source.*"
   },
   "optional_assets": {
-    "height": "src/assets/source/celestial/sol/moon/height_source.*"
+    "height": "assets/source/celestial/sol/moon/height_source.*"
   },
   "derived_outputs": {
-    "albedo": "src/assets/generated/celestial/sol/moon/albedo.tga",
-    "normal": "src/assets/generated/celestial/sol/moon/normal.tga",
-    "material": "src/assets/generated/celestial/sol/moon/material.tga",
-    "preview": "src/assets/generated/celestial/sol/moon/preview.tga",
-    "meta": "src/assets/generated/celestial/sol/moon/meta.json"
+    "albedo": "assets/generated/celestial/sol/moon/albedo.tga",
+    "normal": "assets/generated/celestial/sol/moon/normal.tga",
+    "material": "assets/generated/celestial/sol/moon/material.tga",
+    "preview": "assets/generated/celestial/sol/moon/preview.tga",
+    "meta": "assets/generated/celestial/sol/moon/meta.json"
   }
 }

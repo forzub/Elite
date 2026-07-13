@@ -1,0 +1,142 @@
+{
+  "schema": "elite.celestial.environment.v2",
+  "system_folder_name": "sol",
+  "body_folder_name": "triton",
+  "display_name": "Triton",
+  "authoring_note": "Source-of-truth environment profile. Do not place manual copies in build/assets/generated.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "very_thin_nitrogen_haze",
+    "visual_intensity": 0.22,
+    "radius_scale": 1.007,
+    "horizon_fade_start": 0.025,
+    "horizon_fade_end": 0.34,
+    "colors": {
+      "surface_haze": [
+        0.66,
+        0.82,
+        1.0,
+        0.055
+      ],
+      "limb_core": [
+        0.84,
+        0.95,
+        1.0,
+        0.055
+      ],
+      "near_atmosphere": [
+        0.28,
+        0.46,
+        0.78,
+        0.035
+      ],
+      "outer_atmosphere": [
+        0.08,
+        0.16,
+        0.42,
+        0.022
+      ]
+    },
+    "notes": "Very tenuous nitrogen atmosphere; atmospheric effect should be barely visible.",
+    "physical": {
+      "surface_pressure_pa": 1.4,
+      "scale_height_km": 20,
+      "outer_height_km": 800,
+      "bulk_composition": [
+        {
+          "species": "N2",
+          "fraction": 0.99
+        },
+        {
+          "species": "CH4",
+          "fraction": 0.001
+        }
+      ]
+    },
+    "haze": {
+      "center_strength": 0.005,
+      "limb_strength": 0.18,
+      "contrast_loss": 0.16,
+      "desaturation": 0.12,
+      "distortion_strength": 0.003,
+      "limb_power": 3.6,
+      "colors": {
+        "surface_haze": [
+          0.66,
+          0.82,
+          1.0,
+          0.055
+        ],
+        "limb_core": [
+          0.84,
+          0.95,
+          1.0,
+          0.055
+        ],
+        "near_atmosphere": [
+          0.28,
+          0.46,
+          0.78,
+          0.035
+        ],
+        "outer_atmosphere": [
+          0.08,
+          0.16,
+          0.42,
+          0.022
+        ]
+      }
+    }
+  },
+  "clouds": {
+    "enabled": false,
+    "pattern": "none",
+    "seed_policy": "none",
+    "seed_base": 0,
+    "notes": "No stable cloud deck; keep only a very subtle limb haze.",
+    "global_coverage": 0.0,
+    "appearance": {
+      "base_color": [
+        0.72,
+        0.74,
+        0.76
+      ],
+      "shadow_color": [
+        0.24,
+        0.27,
+        0.31
+      ],
+      "saturation": 0.06,
+      "contrast": 1.1
+    },
+    "layers": [],
+    "circulation": {
+      "model": "none",
+      "zones": []
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 1337,
+      "weather_scale": 6,
+      "mass_scale": 14,
+      "erosion_scale": 28,
+      "detail_scale": 72,
+      "domain_warp_strength": 0.055,
+      "billow_strength": 0.78,
+      "worley_erosion_strength": 0.34,
+      "edge_fragment_strength": 0.52,
+      "edge_fragment_scale": 56,
+      "detached_fragment_probability": 0.28,
+      "soft_edge_width": 0.1
+    },
+    "source_motion_is_physical": true,
+    "runtime_speed_multiplier_not_stored_here": true
+  },
+  "data_quality": "measured_with_high_uncertainty",
+  "provenance": {
+    "sources": [
+      "nasa_planetary_atmospheres"
+    ],
+    "notes": "Tenuous nitrogen atmosphere and haze; no stable cloud deck enabled."
+  }
+}

@@ -6,6 +6,9 @@
 #include <fstream>        // ← ОБЯЗАТЕЛЬНО
 #include <sstream>        // ← ОБЯЗАТЕЛЬНО
 
+#include <algorithm>
+#include <string>
+
 static std::string loadTextFile(const std::string& path)
 {
     std::ifstream file(path);
@@ -64,49 +67,196 @@ unsigned int compileShaderFromFiles(
 
 
 
-static unsigned int compileSingle(GLenum type, const char* src)
+static unsigned int compileSingle(
+    GLenum type,
+    const char* src
+)
 {
-    unsigned int shader = glCreateShader(type);
-    glShaderSource(shader, 1, &src, nullptr);
-    glCompileShader(shader);
+    const unsigned int shader =
+        glCreateShader(
+            type
+        );
 
-    int success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success)
+    glShaderSource(
+        shader,
+        1,
+        &src,
+        nullptr
+    );
+
+    glCompileShader(
+        shader
+    );
+
+    GLint success = GL_FALSE;
+
+    glGetShaderiv(
+        shader,
+        GL_COMPILE_STATUS,
+        &success
+    );
+
+    if (success != GL_TRUE)
     {
-        char log[512];
-        glGetShaderInfoLog(shader, 512, nullptr, log);
-        std::cerr << "[ShaderUtils ERROR] Shader compile error:\n" << log << std::endl;
+        GLint logLength = 0;
+
+        glGetShaderiv(
+            shader,
+            GL_INFO_LOG_LENGTH,
+            &logLength
+        );
+
+        std::string log(
+            static_cast<std::size_t>(
+                std::max(
+                    1,
+                    logLength
+                )
+            ),
+            '\0'
+        );
+
+        glGetShaderInfoLog(
+            shader,
+            static_cast<GLsizei>(
+                log.size()
+            ),
+            nullptr,
+            log.data()
+        );
+
+        std::cerr
+            << "[ShaderUtils ERROR] Shader compile error:\n"
+            << log
+            << std::endl;
+
+        glDeleteShader(
+            shader
+        );
+
+        return 0;
     }
 
     return shader;
 }
 
-unsigned int compileShader(const char* vertexSrc,
-                           const char* fragmentSrc)
+
+
+
+
+
+
+unsigned int compileShader(
+    const char* vertexSrc,
+    const char* fragmentSrc
+)
 {
-    unsigned int vs = compileSingle(GL_VERTEX_SHADER, vertexSrc);
-    unsigned int fs = compileSingle(GL_FRAGMENT_SHADER, fragmentSrc);
+    const unsigned int vertexShader =
+        compileSingle(
+            GL_VERTEX_SHADER,
+            vertexSrc
+        );
 
-    unsigned int program = glCreateProgram();
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
-
-    int success;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success)
+    if (vertexShader == 0)
     {
-        char log[512];
-        glGetProgramInfoLog(program, 512, nullptr, log);
-        std::cerr << "[ShaderUtils ERROR] Shader link error:\n" << log << std::endl;
+        return 0;
     }
 
-    glDeleteShader(vs);
-    glDeleteShader(fs);
+    const unsigned int fragmentShader =
+        compileSingle(
+            GL_FRAGMENT_SHADER,
+            fragmentSrc
+        );
+
+    if (fragmentShader == 0)
+    {
+        glDeleteShader(
+            vertexShader
+        );
+
+        return 0;
+    }
+
+    const unsigned int program =
+        glCreateProgram();
+
+    glAttachShader(
+        program,
+        vertexShader
+    );
+
+    glAttachShader(
+        program,
+        fragmentShader
+    );
+
+    glLinkProgram(
+        program
+    );
+
+    GLint success = GL_FALSE;
+
+    glGetProgramiv(
+        program,
+        GL_LINK_STATUS,
+        &success
+    );
+
+    glDeleteShader(
+        vertexShader
+    );
+
+    glDeleteShader(
+        fragmentShader
+    );
+
+    if (success != GL_TRUE)
+    {
+        GLint logLength = 0;
+
+        glGetProgramiv(
+            program,
+            GL_INFO_LOG_LENGTH,
+            &logLength
+        );
+
+        std::string log(
+            static_cast<std::size_t>(
+                std::max(
+                    1,
+                    logLength
+                )
+            ),
+            '\0'
+        );
+
+        glGetProgramInfoLog(
+            program,
+            static_cast<GLsizei>(
+                log.size()
+            ),
+            nullptr,
+            log.data()
+        );
+
+        std::cerr
+            << "[ShaderUtils ERROR] Shader link error:\n"
+            << log
+            << std::endl;
+
+        glDeleteProgram(
+            program
+        );
+
+        return 0;
+    }
 
     return program;
 }
+
+
+
+
 
 
 unsigned int compileShaderFromFiles(

@@ -1,5 +1,6 @@
 {
   "preset_id": "ice_giant",
+  "environment_preset_id": "ice_giant_methane",
   "system_folder_name": "sol",
   "body_folder_name": "uranus",
   "display_name": "Uranus",

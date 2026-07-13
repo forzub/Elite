@@ -23,6 +23,7 @@ public:
     }
 
     const CelestialSystemDefinition* findSystem(int systemId) const;
+    const StarSystemSummary* findSystemSummary(int systemId) const;
 
 private:
     bool loadStarSystems(const std::string& path);

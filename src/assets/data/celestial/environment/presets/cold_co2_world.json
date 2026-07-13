@@ -1,0 +1,158 @@
+{
+  "schema": "elite.celestial.environment_preset.v2",
+  "preset_id": "cold_co2_world",
+  "classification": "cold dry carbon-dioxide terrestrial world",
+  "data_quality": "generic_physical_model",
+  "notes": "Mars-like thin CO2 atmosphere with sparse water/CO2 ice clouds.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "thin carbon_dioxide",
+    "physical": {
+      "surface_pressure_pa": 700,
+      "scale_height_km": 11,
+      "outer_height_km": 80
+    },
+    "visual_intensity": 0.3,
+    "radius_scale": 1.006,
+    "haze": {
+      "center_strength": 0.002,
+      "limb_strength": 0.28,
+      "contrast_loss": 0.2,
+      "desaturation": 0.1,
+      "distortion_strength": 0.008
+    },
+    "colors": {
+      "surface_haze": [
+        0.52,
+        0.48,
+        0.45,
+        0.035
+      ],
+      "limb_core": [
+        0.68,
+        0.62,
+        0.56,
+        0.06
+      ],
+      "near_atmosphere": [
+        0.44,
+        0.4,
+        0.38,
+        0.03
+      ],
+      "outer_atmosphere": [
+        0.28,
+        0.25,
+        0.24,
+        0.015
+      ]
+    }
+  },
+  "clouds": {
+    "enabled": true,
+    "pattern": "broken_fields",
+    "global_coverage": 0.08,
+    "appearance": {
+      "base_color": [
+        0.72,
+        0.72,
+        0.72
+      ],
+      "shadow_color": [
+        0.32,
+        0.31,
+        0.3
+      ],
+      "saturation": 0.04,
+      "contrast": 1.1
+    },
+    "layers": [
+      {
+        "id": "water_ice",
+        "type": "water_ice",
+        "base_height_km": 8,
+        "top_height_km": 18,
+        "coverage": 0.06,
+        "density": 0.18,
+        "opacity": 0.12,
+        "particle_scale": 0.25,
+        "wind": {
+          "speed_range_mps": [
+            5,
+            35
+          ],
+          "predominant_direction_deg": 270,
+          "data_status": "generic_range"
+        }
+      },
+      {
+        "id": "co2_polar",
+        "type": "carbon_dioxide_ice",
+        "base_height_km": 15,
+        "top_height_km": 30,
+        "coverage": 0.04,
+        "density": 0.15,
+        "opacity": 0.1,
+        "particle_scale": 0.2,
+        "wind": {
+          "speed_range_mps": [
+            10,
+            50
+          ],
+          "predominant_direction_deg": 260,
+          "data_status": "generic_range"
+        }
+      }
+    ],
+    "circulation": {
+      "model": "latitude_bands",
+      "zones": [
+        {
+          "id": "equatorial_cloud_belt",
+          "latitude_center_deg": 0,
+          "half_width_deg": 18,
+          "coverage_multiplier": 1.2,
+          "density_multiplier": 1,
+          "fragmentation": 0.55,
+          "zonal_stretch": 1.1,
+          "drift_speed_multiplier": 1
+        },
+        {
+          "id": "north_polar_hood",
+          "latitude_center_deg": 70,
+          "half_width_deg": 18,
+          "coverage_multiplier": 1.4,
+          "density_multiplier": 1.1,
+          "fragmentation": 0.45,
+          "zonal_stretch": 0.7,
+          "drift_speed_multiplier": 0.8
+        },
+        {
+          "id": "south_polar_hood",
+          "latitude_center_deg": -70,
+          "half_width_deg": 18,
+          "coverage_multiplier": 1.4,
+          "density_multiplier": 1.1,
+          "fragmentation": 0.45,
+          "zonal_stretch": 0.7,
+          "drift_speed_multiplier": 0.8
+        }
+      ]
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 4211,
+      "weather_scale": 8,
+      "mass_scale": 20,
+      "erosion_scale": 38,
+      "detail_scale": 88,
+      "domain_warp_strength": 0.04,
+      "billow_strength": 0.58,
+      "worley_erosion_strength": 0.46,
+      "edge_fragment_strength": 0.42,
+      "edge_fragment_scale": 72,
+      "detached_fragment_probability": 0.18,
+      "soft_edge_width": 0.075
+    }
+  }
+}

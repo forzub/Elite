@@ -1,0 +1,140 @@
+{
+  "schema": "elite.celestial.environment_preset.v2",
+  "preset_id": "desert_thin_atmosphere",
+  "classification": "dry rocky world with a thin atmosphere",
+  "data_quality": "generic_physical_model",
+  "notes": "Generic dry exoplanet default with sparse high clouds or dust haze.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "thin carbon dioxide or nitrogen",
+    "physical": {
+      "surface_pressure_pa": 18000,
+      "scale_height_km": 10,
+      "outer_height_km": 80
+    },
+    "visual_intensity": 0.42,
+    "radius_scale": 1.008,
+    "haze": {
+      "center_strength": 0.005,
+      "limb_strength": 0.38,
+      "contrast_loss": 0.28,
+      "desaturation": 0.18,
+      "distortion_strength": 0.012
+    },
+    "colors": {
+      "surface_haze": [
+        0.48,
+        0.45,
+        0.42,
+        0.045
+      ],
+      "limb_core": [
+        0.62,
+        0.58,
+        0.54,
+        0.08
+      ],
+      "near_atmosphere": [
+        0.42,
+        0.39,
+        0.36,
+        0.04
+      ],
+      "outer_atmosphere": [
+        0.25,
+        0.23,
+        0.22,
+        0.02
+      ]
+    }
+  },
+  "clouds": {
+    "enabled": true,
+    "pattern": "broken_fields",
+    "global_coverage": 0.12,
+    "appearance": {
+      "base_color": [
+        0.68,
+        0.68,
+        0.68
+      ],
+      "shadow_color": [
+        0.3,
+        0.29,
+        0.28
+      ],
+      "saturation": 0.04,
+      "contrast": 1.1
+    },
+    "layers": [
+      {
+        "id": "thin_high",
+        "type": "ice_or_dust",
+        "base_height_km": 8,
+        "top_height_km": 18,
+        "coverage": 0.1,
+        "density": 0.24,
+        "opacity": 0.16,
+        "particle_scale": 0.3,
+        "wind": {
+          "speed_range_mps": [
+            10,
+            55
+          ],
+          "predominant_direction_deg": 275,
+          "data_status": "generic_assumption"
+        }
+      }
+    ],
+    "circulation": {
+      "model": "latitude_bands",
+      "zones": [
+        {
+          "id": "equatorial_dry",
+          "latitude_center_deg": 0,
+          "half_width_deg": 25,
+          "coverage_multiplier": 0.65,
+          "density_multiplier": 0.75,
+          "fragmentation": 0.35,
+          "zonal_stretch": 0.85,
+          "drift_speed_multiplier": 1.0
+        },
+        {
+          "id": "north_midlatitude",
+          "latitude_center_deg": 45,
+          "half_width_deg": 18,
+          "coverage_multiplier": 1.1,
+          "density_multiplier": 1,
+          "fragmentation": 0.55,
+          "zonal_stretch": 1.2,
+          "drift_speed_multiplier": 1.25
+        },
+        {
+          "id": "south_midlatitude",
+          "latitude_center_deg": -45,
+          "half_width_deg": 18,
+          "coverage_multiplier": 1.1,
+          "density_multiplier": 1,
+          "fragmentation": 0.55,
+          "zonal_stretch": 1.2,
+          "drift_speed_multiplier": 1.25
+        }
+      ]
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 3107,
+      "weather_scale": 7,
+      "mass_scale": 18,
+      "erosion_scale": 34,
+      "detail_scale": 80,
+      "domain_warp_strength": 0.04,
+      "billow_strength": 0.62,
+      "worley_erosion_strength": 0.42,
+      "edge_fragment_strength": 0.45,
+      "edge_fragment_scale": 66,
+      "detached_fragment_probability": 0.22,
+      "soft_edge_width": 0.08
+    }
+  }
+}

@@ -1,0 +1,320 @@
+{
+  "schema": "elite.celestial.environment.v2",
+  "system_folder_name": "sol",
+  "body_folder_name": "earth",
+  "display_name": "Earth",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "nitrogen_oxygen_blue",
+    "visual_intensity": 0.72,
+    "radius_scale": 1.012,
+    "horizon_fade_start": 0.025,
+    "horizon_fade_end": 0.34,
+    "colors": {
+      "surface_haze": [
+        0.46,
+        0.58,
+        0.68,
+        0.105
+      ],
+      "limb_core": [
+        0.66,
+        0.76,
+        0.84,
+        0.145
+      ],
+      "near_atmosphere": [
+        0.28,
+        0.42,
+        0.58,
+        0.09
+      ],
+      "outer_atmosphere": [
+        0.08,
+        0.14,
+        0.22,
+        0.045
+      ]
+    },
+    "physical": {
+      "surface_pressure_pa": 101325,
+      "scale_height_km": 8.5,
+      "outer_height_km": 100,
+      "bulk_composition": [
+        {
+          "species": "N2",
+          "fraction": 0.7808
+        },
+        {
+          "species": "O2",
+          "fraction": 0.2095
+        },
+        {
+          "species": "Ar",
+          "fraction": 0.0093
+        }
+      ]
+    },
+    "haze": {
+      "center_strength": 0.015,
+      "limb_strength": 0.62,
+      "contrast_loss": 0.48,
+      "desaturation": 0.34,
+      "distortion_strength": 0.025,
+      "limb_power": 2.6,
+      "colors": {
+        "surface_haze": [
+          0.46,
+          0.58,
+          0.68,
+          0.105
+        ],
+        "limb_core": [
+          0.66,
+          0.76,
+          0.84,
+          0.145
+        ],
+        "near_atmosphere": [
+          0.28,
+          0.42,
+          0.58,
+          0.09
+        ],
+        "outer_atmosphere": [
+          0.08,
+          0.14,
+          0.22,
+          0.045
+        ]
+      }
+    }
+  },
+  "clouds": {
+    "enabled": true,
+    "pattern": "broken_fields",
+    "seed_policy": "random_on_map_open",
+    "seed_base": 42177,
+    "coverage_threshold": 0.535,
+    "density": 0.78,
+    "opacity": 0.215,
+    "edge_sharpness": 0.145,
+    "detail_strength": 0.34,
+    "macro_scale": 2.0,
+    "cell_scale": 15.0,
+    "detail_scale": 46.0,
+    "wind": {
+      "longitude_drift_speed": 0.01035,
+      "latitudinal_drift_speed": 0.0,
+      "shear": 0.05
+    },
+    "animation": {
+      "weather_change_speed": 3.2,
+      "weather_cycle_seconds": 120.0,
+      "density_variation": 0.45
+    },
+    "colors": {
+      "cloud": [
+        0.78,
+        0.86,
+        0.92
+      ],
+      "shadow": [
+        0.3,
+        0.4,
+        0.5
+      ]
+    },
+    "cyclones": {
+      "enabled": false,
+      "probability": 0.0,
+      "strength": 0.0
+    },
+    "global_coverage": 0.58,
+    "appearance": {
+      "base_color": [
+        0.76,
+        0.79,
+        0.82
+      ],
+      "shadow_color": [
+        0.25,
+        0.29,
+        0.34
+      ],
+      "saturation": 0.05,
+      "contrast": 1.12
+    },
+    "layers": [
+      {
+        "id": "low_water",
+        "type": "water_liquid",
+        "base_height_km": 0.5,
+        "top_height_km": 2.5,
+        "coverage": 0.34,
+        "density": 0.78,
+        "opacity": 0.72,
+        "particle_scale": 1.0,
+        "wind": {
+          "speed_range_mps": [
+            2,
+            18
+          ],
+          "predominant_direction_deg": 270,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "measured_range"
+        },
+        "notes": "Trade-wind and boundary-layer clouds; direction varies by latitude."
+      },
+      {
+        "id": "mid_water",
+        "type": "water_liquid_ice",
+        "base_height_km": 2.5,
+        "top_height_km": 7.0,
+        "coverage": 0.2,
+        "density": 0.56,
+        "opacity": 0.5,
+        "particle_scale": 0.65,
+        "wind": {
+          "speed_range_mps": [
+            5,
+            35
+          ],
+          "predominant_direction_deg": 270,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "measured_range"
+        },
+        "notes": "Mid-level frontal cloud decks."
+      },
+      {
+        "id": "high_ice",
+        "type": "ice",
+        "base_height_km": 7.0,
+        "top_height_km": 13.0,
+        "coverage": 0.16,
+        "density": 0.3,
+        "opacity": 0.28,
+        "particle_scale": 0.35,
+        "wind": {
+          "speed_range_mps": [
+            15,
+            75
+          ],
+          "predominant_direction_deg": 270,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "measured_range"
+        },
+        "notes": "Jet-stream cirrus; local winds can exceed this range."
+      }
+    ],
+    "circulation": {
+      "model": "latitude_bands",
+      "zones": [
+        {
+          "id": "equatorial_convergence",
+          "latitude_center_deg": 0,
+          "half_width_deg": 10,
+          "coverage_multiplier": 1.35,
+          "density_multiplier": 1.12,
+          "fragmentation": 0.55,
+          "zonal_stretch": 0.85,
+          "wind_speed_multiplier": 0.8,
+          "predominant_direction_deg": 270
+        },
+        {
+          "id": "north_subtropical_dry",
+          "latitude_center_deg": 25,
+          "half_width_deg": 12,
+          "coverage_multiplier": 0.55,
+          "density_multiplier": 0.72,
+          "fragmentation": 0.35,
+          "zonal_stretch": 0.55,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 90
+        },
+        {
+          "id": "south_subtropical_dry",
+          "latitude_center_deg": -25,
+          "half_width_deg": 12,
+          "coverage_multiplier": 0.55,
+          "density_multiplier": 0.72,
+          "fragmentation": 0.35,
+          "zonal_stretch": 0.55,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 90
+        },
+        {
+          "id": "north_midlatitude_storms",
+          "latitude_center_deg": 52,
+          "half_width_deg": 17,
+          "coverage_multiplier": 1.22,
+          "density_multiplier": 1.08,
+          "fragmentation": 0.78,
+          "zonal_stretch": 1.35,
+          "wind_speed_multiplier": 1.45,
+          "predominant_direction_deg": 270
+        },
+        {
+          "id": "south_midlatitude_storms",
+          "latitude_center_deg": -52,
+          "half_width_deg": 17,
+          "coverage_multiplier": 1.22,
+          "density_multiplier": 1.08,
+          "fragmentation": 0.78,
+          "zonal_stretch": 1.35,
+          "wind_speed_multiplier": 1.45,
+          "predominant_direction_deg": 270
+        },
+        {
+          "id": "polar_hoods",
+          "latitude_center_deg": 80,
+          "half_width_deg": 10,
+          "coverage_multiplier": 0.75,
+          "density_multiplier": 0.72,
+          "fragmentation": 0.45,
+          "zonal_stretch": 0.8,
+          "wind_speed_multiplier": 0.8,
+          "predominant_direction_deg": 270
+        },
+        {
+          "id": "south_polar_hoods",
+          "latitude_center_deg": -80,
+          "half_width_deg": 10,
+          "coverage_multiplier": 0.75,
+          "density_multiplier": 0.72,
+          "fragmentation": 0.45,
+          "zonal_stretch": 0.8,
+          "wind_speed_multiplier": 0.8,
+          "predominant_direction_deg": 270
+        }
+      ]
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 1337,
+      "weather_scale": 6,
+      "mass_scale": 14,
+      "erosion_scale": 28,
+      "detail_scale": 72,
+      "domain_warp_strength": 0.055,
+      "billow_strength": 0.78,
+      "worley_erosion_strength": 0.34,
+      "edge_fragment_strength": 0.52,
+      "edge_fragment_scale": 56,
+      "detached_fragment_probability": 0.28,
+      "soft_edge_width": 0.1
+    },
+    "source_motion_is_physical": true,
+    "runtime_speed_multiplier_not_stored_here": true
+  },
+  "data_quality": "measured_with_render_approximations",
+  "provenance": {
+    "sources": [
+      "nasa_planetary_atmospheres"
+    ],
+    "notes": "Wind ranges are climatological rendering ranges, not a forecast."
+  }
+}

@@ -1,5 +1,6 @@
 {
   "preset_id": "gas_giant",
+  "environment_preset_id": "gas_giant_ammonia",
   "system_folder_name": "sol",
   "body_folder_name": "saturn",
   "display_name": "Saturn",

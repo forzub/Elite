@@ -1,0 +1,196 @@
+{
+  "schema": "elite.celestial.environment_preset.v2",
+  "preset_id": "terrestrial_temperate",
+  "classification": "temperate terrestrial world",
+  "data_quality": "generic_physical_model",
+  "notes": "Generic Earth-like climate; body-specific profiles should override measured values.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "nitrogen_oxygen_like",
+    "physical": {
+      "surface_pressure_pa": 101325,
+      "scale_height_km": 8.5,
+      "outer_height_km": 100
+    },
+    "visual_intensity": 0.72,
+    "radius_scale": 1.012,
+    "haze": {
+      "center_strength": 0.02,
+      "limb_strength": 0.62,
+      "contrast_loss": 0.46,
+      "desaturation": 0.3,
+      "distortion_strength": 0.025
+    },
+    "colors": {
+      "surface_haze": [
+        0.48,
+        0.54,
+        0.6,
+        0.08
+      ],
+      "limb_core": [
+        0.68,
+        0.72,
+        0.78,
+        0.14
+      ],
+      "near_atmosphere": [
+        0.38,
+        0.45,
+        0.55,
+        0.08
+      ],
+      "outer_atmosphere": [
+        0.2,
+        0.26,
+        0.34,
+        0.04
+      ]
+    }
+  },
+  "clouds": {
+    "enabled": true,
+    "pattern": "broken_fields",
+    "global_coverage": 0.58,
+    "appearance": {
+      "base_color": [
+        0.78,
+        0.8,
+        0.82
+      ],
+      "shadow_color": [
+        0.28,
+        0.32,
+        0.38
+      ],
+      "saturation": 0.04,
+      "contrast": 1.1
+    },
+    "layers": [
+      {
+        "id": "low_water",
+        "type": "water",
+        "base_height_km": 0.8,
+        "top_height_km": 3,
+        "coverage": 0.36,
+        "density": 0.78,
+        "opacity": 0.72,
+        "particle_scale": 1,
+        "wind": {
+          "speed_range_mps": [
+            3,
+            20
+          ],
+          "predominant_direction_deg": 260,
+          "data_status": "generic_range"
+        }
+      },
+      {
+        "id": "mid_water",
+        "type": "water",
+        "base_height_km": 3,
+        "top_height_km": 7,
+        "coverage": 0.2,
+        "density": 0.56,
+        "opacity": 0.48,
+        "particle_scale": 0.65,
+        "wind": {
+          "speed_range_mps": [
+            8,
+            35
+          ],
+          "predominant_direction_deg": 270,
+          "data_status": "generic_range"
+        }
+      },
+      {
+        "id": "high_ice",
+        "type": "ice",
+        "base_height_km": 7,
+        "top_height_km": 13,
+        "coverage": 0.14,
+        "density": 0.3,
+        "opacity": 0.26,
+        "particle_scale": 0.35,
+        "wind": {
+          "speed_range_mps": [
+            15,
+            75
+          ],
+          "predominant_direction_deg": 275,
+          "data_status": "generic_range"
+        }
+      }
+    ],
+    "circulation": {
+      "model": "latitude_bands",
+      "zones": [
+        {
+          "id": "equatorial_convergence",
+          "latitude_center_deg": 0,
+          "half_width_deg": 11,
+          "coverage_multiplier": 1.28,
+          "density_multiplier": 1.08,
+          "fragmentation": 0.48,
+          "zonal_stretch": 0.75,
+          "drift_speed_multiplier": 0.8
+        },
+        {
+          "id": "north_subtropical_dry",
+          "latitude_center_deg": 25,
+          "half_width_deg": 12,
+          "coverage_multiplier": 0.58,
+          "density_multiplier": 0.72,
+          "fragmentation": 0.3,
+          "zonal_stretch": 0.5,
+          "drift_speed_multiplier": 1.05
+        },
+        {
+          "id": "south_subtropical_dry",
+          "latitude_center_deg": -25,
+          "half_width_deg": 12,
+          "coverage_multiplier": 0.58,
+          "density_multiplier": 0.72,
+          "fragmentation": 0.3,
+          "zonal_stretch": 0.5,
+          "drift_speed_multiplier": 1.05
+        },
+        {
+          "id": "north_midlatitude_storms",
+          "latitude_center_deg": 52,
+          "half_width_deg": 17,
+          "coverage_multiplier": 1.18,
+          "density_multiplier": 1.05,
+          "fragmentation": 0.72,
+          "zonal_stretch": 1.25,
+          "drift_speed_multiplier": 1.35
+        },
+        {
+          "id": "south_midlatitude_storms",
+          "latitude_center_deg": -52,
+          "half_width_deg": 17,
+          "coverage_multiplier": 1.18,
+          "density_multiplier": 1.05,
+          "fragmentation": 0.72,
+          "zonal_stretch": 1.25,
+          "drift_speed_multiplier": 1.35
+        }
+      ]
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 1337,
+      "weather_scale": 6,
+      "mass_scale": 14,
+      "erosion_scale": 28,
+      "detail_scale": 72,
+      "domain_warp_strength": 0.055,
+      "billow_strength": 0.78,
+      "worley_erosion_strength": 0.34,
+      "edge_fragment_strength": 0.52,
+      "edge_fragment_scale": 56,
+      "detached_fragment_probability": 0.28,
+      "soft_edge_width": 0.1
+    }
+  }
+}

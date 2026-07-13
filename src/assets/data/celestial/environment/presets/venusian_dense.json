@@ -1,0 +1,246 @@
+{
+  "schema": "elite.celestial.environment_preset.v2",
+  "preset_id": "venusian_dense",
+  "classification": "hot terrestrial world with dense sulfuric atmosphere",
+  "data_quality": "generic_physical_model",
+  "notes": "Venus-like default with global sulfuric-acid cloud deck and superrotation.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "dense carbon_dioxide sulfuric_haze",
+    "physical": {
+      "surface_pressure_pa": 9200000,
+      "scale_height_km": 15.9,
+      "outer_height_km": 180
+    },
+    "visual_intensity": 1.2,
+    "radius_scale": 1.035,
+    "haze": {
+      "center_strength": 0.22,
+      "limb_strength": 0.92,
+      "contrast_loss": 0.82,
+      "desaturation": 0.72,
+      "distortion_strength": 0.06
+    },
+    "colors": {
+      "surface_haze": [
+        0.64,
+        0.58,
+        0.48,
+        0.32
+      ],
+      "limb_core": [
+        0.82,
+        0.76,
+        0.62,
+        0.3
+      ],
+      "near_atmosphere": [
+        0.62,
+        0.52,
+        0.4,
+        0.22
+      ],
+      "outer_atmosphere": [
+        0.38,
+        0.3,
+        0.24,
+        0.12
+      ]
+    }
+  },
+  "clouds": {
+    "enabled": true,
+    "pattern": "dense_overcast",
+    "global_coverage": 1.0,
+    "appearance": {
+      "base_color": [
+        0.78,
+        0.74,
+        0.66
+      ],
+      "shadow_color": [
+        0.34,
+        0.31,
+        0.27
+      ],
+      "saturation": 0.04,
+      "contrast": 1.1
+    },
+    "layers": [
+      {
+        "id": "middle_sulfuric",
+        "type": "sulfuric_acid",
+        "base_height_km": 50,
+        "top_height_km": 57,
+        "coverage": 1.0,
+        "density": 1.0,
+        "opacity": 1.0,
+        "particle_scale": 0.8,
+        "wind": {
+          "speed_range_mps": [
+            60,
+            110
+          ],
+          "predominant_direction_deg": 270,
+          "data_status": "generic_range"
+        },
+        "render_role": "primary_opaque_deck",
+        "appearance": {
+          "base_color": [
+            0.86,
+            0.79,
+            0.63
+          ],
+          "shadow_color": [
+            0.46,
+            0.39,
+            0.28
+          ],
+          "opacity_scale": 1.0
+        }
+      },
+      {
+        "id": "lower_sulfuric",
+        "type": "sulfuric_acid",
+        "base_height_km": 47,
+        "top_height_km": 50,
+        "coverage": 0.86,
+        "density": 0.7,
+        "opacity": 0.22,
+        "particle_scale": 1,
+        "wind": {
+          "speed_range_mps": [
+            40,
+            80
+          ],
+          "predominant_direction_deg": 270,
+          "data_status": "generic_range"
+        },
+        "render_role": "slow_haze_overlay",
+        "appearance": {
+          "base_color": [
+            0.74,
+            0.66,
+            0.51
+          ],
+          "shadow_color": [
+            0.38,
+            0.31,
+            0.23
+          ],
+          "opacity_scale": 1.0
+        }
+      },
+      {
+        "id": "upper_sulfuric",
+        "type": "sulfuric_acid",
+        "base_height_km": 57,
+        "top_height_km": 70,
+        "coverage": 0.68,
+        "density": 0.58,
+        "opacity": 0.28,
+        "particle_scale": 0.55,
+        "wind": {
+          "speed_range_mps": [
+            70,
+            120
+          ],
+          "predominant_direction_deg": 270,
+          "data_status": "generic_range"
+        },
+        "render_role": "fast_streak_overlay",
+        "appearance": {
+          "base_color": [
+            0.97,
+            0.9,
+            0.72
+          ],
+          "shadow_color": [
+            0.56,
+            0.47,
+            0.32
+          ],
+          "opacity_scale": 1.0
+        }
+      }
+    ],
+    "circulation": {
+      "model": "latitude_bands",
+      "zones": [
+        {
+          "id": "equatorial_superrotation",
+          "latitude_center_deg": 0,
+          "half_width_deg": 35,
+          "coverage_multiplier": 1,
+          "density_multiplier": 1,
+          "fragmentation": 0.25,
+          "zonal_stretch": 1.8,
+          "drift_speed_multiplier": 1.4
+        },
+        {
+          "id": "north_polar_vortex",
+          "latitude_center_deg": 72,
+          "half_width_deg": 20,
+          "coverage_multiplier": 1.08,
+          "density_multiplier": 1.05,
+          "fragmentation": 0.5,
+          "zonal_stretch": 1,
+          "drift_speed_multiplier": 1
+        },
+        {
+          "id": "south_polar_vortex",
+          "latitude_center_deg": -72,
+          "half_width_deg": 20,
+          "coverage_multiplier": 1.08,
+          "density_multiplier": 1.05,
+          "fragmentation": 0.5,
+          "zonal_stretch": 1,
+          "drift_speed_multiplier": 1
+        }
+      ]
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 5203,
+      "weather_scale": 4,
+      "mass_scale": 10,
+      "erosion_scale": 22,
+      "detail_scale": 56,
+      "domain_warp_strength": 0.08,
+      "billow_strength": 0.72,
+      "worley_erosion_strength": 0.28,
+      "edge_fragment_strength": 0.3,
+      "edge_fragment_scale": 48,
+      "detached_fragment_probability": 0.12,
+      "soft_edge_width": 0.14
+    }
+  },
+  "rendering": {
+    "visual_class": "venusian_cloud_deck",
+    "surface_visibility": "hidden",
+    "load_surface_textures": false,
+    "base_render_mode": "procedural_primary_cloud_deck",
+    "primary_layer_id": "middle_sulfuric",
+    "primary_layer_must_cover_surface": true,
+    "primary_layer_opacity_floor": 0.999,
+    "overlay_layer_ids": [
+      "lower_sulfuric",
+      "upper_sulfuric"
+    ],
+    "maximum_dynamic_overlay_layers": 2,
+    "map_generation_resolution": [
+      1024,
+      512
+    ],
+    "game_generation_resolution": [
+      512,
+      256
+    ],
+    "game_update_policy": {
+      "primary_layer": "cached_and_time_blended",
+      "overlay_layers": "time_sliced_one_generation_per_frame",
+      "far_lod": "single_cached_primary_layer",
+      "offscreen": "do_not_update"
+    }
+  }
+}

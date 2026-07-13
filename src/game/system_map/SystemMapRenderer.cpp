@@ -13,6 +13,8 @@
 #include <cmath>
 #include <limits>
 #include <filesystem>
+#include <cctype>
+#include <utility>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -21,11 +23,154 @@
 #include "src/render/ShaderLibrary.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/render/bitmap/TextureLoader.h"
-
+#include <nlohmann/json.hpp>
 
 namespace
 {
     constexpr double AU_KM = 149597870.7;
+    
+    double cloudWindTimeScale()
+    {
+        static const double cachedValue =
+            []() -> double
+            {
+                namespace fs = std::filesystem;
+
+                fs::path searchRoot =
+                    fs::current_path();
+
+                /*
+                    Запуск обычно происходит из build/.
+                    Поднимаемся вверх и ищем project/src/assets.
+                */
+                for (int level = 0;
+                    level < 6;
+                    ++level)
+                {
+                    const fs::path candidate =
+                        searchRoot /
+                        "src/assets/data/celestial/runtime/environment_debug.json";
+
+                    if (fs::exists(candidate))
+                    {
+                        try
+                        {
+                            std::ifstream input(
+                                candidate
+                            );
+
+                            nlohmann::json root;
+                            input >> root;
+
+                            const auto windScale =
+                                root.value(
+                                    "wind_time_scale",
+                                    nlohmann::json::object()
+                                );
+
+                            const double value =
+                                windScale.value(
+                                    "default_debug",
+                                    600.0
+                                );
+
+                            std::cout
+                                << "[CloudWind]"
+                                << " runtime scale="
+                                << value
+                                << " source="
+                                << candidate.generic_string()
+                                << "\n";
+
+                            return
+                                std::max(
+                                    0.0,
+                                    value
+                                );
+                        }
+                        catch (const std::exception& error)
+                        {
+                            std::cerr
+                                << "[CloudWind]"
+                                << " failed to read runtime config: "
+                                << error.what()
+                                << "\n";
+
+                            return 600.0;
+                        }
+                    }
+
+                    if (!searchRoot.has_parent_path())
+                        break;
+
+                    const fs::path parent =
+                        searchRoot.parent_path();
+
+                    if (parent == searchRoot)
+                        break;
+
+                    searchRoot =
+                        parent;
+                }
+
+                std::cerr
+                    << "[CloudWind]"
+                    << " environment_debug.json not found;"
+                    << " fallback scale=600"
+                    << "\n";
+
+                return 600.0;
+            }();
+
+        return cachedValue;
+    }
+
+
+
+
+
+
+
+
+    std::string normalizeCloudToken(
+        const std::string& value
+    )
+    {
+        std::string result;
+        result.reserve(
+            value.size()
+        );
+
+        for (const unsigned char character : value)
+        {
+            if (std::isalnum(character))
+            {
+                result.push_back(
+                    static_cast<char>(
+                        std::tolower(character)
+                    )
+                );
+            }
+            else
+            {
+                result.push_back('_');
+            }
+        }
+
+        return result;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
     
     std::unordered_map<GLFWwindow*, double*> g_systemMapScrollTargets;
 
@@ -312,7 +457,94 @@ namespace
         if (systemId == 0)
             return "sol";
 
+        if (systemId == 8)
+            return "tau_ceti";
+
         return "";
+    }
+
+
+
+
+
+    std::uint32_t hashEnvironmentString32(
+        const std::string& text
+    )
+    {
+        std::uint32_t hash = 2166136261u;
+
+        for (unsigned char c : text)
+        {
+            hash ^= static_cast<std::uint32_t>(c);
+            hash *= 16777619u;
+        }
+
+        return hash;
+    }
+
+    std::uint32_t makeEnvironmentRuntimeSeed()
+    {
+        static std::uint32_t counter = 0u;
+
+        ++counter;
+
+        const auto now =
+            std::chrono::high_resolution_clock::now()
+                .time_since_epoch()
+                .count();
+
+        std::uint64_t mixed =
+            static_cast<std::uint64_t>(now);
+
+        mixed ^=
+            static_cast<std::uint64_t>(counter) *
+            0x9E3779B97F4A7C15ull;
+
+        mixed ^= mixed >> 32;
+
+        return static_cast<std::uint32_t>(mixed);
+    }
+
+
+
+
+    render::celestial::ProceduralCloudPattern toProceduralCloudPattern(
+        world::celestial::visual::EnvironmentCloudPattern pattern
+    )
+    {
+        using EnvPattern =
+            world::celestial::visual::EnvironmentCloudPattern;
+
+        switch (pattern)
+        {
+            case EnvPattern::ScatteredCumulus:
+                return render::celestial::ProceduralCloudPattern::ScatteredCumulus;
+
+            case EnvPattern::DenseOvercast:
+                return render::celestial::ProceduralCloudPattern::DenseOvercast;
+
+            case EnvPattern::Banded:
+                return render::celestial::ProceduralCloudPattern::Banded;
+
+            case EnvPattern::BrokenFields:
+            case EnvPattern::None:
+            default:
+                return render::celestial::ProceduralCloudPattern::BrokenFields;
+        }
+    }
+
+    glm::vec4 alphaScaled(
+        glm::vec4 color,
+        float intensity
+    )
+    {
+        color.a *=
+            std::max(
+                0.0f,
+                intensity
+            );
+
+        return color;
     }
 
 
@@ -967,6 +1199,23 @@ void SystemMapRenderer::init()
     ensureBackground();
 
     ensureGeneratedCelestialAssets();
+    ensureEnvironmentProfiles();
+
+    if (!m_mapStarfieldInitialized)
+    {
+        m_mapStarfieldInitialized =
+            m_mapStarfieldRenderer.initialize(
+                "assets/data/galaxy/star_systems.json"
+            );
+
+        if (!m_mapStarfieldInitialized)
+        {
+            std::cerr
+                << "[SystemMapRenderer]"
+                << " failed to initialize map starfield"
+                << "\n";
+        }
+    }
 
     GLFWwindow* window = glfwGetCurrentContext();
 
@@ -982,6 +1231,161 @@ void SystemMapRenderer::init()
 
     m_initialized = true;
 }
+
+
+
+
+
+
+void SystemMapRenderer::drawMapStarfield(
+    const Viewport& viewport,
+    const glm::dvec3& observerPositionLy
+)
+{
+    if (!m_mapStarfieldInitialized ||
+        viewport.width <= 0 ||
+        viewport.height <= 0)
+    {
+        return;
+    }
+
+    const float aspect =
+        static_cast<float>(
+            viewport.width
+        ) /
+        static_cast<float>(
+            std::max(
+                viewport.height,
+                1
+            )
+        );
+
+    const glm::mat4 projection =
+        glm::perspective(
+            glm::radians(
+                60.0f
+            ),
+            aspect,
+            0.1f,
+            500.0f
+        );
+
+    /*
+        Небо вращается вместе с detail camera,
+        но не зависит от zoom и pan.
+    */
+    glm::mat4 view(1.0f);
+
+    view =
+        glm::rotate(
+            view,
+            static_cast<float>(
+                -activeDetailCamera().pitch
+            ),
+            glm::vec3(
+                1.0f,
+                0.0f,
+                0.0f
+            )
+        );
+
+    view =
+        glm::rotate(
+            view,
+            static_cast<float>(
+                -activeDetailCamera().yaw
+            ),
+            glm::vec3(
+                0.0f,
+                1.0f,
+                0.0f
+            )
+        );
+
+    m_mapStarfieldRenderer.setObserverPositionLy(
+        glm::vec3(
+            static_cast<float>(
+                observerPositionLy.x
+            ),
+            static_cast<float>(
+                observerPositionLy.y
+            ),
+            static_cast<float>(
+                observerPositionLy.z
+            )
+        )
+    );
+
+    m_mapStarfieldRenderer.render(
+        view,
+        projection,
+        0.88f
+    );
+
+    /*
+        GalaxyStarfieldRenderer в конце включает depth test.
+        Дальнейший map renderer работает как 2D overlay.
+    */
+    glDisable(
+        GL_DEPTH_TEST
+    );
+
+    glDepthMask(
+        GL_TRUE
+    );
+
+    glViewport(
+        viewport.x,
+        viewport.y,
+        viewport.width,
+        viewport.height
+    );
+
+    glScissor(
+        viewport.x,
+        viewport.y,
+        viewport.width,
+        viewport.height
+    );
+
+    glMatrixMode(
+        GL_PROJECTION
+    );
+
+    glLoadIdentity();
+
+    glOrtho(
+        0.0,
+        viewport.width,
+        viewport.height,
+        0.0,
+        -1.0,
+        1.0
+    );
+
+    glMatrixMode(
+        GL_MODELVIEW
+    );
+
+    glLoadIdentity();
+
+    glUseProgram(
+        0
+    );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void SystemMapRenderer::ensureGlObjects()
 {
@@ -1184,6 +1588,1140 @@ void SystemMapRenderer::ensureGeneratedCelestialAssets()
 
 
 
+
+
+
+
+void SystemMapRenderer::ensureEnvironmentProfiles()
+{
+    if (m_environmentProfilesAttempted)
+        return;
+
+    m_environmentProfilesAttempted = true;
+
+    // Runtime path после копирования assets в build.
+    m_environmentProfilesLoaded =
+        m_environmentProfiles.loadFromRoot(
+            "assets/data/celestial/environment"
+        );
+
+    // Dev fallback: запуск из build без копии assets/data.
+    if (!m_environmentProfilesLoaded)
+    {
+        m_environmentProfilesLoaded =
+            m_environmentProfiles.loadFromRoot(
+                "src/assets/data/celestial/environment"
+            );
+    }
+
+    if (m_environmentProfilesLoaded)
+    {
+        std::cout
+            << "[SystemMapRenderer] celestial environment profiles loaded:"
+            << " presets="
+            << m_environmentProfiles.presets().size()
+            << " bodyProfiles="
+            << m_environmentProfiles.profiles().size()
+            << " failed="
+            << m_environmentProfiles.failedCount()
+            << "\n";
+    }
+    else
+    {
+        std::cerr
+            << "[SystemMapRenderer] celestial environment profiles not loaded; "
+            << "atmosphere/clouds from JSON disabled.\n";
+    }
+}
+
+void SystemMapRenderer::beginEnvironmentRenderSessionIfNeeded(
+    Mode mode,
+    int systemId,
+    const std::string& bodyId
+)
+{
+    const std::string bodyPart =
+        lastGeneratedIdentityPathPart(
+            bodyId
+        );
+
+    
+        (void)mode;
+
+        const std::string key =
+            std::to_string(systemId) +
+            ":" +
+            bodyPart;
+
+
+
+    if (m_environmentRenderSessionKey == key &&
+        m_environmentMapOpenSeed != 0u)
+    {
+        return;
+    }
+
+    m_environmentRenderSessionKey =
+        key;
+
+    m_environmentMapOpenSeed =
+        makeEnvironmentRuntimeSeed();
+
+    // Важно:
+    // JSON не перезагружаем.
+    // Чистим только процедурные cloud textures, чтобы память не росла
+    // при прыжках между телами.
+    m_proceduralCloudLayer.clearCache();
+
+    std::cout
+        << "[SystemMapRenderer] environment render session: "
+        << key
+        << " seed="
+        << m_environmentMapOpenSeed
+        << "\n";
+}
+
+
+
+
+
+
+
+world::celestial::visual::CelestialEnvironmentProfile
+SystemMapRenderer::resolvedEnvironmentProfileForBody(
+    int systemId,
+    const std::string& bodyId,
+    const std::string& displayName,
+    const std::string& environmentPresetId
+) const
+{
+    if (!m_environmentProfilesLoaded)
+        return {};
+
+    std::string systemFolder =
+        generatedSystemFolderForSystemId(
+            systemId
+        );
+
+    if (systemFolder.empty())
+    {
+        systemFolder =
+            "system_" +
+            std::to_string(systemId);
+    }
+
+    std::vector<std::string> bodyCandidates;
+
+    auto addCandidate =
+        [&](const std::string& raw)
+        {
+            const std::string token =
+                normalizeGeneratedIdentityToken(
+                    raw
+                );
+
+            if (token.empty())
+                return;
+
+            if (std::find(
+                    bodyCandidates.begin(),
+                    bodyCandidates.end(),
+                    token
+                ) == bodyCandidates.end())
+            {
+                bodyCandidates.push_back(
+                    token
+                );
+            }
+        };
+
+    // ------------------------------------------------------------
+    // 1. Кандидат из generated asset.
+    // ------------------------------------------------------------
+    const auto* asset =
+        generatedAssetForIdentity(
+            systemId,
+            bodyId,
+            displayName
+        );
+
+    if (asset)
+    {
+        addCandidate(
+            asset->bodyFolderName
+        );
+
+        addCandidate(
+            asset->displayName
+        );
+    }
+
+    // ------------------------------------------------------------
+    // 2. Кандидаты из snapshot.
+    // ------------------------------------------------------------
+    addCandidate(
+        lastGeneratedIdentityPathPart(
+            bodyId
+        )
+    );
+
+    addCandidate(
+        bodyId
+    );
+
+    addCandidate(
+        displayName
+    );
+
+    // ------------------------------------------------------------
+    // 3. Reverse aliases.
+    // Если snapshot говорит Terra/Gaia/Земля,
+    // надо всё равно попробовать canonical earth.
+    // ------------------------------------------------------------
+    const auto& aliases =
+        knownGeneratedSolAliases();
+
+    const std::vector<std::string> current =
+        bodyCandidates;
+
+    for (const std::string& candidate : current)
+    {
+        for (const auto& pair : aliases)
+        {
+            const std::string canonical =
+                normalizeGeneratedIdentityToken(
+                    pair.first
+                );
+
+            if (candidate == canonical)
+            {
+                addCandidate(
+                    pair.first
+                );
+
+                continue;
+            }
+
+            for (const std::string& alias : pair.second)
+            {
+                if (candidate ==
+                    normalizeGeneratedIdentityToken(
+                        alias
+                    ))
+                {
+                    addCandidate(
+                        pair.first
+                    );
+                }
+            }
+        }
+    }
+
+    for (const std::string& bodyCandidate : bodyCandidates)
+    {
+        const auto profile =
+            m_environmentProfiles.resolve(
+                environmentPresetId,
+                systemFolder,
+                bodyCandidate
+            );
+
+        if (profile.found)
+            return profile;
+    }
+
+    static int missCounter = 0;
+
+    if ((missCounter++ % 120) == 0)
+    {
+        std::cerr
+            << "[EnvironmentProfile] missing profile"
+            << " systemId=" << systemId
+            << " systemFolder=" << systemFolder
+            << " bodyId=" << bodyId
+            << " displayName=" << displayName
+            << " candidates=";
+
+        for (const std::string& candidate : bodyCandidates)
+        {
+            std::cerr
+                << candidate
+                << " ";
+        }
+
+        std::cerr
+            << "\n";
+    }
+
+    return {};
+}
+
+
+
+
+
+
+
+
+std::vector<
+    render::celestial::ProceduralCloudStyle
+>
+SystemMapRenderer::cloudStylesForBody(
+    int systemId,
+    const std::string& bodyId,
+    const std::string& displayName,
+    const std::string& environmentPresetId,
+    double planetRadiusMeters,
+    int textureWidth,
+    int textureHeight
+) const
+{
+    std::vector<
+        render::celestial::ProceduralCloudStyle
+    > result;
+
+    const auto profile =
+        resolvedEnvironmentProfileForBody(
+            systemId,
+            bodyId,
+            displayName,
+            environmentPresetId
+        );
+
+    if (!profile.found ||
+        !profile.clouds.enabled ||
+        profile.clouds.pattern ==
+            world::celestial::visual::
+                EnvironmentCloudPattern::None ||
+        profile.clouds.layers.empty())
+    {
+        return result;
+    }
+
+    const auto& clouds =
+        profile.clouds;
+
+
+
+
+    const auto& rendering =
+        profile.rendering;
+
+    const bool surfaceHidden =
+        rendering.surfaceVisibility ==
+            "hidden";
+
+    const bool venusian =
+        rendering.visualClass ==
+            "venusian_cloud_deck";
+
+    const bool gasGiant =
+        rendering.visualClass ==
+            "gas_giant";
+
+    const bool iceGiant =
+        rendering.visualClass ==
+            "ice_giant";
+
+
+
+
+    
+    const std::string atmosphereKind =
+        profile.atmosphere.kind;
+
+    const bool venusLike =
+        atmosphereKind.find("venus") != std::string::npos ||
+        atmosphereKind.find("sulfuric") != std::string::npos;
+
+    const bool gasGiantLike =
+        clouds.pattern ==
+            world::celestial::visual::EnvironmentCloudPattern::Banded;
+
+    /*
+        Оценка суммарного покрытия независимых слоёв:
+
+            union = 1 - Π(1 - coverage_i)
+
+        Затем корректируем покрытия слоёв так, чтобы их
+        объединение примерно соответствовало globalCoverage.
+    */
+    double clearProbability = 1.0;
+
+    for (const auto& layer : clouds.layers)
+    {
+        clearProbability *=
+            1.0 -
+            std::clamp(
+                static_cast<double>(
+                    layer.coverage
+                ),
+                0.0,
+                0.98
+            );
+    }
+
+    const double sourceUnionCoverage =
+        1.0 -
+        clearProbability;
+
+    const double coverageCorrection =
+        sourceUnionCoverage > 0.0001
+            ? std::clamp(
+                static_cast<double>(
+                    clouds.globalCoverage
+                ) /
+                sourceUnionCoverage,
+                0.35,
+                1.65
+            )
+            : 1.0;
+
+    const std::string identityKey =
+        profile.systemFolderName +
+        "/" +
+        profile.bodyFolderName +
+        "/" +
+        profile.presetId;
+
+    const std::uint32_t identitySeed =
+        hashEnvironmentString32(
+            identityKey
+        );
+
+    constexpr std::size_t maximumRenderedLayers = 8u;
+
+    const std::size_t layerCount =
+        std::min(
+            clouds.layers.size(),
+            maximumRenderedLayers
+        );
+
+    result.reserve(
+        layerCount
+    );
+
+    for (std::size_t layerIndex = 0;
+         layerIndex < layerCount;
+         ++layerIndex)
+    {
+        const auto& layer =
+            clouds.layers[layerIndex];
+
+        if (layer.coverage <= 0.001f ||
+            layer.opacity <= 0.001f ||
+            layer.topHeightKm <= layer.baseHeightKm)
+        {
+            continue;
+        }
+
+        render::celestial::ProceduralCloudStyle style;
+
+        style.enabled = true;
+
+        style.pattern =
+            toProceduralCloudPattern(
+                clouds.pattern
+            );
+
+        style.layerId =
+            layer.id;
+
+        style.layerType =
+            layer.type;
+
+
+        style.renderRole =
+            layer.renderRole;
+
+        style.visualClass =
+            rendering.visualClass;
+
+        style.surfaceHidden =
+            surfaceHidden;
+
+        style.primaryOpaqueDeck =
+            layer.id ==
+                rendering.primaryLayerId ||
+            layer.renderRole ==
+                "primary_opaque_deck";
+
+        style.opacityFloor =
+            style.primaryOpaqueDeck
+                ? rendering.primaryLayerOpacityFloor
+                : 0.0f;
+
+        if (venusian)
+        {
+            style.morphology =
+                render::celestial::
+                    ProceduralCloudMorphology::
+                        VenusianStreaks;
+        }
+        else if (gasGiant)
+        {
+            style.morphology =
+                render::celestial::
+                    ProceduralCloudMorphology::
+                        GasGiantBanded;
+        }
+        else if (iceGiant)
+        {
+            style.morphology =
+                render::celestial::
+                    ProceduralCloudMorphology::
+                        IceGiantBanded;
+        }
+        else
+        {
+            style.morphology =
+                render::celestial::
+                    ProceduralCloudMorphology::
+                        Terrestrial;
+        }
+
+
+
+        style.baseHeightKm =
+            layer.baseHeightKm;
+
+        style.topHeightKm =
+            layer.topHeightKm;
+
+        style.layerCoverage =
+            layer.coverage;
+
+        style.layerDensity =
+            layer.density;
+
+        style.particleScale =
+            layer.particleScale;
+
+        style.textureWidth =
+            textureWidth;
+
+        style.textureHeight =
+            textureHeight;
+
+        /*
+            Каждый высотный слой должен иметь собственный seed,
+            иначе все слои совпадут формой и будут выглядеть
+            как одна и та же texture на разных радиусах.
+        */
+        const std::uint32_t layerSeed =
+            hashEnvironmentString32(
+                identityKey +
+                "/" +
+                layer.id +
+                "/" +
+                std::to_string(layerIndex)
+            );
+
+        if (clouds.generation.seedPolicy ==
+                "random_on_session" ||
+            clouds.generation.seedPolicy ==
+                "random_on_map_open")
+        {
+            style.seed =
+                clouds.generation.seedBase ^
+                m_environmentMapOpenSeed ^
+                identitySeed ^
+                layerSeed;
+        }
+        else
+        {
+            style.seed =
+                clouds.generation.seedBase ^
+                identitySeed ^
+                layerSeed;
+        }
+
+        /*
+            Покрытие каждого слоя берём из layer.coverage,
+            а globalCoverage используется только как коррекция
+            общей вероятности покрытия всех слоёв.
+        */
+        style.globalCoverage =
+            std::clamp(
+                static_cast<float>(
+                    static_cast<double>(
+                        layer.coverage
+                    ) *
+                    coverageCorrection
+                ),
+                0.01f,
+                0.92f
+            );
+
+        /*
+            Плотное ядро должно закрывать поверхность.
+            Прозрачность должна появляться в texture alpha
+            на краях и в тонких частях, а не за счёт превращения
+            всего слоя в серую плёнку.
+        */
+        style.opacity =
+            std::clamp(
+                layer.opacity *
+                    layer.appearance.opacityScale,
+                0.0f,
+                1.0f
+            );
+
+        if (style.primaryOpaqueDeck)
+        {
+            style.opacity =
+                std::max(
+                    style.opacity,
+                    style.opacityFloor
+                );
+
+            style.globalCoverage =
+                1.0f;
+
+            style.density =
+                1.0f;
+        }
+
+        style.density =
+            std::clamp(
+                layer.density,
+                0.05f,
+                1.0f
+            );
+
+        style.cloudColor =
+            layer.appearance.baseColor;
+
+        style.shadowColor =
+            layer.appearance.shadowColor;
+
+        style.generation =
+            clouds.generation;
+
+        style.circulation =
+            clouds.circulation;
+
+        style.layers.clear();
+        style.layers.push_back(
+            layer
+        );
+
+        /*
+            Разные физические типы облаков должны иметь
+            разные характеристики формы.
+        */
+        const std::string normalizedType =
+            normalizeCloudToken(
+                layer.type
+            );
+
+        const bool isHighIce =
+            normalizedType.find("ice") !=
+                std::string::npos ||
+            normalizedType.find("cirrus") !=
+                std::string::npos;
+
+        const bool isHaze =
+            normalizedType.find("haze") !=
+                std::string::npos ||
+            normalizedType.find("aerosol") !=
+                std::string::npos;
+
+        if (isHighIce)
+        {
+            // Мелкие, тонкие, вытянутые, перистые структуры.
+            style.generation.massScale *=
+                1.55f;
+
+            style.generation.detailScale *=
+                1.65f;
+
+            style.generation.edgeFragmentScale *=
+                1.45f;
+
+            style.generation.edgeFragmentStrength *=
+                1.20f;
+
+            style.generation.softEdgeWidth *=
+                1.45f;
+
+            style.generation.worleyErosionStrength *=
+                0.72f;
+
+            style.opacity *=
+                0.72f;
+
+            style.cloudColor =
+                glm::mix(
+                    style.cloudColor,
+                    glm::vec3(
+                        0.92f,
+                        0.94f,
+                        0.97f
+                    ),
+                    0.35f
+                );
+        }
+        else if (isHaze)
+        {
+            // Почти сплошная мягкая аэрозольная оболочка.
+            style.generation.massScale *=
+                0.70f;
+
+            style.generation.detailScale *=
+                0.62f;
+
+            style.generation.edgeFragmentStrength *=
+                0.35f;
+
+            style.generation.worleyErosionStrength *=
+                0.30f;
+
+            style.generation.softEdgeWidth *=
+                1.80f;
+
+            style.opacity *=
+                0.78f;
+        }
+        else
+        {
+            // Низкие/средние водяные облака:
+            // крупные плотные массы и рваные края.
+            style.generation.massScale *=
+                std::max(
+                    0.65f,
+                    layer.particleScale
+                );
+
+            style.generation.worleyErosionStrength *=
+                1.10f;
+
+            style.generation.edgeFragmentStrength *=
+                1.08f;
+        }
+
+
+
+
+        if (venusLike)
+        {
+            style.pattern =
+                render::celestial::ProceduralCloudPattern::DenseOvercast;
+
+            style.generation.weatherScale *=
+                0.42f;
+
+            style.generation.massScale *=
+                0.34f;
+
+            style.generation.detailScale *=
+                0.52f;
+
+            style.generation.domainWarpStrength *=
+                0.25f;
+
+            style.generation.worleyErosionStrength *=
+                0.18f;
+
+            style.generation.edgeFragmentStrength *=
+                0.12f;
+
+            style.generation.detachedFragmentProbability =
+                0.0f;
+
+            style.generation.softEdgeWidth =
+                std::max(
+                    style.generation.softEdgeWidth,
+                    0.24f
+                );
+
+            style.globalCoverage =
+                std::clamp(
+                    std::max(
+                        style.globalCoverage,
+                        0.76f
+                    ),
+                    0.01f,
+                    0.96f
+                );
+
+            style.opacity *=
+                0.62f;
+
+            style.cloudColor =
+                glm::mix(
+                    style.cloudColor,
+                    glm::vec3(
+                        0.93f,
+                        0.86f,
+                        0.70f
+                    ),
+                    0.65f
+                );
+        }
+        else if (gasGiantLike)
+        {
+            style.opacity *=
+                0.84f;
+
+            style.generation.domainWarpStrength *=
+                0.55f;
+
+            style.generation.edgeFragmentStrength *=
+                0.45f;
+
+            style.generation.worleyErosionStrength *=
+                0.55f;
+
+            style.generation.softEdgeWidth *=
+                1.35f;
+        }
+
+
+
+
+
+
+
+        style.coverageThreshold =
+            std::clamp(
+                1.0f -
+                    style.globalCoverage,
+                0.05f,
+                0.97f
+            );
+
+        style.edgeSharpness =
+            std::clamp(
+                1.0f -
+                    style.generation.softEdgeWidth,
+                0.0f,
+                1.0f
+            );
+
+        style.detailStrength =
+            style.generation.
+                worleyErosionStrength;
+
+        style.macroScale =
+            style.generation.weatherScale;
+
+        style.cellScale =
+            style.generation.massScale;
+
+        style.detailScale =
+            style.generation.detailScale;
+
+        /*
+            Собственный ветер каждого слоя.
+        */
+        const double meanWindMps =
+            (
+                static_cast<double>(
+                    layer.wind.minimumSpeedMps
+                ) +
+                static_cast<double>(
+                    layer.wind.maximumSpeedMps
+                )
+            ) * 0.5;
+
+        const double directionRadians =
+            glm::radians(
+                static_cast<double>(
+                    layer.wind.predominantDirectionDeg
+                )
+            );
+
+        const double longitudinalWindMps =
+            meanWindMps *
+            std::sin(
+                directionRadians
+            );
+
+        const double cloudRadiusMeters =
+            std::max(
+                1.0,
+                planetRadiusMeters +
+                    static_cast<double>(
+                        layer.baseHeightKm
+                    ) *
+                    1000.0
+            );
+
+        const double physicalUvSpeed =
+            longitudinalWindMps /
+            (
+                glm::two_pi<double>() *
+                cloudRadiusMeters
+            );
+
+        const double windScale =
+            cloudWindTimeScale();
+
+        style.windSpeedMps =
+            static_cast<float>(
+                meanWindMps
+            );
+
+        style.windDirectionDeg =
+            layer.wind.predominantDirectionDeg;
+
+        style.driftSpeed =
+            static_cast<float>(
+                physicalUvSpeed *
+                windScale
+            );
+
+        std::cout
+            << "[CloudLayerStyle]"
+            << " body=" << bodyId
+            << " layer=" << style.layerId
+            << " type=" << style.layerType
+            << " heightKm="
+            << style.baseHeightKm
+            << ".."
+            << style.topHeightKm
+            << " coverage="
+            << style.globalCoverage
+            << " opacity="
+            << style.opacity
+            << " windMps="
+            << style.windSpeedMps
+            << " directionDeg="
+            << style.windDirectionDeg
+            << " driftUvPerSecond="
+            << style.driftSpeed
+            << "\n";
+
+        result.push_back(
+            std::move(style)
+        );
+    }
+
+    /*
+        Рисуем от нижних слоёв к верхним.
+    */
+    std::sort(
+        result.begin(),
+        result.end(),
+        [](
+            const auto& left,
+            const auto& right
+        )
+        {
+            return
+                left.baseHeightKm <
+                right.baseHeightKm;
+        }
+    );
+
+    return result;
+}
+
+
+
+
+
+SystemMapRenderer::HubPlanetAtmosphereStyle
+SystemMapRenderer::atmosphereStyleForBody(
+    int systemId,
+    const std::string& bodyId,
+    const std::string& displayName,
+    const std::string& environmentPresetId
+) const
+{
+    HubPlanetAtmosphereStyle style;
+
+    const auto profile =
+        resolvedEnvironmentProfileForBody(
+            systemId,
+            bodyId,
+            displayName,
+            environmentPresetId
+        );
+
+    if (!profile.found ||
+        !profile.atmosphere.enabled)
+    {
+        style.enabled = false;
+        return style;
+    }
+
+    const auto& atmosphere = profile.atmosphere;
+
+    style.enabled = true;
+
+    style.visualIntensity =
+        atmosphere.visualIntensity;
+
+    style.radiusScale =
+        atmosphere.radiusScale;
+
+    style.surfaceHaze =
+        atmosphere.surfaceHaze;
+
+    style.limbCore =
+        atmosphere.limbCore;
+
+    style.nearAtmosphere =
+        atmosphere.nearAtmosphere;
+
+    style.outerAtmosphere =
+        atmosphere.outerAtmosphere;
+
+    const std::string kind =
+        atmosphere.kind;
+
+    // Это пока цвет базовой кинематографической массы планеты
+    // в Hub backdrop. Позже лучше вынести в отдельный surface/backdrop profile.
+    if (kind.find("dust") != std::string::npos ||
+        kind.find("dry") != std::string::npos ||
+        kind.find("mars") != std::string::npos)
+    {
+        style.oceanInner =
+            glm::vec4(
+                0.105f,
+                0.050f,
+                0.030f,
+                0.96f
+            );
+
+        style.oceanOuter =
+            glm::vec4(
+                0.180f,
+                0.080f,
+                0.045f,
+                0.96f
+            );
+    }
+    else if (kind.find("sulfuric") != std::string::npos ||
+             kind.find("venus") != std::string::npos)
+    {
+        style.oceanInner =
+            glm::vec4(
+                0.140f,
+                0.105f,
+                0.060f,
+                0.96f
+            );
+
+        style.oceanOuter =
+            glm::vec4(
+                0.220f,
+                0.170f,
+                0.095f,
+                0.96f
+            );
+    }
+    else if (kind.find("orange") != std::string::npos ||
+             kind.find("titan") != std::string::npos)
+    {
+        style.oceanInner =
+            glm::vec4(
+                0.080f,
+                0.055f,
+                0.035f,
+                0.96f
+            );
+
+        style.oceanOuter =
+            glm::vec4(
+                0.155f,
+                0.100f,
+                0.055f,
+                0.96f
+            );
+    }
+    else if (kind.find("methane_deep_blue") != std::string::npos)
+    {
+        style.oceanInner =
+            glm::vec4(
+                0.015f,
+                0.050f,
+                0.145f,
+                0.96f
+            );
+
+        style.oceanOuter =
+            glm::vec4(
+                0.035f,
+                0.110f,
+                0.260f,
+                0.96f
+            );
+    }
+    else if (kind.find("methane_cyan") != std::string::npos)
+    {
+        style.oceanInner =
+            glm::vec4(
+                0.035f,
+                0.105f,
+                0.120f,
+                0.96f
+            );
+
+        style.oceanOuter =
+            glm::vec4(
+                0.080f,
+                0.210f,
+                0.230f,
+                0.96f
+            );
+    }
+    else if (kind.find("hydrogen_helium") != std::string::npos)
+    {
+        style.oceanInner =
+            glm::vec4(
+                0.120f,
+                0.090f,
+                0.060f,
+                0.96f
+            );
+
+        style.oceanOuter =
+            glm::vec4(
+                0.240f,
+                0.180f,
+                0.110f,
+                0.96f
+            );
+    }
+    else
+    {
+        style.oceanInner =
+            glm::vec4(
+                0.006f,
+                0.035f,
+                0.090f,
+                0.96f
+            );
+
+        style.oceanOuter =
+            glm::vec4(
+                0.025f,
+                0.095f,
+                0.170f,
+                0.96f
+            );
+    }
+
+    return style;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void SystemMapRenderer::resetView()
 {
     m_mode = Mode::Galaxy;
@@ -1214,6 +2752,11 @@ void SystemMapRenderer::resetView()
     m_smoothObjectPositions.clear();
     m_lastSmoothTimeSeconds = 0.0;
     m_lastSystemScale = 1.0f;
+
+    m_environmentVisualTimeSeconds = 0.0;
+    m_environmentLastSourceTimeSeconds = 0.0;
+    m_environmentLastWallClockSeconds = 0.0;
+    m_environmentVisualTimeInitialized = false;
 }
 
 
@@ -1271,6 +2814,23 @@ void SystemMapRenderer::setMode(Mode mode)
     {
         m_hubCamera =
             DetailCamera{};
+
+        // Стартовый cinematic-orbit вид:
+        // станция/хаб на фоне горизонта планеты.
+        m_hubCamera.yaw =
+            0.60;
+
+        m_hubCamera.pitch =
+            0.18;
+
+        m_hubCamera.zoom =
+            1.0;
+
+        m_hubCamera.pan =
+            glm::dvec2(
+                0.0,
+                0.0
+            );
 
         m_hubMapOrbitPivotLocalMeters =
             glm::dvec3(0.0, 0.0, 0.0);
@@ -1641,6 +3201,131 @@ void SystemMapRenderer::addBillboardBall(
     }
 }
 
+
+
+
+
+
+
+
+
+void SystemMapRenderer::addSystemBodyMarker(
+    const glm::vec3& center,
+    float radius,
+    const glm::vec4& color,
+    const glm::mat4& view,
+    int segments
+)
+{
+    if (radius <= 0.0f ||
+        segments < 8)
+    {
+        return;
+    }
+
+    glm::vec3 right {
+        view[0][0],
+        view[1][0],
+        view[2][0]
+    };
+
+    glm::vec3 up {
+        view[0][1],
+        view[1][1],
+        view[2][1]
+    };
+
+    if (glm::length(right) <= 0.000001f ||
+        glm::length(up) <= 0.000001f)
+    {
+        return;
+    }
+
+    right =
+        glm::normalize(
+            right
+        );
+
+    up =
+        glm::normalize(
+            up
+        );
+
+    const glm::vec4 ringColor(
+        color.r,
+        color.g,
+        color.b,
+        0.82f
+    );
+
+    const glm::vec4 crossColor(
+        color.r,
+        color.g,
+        color.b,
+        0.48f
+    );
+
+    for (int i = 0; i < segments; ++i)
+    {
+        const float a0 =
+            glm::two_pi<float>() *
+            static_cast<float>(i) /
+            static_cast<float>(segments);
+
+        const float a1 =
+            glm::two_pi<float>() *
+            static_cast<float>(i + 1) /
+            static_cast<float>(segments);
+
+        const glm::vec3 p0 =
+            center +
+            (
+                std::cos(a0) * right +
+                std::sin(a0) * up
+            ) * radius;
+
+        const glm::vec3 p1 =
+            center +
+            (
+                std::cos(a1) * right +
+                std::sin(a1) * up
+            ) * radius;
+
+        addLine(
+            p0,
+            p1,
+            ringColor
+        );
+    }
+
+    const float crossSize =
+        radius * 0.62f;
+
+    addLine(
+        center - right * crossSize,
+        center + right * crossSize,
+        crossColor
+    );
+
+    addLine(
+        center - up * crossSize,
+        center + up * crossSize,
+        crossColor
+    );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 void SystemMapRenderer::flushSolids(const glm::mat4& mvp)
 {
     if (!m_shader || !m_vao || !m_vbo || m_solidVertices.empty())
@@ -1687,6 +3372,8 @@ void SystemMapRenderer::flushSolids(const glm::mat4& mvp)
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    m_proceduralCloudLayer.beginFrame();
 
     glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_solidVertices.size()));
 
@@ -2565,6 +4252,1281 @@ GLuint SystemMapRenderer::globalAlbedoTextureForPlanetSnapshot(
 
 
 
+
+
+
+
+GLuint SystemMapRenderer::globalAlbedoTextureForHubSnapshot(
+    const world::celestial::HubMapSnapshot& hub
+)
+{
+    const auto* asset =
+        generatedAssetForIdentity(
+            hub.systemId,
+            hub.parentBodyId,
+            hub.parentBodyId
+        );
+
+    if (!asset)
+        return 0;
+
+    return globalAlbedoTextureForGeneratedAsset(
+        *asset
+    );
+}
+
+
+
+
+
+
+
+
+
+
+GLuint SystemMapRenderer::globalNormalTextureForGeneratedAsset(
+    const world::celestial::visual::CelestialGeneratedAssetSet& asset
+)
+{
+    if (asset.global.normalPath.empty())
+        return 0;
+
+    const std::string key =
+        generatedAssetKey(
+            asset
+        );
+
+    auto existing =
+        m_globalNormalTextureByAssetKey.find(
+            key
+        );
+
+    if (existing !=
+        m_globalNormalTextureByAssetKey.end())
+    {
+        return existing->second;
+    }
+
+    const std::filesystem::path resolvedPath =
+        resolveSystemMapAssetPath(
+            asset.global.normalPath
+        );
+
+    const GLuint texture =
+        TextureLoader::load2D(
+            resolvedPath.generic_string(),
+            false
+        );
+
+    m_globalNormalTextureByAssetKey[key] =
+        texture;
+
+    if (texture == 0)
+    {
+        std::cerr
+            << "[SystemMapRenderer]"
+            << " failed to load global normal texture for "
+            << key
+            << " path="
+            << resolvedPath.generic_string()
+            << "\n";
+    }
+
+    return texture;
+}
+
+GLuint SystemMapRenderer::globalNormalTextureForHubSnapshot(
+    const world::celestial::HubMapSnapshot& hub
+)
+{
+    const auto* asset =
+        generatedAssetForIdentity(
+            hub.systemId,
+            hub.parentBodyId,
+            hub.parentBodyId
+        );
+
+    if (!asset)
+        return 0;
+
+    return globalNormalTextureForGeneratedAsset(
+        *asset
+    );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+SystemMapRenderer::HubPlanetAtmosphereStyle
+SystemMapRenderer::hubPlanetAtmosphereStyleForHub(
+    const world::celestial::HubMapSnapshot& hub
+) const
+{
+    return atmosphereStyleForBody(
+        hub.systemId,
+        hub.parentBodyId,
+        hub.parentBodyId,
+        hub.parentEnvironmentPresetId
+    );
+}
+
+
+
+
+render::celestial::HubSphericalGridStyle
+SystemMapRenderer::hubSphericalGridStyleForHub(
+    const world::celestial::HubMapSnapshot& hub
+) const
+{
+    render::celestial::HubSphericalGridStyle style;
+
+    std::string bodyKey =
+        normalizeGeneratedIdentityToken(
+            lastGeneratedIdentityPathPart(
+                hub.parentBodyId
+            )
+        );
+
+    const auto* asset =
+        generatedAssetForIdentity(
+            hub.systemId,
+            hub.parentBodyId,
+            hub.parentBodyId
+        );
+
+    if (asset)
+    {
+        const std::string assetKey =
+            normalizeGeneratedIdentityToken(
+                asset->bodyFolderName
+            );
+
+        if (!assetKey.empty())
+            bodyKey = assetKey;
+    }
+
+    // По умолчанию — холодная голубая сетка.
+    style.radiusScale = 1.12;
+    style.latitudeStepDeg = 10;
+    style.longitudeStepDeg = 10;
+    style.majorEvery = 3;
+    style.samplesPerLine = 180;
+    style.minorColor =
+        glm::vec4(
+            0.28f,
+            0.66f,
+            1.00f,
+            0.055f
+        );
+
+    style.majorColor =
+        glm::vec4(
+            0.46f,
+            0.82f,
+            1.00f,
+            0.105f
+        );
+
+    style.horizonFadeStart = 0.04f;
+    style.horizonFadeEnd = 0.28f;
+
+    if (bodyKey == "mars" ||
+        bodyKey == "ares")
+    {
+        style.minorColor =
+            glm::vec4(
+                1.00f,
+                0.56f,
+                0.26f,
+                0.07f
+            );
+
+        style.majorColor =
+            glm::vec4(
+                1.00f,
+                0.72f,
+                0.34f,
+                0.13f
+            );
+    }
+    else if (bodyKey == "venus")
+    {
+        style.minorColor =
+            glm::vec4(
+                1.00f,
+                0.74f,
+                0.34f,
+                0.08f
+            );
+
+        style.majorColor =
+            glm::vec4(
+                1.00f,
+                0.86f,
+                0.48f,
+                0.15f
+            );
+    }
+    else if (bodyKey == "titan")
+    {
+        style.minorColor =
+            glm::vec4(
+                1.00f,
+                0.62f,
+                0.24f,
+                0.07f
+            );
+
+        style.majorColor =
+            glm::vec4(
+                1.00f,
+                0.76f,
+                0.34f,
+                0.13f
+            );
+    }
+
+    return style;
+}
+
+
+
+
+
+
+
+
+std::vector<
+    render::celestial::ProceduralCloudStyle
+>
+SystemMapRenderer::hubPlanetCloudStylesForHub(
+    const world::celestial::HubMapSnapshot& hub
+) const
+{
+    auto styles =
+        cloudStylesForBody(
+            hub.systemId,
+            hub.parentBodyId,
+            hub.parentBodyId,
+            hub.parentEnvironmentPresetId,
+            hub.parentPlanetRadiusMeters,
+            1536,
+            768
+        );
+
+    /*
+        Hub — режим просмотра огромной планеты.
+        Здесь разрешаем усиленное preview-движение,
+        но сохраняем относительные скорости слоёв.
+    */
+    for (auto& style : styles)
+    {
+        style.driftSpeed *=
+            2.5f;
+    }
+
+    return styles;
+}
+
+
+
+
+
+std::vector<
+    render::celestial::ProceduralCloudStyle
+>
+SystemMapRenderer::planetCloudStylesForPlanet(
+    const world::celestial::PlanetMapSnapshot& planet
+) const
+{
+    return cloudStylesForBody(
+        planet.systemId,
+        planet.planetBodyId,
+        planet.planetName,
+        planet.environmentPresetId,
+        planet.planetRadiusMeters,
+        1024,
+        512
+    );
+}
+
+
+
+
+
+SystemMapRenderer::HubPlanetAtmosphereStyle
+SystemMapRenderer::planetAtmosphereStyleForPlanet(
+    const world::celestial::PlanetMapSnapshot& planet
+) const
+{
+    return atmosphereStyleForBody(
+        planet.systemId,
+        planet.planetBodyId,
+        planet.planetName,
+        planet.environmentPresetId
+    );
+}
+
+
+
+
+
+
+render::celestial::rings::PlanetRingRenderContext
+SystemMapRenderer::planetRingRenderContext(
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx,
+    std::vector<
+        world::celestial::SystemMapRing
+    >& normalizedBands
+) const
+{
+    using render::celestial::rings::
+        PlanetRingRenderContext;
+
+    PlanetRingRenderContext context;
+
+    context.planetCenterPx =
+        glm::dvec2(
+            centerPx.x +
+                activeDetailCamera().pan.x,
+            centerPx.y +
+                activeDetailCamera().pan.y
+        );
+
+    if (planet.planetRadiusMeters <= 1.0)
+        return context;
+
+    const double planetRadiusKm =
+        planet.planetRadiusMeters /
+        1000.0;
+
+    normalizedBands.clear();
+
+    normalizedBands.reserve(
+        planet.rings.size()
+    );
+
+    /*
+        Renderer ожидает радиусы в planet-radius units.
+    */
+    for (const auto& sourceBand :
+         planet.rings)
+    {
+        if (sourceBand.outerRadiusKm <=
+            sourceBand.innerRadiusKm)
+        {
+            continue;
+        }
+
+        auto band =
+            sourceBand;
+
+        band.innerRadiusKm /=
+            planetRadiusKm;
+
+        band.outerRadiusKm /=
+            planetRadiusKm;
+
+        normalizedBands.push_back(
+            std::move(band)
+        );
+    }
+
+    context.visual = planet.ringVisual;
+
+    context.bands =
+        &normalizedBands;
+
+    const glm::dvec3 north =
+        planetNorthAxisWorld(
+            planet
+        );
+
+    const glm::dvec3 prime =
+        planetPrimeAxisWorld(
+            north
+        );
+
+    const glm::dvec3 east =
+        planetEastAxisWorld(
+            north,
+            prime
+        );
+
+    /*
+        Опциональный наклон плоскости колец
+        вокруг prime axis.
+    */
+    const double inclination =
+        glm::radians(
+            planet.
+                ringPlaneInclinationOffsetDeg
+        );
+
+    const glm::dvec3 tiltedEast =
+        glm::normalize(
+            east *
+                std::cos(inclination) +
+            north *
+                std::sin(inclination)
+        );
+
+    const glm::dvec3 ringAxisXWorld =
+        prime;
+
+    const glm::dvec3 ringAxisYWorld =
+        tiltedEast;
+
+    const glm::dvec3 ringAxisXCamera =
+        planetMapCameraSpaceRelative(
+            ringAxisXWorld *
+                planet.planetRadiusMeters
+        );
+
+    const glm::dvec3 ringAxisYCamera =
+        planetMapCameraSpaceRelative(
+            ringAxisYWorld *
+                planet.planetRadiusMeters
+        );
+
+    const double finalScale =
+        scale *
+        activeDetailCamera().zoom;
+
+    /*
+        planetMapProject использует:
+            screen.x += camera.x * finalScale
+            screen.y -= camera.y * finalScale
+    */
+    context.ringAxisXPx =
+        glm::dvec2(
+            ringAxisXCamera.x *
+                finalScale,
+            -ringAxisXCamera.y *
+                finalScale
+        );
+
+    context.ringAxisYPx =
+        glm::dvec2(
+            ringAxisYCamera.x *
+                finalScale,
+            -ringAxisYCamera.y *
+                finalScale
+        );
+
+    /*
+        Координаты shader-а выражены в planet radii,
+        поэтому depth coefficients нормализуем обратно.
+    */
+    context.ringDepthCoefficients =
+        glm::dvec2(
+            ringAxisXCamera.z /
+                planet.planetRadiusMeters,
+            ringAxisYCamera.z /
+                planet.planetRadiusMeters
+        );
+
+    context.planetRotationPhaseRad =
+        planet.planetRotationPhaseRad;
+
+    return context;
+}
+
+
+
+
+
+
+void SystemMapRenderer::drawPlanetEnvironmentLayers(
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx
+)
+{
+    if (!planet.valid ||
+        planet.planetRadiusMeters <= 1.0)
+    {
+        return;
+    }
+
+    const auto cloudStyles =
+        planetCloudStylesForPlanet(
+            planet
+        );
+
+    const HubPlanetAtmosphereStyle atmosphereStyle =
+        planetAtmosphereStyleForPlanet(
+            planet
+        );
+
+    /*
+        Центр и радиус экранного диска Details.
+
+        Эти вычисления должны совпадать с теми,
+        которые используются старым atmosphere renderer.
+    */
+    const glm::dvec2 planetCenterPx(
+        centerPx.x +
+            activeDetailCamera().pan.x,
+        centerPx.y +
+            activeDetailCamera().pan.y
+    );
+
+    const double planetRadiusPx =
+        planet.planetRadiusMeters *
+        scale *
+        activeDetailCamera().zoom;
+
+    /*
+        Сначала рисуем облачные оболочки.
+    */
+    for (const auto& cloudStyle : cloudStyles)
+    {
+        if (!cloudStyle.enabled)
+            continue;
+
+        drawPlanetAnimatedCloudLayers(
+            planet,
+            scale,
+            centerPx,
+            cloudStyle
+        );
+    }
+
+    /*
+        Затем один GPU-pass рисует:
+
+        - внутреннюю дымку;
+        - атмосферный лимб;
+        - внешнее свечение.
+
+        Функция больше не является специфичной для Hub:
+        она работает с любым экранным центром и радиусом.
+    */
+    if (atmosphereStyle.enabled)
+    {
+        drawHubMapPlanetAtmosphereStack(
+            planetCenterPx,
+            planetRadiusPx,
+            atmosphereStyle
+        );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+void SystemMapRenderer::drawPlanetAtmosphereInterior(
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx,
+    const HubPlanetAtmosphereStyle& style
+)
+{
+    if (!style.enabled ||
+        planet.planetRadiusMeters <= 1.0)
+    {
+        return;
+    }
+
+    const glm::dvec2 planetCenterPx(
+        centerPx.x + activeDetailCamera().pan.x,
+        centerPx.y + activeDetailCamera().pan.y
+    );
+
+    const double planetRadiusPx =
+        planet.planetRadiusMeters *
+        scale *
+        activeDetailCamera().zoom;
+
+    glm::vec4 haze =
+        style.surfaceHaze;
+
+    haze.a *=
+        std::max(
+            0.0f,
+            style.visualIntensity
+        );
+
+    drawHubMapPlanetSoftBand(
+        planetCenterPx,
+        planetRadiusPx,
+        haze,
+        0.58,
+        0.86,
+        1.002,
+        24,
+        256
+    );
+}
+
+
+
+
+
+
+
+
+
+void SystemMapRenderer::drawPlanetAtmosphereLimb(
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx,
+    const HubPlanetAtmosphereStyle& style
+)
+{
+    if (!style.enabled ||
+        planet.planetRadiusMeters <= 1.0)
+    {
+        return;
+    }
+
+    const glm::dvec2 planetCenterPx(
+        centerPx.x + activeDetailCamera().pan.x,
+        centerPx.y + activeDetailCamera().pan.y
+    );
+
+    const double planetRadiusPx =
+        planet.planetRadiusMeters *
+        scale *
+        activeDetailCamera().zoom;
+
+    const float intensity =
+        std::max(
+            0.0f,
+            style.visualIntensity
+        );
+
+    glm::vec4 limbCore =
+        style.limbCore;
+
+    glm::vec4 nearAtmosphere =
+        style.nearAtmosphere;
+
+    glm::vec4 outerAtmosphere =
+        style.outerAtmosphere;
+
+    limbCore.a *= intensity;
+    nearAtmosphere.a *= intensity;
+    outerAtmosphere.a *= intensity;
+
+    drawHubMapPlanetSoftBand(
+        planetCenterPx,
+        planetRadiusPx,
+        limbCore,
+        0.986,
+        1.001,
+        1.020,
+        14,
+        256
+    );
+
+    drawHubMapPlanetSoftBand(
+        planetCenterPx,
+        planetRadiusPx,
+        nearAtmosphere,
+        0.998,
+        1.018,
+        static_cast<double>(style.radiusScale) + 0.025,
+        20,
+        256
+    );
+
+    drawHubMapPlanetSoftBand(
+        planetCenterPx,
+        planetRadiusPx,
+        outerAtmosphere,
+        1.012,
+        static_cast<double>(style.radiusScale) + 0.020,
+        static_cast<double>(style.radiusScale) + 0.075,
+        26,
+        256
+    );
+}
+
+
+
+
+
+
+
+
+void SystemMapRenderer::drawPlanetAnimatedCloudLayers(
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx,
+    const render::celestial::ProceduralCloudStyle& style
+)
+{
+    const double renderTimeSeconds =
+        environmentVisualTimeSeconds(
+            planet.universeTimeSeconds
+        );
+
+
+    if (!style.enabled ||
+        planet.planetRadiusMeters <= 1.0)
+    {
+        return;
+    }
+
+    const double meanHeightMeters =
+        (
+            static_cast<double>(
+                style.baseHeightKm
+            ) +
+            static_cast<double>(
+                style.topHeightKm
+            )
+        ) *
+        500.0;
+
+    const double physicalRadiusScale =
+        1.0 +
+        meanHeightMeters /
+            planet.planetRadiusMeters;
+
+    /*
+        Минимальный визуальный разнос нужен, иначе различие
+        в несколько километров на планете радиусом 6371 км
+        практически исчезает и появляется z-overlap.
+    */
+    const double visualLayerOffset =
+        0.0015 *
+        static_cast<double>(
+            1 +
+            (
+                &style -
+                &style
+            )
+        );
+
+    const double cloudRadiusScale =
+        std::clamp(
+            physicalRadiusScale +
+                visualLayerOffset,
+            1.0015,
+            1.045
+        );
+
+    drawPlanetProceduralCloudGlobeLayer(
+        planet,
+        scale,
+        centerPx,
+        cloudRadiusScale,
+        0.0,
+        renderTimeSeconds,
+        style
+    );
+}
+
+
+
+
+
+
+void SystemMapRenderer::drawPlanetProceduralCloudGlobeLayer(
+    const world::celestial::PlanetMapSnapshot& planet,
+    double scale,
+    const glm::dvec2& centerPx,
+    double cloudRadiusScale,
+    double longitudeOffset,
+    double timeSeconds,
+    const render::celestial::ProceduralCloudStyle& style
+)
+{
+    if (!style.enabled ||
+        planet.planetRadiusMeters <= 1.0)
+    {
+        return;
+    }
+
+    const GLuint texture =
+        m_proceduralCloudLayer.textureForStyle(
+            style,
+            timeSeconds
+        );
+
+    if (texture == 0)
+        return;
+
+
+
+
+
+    static GLuint lastLoggedDetailsTexture = 0;
+
+    if (lastLoggedDetailsTexture != texture)
+    {
+        lastLoggedDetailsTexture = texture;
+
+        std::cout
+            << "[PlanetDetailsCloudRenderer]"
+            << " texture=" << texture
+            << " enabled=" << style.enabled
+            << " opacity=" << style.opacity
+            << " driftSpeed=" << style.driftSpeed
+            << " radiusScale=" << cloudRadiusScale
+            << "\n";
+    }
+
+
+
+    auto smoothStep =
+        [](double edge0, double edge1, double x) -> double
+        {
+            const double t =
+                std::clamp(
+                    (x - edge0) /
+                        std::max(
+                            0.000001,
+                            edge1 - edge0
+                        ),
+                    0.0,
+                    1.0
+                );
+
+            return
+                t * t *
+                (3.0 - 2.0 * t);
+        };
+
+    const double radiusMeters =
+        planet.planetRadiusMeters *
+        cloudRadiusScale;
+
+    const double driftU =
+        std::fmod(
+            timeSeconds *
+                static_cast<double>(style.driftSpeed),
+            1.0
+        );
+
+    constexpr int latSegments = 56;
+    constexpr int lonSegments = 112;
+
+    GLboolean textureWasEnabled =
+        glIsEnabled(
+            GL_TEXTURE_2D
+        );
+
+    GLboolean blendWasEnabled =
+        glIsEnabled(
+            GL_BLEND
+        );
+
+    GLboolean depthWasEnabled =
+        glIsEnabled(
+            GL_DEPTH_TEST
+        );
+
+    GLint oldTextureBinding = 0;
+
+    glGetIntegerv(
+        GL_TEXTURE_BINDING_2D,
+        &oldTextureBinding
+    );
+
+    GLint oldTextureEnvMode =
+        GL_MODULATE;
+
+    glGetTexEnviv(
+        GL_TEXTURE_ENV,
+        GL_TEXTURE_ENV_MODE,
+        &oldTextureEnvMode
+    );
+
+    glUseProgram(0);
+
+    glDisable(
+        GL_DEPTH_TEST
+    );
+
+    glEnable(
+        GL_TEXTURE_2D
+    );
+
+    glBindTexture(
+        GL_TEXTURE_2D,
+        texture
+    );
+
+    glTexEnvi(
+        GL_TEXTURE_ENV,
+        GL_TEXTURE_ENV_MODE,
+        GL_MODULATE
+    );
+
+    glEnable(
+        GL_BLEND
+    );
+
+    glBlendFunc(
+        GL_SRC_ALPHA,
+        GL_ONE_MINUS_SRC_ALPHA
+    );
+
+    auto emit =
+        [&](double lat, double lon)
+        {
+            const glm::dvec3 world =
+                planetSurfacePointMeters(
+                    planet,
+                    lat,
+                    lon,
+                    cloudRadiusScale
+                );
+
+            const glm::dvec3 relative =
+                world -
+                planet.planetCenterMeters;
+
+            const glm::dvec3 cameraSpace =
+                planetMapCameraSpaceRelative(
+                    relative
+                );
+
+            const double front =
+                std::clamp(
+                    cameraSpace.z /
+                        std::max(
+                            1.0,
+                            radiusMeters
+                        ),
+                    0.0,
+                    1.0
+                );
+
+            const double horizonFade =
+                smoothStep(
+                    0.035,
+                    0.30,
+                    front
+                );
+
+
+            const double normalizedLatitude =
+                std::abs(
+                    lat /
+                    glm::half_pi<double>()
+                );
+
+            const double polarGeometryFade =
+                1.0 -
+                smoothStep(
+                    0.82,
+                    0.995,
+                    normalizedLatitude
+                );
+
+
+            
+
+
+
+            const glm::dvec2 screen =
+                planetMapProject(
+                    world,
+                    planet,
+                    scale,
+                    centerPx
+                );
+
+            const double u =
+                0.5 +
+                lon / glm::two_pi<double>() +
+                longitudeOffset +
+                driftU;
+
+            const double v =
+                std::clamp(
+                    0.5 -
+                        lat / glm::pi<double>(),
+                    0.0,
+                    1.0
+                );
+
+            const float renderOpacity =
+                std::clamp(
+                    style.opacity,
+                    0.0f,
+                    0.92f
+                );
+
+            const float alpha =
+                static_cast<float>(
+                    renderOpacity *
+                    horizonFade *   
+                    polarGeometryFade
+                );
+
+
+            glColor4f(
+                1.0f,
+                1.0f,
+                1.0f,
+                alpha
+            );
+
+            glTexCoord2d(
+                u,
+                v
+            );
+
+            glVertex2d(
+                screen.x,
+                screen.y
+            );
+        };
+
+    glBegin(
+        GL_TRIANGLES
+    );
+
+    for (int iy = 0; iy < latSegments; ++iy)
+    {
+        const double v0 =
+            static_cast<double>(iy) /
+            static_cast<double>(latSegments);
+
+        const double v1 =
+            static_cast<double>(iy + 1) /
+            static_cast<double>(latSegments);
+
+        const double lat0 =
+            -glm::half_pi<double>() +
+            v0 * glm::pi<double>();
+
+        const double lat1 =
+            -glm::half_pi<double>() +
+            v1 * glm::pi<double>();
+
+        for (int ix = 0; ix < lonSegments; ++ix)
+        {
+            const double u0 =
+                static_cast<double>(ix) /
+                static_cast<double>(lonSegments);
+
+            const double u1 =
+                static_cast<double>(ix + 1) /
+                static_cast<double>(lonSegments);
+
+            const double lon0 =
+                -glm::pi<double>() +
+                u0 * glm::two_pi<double>();
+
+            const double lon1 =
+                -glm::pi<double>() +
+                u1 * glm::two_pi<double>();
+
+            const double latMid =
+                0.5 * (lat0 + lat1);
+
+            const double lonMid =
+                0.5 * (lon0 + lon1);
+
+            const glm::dvec3 midWorld =
+                planetSurfacePointMeters(
+                    planet,
+                    latMid,
+                    lonMid,
+                    cloudRadiusScale
+                );
+
+            const glm::dvec3 midRelative =
+                midWorld -
+                planet.planetCenterMeters;
+
+            const glm::dvec3 midCamera =
+                planetMapCameraSpaceRelative(
+                    midRelative
+                );
+
+            // +Z — видимая полусфера.
+            if (midCamera.z < 0.0)
+                continue;
+
+            emit(
+                lat0,
+                lon0
+            );
+
+            emit(
+                lat0,
+                lon1
+            );
+
+            emit(
+                lat1,
+                lon1
+            );
+
+            emit(
+                lat0,
+                lon0
+            );
+
+            emit(
+                lat1,
+                lon1
+            );
+
+            emit(
+                lat1,
+                lon0
+            );
+        }
+    }
+
+    glEnd();
+
+    glBindTexture(
+        GL_TEXTURE_2D,
+        static_cast<GLuint>(oldTextureBinding)
+    );
+
+    glTexEnvi(
+        GL_TEXTURE_ENV,
+        GL_TEXTURE_ENV_MODE,
+        oldTextureEnvMode
+    );
+
+    if (textureWasEnabled)
+        glEnable(GL_TEXTURE_2D);
+    else
+        glDisable(GL_TEXTURE_2D);
+
+    if (blendWasEnabled)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
+
+    if (depthWasEnabled)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GLuint SystemMapRenderer::globalCloudsTextureForGeneratedAsset(
+    const world::celestial::visual::CelestialGeneratedAssetSet& asset
+)
+{
+    std::string cloudsPath;
+
+    if (!asset.global.cloudsPath.empty())
+    {
+        cloudsPath =
+            asset.global.cloudsPath;
+    }
+    else if (!asset.base.cloudsPath.empty())
+    {
+        cloudsPath =
+            asset.base.cloudsPath;
+    }
+
+    if (cloudsPath.empty())
+        return 0;
+
+    const std::string key =
+        generatedAssetKey(asset);
+
+    auto existing =
+        m_globalCloudsTextureByAssetKey.find(key);
+
+    if (existing != m_globalCloudsTextureByAssetKey.end())
+        return existing->second;
+
+    const std::filesystem::path resolvedPath =
+        resolveSystemMapAssetPath(
+            cloudsPath
+        );
+
+    const GLuint tex =
+        TextureLoader::load2D(
+            resolvedPath.generic_string(),
+            false
+        );
+
+    m_globalCloudsTextureByAssetKey[key] =
+        tex;
+
+    if (tex == 0)
+    {
+        std::cerr
+            << "[SystemMapRenderer] failed to load global clouds texture for "
+            << key
+            << " path="
+            << resolvedPath.generic_string()
+            << "\n";
+    }
+
+    return tex;
+}
+
+GLuint SystemMapRenderer::globalCloudsTextureForHubSnapshot(
+    const world::celestial::HubMapSnapshot& hub
+)
+{
+    const auto* asset =
+        generatedAssetForIdentity(
+            hub.systemId,
+            hub.parentBodyId,
+            hub.parentBodyId
+        );
+
+    if (!asset)
+        return 0;
+
+    return globalCloudsTextureForGeneratedAsset(
+        *asset
+    );
+}
+
+
+
+
+
+
+
+
 bool SystemMapRenderer::drawPlanetShapeModelDetail(
     const world::celestial::PlanetMapSnapshot& planet,
     double scale,
@@ -3232,6 +6194,102 @@ float SystemMapRenderer::bodyVisualRadius(
 }
 
 
+
+
+
+
+
+
+
+SystemMapRenderer::SystemBodyVisualMetrics
+SystemMapRenderer::computeSystemBodyVisualMetrics(
+    const world::celestial::SystemMapBody& body,
+    float physicalRadiusWorld,
+    double worldUnitsPerPixel
+) const
+{
+    using world::celestial::BodyType;
+
+    SystemBodyVisualMetrics out;
+
+    out.physicalRadiusWorld =
+        std::max(
+            0.0f,
+            physicalRadiusWorld
+        );
+
+    if (worldUnitsPerPixel > 0.0 &&
+        std::isfinite(worldUnitsPerPixel))
+    {
+        out.physicalRadiusPx =
+            static_cast<float>(
+                static_cast<double>(out.physicalRadiusWorld) /
+                worldUnitsPerPixel
+            );
+    }
+
+    out.drawPhysicalBody =
+        out.physicalRadiusWorld > 0.0f &&
+        out.physicalRadiusPx >= m_systemControls.minPhysicalBodyRadiusPx;
+
+    float desiredMarkerRadiusPx =
+        0.0f;
+
+    if (body.type == BodyType::Star)
+    {
+        if (out.physicalRadiusPx < m_systemControls.starMarkerRadiusPx)
+        {
+            desiredMarkerRadiusPx =
+                m_systemControls.starMarkerRadiusPx;
+        }
+    }
+    else if (body.type == BodyType::Planet)
+    {
+        if (out.physicalRadiusPx < m_systemControls.planetMarkerRadiusPx)
+        {
+            desiredMarkerRadiusPx =
+                m_systemControls.planetMarkerRadiusPx;
+        }
+    }
+    else if (body.type == BodyType::Moon)
+    {
+        if (out.physicalRadiusPx < m_systemControls.tinyMoonProxyRadiusPx)
+        {
+            desiredMarkerRadiusPx =
+                m_systemControls.tinyMoonProxyRadiusPx;
+        }
+    }
+
+    if (desiredMarkerRadiusPx > 0.0f &&
+        worldUnitsPerPixel > 0.0 &&
+        std::isfinite(worldUnitsPerPixel))
+    {
+        out.drawMarker = true;
+
+        out.markerRadiusPx =
+            desiredMarkerRadiusPx;
+
+        out.markerRadiusWorld =
+            static_cast<float>(
+                worldUnitsPerPixel *
+                static_cast<double>(desiredMarkerRadiusPx)
+            );
+    }
+
+    const float visibleRadiusPx =
+        std::max(
+            out.physicalRadiusPx,
+            out.markerRadiusPx
+        );
+
+    out.pickRadiusPx =
+        std::max(
+            visibleRadiusPx,
+            m_systemControls.pickMinBodyRadiusPx
+        );
+
+    return out;
+}
 
 
 
@@ -4240,47 +7298,31 @@ void SystemMapRenderer::handleDetailInput(
         {
             if (m_mode == Mode::Hub)
             {
-                const glm::dvec2 centerPx(
-                    static_cast<double>(vp.width) * 0.5,
-                    static_cast<double>(vp.height) * 0.5
-                );
+                camera.yaw +=
+                    dx *
+                    controls.rotateSensitivity *
+                    0.65;
 
-                const double safeScale =
-                    std::max(
-                        0.000001,
-                        m_lastHubMapScale
-                    );
-
-                const glm::dvec2 pivotScreenBefore =
-                    hubMapProject(
-                        m_hubMapOrbitPivotLocalMeters,
-                        safeScale,
-                        centerPx
-                    );
-
-                camera.yaw += dx * controls.rotateSensitivity;
-                camera.pitch += dy * controls.rotateSensitivity;
+                camera.pitch +=
+                    dy *
+                    controls.rotateSensitivity *
+                    0.65;
 
                 camera.yaw =
                     wrapAngleRadD(
                         camera.yaw
                     );
 
+                // 0.12: низкий orbital horizon view.
+                // 1.20: почти взгляд вниз.
+                // Отрицательный pitch запрещён, иначе визуально камера
+                // оказывается "изнутри планеты".
                 camera.pitch =
-                    wrapAngleRadD(
-                        camera.pitch
+                    std::clamp(
+                        camera.pitch,
+                        0.12,
+                        1.20
                     );
-
-                const glm::dvec2 pivotScreenAfter =
-                    hubMapProject(
-                        m_hubMapOrbitPivotLocalMeters,
-                        safeScale,
-                        centerPx
-                    );
-
-                camera.pan +=
-                    pivotScreenBefore -
-                    pivotScreenAfter;
             }
             else
             {
@@ -4345,6 +7387,48 @@ void SystemMapRenderer::handleDetailInput(
 
                 camera.zoom = newZoom;
             }
+        }
+
+        if (m_mode == Mode::Hub)
+{
+    camera.pitch =
+        std::clamp(
+            camera.pitch,
+            -0.95,
+            0.95
+        );
+
+    const double maxPanX =
+        static_cast<double>(vp.width) *
+        0.55;
+
+    const double maxPanY =
+        static_cast<double>(vp.height) *
+        0.45;
+
+    camera.pan.x =
+        std::clamp(
+            camera.pan.x,
+            -maxPanX,
+            maxPanX
+        );
+
+    camera.pan.y =
+        std::clamp(
+            camera.pan.y,
+            -maxPanY,
+            maxPanY
+        );
+}
+
+        if (m_mode == Mode::Hub)
+        {
+            camera.pitch =
+                std::clamp(
+                    camera.pitch,
+                    0.12,
+                    1.20
+                );
         }
 
         camera.lastMouseX = mx;
@@ -5146,23 +8230,39 @@ void SystemMapRenderer::drawSystemLabels(
         if (posIt == posById.end())
             continue;
 
-        auto radiusIt = drawRadiusById.find(b.id);
+        
+        auto radiusIt =
+            drawRadiusById.find(
+                b.id
+            );
 
-        const float r =
+        const float physicalRadiusWorld =
             radiusIt != drawRadiusById.end()
                 ? radiusIt->second
-                : 0.1f;
+                : 0.0f;
 
-        const bool selected = b.id == m_selectedBodyId;
-        
+        const SystemBodyVisualMetrics labelMetrics =
+            computeSystemBodyVisualMetrics(
+                b,
+                physicalRadiusWorld,
+                worldUnitsPerPixel
+            );
+
+        const bool selected =
+            b.id == m_selectedBodyId;
 
         const float screenRadiusPx =
-            worldUnitsPerPixel > 0.0
-                ? static_cast<float>(
-                    static_cast<double>(r) /
-                    worldUnitsPerPixel
-                )
-                : 0.0f;
+            std::max(
+                labelMetrics.physicalRadiusPx,
+                labelMetrics.markerRadiusPx
+            );
+
+
+
+
+
+
+
 
        if (!selected)
         {
@@ -5293,6 +8393,105 @@ float SystemMapRenderer::smoothingAlpha() const
     );
 }
 
+
+
+
+
+
+double SystemMapRenderer::environmentVisualTimeSeconds(
+    double sourceTimeSeconds
+)
+{
+    using Clock =
+        std::chrono::steady_clock;
+
+    const double nowSeconds =
+        std::chrono::duration<double>(
+            Clock::now().time_since_epoch()
+        ).count();
+
+    if (!m_environmentVisualTimeInitialized)
+    {
+        m_environmentVisualTimeSeconds =
+            sourceTimeSeconds;
+
+        m_environmentLastSourceTimeSeconds =
+            sourceTimeSeconds;
+
+        m_environmentLastWallClockSeconds =
+            nowSeconds;
+
+        m_environmentVisualTimeInitialized =
+            true;
+
+        return sourceTimeSeconds;
+    }
+
+    const double wallDt =
+        std::clamp(
+            nowSeconds -
+                m_environmentLastWallClockSeconds,
+            0.0,
+            0.05
+        );
+
+    m_environmentLastWallClockSeconds =
+        nowSeconds;
+
+    if (sourceTimeSeconds <
+        m_environmentLastSourceTimeSeconds - 0.001)
+    {
+        m_environmentVisualTimeSeconds =
+            sourceTimeSeconds;
+
+        m_environmentLastSourceTimeSeconds =
+            sourceTimeSeconds;
+
+        return sourceTimeSeconds;
+    }
+
+    m_environmentLastSourceTimeSeconds =
+        sourceTimeSeconds;
+
+    // Плавно двигаем визуальное время локально.
+    m_environmentVisualTimeSeconds +=
+        wallDt;
+
+    // Если сильно отстали — мягко подтягиваемся.
+    const double maxLagSeconds =
+        0.35;
+
+    if (m_environmentVisualTimeSeconds <
+        sourceTimeSeconds - maxLagSeconds)
+    {
+        m_environmentVisualTimeSeconds =
+            sourceTimeSeconds - maxLagSeconds;
+    }
+
+    // Не даём времени убежать слишком далеко вперёд.
+    const double maxLeadSeconds =
+        0.10;
+
+    if (m_environmentVisualTimeSeconds >
+        sourceTimeSeconds + maxLeadSeconds)
+    {
+        m_environmentVisualTimeSeconds =
+            sourceTimeSeconds + maxLeadSeconds;
+    }
+
+    return m_environmentVisualTimeSeconds;
+}
+
+
+
+
+
+
+
+
+
+
+
 glm::vec3 SystemMapRenderer::smoothVec3(
     SmoothPoint& point,
     const glm::vec3& target,
@@ -5386,6 +8585,19 @@ void SystemMapRenderer::renderSystem(
         std::string,
         float
     > drawRadiusById;
+
+
+
+
+    std::unordered_map<
+        std::string,
+        float
+    > selectionRadiusById;
+
+
+
+
+
 
     for (const auto& b : bodies)
     {
@@ -5614,130 +8826,208 @@ m_lastSystemBodyAbsolutePosById = absolutePosById;
 
 
         
-        float bodyDrawRadius = r;
-
-        if (b.type == BodyType::Moon &&
-            b.radiusKm > 0.0 &&
-            b.radiusKm < 40.0)
-        {
-            bodyDrawRadius =
-                std::max(
-                    bodyDrawRadius,
-                    static_cast<float>(
-                        systemWorldUnitsPerPixel *
-                        static_cast<double>(
-                            m_systemControls.tinyMoonProxyRadiusPx
-                        )
-                    )
-                );
-        }
+       
 
 
 
-        const float screenRadiusPx =
-            systemWorldUnitsPerPixel > 0.0
-                ? static_cast<float>(
-                    static_cast<double>(bodyDrawRadius) /
-                    systemWorldUnitsPerPixel
-                )
-                : 0.0f;
 
-        if (b.type == BodyType::Planet ||
-            b.type == BodyType::Moon)
-        {
-            BodyScreenPoint bp;
-
-            bp.bodyId = b.id;
-            bp.name = b.name;
-            bp.screenRadiusPx = screenRadiusPx;
-
-            bp.screen =
-                projectToScreen(
-                    p,
-                    mvp,
-                    vp,
-                    bp.visible,
-                    bp.depth
-                );
-
-            m_lastSystemBodyScreenPoints.push_back(bp);
-        }
 
 
         
         
 
 
-        if (b.type == BodyType::AsteroidBelt)
-        {
-            const glm::dvec3 orbitCenterAbsolute =
-                auToMapUnits(
-                    b.orbitCenterAu
-                );
 
-            const glm::vec3 center =
-                toRenderPos(
-                    orbitCenterAbsolute
-                );
+       const SystemBodyVisualMetrics bodyMetrics =
+    computeSystemBodyVisualMetrics(
+        b,
+        r,
+        systemWorldUnitsPerPixel
+    );
 
-            const float beltR =
-                static_cast<float>(b.orbitRadiusAu) *
-                systemScale;
+const float selectionRadiusWorld =
+    std::max(
+        bodyMetrics.physicalRadiusWorld,
+        static_cast<float>(
+            systemWorldUnitsPerPixel *
+            static_cast<double>(
+                bodyMetrics.pickRadiusPx
+            )
+        )
+    );
 
-            addCircleXZ(center, beltR - 0.12f, {0.65f, 0.68f, 0.72f, 0.12f}, 160);
-            addCircleXZ(center, beltR,         {0.65f, 0.68f, 0.72f, 0.24f}, 160);
-            addCircleXZ(center, beltR + 0.12f, {0.65f, 0.68f, 0.72f, 0.12f}, 160);
+selectionRadiusById[b.id] =
+    selectionRadiusWorld;
 
-            continue;
-        }
+if (b.type == BodyType::Planet ||
+    b.type == BodyType::Moon)
+{
+    BodyScreenPoint bp;
 
-        
-        
+    bp.bodyId = b.id;
+    bp.name = b.name;
 
-        GLuint bodyAlbedoTexture = 0;
+    // Это уже не "физический радиус диска".
+    // Это интерактивный радиус выбора.
+    bp.screenRadiusPx =
+        bodyMetrics.pickRadiusPx;
 
-       if (b.type != BodyType::Star)
-        {
-            bodyAlbedoTexture =
-                globalAlbedoTextureForBody(
-                    b
-                );
-        }
+    bp.screen =
+        projectToScreen(
+            p,
+            mvp,
+            vp,
+            bp.visible,
+            bp.depth
+        );
 
-        if (bodyAlbedoTexture != 0 &&
-            m_texturedShader != 0 &&
-            m_texturedVao != 0 &&
-            m_texturedVbo != 0)
-        {
+    m_lastSystemBodyScreenPoints.push_back(
+        bp
+    );
+}
 
+if (b.type == BodyType::AsteroidBelt)
+{
+    const glm::dvec3 orbitCenterAbsolute =
+        auToMapUnits(
+            b.orbitCenterAu
+        );
+
+    const glm::vec3 center =
+        toRenderPos(
+            orbitCenterAbsolute
+        );
+
+    const float beltR =
+        static_cast<float>(b.orbitRadiusAu) *
+        systemScale;
+
+    addCircleXZ(
+        center,
+        beltR - 0.12f,
+        {0.65f, 0.68f, 0.72f, 0.12f},
+        160
+    );
+
+    addCircleXZ(
+        center,
+        beltR,
+        {0.65f, 0.68f, 0.72f, 0.24f},
+        160
+    );
+
+    addCircleXZ(
+        center,
+        beltR + 0.12f,
+        {0.65f, 0.68f, 0.72f, 0.12f},
+        160
+    );
+
+    continue;
+}
+
+if (bodyMetrics.drawPhysicalBody)
+{
+    GLuint bodyAlbedoTexture =
+        0;
+
+    if (b.type != BodyType::Star)
+    {
+        bodyAlbedoTexture =
+            globalAlbedoTextureForBody(
+                b
+            );
+    }
+
+    if (bodyAlbedoTexture != 0 &&
+        m_texturedShader != 0 &&
+        m_texturedVao != 0 &&
+        m_texturedVbo != 0)
+    {
         const bool largeBody =
             b.type == BodyType::Planet &&
-            bodyDrawRadius > 0.16f;
+            bodyMetrics.physicalRadiusWorld > 0.16f;
 
-        const int latSeg = largeBody ? 64 : 24;
-        const int lonSeg = largeBody ? 128 : 48;
+        const int latSeg =
+            largeBody ? 64 : 24;
+
+        const int lonSeg =
+            largeBody ? 128 : 48;
 
         addTexturedSystemBodySphere(
-                b,
-                bodyAlbedoTexture,
-                p,
-                bodyDrawRadius,
-                glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-                latSeg,
-                lonSeg
+            b,
+            bodyAlbedoTexture,
+            p,
+            bodyMetrics.physicalRadiusWorld,
+            glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
+            latSeg,
+            lonSeg
+        );
+    }
+    else
+    {
+        // Fallback для звёзд и тел без generated-текстуры.
+        // Радиус здесь физический, не proxy.
+        addBillboardBall(
+            p,
+            bodyMetrics.physicalRadiusWorld,
+            c,
+            view,
+            32
+        );
+    }
+}
+
+if (bodyMetrics.drawMarker)
+{
+    glm::vec4 markerColor =
+        c;
+
+    if (b.type == BodyType::Moon)
+    {
+        markerColor =
+            glm::vec4(
+                0.72f,
+                0.78f,
+                0.86f,
+                0.90f
             );
-        }
-        else
-        {
-            // Fallback для звёзд и тел без generated-текстуры.
-            addBillboardBall(
-                p,
-                bodyDrawRadius,
-                c,
-                view,
-                32
+    }
+    else if (b.type == BodyType::Planet)
+    {
+        markerColor =
+            glm::vec4(
+                0.48f,
+                0.76f,
+                1.00f,
+                0.90f
             );
-        }
+    }
+    else if (b.type == BodyType::Star)
+    {
+        markerColor =
+            glm::vec4(
+                1.0f,
+                0.86f,
+                0.36f,
+                0.90f
+            );
+    }
+
+    addSystemBodyMarker(
+        p,
+        bodyMetrics.markerRadiusWorld,
+        markerColor,
+        view,
+        32
+    );
+} 
+
+        
+        
+
+
+       
 
         
 
@@ -5840,10 +9130,10 @@ m_lastSystemBodyAbsolutePosById = absolutePosById;
             posById.find(m_selectedBodyId);
 
         auto radiusIt =
-            drawRadiusById.find(m_selectedBodyId);
+            selectionRadiusById.find(m_selectedBodyId);
 
         if (posIt != posById.end() &&
-            radiusIt != drawRadiusById.end())
+                radiusIt != selectionRadiusById.end())
         {
             beginLines();
 
@@ -6894,7 +10184,7 @@ void SystemMapRenderer::renderPlanetMap(
 )
 {
     ensureGeneratedCelestialAssets();
-
+    ensureEnvironmentProfiles();
 
     glViewport(
         viewport.x,
@@ -6939,6 +10229,20 @@ void SystemMapRenderer::renderPlanetMap(
     if (!planet.valid)
         return;
 
+
+    drawMapStarfield(
+        viewport,
+        planet.systemPositionLy
+    );
+
+
+
+    beginEnvironmentRenderSessionIfNeeded(
+        Mode::Planet,
+        planet.systemId,
+        planet.planetBodyId
+    );
+
     const glm::dvec2 centerPx(
         static_cast<double>(viewport.width) * 0.5,
         static_cast<double>(viewport.height) * 0.5
@@ -6968,47 +10272,133 @@ void SystemMapRenderer::renderPlanetMap(
     const double scale =
         mapHalfPx / std::max(1.0, maxRadiusMeters);
 
+
+
+    std::vector<
+        world::celestial::SystemMapRing
+    > normalizedRingBands;
+
+    const auto ringContext =
+        planetRingRenderContext(
+            planet,
+            scale,
+            centerPx,
+            normalizedRingBands
+        );
+
     
 
 
 
-    const bool shapeModelDrawn =
-        drawPlanetShapeModelDetail(
-            planet,
-            scale,
-            centerPx
-        );
+        const auto environmentProfile =
+    resolvedEnvironmentProfileForBody(
+        planet.systemId,
+        planet.planetBodyId,
+        planet.planetName,
+        planet.environmentPresetId
+    );
 
-    if (!shapeModelDrawn)
+const bool hidePhysicalSurface =
+    environmentProfile.found &&
+    (
+        environmentProfile.rendering.surfaceVisibility ==
+            "hidden" ||
+        !environmentProfile.rendering.loadSurfaceTextures
+    );
+
+
+
+
+
+
+m_planetRingRenderer.render(
+    ringContext,
+    render::celestial::rings::
+        PlanetRingRenderPart::Back
+);
+
+
+
+const bool shapeModelDrawn =
+    !hidePhysicalSurface &&
+    drawPlanetShapeModelDetail(
+        planet,
+        scale,
+        centerPx
+    );
+
+
+
+   
+
+// ------------------------------------------------------------
+// 1. Базовая поверхность планеты.
+// Если shape model не нарисован, рисуем fallback disk + textured globe.
+// ------------------------------------------------------------
+if (!shapeModelDrawn)
+{
+    /*
+        Даже при скрытой поверхности оставляем тёмный
+        непрозрачный fallback disk под primary cloud deck.
+
+        Он нужен только как страховка от щелей на краю.
+    */
+    drawPlanetFilledDisk(
+        planet,
+        scale,
+        centerPx
+    );
+
+    if (!hidePhysicalSurface)
     {
-        // Always draw fallback first.
-        // If there is no generated texture for this system/body,
-        // planet detail still remains visible as disk + grid.
-        drawPlanetFilledDisk(
-            planet,
-            scale,
-            centerPx
-        );
-
-        // Full detail texture, not preview_512.
-        // Uses lod/global/albedo_2048.tga when available.
         drawPlanetTexturedGlobe(
             planet,
             scale,
             centerPx
         );
+    }
+}
 
-        // Grid/orientation overlay.
-        drawPlanetSphereGrid(
-            planet,
-            scale,
-            centerPx
-        );
-    }    
+// ------------------------------------------------------------
+// 2. Environment layer.
+// Для Planet Details НЕ используем Hub screen-space clouds.
+// Здесь должна работать отдельная spherical Details-цепочка:
+// drawPlanetEnvironmentLayers()
+//     -> drawPlanetAtmosphereInterior()
+//     -> drawPlanetAnimatedCloudLayers()
+//         -> drawPlanetProceduralCloudGlobeLayer()
+//     -> drawPlanetAtmosphereLimb()
+// ------------------------------------------------------------
+drawPlanetEnvironmentLayers(
+    planet,
+    scale,
+    centerPx
+);
+
+
+
+m_planetRingRenderer.render(
+    ringContext,
+    render::celestial::rings::
+        PlanetRingRenderPart::Front
+);
 
 
 
 
+
+// ------------------------------------------------------------
+// 3. Сетка/ориентационный оверлей поверх поверхности,
+// облаков и атмосферы.
+// ------------------------------------------------------------
+if (!shapeModelDrawn)
+{
+    drawPlanetSphereGrid(
+        planet,
+        scale,
+        centerPx
+    );
+}
 
 
 
@@ -8649,6 +12039,83 @@ void SystemMapRenderer::drawHubMapVelocityArrow(
 
 
 
+
+
+
+void SystemMapRenderer::drawHubMapScreenMarker(
+    const glm::dvec2& screenPx,
+    double radiusPx,
+    const glm::vec4& color,
+    bool drawCross,
+    int segments
+)
+{
+    if (radiusPx <= 0.5)
+        return;
+
+    segments =
+        std::max(
+            12,
+            segments
+        );
+
+    glColor4f(
+        color.r,
+        color.g,
+        color.b,
+        color.a
+    );
+
+    drawPlanetMapCircle(
+        screenPx,
+        radiusPx,
+        segments
+    );
+
+    if (!drawCross)
+        return;
+
+    const double s =
+        radiusPx * 0.62;
+
+    glBegin(GL_LINES);
+
+    glVertex2d(
+        screenPx.x - s,
+        screenPx.y
+    );
+
+    glVertex2d(
+        screenPx.x + s,
+        screenPx.y
+    );
+
+    glVertex2d(
+        screenPx.x,
+        screenPx.y - s
+    );
+
+    glVertex2d(
+        screenPx.x,
+        screenPx.y + s
+    );
+
+    glEnd();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 glm::dvec3 SystemMapRenderer::hubMapObjectLocalToHubLocal(
     const glm::dvec3& objectCenter,
     const world::celestial::PlanetMapAxisSet& objectAxes,
@@ -8773,11 +12240,715 @@ bool SystemMapRenderer::drawHubMapAssemblyWire(
 
 
 
+void SystemMapRenderer::drawHubMapPlanetHorizonBand(
+    const glm::dvec2& planetCenterPx,
+    double planetRadiusPx,
+    const glm::vec4& innerColor,
+    const glm::vec4& outerColor,
+    double innerRadiusFactor,
+    double outerRadiusFactor,
+    int segments
+)
+{
+    if (planetRadiusPx <= 1.0)
+        return;
+
+    segments =
+        std::max(
+            48,
+            segments
+        );
+
+    const double innerR =
+        planetRadiusPx *
+        innerRadiusFactor;
+
+    const double outerR =
+        planetRadiusPx *
+        outerRadiusFactor;
+
+    glBegin(GL_TRIANGLE_STRIP);
+
+    for (int i = 0; i <= segments; ++i)
+    {
+        const double a =
+            glm::two_pi<double>() *
+            static_cast<double>(i) /
+            static_cast<double>(segments);
+
+        const double ca =
+            std::cos(a);
+
+        const double sa =
+            std::sin(a);
+
+        glColor4f(
+            innerColor.r,
+            innerColor.g,
+            innerColor.b,
+            innerColor.a
+        );
+
+        glVertex2d(
+            planetCenterPx.x + ca * innerR,
+            planetCenterPx.y + sa * innerR
+        );
+
+        glColor4f(
+            outerColor.r,
+            outerColor.g,
+            outerColor.b,
+            outerColor.a
+        );
+
+        glVertex2d(
+            planetCenterPx.x + ca * outerR,
+            planetCenterPx.y + sa * outerR
+        );
+    }
+
+    glEnd();
+}
 
 
 
 
 
+
+
+
+
+
+void SystemMapRenderer::drawHubMapPlanetSoftBand(
+    const glm::dvec2& planetCenterPx,
+    double planetRadiusPx,
+    const glm::vec4& peakColor,
+    double startRadiusFactor,
+    double peakRadiusFactor,
+    double endRadiusFactor,
+    int radialSteps,
+    int segments
+)
+{
+    if (planetRadiusPx <= 1.0)
+        return;
+
+    if (endRadiusFactor <= startRadiusFactor)
+        return;
+
+    if (peakColor.a <= 0.0001f)
+        return;
+
+    radialSteps =
+        std::max(
+            8,
+            radialSteps
+        );
+
+    segments =
+        std::max(
+            96,
+            segments
+        );
+
+    GLboolean textureWasEnabled =
+        glIsEnabled(
+            GL_TEXTURE_2D
+        );
+
+    GLboolean blendWasEnabled =
+        glIsEnabled(
+            GL_BLEND
+        );
+
+    GLboolean depthWasEnabled =
+        glIsEnabled(
+            GL_DEPTH_TEST
+        );
+
+    GLboolean depthMaskWasEnabled =
+        GL_TRUE;
+
+    glGetBooleanv(
+        GL_DEPTH_WRITEMASK,
+        &depthMaskWasEnabled
+    );
+
+    GLint oldTextureBinding = 0;
+
+    glGetIntegerv(
+        GL_TEXTURE_BINDING_2D,
+        &oldTextureBinding
+    );
+
+    glUseProgram(
+        0
+    );
+
+    // ВАЖНО:
+    // Atmosphere band — это чистая цветная геометрия.
+    // Если оставить GL_TEXTURE_2D включённым, fixed pipeline будет
+    // умножать цвет на текущую текстуру и текущие texture coords.
+    // В результате band может стать полностью невидимым.
+    glDisable(
+        GL_TEXTURE_2D
+    );
+
+    glBindTexture(
+        GL_TEXTURE_2D,
+        0
+    );
+
+    glEnable(
+        GL_BLEND
+    );
+
+    glBlendFunc(
+        GL_SRC_ALPHA,
+        GL_ONE_MINUS_SRC_ALPHA
+    );
+
+    glDisable(
+        GL_DEPTH_TEST
+    );
+
+    glDepthMask(
+        GL_FALSE
+    );
+
+    const double startR =
+        planetRadiusPx *
+        startRadiusFactor;
+
+    const double peakR =
+        planetRadiusPx *
+        peakRadiusFactor;
+
+    const double endR =
+        planetRadiusPx *
+        endRadiusFactor;
+
+    const double totalSpan =
+        std::max(
+            0.000001,
+            endR - startR
+        );
+
+    const double peakT =
+        std::clamp(
+            (peakR - startR) / totalSpan,
+            0.0,
+            1.0
+        );
+
+    auto smoothStep =
+        [](double edge0, double edge1, double x) -> double
+        {
+            const double t =
+                std::clamp(
+                    (x - edge0) /
+                    std::max(
+                        0.000001,
+                        edge1 - edge0
+                    ),
+                    0.0,
+                    1.0
+                );
+
+            return
+                t * t *
+                (3.0 - 2.0 * t);
+        };
+
+    auto alphaAt =
+        [&](double t) -> float
+        {
+            double a = 0.0;
+
+            if (t <= peakT)
+            {
+                a =
+                    smoothStep(
+                        0.0,
+                        std::max(
+                            0.000001,
+                            peakT
+                        ),
+                        t
+                    );
+            }
+            else
+            {
+                a =
+                    1.0 -
+                    smoothStep(
+                        peakT,
+                        1.0,
+                        t
+                    );
+            }
+
+            return static_cast<float>(
+                a * peakColor.a
+            );
+        };
+
+    for (int ring = 0; ring < radialSteps; ++ring)
+    {
+        const double t0 =
+            static_cast<double>(ring) /
+            static_cast<double>(radialSteps);
+
+        const double t1 =
+            static_cast<double>(ring + 1) /
+            static_cast<double>(radialSteps);
+
+        const double r0 =
+            startR +
+            (endR - startR) * t0;
+
+        const double r1 =
+            startR +
+            (endR - startR) * t1;
+
+        const float a0 =
+            alphaAt(
+                t0
+            );
+
+        const float a1 =
+            alphaAt(
+                t1
+            );
+
+        glBegin(
+            GL_TRIANGLE_STRIP
+        );
+
+        for (int i = 0; i <= segments; ++i)
+        {
+            const double ang =
+                glm::two_pi<double>() *
+                static_cast<double>(i) /
+                static_cast<double>(segments);
+
+            const double ca =
+                std::cos(
+                    ang
+                );
+
+            const double sa =
+                std::sin(
+                    ang
+                );
+
+            glColor4f(
+                peakColor.r,
+                peakColor.g,
+                peakColor.b,
+                a0
+            );
+
+            glVertex2d(
+                planetCenterPx.x + ca * r0,
+                planetCenterPx.y + sa * r0
+            );
+
+            glColor4f(
+                peakColor.r,
+                peakColor.g,
+                peakColor.b,
+                a1
+            );
+
+            glVertex2d(
+                planetCenterPx.x + ca * r1,
+                planetCenterPx.y + sa * r1
+            );
+        }
+
+        glEnd();
+    }
+
+    glDepthMask(
+        depthMaskWasEnabled
+    );
+
+    if (depthWasEnabled)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
+
+    glBindTexture(
+        GL_TEXTURE_2D,
+        static_cast<GLuint>(oldTextureBinding)
+    );
+
+    if (textureWasEnabled)
+        glEnable(GL_TEXTURE_2D);
+    else
+        glDisable(GL_TEXTURE_2D);
+
+    if (blendWasEnabled)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
+}
+
+
+
+
+
+
+void SystemMapRenderer::drawHubMapPlanetAtmosphereStack(
+    const glm::dvec2& planetCenterPx,
+    double planetRadiusPx,
+    const HubPlanetAtmosphereStyle& style
+)
+{
+    if (!style.enabled ||
+        planetRadiusPx <= 1.0)
+    {
+        return;
+    }
+
+    static GLuint atmosphereShader = 0;
+    static GLuint fullscreenVao = 0;
+
+    static GLint viewportOriginLocation = -1;
+    static GLint viewportSizeLocation = -1;
+    static GLint planetCenterLocation = -1;
+    static GLint planetRadiusLocation = -1;
+
+    static GLint radiusScaleLocation = -1;
+    static GLint visualIntensityLocation = -1;
+
+    static GLint surfaceHazeLocation = -1;
+    static GLint limbCoreLocation = -1;
+    static GLint nearAtmosphereLocation = -1;
+    static GLint outerAtmosphereLocation = -1;
+
+    if (atmosphereShader == 0)
+    {
+        atmosphereShader =
+            ShaderLibrary::instance().get(
+                "hub_planet_atmosphere"
+            );
+
+        if (atmosphereShader == 0)
+        {
+            static bool warned = false;
+
+            if (!warned)
+            {
+                warned = true;
+
+                std::cerr
+                    << "[HubAtmosphere]"
+                    << " shader not available"
+                    << "\n";
+            }
+
+            return;
+        }
+
+        viewportOriginLocation =
+            glGetUniformLocation(
+                atmosphereShader,
+                "uViewportOriginPx"
+            );
+
+        viewportSizeLocation =
+            glGetUniformLocation(
+                atmosphereShader,
+                "uViewportSize"
+            );
+
+        planetCenterLocation =
+            glGetUniformLocation(
+                atmosphereShader,
+                "uPlanetCenterPx"
+            );
+
+        planetRadiusLocation =
+            glGetUniformLocation(
+                atmosphereShader,
+                "uPlanetRadiusPx"
+            );
+
+        radiusScaleLocation =
+            glGetUniformLocation(
+                atmosphereShader,
+                "uRadiusScale"
+            );
+
+        visualIntensityLocation =
+            glGetUniformLocation(
+                atmosphereShader,
+                "uVisualIntensity"
+            );
+
+        surfaceHazeLocation =
+            glGetUniformLocation(
+                atmosphereShader,
+                "uSurfaceHaze"
+            );
+
+        limbCoreLocation =
+            glGetUniformLocation(
+                atmosphereShader,
+                "uLimbCore"
+            );
+
+        nearAtmosphereLocation =
+            glGetUniformLocation(
+                atmosphereShader,
+                "uNearAtmosphere"
+            );
+
+        outerAtmosphereLocation =
+            glGetUniformLocation(
+                atmosphereShader,
+                "uOuterAtmosphere"
+            );
+    }
+
+    if (fullscreenVao == 0)
+    {
+        glGenVertexArrays(
+            1,
+            &fullscreenVao
+        );
+    }
+
+    GLint viewport[4] =
+    {
+        0,
+        0,
+        1,
+        1
+    };
+
+    glGetIntegerv(
+        GL_VIEWPORT,
+        viewport
+    );
+
+    GLint previousProgram = 0;
+    GLint previousVao = 0;
+
+    glGetIntegerv(
+        GL_CURRENT_PROGRAM,
+        &previousProgram
+    );
+
+    glGetIntegerv(
+        GL_VERTEX_ARRAY_BINDING,
+        &previousVao
+    );
+
+    const GLboolean blendWasEnabled =
+        glIsEnabled(
+            GL_BLEND
+        );
+
+    const GLboolean depthWasEnabled =
+        glIsEnabled(
+            GL_DEPTH_TEST
+        );
+
+    const GLboolean cullWasEnabled =
+        glIsEnabled(
+            GL_CULL_FACE
+        );
+
+    const GLboolean scissorWasEnabled =
+        glIsEnabled(
+            GL_SCISSOR_TEST
+        );
+
+    GLint previousBlendSourceRgb = 0;
+    GLint previousBlendDestinationRgb = 0;
+    GLint previousBlendSourceAlpha = 0;
+    GLint previousBlendDestinationAlpha = 0;
+
+    glGetIntegerv(
+        GL_BLEND_SRC_RGB,
+        &previousBlendSourceRgb
+    );
+
+    glGetIntegerv(
+        GL_BLEND_DST_RGB,
+        &previousBlendDestinationRgb
+    );
+
+    glGetIntegerv(
+        GL_BLEND_SRC_ALPHA,
+        &previousBlendSourceAlpha
+    );
+
+    glGetIntegerv(
+        GL_BLEND_DST_ALPHA,
+        &previousBlendDestinationAlpha
+    );
+
+    glDisable(
+        GL_DEPTH_TEST
+    );
+
+    glDisable(
+        GL_CULL_FACE
+    );
+
+    glDisable(
+        GL_SCISSOR_TEST
+    );
+
+    glEnable(
+        GL_BLEND
+    );
+
+    glBlendFunc(
+        GL_SRC_ALPHA,
+        GL_ONE_MINUS_SRC_ALPHA
+    );
+
+    glUseProgram(
+        atmosphereShader
+    );
+
+    glUniform2f(
+        viewportOriginLocation,
+        static_cast<float>(viewport[0]),
+        static_cast<float>(viewport[1])
+    );
+
+    glUniform2f(
+        viewportSizeLocation,
+        static_cast<float>(
+            viewport[2]
+        ),
+        static_cast<float>(
+            viewport[3]
+        )
+    );
+
+    glUniform2f(
+        planetCenterLocation,
+        static_cast<float>(
+            planetCenterPx.x
+        ),
+        static_cast<float>(
+            planetCenterPx.y
+        )
+    );
+
+    glUniform1f(
+        planetRadiusLocation,
+        static_cast<float>(
+            planetRadiusPx
+        )
+    );
+
+    glUniform1f(
+        radiusScaleLocation,
+        style.radiusScale
+    );
+
+    glUniform1f(
+        visualIntensityLocation,
+        style.visualIntensity
+    );
+
+    glUniform4f(
+        surfaceHazeLocation,
+        style.surfaceHaze.r,
+        style.surfaceHaze.g,
+        style.surfaceHaze.b,
+        style.surfaceHaze.a
+    );
+
+    glUniform4f(
+        limbCoreLocation,
+        style.limbCore.r,
+        style.limbCore.g,
+        style.limbCore.b,
+        style.limbCore.a
+    );
+
+    glUniform4f(
+        nearAtmosphereLocation,
+        style.nearAtmosphere.r,
+        style.nearAtmosphere.g,
+        style.nearAtmosphere.b,
+        style.nearAtmosphere.a
+    );
+
+    glUniform4f(
+        outerAtmosphereLocation,
+        style.outerAtmosphere.r,
+        style.outerAtmosphere.g,
+        style.outerAtmosphere.b,
+        style.outerAtmosphere.a
+    );
+
+    glBindVertexArray(
+        fullscreenVao
+    );
+
+    glDrawArrays(
+        GL_TRIANGLES,
+        0,
+        3
+    );
+
+    glBindVertexArray(
+        static_cast<GLuint>(
+            previousVao
+        )
+    );
+
+    glUseProgram(
+        static_cast<GLuint>(
+            previousProgram
+        )
+    );
+
+    glBlendFuncSeparate(
+        static_cast<GLenum>(
+            previousBlendSourceRgb
+        ),
+        static_cast<GLenum>(
+            previousBlendDestinationRgb
+        ),
+        static_cast<GLenum>(
+            previousBlendSourceAlpha
+        ),
+        static_cast<GLenum>(
+            previousBlendDestinationAlpha
+        )
+    );
+
+    if (blendWasEnabled)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
+
+    if (depthWasEnabled)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
+
+    if (cullWasEnabled)
+        glEnable(GL_CULL_FACE);
+    else
+        glDisable(GL_CULL_FACE);
+
+    if (scissorWasEnabled)
+        glEnable(GL_SCISSOR_TEST);
+    else
+        glDisable(GL_SCISSOR_TEST);
+}
 
 
 
@@ -8836,6 +13007,381 @@ void SystemMapRenderer::drawHubMapCircleLocalXY(
 
 
 
+
+
+
+
+
+
+void SystemMapRenderer::drawHubMapTexturedSphereDiskLayer(
+    GLuint texture,
+    const glm::dvec2& centerPx,
+    double radiusPx,
+    const glm::vec4& color,
+    double uOffset,
+    int gridX,
+    int gridY
+)
+{
+    if (texture == 0 ||
+        radiusPx <= 1.0)
+    {
+        return;
+    }
+
+    gridX =
+        std::max(
+            96,
+            gridX
+        );
+
+    gridY =
+        std::max(
+            64,
+            gridY
+        );
+
+    GLint viewport[4] =
+    {
+        0,
+        0,
+        1,
+        1
+    };
+
+    glGetIntegerv(
+        GL_VIEWPORT,
+        viewport
+    );
+
+    const double viewW =
+        static_cast<double>(
+            std::max(
+                viewport[2],
+                1
+            )
+        );
+
+    const double viewH =
+        static_cast<double>(
+            std::max(
+                viewport[3],
+                1
+            )
+        );
+
+    GLboolean textureWasEnabled =
+        glIsEnabled(GL_TEXTURE_2D);
+
+    GLboolean blendWasEnabled =
+        glIsEnabled(GL_BLEND);
+
+    GLint oldTextureBinding =
+        0;
+
+    glGetIntegerv(
+        GL_TEXTURE_BINDING_2D,
+        &oldTextureBinding
+    );
+
+    glUseProgram(0);
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(
+        GL_TEXTURE_2D,
+        texture
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_MIN_FILTER,
+        GL_LINEAR
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_MAG_FILTER,
+        GL_LINEAR
+    );
+
+    glEnable(GL_BLEND);
+    glBlendFunc(
+        GL_SRC_ALPHA,
+        GL_ONE_MINUS_SRC_ALPHA
+    );
+
+    auto wrap01 =
+        [](double x) -> double
+        {
+            x =
+                std::fmod(x, 1.0);
+
+            if (x < 0.0)
+                x += 1.0;
+
+            return x;
+        };
+
+    auto smoothStep =
+        [](double edge0, double edge1, double x) -> double
+        {
+            const double t =
+                std::clamp(
+                    (x - edge0) /
+                    std::max(0.000001, edge1 - edge0),
+                    0.0,
+                    1.0
+                );
+
+            return
+                t * t *
+                (3.0 - 2.0 * t);
+        };
+
+    auto emit =
+        [&](double sx, double sy)
+        {
+            const double nx =
+                (sx - centerPx.x) /
+                radiusPx;
+
+            const double ny =
+                -(sy - centerPx.y) /
+                radiusPx;
+
+            const double rr =
+                nx * nx +
+                ny * ny;
+
+            if (rr > 1.0)
+                return;
+
+            // Видимая полусфера.
+            const double nz =
+                std::sqrt(
+                    std::max(
+                        0.0,
+                        1.0 - rr
+                    )
+                );
+
+            
+                
+
+
+            // ВАЖНО:
+            // Это всё ещё сфера: screen point -> visible hemisphere -> UV.
+            // Но для cinematic orbital view нужно брать больший angular field,
+            // иначе один кусок суши раздувается на пол-экрана.
+            constexpr double kLongitudeAngularScale =
+                2.15;
+
+            constexpr double kLatitudeAngularScale =
+                1.08;
+
+            const double lon =
+                std::atan2(
+                    nx * kLongitudeAngularScale,
+                    std::max(
+                        0.000001,
+                        nz
+                    )
+                );
+
+            const double lat =
+                std::asin(
+                    std::clamp(
+                        ny * kLatitudeAngularScale,
+                        -0.96,
+                        0.96
+                    )
+                );
+
+            double u =
+                0.5 +
+                lon / glm::two_pi<double>() +
+                uOffset;
+
+            double v =
+                0.5 -
+                lat / glm::pi<double>();
+
+            u =
+                wrap01(u);
+
+            // Полюса всё ещё не пускаем в кадр слишком агрессивно,
+            // но диапазон шире, чтобы не было размазанной локальной суши.
+            v =
+                std::clamp(
+                    v,
+                    0.12,
+                    0.88
+                );
+
+
+
+
+
+
+
+            // К горизонту текстуру гасим.
+            const double limb =
+                std::sqrt(
+                    std::max(
+                        0.0,
+                        1.0 - rr
+                    )
+                );
+
+            const double textureFade =
+                smoothStep(
+                    0.18,
+                    0.58,
+                    limb
+                );
+
+            const float alpha =
+                static_cast<float>(
+                    color.a *
+                    textureFade
+                );
+
+            glColor4f(
+                color.r,
+                color.g,
+                color.b,
+                alpha
+            );
+
+            glTexCoord2d(
+                u,
+                v
+            );
+
+            glVertex2d(
+                sx,
+                sy
+            );
+        };
+
+    const double cellW =
+        viewW /
+        static_cast<double>(gridX);
+
+    const double cellH =
+        viewH /
+        static_cast<double>(gridY);
+
+    glBegin(GL_TRIANGLES);
+
+    for (int iy = 0; iy < gridY; ++iy)
+    {
+        const double y0 =
+            static_cast<double>(iy) *
+            cellH;
+
+        const double y1 =
+            static_cast<double>(iy + 1) *
+            cellH;
+
+        for (int ix = 0; ix < gridX; ++ix)
+        {
+            const double x0 =
+                static_cast<double>(ix) *
+                cellW;
+
+            const double x1 =
+                static_cast<double>(ix + 1) *
+                cellW;
+
+            const double nx00 =
+                (x0 - centerPx.x) /
+                radiusPx;
+
+            const double ny00 =
+                -(y0 - centerPx.y) /
+                radiusPx;
+
+            const double nx10 =
+                (x1 - centerPx.x) /
+                radiusPx;
+
+            const double ny10 =
+                -(y0 - centerPx.y) /
+                radiusPx;
+
+            const double nx11 =
+                (x1 - centerPx.x) /
+                radiusPx;
+
+            const double ny11 =
+                -(y1 - centerPx.y) /
+                radiusPx;
+
+            const double nx01 =
+                (x0 - centerPx.x) /
+                radiusPx;
+
+            const double ny01 =
+                -(y1 - centerPx.y) /
+                radiusPx;
+
+            const bool q00 =
+                nx00 * nx00 + ny00 * ny00 <= 1.0;
+
+            const bool q10 =
+                nx10 * nx10 + ny10 * ny10 <= 1.0;
+
+            const bool q11 =
+                nx11 * nx11 + ny11 * ny11 <= 1.0;
+
+            const bool q01 =
+                nx01 * nx01 + ny01 * ny01 <= 1.0;
+
+            if (q00 && q10 && q11)
+            {
+                emit(x0, y0);
+                emit(x1, y0);
+                emit(x1, y1);
+            }
+
+            if (q00 && q11 && q01)
+            {
+                emit(x0, y0);
+                emit(x1, y1);
+                emit(x0, y1);
+            }
+        }
+    }
+
+    glEnd();
+
+    glBindTexture(
+        GL_TEXTURE_2D,
+        static_cast<GLuint>(oldTextureBinding)
+    );
+
+    if (textureWasEnabled)
+        glEnable(GL_TEXTURE_2D);
+    else
+        glDisable(GL_TEXTURE_2D);
+
+    if (blendWasEnabled)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
+}
+
+
+
+
+
+
+
+
+
+
+
 void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
     const world::celestial::HubMapSnapshot& hub,
     double scale,
@@ -8848,102 +13394,419 @@ void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
         return;
     }
 
-    const glm::dvec3 planetCenter =
+
+    beginEnvironmentRenderSessionIfNeeded(
+        Mode::Hub,
+        hub.systemId,
+        hub.parentBodyId
+    );
+
+
+
+    GLint viewport[4] =
+    {
+        0,
+        0,
+        1,
+        1
+    };
+
+    glGetIntegerv(
+        GL_VIEWPORT,
+        viewport
+    );
+
+    const double viewW =
+        static_cast<double>(
+            std::max(
+                viewport[2],
+                1
+            )
+        );
+
+    const double viewH =
+        static_cast<double>(
+            std::max(
+                viewport[3],
+                1
+            )
+        );
+
+    const double maxDim =
+        std::max(
+            viewW,
+            viewH
+        );
+
+    const double pitch =
+        std::clamp(
+            activeDetailCamera().pitch,
+            0.12,
+            1.20
+        );
+
+    auto smoothStep =
+        [](double edge0, double edge1, double x) -> double
+        {
+            const double t =
+                std::clamp(
+                    (x - edge0) /
+                    std::max(
+                        0.000001,
+                        edge1 - edge0
+                    ),
+                    0.0,
+                    1.0
+                );
+
+            return
+                t * t *
+                (3.0 - 2.0 * t);
+        };
+
+    const double lookDownT =
+        smoothStep(
+            0.12,
+            1.20,
+            pitch
+        );
+
+    // Оставляем текущую кинематографическую композицию:
+    // при малом pitch виден горизонт,
+    // при большом pitch уходим к взгляду вниз.
+    const double horizonY =
+        (1.0 - lookDownT) * (viewH * 0.74) +
+        lookDownT * (-viewH * 0.38);
+
+    const double visualRadiusPx =
+        maxDim *
+        (1.38 + 0.46 * lookDownT);
+
+    const double horizonCenterY =
+        horizonY + visualRadiusPx;
+
+    const double nadirCenterY =
+        viewH * 0.54;
+
+    const glm::dvec2 visualPlanetCenterPx(
+        viewW * 0.50 +
+            activeDetailCamera().pan.x * 0.015,
+        (1.0 - lookDownT) * horizonCenterY +
+            lookDownT * nadirCenterY
+    );
+
+    m_lastHubPlanetVisualRadiusPx =
+        visualRadiusPx;
+
+    m_lastHubPlanetVisualCenterPx =
+        visualPlanetCenterPx;
+
+
+    const HubPlanetAtmosphereStyle atmosphereStyle =
+    hubPlanetAtmosphereStyleForHub(
+        hub
+    );
+
+
+    auto mixColor =
+        [](const glm::vec4& a, const glm::vec4& b, float t) -> glm::vec4
+        {
+            return glm::vec4(
+                a.r + (b.r - a.r) * t,
+                a.g + (b.g - a.g) * t,
+                a.b + (b.b - a.b) * t,
+                a.a + (b.a - a.a) * t
+            );
+        };
+
+
+   
+
+    
+
+
+    const GLuint albedoTexture =
+        globalAlbedoTextureForHubSnapshot(
+            hub
+        );
+
+    const GLuint normalTexture =
+        globalNormalTextureForHubSnapshot(
+            hub
+        );
+
+    const GLuint previewTexture =
+        mapPreviewTextureForHubSnapshot(
+            hub
+        );
+
+    GLboolean blendWasEnabled =
+        glIsEnabled(GL_BLEND);
+
+    glUseProgram(0);
+    glEnable(GL_BLEND);
+    glBlendFunc(
+        GL_SRC_ALPHA,
+        GL_ONE_MINUS_SRC_ALPHA
+    );
+
+    // -----------------------------------------------------------------
+// 1. Базовое тело планеты.
+// Гладкая океаническая масса без текстурной грязи.
+//
+// ВАЖНО:
+// Внутри GL_TRIANGLE_STRIP на каждый угол должно быть ровно две вершины:
+//   - внутренняя окружность r0
+//   - внешняя окружность r1
+//
+// Если оставить третью вершину, появятся треугольные "зубья"
+// по всей планете.
+// -----------------------------------------------------------------
+{
+    constexpr int bands = 32;
+    constexpr int segments = 256;
+
+    for (int band = 0; band < bands; ++band)
+    {
+        const double t0 =
+            static_cast<double>(band) /
+            static_cast<double>(bands);
+
+        const double t1 =
+            static_cast<double>(band + 1) /
+            static_cast<double>(bands);
+
+        const double r0 =
+            visualRadiusPx *
+            t0;
+
+        const double r1 =
+            visualRadiusPx *
+            t1;
+
+        const float c0 =
+            static_cast<float>(t0);
+
+        const float c1 =
+            static_cast<float>(t1);
+
+        const glm::vec4 color0 =
+            mixColor(
+                atmosphereStyle.oceanInner,
+                atmosphereStyle.oceanOuter,
+                c0
+            );
+
+        const glm::vec4 color1 =
+            mixColor(
+                atmosphereStyle.oceanInner,
+                atmosphereStyle.oceanOuter,
+                c1
+            );
+
+        glBegin(GL_TRIANGLE_STRIP);
+
+        for (int i = 0; i <= segments; ++i)
+        {
+            const double a =
+                glm::two_pi<double>() *
+                static_cast<double>(i) /
+                static_cast<double>(segments);
+
+            const double ca =
+                std::cos(a);
+
+            const double sa =
+                std::sin(a);
+
+            // Вершина внутренней окружности.
+            glColor4f(
+                color0.r,
+                color0.g,
+                color0.b,
+                color0.a
+            );
+
+            glVertex2d(
+                visualPlanetCenterPx.x + ca * r0,
+                visualPlanetCenterPx.y + sa * r0
+            );
+
+            // Вершина внешней окружности.
+            glColor4f(
+                color1.r,
+                color1.g,
+                color1.b,
+                color1.a
+            );
+
+            glVertex2d(
+                visualPlanetCenterPx.x + ca * r1,
+                visualPlanetCenterPx.y + sa * r1
+            );
+        }
+
+        glEnd();
+    }
+}
+
+    // -----------------------------------------------------------------
+    // 2. Текстура поверхности.
+    // ВРЕМЕННО ОТКЛЮЧЕНА.
+    //
+    // Причина:
+    // equirectangular albedo сейчас натягивается на cinematic fake-hemisphere.
+    // Для карты Хаба это даёт растянутую сушу и грязные пятна.
+    // Пока оставляем чистую океаническую массу + haze + atmosphere.
+    // -----------------------------------------------------------------
+    const double planetLongitudeOffsetU =
+        activeDetailCamera().yaw /
+        glm::two_pi<double>() *
+        0.20;
+
+
+
+    const GLuint surfaceTexture =
+        albedoTexture != 0
+            ? albedoTexture
+            : previewTexture;
+
+    if (surfaceTexture != 0)
+    {
+        /*
+            Пока это screen-space свет.
+
+            Позже вместо фиксированного направления передадим
+            реальное направление к звезде системы.
+        */
+        const glm::vec3 lightDirection =
+            glm::normalize(
+                glm::vec3(
+                    -0.42f,
+                    0.34f,
+                    0.84f
+                )
+            );
+
+        m_hubPlanetSurfaceRenderer.render(
+            surfaceTexture,
+            normalTexture,
+            visualPlanetCenterPx,
+            visualRadiusPx,
+            planetLongitudeOffsetU,
+            lightDirection
+        );
+    }
+    
+
+    const double renderTimeSeconds =
+        environmentVisualTimeSeconds(
+            hub.universeTimeSeconds
+        );
+    
+    const auto cloudStyles =
+        hubPlanetCloudStylesForHub(
+            hub
+        );
+
+    for (std::size_t layerIndex = 0;
+        layerIndex < cloudStyles.size();
+        ++layerIndex)
+    {
+        const auto& cloudStyle =
+            cloudStyles[layerIndex];
+
+        if (!cloudStyle.enabled)
+            continue;
+
+        const double meanHeightMeters =
+            (
+                static_cast<double>(
+                    cloudStyle.baseHeightKm
+                ) +
+                static_cast<double>(
+                    cloudStyle.topHeightKm
+                )
+            ) *
+            500.0;
+
+        const double physicalRadiusScale =
+            1.0 +
+            meanHeightMeters /
+                std::max(
+                    1.0,
+                    hub.parentPlanetRadiusMeters
+                );
+
+        /*
+            На fake cinematic hemisphere физическая разница
+            высот слишком мала, поэтому добавляем небольшой
+            screen-space separation по индексу.
+        */
+        const double cloudRadiusScale =
+            std::clamp(
+                physicalRadiusScale +
+                    0.0025 *
+                    static_cast<double>(
+                        layerIndex + 1
+                    ),
+                1.003,
+                1.055
+            );
+
+        m_hubBackdropCloudRenderer.render(
+            m_proceduralCloudLayer,
+            visualPlanetCenterPx,
+            visualRadiusPx,
+            cloudRadiusScale,
+            planetLongitudeOffsetU,
+            renderTimeSeconds,
+            cloudStyle
+        );
+    }
+
+
+
+
+
+    drawHubMapPlanetAtmosphereStack(
+        visualPlanetCenterPx,
+        visualRadiusPx,
+        atmosphereStyle
+    );
+
+    
+    
+
+
+    
+
+
+
+
+    // -----------------------------------------------------------------
+    // 6. Тактический оверлей оставляем.
+    // -----------------------------------------------------------------
+    const glm::dvec3 planetCenterLocal =
         hub.parentPlanetCenterLocalMeters;
 
-    const glm::dvec2 planetCenterPx =
-        hubMapProject(
-            planetCenter,
-            scale,
-            centerPx
-        );
-
-    const double planetRadiusPx =
-        hub.parentPlanetRadiusMeters *
-        scale *
-        activeDetailCamera().zoom;
-
-
-        const GLuint planetTexture =
-        mapPreviewTextureForHubSnapshot(hub);
-
-    if (planetTexture != 0)
-    {
-        drawTexturedDisk2D(
-            planetTexture,
-            planetCenterPx,
-            planetRadiusPx,
-            glm::vec4(1.0f, 1.0f, 1.0f, 0.28f),
-            192
-        );
-    }
-
-    // Если планета слишком огромная и центр далеко за экраном,
-    // всё равно рисуем только геометрически корректную дугу/край.
-    // Это дает глазу "низ", не превращая карту в синий блин.
-    glColor4f(
-        0.08f,
-        0.22f,
-        0.32f,
-        0.22f
-    );
-
-    glBegin(GL_TRIANGLE_FAN);
-    glVertex2d(
-        planetCenterPx.x,
-        planetCenterPx.y
-    );
-
-    constexpr int fillSegments = 160;
-
-    for (int i = 0; i <= fillSegments; ++i)
-    {
-        const double a =
-            glm::two_pi<double>() *
-            static_cast<double>(i) /
-            static_cast<double>(fillSegments);
-
-        glVertex2d(
-            planetCenterPx.x + std::cos(a) * planetRadiusPx,
-            planetCenterPx.y + std::sin(a) * planetRadiusPx
-        );
-    }
-
-    glEnd();
-
-    // Контур поверхности.
-    glColor4f(
-        0.22f,
-        0.58f,
-        0.78f,
-        0.75f
-    );
-
-    drawPlanetMapCircle(
-        planetCenterPx,
-        planetRadiusPx,
-        192
-    );
-
-    // Орбита хаба вокруг планеты.
     glColor4f(
         0.95f,
         0.82f,
         0.32f,
-        0.42f
+        0.12f
     );
 
     drawHubMapCircleLocalXY(
-        planetCenter,
+        planetCenterLocal,
         hub.hubOrbitRadiusMeters,
         scale,
         centerPx,
         256
     );
 
-    // Радиальная линия: центр планеты -> поверхность -> хаб.
     const glm::dvec3 surfacePoint =
-        planetCenter +
+        planetCenterLocal +
         glm::dvec3(
             0.0,
             hub.parentPlanetRadiusMeters,
@@ -8951,30 +13814,28 @@ void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
         );
 
     glColor4f(
-        0.35f,
-        0.85f,
+        0.70f,
+        0.96f,
         1.0f,
-        0.45f
-    );
-
-    drawPlanetMapLine(
-        hubMapProject(surfacePoint, scale, centerPx),
-        hubMapProject(glm::dvec3(0.0), scale, centerPx)
-    );
-
-    // Маленькая отметка точки под хабом на поверхности.
-    glColor4f(
-        0.65f,
-        0.95f,
-        1.0f,
-        0.85f
+        0.30f
     );
 
     drawPlanetMapCross(
-        hubMapProject(surfacePoint, scale, centerPx),
+        hubMapProject(
+            surfacePoint,
+            scale,
+            centerPx
+        ),
         5.0f
     );
+
+    if (blendWasEnabled)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
 }
+
+
 
 
 
@@ -9132,6 +13993,30 @@ void SystemMapRenderer::renderHubMap(
 {
     ensureGeneratedCelestialAssets();
 
+    GLboolean depthWasEnabled =
+        glIsEnabled(
+            GL_DEPTH_TEST
+        );
+
+    GLboolean blendWasEnabled =
+        glIsEnabled(
+            GL_BLEND
+        );
+
+    auto restoreGlState =
+        [&]()
+        {
+            if (depthWasEnabled)
+                glEnable(GL_DEPTH_TEST);
+            else
+                glDisable(GL_DEPTH_TEST);
+
+            if (blendWasEnabled)
+                glEnable(GL_BLEND);
+            else
+                glDisable(GL_BLEND);
+        };
+
     glViewport(
         viewport.x,
         viewport.y,
@@ -9147,6 +14032,12 @@ void SystemMapRenderer::renderHubMap(
     );
 
     glDisable(GL_DEPTH_TEST);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(
+        GL_SRC_ALPHA,
+        GL_ONE_MINUS_SRC_ALPHA
+    );
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -9177,8 +14068,19 @@ void SystemMapRenderer::renderHubMap(
     glVertex2f(0.0f, static_cast<float>(viewport.height));
     glEnd();
 
+
     if (!hub.valid)
+    {
+        restoreGlState();
         return;
+    }
+
+
+    drawMapStarfield(
+        viewport,
+        hub.systemPositionLy
+    );
+
 
     const glm::dvec2 centerPx(
         static_cast<double>(viewport.width) * 0.5,
@@ -9242,19 +14144,66 @@ void SystemMapRenderer::renderHubMap(
     m_lastHubMapScale = scale;
     m_lastHubMapCenterPx = centerPx;
     m_lastHubMapPickables.clear();
+    const double finalScale =
+        scale *
+        activeDetailCamera().zoom;
 
-    drawHubMapPlanetSurfaceHint(
+
+
+
+   drawHubMapPlanetSurfaceHint(
         hub,
         scale,
         centerPx
     );
 
-    drawHubMapAdaptiveGrid(
-        viewport,
-        scale,
-        centerPx,
-        maxDist
-    );
+    // render::celestial::HubSphericalGridStyle sphericalGridStyle =
+    // hubSphericalGridStyleForHub(
+    //     hub
+    // );
+
+
+
+    // // Сетка Хаба должна быть не на поверхности планеты,
+    // // а на визуальной высоте хаба.
+    // //
+    // // centerPx — это экранная позиция hub-local origin,
+    // // то есть центр старой плоской сетки.
+    // // Поэтому радиус сферической оболочки сетки должен проходить через centerPx.
+    // const double hubGridShellRadiusPx =
+    //     glm::length(
+    //         centerPx -
+    //         m_lastHubPlanetVisualCenterPx
+    //     );
+
+    // if (m_lastHubPlanetVisualRadiusPx > 1.0 &&
+    //     hubGridShellRadiusPx > m_lastHubPlanetVisualRadiusPx)
+    // {
+    //     sphericalGridStyle.radiusScale =
+    //         std::clamp(
+    //             hubGridShellRadiusPx /
+    //                 m_lastHubPlanetVisualRadiusPx,
+    //             1.02,
+    //             2.20
+    //         );
+
+    //     m_hubSphericalGridRenderer.render(
+    //         m_lastHubPlanetVisualCenterPx,
+    //         m_lastHubPlanetVisualRadiusPx,
+    //         activeDetailCamera().yaw *
+    //             0.35,
+    //         sphericalGridStyle
+    //     );
+    // }
+
+
+
+    // drawHubMapAdaptiveGrid(
+    //     viewport,
+    //     scale,
+    //     centerPx,
+    //     maxDist
+    // );
 
     // Оси хаба.
     drawHubMapAxes(
@@ -9278,140 +14227,174 @@ void SystemMapRenderer::renderHubMap(
         6.0f
     );
 
+   
+   
+ 
     // Модули станции.
-    for (const auto& mod : hub.modules)
-    {
-        if (!mod.valid)
-            continue;
+for (const auto& mod : hub.modules)
+{
+    if (!mod.valid)
+        continue;
 
-        {
-            const glm::dvec2 screen =
-                hubMapProject(
-                    mod.localPositionMeters,
-                    scale,
-                    centerPx
-                );
-
-            const double objectRadiusMeters =
-                glm::length(mod.sizeMeters) * 0.5;
-
-            HubMapPickable pickable;
-            pickable.localCenterMeters =
-                mod.localPositionMeters;
-
-            pickable.screenCenterPx =
-                screen;
-
-            pickable.screenRadiusPx =
-                objectRadiusMeters *
-                scale *
-                activeDetailCamera().zoom;
-
-            pickable.priority =
-                mod.prime ? 20 : 10;
-
-            pickable.label =
-                mod.name;
-
-            m_lastHubMapPickables.push_back(
-                pickable
-            );
-        }
-
-
-
-
-
-
-
-        if (mod.prime || mod.kind == "station")
-        {
-            glColor4f(
-                0.65f,
-                0.92f,
-                1.0f,
-                0.95f
-            );
-        }
-        else
-        {
-            glColor4f(
-                0.45f,
-                0.65f,
-                0.85f,
-                0.75f
-            );
-        }
-
-
-        const bool modelDrawn =
-            drawHubMapAssemblyWire(
-                mod.typeId,
-                mod.localPositionMeters,
-                mod.localAxes,
-                scale,
-                centerPx
-            );
-
-        if (!modelDrawn)
-        {
-            drawHubMapBox(
-                mod.localPositionMeters,
-                mod.localAxes,
-                mod.sizeMeters,
-                scale,
-                centerPx
-            );
-        }
-
-        const double moduleAxisLen =
-            std::max(
-                350.0,
-                glm::length(mod.sizeMeters) * 0.08
-            );
-
-        drawHubMapAxes(
+    const glm::dvec2 modScreen =
+        hubMapProject(
             mod.localPositionMeters,
-            mod.localAxes,
-            moduleAxisLen,
             scale,
             centerPx
         );
 
+    const double moduleRadiusMeters =
+        glm::length(
+            mod.sizeMeters
+        ) * 0.5;
 
-        
-    }
+    const double moduleRadiusPx =
+        moduleRadiusMeters *
+        finalScale;
 
-    // Игрок / корабли.
-    for (const auto& ship : hub.ships)
     {
-        if (!ship.valid)
-            continue;
-
-    {
-        const glm::dvec2 screen =
-            hubMapProject(
-                ship.localPositionMeters,
-                scale,
-                centerPx
-            );
-
-        const double objectRadiusMeters =
-            glm::length(ship.sizeMeters) * 0.5;
-
         HubMapPickable pickable;
+
         pickable.localCenterMeters =
-            ship.localPositionMeters;
+            mod.localPositionMeters;
 
         pickable.screenCenterPx =
-            screen;
+            modScreen;
 
         pickable.screenRadiusPx =
             std::max(
                 18.0,
-                objectRadiusMeters *
-                scale *
-                activeDetailCamera().zoom
+                moduleRadiusPx
+            );
+
+        pickable.priority =
+            mod.prime ? 20 : 10;
+
+        pickable.label =
+            mod.name;
+
+        m_lastHubMapPickables.push_back(
+            pickable
+        );
+    }
+
+    if (mod.prime || mod.kind == "station")
+    {
+        glColor4f(
+            0.65f,
+            0.92f,
+            1.0f,
+            0.95f
+        );
+    }
+    else
+    {
+        glColor4f(
+            0.45f,
+            0.65f,
+            0.85f,
+            0.75f
+        );
+    }
+
+    const bool modelDrawn =
+        drawHubMapAssemblyWire(
+            mod.typeId,
+            mod.localPositionMeters,
+            mod.localAxes,
+            scale,
+            centerPx
+        );
+
+    if (!modelDrawn)
+    {
+        drawHubMapBox(
+            mod.localPositionMeters,
+            mod.localAxes,
+            mod.sizeMeters,
+            scale,
+            centerPx
+        );
+    }
+
+    const double moduleAxisLen =
+        std::max(
+            350.0,
+            glm::length(mod.sizeMeters) * 0.08
+        );
+
+    drawHubMapAxes(
+        mod.localPositionMeters,
+        mod.localAxes,
+        moduleAxisLen,
+        scale,
+        centerPx
+    );
+
+    // Если модуль на текущем масштабе слишком мелкий,
+    // добавляем screen-space маркер. Это не физический размер.
+    if (moduleRadiusPx < 8.0)
+    {
+        const glm::vec4 markerColor =
+            mod.prime
+                ? glm::vec4(0.85f, 0.98f, 1.0f, 0.95f)
+                : glm::vec4(0.48f, 0.76f, 1.0f, 0.82f);
+
+        drawHubMapScreenMarker(
+            modScreen,
+            mod.prime ? 9.0 : 7.0,
+            markerColor,
+            mod.prime,
+            32
+        );
+    }
+}
+
+
+
+
+
+// Игрок / корабли.
+for (const auto& ship : hub.ships)
+{
+    if (!ship.valid)
+        continue;
+
+    const glm::dvec2 shipScreen =
+        hubMapProject(
+            ship.localPositionMeters,
+            scale,
+            centerPx
+        );
+
+    const glm::dvec3 shipVisualSize =
+        visualSizeForHubShip(
+            ship,
+            scale
+        );
+
+    const double shipRadiusMeters =
+        glm::length(
+            shipVisualSize
+        ) * 0.5;
+
+    const double shipRadiusPx =
+        shipRadiusMeters *
+        finalScale;
+
+    {
+        HubMapPickable pickable;
+
+        pickable.localCenterMeters =
+            ship.localPositionMeters;
+
+        pickable.screenCenterPx =
+            shipScreen;
+
+        pickable.screenRadiusPx =
+            std::max(
+                ship.player ? 22.0 : 18.0,
+                shipRadiusPx
             );
 
         pickable.priority =
@@ -9427,34 +14410,36 @@ void SystemMapRenderer::renderHubMap(
         );
     }
 
+    if (ship.player)
+    {
+        glColor4f(
+            1.0f,
+            0.78f,
+            0.25f,
+            1.0f
+        );
+    }
+    else
+    {
+        glColor4f(
+            0.95f,
+            0.65f,
+            0.35f,
+            0.85f
+        );
+    }
 
-        if (ship.player)
-        {
-            glColor4f(
-                1.0f,
-                0.78f,
-                0.25f,
-                1.0f
-            );
-        }
-        else
-        {
-            glColor4f(
-                0.95f,
-                0.65f,
-                0.35f,
-                0.85f
-            );
-        }
+    // Если корабль на карте слишком маленький, wire-модель будет шумом.
+    // Тогда рисуем fallback box с увеличенным visual size.
+    const bool allowWireModel =
+        shipRadiusPx >= 10.0;
 
-        const glm::dvec3 shipSize =
-            visualSizeForHubShip(
-                ship,
-                scale
-            );
+    bool shipModelDrawn =
+        false;
 
-
-        const bool shipModelDrawn =
+    if (allowWireModel)
+    {
+        shipModelDrawn =
             drawHubMapAssemblyWire(
                 ship.typeId,
                 ship.localPositionMeters,
@@ -9462,43 +14447,63 @@ void SystemMapRenderer::renderHubMap(
                 scale,
                 centerPx
             );
+    }
 
-        if (!shipModelDrawn)
-        {
-            drawHubMapBox(
-                ship.localPositionMeters,
-                ship.localAxes,
-                ship.sizeMeters,
-                scale,
-                centerPx
-            );
-        }
-
-        const double shipAxisLen =
-            std::max(
-                12.0,
-                glm::length(ship.sizeMeters) * 0.85
-            );
-
-        drawHubMapAxes(
+    if (!shipModelDrawn)
+    {
+        drawHubMapBox(
             ship.localPositionMeters,
             ship.localAxes,
-            shipAxisLen,
-            scale,
-            centerPx
-        );
-
-        drawHubMapVelocityArrow(
-            ship.localPositionMeters,
-            ship.localVelocityMps,
-            std::max(80.0, shipAxisLen * 2.0),
+            shipVisualSize,
             scale,
             centerPx
         );
     }
 
+    const double shipAxisLen =
+        std::max(
+            ship.player ? 26.0 : 16.0,
+            glm::length(shipVisualSize) * 0.65
+        );
 
+    drawHubMapAxes(
+        ship.localPositionMeters,
+        ship.localAxes,
+        shipAxisLen,
+        scale,
+        centerPx
+    );
 
+    drawHubMapVelocityArrow(
+        ship.localPositionMeters,
+        ship.localVelocityMps,
+        std::max(
+            80.0,
+            shipAxisLen * 2.0
+        ),
+        scale,
+        centerPx
+    );
+
+    // Экранный маркер поверх корабля.
+    // PLAYER виден всегда, остальные — когда мелкие.
+    if (ship.player ||
+        shipRadiusPx < 12.0)
+    {
+        const glm::vec4 markerColor =
+            ship.player
+                ? glm::vec4(1.0f, 0.84f, 0.25f, 0.98f)
+                : glm::vec4(1.0f, 0.62f, 0.32f, 0.82f);
+
+        drawHubMapScreenMarker(
+            shipScreen,
+            ship.player ? 13.0 : 8.0,
+            markerColor,
+            true,
+            32
+        );
+    }
+}
 
 
 
@@ -9523,6 +14528,15 @@ void SystemMapRenderer::renderHubMap(
                         scale,
                         centerPx
                     );
+
+                
+                if (p.x < -160.0 ||
+                    p.y < -80.0 ||
+                    p.x > static_cast<double>(viewport.width) + 160.0 ||
+                    p.y > static_cast<double>(viewport.height) + 80.0)
+                {
+                    continue;
+                }
 
                 text.textDrawPx(
                     mod.name,
@@ -9556,6 +14570,26 @@ void SystemMapRenderer::renderHubMap(
                         centerPx
                     );
 
+
+
+
+
+                if (p.x < -160.0 ||
+                    p.y < -80.0 ||
+                    p.x > static_cast<double>(viewport.width) + 160.0 ||
+                    p.y > static_cast<double>(viewport.height) + 80.0)
+                {
+                    continue;
+                }
+
+
+
+
+
+
+
+
+
                 const std::string label =
                     ship.player
                         ? "PLAYER"
@@ -9584,7 +14618,7 @@ void SystemMapRenderer::renderHubMap(
 
 
 
-    glEnable(GL_DEPTH_TEST);
+    restoreGlState();
 }
 
 

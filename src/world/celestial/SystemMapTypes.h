@@ -31,6 +31,76 @@ namespace world::celestial
         std::vector<GalaxyMapSystem> systems;
     };
 
+
+
+
+
+
+    enum class SystemMapRingDisplayMode
+    {
+        LayeredBands = 0,
+        ParticleCloud = 1
+    };
+
+    enum class SystemMapRingVisibilityClass
+    {
+        Main = 0,
+        Secondary = 1,
+        Faint = 2,
+        Diffuse = 3
+    };
+
+    struct SystemMapRingVisualProfile
+    {
+        std::string displayProfile;
+
+        SystemMapRingDisplayMode renderMode =
+            SystemMapRingDisplayMode::LayeredBands;
+
+        float recognizabilityPriority = 0.5f;
+
+        float artisticWidthScale = 1.0f;
+
+        float mainBandEmphasis = 1.0f;
+        float secondaryBandEmphasis = 1.0f;
+        float faintBandEmphasis = 1.0f;
+        float diffuseBandEmphasis = 1.0f;
+
+        float gapContrast = 1.0f;
+
+        float radialStructureStrength = 0.0f;
+        float fineStructureStrength = 0.0f;
+
+        float edgeSoftnessScale = 1.0f;
+        float brightnessVariation = 0.0f;
+
+        float minimumVisibleWidthPx = 0.5f;
+        float minimumMainBandWidthPx = 1.0f;
+
+        float continuousFill = 0.0f;
+        float particleDensity = 0.3f;
+        float particleOpacityScale = 0.4f;
+
+        glm::vec2 particleSizePxRange {
+            0.5f,
+            1.3f
+        };
+
+        float radialJitter = 0.25f;
+        float azimuthalClumping = 0.4f;
+        float clusterScale = 0.7f;
+        float softness = 0.65f;
+
+        bool artisticOcclusionEnabled = false;
+        float backHalfBrightness = 1.0f;
+        float innerEdgeDarkening = 0.0f;
+    };
+
+
+
+
+
+
     struct SystemMapRing
     {
         std::string name;
@@ -39,6 +109,41 @@ namespace world::celestial
         double outerRadiusKm = 0.0;
 
         std::string composition;
+
+        glm::vec3 tint {
+            0.78f,
+            0.78f,
+            0.78f
+        };
+
+        float opacity = 0.25f;
+        float opticalDepth = 0.25f;
+
+        float radialNoiseStrength = 0.15f;
+        float radialBrightnessVariation = 0.15f;
+        float azimuthalAsymmetry = 0.0f;
+
+        float edgeSoftness = 0.04f;
+
+        SystemMapRingVisibilityClass visibilityClass =
+            SystemMapRingVisibilityClass::Faint;
+
+        SystemMapRingDisplayMode displayMode =
+            SystemMapRingDisplayMode::LayeredBands;
+
+        float visualOpacityScale = 1.0f;
+        float radialStructureScale = 1.0f;
+
+        float particleDensityScale = 1.0f;
+        float particleClumpiness = 0.4f;
+        float particleRadialJitter = 0.25f;
+
+        glm::vec2 particleSizePxRange {
+            0.5f,
+            1.3f
+        };
+
+        bool castsShadow = true;
     };
 
     struct SystemMapBody
@@ -48,6 +153,7 @@ namespace world::celestial
         std::vector<CelestialBodyDisplayName> alternativeNames;
   
         std::string parentId;
+        std::string environmentPresetId;
 
         BodyType type = BodyType::Unknown;
 
@@ -71,6 +177,8 @@ namespace world::celestial
         // Потом можно брать из system_details.json, если поле цвета есть.
         glm::vec4 color {0.6f, 0.8f, 1.0f, 1.0f};
 
+        double ringPlaneInclinationOffsetDeg = 0.0;
+        SystemMapRingVisualProfile ringVisual;
         std::vector<SystemMapRing> rings;
     };
 
@@ -115,6 +223,7 @@ namespace world::celestial
         std::string universeDate;
         std::vector<SystemMapBody> bodies;
         std::vector<SystemMapObject> objects;
+        glm::dvec3 systemPositionLy {0.0};
     };
 
 
@@ -166,9 +275,11 @@ struct PlanetMapSnapshot
     bool valid = false;
 
     int systemId = -1;
+    glm::dvec3 systemPositionLy {0.0};
 
     std::string planetBodyId;
     std::string planetName;
+    std::string environmentPresetId;
 
     glm::dvec3 planetCenterMeters {0.0};
 
@@ -185,6 +296,10 @@ struct PlanetMapSnapshot
 
     std::vector<PlanetMapOrbit> hubOrbits;
     std::vector<PlanetMapOrbit> playerOrbits;
+    double ringPlaneInclinationOffsetDeg = 0.0;
+
+    SystemMapRingVisualProfile ringVisual; 
+    std::vector<SystemMapRing> rings;
 
     std::vector<PlanetMapObject> hubs;
     std::vector<PlanetMapObject> stations;
@@ -233,9 +348,11 @@ struct HubMapSnapshot
     bool valid = false;
 
     int systemId = -1;
+    glm::dvec3 systemPositionLy {0.0};
 
     std::string hubId;
     std::string parentBodyId;
+    std::string parentEnvironmentPresetId;
     std::string displayName;
 
     glm::dvec3 hubWorldPositionMeters {0.0};

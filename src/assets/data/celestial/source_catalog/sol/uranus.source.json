@@ -6,17 +6,17 @@
   "body_shape": "sphere",
   "projection": "equirectangular",
   "required_assets": {
-    "albedo": "src/assets/source/celestial/sol/uranus/albedo_source.*"
+    "albedo": "assets/source/celestial/sol/uranus/albedo_source.*"
   },
   "optional_assets": {
-    "clouds": "src/assets/source/celestial/sol/uranus/clouds_source.*"
+    "clouds": "assets/source/celestial/sol/uranus/clouds_source.*"
   },
   "derived_outputs": {
-    "albedo": "src/assets/generated/celestial/sol/uranus/albedo.tga",
-    "normal": "src/assets/generated/celestial/sol/uranus/normal.tga",
-    "material": "src/assets/generated/celestial/sol/uranus/material.tga",
-    "clouds": "src/assets/generated/celestial/sol/uranus/clouds.tga",
-    "preview": "src/assets/generated/celestial/sol/uranus/preview.tga",
-    "meta": "src/assets/generated/celestial/sol/uranus/meta.json"
+    "albedo": "assets/generated/celestial/sol/uranus/albedo.tga",
+    "normal": "assets/generated/celestial/sol/uranus/normal.tga",
+    "material": "assets/generated/celestial/sol/uranus/material.tga",
+    "clouds": "assets/generated/celestial/sol/uranus/clouds.tga",
+    "preview": "assets/generated/celestial/sol/uranus/preview.tga",
+    "meta": "assets/generated/celestial/sol/uranus/meta.json"
   }
 }

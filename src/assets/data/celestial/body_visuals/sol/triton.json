@@ -1,5 +1,6 @@
 {
   "preset_id": "rocky_ice",
+  "environment_preset_id": "thin_nitrogen_ice_world",
   "system_folder_name": "sol",
   "body_folder_name": "triton",
   "display_name": "Triton",

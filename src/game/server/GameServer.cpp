@@ -124,6 +124,232 @@ namespace {
 
 
 
+
+
+    world::celestial::SystemMapRingDisplayMode
+        toSystemMapRingDisplayMode(
+            world::celestial::CelestialRingDisplayMode mode
+        )
+        {
+            using Source =
+                world::celestial::CelestialRingDisplayMode;
+
+            using Target =
+                world::celestial::SystemMapRingDisplayMode;
+
+            return
+                mode == Source::ParticleCloud
+                    ? Target::ParticleCloud
+                    : Target::LayeredBands;
+        }
+
+        world::celestial::SystemMapRingVisibilityClass
+        toSystemMapRingVisibilityClass(
+            world::celestial::CelestialRingVisibilityClass value
+        )
+        {
+            using Source =
+                world::celestial::CelestialRingVisibilityClass;
+
+            using Target =
+                world::celestial::SystemMapRingVisibilityClass;
+
+            switch (value)
+            {
+                case Source::Main:
+                    return Target::Main;
+
+                case Source::Secondary:
+                    return Target::Secondary;
+
+                case Source::Diffuse:
+                    return Target::Diffuse;
+
+                case Source::Faint:
+                default:
+                    return Target::Faint;
+            }
+        }
+
+        world::celestial::SystemMapRingVisualProfile
+        toSystemMapRingVisualProfile(
+            const world::celestial::
+                CelestialRingSystemVisualProfile& source
+        )
+        {
+            world::celestial::
+                SystemMapRingVisualProfile result;
+
+            result.displayProfile =
+                source.displayProfile;
+
+            result.renderMode =
+                toSystemMapRingDisplayMode(
+                    source.renderMode
+                );
+
+            result.recognizabilityPriority =
+                source.recognizabilityPriority;
+
+            result.artisticWidthScale =
+                source.artisticWidthScale;
+
+            result.mainBandEmphasis =
+                source.mainBandEmphasis;
+
+            result.secondaryBandEmphasis =
+                source.secondaryBandEmphasis;
+
+            result.faintBandEmphasis =
+                source.faintBandEmphasis;
+
+            result.diffuseBandEmphasis =
+                source.diffuseBandEmphasis;
+
+            result.gapContrast =
+                source.gapContrast;
+
+            result.radialStructureStrength =
+                source.radialStructureStrength;
+
+            result.fineStructureStrength =
+                source.fineStructureStrength;
+
+            result.edgeSoftnessScale =
+                source.edgeSoftnessScale;
+
+            result.brightnessVariation =
+                source.brightnessVariation;
+
+            result.minimumVisibleWidthPx =
+                source.minimumVisibleWidthPx;
+
+            result.minimumMainBandWidthPx =
+                source.minimumMainBandWidthPx;
+
+            result.continuousFill =
+                source.continuousFill;
+
+            result.particleDensity =
+                source.particleDensity;
+
+            result.particleOpacityScale =
+                source.particleOpacityScale;
+
+            result.particleSizePxRange =
+                source.particleSizePxRange;
+
+            result.radialJitter =
+                source.radialJitter;
+
+            result.azimuthalClumping =
+                source.azimuthalClumping;
+
+            result.clusterScale =
+                source.clusterScale;
+
+            result.softness =
+                source.softness;
+
+            result.artisticOcclusionEnabled =
+                source.artisticOcclusionEnabled;
+
+            result.backHalfBrightness =
+                source.backHalfBrightness;
+
+            result.innerEdgeDarkening =
+                source.innerEdgeDarkening;
+
+            return result;
+        }
+
+        world::celestial::SystemMapRing
+        toSystemMapRing(
+            const world::celestial::
+                CelestialRingDefinition& source
+        )
+        {
+            world::celestial::SystemMapRing result;
+
+            result.name =
+                source.name;
+
+            result.innerRadiusKm =
+                source.innerRadiusKm;
+
+            result.outerRadiusKm =
+                source.outerRadiusKm;
+
+            result.composition =
+                source.composition;
+
+            result.tint =
+                source.render.tint;
+
+            result.opacity =
+                source.render.opacity;
+
+            result.opticalDepth =
+                source.render.opticalDepth;
+
+            result.radialNoiseStrength =
+                source.render.radialNoiseStrength;
+
+            result.radialBrightnessVariation =
+                source.render.radialBrightnessVariation;
+
+            result.azimuthalAsymmetry =
+                source.render.azimuthalAsymmetry;
+
+            result.edgeSoftness =
+                source.render.edgeSoftness;
+
+            result.visibilityClass =
+                toSystemMapRingVisibilityClass(
+                    source.render.visibilityClass
+                );
+
+            result.displayMode =
+                toSystemMapRingDisplayMode(
+                    source.render.displayMode
+                );
+
+            result.visualOpacityScale =
+                source.render.visualOpacityScale;
+
+            result.radialStructureScale =
+                source.render.radialStructureScale;
+
+            result.particleDensityScale =
+                source.render.particleDensityScale;
+
+            result.particleClumpiness =
+                source.render.particleClumpiness;
+
+            result.particleRadialJitter =
+                source.render.particleRadialJitter;
+
+            result.particleSizePxRange =
+                source.render.particleSizePxRange;
+
+            result.castsShadow =
+                source.render.castsShadow;
+
+            return result;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
     std::string jurisdictionForSystemId(int systemId)
     {
         if (systemId == 0)
@@ -930,6 +1156,15 @@ GameServer::buildSystemMapSnapshot(
     out.systemId = system->systemId;
     out.systemName = system->name;
 
+    if (const auto* summary =
+        m_starAtlas.findSystemSummary(
+            systemId
+        ))
+    {
+        out.systemPositionLy =
+            summary->positionLy;
+    }
+
     out.universeTimeSeconds =
         m_universeClock.timeSeconds();
 
@@ -973,6 +1208,8 @@ GameServer::buildSystemMapSnapshot(
         item.alternativeNames = body.alternativeNames;
 
         item.parentId = body.parentId;
+        item.environmentPresetId = body.environmentPresetId;
+
         item.type = body.type;
         item.radiusKm = body.radiusKm;
 
@@ -1047,18 +1284,32 @@ GameServer::buildSystemMapSnapshot(
         item.orbitRadiusAu = body.distanceAu;
         item.drawOrbit = body.distanceAu > 0.0;
 
-        for (const auto& ring : body.rings)
-        {
-            world::celestial::SystemMapRing r;
+        item.ringPlaneInclinationOffsetDeg =
+            body.ringPlaneInclinationOffsetDeg;
 
-            r.name = ring.name;
-            r.innerRadiusKm = ring.innerRadiusKm;
-            r.outerRadiusKm = ring.outerRadiusKm;
-            r.composition = ring.composition;
 
-            item.rings.push_back(std::move(r));
-        }
+        item.ringVisual =
+            toSystemMapRingVisualProfile(
+                body.ringVisual
+            );
 
+
+
+            for (const auto& ring :
+                body.rings)
+            {
+                item.rings.push_back(
+                    toSystemMapRing(
+                        ring
+                    )
+                );
+            }
+                
+    
+    
+    
+    
+    
         out.bodies.push_back(std::move(item));
     }
 
@@ -1184,20 +1435,25 @@ GameServer::buildPlanetMapSnapshot(
 
     PlanetMapSnapshot out;
 
-    out.systemId =
-        systemId;
+    out.systemId = systemId;
 
-    out.planetBodyId =
-        planetBodyId;
+    out.planetBodyId = planetBodyId;
 
-    out.universeTimeSeconds =
-        m_universeClock.timeSeconds();
+    out.universeTimeSeconds = m_universeClock.timeSeconds();
 
-    const auto* system =
-        m_starAtlas.findSystem(systemId);
+    const auto* system = m_starAtlas.findSystem(systemId);
 
     if (!system)
         return out;
+
+    if (const auto* summary =
+            m_starAtlas.findSystemSummary(
+                systemId
+            ))
+    {
+        out.systemPositionLy =
+            summary->positionLy;
+    }
 
     world::celestial::CelestialSystemRuntime planetMapRuntime;
 
@@ -1219,8 +1475,8 @@ GameServer::buildPlanetMapSnapshot(
         if (body.id != planetBodyId)
             continue;
 
-        out.planetName =
-            body.name;
+        out.planetName = body.name;
+        out.environmentPresetId = body.environmentPresetId;
 
         out.planetCenterMeters =
             body.positionAu *
@@ -1249,12 +1505,49 @@ GameServer::buildPlanetMapSnapshot(
                 body.id
             );
 
+
         foundPlanet = true;
         break;
     }
 
     if (!foundPlanet)
         return out;
+
+
+    for (const auto& definition :
+        system->bodies)
+    {
+        if (definition.id != planetBodyId)
+            continue;
+
+        out.ringPlaneInclinationOffsetDeg =
+            definition.ringPlaneInclinationOffsetDeg;
+
+        out.ringVisual =
+            toSystemMapRingVisualProfile(
+                definition.ringVisual
+            );
+
+        out.rings.clear();
+
+
+        
+        for (const auto& sourceRing :
+            definition.rings)
+        {
+            out.rings.push_back(
+                toSystemMapRing(
+                    sourceRing
+                )
+            );
+        }
+
+
+
+
+
+        break;
+    }
 
     // -----------------------------
     // Hubs + hub rail orbits
@@ -1675,17 +1968,51 @@ GameServer::buildHubMapSnapshot(
     if (!frame || !frame->valid)
         return out;
 
-    out.parentBodyId =
-        hub.parentBodyId;
+    out.parentBodyId = hub.parentBodyId;
 
-    out.displayName =
-        hub.id;
+    
+    
+    const auto* system =
+        m_starAtlas.findSystem(
+            systemId
+        );
 
-    out.hubWorldPositionMeters =
-        frame->originMeters;
+    if (const auto* summary =
+            m_starAtlas.findSystemSummary(
+                systemId
+            ))
+    {
+        out.systemPositionLy =
+            summary->positionLy;
+    }
 
-    out.hubWorldVelocityMps =
-        frame->velocityMetersPerSecond;
+    if (system)
+    {
+        for (const auto& body :
+            system->bodies)
+        {
+            if (body.id !=
+                out.parentBodyId)
+            {
+                continue;
+            }
+
+            out.parentEnvironmentPresetId =
+                body.environmentPresetId;
+
+            break;
+        }
+    }
+
+
+
+
+
+    out.displayName = hub.id;
+
+    out.hubWorldPositionMeters = frame->originMeters;
+
+    out.hubWorldVelocityMps = frame->velocityMetersPerSecond;
 
     // Hub local convention:
     // X = prograde

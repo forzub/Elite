@@ -234,8 +234,19 @@ add_executable(EliteGame
     src/world/celestial/visual/CelestialVisualLibrary.cpp
     src/world/celestial/visual/CelestialTextureBaker.cpp
     src/world/celestial/visual/CelestialGeneratedAssetLibrary.cpp
+    src/world/celestial/visual/CelestialEnvironmentProfile.cpp
 
     src/render/celestial/CelestialShapeMesh.cpp
+    src/render/celestial/ProceduralCloudLayer.cpp
+    src/render/celestial/HubSphericalGridRenderer.cpp
+
+    src/render/celestial/clouds/HubBackdropCloudRenderer.cpp
+
+    src/render/celestial/clouds/PlanetaryWeatherMapGenerator.cpp
+    src/render/celestial/clouds/CloudAppearanceTextureGenerator.cpp
+
+    src/render/celestial/HubPlanetSurfaceRenderer.cpp
+    src/render/celestial/rings/PlanetRingRenderer.cpp
 )
 
 
@@ -251,32 +262,93 @@ set(ELITE_RUNTIME_ASSETS_DIR
     "${CMAKE_BINARY_DIR}/assets"
 )
 
-add_custom_target(copy_assets ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory
-            "${ELITE_RUNTIME_ASSETS_DIR}"
+function(elite_copy_asset_tree TARGET_NAME SOURCE_DIR DEST_DIR)
+    if(NOT EXISTS "${SOURCE_DIR}")
+        add_custom_target(${TARGET_NAME})
+        return()
+    endif()
 
-    # Lightweight bundled assets: shaders, data, small configs.
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-            "${ELITE_STATIC_ASSETS_DIR}"
-            "${ELITE_RUNTIME_ASSETS_DIR}"
+    file(
+        GLOB_RECURSE ASSET_FILES
+        CONFIGURE_DEPENDS
+        "${SOURCE_DIR}/*"
+    )
 
-    COMMENT "Copying bundled assets to build/assets"
+    set(COPIED_ASSET_FILES)
+
+    foreach(ASSET_FILE IN LISTS ASSET_FILES)
+        if(IS_DIRECTORY "${ASSET_FILE}")
+            continue()
+        endif()
+
+        file(
+            RELATIVE_PATH RELATIVE_ASSET_PATH
+            "${SOURCE_DIR}"
+            "${ASSET_FILE}"
+        )
+
+        set(OUTPUT_ASSET_FILE
+            "${DEST_DIR}/${RELATIVE_ASSET_PATH}"
+        )
+
+        get_filename_component(
+            OUTPUT_ASSET_DIR
+            "${OUTPUT_ASSET_FILE}"
+            DIRECTORY
+        )
+
+        add_custom_command(
+            OUTPUT "${OUTPUT_ASSET_FILE}"
+
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+                    "${OUTPUT_ASSET_DIR}"
+
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${ASSET_FILE}"
+                    "${OUTPUT_ASSET_FILE}"
+
+            DEPENDS "${ASSET_FILE}"
+
+            COMMENT "Copying asset: ${RELATIVE_ASSET_PATH}"
+
+            VERBATIM
+        )
+
+        list(
+            APPEND COPIED_ASSET_FILES
+            "${OUTPUT_ASSET_FILE}"
+        )
+    endforeach()
+
+    add_custom_target(
+        ${TARGET_NAME}
+        DEPENDS ${COPIED_ASSET_FILES}
+    )
+endfunction()
+
+elite_copy_asset_tree(
+    copy_static_assets
+    "${ELITE_STATIC_ASSETS_DIR}"
+    "${ELITE_RUNTIME_ASSETS_DIR}"
 )
 
-if(EXISTS "${ELITE_EXTERNAL_ASSETS_DIR}")
-    add_custom_command(
-        TARGET copy_assets
-        POST_BUILD
+elite_copy_asset_tree(
+    copy_external_assets
+    "${ELITE_EXTERNAL_ASSETS_DIR}"
+    "${ELITE_RUNTIME_ASSETS_DIR}"
+)
 
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${ELITE_EXTERNAL_ASSETS_DIR}"
-                "${ELITE_RUNTIME_ASSETS_DIR}"
+add_custom_target(
+    copy_assets ALL
+    DEPENDS
+        copy_static_assets
+        copy_external_assets
+)
 
-        COMMENT "Copying external assets to build/assets"
-    )
-endif()
-
-add_dependencies(EliteGame copy_assets)
+add_dependencies(
+    EliteGame
+    copy_assets
+)
 
 
 

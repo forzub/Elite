@@ -1,0 +1,266 @@
+{
+  "schema": "elite.celestial.environment_preset.v2",
+  "preset_id": "gas_giant_ammonia",
+  "classification": "hydrogen helium gas giant with ammonia clouds",
+  "data_quality": "generic_physical_model",
+  "notes": "Default for Jupiter/Saturn-class worlds; individual jet speeds should override this preset.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "hydrogen_helium_ammonia",
+    "physical": {
+      "surface_pressure_pa": 100000,
+      "scale_height_km": 27,
+      "outer_height_km": 1500
+    },
+    "visual_intensity": 1.0,
+    "radius_scale": 1.06,
+    "haze": {
+      "center_strength": 0.08,
+      "limb_strength": 0.78,
+      "contrast_loss": 0.62,
+      "desaturation": 0.42,
+      "distortion_strength": 0.03
+    },
+    "colors": {
+      "surface_haze": [
+        0.5,
+        0.49,
+        0.47,
+        0.16
+      ],
+      "limb_core": [
+        0.72,
+        0.7,
+        0.66,
+        0.22
+      ],
+      "near_atmosphere": [
+        0.48,
+        0.46,
+        0.43,
+        0.14
+      ],
+      "outer_atmosphere": [
+        0.28,
+        0.27,
+        0.26,
+        0.07
+      ]
+    }
+  },
+  "clouds": {
+    "enabled": true,
+    "pattern": "banded",
+    "global_coverage": 1.0,
+    "appearance": {
+      "base_color": [
+        0.74,
+        0.72,
+        0.68
+      ],
+      "shadow_color": [
+        0.26,
+        0.25,
+        0.24
+      ],
+      "saturation": 0.04,
+      "contrast": 1.1
+    },
+    "layers": [
+      {
+        "id": "ammonia",
+        "type": "ammonia_ice",
+        "base_height_km": 0,
+        "top_height_km": 40,
+        "coverage": 1.0,
+        "density": 1.0,
+        "opacity": 1.0,
+        "particle_scale": 1,
+        "wind": {
+          "speed_range_mps": [
+            20,
+            160
+          ],
+          "predominant_direction_deg": 90,
+          "data_status": "generic_range"
+        },
+        "render_role": "primary_opaque_deck",
+        "appearance": {
+          "base_color": [
+            0.86,
+            0.72,
+            0.55
+          ],
+          "shadow_color": [
+            0.42,
+            0.29,
+            0.2
+          ],
+          "opacity_scale": 1.0
+        }
+      },
+      {
+        "id": "ammonium_hydrosulfide",
+        "type": "ammonium_hydrosulfide",
+        "base_height_km": 40,
+        "top_height_km": 90,
+        "coverage": 0.72,
+        "density": 0.72,
+        "opacity": 0.38,
+        "particle_scale": 0.8,
+        "wind": {
+          "speed_range_mps": [
+            20,
+            180
+          ],
+          "predominant_direction_deg": 270,
+          "data_status": "generic_range"
+        },
+        "render_role": "dynamic_belt_overlay",
+        "appearance": {
+          "base_color": [
+            0.72,
+            0.48,
+            0.32
+          ],
+          "shadow_color": [
+            0.32,
+            0.18,
+            0.12
+          ],
+          "opacity_scale": 1.0
+        }
+      },
+      {
+        "id": "water",
+        "type": "water",
+        "base_height_km": 90,
+        "top_height_km": 180,
+        "coverage": 0.42,
+        "density": 0.54,
+        "opacity": 0.3,
+        "particle_scale": 0.6,
+        "wind": {
+          "speed_range_mps": [
+            10,
+            140
+          ],
+          "predominant_direction_deg": 90,
+          "data_status": "generic_range"
+        },
+        "render_role": "high_cloud_overlay",
+        "appearance": {
+          "base_color": [
+            0.96,
+            0.91,
+            0.82
+          ],
+          "shadow_color": [
+            0.55,
+            0.48,
+            0.4
+          ],
+          "opacity_scale": 1.0
+        }
+      }
+    ],
+    "circulation": {
+      "model": "latitude_bands",
+      "zones": [
+        {
+          "id": "equatorial_jet",
+          "latitude_center_deg": 0,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.08,
+          "density_multiplier": 1.05,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "drift_speed_multiplier": 1.35
+        },
+        {
+          "id": "north_temperate_jets",
+          "latitude_center_deg": 28,
+          "half_width_deg": 20,
+          "coverage_multiplier": 1,
+          "density_multiplier": 1,
+          "fragmentation": 0.42,
+          "zonal_stretch": 2.4,
+          "drift_speed_multiplier": 1.25
+        },
+        {
+          "id": "south_temperate_jets",
+          "latitude_center_deg": -28,
+          "half_width_deg": 20,
+          "coverage_multiplier": 1,
+          "density_multiplier": 1,
+          "fragmentation": 0.42,
+          "zonal_stretch": 2.4,
+          "drift_speed_multiplier": 1.25
+        },
+        {
+          "id": "north_polar",
+          "latitude_center_deg": 68,
+          "half_width_deg": 22,
+          "coverage_multiplier": 0.92,
+          "density_multiplier": 0.95,
+          "fragmentation": 0.5,
+          "zonal_stretch": 1.6,
+          "drift_speed_multiplier": 1
+        },
+        {
+          "id": "south_polar",
+          "latitude_center_deg": -68,
+          "half_width_deg": 22,
+          "coverage_multiplier": 0.92,
+          "density_multiplier": 0.95,
+          "fragmentation": 0.5,
+          "zonal_stretch": 1.6,
+          "drift_speed_multiplier": 1
+        }
+      ]
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 7207,
+      "weather_scale": 3.5,
+      "mass_scale": 9,
+      "erosion_scale": 20,
+      "detail_scale": 54,
+      "domain_warp_strength": 0.045,
+      "billow_strength": 0.72,
+      "worley_erosion_strength": 0.25,
+      "edge_fragment_strength": 0.34,
+      "edge_fragment_scale": 48,
+      "detached_fragment_probability": 0.16,
+      "soft_edge_width": 0.12
+    }
+  },
+  "rendering": {
+    "visual_class": "gas_giant",
+    "surface_visibility": "hidden",
+    "load_surface_textures": false,
+    "base_render_mode": "procedural_primary_cloud_deck",
+    "primary_layer_id": "ammonia",
+    "primary_layer_must_cover_surface": true,
+    "primary_layer_opacity_floor": 0.995,
+    "overlay_layer_ids": [
+      "ammonium_hydrosulfide",
+      "water"
+    ],
+    "maximum_dynamic_overlay_layers": 2,
+    "map_generation_resolution": [
+      1024,
+      512
+    ],
+    "game_generation_resolution": [
+      512,
+      256
+    ],
+    "game_update_policy": {
+      "primary_layer": "cached_and_time_blended",
+      "overlay_layers": "time_sliced_one_generation_per_frame",
+      "far_lod": "single_cached_primary_layer",
+      "offscreen": "do_not_update"
+    }
+  }
+}

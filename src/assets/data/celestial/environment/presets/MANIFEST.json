@@ -1,0 +1,23 @@
+{
+  "schema": "elite.celestial.environment_preset_manifest.v1",
+  "presets": [
+    "airless_icy",
+    "airless_rocky",
+    "airless_volcanic",
+    "cold_co2_world",
+    "desert_thin_atmosphere",
+    "gas_giant_ammonia",
+    "ice_giant_methane",
+    "lava_world",
+    "methane_haze_world",
+    "ocean_world",
+    "terrestrial_temperate",
+    "thin_nitrogen_ice_world",
+    "venusian_dense"
+  ],
+  "fallback_rules": {
+    "environment_preset_id": "explicit field in body_visual JSON",
+    "legacy_fallback": "preset_id",
+    "missing_preset": "disable atmosphere and clouds"
+  }
+}

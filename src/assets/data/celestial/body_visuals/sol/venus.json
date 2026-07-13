@@ -1,5 +1,6 @@
 {
   "preset_id": "venusian",
+  "environment_preset_id": "venusian_dense",
   "system_folder_name": "sol",
   "body_folder_name": "venus",
   "display_name": "Venus",

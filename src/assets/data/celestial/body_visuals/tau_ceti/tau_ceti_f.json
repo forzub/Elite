@@ -1,5 +1,6 @@
 {
   "preset_id": "desert_world",
+  "environment_preset_id": "desert_thin_atmosphere",
   "system_folder_name": "tau_ceti",
   "body_folder_name": "tau_ceti_f",
   "display_name": "Tau Ceti f",
@@ -8,7 +9,7 @@
   "surface_source_kind": "ProceduralGeneric",
   "notes": "Existing catalog body from Tau Ceti. Procedural dry world visual test with stronger ridges, basins and relief.",
   "has_atmosphere": true,
-  "has_cloud_layer": false,
+  "has_cloud_layer": true,
   "has_emission": false,
   "surface": {
     "seed": 8003,

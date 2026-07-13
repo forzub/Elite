@@ -1,5 +1,6 @@
 {
   "preset_id": "rocky_ice",
+  "environment_preset_id": "methane_haze_world",
   "system_folder_name": "sol",
   "body_folder_name": "titan",
   "display_name": "Titan",

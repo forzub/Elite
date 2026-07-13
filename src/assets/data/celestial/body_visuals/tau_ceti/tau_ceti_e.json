@@ -1,5 +1,6 @@
 {
   "preset_id": "ocean_world",
+  "environment_preset_id": "ocean_world",
   "system_folder_name": "tau_ceti",
   "body_folder_name": "tau_ceti_e",
   "display_name": "Tau Ceti e",
@@ -8,7 +9,7 @@
   "surface_source_kind": "ProceduralGeneric",
   "notes": "Existing catalog body from Tau Ceti. Procedural ocean-world visual test with stronger continents and relief.",
   "has_atmosphere": true,
-  "has_cloud_layer": false,
+  "has_cloud_layer": true,
   "has_emission": false,
   "surface": {
     "seed": 8001,

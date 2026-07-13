@@ -105,6 +105,45 @@ void InitShaders()
     );
 
 
+
+    shaders.load(
+        "celestial_cloud_texture_generate",
+        "assets/shaders/celestial/cloud_texture_generate.vert",
+        "assets/shaders/celestial/cloud_texture_generate.frag",
+        ShaderProgram::Unknown
+    );
+
+    shaders.load(
+        "celestial_cloud_texture_blend",
+        "assets/shaders/celestial/cloud_texture_blend.vert",
+        "assets/shaders/celestial/cloud_texture_blend.frag",
+        ShaderProgram::Unknown
+    );
+
+
+    shaders.load(
+        "hub_planet_atmosphere",
+        "assets/shaders/celestial/hub_planet_atmosphere.vert",
+        "assets/shaders/celestial/hub_planet_atmosphere.frag",
+        ShaderProgram::Unknown
+    );
+
+
+    shaders.load(
+        "hub_planet_surface",
+        "assets/shaders/celestial/hub_planet_surface.vert",
+        "assets/shaders/celestial/hub_planet_surface.frag",
+        ShaderProgram::Unknown
+    );
+
+    shaders.load(
+        "planet_rings",
+        "assets/shaders/celestial/planet_rings.vert",
+        "assets/shaders/celestial/planet_rings.frag",
+        ShaderProgram::Unknown
+    );
+
+
     shaders.load(
         "galaxy_haze",
         "assets/shaders/starfield/galaxy_haze.vert",

@@ -43,6 +43,7 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
         state.name = body.name;
         state.type = body.type;
         state.parentId = body.parentId;
+        state.environmentPresetId = body.environmentPresetId;
         state.radiusKm = body.radiusKm;
 
         state.dayLengthHours =

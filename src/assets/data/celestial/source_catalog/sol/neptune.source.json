@@ -6,17 +6,17 @@
   "body_shape": "sphere",
   "projection": "equirectangular",
   "required_assets": {
-    "albedo": "src/assets/source/celestial/sol/neptune/albedo_source.*"
+    "albedo": "assets/source/celestial/sol/neptune/albedo_source.*"
   },
   "optional_assets": {
-    "clouds": "src/assets/source/celestial/sol/neptune/clouds_source.*"
+    "clouds": "assets/source/celestial/sol/neptune/clouds_source.*"
   },
   "derived_outputs": {
-    "albedo": "src/assets/generated/celestial/sol/neptune/albedo.tga",
-    "normal": "src/assets/generated/celestial/sol/neptune/normal.tga",
-    "material": "src/assets/generated/celestial/sol/neptune/material.tga",
-    "clouds": "src/assets/generated/celestial/sol/neptune/clouds.tga",
-    "preview": "src/assets/generated/celestial/sol/neptune/preview.tga",
-    "meta": "src/assets/generated/celestial/sol/neptune/meta.json"
+    "albedo": "assets/generated/celestial/sol/neptune/albedo.tga",
+    "normal": "assets/generated/celestial/sol/neptune/normal.tga",
+    "material": "assets/generated/celestial/sol/neptune/material.tga",
+    "clouds": "assets/generated/celestial/sol/neptune/clouds.tga",
+    "preview": "assets/generated/celestial/sol/neptune/preview.tga",
+    "meta": "assets/generated/celestial/sol/neptune/meta.json"
   }
 }

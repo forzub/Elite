@@ -1,0 +1,448 @@
+{
+  "schema": "elite.celestial.environment.v2",
+  "system_folder_name": "sol",
+  "body_folder_name": "neptune",
+  "display_name": "Neptune",
+  "authoring_note": "Source-of-truth environment profile. Do not place manual copies in build/assets/generated.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "methane_deep_blue_stormy",
+    "visual_intensity": 0.95,
+    "radius_scale": 1.016,
+    "horizon_fade_start": 0.025,
+    "horizon_fade_end": 0.34,
+    "colors": {
+      "surface_haze": [
+        0.28,
+        0.48,
+        1.0,
+        0.18
+      ],
+      "limb_core": [
+        0.58,
+        0.76,
+        1.0,
+        0.16
+      ],
+      "near_atmosphere": [
+        0.14,
+        0.34,
+        0.88,
+        0.14
+      ],
+      "outer_atmosphere": [
+        0.04,
+        0.12,
+        0.48,
+        0.085
+      ]
+    },
+    "physical": {
+      "reference_pressure_pa": 100000.0,
+      "scale_height_km": 19.7,
+      "outer_height_km": 800,
+      "bulk_composition": [
+        {
+          "species": "H2",
+          "fraction": 0.8
+        },
+        {
+          "species": "He",
+          "fraction": 0.19
+        },
+        {
+          "species": "CH4",
+          "fraction": 0.015
+        }
+      ]
+    },
+    "haze": {
+      "center_strength": 0.08,
+      "limb_strength": 0.68,
+      "contrast_loss": 0.52,
+      "desaturation": 0.32,
+      "distortion_strength": 0.03,
+      "limb_power": 2.4,
+      "colors": {
+        "surface_haze": [
+          0.28,
+          0.48,
+          1.0,
+          0.18
+        ],
+        "limb_core": [
+          0.58,
+          0.76,
+          1.0,
+          0.16
+        ],
+        "near_atmosphere": [
+          0.14,
+          0.34,
+          0.88,
+          0.14
+        ],
+        "outer_atmosphere": [
+          0.04,
+          0.12,
+          0.48,
+          0.085
+        ]
+      }
+    }
+  },
+  "clouds": {
+    "enabled": true,
+    "pattern": "banded",
+    "seed_policy": "random_on_map_open",
+    "seed_base": 8119,
+    "coverage_threshold": 0.48,
+    "density": 0.76,
+    "opacity": 0.22,
+    "edge_sharpness": 0.2,
+    "detail_strength": 0.28,
+    "macro_scale": 1.2,
+    "cell_scale": 8.0,
+    "detail_scale": 28.0,
+    "wind": {
+      "longitude_drift_speed": 0.01,
+      "latitudinal_drift_speed": 0.0,
+      "shear": 0.35
+    },
+    "animation": {
+      "weather_change_speed": 0.75,
+      "weather_cycle_seconds": 520.0,
+      "density_variation": 0.22
+    },
+    "colors": {
+      "cloud": [
+        0.68,
+        0.86,
+        1.0
+      ],
+      "shadow": [
+        0.24,
+        0.36,
+        0.7
+      ]
+    },
+    "cyclones": {
+      "enabled": false,
+      "probability": 0.0,
+      "strength": 0.0,
+      "notes": "Disabled until vortex is integrated into the procedural cloud texture rather than drawn as a separate screen-space patch."
+    },
+    "notes": "Methane atmosphere with brighter storm streaks; approximate with broken fields.",
+    "global_coverage": 1.0,
+    "appearance": {
+      "base_color": [
+        0.68,
+        0.86,
+        1.0
+      ],
+      "shadow_color": [
+        0.24,
+        0.36,
+        0.7
+      ],
+      "saturation": 0.1,
+      "contrast": 1.02
+    },
+    "layers": [
+      {
+        "id": "deep_water_ammonia",
+        "type": "water_ammonia",
+        "base_height_km": 70,
+        "top_height_km": 160,
+        "coverage": 1.0,
+        "density": 1.0,
+        "opacity": 1.0,
+        "particle_scale": 0.3333333333333333,
+        "wind": {
+          "speed_range_mps": [
+            44.99999999999999,
+            600.0
+          ],
+          "predominant_direction_deg": 90,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "measured_or_model_range"
+        },
+        "notes": "",
+        "render_role": "primary_opaque_deck",
+        "appearance": {
+          "base_color": [
+            0.1,
+            0.3,
+            0.72
+          ],
+          "shadow_color": [
+            0.03,
+            0.1,
+            0.34
+          ],
+          "opacity_scale": 1.0
+        }
+      },
+      {
+        "id": "middle_hydrogen_sulfide",
+        "type": "hydrogen_sulfide",
+        "base_height_km": 25,
+        "top_height_km": 70,
+        "coverage": 0.48,
+        "density": 0.58,
+        "opacity": 0.3,
+        "particle_scale": 0.5,
+        "wind": {
+          "speed_range_mps": [
+            37.5,
+            510.0
+          ],
+          "predominant_direction_deg": 90,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "measured_or_model_range"
+        },
+        "notes": "",
+        "render_role": "dark_blue_band_overlay",
+        "appearance": {
+          "base_color": [
+            0.16,
+            0.42,
+            0.88
+          ],
+          "shadow_color": [
+            0.04,
+            0.16,
+            0.48
+          ],
+          "opacity_scale": 1.0
+        }
+      },
+      {
+        "id": "upper_methane",
+        "type": "methane_ice",
+        "base_height_km": 0,
+        "top_height_km": 25,
+        "coverage": 0.2,
+        "density": 0.52,
+        "opacity": 0.34,
+        "particle_scale": 1.0,
+        "wind": {
+          "speed_range_mps": [
+            30.0,
+            420.0
+          ],
+          "predominant_direction_deg": 90,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "measured_or_model_range"
+        },
+        "notes": "",
+        "render_role": "bright_storm_overlay",
+        "appearance": {
+          "base_color": [
+            0.84,
+            0.94,
+            1.0
+          ],
+          "shadow_color": [
+            0.34,
+            0.56,
+            0.82
+          ],
+          "opacity_scale": 1.0
+        }
+      }
+    ],
+    "circulation": {
+      "model": "alternating_zonal_jets",
+      "zones": [
+        {
+          "id": "jet_-75",
+          "latitude_center_deg": -75,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 270,
+          "notes": "Alternating zonal jet band."
+        },
+        {
+          "id": "jet_-60",
+          "latitude_center_deg": -60,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 90,
+          "notes": "Alternating zonal jet band."
+        },
+        {
+          "id": "jet_-45",
+          "latitude_center_deg": -45,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 270,
+          "notes": "Alternating zonal jet band."
+        },
+        {
+          "id": "jet_-30",
+          "latitude_center_deg": -30,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 90,
+          "notes": "Alternating zonal jet band."
+        },
+        {
+          "id": "jet_-15",
+          "latitude_center_deg": -15,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 270,
+          "notes": "Alternating zonal jet band."
+        },
+        {
+          "id": "jet_+0",
+          "latitude_center_deg": 0,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 90,
+          "notes": "Alternating zonal jet band."
+        },
+        {
+          "id": "jet_+15",
+          "latitude_center_deg": 15,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 270,
+          "notes": "Alternating zonal jet band."
+        },
+        {
+          "id": "jet_+30",
+          "latitude_center_deg": 30,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 90,
+          "notes": "Alternating zonal jet band."
+        },
+        {
+          "id": "jet_+45",
+          "latitude_center_deg": 45,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 270,
+          "notes": "Alternating zonal jet band."
+        },
+        {
+          "id": "jet_+60",
+          "latitude_center_deg": 60,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 90,
+          "notes": "Alternating zonal jet band."
+        },
+        {
+          "id": "jet_+75",
+          "latitude_center_deg": 75,
+          "half_width_deg": 8,
+          "coverage_multiplier": 1.0,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.35,
+          "zonal_stretch": 2.2,
+          "wind_speed_multiplier": 1.0,
+          "predominant_direction_deg": 270,
+          "notes": "Alternating zonal jet band."
+        }
+      ]
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 1337,
+      "weather_scale": 5,
+      "mass_scale": 10,
+      "erosion_scale": 22,
+      "detail_scale": 56,
+      "domain_warp_strength": 0.045,
+      "billow_strength": 0.72,
+      "worley_erosion_strength": 0.3,
+      "edge_fragment_strength": 0.28,
+      "edge_fragment_scale": 48,
+      "detached_fragment_probability": 0.16,
+      "soft_edge_width": 0.12
+    },
+    "source_motion_is_physical": true,
+    "runtime_speed_multiplier_not_stored_here": true
+  },
+  "data_quality": "measured_with_simplified_vertical_model",
+  "provenance": {
+    "sources": [
+      "nasa_neptune"
+    ],
+    "notes": "Heights are renderer-relative above the reference cloud level, not solid-surface altitudes."
+  },
+  "rendering": {
+    "visual_class": "ice_giant",
+    "surface_visibility": "hidden",
+    "load_surface_textures": false,
+    "base_render_mode": "procedural_primary_cloud_deck",
+    "primary_layer_id": "deep_water_ammonia",
+    "primary_layer_must_cover_surface": true,
+    "primary_layer_opacity_floor": 0.999,
+    "overlay_layer_ids": [
+      "middle_hydrogen_sulfide",
+      "upper_methane"
+    ],
+    "maximum_dynamic_overlay_layers": 2,
+    "map_generation_resolution": [
+      1536,
+      768
+    ],
+    "game_generation_resolution": [
+      512,
+      256
+    ],
+    "game_update_policy": {
+      "primary_layer": "cached_and_time_blended",
+      "overlay_layers": "time_sliced_one_generation_per_frame",
+      "far_lod": "single_cached_primary_layer",
+      "offscreen": "do_not_update"
+    }
+  }
+}

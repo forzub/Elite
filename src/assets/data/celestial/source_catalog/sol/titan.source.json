@@ -6,18 +6,18 @@
   "body_shape": "sphere",
   "projection": "equirectangular",
   "required_assets": {
-    "albedo": "src/assets/source/celestial/sol/titan/albedo_source.*"
+    "albedo": "assets/source/celestial/sol/titan/albedo_source.*"
   },
   "optional_assets": {
-    "height": "src/assets/source/celestial/sol/titan/height_source.*",
-    "clouds": "src/assets/source/celestial/sol/titan/clouds_source.*"
+    "height": "assets/source/celestial/sol/titan/height_source.*",
+    "clouds": "assets/source/celestial/sol/titan/clouds_source.*"
   },
   "derived_outputs": {
-    "albedo": "src/assets/generated/celestial/sol/titan/albedo.tga",
-    "normal": "src/assets/generated/celestial/sol/titan/normal.tga",
-    "material": "src/assets/generated/celestial/sol/titan/material.tga",
-    "clouds": "src/assets/generated/celestial/sol/titan/clouds.tga",
-    "preview": "src/assets/generated/celestial/sol/titan/preview.tga",
-    "meta": "src/assets/generated/celestial/sol/titan/meta.json"
+    "albedo": "assets/generated/celestial/sol/titan/albedo.tga",
+    "normal": "assets/generated/celestial/sol/titan/normal.tga",
+    "material": "assets/generated/celestial/sol/titan/material.tga",
+    "clouds": "assets/generated/celestial/sol/titan/clouds.tga",
+    "preview": "assets/generated/celestial/sol/titan/preview.tga",
+    "meta": "assets/generated/celestial/sol/titan/meta.json"
   }
 }

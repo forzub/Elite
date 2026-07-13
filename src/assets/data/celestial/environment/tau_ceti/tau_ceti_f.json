@@ -1,0 +1,256 @@
+{
+  "schema": "elite.celestial.environment.v2",
+  "system_folder_name": "tau_ceti",
+  "body_folder_name": "tau_ceti_f",
+  "display_name": "Tau Ceti f",
+  "authoring_note": "Source-of-truth environment profile. Do not place manual copies in build/assets/generated.",
+  "atmosphere": {
+    "enabled": true,
+    "kind": "fictional_dry_co2_dust",
+    "visual_intensity": 0.46,
+    "radius_scale": 1.011,
+    "horizon_fade_start": 0.025,
+    "horizon_fade_end": 0.34,
+    "colors": {
+      "surface_haze": [
+        1.0,
+        0.54,
+        0.28,
+        0.12
+      ],
+      "limb_core": [
+        1.0,
+        0.74,
+        0.48,
+        0.1
+      ],
+      "near_atmosphere": [
+        0.9,
+        0.42,
+        0.2,
+        0.075
+      ],
+      "outer_atmosphere": [
+        0.55,
+        0.2,
+        0.12,
+        0.04
+      ]
+    },
+    "physical": {
+      "surface_pressure_pa": 18000,
+      "scale_height_km": 12,
+      "outer_height_km": 130,
+      "bulk_composition": [
+        {
+          "species": "CO2",
+          "fraction": 0.88
+        },
+        {
+          "species": "N2",
+          "fraction": 0.1
+        }
+      ]
+    },
+    "haze": {
+      "center_strength": 0.04,
+      "limb_strength": 0.48,
+      "contrast_loss": 0.48,
+      "desaturation": 0.34,
+      "distortion_strength": 0.025,
+      "limb_power": 2.7,
+      "colors": {
+        "surface_haze": [
+          1.0,
+          0.54,
+          0.28,
+          0.12
+        ],
+        "limb_core": [
+          1.0,
+          0.74,
+          0.48,
+          0.1
+        ],
+        "near_atmosphere": [
+          0.9,
+          0.42,
+          0.2,
+          0.075
+        ],
+        "outer_atmosphere": [
+          0.55,
+          0.2,
+          0.12,
+          0.04
+        ]
+      }
+    }
+  },
+  "clouds": {
+    "enabled": true,
+    "pattern": "scattered_cumulus",
+    "seed_policy": "random_on_map_open",
+    "seed_base": 88003,
+    "coverage_threshold": 0.72,
+    "density": 0.36,
+    "opacity": 0.1,
+    "edge_sharpness": 0.24,
+    "detail_strength": 0.22,
+    "macro_scale": 1.4,
+    "cell_scale": 6.5,
+    "detail_scale": 22.0,
+    "wind": {
+      "longitude_drift_speed": 0.0065,
+      "latitudinal_drift_speed": 0.0,
+      "shear": 0.1
+    },
+    "animation": {
+      "weather_change_speed": 0.9,
+      "weather_cycle_seconds": 480.0,
+      "density_variation": 0.25
+    },
+    "colors": {
+      "cloud": [
+        1.0,
+        0.76,
+        0.56
+      ],
+      "shadow": [
+        0.58,
+        0.34,
+        0.22
+      ]
+    },
+    "cyclones": {
+      "enabled": false,
+      "probability": 0.0,
+      "strength": 0.0,
+      "notes": "Disabled until vortex is integrated into the procedural cloud texture rather than drawn as a separate screen-space patch."
+    },
+    "notes": "Fictional cold/dry world; thin dusty atmosphere and sparse clouds/haze.",
+    "global_coverage": 0.18,
+    "appearance": {
+      "base_color": [
+        1.0,
+        0.76,
+        0.56
+      ],
+      "shadow_color": [
+        0.58,
+        0.34,
+        0.22
+      ],
+      "saturation": 0.05,
+      "contrast": 1.12
+    },
+    "layers": [
+      {
+        "id": "dust_haze",
+        "type": "mineral_dust",
+        "base_height_km": 0,
+        "top_height_km": 18,
+        "coverage": 0.22,
+        "density": 0.3,
+        "opacity": 0.16,
+        "particle_scale": 1.2,
+        "wind": {
+          "speed_range_mps": [
+            3,
+            25
+          ],
+          "predominant_direction_deg": 270,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "artistic_physical_assumption"
+        },
+        "notes": ""
+      },
+      {
+        "id": "high_ice",
+        "type": "water_ice",
+        "base_height_km": 12,
+        "top_height_km": 35,
+        "coverage": 0.07,
+        "density": 0.24,
+        "opacity": 0.13,
+        "particle_scale": 0.4,
+        "wind": {
+          "speed_range_mps": [
+            12,
+            50
+          ],
+          "predominant_direction_deg": 270,
+          "direction_convention": "0=north, 90=east, 180=south, 270=west",
+          "reference_frame": "planet_fixed",
+          "data_status": "artistic_physical_assumption"
+        },
+        "notes": ""
+      }
+    ],
+    "circulation": {
+      "model": "dry_seasonal_latitude_bands",
+      "zones": [
+        {
+          "id": "equatorial_dust",
+          "latitude_center_deg": 0,
+          "half_width_deg": 35,
+          "coverage_multiplier": 1.3,
+          "density_multiplier": 1.0,
+          "fragmentation": 0.72,
+          "zonal_stretch": 1.2,
+          "wind_speed_multiplier": 1.2,
+          "predominant_direction_deg": 270
+        },
+        {
+          "id": "north_polar_hood",
+          "latitude_center_deg": 75,
+          "half_width_deg": 15,
+          "coverage_multiplier": 1.4,
+          "density_multiplier": 0.8,
+          "fragmentation": 0.5,
+          "zonal_stretch": 0.8,
+          "wind_speed_multiplier": 0.8,
+          "predominant_direction_deg": 270
+        },
+        {
+          "id": "south_polar_hood",
+          "latitude_center_deg": -75,
+          "half_width_deg": 15,
+          "coverage_multiplier": 1.4,
+          "density_multiplier": 0.8,
+          "fragmentation": 0.5,
+          "zonal_stretch": 0.8,
+          "wind_speed_multiplier": 0.8,
+          "predominant_direction_deg": 270
+        }
+      ]
+    },
+    "generation": {
+      "seed_policy": "random_on_session",
+      "seed_base": 1337,
+      "weather_scale": 6,
+      "mass_scale": 14,
+      "erosion_scale": 28,
+      "detail_scale": 72,
+      "domain_warp_strength": 0.055,
+      "billow_strength": 0.78,
+      "worley_erosion_strength": 0.34,
+      "edge_fragment_strength": 0.52,
+      "edge_fragment_scale": 56,
+      "detached_fragment_probability": 0.28,
+      "soft_edge_width": 0.1
+    },
+    "source_motion_is_physical": true,
+    "runtime_speed_multiplier_not_stored_here": true
+  },
+  "data_quality": "artistic_assumption_atmosphere_unobserved",
+  "provenance": {
+    "sources": [
+      "tau_ceti_2017",
+      "tau_ceti_dynamite",
+      "tau_ceti_composition"
+    ],
+    "notes": "Tau Ceti f atmosphere and planetary status are uncertain; values are game-design assumptions for the project dry world."
+  }
+}

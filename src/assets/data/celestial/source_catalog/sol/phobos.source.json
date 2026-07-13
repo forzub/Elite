@@ -6,16 +6,16 @@
   "body_shape": "irregular_mesh",
   "projection": "mesh_uv",
   "required_assets": {
-    "mesh": "src/assets/source/celestial/sol/phobos/shape_model_source.*",
-    "albedo": "src/assets/source/celestial/sol/phobos/albedo_source.*"
+    "mesh": "assets/source/celestial/sol/phobos/shape_model_source.*",
+    "albedo": "assets/source/celestial/sol/phobos/albedo_source.*"
   },
   "optional_assets": {},
   "derived_outputs": {
-    "mesh": "src/assets/generated/celestial/sol/phobos/shape_model.obj",
-    "albedo": "src/assets/generated/celestial/sol/phobos/albedo.tga",
-    "normal": "src/assets/generated/celestial/sol/phobos/normal.tga",
-    "material": "src/assets/generated/celestial/sol/phobos/material.tga",
-    "preview": "src/assets/generated/celestial/sol/phobos/preview.tga",
-    "meta": "src/assets/generated/celestial/sol/phobos/meta.json"
+    "mesh": "assets/generated/celestial/sol/phobos/shape_model.obj",
+    "albedo": "assets/generated/celestial/sol/phobos/albedo.tga",
+    "normal": "assets/generated/celestial/sol/phobos/normal.tga",
+    "material": "assets/generated/celestial/sol/phobos/material.tga",
+    "preview": "assets/generated/celestial/sol/phobos/preview.tga",
+    "meta": "assets/generated/celestial/sol/phobos/meta.json"
   }
 }

@@ -1,5 +1,6 @@
 {
   "preset_id": "rocky_barren",
+  "environment_preset_id": "airless_rocky",
   "system_folder_name": "sol",
   "body_folder_name": "deimos",
   "display_name": "Deimos",

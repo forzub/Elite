@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 
 #include <nlohmann/json.hpp>
 
@@ -135,37 +136,612 @@ void readOrientationFields(
 
 
 
+void readEnvironmentFields(
+    const json& source,
+    CelestialBodyDefinition& body
+)
+{
+    body.environmentPresetId =
+        source.value(
+            "environment_preset_id",
+            ""
+        );
+}
 
+
+
+
+
+
+
+CelestialRingDisplayMode readRingDisplayMode(
+    const std::string& value
+)
+{
+    if (value == "particle_cloud")
+    {
+        return
+            CelestialRingDisplayMode::
+                ParticleCloud;
+    }
+
+    return
+        CelestialRingDisplayMode::
+            LayeredBands;
+}
+
+CelestialRingVisibilityClass
+readRingVisibilityClass(
+    const std::string& value
+)
+{
+    if (value == "main")
+    {
+        return
+            CelestialRingVisibilityClass::
+                Main;
+    }
+
+    if (value == "secondary")
+    {
+        return
+            CelestialRingVisibilityClass::
+                Secondary;
+    }
+
+    if (value == "diffuse")
+    {
+        return
+            CelestialRingVisibilityClass::
+                Diffuse;
+    }
+
+    return
+        CelestialRingVisibilityClass::
+            Faint;
+}
+
+glm::vec2 readRingVec2(
+    const json& object,
+    const std::string& key,
+    const glm::vec2& fallback
+)
+{
+    if (!object.is_object() ||
+        !object.contains(key))
+    {
+        return fallback;
+    }
+
+    const json& value =
+        object[key];
+
+    if (!value.is_array() ||
+        value.size() < 2 ||
+        !value[0].is_number() ||
+        !value[1].is_number())
+    {
+        return fallback;
+    }
+
+    return glm::vec2(
+        value[0].get<float>(),
+        value[1].get<float>()
+    );
+}
+
+
+
+
+
+
+
+
+glm::vec3 readRingTint(
+    const json& renderObject,
+    const glm::vec3& fallback
+)
+{
+    if (!renderObject.is_object() ||
+        !renderObject.contains("tint_rgb"))
+    {
+        return fallback;
+    }
+
+    const json& value =
+        renderObject["tint_rgb"];
+
+    if (!value.is_array() ||
+        value.size() < 3 ||
+        !value[0].is_number() ||
+        !value[1].is_number() ||
+        !value[2].is_number())
+    {
+        return fallback;
+    }
+
+    return glm::vec3(
+        value[0].get<float>(),
+        value[1].get<float>(),
+        value[2].get<float>()
+    );
+}
+
+CelestialRingDefinition readRingBand(
+    const json& source
+)
+{
+    CelestialRingDefinition ring;
+
+    ring.name =
+        source.value(
+            "name",
+            "Ring"
+        );
+
+    ring.composition =
+        source.value(
+            "composition",
+            ""
+        );
+
+    if (source.contains("distance_from_planet_km") &&
+        source["distance_from_planet_km"].is_object())
+    {
+        const json& distances =
+            source["distance_from_planet_km"];
+
+        ring.innerRadiusKm =
+            distances.value(
+                "inner",
+                0.0
+            );
+
+        ring.outerRadiusKm =
+            distances.value(
+                "outer",
+                0.0
+            );
+    }
+
+    const json render =
+        source.value(
+            "render",
+            json::object()
+        );
+
+    ring.render.tint =
+        readRingTint(
+            render,
+            ring.render.tint
+        );
+
+    ring.render.opacity =
+        std::clamp(
+            render.value(
+                "opacity",
+                ring.render.opacity
+            ),
+            0.0f,
+            1.0f
+        );
+
+    ring.render.opticalDepth =
+        std::max(
+            0.0f,
+            render.value(
+                "optical_depth",
+                ring.render.opticalDepth
+            )
+        );
+
+    ring.render.radialNoiseStrength =
+        std::clamp(
+            render.value(
+                "radial_noise_strength",
+                ring.render.radialNoiseStrength
+            ),
+            0.0f,
+            1.0f
+        );
+
+    ring.render.radialBrightnessVariation =
+        std::clamp(
+            render.value(
+                "radial_brightness_variation",
+                ring.render.radialBrightnessVariation
+            ),
+            0.0f,
+            1.0f
+        );
+
+    ring.render.azimuthalAsymmetry =
+        std::clamp(
+            render.value(
+                "azimuthal_asymmetry",
+                ring.render.azimuthalAsymmetry
+            ),
+            0.0f,
+            1.0f
+        );
+
+    ring.render.edgeSoftness =
+        std::clamp(
+            render.value(
+                "edge_softness",
+                ring.render.edgeSoftness
+            ),
+            0.001f,
+            0.49f
+        );
+
+
+
+
+
+        ring.render.visibilityClass =
+            readRingVisibilityClass(
+                render.value(
+                    "visibility_class",
+                    "faint"
+                )
+            );
+
+        ring.render.displayMode =
+            readRingDisplayMode(
+                render.value(
+                    "display_mode",
+                    "layered_band"
+                ) == "particle_cloud"
+                    ? "particle_cloud"
+                    : "layered_bands"
+            );
+
+        ring.render.visualOpacityScale =
+            std::max(
+                0.0f,
+                render.value(
+                    "visual_opacity_scale",
+                    1.0f
+                )
+            );
+
+        ring.render.radialStructureScale =
+            std::max(
+                0.0f,
+                render.value(
+                    "radial_structure_scale",
+                    1.0f
+                )
+            );
+
+        ring.render.particleDensityScale =
+            std::max(
+                0.0f,
+                render.value(
+                    "particle_density_scale",
+                    1.0f
+                )
+            );
+
+        ring.render.particleClumpiness =
+            std::clamp(
+                render.value(
+                    "particle_clumpiness",
+                    0.4f
+                ),
+                0.0f,
+                1.0f
+            );
+
+        ring.render.particleRadialJitter =
+            std::clamp(
+                render.value(
+                    "particle_radial_jitter",
+                    0.25f
+                ),
+                0.0f,
+                1.0f
+            );
+
+        ring.render.particleSizePxRange =
+            readRingVec2(
+                render,
+                "particle_size_px_range",
+                glm::vec2(
+                    0.5f,
+                    1.3f
+                )
+            );
+
+
+
+
+
+
+
+
+    ring.render.castsShadow =
+        render.value(
+            "casts_shadow",
+            ring.render.castsShadow
+        );
+
+    return ring;
+}
 
 void readRings(
     const json& src,
     CelestialBodyDefinition& body
 )
 {
-    if (!src.contains("rings") || !src["rings"].is_array())
-        return;
+    body.rings.clear();
 
-    for (const auto& r : src["rings"])
+    /*
+        Новый подробный формат имеет приоритет.
+    */
+    if (src.contains("ring_system") &&
+        src["ring_system"].is_object())
     {
-        if (!r.is_object())
-            continue;
+        const json& ringSystem =
+            src["ring_system"];
 
-        CelestialRingDefinition ring;
-        ring.name = r.value("name", "Ring");
-        ring.composition = r.value("composition", "");
+        const json visual =
+    ringSystem.value(
+        "visual",
+        json::object()
+    );
 
-        if (r.contains("distance_from_planet_km") &&
-            r["distance_from_planet_km"].is_object())
+        body.ringVisual.displayProfile =
+            visual.value(
+                "display_profile",
+                ""
+            );
+
+        body.ringVisual.renderMode =
+            readRingDisplayMode(
+                visual.value(
+                    "render_mode",
+                    "layered_bands"
+                )
+            );
+
+        body.ringVisual.recognizabilityPriority =
+            visual.value(
+                "recognizability_priority",
+                0.5f
+            );
+
+        body.ringVisual.artisticWidthScale =
+            visual.value(
+                "artistic_width_scale",
+                1.0f
+            );
+
+        body.ringVisual.mainBandEmphasis =
+            visual.value(
+                "main_band_emphasis",
+                1.0f
+            );
+
+        body.ringVisual.secondaryBandEmphasis =
+            visual.value(
+                "secondary_band_emphasis",
+                1.0f
+            );
+
+        body.ringVisual.faintBandEmphasis =
+            visual.value(
+                "faint_band_emphasis",
+                1.0f
+            );
+
+        body.ringVisual.diffuseBandEmphasis =
+            visual.value(
+                "diffuse_band_emphasis",
+                1.0f
+            );
+
+        body.ringVisual.gapContrast =
+            visual.value(
+                "gap_contrast",
+                1.0f
+            );
+
+        body.ringVisual.radialStructureStrength =
+            visual.value(
+                "radial_structure_strength",
+                0.0f
+            );
+
+        body.ringVisual.fineStructureStrength =
+            visual.value(
+                "fine_structure_strength",
+                0.0f
+            );
+
+        body.ringVisual.edgeSoftnessScale =
+            visual.value(
+                "edge_softness_scale",
+                1.0f
+            );
+
+        body.ringVisual.brightnessVariation =
+            visual.value(
+                "brightness_variation",
+                0.0f
+            );
+
+        body.ringVisual.minimumVisibleWidthPx =
+            visual.value(
+                "minimum_visible_width_px",
+                0.5f
+            );
+
+        body.ringVisual.minimumMainBandWidthPx =
+            visual.value(
+                "minimum_main_band_width_px",
+                1.0f
+            );
+
+        body.ringVisual.continuousFill =
+            visual.value(
+                "continuous_fill",
+                0.0f
+            );
+
+        body.ringVisual.particleDensity =
+            visual.value(
+                "particle_density",
+                0.3f
+            );
+
+        body.ringVisual.particleOpacityScale =
+            visual.value(
+                "particle_opacity_scale",
+                0.4f
+            );
+
+        body.ringVisual.particleSizePxRange =
+            readRingVec2(
+                visual,
+                "particle_size_px_range",
+                glm::vec2(
+                    0.5f,
+                    1.3f
+                )
+            );
+
+        body.ringVisual.radialJitter =
+            visual.value(
+                "radial_jitter",
+                0.25f
+            );
+
+        body.ringVisual.azimuthalClumping =
+            visual.value(
+                "azimuthal_clumping",
+                0.4f
+            );
+
+        body.ringVisual.clusterScale =
+            visual.value(
+                "cluster_scale",
+                0.7f
+            );
+
+        body.ringVisual.softness =
+            visual.value(
+                "softness",
+                0.65f
+            );
+
+        const json artisticOcclusion =
+            visual.value(
+                "artistic_occlusion",
+                json::object()
+            );
+
+        body.ringVisual.artisticOcclusionEnabled =
+            artisticOcclusion.value(
+                "enabled",
+                false
+            );
+
+        body.ringVisual.backHalfBrightness =
+            artisticOcclusion.value(
+                "back_half_brightness",
+                1.0f
+            );
+
+        body.ringVisual.innerEdgeDarkening =
+            artisticOcclusion.value(
+                "inner_edge_darkening",
+                0.0f
+            );
+
+        const json plane =
+            ringSystem.value(
+                "plane",
+                json::object()
+            );
+
+        body.ringPlaneMode =
+            plane.value(
+                "mode",
+                "planet_equatorial"
+            );
+
+        body.ringPlaneInclinationOffsetDeg =
+            plane.value(
+                "inclination_offset_deg",
+                0.0
+            );
+
+        if (ringSystem.contains("bands") &&
+            ringSystem["bands"].is_array())
         {
-            const auto& d = r["distance_from_planet_km"];
-            ring.innerRadiusKm = d.value("inner", 0.0);
-            ring.outerRadiusKm = d.value("outer", 0.0);
+            for (const json& sourceBand :
+                 ringSystem["bands"])
+            {
+                if (!sourceBand.is_object())
+                    continue;
+
+                CelestialRingDefinition ring =
+                    readRingBand(
+                        sourceBand
+                    );
+
+                if (ring.outerRadiusKm >
+                        ring.innerRadiusKm &&
+                    ring.outerRadiusKm > 0.0)
+                {
+                    body.rings.push_back(
+                        std::move(ring)
+                    );
+                }
+            }
         }
 
-        if (ring.outerRadiusKm > ring.innerRadiusKm && ring.outerRadiusKm > 0.0)
-            body.rings.push_back(std::move(ring));
+        /*
+            Если подробные bands успешно прочитаны,
+            старый общий объект rings игнорируем.
+        */
+        if (!body.rings.empty())
+            return;
+    }
+
+    /*
+        Legacy fallback.
+    */
+    if (!src.contains("rings") ||
+        !src["rings"].is_array())
+    {
+        return;
+    }
+
+    for (const json& sourceRing :
+         src["rings"])
+    {
+        if (!sourceRing.is_object())
+            continue;
+
+        CelestialRingDefinition ring =
+            readRingBand(
+                sourceRing
+            );
+
+        if (ring.outerRadiusKm >
+                ring.innerRadiusKm &&
+            ring.outerRadiusKm > 0.0)
+        {
+            body.rings.push_back(
+                std::move(ring)
+            );
+        }
     }
 }
+
 
 
 
@@ -214,6 +790,7 @@ void addMoonDefinitions(
         body.dayLengthHours = moon.value("day_length_hours", 0.0);
 
         readOrientationFields(moon, body);
+        readEnvironmentFields(moon, body);
         readAlternativeNames(moon, body);
 
         system.bodies.push_back(std::move(body));
@@ -254,6 +831,7 @@ void addPlanetDefinitions(
         body.dayLengthHours = planet.value("day_length_hours", 0.0);
 
         readOrientationFields(planet, body);
+        readEnvironmentFields(planet, body);
         readAlternativeNames(planet, body);
         readRings(planet, body);
 
@@ -464,5 +1042,34 @@ const CelestialSystemDefinition* StarAtlasDatabase::findSystem(int systemId) con
 
     return &it->second;
 }
+
+
+
+
+
+const StarSystemSummary*
+StarAtlasDatabase::findSystemSummary(
+    int systemId
+) const
+{
+    for (const auto& system :
+         m_systems)
+    {
+        if (system.id == systemId)
+            return &system;
+    }
+
+    return nullptr;
+}
+
+
+
+
+
+
+
+
+
+
 
 } // namespace world::celestial

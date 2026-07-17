@@ -240,12 +240,28 @@ struct PlanetMapOrbit
     std::string name;
     std::string parentBodyId;
 
+    /*
+        Абсолютные мировые координаты сервера.
+
+        Они должны относиться к одному и тому же universe time.
+    */
     glm::dvec3 centerMeters {0.0};
+    /*
+        Авторитетная абсолютная мировая позиция сервера.
+    */
     glm::dvec3 positionMeters {0.0};
+
+    /*
+        Авторитетная абсолютная мировая скорость сервера.
+    */
     glm::dvec3 velocityMps {0.0};
 
     double radiusMeters = 0.0;
     double altitudeMeters = 0.0;
+    /*
+        Скорость относительно родительской планеты,
+        а не абсолютная скорость в звёздной системе.
+    */
     double speedMps = 0.0;
 
     glm::dvec3 radialAxis {0.0};
@@ -282,6 +298,15 @@ struct PlanetMapSnapshot
     std::string environmentPresetId;
 
     glm::dvec3 planetCenterMeters {0.0};
+
+    /*
+        Абсолютная мировая скорость центра выбранной планеты.
+
+        Она нужна, чтобы преобразовывать мировые скорости объектов
+        в planet-relative velocities для стрелок и orbital axes.
+    */
+    glm::dvec3 planetVelocityMps {0.0};
+
 
     double planetRadiusMeters = 0.0;
     double gravitationalParameterM3s2 = 0.0;
@@ -361,6 +386,82 @@ struct HubMapSnapshot
     // Локальная система карты хаба:
     // X = prograde, Y = radial, Z = normal.
     PlanetMapAxisSet hubAxes;
+
+    /*
+        Текущая авторитетная мировая система хаба.
+
+            X = prograde;
+            Y = radial;
+            Z = normal.
+
+        Она получена непосредственно из серверного
+        HubNavigationFrame на kinematicTimeSeconds.
+
+        Renderer не имеет права самостоятельно продвигать
+        эти оси по орбите.
+    */
+    PlanetMapAxisSet hubWorldAxes;
+
+    /*
+        Universe time, которому одновременно соответствуют:
+
+            hubWorldPositionMeters;
+            hubWorldVelocityMps;
+            hubWorldAxes;
+            parentPlanetWorldPositionMeters;
+            parentPlanetRotationPhaseRad;
+            modules;
+            ships.
+    */
+    double kinematicTimeSeconds = 0.0;
+
+    /*
+        Текущая абсолютная мировая позиция центра
+        родительской планеты.
+    */
+    glm::dvec3 parentPlanetWorldPositionMeters {0.0};
+
+    /*
+        Текущая rotation phase родительской планеты,
+        полученная из CelestialSystemRuntime.
+
+        Hub Map использует то же значение, что и Details,
+        а не пересчитывает вращение отдельно.
+    */
+    double parentPlanetRotationPhaseRad = 0.0;
+
+        /*
+        Реальная мировая орбитальная система хаба
+        в момент построения snapshot:
+
+            X = prograde;
+            Y = radial — от центра планеты к хабу;
+            Z = normal.
+
+        hubAxes выше остаётся локальной единичной системой
+        карты. Эти поля нужны именно для ориентации
+        поверхности родительской планеты.
+    */
+    PlanetMapAxisSet hubWorldAxesAtEpoch;
+
+    /*
+        Universe time, которому соответствуют
+        hubWorldAxesAtEpoch.
+    */
+    double hubWorldAxesEpochSeconds = 0.0;
+
+    /*
+        Статические параметры ориентации родительской
+        планеты. По ним renderer вычисляет текущую
+        body-fixed систему без пересборки всего snapshot.
+    */
+    double parentPlanetDayLengthHours = 0.0;
+
+    double parentPlanetAxialTiltDeg = 0.0;
+    double parentPlanetAxisNodeDeg = 0.0;
+
+    double parentPlanetRotationOffsetDeg = 0.0;
+    double parentPlanetTextureLongitudeOffsetDeg = 0.0;
 
     // Родительская планета в локальных координатах хаба.
     // Для круговой орбиты хаб стоит в (0,0,0),

@@ -1180,13 +1180,28 @@ void SpaceState::renderUI()
 
 
         if (context().app &&
-        context().app->gameUiMode() == GameUiMode::SystemMap)
-    {
-        // System map is a full-screen tactical/navigation mode.
-        // Do not render cockpit/world cameras under it.
-        m_perfRenderUiMs = nowMs() - renderUiStartMs;
-        return;
-    }
+            context().app->gameUiMode() == GameUiMode::SystemMap)
+        {
+            /*
+                В режиме карты обычные игровые камеры не рендерятся.
+
+                Обнуляем их профайлеры, иначе debug panel показывает
+                значения от последнего кадра игрового режима.
+            */
+            m_perfMainRenderMs = 0.0;
+            m_perfRearCameraMs = 0.0;
+
+            m_perfMainStats.reset();
+            m_perfRearStats.reset();
+
+            m_activeMainCamera = nullptr;
+
+            m_perfRenderUiMs =
+                nowMs() -
+                renderUiStartMs;
+
+            return;
+        }
 
 
 
@@ -1483,39 +1498,118 @@ if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System)
     );
 }
 
-if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Planet)
+
+
+
+
+
+if (m_systemMapRenderer.mode() ==
+    SystemMapRenderer::Mode::Planet)
 {
     const int focusedId =
         m_systemMapRenderer.focusedSystemId() >= 0
             ? m_systemMapRenderer.focusedSystemId()
-            : m_server->playerNavigation().currentSystemId;
+            : m_server
+                ->playerNavigation()
+                .currentSystemId;
 
+    const std::string requestedPlanetBodyId =
+        m_loadedPlanetMapBodyId.empty()
+            ? std::string(
+                "system_0.Sol.Земля"
+            )
+            : m_loadedPlanetMapBodyId;
+
+    /*
+        Полный snapshot создаётся только при открытии другой
+        системы или другой планеты.
+    */
     requestPlanetMapSnapshot(
         focusedId,
-        m_loadedPlanetMapBodyId.empty()
-            ? std::string("system_0.Sol.Земля")
-            : m_loadedPlanetMapBodyId,
-        true
+        requestedPlanetBodyId,
+        false
     );
+
+    /*
+        Динамические элементы обновляются каждый кадр:
+
+            - universe time;
+            - текущий центр планеты;
+            - позиции и axes всех hubs;
+            - hub orbital frames;
+            - прикреплённые station modules.
+
+        Это значительно дешевле полного buildPlanetMapSnapshot().
+    */
+    if (m_hasPlanetMapSnapshot &&
+        m_loadedPlanetMapSystemId ==
+            focusedId &&
+        m_loadedPlanetMapBodyId ==
+            requestedPlanetBodyId)
+    {
+        m_server->refreshPlanetMapDynamicState(
+                m_planetMapSnapshot
+            );
+    }
 }
 
-if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Hub)
-{
- 
 
+
+
+
+if (m_systemMapRenderer.mode() ==
+    SystemMapRenderer::Mode::Hub)
+{
     const int focusedId =
         m_systemMapRenderer.focusedSystemId() >= 0
             ? m_systemMapRenderer.focusedSystemId()
             : m_server->playerNavigation().currentSystemId;
 
+    const std::string requestedHubId =
+        m_loadedHubMapHubId.empty()
+            ? std::string(
+                "earth_orbital_hub"
+            )
+            : m_loadedHubMapHubId;
+
+    /*
+        Полный snapshot строится только при смене
+        системы или хаба.
+    */
     requestHubMapSnapshot(
         focusedId,
-        m_loadedHubMapHubId.empty()
-            ? std::string("earth_orbital_hub")
-            : m_loadedHubMapHubId,
-        true
+        requestedHubId,
+        false
     );
+
+    
+    
+
+
+    /*
+        Текущий серверный kinematic state обновляется
+        перед каждым render Hub Map.
+
+        Renderer больше не симулирует орбиту самостоятельно.
+    */
+    if (m_hasHubMapSnapshot &&
+        m_loadedHubMapSystemId ==
+            focusedId &&
+        m_loadedHubMapHubId ==
+            requestedHubId)
+    {
+        m_server
+            ->refreshHubMapDynamicState(
+                m_hubMapSnapshot
+            );
 }
+
+
+
+
+}
+
+
 
 
 
@@ -2602,6 +2696,40 @@ void SpaceState::pushDebugControlState()
     payload["renderLargeObjects"] = dbg.renderLargeObjects;
     payload["renderCelestialBodies"] = dbg.renderCelestialBodies;
     payload["renderSystemMapObjects"] = dbg.renderSystemMapObjects;
+
+        /*
+        Cinematic post-process.
+    */
+    payload["postProcessEnabled"] =
+        dbg.postProcessEnabled;
+
+    payload["postBloomThreshold"] =
+        dbg.postBloomThreshold;
+
+    payload["postBloomKnee"] =
+        dbg.postBloomKnee;
+
+    payload["postBloomIntensity"] =
+        dbg.postBloomIntensity;
+
+    payload["postSoftening"] =
+        dbg.postSoftening;
+
+    payload["postSaturation"] =
+        dbg.postSaturation;
+
+    payload["postContrast"] =
+        dbg.postContrast;
+
+    payload["postVignette"] =
+        dbg.postVignette;
+
+    payload["postGrain"] =
+        dbg.postGrain;
+
+    payload["postHaze"] =
+        dbg.postHaze;
+
     payload["debugControlAutoUpdates"] = dbg.debugControlAutoUpdates;
     payload["systemMapLiveRefreshSec"] = dbg.systemMapLiveRefreshSec;
     
@@ -2654,6 +2782,56 @@ void SpaceState::pushDebugControlState()
     perf["rearCameraMs"] = m_perfRearCameraMs;
     perf["renderUiMs"] = m_perfRenderUiMs;
     perf["hudMs"] = m_perfHudMs;
+
+    const auto& hubPerf =
+        m_systemMapRenderer
+            .hubMapPerformanceStats();
+
+    perf["hubMapActive"] =
+        m_systemMapRenderer.mode() ==
+        SystemMapRenderer::Mode::Hub;
+
+    perf["hubCpuTotalMs"] =
+        hubPerf.cpuTotalMs;
+
+    perf["hubCpuBackgroundMs"] =
+        hubPerf.cpuBackgroundMs;
+
+    perf["hubCpuPlanetBackdropMs"] =
+        hubPerf.cpuPlanetBackdropMs;
+
+    perf["hubCpuGeometryMs"] =
+        hubPerf.cpuGeometryMs;
+
+    perf["hubCpuLabelsMs"] =
+        hubPerf.cpuLabelsMs;
+
+    perf["hubGpuValid"] =
+        hubPerf.gpuValid;
+
+    perf["hubGpuTotalMs"] =
+        hubPerf.gpuTotalMs;
+
+    perf["hubGpuBackgroundMs"] =
+        hubPerf.gpuBackgroundMs;
+
+    perf["hubGpuFallbackBodyMs"] =
+        hubPerf.gpuFallbackBodyMs;
+
+    perf["hubGpuSurfaceMs"] =
+        hubPerf.gpuSurfaceMs;
+
+    perf["hubGpuCloudsMs"] =
+        hubPerf.gpuCloudsMs;
+
+    perf["hubGpuAtmosphereMs"] =
+        hubPerf.gpuAtmosphereMs;
+
+    perf["hubGpuGeometryMs"] =
+        hubPerf.gpuGeometryMs;
+
+    perf["hubGpuLabelsMs"] =
+        hubPerf.gpuLabelsMs;
 
     perf["drawCalls"] = totalStats.drawCalls;
     perf["modulesDrawn"] = totalStats.modulesDrawn;
@@ -2732,6 +2910,139 @@ void SpaceState::applyDebugControlPayload(const json& payload)
     dbg.renderLargeObjects = payload.value("renderLargeObjects", dbg.renderLargeObjects);
     dbg.renderCelestialBodies = payload.value("renderCelestialBodies", dbg.renderCelestialBodies);
     dbg.renderSystemMapObjects = payload.value("renderSystemMapObjects", dbg.renderSystemMapObjects);
+
+
+        /*
+        Cinematic post-process.
+    */
+    dbg.postProcessEnabled =
+        payload.value(
+            "postProcessEnabled",
+            dbg.postProcessEnabled
+        );
+
+    dbg.postBloomThreshold =
+        payload.value(
+            "postBloomThreshold",
+            dbg.postBloomThreshold
+        );
+
+    dbg.postBloomKnee =
+        payload.value(
+            "postBloomKnee",
+            dbg.postBloomKnee
+        );
+
+    dbg.postBloomIntensity =
+        payload.value(
+            "postBloomIntensity",
+            dbg.postBloomIntensity
+        );
+
+    dbg.postSoftening =
+        payload.value(
+            "postSoftening",
+            dbg.postSoftening
+        );
+
+    dbg.postSaturation =
+        payload.value(
+            "postSaturation",
+            dbg.postSaturation
+        );
+
+    dbg.postContrast =
+        payload.value(
+            "postContrast",
+            dbg.postContrast
+        );
+
+    dbg.postVignette =
+        payload.value(
+            "postVignette",
+            dbg.postVignette
+        );
+
+    dbg.postGrain =
+        payload.value(
+            "postGrain",
+            dbg.postGrain
+        );
+
+    dbg.postHaze =
+        payload.value(
+            "postHaze",
+            dbg.postHaze
+        );
+
+    /*
+        Защита от случайных или повреждённых значений.
+        HTML имеет min/max, но C++ всё равно должен
+        считать входные данные недоверенными.
+    */
+    dbg.postBloomThreshold =
+        std::clamp(
+            dbg.postBloomThreshold,
+            0.0f,
+            2.0f
+        );
+
+    dbg.postBloomKnee =
+        std::clamp(
+            dbg.postBloomKnee,
+            0.001f,
+            1.0f
+        );
+
+    dbg.postBloomIntensity =
+        std::clamp(
+            dbg.postBloomIntensity,
+            0.0f,
+            2.0f
+        );
+
+    dbg.postSoftening =
+        std::clamp(
+            dbg.postSoftening,
+            0.0f,
+            1.0f
+        );
+
+    dbg.postSaturation =
+        std::clamp(
+            dbg.postSaturation,
+            0.0f,
+            2.0f
+        );
+
+    dbg.postContrast =
+        std::clamp(
+            dbg.postContrast,
+            0.5f,
+            2.0f
+        );
+
+    dbg.postVignette =
+        std::clamp(
+            dbg.postVignette,
+            0.0f,
+            1.0f
+        );
+
+    dbg.postGrain =
+        std::clamp(
+            dbg.postGrain,
+            0.0f,
+            0.10f
+        );
+
+    dbg.postHaze =
+        std::clamp(
+            dbg.postHaze,
+            0.0f,
+            1.0f
+        );
+
     dbg.debugControlAutoUpdates = payload.value("debugControlAutoUpdates", dbg.debugControlAutoUpdates);
     dbg.systemMapLiveRefreshSec = payload.value("systemMapLiveRefreshSec", dbg.systemMapLiveRefreshSec);
 

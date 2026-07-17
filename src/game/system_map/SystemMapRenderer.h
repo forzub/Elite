@@ -6,12 +6,17 @@
 #include <vector>
 #include <unordered_map>
 
+#include <array>
+#include <cstddef>
+#include <cstdint>
+
 #include <glm/glm.hpp>
 
 #include "render/types/Viewport.h"
 
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/celestial/SystemMapTypes.h"
+#include "src/game/navigation/GalaxyNavigationGrid.h"
 #include "src/world/celestial/visual/CelestialGeneratedAssetLibrary.h"
 #include "src/world/celestial/visual/CelestialEnvironmentProfile.h"
 
@@ -19,11 +24,14 @@
 #include "src/render/celestial/ProceduralCloudLayer.h"
 #include "src/render/celestial/HubSphericalGridRenderer.h"
 #include "src/render/celestial/HubPlanetSurfaceRenderer.h"
+#include "src/render/celestial/PlanetGlobeMeshRenderer.h"
 #include "src/render/starfield/GalaxyStarfieldRenderer.h"
 
 
 #include "src/render/celestial/clouds/HubBackdropCloudRenderer.h"
 #include "src/render/celestial/rings/PlanetRingRenderer.h"
+#include "src/render/system_map/HubMapGpuGeometryRenderer.h"
+#include "src/render/system_map/HubPlanetOverlayRenderer.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
@@ -35,6 +43,40 @@ public:
         System,
         Planet,
         Hub
+    };
+
+    struct HubMapPerformanceStats
+    {
+        /*
+            CPU wall-clock timings.
+
+            Они показывают стоимость подготовки команд:
+            расчётов, циклов, immediate mode, сборки геометрии,
+            вызовов renderer-ов и текста.
+        */
+        double cpuTotalMs = 0.0;
+        double cpuBackgroundMs = 0.0;
+        double cpuPlanetBackdropMs = 0.0;
+        double cpuGeometryMs = 0.0;
+        double cpuLabelsMs = 0.0;
+
+        /*
+            GPU timer query results.
+
+            Значения приходят с задержкой в несколько кадров,
+            чтобы не делать glFinish и не тормозить игру самим
+            профайлером.
+        */
+        bool gpuValid = false;
+
+        double gpuTotalMs = 0.0;
+        double gpuBackgroundMs = 0.0;
+        double gpuFallbackBodyMs = 0.0;
+        double gpuSurfaceMs = 0.0;
+        double gpuCloudsMs = 0.0;
+        double gpuAtmosphereMs = 0.0;
+        double gpuGeometryMs = 0.0;
+        double gpuLabelsMs = 0.0;
     };
 
 public:
@@ -66,6 +108,12 @@ public:
     void setMode(Mode mode);
     Mode mode() const;
     int focusedSystemId() const;
+
+    const HubMapPerformanceStats&
+    hubMapPerformanceStats() const
+    {
+        return m_hubMapPerformanceStats;
+    }
 
     const std::string& selectedBodyId() const;
 
@@ -359,6 +407,11 @@ private:
         const glm::dvec3& relativeMeters
     ) const;
 
+    glm::mat3 planetBodyToDetailCameraMatrix(
+        const world::celestial::PlanetMapSnapshot& planet
+    ) const;
+
+
     GLuint globalAlbedoTextureForPlanetSnapshot(
         const world::celestial::PlanetMapSnapshot& planet
     );
@@ -446,6 +499,39 @@ private:
         const world::celestial::HubMapSnapshot& hub
     );
 
+
+    enum class HubGpuStage : std::size_t
+    {
+        Background = 0,
+        FallbackBody,
+        Surface,
+        Clouds,
+        Atmosphere,
+        Geometry,
+        Labels,
+        Count
+    };
+
+    static constexpr std::size_t kHubGpuStageCount =
+        static_cast<std::size_t>(
+            HubGpuStage::Count
+        );
+
+    static constexpr std::size_t kHubGpuQuerySlotCount =
+        4;
+
+    void ensureHubGpuQueries();
+    void collectHubGpuQueries();
+
+    void beginHubGpuFrame();
+    void endHubGpuFrame();
+
+    void beginHubGpuStage(
+        HubGpuStage stage
+    );
+
+    void endHubGpuStage();
+
     glm::dvec2 hubMapProject(
         const glm::dvec3& localMeters,
         double scale,
@@ -463,6 +549,7 @@ private:
         const glm::dvec3& center,
         const world::celestial::PlanetMapAxisSet& axes,
         const glm::dvec3& size,
+        const glm::vec4& color,
         double scale,
         const glm::dvec2& centerPx
     );
@@ -506,8 +593,7 @@ private:
         ObjectType typeId,
         const glm::dvec3& objectCenter,
         const world::celestial::PlanetMapAxisSet& objectAxes,
-        double scale,
-        const glm::dvec2& centerPx
+        const glm::vec4& color
     );
 
     void drawHubMapCircleLocalXY(
@@ -625,11 +711,14 @@ void drawHubMapPlanetSoftBand(
 void drawHubMapPlanetAtmosphereStack(
     const glm::dvec2& planetCenterPx,
     double planetRadiusPx,
-    const HubPlanetAtmosphereStyle& style
+    const HubPlanetAtmosphereStyle& style,
+    bool premultipliedTarget = false
 );
 
 
-
+glm::mat3 hubCameraToParentPlanetBodyMatrix(
+    const world::celestial::HubMapSnapshot& hub
+) const;
 
 
 void drawHubMapPlanetSurfaceHint(
@@ -886,7 +975,37 @@ private:
         const world::celestial::PlayerNavigationState& nav
     );
 
+    glm::vec3 galaxyPositionLyToRender(
+        const glm::dvec3& positionLy
+    ) const;
 
+    glm::vec3 galaxyVectorLyToRender(
+        const glm::dvec3& vectorLy
+    ) const;
+
+    void addGalaxyNavigationCubeEdges(
+        const glm::vec3& center,
+        const glm::vec3& halfAxisX,
+        const glm::vec3& halfAxisY,
+        const glm::vec3& halfAxisZ,
+        const glm::vec4& color
+    );
+
+    void drawGalaxyNavigationGrid(
+        const Viewport& vp,
+        const glm::mat4& mvp
+    );
+
+    bool pickGalaxyNavigationCell(
+        const Viewport& vp,
+        double localMouseX,
+        double localMouseY,
+        game::navigation::GalaxyNavigationCell& outCell
+    ) const;
+
+    float galaxyNavigationAnchorDiameterPx(
+        const Viewport& vp
+    ) const;
 
     void renderSystem(
         const Viewport& vp,
@@ -1104,7 +1223,13 @@ private:
     void drawPlanetEnvironmentLayers(
         const world::celestial::PlanetMapSnapshot& planet,
         double scale,
-        const glm::dvec2& centerPx
+        const glm::dvec2& centerPx,
+        bool applySphericalSculpt
+    );
+
+    void drawPlanetDetailSculpt(
+        const glm::dvec2& planetCenterPx,
+        double planetRadiusPx
     );
 
     void drawPlanetAnimatedCloudLayers(
@@ -1208,6 +1333,11 @@ private:
     GalaxyCamera m_galaxyCamera;
     SystemCamera m_systemCamera;
 
+    game::navigation::GalaxyNavigationGrid
+        m_galaxyNavigationGrid;
+
+    bool m_galaxyNavigationSpaceWasDown = false;
+
     GalaxyControlSettings m_galaxyControls;
     SystemControlSettings m_systemControls;
 
@@ -1275,8 +1405,25 @@ private:
 
     render::celestial::CelestialShapeMeshLibrary m_celestialShapeMeshes;
     render::celestial::HubPlanetSurfaceRenderer m_hubPlanetSurfaceRenderer;
+    render::celestial::PlanetGlobeMeshRenderer m_planetGlobeMeshRenderer;
+
+    render::system_map::HubMapGpuGeometryRenderer m_hubMapGpuGeometryRenderer;
+    render::system_map::HubPlanetOverlayRenderer m_hubPlanetOverlayRenderer;
+
     render::celestial::rings::PlanetRingRenderer m_planetRingRenderer;
+
+
     GalaxyStarfieldRenderer m_mapStarfieldRenderer;
+
+    /*
+        Details-only screen-space sculpt pass.
+        Shader принадлежит ShaderLibrary, поэтому удалять program
+        внутри SystemMapRenderer не нужно.
+    */
+    GLuint m_planetDetailSculptShader = 0;
+    GLuint m_planetDetailSculptVao = 0;
+
+    bool m_planetDetailSculptWarningPrinted = false;
 
     double m_environmentVisualTimeSeconds = 0.0;
     double m_environmentLastSourceTimeSeconds = 0.0;
@@ -1301,6 +1448,45 @@ private:
 
     double m_lastHubPlanetVisualRadiusPx = 0.0;
     glm::dvec2 m_lastHubPlanetVisualCenterPx {0.0, 0.0};
+
+
+    HubMapPerformanceStats m_hubMapPerformanceStats;
+
+    /*
+        Четыре набора query позволяют читать результат
+        старого кадра без ожидания GPU.
+    */
+    std::array<
+        std::array<
+            GLuint,
+            kHubGpuStageCount
+        >,
+        kHubGpuQuerySlotCount
+    > m_hubGpuQueries {};
+
+    std::array<
+        std::uint32_t,
+        kHubGpuQuerySlotCount
+    > m_hubGpuIssuedMasks {};
+
+    std::array<
+        bool,
+        kHubGpuQuerySlotCount
+    > m_hubGpuSlotPending {};
+
+    std::array<
+        std::uint64_t,
+        kHubGpuQuerySlotCount
+    > m_hubGpuSlotSerials {};
+
+    bool m_hubGpuQueriesInitialized = false;
+    bool m_hubGpuFrameActive = false;
+    bool m_hubGpuStageOpen = false;
+
+    std::size_t m_hubGpuCurrentSlot = 0;
+
+    std::uint64_t m_hubGpuFrameSerial = 0;
+    std::uint64_t m_hubGpuLastCollectedSerial = 0;
 };
 
 

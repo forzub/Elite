@@ -9,14 +9,20 @@ namespace render::celestial
 class HubPlanetSurfaceRenderer
 {
 public:
-    void render(
-        GLuint albedoTexture,
-        GLuint normalTexture,
-        const glm::dvec2& planetCenterPx,
-        double planetRadiusPx,
-        double longitudeOffset,
-        const glm::vec3& lightDirection
-    );
+        void render(
+            GLuint albedoTexture,
+            GLuint normalTexture,
+            const glm::dvec2& planetCenterPx,
+            double planetRadiusPx,
+
+            /*
+                Преобразование нормали из экранной системы
+                cinematic globe в body-fixed систему планеты.
+            */
+            const glm::mat3& cameraToPlanetBody,
+
+            const glm::vec3& lightDirection
+        );
 
 private:
     void ensureResources();
@@ -32,9 +38,9 @@ private:
     GLint m_viewportOriginLocation = -1;
     GLint m_viewportSizeLocation = -1;
     GLint m_planetCenterLocation = -1;
-    
+
     GLint m_planetRadiusLocation = -1;
-    GLint m_longitudeOffsetLocation = -1;
+    GLint m_cameraToPlanetBodyLocation = -1;
 
     GLint m_lightDirectionLocation = -1;
 
@@ -45,6 +51,12 @@ private:
     GLint m_horizonDarkeningLocation = -1;
     GLint m_surfaceContrastLocation = -1;
     GLint m_surfaceSaturationLocation = -1;
+
+    GLint m_aerialPerspectiveColorLocation = -1;
+    GLint m_aerialPerspectiveStrengthLocation = -1;
+    GLint m_aerialPerspectiveStartLocation = -1;
+    GLint m_aerialPerspectiveEndLocation = -1;
+    GLint m_aerialPerspectiveBlurLodLocation = -1;
 
     bool m_missingShaderWarningPrinted = false;
 };

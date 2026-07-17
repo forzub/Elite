@@ -256,6 +256,124 @@
 
       <div class="section">
         <div class="title">Render layers</div>
+              <div class="section">
+        <div class="title">Cinematic post-process</div>
+
+        <div class="sectionGrid three">
+          <div class="row">
+            <label>Enabled</label>
+            <input
+              id="postProcessEnabled"
+              type="checkbox"
+            >
+          </div>
+
+          <div class="row">
+            <label>Bloom threshold</label>
+            <input
+              id="postBloomThreshold"
+              type="number"
+              step="0.01"
+              min="0"
+              max="2"
+            >
+          </div>
+
+          <div class="row">
+            <label>Bloom soft knee</label>
+            <input
+              id="postBloomKnee"
+              type="number"
+              step="0.01"
+              min="0.001"
+              max="1"
+            >
+          </div>
+
+          <div class="row">
+            <label>Bloom intensity</label>
+            <input
+              id="postBloomIntensity"
+              type="number"
+              step="0.01"
+              min="0"
+              max="2"
+            >
+          </div>
+
+          <div class="row">
+            <label>Selective softening</label>
+            <input
+              id="postSoftening"
+              type="number"
+              step="0.01"
+              min="0"
+              max="1"
+            >
+          </div>
+
+          <div class="row">
+            <label>Saturation</label>
+            <input
+              id="postSaturation"
+              type="number"
+              step="0.01"
+              min="0"
+              max="2"
+            >
+          </div>
+
+          <div class="row">
+            <label>Contrast</label>
+            <input
+              id="postContrast"
+              type="number"
+              step="0.01"
+              min="0.5"
+              max="2"
+            >
+          </div>
+
+          <div class="row">
+            <label>Vignette</label>
+            <input
+              id="postVignette"
+              type="number"
+              step="0.01"
+              min="0"
+              max="1"
+            >
+          </div>
+
+          <div class="row">
+            <label>Film grain</label>
+            <input
+              id="postGrain"
+              type="number"
+              step="0.001"
+              min="0"
+              max="0.1"
+            >
+          </div>
+
+          <div class="row">
+            <label>Shadow haze</label>
+            <input
+              id="postHaze"
+              type="number"
+              step="0.01"
+              min="0"
+              max="1"
+            >
+          </div>
+        </div>
+
+        <div class="hint">
+          Bloom считается в половинном разрешении.
+          Selective softening старается сохранять контрастные края.
+          Значения применяются кнопкой Apply без перекомпиляции.
+        </div>
+      </div>
         <div class="sectionGrid three">
           <div class="row"><label>Draw meshes</label><input id="drawMeshes" type="checkbox"></div>
           <div class="row"><label>Render starfield</label><input id="renderStarfield" type="checkbox"></div>
@@ -433,6 +551,47 @@
           <div class="perfKey">Rear camera</div><div class="perfValue" id="perfRearCameraMs">—</div>
           <div class="perfKey">Render UI total</div><div class="perfValue" id="perfRenderUiMs">—</div>
           <div class="perfKey">HUD</div><div class="perfValue" id="perfHudMs">—</div>
+
+          <div class="perfKey">Hub CPU total</div>
+          <div class="perfValue" id="perfHubCpuTotalMs">—</div>
+
+          <div class="perfKey">Hub CPU background</div>
+          <div class="perfValue" id="perfHubCpuBackgroundMs">—</div>
+
+          <div class="perfKey">Hub CPU planet</div>
+          <div class="perfValue" id="perfHubCpuPlanetMs">—</div>
+
+          <div class="perfKey">Hub CPU geometry</div>
+          <div class="perfValue" id="perfHubCpuGeometryMs">—</div>
+
+          <div class="perfKey">Hub CPU labels</div>
+          <div class="perfValue" id="perfHubCpuLabelsMs">—</div>
+
+          <div class="perfKey">Hub GPU total</div>
+          <div class="perfValue" id="perfHubGpuTotalMs">—</div>
+
+          <div class="perfKey">Hub GPU background</div>
+          <div class="perfValue" id="perfHubGpuBackgroundMs">—</div>
+
+          <div class="perfKey">Hub GPU fallback body</div>
+          <div class="perfValue" id="perfHubGpuFallbackBodyMs">—</div>
+
+          <div class="perfKey">Hub GPU surface</div>
+          <div class="perfValue" id="perfHubGpuSurfaceMs">—</div>
+
+          <div class="perfKey">Hub GPU clouds</div>
+          <div class="perfValue" id="perfHubGpuCloudsMs">—</div>
+
+          <div class="perfKey">Hub GPU atmosphere</div>
+          <div class="perfValue" id="perfHubGpuAtmosphereMs">—</div>
+
+          <div class="perfKey">Hub GPU geometry</div>
+          <div class="perfValue" id="perfHubGpuGeometryMs">—</div>
+
+          <div class="perfKey">Hub GPU labels</div>
+          <div class="perfValue" id="perfHubGpuLabelsMs">—</div>
+
+
           <div class="perfKey">Draw calls</div><div class="perfValue" id="perfDrawCalls">—</div>
           <div class="perfKey">Modules drawn / culled</div><div class="perfValue" id="perfModules">—</div>
           <div class="perfKey">Parts drawn / culled</div><div class="perfValue" id="perfParts">—</div>
@@ -472,6 +631,23 @@
       const el = document.getElementById(id);
       if (el) el.value = value;
     }
+
+
+    function numberValue(id, fallback) {
+      const el = document.getElementById(id);
+
+      if (!el) {
+        return fallback;
+      }
+
+      const value = Number(el.value);
+
+      return Number.isFinite(value)
+        ? value
+        : fallback;
+    }
+
+
 
     function markDebugSettingsDirty() {
       debugSettingsDirty = true;
@@ -532,6 +708,89 @@
       setText('perfRearCameraMs', p.rearCameraMs != null ? Number(p.rearCameraMs).toFixed(2) + ' ms' : '—');
       setText('perfRenderUiMs', p.renderUiMs != null ? Number(p.renderUiMs).toFixed(2) + ' ms' : '—');
       setText('perfHudMs', p.hudMs != null ? Number(p.hudMs).toFixed(2) + ' ms' : '—');
+
+            const hubActive =
+        p.hubMapActive === true;
+
+      const hubGpuReady =
+        hubActive &&
+        p.hubGpuValid === true;
+
+      const hubCpuText = (value) =>
+        hubActive && value != null
+          ? Number(value).toFixed(2) + ' ms'
+          : '—';
+
+      const hubGpuText = (value) =>
+        hubGpuReady && value != null
+          ? Number(value).toFixed(2) + ' ms'
+          : '—';
+
+      setText(
+        'perfHubCpuTotalMs',
+        hubCpuText(p.hubCpuTotalMs)
+      );
+
+      setText(
+        'perfHubCpuBackgroundMs',
+        hubCpuText(p.hubCpuBackgroundMs)
+      );
+
+      setText(
+        'perfHubCpuPlanetMs',
+        hubCpuText(p.hubCpuPlanetBackdropMs)
+      );
+
+      setText(
+        'perfHubCpuGeometryMs',
+        hubCpuText(p.hubCpuGeometryMs)
+      );
+
+      setText(
+        'perfHubCpuLabelsMs',
+        hubCpuText(p.hubCpuLabelsMs)
+      );
+
+      setText(
+        'perfHubGpuTotalMs',
+        hubGpuText(p.hubGpuTotalMs)
+      );
+
+      setText(
+        'perfHubGpuBackgroundMs',
+        hubGpuText(p.hubGpuBackgroundMs)
+      );
+
+      setText(
+        'perfHubGpuFallbackBodyMs',
+        hubGpuText(p.hubGpuFallbackBodyMs)
+      );
+
+      setText(
+        'perfHubGpuSurfaceMs',
+        hubGpuText(p.hubGpuSurfaceMs)
+      );
+
+      setText(
+        'perfHubGpuCloudsMs',
+        hubGpuText(p.hubGpuCloudsMs)
+      );
+
+      setText(
+        'perfHubGpuAtmosphereMs',
+        hubGpuText(p.hubGpuAtmosphereMs)
+      );
+
+      setText(
+        'perfHubGpuGeometryMs',
+        hubGpuText(p.hubGpuGeometryMs)
+      );
+
+      setText(
+        'perfHubGpuLabelsMs',
+        hubGpuText(p.hubGpuLabelsMs)
+      );
+
       setText('perfDrawCalls', p.drawCalls ?? '—');
 
       const modules =
@@ -630,6 +889,58 @@
       setChecked('renderCelestialBodies', p.renderCelestialBodies !== false);
       setChecked('renderSystemMapObjects', p.renderSystemMapObjects !== false);
 
+
+            setChecked(
+        'postProcessEnabled',
+        p.postProcessEnabled !== false
+      );
+
+      setValue(
+        'postBloomThreshold',
+        p.postBloomThreshold ?? 0.58
+      );
+
+      setValue(
+        'postBloomKnee',
+        p.postBloomKnee ?? 0.25
+      );
+
+      setValue(
+        'postBloomIntensity',
+        p.postBloomIntensity ?? 0.42
+      );
+
+      setValue(
+        'postSoftening',
+        p.postSoftening ?? 0.18
+      );
+
+      setValue(
+        'postSaturation',
+        p.postSaturation ?? 0.86
+      );
+
+      setValue(
+        'postContrast',
+        p.postContrast ?? 1.08
+      );
+
+      setValue(
+        'postVignette',
+        p.postVignette ?? 0.22
+      );
+
+      setValue(
+        'postGrain',
+        p.postGrain ?? 0.012
+      );
+
+      setValue(
+        'postHaze',
+        p.postHaze ?? 0.24
+      );
+
+
       setChecked('drawAxes', !!p.drawAxes);
       setChecked('drawWorldAxes', !!p.drawWorldAxes);
       setChecked('drawObjectAxes', !!p.drawObjectAxes);
@@ -687,6 +998,38 @@
         renderLargeObjects: document.getElementById('renderLargeObjects').checked,
         renderCelestialBodies: document.getElementById('renderCelestialBodies').checked,
         renderSystemMapObjects: document.getElementById('renderSystemMapObjects').checked,
+
+                postProcessEnabled:
+          document.getElementById('postProcessEnabled').checked,
+
+        postBloomThreshold:
+          numberValue('postBloomThreshold', 0.58),
+
+        postBloomKnee:
+          numberValue('postBloomKnee', 0.25),
+
+        postBloomIntensity:
+          numberValue('postBloomIntensity', 0.42),
+
+        postSoftening:
+          numberValue('postSoftening', 0.18),
+
+        postSaturation:
+          numberValue('postSaturation', 0.86),
+
+        postContrast:
+          numberValue('postContrast', 1.08),
+
+        postVignette:
+          numberValue('postVignette', 0.22),
+
+        postGrain:
+          numberValue('postGrain', 0.012),
+
+        postHaze:
+          numberValue('postHaze', 0.24),
+
+
 
         drawAxes: document.getElementById('drawAxes').checked,
         drawWorldAxes: document.getElementById('drawWorldAxes').checked,

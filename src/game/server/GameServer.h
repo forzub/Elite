@@ -97,10 +97,30 @@ public:
         const std::string& planetBodyId
     ) const;
 
+    /*
+        Обновляет только движущиеся элементы уже построенной
+        Planet Details map.
+
+        Полное определение планеты, rings, environment и textures
+        при этом заново не строятся.
+    */
+    void refreshPlanetMapDynamicState(
+        world::celestial::PlanetMapSnapshot& snapshot
+    ) const;
 
     world::celestial::HubMapSnapshot buildHubMapSnapshot(
         int systemId,
         const std::string& hubId
+    ) const;
+
+    /*
+        Обновляет текущий серверный kinematic state Hub Map.
+
+        Статическое описание планеты и visual presets
+        повторно не загружаются.
+    */
+    void refreshHubMapDynamicState(
+        world::celestial::HubMapSnapshot& snapshot
     ) const;
 
 

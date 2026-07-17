@@ -91,7 +91,7 @@ vec2 local =
     float atmosphereOuterRadius =
         max(
             1.001,
-            uRadiusScale + 0.075
+            uRadiusScale + 0.115
         );
 
     if (radialDistance >
@@ -114,12 +114,12 @@ vec2 local =
             0 у горизонта.
     */
     float insidePlanet =
-        1.0 -
-        smoothstep(
-            0.998,
-            1.003,
-            radialDistance
-        );
+    1.0 -
+    smoothstep(
+        0.992,
+        1.010,
+        radialDistance
+    );
 
     float viewNormal =
         sqrt(
@@ -142,26 +142,40 @@ vec2 local =
             viewNormal
         );
 
+
+float horizonInteriorHaze =
+    smoothstep(
+        0.18,
+        0.995,
+        radialDistance
+    );
+
+
+
     float interiorHazeStrength =
         (
             1.0 -
             exp(
-                -0.055 *
+                -0.090 *
                 opticalDepth
             )
         ) *
-        insidePlanet;
+        insidePlanet *
+        horizonInteriorHaze;
 
     /*
-        В центре haze слабее.
-        У горизонта — сильнее.
+        В центре haze почти незаметна,
+        к горизонту становится ощутимо плотнее.
     */
     interiorHazeStrength *=
-        smoothstep(
-            0.35,
-            0.98,
-            radialDistance
+        mix(
+            0.55,
+            1.0,
+            horizonInteriorHaze
         );
+
+
+
 
     vec4 accumulated =
         vec4(0.0);
@@ -184,19 +198,20 @@ vec2 local =
         Ядро лимба.
     */
     float limbCoreStrength =
-        smoothBand(
-            radialDistance,
-            0.975,
-            1.002,
-            1.025
-        );
+    smoothBand(
+        radialDistance,
+        0.955,
+        1.006,
+        1.045
+    );
 
     vec4 limbCore =
         uLimbCore;
 
     limbCore.a *=
         limbCoreStrength *
-        intensity;
+        intensity *
+        1.35;
 
     accumulated.rgb =
         accumulated.rgb +
@@ -219,22 +234,23 @@ vec2 local =
         Плотная нижняя атмосфера.
     */
     float nearStrength =
-        smoothBand(
-            radialDistance,
-            0.995,
-            1.025,
-            max(
-                1.05,
-                uRadiusScale + 0.035
-            )
-        );
+    smoothBand(
+        radialDistance,
+        0.985,
+        1.035,
+        max(
+            1.085,
+            uRadiusScale + 0.055
+        )
+    );
 
     vec4 nearAtmosphere =
         uNearAtmosphere;
 
     nearAtmosphere.a *=
         nearStrength *
-        intensity;
+        intensity *
+        1.22;
 
     accumulated.rgb =
         accumulated.rgb +
@@ -257,22 +273,23 @@ vec2 local =
         Широкое внешнее растворение.
     */
     float outerStrength =
-        smoothBand(
-            radialDistance,
-            1.015,
-            max(
-                1.04,
-                uRadiusScale + 0.025
-            ),
-            atmosphereOuterRadius
-        );
+    smoothBand(
+        radialDistance,
+        1.000,
+        max(
+            1.060,
+            uRadiusScale + 0.045
+        ),
+        atmosphereOuterRadius
+    );
 
     vec4 outerAtmosphere =
         uOuterAtmosphere;
 
     outerAtmosphere.a *=
-        outerStrength *
-        intensity;
+    outerStrength *
+    intensity *
+    1.45;
 
     accumulated.rgb =
         accumulated.rgb +

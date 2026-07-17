@@ -1552,294 +1552,23 @@ GameServer::buildPlanetMapSnapshot(
     // -----------------------------
     // Hubs + hub rail orbits
     // -----------------------------
-    for (const auto& [hubId, hub] : m_simulation.orbitalHubs())
-    {
-        if (hub.parentBodyId != planetBodyId)
-            continue;
 
-        const auto* frame =
-            m_simulation.hubNavigationFrame(hubId);
-
-        if (!frame || !frame->valid)
-            continue;
-
-        PlanetMapObject hubObj;
-
-        hubObj.stableId =
-            hubId;
-
-        hubObj.name =
-            hub.id;
-
-        hubObj.kind =
-            "hub";
-
-        hubObj.positionMeters =
-            frame->originMeters;
-
-        hubObj.velocityMps =
-            frame->velocityMetersPerSecond;
-
-        hubObj.axes.x =
-            frame->normalAxis;
-
-        hubObj.axes.y =
-            frame->radialAxis;
-
-        hubObj.axes.z =
-            -frame->progradeAxis;
-
-        hubObj.valid =
-            true;
-
-        out.hubs.push_back(
-            hubObj
-        );
-
-        PlanetMapOrbit orbit;
-
-        orbit.id =
-            hubId + "_rail_orbit";
-
-        orbit.name =
-            hub.id + " rail orbit";
-
-        orbit.parentBodyId =
-            planetBodyId;
-
-        orbit.centerMeters =
-            out.planetCenterMeters;
-
-        orbit.positionMeters =
-            frame->originMeters;
-
-        orbit.velocityMps =
-            frame->velocityMetersPerSecond;
-
-        const glm::dvec3 fromPlanet =
-            orbit.positionMeters -
-            out.planetCenterMeters;
-
-        orbit.radiusMeters =
-            glm::length(fromPlanet);
-
-        orbit.altitudeMeters =
-            orbit.radiusMeters -
-            out.planetRadiusMeters;
-
-        orbit.speedMps =
-            glm::length(orbit.velocityMps);
-
-        orbit.radialAxis =
-            frame->radialAxis;
-
-        orbit.progradeAxis =
-            frame->progradeAxis;
-
-        orbit.normalAxis =
-            frame->normalAxis;
-
-        orbit.valid =
-            true;
-
-        out.hubOrbits.push_back(
-            orbit
-        );
-    }
-
-    // -----------------------------
-    // Static objects near this planet
-    // -----------------------------
-    for (const auto& [id, obj] : m_simulation.staticObjects())
-    {
-        if (obj.mapSystemId != systemId)
-            continue;
-
-        if (obj.mapParentBodyId != planetBodyId)
-            continue;
-
-        PlanetMapObject item;
-
-        item.id =
-            id;
-
-        item.stableId =
-            std::to_string(id.value);
-
-        item.name =
-            obj.displayName.empty()
-                ? "Object"
-                : obj.displayName;
-
-        if (obj.type == ObjectType::Station)
-            item.kind = "station";
-        else
-            item.kind = "static";
-
-        item.positionMeters =
-            world::coordinates::fullMeters(
-                obj.worldPosition
-            );
-
-        const auto* frame =
-            m_simulation.hubNavigationFrame(
-                obj.hubId
-            );
-
-        if (frame && frame->valid)
-        {
-            item.velocityMps =
-                frame->velocityMetersPerSecond;
-        }
-
-        item.axes =
-            planetMapAxesFromOrientation(
-                obj.orientation
-            );
-
-        item.valid =
-            true;
-
-        if (item.kind == "station")
-            out.stations.push_back(item);
-    }
-
-    // -----------------------------
-    // Player ship
-    // -----------------------------
-    const Ship* player =
-        m_simulation.playerShip();
-
-    if (player)
-    {
-        const auto& tr =
-            player->core().transform();
-
-        const glm::dvec3 playerMeters =
-            world::coordinates::fullMeters(
-                tr.worldPosition
-            );
-
-        const glm::dvec3 fromPlanet =
-            playerMeters -
-            out.planetCenterMeters;
-
-        const double playerDistance =
-            glm::length(fromPlanet);
-
-        // Пока фильтр простой:
-        // если игрок внутри 100 000 км от планеты,
-        // считаем его релевантным для planet map.
-        const double planetMapRadiusMeters =
-            100000000.0;
-
-        if (playerDistance <= planetMapRadiusMeters)
-        {
-            PlanetMapObject shipObj;
-
-            shipObj.id =
-                m_simulation.playerId();
-
-            shipObj.stableId =
-                "player";
-
-            shipObj.name =
-                "Player";
-
-            shipObj.kind =
-                "player";
-
-            shipObj.positionMeters =
-                playerMeters;
-
-            shipObj.velocityMps =
-                tr.motion.worldVelocityMps;
-
-            shipObj.axes =
-                planetMapAxesFromOrientation(
-                    tr.orientation
-                );
-
-            shipObj.valid =
-                true;
-
-            out.ships.push_back(
-                shipObj
-            );
-
-            PlanetMapOrbit playerOrbit;
-
-            playerOrbit.id =
-                "player_physical_orbit";
-
-            playerOrbit.name =
-                "Player physical orbit";
-
-            playerOrbit.parentBodyId =
-                planetBodyId;
-
-            playerOrbit.centerMeters =
-                out.planetCenterMeters;
-
-            playerOrbit.positionMeters =
-                playerMeters;
-
-            playerOrbit.velocityMps =
-                tr.motion.worldVelocityMps;
-
-            playerOrbit.radiusMeters =
-                playerDistance;
-
-            playerOrbit.altitudeMeters =
-                playerDistance -
-                out.planetRadiusMeters;
-
-            playerOrbit.speedMps =
-                glm::length(
-                    tr.motion.worldVelocityMps
-                );
-
-            playerOrbit.radialAxis =
-                safeNormalizePlanetMap(
-                    fromPlanet,
-                    glm::dvec3(0.0, 1.0, 0.0)
-                );
-
-            const glm::dvec3 tangentialVelocity =
-                tr.motion.worldVelocityMps -
-                playerOrbit.radialAxis *
-                glm::dot(
-                    tr.motion.worldVelocityMps,
-                    playerOrbit.radialAxis
-                );
-
-            playerOrbit.progradeAxis =
-                safeNormalizePlanetMap(
-                    tangentialVelocity,
-                    glm::dvec3(1.0, 0.0, 0.0)
-                );
-
-            playerOrbit.normalAxis =
-                safeNormalizePlanetMap(
-                    glm::cross(
-                        playerOrbit.progradeAxis,
-                        playerOrbit.radialAxis
-                    ),
-                    glm::dvec3(0.0, 0.0, 1.0)
-                );
-
-            playerOrbit.valid =
-                true;
-
-            out.playerOrbits.push_back(
-                playerOrbit
-            );
-        }
-    }
 
     out.valid = true;
 
+    /*
+        Статическая часть snapshot уже построена:
+            - planet definition;
+            - radius;
+            - rings;
+            - environment;
+            - gravitational parameter.
 
+        Все динамические объекты строятся только в одном месте.
+    */
+    refreshPlanetMapDynamicState(
+        out
+    );
 
 
 
@@ -1906,6 +1635,681 @@ GameServer::buildPlanetMapSnapshot(
 
 
 
+void GameServer::refreshPlanetMapDynamicState(
+    world::celestial::PlanetMapSnapshot& snapshot
+) const
+{
+    using namespace world::celestial;
+
+    if (!snapshot.valid ||
+        snapshot.systemId < 0 ||
+        snapshot.planetBodyId.empty())
+    {
+        return;
+    }
+
+    /*
+        Один временной срез для всей карты.
+
+        Положение планеты, хабов, станций и корабля
+        должно относиться к одному серверному кадру.
+    */
+    snapshot.universeTimeSeconds =
+        m_universeClock.timeSeconds();
+
+    // ------------------------------------------------------------
+    // 1. Текущее состояние выбранной планеты.
+    // ------------------------------------------------------------
+
+    bool currentPlanetFound =
+        false;
+
+    for (const auto& body :
+         m_celestialRuntime.snapshot().bodies)
+    {
+        if (body.id !=
+            snapshot.planetBodyId)
+        {
+            continue;
+        }
+
+        snapshot.planetCenterMeters =
+            body.positionAu *
+            world::celestial::MetersPerAu;
+
+        if (body.radiusKm > 0.0)
+        {
+            snapshot.planetRadiusMeters =
+                body.radiusKm *
+                1000.0;
+        }
+
+        /*
+            Это тоже динамическое состояние.
+
+            Иначе текстура планеты застывает при длительно
+            открытом Details.
+        */
+        snapshot.planetRotationPhaseRad =
+            body.rotationPhaseRad;
+
+        snapshot.planetDayLengthHours =
+            body.dayLengthHours;
+
+        snapshot.planetAxialTiltDeg =
+            body.axialTiltDeg;
+
+        snapshot.planetAxisNodeDeg =
+            body.axisNodeDeg;
+
+        snapshot.planetTextureLongitudeOffsetDeg =
+            body.textureLongitudeOffsetDeg;
+
+        currentPlanetFound =
+            true;
+
+        break;
+    }
+
+    /*
+        Fallback на simulation cache.
+
+        Обычно currentPlanetFound будет true, но карта не должна
+        ломаться из-за временного отсутствия body в runtime snapshot.
+    */
+    if (!currentPlanetFound)
+    {
+        glm::dvec3 currentCenter =
+            snapshot.planetCenterMeters;
+
+        double currentRadius =
+            snapshot.planetRadiusMeters;
+
+        if (m_simulation.resolveCelestialBodyMeters(
+                snapshot.planetBodyId,
+                currentCenter,
+                currentRadius
+            ))
+        {
+            snapshot.planetCenterMeters =
+                currentCenter;
+
+            if (currentRadius > 1.0)
+            {
+                snapshot.planetRadiusMeters =
+                    currentRadius;
+            }
+        }
+    }
+
+    snapshot.planetVelocityMps =
+        glm::dvec3(0.0);
+
+    m_simulation
+        .resolveCelestialBodyVelocityMetersPerSecond(
+            snapshot.planetBodyId,
+            snapshot.planetVelocityMps
+        );
+
+    // ------------------------------------------------------------
+    // 2. Dynamic arrays полностью пересобираются.
+    //
+    // Так исчезают:
+    //   - старые позиции;
+    //   - удалённые объекты;
+    //   - отсутствующие новые хабы;
+    //   - замороженная орбита игрока.
+    // ------------------------------------------------------------
+
+    snapshot.hubs.clear();
+    snapshot.hubOrbits.clear();
+
+    snapshot.stations.clear();
+
+    snapshot.ships.clear();
+    snapshot.playerOrbits.clear();
+
+    /*
+        Строит planet-relative orbital frame из абсолютного
+        серверного положения и абсолютной скорости.
+
+        positionMeters и worldVelocityMps остаются мировыми.
+        Relative velocity используется только для orbital axes.
+    */
+    auto resolveOrbitalAxes =
+        [&](
+            const glm::dvec3& positionMeters,
+            const glm::dvec3& worldVelocityMps,
+            const glm::dvec3& fallbackPrograde,
+            const glm::dvec3& fallbackNormal,
+            glm::dvec3& outRadial,
+            glm::dvec3& outPrograde,
+            glm::dvec3& outNormal
+        )
+        {
+            outRadial =
+                safeNormalizePlanetMap(
+                    positionMeters -
+                        snapshot.planetCenterMeters,
+
+                    glm::dvec3(
+                        0.0,
+                        1.0,
+                        0.0
+                    )
+                );
+
+            const glm::dvec3 relativeVelocity =
+                worldVelocityMps -
+                snapshot.planetVelocityMps;
+
+            const glm::dvec3 tangentialVelocity =
+                relativeVelocity -
+                outRadial *
+                    glm::dot(
+                        relativeVelocity,
+                        outRadial
+                    );
+
+            const glm::dvec3 fallbackTangential =
+                fallbackPrograde -
+                outRadial *
+                    glm::dot(
+                        fallbackPrograde,
+                        outRadial
+                    );
+
+            outPrograde =
+                safeNormalizePlanetMap(
+                    tangentialVelocity,
+
+                    safeNormalizePlanetMap(
+                        fallbackTangential,
+
+                        glm::dvec3(
+                            1.0,
+                            0.0,
+                            0.0
+                        )
+                    )
+                );
+
+            /*
+                Сохраняем принятую в проекте конвенцию:
+
+                    normal = cross(prograde, radial)
+            */
+            outNormal =
+                safeNormalizePlanetMap(
+                    glm::cross(
+                        outPrograde,
+                        outRadial
+                    ),
+
+                    safeNormalizePlanetMap(
+                        fallbackNormal,
+
+                        glm::dvec3(
+                            0.0,
+                            0.0,
+                            1.0
+                        )
+                    )
+                );
+
+            /*
+                Повторно ортогонализируем prograde.
+            */
+            outPrograde =
+                safeNormalizePlanetMap(
+                    glm::cross(
+                        outRadial,
+                        outNormal
+                    ),
+                    outPrograde
+                );
+        };
+
+    // ------------------------------------------------------------
+    // 3. Все orbital hubs выбранной планеты.
+    // ------------------------------------------------------------
+
+    for (const auto& [hubId, hub] :
+         m_simulation.orbitalHubs())
+    {
+        if (hub.systemId !=
+                snapshot.systemId ||
+            hub.parentBodyId !=
+                snapshot.planetBodyId)
+        {
+            continue;
+        }
+
+        const auto* frame =
+            m_simulation.hubNavigationFrame(
+                hubId
+            );
+
+        if (!frame ||
+            !frame->valid)
+        {
+            continue;
+        }
+
+        glm::dvec3 radial;
+        glm::dvec3 prograde;
+        glm::dvec3 normal;
+
+        resolveOrbitalAxes(
+            frame->originMeters,
+            frame->velocityMetersPerSecond,
+            frame->progradeAxis,
+            frame->normalAxis,
+            radial,
+            prograde,
+            normal
+        );
+
+        PlanetMapObject hubObject;
+
+        hubObject.stableId =
+            hubId;
+
+        hubObject.name =
+            hub.name.empty()
+                ? hub.id
+                : hub.name;
+
+        hubObject.kind =
+            "hub";
+
+        /*
+            Абсолютная авторитетная серверная позиция.
+        */
+        hubObject.positionMeters =
+            frame->originMeters;
+
+        /*
+            Абсолютная авторитетная серверная скорость.
+        */
+        hubObject.velocityMps =
+            frame->velocityMetersPerSecond;
+
+        /*
+            Ориентация hub orbital frame:
+                X = normal;
+                Y = radial;
+                Z = -prograde.
+        */
+        hubObject.axes.x =
+            normal;
+
+        hubObject.axes.y =
+            radial;
+
+        hubObject.axes.z =
+            -prograde;
+
+        hubObject.valid =
+            true;
+
+        snapshot.hubs.push_back(
+            hubObject
+        );
+
+        PlanetMapOrbit orbit;
+
+        orbit.id =
+            hubId +
+            "_rail_orbit";
+
+        orbit.name =
+            hubObject.name +
+            " rail orbit";
+
+        orbit.parentBodyId =
+            snapshot.planetBodyId;
+
+        orbit.centerMeters =
+            snapshot.planetCenterMeters;
+
+        orbit.positionMeters =
+            frame->originMeters;
+
+        orbit.velocityMps =
+            frame->velocityMetersPerSecond;
+
+        const glm::dvec3 fromPlanet =
+            orbit.positionMeters -
+            snapshot.planetCenterMeters;
+
+        const glm::dvec3 relativeVelocity =
+            orbit.velocityMps -
+            snapshot.planetVelocityMps;
+
+        orbit.radiusMeters =
+            glm::length(
+                fromPlanet
+            );
+
+        orbit.altitudeMeters =
+            orbit.radiusMeters -
+            snapshot.planetRadiusMeters;
+
+        /*
+            Orbital speed в Planet Details означает скорость
+            относительно выбранной планеты.
+        */
+        orbit.speedMps =
+            glm::length(
+                relativeVelocity
+            );
+
+        orbit.radialAxis =
+            radial;
+
+        orbit.progradeAxis =
+            prograde;
+
+        orbit.normalAxis =
+            normal;
+
+        orbit.valid =
+            true;
+
+        snapshot.hubOrbits.push_back(
+            orbit
+        );
+    }
+
+    // ------------------------------------------------------------
+    // 4. Станции и другие static objects.
+    // ------------------------------------------------------------
+
+    for (const auto& [id, object] :
+         m_simulation.staticObjects())
+    {
+        if (object.mapSystemId !=
+                snapshot.systemId ||
+            object.mapParentBodyId !=
+                snapshot.planetBodyId)
+        {
+            continue;
+        }
+
+        if (object.type !=
+            ObjectType::Station)
+        {
+            continue;
+        }
+
+        PlanetMapObject station;
+
+        station.id =
+            id;
+
+        station.stableId =
+            std::to_string(
+                id.value
+            );
+
+        station.name =
+            object.displayName.empty()
+                ? "Station"
+                : object.displayName;
+
+        station.kind =
+            "station";
+
+        station.positionMeters =
+            world::coordinates::fullMeters(
+                object.worldPosition
+            );
+
+        station.axes =
+            planetMapAxesFromOrientation(
+                object.orientation
+            );
+
+        /*
+            Вычисляем абсолютную мировую скорость станции
+            по тому же kinematic model, по которому сервер
+            меняет её позицию.
+        */
+        glm::dvec3 stationWorldVelocityMps =
+            glm::dvec3(
+                object.linearVelocity
+            );
+
+        if (object.attachedToHub &&
+            !object.hubId.empty())
+        {
+            const auto* frame =
+                m_simulation.hubNavigationFrame(
+                    object.hubId
+                );
+
+            if (frame &&
+                frame->valid)
+            {
+                /*
+                    Трансляционная скорость центра hub frame.
+                */
+                stationWorldVelocityMps =
+                    frame->velocityMetersPerSecond;
+
+                /*
+                    Если offset вращается вместе с orbital frame,
+                    добавляем omega × offset.
+
+                    Без этого модуль на удалении от центра хаба
+                    имел бы правильную позицию, но немного
+                    неправильный velocity vector.
+                */
+                if (object.inheritHubOrientation)
+                {
+                    glm::dvec3 hubRadial;
+                    glm::dvec3 hubPrograde;
+                    glm::dvec3 hubNormal;
+
+                    resolveOrbitalAxes(
+                        frame->originMeters,
+                        frame->velocityMetersPerSecond,
+                        frame->progradeAxis,
+                        frame->normalAxis,
+                        hubRadial,
+                        hubPrograde,
+                        hubNormal
+                    );
+
+                    const glm::dvec3 hubRelativeVelocity =
+                        frame->velocityMetersPerSecond -
+                        snapshot.planetVelocityMps;
+
+                    const glm::dvec3 hubTangentialVelocity =
+                        hubRelativeVelocity -
+                        hubRadial *
+                            glm::dot(
+                                hubRelativeVelocity,
+                                hubRadial
+                            );
+
+                    const double orbitRadiusMeters =
+                        glm::length(
+                            frame->originMeters -
+                            snapshot.planetCenterMeters
+                        );
+
+                    const double angularSpeedRadPerSecond =
+                        glm::length(
+                            hubTangentialVelocity
+                        ) /
+                        std::max(
+                            1.0,
+                            orbitRadiusMeters
+                        );
+
+                    /*
+                        При конвенции:
+                            normal = cross(prograde, radial)
+
+                        вектор угловой скорости направлен
+                        в сторону -normal.
+                    */
+                    const glm::dvec3 angularVelocity =
+                        -hubNormal *
+                        angularSpeedRadPerSecond;
+
+                    const glm::dvec3 offsetFromHub =
+                        station.positionMeters -
+                        frame->originMeters;
+
+                    stationWorldVelocityMps +=
+                        glm::cross(
+                            angularVelocity,
+                            offsetFromHub
+                        );
+                }
+            }
+        }
+        else if (object.orbitalMotion.enabled)
+        {
+            glm::dvec3 parentVelocityMps {
+                0.0
+            };
+
+            if (!object.mapParentBodyId.empty())
+            {
+                m_simulation
+                    .resolveCelestialBodyVelocityMetersPerSecond(
+                        object.mapParentBodyId,
+                        parentVelocityMps
+                    );
+            }
+
+            /*
+                computeOrbitVelocity... возвращает локальную
+                скорость относительно orbital center.
+
+                Добавляем абсолютную скорость родителя.
+            */
+            stationWorldVelocityMps =
+                parentVelocityMps +
+                world::orbits::
+                    computeOrbitVelocityMetersPerSecond(
+                        object.orbitalMotion,
+                        snapshot.universeTimeSeconds
+                    );
+        }
+
+        station.velocityMps =
+            stationWorldVelocityMps;
+
+        station.valid =
+            true;
+
+        snapshot.stations.push_back(
+            station
+        );
+    }
+
+    // ------------------------------------------------------------
+    // 5. Игрок.
+    // ------------------------------------------------------------
+
+    const Ship* player =
+        m_simulation.playerShip();
+
+    if (player)
+    {
+        const auto& transform =
+            player->core().transform();
+
+        const glm::dvec3 playerPositionMeters =
+            world::coordinates::fullMeters(
+                transform.worldPosition
+            );
+
+        const glm::dvec3 fromPlanet =
+            playerPositionMeters -
+            snapshot.planetCenterMeters;
+
+        const double playerDistanceMeters =
+            glm::length(
+                fromPlanet
+            );
+
+        /*
+            Пока сохраняем существующий Details radius:
+            100 000 км от центра выбранной планеты.
+        */
+        constexpr double planetMapObjectRadiusMeters =
+            100000000.0;
+
+        if (playerDistanceMeters <=
+            planetMapObjectRadiusMeters)
+        {
+            PlanetMapObject playerObject;
+
+            playerObject.id =
+                m_simulation.playerId();
+
+            playerObject.stableId =
+                "player";
+
+            playerObject.name =
+                "Player";
+
+            playerObject.kind =
+                "player";
+
+            playerObject.positionMeters =
+                playerPositionMeters;
+
+            /*
+                Это настоящий world velocity сервера.
+
+                Не target speed, не desired tactical velocity
+                и не reference velocity.
+            */
+            playerObject.velocityMps =
+                transform.motion.worldVelocityMps;
+
+            playerObject.axes =
+                planetMapAxesFromOrientation(
+                    transform.orientation
+                );
+
+            playerObject.valid =
+                true;
+
+            snapshot.ships.push_back(
+                playerObject
+            );
+        }
+    }
+
+    /*
+        ВАЖНО.
+
+        playerOrbits намеренно остаётся пустым.
+
+        Текущий PlanetMapOrbit умеет рисовать только окружность:
+            center + radial*cos(a)*radius
+                   + prograde*sin(a)*radius
+
+        Это не является реальной траекторией свободного корабля,
+        HubTactical-корабля или объекта на эллиптической орбите.
+
+        До появления настоящего osculating-conic renderer
+        рисовать жёлтую "орбиту" нельзя — это ложная навигационная
+        информация.
+    */
+}
+
+
+
+
 
 
 
@@ -1949,33 +2353,46 @@ GameServer::buildHubMapSnapshot(
 
     HubMapSnapshot out;
 
-    out.systemId = systemId;
-    out.hubId = hubId;
-    out.universeTimeSeconds = m_universeClock.timeSeconds();
+    out.systemId =
+        systemId;
+
+    out.hubId =
+        hubId;
+
+    out.universeTimeSeconds =
+        m_universeClock.timeSeconds();
 
     auto hubIt =
-        m_simulation.orbitalHubs().find(hubId);
+        m_simulation
+            .orbitalHubs()
+            .find(
+                hubId
+            );
 
-    if (hubIt == m_simulation.orbitalHubs().end())
+    if (hubIt ==
+        m_simulation
+            .orbitalHubs()
+            .end())
+    {
         return out;
+    }
 
     const auto& hub =
         hubIt->second;
 
     const auto* frame =
-        m_simulation.hubNavigationFrame(hubId);
-
-    if (!frame || !frame->valid)
-        return out;
-
-    out.parentBodyId = hub.parentBodyId;
-
-    
-    
-    const auto* system =
-        m_starAtlas.findSystem(
-            systemId
+        m_simulation.hubNavigationFrame(
+            hubId
         );
+
+    if (!frame ||
+        !frame->valid)
+    {
+        return out;
+    }
+
+    out.parentBodyId =
+        hub.parentBodyId;
 
     if (const auto* summary =
             m_starAtlas.findSystemSummary(
@@ -1986,10 +2403,15 @@ GameServer::buildHubMapSnapshot(
             summary->positionLy;
     }
 
+    const auto* system =
+        m_starAtlas.findSystem(
+            systemId
+        );
+
     if (system)
     {
         for (const auto& body :
-            system->bodies)
+             system->bodies)
         {
             if (body.id !=
                 out.parentBodyId)
@@ -2000,29 +2422,62 @@ GameServer::buildHubMapSnapshot(
             out.parentEnvironmentPresetId =
                 body.environmentPresetId;
 
+            out.parentPlanetDayLengthHours =
+                body.dayLengthHours;
+
+            out.parentPlanetAxialTiltDeg =
+                body.axialTiltDeg;
+
+            out.parentPlanetAxisNodeDeg =
+                body.axisNodeDeg;
+
+            out.parentPlanetRotationOffsetDeg =
+                body.rotationOffsetDeg;
+
+            out.parentPlanetTextureLongitudeOffsetDeg =
+                body.textureLongitudeOffsetDeg;
+
             break;
         }
     }
 
+    out.displayName =
+        hub.id;
 
+    /*
+        Локальная Hub Map convention:
 
+            X = prograde;
+            Y = radial;
+            Z = normal.
+    */
+    out.hubAxes.x =
+        glm::dvec3(
+            1.0,
+            0.0,
+            0.0
+        );
 
+    out.hubAxes.y =
+        glm::dvec3(
+            0.0,
+            1.0,
+            0.0
+        );
 
-    out.displayName = hub.id;
+    out.hubAxes.z =
+        glm::dvec3(
+            0.0,
+            0.0,
+            1.0
+        );
 
-    out.hubWorldPositionMeters = frame->originMeters;
+    /*
+        Эти значения являются параметрами определения орбиты.
 
-    out.hubWorldVelocityMps = frame->velocityMetersPerSecond;
-
-    // Hub local convention:
-    // X = prograde
-    // Y = radial
-    // Z = normal
-    out.hubAxes.x = glm::dvec3(1.0, 0.0, 0.0);
-    out.hubAxes.y = glm::dvec3(0.0, 1.0, 0.0);
-    out.hubAxes.z = glm::dvec3(0.0, 0.0, 1.0);
-
-
+        Текущий фактический radius и altitude дополнительно
+        пересчитываются в refreshHubMapDynamicState().
+    */
     out.parentPlanetRadiusMeters =
         hub.motion.parentRadiusMeters;
 
@@ -2036,90 +2491,351 @@ GameServer::buildHubMapSnapshot(
     out.hubOrbitalPeriodSeconds =
         hub.motion.orbitalPeriodSeconds;
 
-    // В локальной карте хаба хаб находится в нуле.
-    // Ось Y считается радиальной наружу от планеты.
-    // Значит центр планеты находится вниз по -Y на радиус орбиты.
-    if (out.hubOrbitRadiusMeters > 0.0)
+    /*
+        Теперь snapshot считается валидным по статической части.
+
+        Все текущие координаты, оси, modules и ships
+        строятся в единственной функции ниже.
+    */
+    out.valid =
+        true;
+
+    refreshHubMapDynamicState(
+        out
+    );
+
+    return out;
+}
+
+
+
+void GameServer::refreshHubMapDynamicState(
+    world::celestial::HubMapSnapshot& snapshot
+) const
+{
+    using namespace world::celestial;
+
+    if (snapshot.systemId < 0 ||
+        snapshot.hubId.empty())
     {
-        out.parentPlanetCenterLocalMeters =
-            glm::dvec3(
-                0.0,
-                -out.hubOrbitRadiusMeters,
-                0.0
-            );
+        return;
     }
 
-    // -----------------------------
-    // Modules / station objects
-    // -----------------------------
-    for (const auto& [id, obj] : m_simulation.staticObjects())
+    auto hubIt =
+        m_simulation
+            .orbitalHubs()
+            .find(
+                snapshot.hubId
+            );
+
+    if (hubIt ==
+        m_simulation
+            .orbitalHubs()
+            .end())
     {
-        if (obj.hubId != hubId)
+        snapshot.valid =
+            false;
+
+        return;
+    }
+
+    const auto& hub =
+        hubIt->second;
+
+    const auto* frame =
+        m_simulation.hubNavigationFrame(
+            snapshot.hubId
+        );
+
+    if (!frame ||
+        !frame->valid)
+    {
+        snapshot.valid =
+            false;
+
+        return;
+    }
+
+    /*
+        Один временной срез для всего snapshot.
+    */
+    const double currentUniverseTimeSeconds =
+        m_universeClock.timeSeconds();
+
+    snapshot.universeTimeSeconds =
+        currentUniverseTimeSeconds;
+
+    snapshot.kinematicTimeSeconds =
+        currentUniverseTimeSeconds;
+
+    // ------------------------------------------------------------
+    // 1. Текущее абсолютное состояние хаба.
+    // ------------------------------------------------------------
+
+    snapshot.hubWorldPositionMeters =
+        frame->originMeters;
+
+    snapshot.hubWorldVelocityMps =
+        frame->velocityMetersPerSecond;
+
+    snapshot.hubWorldAxes.x =
+        frame->progradeAxis;
+
+    snapshot.hubWorldAxes.y =
+        frame->radialAxis;
+
+    snapshot.hubWorldAxes.z =
+        frame->normalAxis;
+
+    /*
+        Временно обновляем и legacy epoch-поля.
+
+        Если где-то остался старый код, он получит текущий
+        frame, а не старую orbital phase.
+    */
+    snapshot.hubWorldAxesAtEpoch =
+        snapshot.hubWorldAxes;
+
+    snapshot.hubWorldAxesEpochSeconds =
+        currentUniverseTimeSeconds;
+
+    // ------------------------------------------------------------
+    // 2. Текущее абсолютное состояние родительской планеты.
+    // ------------------------------------------------------------
+
+    glm::dvec3 parentPlanetWorldMeters =
+        hub.motion.centerMeters;
+
+    double resolvedParentRadiusMeters =
+        snapshot.parentPlanetRadiusMeters;
+
+    if (m_simulation.resolveCelestialBodyMeters(
+            snapshot.parentBodyId,
+            parentPlanetWorldMeters,
+            resolvedParentRadiusMeters
+        ))
+    {
+        snapshot.parentPlanetWorldPositionMeters =
+            parentPlanetWorldMeters;
+
+        if (resolvedParentRadiusMeters >
+            1.0)
+        {
+            snapshot.parentPlanetRadiusMeters =
+                resolvedParentRadiusMeters;
+        }
+    }
+    else
+    {
+        /*
+            hub.motion.centerMeters обновляется сервером вместе
+            с текущей позицией родительского тела.
+        */
+        snapshot.parentPlanetWorldPositionMeters =
+            hub.motion.centerMeters;
+    }
+
+    /*
+        Критическая часть.
+
+        Центр планеты в Hub Map больше не задаётся условным:
+
+            (0, -orbitRadius, 0)
+
+        Он вычисляется из тех же абсолютных координат,
+        которые сервер использует в Details.
+    */
+    snapshot.parentPlanetCenterLocalMeters =
+        frame->worldToLocalPosition(
+            snapshot.parentPlanetWorldPositionMeters
+        );
+
+    const glm::dvec3 hubFromPlanetMeters =
+        snapshot.hubWorldPositionMeters -
+        snapshot.parentPlanetWorldPositionMeters;
+
+    snapshot.hubOrbitRadiusMeters =
+        glm::length(
+            hubFromPlanetMeters
+        );
+
+    snapshot.hubAltitudeMeters =
+        snapshot.hubOrbitRadiusMeters -
+        snapshot.parentPlanetRadiusMeters;
+
+    // ------------------------------------------------------------
+    // 3. Текущая rotation phase планеты.
+    // ------------------------------------------------------------
+
+    bool currentPlanetStateFound =
+        false;
+
+    const auto& celestialSnapshot =
+        m_celestialRuntime.snapshot();
+
+    for (const auto& body :
+         celestialSnapshot.bodies)
+    {
+        if (body.id !=
+            snapshot.parentBodyId)
+        {
             continue;
+        }
 
-        HubMapModule mod;
+        snapshot.parentPlanetRotationPhaseRad =
+            body.rotationPhaseRad;
 
-        mod.id = id;
-        mod.typeId = obj.type;
-        mod.stableId = std::to_string(id.value);
+        snapshot.parentPlanetDayLengthHours =
+            body.dayLengthHours;
 
-        mod.name =
-            obj.displayName.empty()
+        snapshot.parentPlanetAxialTiltDeg =
+            body.axialTiltDeg;
+
+        snapshot.parentPlanetAxisNodeDeg =
+            body.axisNodeDeg;
+
+        snapshot.parentPlanetTextureLongitudeOffsetDeg =
+            body.textureLongitudeOffsetDeg;
+
+        currentPlanetStateFound =
+            true;
+
+        break;
+    }
+
+    /*
+        Fallback на ту же аналитическую формулу, если выбранное
+        тело временно отсутствует в runtime snapshot.
+    */
+    if (!currentPlanetStateFound)
+    {
+        constexpr double pi =
+            3.14159265358979323846;
+
+        snapshot.parentPlanetRotationPhaseRad =
+            snapshot.parentPlanetRotationOffsetDeg *
+            pi /
+            180.0;
+
+        if (snapshot.parentPlanetDayLengthHours >
+            0.0)
+        {
+            const double rotationPeriodSeconds =
+                snapshot.parentPlanetDayLengthHours *
+                3600.0;
+
+            const double turns =
+                currentUniverseTimeSeconds /
+                rotationPeriodSeconds;
+
+            const double wrappedTurns =
+                turns -
+                std::floor(
+                    turns
+                );
+
+            snapshot.parentPlanetRotationPhaseRad +=
+                wrappedTurns *
+                2.0 *
+                pi;
+        }
+    }
+
+    // ------------------------------------------------------------
+    // 4. Modules.
+    //
+    // Полностью пересобираем массив из текущего server state.
+    // Так из snapshot исчезают удалённые или перемещённые модули.
+    // ------------------------------------------------------------
+
+    snapshot.modules.clear();
+
+    for (const auto& [id, object] :
+         m_simulation.staticObjects())
+    {
+        if (object.hubId !=
+            snapshot.hubId)
+        {
+            continue;
+        }
+
+        HubMapModule module;
+
+        module.id =
+            id;
+
+        module.typeId =
+            object.type;
+
+        module.stableId =
+            std::to_string(
+                id.value
+            );
+
+        module.name =
+            object.displayName.empty()
                 ? "Hub module"
-                : obj.displayName;
+                : object.displayName;
 
-        mod.kind =
-            obj.type == ObjectType::Station
-                ? "station"
-                : "module";
+        module.kind =
+            object.type ==
+                ObjectType::Station
+                    ? "station"
+                    : "module";
 
-        const glm::dvec3 worldMeters =
+        const glm::dvec3 moduleWorldMeters =
             world::coordinates::fullMeters(
-                obj.worldPosition
+                object.worldPosition
             );
 
-        mod.localPositionMeters =
+        module.localPositionMeters =
             frame->worldToLocalPosition(
-                worldMeters
+                moduleWorldMeters
             );
 
-        mod.localAxes =
+        module.localAxes =
             axesToHubLocal(
-                obj.orientation,
+                object.orientation,
                 *frame
             );
 
-        // Первый вариант: prime/station рисуем длиннее.
-        mod.sizeMeters =
+        module.sizeMeters =
             assemblySizeMetersForType(
-                obj.type
+                object.type
             );
 
-        mod.prime =
+        module.prime =
             !hub.modules.empty() &&
-            hub.modules.front().value == id.value;
+            hub.modules.front().value ==
+                id.value;
 
-        mod.valid = true;
+        module.valid =
+            true;
 
-        out.modules.push_back(
-            mod
+        snapshot.modules.push_back(
+            module
         );
     }
 
-    // -----------------------------
-    // Player ship
-    // -----------------------------
+    // ------------------------------------------------------------
+    // 5. Ships.
+    // Сейчас snapshot содержит игрока.
+    // Позже сюда тем же способом добавим другие реальные ships.
+    // ------------------------------------------------------------
+
+    snapshot.ships.clear();
+
     const Ship* player =
         m_simulation.playerShip();
 
     if (player)
     {
-        const auto& tr =
+        const auto& transform =
             player->core().transform();
 
-        const glm::dvec3 playerWorld =
+        const glm::dvec3 playerWorldMeters =
             world::coordinates::fullMeters(
-                tr.worldPosition
+                transform.worldPosition
             );
 
         HubMapShip ship;
@@ -2133,35 +2849,175 @@ GameServer::buildHubMapSnapshot(
         ship.name =
             "Player";
 
+        /*
+            Позиция всегда вычисляется из абсолютной
+            серверной world position.
+
+            Поэтому Details и Hub Map неизбежно показывают
+            одну и ту же точку пространства.
+        */
         ship.localPositionMeters =
             frame->worldToLocalPosition(
-                playerWorld
+                playerWorldMeters
             );
 
-        ship.localVelocityMps =
-            velocityToHubLocal(
-                tr.motion.worldVelocityMps,
-                *frame
-            );
+        const bool playerUsesThisHubFrame =
+            transform.motion.hubId ==
+            snapshot.hubId;
+
+        if (playerUsesThisHubFrame &&
+            transform.motion.mode ==
+                game::navigation::MotionMode::Docked)
+        {
+            ship.localVelocityMps =
+                glm::dvec3(0.0);
+        }
+        else if (
+            playerUsesThisHubFrame &&
+            transform.motion.mode ==
+                game::navigation::MotionMode::HubTactical)
+        {
+            /*
+                Это серверная локальная скорость текущего
+                HubNavigationFrame.
+
+                Не target speed и не desired velocity.
+            */
+            ship.localVelocityMps =
+                transform.motion.localVelocityMps;
+        }
+        else
+        {
+            /*
+                Для корабля вне HubTactical переводим его
+                текущую абсолютную world velocity в frame хаба.
+            */
+            ship.localVelocityMps =
+                frame->worldToLocalVelocity(
+                    transform.motion.worldVelocityMps
+                );
+        }
 
         ship.localAxes =
             axesToHubLocal(
-                tr.orientation,
+                transform.orientation,
                 *frame
             );
 
         ship.sizeMeters =
-            assemblySizeMetersForType(ship.typeId);
+            assemblySizeMetersForType(
+                ship.typeId
+            );
 
-        ship.player = true;
-        ship.valid = true;
+        ship.player =
+            true;
 
-        out.ships.push_back(
+        ship.valid =
+            true;
+
+        snapshot.ships.push_back(
             ship
         );
+
+        /*
+            Контроль round-trip преобразования.
+
+            local -> world должен восстановить исходную
+            серверную позицию практически без ошибки.
+        */
+        const glm::dvec3 reconstructedPlayerWorld =
+            frame->localToWorldPosition(
+                ship.localPositionMeters
+            );
+
+        const double playerRoundTripErrorMeters =
+            glm::length(
+                reconstructedPlayerWorld -
+                playerWorldMeters
+            );
+
+        if (playerRoundTripErrorMeters >
+            0.01)
+        {
+            static int warningCount =
+                0;
+
+            if (warningCount <
+                20)
+            {
+                ++warningCount;
+
+                std::cerr
+                    << "[HubMapConsistency]"
+                    << " player round-trip error="
+                    << playerRoundTripErrorMeters
+                    << " m"
+                    << " hub="
+                    << snapshot.hubId
+                    << "\n";
+            }
+        }
     }
 
-    out.valid = true;
+    // ------------------------------------------------------------
+    // 6. Контроль геометрии planet <-> hub.
+    // ------------------------------------------------------------
 
-    return out;
+    const glm::dvec3 reconstructedPlanetWorld =
+        frame->localToWorldPosition(
+            snapshot.parentPlanetCenterLocalMeters
+        );
+
+    const double planetRoundTripErrorMeters =
+        glm::length(
+            reconstructedPlanetWorld -
+            snapshot.parentPlanetWorldPositionMeters
+        );
+
+    const glm::dvec3 hubLocalOrigin =
+        frame->worldToLocalPosition(
+            snapshot.hubWorldPositionMeters
+        );
+
+    const double hubOriginErrorMeters =
+        glm::length(
+            hubLocalOrigin
+        );
+
+    if (planetRoundTripErrorMeters >
+            0.01 ||
+        hubOriginErrorMeters >
+            0.01)
+    {
+        static int warningCount =
+            0;
+
+        if (warningCount <
+            20)
+        {
+            ++warningCount;
+
+            std::cerr
+                << "[HubMapConsistency]"
+                << " planetRoundTripError="
+                << planetRoundTripErrorMeters
+                << " m"
+                << " hubOriginError="
+                << hubOriginErrorMeters
+                << " m"
+                << " time="
+                << snapshot.kinematicTimeSeconds
+                << "\n";
+        }
+    }
+
+    snapshot.valid =
+        true;
 }
+
+
+
+
+
+
+

@@ -243,6 +243,9 @@ void UICameraView::render(
 
 void UICameraView::initFBO(int width, int height)
 {
+    GLint previousFBO = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFBO);
+
     fboWidth = width;
     fboHeight = height;
 
@@ -278,8 +281,11 @@ void UICameraView::initFBO(int width, int height)
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         printf("UICameraView FBO not complete!\n");
         
-    glColor4f(1,1,1,1);    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glColor4f(1,1,1,1);
+    glBindFramebuffer(
+        GL_FRAMEBUFFER,
+        static_cast<GLuint>(previousFBO)
+    );
 }
 
 
@@ -348,7 +354,10 @@ glPushAttrib(GL_VIEWPORT_BIT | GL_TRANSFORM_BIT);
 
     drawScene(view, proj);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(
+        GL_FRAMEBUFFER,
+        static_cast<GLuint>(oldFBO)
+    );
     glViewport(vp.x, vp.y, vp.width, vp.height);
     glEnable(GL_BLEND);
 

@@ -91,6 +91,29 @@ void InitShaders()
     );
 
     shaders.load(
+        "hub_map_assembly_wire",
+        "assets/shaders/system_map/hub_map_assembly_wire.vert",
+        "assets/shaders/system_map/hub_map_assembly_wire.frag",
+        ShaderProgram::Unknown
+    );
+
+    shaders.load(
+        "hub_map_dynamic_lines",
+        "assets/shaders/system_map/hub_map_dynamic_lines.vert",
+        "assets/shaders/system_map/hub_map_dynamic_lines.frag",
+        ShaderProgram::Unknown
+    );
+
+    shaders.load(
+        "hub_planet_overlay_composite",
+        "assets/shaders/system_map/hub_planet_overlay_composite.vert",
+        "assets/shaders/system_map/hub_planet_overlay_composite.frag",
+        ShaderProgram::Unknown
+    );
+
+
+
+    shaders.load(
         "system_map_background",
         "assets/shaders/system_map/map_background.vert",
         "assets/shaders/system_map/map_background.frag",
@@ -137,6 +160,21 @@ void InitShaders()
     );
 
     shaders.load(
+        "planet_globe_mesh",
+        "assets/shaders/celestial/planet_globe_mesh.vert",
+        "assets/shaders/celestial/planet_globe_mesh.frag",
+        ShaderProgram::Unknown
+    );
+
+    shaders.load(
+        "planet_detail_sculpt",
+        "assets/shaders/celestial/hub_planet_atmosphere.vert",
+        "assets/shaders/celestial/planet_detail_sculpt.frag",
+        ShaderProgram::Unknown
+    );
+
+
+    shaders.load(
         "planet_rings",
         "assets/shaders/celestial/planet_rings.vert",
         "assets/shaders/celestial/planet_rings.frag",
@@ -153,7 +191,12 @@ void InitShaders()
 
 
 
-
+    shaders.load(
+        "galaxy_haze_composite",
+        "assets/shaders/starfield/galaxy_haze_composite.vert",
+        "assets/shaders/starfield/galaxy_haze_composite.frag",
+        ShaderProgram::Unknown
+    );
 
 
 

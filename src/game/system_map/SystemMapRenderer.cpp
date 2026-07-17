@@ -28,6 +28,21 @@
 namespace
 {
     constexpr double AU_KM = 149597870.7;
+    constexpr float GALAXY_RENDER_UNITS_PER_LY = 2.2f;
+
+    double hubPerfNowMs()
+    {
+        using Clock =
+            std::chrono::steady_clock;
+
+        return
+            std::chrono::duration<
+                double,
+                std::milli
+            >(
+                Clock::now().time_since_epoch()
+            ).count();
+    }
     
     double cloudWindTimeScale()
     {
@@ -812,6 +827,56 @@ namespace
 
 
 
+
+
+
+
+    void configureSphericalTextureSampling(
+        GLuint texture
+    )
+    {
+        if (texture == 0)
+            return;
+
+        GLint previousTexture = 0;
+
+        glGetIntegerv(
+            GL_TEXTURE_BINDING_2D,
+            &previousTexture
+        );
+
+        glBindTexture(
+            GL_TEXTURE_2D,
+            texture
+        );
+
+        /*
+            Equirectangular planetary textures are periodic
+            along longitude (U), but not along latitude (V).
+
+            GL_CLAMP_TO_EDGE on U creates a visible meridian
+            from one pole to the other when longitude jumps
+            from 1 back to 0.
+        */
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_WRAP_S,
+            GL_REPEAT
+        );
+
+        glTexParameteri(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_WRAP_T,
+            GL_CLAMP_TO_EDGE
+        );
+
+        glBindTexture(
+            GL_TEXTURE_2D,
+            static_cast<GLuint>(
+                previousTexture
+            )
+        );
+    }
 
 
 
@@ -2757,6 +2822,9 @@ void SystemMapRenderer::resetView()
     m_environmentLastSourceTimeSeconds = 0.0;
     m_environmentLastWallClockSeconds = 0.0;
     m_environmentVisualTimeInitialized = false;
+
+    m_galaxyNavigationGrid.reset();
+    m_galaxyNavigationSpaceWasDown = false;
 }
 
 
@@ -2803,6 +2871,12 @@ void SystemMapRenderer::setMode(Mode mode)
         return;
 
     m_mode = mode;
+
+    if (m_mode != Mode::Galaxy)
+    {
+        m_galaxyNavigationGrid.setEnabled(false);
+        m_galaxyNavigationSpaceWasDown = false;
+    }
 
     if (m_mode == Mode::Planet)
     {
@@ -3373,7 +3447,7 @@ void SystemMapRenderer::flushSolids(const glm::mat4& mvp)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    m_proceduralCloudLayer.beginFrame();
+    
 
     glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_solidVertices.size()));
 
@@ -4131,6 +4205,10 @@ GLuint SystemMapRenderer::mapPreviewTextureForGeneratedAsset(
             false
         );
 
+    configureSphericalTextureSampling(
+        tex
+    );
+
     m_mapPreviewTextureByAssetKey[key] =
         tex;
 
@@ -4213,6 +4291,10 @@ GLuint SystemMapRenderer::globalAlbedoTextureForGeneratedAsset(
             resolvedPath.generic_string(),
             false
         );
+
+    configureSphericalTextureSampling(
+        tex
+    );
 
     m_globalAlbedoTextureByAssetKey[key] =
         tex;
@@ -4317,6 +4399,10 @@ GLuint SystemMapRenderer::globalNormalTextureForGeneratedAsset(
             resolvedPath.generic_string(),
             false
         );
+
+    configureSphericalTextureSampling(
+        texture
+    );
 
     m_globalNormalTextureByAssetKey[key] =
         texture;
@@ -4518,8 +4604,8 @@ SystemMapRenderer::hubPlanetCloudStylesForHub(
             hub.parentBodyId,
             hub.parentEnvironmentPresetId,
             hub.parentPlanetRadiusMeters,
-            1536,
-            768
+            1024,
+            512
         );
 
     /*
@@ -4747,10 +4833,374 @@ SystemMapRenderer::planetRingRenderContext(
 
 
 
+void SystemMapRenderer::drawPlanetDetailSculpt(
+    const glm::dvec2& planetCenterPx,
+    double planetRadiusPx
+)
+{
+    if (planetRadiusPx <= 1.0)
+        return;
+
+    /*
+        Shader и VAO инициализируются лениво,
+        только при первом открытии Planet Details.
+    */
+    if (m_planetDetailSculptShader == 0)
+    {
+        m_planetDetailSculptShader =
+            ShaderLibrary::instance().get(
+                "planet_detail_sculpt"
+            );
+
+        if (m_planetDetailSculptShader == 0)
+        {
+            if (!m_planetDetailSculptWarningPrinted)
+            {
+                m_planetDetailSculptWarningPrinted = true;
+
+                std::cerr
+                    << "[SystemMapRenderer]"
+                    << " shader 'planet_detail_sculpt'"
+                    << " is unavailable\n";
+            }
+
+            return;
+        }
+    }
+
+    if (m_planetDetailSculptVao == 0)
+    {
+        glGenVertexArrays(
+            1,
+            &m_planetDetailSculptVao
+        );
+    }
+
+    if (m_planetDetailSculptVao == 0)
+        return;
+
+    GLint viewport[4] =
+    {
+        0,
+        0,
+        1,
+        1
+    };
+
+    glGetIntegerv(
+        GL_VIEWPORT,
+        viewport
+    );
+
+    GLint previousProgram = 0;
+    GLint previousVao = 0;
+
+    GLint previousBlendSourceRgb = GL_SRC_ALPHA;
+    GLint previousBlendDestinationRgb = GL_ONE_MINUS_SRC_ALPHA;
+    GLint previousBlendSourceAlpha = GL_SRC_ALPHA;
+    GLint previousBlendDestinationAlpha = GL_ONE_MINUS_SRC_ALPHA;
+
+    GLint previousBlendEquationRgb = GL_FUNC_ADD;
+    GLint previousBlendEquationAlpha = GL_FUNC_ADD;
+
+    glGetIntegerv(
+        GL_CURRENT_PROGRAM,
+        &previousProgram
+    );
+
+    glGetIntegerv(
+        GL_VERTEX_ARRAY_BINDING,
+        &previousVao
+    );
+
+    glGetIntegerv(
+        GL_BLEND_SRC_RGB,
+        &previousBlendSourceRgb
+    );
+
+    glGetIntegerv(
+        GL_BLEND_DST_RGB,
+        &previousBlendDestinationRgb
+    );
+
+    glGetIntegerv(
+        GL_BLEND_SRC_ALPHA,
+        &previousBlendSourceAlpha
+    );
+
+    glGetIntegerv(
+        GL_BLEND_DST_ALPHA,
+        &previousBlendDestinationAlpha
+    );
+
+    glGetIntegerv(
+        GL_BLEND_EQUATION_RGB,
+        &previousBlendEquationRgb
+    );
+
+    glGetIntegerv(
+        GL_BLEND_EQUATION_ALPHA,
+        &previousBlendEquationAlpha
+    );
+
+    const GLboolean blendWasEnabled =
+        glIsEnabled(
+            GL_BLEND
+        );
+
+    const GLboolean depthWasEnabled =
+        glIsEnabled(
+            GL_DEPTH_TEST
+        );
+
+    const GLboolean cullWasEnabled =
+        glIsEnabled(
+            GL_CULL_FACE
+        );
+
+    /*
+        Multiplicative blend:
+
+            result =
+                shaderMultiplier *
+                existingPlanetColor
+    */
+    glEnable(
+        GL_BLEND
+    );
+
+    glBlendEquation(
+        GL_FUNC_ADD
+    );
+
+    glBlendFunc(
+        GL_DST_COLOR,
+        GL_ZERO
+    );
+
+    glDisable(
+        GL_DEPTH_TEST
+    );
+
+    glDisable(
+        GL_CULL_FACE
+    );
+
+    glUseProgram(
+        m_planetDetailSculptShader
+    );
+
+    const GLint viewportOriginLocation =
+        glGetUniformLocation(
+            m_planetDetailSculptShader,
+            "uViewportOriginPx"
+        );
+
+    const GLint viewportSizeLocation =
+        glGetUniformLocation(
+            m_planetDetailSculptShader,
+            "uViewportSize"
+        );
+
+    const GLint planetCenterLocation =
+        glGetUniformLocation(
+            m_planetDetailSculptShader,
+            "uPlanetCenterPx"
+        );
+
+    const GLint planetRadiusLocation =
+        glGetUniformLocation(
+            m_planetDetailSculptShader,
+            "uPlanetRadiusPx"
+        );
+
+    const GLint lightDirectionLocation =
+        glGetUniformLocation(
+            m_planetDetailSculptShader,
+            "uLightDirection"
+        );
+
+    const GLint shadowStrengthLocation =
+        glGetUniformLocation(
+            m_planetDetailSculptShader,
+            "uShadowStrength"
+        );
+
+    const GLint limbDarkeningLocation =
+        glGetUniformLocation(
+            m_planetDetailSculptShader,
+            "uLimbDarkening"
+        );
+
+    if (viewportOriginLocation >= 0)
+    {
+        glUniform2f(
+            viewportOriginLocation,
+            static_cast<float>(
+                viewport[0]
+            ),
+            static_cast<float>(
+                viewport[1]
+            )
+        );
+    }
+
+    if (viewportSizeLocation >= 0)
+    {
+        glUniform2f(
+            viewportSizeLocation,
+            static_cast<float>(
+                viewport[2]
+            ),
+            static_cast<float>(
+                viewport[3]
+            )
+        );
+    }
+
+    if (planetCenterLocation >= 0)
+    {
+        glUniform2f(
+            planetCenterLocation,
+            static_cast<float>(
+                planetCenterPx.x
+            ),
+            static_cast<float>(
+                planetCenterPx.y
+            )
+        );
+    }
+
+    if (planetRadiusLocation >= 0)
+    {
+        glUniform1f(
+            planetRadiusLocation,
+            static_cast<float>(
+                planetRadiusPx
+            )
+        );
+    }
+
+    /*
+        Фиксированный художественный свет.
+
+        Он идёт немного сверху-слева и сильно направлен
+        на наблюдателя. Поэтому настоящей ночной стороны
+        на диске не возникает.
+    */
+    const glm::vec3 lightDirection =
+        glm::normalize(
+            glm::vec3(
+                -0.58f,
+                0.24f,
+                0.78f
+            )
+        );
+
+    if (lightDirectionLocation >= 0)
+    {
+        glUniform3f(
+            lightDirectionLocation,
+            lightDirection.x,
+            lightDirection.y,
+            lightDirection.z
+        );
+    }
+
+    if (shadowStrengthLocation >= 0)
+    {
+        glUniform1f(
+            shadowStrengthLocation,
+            0.34f
+        );
+    }
+
+    if (limbDarkeningLocation >= 0)
+    {
+        glUniform1f(
+            limbDarkeningLocation,
+            0.16f
+        );
+    }
+
+    glBindVertexArray(
+        m_planetDetailSculptVao
+    );
+
+    glDrawArrays(
+        GL_TRIANGLES,
+        0,
+        3
+    );
+
+    glBindVertexArray(
+        static_cast<GLuint>(
+            previousVao
+        )
+    );
+
+    glUseProgram(
+        static_cast<GLuint>(
+            previousProgram
+        )
+    );
+
+    /*
+        Полностью возвращаем прежний blending.
+    */
+    glBlendEquationSeparate(
+        static_cast<GLenum>(
+            previousBlendEquationRgb
+        ),
+        static_cast<GLenum>(
+            previousBlendEquationAlpha
+        )
+    );
+
+    glBlendFuncSeparate(
+        static_cast<GLenum>(
+            previousBlendSourceRgb
+        ),
+        static_cast<GLenum>(
+            previousBlendDestinationRgb
+        ),
+        static_cast<GLenum>(
+            previousBlendSourceAlpha
+        ),
+        static_cast<GLenum>(
+            previousBlendDestinationAlpha
+        )
+    );
+
+    if (blendWasEnabled)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
+
+    if (depthWasEnabled)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
+
+    if (cullWasEnabled)
+        glEnable(GL_CULL_FACE);
+    else
+        glDisable(GL_CULL_FACE);
+}
+
+
+
+
+
+
+
+
+
 void SystemMapRenderer::drawPlanetEnvironmentLayers(
     const world::celestial::PlanetMapSnapshot& planet,
     double scale,
-    const glm::dvec2& centerPx
+    const glm::dvec2& centerPx,
+    bool applySphericalSculpt
 )
 {
     if (!planet.valid ||
@@ -4800,6 +5250,20 @@ void SystemMapRenderer::drawPlanetEnvironmentLayers(
             scale,
             centerPx,
             cloudStyle
+        );
+    }
+
+    /*
+        Затемняем поверхность и облака вместе.
+
+        Atmosphere рисуется после этого pass,
+        поэтому её светлый край не будет убит тенью.
+    */
+    if (applySphericalSculpt)
+    {
+        drawPlanetDetailSculpt(
+            planetCenterPx,
+            planetRadiusPx
         );
     }
 
@@ -4965,8 +5429,6 @@ void SystemMapRenderer::drawPlanetAtmosphereLimb(
 
 
 
-
-
 void SystemMapRenderer::drawPlanetAnimatedCloudLayers(
     const world::celestial::PlanetMapSnapshot& planet,
     double scale,
@@ -4974,17 +5436,16 @@ void SystemMapRenderer::drawPlanetAnimatedCloudLayers(
     const render::celestial::ProceduralCloudStyle& style
 )
 {
-    const double renderTimeSeconds =
-        environmentVisualTimeSeconds(
-            planet.universeTimeSeconds
-        );
-
-
     if (!style.enabled ||
         planet.planetRadiusMeters <= 1.0)
     {
         return;
     }
+
+    const double renderTimeSeconds =
+        environmentVisualTimeSeconds(
+            planet.universeTimeSeconds
+        );
 
     const double meanHeightMeters =
         (
@@ -5000,27 +5461,22 @@ void SystemMapRenderer::drawPlanetAnimatedCloudLayers(
     const double physicalRadiusScale =
         1.0 +
         meanHeightMeters /
-            planet.planetRadiusMeters;
+            std::max(
+                1.0,
+                planet.planetRadiusMeters
+            );
 
     /*
-        Минимальный визуальный разнос нужен, иначе различие
-        в несколько километров на планете радиусом 6371 км
-        практически исчезает и появляется z-overlap.
-    */
-    const double visualLayerOffset =
-        0.0015 *
-        static_cast<double>(
-            1 +
-            (
-                &style -
-                &style
-            )
-        );
+        Даже физически существующая разница высот облачных
+        слоёв может быть меньше одного экранного пикселя.
 
+        Небольшой художественный offset предотвращает
+        наложение облаков точно на поверхность.
+    */
     const double cloudRadiusScale =
         std::clamp(
             physicalRadiusScale +
-                visualLayerOffset,
+                0.0015,
             1.0015,
             1.045
         );
@@ -5035,6 +5491,9 @@ void SystemMapRenderer::drawPlanetAnimatedCloudLayers(
         style
     );
 }
+
+
+
 
 
 
@@ -5057,6 +5516,10 @@ void SystemMapRenderer::drawPlanetProceduralCloudGlobeLayer(
         return;
     }
 
+    /*
+        Эта функция по-прежнему обновляет форму облаков
+        средствами GPU и возвращает актуальную display texture.
+    */
     const GLuint texture =
         m_proceduralCloudLayer.textureForStyle(
             style,
@@ -5066,15 +5529,12 @@ void SystemMapRenderer::drawPlanetProceduralCloudGlobeLayer(
     if (texture == 0)
         return;
 
-
-
-
-
     static GLuint lastLoggedDetailsTexture = 0;
 
     if (lastLoggedDetailsTexture != texture)
     {
-        lastLoggedDetailsTexture = texture;
+        lastLoggedDetailsTexture =
+            texture;
 
         std::cout
             << "[PlanetDetailsCloudRenderer]"
@@ -5083,347 +5543,117 @@ void SystemMapRenderer::drawPlanetProceduralCloudGlobeLayer(
             << " opacity=" << style.opacity
             << " driftSpeed=" << style.driftSpeed
             << " radiusScale=" << cloudRadiusScale
+            << " renderer=GPU_mesh"
             << "\n";
     }
-
-
-
-    auto smoothStep =
-        [](double edge0, double edge1, double x) -> double
-        {
-            const double t =
-                std::clamp(
-                    (x - edge0) /
-                        std::max(
-                            0.000001,
-                            edge1 - edge0
-                        ),
-                    0.0,
-                    1.0
-                );
-
-            return
-                t * t *
-                (3.0 - 2.0 * t);
-        };
-
-    const double radiusMeters =
-        planet.planetRadiusMeters *
-        cloudRadiusScale;
 
     const double driftU =
         std::fmod(
             timeSeconds *
-                static_cast<double>(style.driftSpeed),
+                static_cast<double>(
+                    style.driftSpeed
+                ),
             1.0
         );
 
-    constexpr int latSegments = 56;
-    constexpr int lonSegments = 112;
+    render::celestial::PlanetGlobeLayerDraw draw;
 
-    GLboolean textureWasEnabled =
-        glIsEnabled(
-            GL_TEXTURE_2D
+    draw.texture =
+        texture;
+
+    draw.centerPx =
+        glm::dvec2(
+            centerPx.x +
+                activeDetailCamera().pan.x,
+
+            centerPx.y +
+                activeDetailCamera().pan.y
         );
 
-    GLboolean blendWasEnabled =
-        glIsEnabled(
-            GL_BLEND
+    draw.radiusPx =
+        planet.planetRadiusMeters *
+        scale *
+        activeDetailCamera().zoom *
+        cloudRadiusScale;
+
+    draw.bodyToCamera =
+        planetBodyToDetailCameraMatrix(
+            planet
         );
 
-    GLboolean depthWasEnabled =
-        glIsEnabled(
-            GL_DEPTH_TEST
+    /*
+        Форма облаков меняется внутри ProceduralCloudLayer.
+
+        Этот offset отвечает за непрерывное движение
+        облачного слоя по долготе.
+    */
+    draw.longitudeUvOffset =
+        static_cast<float>(
+            longitudeOffset +
+            driftU
         );
 
-    GLint oldTextureBinding = 0;
+    /*
+        Старый cloud renderer использовал:
 
-    glGetIntegerv(
-        GL_TEXTURE_BINDING_2D,
-        &oldTextureBinding
+            v = 0.5 - latitude / PI
+
+        то есть south pole -> V = 1.
+    */
+    draw.flipV =
+        true;
+
+    /*
+        Цвета cloudColor/shadowColor уже записаны
+        в GPU-generated cloud texture.
+    */
+    draw.color =
+        glm::vec4(
+            1.0f
+        );
+
+    draw.opacity =
+        std::clamp(
+            style.opacity,
+            0.0f,
+            0.92f
+        );
+
+    draw.blending =
+        true;
+
+    /*
+        Полностью сохраняем старый horizonFade:
+
+            smoothStep(0.035, 0.30, front)
+    */
+    draw.useHorizonFade =
+        true;
+
+    draw.horizonFadeStart =
+        0.035f;
+
+    draw.horizonFadeEnd =
+        0.30f;
+
+    /*
+        Полностью сохраняем старый polarGeometryFade:
+
+            1 - smoothStep(0.82, 0.995, normalizedLatitude)
+    */
+    draw.usePolarFade =
+        true;
+
+    draw.polarFadeStart =
+        0.82f;
+
+    draw.polarFadeEnd =
+        0.995f;
+
+    m_planetGlobeMeshRenderer.render(
+        draw
     );
-
-    GLint oldTextureEnvMode =
-        GL_MODULATE;
-
-    glGetTexEnviv(
-        GL_TEXTURE_ENV,
-        GL_TEXTURE_ENV_MODE,
-        &oldTextureEnvMode
-    );
-
-    glUseProgram(0);
-
-    glDisable(
-        GL_DEPTH_TEST
-    );
-
-    glEnable(
-        GL_TEXTURE_2D
-    );
-
-    glBindTexture(
-        GL_TEXTURE_2D,
-        texture
-    );
-
-    glTexEnvi(
-        GL_TEXTURE_ENV,
-        GL_TEXTURE_ENV_MODE,
-        GL_MODULATE
-    );
-
-    glEnable(
-        GL_BLEND
-    );
-
-    glBlendFunc(
-        GL_SRC_ALPHA,
-        GL_ONE_MINUS_SRC_ALPHA
-    );
-
-    auto emit =
-        [&](double lat, double lon)
-        {
-            const glm::dvec3 world =
-                planetSurfacePointMeters(
-                    planet,
-                    lat,
-                    lon,
-                    cloudRadiusScale
-                );
-
-            const glm::dvec3 relative =
-                world -
-                planet.planetCenterMeters;
-
-            const glm::dvec3 cameraSpace =
-                planetMapCameraSpaceRelative(
-                    relative
-                );
-
-            const double front =
-                std::clamp(
-                    cameraSpace.z /
-                        std::max(
-                            1.0,
-                            radiusMeters
-                        ),
-                    0.0,
-                    1.0
-                );
-
-            const double horizonFade =
-                smoothStep(
-                    0.035,
-                    0.30,
-                    front
-                );
-
-
-            const double normalizedLatitude =
-                std::abs(
-                    lat /
-                    glm::half_pi<double>()
-                );
-
-            const double polarGeometryFade =
-                1.0 -
-                smoothStep(
-                    0.82,
-                    0.995,
-                    normalizedLatitude
-                );
-
-
-            
-
-
-
-            const glm::dvec2 screen =
-                planetMapProject(
-                    world,
-                    planet,
-                    scale,
-                    centerPx
-                );
-
-            const double u =
-                0.5 +
-                lon / glm::two_pi<double>() +
-                longitudeOffset +
-                driftU;
-
-            const double v =
-                std::clamp(
-                    0.5 -
-                        lat / glm::pi<double>(),
-                    0.0,
-                    1.0
-                );
-
-            const float renderOpacity =
-                std::clamp(
-                    style.opacity,
-                    0.0f,
-                    0.92f
-                );
-
-            const float alpha =
-                static_cast<float>(
-                    renderOpacity *
-                    horizonFade *   
-                    polarGeometryFade
-                );
-
-
-            glColor4f(
-                1.0f,
-                1.0f,
-                1.0f,
-                alpha
-            );
-
-            glTexCoord2d(
-                u,
-                v
-            );
-
-            glVertex2d(
-                screen.x,
-                screen.y
-            );
-        };
-
-    glBegin(
-        GL_TRIANGLES
-    );
-
-    for (int iy = 0; iy < latSegments; ++iy)
-    {
-        const double v0 =
-            static_cast<double>(iy) /
-            static_cast<double>(latSegments);
-
-        const double v1 =
-            static_cast<double>(iy + 1) /
-            static_cast<double>(latSegments);
-
-        const double lat0 =
-            -glm::half_pi<double>() +
-            v0 * glm::pi<double>();
-
-        const double lat1 =
-            -glm::half_pi<double>() +
-            v1 * glm::pi<double>();
-
-        for (int ix = 0; ix < lonSegments; ++ix)
-        {
-            const double u0 =
-                static_cast<double>(ix) /
-                static_cast<double>(lonSegments);
-
-            const double u1 =
-                static_cast<double>(ix + 1) /
-                static_cast<double>(lonSegments);
-
-            const double lon0 =
-                -glm::pi<double>() +
-                u0 * glm::two_pi<double>();
-
-            const double lon1 =
-                -glm::pi<double>() +
-                u1 * glm::two_pi<double>();
-
-            const double latMid =
-                0.5 * (lat0 + lat1);
-
-            const double lonMid =
-                0.5 * (lon0 + lon1);
-
-            const glm::dvec3 midWorld =
-                planetSurfacePointMeters(
-                    planet,
-                    latMid,
-                    lonMid,
-                    cloudRadiusScale
-                );
-
-            const glm::dvec3 midRelative =
-                midWorld -
-                planet.planetCenterMeters;
-
-            const glm::dvec3 midCamera =
-                planetMapCameraSpaceRelative(
-                    midRelative
-                );
-
-            // +Z — видимая полусфера.
-            if (midCamera.z < 0.0)
-                continue;
-
-            emit(
-                lat0,
-                lon0
-            );
-
-            emit(
-                lat0,
-                lon1
-            );
-
-            emit(
-                lat1,
-                lon1
-            );
-
-            emit(
-                lat0,
-                lon0
-            );
-
-            emit(
-                lat1,
-                lon1
-            );
-
-            emit(
-                lat1,
-                lon0
-            );
-        }
-    }
-
-    glEnd();
-
-    glBindTexture(
-        GL_TEXTURE_2D,
-        static_cast<GLuint>(oldTextureBinding)
-    );
-
-    glTexEnvi(
-        GL_TEXTURE_ENV,
-        GL_TEXTURE_ENV_MODE,
-        oldTextureEnvMode
-    );
-
-    if (textureWasEnabled)
-        glEnable(GL_TEXTURE_2D);
-    else
-        glDisable(GL_TEXTURE_2D);
-
-    if (blendWasEnabled)
-        glEnable(GL_BLEND);
-    else
-        glDisable(GL_BLEND);
-
-    if (depthWasEnabled)
-        glEnable(GL_DEPTH_TEST);
-    else
-        glDisable(GL_DEPTH_TEST);
 }
-
-
 
 
 
@@ -6312,6 +6542,21 @@ void SystemMapRenderer::render(
         
     if (!m_initialized)
         init();
+
+
+    /*
+        Начало нового кадра процедурных облаков.
+
+        Это должно выполняться ровно один раз до любого
+        вызова textureForStyle(), независимо от режима карты
+        и наличия старой solid geometry.
+    */
+    m_proceduralCloudLayer.beginFrame();
+
+
+
+
+
     const Viewport& vp = viewport;
 
     glViewport(vp.x, vp.y, vp.width, vp.height);
@@ -6386,22 +6631,390 @@ void SystemMapRenderer::render(
 
 
 
+glm::vec3 SystemMapRenderer::galaxyPositionLyToRender(
+    const glm::dvec3& positionLy
+) const
+{
+    /*
+        Navigation coordinates and star-atlas coordinates use the same
+        heliocentric equatorial J2000 axes. The renderer only applies
+        a visual scale.
+    */
+    return glm::vec3(
+        static_cast<float>(positionLy.x) * GALAXY_RENDER_UNITS_PER_LY,
+        static_cast<float>(positionLy.y) * GALAXY_RENDER_UNITS_PER_LY,
+        static_cast<float>(positionLy.z) * GALAXY_RENDER_UNITS_PER_LY
+    );
+}
+
+glm::vec3 SystemMapRenderer::galaxyVectorLyToRender(
+    const glm::dvec3& vectorLy
+) const
+{
+    return glm::vec3(
+        static_cast<float>(vectorLy.x) * GALAXY_RENDER_UNITS_PER_LY,
+        static_cast<float>(vectorLy.y) * GALAXY_RENDER_UNITS_PER_LY,
+        static_cast<float>(vectorLy.z) * GALAXY_RENDER_UNITS_PER_LY
+    );
+}
+
 glm::vec3 SystemMapRenderer::galaxyStarPosition(
     const world::celestial::GalaxyMapSystem& s
 ) const
 {
-    const float scale = 2.2f;
-
-    return {
-        static_cast<float>(s.positionLy.x * scale),
-        static_cast<float>(s.positionLy.y * scale),
-        static_cast<float>(s.positionLy.z * scale)
-    };
+    return galaxyPositionLyToRender(
+        s.positionLy
+    );
 }
 
+void SystemMapRenderer::addGalaxyNavigationCubeEdges(
+    const glm::vec3& center,
+    const glm::vec3& halfAxisX,
+    const glm::vec3& halfAxisY,
+    const glm::vec3& halfAxisZ,
+    const glm::vec4& color
+)
+{
+    const std::array<glm::vec3, 8> corners =
+    {
+        center - halfAxisX - halfAxisY - halfAxisZ,
+        center + halfAxisX - halfAxisY - halfAxisZ,
+        center - halfAxisX + halfAxisY - halfAxisZ,
+        center + halfAxisX + halfAxisY - halfAxisZ,
+        center - halfAxisX - halfAxisY + halfAxisZ,
+        center + halfAxisX - halfAxisY + halfAxisZ,
+        center - halfAxisX + halfAxisY + halfAxisZ,
+        center + halfAxisX + halfAxisY + halfAxisZ
+    };
 
+    static constexpr int edges[12][2] =
+    {
+        {0, 1}, {2, 3}, {4, 5}, {6, 7},
+        {0, 2}, {1, 3}, {4, 6}, {5, 7},
+        {0, 4}, {1, 5}, {2, 6}, {3, 7}
+    };
 
+    const glm::vec4 weakColor(
+        color.r,
+        color.g,
+        color.b,
+        color.a * 0.38f
+    );
 
+    for (const auto& edge : edges)
+    {
+        const glm::vec3 a = corners[edge[0]];
+        const glm::vec3 b = corners[edge[1]];
+        const glm::vec3 d = b - a;
+
+        addLine(a, a + d * 0.18f, color);
+        addLine(a + d * 0.18f, a + d * 0.32f, weakColor);
+        addLine(a + d * 0.68f, a + d * 0.82f, weakColor);
+        addLine(a + d * 0.82f, b, color);
+    }
+}
+
+void SystemMapRenderer::drawGalaxyNavigationGrid(
+    const Viewport&,
+    const glm::mat4&
+)
+{
+    if (!m_galaxyNavigationGrid.enabled())
+        return;
+
+    const auto& frame =
+        m_galaxyNavigationGrid.frame();
+
+    const auto cells =
+        m_galaxyNavigationGrid.neighborhood();
+
+    for (const auto& cell : cells)
+    {
+        const glm::vec3 center =
+            galaxyPositionLyToRender(
+                cell.centerLy
+            );
+
+        const double halfSizeLy =
+            cell.sizeLy * 0.5;
+
+        const glm::vec3 halfAxisX =
+            galaxyVectorLyToRender(
+                frame.axisX * halfSizeLy
+            );
+
+        const glm::vec3 halfAxisY =
+            galaxyVectorLyToRender(
+                frame.axisY * halfSizeLy
+            );
+
+        const glm::vec3 halfAxisZ =
+            galaxyVectorLyToRender(
+                frame.axisZ * halfSizeLy
+            );
+
+        const bool isAnchor =
+            cell.index ==
+            m_galaxyNavigationGrid.anchorIndex();
+
+        const bool isHovered =
+            m_galaxyNavigationGrid.hasHoveredCell() &&
+            cell.index ==
+                m_galaxyNavigationGrid.hoveredCell().index;
+
+        const bool isSelected =
+            m_galaxyNavigationGrid.hasSelectedCell() &&
+            cell.index ==
+                m_galaxyNavigationGrid.selectedCell().index;
+
+        glm::vec4 edgeColor(
+            0.25f,
+            0.66f,
+            0.88f,
+            0.11f
+        );
+
+        glm::vec4 markerColor(
+            1.00f,
+            0.80f,
+            0.18f,
+            0.42f
+        );
+
+        if (isAnchor)
+        {
+            edgeColor.a = 0.18f;
+            markerColor.a = 0.58f;
+        }
+
+        if (isHovered)
+        {
+            edgeColor = glm::vec4(
+                0.55f,
+                0.88f,
+                1.00f,
+                0.34f
+            );
+
+            markerColor = glm::vec4(
+                1.00f,
+                0.88f,
+                0.28f,
+                0.92f
+            );
+        }
+
+        if (isSelected)
+        {
+            edgeColor = glm::vec4(
+                0.95f,
+                0.76f,
+                0.18f,
+                0.42f
+            );
+
+            markerColor = glm::vec4(
+                1.00f,
+                0.86f,
+                0.20f,
+                1.00f
+            );
+        }
+
+        addGalaxyNavigationCubeEdges(
+            center,
+            halfAxisX,
+            halfAxisY,
+            halfAxisZ,
+            edgeColor
+        );
+
+        const float cellRenderSize =
+            static_cast<float>(
+                cell.sizeLy
+            ) * GALAXY_RENDER_UNITS_PER_LY;
+
+        float markerSize =
+            std::clamp(
+                cellRenderSize * 0.040f,
+                0.20f,
+                0.80f
+            );
+
+        if (isHovered || isSelected)
+            markerSize *= 1.35f;
+
+        addCross(
+            center,
+            markerSize,
+            markerColor
+        );
+    }
+}
+
+bool SystemMapRenderer::pickGalaxyNavigationCell(
+    const Viewport& vp,
+    double localMouseX,
+    double localMouseY,
+    game::navigation::GalaxyNavigationCell& outCell
+) const
+{
+    if (!m_galaxyNavigationGrid.enabled())
+        return false;
+
+    const glm::mat4 mvp =
+        galaxyProjectionMatrix(vp) *
+        galaxyViewMatrix();
+
+    bool found = false;
+    float bestDistancePx = 18.0f;
+    float bestDepth = 1.0f;
+
+    const auto cells =
+        m_galaxyNavigationGrid.neighborhood();
+
+    for (const auto& cell : cells)
+    {
+        bool visible = false;
+        float depth = 1.0f;
+
+        const glm::vec2 screen =
+            projectToScreen(
+                galaxyPositionLyToRender(
+                    cell.centerLy
+                ),
+                mvp,
+                vp,
+                visible,
+                depth
+            );
+
+        if (!visible)
+            continue;
+
+        const float dx =
+            screen.x -
+            static_cast<float>(localMouseX);
+
+        const float dy =
+            screen.y -
+            static_cast<float>(localMouseY);
+
+        const float distancePx =
+            std::sqrt(dx * dx + dy * dy);
+
+        const bool betterScreenMatch =
+            distancePx < bestDistancePx - 0.25f;
+
+        const bool equalScreenMatchButNearer =
+            std::abs(distancePx - bestDistancePx) <= 0.25f &&
+            depth < bestDepth;
+
+        if (!betterScreenMatch &&
+            !equalScreenMatchButNearer)
+        {
+            continue;
+        }
+
+        found = true;
+        bestDistancePx = distancePx;
+        bestDepth = depth;
+        outCell = cell;
+    }
+
+    return found;
+}
+
+float SystemMapRenderer::galaxyNavigationAnchorDiameterPx(
+    const Viewport& vp
+) const
+{
+    if (!m_galaxyNavigationGrid.enabled())
+        return 0.0f;
+
+    const auto cell =
+        m_galaxyNavigationGrid.anchorCell();
+
+    const auto& frame =
+        m_galaxyNavigationGrid.frame();
+
+    const glm::dvec3 hx =
+        frame.axisX *
+        (cell.sizeLy * 0.5);
+
+    const glm::dvec3 hy =
+        frame.axisY *
+        (cell.sizeLy * 0.5);
+
+    const glm::dvec3 hz =
+        frame.axisZ *
+        (cell.sizeLy * 0.5);
+
+    const std::array<glm::dvec3, 8> corners =
+    {
+        cell.centerLy - hx - hy - hz,
+        cell.centerLy + hx - hy - hz,
+        cell.centerLy - hx + hy - hz,
+        cell.centerLy + hx + hy - hz,
+        cell.centerLy - hx - hy + hz,
+        cell.centerLy + hx - hy + hz,
+        cell.centerLy - hx + hy + hz,
+        cell.centerLy + hx + hy + hz
+    };
+
+    const glm::mat4 mvp =
+        galaxyProjectionMatrix(vp) *
+        galaxyViewMatrix();
+
+    bool anyVisible = false;
+
+    float minX =
+        std::numeric_limits<float>::max();
+
+    float minY =
+        std::numeric_limits<float>::max();
+
+    float maxX =
+        -std::numeric_limits<float>::max();
+
+    float maxY =
+        -std::numeric_limits<float>::max();
+
+    for (const glm::dvec3& cornerLy : corners)
+    {
+        bool visible = false;
+        float depth = 1.0f;
+
+        const glm::vec2 screen =
+            projectToScreen(
+                galaxyPositionLyToRender(
+                    cornerLy
+                ),
+                mvp,
+                vp,
+                visible,
+                depth
+            );
+
+        if (!visible)
+            continue;
+
+        anyVisible = true;
+
+        minX = std::min(minX, screen.x);
+        minY = std::min(minY, screen.y);
+        maxX = std::max(maxX, screen.x);
+        maxY = std::max(maxY, screen.y);
+    }
+
+    if (!anyVisible)
+        return 0.0f;
+
+    return std::max(
+        maxX - minX,
+        maxY - minY
+    );
+}
 
 
 glm::mat4 SystemMapRenderer::galaxyViewMatrix() const
@@ -7463,6 +8076,63 @@ void SystemMapRenderer::handleGalaxyInput(
         const double dx = mx - m_galaxyCamera.lastMouseX;
         const double dy = my - m_galaxyCamera.lastMouseY;
 
+        const bool spaceDown =
+            glfwGetKey(
+                window,
+                GLFW_KEY_SPACE
+            ) == GLFW_PRESS;
+
+        if (spaceDown &&
+            !m_galaxyNavigationSpaceWasDown)
+        {
+            m_galaxyNavigationGrid.toggleEnabled();
+
+            if (m_galaxyNavigationGrid.enabled())
+            {
+                /*
+                    First activation starts from the Sol-centred
+                    zero cell. Existing selection survives later
+                    off/on toggles.
+                */
+                const auto anchor =
+                    m_galaxyNavigationGrid.anchorCell();
+
+                m_galaxyCamera.target =
+                    galaxyPositionLyToRender(
+                        anchor.centerLy
+                    );
+            }
+        }
+
+        m_galaxyNavigationSpaceWasDown =
+            spaceDown;
+
+        if (m_galaxyNavigationGrid.enabled() &&
+            inside)
+        {
+            game::navigation::GalaxyNavigationCell hoveredCell;
+
+            if (pickGalaxyNavigationCell(
+                    vp,
+                    localMx,
+                    localMy,
+                    hoveredCell
+                ))
+            {
+                m_galaxyNavigationGrid.setHoveredCell(
+                    hoveredCell
+                );
+            }
+            else
+            {
+                m_galaxyNavigationGrid.clearHoveredCell();
+            }
+        }
+        else
+        {
+            m_galaxyNavigationGrid.clearHoveredCell();
+        }
+
         bool leftStartedThisFrame = false;
 
         if (inside &&
@@ -7532,11 +8202,36 @@ void SystemMapRenderer::handleGalaxyInput(
 
                     if (picked >= 0)
                     {
+                        /*
+                            A real star/system has priority over an
+                            empty-space grid marker.
+                        */
                         m_selectedSystemId =
                             picked;
 
                         m_focusedSystemId =
                             picked;
+                    }
+                    else if (m_galaxyNavigationGrid.enabled())
+                    {
+                        game::navigation::GalaxyNavigationCell pickedCell;
+
+                        if (pickGalaxyNavigationCell(
+                                vp,
+                                localMx,
+                                localMy,
+                                pickedCell
+                            ))
+                        {
+                            m_galaxyNavigationGrid.selectCell(
+                                pickedCell
+                            );
+
+                            m_galaxyCamera.target =
+                                galaxyPositionLyToRender(
+                                    pickedCell.centerLy
+                                );
+                        }
                     }
                 }
             }
@@ -7765,6 +8460,45 @@ void SystemMapRenderer::handleGalaxyInput(
                         controls.minDistance,
                         controls.maxDistance
                     );
+
+                if (m_galaxyNavigationGrid.enabled())
+                {
+                    const float cubeDiameterPx =
+                        galaxyNavigationAnchorDiameterPx(
+                            vp
+                        );
+
+                    const float viewportReferencePx =
+                        static_cast<float>(
+                            std::max(
+                                1,
+                                std::min(
+                                    vp.width,
+                                    vp.height
+                                )
+                            )
+                        );
+
+                    if (zoom > 0.0f &&
+                        cubeDiameterPx >
+                            viewportReferencePx * 0.72f)
+                    {
+                        m_galaxyNavigationGrid.refineAroundAnchor();
+                    }
+                    else if (zoom < 0.0f &&
+                             cubeDiameterPx <
+                                viewportReferencePx * 0.18f)
+                    {
+                        m_galaxyNavigationGrid.coarsenAroundAnchor();
+                    }
+
+                    m_galaxyCamera.target =
+                        galaxyPositionLyToRender(
+                            m_galaxyNavigationGrid
+                                .anchorCell()
+                                .centerLy
+                        );
+                }
             }
         }
 
@@ -7811,14 +8545,44 @@ void SystemMapRenderer::renderGalaxy(
 
     beginLines();
 
-    const glm::vec4 gridColor { 0.10f, 0.28f, 0.43f, 0.22f };
-
-    for (int i = -20; i <= 20; ++i)
+    if (m_galaxyNavigationGrid.enabled())
     {
-        const float v = static_cast<float>(i) * 5.0f;
+        /*
+            The old decorative plane is hidden in navigation mode.
+            The cubic grid is the active coordinate instrument.
+        */
+        drawGalaxyNavigationGrid(
+            vp,
+            mvp
+        );
+    }
+    else
+    {
+        const glm::vec4 gridColor {
+            0.10f,
+            0.28f,
+            0.43f,
+            0.22f
+        };
 
-        addLine({ -100.0f, 0.0f, v }, { 100.0f, 0.0f, v }, gridColor);
-        addLine({ v, 0.0f, -100.0f }, { v, 0.0f, 100.0f }, gridColor);
+        for (int i = -20; i <= 20; ++i)
+        {
+            const float v =
+                static_cast<float>(i) *
+                5.0f;
+
+            addLine(
+                {-100.0f, 0.0f, v},
+                { 100.0f, 0.0f, v},
+                gridColor
+            );
+
+            addLine(
+                {v, 0.0f, -100.0f},
+                {v, 0.0f,  100.0f},
+                gridColor
+            );
+        }
     }
 
     // Пустой будущий слой навигации.
@@ -8410,6 +9174,17 @@ double SystemMapRenderer::environmentVisualTimeSeconds(
             Clock::now().time_since_epoch()
         ).count();
 
+    if (!std::isfinite(sourceTimeSeconds))
+    {
+        sourceTimeSeconds =
+            0.0;
+    }
+
+    /*
+        Первый кадр синхронизируем с universe time,
+        чтобы разные тела получали детерминированную
+        исходную фазу.
+    */
     if (!m_environmentVisualTimeInitialized)
     {
         m_environmentVisualTimeSeconds =
@@ -8424,65 +9199,109 @@ double SystemMapRenderer::environmentVisualTimeSeconds(
         m_environmentVisualTimeInitialized =
             true;
 
-        return sourceTimeSeconds;
+        return
+            m_environmentVisualTimeSeconds;
     }
 
-    const double wallDt =
+    /*
+        Реальное время кадра.
+
+        Верхнее ограничение защищает анимацию от большого
+        скачка после breakpoint, сворачивания окна или лагов.
+    */
+    const double wallDeltaSeconds =
         std::clamp(
             nowSeconds -
                 m_environmentLastWallClockSeconds,
             0.0,
-            0.05
+            0.10
         );
 
     m_environmentLastWallClockSeconds =
         nowSeconds;
 
-    if (sourceTimeSeconds <
-        m_environmentLastSourceTimeSeconds - 0.001)
-    {
-        m_environmentVisualTimeSeconds =
-            sourceTimeSeconds;
+    const bool sourceWentBackward =
+        sourceTimeSeconds <
+        m_environmentLastSourceTimeSeconds -
+            0.001;
 
-        m_environmentLastSourceTimeSeconds =
-            sourceTimeSeconds;
-
-        return sourceTimeSeconds;
-    }
+    const bool sourceAdvanced =
+        sourceTimeSeconds >
+        m_environmentLastSourceTimeSeconds +
+            0.000001;
 
     m_environmentLastSourceTimeSeconds =
         sourceTimeSeconds;
 
-    // Плавно двигаем визуальное время локально.
+    /*
+        Явный откат universe time:
+        загрузка состояния, перемотка или сброс сервера.
+
+        В этом случае локальное визуальное время тоже
+        должно немедленно синхронизироваться.
+    */
+    if (sourceWentBackward)
+    {
+        m_environmentVisualTimeSeconds =
+            sourceTimeSeconds;
+
+        return
+            m_environmentVisualTimeSeconds;
+    }
+
+    /*
+        Главное изменение:
+
+        визуальное время всегда движется по steady_clock,
+        даже если snapshot кэширован и его universeTimeSeconds
+        несколько секунд не обновляется.
+    */
     m_environmentVisualTimeSeconds +=
-        wallDt;
+        wallDeltaSeconds;
 
-    // Если сильно отстали — мягко подтягиваемся.
-    const double maxLagSeconds =
-        0.35;
+    /*
+        Когда свежий snapshot всё-таки приходит, мягко
+        корректируем небольшое расхождение.
 
-    if (m_environmentVisualTimeSeconds <
-        sourceTimeSeconds - maxLagSeconds)
+        Большой скачок синхронизируем сразу — например,
+        при ускоренном universe time или смене состояния.
+    */
+    if (sourceAdvanced)
     {
-        m_environmentVisualTimeSeconds =
-            sourceTimeSeconds - maxLagSeconds;
+        const double timeError =
+            sourceTimeSeconds -
+            m_environmentVisualTimeSeconds;
+
+        if (std::abs(timeError) > 2.0)
+        {
+            m_environmentVisualTimeSeconds =
+                sourceTimeSeconds;
+        }
+        else
+        {
+            const double correctionBlend =
+                1.0 -
+                std::exp(
+                    -6.0 *
+                    wallDeltaSeconds
+                );
+
+            const double limitedError =
+                std::clamp(
+                    timeError,
+                    -0.25,
+                    0.25
+                );
+
+            m_environmentVisualTimeSeconds +=
+                limitedError *
+                correctionBlend;
+        }
     }
 
-    // Не даём времени убежать слишком далеко вперёд.
-    const double maxLeadSeconds =
-        0.10;
-
-    if (m_environmentVisualTimeSeconds >
-        sourceTimeSeconds + maxLeadSeconds)
-    {
-        m_environmentVisualTimeSeconds =
-            sourceTimeSeconds + maxLeadSeconds;
-    }
-
-    return m_environmentVisualTimeSeconds;
+    return
+        m_environmentVisualTimeSeconds;
 }
-
-
 
 
 
@@ -9991,7 +10810,110 @@ glm::dvec3 SystemMapRenderer::planetMapCameraSpaceRelative(
 
 
 
+glm::mat3 SystemMapRenderer::planetBodyToDetailCameraMatrix(
+    const world::celestial::PlanetMapSnapshot& planet
+) const
+{
+    const glm::dvec3 north =
+        planetNorthAxisWorld(
+            planet
+        );
 
+    const glm::dvec3 prime0 =
+        planetPrimeAxisWorld(
+            north
+        );
+
+    const glm::dvec3 east0 =
+        planetEastAxisWorld(
+            north,
+            prime0
+        );
+
+    /*
+        Полностью повторяем planetSurfacePointMeters():
+
+            worldLon =
+                textureLongitude
+                + textureOffset
+                + rotationPhase
+    */
+    const double spin =
+        degToRadD(
+            planet.planetTextureLongitudeOffsetDeg
+        ) +
+        planet.planetRotationPhaseRad;
+
+    const double cosine =
+        std::cos(
+            spin
+        );
+
+    const double sine =
+        std::sin(
+            spin
+        );
+
+    /*
+        После включения spin локальная координата сферы:
+
+            X = cos(longitude)
+            Y = latitude
+            Z = sin(longitude)
+    */
+    const glm::dvec3 rotatedPrime =
+        prime0 *
+            cosine +
+        east0 *
+            sine;
+
+    const glm::dvec3 rotatedEast =
+        -prime0 *
+            sine +
+        east0 *
+            cosine;
+
+    const glm::dvec3 cameraPrime =
+        planetMapCameraSpaceRelative(
+            rotatedPrime
+        );
+
+    const glm::dvec3 cameraNorth =
+        planetMapCameraSpaceRelative(
+            north
+        );
+
+    const glm::dvec3 cameraEast =
+        planetMapCameraSpaceRelative(
+            rotatedEast
+        );
+
+    /*
+        glm::mat3 принимает столбцы.
+
+        Поэтому:
+
+            matrix * vec3(x, y, z)
+
+        возвращает:
+
+            prime * x
+            + north * y
+            + east * z
+    */
+    return
+        glm::mat3(
+            glm::vec3(
+                cameraPrime
+            ),
+            glm::vec3(
+                cameraNorth
+            ),
+            glm::vec3(
+                cameraEast
+            )
+        );
+}
 
 
 
@@ -10372,7 +11294,8 @@ if (!shapeModelDrawn)
 drawPlanetEnvironmentLayers(
     planet,
     scale,
-    centerPx
+    centerPx,
+    !shapeModelDrawn
 );
 
 
@@ -10477,9 +11400,13 @@ if (!shapeModelDrawn)
             axisLenMeters
         );
 
+        const glm::dvec3 hubRelativeVelocityMps =
+            hub.velocityMps -
+            planet.planetVelocityMps;
+
         drawPlanetMapVelocityArrow(
             hub.positionMeters,
-            hub.velocityMps,
+            hubRelativeVelocityMps,
             planet,
             scale,
             centerPx,
@@ -10513,9 +11440,13 @@ if (!shapeModelDrawn)
             axisLenMeters
         );
 
+        const glm::dvec3 stationRelativeVelocityMps =
+            station.velocityMps -
+            planet.planetVelocityMps;
+
         drawPlanetMapVelocityArrow(
             station.positionMeters,
-            station.velocityMps,
+            stationRelativeVelocityMps,
             planet,
             scale,
             centerPx,
@@ -10549,9 +11480,13 @@ if (!shapeModelDrawn)
             axisLenMeters
         );
 
+        const glm::dvec3 shipRelativeVelocityMps =
+            ship.velocityMps -
+            planet.planetVelocityMps;
+
         drawPlanetMapVelocityArrow(
             ship.positionMeters,
-            ship.velocityMps,
+            shipRelativeVelocityMps,
             planet,
             scale,
             centerPx,
@@ -11226,7 +12161,6 @@ void SystemMapRenderer::drawPlanetFilledDisk(
 
 
 
-
 void SystemMapRenderer::drawPlanetTexturedGlobe(
     const world::celestial::PlanetMapSnapshot& planet,
     double scale,
@@ -11244,196 +12178,64 @@ void SystemMapRenderer::drawPlanetTexturedGlobe(
     if (texture == 0)
         return;
 
-    constexpr int latSegments = 48;
-    constexpr int lonSegments = 96;
+    render::celestial::PlanetGlobeLayerDraw draw;
 
-    GLboolean textureWasEnabled =
-        glIsEnabled(GL_TEXTURE_2D);
+    draw.texture =
+        texture;
 
-    GLboolean blendWasEnabled =
-        glIsEnabled(GL_BLEND);
+    draw.centerPx =
+        glm::dvec2(
+            centerPx.x +
+                activeDetailCamera().pan.x,
 
-    glUseProgram(0);
+            centerPx.y +
+                activeDetailCamera().pan.y
+        );
 
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    draw.radiusPx =
+        planet.planetRadiusMeters *
+        scale *
+        activeDetailCamera().zoom;
 
-    glEnable(GL_BLEND);
-    glBlendFunc(
-        GL_SRC_ALPHA,
-        GL_ONE_MINUS_SRC_ALPHA
+    draw.bodyToCamera =
+        planetBodyToDetailCameraMatrix(
+            planet
+        );
+
+    /*
+        Spin уже включён в bodyToCamera.
+    */
+    draw.longitudeUvOffset =
+        0.0f;
+
+    /*
+        Сохраняем ориентацию V старого surface renderer:
+            south pole -> V = 0
+    */
+    draw.flipV =
+        false;
+
+    draw.color =
+        glm::vec4(
+            1.0f
+        );
+
+    draw.opacity =
+        1.0f;
+
+    draw.blending =
+        true;
+
+    draw.useHorizonFade =
+        false;
+
+    draw.usePolarFade =
+        false;
+
+    m_planetGlobeMeshRenderer.render(
+        draw
     );
-
-    glColor4f(
-        1.0f,
-        1.0f,
-        1.0f,
-        1.0f
-    );
-
-    glBegin(GL_TRIANGLES);
-
-    for (int iy = 0; iy < latSegments; ++iy)
-    {
-        const double v0 =
-            static_cast<double>(iy) /
-            static_cast<double>(latSegments);
-
-        const double v1 =
-            static_cast<double>(iy + 1) /
-            static_cast<double>(latSegments);
-
-        const double lat0 =
-            -glm::half_pi<double>() +
-            v0 * glm::pi<double>();
-
-        const double lat1 =
-            -glm::half_pi<double>() +
-            v1 * glm::pi<double>();
-
-        for (int ix = 0; ix < lonSegments; ++ix)
-        {
-            const double u0 =
-                static_cast<double>(ix) /
-                static_cast<double>(lonSegments);
-
-            const double u1 =
-                static_cast<double>(ix + 1) /
-                static_cast<double>(lonSegments);
-
-            const double lon0 =
-                -glm::pi<double>() +
-                u0 * glm::two_pi<double>();
-
-            const double lon1 =
-                -glm::pi<double>() +
-                u1 * glm::two_pi<double>();
-
-            const double latMid =
-                0.5 * (lat0 + lat1);
-
-            const double lonMid =
-                0.5 * (lon0 + lon1);
-
-            const glm::dvec3 midWorld =
-                planetSurfacePointMeters(
-                    planet,
-                    latMid,
-                    lonMid
-                );
-
-            const glm::dvec3 midRelative =
-                midWorld -
-                planet.planetCenterMeters;
-
-            const glm::dvec3 midCamera =
-                planetMapCameraSpaceRelative(
-                    midRelative
-                );
-
-            // Draw only the visible hemisphere.
-            // In the current planet-map camera convention +Z is front.
-            if (midCamera.z < 0.0)
-                continue;
-
-            const glm::dvec3 p00 =
-                planetSurfacePointMeters(
-                    planet,
-                    lat0,
-                    lon0
-                );
-
-            const glm::dvec3 p10 =
-                planetSurfacePointMeters(
-                    planet,
-                    lat0,
-                    lon1
-                );
-
-            const glm::dvec3 p11 =
-                planetSurfacePointMeters(
-                    planet,
-                    lat1,
-                    lon1
-                );
-
-            const glm::dvec3 p01 =
-                planetSurfacePointMeters(
-                    planet,
-                    lat1,
-                    lon0
-                );
-
-            const glm::dvec2 s00 =
-                planetMapProject(
-                    p00,
-                    planet,
-                    scale,
-                    centerPx
-                );
-
-            const glm::dvec2 s10 =
-                planetMapProject(
-                    p10,
-                    planet,
-                    scale,
-                    centerPx
-                );
-
-            const glm::dvec2 s11 =
-                planetMapProject(
-                    p11,
-                    planet,
-                    scale,
-                    centerPx
-                );
-
-            const glm::dvec2 s01 =
-                planetMapProject(
-                    p01,
-                    planet,
-                    scale,
-                    centerPx
-                );
-
-            // Triangle 1
-            glTexCoord2d(u0, v0);
-            glVertex2d(s00.x, s00.y);
-
-            glTexCoord2d(u1, v0);
-            glVertex2d(s10.x, s10.y);
-
-            glTexCoord2d(u1, v1);
-            glVertex2d(s11.x, s11.y);
-
-            // Triangle 2
-            glTexCoord2d(u0, v0);
-            glVertex2d(s00.x, s00.y);
-
-            glTexCoord2d(u1, v1);
-            glVertex2d(s11.x, s11.y);
-
-            glTexCoord2d(u0, v1);
-            glVertex2d(s01.x, s01.y);
-        }
-    }
-
-    glEnd();
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    if (textureWasEnabled)
-        glEnable(GL_TEXTURE_2D);
-    else
-        glDisable(GL_TEXTURE_2D);
-
-    if (blendWasEnabled)
-        glEnable(GL_BLEND);
-    else
-        glDisable(GL_BLEND);
 }
-
-
 
 
 
@@ -11683,23 +12485,35 @@ void SystemMapRenderer::drawPlanetMapOrbit3D(
         const glm::dvec3 p1 =
             orbitPoint((i + 1) % segments);
 
-        const glm::dvec3 mid =
-            (p0 + p1) * 0.5;
+ 
+            
+const glm::dvec3 mid =
+    (p0 + p1) * 0.5;
 
-        const bool hidden =
-            isHiddenBehindPlanet(mid);
+/*
+    В Planet Details дальняя половина орбиты остаётся
+    видимой как очень слабая навигационная подсказка.
 
-        const float alpha =
-            hidden
-                ? baseColor[3] * 0.16f
-                : baseColor[3];
+    Это относится только к карте Details. На карте Hub
+    эта функция не используется.
+*/
+const bool hidden =
+    isHiddenBehindPlanet(mid);
 
-        glColor4f(
-            baseColor[0],
-            baseColor[1],
-            baseColor[2],
-            alpha
-        );
+const float alpha =
+    hidden
+        ? baseColor[3] * 0.16f
+        : baseColor[3];
+
+glColor4f(
+    baseColor[0],
+    baseColor[1],
+    baseColor[2],
+    alpha
+);
+
+
+
 
         const glm::dvec2 s0 =
             planetMapProject(
@@ -11917,62 +12731,95 @@ glm::dvec3 SystemMapRenderer::hubMapUnprojectCursorToLocal(
 
 
 
-
-
-
-
-
 void SystemMapRenderer::drawHubMapBox(
     const glm::dvec3& center,
     const world::celestial::PlanetMapAxisSet& axes,
     const glm::dvec3& size,
+    const glm::vec4& color,
     double scale,
     const glm::dvec2& centerPx
 )
 {
-    const glm::dvec3 hx = axes.x * (size.x * 0.5);
-    const glm::dvec3 hy = axes.y * (size.y * 0.5);
-    const glm::dvec3 hz = axes.z * (size.z * 0.5);
+    const glm::dvec3 hx =
+        axes.x * (size.x * 0.5);
 
-    glm::dvec3 p[8];
+    const glm::dvec3 hy =
+        axes.y * (size.y * 0.5);
 
-    p[0] = center - hx - hy - hz;
-    p[1] = center + hx - hy - hz;
-    p[2] = center + hx + hy - hz;
-    p[3] = center - hx + hy - hz;
+    const glm::dvec3 hz =
+        axes.z * (size.z * 0.5);
 
-    p[4] = center - hx - hy + hz;
-    p[5] = center + hx - hy + hz;
-    p[6] = center + hx + hy + hz;
-    p[7] = center - hx + hy + hz;
+    glm::dvec3 points[8];
 
-    auto line =
-        [&](int a, int b)
+    points[0] = center - hx - hy - hz;
+    points[1] = center + hx - hy - hz;
+    points[2] = center + hx + hy - hz;
+    points[3] = center - hx + hy - hz;
+
+    points[4] = center - hx - hy + hz;
+    points[5] = center + hx - hy + hz;
+    points[6] = center + hx + hy + hz;
+    points[7] = center - hx + hy + hz;
+
+    constexpr int edges[12][2] =
+    {
+        {0, 1}, {1, 2}, {2, 3}, {3, 0},
+        {4, 5}, {5, 6}, {6, 7}, {7, 4},
+        {0, 4}, {1, 5}, {2, 6}, {3, 7}
+    };
+
+    if (m_hubMapGpuGeometryRenderer.active())
+    {
+        for (const auto& edge : edges)
         {
-            const glm::dvec2 sa =
-                hubMapProject(p[a], scale, centerPx);
+            m_hubMapGpuGeometryRenderer.submitHubLine(
+                points[edge[0]],
+                points[edge[1]],
+                color
+            );
+        }
 
-            const glm::dvec2 sb =
-                hubMapProject(p[b], scale, centerPx);
+        return;
+    }
 
-            drawPlanetMapLine(sa, sb);
-        };
+    /*
+        Старый путь остаётся fallback-ом,
+        если новые shaders не загрузились.
+    */
+    glColor4f(
+        color.r,
+        color.g,
+        color.b,
+        color.a
+    );
 
-    line(0, 1);
-    line(1, 2);
-    line(2, 3);
-    line(3, 0);
-
-    line(4, 5);
-    line(5, 6);
-    line(6, 7);
-    line(7, 4);
-
-    line(0, 4);
-    line(1, 5);
-    line(2, 6);
-    line(3, 7);
+    for (const auto& edge : edges)
+    {
+        drawPlanetMapLine(
+            hubMapProject(
+                points[edge[0]],
+                scale,
+                centerPx
+            ),
+            hubMapProject(
+                points[edge[1]],
+                scale,
+                centerPx
+            )
+        );
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -11984,27 +12831,97 @@ void SystemMapRenderer::drawHubMapAxes(
     const glm::dvec2& centerPx
 )
 {
-    const glm::dvec2 o =
-        hubMapProject(center, scale, centerPx);
-
-    glColor4f(1.0f, 0.2f, 0.2f, 0.95f);
-    drawPlanetMapLine(
-        o,
-        hubMapProject(center + axes.x * axisLenMeters, scale, centerPx)
+    const glm::vec4 xColor(
+        1.0f,
+        0.2f,
+        0.2f,
+        0.95f
     );
 
-    glColor4f(0.2f, 1.0f, 0.2f, 0.95f);
-    drawPlanetMapLine(
-        o,
-        hubMapProject(center + axes.y * axisLenMeters, scale, centerPx)
+    const glm::vec4 yColor(
+        0.2f,
+        1.0f,
+        0.2f,
+        0.95f
     );
 
-    glColor4f(0.25f, 0.55f, 1.0f, 0.95f);
+    const glm::vec4 zColor(
+        0.25f,
+        0.55f,
+        1.0f,
+        0.95f
+    );
+
+    if (m_hubMapGpuGeometryRenderer.active())
+    {
+        m_hubMapGpuGeometryRenderer.submitHubLine(
+            center,
+            center + axes.x * axisLenMeters,
+            xColor
+        );
+
+        m_hubMapGpuGeometryRenderer.submitHubLine(
+            center,
+            center + axes.y * axisLenMeters,
+            yColor
+        );
+
+        m_hubMapGpuGeometryRenderer.submitHubLine(
+            center,
+            center + axes.z * axisLenMeters,
+            zColor
+        );
+
+        return;
+    }
+
+    const glm::dvec2 origin =
+        hubMapProject(
+            center,
+            scale,
+            centerPx
+        );
+
+    glColor4f(xColor.r, xColor.g, xColor.b, xColor.a);
+
     drawPlanetMapLine(
-        o,
-        hubMapProject(center + axes.z * axisLenMeters, scale, centerPx)
+        origin,
+        hubMapProject(
+            center + axes.x * axisLenMeters,
+            scale,
+            centerPx
+        )
+    );
+
+    glColor4f(yColor.r, yColor.g, yColor.b, yColor.a);
+
+    drawPlanetMapLine(
+        origin,
+        hubMapProject(
+            center + axes.y * axisLenMeters,
+            scale,
+            centerPx
+        )
+    );
+
+    glColor4f(zColor.r, zColor.g, zColor.b, zColor.a);
+
+    drawPlanetMapLine(
+        origin,
+        hubMapProject(
+            center + axes.z * axisLenMeters,
+            scale,
+            centerPx
+        )
     );
 }
+
+
+
+
+
+
+
 
 
 
@@ -12022,14 +12939,45 @@ void SystemMapRenderer::drawHubMapVelocityArrow(
     if (speed < 0.001)
         return;
 
-    const glm::dvec3 dir =
+    const glm::dvec3 direction =
         velocity / speed;
 
-    glColor4f(1.0f, 0.9f, 0.25f, 0.95f);
+    const glm::vec4 color(
+        1.0f,
+        0.9f,
+        0.25f,
+        0.95f
+    );
+
+    if (m_hubMapGpuGeometryRenderer.active())
+    {
+        m_hubMapGpuGeometryRenderer.submitHubLine(
+            center,
+            center + direction * lenMeters,
+            color
+        );
+
+        return;
+    }
+
+    glColor4f(
+        color.r,
+        color.g,
+        color.b,
+        color.a
+    );
 
     drawPlanetMapLine(
-        hubMapProject(center, scale, centerPx),
-        hubMapProject(center + dir * lenMeters, scale, centerPx)
+        hubMapProject(
+            center,
+            scale,
+            centerPx
+        ),
+        hubMapProject(
+            center + direction * lenMeters,
+            scale,
+            centerPx
+        )
     );
 }
 
@@ -12058,6 +13006,36 @@ void SystemMapRenderer::drawHubMapScreenMarker(
             12,
             segments
         );
+
+
+
+    if (m_hubMapGpuGeometryRenderer.active())
+    {
+        m_hubMapGpuGeometryRenderer.submitScreenCircle(
+            screenPx,
+            radiusPx,
+            color,
+            segments
+        );
+
+        if (drawCross)
+        {
+            m_hubMapGpuGeometryRenderer.submitScreenCross(
+                screenPx,
+                radiusPx * 0.62,
+                color
+            );
+        }
+
+        return;
+    }
+
+
+
+
+
+
+
 
     glColor4f(
         color.r,
@@ -12131,18 +13109,22 @@ glm::dvec3 SystemMapRenderer::hubMapObjectLocalToHubLocal(
 
 
 
+
+
 bool SystemMapRenderer::drawHubMapAssemblyWire(
     ObjectType typeId,
     const glm::dvec3& objectCenter,
     const world::celestial::PlanetMapAxisSet& objectAxes,
-    double scale,
-    const glm::dvec2& centerPx
+    const glm::vec4& color
 )
 {
     using game::ship::geometry::AssemblyMeshLibrary;
 
-    if (typeId == ObjectType::None)
+    if (!m_hubMapGpuGeometryRenderer.active() ||
+        typeId == ObjectType::None)
+    {
         return false;
+    }
 
     if (!AssemblyMeshLibrary::has(typeId))
         return false;
@@ -12150,92 +13132,102 @@ bool SystemMapRenderer::drawHubMapAssemblyWire(
     const auto& assembly =
         AssemblyMeshLibrary::get(typeId);
 
-    bool drewAnything = false;
+    /*
+        Локальная система объекта → hub-local meters.
 
-    // Для маленьких кораблей лучше цельный proxy, если он есть.
-    // Это быстрее и чище на карте.
-    if (assembly.hasWholeShipProxy)
+        Столбцы матрицы:
+            0 = object X
+            1 = object Y
+            2 = object Z
+            3 = object center
+    */
+    glm::mat4 objectToHub(1.0f);
+
+    objectToHub[0] =
+        glm::vec4(
+            glm::vec3(objectAxes.x),
+            0.0f
+        );
+
+    objectToHub[1] =
+        glm::vec4(
+            glm::vec3(objectAxes.y),
+            0.0f
+        );
+
+    objectToHub[2] =
+        glm::vec4(
+            glm::vec3(objectAxes.z),
+            0.0f
+        );
+
+    objectToHub[3] =
+        glm::vec4(
+            glm::vec3(objectCenter),
+            1.0f
+        );
+
+    /*
+        Сохраняем прежнюю логику:
+        при наличии whole-object proxy модульную
+        сборку не рисуем.
+    */
+    if (assembly.hasWholeShipProxy &&
+        assembly.wholeShipProxyGpu.getEdgeVertexCount() > 0)
     {
-        const auto& mesh =
-            assembly.wholeShipProxyMesh;
+        m_hubMapGpuGeometryRenderer.submitMesh(
+            assembly.wholeShipProxyGpu,
+            objectToHub,
+            color
+        );
 
-        for (const auto& edge : mesh.edges)
-        {
-            const glm::dvec3 a =
-                hubMapObjectLocalToHubLocal(
-                    objectCenter,
-                    objectAxes,
-                    glm::dvec3(edge.a)
-                );
-
-            const glm::dvec3 b =
-                hubMapObjectLocalToHubLocal(
-                    objectCenter,
-                    objectAxes,
-                    glm::dvec3(edge.b)
-                );
-
-            drawPlanetMapLine(
-                hubMapProject(a, scale, centerPx),
-                hubMapProject(b, scale, centerPx)
-            );
-
-            drewAnything = true;
-        }
-
-        if (drewAnything)
-            return true;
+        return true;
     }
 
-    // Для станции рисуем модульную LOD1-сборку.
-    // Это как раз "цветок со стеблем", а не кирпич.
+    bool submittedAnything = false;
+
     for (const auto& module : assembly.modules)
     {
         for (const auto& part : module.meshes)
         {
-            const auto& mesh =
-                part.lod1Mesh.edges.empty()
-                    ? part.lod0Mesh
-                    : part.lod1Mesh;
+            const auto& meshGpu =
+                part.lod1Gpu.getEdgeVertexCount() > 0
+                    ? part.lod1Gpu
+                    : part.lod0Gpu;
 
-            for (const auto& edge : mesh.edges)
-            {
-                const glm::dvec3 localA =
-                    glm::dvec3(module.localPosition) +
-                    glm::dvec3(part.localOffset) +
-                    glm::dvec3(edge.a);
+            if (meshGpu.getEdgeVertexCount() == 0)
+                continue;
 
-                const glm::dvec3 localB =
-                    glm::dvec3(module.localPosition) +
-                    glm::dvec3(part.localOffset) +
-                    glm::dvec3(edge.b);
+            /*
+                Старый CPU renderer учитывал localPosition
+                и localOffset, но не localRotationDeg.
 
-                const glm::dvec3 a =
-                    hubMapObjectLocalToHubLocal(
-                        objectCenter,
-                        objectAxes,
-                        localA
-                    );
+                Поведение пока сохраняем без изменений.
+            */
+            const glm::vec3 localOffset =
+                module.localPosition +
+                part.localOffset;
 
-                const glm::dvec3 b =
-                    hubMapObjectLocalToHubLocal(
-                        objectCenter,
-                        objectAxes,
-                        localB
-                    );
-
-                drawPlanetMapLine(
-                    hubMapProject(a, scale, centerPx),
-                    hubMapProject(b, scale, centerPx)
+            const glm::mat4 localTranslation =
+                glm::translate(
+                    glm::mat4(1.0f),
+                    localOffset
                 );
 
-                drewAnything = true;
-            }
+            m_hubMapGpuGeometryRenderer.submitMesh(
+                meshGpu,
+                objectToHub * localTranslation,
+                color
+            );
+
+            submittedAnything = true;
         }
     }
 
-    return drewAnything;
+    return submittedAnything;
 }
+
+
 
 
 
@@ -12603,7 +13595,8 @@ void SystemMapRenderer::drawHubMapPlanetSoftBand(
 void SystemMapRenderer::drawHubMapPlanetAtmosphereStack(
     const glm::dvec2& planetCenterPx,
     double planetRadiusPx,
-    const HubPlanetAtmosphereStyle& style
+    const HubPlanetAtmosphereStyle& style,
+    bool premultipliedTarget
 )
 {
     if (!style.enabled ||
@@ -12767,10 +13760,34 @@ void SystemMapRenderer::drawHubMapPlanetAtmosphereStack(
             GL_SCISSOR_TEST
         );
 
-    GLint previousBlendSourceRgb = 0;
-    GLint previousBlendDestinationRgb = 0;
-    GLint previousBlendSourceAlpha = 0;
-    GLint previousBlendDestinationAlpha = 0;
+
+
+    GLint previousScissorBox[4] =
+    {
+        0,
+        0,
+        1,
+        1
+    };
+
+    glGetIntegerv(
+        GL_SCISSOR_BOX,
+        previousScissorBox
+    );
+
+
+    GLint previousBlendSourceRgb =
+        GL_SRC_ALPHA;
+
+    GLint previousBlendDestinationRgb =
+        GL_ONE_MINUS_SRC_ALPHA;
+
+    GLint previousBlendSourceAlpha =
+        GL_SRC_ALPHA;
+
+    GLint previousBlendDestinationAlpha =
+        GL_ONE_MINUS_SRC_ALPHA;
+
 
     glGetIntegerv(
         GL_BLEND_SRC_RGB,
@@ -12792,6 +13809,119 @@ void SystemMapRenderer::drawHubMapPlanetAtmosphereStack(
         &previousBlendDestinationAlpha
     );
 
+
+
+    /*
+        Atmosphere shader нужен только в прямоугольнике,
+        содержащем внешнюю атмосферную оболочку.
+    */
+    const double atmosphereOuterRadiusScale =
+        std::max(
+            1.001,
+            static_cast<double>(
+                style.radiusScale
+            ) +
+            0.075
+        );
+
+    const double atmosphereRadiusPx =
+        planetRadiusPx *
+        atmosphereOuterRadiusScale;
+
+    const int localLeft =
+        static_cast<int>(
+            std::floor(
+                planetCenterPx.x -
+                atmosphereRadiusPx -
+                2.0
+            )
+        );
+
+    const int localRight =
+        static_cast<int>(
+            std::ceil(
+                planetCenterPx.x +
+                atmosphereRadiusPx +
+                2.0
+            )
+        );
+
+    const int localTop =
+        static_cast<int>(
+            std::floor(
+                planetCenterPx.y -
+                atmosphereRadiusPx -
+                2.0
+            )
+        );
+
+    const int localBottom =
+        static_cast<int>(
+            std::ceil(
+                planetCenterPx.y +
+                atmosphereRadiusPx +
+                2.0
+            )
+        );
+
+    const int clippedLeft =
+        std::clamp(
+            localLeft,
+            0,
+            viewport[2]
+        );
+
+    const int clippedRight =
+        std::clamp(
+            localRight,
+            0,
+            viewport[2]
+        );
+
+    const int clippedTop =
+        std::clamp(
+            localTop,
+            0,
+            viewport[3]
+        );
+
+    const int clippedBottom =
+        std::clamp(
+            localBottom,
+            0,
+            viewport[3]
+        );
+
+    const int scissorWidth =
+        clippedRight -
+        clippedLeft;
+
+    const int scissorHeight =
+        clippedBottom -
+        clippedTop;
+
+    if (scissorWidth <= 0 ||
+        scissorHeight <= 0)
+    {
+        return;
+    }
+
+    /*
+        planetCenterPx использует начало координат сверху,
+        glScissor — снизу.
+    */
+    const int scissorX =
+        viewport[0] +
+        clippedLeft;
+
+    const int scissorY =
+        viewport[1] +
+        viewport[3] -
+        clippedBottom;
+
+
+
+
     glDisable(
         GL_DEPTH_TEST
     );
@@ -12800,18 +13930,49 @@ void SystemMapRenderer::drawHubMapPlanetAtmosphereStack(
         GL_CULL_FACE
     );
 
-    glDisable(
+    glEnable(
         GL_SCISSOR_TEST
     );
 
+    glScissor(
+        scissorX,
+        scissorY,
+        scissorWidth,
+        scissorHeight
+    );
+
+
+    
     glEnable(
         GL_BLEND
     );
 
-    glBlendFunc(
-        GL_SRC_ALPHA,
-        GL_ONE_MINUS_SRC_ALPHA
-    );
+    if (premultipliedTarget)
+    {
+        /*
+            RGB остаётся premultiplied внутри прозрачного
+            half-resolution overlay.
+
+            Alpha накапливается отдельно.
+        */
+        glBlendFuncSeparate(
+            GL_SRC_ALPHA,
+            GL_ONE_MINUS_SRC_ALPHA,
+            GL_ONE,
+            GL_ONE_MINUS_SRC_ALPHA
+        );
+    }
+    else
+    {
+        glBlendFunc(
+            GL_SRC_ALPHA,
+            GL_ONE_MINUS_SRC_ALPHA
+        );
+    }
+
+
+
+
 
     glUseProgram(
         atmosphereShader
@@ -12927,6 +14088,13 @@ void SystemMapRenderer::drawHubMapPlanetAtmosphereStack(
         static_cast<GLenum>(
             previousBlendDestinationAlpha
         )
+    );
+
+    glScissor(
+        previousScissorBox[0],
+        previousScissorBox[1],
+        previousScissorBox[2],
+        previousScissorBox[3]
     );
 
     if (blendWasEnabled)
@@ -13379,6 +14547,305 @@ void SystemMapRenderer::drawHubMapTexturedSphereDiskLayer(
 
 
 
+glm::mat3
+SystemMapRenderer::hubCameraToParentPlanetBodyMatrix(
+    const world::celestial::HubMapSnapshot& hub
+) const
+{
+    /*
+    ====================================================
+    1. Текущая серверная орбитальная система хаба
+    ====================================================
+
+    Эти оси уже соответствуют текущему server tick.
+
+    Renderer не вычисляет orbital phase и не интегрирует
+    положение хаба самостоятельно.
+*/
+glm::dvec3 progradeWorld =
+    safeNormalizeD(
+        hub.hubWorldAxes.x,
+        glm::dvec3(
+            1.0,
+            0.0,
+            0.0
+        )
+    );
+
+glm::dvec3 radialWorld =
+    safeNormalizeD(
+        hub.hubWorldAxes.y,
+        glm::dvec3(
+            0.0,
+            1.0,
+            0.0
+        )
+    );
+
+glm::dvec3 normalWorld =
+    safeNormalizeD(
+        glm::cross(
+            progradeWorld,
+            radialWorld
+        ),
+        safeNormalizeD(
+            hub.hubWorldAxes.z,
+            glm::dvec3(
+                0.0,
+                0.0,
+                1.0
+            )
+        )
+    );
+
+/*
+    Ортогонализируем frame после передачи double -> snapshot.
+*/
+progradeWorld =
+    safeNormalizeD(
+        glm::cross(
+            radialWorld,
+            normalWorld
+        ),
+        progradeWorld
+    );
+
+radialWorld =
+    safeNormalizeD(
+        glm::cross(
+            normalWorld,
+            progradeWorld
+        ),
+        radialWorld
+    );
+
+    /*
+        ====================================================
+        2. Экранная ориентация cinematic globe
+        ====================================================
+
+        Центр видимого диска всегда является sub-hub point:
+
+            camera Z -> radialWorld
+
+        Yaw вращает экранные tangent axes вокруг направления
+        от планеты к хабу. Pitch меняет композицию горизонта,
+        но не физическое положение наблюдателя над планетой.
+    */
+    const double cameraYaw =
+        activeDetailCamera().yaw;
+
+    const double yawCos =
+        std::cos(
+            cameraYaw
+        );
+
+    const double yawSin =
+        std::sin(
+            cameraYaw
+        );
+
+    const glm::dvec3 screenRightWorld =
+        safeNormalizeD(
+            progradeWorld *
+                yawCos -
+            normalWorld *
+                yawSin,
+            progradeWorld
+        );
+
+    const glm::dvec3 screenUpWorld =
+        safeNormalizeD(
+            -normalWorld *
+                yawCos -
+            progradeWorld *
+                yawSin,
+            -normalWorld
+        );
+
+    const glm::dvec3 screenTowardViewerWorld =
+        radialWorld;
+
+    /*
+        ====================================================
+        3. Body-fixed система родительской планеты
+        ====================================================
+    */
+    const double tilt =
+        degToRadD(
+            hub.parentPlanetAxialTiltDeg
+        );
+
+    const double node =
+        degToRadD(
+            hub.parentPlanetAxisNodeDeg
+        );
+
+    const glm::dvec3 planetNorthWorld =
+        safeNormalizeD(
+            glm::dvec3(
+                std::sin(tilt) *
+                    std::cos(node),
+
+                std::cos(tilt),
+
+                std::sin(tilt) *
+                    std::sin(node)
+            ),
+            glm::dvec3(
+                0.0,
+                1.0,
+                0.0
+            )
+        );
+
+    const glm::dvec3 planetPrime0World =
+        planetPrimeAxisWorld(
+            planetNorthWorld
+        );
+
+    const glm::dvec3 planetEast0World =
+        planetEastAxisWorld(
+            planetNorthWorld,
+            planetPrime0World
+        );
+
+    /*
+        Полностью повторяет CelestialSystemRuntime:
+
+            rotationPhase =
+                universeTime / dayLength
+                + rotationOffset
+    */
+    
+
+
+
+        /*
+    Rotation phase приходит из того же CelestialSystemRuntime,
+    который используется Planet Details.
+*/
+const double rotationPhase =
+    hub.parentPlanetRotationPhaseRad;
+
+
+
+
+
+
+
+
+    /*
+        Texture longitude zero в мировом пространстве.
+    */
+    const double textureSpin =
+        rotationPhase +
+        degToRadD(
+            hub.parentPlanetTextureLongitudeOffsetDeg
+        );
+
+    const double textureCos =
+        std::cos(
+            textureSpin
+        );
+
+    const double textureSin =
+        std::sin(
+            textureSpin
+        );
+
+    const glm::dvec3 texturePrimeWorld =
+        safeNormalizeD(
+            planetPrime0World *
+                textureCos +
+            planetEast0World *
+                textureSin,
+            planetPrime0World
+        );
+
+    const glm::dvec3 textureEastWorld =
+        safeNormalizeD(
+            -planetPrime0World *
+                textureSin +
+            planetEast0World *
+                textureCos,
+            planetEast0World
+        );
+
+    /*
+        Мировое направление -> координаты texture body:
+
+            X = longitude 0;
+            Y = north;
+            Z = longitude +90°.
+    */
+    auto worldDirectionToBody =
+        [&](
+            const glm::dvec3& worldDirection
+        ) -> glm::vec3
+        {
+            const glm::dvec3 direction =
+                safeNormalizeD(
+                    worldDirection,
+                    glm::dvec3(
+                        0.0,
+                        0.0,
+                        1.0
+                    )
+                );
+
+            return
+                glm::vec3(
+                    static_cast<float>(
+                        glm::dot(
+                            direction,
+                            texturePrimeWorld
+                        )
+                    ),
+
+                    static_cast<float>(
+                        glm::dot(
+                            direction,
+                            planetNorthWorld
+                        )
+                    ),
+
+                    static_cast<float>(
+                        glm::dot(
+                            direction,
+                            textureEastWorld
+                        )
+                    )
+                );
+        };
+
+    /*
+        glm::mat3 принимает столбцы.
+
+        Поэтому matrix * cameraNormal переводит:
+
+            camera X -> body direction screenRight;
+            camera Y -> body direction screenUp;
+            camera Z -> body direction sub-hub point.
+    */
+    return
+        glm::mat3(
+            worldDirectionToBody(
+                screenRightWorld
+            ),
+
+            worldDirectionToBody(
+                screenUpWorld
+            ),
+
+            worldDirectionToBody(
+                screenTowardViewerWorld
+            )
+        );
+}
+
+
+
 
 
 
@@ -13540,6 +15007,11 @@ void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
             hub
         );
 
+    const GLuint surfaceTexture =
+        albedoTexture != 0
+            ? albedoTexture
+            : previewTexture;
+
     GLboolean blendWasEnabled =
         glIsEnabled(GL_BLEND);
 
@@ -13562,6 +15034,11 @@ void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
 // Если оставить третью вершину, появятся треугольные "зубья"
 // по всей планете.
 // -----------------------------------------------------------------
+beginHubGpuStage(
+    HubGpuStage::FallbackBody
+);
+
+if (surfaceTexture == 0)
 {
     constexpr int bands = 32;
     constexpr int segments = 256;
@@ -13650,7 +15127,15 @@ void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
     }
 }
 
-    // -----------------------------------------------------------------
+    
+
+
+endHubGpuStage();
+
+
+
+
+// -----------------------------------------------------------------
     // 2. Текстура поверхности.
     // ВРЕМЕННО ОТКЛЮЧЕНА.
     //
@@ -13659,17 +15144,33 @@ void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
     // Для карты Хаба это даёт растянутую сушу и грязные пятна.
     // Пока оставляем чистую океаническую массу + haze + atmosphere.
     // -----------------------------------------------------------------
-    const double planetLongitudeOffsetU =
-        activeDetailCamera().yaw /
-        glm::two_pi<double>() *
-        0.20;
+        /*
+        Одно общее время для поверхности и облаков.
+        */
+/*
+    Визуальное время используется только для движения
+    procedural clouds.
+*/
+const double cloudVisualTimeSeconds =
+    environmentVisualTimeSeconds(
+        hub.universeTimeSeconds
+    );
+
+/*
+    Геометрическая ориентация планеты берётся строго
+    из текущего server snapshot.
+*/
+const glm::mat3 cameraToPlanetBody =
+    hubCameraToParentPlanetBodyMatrix(
+        hub
+    );
 
 
 
-    const GLuint surfaceTexture =
-        albedoTexture != 0
-            ? albedoTexture
-            : previewTexture;
+    beginHubGpuStage(
+        HubGpuStage::Surface
+    );
+    
 
     if (surfaceTexture != 0)
     {
@@ -13693,91 +15194,246 @@ void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
             normalTexture,
             visualPlanetCenterPx,
             visualRadiusPx,
-            planetLongitudeOffsetU,
+            cameraToPlanetBody,
             lightDirection
         );
     }
     
 
-    const double renderTimeSeconds =
-        environmentVisualTimeSeconds(
-            hub.universeTimeSeconds
-        );
+    endHubGpuStage();
     
-    const auto cloudStyles =
-        hubPlanetCloudStylesForHub(
-            hub
+    /*
+        Облака и атмосфера являются мягкими слоями. Рисуем их
+        в половинном разрешении и один раз композим поверх
+        full-resolution поверхности.
+    */
+    constexpr float hubSoftLayerResolutionScale =
+        0.50f;
+
+    const bool softLayerTargetActive =
+        m_hubPlanetOverlayRenderer.begin(
+            viewport[2],
+            viewport[3],
+            hubSoftLayerResolutionScale
         );
 
-    for (std::size_t layerIndex = 0;
-        layerIndex < cloudStyles.size();
-        ++layerIndex)
-    {
-        const auto& cloudStyle =
-            cloudStyles[layerIndex];
+    const double softLayerScale =
+        softLayerTargetActive
+            ? static_cast<double>(
+                m_hubPlanetOverlayRenderer.resolutionScale()
+            )
+            : 1.0;
 
-        if (!cloudStyle.enabled)
-            continue;
+    const glm::dvec2 softPlanetCenterPx =
+        visualPlanetCenterPx *
+        softLayerScale;
 
-        const double meanHeightMeters =
-            (
-                static_cast<double>(
-                    cloudStyle.baseHeightKm
-                ) +
-                static_cast<double>(
-                    cloudStyle.topHeightKm
-                )
-            ) *
-            500.0;
+    const double softPlanetRadiusPx =
+        visualRadiusPx *
+        softLayerScale;
 
-        const double physicalRadiusScale =
-            1.0 +
-            meanHeightMeters /
-                std::max(
-                    1.0,
-                    hub.parentPlanetRadiusMeters
-                );
 
-        /*
-            На fake cinematic hemisphere физическая разница
-            высот слишком мала, поэтому добавляем небольшой
-            screen-space separation по индексу.
-        */
-        const double cloudRadiusScale =
-            std::clamp(
-                physicalRadiusScale +
-                    0.0025 *
-                    static_cast<double>(
-                        layerIndex + 1
-                    ),
-                1.003,
-                1.055
+        beginHubGpuStage(
+            HubGpuStage::Clouds
+        );
+
+        const auto cloudStyles =
+            hubPlanetCloudStylesForHub(
+                hub
             );
 
-        m_hubBackdropCloudRenderer.render(
-            m_proceduralCloudLayer,
-            visualPlanetCenterPx,
-            visualRadiusPx,
-            cloudRadiusScale,
-            planetLongitudeOffsetU,
-            renderTimeSeconds,
-            cloudStyle
+        for (std::size_t layerIndex = 0;
+            layerIndex < cloudStyles.size();
+            ++layerIndex)
+        {
+            const auto& cloudStyle =
+                cloudStyles[layerIndex];
+
+            if (!cloudStyle.enabled)
+                continue;
+
+            /*
+                ProceduralCloudLayer по-прежнему изменяет форму
+                облаков и выполняет blending между состояниями.
+
+                Новый mesh renderer только дешёво натягивает
+                готовую динамическую текстуру на сферу.
+            */
+            const GLuint cloudTexture =
+                m_proceduralCloudLayer.textureForStyle(
+                    cloudStyle,
+                    cloudVisualTimeSeconds
+                );
+
+            if (cloudTexture == 0)
+                continue;
+
+            const double meanHeightMeters =
+                (
+                    static_cast<double>(
+                        cloudStyle.baseHeightKm
+                    ) +
+                    static_cast<double>(
+                        cloudStyle.topHeightKm
+                    )
+                ) *
+                500.0;
+
+            const double physicalRadiusScale =
+                1.0 +
+                meanHeightMeters /
+                    std::max(
+                        1.0,
+                        hub.parentPlanetRadiusMeters
+                    );
+
+            /*
+                На огромной cinematic-сфере физическая разница
+                высот почти незаметна. Оставляем слабое визуальное
+                разделение слоёв.
+            */
+            const double cloudRadiusScale =
+                std::clamp(
+                    physicalRadiusScale +
+                        0.0025 *
+                        static_cast<double>(
+                            layerIndex + 1
+                        ),
+                    1.003,
+                    1.055
+                );
+
+            /*
+                Независимый дрейф текущего облачного слоя.
+            */
+            const double driftU =
+                std::fmod(
+                    cloudVisualTimeSeconds *
+                        static_cast<double>(
+                            cloudStyle.driftSpeed
+                        ),
+                    1.0
+                );
+
+            render::celestial::PlanetGlobeLayerDraw draw;
+
+            draw.texture =
+                cloudTexture;
+
+            /*
+                visualPlanetCenterPx задан относительно текущего
+                viewport и использует начало координат слева сверху.
+            */
+            draw.centerPx =
+                softPlanetCenterPx;
+
+            draw.radiusPx =
+                softPlanetRadiusPx *
+                cloudRadiusScale;
+
+            /*
+                Hub backdrop является художественной экранной
+                сферой, поэтому используем прямую ориентацию:
+
+                    X — вправо;
+                    Y — вверх;
+                    Z — к камере.
+            */
+            /*
+                cameraToPlanetBody является чистым вращением.
+                Его inverse равен transpose.
+            */
+            draw.bodyToCamera =
+                glm::transpose(
+                    cameraToPlanetBody
+                );
+
+            /*
+                Вращение самой планеты уже содержится
+                в bodyToCamera.
+
+                Здесь остаётся только относительный
+                атмосферный дрейф облаков.
+            */
+            draw.longitudeUvOffset =
+                static_cast<float>(
+                    driftU
+                );
+
+            /*
+                Сохраняем вертикальную ориентацию старого
+                HubBackdropCloudRenderer.
+            */
+            draw.flipV =
+                true;
+
+            draw.color =
+                glm::vec4(
+                    1.0f
+                );
+
+            /*
+                Сохраняем прежнее художественное усиление alpha.
+            */
+            draw.opacity =
+                std::clamp(
+                    cloudStyle.opacity *
+                        2.6f,
+                    0.0f,
+                    0.72f
+                );
+
+            draw.blending = true;
+            draw.premultipliedTarget = softLayerTargetActive;
+
+            /*
+                Растворение облаков возле горизонта.
+            */
+            draw.useHorizonFade =
+                true;
+
+            draw.horizonFadeStart =
+                0.05f;
+
+            draw.horizonFadeEnd =
+                0.32f;
+
+            draw.usePolarFade =
+                false;
+
+            m_planetGlobeMeshRenderer.render(
+                draw
+            );
+        }
+
+
+
+        endHubGpuStage();
+
+
+        beginHubGpuStage(
+            HubGpuStage::Atmosphere
         );
-    }
 
 
 
+        drawHubMapPlanetAtmosphereStack(
+            softPlanetCenterPx,
+            softPlanetRadiusPx,
+            atmosphereStyle,
+            softLayerTargetActive
+        );
 
+        if (softLayerTargetActive)
+        {
+            /*
+                Composite учитываем в Atmosphere-stage:
+                это один bilinear fullscreen pass.
+            */
+            m_hubPlanetOverlayRenderer.endAndComposite();
+        }
 
-    drawHubMapPlanetAtmosphereStack(
-        visualPlanetCenterPx,
-        visualRadiusPx,
-        atmosphereStyle
-    );
-
-    
-    
-
+        endHubGpuStage();
 
     
 
@@ -13790,20 +15446,45 @@ void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
     const glm::dvec3 planetCenterLocal =
         hub.parentPlanetCenterLocalMeters;
 
-    glColor4f(
-        0.95f,
-        0.82f,
-        0.32f,
-        0.12f
-    );
 
-    drawHubMapCircleLocalXY(
-        planetCenterLocal,
-        hub.hubOrbitRadiusMeters,
-        scale,
-        centerPx,
-        256
-    );
+
+
+
+
+        /*
+            Полная круговая орбита выбранного хаба вокруг
+            родительской планеты.
+
+            Hub-local convention:
+                X = prograde;
+                Y = radial;
+                Z = orbital normal.
+
+            Поэтому орбита лежит в локальной плоскости XY.
+        */
+        glColor4f(
+            0.95f,
+            0.82f,
+            0.32f,
+            0.12f
+        );
+
+        drawHubMapCircleLocalXY(
+            planetCenterLocal,
+            hub.hubOrbitRadiusMeters,
+            scale,
+            centerPx,
+            256
+        );
+
+
+
+
+
+
+
+
+
 
     const glm::dvec3 surfacePoint =
         planetCenterLocal +
@@ -13986,11 +15667,337 @@ glm::dvec3 SystemMapRenderer::visualSizeForHubShip(
 
 
 
+
+void SystemMapRenderer::ensureHubGpuQueries()
+{
+    if (m_hubGpuQueriesInitialized)
+        return;
+
+    for (auto& slot : m_hubGpuQueries)
+    {
+        glGenQueries(
+            static_cast<GLsizei>(
+                slot.size()
+            ),
+            slot.data()
+        );
+    }
+
+    m_hubGpuQueriesInitialized = true;
+}
+
+
+void SystemMapRenderer::collectHubGpuQueries()
+{
+    if (!m_hubGpuQueriesInitialized)
+        return;
+
+    for (std::size_t slotIndex = 0;
+         slotIndex < kHubGpuQuerySlotCount;
+         ++slotIndex)
+    {
+        if (!m_hubGpuSlotPending[slotIndex])
+            continue;
+
+        const std::uint32_t issuedMask =
+            m_hubGpuIssuedMasks[slotIndex];
+
+        bool allAvailable = true;
+
+        for (std::size_t stageIndex = 0;
+             stageIndex < kHubGpuStageCount;
+             ++stageIndex)
+        {
+            const std::uint32_t stageBit =
+                1u <<
+                static_cast<std::uint32_t>(
+                    stageIndex
+                );
+
+            if ((issuedMask & stageBit) == 0u)
+                continue;
+
+            GLint available = GL_FALSE;
+
+            glGetQueryObjectiv(
+                m_hubGpuQueries[slotIndex][stageIndex],
+                GL_QUERY_RESULT_AVAILABLE,
+                &available
+            );
+
+            if (available != GL_TRUE)
+            {
+                allAvailable = false;
+                break;
+            }
+        }
+
+        if (!allAvailable)
+            continue;
+
+        std::array<
+            double,
+            kHubGpuStageCount
+        > stageMilliseconds {};
+
+        for (std::size_t stageIndex = 0;
+             stageIndex < kHubGpuStageCount;
+             ++stageIndex)
+        {
+            const std::uint32_t stageBit =
+                1u <<
+                static_cast<std::uint32_t>(
+                    stageIndex
+                );
+
+            if ((issuedMask & stageBit) == 0u)
+                continue;
+
+            GLuint64 elapsedNanoseconds = 0;
+
+            glGetQueryObjectui64v(
+                m_hubGpuQueries[slotIndex][stageIndex],
+                GL_QUERY_RESULT,
+                &elapsedNanoseconds
+            );
+
+            stageMilliseconds[stageIndex] =
+                static_cast<double>(
+                    elapsedNanoseconds
+                ) /
+                1000000.0;
+        }
+
+        const std::uint64_t slotSerial =
+            m_hubGpuSlotSerials[slotIndex];
+
+        /*
+            Если сразу готовы несколько старых кадров,
+            сохраняем самый новый из них.
+        */
+        if (slotSerial >
+            m_hubGpuLastCollectedSerial)
+        {
+            auto stageMs =
+                [&](
+                    HubGpuStage stage
+                ) -> double
+                {
+                    return
+                        stageMilliseconds[
+                            static_cast<std::size_t>(
+                                stage
+                            )
+                        ];
+                };
+
+            m_hubMapPerformanceStats.gpuBackgroundMs =
+                stageMs(
+                    HubGpuStage::Background
+                );
+
+            m_hubMapPerformanceStats.gpuFallbackBodyMs =
+                stageMs(
+                    HubGpuStage::FallbackBody
+                );
+
+            m_hubMapPerformanceStats.gpuSurfaceMs =
+                stageMs(
+                    HubGpuStage::Surface
+                );
+
+            m_hubMapPerformanceStats.gpuCloudsMs =
+                stageMs(
+                    HubGpuStage::Clouds
+                );
+
+            m_hubMapPerformanceStats.gpuAtmosphereMs =
+                stageMs(
+                    HubGpuStage::Atmosphere
+                );
+
+            m_hubMapPerformanceStats.gpuGeometryMs =
+                stageMs(
+                    HubGpuStage::Geometry
+                );
+
+            m_hubMapPerformanceStats.gpuLabelsMs =
+                stageMs(
+                    HubGpuStage::Labels
+                );
+
+            m_hubMapPerformanceStats.gpuTotalMs =
+                m_hubMapPerformanceStats.gpuBackgroundMs +
+                m_hubMapPerformanceStats.gpuFallbackBodyMs +
+                m_hubMapPerformanceStats.gpuSurfaceMs +
+                m_hubMapPerformanceStats.gpuCloudsMs +
+                m_hubMapPerformanceStats.gpuAtmosphereMs +
+                m_hubMapPerformanceStats.gpuGeometryMs +
+                m_hubMapPerformanceStats.gpuLabelsMs;
+
+            m_hubMapPerformanceStats.gpuValid =
+                true;
+
+            m_hubGpuLastCollectedSerial =
+                slotSerial;
+        }
+
+        m_hubGpuSlotPending[slotIndex] = false;
+        m_hubGpuIssuedMasks[slotIndex] = 0u;
+    }
+}
+
+
+void SystemMapRenderer::beginHubGpuFrame()
+{
+    ensureHubGpuQueries();
+    collectHubGpuQueries();
+
+    ++m_hubGpuFrameSerial;
+
+    m_hubGpuCurrentSlot =
+        static_cast<std::size_t>(
+            m_hubGpuFrameSerial %
+            kHubGpuQuerySlotCount
+        );
+
+    /*
+        Если GPU ещё не закончил старый кадр в этом slot,
+        текущий кадр просто не профилируем.
+
+        Главное — не блокировать render thread.
+    */
+    if (m_hubGpuSlotPending[
+            m_hubGpuCurrentSlot
+        ])
+    {
+        m_hubGpuFrameActive = false;
+        m_hubGpuStageOpen = false;
+        return;
+    }
+
+    m_hubGpuIssuedMasks[
+        m_hubGpuCurrentSlot
+    ] = 0u;
+
+    m_hubGpuSlotSerials[
+        m_hubGpuCurrentSlot
+    ] = m_hubGpuFrameSerial;
+
+    m_hubGpuFrameActive = true;
+    m_hubGpuStageOpen = false;
+}
+
+
+void SystemMapRenderer::endHubGpuFrame()
+{
+    if (m_hubGpuStageOpen)
+    {
+        endHubGpuStage();
+    }
+
+    if (m_hubGpuFrameActive)
+    {
+        m_hubGpuSlotPending[
+            m_hubGpuCurrentSlot
+        ] =
+            m_hubGpuIssuedMasks[
+                m_hubGpuCurrentSlot
+            ] != 0u;
+    }
+
+    m_hubGpuFrameActive = false;
+    m_hubGpuStageOpen = false;
+}
+
+
+void SystemMapRenderer::beginHubGpuStage(
+    HubGpuStage stage
+)
+{
+    if (!m_hubGpuFrameActive)
+        return;
+
+    /*
+        GL_TIME_ELAPSED queries нельзя вкладывать друг в друга.
+    */
+    if (m_hubGpuStageOpen)
+    {
+        endHubGpuStage();
+    }
+
+    const std::size_t stageIndex =
+        static_cast<std::size_t>(
+            stage
+        );
+
+    glBeginQuery(
+        GL_TIME_ELAPSED,
+        m_hubGpuQueries[
+            m_hubGpuCurrentSlot
+        ][
+            stageIndex
+        ]
+    );
+
+    m_hubGpuIssuedMasks[
+        m_hubGpuCurrentSlot
+    ] |=
+        1u <<
+        static_cast<std::uint32_t>(
+            stageIndex
+        );
+
+    m_hubGpuStageOpen = true;
+}
+
+
+void SystemMapRenderer::endHubGpuStage()
+{
+    if (!m_hubGpuFrameActive ||
+        !m_hubGpuStageOpen)
+    {
+        return;
+    }
+
+    glEndQuery(
+        GL_TIME_ELAPSED
+    );
+
+    m_hubGpuStageOpen = false;
+}
+
+
+
+
+
+
+
 void SystemMapRenderer::renderHubMap(
     const Viewport& viewport,
     const world::celestial::HubMapSnapshot& hub
 )
-{
+{   
+
+    const double cpuTotalStartMs =
+        hubPerfNowMs();
+
+    m_hubMapPerformanceStats.cpuTotalMs = 0.0;
+    m_hubMapPerformanceStats.cpuBackgroundMs = 0.0;
+    m_hubMapPerformanceStats.cpuPlanetBackdropMs = 0.0;
+    m_hubMapPerformanceStats.cpuGeometryMs = 0.0;
+    m_hubMapPerformanceStats.cpuLabelsMs = 0.0;
+
+    beginHubGpuFrame();
+
+    const double cpuBackgroundStartMs =
+        hubPerfNowMs();
+
+    beginHubGpuStage(
+        HubGpuStage::Background
+    );
+
+
     ensureGeneratedCelestialAssets();
 
     GLboolean depthWasEnabled =
@@ -14071,7 +16078,19 @@ void SystemMapRenderer::renderHubMap(
 
     if (!hub.valid)
     {
+        endHubGpuStage();
+        endHubGpuFrame();
+
+        m_hubMapPerformanceStats.cpuBackgroundMs =
+            hubPerfNowMs() -
+            cpuBackgroundStartMs;
+
         restoreGlState();
+
+        m_hubMapPerformanceStats.cpuTotalMs =
+            hubPerfNowMs() -
+            cpuTotalStartMs;
+
         return;
     }
 
@@ -14080,6 +16099,12 @@ void SystemMapRenderer::renderHubMap(
         viewport,
         hub.systemPositionLy
     );
+
+    endHubGpuStage();
+
+    m_hubMapPerformanceStats.cpuBackgroundMs =
+        hubPerfNowMs() -
+        cpuBackgroundStartMs;
 
 
     const glm::dvec2 centerPx(
@@ -14151,11 +16176,18 @@ void SystemMapRenderer::renderHubMap(
 
 
 
-   drawHubMapPlanetSurfaceHint(
+   const double cpuPlanetBackdropStartMs =
+        hubPerfNowMs();
+
+    drawHubMapPlanetSurfaceHint(
         hub,
         scale,
         centerPx
     );
+
+m_hubMapPerformanceStats.cpuPlanetBackdropMs =
+    hubPerfNowMs() -
+    cpuPlanetBackdropStartMs;
 
     // render::celestial::HubSphericalGridStyle sphericalGridStyle =
     // hubSphericalGridStyleForHub(
@@ -14205,6 +16237,43 @@ void SystemMapRenderer::renderHubMap(
     //     maxDist
     // );
 
+
+    const double cpuGeometryStartMs =
+        hubPerfNowMs();
+
+    beginHubGpuStage(
+        HubGpuStage::Geometry
+    );
+
+
+    m_hubMapGpuGeometryRenderer.beginFrame(
+        viewport.width,
+        viewport.height,
+
+        /*
+            В старом hubMapProject screen origin был:
+                center + camera.pan
+        */
+        glm::dvec2(
+            centerPx.x +
+                activeDetailCamera().pan.x,
+
+            centerPx.y +
+                activeDetailCamera().pan.y
+        ),
+
+        /*
+            Старый finalScale:
+                scale * camera.zoom
+        */
+        finalScale,
+
+        activeDetailCamera().yaw,
+        activeDetailCamera().pitch
+    );
+
+
+
     // Оси хаба.
     drawHubMapAxes(
         glm::dvec3(0.0),
@@ -14215,297 +16284,328 @@ void SystemMapRenderer::renderHubMap(
     );
 
     // Центр хаба / текущая орбитальная точка.
-    glColor4f(
+    const glm::dvec2 hubOriginScreen =
+        hubMapProject(
+            glm::dvec3(0.0),
+            scale,
+            centerPx
+        );
+
+    const glm::vec4 hubOriginColor(
         1.0f,
         0.86f,
         0.35f,
         0.95f
     );
 
-    drawPlanetMapCross(
-        hubMapProject(glm::dvec3(0.0), scale, centerPx),
-        6.0f
-    );
+    if (m_hubMapGpuGeometryRenderer.active())
+    {
+        m_hubMapGpuGeometryRenderer.submitScreenCross(
+            hubOriginScreen,
+            6.0,
+            hubOriginColor
+        );
+    }
+    else
+    {
+        glColor4f(
+            hubOriginColor.r,
+            hubOriginColor.g,
+            hubOriginColor.b,
+            hubOriginColor.a
+        );
+
+        drawPlanetMapCross(
+            hubOriginScreen,
+            6.0f
+        );
+    }
 
    
    
  
     // Модули станции.
-for (const auto& mod : hub.modules)
-{
-    if (!mod.valid)
-        continue;
-
-    const glm::dvec2 modScreen =
-        hubMapProject(
-            mod.localPositionMeters,
-            scale,
-            centerPx
-        );
-
-    const double moduleRadiusMeters =
-        glm::length(
-            mod.sizeMeters
-        ) * 0.5;
-
-    const double moduleRadiusPx =
-        moduleRadiusMeters *
-        finalScale;
-
+    for (const auto& mod : hub.modules)
     {
-        HubMapPickable pickable;
+        if (!mod.valid)
+            continue;
 
-        pickable.localCenterMeters =
-            mod.localPositionMeters;
-
-        pickable.screenCenterPx =
-            modScreen;
-
-        pickable.screenRadiusPx =
-            std::max(
-                18.0,
-                moduleRadiusPx
-            );
-
-        pickable.priority =
-            mod.prime ? 20 : 10;
-
-        pickable.label =
-            mod.name;
-
-        m_lastHubMapPickables.push_back(
-            pickable
-        );
-    }
-
-    if (mod.prime || mod.kind == "station")
-    {
-        glColor4f(
-            0.65f,
-            0.92f,
-            1.0f,
-            0.95f
-        );
-    }
-    else
-    {
-        glColor4f(
-            0.45f,
-            0.65f,
-            0.85f,
-            0.75f
-        );
-    }
-
-    const bool modelDrawn =
-        drawHubMapAssemblyWire(
-            mod.typeId,
-            mod.localPositionMeters,
-            mod.localAxes,
-            scale,
-            centerPx
-        );
-
-    if (!modelDrawn)
-    {
-        drawHubMapBox(
-            mod.localPositionMeters,
-            mod.localAxes,
-            mod.sizeMeters,
-            scale,
-            centerPx
-        );
-    }
-
-    const double moduleAxisLen =
-        std::max(
-            350.0,
-            glm::length(mod.sizeMeters) * 0.08
-        );
-
-    drawHubMapAxes(
-        mod.localPositionMeters,
-        mod.localAxes,
-        moduleAxisLen,
-        scale,
-        centerPx
-    );
-
-    // Если модуль на текущем масштабе слишком мелкий,
-    // добавляем screen-space маркер. Это не физический размер.
-    if (moduleRadiusPx < 8.0)
-    {
-        const glm::vec4 markerColor =
-            mod.prime
-                ? glm::vec4(0.85f, 0.98f, 1.0f, 0.95f)
-                : glm::vec4(0.48f, 0.76f, 1.0f, 0.82f);
-
-        drawHubMapScreenMarker(
-            modScreen,
-            mod.prime ? 9.0 : 7.0,
-            markerColor,
-            mod.prime,
-            32
-        );
-    }
-}
-
-
-
-
-
-// Игрок / корабли.
-for (const auto& ship : hub.ships)
-{
-    if (!ship.valid)
-        continue;
-
-    const glm::dvec2 shipScreen =
-        hubMapProject(
-            ship.localPositionMeters,
-            scale,
-            centerPx
-        );
-
-    const glm::dvec3 shipVisualSize =
-        visualSizeForHubShip(
-            ship,
-            scale
-        );
-
-    const double shipRadiusMeters =
-        glm::length(
-            shipVisualSize
-        ) * 0.5;
-
-    const double shipRadiusPx =
-        shipRadiusMeters *
-        finalScale;
-
-    {
-        HubMapPickable pickable;
-
-        pickable.localCenterMeters =
-            ship.localPositionMeters;
-
-        pickable.screenCenterPx =
-            shipScreen;
-
-        pickable.screenRadiusPx =
-            std::max(
-                ship.player ? 22.0 : 18.0,
-                shipRadiusPx
-            );
-
-        pickable.priority =
-            ship.player ? 100 : 50;
-
-        pickable.label =
-            ship.player
-                ? "PLAYER"
-                : ship.name;
-
-        m_lastHubMapPickables.push_back(
-            pickable
-        );
-    }
-
-    if (ship.player)
-    {
-        glColor4f(
-            1.0f,
-            0.78f,
-            0.25f,
-            1.0f
-        );
-    }
-    else
-    {
-        glColor4f(
-            0.95f,
-            0.65f,
-            0.35f,
-            0.85f
-        );
-    }
-
-    // Если корабль на карте слишком маленький, wire-модель будет шумом.
-    // Тогда рисуем fallback box с увеличенным visual size.
-    const bool allowWireModel =
-        shipRadiusPx >= 10.0;
-
-    bool shipModelDrawn =
-        false;
-
-    if (allowWireModel)
-    {
-        shipModelDrawn =
-            drawHubMapAssemblyWire(
-                ship.typeId,
-                ship.localPositionMeters,
-                ship.localAxes,
+        const glm::dvec2 modScreen =
+            hubMapProject(
+                mod.localPositionMeters,
                 scale,
                 centerPx
             );
-    }
 
-    if (!shipModelDrawn)
-    {
-        drawHubMapBox(
-            ship.localPositionMeters,
-            ship.localAxes,
-            shipVisualSize,
+        const double moduleRadiusMeters =
+            glm::length(
+                mod.sizeMeters
+            ) * 0.5;
+
+        const double moduleRadiusPx =
+            moduleRadiusMeters *
+            finalScale;
+
+        {
+            HubMapPickable pickable;
+
+            pickable.localCenterMeters =
+                mod.localPositionMeters;
+
+            pickable.screenCenterPx =
+                modScreen;
+
+            pickable.screenRadiusPx =
+                std::max(
+                    18.0,
+                    moduleRadiusPx
+                );
+
+            pickable.priority =
+                mod.prime ? 20 : 10;
+
+            pickable.label =
+                mod.name;
+
+            m_lastHubMapPickables.push_back(
+                pickable
+            );
+        }
+
+        const glm::vec4 moduleWireColor =
+            mod.prime ||
+            mod.kind == "station"
+                ? glm::vec4(
+                    0.65f,
+                    0.92f,
+                    1.0f,
+                    0.95f
+                )
+                : glm::vec4(
+                    0.45f,
+                    0.65f,
+                    0.85f,
+                    0.75f
+                );
+
+        const bool modelDrawn =
+            drawHubMapAssemblyWire(
+                mod.typeId,
+                mod.localPositionMeters,
+                mod.localAxes,
+                moduleWireColor
+            );
+
+        if (!modelDrawn)
+        {
+            drawHubMapBox(
+                mod.localPositionMeters,
+                mod.localAxes,
+                mod.sizeMeters,
+                moduleWireColor,
+                scale,
+                centerPx
+            );
+        }
+
+        const double moduleAxisLen =
+            std::max(
+                350.0,
+                glm::length(mod.sizeMeters) * 0.08
+            );
+
+        drawHubMapAxes(
+            mod.localPositionMeters,
+            mod.localAxes,
+            moduleAxisLen,
             scale,
             centerPx
         );
+
+        // Если модуль на текущем масштабе слишком мелкий,
+        // добавляем screen-space маркер. Это не физический размер.
+        if (moduleRadiusPx < 8.0)
+        {
+            const glm::vec4 markerColor =
+                mod.prime
+                    ? glm::vec4(0.85f, 0.98f, 1.0f, 0.95f)
+                    : glm::vec4(0.48f, 0.76f, 1.0f, 0.82f);
+
+            drawHubMapScreenMarker(
+                modScreen,
+                mod.prime ? 9.0 : 7.0,
+                markerColor,
+                mod.prime,
+                32
+            );
+        }
     }
 
-    const double shipAxisLen =
-        std::max(
-            ship.player ? 26.0 : 16.0,
-            glm::length(shipVisualSize) * 0.65
-        );
 
-    drawHubMapAxes(
-        ship.localPositionMeters,
-        ship.localAxes,
-        shipAxisLen,
-        scale,
-        centerPx
-    );
 
-    drawHubMapVelocityArrow(
-        ship.localPositionMeters,
-        ship.localVelocityMps,
-        std::max(
-            80.0,
-            shipAxisLen * 2.0
-        ),
-        scale,
-        centerPx
-    );
 
-    // Экранный маркер поверх корабля.
-    // PLAYER виден всегда, остальные — когда мелкие.
-    if (ship.player ||
-        shipRadiusPx < 12.0)
+
+    // Игрок / корабли.
+    for (const auto& ship : hub.ships)
     {
-        const glm::vec4 markerColor =
-            ship.player
-                ? glm::vec4(1.0f, 0.84f, 0.25f, 0.98f)
-                : glm::vec4(1.0f, 0.62f, 0.32f, 0.82f);
+        if (!ship.valid)
+            continue;
 
-        drawHubMapScreenMarker(
-            shipScreen,
-            ship.player ? 13.0 : 8.0,
-            markerColor,
-            true,
-            32
+        const glm::dvec2 shipScreen =
+            hubMapProject(
+                ship.localPositionMeters,
+                scale,
+                centerPx
+            );
+
+        const glm::dvec3 shipVisualSize =
+            visualSizeForHubShip(
+                ship,
+                scale
+            );
+
+        const double shipRadiusMeters =
+            glm::length(
+                shipVisualSize
+            ) * 0.5;
+
+        const double shipRadiusPx =
+            shipRadiusMeters *
+            finalScale;
+
+        {
+            HubMapPickable pickable;
+
+            pickable.localCenterMeters =
+                ship.localPositionMeters;
+
+            pickable.screenCenterPx =
+                shipScreen;
+
+            pickable.screenRadiusPx =
+                std::max(
+                    ship.player ? 22.0 : 18.0,
+                    shipRadiusPx
+                );
+
+            pickable.priority =
+                ship.player ? 100 : 50;
+
+            pickable.label =
+                ship.player
+                    ? "PLAYER"
+                    : ship.name;
+
+            m_lastHubMapPickables.push_back(
+                pickable
+            );
+        }
+
+       const glm::vec4 shipWireColor =
+        ship.player
+            ? glm::vec4(
+                1.0f,
+                0.78f,
+                0.25f,
+                1.0f
+            )
+            : glm::vec4(
+                0.95f,
+                0.65f,
+                0.35f,
+                0.85f
+            );
+
+        // Если корабль на карте слишком маленький, wire-модель будет шумом.
+        // Тогда рисуем fallback box с увеличенным visual size.
+        const bool allowWireModel =
+            shipRadiusPx >= 10.0;
+
+        bool shipModelDrawn =
+            false;
+
+        if (allowWireModel)
+        {
+            shipModelDrawn =
+                drawHubMapAssemblyWire(
+                    ship.typeId,
+                    ship.localPositionMeters,
+                    ship.localAxes,
+                    shipWireColor
+                );
+        }
+
+        if (!shipModelDrawn)
+        {
+            drawHubMapBox(
+                ship.localPositionMeters,
+                ship.localAxes,
+                shipVisualSize,
+                shipWireColor,
+                scale,
+                centerPx
+            );
+        }
+
+        const double shipAxisLen =
+            std::max(
+                ship.player ? 26.0 : 16.0,
+                glm::length(shipVisualSize) * 0.65
+            );
+
+        drawHubMapAxes(
+            ship.localPositionMeters,
+            ship.localAxes,
+            shipAxisLen,
+            scale,
+            centerPx
         );
+
+        drawHubMapVelocityArrow(
+            ship.localPositionMeters,
+            ship.localVelocityMps,
+            std::max(
+                80.0,
+                shipAxisLen * 2.0
+            ),
+            scale,
+            centerPx
+        );
+
+        // Экранный маркер поверх корабля.
+        // PLAYER виден всегда, остальные — когда мелкие.
+        if (ship.player ||
+            shipRadiusPx < 12.0)
+        {
+            const glm::vec4 markerColor =
+                ship.player
+                    ? glm::vec4(1.0f, 0.84f, 0.25f, 0.98f)
+                    : glm::vec4(1.0f, 0.62f, 0.32f, 0.82f);
+
+            drawHubMapScreenMarker(
+                shipScreen,
+                ship.player ? 13.0 : 8.0,
+                markerColor,
+                true,
+                32
+            );
+        }
     }
-}
 
 
+        m_hubMapGpuGeometryRenderer.flush();
+        endHubGpuStage();
+
+        m_hubMapPerformanceStats.cpuGeometryMs =
+            hubPerfNowMs() -
+            cpuGeometryStartMs;
+
+        const double cpuLabelsStartMs =
+            hubPerfNowMs();
+
+        beginHubGpuStage(
+            HubGpuStage::Labels
+        );
 
 
         {
@@ -14609,6 +16709,11 @@ for (const auto& ship : hub.ships)
 
 
 
+        endHubGpuStage();
+
+        m_hubMapPerformanceStats.cpuLabelsMs =
+            hubPerfNowMs() -
+            cpuLabelsStartMs;
 
 
 
@@ -14617,8 +16722,14 @@ for (const auto& ship : hub.ships)
 
 
 
+    endHubGpuFrame();
 
     restoreGlState();
+
+    m_hubMapPerformanceStats.cpuTotalMs =
+        hubPerfNowMs() -
+        cpuTotalStartMs;
+    
 }
 
 

@@ -148,12 +148,6 @@ public:
     );
     void setOrbitalUniverseTimeSeconds(double t);
 
-    // bool placePlayerNearStaticObject(
-    //     const std::string& hubId,
-    //     const std::string& moduleId,
-    //     const glm::dvec3& offsetMeters
-    // );
-
     void buildInitialScene();
 
     bool resolveCelestialBodyMeters(
@@ -162,11 +156,14 @@ public:
         double& outRadiusMeters
     ) const;
 
-    // bool placePlayerNearHubModule(
-    //     const std::string& hubId,
-    //     const std::string& moduleId,
-    //     const glm::dvec3& offsetMeters
-    // );
+    /*
+        Возвращает абсолютную мировую скорость центра
+        небесного тела из текущего серверного kinematic cache.
+    */
+    bool resolveCelestialBodyVelocityMetersPerSecond(
+        const std::string& bodyId,
+        glm::dvec3& outVelocityMetersPerSecond
+    ) const;
 
     game::navigation::ResolvedFrameState resolveReferenceFrame(
         const game::navigation::ReferenceFrame& frame

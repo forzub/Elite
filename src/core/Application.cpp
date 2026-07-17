@@ -13,6 +13,8 @@
 #include "ui/html/HtmlUiPanelId.h"
 
 #include "render/ViewportUtils.h"
+#include "render/Renderer.h"
+#include "debug/DebugSettings.h"
 
 // =====================================================================================
 // Constructor
@@ -202,6 +204,8 @@ void Application::init()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_DEPTH_TEST);
 
+    m_renderer.init();
+
     
     glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
 
@@ -331,8 +335,7 @@ void Application::mainLoop()
 
                     if (webCommand == "system_map_hub")
                     {
-                        std::cerr
-                            << "[WEB] system_map_hub\n";
+                        
                         if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
                         {
                             space->setSystemMapHubMode();
@@ -343,8 +346,7 @@ void Application::mainLoop()
 
                     if (webCommand == "system_map_detail")
                     {
-                        std::cerr
-                            << "[WEB] system_map_detail\n";
+                        
                         if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
                         {
                             space->setSystemMapLoadedPlanetMode();
@@ -478,16 +480,119 @@ void Application::mainLoop()
             GL_STENCIL_BUFFER_BIT
         );
 
-            GameState* top = m_states.current();
-            GameState* below = m_states.previous();
+            
 
-            // --- render world ---
-            if (top)
-            {
-                if (top->isModal() && below) below->renderUI();
-                top->renderUI();
-            }
-            if (top)top->renderHUD();
+
+
+GameState* top = m_states.current();
+GameState* below = m_states.previous();
+
+const bool systemMapMode =
+    m_gameUi.isMode(GameUiMode::SystemMap);
+/*
+    Копируем live-настройки из debug panel в Renderer.
+
+    Это дешёвая операция: только bool и несколько float.
+    GL-ресурсы при этом не пересоздаются.
+*/
+{
+    const auto& debugRender =
+        debug::get().render;
+
+    PostProcessSettings& post =
+        m_renderer.postProcessSettings();
+
+    post.enabled =
+        debugRender.postProcessEnabled;
+
+    post.bloomThreshold =
+        debugRender.postBloomThreshold;
+
+    post.bloomKnee =
+        debugRender.postBloomKnee;
+
+    post.bloomIntensity =
+        debugRender.postBloomIntensity;
+
+    post.softening =
+        debugRender.postSoftening;
+
+    post.saturation =
+        debugRender.postSaturation;
+
+    post.contrast =
+        debugRender.postContrast;
+
+    post.vignette =
+        debugRender.postVignette;
+
+    post.grain =
+        debugRender.postGrain;
+
+    post.haze =
+        debugRender.postHaze;
+}
+// В режиме System Map справа находится нативная WebView-панель.
+// Центрируем vignette/haze только по видимой OpenGL-части.
+int postProcessViewportWidth = lb.width;
+
+if (systemMapMode)
+{
+    postProcessViewportWidth =
+        static_cast<int>(
+            static_cast<float>(lb.width) * 0.72f
+        );
+}
+
+const bool postProcessActive =
+    m_renderer.beginPostProcess(
+        fbW,
+        fbH,
+        lb.x,
+        lb.y,
+        postProcessViewportWidth,
+        lb.height
+    );
+
+// Обычная 3D-сцена.
+if (top)
+{
+    if (top->isModal() && below)
+        below->renderUI();
+
+    top->renderUI();
+}
+
+// В текущей архитектуре SystemMapRenderer вызывается из renderHUD().
+// Поэтому в режиме карты его нужно выполнить ДО завершения post-process.
+if (systemMapMode && top)
+{
+    top->renderHUD();
+}
+
+// Финальный cinematic composite.
+if (postProcessActive)
+{
+    m_renderer.endPostProcess(
+        static_cast<float>(currentTime)
+    );
+}
+
+// В обычном игровом режиме HUD оставляем чистым и резким.
+if (!systemMapMode && top)
+{
+    top->renderHUD();
+}
+
+
+
+
+
+
+
+
+
+
 
         m_renderer.endFrame();
         glDisable(GL_SCISSOR_TEST);
@@ -513,6 +618,7 @@ void Application::shutdown()
 
 
     m_htmlUi.stop();
+    m_renderer.shutdown();
 
     delete m_window;
 }

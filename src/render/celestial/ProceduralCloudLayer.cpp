@@ -1305,271 +1305,287 @@ GLuint ProceduralCloudLayer::textureForStyle(
 
 
         
-/*
-    Расстояние между двумя ключевыми procedural-состояниями.
+        /*
+            Расстояние между двумя ключевыми procedural-состояниями.
 
-    Само изображение меняется каждый кадр через blend.
-*/
-constexpr double stateIntervalSeconds =
-    2.40;
+            Само изображение меняется каждый кадр через blend.
+        */
+        constexpr double stateIntervalSeconds =
+            2.40;
 
-/*
-    Не позволяем внешнему серверному времени заставить
-    визуальный renderer одномоментно догонять большой скачок.
-*/
-constexpr double maximumAnimationDeltaSeconds =
-    0.10;
+        /*
+            Не позволяем внешнему серверному времени заставить
+            визуальный renderer одномоментно догонять большой скачок.
+        */
+        constexpr double maximumAnimationDeltaSeconds =
+            0.10;
 
-if (!entry.initialized)
-{
-    entry.lastSourceTimeSeconds =
-        timeSeconds;
+        if (!entry.initialized)
+        {
+            entry.lastSourceTimeSeconds =
+                timeSeconds;
 
-    entry.updatePhaseSeconds =
-        cloudLayerUpdatePhase(
-            style,
-            stateIntervalSeconds
-        );
+            entry.lastAdvancedFrameSerial =
+                m_frameSerial;
 
-    /*
-        ВАЖНО:
+            entry.updatePhaseSeconds =
+                cloudLayerUpdatePhase(
+                    style,
+                    stateIntervalSeconds
+                );
 
-        previous и next всегда образуют интервал [0; 2.4].
+            /*
+                ВАЖНО:
 
-        Фазовый сдвиг задаётся animationTimeSeconds,
-        а не смещением previousStateTimeSeconds.
-        Поэтому слой сразу начинает интерполироваться,
-        а не замирает перед началом своего интервала.
-    */
-    entry.previousStateTimeSeconds =
-        0.0;
+                previous и next всегда образуют интервал [0; 2.4].
 
-    entry.nextStateTimeSeconds =
-        stateIntervalSeconds;
+                Фазовый сдвиг задаётся animationTimeSeconds,
+                а не смещением previousStateTimeSeconds.
+                Поэтому слой сразу начинает интерполироваться,
+                а не замирает перед началом своего интервала.
+            */
+            entry.previousStateTimeSeconds =
+                0.0;
 
-    entry.animationTimeSeconds =
-        std::fmod(
-            entry.updatePhaseSeconds,
-            stateIntervalSeconds
-        );
+            entry.nextStateTimeSeconds =
+                stateIntervalSeconds;
 
-    generateGpuTexture(
-        entry.previousTexture,
-        entry.width,
-        entry.height,
-        style,
-        entry.previousStateTimeSeconds
-    );
+            entry.animationTimeSeconds =
+                std::fmod(
+                    entry.updatePhaseSeconds,
+                    stateIntervalSeconds
+                );
 
-    generateGpuTexture(
-        entry.nextTexture,
-        entry.width,
-        entry.height,
-        style,
-        entry.nextStateTimeSeconds
-    );
-
-    /*
-        Future пока не создаём, чтобы не делать три тяжёлых
-        generation-pass сразу при первом открытии карты.
-    */
-    entry.futureStatePrepared = false;
-    entry.initialized = true;
-}
-
-/*
-    Получаем delta от внешнего времени.
-*/
-double sourceDelta =
-    timeSeconds -
-    entry.lastSourceTimeSeconds;
-
-entry.lastSourceTimeSeconds =
-    timeSeconds;
-
-if (!std::isfinite(sourceDelta) ||
-    sourceDelta < 0.0)
-{
-    sourceDelta = 0.0;
-}
-
-/*
-    Если snapshot использует одно и то же время несколько кадров,
-    визуальная анимация всё равно должна идти.
-
-    Это временный fallback. Позже лучше передавать сюда
-    настоящее render-frame delta.
-*/
-constexpr double nominalFrameDeltaSeconds =
-    1.0 / 60.0;
-
-if (sourceDelta <= 0.000001)
-{
-    sourceDelta =
-        nominalFrameDeltaSeconds;
-}
-
-sourceDelta =
-    std::clamp(
-        sourceDelta,
-        0.0,
-        maximumAnimationDeltaSeconds
-    );
-
-entry.animationTimeSeconds +=
-    sourceDelta;
-
-const double intervalLength =
-    std::max(
-        0.000001,
-        entry.nextStateTimeSeconds -
-            entry.previousStateTimeSeconds
-    );
-
-float transition =
-    static_cast<float>(
-        std::clamp(
-            (
-                entry.animationTimeSeconds -
-                    entry.previousStateTimeSeconds
-            ) /
-            intervalLength,
-            0.0,
-            1.0
-        )
-    );
-
-/*
-    Когда слой достаточно продвинулся в текущем интервале,
-    помечаем future generation как pending.
-
-    ВАЖНО:
-    здесь мы не обязаны генерировать texture немедленно.
-*/
-constexpr float futurePreparationBase =
-    0.58f;
-
-const float phaseNormalized =
-    static_cast<float>(
-        entry.updatePhaseSeconds /
-        stateIntervalSeconds
-    );
-
-const float preparationThreshold =
-    std::clamp(
-        futurePreparationBase +
-            phaseNormalized * 0.20f,
-        0.55f,
-        0.82f
-    );
-
-if (!entry.futureStatePrepared &&
-    !entry.futureGenerationPending &&
-    transition >= preparationThreshold)
-{
-    entry.pendingFutureStateTimeSeconds =
-        entry.nextStateTimeSeconds +
-        stateIntervalSeconds;
-
-    entry.futureGenerationPending = true;
-}
-
-/*
-    Бюджет:
-    не больше одной тяжёлой cloud-generation за кадр.
-
-    Это главный фикс против подёргиваний.
-*/
-if (entry.futureGenerationPending &&
-    !m_generationPerformedThisFrame)
-{
-    generateGpuTexture(
-        entry.futureTexture,
-        entry.width,
-        entry.height,
-        style,
-        entry.pendingFutureStateTimeSeconds
-    );
-
-    entry.futureStatePrepared = true;
-    entry.futureGenerationPending = false;
-    m_generationPerformedThisFrame = true;
-}
-
-/*
-    На самой границе интервала мы НЕ генерируем texture.
-
-    Если future ещё не готова,
-    просто удерживаем анимацию почти на 1.0,
-    пока будущий state не будет подготовлен
-    в одном из следующих кадров.
-*/
-if (entry.animationTimeSeconds >=
-    entry.nextStateTimeSeconds)
-{
-    if (!entry.futureStatePrepared)
-    {
-        entry.animationTimeSeconds =
-            entry.nextStateTimeSeconds -
-            0.000001;
-
-        transition = 0.9999f;
-    }
-    else
-    {
-        const GLuint reusableTexture =
-            entry.previousTexture;
-
-        entry.previousTexture =
-            entry.nextTexture;
-
-        entry.nextTexture =
-            entry.futureTexture;
-
-        entry.futureTexture =
-            reusableTexture;
-
-        entry.previousStateTimeSeconds =
-            entry.nextStateTimeSeconds;
-
-        entry.nextStateTimeSeconds =
-            entry.previousStateTimeSeconds +
-            stateIntervalSeconds;
-
-        entry.futureStatePrepared = false;
-        entry.futureGenerationPending = false;
-        entry.pendingFutureStateTimeSeconds = 0.0;
-
-        entry.animationTimeSeconds =
-            std::clamp(
-                entry.animationTimeSeconds,
-                entry.previousStateTimeSeconds,
-                entry.nextStateTimeSeconds -
-                    0.000001
+            generateGpuTexture(
+                entry.previousTexture,
+                entry.width,
+                entry.height,
+                style,
+                entry.previousStateTimeSeconds
             );
 
-        transition =
+            generateGpuTexture(
+                entry.nextTexture,
+                entry.width,
+                entry.height,
+                style,
+                entry.nextStateTimeSeconds
+            );
+
+            /*
+                Future пока не создаём, чтобы не делать три тяжёлых
+                generation-pass сразу при первом открытии карты.
+            */
+            entry.futureStatePrepared = false;
+            entry.initialized = true;
+        }
+
+        
+        
+        
+
+        /*
+            Один style может использоваться несколькими render-pass
+            в пределах одного кадра.
+
+            Продвигаем его animation time только при первом обращении
+            в текущем m_frameSerial.
+        */
+        if (entry.lastAdvancedFrameSerial !=
+            m_frameSerial)
+        {
+            double sourceDelta =
+                timeSeconds -
+                entry.lastSourceTimeSeconds;
+
+            entry.lastSourceTimeSeconds =
+                timeSeconds;
+
+            entry.lastAdvancedFrameSerial =
+                m_frameSerial;
+
+            if (!std::isfinite(sourceDelta) ||
+                sourceDelta < 0.0)
+            {
+                sourceDelta =
+                    0.0;
+            }
+
+            /*
+                environmentVisualTimeSeconds() теперь самостоятельно
+                продолжает время при кэшированном snapshot.
+
+                Поэтому искусственный fallback 1/60 здесь больше
+                не нужен и не должен зависеть от числа вызовов.
+            */
+            sourceDelta =
+                std::clamp(
+                    sourceDelta,
+                    0.0,
+                    maximumAnimationDeltaSeconds
+                );
+
+            entry.animationTimeSeconds +=
+                sourceDelta;
+        }
+
+
+
+
+
+
+
+        const double intervalLength =
+            std::max(
+                0.000001,
+                entry.nextStateTimeSeconds -
+                    entry.previousStateTimeSeconds
+            );
+
+        float transition =
             static_cast<float>(
                 std::clamp(
                     (
                         entry.animationTimeSeconds -
                             entry.previousStateTimeSeconds
                     ) /
-                    stateIntervalSeconds,
+                    intervalLength,
                     0.0,
                     1.0
                 )
             );
-    }
-}
 
-blendGpuTextures(
-    entry,
-    transition
-);
+        /*
+            Когда слой достаточно продвинулся в текущем интервале,
+            помечаем future generation как pending.
 
-return
-    entry.displayTexture;
+            ВАЖНО:
+            здесь мы не обязаны генерировать texture немедленно.
+        */
+        constexpr float futurePreparationBase =
+            0.58f;
+
+        const float phaseNormalized =
+            static_cast<float>(
+                entry.updatePhaseSeconds /
+                stateIntervalSeconds
+            );
+
+        const float preparationThreshold =
+            std::clamp(
+                futurePreparationBase +
+                    phaseNormalized * 0.20f,
+                0.55f,
+                0.82f
+            );
+
+        if (!entry.futureStatePrepared &&
+            !entry.futureGenerationPending &&
+            transition >= preparationThreshold)
+        {
+            entry.pendingFutureStateTimeSeconds =
+                entry.nextStateTimeSeconds +
+                stateIntervalSeconds;
+
+            entry.futureGenerationPending = true;
+        }
+
+        /*
+            Бюджет:
+            не больше одной тяжёлой cloud-generation за кадр.
+
+            Это главный фикс против подёргиваний.
+        */
+        if (entry.futureGenerationPending &&
+            !m_generationPerformedThisFrame)
+        {
+            generateGpuTexture(
+                entry.futureTexture,
+                entry.width,
+                entry.height,
+                style,
+                entry.pendingFutureStateTimeSeconds
+            );
+
+            entry.futureStatePrepared = true;
+            entry.futureGenerationPending = false;
+            m_generationPerformedThisFrame = true;
+        }
+
+        /*
+            На самой границе интервала мы НЕ генерируем texture.
+
+            Если future ещё не готова,
+            просто удерживаем анимацию почти на 1.0,
+            пока будущий state не будет подготовлен
+            в одном из следующих кадров.
+        */
+        if (entry.animationTimeSeconds >=
+            entry.nextStateTimeSeconds)
+        {
+            if (!entry.futureStatePrepared)
+            {
+                entry.animationTimeSeconds =
+                    entry.nextStateTimeSeconds -
+                    0.000001;
+
+                transition = 0.9999f;
+            }
+            else
+            {
+                const GLuint reusableTexture =
+                    entry.previousTexture;
+
+                entry.previousTexture =
+                    entry.nextTexture;
+
+                entry.nextTexture =
+                    entry.futureTexture;
+
+                entry.futureTexture =
+                    reusableTexture;
+
+                entry.previousStateTimeSeconds =
+                    entry.nextStateTimeSeconds;
+
+                entry.nextStateTimeSeconds =
+                    entry.previousStateTimeSeconds +
+                    stateIntervalSeconds;
+
+                entry.futureStatePrepared = false;
+                entry.futureGenerationPending = false;
+                entry.pendingFutureStateTimeSeconds = 0.0;
+
+                entry.animationTimeSeconds =
+                    std::clamp(
+                        entry.animationTimeSeconds,
+                        entry.previousStateTimeSeconds,
+                        entry.nextStateTimeSeconds -
+                            0.000001
+                    );
+
+                transition =
+                    static_cast<float>(
+                        std::clamp(
+                            (
+                                entry.animationTimeSeconds -
+                                    entry.previousStateTimeSeconds
+                            ) /
+                            stateIntervalSeconds,
+                            0.0,
+                            1.0
+                        )
+                    );
+            }
+        }
+
+        blendGpuTextures(
+            entry,
+            transition
+        );
+
+        return
+            entry.displayTexture;
 
 
 

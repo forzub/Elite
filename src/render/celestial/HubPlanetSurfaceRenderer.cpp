@@ -1,7 +1,10 @@
 #include "src/render/celestial/HubPlanetSurfaceRenderer.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
+
+#include <glm/gtc/type_ptr.hpp>
 
 #include "src/render/ShaderLibrary.h"
 
@@ -74,10 +77,10 @@ void HubPlanetSurfaceRenderer::ensureResources()
                 "uPlanetRadiusPx"
             );
 
-        m_longitudeOffsetLocation =
+        m_cameraToPlanetBodyLocation =
             glGetUniformLocation(
                 m_shader,
-                "uLongitudeOffset"
+                "uCameraToPlanetBody"
             );
 
         m_lightDirectionLocation =
@@ -121,6 +124,36 @@ void HubPlanetSurfaceRenderer::ensureResources()
                 m_shader,
                 "uSurfaceSaturation"
             );
+
+        m_aerialPerspectiveColorLocation =
+            glGetUniformLocation(
+                m_shader,
+                "uAerialPerspectiveColor"
+            );
+
+        m_aerialPerspectiveStrengthLocation =
+            glGetUniformLocation(
+                m_shader,
+                "uAerialPerspectiveStrength"
+            );
+
+        m_aerialPerspectiveStartLocation =
+            glGetUniformLocation(
+                m_shader,
+                "uAerialPerspectiveStart"
+            );
+
+        m_aerialPerspectiveEndLocation =
+            glGetUniformLocation(
+                m_shader,
+                "uAerialPerspectiveEnd"
+            );
+
+        m_aerialPerspectiveBlurLodLocation =
+            glGetUniformLocation(
+                m_shader,
+                "uAerialPerspectiveBlurLod"
+            );
     }
 
     if (m_fullscreenVao == 0)
@@ -137,7 +170,7 @@ void HubPlanetSurfaceRenderer::render(
     GLuint normalTexture,
     const glm::dvec2& planetCenterPx,
     double planetRadiusPx,
-    double longitudeOffset,
+    const glm::mat3& cameraToPlanetBody,
     const glm::vec3& lightDirection
 )
 {
@@ -228,6 +261,112 @@ void HubPlanetSurfaceRenderer::render(
             GL_SCISSOR_TEST
         );
 
+
+        GLint previousScissorBox[4] =
+        {
+            0,
+            0,
+            1,
+            1
+        };
+
+        glGetIntegerv(
+            GL_SCISSOR_BOX,
+            previousScissorBox
+        );
+
+        /*
+            Fullscreen shader реально нужен только в квадрате,
+            содержащем диск планеты.
+        */
+        const int localLeft =
+            static_cast<int>(
+                std::floor(
+                    planetCenterPx.x -
+                    planetRadiusPx -
+                    2.0
+                )
+            );
+
+        const int localRight =
+            static_cast<int>(
+                std::ceil(
+                    planetCenterPx.x +
+                    planetRadiusPx +
+                    2.0
+                )
+            );
+
+        const int localTop =
+            static_cast<int>(
+                std::floor(
+                    planetCenterPx.y -
+                    planetRadiusPx -
+                    2.0
+                )
+            );
+
+        const int localBottom =
+            static_cast<int>(
+                std::ceil(
+                    planetCenterPx.y +
+                    planetRadiusPx +
+                    2.0
+                )
+            );
+
+        const int clippedLeft =
+            std::clamp(
+                localLeft,
+                0,
+                viewport[2]
+            );
+
+        const int clippedRight =
+            std::clamp(
+                localRight,
+                0,
+                viewport[2]
+            );
+
+        const int clippedTop =
+            std::clamp(
+                localTop,
+                0,
+                viewport[3]
+            );
+
+        const int clippedBottom =
+            std::clamp(
+                localBottom,
+                0,
+                viewport[3]
+            );
+
+        const int scissorWidth =
+            clippedRight -
+            clippedLeft;
+
+        const int scissorHeight =
+            clippedBottom -
+            clippedTop;
+
+        if (scissorWidth <= 0 ||
+            scissorHeight <= 0)
+        {
+            return;
+        }
+
+        const int scissorX =
+            viewport[0] +
+            clippedLeft;
+
+        const int scissorY =
+            viewport[1] +
+            viewport[3] -
+            clippedBottom;
+
+
     glDisable(
         GL_BLEND
     );
@@ -240,8 +379,15 @@ void HubPlanetSurfaceRenderer::render(
         GL_CULL_FACE
     );
 
-    glDisable(
+    glEnable(
         GL_SCISSOR_TEST
+    );
+
+    glScissor(
+        scissorX,
+        scissorY,
+        scissorWidth,
+        scissorHeight
     );
 
     glUseProgram(
@@ -320,10 +466,12 @@ void HubPlanetSurfaceRenderer::render(
         )
     );
 
-    glUniform1f(
-        m_longitudeOffsetLocation,
-        static_cast<float>(
-            longitudeOffset
+    glUniformMatrix3fv(
+        m_cameraToPlanetBodyLocation,
+        1,
+        GL_FALSE,
+        glm::value_ptr(
+            cameraToPlanetBody
         )
     );
 
@@ -364,6 +512,33 @@ void HubPlanetSurfaceRenderer::render(
     glUniform1f(
         m_surfaceSaturationLocation,
         0.92f
+    );
+
+    glUniform3f(
+        m_aerialPerspectiveColorLocation,
+        0.78f,
+        0.84f,
+        0.92f
+    );
+
+    glUniform1f(
+        m_aerialPerspectiveStrengthLocation,
+        0.62f
+    );
+
+    glUniform1f(
+        m_aerialPerspectiveStartLocation,
+        0.18f
+    );
+
+    glUniform1f(
+        m_aerialPerspectiveEndLocation,
+        0.92f
+    );
+
+    glUniform1f(
+        m_aerialPerspectiveBlurLodLocation,
+        2.6f
     );
 
     glBindVertexArray(
@@ -430,6 +605,18 @@ void HubPlanetSurfaceRenderer::render(
         glEnable(GL_CULL_FACE);
     else
         glDisable(GL_CULL_FACE);
+
+
+
+    glScissor(
+        previousScissorBox[0],
+        previousScissorBox[1],
+        previousScissorBox[2],
+        previousScissorBox[3]
+    );
+
+
+
 
     if (scissorWasEnabled)
         glEnable(GL_SCISSOR_TEST);

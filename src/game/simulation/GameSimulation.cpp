@@ -2666,6 +2666,36 @@ bool GameSimulation::resolveCelestialBodyMeters(
 
 
 
+bool GameSimulation::resolveCelestialBodyVelocityMetersPerSecond(
+    const std::string& bodyId,
+    glm::dvec3& outVelocityMetersPerSecond
+) const
+{
+    const auto it =
+        m_celestialBodyVelocitiesMetersPerSecond.find(
+            bodyId
+        );
+
+    if (it ==
+        m_celestialBodyVelocitiesMetersPerSecond.end())
+    {
+        outVelocityMetersPerSecond =
+            glm::dvec3(0.0);
+
+        return false;
+    }
+
+    outVelocityMetersPerSecond =
+        it->second;
+
+    return true;
+}
+
+
+
+
+
+
 
 game::navigation::ResolvedFrameState GameSimulation::resolveReferenceFrame(
     const game::navigation::ReferenceFrame& frame

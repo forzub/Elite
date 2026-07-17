@@ -247,6 +247,12 @@ add_executable(EliteGame
 
     src/render/celestial/HubPlanetSurfaceRenderer.cpp
     src/render/celestial/rings/PlanetRingRenderer.cpp
+    src/render/celestial/PlanetGlobeMeshRenderer.cpp
+
+    src/render/system_map/HubMapGpuGeometryRenderer.cpp
+    src/render/system_map/HubPlanetOverlayRenderer.cpp
+
+    src/game/navigation/GalaxyNavigationGrid.cpp
 )
 
 

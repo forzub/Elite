@@ -186,6 +186,15 @@ private:
         double lastSourceTimeSeconds = 0.0;
 
         /*
+            Один и тот же style может быть запрошен несколько
+            раз внутри одного render-frame.
+
+            Анимационное время должно продвигаться только один
+            раз за кадр, независимо от количества draw calls.
+        */
+        std::uint64_t lastAdvancedFrameSerial = 0;
+
+        /*
             Времена двух состояний, между которыми выполняется blend.
         */
         double previousStateTimeSeconds = 0.0;

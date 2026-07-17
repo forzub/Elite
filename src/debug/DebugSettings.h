@@ -43,6 +43,63 @@ struct DebugRenderSettings
     bool renderCelestialBodies = true;
     bool renderSystemMapObjects = true;
 
+        // =========================
+    // CINEMATIC POST-PROCESS
+    // =========================
+
+    /*
+        Общий переключатель post-process.
+
+        false:
+            сцена рисуется напрямую без cinematic composite.
+
+        true:
+            bloom, selective softening, grading,
+            vignette, grain и haze включены.
+    */
+    bool postProcessEnabled = true;
+
+    /*
+        Bloom.
+
+        threshold:
+            с какой яркости пиксель начинает попадать в bloom.
+
+        knee:
+            насколько мягко bloom появляется около threshold.
+
+        intensity:
+            сила размытого свечения в итоговом composite.
+    */
+    float postBloomThreshold = 0.58f;
+    float postBloomKnee = 0.25f;
+    float postBloomIntensity = 0.42f;
+
+    /*
+        Selective softening.
+
+        Размывает преимущественно низкоконтрастные области,
+        сохраняя резкие границы лучше обычного blur.
+    */
+    float postSoftening = 0.18f;
+
+    /*
+        Итоговая цветокоррекция.
+    */
+    float postSaturation = 0.86f;
+    float postContrast = 1.08f;
+
+    /*
+        Дополнительные художественные эффекты.
+    */
+    float postVignette = 0.22f;
+    float postGrain = 0.012f;
+    float postHaze = 0.24f;
+
+
+
+    
+
     // Debug UI behaviour.
     // Не выключает WebSocket/HTML-сервер. Только останавливает автопуш state_update.
     bool debugControlAutoUpdates = true;

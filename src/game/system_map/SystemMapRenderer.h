@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <functional>
 
 #include <array>
 #include <cstddef>
@@ -32,6 +33,9 @@
 #include "src/render/celestial/rings/PlanetRingRenderer.h"
 #include "src/render/system_map/HubMapGpuGeometryRenderer.h"
 #include "src/render/system_map/HubPlanetOverlayRenderer.h"
+
+#include "src/game/system_map/GalaxyMapVisualSettings.h"
+#include "src/game/system_map/MapTransitionController.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
@@ -109,6 +113,11 @@ public:
     Mode mode() const;
     int focusedSystemId() const;
 
+    bool beginMapTransition(
+        const MapTransitionSpec& spec,
+        std::function<void()> applyNewState
+    );
+
     const HubMapPerformanceStats&
     hubMapPerformanceStats() const
     {
@@ -182,7 +191,7 @@ private:
     {
         float yaw = 0.65f;
         float pitch = 0.72f;
-        float distance = 150.0f;
+        float distance = 82.0f;
         glm::vec3 target {0.0f, 0.0f, 0.0f};
 
         bool rotating = false;
@@ -195,6 +204,27 @@ private:
 
         float lastWheelY = 0.0f;
     };
+
+
+
+
+    struct GalaxyCameraFlight
+    {
+        bool active = false;
+
+        glm::vec3 startTarget {0.0f};
+        glm::vec3 destinationTarget {0.0f};
+
+        float startDistance = 82.0f;
+        float destinationDistance = 82.0f;
+
+        double startTimeSeconds = 0.0;
+        double durationSeconds = 0.0;
+    };
+
+
+
+
 
     struct SystemCamera
     {
@@ -255,8 +285,8 @@ private:
 
         float panScaleByDistance = 0.0018f;
 
-        float zoomInFactor = 0.88f;
-        float zoomOutFactor = 1.12f;
+        float zoomInFactor = 0.935f;
+        float zoomOutFactor = 1.07f;
 
         float minDistance = 8.0f;
         float maxDistance = 700.0f;
@@ -396,7 +426,18 @@ private:
 
 
 
+    void ensureMapTransitionSnapshot(
+    const Viewport& viewport
+    );
 
+    void captureMapTransitionSnapshot(
+        const Viewport& viewport
+    );
+
+    void drawMapTransitionSnapshot(
+        const Viewport& viewport,
+        float alpha
+    );
 
 
 
@@ -812,6 +853,8 @@ private:
     void ensureBackground();
     void drawBackground(); 
 
+
+
     void beginLines();
     void addLine(const glm::vec3& a, const glm::vec3& b, const glm::vec4& color);
     
@@ -862,6 +905,22 @@ private:
         const glm::mat4& view,
         int segments = 32
     );
+
+
+
+    void addGalaxyStarHalo(
+        const glm::vec3& center,
+        float starRadius,
+        float outerRadiusScale,
+        float baseAlpha,
+        const glm::vec4& color,
+        const glm::mat4& view,
+        int ringCount,
+        int segments
+    );
+
+
+
 
     void addSystemBodyMarker(
         const glm::vec3& center,
@@ -996,6 +1055,12 @@ private:
         const glm::mat4& mvp
     );
 
+    void updateGalaxyNavigationHoverFromCursor(
+        const Viewport& vp,
+        double localMouseX,
+        double localMouseY
+    );
+
     bool pickGalaxyNavigationCell(
         const Viewport& vp,
         double localMouseX,
@@ -1032,6 +1097,23 @@ private:
         float physicalRadiusWorld,
         double worldUnitsPerPixel
     ) const;
+
+
+
+    void beginGalaxyCameraFlight(
+        const glm::vec3& destinationTarget,
+        float destinationDistance
+    );
+
+    void updateGalaxyCameraFlight(
+        double nowSeconds
+    );
+
+    void cancelGalaxyCameraFlight(
+        bool snapToDestination
+    );
+
+
 
     glm::mat4 galaxyViewMatrix() const;
     glm::mat4 galaxyProjectionMatrix(const Viewport& vp) const;
@@ -1331,15 +1413,19 @@ private:
     double m_pendingScrollY = 0.0;
 
     GalaxyCamera m_galaxyCamera;
+    GalaxyCameraFlight m_galaxyCameraFlight;
+
     SystemCamera m_systemCamera;
 
     game::navigation::GalaxyNavigationGrid
         m_galaxyNavigationGrid;
 
-    bool m_galaxyNavigationSpaceWasDown = false;
+   
 
     GalaxyControlSettings m_galaxyControls;
+    GalaxyMapVisualSettings m_galaxyVisuals;
     SystemControlSettings m_systemControls;
+    
 
     DetailControlSettings m_planetControls;
     DetailControlSettings m_hubControls = []()
@@ -1487,6 +1573,22 @@ private:
 
     std::uint64_t m_hubGpuFrameSerial = 0;
     std::uint64_t m_hubGpuLastCollectedSerial = 0;
+
+
+
+    /*
+        Отдельный single-sample framebuffer нужен для разрешения
+        MSAA-кадра карты в обычную текстуру перехода.
+    */
+    GLuint m_mapTransitionSnapshotFramebuffer = 0;
+    GLuint m_mapTransitionSnapshotTexture = 0;
+
+    int m_mapTransitionSnapshotWidth = 0;
+    int m_mapTransitionSnapshotHeight = 0;
+
+    bool m_mapTransitionSnapshotReady = false;
+
+    MapTransitionController m_mapTransition;
 };
 
 

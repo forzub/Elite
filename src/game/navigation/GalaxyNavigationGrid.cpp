@@ -11,15 +11,42 @@ GalaxyNavigationGrid::GalaxyNavigationGrid()
     reset();
 }
 
+
+
+
+
+
 void GalaxyNavigationGrid::reset()
 {
-    m_enabled = false;
-    m_level = MinimumLevel;
+    m_enabled = true;
+    m_level = InitialLevel;
     m_displayRadius = 1;
+
+    /*
+        Начальный куб расположен вокруг начала координат:
+        Sol, индекс 0/0/0.
+    */
     m_anchorIndex = {};
+
+    /*
+        При первом открытии карты центральный куб уже является
+        зафиксированным выбранным кубом.
+    */
+    m_selectedCell =
+        cell(
+            m_anchorIndex,
+            m_level
+        );
+
+    /*
+        Hover появляется только после движения курсора.
+    */
     m_hoveredCell.reset();
-    m_selectedCell.reset();
 }
+
+
+
+
 
 bool GalaxyNavigationGrid::enabled() const
 {

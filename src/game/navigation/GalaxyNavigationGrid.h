@@ -81,8 +81,20 @@ class GalaxyNavigationGrid
 {
 public:
     static constexpr int Subdivision = 3;
+
     static constexpr int MinimumLevel = 0;
-    static constexpr int MaximumLevel = 12;
+    static constexpr int InitialLevel = 1;
+    /*
+        Последний уровень, отображаемый на карте Galaxy.
+
+        L9:
+            27 ly / 3^9
+            ≈ 0.001371742 ly
+            ≈ 86.75 AU
+
+        Дальнейшее приближение выполняется уже в карте System.
+    */
+    static constexpr int MaximumLevel = 9;
 
     /*
         Level 0 cube edge.
@@ -169,7 +181,7 @@ private:
 private:
     GalaxyNavigationFrame m_frame;
 
-    bool m_enabled = false;
+    bool m_enabled = true;
 
     int m_level = MinimumLevel;
     int m_displayRadius = 1;

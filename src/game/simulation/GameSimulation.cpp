@@ -1565,18 +1565,105 @@ void GameSimulation::rebuildHubNavigationFrames(double dt)
                 );
         }
 
+
+        
+
+
+
+
+        /*
+            frame.velocityMetersPerSecond — полная мировая скорость хаба:
+
+                parent planet world velocity
+                +
+                hub orbital velocity relative to planet.
+
+            Для построения orbital frame нужна только скорость
+            хаба относительно родительской планеты.
+
+            Иначе движение планеты вокруг звезды поворачивает
+            prograde/normal и Hub Map получает другую плоскость орбиты,
+            чем Planet Details.
+        */
+        glm::dvec3 parentVelocityMetersPerSecond {
+            0.0
+        };
+
+        bool parentVelocityResolved =
+            false;
+
+        const auto parentVelocityIt =
+            m_celestialBodyVelocitiesMetersPerSecond.find(
+                hub.parentBodyId
+            );
+
+        if (parentVelocityIt !=
+            m_celestialBodyVelocitiesMetersPerSecond.end())
+        {
+            parentVelocityMetersPerSecond =
+                parentVelocityIt->second;
+
+            parentVelocityResolved =
+                true;
+        }
+
+        glm::dvec3 relativeOrbitalVelocityMetersPerSecond;
+
+        if (parentVelocityResolved)
+        {
+            relativeOrbitalVelocityMetersPerSecond =
+                frame.velocityMetersPerSecond -
+                parentVelocityMetersPerSecond;
+        }
+        else
+        {
+            /*
+                При стартовой инициализации velocity cache теоретически
+                может быть ещё не заполнен. Аналитическая локальная
+                орбитальная скорость остаётся корректным fallback.
+            */
+            relativeOrbitalVelocityMetersPerSecond =
+                world::orbits::
+                    computeOrbitVelocityMetersPerSecond(
+                        hub.motion,
+                        m_orbitalUniverseTimeSeconds
+                    );
+        }
+
         glm::dvec3 prograde =
             safeNormalizeD(
-                frame.velocityMetersPerSecond,
+                relativeOrbitalVelocityMetersPerSecond,
                 glm::dvec3(1.0, 0.0, 0.0)
             );
 
-        // Убираем радиальную примесь, чтобы prograde был касательным.
-        prograde =
-            safeNormalizeD(
-                prograde - radial * glm::dot(prograde, radial),
-                glm::dvec3(1.0, 0.0, 0.0)
-            );
+            /*
+                Убираем возможную радиальную составляющую.
+                Для круговой орбиты она практически нулевая,
+                но frame должен оставаться ортогональным.
+            */
+            prograde =
+                safeNormalizeD(
+                    prograde -
+                        radial *
+                        glm::dot(
+                            prograde,
+                            radial
+                        ),
+
+                    glm::dvec3(
+                        1.0,
+                        0.0,
+                        0.0
+                    )
+                );
+
+
+
+
+
+
+
+
 
         const glm::dvec3 normal =
             safeNormalizeD(

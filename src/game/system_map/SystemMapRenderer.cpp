@@ -1247,11 +1247,85 @@ namespace
 
 
 
+    float galaxyStarTypeVisualScale(
+        const std::string& starType
+    )
+    {
+        if (starType.empty())
+            return 1.0f;
 
+        const char spectralClass =
+            static_cast<char>(
+                std::toupper(
+                    static_cast<unsigned char>(
+                        starType.front()
+                    )
+                )
+            );
+
+        float scale = 1.0f;
+
+        switch (spectralClass)
+        {
+            case 'O': scale = 1.65f; break;
+            case 'B': scale = 1.45f; break;
+            case 'A': scale = 1.25f; break;
+            case 'F': scale = 1.12f; break;
+            case 'G': scale = 1.00f; break;
+            case 'K': scale = 0.90f; break;
+            case 'M': scale = 0.78f; break;
+
+            // Белые и коричневые карлики.
+            case 'D': scale = 0.68f; break;
+            case 'L': scale = 0.66f; break;
+            case 'T': scale = 0.62f; break;
+
+            default: scale = 1.0f; break;
+        }
+
+        /*
+            Это не физический радиус, а визуальная поправка
+            по классу светимости.
+        */
+        if (starType.find("III") != std::string::npos)
+        {
+            scale *= 1.50f;
+        }
+        else if (starType.find("IV") != std::string::npos)
+        {
+            scale *= 1.20f;
+        }
+
+        return std::clamp(
+            scale,
+            0.58f,
+            1.85f
+        );
+    }
 
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void SystemMapRenderer::init()
 {
@@ -1565,6 +1639,8 @@ void SystemMapRenderer::ensureShader()
         
         return;
     }
+
+    
 
     m_mvpLoc = glGetUniformLocation(m_shader, "uMVP");
 }
@@ -2791,6 +2867,8 @@ void SystemMapRenderer::resetView()
 {
     m_mode = Mode::Galaxy;
     m_galaxyCamera = GalaxyCamera{};
+    m_galaxyCamera.distance = m_galaxyVisuals.initialCameraDistance;
+    m_galaxyCameraFlight = GalaxyCameraFlight{};
     m_systemCamera = SystemCamera{};
     m_planetCamera = DetailCamera{};
     m_hubCamera = DetailCamera{};
@@ -2824,8 +2902,217 @@ void SystemMapRenderer::resetView()
     m_environmentVisualTimeInitialized = false;
 
     m_galaxyNavigationGrid.reset();
-    m_galaxyNavigationSpaceWasDown = false;
+  
 }
+
+
+
+
+
+
+
+    void SystemMapRenderer::beginGalaxyCameraFlight(
+    const glm::vec3& destinationTarget,
+    float destinationDistance
+)
+{
+    destinationDistance =
+        std::clamp(
+            destinationDistance,
+            m_galaxyControls.minDistance,
+            std::min(
+                m_galaxyControls.maxDistance,
+                m_galaxyVisuals.labelMaxCameraDistance
+            )
+        );
+
+    const float targetTravelDistance =
+        glm::length(
+            destinationTarget -
+            m_galaxyCamera.target
+        );
+
+    const float distanceChange =
+        std::abs(
+            destinationDistance -
+            m_galaxyCamera.distance
+        );
+
+    /*
+        Если камера уже находится практически в нужной точке,
+        анимация не нужна.
+    */
+    if (targetTravelDistance < 0.0001f &&
+        distanceChange < 0.0001f)
+    {
+        m_galaxyCamera.target =
+            destinationTarget;
+
+        m_galaxyCamera.distance =
+            destinationDistance;
+
+        m_galaxyCameraFlight.active =
+            false;
+
+        return;
+    }
+
+    const float referenceDistance =
+        std::max(
+            1.0f,
+            m_galaxyVisuals.cameraFlightReferenceDistance
+        );
+
+    const float distanceFactor =
+        std::clamp(
+            targetTravelDistance /
+                referenceDistance,
+            0.0f,
+            1.0f
+        );
+
+    const float duration =
+        m_galaxyVisuals.cameraFlightMinSeconds +
+        (
+            m_galaxyVisuals.cameraFlightMaxSeconds -
+            m_galaxyVisuals.cameraFlightMinSeconds
+        ) *
+        distanceFactor;
+
+    m_galaxyCameraFlight.startTarget =
+        m_galaxyCamera.target;
+
+    m_galaxyCameraFlight.destinationTarget =
+        destinationTarget;
+
+    m_galaxyCameraFlight.startDistance =
+        m_galaxyCamera.distance;
+
+    m_galaxyCameraFlight.destinationDistance =
+        destinationDistance;
+
+    m_galaxyCameraFlight.startTimeSeconds =
+        glfwGetTime();
+
+    m_galaxyCameraFlight.durationSeconds =
+        std::max(
+            0.01,
+            static_cast<double>(duration)
+        );
+
+    m_galaxyCameraFlight.active =
+        true;
+
+    /*
+        Во время автоматического перелёта ручное вращение
+        и перемещение камеры прекращаются.
+    */
+    m_galaxyCamera.rotating = false;
+    m_galaxyCamera.panning = false;
+    m_galaxyOrbitPivotActive = false;
+}
+
+
+void SystemMapRenderer::updateGalaxyCameraFlight(
+    double nowSeconds
+)
+{
+    if (!m_galaxyCameraFlight.active)
+        return;
+
+    const double elapsedSeconds =
+        std::max(
+            0.0,
+            nowSeconds -
+                m_galaxyCameraFlight.startTimeSeconds
+        );
+
+    const float linearProgress =
+        static_cast<float>(
+            std::clamp(
+                elapsedSeconds /
+                    m_galaxyCameraFlight.durationSeconds,
+                0.0,
+                1.0
+            )
+        );
+
+    /*
+        SmootherStep:
+        скорость равна нулю в начале и конце движения.
+        Поэтому камера не дёргается при старте и остановке.
+    */
+    const float progress =
+        linearProgress *
+        linearProgress *
+        linearProgress *
+        (
+            linearProgress *
+            (
+                linearProgress * 6.0f -
+                15.0f
+            ) +
+            10.0f
+        );
+
+    m_galaxyCamera.target =
+        glm::mix(
+            m_galaxyCameraFlight.startTarget,
+            m_galaxyCameraFlight.destinationTarget,
+            progress
+        );
+
+    m_galaxyCamera.distance =
+        m_galaxyCameraFlight.startDistance +
+        (
+            m_galaxyCameraFlight.destinationDistance -
+            m_galaxyCameraFlight.startDistance
+        ) *
+        progress;
+
+    if (linearProgress >= 1.0f)
+    {
+        m_galaxyCamera.target =
+            m_galaxyCameraFlight.destinationTarget;
+
+        m_galaxyCamera.distance =
+            m_galaxyCameraFlight.destinationDistance;
+
+        m_galaxyCameraFlight.active =
+            false;
+    }
+}
+
+
+void SystemMapRenderer::cancelGalaxyCameraFlight(
+    bool snapToDestination
+)
+{
+    if (!m_galaxyCameraFlight.active)
+        return;
+
+    if (snapToDestination)
+    {
+        m_galaxyCamera.target =
+            m_galaxyCameraFlight.destinationTarget;
+
+        m_galaxyCamera.distance =
+            m_galaxyCameraFlight.destinationDistance;
+    }
+
+    m_galaxyCameraFlight.active =
+        false;
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2835,23 +3122,68 @@ void SystemMapRenderer::focusGalaxySystem(
     const world::celestial::GalaxyMapSnapshot& galaxy
 )
 {
-    for (const auto& s : galaxy.systems)
+    for (const auto& system : galaxy.systems)
     {
-        if (s.id != systemId)
+        if (system.id != systemId)
             continue;
 
-        m_selectedSystemId = s.id;
-        m_focusedSystemId = s.id;
-        m_galaxyCamera.target = galaxyStarPosition(s);
+        m_selectedSystemId =
+            system.id;
 
-        // Не зумим насильно, но если камера слишком далеко —
-        // подводим к рабочей дистанции.
-        if (m_galaxyCamera.distance > 130.0f)
-            m_galaxyCamera.distance = 130.0f;
+        m_focusedSystemId =
+            system.id;
+
+        /*
+            Выбираем куб текущего уровня,
+            внутри которого находится звезда.
+        */
+        m_galaxyNavigationGrid
+            .setAnchorFromPositionLy(
+                system.positionLy
+            );
+
+        const auto starCell =
+            m_galaxyNavigationGrid
+                .anchorCell();
+
+        m_galaxyNavigationGrid.selectCell(
+            starCell
+        );
+
+        const glm::vec3 destinationTarget =
+            galaxyPositionLyToRender(
+                starCell.centerLy
+            );
+
+        /*
+            В Galaxy плавно летим к кубу.
+            В других режимах просто сохраняем позицию,
+            которая будет использована после возврата в Galaxy.
+        */
+        if (m_mode == Mode::Galaxy)
+        {
+            beginGalaxyCameraFlight(
+                destinationTarget,
+                m_galaxyCamera.distance
+            );
+        }
+        else
+        {
+            m_galaxyCamera.target =
+                destinationTarget;
+        }
 
         return;
     }
 }
+
+
+
+
+
+
+
+
 
 int SystemMapRenderer::selectedSystemId() const
 {
@@ -2865,6 +3197,27 @@ int SystemMapRenderer::focusedSystemId() const
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void SystemMapRenderer::setMode(Mode mode)
 {
     if (m_mode == mode)
@@ -2872,11 +3225,18 @@ void SystemMapRenderer::setMode(Mode mode)
 
     m_mode = mode;
 
+    /*
+        Если пользователь открыл другую карту во время перелёта,
+        сохраняем конечную позицию Galaxy-камеры.
+    */
     if (m_mode != Mode::Galaxy)
     {
-        m_galaxyNavigationGrid.setEnabled(false);
-        m_galaxyNavigationSpaceWasDown = false;
+        cancelGalaxyCameraFlight(
+            true
+        );
     }
+
+
 
     if (m_mode == Mode::Planet)
     {
@@ -3274,6 +3634,160 @@ void SystemMapRenderer::addBillboardBall(
         m_solidVertices.push_back({ p1, edgeColor });
     }
 }
+
+
+
+
+
+void SystemMapRenderer::addGalaxyStarHalo(
+    const glm::vec3& center,
+    float starRadius,
+    float outerRadiusScale,
+    float baseAlpha,
+    const glm::vec4& color,
+    const glm::mat4& view,
+    int ringCount,
+    int segments
+)
+{
+    if (starRadius <= 0.0f ||
+        outerRadiusScale <= 1.0f ||
+        baseAlpha <= 0.0f ||
+        ringCount <= 0 ||
+        segments < 8)
+    {
+        return;
+    }
+
+    glm::vec3 cameraRight(
+        view[0][0],
+        view[1][0],
+        view[2][0]
+    );
+
+    glm::vec3 cameraUp(
+        view[0][1],
+        view[1][1],
+        view[2][1]
+    );
+
+    if (glm::length(cameraRight) < 0.000001f ||
+        glm::length(cameraUp) < 0.000001f)
+    {
+        return;
+    }
+
+    cameraRight =
+        glm::normalize(cameraRight);
+
+    cameraUp =
+        glm::normalize(cameraUp);
+
+    ringCount =
+        std::max(
+            ringCount,
+            1
+        );
+
+    segments =
+        std::max(
+            segments,
+            8
+        );
+
+    for (int ring = 0; ring < ringCount; ++ring)
+    {
+        const float t =
+            ringCount > 1
+                ? static_cast<float>(ring) /
+                    static_cast<float>(ringCount - 1)
+                : 0.0f;
+
+        /*
+            Между ядром звезды и гало оставляем заметный
+            пустой промежуток. Поэтому шарик остаётся чётким,
+            а гало читается как отдельный объект.
+        */
+        constexpr float innerHaloRadiusScale =
+            2.10f;
+
+        const float radiusScale =
+            innerHaloRadiusScale +
+            (
+                outerRadiusScale -
+                innerHaloRadiusScale
+            ) *
+            t;
+
+        const float radius =
+            starRadius *
+            radiusScale;
+
+
+        /*
+            Даже внешнее кольцо остаётся видимым.
+            Внутренние кольца заметно ярче.
+        */
+        const float inverseT =
+            1.0f - t;
+
+        const float fade =
+            0.28f +
+            0.72f *
+            std::pow(
+                inverseT,
+                1.65f
+            );
+
+        glm::vec4 ringColor = color;
+
+        ringColor.a =
+            baseAlpha *
+            fade;
+
+        for (int segment = 0;
+             segment < segments;
+             ++segment)
+        {
+            const float angle0 =
+                glm::two_pi<float>() *
+                static_cast<float>(segment) /
+                static_cast<float>(segments);
+
+            const float angle1 =
+                glm::two_pi<float>() *
+                static_cast<float>(segment + 1) /
+                static_cast<float>(segments);
+
+            const glm::vec3 point0 =
+                center +
+                (
+                    std::cos(angle0) *
+                    cameraRight +
+                    std::sin(angle0) *
+                    cameraUp
+                ) *
+                radius;
+
+            const glm::vec3 point1 =
+                center +
+                (
+                    std::cos(angle1) *
+                    cameraRight +
+                    std::sin(angle1) *
+                    cameraUp
+                ) *
+                radius;
+
+            addLine(
+                point0,
+                point1,
+                ringColor
+            );
+        }
+    }
+}
+
 
 
 
@@ -6543,7 +7057,19 @@ void SystemMapRenderer::render(
     if (!m_initialized)
         init();
 
+    const double nowSeconds =
+        glfwGetTime();
 
+    updateGalaxyCameraFlight(
+        nowSeconds
+    );
+
+    m_mapTransition.update(
+        nowSeconds
+    );
+
+
+  
     /*
         Начало нового кадра процедурных облаков.
 
@@ -6615,7 +7141,47 @@ void SystemMapRenderer::render(
     }
 
 
+    /*
+        Настоящий crossfade.
 
+        Если переход только начался, framebuffer ещё содержит
+        старое состояние. Сохраняем его в текстуру и только
+        после этого выполняем смену камеры или режима.
+
+        На следующих кадрах уже рисуется новое состояние,
+        а старый снимок постепенно растворяется поверх него.
+    */
+    glViewport(
+        viewport.x,
+        viewport.y,
+        viewport.width,
+        viewport.height
+    );
+
+    glScissor(
+        viewport.x,
+        viewport.y,
+        viewport.width,
+        viewport.height
+    );
+
+    if (m_mapTransition.needsOutgoingCapture())
+    {
+        captureMapTransitionSnapshot(
+            viewport
+        );
+
+        m_mapTransition.outgoingCaptured(
+            glfwGetTime()
+        );
+    }
+    else if (m_mapTransition.active())
+    {
+        drawMapTransitionSnapshot(
+            viewport,
+            m_mapTransition.outgoingAlpha()
+        );
+    }
 
 
 
@@ -6725,8 +7291,55 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
     const auto& frame =
         m_galaxyNavigationGrid.frame();
 
-    const auto cells =
-        m_galaxyNavigationGrid.neighborhood();
+    
+        std::vector<
+    game::navigation::GalaxyNavigationCell
+> cells;
+
+cells.reserve(2);
+
+const auto anchorCell =
+    m_galaxyNavigationGrid.anchorCell();
+
+cells.push_back(anchorCell);
+
+if (m_galaxyNavigationGrid.hasHoveredCell())
+{
+    const auto& hoveredCell =
+        m_galaxyNavigationGrid.hoveredCell();
+
+    if (hoveredCell.index != anchorCell.index)
+    {
+        cells.push_back(hoveredCell);
+    }
+}
+
+
+
+const glm::mat4 cameraView =
+    galaxyViewMatrix();
+
+const glm::vec3 cameraRight(
+    cameraView[0][0],
+    cameraView[1][0],
+    cameraView[2][0]
+);
+
+const glm::vec3 cameraUp(
+    cameraView[0][1],
+    cameraView[1][1],
+    cameraView[2][1]
+);
+
+
+
+
+
+
+
+
+
+
 
     for (const auto& cell : cells)
     {
@@ -6767,59 +7380,59 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
             cell.index ==
                 m_galaxyNavigationGrid.selectedCell().index;
 
-        glm::vec4 edgeColor(
-            0.25f,
-            0.66f,
-            0.88f,
-            0.11f
-        );
+glm::vec4 edgeColor(
+    0.22f,
+    0.58f,
+    0.78f,
+    0.035f
+);
 
-        glm::vec4 markerColor(
-            1.00f,
-            0.80f,
-            0.18f,
-            0.42f
-        );
+glm::vec4 markerColor(
+    0.82f,
+    0.67f,
+    0.24f,
+    0.10f
+);
 
-        if (isAnchor)
-        {
-            edgeColor.a = 0.18f;
-            markerColor.a = 0.58f;
-        }
+if (isAnchor)
+{
+    edgeColor.a = 0.18f;
+    markerColor.a = 0.58f;
+}
 
-        if (isHovered)
-        {
-            edgeColor = glm::vec4(
-                0.55f,
-                0.88f,
-                1.00f,
-                0.34f
-            );
+if (isHovered)
+{
+    edgeColor = glm::vec4(
+        0.45f,
+        0.78f,
+        0.92f,
+        0.18f
+    );
 
-            markerColor = glm::vec4(
-                1.00f,
-                0.88f,
-                0.28f,
-                0.92f
-            );
-        }
+    markerColor = glm::vec4(
+        0.92f,
+        0.76f,
+        0.28f,
+        0.58f
+    );
+}
 
-        if (isSelected)
-        {
-            edgeColor = glm::vec4(
-                0.95f,
-                0.76f,
-                0.18f,
-                0.42f
-            );
+if (isSelected)
+{
+    edgeColor = glm::vec4(
+        0.78f,
+        0.58f,
+        0.16f,
+        0.25f
+    );
 
-            markerColor = glm::vec4(
-                1.00f,
-                0.86f,
-                0.20f,
-                1.00f
-            );
-        }
+    markerColor = glm::vec4(
+        1.00f,
+        0.75f,
+        0.18f,
+        0.72f
+    );
+}
 
         addGalaxyNavigationCubeEdges(
             center,
@@ -6834,21 +7447,63 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                 cell.sizeLy
             ) * GALAXY_RENDER_UNITS_PER_LY;
 
-        float markerSize =
-            std::clamp(
-                cellRenderSize * 0.040f,
-                0.20f,
-                0.80f
-            );
 
-        if (isHovered || isSelected)
-            markerSize *= 1.35f;
+            
+            float markerSize =
+    std::clamp(
+        cellRenderSize * 0.018f,
+        0.10f,
+        0.34f
+    );
 
-        addCross(
-            center,
-            markerSize,
-            markerColor
-        );
+if (isHovered || isSelected)
+{
+    markerSize *= 1.40f;
+}
+
+/*
+    Плоский ромб всегда обращён к камере.
+    Он визуально отличается от трёхмерного креста звезды.
+*/
+const glm::vec3 markerTop =
+    center + cameraUp * markerSize;
+
+const glm::vec3 markerRight =
+    center + cameraRight * markerSize;
+
+const glm::vec3 markerBottom =
+    center - cameraUp * markerSize;
+
+const glm::vec3 markerLeft =
+    center - cameraRight * markerSize;
+
+addLine(
+    markerTop,
+    markerRight,
+    markerColor
+);
+
+addLine(
+    markerRight,
+    markerBottom,
+    markerColor
+);
+
+addLine(
+    markerBottom,
+    markerLeft,
+    markerColor
+);
+
+addLine(
+    markerLeft,
+    markerTop,
+    markerColor
+);
+
+
+
+
     }
 }
 
@@ -6870,8 +7525,38 @@ bool SystemMapRenderer::pickGalaxyNavigationCell(
     float bestDistancePx = 18.0f;
     float bestDepth = 1.0f;
 
-    const auto cells =
-        m_galaxyNavigationGrid.neighborhood();
+    
+    
+
+
+    std::vector<
+    game::navigation::GalaxyNavigationCell
+> cells;
+
+cells.reserve(2);
+
+const auto anchorCell =
+    m_galaxyNavigationGrid.anchorCell();
+
+cells.push_back(anchorCell);
+
+if (m_galaxyNavigationGrid.hasHoveredCell())
+{
+    const auto& hoveredCell =
+        m_galaxyNavigationGrid.hoveredCell();
+
+    if (hoveredCell.index != anchorCell.index)
+    {
+        cells.push_back(hoveredCell);
+    }
+}
+
+
+        
+
+
+
+
 
     for (const auto& cell : cells)
     {
@@ -6924,6 +7609,191 @@ bool SystemMapRenderer::pickGalaxyNavigationCell(
 
     return found;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+void SystemMapRenderer::updateGalaxyNavigationHoverFromCursor(
+    const Viewport& vp,
+    double localMouseX,
+    double localMouseY
+)
+{
+    if (!m_galaxyNavigationGrid.enabled() ||
+        vp.width <= 0 ||
+        vp.height <= 0)
+    {
+        m_galaxyNavigationGrid.clearHoveredCell();
+        return;
+    }
+
+    /*
+        glm::unProject использует начало координат снизу,
+        а координаты мыши приходят от верхнего края.
+    */
+    const float mouseWindowX =
+        static_cast<float>(localMouseX);
+
+    const float mouseWindowY =
+        static_cast<float>(vp.height) -
+        static_cast<float>(localMouseY);
+
+    const glm::vec4 viewport(
+        0.0f,
+        0.0f,
+        static_cast<float>(vp.width),
+        static_cast<float>(vp.height)
+    );
+
+    const glm::mat4 view =
+        galaxyViewMatrix();
+
+    const glm::mat4 projection =
+        galaxyProjectionMatrix(vp);
+
+    const glm::vec3 rayNear =
+        glm::unProject(
+            glm::vec3(
+                mouseWindowX,
+                mouseWindowY,
+                0.0f
+            ),
+            view,
+            projection,
+            viewport
+        );
+
+    const glm::vec3 rayFar =
+        glm::unProject(
+            glm::vec3(
+                mouseWindowX,
+                mouseWindowY,
+                1.0f
+            ),
+            view,
+            projection,
+            viewport
+        );
+
+    const glm::vec3 rayVector =
+        rayFar - rayNear;
+
+    const float rayLength =
+        glm::length(rayVector);
+
+    if (rayLength < 0.000001f)
+    {
+        m_galaxyNavigationGrid.clearHoveredCell();
+        return;
+    }
+
+    const glm::vec3 rayDirection =
+        rayVector / rayLength;
+
+    /*
+        Рабочая плоскость проходит через центр
+        зафиксированного куба и обращена к камере.
+    */
+    const auto anchorCell =
+        m_galaxyNavigationGrid.anchorCell();
+
+    const glm::vec3 planePoint =
+        galaxyPositionLyToRender(
+            anchorCell.centerLy
+        );
+
+    const glm::vec3 planeNormal =
+        orbitCameraDirectionFromYawPitch(
+            m_galaxyCamera.yaw,
+            m_galaxyCamera.pitch
+        );
+
+    const float denominator =
+        glm::dot(
+            rayDirection,
+            planeNormal
+        );
+
+    if (std::abs(denominator) < 0.000001f)
+    {
+        m_galaxyNavigationGrid.clearHoveredCell();
+        return;
+    }
+
+    const float distanceAlongRay =
+        glm::dot(
+            planePoint - rayNear,
+            planeNormal
+        ) /
+        denominator;
+
+    if (distanceAlongRay <= 0.0f)
+    {
+        m_galaxyNavigationGrid.clearHoveredCell();
+        return;
+    }
+
+    const glm::vec3 cursorRenderPosition =
+        rayNear +
+        rayDirection * distanceAlongRay;
+
+    const glm::dvec3 cursorPositionLy(
+        static_cast<double>(
+            cursorRenderPosition.x
+        ) / static_cast<double>(
+            GALAXY_RENDER_UNITS_PER_LY
+        ),
+
+        static_cast<double>(
+            cursorRenderPosition.y
+        ) / static_cast<double>(
+            GALAXY_RENDER_UNITS_PER_LY
+        ),
+
+        static_cast<double>(
+            cursorRenderPosition.z
+        ) / static_cast<double>(
+            GALAXY_RENDER_UNITS_PER_LY
+        )
+    );
+
+    const auto hoveredIndex =
+        m_galaxyNavigationGrid
+            .nearestIndexForPositionLy(
+                cursorPositionLy,
+                m_galaxyNavigationGrid.level()
+            );
+
+    m_galaxyNavigationGrid.setHoveredCell(
+        m_galaxyNavigationGrid.cell(
+            hoveredIndex,
+            m_galaxyNavigationGrid.level()
+        )
+    );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 float SystemMapRenderer::galaxyNavigationAnchorDiameterPx(
     const Viewport& vp
@@ -7243,6 +8113,25 @@ void SystemMapRenderer::handleInput(
     {
         return;
     }
+
+
+
+    /*
+        Во время crossfade нельзя вращать или перемещать
+        старую либо новую сцену.
+
+        AwaitingCapture тоже считается активной фазой.
+    */
+    if (m_mapTransition.blocksInput())
+    {
+        m_pendingScrollY = 0.0;
+        return;
+    }
+
+
+
+
+
 
     GLFWwindow* window =
         glfwGetCurrentContext();
@@ -8072,66 +8961,177 @@ void SystemMapRenderer::handleGalaxyInput(
     // =========================================================
     // GALAXY MODE INPUT
     // =========================================================
+        
         const GalaxyControlSettings& controls = m_galaxyControls;
+        
+        
+        /*
+            Камера не может отлететь дальше границы,
+            после которой скрываются названия систем.
+        */
+        const float galaxyMaximumDistance =
+            std::max(
+                controls.minDistance,
+                m_galaxyVisuals.labelMaxCameraDistance
+            );
+
+        m_galaxyCamera.distance =
+            std::clamp(
+                m_galaxyCamera.distance,
+                controls.minDistance,
+                galaxyMaximumDistance
+            );
+
         const double dx = mx - m_galaxyCamera.lastMouseX;
         const double dy = my - m_galaxyCamera.lastMouseY;
 
-        const bool spaceDown =
-            glfwGetKey(
-                window,
-                GLFW_KEY_SPACE
-            ) == GLFW_PRESS;
 
-        if (spaceDown &&
-            !m_galaxyNavigationSpaceWasDown)
+
+
+
+        if (m_mapTransition.active())
         {
-            m_galaxyNavigationGrid.toggleEnabled();
+            m_galaxyCamera.rotating = false;
+            m_galaxyCamera.panning = false;
 
-            if (m_galaxyNavigationGrid.enabled())
-            {
-                /*
-                    First activation starts from the Sol-centred
-                    zero cell. Existing selection survives later
-                    off/on toggles.
-                */
-                const auto anchor =
-                    m_galaxyNavigationGrid.anchorCell();
+            m_galaxyCamera.leftWasDown =
+                leftDown;
 
-                m_galaxyCamera.target =
-                    galaxyPositionLyToRender(
-                        anchor.centerLy
-                    );
-            }
+            m_galaxyCamera.rightWasDown =
+                rightDown;
+
+            m_galaxyCamera.lastMouseX =
+                mx;
+
+            m_galaxyCamera.lastMouseY =
+                my;
+
+            return;
         }
 
-        m_galaxyNavigationSpaceWasDown =
-            spaceDown;
+        /*
+            Любое осознанное ручное управление прерывает
+            автоматический перелёт без скачка в конечную точку.
+        */
+        const bool manualFlightCancel =
+            (
+                inside &&
+                leftDown &&
+                !m_galaxyCamera.leftWasDown
+            ) ||
+            (
+                inside &&
+                rightDown &&
+                !m_galaxyCamera.rightWasDown
+            ) ||
+            m_pendingScrollY != 0.0 ||
+            glfwGetKey(
+                window,
+                GLFW_KEY_EQUAL
+            ) == GLFW_PRESS ||
+            glfwGetKey(
+                window,
+                GLFW_KEY_KP_ADD
+            ) == GLFW_PRESS ||
+            glfwGetKey(
+                window,
+                GLFW_KEY_MINUS
+            ) == GLFW_PRESS ||
+            glfwGetKey(
+                window,
+                GLFW_KEY_KP_SUBTRACT
+            ) == GLFW_PRESS;
+
+        if (m_galaxyCameraFlight.active &&
+            manualFlightCancel)
+        {
+            cancelGalaxyCameraFlight(
+                false
+            );
+        }
+
+        /*
+            Пока камера летит автоматически, не пересчитываем hover:
+            иначе неподвижный курсор будет подсвечивать разные кубы,
+            пролетающие под ним.
+        */
+        if (m_galaxyCameraFlight.active)
+        {
+            m_galaxyNavigationGrid.clearHoveredCell();
+
+            m_galaxyCamera.rotating = false;
+            m_galaxyCamera.panning = false;
+
+            m_galaxyCamera.leftWasDown =
+                leftDown;
+
+            m_galaxyCamera.rightWasDown =
+                rightDown;
+
+            m_galaxyCamera.lastMouseX =
+                mx;
+
+            m_galaxyCamera.lastMouseY =
+                my;
+
+            return;
+        }
+
+
+
+
+        /*
+            WebView является отдельным дочерним окном и удерживает
+            клавиатурный фокус. При клике по 3D-карте возвращаем
+            фокус GLFW-окну.
+
+            Обработчик F10 в HTML при этом остаётся нужен:
+            он работает, пока курсор находится в правой панели.
+        */
+        const bool mapMousePressed =
+            (
+                leftDown &&
+                !m_galaxyCamera.leftWasDown
+            ) ||
+            (
+                rightDown &&
+                !m_galaxyCamera.rightWasDown
+            );
+
+        if (inside && mapMousePressed)
+        {
+            glfwFocusWindow(window);
+        }
+
+
+
+        
+        
+
+
+
+
 
         if (m_galaxyNavigationGrid.enabled() &&
             inside)
         {
-            game::navigation::GalaxyNavigationCell hoveredCell;
-
-            if (pickGalaxyNavigationCell(
-                    vp,
-                    localMx,
-                    localMy,
-                    hoveredCell
-                ))
-            {
-                m_galaxyNavigationGrid.setHoveredCell(
-                    hoveredCell
-                );
-            }
-            else
-            {
-                m_galaxyNavigationGrid.clearHoveredCell();
-            }
+            updateGalaxyNavigationHoverFromCursor(
+                vp,
+                localMx,
+                localMy
+            );
         }
         else
         {
             m_galaxyNavigationGrid.clearHoveredCell();
         }
+
+
+
+
+
+
+
 
         bool leftStartedThisFrame = false;
 
@@ -8200,17 +9200,17 @@ void SystemMapRenderer::handleGalaxyInput(
                             localMy
                         );
 
+
                     if (picked >= 0)
                     {
                         /*
-                            A real star/system has priority over an
-                            empty-space grid marker.
+                            Одна функция отвечает и за выбор системы,
+                            и за куб, и за плавное движение камеры.
                         */
-                        m_selectedSystemId =
-                            picked;
-
-                        m_focusedSystemId =
-                            picked;
+                        focusGalaxySystem(
+                            picked,
+                            galaxy
+                        );
                     }
                     else if (m_galaxyNavigationGrid.enabled())
                     {
@@ -8227,10 +9227,12 @@ void SystemMapRenderer::handleGalaxyInput(
                                 pickedCell
                             );
 
-                            m_galaxyCamera.target =
+                            beginGalaxyCameraFlight(
                                 galaxyPositionLyToRender(
                                     pickedCell.centerLy
-                                );
+                                ),
+                                m_galaxyCamera.distance
+                            );
                         }
                     }
                 }
@@ -8544,6 +9546,7 @@ void SystemMapRenderer::renderGalaxy(
     const glm::mat4 mvp = proj * view;
 
     beginLines();
+    beginSolids();
 
     if (m_galaxyNavigationGrid.enabled())
     {
@@ -8591,6 +9594,31 @@ void SystemMapRenderer::renderGalaxy(
 
     m_lastGalaxyScreenPoints.clear();
 
+
+
+    const glm::vec3 cameraDirection =
+        orbitCameraDirectionFromYawPitch(
+            m_galaxyCamera.yaw,
+            m_galaxyCamera.pitch
+        );
+
+    const glm::vec3 cameraPosition =
+        m_galaxyCamera.target +
+        cameraDirection *
+        m_galaxyCamera.distance;
+
+    const float safeViewportHeight =
+        static_cast<float>(
+            std::max(vp.height, 1)
+        );
+
+    const float tanHalfFov =
+        std::tan(
+            glm::radians(48.0f) * 0.5f
+        );
+
+
+
     for (const auto& s : systems)
     {
         const glm::vec3 p = galaxyStarPosition(s);
@@ -8598,28 +9626,171 @@ void SystemMapRenderer::renderGalaxy(
         const bool isCurrent = s.id == nav.currentSystemId;
         const bool isSelected = s.id == m_selectedSystemId;
 
+        
+        
+
+
+
+        /*
+            Цвет всегда определяется спектральным классом.
+            Выбор системы больше не перекрашивает звезду в голубой.
+        */
         glm::vec4 c =
-            isSelected
-                ? glm::vec4(0.55f, 0.95f, 1.00f, 1.0f)
-                : isCurrent
-                    ? glm::vec4(1.0f, 0.86f, 0.45f, 1.0f)
-                    : colorForStarType(s.starType);
+            colorForStarType(
+                s.starType
+            );
 
-        const float size =
-            isSelected ? 1.25f :
-            isCurrent  ? 0.95f :
-                         0.48f;
+        const float viewDepth =
+            std::max(
+                0.1f,
+                glm::dot(
+                    p - cameraPosition,
+                    -cameraDirection
+                )
+            );
 
-        addCross(p, size, c);
+        /*
+            Перевод экранных пикселей в единицы карты.
+            Благодаря этому звезда остаётся читаемой при изменении
+            разрешения и расстояния камеры.
+        */
+        const float worldUnitsPerPixel =
+            2.0f *
+            viewDepth *
+            tanHalfFov /
+            safeViewportHeight;
+
+        float starScale =
+            galaxyStarTypeVisualScale(
+                s.starType
+            );
+
+        if (s.starsCount > 1)
+        {
+            starScale *=
+                1.0f +
+                std::min(
+                    0.24f,
+                    static_cast<float>(
+                        s.starsCount - 1
+                    ) *
+                    m_galaxyVisuals.multipleStarScale
+                );
+        }
 
         if (isCurrent)
-            addCircleXZ(p, 1.45f, { 1.0f, 0.82f, 0.35f, 0.9f }, 48);
+        {
+            starScale *=
+                m_galaxyVisuals.currentStarScale;
+        }
 
         if (isSelected)
         {
-            addCircleXZ(p, 2.10f, { 0.40f, 0.95f, 1.00f, 0.95f }, 64);
-            addCircleXZ(p, 2.80f, { 0.40f, 0.95f, 1.00f, 0.35f }, 64);
+            starScale *=
+                m_galaxyVisuals.selectedStarScale;
         }
+
+        const float starRadius =
+            m_galaxyVisuals.starBaseRadiusPx *
+            starScale *
+            worldUnitsPerPixel;
+
+        /*
+            Проверяем, находится ли система внутри:
+            - зафиксированного куба;
+            - куба под курсором.
+        */
+        bool insideFixedCube = false;
+        bool insideHoveredCube = false;
+
+        if (m_galaxyNavigationGrid.enabled())
+        {
+            const auto starCellIndex =
+                m_galaxyNavigationGrid
+                    .nearestIndexForPositionLy(
+                        s.positionLy,
+                        m_galaxyNavigationGrid.level()
+                    );
+
+            insideFixedCube =
+                starCellIndex ==
+                m_galaxyNavigationGrid.anchorIndex();
+
+            insideHoveredCube =
+                m_galaxyNavigationGrid.hasHoveredCell() &&
+                starCellIndex ==
+                    m_galaxyNavigationGrid
+                        .hoveredCell()
+                        .index;
+        }
+
+
+
+        
+
+
+        /*
+            Hovered имеет приоритет: если звезда одновременно
+            находится в зафиксированном и подсвеченном кубе,
+            двойное гало не рисуем.
+        */
+        if (insideHoveredCube)
+        {
+            addGalaxyStarHalo(
+                p,
+                starRadius,
+                m_galaxyVisuals
+                    .hoveredCubeHaloRadiusScale,
+                m_galaxyVisuals
+                    .hoveredCubeHaloAlpha,
+                c,
+                view,
+                m_galaxyVisuals
+                    .starHaloRingCount,
+                m_galaxyVisuals
+                    .starHaloSegments
+            );
+        }
+        else if (insideFixedCube)
+        {
+            addGalaxyStarHalo(
+                p,
+                starRadius,
+                m_galaxyVisuals
+                    .fixedCubeHaloRadiusScale,
+                m_galaxyVisuals
+                    .fixedCubeHaloAlpha,
+                c,
+                view,
+                m_galaxyVisuals
+                    .starHaloRingCount,
+                m_galaxyVisuals
+                    .starHaloSegments
+            );
+        }
+
+
+
+
+        /*
+            Само ядро звезды.
+        */
+        c.a = 1.0f;
+
+        addBillboardBall(
+            p,
+            starRadius,
+            c,
+            view,
+            32
+        );
+
+
+
+
+
+
+
 
         ScreenPoint sp;
         sp.systemId = s.id;
@@ -8629,13 +9800,24 @@ void SystemMapRenderer::renderGalaxy(
         m_lastGalaxyScreenPoints.push_back(sp);
     }
 
+    /*
+        Сначала непрозрачные и полупрозрачные диски звёзд,
+        затем линии кубов поверх них.
+    */
+    flushSolids(mvp);
     flushLines(mvp);
+
     drawGalaxyLabels(
         vp,
         galaxy,
         mvp
     );
+
+
 }
+
+
+
 
 
 void SystemMapRenderer::drawNavigationLayerPlaceholder()
@@ -8659,8 +9841,7 @@ void SystemMapRenderer::drawGalaxyLabels(
     const glm::mat4& mvp
 )
 {
-    if (m_galaxyCamera.distance > 130.0f)
-        return;
+
 
    
 
@@ -8678,17 +9859,70 @@ void SystemMapRenderer::drawGalaxyLabels(
     std::vector<Label> labels;
     std::vector<glm::vec4> occupied;
 
+
+
+
+
     const float screenFactor =
-        std::clamp(static_cast<float>(vp.height) / 768.0f, 0.85f, 1.45f);
+        std::clamp(
+            static_cast<float>(vp.height) /
+                m_galaxyVisuals.labelReferenceHeightPx,
+            0.72f,
+            1.45f
+        );
+
+    const float labelFactor =
+        screenFactor *
+        m_galaxyVisuals.labelScale;
 
     const int titlePx =
-        std::clamp(static_cast<int>(15.0f * screenFactor), 13, 20);
+        std::clamp(
+            static_cast<int>(
+                std::lround(
+                    static_cast<float>(
+                        m_galaxyVisuals.labelTitleBasePx
+                    ) *
+                    labelFactor
+                )
+            ),
+            m_galaxyVisuals.labelTitleMinPx,
+            m_galaxyVisuals.labelTitleMaxPx
+        );
 
     const int selectedTitlePx =
-        std::clamp(static_cast<int>(18.0f * screenFactor), 15, 25);
+        std::clamp(
+            static_cast<int>(
+                std::lround(
+                    static_cast<float>(
+                        m_galaxyVisuals.labelSelectedTitleBasePx
+                    ) *
+                    labelFactor
+                )
+            ),
+            m_galaxyVisuals.labelTitleMinPx,
+            m_galaxyVisuals.labelTitleMaxPx
+        );
 
     const int subtitlePx =
-        std::clamp(static_cast<int>(12.0f * screenFactor), 10, 16);
+        std::clamp(
+            static_cast<int>(
+                std::lround(
+                    static_cast<float>(
+                        m_galaxyVisuals.labelSubtitleBasePx
+                    ) *
+                    labelFactor
+                )
+            ),
+            m_galaxyVisuals.labelSubtitleMinPx,
+            m_galaxyVisuals.labelSubtitleMaxPx
+        );
+
+
+
+
+
+
+
 
     for (const auto& s : galaxy.systems)
     {
@@ -10273,31 +11507,87 @@ void SystemMapRenderer::ensureBackground()
 }
 
 
+
+
+
+
+
+
+
+
 void SystemMapRenderer::drawBackground()
 {
     if (!m_bgShader || !m_bgVao)
         return;
 
-    GLboolean depthWasEnabled = glIsEnabled(GL_DEPTH_TEST);
-    GLboolean blendWasEnabled = glIsEnabled(GL_BLEND);
+    const GLboolean depthWasEnabled =
+        glIsEnabled(GL_DEPTH_TEST);
+
+    const GLboolean blendWasEnabled =
+        glIsEnabled(GL_BLEND);
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 
     glUseProgram(m_bgShader);
+
+    /*
+        Проход 0 — обычный фон карты.
+        Проход 1 используется только для transition snapshot.
+    */
+    const GLint passLoc =
+        glGetUniformLocation(
+            m_bgShader,
+            "uPass"
+        );
+
+    if (passLoc >= 0)
+    {
+        glUniform1i(
+            passLoc,
+            0
+        );
+    }
+
     glBindVertexArray(m_bgVao);
 
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(
+        GL_TRIANGLES,
+        0,
+        6
+    );
 
     glBindVertexArray(0);
     glUseProgram(0);
 
-    if (depthWasEnabled) glEnable(GL_DEPTH_TEST);
-    else glDisable(GL_DEPTH_TEST);
+    if (depthWasEnabled)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
 
-    if (blendWasEnabled) glEnable(GL_BLEND);
-    else glDisable(GL_BLEND);
+    if (blendWasEnabled)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void SystemMapRenderer::setRightPanelRatio(float ratio)
@@ -16735,4 +18025,462 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
 
 
 
+bool SystemMapRenderer::beginMapTransition(
+    const MapTransitionSpec& spec,
+    std::function<void()> applyNewState
+)
+{
+    return m_mapTransition.begin(
+        spec,
+        std::move(applyNewState)
+    );
+}
 
+
+
+
+
+
+
+
+void SystemMapRenderer::ensureMapTransitionSnapshot(
+    const Viewport& viewport
+)
+{
+    if (viewport.width <= 0 ||
+        viewport.height <= 0)
+    {
+        m_mapTransitionSnapshotReady =
+            false;
+
+        return;
+    }
+
+    /*
+        Если framebuffer и текстура уже созданы под текущий
+        размер map viewport, пересоздавать их не нужно.
+    */
+    if (m_mapTransitionSnapshotFramebuffer != 0 &&
+        m_mapTransitionSnapshotTexture != 0 &&
+        m_mapTransitionSnapshotReady &&
+        m_mapTransitionSnapshotWidth == viewport.width &&
+        m_mapTransitionSnapshotHeight == viewport.height)
+    {
+        return;
+    }
+
+    GLint previousReadFramebuffer = 0;
+    GLint previousDrawFramebuffer = 0;
+
+    GLint previousActiveTexture = 0;
+    GLint previousTexture = 0;
+
+    glGetIntegerv(
+        GL_READ_FRAMEBUFFER_BINDING,
+        &previousReadFramebuffer
+    );
+
+    glGetIntegerv(
+        GL_DRAW_FRAMEBUFFER_BINDING,
+        &previousDrawFramebuffer
+    );
+
+    glGetIntegerv(
+        GL_ACTIVE_TEXTURE,
+        &previousActiveTexture
+    );
+
+    glActiveTexture(
+        GL_TEXTURE0
+    );
+
+    glGetIntegerv(
+        GL_TEXTURE_BINDING_2D,
+        &previousTexture
+    );
+
+    if (m_mapTransitionSnapshotTexture == 0)
+    {
+        glGenTextures(
+            1,
+            &m_mapTransitionSnapshotTexture
+        );
+    }
+
+    if (m_mapTransitionSnapshotFramebuffer == 0)
+    {
+        glGenFramebuffers(
+            1,
+            &m_mapTransitionSnapshotFramebuffer
+        );
+    }
+
+    m_mapTransitionSnapshotReady =
+        false;
+
+    /*
+        Обычная single-sample RGBA8-текстура.
+        Именно в неё будет разрешаться MSAA framebuffer карты.
+    */
+    glBindTexture(
+        GL_TEXTURE_2D,
+        m_mapTransitionSnapshotTexture
+    );
+
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGBA8,
+        viewport.width,
+        viewport.height,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        nullptr
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_MIN_FILTER,
+        GL_LINEAR
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_MAG_FILTER,
+        GL_LINEAR
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_WRAP_S,
+        GL_CLAMP_TO_EDGE
+    );
+
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_WRAP_T,
+        GL_CLAMP_TO_EDGE
+    );
+
+    /*
+        Прикрепляем текстуру к отдельному framebuffer.
+    */
+    glBindFramebuffer(
+        GL_FRAMEBUFFER,
+        m_mapTransitionSnapshotFramebuffer
+    );
+
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER,
+        GL_COLOR_ATTACHMENT0,
+        GL_TEXTURE_2D,
+        m_mapTransitionSnapshotTexture,
+        0
+    );
+
+    glDrawBuffer(
+        GL_COLOR_ATTACHMENT0
+    );
+
+    glReadBuffer(
+        GL_COLOR_ATTACHMENT0
+    );
+
+    const GLenum framebufferStatus =
+        glCheckFramebufferStatus(
+            GL_FRAMEBUFFER
+        );
+
+    if (framebufferStatus ==
+        GL_FRAMEBUFFER_COMPLETE)
+    {
+        m_mapTransitionSnapshotWidth =
+            viewport.width;
+
+        m_mapTransitionSnapshotHeight =
+            viewport.height;
+
+        m_mapTransitionSnapshotReady =
+            true;
+    }
+    else
+    {
+        m_mapTransitionSnapshotWidth = 0;
+        m_mapTransitionSnapshotHeight = 0;
+
+        std::cerr
+            << "[MapTransition] snapshot framebuffer incomplete: 0x"
+            << std::hex
+            << static_cast<unsigned int>(
+                framebufferStatus
+            )
+            << std::dec
+            << '\n';
+    }
+
+    /*
+        Восстанавливаем framebuffer, в который в данный момент
+        рисуется карта. Обычно это Renderer::m_sceneFramebuffer.
+    */
+    glBindFramebuffer(
+        GL_READ_FRAMEBUFFER,
+        static_cast<GLuint>(
+            previousReadFramebuffer
+        )
+    );
+
+    glBindFramebuffer(
+        GL_DRAW_FRAMEBUFFER,
+        static_cast<GLuint>(
+            previousDrawFramebuffer
+        )
+    );
+
+    glBindTexture(
+        GL_TEXTURE_2D,
+        static_cast<GLuint>(
+            previousTexture
+        )
+    );
+
+    glActiveTexture(
+        static_cast<GLenum>(
+            previousActiveTexture
+        )
+    );
+}
+
+
+
+
+
+
+
+void SystemMapRenderer::captureMapTransitionSnapshot(
+    const Viewport& viewport
+)
+{
+    ensureMapTransitionSnapshot(
+        viewport
+    );
+
+    if (!m_mapTransitionSnapshotReady ||
+        m_mapTransitionSnapshotFramebuffer == 0 ||
+        m_mapTransitionSnapshotTexture == 0)
+    {
+        return;
+    }
+
+    GLint previousReadFramebuffer = 0;
+    GLint previousDrawFramebuffer = 0;
+
+    glGetIntegerv(
+        GL_READ_FRAMEBUFFER_BINDING,
+        &previousReadFramebuffer
+    );
+
+    glGetIntegerv(
+        GL_DRAW_FRAMEBUFFER_BINDING,
+        &previousDrawFramebuffer
+    );
+
+    const GLboolean scissorWasEnabled =
+        glIsEnabled(
+            GL_SCISSOR_TEST
+        );
+
+    /*
+        glBlitFramebuffer учитывает scissor destination.
+        Текущий scissor задан в глобальных координатах окна,
+        а snapshot framebuffer начинается с 0/0.
+
+        Поэтому на время resolve scissor нужно отключить.
+    */
+    glDisable(
+        GL_SCISSOR_TEST
+    );
+
+    /*
+        READ остаётся текущим MSAA framebuffer карты.
+        DRAW переключается на single-sample snapshot framebuffer.
+    */
+    glBindFramebuffer(
+        GL_READ_FRAMEBUFFER,
+        static_cast<GLuint>(
+            previousReadFramebuffer
+        )
+    );
+
+    glBindFramebuffer(
+        GL_DRAW_FRAMEBUFFER,
+        m_mapTransitionSnapshotFramebuffer
+    );
+
+    /*
+        Одновременно:
+        - копируем старый кадр;
+        - разрешаем MSAA;
+        - переносим map viewport в текстуру размером width×height.
+    */
+    glBlitFramebuffer(
+        viewport.x,
+        viewport.y,
+        viewport.x + viewport.width,
+        viewport.y + viewport.height,
+
+        0,
+        0,
+        viewport.width,
+        viewport.height,
+
+        GL_COLOR_BUFFER_BIT,
+        GL_NEAREST
+    );
+
+    /*
+        Возвращаем framebuffer карты.
+    */
+    glBindFramebuffer(
+        GL_READ_FRAMEBUFFER,
+        static_cast<GLuint>(
+            previousReadFramebuffer
+        )
+    );
+
+    glBindFramebuffer(
+        GL_DRAW_FRAMEBUFFER,
+        static_cast<GLuint>(
+            previousDrawFramebuffer
+        )
+    );
+
+    if (scissorWasEnabled)
+        glEnable(GL_SCISSOR_TEST);
+    else
+        glDisable(GL_SCISSOR_TEST);
+}
+
+
+
+
+
+
+void SystemMapRenderer::drawMapTransitionSnapshot(
+    const Viewport& viewport,
+    float alpha
+)
+{
+    if (!m_bgShader ||
+        !m_bgVao ||
+        !m_mapTransitionSnapshotReady ||
+        !m_mapTransitionSnapshotFramebuffer ||
+        !m_mapTransitionSnapshotTexture ||
+        alpha <= 0.0f)
+    {
+        return;
+    }
+
+    glViewport(
+        viewport.x,
+        viewport.y,
+        viewport.width,
+        viewport.height
+    );
+
+    glScissor(
+        viewport.x,
+        viewport.y,
+        viewport.width,
+        viewport.height
+    );
+
+    GLboolean depthWasEnabled =
+        glIsEnabled(GL_DEPTH_TEST);
+
+    GLboolean blendWasEnabled =
+        glIsEnabled(GL_BLEND);
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+
+    glBlendFunc(
+        GL_SRC_ALPHA,
+        GL_ONE_MINUS_SRC_ALPHA
+    );
+
+    GLint previousActiveTexture = 0;
+    GLint previousTexture = 0;
+
+    glGetIntegerv(
+        GL_ACTIVE_TEXTURE,
+        &previousActiveTexture
+    );
+
+    glActiveTexture(GL_TEXTURE0);
+
+    glGetIntegerv(
+        GL_TEXTURE_BINDING_2D,
+        &previousTexture
+    );
+
+    glBindTexture(
+        GL_TEXTURE_2D,
+        m_mapTransitionSnapshotTexture
+    );
+
+    glUseProgram(m_bgShader);
+
+    const GLint passLoc =
+        glGetUniformLocation(m_bgShader, "uPass");
+
+    const GLint samplerLoc =
+        glGetUniformLocation(
+            m_bgShader,
+            "uTransitionSnapshot"
+        );
+
+    const GLint alphaLoc =
+        glGetUniformLocation(
+            m_bgShader,
+            "uTransitionAlpha"
+        );
+
+    if (passLoc >= 0)
+        glUniform1i(passLoc, 1);
+
+    if (samplerLoc >= 0)
+        glUniform1i(samplerLoc, 0);
+
+    if (alphaLoc >= 0)
+        glUniform1f(alphaLoc, alpha);
+
+    glBindVertexArray(m_bgVao);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindVertexArray(0);
+
+    if (passLoc >= 0)
+        glUniform1i(passLoc, 0);
+
+    glUseProgram(0);
+
+    glBindTexture(
+        GL_TEXTURE_2D,
+        static_cast<GLuint>(previousTexture)
+    );
+
+    glActiveTexture(
+        static_cast<GLenum>(previousActiveTexture)
+    );
+
+    if (depthWasEnabled)
+        glEnable(GL_DEPTH_TEST);
+    else
+        glDisable(GL_DEPTH_TEST);
+
+    if (blendWasEnabled)
+        glEnable(GL_BLEND);
+    else
+        glDisable(GL_BLEND);
+}

@@ -99,6 +99,8 @@ public:
     void setSystemMapGalaxyMode();
     void setSystemMapCurrentSystemMode();
 
+
+
     void applyDebugControlPayload(const nlohmann::json& payload);
 
     void requestGalaxyMapSnapshotOnce();

@@ -264,6 +264,12 @@ void Application::mainLoop()
         
         #ifdef _WIN32
         {
+            /*
+                F11 опрашивается на уровне Windows, поэтому работает
+                независимо от фокуса GLFW/WebView.
+
+                F10 пока зарезервирована для будущей функции.
+            */
             const bool f11Down =
                 (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
 
@@ -278,6 +284,8 @@ void Application::mainLoop()
                     continue;
                 }
             }
+
+            
         }
         #endif
 
@@ -322,6 +330,12 @@ void Application::mainLoop()
 
                         continue;
                     }
+
+
+                    
+                    
+
+
 
                     if (webCommand == "system_map_current_system")
                     {

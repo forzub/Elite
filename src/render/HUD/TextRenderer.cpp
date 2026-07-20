@@ -12,6 +12,7 @@
 #include <memory>
 #include <unordered_map>
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -468,6 +469,113 @@ void TextRenderer::textDraw(
         x += static_cast<float>(ch.advance >> 6) * scale;
     }
 }
+
+
+
+
+void TextRenderer::textDrawRotated(
+    Font& font,
+    const std::string& text,
+    float x,
+    float baselineY,
+    const glm::vec4& color,
+    float scale,
+    float angleRad
+)
+{
+    if (!m_batchActive)
+        beginFrame();
+
+    TextBatch& batch = batchForTexture(font.atlasTexture());
+
+    const float cosine = std::cos(angleRad);
+    const float sine = std::sin(angleRad);
+
+    auto rotatePoint =
+        [&](float px, float py) -> glm::vec2
+        {
+            const float dx = px - x;
+            const float dy = py - baselineY;
+
+            return {
+                x + dx * cosine - dy * sine,
+                baselineY + dx * sine + dy * cosine
+            };
+        };
+
+    auto toNdc =
+        [&](const glm::vec2& p) -> glm::vec2
+        {
+            return {
+                (2.0f * p.x / m_screenW) - 1.0f,
+                1.0f - (2.0f * p.y / m_screenH)
+            };
+        };
+
+    float penX = x;
+    std::size_t i = 0;
+
+    while (i < text.size())
+    {
+        const uint32_t cp = nextUtf8Codepoint(text, i);
+        Character& ch = font.glyph(cp);
+
+        const float advance =
+            static_cast<float>(ch.advance >> 6) * scale;
+
+        if (ch.size.x <= 0 || ch.size.y <= 0)
+        {
+            penX += advance;
+            continue;
+        }
+
+        const float left =
+            penX + static_cast<float>(ch.bearing.x) * scale;
+
+        const float top =
+            baselineY - static_cast<float>(ch.bearing.y) * scale;
+
+        const float right =
+            left + static_cast<float>(ch.size.x) * scale;
+
+        const float bottom =
+            top + static_cast<float>(ch.size.y) * scale;
+
+        const glm::vec2 p0 = toNdc(rotatePoint(left, bottom));
+        const glm::vec2 p1 = toNdc(rotatePoint(left, top));
+        const glm::vec2 p2 = toNdc(rotatePoint(right, top));
+        const glm::vec2 p3 = toNdc(rotatePoint(right, bottom));
+
+        const float u0 = ch.uv0.x;
+        const float v0 = ch.uv0.y;
+        const float u1 = ch.uv1.x;
+        const float v1 = ch.uv1.y;
+
+        const TextVertex vertices[6] =
+        {
+            {p0.x, p0.y, u0, v1, color.r, color.g, color.b, color.a},
+            {p1.x, p1.y, u0, v0, color.r, color.g, color.b, color.a},
+            {p2.x, p2.y, u1, v0, color.r, color.g, color.b, color.a},
+
+            {p0.x, p0.y, u0, v1, color.r, color.g, color.b, color.a},
+            {p2.x, p2.y, u1, v0, color.r, color.g, color.b, color.a},
+            {p3.x, p3.y, u1, v1, color.r, color.g, color.b, color.a}
+        };
+
+        batch.vertices.insert(
+            batch.vertices.end(),
+            std::begin(vertices),
+            std::end(vertices)
+        );
+
+        penX += advance;
+    }
+}
+
+
+
+
+
 
 void TextRenderer::textDraw(
     const std::string& text,

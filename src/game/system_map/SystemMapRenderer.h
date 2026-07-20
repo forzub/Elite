@@ -18,6 +18,8 @@
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/game/navigation/GalaxyNavigationGrid.h"
+#include "src/game/navigation/SystemNavigationGrid.h"
+#include "src/game/navigation/NavigationRegionCatalog.h"
 #include "src/world/celestial/visual/CelestialGeneratedAssetLibrary.h"
 #include "src/world/celestial/visual/CelestialEnvironmentProfile.h"
 
@@ -33,6 +35,7 @@
 #include "src/render/celestial/rings/PlanetRingRenderer.h"
 #include "src/render/system_map/HubMapGpuGeometryRenderer.h"
 #include "src/render/system_map/HubPlanetOverlayRenderer.h"
+#include "src/render/navigation/NavigationCellLabelLayer.h"
 
 #include "src/game/system_map/GalaxyMapVisualSettings.h"
 #include "src/game/system_map/MapTransitionController.h"
@@ -103,6 +106,8 @@ public:
     );
 
     int selectedSystemId() const;
+
+    int consumeRequestedSystemEntry();
 
     void handleInput(
         const Viewport& vp,
@@ -223,6 +228,21 @@ private:
     };
 
 
+    struct SystemCameraFlight
+    {
+        bool active = false;
+
+        glm::dvec3 startTarget {0.0};
+        glm::dvec3 destinationTarget {0.0};
+
+        float startDistance = 95.0f;
+        float destinationDistance = 95.0f;
+
+        double startTimeSeconds = 0.0;
+        double durationSeconds = 0.58;
+    };
+
+
 
 
 
@@ -288,7 +308,8 @@ private:
         float zoomInFactor = 0.935f;
         float zoomOutFactor = 1.07f;
 
-        float minDistance = 8.0f;
+        /* Needed for the terminal ~260 AU Galaxy cell. */
+        float minDistance = 0.002f;
         float maxDistance = 700.0f;
 
         // Радиус поиска pivot-звезды при старте вращения.
@@ -324,9 +345,9 @@ private:
 
         double clickMoveThresholdPx = 5.0;
 
-        // Максимальное приближение system map:
-        // 1 пиксель = 20 км.
-        double minKmPerPixel = 20.0;
+        // Terminal 100 km navigation cube must remain inspectable.
+        // 0.1 km/px gives roughly 1000 px across that cube.
+        double minKmPerPixel = 0.1;
 
         // Picking видимых дисков планет/лун.
         float pickMaxBodyRadiusPx = 8000.0f;
@@ -1055,6 +1076,40 @@ private:
         const glm::mat4& mvp
     );
 
+    void drawGalaxyNavigationCellLabels(
+        const Viewport& vp,
+        const glm::mat4& mvp
+    );
+
+    void drawSystemNavigationGrid(
+        const Viewport& vp,
+        const glm::mat4& mvp,
+        float systemScale
+    );
+
+    void drawSystemNavigationCellLabels(
+        const Viewport& vp,
+        const glm::mat4& mvp,
+        float systemScale
+    );
+
+    void updateSystemNavigationHoverFromCursor(
+        const Viewport& vp,
+        double localMouseX,
+        double localMouseY
+    );
+
+    bool pickSystemNavigationCell(
+        const Viewport& vp,
+        double localMouseX,
+        double localMouseY,
+        game::navigation::CubicNavigationCell& outCell
+    ) const;
+
+    float systemNavigationAnchorDiameterPx(
+        const Viewport& vp
+    ) const;
+
     void updateGalaxyNavigationHoverFromCursor(
         const Viewport& vp,
         double localMouseX,
@@ -1113,6 +1168,19 @@ private:
         bool snapToDestination
     );
 
+
+    void beginSystemCameraFlight(
+        const glm::dvec3& destinationTarget,
+        float destinationDistance
+    );
+
+    void updateSystemCameraFlight(
+        double nowSeconds
+    );
+
+    void cancelSystemCameraFlight(
+        bool snapToDestination
+    );
 
 
     glm::mat4 galaxyViewMatrix() const;
@@ -1414,11 +1482,45 @@ private:
 
     GalaxyCamera m_galaxyCamera;
     GalaxyCameraFlight m_galaxyCameraFlight;
+    SystemCameraFlight m_systemCameraFlight;
 
     SystemCamera m_systemCamera;
 
     game::navigation::GalaxyNavigationGrid
         m_galaxyNavigationGrid;
+
+    game::navigation::SystemNavigationGrid
+        m_systemNavigationGrid;
+
+
+    /*
+        Физическая точка, которую должна содержать вся последующая
+        цепочка дочерних Galaxy-кубов.
+
+        Для выбранной звезды это точная координата звезды.
+        Для выбранного центра куба это центр выбранного куба.
+    */
+    glm::dvec3 m_galaxyNavigationFocusLy {0.0};
+    bool m_galaxyNavigationFocusValid = false;
+
+    /*
+        Аналогичная точка внутри карты System.
+        Единицы: AU.
+    */
+    glm::dvec3 m_systemNavigationFocusAu {0.0};
+    bool m_systemNavigationFocusValid = false;
+
+    game::navigation::NavigationRegionCatalog
+        m_navigationRegionCatalog;
+
+    render::navigation::NavigationCellLabelLayer
+        m_galaxyNavigationLabelLayer;
+
+    render::navigation::NavigationCellLabelLayer
+        m_systemNavigationLabelLayer;
+
+    std::string m_navigationNamingFactionId = "sol_authority";
+    std::string m_navigationNamingLocale = "ru";
 
    
 
@@ -1440,6 +1542,7 @@ private:
     }();
 
     int m_selectedSystemId = -1;
+    int m_requestedSystemEntryId = -1;
     int m_focusedSystemId = -1;
     bool m_comboOpen = false;
 
@@ -1590,5 +1693,3 @@ private:
 
     MapTransitionController m_mapTransition;
 };
-
-

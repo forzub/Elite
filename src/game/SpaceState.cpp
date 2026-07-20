@@ -746,6 +746,16 @@ void SpaceState::handleInput()
                 mapVp,
                 m_galaxyMapSnapshot
             );
+
+            const int requestedSystemId =
+                m_systemMapRenderer.consumeRequestedSystemEntry();
+
+            if (requestedSystemId >= 0)
+            {
+                selectSystemMapSystem(requestedSystemId);
+                setSystemMapCurrentSystemMode();
+                return;
+            }
         }
 
 

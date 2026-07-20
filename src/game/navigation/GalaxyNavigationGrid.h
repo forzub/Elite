@@ -80,31 +80,32 @@ struct GalaxyNavigationCell
 class GalaxyNavigationGrid
 {
 public:
-    static constexpr int Subdivision = 3;
+    /* One visible Galaxy step packs two ternary subdivisions: 3^2. */
+    static constexpr int Subdivision = 9;
 
     static constexpr int MinimumLevel = 0;
     static constexpr int InitialLevel = 1;
     /*
         Последний уровень, отображаемый на карте Galaxy.
 
-        L9:
-            27 ly / 3^9
-            ≈ 0.001371742 ly
-            ≈ 86.75 AU
+        L4:
+            27 ly / 9^4
+            ≈ 0.004115226 ly
+            ≈ 260.25 AU
 
         Дальнейшее приближение выполняется уже в карте System.
     */
-    static constexpr int MaximumLevel = 9;
+    static constexpr int MaximumLevel = 4;
 
     /*
         Level 0 cube edge.
 
-        27 ly gives the following hierarchy:
+        Visible Galaxy hierarchy:
             L0 = 27 ly
-            L1 =  9 ly
-            L2 =  3 ly
-            L3 =  1 ly
-            L4 =  0.333... ly
+            L1 =  3 ly
+            L2 =  0.333... ly
+            L3 =  0.037037... ly
+            L4 =  0.004115... ly ~= 260.25 AU
 
         The galaxy map is not intended to refine all the way to kilometres.
         A selected empty interstellar region will later create its own

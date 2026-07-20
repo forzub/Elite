@@ -20,6 +20,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "render/HUD/TextRenderer.h"
+#include "src/game/navigation/NavigationAddressFormatter.h"
 #include "src/render/ShaderLibrary.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/render/bitmap/TextureLoader.h"
@@ -1339,6 +1340,21 @@ void SystemMapRenderer::init()
 
     ensureGeneratedCelestialAssets();
     ensureEnvironmentProfiles();
+
+    if (!m_navigationRegionCatalog.loaded())
+    {
+        const bool namesLoaded =
+            m_navigationRegionCatalog.loadFromRuntimeOrSource(
+                "assets/data/navigation/region_names.json",
+                "src/assets/data/navigation/region_names.json"
+            );
+
+        if (!namesLoaded)
+        {
+            std::cerr
+                << "[SystemMapRenderer] navigation region names not loaded\n";
+        }
+    }
 
     if (!m_mapStarfieldInitialized)
     {
@@ -2870,9 +2886,24 @@ void SystemMapRenderer::resetView()
     m_galaxyCamera.distance = m_galaxyVisuals.initialCameraDistance;
     m_galaxyCameraFlight = GalaxyCameraFlight{};
     m_systemCamera = SystemCamera{};
+    m_systemCameraFlight = SystemCameraFlight{};
+
+    m_galaxyNavigationFocusLy =
+        glm::dvec3(0.0);
+
+    m_galaxyNavigationFocusValid =
+        false;
+
+    m_systemNavigationFocusAu =
+        glm::dvec3(0.0);
+
+    m_systemNavigationFocusValid =
+        false;
+
     m_planetCamera = DetailCamera{};
     m_hubCamera = DetailCamera{};
     m_selectedSystemId = -1;
+    m_requestedSystemEntryId = -1;
     m_focusedSystemId = -1;
     m_selectedBodyId.clear();
     m_comboOpen = false;
@@ -2893,6 +2924,8 @@ void SystemMapRenderer::resetView()
     m_lastSystemBodyAbsolutePosById.clear();
     m_smoothBodyPositions.clear();
     m_smoothObjectPositions.clear();
+    m_galaxyNavigationLabelLayer.clear();
+    m_systemNavigationLabelLayer.clear();
     m_lastSmoothTimeSeconds = 0.0;
     m_lastSystemScale = 1.0f;
 
@@ -2963,13 +2996,33 @@ void SystemMapRenderer::resetView()
             m_galaxyVisuals.cameraFlightReferenceDistance
         );
 
-    const float distanceFactor =
-        std::clamp(
-            targetTravelDistance /
-                referenceDistance,
-            0.0f,
-            1.0f
-        );
+        const float targetFactor =
+            std::clamp(
+                targetTravelDistance /
+                    referenceDistance,
+                0.0f,
+                1.0f
+            );
+
+        const float zoomFactor =
+            std::clamp(
+                distanceChange /
+                    std::max(
+                        0.0001f,
+                        std::max(
+                            m_galaxyCamera.distance,
+                            destinationDistance
+                        )
+                    ),
+                0.0f,
+                1.0f
+            );
+
+        const float distanceFactor =
+            std::max(
+                targetFactor,
+                zoomFactor
+            );
 
     const float duration =
         m_galaxyVisuals.cameraFlightMinSeconds +
@@ -3062,13 +3115,34 @@ void SystemMapRenderer::updateGalaxyCameraFlight(
             progress
         );
 
-    m_galaxyCamera.distance =
-        m_galaxyCameraFlight.startDistance +
-        (
-            m_galaxyCameraFlight.destinationDistance -
-            m_galaxyCameraFlight.startDistance
-        ) *
-        progress;
+        /*
+            Масштаб воспринимается как отношение расстояний,
+            поэтому интерполируем логарифм расстояния.
+
+            Это сохраняет одинаковую визуальную скорость как на G1,
+            так и на G4.
+        */
+        const float startDistance =
+            std::max(
+                m_galaxyCameraFlight.startDistance,
+                0.0000001f
+            );
+
+        const float destinationDistance =
+            std::max(
+                m_galaxyCameraFlight.destinationDistance,
+                0.0000001f
+            );
+
+        m_galaxyCamera.distance =
+            std::exp(
+                std::log(startDistance) +
+                (
+                    std::log(destinationDistance) -
+                    std::log(startDistance)
+                ) *
+                progress
+            );
 
     if (linearProgress >= 1.0f)
     {
@@ -3109,7 +3183,141 @@ void SystemMapRenderer::cancelGalaxyCameraFlight(
 
 
 
+void SystemMapRenderer::beginSystemCameraFlight(
+    const glm::dvec3& destinationTarget,
+    float destinationDistance
+)
+{
+    destinationDistance = std::clamp(
+        destinationDistance,
+        SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
+        SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT
+    );
 
+    m_systemCameraFlight.startTarget =
+        m_systemCamera.target;
+
+    m_systemCameraFlight.destinationTarget =
+        destinationTarget;
+
+    m_systemCameraFlight.startDistance =
+        m_systemCamera.distance;
+
+    m_systemCameraFlight.destinationDistance =
+        destinationDistance;
+
+    m_systemCameraFlight.startTimeSeconds =
+        glfwGetTime();
+
+    m_systemCameraFlight.durationSeconds =
+        0.58;
+
+    m_systemCameraFlight.active =
+        true;
+
+    m_systemCamera.rotating = false;
+    m_systemCamera.panning = false;
+    m_systemOrbitPivotActive = false;
+}
+
+void SystemMapRenderer::updateSystemCameraFlight(
+    double nowSeconds
+)
+{
+    if (!m_systemCameraFlight.active)
+        return;
+
+    const double elapsed =
+        std::max(
+            0.0,
+            nowSeconds -
+                m_systemCameraFlight.startTimeSeconds
+        );
+
+    const float linearProgress =
+        static_cast<float>(
+            std::clamp(
+                elapsed /
+                    m_systemCameraFlight.durationSeconds,
+                0.0,
+                1.0
+            )
+        );
+
+    const float progress =
+        linearProgress *
+        linearProgress *
+        linearProgress *
+        (
+            linearProgress *
+            (
+                linearProgress * 6.0f -
+                15.0f
+            ) +
+            10.0f
+        );
+
+    m_systemCamera.target =
+        glm::mix(
+            m_systemCameraFlight.startTarget,
+            m_systemCameraFlight.destinationTarget,
+            static_cast<double>(progress)
+        );
+
+const float startDistance =
+    std::max(
+        m_systemCameraFlight.startDistance,
+        0.0000001f
+    );
+
+const float destinationDistance =
+    std::max(
+        m_systemCameraFlight.destinationDistance,
+        0.0000001f
+    );
+
+m_systemCamera.distance =
+    std::exp(
+        std::log(startDistance) +
+        (
+            std::log(destinationDistance) -
+            std::log(startDistance)
+        ) *
+        progress
+    );
+
+    if (linearProgress >= 1.0f)
+    {
+        m_systemCamera.target =
+            m_systemCameraFlight.destinationTarget;
+
+        m_systemCamera.distance =
+            m_systemCameraFlight.destinationDistance;
+
+        m_systemCameraFlight.active =
+            false;
+    }
+}
+
+void SystemMapRenderer::cancelSystemCameraFlight(
+    bool snapToDestination
+)
+{
+    if (!m_systemCameraFlight.active)
+        return;
+
+    if (snapToDestination)
+    {
+        m_systemCamera.target =
+            m_systemCameraFlight.destinationTarget;
+
+        m_systemCamera.distance =
+            m_systemCameraFlight.destinationDistance;
+    }
+
+    m_systemCameraFlight.active =
+        false;
+}
 
 
 
@@ -3132,6 +3340,16 @@ void SystemMapRenderer::focusGalaxySystem(
 
         m_focusedSystemId =
             system.id;
+
+        /*
+            Важно: сохраняем позицию самой звезды, а не центр
+            содержащего её куба.
+        */
+        m_galaxyNavigationFocusLy =
+            system.positionLy;
+
+        m_galaxyNavigationFocusValid =
+            true;
 
         /*
             Выбираем куб текущего уровня,
@@ -3188,6 +3406,13 @@ void SystemMapRenderer::focusGalaxySystem(
 int SystemMapRenderer::selectedSystemId() const
 {
     return m_selectedSystemId;
+}
+
+int SystemMapRenderer::consumeRequestedSystemEntry()
+{
+    const int requested = m_requestedSystemEntryId;
+    m_requestedSystemEntryId = -1;
+    return requested;
 }
 
 
@@ -7064,6 +7289,10 @@ void SystemMapRenderer::render(
         nowSeconds
     );
 
+    updateSystemCameraFlight(
+        nowSeconds
+    );
+
     m_mapTransition.update(
         nowSeconds
     );
@@ -7281,7 +7510,7 @@ void SystemMapRenderer::addGalaxyNavigationCubeEdges(
 }
 
 void SystemMapRenderer::drawGalaxyNavigationGrid(
-    const Viewport&,
+    const Viewport& vp,
     const glm::mat4&
 )
 {
@@ -7293,46 +7522,58 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
 
     
         std::vector<
-    game::navigation::GalaxyNavigationCell
-> cells;
+            game::navigation::GalaxyNavigationCell
+        > cells;
 
-cells.reserve(2);
+        cells.reserve(2);
 
-const auto anchorCell =
-    m_galaxyNavigationGrid.anchorCell();
+        const auto anchorCell =
+            m_galaxyNavigationGrid.anchorCell();
 
-cells.push_back(anchorCell);
+        cells.push_back(anchorCell);
 
-if (m_galaxyNavigationGrid.hasHoveredCell())
-{
-    const auto& hoveredCell =
-        m_galaxyNavigationGrid.hoveredCell();
+        if (m_galaxyNavigationGrid.hasHoveredCell())
+        {
+            const auto& hoveredCell =
+                m_galaxyNavigationGrid.hoveredCell();
 
-    if (hoveredCell.index != anchorCell.index)
-    {
-        cells.push_back(hoveredCell);
-    }
-}
+            if (hoveredCell.index != anchorCell.index)
+            {
+                cells.push_back(hoveredCell);
+            }
+        }
 
+        const glm::mat4 cameraView =
+            galaxyViewMatrix();
 
+        const glm::vec3 cameraRight(
+            cameraView[0][0],
+            cameraView[1][0],
+            cameraView[2][0]
+        );
 
-const glm::mat4 cameraView =
-    galaxyViewMatrix();
-
-const glm::vec3 cameraRight(
-    cameraView[0][0],
-    cameraView[1][0],
-    cameraView[2][0]
-);
-
-const glm::vec3 cameraUp(
-    cameraView[0][1],
-    cameraView[1][1],
-    cameraView[2][1]
-);
+        const glm::vec3 cameraUp(
+            cameraView[0][1],
+            cameraView[1][1],
+            cameraView[2][1]
+        );
 
 
+        /*
+            Положение и направление Galaxy-камеры нужны,
+            чтобы экранный ромб сохранял постоянный размер
+            независимо от удаления камеры.
+        */
+        const glm::vec3 cameraDirection =
+            orbitCameraDirectionFromYawPitch(
+                m_galaxyCamera.yaw,
+                m_galaxyCamera.pitch
+            );
 
+        const glm::vec3 cameraPosition =
+            m_galaxyCamera.target +
+            cameraDirection *
+            m_galaxyCamera.distance;
 
 
 
@@ -7380,59 +7621,59 @@ const glm::vec3 cameraUp(
             cell.index ==
                 m_galaxyNavigationGrid.selectedCell().index;
 
-glm::vec4 edgeColor(
-    0.22f,
-    0.58f,
-    0.78f,
-    0.035f
-);
+        glm::vec4 edgeColor(
+            0.22f,
+            0.58f,
+            0.78f,
+            0.035f
+        );
 
-glm::vec4 markerColor(
-    0.82f,
-    0.67f,
-    0.24f,
-    0.10f
-);
+        glm::vec4 markerColor(
+            0.82f,
+            0.67f,
+            0.24f,
+            0.10f
+        );
 
-if (isAnchor)
-{
-    edgeColor.a = 0.18f;
-    markerColor.a = 0.58f;
-}
+        if (isAnchor)
+        {
+            edgeColor.a = 0.18f;
+            markerColor.a = 0.58f;
+        }
 
-if (isHovered)
-{
-    edgeColor = glm::vec4(
-        0.45f,
-        0.78f,
-        0.92f,
-        0.18f
-    );
+        if (isHovered)
+        {
+            edgeColor = glm::vec4(
+                0.45f,
+                0.78f,
+                0.92f,
+                0.18f
+            );
 
-    markerColor = glm::vec4(
-        0.92f,
-        0.76f,
-        0.28f,
-        0.58f
-    );
-}
+            markerColor = glm::vec4(
+                0.92f,
+                0.76f,
+                0.28f,
+                0.58f
+            );
+        }
 
-if (isSelected)
-{
-    edgeColor = glm::vec4(
-        0.78f,
-        0.58f,
-        0.16f,
-        0.25f
-    );
+        if (isSelected)
+        {
+            edgeColor = glm::vec4(
+                0.78f,
+                0.58f,
+                0.16f,
+                0.25f
+            );
 
-    markerColor = glm::vec4(
-        1.00f,
-        0.75f,
-        0.18f,
-        0.72f
-    );
-}
+            markerColor = glm::vec4(
+                1.00f,
+                0.75f,
+                0.18f,
+                0.72f
+            );
+        }
 
         addGalaxyNavigationCubeEdges(
             center,
@@ -7442,69 +7683,202 @@ if (isSelected)
             edgeColor
         );
 
-        const float cellRenderSize =
+
+        
+
+
+
+        const float viewDepth =
+            std::max(
+                0.001f,
+                glm::dot(
+                    center - cameraPosition,
+                    -cameraDirection
+                )
+            );
+
+        const float worldUnitsPerPixel =
+            2.0f *
+            viewDepth *
+            std::tan(
+                glm::radians(48.0f) * 0.5f
+            ) /
             static_cast<float>(
-                cell.sizeLy
-            ) * GALAXY_RENDER_UNITS_PER_LY;
+                std::max(vp.height, 1)
+            );
+
+        const float markerRadiusPx =
+            (isHovered || isSelected)
+                ? 5.0f
+                : 4.0f;
+
+        const float markerSize =
+            worldUnitsPerPixel *
+            markerRadiusPx;
 
 
-            
-            float markerSize =
-    std::clamp(
-        cellRenderSize * 0.018f,
-        0.10f,
-        0.34f
-    );
 
-if (isHovered || isSelected)
-{
-    markerSize *= 1.40f;
-}
 
-/*
-    Плоский ромб всегда обращён к камере.
-    Он визуально отличается от трёхмерного креста звезды.
-*/
-const glm::vec3 markerTop =
-    center + cameraUp * markerSize;
 
-const glm::vec3 markerRight =
-    center + cameraRight * markerSize;
 
-const glm::vec3 markerBottom =
-    center - cameraUp * markerSize;
 
-const glm::vec3 markerLeft =
-    center - cameraRight * markerSize;
 
-addLine(
-    markerTop,
-    markerRight,
-    markerColor
-);
 
-addLine(
-    markerRight,
-    markerBottom,
-    markerColor
-);
 
-addLine(
-    markerBottom,
-    markerLeft,
-    markerColor
-);
+        /*
+            Плоский ромб всегда обращён к камере.
+            Он визуально отличается от трёхмерного креста звезды.
+        */
+        const glm::vec3 markerTop =
+            center + cameraUp * markerSize;
 
-addLine(
-    markerLeft,
-    markerTop,
-    markerColor
-);
+        const glm::vec3 markerRight =
+            center + cameraRight * markerSize;
+
+        const glm::vec3 markerBottom =
+            center - cameraUp * markerSize;
+
+        const glm::vec3 markerLeft =
+            center - cameraRight * markerSize;
+
+        addLine(
+            markerTop,
+            markerRight,
+            markerColor
+        );
+
+        addLine(
+            markerRight,
+            markerBottom,
+            markerColor
+        );
+
+        addLine(
+            markerBottom,
+            markerLeft,
+            markerColor
+        );
+
+        addLine(
+            markerLeft,
+            markerTop,
+            markerColor
+        );
 
 
 
 
     }
+}
+
+
+
+
+void SystemMapRenderer::drawGalaxyNavigationCellLabels(
+    const Viewport& vp,
+    const glm::mat4& mvp
+)
+{
+    if (!m_galaxyNavigationGrid.enabled())
+        return;
+
+    using game::navigation::NavigationCellId;
+    using render::navigation::NavigationCellLabelRequest;
+
+    std::vector<game::navigation::GalaxyNavigationCell> cells;
+    cells.reserve(2);
+
+    const auto anchor = m_galaxyNavigationGrid.anchorCell();
+    cells.push_back(anchor);
+
+    if (m_galaxyNavigationGrid.hasHoveredCell())
+    {
+        const auto hovered = m_galaxyNavigationGrid.hoveredCell();
+        if (hovered.index != anchor.index)
+            cells.push_back(hovered);
+    }
+
+    const auto& frame = m_galaxyNavigationGrid.frame();
+    std::vector<NavigationCellLabelRequest> requests;
+    requests.reserve(cells.size());
+
+    for (const auto& cell : cells)
+    {
+        NavigationCellId id;
+        id.frameId = frame.id;
+        id.level = cell.level;
+        id.x = cell.index.x;
+        id.y = cell.index.y;
+        id.z = cell.index.z;
+
+        NavigationCellLabelRequest request;
+        request.id = id;
+        request.center = galaxyPositionLyToRender(cell.centerLy);
+
+        const double halfSizeLy = cell.sizeLy * 0.5;
+        request.halfAxisX = galaxyVectorLyToRender(frame.axisX * halfSizeLy);
+        request.halfAxisY = galaxyVectorLyToRender(frame.axisY * halfSizeLy);
+        request.halfAxisZ = galaxyVectorLyToRender(frame.axisZ * halfSizeLy);
+
+        request.coordinateText = game::navigation::formatCellCoordinate(
+            "G",
+            cell.level,
+            cell.index
+        );
+
+        const auto resolved = m_navigationRegionCatalog.resolve(
+            id,
+            game::navigation::GalaxyNavigationGrid::Subdivision,
+            m_navigationNamingFactionId,
+            m_navigationNamingLocale
+        );
+
+        if (resolved)
+        {
+            request.regionName = resolved->value.name;
+            request.shortRegionName = resolved->value.shortName;
+        }
+
+        const bool hovered =
+            m_galaxyNavigationGrid.hasHoveredCell() &&
+            cell.index == m_galaxyNavigationGrid.hoveredCell().index;
+
+        const bool selected =
+            cell.index == m_galaxyNavigationGrid.anchorIndex();
+
+        request.visualKey =
+            selected
+                ? "galaxy:selected"
+                : "galaxy:hovered";
+
+        request.targetOpacity = selected ? 0.90f : 0.68f;
+
+
+        request.color = selected
+            ? glm::vec4(1.00f, 0.76f, 0.28f, 0.70f)
+            : glm::vec4(0.48f, 0.80f, 0.96f, 0.58f);
+
+        if (hovered && !selected)
+            request.targetOpacity = 0.78f;
+
+        requests.push_back(std::move(request));
+    }
+
+    const glm::vec3 direction = orbitCameraDirectionFromYawPitch(
+        m_galaxyCamera.yaw,
+        m_galaxyCamera.pitch
+    );
+
+    const glm::vec3 cameraPosition =
+        m_galaxyCamera.target + direction * m_galaxyCamera.distance;
+
+    m_galaxyNavigationLabelLayer.draw(
+        vp,
+        mvp,
+        cameraPosition,
+        requests,
+        glfwGetTime()
+    );
 }
 
 bool SystemMapRenderer::pickGalaxyNavigationCell(
@@ -7928,7 +8302,7 @@ glm::mat4 SystemMapRenderer::galaxyProjectionMatrix(const Viewport& vp) const
     return glm::perspective(
         glm::radians(48.0f),
         aspect,
-        0.1f,
+        0.0001f,
         2000.0f
     );
 }
@@ -8234,6 +8608,178 @@ void SystemMapRenderer::handleInput(
 
 
 
+void SystemMapRenderer::updateSystemNavigationHoverFromCursor(
+    const Viewport& vp,
+    double localMouseX,
+    double localMouseY
+)
+{
+    if (!m_systemNavigationGrid.enabled() || m_lastSystemScale <= 0.0f)
+    {
+        m_systemNavigationGrid.clearHoveredCell();
+        return;
+    }
+
+    const glm::mat4 view = systemViewMatrix();
+
+    const glm::dvec3 cursorMapPosition =
+        systemMapTargetPlanePointFromScreen(
+            vp,
+            view,
+            m_systemCamera.target,
+            static_cast<double>(m_systemCamera.distance),
+            localMouseX,
+            localMouseY
+        );
+
+    const glm::dvec3 cursorAu =
+        cursorMapPosition /
+        static_cast<double>(m_lastSystemScale);
+
+    const auto index = m_systemNavigationGrid.nearestIndexForPosition(
+        cursorAu,
+        m_systemNavigationGrid.level()
+    );
+
+    m_systemNavigationGrid.setHoveredCell(
+        m_systemNavigationGrid.cell(
+            index,
+            m_systemNavigationGrid.level()
+        )
+    );
+}
+
+bool SystemMapRenderer::pickSystemNavigationCell(
+    const Viewport& vp,
+    double localMouseX,
+    double localMouseY,
+    game::navigation::CubicNavigationCell& outCell
+) const
+{
+    if (!m_systemNavigationGrid.enabled() || m_lastSystemScale <= 0.0f)
+        return false;
+
+    std::vector<game::navigation::CubicNavigationCell> cells;
+    cells.reserve(2);
+
+    const auto anchor = m_systemNavigationGrid.anchorCell();
+    cells.push_back(anchor);
+
+    if (m_systemNavigationGrid.hasHoveredCell())
+    {
+        const auto hovered = m_systemNavigationGrid.hoveredCell();
+        if (hovered.index != anchor.index)
+            cells.push_back(hovered);
+    }
+
+    const glm::mat4 mvp = systemProjectionMatrix(vp) * systemViewMatrix();
+    bool found = false;
+    float bestDistance = 18.0f;
+    float bestDepth = 1.0f;
+
+    for (const auto& cell : cells)
+    {
+        const glm::dvec3 absoluteMap =
+            cell.center * static_cast<double>(m_lastSystemScale);
+
+        const glm::vec3 relative =
+            glm::vec3(absoluteMap - m_systemCamera.target);
+
+        bool visible = false;
+        float depth = 1.0f;
+
+        const glm::vec2 screen = projectToScreen(
+            relative,
+            mvp,
+            vp,
+            visible,
+            depth
+        );
+
+        if (!visible)
+            continue;
+
+        const glm::vec2 delta =
+            screen - glm::vec2(
+                static_cast<float>(localMouseX),
+                static_cast<float>(localMouseY)
+            );
+
+        const float distance = glm::length(delta);
+
+        if (distance < bestDistance ||
+            (std::abs(distance - bestDistance) < 0.01f && depth < bestDepth))
+        {
+            bestDistance = distance;
+            bestDepth = depth;
+            outCell = cell;
+            found = true;
+        }
+    }
+
+    return found;
+}
+
+float SystemMapRenderer::systemNavigationAnchorDiameterPx(
+    const Viewport& vp
+) const
+{
+    if (!m_systemNavigationGrid.enabled() || m_lastSystemScale <= 0.0f)
+        return 0.0f;
+
+    const auto cell = m_systemNavigationGrid.anchorCell();
+    const double halfSizeMap =
+        cell.size * 0.5 * static_cast<double>(m_lastSystemScale);
+
+    const glm::dvec3 centerMap =
+        cell.center * static_cast<double>(m_lastSystemScale);
+
+    float minX = std::numeric_limits<float>::max();
+    float minY = std::numeric_limits<float>::max();
+    float maxX = -std::numeric_limits<float>::max();
+    float maxY = -std::numeric_limits<float>::max();
+    bool any = false;
+
+    const glm::mat4 mvp = systemProjectionMatrix(vp) * systemViewMatrix();
+
+    for (int z = -1; z <= 1; z += 2)
+    {
+        for (int y = -1; y <= 1; y += 2)
+        {
+            for (int x = -1; x <= 1; x += 2)
+            {
+                const glm::dvec3 cornerMap =
+                    centerMap +
+                    glm::dvec3(x, y, z) * halfSizeMap;
+
+                const glm::vec3 relative =
+                    glm::vec3(cornerMap - m_systemCamera.target);
+
+                bool visible = false;
+                float depth = 1.0f;
+                const glm::vec2 screen = projectToScreen(
+                    relative,
+                    mvp,
+                    vp,
+                    visible,
+                    depth
+                );
+
+                if (!visible)
+                    continue;
+
+                any = true;
+                minX = std::min(minX, screen.x);
+                minY = std::min(minY, screen.y);
+                maxX = std::max(maxX, screen.x);
+                maxY = std::max(maxY, screen.y);
+            }
+        }
+    }
+
+    return any ? std::max(maxX - minX, maxY - minY) : 0.0f;
+}
+
 void SystemMapRenderer::handleSystemInput(
     const Viewport& vp,
     GLFWwindow* window,
@@ -8253,8 +8799,60 @@ void SystemMapRenderer::handleSystemInput(
         const SystemControlSettings& controls = m_systemControls;
         const double dx = mx - m_systemCamera.lastMouseX;
         const double dy = my - m_systemCamera.lastMouseY;
+
         bool leftStartedThisFrame = false;
         bool rightStartedThisFrame = false;
+
+        const bool manualFlightCancel =
+            (
+                inside &&
+                leftDown &&
+                !m_systemCamera.leftWasDown
+            ) ||
+            (
+                inside &&
+                rightDown &&
+                !m_systemCamera.rightWasDown
+            ) ||
+            m_pendingScrollY != 0.0 ||
+            glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
+
+        if (m_systemCameraFlight.active &&
+            manualFlightCancel)
+        {
+            cancelSystemCameraFlight(false);
+        }
+
+        if (m_systemCameraFlight.active)
+        {
+            m_systemNavigationGrid.clearHoveredCell();
+
+            m_systemCamera.rotating = false;
+            m_systemCamera.panning = false;
+
+            m_systemCamera.leftWasDown = leftDown;
+            m_systemCamera.rightWasDown = rightDown;
+            m_systemCamera.lastMouseX = mx;
+            m_systemCamera.lastMouseY = my;
+
+            return;
+        }
+
+        if (inside)
+        {
+            updateSystemNavigationHoverFromCursor(
+                vp,
+                localMx,
+                localMy
+            );
+        }
+        else
+        {
+            m_systemNavigationGrid.clearHoveredCell();
+        }
 
         auto projectSystemAbsoluteToScreen =
             [&](const glm::dvec3& absolutePos,
@@ -8376,10 +8974,66 @@ void SystemMapRenderer::handleSystemInput(
                     {
                         m_selectedBodyId =
                             m_lastSystemBodyScreenPoints[pickedIndex].bodyId;
+
+                        const auto absoluteIt =
+                            m_lastSystemBodyAbsolutePosById.find(
+                                m_selectedBodyId
+                            );
+
+                        if (absoluteIt != m_lastSystemBodyAbsolutePosById.end() &&
+                            m_lastSystemScale > 0.0f)
+                        {
+                            const glm::dvec3 bodyAu =
+                                absoluteIt->second /
+                                static_cast<double>(m_lastSystemScale);
+
+                            m_systemNavigationFocusAu =
+                                bodyAu;
+
+                            m_systemNavigationFocusValid =
+                                true;
+
+                            m_systemNavigationGrid.setAnchorFromPosition(
+                                bodyAu
+                            );
+
+                            m_systemNavigationGrid.selectCell(
+                                m_systemNavigationGrid.anchorCell()
+                            );
+                        }
                     }
                     else
                     {
                         m_selectedBodyId.clear();
+
+                        game::navigation::CubicNavigationCell pickedCell;
+
+                        if (pickSystemNavigationCell(
+                            vp,
+                            localMx,
+                            localMy,
+                            pickedCell
+                        ))
+                        {
+                            m_systemNavigationFocusAu =
+                                pickedCell.center;
+
+                            m_systemNavigationFocusValid =
+                                true;
+
+                            m_systemNavigationGrid.selectCell(
+                                pickedCell
+                            );
+
+                            /*
+                                Переход к центру выбранного куба тоже плавный.
+                            */
+                            beginSystemCameraFlight(
+                                pickedCell.center *
+                                    static_cast<double>(m_lastSystemScale),
+                                m_systemCamera.distance
+                            );
+                        }
                     }
                 }
             }
@@ -8597,6 +9251,12 @@ void SystemMapRenderer::handleSystemInput(
 
             if (zoom != 0.0f)
             {
+                const float distanceBeforeZoom =
+                    m_systemCamera.distance;
+
+                const glm::dvec3 targetBeforeZoom =
+                    m_systemCamera.target;
+
                 const glm::mat4 viewBefore =
                     systemViewMatrix();
 
@@ -8658,6 +9318,116 @@ void SystemMapRenderer::handleSystemInput(
                 m_systemCamera.target +=
                     anchorBefore -
                     anchorAfter;
+
+                if (m_systemNavigationGrid.enabled())
+                {
+                    const float cubeDiameterPx =
+                        systemNavigationAnchorDiameterPx(vp);
+
+                    const float viewportReferencePx =
+                        static_cast<float>(
+                            std::max(1, std::min(vp.width, vp.height))
+                        );
+
+                    if (zoom > 0.0f &&
+                        cubeDiameterPx > viewportReferencePx * 0.72f)
+                    {
+                        if (m_systemNavigationGrid.refineAroundAnchor())
+                        {
+                            if (m_systemNavigationFocusValid)
+                            {
+                                m_systemNavigationGrid
+                                    .setAnchorFromPosition(
+                                        m_systemNavigationFocusAu
+                                    );
+
+                                m_systemNavigationGrid.selectCell(
+                                    m_systemNavigationGrid.anchorCell()
+                                );
+                            }
+
+                            beginSystemCameraFlight(
+                                m_systemNavigationGrid.anchorCell().center *
+                                    static_cast<double>(m_lastSystemScale),
+
+                                m_systemCamera.distance /
+                                    static_cast<float>(
+                                        game::navigation::SystemNavigationGrid::Subdivision
+                                    )
+                            );
+                        }
+                        else
+                        {
+                            /* S6: further precision is the local km offset. */
+                            m_systemCamera.distance = distanceBeforeZoom;
+                            m_systemCamera.target = targetBeforeZoom;
+                        }
+                    }
+                    else if (zoom < 0.0f &&
+                             cubeDiameterPx < viewportReferencePx * 0.18f)
+                    {
+                        if (m_systemNavigationGrid.coarsenAroundAnchor())
+                        {
+
+
+                            if (m_systemNavigationGrid.refineAroundAnchor())
+                            {
+                                if (m_systemNavigationFocusValid)
+                                {
+                                    m_systemNavigationGrid
+                                        .setAnchorFromPosition(
+                                            m_systemNavigationFocusAu
+                                        );
+
+                                    m_systemNavigationGrid.selectCell(
+                                        m_systemNavigationGrid.anchorCell()
+                                    );
+                                }
+
+                                beginSystemCameraFlight(
+                                    m_systemNavigationGrid.anchorCell().center *
+                                        static_cast<double>(m_lastSystemScale),
+
+                                    m_systemCamera.distance /
+                                        static_cast<float>(
+                                            game::navigation::
+                                                SystemNavigationGrid::Subdivision
+                                        )
+                                );
+                            }
+
+
+
+                            beginSystemCameraFlight(
+                                m_systemNavigationGrid.anchorCell().center *
+                                    static_cast<double>(m_lastSystemScale),
+
+                                m_systemCamera.distance *
+                                    static_cast<float>(
+                                        game::navigation::SystemNavigationGrid::Subdivision
+                                    )
+                            );
+                        }
+                    }
+
+                    const float terminalMinHalfHeight =
+                        static_cast<float>(
+                            (controls.minKmPerPixel *
+                             static_cast<double>(m_lastSystemScale) /
+                             AU_KM) *
+                            static_cast<double>(vp.height) *
+                            0.5
+                        );
+
+                    m_systemCamera.distance = std::clamp(
+                        m_systemCamera.distance,
+                        std::max(
+                            SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
+                            terminalMinHalfHeight
+                        ),
+                        SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT
+                    );
+                }
             }
         }
 
@@ -8702,7 +9472,6 @@ void SystemMapRenderer::handleDetailInput(
         }
 
         bool leftStartedThisFrame = false;
-
         bool rightStartedThisFrame = false;
 
         if (inside &&
@@ -9217,12 +9986,28 @@ void SystemMapRenderer::handleGalaxyInput(
                         game::navigation::GalaxyNavigationCell pickedCell;
 
                         if (pickGalaxyNavigationCell(
-                                vp,
-                                localMx,
-                                localMy,
-                                pickedCell
-                            ))
-                        {
+        vp,
+        localMx,
+        localMy,
+        pickedCell
+    ))
+{
+                            /*
+                                Теперь выбрана не звезда, а центр куба.
+                                Старую выбранную систему необходимо сбросить.
+                            */
+                            m_selectedSystemId =
+                                -1;
+
+                            m_focusedSystemId =
+                                -1;
+
+                            m_galaxyNavigationFocusLy =
+                                pickedCell.centerLy;
+
+                            m_galaxyNavigationFocusValid =
+                                true;
+
                             m_galaxyNavigationGrid.selectCell(
                                 pickedCell
                             );
@@ -9448,10 +10233,19 @@ void SystemMapRenderer::handleGalaxyInput(
 
             if (zoom != 0.0f)
             {
+                const float distanceBeforeZoom =
+                    m_galaxyCamera.distance;
+
                 const float factor =
-                    zoom > 0.0f
-                        ? controls.zoomInFactor
-                        : controls.zoomOutFactor;
+                zoom > 0.0f
+                    ? std::pow(
+                        controls.zoomInFactor,
+                        zoom
+                    )
+                    : std::pow(
+                        controls.zoomOutFactor,
+                        -zoom
+                    );
 
                 m_galaxyCamera.distance *=
                     factor;
@@ -9485,21 +10279,93 @@ void SystemMapRenderer::handleGalaxyInput(
                         cubeDiameterPx >
                             viewportReferencePx * 0.72f)
                     {
-                        m_galaxyNavigationGrid.refineAroundAnchor();
+                        if (m_galaxyNavigationGrid.refineAroundAnchor())
+                        {
+
+                            if (m_galaxyNavigationFocusValid)
+                            {
+                                /*
+                                    refineAroundAnchor() уже переключил сетку
+                                    на следующий уровень.
+
+                                    Теперь на этом новом уровне находим куб,
+                                    содержащий физическую точку фокуса.
+                                */
+                                m_galaxyNavigationGrid
+                                    .setAnchorFromPositionLy(
+                                        m_galaxyNavigationFocusLy
+                                    );
+
+                                m_galaxyNavigationGrid.selectCell(
+                                    m_galaxyNavigationGrid.anchorCell()
+                                );
+                            }
+
+                            beginGalaxyCameraFlight(
+                                galaxyPositionLyToRender(
+                                    m_galaxyNavigationGrid
+                                        .anchorCell()
+                                        .centerLy
+                                ),
+                                m_galaxyCamera.distance /
+                                    static_cast<float>(
+                                        game::navigation::GalaxyNavigationGrid::Subdivision
+                                    )
+                            );
+                        }
+                        else
+                        {
+                            /* Terminal Galaxy level: the next scale is System. */
+                            m_galaxyCamera.distance = distanceBeforeZoom;
+
+                            if (m_selectedSystemId >= 0)
+                            {
+                                m_requestedSystemEntryId =
+                                    m_selectedSystemId;
+                            }
+                        }
                     }
                     else if (zoom < 0.0f &&
                              cubeDiameterPx <
                                 viewportReferencePx * 0.18f)
                     {
-                        m_galaxyNavigationGrid.coarsenAroundAnchor();
+                        if (m_galaxyNavigationGrid.coarsenAroundAnchor())
+                        {
+                            if (m_galaxyNavigationFocusValid)
+                            {
+                                m_galaxyNavigationGrid
+                                    .setAnchorFromPositionLy(
+                                        m_galaxyNavigationFocusLy
+                                    );
+
+                                m_galaxyNavigationGrid.selectCell(
+                                    m_galaxyNavigationGrid.anchorCell()
+                                );
+                            }
+
+
+                            beginGalaxyCameraFlight(
+                                galaxyPositionLyToRender(
+                                    m_galaxyNavigationGrid
+                                        .anchorCell()
+                                        .centerLy
+                                ),
+                                m_galaxyCamera.distance *
+                                    static_cast<float>(
+                                        game::navigation::GalaxyNavigationGrid::Subdivision
+                                    )
+                            );
+                        }
                     }
 
-                    m_galaxyCamera.target =
-                        galaxyPositionLyToRender(
-                            m_galaxyNavigationGrid
-                                .anchorCell()
-                                .centerLy
-                        );
+                    m_galaxyCamera.distance = std::clamp(
+                        m_galaxyCamera.distance,
+                        controls.minDistance,
+                        controls.maxDistance
+                    );
+
+                    
+                    
                 }
             }
         }
@@ -9806,6 +10672,11 @@ void SystemMapRenderer::renderGalaxy(
     */
     flushSolids(mvp);
     flushLines(mvp);
+
+    drawGalaxyNavigationCellLabels(
+        vp,
+        mvp
+    );
 
     drawGalaxyLabels(
         vp,
@@ -10545,6 +11416,241 @@ double SystemMapRenderer::environmentVisualTimeSeconds(
 
 
 
+void SystemMapRenderer::drawSystemNavigationGrid(
+    const Viewport& vp,
+    const glm::mat4&,
+    float systemScale
+)
+{
+    if (!m_systemNavigationGrid.enabled() || systemScale <= 0.0f)
+        return;
+
+    std::vector<game::navigation::CubicNavigationCell> cells;
+    cells.reserve(2);
+
+    const auto anchor = m_systemNavigationGrid.anchorCell();
+    cells.push_back(anchor);
+
+    if (m_systemNavigationGrid.hasHoveredCell())
+    {
+        const auto hovered = m_systemNavigationGrid.hoveredCell();
+        if (hovered.index != anchor.index)
+            cells.push_back(hovered);
+    }
+
+    const glm::mat4 view = systemViewMatrix();
+
+    const glm::vec3 cameraRight(
+        view[0][0],
+        view[1][0],
+        view[2][0]
+    );
+
+    const glm::vec3 cameraUp(
+        view[0][1],
+        view[1][1],
+        view[2][1]
+    );
+
+
+
+    
+
+
+
+
+
+
+
+    auto toRender =
+        [&](const glm::dvec3& positionAu) -> glm::vec3
+        {
+            const glm::dvec3 absoluteMap =
+                positionAu * static_cast<double>(systemScale);
+
+            return glm::vec3(absoluteMap - m_systemCamera.target);
+        };
+
+    for (const auto& cell : cells)
+    {
+        const glm::vec3 center = toRender(cell.center);
+        const float halfSize =
+            static_cast<float>(cell.size * 0.5) * systemScale;
+
+        const glm::vec3 halfAxisX(halfSize, 0.0f, 0.0f);
+        const glm::vec3 halfAxisY(0.0f, halfSize, 0.0f);
+        const glm::vec3 halfAxisZ(0.0f, 0.0f, halfSize);
+
+        const bool selected = cell.index == m_systemNavigationGrid.anchorIndex();
+        const bool hovered =
+            m_systemNavigationGrid.hasHoveredCell() &&
+            cell.index == m_systemNavigationGrid.hoveredCell().index;
+
+        const glm::vec4 edgeColor = selected
+            ? glm::vec4(0.92f, 0.66f, 0.20f, 0.24f)
+            : glm::vec4(0.38f, 0.72f, 0.94f, hovered ? 0.18f : 0.08f);
+
+        addGalaxyNavigationCubeEdges(
+            center,
+            halfAxisX,
+            halfAxisY,
+            halfAxisZ,
+            edgeColor
+        );
+
+
+        
+
+
+        const float markerWorldPerPixel =
+            static_cast<float>(
+                systemMapWorldUnitsPerPixel(
+                    m_systemCamera.distance,
+                    vp.height
+                )
+            );
+
+        const float markerSize =
+            markerWorldPerPixel *
+            (selected ? 5.0f : 4.0f);
+
+
+
+
+
+
+
+
+
+        const glm::vec4 markerColor = selected
+            ? glm::vec4(1.00f, 0.76f, 0.24f, 0.78f)
+            : glm::vec4(0.54f, 0.82f, 1.00f, 0.58f);
+
+        const glm::vec3 top = center + cameraUp * markerSize;
+        const glm::vec3 right = center + cameraRight * markerSize;
+        const glm::vec3 bottom = center - cameraUp * markerSize;
+        const glm::vec3 left = center - cameraRight * markerSize;
+
+        addLine(top, right, markerColor);
+        addLine(right, bottom, markerColor);
+        addLine(bottom, left, markerColor);
+        addLine(left, top, markerColor);
+    }
+}
+
+void SystemMapRenderer::drawSystemNavigationCellLabels(
+    const Viewport& vp,
+    const glm::mat4& mvp,
+    float systemScale
+)
+{
+    if (!m_systemNavigationGrid.enabled() || systemScale <= 0.0f)
+        return;
+
+    using game::navigation::NavigationCellId;
+    using render::navigation::NavigationCellLabelRequest;
+
+    std::vector<game::navigation::CubicNavigationCell> cells;
+    cells.reserve(2);
+
+    const auto anchor = m_systemNavigationGrid.anchorCell();
+    cells.push_back(anchor);
+
+    if (m_systemNavigationGrid.hasHoveredCell())
+    {
+        const auto hovered = m_systemNavigationGrid.hoveredCell();
+        if (hovered.index != anchor.index)
+            cells.push_back(hovered);
+    }
+
+    std::vector<NavigationCellLabelRequest> requests;
+    requests.reserve(cells.size());
+
+    for (const auto& cell : cells)
+    {
+        NavigationCellId id;
+        id.frameId = m_systemNavigationGrid.frame().id;
+        id.level = cell.level;
+        id.x = cell.index.x;
+        id.y = cell.index.y;
+        id.z = cell.index.z;
+
+        NavigationCellLabelRequest request;
+        request.id = id;
+
+        const glm::dvec3 absoluteMap =
+            cell.center * static_cast<double>(systemScale);
+
+        request.center = glm::vec3(absoluteMap - m_systemCamera.target);
+
+        const float halfSize =
+            static_cast<float>(cell.size * 0.5) * systemScale;
+
+        request.halfAxisX = glm::vec3(halfSize, 0.0f, 0.0f);
+        request.halfAxisY = glm::vec3(0.0f, halfSize, 0.0f);
+        request.halfAxisZ = glm::vec3(0.0f, 0.0f, halfSize);
+
+        request.coordinateText = game::navigation::formatCellCoordinate(
+            "S",
+            cell
+        );
+
+        const auto resolved = m_navigationRegionCatalog.resolve(
+            id,
+            game::navigation::SystemNavigationGrid::Subdivision,
+            m_navigationNamingFactionId,
+            m_navigationNamingLocale
+        );
+
+        if (resolved)
+        {
+            request.regionName = resolved->value.name;
+            request.shortRegionName = resolved->value.shortName;
+        }
+
+        const bool selected =
+            cell.index ==
+                m_systemNavigationGrid.anchorIndex();
+
+        /*
+            Подпись выбранного куба не должна исчезать и создаваться
+            заново при переходе S1 -> S2.
+        */
+        request.visualKey =
+            selected
+                ? "system:selected"
+                : "system:hovered";
+
+        request.targetOpacity =
+            selected
+                ? 0.88f
+                : 0.70f;
+
+        request.color =
+            selected
+                ? glm::vec4(1.00f, 0.76f, 0.28f, 0.68f)
+                : glm::vec4(0.48f, 0.80f, 0.96f, 0.56f);
+
+        requests.push_back(std::move(request));
+    }
+
+    const glm::vec3 direction = orbitCameraDirectionFromYawPitch(
+        m_systemCamera.yaw,
+        m_systemCamera.pitch
+    );
+
+    const glm::vec3 cameraPosition =
+        direction * m_systemCamera.distance;
+
+    m_systemNavigationLabelLayer.draw(
+        vp,
+        mvp,
+        cameraPosition,
+        requests,
+        glfwGetTime()
+    );
+}
+
 glm::vec3 SystemMapRenderer::smoothVec3(
     SmoothPoint& point,
     const glm::vec3& target,
@@ -10576,6 +11682,22 @@ void SystemMapRenderer::renderSystem(
     ensureTexturedGlObjects();
     ensureTexturedShader();
     ensureGeneratedCelestialAssets();
+
+
+    if (m_systemNavigationGrid.systemId() != system.systemId)
+    {
+        m_systemNavigationGrid.activateSystem(
+            system.systemId
+        );
+
+        m_systemNavigationLabelLayer.clear();
+
+        m_systemNavigationFocusAu =
+            glm::dvec3(0.0);
+
+        m_systemNavigationFocusValid =
+            false;
+    }
 
     const auto& bodies = system.bodies;
 
@@ -10765,48 +11887,11 @@ m_lastSystemBodyAbsolutePosById = absolutePosById;
 
 
 
-    const glm::vec4 gridColor { 0.10f, 0.28f, 0.43f, 0.18f };
-
-    constexpr double gridStep =
-        5.0;
-
-    constexpr int gridHalfLines =
-        24;
-
-    const double gridHalfSize =
-        gridStep *
-        static_cast<double>(gridHalfLines);
-
-    const double gridCenterX =
-        std::floor(systemCameraOrigin.x / gridStep) *
-        gridStep;
-
-    const double gridCenterZ =
-        std::floor(systemCameraOrigin.z / gridStep) *
-        gridStep;
-
-    for (int i = -gridHalfLines; i <= gridHalfLines; ++i)
-    {
-        const double xAbs =
-            gridCenterX +
-            static_cast<double>(i) * gridStep;
-
-        const double zAbs =
-            gridCenterZ +
-            static_cast<double>(i) * gridStep;
-
-        addLine(
-            toRenderPos(glm::dvec3(gridCenterX - gridHalfSize, 0.0, zAbs)),
-            toRenderPos(glm::dvec3(gridCenterX + gridHalfSize, 0.0, zAbs)),
-            gridColor
-        );
-
-        addLine(
-            toRenderPos(glm::dvec3(xAbs, 0.0, gridCenterZ - gridHalfSize)),
-            toRenderPos(glm::dvec3(xAbs, 0.0, gridCenterZ + gridHalfSize)),
-            gridColor
-        );
-    }
+    drawSystemNavigationGrid(
+        vp,
+        mvp,
+        systemScale
+    );
 
     
 
@@ -11234,6 +12319,12 @@ if (bodyMetrics.drawMarker)
 
 
 
+
+    drawSystemNavigationCellLabels(
+        vp,
+        mvp,
+        systemScale
+    );
 
     drawSystemLabels(
         vp,

@@ -47,25 +47,6 @@ public:
         float scale
     );
 
-
-
-    /*
-    Screen-space text rotated around its baseline origin.
-    angleRad uses screen coordinates: positive angle rotates clockwise.
-    */
-    void textDrawRotated(
-        Font& font,
-        const std::string& text,
-        float x,
-        float baselineY,
-        const glm::vec4& color,
-        float scale,
-        float angleRad
-    );
-
-
-
-
     inline void textDraw(
         Font& font,
         const std::string& text,
@@ -76,9 +57,6 @@ public:
     {
         textDraw(font, text, x, baselineY, glm::vec4(color, 1.0f));
     }
-
-
-
 
     void textDraw(
         const std::string& text,
@@ -95,12 +73,6 @@ public:
         float scale,
         const glm::vec4& color
     );
-
-
-
-
-
-
 
     void textDrawPx(
         const std::string& text,

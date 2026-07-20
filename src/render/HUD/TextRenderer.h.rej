@@ -1,0 +1,47 @@
+--- src/render/HUD/TextRenderer.h	2026-06-04 20:42:42.000000000 +0400
++++ src/render/HUD/TextRenderer.h	2026-07-19 22:09:32.630317814 +0400
+@@ -30,10 +30,10 @@
+         const glm::vec4& color
+     );
+ 
+-    void textDraw(
+-        Font& font,
+-        const std::string& text,
+-        float x,
++    void textDraw(
++        Font& font,
++        const std::string& text,
++        float x,
+         float baselineY,
+         const glm::vec4& color
+     );
+@@ -44,8 +44,22 @@
+         float x,
+         float y,
+         const glm::vec4& color,
+-        float scale
+-    );
++        float scale
++    );
++
++    /*
++        Screen-space text rotated around its baseline origin.
++        angleRad uses screen coordinates: positive angle rotates clockwise.
++    */
++    void textDrawRotated(
++        Font& font,
++        const std::string& text,
++        float x,
++        float baselineY,
++        const glm::vec4& color,
++        float scale,
++        float angleRad
++    );
+ 
+     inline void textDraw(
+         Font& font,
+@@ -128,4 +142,4 @@
+     int m_locTextSampler = -1;
+ 
+     std::vector<TextBatch> m_batches;
+-};+};

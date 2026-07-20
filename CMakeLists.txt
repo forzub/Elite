@@ -253,6 +253,11 @@ add_executable(EliteGame
     src/render/system_map/HubPlanetOverlayRenderer.cpp
 
     src/game/navigation/GalaxyNavigationGrid.cpp
+
+    src/game/navigation/CubicNavigationGrid.cpp
+    src/game/navigation/NavigationRegionCatalog.cpp
+    src/game/navigation/SystemNavigationGrid.cpp
+    src/render/navigation/NavigationCellLabelLayer.cpp
 )
 
 

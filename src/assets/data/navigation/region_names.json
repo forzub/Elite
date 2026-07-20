@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "regions": [
+    {
+      "cell": {
+        "frame_id": "sol_equatorial_j2000",
+        "level": 0,
+        "index": [0, 0, 0]
+      },
+      "names": [
+        {
+          "faction_id": "sol_authority",
+          "language": "ru",
+          "script": "Cyrl",
+          "name": "Сектор Солнца",
+          "short_name": "Солнце",
+          "kind": "official",
+          "preferred": true
+        },
+        {
+          "faction_id": "sol_authority",
+          "language": "en",
+          "script": "Latn",
+          "name": "Sol Sector",
+          "short_name": "Sol",
+          "kind": "official",
+          "preferred": true
+        },
+        {
+          "faction_id": "independent",
+          "language": "en",
+          "script": "Latn",
+          "name": "Old Sun Reach",
+          "short_name": "Sun Reach",
+          "kind": "common",
+          "preferred": true
+        },
+        {
+          "faction_id": "eastern_union",
+          "language": "zh-Hans",
+          "script": "Hans",
+          "name": "太阳区",
+          "short_name": "太阳",
+          "kind": "official",
+          "preferred": true
+        }
+      ]
+    },
+    {
+      "cell": {
+        "frame_id": "system_barycentric:0",
+        "level": 0,
+        "index": [0, 0, 0]
+      },
+      "names": [
+        {
+          "faction_id": "sol_authority",
+          "language": "ru",
+          "script": "Cyrl",
+          "name": "Система Солнца",
+          "short_name": "Солнце",
+          "kind": "official",
+          "preferred": true
+        },
+        {
+          "faction_id": "sol_authority",
+          "language": "en",
+          "script": "Latn",
+          "name": "Sol System",
+          "short_name": "Sol",
+          "kind": "official",
+          "preferred": true
+        }
+      ]
+    }
+  ]
+}

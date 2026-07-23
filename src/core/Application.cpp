@@ -297,6 +297,49 @@ void Application::mainLoop()
                 std::string webCommand;
                 while (m_gameWebView.pollCommand(webCommand))
                 {
+                    if (webCommand.rfind(
+                            "system_map_open_selected:",
+                            0
+                        ) == 0)
+                    {
+                        const std::string idText =
+                            webCommand.substr(
+                                std::string(
+                                    "system_map_open_selected:"
+                                ).size()
+                            );
+
+                        try
+                        {
+                            const int systemId =
+                                std::stoi(idText);
+
+                            if (auto* space =
+                                dynamic_cast<SpaceState*>(
+                                    m_states.current()
+                                ))
+                            {
+                                /*
+                                    Обе операции выполняются последовательно
+                                    внутри обработки одной команды.
+                                */
+                                space->selectSystemMapSystem(
+                                    systemId
+                                );
+
+                                space->setSystemMapCurrentSystemMode();
+                            }
+                        }
+                        catch (...)
+                        {
+                            std::cout
+                                << "[App] bad system_map_open_selected command: "
+                                << webCommand
+                                << "\n";
+                        }
+
+                        continue;
+                    }
                     // std::cout << "[App] WebView command: " << webCommand << "\n";
                     if (webCommand.rfind("system_map_select:", 0) == 0)
                     {

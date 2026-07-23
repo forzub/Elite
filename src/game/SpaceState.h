@@ -98,6 +98,9 @@ public:
     void selectSystemMapSystem(int systemId);
     void setSystemMapGalaxyMode();
     void setSystemMapCurrentSystemMode();
+    void setSystemMapEmptySectorMode(
+        const glm::dvec3& positionLy
+    );
 
 
 
@@ -262,6 +265,8 @@ private:
     int m_loadedSystemMapId = -1;
     bool m_hasGalaxyMapSnapshot = false;
     bool m_hasSystemMapSnapshot = false;
+    bool m_systemMapShowsEmptySector = false;
+    int m_nextEmptySystemMapId = -2;
     double m_systemMapLiveRefreshTimer = 0.0;
 
     bool m_systemMapVisible = false;

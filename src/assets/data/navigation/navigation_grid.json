@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "coordinateFrame": "sol_equatorial_j2000",
+  "subdivisionPerAxis": 25,
+  "maximumDepth": 9,
+  "terminalCellEdgeKm": 100.0,
+  "galaxy": {
+    "minimumLevel": 1,
+    "initialLevel": 1,
+    "systemEntryRequiredEdgeAu": 100.0
+  },
+  "coordinateDisplay": {
+    "defaultFormat": "hierarchical",
+    "cycleKey": "F9"
+  },
+  "rootNavigation": {
+    "defaultPolicy": "blocked",
+    "allowedCells": [
+      [-1, 1, 0],
+      [-1, 2, -1],
+      [-1, 2, 0],
+      [0, 0, 0],
+      [0, 1, 0]
+    ]
+  }
+}

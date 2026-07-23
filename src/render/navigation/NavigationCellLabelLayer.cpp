@@ -470,18 +470,27 @@ void NavigationCellLabelLayer::drawFaceLabel(
 
     TextRenderer& text = TextRenderer::instance();
 
-    if (!coordinate.empty())
+    if (!region.empty())
     {
+        const glm::vec2 regionLine =
+            coordinate.empty()
+                ? origin
+                : origin +
+                    inward *
+                    (15.0f * screenScale);
+
         text.textDrawRotated(
             *m_font,
-            coordinate,
-            origin.x,
-            origin.y,
-            titleColor,
-            titleScale,
+            region,
+            regionLine.x,
+            regionLine.y,
+            subtitleColor,
+            subtitleScale,
             angle
         );
     }
+
+    
 
     if (!region.empty())
     {

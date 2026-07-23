@@ -1,0 +1,1155 @@
+diff --git a/src/assets/data/navigation/navigation_grid.json b/src/assets/data/navigation/navigation_grid.json
+index 79aedf8..3ad8a9a 100644
+--- a/src/assets/data/navigation/navigation_grid.json
++++ b/src/assets/data/navigation/navigation_grid.json
+@@ -9,6 +9,9 @@
+     "initialLevel": 1,
+     "systemEntryRequiredEdgeAu": 100.0
+   },
++  "system": {
++    "maximumLevel": 5
++  },
+   "coordinateDisplay": {
+     "defaultFormat": "hierarchical",
+     "cycleKey": "F9"
+diff --git a/src/game/SpaceState.cpp b/src/game/SpaceState.cpp
+index a37aeda..486b385 100644
+--- a/src/game/SpaceState.cpp
++++ b/src/game/SpaceState.cpp
+@@ -796,11 +796,9 @@ void SpaceState::handleInput()
+             {
+                 if (requestedSystemEntry->knownSystem())
+                 {
+-                    selectSystemMapSystem(
++                    setSystemMapKnownSystemMode(
+                         requestedSystemEntry->systemId
+                     );
+-
+-                    setSystemMapCurrentSystemMode();
+                 }
+                 else
+                 {
+@@ -1566,24 +1564,6 @@ void SpaceState::renderHUD()
+ 
+ 
+ 
+-if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System)
+-{
+-    const int focusedId =
+-        m_systemMapRenderer.focusedSystemId() >= 0
+-            ? m_systemMapRenderer.focusedSystemId()
+-            : m_server->playerNavigation().currentSystemId;
+-
+-    requestSystemMapSnapshot(
+-        focusedId,
+-        false
+-    );
+-}
+-
+-
+-
+-
+-
+-
+ if (m_systemMapRenderer.mode() ==
+     SystemMapRenderer::Mode::Planet)
+ {
+@@ -3491,9 +3471,6 @@ void SpaceState::selectSystemMapSystem(
+     if (!m_server)
+         return;
+ 
+-    m_systemMapShowsEmptySector =
+-        false;
+-
+     requestGalaxyMapSnapshotOnce();
+ 
+     /*
+@@ -3504,6 +3481,9 @@ void SpaceState::selectSystemMapSystem(
+     if (m_systemMapRenderer.mode() ==
+         SystemMapRenderer::Mode::Galaxy)
+     {
++        m_systemMapShowsEmptySector =
++            false;
++
+         m_systemMapRenderer.focusGalaxySystem(
+             systemId,
+             m_galaxyMapSnapshot
+@@ -3514,34 +3494,11 @@ void SpaceState::selectSystemMapSystem(
+     }
+ 
+     /*
+-        В System меняется всё содержимое системной карты.
+-        Поэтому сохраняем старый кадр и плавно растворяем его
+-        поверх новой системы.
++        System-system switching and Galaxy-system entry use the same
++        atomic transition path.
+     */
+-    m_systemMapRenderer.beginMapTransition(
+-        MapTransitionPresets::modeChange(),
+-
+-        [this, systemId]()
+-        {
+-            if (!m_server)
+-                return;
+-
+-            m_systemMapRenderer.focusGalaxySystem(
+-                systemId,
+-                m_galaxyMapSnapshot
+-            );
+-
+-            requestSystemMapSnapshot(
+-                systemId,
+-                true
+-            );
+-
+-            m_systemMapRenderer.setMode(
+-                SystemMapRenderer::Mode::System
+-            );
+-
+-            pushSystemMapPanelState();
+-        }
++    setSystemMapKnownSystemMode(
++        systemId
+     );
+ }
+ 
+@@ -3657,54 +3614,45 @@ void SpaceState::setSystemMapEmptySectorMode(
+ 
+ 
+ 
+-void SpaceState::setSystemMapCurrentSystemMode()
++void SpaceState::setSystemMapKnownSystemMode(
++    int systemId
++)
+ {
+-    if (!m_server)
+-        return;
+-
+-    if (m_systemMapRenderer.mode() ==
+-        SystemMapRenderer::Mode::System)
++    if (!m_server ||
++        systemId < 0)
+     {
+         return;
+     }
+ 
+-    const int selectedId =
+-        m_systemMapRenderer.selectedSystemId() >= 0
+-            ? m_systemMapRenderer.selectedSystemId()
+-            : m_server
+-                ->playerNavigation()
+-                .currentSystemId;
++    /*
++        Galaxy -> System is one atomic command.
++
++        The old path first changed the Galaxy selection and then asked a
++        second function to rediscover that selection. If either state was
++        stale, the fallback was the player's current system (usually Sol).
++        Capture the requested id once and carry exactly that id through the
++        transition.
++    */
++    requestGalaxyMapSnapshotOnce();
+ 
+     m_systemMapRenderer.beginMapTransition(
+         MapTransitionPresets::modeChange(),
+ 
+-        [this, selectedId]()
++        [this, systemId]()
+         {
+             if (!m_server)
+                 return;
+ 
+-            /*
+-                Сохраняем выбранную систему и положение
+-                Galaxy-камеры для последующего возврата.
+-            */
++            m_systemMapShowsEmptySector =
++                false;
++
+             m_systemMapRenderer.focusGalaxySystem(
+-                selectedId,
++                systemId,
+                 m_galaxyMapSnapshot
+             );
+ 
+             requestSystemMapSnapshot(
+-                selectedId,
+-                true
+-            );
+-
+-            /*
+-                Пока сохраняем существующее поведение:
+-                заранее загружаем Землю для тестовой Details-карты.
+-                Позже это можно будет убрать отдельно.
+-            */
+-            requestPlanetMapSnapshot(
+-                selectedId,
+-                "system_0.Sol.Земля",
++                systemId,
+                 true
+             );
+ 
+@@ -3721,6 +3669,33 @@ void SpaceState::setSystemMapCurrentSystemMode()
+ 
+ 
+ 
++void SpaceState::setSystemMapCurrentSystemMode()
++{
++    if (!m_server)
++        return;
++
++    if (m_systemMapRenderer.mode() ==
++        SystemMapRenderer::Mode::System)
++    {
++        return;
++    }
++
++    const int selectedId =
++        m_systemMapRenderer.selectedSystemId() >= 0
++            ? m_systemMapRenderer.selectedSystemId()
++            : m_server
++                ->playerNavigation()
++                .currentSystemId;
++
++    setSystemMapKnownSystemMode(
++        selectedId
++    );
++}
++
++
++
++
++
+ 
+ 
+ 
+diff --git a/src/game/SpaceState.h b/src/game/SpaceState.h
+index 3bb156c..e3adf6f 100644
+--- a/src/game/SpaceState.h
++++ b/src/game/SpaceState.h
+@@ -95,9 +95,10 @@ public:
+     void pushDebugControlState();
+     void pushSystemMapState();
+     void pushSystemMapPanelState();
+-    void selectSystemMapSystem(int systemId);
+-    void setSystemMapGalaxyMode();
+-    void setSystemMapCurrentSystemMode();
++    void selectSystemMapSystem(int systemId);
++    void setSystemMapGalaxyMode();
++    void setSystemMapKnownSystemMode(int systemId);
++    void setSystemMapCurrentSystemMode();
+     void setSystemMapEmptySectorMode(
+         const glm::dvec3& positionLy
+     );
+diff --git a/src/game/navigation/GalaxyNavigationConfig.cpp b/src/game/navigation/GalaxyNavigationConfig.cpp
+index 6c80528..c10be5d 100644
+--- a/src/game/navigation/GalaxyNavigationConfig.cpp
++++ b/src/game/navigation/GalaxyNavigationConfig.cpp
+@@ -91,6 +91,19 @@ bool loadFile(
+             result.systemEntryRequiredEdgeAu
+         ));
+ 
++    const json system =
++        root.value("system", json::object());
++
++    result.systemMaximumLevel =
++        std::clamp(
++            system.value(
++                "maximumLevel",
++                result.systemMaximumLevel
++            ),
++            0,
++            result.maximumDepth
++        );
++
+     const json display =
+         root.value("coordinateDisplay", json::object());
+ 
+diff --git a/src/game/navigation/GalaxyNavigationConfig.h b/src/game/navigation/GalaxyNavigationConfig.h
+index c217487..1b2c472 100644
+--- a/src/game/navigation/GalaxyNavigationConfig.h
++++ b/src/game/navigation/GalaxyNavigationConfig.h
+@@ -20,6 +20,7 @@ struct GalaxyNavigationConfig
+     int minimumLevel = 1;
+     int initialLevel = 1;
+     int maximumDepth = 9;
++    int systemMaximumLevel = 5;
+ 
+     double terminalCellEdgeKm = 100.0;
+     double systemEntryRequiredEdgeAu = 3400.0;
+diff --git a/src/game/navigation/SystemNavigationGrid.cpp b/src/game/navigation/SystemNavigationGrid.cpp
+index 8d2d158..070f3a2 100644
+--- a/src/game/navigation/SystemNavigationGrid.cpp
++++ b/src/game/navigation/SystemNavigationGrid.cpp
+@@ -104,9 +104,12 @@ SystemNavigationGrid::makeDefinition(int systemId)
+         MinimumLevel;
+ 
+     result.maximumLevel =
+-        calculateSystemMaximumLevel(
+-            config,
+-            rootEdgeAu
++        std::min(
++            config.systemMaximumLevel,
++            calculateSystemMaximumLevel(
++                config,
++                rootEdgeAu
++            )
+         );
+ 
+     result.initialLevel =
+diff --git a/src/game/system_map/SystemMapRenderer.cpp b/src/game/system_map/SystemMapRenderer.cpp
+index 6e0f211..a3845d5 100644
+--- a/src/game/system_map/SystemMapRenderer.cpp
++++ b/src/game/system_map/SystemMapRenderer.cpp
+@@ -928,7 +928,7 @@ namespace
+ 
+     /*
+         System использует ортографическую камеру от масштаба
+-        всей системы до куба порядка 100 km.
++        всей системы до последнего уровня System map.
+ 
+         Фиксированный диапазон глубины 0.001...120000 терял
+         точность уже около S3. Глубина камеры теперь вычисляется
+@@ -3013,6 +3013,10 @@ void SystemMapRenderer::resetView()
+     m_hasGalaxyMapEntryState = false;
+     m_lastGalaxyMapEntrySystemId = -1;
+     m_lastGalaxyMapEntryTerminalCell = {};
++    m_lastGalaxyMapEntryPositionLy = glm::dvec3(0.0);
++
++    m_navigationLevelZeroButtonHovered = false;
++    m_navigationOverlayLeftWasDown = false;
+ 
+ }
+ 
+@@ -4735,6 +4739,8 @@ void SystemMapRenderer::handleInput(
+     if (m_mapTransition.blocksInput())
+     {
+         m_pendingScrollY = 0.0;
++        m_navigationLevelZeroButtonHovered = false;
++        m_navigationOverlayLeftWasDown = false;
+         return;
+     }
+ 
+@@ -4782,6 +4788,63 @@ void SystemMapRenderer::handleInput(
+             GLFW_MOUSE_BUTTON_RIGHT
+         ) == GLFW_PRESS;
+ 
++    const bool showLevelZeroButton =
++        m_mode == Mode::Galaxy ||
++        m_mode == Mode::System;
++
++    m_navigationLevelZeroButtonHovered =
++        showLevelZeroButton &&
++        inside &&
++        render::navigation::
++            NavigationCoordinateOverlay::
++                levelZeroButtonBounds(
++                    vp
++                )
++                .contains(
++                    localMx,
++                    localMy
++                );
++
++    const bool levelZeroPressed =
++        m_navigationLevelZeroButtonHovered &&
++        leftDown &&
++        !m_navigationOverlayLeftWasDown;
++
++    m_navigationOverlayLeftWasDown =
++        leftDown;
++
++    if (m_navigationLevelZeroButtonHovered)
++    {
++        m_pendingScrollY = 0.0;
++
++        if (levelZeroPressed)
++        {
++            resetNavigationViewToLevelZero(
++                vp
++            );
++        }
++
++        /*
++            The button is part of the map viewport, so explicitly prevent
++            the scene behind it from receiving the same mouse gesture.
++        */
++        m_galaxyCamera.rotating = false;
++        m_galaxyCamera.panning = false;
++        m_galaxyCamera.leftWasDown = leftDown;
++        m_galaxyCamera.rightWasDown = rightDown;
++        m_galaxyCamera.lastMouseX = mx;
++        m_galaxyCamera.lastMouseY = my;
++
++        m_systemCamera.rotating = false;
++        m_systemCamera.panning = false;
++        m_systemCamera.leftWasDown = leftDown;
++        m_systemCamera.rightWasDown = rightDown;
++        m_systemCamera.lastMouseX = mx;
++        m_systemCamera.lastMouseY = my;
++
++        return;
++    }
++
+     if (m_mode == Mode::System)
+     {
+         handleSystemInput(
+diff --git a/src/game/system_map/SystemMapRenderer.h b/src/game/system_map/SystemMapRenderer.h
+index f502fbd..e116c38 100644
+--- a/src/game/system_map/SystemMapRenderer.h
++++ b/src/game/system_map/SystemMapRenderer.h
+@@ -439,9 +439,12 @@ private:
+         double cubeDoubleClickMaxIntervalSeconds = 0.38;
+         double cubeDoubleClickMaxDistancePx = 12.0;
+ 
+-        // Terminal 100 km navigation cube must remain inspectable.
+-        // 0.1 km/px gives roughly 1000 px across that cube.
+-        double minKmPerPixel = 0.1;
++        /*
++            System navigation stops at S5 (about 2500 km).
++            2.5 km/px keeps that terminal cube inspectable at roughly
++            1000 px. Smaller scales belong to Details.
++        */
++        double minKmPerPixel = 2.5;
+ 
+         // Picking видимых дисков планет/лун.
+         float pickMaxBodyRadiusPx = 8000.0f;
+@@ -699,6 +702,10 @@ private:
+         int level
+     );
+ 
++    void resetNavigationViewToLevelZero(
++        const Viewport& viewport
++    );
++
+     void endHubGpuStage();
+ 
+     glm::dvec2 hubMapProject(
+@@ -1706,10 +1713,14 @@ private:
+     int m_lastGalaxyMapEntrySystemId = -1;
+     game::navigation::GalaxyGridIndex
+         m_lastGalaxyMapEntryTerminalCell;
++    glm::dvec3 m_lastGalaxyMapEntryPositionLy {0.0};
+ 
+     render::navigation::NavigationCoordinateOverlay
+         m_navigationCoordinateOverlay;
+ 
++    bool m_navigationLevelZeroButtonHovered = false;
++    bool m_navigationOverlayLeftWasDown = false;
++
+     struct NavigationLevelAnnouncement
+     {
+         std::string text;
+diff --git a/src/game/system_map/SystemMapRendererCommon.inl b/src/game/system_map/SystemMapRendererCommon.inl
+index 8a6428f..df72b16 100644
+--- a/src/game/system_map/SystemMapRendererCommon.inl
++++ b/src/game/system_map/SystemMapRendererCommon.inl
+@@ -321,7 +321,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
+ 
+     /*
+         Полный адрес игрока всегда строится до
+-        терминального System-уровня S6.
++        терминального System-уровня S5.
+     */
+     const int terminalSystemLevel =
+         m_systemNavigationGrid
+@@ -746,7 +746,10 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
+         blocks,
+         footerText,
+         m_navigationLevelAnnouncement.text,
+-        levelAnnouncementAlpha
++        levelAnnouncementAlpha,
++        m_mode == Mode::Galaxy ||
++            m_mode == Mode::System,
++        m_navigationLevelZeroButtonHovered
+     );
+ }
+ 
+@@ -756,6 +759,127 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
+ 
+ 
+ 
++void SystemMapRenderer::resetNavigationViewToLevelZero(
++    const Viewport& viewport
++)
++{
++    if (m_mode == Mode::Galaxy)
++    {
++        cancelGalaxyCameraFlight(false);
++
++        m_galaxyNavigationGrid.reset();
++        m_galaxyNavigationGrid.setAnchorFromPositionLy(
++            m_lastGalaxyMapEntryPositionLy
++        );
++        m_galaxyNavigationGrid.selectCell(
++            m_galaxyNavigationGrid.anchorCell()
++        );
++        m_galaxyNavigationGrid.clearHoveredCell();
++
++        m_galaxyCamera =
++            GalaxyCamera{};
++
++        m_galaxyCamera.target =
++            galaxyPositionLyToRender(
++                m_galaxyNavigationGrid
++                    .anchorCell()
++                    .centerLy
++            );
++
++        const float initialCellEdgeRender =
++            static_cast<float>(
++                m_galaxyNavigationGrid
++                    .anchorCell()
++                    .sizeLy
++            ) *
++            GALAXY_RENDER_UNITS_PER_LY;
++
++        m_galaxyCamera.distance =
++            std::clamp(
++                initialCellEdgeRender * 2.35f,
++                m_galaxyControls.minDistance,
++                m_galaxyControls.maxDistance
++            );
++
++        m_galaxyNavigationFocusLy =
++            m_lastGalaxyMapEntryPositionLy;
++        m_galaxyNavigationFocusValid =
++            true;
++
++        m_galaxyHoverVisualCell.reset();
++        m_galaxyHoverVisualAlpha = 0.0f;
++        m_galaxyHoverOutgoingCell.reset();
++        m_galaxyHoverOutgoingAlpha = 0.0f;
++        m_galaxyHoverVisualLastTimeSeconds = 0.0;
++        m_galaxyCubeClickTracker.reset();
++        m_galaxyOrbitPivotActive = false;
++
++        announceNavigationLevel(
++            'G',
++            m_galaxyNavigationGrid.level()
++        );
++
++        return;
++    }
++
++    if (m_mode == Mode::System &&
++        m_systemNavigationGrid.enabled())
++    {
++        cancelSystemCameraFlight(false);
++
++        m_systemNavigationGrid.reset();
++        m_systemNavigationGrid.setAnchorFromPosition(
++            glm::dvec3(0.0)
++        );
++        m_systemNavigationGrid.selectCell(
++            m_systemNavigationGrid.anchorCell()
++        );
++        m_systemNavigationGrid.clearHoveredCell();
++
++        m_systemCamera =
++            SystemCamera{};
++
++        const float defaultDistance =
++            m_systemControls.fittedSystemRadiusWorld *
++            m_systemControls.initialFitPadding;
++
++        const float maximumDistance =
++            std::max(
++                SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
++                systemNavigationMaximumCameraDistance(
++                    viewport
++                )
++            );
++
++        m_systemCamera.distance =
++            std::clamp(
++                defaultDistance,
++                SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
++                maximumDistance
++            );
++
++        m_systemCameraFlight =
++            SystemCameraFlight{};
++
++        m_systemHoverVisualCell.reset();
++        m_systemHoverVisualAlpha = 0.0f;
++        m_systemHoverOutgoingCell.reset();
++        m_systemHoverOutgoingAlpha = 0.0f;
++        m_systemHoverVisualLastTimeSeconds = 0.0;
++        m_systemCubeClickTracker.reset();
++        m_systemOrbitPivotActive = false;
++
++        announceNavigationLevel(
++            'S',
++            m_systemNavigationGrid.level()
++        );
++    }
++}
++
++
++
++
++
+ // ============================================================================
+ // Map transitions
+ // ============================================================================
+diff --git a/src/game/system_map/SystemMapRendererGalaxy.inl b/src/game/system_map/SystemMapRendererGalaxy.inl
+index b43f972..9e569c4 100644
+--- a/src/game/system_map/SystemMapRendererGalaxy.inl
++++ b/src/game/system_map/SystemMapRendererGalaxy.inl
+@@ -120,6 +120,9 @@ void SystemMapRenderer::onGalaxyMapEntered(
+             insideKnownSystem
+         );
+ 
++    m_lastGalaxyMapEntryPositionLy =
++        playerPositionLy;
++
+     const int terminalLevel =
+         m_galaxyNavigationGrid.maximumLevel();
+ 
+@@ -1755,7 +1758,48 @@ SystemMapRenderer::galaxySystemEntryForPosition(
+         Do not silently replace an empty-space request with an old selected
+         system merely because the same terminal cube contains a star.
+     */
+-    if (explicitSystemId >= 0)
++    int entrySystemId =
++        explicitSystemId;
++
++    /*
++        A selected star remains a valid entry target only while the
++        navigation point is still inside that star's terminal cube.
++
++        This preserves an intentional click on Tau Ceti even if the last
++        wheel event no longer lands on the tiny star marker. At the same
++        time, an old selection can never hijack entry into another or empty
++        cube.
++    */
++    if (entrySystemId < 0 &&
++        m_selectedSystemId >= 0)
++    {
++        const auto selectedSystem =
++            std::find_if(
++                galaxy.systems.begin(),
++                galaxy.systems.end(),
++                [&](const auto& system)
++                {
++                    return
++                        system.id ==
++                        m_selectedSystemId;
++                }
++            );
++
++        if (selectedSystem !=
++                galaxy.systems.end() &&
++            m_galaxyNavigationGrid
++                .nearestIndexForPositionLy(
++                    selectedSystem->positionLy,
++                    terminalLevel
++                ) ==
++                terminalIndex)
++        {
++            entrySystemId =
++                selectedSystem->id;
++        }
++    }
++
++    if (entrySystemId >= 0)
+     {
+         const auto explicitSystem =
+             std::find_if(
+@@ -1765,7 +1809,7 @@ SystemMapRenderer::galaxySystemEntryForPosition(
+                 {
+                     return
+                         system.id ==
+-                        explicitSystemId;
++                        entrySystemId;
+                 }
+             );
+ 
+@@ -2406,11 +2450,28 @@ void SystemMapRenderer::handleGalaxyInput(
+                                     */
+                                     m_galaxyCubeClickTracker.reset();
+ 
+-                                    m_selectedSystemId = -1;
+-                                    m_focusedSystemId = -1;
+-                                    m_galaxyNavigationFocusLy =
+-                                        pickedCell.centerLy;
+-                                    m_galaxyNavigationFocusValid = true;
++                                    const SystemEntryRequest entryRequest =
++                                        galaxySystemEntryForPosition(
++                                            galaxy,
++                                            pickedCell.centerLy
++                                        );
++
++                                    if (entryRequest.knownSystem())
++                                    {
++                                        m_selectedSystemId =
++                                            entryRequest.systemId;
++
++                                        m_focusedSystemId =
++                                            entryRequest.systemId;
++                                    }
++                                    else
++                                    {
++                                        m_selectedSystemId = -1;
++                                        m_focusedSystemId = -1;
++                                        m_galaxyNavigationFocusLy =
++                                            pickedCell.centerLy;
++                                        m_galaxyNavigationFocusValid = true;
++                                    }
+ 
+                                     announceNavigationLevel(
+                                         'S',
+@@ -2420,10 +2481,7 @@ void SystemMapRenderer::handleGalaxyInput(
+                                     );
+ 
+                                     m_requestedSystemEntry =
+-                                        galaxySystemEntryForPosition(
+-                                            galaxy,
+-                                            pickedCell.centerLy
+-                                        );
++                                        entryRequest;
+                                 }
+                             }
+ 
+@@ -2968,7 +3026,8 @@ void SystemMapRenderer::handleGalaxyInput(
+                         /*
+                             At the terminal Galaxy level, enter the
+                             star or empty sector under the navigation
+-                            point. Old selection is irrelevant.
++                            point. A selected star is accepted only while
++                            it belongs to this exact terminal cube.
+ 
+                             Здесь нет camera flight: смену режима
+                             выполнит SpaceState через существующий
+@@ -2976,13 +3035,20 @@ void SystemMapRenderer::handleGalaxyInput(
+                         */
+                         m_galaxyCubeClickTracker.reset();
+ 
+-                        if (pivotSystemId >= 0)
++                        const SystemEntryRequest entryRequest =
++                            galaxySystemEntryForPosition(
++                                galaxy,
++                                navigationPointLy,
++                                pivotSystemId
++                            );
++
++                        if (entryRequest.knownSystem())
+                         {
+                             m_selectedSystemId =
+-                                pivotSystemId;
++                                entryRequest.systemId;
+ 
+                             m_focusedSystemId =
+-                                pivotSystemId;
++                                entryRequest.systemId;
+                         }
+                         else
+                         {
+@@ -3004,11 +3070,7 @@ void SystemMapRenderer::handleGalaxyInput(
+                         );
+ 
+                         m_requestedSystemEntry =
+-                            galaxySystemEntryForPosition(
+-                                galaxy,
+-                                navigationPointLy,
+-                                pivotSystemId
+-                            );
++                            entryRequest;
+                     }
+                     else
+                     {
+diff --git a/src/game/system_map/SystemMapRendererSystem.inl b/src/game/system_map/SystemMapRendererSystem.inl
+index 388d115..d474046 100644
+--- a/src/game/system_map/SystemMapRendererSystem.inl
++++ b/src/game/system_map/SystemMapRendererSystem.inl
+@@ -137,7 +137,7 @@ void SystemMapRenderer::updateSystemNavigationHoverFromCursor(
+     /*
+         The complete System map is one fixed S0 domain.
+ 
+-        S1...S6 are view resolutions inside that domain, not isolated
++        S1...S5 are view resolutions inside that domain, not isolated
+         child trees of the currently selected or anchored cube.
+     */
+     const game::navigation::CubicGridIndex
+@@ -1624,18 +1624,35 @@ auto captureSystemOrbitPivot =
+                         systemNavigationCursorAu();
+                 }
+ 
+-                const glm::mat4 viewBefore =
+-                    systemViewMatrix();
+-
+-                const glm::dvec3 anchorBefore =
+-                    systemMapTargetPlanePointFromScreen(
+-                        vp,
+-                        viewBefore,
+-                        m_systemCamera.target,
+-                        static_cast<double>(m_systemCamera.distance),
+-                        localMx,
+-                        localMy
+-                    );
++                /*
++                    One navigation point drives both mechanisms:
++
++                    - the camera zoom pivot;
++                    - the cubic hierarchy transition.
++
++                    Previously the hierarchy used body/cube/centre while
++                    the camera simultaneously zoomed around an unrelated
++                    point on the mouse plane. At deep levels those two
++                    pivots diverged and looked like a teleport.
++                */
++                const glm::dvec3 navigationPointWorld =
++                    navigationPointAu *
++                    static_cast<double>(
++                        m_lastSystemScale
++                    );
++
++                bool pivotBeforeVisible =
++                    false;
++
++                float pivotBeforeDepth =
++                    1.0f;
++
++                const glm::vec2 pivotBeforeScreen =
++                    projectSystemAbsoluteToScreen(
++                        navigationPointWorld,
++                        pivotBeforeVisible,
++                        pivotBeforeDepth
++                    );
+ 
+                 const float zoomStep = controls.zoomStep;
+ 
+@@ -1669,22 +1686,75 @@ auto captureSystemOrbitPivot =
+                         SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT
+                     );
+ 
+-                const glm::mat4 viewAfter =
+-                    systemViewMatrix();
+-
+-                const glm::dvec3 anchorAfter =
+-                    systemMapTargetPlanePointFromScreen(
+-                        vp,
+-                        viewAfter,
+-                        m_systemCamera.target,
+-                        static_cast<double>(m_systemCamera.distance),
+-                        localMx,
+-                        localMy
+-                    );
+-
+-                m_systemCamera.target +=
+-                    anchorBefore -
+-                    anchorAfter;
++                bool pivotAfterVisible =
++                    false;
++
++                float pivotAfterDepth =
++                    1.0f;
++
++                const glm::vec2 pivotAfterScreen =
++                    projectSystemAbsoluteToScreen(
++                        navigationPointWorld,
++                        pivotAfterVisible,
++                        pivotAfterDepth
++                    );
++
++                const glm::vec2 pivotScreenDelta =
++                    pivotBeforeScreen -
++                    pivotAfterScreen;
++
++                if (pivotBeforeVisible &&
++                    pivotAfterVisible &&
++                    std::isfinite(pivotScreenDelta.x) &&
++                    std::isfinite(pivotScreenDelta.y))
++                {
++                    const glm::mat4 viewAfter =
++                        systemViewMatrix();
++
++                    const glm::vec3 rightF =
++                        systemMapViewRight(
++                            viewAfter
++                        );
++
++                    const glm::vec3 upF =
++                        systemMapViewUp(
++                            viewAfter
++                        );
++
++                    const glm::dvec3 right(
++                        rightF.x,
++                        rightF.y,
++                        rightF.z
++                    );
++
++                    const glm::dvec3 up(
++                        upF.x,
++                        upF.y,
++                        upF.z
++                    );
++
++                    const double worldUnitsPerPixel =
++                        systemMapWorldUnitsPerPixel(
++                            static_cast<double>(
++                                m_systemCamera.distance
++                            ),
++                            vp.height
++                        );
++
++                    m_systemCamera.target -=
++                        right *
++                        static_cast<double>(
++                            pivotScreenDelta.x
++                        ) *
++                        worldUnitsPerPixel;
++
++                    m_systemCamera.target +=
++                        up *
++                        static_cast<double>(
++                            pivotScreenDelta.y
++                        ) *
++                        worldUnitsPerPixel;
++                }
+ 
+                 syncSystemNavigationAnchorToCursor();
+ 
+@@ -1974,9 +2044,10 @@ void SystemMapRenderer::drawSystemLabels(
+ 
+     for (const auto& b : system.bodies)
+     {
+-        if (b.type != BodyType::Planet &&
+-            b.type != BodyType::Moon &&
+-            b.type != BodyType::AsteroidBelt)
++        if (b.type != BodyType::Star &&
++            b.type != BodyType::Planet &&
++            b.type != BodyType::Moon &&
++            b.type != BodyType::AsteroidBelt)
+         {
+             continue;
+         }
+@@ -2099,20 +2170,27 @@ void SystemMapRenderer::drawSystemLabels(
+                 ? 16
+                 : 14;
+ 
+-        const glm::vec4 titleColor =
+-            selected
+-                ? glm::vec4(
+-                    1.0f,
+-                    0.78f,
+-                    0.30f,
+-                    0.96f
+-                  )
+-                : glm::vec4(
+-                    0.62f,
+-                    0.84f,
+-                    1.0f,
+-                    0.88f
+-                  );
++        const glm::vec4 titleColor =
++            selected
++                ? glm::vec4(
++                    1.0f,
++                    0.78f,
++                    0.30f,
++                    0.96f
++                  )
++                : b.type == BodyType::Star
++                    ? glm::vec4(
++                        1.0f,
++                        0.82f,
++                        0.46f,
++                        0.90f
++                      )
++                    : glm::vec4(
++                        0.62f,
++                        0.84f,
++                        1.0f,
++                        0.88f
++                      );
+ 
+         text.textDrawPx(
+             b.name,
+diff --git a/src/render/navigation/NavigationCoordinateOverlay.cpp b/src/render/navigation/NavigationCoordinateOverlay.cpp
+index a9b6b41..da38399 100644
+--- a/src/render/navigation/NavigationCoordinateOverlay.cpp
++++ b/src/render/navigation/NavigationCoordinateOverlay.cpp
+@@ -60,6 +60,45 @@ NavigationCoordinateOverlay() = default;
+ NavigationCoordinateOverlay::
+ ~NavigationCoordinateOverlay() = default;
+ 
++NavigationOverlayButtonBounds
++NavigationCoordinateOverlay::levelZeroButtonBounds(
++    const Viewport& viewport
++)
++{
++    const float screenScale =
++        std::clamp(
++            static_cast<float>(viewport.height) /
++                1080.0f,
++            0.72f,
++            1.35f
++        );
++
++    const float width =
++        190.0f *
++        screenScale;
++
++    const float height =
++        38.0f *
++        screenScale;
++
++    const float right =
++        static_cast<float>(viewport.width) -
++        18.0f *
++        screenScale;
++
++    const float bottom =
++        static_cast<float>(viewport.height) -
++        10.0f *
++        screenScale;
++
++    return {
++        right - width,
++        bottom - height,
++        right,
++        bottom
++    };
++}
++
+ void NavigationCoordinateOverlay::ensureFont()
+ {
+     if (m_font)
+@@ -97,7 +136,9 @@ void NavigationCoordinateOverlay::draw(
+     const std::vector<NavigationCoordinateBlock>& blocks,
+     const std::string& footerText,
+     const std::string& levelAnnouncement,
+-    float levelAnnouncementAlpha
++    float levelAnnouncementAlpha,
++    bool showLevelZeroButton,
++    bool levelZeroButtonHovered
+ )
+ {
+     if (viewport.width <= 0 ||
+@@ -108,7 +149,8 @@ void NavigationCoordinateOverlay::draw(
+             (
+                 levelAnnouncement.empty() ||
+                 levelAnnouncementAlpha <= 0.001f
+-            )
++            ) &&
++            !showLevelZeroButton
+         ))
+     {
+         return;
+@@ -289,6 +331,64 @@ void NavigationCoordinateOverlay::draw(
+         );
+     }
+ 
++    if (showLevelZeroButton)
++    {
++        const NavigationOverlayButtonBounds bounds =
++            levelZeroButtonBounds(
++                viewport
++            );
++
++        const glm::vec4 buttonColor =
++            levelZeroButtonHovered
++                ? glm::vec4(
++                    0.64f,
++                    0.84f,
++                    0.96f,
++                    0.92f
++                  )
++                : glm::vec4(
++                    0.44f,
++                    0.62f,
++                    0.74f,
++                    0.66f
++                  );
++
++        const float buttonScale =
++            bodyScale;
++
++        const std::string buttonText =
++            "[  LEVEL 0  ]";
++
++        const float textWidth =
++            m_font->measureText(
++                buttonText
++            ) *
++            buttonScale;
++
++        const float x =
++            bounds.left +
++            (
++                bounds.right -
++                bounds.left -
++                textWidth
++            ) *
++            0.5f;
++
++        const float y =
++            bounds.top +
++            27.0f *
++            screenScale;
++
++        text.textDraw(
++            *m_font,
++            buttonText,
++            x,
++            y,
++            buttonColor,
++            buttonScale
++        );
++    }
++
+     if (!levelAnnouncement.empty() &&
+         levelAnnouncementAlpha > 0.001f)
+     {
+diff --git a/src/render/navigation/NavigationCoordinateOverlay.h b/src/render/navigation/NavigationCoordinateOverlay.h
+index 6332d8b..f7504ad 100644
+--- a/src/render/navigation/NavigationCoordinateOverlay.h
++++ b/src/render/navigation/NavigationCoordinateOverlay.h
+@@ -29,6 +29,26 @@ struct NavigationCoordinateBlock
+     std::vector<std::string> addressLines;
+ };
+ 
++struct NavigationOverlayButtonBounds
++{
++    float left = 0.0f;
++    float top = 0.0f;
++    float right = 0.0f;
++    float bottom = 0.0f;
++
++    bool contains(
++        double x,
++        double y
++    ) const
++    {
++        return
++            x >= static_cast<double>(left) &&
++            x <= static_cast<double>(right) &&
++            y >= static_cast<double>(top) &&
++            y <= static_cast<double>(bottom);
++    }
++};
++
+ class NavigationCoordinateOverlay
+ {
+ public:
+@@ -40,9 +60,16 @@ public:
+         const std::vector<NavigationCoordinateBlock>& blocks,
+         const std::string& footerText = {},
+         const std::string& levelAnnouncement = {},
+-        float levelAnnouncementAlpha = 0.0f
++        float levelAnnouncementAlpha = 0.0f,
++        bool showLevelZeroButton = false,
++        bool levelZeroButtonHovered = false
+     );
+ 
++    static NavigationOverlayButtonBounds
++        levelZeroButtonBounds(
++            const Viewport& viewport
++        );
++
+ private:
+     void ensureFont();
+ 

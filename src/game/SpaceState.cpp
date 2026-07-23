@@ -469,6 +469,9 @@ void SpaceState::requestSystemMapSnapshot(
     if (!m_server)
         return;
 
+    m_systemMapShowsEmptySector =
+        false;
+
     if (!forceRefresh &&
         m_hasSystemMapSnapshot &&
         m_loadedSystemMapId == systemId)
@@ -636,9 +639,29 @@ void SpaceState::setSystemMapHubMode()
 
 void SpaceState::updateSystemMapLiveFlags()
 {
+    const bool wasSystemMapVisible =
+        m_systemMapVisible;
+
     m_systemMapVisible =
         context().app &&
         context().app->gameUiMode() == GameUiMode::SystemMap;
+
+    /*
+        Первый вход в карту либо вход после прыжка.
+
+        Сам SystemMapRenderer решает:
+        - сохранить старую камеру;
+        - или центрировать её на кубе игрока.
+    */
+    if (m_systemMapVisible &&
+        !wasSystemMapVisible &&
+        m_server)
+    {
+        m_systemMapRenderer.onGalaxyMapEntered(
+            m_galaxyMapSnapshot,
+            m_server->playerNavigation()
+        );
+    }
 
     m_systemMapLiveSnapshotsEnabled =
         m_systemMapVisible &&
@@ -651,7 +674,16 @@ void SpaceState::updateSystemMapLiveFlags()
         return;
     }
 
-    if (m_systemMapRenderer.focusedSystemId() >= 0)
+    if (m_systemMapShowsEmptySector)
+    {
+        /*
+            У пустого сектора нет серверного systemId.
+            Нельзя подменять его live snapshot текущей системы
+            игрока на следующем update().
+        */
+        m_liveSystemMapId = -1;
+    }
+    else if (m_systemMapRenderer.focusedSystemId() >= 0)
     {
         m_liveSystemMapId =
             m_systemMapRenderer.focusedSystemId();
@@ -742,18 +774,41 @@ void SpaceState::handleInput()
             );
             mapVp.height = fullVp.height;
 
+
+            if (m_systemMapRenderer.mode() ==
+                    SystemMapRenderer::Mode::Galaxy &&
+                Input::instance().isKeyPressedOnce(GLFW_KEY_F9))
+            {
+                m_systemMapRenderer
+                    .cycleNavigationCoordinateFormat();
+            }
+
+
             m_systemMapRenderer.handleInput(
                 mapVp,
                 m_galaxyMapSnapshot
             );
 
-            const int requestedSystemId =
+            const auto requestedSystemEntry =
                 m_systemMapRenderer.consumeRequestedSystemEntry();
 
-            if (requestedSystemId >= 0)
+            if (requestedSystemEntry)
             {
-                selectSystemMapSystem(requestedSystemId);
-                setSystemMapCurrentSystemMode();
+                if (requestedSystemEntry->knownSystem())
+                {
+                    selectSystemMapSystem(
+                        requestedSystemEntry->systemId
+                    );
+
+                    setSystemMapCurrentSystemMode();
+                }
+                else
+                {
+                    setSystemMapEmptySectorMode(
+                        requestedSystemEntry->positionLy
+                    );
+                }
+
                 return;
             }
         }
@@ -2099,6 +2154,18 @@ void SpaceState::processHtmlCommands()
                     continue;
                 }
 
+                if (msg.command == "cycle_coordinate_format")
+                {
+                    if (m_systemMapRenderer.mode() ==
+                        SystemMapRenderer::Mode::Galaxy)
+                    {
+                        m_systemMapRenderer
+                            .cycleNavigationCoordinateFormat();
+                    }
+
+                    continue;
+                }
+
                 if (msg.command == "close")
                 {
                     if (Application* app = context().app)
@@ -3424,6 +3491,9 @@ void SpaceState::selectSystemMapSystem(
     if (!m_server)
         return;
 
+    m_systemMapShowsEmptySector =
+        false;
+
     requestGalaxyMapSnapshotOnce();
 
     /*
@@ -3504,6 +3574,11 @@ void SpaceState::setSystemMapGalaxyMode()
                 SystemMapRenderer::Mode::Galaxy
             );
 
+            m_systemMapRenderer.onGalaxyMapEntered(
+                m_galaxyMapSnapshot,
+                m_server->playerNavigation()
+            );
+
             pushSystemMapPanelState();
         }
     );
@@ -3513,6 +3588,70 @@ void SpaceState::setSystemMapGalaxyMode()
 
 
 
+
+
+
+
+
+void SpaceState::setSystemMapEmptySectorMode(
+    const glm::dvec3& positionLy
+)
+{
+    if (!m_server)
+        return;
+
+    world::celestial::SystemMapSnapshot
+        emptySector;
+
+    /*
+        Каждый пустой сектор получает отдельный отрицательный
+        runtime-id. Благодаря этому SystemNavigationGrid и камера
+        сбрасываются даже при переходе из одного пустого сектора
+        в другой.
+    */
+    emptySector.systemId =
+        m_nextEmptySystemMapId--;
+
+    emptySector.systemName =
+        "Deep Space Sector";
+
+    emptySector.universeTimeSeconds =
+        m_server->universeClock().timeSeconds();
+
+    emptySector.universeDate =
+        m_server->universeClock().dateTimeString();
+
+    emptySector.systemPositionLy =
+        positionLy;
+
+    m_systemMapRenderer.beginMapTransition(
+        MapTransitionPresets::modeChange(),
+
+        [this, emptySector]()
+        {
+            if (!m_server)
+                return;
+
+            m_systemMapSnapshot =
+                emptySector;
+
+            m_loadedSystemMapId =
+                emptySector.systemId;
+
+            m_hasSystemMapSnapshot =
+                true;
+
+            m_systemMapShowsEmptySector =
+                true;
+
+            m_systemMapRenderer.setMode(
+                SystemMapRenderer::Mode::System
+            );
+
+            pushSystemMapPanelState();
+        }
+    );
+}
 
 
 
@@ -3726,12 +3865,28 @@ void SpaceState::pushSystemMapPanelState()
     payload["currentSystemId"] = nav.currentSystemId;
     payload["currentSystemName"] = celestial.systemName;
 
-    const int selectedId =
-        m_systemMapRenderer.selectedSystemId() >= 0
-            ? m_systemMapRenderer.selectedSystemId()
-            : nav.currentSystemId;
+    int selectedId = -1;
+
+    if (!m_systemMapShowsEmptySector)
+    {
+        selectedId =
+            m_systemMapRenderer.selectedSystemId() >= 0
+                ? m_systemMapRenderer.selectedSystemId()
+                : nav.currentSystemId;
+    }
 
     payload["selectedSystemId"] = selectedId;
+    payload["selectedEmptySector"] =
+        m_systemMapShowsEmptySector;
+
+    if (m_systemMapShowsEmptySector)
+    {
+        payload["selectedEmptySectorPositionLy"] = {
+            {"x", m_systemMapSnapshot.systemPositionLy.x},
+            {"y", m_systemMapSnapshot.systemPositionLy.y},
+            {"z", m_systemMapSnapshot.systemPositionLy.z}
+        };
+    }
 
     payload["systems"] = json::array();
     payload["selectedBodyId"] =

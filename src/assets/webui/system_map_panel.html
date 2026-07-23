@@ -425,7 +425,15 @@ function sendGameCommand(command) {
 
 document.getElementById("btnToggleMode").addEventListener("click", () => {
     if (currentMode === "Galaxy") {
-        sendGameCommand("system_map_current_system");
+        if (selectedSystemId !== null &&
+            selectedSystemId !== undefined) {
+            sendGameCommand(
+                `system_map_open_selected:${selectedSystemId}`
+            );
+        } else {
+            sendGameCommand("system_map_current_system");
+        }
+
         return;
     }
 

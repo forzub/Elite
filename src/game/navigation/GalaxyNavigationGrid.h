@@ -7,6 +7,8 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/navigation/GalaxyNavigationConfig.h"
+
 namespace game::navigation
 {
 
@@ -80,40 +82,6 @@ struct GalaxyNavigationCell
 class GalaxyNavigationGrid
 {
 public:
-    /* One visible Galaxy step packs two ternary subdivisions: 3^2. */
-    static constexpr int Subdivision = 9;
-
-    static constexpr int MinimumLevel = 0;
-    static constexpr int InitialLevel = 1;
-    /*
-        Последний уровень, отображаемый на карте Galaxy.
-
-        L4:
-            27 ly / 9^4
-            ≈ 0.004115226 ly
-            ≈ 260.25 AU
-
-        Дальнейшее приближение выполняется уже в карте System.
-    */
-    static constexpr int MaximumLevel = 4;
-
-    /*
-        Level 0 cube edge.
-
-        Visible Galaxy hierarchy:
-            L0 = 27 ly
-            L1 =  3 ly
-            L2 =  0.333... ly
-            L3 =  0.037037... ly
-            L4 =  0.004115... ly ~= 260.25 AU
-
-        The galaxy map is not intended to refine all the way to kilometres.
-        A selected empty interstellar region will later create its own
-        DeepSpaceSearchFrame with metre-based cells.
-    */
-    static constexpr double BaseCellSizeLy = 27.0;
-
-public:
     GalaxyNavigationGrid();
 
     void reset();
@@ -123,6 +91,12 @@ public:
     void toggleEnabled();
 
     const GalaxyNavigationFrame& frame() const;
+    const GalaxyNavigationConfig& config() const;
+
+    int subdivision() const;
+    int minimumLevel() const;
+    int initialLevel() const;
+    int maximumLevel() const;
 
     int level() const;
     double cellSizeLy() const;
@@ -151,10 +125,11 @@ public:
     bool canCoarsen() const;
 
     /*
-        Refinement keeps the same physical centre.
+        Refinement changes only view resolution and view anchor.
+        Explicit selection is independent and keeps its address.
 
-        Parent index (i,j,k) at level L becomes central child
-        index (3i,3j,3k) at level L+1.
+        The caller may re-anchor to an arbitrary navigable position
+        after the level changes.
     */
     bool refineAroundAnchor();
     bool coarsenAroundAnchor();
@@ -174,17 +149,32 @@ public:
         int level
     ) const;
 
+    GalaxyGridIndex rootIndexForCell(
+        const GalaxyGridIndex& index,
+        int level
+    ) const;
+
+    bool isCellNavigable(
+        const GalaxyGridIndex& index,
+        int level
+    ) const;
+
+    bool isCellNavigable(
+        const GalaxyNavigationCell& cell
+    ) const;
+
     std::vector<GalaxyNavigationCell> neighborhood() const;
 
 private:
-    static std::int64_t nearestParentIndex(std::int64_t childIndex);
+    std::int64_t nearestParentIndex(std::int64_t childIndex) const;
 
 private:
     GalaxyNavigationFrame m_frame;
+    GalaxyNavigationConfig m_config;
 
     bool m_enabled = true;
 
-    int m_level = MinimumLevel;
+    int m_level = 1;
     int m_displayRadius = 1;
 
     GalaxyGridIndex m_anchorIndex;

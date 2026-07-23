@@ -189,7 +189,7 @@ camera.position.set(0, 28, 60);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 const MAP_PIXEL_RATIO = Math.min(window.devicePixelRatio || 1, 1.25);
-renderer.setPixelRatio(MAP_PIXEL_RATIO);    
+renderer.setPixelRatio(MAP_PIXEL_RATIO);
 renderer.setSize(viewportWidth(), viewportHeight());
 container.appendChild(renderer.domElement);
 
@@ -737,6 +737,13 @@ document.getElementById("btnExit").onclick = async () => {
 };
 
 window.addEventListener("keydown", async ev => {
+    if (ev.key === "F9") {
+        ev.preventDefault();
+        ev.stopPropagation();
+        sendCommand("cycle_coordinate_format");
+        return;
+    }
+
     if (ev.key !== "Escape") return;
 
     ev.preventDefault();
@@ -886,7 +893,7 @@ function animate() {
     controls.update();
     updateDetailVisibility();
     renderer.render(scene, camera);
-    
+
     if (labelRenderFrame++ % 2 === 0) {
         labelRenderer.render(scene, camera);
     }

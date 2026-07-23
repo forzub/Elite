@@ -258,6 +258,9 @@ add_executable(EliteGame
     src/game/navigation/NavigationRegionCatalog.cpp
     src/game/navigation/SystemNavigationGrid.cpp
     src/render/navigation/NavigationCellLabelLayer.cpp
+
+    src/render/navigation/NavigationCoordinateOverlay.cpp
+    src/game/navigation/GalaxyNavigationConfig.cpp
 )
 
 

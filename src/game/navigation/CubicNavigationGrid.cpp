@@ -167,15 +167,17 @@ void CubicNavigationGrid::selectCell(
     const CubicNavigationCell& cellValue
 )
 {
-    m_level = std::clamp(
-        cellValue.level,
-        m_definition.minimumLevel,
-        m_definition.maximumLevel
-    );
+    /*
+        Selection is an address/route target.
 
-    m_anchorIndex = cellValue.index;
-    m_selectedCell = cell(m_anchorIndex, m_level);
-    m_hoveredCell = m_selectedCell;
+        It must not change the view level or the cell used by camera
+        navigation. GalaxyNavigationGrid follows the same rule.
+    */
+    m_selectedCell =
+        cell(
+            cellValue.index,
+            cellValue.level
+        );
 }
 
 void CubicNavigationGrid::clearSelectedCell()
@@ -203,9 +205,7 @@ bool CubicNavigationGrid::refineAroundAnchor()
     m_anchorIndex.z *= m_definition.subdivision;
     ++m_level;
 
-    const CubicNavigationCell child = cell(m_anchorIndex, m_level);
-    m_selectedCell = child;
-    m_hoveredCell = child;
+    m_hoveredCell.reset();
     return true;
 }
 
@@ -219,9 +219,7 @@ bool CubicNavigationGrid::coarsenAroundAnchor()
     m_anchorIndex.z = nearestParentIndex(m_anchorIndex.z);
     --m_level;
 
-    const CubicNavigationCell parent = cell(m_anchorIndex, m_level);
-    m_selectedCell = parent;
-    m_hoveredCell = parent;
+    m_hoveredCell.reset();
     return true;
 }
 

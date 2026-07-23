@@ -10,6 +10,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 
 #include <glm/glm.hpp>
 
@@ -19,6 +20,13 @@
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/game/navigation/GalaxyNavigationGrid.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
+
+#include "src/game/navigation/CubicNavigationCameraFlight.h"
+#include "src/game/navigation/CubicNavigationHierarchy.h"
+#include "src/game/navigation/CubicNavigationInteraction.h"
+
+
+#include "src/game/navigation/NavigationAddressFormatter.h"
 #include "src/game/navigation/NavigationRegionCatalog.h"
 #include "src/world/celestial/visual/CelestialGeneratedAssetLibrary.h"
 #include "src/world/celestial/visual/CelestialEnvironmentProfile.h"
@@ -30,12 +38,13 @@
 #include "src/render/celestial/PlanetGlobeMeshRenderer.h"
 #include "src/render/starfield/GalaxyStarfieldRenderer.h"
 
+#include "src/render/navigation/NavigationCoordinateOverlay.h"
 
 #include "src/render/celestial/clouds/HubBackdropCloudRenderer.h"
 #include "src/render/celestial/rings/PlanetRingRenderer.h"
 #include "src/render/system_map/HubMapGpuGeometryRenderer.h"
 #include "src/render/system_map/HubPlanetOverlayRenderer.h"
-#include "src/render/navigation/NavigationCellLabelLayer.h"
+
 
 #include "src/game/system_map/GalaxyMapVisualSettings.h"
 #include "src/game/system_map/MapTransitionController.h"
@@ -50,6 +59,24 @@ public:
         System,
         Planet,
         Hub
+    };
+
+    /*
+        Переход Galaxy -> System может вести как в известную
+        звёздную систему, так и в пустой пространственный сектор.
+
+        systemId >= 0 означает известную систему.
+        systemId < 0 означает пустой сектор с центром positionLy.
+    */
+    struct SystemEntryRequest
+    {
+        int systemId = -1;
+        glm::dvec3 positionLy {0.0};
+
+        bool knownSystem() const
+        {
+            return systemId >= 0;
+        }
     };
 
     struct HubMapPerformanceStats
@@ -100,6 +127,13 @@ public:
 
     void resetView();
 
+    void onGalaxyMapEntered(
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::PlayerNavigationState& nav
+    );
+
+    void cycleNavigationCoordinateFormat();
+
     void focusGalaxySystem(
         int systemId,
         const world::celestial::GalaxyMapSnapshot& galaxy
@@ -107,7 +141,8 @@ public:
 
     int selectedSystemId() const;
 
-    int consumeRequestedSystemEntry();
+    std::optional<SystemEntryRequest>
+    consumeRequestedSystemEntry();
 
     void handleInput(
         const Viewport& vp,
@@ -213,19 +248,7 @@ private:
 
 
 
-    struct GalaxyCameraFlight
-    {
-        bool active = false;
-
-        glm::vec3 startTarget {0.0f};
-        glm::vec3 destinationTarget {0.0f};
-
-        float startDistance = 82.0f;
-        float destinationDistance = 82.0f;
-
-        double startTimeSeconds = 0.0;
-        double durationSeconds = 0.0;
-    };
+    
 
 
     struct SystemCameraFlight
@@ -313,16 +336,50 @@ private:
         float maxDistance = 700.0f;
 
         // Радиус поиска pivot-звезды при старте вращения.
-        float pivotPickRadiusPx = 120.0f;
+        float pivotPickRadiusPx = 36.0f;
+
+        /*
+            Максимальный угловой шаг за один кадр.
+            Защищает от скачка после потери фокуса окна
+            или редкого длинного кадра.
+        */
+        float rotationMaxStepRad = 0.10f;
 
         // Радиус кликового выбора системы.
         float systemPickRadiusPx = 32.0f;
+
+        /*
+            Куб текущего Galaxy-уровня не рисуется и не
+            участвует в hover/picking, пока его экранный диаметр
+            меньше этого порога.
+
+            Порог масштабируется от меньшей стороны viewport,
+            но не опускается ниже navigationCellInteractiveMinPx.
+        */
+        float navigationCellInteractiveViewportFraction = 0.075f;
+        float navigationCellInteractiveMinPx = 56.0f;
+
+        float navigationHoverFadeInSeconds = 0.18f;
+        float navigationHoverFadeOutSeconds = 0.14f;
+
+
+
+        double cubeDoubleClickMaxIntervalSeconds = 0.38;
+        double cubeDoubleClickMaxDistancePx = 12.0;
 
         double clickMoveThresholdPx = 5.0;
     };
 
     struct SystemControlSettings
     {
+        /*
+            The outermost known body is normalized to this map radius.
+            A newly opened system uses initialFitPadding around that radius,
+            so the system is readable instead of appearing as a point.
+        */
+        float fittedSystemRadiusWorld = 70.0f;
+        float initialFitPadding = 1.35f;
+
         // Экранный радиус навигационного маркера для малых лун.
         // ВАЖНО: это не физический радиус тела.
         float tinyMoonProxyRadiusPx = 4.0f;
@@ -338,12 +395,49 @@ private:
         // Минимальный radius для мышиного выбора.
         float pickMinBodyRadiusPx = 6.0f;
 
-        float rotateSensitivity = 0.008f;
-        float pitchLimitRad = 1.52f;
+
+        
+        float rotateSensitivity = 0.0055f;
+        float pitchLimitRad = 1.32f;
+
+        /*
+            Максимальное расстояние от видимого диска тела,
+            на котором оно может стать pivot вращения.
+        */
+        float rotationPivotMaxDistancePx = 28.0f;
+
+        /*
+            Максимальный угловой шаг вращения за один кадр.
+            Защищает от рывков при большом mouse delta.
+        */
+        float rotationMaxStepRad = 0.10f;
+
+
+
+
+
 
         float zoomStep = 1.28f;
 
         double clickMoveThresholdPx = 5.0;
+
+        float navigationCellInteractiveViewportFraction = 0.075f;
+        float navigationCellInteractiveMinPx = 56.0f;
+
+        float navigationHoverFadeInSeconds = 0.18f;
+        float navigationHoverFadeOutSeconds = 0.14f;
+
+
+        /*
+            At maximum zoom-out the single S0 root must not become
+            smaller than this fraction of the shorter viewport side.
+
+            0.60 означает 60%.
+        */
+        float navigationParentMinViewportFraction = 0.60f;
+
+        double cubeDoubleClickMaxIntervalSeconds = 0.38;
+        double cubeDoubleClickMaxDistancePx = 12.0;
 
         // Terminal 100 km navigation cube must remain inspectable.
         // 0.1 km/px gives roughly 1000 px across that cube.
@@ -592,6 +686,19 @@ private:
         HubGpuStage stage
     );
 
+
+    void drawNavigationCoordinateOverlay(
+        const Viewport& viewport,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::SystemMapSnapshot& system,
+        const world::celestial::PlayerNavigationState& nav
+    );
+
+    void announceNavigationLevel(
+        char mapPrefix,
+        int level
+    );
+
     void endHubGpuStage();
 
     glm::dvec2 hubMapProject(
@@ -666,12 +773,12 @@ private:
         int segments = 192
     );
 
-    
 
 
 
-    
-    
+
+
+
     void drawHubMapTexturedSphereDiskLayer(
     GLuint texture,
     const glm::dvec2& centerPx,
@@ -699,7 +806,7 @@ void drawHubMapPlanetHorizonBand(
 struct HubPlanetAtmosphereStyle
 {
     bool enabled = false;
-    
+
 
     float visualIntensity = 1.0f;
     float radiusScale = 1.018f;
@@ -787,11 +894,11 @@ void drawHubMapPlanetSurfaceHint(
     const world::celestial::HubMapSnapshot& hub,
     double scale,
     const glm::dvec2& centerPx
-); 
-    
-    
-    
-    
+);
+
+
+
+
 
 
 
@@ -811,7 +918,7 @@ void drawHubMapPlanetSurfaceHint(
         const world::celestial::HubMapShip& ship,
         double scale
     ) const;
-    
+
 
 private:
     void ensureGlObjects();
@@ -872,13 +979,13 @@ private:
 
 
     void ensureBackground();
-    void drawBackground(); 
+    void drawBackground();
 
 
 
     void beginLines();
     void addLine(const glm::vec3& a, const glm::vec3& b, const glm::vec4& color);
-    
+
     void addCircleXZ(
         const glm::vec3& center,
         float radius,
@@ -1063,7 +1170,11 @@ private:
         const glm::dvec3& vectorLy
     ) const;
 
-    void addGalaxyNavigationCubeEdges(
+    glm::dvec3 galaxyRenderToPositionLy(
+        const glm::vec3& renderPosition
+    ) const;
+
+    void addNavigationCubeEdges(
         const glm::vec3& center,
         const glm::vec3& halfAxisX,
         const glm::vec3& halfAxisY,
@@ -1076,10 +1187,21 @@ private:
         const glm::mat4& mvp
     );
 
-    void drawGalaxyNavigationCellLabels(
+    glm::dvec3 playerGalaxyPositionLy(
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::PlayerNavigationState& nav,
+        bool& outInsideKnownSystem
+    ) const;
+
+    void drawGalaxyPlayerMarker(
         const Viewport& vp,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::PlayerNavigationState& nav,
         const glm::mat4& mvp
     );
+
+
+
 
     void drawSystemNavigationGrid(
         const Viewport& vp,
@@ -1087,11 +1209,6 @@ private:
         float systemScale
     );
 
-    void drawSystemNavigationCellLabels(
-        const Viewport& vp,
-        const glm::mat4& mvp,
-        float systemScale
-    );
 
     void updateSystemNavigationHoverFromCursor(
         const Viewport& vp,
@@ -1110,6 +1227,34 @@ private:
         const Viewport& vp
     ) const;
 
+    bool systemNavigationCellsInteractive(
+        const Viewport& vp
+    ) const;
+
+    float systemNavigationMaximumCameraDistance(
+        const Viewport& vp
+    ) const;
+
+    glm::dvec3 systemNavigationCursorAu() const;
+
+    void syncSystemNavigationAnchorToCursor();
+
+    void focusSystemBody(
+        const std::string& bodyId
+    );
+
+
+    glm::dvec3 systemNavigationBoundaryCenterWorld() const;
+
+    void constrainSystemCameraToNavigationBoundary(
+        const Viewport& vp
+    );
+
+
+
+
+
+
     void updateGalaxyNavigationHoverFromCursor(
         const Viewport& vp,
         double localMouseX,
@@ -1125,6 +1270,18 @@ private:
 
     float galaxyNavigationAnchorDiameterPx(
         const Viewport& vp
+    ) const;
+
+    bool galaxyNavigationCellsInteractive(
+        const Viewport& vp
+    ) const;
+
+    void syncGalaxyNavigationAnchorToCameraTarget();
+
+    SystemEntryRequest galaxySystemEntryForPosition(
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const glm::dvec3& positionLy,
+        int explicitSystemId = -1
     ) const;
 
     void renderSystem(
@@ -1308,7 +1465,7 @@ private:
     DetailCamera& activeDetailCamera();
     const DetailCamera& activeDetailCamera() const;
 
-    const DetailControlSettings& activeDetailControls() const;  
+    const DetailControlSettings& activeDetailControls() const;
 
     void handleSystemInput(
         const Viewport& vp,
@@ -1322,7 +1479,7 @@ private:
         bool rightDown
     );
 
-    void handleDetailInput(
+    void handleDetailAndHubInput(
         const Viewport& vp,
         GLFWwindow* window,
         double mx,
@@ -1347,7 +1504,7 @@ private:
         bool rightDown
     );
 
- 
+
     std::vector<
         render::celestial::ProceduralCloudStyle
     >
@@ -1416,9 +1573,9 @@ private:
 
 
 
- 
 
-   
+
+
     render::celestial::HubSphericalGridStyle hubSphericalGridStyleForHub(
         const world::celestial::HubMapSnapshot& hub
     ) const;
@@ -1450,7 +1607,7 @@ private:
         double sourceTimeSeconds
     );
 
-    
+
 
 private:
     bool m_initialized = false;
@@ -1481,53 +1638,97 @@ private:
     double m_pendingScrollY = 0.0;
 
     GalaxyCamera m_galaxyCamera;
-    GalaxyCameraFlight m_galaxyCameraFlight;
-    SystemCameraFlight m_systemCameraFlight;
 
+    game::navigation::CubicNavigationCameraFlight m_galaxyCameraFlight;
+    SystemCameraFlight m_systemCameraFlight;
     SystemCamera m_systemCamera;
 
-    game::navigation::GalaxyNavigationGrid
-        m_galaxyNavigationGrid;
-
-    game::navigation::SystemNavigationGrid
-        m_systemNavigationGrid;
+    game::navigation::GalaxyNavigationGrid m_galaxyNavigationGrid;
+    game::navigation::SystemNavigationGrid m_systemNavigationGrid;
 
 
     /*
-        Физическая точка, которую должна содержать вся последующая
-        цепочка дочерних Galaxy-кубов.
+        Точная физическая точка явного пользовательского выбора.
 
         Для выбранной звезды это точная координата звезды.
         Для выбранного центра куба это центр выбранного куба.
+
+        Она используется для адреса/маршрута, но не управляет
+        camera target, hover или сменой уровня колесом.
     */
     glm::dvec3 m_galaxyNavigationFocusLy {0.0};
     bool m_galaxyNavigationFocusValid = false;
 
     /*
-        Аналогичная точка внутри карты System.
-        Единицы: AU.
+        Render-only hover state. The logical hovered cell may disappear
+        immediately, while this copy is allowed to fade out smoothly.
     */
-    glm::dvec3 m_systemNavigationFocusAu {0.0};
-    bool m_systemNavigationFocusValid = false;
+    std::optional<game::navigation::GalaxyNavigationCell>
+        m_galaxyHoverVisualCell;
+
+    float m_galaxyHoverVisualAlpha = 0.0f;
+
+    std::optional<game::navigation::GalaxyNavigationCell>
+        m_galaxyHoverOutgoingCell;
+
+    float m_galaxyHoverOutgoingAlpha = 0.0f;
+    double m_galaxyHoverVisualLastTimeSeconds = 0.0;
+
+    game::navigation::CubicNavigationClickTracker<
+            game::navigation::GalaxyGridIndex
+        > m_galaxyCubeClickTracker;
+
+    std::optional<game::navigation::CubicNavigationCell>
+        m_systemHoverVisualCell;
+
+    float m_systemHoverVisualAlpha = 0.0f;
+
+    std::optional<game::navigation::CubicNavigationCell>
+        m_systemHoverOutgoingCell;
+
+    float m_systemHoverOutgoingAlpha = 0.0f;
+    double m_systemHoverVisualLastTimeSeconds = 0.0;
+
+    game::navigation::CubicNavigationClickTracker<
+            game::navigation::CubicGridIndex
+        > m_systemCubeClickTracker;
+
+    int m_lastSystemCameraFitSystemId = -1;
 
     game::navigation::NavigationRegionCatalog
         m_navigationRegionCatalog;
 
-    render::navigation::NavigationCellLabelLayer
-        m_galaxyNavigationLabelLayer;
+    game::navigation::NavigationCoordinateFormat
+        m_navigationCoordinateFormat =
+            game::navigation::NavigationCoordinateFormat::Hierarchical;
 
-    render::navigation::NavigationCellLabelLayer
-        m_systemNavigationLabelLayer;
+    bool m_hasGalaxyMapEntryState = false;
+    int m_lastGalaxyMapEntrySystemId = -1;
+    game::navigation::GalaxyGridIndex
+        m_lastGalaxyMapEntryTerminalCell;
+
+    render::navigation::NavigationCoordinateOverlay
+        m_navigationCoordinateOverlay;
+
+    struct NavigationLevelAnnouncement
+    {
+        std::string text;
+        double startedAtSeconds = -1.0;
+        double durationSeconds = 1.35;
+    };
+
+    NavigationLevelAnnouncement
+        m_navigationLevelAnnouncement;
 
     std::string m_navigationNamingFactionId = "sol_authority";
     std::string m_navigationNamingLocale = "ru";
 
-   
+
 
     GalaxyControlSettings m_galaxyControls;
     GalaxyMapVisualSettings m_galaxyVisuals;
     SystemControlSettings m_systemControls;
-    
+
 
     DetailControlSettings m_planetControls;
     DetailControlSettings m_hubControls = []()
@@ -1542,7 +1743,8 @@ private:
     }();
 
     int m_selectedSystemId = -1;
-    int m_requestedSystemEntryId = -1;
+    std::optional<SystemEntryRequest>
+        m_requestedSystemEntry;
     int m_focusedSystemId = -1;
     bool m_comboOpen = false;
 
@@ -1568,7 +1770,7 @@ private:
 
     std::string m_selectedBodyId;
     std::vector<BodyScreenPoint> m_lastSystemBodyScreenPoints;
-    
+
     world::celestial::visual::CelestialGeneratedAssetLibrary m_generatedCelestialAssets;
 
     bool m_generatedCelestialAssetsAttempted = false;
@@ -1621,7 +1823,7 @@ private:
 
     bool m_mapStarfieldInitialized = false;
     float m_lastSystemScale = 1.0f;
-    
+
     glm::dvec3 m_systemOrbitPivotAbsolute {0.0, 0.0, 0.0};
     bool m_systemOrbitPivotActive = false;
 
@@ -1633,7 +1835,7 @@ private:
 
     render::celestial::ProceduralCloudLayer m_proceduralCloudLayer;
     render::celestial::HubSphericalGridRenderer m_hubSphericalGridRenderer;
-    
+
 
     double m_lastHubPlanetVisualRadiusPx = 0.0;
     glm::dvec2 m_lastHubPlanetVisualCenterPx {0.0, 0.0};
@@ -1676,8 +1878,6 @@ private:
 
     std::uint64_t m_hubGpuFrameSerial = 0;
     std::uint64_t m_hubGpuLastCollectedSerial = 0;
-
-
 
     /*
         Отдельный single-sample framebuffer нужен для разрешения

@@ -104,9 +104,12 @@ SystemNavigationGrid::makeDefinition(int systemId)
         MinimumLevel;
 
     result.maximumLevel =
-        calculateSystemMaximumLevel(
-            config,
-            rootEdgeAu
+        std::min(
+            config.systemMaximumLevel,
+            calculateSystemMaximumLevel(
+                config,
+                rootEdgeAu
+            )
         );
 
     result.initialLevel =

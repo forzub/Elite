@@ -97,6 +97,7 @@ public:
     void pushSystemMapPanelState();
     void selectSystemMapSystem(int systemId);
     void setSystemMapGalaxyMode();
+    void setSystemMapKnownSystemMode(int systemId);
     void setSystemMapCurrentSystemMode();
     void setSystemMapEmptySectorMode(
         const glm::dvec3& positionLy
@@ -118,6 +119,12 @@ public:
     void requestPlanetMapSnapshot(
         int systemId,
         const std::string& planetBodyId,
+        bool forceRefresh = false
+    );
+
+    void requestLocalSpaceMapSnapshot(
+        int systemId,
+        const std::string& anchorHubId,
         bool forceRefresh = false
     );
 
@@ -261,6 +268,7 @@ private:
     bool m_hasPlanetMapSnapshot = false;
     int m_loadedPlanetMapSystemId = -1;
     std::string m_loadedPlanetMapBodyId;
+    std::string m_loadedPlanetMapAnchorHubId;
 
     int m_loadedSystemMapId = -1;
     bool m_hasGalaxyMapSnapshot = false;

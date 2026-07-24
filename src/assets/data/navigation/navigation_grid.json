@@ -9,6 +9,9 @@
     "initialLevel": 1,
     "systemEntryRequiredEdgeAu": 100.0
   },
+  "system": {
+    "maximumLevel": 5
+  },
   "coordinateDisplay": {
     "defaultFormat": "hierarchical",
     "cycleKey": "F9"

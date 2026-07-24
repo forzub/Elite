@@ -112,6 +112,24 @@ GalaxyStarfieldRenderer::~GalaxyStarfieldRenderer()
     shutdown();
 }
 
+void GalaxyStarfieldRenderer::setCatalogFilter(
+    float minimumDistanceLy,
+    bool excludeGameSystems
+)
+{
+    if (m_initialized)
+        return;
+
+    m_minimumCatalogDistanceLy =
+        std::max(
+            0.0f,
+            minimumDistanceLy
+        );
+
+    m_excludeGameSystems =
+        excludeGameSystems;
+}
+
 bool GalaxyStarfieldRenderer::initialize(const std::string& atlasPath)
 {
     if (m_initialized)
@@ -859,6 +877,18 @@ void GalaxyStarfieldRenderer::rebuildVertices()
         glm::vec3 relative = source.positionLy - m_observerPositionLy;
         const float len = glm::length(relative);
 
+        if (m_excludeGameSystems &&
+            source.atlasStar)
+        {
+            continue;
+        }
+
+        if (len <
+            m_minimumCatalogDistanceLy)
+        {
+            continue;
+        }
+
         if (len < kMinDirectionLength)
             continue;
 
@@ -935,6 +965,18 @@ void GalaxyStarfieldRenderer::rebuildVerticesFromRealCatalog()
     {
         const glm::vec3 relative = star.positionLy - m_observerPositionLy;
         const float distanceLy = glm::length(relative);
+
+        if (m_excludeGameSystems &&
+            star.isGameSystem)
+        {
+            continue;
+        }
+
+        if (distanceLy <
+            m_minimumCatalogDistanceLy)
+        {
+            continue;
+        }
 
         // Если наблюдатель находится прямо в этой системе,
         // сама звезда не рисуется как точка на небесной сфере.

@@ -595,7 +595,9 @@ document.getElementById("btnToggleMode").textContent = modeButtonText;
 
 const btnHub = document.getElementById("btnHub");
 
-if (currentMode === "Planet" || currentMode === "Detail") {
+if ((currentMode === "Planet" ||
+     currentMode === "Detail") &&
+    payload.canOpenHub) {
     btnHub.style.display = "inline-block";
     btnHub.disabled = false;
 } else {

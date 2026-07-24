@@ -336,6 +336,8 @@ void SystemMapRenderer::renderPlanetMap(
     const world::celestial::PlanetMapSnapshot& planet
 )
 {
+    m_lastPlanetHubScreenPoints.clear();
+
     ensureGeneratedCelestialAssets();
     ensureEnvironmentProfiles();
 
@@ -390,11 +392,14 @@ void SystemMapRenderer::renderPlanetMap(
 
 
 
-    beginEnvironmentRenderSessionIfNeeded(
-        Mode::Planet,
-        planet.systemId,
-        planet.planetBodyId
-    );
+    if (planet.hasCentralBody)
+    {
+        beginEnvironmentRenderSessionIfNeeded(
+            Mode::Planet,
+            planet.systemId,
+            planet.planetBodyId
+        );
+    }
 
     const glm::dvec2 centerPx(
         static_cast<double>(viewport.width) * 0.5,
@@ -416,6 +421,40 @@ void SystemMapRenderer::renderPlanetMap(
             maxRadiusMeters = std::max(maxRadiusMeters, o.radiusMeters);
     }
 
+    const auto includeObjectDistance =
+        [&](const world::celestial::PlanetMapObject& object)
+        {
+            if (!object.valid)
+                return;
+
+            maxRadiusMeters =
+                std::max(
+                    maxRadiusMeters,
+                    glm::length(
+                        object.positionMeters -
+                        planet.planetCenterMeters
+                    )
+                );
+        };
+
+    for (const auto& hub : planet.hubs)
+        includeObjectDistance(hub);
+
+    for (const auto& station : planet.stations)
+        includeObjectDistance(station);
+
+    for (const auto& ship : planet.ships)
+        includeObjectDistance(ship);
+
+    if (!planet.hasCentralBody)
+    {
+        maxRadiusMeters =
+            std::max(
+                maxRadiusMeters,
+                100000.0
+            );
+    }
+
     const double mapHalfPx =
         std::min(
             viewport.width,
@@ -427,6 +466,8 @@ void SystemMapRenderer::renderPlanetMap(
 
 
 
+    if (planet.hasCentralBody)
+    {
     std::vector<
         world::celestial::SystemMapRing
     > normalizedRingBands;
@@ -554,6 +595,8 @@ if (!shapeModelDrawn)
     );
 }
 
+    }
+
 
 
 
@@ -619,8 +662,66 @@ if (!shapeModelDrawn)
                 centerPx
             );
 
+        HubScreenPoint point;
+        point.hubId = hub.stableId;
+        point.parentBodyId =
+            planet.planetBodyId;
+        point.name = hub.name;
+        point.screen =
+            glm::vec2(
+                static_cast<float>(p.x),
+                static_cast<float>(p.y)
+            );
+        point.visible =
+            p.x >= 0.0 &&
+            p.y >= 0.0 &&
+            p.x <= viewport.width &&
+            p.y <= viewport.height;
+        point.screenRadiusPx = 15.0f;
+
+        m_lastPlanetHubScreenPoints.push_back(
+            point
+        );
+
         glColor4f(0.3f, 0.9f, 1.0f, 1.0f);
         drawPlanetMapCross(p, 7.0f);
+
+        if (hub.stableId ==
+            m_selectedHubId)
+        {
+            glColor4f(
+                0.38f,
+                0.95f,
+                1.0f,
+                0.98f
+            );
+
+            constexpr int segments = 64;
+            constexpr double radiusPx = 14.0;
+
+            glBegin(GL_LINE_LOOP);
+
+            for (int segment = 0;
+                 segment < segments;
+                 ++segment)
+            {
+                const double angle =
+                    glm::two_pi<double>() *
+                    static_cast<double>(segment) /
+                    static_cast<double>(segments);
+
+                glVertex2d(
+                    p.x +
+                        std::cos(angle) *
+                        radiusPx,
+                    p.y +
+                        std::sin(angle) *
+                        radiusPx
+                );
+            }
+
+            glEnd();
+        }
 
         drawPlanetMapAxes(
             hub.positionMeters,
@@ -643,6 +744,53 @@ if (!shapeModelDrawn)
             centerPx,
             velocityArrowLenMeters
         );
+    }
+
+    if (!m_selectedHubId.empty())
+    {
+        const auto selectedPoint =
+            std::find_if(
+                m_lastPlanetHubScreenPoints.begin(),
+                m_lastPlanetHubScreenPoints.end(),
+                [&](const HubScreenPoint& point)
+                {
+                    return
+                        point.hubId ==
+                        m_selectedHubId;
+                }
+            );
+
+        if (selectedPoint ==
+            m_lastPlanetHubScreenPoints.end())
+        {
+            m_selectedHubId.clear();
+            m_selectedHubParentBodyId.clear();
+        }
+        else if (selectedPoint->visible)
+        {
+            auto& text =
+                TextRenderer::instance();
+
+            text.beginFrameForViewport(
+                viewport.width,
+                viewport.height
+            );
+
+            text.textDrawPx(
+                selectedPoint->name,
+                selectedPoint->screen.x + 18.0f,
+                selectedPoint->screen.y - 9.0f,
+                13,
+                glm::vec4(
+                    0.42f,
+                    0.95f,
+                    1.0f,
+                    0.96f
+                )
+            );
+
+            text.endFrame();
+        }
     }
 
     // Станции.
@@ -726,6 +874,48 @@ if (!shapeModelDrawn)
     }
 
     glEnable(GL_DEPTH_TEST);
+}
+
+
+int SystemMapRenderer::pickPlanetHub(
+    double mouseX,
+    double mouseY
+) const
+{
+    int bestIndex = -1;
+    float bestDistance = std::numeric_limits<float>::max();
+
+    const glm::vec2 mouse(
+        static_cast<float>(mouseX),
+        static_cast<float>(mouseY)
+    );
+
+    for (int i = 0;
+         i < static_cast<int>(
+             m_lastPlanetHubScreenPoints.size()
+         );
+         ++i)
+    {
+        const HubScreenPoint& point =
+            m_lastPlanetHubScreenPoints[i];
+
+        if (!point.visible)
+            continue;
+
+        const float distance =
+            glm::length(
+                point.screen - mouse
+            );
+
+        if (distance <= point.screenRadiusPx &&
+            distance < bestDistance)
+        {
+            bestDistance = distance;
+            bestIndex = i;
+        }
+    }
+
+    return bestIndex;
 }
 
 

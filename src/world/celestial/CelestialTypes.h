@@ -224,6 +224,15 @@ struct CelestialBodyDefinition
     double orbitalPeriodDays = 0.0;
     double dayLengthHours = 0.0;
 
+    /*
+        Direction signs are explicit data instead of being inferred from a
+        positive period. +1 means prograde, -1 means retrograde.
+    */
+    int orbitalDirection = 1;
+    int rotationDirection = 1;
+
+    double orbitalPhaseOffsetDeg = 0.0;
+
     // Body orientation convention:
     // +Y = north pole.
     // XZ = equatorial plane.

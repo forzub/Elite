@@ -118,6 +118,55 @@ void readOrientationFields(
     world::celestial::CelestialBodyDefinition& body
 )
 {
+    const auto directionSign =
+        [&](const char* key) -> int
+        {
+            if (!j.contains(key))
+                return 1;
+
+            const json& value =
+                j[key];
+
+            if (value.is_number_integer())
+            {
+                return
+                    value.get<int>() < 0
+                        ? -1
+                        : 1;
+            }
+
+            if (value.is_string())
+            {
+                const std::string text =
+                    value.get<std::string>();
+
+                if (text == "retrograde" ||
+                    text == "reverse" ||
+                    text == "-1")
+                {
+                    return -1;
+                }
+            }
+
+            return 1;
+        };
+
+    body.orbitalDirection =
+        directionSign(
+            "orbit_direction"
+        );
+
+    body.rotationDirection =
+        directionSign(
+            "rotation_direction"
+        );
+
+    body.orbitalPhaseOffsetDeg =
+        j.value(
+            "orbit_phase_offset_deg",
+            0.0
+        );
+
     body.axialTiltDeg =
         j.value("axial_tilt_deg", 0.0);
 
@@ -992,6 +1041,7 @@ bool StarAtlasDatabase::loadSystemDetails(const std::string& path)
                 body.radiusKm = body.diameterKm * 0.5;
 
                 readGravityFields(star, body);
+                readOrientationFields(star, body);
 
                 if (star.contains("position_au"))
                     body.staticPositionAu = readAuPosition(star["position_au"]);

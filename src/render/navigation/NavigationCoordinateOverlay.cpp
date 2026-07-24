@@ -60,6 +60,47 @@ NavigationCoordinateOverlay() = default;
 NavigationCoordinateOverlay::
 ~NavigationCoordinateOverlay() = default;
 
+NavigationOverlayButtonBounds
+NavigationCoordinateOverlay::levelZeroButtonBounds(
+    const Viewport& viewport
+)
+{
+    const NavigationOverlayVisualSettings visuals;
+
+    const float screenScale =
+        std::clamp(
+            static_cast<float>(viewport.height) /
+                visuals.referenceHeightPx,
+            visuals.minimumScreenScale,
+            visuals.maximumScreenScale
+        );
+
+    const float width =
+        visuals.levelZeroButtonWidthPx *
+        screenScale;
+
+    const float height =
+        visuals.levelZeroButtonHeightPx *
+        screenScale;
+
+    const float right =
+        static_cast<float>(viewport.width) -
+        visuals.levelZeroButtonRightPx *
+        screenScale;
+
+    const float bottom =
+        static_cast<float>(viewport.height) -
+        visuals.levelZeroButtonBottomPx *
+        screenScale;
+
+    return {
+        right - width,
+        bottom - height,
+        right,
+        bottom
+    };
+}
+
 void NavigationCoordinateOverlay::ensureFont()
 {
     if (m_font)
@@ -97,7 +138,9 @@ void NavigationCoordinateOverlay::draw(
     const std::vector<NavigationCoordinateBlock>& blocks,
     const std::string& footerText,
     const std::string& levelAnnouncement,
-    float levelAnnouncementAlpha
+    float levelAnnouncementAlpha,
+    bool showLevelZeroButton,
+    bool levelZeroButtonHovered
 )
 {
     if (viewport.width <= 0 ||
@@ -108,7 +151,8 @@ void NavigationCoordinateOverlay::draw(
             (
                 levelAnnouncement.empty() ||
                 levelAnnouncementAlpha <= 0.001f
-            )
+            ) &&
+            !showLevelZeroButton
         ))
     {
         return;
@@ -122,55 +166,47 @@ void NavigationCoordinateOverlay::draw(
     const float screenScale =
         std::clamp(
             static_cast<float>(viewport.height) /
-                1080.0f,
-            0.72f,
-            1.35f
+                m_visuals.referenceHeightPx,
+            m_visuals.minimumScreenScale,
+            m_visuals.maximumScreenScale
         );
 
-    /*
-        Navigation coordinates are primary instruments. Keep the entire
-        block at twice the previous size while retaining viewport scaling.
-    */
     const float navigationTextScale =
-        2.0f;
+        m_visuals.coordinateTextScale;
 
     const float titleScale =
-        0.72f *
+        m_visuals.titleBaseScale *
         navigationTextScale *
         screenScale;
 
     const float bodyScale =
-        0.66f *
+        m_visuals.bodyBaseScale *
         navigationTextScale *
         screenScale;
 
-    /*
-        The footer is an orientation instrument, not secondary fine print.
-        Keep it close to twice the old size while retaining viewport scaling.
-    */
     const float footerScale =
         bodyScale *
-        1.85f;
+        m_visuals.footerRelativeToBodyScale;
 
     const float left =
-        18.0f *
+        m_visuals.leftPx *
         screenScale;
 
     const float contentLeft =
         left +
-        10.0f *
+        m_visuals.contentIndentPx *
         screenScale;
 
     float baselineY =
-        38.0f *
+        m_visuals.topBaselinePx *
         screenScale;
 
     const float lineStep =
-        34.0f *
+        m_visuals.lineStepPx *
         screenScale;
 
     const float blockGap =
-        14.0f *
+        m_visuals.blockGapPx *
         screenScale;
 
     TextRenderer& text =
@@ -283,9 +319,68 @@ void NavigationCoordinateOverlay::draw(
             footerText,
             left,
             static_cast<float>(viewport.height) -
-                28.0f * screenScale,
+                m_visuals.footerBottomPx *
+                    screenScale,
             footerColor,
             footerScale
+        );
+    }
+
+    if (showLevelZeroButton)
+    {
+        const NavigationOverlayButtonBounds bounds =
+            levelZeroButtonBounds(
+                viewport
+            );
+
+        const glm::vec4 buttonColor =
+            levelZeroButtonHovered
+                ? glm::vec4(
+                    0.64f,
+                    0.84f,
+                    0.96f,
+                    0.92f
+                  )
+                : glm::vec4(
+                    0.44f,
+                    0.62f,
+                    0.74f,
+                    0.66f
+                  );
+
+        const float buttonScale =
+            bodyScale;
+
+        const std::string buttonText =
+            "[  LEVEL 0  ]";
+
+        const float textWidth =
+            m_font->measureText(
+                buttonText
+            ) *
+            buttonScale;
+
+        const float x =
+            bounds.left +
+            (
+                bounds.right -
+                bounds.left -
+                textWidth
+            ) *
+            0.5f;
+
+        const float y =
+            bounds.top +
+            m_visuals.levelZeroButtonBaselinePx *
+            screenScale;
+
+        text.textDraw(
+            *m_font,
+            buttonText,
+            x,
+            y,
+            buttonColor,
+            buttonScale
         );
     }
 
@@ -304,7 +399,7 @@ void NavigationCoordinateOverlay::draw(
         };
 
         const float noticeScale =
-            2.15f *
+            m_visuals.levelAnnouncementScale *
             screenScale;
 
         const float estimatedWidth =
@@ -318,14 +413,16 @@ void NavigationCoordinateOverlay::draw(
                 18.0f * screenScale,
                 static_cast<float>(viewport.width) -
                     estimatedWidth -
-                    32.0f * screenScale
+                    m_visuals.levelAnnouncementRightPx *
+                        screenScale
             );
 
         text.textDraw(
             *m_font,
             levelAnnouncement,
             noticeX,
-            62.0f * screenScale,
+            m_visuals.levelAnnouncementBaselinePx *
+                screenScale,
             noticeColor,
             noticeScale
         );

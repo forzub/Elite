@@ -1168,6 +1168,9 @@ GameServer::buildSystemMapSnapshot(
     out.universeTimeSeconds =
         m_universeClock.timeSeconds();
 
+    out.universeTimeScale =
+        m_universeClock.timeScale();
+
     out.universeDate =
         m_universeClock.dateTimeString();
 
@@ -1213,6 +1216,17 @@ GameServer::buildSystemMapSnapshot(
         item.type = body.type;
         item.radiusKm = body.radiusKm;
 
+        item.orbitalPeriodDays =
+            body.orbitalPeriodDays;
+
+        item.orbitalDirection =
+            body.orbitalDirection;
+
+        item.orbitalPhaseOffsetRad =
+            body.orbitalPhaseOffsetDeg *
+            3.14159265358979323846 /
+            180.0;
+
         item.rotationPhaseRad =
             body.rotationOffsetDeg *
             3.14159265358979323846 /
@@ -1220,6 +1234,9 @@ GameServer::buildSystemMapSnapshot(
 
         item.dayLengthHours =
             body.dayLengthHours;
+
+        item.rotationDirection =
+            body.rotationDirection;
 
         item.axialTiltDeg =
             body.axialTiltDeg;
@@ -1325,6 +1342,9 @@ GameServer::buildSystemMapSnapshot(
         world::celestial::SystemMapObject mapObj;
 
         mapObj.id = id;
+        mapObj.stableId =
+            "entity:" +
+            std::to_string(id.value);
 
         mapObj.name = obj.displayName;
 
@@ -1411,6 +1431,70 @@ GameServer::buildSystemMapSnapshot(
         );
     }
 
+    /*
+        A hub is a selectable map object of its own. Its modules remain in the
+        snapshot as ordinary static objects, but they must never stand in for
+        the hub identity used by Details/Hub navigation.
+    */
+    for (const auto& [hubId, hub] :
+         m_simulation.orbitalHubs())
+    {
+        if (hub.systemId != systemId)
+            continue;
+
+        const auto* frame =
+            m_simulation.hubNavigationFrame(
+                hubId
+            );
+
+        if (!frame ||
+            !frame->valid)
+        {
+            continue;
+        }
+
+        world::celestial::SystemMapObject mapHub;
+
+        mapHub.stableId = hubId;
+        mapHub.name =
+            hub.name.empty()
+                ? hubId
+                : hub.name;
+        mapHub.owner = hub.owner;
+        mapHub.parentBodyId = hub.parentBodyId;
+        mapHub.kind =
+            world::celestial::
+                SystemMapObjectKind::Hub;
+        mapHub.positionAu =
+            frame->originMeters /
+            world::celestial::MetersPerAu;
+        mapHub.systemId = hub.systemId;
+
+        if (hub.motion.enabled)
+        {
+            mapHub.hasOrbit = true;
+            mapHub.orbitCenterAu =
+                hub.motion.centerMeters /
+                world::celestial::MetersPerAu;
+            mapHub.orbitRadiusAu =
+                (
+                    hub.motion.parentRadiusMeters +
+                    hub.motion.altitudeMeters
+                ) /
+                world::celestial::MetersPerAu;
+            mapHub.orbitInclinationDeg =
+                hub.motion.inclinationDeg;
+            mapHub.orbitLongitudeOfAscendingNodeDeg =
+                hub.motion.longitudeOfAscendingNodeDeg;
+            mapHub.orbitArgumentOfPeriapsisDeg =
+                hub.motion.argumentOfPeriapsisDeg;
+        }
+
+        out.objects.push_back(
+            std::move(mapHub)
+        );
+    }
+
 
 
     appendSystemMapMotionDebugCsv(out);
@@ -1420,6 +1504,193 @@ GameServer::buildSystemMapSnapshot(
 
 
 
+
+
+
+
+
+world::celestial::PlanetMapSnapshot
+GameServer::buildLocalSpaceMapSnapshot(
+    int systemId,
+    const std::string& anchorHubId
+) const
+{
+    using namespace world::celestial;
+
+    PlanetMapSnapshot out;
+    out.systemId = systemId;
+    out.hasCentralBody = false;
+    out.detailAnchorHubId = anchorHubId;
+    out.planetName = "Deep Space";
+    out.universeTimeSeconds =
+        m_universeClock.timeSeconds();
+
+    if (anchorHubId.empty())
+        return out;
+
+    const auto hubIt =
+        m_simulation.orbitalHubs().find(
+            anchorHubId
+        );
+
+    const auto* anchorFrame =
+        m_simulation.hubNavigationFrame(
+            anchorHubId
+        );
+
+    if (hubIt == m_simulation.orbitalHubs().end() ||
+        hubIt->second.systemId != systemId ||
+        !anchorFrame ||
+        !anchorFrame->valid)
+    {
+        return out;
+    }
+
+    if (const auto* summary =
+            m_starAtlas.findSystemSummary(systemId))
+    {
+        out.systemPositionLy =
+            summary->positionLy;
+    }
+
+    out.planetCenterMeters =
+        anchorFrame->originMeters;
+    out.planetVelocityMps =
+        anchorFrame->velocityMetersPerSecond;
+    out.valid = true;
+
+    /*
+        This radius limits Details to a local encounter volume. It is not a
+        navigation boundary; it only decides which neighboring objects are
+        useful in this view.
+    */
+    constexpr double LocalDetailRadiusMeters =
+        5.0e9;
+
+    for (const auto& [hubId, hub] :
+         m_simulation.orbitalHubs())
+    {
+        if (hub.systemId != systemId)
+            continue;
+
+        const auto* frame =
+            m_simulation.hubNavigationFrame(
+                hubId
+            );
+
+        if (!frame ||
+            !frame->valid ||
+            glm::length(
+                frame->originMeters -
+                out.planetCenterMeters
+            ) > LocalDetailRadiusMeters)
+        {
+            continue;
+        }
+
+        PlanetMapObject object;
+        object.stableId = hubId;
+        object.name =
+            hub.name.empty()
+                ? hubId
+                : hub.name;
+        object.kind = "hub";
+        object.positionMeters =
+            frame->originMeters;
+        object.velocityMps =
+            frame->velocityMetersPerSecond;
+        object.axes.x = frame->normalAxis;
+        object.axes.y = frame->radialAxis;
+        object.axes.z = -frame->progradeAxis;
+        object.valid = true;
+
+        out.hubs.push_back(
+            std::move(object)
+        );
+    }
+
+    /*
+        Nearby celestial bodies are context objects here, not the center of
+        the Details scene. This also covers asteroids once they are present in
+        the authoritative system catalog.
+    */
+    if (const auto* system =
+            m_starAtlas.findSystem(systemId))
+    {
+        world::celestial::CelestialSystemRuntime
+            localRuntime;
+
+        localRuntime.setSystem(system);
+        localRuntime.update(
+            out.universeTimeSeconds
+        );
+
+        for (const auto& body :
+             localRuntime.snapshot().bodies)
+        {
+            const glm::dvec3 positionMeters =
+                body.positionAu *
+                world::celestial::MetersPerAu;
+
+            if (glm::length(
+                    positionMeters -
+                    out.planetCenterMeters
+                ) > LocalDetailRadiusMeters)
+            {
+                continue;
+            }
+
+            PlanetMapObject contextBody;
+            contextBody.stableId = body.id;
+            contextBody.name = body.name;
+            contextBody.kind = "celestial";
+            contextBody.positionMeters =
+                positionMeters;
+            contextBody.valid = true;
+
+            out.stations.push_back(
+                std::move(contextBody)
+            );
+        }
+    }
+
+    for (const auto& [entityId, object] :
+         m_simulation.staticObjects())
+    {
+        if (object.mapSystemId != systemId)
+            continue;
+
+        const glm::dvec3 positionMeters =
+            world::coordinates::fullMeters(
+                object.worldPosition
+            );
+
+        if (glm::length(
+                positionMeters -
+                out.planetCenterMeters
+            ) > LocalDetailRadiusMeters)
+        {
+            continue;
+        }
+
+        PlanetMapObject station;
+        station.id = entityId;
+        station.stableId =
+            "entity:" +
+            std::to_string(entityId.value);
+        station.name = object.displayName;
+        station.kind = "station";
+        station.positionMeters =
+            positionMeters;
+        station.valid = true;
+
+        out.stations.push_back(
+            std::move(station)
+        );
+    }
+
+    return out;
+}
 
 
 
@@ -1642,11 +1913,27 @@ void GameServer::refreshPlanetMapDynamicState(
     using namespace world::celestial;
 
     if (!snapshot.valid ||
-        snapshot.systemId < 0 ||
-        snapshot.planetBodyId.empty())
+        snapshot.systemId < 0)
     {
         return;
     }
+
+    if (!snapshot.hasCentralBody)
+    {
+        if (!snapshot.detailAnchorHubId.empty())
+        {
+            snapshot =
+                buildLocalSpaceMapSnapshot(
+                    snapshot.systemId,
+                    snapshot.detailAnchorHubId
+                );
+        }
+
+        return;
+    }
+
+    if (snapshot.planetBodyId.empty())
+        return;
 
     /*
         Один временной срез для всей карты.
@@ -2442,7 +2729,9 @@ GameServer::buildHubMapSnapshot(
     }
 
     out.displayName =
-        hub.id;
+        hub.name.empty()
+            ? hub.id
+            : hub.name;
 
     /*
         Локальная Hub Map convention:
@@ -3014,10 +3303,3 @@ void GameServer::refreshHubMapDynamicState(
     snapshot.valid =
         true;
 }
-
-
-
-
-
-
-

@@ -47,6 +47,7 @@
 
 
 #include "src/game/system_map/GalaxyMapVisualSettings.h"
+#include "src/game/system_map/SystemMapVisualSettings.h"
 #include "src/game/system_map/MapTransitionController.h"
 
 struct GLFWwindow;
@@ -165,6 +166,8 @@ public:
     }
 
     const std::string& selectedBodyId() const;
+    const std::string& selectedHubId() const;
+    const std::string& selectedHubParentBodyId() const;
 
 private:
     struct Vertex
@@ -205,6 +208,17 @@ private:
         float depth = 0.0f;
         bool visible = false;
         float screenRadiusPx = 0.0f;
+    };
+
+    struct HubScreenPoint
+    {
+        std::string hubId;
+        std::string parentBodyId;
+        std::string name;
+        glm::vec2 screen {0.0f};
+        float depth = 0.0f;
+        bool visible = false;
+        float screenRadiusPx = 12.0f;
     };
 
     struct SystemBodyVisualMetrics
@@ -301,6 +315,8 @@ private:
 
         double lastMouseX = 0.0;
         double lastMouseY = 0.0;
+        double mouseDownX = 0.0;
+        double mouseDownY = 0.0;
     };
 
     DetailCamera m_planetCamera;
@@ -439,9 +455,12 @@ private:
         double cubeDoubleClickMaxIntervalSeconds = 0.38;
         double cubeDoubleClickMaxDistancePx = 12.0;
 
-        // Terminal 100 km navigation cube must remain inspectable.
-        // 0.1 km/px gives roughly 1000 px across that cube.
-        double minKmPerPixel = 0.1;
+        /*
+            System navigation stops at S5 (about 2500 km).
+            2.5 km/px keeps that terminal cube inspectable at roughly
+            1000 px. Smaller scales belong to Details.
+        */
+        double minKmPerPixel = 2.5;
 
         // Picking видимых дисков планет/лун.
         float pickMaxBodyRadiusPx = 8000.0f;
@@ -697,6 +716,10 @@ private:
     void announceNavigationLevel(
         char mapPrefix,
         int level
+    );
+
+    void resetNavigationViewToLevelZero(
+        const Viewport& viewport
     );
 
     void endHubGpuStage();
@@ -1243,6 +1266,11 @@ private:
         const std::string& bodyId
     );
 
+    void focusSystemHub(
+        const std::string& hubId,
+        const std::string& parentBodyId
+    );
+
 
     glm::dvec3 systemNavigationBoundaryCenterWorld() const;
 
@@ -1384,6 +1412,16 @@ private:
         double mouseY
     ) const;
 
+    int pickSystemHub(
+        double mouseX,
+        double mouseY
+    ) const;
+
+    int pickPlanetHub(
+        double mouseX,
+        double mouseY
+    ) const;
+
 
     int pickSystemOrbitPivotBody(
         double mouseX,
@@ -1436,7 +1474,7 @@ private:
         const world::celestial::SystemMapSnapshot& system,
         const glm::mat4& view,
         const glm::mat4& mvp,
-        const std::unordered_map<uint32_t, glm::vec3>& objectVisualPosById,
+        const std::unordered_map<std::string, glm::vec3>& objectVisualPosById,
         const std::unordered_map<std::string, glm::vec3>& bodyVisualPosById,
         const std::unordered_map<std::string, float>& drawRadiusById,
         double worldUnitsPerPixel,
@@ -1448,7 +1486,7 @@ private:
         const world::celestial::SystemMapSnapshot& system,
         const glm::mat4& mvp,
         const glm::mat4& view,
-        const std::unordered_map<uint32_t, glm::vec3>& objectVisualPosById,
+        const std::unordered_map<std::string, glm::vec3>& objectVisualPosById,
         const std::unordered_map<std::string, glm::vec3>& bodyVisualPosById,
         const std::unordered_map<std::string, float>& drawRadiusById
     );
@@ -1588,6 +1626,19 @@ private:
         const glm::dvec3& observerPositionLy
     );
 
+    void drawMapStarfield(
+        const Viewport& viewport,
+        const glm::dvec3& observerPositionLy,
+        const glm::mat4& cameraView,
+        float fieldOfViewDeg,
+        float sizeScale,
+        bool distantGalaxyBackdrop
+    );
+
+    double systemPresentationTimeSeconds(
+        const world::celestial::SystemMapSnapshot& system
+    );
+
 
 
     render::celestial::rings::PlanetRingRenderContext
@@ -1706,9 +1757,13 @@ private:
     int m_lastGalaxyMapEntrySystemId = -1;
     game::navigation::GalaxyGridIndex
         m_lastGalaxyMapEntryTerminalCell;
+    glm::dvec3 m_lastGalaxyMapEntryPositionLy {0.0};
 
     render::navigation::NavigationCoordinateOverlay
         m_navigationCoordinateOverlay;
+
+    bool m_navigationLevelZeroButtonHovered = false;
+    bool m_navigationOverlayLeftWasDown = false;
 
     struct NavigationLevelAnnouncement
     {
@@ -1728,6 +1783,7 @@ private:
     GalaxyControlSettings m_galaxyControls;
     GalaxyMapVisualSettings m_galaxyVisuals;
     SystemControlSettings m_systemControls;
+    SystemMapVisualSettings m_systemVisuals;
 
 
     DetailControlSettings m_planetControls;
@@ -1769,7 +1825,11 @@ private:
     );
 
     std::string m_selectedBodyId;
+    std::string m_selectedHubId;
+    std::string m_selectedHubParentBodyId;
     std::vector<BodyScreenPoint> m_lastSystemBodyScreenPoints;
+    std::vector<HubScreenPoint> m_lastSystemHubScreenPoints;
+    std::vector<HubScreenPoint> m_lastPlanetHubScreenPoints;
 
     world::celestial::visual::CelestialGeneratedAssetLibrary m_generatedCelestialAssets;
 
@@ -1792,6 +1852,7 @@ private:
     std::unordered_map<std::string, GLuint> m_globalNormalTextureByAssetKey;
     std::unordered_map<std::string, GLuint> m_globalCloudsTextureByAssetKey;
     std::unordered_map<std::string, glm::dvec3> m_lastSystemBodyAbsolutePosById;
+    std::unordered_map<std::string, glm::dvec3> m_lastSystemObjectAbsolutePosById;
     render::celestial::HubBackdropCloudRenderer m_hubBackdropCloudRenderer;
 
     render::celestial::CelestialShapeMeshLibrary m_celestialShapeMeshes;
@@ -1805,6 +1866,7 @@ private:
 
 
     GalaxyStarfieldRenderer m_mapStarfieldRenderer;
+    GalaxyStarfieldRenderer m_galaxyBackdropStarfieldRenderer;
 
     /*
         Details-only screen-space sculpt pass.
@@ -1822,7 +1884,13 @@ private:
     bool m_environmentVisualTimeInitialized = false;
 
     bool m_mapStarfieldInitialized = false;
+    bool m_galaxyBackdropStarfieldInitialized = false;
     float m_lastSystemScale = 1.0f;
+
+    int m_systemPresentationSystemId = -1;
+    double m_systemPresentationSourceTimeSeconds = 0.0;
+    double m_systemPresentationWallTimeSeconds = 0.0;
+    double m_systemPresentationTimeScale = 1.0;
 
     glm::dvec3 m_systemOrbitPivotAbsolute {0.0, 0.0, 0.0};
     bool m_systemOrbitPivotActive = false;

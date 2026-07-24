@@ -91,6 +91,19 @@ bool loadFile(
             result.systemEntryRequiredEdgeAu
         ));
 
+    const json system =
+        root.value("system", json::object());
+
+    result.systemMaximumLevel =
+        std::clamp(
+            system.value(
+                "maximumLevel",
+                result.systemMaximumLevel
+            ),
+            0,
+            result.maximumDepth
+        );
+
     const json display =
         root.value("coordinateDisplay", json::object());
 

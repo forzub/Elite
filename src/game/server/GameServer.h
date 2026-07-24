@@ -97,6 +97,11 @@ public:
         const std::string& planetBodyId
     ) const;
 
+    world::celestial::PlanetMapSnapshot buildLocalSpaceMapSnapshot(
+        int systemId,
+        const std::string& anchorHubId
+    ) const;
+
     /*
         Обновляет только движущиеся элементы уже построенной
         Planet Details map.

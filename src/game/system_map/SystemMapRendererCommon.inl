@@ -321,7 +321,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
 
     /*
         Полный адрес игрока всегда строится до
-        терминального System-уровня S6.
+        терминального System-уровня S5.
     */
     const int terminalSystemLevel =
         m_systemNavigationGrid
@@ -746,11 +746,135 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         blocks,
         footerText,
         m_navigationLevelAnnouncement.text,
-        levelAnnouncementAlpha
+        levelAnnouncementAlpha,
+        m_mode == Mode::Galaxy ||
+            m_mode == Mode::System,
+        m_navigationLevelZeroButtonHovered
     );
 }
 
 
+
+
+
+
+
+void SystemMapRenderer::resetNavigationViewToLevelZero(
+    const Viewport& viewport
+)
+{
+    if (m_mode == Mode::Galaxy)
+    {
+        cancelGalaxyCameraFlight(false);
+
+        m_galaxyNavigationGrid.reset();
+        m_galaxyNavigationGrid.setAnchorFromPositionLy(
+            m_lastGalaxyMapEntryPositionLy
+        );
+        m_galaxyNavigationGrid.selectCell(
+            m_galaxyNavigationGrid.anchorCell()
+        );
+        m_galaxyNavigationGrid.clearHoveredCell();
+
+        m_galaxyCamera =
+            GalaxyCamera{};
+
+        m_galaxyCamera.target =
+            galaxyPositionLyToRender(
+                m_galaxyNavigationGrid
+                    .anchorCell()
+                    .centerLy
+            );
+
+        const float initialCellEdgeRender =
+            static_cast<float>(
+                m_galaxyNavigationGrid
+                    .anchorCell()
+                    .sizeLy
+            ) *
+            GALAXY_RENDER_UNITS_PER_LY;
+
+        m_galaxyCamera.distance =
+            std::clamp(
+                initialCellEdgeRender * 2.35f,
+                m_galaxyControls.minDistance,
+                m_galaxyControls.maxDistance
+            );
+
+        m_galaxyNavigationFocusLy =
+            m_lastGalaxyMapEntryPositionLy;
+        m_galaxyNavigationFocusValid =
+            true;
+
+        m_galaxyHoverVisualCell.reset();
+        m_galaxyHoverVisualAlpha = 0.0f;
+        m_galaxyHoverOutgoingCell.reset();
+        m_galaxyHoverOutgoingAlpha = 0.0f;
+        m_galaxyHoverVisualLastTimeSeconds = 0.0;
+        m_galaxyCubeClickTracker.reset();
+        m_galaxyOrbitPivotActive = false;
+
+        announceNavigationLevel(
+            'G',
+            m_galaxyNavigationGrid.level()
+        );
+
+        return;
+    }
+
+    if (m_mode == Mode::System &&
+        m_systemNavigationGrid.enabled())
+    {
+        cancelSystemCameraFlight(false);
+
+        m_systemNavigationGrid.reset();
+        m_systemNavigationGrid.setAnchorFromPosition(
+            glm::dvec3(0.0)
+        );
+        m_systemNavigationGrid.selectCell(
+            m_systemNavigationGrid.anchorCell()
+        );
+        m_systemNavigationGrid.clearHoveredCell();
+
+        m_systemCamera =
+            SystemCamera{};
+
+        const float defaultDistance =
+            m_systemControls.fittedSystemRadiusWorld *
+            m_systemControls.initialFitPadding;
+
+        const float maximumDistance =
+            std::max(
+                SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
+                systemNavigationMaximumCameraDistance(
+                    viewport
+                )
+            );
+
+        m_systemCamera.distance =
+            std::clamp(
+                defaultDistance,
+                SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
+                maximumDistance
+            );
+
+        m_systemCameraFlight =
+            SystemCameraFlight{};
+
+        m_systemHoverVisualCell.reset();
+        m_systemHoverVisualAlpha = 0.0f;
+        m_systemHoverOutgoingCell.reset();
+        m_systemHoverOutgoingAlpha = 0.0f;
+        m_systemHoverVisualLastTimeSeconds = 0.0;
+        m_systemCubeClickTracker.reset();
+        m_systemOrbitPivotActive = false;
+
+        announceNavigationLevel(
+            'S',
+            m_systemNavigationGrid.level()
+        );
+    }
+}
 
 
 
@@ -1318,6 +1442,8 @@ void SystemMapRenderer::handleDetailAndHubInput(
             camera.lastMouseX = mx;
 
             camera.lastMouseY = my;
+            camera.mouseDownX = mx;
+            camera.mouseDownY = my;
 
             if (m_mode == Mode::Hub)
             {
@@ -1373,8 +1499,47 @@ void SystemMapRenderer::handleDetailAndHubInput(
             }
         }
 
-        if (!leftDown)
+        if (!leftDown &&
+            camera.rotating)
         {
+            const double clickMovement =
+                std::abs(mx - camera.mouseDownX) +
+                std::abs(my - camera.mouseDownY);
+
+            if (inside &&
+                m_mode == Mode::Planet &&
+                clickMovement <= 8.0)
+            {
+                const int pickedHub =
+                    pickPlanetHub(
+                        localMx,
+                        localMy
+                    );
+
+                if (pickedHub >= 0 &&
+                    pickedHub <
+                        static_cast<int>(
+                            m_lastPlanetHubScreenPoints.size()
+                        ))
+                {
+                    const auto& point =
+                        m_lastPlanetHubScreenPoints[
+                            pickedHub
+                        ];
+
+                    m_selectedBodyId.clear();
+                    m_selectedHubId =
+                        point.hubId;
+                    m_selectedHubParentBodyId =
+                        point.parentBodyId;
+                }
+                else
+                {
+                    m_selectedHubId.clear();
+                    m_selectedHubParentBodyId.clear();
+                }
+            }
+
             camera.rotating = false;
         }
 

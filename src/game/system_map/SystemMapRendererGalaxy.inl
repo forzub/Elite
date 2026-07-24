@@ -120,6 +120,9 @@ void SystemMapRenderer::onGalaxyMapEntered(
             insideKnownSystem
         );
 
+    m_lastGalaxyMapEntryPositionLy =
+        playerPositionLy;
+
     const int terminalLevel =
         m_galaxyNavigationGrid.maximumLevel();
 
@@ -1755,7 +1758,48 @@ SystemMapRenderer::galaxySystemEntryForPosition(
         Do not silently replace an empty-space request with an old selected
         system merely because the same terminal cube contains a star.
     */
-    if (explicitSystemId >= 0)
+    int entrySystemId =
+        explicitSystemId;
+
+    /*
+        A selected star remains a valid entry target only while the
+        navigation point is still inside that star's terminal cube.
+
+        This preserves an intentional click on Tau Ceti even if the last
+        wheel event no longer lands on the tiny star marker. At the same
+        time, an old selection can never hijack entry into another or empty
+        cube.
+    */
+    if (entrySystemId < 0 &&
+        m_selectedSystemId >= 0)
+    {
+        const auto selectedSystem =
+            std::find_if(
+                galaxy.systems.begin(),
+                galaxy.systems.end(),
+                [&](const auto& system)
+                {
+                    return
+                        system.id ==
+                        m_selectedSystemId;
+                }
+            );
+
+        if (selectedSystem !=
+                galaxy.systems.end() &&
+            m_galaxyNavigationGrid
+                .nearestIndexForPositionLy(
+                    selectedSystem->positionLy,
+                    terminalLevel
+                ) ==
+                terminalIndex)
+        {
+            entrySystemId =
+                selectedSystem->id;
+        }
+    }
+
+    if (entrySystemId >= 0)
     {
         const auto explicitSystem =
             std::find_if(
@@ -1765,7 +1809,7 @@ SystemMapRenderer::galaxySystemEntryForPosition(
                 {
                     return
                         system.id ==
-                        explicitSystemId;
+                        entrySystemId;
                 }
             );
 
@@ -2406,11 +2450,28 @@ void SystemMapRenderer::handleGalaxyInput(
                                     */
                                     m_galaxyCubeClickTracker.reset();
 
-                                    m_selectedSystemId = -1;
-                                    m_focusedSystemId = -1;
-                                    m_galaxyNavigationFocusLy =
-                                        pickedCell.centerLy;
-                                    m_galaxyNavigationFocusValid = true;
+                                    const SystemEntryRequest entryRequest =
+                                        galaxySystemEntryForPosition(
+                                            galaxy,
+                                            pickedCell.centerLy
+                                        );
+
+                                    if (entryRequest.knownSystem())
+                                    {
+                                        m_selectedSystemId =
+                                            entryRequest.systemId;
+
+                                        m_focusedSystemId =
+                                            entryRequest.systemId;
+                                    }
+                                    else
+                                    {
+                                        m_selectedSystemId = -1;
+                                        m_focusedSystemId = -1;
+                                        m_galaxyNavigationFocusLy =
+                                            pickedCell.centerLy;
+                                        m_galaxyNavigationFocusValid = true;
+                                    }
 
                                     announceNavigationLevel(
                                         'S',
@@ -2420,10 +2481,7 @@ void SystemMapRenderer::handleGalaxyInput(
                                     );
 
                                     m_requestedSystemEntry =
-                                        galaxySystemEntryForPosition(
-                                            galaxy,
-                                            pickedCell.centerLy
-                                        );
+                                        entryRequest;
                                 }
                             }
 
@@ -2968,7 +3026,8 @@ void SystemMapRenderer::handleGalaxyInput(
                         /*
                             At the terminal Galaxy level, enter the
                             star or empty sector under the navigation
-                            point. Old selection is irrelevant.
+                            point. A selected star is accepted only while
+                            it belongs to this exact terminal cube.
 
                             Здесь нет camera flight: смену режима
                             выполнит SpaceState через существующий
@@ -2976,13 +3035,20 @@ void SystemMapRenderer::handleGalaxyInput(
                         */
                         m_galaxyCubeClickTracker.reset();
 
-                        if (pivotSystemId >= 0)
+                        const SystemEntryRequest entryRequest =
+                            galaxySystemEntryForPosition(
+                                galaxy,
+                                navigationPointLy,
+                                pivotSystemId
+                            );
+
+                        if (entryRequest.knownSystem())
                         {
                             m_selectedSystemId =
-                                pivotSystemId;
+                                entryRequest.systemId;
 
                             m_focusedSystemId =
-                                pivotSystemId;
+                                entryRequest.systemId;
                         }
                         else
                         {
@@ -3004,11 +3070,7 @@ void SystemMapRenderer::handleGalaxyInput(
                         );
 
                         m_requestedSystemEntry =
-                            galaxySystemEntryForPosition(
-                                galaxy,
-                                navigationPointLy,
-                                pivotSystemId
-                            );
+                            entryRequest;
                     }
                     else
                     {
@@ -3079,6 +3141,27 @@ void SystemMapRenderer::renderGalaxy(
     const glm::mat4 proj = galaxyProjectionMatrix(vp);
     const glm::mat4 view = galaxyViewMatrix();
     const glm::mat4 mvp = proj * view;
+
+    if (m_galaxyVisuals.drawStarfield)
+    {
+        bool playerInsideKnownSystem = false;
+
+        const glm::dvec3 observerPositionLy =
+            playerGalaxyPositionLy(
+                galaxy,
+                nav,
+                playerInsideKnownSystem
+            );
+
+        drawMapStarfield(
+            vp,
+            observerPositionLy,
+            view,
+            m_galaxyVisuals.starfieldFieldOfViewDeg,
+            m_galaxyVisuals.starfieldSizeScale,
+            true
+        );
+    }
 
     beginLines();
     beginSolids();
@@ -3611,8 +3694,8 @@ void SystemMapRenderer::drawGalaxyLabels(
         std::clamp(
             static_cast<float>(vp.height) /
                 m_galaxyVisuals.labelReferenceHeightPx,
-            0.72f,
-            1.45f
+            m_galaxyVisuals.labelMinimumScreenScale,
+            m_galaxyVisuals.labelMaximumScreenScale
         );
 
     const float labelFactor =

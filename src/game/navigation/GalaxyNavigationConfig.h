@@ -20,6 +20,7 @@ struct GalaxyNavigationConfig
     int minimumLevel = 1;
     int initialLevel = 1;
     int maximumDepth = 9;
+    int systemMaximumLevel = 5;
 
     double terminalCellEdgeKm = 100.0;
     double systemEntryRequiredEdgeAu = 3400.0;

@@ -523,9 +523,45 @@ void SpaceState::requestPlanetMapSnapshot(
 
     m_loadedPlanetMapBodyId =
         planetBodyId;
+    m_loadedPlanetMapAnchorHubId.clear();
 
     m_hasPlanetMapSnapshot =
-        true;
+        m_planetMapSnapshot.valid;
+}
+
+
+void SpaceState::requestLocalSpaceMapSnapshot(
+    int systemId,
+    const std::string& anchorHubId,
+    bool forceRefresh
+)
+{
+    if (!m_server ||
+        anchorHubId.empty())
+    {
+        return;
+    }
+
+    if (!forceRefresh &&
+        m_hasPlanetMapSnapshot &&
+        m_loadedPlanetMapSystemId == systemId &&
+        m_loadedPlanetMapAnchorHubId == anchorHubId)
+    {
+        return;
+    }
+
+    m_planetMapSnapshot =
+        m_server->buildLocalSpaceMapSnapshot(
+            systemId,
+            anchorHubId
+        );
+
+    m_loadedPlanetMapSystemId = systemId;
+    m_loadedPlanetMapBodyId.clear();
+    m_loadedPlanetMapAnchorHubId =
+        anchorHubId;
+    m_hasPlanetMapSnapshot =
+        m_planetMapSnapshot.valid;
 }
 
 
@@ -594,12 +630,15 @@ void SpaceState::setSystemMapHubMode()
                 ->playerNavigation()
                 .currentSystemId;
 
-    /*
-        Пока используется первый тестовый хаб.
-        Это сохраняет существующую логику проекта.
-    */
     const std::string hubId =
-        "earth_orbital_hub";
+        m_systemMapRenderer.selectedHubId();
+
+    /*
+        Hub mode is an object transition, not a planet transition. Never
+        substitute Earth or any other hub when the user did not select one.
+    */
+    if (hubId.empty())
+        return;
 
     m_systemMapRenderer.beginMapTransition(
         MapTransitionPresets::modeChange(),
@@ -796,11 +835,9 @@ void SpaceState::handleInput()
             {
                 if (requestedSystemEntry->knownSystem())
                 {
-                    selectSystemMapSystem(
+                    setSystemMapKnownSystemMode(
                         requestedSystemEntry->systemId
                     );
-
-                    setSystemMapCurrentSystemMode();
                 }
                 else
                 {
@@ -1566,24 +1603,6 @@ void SpaceState::renderHUD()
 
 
 
-if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System)
-{
-    const int focusedId =
-        m_systemMapRenderer.focusedSystemId() >= 0
-            ? m_systemMapRenderer.focusedSystemId()
-            : m_server->playerNavigation().currentSystemId;
-
-    requestSystemMapSnapshot(
-        focusedId,
-        false
-    );
-}
-
-
-
-
-
-
 if (m_systemMapRenderer.mode() ==
     SystemMapRenderer::Mode::Planet)
 {
@@ -1595,21 +1614,28 @@ if (m_systemMapRenderer.mode() ==
                 .currentSystemId;
 
     const std::string requestedPlanetBodyId =
-        m_loadedPlanetMapBodyId.empty()
-            ? std::string(
-                "system_0.Sol.Земля"
-            )
-            : m_loadedPlanetMapBodyId;
+        m_loadedPlanetMapBodyId;
 
     /*
         Полный snapshot создаётся только при открытии другой
         системы или другой планеты.
     */
-    requestPlanetMapSnapshot(
-        focusedId,
-        requestedPlanetBodyId,
-        false
-    );
+    if (!m_loadedPlanetMapAnchorHubId.empty())
+    {
+        requestLocalSpaceMapSnapshot(
+            focusedId,
+            m_loadedPlanetMapAnchorHubId,
+            false
+        );
+    }
+    else
+    {
+        requestPlanetMapSnapshot(
+            focusedId,
+            requestedPlanetBodyId,
+            false
+        );
+    }
 
     /*
         Динамические элементы обновляются каждый кадр:
@@ -1625,8 +1651,12 @@ if (m_systemMapRenderer.mode() ==
     if (m_hasPlanetMapSnapshot &&
         m_loadedPlanetMapSystemId ==
             focusedId &&
-        m_loadedPlanetMapBodyId ==
-            requestedPlanetBodyId)
+        (
+            m_loadedPlanetMapBodyId ==
+                requestedPlanetBodyId ||
+            m_loadedPlanetMapAnchorHubId ==
+                m_planetMapSnapshot.detailAnchorHubId
+        ))
     {
         m_server->refreshPlanetMapDynamicState(
                 m_planetMapSnapshot
@@ -1647,11 +1677,7 @@ if (m_systemMapRenderer.mode() ==
             : m_server->playerNavigation().currentSystemId;
 
     const std::string requestedHubId =
-        m_loadedHubMapHubId.empty()
-            ? std::string(
-                "earth_orbital_hub"
-            )
-            : m_loadedHubMapHubId;
+        m_loadedHubMapHubId;
 
     /*
         Полный snapshot строится только при смене
@@ -3491,9 +3517,6 @@ void SpaceState::selectSystemMapSystem(
     if (!m_server)
         return;
 
-    m_systemMapShowsEmptySector =
-        false;
-
     requestGalaxyMapSnapshotOnce();
 
     /*
@@ -3504,6 +3527,9 @@ void SpaceState::selectSystemMapSystem(
     if (m_systemMapRenderer.mode() ==
         SystemMapRenderer::Mode::Galaxy)
     {
+        m_systemMapShowsEmptySector =
+            false;
+
         m_systemMapRenderer.focusGalaxySystem(
             systemId,
             m_galaxyMapSnapshot
@@ -3514,34 +3540,11 @@ void SpaceState::selectSystemMapSystem(
     }
 
     /*
-        В System меняется всё содержимое системной карты.
-        Поэтому сохраняем старый кадр и плавно растворяем его
-        поверх новой системы.
+        System-system switching and Galaxy-system entry use the same
+        atomic transition path.
     */
-    m_systemMapRenderer.beginMapTransition(
-        MapTransitionPresets::modeChange(),
-
-        [this, systemId]()
-        {
-            if (!m_server)
-                return;
-
-            m_systemMapRenderer.focusGalaxySystem(
-                systemId,
-                m_galaxyMapSnapshot
-            );
-
-            requestSystemMapSnapshot(
-                systemId,
-                true
-            );
-
-            m_systemMapRenderer.setMode(
-                SystemMapRenderer::Mode::System
-            );
-
-            pushSystemMapPanelState();
-        }
+    setSystemMapKnownSystemMode(
+        systemId
     );
 }
 
@@ -3618,6 +3621,9 @@ void SpaceState::setSystemMapEmptySectorMode(
     emptySector.universeTimeSeconds =
         m_server->universeClock().timeSeconds();
 
+    emptySector.universeTimeScale =
+        m_server->universeClock().timeScale();
+
     emptySector.universeDate =
         m_server->universeClock().dateTimeString();
 
@@ -3657,6 +3663,61 @@ void SpaceState::setSystemMapEmptySectorMode(
 
 
 
+void SpaceState::setSystemMapKnownSystemMode(
+    int systemId
+)
+{
+    if (!m_server ||
+        systemId < 0)
+    {
+        return;
+    }
+
+    /*
+        Galaxy -> System is one atomic command.
+
+        The old path first changed the Galaxy selection and then asked a
+        second function to rediscover that selection. If either state was
+        stale, the fallback was the player's current system (usually Sol).
+        Capture the requested id once and carry exactly that id through the
+        transition.
+    */
+    requestGalaxyMapSnapshotOnce();
+
+    m_systemMapRenderer.beginMapTransition(
+        MapTransitionPresets::modeChange(),
+
+        [this, systemId]()
+        {
+            if (!m_server)
+                return;
+
+            m_systemMapShowsEmptySector =
+                false;
+
+            m_systemMapRenderer.focusGalaxySystem(
+                systemId,
+                m_galaxyMapSnapshot
+            );
+
+            requestSystemMapSnapshot(
+                systemId,
+                true
+            );
+
+            m_systemMapRenderer.setMode(
+                SystemMapRenderer::Mode::System
+            );
+
+            pushSystemMapPanelState();
+        }
+    );
+}
+
+
+
+
+
 void SpaceState::setSystemMapCurrentSystemMode()
 {
     if (!m_server)
@@ -3675,45 +3736,8 @@ void SpaceState::setSystemMapCurrentSystemMode()
                 ->playerNavigation()
                 .currentSystemId;
 
-    m_systemMapRenderer.beginMapTransition(
-        MapTransitionPresets::modeChange(),
-
-        [this, selectedId]()
-        {
-            if (!m_server)
-                return;
-
-            /*
-                Сохраняем выбранную систему и положение
-                Galaxy-камеры для последующего возврата.
-            */
-            m_systemMapRenderer.focusGalaxySystem(
-                selectedId,
-                m_galaxyMapSnapshot
-            );
-
-            requestSystemMapSnapshot(
-                selectedId,
-                true
-            );
-
-            /*
-                Пока сохраняем существующее поведение:
-                заранее загружаем Землю для тестовой Details-карты.
-                Позже это можно будет убрать отдельно.
-            */
-            requestPlanetMapSnapshot(
-                selectedId,
-                "system_0.Sol.Земля",
-                true
-            );
-
-            m_systemMapRenderer.setMode(
-                SystemMapRenderer::Mode::System
-            );
-
-            pushSystemMapPanelState();
-        }
+    setSystemMapKnownSystemMode(
+        selectedId
     );
 }
 
@@ -3743,16 +3767,32 @@ void SpaceState::setSystemMapPlanetMode()
                 ->playerNavigation()
                 .currentSystemId;
 
-    const std::string bodyId =
+    std::string bodyId =
         m_systemMapRenderer.selectedBodyId();
+    const std::string hubId =
+        m_systemMapRenderer.selectedHubId();
 
-    if (bodyId.empty())
+    /*
+        Details for an orbital hub opens the hub's real parent context.
+        The hub selection remains active, so Details can highlight it and
+        enable HUB. A selected planet clears the hub selection in renderer.
+    */
+    if (bodyId.empty() &&
+        !hubId.empty())
+    {
+        bodyId =
+            m_systemMapRenderer
+                .selectedHubParentBodyId();
+    }
+
+    if (bodyId.empty() &&
+        hubId.empty())
         return;
 
     m_systemMapRenderer.beginMapTransition(
         MapTransitionPresets::modeChange(),
 
-        [this, selectedId, bodyId]()
+        [this, selectedId, bodyId, hubId]()
         {
             if (!m_server)
                 return;
@@ -3761,11 +3801,22 @@ void SpaceState::setSystemMapPlanetMode()
                 Новый snapshot строится после сохранения
                 старого кадра System.
             */
-            requestPlanetMapSnapshot(
-                selectedId,
-                bodyId,
-                true
-            );
+            if (!bodyId.empty())
+            {
+                requestPlanetMapSnapshot(
+                    selectedId,
+                    bodyId,
+                    true
+                );
+            }
+            else
+            {
+                requestLocalSpaceMapSnapshot(
+                    selectedId,
+                    hubId,
+                    true
+                );
+            }
 
             m_systemMapRenderer.setMode(
                 SystemMapRenderer::Mode::Planet
@@ -3891,10 +3942,22 @@ void SpaceState::pushSystemMapPanelState()
     payload["systems"] = json::array();
     payload["selectedBodyId"] =
         m_systemMapRenderer.selectedBodyId();
+    payload["selectedHubId"] =
+        m_systemMapRenderer.selectedHubId();
 
     payload["canOpenDetail"] =
         m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System &&
-        !m_systemMapRenderer.selectedBodyId().empty();
+        (
+            !m_systemMapRenderer.selectedBodyId().empty() ||
+            (
+                !m_systemMapRenderer.selectedHubId().empty()
+            )
+        );
+
+    payload["canOpenHub"] =
+        m_systemMapRenderer.mode() ==
+            SystemMapRenderer::Mode::Planet &&
+        !m_systemMapRenderer.selectedHubId().empty();
 
 
 

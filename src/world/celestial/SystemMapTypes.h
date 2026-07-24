@@ -165,9 +165,14 @@ namespace world::celestial
         double orbitRadiusAu = 0.0;
         bool drawOrbit = false;
 
+        double orbitalPeriodDays = 0.0;
+        int orbitalDirection = 1;
+        double orbitalPhaseOffsetRad = 0.0;
+
         double radiusKm = 0.0;
         double rotationPhaseRad = 0.0;
         double dayLengthHours = 0.0;
+        int rotationDirection = 1;
 
         double axialTiltDeg = 0.0;
         double axisNodeDeg = 0.0;
@@ -185,6 +190,7 @@ namespace world::celestial
     enum class SystemMapObjectKind
     {
         Unknown,
+        Hub,
         Station,
         Mine,
         Buoy,
@@ -195,6 +201,9 @@ namespace world::celestial
     struct SystemMapObject
     {
         EntityId id {};
+        // Stable runtime/catalog identifier. Unlike EntityId, it also exists
+        // for composite objects such as orbital hubs.
+        std::string stableId;
         std::string name;
         std::string owner;
         std::string parentBodyId;
@@ -220,6 +229,7 @@ namespace world::celestial
         int systemId = -1;
         std::string systemName;
         double universeTimeSeconds = 0.0;
+        double universeTimeScale = 1.0;
         std::string universeDate;
         std::vector<SystemMapBody> bodies;
         std::vector<SystemMapObject> objects;
@@ -289,11 +299,15 @@ struct PlanetMapObject
 struct PlanetMapSnapshot
 {
     bool valid = false;
+    bool hasCentralBody = true;
 
     int systemId = -1;
     glm::dvec3 systemPositionLy {0.0};
 
     std::string planetBodyId;
+    // Non-empty when Details is centered on a free-space hub rather than
+    // on a celestial body.
+    std::string detailAnchorHubId;
     std::string planetName;
     std::string environmentPresetId;
 

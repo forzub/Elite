@@ -44,8 +44,10 @@ struct GalaxyMapVisualSettings
     int starHaloSegments = 40;
 
     // Подписи.
-    float labelScale = 0.88f;
+    float labelScale = 1.32f;
     float labelReferenceHeightPx = 1080.0f;
+    float labelMinimumScreenScale = 0.72f;
+    float labelMaximumScreenScale = 1.45f;
     float labelMaxCameraDistance = 155.0f;
 
     int labelTitleBasePx = 13;
@@ -53,8 +55,18 @@ struct GalaxyMapVisualSettings
     int labelSubtitleBasePx = 10;
 
     int labelTitleMinPx = 10;
-    int labelTitleMaxPx = 18;
+    int labelTitleMaxPx = 27;
 
     int labelSubtitleMinPx = 8;
-    int labelSubtitleMaxPx = 14;
+    int labelSubtitleMaxPx = 21;
+
+    /*
+        Galaxy uses a separate distant-only starfield instance.
+        Nearby/game systems are excluded so they are not drawn twice:
+        once as map objects and once on the background sphere.
+    */
+    bool drawStarfield = true;
+    float starfieldFieldOfViewDeg = 48.0f;
+    float starfieldSizeScale = 0.68f;
+    float starfieldMinimumDistanceLy = 120.0f;
 };

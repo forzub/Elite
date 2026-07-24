@@ -114,6 +114,7 @@
               "atmosphere_density": 92.0,
               "surface_temperature_k": 737,
               "day_length_hours": 5832,
+              "axial_tilt_deg": 177.36,
               "surface_gravity_g": 0.9,
               "oceans": false,
               "land_water_ratio": "100/0",
@@ -328,6 +329,7 @@
                   "mass_earth": 5.2e-07,
                   "distance_from_planet_km": 23500000,
                   "orbital_period_days": 743.2,
+                  "orbit_direction": "retrograde",
                   "environment_preset_id": "airless_rocky"
                 }
               ],
@@ -619,6 +621,7 @@
                   "mass_earth": 1.4e-05,
                   "distance_from_planet_km": 12948000,
                   "orbital_period_days": 548.2,
+                  "orbit_direction": "retrograde",
                   "environment_preset_id": "airless_rocky"
                 }
               ],
@@ -880,6 +883,7 @@
               "atmosphere_density": 500.0,
               "surface_temperature_k": 76,
               "day_length_hours": 17.2,
+              "axial_tilt_deg": 97.77,
               "surface_gravity_g": 0.89,
               "oceans": false,
               "land_water_ratio": "0/0",
@@ -1221,6 +1225,7 @@
                   "mass_earth": 0.0036,
                   "distance_from_planet_km": 354760,
                   "orbital_period_days": 5.88,
+                  "orbit_direction": "retrograde",
                   "environment_preset_id": "thin_nitrogen_ice_world"
                 },
                 {

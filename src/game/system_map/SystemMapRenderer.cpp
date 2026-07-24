@@ -916,10 +916,6 @@ namespace
 
 
 
-    constexpr float SYSTEM_MAP_FOV_DEG =
-        48.0f;
-
-
     constexpr float SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT =
         0.0000005f;
 
@@ -928,7 +924,7 @@ namespace
 
     /*
         System использует ортографическую камеру от масштаба
-        всей системы до куба порядка 100 km.
+        всей системы до последнего уровня System map.
 
         Фиксированный диапазон глубины 0.001...120000 терял
         точность уже около S3. Глубина камеры теперь вычисляется
@@ -967,30 +963,44 @@ namespace
         );
     }
 
-    float systemMapOrthoEyeDistance(
-        float cameraHalfHeight
+    float systemMapPerspectiveEyeDistance(
+        float cameraHalfHeight,
+        float fieldOfViewDeg
     )
     {
+        const float safeHalfHeight =
+            std::clamp(
+                cameraHalfHeight,
+                SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
+                SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT
+            );
+
+        const float halfFovRad =
+            glm::radians(
+                fieldOfViewDeg * 0.5f
+            );
+
         return
-            systemMapOrthoDepthHalfRange(
-                cameraHalfHeight
-            ) +
-            systemMapOrthoNearPlane(
-                cameraHalfHeight
+            safeHalfHeight /
+            std::max(
+                std::tan(halfFovRad),
+                0.0001f
             );
     }
 
-    float systemMapOrthoFarPlane(
-        float cameraHalfHeight
+    float systemMapPerspectiveFarPlane(
+        float cameraHalfHeight,
+        float fieldOfViewDeg
     )
     {
         return
-            systemMapOrthoEyeDistance(
-                cameraHalfHeight
+            systemMapPerspectiveEyeDistance(
+                cameraHalfHeight,
+                fieldOfViewDeg
             ) +
             systemMapOrthoDepthHalfRange(
                 cameraHalfHeight
-            );
+            ) * 2.0f;
     }
 
         double systemMapWorldUnitsPerPixel(
@@ -1440,6 +1450,27 @@ void SystemMapRenderer::init()
         }
     }
 
+    if (!m_galaxyBackdropStarfieldInitialized)
+    {
+        m_galaxyBackdropStarfieldRenderer.setCatalogFilter(
+            m_galaxyVisuals.starfieldMinimumDistanceLy,
+            true
+        );
+
+        m_galaxyBackdropStarfieldInitialized =
+            m_galaxyBackdropStarfieldRenderer.initialize(
+                "assets/data/galaxy/star_systems.json"
+            );
+
+        if (!m_galaxyBackdropStarfieldInitialized)
+        {
+            std::cerr
+                << "[SystemMapRenderer]"
+                << " failed to initialize galaxy backdrop starfield"
+                << "\n";
+        }
+    }
+
     GLFWwindow* window = glfwGetCurrentContext();
 
     if (window)
@@ -1465,34 +1496,6 @@ void SystemMapRenderer::drawMapStarfield(
     const glm::dvec3& observerPositionLy
 )
 {
-    if (!m_mapStarfieldInitialized ||
-        viewport.width <= 0 ||
-        viewport.height <= 0)
-    {
-        return;
-    }
-
-    const float aspect =
-        static_cast<float>(
-            viewport.width
-        ) /
-        static_cast<float>(
-            std::max(
-                viewport.height,
-                1
-            )
-        );
-
-    const glm::mat4 projection =
-        glm::perspective(
-            glm::radians(
-                60.0f
-            ),
-            aspect,
-            0.1f,
-            500.0f
-        );
-
     /*
         Небо вращается вместе с detail camera,
         но не зависит от zoom и pan.
@@ -1525,7 +1528,68 @@ void SystemMapRenderer::drawMapStarfield(
             )
         );
 
-    m_mapStarfieldRenderer.setObserverPositionLy(
+    drawMapStarfield(
+        viewport,
+        observerPositionLy,
+        view,
+        60.0f,
+        0.88f,
+        false
+    );
+}
+
+void SystemMapRenderer::drawMapStarfield(
+    const Viewport& viewport,
+    const glm::dvec3& observerPositionLy,
+    const glm::mat4& cameraView,
+    float fieldOfViewDeg,
+    float sizeScale,
+    bool distantGalaxyBackdrop
+)
+{
+    GalaxyStarfieldRenderer& renderer =
+        distantGalaxyBackdrop
+            ? m_galaxyBackdropStarfieldRenderer
+            : m_mapStarfieldRenderer;
+
+    const bool initialized =
+        distantGalaxyBackdrop
+            ? m_galaxyBackdropStarfieldInitialized
+            : m_mapStarfieldInitialized;
+
+    if (!initialized ||
+        viewport.width <= 0 ||
+        viewport.height <= 0)
+    {
+        return;
+    }
+
+    const float aspect =
+        static_cast<float>(
+            viewport.width
+        ) /
+        static_cast<float>(
+            std::max(
+                viewport.height,
+                1
+            )
+        );
+
+    const glm::mat4 projection =
+        glm::perspective(
+            glm::radians(
+                std::clamp(
+                    fieldOfViewDeg,
+                    20.0f,
+                    120.0f
+                )
+            ),
+            aspect,
+            0.1f,
+            500.0f
+        );
+
+    renderer.setObserverPositionLy(
         glm::vec3(
             static_cast<float>(
                 observerPositionLy.x
@@ -1539,10 +1603,10 @@ void SystemMapRenderer::drawMapStarfield(
         )
     );
 
-    m_mapStarfieldRenderer.render(
-        view,
+    renderer.render(
+        cameraView,
         projection,
-        0.88f
+        sizeScale
     );
 
     /*
@@ -2980,6 +3044,8 @@ void SystemMapRenderer::resetView()
     m_requestedSystemEntry.reset();
     m_focusedSystemId = -1;
     m_selectedBodyId.clear();
+    m_selectedHubId.clear();
+    m_selectedHubParentBodyId.clear();
     m_comboOpen = false;
     m_pendingScrollY = 0.0;
     m_systemOrbitPivotAbsolute = glm::dvec3(0.0, 0.0, 0.0);
@@ -2994,14 +3060,22 @@ void SystemMapRenderer::resetView()
     m_lastHubMapCenterPx = glm::dvec2(0.0, 0.0);
     m_lastGalaxyScreenPoints.clear();
     m_lastSystemBodyScreenPoints.clear();
+    m_lastSystemHubScreenPoints.clear();
+    m_lastPlanetHubScreenPoints.clear();
     m_lastHubMapPickables.clear();
     m_lastSystemBodyAbsolutePosById.clear();
+    m_lastSystemObjectAbsolutePosById.clear();
     m_smoothBodyPositions.clear();
     m_smoothObjectPositions.clear();
 
 
     m_lastSmoothTimeSeconds = 0.0;
     m_lastSystemScale = 1.0f;
+
+    m_systemPresentationSystemId = -1;
+    m_systemPresentationSourceTimeSeconds = 0.0;
+    m_systemPresentationWallTimeSeconds = 0.0;
+    m_systemPresentationTimeScale = 1.0;
 
     m_environmentVisualTimeSeconds = 0.0;
     m_environmentLastSourceTimeSeconds = 0.0;
@@ -3013,6 +3087,10 @@ void SystemMapRenderer::resetView()
     m_hasGalaxyMapEntryState = false;
     m_lastGalaxyMapEntrySystemId = -1;
     m_lastGalaxyMapEntryTerminalCell = {};
+    m_lastGalaxyMapEntryPositionLy = glm::dvec3(0.0);
+
+    m_navigationLevelZeroButtonHovered = false;
+    m_navigationOverlayLeftWasDown = false;
 
 }
 
@@ -4735,6 +4813,8 @@ void SystemMapRenderer::handleInput(
     if (m_mapTransition.blocksInput())
     {
         m_pendingScrollY = 0.0;
+        m_navigationLevelZeroButtonHovered = false;
+        m_navigationOverlayLeftWasDown = false;
         return;
     }
 
@@ -4781,6 +4861,63 @@ void SystemMapRenderer::handleInput(
             window,
             GLFW_MOUSE_BUTTON_RIGHT
         ) == GLFW_PRESS;
+
+    const bool showLevelZeroButton =
+        m_mode == Mode::Galaxy ||
+        m_mode == Mode::System;
+
+    m_navigationLevelZeroButtonHovered =
+        showLevelZeroButton &&
+        inside &&
+        render::navigation::
+            NavigationCoordinateOverlay::
+                levelZeroButtonBounds(
+                    vp
+                )
+                .contains(
+                    localMx,
+                    localMy
+                );
+
+    const bool levelZeroPressed =
+        m_navigationLevelZeroButtonHovered &&
+        leftDown &&
+        !m_navigationOverlayLeftWasDown;
+
+    m_navigationOverlayLeftWasDown =
+        leftDown;
+
+    if (m_navigationLevelZeroButtonHovered)
+    {
+        m_pendingScrollY = 0.0;
+
+        if (levelZeroPressed)
+        {
+            resetNavigationViewToLevelZero(
+                vp
+            );
+        }
+
+        /*
+            The button is part of the map viewport, so explicitly prevent
+            the scene behind it from receiving the same mouse gesture.
+        */
+        m_galaxyCamera.rotating = false;
+        m_galaxyCamera.panning = false;
+        m_galaxyCamera.leftWasDown = leftDown;
+        m_galaxyCamera.rightWasDown = rightDown;
+        m_galaxyCamera.lastMouseX = mx;
+        m_galaxyCamera.lastMouseY = my;
+
+        m_systemCamera.rotating = false;
+        m_systemCamera.panning = false;
+        m_systemCamera.leftWasDown = leftDown;
+        m_systemCamera.rightWasDown = rightDown;
+        m_systemCamera.lastMouseX = mx;
+        m_systemCamera.lastMouseY = my;
+
+        return;
+    }
 
     if (m_mode == Mode::System)
     {

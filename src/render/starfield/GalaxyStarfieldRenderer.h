@@ -36,6 +36,15 @@ public:
     bool initialize(const std::string& atlasPath = "assets/data/galaxy/star_systems.json");
     void shutdown();
 
+    /*
+        Configure a catalog subset before initialize().
+        Defaults preserve the existing world/detail/hub sky unchanged.
+    */
+    void setCatalogFilter(
+        float minimumDistanceLy,
+        bool excludeGameSystems
+    );
+
     void setObserverPositionLy(const glm::vec3& positionLy);
 
     void render(
@@ -129,6 +138,9 @@ private:
     glm::vec3 m_lastRebuildObserverPositionLy {0.0f};
     float m_rebuildThresholdLy = 0.01f;   // можно потом крутить
     float m_renderRadius = 120.0f;
+
+    float m_minimumCatalogDistanceLy = 0.0f;
+    bool m_excludeGameSystems = false;
 
     MilkyWayRenderer m_milkyWayRenderer;
 };

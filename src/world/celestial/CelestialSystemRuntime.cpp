@@ -1,15 +1,11 @@
 #include "src/world/celestial/CelestialSystemRuntime.h"
+#include "src/world/celestial/CelestialOrbitKinematics.h"
 
 #include <cmath>
 #include <unordered_map>
 
 namespace world::celestial
 {
-
-namespace
-{
-constexpr double TwoPi = 6.28318530717958647692;
-}
 
 void CelestialSystemRuntime::setSystem(
     const CelestialSystemDefinition* definition
@@ -78,24 +74,27 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
         if (body.orbitalPeriodDays > 0.0)
         {
             state.orbitalPhaseRad =
-                std::fmod(
-                    simTimeSeconds / (body.orbitalPeriodDays * SecondsPerDay),
-                    1.0
-                ) * TwoPi;
+                circularOrbitPhaseRad(
+                    simTimeSeconds,
+                    body.orbitalPeriodDays,
+                    body.orbitalDirection,
+                    body.orbitalPhaseOffsetDeg *
+                        OrbitTwoPi /
+                        360.0
+                );
         }
 
         if (body.dayLengthHours > 0.0)
         {
             state.rotationPhaseRad =
-                std::fmod(
-                    simTimeSeconds / (body.dayLengthHours * 3600.0),
-                    1.0
-                ) * TwoPi;
-
-            state.rotationPhaseRad +=
-                body.rotationOffsetDeg *
-                TwoPi /
-                360.0;
+                bodyRotationPhaseRad(
+                    simTimeSeconds,
+                    body.dayLengthHours,
+                    body.rotationDirection,
+                    body.rotationOffsetDeg *
+                        OrbitTwoPi /
+                        360.0
+                );
         }
 
         worldAuById[state.id] = state.positionAu;
@@ -119,19 +118,22 @@ glm::dvec3 CelestialSystemRuntime::computeRelativePositionAu(
     if (body.orbitalPeriodDays > 0.0)
     {
         phase =
-            std::fmod(
-                simTimeSeconds / (body.orbitalPeriodDays * SecondsPerDay),
-                1.0
-            ) * TwoPi;
+            circularOrbitPhaseRad(
+                simTimeSeconds,
+                body.orbitalPeriodDays,
+                body.orbitalDirection,
+                body.orbitalPhaseOffsetDeg *
+                    OrbitTwoPi /
+                    360.0
+            );
     }
 
     // Пока все орбиты круговые в XZ.
     // Это не финальная астрономия, но это уже нормальный runtime-слой:
     // definition не меняется, меняется только snapshot.
-    return glm::dvec3(
-        std::cos(phase) * body.distanceAu,
-        0.0,
-        std::sin(phase) * body.distanceAu
+    return circularOrbitPositionAu(
+        body.distanceAu,
+        phase
     );
 }
 

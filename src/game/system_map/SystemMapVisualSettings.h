@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/vec3.hpp>
+
 struct SystemMapVisualSettings
 {
     /*
@@ -46,4 +48,36 @@ struct SystemMapVisualSettings
     // Must match projectionFieldOfViewDeg or the sky and geometry diverge.
     float starfieldFieldOfViewDeg = 48.0f;
     float starfieldSizeScale = 0.82f;
+
+    /*
+        System-map-only sky treatment. The shared renderer uses 1.0 defaults
+        everywhere else, including the actual flight scene and Hub/Detail maps.
+    */
+    float starfieldBrightnessScale = 0.42f;
+
+    /*
+        В System Map Млечный путь нужен как очень мягкая глубина,
+        а не как главный объект.
+    */
+    float milkyWayIntensityScale = 0.24f;
+
+    glm::vec3 milkyWayColorTint {
+        0.42f,
+        0.58f,
+        0.84f
+    };
+
+    /*
+        Map-only atmospheric veil drawn after the shared starfield and before
+        system bodies, orbits, navigation graphics and labels.
+    */
+    bool drawAtmosphereVeil = true;
+
+    /*
+        System Map тоже надо притушить, но оставить чуть больше читаемости
+        в центре, чтобы локальная сцена не теряла глубину.
+    */
+    float atmosphereVeilCenterAlpha = 0.30f;
+    float atmosphereVeilEdgeAlpha = 0.78f;
+    float atmosphereVeilAquaStrength = 0.20f;
 };

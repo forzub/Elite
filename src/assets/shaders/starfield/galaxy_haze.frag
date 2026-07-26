@@ -14,6 +14,7 @@ uniform float uBandWidthDeg;
 uniform float uCoreWidthDeg;
 uniform float uIntensity;
 uniform float uDustStrength;
+uniform vec3 uColorTint;
 
 const float PI = 3.14159265358979323846;
 
@@ -129,6 +130,7 @@ void main()
 
     vec3 color = mix(cold, neutral, saturate(band * 0.75 + cloud * 0.25));
     color = mix(color, warm, saturate(core * 0.72));
+    color *= clamp(uColorTint, vec3(0.0), vec3(2.0));
 
     float alpha = density * uIntensity;
     alpha = clamp(alpha, 0.0, 0.38);

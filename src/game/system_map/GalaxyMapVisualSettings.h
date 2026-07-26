@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/vec3.hpp>
+
 struct GalaxyMapVisualSettings
 {
     // Начальная камера.
@@ -69,4 +71,44 @@ struct GalaxyMapVisualSettings
     float starfieldFieldOfViewDeg = 48.0f;
     float starfieldSizeScale = 0.68f;
     float starfieldMinimumDistanceLy = 120.0f;
+
+    /*
+        Map-only controls for the shared sky renderer.
+
+        Defaults inside GalaxyStarfieldRenderer remain 1.0, so the same
+        renderer keeps its original brightness in the actual game scene.
+    */
+    float starfieldBrightnessScale = 0.48f;
+
+    /*
+        Млечный путь вернуть в видимость, но оставить второстепенным.
+    */
+    float milkyWayIntensityScale = 0.28f;
+
+    glm::vec3 milkyWayColorTint {
+        0.46f,
+        0.62f,
+        0.86f
+    };
+
+    /*
+        Map-only atmospheric veil.
+
+        It is drawn after the shared starfield, so the game sky renderer and
+        its shader remain untouched. Map geometry, labels and UI are drawn
+        afterwards and stay crisp.
+    */
+    bool drawAtmosphereVeil = true;
+
+    /*
+        Насколько сильно затемняется уже нарисованный starfield.
+        Это не влияет на геометрию карты, подписи и UI.
+    */
+    float atmosphereVeilCenterAlpha = 0.24f;
+    float atmosphereVeilEdgeAlpha = 0.72f;
+
+    /*
+        Холодный акцент, но без лишнего свечения.
+    */
+    float atmosphereVeilAquaStrength = 0.24f;
 };

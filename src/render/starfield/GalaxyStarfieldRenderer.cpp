@@ -1028,7 +1028,10 @@ void GalaxyStarfieldRenderer::rebuildVerticesFromRealCatalog()
 void GalaxyStarfieldRenderer::render(
     const glm::mat4& view,
     const glm::mat4& projection,
-    float sizeScale
+    float sizeScale,
+    float starBrightnessScale,
+    float milkyWayIntensityScale,
+    const glm::vec3& milkyWayColorTint
 )
 {
     
@@ -1084,7 +1087,15 @@ void GalaxyStarfieldRenderer::render(
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // Сначала мягкая дымка Млечного Пути.
-    m_milkyWayRenderer.render(view, projection, m_renderRadius);
+    // Коэффициенты по умолчанию равны 1.0, поэтому игровое небо
+    // сохраняет прежний вид. Карты передают собственные значения.
+    m_milkyWayRenderer.render(
+        view,
+        projection,
+        m_renderRadius,
+        milkyWayIntensityScale,
+        milkyWayColorTint
+    );
 
     // Потом острые звёзды.
     glUseProgram(shader);
@@ -1096,6 +1107,24 @@ void GalaxyStarfieldRenderer::render(
     const GLint locSizeScale = glGetUniformLocation(shader, "uSizeScale");
     if (locSizeScale >= 0)
         glUniform1f(locSizeScale, sizeScale);
+
+    const GLint locBrightnessScale =
+        glGetUniformLocation(
+            shader,
+            "uBrightnessScale"
+        );
+
+    if (locBrightnessScale >= 0)
+    {
+        glUniform1f(
+            locBrightnessScale,
+            std::clamp(
+                starBrightnessScale,
+                0.0f,
+                2.0f
+            )
+        );
+    }
 
     glBindVertexArray(m_vao);
     glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(m_vertices.size()));

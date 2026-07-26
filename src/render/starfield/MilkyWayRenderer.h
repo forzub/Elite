@@ -25,7 +25,9 @@ public:
     void render(
         const glm::mat4& view,
         const glm::mat4& projection,
-        float skyRadius
+        float skyRadius,
+        float intensityScale = 1.0f,
+        const glm::vec3& colorTint = glm::vec3(1.0f)
     );
 
     bool isInitialized() const

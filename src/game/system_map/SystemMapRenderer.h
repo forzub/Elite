@@ -1003,6 +1003,11 @@ private:
 
     void ensureBackground();
     void drawBackground();
+    void drawMapAtmosphereVeil(
+        float centerAlpha,
+        float edgeAlpha,
+        float aquaStrength
+    );
 
 
 
@@ -1632,7 +1637,10 @@ private:
         const glm::mat4& cameraView,
         float fieldOfViewDeg,
         float sizeScale,
-        bool distantGalaxyBackdrop
+        bool distantGalaxyBackdrop,
+        float starBrightnessScale = 1.0f,
+        float milkyWayIntensityScale = 1.0f,
+        const glm::vec3& milkyWayColorTint = glm::vec3(1.0f)
     );
 
     double systemPresentationTimeSeconds(

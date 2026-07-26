@@ -50,7 +50,10 @@ public:
     void render(
         const glm::mat4& view,
         const glm::mat4& projection,
-        float sizeScale = 1.0f
+        float sizeScale = 1.0f,
+        float starBrightnessScale = 1.0f,
+        float milkyWayIntensityScale = 1.0f,
+        const glm::vec3& milkyWayColorTint = glm::vec3(1.0f)
     );
 
     bool isInitialized() const { return m_initialized; }

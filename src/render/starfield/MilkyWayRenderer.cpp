@@ -396,7 +396,9 @@ void MilkyWayRenderer::ensureHalfResolutionTarget(
 void MilkyWayRenderer::render(
     const glm::mat4& view,
     const glm::mat4& projection,
-    float skyRadius
+    float skyRadius,
+    float intensityScale,
+    const glm::vec3& colorTint
 )
 {
     (void)skyRadius;
@@ -721,7 +723,36 @@ void MilkyWayRenderer::render(
             {
                 glUniform1f(
                     locIntensity,
-                    m_intensity
+                    m_intensity *
+                        std::clamp(
+                            intensityScale,
+                            0.0f,
+                            2.0f
+                        )
+                );
+            }
+
+            const GLint locColorTint =
+                glGetUniformLocation(
+                    hazeShader,
+                    "uColorTint"
+                );
+
+            if (locColorTint >= 0)
+            {
+                const glm::vec3 safeColorTint =
+                    glm::clamp(
+                        colorTint,
+                        glm::vec3(0.0f),
+                        glm::vec3(2.0f)
+                    );
+
+                glUniform3fv(
+                    locColorTint,
+                    1,
+                    glm::value_ptr(
+                        safeColorTint
+                    )
                 );
             }
 

@@ -2934,7 +2934,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
                 halfAxisX,
                 halfAxisY,
                 halfAxisZ,
-                glm::vec4(0.22f, 0.48f, 0.64f, 0.085f)
+                glm::vec4(0.24f, 0.52f, 0.68f, 0.110f)
             );
 
             if (i == focusedParentIndex)
@@ -2944,7 +2944,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
                     halfAxisX,
                     halfAxisY,
                     halfAxisZ,
-                    glm::vec4(0.22f, 0.48f, 0.64f, 0.052f)
+                    glm::vec4(0.24f, 0.52f, 0.68f, 0.072f)
                 );
             }
         }
@@ -3350,7 +3350,19 @@ void SystemMapRenderer::renderSystem(
             view,
             m_systemVisuals.starfieldFieldOfViewDeg,
             m_systemVisuals.starfieldSizeScale,
-            false
+            false,
+            m_systemVisuals.starfieldBrightnessScale,
+            m_systemVisuals.milkyWayIntensityScale,
+            m_systemVisuals.milkyWayColorTint
+        );
+    }
+
+    if (m_systemVisuals.drawAtmosphereVeil)
+    {
+        drawMapAtmosphereVeil(
+            m_systemVisuals.atmosphereVeilCenterAlpha,
+            m_systemVisuals.atmosphereVeilEdgeAlpha,
+            m_systemVisuals.atmosphereVeilAquaStrength
         );
     }
 

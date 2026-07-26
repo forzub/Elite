@@ -5,6 +5,8 @@ in vec2 vUv;
 
 out vec4 FragColor;
 
+uniform float uBrightnessScale;
+
 void main()
 {
     vec2 p = vUv * 2.0 - 1.0;
@@ -13,7 +15,12 @@ void main()
     if (r > 1.0)
         discard;
 
-    float brightness = clamp(vColor.a, 0.0, 1.0);
+    float brightness =
+        clamp(
+            vColor.a * clamp(uBrightnessScale, 0.0, 2.0),
+            0.0,
+            1.0
+        );
 
     float core = pow(max(1.0 - r, 0.0), 5.5);
     float halo = pow(max(1.0 - r, 0.0), 2.0) * 0.35;

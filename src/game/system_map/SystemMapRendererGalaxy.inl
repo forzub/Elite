@@ -834,7 +834,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
             rootHalfAxisX,
             rootHalfAxisY,
             rootHalfAxisZ,
-            glm::vec4(0.20f, 0.42f, 0.56f, 0.055f)
+            glm::vec4(0.22f, 0.46f, 0.60f, 0.075f)
         );
 
         const bool isFocusedRoot =
@@ -851,10 +851,10 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                 rootHalfAxisY,
                 rootHalfAxisZ,
                 glm::vec4(
-                    0.20f,
-                    0.42f,
-                    0.56f,
-                    0.040f
+                    0.22f,
+                    0.46f,
+                    0.60f,
+                    0.058f
                 )
             );
         }
@@ -1049,10 +1049,10 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                 parentHalfAxisY,
                 parentHalfAxisZ,
                 glm::vec4(
-                    0.22f,
-                    0.48f,
-                    0.64f,
-                    0.085f
+                    0.24f,
+                    0.52f,
+                    0.68f,
+                    0.110f
                 )
             );
 
@@ -1065,10 +1065,10 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                     parentHalfAxisY,
                     parentHalfAxisZ,
                     glm::vec4(
-                        0.22f,
-                        0.48f,
-                        0.64f,
-                        0.052f
+                        0.24f,
+                        0.52f,
+                        0.68f,
+                        0.072f
                     )
                 );
             }
@@ -3159,7 +3159,19 @@ void SystemMapRenderer::renderGalaxy(
             view,
             m_galaxyVisuals.starfieldFieldOfViewDeg,
             m_galaxyVisuals.starfieldSizeScale,
-            true
+            true,
+            m_galaxyVisuals.starfieldBrightnessScale,
+            m_galaxyVisuals.milkyWayIntensityScale,
+            m_galaxyVisuals.milkyWayColorTint
+        );
+    }
+
+    if (m_galaxyVisuals.drawAtmosphereVeil)
+    {
+        drawMapAtmosphereVeil(
+            m_galaxyVisuals.atmosphereVeilCenterAlpha,
+            m_galaxyVisuals.atmosphereVeilEdgeAlpha,
+            m_galaxyVisuals.atmosphereVeilAquaStrength
         );
     }
 

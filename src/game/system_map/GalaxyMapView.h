@@ -202,6 +202,13 @@ namespace game::system_map
             int explicitSystemId = -1
         ) const;
 
+        bool focusSystem(
+            int systemId,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            bool animateCamera,
+            double nowSeconds
+        );
+
         std::optional<GalaxySystemEntryRequest>
         consumeRequestedSystemEntry();
 

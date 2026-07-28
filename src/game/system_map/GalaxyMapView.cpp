@@ -452,6 +452,61 @@ namespace game::system_map
         };
     }
 
+    bool GalaxyMapView::focusSystem(
+        int systemId,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        bool animateCamera,
+        double nowSeconds
+    )
+    {
+        const auto system =
+            std::find_if(
+                galaxy.systems.begin(),
+                galaxy.systems.end(),
+                [systemId](const auto& candidate)
+                {
+                    return candidate.id == systemId;
+                }
+            );
+
+        if (system == galaxy.systems.end())
+            return false;
+
+        m_state.selectedSystemId = system->id;
+        m_state.focusedSystemId = system->id;
+
+        // Keep the exact star position as the navigation target.
+        m_state.navigationFocusLy = system->positionLy;
+        m_state.navigationFocusValid = true;
+
+        m_state.navigationGrid.setAnchorFromPositionLy(
+            system->positionLy
+        );
+
+        m_state.navigationGrid.selectCell(
+            m_state.navigationGrid.anchorCell()
+        );
+
+        const glm::vec3 destinationTarget =
+            positionLyToRender(system->positionLy);
+
+        if (animateCamera)
+        {
+            beginCameraFlight(
+                destinationTarget,
+                m_state.camera.distance,
+                nowSeconds
+            );
+        }
+        else
+        {
+            m_state.camera.target = destinationTarget;
+        }
+
+        return true;
+    }
+
+
     std::optional<GalaxySystemEntryRequest>
     GalaxyMapView::consumeRequestedSystemEntry()
     {

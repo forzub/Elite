@@ -4937,18 +4937,60 @@ void SystemMapRenderer::handleInput(
 
     if (m_mode == Mode::Galaxy)
     {
-        handleGalaxyInput(
-            vp,
-            galaxy,
-            window,
-            mx,
-            my,
-            localMx,
-            localMy,
-            inside,
-            leftDown,
-            rightDown
-        );
+        game::system_map::GalaxyMapInputFrame frame;
+        frame.viewport = vp;
+        frame.mouseX = mx;
+        frame.mouseY = my;
+        frame.localMouseX = localMx;
+        frame.localMouseY = localMy;
+        frame.inside = inside;
+        frame.leftDown = leftDown;
+        frame.rightDown = rightDown;
+        frame.zoomInKeyDown =
+            glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS;
+        frame.zoomOutKeyDown =
+            glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
+        frame.transitionActive = m_mapTransition.active();
+        frame.nowSeconds = glfwGetTime();
+
+        const auto result =
+            m_galaxyInteraction.handleInput(
+                m_galaxyView,
+                galaxy,
+                frame,
+                m_pendingScrollY
+            );
+
+        if (result.requestWindowFocus)
+            glfwFocusWindow(window);
+
+        if (result.navigationEvent.has_value())
+        {
+            const auto& event =
+                result.navigationEvent.value();
+
+            if (event.type ==
+                game::system_map::
+                    GalaxyMapNavigationEventType::
+                        GalaxyLevelChanged)
+            {
+                announceNavigationLevel(
+                    'G',
+                    event.galaxyLevel
+                );
+            }
+            else
+            {
+                announceNavigationLevel(
+                    'S',
+                    m_systemNavigationGrid
+                        .definition()
+                        .minimumLevel
+                );
+            }
+        }
 
         return;
     }

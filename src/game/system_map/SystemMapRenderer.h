@@ -53,6 +53,7 @@
 #include "src/game/system_map/MapMode.h"
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/GalaxyMapView.h"
+#include "src/game/system_map/GalaxyMapInteraction.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
@@ -1117,24 +1118,6 @@ private:
         const Viewport& vp
     );
 
-
-
-
-
-
-    void updateGalaxyNavigationHoverFromCursor(
-        const Viewport& vp,
-        double localMouseX,
-        double localMouseY
-    );
-
-    bool pickGalaxyNavigationCell(
-        const Viewport& vp,
-        double localMouseX,
-        double localMouseY,
-        game::navigation::GalaxyNavigationCell& outCell
-    ) const;
-
     float galaxyNavigationAnchorDiameterPx(
         const Viewport& vp
     ) const;
@@ -1225,13 +1208,6 @@ private:
         float& depth
     ) const;
 
-    int pickGalaxySystem(
-        const Viewport& vp,
-        const world::celestial::GalaxyMapSnapshot& galaxy,
-        double mouseX,
-        double mouseY
-    ) const;
-
     void drawGalaxyLabels(
         const Viewport& vp,
         const world::celestial::GalaxyMapSnapshot& galaxy,
@@ -1271,15 +1247,6 @@ private:
 
 
     void drawNavigationLayerPlaceholder();
-
-    glm::vec3 nearestVisibleStarToScreenPoint(
-        const Viewport& vp,
-        const world::celestial::GalaxyMapSnapshot& galaxy,
-        double localMouseX,
-        double localMouseY,
-        float maxRadiusPx,
-        bool& found
-    ) const;
 
     void debugLabelTraceToFile(
         const std::string& name,
@@ -1358,19 +1325,6 @@ private:
 
     void handleDetailAndHubInput(
         const Viewport& vp,
-        GLFWwindow* window,
-        double mx,
-        double my,
-        double localMx,
-        double localMy,
-        bool inside,
-        bool leftDown,
-        bool rightDown
-    );
-
-    void handleGalaxyInput(
-        const Viewport& vp,
-        const world::celestial::GalaxyMapSnapshot& galaxy,
         GLFWwindow* window,
         double mx,
         double my,
@@ -1531,6 +1485,7 @@ private:
     double m_pendingScrollY = 0.0;
 
     game::system_map::GalaxyMapView m_galaxyView;
+    game::system_map::GalaxyMapInteraction m_galaxyInteraction;
 
     SystemCameraFlight m_systemCameraFlight;
     SystemCamera m_systemCamera;

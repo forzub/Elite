@@ -847,6 +847,23 @@ private:
         float aquaStrength
     ) override;
 
+    double currentTimeSeconds() const override;
+
+    void beginTextFrame(
+        int viewportWidth,
+        int viewportHeight
+    ) override;
+
+    void drawTextPx(
+        const std::string& text,
+        float x,
+        float y,
+        int pixelHeight,
+        const glm::vec4& color
+    ) override;
+
+    void endTextFrame() override;
+
 
 
     void beginLines() override;
@@ -1052,25 +1069,11 @@ private:
         const glm::vec4& color
     );
 
-    void drawGalaxyNavigationGrid(
-        const Viewport& vp,
-        const glm::mat4& mvp
-    ) override;
-
     glm::dvec3 playerGalaxyPositionLy(
         const world::celestial::GalaxyMapSnapshot& galaxy,
         const world::celestial::PlayerNavigationState& nav,
         bool& outInsideKnownSystem
     ) const;
-
-    void drawGalaxyPlayerMarker(
-        const Viewport& vp,
-        const world::celestial::GalaxyMapSnapshot& galaxy,
-        const world::celestial::PlayerNavigationState& nav,
-        const glm::mat4& mvp
-    ) override;
-
-
 
 
     void drawSystemNavigationGrid(
@@ -1215,12 +1218,6 @@ private:
         float& depth
     ) const;
 
-    void drawGalaxyLabels(
-        const Viewport& vp,
-        const world::celestial::GalaxyMapSnapshot& galaxy,
-        const glm::mat4& mvp
-    ) override;
-
     void drawSystemLabels(
         const Viewport& vp,
         const world::celestial::SystemMapSnapshot& system,
@@ -1252,14 +1249,6 @@ private:
     ) const;
 
 
-
-    void drawNavigationLayerPlaceholder() override;
-
-    void debugLabelTraceToFile(
-        const std::string& name,
-        const glm::vec2& screen,
-        const glm::vec2& pos
-    ) const;
 
     void addMapObjectCube(
         const glm::vec3& center,

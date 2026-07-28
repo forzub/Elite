@@ -1377,6 +1377,48 @@ namespace
 
 
 
+double SystemMapRenderer::currentTimeSeconds() const
+{
+    return glfwGetTime();
+}
+
+
+void SystemMapRenderer::beginTextFrame(
+    int viewportWidth,
+    int viewportHeight
+)
+{
+    TextRenderer::instance().beginFrameForViewport(
+        viewportWidth,
+        viewportHeight
+    );
+}
+
+
+void SystemMapRenderer::drawTextPx(
+    const std::string& text,
+    float x,
+    float y,
+    int pixelHeight,
+    const glm::vec4& color
+)
+{
+    TextRenderer::instance().textDrawPx(
+        text,
+        x,
+        y,
+        pixelHeight,
+        color
+    );
+}
+
+
+void SystemMapRenderer::endTextFrame()
+{
+    TextRenderer::instance().endFrame();
+}
+
+
 void SystemMapRenderer::init()
 {
     ensureGlObjects();

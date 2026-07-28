@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 #include "src/render/types/Viewport.h"
 
 namespace world::celestial
@@ -29,6 +31,30 @@ namespace game::system_map
             const Viewport& viewport,
             const world::celestial::GalaxyMapSnapshot& galaxy,
             const world::celestial::PlayerNavigationState& navigation
+        ) const;
+
+    private:
+        void drawNavigationGrid(
+            GalaxyMapView& view,
+            GalaxyMapRenderContext& context,
+            const Viewport& viewport
+        ) const;
+
+        void drawLabels(
+            GalaxyMapView& view,
+            GalaxyMapRenderContext& context,
+            const Viewport& viewport,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const glm::mat4& mvp
+        ) const;
+
+        void drawPlayerMarker(
+            GalaxyMapView& view,
+            GalaxyMapRenderContext& context,
+            const Viewport& viewport,
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const world::celestial::PlayerNavigationState& navigation,
+            const glm::mat4& mvp
         ) const;
     };
 }

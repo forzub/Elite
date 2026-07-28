@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include <string>
+
 #include "src/render/types/Viewport.h"
 
 namespace world::celestial
@@ -66,32 +68,21 @@ namespace game::system_map
         virtual void flushSolids(const glm::mat4& mvp) = 0;
         virtual void flushLines(const glm::mat4& mvp) = 0;
 
-        /*
-            Temporary high-level bridges.
+        virtual double currentTimeSeconds() const = 0;
 
-            Navigation-grid, labels and player-marker passes still use the
-            old shared primitive implementation. Later Galaxy extraction
-            steps will move these passes into GalaxyMapRenderer and shrink
-            this interface without changing GPU ownership.
-        */
-        virtual void drawGalaxyNavigationGrid(
-            const Viewport& viewport,
-            const glm::mat4& mvp
+        virtual void beginTextFrame(
+            int viewportWidth,
+            int viewportHeight
         ) = 0;
 
-        virtual void drawNavigationLayerPlaceholder() = 0;
-
-        virtual void drawGalaxyLabels(
-            const Viewport& viewport,
-            const world::celestial::GalaxyMapSnapshot& galaxy,
-            const glm::mat4& mvp
+        virtual void drawTextPx(
+            const std::string& text,
+            float x,
+            float y,
+            int pixelHeight,
+            const glm::vec4& color
         ) = 0;
 
-        virtual void drawGalaxyPlayerMarker(
-            const Viewport& viewport,
-            const world::celestial::GalaxyMapSnapshot& galaxy,
-            const world::celestial::PlayerNavigationState& navigation,
-            const glm::mat4& mvp
-        ) = 0;
+        virtual void endTextFrame() = 0;
     };
 }

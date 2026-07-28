@@ -54,9 +54,12 @@
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/game/system_map/GalaxyMapInteraction.h"
+#include "src/game/system_map/GalaxyMapRenderContext.h"
+#include "src/game/system_map/GalaxyMapRenderer.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
+    : private game::system_map::GalaxyMapRenderContext
 {
 public:
     using Mode = game::system_map::MapMode;
@@ -842,12 +845,16 @@ private:
         float centerAlpha,
         float edgeAlpha,
         float aquaStrength
-    );
+    ) override;
 
 
 
-    void beginLines();
-    void addLine(const glm::vec3& a, const glm::vec3& b, const glm::vec4& color);
+    void beginLines() override;
+    void addLine(
+        const glm::vec3& a,
+        const glm::vec3& b,
+        const glm::vec4& color
+    ) override;
 
     void addCircleXZ(
         const glm::vec3& center,
@@ -887,7 +894,7 @@ private:
     );
 
 
-    void beginSolids();
+    void beginSolids() override;
 
     void addBillboardBall(
         const glm::vec3& center,
@@ -895,7 +902,7 @@ private:
         const glm::vec4& color,
         const glm::mat4& view,
         int segments = 32
-    );
+    ) override;
 
 
 
@@ -921,7 +928,7 @@ private:
         int segments = 32
     );
 
-    void flushSolids(const glm::mat4& mvp);
+    void flushSolids(const glm::mat4& mvp) override;
 
     void beginTexturedBodies();
 
@@ -1017,7 +1024,7 @@ private:
         float size,
         const glm::vec4& color
     );
-    void flushLines(const glm::mat4& mvp);
+    void flushLines(const glm::mat4& mvp) override;
 
     void renderGalaxy(
         const Viewport& vp,
@@ -1048,7 +1055,7 @@ private:
     void drawGalaxyNavigationGrid(
         const Viewport& vp,
         const glm::mat4& mvp
-    );
+    ) override;
 
     glm::dvec3 playerGalaxyPositionLy(
         const world::celestial::GalaxyMapSnapshot& galaxy,
@@ -1061,7 +1068,7 @@ private:
         const world::celestial::GalaxyMapSnapshot& galaxy,
         const world::celestial::PlayerNavigationState& nav,
         const glm::mat4& mvp
-    );
+    ) override;
 
 
 
@@ -1212,7 +1219,7 @@ private:
         const Viewport& vp,
         const world::celestial::GalaxyMapSnapshot& galaxy,
         const glm::mat4& mvp
-    );
+    ) override;
 
     void drawSystemLabels(
         const Viewport& vp,
@@ -1246,7 +1253,7 @@ private:
 
 
 
-    void drawNavigationLayerPlaceholder();
+    void drawNavigationLayerPlaceholder() override;
 
     void debugLabelTraceToFile(
         const std::string& name,
@@ -1429,7 +1436,7 @@ private:
         float starBrightnessScale = 1.0f,
         float milkyWayIntensityScale = 1.0f,
         const glm::vec3& milkyWayColorTint = glm::vec3(1.0f)
-    );
+    ) override;
 
     double systemPresentationTimeSeconds(
         const world::celestial::SystemMapSnapshot& system
@@ -1486,6 +1493,7 @@ private:
 
     game::system_map::GalaxyMapView m_galaxyView;
     game::system_map::GalaxyMapInteraction m_galaxyInteraction;
+    game::system_map::GalaxyMapRenderer m_galaxyRenderer;
 
     SystemCameraFlight m_systemCameraFlight;
     SystemCamera m_systemCamera;

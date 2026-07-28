@@ -2374,25 +2374,10 @@ void SystemMapRenderer::drawSystemLabels(
 
         const glm::vec4 titleColor =
             selected
-                ? glm::vec4(
-                    1.0f,
-                    0.78f,
-                    0.30f,
-                    0.96f
-                  )
+                ? m_systemVisuals.bodyLabels.selectedTitleColor
                 : b.type == BodyType::Star
-                    ? glm::vec4(
-                        1.0f,
-                        0.82f,
-                        0.46f,
-                        0.90f
-                      )
-                    : glm::vec4(
-                        0.62f,
-                        0.84f,
-                        1.0f,
-                        0.88f
-                      );
+                    ? m_systemVisuals.bodyLabels.starTitleColor
+                    : m_systemVisuals.bodyLabels.bodyTitleColor;
 
         text.textDrawPx(
             b.name,
@@ -2412,7 +2397,7 @@ void SystemMapRenderer::drawSystemLabels(
                     m_systemVisuals.labelSubtitleOffsetBasePx *
                         labelFactor,
                 subtitlePixelSize,
-                glm::vec4(0.55f, 0.67f, 0.78f, 0.62f)
+                m_systemVisuals.bodyLabels.subtitleColor
             );
         }
     }
@@ -2934,7 +2919,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
                 halfAxisX,
                 halfAxisY,
                 halfAxisZ,
-                glm::vec4(0.24f, 0.52f, 0.68f, 0.110f)
+                m_systemVisuals.navigationGrid.parentEdgeColor
             );
 
             if (i == focusedParentIndex)
@@ -2944,7 +2929,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
                     halfAxisX,
                     halfAxisY,
                     halfAxisZ,
-                    glm::vec4(0.24f, 0.52f, 0.68f, 0.072f)
+                    m_systemVisuals.navigationGrid.parentFaceGridColor
                 );
             }
         }
@@ -3013,18 +2998,16 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
         glm::vec4 edgeColor =
             selected
-                ? glm::vec4(0.92f, 0.66f, 0.20f, 0.24f)
-                : glm::vec4(0.38f, 0.72f, 0.94f, 0.08f);
+                ? m_systemVisuals.navigationGrid.selectedEdgeColor
+                : m_systemVisuals.navigationGrid.currentEdgeColor;
 
         if (hovered)
         {
             edgeColor =
-                glm::vec4(
-                    0.45f,
-                    0.78f,
-                    0.92f,
-                    0.18f * hoverVisualAlpha
-                );
+                m_systemVisuals.navigationGrid.hoveredEdgeColor;
+
+            edgeColor.a *=
+                hoverVisualAlpha;
         }
 
         glm::vec4 currentLevelGridColor =
@@ -3032,9 +3015,12 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
         currentLevelGridColor.a =
             std::clamp(
-                edgeColor.a * 0.28f,
-                0.025f * (hovered ? hoverVisualAlpha : 1.0f),
-                0.070f * (hovered ? hoverVisualAlpha : 1.0f)
+                edgeColor.a *
+                    m_systemVisuals.navigationGrid.faceGridAlphaScale,
+                m_systemVisuals.navigationGrid.faceGridMinimumAlpha *
+                    (hovered ? hoverVisualAlpha : 1.0f),
+                m_systemVisuals.navigationGrid.faceGridMaximumAlpha *
+                    (hovered ? hoverVisualAlpha : 1.0f)
             );
 
         addCubeFarFaceGrids(
@@ -3062,7 +3048,9 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
         const float markerSize =
             markerWorldPerPixel *
-            (selected ? 5.0f : 4.0f);
+            (selected
+                ? m_systemVisuals.navigationGrid.selectedMarkerRadiusPx
+                : m_systemVisuals.navigationGrid.currentMarkerRadiusPx);
 
 
 
@@ -3073,8 +3061,8 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
 
         glm::vec4 markerColor = selected
-            ? glm::vec4(1.00f, 0.76f, 0.24f, 0.78f)
-            : glm::vec4(0.54f, 0.82f, 1.00f, 0.58f);
+            ? m_systemVisuals.navigationGrid.selectedMarkerColor
+            : m_systemVisuals.navigationGrid.currentMarkerColor;
 
         if (hovered && !selected)
             markerColor.a *= hoverVisualAlpha;
@@ -3600,16 +3588,18 @@ if (!m_selectedBodyId.empty())
 
         const glm::vec4 orbitColor =
             b.type == BodyType::Moon
-                ? glm::vec4(0.72f, 0.78f, 0.86f, 0.24f)
+                ? m_systemVisuals.scene.moonOrbitColor
                 : b.type == BodyType::AsteroidBelt
-                    ? glm::vec4(0.62f, 0.66f, 0.72f, 0.30f)
-                    : glm::vec4(0.48f, 0.76f, 1.00f, 0.34f);
+                    ? m_systemVisuals.scene.asteroidBeltOrbitColor
+                    : m_systemVisuals.scene.planetOrbitColor;
 
         addCircleXZ(
             center,
             orbitR,
             orbitColor,
-            b.type == BodyType::Moon ? 64 : 160
+            b.type == BodyType::Moon
+                ? m_systemVisuals.scene.moonOrbitSegments
+                : m_systemVisuals.scene.primaryOrbitSegments
         );
     }
 
@@ -3790,22 +3780,12 @@ if (bodyMetrics.drawMarker)
     if (b.type == BodyType::Moon)
     {
         markerColor =
-            glm::vec4(
-                0.72f,
-                0.78f,
-                0.86f,
-                0.90f
-            );
+            m_systemVisuals.scene.moonMarkerColor;
     }
     else if (b.type == BodyType::Planet)
     {
         markerColor =
-            glm::vec4(
-                0.48f,
-                0.76f,
-                1.00f,
-                0.90f
-            );
+            m_systemVisuals.scene.planetMarkerColor;
     }
     else if (b.type == BodyType::Star)
     {
@@ -4018,14 +3998,14 @@ if (bodyMetrics.drawMarker)
             addCircleXZ(
                 selectedPos,
                 selectedRadius * 1.95f,
-                glm::vec4(1.0f, 0.82f, 0.25f, 0.98f),
+                m_systemVisuals.scene.selectedRingColor,
                 96
             );
 
             addCircleXY(
                 selectedPos,
                 selectedRadius * 2.10f,
-                glm::vec4(1.0f, 0.82f, 0.25f, 0.34f),
+                m_systemVisuals.scene.selectedSecondaryRingColor,
                 96
             );
 
@@ -4054,24 +4034,14 @@ if (bodyMetrics.drawMarker)
             addCircleXY(
                 selectedHubPosition->second,
                 markerRadius,
-                glm::vec4(
-                    0.30f,
-                    0.92f,
-                    1.00f,
-                    0.98f
-                ),
+                m_systemVisuals.scene.selectedHubRingColor,
                 64
             );
 
             addCircleXZ(
                 selectedHubPosition->second,
                 markerRadius * 1.15f,
-                glm::vec4(
-                    0.30f,
-                    0.92f,
-                    1.00f,
-                    0.78f
-                ),
+                m_systemVisuals.scene.selectedHubSecondaryRingColor,
                 64
             );
 
@@ -4270,12 +4240,7 @@ if (bodyMetrics.drawMarker)
                 x0,
                 y0 - 24.0f,
                 12,
-                glm::vec4(
-                    0.58f,
-                    0.82f,
-                    1.0f,
-                    0.78f
-                )
+                m_systemVisuals.scene.scalePrimaryTextColor
             );
 
             std::ostringstream pxLabel;
@@ -4291,12 +4256,7 @@ if (bodyMetrics.drawMarker)
                 x0,
                 y0 + 10.0f,
                 10,
-                glm::vec4(
-                    0.42f,
-                    0.62f,
-                    0.82f,
-                    0.58f
-                )
+                m_systemVisuals.scene.scaleSecondaryTextColor
             );
 
             text.endFrame();
@@ -5103,8 +5063,8 @@ void SystemMapRenderer::drawSystemObjectLabels(
 
         const glm::vec3 labelColor =
             isHub
-                ? glm::vec3(0.42f, 0.95f, 1.00f)
-                : glm::vec3(1.00f, 0.86f, 0.42f);
+                ? m_systemVisuals.scene.hubObjectLabelColor
+                : m_systemVisuals.scene.otherObjectLabelColor;
 
         text.textDrawPx(
             obj.name,
@@ -5125,10 +5085,11 @@ void SystemMapRenderer::drawSystemObjectLabels(
                 screen.y + 9.0f,
                 10,
                 glm::vec4(
-                    0.75f,
-                    0.72f,
-                    0.58f,
-                    alpha * 0.70f
+                    glm::vec3(
+                        m_systemVisuals.scene.objectOwnerLabelColor
+                    ),
+                    alpha *
+                        m_systemVisuals.scene.objectOwnerAlphaScale
                 )
             );
         }

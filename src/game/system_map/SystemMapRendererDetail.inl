@@ -372,7 +372,12 @@ void SystemMapRenderer::renderPlanetMap(
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    glColor4f(0.02f, 0.025f, 0.035f, 1.0f);
+    glColor4f(
+        m_detailVisuals.backgroundColor.r,
+        m_detailVisuals.backgroundColor.g,
+        m_detailVisuals.backgroundColor.b,
+        m_detailVisuals.backgroundColor.a
+    );
 
     glBegin(GL_QUADS);
     glVertex2f(0.0f, 0.0f);
@@ -385,10 +390,13 @@ void SystemMapRenderer::renderPlanetMap(
         return;
 
 
-    drawMapStarfield(
-        viewport,
-        planet.systemPositionLy
-    );
+    if (m_detailVisuals.drawStarfield)
+    {
+        drawMapStarfield(
+            viewport,
+            planet.systemPositionLy
+        );
+    }
 
 
 
@@ -781,12 +789,7 @@ if (!shapeModelDrawn)
                 selectedPoint->screen.x + 18.0f,
                 selectedPoint->screen.y - 9.0f,
                 13,
-                glm::vec4(
-                    0.42f,
-                    0.95f,
-                    1.0f,
-                    0.96f
-                )
+                m_detailVisuals.selectedHubLabelColor
             );
 
             text.endFrame();
@@ -807,7 +810,12 @@ if (!shapeModelDrawn)
                 centerPx
             );
 
-        glColor4f(0.8f, 0.95f, 1.0f, 1.0f);
+        glColor4f(
+            m_detailVisuals.stationMarkerColor.r,
+            m_detailVisuals.stationMarkerColor.g,
+            m_detailVisuals.stationMarkerColor.b,
+            m_detailVisuals.stationMarkerColor.a
+        );
         drawPlanetMapCross(p, 6.0f);
 
         drawPlanetMapAxes(
@@ -847,7 +855,12 @@ if (!shapeModelDrawn)
                 centerPx
             );
 
-        glColor4f(1.0f, 0.85f, 0.25f, 1.0f);
+        glColor4f(
+            m_detailVisuals.selectedStationMarkerColor.r,
+            m_detailVisuals.selectedStationMarkerColor.g,
+            m_detailVisuals.selectedStationMarkerColor.b,
+            m_detailVisuals.selectedStationMarkerColor.a
+        );
         drawPlanetMapCross(p, 8.0f);
 
         drawPlanetMapAxes(

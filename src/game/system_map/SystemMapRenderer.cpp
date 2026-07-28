@@ -1528,13 +1528,44 @@ void SystemMapRenderer::drawMapStarfield(
             )
         );
 
+    const bool hubMode =
+        m_mode == Mode::Hub;
+
+    const float fieldOfViewDeg =
+        hubMode
+            ? m_hubVisuals.starfieldFieldOfViewDeg
+            : m_detailVisuals.starfieldFieldOfViewDeg;
+
+    const float sizeScale =
+        hubMode
+            ? m_hubVisuals.starfieldSizeScale
+            : m_detailVisuals.starfieldSizeScale;
+
+    const float starBrightnessScale =
+        hubMode
+            ? m_hubVisuals.starfieldBrightnessScale
+            : m_detailVisuals.starfieldBrightnessScale;
+
+    const float milkyWayIntensityScale =
+        hubMode
+            ? m_hubVisuals.milkyWayIntensityScale
+            : m_detailVisuals.milkyWayIntensityScale;
+
+    const glm::vec3 milkyWayColorTint =
+        hubMode
+            ? m_hubVisuals.milkyWayColorTint
+            : m_detailVisuals.milkyWayColorTint;
+
     drawMapStarfield(
         viewport,
         observerPositionLy,
         view,
-        60.0f,
-        0.88f,
-        false
+        fieldOfViewDeg,
+        sizeScale,
+        false,
+        starBrightnessScale,
+        milkyWayIntensityScale,
+        milkyWayColorTint
     );
 }
 

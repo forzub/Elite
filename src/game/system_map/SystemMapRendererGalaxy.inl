@@ -834,7 +834,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
             rootHalfAxisX,
             rootHalfAxisY,
             rootHalfAxisZ,
-            glm::vec4(0.22f, 0.46f, 0.60f, 0.075f)
+            m_galaxyVisuals.navigationGrid.rootEdgeColor
         );
 
         const bool isFocusedRoot =
@@ -850,12 +850,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                 rootHalfAxisX,
                 rootHalfAxisY,
                 rootHalfAxisZ,
-                glm::vec4(
-                    0.22f,
-                    0.46f,
-                    0.60f,
-                    0.058f
-                )
+                m_galaxyVisuals.navigationGrid.rootFaceGridColor
             );
         }
     }
@@ -1048,12 +1043,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                 parentHalfAxisX,
                 parentHalfAxisY,
                 parentHalfAxisZ,
-                glm::vec4(
-                    0.24f,
-                    0.52f,
-                    0.68f,
-                    0.110f
-                )
+                m_galaxyVisuals.navigationGrid.parentEdgeColor
             );
 
             if (hasFocusedParent &&
@@ -1064,12 +1054,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                     parentHalfAxisX,
                     parentHalfAxisY,
                     parentHalfAxisZ,
-                    glm::vec4(
-                        0.24f,
-                        0.52f,
-                        0.68f,
-                        0.072f
-                    )
+                    m_galaxyVisuals.navigationGrid.parentFaceGridColor
                 );
             }
         }
@@ -1157,41 +1142,27 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
             cell.index ==
                 m_galaxyNavigationGrid.selectedCell().index;
 
-        glm::vec4 edgeColor(
-            0.22f,
-            0.58f,
-            0.78f,
-            0.035f
-        );
+        glm::vec4 edgeColor =
+            m_galaxyVisuals.navigationGrid.currentEdgeColor;
 
-        glm::vec4 markerColor(
-            0.82f,
-            0.67f,
-            0.24f,
-            0.10f
-        );
+        glm::vec4 markerColor =
+            m_galaxyVisuals.navigationGrid.currentMarkerColor;
 
         if (isAnchor)
         {
-            edgeColor.a = 0.18f;
-            markerColor.a = 0.58f;
+            edgeColor.a =
+                m_galaxyVisuals.navigationGrid.anchorEdgeAlpha;
+            markerColor.a =
+                m_galaxyVisuals.navigationGrid.anchorMarkerAlpha;
         }
 
         if (isHovered)
         {
-            edgeColor = glm::vec4(
-                0.45f,
-                0.78f,
-                0.92f,
-                0.18f
-            );
+            edgeColor =
+                m_galaxyVisuals.navigationGrid.hoveredEdgeColor;
 
-            markerColor = glm::vec4(
-                0.92f,
-                0.76f,
-                0.28f,
-                0.58f
-            );
+            markerColor =
+                m_galaxyVisuals.navigationGrid.hoveredMarkerColor;
 
             edgeColor.a *=
                 hoverVisualAlpha;
@@ -1202,19 +1173,11 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
 
         if (isSelected)
         {
-            edgeColor = glm::vec4(
-                0.78f,
-                0.58f,
-                0.16f,
-                0.25f
-            );
+            edgeColor =
+                m_galaxyVisuals.navigationGrid.selectedEdgeColor;
 
-            markerColor = glm::vec4(
-                1.00f,
-                0.75f,
-                0.18f,
-                0.72f
-            );
+            markerColor =
+                m_galaxyVisuals.navigationGrid.selectedMarkerColor;
         }
 
         glm::vec4 currentLevelGridColor =
@@ -1222,9 +1185,16 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
 
         currentLevelGridColor.a =
             std::clamp(
-                edgeColor.a * 0.28f,
-                0.025f,
-                0.070f
+                edgeColor.a *
+                    m_galaxyVisuals
+                        .navigationGrid
+                        .currentFaceGridAlphaScale,
+                m_galaxyVisuals
+                    .navigationGrid
+                    .currentFaceGridMinimumAlpha,
+                m_galaxyVisuals
+                    .navigationGrid
+                    .currentFaceGridMaximumAlpha
             );
 
         addCubeFarFaceGrids(
@@ -3574,7 +3544,7 @@ void SystemMapRenderer::drawGalaxyPlayerMarker(
                 markerColor.r,
                 markerColor.g,
                 markerColor.b,
-                0.42f
+                m_galaxyVisuals.navigationGrid.terminalCubeAlpha
             )
         );
 
@@ -3623,7 +3593,7 @@ void SystemMapRenderer::drawGalaxyPlayerMarker(
             markerColor.r,
             markerColor.g,
             markerColor.b,
-            0.52f
+            m_galaxyVisuals.navigationGrid.terminalLeaderAlpha
         )
     );
 
@@ -3910,8 +3880,8 @@ for (const auto& l : labels)
 {
     const glm::vec4 lineColor =
         l.selected
-            ? glm::vec4(0.98f, 0.72f, 0.34f, 0.55f)
-            : glm::vec4(0.46f, 0.78f, 1.00f, 0.32f);
+            ? m_galaxyVisuals.labels.selectedLeaderColor
+            : m_galaxyVisuals.labels.normalLeaderColor;
 
 
 
@@ -3959,13 +3929,13 @@ for (const auto& l : labels)
 
     const glm::vec4 titleColor =
         l.selected
-            ? glm::vec4(0.98f, 0.72f, 0.34f, 0.92f)
-            : glm::vec4(0.46f, 0.78f, 1.00f, 0.68f);
+            ? m_galaxyVisuals.labels.selectedTitleColor
+            : m_galaxyVisuals.labels.normalTitleColor;
 
     const glm::vec4 subtitleColor =
         l.selected
-            ? glm::vec4(0.70f, 0.86f, 1.00f, 0.68f)
-            : glm::vec4(0.38f, 0.64f, 0.90f, 0.46f);
+            ? m_galaxyVisuals.labels.selectedSubtitleColor
+            : m_galaxyVisuals.labels.normalSubtitleColor;
 
 
     text.textDrawPx(

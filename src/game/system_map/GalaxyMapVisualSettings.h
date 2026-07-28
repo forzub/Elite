@@ -1,6 +1,42 @@
 #pragma once
 
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+
+struct GalaxyNavigationGridVisualSettings
+{
+    glm::vec4 rootEdgeColor {0.22f, 0.46f, 0.60f, 0.075f};
+    glm::vec4 rootFaceGridColor {0.22f, 0.46f, 0.60f, 0.058f};
+    glm::vec4 parentEdgeColor {0.24f, 0.52f, 0.68f, 0.110f};
+    glm::vec4 parentFaceGridColor {0.24f, 0.52f, 0.68f, 0.072f};
+
+    glm::vec4 currentEdgeColor {0.22f, 0.58f, 0.78f, 0.035f};
+    glm::vec4 currentMarkerColor {0.82f, 0.67f, 0.24f, 0.10f};
+    float anchorEdgeAlpha = 0.18f;
+    float anchorMarkerAlpha = 0.58f;
+
+    glm::vec4 hoveredEdgeColor {0.45f, 0.78f, 0.92f, 0.18f};
+    glm::vec4 hoveredMarkerColor {0.92f, 0.76f, 0.28f, 0.58f};
+    glm::vec4 selectedEdgeColor {0.78f, 0.58f, 0.16f, 0.25f};
+    glm::vec4 selectedMarkerColor {1.00f, 0.75f, 0.18f, 0.72f};
+
+    float currentFaceGridAlphaScale = 0.28f;
+    float currentFaceGridMinimumAlpha = 0.025f;
+    float currentFaceGridMaximumAlpha = 0.070f;
+
+    float terminalCubeAlpha = 0.42f;
+    float terminalLeaderAlpha = 0.52f;
+};
+
+struct GalaxyLabelVisualSettings
+{
+    glm::vec4 selectedLeaderColor {0.98f, 0.72f, 0.34f, 0.55f};
+    glm::vec4 normalLeaderColor {0.46f, 0.78f, 1.00f, 0.32f};
+    glm::vec4 selectedTitleColor {0.98f, 0.72f, 0.34f, 0.92f};
+    glm::vec4 normalTitleColor {0.46f, 0.78f, 1.00f, 0.68f};
+    glm::vec4 selectedSubtitleColor {0.70f, 0.86f, 1.00f, 0.68f};
+    glm::vec4 normalSubtitleColor {0.38f, 0.64f, 0.90f, 0.46f};
+};
 
 struct GalaxyMapVisualSettings
 {
@@ -78,17 +114,17 @@ struct GalaxyMapVisualSettings
         Defaults inside GalaxyStarfieldRenderer remain 1.0, so the same
         renderer keeps its original brightness in the actual game scene.
     */
-    float starfieldBrightnessScale = 0.48f;
+    float starfieldBrightnessScale = 0.72f;
 
     /*
         Млечный путь вернуть в видимость, но оставить второстепенным.
     */
-    float milkyWayIntensityScale = 0.28f;
+    float milkyWayIntensityScale = 0.44f;
 
     glm::vec3 milkyWayColorTint {
-        0.46f,
-        0.62f,
-        0.86f
+        0.56f,
+        0.70f,
+        0.92f
     };
 
     /*
@@ -111,4 +147,7 @@ struct GalaxyMapVisualSettings
         Холодный акцент, но без лишнего свечения.
     */
     float atmosphereVeilAquaStrength = 0.24f;
+
+    GalaxyNavigationGridVisualSettings navigationGrid;
+    GalaxyLabelVisualSettings labels;
 };

@@ -1,6 +1,57 @@
 #pragma once
 
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+
+struct SystemNavigationGridVisualSettings
+{
+    glm::vec4 parentEdgeColor {0.24f, 0.52f, 0.68f, 0.110f};
+    glm::vec4 parentFaceGridColor {0.24f, 0.52f, 0.68f, 0.072f};
+    glm::vec4 currentEdgeColor {0.38f, 0.72f, 0.94f, 0.08f};
+    glm::vec4 hoveredEdgeColor {0.45f, 0.78f, 0.92f, 0.18f};
+    glm::vec4 selectedEdgeColor {0.92f, 0.66f, 0.20f, 0.24f};
+    glm::vec4 currentMarkerColor {0.54f, 0.82f, 1.00f, 0.58f};
+    glm::vec4 selectedMarkerColor {1.00f, 0.76f, 0.24f, 0.78f};
+    float currentMarkerRadiusPx = 4.0f;
+    float selectedMarkerRadiusPx = 5.0f;
+    float faceGridAlphaScale = 0.28f;
+    float faceGridMinimumAlpha = 0.025f;
+    float faceGridMaximumAlpha = 0.070f;
+};
+
+struct SystemBodyLabelVisualSettings
+{
+    glm::vec4 selectedTitleColor {1.0f, 0.78f, 0.30f, 0.96f};
+    glm::vec4 starTitleColor {1.0f, 0.82f, 0.46f, 0.90f};
+    glm::vec4 bodyTitleColor {0.62f, 0.84f, 1.0f, 0.88f};
+    glm::vec4 subtitleColor {0.55f, 0.67f, 0.78f, 0.62f};
+};
+
+struct SystemSceneVisualSettings
+{
+    glm::vec4 moonOrbitColor {0.72f, 0.78f, 0.86f, 0.24f};
+    glm::vec4 asteroidBeltOrbitColor {0.62f, 0.66f, 0.72f, 0.30f};
+    glm::vec4 planetOrbitColor {0.48f, 0.76f, 1.00f, 0.34f};
+    int moonOrbitSegments = 64;
+    int primaryOrbitSegments = 160;
+
+    glm::vec4 moonMarkerColor {0.72f, 0.78f, 0.86f, 0.90f};
+    glm::vec4 planetMarkerColor {0.48f, 0.76f, 1.00f, 0.90f};
+    glm::vec4 asteroidMarkerColor {0.74f, 0.70f, 0.62f, 0.88f};
+
+    glm::vec4 selectedRingColor {1.0f, 0.82f, 0.25f, 0.98f};
+    glm::vec4 selectedSecondaryRingColor {1.0f, 0.82f, 0.25f, 0.34f};
+    glm::vec4 selectedHubRingColor {0.30f, 0.92f, 1.00f, 0.98f};
+    glm::vec4 selectedHubSecondaryRingColor {0.30f, 0.92f, 1.00f, 0.78f};
+
+    glm::vec4 scalePrimaryTextColor {0.58f, 0.82f, 1.0f, 0.78f};
+    glm::vec4 scaleSecondaryTextColor {0.42f, 0.62f, 0.82f, 0.58f};
+
+    glm::vec3 hubObjectLabelColor {0.42f, 0.95f, 1.00f};
+    glm::vec3 otherObjectLabelColor {1.00f, 0.86f, 0.42f};
+    glm::vec3 objectOwnerLabelColor {0.75f, 0.72f, 0.58f};
+    float objectOwnerAlphaScale = 0.70f;
+};
 
 struct SystemMapVisualSettings
 {
@@ -53,18 +104,18 @@ struct SystemMapVisualSettings
         System-map-only sky treatment. The shared renderer uses 1.0 defaults
         everywhere else, including the actual flight scene and Hub/Detail maps.
     */
-    float starfieldBrightnessScale = 0.42f;
+    float starfieldBrightnessScale = 0.68f;
 
     /*
         В System Map Млечный путь нужен как очень мягкая глубина,
         а не как главный объект.
     */
-    float milkyWayIntensityScale = 0.24f;
+    float milkyWayIntensityScale = 0.38f;
 
     glm::vec3 milkyWayColorTint {
-        0.42f,
-        0.58f,
-        0.84f
+        0.54f,
+        0.68f,
+        0.90f
     };
 
     /*
@@ -80,4 +131,8 @@ struct SystemMapVisualSettings
     float atmosphereVeilCenterAlpha = 0.30f;
     float atmosphereVeilEdgeAlpha = 0.78f;
     float atmosphereVeilAquaStrength = 0.20f;
+
+    SystemNavigationGridVisualSettings navigationGrid;
+    SystemBodyLabelVisualSettings bodyLabels;
+    SystemSceneVisualSettings scene;
 };

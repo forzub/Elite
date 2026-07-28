@@ -2916,10 +2916,10 @@ const glm::mat3 cameraToPlanetBody =
             Поэтому орбита лежит в локальной плоскости XY.
         */
         glColor4f(
-            0.95f,
-            0.82f,
-            0.32f,
-            0.12f
+            m_hubVisuals.planetOrbitColor.r,
+            m_hubVisuals.planetOrbitColor.g,
+            m_hubVisuals.planetOrbitColor.b,
+            m_hubVisuals.planetOrbitColor.a
         );
 
         drawHubMapCircleLocalXY(
@@ -2948,10 +2948,10 @@ const glm::mat3 cameraToPlanetBody =
         );
 
     glColor4f(
-        0.70f,
-        0.96f,
-        1.0f,
-        0.30f
+        m_hubVisuals.hubOriginColor.r,
+        m_hubVisuals.hubOriginColor.g,
+        m_hubVisuals.hubOriginColor.b,
+        m_hubVisuals.hubOriginColor.a
     );
 
     drawPlanetMapCross(
@@ -3009,10 +3009,10 @@ void SystemMapRenderer::drawHubMapAdaptiveGrid(
         ) + 2;
 
     glColor4f(
-        0.12f,
-        0.28f,
-        0.38f,
-        0.30f
+        m_hubVisuals.localGridColor.r,
+        m_hubVisuals.localGridColor.g,
+        m_hubVisuals.localGridColor.b,
+        m_hubVisuals.localGridColor.a
     );
 
     for (int i = -gridN; i <= gridN; ++i)
@@ -3034,10 +3034,10 @@ void SystemMapRenderer::drawHubMapAdaptiveGrid(
 
     // Главные оси плоскости хаба.
     glColor4f(
-        0.20f,
-        0.55f,
-        0.75f,
-        0.45f
+        m_hubVisuals.localGridAxisColor.r,
+        m_hubVisuals.localGridAxisColor.g,
+        m_hubVisuals.localGridAxisColor.b,
+        m_hubVisuals.localGridAxisColor.a
     );
 
     drawPlanetMapLine(
@@ -3515,10 +3515,10 @@ void SystemMapRenderer::renderHubMap(
     glLoadIdentity();
 
     glColor4f(
-        0.015f,
-        0.020f,
-        0.030f,
-        1.0f
+        m_hubVisuals.backgroundColor.r,
+        m_hubVisuals.backgroundColor.g,
+        m_hubVisuals.backgroundColor.b,
+        m_hubVisuals.backgroundColor.a
     );
 
     glBegin(GL_QUADS);
@@ -3548,10 +3548,13 @@ void SystemMapRenderer::renderHubMap(
     }
 
 
-    drawMapStarfield(
-        viewport,
-        hub.systemPositionLy
-    );
+    if (m_hubVisuals.drawStarfield)
+    {
+        drawMapStarfield(
+            viewport,
+            hub.systemPositionLy
+        );
+    }
 
     endHubGpuStage();
 
@@ -3828,18 +3831,8 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
         const glm::vec4 moduleWireColor =
             mod.prime ||
             mod.kind == "station"
-                ? glm::vec4(
-                    0.65f,
-                    0.92f,
-                    1.0f,
-                    0.95f
-                )
-                : glm::vec4(
-                    0.45f,
-                    0.65f,
-                    0.85f,
-                    0.75f
-                );
+                ? m_hubVisuals.primeModuleWireColor
+                : m_hubVisuals.regularModuleWireColor;
 
         const bool modelDrawn =
             drawHubMapAssemblyWire(
@@ -3877,19 +3870,21 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
 
         // Если модуль на текущем масштабе слишком мелкий,
         // добавляем screen-space маркер. Это не физический размер.
-        if (moduleRadiusPx < 8.0)
+        if (moduleRadiusPx < m_hubVisuals.moduleMarkerThresholdPx)
         {
             const glm::vec4 markerColor =
                 mod.prime
-                    ? glm::vec4(0.85f, 0.98f, 1.0f, 0.95f)
-                    : glm::vec4(0.48f, 0.76f, 1.0f, 0.82f);
+                    ? m_hubVisuals.primeModuleMarkerColor
+                    : m_hubVisuals.regularModuleMarkerColor;
 
             drawHubMapScreenMarker(
                 modScreen,
-                mod.prime ? 9.0 : 7.0,
+                mod.prime
+                    ? m_hubVisuals.primeModuleMarkerRadiusPx
+                    : m_hubVisuals.regularModuleMarkerRadiusPx,
                 markerColor,
                 mod.prime,
-                32
+                m_hubVisuals.moduleMarkerSegments
             );
         }
     }
@@ -3956,18 +3951,8 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
 
        const glm::vec4 shipWireColor =
         ship.player
-            ? glm::vec4(
-                1.0f,
-                0.78f,
-                0.25f,
-                1.0f
-            )
-            : glm::vec4(
-                0.95f,
-                0.65f,
-                0.35f,
-                0.85f
-            );
+            ? m_hubVisuals.playerShipWireColor
+            : m_hubVisuals.regularShipWireColor;
 
         // Если корабль на карте слишком маленький, wire-модель будет шумом.
         // Тогда рисуем fallback box с увеличенным visual size.
@@ -4028,19 +4013,21 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
         // Экранный маркер поверх корабля.
         // PLAYER виден всегда, остальные — когда мелкие.
         if (ship.player ||
-            shipRadiusPx < 12.0)
+            shipRadiusPx < m_hubVisuals.shipMarkerThresholdPx)
         {
             const glm::vec4 markerColor =
                 ship.player
-                    ? glm::vec4(1.0f, 0.84f, 0.25f, 0.98f)
-                    : glm::vec4(1.0f, 0.62f, 0.32f, 0.82f);
+                    ? m_hubVisuals.playerShipMarkerColor
+                    : m_hubVisuals.regularShipMarkerColor;
 
             drawHubMapScreenMarker(
                 shipScreen,
-                ship.player ? 13.0 : 8.0,
+                ship.player
+                    ? m_hubVisuals.playerShipMarkerRadiusPx
+                    : m_hubVisuals.regularShipMarkerRadiusPx,
                 markerColor,
                 true,
-                32
+                m_hubVisuals.shipMarkerSegments
             );
         }
     }
@@ -4095,8 +4082,8 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
                     mod.name,
                     static_cast<float>(p.x + 10.0),
                     static_cast<float>(p.y - 8.0),
-                    13,
-                    glm::vec4(0.65f, 0.92f, 1.0f, 0.88f)
+                    m_hubVisuals.primaryLabelPx,
+                    m_hubVisuals.moduleLabelColor
                 );
 
                 if (!mod.kind.empty())
@@ -4105,8 +4092,8 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
                         mod.kind,
                         static_cast<float>(p.x + 10.0),
                         static_cast<float>(p.y + 8.0),
-                        10,
-                        glm::vec4(0.55f, 0.72f, 0.82f, 0.62f)
+                        m_hubVisuals.secondaryLabelPx,
+                        m_hubVisuals.moduleSubtitleColor
                     );
                 }
             }
@@ -4152,8 +4139,8 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
                     label,
                     static_cast<float>(p.x + 10.0),
                     static_cast<float>(p.y - 8.0),
-                    13,
-                    glm::vec4(1.0f, 0.78f, 0.25f, 0.92f)
+                    m_hubVisuals.primaryLabelPx,
+                    m_hubVisuals.shipLabelColor
                 );
             }
 
@@ -4286,83 +4273,44 @@ SystemMapRenderer::hubSphericalGridStyleForHub(
 
     // По умолчанию — холодная голубая сетка.
     style.radiusScale = 1.12;
-    style.latitudeStepDeg = 10;
-    style.longitudeStepDeg = 10;
-    style.majorEvery = 3;
-    style.samplesPerLine = 180;
+    style.latitudeStepDeg =
+        m_hubVisuals.sphericalGridLatitudeStepDeg;
+    style.longitudeStepDeg =
+        m_hubVisuals.sphericalGridLongitudeStepDeg;
+    style.majorEvery =
+        m_hubVisuals.sphericalGridMajorEvery;
+    style.samplesPerLine =
+        m_hubVisuals.sphericalGridSamplesPerLine;
     style.minorColor =
-        glm::vec4(
-            0.28f,
-            0.66f,
-            1.00f,
-            0.055f
-        );
-
+        m_hubVisuals.sphericalGridMinorColor;
     style.majorColor =
-        glm::vec4(
-            0.46f,
-            0.82f,
-            1.00f,
-            0.105f
-        );
-
-    style.horizonFadeStart = 0.04f;
-    style.horizonFadeEnd = 0.28f;
+        m_hubVisuals.sphericalGridMajorColor;
+    style.horizonFadeStart =
+        m_hubVisuals.sphericalGridHorizonFadeStart;
+    style.horizonFadeEnd =
+        m_hubVisuals.sphericalGridHorizonFadeEnd;
 
     if (bodyKey == "mars" ||
         bodyKey == "ares")
     {
         style.minorColor =
-            glm::vec4(
-                1.00f,
-                0.56f,
-                0.26f,
-                0.07f
-            );
-
+            m_hubVisuals.marsGridMinorColor;
         style.majorColor =
-            glm::vec4(
-                1.00f,
-                0.72f,
-                0.34f,
-                0.13f
-            );
+            m_hubVisuals.marsGridMajorColor;
     }
     else if (bodyKey == "venus")
     {
         style.minorColor =
-            glm::vec4(
-                1.00f,
-                0.74f,
-                0.34f,
-                0.08f
-            );
-
+            m_hubVisuals.venusGridMinorColor;
         style.majorColor =
-            glm::vec4(
-                1.00f,
-                0.86f,
-                0.48f,
-                0.15f
-            );
+            m_hubVisuals.venusGridMajorColor;
     }
     else if (bodyKey == "titan")
     {
         style.minorColor =
-            glm::vec4(
-                1.00f,
-                0.62f,
-                0.24f,
-                0.07f
-            );
-
+            m_hubVisuals.titanGridMinorColor;
         style.majorColor =
-            glm::vec4(
-                1.00f,
-                0.76f,
-                0.34f,
-                0.13f
-            );
+            m_hubVisuals.titanGridMajorColor;
     }
 
     return style;

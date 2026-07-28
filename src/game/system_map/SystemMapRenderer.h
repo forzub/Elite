@@ -48,6 +48,8 @@
 
 #include "src/game/system_map/GalaxyMapVisualSettings.h"
 #include "src/game/system_map/SystemMapVisualSettings.h"
+#include "src/game/system_map/DetailMapVisualSettings.h"
+#include "src/game/system_map/HubMapVisualSettings.h"
 #include "src/game/system_map/MapTransitionController.h"
 
 struct GLFWwindow;
@@ -1795,6 +1797,7 @@ private:
 
 
     DetailControlSettings m_planetControls;
+    DetailMapVisualSettings m_detailVisuals;
     DetailControlSettings m_hubControls = []()
     {
         DetailControlSettings settings;
@@ -1805,6 +1808,8 @@ private:
 
         return settings;
     }();
+
+    HubMapVisualSettings m_hubVisuals;
 
     int m_selectedSystemId = -1;
     std::optional<SystemEntryRequest>

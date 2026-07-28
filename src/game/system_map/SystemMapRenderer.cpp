@@ -30,7 +30,8 @@
 namespace
 {
     constexpr double AU_KM = 149597870.7;
-    constexpr float GALAXY_RENDER_UNITS_PER_LY = 2.2f;
+    constexpr float GALAXY_RENDER_UNITS_PER_LY =
+        game::system_map::GalaxyMapView::RenderUnitsPerLightYear;
 
     double hubPerfNowMs()
     {
@@ -1391,7 +1392,7 @@ void SystemMapRenderer::init()
 
     m_navigationCoordinateFormat =
         game::navigation::navigationCoordinateFormatFromString(
-            m_galaxyNavigationGrid
+            m_galaxyView.state().navigationGrid
                 .config()
                 .defaultCoordinateFormat
         );
@@ -1430,7 +1431,7 @@ void SystemMapRenderer::init()
     if (!m_galaxyBackdropStarfieldInitialized)
     {
         m_galaxyBackdropStarfieldRenderer.setCatalogFilter(
-            m_galaxyVisuals.starfieldMinimumDistanceLy,
+            m_galaxyView.visuals().starfieldMinimumDistanceLy,
             true
         );
 
@@ -3016,17 +3017,9 @@ SystemMapRenderer::atmosphereStyleForBody(
 void SystemMapRenderer::resetView()
 {
     m_mode = Mode::Galaxy;
-    m_galaxyCamera = GalaxyCamera{};
-    m_galaxyCamera.distance = m_galaxyVisuals.initialCameraDistance;
-    m_galaxyCameraFlight.reset();
+    m_galaxyView.reset();
     m_systemCamera = SystemCamera{};
     m_systemCameraFlight = SystemCameraFlight{};
-
-    m_galaxyNavigationFocusLy =
-        glm::dvec3(0.0);
-
-    m_galaxyNavigationFocusValid =
-        false;
 
     m_systemHoverVisualCell.reset();
     m_systemHoverVisualAlpha = 0.0f;
@@ -3034,7 +3027,6 @@ void SystemMapRenderer::resetView()
     m_systemHoverOutgoingAlpha = 0.0f;
     m_systemHoverVisualLastTimeSeconds = 0.0;
     m_systemCubeClickTracker.reset();
-    m_galaxyCubeClickTracker.reset();
     m_lastSystemCameraFitSystemId = -1;
 
     m_navigationLevelAnnouncement.text.clear();
@@ -3042,25 +3034,16 @@ void SystemMapRenderer::resetView()
 
     m_planetCamera = DetailCamera{};
     m_hubCamera = DetailCamera{};
-    m_selectedSystemId = -1;
-    m_requestedSystemEntry.reset();
-    m_focusedSystemId = -1;
     m_selectedBodyId.clear();
     m_selectedHubId.clear();
     m_selectedHubParentBodyId.clear();
-    m_comboOpen = false;
     m_pendingScrollY = 0.0;
     m_systemOrbitPivotAbsolute = glm::dvec3(0.0, 0.0, 0.0);
     m_systemOrbitPivotActive = false;
-    m_galaxyOrbitPivotWorld = glm::vec3(0.0f, 0.0f, 0.0f);
-    m_galaxyOrbitPivotActive = false;
-    m_galaxyMouseDownX = 0.0;
-    m_galaxyMouseDownY = 0.0;
     m_hubMapOrbitPivotLocalMeters = glm::dvec3(0.0, 0.0, 0.0);
     m_hubMapOrbitPivotScreenPx = glm::dvec2(0.0, 0.0);
     m_lastHubMapScale = 1.0;
     m_lastHubMapCenterPx = glm::dvec2(0.0, 0.0);
-    m_lastGalaxyScreenPoints.clear();
     m_lastSystemBodyScreenPoints.clear();
     m_lastSystemHubScreenPoints.clear();
     m_lastPlanetHubScreenPoints.clear();
@@ -3083,13 +3066,6 @@ void SystemMapRenderer::resetView()
     m_environmentLastSourceTimeSeconds = 0.0;
     m_environmentLastWallClockSeconds = 0.0;
     m_environmentVisualTimeInitialized = false;
-
-    m_galaxyNavigationGrid.reset();
-
-    m_hasGalaxyMapEntryState = false;
-    m_lastGalaxyMapEntrySystemId = -1;
-    m_lastGalaxyMapEntryTerminalCell = {};
-    m_lastGalaxyMapEntryPositionLy = glm::dvec3(0.0);
 
     m_navigationLevelZeroButtonHovered = false;
     m_navigationOverlayLeftWasDown = false;
@@ -3126,24 +3102,19 @@ void SystemMapRenderer::cycleNavigationCoordinateFormat()
 
 int SystemMapRenderer::selectedSystemId() const
 {
-    return m_selectedSystemId;
+    return m_galaxyView.state().selectedSystemId;
 }
 
 std::optional<SystemMapRenderer::SystemEntryRequest>
 SystemMapRenderer::consumeRequestedSystemEntry()
 {
-    const auto requested =
-        m_requestedSystemEntry;
-
-    m_requestedSystemEntry.reset();
-
-    return requested;
+    return m_galaxyView.consumeRequestedSystemEntry();
 }
 
 
 int SystemMapRenderer::focusedSystemId() const
 {
-    return m_focusedSystemId;
+    return m_galaxyView.state().focusedSystemId;
 }
 
 
@@ -4912,12 +4883,12 @@ void SystemMapRenderer::handleInput(
             The button is part of the map viewport, so explicitly prevent
             the scene behind it from receiving the same mouse gesture.
         */
-        m_galaxyCamera.rotating = false;
-        m_galaxyCamera.panning = false;
-        m_galaxyCamera.leftWasDown = leftDown;
-        m_galaxyCamera.rightWasDown = rightDown;
-        m_galaxyCamera.lastMouseX = mx;
-        m_galaxyCamera.lastMouseY = my;
+        m_galaxyView.state().camera.rotating = false;
+        m_galaxyView.state().camera.panning = false;
+        m_galaxyView.state().camera.leftWasDown = leftDown;
+        m_galaxyView.state().camera.rightWasDown = rightDown;
+        m_galaxyView.state().camera.lastMouseX = mx;
+        m_galaxyView.state().camera.lastMouseY = my;
 
         m_systemCamera.rotating = false;
         m_systemCamera.panning = false;

@@ -229,6 +229,7 @@ add_executable(EliteGame
     src/world/celestial/CelestialSystemRuntime.cpp
 
     src/game/system_map/SystemMapRenderer.cpp
+    src/game/system_map/GalaxyMapView.cpp
     src/game/navigation/DynamicMotionSystem.cpp
 
     src/world/celestial/visual/CelestialVisualLibrary.cpp

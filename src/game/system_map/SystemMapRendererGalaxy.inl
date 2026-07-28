@@ -12,44 +12,21 @@ glm::vec3 SystemMapRenderer::galaxyPositionLyToRender(
     const glm::dvec3& positionLy
 ) const
 {
-    /*
-        Navigation coordinates and star-atlas coordinates use the same
-        heliocentric equatorial J2000 axes. The renderer only applies
-        a visual scale.
-    */
-    return glm::vec3(
-        static_cast<float>(positionLy.x) * GALAXY_RENDER_UNITS_PER_LY,
-        static_cast<float>(positionLy.y) * GALAXY_RENDER_UNITS_PER_LY,
-        static_cast<float>(positionLy.z) * GALAXY_RENDER_UNITS_PER_LY
-    );
+    return m_galaxyView.positionLyToRender(positionLy);
 }
 
 glm::vec3 SystemMapRenderer::galaxyVectorLyToRender(
     const glm::dvec3& vectorLy
 ) const
 {
-    return glm::vec3(
-        static_cast<float>(vectorLy.x) * GALAXY_RENDER_UNITS_PER_LY,
-        static_cast<float>(vectorLy.y) * GALAXY_RENDER_UNITS_PER_LY,
-        static_cast<float>(vectorLy.z) * GALAXY_RENDER_UNITS_PER_LY
-    );
+    return m_galaxyView.vectorLyToRender(vectorLy);
 }
 
 glm::dvec3 SystemMapRenderer::galaxyRenderToPositionLy(
     const glm::vec3& renderPosition
 ) const
 {
-    const double inverseScale =
-        1.0 /
-        static_cast<double>(
-            GALAXY_RENDER_UNITS_PER_LY
-        );
-
-    return glm::dvec3(
-        static_cast<double>(renderPosition.x) * inverseScale,
-        static_cast<double>(renderPosition.y) * inverseScale,
-        static_cast<double>(renderPosition.z) * inverseScale
-    );
+    return m_galaxyView.renderToPositionLy(renderPosition);
 }
 
 glm::vec3 SystemMapRenderer::galaxyStarPosition(
@@ -103,13 +80,13 @@ void SystemMapRenderer::onGalaxyMapEntered(
         not change, but transient mouse state must never survive closing the
         map or returning from another map mode.
     */
-    m_galaxyNavigationGrid.clearHoveredCell();
-    m_galaxyHoverVisualCell.reset();
-    m_galaxyHoverVisualAlpha = 0.0f;
-    m_galaxyHoverOutgoingCell.reset();
-    m_galaxyHoverOutgoingAlpha = 0.0f;
-    m_galaxyHoverVisualLastTimeSeconds = 0.0;
-    m_galaxyCubeClickTracker.reset();
+    m_galaxyView.state().navigationGrid.clearHoveredCell();
+    m_galaxyView.state().hoverVisualCell.reset();
+    m_galaxyView.state().hoverVisualAlpha = 0.0f;
+    m_galaxyView.state().hoverOutgoingCell.reset();
+    m_galaxyView.state().hoverOutgoingAlpha = 0.0f;
+    m_galaxyView.state().hoverVisualLastTimeSeconds = 0.0;
+    m_galaxyView.state().cubeClickTracker.reset();
 
     bool insideKnownSystem = false;
 
@@ -120,14 +97,14 @@ void SystemMapRenderer::onGalaxyMapEntered(
             insideKnownSystem
         );
 
-    m_lastGalaxyMapEntryPositionLy =
+    m_galaxyView.state().entry.positionLy =
         playerPositionLy;
 
     const int terminalLevel =
-        m_galaxyNavigationGrid.maximumLevel();
+        m_galaxyView.state().navigationGrid.maximumLevel();
 
     const auto terminalCell =
-        m_galaxyNavigationGrid.nearestIndexForPositionLy(
+        m_galaxyView.state().navigationGrid.nearestIndexForPositionLy(
             playerPositionLy,
             terminalLevel
         );
@@ -138,56 +115,56 @@ void SystemMapRenderer::onGalaxyMapEntered(
             : -1;
 
     const bool playerRegionChanged =
-        !m_hasGalaxyMapEntryState ||
-        entrySystemId != m_lastGalaxyMapEntrySystemId ||
-        terminalCell != m_lastGalaxyMapEntryTerminalCell;
+        !m_galaxyView.state().entry.valid ||
+        entrySystemId != m_galaxyView.state().entry.systemId ||
+        terminalCell != m_galaxyView.state().entry.terminalCell;
 
     if (playerRegionChanged)
     {
         cancelGalaxyCameraFlight(false);
 
-        m_galaxyNavigationGrid.reset();
-        m_galaxyNavigationGrid.setAnchorFromPositionLy(
+        m_galaxyView.state().navigationGrid.reset();
+        m_galaxyView.state().navigationGrid.setAnchorFromPositionLy(
             playerPositionLy
         );
-        m_galaxyNavigationGrid.selectCell(
-            m_galaxyNavigationGrid.anchorCell()
+        m_galaxyView.state().navigationGrid.selectCell(
+            m_galaxyView.state().navigationGrid.anchorCell()
         );
 
-        m_galaxyNavigationFocusLy =
+        m_galaxyView.state().navigationFocusLy =
             playerPositionLy;
-        m_galaxyNavigationFocusValid = true;
+        m_galaxyView.state().navigationFocusValid = true;
 
-        m_galaxyCamera.target =
+        m_galaxyView.state().camera.target =
             galaxyPositionLyToRender(
-                m_galaxyNavigationGrid
+                m_galaxyView.state().navigationGrid
                     .anchorCell()
                     .centerLy
             );
 
         const float initialCellEdgeRender =
             static_cast<float>(
-                m_galaxyNavigationGrid
+                m_galaxyView.state().navigationGrid
                     .anchorCell()
                     .sizeLy
             ) * GALAXY_RENDER_UNITS_PER_LY;
 
-        m_galaxyCamera.distance =
+        m_galaxyView.state().camera.distance =
             std::clamp(
                 initialCellEdgeRender * 2.35f,
-                m_galaxyControls.minDistance,
-                m_galaxyControls.maxDistance
+                m_galaxyView.controls().minDistance,
+                m_galaxyView.controls().maxDistance
             );
 
-        m_selectedSystemId = entrySystemId;
-        m_focusedSystemId = entrySystemId;
+        m_galaxyView.state().selectedSystemId = entrySystemId;
+        m_galaxyView.state().focusedSystemId = entrySystemId;
     }
 
-    m_lastGalaxyMapEntrySystemId =
+    m_galaxyView.state().entry.systemId =
         entrySystemId;
-    m_lastGalaxyMapEntryTerminalCell =
+    m_galaxyView.state().entry.terminalCell =
         terminalCell;
-    m_hasGalaxyMapEntryState = true;
+    m_galaxyView.state().entry.valid = true;
 }
 
 
@@ -199,11 +176,11 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
     const glm::mat4&
 )
 {
-    if (!m_galaxyNavigationGrid.enabled())
+    if (!m_galaxyView.state().navigationGrid.enabled())
         return;
 
     const auto& frame =
-        m_galaxyNavigationGrid.frame();
+        m_galaxyView.state().navigationGrid.frame();
 
     const bool currentLevelCellsInteractive =
         galaxyNavigationCellsInteractive(vp);
@@ -218,31 +195,31 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
 
     double hoverDeltaSeconds = 0.0;
 
-    if (m_galaxyHoverVisualLastTimeSeconds > 0.0)
+    if (m_galaxyView.state().hoverVisualLastTimeSeconds > 0.0)
     {
         hoverDeltaSeconds =
             std::clamp(
                 hoverNowSeconds -
-                    m_galaxyHoverVisualLastTimeSeconds,
+                    m_galaxyView.state().hoverVisualLastTimeSeconds,
                 0.0,
                 0.10
             );
     }
 
-    m_galaxyHoverVisualLastTimeSeconds =
+    m_galaxyView.state().hoverVisualLastTimeSeconds =
         hoverNowSeconds;
 
     std::optional<game::navigation::GalaxyNavigationCell>
         hoverTargetCell;
 
     const auto anchorCell =
-        m_galaxyNavigationGrid.anchorCell();
+        m_galaxyView.state().navigationGrid.anchorCell();
 
     if (currentLevelCellsInteractive &&
-        m_galaxyNavigationGrid.hasHoveredCell())
+        m_galaxyView.state().navigationGrid.hasHoveredCell())
     {
         const auto& logicalHovered =
-            m_galaxyNavigationGrid.hoveredCell();
+            m_galaxyView.state().navigationGrid.hoveredCell();
 
         if (logicalHovered.level != anchorCell.level ||
             logicalHovered.index != anchorCell.index)
@@ -254,29 +231,29 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
     const bool hoverTargetChanged =
         hoverTargetCell.has_value() &&
         (
-            !m_galaxyHoverVisualCell.has_value() ||
+            !m_galaxyView.state().hoverVisualCell.has_value() ||
             hoverTargetCell->level !=
-                m_galaxyHoverVisualCell->level ||
+                m_galaxyView.state().hoverVisualCell->level ||
             hoverTargetCell->index !=
-                m_galaxyHoverVisualCell->index
+                m_galaxyView.state().hoverVisualCell->index
         );
 
     if (hoverTargetChanged)
     {
-        if (m_galaxyHoverVisualCell.has_value() &&
-            m_galaxyHoverVisualAlpha > 0.001f)
+        if (m_galaxyView.state().hoverVisualCell.has_value() &&
+            m_galaxyView.state().hoverVisualAlpha > 0.001f)
         {
-            m_galaxyHoverOutgoingCell =
-                m_galaxyHoverVisualCell;
+            m_galaxyView.state().hoverOutgoingCell =
+                m_galaxyView.state().hoverVisualCell;
 
-            m_galaxyHoverOutgoingAlpha =
-                m_galaxyHoverVisualAlpha;
+            m_galaxyView.state().hoverOutgoingAlpha =
+                m_galaxyView.state().hoverVisualAlpha;
         }
 
-        m_galaxyHoverVisualCell =
+        m_galaxyView.state().hoverVisualCell =
             hoverTargetCell;
 
-        m_galaxyHoverVisualAlpha =
+        m_galaxyView.state().hoverVisualAlpha =
             0.0f;
     }
 
@@ -285,13 +262,13 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
         const float fadeInSeconds =
             std::max(
                 0.001f,
-                m_galaxyControls.navigationHoverFadeInSeconds
+                m_galaxyView.controls().navigationHoverFadeInSeconds
             );
 
-        m_galaxyHoverVisualAlpha =
+        m_galaxyView.state().hoverVisualAlpha =
             std::min(
                 1.0f,
-                m_galaxyHoverVisualAlpha +
+                m_galaxyView.state().hoverVisualAlpha +
                     static_cast<float>(hoverDeltaSeconds) /
                         fadeInSeconds
             );
@@ -301,44 +278,44 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
         const float fadeOutSeconds =
             std::max(
                 0.001f,
-                m_galaxyControls.navigationHoverFadeOutSeconds
+                m_galaxyView.controls().navigationHoverFadeOutSeconds
             );
 
-        m_galaxyHoverVisualAlpha =
+        m_galaxyView.state().hoverVisualAlpha =
             std::max(
                 0.0f,
-                m_galaxyHoverVisualAlpha -
+                m_galaxyView.state().hoverVisualAlpha -
                     static_cast<float>(hoverDeltaSeconds) /
                         fadeOutSeconds
             );
 
-        if (m_galaxyHoverVisualAlpha <= 0.001f)
+        if (m_galaxyView.state().hoverVisualAlpha <= 0.001f)
         {
-            m_galaxyHoverVisualAlpha = 0.0f;
-            m_galaxyHoverVisualCell.reset();
+            m_galaxyView.state().hoverVisualAlpha = 0.0f;
+            m_galaxyView.state().hoverVisualCell.reset();
         }
     }
 
-    if (m_galaxyHoverOutgoingCell.has_value())
+    if (m_galaxyView.state().hoverOutgoingCell.has_value())
     {
         const float fadeOutSeconds =
             std::max(
                 0.001f,
-                m_galaxyControls.navigationHoverFadeOutSeconds
+                m_galaxyView.controls().navigationHoverFadeOutSeconds
             );
 
-        m_galaxyHoverOutgoingAlpha =
+        m_galaxyView.state().hoverOutgoingAlpha =
             std::max(
                 0.0f,
-                m_galaxyHoverOutgoingAlpha -
+                m_galaxyView.state().hoverOutgoingAlpha -
                     static_cast<float>(hoverDeltaSeconds) /
                         fadeOutSeconds
             );
 
-        if (m_galaxyHoverOutgoingAlpha <= 0.001f)
+        if (m_galaxyView.state().hoverOutgoingAlpha <= 0.001f)
         {
-            m_galaxyHoverOutgoingAlpha = 0.0f;
-            m_galaxyHoverOutgoingCell.reset();
+            m_galaxyView.state().hoverOutgoingAlpha = 0.0f;
+            m_galaxyView.state().hoverOutgoingCell.reset();
         }
     }
 
@@ -356,10 +333,10 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
             Draw it only when its stored precision matches the
             currently displayed level.
         */
-        if (m_galaxyNavigationGrid.hasSelectedCell())
+        if (m_galaxyView.state().navigationGrid.hasSelectedCell())
         {
             const auto& selectedCell =
-                m_galaxyNavigationGrid.selectedCell();
+                m_galaxyView.state().navigationGrid.selectedCell();
 
             if (selectedCell.level == anchorCell.level &&
                 selectedCell.index != anchorCell.index)
@@ -368,11 +345,11 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
             }
         }
 
-        if (m_galaxyHoverVisualCell.has_value() &&
-            m_galaxyHoverVisualAlpha > 0.001f)
+        if (m_galaxyView.state().hoverVisualCell.has_value() &&
+            m_galaxyView.state().hoverVisualAlpha > 0.001f)
         {
             const auto& hoveredCell =
-                m_galaxyHoverVisualCell.value();
+                m_galaxyView.state().hoverVisualCell.value();
 
             const bool alreadyPresent =
                 std::any_of(
@@ -392,11 +369,11 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
             }
         }
 
-        if (m_galaxyHoverOutgoingCell.has_value() &&
-            m_galaxyHoverOutgoingAlpha > 0.001f)
+        if (m_galaxyView.state().hoverOutgoingCell.has_value() &&
+            m_galaxyView.state().hoverOutgoingAlpha > 0.001f)
         {
             const auto& outgoingCell =
-                m_galaxyHoverOutgoingCell.value();
+                m_galaxyView.state().hoverOutgoingCell.value();
 
             const bool alreadyPresent =
                 std::any_of(
@@ -437,14 +414,14 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
         */
         const glm::vec3 cameraDirection =
             orbitCameraDirectionFromYawPitch(
-                m_galaxyCamera.yaw,
-                m_galaxyCamera.pitch
+                m_galaxyView.state().camera.yaw,
+                m_galaxyView.state().camera.pitch
             );
 
         const glm::vec3 cameraPosition =
-            m_galaxyCamera.target +
+            m_galaxyView.state().camera.target +
             cameraDirection *
-            m_galaxyCamera.distance;
+            m_galaxyView.state().camera.distance;
 
     const glm::vec3 cameraRayDirection =
         -cameraDirection;
@@ -629,7 +606,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
         };
 
     const int faceDivisions =
-        m_galaxyNavigationGrid.subdivision();
+        m_galaxyView.state().navigationGrid.subdivision();
 
     const auto addCubeFarFaceGrids =
         [&](const glm::vec3& cubeCenter,
@@ -725,7 +702,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
         архивкубов образуют видимую границу игрового пространства.
     */
     const double rootEdgeLy =
-        m_galaxyNavigationGrid.config().rootEdgeLy();
+        m_galaxyView.state().navigationGrid.config().rootEdgeLy();
 
     const double rootHalfEdgeLy =
         rootEdgeLy * 0.5;
@@ -756,7 +733,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
         2. если луч не пересёк ни один Root — ближайший к camera.target.
     */
     for (const auto& rootIndex :
-         m_galaxyNavigationGrid.config().allowedRootCells)
+         m_galaxyView.state().navigationGrid.config().allowedRootCells)
     {
         const glm::dvec3 rootCenterLy =
             frame.originLy +
@@ -783,7 +760,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                 std::numeric_limits<float>::max();
 
         const glm::vec3 fallbackDelta =
-            rootCenter - m_galaxyCamera.target;
+            rootCenter - m_galaxyView.state().camera.target;
 
         const float fallbackDistanceSquared =
             glm::dot(
@@ -815,7 +792,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
     }
 
     for (const auto& rootIndex :
-         m_galaxyNavigationGrid.config().allowedRootCells)
+         m_galaxyView.state().navigationGrid.config().allowedRootCells)
     {
         const glm::dvec3 rootCenterLy =
             frame.originLy +
@@ -834,7 +811,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
             rootHalfAxisX,
             rootHalfAxisY,
             rootHalfAxisZ,
-            m_galaxyVisuals.navigationGrid.rootEdgeColor
+            m_galaxyView.visuals().navigationGrid.rootEdgeColor
         );
 
         const bool isFocusedRoot =
@@ -842,15 +819,15 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
             rootIndex == focusedRootIndex;
 
         if (isFocusedRoot &&
-            m_galaxyNavigationGrid.level() ==
-                m_galaxyNavigationGrid.minimumLevel())
+            m_galaxyView.state().navigationGrid.level() ==
+                m_galaxyView.state().navigationGrid.minimumLevel())
         {
             addCubeFarFaceGrids(
                 rootCenter,
                 rootHalfAxisX,
                 rootHalfAxisY,
                 rootHalfAxisZ,
-                m_galaxyVisuals.navigationGrid.rootFaceGridColor
+                m_galaxyView.visuals().navigationGrid.rootFaceGridColor
             );
         }
     }
@@ -860,8 +837,8 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
         а куб предыдущего рабочего уровня. Для выбранного и наведённого
         кубов родители могут различаться, поэтому собираем уникальный список.
     */
-    if (m_galaxyNavigationGrid.level() >
-        m_galaxyNavigationGrid.minimumLevel())
+    if (m_galaxyView.state().navigationGrid.level() >
+        m_galaxyView.state().navigationGrid.minimumLevel())
     {
         std::vector<game::navigation::GalaxyNavigationCell>
             parentCells;
@@ -874,7 +851,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
 
             const double subdivision =
                 static_cast<double>(
-                    m_galaxyNavigationGrid.subdivision()
+                    m_galaxyView.state().navigationGrid.subdivision()
                 );
 
             parentIndex.x =
@@ -902,7 +879,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                 );
 
             const auto parentCell =
-                m_galaxyNavigationGrid.cell(
+                m_galaxyView.state().navigationGrid.cell(
                     parentIndex,
                     currentCell.level - 1
                 );
@@ -977,7 +954,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                     std::numeric_limits<float>::max();
 
             const glm::vec3 fallbackDelta =
-                parentCenter - m_galaxyCamera.target;
+                parentCenter - m_galaxyView.state().camera.target;
 
             const float fallbackDistanceSquared =
                 glm::dot(
@@ -1043,7 +1020,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                 parentHalfAxisX,
                 parentHalfAxisY,
                 parentHalfAxisZ,
-                m_galaxyVisuals.navigationGrid.parentEdgeColor
+                m_galaxyView.visuals().navigationGrid.parentEdgeColor
             );
 
             if (hasFocusedParent &&
@@ -1054,7 +1031,7 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
                     parentHalfAxisX,
                     parentHalfAxisY,
                     parentHalfAxisZ,
-                    m_galaxyVisuals.navigationGrid.parentFaceGridColor
+                    m_galaxyView.visuals().navigationGrid.parentFaceGridColor
                 );
             }
         }
@@ -1102,33 +1079,33 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
 
         const bool isAnchor =
             cell.index ==
-            m_galaxyNavigationGrid.anchorIndex();
+            m_galaxyView.state().navigationGrid.anchorIndex();
 
         float hoverVisualAlpha = 0.0f;
 
-        if (m_galaxyHoverVisualCell.has_value() &&
+        if (m_galaxyView.state().hoverVisualCell.has_value() &&
             cell.index ==
-                m_galaxyHoverVisualCell->index &&
+                m_galaxyView.state().hoverVisualCell->index &&
             cell.level ==
-                m_galaxyHoverVisualCell->level)
+                m_galaxyView.state().hoverVisualCell->level)
         {
             hoverVisualAlpha =
                 std::max(
                     hoverVisualAlpha,
-                    m_galaxyHoverVisualAlpha
+                    m_galaxyView.state().hoverVisualAlpha
                 );
         }
 
-        if (m_galaxyHoverOutgoingCell.has_value() &&
+        if (m_galaxyView.state().hoverOutgoingCell.has_value() &&
             cell.index ==
-                m_galaxyHoverOutgoingCell->index &&
+                m_galaxyView.state().hoverOutgoingCell->index &&
             cell.level ==
-                m_galaxyHoverOutgoingCell->level)
+                m_galaxyView.state().hoverOutgoingCell->level)
         {
             hoverVisualAlpha =
                 std::max(
                     hoverVisualAlpha,
-                    m_galaxyHoverOutgoingAlpha
+                    m_galaxyView.state().hoverOutgoingAlpha
                 );
         }
 
@@ -1136,33 +1113,33 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
             hoverVisualAlpha > 0.001f;
 
         const bool isSelected =
-            m_galaxyNavigationGrid.hasSelectedCell() &&
+            m_galaxyView.state().navigationGrid.hasSelectedCell() &&
             cell.level ==
-                m_galaxyNavigationGrid.selectedCell().level &&
+                m_galaxyView.state().navigationGrid.selectedCell().level &&
             cell.index ==
-                m_galaxyNavigationGrid.selectedCell().index;
+                m_galaxyView.state().navigationGrid.selectedCell().index;
 
         glm::vec4 edgeColor =
-            m_galaxyVisuals.navigationGrid.currentEdgeColor;
+            m_galaxyView.visuals().navigationGrid.currentEdgeColor;
 
         glm::vec4 markerColor =
-            m_galaxyVisuals.navigationGrid.currentMarkerColor;
+            m_galaxyView.visuals().navigationGrid.currentMarkerColor;
 
         if (isAnchor)
         {
             edgeColor.a =
-                m_galaxyVisuals.navigationGrid.anchorEdgeAlpha;
+                m_galaxyView.visuals().navigationGrid.anchorEdgeAlpha;
             markerColor.a =
-                m_galaxyVisuals.navigationGrid.anchorMarkerAlpha;
+                m_galaxyView.visuals().navigationGrid.anchorMarkerAlpha;
         }
 
         if (isHovered)
         {
             edgeColor =
-                m_galaxyVisuals.navigationGrid.hoveredEdgeColor;
+                m_galaxyView.visuals().navigationGrid.hoveredEdgeColor;
 
             markerColor =
-                m_galaxyVisuals.navigationGrid.hoveredMarkerColor;
+                m_galaxyView.visuals().navigationGrid.hoveredMarkerColor;
 
             edgeColor.a *=
                 hoverVisualAlpha;
@@ -1174,10 +1151,10 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
         if (isSelected)
         {
             edgeColor =
-                m_galaxyVisuals.navigationGrid.selectedEdgeColor;
+                m_galaxyView.visuals().navigationGrid.selectedEdgeColor;
 
             markerColor =
-                m_galaxyVisuals.navigationGrid.selectedMarkerColor;
+                m_galaxyView.visuals().navigationGrid.selectedMarkerColor;
         }
 
         glm::vec4 currentLevelGridColor =
@@ -1186,13 +1163,13 @@ void SystemMapRenderer::drawGalaxyNavigationGrid(
         currentLevelGridColor.a =
             std::clamp(
                 edgeColor.a *
-                    m_galaxyVisuals
+                    m_galaxyView.visuals()
                         .navigationGrid
                         .currentFaceGridAlphaScale,
-                m_galaxyVisuals
+                m_galaxyView.visuals()
                     .navigationGrid
                     .currentFaceGridMinimumAlpha,
-                m_galaxyVisuals
+                m_galaxyView.visuals()
                     .navigationGrid
                     .currentFaceGridMaximumAlpha
             );
@@ -1310,7 +1287,7 @@ bool SystemMapRenderer::pickGalaxyNavigationCell(
     game::navigation::GalaxyNavigationCell& outCell
 ) const
 {
-    if (!m_galaxyNavigationGrid.enabled() ||
+    if (!m_galaxyView.state().navigationGrid.enabled() ||
         !galaxyNavigationCellsInteractive(vp))
         return false;
 
@@ -1333,14 +1310,14 @@ bool SystemMapRenderer::pickGalaxyNavigationCell(
 cells.reserve(2);
 
 const auto anchorCell =
-    m_galaxyNavigationGrid.anchorCell();
+    m_galaxyView.state().navigationGrid.anchorCell();
 
 cells.push_back(anchorCell);
 
-if (m_galaxyNavigationGrid.hasHoveredCell())
+if (m_galaxyView.state().navigationGrid.hasHoveredCell())
 {
     const auto& hoveredCell =
-        m_galaxyNavigationGrid.hoveredCell();
+        m_galaxyView.state().navigationGrid.hoveredCell();
 
     if (hoveredCell.index != anchorCell.index)
     {
@@ -1415,12 +1392,12 @@ void SystemMapRenderer::updateGalaxyNavigationHoverFromCursor(
     double localMouseY
 )
 {
-    if (!m_galaxyNavigationGrid.enabled() ||
+    if (!m_galaxyView.state().navigationGrid.enabled() ||
         !galaxyNavigationCellsInteractive(vp) ||
         vp.width <= 0 ||
         vp.height <= 0)
     {
-        m_galaxyNavigationGrid.clearHoveredCell();
+        m_galaxyView.state().navigationGrid.clearHoveredCell();
         return;
     }
 
@@ -1480,7 +1457,7 @@ void SystemMapRenderer::updateGalaxyNavigationHoverFromCursor(
 
     if (rayLength < 0.000001f)
     {
-        m_galaxyNavigationGrid.clearHoveredCell();
+        m_galaxyView.state().navigationGrid.clearHoveredCell();
         return;
     }
 
@@ -1493,12 +1470,12 @@ void SystemMapRenderer::updateGalaxyNavigationHoverFromCursor(
         работать после свободного pan к другой звезде.
     */
     const glm::vec3 planePoint =
-        m_galaxyCamera.target;
+        m_galaxyView.state().camera.target;
 
     const glm::vec3 planeNormal =
         orbitCameraDirectionFromYawPitch(
-            m_galaxyCamera.yaw,
-            m_galaxyCamera.pitch
+            m_galaxyView.state().camera.yaw,
+            m_galaxyView.state().camera.pitch
         );
 
     const float denominator =
@@ -1509,7 +1486,7 @@ void SystemMapRenderer::updateGalaxyNavigationHoverFromCursor(
 
     if (std::abs(denominator) < 0.000001f)
     {
-        m_galaxyNavigationGrid.clearHoveredCell();
+        m_galaxyView.state().navigationGrid.clearHoveredCell();
         return;
     }
 
@@ -1522,7 +1499,7 @@ void SystemMapRenderer::updateGalaxyNavigationHoverFromCursor(
 
     if (distanceAlongRay <= 0.0f)
     {
-        m_galaxyNavigationGrid.clearHoveredCell();
+        m_galaxyView.state().navigationGrid.clearHoveredCell();
         return;
     }
 
@@ -1551,16 +1528,16 @@ void SystemMapRenderer::updateGalaxyNavigationHoverFromCursor(
     );
 
     const auto hoveredIndex =
-        m_galaxyNavigationGrid
+        m_galaxyView.state().navigationGrid
             .nearestIndexForPositionLy(
                 cursorPositionLy,
-                m_galaxyNavigationGrid.level()
+                m_galaxyView.state().navigationGrid.level()
             );
 
 
 
     const int currentLevel =
-        m_galaxyNavigationGrid.level();
+        m_galaxyView.state().navigationGrid.level();
 
     /*
         Единственная навигационная граница Galaxy —
@@ -1570,14 +1547,14 @@ void SystemMapRenderer::updateGalaxyNavigationHoverFromCursor(
         больше не образует невидимую стену.
     */
     const bool insideNavigableRoot =
-        m_galaxyNavigationGrid.isCellNavigable(
+        m_galaxyView.state().navigationGrid.isCellNavigable(
             hoveredIndex,
             currentLevel
         );
 
     if (!insideNavigableRoot)
     {
-        m_galaxyNavigationGrid.clearHoveredCell();
+        m_galaxyView.state().navigationGrid.clearHoveredCell();
         return;
     }
 
@@ -1585,10 +1562,10 @@ void SystemMapRenderer::updateGalaxyNavigationHoverFromCursor(
 
 
 
-    m_galaxyNavigationGrid.setHoveredCell(
-        m_galaxyNavigationGrid.cell(
+    m_galaxyView.state().navigationGrid.setHoveredCell(
+        m_galaxyView.state().navigationGrid.cell(
             hoveredIndex,
-            m_galaxyNavigationGrid.level()
+            m_galaxyView.state().navigationGrid.level()
         )
     );
 }
@@ -1599,39 +1576,7 @@ float SystemMapRenderer::galaxyNavigationAnchorDiameterPx(
     const Viewport& vp
 ) const
 {
-    if (!m_galaxyNavigationGrid.enabled() ||
-        vp.height <= 0)
-    {
-        return 0.0f;
-    }
-
-    const float cellEdgeRender =
-        static_cast<float>(
-            m_galaxyNavigationGrid.cellSizeLy()
-        ) *
-        GALAXY_RENDER_UNITS_PER_LY;
-
-    /*
-        Level threshold belongs to the view layer, not to a selected
-        cube which may be far away or outside the viewport.
-
-        camera.target lies exactly m_galaxyCamera.distance in front
-        of the perspective eye.
-    */
-    const float viewLayerDepth =
-        std::max(
-            m_galaxyCamera.distance,
-            0.0001f
-        );
-
-    return
-        game::navigation::
-            cubicNavigationPerspectiveProjectedDiameterPx(
-                cellEdgeRender,
-                viewLayerDepth,
-                glm::radians(48.0f),
-                vp.height
-            );
+    return m_galaxyView.navigationAnchorDiameterPx(vp);
 }
 
 
@@ -1639,58 +1584,14 @@ bool SystemMapRenderer::galaxyNavigationCellsInteractive(
     const Viewport& vp
 ) const
 {
-    if (!m_galaxyNavigationGrid.enabled() ||
-        vp.width <= 0 ||
-        vp.height <= 0)
-    {
-        return false;
-    }
-
-    const float viewportReferencePx =
-        static_cast<float>(
-            std::max(
-                1,
-                std::min(vp.width, vp.height)
-            )
-        );
-
-    const float minimumInteractiveDiameterPx =
-        std::max(
-            m_galaxyControls.navigationCellInteractiveMinPx,
-            viewportReferencePx *
-                m_galaxyControls
-                    .navigationCellInteractiveViewportFraction
-        );
-
-    const float projectedCellDiameterPx =
-        galaxyNavigationAnchorDiameterPx(
-            vp
-        );
-
-    return
-        projectedCellDiameterPx >=
-            minimumInteractiveDiameterPx;
+    return m_galaxyView.navigationCellsInteractive(vp);
 }
 
 
 void SystemMapRenderer::
 syncGalaxyNavigationAnchorToCameraTarget()
 {
-    if (!m_galaxyNavigationGrid.enabled())
-        return;
-
-    const glm::dvec3 viewCenterLy =
-        galaxyRenderToPositionLy(
-            m_galaxyCamera.target
-        );
-
-    /*
-        setAnchorFromPositionLy already rejects cells outside
-        the five allowed Root cubes.
-    */
-    m_galaxyNavigationGrid.setAnchorFromPositionLy(
-        viewCenterLy
-    );
+    m_galaxyView.syncNavigationAnchorToCameraTarget();
 }
 
 
@@ -1701,152 +1602,25 @@ SystemMapRenderer::galaxySystemEntryForPosition(
     int explicitSystemId
 ) const
 {
-    const int terminalLevel =
-        m_galaxyNavigationGrid.maximumLevel();
-
-    const auto terminalIndex =
-        m_galaxyNavigationGrid
-            .nearestIndexForPositionLy(
-                positionLy,
-                terminalLevel
-            );
-
-    if (!m_galaxyNavigationGrid.isCellNavigable(
-            terminalIndex,
-            terminalLevel
-        ))
-    {
-        return {};
-    }
-
-    /*
-        Entry intent is explicit:
-
-        - scrolling on a star enters that known system;
-        - scrolling or double-clicking a cube enters that spatial sector.
-
-        Do not silently replace an empty-space request with an old selected
-        system merely because the same terminal cube contains a star.
-    */
-    int entrySystemId =
-        explicitSystemId;
-
-    /*
-        A selected star remains a valid entry target only while the
-        navigation point is still inside that star's terminal cube.
-
-        This preserves an intentional click on Tau Ceti even if the last
-        wheel event no longer lands on the tiny star marker. At the same
-        time, an old selection can never hijack entry into another or empty
-        cube.
-    */
-    if (entrySystemId < 0 &&
-        m_selectedSystemId >= 0)
-    {
-        const auto selectedSystem =
-            std::find_if(
-                galaxy.systems.begin(),
-                galaxy.systems.end(),
-                [&](const auto& system)
-                {
-                    return
-                        system.id ==
-                        m_selectedSystemId;
-                }
-            );
-
-        if (selectedSystem !=
-                galaxy.systems.end() &&
-            m_galaxyNavigationGrid
-                .nearestIndexForPositionLy(
-                    selectedSystem->positionLy,
-                    terminalLevel
-                ) ==
-                terminalIndex)
-        {
-            entrySystemId =
-                selectedSystem->id;
-        }
-    }
-
-    if (entrySystemId >= 0)
-    {
-        const auto explicitSystem =
-            std::find_if(
-                galaxy.systems.begin(),
-                galaxy.systems.end(),
-                [&](const auto& system)
-                {
-                    return
-                        system.id ==
-                        entrySystemId;
-                }
-            );
-
-        if (explicitSystem !=
-            galaxy.systems.end())
-        {
-            return SystemEntryRequest
-            {
-                explicitSystem->id,
-                explicitSystem->positionLy
-            };
-        }
-    }
-
-    const auto terminalCell =
-        m_galaxyNavigationGrid.cell(
-            terminalIndex,
-            terminalLevel
-        );
-
-    return SystemEntryRequest
-    {
-        -1,
-        terminalCell.centerLy
-    };
+    return m_galaxyView.systemEntryForPosition(
+        galaxy,
+        positionLy,
+        explicitSystemId
+    );
 }
 
 
 glm::mat4 SystemMapRenderer::galaxyViewMatrix() const
 {
-    const glm::vec3 dir =
-        orbitCameraDirectionFromYawPitch(
-            m_galaxyCamera.yaw,
-            m_galaxyCamera.pitch
-        );
-
-    const glm::vec3 up =
-        orbitCameraUpFromYawPitch(
-            m_galaxyCamera.yaw,
-            m_galaxyCamera.pitch
-        );
-
-    const glm::vec3 eye =
-        m_galaxyCamera.target +
-        dir * m_galaxyCamera.distance;
-
-    return glm::lookAt(
-        eye,
-        m_galaxyCamera.target,
-        up
-    );
+    return m_galaxyView.viewMatrix();
 }
 
 
-glm::mat4 SystemMapRenderer::galaxyProjectionMatrix(const Viewport& vp) const
+glm::mat4 SystemMapRenderer::galaxyProjectionMatrix(
+    const Viewport& vp
+) const
 {
-    const float aspect =
-        vp.height > 0
-            ? static_cast<float>(vp.width) / static_cast<float>(vp.height)
-            : 1.0f;
-
-    return glm::perspective(
-        glm::radians(48.0f),
-        aspect,
-        0.0001f,
-        2000.0f
-    );
+    return m_galaxyView.projectionMatrix(vp);
 }
 
 
@@ -1876,7 +1650,7 @@ void SystemMapRenderer::handleGalaxyInput(
     // GALAXY MODE INPUT
     // =========================================================
 
-        const GalaxyControlSettings& controls = m_galaxyControls;
+        const game::system_map::GalaxyMapControlSettings& controls = m_galaxyView.controls();
 
 
         /*
@@ -1886,18 +1660,18 @@ void SystemMapRenderer::handleGalaxyInput(
         const float galaxyMaximumDistance =
             std::max(
                 controls.minDistance,
-                m_galaxyVisuals.labelMaxCameraDistance
+                m_galaxyView.visuals().labelMaxCameraDistance
             );
 
-        m_galaxyCamera.distance =
+        m_galaxyView.state().camera.distance =
             std::clamp(
-                m_galaxyCamera.distance,
+                m_galaxyView.state().camera.distance,
                 controls.minDistance,
                 galaxyMaximumDistance
             );
 
-        const double dx = mx - m_galaxyCamera.lastMouseX;
-        const double dy = my - m_galaxyCamera.lastMouseY;
+        const double dx = mx - m_galaxyView.state().camera.lastMouseX;
+        const double dy = my - m_galaxyView.state().camera.lastMouseY;
 
 
 
@@ -1905,19 +1679,19 @@ void SystemMapRenderer::handleGalaxyInput(
 
         if (m_mapTransition.active())
         {
-            m_galaxyCamera.rotating = false;
-            m_galaxyCamera.panning = false;
+            m_galaxyView.state().camera.rotating = false;
+            m_galaxyView.state().camera.panning = false;
 
-            m_galaxyCamera.leftWasDown =
+            m_galaxyView.state().camera.leftWasDown =
                 leftDown;
 
-            m_galaxyCamera.rightWasDown =
+            m_galaxyView.state().camera.rightWasDown =
                 rightDown;
 
-            m_galaxyCamera.lastMouseX =
+            m_galaxyView.state().camera.lastMouseX =
                 mx;
 
-            m_galaxyCamera.lastMouseY =
+            m_galaxyView.state().camera.lastMouseY =
                 my;
 
             return;
@@ -1941,12 +1715,12 @@ void SystemMapRenderer::handleGalaxyInput(
             (
                 inside &&
                 leftDown &&
-                !m_galaxyCamera.leftWasDown
+                !m_galaxyView.state().camera.leftWasDown
             ) ||
             (
                 inside &&
                 rightDown &&
-                !m_galaxyCamera.rightWasDown
+                !m_galaxyView.state().camera.rightWasDown
             ) ||
             wheelInputPending;        
 
@@ -1955,7 +1729,7 @@ void SystemMapRenderer::handleGalaxyInput(
 
 
 
-                if (m_galaxyCameraFlight.active() &&
+                if (m_galaxyView.state().cameraFlight.active() &&
                     manualFlightCancel)
                 {
                     cancelGalaxyCameraFlight(
@@ -1968,7 +1742,7 @@ void SystemMapRenderer::handleGalaxyInput(
                     иначе неподвижный курсор будет подсвечивать разные кубы,
                     пролетающие под ним.
                 */
-                if (m_galaxyCameraFlight.active())
+                if (m_galaxyView.state().cameraFlight.active())
                 {
                     /*
                         Не сохраняем wheel-импульсы до окончания перелёта.
@@ -1977,21 +1751,21 @@ void SystemMapRenderer::handleGalaxyInput(
                     */
                     m_pendingScrollY = 0.0;
 
-                    m_galaxyNavigationGrid.clearHoveredCell();
+                    m_galaxyView.state().navigationGrid.clearHoveredCell();
 
-                    m_galaxyCamera.rotating = false;
-                    m_galaxyCamera.panning = false;
+                    m_galaxyView.state().camera.rotating = false;
+                    m_galaxyView.state().camera.panning = false;
 
-                    m_galaxyCamera.leftWasDown =
+                    m_galaxyView.state().camera.leftWasDown =
                         leftDown;
 
-                    m_galaxyCamera.rightWasDown =
+                    m_galaxyView.state().camera.rightWasDown =
                         rightDown;
 
-                    m_galaxyCamera.lastMouseX =
+                    m_galaxyView.state().camera.lastMouseX =
                         mx;
 
-                    m_galaxyCamera.lastMouseY =
+                    m_galaxyView.state().camera.lastMouseY =
                         my;
 
                     return;
@@ -2011,11 +1785,11 @@ void SystemMapRenderer::handleGalaxyInput(
                 const bool mapMousePressed =
                     (
                         leftDown &&
-                        !m_galaxyCamera.leftWasDown
+                        !m_galaxyView.state().camera.leftWasDown
                     ) ||
                     (
                         rightDown &&
-                        !m_galaxyCamera.rightWasDown
+                        !m_galaxyView.state().camera.rightWasDown
                     );
 
                 if (inside && mapMousePressed)
@@ -2032,7 +1806,7 @@ void SystemMapRenderer::handleGalaxyInput(
 
 
 
-        if (m_galaxyNavigationGrid.enabled() &&
+        if (m_galaxyView.state().navigationGrid.enabled() &&
             inside)
         {
             updateGalaxyNavigationHoverFromCursor(
@@ -2043,7 +1817,7 @@ void SystemMapRenderer::handleGalaxyInput(
         }
         else
         {
-            m_galaxyNavigationGrid.clearHoveredCell();
+            m_galaxyView.state().navigationGrid.clearHoveredCell();
         }
 
 
@@ -2056,12 +1830,12 @@ void SystemMapRenderer::handleGalaxyInput(
 
         if (inside &&
             leftDown &&
-            !m_galaxyCamera.leftWasDown)
+            !m_galaxyView.state().camera.leftWasDown)
         {
             leftStartedThisFrame = true;
 
-            m_galaxyMouseDownX = mx;
-            m_galaxyMouseDownY = my;
+            m_galaxyView.state().mouseDownX = mx;
+            m_galaxyView.state().mouseDownY = my;
 
             /*
                 Сначала ищем ближайшую к курсору видимую звезду.
@@ -2081,28 +1855,28 @@ void SystemMapRenderer::handleGalaxyInput(
 
             if (pivotFound)
             {
-                m_galaxyOrbitPivotWorld =
+                m_galaxyView.state().orbitPivotWorld =
                     pivot;
 
-                m_galaxyOrbitPivotActive =
+                m_galaxyView.state().orbitPivotActive =
                     true;
             }
             else if (
-                m_galaxyNavigationGrid.enabled() &&
-                m_galaxyNavigationGrid.hasHoveredCell())
+                m_galaxyView.state().navigationGrid.enabled() &&
+                m_galaxyView.state().navigationGrid.hasHoveredCell())
             {
                 /*
                     No object under the mouse: use the cube which is
                     currently highlighted by the navigation layer.
                 */
-                m_galaxyOrbitPivotWorld =
+                m_galaxyView.state().orbitPivotWorld =
                     galaxyPositionLyToRender(
-                        m_galaxyNavigationGrid
+                        m_galaxyView.state().navigationGrid
                             .hoveredCell()
                             .centerLy
                     );
 
-                m_galaxyOrbitPivotActive =
+                m_galaxyView.state().orbitPivotActive =
                     true;
             }
             else
@@ -2111,10 +1885,10 @@ void SystemMapRenderer::handleGalaxyInput(
                     If neither an object nor a cube is available,
                     rotate around the current centre of the view.
                 */
-                m_galaxyOrbitPivotWorld =
-                    m_galaxyCamera.target;
+                m_galaxyView.state().orbitPivotWorld =
+                    m_galaxyView.state().camera.target;
 
-                m_galaxyOrbitPivotActive =
+                m_galaxyView.state().orbitPivotActive =
                     false;
             }
 
@@ -2124,20 +1898,20 @@ void SystemMapRenderer::handleGalaxyInput(
                 Отдельный код компенсации ниже удерживает
                 выбранную звезду под курсором во время вращения.
             */
-            m_galaxyCamera.rotating =
+            m_galaxyView.state().camera.rotating =
                 true;
         }
 
         if (!leftDown &&
-            m_galaxyCamera.leftWasDown)
+            m_galaxyView.state().camera.leftWasDown)
         
         
         {
             if (inside)
             {
                 const double move =
-                    std::abs(mx - m_galaxyMouseDownX) +
-                    std::abs(my - m_galaxyMouseDownY);
+                    std::abs(mx - m_galaxyView.state().mouseDownX) +
+                    std::abs(my - m_galaxyView.state().mouseDownY);
 
                 if (move < controls.clickMoveThresholdPx)
                 {
@@ -2153,7 +1927,7 @@ void SystemMapRenderer::handleGalaxyInput(
                         cubeCenterCell;
 
                     const bool cubeCenterPicked =
-                        m_galaxyNavigationGrid.enabled() &&
+                        m_galaxyView.state().navigationGrid.enabled() &&
                         pickGalaxyNavigationCell(
                             vp,
                             localMx,
@@ -2183,7 +1957,7 @@ void SystemMapRenderer::handleGalaxyInput(
                             A system click is not part of a cube double-click
                             sequence.
                         */
-                        m_galaxyCubeClickTracker.reset();
+                        m_galaxyView.state().cubeClickTracker.reset();
 
                         /*
                             Одна функция отвечает и за выбор системы,
@@ -2194,7 +1968,7 @@ void SystemMapRenderer::handleGalaxyInput(
                             galaxy
                         );
                     }
-                    else if (m_galaxyNavigationGrid.enabled())
+                    else if (m_galaxyView.state().navigationGrid.enabled())
                     {
                         /*
                             Повторно picking не выполняем.
@@ -2217,7 +1991,7 @@ void SystemMapRenderer::handleGalaxyInput(
 
                             
                             const bool isCubeDoubleClick =
-                                m_galaxyCubeClickTracker
+                                m_galaxyView.state().cubeClickTracker
                                     .registerClick(
                                         glfwGetTime(),
                                         localMx,
@@ -2252,11 +2026,11 @@ void SystemMapRenderer::handleGalaxyInput(
                             */
                             bool clickedCellContainsExistingFocus = false;
 
-                            if (m_galaxyNavigationFocusValid)
+                            if (m_galaxyView.state().navigationFocusValid)
                             {
                                 const auto focusCellIndex =
-                                    m_galaxyNavigationGrid.nearestIndexForPositionLy(
-                                        m_galaxyNavigationFocusLy,
+                                    m_galaxyView.state().navigationGrid.nearestIndexForPositionLy(
+                                        m_galaxyView.state().navigationFocusLy,
                                         pickedCell.level
                                     );
 
@@ -2270,13 +2044,13 @@ void SystemMapRenderer::handleGalaxyInput(
                                     Пользователь выбрал другой куб, не содержащий прежнюю
                                     навигационную цель. Теперь работаем от центра этого куба.
                                 */
-                                m_selectedSystemId = -1;
-                                m_focusedSystemId = -1;
+                                m_galaxyView.state().selectedSystemId = -1;
+                                m_galaxyView.state().focusedSystemId = -1;
 
-                                m_galaxyNavigationFocusLy =
+                                m_galaxyView.state().navigationFocusLy =
                                     pickedCell.centerLy;
 
-                                m_galaxyNavigationFocusValid =
+                                m_galaxyView.state().navigationFocusValid =
                                     true;
                             }
 
@@ -2285,7 +2059,7 @@ void SystemMapRenderer::handleGalaxyInput(
                                 и при продолжении детализации звезды,
                                 и при переходе к новому пустому кубу.
                             */
-                            m_galaxyNavigationGrid.selectCell(pickedCell);
+                            m_galaxyView.state().navigationGrid.selectCell(pickedCell);
 
 
 
@@ -2312,7 +2086,7 @@ void SystemMapRenderer::handleGalaxyInput(
                                 const auto levelAction =
                                     game::navigation::
                                         cubicNavigationDoubleClickAction(
-                                            m_galaxyNavigationGrid
+                                            m_galaxyView.state().navigationGrid
                                                 .canRefine(),
 
                                             true
@@ -2335,7 +2109,7 @@ void SystemMapRenderer::handleGalaxyInput(
                                         game::navigation::
                                             applyCubicNavigationLevelActionAtPosition(
                                                 levelAction,
-                                                m_galaxyNavigationGrid,
+                                                m_galaxyView.state().navigationGrid,
                                                 pickedCell.centerLy,
                                                 [](
                                                     auto& grid,
@@ -2353,16 +2127,16 @@ void SystemMapRenderer::handleGalaxyInput(
                                     {    
                                         announceNavigationLevel(
                                             'G',
-                                            m_galaxyNavigationGrid.level()
+                                            m_galaxyView.state().navigationGrid.level()
                                         );
 
-                                        m_galaxyHoverVisualCell.reset();                                       
-                                        m_galaxyHoverVisualAlpha = 0.0f;
+                                        m_galaxyView.state().hoverVisualCell.reset();
+                                        m_galaxyView.state().hoverVisualAlpha = 0.0f;
 
-                                        m_galaxyHoverOutgoingCell.reset();
-                                        m_galaxyHoverOutgoingAlpha = 0.0f;
+                                        m_galaxyView.state().hoverOutgoingCell.reset();
+                                        m_galaxyView.state().hoverOutgoingAlpha = 0.0f;
 
-                                        m_galaxyCubeClickTracker.reset();
+                                        m_galaxyView.state().cubeClickTracker.reset();
 
                                         /*
                                             Вписываем куб двойного клика,
@@ -2418,7 +2192,7 @@ void SystemMapRenderer::handleGalaxyInput(
                                         тот же SystemEntryRequest в своей
                                         ветке ниже.
                                     */
-                                    m_galaxyCubeClickTracker.reset();
+                                    m_galaxyView.state().cubeClickTracker.reset();
 
                                     const SystemEntryRequest entryRequest =
                                         galaxySystemEntryForPosition(
@@ -2428,19 +2202,19 @@ void SystemMapRenderer::handleGalaxyInput(
 
                                     if (entryRequest.knownSystem())
                                     {
-                                        m_selectedSystemId =
+                                        m_galaxyView.state().selectedSystemId =
                                             entryRequest.systemId;
 
-                                        m_focusedSystemId =
+                                        m_galaxyView.state().focusedSystemId =
                                             entryRequest.systemId;
                                     }
                                     else
                                     {
-                                        m_selectedSystemId = -1;
-                                        m_focusedSystemId = -1;
-                                        m_galaxyNavigationFocusLy =
+                                        m_galaxyView.state().selectedSystemId = -1;
+                                        m_galaxyView.state().focusedSystemId = -1;
+                                        m_galaxyView.state().navigationFocusLy =
                                             pickedCell.centerLy;
-                                        m_galaxyNavigationFocusValid = true;
+                                        m_galaxyView.state().navigationFocusValid = true;
                                     }
 
                                     announceNavigationLevel(
@@ -2450,7 +2224,7 @@ void SystemMapRenderer::handleGalaxyInput(
                                             .minimumLevel
                                     );
 
-                                    m_requestedSystemEntry =
+                                    m_galaxyView.state().requestedSystemEntry =
                                         entryRequest;
                                 }
                             }
@@ -2461,37 +2235,37 @@ void SystemMapRenderer::handleGalaxyInput(
                         }
                         else
                         {
-                            m_galaxyCubeClickTracker.reset();
+                            m_galaxyView.state().cubeClickTracker.reset();
                         }
                     }
                 }
             }
 
-            m_galaxyCamera.rotating = false;
-            m_galaxyOrbitPivotActive = false;
+            m_galaxyView.state().camera.rotating = false;
+            m_galaxyView.state().orbitPivotActive = false;
         }
 
         if (!leftDown)
         {
-            m_galaxyCamera.rotating = false;
-            m_galaxyOrbitPivotActive = false;
+            m_galaxyView.state().camera.rotating = false;
+            m_galaxyView.state().orbitPivotActive = false;
         }
 
         if (inside &&
             rightDown &&
-            !m_galaxyCamera.rightWasDown)
+            !m_galaxyView.state().camera.rightWasDown)
         {
-            m_galaxyCamera.panning = true;
-            m_galaxyCamera.lastMouseX = mx;
-            m_galaxyCamera.lastMouseY = my;
+            m_galaxyView.state().camera.panning = true;
+            m_galaxyView.state().camera.lastMouseX = mx;
+            m_galaxyView.state().camera.lastMouseY = my;
         }
 
         if (!rightDown)
         {
-            m_galaxyCamera.panning = false;
+            m_galaxyView.state().camera.panning = false;
         }
 
-        if (m_galaxyCamera.rotating &&
+        if (m_galaxyView.state().camera.rotating &&
             leftDown &&
             !leftStartedThisFrame)
         {
@@ -2507,7 +2281,7 @@ void SystemMapRenderer::handleGalaxyInput(
 
             const glm::vec2 pivotBefore =
                 projectToScreen(
-                    m_galaxyOrbitPivotWorld,
+                    m_galaxyView.state().orbitPivotWorld,
                     mvpBefore,
                     vp,
                     beforeVisible,
@@ -2530,25 +2304,25 @@ void SystemMapRenderer::handleGalaxyInput(
                     controls.rotationMaxStepRad
                 );
 
-            m_galaxyCamera.yaw +=
+            m_galaxyView.state().camera.yaw +=
                 yawStep;
 
-            m_galaxyCamera.pitch +=
+            m_galaxyView.state().camera.pitch +=
                 pitchStep;
 
-            m_galaxyCamera.yaw =
+            m_galaxyView.state().camera.yaw =
                 wrapAngleRadF(
-                    m_galaxyCamera.yaw
+                    m_galaxyView.state().camera.yaw
                 );
 
-            m_galaxyCamera.pitch =
+            m_galaxyView.state().camera.pitch =
                 std::clamp(
-                    m_galaxyCamera.pitch,
+                    m_galaxyView.state().camera.pitch,
                     -controls.pitchLimitRad,
                     controls.pitchLimitRad
                 );
 
-            if (m_galaxyOrbitPivotActive)
+            if (m_galaxyView.state().orbitPivotActive)
             {
                 bool afterVisible =
                     false;
@@ -2565,7 +2339,7 @@ void SystemMapRenderer::handleGalaxyInput(
 
                 const glm::vec2 pivotAfter =
                     projectToScreen(
-                        m_galaxyOrbitPivotWorld,
+                        m_galaxyView.state().orbitPivotWorld,
                         mvpAfter,
                         vp,
                         afterVisible,
@@ -2595,20 +2369,20 @@ void SystemMapRenderer::handleGalaxyInput(
 
                     const glm::vec3 dir =
                         orbitCameraDirectionFromYawPitch(
-                            m_galaxyCamera.yaw,
-                            m_galaxyCamera.pitch
+                            m_galaxyView.state().camera.yaw,
+                            m_galaxyView.state().camera.pitch
                         );
 
                     const glm::vec3 eye =
-                        m_galaxyCamera.target +
+                        m_galaxyView.state().camera.target +
                         dir *
-                        m_galaxyCamera.distance;
+                        m_galaxyView.state().camera.distance;
 
                     const float pivotDepth =
                         std::max(
                             0.0001f,
                             glm::dot(
-                                m_galaxyOrbitPivotWorld - eye,
+                                m_galaxyView.state().orbitPivotWorld - eye,
                                 -dir
                             )
                         );
@@ -2626,12 +2400,12 @@ void SystemMapRenderer::handleGalaxyInput(
                             std::max(vp.height, 1)
                         );
 
-                    m_galaxyCamera.target -=
+                    m_galaxyView.state().camera.target -=
                         right *
                         screenDelta.x *
                         worldUnitsPerPixel;
 
-                    m_galaxyCamera.target +=
+                    m_galaxyView.state().camera.target +=
                         up *
                         screenDelta.y *
                         worldUnitsPerPixel;
@@ -2641,7 +2415,7 @@ void SystemMapRenderer::handleGalaxyInput(
             syncGalaxyNavigationAnchorToCameraTarget();
         }
 
-        if (m_galaxyCamera.panning && rightDown)
+        if (m_galaxyView.state().camera.panning && rightDown)
         {
             const glm::mat4 view =
                 galaxyViewMatrix();
@@ -2659,15 +2433,15 @@ void SystemMapRenderer::handleGalaxyInput(
             );
 
             const float panScale =
-                m_galaxyCamera.distance *
+                m_galaxyView.state().camera.distance *
                 controls.panScaleByDistance;
 
-            m_galaxyCamera.target -=
+            m_galaxyView.state().camera.target -=
                 right *
                 static_cast<float>(dx) *
                 panScale;
 
-            m_galaxyCamera.target +=
+            m_galaxyView.state().camera.target +=
                 up *
                 static_cast<float>(dy) *
                 panScale;
@@ -2748,11 +2522,11 @@ void SystemMapRenderer::handleGalaxyInput(
                 */
                 glm::dvec3 navigationPointLy =
                     galaxyRenderToPositionLy(
-                        m_galaxyCamera.target
+                        m_galaxyView.state().camera.target
                     );
 
                 glm::vec3 zoomPivotWorld =
-                    m_galaxyCamera.target;
+                    m_galaxyView.state().camera.target;
 
                 bool zoomPivotActive = false;
 
@@ -2793,11 +2567,11 @@ void SystemMapRenderer::handleGalaxyInput(
                     }
                 }
                 else if (
-                    m_galaxyNavigationGrid.enabled() &&
-                    m_galaxyNavigationGrid.hasHoveredCell())
+                    m_galaxyView.state().navigationGrid.enabled() &&
+                    m_galaxyView.state().navigationGrid.hasHoveredCell())
                 {
                     navigationPointLy =
-                        m_galaxyNavigationGrid
+                        m_galaxyView.state().navigationGrid
                             .hoveredCell()
                             .centerLy;
 
@@ -2814,24 +2588,24 @@ void SystemMapRenderer::handleGalaxyInput(
                     the five Root cubes to become a level anchor.
                 */
                 const auto navigationPointIndex =
-                    m_galaxyNavigationGrid
+                    m_galaxyView.state().navigationGrid
                         .nearestIndexForPositionLy(
                             navigationPointLy,
-                            m_galaxyNavigationGrid.level()
+                            m_galaxyView.state().navigationGrid.level()
                         );
 
-                if (!m_galaxyNavigationGrid.isCellNavigable(
+                if (!m_galaxyView.state().navigationGrid.isCellNavigable(
                         navigationPointIndex,
-                        m_galaxyNavigationGrid.level()
+                        m_galaxyView.state().navigationGrid.level()
                     ))
                 {
                     navigationPointLy =
-                        m_galaxyNavigationGrid
+                        m_galaxyView.state().navigationGrid
                             .anchorCell()
                             .centerLy;
 
                     zoomPivotWorld =
-                        m_galaxyCamera.target;
+                        m_galaxyView.state().camera.target;
 
                     zoomPivotActive = false;
                 }
@@ -2865,12 +2639,12 @@ void SystemMapRenderer::handleGalaxyInput(
                             -zoom
                         );
 
-                m_galaxyCamera.distance *=
+                m_galaxyView.state().camera.distance *=
                     factor;
 
-                m_galaxyCamera.distance =
+                m_galaxyView.state().camera.distance =
                     std::clamp(
-                        m_galaxyCamera.distance,
+                        m_galaxyView.state().camera.distance,
                         controls.minDistance,
                         galaxyMaximumDistance
                     );
@@ -2920,14 +2694,14 @@ void SystemMapRenderer::handleGalaxyInput(
 
                         const glm::vec3 direction =
                             orbitCameraDirectionFromYawPitch(
-                                m_galaxyCamera.yaw,
-                                m_galaxyCamera.pitch
+                                m_galaxyView.state().camera.yaw,
+                                m_galaxyView.state().camera.pitch
                             );
 
                         const glm::vec3 eye =
-                            m_galaxyCamera.target +
+                            m_galaxyView.state().camera.target +
                             direction *
-                            m_galaxyCamera.distance;
+                            m_galaxyView.state().camera.distance;
 
                         const float pivotDepth =
                             std::max(
@@ -2949,12 +2723,12 @@ void SystemMapRenderer::handleGalaxyInput(
                                 std::max(vp.height, 1)
                             );
 
-                        m_galaxyCamera.target -=
+                        m_galaxyView.state().camera.target -=
                             right *
                             screenDelta.x *
                             worldUnitsPerPixel;
 
-                        m_galaxyCamera.target +=
+                        m_galaxyView.state().camera.target +=
                             up *
                             screenDelta.y *
                             worldUnitsPerPixel;
@@ -2967,7 +2741,7 @@ void SystemMapRenderer::handleGalaxyInput(
                     Затем общий слой решает, нужно ли менять
                     уровень иерархии.
                 */
-                if (m_galaxyNavigationGrid.enabled())
+                if (m_galaxyView.state().navigationGrid.enabled())
                 {
                     const float currentCellDiameterPx =
                         galaxyNavigationAnchorDiameterPx(
@@ -2981,9 +2755,9 @@ void SystemMapRenderer::handleGalaxyInput(
                                 currentCellDiameterPx,
                                 vp.width,
                                 vp.height,
-                                m_galaxyNavigationGrid
+                                m_galaxyView.state().navigationGrid
                                     .canRefine(),
-                                m_galaxyNavigationGrid
+                                m_galaxyView.state().navigationGrid
                                     .canCoarsen(),
                                 true
                             );
@@ -3001,9 +2775,9 @@ void SystemMapRenderer::handleGalaxyInput(
 
                             Здесь нет camera flight: смену режима
                             выполнит SpaceState через существующий
-                            запрос m_requestedSystemEntry.
+                            запрос перехода в System Map.
                         */
-                        m_galaxyCubeClickTracker.reset();
+                        m_galaxyView.state().cubeClickTracker.reset();
 
                         const SystemEntryRequest entryRequest =
                             galaxySystemEntryForPosition(
@@ -3014,21 +2788,21 @@ void SystemMapRenderer::handleGalaxyInput(
 
                         if (entryRequest.knownSystem())
                         {
-                            m_selectedSystemId =
+                            m_galaxyView.state().selectedSystemId =
                                 entryRequest.systemId;
 
-                            m_focusedSystemId =
+                            m_galaxyView.state().focusedSystemId =
                                 entryRequest.systemId;
                         }
                         else
                         {
-                            m_selectedSystemId = -1;
-                            m_focusedSystemId = -1;
+                            m_galaxyView.state().selectedSystemId = -1;
+                            m_galaxyView.state().focusedSystemId = -1;
 
-                            m_galaxyNavigationFocusLy =
+                            m_galaxyView.state().navigationFocusLy =
                                 navigationPointLy;
 
-                            m_galaxyNavigationFocusValid =
+                            m_galaxyView.state().navigationFocusValid =
                                 true;
                         }
 
@@ -3039,7 +2813,7 @@ void SystemMapRenderer::handleGalaxyInput(
                                 .minimumLevel
                         );
 
-                        m_requestedSystemEntry =
+                        m_galaxyView.state().requestedSystemEntry =
                             entryRequest;
                     }
                     else
@@ -3048,7 +2822,7 @@ void SystemMapRenderer::handleGalaxyInput(
                             game::navigation::
                                 applyCubicNavigationLevelActionAtPosition(
                                     levelAction,
-                                    m_galaxyNavigationGrid,
+                                    m_galaxyView.state().navigationGrid,
                                     navigationPointLy,
                                     [](
                                         auto& grid,
@@ -3066,23 +2840,23 @@ void SystemMapRenderer::handleGalaxyInput(
                         {
                             announceNavigationLevel(
                                 'G',
-                                m_galaxyNavigationGrid.level()
+                                m_galaxyView.state().navigationGrid.level()
                             );
 
-                            m_galaxyHoverVisualCell.reset();
-                            m_galaxyHoverVisualAlpha = 0.0f;
+                            m_galaxyView.state().hoverVisualCell.reset();
+                            m_galaxyView.state().hoverVisualAlpha = 0.0f;
 
-                            m_galaxyHoverOutgoingCell.reset();
-                            m_galaxyHoverOutgoingAlpha = 0.0f;
+                            m_galaxyView.state().hoverOutgoingCell.reset();
+                            m_galaxyView.state().hoverOutgoingAlpha = 0.0f;
 
-                            m_galaxyCubeClickTracker.reset();
+                            m_galaxyView.state().cubeClickTracker.reset();
                         }
                     }
                 }
             }
         }
 
-        m_galaxyCamera.leftWasDown = leftDown;
+        m_galaxyView.state().camera.leftWasDown = leftDown;
 
 
 
@@ -3090,9 +2864,9 @@ void SystemMapRenderer::handleGalaxyInput(
 
 
 
-        m_galaxyCamera.rightWasDown = rightDown;
-        m_galaxyCamera.lastMouseX = mx;
-        m_galaxyCamera.lastMouseY = my;
+        m_galaxyView.state().camera.rightWasDown = rightDown;
+        m_galaxyView.state().camera.lastMouseX = mx;
+        m_galaxyView.state().camera.lastMouseY = my;
 
 
 
@@ -3112,7 +2886,7 @@ void SystemMapRenderer::renderGalaxy(
     const glm::mat4 view = galaxyViewMatrix();
     const glm::mat4 mvp = proj * view;
 
-    if (m_galaxyVisuals.drawStarfield)
+    if (m_galaxyView.visuals().drawStarfield)
     {
         bool playerInsideKnownSystem = false;
 
@@ -3127,28 +2901,28 @@ void SystemMapRenderer::renderGalaxy(
             vp,
             observerPositionLy,
             view,
-            m_galaxyVisuals.starfieldFieldOfViewDeg,
-            m_galaxyVisuals.starfieldSizeScale,
+            m_galaxyView.visuals().starfieldFieldOfViewDeg,
+            m_galaxyView.visuals().starfieldSizeScale,
             true,
-            m_galaxyVisuals.starfieldBrightnessScale,
-            m_galaxyVisuals.milkyWayIntensityScale,
-            m_galaxyVisuals.milkyWayColorTint
+            m_galaxyView.visuals().starfieldBrightnessScale,
+            m_galaxyView.visuals().milkyWayIntensityScale,
+            m_galaxyView.visuals().milkyWayColorTint
         );
     }
 
-    if (m_galaxyVisuals.drawAtmosphereVeil)
+    if (m_galaxyView.visuals().drawAtmosphereVeil)
     {
         drawMapAtmosphereVeil(
-            m_galaxyVisuals.atmosphereVeilCenterAlpha,
-            m_galaxyVisuals.atmosphereVeilEdgeAlpha,
-            m_galaxyVisuals.atmosphereVeilAquaStrength
+            m_galaxyView.visuals().atmosphereVeilCenterAlpha,
+            m_galaxyView.visuals().atmosphereVeilEdgeAlpha,
+            m_galaxyView.visuals().atmosphereVeilAquaStrength
         );
     }
 
     beginLines();
     beginSolids();
 
-    if (m_galaxyNavigationGrid.enabled())
+    if (m_galaxyView.state().navigationGrid.enabled())
     {
         /*
             The old decorative plane is hidden in navigation mode.
@@ -3192,20 +2966,20 @@ void SystemMapRenderer::renderGalaxy(
     // Здесь позже будут гравитационные складки, трассы, маяки, опасные зоны.
     drawNavigationLayerPlaceholder();
 
-    m_lastGalaxyScreenPoints.clear();
+    m_galaxyView.state().screenPoints.clear();
 
 
 
     const glm::vec3 cameraDirection =
         orbitCameraDirectionFromYawPitch(
-            m_galaxyCamera.yaw,
-            m_galaxyCamera.pitch
+            m_galaxyView.state().camera.yaw,
+            m_galaxyView.state().camera.pitch
         );
 
     const glm::vec3 cameraPosition =
-        m_galaxyCamera.target +
+        m_galaxyView.state().camera.target +
         cameraDirection *
-        m_galaxyCamera.distance;
+        m_galaxyView.state().camera.distance;
 
     const float safeViewportHeight =
         static_cast<float>(
@@ -3224,7 +2998,7 @@ void SystemMapRenderer::renderGalaxy(
         const glm::vec3 p = galaxyStarPosition(s);
 
         const bool isCurrent = s.id == nav.currentSystemId;
-        const bool isSelected = s.id == m_selectedSystemId;
+        const bool isSelected = s.id == m_galaxyView.state().selectedSystemId;
 
 
 
@@ -3274,24 +3048,24 @@ void SystemMapRenderer::renderGalaxy(
                     static_cast<float>(
                         s.starsCount - 1
                     ) *
-                    m_galaxyVisuals.multipleStarScale
+                    m_galaxyView.visuals().multipleStarScale
                 );
         }
 
         if (isCurrent)
         {
             starScale *=
-                m_galaxyVisuals.currentStarScale;
+                m_galaxyView.visuals().currentStarScale;
         }
 
         if (isSelected)
         {
             starScale *=
-                m_galaxyVisuals.selectedStarScale;
+                m_galaxyView.visuals().selectedStarScale;
         }
 
         const float starRadius =
-            m_galaxyVisuals.starBaseRadiusPx *
+            m_galaxyView.visuals().starBaseRadiusPx *
             starScale *
             worldUnitsPerPixel;
 
@@ -3304,22 +3078,22 @@ void SystemMapRenderer::renderGalaxy(
         bool insideHoveredCube = false;
         float hoveredCubeVisualAlpha = 0.0f;
 
-        if (m_galaxyNavigationGrid.enabled())
+        if (m_galaxyView.state().navigationGrid.enabled())
         {
             const auto starCellIndex =
-                m_galaxyNavigationGrid
+                m_galaxyView.state().navigationGrid
                     .nearestIndexForPositionLy(
                         s.positionLy,
-                        m_galaxyNavigationGrid.level()
+                        m_galaxyView.state().navigationGrid.level()
                     );
 
-            if (m_galaxyNavigationGrid.hasSelectedCell())
+            if (m_galaxyView.state().navigationGrid.hasSelectedCell())
             {
                 const auto& selectedCell =
-                    m_galaxyNavigationGrid.selectedCell();
+                    m_galaxyView.state().navigationGrid.selectedCell();
 
                 if (selectedCell.level ==
-                    m_galaxyNavigationGrid.level())
+                    m_galaxyView.state().navigationGrid.level())
                 {
                     insideSelectedCube =
                         starCellIndex ==
@@ -3327,25 +3101,25 @@ void SystemMapRenderer::renderGalaxy(
                 }
             }
 
-            if (m_galaxyHoverVisualCell.has_value() &&
+            if (m_galaxyView.state().hoverVisualCell.has_value() &&
                 starCellIndex ==
-                    m_galaxyHoverVisualCell->index)
+                    m_galaxyView.state().hoverVisualCell->index)
             {
                 hoveredCubeVisualAlpha =
                     std::max(
                         hoveredCubeVisualAlpha,
-                        m_galaxyHoverVisualAlpha
+                        m_galaxyView.state().hoverVisualAlpha
                     );
             }
 
-            if (m_galaxyHoverOutgoingCell.has_value() &&
+            if (m_galaxyView.state().hoverOutgoingCell.has_value() &&
                 starCellIndex ==
-                    m_galaxyHoverOutgoingCell->index)
+                    m_galaxyView.state().hoverOutgoingCell->index)
             {
                 hoveredCubeVisualAlpha =
                     std::max(
                         hoveredCubeVisualAlpha,
-                        m_galaxyHoverOutgoingAlpha
+                        m_galaxyView.state().hoverOutgoingAlpha
                     );
             }
 
@@ -3368,16 +3142,16 @@ void SystemMapRenderer::renderGalaxy(
             addGalaxyStarHalo(
                 p,
                 starRadius,
-                m_galaxyVisuals
+                m_galaxyView.visuals()
                     .hoveredCubeHaloRadiusScale,
-                m_galaxyVisuals
+                m_galaxyView.visuals()
                     .hoveredCubeHaloAlpha *
                         hoveredCubeVisualAlpha,
                 c,
                 view,
-                m_galaxyVisuals
+                m_galaxyView.visuals()
                     .starHaloRingCount,
-                m_galaxyVisuals
+                m_galaxyView.visuals()
                     .starHaloSegments
             );
         }
@@ -3386,15 +3160,15 @@ void SystemMapRenderer::renderGalaxy(
             addGalaxyStarHalo(
                 p,
                 starRadius,
-                m_galaxyVisuals
+                m_galaxyView.visuals()
                     .fixedCubeHaloRadiusScale,
-                m_galaxyVisuals
+                m_galaxyView.visuals()
                     .fixedCubeHaloAlpha,
                 c,
                 view,
-                m_galaxyVisuals
+                m_galaxyView.visuals()
                     .starHaloRingCount,
-                m_galaxyVisuals
+                m_galaxyView.visuals()
                     .starHaloSegments
             );
         }
@@ -3422,12 +3196,12 @@ void SystemMapRenderer::renderGalaxy(
 
 
 
-        ScreenPoint sp;
+        game::system_map::GalaxyMapScreenPoint sp;
         sp.systemId = s.id;
         sp.name = s.name;
         sp.world = p;
         sp.screen = projectToScreen(p, mvp, vp, sp.visible, sp.depth);
-        m_lastGalaxyScreenPoints.push_back(sp);
+        m_galaxyView.state().screenPoints.push_back(sp);
     }
 
     /*
@@ -3515,16 +3289,16 @@ void SystemMapRenderer::drawGalaxyPlayerMarker(
     if (!insideKnownSystem)
     {
         const int terminalLevel =
-            m_galaxyNavigationGrid.maximumLevel();
+            m_galaxyView.state().navigationGrid.maximumLevel();
 
         const auto terminalIndex =
-            m_galaxyNavigationGrid.nearestIndexForPositionLy(
+            m_galaxyView.state().navigationGrid.nearestIndexForPositionLy(
                 playerPositionLy,
                 terminalLevel
             );
 
         const auto terminalCell =
-            m_galaxyNavigationGrid.cell(
+            m_galaxyView.state().navigationGrid.cell(
                 terminalIndex,
                 terminalLevel
             );
@@ -3544,7 +3318,7 @@ void SystemMapRenderer::drawGalaxyPlayerMarker(
                 markerColor.r,
                 markerColor.g,
                 markerColor.b,
-                m_galaxyVisuals.navigationGrid.terminalCubeAlpha
+                m_galaxyView.visuals().navigationGrid.terminalCubeAlpha
             )
         );
 
@@ -3593,7 +3367,7 @@ void SystemMapRenderer::drawGalaxyPlayerMarker(
             markerColor.r,
             markerColor.g,
             markerColor.b,
-            m_galaxyVisuals.navigationGrid.terminalLeaderAlpha
+            m_galaxyView.visuals().navigationGrid.terminalLeaderAlpha
         )
     );
 
@@ -3675,27 +3449,27 @@ void SystemMapRenderer::drawGalaxyLabels(
     const float screenFactor =
         std::clamp(
             static_cast<float>(vp.height) /
-                m_galaxyVisuals.labelReferenceHeightPx,
-            m_galaxyVisuals.labelMinimumScreenScale,
-            m_galaxyVisuals.labelMaximumScreenScale
+                m_galaxyView.visuals().labelReferenceHeightPx,
+            m_galaxyView.visuals().labelMinimumScreenScale,
+            m_galaxyView.visuals().labelMaximumScreenScale
         );
 
     const float labelFactor =
         screenFactor *
-        m_galaxyVisuals.labelScale;
+        m_galaxyView.visuals().labelScale;
 
     const int titlePx =
         std::clamp(
             static_cast<int>(
                 std::lround(
                     static_cast<float>(
-                        m_galaxyVisuals.labelTitleBasePx
+                        m_galaxyView.visuals().labelTitleBasePx
                     ) *
                     labelFactor
                 )
             ),
-            m_galaxyVisuals.labelTitleMinPx,
-            m_galaxyVisuals.labelTitleMaxPx
+            m_galaxyView.visuals().labelTitleMinPx,
+            m_galaxyView.visuals().labelTitleMaxPx
         );
 
     const int selectedTitlePx =
@@ -3703,13 +3477,13 @@ void SystemMapRenderer::drawGalaxyLabels(
             static_cast<int>(
                 std::lround(
                     static_cast<float>(
-                        m_galaxyVisuals.labelSelectedTitleBasePx
+                        m_galaxyView.visuals().labelSelectedTitleBasePx
                     ) *
                     labelFactor
                 )
             ),
-            m_galaxyVisuals.labelTitleMinPx,
-            m_galaxyVisuals.labelTitleMaxPx
+            m_galaxyView.visuals().labelTitleMinPx,
+            m_galaxyView.visuals().labelTitleMaxPx
         );
 
     const int subtitlePx =
@@ -3717,13 +3491,13 @@ void SystemMapRenderer::drawGalaxyLabels(
             static_cast<int>(
                 std::lround(
                     static_cast<float>(
-                        m_galaxyVisuals.labelSubtitleBasePx
+                        m_galaxyView.visuals().labelSubtitleBasePx
                     ) *
                     labelFactor
                 )
             ),
-            m_galaxyVisuals.labelSubtitleMinPx,
-            m_galaxyVisuals.labelSubtitleMaxPx
+            m_galaxyView.visuals().labelSubtitleMinPx,
+            m_galaxyView.visuals().labelSubtitleMaxPx
         );
 
 
@@ -3749,7 +3523,7 @@ void SystemMapRenderer::drawGalaxyLabels(
         if (!visible)
             continue;
 
-        const bool selected = s.id == m_selectedSystemId;
+        const bool selected = s.id == m_galaxyView.state().selectedSystemId;
 
         // Пока игрок находится у текущей системы. Для galaxy-map этого достаточно.
         // Если позже игрок будет в межзвездном пространстве — добавим точную playerPositionLy.
@@ -3872,7 +3646,7 @@ if (logThisFrame)
         << "\nFRAME " << debugFrame
         << " vp=(" << vp.x << "," << vp.y
         << "," << vp.width << "," << vp.height << ")"
-        << " cameraDistance=" << m_galaxyCamera.distance
+        << " cameraDistance=" << m_galaxyView.state().camera.distance
         << "\n";
 }
 
@@ -3880,8 +3654,8 @@ for (const auto& l : labels)
 {
     const glm::vec4 lineColor =
         l.selected
-            ? m_galaxyVisuals.labels.selectedLeaderColor
-            : m_galaxyVisuals.labels.normalLeaderColor;
+            ? m_galaxyView.visuals().labels.selectedLeaderColor
+            : m_galaxyView.visuals().labels.normalLeaderColor;
 
 
 
@@ -3929,13 +3703,13 @@ for (const auto& l : labels)
 
     const glm::vec4 titleColor =
         l.selected
-            ? m_galaxyVisuals.labels.selectedTitleColor
-            : m_galaxyVisuals.labels.normalTitleColor;
+            ? m_galaxyView.visuals().labels.selectedTitleColor
+            : m_galaxyView.visuals().labels.normalTitleColor;
 
     const glm::vec4 subtitleColor =
         l.selected
-            ? m_galaxyVisuals.labels.selectedSubtitleColor
-            : m_galaxyVisuals.labels.normalSubtitleColor;
+            ? m_galaxyView.visuals().labels.selectedSubtitleColor
+            : m_galaxyView.visuals().labels.normalSubtitleColor;
 
 
     text.textDrawPx(
@@ -3973,138 +3747,11 @@ void SystemMapRenderer::beginGalaxyCameraFlight(
     float destinationDistance
 )
 {
-    destinationDistance =
-        std::clamp(
-            destinationDistance,
-            m_galaxyControls.minDistance,
-            std::min(
-                m_galaxyControls.maxDistance,
-                m_galaxyVisuals.labelMaxCameraDistance
-            )
-        );
-
-    const float targetTravelDistance =
-        glm::length(
-            destinationTarget -
-                m_galaxyCamera.target
-        );
-
-    const float distanceChange =
-        std::abs(
-            destinationDistance -
-                m_galaxyCamera.distance
-        );
-
-    /*
-        Продолжительность пока вычисляется по старым
-        Galaxy-настройкам. Поведение не меняем.
-    */
-    const float referenceDistance =
-        std::max(
-            1.0f,
-            m_galaxyVisuals
-                .cameraFlightReferenceDistance
-        );
-
-    const float targetFactor =
-        std::clamp(
-            targetTravelDistance /
-                referenceDistance,
-            0.0f,
-            1.0f
-        );
-
-    const float zoomFactor =
-        std::clamp(
-            distanceChange /
-                std::max(
-                    0.0001f,
-                    std::max(
-                        m_galaxyCamera.distance,
-                        destinationDistance
-                    )
-                ),
-            0.0f,
-            1.0f
-        );
-
-    const float distanceFactor =
-        std::max(
-            targetFactor,
-            zoomFactor
-        );
-
-    const float duration =
-        m_galaxyVisuals
-            .cameraFlightMinSeconds +
-        (
-            m_galaxyVisuals
-                .cameraFlightMaxSeconds -
-            m_galaxyVisuals
-                .cameraFlightMinSeconds
-        ) *
-        distanceFactor;
-
-    game::navigation::CubicNavigationCameraPose
-        currentPose;
-
-    currentPose.target =
-        glm::dvec3(
-            m_galaxyCamera.target
-        );
-
-    currentPose.scale =
-        static_cast<double>(
-            m_galaxyCamera.distance
-        );
-
-    game::navigation::CubicNavigationCameraPose
-        destinationPose;
-
-    destinationPose.target =
-        glm::dvec3(
-            destinationTarget
-        );
-
-    destinationPose.scale =
-        static_cast<double>(
-            destinationDistance
-        );
-
-    m_galaxyCameraFlight.begin(
-        currentPose,
-        destinationPose,
-        glfwGetTime(),
-        static_cast<double>(
-            duration
-        )
+    m_galaxyView.beginCameraFlight(
+        destinationTarget,
+        destinationDistance,
+        glfwGetTime()
     );
-
-    /*
-        begin() может применить destination немедленно,
-        если перемещение практически равно нулю.
-    */
-    m_galaxyCamera.target =
-        glm::vec3(
-            currentPose.target
-        );
-
-    m_galaxyCamera.distance =
-        static_cast<float>(
-            currentPose.scale
-        );
-
-    if (m_galaxyCameraFlight.active())
-    {
-        m_galaxyCamera.rotating =
-            false;
-
-        m_galaxyCamera.panning =
-            false;
-
-        m_galaxyOrbitPivotActive =
-            false;
-    }
 }
 
 
@@ -4114,36 +3761,7 @@ void SystemMapRenderer::updateGalaxyCameraFlight(
     double nowSeconds
 )
 {
-    game::navigation::CubicNavigationCameraPose
-        pose;
-
-    pose.target =
-        glm::dvec3(
-            m_galaxyCamera.target
-        );
-
-    pose.scale =
-        static_cast<double>(
-            m_galaxyCamera.distance
-        );
-
-    if (!m_galaxyCameraFlight.update(
-            nowSeconds,
-            pose
-        ))
-    {
-        return;
-    }
-
-    m_galaxyCamera.target =
-        glm::vec3(
-            pose.target
-        );
-
-    m_galaxyCamera.distance =
-        static_cast<float>(
-            pose.scale
-        );
+    m_galaxyView.updateCameraFlight(nowSeconds);
 }
 
 
@@ -4153,36 +3771,7 @@ void SystemMapRenderer::cancelGalaxyCameraFlight(
     bool snapToDestination
 )
 {
-    game::navigation::CubicNavigationCameraPose
-        pose;
-
-    pose.target =
-        glm::dvec3(
-            m_galaxyCamera.target
-        );
-
-    pose.scale =
-        static_cast<double>(
-            m_galaxyCamera.distance
-        );
-
-    if (!m_galaxyCameraFlight.cancel(
-            snapToDestination,
-            pose
-        ))
-    {
-        return;
-    }
-
-    m_galaxyCamera.target =
-        glm::vec3(
-            pose.target
-        );
-
-    m_galaxyCamera.distance =
-        static_cast<float>(
-            pose.scale
-        );
+    m_galaxyView.cancelCameraFlight(snapToDestination);
 }
 
 
@@ -4202,36 +3791,36 @@ void SystemMapRenderer::focusGalaxySystem(
         if (system.id != systemId)
             continue;
 
-        m_selectedSystemId =
+        m_galaxyView.state().selectedSystemId =
             system.id;
 
-        m_focusedSystemId =
+        m_galaxyView.state().focusedSystemId =
             system.id;
 
         /*
             Важно: сохраняем позицию самой звезды, а не центр
             содержащего её куба.
         */
-        m_galaxyNavigationFocusLy =
+        m_galaxyView.state().navigationFocusLy =
             system.positionLy;
 
-        m_galaxyNavigationFocusValid =
+        m_galaxyView.state().navigationFocusValid =
             true;
 
         /*
             Выбираем куб текущего уровня,
             внутри которого находится звезда.
         */
-        m_galaxyNavigationGrid
+        m_galaxyView.state().navigationGrid
             .setAnchorFromPositionLy(
                 system.positionLy
             );
 
         const auto starCell =
-            m_galaxyNavigationGrid
+            m_galaxyView.state().navigationGrid
                 .anchorCell();
 
-        m_galaxyNavigationGrid.selectCell(
+        m_galaxyView.state().navigationGrid.selectCell(
             starCell
         );
 
@@ -4257,12 +3846,12 @@ void SystemMapRenderer::focusGalaxySystem(
         {
             beginGalaxyCameraFlight(
                 destinationTarget,
-                m_galaxyCamera.distance
+                m_galaxyView.state().camera.distance
             );
         }
         else
         {
-            m_galaxyCamera.target =
+            m_galaxyView.state().camera.target =
                 destinationTarget;
         }
 
@@ -4492,7 +4081,7 @@ int SystemMapRenderer::pickGalaxySystem(
         const float dy = screen.y - static_cast<float>(mouseY);
         const float d = std::sqrt(dx * dx + dy * dy);
 
-        const float pickRadius = m_galaxyControls.systemPickRadiusPx;
+        const float pickRadius = m_galaxyView.controls().systemPickRadiusPx;
 
         if (d < pickRadius && d < bestDist)
         {
@@ -4592,10 +4181,10 @@ void SystemMapRenderer::debugLabelTraceToFile(
         << " screen=(" << screen.x << "," << screen.y << ")"
         << " pos=(" << pos.x << "," << pos.y << ")"
         << " delta=(" << (pos.x - screen.x) << "," << (pos.y - screen.y) << ")"
-        << " cameraDistance=" << m_galaxyCamera.distance
+        << " cameraDistance=" << m_galaxyView.state().camera.distance
         << " target=("
-        << m_galaxyCamera.target.x << ","
-        << m_galaxyCamera.target.y << ","
-        << m_galaxyCamera.target.z << ")"
+        << m_galaxyView.state().camera.target.x << ","
+        << m_galaxyView.state().camera.target.y << ","
+        << m_galaxyView.state().camera.target.z << ")"
         << "\n";
 }

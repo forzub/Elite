@@ -46,13 +46,13 @@
 #include "src/render/system_map/HubPlanetOverlayRenderer.h"
 
 
-#include "src/game/system_map/GalaxyMapVisualSettings.h"
 #include "src/game/system_map/SystemMapVisualSettings.h"
 #include "src/game/system_map/DetailMapVisualSettings.h"
 #include "src/game/system_map/HubMapVisualSettings.h"
 #include "src/game/system_map/MapTransitionController.h"
 #include "src/game/system_map/MapMode.h"
 #include "src/game/system_map/MapCameraState.h"
+#include "src/game/system_map/GalaxyMapView.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
@@ -60,23 +60,8 @@ class SystemMapRenderer
 public:
     using Mode = game::system_map::MapMode;
 
-    /*
-        Переход Galaxy -> System может вести как в известную
-        звёздную систему, так и в пустой пространственный сектор.
-
-        systemId >= 0 означает известную систему.
-        systemId < 0 означает пустой сектор с центром positionLy.
-    */
-    struct SystemEntryRequest
-    {
-        int systemId = -1;
-        glm::dvec3 positionLy {0.0};
-
-        bool knownSystem() const
-        {
-            return systemId >= 0;
-        }
-    };
+    using SystemEntryRequest =
+        game::system_map::GalaxySystemEntryRequest;
 
     struct HubMapPerformanceStats
     {
@@ -187,17 +172,6 @@ private:
         std::vector<TexturedVertex> vertices;
     };
 
-    struct ScreenPoint
-    {
-        int systemId = -1;
-        std::string name;
-        glm::vec3 world {0.0f};
-        glm::vec2 screen {0.0f};
-        float depth = 0.0f;
-        bool visible = false;
-    };
-
-
     struct BodyScreenPoint
     {
         std::string bodyId;
@@ -239,77 +213,12 @@ private:
         bool drawMarker = false;
     };
 
-    using GalaxyCamera = game::system_map::GalaxyCameraState;
     using SystemCameraFlight = game::system_map::SystemCameraFlightState;
     using SystemCamera = game::system_map::SystemCameraState;
     using DetailCamera = game::system_map::DetailCameraState;
 
     DetailCamera m_planetCamera;
     DetailCamera m_hubCamera;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    struct GalaxyControlSettings
-    {
-        float rotateSensitivity = 0.008f;
-        float pitchLimitRad = 1.52f;
-
-        float panScaleByDistance = 0.0018f;
-
-        float zoomInFactor = 0.935f;
-        float zoomOutFactor = 1.07f;
-
-        /* Needed for the terminal ~260 AU Galaxy cell. */
-        float minDistance = 0.002f;
-        float maxDistance = 700.0f;
-
-        // Радиус поиска pivot-звезды при старте вращения.
-        float pivotPickRadiusPx = 36.0f;
-
-        /*
-            Максимальный угловой шаг за один кадр.
-            Защищает от скачка после потери фокуса окна
-            или редкого длинного кадра.
-        */
-        float rotationMaxStepRad = 0.10f;
-
-        // Радиус кликового выбора системы.
-        float systemPickRadiusPx = 32.0f;
-
-        /*
-            Куб текущего Galaxy-уровня не рисуется и не
-            участвует в hover/picking, пока его экранный диаметр
-            меньше этого порога.
-
-            Порог масштабируется от меньшей стороны viewport,
-            но не опускается ниже navigationCellInteractiveMinPx.
-        */
-        float navigationCellInteractiveViewportFraction = 0.075f;
-        float navigationCellInteractiveMinPx = 56.0f;
-
-        float navigationHoverFadeInSeconds = 0.18f;
-        float navigationHoverFadeOutSeconds = 0.14f;
-
-
-
-        double cubeDoubleClickMaxIntervalSeconds = 0.38;
-        double cubeDoubleClickMaxDistancePx = 12.0;
-
-        double clickMoveThresholdPx = 5.0;
-    };
 
     struct SystemControlSettings
     {
@@ -1621,46 +1530,13 @@ private:
 
     double m_pendingScrollY = 0.0;
 
-    GalaxyCamera m_galaxyCamera;
+    game::system_map::GalaxyMapView m_galaxyView;
 
-    game::navigation::CubicNavigationCameraFlight m_galaxyCameraFlight;
     SystemCameraFlight m_systemCameraFlight;
     SystemCamera m_systemCamera;
 
-    game::navigation::GalaxyNavigationGrid m_galaxyNavigationGrid;
     game::navigation::SystemNavigationGrid m_systemNavigationGrid;
 
-
-    /*
-        Точная физическая точка явного пользовательского выбора.
-
-        Для выбранной звезды это точная координата звезды.
-        Для выбранного центра куба это центр выбранного куба.
-
-        Она используется для адреса/маршрута, но не управляет
-        camera target, hover или сменой уровня колесом.
-    */
-    glm::dvec3 m_galaxyNavigationFocusLy {0.0};
-    bool m_galaxyNavigationFocusValid = false;
-
-    /*
-        Render-only hover state. The logical hovered cell may disappear
-        immediately, while this copy is allowed to fade out smoothly.
-    */
-    std::optional<game::navigation::GalaxyNavigationCell>
-        m_galaxyHoverVisualCell;
-
-    float m_galaxyHoverVisualAlpha = 0.0f;
-
-    std::optional<game::navigation::GalaxyNavigationCell>
-        m_galaxyHoverOutgoingCell;
-
-    float m_galaxyHoverOutgoingAlpha = 0.0f;
-    double m_galaxyHoverVisualLastTimeSeconds = 0.0;
-
-    game::navigation::CubicNavigationClickTracker<
-            game::navigation::GalaxyGridIndex
-        > m_galaxyCubeClickTracker;
 
     std::optional<game::navigation::CubicNavigationCell>
         m_systemHoverVisualCell;
@@ -1686,12 +1562,6 @@ private:
         m_navigationCoordinateFormat =
             game::navigation::NavigationCoordinateFormat::Hierarchical;
 
-    bool m_hasGalaxyMapEntryState = false;
-    int m_lastGalaxyMapEntrySystemId = -1;
-    game::navigation::GalaxyGridIndex
-        m_lastGalaxyMapEntryTerminalCell;
-    glm::dvec3 m_lastGalaxyMapEntryPositionLy {0.0};
-
     render::navigation::NavigationCoordinateOverlay
         m_navigationCoordinateOverlay;
 
@@ -1713,8 +1583,6 @@ private:
 
 
 
-    GalaxyControlSettings m_galaxyControls;
-    GalaxyMapVisualSettings m_galaxyVisuals;
     SystemControlSettings m_systemControls;
     SystemMapVisualSettings m_systemVisuals;
 
@@ -1734,13 +1602,7 @@ private:
 
     HubMapVisualSettings m_hubVisuals;
 
-    int m_selectedSystemId = -1;
-    std::optional<SystemEntryRequest>
-        m_requestedSystemEntry;
-    int m_focusedSystemId = -1;
-    bool m_comboOpen = false;
 
-    std::vector<ScreenPoint> m_lastGalaxyScreenPoints;
 
     struct SmoothPoint
     {
@@ -1831,11 +1693,6 @@ private:
     glm::dvec3 m_systemOrbitPivotAbsolute {0.0, 0.0, 0.0};
     bool m_systemOrbitPivotActive = false;
 
-    glm::vec3 m_galaxyOrbitPivotWorld {0.0f, 0.0f, 0.0f};
-    bool m_galaxyOrbitPivotActive = false;
-
-    double m_galaxyMouseDownX = 0.0;
-    double m_galaxyMouseDownY = 0.0;
 
     render::celestial::ProceduralCloudLayer m_proceduralCloudLayer;
     render::celestial::HubSphericalGridRenderer m_hubSphericalGridRenderer;

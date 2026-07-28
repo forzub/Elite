@@ -1,0 +1,465 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 33,
+  "name": "Hamal",
+  "position_ly": {
+    "x": -38.2,
+    "y": 50.5,
+    "z": -9.8
+  },
+  "stars_count": 1,
+  "star_type": "K1IIIb",
+  "stability": "Оранжевый гигант (конечная стадия)",
+  "planets_summary": "1 возможная планета (требует подтверждения)",
+  "primary_resources": [
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "metals"
+  ],
+  "details": {
+    "alternative_names": [
+      "Hamal",
+      "Хамаль",
+      "α Arietis",
+      "Оранжевый Гигант"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Hamal",
+        "alternative_names": [
+          "α Ari",
+          "Хамаль A"
+        ],
+        "type": "K1IIIb — Оранжевый гигант",
+        "diameter_km": 52000000,
+        "mass_kg": 2.982705e+30,
+        "gravitational_parameter_m3s2": 1.990746798e+20,
+        "mass_solar": 1.5,
+        "luminosity_solar": 96,
+        "temperature_k": 4480,
+        "age_gyr": 4.2,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Hamal b",
+            "alternative_names": [
+              "Хамаль b",
+              "Выжившая планета"
+            ],
+            "distance_au": 1.8,
+            "orbital_period_days": 720,
+            "diameter_km": 38000,
+            "mass_kg": 3.463876e+25,
+            "gravitational_parameter_m3s2": 2311894759000000.0,
+            "mass_earth": 5.8,
+            "orbit_type": "S-type",
+            "primary_star": "Hamal",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 280.0,
+            "surface_temperature_k": 695,
+            "day_length_hours": 13.5,
+            "surface_gravity_g": 1.75,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "",
+            "mining_appeal": "Низкая (экстремальная температура)",
+            "moons": [
+              {
+                "name": "Hamal b-I",
+                "diameter_km": 2200,
+                "mass_kg": 6.56942e+22,
+                "gravitational_parameter_m3s2": 4384627991000.0,
+                "mass_earth": 0.011,
+                "distance_from_planet_km": 285000,
+                "atmosphere": false,
+                "oceans": false,
+                "orbital_period_days": 4.5,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Faint rings of Hamal b",
+                "distance_from_planet_km": {
+                  "inner": 28559.232,
+                  "outer": 44709.232
+                },
+                "composition": "Dust, ice and dark particles",
+                "mining_appeal": "Low",
+                "data_status": "procedural_plausible"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Dust halo",
+                  "distance_from_planet_km": {
+                    "inner": 28559.232,
+                    "outer": 32739.232
+                  },
+                  "composition": "Micron dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.28,
+                      0.26,
+                      0.24
+                    ],
+                    "opacity": 0.025,
+                    "optical_depth": 0.01,
+                    "radial_noise_strength": 0.65,
+                    "radial_brightness_variation": 0.4,
+                    "azimuthal_asymmetry": 0.12,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main dusty ring",
+                  "distance_from_planet_km": {
+                    "inner": 33119.232,
+                    "outer": 35019.232
+                  },
+                  "composition": "Dark silicate dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.36,
+                      0.33,
+                      0.3
+                    ],
+                    "opacity": 0.08,
+                    "optical_depth": 0.05,
+                    "radial_noise_strength": 0.42,
+                    "radial_brightness_variation": 0.24,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4158,
+                    "particle_radial_jitter": 0.2599,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Gossamer ring",
+                  "distance_from_planet_km": {
+                    "inner": 35399.232,
+                    "outer": 44709.232
+                  },
+                  "composition": "Very diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.3,
+                      0.28,
+                      0.27
+                    ],
+                    "opacity": 0.018,
+                    "optical_depth": 0.008,
+                    "radial_noise_strength": 0.74,
+                    "radial_brightness_variation": 0.52,
+                    "azimuthal_asymmetry": 0.2,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0119,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.2599,
+                "azimuthal_clumping": 0.4158,
+                "cluster_scale": 0.6898,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          },
+          {
+            "name": "Hamal c",
+            "alternative_names": [
+              "Хамаль c",
+              "Газовый гигант"
+            ],
+            "distance_au": 6.5,
+            "orbital_period_days": 5850,
+            "diameter_km": 135000,
+            "mass_kg": 1.463189e+27,
+            "gravitational_parameter_m3s2": 9.765762343e+16,
+            "mass_earth": 245,
+            "orbit_type": "S-type",
+            "primary_star": "Hamal",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения внешнего пояса",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 895.0,
+            "surface_temperature_k": 185,
+            "day_length_hours": 10.2,
+            "surface_gravity_g": 2.28,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "Hamal c-I",
+                "diameter_km": 4500,
+                "mass_kg": 1.134718e+23,
+                "gravitational_parameter_m3s2": 7573448347000.0,
+                "mass_earth": 0.019,
+                "distance_from_planet_km": 650000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 8.2,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Hamal c",
+                "distance_from_planet_km": {
+                  "inner": 52000,
+                  "outer": 175000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 93439.723,
+                    "outer": 101864.008
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 106939.723,
+                    "outer": 126202.831
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.2684,
+                    "optical_depth": 0.195,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4179,
+                    "particle_radial_jitter": 0.2611,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 144064.723,
+                    "outer": 200247.92
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0124,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.2611,
+                "azimuthal_clumping": 0.4179,
+                "cluster_scale": 0.6919,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Хамала",
+        "distance_from_star_au": 35,
+        "asteroid_count": 1420000,
+        "min_size_m": 40,
+        "max_size_m": 980000,
+        "avg_size_m": 6500,
+        "mining_appeal": "Средняя (лёд, редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера Хамала",
+        "distance_from_star_au": 165,
+        "asteroid_count": 22000000,
+        "min_size_m": 100,
+        "max_size_m": 2450000,
+        "avg_size_m": 105000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Оранжевый гигант на поздней стадии эволюции. Планета существует, но система приближается к финальной стадии. 1 кандидат, 1 ожидается.",
+    "technical_notes": "Оранжевый гигант. Звезда расширяется, планеты могут быть поглощены в будущем."
+  }
+}

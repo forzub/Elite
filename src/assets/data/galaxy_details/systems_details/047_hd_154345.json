@@ -1,0 +1,484 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 47,
+  "name": "HD 154345",
+  "position_ly": {
+    "x": -30.8,
+    "y": 46.8,
+    "z": -8.5
+  },
+  "stars_count": 1,
+  "star_type": "G8V",
+  "stability": "Стабильный жёлтый карлик",
+  "planets_summary": "1 планета (газовый гигант)",
+  "primary_resources": [
+    "helium3",
+    "metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "water"
+  ],
+  "details": {
+    "alternative_names": [
+      "HD 154345",
+      "Аш Ди 154345",
+      "Система 154345"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "HD 154345",
+        "alternative_names": [
+          "HD 154345 A"
+        ],
+        "type": "G8V — Жёлтый карлик",
+        "diameter_km": 1240000,
+        "mass_kg": 1.7498536e+30,
+        "gravitational_parameter_m3s2": 1.167904788e+20,
+        "mass_solar": 0.88,
+        "luminosity_solar": 0.62,
+        "temperature_k": 5450,
+        "age_gyr": 6.2,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "HD 154345 b",
+            "alternative_names": [
+              "HD 154345 b",
+              "Газовый гигант"
+            ],
+            "distance_au": 4.2,
+            "orbital_period_days": 2950,
+            "diameter_km": 132000,
+            "mass_kg": 1.284023e+27,
+            "gravitational_parameter_m3s2": 8.569954709e+16,
+            "mass_earth": 215,
+            "orbit_type": "S-type",
+            "primary_star": "HD 154345",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 875.0,
+            "surface_temperature_k": 95,
+            "day_length_hours": 10.5,
+            "surface_gravity_g": 2.25,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3, газодобыча)",
+            "moons": [
+              {
+                "name": "HD 154345 b-I",
+                "diameter_km": 4350,
+                "mass_kg": 1.074996e+23,
+                "gravitational_parameter_m3s2": 7174845803000.0,
+                "mass_earth": 0.018,
+                "distance_from_planet_km": 635000,
+                "atmosphere": true,
+                "atmosphere_composition": "Азот, метан",
+                "oceans": true,
+                "orbital_period_days": 8.0,
+                "environment_preset_id": "methane_haze_world"
+              },
+              {
+                "name": "HD 154345 b-II",
+                "diameter_km": 3750,
+                "mass_kg": 8.9583e+22,
+                "gravitational_parameter_m3s2": 5979038169000.0,
+                "mass_earth": 0.015,
+                "distance_from_planet_km": 870000,
+                "atmosphere": true,
+                "atmosphere_composition": "Водород, гелий",
+                "oceans": false,
+                "orbital_period_days": 12.8,
+                "environment_preset_id": "gas_giant_ammonia"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца HD 154345 b",
+                "distance_from_planet_km": {
+                  "inner": 52000,
+                  "outer": 175000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 79413.285,
+                    "outer": 84734.626
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.26
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 92613.285,
+                    "outer": 124345.81
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.4376,
+                    "optical_depth": 0.3494,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.3266,
+                    "radial_structure_scale": 0.74
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 128913.285,
+                    "outer": 168238.148
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.26
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.0933,
+                "main_band_emphasis": 1.3266,
+                "secondary_band_emphasis": 0.7866,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.5832,
+                "radial_structure_strength": 0.74,
+                "fine_structure_strength": 0.26,
+                "edge_softness_scale": 0.84,
+                "brightness_variation": 0.24,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            }
+          },
+          {
+            "name": "HD 154345 c",
+            "alternative_names": [
+              "HD 154345 c",
+              "Суперземля"
+            ],
+            "distance_au": 1.85,
+            "orbital_period_days": 925,
+            "diameter_km": 11500,
+            "mass_kg": 1.911104e+25,
+            "gravitational_parameter_m3s2": 1275528143000000.0,
+            "mass_earth": 3.2,
+            "orbit_type": "S-type",
+            "primary_star": "HD 154345",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.2,
+            "surface_temperature_k": 195,
+            "day_length_hours": 285,
+            "surface_gravity_g": 1.35,
+            "oceans": false,
+            "land_water_ratio": "75/25",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "HD 154345 d",
+            "alternative_names": [
+              "HD 154345 d",
+              "Ледяной гигант"
+            ],
+            "distance_au": 8.5,
+            "orbital_period_days": 9850,
+            "diameter_km": 55000,
+            "mass_kg": 1.911104e+26,
+            "gravitational_parameter_m3s2": 1.275528143e+16,
+            "mass_earth": 32,
+            "orbit_type": "S-type",
+            "primary_star": "HD 154345",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 415.0,
+            "surface_temperature_k": 65,
+            "day_length_hours": 9.2,
+            "surface_gravity_g": 1.62,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "HD 154345 d-I",
+                "diameter_km": 3200,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 485000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 6.5,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца HD 154345 d",
+                "distance_from_planet_km": {
+                  "inner": 45000,
+                  "outer": 155000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 38002.355,
+                    "outer": 40353.326
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 43502.355,
+                    "outer": 49744.692
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.2768,
+                    "optical_depth": 0.2277,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5191,
+                    "particle_radial_jitter": 0.3207,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 58627.355,
+                    "outer": 73634.639
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0363,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.3207,
+                "azimuthal_clumping": 0.5191,
+                "cluster_scale": 0.7962,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс HD 154345",
+        "distance_from_star_au": 12,
+        "asteroid_count": 1150000,
+        "min_size_m": 30,
+        "max_size_m": 1080000,
+        "avg_size_m": 3100,
+        "mining_appeal": "Высокая (лёд, редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера HD 154345",
+        "distance_from_star_au": 65,
+        "asteroid_count": 18000000,
+        "min_size_m": 100,
+        "max_size_m": 2450000,
+        "avg_size_m": 95000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Жёлтый карлик с газовым гигантом на далёкой орбите. Обширный пояс астероидов делает систему ценной для добычи. 1 подтверждена, 2 ожидается.",
+    "technical_notes": "Жёлтый карлик. Газовый гигант на большом расстоянии от звезды."
+  }
+}

@@ -1,0 +1,431 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 36,
+  "name": "9 Ceti",
+  "position_ly": {
+    "x": -23.8,
+    "y": 58.5,
+    "z": -10.2
+  },
+  "stars_count": 1,
+  "star_type": "G3V",
+  "stability": "Стабильный жёлтый карлик",
+  "planets_summary": "Неподтверждённые кандидаты",
+  "primary_resources": [
+    "metals",
+    "water"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "9 Ceti",
+      "9 Кита",
+      "HD 11000",
+      "Солнечный Аналог"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "9 Ceti",
+        "alternative_names": [
+          "9 Кита A",
+          "HD 11000"
+        ],
+        "type": "G3V — Жёлтый карлик",
+        "diameter_km": 1350000,
+        "mass_kg": 2.0282394e+30,
+        "gravitational_parameter_m3s2": 1.353707823e+20,
+        "mass_solar": 1.02,
+        "luminosity_solar": 1.08,
+        "temperature_k": 5850,
+        "age_gyr": 4.8,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "9 Ceti b",
+            "alternative_names": [
+              "9 Кита b",
+              "Меркурий-2"
+            ],
+            "distance_au": 0.42,
+            "orbital_period_days": 95,
+            "diameter_km": 5200,
+            "mass_kg": 4.77776e+23,
+            "gravitational_parameter_m3s2": 31888203570000.0,
+            "mass_earth": 0.08,
+            "orbit_type": "S-type",
+            "primary_star": "9 Ceti",
+            "discovery_status": "необнаружена",
+            "atmosphere": false,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.0,
+            "surface_temperature_k": 520,
+            "day_length_hours": 3850,
+            "surface_gravity_g": 0.42,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Высокая (металлы, редкие минералы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "airless_rocky"
+          },
+          {
+            "name": "9 Ceti c",
+            "alternative_names": [
+              "9 Кита c",
+              "Венера-2"
+            ],
+            "distance_au": 0.78,
+            "orbital_period_days": 245,
+            "diameter_km": 11800,
+            "mass_kg": 5.07637e+24,
+            "gravitational_parameter_m3s2": 338812162900000.0,
+            "mass_earth": 0.85,
+            "orbit_type": "S-type",
+            "primary_star": "9 Ceti",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 85.0,
+            "surface_temperature_k": 685,
+            "day_length_hours": 5280,
+            "surface_gravity_g": 0.88,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (сложные условия)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "venusian_dense"
+          },
+          {
+            "name": "9 Ceti d",
+            "alternative_names": [
+              "9 Кита d",
+              "Земля-2",
+              "Надежда"
+            ],
+            "distance_au": 1.05,
+            "orbital_period_days": 385,
+            "diameter_km": 12500,
+            "mass_kg": 5.67359e+24,
+            "gravitational_parameter_m3s2": 378672417400000.0,
+            "mass_earth": 0.95,
+            "orbit_type": "S-type",
+            "primary_star": "9 Ceti",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.95,
+            "surface_temperature_k": 275,
+            "day_length_hours": 26,
+            "surface_gravity_g": 0.95,
+            "oceans": true,
+            "land_water_ratio": "35/65",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [
+              {
+                "name": "9 Ceti d-I",
+                "diameter_km": 2850,
+                "mass_kg": 6.56942e+22,
+                "gravitational_parameter_m3s2": 4384627991000.0,
+                "mass_earth": 0.011,
+                "distance_from_planet_km": 365000,
+                "atmosphere": false,
+                "oceans": false,
+                "orbital_period_days": 24.5,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "ocean_world"
+          },
+          {
+            "name": "9 Ceti e",
+            "alternative_names": [
+              "9 Кита e",
+              "Марс-2"
+            ],
+            "distance_au": 1.62,
+            "orbital_period_days": 725,
+            "diameter_km": 7200,
+            "mass_kg": 7.16664e+23,
+            "gravitational_parameter_m3s2": 47832305350000.0,
+            "mass_earth": 0.12,
+            "orbit_type": "S-type",
+            "primary_star": "9 Ceti",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.015,
+            "surface_temperature_k": 195,
+            "day_length_hours": 25.5,
+            "surface_gravity_g": 0.42,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Высокая (железо, вода в виде льда)",
+            "moons": [
+              {
+                "name": "9 Ceti e-I",
+                "diameter_km": 18,
+                "mass_kg": 8.9583e+16,
+                "gravitational_parameter_m3s2": 5979038.169,
+                "mass_earth": 1.5e-08,
+                "distance_from_planet_km": 8500,
+                "atmosphere": false,
+                "oceans": false,
+                "orbital_period_days": 0.28,
+                "environment_preset_id": "airless_rocky"
+              },
+              {
+                "name": "9 Ceti e-II",
+                "diameter_km": 10,
+                "mass_kg": 1.254162e+16,
+                "gravitational_parameter_m3s2": 837065.3437,
+                "mass_earth": 2.1e-09,
+                "distance_from_planet_km": 21500,
+                "atmosphere": false,
+                "oceans": false,
+                "orbital_period_days": 1.15,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "9 Ceti f",
+            "alternative_names": [
+              "9 Кита f",
+              "Юпитер-2"
+            ],
+            "distance_au": 5.85,
+            "orbital_period_days": 4850,
+            "diameter_km": 142000,
+            "mass_kg": 1.940965e+27,
+            "gravitational_parameter_m3s2": 1.29545827e+17,
+            "mass_earth": 325,
+            "orbit_type": "S-type",
+            "primary_star": "9 Ceti",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 985.0,
+            "surface_temperature_k": 155,
+            "day_length_hours": 10.2,
+            "surface_gravity_g": 2.58,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий металлический водород",
+            "mining_appeal": "Высокая (гелий-3, газодобыча)",
+            "moons": [
+              {
+                "name": "9 Ceti f-I",
+                "diameter_km": 5150,
+                "mass_kg": 1.433328e+23,
+                "gravitational_parameter_m3s2": 9566461070000.0,
+                "mass_earth": 0.024,
+                "distance_from_planet_km": 1050000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 7.2,
+                "environment_preset_id": "terrestrial_temperate"
+              },
+              {
+                "name": "9 Ceti f-II",
+                "diameter_km": 4650,
+                "mass_kg": 1.19444e+23,
+                "gravitational_parameter_m3s2": 7972050892000.0,
+                "mass_earth": 0.02,
+                "distance_from_planet_km": 1820000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 15.8,
+                "environment_preset_id": "terrestrial_temperate"
+              },
+              {
+                "name": "9 Ceti f-III",
+                "diameter_km": 3520,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 655000,
+                "atmosphere": true,
+                "oceans": false,
+                "orbital_period_days": 3.5,
+                "environment_preset_id": "desert_thin_atmosphere"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца 9 Ceti f",
+                "distance_from_planet_km": {
+                  "inner": 88000,
+                  "outer": 215000
+                },
+                "composition": "Пыль, мелкие камни",
+                "mining_appeal": "Низкая"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 86509.8,
+                    "outer": 97092.453
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2602
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 100709.8,
+                    "outer": 118396.415
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.408,
+                    "optical_depth": 0.3039,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.327,
+                    "radial_structure_scale": 0.7403
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 139759.8,
+                    "outer": 177265.583
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2602
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.0935,
+                "main_band_emphasis": 1.327,
+                "secondary_band_emphasis": 0.7869,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.5839,
+                "radial_structure_strength": 0.7403,
+                "fine_structure_strength": 0.2602,
+                "edge_softness_scale": 0.8403,
+                "brightness_variation": 0.2402,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс 9 Кита",
+        "distance_from_star_au": 2.95,
+        "asteroid_count": 520000,
+        "min_size_m": 15,
+        "max_size_m": 680000,
+        "avg_size_m": 1100,
+        "mining_appeal": "Высокая (металлы, вода)"
+      },
+      {
+        "name": "Пояс Койпера 9 Кита",
+        "distance_from_star_au": 48,
+        "asteroid_count": 95000000,
+        "min_size_m": 100,
+        "max_size_m": 2250000,
+        "avg_size_m": 48000,
+        "mining_appeal": "Средняя (лёд, редкие элементы)"
+      }
+    ],
+    "lore_notes": "Солнечный аналог без подтверждённых планет. Пояс астероидов богат ресурсами. Система стабильна и безопасна для колонизации. 0 подтверждено, 5 ожидается.",
+    "technical_notes": "Жёлтый карлик, похожий на Солнце. Низкая активность звезды."
+  }
+}

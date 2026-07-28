@@ -1,0 +1,386 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 28,
+  "name": "YZ Ceti",
+  "position_ly": {
+    "x": -2.68,
+    "y": 11.25,
+    "z": -3.58
+  },
+  "stars_count": 1,
+  "star_type": "M4.5V",
+  "stability": "Активный красный карлик",
+  "planets_summary": "3 планеты (суперземли)",
+  "primary_resources": [
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "YZ Ceti",
+      "ИП Цети",
+      "GJ 54.1",
+      "Три Суперземли"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "YZ Ceti",
+        "alternative_names": [
+          "GJ 54.1",
+          "ИП Цети A"
+        ],
+        "type": "M4.5V — Красный карлик",
+        "diameter_km": 265000,
+        "mass_kg": 2.585011e+29,
+        "gravitational_parameter_m3s2": 1.725313892e+19,
+        "mass_solar": 0.13,
+        "luminosity_solar": 0.0023,
+        "temperature_k": 2950,
+        "age_gyr": 7.2,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "YZ Ceti b",
+            "alternative_names": [
+              "YZ Ceti b",
+              "Ад",
+              "Горячая суперземля"
+            ],
+            "distance_au": 0.016,
+            "orbital_period_days": 0.68,
+            "diameter_km": 10500,
+            "mass_kg": 6.56942e+24,
+            "gravitational_parameter_m3s2": 438462799100000.0,
+            "mass_earth": 1.1,
+            "orbit_type": "S-type",
+            "primary_star": "YZ Ceti",
+            "discovery_status": "подтверждена",
+            "atmosphere": false,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.0,
+            "surface_temperature_k": 620,
+            "day_length_hours": 16,
+            "surface_gravity_g": 0.92,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Низкая (высокая температура)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "airless_rocky"
+          },
+          {
+            "name": "YZ Ceti c",
+            "alternative_names": [
+              "YZ Ceti c",
+              "Пустыня",
+              "Тёплая суперземля"
+            ],
+            "distance_au": 0.023,
+            "orbital_period_days": 1.24,
+            "diameter_km": 9800,
+            "mass_kg": 5.67359e+24,
+            "gravitational_parameter_m3s2": 378672417400000.0,
+            "mass_earth": 0.95,
+            "orbit_type": "S-type",
+            "primary_star": "YZ Ceti",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 1.2,
+            "surface_temperature_k": 485,
+            "day_length_hours": 30,
+            "surface_gravity_g": 0.88,
+            "oceans": false,
+            "land_water_ratio": "95/5",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "YZ Ceti d",
+            "alternative_names": [
+              "YZ Ceti d",
+              "Холодный мир",
+              "Суперземля 3"
+            ],
+            "distance_au": 0.032,
+            "orbital_period_days": 2.05,
+            "diameter_km": 9200,
+            "mass_kg": 5.07637e+24,
+            "gravitational_parameter_m3s2": 338812162900000.0,
+            "mass_earth": 0.85,
+            "orbit_type": "S-type",
+            "primary_star": "YZ Ceti",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.9,
+            "surface_temperature_k": 395,
+            "day_length_hours": 49,
+            "surface_gravity_g": 0.82,
+            "oceans": false,
+            "land_water_ratio": "90/10",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [
+              {
+                "name": "YZ Ceti d-I",
+                "diameter_km": 520,
+                "mass_kg": 5.9722e+21,
+                "gravitational_parameter_m3s2": 398602544600.0,
+                "mass_earth": 0.001,
+                "distance_from_planet_km": 75000,
+                "atmosphere": false,
+                "oceans": false,
+                "orbital_period_days": 1.2,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "YZ Ceti e",
+            "alternative_names": [
+              "YZ Ceti e",
+              "Ледяная суперземля"
+            ],
+            "distance_au": 0.058,
+            "orbital_period_days": 5.8,
+            "diameter_km": 8500,
+            "mass_kg": 4.299984e+24,
+            "gravitational_parameter_m3s2": 286993832100000.0,
+            "mass_earth": 0.72,
+            "orbit_type": "S-type",
+            "primary_star": "YZ Ceti",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения пояса",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.8,
+            "surface_temperature_k": 285,
+            "day_length_hours": 139,
+            "surface_gravity_g": 0.78,
+            "oceans": false,
+            "land_water_ratio": "50/50",
+            "ocean_composition": "Вода (H₂O) — лёд",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "YZ Ceti f",
+            "alternative_names": [
+              "YZ Ceti f",
+              "Газовый карлик"
+            ],
+            "distance_au": 0.15,
+            "orbital_period_days": 28.5,
+            "diameter_km": 38000,
+            "mass_kg": 7.16664e+25,
+            "gravitational_parameter_m3s2": 4783230535000000.0,
+            "mass_earth": 12,
+            "orbit_type": "S-type",
+            "primary_star": "YZ Ceti",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Долгосрочные аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 145.0,
+            "surface_temperature_k": 145,
+            "day_length_hours": 9.2,
+            "surface_gravity_g": 1.28,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "YZ Ceti f-I",
+                "diameter_km": 2500,
+                "mass_kg": 6.56942e+22,
+                "gravitational_parameter_m3s2": 4384627991000.0,
+                "mass_earth": 0.011,
+                "distance_from_planet_km": 350000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 5.8,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца YZ Ceti f",
+                "distance_from_planet_km": {
+                  "inner": 38000,
+                  "outer": 135000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 24545.869,
+                    "outer": 26837.496
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2557
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 28345.869,
+                    "outer": 33645.697
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.4055,
+                    "optical_depth": 0.2103,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.3187,
+                    "radial_structure_scale": 0.7335
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 38795.869,
+                    "outer": 52210.971
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2557
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.0904,
+                "main_band_emphasis": 1.3187,
+                "secondary_band_emphasis": 0.7809,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.5707,
+                "radial_structure_strength": 0.7335,
+                "fine_structure_strength": 0.2557,
+                "edge_softness_scale": 0.8335,
+                "brightness_variation": 0.2357,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс YZ Ceti",
+        "distance_from_star_au": 0.09,
+        "asteroid_count": 115000,
+        "min_size_m": 5,
+        "max_size_m": 240000,
+        "avg_size_m": 450,
+        "mining_appeal": "Низкая (высокая температура)"
+      },
+      {
+        "name": "Пояс Койпера YZ Ceti",
+        "distance_from_star_au": 0.45,
+        "asteroid_count": 1850000,
+        "min_size_m": 50,
+        "max_size_m": 480000,
+        "avg_size_m": 14000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Три суперземли вокруг активного красного карлика. Частые вспышки звезды затрудняют долгосрочное пребывание. 3 подтверждено, 2 ожидается.",
+    "technical_notes": "Активный красный карлик. Планеты находятся очень близко к звезде из-за низкой светимости."
+  }
+}

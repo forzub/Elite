@@ -1,0 +1,369 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 2,
+  "name": "Barnard's Star",
+  "position_ly": {
+    "x": -0.057,
+    "y": -5.94,
+    "z": 0.487
+  },
+  "stars_count": 1,
+  "star_type": "M4Ve",
+  "stability": "Стабильный красный карлик, низкая активность",
+  "planets_summary": "4 подтверждённые планеты (b, c, d, e) — суперземли",
+  "primary_resources": [
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "Звезда Барнарда",
+      "V2500 Ophiuchi"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Barnard's Star",
+        "alternative_names": [
+          "GJ 699"
+        ],
+        "type": "M4Ve — Красный карлик",
+        "diameter_km": 280000,
+        "mass_kg": 3.181552e+29,
+        "gravitational_parameter_m3s2": 2.123463251e+19,
+        "mass_solar": 0.16,
+        "luminosity_solar": 0.0035,
+        "temperature_k": 3150,
+        "age_gyr": 10.0,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Barnard b",
+            "distance_au": 0.4,
+            "orbital_period_days": 233,
+            "diameter_km": 9800,
+            "mass_kg": 1.911104e+25,
+            "gravitational_parameter_m3s2": 1275528143000000.0,
+            "mass_earth": 3.2,
+            "orbit_type": "S-type",
+            "primary_star": "Barnard's Star",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_density": 4.0,
+            "surface_temperature_k": 105,
+            "surface_gravity_g": 1.4,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "Barnard c",
+            "distance_au": 0.7,
+            "orbital_period_days": 520,
+            "diameter_km": 7200,
+            "mass_kg": 1.074996e+25,
+            "gravitational_parameter_m3s2": 717484580300000.0,
+            "mass_earth": 1.8,
+            "orbit_type": "S-type",
+            "primary_star": "Barnard's Star",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_density": 1.5,
+            "surface_temperature_k": 85,
+            "surface_gravity_g": 1.0,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "mining_appeal": "Низкая",
+            "moons": [
+              {
+                "name": "Barnard c-I",
+                "diameter_km": 450,
+                "mass_kg": 5.9722e+21,
+                "gravitational_parameter_m3s2": 398602544600.0,
+                "mass_earth": 0.001,
+                "distance_from_planet_km": 85000,
+                "orbital_period_days": 2.1,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "Barnard d",
+            "distance_au": 1.1,
+            "orbital_period_days": 980,
+            "diameter_km": 6500,
+            "mass_kg": 7.16664e+24,
+            "gravitational_parameter_m3s2": 478323053500000.0,
+            "mass_earth": 1.2,
+            "orbit_type": "S-type",
+            "primary_star": "Barnard's Star",
+            "discovery_status": "подтверждена",
+            "atmosphere": false,
+            "atmosphere_density": 0.0,
+            "surface_temperature_k": 65,
+            "surface_gravity_g": 0.9,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "airless_icy"
+          },
+          {
+            "name": "Barnard e",
+            "distance_au": 1.5,
+            "orbital_period_days": 1450,
+            "diameter_km": 5800,
+            "mass_kg": 5.37498e+24,
+            "gravitational_parameter_m3s2": 358742290100000.0,
+            "mass_earth": 0.9,
+            "orbit_type": "S-type",
+            "primary_star": "Barnard's Star",
+            "discovery_status": "подтверждена",
+            "atmosphere": false,
+            "atmosphere_density": 0.0,
+            "surface_temperature_k": 55,
+            "surface_gravity_g": 0.8,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "mining_appeal": "Низкая",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "airless_icy"
+          },
+          {
+            "name": "Barnard f",
+            "distance_au": 2.3,
+            "orbital_period_days": 2680,
+            "diameter_km": 8200,
+            "mass_kg": 1.254162e+25,
+            "gravitational_parameter_m3s2": 837065343700000.0,
+            "mass_earth": 2.1,
+            "orbit_type": "S-type",
+            "primary_star": "Barnard's Star",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения внешнего пояса",
+            "atmosphere": true,
+            "atmosphere_density": 2.8,
+            "surface_temperature_k": 95,
+            "surface_gravity_g": 1.15,
+            "oceans": true,
+            "land_water_ratio": "30/70",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая",
+            "moons": [
+              {
+                "name": "Barnard f-I",
+                "diameter_km": 920,
+                "mass_kg": 1.79166e+22,
+                "gravitational_parameter_m3s2": 1195807634000.0,
+                "mass_earth": 0.003,
+                "distance_from_planet_km": 125000,
+                "orbital_period_days": 3.5,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "Barnard g",
+            "distance_au": 4.5,
+            "orbital_period_days": 7200,
+            "diameter_km": 95000,
+            "mass_kg": 5.07637e+26,
+            "gravitational_parameter_m3s2": 3.388121629e+16,
+            "mass_earth": 85,
+            "orbit_type": "S-type",
+            "primary_star": "Barnard's Star",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Долгосрочные аномалии",
+            "atmosphere": true,
+            "atmosphere_density": 750.0,
+            "surface_temperature_k": 65,
+            "surface_gravity_g": 1.95,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "Barnard g-I",
+                "diameter_km": 3200,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 485000,
+                "orbital_period_days": 6.8,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Барнарда g",
+                "distance_from_planet_km": {
+                  "inner": 58000,
+                  "outer": 185000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 64591.0,
+                    "outer": 68516.061
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2093
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 74091.0,
+                    "outer": 97472.082
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.4712,
+                    "optical_depth": 0.3207,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.2337,
+                    "radial_structure_scale": 0.664
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 100216.0,
+                    "outer": 131781.044
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2093
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.0595,
+                "main_band_emphasis": 1.2337,
+                "secondary_band_emphasis": 0.7191,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.4355,
+                "radial_structure_strength": 0.664,
+                "fine_structure_strength": 0.2093,
+                "edge_softness_scale": 0.764,
+                "brightness_variation": 0.1893,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Барнарда",
+        "distance_from_star_au": 2.5,
+        "asteroid_count": 180000,
+        "mining_appeal": "Средняя"
+      },
+      {
+        "name": "Пояс Койпера Барнарда",
+        "distance_from_star_au": 8.5,
+        "asteroid_count": 2500000,
+        "mining_appeal": "Высокая"
+      }
+    ],
+    "lore_notes": "Одна из старейших звёзд (10 млрд лет). 6 планет, включая 2 скрытые.",
+    "technical_notes": "Одиночный красный карлик. Низкая активность."
+  }
+}

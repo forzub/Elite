@@ -1,0 +1,496 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 11,
+  "name": "Gliese 667 (A+B+C)",
+  "position_ly": {
+    "x": -10.85,
+    "y": 19.12,
+    "z": -8.45
+  },
+  "stars_count": 3,
+  "star_type": "K3V + K5V + M1.5V",
+  "stability": "Тройная система, компонент C (M1.5V) стабилен",
+  "planets_summary": "GJ 667 Cc (потенциально в зоне обитаемости), до 6 планет у компонента C",
+  "primary_resources": [
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "Gliese 667",
+      "GJ 667",
+      "HR 6426"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Gliese 667 A",
+        "alternative_names": [
+          "GJ 667 A",
+          "HR 6426 A"
+        ],
+        "type": "K3V — Оранжевый карлик",
+        "diameter_km": 920000,
+        "mass_kg": 1.4515831e+30,
+        "gravitational_parameter_m3s2": 9.688301084e+19,
+        "mass_solar": 0.73,
+        "luminosity_solar": 0.24,
+        "temperature_k": 4750,
+        "age_gyr": 2.0,
+        "distance_from_barycenter_au": 8.5,
+        "position_au": {
+          "x": -8.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Gliese 667 B",
+          "semi_major_axis_au": 18,
+          "min_distance_au": 12,
+          "max_distance_au": 24,
+          "orbital_period_years": 42,
+          "eccentricity": 0.38
+        },
+        "planets": []
+      },
+      {
+        "name": "Gliese 667 B",
+        "alternative_names": [
+          "GJ 667 B",
+          "HR 6426 B"
+        ],
+        "type": "K5V — Оранжевый карлик",
+        "diameter_km": 850000,
+        "mass_kg": 1.3720443e+30,
+        "gravitational_parameter_m3s2": 9.157435271e+19,
+        "mass_solar": 0.69,
+        "luminosity_solar": 0.18,
+        "temperature_k": 4550,
+        "age_gyr": 2.0,
+        "distance_from_barycenter_au": 9.5,
+        "position_au": {
+          "x": 9.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Gliese 667 A",
+          "semi_major_axis_au": 18,
+          "min_distance_au": 12,
+          "max_distance_au": 24,
+          "orbital_period_years": 42,
+          "eccentricity": 0.38
+        },
+        "planets": []
+      },
+      {
+        "name": "Gliese 667 C",
+        "alternative_names": [
+          "GJ 667 C",
+          "HR 6426 C"
+        ],
+        "type": "M1.5V — Красный карлик",
+        "diameter_km": 360000,
+        "mass_kg": 6.164257e+29,
+        "gravitational_parameter_m3s2": 4.11421005e+19,
+        "mass_solar": 0.31,
+        "luminosity_solar": 0.014,
+        "temperature_k": 3700,
+        "age_gyr": 2.0,
+        "distance_from_barycenter_au": 125,
+        "position_au": {
+          "x": 0,
+          "y": 125,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Gliese 667 AB",
+          "semi_major_axis_au": 230,
+          "min_distance_au": 180,
+          "max_distance_au": 280,
+          "orbital_period_years": 1850,
+          "eccentricity": 0.45
+        },
+        "planets": [
+          {
+            "name": "GJ 667 Cb",
+            "alternative_names": [
+              "GJ 667 Cb",
+              "Глизе 667 Cb"
+            ],
+            "distance_au": 0.05,
+            "orbital_period_days": 7.2,
+            "diameter_km": 14200,
+            "mass_kg": 3.404154e+25,
+            "gravitational_parameter_m3s2": 2272034504000000.0,
+            "mass_earth": 5.7,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 667 C",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 9.0,
+            "surface_temperature_k": 480,
+            "day_length_hours": 172,
+            "surface_gravity_g": 1.75,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (высокая температура)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "GJ 667 Cc",
+            "alternative_names": [
+              "GJ 667 Cc",
+              "Жемчужина",
+              "Надежда"
+            ],
+            "distance_au": 0.125,
+            "orbital_period_days": 28.2,
+            "diameter_km": 13800,
+            "mass_kg": 2.68749e+25,
+            "gravitational_parameter_m3s2": 1793711451000000.0,
+            "mass_earth": 4.5,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 667 C",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 4.2,
+            "surface_temperature_k": 277,
+            "day_length_hours": 676,
+            "surface_gravity_g": 1.54,
+            "oceans": true,
+            "land_water_ratio": "55/45",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (потенциально обитаемая)",
+            "moons": [
+              {
+                "name": "GJ 667 Cc-I",
+                "diameter_km": 1950,
+                "mass_kg": 5.9722e+22,
+                "gravitational_parameter_m3s2": 3986025446000.0,
+                "mass_earth": 0.01,
+                "distance_from_planet_km": 210000,
+                "orbital_period_days": 5.2,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "terrestrial_temperate"
+          },
+          {
+            "name": "GJ 667 Cd",
+            "alternative_names": [
+              "GJ 667 Cd",
+              "Ледяной мир"
+            ],
+            "distance_au": 0.16,
+            "orbital_period_days": 39,
+            "diameter_km": 12200,
+            "mass_kg": 2.269436e+25,
+            "gravitational_parameter_m3s2": 1514689669000000.0,
+            "mass_earth": 3.8,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 667 C",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.2,
+            "surface_temperature_k": 245,
+            "day_length_hours": 936,
+            "surface_gravity_g": 1.42,
+            "oceans": false,
+            "land_water_ratio": "70/30",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "GJ 667 Ce",
+            "alternative_names": [
+              "GJ 667 Ce",
+              "Пустыня"
+            ],
+            "distance_au": 0.21,
+            "orbital_period_days": 62,
+            "diameter_km": 11500,
+            "mass_kg": 1.612494e+25,
+            "gravitational_parameter_m3s2": 1076226870000000.0,
+            "mass_earth": 2.7,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 667 C",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.8,
+            "surface_temperature_k": 215,
+            "day_length_hours": 1488,
+            "surface_gravity_g": 1.25,
+            "oceans": false,
+            "land_water_ratio": "75/25",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "GJ 667 Cf",
+            "alternative_names": [
+              "GJ 667 Cf",
+              "Холодный мир"
+            ],
+            "distance_au": 0.28,
+            "orbital_period_days": 95,
+            "diameter_km": 10200,
+            "mass_kg": 1.313884e+25,
+            "gravitational_parameter_m3s2": 876925598100000.0,
+            "mass_earth": 2.2,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 667 C",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.2,
+            "surface_temperature_k": 185,
+            "day_length_hours": 2280,
+            "surface_gravity_g": 1.15,
+            "oceans": false,
+            "land_water_ratio": "80/20",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "GJ 667 Cg",
+            "alternative_names": [
+              "GJ 667 Cg",
+              "Газовый карлик"
+            ],
+            "distance_au": 0.42,
+            "orbital_period_days": 168,
+            "diameter_km": 48000,
+            "mass_kg": 1.672216e+26,
+            "gravitational_parameter_m3s2": 1.116087125e+16,
+            "mass_earth": 28,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 667 C",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения внешнего пояса",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 320.0,
+            "surface_temperature_k": 125,
+            "day_length_hours": 11.5,
+            "surface_gravity_g": 1.58,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "GJ 667 Cg-I",
+                "diameter_km": 2800,
+                "mass_kg": 7.16664e+22,
+                "gravitational_parameter_m3s2": 4783230535000.0,
+                "mass_earth": 0.012,
+                "distance_from_planet_km": 420000,
+                "orbital_period_days": 6.5,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца GJ 667 Cg",
+                "distance_from_planet_km": {
+                  "inner": 42000,
+                  "outer": 145000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 31104.452,
+                    "outer": 33225.053
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 35904.452,
+                    "outer": 45869.594
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.3802,
+                    "optical_depth": 0.3479,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.3169,
+                    "particle_radial_jitter": 0.216,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 49104.452,
+                    "outer": 73214.526
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.24,
+                "azimuthal_clumping": 0.32,
+                "cluster_scale": 0.588,
+                "softness": 0.5504,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Глизе 667",
+        "distance_from_star_au": 0.6,
+        "asteroid_count": 340000,
+        "min_size_m": 10,
+        "max_size_m": 520000,
+        "avg_size_m": 850,
+        "mining_appeal": "Высокая (металлы, редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера Глизе 667",
+        "distance_from_star_au": 3.5,
+        "asteroid_count": 2800000,
+        "min_size_m": 80,
+        "max_size_m": 680000,
+        "avg_size_m": 25000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Тройная система с богатой планетной системой у компонента C. GJ 667 Cc — один из лучших кандидатов на обитаемость. 6 планет подтверждено, 1 ожидается.",
+    "technical_notes": "Тройная система. Планеты вращаются вокруг компонента C (красный карлик). Гравитационные взаимодействия между звёздами минимальны."
+  }
+}

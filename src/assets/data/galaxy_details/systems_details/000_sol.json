@@ -1,0 +1,1488 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 0,
+  "name": "Sol (Солнце)",
+  "position_ly": {
+    "x": 0.0,
+    "y": 0.0,
+    "z": 0.0
+  },
+  "stars_count": 1,
+  "star_type": "G2V",
+  "stability": "Стабильный жёлтый карлик, низкая вспышечная активность",
+  "planets_summary": "8 планет: Меркурий, Венера, Земля (обитаемая), Марс, Юпитер, Сатурн, Уран, Нептун; 5 карликовых планет, пояс астероидов, пояс Койпера",
+  "primary_resources": [
+    "metals",
+    "water"
+  ],
+  "secondary_resources": [
+    "ice",
+    "helium3"
+  ],
+  "details": {
+    "alternative_names": [
+      "Solar System",
+      "Sol System",
+      "Терра Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Sol",
+        "alternative_names": [
+          "Солнце",
+          "Sun"
+        ],
+        "type": "G2V — Жёлтый карлик",
+        "diameter_km": 1392700,
+        "mass_kg": 1.98847e+30,
+        "gravitational_parameter_m3s2": 1.3271244e+20,
+        "mass_solar": 1.0,
+        "luminosity_solar": 1.0,
+        "temperature_k": 5778,
+        "age_gyr": 4.6,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Меркурий",
+            "alternative_names": [
+              "Mercury",
+              "Hermes"
+            ],
+            "distance_au": 0.39,
+            "orbital_period_days": 88,
+            "diameter_km": 4879,
+            "mass_kg": 3.3011e+23,
+            "gravitational_parameter_m3s2": 22032000000000.0,
+            "mass_earth": 0.055,
+            "orbit_type": "S-type",
+            "primary_star": "Sol",
+            "discovery_status": "подтверждена",
+            "atmosphere": false,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.0,
+            "surface_temperature_k": 440,
+            "day_length_hours": 4222,
+            "surface_gravity_g": 0.38,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Высокая (металлы, редкие минералы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "airless_rocky"
+          },
+          {
+            "name": "Венера",
+            "alternative_names": [
+              "Venus",
+              "Aphrodite"
+            ],
+            "distance_au": 0.72,
+            "orbital_period_days": 225,
+            "diameter_km": 12104,
+            "mass_kg": 4.8675e+24,
+            "gravitational_parameter_m3s2": 324859000000000.0,
+            "mass_earth": 0.815,
+            "orbit_type": "S-type",
+            "primary_star": "Sol",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 92.0,
+            "surface_temperature_k": 737,
+            "day_length_hours": 5832,
+            "axial_tilt_deg": 177.36,
+            "surface_gravity_g": 0.9,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (сложные условия)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "venusian_dense"
+          },
+          {
+            "name": "Земля",
+            "alternative_names": [
+              "Earth",
+              "Terra",
+              "Gaia"
+            ],
+            "distance_au": 1.0,
+            "orbital_period_days": 365,
+            "diameter_km": 12742,
+            "mass_kg": 5.9722e+24,
+            "gravitational_parameter_m3s2": 398600441800000.0,
+            "mass_earth": 1.0,
+            "orbit_type": "S-type",
+            "primary_star": "Sol",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": true,
+            "atmosphere_density": 1.0,
+            "surface_temperature_k": 288,
+            "day_length_hours": 24,
+            "surface_gravity_g": 1.0,
+            "oceans": true,
+            "land_water_ratio": "29/71",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Низкая (заповедная зона)",
+            "axial_tilt_deg": 23.44,
+            "axis_node_deg": 0.0,
+            "rotation_offset_deg": 0.0,
+            "texture_longitude_offset_deg": 0.0,
+            "moons": [
+              {
+                "name": "Луна",
+                "alternative_names": [
+                  "Moon",
+                  "Luna"
+                ],
+                "diameter_km": 3474,
+                "mass_kg": 7.342e+22,
+                "gravitational_parameter_m3s2": 4904869500000.0,
+                "mass_earth": 0.0123,
+                "distance_from_planet_km": 384400,
+                "atmosphere": false,
+                "oceans": false,
+                "orbital_period_days": 27.3,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "terrestrial_temperate"
+          },
+          {
+            "name": "Марс",
+            "alternative_names": [
+              "Mars",
+              "Ares"
+            ],
+            "distance_au": 1.52,
+            "orbital_period_days": 687,
+            "diameter_km": 6779,
+            "mass_kg": 6.4171e+23,
+            "gravitational_parameter_m3s2": 42828370000000.0,
+            "mass_earth": 0.107,
+            "orbit_type": "S-type",
+            "primary_star": "Sol",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.01,
+            "surface_temperature_k": 210,
+            "day_length_hours": 24.6,
+            "surface_gravity_g": 0.38,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Высокая (железо, вода в виде льда)",
+            "moons": [
+              {
+                "name": "Фобос",
+                "diameter_km": 22,
+                "mass_kg": 1.0659e+16,
+                "gravitational_parameter_m3s2": 711413.637,
+                "mass_earth": 1.8e-08,
+                "distance_from_planet_km": 9376,
+                "orbital_period_days": 0.32,
+                "environment_preset_id": "airless_rocky"
+              },
+              {
+                "name": "Деймос",
+                "diameter_km": 12,
+                "mass_kg": 1476200000000000.0,
+                "gravitational_parameter_m3s2": 98526.0166,
+                "mass_earth": 2.4e-09,
+                "distance_from_planet_km": 23463,
+                "orbital_period_days": 1.26,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "Юпитер",
+            "alternative_names": [
+              "Jupiter",
+              "Zeus"
+            ],
+            "distance_au": 5.2,
+            "orbital_period_days": 4333,
+            "diameter_km": 139820,
+            "mass_kg": 1.89813e+27,
+            "gravitational_parameter_m3s2": 1.26686534e+17,
+            "mass_earth": 317.8,
+            "orbit_type": "S-type",
+            "primary_star": "Sol",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 1000.0,
+            "surface_temperature_k": 165,
+            "day_length_hours": 9.9,
+            "surface_gravity_g": 2.53,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий металлический водород",
+            "mining_appeal": "Средняя (гелий-3)",
+            "moons": [
+              {
+                "name": "Ганимед",
+                "diameter_km": 5268,
+                "mass_kg": 1.4819e+23,
+                "gravitational_parameter_m3s2": 9887819980000.0,
+                "mass_earth": 0.025,
+                "distance_from_planet_km": 1070400,
+                "orbital_period_days": 7.15,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Каллисто",
+                "diameter_km": 4821,
+                "mass_kg": 1.0759e+23,
+                "gravitational_parameter_m3s2": 7179289000000.0,
+                "mass_earth": 0.018,
+                "distance_from_planet_km": 1882700,
+                "orbital_period_days": 16.69,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Ио",
+                "diameter_km": 3643,
+                "mass_kg": 8.9319e+22,
+                "gravitational_parameter_m3s2": 5959916000000.0,
+                "mass_earth": 0.015,
+                "distance_from_planet_km": 421700,
+                "orbital_period_days": 1.77,
+                "environment_preset_id": "airless_volcanic"
+              },
+              {
+                "name": "Европа",
+                "diameter_km": 3122,
+                "mass_kg": 4.7998e+22,
+                "gravitational_parameter_m3s2": 3202739000000.0,
+                "mass_earth": 0.008,
+                "distance_from_planet_km": 671100,
+                "orbital_period_days": 3.55,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Амальтея",
+                "diameter_km": 167,
+                "mass_kg": 2.08e+18,
+                "gravitational_parameter_m3s2": 138825440.0,
+                "mass_earth": 2.4e-06,
+                "distance_from_planet_km": 181400,
+                "orbital_period_days": 0.5,
+                "environment_preset_id": "airless_rocky"
+              },
+              {
+                "name": "Гималия",
+                "diameter_km": 140,
+                "mass_kg": 4.2e+18,
+                "gravitational_parameter_m3s2": 280320600.0,
+                "mass_earth": 6.7e-06,
+                "distance_from_planet_km": 11480000,
+                "orbital_period_days": 250.6,
+                "environment_preset_id": "airless_rocky"
+              },
+              {
+                "name": "Элара",
+                "diameter_km": 86,
+                "mass_kg": 8.7e+17,
+                "gravitational_parameter_m3s2": 58066410.0,
+                "mass_earth": 1.5e-06,
+                "distance_from_planet_km": 11737000,
+                "orbital_period_days": 259.6,
+                "environment_preset_id": "airless_rocky"
+              },
+              {
+                "name": "Пасифе",
+                "diameter_km": 60,
+                "mass_kg": 3e+17,
+                "gravitational_parameter_m3s2": 20022900.0,
+                "mass_earth": 5.2e-07,
+                "distance_from_planet_km": 23500000,
+                "orbital_period_days": 743.2,
+                "orbit_direction": "retrograde",
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Юпитера",
+                "distance_from_planet_km": {
+                  "inner": 92000,
+                  "outer": 225000
+                },
+                "composition": "Пыль, камни",
+                "mining_appeal": "Низкая"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "measured_approximation",
+              "notes": "Faint dusty system; visually subordinate to the planet.",
+              "bands": [
+                {
+                  "name": "Halo ring",
+                  "distance_from_planet_km": {
+                    "inner": 92000,
+                    "outer": 122500
+                  },
+                  "composition": "Micron dust and charged particles",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.28,
+                      0.24,
+                      0.22
+                    ],
+                    "opacity": 0.045,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.35,
+                    "azimuthal_asymmetry": 0.1,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.35,
+                    "particle_density_scale": 0.55,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.8,
+                      1.8
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 122500,
+                    "outer": 129000
+                  },
+                  "composition": "Dark silicate dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.42,
+                      0.36,
+                      0.31
+                    ],
+                    "opacity": 0.11,
+                    "optical_depth": 0.08,
+                    "radial_noise_strength": 0.38,
+                    "radial_brightness_variation": 0.22,
+                    "azimuthal_asymmetry": 0.06,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 1.0,
+                    "particle_density_scale": 1.0,
+                    "particle_clumpiness": 0.32,
+                    "particle_radial_jitter": 0.22,
+                    "particle_size_px_range": [
+                      1.1,
+                      2.4
+                    ]
+                  }
+                },
+                {
+                  "name": "Amalthea gossamer ring",
+                  "distance_from_planet_km": {
+                    "inner": 129000,
+                    "outer": 182000
+                  },
+                  "composition": "Very diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.34,
+                      0.28,
+                      0.24
+                    ],
+                    "opacity": 0.028,
+                    "optical_depth": 0.012,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.42,
+                    "azimuthal_asymmetry": 0.18,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "faint",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.44,
+                    "particle_density_scale": 0.62,
+                    "particle_clumpiness": 0.58,
+                    "particle_radial_jitter": 0.42,
+                    "particle_size_px_range": [
+                      0.82,
+                      1.75
+                    ]
+                  }
+                },
+                {
+                  "name": "Thebe gossamer ring",
+                  "distance_from_planet_km": {
+                    "inner": 182000,
+                    "outer": 226000
+                  },
+                  "composition": "Extremely diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.3,
+                      0.25,
+                      0.22
+                    ],
+                    "opacity": 0.018,
+                    "optical_depth": 0.008,
+                    "radial_noise_strength": 0.72,
+                    "radial_brightness_variation": 0.48,
+                    "azimuthal_asymmetry": 0.22,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.28,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.66,
+                    "particle_radial_jitter": 0.48,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "jupiter_dust_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.72,
+                "artistic_width_scale": 1.03,
+                "continuous_fill": 0.018,
+                "particle_density": 0.72,
+                "particle_opacity_scale": 0.95,
+                "particle_size_px_range": [
+                  0.9,
+                  2.2
+                ],
+                "radial_jitter": 0.32,
+                "azimuthal_clumping": 0.42,
+                "cluster_scale": 0.7,
+                "softness": 0.42,
+                "faint_band_emphasis": 0.55,
+                "diffuse_band_emphasis": 0.28,
+                "minimum_visible_width_px": 1.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          },
+          {
+            "name": "Сатурн",
+            "alternative_names": [
+              "Saturn",
+              "Cronus"
+            ],
+            "distance_au": 9.5,
+            "orbital_period_days": 10759,
+            "diameter_km": 116460,
+            "mass_kg": 5.6834e+26,
+            "gravitational_parameter_m3s2": 3.7931187e+16,
+            "mass_earth": 95.2,
+            "orbit_type": "S-type",
+            "primary_star": "Sol",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 800.0,
+            "surface_temperature_k": 134,
+            "day_length_hours": 10.7,
+            "surface_gravity_g": 1.07,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3, кольца)",
+            "moons": [
+              {
+                "name": "Титан",
+                "diameter_km": 5150,
+                "mass_kg": 1.3452e+23,
+                "gravitational_parameter_m3s2": 8978138200000.0,
+                "mass_earth": 0.023,
+                "distance_from_planet_km": 1221870,
+                "orbital_period_days": 15.9,
+                "environment_preset_id": "methane_haze_world"
+              },
+              {
+                "name": "Рея",
+                "diameter_km": 1527,
+                "mass_kg": 2.3065e+21,
+                "gravitational_parameter_m3s2": 153940000000.0,
+                "mass_earth": 0.0004,
+                "distance_from_planet_km": 527040,
+                "orbital_period_days": 4.52,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Япет",
+                "diameter_km": 1470,
+                "mass_kg": 1.8056e+21,
+                "gravitational_parameter_m3s2": 120500000000.0,
+                "mass_earth": 0.0003,
+                "distance_from_planet_km": 3560820,
+                "orbital_period_days": 79.3,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Диона",
+                "diameter_km": 1123,
+                "mass_kg": 1.0955e+21,
+                "gravitational_parameter_m3s2": 73116000000.0,
+                "mass_earth": 0.0002,
+                "distance_from_planet_km": 377400,
+                "orbital_period_days": 2.74,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Тетис",
+                "diameter_km": 1062,
+                "mass_kg": 6.1745e+20,
+                "gravitational_parameter_m3s2": 41212000000.0,
+                "mass_earth": 0.0001,
+                "distance_from_planet_km": 294660,
+                "orbital_period_days": 1.89,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Энцелад",
+                "diameter_km": 504,
+                "mass_kg": 1.08022e+20,
+                "gravitational_parameter_m3s2": 7210500000.0,
+                "mass_earth": 1.8e-05,
+                "distance_from_planet_km": 238020,
+                "orbital_period_days": 1.37,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Мимас",
+                "diameter_km": 396,
+                "mass_kg": 3.7493e+19,
+                "gravitational_parameter_m3s2": 2502600000.0,
+                "mass_earth": 6.3e-06,
+                "distance_from_planet_km": 185520,
+                "orbital_period_days": 0.94,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Феба",
+                "diameter_km": 213,
+                "mass_kg": 8.292e+18,
+                "gravitational_parameter_m3s2": 553432956.0,
+                "mass_earth": 1.4e-05,
+                "distance_from_planet_km": 12948000,
+                "orbital_period_days": 548.2,
+                "orbit_direction": "retrograde",
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Сатурна",
+                "distance_from_planet_km": {
+                  "inner": 66900,
+                  "outer": 480000
+                },
+                "composition": "Лёд (95%), пыль",
+                "mining_appeal": "Высокая"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "measured_approximation",
+              "notes": "Bright icy multi-band system. Gaps are represented by radial separation between bands.",
+              "bands": [
+                {
+                  "name": "D ring",
+                  "distance_from_planet_km": {
+                    "inner": 66900,
+                    "outer": 74510
+                  },
+                  "composition": "Diffuse water ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.72,
+                      0.68,
+                      0.61
+                    ],
+                    "opacity": 0.08,
+                    "optical_depth": 0.04,
+                    "radial_noise_strength": 0.42,
+                    "radial_brightness_variation": 0.28,
+                    "azimuthal_asymmetry": 0.03,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "faint",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.18,
+                    "radial_structure_scale": 0.291
+                  }
+                },
+                {
+                  "name": "C ring",
+                  "distance_from_planet_km": {
+                    "inner": 74658,
+                    "outer": 91975
+                  },
+                  "composition": "Water ice with dark contaminants",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.69,
+                      0.67,
+                      0.63
+                    ],
+                    "opacity": 0.34,
+                    "optical_depth": 0.2,
+                    "radial_noise_strength": 0.22,
+                    "radial_brightness_variation": 0.2,
+                    "azimuthal_asymmetry": 0.02,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.3834,
+                    "radial_structure_scale": 0.7864
+                  }
+                },
+                {
+                  "name": "B ring",
+                  "distance_from_planet_km": {
+                    "inner": 92000,
+                    "outer": 117580
+                  },
+                  "composition": "Dense water ice",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.93,
+                      0.91,
+                      0.84
+                    ],
+                    "opacity": 0.82,
+                    "optical_depth": 0.85,
+                    "radial_noise_strength": 0.12,
+                    "radial_brightness_variation": 0.18,
+                    "azimuthal_asymmetry": 0.01,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.3834,
+                    "radial_structure_scale": 0.7864
+                  }
+                },
+                {
+                  "name": "A ring",
+                  "distance_from_planet_km": {
+                    "inner": 122170,
+                    "outer": 136775
+                  },
+                  "composition": "Water ice",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.86,
+                      0.84,
+                      0.78
+                    ],
+                    "opacity": 0.62,
+                    "optical_depth": 0.55,
+                    "radial_noise_strength": 0.18,
+                    "radial_brightness_variation": 0.28,
+                    "azimuthal_asymmetry": 0.02,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.3834,
+                    "radial_structure_scale": 0.7864
+                  }
+                },
+                {
+                  "name": "F ring",
+                  "distance_from_planet_km": {
+                    "inner": 140180,
+                    "outer": 140720
+                  },
+                  "composition": "Narrow clumpy water-ice ring",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.88,
+                      0.85,
+                      0.78
+                    ],
+                    "opacity": 0.48,
+                    "optical_depth": 0.38,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.48,
+                    "azimuthal_asymmetry": 0.36,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "secondary",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.8279,
+                    "radial_structure_scale": 0.7864
+                  }
+                },
+                {
+                  "name": "G ring",
+                  "distance_from_planet_km": {
+                    "inner": 166000,
+                    "outer": 175000
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.045,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.42,
+                    "azimuthal_asymmetry": 0.1,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.291
+                  }
+                },
+                {
+                  "name": "E ring",
+                  "distance_from_planet_km": {
+                    "inner": 180000,
+                    "outer": 480000
+                  },
+                  "composition": "Extremely diffuse water-ice grains",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.7,
+                      0.74,
+                      0.78
+                    ],
+                    "opacity": 0.018,
+                    "optical_depth": 0.006,
+                    "radial_noise_strength": 0.78,
+                    "radial_brightness_variation": 0.6,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.291
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.114,
+                "main_band_emphasis": 1.3834,
+                "secondary_band_emphasis": 0.8279,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.6736,
+                "radial_structure_strength": 0.7864,
+                "fine_structure_strength": 0.291,
+                "edge_softness_scale": 0.8864,
+                "brightness_variation": 0.271,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            }
+          },
+          {
+            "name": "Уран",
+            "alternative_names": [
+              "Uranus",
+              "Ouranos"
+            ],
+            "distance_au": 19.2,
+            "orbital_period_days": 30687,
+            "diameter_km": 50724,
+            "mass_kg": 8.681e+25,
+            "gravitational_parameter_m3s2": 5793939000000000.0,
+            "mass_earth": 14.5,
+            "orbit_type": "S-type",
+            "primary_star": "Sol",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 500.0,
+            "surface_temperature_k": 76,
+            "day_length_hours": 17.2,
+            "axial_tilt_deg": 97.77,
+            "surface_gravity_g": 0.89,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Вода, аммиак, метан",
+            "mining_appeal": "Низкая (удалённость)",
+            "moons": [
+              {
+                "name": "Титания",
+                "diameter_km": 1578,
+                "mass_kg": 3.527e+21,
+                "gravitational_parameter_m3s2": 235300000000.0,
+                "mass_earth": 0.0006,
+                "distance_from_planet_km": 436300,
+                "orbital_period_days": 8.7,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Оберон",
+                "diameter_km": 1523,
+                "mass_kg": 3.014e+21,
+                "gravitational_parameter_m3s2": 201200000000.0,
+                "mass_earth": 0.0005,
+                "distance_from_planet_km": 583500,
+                "orbital_period_days": 13.5,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Умбриэль",
+                "diameter_km": 1169,
+                "mass_kg": 1.275e+21,
+                "gravitational_parameter_m3s2": 85110000000.0,
+                "mass_earth": 0.0002,
+                "distance_from_planet_km": 266000,
+                "orbital_period_days": 4.1,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Ариэль",
+                "diameter_km": 1158,
+                "mass_kg": 1.353e+21,
+                "gravitational_parameter_m3s2": 90260000000.0,
+                "mass_earth": 0.0002,
+                "distance_from_planet_km": 190900,
+                "orbital_period_days": 2.5,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Миранда",
+                "diameter_km": 472,
+                "mass_kg": 6.59e+19,
+                "gravitational_parameter_m3s2": 4398363700.0,
+                "mass_earth": 1.3e-05,
+                "distance_from_planet_km": 129900,
+                "orbital_period_days": 1.4,
+                "environment_preset_id": "airless_icy"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Урана",
+                "distance_from_planet_km": {
+                  "inner": 38000,
+                  "outer": 98000
+                },
+                "composition": "Тёмная пыль, лёд",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "ice_giant_methane",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "measured_approximation",
+              "notes": "Narrow, dark carbon-rich rings.",
+              "bands": [
+                {
+                  "name": "Zeta ring",
+                  "distance_from_planet_km": {
+                    "inner": 38000,
+                    "outer": 39500
+                  },
+                  "composition": "Diffuse dark dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.12,
+                      0.13,
+                      0.14
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.62,
+                    "radial_brightness_variation": 0.35,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "6-5-4 ring complex",
+                  "distance_from_planet_km": {
+                    "inner": 41800,
+                    "outer": 42350
+                  },
+                  "composition": "Dark carbonaceous particles",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1,
+                      0.11,
+                      0.12
+                    ],
+                    "opacity": 0.18,
+                    "optical_depth": 0.12,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.2,
+                    "azimuthal_asymmetry": 0.03,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "secondary",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.68,
+                    "particle_density_scale": 0.76,
+                    "particle_clumpiness": 0.4161,
+                    "particle_radial_jitter": 0.27,
+                    "particle_size_px_range": [
+                      0.95,
+                      2.05
+                    ]
+                  }
+                },
+                {
+                  "name": "Alpha-Beta complex",
+                  "distance_from_planet_km": {
+                    "inner": 44700,
+                    "outer": 45800
+                  },
+                  "composition": "Dark carbonaceous ice",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.13,
+                      0.14,
+                      0.15
+                    ],
+                    "opacity": 0.26,
+                    "optical_depth": 0.2,
+                    "radial_noise_strength": 0.2,
+                    "radial_brightness_variation": 0.18,
+                    "azimuthal_asymmetry": 0.02,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4161,
+                    "particle_radial_jitter": 0.26,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Eta-Gamma-Delta complex",
+                  "distance_from_planet_km": {
+                    "inner": 47100,
+                    "outer": 48350
+                  },
+                  "composition": "Dark ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.14,
+                      0.15,
+                      0.16
+                    ],
+                    "opacity": 0.22,
+                    "optical_depth": 0.17,
+                    "radial_noise_strength": 0.22,
+                    "radial_brightness_variation": 0.2,
+                    "azimuthal_asymmetry": 0.02,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4161,
+                    "particle_radial_jitter": 0.26,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Epsilon ring",
+                  "distance_from_planet_km": {
+                    "inner": 51100,
+                    "outer": 51450
+                  },
+                  "composition": "Dense dark ice",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.17,
+                      0.18,
+                      0.19
+                    ],
+                    "opacity": 0.52,
+                    "optical_depth": 0.48,
+                    "radial_noise_strength": 0.16,
+                    "radial_brightness_variation": 0.16,
+                    "azimuthal_asymmetry": 0.04,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "secondary",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.68,
+                    "particle_density_scale": 0.76,
+                    "particle_clumpiness": 0.4161,
+                    "particle_radial_jitter": 0.27,
+                    "particle_size_px_range": [
+                      0.95,
+                      2.05
+                    ]
+                  }
+                },
+                {
+                  "name": "Mu-Nu outer rings",
+                  "distance_from_planet_km": {
+                    "inner": 66000,
+                    "outer": 98000
+                  },
+                  "composition": "Very diffuse blue-gray dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.2,
+                      0.24,
+                      0.27
+                    ],
+                    "opacity": 0.025,
+                    "optical_depth": 0.01,
+                    "radial_noise_strength": 0.72,
+                    "radial_brightness_variation": 0.5,
+                    "azimuthal_asymmetry": 0.16,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "faint",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.44,
+                    "particle_density_scale": 0.6,
+                    "particle_clumpiness": 0.468,
+                    "particle_radial_jitter": 0.342,
+                    "particle_size_px_range": [
+                      0.82,
+                      1.75
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.012,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.26,
+                "azimuthal_clumping": 0.4161,
+                "cluster_scale": 0.6901,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          },
+          {
+            "name": "Нептун",
+            "alternative_names": [
+              "Neptune",
+              "Poseidon"
+            ],
+            "distance_au": 30.1,
+            "orbital_period_days": 60190,
+            "diameter_km": 49244,
+            "mass_kg": 1.02413e+26,
+            "gravitational_parameter_m3s2": 6836529000000000.0,
+            "mass_earth": 17.1,
+            "orbit_type": "S-type",
+            "primary_star": "Sol",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 500.0,
+            "surface_temperature_k": 72,
+            "day_length_hours": 16.1,
+            "surface_gravity_g": 1.14,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Вода, аммиак, метан",
+            "mining_appeal": "Низкая (удалённость)",
+            "moons": [
+              {
+                "name": "Тритон",
+                "diameter_km": 2707,
+                "mass_kg": 2.139e+22,
+                "gravitational_parameter_m3s2": 1427600000000.0,
+                "mass_earth": 0.0036,
+                "distance_from_planet_km": 354760,
+                "orbital_period_days": 5.88,
+                "orbit_direction": "retrograde",
+                "environment_preset_id": "thin_nitrogen_ice_world"
+              },
+              {
+                "name": "Протей",
+                "diameter_km": 420,
+                "mass_kg": 4.4e+19,
+                "gravitational_parameter_m3s2": 2936692000.0,
+                "mass_earth": 8.4e-06,
+                "distance_from_planet_km": 117600,
+                "orbital_period_days": 1.12,
+                "environment_preset_id": "airless_rocky"
+              },
+              {
+                "name": "Нереида",
+                "diameter_km": 340,
+                "mass_kg": 3.1e+19,
+                "gravitational_parameter_m3s2": 2069033000.0,
+                "mass_earth": 3.1e-06,
+                "distance_from_planet_km": 5513400,
+                "orbital_period_days": 360.1,
+                "environment_preset_id": "airless_icy"
+              },
+              {
+                "name": "Ларисса",
+                "diameter_km": 194,
+                "mass_kg": 4.2e+18,
+                "gravitational_parameter_m3s2": 280320600.0,
+                "mass_earth": 7.3e-07,
+                "distance_from_planet_km": 73548,
+                "orbital_period_days": 0.55,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Нептуна",
+                "distance_from_planet_km": {
+                  "inner": 41900,
+                  "outer": 62900
+                },
+                "composition": "Пыль, лёд",
+                "mining_appeal": "Низкая"
+              }
+            ],
+            "environment_preset_id": "ice_giant_methane",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "measured_approximation",
+              "notes": "Dark narrow rings; Adams ring carries strong azimuthal arcs.",
+              "bands": [
+                {
+                  "name": "Galle ring",
+                  "distance_from_planet_km": {
+                    "inner": 41900,
+                    "outer": 42900
+                  },
+                  "composition": "Dark dust and ice",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.16,
+                      0.17,
+                      0.2
+                    ],
+                    "opacity": 0.1,
+                    "optical_depth": 0.06,
+                    "radial_noise_strength": 0.38,
+                    "radial_brightness_variation": 0.22,
+                    "azimuthal_asymmetry": 0.04,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Le Verrier ring",
+                  "distance_from_planet_km": {
+                    "inner": 53150,
+                    "outer": 53350
+                  },
+                  "composition": "Dark icy dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.18,
+                      0.19,
+                      0.22
+                    ],
+                    "opacity": 0.2,
+                    "optical_depth": 0.15,
+                    "radial_noise_strength": 0.24,
+                    "radial_brightness_variation": 0.18,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "secondary",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.68,
+                    "particle_density_scale": 0.76,
+                    "particle_clumpiness": 0.5412,
+                    "particle_radial_jitter": 0.3337,
+                    "particle_size_px_range": [
+                      0.95,
+                      2.05
+                    ]
+                  }
+                },
+                {
+                  "name": "Lassell ring",
+                  "distance_from_planet_km": {
+                    "inner": 53200,
+                    "outer": 57200
+                  },
+                  "composition": "Diffuse dust sheet",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.15,
+                      0.17,
+                      0.21
+                    ],
+                    "opacity": 0.045,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.58,
+                    "radial_brightness_variation": 0.36,
+                    "azimuthal_asymmetry": 0.1,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "faint",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.44,
+                    "particle_density_scale": 0.6,
+                    "particle_clumpiness": 0.5412,
+                    "particle_radial_jitter": 0.342,
+                    "particle_size_px_range": [
+                      0.82,
+                      1.75
+                    ]
+                  }
+                },
+                {
+                  "name": "Arago ring",
+                  "distance_from_planet_km": {
+                    "inner": 57200,
+                    "outer": 57400
+                  },
+                  "composition": "Narrow dusty ring",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.18,
+                      0.2,
+                      0.24
+                    ],
+                    "opacity": 0.12,
+                    "optical_depth": 0.08,
+                    "radial_noise_strength": 0.3,
+                    "radial_brightness_variation": 0.22,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "secondary",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.68,
+                    "particle_density_scale": 0.76,
+                    "particle_clumpiness": 0.5412,
+                    "particle_radial_jitter": 0.3337,
+                    "particle_size_px_range": [
+                      0.95,
+                      2.05
+                    ]
+                  }
+                },
+                {
+                  "name": "Adams ring",
+                  "distance_from_planet_km": {
+                    "inner": 62900,
+                    "outer": 63050
+                  },
+                  "composition": "Dark dust with persistent arcs",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.2,
+                      0.22,
+                      0.26
+                    ],
+                    "opacity": 0.24,
+                    "optical_depth": 0.18,
+                    "radial_noise_strength": 0.34,
+                    "radial_brightness_variation": 0.28,
+                    "azimuthal_asymmetry": 0.72,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5412,
+                    "particle_radial_jitter": 0.3337,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0415,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.3337,
+                "azimuthal_clumping": 0.5412,
+                "cluster_scale": 0.8189,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс астероидов",
+        "distance_from_star_au": 2.8,
+        "asteroid_count": 500000,
+        "mining_appeal": "Высокая"
+      },
+      {
+        "name": "Пояс Койпера",
+        "distance_from_star_au": 45,
+        "asteroid_count": 100000000,
+        "mining_appeal": "Средняя"
+      }
+    ],
+    "lore_notes": "Дом человечества. 8 планет, множество лун и колец.",
+    "technical_notes": "Одиночная звезда. Барицентр совпадает с центром звезды."
+  }
+}

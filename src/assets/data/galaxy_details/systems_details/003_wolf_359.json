@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 3,
+  "name": "Wolf 359",
+  "position_ly": {
+    "x": -1.92,
+    "y": -3.94,
+    "z": 6.52
+  },
+  "stars_count": 1,
+  "star_type": "M6.5Ve",
+  "stability": "Активный красный карлик, мощные вспышки",
+  "planets_summary": "Неподтверждённые кандидаты (большинство опровергнуто)",
+  "primary_resources": [
+    "asteroids"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "Wolf 359",
+      "CN Leonis",
+      "Вольф 359",
+      "GJ 406"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Wolf 359",
+        "alternative_names": [
+          "CN Leonis",
+          "GJ 406",
+          "Вольф 359"
+        ],
+        "type": "M6.5Ve — Красный карлик",
+        "diameter_km": 220000,
+        "mass_kg": 1.789623e+29,
+        "gravitational_parameter_m3s2": 1.194448079e+19,
+        "mass_solar": 0.09,
+        "luminosity_solar": 0.0014,
+        "temperature_k": 2800,
+        "age_gyr": 1.0,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [],
+        "asteroid_belts": [
+          {
+            "name": "Пояс Вольфа (разреженный)",
+            "distance_from_star_au": 0.15,
+            "asteroid_count": 45000,
+            "mining_appeal": "Низкая (высокая радиация)"
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Вольфа",
+        "distance_from_star_au": 0.15,
+        "asteroid_count": 95000,
+        "min_size_m": 5,
+        "max_size_m": 180000,
+        "avg_size_m": 420,
+        "mining_appeal": "Низкая (высокая радиация)"
+      },
+      {
+        "name": "Пояс Койпера Вольфа",
+        "distance_from_star_au": 0.8,
+        "asteroid_count": 850000,
+        "min_size_m": 50,
+        "max_size_m": 450000,
+        "avg_size_m": 15000,
+        "mining_appeal": "Средняя (лёд)"
+      }
+    ],
+    "lore_notes": "Активный красный карлик с мощными вспышками. 3 планеты, большинство кандидатов опровергнуто. Опасная зона для навигации.",
+    "technical_notes": "Одиночный красный карлик. Частые вспышки делают систему непригодной для долгосрочного пребывания."
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 42,
+  "name": "17 Cygni",
+  "position_ly": {
+    "x": -26.8,
+    "y": 60.5,
+    "z": 3.5
+  },
+  "stars_count": 2,
+  "star_type": "F7V + M0.4",
+  "stability": "Стабильная двойная система",
+  "planets_summary": "Неподтверждённые кандидаты",
+  "primary_resources": [
+    "rare_metals",
+    "metals"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "17 Cygni",
+      "17 Лебедя",
+      "Двойная Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "17 Cygni A",
+        "alternative_names": [
+          "17 Cyg A",
+          "HD 186808 A"
+        ],
+        "type": "F7V — Жёлто-белый карлик",
+        "diameter_km": 1520000,
+        "mass_kg": 2.5452416e+30,
+        "gravitational_parameter_m3s2": 1.698770601e+20,
+        "mass_solar": 1.28,
+        "luminosity_solar": 3.8,
+        "temperature_k": 6350,
+        "age_gyr": 3.2,
+        "distance_from_barycenter_au": 8.5,
+        "position_au": {
+          "x": -8.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "17 Cygni B",
+          "semi_major_axis_au": 45,
+          "min_distance_au": 35,
+          "max_distance_au": 55,
+          "orbital_period_years": 125,
+          "eccentricity": 0.22
+        },
+        "planets": [
+          {
+            "name": "17 Cygni Ab",
+            "alternative_names": [
+              "17 Cyg Ab",
+              "Горячая суперземля"
+            ],
+            "distance_au": 1.85,
+            "orbital_period_days": 685,
+            "diameter_km": 13500,
+            "mass_kg": 3.105544e+25,
+            "gravitational_parameter_m3s2": 2072733232000000.0,
+            "mass_earth": 5.2,
+            "orbit_type": "S-type",
+            "primary_star": "17 Cygni A",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 4.8,
+            "surface_temperature_k": 485,
+            "day_length_hours": 520,
+            "surface_gravity_g": 1.62,
+            "oceans": false,
+            "land_water_ratio": "80/20",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          }
+        ]
+      },
+      {
+        "name": "17 Cygni B",
+        "alternative_names": [
+          "17 Cyg B",
+          "HD 186808 B",
+          "Красный карлик"
+        ],
+        "type": "M0.4 — Красный карлик",
+        "diameter_km": 395000,
+        "mass_kg": 1.0340044e+30,
+        "gravitational_parameter_m3s2": 6.901255567e+19,
+        "mass_solar": 0.52,
+        "luminosity_solar": 0.038,
+        "temperature_k": 3750,
+        "age_gyr": 3.2,
+        "distance_from_barycenter_au": 36.5,
+        "position_au": {
+          "x": 36.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "17 Cygni A",
+          "semi_major_axis_au": 45,
+          "min_distance_au": 35,
+          "max_distance_au": 55,
+          "orbital_period_years": 125,
+          "eccentricity": 0.22
+        },
+        "planets": [
+          {
+            "name": "17 Cygni Bb",
+            "alternative_names": [
+              "17 Cyg Bb",
+              "Суперземля B"
+            ],
+            "distance_au": 0.42,
+            "orbital_period_days": 125,
+            "diameter_km": 10500,
+            "mass_kg": 1.49305e+25,
+            "gravitational_parameter_m3s2": 996506361500000.0,
+            "mass_earth": 2.5,
+            "orbit_type": "S-type",
+            "primary_star": "17 Cygni B",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.5,
+            "surface_temperature_k": 285,
+            "day_length_hours": 385,
+            "surface_gravity_g": 1.18,
+            "oceans": false,
+            "land_water_ratio": "75/25",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс 17 Cygni",
+        "distance_from_star_au": 8.5,
+        "asteroid_count": 920000,
+        "min_size_m": 25,
+        "max_size_m": 950000,
+        "avg_size_m": 2400,
+        "mining_appeal": "Высокая (редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера 17 Cygni",
+        "distance_from_star_au": 65,
+        "asteroid_count": 15000000,
+        "min_size_m": 100,
+        "max_size_m": 2250000,
+        "avg_size_m": 85000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Двойная система с жёлто-белым и красным карликом. Планеты не подтверждены, но пояс астероидов исключительно богат редкими элементами. 0 подтверждено, 2 ожидается.",
+    "technical_notes": "Двойная система. Компоненты находятся на среднем расстоянии друг от друга."
+  }
+}

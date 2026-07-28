@@ -1,0 +1,550 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 29,
+  "name": "Gliese 229",
+  "position_ly": {
+    "x": -11.52,
+    "y": 13.18,
+    "z": -5.95
+  },
+  "stars_count": 2,
+  "star_type": "M1V + T7",
+  "stability": "Стабильная (красный карлик + коричневый карлик)",
+  "planets_summary": "2 подтверждённые планеты (Ab, Ac)",
+  "primary_resources": [
+    "water",
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "metals",
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "Gliese 229",
+      "GJ 229",
+      "Глизе 229",
+      "Двойная Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Gliese 229 A",
+        "alternative_names": [
+          "GJ 229 A",
+          "Красный карлик"
+        ],
+        "type": "M1V — Красный карлик",
+        "diameter_km": 375000,
+        "mass_kg": 1.0340044e+30,
+        "gravitational_parameter_m3s2": 6.901255567e+19,
+        "mass_solar": 0.52,
+        "luminosity_solar": 0.035,
+        "temperature_k": 3650,
+        "age_gyr": 5.5,
+        "distance_from_barycenter_au": 2.8,
+        "position_au": {
+          "x": -2.8,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Gliese 229 B",
+          "semi_major_axis_au": 45,
+          "min_distance_au": 35,
+          "max_distance_au": 55,
+          "orbital_period_years": 285,
+          "eccentricity": 0.22
+        },
+        "planets": [
+          {
+            "name": "Gliese 229 Ab",
+            "alternative_names": [
+              "GJ 229 Ab",
+              "Надежда A",
+              "Кандидат в обитаемые"
+            ],
+            "distance_au": 0.08,
+            "orbital_period_days": 14.5,
+            "diameter_km": 12200,
+            "mass_kg": 1.672216e+25,
+            "gravitational_parameter_m3s2": 1116087125000000.0,
+            "mass_earth": 2.8,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 229 A",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.2,
+            "surface_temperature_k": 295,
+            "day_length_hours": 348,
+            "surface_gravity_g": 1.25,
+            "oceans": true,
+            "land_water_ratio": "45/55",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "ocean_world"
+          },
+          {
+            "name": "Gliese 229 Ac",
+            "alternative_names": [
+              "GJ 229 Ac",
+              "Пустыня A",
+              "Суперземля"
+            ],
+            "distance_au": 0.15,
+            "orbital_period_days": 35,
+            "diameter_km": 10800,
+            "mass_kg": 1.254162e+25,
+            "gravitational_parameter_m3s2": 837065343700000.0,
+            "mass_earth": 2.1,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 229 A",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.5,
+            "surface_temperature_k": 235,
+            "day_length_hours": 840,
+            "surface_gravity_g": 1.1,
+            "oceans": false,
+            "land_water_ratio": "75/25",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [
+              {
+                "name": "Gliese 229 Ac-I",
+                "diameter_km": 1150,
+                "mass_kg": 2.9861e+22,
+                "gravitational_parameter_m3s2": 1993012723000.0,
+                "mass_earth": 0.005,
+                "distance_from_planet_km": 145000,
+                "atmosphere": false,
+                "oceans": false,
+                "orbital_period_days": 3.2,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "Gliese 229 Ad",
+            "alternative_names": [
+              "GJ 229 Ad",
+              "Ледяная суперземля"
+            ],
+            "distance_au": 0.28,
+            "orbital_period_days": 85,
+            "diameter_km": 9500,
+            "mass_kg": 1.074996e+25,
+            "gravitational_parameter_m3s2": 717484580300000.0,
+            "mass_earth": 1.8,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 229 A",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения пояса",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.2,
+            "surface_temperature_k": 175,
+            "day_length_hours": 2040,
+            "surface_gravity_g": 1.05,
+            "oceans": false,
+            "land_water_ratio": "40/60",
+            "ocean_composition": "Вода (H₂O) — лёд",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "Gliese 229 Ae",
+            "alternative_names": [
+              "GJ 229 Ae",
+              "Газовый карлик"
+            ],
+            "distance_au": 0.75,
+            "orbital_period_days": 385,
+            "diameter_km": 48000,
+            "mass_kg": 1.313884e+26,
+            "gravitational_parameter_m3s2": 8769255981000000.0,
+            "mass_earth": 22,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 229 A",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Долгосрочные аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 265.0,
+            "surface_temperature_k": 95,
+            "day_length_hours": 9.5,
+            "surface_gravity_g": 1.48,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "Gliese 229 Ae-I",
+                "diameter_km": 3200,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 420000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 6.5,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Gliese 229 Ae",
+                "distance_from_planet_km": {
+                  "inner": 45000,
+                  "outer": 155000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "ice_giant_methane",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible narrow dark ring system derived from ice-giant analogues.",
+              "bands": [
+                {
+                  "name": "Narrow ring 1",
+                  "distance_from_planet_km": {
+                    "inner": 34945.771,
+                    "outer": 35334.095
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1558,
+                      0.2262,
+                      0.2522
+                    ],
+                    "opacity": 0.185,
+                    "optical_depth": 0.1239,
+                    "radial_noise_strength": 0.2632,
+                    "radial_brightness_variation": 0.1969,
+                    "azimuthal_asymmetry": 0.1778,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "secondary",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.68,
+                    "particle_density_scale": 0.76,
+                    "particle_clumpiness": 0.5822,
+                    "particle_radial_jitter": 0.3578,
+                    "particle_size_px_range": [
+                      0.95,
+                      2.05
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 2",
+                  "distance_from_planet_km": {
+                    "inner": 37630.082,
+                    "outer": 37797.33
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1735,
+                      0.185,
+                      0.258
+                    ],
+                    "opacity": 0.2633,
+                    "optical_depth": 0.1207,
+                    "radial_noise_strength": 0.3186,
+                    "radial_brightness_variation": 0.1671,
+                    "azimuthal_asymmetry": 0.0538,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5822,
+                    "particle_radial_jitter": 0.3578,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 3",
+                  "distance_from_planet_km": {
+                    "inner": 39679.855,
+                    "outer": 40030.675
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1742,
+                      0.1932,
+                      0.2518
+                    ],
+                    "opacity": 0.3105,
+                    "optical_depth": 0.1626,
+                    "radial_noise_strength": 0.2914,
+                    "radial_brightness_variation": 0.1637,
+                    "azimuthal_asymmetry": 0.1017,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5822,
+                    "particle_radial_jitter": 0.3578,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 4",
+                  "distance_from_planet_km": {
+                    "inner": 42242.422,
+                    "outer": 42740.908
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1963,
+                      0.1984,
+                      0.2494
+                    ],
+                    "opacity": 0.2783,
+                    "optical_depth": 0.1791,
+                    "radial_noise_strength": 0.3577,
+                    "radial_brightness_variation": 0.2186,
+                    "azimuthal_asymmetry": 0.0015,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5822,
+                    "particle_radial_jitter": 0.3578,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 5",
+                  "distance_from_planet_km": {
+                    "inner": 44199.675,
+                    "outer": 44682.041
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1937,
+                      0.1724,
+                      0.2235
+                    ],
+                    "opacity": 0.2331,
+                    "optical_depth": 0.1534,
+                    "radial_noise_strength": 0.4073,
+                    "radial_brightness_variation": 0.1833,
+                    "azimuthal_asymmetry": 0.0408,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5822,
+                    "particle_radial_jitter": 0.3578,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 6",
+                  "distance_from_planet_km": {
+                    "inner": 45970.101,
+                    "outer": 46438.479
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1861,
+                      0.1916,
+                      0.2471
+                    ],
+                    "opacity": 0.2132,
+                    "optical_depth": 0.2778,
+                    "radial_noise_strength": 0.4196,
+                    "radial_brightness_variation": 0.2298,
+                    "azimuthal_asymmetry": 0.1779,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5822,
+                    "particle_radial_jitter": 0.3578,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 7",
+                  "distance_from_planet_km": {
+                    "inner": 48114.405,
+                    "outer": 48316.779
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.174,
+                      0.1807,
+                      0.2646
+                    ],
+                    "opacity": 0.2629,
+                    "optical_depth": 0.2503,
+                    "radial_noise_strength": 0.4042,
+                    "radial_brightness_variation": 0.2085,
+                    "azimuthal_asymmetry": 0.062,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5822,
+                    "particle_radial_jitter": 0.3578,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0511,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.3578,
+                "azimuthal_clumping": 0.58,
+                "cluster_scale": 0.8611,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Gliese 229 B",
+        "alternative_names": [
+          "GJ 229 B",
+          "Коричневый карлик",
+          "T7"
+        ],
+        "type": "T7 — Коричневый карлик",
+        "diameter_km": 95000,
+        "mass_kg": 9.94235e+28,
+        "gravitational_parameter_m3s2": 6.63582266e+18,
+        "mass_solar": 0.05,
+        "luminosity_solar": 6e-05,
+        "temperature_k": 950,
+        "age_gyr": 5.5,
+        "distance_from_barycenter_au": 42.2,
+        "position_au": {
+          "x": 42.2,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Gliese 229 A",
+          "semi_major_axis_au": 45,
+          "min_distance_au": 35,
+          "max_distance_au": 55,
+          "orbital_period_years": 285,
+          "eccentricity": 0.22
+        },
+        "planets": []
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Глизе 229",
+        "distance_from_star_au": 0.4,
+        "asteroid_count": 185000,
+        "min_size_m": 6,
+        "max_size_m": 340000,
+        "avg_size_m": 580,
+        "mining_appeal": "Средняя (лёд, металлы)"
+      },
+      {
+        "name": "Пояс Койпера Глизе 229",
+        "distance_from_star_au": 2.5,
+        "asteroid_count": 2800000,
+        "min_size_m": 80,
+        "max_size_m": 620000,
+        "avg_size_m": 20000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Двойная система с красным и коричневым карликом. Две подтверждённые планеты у компонента A. Коричневый карлик представляет научный интерес. 2 подтверждено, 2 ожидается.",
+    "technical_notes": "Красный карлик + коричневый карлик (T-класс). Компаньон B слишком холодный для формирования планет."
+  }
+}

@@ -33,7 +33,7 @@ public:
     GalaxyStarfieldRenderer(const GalaxyStarfieldRenderer&) = delete;
     GalaxyStarfieldRenderer& operator=(const GalaxyStarfieldRenderer&) = delete;
 
-    bool initialize(const std::string& atlasPath = "assets/data/star_atlas/star_systems.json");
+    bool initialize(const std::string& galaxyDetailsRoot = "assets/data/galaxy_details");
     void shutdown();
 
     /*
@@ -99,7 +99,8 @@ private:
 
     
 
-    bool loadAtlasStars(const std::string& atlasPath);
+    bool loadAtlasStars(const std::string& galaxyDetailsRoot);
+    bool mergeGameSystemsFromCatalog(const std::string& galaxyDetailsRoot);
     bool loadRealStarCatalog(const std::string& path);
 
     void generateProceduralField();

@@ -1,0 +1,562 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 30,
+  "name": "Epsilon Indi",
+  "position_ly": {
+    "x": -6.82,
+    "y": 8.15,
+    "z": -5.28
+  },
+  "stars_count": 3,
+  "star_type": "K5V + T1 + T6",
+  "stability": "Стабильная (оранжевый карлик + два коричневых карлика)",
+  "planets_summary": "Epsilon Indi Ab (газовый гигант)",
+  "primary_resources": [
+    "helium3",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "metals"
+  ],
+  "details": {
+    "alternative_names": [
+      "Epsilon Indi",
+      "ε Ind",
+      "Эпсилон Индейца",
+      "Тройная Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Epsilon Indi A",
+        "alternative_names": [
+          "ε Ind A",
+          "Оранжевый карлик"
+        ],
+        "type": "K5V — Оранжевый карлик",
+        "diameter_km": 890000,
+        "mass_kg": 1.5112372e+30,
+        "gravitational_parameter_m3s2": 1.008645044e+20,
+        "mass_solar": 0.76,
+        "luminosity_solar": 0.22,
+        "temperature_k": 4630,
+        "age_gyr": 8.0,
+        "distance_from_barycenter_au": 1.2,
+        "position_au": {
+          "x": -1.2,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Epsilon Indi Ba+Bb",
+          "semi_major_axis_au": 1450,
+          "min_distance_au": 1200,
+          "max_distance_au": 1700,
+          "orbital_period_years": 28000,
+          "eccentricity": 0.17
+        },
+        "planets": [
+          {
+            "name": "Epsilon Indi Ab",
+            "alternative_names": [
+              "ε Ind Ab",
+              "Газовый гигант",
+              "Гелий-3 источник"
+            ],
+            "distance_au": 2.8,
+            "orbital_period_days": 1850,
+            "diameter_km": 118000,
+            "mass_kg": 1.761799e+27,
+            "gravitational_parameter_m3s2": 1.175877507e+17,
+            "mass_earth": 295,
+            "orbit_type": "S-type",
+            "primary_star": "Epsilon Indi A",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 950.0,
+            "surface_temperature_k": 92,
+            "day_length_hours": 10.2,
+            "surface_gravity_g": 2.2,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3, газодобыча)",
+            "moons": [
+              {
+                "name": "Epsilon Indi Ab-I",
+                "diameter_km": 4800,
+                "mass_kg": 1.313884e+23,
+                "gravitational_parameter_m3s2": 8769255981000.0,
+                "mass_earth": 0.022,
+                "distance_from_planet_km": 680000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 8.9,
+                "environment_preset_id": "terrestrial_temperate"
+              },
+              {
+                "name": "Epsilon Indi Ab-II",
+                "diameter_km": 3800,
+                "mass_kg": 9.55552e+22,
+                "gravitational_parameter_m3s2": 6377640714000.0,
+                "mass_earth": 0.016,
+                "distance_from_planet_km": 920000,
+                "atmosphere": true,
+                "oceans": false,
+                "orbital_period_days": 14.2,
+                "environment_preset_id": "desert_thin_atmosphere"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Эпсилона Инди Ab",
+                "distance_from_planet_km": {
+                  "inner": 55000,
+                  "outer": 185000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 71759.46,
+                    "outer": 81334.092
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 83559.46,
+                    "outer": 109924.888
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.3392,
+                    "optical_depth": 0.1719,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4813,
+                    "particle_radial_jitter": 0.2984,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 116009.46,
+                    "outer": 180907.864
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0274,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.2984,
+                "azimuthal_clumping": 0.4813,
+                "cluster_scale": 0.7572,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          },
+          {
+            "name": "Epsilon Indi Ac",
+            "alternative_names": [
+              "ε Ind Ac",
+              "Суперземля"
+            ],
+            "distance_au": 4.85,
+            "orbital_period_days": 4250,
+            "diameter_km": 14500,
+            "mass_kg": 3.702764e+25,
+            "gravitational_parameter_m3s2": 2471335777000000.0,
+            "mass_earth": 6.2,
+            "orbit_type": "S-type",
+            "primary_star": "Epsilon Indi A",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения внешнего пояса",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 4.8,
+            "surface_temperature_k": 65,
+            "day_length_hours": 10200,
+            "surface_gravity_g": 1.62,
+            "oceans": false,
+            "land_water_ratio": "30/70",
+            "ocean_composition": "Вода (H₂O) — лёд",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "Epsilon Indi Ad",
+            "alternative_names": [
+              "ε Ind Ad",
+              "Ледяной гигант"
+            ],
+            "distance_au": 8.5,
+            "orbital_period_days": 9850,
+            "diameter_km": 58000,
+            "mass_kg": 2.508324e+26,
+            "gravitational_parameter_m3s2": 1.674130687e+16,
+            "mass_earth": 42,
+            "orbit_type": "S-type",
+            "primary_star": "Epsilon Indi A",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Долгосрочные аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 485.0,
+            "surface_temperature_k": 45,
+            "day_length_hours": 9.8,
+            "surface_gravity_g": 1.68,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "Epsilon Indi Ad-I",
+                "diameter_km": 3500,
+                "mass_kg": 8.9583e+22,
+                "gravitational_parameter_m3s2": 5979038169000.0,
+                "mass_earth": 0.015,
+                "distance_from_planet_km": 520000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 7.2,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Epsilon Indi Ad",
+                "distance_from_planet_km": {
+                  "inner": 48000,
+                  "outer": 165000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 34439.216,
+                    "outer": 38606.136
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 40239.216,
+                    "outer": 48587.265
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.2956,
+                    "optical_depth": 0.1637,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4855,
+                    "particle_radial_jitter": 0.3009,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 56189.216,
+                    "outer": 68636.765
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0283,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.3009,
+                "azimuthal_clumping": 0.4855,
+                "cluster_scale": 0.7615,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Epsilon Indi Ba",
+        "alternative_names": [
+          "ε Ind Ba",
+          "Коричневый карлик 1",
+          "T1"
+        ],
+        "type": "T1 — Коричневый карлик",
+        "diameter_km": 88000,
+        "mass_kg": 9.345809e+28,
+        "gravitational_parameter_m3s2": 6.237673301e+18,
+        "mass_solar": 0.047,
+        "luminosity_solar": 5e-05,
+        "temperature_k": 1200,
+        "age_gyr": 8.0,
+        "distance_from_barycenter_au": 725,
+        "position_au": {
+          "x": 725,
+          "y": 0,
+          "z": 0
+        },
+        "planets": []
+      },
+      {
+        "name": "Epsilon Indi Bb",
+        "alternative_names": [
+          "ε Ind Bb",
+          "Коричневый карлик 2",
+          "T6"
+        ],
+        "type": "T6 — Коричневый карлик",
+        "diameter_km": 82000,
+        "mass_kg": 6.959645e+28,
+        "gravitational_parameter_m3s2": 4.645075862e+18,
+        "mass_solar": 0.035,
+        "luminosity_solar": 2e-05,
+        "temperature_k": 850,
+        "age_gyr": 8.0,
+        "distance_from_barycenter_au": 725,
+        "position_au": {
+          "x": 725,
+          "y": 0,
+          "z": 0
+        },
+        "planets": []
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Эпсилона Инди",
+        "distance_from_star_au": 8.5,
+        "asteroid_count": 920000,
+        "min_size_m": 25,
+        "max_size_m": 950000,
+        "avg_size_m": 2800,
+        "mining_appeal": "Высокая (лёд, редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера Эпсилона Инди",
+        "distance_from_star_au": 55,
+        "asteroid_count": 12000000,
+        "min_size_m": 100,
+        "max_size_m": 1850000,
+        "avg_size_m": 65000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Тройная система с оранжевым карликом и двумя коричневыми карликами. Газовый гигант с перспективными лунами. 1 подтверждена, 2 ожидается.",
+    "technical_notes": "Оранжевый карлик + два коричневых карлика. Компоненты B находятся на большом расстоянии от A."
+  }
+}

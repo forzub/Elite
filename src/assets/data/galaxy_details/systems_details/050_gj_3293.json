@@ -1,0 +1,438 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 50,
+  "name": "GJ 3293",
+  "position_ly": {
+    "x": -26.8,
+    "y": 42.8,
+    "z": -7.5
+  },
+  "stars_count": 1,
+  "star_type": "M2.5V",
+  "stability": "Стабильный красный карлик",
+  "planets_summary": "3 планеты (суперземли)",
+  "primary_resources": [
+    "metals",
+    "water"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "GJ 3293",
+      "GJ 3293",
+      "Система 3293"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "GJ 3293",
+        "alternative_names": [
+          "GJ 3293 A"
+        ],
+        "type": "M2.5V — Красный карлик",
+        "diameter_km": 340000,
+        "mass_kg": 8.351574e+29,
+        "gravitational_parameter_m3s2": 5.574091035e+19,
+        "mass_solar": 0.42,
+        "luminosity_solar": 0.025,
+        "temperature_k": 3540,
+        "age_gyr": 6.2,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "GJ 3293 b",
+            "alternative_names": [
+              "GJ 3293 b",
+              "Горячая суперземля"
+            ],
+            "distance_au": 0.045,
+            "orbital_period_days": 5.8,
+            "diameter_km": 10800,
+            "mass_kg": 1.911104e+25,
+            "gravitational_parameter_m3s2": 1275528143000000.0,
+            "mass_earth": 3.2,
+            "orbit_type": "S-type",
+            "primary_star": "GJ 3293",
+            "discovery_status": "подтверждена",
+            "atmosphere": false,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.0,
+            "surface_temperature_k": 485,
+            "day_length_hours": 139,
+            "surface_gravity_g": 1.38,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Низкая (высокая температура)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "airless_rocky"
+          },
+          {
+            "name": "GJ 3293 c",
+            "alternative_names": [
+              "GJ 3293 c",
+              "Суперземля в зоне обитаемости"
+            ],
+            "distance_au": 0.12,
+            "orbital_period_days": 22,
+            "diameter_km": 11500,
+            "mass_kg": 2.448602e+25,
+            "gravitational_parameter_m3s2": 1634270433000000.0,
+            "mass_earth": 4.1,
+            "orbit_type": "S-type",
+            "primary_star": "GJ 3293",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.8,
+            "surface_temperature_k": 265,
+            "day_length_hours": 528,
+            "surface_gravity_g": 1.48,
+            "oceans": true,
+            "land_water_ratio": "42/58",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [
+              {
+                "name": "GJ 3293 c-I",
+                "diameter_km": 1420,
+                "mass_kg": 4.18054e+22,
+                "gravitational_parameter_m3s2": 2790217812000.0,
+                "mass_earth": 0.007,
+                "distance_from_planet_km": 165000,
+                "atmosphere": false,
+                "atmosphere_composition": "",
+                "oceans": false,
+                "orbital_period_days": 3.5,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "ocean_world"
+          },
+          {
+            "name": "GJ 3293 d",
+            "alternative_names": [
+              "GJ 3293 d",
+              "Холодная суперземля"
+            ],
+            "distance_au": 0.22,
+            "orbital_period_days": 52,
+            "diameter_km": 9800,
+            "mass_kg": 1.49305e+25,
+            "gravitational_parameter_m3s2": 996506361500000.0,
+            "mass_earth": 2.5,
+            "orbit_type": "S-type",
+            "primary_star": "GJ 3293",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.2,
+            "surface_temperature_k": 195,
+            "day_length_hours": 1248,
+            "surface_gravity_g": 1.18,
+            "oceans": false,
+            "land_water_ratio": "78/22",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "GJ 3293 e",
+            "alternative_names": [
+              "GJ 3293 e",
+              "Газовый карлик"
+            ],
+            "distance_au": 0.55,
+            "orbital_period_days": 245,
+            "diameter_km": 52000,
+            "mass_kg": 1.672216e+26,
+            "gravitational_parameter_m3s2": 1.116087125e+16,
+            "mass_earth": 28,
+            "orbit_type": "S-type",
+            "primary_star": "GJ 3293",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 325.0,
+            "surface_temperature_k": 95,
+            "day_length_hours": 9.5,
+            "surface_gravity_g": 1.55,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "GJ 3293 e-I",
+                "diameter_km": 3200,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 485000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 6.5,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца GJ 3293 e",
+                "distance_from_planet_km": {
+                  "inner": 45000,
+                  "outer": 155000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "ice_giant_methane",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible narrow dark ring system derived from ice-giant analogues.",
+              "bands": [
+                {
+                  "name": "Narrow ring 1",
+                  "distance_from_planet_km": {
+                    "inner": 38175.124,
+                    "outer": 38600.563
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.2087,
+                      0.1974,
+                      0.2797
+                    ],
+                    "opacity": 0.3048,
+                    "optical_depth": 0.2553,
+                    "radial_noise_strength": 0.3457,
+                    "radial_brightness_variation": 0.243,
+                    "azimuthal_asymmetry": 0.0128,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5077,
+                    "particle_radial_jitter": 0.3139,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 2",
+                  "distance_from_planet_km": {
+                    "inner": 40984.929,
+                    "outer": 41204.005
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1629,
+                      0.1835,
+                      0.2104
+                    ],
+                    "opacity": 0.1504,
+                    "optical_depth": 0.1485,
+                    "radial_noise_strength": 0.287,
+                    "radial_brightness_variation": 0.2059,
+                    "azimuthal_asymmetry": 0.1238,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "secondary",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.68,
+                    "particle_density_scale": 0.76,
+                    "particle_clumpiness": 0.5077,
+                    "particle_radial_jitter": 0.3139,
+                    "particle_size_px_range": [
+                      0.95,
+                      2.05
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 3",
+                  "distance_from_planet_km": {
+                    "inner": 42414.259,
+                    "outer": 42637.895
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.2039,
+                      0.2063,
+                      0.229
+                    ],
+                    "opacity": 0.3018,
+                    "optical_depth": 0.2303,
+                    "radial_noise_strength": 0.3147,
+                    "radial_brightness_variation": 0.2183,
+                    "azimuthal_asymmetry": 0.1674,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5077,
+                    "particle_radial_jitter": 0.3139,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 4",
+                  "distance_from_planet_km": {
+                    "inner": 44366.322,
+                    "outer": 44604.814
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1464,
+                      0.1831,
+                      0.1971
+                    ],
+                    "opacity": 0.2644,
+                    "optical_depth": 0.0961,
+                    "radial_noise_strength": 0.3848,
+                    "radial_brightness_variation": 0.2168,
+                    "azimuthal_asymmetry": 0.1097,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5077,
+                    "particle_radial_jitter": 0.3139,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 5",
+                  "distance_from_planet_km": {
+                    "inner": 47010.06,
+                    "outer": 47384.896
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1401,
+                      0.2022,
+                      0.2642
+                    ],
+                    "opacity": 0.258,
+                    "optical_depth": 0.1217,
+                    "radial_noise_strength": 0.3467,
+                    "radial_brightness_variation": 0.2677,
+                    "azimuthal_asymmetry": 0.0483,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5077,
+                    "particle_radial_jitter": 0.3139,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0336,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.3139,
+                "azimuthal_clumping": 0.5077,
+                "cluster_scale": 0.7844,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс GJ 3293",
+        "distance_from_star_au": 0.55,
+        "asteroid_count": 225000,
+        "min_size_m": 7,
+        "max_size_m": 395000,
+        "avg_size_m": 680,
+        "mining_appeal": "Средняя (лёд, металлы)"
+      },
+      {
+        "name": "Пояс Койпера GJ 3293",
+        "distance_from_star_au": 2.5,
+        "asteroid_count": 3500000,
+        "min_size_m": 80,
+        "max_size_m": 680000,
+        "avg_size_m": 22000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Красный карлик с тремя суперземлями. Одна планета в зоне обитаемости делает систему перспективной для исследования. 3 подтверждено, 1 ожидается.",
+    "technical_notes": "Красный карлик. Три планеты на разных расстояниях от звезды."
+  }
+}

@@ -1,0 +1,391 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 14,
+  "name": "HD 20794 (82 G. Eridani)",
+  "position_ly": {
+    "x": -9.9,
+    "y": 15.7,
+    "z": -6.4
+  },
+  "stars_count": 1,
+  "star_type": "G8V",
+  "stability": "Стабильный жёлтый карлик",
+  "planets_summary": "HD 20794 d (кандидат в зоне обитаемости), 3 планеты (суперземли)",
+  "primary_resources": [
+    "metals",
+    "water"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "HD 20794",
+      "82 G. Eridani",
+      "82 Эридана"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "HD 20794",
+        "alternative_names": [
+          "82 G. Eridani",
+          "82 Эридана"
+        ],
+        "type": "G8V — Жёлтый карлик",
+        "diameter_km": 1220000,
+        "mass_kg": 1.6901995e+30,
+        "gravitational_parameter_m3s2": 1.128089852e+20,
+        "mass_solar": 0.85,
+        "luminosity_solar": 0.58,
+        "temperature_k": 5450,
+        "age_gyr": 6.0,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "HD 20794 b",
+            "alternative_names": [
+              "HD 20794 b",
+              "82 Эридана b"
+            ],
+            "distance_au": 0.35,
+            "orbital_period_days": 95,
+            "diameter_km": 9800,
+            "mass_kg": 1.074996e+25,
+            "gravitational_parameter_m3s2": 717484580300000.0,
+            "mass_earth": 1.8,
+            "orbit_type": "S-type",
+            "primary_star": "HD 20794",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.2,
+            "surface_temperature_k": 320,
+            "day_length_hours": 125,
+            "surface_gravity_g": 1.05,
+            "oceans": false,
+            "land_water_ratio": "85/15",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "HD 20794 c",
+            "alternative_names": [
+              "HD 20794 c",
+              "82 Эридана c"
+            ],
+            "distance_au": 0.52,
+            "orbital_period_days": 165,
+            "diameter_km": 10500,
+            "mass_kg": 1.433328e+25,
+            "gravitational_parameter_m3s2": 956646107000000.0,
+            "mass_earth": 2.4,
+            "orbit_type": "S-type",
+            "primary_star": "HD 20794",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.8,
+            "surface_temperature_k": 275,
+            "day_length_hours": 158,
+            "surface_gravity_g": 1.15,
+            "oceans": false,
+            "land_water_ratio": "80/20",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [
+              {
+                "name": "HD 20794 c-I",
+                "diameter_km": 920,
+                "mass_kg": 1.79166e+22,
+                "gravitational_parameter_m3s2": 1195807634000.0,
+                "mass_earth": 0.003,
+                "distance_from_planet_km": 135000,
+                "orbital_period_days": 2.5,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "HD 20794 d",
+            "alternative_names": [
+              "HD 20794 d",
+              "82 Эридана d",
+              "Надежда"
+            ],
+            "distance_au": 0.85,
+            "orbital_period_days": 340,
+            "diameter_km": 11800,
+            "mass_kg": 1.911104e+25,
+            "gravitational_parameter_m3s2": 1275528143000000.0,
+            "mass_earth": 3.2,
+            "orbit_type": "S-type",
+            "primary_star": "HD 20794",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.5,
+            "surface_temperature_k": 245,
+            "day_length_hours": 195,
+            "surface_gravity_g": 1.3,
+            "oceans": true,
+            "land_water_ratio": "50/50",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [
+              {
+                "name": "HD 20794 d-I",
+                "diameter_km": 1650,
+                "mass_kg": 4.77776e+22,
+                "gravitational_parameter_m3s2": 3188820357000.0,
+                "mass_earth": 0.008,
+                "distance_from_planet_km": 185000,
+                "orbital_period_days": 4.2,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "ocean_world"
+          },
+          {
+            "name": "HD 20794 e",
+            "alternative_names": [
+              "HD 20794 e",
+              "82 Эридана e",
+              "Лёд"
+            ],
+            "distance_au": 1.25,
+            "orbital_period_days": 580,
+            "diameter_km": 10200,
+            "mass_kg": 1.49305e+25,
+            "gravitational_parameter_m3s2": 996506361500000.0,
+            "mass_earth": 2.5,
+            "orbit_type": "S-type",
+            "primary_star": "HD 20794",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.5,
+            "surface_temperature_k": 195,
+            "day_length_hours": 285,
+            "surface_gravity_g": 1.15,
+            "oceans": false,
+            "land_water_ratio": "70/30",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "HD 20794 f",
+            "alternative_names": [
+              "HD 20794 f",
+              "82 Эридана f",
+              "Газовый карлик"
+            ],
+            "distance_au": 2.85,
+            "orbital_period_days": 1680,
+            "diameter_km": 65000,
+            "mass_kg": 2.68749e+26,
+            "gravitational_parameter_m3s2": 1.793711451e+16,
+            "mass_earth": 45,
+            "orbit_type": "S-type",
+            "primary_star": "HD 20794",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Долгосрочные аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 480.0,
+            "surface_temperature_k": 105,
+            "day_length_hours": 10.8,
+            "surface_gravity_g": 1.75,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "HD 20794 f-I",
+                "diameter_km": 3500,
+                "mass_kg": 8.9583e+22,
+                "gravitational_parameter_m3s2": 5979038169000.0,
+                "mass_earth": 0.015,
+                "distance_from_planet_km": 520000,
+                "orbital_period_days": 7.2,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца HD 20794 f",
+                "distance_from_planet_km": {
+                  "inner": 48000,
+                  "outer": 165000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 40573.25,
+                    "outer": 45701.309
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2604
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 47073.25,
+                    "outer": 53796.392
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.4379,
+                    "optical_depth": 0.3439,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.3275,
+                    "radial_structure_scale": 0.7407
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 64948.25,
+                    "outer": 85729.685
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2604
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.0936,
+                "main_band_emphasis": 1.3275,
+                "secondary_band_emphasis": 0.7873,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.5846,
+                "radial_structure_strength": 0.7407,
+                "fine_structure_strength": 0.2604,
+                "edge_softness_scale": 0.8407,
+                "brightness_variation": 0.2404,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс HD 20794",
+        "distance_from_star_au": 2.5,
+        "asteroid_count": 420000,
+        "min_size_m": 10,
+        "max_size_m": 580000,
+        "avg_size_m": 900,
+        "mining_appeal": "Высокая (металлы, вода)"
+      },
+      {
+        "name": "Пояс Койпера HD 20794",
+        "distance_from_star_au": 35,
+        "asteroid_count": 5800000,
+        "min_size_m": 100,
+        "max_size_m": 1250000,
+        "avg_size_m": 45000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Солнечный аналог с тремя суперземлями. HD 20794 d — перспективный кандидат для колонизации. 3 подтверждено, 2 ожидается. Система стабильна.",
+    "technical_notes": "Жёлтый карлик, похожий на Солнце. Низкая активность звезды."
+  }
+}

@@ -23,12 +23,23 @@ namespace world::celestial
         std::string jurisdiction;
     };
 
+    struct GalaxyMapObject
+    {
+        std::string id;
+        std::string name;
+        std::string objectType;
+        glm::dvec3 positionLy {0.0};
+        std::string description;
+        std::vector<std::string> tags;
+    };
+
     struct GalaxyMapSnapshot
     {
         double universeTimeSeconds = 0.0;
         std::string universeDate;
 
         std::vector<GalaxyMapSystem> systems;
+        std::vector<GalaxyMapObject> objects;
     };
 
 
@@ -179,7 +190,7 @@ namespace world::celestial
         double textureLongitudeOffsetDeg = 0.0;
 
         // Пока цвет fallback-овый.
-        // Потом можно брать из system_details.json, если поле цвета есть.
+        // Потом можно брать из galaxy_details/systems_details, если поле цвета есть.
         glm::vec4 color {0.6f, 0.8f, 1.0f, 1.0f};
 
         double ringPlaneInclinationOffsetDeg = 0.0;

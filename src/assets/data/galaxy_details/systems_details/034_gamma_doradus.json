@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 34,
+  "name": "Gamma Doradus",
+  "position_ly": {
+    "x": -48.5,
+    "y": 38.2,
+    "z": -12.5
+  },
+  "stars_count": 1,
+  "star_type": "F0V",
+  "stability": "Стабильный жёлто-белый карлик",
+  "planets_summary": "Неподтверждённые кандидаты",
+  "primary_resources": [
+    "rare_metals",
+    "metals"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "Gamma Doradus",
+      "γ Dor",
+      "Гамма Золотой Рыбы",
+      "F0V"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Gamma Doradus",
+        "alternative_names": [
+          "γ Dor",
+          "Гамма Золотой Рыбы A"
+        ],
+        "type": "F0V — Жёлто-белый карлик",
+        "diameter_km": 1650000,
+        "mass_kg": 2.8832815e+30,
+        "gravitational_parameter_m3s2": 1.924388572e+20,
+        "mass_solar": 1.45,
+        "luminosity_solar": 5.8,
+        "temperature_k": 7200,
+        "age_gyr": 1.8,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": []
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Гаммы Золотой Рыбы",
+        "distance_from_star_au": 8.5,
+        "asteroid_count": 720000,
+        "min_size_m": 20,
+        "max_size_m": 820000,
+        "avg_size_m": 1800,
+        "mining_appeal": "Высокая (редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера Гаммы Золотой Рыбы",
+        "distance_from_star_au": 85,
+        "asteroid_count": 15000000,
+        "min_size_m": 100,
+        "max_size_m": 2250000,
+        "avg_size_m": 85000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Молодая яркая звезда без подтверждённых планет. Пояс астероидов богат редкими элементами. 0 подтверждено, 3 ожидается.",
+    "technical_notes": "Жёлто-белый карлик. Высокая светимость и температура. Переменная звезда типа Gamma Doradus."
+  }
+}

@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 9,
+  "name": "Epsilon Eridani",
+  "position_ly": {
+    "x": 5.89,
+    "y": -7.12,
+    "z": -4.58
+  },
+  "stars_count": 1,
+  "star_type": "K2V",
+  "stability": "Молодая звезда, высокая активность",
+  "planets_summary": "Epsilon Eridani b (газовый гигант), пояс астероидов",
+  "primary_resources": [
+    "ice",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "helium3"
+  ],
+  "details": {
+    "alternative_names": [
+      "Epsilon Eridani",
+      "Эпсилон Эридана",
+      "ε Eri",
+      "HD 22049"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Epsilon Eridani",
+        "alternative_names": [
+          "ε Eri",
+          "Эпсилон Эридана",
+          "HD 22049"
+        ],
+        "type": "K2V — Оранжевый карлик",
+        "diameter_km": 980000,
+        "mass_kg": 1.6305454e+30,
+        "gravitational_parameter_m3s2": 1.088274916e+20,
+        "mass_solar": 0.82,
+        "luminosity_solar": 0.34,
+        "temperature_k": 5084,
+        "age_gyr": 0.8,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Epsilon Eridani b",
+            "alternative_names": [
+              "ε Eri b",
+              "Эпсилон Эридана b",
+              "Эгир"
+            ],
+            "distance_au": 3.4,
+            "orbital_period_days": 2500,
+            "diameter_km": 115000,
+            "mass_kg": 1.672216e+27,
+            "gravitational_parameter_m3s2": 1.116087125e+17,
+            "mass_earth": 280,
+            "orbit_type": "S-type",
+            "primary_star": "Epsilon Eridani",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 900.0,
+            "surface_temperature_k": 95,
+            "day_length_hours": 11,
+            "surface_gravity_g": 2.1,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3, газодобыча)",
+            "moons": [
+              {
+                "name": "Epsilon Eridani b-I",
+                "diameter_km": 4200,
+                "mass_kg": 1.074996e+23,
+                "gravitational_parameter_m3s2": 7174845803000.0,
+                "mass_earth": 0.018,
+                "distance_from_planet_km": 650000,
+                "orbital_period_days": 8.5,
+                "environment_preset_id": "airless_rocky"
+              },
+              {
+                "name": "Epsilon Eridani b-II",
+                "diameter_km": 3500,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 850000,
+                "orbital_period_days": 12.8,
+                "environment_preset_id": "airless_rocky"
+              },
+              {
+                "name": "Epsilon Eridani b-III",
+                "diameter_km": 2800,
+                "mass_kg": 6.56942e+22,
+                "gravitational_parameter_m3s2": 4384627991000.0,
+                "mass_earth": 0.011,
+                "distance_from_planet_km": 1120000,
+                "orbital_period_days": 18.5,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Эпсилона Эридана b",
+                "distance_from_planet_km": {
+                  "inner": 55000,
+                  "outer": 185000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 76474.725,
+                    "outer": 82294.985
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2384
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 87974.725,
+                    "outer": 101806.299
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.4045,
+                    "optical_depth": 0.3367,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.2871,
+                    "radial_structure_scale": 0.7077
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 119599.725,
+                    "outer": 168927.394
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2384
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.079,
+                "main_band_emphasis": 1.2871,
+                "secondary_band_emphasis": 0.7579,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.5205,
+                "radial_structure_strength": 0.7077,
+                "fine_structure_strength": 0.2384,
+                "edge_softness_scale": 0.8077,
+                "brightness_variation": 0.2184,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            }
+          },
+          {
+            "name": "Epsilon Eridani c",
+            "alternative_names": [
+              "ε Eri c",
+              "Эпсилон Эридана c",
+              "Суперземля"
+            ],
+            "distance_au": 1.8,
+            "orbital_period_days": 920,
+            "diameter_km": 12500,
+            "mass_kg": 2.508324e+25,
+            "gravitational_parameter_m3s2": 1674130687000000.0,
+            "mass_earth": 4.2,
+            "orbit_type": "S-type",
+            "primary_star": "Epsilon Eridani",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения пояса астероидов",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.8,
+            "surface_temperature_k": 185,
+            "day_length_hours": 285,
+            "surface_gravity_g": 1.48,
+            "oceans": false,
+            "land_water_ratio": "75/25",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Эпсилона",
+        "distance_from_star_au": 35,
+        "asteroid_count": 5000000,
+        "min_size_m": 50,
+        "max_size_m": 1500000,
+        "avg_size_m": 35000,
+        "mining_appeal": "Высокая (лёд, редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера Эпсилона",
+        "distance_from_star_au": 95,
+        "asteroid_count": 18000000,
+        "min_size_m": 100,
+        "max_size_m": 2200000,
+        "avg_size_m": 95000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Молодая звезда (800 млн лет) с высокой активностью. Газовый гигант и обширный пояс астероидов. Система напоминает раннюю Солнечную систему.",
+    "technical_notes": "Одна из ближайших молодых звёзд. Высокая звёздная активность требует защиты для экипажей."
+  }
+}

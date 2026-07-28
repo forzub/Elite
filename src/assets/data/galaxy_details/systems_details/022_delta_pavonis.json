@@ -1,0 +1,317 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 22,
+  "name": "Delta Pavonis",
+  "position_ly": {
+    "x": -13.52,
+    "y": 13.18,
+    "z": -5.28
+  },
+  "stars_count": 1,
+  "star_type": "G8IV",
+  "stability": "Стабильный субгигант",
+  "planets_summary": "Неподтверждённые кандидаты",
+  "primary_resources": [
+    "metals",
+    "water"
+  ],
+  "secondary_resources": [
+    "ice",
+    "rare_metals"
+  ],
+  "details": {
+    "alternative_names": [
+      "Delta Pavonis",
+      "δ Pav",
+      "Дельта Павлина",
+      "Субгигант Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Delta Pavonis",
+        "alternative_names": [
+          "δ Pav",
+          "HD 166593",
+          "Дельта Павлина A"
+        ],
+        "type": "G8IV — Жёлтый субгигант",
+        "diameter_km": 1580000,
+        "mass_kg": 2.0878935e+30,
+        "gravitational_parameter_m3s2": 1.393522759e+20,
+        "mass_solar": 1.05,
+        "luminosity_solar": 1.55,
+        "temperature_k": 5650,
+        "age_gyr": 6.8,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Delta Pavonis b",
+            "alternative_names": [
+              "δ Pav b",
+              "Дельта Павлина b",
+              "Суперземля 1"
+            ],
+            "distance_au": 1.2,
+            "orbital_period_days": 485,
+            "diameter_km": 10500,
+            "mass_kg": 1.313884e+25,
+            "gravitational_parameter_m3s2": 876925598100000.0,
+            "mass_earth": 2.2,
+            "orbit_type": "S-type",
+            "primary_star": "Delta Pavonis",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.5,
+            "surface_temperature_k": 265,
+            "day_length_hours": 185,
+            "surface_gravity_g": 1.18,
+            "oceans": false,
+            "land_water_ratio": "85/15",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (требуется подтверждение)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "Delta Pavonis c",
+            "alternative_names": [
+              "δ Pav c",
+              "Дельта Павлина c",
+              "Суперземля 2"
+            ],
+            "distance_au": 2.15,
+            "orbital_period_days": 1150,
+            "diameter_km": 12800,
+            "mass_kg": 2.09027e+25,
+            "gravitational_parameter_m3s2": 1395108906000000.0,
+            "mass_earth": 3.5,
+            "orbit_type": "S-type",
+            "primary_star": "Delta Pavonis",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения пояса астероидов",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.2,
+            "surface_temperature_k": 195,
+            "day_length_hours": 420,
+            "surface_gravity_g": 1.32,
+            "oceans": false,
+            "land_water_ratio": "75/25",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "Delta Pavonis d",
+            "alternative_names": [
+              "δ Pav d",
+              "Дельта Павлина d",
+              "Газовый гигант"
+            ],
+            "distance_au": 5.85,
+            "orbital_period_days": 4850,
+            "diameter_km": 135000,
+            "mass_kg": 1.343745e+27,
+            "gravitational_parameter_m3s2": 8.968557254e+16,
+            "mass_earth": 225,
+            "orbit_type": "S-type",
+            "primary_star": "Delta Pavonis",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Долгосрочные аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 895.0,
+            "surface_temperature_k": 85,
+            "day_length_hours": 10.2,
+            "surface_gravity_g": 2.25,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "Delta Pavonis d-I",
+                "diameter_km": 4500,
+                "mass_kg": 1.134718e+23,
+                "gravitational_parameter_m3s2": 7573448347000.0,
+                "mass_earth": 0.019,
+                "distance_from_planet_km": 650000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 8.2,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Delta Pavonis d",
+                "distance_from_planet_km": {
+                  "inner": 52000,
+                  "outer": 175000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 84113.038,
+                    "outer": 94560.341
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.254
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 97613.038,
+                    "outer": 126890.223
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.4308,
+                    "optical_depth": 0.1769,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.3157,
+                    "radial_structure_scale": 0.731
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 134738.038,
+                    "outer": 170628.413
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.254
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.0894,
+                "main_band_emphasis": 1.3157,
+                "secondary_band_emphasis": 0.7787,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.5659,
+                "radial_structure_strength": 0.731,
+                "fine_structure_strength": 0.254,
+                "edge_softness_scale": 0.831,
+                "brightness_variation": 0.234,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Дельты Павлина",
+        "distance_from_star_au": 4.5,
+        "asteroid_count": 680000,
+        "min_size_m": 20,
+        "max_size_m": 850000,
+        "avg_size_m": 1500,
+        "mining_appeal": "Высокая (металлы, редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера Дельты Павлина",
+        "distance_from_star_au": 42,
+        "asteroid_count": 7500000,
+        "min_size_m": 100,
+        "max_size_m": 1650000,
+        "avg_size_m": 58000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Субгигант в конце главной последовательности. Планеты не подтверждены, но пояс астероидов богат ресурсами. 0 подтверждено, 3 ожидается.",
+    "technical_notes": "Жёлтый субгигант. Звезда начинает расширяться, что может сделать систему нестабильной в будущем."
+  }
+}

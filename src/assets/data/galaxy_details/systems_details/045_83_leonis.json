@@ -1,0 +1,483 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 45,
+  "name": "83 Leonis",
+  "position_ly": {
+    "x": -28.8,
+    "y": 60.5,
+    "z": -7.5
+  },
+  "stars_count": 2,
+  "star_type": "K0IV + K2V",
+  "stability": "Стабильная двойная система",
+  "planets_summary": "2 планеты (газовые гиганты)",
+  "primary_resources": [
+    "helium3",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "metals"
+  ],
+  "details": {
+    "alternative_names": [
+      "83 Leonis",
+      "83 Льва",
+      "Двойная Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "83 Leonis A",
+        "alternative_names": [
+          "83 Leo A",
+          "HD 102194 A"
+        ],
+        "type": "K0IV — Оранжевый субгигант",
+        "diameter_km": 1350000,
+        "mass_kg": 2.1475476e+30,
+        "gravitational_parameter_m3s2": 1.433337695e+20,
+        "mass_solar": 1.08,
+        "luminosity_solar": 1.85,
+        "temperature_k": 5150,
+        "age_gyr": 4.8,
+        "distance_from_barycenter_au": 18.5,
+        "position_au": {
+          "x": -18.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "83 Leonis B",
+          "semi_major_axis_au": 95,
+          "min_distance_au": 75,
+          "max_distance_au": 115,
+          "orbital_period_years": 385,
+          "eccentricity": 0.28
+        },
+        "planets": [
+          {
+            "name": "83 Leonis b",
+            "alternative_names": [
+              "83 Leo b",
+              "Газовый гигант 1"
+            ],
+            "distance_au": 2.45,
+            "orbital_period_days": 1180,
+            "diameter_km": 138000,
+            "mass_kg": 1.403467e+27,
+            "gravitational_parameter_m3s2": 9.367159798e+16,
+            "mass_earth": 235,
+            "orbit_type": "S-type",
+            "primary_star": "83 Leonis A",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 910.0,
+            "surface_temperature_k": 148,
+            "day_length_hours": 10.2,
+            "surface_gravity_g": 2.32,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3, газодобыча)",
+            "moons": [
+              {
+                "name": "83 Leonis b-I",
+                "diameter_km": 4650,
+                "mass_kg": 1.19444e+23,
+                "gravitational_parameter_m3s2": 7972050892000.0,
+                "mass_earth": 0.02,
+                "distance_from_planet_km": 675000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 8.5,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца 83 Leonis b",
+                "distance_from_planet_km": {
+                  "inner": 55000,
+                  "outer": 185000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 96463.78,
+                    "outer": 103175.434
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 110263.78,
+                    "outer": 128324.725
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.3616,
+                    "optical_depth": 0.2432,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.30600000000000005,
+                    "particle_radial_jitter": 0.216,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 148213.78,
+                    "outer": 211451.726
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.24,
+                "azimuthal_clumping": 0.32,
+                "cluster_scale": 0.58,
+                "softness": 0.535,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "83 Leonis B",
+        "alternative_names": [
+          "83 Leo B",
+          "HD 102194 B",
+          "Оранжевый карлик"
+        ],
+        "type": "K2V — Оранжевый карлик",
+        "diameter_km": 940000,
+        "mass_kg": 1.5510066e+30,
+        "gravitational_parameter_m3s2": 1.035188335e+20,
+        "mass_solar": 0.78,
+        "luminosity_solar": 0.28,
+        "temperature_k": 4950,
+        "age_gyr": 4.8,
+        "distance_from_barycenter_au": 76.5,
+        "position_au": {
+          "x": 76.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "83 Leonis A",
+          "semi_major_axis_au": 95,
+          "min_distance_au": 75,
+          "max_distance_au": 115,
+          "orbital_period_years": 385,
+          "eccentricity": 0.28
+        },
+        "planets": [
+          {
+            "name": "83 Leonis c",
+            "alternative_names": [
+              "83 Leo c",
+              "Газовый гигант 2"
+            ],
+            "distance_au": 1.85,
+            "orbital_period_days": 885,
+            "diameter_km": 125000,
+            "mass_kg": 1.104857e+27,
+            "gravitational_parameter_m3s2": 7.374147075e+16,
+            "mass_earth": 185,
+            "orbit_type": "S-type",
+            "primary_star": "83 Leonis B",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 840.0,
+            "surface_temperature_k": 155,
+            "day_length_hours": 9.8,
+            "surface_gravity_g": 2.15,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3, газодобыча)",
+            "moons": [
+              {
+                "name": "83 Leonis c-I",
+                "diameter_km": 4050,
+                "mass_kg": 1.015274e+23,
+                "gravitational_parameter_m3s2": 6776243258000.0,
+                "mass_earth": 0.017,
+                "distance_from_planet_km": 605000,
+                "atmosphere": true,
+                "atmosphere_composition": "Водород, гелий",
+                "oceans": false,
+                "orbital_period_days": 7.5,
+                "environment_preset_id": "gas_giant_ammonia"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца 83 Leonis c",
+                "distance_from_planet_km": {
+                  "inner": 50000,
+                  "outer": 170000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 76342.848,
+                    "outer": 86884.666
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.1857
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 88842.848,
+                    "outer": 109188.928
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.4726,
+                    "optical_depth": 0.2577,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.1904,
+                    "radial_structure_scale": 0.6285
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 123217.848,
+                    "outer": 169536.561
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.1857
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.0438,
+                "main_band_emphasis": 1.1904,
+                "secondary_band_emphasis": 0.6876,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.3666,
+                "radial_structure_strength": 0.6285,
+                "fine_structure_strength": 0.1857,
+                "edge_softness_scale": 0.7285,
+                "brightness_variation": 0.1657,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс 83 Leonis",
+        "distance_from_star_au": 9.5,
+        "asteroid_count": 965000,
+        "min_size_m": 26,
+        "max_size_m": 985000,
+        "avg_size_m": 2550,
+        "mining_appeal": "Высокая (лёд, редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера 83 Leonis",
+        "distance_from_star_au": 68,
+        "asteroid_count": 14500000,
+        "min_size_m": 100,
+        "max_size_m": 2250000,
+        "avg_size_m": 85000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Двойная система с двумя газовыми гигантами. Исключительно богата гелием-3. Приоритетная цель для корпораций. 2 подтверждено, 0 ожидается.",
+    "technical_notes": "Двойная система. Два газовых гиганта на разных орбитах."
+  }
+}

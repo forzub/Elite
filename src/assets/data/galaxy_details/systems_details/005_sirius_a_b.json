@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 5,
+  "name": "Sirius A+B",
+  "position_ly": {
+    "x": -1.612,
+    "y": 8.077,
+    "z": -2.474
+  },
+  "stars_count": 2,
+  "star_type": "A1Vm + DA2",
+  "stability": "Стабильная (белый карлик-компаньон)",
+  "planets_summary": "Неподтверждённые кандидаты",
+  "primary_resources": [
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "Sirius",
+      "Сириус",
+      "Песья звезда",
+      "Alpha Canis Majoris"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Sirius A",
+        "alternative_names": [
+          "Alpha CMa A",
+          "Сириус A",
+          "Песья звезда A"
+        ],
+        "type": "A1V — Белый карлик (главная последовательность)",
+        "diameter_km": 2400000,
+        "mass_kg": 4.0167094e+30,
+        "gravitational_parameter_m3s2": 2.680872355e+20,
+        "mass_solar": 2.02,
+        "luminosity_solar": 25.4,
+        "temperature_k": 9940,
+        "age_gyr": 0.25,
+        "distance_from_barycenter_au": 7.5,
+        "position_au": {
+          "x": -7.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Sirius B",
+          "semi_major_axis_au": 20,
+          "min_distance_au": 8,
+          "max_distance_au": 32,
+          "orbital_period_years": 50.1,
+          "eccentricity": 0.6
+        },
+        "planets": [],
+        "asteroid_belts": [
+          {
+            "name": "Пояс Сириуса",
+            "distance_from_star_au": 15,
+            "asteroid_count": 850000,
+            "min_size_m": 20,
+            "max_size_m": 800000,
+            "avg_size_m": 2500,
+            "mining_appeal": "Высокая (редкие элементы)"
+          }
+        ]
+      },
+      {
+        "name": "Sirius B",
+        "alternative_names": [
+          "Alpha CMa B",
+          "Сириус B",
+          "Щенок"
+        ],
+        "type": "DA2 — Белый карлик (компактный)",
+        "diameter_km": 11800,
+        "mass_kg": 1.9487006e+30,
+        "gravitational_parameter_m3s2": 1.300621241e+20,
+        "mass_solar": 0.98,
+        "luminosity_solar": 0.026,
+        "temperature_k": 25200,
+        "age_gyr": 0.25,
+        "distance_from_barycenter_au": 12.5,
+        "position_au": {
+          "x": 12.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Sirius A",
+          "semi_major_axis_au": 20,
+          "min_distance_au": 8,
+          "max_distance_au": 32,
+          "orbital_period_years": 50.1,
+          "eccentricity": 0.6
+        },
+        "planets": [],
+        "asteroid_belts": [
+          {
+            "name": "Пояс Сириуса",
+            "distance_from_star_au": 15,
+            "asteroid_count": 950000,
+            "min_size_m": 120,
+            "max_size_m": 800000,
+            "avg_size_m": 2500,
+            "mining_appeal": "Высокая (редкие элементы)"
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Койпера Сириуса",
+        "distance_from_star_au": 85,
+        "asteroid_count": 12000000,
+        "min_size_m": 100,
+        "max_size_m": 1850000,
+        "avg_size_m": 85000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Ярчайшая звезда на ночном небе Земли. Двойная система с белым карликом-компаньоном. Планеты не подтверждены, но пояс астероидов богат ресурсами.",
+    "technical_notes": "Двойная система. Sirius B — один из ближайших белых карликов. Высокая яркость Sirius A затрудняет обнаружение планет."
+  }
+}

@@ -470,17 +470,31 @@ GameServer::GameServer(){
 
         bool atlasLoaded =
         m_starAtlas.load(
-            "assets/data/star_atlas/star_systems.json",
-            "assets/data/star_atlas/system_details.json"
+            "assets/data/galaxy_details"
         );
 
         if (!atlasLoaded)
         {
             atlasLoaded =
                 m_starAtlas.load(
-                    "../assets/data/star_atlas/star_systems.json",
-                    "../assets/data/star_atlas/system_details.json"
+                    "../assets/data/galaxy_details"
                 );
+        }
+
+        if (!atlasLoaded)
+        {
+            // Developer-tree fallback when EliteGame.exe is launched
+            // from build/ and the copied runtime assets are stale or absent.
+            atlasLoaded =
+                m_starAtlas.load(
+                    "../src/assets/data/galaxy_details"
+                );
+        }
+
+        if (!atlasLoaded)
+        {
+            std::cerr
+                << "[GameServer] galaxy details catalog was not loaded\n";
         }
 
         m_playerNavigation.currentSystemId = 0;
@@ -1051,6 +1065,20 @@ world::celestial::GalaxyMapSnapshot GameServer::buildGalaxyMapSnapshot() const
         item.jurisdiction = jurisdictionForSystemId(s.id);
 
         out.systems.push_back(std::move(item));
+    }
+
+    for (const auto& source : m_starAtlas.objects())
+    {
+        world::celestial::GalaxyMapObject item;
+
+        item.id = source.id;
+        item.name = source.name;
+        item.objectType = source.objectType;
+        item.positionLy = source.positionLy;
+        item.description = source.description;
+        item.tags = source.tags;
+
+        out.objects.push_back(std::move(item));
     }
 
     return out;

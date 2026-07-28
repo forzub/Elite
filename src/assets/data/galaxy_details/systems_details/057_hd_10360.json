@@ -1,0 +1,503 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 57,
+  "name": "HD 10360",
+  "position_ly": {
+    "x": -48.5,
+    "y": 97.5,
+    "z": -28.5
+  },
+  "stars_count": 1,
+  "star_type": "K2V",
+  "stability": "Стабильный оранжевый карлик",
+  "planets_summary": "2 подтвержденные планеты (суперземли)",
+  "primary_resources": [
+    "metals",
+    "water"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "HD 10360 System",
+      "Аш Ди 10360",
+      "Система 10360"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "HD 10360",
+        "alternative_names": [
+          "HD 10360 A"
+        ],
+        "type": "K2V — Оранжевый карлик",
+        "diameter_km": 920000,
+        "mass_kg": 1.5510066e+30,
+        "gravitational_parameter_m3s2": 1.035188335e+20,
+        "mass_solar": 0.78,
+        "luminosity_solar": 0.35,
+        "temperature_k": 4900,
+        "age_gyr": 6.2,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "HD 10360 b",
+            "alternative_names": [
+              "HD 10360 b",
+              "Суперземля 1"
+            ],
+            "distance_au": 0.42,
+            "orbital_period_days": 95,
+            "diameter_km": 11500,
+            "mass_kg": 1.911104e+25,
+            "gravitational_parameter_m3s2": 1275528143000000.0,
+            "mass_earth": 3.2,
+            "orbit_type": "S-type",
+            "primary_star": "HD 10360",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.5,
+            "surface_temperature_k": 285,
+            "day_length_hours": 285,
+            "surface_gravity_g": 1.35,
+            "oceans": false,
+            "land_water_ratio": "75/25",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "HD 10360 c",
+            "alternative_names": [
+              "HD 10360 c",
+              "Суперземля в зоне обитаемости"
+            ],
+            "distance_au": 0.68,
+            "orbital_period_days": 195,
+            "diameter_km": 12800,
+            "mass_kg": 2.68749e+25,
+            "gravitational_parameter_m3s2": 1793711451000000.0,
+            "mass_earth": 4.5,
+            "orbit_type": "S-type",
+            "primary_star": "HD 10360",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 4.2,
+            "surface_temperature_k": 248,
+            "day_length_hours": 420,
+            "surface_gravity_g": 1.52,
+            "oceans": true,
+            "land_water_ratio": "45/55",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [
+              {
+                "name": "HD 10360 c-I",
+                "diameter_km": 1650,
+                "mass_kg": 4.77776e+22,
+                "gravitational_parameter_m3s2": 3188820357000.0,
+                "mass_earth": 0.008,
+                "distance_from_planet_km": 185000,
+                "atmosphere": false,
+                "oceans": false,
+                "orbital_period_days": 4.2,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "ocean_world"
+          },
+          {
+            "name": "HD 10360 d",
+            "alternative_names": [
+              "HD 10360 d",
+              "Холодная суперземля"
+            ],
+            "distance_au": 1.15,
+            "orbital_period_days": 425,
+            "diameter_km": 10500,
+            "mass_kg": 1.672216e+25,
+            "gravitational_parameter_m3s2": 1116087125000000.0,
+            "mass_earth": 2.8,
+            "orbit_type": "S-type",
+            "primary_star": "HD 10360",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.5,
+            "surface_temperature_k": 185,
+            "day_length_hours": 1020,
+            "surface_gravity_g": 1.25,
+            "oceans": false,
+            "land_water_ratio": "60/40",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "HD 10360 e",
+            "alternative_names": [
+              "HD 10360 e",
+              "Газовый карлик"
+            ],
+            "distance_au": 2.85,
+            "orbital_period_days": 1680,
+            "diameter_km": 52000,
+            "mass_kg": 1.672216e+26,
+            "gravitational_parameter_m3s2": 1.116087125e+16,
+            "mass_earth": 28,
+            "orbit_type": "S-type",
+            "primary_star": "HD 10360",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 325.0,
+            "surface_temperature_k": 95,
+            "day_length_hours": 9.5,
+            "surface_gravity_g": 1.55,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "HD 10360 e-I",
+                "diameter_km": 3200,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 485000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 6.5,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца HD 10360 e",
+                "distance_from_planet_km": {
+                  "inner": 45000,
+                  "outer": 155000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "ice_giant_methane",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible narrow dark ring system derived from ice-giant analogues.",
+              "bands": [
+                {
+                  "name": "Narrow ring 1",
+                  "distance_from_planet_km": {
+                    "inner": 41052.786,
+                    "outer": 41628.403
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1439,
+                      0.1645,
+                      0.2135
+                    ],
+                    "opacity": 0.3251,
+                    "optical_depth": 0.2437,
+                    "radial_noise_strength": 0.4082,
+                    "radial_brightness_variation": 0.1956,
+                    "azimuthal_asymmetry": 0.1369,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4065,
+                    "particle_radial_jitter": 0.2544,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 2",
+                  "distance_from_planet_km": {
+                    "inner": 42800.759,
+                    "outer": 42997.082
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1347,
+                      0.1836,
+                      0.2492
+                    ],
+                    "opacity": 0.2006,
+                    "optical_depth": 0.2235,
+                    "radial_noise_strength": 0.2045,
+                    "radial_brightness_variation": 0.1643,
+                    "azimuthal_asymmetry": 0.1396,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4065,
+                    "particle_radial_jitter": 0.2544,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 3",
+                  "distance_from_planet_km": {
+                    "inner": 45418.434,
+                    "outer": 45758.799
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1632,
+                      0.1796,
+                      0.2335
+                    ],
+                    "opacity": 0.1637,
+                    "optical_depth": 0.2626,
+                    "radial_noise_strength": 0.3611,
+                    "radial_brightness_variation": 0.2506,
+                    "azimuthal_asymmetry": 0.1165,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4065,
+                    "particle_radial_jitter": 0.2544,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 4",
+                  "distance_from_planet_km": {
+                    "inner": 47335.136,
+                    "outer": 47729.842
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1618,
+                      0.2192,
+                      0.1806
+                    ],
+                    "opacity": 0.3318,
+                    "optical_depth": 0.2346,
+                    "radial_noise_strength": 0.2302,
+                    "radial_brightness_variation": 0.1975,
+                    "azimuthal_asymmetry": 0.1554,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4065,
+                    "particle_radial_jitter": 0.2544,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 5",
+                  "distance_from_planet_km": {
+                    "inner": 49206.386,
+                    "outer": 49694.826
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1357,
+                      0.2127,
+                      0.2186
+                    ],
+                    "opacity": 0.2795,
+                    "optical_depth": 0.1309,
+                    "radial_noise_strength": 0.3099,
+                    "radial_brightness_variation": 0.1257,
+                    "azimuthal_asymmetry": 0.0384,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4065,
+                    "particle_radial_jitter": 0.2544,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 6",
+                  "distance_from_planet_km": {
+                    "inner": 51924.489,
+                    "outer": 52466.787
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1391,
+                      0.2153,
+                      0.1826
+                    ],
+                    "opacity": 0.2338,
+                    "optical_depth": 0.1541,
+                    "radial_noise_strength": 0.3678,
+                    "radial_brightness_variation": 0.2287,
+                    "azimuthal_asymmetry": 0.1138,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4065,
+                    "particle_radial_jitter": 0.2544,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 7",
+                  "distance_from_planet_km": {
+                    "inner": 54370.381,
+                    "outer": 54902.708
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1418,
+                      0.1711,
+                      0.2117
+                    ],
+                    "opacity": 0.2783,
+                    "optical_depth": 0.1931,
+                    "radial_noise_strength": 0.1961,
+                    "radial_brightness_variation": 0.2622,
+                    "azimuthal_asymmetry": 0.0551,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4065,
+                    "particle_radial_jitter": 0.2544,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0098,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.2544,
+                "azimuthal_clumping": 0.4065,
+                "cluster_scale": 0.6802,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс HD 10360",
+        "distance_from_star_au": 1.8,
+        "asteroid_count": 385000,
+        "min_size_m": 10,
+        "max_size_m": 580000,
+        "avg_size_m": 850,
+        "mining_appeal": "Высокая (металлы, вода)"
+      },
+      {
+        "name": "Пояс Койпера HD 10360",
+        "distance_from_star_au": 18,
+        "asteroid_count": 5200000,
+        "min_size_m": 100,
+        "max_size_m": 1250000,
+        "avg_size_m": 42000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Оранжевый карлик с тремя суперземлями, одна из которых в зоне обитаемости. HD 10360 c — перспективный кандидат для колонизации. Система стабильна, богата ресурсами. 3 подтверждено, 1 ожидается.",
+    "technical_notes": "Оранжевый карлик K2V. Низкая активность звезды. Планеты находятся на умеренных орбитах."
+  }
+}

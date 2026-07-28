@@ -13,6 +13,7 @@
 #include <nlohmann/json.hpp>
 
 #include "src/render/ShaderLibrary.h"
+#include "src/world/celestial/StarAtlasDatabase.h"
 
 using json = nlohmann::json;
 
@@ -102,6 +103,27 @@ bool matrixAlmostEqual(const glm::mat4& a, const glm::mat4& b, float eps = 0.000
 }
 
 
+float defaultAbsoluteMagnitudeForStarType(
+    const std::string& type
+)
+{
+    if (type.empty())
+        return 6.0f;
+
+    switch (type.front())
+    {
+        case 'O': return -5.0f;
+        case 'B': return -1.0f;
+        case 'A': return 1.0f;
+        case 'F': return 3.0f;
+        case 'G': return 5.0f;
+        case 'K': return 6.5f;
+        case 'M': return 10.0f;
+        default:  return 6.0f;
+    }
+}
+
+
 
 }
 
@@ -130,17 +152,82 @@ void GalaxyStarfieldRenderer::setCatalogFilter(
         excludeGameSystems;
 }
 
-bool GalaxyStarfieldRenderer::initialize(const std::string& atlasPath)
+bool GalaxyStarfieldRenderer::initialize(
+    const std::string& galaxyDetailsRoot
+)
 {
     if (m_initialized)
         return true;
 
-    bool realCatalogLoaded = loadRealStarCatalog("assets/data/galaxy/real_star_catalog.json");
+    bool realCatalogLoaded =
+        loadRealStarCatalog(
+            "assets/data/galaxy/real_star_catalog.json"
+        );
 
     if (!realCatalogLoaded)
     {
-        // When EliteGame.exe is launched from build/, assets may still live one level above.
-        realCatalogLoaded = loadRealStarCatalog("../assets/data/galaxy/real_star_catalog.json");
+        realCatalogLoaded =
+            loadRealStarCatalog(
+                "../assets/data/galaxy/real_star_catalog.json"
+            );
+    }
+
+    if (!realCatalogLoaded)
+    {
+        // Developer-tree fallback when running from build/.
+        realCatalogLoaded =
+            loadRealStarCatalog(
+                "../src/assets/data/galaxy/real_star_catalog.json"
+            );
+    }
+
+    const auto loadSystems =
+        [&](const std::string& root)
+        {
+            return
+                realCatalogLoaded
+                    ? mergeGameSystemsFromCatalog(root)
+                    : loadAtlasStars(root);
+        };
+
+    bool systemsLoaded =
+        loadSystems(galaxyDetailsRoot);
+
+    if (!systemsLoaded &&
+        galaxyDetailsRoot == "assets/data/galaxy_details")
+    {
+        systemsLoaded =
+            loadSystems(
+                "../assets/data/galaxy_details"
+            );
+    }
+
+    if (!systemsLoaded &&
+        galaxyDetailsRoot == "assets/data/galaxy_details")
+    {
+        systemsLoaded =
+            loadSystems(
+                "../src/assets/data/galaxy_details"
+            );
+    }
+
+    if (!systemsLoaded)
+    {
+        std::cerr
+            << "[Starfield] galaxy details catalog was not loaded; ";
+
+        if (realCatalogLoaded)
+        {
+            std::cerr
+                << "continuing with the real-star catalog"
+                << std::endl;
+        }
+        else
+        {
+            std::cerr
+                << "continuing with the procedural fallback"
+                << std::endl;
+        }
     }
 
     if (realCatalogLoaded)
@@ -152,15 +239,8 @@ bool GalaxyStarfieldRenderer::initialize(const std::string& atlasPath)
     {
         std::cerr
             << "[Starfield] real_star_catalog.json not found. "
-            << "Falling back to old atlas/procedural starfield."
+            << "Using galaxy-details systems plus procedural stars."
             << std::endl;
-
-        bool atlasLoaded = loadAtlasStars(atlasPath);
-
-        if (!atlasLoaded && atlasPath == "assets/data/star_atlas/star_systems.json")
-        {
-            atlasLoaded = loadAtlasStars("../assets/data/star_atlas/star_systems.json");
-        }
 
         generateProceduralField();
         m_milkyWayRenderer.initialize();
@@ -353,82 +433,195 @@ void GalaxyStarfieldRenderer::setObserverPositionLy(const glm::vec3& positionLy)
 
 
 
-bool GalaxyStarfieldRenderer::loadAtlasStars(const std::string& atlasPath)
+bool GalaxyStarfieldRenderer::loadAtlasStars(
+    const std::string& galaxyDetailsRoot
+)
 {
-    std::ifstream in(atlasPath);
-    if (!in.is_open())
+    std::vector<world::celestial::StarSystemSummary> systems;
+    std::string error;
+
+    if (!world::celestial::StarAtlasDatabase::
+            loadSystemSummariesFromDirectory(
+                galaxyDetailsRoot,
+                systems,
+                &error))
     {
-        std::cerr << "[Starfield] atlas not found: " << atlasPath << std::endl;
+        std::cerr
+            << "[Starfield] "
+            << error
+            << std::endl;
         return false;
     }
 
-    std::cout << "[Starfield] loading atlas: " << atlasPath << std::endl;
-
-    json root;
-    try
+    for (const auto& system : systems)
     {
-        in >> root;
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << "[Starfield] failed to parse atlas: " << e.what() << std::endl;
-        return false;
-    }
+        const glm::vec3 pos(system.positionLy);
 
-    const json* arr = nullptr;
-    if (root.contains("star_systems") && root["star_systems"].is_array())
-        arr = &root["star_systems"];
-    else if (root.is_array())
-        arr = &root;
-
-    if (!arr)
-    {
-        std::cerr << "[Starfield] atlas has no star_systems array" << std::endl;
-        return false;
-    }
-
-    for (const auto& item : *arr)
-    {
-        const float x = item.value("x_ly", 0.0f);
-        const float y = item.value("y_ly", 0.0f);
-        const float z = item.value("z_ly", 0.0f);
-
-        glm::vec3 pos(x, y, z);
         if (glm::length(pos) < kMinDirectionLength)
             continue;
 
-        const std::string type = item.value("star_type", std::string("G"));
-        glm::vec3 color = colorForStarType(type);
+        const glm::vec3 color =
+            colorForStarType(system.starType);
 
-        const float distance = std::max(0.1f, item.value("distance_ly", glm::length(pos)));
-        const int starsCount = std::max(1, item.value("stars_count", 1));
+        const float distance =
+            std::max(
+                0.1f,
+                glm::length(pos)
+            );
 
-        float brightness = 1.0f / std::sqrt(std::max(1.0f, distance));
-        brightness = std::max(
+        const int starsCount =
+            std::max(1, system.starsCount);
+
+        float brightness =
+            1.0f /
+            std::sqrt(std::max(1.0f, distance));
+
+        brightness = std::clamp(
+            brightness * 2.8f +
+                0.12f *
+                static_cast<float>(starsCount - 1),
             0.72f,
-            std::min(1.0f, brightness * 2.8f + 0.12f * static_cast<float>(starsCount - 1))
+            1.0f
         );
 
-        const float size =
-            2.4f
-            + 0.45f * static_cast<float>(starsCount - 1)
-            + brightness * 3.2f;
-        {
-            StarSource s;
-            s.positionLy = pos;
-            s.color = color;
-            s.magnitude = brightness;
-            s.size = size;
-            s.atlasStar = true;
-            m_sources.push_back(s);
-        }
+        StarSource source;
+        source.positionLy = pos;
+        source.color = color;
+        source.magnitude = brightness;
+        source.size =
+            2.4f +
+            0.45f *
+                static_cast<float>(starsCount - 1) +
+            brightness * 3.2f;
+        source.atlasStar = true;
+
+        m_sources.push_back(source);
     }
 
-    std::cout << "[Starfield] atlas stars loaded=" << m_sources.size() << std::endl;
-    return true;
+    std::cout
+        << "[Starfield] galaxy systems loaded="
+        << systems.size()
+        << " root="
+        << galaxyDetailsRoot
+        << std::endl;
+
+    return !systems.empty();
 }
 
+bool GalaxyStarfieldRenderer::mergeGameSystemsFromCatalog(
+    const std::string& galaxyDetailsRoot
+)
+{
+    std::vector<world::celestial::StarSystemSummary> systems;
+    std::string error;
 
+    if (!world::celestial::StarAtlasDatabase::
+            loadSystemSummariesFromDirectory(
+                galaxyDetailsRoot,
+                systems,
+                &error))
+    {
+        std::cerr
+            << "[Starfield] "
+            << error
+            << std::endl;
+        return false;
+    }
+
+    for (RealStar& star : m_realStars)
+    {
+        star.isGameSystem = false;
+        star.gameSystemId = -1;
+    }
+
+    std::vector<bool> claimed(
+        m_realStars.size(),
+        false
+    );
+
+    constexpr float matchDistanceLy = 0.25f;
+    int mergedCount = 0;
+    int addedCount = 0;
+
+    for (const auto& system : systems)
+    {
+        const glm::vec3 position(system.positionLy);
+
+        std::size_t bestIndex = m_realStars.size();
+        float bestDistance = matchDistanceLy;
+
+        for (std::size_t i = 0;
+             i < m_realStars.size();
+             ++i)
+        {
+            if (claimed[i])
+                continue;
+
+            const float distance =
+                glm::distance(
+                    position,
+                    m_realStars[i].positionLy
+                );
+
+            if (distance <= bestDistance)
+            {
+                bestDistance = distance;
+                bestIndex = i;
+            }
+        }
+
+        if (bestIndex < m_realStars.size())
+        {
+            RealStar& star = m_realStars[bestIndex];
+            star.isGameSystem = true;
+            star.gameSystemId = system.id;
+            claimed[bestIndex] = true;
+            ++mergedCount;
+            continue;
+        }
+
+        RealStar star;
+        star.id =
+            "GAME_SYSTEM_" +
+            std::to_string(system.id);
+        star.name = system.name;
+        star.positionLy = position;
+        star.color = colorForStarType(system.starType);
+        star.absoluteMagnitude =
+            defaultAbsoluteMagnitudeForStarType(
+                system.starType
+            );
+
+        const float distanceFromSol =
+            std::max(
+                glm::length(position),
+                0.001f
+            );
+
+        star.visualMagnitudeFromSol =
+            apparentMagnitudeFromAbsolute(
+                star.absoluteMagnitude,
+                distanceFromSol
+            );
+        star.isGameSystem = true;
+        star.gameSystemId = system.id;
+
+        m_realStars.push_back(std::move(star));
+        claimed.push_back(true);
+        ++addedCount;
+    }
+
+    std::cout
+        << "[Starfield] runtime game systems="
+        << systems.size()
+        << " merged="
+        << mergedCount
+        << " added="
+        << addedCount
+        << std::endl;
+
+    return !systems.empty();
+}
 
 
 bool GalaxyStarfieldRenderer::loadRealStarCatalog(const std::string& path)
@@ -532,18 +725,9 @@ bool GalaxyStarfieldRenderer::loadRealStarCatalog(const std::string& path)
     s.visualMagnitudeFromSol = visualMag;
     s.absoluteMagnitude = absMag;
 
-    // --- flags ---
+    // Game-system identity is merged at runtime from galaxy_details.
     s.isGameSystem = false;
-    if (item.contains("isGameSystem") && item["isGameSystem"].is_boolean())
-    {
-        s.isGameSystem = item["isGameSystem"].get<bool>();
-    }
-
     s.gameSystemId = -1;
-    if (item.contains("gameSystemId") && item["gameSystemId"].is_number_integer())
-    {
-        s.gameSystemId = item["gameSystemId"].get<int>();
-    }
 
         m_realStars.push_back(s);
     }

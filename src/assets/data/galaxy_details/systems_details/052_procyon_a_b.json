@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 52,
+  "name": "Procyon A+B",
+  "position_ly": {
+    "x": -4.82,
+    "y": -9.18,
+    "z": -5.05
+  },
+  "stars_count": 2,
+  "star_type": "F5IV-V + DQZ",
+  "stability": "Стабильная (белый карлик-компаньон)",
+  "planets_summary": "Неподтверждённые кандидаты",
+  "primary_resources": [
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "metals"
+  ],
+  "details": {
+    "alternative_names": [
+      "Procyon",
+      "Процион",
+      "Alpha Canis Minoris",
+      "Двойная Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Procyon A",
+        "alternative_names": [
+          "Procyon A",
+          "α CMi A",
+          "Жёлто-белый субгигант"
+        ],
+        "type": "F5IV-V — Жёлто-белый субгигант",
+        "diameter_km": 1680000,
+        "mass_kg": 2.8236274e+30,
+        "gravitational_parameter_m3s2": 1.884573636e+20,
+        "mass_solar": 1.42,
+        "luminosity_solar": 6.9,
+        "temperature_k": 6530,
+        "age_gyr": 1.8,
+        "distance_from_barycenter_au": 8.5,
+        "position_au": {
+          "x": -8.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Procyon B",
+          "semi_major_axis_au": 15,
+          "min_distance_au": 10,
+          "max_distance_au": 20,
+          "orbital_period_years": 40.8,
+          "eccentricity": 0.4
+        },
+        "planets": []
+      },
+      {
+        "name": "Procyon B",
+        "alternative_names": [
+          "Procyon B",
+          "α CMi B",
+          "Белый карлик"
+        ],
+        "type": "DQZ — Белый карлик",
+        "diameter_km": 13500,
+        "mass_kg": 1.193082e+30,
+        "gravitational_parameter_m3s2": 7.962987193e+19,
+        "mass_solar": 0.6,
+        "luminosity_solar": 0.0005,
+        "temperature_k": 7740,
+        "age_gyr": 1.8,
+        "distance_from_barycenter_au": 6.5,
+        "position_au": {
+          "x": 6.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Procyon A",
+          "semi_major_axis_au": 15,
+          "min_distance_au": 10,
+          "max_distance_au": 20,
+          "orbital_period_years": 40.8,
+          "eccentricity": 0.4
+        },
+        "planets": [],
+        "asteroid_belts": [
+          {
+            "name": "Пояс Проциона",
+            "distance_from_star_au": 8.5,
+            "asteroid_count": 920000,
+            "min_size_m": 25,
+            "max_size_m": 950000,
+            "avg_size_m": 2400,
+            "mining_appeal": "Высокая (редкие элементы)"
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Койпера Проциона",
+        "distance_from_star_au": 55,
+        "asteroid_count": 14000000,
+        "min_size_m": 100,
+        "max_size_m": 2150000,
+        "avg_size_m": 82000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Яркая двойная система в созвездии Малого Пса. Белый карлик-компаньон представляет научный интерес. Планеты не подтверждены. 0 подтверждено, 1 ожидается.",
+    "technical_notes": "Двойная система. Procyon B — один из ближайших белых карликов к Солнцу."
+  }
+}

@@ -30,7 +30,7 @@ namespace game::navigation
         light years.
 
     These are the same coordinates already stored in:
-        assets/data/star_atlas/star_systems.json
+        assets/data/galaxy_details/systems_details/*.json
 */
 struct GalaxyNavigationFrame
 {

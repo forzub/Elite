@@ -1,0 +1,295 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 17,
+  "name": "TRAPPIST-1",
+  "position_ly": {
+    "x": -15.82,
+    "y": 36.45,
+    "z": -6.28
+  },
+  "stars_count": 1,
+  "star_type": "M8V",
+  "stability": "Ультра-холодный карлик, умеренная активность",
+  "planets_summary": "7 планет земного типа (e, f, g — кандидаты в зоне обитаемости)",
+  "primary_resources": [
+    "water",
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "metals",
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "TRAPPIST-1",
+      "ТРАППИСТ-1",
+      "2MASS J23062928-0502285",
+      "Система Семи Сестёр"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "TRAPPIST-1",
+        "alternative_names": [
+          "2MASS J23062928-0502285",
+          "ТРАППИСТ-1 A"
+        ],
+        "type": "M8V — Ультра-холодный красный карлик",
+        "diameter_km": 165000,
+        "mass_kg": 1.7697383e+29,
+        "gravitational_parameter_m3s2": 1.181176434e+19,
+        "mass_solar": 0.089,
+        "luminosity_solar": 0.0005,
+        "temperature_k": 2560,
+        "age_gyr": 7.6,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "TRAPPIST-1 b",
+            "alternative_names": [
+              "TRAPPIST-1 b",
+              "Сестра 1",
+              "Ад"
+            ],
+            "distance_au": 0.011,
+            "orbital_period_days": 1.5,
+            "diameter_km": 14200,
+            "mass_kg": 8.241636e+24,
+            "gravitational_parameter_m3s2": 550071511500000.0,
+            "mass_earth": 1.38,
+            "orbit_type": "S-type",
+            "primary_star": "TRAPPIST-1",
+            "discovery_status": "подтверждена",
+            "atmosphere": false,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.0,
+            "surface_temperature_k": 400,
+            "day_length_hours": 36,
+            "surface_gravity_g": 1.02,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Низкая (высокая температура)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "airless_rocky"
+          },
+          {
+            "name": "TRAPPIST-1 c",
+            "alternative_names": [
+              "TRAPPIST-1 c",
+              "Сестра 2",
+              "Венера-подобная"
+            ],
+            "distance_au": 0.015,
+            "orbital_period_days": 2.4,
+            "diameter_km": 13800,
+            "mass_kg": 7.883304e+24,
+            "gravitational_parameter_m3s2": 526155358900000.0,
+            "mass_earth": 1.32,
+            "orbit_type": "S-type",
+            "primary_star": "TRAPPIST-1",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 5.5,
+            "surface_temperature_k": 340,
+            "day_length_hours": 58,
+            "surface_gravity_g": 0.98,
+            "oceans": false,
+            "land_water_ratio": "95/5",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "TRAPPIST-1 d",
+            "alternative_names": [
+              "TRAPPIST-1 d",
+              "Сестра 3",
+              "Пустыня"
+            ],
+            "distance_au": 0.021,
+            "orbital_period_days": 4.0,
+            "diameter_km": 11200,
+            "mass_kg": 4.658316e+24,
+            "gravitational_parameter_m3s2": 310909984800000.0,
+            "mass_earth": 0.78,
+            "orbit_type": "S-type",
+            "primary_star": "TRAPPIST-1",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 1.2,
+            "surface_temperature_k": 285,
+            "day_length_hours": 96,
+            "surface_gravity_g": 0.88,
+            "oceans": false,
+            "land_water_ratio": "85/15",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "TRAPPIST-1 e",
+            "alternative_names": [
+              "TRAPPIST-1 e",
+              "Сестра 4",
+              "Надежда"
+            ],
+            "distance_au": 0.029,
+            "orbital_period_days": 6.1,
+            "diameter_km": 11800,
+            "mass_kg": 5.494424e+24,
+            "gravitational_parameter_m3s2": 366714341000000.0,
+            "mass_earth": 0.92,
+            "orbit_type": "S-type",
+            "primary_star": "TRAPPIST-1",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 1.5,
+            "surface_temperature_k": 251,
+            "day_length_hours": 146,
+            "surface_gravity_g": 0.92,
+            "oceans": true,
+            "land_water_ratio": "50/50",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "ocean_world"
+          },
+          {
+            "name": "TRAPPIST-1 f",
+            "alternative_names": [
+              "TRAPPIST-1 f",
+              "Сестра 5",
+              "Вера"
+            ],
+            "distance_au": 0.038,
+            "orbital_period_days": 9.2,
+            "diameter_km": 13500,
+            "mass_kg": 6.211088e+24,
+            "gravitational_parameter_m3s2": 414546646400000.0,
+            "mass_earth": 1.04,
+            "orbit_type": "S-type",
+            "primary_star": "TRAPPIST-1",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.0,
+            "surface_temperature_k": 219,
+            "day_length_hours": 221,
+            "surface_gravity_g": 0.96,
+            "oceans": true,
+            "land_water_ratio": "30/70",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "TRAPPIST-1 g",
+            "alternative_names": [
+              "TRAPPIST-1 g",
+              "Сестра 6",
+              "Любовь"
+            ],
+            "distance_au": 0.047,
+            "orbital_period_days": 12.4,
+            "diameter_km": 14100,
+            "mass_kg": 7.883304e+24,
+            "gravitational_parameter_m3s2": 526155358900000.0,
+            "mass_earth": 1.32,
+            "orbit_type": "S-type",
+            "primary_star": "TRAPPIST-1",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.5,
+            "surface_temperature_k": 199,
+            "day_length_hours": 298,
+            "surface_gravity_g": 1.05,
+            "oceans": true,
+            "land_water_ratio": "20/80",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "TRAPPIST-1 h",
+            "alternative_names": [
+              "TRAPPIST-1 h",
+              "Сестра 7",
+              "Ледяной мир"
+            ],
+            "distance_au": 0.062,
+            "orbital_period_days": 18.8,
+            "diameter_km": 10800,
+            "mass_kg": 4.061096e+24,
+            "gravitational_parameter_m3s2": 271049730300000.0,
+            "mass_earth": 0.68,
+            "orbit_type": "S-type",
+            "primary_star": "TRAPPIST-1",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 1.8,
+            "surface_temperature_k": 165,
+            "day_length_hours": 451,
+            "surface_gravity_g": 0.85,
+            "oceans": false,
+            "land_water_ratio": "10/90",
+            "ocean_composition": "Вода (H₂O) — лёд",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс TRAPPIST-1",
+        "distance_from_star_au": 0.1,
+        "asteroid_count": 150000,
+        "min_size_m": 5,
+        "max_size_m": 280000,
+        "avg_size_m": 450,
+        "mining_appeal": "Средняя (лёд, металлы)"
+      },
+      {
+        "name": "Пояс Койпера TRAPPIST-1",
+        "distance_from_star_au": 0.35,
+        "asteroid_count": 2800000,
+        "min_size_m": 50,
+        "max_size_m": 580000,
+        "avg_size_m": 18000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Семь планет земного типа, три в зоне обитаемости. Самая компактная планетная система из известных. Все 7 подтверждены.",
+    "technical_notes": "Ультра-холодный красный карлик. Все планеты находятся ближе к звезде, чем Меркурий к Солнцу."
+  }
+}

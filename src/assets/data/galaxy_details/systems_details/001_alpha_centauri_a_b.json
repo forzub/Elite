@@ -1,0 +1,419 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 1,
+  "name": "Alpha Centauri A+B",
+  "position_ly": {
+    "x": -1.634,
+    "y": -1.366,
+    "z": -3.816
+  },
+  "stars_count": 2,
+  "star_type": "G2V + K1V",
+  "stability": "Стабильная (двойная система, компоненты A и B стабильны)",
+  "planets_summary": "Альфа Центавра A и B — кандидаты",
+  "primary_resources": [
+    "rare_metals",
+    "helium3"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "observational_reference_2026": {
+    "source": "NASA Exoplanet Archive",
+    "retrieved_utc": "2026-07-28",
+    "source_url": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima",
+    "scope": "Alpha Centauri A and B only; Proxima Centauri is catalog system 60.",
+    "objects": [
+      {
+        "name": "Alpha Centauri A b",
+        "status": "candidate",
+        "semi_major_axis_au": 1.9,
+        "parameter_epoch": 2025
+      },
+      {
+        "name": "Alpha Centauri B b",
+        "status": "false_positive",
+        "orbital_period_days": 3.2357
+      }
+    ],
+    "gameplay_note": "Bodies in details are procedural future-gameplay bodies for year 3026 and are not claims about confirmed planets in 2026."
+  },
+  "details": {
+    "alternative_names": [
+      "Rigil Kentaurus",
+      "Toliman",
+      "α Cen"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Alpha Centauri A",
+        "alternative_names": [
+          "α Cen A",
+          "HD 128620"
+        ],
+        "type": "G2V — Жёлтый карлик",
+        "diameter_km": 1420000,
+        "mass_kg": 2.187317e+30,
+        "gravitational_parameter_m3s2": 1.459880985e+20,
+        "mass_solar": 1.1,
+        "luminosity_solar": 1.5,
+        "temperature_k": 5800,
+        "age_gyr": 5.0,
+        "distance_from_barycenter_au": 10.4,
+        "position_au": {
+          "x": -10.4,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Alpha Centauri B",
+          "semi_major_axis_au": 23.4,
+          "orbital_period_years": 79.9
+        },
+        "planets": [
+          {
+            "name": "Alpha Centauri Ab",
+            "alternative_names": [
+              "α Cen Ab",
+              "Надежда"
+            ],
+            "distance_au": 1.2,
+            "orbital_period_days": 420,
+            "diameter_km": 8500,
+            "mass_kg": 3.88193e+24,
+            "gravitational_parameter_m3s2": 259091654000000.0,
+            "mass_earth": 0.65,
+            "orbit_type": "S-type",
+            "primary_star": "Alpha Centauri A",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_density": 0.8,
+            "surface_temperature_k": 260,
+            "surface_gravity_g": 0.85,
+            "oceans": false,
+            "land_water_ratio": "90/10",
+            "mining_appeal": "Высокая (редкие минералы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere",
+            "data_origin": "procedural_future_gameplay"
+          },
+          {
+            "name": "Alpha Centauri Ac",
+            "alternative_names": [
+              "α Cen Ac",
+              "Вера"
+            ],
+            "distance_au": 2.8,
+            "orbital_period_days": 1580,
+            "diameter_km": 12500,
+            "mass_kg": 1.074996e+25,
+            "gravitational_parameter_m3s2": 717484580300000.0,
+            "mass_earth": 1.8,
+            "orbit_type": "S-type",
+            "primary_star": "Alpha Centauri A",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения внешнего пояса",
+            "atmosphere": true,
+            "atmosphere_density": 1.5,
+            "surface_temperature_k": 185,
+            "surface_gravity_g": 1.05,
+            "oceans": false,
+            "land_water_ratio": "85/15",
+            "mining_appeal": "Средняя",
+            "moons": [
+              {
+                "name": "Alpha Centauri Ac-I",
+                "diameter_km": 980,
+                "mass_kg": 2.38888e+22,
+                "gravitational_parameter_m3s2": 1594410178000.0,
+                "mass_earth": 0.004,
+                "distance_from_planet_km": 125000,
+                "orbital_period_days": 2.5,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world",
+            "data_origin": "procedural_future_gameplay"
+          },
+          {
+            "name": "Alpha Centauri Ad",
+            "alternative_names": [
+              "α Cen Ad",
+              "Любовь"
+            ],
+            "distance_au": 5.5,
+            "orbital_period_days": 4200,
+            "diameter_km": 95000,
+            "mass_kg": 5.07637e+26,
+            "gravitational_parameter_m3s2": 3.388121629e+16,
+            "mass_earth": 85,
+            "orbit_type": "S-type",
+            "primary_star": "Alpha Centauri A",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Долгосрочные аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_density": 750.0,
+            "surface_temperature_k": 95,
+            "surface_gravity_g": 1.95,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "Alpha Centauri Ad-I",
+                "diameter_km": 3200,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 485000,
+                "orbital_period_days": 6.8,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Alpha Centauri Ad",
+                "distance_from_planet_km": {
+                  "inner": 58000,
+                  "outer": 185000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 59417.37,
+                    "outer": 67888.739
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2132
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 68917.37,
+                    "outer": 80733.731
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.4099,
+                    "optical_depth": 0.2041,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.2408,
+                    "radial_structure_scale": 0.6698
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 95042.37,
+                    "outer": 119458.515
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2132
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.0621,
+                "main_band_emphasis": 1.2408,
+                "secondary_band_emphasis": 0.7242,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.4468,
+                "radial_structure_strength": 0.6698,
+                "fine_structure_strength": 0.2132,
+                "edge_softness_scale": 0.7698,
+                "brightness_variation": 0.1932,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            },
+            "data_origin": "procedural_future_gameplay"
+          }
+        ],
+        "asteroid_belts": [
+          {
+            "name": "Пояс Альфа",
+            "distance_from_star_au": 3.5,
+            "asteroid_count": 250000,
+            "mining_appeal": "Высокая"
+          }
+        ]
+      },
+      {
+        "name": "Alpha Centauri B",
+        "alternative_names": [
+          "α Cen B",
+          "HD 128621"
+        ],
+        "type": "K1V — Оранжевый карлик",
+        "diameter_km": 1100000,
+        "mass_kg": 1.8095077e+30,
+        "gravitational_parameter_m3s2": 1.207719724e+20,
+        "mass_solar": 0.91,
+        "luminosity_solar": 0.5,
+        "temperature_k": 5200,
+        "age_gyr": 5.0,
+        "distance_from_barycenter_au": 12.6,
+        "position_au": {
+          "x": 12.6,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Alpha Centauri A",
+          "semi_major_axis_au": 23.4,
+          "orbital_period_years": 79.9
+        },
+        "planets": [
+          {
+            "name": "Alpha Centauri Ba",
+            "alternative_names": [
+              "α Cen Ba",
+              "Пустыня B"
+            ],
+            "distance_au": 0.9,
+            "orbital_period_days": 285,
+            "diameter_km": 9200,
+            "mass_kg": 4.299984e+24,
+            "gravitational_parameter_m3s2": 286993832100000.0,
+            "mass_earth": 0.72,
+            "orbit_type": "S-type",
+            "primary_star": "Alpha Centauri B",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_density": 0.6,
+            "surface_temperature_k": 245,
+            "surface_gravity_g": 0.88,
+            "oceans": false,
+            "land_water_ratio": "92/8",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere",
+            "data_origin": "procedural_future_gameplay"
+          },
+          {
+            "name": "Alpha Centauri Bb",
+            "alternative_names": [
+              "α Cen Bb",
+              "Лёд B"
+            ],
+            "distance_au": 1.8,
+            "orbital_period_days": 820,
+            "diameter_km": 11000,
+            "mass_kg": 8.9583e+24,
+            "gravitational_parameter_m3s2": 597903816900000.0,
+            "mass_earth": 1.5,
+            "orbit_type": "S-type",
+            "primary_star": "Alpha Centauri B",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Периодические затемнения звезды",
+            "atmosphere": true,
+            "atmosphere_density": 1.2,
+            "surface_temperature_k": 165,
+            "surface_gravity_g": 0.98,
+            "oceans": false,
+            "land_water_ratio": "75/25",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world",
+            "data_origin": "procedural_future_gameplay"
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Койпера Альфа",
+        "distance_from_star_au": 45,
+        "asteroid_count": 8000000,
+        "mining_appeal": "Высокая"
+      }
+    ],
+    "lore_notes": "Ближайшая звёздная система. 5 планет между двумя звёздами. Проксима — отдельная система.",
+    "technical_notes": "Двойная система. Планеты S-type вокруг отдельных звёзд. Проксима Центавра не входит в этот файл и хранится как система 60. Тела в details являются процедурной моделью игрового 3026 года; наблюдательный статус 2026 хранится отдельно в observational_reference_2026."
+  }
+}

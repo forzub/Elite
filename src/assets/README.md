@@ -4,10 +4,10 @@ This directory contains runtime assets and source data copied into the build tre
 
 ## Galaxy data
 
-- `data/star_atlas/star_systems.json` is the only star-system summary catalog.
-- `data/star_atlas/system_details.json` is the current detailed-system catalog until the directory-based galaxy catalog migration is completed.
-- `data/galaxy/real_star_catalog.json` contains the extended real-star background catalog.
-- `data/galaxy/systems.json` belongs to the separate legacy `GalaxyDatabase` graph (`actors`, `nodes`, and `routes`) and is not a duplicate of the star atlas.
+- `data/galaxy_details/systems_details/*.json` is the only physical star-system catalog. Each file owns both galactic summary data and internal celestial-body details.
+- `data/galaxy_details/objects_details/*.json` contains automatically discovered free interstellar objects.
+- `data/galaxy/systems.json` remains a separate political/navigation layer used by `GalaxyDatabase`; it is not a physical star-system catalog.
+- `data/galaxy/real_star_catalog.json` contains only the extended real-star background. Game systems are merged into it at runtime from `galaxy_details`.
 
 ## Shared shaders
 

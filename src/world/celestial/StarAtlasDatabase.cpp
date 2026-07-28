@@ -3,6 +3,11 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <cctype>
+#include <filesystem>
+#include <sstream>
+#include <unordered_map>
+#include <stdexcept>
 
 #include <nlohmann/json.hpp>
 
@@ -23,6 +28,903 @@ json loadJson(const std::string& path)
     json j;
     f >> j;
     return j;
+}
+
+
+namespace fs = std::filesystem;
+
+struct SystemCatalogDocument
+{
+    fs::path sourcePath;
+    StarSystemSummary summary;
+    json details;
+};
+
+std::string normalizeCatalogName(std::string value)
+{
+    std::string normalized;
+    normalized.reserve(value.size());
+
+    bool pendingSpace = false;
+
+    for (unsigned char c : value)
+    {
+        if (std::isspace(c))
+        {
+            pendingSpace = !normalized.empty();
+            continue;
+        }
+
+        if (pendingSpace)
+        {
+            normalized.push_back(' ');
+            pendingSpace = false;
+        }
+
+        normalized.push_back(
+            static_cast<char>(std::tolower(c))
+        );
+    }
+
+    return normalized;
+}
+
+bool readPositionLy(
+    const json& source,
+    glm::dvec3& out
+)
+{
+    if (!source.is_object())
+        return false;
+
+    const auto numeric =
+        [&](const char* key)
+        {
+            return
+                source.contains(key) &&
+                source[key].is_number();
+        };
+
+    if (!numeric("x") ||
+        !numeric("y") ||
+        !numeric("z"))
+    {
+        return false;
+    }
+
+    out = glm::dvec3(
+        source["x"].get<double>(),
+        source["y"].get<double>(),
+        source["z"].get<double>()
+    );
+
+    return true;
+}
+
+bool collectJsonFiles(
+    const fs::path& directory,
+    bool allowEmpty,
+    std::vector<fs::path>& outFiles,
+    std::string& error
+)
+{
+    outFiles.clear();
+
+    std::error_code ec;
+
+    if (!fs::exists(directory, ec) ||
+        !fs::is_directory(directory, ec))
+    {
+        error =
+            "directory does not exist: " +
+            directory.generic_string();
+        return false;
+    }
+
+    fs::directory_iterator it(directory, ec);
+    fs::directory_iterator end;
+
+    if (ec)
+    {
+        error =
+            "cannot enumerate directory: " +
+            directory.generic_string() +
+            ": " + ec.message();
+        return false;
+    }
+
+    for (; it != end; it.increment(ec))
+    {
+        if (ec)
+        {
+            error =
+                "directory iteration failed: " +
+                directory.generic_string() +
+                ": " + ec.message();
+            return false;
+        }
+
+        const fs::directory_entry& entry = *it;
+
+        if (!entry.is_regular_file(ec) || ec)
+        {
+            ec.clear();
+            continue;
+        }
+
+        const fs::path path = entry.path();
+
+        if (path.extension() == ".json")
+            outFiles.push_back(path);
+    }
+
+    std::sort(
+        outFiles.begin(),
+        outFiles.end(),
+        [](const fs::path& a, const fs::path& b)
+        {
+            return a.generic_string() < b.generic_string();
+        }
+    );
+
+    if (!allowEmpty && outFiles.empty())
+    {
+        error =
+            "no JSON files found in: " +
+            directory.generic_string();
+        return false;
+    }
+
+    return true;
+}
+
+bool parseSystemCatalogFile(
+    const fs::path& path,
+    StarSystemCatalogScope catalogScope,
+    SystemCatalogDocument& out,
+    std::string& error
+)
+{
+    json root;
+
+    try
+    {
+        root = loadJson(path.string());
+    }
+    catch (const std::exception& e)
+    {
+        error = e.what();
+        return false;
+    }
+
+    const auto fail =
+        [&](const std::string& message)
+        {
+            error =
+                path.generic_string() +
+                ": " + message;
+            return false;
+        };
+
+    if (!root.is_object())
+        return fail("root must be an object");
+
+    if (!root.contains("schema_version") ||
+        !root["schema_version"].is_number_integer() ||
+        root["schema_version"].get<int>() != 1)
+    {
+        return fail("unsupported or missing schema_version");
+    }
+
+    if (!root.contains("kind") ||
+        !root["kind"].is_string() ||
+        root["kind"].get<std::string>() != "star_system")
+    {
+        return fail("kind must be 'star_system'");
+    }
+
+    if (!root.contains("id") ||
+        !root["id"].is_number_integer())
+    {
+        return fail("id must be an integer");
+    }
+
+    out.summary.id = root["id"].get<int>();
+
+    if (out.summary.id < 0)
+        return fail("id must be non-negative");
+
+    if (catalogScope == StarSystemCatalogScope::Local &&
+        out.summary.id >= 100000)
+    {
+        return fail("local system id must be below 100000");
+    }
+
+    if (catalogScope == StarSystemCatalogScope::Distant &&
+        out.summary.id < 100000)
+    {
+        return fail("distant system id must be at least 100000");
+    }
+
+    if (!root.contains("name") ||
+        !root["name"].is_string())
+    {
+        return fail("name must be a string");
+    }
+
+    out.summary.name = root["name"].get<std::string>();
+
+    if (out.summary.name.empty())
+        return fail("name must not be empty");
+
+    if (!root.contains("position_ly") ||
+        !readPositionLy(root["position_ly"], out.summary.positionLy))
+    {
+        return fail("position_ly must contain numeric x, y and z");
+    }
+
+    if (root.contains("distance_ly"))
+    {
+        return fail(
+            "distance_ly is derived from position_ly and must not be stored"
+        );
+    }
+
+    if (!root.contains("stars_count") ||
+        !root["stars_count"].is_number_integer())
+    {
+        return fail("stars_count must be an integer");
+    }
+
+    out.summary.starsCount =
+        root["stars_count"].get<int>();
+
+    if (out.summary.starsCount < 1)
+        return fail("stars_count must be positive");
+
+    if (!root.contains("star_type") ||
+        !root["star_type"].is_string())
+    {
+        return fail("star_type must be a string");
+    }
+
+    out.summary.starType =
+        root["star_type"].get<std::string>();
+
+    out.summary.catalogScope = catalogScope;
+    out.summary.atlasVisible =
+        catalogScope == StarSystemCatalogScope::Local;
+    out.summary.routeTarget = true;
+
+    if (root.contains("catalog_scope"))
+    {
+        if (!root["catalog_scope"].is_string())
+            return fail("catalog_scope must be a string");
+
+        const std::string expectedScope =
+            catalogScope == StarSystemCatalogScope::Distant
+                ? "distant"
+                : "local";
+
+        if (root["catalog_scope"].get<std::string>() != expectedScope)
+        {
+            return fail(
+                "catalog_scope does not match the containing directory"
+            );
+        }
+    }
+    else if (catalogScope == StarSystemCatalogScope::Distant)
+    {
+        return fail("distant systems require catalog_scope='distant'");
+    }
+
+    if (root.contains("atlas_visible"))
+    {
+        if (!root["atlas_visible"].is_boolean())
+            return fail("atlas_visible must be a boolean");
+
+        out.summary.atlasVisible =
+            root["atlas_visible"].get<bool>();
+    }
+
+    if (root.contains("route_target"))
+    {
+        if (!root["route_target"].is_boolean())
+            return fail("route_target must be a boolean");
+
+        out.summary.routeTarget =
+            root["route_target"].get<bool>();
+    }
+
+    if (root.contains("quest_role"))
+    {
+        if (!root["quest_role"].is_string())
+            return fail("quest_role must be a string");
+
+        out.summary.questRole =
+            root["quest_role"].get<std::string>();
+    }
+
+    if (catalogScope == StarSystemCatalogScope::Distant &&
+        out.summary.atlasVisible)
+    {
+        return fail(
+            "distant systems must set atlas_visible=false in the current atlas"
+        );
+    }
+
+    if (!root.contains("details") ||
+        !root["details"].is_object())
+    {
+        return fail("details must be an object");
+    }
+
+    out.sourcePath = path;
+    out.details = root["details"];
+
+    const auto requireArray =
+        [&](const char* key)
+        {
+            return
+                !out.details.contains(key) ||
+                out.details[key].is_array();
+        };
+
+    if (!requireArray("stars") ||
+        !requireArray("system_planets") ||
+        !requireArray("asteroid_belts"))
+    {
+        return fail(
+            "details.stars, details.system_planets and "
+            "details.asteroid_belts must be arrays"
+        );
+    }
+
+    if (out.details.contains("center_of_mass") &&
+        !out.details["center_of_mass"].is_object())
+    {
+        return fail("details.center_of_mass must be an object");
+    }
+
+    if (out.details.contains("stars") &&
+        static_cast<int>(out.details["stars"].size()) !=
+            out.summary.starsCount)
+    {
+        return fail(
+            "stars_count does not match details.stars size"
+        );
+    }
+
+    return true;
+}
+
+struct CatalogLoadReport
+{
+    std::size_t filesDiscovered = 0;
+    std::size_t filesLoaded = 0;
+    std::size_t filesSkipped = 0;
+    std::vector<std::string> skippedMessages;
+};
+
+void addCatalogSkip(
+    CatalogLoadReport& report,
+    const std::string& message
+)
+{
+    ++report.filesSkipped;
+    report.skippedMessages.push_back(message);
+}
+
+void addCatalogSkip(
+    CatalogLoadReport& report,
+    const fs::path& path,
+    const std::string& reason
+)
+{
+    addCatalogSkip(
+        report,
+        path.generic_string() + ": " + reason
+    );
+}
+
+void printCatalogSkips(
+    const char* prefix,
+    const char* category,
+    const CatalogLoadReport& report
+)
+{
+    for (const std::string& message : report.skippedMessages)
+    {
+        std::cerr
+            << prefix
+            << " skipped invalid "
+            << category
+            << " file: "
+            << message
+            << "\n";
+    }
+}
+
+bool loadSystemCatalogDocuments(
+    const std::string& galaxyDetailsRoot,
+    const char* directoryName,
+    StarSystemCatalogScope catalogScope,
+    bool allowMissingOrEmpty,
+    std::vector<SystemCatalogDocument>& outDocuments,
+    CatalogLoadReport& report,
+    std::string& fatalError
+)
+{
+    report = CatalogLoadReport {};
+
+    const fs::path directory =
+        fs::path(galaxyDetailsRoot) /
+        directoryName;
+
+    if (allowMissingOrEmpty)
+    {
+        std::error_code existsError;
+
+        if (!fs::exists(directory, existsError))
+        {
+            if (existsError)
+            {
+                fatalError =
+                    "cannot inspect directory: " +
+                    directory.generic_string() +
+                    ": " + existsError.message();
+                return false;
+            }
+
+            outDocuments.clear();
+            fatalError.clear();
+            return true;
+        }
+    }
+
+    std::vector<fs::path> files;
+
+    if (!collectJsonFiles(
+            directory,
+            allowMissingOrEmpty,
+            files,
+            fatalError))
+    {
+        return false;
+    }
+
+    report.filesDiscovered = files.size();
+
+    outDocuments.clear();
+    outDocuments.reserve(files.size());
+
+    std::unordered_map<int, fs::path> idSources;
+    std::unordered_map<std::string, fs::path> nameSources;
+
+    for (const fs::path& path : files)
+    {
+        SystemCatalogDocument document;
+        std::string fileError;
+
+        if (!parseSystemCatalogFile(
+                path,
+                catalogScope,
+                document,
+                fileError))
+        {
+            addCatalogSkip(report, fileError);
+            continue;
+        }
+
+        const auto existingId =
+            idSources.find(document.summary.id);
+
+        if (existingId != idSources.end())
+        {
+            std::ostringstream reason;
+            reason
+                << "duplicate system id="
+                << document.summary.id
+                << "; first valid definition kept from "
+                << existingId->second.generic_string();
+
+            addCatalogSkip(report, path, reason.str());
+            continue;
+        }
+
+        const std::string normalizedName =
+            normalizeCatalogName(
+                document.summary.name
+            );
+
+        const auto existingName =
+            nameSources.find(normalizedName);
+
+        if (existingName != nameSources.end())
+        {
+            std::ostringstream reason;
+            reason
+                << "duplicate normalized system name '"
+                << document.summary.name
+                << "'; first valid definition kept from "
+                << existingName->second.generic_string();
+
+            addCatalogSkip(report, path, reason.str());
+            continue;
+        }
+
+        const SystemCatalogDocument* identicalPosition = nullptr;
+
+        for (const SystemCatalogDocument& existingDocument :
+             outDocuments)
+        {
+            const glm::dvec3 delta =
+                existingDocument.summary.positionLy -
+                document.summary.positionLy;
+
+            const double distanceSquared =
+                delta.x * delta.x +
+                delta.y * delta.y +
+                delta.z * delta.z;
+
+            if (distanceSquared < 1.0e-12)
+            {
+                identicalPosition = &existingDocument;
+                break;
+            }
+        }
+
+        if (identicalPosition)
+        {
+            addCatalogSkip(
+                report,
+                path,
+                "position_ly is identical to first valid definition " +
+                    identicalPosition->sourcePath.generic_string()
+            );
+            continue;
+        }
+
+        idSources.emplace(
+            document.summary.id,
+            path
+        );
+
+        nameSources.emplace(
+            normalizedName,
+            path
+        );
+
+        outDocuments.push_back(
+            std::move(document)
+        );
+    }
+
+    std::sort(
+        outDocuments.begin(),
+        outDocuments.end(),
+        [](
+            const SystemCatalogDocument& a,
+            const SystemCatalogDocument& b
+        )
+        {
+            return a.summary.id < b.summary.id;
+        }
+    );
+
+    report.filesLoaded = outDocuments.size();
+
+    if (!allowMissingOrEmpty && outDocuments.empty())
+    {
+        std::ostringstream message;
+        message
+            << "no valid star-system JSON files found in: "
+            << directory.generic_string()
+            << " (discovered="
+            << report.filesDiscovered
+            << ", skipped="
+            << report.filesSkipped
+            << ")";
+
+        fatalError = message.str();
+        return false;
+    }
+
+    fatalError.clear();
+    return true;
+}
+
+void removeDistantCatalogConflicts(
+    const std::vector<SystemCatalogDocument>& localDocuments,
+    std::vector<SystemCatalogDocument>& distantDocuments,
+    CatalogLoadReport& distantReport
+)
+{
+    std::vector<SystemCatalogDocument> accepted;
+    accepted.reserve(distantDocuments.size());
+
+    for (SystemCatalogDocument& distant : distantDocuments)
+    {
+        std::string conflictReason;
+
+        for (const SystemCatalogDocument& local : localDocuments)
+        {
+            if (distant.summary.id == local.summary.id)
+            {
+                conflictReason =
+                    "system id conflicts with local definition " +
+                    local.sourcePath.generic_string();
+                break;
+            }
+
+            if (normalizeCatalogName(distant.summary.name) ==
+                normalizeCatalogName(local.summary.name))
+            {
+                conflictReason =
+                    "system name conflicts with local definition " +
+                    local.sourcePath.generic_string();
+                break;
+            }
+
+            const glm::dvec3 delta =
+                local.summary.positionLy -
+                distant.summary.positionLy;
+
+            const double distanceSquared =
+                delta.x * delta.x +
+                delta.y * delta.y +
+                delta.z * delta.z;
+
+            if (distanceSquared < 1.0e-12)
+            {
+                conflictReason =
+                    "position_ly conflicts with local definition " +
+                    local.sourcePath.generic_string();
+                break;
+            }
+        }
+
+        if (!conflictReason.empty())
+        {
+            addCatalogSkip(
+                distantReport,
+                distant.sourcePath,
+                conflictReason + "; local definition kept"
+            );
+            continue;
+        }
+
+        accepted.push_back(std::move(distant));
+    }
+
+    distantDocuments = std::move(accepted);
+    distantReport.filesLoaded = distantDocuments.size();
+}
+
+bool parseGalaxyObjectFile(
+    const fs::path& path,
+    GalaxyObjectDefinition& out,
+    std::string& error
+)
+{
+    json root;
+
+    try
+    {
+        root = loadJson(path.string());
+
+        const auto fail =
+            [&](const std::string& message)
+            {
+                error =
+                    path.generic_string() +
+                    ": " + message;
+                return false;
+            };
+
+        if (!root.is_object())
+            return fail("root must be an object");
+
+        if (!root.contains("schema_version") ||
+            !root["schema_version"].is_number_integer() ||
+            root["schema_version"].get<int>() != 1)
+        {
+            return fail("unsupported or missing schema_version");
+        }
+
+        if (!root.contains("kind") ||
+            !root["kind"].is_string() ||
+            root["kind"].get<std::string>() != "galaxy_object")
+        {
+            return fail("kind must be 'galaxy_object'");
+        }
+
+        GalaxyObjectDefinition object;
+
+        if (!root.contains("id") ||
+            !root["id"].is_string())
+        {
+            return fail("id must be a string");
+        }
+
+        object.id = root["id"].get<std::string>();
+
+        if (object.id.empty())
+            return fail("id must not be empty");
+
+        if (!root.contains("name") ||
+            !root["name"].is_string())
+        {
+            return fail("name must be a string");
+        }
+
+        object.name = root["name"].get<std::string>();
+
+        if (object.name.empty())
+            return fail("name must not be empty");
+
+        if (!root.contains("object_type") ||
+            !root["object_type"].is_string())
+        {
+            return fail("object_type must be a string");
+        }
+
+        object.objectType =
+            root["object_type"].get<std::string>();
+
+        if (object.objectType.empty())
+            return fail("object_type must not be empty");
+
+        if (!root.contains("position_ly") ||
+            !readPositionLy(root["position_ly"], object.positionLy))
+        {
+            return fail("position_ly must contain numeric x, y and z");
+        }
+
+        if (root.contains("description"))
+        {
+            if (!root["description"].is_string())
+                return fail("description must be a string");
+
+            object.description =
+                root["description"].get<std::string>();
+        }
+
+        if (root.contains("tags"))
+        {
+            if (!root["tags"].is_array())
+                return fail("tags must be an array");
+
+            for (const json& tag : root["tags"])
+            {
+                if (!tag.is_string())
+                    return fail("every tag must be a string");
+
+                object.tags.push_back(
+                    tag.get<std::string>()
+                );
+            }
+        }
+
+        if (root.contains("properties"))
+        {
+            if (!root["properties"].is_object())
+                return fail("properties must be an object");
+
+            object.properties = root["properties"];
+        }
+
+        out = std::move(object);
+        error.clear();
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        error =
+            path.generic_string() +
+            ": " + e.what();
+        return false;
+    }
+}
+
+bool loadGalaxyObjects(
+    const std::string& galaxyDetailsRoot,
+    std::vector<GalaxyObjectDefinition>& outObjects,
+    CatalogLoadReport& report,
+    std::string& fatalError
+)
+{
+    report = CatalogLoadReport {};
+
+    const fs::path directory =
+        fs::path(galaxyDetailsRoot) /
+        "objects_details";
+
+    std::error_code directoryError;
+
+    if (!fs::exists(directory, directoryError))
+    {
+        if (directoryError)
+        {
+            fatalError =
+                "cannot inspect directory: " +
+                directory.generic_string() +
+                ": " + directoryError.message();
+            return false;
+        }
+
+        outObjects.clear();
+        fatalError.clear();
+        return true;
+    }
+
+    std::vector<fs::path> files;
+
+    if (!collectJsonFiles(
+            directory,
+            true,
+            files,
+            fatalError))
+    {
+        return false;
+    }
+
+    report.filesDiscovered = files.size();
+
+    outObjects.clear();
+    outObjects.reserve(files.size());
+
+    std::unordered_map<std::string, fs::path> idSources;
+
+    for (const fs::path& path : files)
+    {
+        GalaxyObjectDefinition object;
+        std::string fileError;
+
+        if (!parseGalaxyObjectFile(
+                path,
+                object,
+                fileError))
+        {
+            addCatalogSkip(report, fileError);
+            continue;
+        }
+
+        const auto existing =
+            idSources.find(object.id);
+
+        if (existing != idSources.end())
+        {
+            addCatalogSkip(
+                report,
+                path,
+                "duplicate galaxy object id='" +
+                    object.id +
+                    "'; first valid definition kept from " +
+                    existing->second.generic_string()
+            );
+            continue;
+        }
+
+        idSources.emplace(object.id, path);
+        outObjects.push_back(std::move(object));
+    }
+
+    std::sort(
+        outObjects.begin(),
+        outObjects.end(),
+        [](
+            const GalaxyObjectDefinition& a,
+            const GalaxyObjectDefinition& b
+        )
+        {
+            return a.id < b.id;
+        }
+    );
+
+    report.filesLoaded = outObjects.size();
+    fatalError.clear();
+    return true;
 }
 
 glm::dvec3 readAuPosition(const json& j)
@@ -927,159 +1829,392 @@ void addAsteroidBelts(
     }
 }
 
-} // namespace
-
-bool StarAtlasDatabase::load(
-    const std::string& starSystemsPath,
-    const std::string& systemDetailsPath
+CelestialSystemDefinition buildSystemDefinition(
+    const SystemCatalogDocument& document
 )
 {
-    m_systems.clear();
-    m_details.clear();
+    const json& srcSystem = document.details;
 
-    bool ok = true;
-    ok = loadStarSystems(starSystemsPath) && ok;
-    ok = loadSystemDetails(systemDetailsPath) && ok;
+    CelestialSystemDefinition system;
+    system.systemId = document.summary.id;
+    system.name = document.summary.name;
+
+    if (srcSystem.contains("center_of_mass"))
+    {
+        system.barycenterAu = glm::dvec3(
+            srcSystem["center_of_mass"].value("x_au", 0.0),
+            srcSystem["center_of_mass"].value("y_au", 0.0),
+            srcSystem["center_of_mass"].value("z_au", 0.0)
+        );
+    }
+
+    if (srcSystem.contains("stars"))
+    {
+        if (!srcSystem["stars"].is_array())
+        {
+            throw std::runtime_error(
+                "details.stars must be an array"
+            );
+        }
+
+        for (const auto& star : srcSystem["stars"])
+        {
+            if (!star.is_object())
+            {
+                throw std::runtime_error(
+                    "every details.stars entry must be an object"
+                );
+            }
+
+            CelestialBodyDefinition body;
+            body.name = star.value("name", "Star");
+            body.id =
+                "system_" +
+                std::to_string(system.systemId) +
+                "." +
+                safeIdPart(body.name);
+
+            body.type = BodyType::Star;
+            body.parentId.clear();
+
+            body.diameterKm = star.value("diameter_km", 0.0);
+            body.radiusKm = body.diameterKm * 0.5;
+
+            readGravityFields(star, body);
+            readOrientationFields(star, body);
+
+            if (star.contains("position_au"))
+            {
+                if (!star["position_au"].is_object())
+                {
+                    throw std::runtime_error(
+                        "star.position_au must be an object"
+                    );
+                }
+
+                body.staticPositionAu =
+                    readAuPosition(star["position_au"]);
+            }
+
+            readAlternativeNames(star, body);
+
+            const std::string starId = body.id;
+            system.bodies.push_back(std::move(body));
+
+            if (star.contains("planets"))
+                addPlanetDefinitions(system, starId, star["planets"]);
+
+            if (star.contains("asteroid_belts"))
+                addAsteroidBelts(system, starId, star["asteroid_belts"]);
+        }
+    }
+
+    if (srcSystem.contains("system_planets"))
+    {
+        addPlanetDefinitions(
+            system,
+            "system_" +
+                std::to_string(system.systemId) +
+                ".barycenter",
+            srcSystem["system_planets"]
+        );
+    }
+
+    if (srcSystem.contains("asteroid_belts"))
+    {
+        addAsteroidBelts(
+            system,
+            "system_" +
+                std::to_string(system.systemId) +
+                ".barycenter",
+            srcSystem["asteroid_belts"]
+        );
+    }
+
+    return system;
+}
+
+} // namespace
+
+bool StarAtlasDatabase::loadSystemSummariesFromDirectory(
+    const std::string& galaxyDetailsRoot,
+    std::vector<StarSystemSummary>& outSystems,
+    std::string* errorMessage
+)
+{
+    std::vector<SystemCatalogDocument> documents;
+    CatalogLoadReport report;
+    std::string fatalError;
+
+    if (!loadSystemCatalogDocuments(
+            galaxyDetailsRoot,
+            "systems_details",
+            StarSystemCatalogScope::Local,
+            false,
+            documents,
+            report,
+            fatalError))
+    {
+        printCatalogSkips(
+            "[GalaxyCatalog]",
+            "local system",
+            report
+        );
+
+        if (errorMessage)
+            *errorMessage = fatalError;
+
+        return false;
+    }
+
+    printCatalogSkips(
+        "[GalaxyCatalog]",
+        "local system",
+        report
+    );
+
+    outSystems.clear();
+    outSystems.reserve(documents.size());
+
+    for (const SystemCatalogDocument& document : documents)
+        outSystems.push_back(document.summary);
+
+    if (report.filesSkipped > 0)
+    {
+        std::cerr
+            << "[GalaxyCatalog] local systems loaded="
+            << outSystems.size()
+            << " skipped="
+            << report.filesSkipped
+            << " root="
+            << galaxyDetailsRoot
+            << "\n";
+    }
+
+    if (errorMessage)
+        errorMessage->clear();
+
+    return !outSystems.empty();
+}
+
+bool StarAtlasDatabase::load(
+    const std::string& galaxyDetailsRoot
+)
+{
+    std::vector<SystemCatalogDocument> localDocuments;
+    std::vector<SystemCatalogDocument> distantDocuments;
+    std::vector<GalaxyObjectDefinition> objects;
+
+    CatalogLoadReport localReport;
+    CatalogLoadReport distantReport;
+    CatalogLoadReport objectReport;
+    CatalogLoadReport buildReport;
+
+    std::string fatalError;
+
+    if (!loadSystemCatalogDocuments(
+            galaxyDetailsRoot,
+            "systems_details",
+            StarSystemCatalogScope::Local,
+            false,
+            localDocuments,
+            localReport,
+            fatalError))
+    {
+        printCatalogSkips(
+            "[StarAtlasDatabase]",
+            "local system",
+            localReport
+        );
+
+        std::cerr
+            << "[StarAtlasDatabase] "
+            << fatalError
+            << "\n";
+        return false;
+    }
+
+    printCatalogSkips(
+        "[StarAtlasDatabase]",
+        "local system",
+        localReport
+    );
+
+    if (!loadSystemCatalogDocuments(
+            galaxyDetailsRoot,
+            "distant_systems_details",
+            StarSystemCatalogScope::Distant,
+            true,
+            distantDocuments,
+            distantReport,
+            fatalError))
+    {
+        std::cerr
+            << "[StarAtlasDatabase] distant catalog unavailable; "
+            << "continuing without distant systems: "
+            << fatalError
+            << "\n";
+
+        distantDocuments.clear();
+        distantReport = CatalogLoadReport {};
+    }
+    else
+    {
+        removeDistantCatalogConflicts(
+            localDocuments,
+            distantDocuments,
+            distantReport
+        );
+
+        printCatalogSkips(
+            "[StarAtlasDatabase]",
+            "distant system",
+            distantReport
+        );
+    }
+
+    if (!loadGalaxyObjects(
+            galaxyDetailsRoot,
+            objects,
+            objectReport,
+            fatalError))
+    {
+        std::cerr
+            << "[StarAtlasDatabase] object catalog unavailable; "
+            << "continuing without galaxy objects: "
+            << fatalError
+            << "\n";
+
+        objects.clear();
+        objectReport = CatalogLoadReport {};
+    }
+    else
+    {
+        printCatalogSkips(
+            "[StarAtlasDatabase]",
+            "galaxy object",
+            objectReport
+        );
+    }
+
+    std::vector<StarSystemSummary> systems;
+    std::vector<StarSystemSummary> distantSystems;
+    std::unordered_map<int, CelestialSystemDefinition> details;
+
+    systems.reserve(localDocuments.size());
+    distantSystems.reserve(distantDocuments.size());
+    details.reserve(
+        localDocuments.size() +
+        distantDocuments.size()
+    );
+
+    const auto buildDocuments =
+        [&](const std::vector<SystemCatalogDocument>& documents,
+            std::vector<StarSystemSummary>& summaries)
+        {
+            for (const SystemCatalogDocument& document : documents)
+            {
+                try
+                {
+                    CelestialSystemDefinition system =
+                        buildSystemDefinition(document);
+
+                    const auto inserted =
+                        details.emplace(
+                            system.systemId,
+                            std::move(system)
+                        );
+
+                    if (!inserted.second)
+                    {
+                        addCatalogSkip(
+                            buildReport,
+                            document.sourcePath,
+                            "system id already exists in the runtime catalog; "
+                            "first valid definition kept"
+                        );
+                        continue;
+                    }
+
+                    summaries.push_back(document.summary);
+                }
+                catch (const std::exception& e)
+                {
+                    addCatalogSkip(
+                        buildReport,
+                        document.sourcePath,
+                        std::string(
+                            "failed to build runtime definition: "
+                        ) + e.what()
+                    );
+                }
+            }
+        };
+
+    buildDocuments(localDocuments, systems);
+    buildDocuments(distantDocuments, distantSystems);
+
+    printCatalogSkips(
+        "[StarAtlasDatabase]",
+        "runtime system",
+        buildReport
+    );
+
+    if (systems.empty())
+    {
+        std::cerr
+            << "[StarAtlasDatabase] no valid local systems remained "
+            << "after per-file validation; catalog not published\n";
+        return false;
+    }
+
+    const bool hasSol =
+        std::any_of(
+            systems.begin(),
+            systems.end(),
+            [](const StarSystemSummary& summary)
+            {
+                return summary.id == 0;
+            }
+        );
+
+    if (!hasSol)
+    {
+        std::cerr
+            << "[StarAtlasDatabase] WARNING: local system id=0 (Sol) "
+            << "is unavailable; publishing the remaining catalog "
+            << "in degraded mode\n";
+    }
+
+    // Publish the valid subset. A malformed sibling file must not discard
+    // systems and objects that passed validation independently.
+    m_systems = std::move(systems);
+    m_distantSystems = std::move(distantSystems);
+    m_details = std::move(details);
+    m_objects = std::move(objects);
+
+    const std::size_t skippedSystemFiles =
+        localReport.filesSkipped +
+        distantReport.filesSkipped +
+        buildReport.filesSkipped;
 
     std::cout
-        << "[StarAtlasDatabase] systems=" << m_systems.size()
+        << "[StarAtlasDatabase] local_systems=" << m_systems.size()
+        << " distant_systems=" << m_distantSystems.size()
         << " details=" << m_details.size()
+        << " galaxy_objects=" << m_objects.size()
+        << " skipped_system_files=" << skippedSystemFiles
+        << " skipped_object_files=" << objectReport.filesSkipped
+        << " degraded="
+        << (
+            skippedSystemFiles > 0 ||
+            objectReport.filesSkipped > 0 ||
+            !hasSol
+                ? "yes"
+                : "no"
+        )
+        << " root=" << galaxyDetailsRoot
         << "\n";
-
-    return ok;
-}
-
-bool StarAtlasDatabase::loadStarSystems(const std::string& path)
-{
-    json root;
-
-    try
-    {
-        root = loadJson(path);
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << "[StarAtlasDatabase] " << e.what() << "\n";
-        return false;
-    }
-
-    if (!root.contains("star_systems") || !root["star_systems"].is_array())
-    {
-        std::cerr << "[StarAtlasDatabase] no star_systems array\n";
-        return false;
-    }
-
-    for (const auto& item : root["star_systems"])
-    {
-        StarSystemSummary s;
-        s.id = item.value("id", -1);
-        s.name = item.value("name", "");
-        s.positionLy = glm::dvec3(
-            item.value("x_ly", 0.0),
-            item.value("y_ly", 0.0),
-            item.value("z_ly", 0.0)
-        );
-        s.starsCount = item.value("stars_count", 1);
-        s.starType = item.value("star_type", "");
-
-        if (s.id >= 0)
-            m_systems.push_back(std::move(s));
-    }
-
-    return true;
-}
-
-bool StarAtlasDatabase::loadSystemDetails(const std::string& path)
-{
-    json root;
-
-    try
-    {
-        root = loadJson(path);
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << "[StarAtlasDatabase] " << e.what() << "\n";
-        return false;
-    }
-
-    if (!root.contains("systems") || !root["systems"].is_array())
-    {
-        std::cerr << "[StarAtlasDatabase] no systems array\n";
-        return false;
-    }
-
-    for (const auto& srcSystem : root["systems"])
-    {
-        CelestialSystemDefinition system;
-
-        system.systemId = srcSystem.value("system_id", -1);
-        system.name = srcSystem.value("system_name", "");
-
-        if (srcSystem.contains("center_of_mass"))
-        {
-            system.barycenterAu = glm::dvec3(
-                srcSystem["center_of_mass"].value("x_au", 0.0),
-                srcSystem["center_of_mass"].value("y_au", 0.0),
-                srcSystem["center_of_mass"].value("z_au", 0.0)
-            );
-        }
-
-        if (srcSystem.contains("stars") && srcSystem["stars"].is_array())
-        {
-            for (const auto& star : srcSystem["stars"])
-            {
-                CelestialBodyDefinition body;
-                body.name = star.value("name", "Star");
-                body.id = "system_" + std::to_string(system.systemId) + "." + safeIdPart(body.name);
-              
-
-                body.type = BodyType::Star;
-                body.parentId.clear();
-
-                body.diameterKm = star.value("diameter_km", 0.0);
-                body.radiusKm = body.diameterKm * 0.5;
-
-                readGravityFields(star, body);
-                readOrientationFields(star, body);
-
-                if (star.contains("position_au"))
-                    body.staticPositionAu = readAuPosition(star["position_au"]);
-
-                readAlternativeNames(star, body);
-
-                const std::string starId = body.id;
-                system.bodies.push_back(std::move(body));
-
-                if (star.contains("planets"))
-                    addPlanetDefinitions(system, starId, star["planets"]);
-
-                if (star.contains("asteroid_belts"))
-                    addAsteroidBelts(system, starId, star["asteroid_belts"]);
-            }
-        }
-
-        if (srcSystem.contains("system_planets"))
-        {
-            addPlanetDefinitions(
-                system,
-                "system_" + std::to_string(system.systemId) + ".barycenter",
-                srcSystem["system_planets"]
-            );
-        }
-
-        if (srcSystem.contains("asteroid_belts"))
-        {
-            addAsteroidBelts(
-                system,
-                "system_" + std::to_string(system.systemId) + ".barycenter",
-                srcSystem["asteroid_belts"]
-            );
-        }
-
-        if (system.systemId >= 0)
-            m_details.emplace(system.systemId, std::move(system));
-    }
 
     return true;
 }
@@ -1104,6 +2239,13 @@ StarAtlasDatabase::findSystemSummary(
 {
     for (const auto& system :
          m_systems)
+    {
+        if (system.id == systemId)
+            return &system;
+    }
+
+    for (const auto& system :
+         m_distantSystems)
     {
         if (system.id == systemId)
             return &system;

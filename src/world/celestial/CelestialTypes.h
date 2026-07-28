@@ -40,6 +40,12 @@ inline std::string toString(BodyType type)
     }
 }
 
+enum class StarSystemCatalogScope
+{
+    Local,
+    Distant
+};
+
 struct StarSystemSummary
 {
     int id = -1;
@@ -48,6 +54,29 @@ struct StarSystemSummary
     glm::dvec3 positionLy {0.0};
     int starsCount = 1;
     std::string starType;
+
+    StarSystemCatalogScope catalogScope =
+        StarSystemCatalogScope::Local;
+
+    bool atlasVisible = true;
+    bool routeTarget = true;
+    std::string questRole;
+};
+
+
+struct GalaxyObjectDefinition
+{
+    std::string id;
+    std::string name;
+    std::string objectType;
+
+    glm::dvec3 positionLy {0.0};
+
+    std::string description;
+    std::vector<std::string> tags;
+
+    // Type-specific data that does not belong in the common catalog schema.
+    nlohmann::json properties = nlohmann::json::object();
 };
 
 
@@ -197,7 +226,7 @@ struct CelestialBodyDefinition
     BodyType type = BodyType::Unknown;
 
     std::string parentId;
-    // Environment preset from system_details.json.
+    // Environment preset from galaxy_details/systems_details/*.json.
     // Example: terrestrial_temperate, gas_giant_ammonia.
     std::string environmentPresetId;
 

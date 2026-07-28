@@ -1,0 +1,300 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 100062,
+  "name": "Kepler-62",
+  "catalog_scope": "distant",
+  "atlas_visible": false,
+  "route_target": true,
+  "quest_role": "pilgrim_destination",
+  "position_ly": {
+    "x": 157.628916,
+    "y": -671.393227,
+    "z": 698.119231
+  },
+  "stars_count": 1,
+  "star_type": "K2 V",
+  "stability": "Стабильный оранжевый карлик; удалённая квестовая система",
+  "planets_summary": "5 подтверждённых экзопланет; e и f используются как цели паломнического сюжета",
+  "primary_resources": [
+    "water",
+    "ice",
+    "metals"
+  ],
+  "secondary_resources": [
+    "rare_metals"
+  ],
+  "observational_reference_2026": {
+    "source": "NASA Exoplanet Archive",
+    "retrieved_utc": "2026-07-28",
+    "source_url": "https://exoplanetarchive.ipac.caltech.edu/overview/Kepler-62%20e",
+    "coordinate_frame": "ICRS Cartesian, light-years from Sol",
+    "ra_hms": "18h52m51.01s",
+    "dec_dms": "+45d20m58.92s",
+    "distance_pc": 300.874,
+    "distance_ly_derived": 981.318603,
+    "position_conversion": "x=d*cos(dec)*cos(ra), y=d*cos(dec)*sin(ra), z=d*sin(dec)",
+    "host_spectral_type": "K2 V",
+    "confirmed_planets": [
+      {
+        "name": "Kepler-62 b",
+        "orbital_period_days": 5.7149,
+        "radius_earth": 1.31
+      },
+      {
+        "name": "Kepler-62 c",
+        "orbital_period_days": 12.4417,
+        "radius_earth": 0.54
+      },
+      {
+        "name": "Kepler-62 d",
+        "orbital_period_days": 18.164,
+        "radius_earth": 1.95
+      },
+      {
+        "name": "Kepler-62 e",
+        "orbital_period_days": 122.39,
+        "radius_earth": 1.61
+      },
+      {
+        "name": "Kepler-62 f",
+        "orbital_period_days": 267.29,
+        "radius_earth": 1.41
+      }
+    ],
+    "gameplay_policy": "The 3026 gameplay model may use speculative masses, atmospheres, moons and surface conditions. This observational block preserves the NASA 2026 reference values."
+  },
+  "details": {
+    "alternative_names": [
+      "Kepler-62",
+      "Кеплер-62",
+      "KOI-701",
+      "Система Пяти"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Kepler-62",
+        "alternative_names": [
+          "Кеплер-62 A",
+          "KOI-701"
+        ],
+        "type": "K2V — Оранжевый карлик",
+        "diameter_km": 920000,
+        "mass_kg": 1.3720443e+30,
+        "gravitational_parameter_m3s2": 9.157435271e+19,
+        "mass_solar": 0.69,
+        "luminosity_solar": 0.21,
+        "temperature_k": 4925,
+        "age_gyr": 7.0,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Kepler-62 b",
+            "alternative_names": [
+              "Kepler-62 b",
+              "Горячая суперземля"
+            ],
+            "distance_au": 0.055,
+            "orbital_period_days": 5.7,
+            "diameter_km": 10800,
+            "mass_kg": 1.672216e+25,
+            "gravitational_parameter_m3s2": 1116087125000000.0,
+            "mass_earth": 2.8,
+            "orbit_type": "S-type",
+            "primary_star": "Kepler-62",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.5,
+            "surface_temperature_k": 485,
+            "day_length_hours": 137,
+            "surface_gravity_g": 1.28,
+            "oceans": false,
+            "land_water_ratio": "90/10",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere",
+            "data_origin": "procedural_future_gameplay",
+            "observation_status_2026": "see observational_reference_2026"
+          },
+          {
+            "name": "Kepler-62 c",
+            "alternative_names": [
+              "Kepler-62 c",
+              "Тёплая суперземля"
+            ],
+            "distance_au": 0.092,
+            "orbital_period_days": 12.4,
+            "diameter_km": 9500,
+            "mass_kg": 1.313884e+25,
+            "gravitational_parameter_m3s2": 876925598100000.0,
+            "mass_earth": 2.2,
+            "orbit_type": "S-type",
+            "primary_star": "Kepler-62",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.8,
+            "surface_temperature_k": 385,
+            "day_length_hours": 298,
+            "surface_gravity_g": 1.18,
+            "oceans": false,
+            "land_water_ratio": "85/15",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere",
+            "data_origin": "procedural_future_gameplay",
+            "observation_status_2026": "see observational_reference_2026"
+          },
+          {
+            "name": "Kepler-62 d",
+            "alternative_names": [
+              "Kepler-62 d",
+              "Нептунианец"
+            ],
+            "distance_au": 0.25,
+            "orbital_period_days": 58,
+            "diameter_km": 32000,
+            "mass_kg": 5.07637e+25,
+            "gravitational_parameter_m3s2": 3388121629000000.0,
+            "mass_earth": 8.5,
+            "orbit_type": "S-type",
+            "primary_star": "Kepler-62",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 145.0,
+            "surface_temperature_k": 245,
+            "day_length_hours": 10.5,
+            "surface_gravity_g": 1.6,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (нептунианский тип)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere",
+            "data_origin": "procedural_future_gameplay",
+            "observation_status_2026": "see observational_reference_2026"
+          },
+          {
+            "name": "Kepler-62 e",
+            "alternative_names": [
+              "Kepler-62 e",
+              "Суперземля 1",
+              "Надежда 1"
+            ],
+            "distance_au": 0.427,
+            "orbital_period_days": 122,
+            "diameter_km": 15200,
+            "mass_kg": 2.68749e+25,
+            "gravitational_parameter_m3s2": 1793711451000000.0,
+            "mass_earth": 4.5,
+            "orbit_type": "S-type",
+            "primary_star": "Kepler-62",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 4.8,
+            "surface_temperature_k": 270,
+            "day_length_hours": 2928,
+            "surface_gravity_g": 1.6,
+            "oceans": true,
+            "land_water_ratio": "30/70",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "ocean_world",
+            "data_origin": "procedural_future_gameplay",
+            "observation_status_2026": "see observational_reference_2026"
+          },
+          {
+            "name": "Kepler-62 f",
+            "alternative_names": [
+              "Kepler-62 f",
+              "Суперземля 2",
+              "Земля 3.0",
+              "Надежда 2"
+            ],
+            "distance_au": 0.718,
+            "orbital_period_days": 267,
+            "diameter_km": 13800,
+            "mass_kg": 1.672216e+25,
+            "gravitational_parameter_m3s2": 1116087125000000.0,
+            "mass_earth": 2.8,
+            "orbit_type": "S-type",
+            "primary_star": "Kepler-62",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.5,
+            "surface_temperature_k": 225,
+            "day_length_hours": 6408,
+            "surface_gravity_g": 1.35,
+            "oceans": true,
+            "land_water_ratio": "25/75",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [
+              {
+                "name": "Kepler-62 f-I",
+                "diameter_km": 1680,
+                "mass_kg": 4.77776e+22,
+                "gravitational_parameter_m3s2": 3188820357000.0,
+                "mass_earth": 0.008,
+                "distance_from_planet_km": 195000,
+                "atmosphere": false,
+                "oceans": false,
+                "orbital_period_days": 4.8,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world",
+            "data_origin": "procedural_future_gameplay",
+            "observation_status_2026": "see observational_reference_2026"
+          }
+        ],
+        "data_origin": "procedural_future_gameplay"
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Кеплера-62",
+        "distance_from_star_au": 2.0,
+        "asteroid_count": 520000,
+        "min_size_m": 12,
+        "max_size_m": 680000,
+        "avg_size_m": 1050,
+        "mining_appeal": "Высокая (металлы, вода)"
+      },
+      {
+        "name": "Пояс Койпера Кеплера-62",
+        "distance_from_star_au": 25,
+        "asteroid_count": 6200000,
+        "min_size_m": 100,
+        "max_size_m": 1450000,
+        "avg_size_m": 52000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Пять планет, две в зоне обитаемости. Kepler-62 f — одна из самых землеподобных известных планет. Все 5 подтверждены.",
+    "technical_notes": "Удалённая квестовая система паломников. Игровая модель тел относится к 3026 году и не обязана совпадать с наблюдательными оценками 2026 года. Наблюдательные параметры вынесены в observational_reference_2026."
+  }
+}

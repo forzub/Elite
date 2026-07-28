@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 20,
+  "name": "HD 93083",
+  "position_ly": {
+    "x": -73.303541,
+    "y": 25.116471,
+    "z": -51.438789
+  },
+  "stars_count": 1,
+  "star_type": "K2 IV-V",
+  "stability": "Стабильная старая K-звезда; параметры обновлены по NASA Exoplanet Archive",
+  "planets_summary": "2 подтверждённые планеты: GJ 1137 c и HD 93083 b",
+  "primary_resources": [
+    "water",
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "metals",
+    "ice"
+  ],
+  "observational_reference_2026": {
+    "source": "NASA Exoplanet Archive",
+    "retrieved_utc": "2026-07-28",
+    "source_url": "https://exoplanetarchive.ipac.caltech.edu/overview/HD%2093083",
+    "coordinate_frame": "ICRS Cartesian, light-years from Sol",
+    "ra_hms": "10h44m20.80s",
+    "dec_dms": "-33d34m39.65s",
+    "distance_pc": 28.5159,
+    "position_conversion": "x=d*cos(dec)*cos(ra), y=d*cos(dec)*sin(ra), z=d*sin(dec)",
+    "planet_radius_policy": "No physical radius is stored when NASA reports only radial-velocity minimum mass."
+  },
+  "details": {
+    "alternative_names": [
+      "GJ 1137"
+    ],
+    "center_of_mass": {
+      "x_au": 0.0,
+      "y_au": 0.0,
+      "z_au": 0.0
+    },
+    "stars": [
+      {
+        "name": "HD 93083",
+        "alternative_names": [
+          "GJ 1137"
+        ],
+        "type": "K2 IV-V",
+        "diameter_km": 1164602.0,
+        "mass_kg": 1.66236092e+30,
+        "gravitational_parameter_m3s2": 1.1095095488356e+20,
+        "mass_solar": 0.836,
+        "luminosity_solar": 0.407,
+        "temperature_k": 5034,
+        "age_gyr": 10.71,
+        "distance_from_barycenter_au": 0.0,
+        "position_au": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "data_origin": "NASA Exoplanet Archive 2026",
+        "planets": [
+          {
+            "name": "GJ 1137 c",
+            "alternative_names": [],
+            "distance_au": 0.0835,
+            "orbital_period_days": 9.6412,
+            "eccentricity": 0.0,
+            "diameter_km": 0.0,
+            "mass_kg": 3.0577664e+25,
+            "gravitational_parameter_m3s2": 2040845028352000.0,
+            "mass_earth": 5.12,
+            "mass_measurement": "minimum_mass_m_sin_i",
+            "orbit_type": "S-type",
+            "primary_star": "HD 93083",
+            "discovery_status": "confirmed",
+            "incident_flux_earth": 58.4,
+            "radius_status": "not_measured",
+            "data_origin": "NASA Exoplanet Archive, Stoeva et al. 2026",
+            "moons": [],
+            "rings": []
+          },
+          {
+            "name": "HD 93083 b",
+            "alternative_names": [],
+            "distance_au": 0.508,
+            "orbital_period_days": 144.72,
+            "eccentricity": 0.118,
+            "diameter_km": 0.0,
+            "mass_kg": 8.540246e+26,
+            "gravitational_parameter_m3s2": 5.70001638778e+16,
+            "mass_earth": 143.0,
+            "mass_measurement": "minimum_mass_m_sin_i",
+            "orbit_type": "S-type",
+            "primary_star": "HD 93083",
+            "discovery_status": "confirmed",
+            "incident_flux_earth": 1.59,
+            "radius_status": "not_measured",
+            "data_origin": "NASA Exoplanet Archive, Stoeva et al. 2026",
+            "moons": [],
+            "rings": []
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [],
+    "lore_notes": "",
+    "technical_notes": "NASA confirms two radial-velocity planets. Their physical radii are not measured; diameter_km is deliberately zero rather than estimated."
+  }
+}

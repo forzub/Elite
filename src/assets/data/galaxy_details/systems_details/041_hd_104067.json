@@ -1,0 +1,604 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 41,
+  "name": "HD 104067",
+  "position_ly": {
+    "x": -33.8,
+    "y": 56.5,
+    "z": -6.2
+  },
+  "stars_count": 1,
+  "star_type": "K3V",
+  "stability": "Стабильный оранжевый карлик",
+  "planets_summary": "1 планета (газовый гигант)",
+  "primary_resources": [
+    "helium3",
+    "metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "water"
+  ],
+  "details": {
+    "alternative_names": [
+      "HD 104067",
+      "Аш Ди 104067",
+      "Система 104067"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "HD 104067",
+        "alternative_names": [
+          "HD 104067 A"
+        ],
+        "type": "K3V — Оранжевый карлик",
+        "diameter_km": 920000,
+        "mass_kg": 1.4714678e+30,
+        "gravitational_parameter_m3s2": 9.821017538e+19,
+        "mass_solar": 0.74,
+        "luminosity_solar": 0.25,
+        "temperature_k": 4850,
+        "age_gyr": 5.8,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "HD 104067 b",
+            "alternative_names": [
+              "HD 104067 b",
+              "Газовый гигант"
+            ],
+            "distance_au": 1.52,
+            "orbital_period_days": 685,
+            "diameter_km": 122000,
+            "mass_kg": 1.045135e+27,
+            "gravitational_parameter_m3s2": 6.97554453e+16,
+            "mass_earth": 175,
+            "orbit_type": "S-type",
+            "primary_star": "HD 104067",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 810.0,
+            "surface_temperature_k": 142,
+            "day_length_hours": 10.8,
+            "surface_gravity_g": 2.12,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3, газодобыча)",
+            "moons": [
+              {
+                "name": "HD 104067 b-I",
+                "diameter_km": 3950,
+                "mass_kg": 9.55552e+22,
+                "gravitational_parameter_m3s2": 6377640714000.0,
+                "mass_earth": 0.016,
+                "distance_from_planet_km": 575000,
+                "atmosphere": true,
+                "atmosphere_composition": "Водород, гелий",
+                "oceans": false,
+                "orbital_period_days": 6.8,
+                "environment_preset_id": "gas_giant_ammonia"
+              },
+              {
+                "name": "HD 104067 b-II",
+                "diameter_km": 3200,
+                "mass_kg": 7.76386e+22,
+                "gravitational_parameter_m3s2": 5181833080000.0,
+                "mass_earth": 0.013,
+                "distance_from_planet_km": 785000,
+                "atmosphere": true,
+                "atmosphere_composition": "Азот, метан",
+                "oceans": true,
+                "orbital_period_days": 11.5,
+                "environment_preset_id": "methane_haze_world"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца HD 104067 b",
+                "distance_from_planet_km": {
+                  "inner": 50000,
+                  "outer": 170000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 73238.681,
+                    "outer": 82268.271
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 85438.681,
+                    "outer": 109865.311
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.2249,
+                    "optical_depth": 0.1705,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.3693,
+                    "particle_radial_jitter": 0.2325,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 118988.681,
+                    "outer": 154833.535
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.001,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.24,
+                "azimuthal_clumping": 0.3693,
+                "cluster_scale": 0.6419,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          },
+          {
+            "name": "HD 104067 c",
+            "alternative_names": [
+              "HD 104067 c",
+              "Суперземля"
+            ],
+            "distance_au": 0.65,
+            "orbital_period_days": 245,
+            "diameter_km": 11200,
+            "mass_kg": 1.672216e+25,
+            "gravitational_parameter_m3s2": 1116087125000000.0,
+            "mass_earth": 2.8,
+            "orbit_type": "S-type",
+            "primary_star": "HD 104067",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.8,
+            "surface_temperature_k": 245,
+            "day_length_hours": 245,
+            "surface_gravity_g": 1.25,
+            "oceans": false,
+            "land_water_ratio": "75/25",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "HD 104067 d",
+            "alternative_names": [
+              "HD 104067 d",
+              "Ледяной гигант"
+            ],
+            "distance_au": 3.85,
+            "orbital_period_days": 2850,
+            "diameter_km": 52000,
+            "mass_kg": 1.672216e+26,
+            "gravitational_parameter_m3s2": 1.116087125e+16,
+            "mass_earth": 28,
+            "orbit_type": "S-type",
+            "primary_star": "HD 104067",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 385.0,
+            "surface_temperature_k": 85,
+            "day_length_hours": 9.5,
+            "surface_gravity_g": 1.58,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "HD 104067 d-I",
+                "diameter_km": 3200,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 485000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 6.5,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца HD 104067 d",
+                "distance_from_planet_km": {
+                  "inner": 45000,
+                  "outer": 155000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "ice_giant_methane",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible narrow dark ring system derived from ice-giant analogues.",
+              "bands": [
+                {
+                  "name": "Narrow ring 1",
+                  "distance_from_planet_km": {
+                    "inner": 38297.85,
+                    "outer": 38795.67
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.2076,
+                      0.1504,
+                      0.1968
+                    ],
+                    "opacity": 0.1664,
+                    "optical_depth": 0.1395,
+                    "radial_noise_strength": 0.2375,
+                    "radial_brightness_variation": 0.2242,
+                    "azimuthal_asymmetry": 0.0812,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "secondary",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.68,
+                    "particle_density_scale": 0.76,
+                    "particle_clumpiness": 0.378,
+                    "particle_radial_jitter": 0.27,
+                    "particle_size_px_range": [
+                      0.95,
+                      2.05
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 2",
+                  "distance_from_planet_km": {
+                    "inner": 40667.02,
+                    "outer": 41299.443
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.145,
+                      0.1889,
+                      0.2292
+                    ],
+                    "opacity": 0.1649,
+                    "optical_depth": 0.1925,
+                    "radial_noise_strength": 0.2871,
+                    "radial_brightness_variation": 0.204,
+                    "azimuthal_asymmetry": 0.0465,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.3651,
+                    "particle_radial_jitter": 0.23,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 3",
+                  "distance_from_planet_km": {
+                    "inner": 43606.968,
+                    "outer": 44216.163
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1683,
+                      0.2079,
+                      0.2552
+                    ],
+                    "opacity": 0.2541,
+                    "optical_depth": 0.154,
+                    "radial_noise_strength": 0.3275,
+                    "radial_brightness_variation": 0.1798,
+                    "azimuthal_asymmetry": 0.0046,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.3651,
+                    "particle_radial_jitter": 0.23,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 4",
+                  "distance_from_planet_km": {
+                    "inner": 46075.055,
+                    "outer": 46678.815
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1389,
+                      0.2149,
+                      0.1952
+                    ],
+                    "opacity": 0.2054,
+                    "optical_depth": 0.1093,
+                    "radial_noise_strength": 0.3853,
+                    "radial_brightness_variation": 0.1277,
+                    "azimuthal_asymmetry": 0.038,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "secondary",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.68,
+                    "particle_density_scale": 0.76,
+                    "particle_clumpiness": 0.378,
+                    "particle_radial_jitter": 0.27,
+                    "particle_size_px_range": [
+                      0.95,
+                      2.05
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 5",
+                  "distance_from_planet_km": {
+                    "inner": 49035.511,
+                    "outer": 49477.373
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1519,
+                      0.1915,
+                      0.2775
+                    ],
+                    "opacity": 0.2306,
+                    "optical_depth": 0.1288,
+                    "radial_noise_strength": 0.1899,
+                    "radial_brightness_variation": 0.2298,
+                    "azimuthal_asymmetry": 0.1594,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.3651,
+                    "particle_radial_jitter": 0.23,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 6",
+                  "distance_from_planet_km": {
+                    "inner": 51226.784,
+                    "outer": 51505.736
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1888,
+                      0.2086,
+                      0.2781
+                    ],
+                    "opacity": 0.1808,
+                    "optical_depth": 0.1341,
+                    "radial_noise_strength": 0.2372,
+                    "radial_brightness_variation": 0.2511,
+                    "azimuthal_asymmetry": 0.0323,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "secondary",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.68,
+                    "particle_density_scale": 0.76,
+                    "particle_clumpiness": 0.378,
+                    "particle_radial_jitter": 0.27,
+                    "particle_size_px_range": [
+                      0.95,
+                      2.05
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.24,
+                "azimuthal_clumping": 0.3651,
+                "cluster_scale": 0.6376,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс HD 104067",
+        "distance_from_star_au": 4.8,
+        "asteroid_count": 595000,
+        "min_size_m": 18,
+        "max_size_m": 750000,
+        "avg_size_m": 1450,
+        "mining_appeal": "Высокая (лёд, металлы)"
+      },
+      {
+        "name": "Пояс Койпера HD 104067",
+        "distance_from_star_au": 38,
+        "asteroid_count": 9500000,
+        "min_size_m": 100,
+        "max_size_m": 1850000,
+        "avg_size_m": 62000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Оранжевый карлик с газовым гигантом и двумя крупными лунами. Система стабильна, богата ресурсами для добычи. 1 подтверждена, 2 ожидается.",
+    "technical_notes": "Оранжевый карлик. Газовый гигант с интересными лунами для исследования."
+  }
+}

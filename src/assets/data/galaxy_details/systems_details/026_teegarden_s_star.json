@@ -1,0 +1,478 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 26,
+  "name": "Teegarden's Star",
+  "position_ly": {
+    "x": -2.15,
+    "y": 11.82,
+    "z": -2.45
+  },
+  "stars_count": 1,
+  "star_type": "M7V",
+  "stability": "Стабильный красный карлик",
+  "planets_summary": "2 планеты (b и c — кандидаты в зоне обитаемости)",
+  "primary_resources": [
+    "water",
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "metals",
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "Teegarden's Star",
+      "Звезда Тигардена",
+      "SO J025300.5+165253",
+      "Две Надежды"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Teegarden's Star",
+        "alternative_names": [
+          "SO J025300.5+165253",
+          "Тигарден A"
+        ],
+        "type": "M7V — Красный карлик",
+        "diameter_km": 185000,
+        "mass_kg": 1.789623e+29,
+        "gravitational_parameter_m3s2": 1.194448079e+19,
+        "mass_solar": 0.09,
+        "luminosity_solar": 0.0007,
+        "temperature_k": 2700,
+        "age_gyr": 8.0,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Teegarden b",
+            "alternative_names": [
+              "Teegarden b",
+              "Надежда 1",
+              "Кандидат в обитаемые 1"
+            ],
+            "distance_au": 0.025,
+            "orbital_period_days": 4.9,
+            "diameter_km": 12800,
+            "mass_kg": 7.46525e+24,
+            "gravitational_parameter_m3s2": 498253180700000.0,
+            "mass_earth": 1.25,
+            "orbit_type": "S-type",
+            "primary_star": "Teegarden's Star",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 1.8,
+            "surface_temperature_k": 265,
+            "day_length_hours": 118,
+            "surface_gravity_g": 0.95,
+            "oceans": true,
+            "land_water_ratio": "55/45",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [
+              {
+                "name": "Teegarden b-I",
+                "diameter_km": 980,
+                "mass_kg": 2.38888e+22,
+                "gravitational_parameter_m3s2": 1594410178000.0,
+                "mass_earth": 0.004,
+                "distance_from_planet_km": 125000,
+                "atmosphere": false,
+                "oceans": false,
+                "orbital_period_days": 2.8,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "terrestrial_temperate"
+          },
+          {
+            "name": "Teegarden c",
+            "alternative_names": [
+              "Teegarden c",
+              "Надежда 2",
+              "Кандидат в обитаемые 2"
+            ],
+            "distance_au": 0.045,
+            "orbital_period_days": 11.4,
+            "diameter_km": 11500,
+            "mass_kg": 6.56942e+24,
+            "gravitational_parameter_m3s2": 438462799100000.0,
+            "mass_earth": 1.1,
+            "orbit_type": "S-type",
+            "primary_star": "Teegarden's Star",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 1.5,
+            "surface_temperature_k": 215,
+            "day_length_hours": 274,
+            "surface_gravity_g": 0.9,
+            "oceans": true,
+            "land_water_ratio": "35/65",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "Teegarden d",
+            "alternative_names": [
+              "Teegarden d",
+              "Ледяная суперземля"
+            ],
+            "distance_au": 0.085,
+            "orbital_period_days": 28.5,
+            "diameter_km": 10200,
+            "mass_kg": 5.67359e+24,
+            "gravitational_parameter_m3s2": 378672417400000.0,
+            "mass_earth": 0.95,
+            "orbit_type": "S-type",
+            "primary_star": "Teegarden's Star",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения пояса",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 1.2,
+            "surface_temperature_k": 165,
+            "day_length_hours": 684,
+            "surface_gravity_g": 0.88,
+            "oceans": false,
+            "land_water_ratio": "20/80",
+            "ocean_composition": "Вода (H₂O) — лёд",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "Teegarden e",
+            "alternative_names": [
+              "Teegarden e",
+              "Газовый карлик"
+            ],
+            "distance_au": 0.22,
+            "orbital_period_days": 125,
+            "diameter_km": 42000,
+            "mass_kg": 8.9583e+25,
+            "gravitational_parameter_m3s2": 5979038169000000.0,
+            "mass_earth": 15,
+            "orbit_type": "S-type",
+            "primary_star": "Teegarden's Star",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Долгосрочные аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 185.0,
+            "surface_temperature_k": 95,
+            "day_length_hours": 9.2,
+            "surface_gravity_g": 1.38,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "Teegarden e-I",
+                "diameter_km": 2800,
+                "mass_kg": 7.16664e+22,
+                "gravitational_parameter_m3s2": 4783230535000.0,
+                "mass_earth": 0.012,
+                "distance_from_planet_km": 380000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 6.2,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Teegarden e",
+                "distance_from_planet_km": {
+                  "inner": 42000,
+                  "outer": 145000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "ice_giant_methane",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible narrow dark ring system derived from ice-giant analogues.",
+              "bands": [
+                {
+                  "name": "Narrow ring 1",
+                  "distance_from_planet_km": {
+                    "inner": 31566.879,
+                    "outer": 31963.601
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1353,
+                      0.1666,
+                      0.1911
+                    ],
+                    "opacity": 0.2337,
+                    "optical_depth": 0.2632,
+                    "radial_noise_strength": 0.1968,
+                    "radial_brightness_variation": 0.1758,
+                    "azimuthal_asymmetry": 0.0424,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5487,
+                    "particle_radial_jitter": 0.3381,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 2",
+                  "distance_from_planet_km": {
+                    "inner": 33470.545,
+                    "outer": 33858.982
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1311,
+                      0.1688,
+                      0.1891
+                    ],
+                    "opacity": 0.1354,
+                    "optical_depth": 0.1911,
+                    "radial_noise_strength": 0.2786,
+                    "radial_brightness_variation": 0.2203,
+                    "azimuthal_asymmetry": 0.0045,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5487,
+                    "particle_radial_jitter": 0.3381,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 3",
+                  "distance_from_planet_km": {
+                    "inner": 34999.627,
+                    "outer": 35137.421
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1714,
+                      0.2021,
+                      0.2223
+                    ],
+                    "opacity": 0.1206,
+                    "optical_depth": 0.2161,
+                    "radial_noise_strength": 0.3771,
+                    "radial_brightness_variation": 0.1776,
+                    "azimuthal_asymmetry": 0.1609,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5487,
+                    "particle_radial_jitter": 0.3381,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 4",
+                  "distance_from_planet_km": {
+                    "inner": 37051.821,
+                    "outer": 37311.608
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1787,
+                      0.174,
+                      0.2655
+                    ],
+                    "opacity": 0.1568,
+                    "optical_depth": 0.0788,
+                    "radial_noise_strength": 0.2607,
+                    "radial_brightness_variation": 0.2081,
+                    "azimuthal_asymmetry": 0.1167,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "secondary",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.68,
+                    "particle_density_scale": 0.76,
+                    "particle_clumpiness": 0.5487,
+                    "particle_radial_jitter": 0.3381,
+                    "particle_size_px_range": [
+                      0.95,
+                      2.05
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 5",
+                  "distance_from_planet_km": {
+                    "inner": 38159.158,
+                    "outer": 38395.909
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.2057,
+                      0.1757,
+                      0.2101
+                    ],
+                    "opacity": 0.2688,
+                    "optical_depth": 0.23,
+                    "radial_noise_strength": 0.3212,
+                    "radial_brightness_variation": 0.2035,
+                    "azimuthal_asymmetry": 0.047,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5487,
+                    "particle_radial_jitter": 0.3381,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 6",
+                  "distance_from_planet_km": {
+                    "inner": 39371.772,
+                    "outer": 39862.775
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.2012,
+                      0.218,
+                      0.2166
+                    ],
+                    "opacity": 0.2469,
+                    "optical_depth": 0.1936,
+                    "radial_noise_strength": 0.3802,
+                    "radial_brightness_variation": 0.1963,
+                    "azimuthal_asymmetry": 0.0417,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5487,
+                    "particle_radial_jitter": 0.3381,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0432,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.3381,
+                "azimuthal_clumping": 0.5487,
+                "cluster_scale": 0.8266,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Тигардена",
+        "distance_from_star_au": 0.12,
+        "asteroid_count": 95000,
+        "min_size_m": 5,
+        "max_size_m": 220000,
+        "avg_size_m": 420,
+        "mining_appeal": "Средняя (лёд, металлы)"
+      },
+      {
+        "name": "Пояс Койпера Тигардена",
+        "distance_from_star_au": 0.55,
+        "asteroid_count": 1850000,
+        "min_size_m": 50,
+        "max_size_m": 480000,
+        "avg_size_m": 15000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Один из ближайших красных карликов с двумя планетами в зоне обитаемости. Система стабильна и перспективна для колонизации. 2 подтверждено, 2 ожидается.",
+    "technical_notes": "Ультра-холодный красный карлик. Очень низкая светимость требует близкого расположения планет."
+  }
+}

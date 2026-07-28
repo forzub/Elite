@@ -1,0 +1,411 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 54,
+  "name": "HD 85512",
+  "position_ly": {
+    "x": -14.5,
+    "y": 31.2,
+    "z": -8.5
+  },
+  "stars_count": 1,
+  "star_type": "K5V",
+  "stability": "Стабильный оранжевый карлик",
+  "planets_summary": "HD 85512 b (кандидат в зоне обитаемости)",
+  "primary_resources": [
+    "water",
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "metals",
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "HD 85512",
+      "Аш Ди 85512",
+      "Система 85512"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "HD 85512",
+        "alternative_names": [
+          "HD 85512 A"
+        ],
+        "type": "K5V — Оранжевый карлик",
+        "diameter_km": 870000,
+        "mass_kg": 1.3720443e+30,
+        "gravitational_parameter_m3s2": 9.157435271e+19,
+        "mass_solar": 0.69,
+        "luminosity_solar": 0.19,
+        "temperature_k": 4720,
+        "age_gyr": 5.6,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "HD 85512 b",
+            "alternative_names": [
+              "HD 85512 b",
+              "Суперземля в зоне обитаемости"
+            ],
+            "distance_au": 0.26,
+            "orbital_period_days": 54,
+            "diameter_km": 12800,
+            "mass_kg": 2.149992e+25,
+            "gravitational_parameter_m3s2": 1434969161000000.0,
+            "mass_earth": 3.6,
+            "orbit_type": "S-type",
+            "primary_star": "HD 85512",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.8,
+            "surface_temperature_k": 248,
+            "day_length_hours": 1296,
+            "surface_gravity_g": 1.38,
+            "oceans": true,
+            "land_water_ratio": "45/55",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [
+              {
+                "name": "HD 85512 b-I",
+                "diameter_km": 1680,
+                "mass_kg": 4.77776e+22,
+                "gravitational_parameter_m3s2": 3188820357000.0,
+                "mass_earth": 0.008,
+                "distance_from_planet_km": 195000,
+                "atmosphere": true,
+                "atmosphere_composition": "Азот, аргон",
+                "oceans": false,
+                "orbital_period_days": 4.5,
+                "environment_preset_id": "desert_thin_atmosphere"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "ocean_world"
+          },
+          {
+            "name": "HD 85512 c",
+            "alternative_names": [
+              "HD 85512 c",
+              "Холодная суперземля"
+            ],
+            "distance_au": 0.48,
+            "orbital_period_days": 145,
+            "diameter_km": 10800,
+            "mass_kg": 1.49305e+25,
+            "gravitational_parameter_m3s2": 996506361500000.0,
+            "mass_earth": 2.5,
+            "orbit_type": "S-type",
+            "primary_star": "HD 85512",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.5,
+            "surface_temperature_k": 185,
+            "day_length_hours": 3480,
+            "surface_gravity_g": 1.18,
+            "oceans": false,
+            "land_water_ratio": "60/40",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "HD 85512 d",
+            "alternative_names": [
+              "HD 85512 d",
+              "Газовый карлик"
+            ],
+            "distance_au": 1.25,
+            "orbital_period_days": 685,
+            "diameter_km": 52000,
+            "mass_kg": 1.672216e+26,
+            "gravitational_parameter_m3s2": 1.116087125e+16,
+            "mass_earth": 28,
+            "orbit_type": "S-type",
+            "primary_star": "HD 85512",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 325.0,
+            "surface_temperature_k": 95,
+            "day_length_hours": 9.5,
+            "surface_gravity_g": 1.55,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "HD 85512 d-I",
+                "diameter_km": 3200,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 485000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 6.5,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца HD 85512 d",
+                "distance_from_planet_km": {
+                  "inner": 45000,
+                  "outer": 155000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "ice_giant_methane",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible narrow dark ring system derived from ice-giant analogues.",
+              "bands": [
+                {
+                  "name": "Narrow ring 1",
+                  "distance_from_planet_km": {
+                    "inner": 38681.161,
+                    "outer": 38950.608
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.2058,
+                      0.1641,
+                      0.2286
+                    ],
+                    "opacity": 0.2777,
+                    "optical_depth": 0.185,
+                    "radial_noise_strength": 0.4038,
+                    "radial_brightness_variation": 0.2426,
+                    "azimuthal_asymmetry": 0.1621,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5985,
+                    "particle_radial_jitter": 0.3674,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 2",
+                  "distance_from_planet_km": {
+                    "inner": 41146.77,
+                    "outer": 41690.913
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1816,
+                      0.1808,
+                      0.2182
+                    ],
+                    "opacity": 0.331,
+                    "optical_depth": 0.1243,
+                    "radial_noise_strength": 0.287,
+                    "radial_brightness_variation": 0.2453,
+                    "azimuthal_asymmetry": 0.0426,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5985,
+                    "particle_radial_jitter": 0.3674,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 3",
+                  "distance_from_planet_km": {
+                    "inner": 43256.68,
+                    "outer": 43560.403
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1603,
+                      0.2058,
+                      0.2171
+                    ],
+                    "opacity": 0.2042,
+                    "optical_depth": 0.2387,
+                    "radial_noise_strength": 0.3634,
+                    "radial_brightness_variation": 0.1608,
+                    "azimuthal_asymmetry": 0.0961,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5985,
+                    "particle_radial_jitter": 0.3674,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 4",
+                  "distance_from_planet_km": {
+                    "inner": 44654.864,
+                    "outer": 45213.668
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1917,
+                      0.1684,
+                      0.2608
+                    ],
+                    "opacity": 0.2879,
+                    "optical_depth": 0.0973,
+                    "radial_noise_strength": 0.2973,
+                    "radial_brightness_variation": 0.2255,
+                    "azimuthal_asymmetry": 0.1016,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5985,
+                    "particle_radial_jitter": 0.3674,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Narrow ring 5",
+                  "distance_from_planet_km": {
+                    "inner": 46368.527,
+                    "outer": 46772.767
+                  },
+                  "composition": "Dark carbon-rich ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.1547,
+                      0.1782,
+                      0.2084
+                    ],
+                    "opacity": 0.3109,
+                    "optical_depth": 0.0537,
+                    "radial_noise_strength": 0.3282,
+                    "radial_brightness_variation": 0.2083,
+                    "azimuthal_asymmetry": 0.0128,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5985,
+                    "particle_radial_jitter": 0.3674,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0549,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.3674,
+                "azimuthal_clumping": 0.58,
+                "cluster_scale": 0.8779,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс HD 85512",
+        "distance_from_star_au": 0.85,
+        "asteroid_count": 265000,
+        "min_size_m": 8,
+        "max_size_m": 420000,
+        "avg_size_m": 720,
+        "mining_appeal": "Средняя (лёд, металлы)"
+      },
+      {
+        "name": "Пояс Койпера HD 85512",
+        "distance_from_star_au": 4.5,
+        "asteroid_count": 5500000,
+        "min_size_m": 80,
+        "max_size_m": 950000,
+        "avg_size_m": 28000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Оранжевый карлик с суперземлёй в зоне обитаемости. HD 85512 b — один из лучших кандидатов для потенциальной колонизации. 1 подтверждена, 2 ожидается.",
+    "technical_notes": "Оранжевый карлик. Планета находится на краю зоны обитаемости."
+  }
+}

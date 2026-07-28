@@ -1,0 +1,304 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 46,
+  "name": "GJ 3021",
+  "position_ly": {
+    "x": -28.8,
+    "y": 46.8,
+    "z": -6.2
+  },
+  "stars_count": 2,
+  "star_type": "G6V + M4V",
+  "stability": "Стабильная двойная система",
+  "planets_summary": "1 планета (газовый гигант)",
+  "primary_resources": [
+    "helium3",
+    "metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "water"
+  ],
+  "details": {
+    "alternative_names": [
+      "GJ 3021",
+      "GJ 3021",
+      "Двойная Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "GJ 3021 A",
+        "alternative_names": [
+          "GJ 3021 A",
+          "Жёлтый карлик"
+        ],
+        "type": "G6V — Жёлтый карлик",
+        "diameter_km": 1310000,
+        "mass_kg": 1.9487006e+30,
+        "gravitational_parameter_m3s2": 1.300621241e+20,
+        "mass_solar": 0.98,
+        "luminosity_solar": 0.92,
+        "temperature_k": 5750,
+        "age_gyr": 5.2,
+        "distance_from_barycenter_au": 8.5,
+        "position_au": {
+          "x": -8.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "GJ 3021 B",
+          "semi_major_axis_au": 65,
+          "min_distance_au": 50,
+          "max_distance_au": 80,
+          "orbital_period_years": 185,
+          "eccentricity": 0.25
+        },
+        "planets": [
+          {
+            "name": "GJ 3021 b",
+            "alternative_names": [
+              "GJ 3021 b",
+              "Газовый гигант"
+            ],
+            "distance_au": 0.5,
+            "orbital_period_days": 145,
+            "diameter_km": 142000,
+            "mass_kg": 1.582633e+27,
+            "gravitational_parameter_m3s2": 1.056296743e+17,
+            "mass_earth": 265,
+            "orbit_type": "S-type",
+            "primary_star": "GJ 3021 A",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 920.0,
+            "surface_temperature_k": 285,
+            "day_length_hours": 11.8,
+            "surface_gravity_g": 2.38,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3, газодобыча)",
+            "moons": [
+              {
+                "name": "GJ 3021 b-I",
+                "diameter_km": 4650,
+                "mass_kg": 1.19444e+23,
+                "gravitational_parameter_m3s2": 7972050892000.0,
+                "mass_earth": 0.02,
+                "distance_from_planet_km": 675000,
+                "atmosphere": true,
+                "atmosphere_composition": "Азот, метан",
+                "oceans": true,
+                "orbital_period_days": 8.8,
+                "environment_preset_id": "methane_haze_world"
+              },
+              {
+                "name": "GJ 3021 b-II",
+                "diameter_km": 3950,
+                "mass_kg": 1.015274e+23,
+                "gravitational_parameter_m3s2": 6776243258000.0,
+                "mass_earth": 0.017,
+                "distance_from_planet_km": 920000,
+                "atmosphere": true,
+                "atmosphere_composition": "Водород, гелий",
+                "oceans": false,
+                "orbital_period_days": 14.2,
+                "environment_preset_id": "gas_giant_ammonia"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца GJ 3021 b",
+                "distance_from_planet_km": {
+                  "inner": 55000,
+                  "outer": 185000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 98589.144,
+                    "outer": 106784.95
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2921
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 112789.144,
+                    "outer": 128709.291
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.475,
+                    "optical_depth": 0.2682,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.3855,
+                    "radial_structure_scale": 0.7881
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 151839.144,
+                    "outer": 207840.697
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2921
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.1147,
+                "main_band_emphasis": 1.3855,
+                "secondary_band_emphasis": 0.8294,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.6769,
+                "radial_structure_strength": 0.7881,
+                "fine_structure_strength": 0.2921,
+                "edge_softness_scale": 0.8881,
+                "brightness_variation": 0.2721,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "GJ 3021 B",
+        "alternative_names": [
+          "GJ 3021 B",
+          "Красный карлик"
+        ],
+        "type": "M4V — Красный карлик",
+        "diameter_km": 285000,
+        "mass_kg": 3.579246e+29,
+        "gravitational_parameter_m3s2": 2.388896158e+19,
+        "mass_solar": 0.18,
+        "luminosity_solar": 0.0038,
+        "temperature_k": 3150,
+        "age_gyr": 5.2,
+        "distance_from_barycenter_au": 56.5,
+        "position_au": {
+          "x": 56.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "GJ 3021 A",
+          "semi_major_axis_au": 65,
+          "min_distance_au": 50,
+          "max_distance_au": 80,
+          "orbital_period_years": 185,
+          "eccentricity": 0.25
+        },
+        "planets": []
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс GJ 3021",
+        "distance_from_star_au": 3.5,
+        "asteroid_count": 485000,
+        "min_size_m": 15,
+        "max_size_m": 680000,
+        "avg_size_m": 1250,
+        "mining_appeal": "Высокая (металлы, вода)"
+      },
+      {
+        "name": "Пояс Койпера GJ 3021",
+        "distance_from_star_au": 42,
+        "asteroid_count": 10000000,
+        "min_size_m": 100,
+        "max_size_m": 1950000,
+        "avg_size_m": 68000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Двойная система с жёлтым и красным карликом. Газовый гигант с перспективной луной. Система стабильна. 1 подтверждена, 0 ожидается.",
+    "technical_notes": "Двойная система. Газовый гигант вращается вокруг основного компонента A."
+  }
+}

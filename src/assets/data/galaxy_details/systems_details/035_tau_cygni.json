@@ -1,0 +1,563 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 35,
+  "name": "Tau Cygni",
+  "position_ly": {
+    "x": -28.5,
+    "y": 53.2,
+    "z": 12.8
+  },
+  "stars_count": 2,
+  "star_type": "F2IV + G0V",
+  "stability": "Стабильная двойная система",
+  "planets_summary": "Неподтверждённые кандидаты",
+  "primary_resources": [
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "water"
+  ],
+  "details": {
+    "alternative_names": [
+      "Tau Cygni",
+      "τ Cyg",
+      "Тау Лебедя",
+      "Двойная Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Tau Cygni A",
+        "alternative_names": [
+          "τ Cyg A",
+          "Субгигант A"
+        ],
+        "type": "F2IV — Жёлто-белый субгигант",
+        "diameter_km": 1850000,
+        "mass_kg": 3.0821285e+30,
+        "gravitational_parameter_m3s2": 2.057105025e+20,
+        "mass_solar": 1.55,
+        "luminosity_solar": 7.2,
+        "temperature_k": 6850,
+        "age_gyr": 2.5,
+        "distance_from_barycenter_au": 28,
+        "position_au": {
+          "x": -28,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Tau Cygni B",
+          "semi_major_axis_au": 85,
+          "min_distance_au": 65,
+          "max_distance_au": 105,
+          "orbital_period_years": 285,
+          "eccentricity": 0.25
+        },
+        "planets": [
+          {
+            "name": "Tau Cygni Ab",
+            "alternative_names": [
+              "τ Cyg Ab",
+              "Горячая суперземля A"
+            ],
+            "distance_au": 2.5,
+            "orbital_period_days": 985,
+            "diameter_km": 14500,
+            "mass_kg": 3.702764e+25,
+            "gravitational_parameter_m3s2": 2471335777000000.0,
+            "mass_earth": 6.2,
+            "orbit_type": "S-type",
+            "primary_star": "Tau Cygni A",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 5.2,
+            "surface_temperature_k": 485,
+            "day_length_hours": 620,
+            "surface_gravity_g": 1.68,
+            "oceans": false,
+            "land_water_ratio": "80/20",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (требуется подтверждение)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "Tau Cygni Ac",
+            "alternative_names": [
+              "τ Cyg Ac",
+              "Газовый гигант A"
+            ],
+            "distance_au": 8.5,
+            "orbital_period_days": 6850,
+            "diameter_km": 138000,
+            "mass_kg": 1.582633e+27,
+            "gravitational_parameter_m3s2": 1.056296743e+17,
+            "mass_earth": 265,
+            "orbit_type": "S-type",
+            "primary_star": "Tau Cygni A",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения внешнего пояса",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 915.0,
+            "surface_temperature_k": 145,
+            "day_length_hours": 10.2,
+            "surface_gravity_g": 2.32,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "Tau Cygni Ac-I",
+                "diameter_km": 4800,
+                "mass_kg": 1.19444e+23,
+                "gravitational_parameter_m3s2": 7972050892000.0,
+                "mass_earth": 0.02,
+                "distance_from_planet_km": 680000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 8.5,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Tau Cygni Ac",
+                "distance_from_planet_km": {
+                  "inner": 55000,
+                  "outer": 185000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 89024.325,
+                    "outer": 100773.436
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.5972,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 102824.325,
+                    "outer": 132028.455
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.2613,
+                    "optical_depth": 0.2702,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5972,
+                    "particle_radial_jitter": 0.3666,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 140774.325,
+                    "outer": 204549.222
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.5972,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0546,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.3666,
+                "azimuthal_clumping": 0.58,
+                "cluster_scale": 0.8766,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "Tau Cygni B",
+        "alternative_names": [
+          "τ Cyg B",
+          "Жёлтый карлик B"
+        ],
+        "type": "G0V — Жёлтый карлик",
+        "diameter_km": 1320000,
+        "mass_kg": 2.0878935e+30,
+        "gravitational_parameter_m3s2": 1.393522759e+20,
+        "mass_solar": 1.05,
+        "luminosity_solar": 1.15,
+        "temperature_k": 5900,
+        "age_gyr": 2.5,
+        "distance_from_barycenter_au": 57,
+        "position_au": {
+          "x": 57,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Tau Cygni A",
+          "semi_major_axis_au": 85,
+          "min_distance_au": 65,
+          "max_distance_au": 105,
+          "orbital_period_years": 285,
+          "eccentricity": 0.25
+        },
+        "planets": [
+          {
+            "name": "Tau Cygni Ba",
+            "alternative_names": [
+              "τ Cyg Ba",
+              "Суперземля B"
+            ],
+            "distance_au": 1.85,
+            "orbital_period_days": 685,
+            "diameter_km": 12500,
+            "mass_kg": 2.508324e+25,
+            "gravitational_parameter_m3s2": 1674130687000000.0,
+            "mass_earth": 4.2,
+            "orbit_type": "S-type",
+            "primary_star": "Tau Cygni B",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.8,
+            "surface_temperature_k": 325,
+            "day_length_hours": 485,
+            "surface_gravity_g": 1.48,
+            "oceans": false,
+            "land_water_ratio": "75/25",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (требуется подтверждение)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "Tau Cygni Bb",
+            "alternative_names": [
+              "τ Cyg Bb",
+              "Газовый гигант B"
+            ],
+            "distance_au": 5.85,
+            "orbital_period_days": 4250,
+            "diameter_km": 125000,
+            "mass_kg": 1.164579e+27,
+            "gravitational_parameter_m3s2": 7.77274962e+16,
+            "mass_earth": 195,
+            "orbit_type": "S-type",
+            "primary_star": "Tau Cygni B",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Долгосрочные аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 845.0,
+            "surface_temperature_k": 115,
+            "day_length_hours": 10.5,
+            "surface_gravity_g": 2.18,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "Tau Cygni Bb-I",
+                "diameter_km": 4200,
+                "mass_kg": 1.074996e+23,
+                "gravitational_parameter_m3s2": 7174845803000.0,
+                "mass_earth": 0.018,
+                "distance_from_planet_km": 620000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 7.8,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Tau Cygni Bb",
+                "distance_from_planet_km": {
+                  "inner": 52000,
+                  "outer": 175000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 74940.42,
+                    "outer": 84043.723
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 87440.42,
+                    "outer": 107889.76
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.3473,
+                    "optical_depth": 0.3044,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4326,
+                    "particle_radial_jitter": 0.2697,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 121815.42,
+                    "outer": 155779.512
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0159,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.2697,
+                "azimuthal_clumping": 0.4326,
+                "cluster_scale": 0.7071,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Тау Лебедя",
+        "distance_from_star_au": 12,
+        "asteroid_count": 890000,
+        "min_size_m": 25,
+        "max_size_m": 920000,
+        "avg_size_m": 2200,
+        "mining_appeal": "Высокая (металлы, редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера Тау Лебедя",
+        "distance_from_star_au": 95,
+        "asteroid_count": 18000000,
+        "min_size_m": 100,
+        "max_size_m": 2450000,
+        "avg_size_m": 95000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Двойная система с субгигантом и жёлтым карликом. Планеты не подтверждены, но пояс астероидов делает систему интересной для добычи. 0 подтверждено, 4 ожидается.",
+    "technical_notes": "Двойная система. Компоненты находятся на среднем расстоянии друг от друга."
+  }
+}

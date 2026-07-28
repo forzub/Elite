@@ -1,0 +1,408 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 25,
+  "name": "Gliese 357",
+  "position_ly": {
+    "x": -17.52,
+    "y": 23.45,
+    "z": -6.95
+  },
+  "stars_count": 1,
+  "star_type": "M2.5V",
+  "stability": "Стабильный красный карлик",
+  "planets_summary": "3 планеты (GJ 357 d — кандидат в зоне обитаемости)",
+  "primary_resources": [
+    "water",
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "metals",
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "Gliese 357",
+      "GJ 357",
+      "Глизе 357",
+      "Три Сестры"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Gliese 357",
+        "alternative_names": [
+          "GJ 357 A"
+        ],
+        "type": "M2.5V — Красный карлик",
+        "diameter_km": 345000,
+        "mass_kg": 8.550421e+29,
+        "gravitational_parameter_m3s2": 5.706807488e+19,
+        "mass_solar": 0.43,
+        "luminosity_solar": 0.026,
+        "temperature_k": 3580,
+        "age_gyr": 5.8,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "GJ 357 b",
+            "alternative_names": [
+              "GJ 357 b",
+              "Ад",
+              "Горячая суперземля"
+            ],
+            "distance_au": 0.025,
+            "orbital_period_days": 3.9,
+            "diameter_km": 15800,
+            "mass_kg": 3.643042e+25,
+            "gravitational_parameter_m3s2": 2431475522000000.0,
+            "mass_earth": 6.1,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 357",
+            "discovery_status": "подтверждена",
+            "atmosphere": false,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.0,
+            "surface_temperature_k": 530,
+            "day_length_hours": 94,
+            "surface_gravity_g": 1.75,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Низкая (высокая температура)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "airless_rocky"
+          },
+          {
+            "name": "GJ 357 c",
+            "alternative_names": [
+              "GJ 357 c",
+              "Пустыня",
+              "Тёплая суперземля"
+            ],
+            "distance_au": 0.06,
+            "orbital_period_days": 12.5,
+            "diameter_km": 11200,
+            "mass_kg": 2.269436e+25,
+            "gravitational_parameter_m3s2": 1514689669000000.0,
+            "mass_earth": 3.8,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 357",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.5,
+            "surface_temperature_k": 380,
+            "day_length_hours": 300,
+            "surface_gravity_g": 1.4,
+            "oceans": false,
+            "land_water_ratio": "95/5",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "GJ 357 d",
+            "alternative_names": [
+              "GJ 357 d",
+              "Надежда",
+              "Кандидат в обитаемые"
+            ],
+            "distance_au": 0.2,
+            "orbital_period_days": 55.7,
+            "diameter_km": 14500,
+            "mass_kg": 3.643042e+25,
+            "gravitational_parameter_m3s2": 2431475522000000.0,
+            "mass_earth": 6.1,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 357",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 5.2,
+            "surface_temperature_k": 220,
+            "day_length_hours": 1337,
+            "surface_gravity_g": 1.7,
+            "oceans": true,
+            "land_water_ratio": "40/60",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [
+              {
+                "name": "GJ 357 d-I",
+                "diameter_km": 1750,
+                "mass_kg": 5.37498e+22,
+                "gravitational_parameter_m3s2": 3587422901000.0,
+                "mass_earth": 0.009,
+                "distance_from_planet_km": 205000,
+                "atmosphere": true,
+                "oceans": false,
+                "orbital_period_days": 4.8,
+                "environment_preset_id": "desert_thin_atmosphere"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "GJ 357 e",
+            "alternative_names": [
+              "GJ 357 e",
+              "Ледяная суперземля"
+            ],
+            "distance_au": 0.35,
+            "orbital_period_days": 125,
+            "diameter_km": 12800,
+            "mass_kg": 2.68749e+25,
+            "gravitational_parameter_m3s2": 1793711451000000.0,
+            "mass_earth": 4.5,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 357",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения пояса",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.5,
+            "surface_temperature_k": 165,
+            "day_length_hours": 3000,
+            "surface_gravity_g": 1.48,
+            "oceans": false,
+            "land_water_ratio": "60/40",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "GJ 357 f",
+            "alternative_names": [
+              "GJ 357 f",
+              "Газовый карлик"
+            ],
+            "distance_au": 0.95,
+            "orbital_period_days": 520,
+            "diameter_km": 58000,
+            "mass_kg": 2.269436e+26,
+            "gravitational_parameter_m3s2": 1.514689669e+16,
+            "mass_earth": 38,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 357",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Долгосрочные аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 385.0,
+            "surface_temperature_k": 95,
+            "day_length_hours": 9.5,
+            "surface_gravity_g": 1.62,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "GJ 357 f-I",
+                "diameter_km": 3500,
+                "mass_kg": 8.9583e+22,
+                "gravitational_parameter_m3s2": 5979038169000.0,
+                "mass_earth": 0.015,
+                "distance_from_planet_km": 520000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 7.2,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца GJ 357 f",
+                "distance_from_planet_km": {
+                  "inner": 48000,
+                  "outer": 165000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 34850.432,
+                    "outer": 38732.986
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 40650.432,
+                    "outer": 48219.768
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.2334,
+                    "optical_depth": 0.3459,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5021,
+                    "particle_radial_jitter": 0.3107,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 56600.432,
+                    "outer": 68498.907
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0323,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.3107,
+                "azimuthal_clumping": 0.5021,
+                "cluster_scale": 0.7787,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Глизе 357",
+        "distance_from_star_au": 0.5,
+        "asteroid_count": 215000,
+        "min_size_m": 6,
+        "max_size_m": 380000,
+        "avg_size_m": 650,
+        "mining_appeal": "Средняя (лёд, металлы)"
+      },
+      {
+        "name": "Пояс Койпера Глизе 357",
+        "distance_from_star_au": 2.8,
+        "asteroid_count": 3500000,
+        "min_size_m": 80,
+        "max_size_m": 680000,
+        "avg_size_m": 22000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Три планеты, включая GJ 357 d в зоне обитаемости. Система перспективна для дальней колонизации. 3 подтверждено, 2 ожидается.",
+    "technical_notes": "Красный карлик. Планеты находятся в разных температурных зонах."
+  }
+}

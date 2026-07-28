@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 60,
+  "name": "Proxima Centauri",
+  "position_ly": {
+    "x": -1.547684,
+    "y": -1.183014,
+    "z": -3.770406
+  },
+  "stars_count": 1,
+  "star_type": "M5.5 V",
+  "stability": "Одиночный красный карлик, высокая вспышечная активность (вспыхивающая звезда)",
+  "planets_summary": "Proxima Centauri b и d подтверждены; Proxima Centauri c — кандидат",
+  "primary_resources": [
+    "water",
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "metals",
+    "ice"
+  ],
+  "observational_reference_2026": {
+    "source": "NASA Exoplanet Archive",
+    "retrieved_utc": "2026-07-28",
+    "source_url": "https://exoplanetarchive.ipac.caltech.edu/overview/Proxima",
+    "coordinate_frame": "ICRS Cartesian, light-years from Sol",
+    "ra_hms": "14h29m34.43s",
+    "dec_dms": "-62d40m34.26s",
+    "distance_pc": 1.30119,
+    "position_conversion": "x=d*cos(dec)*cos(ra), y=d*cos(dec)*sin(ra), z=d*sin(dec)",
+    "planet_radius_policy": "No physical radius is stored when NASA reports only radial-velocity minimum mass."
+  },
+  "details": {
+    "alternative_names": [
+      "Proxima Cen",
+      "Alpha Centauri C"
+    ],
+    "center_of_mass": {
+      "x_au": 0.0,
+      "y_au": 0.0,
+      "z_au": 0.0
+    },
+    "stars": [
+      {
+        "name": "Proxima Centauri",
+        "alternative_names": [
+          "Proxima Cen",
+          "Alpha Centauri C"
+        ],
+        "type": "M5.5 V — красный карлик, вспыхивающая звезда",
+        "diameter_km": 196187.4,
+        "mass_kg": 2.42792187e+29,
+        "gravitational_parameter_m3s2": 1.6204678936941e+19,
+        "mass_solar": 0.1221,
+        "luminosity_solar": 0.001514,
+        "temperature_k": 2900,
+        "distance_from_barycenter_au": 0.0,
+        "position_au": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "data_origin": "NASA Exoplanet Archive 2026",
+        "planets": [
+          {
+            "name": "Proxima Centauri d",
+            "alternative_names": [
+              "Proxima Cen d"
+            ],
+            "distance_au": 0.02881,
+            "orbital_period_days": 5.12338,
+            "eccentricity": 0.0,
+            "diameter_km": 0.0,
+            "mass_kg": 1.552772e+24,
+            "gravitational_parameter_m3s2": 103636661596000.0,
+            "mass_earth": 0.26,
+            "mass_measurement": "minimum_mass_m_sin_i",
+            "orbit_type": "S-type",
+            "primary_star": "Proxima Centauri",
+            "discovery_status": "confirmed",
+            "equilibrium_temperature_k": 282,
+            "incident_flux_earth": 1.814,
+            "radius_status": "not_measured",
+            "data_origin": "NASA Exoplanet Archive, Suárez Mascareño et al. 2025",
+            "moons": [],
+            "rings": []
+          },
+          {
+            "name": "Proxima Centauri b",
+            "alternative_names": [
+              "Proxima Cen b"
+            ],
+            "distance_au": 0.04848,
+            "orbital_period_days": 11.18465,
+            "eccentricity": 0.0,
+            "diameter_km": 0.0,
+            "mass_kg": 6.300671e+24,
+            "gravitational_parameter_m3s2": 420525684553000.0,
+            "mass_earth": 1.055,
+            "mass_measurement": "minimum_mass_m_sin_i",
+            "orbit_type": "S-type",
+            "primary_star": "Proxima Centauri",
+            "discovery_status": "confirmed",
+            "equilibrium_temperature_k": 218,
+            "incident_flux_earth": 0.641,
+            "radius_status": "not_measured",
+            "data_origin": "NASA Exoplanet Archive, Suárez Mascareño et al. 2025",
+            "moons": [],
+            "rings": []
+          },
+          {
+            "name": "Proxima Centauri c",
+            "alternative_names": [
+              "Proxima Cen c"
+            ],
+            "distance_au": 1.48,
+            "orbital_period_days": 1900.0,
+            "eccentricity": 0.0,
+            "diameter_km": 0.0,
+            "mass_kg": 3.463876e+25,
+            "gravitational_parameter_m3s2": 2311894758680000.0,
+            "mass_earth": 5.8,
+            "mass_measurement": "minimum_mass_m_sin_i",
+            "orbit_type": "S-type",
+            "primary_star": "Proxima Centauri",
+            "discovery_status": "candidate",
+            "equilibrium_temperature_k": 39,
+            "radius_status": "not_measured",
+            "data_origin": "NASA Exoplanet Archive, Damasso et al. 2020",
+            "moons": [],
+            "rings": []
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [],
+    "lore_notes": "Проксима является отдельной компонентой широкой системы Альфа Центавра и хранится отдельно от Alpha Centauri A+B.",
+    "technical_notes": "Координаты и наблюдательные параметры обновлены по NASA Exoplanet Archive. Физические радиусы RV-планет не измерены и не выдумываются."
+  }
+}

@@ -1,0 +1,248 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 10,
+  "name": "Gliese 581",
+  "position_ly": {
+    "x": -7.82,
+    "y": 18.45,
+    "z": -6.12
+  },
+  "stars_count": 1,
+  "star_type": "M3V",
+  "stability": "Стабильный красный карлик",
+  "planets_summary": "4 подтверждённые планеты (GJ 581 g — спорная)",
+  "primary_resources": [
+    "water",
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "metals",
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "Gliese 581",
+      "Глизе 581",
+      "GJ 581",
+      "HO Librae"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Gliese 581",
+        "alternative_names": [
+          "GJ 581",
+          "Глизе 581",
+          "HO Librae"
+        ],
+        "type": "M3V — Красный карлик",
+        "diameter_km": 320000,
+        "mass_kg": 6.164257e+29,
+        "gravitational_parameter_m3s2": 4.11421005e+19,
+        "mass_solar": 0.31,
+        "luminosity_solar": 0.013,
+        "temperature_k": 3480,
+        "age_gyr": 7.0,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Gliese 581 b",
+            "alternative_names": [
+              "GJ 581 b",
+              "Глизе 581 b",
+              "Ад"
+            ],
+            "distance_au": 0.04,
+            "orbital_period_days": 5.4,
+            "diameter_km": 15500,
+            "mass_kg": 3.224988e+25,
+            "gravitational_parameter_m3s2": 2152453741000000.0,
+            "mass_earth": 5.4,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 581",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 12.0,
+            "surface_temperature_k": 520,
+            "day_length_hours": 130,
+            "surface_gravity_g": 1.8,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (высокая температура)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "Gliese 581 c",
+            "alternative_names": [
+              "GJ 581 c",
+              "Глизе 581 c",
+              "Чистилище"
+            ],
+            "distance_au": 0.07,
+            "orbital_period_days": 13,
+            "diameter_km": 12800,
+            "mass_kg": 3.28471e+25,
+            "gravitational_parameter_m3s2": 2192313995000000.0,
+            "mass_earth": 5.5,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 581",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 8.0,
+            "surface_temperature_k": 380,
+            "day_length_hours": 312,
+            "surface_gravity_g": 1.7,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Низкая",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "Gliese 581 d",
+            "alternative_names": [
+              "GJ 581 d",
+              "Глизе 581 d",
+              "Рай"
+            ],
+            "distance_au": 0.22,
+            "orbital_period_days": 67,
+            "diameter_km": 11200,
+            "mass_kg": 3.344432e+25,
+            "gravitational_parameter_m3s2": 2232174250000000.0,
+            "mass_earth": 5.6,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 581",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 5.0,
+            "surface_temperature_k": 240,
+            "day_length_hours": 480,
+            "surface_gravity_g": 1.6,
+            "oceans": true,
+            "land_water_ratio": "20/80",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (вода, потенциально обитаемая)",
+            "moons": [
+              {
+                "name": "Gliese 581 d-I",
+                "diameter_km": 1850,
+                "mass_kg": 5.37498e+22,
+                "gravitational_parameter_m3s2": 3587422901000.0,
+                "mass_earth": 0.009,
+                "distance_from_planet_km": 195000,
+                "orbital_period_days": 4.2,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "ocean_world"
+          },
+          {
+            "name": "Gliese 581 g",
+            "alternative_names": [
+              "GJ 581 g",
+              "Глизе 581 g",
+              "Загадка"
+            ],
+            "distance_au": 0.15,
+            "orbital_period_days": 37,
+            "diameter_km": 10500,
+            "mass_kg": 2.09027e+25,
+            "gravitational_parameter_m3s2": 1395108906000000.0,
+            "mass_earth": 3.5,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 581",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.8,
+            "surface_temperature_k": 265,
+            "day_length_hours": 385,
+            "surface_gravity_g": 1.42,
+            "oceans": true,
+            "land_water_ratio": "45/55",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (требуется подтверждение)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "ocean_world"
+          },
+          {
+            "name": "Gliese 581 e",
+            "alternative_names": [
+              "GJ 581 e",
+              "Глизе 581 e",
+              "Ледяной мир"
+            ],
+            "distance_au": 0.35,
+            "orbital_period_days": 125,
+            "diameter_km": 9200,
+            "mass_kg": 1.672216e+25,
+            "gravitational_parameter_m3s2": 1116087125000000.0,
+            "mass_earth": 2.8,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 581",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения внешнего пояса",
+            "atmosphere": false,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.0,
+            "surface_temperature_k": 185,
+            "day_length_hours": 520,
+            "surface_gravity_g": 1.25,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (замороженные газы)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "airless_icy"
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Глизе 581",
+        "distance_from_star_au": 0.5,
+        "asteroid_count": 280000,
+        "min_size_m": 8,
+        "max_size_m": 450000,
+        "avg_size_m": 800,
+        "mining_appeal": "Средняя (лёд, металлы)"
+      },
+      {
+        "name": "Пояс Койпера Глизе 581",
+        "distance_from_star_au": 2.5,
+        "asteroid_count": 1850000,
+        "min_size_m": 80,
+        "max_size_m": 580000,
+        "avg_size_m": 22000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Одна из самых известных систем красных карликов. GJ 581 g остаётся спорной. Четыре подтверждённые планеты делают систему ценной для исследований обитаемости.",
+    "technical_notes": "Стабильный красный карлик. Планеты близко к звезде из-за низкой светимости."
+  }
+}

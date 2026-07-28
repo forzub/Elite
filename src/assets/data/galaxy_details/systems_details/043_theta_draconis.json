@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 43,
+  "name": "Theta Draconis",
+  "position_ly": {
+    "x": -23.8,
+    "y": 58.5,
+    "z": 16.2
+  },
+  "stars_count": 2,
+  "star_type": "F9V",
+  "stability": "Стабильная двойная система",
+  "planets_summary": "Неподтверждённые кандидаты",
+  "primary_resources": [
+    "metals",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "water"
+  ],
+  "details": {
+    "alternative_names": [
+      "Theta Draconis",
+      "Тета Дракона",
+      "Двойная Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Theta Draconis A",
+        "alternative_names": [
+          "Theta Dra A",
+          "HD 175775 A"
+        ],
+        "type": "F9V — Жёлто-белый карлик",
+        "diameter_km": 1420000,
+        "mass_kg": 2.2867405e+30,
+        "gravitational_parameter_m3s2": 1.526239212e+20,
+        "mass_solar": 1.15,
+        "luminosity_solar": 2.2,
+        "temperature_k": 6150,
+        "age_gyr": 3.5,
+        "distance_from_barycenter_au": 12.5,
+        "position_au": {
+          "x": -12.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Theta Draconis B",
+          "semi_major_axis_au": 65,
+          "min_distance_au": 50,
+          "max_distance_au": 80,
+          "orbital_period_years": 185,
+          "eccentricity": 0.25
+        },
+        "planets": [
+          {
+            "name": "Theta Draconis Ab",
+            "alternative_names": [
+              "Theta Dra Ab",
+              "Горячая суперземля"
+            ],
+            "distance_au": 1.85,
+            "orbital_period_days": 685,
+            "diameter_km": 13500,
+            "mass_kg": 3.105544e+25,
+            "gravitational_parameter_m3s2": 2072733232000000.0,
+            "mass_earth": 5.2,
+            "orbit_type": "S-type",
+            "primary_star": "Theta Draconis A",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 4.8,
+            "surface_temperature_k": 485,
+            "day_length_hours": 520,
+            "surface_gravity_g": 1.62,
+            "oceans": false,
+            "land_water_ratio": "80/20",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          }
+        ]
+      },
+      {
+        "name": "Theta Draconis B",
+        "alternative_names": [
+          "Theta Dra B",
+          "HD 175775 B",
+          "Оранжевый карлик"
+        ],
+        "type": "K5V — Оранжевый карлик",
+        "diameter_km": 880000,
+        "mass_kg": 1.3521596e+30,
+        "gravitational_parameter_m3s2": 9.024718818e+19,
+        "mass_solar": 0.68,
+        "luminosity_solar": 0.16,
+        "temperature_k": 4550,
+        "age_gyr": 3.5,
+        "distance_from_barycenter_au": 52.5,
+        "position_au": {
+          "x": 52.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Theta Draconis A",
+          "semi_major_axis_au": 65,
+          "min_distance_au": 50,
+          "max_distance_au": 80,
+          "orbital_period_years": 185,
+          "eccentricity": 0.25
+        },
+        "planets": [
+          {
+            "name": "Theta Draconis Bb",
+            "alternative_names": [
+              "Theta Dra Bb",
+              "Суперземля B"
+            ],
+            "distance_au": 0.65,
+            "orbital_period_days": 185,
+            "diameter_km": 10800,
+            "mass_kg": 1.672216e+25,
+            "gravitational_parameter_m3s2": 1116087125000000.0,
+            "mass_earth": 2.8,
+            "orbit_type": "S-type",
+            "primary_star": "Theta Draconis B",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.8,
+            "surface_temperature_k": 265,
+            "day_length_hours": 385,
+            "surface_gravity_g": 1.25,
+            "oceans": false,
+            "land_water_ratio": "75/25",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Theta Draconis",
+        "distance_from_star_au": 10,
+        "asteroid_count": 1050000,
+        "min_size_m": 28,
+        "max_size_m": 1020000,
+        "avg_size_m": 2850,
+        "mining_appeal": "Высокая (редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера Theta Draconis",
+        "distance_from_star_au": 75,
+        "asteroid_count": 16000000,
+        "min_size_m": 100,
+        "max_size_m": 2350000,
+        "avg_size_m": 92000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Двойная система в созвездии Дракона. Планеты не подтверждены, но пояс астероидов делает систему ценной для добычи. 0 подтверждено, 2 ожидается.",
+    "technical_notes": "Двойная система. Стабильные орбиты, низкая активность звёзд."
+  }
+}

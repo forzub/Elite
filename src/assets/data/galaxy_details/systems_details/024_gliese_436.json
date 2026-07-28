@@ -1,0 +1,482 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 24,
+  "name": "Gliese 436",
+  "position_ly": {
+    "x": -19.52,
+    "y": 24.18,
+    "z": -7.85
+  },
+  "stars_count": 1,
+  "star_type": "M2.5V",
+  "stability": "Стабильный красный карлик",
+  "planets_summary": "GJ 436 b (горячий нептун)",
+  "primary_resources": [
+    "helium3",
+    "ice"
+  ],
+  "secondary_resources": [
+    "metals"
+  ],
+  "details": {
+    "alternative_names": [
+      "Gliese 436",
+      "GJ 436",
+      "Глизе 436",
+      "Горячий Нептун"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Gliese 436",
+        "alternative_names": [
+          "GJ 436 A"
+        ],
+        "type": "M2.5V — Красный карлик",
+        "diameter_km": 340000,
+        "mass_kg": 8.351574e+29,
+        "gravitational_parameter_m3s2": 5.574091035e+19,
+        "mass_solar": 0.42,
+        "luminosity_solar": 0.025,
+        "temperature_k": 3550,
+        "age_gyr": 6.2,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "GJ 436 b",
+            "alternative_names": [
+              "GJ 436 b",
+              "Горячий Нептун",
+              "Паровой мир"
+            ],
+            "distance_au": 0.028,
+            "orbital_period_days": 2.64,
+            "diameter_km": 52000,
+            "mass_kg": 1.313884e+26,
+            "gravitational_parameter_m3s2": 8769255981000000.0,
+            "mass_earth": 22,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 436",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 280.0,
+            "surface_temperature_k": 712,
+            "day_length_hours": 63,
+            "surface_gravity_g": 2.0,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (горячий нептун)",
+            "moons": [],
+            "rings": [
+              {
+                "name": "Faint rings of GJ 436 b",
+                "distance_from_planet_km": {
+                  "inner": 33897.757,
+                  "outer": 55997.757
+                },
+                "composition": "Dust, ice and dark particles",
+                "mining_appeal": "Low",
+                "data_status": "procedural_plausible"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Dust halo",
+                  "distance_from_planet_km": {
+                    "inner": 33897.757,
+                    "outer": 39617.757
+                  },
+                  "composition": "Micron dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.28,
+                      0.26,
+                      0.24
+                    ],
+                    "opacity": 0.025,
+                    "optical_depth": 0.01,
+                    "radial_noise_strength": 0.65,
+                    "radial_brightness_variation": 0.4,
+                    "azimuthal_asymmetry": 0.12,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main dusty ring",
+                  "distance_from_planet_km": {
+                    "inner": 40137.757,
+                    "outer": 42737.757
+                  },
+                  "composition": "Dark silicate dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.36,
+                      0.33,
+                      0.3
+                    ],
+                    "opacity": 0.08,
+                    "optical_depth": 0.05,
+                    "radial_noise_strength": 0.42,
+                    "radial_brightness_variation": 0.24,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.3877,
+                    "particle_radial_jitter": 0.2433,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Gossamer ring",
+                  "distance_from_planet_km": {
+                    "inner": 43257.757,
+                    "outer": 55997.757
+                  },
+                  "composition": "Very diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.3,
+                      0.28,
+                      0.27
+                    ],
+                    "opacity": 0.018,
+                    "optical_depth": 0.008,
+                    "radial_noise_strength": 0.74,
+                    "radial_brightness_variation": 0.52,
+                    "azimuthal_asymmetry": 0.2,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0053,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.2433,
+                "azimuthal_clumping": 0.3877,
+                "cluster_scale": 0.6608,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          },
+          {
+            "name": "GJ 436 c",
+            "alternative_names": [
+              "GJ 436 c",
+              "Суперземля"
+            ],
+            "distance_au": 0.085,
+            "orbital_period_days": 14.5,
+            "diameter_km": 13500,
+            "mass_kg": 3.105544e+25,
+            "gravitational_parameter_m3s2": 2072733232000000.0,
+            "mass_earth": 5.2,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 436",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Периодические аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 4.5,
+            "surface_temperature_k": 385,
+            "day_length_hours": 348,
+            "surface_gravity_g": 1.58,
+            "oceans": false,
+            "land_water_ratio": "70/30",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "GJ 436 d",
+            "alternative_names": [
+              "GJ 436 d",
+              "Ледяной гигант"
+            ],
+            "distance_au": 0.28,
+            "orbital_period_days": 95,
+            "diameter_km": 45000,
+            "mass_kg": 1.074996e+26,
+            "gravitational_parameter_m3s2": 7174845803000000.0,
+            "mass_earth": 18,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 436",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения пояса",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 245.0,
+            "surface_temperature_k": 145,
+            "day_length_hours": 9.2,
+            "surface_gravity_g": 1.48,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "GJ 436 d-I",
+                "diameter_km": 3200,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 420000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 6.5,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца GJ 436 d",
+                "distance_from_planet_km": {
+                  "inner": 45000,
+                  "outer": 155000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 28113.216,
+                    "outer": 30174.086
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 32613.216,
+                    "outer": 40393.486
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.3178,
+                    "optical_depth": 0.3366,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.3918,
+                    "particle_radial_jitter": 0.2458,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 44988.216,
+                    "outer": 63472.634
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0063,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.2458,
+                "azimuthal_clumping": 0.3918,
+                "cluster_scale": 0.6651,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Глизе 436",
+        "distance_from_star_au": 0.15,
+        "asteroid_count": 185000,
+        "min_size_m": 5,
+        "max_size_m": 320000,
+        "avg_size_m": 580,
+        "mining_appeal": "Низкая (высокая температура)"
+      },
+      {
+        "name": "Пояс Койпера Глизе 436",
+        "distance_from_star_au": 0.85,
+        "asteroid_count": 2500000,
+        "min_size_m": 50,
+        "max_size_m": 580000,
+        "avg_size_m": 18000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Горячий нептун с экстремальной температурой. Система интересна для изучения миграции планет. 1 подтверждена, 2 ожидается.",
+    "technical_notes": "Красный карлик. Планета находится очень близко к звезде."
+  }
+}

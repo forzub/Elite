@@ -1,0 +1,431 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 32,
+  "name": "Aldebaran",
+  "position_ly": {
+    "x": -32.5,
+    "y": 52.8,
+    "z": -8.5
+  },
+  "stars_count": 1,
+  "star_type": "K5III",
+  "stability": "Красный гигант (конечная стадия эволюции)",
+  "planets_summary": "1 возможная планета (требует подтверждения)",
+  "primary_resources": [
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "metals"
+  ],
+  "details": {
+    "alternative_names": [
+      "Aldebaran",
+      "Альдебаран",
+      "Глаз Быка",
+      "K5III"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Aldebaran",
+        "alternative_names": [
+          "α Tau",
+          "Альдебаран A"
+        ],
+        "type": "K5III — Красный гигант",
+        "diameter_km": 61000000,
+        "mass_kg": 2.3066252e+30,
+        "gravitational_parameter_m3s2": 1.539510857e+20,
+        "mass_solar": 1.16,
+        "luminosity_solar": 439,
+        "temperature_k": 3910,
+        "age_gyr": 6.4,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Aldebaran b",
+            "alternative_names": [
+              "Альдебаран b",
+              "Выжившая планета"
+            ],
+            "distance_au": 1.35,
+            "orbital_period_days": 628,
+            "diameter_km": 42000,
+            "mass_kg": 3.88193e+25,
+            "gravitational_parameter_m3s2": 2590916540000000.0,
+            "mass_earth": 6.5,
+            "orbit_type": "S-type",
+            "primary_star": "Aldebaran",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 320.0,
+            "surface_temperature_k": 780,
+            "day_length_hours": 15,
+            "surface_gravity_g": 1.85,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "",
+            "mining_appeal": "Низкая (экстремальная температура)",
+            "moons": [],
+            "rings": [
+              {
+                "name": "Faint rings of Aldebaran b",
+                "distance_from_planet_km": {
+                  "inner": 24849.387,
+                  "outer": 61338.719
+                },
+                "composition": "Dust, ice and dark particles",
+                "mining_appeal": "Low",
+                "data_status": "procedural_plausible"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 24849.387,
+                    "outer": 27299.902
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2303
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 29049.387,
+                    "outer": 36450.503
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.4787,
+                    "optical_depth": 0.376,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 1.2722,
+                    "radial_structure_scale": 0.6955
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 40599.387,
+                    "outer": 61338.719
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "layered_band",
+                    "visual_opacity_scale": 0.012,
+                    "radial_structure_scale": 0.2303
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "saturn_like_broad_bands",
+                "render_mode": "layered_bands",
+                "recognizability_priority": 0.92,
+                "artistic_width_scale": 1.0735,
+                "main_band_emphasis": 1.2722,
+                "secondary_band_emphasis": 0.7471,
+                "faint_band_emphasis": 0.18,
+                "diffuse_band_emphasis": 0.012,
+                "gap_contrast": 1.4967,
+                "radial_structure_strength": 0.6955,
+                "fine_structure_strength": 0.2303,
+                "edge_softness_scale": 0.7955,
+                "brightness_variation": 0.2103,
+                "minimum_visible_width_px": 0.85,
+                "minimum_main_band_width_px": 2.0,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": true,
+                  "back_half_brightness": 0.82,
+                  "inner_edge_darkening": 0.08
+                }
+              }
+            }
+          },
+          {
+            "name": "Aldebaran c",
+            "alternative_names": [
+              "Альдебаран c",
+              "Газовый гигант"
+            ],
+            "distance_au": 4.85,
+            "orbital_period_days": 3850,
+            "diameter_km": 142000,
+            "mass_kg": 1.702077e+27,
+            "gravitational_parameter_m3s2": 1.136017252e+17,
+            "mass_earth": 285,
+            "orbit_type": "S-type",
+            "primary_star": "Aldebaran",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения внешнего пояса",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 925.0,
+            "surface_temperature_k": 285,
+            "day_length_hours": 10.5,
+            "surface_gravity_g": 2.35,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "Aldebaran c-I",
+                "diameter_km": 4800,
+                "mass_kg": 1.19444e+23,
+                "gravitational_parameter_m3s2": 7972050892000.0,
+                "mass_earth": 0.02,
+                "distance_from_planet_km": 680000,
+                "atmosphere": true,
+                "oceans": true,
+                "orbital_period_days": 8.5,
+                "environment_preset_id": "terrestrial_temperate"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Aldebaran c",
+                "distance_from_planet_km": {
+                  "inner": 55000,
+                  "outer": 185000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 90973.121,
+                    "outer": 97742.927
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 105173.121,
+                    "outer": 137090.501
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.3407,
+                    "optical_depth": 0.2827,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4246,
+                    "particle_radial_jitter": 0.2651,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 144223.121,
+                    "outer": 192504.657
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.014,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.2651,
+                "azimuthal_clumping": 0.4246,
+                "cluster_scale": 0.6989,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Альдебарана",
+        "distance_from_star_au": 45,
+        "asteroid_count": 1850000,
+        "min_size_m": 50,
+        "max_size_m": 1200000,
+        "avg_size_m": 8500,
+        "mining_appeal": "Средняя (лёд, редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера Альдебарана",
+        "distance_from_star_au": 185,
+        "asteroid_count": 25000000,
+        "min_size_m": 100,
+        "max_size_m": 2850000,
+        "avg_size_m": 125000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Красный гигант в конце эволюции. Звезда расширилась, поглотив внутренние планеты. Оставшаяся планета обречена на поглощение. 1 кандидат, 1 ожидается.",
+    "technical_notes": "Красный гигант. Система нестабильна в долгосрочной перспективе. Высокая светимость."
+  }
+}

@@ -675,11 +675,8 @@ std::string toAssetPath(
 
 
 
-constexpr const char* kStarAtlasSystemsPath =
-    "src/assets/data/star_atlas/star_systems.json";
-
-constexpr const char* kStarAtlasSystemDetailsPath =
-    "src/assets/data/star_atlas/system_details.json";
+constexpr const char* kGalaxyDetailsRoot =
+    "src/assets/data/galaxy_details";
 
 std::string normalizeIdentityToken(
     const std::string& s
@@ -1044,7 +1041,7 @@ bool enrichDescriptorFromPhysicalAtlas(
         return false;
 
     // This is a derived in-memory value.
-    // Source of truth remains system_details.json / diameter_km.
+    // Source of truth remains galaxy_details/systems_details/*.json / details / diameter_km.
     desc.referenceRadiusKm = body->radiusKm;
 
     std::cout
@@ -1054,7 +1051,7 @@ bool enrichDescriptorFromPhysicalAtlas(
         << desc.bodyFolderName
         << " radius_km="
         << body->radiusKm
-        << " source=star_atlas/system_details.json"
+        << " source=galaxy_details/systems_details"
         << "\n";
 
     return true;
@@ -3697,10 +3694,10 @@ json descriptorToJson(const CelestialBodyVisualDescriptor& d)
     j["reference_radius_km"] = d.referenceRadiusKm;
 
     j["reference_radius_source"] = {
-        { "source_path", kStarAtlasSystemDetailsPath },
-        { "source_field", "diameter_km" },
+        { "source_path", kGalaxyDetailsRoot },
+        { "source_field", "details.*.diameter_km" },
         { "derivation", "reference_radius_km = diameter_km * 0.5" },
-        { "authoritative_layer", "star_atlas/system_details.json" }
+        { "authoritative_layer", "galaxy_details/systems_details" }
     };
 
     j["notes"] = d.notes;
@@ -3907,19 +3904,14 @@ bool CelestialTextureBaker::bakeLibrary(
     const auto resolvedOutput =
         resolveProjectPath(options.outputRoot);
 
-
-    const auto resolvedStarSystems =
-        resolveProjectPath(kStarAtlasSystemsPath);
-
-    const auto resolvedSystemDetails =
-        resolveProjectPath(kStarAtlasSystemDetailsPath);
+    const auto resolvedGalaxyDetails =
+        resolveProjectPath(kGalaxyDetailsRoot);
 
     world::celestial::StarAtlasDatabase physicalAtlas;
 
     const bool physicalAtlasLoaded =
         physicalAtlas.load(
-            resolvedStarSystems.string(),
-            resolvedSystemDetails.string()
+            resolvedGalaxyDetails.string()
         );
 
     if (!physicalAtlasLoaded)

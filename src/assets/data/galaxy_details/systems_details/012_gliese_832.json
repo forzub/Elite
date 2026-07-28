@@ -1,0 +1,461 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 12,
+  "name": "Gliese 832",
+  "position_ly": {
+    "x": 8.524905,
+    "y": -6.333174,
+    "z": -12.222234
+  },
+  "stars_count": 1,
+  "star_type": "M1.5 V / M2-3 V",
+  "stability": "Старый спокойный красный карлик; низкая светимость, длительная главная последовательность",
+  "planets_summary": "GJ 832 b подтверждена; сигнал GJ 832 c был опровергнут в 2022 году. В игровой модели 3026 года внутренние планеты c-e открыты последующими наблюдениями.",
+  "primary_resources": [
+    "helium3"
+  ],
+  "secondary_resources": [
+    "water",
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "Gliese 832",
+      "GJ 832",
+      "HD 204961"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Gliese 832",
+        "alternative_names": [
+          "GJ 832",
+          "HD 204961"
+        ],
+        "type": "M1.5 V / M2-3 V — красный карлик",
+        "diameter_km": 614382.41,
+        "mass_kg": 8.93021877e+29,
+        "gravitational_parameter_m3s2": 5.960295913661099e+19,
+        "mass_solar": 0.4491,
+        "luminosity_solar": 0.02999,
+        "temperature_k": 3657,
+        "age_gyr": 8.1,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Gliese 832 d",
+            "alternative_names": [
+              "GJ 832 d",
+              "Внутренний кузнечный мир"
+            ],
+            "distance_au": 0.075,
+            "orbital_period_days": 11.19,
+            "diameter_km": 13200,
+            "mass_kg": 6.56942e+24,
+            "gravitational_parameter_m3s2": 438462790600000.0,
+            "mass_earth": 1.1,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 832",
+            "discovery_status": "gameplay_confirmed_3026",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.18,
+            "surface_temperature_k": 620,
+            "day_length_hours": 268.7,
+            "surface_gravity_g": 1.03,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Высокая (тугоплавкие металлы, силикатная кора)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "lava_world",
+            "eccentricity": 0.03,
+            "data_origin": "procedural_future_gameplay"
+          },
+          {
+            "name": "Gliese 832 c",
+            "alternative_names": [
+              "GJ 832 c",
+              "Суперземля",
+              "Надежда"
+            ],
+            "distance_au": 0.163,
+            "orbital_period_days": 35.87,
+            "diameter_km": 16400,
+            "mass_kg": 3.224988e+25,
+            "gravitational_parameter_m3s2": 2152453741000000.0,
+            "mass_earth": 5.4,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 832",
+            "discovery_status": "gameplay_confirmed_3026",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 5.5,
+            "surface_temperature_k": 253,
+            "day_length_hours": 861.0,
+            "surface_gravity_g": 1.55,
+            "oceans": true,
+            "land_water_ratio": "35/65",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [
+              {
+                "name": "Gliese 832 c-I",
+                "diameter_km": 1100,
+                "mass_kg": 2.38888e+21,
+                "gravitational_parameter_m3s2": 159441017840.0,
+                "mass_earth": 0.0004,
+                "distance_from_planet_km": 85000,
+                "orbital_period_days": 1.23,
+                "environment_preset_id": "airless_rocky",
+                "data_origin": "procedural_future_gameplay"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "ocean_world",
+            "eccentricity": 0.08,
+            "observational_status_2026": "false_positive_signal",
+            "radius_status": "procedural_mass_radius_model",
+            "data_origin": "procedural_future_gameplay constrained by the historical 35.68-day signal"
+          },
+          {
+            "name": "Gliese 832 e",
+            "alternative_names": [
+              "GJ 832 e",
+              "Внешний ледяной мир"
+            ],
+            "distance_au": 0.42,
+            "orbital_period_days": 148.35,
+            "diameter_km": 19800,
+            "mass_kg": 2.030548e+25,
+            "gravitational_parameter_m3s2": 1355249000000000.0,
+            "mass_earth": 3.4,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 832",
+            "discovery_status": "gameplay_confirmed_3026",
+            "lore_hint": "Гравитационные возмущения пояса",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 4.0,
+            "surface_temperature_k": 178,
+            "day_length_hours": 31.0,
+            "surface_gravity_g": 1.39,
+            "oceans": false,
+            "land_water_ratio": "55/45",
+            "ocean_composition": "Подповерхностный водно-аммиачный океан",
+            "mining_appeal": "Высокая (вода, аммиак, летучие соединения)",
+            "moons": [
+              {
+                "name": "Gliese 832 e-I",
+                "diameter_km": 2100,
+                "mass_kg": 1.19444e+22,
+                "gravitational_parameter_m3s2": 797205089200.0,
+                "mass_earth": 0.002,
+                "distance_from_planet_km": 150000,
+                "orbital_period_days": 3.63,
+                "environment_preset_id": "airless_icy",
+                "data_origin": "procedural_future_gameplay"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "thin_nitrogen_ice_world",
+            "eccentricity": 0.06,
+            "data_origin": "procedural_future_gameplay"
+          },
+          {
+            "name": "Gliese 832 b",
+            "alternative_names": [
+              "GJ 832 b",
+              "Газовый гигант"
+            ],
+            "distance_au": 3.651,
+            "orbital_period_days": 3795.0,
+            "diameter_km": 139820.0,
+            "mass_kg": 1.97172044e+27,
+            "gravitational_parameter_m3s2": 1.315990608492e+17,
+            "mass_earth": 330.2,
+            "orbit_type": "S-type",
+            "primary_star": "Gliese 832",
+            "discovery_status": "confirmed",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 850.0,
+            "surface_temperature_k": 43,
+            "day_length_hours": 10.5,
+            "surface_gravity_g": 2.6,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3, газодобыча)",
+            "moons": [
+              {
+                "name": "Gliese 832 b-I",
+                "diameter_km": 3600,
+                "mass_kg": 8.9583e+22,
+                "gravitational_parameter_m3s2": 5979038169000.0,
+                "mass_earth": 0.015,
+                "distance_from_planet_km": 450000,
+                "orbital_period_days": 1.91,
+                "environment_preset_id": "airless_volcanic",
+                "data_origin": "procedural_future_gameplay"
+              },
+              {
+                "name": "Gliese 832 b-II",
+                "diameter_km": 5200,
+                "mass_kg": 1.49305e+23,
+                "gravitational_parameter_m3s2": 9965063615000.0,
+                "mass_earth": 0.025,
+                "distance_from_planet_km": 750000,
+                "orbital_period_days": 4.12,
+                "environment_preset_id": "airless_icy",
+                "data_origin": "procedural_future_gameplay"
+              },
+              {
+                "name": "Gliese 832 b-III",
+                "diameter_km": 4800,
+                "mass_kg": 1.313884e+23,
+                "gravitational_parameter_m3s2": 8769255812000.0,
+                "mass_earth": 0.022,
+                "distance_from_planet_km": 1200000,
+                "orbital_period_days": 8.33,
+                "atmosphere": true,
+                "atmosphere_composition": "Азот, метан, углеводородный смог",
+                "oceans": false,
+                "environment_preset_id": "methane_haze_world",
+                "data_origin": "procedural_future_gameplay"
+              },
+              {
+                "name": "Gliese 832 b-IV",
+                "diameter_km": 1800,
+                "mass_kg": 1.79166e+22,
+                "gravitational_parameter_m3s2": 1195807634000.0,
+                "mass_earth": 0.003,
+                "distance_from_planet_km": 2100000,
+                "orbital_period_days": 19.29,
+                "environment_preset_id": "airless_icy",
+                "data_origin": "procedural_future_gameplay"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Глизе 832 b",
+                "distance_from_planet_km": {
+                  "inner": 52000,
+                  "outer": 175000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 77626.346,
+                    "outer": 86590.296
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 90126.346,
+                    "outer": 106961.927
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.3963,
+                    "optical_depth": 0.3208,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.4782,
+                    "particle_radial_jitter": 0.2966,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 124501.346,
+                    "outer": 148072.227
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0266,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.2966,
+                "azimuthal_clumping": 0.4782,
+                "cluster_scale": 0.754,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            },
+            "eccentricity": 0.021,
+            "mass_measurement": "astrometry_and_radial_velocity",
+            "radius_status": "gameplay_jupiter_class_proxy",
+            "data_origin": "NASA orbit and mass; procedural gameplay radius, atmosphere, moons and rings"
+          }
+        ],
+        "data_origin": "NASA Exoplanet Archive 2026"
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Внутренний пояс Глизе 832",
+        "distance_from_star_au": 0.72,
+        "asteroid_count": 275000,
+        "min_size_m": 8,
+        "max_size_m": 480000,
+        "avg_size_m": 720,
+        "mining_appeal": "Средняя (силикаты, металлы, остаточный лёд)"
+      },
+      {
+        "name": "Внешний пояс Глизе 832",
+        "distance_from_star_au": 8.5,
+        "asteroid_count": 3200000,
+        "min_size_m": 100,
+        "max_size_m": 720000,
+        "avg_size_m": 28000,
+        "mining_appeal": "Высокая (вода, аммиак, летучие соединения)"
+      }
+    ],
+    "lore_notes": "К 3026 году система стала одной из ключевых целей дальних экспедиций. Подтверждённый холодный газовый гигант GJ 832 b обладает развитой системой спутников; внутренние планеты были открыты после эпохи ранних спорных радиальных измерений.",
+    "technical_notes": "Официальные параметры звезды и GJ 832 b отделены от процедурной модели 3026 года. Сигнал GJ 832 c имел статус false positive в NASA Exoplanet Archive в 2026 году; игровая планета c является последующим независимым открытием."
+  },
+  "observational_reference_2026": {
+    "source": "NASA Exoplanet Archive",
+    "retrieved_utc": "2026-07-28",
+    "source_url": "https://exoplanetarchive.ipac.caltech.edu/overview/GJ%20832",
+    "coordinate_frame": "ICRS Cartesian, light-years from Sol",
+    "ra_hms": "21h33m33.90s",
+    "dec_dms": "-49d00m45.06s",
+    "distance_pc": 4.96435,
+    "position_conversion": "x=d*cos(dec)*cos(ra), y=d*cos(dec)*sin(ra), z=d*sin(dec)",
+    "stellar_mass_solar": 0.4491,
+    "stellar_radius_solar": 0.441557,
+    "stellar_temperature_k": 3657,
+    "stellar_age_gyr": 8.1,
+    "confirmed_planets": [
+      "GJ 832 b"
+    ],
+    "false_positive_signals": [
+      {
+        "name": "GJ 832 c",
+        "status": "false_positive",
+        "reason": "The radial-velocity signal was refuted by Gorrini et al. 2022",
+        "reported_period_days": 35.68,
+        "reported_semi_major_axis_au": 0.163,
+        "reported_minimum_mass_earth": 5.4
+      }
+    ],
+    "gameplay_note": "Planets c-e and their moons are a procedurally plausible year-3026 system model. They are not NASA-confirmed 2026 bodies."
+  }
+}

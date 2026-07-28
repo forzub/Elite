@@ -1,4 +1,5 @@
 #include "src/game/system_map/SystemMapRenderer.h"
+#include "src/input/Input.h"
 
 #include <cmath>
 #include <iostream>
@@ -186,30 +187,6 @@ namespace
 
 
 
-
-
-    std::unordered_map<GLFWwindow*, double*> g_systemMapScrollTargets;
-
-    void systemMapScrollCallback(
-        GLFWwindow* window,
-        double,
-        double yoffset
-    )
-    {
-        auto it =
-            g_systemMapScrollTargets.find(
-                window
-            );
-
-        if (it == g_systemMapScrollTargets.end() ||
-            it->second == nullptr)
-        {
-            return;
-        }
-
-        *it->second +=
-            yoffset;
-    }
 
 
     constexpr double AU_PER_LIGHT_YEAR = 63241.077084266;
@@ -1438,7 +1415,7 @@ void SystemMapRenderer::init()
     {
         m_mapStarfieldInitialized =
             m_mapStarfieldRenderer.initialize(
-                "assets/data/star_atlas/star_systems.json"
+                "assets/data/galaxy_details"
             );
 
         if (!m_mapStarfieldInitialized)
@@ -1459,7 +1436,7 @@ void SystemMapRenderer::init()
 
         m_galaxyBackdropStarfieldInitialized =
             m_galaxyBackdropStarfieldRenderer.initialize(
-                "assets/data/star_atlas/star_systems.json"
+                "assets/data/galaxy_details"
             );
 
         if (!m_galaxyBackdropStarfieldInitialized)
@@ -1469,18 +1446,6 @@ void SystemMapRenderer::init()
                 << " failed to initialize galaxy backdrop starfield"
                 << "\n";
         }
-    }
-
-    GLFWwindow* window = glfwGetCurrentContext();
-
-    if (window)
-    {
-        g_systemMapScrollTargets[window] = &m_pendingScrollY;
-
-        glfwSetScrollCallback(
-            window,
-            systemMapScrollCallback
-        );
     }
 
     m_initialized = true;
@@ -4839,6 +4804,14 @@ void SystemMapRenderer::handleInput(
         return;
     }
 
+    /*
+        Scroll input belongs to the application-wide Input service.
+        SystemMapRenderer must not replace GLFW callbacks or keep raw
+        pointers in a global table. The renderer only consumes the
+        frame-local wheel delta while the map owns input focus.
+    */
+    m_pendingScrollY +=
+        Input::instance().consumeScrollY();
 
 
     /*

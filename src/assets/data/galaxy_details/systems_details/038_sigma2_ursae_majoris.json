@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 38,
+  "name": "Sigma² Ursae Majoris",
+  "position_ly": {
+    "x": -18.5,
+    "y": 58.2,
+    "z": 18.5
+  },
+  "stars_count": 3,
+  "star_type": "F7IV + K2V",
+  "stability": "Стабильная многокомпонентная система",
+  "planets_summary": "Неподтверждённые кандидаты",
+  "primary_resources": [
+    "rare_metals",
+    "metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "water"
+  ],
+  "details": {
+    "alternative_names": [
+      "Sigma² UMa",
+      "Сигма² Большой Медведицы",
+      "Тройная Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Sigma² UMa A",
+        "alternative_names": [
+          "Сигма² UMa A",
+          "HD 102194 A"
+        ],
+        "type": "F7IV — Жёлто-белый субгигант",
+        "diameter_km": 1720000,
+        "mass_kg": 2.8236274e+30,
+        "gravitational_parameter_m3s2": 1.884573636e+20,
+        "mass_solar": 1.42,
+        "luminosity_solar": 6.5,
+        "temperature_k": 6450,
+        "age_gyr": 2.8,
+        "distance_from_barycenter_au": 12.5,
+        "position_au": {
+          "x": -12.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "Sigma² UMa B+C",
+          "semi_major_axis_au": 85,
+          "min_distance_au": 65,
+          "max_distance_au": 105,
+          "orbital_period_years": 285,
+          "eccentricity": 0.25
+        },
+        "planets": [
+          {
+            "name": "Sigma² UMa Ab",
+            "alternative_names": [
+              "Сигма² UMa Ab",
+              "Горячая суперземля"
+            ],
+            "distance_au": 1.85,
+            "orbital_period_days": 685,
+            "diameter_km": 13500,
+            "mass_kg": 3.105544e+25,
+            "gravitational_parameter_m3s2": 2072733232000000.0,
+            "mass_earth": 5.2,
+            "orbit_type": "S-type",
+            "primary_star": "Sigma² UMa A",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 4.8,
+            "surface_temperature_k": 485,
+            "day_length_hours": 520,
+            "surface_gravity_g": 1.62,
+            "oceans": false,
+            "land_water_ratio": "80/20",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя (требуется подтверждение)",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          }
+        ]
+      },
+      {
+        "name": "Sigma² UMa B",
+        "alternative_names": [
+          "Сигма² UMa B",
+          "HD 102194 B"
+        ],
+        "type": "K2V — Оранжевый карлик",
+        "diameter_km": 940000,
+        "mass_kg": 1.5510066e+30,
+        "gravitational_parameter_m3s2": 1.035188335e+20,
+        "mass_solar": 0.78,
+        "luminosity_solar": 0.28,
+        "temperature_k": 4950,
+        "age_gyr": 2.8,
+        "distance_from_barycenter_au": 35.5,
+        "position_au": {
+          "x": 35.5,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Sigma² UMa Bb",
+            "alternative_names": [
+              "Сигма² UMa Bb",
+              "Суперземля B"
+            ],
+            "distance_au": 0.85,
+            "orbital_period_days": 285,
+            "diameter_km": 11500,
+            "mass_kg": 1.911104e+25,
+            "gravitational_parameter_m3s2": 1275528143000000.0,
+            "mass_earth": 3.2,
+            "orbit_type": "S-type",
+            "primary_star": "Sigma² UMa B",
+            "discovery_status": "необнаружена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 3.2,
+            "surface_temperature_k": 285,
+            "day_length_hours": 420,
+            "surface_gravity_g": 1.35,
+            "oceans": false,
+            "land_water_ratio": "70/30",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          }
+        ]
+      },
+      {
+        "name": "Sigma² UMa C",
+        "alternative_names": [
+          "Сигма² UMa C",
+          "Красный карлик"
+        ],
+        "type": "M3V — Красный карлик",
+        "diameter_km": 320000,
+        "mass_kg": 6.959645e+29,
+        "gravitational_parameter_m3s2": 4.645075862e+19,
+        "mass_solar": 0.35,
+        "luminosity_solar": 0.015,
+        "temperature_k": 3450,
+        "age_gyr": 2.8,
+        "distance_from_barycenter_au": 37,
+        "position_au": {
+          "x": 37,
+          "y": 0,
+          "z": 0
+        },
+        "planets": []
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Sigma² UMa",
+        "distance_from_star_au": 15,
+        "asteroid_count": 1150000,
+        "min_size_m": 30,
+        "max_size_m": 1050000,
+        "avg_size_m": 3200,
+        "mining_appeal": "Высокая (редкие элементы)"
+      },
+      {
+        "name": "Пояс Койпера Sigma² UMa",
+        "distance_from_star_au": 95,
+        "asteroid_count": 18000000,
+        "min_size_m": 100,
+        "max_size_m": 2450000,
+        "avg_size_m": 95000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Тройная система с субгигантом, оранжевым и красным карликами. Планеты не подтверждены, но пояс астероидов исключительно богат. 0 подтверждено, 2 ожидается.",
+    "technical_notes": "Многокомпонентная система. Сложная гравитационная динамика."
+  }
+}

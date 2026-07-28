@@ -1,0 +1,325 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 44,
+  "name": "HD 33564",
+  "position_ly": {
+    "x": -36.5,
+    "y": 53.8,
+    "z": -7.2
+  },
+  "stars_count": 2,
+  "star_type": "F6V",
+  "stability": "Стабильная двойная система",
+  "planets_summary": "1 планета (газовый гигант)",
+  "primary_resources": [
+    "helium3",
+    "rare_metals"
+  ],
+  "secondary_resources": [
+    "ice",
+    "metals"
+  ],
+  "details": {
+    "alternative_names": [
+      "HD 33564",
+      "Аш Ди 33564",
+      "Двойная Система"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "HD 33564 A",
+        "alternative_names": [
+          "HD 33564 A",
+          "Жёлто-белый карлик"
+        ],
+        "type": "F6V — Жёлто-белый карлик",
+        "diameter_km": 1480000,
+        "mass_kg": 2.4259334e+30,
+        "gravitational_parameter_m3s2": 1.619140729e+20,
+        "mass_solar": 1.22,
+        "luminosity_solar": 3.2,
+        "temperature_k": 6250,
+        "age_gyr": 2.9,
+        "distance_from_barycenter_au": 15.5,
+        "position_au": {
+          "x": -15.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "HD 33564 B",
+          "semi_major_axis_au": 85,
+          "min_distance_au": 65,
+          "max_distance_au": 105,
+          "orbital_period_years": 285,
+          "eccentricity": 0.25
+        },
+        "planets": [
+          {
+            "name": "HD 33564 b",
+            "alternative_names": [
+              "HD 33564 b",
+              "Газовый гигант"
+            ],
+            "distance_au": 2.15,
+            "orbital_period_days": 1050,
+            "diameter_km": 135000,
+            "mass_kg": 1.313884e+27,
+            "gravitational_parameter_m3s2": 8.769255981e+16,
+            "mass_earth": 220,
+            "orbit_type": "S-type",
+            "primary_star": "HD 33564 A",
+            "discovery_status": "подтверждена",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 890.0,
+            "surface_temperature_k": 155,
+            "day_length_hours": 10.5,
+            "surface_gravity_g": 2.28,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3, газодобыча)",
+            "moons": [
+              {
+                "name": "HD 33564 b-I",
+                "diameter_km": 4450,
+                "mass_kg": 1.134718e+23,
+                "gravitational_parameter_m3s2": 7573448347000.0,
+                "mass_earth": 0.019,
+                "distance_from_planet_km": 645000,
+                "atmosphere": true,
+                "atmosphere_composition": "Азот, метан",
+                "oceans": true,
+                "orbital_period_days": 8.2,
+                "environment_preset_id": "methane_haze_world"
+              },
+              {
+                "name": "HD 33564 b-II",
+                "diameter_km": 3850,
+                "mass_kg": 9.55552e+22,
+                "gravitational_parameter_m3s2": 6377640714000.0,
+                "mass_earth": 0.016,
+                "distance_from_planet_km": 885000,
+                "atmosphere": true,
+                "atmosphere_composition": "Водород, гелий",
+                "oceans": false,
+                "orbital_period_days": 13.5,
+                "environment_preset_id": "gas_giant_ammonia"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца HD 33564 b",
+                "distance_from_planet_km": {
+                  "inner": 55000,
+                  "outer": 185000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 94243.34,
+                    "outer": 100051.391
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 107743.34,
+                    "outer": 134740.276
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.238,
+                    "optical_depth": 0.1825,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.5338,
+                    "particle_radial_jitter": 0.3293,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 144868.34,
+                    "outer": 182273.33
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.558,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0397,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.3293,
+                "azimuthal_clumping": 0.5338,
+                "cluster_scale": 0.8112,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "HD 33564 B",
+        "alternative_names": [
+          "HD 33564 B",
+          "Оранжевый карлик"
+        ],
+        "type": "K2V — Оранжевый карлик",
+        "diameter_km": 930000,
+        "mass_kg": 1.5112372e+30,
+        "gravitational_parameter_m3s2": 1.008645044e+20,
+        "mass_solar": 0.76,
+        "luminosity_solar": 0.26,
+        "temperature_k": 4900,
+        "age_gyr": 2.9,
+        "distance_from_barycenter_au": 69.5,
+        "position_au": {
+          "x": 69.5,
+          "y": 0,
+          "z": 0
+        },
+        "binary_orbit": {
+          "companion": "HD 33564 A",
+          "semi_major_axis_au": 85,
+          "min_distance_au": 65,
+          "max_distance_au": 105,
+          "orbital_period_years": 285,
+          "eccentricity": 0.25
+        },
+        "planets": []
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс HD 33564",
+        "distance_from_star_au": 7.5,
+        "asteroid_count": 825000,
+        "min_size_m": 22,
+        "max_size_m": 920000,
+        "avg_size_m": 2100,
+        "mining_appeal": "Высокая (лёд, металлы)"
+      },
+      {
+        "name": "Пояс Койпера HD 33564",
+        "distance_from_star_au": 55,
+        "asteroid_count": 13000000,
+        "min_size_m": 100,
+        "max_size_m": 2150000,
+        "avg_size_m": 78000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Двойная система с газовым гигантом. Система стабильна, богата ресурсами для долгосрочной добычи. 1 подтверждена, 0 ожидается.",
+    "technical_notes": "Двойная система. Газовый гигант вращается вокруг основного компонента."
+  }
+}

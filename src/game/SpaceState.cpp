@@ -23,7 +23,6 @@
 #include "src/game/player/ActorCodeGenerator.h"
 
 #include "ui/ConfirmExitState.h"
-#include "src/galaxy/GalaxyDatabase.h"
 
 #include "src/render/camera/RenderCameraViewport.h"
 #include "src/debug/DebugSettings.h"
@@ -395,21 +394,15 @@ SpaceState::SpaceState(StateStack& states)
     initHUD();
 
     
-    // =======================================================================
-    // load galaxy database + test
-    // =======================================================================
-    
-    GalaxyDatabase galaxy;
-    galaxy.loadFromDirectory("assets/data/galaxy");
-    galaxy.validate();
-    
-    std::cerr
-    << "Actors:  " << galaxy.actorCount()  << "\n"
-    << "Systems: " << galaxy.systemCount() << "\n"
-    << "Nodes:   " << galaxy.nodeCount()   << "\n"
-    << "Routes:  " << galaxy.routeCount()  << "\n";
-    
-    
+    /*
+        The legacy political GalaxyDatabase is intentionally not loaded here.
+        It is a separate, currently unused population/politics layer whose
+        numeric system IDs do not match the physical StarAtlas IDs. Loading it
+        only for startup counters created the false impression that it was part
+        of the active server world. It can be reintroduced later behind an
+        explicit server-owned world service and a stable cross-catalog key.
+    */
+
 
     // =======================================================================
     // world = vacuum

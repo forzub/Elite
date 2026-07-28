@@ -1,0 +1,427 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "id": 8,
+  "name": "Tau Ceti",
+  "position_ly": {
+    "x": 10.291,
+    "y": 5.024,
+    "z": -3.271
+  },
+  "stars_count": 1,
+  "star_type": "G8.5V",
+  "stability": "Стабильный жёлтый карлик",
+  "planets_summary": "Несколько кандидатов, состав системы уточняется",
+  "primary_resources": [
+    "metals",
+    "water"
+  ],
+  "secondary_resources": [
+    "ice"
+  ],
+  "details": {
+    "alternative_names": [
+      "Tau Ceti",
+      "Тау Кита",
+      "η Ceti",
+      "HD 10700"
+    ],
+    "center_of_mass": {
+      "x_au": 0,
+      "y_au": 0,
+      "z_au": 0
+    },
+    "stars": [
+      {
+        "name": "Tau Ceti",
+        "alternative_names": [
+          "η Ceti",
+          "Тау Кита",
+          "HD 10700"
+        ],
+        "type": "G8.5V — Жёлтый карлик",
+        "diameter_km": 1250000,
+        "mass_kg": 1.5510066e+30,
+        "gravitational_parameter_m3s2": 1.035188335e+20,
+        "mass_solar": 0.78,
+        "luminosity_solar": 0.52,
+        "temperature_k": 5344,
+        "age_gyr": 5.8,
+        "distance_from_barycenter_au": 0,
+        "position_au": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "planets": [
+          {
+            "name": "Tau Ceti e",
+            "alternative_names": [
+              "τ Cet e",
+              "Тау Кита e",
+              "Надежда"
+            ],
+            "distance_au": 0.55,
+            "orbital_period_days": 168,
+            "diameter_km": 11800,
+            "mass_kg": 2.329158e+25,
+            "gravitational_parameter_m3s2": 1554549924000000.0,
+            "mass_earth": 3.9,
+            "orbit_type": "S-type",
+            "primary_star": "Tau Ceti",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 4.5,
+            "surface_temperature_k": 295,
+            "day_length_hours": 185,
+            "surface_gravity_g": 1.5,
+            "oceans": true,
+            "land_water_ratio": "45/55",
+            "ocean_composition": "Вода (H₂O)",
+            "mining_appeal": "Высокая (кандидат в обитаемые)",
+            "moons": [
+              {
+                "name": "Tau Ceti e-I",
+                "diameter_km": 2100,
+                "mass_kg": 7.16664e+22,
+                "gravitational_parameter_m3s2": 4783230535000.0,
+                "mass_earth": 0.012,
+                "distance_from_planet_km": 220000,
+                "orbital_period_days": 5.8,
+                "environment_preset_id": "airless_rocky"
+              },
+              {
+                "name": "Tau Ceti e-II",
+                "diameter_km": 1650,
+                "mass_kg": 4.77776e+22,
+                "gravitational_parameter_m3s2": 3188820357000.0,
+                "mass_earth": 0.008,
+                "distance_from_planet_km": 315000,
+                "orbital_period_days": 9.5,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [],
+            "environment_preset_id": "ocean_world"
+          },
+          {
+            "name": "Tau Ceti f",
+            "alternative_names": [
+              "τ Cet f",
+              "Тау Кита f",
+              "Вера"
+            ],
+            "distance_au": 1.35,
+            "orbital_period_days": 640,
+            "diameter_km": 10200,
+            "mass_kg": 1.49305e+25,
+            "gravitational_parameter_m3s2": 996506361500000.0,
+            "mass_earth": 2.5,
+            "orbit_type": "S-type",
+            "primary_star": "Tau Ceti",
+            "discovery_status": "кандидат",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 2.2,
+            "surface_temperature_k": 210,
+            "day_length_hours": 145,
+            "surface_gravity_g": 1.2,
+            "oceans": false,
+            "land_water_ratio": "80/20",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "cold_co2_world"
+          },
+          {
+            "name": "Tau Ceti g",
+            "alternative_names": [
+              "τ Cet g",
+              "Тау Кита g",
+              "Любовь"
+            ],
+            "distance_au": 0.78,
+            "orbital_period_days": 320,
+            "diameter_km": 9500,
+            "mass_kg": 1.074996e+25,
+            "gravitational_parameter_m3s2": 717484580300000.0,
+            "mass_earth": 1.8,
+            "orbit_type": "S-type",
+            "primary_star": "Tau Ceti",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Периодические аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 1.8,
+            "surface_temperature_k": 245,
+            "day_length_hours": 165,
+            "surface_gravity_g": 1.05,
+            "oceans": false,
+            "land_water_ratio": "85/15",
+            "ocean_composition": "",
+            "mining_appeal": "Средняя",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "desert_thin_atmosphere"
+          },
+          {
+            "name": "Tau Ceti h",
+            "alternative_names": [
+              "τ Cet h",
+              "Тау Кита h",
+              "Холодный мир"
+            ],
+            "distance_au": 1.85,
+            "orbital_period_days": 920,
+            "diameter_km": 8800,
+            "mass_kg": 8.9583e+24,
+            "gravitational_parameter_m3s2": 597903816900000.0,
+            "mass_earth": 1.5,
+            "orbit_type": "S-type",
+            "primary_star": "Tau Ceti",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Гравитационные возмущения внешнего пояса",
+            "atmosphere": false,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 0.0,
+            "surface_temperature_k": 175,
+            "day_length_hours": 125,
+            "surface_gravity_g": 0.98,
+            "oceans": false,
+            "land_water_ratio": "100/0",
+            "ocean_composition": "",
+            "mining_appeal": "Низкая",
+            "moons": [],
+            "rings": [],
+            "environment_preset_id": "airless_icy"
+          },
+          {
+            "name": "Tau Ceti i",
+            "alternative_names": [
+              "τ Cet i",
+              "Тау Кита i",
+              "Газовый гигант"
+            ],
+            "distance_au": 4.2,
+            "orbital_period_days": 3150,
+            "diameter_km": 118000,
+            "mass_kg": 1.104857e+27,
+            "gravitational_parameter_m3s2": 7.374147075e+16,
+            "mass_earth": 185,
+            "orbit_type": "S-type",
+            "primary_star": "Tau Ceti",
+            "discovery_status": "необнаружена",
+            "lore_hint": "Долгосрочные аномалии в радиальной скорости",
+            "atmosphere": true,
+            "atmosphere_breathable": false,
+            "atmosphere_density": 850.0,
+            "surface_temperature_k": 95,
+            "day_length_hours": 10.2,
+            "surface_gravity_g": 2.15,
+            "oceans": false,
+            "land_water_ratio": "0/0",
+            "ocean_composition": "Жидкий водород",
+            "mining_appeal": "Высокая (гелий-3)",
+            "moons": [
+              {
+                "name": "Tau Ceti i-I",
+                "diameter_km": 4200,
+                "mass_kg": 1.074996e+23,
+                "gravitational_parameter_m3s2": 7174845803000.0,
+                "mass_earth": 0.018,
+                "distance_from_planet_km": 620000,
+                "orbital_period_days": 7.8,
+                "environment_preset_id": "airless_rocky"
+              },
+              {
+                "name": "Tau Ceti i-II",
+                "diameter_km": 3500,
+                "mass_kg": 8.36108e+22,
+                "gravitational_parameter_m3s2": 5580435624000.0,
+                "mass_earth": 0.014,
+                "distance_from_planet_km": 850000,
+                "orbital_period_days": 12.5,
+                "environment_preset_id": "airless_rocky"
+              }
+            ],
+            "rings": [
+              {
+                "name": "Кольца Тау Кита i",
+                "distance_from_planet_km": {
+                  "inner": 55000,
+                  "outer": 185000
+                },
+                "composition": "Лёд, пыль",
+                "mining_appeal": "Средняя"
+              }
+            ],
+            "environment_preset_id": "gas_giant_ammonia",
+            "ring_system": {
+              "plane": {
+                "mode": "planet_equatorial",
+                "normal_source": "planet_rotation_axis",
+                "inclination_offset_deg": 0.0
+              },
+              "data_status": "procedural_plausible",
+              "notes": "Plausible ring system generated from gas-giant analogues.",
+              "bands": [
+                {
+                  "name": "Inner halo",
+                  "distance_from_planet_km": {
+                    "inner": 70991.66,
+                    "outer": 78660.006
+                  },
+                  "composition": "Diffuse dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.32,
+                      0.3,
+                      0.28
+                    ],
+                    "opacity": 0.05,
+                    "optical_depth": 0.02,
+                    "radial_noise_strength": 0.55,
+                    "radial_brightness_variation": 0.32,
+                    "azimuthal_asymmetry": 0.08,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.579,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                },
+                {
+                  "name": "Main ring",
+                  "distance_from_planet_km": {
+                    "inner": 82791.66,
+                    "outer": 109808.543
+                  },
+                  "composition": "Ice-rich dust and fragments",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.62,
+                      0.61,
+                      0.58
+                    ],
+                    "opacity": 0.354,
+                    "optical_depth": 0.3541,
+                    "radial_noise_strength": 0.28,
+                    "radial_brightness_variation": 0.25,
+                    "azimuthal_asymmetry": 0.05,
+                    "edge_softness": 0.035,
+                    "casts_shadow": true,
+                    "visibility_class": "main",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.95,
+                    "particle_density_scale": 0.95,
+                    "particle_clumpiness": 0.579,
+                    "particle_radial_jitter": 0.3559,
+                    "particle_size_px_range": [
+                      1.05,
+                      2.35
+                    ]
+                  }
+                },
+                {
+                  "name": "Outer diffuse sheet",
+                  "distance_from_planet_km": {
+                    "inner": 115241.66,
+                    "outer": 154496.664
+                  },
+                  "composition": "Diffuse ice and dust",
+                  "render": {
+                    "role": "ring",
+                    "tint_rgb": [
+                      0.48,
+                      0.49,
+                      0.5
+                    ],
+                    "opacity": 0.035,
+                    "optical_depth": 0.015,
+                    "radial_noise_strength": 0.68,
+                    "radial_brightness_variation": 0.45,
+                    "azimuthal_asymmetry": 0.14,
+                    "edge_softness": 0.12,
+                    "casts_shadow": false,
+                    "visibility_class": "diffuse",
+                    "display_mode": "particle_cloud",
+                    "visual_opacity_scale": 0.27,
+                    "particle_density_scale": 0.46,
+                    "particle_clumpiness": 0.579,
+                    "particle_radial_jitter": 0.41400000000000003,
+                    "particle_size_px_range": [
+                      0.72,
+                      1.55
+                    ]
+                  }
+                }
+              ],
+              "visual": {
+                "display_profile": "readable_particle_ring_cloud",
+                "render_mode": "particle_cloud",
+                "recognizability_priority": 0.68,
+                "artistic_width_scale": 1.0504,
+                "continuous_fill": 0.008,
+                "particle_density": 0.6,
+                "particle_opacity_scale": 0.82,
+                "particle_size_px_range": [
+                  0.85,
+                  1.8
+                ],
+                "radial_jitter": 0.3559,
+                "azimuthal_clumping": 0.579,
+                "cluster_scale": 0.8578,
+                "softness": 0.56,
+                "faint_band_emphasis": 0.5,
+                "diffuse_band_emphasis": 0.26,
+                "minimum_visible_width_px": 0.95,
+                "use_lighting": false,
+                "use_planet_shadow": false,
+                "use_ring_shadow_on_planet": false,
+                "artistic_occlusion": {
+                  "enabled": false,
+                  "back_half_brightness": 0.98,
+                  "inner_edge_darkening": 0.0
+                }
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "system_planets": [],
+    "asteroid_belts": [
+      {
+        "name": "Пояс Тау Кита",
+        "distance_from_star_au": 3.0,
+        "asteroid_count": 1200000,
+        "min_size_m": 5,
+        "max_size_m": 650000,
+        "avg_size_m": 900,
+        "mining_appeal": "Высокая (металлы, вода)"
+      },
+      {
+        "name": "Пояс Койпера Тау Кита",
+        "distance_from_star_au": 45,
+        "asteroid_count": 8500000,
+        "min_size_m": 100,
+        "max_size_m": 1850000,
+        "avg_size_m": 65000,
+        "mining_appeal": "Высокая (лёд)"
+      }
+    ],
+    "lore_notes": "Один из ближайших солнечных аналогов. Несколько кандидатов в планеты, состав системы уточняется. Перспективная цель для колонизации благодаря стабильности звезды.",
+    "technical_notes": "Стабильный жёлтый карлик. Низкая металличность звезды может влиять на состав планет."
+  }
+}

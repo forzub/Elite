@@ -113,7 +113,7 @@ void WorldLabelRenderer::init(StateContext& context)
     // -------------------------------------------------
     m_primitiveProgram = compileShaderFromFiles(
         "assets/shaders/hud/hudPrimitive.vert",
-        "assets/shaders/hud/hudPrimitive.frag"
+        "assets/shaders/common/vertex_color.frag"
     );
 
     if (!m_primitiveProgram)

@@ -24,7 +24,7 @@ void RenderCockpitPass::init()
 
     shader = compileShaderFromFiles(
         "assets/shaders/cockpit/cockpit.vert",
-        "assets/shaders/cockpit/cockpit.frag"
+        "assets/shaders/common/vertex_color.frag"
     );
 
     fillShader = compileShaderFromFiles(

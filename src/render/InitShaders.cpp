@@ -6,13 +6,6 @@ void InitShaders()
     auto& shaders = ShaderLibrary::instance();
 
     shaders.load(
-        "ship_wire",
-        "assets/shaders/wiremesh/wireframe.vert",
-        "assets/shaders/wiremesh/wireframe.frag",
-        ShaderProgram::Unknown
-    );
-
-    shaders.load(
         "mesh_fill",
         "assets/shaders/mesh/mesh_fill.vert",
         "assets/shaders/mesh/mesh_fill.frag",
@@ -64,7 +57,7 @@ void InitShaders()
     shaders.load(
         "debug_lines",
         "assets/shaders/scene/debug_lines.vert",
-        "assets/shaders/scene/debug_lines.frag",
+        "assets/shaders/common/vertex_color.frag",
         ShaderProgram::DebugLines
     );
 
@@ -86,27 +79,27 @@ void InitShaders()
     shaders.load(
         "system_map_lines",
         "assets/shaders/system_map/map_lines.vert",
-        "assets/shaders/system_map/map_lines.frag",
+        "assets/shaders/common/vertex_color.frag",
         ShaderProgram::DebugLines
     );
 
     shaders.load(
         "hub_map_assembly_wire",
         "assets/shaders/system_map/hub_map_assembly_wire.vert",
-        "assets/shaders/system_map/hub_map_assembly_wire.frag",
+        "assets/shaders/common/vertex_color_discard.frag",
         ShaderProgram::Unknown
     );
 
     shaders.load(
         "hub_map_dynamic_lines",
         "assets/shaders/system_map/hub_map_dynamic_lines.vert",
-        "assets/shaders/system_map/hub_map_dynamic_lines.frag",
+        "assets/shaders/common/vertex_color_discard.frag",
         ShaderProgram::Unknown
     );
 
     shaders.load(
         "hub_planet_overlay_composite",
-        "assets/shaders/system_map/hub_planet_overlay_composite.vert",
+        "assets/shaders/common/fullscreen_triangle_uv.vert",
         "assets/shaders/system_map/hub_planet_overlay_composite.frag",
         ShaderProgram::Unknown
     );
@@ -131,14 +124,14 @@ void InitShaders()
 
     shaders.load(
         "celestial_cloud_texture_generate",
-        "assets/shaders/celestial/cloud_texture_generate.vert",
+        "assets/shaders/common/fullscreen_triangle_uv.vert",
         "assets/shaders/celestial/cloud_texture_generate.frag",
         ShaderProgram::Unknown
     );
 
     shaders.load(
         "celestial_cloud_texture_blend",
-        "assets/shaders/celestial/cloud_texture_blend.vert",
+        "assets/shaders/common/fullscreen_triangle_uv.vert",
         "assets/shaders/celestial/cloud_texture_blend.frag",
         ShaderProgram::Unknown
     );
@@ -146,7 +139,7 @@ void InitShaders()
 
     shaders.load(
         "hub_planet_atmosphere",
-        "assets/shaders/celestial/hub_planet_atmosphere.vert",
+        "assets/shaders/common/fullscreen_triangle_uv.vert",
         "assets/shaders/celestial/hub_planet_atmosphere.frag",
         ShaderProgram::Unknown
     );
@@ -154,7 +147,7 @@ void InitShaders()
 
     shaders.load(
         "hub_planet_surface",
-        "assets/shaders/celestial/hub_planet_surface.vert",
+        "assets/shaders/common/fullscreen_triangle_uv.vert",
         "assets/shaders/celestial/hub_planet_surface.frag",
         ShaderProgram::Unknown
     );
@@ -168,7 +161,7 @@ void InitShaders()
 
     shaders.load(
         "planet_detail_sculpt",
-        "assets/shaders/celestial/hub_planet_atmosphere.vert",
+        "assets/shaders/common/fullscreen_triangle_uv.vert",
         "assets/shaders/celestial/planet_detail_sculpt.frag",
         ShaderProgram::Unknown
     );
@@ -193,7 +186,7 @@ void InitShaders()
 
     shaders.load(
         "galaxy_haze_composite",
-        "assets/shaders/starfield/galaxy_haze_composite.vert",
+        "assets/shaders/common/fullscreen_triangle_uv.vert",
         "assets/shaders/starfield/galaxy_haze_composite.frag",
         ShaderProgram::Unknown
     );

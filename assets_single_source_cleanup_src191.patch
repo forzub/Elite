@@ -1,36 +1,29 @@
 diff --git a/src/assets/README.md b/src/assets/README.md
 new file mode 100644
-index 0000000000000000000000000000000000000000..9ceff5e8ba2d4de08bb34091ac2be45c1e8e7bfa
+index 0000000..0ac1a73
 --- /dev/null
 +++ b/src/assets/README.md
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,18 @@
 +# Asset sources of truth
 +
-+This directory contains runtime assets. Do not keep backup or copy files next
-+to active assets; version control is the history.
++This directory contains runtime assets and source data copied into the build tree.
 +
 +## Galaxy data
 +
-+- `data/star_atlas/star_systems.json` is the single physical star-system catalog.
-+- `data/star_atlas/system_details.json` contains detailed celestial definitions.
-+- `data/galaxy/real_star_catalog.json` is the background real-star catalog.
-+- `data/galaxy/systems.json` is currently a separate legacy political/network
-+  dataset consumed by `GalaxyDatabase`; it is not a copy of the physical atlas.
-+  It must be migrated deliberately before it can be removed.
++- `data/star_atlas/star_systems.json` is the only star-system summary catalog.
++- `data/star_atlas/system_details.json` is the current detailed-system catalog until the directory-based galaxy catalog migration is completed.
++- `data/galaxy/real_star_catalog.json` contains the extended real-star background catalog.
++- `data/galaxy/systems.json` belongs to the separate legacy `GalaxyDatabase` graph (`actors`, `nodes`, and `routes`) and is not a duplicate of the star atlas.
 +
 +## Shared shaders
 +
-+Reusable shader stages live in `shaders/common/`. Multiple shader programs may
-+reference the same stage. Do not duplicate an identical stage into feature
-+folders only to give it another filename.
++Reusable shader stages live in `shaders/common`. Renderer registrations should reference these files instead of keeping byte-for-byte or functionally identical copies beside every effect.
 +
-+## Generated and historical files
++## Retained data
 +
-+Generated runtime output belongs under `generated/` or `data/celestial/runtime/`.
-+Historical versions belong in version control, not in files named `old`, `copy`,
-+or `backup`.
++Unique files are not deleted merely because no direct literal path appears in C++: environment, body-visual, and source-catalog directories are loaded by convention or tooling. Legacy galaxy datasets with unique content remain until their consumers are migrated explicitly.
 diff --git a/src/assets/data/galaxy/real_star_catalog.json b/src/assets/data/galaxy/real_star_catalog.json
-index 69a660113a61e09bb6e9e91cd6630809f57973fa..530715f6c69d0656aa4de90dd5c9507af9661d92 100644
+index 69a6601..530715f 100644
 --- a/src/assets/data/galaxy/real_star_catalog.json
 +++ b/src/assets/data/galaxy/real_star_catalog.json
 @@ -12,7 +12,7 @@
@@ -44,7 +37,7 @@ index 69a660113a61e09bb6e9e91cd6630809f57973fa..530715f6c69d0656aa4de90dd5c9507a
    "counts": {
 diff --git a/src/assets/data/galaxy/star_systems.json b/src/assets/data/galaxy/star_systems.json
 deleted file mode 100644
-index d73cbee87b46483917526a598101ad8cfde8c69e..0000000000000000000000000000000000000000
+index d73cbee..0000000
 --- a/src/assets/data/galaxy/star_systems.json
 +++ /dev/null
 @@ -1,872 +0,0 @@
@@ -923,7 +916,7 @@ index d73cbee87b46483917526a598101ad8cfde8c69e..00000000000000000000000000000000
 \ No newline at end of file
 diff --git a/src/assets/data/galaxy/system_physics.json b/src/assets/data/galaxy/system_physics.json
 deleted file mode 100644
-index 9e26dfeeb6e641a33dae4961196235bdb965b21b..0000000000000000000000000000000000000000
+index 9e26dfe..0000000
 --- a/src/assets/data/galaxy/system_physics.json
 +++ /dev/null
 @@ -1 +0,0 @@
@@ -931,7 +924,7 @@ index 9e26dfeeb6e641a33dae4961196235bdb965b21b..00000000000000000000000000000000
 \ No newline at end of file
 diff --git a/src/assets/data/star_atlas/system_details_old.json b/src/assets/data/star_atlas/system_details_old.json
 deleted file mode 100644
-index 1959d2cb73cc28dde3b430f140d10726ee5c125e..0000000000000000000000000000000000000000
+index 1959d2c..0000000
 --- a/src/assets/data/star_atlas/system_details_old.json
 +++ /dev/null
 @@ -1,12332 +0,0 @@
@@ -13270,7 +13263,7 @@ index 1959d2cb73cc28dde3b430f140d10726ee5c125e..00000000000000000000000000000000
 \ No newline at end of file
 diff --git a/src/assets/shaders/celestial/cloud_texture_blend.vert b/src/assets/shaders/celestial/cloud_texture_blend.vert
 deleted file mode 100644
-index 5bc3fd58c95e61dbcb6ecedfe0a0abde41f6cd26..0000000000000000000000000000000000000000
+index 5bc3fd5..0000000
 --- a/src/assets/shaders/celestial/cloud_texture_blend.vert
 +++ /dev/null
 @@ -1,32 +0,0 @@
@@ -13309,7 +13302,7 @@ index 5bc3fd58c95e61dbcb6ecedfe0a0abde41f6cd26..00000000000000000000000000000000
 \ No newline at end of file
 diff --git a/src/assets/shaders/celestial/cloud_texture_generate.vert b/src/assets/shaders/celestial/cloud_texture_generate.vert
 deleted file mode 100644
-index 669435a4bad0946e07c212d06acd217fe85001d6..0000000000000000000000000000000000000000
+index 669435a..0000000
 --- a/src/assets/shaders/celestial/cloud_texture_generate.vert
 +++ /dev/null
 @@ -1,39 +0,0 @@
@@ -13355,7 +13348,7 @@ index 669435a4bad0946e07c212d06acd217fe85001d6..00000000000000000000000000000000
 \ No newline at end of file
 diff --git a/src/assets/shaders/celestial/hub_planet_atmosphere.vert b/src/assets/shaders/celestial/hub_planet_atmosphere.vert
 deleted file mode 100644
-index 5bc3fd58c95e61dbcb6ecedfe0a0abde41f6cd26..0000000000000000000000000000000000000000
+index 5bc3fd5..0000000
 --- a/src/assets/shaders/celestial/hub_planet_atmosphere.vert
 +++ /dev/null
 @@ -1,32 +0,0 @@
@@ -13394,7 +13387,7 @@ index 5bc3fd58c95e61dbcb6ecedfe0a0abde41f6cd26..00000000000000000000000000000000
 \ No newline at end of file
 diff --git a/src/assets/shaders/celestial/hub_planet_surface.vert b/src/assets/shaders/celestial/hub_planet_surface.vert
 deleted file mode 100644
-index 5bc3fd58c95e61dbcb6ecedfe0a0abde41f6cd26..0000000000000000000000000000000000000000
+index 5bc3fd5..0000000
 --- a/src/assets/shaders/celestial/hub_planet_surface.vert
 +++ /dev/null
 @@ -1,32 +0,0 @@
@@ -13431,38 +13424,12 @@ index 5bc3fd58c95e61dbcb6ecedfe0a0abde41f6cd26..00000000000000000000000000000000
 -        );
 -}
 \ No newline at end of file
-diff --git a/src/assets/shaders/starfield/galaxy_haze_composite.vert b/src/assets/shaders/common/fullscreen_triangle_uv.vert
-similarity index 62%
-rename from src/assets/shaders/starfield/galaxy_haze_composite.vert
-rename to src/assets/shaders/common/fullscreen_triangle_uv.vert
-index 80c0183362a664cbc039bc97f7d2fbbe552aa841..6b8ac1c481e074fcb7108b5e4a0cc1af450ec2d8 100644
---- a/src/assets/shaders/starfield/galaxy_haze_composite.vert
-+++ b/src/assets/shaders/common/fullscreen_triangle_uv.vert
-@@ -13,14 +13,6 @@ void main()
-     else
-         position = vec2(-1.0, 3.0);
- 
--    vUv =
--        position * 0.5 +
--        0.5;
--
--    gl_Position =
--        vec4(
--            position,
--            0.0,
--            1.0
--        );
-+    vUv = position * 0.5 + 0.5;
-+    gl_Position = vec4(position, 0.0, 1.0);
- }
-diff --git a/src/assets/shaders/hud/hudPrimitive.frag b/src/assets/shaders/common/vertex_color.frag
-similarity index 91%
-rename from src/assets/shaders/hud/hudPrimitive.frag
-rename to src/assets/shaders/common/vertex_color.frag
-index ab726f421d00d2a7b23a57980e1a18bcc85630e3..59470b18d1840e571a3ba11670647e330988c0ec 100644
---- a/src/assets/shaders/hud/hudPrimitive.frag
-+++ b/src/assets/shaders/common/vertex_color.frag
-@@ -1,9 +1,9 @@
+diff --git a/src/assets/shaders/cockpit/cockpit.frag b/src/assets/shaders/cockpit/cockpit.frag
+deleted file mode 100644
+index e464fb5..0000000
+--- a/src/assets/shaders/cockpit/cockpit.frag
++++ /dev/null
+@@ -1,9 +0,0 @@
 -#version 330 core
 -
 -in vec4 vColor;
@@ -13472,7 +13439,36 @@ index ab726f421d00d2a7b23a57980e1a18bcc85630e3..59470b18d1840e571a3ba11670647e33
 -{
 -    FragColor = vColor;
 -}
-\ No newline at end of file
+diff --git a/src/assets/shaders/common/fullscreen_triangle_uv.vert b/src/assets/shaders/common/fullscreen_triangle_uv.vert
+new file mode 100644
+index 0000000..6b8ac1c
+--- /dev/null
++++ b/src/assets/shaders/common/fullscreen_triangle_uv.vert
+@@ -0,0 +1,18 @@
++#version 330 core
++
++out vec2 vUv;
++
++void main()
++{
++    vec2 position;
++
++    if (gl_VertexID == 0)
++        position = vec2(-1.0, -1.0);
++    else if (gl_VertexID == 1)
++        position = vec2(3.0, -1.0);
++    else
++        position = vec2(-1.0, 3.0);
++
++    vUv = position * 0.5 + 0.5;
++    gl_Position = vec4(position, 0.0, 1.0);
++}
+diff --git a/src/assets/shaders/common/vertex_color.frag b/src/assets/shaders/common/vertex_color.frag
+new file mode 100644
+index 0000000..59470b1
+--- /dev/null
++++ b/src/assets/shaders/common/vertex_color.frag
+@@ -0,0 +1,9 @@
 +#version 330 core
 +
 +in vec4 vColor;
@@ -13482,39 +13478,43 @@ index ab726f421d00d2a7b23a57980e1a18bcc85630e3..59470b18d1840e571a3ba11670647e33
 +{
 +    FragColor = vColor;
 +}
-diff --git a/src/assets/shaders/system_map/map_lines.frag b/src/assets/shaders/common/vertex_color_discard.frag
-similarity index 66%
-rename from src/assets/shaders/system_map/map_lines.frag
-rename to src/assets/shaders/common/vertex_color_discard.frag
-index ab726f421d00d2a7b23a57980e1a18bcc85630e3..be62f7f85bb6782ed467eb1a6af42f9e19fad862 100644
---- a/src/assets/shaders/system_map/map_lines.frag
+diff --git a/src/assets/shaders/common/vertex_color_discard.frag b/src/assets/shaders/common/vertex_color_discard.frag
+new file mode 100644
+index 0000000..8a4d759
+--- /dev/null
 +++ b/src/assets/shaders/common/vertex_color_discard.frag
-@@ -1,9 +1,12 @@
--#version 330 core
--
--in vec4 vColor;
--out vec4 FragColor;
--
--void main()
--{
--    FragColor = vColor;
--}
-\ No newline at end of file
+@@ -0,0 +1,12 @@
 +#version 330 core
 +
 +in vec4 vColor;
-+out vec4 FragColor;
++out vec4 outColor;
 +
 +void main()
 +{
 +    if (vColor.a <= 0.001)
 +        discard;
 +
-+    FragColor = vColor;
++    outColor = vColor;
 +}
+diff --git a/src/assets/shaders/hud/hudPrimitive.frag b/src/assets/shaders/hud/hudPrimitive.frag
+deleted file mode 100644
+index ab726f4..0000000
+--- a/src/assets/shaders/hud/hudPrimitive.frag
++++ /dev/null
+@@ -1,9 +0,0 @@
+-#version 330 core
+-
+-in vec4 vColor;
+-out vec4 FragColor;
+-
+-void main()
+-{
+-    FragColor = vColor;
+-}
+\ No newline at end of file
 diff --git a/src/assets/shaders/mesh/edga_old.vert b/src/assets/shaders/mesh/edga_old.vert
 deleted file mode 100644
-index d6fb4c5127c2d35819eb5c14087f08d7b6a1e51d..0000000000000000000000000000000000000000
+index d6fb4c5..0000000
 --- a/src/assets/shaders/mesh/edga_old.vert
 +++ /dev/null
 @@ -1,17 +0,0 @@
@@ -13538,7 +13538,7 @@ index d6fb4c5127c2d35819eb5c14087f08d7b6a1e51d..00000000000000000000000000000000
 \ No newline at end of file
 diff --git a/src/assets/shaders/mesh/edge_old.frag b/src/assets/shaders/mesh/edge_old.frag
 deleted file mode 100644
-index 0e2c1071a9659154a9186ce7fe8184614dd14de3..0000000000000000000000000000000000000000
+index 0e2c107..0000000
 --- a/src/assets/shaders/mesh/edge_old.frag
 +++ /dev/null
 @@ -1,30 +0,0 @@
@@ -13575,7 +13575,7 @@ index 0e2c1071a9659154a9186ce7fe8184614dd14de3..00000000000000000000000000000000
 \ No newline at end of file
 diff --git a/src/assets/shaders/mesh/edge_old.geom b/src/assets/shaders/mesh/edge_old.geom
 deleted file mode 100644
-index 2d5aa7322be38aba652ee7876de36093142e9f4c..0000000000000000000000000000000000000000
+index 2d5aa73..0000000
 --- a/src/assets/shaders/mesh/edge_old.geom
 +++ /dev/null
 @@ -1,57 +0,0 @@
@@ -13639,7 +13639,7 @@ index 2d5aa7322be38aba652ee7876de36093142e9f4c..00000000000000000000000000000000
 \ No newline at end of file
 diff --git a/src/assets/shaders/mesh/large_object_colors_fill.frag b/src/assets/shaders/mesh/large_object_colors_fill.frag
 deleted file mode 100644
-index 01644538819b57b9bfe733c6137c172c49c03a5a..0000000000000000000000000000000000000000
+index 0164453..0000000
 --- a/src/assets/shaders/mesh/large_object_colors_fill.frag
 +++ /dev/null
 @@ -1,50 +0,0 @@
@@ -13694,9 +13694,23 @@ index 01644538819b57b9bfe733c6137c172c49c03a5a..00000000000000000000000000000000
 -    FragColor = vec4(finalColor, 1.0);
 -}
 \ No newline at end of file
+diff --git a/src/assets/shaders/scene/debug_lines.frag b/src/assets/shaders/scene/debug_lines.frag
+deleted file mode 100644
+index 6115ac0..0000000
+--- a/src/assets/shaders/scene/debug_lines.frag
++++ /dev/null
+@@ -1,7 +0,0 @@
+-#version 330 core
+-in vec4 vColor;
+-out vec4 FragColor;
+-
+-void main() {
+-    FragColor = vColor;
+-}
+\ No newline at end of file
 diff --git a/src/assets/shaders/starfield/galaxy_haze copy.frag b/src/assets/shaders/starfield/galaxy_haze copy.frag
 deleted file mode 100644
-index 295f72da430303b4186081de741d3121242933fd..0000000000000000000000000000000000000000
+index 295f72d..0000000
 --- a/src/assets/shaders/starfield/galaxy_haze copy.frag	
 +++ /dev/null
 @@ -1,159 +0,0 @@
@@ -13860,9 +13874,41 @@ index 295f72da430303b4186081de741d3121242933fd..00000000000000000000000000000000
 -    FragColor = vec4(color, alpha);
 -}
 \ No newline at end of file
+diff --git a/src/assets/shaders/starfield/galaxy_haze_composite.vert b/src/assets/shaders/starfield/galaxy_haze_composite.vert
+deleted file mode 100644
+index 80c0183..0000000
+--- a/src/assets/shaders/starfield/galaxy_haze_composite.vert
++++ /dev/null
+@@ -1,26 +0,0 @@
+-#version 330 core
+-
+-out vec2 vUv;
+-
+-void main()
+-{
+-    vec2 position;
+-
+-    if (gl_VertexID == 0)
+-        position = vec2(-1.0, -1.0);
+-    else if (gl_VertexID == 1)
+-        position = vec2(3.0, -1.0);
+-    else
+-        position = vec2(-1.0, 3.0);
+-
+-    vUv =
+-        position * 0.5 +
+-        0.5;
+-
+-    gl_Position =
+-        vec4(
+-            position,
+-            0.0,
+-            1.0
+-        );
+-}
 diff --git a/src/assets/shaders/system_map/hub_map_assembly_wire.frag b/src/assets/shaders/system_map/hub_map_assembly_wire.frag
 deleted file mode 100644
-index a2c2f348844ed9258eb63112f8782016a41f4a26..0000000000000000000000000000000000000000
+index a2c2f34..0000000
 --- a/src/assets/shaders/system_map/hub_map_assembly_wire.frag
 +++ /dev/null
 @@ -1,14 +0,0 @@
@@ -13882,7 +13928,7 @@ index a2c2f348844ed9258eb63112f8782016a41f4a26..00000000000000000000000000000000
 -}
 diff --git a/src/assets/shaders/system_map/hub_map_dynamic_lines.frag b/src/assets/shaders/system_map/hub_map_dynamic_lines.frag
 deleted file mode 100644
-index a2c2f348844ed9258eb63112f8782016a41f4a26..0000000000000000000000000000000000000000
+index a2c2f34..0000000
 --- a/src/assets/shaders/system_map/hub_map_dynamic_lines.frag
 +++ /dev/null
 @@ -1,14 +0,0 @@
@@ -13902,7 +13948,7 @@ index a2c2f348844ed9258eb63112f8782016a41f4a26..00000000000000000000000000000000
 -}
 diff --git a/src/assets/shaders/system_map/hub_planet_overlay_composite.vert b/src/assets/shaders/system_map/hub_planet_overlay_composite.vert
 deleted file mode 100644
-index 80c0183362a664cbc039bc97f7d2fbbe552aa841..0000000000000000000000000000000000000000
+index 80c0183..0000000
 --- a/src/assets/shaders/system_map/hub_planet_overlay_composite.vert
 +++ /dev/null
 @@ -1,26 +0,0 @@
@@ -13932,9 +13978,25 @@ index 80c0183362a664cbc039bc97f7d2fbbe552aa841..00000000000000000000000000000000
 -            1.0
 -        );
 -}
+diff --git a/src/assets/shaders/system_map/map_lines.frag b/src/assets/shaders/system_map/map_lines.frag
+deleted file mode 100644
+index ab726f4..0000000
+--- a/src/assets/shaders/system_map/map_lines.frag
++++ /dev/null
+@@ -1,9 +0,0 @@
+-#version 330 core
+-
+-in vec4 vColor;
+-out vec4 FragColor;
+-
+-void main()
+-{
+-    FragColor = vColor;
+-}
+\ No newline at end of file
 diff --git a/src/assets/shaders/wiremesh/mesh_edge.frag b/src/assets/shaders/wiremesh/mesh_edge.frag
 deleted file mode 100644
-index fd8e32e49ab856c3602ccb7ffa054d073aee7932..0000000000000000000000000000000000000000
+index fd8e32e..0000000
 --- a/src/assets/shaders/wiremesh/mesh_edge.frag
 +++ /dev/null
 @@ -1,10 +0,0 @@
@@ -13950,7 +14012,7 @@ index fd8e32e49ab856c3602ccb7ffa054d073aee7932..00000000000000000000000000000000
 -}
 diff --git a/src/assets/shaders/wiremesh/mesh_edge.vert b/src/assets/shaders/wiremesh/mesh_edge.vert
 deleted file mode 100644
-index 2369ac4c6d28660d09637a51dd787d09b60fdb18..0000000000000000000000000000000000000000
+index 2369ac4..0000000
 --- a/src/assets/shaders/wiremesh/mesh_edge.vert
 +++ /dev/null
 @@ -1,12 +0,0 @@
@@ -13968,7 +14030,7 @@ index 2369ac4c6d28660d09637a51dd787d09b60fdb18..00000000000000000000000000000000
 -}
 diff --git a/src/assets/shaders/wiremesh/wireframe.frag b/src/assets/shaders/wiremesh/wireframe.frag
 deleted file mode 100644
-index 46df5afca03335689425f631e8819c11eab41d70..0000000000000000000000000000000000000000
+index 46df5af..0000000
 --- a/src/assets/shaders/wiremesh/wireframe.frag
 +++ /dev/null
 @@ -1,23 +0,0 @@
@@ -13998,7 +14060,7 @@ index 46df5afca03335689425f631e8819c11eab41d70..00000000000000000000000000000000
 \ No newline at end of file
 diff --git a/src/assets/shaders/wiremesh/wireframe.vert b/src/assets/shaders/wiremesh/wireframe.vert
 deleted file mode 100644
-index 3debf885aa1d4d214c067bb456e0f1fd30c7d8b0..0000000000000000000000000000000000000000
+index 3debf88..0000000
 --- a/src/assets/shaders/wiremesh/wireframe.vert
 +++ /dev/null
 @@ -1,15 +0,0 @@
@@ -14020,7 +14082,7 @@ index 3debf885aa1d4d214c067bb456e0f1fd30c7d8b0..00000000000000000000000000000000
 \ No newline at end of file
 diff --git a/src/assets/webui/debug_control_old.html b/src/assets/webui/debug_control_old.html
 deleted file mode 100644
-index 40dde608438c2a2f6ad4098abfe25248769db20b..0000000000000000000000000000000000000000
+index 40dde60..0000000
 --- a/src/assets/webui/debug_control_old.html
 +++ /dev/null
 @@ -1,756 +0,0 @@
@@ -14782,7 +14844,7 @@ index 40dde608438c2a2f6ad4098abfe25248769db20b..00000000000000000000000000000000
 -</html>
 \ No newline at end of file
 diff --git a/src/game/SpaceState-Init.cpp b/src/game/SpaceState-Init.cpp
-index 6eb42511ce24a5ed47a08f6ccd1bd0aa82daf025..54c7def1d29aaf963bb5d756619dbea1865aaf89 100644
+index 6eb4251..54c7def 100644
 --- a/src/game/SpaceState-Init.cpp
 +++ b/src/game/SpaceState-Init.cpp
 @@ -184,7 +184,7 @@ void SpaceState::initHUD()
@@ -14795,7 +14857,7 @@ index 6eb42511ce24a5ed47a08f6ccd1bd0aa82daf025..54c7def1d29aaf963bb5d756619dbea1
      labelMainViewText->color = {0.2f, 0.8f, 1.0f, 0.1f};
      labelMainViewText->position = {0.06f, 0.13f};
 diff --git a/src/game/navigation/GalaxyNavigationGrid.h b/src/game/navigation/GalaxyNavigationGrid.h
-index 59f6043a9e1e3fe7aa2719f9c6313bcbd484e692..841fcd84ec837a425bf05ccb69a36b60061c0d19 100644
+index 59f6043..841fcd8 100644
 --- a/src/game/navigation/GalaxyNavigationGrid.h
 +++ b/src/game/navigation/GalaxyNavigationGrid.h
 @@ -30,7 +30,7 @@ namespace game::navigation
@@ -14808,7 +14870,7 @@ index 59f6043a9e1e3fe7aa2719f9c6313bcbd484e692..841fcd84ec837a425bf05ccb69a36b60
  struct GalaxyNavigationFrame
  {
 diff --git a/src/game/system_map/SystemMapRenderer.cpp b/src/game/system_map/SystemMapRenderer.cpp
-index a7ccc8757461450d34f14099d9a66fffc4a14dc5..18e46727464121ed17fb7c7f2523dfd8d1886b9e 100644
+index 53edd50..027cc72 100644
 --- a/src/game/system_map/SystemMapRenderer.cpp
 +++ b/src/game/system_map/SystemMapRenderer.cpp
 @@ -1438,7 +1438,7 @@ void SystemMapRenderer::init()
@@ -14830,7 +14892,7 @@ index a7ccc8757461450d34f14099d9a66fffc4a14dc5..18e46727464121ed17fb7c7f2523dfd8
  
          if (!m_galaxyBackdropStarfieldInitialized)
 diff --git a/src/render/HUD/WorldLabelRenderer.cpp b/src/render/HUD/WorldLabelRenderer.cpp
-index f200a9b3faf526ffeab66d537ce89c703a9013ab..71cb7c06f2426ff4a3c609476d7887365bdf809f 100644
+index f200a9b..71cb7c0 100644
 --- a/src/render/HUD/WorldLabelRenderer.cpp
 +++ b/src/render/HUD/WorldLabelRenderer.cpp
 @@ -113,7 +113,7 @@ void WorldLabelRenderer::init(StateContext& context)
@@ -14843,7 +14905,7 @@ index f200a9b3faf526ffeab66d537ce89c703a9013ab..71cb7c06f2426ff4a3c609476d788736
  
      if (!m_primitiveProgram)
 diff --git a/src/render/InitShaders.cpp b/src/render/InitShaders.cpp
-index 7bacc8c6bc00c500d393cfeb5066495d1b8cd627..ef6fb220b1caea2d6e78ea90aef980e7350b27d2 100644
+index 7bacc8c..09672f8 100644
 --- a/src/render/InitShaders.cpp
 +++ b/src/render/InitShaders.cpp
 @@ -5,13 +5,6 @@ void InitShaders()
@@ -14860,6 +14922,15 @@ index 7bacc8c6bc00c500d393cfeb5066495d1b8cd627..ef6fb220b1caea2d6e78ea90aef980e7
      shaders.load(
          "mesh_fill",
          "assets/shaders/mesh/mesh_fill.vert",
+@@ -64,7 +57,7 @@ void InitShaders()
+     shaders.load(
+         "debug_lines",
+         "assets/shaders/scene/debug_lines.vert",
+-        "assets/shaders/scene/debug_lines.frag",
++        "assets/shaders/common/vertex_color.frag",
+         ShaderProgram::DebugLines
+     );
+ 
 @@ -86,27 +79,27 @@ void InitShaders()
      shaders.load(
          "system_map_lines",
@@ -14945,8 +15016,21 @@ index 7bacc8c6bc00c500d393cfeb5066495d1b8cd627..ef6fb220b1caea2d6e78ea90aef980e7
          "assets/shaders/starfield/galaxy_haze_composite.frag",
          ShaderProgram::Unknown
      );
+diff --git a/src/render/RenderCockpitPass.cpp b/src/render/RenderCockpitPass.cpp
+index 06017d2..712fbec 100644
+--- a/src/render/RenderCockpitPass.cpp
++++ b/src/render/RenderCockpitPass.cpp
+@@ -24,7 +24,7 @@ void RenderCockpitPass::init()
+ 
+     shader = compileShaderFromFiles(
+         "assets/shaders/cockpit/cockpit.vert",
+-        "assets/shaders/cockpit/cockpit.frag"
++        "assets/shaders/common/vertex_color.frag"
+     );
+ 
+     fillShader = compileShaderFromFiles(
 diff --git a/src/render/starfield/GalaxyStarfieldRenderer.cpp b/src/render/starfield/GalaxyStarfieldRenderer.cpp
-index 6b6b3dde039927e3e2d5479f7ed8e8eba9e79c61..da0017edd0def4475c318ca227d8dcedf3239529 100644
+index 6b6b3dd..da0017e 100644
 --- a/src/render/starfield/GalaxyStarfieldRenderer.cpp
 +++ b/src/render/starfield/GalaxyStarfieldRenderer.cpp
 @@ -157,9 +157,9 @@ bool GalaxyStarfieldRenderer::initialize(const std::string& atlasPath)
@@ -14962,7 +15046,7 @@ index 6b6b3dde039927e3e2d5479f7ed8e8eba9e79c61..da0017edd0def4475c318ca227d8dced
  
          generateProceduralField();
 diff --git a/src/render/starfield/GalaxyStarfieldRenderer.h b/src/render/starfield/GalaxyStarfieldRenderer.h
-index 9d64f5924d860bbfe0893ad3a5b35c7542d73bf0..ecc685fb3e13f79a06f190126fbd15a38349be0a 100644
+index 9d64f59..ecc685f 100644
 --- a/src/render/starfield/GalaxyStarfieldRenderer.h
 +++ b/src/render/starfield/GalaxyStarfieldRenderer.h
 @@ -33,7 +33,7 @@ public:

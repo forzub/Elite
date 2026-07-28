@@ -184,7 +184,7 @@ void SpaceState::initHUD()
     auto labelMainViewText = std::make_unique<UIText>();
     labelMainViewText->id = "main_label";
     labelMainViewText->label = "FRONT";
-    labelMainViewText->fontPath = "assets/fonts/Roboto-BOLD.ttf";
+    labelMainViewText->fontPath = "assets/fonts/Roboto-Bold.ttf";
     labelMainViewText->fontSizeRel = 0.03f; // относительный размер от высоты экрана 2.5% от высоты
     labelMainViewText->color = {0.2f, 0.8f, 1.0f, 0.1f};
     labelMainViewText->position = {0.06f, 0.13f};

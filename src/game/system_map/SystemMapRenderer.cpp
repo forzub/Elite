@@ -1438,7 +1438,7 @@ void SystemMapRenderer::init()
     {
         m_mapStarfieldInitialized =
             m_mapStarfieldRenderer.initialize(
-                "assets/data/galaxy/star_systems.json"
+                "assets/data/star_atlas/star_systems.json"
             );
 
         if (!m_mapStarfieldInitialized)
@@ -1459,7 +1459,7 @@ void SystemMapRenderer::init()
 
         m_galaxyBackdropStarfieldInitialized =
             m_galaxyBackdropStarfieldRenderer.initialize(
-                "assets/data/galaxy/star_systems.json"
+                "assets/data/star_atlas/star_systems.json"
             );
 
         if (!m_galaxyBackdropStarfieldInitialized)

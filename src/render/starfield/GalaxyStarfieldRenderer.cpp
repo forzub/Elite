@@ -157,9 +157,9 @@ bool GalaxyStarfieldRenderer::initialize(const std::string& atlasPath)
 
         bool atlasLoaded = loadAtlasStars(atlasPath);
 
-        if (!atlasLoaded && atlasPath == "assets/data/galaxy/star_systems.json")
+        if (!atlasLoaded && atlasPath == "assets/data/star_atlas/star_systems.json")
         {
-            atlasLoaded = loadAtlasStars("../assets/data/galaxy/star_systems.json");
+            atlasLoaded = loadAtlasStars("../assets/data/star_atlas/star_systems.json");
         }
 
         generateProceduralField();

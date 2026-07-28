@@ -12,7 +12,7 @@
   },
   "selection": {
     "real_stars": "top 3000 brightest HYG v4.1 stars by visual magnitude",
-    "game_systems": "all systems from assets/data/galaxy/star_systems.json merged when coordinates match within 0.25 ly, otherwise added from game atlas coordinates",
+    "game_systems": "all systems from assets/data/star_atlas/star_systems.json merged when coordinates match within 0.25 ly, otherwise added from game atlas coordinates",
     "procedural_stars": 0
   },
   "counts": {

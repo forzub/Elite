@@ -33,7 +33,7 @@ public:
     GalaxyStarfieldRenderer(const GalaxyStarfieldRenderer&) = delete;
     GalaxyStarfieldRenderer& operator=(const GalaxyStarfieldRenderer&) = delete;
 
-    bool initialize(const std::string& atlasPath = "assets/data/galaxy/star_systems.json");
+    bool initialize(const std::string& atlasPath = "assets/data/star_atlas/star_systems.json");
     void shutdown();
 
     /*

@@ -53,14 +53,16 @@ float starSizeFromMagnitude(float apparentMagnitude, bool isGameSystem)
 
     float size = 1.35f + std::pow(clamped, 0.75f) * 6.8f;
 
-    // Keep bright stars unchanged, but give dim catalog stars a slightly
-    // wider footprint. This improves visibility of companions such as
-    // Alcor without increasing their alpha or bloating Mizar.
+    // Brightness still comes only from alpha. For dim stars the apparent
+    // diameter is deliberately kept larger so their raster footprint spans
+    // several pixels instead of blinking in and out as the camera moves.
+    // Bright stars (magnitude <= 2.4) remain unchanged.
     const float faintness =
         clamp01((apparentMagnitude - 2.4f) / 4.1f);
     const float smoothFaintness =
         faintness * faintness * (3.0f - 2.0f * faintness);
-    size += 0.55f * smoothFaintness;
+    constexpr float kFaintStarFootprintBoost = 3.8f;
+    size += kFaintStarFootprintBoost * smoothFaintness;
 
     if (isGameSystem)
         size *= 1.35f;

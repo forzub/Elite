@@ -214,6 +214,7 @@ add_executable(EliteGame
     src/world/navigation/NavigationBodyAdapter.cpp
     
     src/render/starfield/GalaxyStarfieldRenderer.cpp
+    src/render/starfield/ConstellationOverlayRenderer.cpp
     src/render/starfield/MilkyWayRenderer.cpp
 
     src/game/promo/PromoFlybyScenario.cpp

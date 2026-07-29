@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/GalaxyNavigationGrid.h"
+#include "src/game/system_map/MapIntent.h"
 #include "src/render/types/Viewport.h"
 
 namespace world::celestial
@@ -15,20 +16,6 @@ namespace world::celestial
 namespace game::system_map
 {
     class GalaxyMapView;
-
-    enum class GalaxyMapNavigationEventType
-    {
-        GalaxyLevelChanged,
-        EnterSystemMap
-    };
-
-    struct GalaxyMapNavigationEvent
-    {
-        GalaxyMapNavigationEventType type =
-            GalaxyMapNavigationEventType::GalaxyLevelChanged;
-
-        int galaxyLevel = 0;
-    };
 
     struct GalaxyMapInputFrame
     {
@@ -53,7 +40,12 @@ namespace game::system_map
     struct GalaxyMapInputResult
     {
         bool requestWindowFocus = false;
-        std::optional<GalaxyMapNavigationEvent> navigationEvent;
+
+        // Presentation-only feedback consumed by SystemMapRenderer.
+        std::optional<int> galaxyLevelChanged;
+
+        // World or mode transition executed by SpaceState.
+        std::optional<MapIntent> mapIntent;
     };
 
     /*

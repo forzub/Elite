@@ -51,6 +51,7 @@
 #include "src/game/system_map/HubMapVisualSettings.h"
 #include "src/game/system_map/MapTransitionController.h"
 #include "src/game/system_map/MapMode.h"
+#include "src/game/system_map/MapIntent.h"
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/game/system_map/GalaxyMapInteraction.h"
@@ -63,9 +64,6 @@ class SystemMapRenderer
 {
 public:
     using Mode = game::system_map::MapMode;
-
-    using SystemEntryRequest =
-        game::system_map::GalaxySystemEntryRequest;
 
     struct HubMapPerformanceStats
     {
@@ -103,6 +101,7 @@ public:
 
 public:
     void init();
+
     void setRightPanelRatio(float ratio);
     void render(
         const Viewport& viewport,
@@ -129,10 +128,7 @@ public:
 
     int selectedSystemId() const;
 
-    std::optional<SystemEntryRequest>
-    consumeRequestedSystemEntry();
-
-    void handleInput(
+    std::optional<game::system_map::MapIntent> handleInput(
         const Viewport& vp,
         const world::celestial::GalaxyMapSnapshot& galaxy
     );
@@ -923,7 +919,7 @@ private:
 
 
 
-    void addGalaxyStarHalo(
+    void addBillboardHalo(
         const glm::vec3& center,
         float starRadius,
         float outerRadiusScale,
@@ -1043,24 +1039,6 @@ private:
     );
     void flushLines(const glm::mat4& mvp) override;
 
-    void renderGalaxy(
-        const Viewport& vp,
-        const world::celestial::GalaxyMapSnapshot& galaxy,
-        const world::celestial::PlayerNavigationState& nav
-    );
-
-    glm::vec3 galaxyPositionLyToRender(
-        const glm::dvec3& positionLy
-    ) const;
-
-    glm::vec3 galaxyVectorLyToRender(
-        const glm::dvec3& vectorLy
-    ) const;
-
-    glm::dvec3 galaxyRenderToPositionLy(
-        const glm::vec3& renderPosition
-    ) const;
-
     void addNavigationCubeEdges(
         const glm::vec3& center,
         const glm::vec3& halfAxisX,
@@ -1068,13 +1046,6 @@ private:
         const glm::vec3& halfAxisZ,
         const glm::vec4& color
     );
-
-    glm::dvec3 playerGalaxyPositionLy(
-        const world::celestial::GalaxyMapSnapshot& galaxy,
-        const world::celestial::PlayerNavigationState& nav,
-        bool& outInsideKnownSystem
-    ) const;
-
 
     void drawSystemNavigationGrid(
         const Viewport& vp,
@@ -1128,22 +1099,6 @@ private:
         const Viewport& vp
     );
 
-    float galaxyNavigationAnchorDiameterPx(
-        const Viewport& vp
-    ) const;
-
-    bool galaxyNavigationCellsInteractive(
-        const Viewport& vp
-    ) const;
-
-    void syncGalaxyNavigationAnchorToCameraTarget();
-
-    SystemEntryRequest galaxySystemEntryForPosition(
-        const world::celestial::GalaxyMapSnapshot& galaxy,
-        const glm::dvec3& positionLy,
-        int explicitSystemId = -1
-    ) const;
-
     void renderSystem(
         const Viewport& vp,
         const world::celestial::SystemMapSnapshot& system,
@@ -1156,7 +1111,6 @@ private:
         const std::vector<std::string>& lines
     );
 
-    glm::vec4 colorForStarType(const std::string& starType) const;
     glm::vec4 colorForBodyType(world::celestial::BodyType type) const;
 
     float bodyVisualRadius(
@@ -1170,20 +1124,6 @@ private:
         double worldUnitsPerPixel
     ) const;
 
-
-
-    void beginGalaxyCameraFlight(
-        const glm::vec3& destinationTarget,
-        float destinationDistance
-    );
-
-    void updateGalaxyCameraFlight(
-        double nowSeconds
-    );
-
-    void cancelGalaxyCameraFlight(
-        bool snapToDestination
-    );
 
 
     void beginSystemCameraFlight(
@@ -1200,15 +1140,8 @@ private:
     );
 
 
-    glm::mat4 galaxyViewMatrix() const;
-    glm::mat4 galaxyProjectionMatrix(const Viewport& vp) const;
-
     glm::mat4 systemViewMatrix() const;
     glm::mat4 systemProjectionMatrix(const Viewport& vp) const;
-
-    glm::vec3 galaxyStarPosition(
-        const world::celestial::GalaxyMapSystem& s
-    ) const;
 
     glm::vec2 projectToScreen(
         const glm::vec3& world,

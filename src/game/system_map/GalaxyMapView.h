@@ -11,11 +11,13 @@
 #include "src/game/navigation/GalaxyNavigationGrid.h"
 #include "src/game/system_map/GalaxyMapVisualSettings.h"
 #include "src/game/system_map/MapCameraState.h"
+#include "src/game/system_map/MapIntent.h"
 #include "src/render/types/Viewport.h"
 
 namespace world::celestial
 {
     struct GalaxyMapSnapshot;
+    struct PlayerNavigationState;
 }
 
 namespace game::system_map
@@ -60,17 +62,6 @@ namespace game::system_map
     };
 
 
-    struct GalaxySystemEntryRequest
-    {
-        int systemId = -1;
-        glm::dvec3 positionLy {0.0};
-
-        bool knownSystem() const
-        {
-            return systemId >= 0;
-        }
-    };
-
     struct GalaxyMapEntryState
     {
         bool valid = false;
@@ -101,8 +92,6 @@ namespace game::system_map
         > cubeClickTracker;
 
         GalaxyMapEntryState entry;
-        std::optional<GalaxySystemEntryRequest> requestedSystemEntry;
-
         int selectedSystemId = -1;
         int focusedSystemId = -1;
 
@@ -162,6 +151,23 @@ namespace game::system_map
 
         void reset();
 
+        void onEntered(
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const world::celestial::PlayerNavigationState& playerNavigation
+        );
+
+        void synchronizeCatalogRoots(
+            const world::celestial::GalaxyMapSnapshot& galaxy
+        );
+
+        void resetNavigationToEntry();
+
+        glm::dvec3 playerPositionLy(
+            const world::celestial::GalaxyMapSnapshot& galaxy,
+            const world::celestial::PlayerNavigationState& playerNavigation,
+            bool& outInsideKnownSystem
+        ) const;
+
         glm::vec3 positionLyToRender(
             const glm::dvec3& positionLy
         ) const;
@@ -196,7 +202,7 @@ namespace game::system_map
         void updateCameraFlight(double nowSeconds);
         void cancelCameraFlight(bool snapToDestination);
 
-        GalaxySystemEntryRequest systemEntryForPosition(
+        MapIntent entryIntentForPosition(
             const world::celestial::GalaxyMapSnapshot& galaxy,
             const glm::dvec3& positionLy,
             int explicitSystemId = -1
@@ -208,9 +214,6 @@ namespace game::system_map
             bool animateCamera,
             double nowSeconds
         );
-
-        std::optional<GalaxySystemEntryRequest>
-        consumeRequestedSystemEntry();
 
     private:
         GalaxyMapViewState m_state;

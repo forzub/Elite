@@ -424,21 +424,7 @@ namespace game::system_map
         const auto announceGalaxyLevel =
             [&](int level)
             {
-                result.navigationEvent = GalaxyMapNavigationEvent
-                {
-                    GalaxyMapNavigationEventType::GalaxyLevelChanged,
-                    level
-                };
-            };
-
-        const auto announceSystemEntry =
-            [&]()
-            {
-                result.navigationEvent = GalaxyMapNavigationEvent
-                {
-                    GalaxyMapNavigationEventType::EnterSystemMap,
-                    0
-                };
+                result.galaxyLevelChanged = level;
             };
 
         const auto beginCameraFlight =
@@ -996,24 +982,24 @@ namespace game::system_map
 
                                         Здесь переход запрошен явным
                                         двойным кликом. Колесо использует
-                                        тот же SystemEntryRequest в своей
+                                        тот же MapIntent в своей
                                         ветке ниже.
                                     */
                                     view.state().cubeClickTracker.reset();
 
-                                    const GalaxySystemEntryRequest entryRequest =
-                                        view.systemEntryForPosition(
+                                    const MapIntent entryIntent =
+                                        view.entryIntentForPosition(
                                             galaxy,
                                             pickedCell.centerLy
                                         );
 
-                                    if (entryRequest.knownSystem())
+                                    if (entryIntent.entersKnownSystem())
                                     {
                                         view.state().selectedSystemId =
-                                            entryRequest.systemId;
+                                            entryIntent.systemId;
 
                                         view.state().focusedSystemId =
-                                            entryRequest.systemId;
+                                            entryIntent.systemId;
                                     }
                                     else
                                     {
@@ -1024,10 +1010,13 @@ namespace game::system_map
                                         view.state().navigationFocusValid = true;
                                     }
 
-                                    announceSystemEntry();
-
-                                    view.state().requestedSystemEntry =
-                                        entryRequest;
+                                    if (entryIntent.valid())
+                                    {
+                                        if (entryIntent.valid())
+                        {
+                            result.mapIntent = entryIntent;
+                        }
+                                    }
                                 }
                             }
 
@@ -1567,20 +1556,20 @@ namespace game::system_map
                         */
                         view.state().cubeClickTracker.reset();
 
-                        const GalaxySystemEntryRequest entryRequest =
-                            view.systemEntryForPosition(
+                        const MapIntent entryIntent =
+                            view.entryIntentForPosition(
                                 galaxy,
                                 navigationPointLy,
                                 pivotSystemId
                             );
 
-                        if (entryRequest.knownSystem())
+                        if (entryIntent.entersKnownSystem())
                         {
                             view.state().selectedSystemId =
-                                entryRequest.systemId;
+                                entryIntent.systemId;
 
                             view.state().focusedSystemId =
-                                entryRequest.systemId;
+                                entryIntent.systemId;
                         }
                         else
                         {
@@ -1594,10 +1583,10 @@ namespace game::system_map
                                 true;
                         }
 
-                        announceSystemEntry();
-
-                        view.state().requestedSystemEntry =
-                            entryRequest;
+                        if (entryIntent.valid())
+                        {
+                            result.mapIntent = entryIntent;
+                        }
                     }
                     else
                     {

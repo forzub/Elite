@@ -391,6 +391,8 @@ namespace game::system_map
         const world::celestial::PlayerNavigationState& navigation
     ) const
     {
+        viewState.synchronizeCatalogRoots(galaxy);
+
         const glm::mat4 projection =
             viewState.projectionMatrix(viewport);
 
@@ -673,6 +675,7 @@ namespace game::system_map
             context,
             viewport,
             galaxy,
+            navigation,
             mvp
         );
 
@@ -1249,7 +1252,7 @@ void GalaxyMapRenderer::drawNavigationGrid(
         2. если луч не пересёк ни один Root — ближайший к camera.target.
     */
     for (const auto& rootIndex :
-         viewState.state().navigationGrid.config().allowedRootCells)
+         viewState.state().navigationGrid.allowedRootCells())
     {
         const glm::dvec3 rootCenterLy =
             frame.originLy +
@@ -1308,7 +1311,7 @@ void GalaxyMapRenderer::drawNavigationGrid(
     }
 
     for (const auto& rootIndex :
-         viewState.state().navigationGrid.config().allowedRootCells)
+         viewState.state().navigationGrid.allowedRootCells())
     {
         const glm::dvec3 rootCenterLy =
             frame.originLy +
@@ -1803,6 +1806,7 @@ void GalaxyMapRenderer::drawLabels(
     GalaxyMapRenderContext& context,
     const Viewport& vp,
     const world::celestial::GalaxyMapSnapshot& galaxy,
+    const world::celestial::PlayerNavigationState& navigation,
     const glm::mat4& mvp
 ) const
 {
@@ -1889,6 +1893,9 @@ void GalaxyMapRenderer::drawLabels(
 
 
 
+    const glm::dvec3 observerPositionLy =
+        playerPositionLy(galaxy, navigation);
+
     for (const auto& s : galaxy.systems)
     {
         bool visible = false;
@@ -1907,24 +1914,16 @@ void GalaxyMapRenderer::drawLabels(
 
         const bool selected = s.id == viewState.state().selectedSystemId;
 
-        // Пока игрок находится у текущей системы. Для galaxy-map этого достаточно.
-        // Если позже игрок будет в межзвездном пространстве — добавим точную playerPositionLy.
-        double distanceLy = 0.0;
+        const glm::dvec3 observerDeltaLy =
+            s.positionLy - observerPositionLy;
 
-        for (const auto& cur : galaxy.systems)
-        {
-            // У тебя текущая система сейчас визуально совпадает с Sol.
-            // До передачи nav сюда считаем от системы id=0, если она есть.
-            if (cur.id == 0)
-            {
-                const double dx = s.positionLy.x - cur.positionLy.x;
-                const double dy = s.positionLy.y - cur.positionLy.y;
-                const double dz = s.positionLy.z - cur.positionLy.z;
-
-                distanceLy = std::sqrt(dx * dx + dy * dy + dz * dz);
-                break;
-            }
-        }
+        const double distanceLy =
+            std::sqrt(
+                glm::dot(
+                    observerDeltaLy,
+                    observerDeltaLy
+                )
+            );
 
         const std::string subtitle =
             (s.starType.empty() ? "Unknown" : s.starType) +

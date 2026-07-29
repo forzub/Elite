@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -93,6 +94,18 @@ public:
     const GalaxyNavigationFrame& frame() const;
     const GalaxyNavigationConfig& config() const;
 
+    /*
+        The JSON whitelist defines intentionally navigable empty root sectors.
+        Loaded catalog systems are added at runtime so a valid star can never
+        exist outside the visible/navigable root domain.
+    */
+    void synchronizeCatalogPositions(
+        const std::vector<glm::dvec3>& positionsLy
+    );
+
+    const std::vector<std::array<std::int64_t, 3>>&
+    allowedRootCells() const;
+
     int subdivision() const;
     int minimumLevel() const;
     int initialLevel() const;
@@ -168,9 +181,16 @@ public:
 private:
     std::int64_t nearestParentIndex(std::int64_t childIndex) const;
 
+    std::array<std::int64_t, 3> rootIndexForPositionLy(
+        const glm::dvec3& positionLy
+    ) const;
+
 private:
     GalaxyNavigationFrame m_frame;
     GalaxyNavigationConfig m_config;
+
+    std::vector<std::array<std::int64_t, 3>>
+        m_allowedRootCells;
 
     bool m_enabled = true;
 

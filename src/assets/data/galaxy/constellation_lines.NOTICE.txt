@@ -1,0 +1,15 @@
+Western constellation stick-figure data
+========================================
+
+The line topology in constellation_lines.json is adapted from:
+
+  ConstellationLines, Marc van der Sluys (2005-2023)
+  DOI: 10.5281/zenodo.10397192
+  Source repository: MarcvdSluys/ConstellationLines
+
+The source dataset is licensed under Creative Commons
+Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
+
+The JSON representation stores the same line topology using Bright Star
+Catalogue (HR) identifiers so it can be joined to real_star_catalog.json.
+Project-specific rendering code is not derived from the dataset.

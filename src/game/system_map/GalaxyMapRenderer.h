@@ -45,6 +45,7 @@ namespace game::system_map
             GalaxyMapRenderContext& context,
             const Viewport& viewport,
             const world::celestial::GalaxyMapSnapshot& galaxy,
+            const world::celestial::PlayerNavigationState& navigation,
             const glm::mat4& mvp
         ) const;
 

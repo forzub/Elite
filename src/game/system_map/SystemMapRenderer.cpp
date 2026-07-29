@@ -30,8 +30,6 @@
 namespace
 {
     constexpr double AU_KM = 149597870.7;
-    constexpr float GALAXY_RENDER_UNITS_PER_LY =
-        game::system_map::GalaxyMapView::RenderUnitsPerLightYear;
 
     double hubPerfNowMs()
     {
@@ -1456,6 +1454,16 @@ void SystemMapRenderer::init()
 
     if (!m_mapStarfieldInitialized)
     {
+        // System/Detail/Hub skies use the real astronomical catalog.
+        // Runtime-only game-system proxies remain available for metadata,
+        // but are not rendered as false background stars. Constellation
+        // figures are a gameplay-sky aid and are not part of map rendering.
+        m_mapStarfieldRenderer.setConstellationOverlayAvailable(false);
+        m_mapStarfieldRenderer.setCatalogFilter(
+            0.0f,
+            true
+        );
+
         m_mapStarfieldInitialized =
             m_mapStarfieldRenderer.initialize(
                 "assets/data/galaxy_details"
@@ -1472,6 +1480,7 @@ void SystemMapRenderer::init()
 
     if (!m_galaxyBackdropStarfieldInitialized)
     {
+        m_galaxyBackdropStarfieldRenderer.setConstellationOverlayAvailable(false);
         m_galaxyBackdropStarfieldRenderer.setCatalogFilter(
             m_galaxyView.visuals().starfieldMinimumDistanceLy,
             true
@@ -3142,17 +3151,36 @@ void SystemMapRenderer::cycleNavigationCoordinateFormat()
 
 
 
+void SystemMapRenderer::onGalaxyMapEntered(
+    const world::celestial::GalaxyMapSnapshot& galaxy,
+    const world::celestial::PlayerNavigationState& navigation
+)
+{
+    m_galaxyView.onEntered(
+        galaxy,
+        navigation
+    );
+}
+
+
+void SystemMapRenderer::focusGalaxySystem(
+    int systemId,
+    const world::celestial::GalaxyMapSnapshot& galaxy
+)
+{
+    m_galaxyView.focusSystem(
+        systemId,
+        galaxy,
+        m_mode == Mode::Galaxy,
+        glfwGetTime()
+    );
+}
+
+
 int SystemMapRenderer::selectedSystemId() const
 {
     return m_galaxyView.state().selectedSystemId;
 }
-
-std::optional<SystemMapRenderer::SystemEntryRequest>
-SystemMapRenderer::consumeRequestedSystemEntry()
-{
-    return m_galaxyView.consumeRequestedSystemEntry();
-}
-
 
 int SystemMapRenderer::focusedSystemId() const
 {
@@ -3194,7 +3222,7 @@ void SystemMapRenderer::setMode(Mode mode)
     */
     if (m_mode != Mode::Galaxy)
     {
-        cancelGalaxyCameraFlight(
+        m_galaxyView.cancelCameraFlight(
             true
         );
     }
@@ -4608,7 +4636,7 @@ void SystemMapRenderer::render(
     const double nowSeconds =
         glfwGetTime();
 
-    updateGalaxyCameraFlight(
+    m_galaxyView.updateCameraFlight(
         nowSeconds
     );
 
@@ -4677,7 +4705,9 @@ void SystemMapRenderer::render(
     }
     else if (m_mode == Mode::Galaxy)
     {
-        renderGalaxy(
+        m_galaxyRenderer.render(
+            m_galaxyView,
+            *this,
             vp,
             galaxy,
             nav
@@ -4755,7 +4785,6 @@ void SystemMapRenderer::render(
 
 
 
-#include "src/game/system_map/SystemMapRendererGalaxy.inl"
 #include "src/game/system_map/SystemMapRendererSystem.inl"
 
 
@@ -4804,7 +4833,8 @@ glm::vec2 SystemMapRenderer::projectToScreen(
 
 
 
-void SystemMapRenderer::handleInput(
+std::optional<game::system_map::MapIntent>
+SystemMapRenderer::handleInput(
     const Viewport& vp,
     const world::celestial::GalaxyMapSnapshot& galaxy
 )
@@ -4814,7 +4844,7 @@ void SystemMapRenderer::handleInput(
         m_mode != Mode::Planet &&
         m_mode != Mode::Hub)
     {
-        return;
+        return std::nullopt;
     }
 
     /*
@@ -4838,7 +4868,7 @@ void SystemMapRenderer::handleInput(
         m_pendingScrollY = 0.0;
         m_navigationLevelZeroButtonHovered = false;
         m_navigationOverlayLeftWasDown = false;
-        return;
+        return std::nullopt;
     }
 
 
@@ -4850,7 +4880,7 @@ void SystemMapRenderer::handleInput(
         glfwGetCurrentContext();
 
     if (!window)
-        return;
+        return std::nullopt;
 
     double mx = 0.0;
     double my = 0.0;
@@ -4939,7 +4969,7 @@ void SystemMapRenderer::handleInput(
         m_systemCamera.lastMouseX = mx;
         m_systemCamera.lastMouseY = my;
 
-        return;
+        return std::nullopt;
     }
 
     if (m_mode == Mode::System)
@@ -4956,7 +4986,7 @@ void SystemMapRenderer::handleInput(
             rightDown
         );
 
-        return;
+        return std::nullopt;
     }
 
     if (m_mode == Mode::Planet ||
@@ -4974,7 +5004,7 @@ void SystemMapRenderer::handleInput(
             rightDown
         );
 
-        return;
+        return std::nullopt;
     }
 
     if (m_mode == Mode::Galaxy)
@@ -5008,22 +5038,25 @@ void SystemMapRenderer::handleInput(
         if (result.requestWindowFocus)
             glfwFocusWindow(window);
 
-        if (result.navigationEvent.has_value())
+        if (result.galaxyLevelChanged.has_value())
         {
-            const auto& event =
-                result.navigationEvent.value();
+            announceNavigationLevel(
+                'G',
+                result.galaxyLevelChanged.value()
+            );
+        }
 
-            if (event.type ==
-                game::system_map::
-                    GalaxyMapNavigationEventType::
-                        GalaxyLevelChanged)
-            {
-                announceNavigationLevel(
-                    'G',
-                    event.galaxyLevel
-                );
-            }
-            else
+        if (result.mapIntent.has_value())
+        {
+            const auto type =
+                result.mapIntent->type;
+
+            if (type ==
+                    game::system_map::MapIntentType::
+                        EnterKnownSystem ||
+                type ==
+                    game::system_map::MapIntentType::
+                        EnterEmptySector)
             {
                 announceNavigationLevel(
                     'S',
@@ -5034,8 +5067,11 @@ void SystemMapRenderer::handleInput(
             }
         }
 
-        return;
+        return result.mapIntent;
     }
+
+    return std::nullopt;
+
 }
 
 

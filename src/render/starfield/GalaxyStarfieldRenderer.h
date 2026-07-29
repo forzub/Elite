@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "src/render/starfield/MilkyWayRenderer.h"
+#include "src/render/starfield/ConstellationOverlayRenderer.h"
 
 class GalaxyStarfieldRenderer
 {
@@ -23,6 +24,14 @@ public:
         float visualMagnitudeFromSol = 6.0f;
         float absoluteMagnitude = 6.0f;
 
+        // Bright Star Catalogue number used by constellation topology.
+        int brightStarCatalogId = -1;
+
+        // True only for stars that came from real_star_catalog.json.
+        // Runtime-only game-system proxies are kept for labels/debug, but
+        // must not contaminate the astronomical sky.
+        bool isAstronomicalCatalogStar = false;
+
         bool isGameSystem = false;
         int gameSystemId = -1;
     };
@@ -38,14 +47,43 @@ public:
 
     /*
         Configure a catalog subset before initialize().
-        Defaults preserve the existing world/detail/hub sky unchanged.
+
+        Runtime-only game-system proxies are useful for labels and debug,
+        but they are not astronomical catalog stars. They can be excluded
+        without removing real HYG stars that also represent game systems.
     */
     void setCatalogFilter(
         float minimumDistanceLy,
-        bool excludeGameSystems
+        bool excludeRuntimeGameSystemProxies
     );
 
     void setObserverPositionLy(const glm::vec3& positionLy);
+
+    // Configure before initialize(). Map renderers disable this capability
+    // completely so they neither load nor build the decorative sky layer.
+    void setConstellationOverlayAvailable(bool available)
+    {
+        m_constellationOverlayAvailable = available;
+
+        if (!available)
+            m_constellationOverlayEnabled = false;
+    }
+
+    void setConstellationOverlayEnabled(bool enabled)
+    {
+        m_constellationOverlayEnabled = enabled;
+    }
+
+    bool constellationOverlayEnabled() const
+    {
+        return m_constellationOverlayEnabled;
+    }
+
+    const std::vector<ConstellationOverlayRenderer::ConstellationDefinition>&
+    getConstellationDefinitions() const
+    {
+        return m_constellationOverlayRenderer.definitions();
+    }
 
     void render(
         const glm::mat4& view,
@@ -107,6 +145,7 @@ private:
 
     void rebuildVertices();
     void rebuildVerticesFromRealCatalog();
+    void rebuildConstellationOverlay();
 
 
 
@@ -144,7 +183,10 @@ private:
     float m_renderRadius = 120.0f;
 
     float m_minimumCatalogDistanceLy = 0.0f;
-    bool m_excludeGameSystems = false;
+    bool m_excludeRuntimeGameSystemProxies = false;
 
+    bool m_constellationOverlayAvailable = true;
+    bool m_constellationOverlayEnabled = false;
+    ConstellationOverlayRenderer m_constellationOverlayRenderer;
     MilkyWayRenderer m_milkyWayRenderer;
 };

@@ -52,7 +52,15 @@ float starSizeFromMagnitude(float apparentMagnitude, bool isGameSystem)
     const float clamped = std::max(0.0f, std::min(1.0f, normalized));
 
     float size = 1.35f + std::pow(clamped, 0.75f) * 6.8f;
-    // float size = 1.15f + std::pow(clamped, 0.75f) * 6.5f;
+
+    // Keep bright stars unchanged, but give dim catalog stars a slightly
+    // wider footprint. This improves visibility of companions such as
+    // Alcor without increasing their alpha or bloating Mizar.
+    const float faintness =
+        clamp01((apparentMagnitude - 2.4f) / 4.1f);
+    const float smoothFaintness =
+        faintness * faintness * (3.0f - 2.0f * faintness);
+    size += 0.55f * smoothFaintness;
 
     if (isGameSystem)
         size *= 1.35f;
@@ -136,7 +144,7 @@ GalaxyStarfieldRenderer::~GalaxyStarfieldRenderer()
 
 void GalaxyStarfieldRenderer::setCatalogFilter(
     float minimumDistanceLy,
-    bool excludeGameSystems
+    bool excludeRuntimeGameSystemProxies
 )
 {
     if (m_initialized)
@@ -148,8 +156,8 @@ void GalaxyStarfieldRenderer::setCatalogFilter(
             minimumDistanceLy
         );
 
-    m_excludeGameSystems =
-        excludeGameSystems;
+    m_excludeRuntimeGameSystemProxies =
+        excludeRuntimeGameSystemProxies;
 }
 
 bool GalaxyStarfieldRenderer::initialize(
@@ -245,6 +253,35 @@ bool GalaxyStarfieldRenderer::initialize(
         generateProceduralField();
         m_milkyWayRenderer.initialize();
         rebuildVertices();
+    }
+
+    if (m_constellationOverlayAvailable)
+    {
+        bool constellationDefinitionsLoaded =
+            m_constellationOverlayRenderer.initialize(
+                "assets/data/galaxy/constellation_lines.json"
+            );
+
+        if (!constellationDefinitionsLoaded)
+        {
+            constellationDefinitionsLoaded =
+                m_constellationOverlayRenderer.initialize(
+                    "../assets/data/galaxy/constellation_lines.json"
+                );
+        }
+
+        if (!constellationDefinitionsLoaded)
+        {
+            constellationDefinitionsLoaded =
+                m_constellationOverlayRenderer.initialize(
+                    "../src/assets/data/galaxy/constellation_lines.json"
+                );
+        }
+
+        if (constellationDefinitionsLoaded)
+            rebuildConstellationOverlay();
+        else
+            std::cerr << "[Constellations] overlay data was not loaded" << std::endl;
     }
 
     glGenVertexArrays(1, &m_vao);
@@ -377,6 +414,7 @@ void GalaxyStarfieldRenderer::shutdown()
         m_screenVao = 0;
     }
 
+    m_constellationOverlayRenderer.shutdown();
     m_milkyWayRenderer.shutdown();
 
     m_initialized = false;
@@ -389,8 +427,15 @@ void GalaxyStarfieldRenderer::shutdown()
 
 void GalaxyStarfieldRenderer::setObserverPositionLy(const glm::vec3& positionLy)
 {
-    const float observerDelta = glm::length(positionLy - m_observerPositionLy);
-    if (observerDelta < 0.0001f)
+    const float observerDelta =
+        glm::length(
+            positionLy -
+            m_observerPositionLy
+        );
+
+    // Keep the published observer position tied to the real player position.
+    // Vertex rebuilding remains throttled separately by m_rebuildThresholdLy.
+    if (observerDelta < 0.000000001f)
         return;
 
     m_observerPositionLy = positionLy;
@@ -406,6 +451,8 @@ void GalaxyStarfieldRenderer::setObserverPositionLy(const glm::vec3& positionLy)
         rebuildVerticesFromRealCatalog();
     else
         rebuildVertices();
+
+    rebuildConstellationOverlay();
 
     m_lastRebuildObserverPositionLy = m_observerPositionLy;
 
@@ -724,6 +771,14 @@ bool GalaxyStarfieldRenderer::loadRealStarCatalog(const std::string& path)
 
     s.visualMagnitudeFromSol = visualMag;
     s.absoluteMagnitude = absMag;
+
+    s.brightStarCatalogId = -1;
+    if (item.contains("hr") && item["hr"].is_number_integer())
+    {
+        s.brightStarCatalogId = item["hr"].get<int>();
+    }
+
+    s.isAstronomicalCatalogStar = true;
 
     // Game-system identity is merged at runtime from galaxy_details.
     s.isGameSystem = false;
@@ -1061,7 +1116,7 @@ void GalaxyStarfieldRenderer::rebuildVertices()
         glm::vec3 relative = source.positionLy - m_observerPositionLy;
         const float len = glm::length(relative);
 
-        if (m_excludeGameSystems &&
+        if (m_excludeRuntimeGameSystemProxies &&
             source.atlasStar)
         {
             continue;
@@ -1150,8 +1205,12 @@ void GalaxyStarfieldRenderer::rebuildVerticesFromRealCatalog()
         const glm::vec3 relative = star.positionLy - m_observerPositionLy;
         const float distanceLy = glm::length(relative);
 
-        if (m_excludeGameSystems &&
-            star.isGameSystem)
+        const bool runtimeGameSystemProxy =
+            star.isGameSystem &&
+            !star.isAstronomicalCatalogStar;
+
+        if (m_excludeRuntimeGameSystemProxies &&
+            runtimeGameSystemProxy)
         {
             continue;
         }
@@ -1205,7 +1264,35 @@ void GalaxyStarfieldRenderer::rebuildVerticesFromRealCatalog()
 
 
 
+void GalaxyStarfieldRenderer::rebuildConstellationOverlay()
+{
+    if (!m_constellationOverlayAvailable ||
+        !m_constellationOverlayRenderer.isInitialized())
+        return;
 
+    std::vector<ConstellationOverlayRenderer::StarReference> references;
+    references.reserve(m_realStars.size());
+
+    for (const RealStar& star : m_realStars)
+    {
+        if (!star.isAstronomicalCatalogStar ||
+            star.brightStarCatalogId <= 0)
+        {
+            continue;
+        }
+
+        ConstellationOverlayRenderer::StarReference reference;
+        reference.brightStarCatalogId = star.brightStarCatalogId;
+        reference.positionLy = star.positionLy;
+        references.push_back(reference);
+    }
+
+    m_constellationOverlayRenderer.rebuild(
+        references,
+        m_observerPositionLy,
+        m_renderRadius
+    );
+}
 
 
 
@@ -1280,6 +1367,14 @@ void GalaxyStarfieldRenderer::render(
         milkyWayIntensityScale,
         milkyWayColorTint
     );
+
+    // Constellation topology is a separate optional layer between
+    // the Milky Way haze and the sharp star sprites.
+    if (m_constellationOverlayAvailable &&
+        m_constellationOverlayEnabled)
+    {
+        m_constellationOverlayRenderer.render(mvp);
+    }
 
     // Потом острые звёзды.
     glUseProgram(shader);

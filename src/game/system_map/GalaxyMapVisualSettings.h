@@ -99,14 +99,16 @@ struct GalaxyMapVisualSettings
     int labelSubtitleMaxPx = 21;
 
     /*
-        Galaxy uses a separate distant-only starfield instance.
-        Nearby/game systems are excluded so they are not drawn twice:
-        once as map objects and once on the background sphere.
+        Galaxy uses a separate astronomical background instance.
+
+        Do not cut away nearby real stars: those stars carry most familiar
+        constellation shapes. Runtime-only game-system proxies are filtered
+        by GalaxyStarfieldRenderer, while real catalog stars remain visible.
     */
     bool drawStarfield = true;
     float starfieldFieldOfViewDeg = 48.0f;
     float starfieldSizeScale = 0.68f;
-    float starfieldMinimumDistanceLy = 120.0f;
+    float starfieldMinimumDistanceLy = 0.0f;
 
     /*
         Map-only controls for the shared sky renderer.

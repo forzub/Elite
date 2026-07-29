@@ -196,6 +196,7 @@ private:
     SceneRenderer m_sceneRenderer;
     PreparedScene m_preparedScene;
     SystemMapRenderer m_systemMapRenderer;
+    bool m_constellationOverlayEnabled = false;
 
 
     // std::unique_ptr<game::debug::DebugServer>       m_debugServer;

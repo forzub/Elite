@@ -1,6 +1,8 @@
 #include "src/game/system_map/GalaxyMapView.h"
 
 #include "src/world/celestial/SystemMapTypes.h"
+#include "src/game/navigation/SystemNavigationGrid.h"
+#include "src/world/coordinates/WorldPosition.h"
 
 #include <algorithm>
 #include <cmath>
@@ -74,7 +76,6 @@ namespace game::system_map
         m_state.cubeClickTracker.reset();
 
         m_state.entry = GalaxyMapEntryState {};
-        m_state.requestedSystemEntry.reset();
         m_state.selectedSystemId = -1;
         m_state.focusedSystemId = -1;
         m_state.screenPoints.clear();
@@ -83,6 +84,202 @@ namespace game::system_map
         m_state.orbitPivotActive = false;
         m_state.mouseDownX = 0.0;
         m_state.mouseDownY = 0.0;
+    }
+
+
+    glm::dvec3 GalaxyMapView::playerPositionLy(
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::PlayerNavigationState& playerNavigation,
+        bool& outInsideKnownSystem
+    ) const
+    {
+        const auto system =
+            std::find_if(
+                galaxy.systems.begin(),
+                galaxy.systems.end(),
+                [&](const auto& candidate)
+                {
+                    return
+                        candidate.id ==
+                        playerNavigation.currentSystemId;
+                }
+            );
+
+        outInsideKnownSystem =
+            system != galaxy.systems.end();
+
+        if (outInsideKnownSystem)
+        {
+            return
+                system->positionLy +
+                playerNavigation.systemLocalAu /
+                    navigation::SystemNavigationGrid::AuPerLightYear;
+        }
+
+        return world::coordinates::toGalacticLy(
+            playerNavigation.worldPosition
+        );
+    }
+
+    void GalaxyMapView::synchronizeCatalogRoots(
+        const world::celestial::GalaxyMapSnapshot& galaxy
+    )
+    {
+        std::vector<glm::dvec3> positionsLy;
+        positionsLy.reserve(galaxy.systems.size());
+
+        for (const auto& system : galaxy.systems)
+            positionsLy.push_back(system.positionLy);
+
+        m_state.navigationGrid.synchronizeCatalogPositions(
+            positionsLy
+        );
+    }
+
+    void GalaxyMapView::onEntered(
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::PlayerNavigationState& playerNavigation
+    )
+    {
+        synchronizeCatalogRoots(galaxy);
+
+        /*
+            Persistent camera state is preserved while the player remains in
+            the same terminal Galaxy region. Transient interaction state must
+            never survive closing the map or returning from a child map.
+        */
+        m_state.navigationGrid.clearHoveredCell();
+        m_state.hoverVisualCell.reset();
+        m_state.hoverVisualAlpha = 0.0f;
+        m_state.hoverOutgoingCell.reset();
+        m_state.hoverOutgoingAlpha = 0.0f;
+        m_state.hoverVisualLastTimeSeconds = 0.0;
+        m_state.cubeClickTracker.reset();
+
+        bool insideKnownSystem = false;
+
+        const glm::dvec3 playerLy =
+            playerPositionLy(
+                galaxy,
+                playerNavigation,
+                insideKnownSystem
+            );
+
+        m_state.entry.positionLy = playerLy;
+
+        const int terminalLevel =
+            m_state.navigationGrid.maximumLevel();
+
+        const auto terminalCell =
+            m_state.navigationGrid.nearestIndexForPositionLy(
+                playerLy,
+                terminalLevel
+            );
+
+        const int entrySystemId =
+            insideKnownSystem
+                ? playerNavigation.currentSystemId
+                : -1;
+
+        const bool playerRegionChanged =
+            !m_state.entry.valid ||
+            entrySystemId != m_state.entry.systemId ||
+            terminalCell != m_state.entry.terminalCell;
+
+        if (playerRegionChanged)
+        {
+            cancelCameraFlight(false);
+
+            m_state.navigationGrid.reset();
+            m_state.navigationGrid.setAnchorFromPositionLy(
+                playerLy
+            );
+            m_state.navigationGrid.selectCell(
+                m_state.navigationGrid.anchorCell()
+            );
+
+            m_state.navigationFocusLy = playerLy;
+            m_state.navigationFocusValid = true;
+
+            m_state.camera.target =
+                positionLyToRender(
+                    m_state.navigationGrid
+                        .anchorCell()
+                        .centerLy
+                );
+
+            const float initialCellEdgeRender =
+                static_cast<float>(
+                    m_state.navigationGrid
+                        .anchorCell()
+                        .sizeLy
+                ) *
+                RenderUnitsPerLightYear;
+
+            m_state.camera.distance =
+                std::clamp(
+                    initialCellEdgeRender * 2.35f,
+                    m_controls.minDistance,
+                    m_controls.maxDistance
+                );
+
+            m_state.selectedSystemId = entrySystemId;
+            m_state.focusedSystemId = entrySystemId;
+        }
+
+        m_state.entry.systemId = entrySystemId;
+        m_state.entry.terminalCell = terminalCell;
+        m_state.entry.valid = true;
+    }
+
+    void GalaxyMapView::resetNavigationToEntry()
+    {
+        cancelCameraFlight(false);
+
+        m_state.navigationGrid.reset();
+        m_state.navigationGrid.setAnchorFromPositionLy(
+            m_state.entry.positionLy
+        );
+        m_state.navigationGrid.selectCell(
+            m_state.navigationGrid.anchorCell()
+        );
+        m_state.navigationGrid.clearHoveredCell();
+
+        m_state.camera = GalaxyCameraState {};
+
+        m_state.camera.target =
+            positionLyToRender(
+                m_state.navigationGrid
+                    .anchorCell()
+                    .centerLy
+            );
+
+        const float initialCellEdgeRender =
+            static_cast<float>(
+                m_state.navigationGrid
+                    .anchorCell()
+                    .sizeLy
+            ) *
+            RenderUnitsPerLightYear;
+
+        m_state.camera.distance =
+            std::clamp(
+                initialCellEdgeRender * 2.35f,
+                m_controls.minDistance,
+                m_controls.maxDistance
+            );
+
+        m_state.navigationFocusLy =
+            m_state.entry.positionLy;
+        m_state.navigationFocusValid = true;
+
+        m_state.hoverVisualCell.reset();
+        m_state.hoverVisualAlpha = 0.0f;
+        m_state.hoverOutgoingCell.reset();
+        m_state.hoverOutgoingAlpha = 0.0f;
+        m_state.hoverVisualLastTimeSeconds = 0.0;
+        m_state.cubeClickTracker.reset();
+        m_state.orbitPivotActive = false;
     }
 
     glm::vec3 GalaxyMapView::positionLyToRender(
@@ -367,7 +564,7 @@ namespace game::system_map
         m_state.camera.distance = static_cast<float>(pose.scale);
     }
 
-    GalaxySystemEntryRequest GalaxyMapView::systemEntryForPosition(
+    MapIntent GalaxyMapView::entryIntentForPosition(
         const world::celestial::GalaxyMapSnapshot& galaxy,
         const glm::dvec3& positionLy,
         int explicitSystemId
@@ -387,7 +584,7 @@ namespace game::system_map
                 terminalLevel
             ))
         {
-            return {};
+            return MapIntent {};
         }
 
         int entrySystemId = explicitSystemId;
@@ -431,11 +628,10 @@ namespace game::system_map
 
             if (explicitSystem != galaxy.systems.end())
             {
-                return GalaxySystemEntryRequest
-                {
+                return MapIntent::enterKnownSystem(
                     explicitSystem->id,
                     explicitSystem->positionLy
-                };
+                );
             }
         }
 
@@ -445,11 +641,9 @@ namespace game::system_map
                 terminalLevel
             );
 
-        return GalaxySystemEntryRequest
-        {
-            -1,
+        return MapIntent::enterEmptySector(
             terminalCell.centerLy
-        };
+        );
     }
 
     bool GalaxyMapView::focusSystem(
@@ -506,16 +700,5 @@ namespace game::system_map
         return true;
     }
 
-
-    std::optional<GalaxySystemEntryRequest>
-    GalaxyMapView::consumeRequestedSystemEntry()
-    {
-        auto requested =
-            m_state.requestedSystemEntry;
-
-        m_state.requestedSystemEntry.reset();
-
-        return requested;
-    }
 
 }

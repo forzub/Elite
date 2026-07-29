@@ -127,6 +127,11 @@ public:
 
     bool initializeStaticResources();
 
+    void setConstellationOverlayEnabled(bool enabled)
+    {
+        m_starfieldRenderer.setConstellationOverlayEnabled(enabled);
+    }
+
 
     PreparedScene prepareScene(
         const ClientWorldState& world,

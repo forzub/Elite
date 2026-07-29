@@ -645,6 +645,14 @@ bool SceneRenderer::initializeStaticResources()
 
     if (!m_starfieldRenderer.isInitialized())
     {
+        // The gameplay sky must remain an astronomical catalog view.
+        // Runtime-only game-system proxies are still available to labels,
+        // but they are not rendered as extra false stars.
+        m_starfieldRenderer.setCatalogFilter(
+            0.0f,
+            true
+        );
+
         ok = ok && m_starfieldRenderer.initialize();
     }
 
@@ -1378,6 +1386,19 @@ profileAfterSetupMs = renderProfileNowMs();
         dbg.shouldRenderStarfield() &&
         m_starfieldRenderer.isInitialized())
     {
+        const glm::dvec3 observerPositionLy =
+            world::coordinates::toGalacticLy(
+                frame.origin
+            );
+
+        m_starfieldRenderer.setObserverPositionLy(
+            glm::vec3(
+                static_cast<float>(observerPositionLy.x),
+                static_cast<float>(observerPositionLy.y),
+                static_cast<float>(observerPositionLy.z)
+            )
+        );
+
         m_starfieldRenderer.render(renderView, proj);
     }
 
@@ -3170,101 +3191,11 @@ void SceneRenderer::renderConstellationHoverOverlay(
     if (mouseX < 0.0 || mouseY < 0.0 || mouseX > screenW || mouseY > screenH)
         return;
 
-    struct ConstellationDef
-    {
-        const char* id;
-        const char* label;
-        std::vector<std::pair<const char*, const char*>> edges;
-    };
+    const auto& constellations =
+        m_starfieldRenderer.getConstellationDefinitions();
 
-    static const std::vector<ConstellationDef> kConstellations =
-    {
-        {
-            "Ori",
-            "Orion",
-            {
-                {"Betelgeuse", "Bellatrix"},
-                {"Bellatrix", "Mintaka"},
-                {"Mintaka", "Alnilam"},
-                {"Alnilam", "Alnitak"},
-                {"Alnitak", "Saiph"},
-                {"Saiph", "Rigel"},
-                {"Rigel", "Mintaka"}
-            }
-        },
-        {
-            "UMa",
-            "Ursa Major",
-            {
-                {"Dubhe", "Merak"},
-                {"Merak", "Phecda"},
-                {"Phecda", "Megrez"},
-                {"Megrez", "Alioth"},
-                {"Alioth", "Mizar"},
-                {"Mizar", "Alkaid"}
-            }
-        },
-        {
-            "Cyg",
-            "Cygnus",
-            {
-                {"Deneb", "Sadr"},
-                {"Sadr", "Aljanah"},
-                {"Sadr", "Fawaris"},
-                {"Sadr", "Albireo"}
-            }
-        },
-        {
-            "Cas",
-            "Cassiopeia",
-            {
-                {"Caph", "Schedar"},
-                {"Schedar", "Cih"},
-                {"Cih", "Ruchbah"},
-                {"Ruchbah", "Segin"}
-            }
-        },
-        {
-            "Cru",
-            "Crux",
-            {
-                {"Gacrux", "Acrux"},
-                {"Mimosa", "Imai"}
-            }
-        },
-        {
-            "Leo",
-            "Leo",
-            {
-                {"Regulus", "Algieba"},
-                {"Algieba", "Zosma"},
-                {"Zosma", "Denebola"},
-                {"Zosma", "Chertan"}
-            }
-        },
-        {
-            "Gem",
-            "Gemini",
-            {
-                {"Castor", "Pollux"},
-                {"Castor", "Mebsuta"},
-                {"Mebsuta", "Alhena"},
-                {"Pollux", "Wasat"},
-                {"Wasat", "Alhena"}
-            }
-        },
-        {
-            "Sco",
-            "Scorpius",
-            {
-                {"Dschubba", "Antares"},
-                {"Antares", "Larawag"},
-                {"Larawag", "Shaula"},
-                {"Shaula", "Lesath"},
-                {"Shaula", "Sargas"}
-            }
-        }
-    };
+    if (constellations.empty())
+        return;
 
     struct ScreenStar
     {
@@ -3317,18 +3248,27 @@ void SceneRenderer::renderConstellationHoverOverlay(
         projected.push_back(ScreenStar{&star, screen});
     }
 
-    auto findByName = [&](const char* name) -> const ScreenStar*
-    {
-        for (const auto& s : projected)
-        {
-            if (!s.star)
-                continue;
+    std::unordered_map<int, const ScreenStar*> projectedByHr;
+    projectedByHr.reserve(projected.size());
 
-            if (s.star->name == name)
-                return &s;
+    for (const ScreenStar& screenStar : projected)
+    {
+        if (!screenStar.star ||
+            screenStar.star->brightStarCatalogId <= 0)
+        {
+            continue;
         }
 
-        return nullptr;
+        projectedByHr.emplace(
+            screenStar.star->brightStarCatalogId,
+            &screenStar
+        );
+    }
+
+    auto findByHr = [&](int hr) -> const ScreenStar*
+    {
+        const auto it = projectedByHr.find(hr);
+        return it == projectedByHr.end() ? nullptr : it->second;
     };
 
     const glm::vec2 mouse(
@@ -3336,42 +3276,46 @@ void SceneRenderer::renderConstellationHoverOverlay(
         static_cast<float>(mouseY)
     );
 
-    const ConstellationDef* bestConstellation = nullptr;
+    const ConstellationOverlayRenderer::ConstellationDefinition*
+        bestConstellation = nullptr;
     float bestDistance = 999999.0f;
 
-    for (const auto& c : kConstellations)
+    for (const auto& constellation : constellations)
     {
         float minDistance = 999999.0f;
         int visibleEdges = 0;
 
-        for (const auto& edge : c.edges)
+        for (const auto& polyline : constellation.polylinesHr)
         {
-            const ScreenStar* a = findByName(edge.first);
-            const ScreenStar* b = findByName(edge.second);
+            for (std::size_t i = 1; i < polyline.size(); ++i)
+            {
+                const ScreenStar* a = findByHr(polyline[i - 1]);
+                const ScreenStar* b = findByHr(polyline[i]);
 
-            if (!a || !b)
-                continue;
+                if (!a || !b)
+                    continue;
 
-            const glm::vec2 ab = b->screen - a->screen;
-            const float abLen2 = glm::dot(ab, ab);
+                const glm::vec2 ab = b->screen - a->screen;
+                const float abLen2 = glm::dot(ab, ab);
 
-            if (abLen2 < 0.0001f)
-                continue;
+                if (abLen2 < 0.0001f)
+                    continue;
 
-            const float t =
-                std::max(
-                    0.0f,
-                    std::min(
-                        1.0f,
-                        glm::dot(mouse - a->screen, ab) / abLen2
-                    )
-                );
+                const float t =
+                    std::max(
+                        0.0f,
+                        std::min(
+                            1.0f,
+                            glm::dot(mouse - a->screen, ab) / abLen2
+                        )
+                    );
 
-            const glm::vec2 closest = a->screen + ab * t;
-            const float d = glm::length(mouse - closest);
+                const glm::vec2 closest = a->screen + ab * t;
+                const float distance = glm::length(mouse - closest);
 
-            minDistance = std::min(minDistance, d);
-            ++visibleEdges;
+                minDistance = std::min(minDistance, distance);
+                ++visibleEdges;
+            }
         }
 
         if (visibleEdges <= 0)
@@ -3380,7 +3324,7 @@ void SceneRenderer::renderConstellationHoverOverlay(
         if (minDistance < bestDistance)
         {
             bestDistance = minDistance;
-            bestConstellation = &c;
+            bestConstellation = &constellation;
         }
     }
 
@@ -3414,23 +3358,26 @@ void SceneRenderer::renderConstellationHoverOverlay(
     glm::vec2 labelAnchor(0.0f);
     int labelCount = 0;
 
-    for (const auto& edge : bestConstellation->edges)
+    for (const auto& polyline : bestConstellation->polylinesHr)
     {
-        const ScreenStar* a = findByName(edge.first);
-        const ScreenStar* b = findByName(edge.second);
+        for (std::size_t i = 1; i < polyline.size(); ++i)
+        {
+            const ScreenStar* a = findByHr(polyline[i - 1]);
+            const ScreenStar* b = findByHr(polyline[i]);
 
-        if (!a || !b)
-            continue;
+            if (!a || !b)
+                continue;
 
-        m_debugLines->addLine(
-            pxToNdc(a->screen),
-            pxToNdc(b->screen),
-            lineColor
-        );
+            m_debugLines->addLine(
+                pxToNdc(a->screen),
+                pxToNdc(b->screen),
+                lineColor
+            );
 
-        labelAnchor += a->screen;
-        labelAnchor += b->screen;
-        labelCount += 2;
+            labelAnchor += a->screen;
+            labelAnchor += b->screen;
+            labelCount += 2;
+        }
     }
 
     m_debugLines->endOverlay(glm::mat4(1.0f));
@@ -3447,7 +3394,7 @@ void SceneRenderer::renderConstellationHoverOverlay(
 
     TextRenderer::instance().textDraw(
         *m_starLabelFont,
-        bestConstellation->label,
+        bestConstellation->name,
         labelAnchor.x + 12.0f,
         labelAnchor.y - 12.0f,
         glm::vec4(0.65f, 0.86f, 1.0f, 0.92f)

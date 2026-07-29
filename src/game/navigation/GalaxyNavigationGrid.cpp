@@ -14,6 +14,8 @@ GalaxyNavigationGrid::GalaxyNavigationGrid()
             "src/assets/data/navigation/navigation_grid.json"
         );
 
+    m_allowedRootCells = m_config.allowedRootCells;
+
     reset();
 }
 
@@ -80,6 +82,38 @@ const GalaxyNavigationFrame& GalaxyNavigationGrid::frame() const
 const GalaxyNavigationConfig& GalaxyNavigationGrid::config() const
 {
     return m_config;
+}
+
+void GalaxyNavigationGrid::synchronizeCatalogPositions(
+    const std::vector<glm::dvec3>& positionsLy
+)
+{
+    m_allowedRootCells = m_config.allowedRootCells;
+
+    for (const glm::dvec3& positionLy : positionsLy)
+    {
+        const auto root = rootIndexForPositionLy(positionLy);
+
+        if (std::find(
+                m_allowedRootCells.begin(),
+                m_allowedRootCells.end(),
+                root
+            ) == m_allowedRootCells.end())
+        {
+            m_allowedRootCells.push_back(root);
+        }
+    }
+
+    std::sort(
+        m_allowedRootCells.begin(),
+        m_allowedRootCells.end()
+    );
+}
+
+const std::vector<std::array<std::int64_t, 3>>&
+GalaxyNavigationGrid::allowedRootCells() const
+{
+    return m_allowedRootCells;
 }
 
 int GalaxyNavigationGrid::subdivision() const
@@ -372,11 +406,15 @@ bool GalaxyNavigationGrid::isCellNavigable(
     const GalaxyGridIndex root =
         rootIndexForCell(index, levelValue);
 
-    return m_config.isRootAllowed(
-        root.x,
-        root.y,
-        root.z
-    );
+    return std::find(
+        m_allowedRootCells.begin(),
+        m_allowedRootCells.end(),
+        std::array<std::int64_t, 3>{
+            root.x,
+            root.y,
+            root.z
+        }
+    ) != m_allowedRootCells.end();
 }
 
 bool GalaxyNavigationGrid::isCellNavigable(
@@ -387,6 +425,38 @@ bool GalaxyNavigationGrid::isCellNavigable(
         cellValue.index,
         cellValue.level
     );
+}
+
+std::array<std::int64_t, 3>
+GalaxyNavigationGrid::rootIndexForPositionLy(
+    const glm::dvec3& positionLy
+) const
+{
+    const double rootSizeLy = m_config.rootEdgeLy();
+
+    const glm::dvec3 relative =
+        positionLy - m_frame.originLy;
+
+    return {
+        static_cast<std::int64_t>(
+            std::llround(
+                glm::dot(relative, m_frame.axisX) /
+                    rootSizeLy
+            )
+        ),
+        static_cast<std::int64_t>(
+            std::llround(
+                glm::dot(relative, m_frame.axisY) /
+                    rootSizeLy
+            )
+        ),
+        static_cast<std::int64_t>(
+            std::llround(
+                glm::dot(relative, m_frame.axisZ) /
+                    rootSizeLy
+            )
+        )
+    };
 }
 
 std::vector<GalaxyNavigationCell>

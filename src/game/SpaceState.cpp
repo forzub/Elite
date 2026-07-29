@@ -789,6 +789,21 @@ SpaceState::~SpaceState()
 // =====================================================================================
 void SpaceState::handleInput()
 {
+    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F12))
+    {
+        m_constellationOverlayEnabled =
+            !m_constellationOverlayEnabled;
+
+        m_sceneRenderer.setConstellationOverlayEnabled(
+            m_constellationOverlayEnabled
+        );
+
+        std::cout
+            << "[Constellations] gameplay layer "
+            << (m_constellationOverlayEnabled ? "enabled" : "disabled")
+            << std::endl;
+    }
+
     if (context().app &&
         context().app->gameUiMode() == GameUiMode::SystemMap)
     {
@@ -816,30 +831,35 @@ void SpaceState::handleInput()
             }
 
 
-            m_systemMapRenderer.handleInput(
-                mapVp,
-                m_galaxyMapSnapshot
-            );
+            const auto mapIntent =
+                m_systemMapRenderer.handleInput(
+                    mapVp,
+                    m_galaxyMapSnapshot
+                );
 
-            const auto requestedSystemEntry =
-                m_systemMapRenderer.consumeRequestedSystemEntry();
-
-            if (requestedSystemEntry)
+            if (mapIntent.has_value())
             {
-                if (requestedSystemEntry->knownSystem())
+                using game::system_map::MapIntentType;
+
+                if (mapIntent->type ==
+                    MapIntentType::EnterKnownSystem)
                 {
                     setSystemMapKnownSystemMode(
-                        requestedSystemEntry->systemId
+                        mapIntent->systemId
                     );
-                }
-                else
-                {
-                    setSystemMapEmptySectorMode(
-                        requestedSystemEntry->positionLy
-                    );
+
+                    return;
                 }
 
-                return;
+                if (mapIntent->type ==
+                    MapIntentType::EnterEmptySector)
+                {
+                    setSystemMapEmptySectorMode(
+                        mapIntent->positionLy
+                    );
+
+                    return;
+                }
             }
         }
 

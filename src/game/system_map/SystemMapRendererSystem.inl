@@ -3984,7 +3984,7 @@ if (bodyMetrics.drawMarker)
                 A selected planet gets a separate, visible halo around the
                 sharp body marker. This mirrors selected stars in Galaxy.
             */
-            addGalaxyStarHalo(
+            addBillboardHalo(
                 selectedPos,
                 selectedRadius,
                 4.60f,

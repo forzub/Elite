@@ -174,16 +174,16 @@ void Application::init()
 {
     std::cout << "Application init\n";
 
-    m_context.app           = this;   
+    m_context.app           = this;
 
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
     m_window = new Window(1280, 720, "EliteGame");
-    
+
     // m_window  = new Window(1920, 1080, "EliteGame");
 
-   
 
-    
+
+
     // ---------------------------------------------------
             std::string webUiRoot = findGameUiRoot();
 
@@ -206,7 +206,7 @@ void Application::init()
 
     m_renderer.init();
 
-    
+
     glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
 
     g_stateContext          = &m_context;
@@ -256,12 +256,12 @@ void Application::mainLoop()
 
         m_context.dt            = dt;
         lastTime                = currentTime;
-        
+
         // Input::instance().update();
         m_window->pollEvents();
         Input::instance().update(m_window->nativeHandle());
-        
-        
+
+
         #ifdef _WIN32
         {
             /*
@@ -285,7 +285,7 @@ void Application::mainLoop()
                 }
             }
 
-            
+
         }
         #endif
 
@@ -375,8 +375,8 @@ void Application::mainLoop()
                     }
 
 
-                    
-                    
+
+
 
 
 
@@ -392,7 +392,7 @@ void Application::mainLoop()
 
                     if (webCommand == "system_map_hub")
                     {
-                        
+
                         if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
                         {
                             space->setSystemMapHubMode();
@@ -403,10 +403,10 @@ void Application::mainLoop()
 
                     if (webCommand == "system_map_detail")
                     {
-                        
+
                         if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
                         {
-                            space->setSystemMapLoadedPlanetMode();
+                            space->setSystemMapLoadedDetailMode();
                         }
 
                         continue;
@@ -416,12 +416,12 @@ void Application::mainLoop()
                     {
                         if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
                         {
-                            space->setSystemMapPlanetMode();
+                            space->setSystemMapDetailMode();
                         }
 
                         continue;
                     }
-                    
+
                     if (webCommand == "close_system_map")
                     {
                         closeGameUi();
@@ -476,7 +476,7 @@ void Application::mainLoop()
             continue;
         }
 
-        
+
 
 
 
@@ -496,14 +496,14 @@ void Application::mainLoop()
 
                 // 2. Если нет — но оно хочет confirm-exit
                 if (state->wantsConfirmExit())
-                {  
+                {
                     // В твоей реализации это уже внутри onGlobalEscape SpaceState
                 }
             }
 
             state->handleInput();
             state->update(dt);
-        
+
         m_renderer.beginFrame();
 
         int fbW = 1;
@@ -537,7 +537,7 @@ void Application::mainLoop()
             GL_STENCIL_BUFFER_BIT
         );
 
-            
+
 
 
 

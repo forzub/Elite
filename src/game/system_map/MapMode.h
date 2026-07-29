@@ -6,7 +6,10 @@ namespace game::system_map
     {
         Galaxy,
         System,
-        Planet,
-        Hub
+        Detail,
+        Hub,
+
+        // Source compatibility for code outside the map subsystem.
+        Planet = Detail
     };
 }

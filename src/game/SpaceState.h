@@ -26,9 +26,9 @@
 #include "src/game/network/ITransport.h"
 #include "src/game/network/LocalLoopbackTransport.h"
 #include "src/scene/SceneRenderer.h"
-#include "src/ui/components/radar/RadarWidgetBase.h" 
+#include "src/ui/components/radar/RadarWidgetBase.h"
 
-// #include "src/WebSocket/DebugServer.h" 
+// #include "src/WebSocket/DebugServer.h"
 #include "src/debug/FrustumDebugData.h"
 
 #include "src/game/network/ClientShipCommand.h"
@@ -61,10 +61,10 @@ class SpaceState : public GameState
 public:
     explicit SpaceState(StateStack& states);
     ~SpaceState();
-    
+
     void renderUI() override;
     void renderHUD() override;
-    
+
     void handleInput() override;
     void update(float dt) override;
     void render() override;
@@ -116,19 +116,12 @@ public:
     void updateSystemMapLiveFlags();
     bool shouldRefreshSystemMapSnapshot() const;
 
-    void requestPlanetMapSnapshot(
-        int systemId,
-        const std::string& planetBodyId,
+    void requestDetailMapSnapshot(
+        const world::celestial::DetailTarget& target,
         bool forceRefresh = false
     );
 
-    void requestLocalSpaceMapSnapshot(
-        int systemId,
-        const std::string& anchorHubId,
-        bool forceRefresh = false
-    );
-
-    void setSystemMapPlanetMode();
+    void setSystemMapDetailMode();
 
     void requestHubMapSnapshot(
         int systemId,
@@ -137,17 +130,17 @@ public:
     );
 
     void setSystemMapHubMode();
-    void setSystemMapLoadedPlanetMode();
+    void setSystemMapLoadedDetailMode();
 private:
 
-    
+
 
     WorldParams                                 m_world;
 
     bool wantsConfirmExit() const override;
     bool onGlobalEscape() override;
     bool isInSafeZone() const;
-    
+
     // std::vector<Planet>                         m_planets;                  // "world/Planet.h"
     // std::vector<WorldSignal>                    m_worldSignals;             // "world/WorldSignal.h"
     // std::vector<InterferenceSource>             m_interferenceSources;      // "world/InterferenceSource.h" - источники помех
@@ -157,18 +150,18 @@ private:
     std::vector<HudLineRect>                    m_hudRects;
     HudMessage*                                 m_activeMessage = nullptr;
     HudRenderer                                 m_hudRenderer;
-    
+
     WorldLabelRenderer                          m_worldLabelRenderer;
 
 
 
     std::unique_ptr<UIContainer>                uiRoot;
-    UICameraView*                               rearView = nullptr; 
+    UICameraView*                               rearView = nullptr;
     ScreenLayout                                m_layout = ScreenLayout::Front_Main_Rear_Mini; //  режими отображения камеры
     Camera*                                     m_activeMainCamera = nullptr;
     ShipCameraMode                              m_activeCameraMode = ShipCameraMode::Cockpit;
 
-    
+
     // std::unique_ptr<GameSimulation>                 m_simulation;
     std::unique_ptr<GameServer>                     m_server;
     std::unique_ptr<GameClient>                     m_client;
@@ -178,7 +171,7 @@ private:
     PlayerInputMapper                               m_inputMapper;
     std::unique_ptr<PlayerShipView>                 m_playerView;
     EntityId                                        m_playerId;
-    
+
     ShipControlState                                m_playerControl;
     std::deque<ShipControlState>                    m_sentInputs;
     uint32_t m_localTick = 0;
@@ -259,17 +252,15 @@ private:
     world::celestial::GalaxyMapSnapshot m_galaxyMapSnapshot;
 
     world::celestial::SystemMapSnapshot m_systemMapSnapshot;
-    world::celestial::PlanetMapSnapshot m_planetMapSnapshot;
+    world::celestial::DetailMapSnapshot m_detailMapSnapshot;
     world::celestial::HubMapSnapshot m_hubMapSnapshot;
 
     bool m_hasHubMapSnapshot = false;
     int m_loadedHubMapSystemId = -1;
     std::string m_loadedHubMapHubId;
 
-    bool m_hasPlanetMapSnapshot = false;
-    int m_loadedPlanetMapSystemId = -1;
-    std::string m_loadedPlanetMapBodyId;
-    std::string m_loadedPlanetMapAnchorHubId;
+    bool m_hasDetailMapSnapshot = false;
+    world::celestial::DetailTarget m_loadedDetailTarget;
 
     int m_loadedSystemMapId = -1;
     bool m_hasGalaxyMapSnapshot = false;
@@ -281,5 +272,5 @@ private:
     bool m_systemMapVisible = false;
     bool m_systemMapLiveSnapshotsEnabled = false;
     int m_liveSystemMapId = -1;
-    
+
 };

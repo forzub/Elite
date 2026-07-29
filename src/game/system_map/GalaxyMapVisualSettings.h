@@ -5,12 +5,12 @@
 
 struct GalaxyNavigationGridVisualSettings
 {
-    glm::vec4 rootEdgeColor {0.22f, 0.46f, 0.60f, 0.075f};
-    glm::vec4 rootFaceGridColor {0.22f, 0.46f, 0.60f, 0.058f};
-    glm::vec4 parentEdgeColor {0.24f, 0.52f, 0.68f, 0.110f};
-    glm::vec4 parentFaceGridColor {0.24f, 0.52f, 0.68f, 0.072f};
+    glm::vec4 rootEdgeColor {0.22f, 0.46f, 0.60f, 0.096f};
+    glm::vec4 rootFaceGridColor {0.22f, 0.46f, 0.60f, 0.074f};
+    glm::vec4 parentEdgeColor {0.24f, 0.52f, 0.68f, 0.140f};
+    glm::vec4 parentFaceGridColor {0.24f, 0.52f, 0.68f, 0.092f};
 
-    glm::vec4 currentEdgeColor {0.22f, 0.58f, 0.78f, 0.035f};
+    glm::vec4 currentEdgeColor {0.22f, 0.58f, 0.78f, 0.050f};
     glm::vec4 currentMarkerColor {0.82f, 0.67f, 0.24f, 0.10f};
     float anchorEdgeAlpha = 0.18f;
     float anchorMarkerAlpha = 0.58f;
@@ -20,9 +20,9 @@ struct GalaxyNavigationGridVisualSettings
     glm::vec4 selectedEdgeColor {0.78f, 0.58f, 0.16f, 0.25f};
     glm::vec4 selectedMarkerColor {1.00f, 0.75f, 0.18f, 0.72f};
 
-    float currentFaceGridAlphaScale = 0.28f;
-    float currentFaceGridMinimumAlpha = 0.025f;
-    float currentFaceGridMaximumAlpha = 0.070f;
+    float currentFaceGridAlphaScale = 0.36f;
+    float currentFaceGridMinimumAlpha = 0.032f;
+    float currentFaceGridMaximumAlpha = 0.090f;
 
     float terminalCubeAlpha = 0.42f;
     float terminalLeaderAlpha = 0.52f;

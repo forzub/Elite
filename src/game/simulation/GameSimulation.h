@@ -127,6 +127,7 @@ public:
     EntityId playerId() const { return m_playerId; }
     double serverTime() const { return m_serverTime; }
     std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships();
+    const std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships() const;
     const std::unordered_map<EntityId, StaticObject>& staticObjects() const;
     bool setStaticObjectMapInfo(
         EntityId id,

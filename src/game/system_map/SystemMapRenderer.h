@@ -57,10 +57,26 @@
 #include "src/game/system_map/GalaxyMapInteraction.h"
 #include "src/game/system_map/GalaxyMapRenderContext.h"
 #include "src/game/system_map/GalaxyMapRenderer.h"
+#include "src/game/system_map/SystemMapView.h"
+#include "src/game/system_map/SystemMapInteraction.h"
+#include "src/game/system_map/SystemMapFrameData.h"
+#include "src/game/system_map/SystemMapRenderContext.h"
+#include "src/game/system_map/SystemMapSceneRenderer.h"
+#include "src/game/system_map/DetailMapView.h"
+#include "src/game/system_map/HubMapView.h"
+#include "src/game/system_map/LocalMapInteraction.h"
+#include "src/game/system_map/DetailMapRenderContext.h"
+#include "src/game/system_map/DetailMapSceneRenderer.h"
+#include "src/game/system_map/HubMapRenderContext.h"
+#include "src/game/system_map/HubMapSceneRenderer.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
-    : private game::system_map::GalaxyMapRenderContext
+    : private game::system_map::GalaxyMapRenderContext,
+      private game::system_map::SystemMapRenderContext,
+      private game::system_map::SystemMapInteractionContext,
+      private game::system_map::DetailMapRenderContext,
+      private game::system_map::HubMapRenderContext
 {
 public:
     using Mode = game::system_map::MapMode;
@@ -107,7 +123,7 @@ public:
         const Viewport& viewport,
         const world::celestial::GalaxyMapSnapshot& galaxy,
         const world::celestial::SystemMapSnapshot& system,
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         const world::celestial::HubMapSnapshot& hub,
         const world::celestial::PlayerNavigationState& nav
     );
@@ -152,6 +168,11 @@ public:
     const std::string& selectedHubId() const;
     const std::string& selectedHubParentBodyId() const;
 
+    bool canOpenSelectedDetail() const;
+
+    std::optional<world::celestial::DetailSpatialCell>
+    selectedTerminalDetailCell() const;
+
 private:
     struct Vertex
     {
@@ -172,189 +193,22 @@ private:
         std::vector<TexturedVertex> vertices;
     };
 
-    struct BodyScreenPoint
-    {
-        std::string bodyId;
-        std::string name;
-        glm::vec2 screen {0.0f};
-        float depth = 0.0f;
-        bool visible = false;
-        float screenRadiusPx = 0.0f;
-    };
+    using HubScreenPoint = game::system_map::DetailHubScreenPoint;
+    using HubMapPickable = game::system_map::HubMapPickable;
 
-    struct HubScreenPoint
-    {
-        std::string hubId;
-        std::string parentBodyId;
-        std::string name;
-        glm::vec2 screen {0.0f};
-        float depth = 0.0f;
-        bool visible = false;
-        float screenRadiusPx = 12.0f;
-    };
-
-    struct SystemBodyVisualMetrics
-    {
-        // Реальный радиус тела в map-world units.
-        float physicalRadiusWorld = 0.0f;
-
-        // Реальный экранный радиус тела.
-        float physicalRadiusPx = 0.0f;
-
-        // Радиус навигационного маркера.
-        // Это НЕ физический размер тела.
-        float markerRadiusPx = 0.0f;
-        float markerRadiusWorld = 0.0f;
-
-        // Радиус для mouse picking.
-        float pickRadiusPx = 0.0f;
-
-        bool drawPhysicalBody = false;
-        bool drawMarker = false;
-    };
+    using SystemBodyVisualMetrics =
+        game::system_map::SystemBodyVisualMetrics;
 
     using SystemCameraFlight = game::system_map::SystemCameraFlightState;
     using SystemCamera = game::system_map::SystemCameraState;
     using DetailCamera = game::system_map::DetailCameraState;
+    using DetailControlSettings = game::system_map::LocalMapControlSettings;
 
-    DetailCamera m_planetCamera;
-    DetailCamera m_hubCamera;
-
-    struct SystemControlSettings
-    {
-        /*
-            The outermost known body is normalized to this map radius.
-            A newly opened system uses initialFitPadding around that radius,
-            so the system is readable instead of appearing as a point.
-        */
-        float fittedSystemRadiusWorld = 70.0f;
-        float initialFitPadding = 1.35f;
-
-        // Экранный радиус навигационного маркера для малых лун.
-        // ВАЖНО: это не физический радиус тела.
-        float tinyMoonProxyRadiusPx = 4.0f;
-
-        // Ниже этого размера физическое тело не рисуем как сферу.
-        // Вместо этого рисуется marker overlay.
-        float minPhysicalBodyRadiusPx = 0.70f;
-
-        // Маркеры для тел, которые физически меньше удобного экранного размера.
-        float starMarkerRadiusPx = 3.0f;
-        float planetMarkerRadiusPx = 3.5f;
-
-        // Минимальный radius для мышиного выбора.
-        float pickMinBodyRadiusPx = 6.0f;
-
-
-        
-        float rotateSensitivity = 0.0055f;
-        float pitchLimitRad = 1.32f;
-
-        /*
-            Максимальное расстояние от видимого диска тела,
-            на котором оно может стать pivot вращения.
-        */
-        float rotationPivotMaxDistancePx = 28.0f;
-
-        /*
-            Максимальный угловой шаг вращения за один кадр.
-            Защищает от рывков при большом mouse delta.
-        */
-        float rotationMaxStepRad = 0.10f;
-
-
-
-
-
-
-        float zoomStep = 1.28f;
-
-        double clickMoveThresholdPx = 5.0;
-
-        float navigationCellInteractiveViewportFraction = 0.075f;
-        float navigationCellInteractiveMinPx = 56.0f;
-
-        float navigationHoverFadeInSeconds = 0.18f;
-        float navigationHoverFadeOutSeconds = 0.14f;
-
-
-        /*
-            At maximum zoom-out the single S0 root must not become
-            smaller than this fraction of the shorter viewport side.
-
-            0.60 означает 60%.
-        */
-        float navigationParentMinViewportFraction = 0.60f;
-
-        double cubeDoubleClickMaxIntervalSeconds = 0.38;
-        double cubeDoubleClickMaxDistancePx = 12.0;
-
-        /*
-            System navigation stops at S5 (about 2500 km).
-            2.5 km/px keeps that terminal cube inspectable at roughly
-            1000 px. Smaller scales belong to Details.
-        */
-        double minKmPerPixel = 2.5;
-
-        // Picking видимых дисков планет/лун.
-        float pickMaxBodyRadiusPx = 8000.0f;
-        float pickHaloBasePx = 48.0f;
-        float pickHaloRadiusFactor = 0.08f;
-        float pickHaloMaxPx = 220.0f;
-        float pickScoreDiskWeight = 10000.0f;
-
-        // Если на экране мало тел, orbit-pivot можно цеплять
-        // не только по строгому hit-test рядом с мышью,
-        // а по ближайшему видимому телу в viewport.
-        int sparsePivotMaxVisibleBodies = 2;
-
-        // Небольшой запас за границами viewport.
-        // Нужен для крупных тел, центр которых уже за экраном,
-        // но диск всё ещё занимает видимую область.
-        float sparsePivotViewportPaddingPx = 96.0f;
-    };
-
-    struct DetailControlSettings
-    {
-        double rotateSensitivity = 0.008;
-
-        double zoomStep = 1.08;
-        double minZoom = 0.15;
-        double maxZoom = 16.0;
-    };
-
-
-
-    // Hub map orbit pivot.
-    // This is the local-space point that should remain visually fixed
-    // while the 3D hub map rotates.
-    glm::dvec3 m_hubMapOrbitPivotLocalMeters {0.0, 0.0, 0.0};
-
-    // Screen position where the orbit pivot was captured.
-    // Kept for future picking/debug; current compensation uses project-before/project-after.
-    glm::dvec2 m_hubMapOrbitPivotScreenPx {0.0, 0.0};
-
-    // Last rendered hub map scale.
-    // Input code needs this to convert mouse pixels back to hub-local meters.
-    double m_lastHubMapScale = 1.0;
-
-    glm::dvec2 m_lastHubMapCenterPx {0.0, 0.0};
-
-    struct HubMapPickable
-    {
-        glm::dvec3 localCenterMeters {0.0, 0.0, 0.0};
-        glm::dvec2 screenCenterPx {0.0, 0.0};
-
-        double screenRadiusPx = 16.0;
-
-        // Чем выше priority, тем охотнее выбираем объект.
-        // Например: player > ship > station module.
-        int priority = 0;
-
-        std::string label;
-    };
-
-    std::vector<HubMapPickable> m_lastHubMapPickables;
+    game::system_map::DetailMapView m_detailView;
+    game::system_map::HubMapView m_hubView;
+    game::system_map::LocalMapInteraction m_localMapInteraction;
+    game::system_map::DetailMapSceneRenderer m_detailSceneRenderer;
+    game::system_map::HubMapSceneRenderer m_hubSceneRenderer;
 
     bool pickHubMapOrbitPivot(
         const glm::dvec2& mousePx,
@@ -364,19 +218,19 @@ private:
 
 
     void drawPlanetSphereGrid(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx
     );
 
     void drawPlanetFilledDisk(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx
     );
 
     void drawPlanetTexturedGlobe(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx
     );
@@ -385,7 +239,7 @@ private:
 
 
     bool drawPlanetShapeModelDetail(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx
     );
@@ -417,12 +271,12 @@ private:
     ) const;
 
     glm::mat3 planetBodyToDetailCameraMatrix(
-        const world::celestial::PlanetMapSnapshot& planet
+        const world::celestial::DetailMapSnapshot& planet
     ) const;
 
 
     GLuint globalAlbedoTextureForPlanetSnapshot(
-        const world::celestial::PlanetMapSnapshot& planet
+        const world::celestial::DetailMapSnapshot& planet
     );
 
     GLuint globalAlbedoTextureForGeneratedAsset(
@@ -480,13 +334,13 @@ private:
     );
 
     void drawPlanetTexturedDisk(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx
     );
 
     GLuint mapPreviewTextureForPlanetSnapshot(
-        const world::celestial::PlanetMapSnapshot& planet
+        const world::celestial::DetailMapSnapshot& planet
     );
 
     GLuint mapPreviewTextureForHubSnapshot(
@@ -503,10 +357,11 @@ private:
 
 
 
-    void renderHubMap(
+    void renderHubMapPasses(
+        game::system_map::HubMapView& view,
         const Viewport& viewport,
         const world::celestial::HubMapSnapshot& hub
-    );
+    ) override;
 
 
     enum class HubGpuStage : std::size_t
@@ -573,7 +428,7 @@ private:
 
     void drawHubMapBox(
         const glm::dvec3& center,
-        const world::celestial::PlanetMapAxisSet& axes,
+        const world::celestial::LocalSceneAxes& axes,
         const glm::dvec3& size,
         const glm::vec4& color,
         double scale,
@@ -582,7 +437,7 @@ private:
 
     void drawHubMapAxes(
         const glm::dvec3& center,
-        const world::celestial::PlanetMapAxisSet& axes,
+        const world::celestial::LocalSceneAxes& axes,
         double axisLenMeters,
         double scale,
         const glm::dvec2& centerPx
@@ -611,14 +466,14 @@ private:
 
     glm::dvec3 hubMapObjectLocalToHubLocal(
         const glm::dvec3& objectCenter,
-        const world::celestial::PlanetMapAxisSet& objectAxes,
+        const world::celestial::LocalSceneAxes& objectAxes,
         const glm::dvec3& localPoint
     ) const;
 
     bool drawHubMapAssemblyWire(
         ObjectType typeId,
         const glm::dvec3& objectCenter,
-        const world::celestial::PlanetMapAxisSet& objectAxes,
+        const world::celestial::LocalSceneAxes& objectAxes,
         const glm::vec4& color
     );
 
@@ -874,14 +729,14 @@ private:
         float radius,
         const glm::vec4& color,
         int segments = 96
-    );
+    ) override;
 
     void addCircleXY(
         const glm::vec3& center,
         float radius,
         const glm::vec4& color,
         int segments = 96
-    );
+    ) override;
 
     void addCircleYZ(
         const glm::vec3& center,
@@ -928,7 +783,7 @@ private:
         const glm::mat4& view,
         int ringCount,
         int segments
-    );
+    ) override;
 
 
 
@@ -943,7 +798,7 @@ private:
 
     void flushSolids(const glm::mat4& mvp) override;
 
-    void beginTexturedBodies();
+    void beginTexturedBodies() override;
 
     void addTexturedBillboard(
         GLuint texture,
@@ -974,7 +829,7 @@ private:
         int lonSegments = 48
     );
 
-    void flushTexturedBodies(const glm::mat4& mvp);
+    void flushTexturedBodies(const glm::mat4& mvp) override;
 
     GLuint mapPreviewTextureForBody(
         const world::celestial::SystemMapBody& body
@@ -985,14 +840,15 @@ private:
         const world::celestial::SystemMapBody& body
     ) const;
 
-    void renderPlanetMap(
+    void renderDetailMapPasses(
+        game::system_map::DetailMapView& view,
         const Viewport& viewport,
-        const world::celestial::PlanetMapSnapshot& planet
-    );
+        const world::celestial::DetailMapSnapshot& planet
+    ) override;
 
     glm::dvec2 planetMapProject(
         const glm::dvec3& worldMeters,
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx
     ) const;
@@ -1015,8 +871,8 @@ private:
 
     void drawPlanetMapAxes(
         const glm::dvec3& originMeters,
-        const world::celestial::PlanetMapAxisSet& axes,
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::LocalSceneAxes& axes,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx,
         double axisLenMeters
@@ -1025,7 +881,7 @@ private:
     void drawPlanetMapVelocityArrow(
         const glm::dvec3& originMeters,
         const glm::dvec3& velocityMps,
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx,
         double lenMeters
@@ -1036,7 +892,7 @@ private:
         const glm::vec3& center,
         float size,
         const glm::vec4& color
-    );
+    ) override;
     void flushLines(const glm::mat4& mvp) override;
 
     void addNavigationCubeEdges(
@@ -1051,53 +907,40 @@ private:
         const Viewport& vp,
         const glm::mat4& mvp,
         float systemScale
+    ) override;
+
+
+    void ensureSystemRenderResources() override;
+
+    game::system_map::SystemMapFrameData&
+    systemFrameData() override;
+
+    void addRingBand3D(
+        const glm::vec3& center,
+        const glm::vec3& axisX,
+        const glm::vec3& axisY,
+        float innerRadius,
+        float outerRadius,
+        const glm::vec4& color,
+        int segments
     );
 
+    void addSystemBodyRingVisuals(
+        const world::celestial::SystemMapBody& body,
+        const glm::vec3& center,
+        const game::system_map::SystemBodyVisualMetrics& metrics,
+        float systemScale,
+        double worldUnitsPerPixel,
+        const glm::mat4& view
+    ) override;
 
-    void updateSystemNavigationHoverFromCursor(
-        const Viewport& vp,
-        double localMouseX,
-        double localMouseY
-    );
-
-    bool pickSystemNavigationCell(
-        const Viewport& vp,
-        double localMouseX,
-        double localMouseY,
-        game::navigation::CubicNavigationCell& outCell
-    ) const;
-
-    float systemNavigationAnchorDiameterPx(
-        const Viewport& vp
-    ) const;
-
-    bool systemNavigationCellsInteractive(
-        const Viewport& vp
-    ) const;
-
-    float systemNavigationMaximumCameraDistance(
-        const Viewport& vp
-    ) const;
-
-    glm::dvec3 systemNavigationCursorAu() const;
-
-    void syncSystemNavigationAnchorToCursor();
-
-    void focusSystemBody(
-        const std::string& bodyId
-    );
-
-    void focusSystemHub(
-        const std::string& hubId,
-        const std::string& parentBodyId
-    );
-
-
-    glm::dvec3 systemNavigationBoundaryCenterWorld() const;
-
-    void constrainSystemCameraToNavigationBoundary(
-        const Viewport& vp
-    );
+    void addSystemBodyVisual(
+        const world::celestial::SystemMapBody& body,
+        const glm::vec3& center,
+        const game::system_map::SystemBodyVisualMetrics& metrics,
+        const glm::vec4& fallbackColor,
+        const glm::mat4& view
+    ) override;
 
     void renderSystem(
         const Viewport& vp,
@@ -1111,37 +954,24 @@ private:
         const std::vector<std::string>& lines
     );
 
-    glm::vec4 colorForBodyType(world::celestial::BodyType type) const;
+    glm::vec4 colorForBodyType(
+        world::celestial::BodyType type
+    ) const override;
 
     float bodyVisualRadius(
         const world::celestial::SystemMapBody& body,
         float distanceScale
-    ) const;
+    ) const override;
 
-    SystemBodyVisualMetrics computeSystemBodyVisualMetrics(
+    game::system_map::SystemBodyVisualMetrics
+    computeSystemBodyVisualMetrics(
         const world::celestial::SystemMapBody& body,
         float physicalRadiusWorld,
         double worldUnitsPerPixel
-    ) const;
+    ) const override;
 
 
 
-    void beginSystemCameraFlight(
-        const glm::dvec3& destinationTarget,
-        float destinationDistance
-    );
-
-    void updateSystemCameraFlight(
-        double nowSeconds
-    );
-
-    void cancelSystemCameraFlight(
-        bool snapToDestination
-    );
-
-
-    glm::mat4 systemViewMatrix() const;
-    glm::mat4 systemProjectionMatrix(const Viewport& vp) const;
 
     glm::vec2 projectToScreen(
         const glm::vec3& world,
@@ -1149,7 +979,7 @@ private:
         const Viewport& vp,
         bool& visible,
         float& depth
-    ) const;
+    ) const override;
 
     void drawSystemLabels(
         const Viewport& vp,
@@ -1157,7 +987,7 @@ private:
         const glm::mat4& mvp,
         const std::unordered_map<std::string, glm::vec3>& posById,
         const std::unordered_map<std::string, float>& drawRadiusById
-    );
+    ) override;
 
     int pickSystemBody(
         double mouseX,
@@ -1180,6 +1010,31 @@ private:
         double mouseY,
         const Viewport& vp
     ) const;
+
+    std::optional<std::string> pickSystemBodyId(
+        double localMouseX,
+        double localMouseY
+    ) const override;
+
+    std::optional<game::system_map::SystemMapHubSelection>
+    pickSystemHubSelection(
+        double localMouseX,
+        double localMouseY
+    ) const override;
+
+    std::optional<std::string> pickSystemOrbitPivotBodyId(
+        double localMouseX,
+        double localMouseY,
+        const Viewport& viewport
+    ) const override;
+
+    std::optional<glm::dvec3> systemBodyAbsolutePosition(
+        const std::string& bodyId
+    ) const override;
+
+    std::optional<glm::dvec3> systemObjectAbsolutePosition(
+        const std::string& objectId
+    ) const override;
 
 
 
@@ -1214,7 +1069,7 @@ private:
         const std::unordered_map<std::string, float>& drawRadiusById,
         double worldUnitsPerPixel,
         float systemScale
-    );
+    ) override;
 
     void drawSystemObjectLabels(
         const Viewport& vp,
@@ -1224,11 +1079,11 @@ private:
         const std::unordered_map<std::string, glm::vec3>& objectVisualPosById,
         const std::unordered_map<std::string, glm::vec3>& bodyVisualPosById,
         const std::unordered_map<std::string, float>& drawRadiusById
-    );
+    ) override;
 
-    void drawPlanetMapOrbit3D(
-        const world::celestial::PlanetMapOrbit& orbit,
-        const world::celestial::PlanetMapSnapshot& planet,
+    void drawDetailMapOrbit3D(
+        const world::celestial::DetailMapOrbit& orbit,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx,
         int segments
@@ -1239,18 +1094,6 @@ private:
     const DetailCamera& activeDetailCamera() const;
 
     const DetailControlSettings& activeDetailControls() const;
-
-    void handleSystemInput(
-        const Viewport& vp,
-        GLFWwindow* window,
-        double mx,
-        double my,
-        double localMx,
-        double localMy,
-        bool inside,
-        bool leftDown,
-        bool rightDown
-    );
 
     void handleDetailAndHubInput(
         const Viewport& vp,
@@ -1278,17 +1121,17 @@ private:
         render::celestial::ProceduralCloudStyle
     >
     planetCloudStylesForPlanet(
-        const world::celestial::PlanetMapSnapshot& planet
+        const world::celestial::DetailMapSnapshot& planet
     ) const;
 
 
 
     HubPlanetAtmosphereStyle planetAtmosphereStyleForPlanet(
-        const world::celestial::PlanetMapSnapshot& planet
+        const world::celestial::DetailMapSnapshot& planet
     ) const;
 
     void drawPlanetEnvironmentLayers(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx,
         bool applySphericalSculpt
@@ -1300,14 +1143,14 @@ private:
     );
 
     void drawPlanetAnimatedCloudLayers(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx,
         const render::celestial::ProceduralCloudStyle& baseStyle
     );
 
     void drawPlanetProceduralCloudGlobeLayer(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx,
         double cloudRadiusScale,
@@ -1318,14 +1161,14 @@ private:
 
 
     void drawPlanetAtmosphereInterior(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx,
         const HubPlanetAtmosphereStyle& style
     );
 
     void drawPlanetAtmosphereLimb(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx,
         const HubPlanetAtmosphereStyle& style
@@ -1360,15 +1203,11 @@ private:
         const glm::vec3& milkyWayColorTint = glm::vec3(1.0f)
     ) override;
 
-    double systemPresentationTimeSeconds(
-        const world::celestial::SystemMapSnapshot& system
-    );
-
 
 
     render::celestial::rings::PlanetRingRenderContext
     planetRingRenderContext(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double scale,
         const glm::dvec2& centerPx,
         std::vector<
@@ -1417,28 +1256,10 @@ private:
     game::system_map::GalaxyMapInteraction m_galaxyInteraction;
     game::system_map::GalaxyMapRenderer m_galaxyRenderer;
 
-    SystemCameraFlight m_systemCameraFlight;
-    SystemCamera m_systemCamera;
-
-    game::navigation::SystemNavigationGrid m_systemNavigationGrid;
-
-
-    std::optional<game::navigation::CubicNavigationCell>
-        m_systemHoverVisualCell;
-
-    float m_systemHoverVisualAlpha = 0.0f;
-
-    std::optional<game::navigation::CubicNavigationCell>
-        m_systemHoverOutgoingCell;
-
-    float m_systemHoverOutgoingAlpha = 0.0f;
-    double m_systemHoverVisualLastTimeSeconds = 0.0;
-
-    game::navigation::CubicNavigationClickTracker<
-            game::navigation::CubicGridIndex
-        > m_systemCubeClickTracker;
-
-    int m_lastSystemCameraFitSystemId = -1;
+    game::system_map::SystemMapView m_systemView;
+    game::system_map::SystemMapInteraction m_systemInteraction;
+    game::system_map::SystemMapSceneRenderer m_systemSceneRenderer;
+    game::system_map::SystemMapFrameData m_systemFrameData;
 
     game::navigation::NavigationRegionCatalog
         m_navigationRegionCatalog;
@@ -1468,23 +1289,7 @@ private:
 
 
 
-    SystemControlSettings m_systemControls;
-    SystemMapVisualSettings m_systemVisuals;
-
-
-    DetailControlSettings m_planetControls;
     DetailMapVisualSettings m_detailVisuals;
-    DetailControlSettings m_hubControls = []()
-    {
-        DetailControlSettings settings;
-
-        settings.zoomStep = 1.06;
-        settings.minZoom = 0.15;
-        settings.maxZoom = 8.0;
-
-        return settings;
-    }();
-
     HubMapVisualSettings m_hubVisuals;
 
 
@@ -1507,13 +1312,6 @@ private:
         float alpha
     );
 
-    std::string m_selectedBodyId;
-    std::string m_selectedHubId;
-    std::string m_selectedHubParentBodyId;
-    std::vector<BodyScreenPoint> m_lastSystemBodyScreenPoints;
-    std::vector<HubScreenPoint> m_lastSystemHubScreenPoints;
-    std::vector<HubScreenPoint> m_lastPlanetHubScreenPoints;
-
     world::celestial::visual::CelestialGeneratedAssetLibrary m_generatedCelestialAssets;
 
     bool m_generatedCelestialAssetsAttempted = false;
@@ -1534,8 +1332,6 @@ private:
     std::unordered_map<std::string, GLuint> m_globalAlbedoTextureByAssetKey;
     std::unordered_map<std::string, GLuint> m_globalNormalTextureByAssetKey;
     std::unordered_map<std::string, GLuint> m_globalCloudsTextureByAssetKey;
-    std::unordered_map<std::string, glm::dvec3> m_lastSystemBodyAbsolutePosById;
-    std::unordered_map<std::string, glm::dvec3> m_lastSystemObjectAbsolutePosById;
     render::celestial::HubBackdropCloudRenderer m_hubBackdropCloudRenderer;
 
     render::celestial::CelestialShapeMeshLibrary m_celestialShapeMeshes;
@@ -1568,17 +1364,6 @@ private:
 
     bool m_mapStarfieldInitialized = false;
     bool m_galaxyBackdropStarfieldInitialized = false;
-    float m_lastSystemScale = 1.0f;
-
-    int m_systemPresentationSystemId = -1;
-    double m_systemPresentationSourceTimeSeconds = 0.0;
-    double m_systemPresentationWallTimeSeconds = 0.0;
-    double m_systemPresentationTimeScale = 1.0;
-
-    glm::dvec3 m_systemOrbitPivotAbsolute {0.0, 0.0, 0.0};
-    bool m_systemOrbitPivotActive = false;
-
-
     render::celestial::ProceduralCloudLayer m_proceduralCloudLayer;
     render::celestial::HubSphericalGridRenderer m_hubSphericalGridRenderer;
 

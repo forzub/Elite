@@ -1,11 +1,14 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
 #include <glm/glm.hpp>
 #include "src/scene/EntityId.h"
 #include "src/world/celestial/CelestialTypes.h"
+#include "src/world/celestial/DetailMapTypes.h"
+#include "src/world/celestial/LocalSceneTypes.h"
 #include "src/world/types/ObjectType.h"
 
 namespace world::celestial
@@ -162,7 +165,7 @@ namespace world::celestial
         std::string id;
         std::string name;
         std::vector<CelestialBodyDisplayName> alternativeNames;
-  
+
         std::string parentId;
         std::string environmentPresetId;
 
@@ -209,6 +212,27 @@ namespace world::celestial
         Ship
     };
 
+    inline DetailObjectClass detailObjectClass(
+        SystemMapObjectKind kind
+    )
+    {
+        switch (kind)
+        {
+            case SystemMapObjectKind::Ship:
+                return DetailObjectClass::Ship;
+
+            case SystemMapObjectKind::Hub:
+            case SystemMapObjectKind::Station:
+            case SystemMapObjectKind::Mine:
+            case SystemMapObjectKind::Buoy:
+            case SystemMapObjectKind::Relay:
+                return DetailObjectClass::Hub;
+
+            default:
+                return DetailObjectClass::None;
+        }
+    }
+
     struct SystemMapObject
     {
         EntityId id {};
@@ -248,14 +272,9 @@ namespace world::celestial
     };
 
 
-    struct PlanetMapAxisSet
-{
-    glm::dvec3 x {1.0, 0.0, 0.0};
-    glm::dvec3 y {0.0, 1.0, 0.0};
-    glm::dvec3 z {0.0, 0.0, 1.0};
-};
+    using PlanetMapAxisSet = LocalSceneAxes;
 
-struct PlanetMapOrbit
+struct DetailMapOrbit
 {
     std::string id;
     std::string name;
@@ -292,28 +311,22 @@ struct PlanetMapOrbit
     bool valid = false;
 };
 
-struct PlanetMapObject
-{
-    EntityId id {};
-    std::string stableId;
-    std::string name;
-    std::string kind;
+using PlanetMapObject = LocalSceneObject;
 
-    glm::dvec3 positionMeters {0.0};
-    glm::dvec3 velocityMps {0.0};
-
-    PlanetMapAxisSet axes;
-
-    bool valid = false;
-};
-
-struct PlanetMapSnapshot
+struct DetailMapSnapshot
 {
     bool valid = false;
     bool hasCentralBody = true;
 
     int systemId = -1;
     glm::dvec3 systemPositionLy {0.0};
+
+    // Compatibility container for all current Details scenes. The renderer
+    // still consumes DetailMapSnapshot while phase 3 separates the views.
+    DetailTarget detailTarget;
+
+    // Half-edge of a SpatialVolume scene. Zero for object-centred scenes.
+    double detailHalfExtentMeters = 0.0;
 
     std::string planetBodyId;
     // Non-empty when Details is centered on a free-space hub rather than
@@ -344,54 +357,24 @@ struct PlanetMapSnapshot
     double planetAxisNodeDeg = 0.0;
     double planetTextureLongitudeOffsetDeg = 0.0;
 
-    std::vector<PlanetMapOrbit> hubOrbits;
-    std::vector<PlanetMapOrbit> playerOrbits;
+    std::vector<DetailMapOrbit> hubOrbits;
+    std::vector<DetailMapOrbit> playerOrbits;
     double ringPlaneInclinationOffsetDeg = 0.0;
 
-    SystemMapRingVisualProfile ringVisual; 
+    SystemMapRingVisualProfile ringVisual;
     std::vector<SystemMapRing> rings;
 
-    std::vector<PlanetMapObject> hubs;
-    std::vector<PlanetMapObject> stations;
-    std::vector<PlanetMapObject> ships;
+    // Unified local-scene inventory. Object class, role and parent identity
+    // decide how an item is rendered and interacted with.
+    LocalSceneInventory scene;
 };
 
 
-struct HubMapModule
-{
-    EntityId id {};
-    ObjectType typeId = ObjectType::None;
-    
-    std::string stableId;
-    std::string name;
-    std::string kind;
+using PlanetMapSnapshot = DetailMapSnapshot;
+using PlanetMapOrbit = DetailMapOrbit;
 
-    glm::dvec3 localPositionMeters {0.0};
-    PlanetMapAxisSet localAxes;
-
-    glm::dvec3 sizeMeters {80.0, 30.0, 30.0};
-
-    bool prime = false;
-    bool valid = false;
-};
-
-struct HubMapShip
-{
-    EntityId id {};
-    ObjectType typeId = ObjectType::None;
-
-    std::string name;
-
-    glm::dvec3 localPositionMeters {0.0};
-    glm::dvec3 localVelocityMps {0.0};
-
-    PlanetMapAxisSet localAxes;
-
-    glm::dvec3 sizeMeters {1.0, 1.0, 1.0};
-
-    bool player = false;
-    bool valid = false;
-};
+using HubMapModule = LocalSceneObject;
+using HubMapShip = LocalSceneObject;
 
 struct HubMapSnapshot
 {
@@ -410,7 +393,7 @@ struct HubMapSnapshot
 
     // Локальная система карты хаба:
     // X = prograde, Y = radial, Z = normal.
-    PlanetMapAxisSet hubAxes;
+    LocalSceneAxes hubAxes;
 
     /*
         Текущая авторитетная мировая система хаба.
@@ -425,7 +408,7 @@ struct HubMapSnapshot
         Renderer не имеет права самостоятельно продвигать
         эти оси по орбите.
     */
-    PlanetMapAxisSet hubWorldAxes;
+    LocalSceneAxes hubWorldAxes;
 
     /*
         Universe time, которому одновременно соответствуют:
@@ -467,7 +450,7 @@ struct HubMapSnapshot
         карты. Эти поля нужны именно для ориентации
         поверхности родительской планеты.
     */
-    PlanetMapAxisSet hubWorldAxesAtEpoch;
+    LocalSceneAxes hubWorldAxesAtEpoch;
 
     /*
         Universe time, которому соответствуют
@@ -498,8 +481,8 @@ struct HubMapSnapshot
     double hubOrbitRadiusMeters = 0.0;
     double hubOrbitalPeriodSeconds = 0.0;
 
-    std::vector<HubMapModule> modules;
-    std::vector<HubMapShip> ships;
+    // Hub components and nearby ships share the same scene inventory.
+    LocalSceneInventory scene;
 
     double universeTimeSeconds = 0.0;
 };

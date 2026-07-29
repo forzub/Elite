@@ -53,7 +53,7 @@ glm::dvec2 SystemMapRenderer::hubMapProject(
         glm::dvec3& outPivotLocalMeters
     ) const
     {
-        if (m_lastHubMapPickables.empty())
+        if (m_hubView.frame().pickables.empty())
             return false;
 
         const HubMapPickable* best = nullptr;
@@ -61,7 +61,7 @@ glm::dvec2 SystemMapRenderer::hubMapProject(
         double bestScore =
             std::numeric_limits<double>::max();
 
-        for (const auto& p : m_lastHubMapPickables)
+        for (const auto& p : m_hubView.frame().pickables)
         {
             const double dx =
                 mousePx.x - p.screenCenterPx.x;
@@ -186,7 +186,7 @@ glm::dvec3 SystemMapRenderer::hubMapUnprojectCursorToLocal(
 
 void SystemMapRenderer::drawHubMapBox(
     const glm::dvec3& center,
-    const world::celestial::PlanetMapAxisSet& axes,
+    const world::celestial::LocalSceneAxes& axes,
     const glm::dvec3& size,
     const glm::vec4& color,
     double scale,
@@ -278,7 +278,7 @@ void SystemMapRenderer::drawHubMapBox(
 
 void SystemMapRenderer::drawHubMapAxes(
     const glm::dvec3& center,
-    const world::celestial::PlanetMapAxisSet& axes,
+    const world::celestial::LocalSceneAxes& axes,
     double axisLenMeters,
     double scale,
     const glm::dvec2& centerPx
@@ -549,7 +549,7 @@ void SystemMapRenderer::drawHubMapScreenMarker(
 
 glm::dvec3 SystemMapRenderer::hubMapObjectLocalToHubLocal(
     const glm::dvec3& objectCenter,
-    const world::celestial::PlanetMapAxisSet& objectAxes,
+    const world::celestial::LocalSceneAxes& objectAxes,
     const glm::dvec3& localPoint
 ) const
 {
@@ -567,7 +567,7 @@ glm::dvec3 SystemMapRenderer::hubMapObjectLocalToHubLocal(
 bool SystemMapRenderer::drawHubMapAssemblyWire(
     ObjectType typeId,
     const glm::dvec3& objectCenter,
-    const world::celestial::PlanetMapAxisSet& objectAxes,
+    const world::celestial::LocalSceneAxes& objectAxes,
     const glm::vec4& color
 )
 {
@@ -1395,7 +1395,7 @@ void SystemMapRenderer::drawHubMapPlanetAtmosphereStack(
     );
 
 
-    
+
     glEnable(
         GL_BLEND
     );
@@ -1786,8 +1786,8 @@ void SystemMapRenderer::drawHubMapTexturedSphereDiskLayer(
                     )
                 );
 
-            
-                
+
+
 
 
             // ВАЖНО:
@@ -2170,7 +2170,7 @@ radialWorld =
                 universeTime / dayLength
                 + rotationOffset
     */
-    
+
 
 
 
@@ -2440,9 +2440,9 @@ void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
         };
 
 
-   
 
-    
+
+
 
 
     const GLuint albedoTexture =
@@ -2580,7 +2580,7 @@ if (surfaceTexture == 0)
     }
 }
 
-    
+
 
 
 endHubGpuStage();
@@ -2623,7 +2623,7 @@ const glm::mat3 cameraToPlanetBody =
     beginHubGpuStage(
         HubGpuStage::Surface
     );
-    
+
 
     if (surfaceTexture != 0)
     {
@@ -2651,10 +2651,10 @@ const glm::mat3 cameraToPlanetBody =
             lightDirection
         );
     }
-    
+
 
     endHubGpuStage();
-    
+
     /*
         Облака и атмосфера являются мягкими слоями. Рисуем их
         в половинном разрешении и один раз композим поверх
@@ -2888,7 +2888,7 @@ const glm::mat3 cameraToPlanetBody =
 
         endHubGpuStage();
 
-    
+
 
 
 
@@ -3426,11 +3426,12 @@ void SystemMapRenderer::endHubGpuStage()
 
 
 
-void SystemMapRenderer::renderHubMap(
+void SystemMapRenderer::renderHubMapPasses(
+    game::system_map::HubMapView& view,
     const Viewport& viewport,
     const world::celestial::HubMapSnapshot& hub
 )
-{   
+{
 
     const double cpuTotalStartMs =
         hubPerfNowMs();
@@ -3569,30 +3570,41 @@ void SystemMapRenderer::renderHubMap(
     );
 
     double maxDist =
-        1000.0;
+        std::max(
+            1000.0,
+            hub.scene.halfExtentMeters
+        );
 
-    for (const auto& m : hub.modules)
+    for (const auto& m : hub.scene.objects)
     {
-        if (!m.valid)
+        if (!m.valid ||
+            m.objectClass !=
+                world::celestial::DetailObjectClass::Hub)
+        {
             continue;
+        }
 
         maxDist =
             std::max(
                 maxDist,
-                glm::length(m.localPositionMeters) +
+                glm::length(m.positionMeters) +
                 glm::length(m.sizeMeters)
             );
     }
 
-    for (const auto& s : hub.ships)
+    for (const auto& s : hub.scene.objects)
     {
-        if (!s.valid)
+        if (!s.valid ||
+            s.objectClass !=
+                world::celestial::DetailObjectClass::Ship)
+        {
             continue;
+        }
 
         maxDist =
             std::max(
                 maxDist,
-                glm::length(s.localPositionMeters) +
+                glm::length(s.positionMeters) +
                 800.0
             );
     }
@@ -3622,9 +3634,9 @@ void SystemMapRenderer::renderHubMap(
             maxDist
         );
 
-    m_lastHubMapScale = scale;
-    m_lastHubMapCenterPx = centerPx;
-    m_lastHubMapPickables.clear();
+    m_hubView.frame().scale = scale;
+    m_hubView.frame().centerPx = centerPx;
+    m_hubView.frame().pickables.clear();
     const double finalScale =
         scale *
         activeDetailCamera().zoom;
@@ -3777,18 +3789,22 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
         );
     }
 
-   
-   
- 
+
+
+
     // Модули станции.
-    for (const auto& mod : hub.modules)
+    for (const auto& mod : hub.scene.objects)
     {
-        if (!mod.valid)
+        if (!mod.valid ||
+            mod.objectClass !=
+                world::celestial::DetailObjectClass::Hub)
+        {
             continue;
+        }
 
         const glm::dvec2 modScreen =
             hubMapProject(
-                mod.localPositionMeters,
+                mod.positionMeters,
                 scale,
                 centerPx
             );
@@ -3806,7 +3822,7 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
             HubMapPickable pickable;
 
             pickable.localCenterMeters =
-                mod.localPositionMeters;
+                mod.positionMeters;
 
             pickable.screenCenterPx =
                 modScreen;
@@ -3823,7 +3839,7 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
             pickable.label =
                 mod.name;
 
-            m_lastHubMapPickables.push_back(
+            m_hubView.frame().pickables.push_back(
                 pickable
             );
         }
@@ -3837,16 +3853,16 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
         const bool modelDrawn =
             drawHubMapAssemblyWire(
                 mod.typeId,
-                mod.localPositionMeters,
-                mod.localAxes,
+                mod.positionMeters,
+                mod.axes,
                 moduleWireColor
             );
 
         if (!modelDrawn)
         {
             drawHubMapBox(
-                mod.localPositionMeters,
-                mod.localAxes,
+                mod.positionMeters,
+                mod.axes,
                 mod.sizeMeters,
                 moduleWireColor,
                 scale,
@@ -3861,8 +3877,8 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
             );
 
         drawHubMapAxes(
-            mod.localPositionMeters,
-            mod.localAxes,
+            mod.positionMeters,
+            mod.axes,
             moduleAxisLen,
             scale,
             centerPx
@@ -3894,14 +3910,18 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
 
 
     // Игрок / корабли.
-    for (const auto& ship : hub.ships)
+    for (const auto& ship : hub.scene.objects)
     {
-        if (!ship.valid)
+        if (!ship.valid ||
+            ship.objectClass !=
+                world::celestial::DetailObjectClass::Ship)
+        {
             continue;
+        }
 
         const glm::dvec2 shipScreen =
             hubMapProject(
-                ship.localPositionMeters,
+                ship.positionMeters,
                 scale,
                 centerPx
             );
@@ -3925,7 +3945,7 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
             HubMapPickable pickable;
 
             pickable.localCenterMeters =
-                ship.localPositionMeters;
+                ship.positionMeters;
 
             pickable.screenCenterPx =
                 shipScreen;
@@ -3944,7 +3964,7 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
                     ? "PLAYER"
                     : ship.name;
 
-            m_lastHubMapPickables.push_back(
+            m_hubView.frame().pickables.push_back(
                 pickable
             );
         }
@@ -3967,8 +3987,8 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
             shipModelDrawn =
                 drawHubMapAssemblyWire(
                     ship.typeId,
-                    ship.localPositionMeters,
-                    ship.localAxes,
+                    ship.positionMeters,
+                    ship.axes,
                     shipWireColor
                 );
         }
@@ -3976,8 +3996,8 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
         if (!shipModelDrawn)
         {
             drawHubMapBox(
-                ship.localPositionMeters,
-                ship.localAxes,
+                ship.positionMeters,
+                ship.axes,
                 shipVisualSize,
                 shipWireColor,
                 scale,
@@ -3992,16 +4012,16 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
             );
 
         drawHubMapAxes(
-            ship.localPositionMeters,
-            ship.localAxes,
+            ship.positionMeters,
+            ship.axes,
             shipAxisLen,
             scale,
             centerPx
         );
 
         drawHubMapVelocityArrow(
-            ship.localPositionMeters,
-            ship.localVelocityMps,
+            ship.positionMeters,
+            ship.velocityMps,
             std::max(
                 80.0,
                 shipAxisLen * 2.0
@@ -4057,19 +4077,23 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
                 viewport.height
             );
 
-            for (const auto& mod : hub.modules)
+            for (const auto& mod : hub.scene.objects)
             {
-                if (!mod.valid)
+                if (!mod.valid ||
+                    mod.objectClass !=
+                        world::celestial::DetailObjectClass::Hub)
+                {
                     continue;
+                }
 
                 const glm::dvec2 p =
                     hubMapProject(
-                        mod.localPositionMeters,
+                        mod.positionMeters,
                         scale,
                         centerPx
                     );
 
-                
+
                 if (p.x < -160.0 ||
                     p.y < -80.0 ||
                     p.x > static_cast<double>(viewport.width) + 160.0 ||
@@ -4098,14 +4122,18 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
                 }
             }
 
-            for (const auto& ship : hub.ships)
+            for (const auto& ship : hub.scene.objects)
             {
-                if (!ship.valid)
+                if (!ship.valid ||
+                    ship.objectClass !=
+                        world::celestial::DetailObjectClass::Ship)
+                {
                     continue;
+                }
 
                 const glm::dvec2 p =
                     hubMapProject(
-                        ship.localPositionMeters,
+                        ship.positionMeters,
                         scale,
                         centerPx
                     );
@@ -4169,7 +4197,7 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
     m_hubMapPerformanceStats.cpuTotalMs =
         hubPerfNowMs() -
         cpuTotalStartMs;
-    
+
 }
 
 

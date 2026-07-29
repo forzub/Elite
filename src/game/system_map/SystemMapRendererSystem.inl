@@ -23,57 +23,7 @@ namespace
 }
 
 
-double SystemMapRenderer::systemPresentationTimeSeconds(
-    const world::celestial::SystemMapSnapshot& system
-)
-{
-    const double wallNowSeconds =
-        glfwGetTime();
 
-    const bool sourceChanged =
-        m_systemPresentationSystemId !=
-            system.systemId ||
-        std::abs(
-            m_systemPresentationSourceTimeSeconds -
-                system.universeTimeSeconds
-        ) > 0.000001 ||
-        std::abs(
-            m_systemPresentationTimeScale -
-                system.universeTimeScale
-        ) > 0.000001;
-
-    if (sourceChanged)
-    {
-        /*
-            The snapshot is authoritative. Between snapshots the renderer
-            advances the same shared orbit equations using the server time
-            scale, then re-anchors to the next server timestamp.
-        */
-        m_systemPresentationSystemId =
-            system.systemId;
-
-        m_systemPresentationSourceTimeSeconds =
-            system.universeTimeSeconds;
-
-        m_systemPresentationWallTimeSeconds =
-            wallNowSeconds;
-
-        m_systemPresentationTimeScale =
-            std::max(
-                0.0,
-                system.universeTimeScale
-            );
-    }
-
-    return
-        m_systemPresentationSourceTimeSeconds +
-        std::max(
-            0.0,
-            wallNowSeconds -
-                m_systemPresentationWallTimeSeconds
-        ) *
-        m_systemPresentationTimeScale;
-}
 
 // ============================================================================
 // System camera matrices
@@ -81,1934 +31,15 @@ double SystemMapRenderer::systemPresentationTimeSeconds(
 
 
 
-glm::mat4 SystemMapRenderer::systemViewMatrix() const
-{
-    const glm::vec3 dir =
-        orbitCameraDirectionFromYawPitch(
-            m_systemCamera.yaw,
-            m_systemCamera.pitch
-        );
-
-    const glm::vec3 up =
-        orbitCameraUpFromYawPitch(
-            m_systemCamera.yaw,
-            m_systemCamera.pitch
-        );
-
-    // В system map все render-позиции уже будут relative:
-    // renderPosition = absolutePosition - m_systemCamera.target.
-    //
-    // Поэтому камера смотрит в локальный ноль.
-    const glm::vec3 eye =
-        dir *
-        systemMapPerspectiveEyeDistance(
-            m_systemCamera.distance,
-            m_systemVisuals.projectionFieldOfViewDeg
-        );
-
-    return glm::lookAt(
-        eye,
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        up
-    );
-}
 
 
-glm::mat4 SystemMapRenderer::systemProjectionMatrix(
-    const Viewport& vp
-) const
-{
-    const float aspect =
-        vp.height > 0
-            ? static_cast<float>(vp.width) /
-              static_cast<float>(vp.height)
-            : 1.0f;
-
-    const float halfHeight =
-        std::clamp(
-            m_systemCamera.distance,
-            SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-            SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT
-        );
-
-    return glm::perspective(
-        glm::radians(
-            m_systemVisuals.projectionFieldOfViewDeg
-        ),
-        aspect,
-        systemMapOrthoNearPlane(
-            halfHeight
-        ),
-        systemMapPerspectiveFarPlane(
-            halfHeight,
-            m_systemVisuals.projectionFieldOfViewDeg
-        )
-    );
-}
 
 
 // ============================================================================
-// System navigation and input
+// System interaction is implemented by SystemMapInteraction.
+// Scene orchestration is implemented by SystemMapSceneRenderer.
+// This file contains shared rendering backends and pick-cache adapters.
 // ============================================================================
-
-// updateSystemNavigationHoverFromCursor()
-// pickSystemNavigationCell()
-// systemNavigationAnchorDiameterPx()
-// handleSystemInput()
-
-
-
-void SystemMapRenderer::updateSystemNavigationHoverFromCursor(
-    const Viewport& vp,
-    double localMouseX,
-    double localMouseY
-)
-{
-    if (!m_systemNavigationGrid.enabled() ||
-        m_lastSystemScale <= 0.0f ||
-        !systemNavigationCellsInteractive(vp))
-    {
-        m_systemNavigationGrid.clearHoveredCell();
-        return;
-    }
-
-    const glm::mat4 view = systemViewMatrix();
-
-    const glm::dvec3 cursorMapPosition =
-        systemMapTargetPlanePointFromScreen(
-            vp,
-            view,
-            m_systemCamera.target,
-            static_cast<double>(m_systemCamera.distance),
-            localMouseX,
-            localMouseY
-        );
-
-    const glm::dvec3 cursorAu =
-        cursorMapPosition /
-        static_cast<double>(m_lastSystemScale);
-
-    const auto index = m_systemNavigationGrid.nearestIndexForPosition(
-        cursorAu,
-        m_systemNavigationGrid.level()
-    );
-
-
-
-
-
-    const int minimumLevel =
-        m_systemNavigationGrid
-            .definition()
-            .minimumLevel;
-
-    /*
-        The complete System map is one fixed S0 domain.
-
-        S1...S5 are view resolutions inside that domain, not isolated
-        child trees of the currently selected or anchored cube.
-    */
-    const game::navigation::CubicGridIndex
-        systemRootIndex {};
-
-    const auto rootIndexForCursor =
-        m_systemNavigationGrid.nearestIndexForPosition(
-            cursorAu,
-            minimumLevel
-        );
-
-    if (rootIndexForCursor != systemRootIndex)
-    {
-        m_systemNavigationGrid.clearHoveredCell();
-        return;
-    }
-
-
-
-
-
-
-    m_systemNavigationGrid.setHoveredCell(
-        m_systemNavigationGrid.cell(
-            index,
-            m_systemNavigationGrid.level()
-        )
-    );
-}
-
-bool SystemMapRenderer::pickSystemNavigationCell(
-    const Viewport& vp,
-    double localMouseX,
-    double localMouseY,
-    game::navigation::CubicNavigationCell& outCell
-) const
-{
-    if (!m_systemNavigationGrid.enabled() ||
-        m_lastSystemScale <= 0.0f ||
-        !systemNavigationCellsInteractive(vp))
-        return false;
-
-    std::vector<game::navigation::CubicNavigationCell> cells;
-    cells.reserve(3);
-
-    const auto anchor = m_systemNavigationGrid.anchorCell();
-    cells.push_back(anchor);
-
-    const auto addUniqueCell =
-        [&](const game::navigation::CubicNavigationCell& cell)
-        {
-            const bool alreadyPresent =
-                std::any_of(
-                    cells.begin(),
-                    cells.end(),
-                    [&](const auto& existing)
-                    {
-                        return
-                            existing.level == cell.level &&
-                            existing.index == cell.index;
-                    }
-                );
-
-            if (!alreadyPresent)
-                cells.push_back(cell);
-        };
-
-    if (m_systemNavigationGrid.hasSelectedCell())
-    {
-        const auto selected =
-            m_systemNavigationGrid.selectedCell();
-
-        if (selected.level ==
-            m_systemNavigationGrid.level())
-        {
-            addUniqueCell(selected);
-        }
-    }
-
-    if (m_systemNavigationGrid.hasHoveredCell())
-    {
-        const auto hovered = m_systemNavigationGrid.hoveredCell();
-        addUniqueCell(hovered);
-    }
-
-    const glm::mat4 mvp = systemProjectionMatrix(vp) * systemViewMatrix();
-    bool found = false;
-    float bestDistance = 18.0f;
-    float bestDepth = 1.0f;
-
-    for (const auto& cell : cells)
-    {
-        const glm::dvec3 absoluteMap =
-            cell.center * static_cast<double>(m_lastSystemScale);
-
-        const glm::vec3 relative =
-            glm::vec3(absoluteMap - m_systemCamera.target);
-
-        bool visible = false;
-        float depth = 1.0f;
-
-        const glm::vec2 screen = projectToScreen(
-            relative,
-            mvp,
-            vp,
-            visible,
-            depth
-        );
-
-        if (!visible)
-            continue;
-
-        const glm::vec2 delta =
-            screen - glm::vec2(
-                static_cast<float>(localMouseX),
-                static_cast<float>(localMouseY)
-            );
-
-        const float distance = glm::length(delta);
-
-        if (distance < bestDistance ||
-            (std::abs(distance - bestDistance) < 0.01f && depth < bestDepth))
-        {
-            bestDistance = distance;
-            bestDepth = depth;
-            outCell = cell;
-            found = true;
-        }
-    }
-
-    return found;
-}
-
-float SystemMapRenderer::systemNavigationAnchorDiameterPx(
-    const Viewport& vp
-) const
-{
-    if (!m_systemNavigationGrid.enabled() ||
-        m_lastSystemScale <= 0.0f ||
-        vp.height <= 0)
-    {
-        return 0.0f;
-    }
-
-    const auto cell = m_systemNavigationGrid.anchorCell();
-
-    const float cellEdgeWorld =
-        static_cast<float>(
-            cell.size *
-            static_cast<double>(m_lastSystemScale)
-        );
-
-    return
-        game::navigation::
-            cubicNavigationOrthographicProjectedDiameterPx(
-                cellEdgeWorld,
-                m_systemCamera.distance,
-                vp.height
-            );
-}
-
-
-bool SystemMapRenderer::systemNavigationCellsInteractive(
-    const Viewport& vp
-) const
-{
-    if (!m_systemNavigationGrid.enabled() ||
-        m_lastSystemScale <= 0.0f ||
-        vp.width <= 0 ||
-        vp.height <= 0)
-    {
-        return false;
-    }
-
-    const float viewportReferencePx =
-        static_cast<float>(
-            std::max(
-                1,
-                std::min(vp.width, vp.height)
-            )
-        );
-
-    const float minimumInteractiveDiameterPx =
-        std::max(
-            m_systemControls.navigationCellInteractiveMinPx,
-            viewportReferencePx *
-                m_systemControls
-                    .navigationCellInteractiveViewportFraction
-        );
-
-    const float projectedCellDiameterPx =
-        systemNavigationAnchorDiameterPx(
-            vp
-        );
-
-    return
-        projectedCellDiameterPx >=
-            minimumInteractiveDiameterPx;
-}
-
-
-
-
-
-glm::dvec3 SystemMapRenderer::systemNavigationCursorAu() const
-{
-    if (m_lastSystemScale <= 0.0f)
-        return glm::dvec3(0.0);
-
-    /*
-        В System map camera.target — абсолютная точка карты,
-        находящаяся в центре экрана, в render units.
-
-        Деление на масштаб возвращает её в AU. Это и есть
-        навигационный курсор. Он не зависит от выбранного тела.
-    */
-    return
-        m_systemCamera.target /
-        static_cast<double>(
-            m_lastSystemScale
-        );
-}
-
-
-void SystemMapRenderer::focusSystemBody(
-    const std::string& bodyId
-)
-{
-    if (bodyId.empty() ||
-        !m_systemNavigationGrid.enabled() ||
-        m_lastSystemScale <= 0.0f)
-    {
-        return;
-    }
-
-    const auto absoluteIt =
-        m_lastSystemBodyAbsolutePosById.find(
-            bodyId
-        );
-
-    if (absoluteIt ==
-        m_lastSystemBodyAbsolutePosById.end())
-    {
-        return;
-    }
-
-    m_selectedBodyId =
-        bodyId;
-    m_selectedHubId.clear();
-    m_selectedHubParentBodyId.clear();
-
-    const glm::dvec3 bodyPositionAu =
-        absoluteIt->second /
-        static_cast<double>(
-            m_lastSystemScale
-        );
-
-    /*
-        A body behaves like a star in Galaxy:
-        - preserve the exact object position as the camera target;
-        - select the current-level cube which contains it;
-        - keep the current zoom level.
-    */
-    m_systemNavigationGrid.setAnchorFromPosition(
-        bodyPositionAu
-    );
-
-    m_systemNavigationGrid.selectCell(
-        m_systemNavigationGrid.anchorCell()
-    );
-
-    m_systemNavigationGrid.clearHoveredCell();
-
-    m_systemHoverVisualCell.reset();
-    m_systemHoverVisualAlpha = 0.0f;
-    m_systemHoverOutgoingCell.reset();
-    m_systemHoverOutgoingAlpha = 0.0f;
-
-    m_systemCubeClickTracker.reset();
-
-    beginSystemCameraFlight(
-        absoluteIt->second,
-        m_systemCamera.distance
-    );
-}
-
-
-void SystemMapRenderer::focusSystemHub(
-    const std::string& hubId,
-    const std::string& parentBodyId
-)
-{
-    if (hubId.empty() ||
-        !m_systemNavigationGrid.enabled() ||
-        m_lastSystemScale <= 0.0f)
-    {
-        return;
-    }
-
-    const auto positionIt =
-        m_lastSystemObjectAbsolutePosById.find(
-            hubId
-        );
-
-    if (positionIt ==
-        m_lastSystemObjectAbsolutePosById.end())
-        return;
-
-    m_selectedBodyId.clear();
-    m_selectedHubId = hubId;
-    m_selectedHubParentBodyId = parentBodyId;
-
-    const glm::dvec3 hubPositionAu =
-        positionIt->second /
-        static_cast<double>(
-            m_lastSystemScale
-        );
-
-    m_systemNavigationGrid.setAnchorFromPosition(
-        hubPositionAu
-    );
-
-    m_systemNavigationGrid.selectCell(
-        m_systemNavigationGrid.anchorCell()
-    );
-
-    m_systemNavigationGrid.clearHoveredCell();
-
-    beginSystemCameraFlight(
-        positionIt->second,
-        m_systemCamera.distance
-    );
-}
-
-
-void SystemMapRenderer::syncSystemNavigationAnchorToCursor()
-{
-    if (!m_systemNavigationGrid.enabled() ||
-        m_lastSystemScale <= 0.0f)
-    {
-        return;
-    }
-
-    const int minimumLevel =
-        m_systemNavigationGrid
-            .definition()
-            .minimumLevel;
-
-    const glm::dvec3 cursorAu =
-        systemNavigationCursorAu();
-
-    const game::navigation::CubicGridIndex
-        systemRootIndex {};
-
-    if (m_systemNavigationGrid.nearestIndexForPosition(
-            cursorAu,
-            minimumLevel
-        ) != systemRootIndex)
-    {
-        return;
-    }
-
-    const auto candidateIndex =
-        m_systemNavigationGrid.nearestIndexForPosition(
-            cursorAu,
-            m_systemNavigationGrid.level()
-        );
-
-    if (candidateIndex ==
-        m_systemNavigationGrid.anchorIndex())
-    {
-        return;
-    }
-
-    /*
-        Camera movement owns the view. Updating the anchor only changes
-        which current-level cell is rendered at the view centre.
-    */
-    m_systemNavigationGrid.setAnchorIndex(
-        candidateIndex
-    );
-
-    m_systemNavigationGrid.clearHoveredCell();
-
-    m_systemHoverVisualCell.reset();
-    m_systemHoverVisualAlpha = 0.0f;
-
-    m_systemHoverOutgoingCell.reset();
-    m_systemHoverOutgoingAlpha = 0.0f;
-
-    m_systemCubeClickTracker.reset();
-}
-
-
-float SystemMapRenderer::systemNavigationMaximumCameraDistance(
-    const Viewport& vp
-) const
-{
-    if (!m_systemNavigationGrid.enabled() ||
-        m_lastSystemScale <= 0.0f ||
-        vp.width <= 0 ||
-        vp.height <= 0)
-    {
-        return SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT;
-    }
-
-    /*
-        The zoom-out boundary is always the single S0 domain.
-        It must not shrink when the view changes from S2 to S3, etc.
-    */
-    const int boundaryLevel =
-        m_systemNavigationGrid.definition().minimumLevel;
-
-    const double boundaryEdgeWorld =
-        m_systemNavigationGrid.cellSize(boundaryLevel) *
-        static_cast<double>(m_lastSystemScale);
-
-    const double viewportReferencePx =
-        static_cast<double>(
-            std::max(
-                1,
-                std::min(vp.width, vp.height)
-            )
-        );
-
-    const double minimumParentDiameterPx =
-        viewportReferencePx *
-        static_cast<double>(
-            m_systemControls
-                .navigationParentMinViewportFraction
-        );
-
-    /*
-        Для ортографической камеры:
-
-        projectedPx =
-            edgeWorld * 1.35 / worldUnitsPerPixel
-
-        worldUnitsPerPixel =
-            2 * halfHeight / viewportHeight
-    */
-    const double maximumHalfHeight =
-        boundaryEdgeWorld *
-        1.35 *
-        static_cast<double>(
-            std::max(vp.height, 1)
-        ) /
-        (
-            2.0 *
-            std::max(
-                minimumParentDiameterPx,
-                1.0
-            )
-        );
-
-    return std::clamp(
-        static_cast<float>(maximumHalfHeight),
-        SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-        SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT
-    );
-}
-
-
-
-
-
-glm::dvec3
-SystemMapRenderer::systemNavigationBoundaryCenterWorld() const
-{
-    if (!m_systemNavigationGrid.enabled() ||
-        m_lastSystemScale <= 0.0f)
-    {
-        return m_systemCamera.target;
-    }
-
-    const int boundaryLevel =
-        m_systemNavigationGrid
-            .definition()
-            .minimumLevel;
-
-    const game::navigation::CubicGridIndex
-        boundaryIndex {};
-
-    const auto boundaryCell =
-        m_systemNavigationGrid.cell(
-            boundaryIndex,
-            boundaryLevel
-        );
-
-    return
-        boundaryCell.center *
-        static_cast<double>(
-            m_lastSystemScale
-        );
-}
-
-
-
-
-
-
-
-
-void SystemMapRenderer::
-constrainSystemCameraToNavigationBoundary(
-    const Viewport& vp
-)
-{
-    if (!m_systemNavigationGrid.enabled() ||
-        m_lastSystemScale <= 0.0f ||
-        vp.width <= 0 ||
-        vp.height <= 0)
-    {
-        return;
-    }
-
-    const float maximumDistance =
-        systemNavigationMaximumCameraDistance(
-            vp
-        );
-
-    const float boundaryEpsilon =
-        std::max(
-            0.000001f,
-            maximumDistance * 0.0005f
-        );
-
-    /*
-        S0 is the only camera boundary at every System resolution.
-        Intermediate cells never recenter or constrain the camera.
-    */
-    const int boundaryLevel =
-        m_systemNavigationGrid
-            .definition()
-            .minimumLevel;
-
-    const game::navigation::CubicGridIndex
-        boundaryIndex {};
-
-    const auto boundaryCell =
-        m_systemNavigationGrid.cell(
-            boundaryIndex,
-            boundaryLevel
-        );
-
-    const auto& frame =
-        m_systemNavigationGrid.frame();
-
-    const glm::dvec3 axisX =
-        glm::normalize(frame.axisX);
-
-    const glm::dvec3 axisY =
-        glm::normalize(frame.axisY);
-
-    const glm::dvec3 axisZ =
-        glm::normalize(frame.axisZ);
-
-    const double renderScale =
-        static_cast<double>(
-            m_lastSystemScale
-        );
-
-    const glm::dvec3 boundaryCenter =
-        boundaryCell.center *
-        renderScale;
-
-    /*
-        Неподвижная внешняя граница System map.
-        Внутри неё при достаточном приближении можно
-        панорамировать между соседними родительскими кубами.
-    */
-    const game::navigation::CubicGridIndex
-        systemRootIndex {};
-
-    const auto rootCell =
-        m_systemNavigationGrid.cell(
-            systemRootIndex,
-            m_systemNavigationGrid
-                .definition()
-                .minimumLevel
-        );
-
-    const glm::dvec3 rootCenter =
-        rootCell.center *
-        renderScale;
-
-    const double rootHalfEdge =
-        rootCell.size *
-        renderScale *
-        0.5;
-
-    /*
-        Ограничение зависит только от масштаба,
-        а не от yaw/pitch.
-
-        Поэтому при вращении допустимая область
-        больше не меняется и камера не дёргается.
-    */
-    const auto clampTarget =
-        [&](const glm::dvec3& requestedTarget,
-            float requestedDistance)
-        {
-            const float safeDistance =
-                std::clamp(
-                    requestedDistance,
-                    SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-                    maximumDistance
-                );
-
-            if (safeDistance >=
-                maximumDistance -
-                boundaryEpsilon)
-            {
-                return boundaryCenter;
-            }
-
-            /*
-                На максимальном отдалении freedom = 0:
-                куб строго по центру.
-
-                При приближении freedom плавно стремится к 1:
-                становится доступно панорамирование внутри куба.
-            */
-            const double linearFreedom =
-                std::clamp(
-                    1.0 -
-                    static_cast<double>(safeDistance) /
-                    static_cast<double>(
-                        std::max(
-                            maximumDistance,
-                            0.000001f
-                        )
-                    ),
-                    0.0,
-                    1.0
-                );
-
-            const double smoothFreedom =
-                linearFreedom *
-                linearFreedom *
-                (
-                    3.0 -
-                    2.0 * linearFreedom
-                );
-
-            const glm::dvec3 relative =
-                requestedTarget -
-                boundaryCenter;
-
-            const glm::dvec3 rootRelative =
-                rootCenter -
-                boundaryCenter;
-
-            /*
-                На дальнем масштабе оба предела равны нулю:
-                текущий материнский куб стоит в центре.
-
-                При приближении пределы раскрываются до полного S0.
-                Поэтому камера может перейти в соседний родитель,
-                но никогда не покидает выбранный Galaxy-сектор.
-            */
-            const auto clampAxis =
-                [&](const glm::dvec3& axis)
-                {
-                    const double rootCenterOnAxis =
-                        glm::dot(
-                            rootRelative,
-                            axis
-                        );
-
-                    const double minimumOffset =
-                        (
-                            rootCenterOnAxis -
-                            rootHalfEdge
-                        ) *
-                        smoothFreedom;
-
-                    const double maximumOffset =
-                        (
-                            rootCenterOnAxis +
-                            rootHalfEdge
-                        ) *
-                        smoothFreedom;
-
-                    return std::clamp(
-                        glm::dot(relative, axis),
-                        minimumOffset,
-                        maximumOffset
-                    );
-                };
-
-            const double localX =
-                clampAxis(axisX);
-
-            const double localY =
-                clampAxis(axisY);
-
-            const double localZ =
-                clampAxis(axisZ);
-
-            return
-                boundaryCenter +
-                axisX * localX +
-                axisY * localY +
-                axisZ * localZ;
-        };
-
-    m_systemCamera.distance =
-        std::min(
-            m_systemCamera.distance,
-            maximumDistance
-        );
-
-    m_systemCamera.target =
-        clampTarget(
-            m_systemCamera.target,
-            m_systemCamera.distance
-        );
-
-    if (m_systemCameraFlight.active)
-    {
-        m_systemCameraFlight.destinationDistance =
-            std::min(
-                m_systemCameraFlight.destinationDistance,
-                maximumDistance
-            );
-
-        m_systemCameraFlight.destinationTarget =
-            clampTarget(
-                m_systemCameraFlight.destinationTarget,
-                m_systemCameraFlight.destinationDistance
-            );
-    }
-}
-
-
-
-
-
-
-
-void SystemMapRenderer::handleSystemInput(
-    const Viewport& vp,
-    GLFWwindow* window,
-    double mx,
-    double my,
-    double localMx,
-    double localMy,
-    bool inside,
-    bool leftDown,
-    bool rightDown
-)
-{
-    // =========================================================
-    // SYSTEM MODE INPUT
-    // =========================================================
-    
-        const SystemControlSettings& controls = m_systemControls;
-        const double dx = mx - m_systemCamera.lastMouseX;
-        const double dy = my - m_systemCamera.lastMouseY;
-
-
-        
-        constrainSystemCameraToNavigationBoundary(
-            vp
-        );
-
-
-        
-
-        bool leftStartedThisFrame = false;
-        bool rightStartedThisFrame = false;
-        const bool wheelInputPending =
-            inside &&
-            m_pendingScrollY != 0.0;
-
-        const bool manualFlightCancel =
-        (
-            inside &&
-            leftDown &&
-            !m_systemCamera.leftWasDown
-        ) ||
-        (
-            inside &&
-            rightDown &&
-            !m_systemCamera.rightWasDown
-        ) ||
-        wheelInputPending;
-
-
-
-
-        if (m_systemCameraFlight.active &&
-            manualFlightCancel)
-        {
-            cancelSystemCameraFlight(false);
-        }
-
-        if (m_systemCameraFlight.active)
-        {
-            m_pendingScrollY = 0.0;
-
-            m_systemNavigationGrid.clearHoveredCell();
-
-            m_systemCamera.rotating = false;
-            m_systemCamera.panning = false;
-
-
-
-
-
-
-            /*
-                Повторная проверка после zoom и pan.
-
-                Если этим действием камера достигла внешней границы,
-                сразу возвращаем материнский куб в центр.
-            */
-            constrainSystemCameraToNavigationBoundary(
-                vp
-            );
-
-
-            m_systemCamera.leftWasDown = leftDown;
-            m_systemCamera.rightWasDown = rightDown;
-            m_systemCamera.lastMouseX = mx;
-            m_systemCamera.lastMouseY = my;
-
-            return;
-        }
-
-        if (inside)
-        {
-            updateSystemNavigationHoverFromCursor(
-                vp,
-                localMx,
-                localMy
-            );
-        }
-        else
-        {
-            m_systemNavigationGrid.clearHoveredCell();
-        }
-
-        auto projectSystemAbsoluteToScreen =
-            [&](const glm::dvec3& absolutePos,
-                bool& visible,
-                float& depth) -> glm::vec2
-            {
-                const glm::dvec3 relative =
-                    absolutePos -
-                    m_systemCamera.target;
-
-                const glm::vec3 renderPos(
-                    static_cast<float>(relative.x),
-                    static_cast<float>(relative.y),
-                    static_cast<float>(relative.z)
-                );
-
-                const glm::mat4 mvp =
-                    systemProjectionMatrix(vp) *
-                    systemViewMatrix();
-
-                return projectToScreen(
-                    renderPos,
-                    mvp,
-                    vp,
-                    visible,
-                    depth
-                );
-            };
-
-
-
-            
-auto captureSystemOrbitPivot =
-[&]()
-{
-    const float maximumDistance =
-        systemNavigationMaximumCameraDistance(
-            vp
-        );
-
-    const float maximumDistanceEpsilon =
-        std::max(
-            0.000001f,
-            maximumDistance * 0.0005f
-        );
-
-    /*
-        На самом дальнем обзоре положение камеры
-        зафиксировано на материнском кубе.
-
-        Здесь нельзя одновременно пытаться удерживать
-        планету под мышью: ограничитель камеры всё равно
-        вернёт target к центру и получится рывок.
-    */
-    if (m_systemCamera.distance >=
-        maximumDistance -
-            maximumDistanceEpsilon)
-    {
-        m_systemOrbitPivotAbsolute =
-            systemNavigationBoundaryCenterWorld();
-
-        m_systemOrbitPivotActive =
-            false;
-
-        return;
-    }
-
-    /*
-        Маркер куба имеет первый приоритет.
-    */
-    game::navigation::CubicNavigationCell
-        pivotCell;
-
-    const bool cubePivotFound =
-        m_systemNavigationGrid.enabled() &&
-        pickSystemNavigationCell(
-            vp,
-            localMx,
-            localMy,
-            pivotCell
-        );
-
-    if (cubePivotFound)
-    {
-        m_systemOrbitPivotAbsolute =
-            pivotCell.center *
-            static_cast<double>(
-                m_lastSystemScale
-            );
-
-        m_systemOrbitPivotActive =
-            true;
-
-        return;
-    }
-
-    /*
-        Тело может стать pivot только при строгом
-        попадании рядом с его видимым диском.
-    */
-    const int pivotBodyIndex =
-        pickSystemOrbitPivotBody(
-            localMx,
-            localMy,
-            vp
-        );
-
-    if (pivotBodyIndex >= 0 &&
-        pivotBodyIndex <
-            static_cast<int>(
-                m_lastSystemBodyScreenPoints.size()
-            ))
-    {
-        const std::string& bodyId =
-            m_lastSystemBodyScreenPoints[
-                pivotBodyIndex
-            ].bodyId;
-
-        const auto absoluteIt =
-            m_lastSystemBodyAbsolutePosById.find(
-                bodyId
-            );
-
-        if (absoluteIt !=
-            m_lastSystemBodyAbsolutePosById.end())
-        {
-            m_systemOrbitPivotAbsolute =
-                absoluteIt->second;
-
-            m_systemOrbitPivotActive =
-                true;
-
-            return;
-        }
-    }
-
-    /*
-        Рядом с мышью нет ни куба, ни тела.
-
-        camera.target в ортографической System-камере —
-        это мировая точка, которая проецируется точно
-        в центр экрана.
-
-        active=false означает, что дополнительная
-        pivot-компенсация применяться не будет.
-    */
-    m_systemOrbitPivotAbsolute =
-        m_systemCamera.target;
-
-    m_systemOrbitPivotActive =
-        false;
-};
-
-
-
-
-
-
-
-
-
-
-
-        if (inside &&
-            leftDown &&
-            !m_systemCamera.leftWasDown)
-        {
-            leftStartedThisFrame =
-                true;
-
-            m_systemCamera.mouseDownX =
-                mx;
-
-            m_systemCamera.mouseDownY =
-                my;
-
-            m_systemCamera.rotating =
-                true;
-
-            m_systemCamera.lastMouseX =
-                mx;
-
-            m_systemCamera.lastMouseY =
-                my;
-
-            captureSystemOrbitPivot();
-        }
-
-        if (!leftDown &&
-            m_systemCamera.leftWasDown)
-        {
-            if (inside)
-            {
-                const double move =
-                    std::abs(mx - m_systemCamera.mouseDownX) +
-                    std::abs(my - m_systemCamera.mouseDownY);
-
-
-
-                if (move < controls.clickMoveThresholdPx)
-                {
-                    game::navigation::CubicNavigationCell
-                        cubeCenterCell;
-
-                    /*
-                        A real hub is the most specific target. Cube-center
-                        double click remains available everywhere outside the
-                        hub's small pick radius.
-                    */
-                    const int pickedHubIndex =
-                        pickSystemHub(
-                            localMx,
-                            localMy
-                        );
-
-                    const bool cubeCenterPicked =
-                        pickedHubIndex < 0 &&
-                        m_systemNavigationGrid.enabled() &&
-                        pickSystemNavigationCell(
-                            vp,
-                            localMx,
-                            localMy,
-                            cubeCenterCell
-                        );
-
-                    const int pickedIndex =
-                        cubeCenterPicked ||
-                        pickedHubIndex >= 0
-                            ? -1
-                            : pickSystemBody(
-                                localMx,
-                                localMy
-                            );
-
-                    if (pickedHubIndex >= 0 &&
-                        pickedHubIndex <
-                            static_cast<int>(
-                                m_lastSystemHubScreenPoints.size()
-                            ))
-                    {
-                        const auto& pickedHub =
-                            m_lastSystemHubScreenPoints[
-                                pickedHubIndex
-                            ];
-
-                        focusSystemHub(
-                            pickedHub.hubId,
-                            pickedHub.parentBodyId
-                        );
-                    }
-                    else if (pickedIndex >= 0 &&
-                        pickedIndex <
-                            static_cast<int>(
-                                m_lastSystemBodyScreenPoints.size()
-                            ))
-                    {
-                        focusSystemBody(
-                            m_lastSystemBodyScreenPoints[
-                                pickedIndex
-                            ].bodyId
-                        );
-                    }
-                    else if (m_systemNavigationGrid.enabled())
-                    {
-                        if (cubeCenterPicked)
-                        {
-                            const bool isCubeDoubleClick =
-                                m_systemCubeClickTracker
-                                    .registerClick(
-                                        glfwGetTime(),
-                                        localMx,
-                                        localMy,
-                                        cubeCenterCell.level,
-                                        cubeCenterCell.index,
-                                        controls
-                                            .cubeDoubleClickMaxIntervalSeconds,
-                                        controls
-                                            .cubeDoubleClickMaxDistancePx
-                                    );
-
-                            m_systemNavigationGrid.selectCell(
-                                cubeCenterCell
-                            );
-
-                            /*
-                                Одиночный клик только выбирает куб.
-                                Никакого движения камеры здесь нет.
-                            */
-                            if (isCubeDoubleClick)
-                            {
-                                const auto levelAction =
-                                    game::navigation::
-                                        cubicNavigationDoubleClickAction(
-                                            m_systemNavigationGrid
-                                                .canRefine(),
-                                            false
-                                        );
-
-                                /*
-                                    После уточнения именно этот куб
-                                    становится материнским.
-                                */
-                                const auto newParentCell =
-                                    cubeCenterCell;
-
-                                const bool levelChanged =
-                                    game::navigation::
-                                        applyCubicNavigationLevelActionAtPosition(
-                                            levelAction,
-                                            m_systemNavigationGrid,
-                                            cubeCenterCell.center,
-                                            [](
-                                                auto& grid,
-                                                const glm::dvec3& position
-                                            )
-                                            {
-                                                grid.setAnchorFromPosition(
-                                                    position
-                                                );
-                                            },
-                                            false
-                                        );
-
-                                if (levelChanged)
-                                {
-                                    announceNavigationLevel(
-                                        'S',
-                                        m_systemNavigationGrid.level()
-                                    );
-
-                                    m_systemHoverVisualCell.reset();
-                                    m_systemHoverVisualAlpha = 0.0f;
-
-                                    m_systemHoverOutgoingCell.reset();
-                                    m_systemHoverOutgoingAlpha = 0.0f;
-
-                                    m_systemCubeClickTracker.reset();
-
-                                    const float parentEdgeRender =
-                                        static_cast<float>(
-                                            newParentCell.size *
-                                            static_cast<double>(
-                                                m_lastSystemScale
-                                            )
-                                        );
-
-                                    const float fittedHalfHeight =
-                                        game::navigation::
-                                            cubicNavigationOrthographicFitHalfHeight(
-                                                parentEdgeRender,
-                                                vp.width,
-                                                vp.height
-                                            );
-
-                                    beginSystemCameraFlight(
-                                        newParentCell.center *
-                                            static_cast<double>(
-                                                m_lastSystemScale
-                                            ),
-                                        std::clamp(
-                                            fittedHalfHeight,
-                                            SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-                                            systemNavigationMaximumCameraDistance(
-                                                vp
-                                            )
-                                        )
-                                    );
-                                }
-                            }
-                        }
-                        else
-                        {
-                            m_systemCubeClickTracker.reset();
-                        }
-                    }
-                }
-
-               
-                    
-           
-           
-           
-           
-            }
-
-            m_systemCamera.rotating =
-                false;
-
-            m_systemOrbitPivotActive =
-                false;
-        }
-
-        if (!leftDown)
-        {
-            m_systemCamera.rotating =
-                false;
-
-            m_systemOrbitPivotActive =
-                false;
-        }
-
-        if (inside &&
-            rightDown &&
-            !m_systemCamera.rightWasDown)
-        {
-            rightStartedThisFrame =
-                true;
-
-            m_systemCamera.panning =
-                true;
-
-            m_systemCamera.lastMouseX =
-                mx;
-
-            m_systemCamera.lastMouseY =
-                my;
-        }
-
-        if (!rightDown)
-        {
-            m_systemCamera.panning =
-                false;
-        }
-
-        if (m_systemCamera.rotating &&
-            leftDown &&
-            !leftStartedThisFrame)
-        {
-            bool beforeVisible =
-                false;
-
-            float beforeDepth =
-                1.0f;
-
-            const glm::vec2 pivotBefore =
-                projectSystemAbsoluteToScreen(
-                    m_systemOrbitPivotAbsolute,
-                    beforeVisible,
-                    beforeDepth
-                );
-
-
-                
-
-
-
-            const float yawStep =
-                std::clamp(
-                    -static_cast<float>(dx) *
-                        controls.rotateSensitivity,
-                    -controls.rotationMaxStepRad,
-                    controls.rotationMaxStepRad
-                );
-
-            const float pitchStep =
-                std::clamp(
-                    static_cast<float>(dy) *
-                        controls.rotateSensitivity,
-                    -controls.rotationMaxStepRad,
-                    controls.rotationMaxStepRad
-                );
-
-            m_systemCamera.yaw +=
-                yawStep;
-
-            m_systemCamera.pitch +=
-                pitchStep;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            m_systemCamera.yaw =
-                wrapAngleRadF(
-                    m_systemCamera.yaw
-                );
-
-            m_systemCamera.pitch =
-                std::clamp(
-                    m_systemCamera.pitch,
-                    -controls.pitchLimitRad,
-                    controls.pitchLimitRad
-                );
-
-            if (m_systemOrbitPivotActive)
-            {
-                bool afterVisible =
-                    false;
-
-                float afterDepth =
-                    1.0f;
-
-                const glm::vec2 pivotAfter =
-                    projectSystemAbsoluteToScreen(
-                        m_systemOrbitPivotAbsolute,
-                        afterVisible,
-                        afterDepth
-                    );
-
-                const glm::vec2 screenDelta =
-                    pivotBefore -
-                    pivotAfter;
-
-                if (beforeVisible &&
-                    afterVisible &&
-                    std::isfinite(screenDelta.x) &&
-                    std::isfinite(screenDelta.y))
-                {
-                    const glm::mat4 viewAfter =
-                        systemViewMatrix();
-
-                    const glm::vec3 rightF =
-                        systemMapViewRight(
-                            viewAfter
-                        );
-
-                    const glm::vec3 upF =
-                        systemMapViewUp(
-                            viewAfter
-                        );
-
-                    const glm::dvec3 right(
-                        rightF.x,
-                        rightF.y,
-                        rightF.z
-                    );
-
-                    const glm::dvec3 up(
-                        upF.x,
-                        upF.y,
-                        upF.z
-                    );
-
-                    const double worldUnitsPerPixel =
-                        systemMapWorldUnitsPerPixel(
-                            static_cast<double>(m_systemCamera.distance),
-                            vp.height
-                        );
-
-                    m_systemCamera.target -=
-                        right *
-                        static_cast<double>(screenDelta.x) *
-                        worldUnitsPerPixel;
-
-                    m_systemCamera.target +=
-                        up *
-                        static_cast<double>(screenDelta.y) *
-                        worldUnitsPerPixel;
-                }
-            }
-        }
-
-        if (m_systemCamera.panning &&
-            rightDown &&
-            !rightStartedThisFrame)
-        {
-            const glm::mat4 view =
-                systemViewMatrix();
-
-            const glm::vec3 rightF =
-                systemMapViewRight(
-                    view
-                );
-
-            const glm::vec3 upF =
-                systemMapViewUp(
-                    view
-                );
-
-            const glm::dvec3 right(
-                rightF.x,
-                rightF.y,
-                rightF.z
-            );
-
-            const glm::dvec3 up(
-                upF.x,
-                upF.y,
-                upF.z
-            );
-
-            const double worldUnitsPerPixel =
-                systemMapWorldUnitsPerPixel(
-                    static_cast<double>(m_systemCamera.distance),
-                    vp.height
-                );
-
-            m_systemCamera.target -=
-                right *
-                dx *
-                worldUnitsPerPixel;
-
-            m_systemCamera.target +=
-                up *
-                dy *
-                worldUnitsPerPixel;
-
-            /*
-                Навигационный курсор находится в центре экрана.
-                Если панорамирование уверенно завело его в соседний
-                материнский куб, меняем иерархический якорь без
-                перемещения камеры.
-            */
-            syncSystemNavigationAnchorToCursor();
-        }
-
-        if (inside)
-        {
-            float zoom = 0.0f;
-
-            if (m_pendingScrollY != 0.0)
-            {
-                zoom +=
-                    m_pendingScrollY > 0.0
-                        ? 1.0f
-                        : -1.0f;
-
-                m_pendingScrollY = 0.0;
-            }
-
-            if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS ||
-                glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS)
-            {
-                zoom += 1.0f;
-            }
-
-            if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS ||
-                glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS)
-            {
-                zoom -= 1.0f;
-            }
-
-            if (zoom != 0.0f)
-            {
-                /*
-                    System uses the same navigation-point priority as Galaxy:
-
-                    1. body under the mouse;
-                    2. highlighted cube under the mouse;
-                    3. current centre of the view.
-
-                    Explicit selection is not consulted. A selected planet
-                    therefore cannot pull later level changes back to itself.
-                */
-                glm::dvec3 navigationPointAu =
-                    systemNavigationCursorAu();
-
-                const int pivotBodyIndex =
-                    pickSystemOrbitPivotBody(
-                        localMx,
-                        localMy,
-                        vp
-                    );
-
-                if (pivotBodyIndex >= 0 &&
-                    pivotBodyIndex <
-                        static_cast<int>(
-                            m_lastSystemBodyScreenPoints.size()
-                        ))
-                {
-                    const std::string& bodyId =
-                        m_lastSystemBodyScreenPoints[
-                            pivotBodyIndex
-                        ].bodyId;
-
-                    const auto absoluteIt =
-                        m_lastSystemBodyAbsolutePosById.find(
-                            bodyId
-                        );
-
-                    if (absoluteIt !=
-                        m_lastSystemBodyAbsolutePosById.end())
-                    {
-                        navigationPointAu =
-                            absoluteIt->second /
-                            static_cast<double>(
-                                m_lastSystemScale
-                            );
-                    }
-                }
-                else if (
-                    m_systemNavigationGrid.enabled() &&
-                    m_systemNavigationGrid.hasHoveredCell())
-                {
-                    navigationPointAu =
-                        m_systemNavigationGrid
-                            .hoveredCell()
-                            .center;
-                }
-
-                const auto rootIndexForNavigationPoint =
-                    m_systemNavigationGrid.nearestIndexForPosition(
-                        navigationPointAu,
-                        m_systemNavigationGrid
-                            .definition()
-                            .minimumLevel
-                    );
-
-                if (rootIndexForNavigationPoint !=
-                    game::navigation::CubicGridIndex {})
-                {
-                    navigationPointAu =
-                        systemNavigationCursorAu();
-                }
-
-                /*
-                    One navigation point drives both mechanisms:
-
-                    - the camera zoom pivot;
-                    - the cubic hierarchy transition.
-
-                    Previously the hierarchy used body/cube/centre while
-                    the camera simultaneously zoomed around an unrelated
-                    point on the mouse plane. At deep levels those two
-                    pivots diverged and looked like a teleport.
-                */
-                const glm::dvec3 navigationPointWorld =
-                    navigationPointAu *
-                    static_cast<double>(
-                        m_lastSystemScale
-                    );
-
-                bool pivotBeforeVisible =
-                    false;
-
-                float pivotBeforeDepth =
-                    1.0f;
-
-                const glm::vec2 pivotBeforeScreen =
-                    projectSystemAbsoluteToScreen(
-                        navigationPointWorld,
-                        pivotBeforeVisible,
-                        pivotBeforeDepth
-                    );
-
-                const float zoomStep = controls.zoomStep;
-
-                const float factor =
-                    std::pow(
-                        zoomStep,
-                        -zoom
-                    );
-
-                m_systemCamera.distance *= factor;
-
-                const float minHalfHeightFor20KmPerPx =
-                    static_cast<float>(
-                        (controls.minKmPerPixel *
-                         static_cast<double>(m_lastSystemScale) /
-                         AU_KM) *
-                        static_cast<double>(vp.height) *
-                        0.5
-                    );
-
-                const float dynamicMinHalfHeight =
-                    std::max(
-                        SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-                        minHalfHeightFor20KmPerPx
-                    );
-
-                m_systemCamera.distance =
-                    std::clamp(
-                        m_systemCamera.distance,
-                        dynamicMinHalfHeight,
-                        SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT
-                    );
-
-                bool pivotAfterVisible =
-                    false;
-
-                float pivotAfterDepth =
-                    1.0f;
-
-                const glm::vec2 pivotAfterScreen =
-                    projectSystemAbsoluteToScreen(
-                        navigationPointWorld,
-                        pivotAfterVisible,
-                        pivotAfterDepth
-                    );
-
-                const glm::vec2 pivotScreenDelta =
-                    pivotBeforeScreen -
-                    pivotAfterScreen;
-
-                if (pivotBeforeVisible &&
-                    pivotAfterVisible &&
-                    std::isfinite(pivotScreenDelta.x) &&
-                    std::isfinite(pivotScreenDelta.y))
-                {
-                    const glm::mat4 viewAfter =
-                        systemViewMatrix();
-
-                    const glm::vec3 rightF =
-                        systemMapViewRight(
-                            viewAfter
-                        );
-
-                    const glm::vec3 upF =
-                        systemMapViewUp(
-                            viewAfter
-                        );
-
-                    const glm::dvec3 right(
-                        rightF.x,
-                        rightF.y,
-                        rightF.z
-                    );
-
-                    const glm::dvec3 up(
-                        upF.x,
-                        upF.y,
-                        upF.z
-                    );
-
-                    const double worldUnitsPerPixel =
-                        systemMapWorldUnitsPerPixel(
-                            static_cast<double>(
-                                m_systemCamera.distance
-                            ),
-                            vp.height
-                        );
-
-                    m_systemCamera.target -=
-                        right *
-                        static_cast<double>(
-                            pivotScreenDelta.x
-                        ) *
-                        worldUnitsPerPixel;
-
-                    m_systemCamera.target +=
-                        up *
-                        static_cast<double>(
-                            pivotScreenDelta.y
-                        ) *
-                        worldUnitsPerPixel;
-                }
-
-                syncSystemNavigationAnchorToCursor();
-
-                if (m_systemNavigationGrid.enabled())
-                {
-
-                    const float cubeDiameterPx =
-                        systemNavigationAnchorDiameterPx(vp);
-
-
-
-                    const auto levelAction =
-                        game::navigation::
-                            cubicNavigationWheelAction(
-                                zoom,
-                                cubeDiameterPx,
-                                vp.width,
-                                vp.height,
-                                m_systemNavigationGrid.canRefine(),
-                                m_systemNavigationGrid.canCoarsen(),
-                                false
-                            );
-
-                    const bool levelChanged =
-                        game::navigation::
-                            applyCubicNavigationLevelActionAtPosition(
-                                levelAction,
-                                m_systemNavigationGrid,
-                                navigationPointAu,
-                                [](
-                                    auto& grid,
-                                    const glm::dvec3& position
-                                )
-                                    {
-                                        grid.setAnchorFromPosition(
-                                            position
-                                        );
-                                    },
-                                    false
-                                );
-
-                    if (levelChanged)
-                    {
-                        announceNavigationLevel(
-                            'S',
-                            m_systemNavigationGrid.level()
-                        );
-
-                        m_systemHoverVisualCell.reset();
-                        m_systemHoverVisualAlpha = 0.0f;
-
-                        m_systemHoverOutgoingCell.reset();
-                        m_systemHoverOutgoingAlpha = 0.0f;
-
-                        m_systemCubeClickTracker.reset();
-                    }
-
-
-                        
-
-
-
-
-
-
-                    const float terminalMinHalfHeight =
-                        static_cast<float>(
-                            (controls.minKmPerPixel *
-                             static_cast<double>(m_lastSystemScale) /
-                             AU_KM) *
-                            static_cast<double>(vp.height) *
-                            0.5
-                        );
-
-                    const float navigationMaximumHalfHeight =
-                        systemNavigationMaximumCameraDistance(vp);
-
-                    const float navigationMinimumHalfHeight =
-                        std::min(
-                            navigationMaximumHalfHeight,
-                            std::max(
-                                SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-                                terminalMinHalfHeight
-                            )
-                        );
-
-                    m_systemCamera.distance = std::clamp(
-                        m_systemCamera.distance,
-                        navigationMinimumHalfHeight,
-                        navigationMaximumHalfHeight
-                    );
-                }
-            }
-        }
-
-        /*
-            Ограничение должно применяться в том же кадре,
-            в котором zoom/pan/rotation изменили камеру.
-            Иначе следующий кадр возвращает target назад
-            и создаёт видимый скачок.
-        */
-        constrainSystemCameraToNavigationBoundary(
-            vp
-        );
-
-        m_systemCamera.leftWasDown = leftDown;
-        m_systemCamera.rightWasDown = rightDown;
-        m_systemCamera.lastMouseX = mx;
-        m_systemCamera.lastMouseY = my;
-
-        
-}
 
 
 // ============================================================================
@@ -2018,141 +49,10 @@ auto captureSystemOrbitPivot =
 
 
 
-void SystemMapRenderer::beginSystemCameraFlight(
-    const glm::dvec3& destinationTarget,
-    float destinationDistance
-)
-{
-    destinationDistance = std::clamp(
-        destinationDistance,
-        SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-        SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT
-    );
 
-    m_systemCameraFlight.startTarget =
-        m_systemCamera.target;
 
-    m_systemCameraFlight.destinationTarget =
-        destinationTarget;
 
-    m_systemCameraFlight.startDistance =
-        m_systemCamera.distance;
 
-    m_systemCameraFlight.destinationDistance =
-        destinationDistance;
-
-    m_systemCameraFlight.startTimeSeconds =
-        glfwGetTime();
-
-    m_systemCameraFlight.durationSeconds =
-        0.58;
-
-    m_systemCameraFlight.active =
-        true;
-
-    m_systemCamera.rotating = false;
-    m_systemCamera.panning = false;
-    m_systemOrbitPivotActive = false;
-}
-
-void SystemMapRenderer::updateSystemCameraFlight(
-    double nowSeconds
-)
-{
-    if (!m_systemCameraFlight.active)
-        return;
-
-    const double elapsed =
-        std::max(
-            0.0,
-            nowSeconds -
-                m_systemCameraFlight.startTimeSeconds
-        );
-
-    const float linearProgress =
-        static_cast<float>(
-            std::clamp(
-                elapsed /
-                    m_systemCameraFlight.durationSeconds,
-                0.0,
-                1.0
-            )
-        );
-
-    const float progress =
-        linearProgress *
-        linearProgress *
-        linearProgress *
-        (
-            linearProgress *
-            (
-                linearProgress * 6.0f -
-                15.0f
-            ) +
-            10.0f
-        );
-
-    m_systemCamera.target =
-        glm::mix(
-            m_systemCameraFlight.startTarget,
-            m_systemCameraFlight.destinationTarget,
-            static_cast<double>(progress)
-        );
-
-const float startDistance =
-    std::max(
-        m_systemCameraFlight.startDistance,
-        0.0000001f
-    );
-
-const float destinationDistance =
-    std::max(
-        m_systemCameraFlight.destinationDistance,
-        0.0000001f
-    );
-
-m_systemCamera.distance =
-    std::exp(
-        std::log(startDistance) +
-        (
-            std::log(destinationDistance) -
-            std::log(startDistance)
-        ) *
-        progress
-    );
-
-    if (linearProgress >= 1.0f)
-    {
-        m_systemCamera.target =
-            m_systemCameraFlight.destinationTarget;
-
-        m_systemCamera.distance =
-            m_systemCameraFlight.destinationDistance;
-
-        m_systemCameraFlight.active =
-            false;
-    }
-}
-
-void SystemMapRenderer::cancelSystemCameraFlight(
-    bool snapToDestination
-)
-{
-    if (!m_systemCameraFlight.active)
-        return;
-
-    if (snapToDestination)
-    {
-        m_systemCamera.target =
-            m_systemCameraFlight.destinationTarget;
-
-        m_systemCamera.distance =
-            m_systemCameraFlight.destinationDistance;
-    }
-
-    m_systemCameraFlight.active =
-        false;
-}
 
 
 // ============================================================================
@@ -2180,34 +80,34 @@ void SystemMapRenderer::drawSystemLabels(
 
         const double worldUnitsPerPixel =
             systemMapWorldUnitsPerPixel(
-                static_cast<double>(m_systemCamera.distance),
+                static_cast<double>(m_systemView.state().camera.distance),
                 vp.height
             );
 
     const float screenFactor =
         std::clamp(
             static_cast<float>(vp.height) /
-                m_systemVisuals.labelReferenceHeightPx,
-            m_systemVisuals.labelMinimumScreenScale,
-            m_systemVisuals.labelMaximumScreenScale
+                m_systemView.visuals().labelReferenceHeightPx,
+            m_systemView.visuals().labelMinimumScreenScale,
+            m_systemView.visuals().labelMaximumScreenScale
         );
 
     const float labelFactor =
         screenFactor *
-        m_systemVisuals.labelScale;
+        m_systemView.visuals().labelScale;
 
     const int titlePixelSize =
         std::clamp(
             static_cast<int>(
                 std::lround(
                     static_cast<float>(
-                        m_systemVisuals.labelTitleBasePx
+                        m_systemView.visuals().labelTitleBasePx
                     ) *
                     labelFactor
                 )
             ),
-            m_systemVisuals.labelTitleMinPx,
-            m_systemVisuals.labelTitleMaxPx
+            m_systemView.visuals().labelTitleMinPx,
+            m_systemView.visuals().labelTitleMaxPx
         );
 
     const int selectedTitlePixelSize =
@@ -2215,13 +115,13 @@ void SystemMapRenderer::drawSystemLabels(
             static_cast<int>(
                 std::lround(
                     static_cast<float>(
-                        m_systemVisuals.labelSelectedTitleBasePx
+                        m_systemView.visuals().labelSelectedTitleBasePx
                     ) *
                     labelFactor
                 )
             ),
-            m_systemVisuals.labelTitleMinPx,
-            m_systemVisuals.labelTitleMaxPx
+            m_systemView.visuals().labelTitleMinPx,
+            m_systemView.visuals().labelTitleMaxPx
         );
 
     const int subtitlePixelSize =
@@ -2229,13 +129,13 @@ void SystemMapRenderer::drawSystemLabels(
             static_cast<int>(
                 std::lround(
                     static_cast<float>(
-                        m_systemVisuals.labelSubtitleBasePx
+                        m_systemView.visuals().labelSubtitleBasePx
                     ) *
                     labelFactor
                 )
             ),
-            m_systemVisuals.labelSubtitleMinPx,
-            m_systemVisuals.labelSubtitleMaxPx
+            m_systemView.visuals().labelSubtitleMinPx,
+            m_systemView.visuals().labelSubtitleMaxPx
         );
 
     for (const auto& b : system.bodies)
@@ -2271,7 +171,7 @@ void SystemMapRenderer::drawSystemLabels(
             );
 
         const bool selected =
-            b.id == m_selectedBodyId;
+            b.id == m_systemView.state().selectedBodyId;
 
         const float screenRadiusPx =
             std::max(
@@ -2296,7 +196,7 @@ void SystemMapRenderer::drawSystemLabels(
             static_cast<double>(worldUnitsPerPixel) *
             AU_KM /
             std::max(
-                static_cast<double>(m_lastSystemScale),
+                static_cast<double>(m_systemView.state().lastScale),
                 0.000001
             );
 
@@ -2355,16 +255,16 @@ void SystemMapRenderer::drawSystemLabels(
         const float labelOffsetPx =
             std::max(
                 screenRadiusPx +
-                    m_systemVisuals.labelBodyGapBasePx *
+                    m_systemView.visuals().labelBodyGapBasePx *
                         labelFactor,
-                m_systemVisuals.labelMinimumOffsetBasePx *
+                m_systemView.visuals().labelMinimumOffsetBasePx *
                     labelFactor
             );
 
         const float x = screen.x + labelOffsetPx;
         const float y =
             screen.y +
-            m_systemVisuals.labelTitleYOffsetBasePx *
+            m_systemView.visuals().labelTitleYOffsetBasePx *
                 labelFactor;
 
         const int bodyTitlePixelSize =
@@ -2374,10 +274,10 @@ void SystemMapRenderer::drawSystemLabels(
 
         const glm::vec4 titleColor =
             selected
-                ? m_systemVisuals.bodyLabels.selectedTitleColor
+                ? m_systemView.visuals().bodyLabels.selectedTitleColor
                 : b.type == BodyType::Star
-                    ? m_systemVisuals.bodyLabels.starTitleColor
-                    : m_systemVisuals.bodyLabels.bodyTitleColor;
+                    ? m_systemView.visuals().bodyLabels.starTitleColor
+                    : m_systemView.visuals().bodyLabels.bodyTitleColor;
 
         text.textDrawPx(
             b.name,
@@ -2394,10 +294,10 @@ void SystemMapRenderer::drawSystemLabels(
                 "(" + subtitle + ")",
                 x,
                 y +
-                    m_systemVisuals.labelSubtitleOffsetBasePx *
+                    m_systemView.visuals().labelSubtitleOffsetBasePx *
                         labelFactor,
                 subtitlePixelSize,
-                m_systemVisuals.bodyLabels.subtitleColor
+                m_systemView.visuals().bodyLabels.subtitleColor
             );
         }
     }
@@ -2420,39 +320,39 @@ void SystemMapRenderer::drawSystemNavigationGrid(
     float systemScale
 )
 {
-    if (!m_systemNavigationGrid.enabled() || systemScale <= 0.0f)
+    if (!m_systemView.state().navigationGrid.enabled() || systemScale <= 0.0f)
         return;
 
     const bool currentLevelCellsInteractive =
-        systemNavigationCellsInteractive(vp);
+        m_systemView.navigationCellsInteractive(vp);
 
     const double hoverNowSeconds =
         glfwGetTime();
 
     double hoverDeltaSeconds = 0.0;
 
-    if (m_systemHoverVisualLastTimeSeconds > 0.0)
+    if (m_systemView.state().hoverVisualLastTimeSeconds > 0.0)
     {
         hoverDeltaSeconds =
             std::clamp(
                 hoverNowSeconds -
-                    m_systemHoverVisualLastTimeSeconds,
+                    m_systemView.state().hoverVisualLastTimeSeconds,
                 0.0,
                 0.10
             );
     }
 
-    m_systemHoverVisualLastTimeSeconds =
+    m_systemView.state().hoverVisualLastTimeSeconds =
         hoverNowSeconds;
 
     const auto anchor =
-        m_systemNavigationGrid.anchorCell();
+        m_systemView.state().navigationGrid.anchorCell();
 
     const std::optional<game::navigation::CubicNavigationCell>
         selectedCell =
-            m_systemNavigationGrid.hasSelectedCell()
+            m_systemView.state().navigationGrid.hasSelectedCell()
                 ? std::optional<game::navigation::CubicNavigationCell>(
-                    m_systemNavigationGrid.selectedCell()
+                    m_systemView.state().navigationGrid.selectedCell()
                   )
                 : std::nullopt;
 
@@ -2460,10 +360,10 @@ void SystemMapRenderer::drawSystemNavigationGrid(
         hoverTargetCell;
 
     if (currentLevelCellsInteractive &&
-        m_systemNavigationGrid.hasHoveredCell())
+        m_systemView.state().navigationGrid.hasHoveredCell())
     {
         const auto& logicalHovered =
-            m_systemNavigationGrid.hoveredCell();
+            m_systemView.state().navigationGrid.hoveredCell();
 
         const bool sameAsAnchor =
             logicalHovered.level == anchor.level &&
@@ -2484,29 +384,29 @@ void SystemMapRenderer::drawSystemNavigationGrid(
     const bool hoverTargetChanged =
         hoverTargetCell.has_value() &&
         (
-            !m_systemHoverVisualCell.has_value() ||
+            !m_systemView.state().hoverVisualCell.has_value() ||
             hoverTargetCell->level !=
-                m_systemHoverVisualCell->level ||
+                m_systemView.state().hoverVisualCell->level ||
             hoverTargetCell->index !=
-                m_systemHoverVisualCell->index
+                m_systemView.state().hoverVisualCell->index
         );
 
     if (hoverTargetChanged)
     {
-        if (m_systemHoverVisualCell.has_value() &&
-            m_systemHoverVisualAlpha > 0.001f)
+        if (m_systemView.state().hoverVisualCell.has_value() &&
+            m_systemView.state().hoverVisualAlpha > 0.001f)
         {
-            m_systemHoverOutgoingCell =
-                m_systemHoverVisualCell;
+            m_systemView.state().hoverOutgoingCell =
+                m_systemView.state().hoverVisualCell;
 
-            m_systemHoverOutgoingAlpha =
-                m_systemHoverVisualAlpha;
+            m_systemView.state().hoverOutgoingAlpha =
+                m_systemView.state().hoverVisualAlpha;
         }
 
-        m_systemHoverVisualCell =
+        m_systemView.state().hoverVisualCell =
             hoverTargetCell;
 
-        m_systemHoverVisualAlpha =
+        m_systemView.state().hoverVisualAlpha =
             0.0f;
     }
 
@@ -2515,13 +415,13 @@ void SystemMapRenderer::drawSystemNavigationGrid(
         const float fadeInSeconds =
             std::max(
                 0.001f,
-                m_systemControls.navigationHoverFadeInSeconds
+                m_systemView.controls().navigationHoverFadeInSeconds
             );
 
-        m_systemHoverVisualAlpha =
+        m_systemView.state().hoverVisualAlpha =
             std::min(
                 1.0f,
-                m_systemHoverVisualAlpha +
+                m_systemView.state().hoverVisualAlpha +
                     static_cast<float>(hoverDeltaSeconds) /
                         fadeInSeconds
             );
@@ -2531,44 +431,44 @@ void SystemMapRenderer::drawSystemNavigationGrid(
         const float fadeOutSeconds =
             std::max(
                 0.001f,
-                m_systemControls.navigationHoverFadeOutSeconds
+                m_systemView.controls().navigationHoverFadeOutSeconds
             );
 
-        m_systemHoverVisualAlpha =
+        m_systemView.state().hoverVisualAlpha =
             std::max(
                 0.0f,
-                m_systemHoverVisualAlpha -
+                m_systemView.state().hoverVisualAlpha -
                     static_cast<float>(hoverDeltaSeconds) /
                         fadeOutSeconds
             );
 
-        if (m_systemHoverVisualAlpha <= 0.001f)
+        if (m_systemView.state().hoverVisualAlpha <= 0.001f)
         {
-            m_systemHoverVisualAlpha = 0.0f;
-            m_systemHoverVisualCell.reset();
+            m_systemView.state().hoverVisualAlpha = 0.0f;
+            m_systemView.state().hoverVisualCell.reset();
         }
     }
 
-    if (m_systemHoverOutgoingCell.has_value())
+    if (m_systemView.state().hoverOutgoingCell.has_value())
     {
         const float fadeOutSeconds =
             std::max(
                 0.001f,
-                m_systemControls.navigationHoverFadeOutSeconds
+                m_systemView.controls().navigationHoverFadeOutSeconds
             );
 
-        m_systemHoverOutgoingAlpha =
+        m_systemView.state().hoverOutgoingAlpha =
             std::max(
                 0.0f,
-                m_systemHoverOutgoingAlpha -
+                m_systemView.state().hoverOutgoingAlpha -
                     static_cast<float>(hoverDeltaSeconds) /
                         fadeOutSeconds
             );
 
-        if (m_systemHoverOutgoingAlpha <= 0.001f)
+        if (m_systemView.state().hoverOutgoingAlpha <= 0.001f)
         {
-            m_systemHoverOutgoingAlpha = 0.0f;
-            m_systemHoverOutgoingCell.reset();
+            m_systemView.state().hoverOutgoingAlpha = 0.0f;
+            m_systemView.state().hoverOutgoingCell.reset();
         }
     }
 
@@ -2585,11 +485,11 @@ void SystemMapRenderer::drawSystemNavigationGrid(
         );
     }
 
-    if (m_systemHoverVisualCell.has_value() &&
-        m_systemHoverVisualAlpha > 0.001f)
+    if (m_systemView.state().hoverVisualCell.has_value() &&
+        m_systemView.state().hoverVisualAlpha > 0.001f)
     {
         const auto& hovered =
-            m_systemHoverVisualCell.value();
+            m_systemView.state().hoverVisualCell.value();
 
         if (hovered.level != anchor.level ||
             hovered.index != anchor.index)
@@ -2598,11 +498,11 @@ void SystemMapRenderer::drawSystemNavigationGrid(
         }
     }
 
-    if (m_systemHoverOutgoingCell.has_value() &&
-        m_systemHoverOutgoingAlpha > 0.001f)
+    if (m_systemView.state().hoverOutgoingCell.has_value() &&
+        m_systemView.state().hoverOutgoingAlpha > 0.001f)
     {
         const auto& outgoing =
-            m_systemHoverOutgoingCell.value();
+            m_systemView.state().hoverOutgoingCell.value();
 
         const bool alreadyPresent =
             std::any_of(
@@ -2620,7 +520,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
             cells.push_back(outgoing);
     }
 
-    const glm::mat4 view = systemViewMatrix();
+    const glm::mat4 view = m_systemView.viewMatrix();
 
     const glm::vec3 cameraRight(
         view[0][0],
@@ -2640,25 +540,25 @@ void SystemMapRenderer::drawSystemNavigationGrid(
             const glm::dvec3 absoluteMap =
                 positionAu * static_cast<double>(systemScale);
 
-            return glm::vec3(absoluteMap - m_systemCamera.target);
+            return glm::vec3(absoluteMap - m_systemView.state().camera.target);
         };
 
     const glm::vec3 cameraDirection =
         orbitCameraDirectionFromYawPitch(
-            m_systemCamera.yaw,
-            m_systemCamera.pitch
+            m_systemView.state().camera.yaw,
+            m_systemView.state().camera.pitch
         );
 
     const glm::vec3 cameraPosition =
         cameraDirection *
         systemMapPerspectiveEyeDistance(
-            m_systemCamera.distance,
-            m_systemVisuals.projectionFieldOfViewDeg
+            m_systemView.state().camera.distance,
+            m_systemView.visuals().projectionFieldOfViewDeg
         );
 
     const double worldUnitsPerPixel =
         systemMapWorldUnitsPerPixel(
-            static_cast<double>(m_systemCamera.distance),
+            static_cast<double>(m_systemView.state().camera.distance),
             vp.height
         );
 
@@ -2713,7 +613,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
         };
 
     const int faceDivisions =
-        m_systemNavigationGrid.subdivision();
+        m_systemView.state().navigationGrid.subdivision();
 
     const auto addCubeFarFaceGrids =
         [&](const glm::vec3& cubeCenter,
@@ -2793,8 +693,8 @@ void SystemMapRenderer::drawSystemNavigationGrid(
         list but draw the dense face grid only on the parent nearest the
         camera target.
     */
-    if (m_systemNavigationGrid.level() >
-        m_systemNavigationGrid.definition().minimumLevel)
+    if (m_systemView.state().navigationGrid.level() >
+        m_systemView.state().navigationGrid.definition().minimumLevel)
     {
         std::vector<game::navigation::CubicNavigationCell>
             parentCells;
@@ -2803,7 +703,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
         const double subdivision =
             static_cast<double>(
-                m_systemNavigationGrid.subdivision()
+                m_systemView.state().navigationGrid.subdivision()
             );
 
         for (const auto& currentCell : cells)
@@ -2835,7 +735,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
                 );
 
             const auto parentCell =
-                m_systemNavigationGrid.cell(
+                m_systemView.state().navigationGrid.cell(
                     parentIndex,
                     currentCell.level - 1
                 );
@@ -2870,7 +770,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
             const glm::dvec3 delta =
                 parentAbsoluteMap -
-                m_systemCamera.target;
+                m_systemView.state().camera.target;
 
             const double rightDistance =
                 glm::dot(
@@ -2919,7 +819,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
                 halfAxisX,
                 halfAxisY,
                 halfAxisZ,
-                m_systemVisuals.navigationGrid.parentEdgeColor
+                m_systemView.visuals().navigationGrid.parentEdgeColor
             );
 
             if (i == focusedParentIndex)
@@ -2929,7 +829,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
                     halfAxisX,
                     halfAxisY,
                     halfAxisZ,
-                    m_systemVisuals.navigationGrid.parentFaceGridColor
+                    m_systemView.visuals().navigationGrid.parentFaceGridColor
                 );
             }
         }
@@ -2953,7 +853,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
         const bool rootBoundary =
             cell.level ==
-                m_systemNavigationGrid
+                m_systemView.state().navigationGrid
                     .definition()
                     .minimumLevel;
 
@@ -2971,25 +871,25 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
         float hoverVisualAlpha = 0.0f;
 
-        if (m_systemHoverVisualCell.has_value() &&
-            cell.level == m_systemHoverVisualCell->level &&
-            cell.index == m_systemHoverVisualCell->index)
+        if (m_systemView.state().hoverVisualCell.has_value() &&
+            cell.level == m_systemView.state().hoverVisualCell->level &&
+            cell.index == m_systemView.state().hoverVisualCell->index)
         {
             hoverVisualAlpha =
                 std::max(
                     hoverVisualAlpha,
-                    m_systemHoverVisualAlpha
+                    m_systemView.state().hoverVisualAlpha
                 );
         }
 
-        if (m_systemHoverOutgoingCell.has_value() &&
-            cell.level == m_systemHoverOutgoingCell->level &&
-            cell.index == m_systemHoverOutgoingCell->index)
+        if (m_systemView.state().hoverOutgoingCell.has_value() &&
+            cell.level == m_systemView.state().hoverOutgoingCell->level &&
+            cell.index == m_systemView.state().hoverOutgoingCell->index)
         {
             hoverVisualAlpha =
                 std::max(
                     hoverVisualAlpha,
-                    m_systemHoverOutgoingAlpha
+                    m_systemView.state().hoverOutgoingAlpha
                 );
         }
 
@@ -2998,13 +898,13 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
         glm::vec4 edgeColor =
             selected
-                ? m_systemVisuals.navigationGrid.selectedEdgeColor
-                : m_systemVisuals.navigationGrid.currentEdgeColor;
+                ? m_systemView.visuals().navigationGrid.selectedEdgeColor
+                : m_systemView.visuals().navigationGrid.currentEdgeColor;
 
         if (hovered)
         {
             edgeColor =
-                m_systemVisuals.navigationGrid.hoveredEdgeColor;
+                m_systemView.visuals().navigationGrid.hoveredEdgeColor;
 
             edgeColor.a *=
                 hoverVisualAlpha;
@@ -3016,10 +916,10 @@ void SystemMapRenderer::drawSystemNavigationGrid(
         currentLevelGridColor.a =
             std::clamp(
                 edgeColor.a *
-                    m_systemVisuals.navigationGrid.faceGridAlphaScale,
-                m_systemVisuals.navigationGrid.faceGridMinimumAlpha *
+                    m_systemView.visuals().navigationGrid.faceGridAlphaScale,
+                m_systemView.visuals().navigationGrid.faceGridMinimumAlpha *
                     (hovered ? hoverVisualAlpha : 1.0f),
-                m_systemVisuals.navigationGrid.faceGridMaximumAlpha *
+                m_systemView.visuals().navigationGrid.faceGridMaximumAlpha *
                     (hovered ? hoverVisualAlpha : 1.0f)
             );
 
@@ -3049,8 +949,8 @@ void SystemMapRenderer::drawSystemNavigationGrid(
         const float markerSize =
             markerWorldPerPixel *
             (selected
-                ? m_systemVisuals.navigationGrid.selectedMarkerRadiusPx
-                : m_systemVisuals.navigationGrid.currentMarkerRadiusPx);
+                ? m_systemView.visuals().navigationGrid.selectedMarkerRadiusPx
+                : m_systemView.visuals().navigationGrid.currentMarkerRadiusPx);
 
 
 
@@ -3061,8 +961,8 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
 
         glm::vec4 markerColor = selected
-            ? m_systemVisuals.navigationGrid.selectedMarkerColor
-            : m_systemVisuals.navigationGrid.currentMarkerColor;
+            ? m_systemView.visuals().navigationGrid.selectedMarkerColor
+            : m_systemView.visuals().navigationGrid.currentMarkerColor;
 
         if (hovered && !selected)
             markerColor.a *= hoverVisualAlpha;
@@ -3083,711 +983,355 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
 
 // ============================================================================
-// System scene rendering
+// System scene rendering facade and render-context backend
 // ============================================================================
 
 
-
-
-void SystemMapRenderer::renderSystem(
-        const Viewport& vp,
-        const world::celestial::SystemMapSnapshot& system,
-        const world::celestial::PlayerNavigationState& nav
-)
+void SystemMapRenderer::ensureSystemRenderResources()
 {
     ensureTexturedGlObjects();
     ensureTexturedShader();
     ensureGeneratedCelestialAssets();
+}
 
 
-    const bool navigationSystemChanged =
-        m_systemNavigationGrid.systemId() !=
-            system.systemId;
+game::system_map::SystemMapFrameData&
+SystemMapRenderer::systemFrameData()
+{
+    return m_systemFrameData;
+}
 
-    if (navigationSystemChanged)
+
+void SystemMapRenderer::addSystemBodyRingVisuals(
+    const world::celestial::SystemMapBody& body,
+    const glm::vec3& center,
+    const game::system_map::SystemBodyVisualMetrics& metrics,
+    float systemScale,
+    double worldUnitsPerPixel,
+    const glm::mat4& view
+)
+{
+    using world::celestial::SystemMapRingVisibilityClass;
+
+    if (!metrics.drawPhysicalBody ||
+        body.rings.empty() ||
+        systemScale <= 0.0f ||
+        worldUnitsPerPixel <= 0.0)
     {
-        m_systemNavigationGrid.activateSystem(
-            system.systemId
-        );
-
-        m_systemHoverVisualCell.reset();
-        m_systemHoverVisualAlpha = 0.0f;
-        m_systemHoverOutgoingCell.reset();
-        m_systemHoverOutgoingAlpha = 0.0f;
-        m_systemHoverVisualLastTimeSeconds = 0.0;
-        m_systemCubeClickTracker.reset();
+        return;
     }
 
-    const double presentationTimeSeconds =
-        systemPresentationTimeSeconds(
-            system
-        );
+    double maximumOuterRadiusKm = 0.0;
+    double maximumBandWidthKm = 0.0;
 
-    /*
-        Build a presentation snapshot from the last authoritative server
-        snapshot. The shared orbit equations are the same ones used by
-        CelestialSystemRuntime, so accelerated time remains continuous
-        without creating a second independent simulation.
-    */
-    std::vector<
-        world::celestial::SystemMapBody
-    > visualBodies =
-        system.bodies;
-
-    std::unordered_map<
-        std::string,
-        glm::dvec3
-    > visualBodyPositionAuById;
-
-    for (auto& body : visualBodies)
+    for (const auto& ring : body.rings)
     {
-        glm::dvec3 visualOrbitCenter =
-            body.orbitCenterAu;
-
-        const auto parentIt =
-            visualBodyPositionAuById.find(
-                body.parentId
+        maximumOuterRadiusKm =
+            std::max(
+                maximumOuterRadiusKm,
+                ring.outerRadiusKm
             );
 
-        if (parentIt !=
-            visualBodyPositionAuById.end())
-        {
-            visualOrbitCenter =
-                parentIt->second;
-        }
-
-        if (body.drawOrbit &&
-            body.orbitRadiusAu > 0.0 &&
-            body.orbitalPeriodDays > 0.0)
-        {
-            const double phaseRad =
-                world::celestial::
-                    circularOrbitPhaseRad(
-                        presentationTimeSeconds,
-                        body.orbitalPeriodDays,
-                        body.orbitalDirection,
-                        body.orbitalPhaseOffsetRad
-                    );
-
-            body.positionAu =
-                visualOrbitCenter +
-                world::celestial::
-                    circularOrbitPositionAu(
-                        body.orbitRadiusAu,
-                        phaseRad
-                    );
-        }
-        else if (parentIt !=
-                 visualBodyPositionAuById.end())
-        {
-            /*
-                Preserve a static relative offset if a child has no period.
-            */
-            body.positionAu =
-                visualOrbitCenter +
-                (
-                    body.positionAu -
-                    body.orbitCenterAu
-                );
-        }
-
-        body.orbitCenterAu =
-            visualOrbitCenter;
-
-        if (body.dayLengthHours > 0.0)
-        {
-            const double snapshotRotationOffset =
-                body.rotationPhaseRad -
-                static_cast<double>(
-                    body.rotationDirection < 0
-                        ? -1
-                        : 1
-                ) *
-                std::fmod(
-                    system.universeTimeSeconds /
-                        (
-                            body.dayLengthHours *
-                            3600.0
-                        ),
-                    1.0
-                ) *
-                world::celestial::OrbitTwoPi;
-
-            body.rotationPhaseRad =
-                world::celestial::
-                    bodyRotationPhaseRad(
-                        presentationTimeSeconds,
-                        body.dayLengthHours,
-                        body.rotationDirection,
-                        snapshotRotationOffset
-                    );
-        }
-
-        visualBodyPositionAuById[body.id] =
-            body.positionAu;
-    }
-
-    const auto& bodies =
-        visualBodies;
-
-    m_lastSystemBodyScreenPoints.clear();
-    m_lastSystemHubScreenPoints.clear();
-
-    /*
-        Пустой межзвёздный сектор всё равно должен рисовать
-        System navigation grid.
-
-        Для известной системы масштаб определяется орбитами.
-        Для пустого сектора S0 вписывается целиком и становится
-        исходным материнским кубом.
-    */
-    double maxAu =
-        bodies.empty()
-            ? std::max(
-                1.0,
-                m_systemNavigationGrid.cellSize(
-                    m_systemNavigationGrid
-                        .definition()
-                        .minimumLevel
-                ) * 0.5
-            )
-            : 1.0;
-
-    for (const auto& b : bodies)
-    {
-        const double r =
-            std::sqrt(
-                b.positionAu.x * b.positionAu.x +
-                b.positionAu.y * b.positionAu.y +
-                b.positionAu.z * b.positionAu.z
-            );
-
-        maxAu = std::max(maxAu, r);
-
-        if (b.drawOrbit &&
-            b.orbitRadiusAu > 0.0)
-        {
-            const double orbitCenterRadius =
-                std::sqrt(
-                    b.orbitCenterAu.x * b.orbitCenterAu.x +
-                    b.orbitCenterAu.y * b.orbitCenterAu.y +
-                    b.orbitCenterAu.z * b.orbitCenterAu.z
-                );
-
-            maxAu =
+        maximumBandWidthKm =
+            std::max(
+                maximumBandWidthKm,
                 std::max(
-                    maxAu,
-                    orbitCenterRadius +
-                        b.orbitRadiusAu
-                );
-        }
-
-    }
-
-    const float systemScale =
-        m_systemControls.fittedSystemRadiusWorld /
-        static_cast<float>(maxAu);
-
-    m_lastSystemScale = systemScale;
-
-    /*
-        Fit each system once. Returning from another map mode preserves the
-        existing view, while opening a different system starts with readable
-        orbits instead of inheriting an unrelated extreme zoom.
-    */
-    if (m_lastSystemCameraFitSystemId != system.systemId)
-    {
-        cancelSystemCameraFlight(false);
-
-        m_systemCamera.target =
-            glm::dvec3(0.0);
-
-        m_systemCamera.distance =
-            std::clamp(
-                m_systemControls.fittedSystemRadiusWorld *
-                    m_systemControls.initialFitPadding,
-                SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-                SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT
-            );
-
-        m_systemNavigationGrid.setAnchorFromPosition(
-            glm::dvec3(0.0)
-        );
-
-        m_systemNavigationGrid.selectCell(
-            m_systemNavigationGrid.anchorCell()
-        );
-
-        m_lastSystemCameraFitSystemId =
-            system.systemId;
-    }
-
-    const glm::mat4 proj =
-        systemProjectionMatrix(
-            vp
-        );
-
-    const glm::mat4 view =
-        systemViewMatrix();
-
-    if (m_systemVisuals.drawStarfield)
-    {
-        drawMapStarfield(
-            vp,
-            system.systemPositionLy,
-            view,
-            m_systemVisuals.starfieldFieldOfViewDeg,
-            m_systemVisuals.starfieldSizeScale,
-            false,
-            m_systemVisuals.starfieldBrightnessScale,
-            m_systemVisuals.milkyWayIntensityScale,
-            m_systemVisuals.milkyWayColorTint
-        );
-    }
-
-    if (m_systemVisuals.drawAtmosphereVeil)
-    {
-        drawMapAtmosphereVeil(
-            m_systemVisuals.atmosphereVeilCenterAlpha,
-            m_systemVisuals.atmosphereVeilEdgeAlpha,
-            m_systemVisuals.atmosphereVeilAquaStrength
-        );
-    }
-
-    const glm::mat4 mvp =
-        proj * view;
-
-    const double systemWorldUnitsPerPixel =
-        systemMapWorldUnitsPerPixel(
-            static_cast<double>(
-                m_systemCamera.distance
-            ),
-            vp.height
-        );
-
-    using world::celestial::BodyType;
-
-    // =========================================================
-    // Static lookup data.
-    // Эти таблицы нужны дальше для выбора, радиусов, орбит,
-    // подписей и selection overlay.
-    // =========================================================
-    std::unordered_map<
-        std::string,
-        const world::celestial::SystemMapBody*
-    > bodyById;
-
-    std::unordered_map<
-        std::string,
-        float
-    > drawRadiusById;
-
-
-
-
-    std::unordered_map<
-        std::string,
-        float
-    > selectionRadiusById;
-
-
-
-
-
-
-    for (const auto& b : bodies)
-    {
-        bodyById[b.id] =
-            &b;
-
-        drawRadiusById[b.id] =
-            bodyVisualRadius(
-                b,
-                systemScale
+                    0.0,
+                    ring.outerRadiusKm - ring.innerRadiusKm
+                )
             );
     }
 
-// Если выбранная цель исчезла или это звезда — сбрасываем выбор.
-if (!m_selectedBodyId.empty())
-{
-    auto selectedIt =
-        bodyById.find(
-            m_selectedBodyId
-        );
+    if (maximumOuterRadiusKm <= 0.0)
+        return;
 
-    if (selectedIt == bodyById.end() ||
-        selectedIt->second->type == BodyType::Star)
+    const double outerRadiusWorld =
+        maximumOuterRadiusKm /
+        AU_KM * static_cast<double>(systemScale);
+
+    const double bandWidthWorld =
+        maximumBandWidthKm /
+        AU_KM * static_cast<double>(systemScale);
+
+    const double outerRadiusPx =
+        outerRadiusWorld / worldUnitsPerPixel;
+
+    const double widestBandPx =
+        bandWidthWorld / worldUnitsPerPixel;
+
+    if (outerRadiusPx < 28.0 ||
+        widestBandPx < 0.75)
     {
-        m_selectedBodyId.clear();
+        return;
     }
-}
 
-// =========================================================
-// Floating origin для system map.
-//
-// absolutePosById хранит точные double-позиции в map units.
-// posById хранит render-relative float-позиции около нуля.
-// В GPU отдаём только relative position.
-// =========================================================
-std::unordered_map<
-    std::string,
-    glm::dvec3
-> absolutePosById;
-
-std::unordered_map<
-    std::string,
-    glm::vec3
-> posById;
-
-const glm::dvec3 systemCameraOrigin =
-    m_systemCamera.target;
-
-auto auToMapUnits =
-    [&](const glm::dvec3& au) -> glm::dvec3
-    {
-        return glm::dvec3(
-            au.x * static_cast<double>(systemScale),
-            au.y * static_cast<double>(systemScale),
-            au.z * static_cast<double>(systemScale)
+    const glm::dvec3 north =
+        systemBodyNorthAxisWorld(
+            body
         );
+
+    const glm::dvec3 ringAxisXWorld =
+        systemBodyPrimeAxisWorld(
+            north
+        );
+
+    const glm::dvec3 ringAxisYWorld =
+        systemBodyRingAxisYWorld(
+            body,
+            north,
+            ringAxisXWorld
+        );
+
+    const glm::vec3 axisX(
+        static_cast<float>(ringAxisXWorld.x),
+        static_cast<float>(ringAxisXWorld.y),
+        static_cast<float>(ringAxisXWorld.z)
+    );
+
+    const glm::vec3 axisY(
+        static_cast<float>(ringAxisYWorld.x),
+        static_cast<float>(ringAxisYWorld.y),
+        static_cast<float>(ringAxisYWorld.z)
+    );
+
+    glm::vec3 cameraForward {
+        view[0][2],
+        view[1][2],
+        view[2][2]
     };
 
-auto toRenderPos =
-    [&](const glm::dvec3& absoluteMapUnits) -> glm::vec3
+    if (glm::length(cameraForward) <= 0.000001f)
     {
-        const glm::dvec3 relative =
-            absoluteMapUnits -
-            systemCameraOrigin;
-
-        return glm::vec3(
-            static_cast<float>(relative.x),
-            static_cast<float>(relative.y),
-            static_cast<float>(relative.z)
-        );
-    };
-
-for (const auto& b : bodies)
-{
-    const glm::dvec3 absolutePos =
-        auToMapUnits(
-            b.positionAu
-        );
-
-    absolutePosById[b.id] =
-        absolutePos;
-
-    posById[b.id] =
-        toRenderPos(
-            absolutePos
-        );
-}
-
-
-m_lastSystemBodyAbsolutePosById = absolutePosById;
-
-/*
-    A selected moving body owns only its highlighted cell.
-    It must not move the navigation anchor or camera behind the user's back.
-*/
-if (!m_selectedBodyId.empty())
-{
-    const auto selectedPositionIt =
-        visualBodyPositionAuById.find(
-            m_selectedBodyId
-        );
-
-    if (selectedPositionIt !=
-        visualBodyPositionAuById.end())
-    {
-        const int selectedLevel =
-            m_systemNavigationGrid.level();
-
-        const auto selectedIndex =
-            m_systemNavigationGrid
-                .nearestIndexForPosition(
-                    selectedPositionIt->second,
-                    selectedLevel
-                );
-
-        m_systemNavigationGrid.selectCell(
-            m_systemNavigationGrid.cell(
-                selectedIndex,
-                selectedLevel
-            )
-        );
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    beginLines();
-    beginSolids();
-    beginTexturedBodies();
-
-
-    
-
-
-
-    drawSystemNavigationGrid(
-        vp,
-        mvp,
-        systemScale
-    );
-
-    
-
-    // Орбиты планет, лун и астероидных поясов.
-    for (const auto& b : bodies)
-    {
-        if (b.type != BodyType::Planet &&
-            b.type != BodyType::Moon)
-        {
-            continue;
-        }
-
-        
-        if (!b.drawOrbit || b.orbitRadiusAu <= 0.0)
-            continue;
-
-       
-
-
-        const glm::dvec3 orbitCenterAbsolute =
-            auToMapUnits(
-                b.orbitCenterAu
-            );
-
-        const glm::vec3 center =
-            toRenderPos(
-                orbitCenterAbsolute
-            );
-
-        float orbitR =
-            static_cast<float>(b.orbitRadiusAu) * systemScale;
-
-
-        
-
-        
-
-
-
-
-        const glm::vec4 orbitColor =
-            b.type == BodyType::Moon
-                ? m_systemVisuals.scene.moonOrbitColor
-                : b.type == BodyType::AsteroidBelt
-                    ? m_systemVisuals.scene.asteroidBeltOrbitColor
-                    : m_systemVisuals.scene.planetOrbitColor;
-
-        addCircleXZ(
-            center,
-            orbitR,
-            orbitColor,
-            b.type == BodyType::Moon
-                ? m_systemVisuals.scene.moonOrbitSegments
-                : m_systemVisuals.scene.primaryOrbitSegments
-        );
-    }
-
-
-
-
- 
-
-
-
-
-    // Тела, кольца, пояса.
-    for (const auto& b : bodies)
-    {
-        const glm::vec3 p = posById[b.id];
-        const glm::vec4 c = colorForBodyType(b.type);
-        const float r = drawRadiusById[b.id];
-
-
-        
-       
-
-
-
-
-
-
-        
-        
-
-
-
-       const SystemBodyVisualMetrics bodyMetrics =
-    computeSystemBodyVisualMetrics(
-        b,
-        r,
-        systemWorldUnitsPerPixel
-    );
-
-const float selectionRadiusWorld =
-    std::max(
-        bodyMetrics.physicalRadiusWorld,
-        static_cast<float>(
-            systemWorldUnitsPerPixel *
-            static_cast<double>(
-                bodyMetrics.pickRadiusPx
-            )
-        )
-    );
-
-selectionRadiusById[b.id] =
-    selectionRadiusWorld;
-
-if (b.type == BodyType::Planet ||
-    b.type == BodyType::Moon)
-{
-    BodyScreenPoint bp;
-
-    bp.bodyId = b.id;
-    bp.name = b.name;
-
-    // Это уже не "физический радиус диска".
-    // Это интерактивный радиус выбора.
-    bp.screenRadiusPx =
-        bodyMetrics.pickRadiusPx;
-
-    bp.screen =
-        projectToScreen(
-            p,
-            mvp,
-            vp,
-            bp.visible,
-            bp.depth
-        );
-
-    m_lastSystemBodyScreenPoints.push_back(
-        bp
-    );
-}
-
-if (b.type == BodyType::AsteroidBelt)
-{
-    const glm::dvec3 orbitCenterAbsolute =
-        auToMapUnits(
-            b.orbitCenterAu
-        );
-
-    const glm::vec3 center =
-        toRenderPos(
-            orbitCenterAbsolute
-        );
-
-    const float beltR =
-        static_cast<float>(b.orbitRadiusAu) *
-        systemScale;
-
-    addCircleXZ(
-        center,
-        beltR - 0.12f,
-        {0.65f, 0.68f, 0.72f, 0.12f},
-        160
-    );
-
-    addCircleXZ(
-        center,
-        beltR,
-        {0.65f, 0.68f, 0.72f, 0.24f},
-        160
-    );
-
-    addCircleXZ(
-        center,
-        beltR + 0.12f,
-        {0.65f, 0.68f, 0.72f, 0.12f},
-        160
-    );
-
-    continue;
-}
-
-if (bodyMetrics.drawPhysicalBody)
-{
-    GLuint bodyAlbedoTexture =
-        0;
-
-    if (b.type != BodyType::Star)
-    {
-        bodyAlbedoTexture =
-            globalAlbedoTextureForBody(
-                b
-            );
-    }
-
-    if (bodyAlbedoTexture != 0 &&
-        m_texturedShader != 0 &&
-        m_texturedVao != 0 &&
-        m_texturedVbo != 0)
-    {
-        const bool largeBody =
-            b.type == BodyType::Planet &&
-            bodyMetrics.physicalRadiusWorld > 0.16f;
-
-        const int latSeg =
-            largeBody ? 64 : 24;
-
-        const int lonSeg =
-            largeBody ? 128 : 48;
-
-        addTexturedSystemBodySphere(
-            b,
-            bodyAlbedoTexture,
-            p,
-            bodyMetrics.physicalRadiusWorld,
-            glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),
-            latSeg,
-            lonSeg
-        );
+        cameraForward = glm::vec3(0.0f, 0.0f, 1.0f);
     }
     else
     {
-        // Fallback для звёзд и тел без generated-текстуры.
-        // Радиус здесь физический, не proxy.
-        addBillboardBall(
-            p,
-            bodyMetrics.physicalRadiusWorld,
-            c,
-            view,
-            32
+        cameraForward = glm::normalize(cameraForward);
+    }
+
+    glm::vec3 ringNormal =
+        glm::cross(
+            axisX,
+            axisY
+        );
+
+    if (glm::length(ringNormal) <= 0.000001f)
+    {
+        return;
+    }
+
+    ringNormal =
+        glm::normalize(
+            ringNormal
+        );
+
+    const float ringOpenFactor =
+        std::abs(
+            glm::dot(
+                ringNormal,
+                cameraForward
+            )
+        );
+
+    if (ringOpenFactor < 0.16f)
+    {
+        return;
+    }
+
+    auto visibilityMultiplier =
+        [&](SystemMapRingVisibilityClass visibility) -> float
+        {
+            switch (visibility)
+            {
+                case SystemMapRingVisibilityClass::Main:
+                    return body.ringVisual.mainBandEmphasis;
+                case SystemMapRingVisibilityClass::Secondary:
+                    return body.ringVisual.secondaryBandEmphasis;
+                case SystemMapRingVisibilityClass::Faint:
+                    return body.ringVisual.faintBandEmphasis;
+                case SystemMapRingVisibilityClass::Diffuse:
+                    return body.ringVisual.diffuseBandEmphasis;
+            }
+
+            return 1.0f;
+        };
+
+    const float minimumVisibleWidthPx =
+        std::max(
+            0.85f,
+            body.ringVisual.minimumVisibleWidthPx
+        );
+
+    const float widthScale =
+        std::max(
+            1.0f,
+            body.ringVisual.artisticWidthScale
+        );
+
+    const int segments =
+        outerRadiusPx > 180.0
+            ? 160
+            : outerRadiusPx > 96.0
+                ? 128
+                : 96;
+
+    for (const auto& ring : body.rings)
+    {
+        const double ringInnerWorldRaw =
+            ring.innerRadiusKm /
+            AU_KM * static_cast<double>(systemScale);
+
+        const double ringOuterWorldRaw =
+            ring.outerRadiusKm /
+            AU_KM * static_cast<double>(systemScale);
+
+        if (ringOuterWorldRaw <= ringInnerWorldRaw)
+            continue;
+
+        double ringInnerWorld = ringInnerWorldRaw;
+        double ringOuterWorld = ringOuterWorldRaw;
+
+        const double midRadiusWorld =
+            0.5 * (ringInnerWorld + ringOuterWorld);
+
+        double halfWidthWorld =
+            0.5 * (ringOuterWorld - ringInnerWorld) *
+            static_cast<double>(widthScale);
+
+        const double minimumHalfWidthWorld =
+            0.5 * static_cast<double>(minimumVisibleWidthPx) *
+            worldUnitsPerPixel;
+
+        halfWidthWorld =
+            std::max(
+                halfWidthWorld,
+                minimumHalfWidthWorld
+            );
+
+        ringInnerWorld =
+            std::max(
+                0.0,
+                midRadiusWorld - halfWidthWorld
+            );
+
+        ringOuterWorld =
+            midRadiusWorld + halfWidthWorld;
+
+        float alpha =
+            ring.opacity *
+            ring.visualOpacityScale *
+            visibilityMultiplier(
+                ring.visibilityClass
+            );
+
+        alpha *=
+            0.55f +
+            0.45f *
+            std::clamp(
+                body.ringVisual.recognizabilityPriority,
+                0.0f,
+                1.0f
+            );
+
+        alpha *=
+            std::clamp(
+                0.35f + 0.65f * ringOpenFactor,
+                0.0f,
+                1.0f
+            );
+
+        alpha = std::clamp(alpha, 0.06f, 0.72f);
+
+        glm::vec4 ringColor(
+            ring.tint.r,
+            ring.tint.g,
+            ring.tint.b,
+            alpha
+        );
+
+        addRingBand3D(
+            center,
+            axisX,
+            axisY,
+            static_cast<float>(ringInnerWorld),
+            static_cast<float>(ringOuterWorld),
+            ringColor,
+            segments
         );
     }
 }
 
-if (bodyMetrics.drawMarker)
-{
-    glm::vec4 markerColor =
-        c;
 
-    if (b.type == BodyType::Moon)
+void SystemMapRenderer::addSystemBodyVisual(
+    const world::celestial::SystemMapBody& body,
+    const glm::vec3& center,
+    const game::system_map::SystemBodyVisualMetrics& metrics,
+    const glm::vec4& fallbackColor,
+    const glm::mat4& view
+)
+{
+    using world::celestial::BodyType;
+
+    if (metrics.drawPhysicalBody)
+    {
+        GLuint albedoTexture = 0;
+
+        if (body.type != BodyType::Star)
+        {
+            albedoTexture =
+                globalAlbedoTextureForBody(
+                    body
+                );
+        }
+
+        if (albedoTexture != 0 &&
+            m_texturedShader != 0 &&
+            m_texturedVao != 0 &&
+            m_texturedVbo != 0)
+        {
+            const bool largeBody =
+                body.type == BodyType::Planet &&
+                metrics.physicalRadiusWorld > 0.16f;
+
+            addTexturedSystemBodySphere(
+                body,
+                albedoTexture,
+                center,
+                metrics.physicalRadiusWorld,
+                glm::vec4(1.0f),
+                largeBody ? 64 : 24,
+                largeBody ? 128 : 48
+            );
+        }
+        else
+        {
+            addBillboardBall(
+                center,
+                metrics.physicalRadiusWorld,
+                fallbackColor,
+                view,
+                32
+            );
+        }
+    }
+
+    if (!metrics.drawMarker)
+        return;
+
+    glm::vec4 markerColor =
+        fallbackColor;
+
+    if (body.type == BodyType::Moon)
     {
         markerColor =
-            m_systemVisuals.scene.moonMarkerColor;
+            m_systemView.visuals().scene.moonMarkerColor;
     }
-    else if (b.type == BodyType::Planet)
+    else if (body.type == BodyType::Planet)
     {
         markerColor =
-            m_systemVisuals.scene.planetMarkerColor;
+            m_systemView.visuals().scene.planetMarkerColor;
     }
-    else if (b.type == BodyType::Star)
+    else if (body.type == BodyType::Star)
     {
         markerColor =
             glm::vec4(
@@ -3799,305 +1343,29 @@ if (bodyMetrics.drawMarker)
     }
 
     addSystemBodyMarker(
-        p,
-        bodyMetrics.markerRadiusWorld,
+        center,
+        metrics.markerRadiusWorld,
         markerColor,
         view,
         32
     );
-} 
-
-        
-        
-
-
-       
-
-        
-
-
-
-
-
-        
-    }
-
-    if (system.systemId == nav.currentSystemId)
-    {
-        const glm::dvec3 playerAbsolute(
-                nav.systemLocalAu.x * static_cast<double>(systemScale),
-                nav.systemLocalAu.y * static_cast<double>(systemScale),
-                nav.systemLocalAu.z * static_cast<double>(systemScale)
-            );
-
-        const glm::dvec3 playerRelative =
-            playerAbsolute -
-            systemCameraOrigin;
-
-        glm::vec3 player {
-            static_cast<float>(playerRelative.x),
-            static_cast<float>(playerRelative.y),
-            static_cast<float>(playerRelative.z)
-        };
-
-        const float playerCrossSize =
-            systemWorldUnitsPerPixel *
-            10.0f;
-
-        const float playerCircleRadius =
-            systemWorldUnitsPerPixel *
-            17.0f;
-
-        addCross(
-            player,
-            playerCrossSize,
-            glm::vec4(1.0f, 0.82f, 0.35f, 1.0f)
-        );
-
-        addCircleXZ(
-            player,
-            playerCircleRadius,
-            glm::vec4(1.0f, 0.82f, 0.35f, 0.55f),
-            48
-        );
-    }
-
-
-    std::unordered_map<std::string, glm::vec3> objectVisualPosById;
-    m_lastSystemObjectAbsolutePosById.clear();
-
-
-
-
-
-
-
-
-
-
-    for (const auto& obj : system.objects)
-    {
-        const glm::dvec3 objectAbsolute =
-            auToMapUnits(
-                obj.positionAu
-            );
-
-        const glm::vec3 p =
-            toRenderPos(
-                objectAbsolute
-            );
-
-        const std::string objectKey =
-            systemMapObjectStableKey(
-                obj
-            );
-
-        objectVisualPosById[objectKey] =
-            p;
-        m_lastSystemObjectAbsolutePosById[objectKey] =
-            objectAbsolute;
-
-        if (obj.kind ==
-            world::celestial::
-                SystemMapObjectKind::Hub)
-        {
-            HubScreenPoint point;
-            point.hubId = objectKey;
-            point.parentBodyId = obj.parentBodyId;
-            point.name = obj.name;
-            point.screen =
-                projectToScreen(
-                    p,
-                    mvp,
-                    vp,
-                    point.visible,
-                    point.depth
-                );
-            point.screenRadiusPx = 15.0f;
-
-            m_lastSystemHubScreenPoints.push_back(
-                std::move(point)
-            );
-        }
-    }
-
-    
-
-
-
-
-
-    flushLines(mvp);
-
-    // Draw old solid bodies first.
-    // Textured bodies are drawn after them.
-    flushSolids(mvp);
-    flushTexturedBodies(mvp);
-
-
-    
-
-    // Selection overlay must be drawn AFTER bodies,
-    // otherwise the planet texture overpaints the marker.
-    if (!m_selectedBodyId.empty())
-    {
-        auto posIt =
-            posById.find(m_selectedBodyId);
-
-        auto radiusIt =
-            selectionRadiusById.find(m_selectedBodyId);
-
-        if (posIt != posById.end() &&
-                radiusIt != selectionRadiusById.end())
-        {
-            beginLines();
-
-            const glm::vec3 selectedPos =
-                posIt->second;
-
-            const float selectedRadius =
-                radiusIt->second;
-
-            glm::vec4 haloColor(
-                1.0f,
-                0.78f,
-                0.28f,
-                1.0f
-            );
-
-            const auto selectedBodyIt =
-                bodyById.find(
-                    m_selectedBodyId
-                );
-
-            if (selectedBodyIt != bodyById.end())
-            {
-                haloColor =
-                    colorForBodyType(
-                        selectedBodyIt->second->type
-                    );
-
-                haloColor.a = 1.0f;
-            }
-
-            /*
-                A selected planet gets a separate, visible halo around the
-                sharp body marker. This mirrors selected stars in Galaxy.
-            */
-            addBillboardHalo(
-                selectedPos,
-                selectedRadius,
-                4.60f,
-                0.42f,
-                haloColor,
-                view,
-                7,
-                96
-            );
-
-            addCircleXZ(
-                selectedPos,
-                selectedRadius * 1.95f,
-                m_systemVisuals.scene.selectedRingColor,
-                96
-            );
-
-            addCircleXY(
-                selectedPos,
-                selectedRadius * 2.10f,
-                m_systemVisuals.scene.selectedSecondaryRingColor,
-                96
-            );
-
-            flushLines(mvp);
-        }
-    }
-
-    if (!m_selectedHubId.empty())
-    {
-        const auto selectedHubPosition =
-            objectVisualPosById.find(
-                m_selectedHubId
-            );
-
-        if (selectedHubPosition !=
-            objectVisualPosById.end())
-        {
-            beginLines();
-
-            const float markerRadius =
-                static_cast<float>(
-                    systemWorldUnitsPerPixel *
-                    18.0
-                );
-
-            addCircleXY(
-                selectedHubPosition->second,
-                markerRadius,
-                m_systemVisuals.scene.selectedHubRingColor,
-                64
-            );
-
-            addCircleXZ(
-                selectedHubPosition->second,
-                markerRadius * 1.15f,
-                m_systemVisuals.scene.selectedHubSecondaryRingColor,
-                64
-            );
-
-            flushLines(mvp);
-        }
-    }
-
-    if (!m_selectedHubId.empty())
-    {
-        const auto selectedHubPosition =
-            m_lastSystemObjectAbsolutePosById.find(
-                m_selectedHubId
-            );
-
-        if (selectedHubPosition ==
-            m_lastSystemObjectAbsolutePosById.end())
-        {
-            m_selectedHubId.clear();
-            m_selectedHubParentBodyId.clear();
-        }
-        else
-        {
-            const glm::dvec3 hubPositionAu =
-                selectedHubPosition->second /
-                static_cast<double>(
-                    m_lastSystemScale
-                );
-
-            const int selectedLevel =
-                m_systemNavigationGrid.level();
-
-            m_systemNavigationGrid.selectCell(
-                m_systemNavigationGrid.cell(
-                    m_systemNavigationGrid
-                        .nearestIndexForPosition(
-                            hubPositionAu,
-                            selectedLevel
-                        ),
-                    selectedLevel
-                )
-            );
-        }
-    }
-
-
-
-    drawSystemObjectOverlays(
+}
+
+
+void SystemMapRenderer::renderSystem(
+    const Viewport& viewport,
+    const world::celestial::SystemMapSnapshot& system,
+    const world::celestial::PlayerNavigationState& navigation
+)
+{
+    m_systemSceneRenderer.render(
+        m_systemView,
+        *this,
+        viewport,
         system,
-        view,
-        mvp,
-        objectVisualPosById,
-        posById,
-        drawRadiusById,
-        systemWorldUnitsPerPixel,
-        systemScale
+        navigation
     );
+}
 
 
 
@@ -4107,161 +1375,6 @@ if (bodyMetrics.drawMarker)
 
 
 
-    
-
-    drawSystemLabels(
-        vp,
-        system,
-        mvp,
-        posById,
-        drawRadiusById
-    );
-
-
-
-
-    drawSystemObjectLabels(
-        vp,
-        system,
-        mvp,
-        view,
-        objectVisualPosById,
-        posById,
-        drawRadiusById
-    );
-   
-
-
-
-    {
-        const double worldUnitsPerPixel =
-            systemMapWorldUnitsPerPixel(
-                static_cast<double>(m_systemCamera.distance),
-                vp.height
-            );
-
-        const double kmPerPixel =
-            static_cast<double>(worldUnitsPerPixel) /
-            static_cast<double>(systemScale) *
-            AU_KM;
-
-        if (kmPerPixel > 0.0 &&
-            std::isfinite(kmPerPixel))
-        {
-            const double desiredBarPx =
-                150.0;
-
-            const double niceKm =
-                niceSystemMapScaleNumber(
-                    kmPerPixel * desiredBarPx
-                );
-
-            const double barPx =
-                niceKm / kmPerPixel;
-
-            const float x0 =
-                28.0f;
-
-            const float scaleOverlay =
-                std::clamp(
-                    static_cast<float>(vp.height) /
-                        1080.0f,
-                    0.72f,
-                    1.35f
-                );
-
-            const float y0 =
-                static_cast<float>(vp.height) -
-                96.0f * scaleOverlay;
-
-            const float x1 =
-                x0 +
-                static_cast<float>(
-                    std::clamp(
-                        barPx,
-                        48.0,
-                        260.0
-                    )
-                );
-
-            const glm::mat4 scaleOrtho =
-                glm::ortho(
-                    0.0f,
-                    static_cast<float>(vp.width),
-                    static_cast<float>(vp.height),
-                    0.0f,
-                    -1.0f,
-                    1.0f
-                );
-
-            beginLines();
-
-            const glm::vec4 scaleColor(
-                0.48f,
-                0.78f,
-                1.0f,
-                0.72f
-            );
-
-            addLine(
-                glm::vec3(x0, y0, 0.0f),
-                glm::vec3(x1, y0, 0.0f),
-                scaleColor
-            );
-
-            addLine(
-                glm::vec3(x0, y0 - 5.0f, 0.0f),
-                glm::vec3(x0, y0 + 5.0f, 0.0f),
-                scaleColor
-            );
-
-            addLine(
-                glm::vec3(x1, y0 - 5.0f, 0.0f),
-                glm::vec3(x1, y0 + 5.0f, 0.0f),
-                scaleColor
-            );
-
-            flushLines(
-                scaleOrtho
-            );
-
-            auto& text =
-                TextRenderer::instance();
-
-            text.beginFrameForViewport(
-                vp.width,
-                vp.height
-            );
-
-            text.textDrawPx(
-                fmtSystemMapScaleDistance(
-                    niceKm
-                ),
-                x0,
-                y0 - 24.0f,
-                12,
-                m_systemVisuals.scene.scalePrimaryTextColor
-            );
-
-            std::ostringstream pxLabel;
-
-            pxLabel
-                << "1 px = "
-                << fmtSystemMapScaleDistance(
-                    kmPerPixel
-                );
-
-            text.textDrawPx(
-                pxLabel.str(),
-                x0,
-                y0 + 10.0f,
-                10,
-                m_systemVisuals.scene.scaleSecondaryTextColor
-            );
-
-            text.endFrame();
-        }
-    }
 
 
 
@@ -4270,7 +1383,6 @@ if (bodyMetrics.drawMarker)
 
 
 
-}   
 
 
 // ============================================================================
@@ -4638,7 +1750,7 @@ float SystemMapRenderer::bodyVisualRadius(
 }
 
 
-SystemMapRenderer::SystemBodyVisualMetrics
+game::system_map::SystemBodyVisualMetrics
 SystemMapRenderer::computeSystemBodyVisualMetrics(
     const world::celestial::SystemMapBody& body,
     float physicalRadiusWorld,
@@ -4667,33 +1779,33 @@ SystemMapRenderer::computeSystemBodyVisualMetrics(
 
     out.drawPhysicalBody =
         out.physicalRadiusWorld > 0.0f &&
-        out.physicalRadiusPx >= m_systemControls.minPhysicalBodyRadiusPx;
+        out.physicalRadiusPx >= m_systemView.controls().minPhysicalBodyRadiusPx;
 
     float desiredMarkerRadiusPx =
         0.0f;
 
     if (body.type == BodyType::Star)
     {
-        if (out.physicalRadiusPx < m_systemControls.starMarkerRadiusPx)
+        if (out.physicalRadiusPx < m_systemView.controls().starMarkerRadiusPx)
         {
             desiredMarkerRadiusPx =
-                m_systemControls.starMarkerRadiusPx;
+                m_systemView.controls().starMarkerRadiusPx;
         }
     }
     else if (body.type == BodyType::Planet)
     {
-        if (out.physicalRadiusPx < m_systemControls.planetMarkerRadiusPx)
+        if (out.physicalRadiusPx < m_systemView.controls().planetMarkerRadiusPx)
         {
             desiredMarkerRadiusPx =
-                m_systemControls.planetMarkerRadiusPx;
+                m_systemView.controls().planetMarkerRadiusPx;
         }
     }
     else if (body.type == BodyType::Moon)
     {
-        if (out.physicalRadiusPx < m_systemControls.tinyMoonProxyRadiusPx)
+        if (out.physicalRadiusPx < m_systemView.controls().tinyMoonProxyRadiusPx)
         {
             desiredMarkerRadiusPx =
-                m_systemControls.tinyMoonProxyRadiusPx;
+                m_systemView.controls().tinyMoonProxyRadiusPx;
         }
     }
 
@@ -4722,7 +1834,7 @@ SystemMapRenderer::computeSystemBodyVisualMetrics(
     out.pickRadiusPx =
         std::max(
             visibleRadiusPx,
-            m_systemControls.pickMinBodyRadiusPx
+            m_systemView.controls().pickMinBodyRadiusPx
         );
 
     return out;
@@ -5063,8 +2175,8 @@ void SystemMapRenderer::drawSystemObjectLabels(
 
         const glm::vec3 labelColor =
             isHub
-                ? m_systemVisuals.scene.hubObjectLabelColor
-                : m_systemVisuals.scene.otherObjectLabelColor;
+                ? m_systemView.visuals().scene.hubObjectLabelColor
+                : m_systemView.visuals().scene.otherObjectLabelColor;
 
         text.textDrawPx(
             obj.name,
@@ -5086,10 +2198,10 @@ void SystemMapRenderer::drawSystemObjectLabels(
                 10,
                 glm::vec4(
                     glm::vec3(
-                        m_systemVisuals.scene.objectOwnerLabelColor
+                        m_systemView.visuals().scene.objectOwnerLabelColor
                     ),
                     alpha *
-                        m_systemVisuals.scene.objectOwnerAlphaScale
+                        m_systemView.visuals().scene.objectOwnerAlphaScale
                 )
             );
         }
@@ -5108,20 +2220,57 @@ void SystemMapRenderer::drawSystemObjectLabels(
 
 const std::string& SystemMapRenderer::selectedBodyId() const
 {
-    return m_selectedBodyId;
+    return m_systemView.state().selectedBodyId;
 }
 
 
 const std::string& SystemMapRenderer::selectedHubId() const
 {
-    return m_selectedHubId;
+    return m_systemView.state().selectedHubId;
 }
 
 
 const std::string&
 SystemMapRenderer::selectedHubParentBodyId() const
 {
-    return m_selectedHubParentBodyId;
+    return m_systemView.state().selectedHubParentBodyId;
+}
+
+
+std::optional<world::celestial::DetailSpatialCell>
+SystemMapRenderer::selectedTerminalDetailCell() const
+{
+    const auto terminalCell =
+        m_systemView.resolvedTerminalSelection();
+
+    if (!terminalCell)
+        return std::nullopt;
+
+    world::celestial::DetailSpatialCell result;
+    result.level = terminalCell->level;
+    result.maximumLevel =
+        m_systemView.state().navigationGrid
+            .definition()
+            .maximumLevel;
+    result.x = terminalCell->index.x;
+    result.y = terminalCell->index.y;
+    result.z = terminalCell->index.z;
+    result.centerAu = terminalCell->center;
+    result.edgeAu = terminalCell->size;
+
+    return result;
+}
+
+
+bool SystemMapRenderer::canOpenSelectedDetail() const
+{
+    if (!m_systemView.state().selectedBodyId.empty() ||
+        !m_systemView.state().selectedHubId.empty())
+    {
+        return true;
+    }
+
+    return selectedTerminalDetailCell().has_value();
 }
 
 
@@ -5140,12 +2289,12 @@ int SystemMapRenderer::pickSystemHub(
 
     for (int i = 0;
          i < static_cast<int>(
-             m_lastSystemHubScreenPoints.size()
+             m_systemFrameData.hubScreenPoints.size()
          );
          ++i)
     {
-        const HubScreenPoint& point =
-            m_lastSystemHubScreenPoints[i];
+        const auto& point =
+            m_systemFrameData.hubScreenPoints[i];
 
         if (!point.visible ||
             !std::isfinite(point.screen.x) ||
@@ -5189,11 +2338,11 @@ int SystemMapRenderer::pickSystemBody(
     );
 
     for (int i = 0;
-         i < static_cast<int>(m_lastSystemBodyScreenPoints.size());
+         i < static_cast<int>(m_systemFrameData.bodyScreenPoints.size());
          ++i)
     {
-        const BodyScreenPoint& p =
-            m_lastSystemBodyScreenPoints[i];
+        const auto& p =
+            m_systemFrameData.bodyScreenPoints[i];
 
         if (!std::isfinite(p.screen.x) ||
             !std::isfinite(p.screen.y) ||
@@ -5239,7 +2388,7 @@ int SystemMapRenderer::pickSystemBody(
             std::clamp(
                 realBodyRadiusPx,
                 0.0f,
-                m_systemControls.pickMaxBodyRadiusPx
+                m_systemView.controls().pickMaxBodyRadiusPx
             );
 
         const float distanceToRealDisk =
@@ -5252,10 +2401,10 @@ int SystemMapRenderer::pickSystemBody(
         const float pickHaloPx =
             std::clamp(
                 haloBodyRadiusPx *
-                    m_systemControls.pickHaloRadiusFactor +
-                    m_systemControls.pickHaloBasePx,
-                m_systemControls.pickHaloBasePx,
-                m_systemControls.pickHaloMaxPx
+                    m_systemView.controls().pickHaloRadiusFactor +
+                    m_systemView.controls().pickHaloBasePx,
+                m_systemView.controls().pickHaloBasePx,
+                m_systemView.controls().pickHaloMaxPx
             );
 
         if (distanceToRealDisk > pickHaloPx)
@@ -5285,7 +2434,7 @@ int SystemMapRenderer::pickSystemBody(
             score =
                 1000000.0f +
                 distanceToRealDisk *
-                    m_systemControls.pickScoreDiskWeight +
+                    m_systemView.controls().pickScoreDiskWeight +
                 centerDistance;
         }
 
@@ -5331,12 +2480,12 @@ int SystemMapRenderer::pickSystemOrbitPivotBody(
     for (int i = 0;
          i <
             static_cast<int>(
-                m_lastSystemBodyScreenPoints.size()
+                m_systemFrameData.bodyScreenPoints.size()
             );
          ++i)
     {
-        const BodyScreenPoint& point =
-            m_lastSystemBodyScreenPoints[i];
+        const auto& point =
+            m_systemFrameData.bodyScreenPoints[i];
 
         if (!std::isfinite(point.screen.x) ||
             !std::isfinite(point.screen.y) ||
@@ -5381,7 +2530,7 @@ int SystemMapRenderer::pickSystemOrbitPivotBody(
             );
 
         if (distanceToDiskPx >
-            m_systemControls
+            m_systemView.controls()
                 .rotationPivotMaxDistancePx)
         {
             continue;
@@ -5409,4 +2558,131 @@ int SystemMapRenderer::pickSystemOrbitPivotBody(
     }
 
     return bestIndex;
+}
+
+
+std::optional<std::string>
+SystemMapRenderer::pickSystemBodyId(
+    double localMouseX,
+    double localMouseY
+) const
+{
+    const int index =
+        pickSystemBody(
+            localMouseX,
+            localMouseY
+        );
+
+    if (index < 0 ||
+        index >= static_cast<int>(
+            m_systemFrameData.bodyScreenPoints.size()
+        ))
+    {
+        return std::nullopt;
+    }
+
+    return m_systemFrameData.bodyScreenPoints[
+        index
+    ].bodyId;
+}
+
+
+std::optional<game::system_map::SystemMapHubSelection>
+SystemMapRenderer::pickSystemHubSelection(
+    double localMouseX,
+    double localMouseY
+) const
+{
+    const int index =
+        pickSystemHub(
+            localMouseX,
+            localMouseY
+        );
+
+    if (index < 0 ||
+        index >= static_cast<int>(
+            m_systemFrameData.hubScreenPoints.size()
+        ))
+    {
+        return std::nullopt;
+    }
+
+    const auto& point =
+        m_systemFrameData.hubScreenPoints[index];
+
+    game::system_map::SystemMapHubSelection
+        result;
+
+    result.hubId = point.hubId;
+    result.parentBodyId = point.parentBodyId;
+
+    return result;
+}
+
+
+std::optional<std::string>
+SystemMapRenderer::pickSystemOrbitPivotBodyId(
+    double localMouseX,
+    double localMouseY,
+    const Viewport& viewport
+) const
+{
+    const int index =
+        pickSystemOrbitPivotBody(
+            localMouseX,
+            localMouseY,
+            viewport
+        );
+
+    if (index < 0 ||
+        index >= static_cast<int>(
+            m_systemFrameData.bodyScreenPoints.size()
+        ))
+    {
+        return std::nullopt;
+    }
+
+    return m_systemFrameData.bodyScreenPoints[
+        index
+    ].bodyId;
+}
+
+
+std::optional<glm::dvec3>
+SystemMapRenderer::systemBodyAbsolutePosition(
+    const std::string& bodyId
+) const
+{
+    const auto it =
+        m_systemFrameData.bodyAbsolutePositionById.find(
+            bodyId
+        );
+
+    if (it ==
+        m_systemFrameData.bodyAbsolutePositionById.end())
+    {
+        return std::nullopt;
+    }
+
+    return it->second;
+}
+
+
+std::optional<glm::dvec3>
+SystemMapRenderer::systemObjectAbsolutePosition(
+    const std::string& objectId
+) const
+{
+    const auto it =
+        m_systemFrameData.objectAbsolutePositionById.find(
+            objectId
+        );
+
+    if (it ==
+        m_systemFrameData.objectAbsolutePositionById.end())
+    {
+        return std::nullopt;
+    }
+
+    return it->second;
 }

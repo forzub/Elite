@@ -20,7 +20,7 @@ class GameServer
 {
 public:
     GameServer();
-    
+
     void update(double dt);
 
     void submitCommand(EntityId shipId, const ShipControlState& control);
@@ -92,12 +92,16 @@ public:
         int systemId
     ) const;
 
-    world::celestial::PlanetMapSnapshot buildPlanetMapSnapshot(
+    world::celestial::DetailMapSnapshot buildDetailMapSnapshot(
+        const world::celestial::DetailTarget& target
+    ) const;
+
+    world::celestial::DetailMapSnapshot buildCelestialBodyDetailSnapshot(
         int systemId,
         const std::string& planetBodyId
     ) const;
 
-    world::celestial::PlanetMapSnapshot buildLocalSpaceMapSnapshot(
+    world::celestial::DetailMapSnapshot buildLocalObjectDetailSnapshot(
         int systemId,
         const std::string& anchorHubId
     ) const;
@@ -109,8 +113,8 @@ public:
         Полное определение планеты, rings, environment и textures
         при этом заново не строятся.
     */
-    void refreshPlanetMapDynamicState(
-        world::celestial::PlanetMapSnapshot& snapshot
+    void refreshDetailMapDynamicState(
+        world::celestial::DetailMapSnapshot& snapshot
     ) const;
 
     world::celestial::HubMapSnapshot buildHubMapSnapshot(
@@ -134,10 +138,15 @@ public:
     double debugUniverseTimeScale() const;
 
 private:
+    void appendLocalDetailObjects(
+        world::celestial::DetailMapSnapshot& snapshot,
+        double extentMeters,
+        bool cubicBounds
+    ) const;
 
     GameSimulation                                                          m_simulation;
-    
-    
+
+
     std::unordered_map<uint32_t, std::deque<ShipControlState>> m_pendingCommands;
     std::unordered_map<uint32_t, std::deque<ClientShipCommand>> m_pendingClientShipCommands;
     uint32_t m_serverTick = 0;

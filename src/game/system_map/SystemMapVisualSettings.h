@@ -5,18 +5,18 @@
 
 struct SystemNavigationGridVisualSettings
 {
-    glm::vec4 parentEdgeColor {0.24f, 0.52f, 0.68f, 0.110f};
-    glm::vec4 parentFaceGridColor {0.24f, 0.52f, 0.68f, 0.072f};
-    glm::vec4 currentEdgeColor {0.38f, 0.72f, 0.94f, 0.08f};
+    glm::vec4 parentEdgeColor {0.24f, 0.52f, 0.68f, 0.140f};
+    glm::vec4 parentFaceGridColor {0.24f, 0.52f, 0.68f, 0.092f};
+    glm::vec4 currentEdgeColor {0.38f, 0.72f, 0.94f, 0.105f};
     glm::vec4 hoveredEdgeColor {0.45f, 0.78f, 0.92f, 0.18f};
     glm::vec4 selectedEdgeColor {0.92f, 0.66f, 0.20f, 0.24f};
     glm::vec4 currentMarkerColor {0.54f, 0.82f, 1.00f, 0.58f};
     glm::vec4 selectedMarkerColor {1.00f, 0.76f, 0.24f, 0.78f};
     float currentMarkerRadiusPx = 4.0f;
     float selectedMarkerRadiusPx = 5.0f;
-    float faceGridAlphaScale = 0.28f;
-    float faceGridMinimumAlpha = 0.025f;
-    float faceGridMaximumAlpha = 0.070f;
+    float faceGridAlphaScale = 0.36f;
+    float faceGridMinimumAlpha = 0.032f;
+    float faceGridMaximumAlpha = 0.090f;
 };
 
 struct SystemBodyLabelVisualSettings

@@ -378,7 +378,7 @@ namespace
 SpaceState::SpaceState(StateStack& states)
     : GameState(states)
 {
-    
+
     initServer();
     initClient();
 
@@ -393,7 +393,7 @@ SpaceState::SpaceState(StateStack& states)
 
     initHUD();
 
-    
+
     /*
         The legacy political GalaxyDatabase is intentionally not loaded here.
         It is a separate, currently unused population/politics layer whose
@@ -422,7 +422,7 @@ SpaceState::SpaceState(StateStack& states)
     // m_interferenceSources.push_back(jammer);
 
 
-    
+
     // m_simulation->planets().clear();
 
     // m_planets.push_back({
@@ -432,7 +432,7 @@ SpaceState::SpaceState(StateStack& states)
 
     testDamageSystem();
 
-       
+
 }
 
 
@@ -485,80 +485,34 @@ void SpaceState::requestSystemMapSnapshot(
 
 
 
-void SpaceState::requestPlanetMapSnapshot(
-    int systemId,
-    const std::string& planetBodyId,
-    bool forceRefresh
-)
-{
-    if (!m_server)
-        return;
-
-    if (planetBodyId.empty())
-        return;
-
-    if (!forceRefresh &&
-        m_hasPlanetMapSnapshot &&
-        m_loadedPlanetMapSystemId == systemId &&
-        m_loadedPlanetMapBodyId == planetBodyId)
-    {
-        return;
-    }
-
-    m_planetMapSnapshot =
-        m_server->buildPlanetMapSnapshot(
-            systemId,
-            planetBodyId
-        );
-
-    m_loadedPlanetMapSystemId =
-        systemId;
-
-    m_loadedPlanetMapBodyId =
-        planetBodyId;
-    m_loadedPlanetMapAnchorHubId.clear();
-
-    m_hasPlanetMapSnapshot =
-        m_planetMapSnapshot.valid;
-}
-
-
-void SpaceState::requestLocalSpaceMapSnapshot(
-    int systemId,
-    const std::string& anchorHubId,
+void SpaceState::requestDetailMapSnapshot(
+    const world::celestial::DetailTarget& target,
     bool forceRefresh
 )
 {
     if (!m_server ||
-        anchorHubId.empty())
+        !target.valid())
     {
         return;
     }
 
     if (!forceRefresh &&
-        m_hasPlanetMapSnapshot &&
-        m_loadedPlanetMapSystemId == systemId &&
-        m_loadedPlanetMapAnchorHubId == anchorHubId)
+        m_hasDetailMapSnapshot &&
+        m_loadedDetailTarget == target)
     {
         return;
     }
 
-    m_planetMapSnapshot =
-        m_server->buildLocalSpaceMapSnapshot(
-            systemId,
-            anchorHubId
+    m_detailMapSnapshot =
+        m_server->buildDetailMapSnapshot(
+            target
         );
 
-    m_loadedPlanetMapSystemId = systemId;
-    m_loadedPlanetMapBodyId.clear();
-    m_loadedPlanetMapAnchorHubId =
-        anchorHubId;
-    m_hasPlanetMapSnapshot =
-        m_planetMapSnapshot.valid;
+    m_loadedDetailTarget = target;
+
+    m_hasDetailMapSnapshot =
+        m_detailMapSnapshot.valid;
 }
-
-
-
 
 
 void SpaceState::requestHubMapSnapshot(
@@ -867,7 +821,7 @@ void SpaceState::handleInput()
 
         if (Input::instance().isKeyPressedOnce(GLFW_KEY_P))
         {
-            setSystemMapPlanetMode();
+            setSystemMapDetailMode();
             return;
         }
 
@@ -1121,8 +1075,8 @@ m_playerView->updateCockpitStateFromSnapshot(
 );
 
     m_perfPlayerViewMs = nowMs() - playerViewStartMs;
-    
-    
+
+
     // --------------------------------------------------
     // DEBUG: Обрабатываем отладочные команды из очереди
     // --------------------------------------------------
@@ -1130,7 +1084,7 @@ m_playerView->updateCockpitStateFromSnapshot(
         std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
         for (const auto& cmd : m_debugCommands)
         {
-             
+
             switch (cmd.type)
             {
                 case ClientShipCommand::DamageRadiator:
@@ -1166,12 +1120,12 @@ m_playerView->updateCockpitStateFromSnapshot(
         m_debugCommands.clear();
     }
     // --------------------------------------------------
-    
+
 
 
     // const auto& o = ship.renderTransform.orientation;
 
-    
+
     // ========= обновление радара ====================
     if (m_radarWidget)
     {
@@ -1216,9 +1170,9 @@ m_playerView->updateCockpitStateFromSnapshot(
         }
     }
 
-    
 
-    
+
+
     static float structureDebugTimer = 0.0f;
     structureDebugTimer += dt;
     if (structureDebugTimer > 0.25f)
@@ -1283,9 +1237,9 @@ if (shouldRefreshSystemMapSnapshot())
 
 
 
-    
+
     m_perfUpdateMs = nowMs() - updateStartMs;
-    
+
 }
 
 
@@ -1339,7 +1293,7 @@ void SpaceState::renderUI()
     Camera*                                     mainCam = nullptr;
     Camera*                                     miniCam = nullptr;
 
-    
+
 
     switch (m_layout)
     {
@@ -1451,7 +1405,7 @@ void SpaceState::renderUI()
             );
 
             setText("main_coord_cell", buf);
-            
+
 
             std::snprintf(buf, sizeof(buf), "X %.0f m", globalMeters.x);
             setText("main_coord_x", buf);
@@ -1461,11 +1415,11 @@ void SpaceState::renderUI()
 
             std::snprintf(buf, sizeof(buf), "Z %.0f m", globalMeters.z);
             setText("main_coord_z", buf);
-            
+
 
             std::snprintf(buf, sizeof(buf), "V %.1f m/s", speedMps);
             setText("main_coord_v", buf);
-            
+
         }
     }
 
@@ -1486,9 +1440,9 @@ void SpaceState::renderUI()
 
     // -------------------------------
     // 3D ПРОЕКЦИЯ
-    // ------------------------------- 
-    
-    SceneRenderPolicy mainPolicy; 
+    // -------------------------------
+
+    SceneRenderPolicy mainPolicy;
 
 
     const auto& dbg = debug::get().render;
@@ -1581,7 +1535,7 @@ else
 
 
 
-   m_perfRenderUiMs = nowMs() - renderUiStartMs; 
+   m_perfRenderUiMs = nowMs() - renderUiStartMs;
 }
 
 
@@ -1611,69 +1565,33 @@ void SpaceState::renderHUD()
 
         m_systemMapRenderer.setRightPanelRatio(panelRatio);
 
-        
+
 
 
 
 
 if (m_systemMapRenderer.mode() ==
-    SystemMapRenderer::Mode::Planet)
+    SystemMapRenderer::Mode::Detail)
 {
-    const int focusedId =
-        m_systemMapRenderer.focusedSystemId() >= 0
-            ? m_systemMapRenderer.focusedSystemId()
-            : m_server
-                ->playerNavigation()
-                .currentSystemId;
-
-    const std::string requestedPlanetBodyId =
-        m_loadedPlanetMapBodyId;
-
     /*
-        Полный snapshot создаётся только при открытии другой
-        системы или другой планеты.
+        Details is now refreshed by its explicit target. This covers a
+        planet, a free-space hub and a terminal navigation cube without
+        inferring scene type from legacy body/hub strings.
     */
-    if (!m_loadedPlanetMapAnchorHubId.empty())
+    if (m_loadedDetailTarget.valid())
     {
-        requestLocalSpaceMapSnapshot(
-            focusedId,
-            m_loadedPlanetMapAnchorHubId,
-            false
-        );
-    }
-    else
-    {
-        requestPlanetMapSnapshot(
-            focusedId,
-            requestedPlanetBodyId,
+        requestDetailMapSnapshot(
+            m_loadedDetailTarget,
             false
         );
     }
 
-    /*
-        Динамические элементы обновляются каждый кадр:
-
-            - universe time;
-            - текущий центр планеты;
-            - позиции и axes всех hubs;
-            - hub orbital frames;
-            - прикреплённые station modules.
-
-        Это значительно дешевле полного buildPlanetMapSnapshot().
-    */
-    if (m_hasPlanetMapSnapshot &&
-        m_loadedPlanetMapSystemId ==
-            focusedId &&
-        (
-            m_loadedPlanetMapBodyId ==
-                requestedPlanetBodyId ||
-            m_loadedPlanetMapAnchorHubId ==
-                m_planetMapSnapshot.detailAnchorHubId
-        ))
+    if (m_hasDetailMapSnapshot &&
+        m_loadedDetailTarget.valid())
     {
-        m_server->refreshPlanetMapDynamicState(
-                m_planetMapSnapshot
-            );
+        m_server->refreshDetailMapDynamicState(
+            m_detailMapSnapshot
+        );
     }
 }
 
@@ -1702,8 +1620,8 @@ if (m_systemMapRenderer.mode() ==
         false
     );
 
-    
-    
+
+
 
 
     /*
@@ -1737,12 +1655,12 @@ m_systemMapRenderer.render(
     mapVp,
     m_galaxyMapSnapshot,
     m_systemMapSnapshot,
-    m_planetMapSnapshot,
+    m_detailMapSnapshot,
     m_hubMapSnapshot,
     m_server->playerNavigation()
 );
 
-        
+
 
 
         glEnable(GL_DEPTH_TEST);
@@ -1767,7 +1685,7 @@ m_systemMapRenderer.render(
 
 
 
-    
+
 
     // -------------------------------------------------
     // сразу ставим ортографию и больше её не трогаем - это для 2D графики
@@ -1785,23 +1703,23 @@ m_systemMapRenderer.render(
     // -------------------------------------------------
     // 1. Статический HUD (рамки, текст)
     // -------------------------------------------------
-      
+
 
     const auto& ships = m_client->world().ships();
     auto it = ships.find(m_playerId.value);
     if (it == ships.end())
         return;
-        
-    
 
 
-    
-    const auto& playerShip = it->second;    
+
+
+
+    const auto& playerShip = it->second;
     const auto& radarContacts = playerShip.radarContacts;
 
 
 
-    
+
     // -------------------------------------------------
     // 2. Ship UI / HUD layer
     // -------------------------------------------------
@@ -1850,7 +1768,7 @@ m_systemMapRenderer.render(
 
         TextRenderer::instance().endFrame();
 
-        
+
 
 
 
@@ -1930,7 +1848,7 @@ if (m_server)
         const double distPlayerHubM =
             haveHub ? glm::length(playerM - hubM) : -1.0;
 
-       
+
 
         // -------------------------------------------------
         // SCREEN OVERLAY: то же самое на HUD
@@ -2032,8 +1950,8 @@ if (m_server)
     // // 3. векторные приборы
     glEnable(GL_DEPTH_TEST);
 
-    
-   
+
+
     m_perfHudMs = nowMs() - hudStartMs;
 }
 
@@ -2045,7 +1963,7 @@ if (m_server)
 
 bool SpaceState::wantsConfirmExit() const
 {
-    
+
     return true; // есть активная игровая сессия
 }
 
@@ -2057,7 +1975,7 @@ bool SpaceState::wantsConfirmExit() const
 bool SpaceState::onGlobalEscape()
 {
 
-    
+
 
     ConfirmExitOptions opts;
     opts.canSave = isInSafeZone();
@@ -2087,8 +2005,8 @@ void SpaceState::handleResize(int width, int height)
     {
         m_playerView->resize(width, height);
         m_playerView->updateBoundary(width, height);
-        
-        
+
+
     }
 }
 
@@ -2165,7 +2083,7 @@ void SpaceState::processHtmlCommands()
 
     for (const auto& msg : cmds)
     {
-        
+
         // ------------------------------
         // SYSTEM MAP
         // ------------------------------
@@ -2184,7 +2102,7 @@ void SpaceState::processHtmlCommands()
 
             if (msg.type == HtmlUiMessageType::Command)
             {
-                
+
 
 
                 if (msg.command == "request_snapshot")
@@ -2216,11 +2134,11 @@ void SpaceState::processHtmlCommands()
                 }
             }
         }
-        
-        
-        
-         
-        
+
+
+
+
+
         // ------------------------------
         // ATTACHMENT EDITOR
         // ------------------------------
@@ -2864,7 +2782,7 @@ void SpaceState::pushDebugControlState()
 
     payload["debugControlAutoUpdates"] = dbg.debugControlAutoUpdates;
     payload["systemMapLiveRefreshSec"] = dbg.systemMapLiveRefreshSec;
-    
+
     payload["drawAxes"] = dbg.drawAxes;
     payload["drawWorldAxes"] = dbg.drawWorldAxes;
     payload["drawObjectAxes"] = dbg.drawObjectAxes;
@@ -3190,7 +3108,7 @@ void SpaceState::applyDebugControlPayload(const json& payload)
 
     dbg.drawModulePivots = payload.value("drawModulePivots", dbg.drawModulePivots);
     dbg.drawHitVolumes = payload.value("drawHitVolumes", dbg.drawHitVolumes);
-    dbg.hitVolumeFilterMode = payload.value("hitVolumeFilterMode", dbg.hitVolumeFilterMode); 
+    dbg.hitVolumeFilterMode = payload.value("hitVolumeFilterMode", dbg.hitVolumeFilterMode);
     dbg.publishObjectOrientation = payload.value("publishObjectOrientation", dbg.publishObjectOrientation);
     dbg.hitVolumesOverlay = payload.value("hitVolumesOverlay", dbg.hitVolumesOverlay);
     dbg.hideMeshesWhenDrawingHitVolumes = payload.value("hideMeshesWhenDrawingHitVolumes", dbg.hideMeshesWhenDrawingHitVolumes);
@@ -3224,7 +3142,7 @@ void SpaceState::applyDebugControlPayload(const json& payload)
         );
 
 
-            
+
     }
 
 
@@ -3297,7 +3215,7 @@ void SpaceState::updatePromoPlayerShipTracking(float dt)
     glm::mat4 targetOrientation =
         makePromoPitchOnlyOrientationClient(toTarget);
 
-    
+
 
     glm::quat targetQ =
         glm::quat_cast(targetOrientation);
@@ -3762,13 +3680,15 @@ void SpaceState::setSystemMapCurrentSystemMode()
 
 
 
-void SpaceState::setSystemMapPlanetMode()
+void SpaceState::setSystemMapDetailMode()
 {
+    using namespace world::celestial;
+
     if (!m_server)
         return;
 
     if (m_systemMapRenderer.mode() ==
-        SystemMapRenderer::Mode::Planet)
+        SystemMapRenderer::Mode::Detail)
     {
         return;
     }
@@ -3780,59 +3700,90 @@ void SpaceState::setSystemMapPlanetMode()
                 ->playerNavigation()
                 .currentSystemId;
 
-    std::string bodyId =
+    const std::string selectedBodyId =
         m_systemMapRenderer.selectedBodyId();
-    const std::string hubId =
+    const std::string selectedHubId =
         m_systemMapRenderer.selectedHubId();
+    const std::string selectedHubParentBodyId =
+        m_systemMapRenderer
+            .selectedHubParentBodyId();
 
-    /*
-        Details for an orbital hub opens the hub's real parent context.
-        The hub selection remains active, so Details can highlight it and
-        enable HUB. A selected planet clears the hub selection in renderer.
-    */
-    if (bodyId.empty() &&
-        !hubId.empty())
+    DetailTarget target;
+    target.systemId = selectedId;
+    target.systemPositionLy =
+        m_systemMapSnapshot.systemPositionLy;
+
+    if (!selectedBodyId.empty())
     {
-        bodyId =
+        target.sceneKind =
+            DetailSceneKind::CelestialBody;
+        target.focusClass =
+            DetailObjectClass::CelestialBody;
+        target.anchorId = selectedBodyId;
+        target.focusId = selectedBodyId;
+    }
+    else if (!selectedHubId.empty() &&
+        !selectedHubParentBodyId.empty())
+    {
+        /*
+            An orbital hub is infrastructure, but Details keeps the parent
+            body as the scene anchor so the existing planet/hub workflow and
+            the HUB button remain intact.
+        */
+        target.sceneKind =
+            DetailSceneKind::CelestialBody;
+        target.focusClass =
+            DetailObjectClass::Hub;
+        target.anchorId =
+            selectedHubParentBodyId;
+        target.focusId = selectedHubId;
+    }
+    else if (!selectedHubId.empty())
+    {
+        target.sceneKind =
+            DetailSceneKind::LocalObject;
+        target.focusClass =
+            DetailObjectClass::Hub;
+        target.anchorId = selectedHubId;
+        target.focusId = selectedHubId;
+    }
+    else
+    {
+        const auto selectedCell =
             m_systemMapRenderer
-                .selectedHubParentBodyId();
+                .selectedTerminalDetailCell();
+
+        if (!selectedCell)
+            return;
+
+        target.sceneKind =
+            DetailSceneKind::SpatialVolume;
+        target.focusClass =
+            DetailObjectClass::None;
+        target.spatialCell = *selectedCell;
     }
 
-    if (bodyId.empty() &&
-        hubId.empty())
+    if (!target.valid())
         return;
 
     m_systemMapRenderer.beginMapTransition(
         MapTransitionPresets::modeChange(),
 
-        [this, selectedId, bodyId, hubId]()
+        [this, target]()
         {
             if (!m_server)
                 return;
 
-            /*
-                Новый snapshot строится после сохранения
-                старого кадра System.
-            */
-            if (!bodyId.empty())
-            {
-                requestPlanetMapSnapshot(
-                    selectedId,
-                    bodyId,
-                    true
-                );
-            }
-            else
-            {
-                requestLocalSpaceMapSnapshot(
-                    selectedId,
-                    hubId,
-                    true
-                );
-            }
+            requestDetailMapSnapshot(
+                target,
+                true
+            );
+
+            if (!m_hasDetailMapSnapshot)
+                return;
 
             m_systemMapRenderer.setMode(
-                SystemMapRenderer::Mode::Planet
+                SystemMapRenderer::Mode::Detail
             );
 
             pushSystemMapPanelState();
@@ -3845,18 +3796,16 @@ void SpaceState::setSystemMapPlanetMode()
 
 
 
-
-
-void SpaceState::setSystemMapLoadedPlanetMode()
+void SpaceState::setSystemMapLoadedDetailMode()
 {
     if (!m_server)
         return;
 
-    if (!m_hasPlanetMapSnapshot)
+    if (!m_hasDetailMapSnapshot)
         return;
 
     if (m_systemMapRenderer.mode() ==
-        SystemMapRenderer::Mode::Planet)
+        SystemMapRenderer::Mode::Detail)
     {
         return;
     }
@@ -3870,7 +3819,7 @@ void SpaceState::setSystemMapLoadedPlanetMode()
                 return;
 
             m_systemMapRenderer.setMode(
-                SystemMapRenderer::Mode::Planet
+                SystemMapRenderer::Mode::Detail
             );
 
             pushSystemMapPanelState();
@@ -3911,13 +3860,13 @@ void SpaceState::pushSystemMapPanelState()
     {
         payload["mode"] = "Galaxy";
     }
-    else if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Planet)
+    else if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Detail)
     {
-        payload["mode"] = "Planet";
+        payload["mode"] = "Detail";
     }
     else if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Hub)
     {
-        
+
         payload["mode"] = "Hub";
     }
     else
@@ -3959,17 +3908,27 @@ void SpaceState::pushSystemMapPanelState()
         m_systemMapRenderer.selectedHubId();
 
     payload["canOpenDetail"] =
-        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System &&
-        (
-            !m_systemMapRenderer.selectedBodyId().empty() ||
-            (
-                !m_systemMapRenderer.selectedHubId().empty()
-            )
-        );
+        m_systemMapRenderer.mode() ==
+            SystemMapRenderer::Mode::System &&
+        m_systemMapRenderer.canOpenSelectedDetail();
+
+    if (const auto selectedCell =
+            m_systemMapRenderer
+                .selectedTerminalDetailCell())
+    {
+        payload["selectedDetailCell"] = {
+            {"level", selectedCell->level},
+            {"maximumLevel", selectedCell->maximumLevel},
+            {"x", selectedCell->x},
+            {"y", selectedCell->y},
+            {"z", selectedCell->z},
+            {"edgeAu", selectedCell->edgeAu}
+        };
+    }
 
     payload["canOpenHub"] =
         m_systemMapRenderer.mode() ==
-            SystemMapRenderer::Mode::Planet &&
+            SystemMapRenderer::Mode::Detail &&
         !m_systemMapRenderer.selectedHubId().empty();
 
 

@@ -26,4 +26,11 @@ struct DetailMapVisualSettings
     glm::vec4 selectedHubLabelColor {0.42f, 0.95f, 1.0f, 0.96f};
     glm::vec4 stationMarkerColor {0.80f, 0.95f, 1.0f, 1.0f};
     glm::vec4 selectedStationMarkerColor {1.0f, 0.85f, 0.25f, 1.0f};
+
+    bool drawBodyTitle = true;
+    float bodyTitleHeightFraction = 0.026f;
+    int bodyTitleMinimumPx = 17;
+    int bodyTitleMaximumPx = 38;
+    float bodyTitleMarginHeightFraction = 0.020f;
+    glm::vec4 bodyTitleColor {0.78f, 0.84f, 0.90f, 0.92f};
 };

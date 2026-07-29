@@ -1,5 +1,6 @@
 #include "GameServer.h"
 #include "src/game/network/ClientMessage.h"
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -411,12 +412,12 @@ namespace {
 
 namespace
 {
-    world::celestial::PlanetMapAxisSet axesToHubLocal(
+    world::celestial::LocalSceneAxes axesToHubLocal(
         const glm::mat4& worldOrientation,
         const game::navigation::HubNavigationFrame& frame
     )
     {
-        world::celestial::PlanetMapAxisSet axes;
+        world::celestial::LocalSceneAxes axes;
 
         auto convert =
             [&](const glm::dvec3& worldAxis)
@@ -785,7 +786,7 @@ void GameServer::receiveClientMessage(
     EntityId playerId,
     const game::network::ClientMessage& msg)
 {
-    
+
     switch (msg.type)
     {
         case game::network::ClientMessageType::ControlInput:
@@ -799,7 +800,7 @@ void GameServer::receiveClientMessage(
 
         case game::network::ClientMessageType::ClientShipCommand:
 {
-            
+
             const auto& cmd =
                 std::get<ClientShipCommand>(msg.payload);
 
@@ -1105,11 +1106,11 @@ namespace
         return v / std::sqrt(len2);
     }
 
-    world::celestial::PlanetMapAxisSet planetMapAxesFromOrientation(
+    world::celestial::LocalSceneAxes planetMapAxesFromOrientation(
         const glm::mat4& m
     )
     {
-        world::celestial::PlanetMapAxisSet axes;
+        world::celestial::LocalSceneAxes axes;
 
         axes.x = glm::dvec3(m[0]);
         axes.y = glm::dvec3(m[1]);
@@ -1208,7 +1209,7 @@ GameServer::buildSystemMapSnapshot(
 
 
 
-    
+
     world::celestial::CelestialSystemRuntime runtime;
 
     runtime.setSystem(system);
@@ -1349,12 +1350,12 @@ GameServer::buildSystemMapSnapshot(
                     )
                 );
             }
-                
-    
-    
-    
-    
-    
+
+
+
+
+
+
         out.bodies.push_back(std::move(item));
     }
 
@@ -1537,15 +1538,378 @@ GameServer::buildSystemMapSnapshot(
 
 
 
-world::celestial::PlanetMapSnapshot
-GameServer::buildLocalSpaceMapSnapshot(
+void GameServer::appendLocalDetailObjects(
+    world::celestial::DetailMapSnapshot& out,
+    double extentMeters,
+    bool cubicBounds
+) const
+{
+    using namespace world::celestial;
+
+    const auto intersectsBounds =
+        [&](const glm::dvec3& positionMeters,
+            double objectRadiusMeters = 0.0)
+        {
+            const glm::dvec3 delta =
+                positionMeters -
+                out.planetCenterMeters;
+
+            if (cubicBounds)
+            {
+                return
+                    std::abs(delta.x) <=
+                        extentMeters + objectRadiusMeters &&
+                    std::abs(delta.y) <=
+                        extentMeters + objectRadiusMeters &&
+                    std::abs(delta.z) <=
+                        extentMeters + objectRadiusMeters;
+            }
+
+            return
+                glm::length(delta) <=
+                    extentMeters + objectRadiusMeters;
+        };
+
+    for (const auto& [hubId, hub] :
+         m_simulation.orbitalHubs())
+    {
+        if (hub.systemId != out.systemId)
+            continue;
+
+        const auto* frame =
+            m_simulation.hubNavigationFrame(
+                hubId
+            );
+
+        if (!frame ||
+            !frame->valid ||
+            !intersectsBounds(frame->originMeters))
+        {
+            continue;
+        }
+
+        LocalSceneObject object;
+        object.stableId = hubId;
+        object.name =
+            hub.name.empty()
+                ? hubId
+                : hub.name;
+        object.kind = "hub";
+        object.parentStableId = hub.parentBodyId;
+        object.objectClass = DetailObjectClass::Hub;
+        object.origin = DetailObjectOrigin::Runtime;
+        object.positionMeters =
+            frame->originMeters;
+        object.velocityMps =
+            frame->velocityMetersPerSecond;
+        object.axes.x = frame->normalAxis;
+        object.axes.y = frame->radialAxis;
+        object.axes.z = -frame->progradeAxis;
+        object.valid = true;
+
+        out.scene.objects.push_back(
+            std::move(object)
+        );
+    }
+
+    /*
+        Nearby bodies are context objects, not duplicated scene roots.
+        Authored and procedural asteroids use this same collection. A body
+        crossing a cube boundary is included when its sphere intersects it.
+    */
+    if (const auto* system =
+            m_starAtlas.findSystem(out.systemId))
+    {
+        CelestialSystemRuntime localRuntime;
+
+        localRuntime.setSystem(system);
+        localRuntime.update(
+            out.universeTimeSeconds
+        );
+
+        for (const auto& body :
+             localRuntime.snapshot().bodies)
+        {
+            const glm::dvec3 positionMeters =
+                body.positionAu *
+                MetersPerAu;
+
+            const double radiusMeters =
+                std::max(
+                    0.0,
+                    body.radiusKm * 1000.0
+                );
+
+            if (!intersectsBounds(
+                    positionMeters,
+                    radiusMeters
+                ))
+            {
+                continue;
+            }
+
+            LocalSceneObject contextBody;
+            contextBody.stableId = body.id;
+            contextBody.name = body.name;
+            contextBody.kind = "celestial";
+            contextBody.objectClass =
+                DetailObjectClass::CelestialBody;
+            contextBody.origin =
+                DetailObjectOrigin::Authored;
+            contextBody.positionMeters =
+                positionMeters;
+            contextBody.boundingRadiusMeters =
+                radiusMeters;
+            contextBody.valid = true;
+
+            out.scene.objects.push_back(
+                std::move(contextBody)
+            );
+        }
+    }
+
+    /*
+        StaticObject is currently the runtime representation for station
+        modules and other infrastructure. Its presentation kind may later be
+        mine/base/beacon/relay, but its top-level class remains Hub.
+    */
+    for (const auto& [entityId, object] :
+         m_simulation.staticObjects())
+    {
+        if (object.mapSystemId != out.systemId)
+            continue;
+
+        const glm::dvec3 positionMeters =
+            world::coordinates::fullMeters(
+                object.worldPosition
+            );
+
+        if (!intersectsBounds(positionMeters))
+            continue;
+
+        LocalSceneObject station;
+        station.id = entityId;
+        station.stableId =
+            "entity:" +
+            std::to_string(entityId.value);
+        station.name = object.displayName;
+        station.kind = "station";
+        station.parentStableId = object.hubId;
+        station.objectClass =
+            DetailObjectClass::Hub;
+        station.origin =
+            DetailObjectOrigin::Runtime;
+        station.positionMeters =
+            positionMeters;
+        station.velocityMps =
+            glm::dvec3(object.linearVelocity);
+        station.valid = true;
+
+        out.scene.objects.push_back(
+            std::move(station)
+        );
+    }
+
+    for (const auto& [entityId, ship] :
+         m_simulation.ships())
+    {
+        if (!ship)
+            continue;
+
+        const auto& core = ship->core();
+        const auto& transform = core.transform();
+        const glm::dvec3 positionMeters =
+            transform.fullWorldMeters();
+
+        if (!intersectsBounds(positionMeters))
+            continue;
+
+        LocalSceneObject object;
+        object.id = entityId;
+        object.stableId =
+            "entity:" +
+            std::to_string(entityId.value);
+        object.name =
+            core.descriptor().identity.shipName.empty()
+                ? "Ship " + std::to_string(entityId.value)
+                : core.descriptor().identity.shipName;
+        object.kind = "ship";
+        object.parentStableId = transform.motion.hubId;
+        object.objectClass = DetailObjectClass::Ship;
+        object.origin = DetailObjectOrigin::Runtime;
+        object.role = LocalSceneObjectRole::Participant;
+        object.positionMeters = positionMeters;
+        object.velocityMps =
+            transform.motion.worldVelocityMps;
+        object.axes =
+            planetMapAxesFromOrientation(
+                transform.orientation
+            );
+        object.valid = true;
+
+        out.scene.objects.push_back(
+            std::move(object)
+        );
+    }
+}
+
+
+world::celestial::DetailMapSnapshot
+GameServer::buildDetailMapSnapshot(
+    const world::celestial::DetailTarget& target
+) const
+{
+    using namespace world::celestial;
+
+    DetailMapSnapshot out;
+
+    if (!target.valid())
+        return out;
+
+    switch (target.sceneKind)
+    {
+        case DetailSceneKind::CelestialBody:
+            out = buildCelestialBodyDetailSnapshot(
+                target.systemId,
+                target.anchorId
+            );
+            break;
+
+        case DetailSceneKind::LocalObject:
+            if (target.focusClass ==
+                    DetailObjectClass::Hub)
+            {
+                out = buildLocalObjectDetailSnapshot(
+                    target.systemId,
+                    target.anchorId
+                );
+            }
+            break;
+
+        case DetailSceneKind::SpatialVolume:
+        {
+            out.systemId = target.systemId;
+            out.systemPositionLy =
+                target.systemPositionLy;
+            out.hasCentralBody = false;
+            out.planetName = "Local Space";
+            out.universeTimeSeconds =
+                m_universeClock.timeSeconds();
+            out.planetCenterMeters =
+                target.spatialCell.centerAu *
+                MetersPerAu;
+
+            /*
+                A navigation cube is an address, not a container that may
+                swallow a planet. If the cube centre lies inside a body, use
+                that body's own Details scene. A mere surface intersection
+                remains SpatialVolume and is rendered as local context.
+            */
+            if (const auto* system =
+                    m_starAtlas.findSystem(target.systemId))
+            {
+                CelestialSystemRuntime localRuntime;
+                localRuntime.setSystem(system);
+                localRuntime.update(
+                    out.universeTimeSeconds
+                );
+
+                for (const auto& body :
+                     localRuntime.snapshot().bodies)
+                {
+                    const double radiusMeters =
+                        std::max(
+                            0.0,
+                            body.radiusKm * 1000.0
+                        );
+
+                    if (radiusMeters <= 0.0)
+                        continue;
+
+                    const glm::dvec3 bodyCenterMeters =
+                        body.positionAu *
+                        MetersPerAu;
+
+                    if (glm::length(
+                            out.planetCenterMeters -
+                            bodyCenterMeters
+                        ) >= radiusMeters)
+                    {
+                        continue;
+                    }
+
+                    DetailTarget bodyTarget = target;
+                    bodyTarget.sceneKind =
+                        DetailSceneKind::CelestialBody;
+                    bodyTarget.focusClass =
+                        DetailObjectClass::CelestialBody;
+                    bodyTarget.anchorId = body.id;
+                    bodyTarget.focusId = body.id;
+
+                    out = buildCelestialBodyDetailSnapshot(
+                        target.systemId,
+                        body.id
+                    );
+
+                    if (out.valid)
+                    {
+                        out.detailTarget =
+                            std::move(bodyTarget);
+                    }
+
+                    return out;
+                }
+            }
+
+            out.detailHalfExtentMeters =
+                target.spatialCell.edgeAu *
+                MetersPerAu * 0.5;
+            out.valid =
+                out.detailHalfExtentMeters > 0.0;
+
+            if (out.valid)
+            {
+                appendLocalDetailObjects(
+                    out,
+                    out.detailHalfExtentMeters,
+                    true
+                );
+            }
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    if (out.valid)
+    {
+        out.detailTarget = target;
+        out.scene.anchorClass =
+            target.sceneKind == DetailSceneKind::CelestialBody
+                ? DetailObjectClass::CelestialBody
+                : target.focusClass;
+        out.scene.anchorId = target.anchorId;
+        out.scene.focusId = target.focusId;
+        out.scene.coordinateSpace =
+            LocalSceneCoordinateSpace::SystemWorldMeters;
+        out.scene.originWorldMeters = out.planetCenterMeters;
+        out.scene.halfExtentMeters = out.detailHalfExtentMeters;
+    }
+
+    return out;
+}
+
+
+world::celestial::DetailMapSnapshot
+GameServer::buildLocalObjectDetailSnapshot(
     int systemId,
     const std::string& anchorHubId
 ) const
 {
     using namespace world::celestial;
 
-    PlanetMapSnapshot out;
+    DetailMapSnapshot out;
     out.systemId = systemId;
     out.hasCentralBody = false;
     out.detailAnchorHubId = anchorHubId;
@@ -1587,152 +1951,41 @@ GameServer::buildLocalSpaceMapSnapshot(
         anchorFrame->velocityMetersPerSecond;
     out.valid = true;
 
+    out.scene.anchorClass = DetailObjectClass::Hub;
+    out.scene.anchorId = anchorHubId;
+    out.scene.focusId = anchorHubId;
+    out.scene.coordinateSpace =
+        LocalSceneCoordinateSpace::SystemWorldMeters;
+    out.scene.originWorldMeters = out.planetCenterMeters;
+    out.scene.halfExtentMeters = 5.0e9;
+
     /*
-        This radius limits Details to a local encounter volume. It is not a
-        navigation boundary; it only decides which neighboring objects are
-        useful in this view.
+        LocalObject Details is intentionally bounded independently from the
+        navigation cube. The object is the scene anchor; nearby content is
+        merely context.
     */
     constexpr double LocalDetailRadiusMeters =
         5.0e9;
 
-    for (const auto& [hubId, hub] :
-         m_simulation.orbitalHubs())
-    {
-        if (hub.systemId != systemId)
-            continue;
-
-        const auto* frame =
-            m_simulation.hubNavigationFrame(
-                hubId
-            );
-
-        if (!frame ||
-            !frame->valid ||
-            glm::length(
-                frame->originMeters -
-                out.planetCenterMeters
-            ) > LocalDetailRadiusMeters)
-        {
-            continue;
-        }
-
-        PlanetMapObject object;
-        object.stableId = hubId;
-        object.name =
-            hub.name.empty()
-                ? hubId
-                : hub.name;
-        object.kind = "hub";
-        object.positionMeters =
-            frame->originMeters;
-        object.velocityMps =
-            frame->velocityMetersPerSecond;
-        object.axes.x = frame->normalAxis;
-        object.axes.y = frame->radialAxis;
-        object.axes.z = -frame->progradeAxis;
-        object.valid = true;
-
-        out.hubs.push_back(
-            std::move(object)
-        );
-    }
-
-    /*
-        Nearby celestial bodies are context objects here, not the center of
-        the Details scene. This also covers asteroids once they are present in
-        the authoritative system catalog.
-    */
-    if (const auto* system =
-            m_starAtlas.findSystem(systemId))
-    {
-        world::celestial::CelestialSystemRuntime
-            localRuntime;
-
-        localRuntime.setSystem(system);
-        localRuntime.update(
-            out.universeTimeSeconds
-        );
-
-        for (const auto& body :
-             localRuntime.snapshot().bodies)
-        {
-            const glm::dvec3 positionMeters =
-                body.positionAu *
-                world::celestial::MetersPerAu;
-
-            if (glm::length(
-                    positionMeters -
-                    out.planetCenterMeters
-                ) > LocalDetailRadiusMeters)
-            {
-                continue;
-            }
-
-            PlanetMapObject contextBody;
-            contextBody.stableId = body.id;
-            contextBody.name = body.name;
-            contextBody.kind = "celestial";
-            contextBody.positionMeters =
-                positionMeters;
-            contextBody.valid = true;
-
-            out.stations.push_back(
-                std::move(contextBody)
-            );
-        }
-    }
-
-    for (const auto& [entityId, object] :
-         m_simulation.staticObjects())
-    {
-        if (object.mapSystemId != systemId)
-            continue;
-
-        const glm::dvec3 positionMeters =
-            world::coordinates::fullMeters(
-                object.worldPosition
-            );
-
-        if (glm::length(
-                positionMeters -
-                out.planetCenterMeters
-            ) > LocalDetailRadiusMeters)
-        {
-            continue;
-        }
-
-        PlanetMapObject station;
-        station.id = entityId;
-        station.stableId =
-            "entity:" +
-            std::to_string(entityId.value);
-        station.name = object.displayName;
-        station.kind = "station";
-        station.positionMeters =
-            positionMeters;
-        station.valid = true;
-
-        out.stations.push_back(
-            std::move(station)
-        );
-    }
+    appendLocalDetailObjects(
+        out,
+        LocalDetailRadiusMeters,
+        false
+    );
 
     return out;
 }
 
 
-
-
-
-world::celestial::PlanetMapSnapshot
-GameServer::buildPlanetMapSnapshot(
+world::celestial::DetailMapSnapshot
+GameServer::buildCelestialBodyDetailSnapshot(
     int systemId,
     const std::string& planetBodyId
 ) const
 {
     using namespace world::celestial;
 
-    PlanetMapSnapshot out;
+    DetailMapSnapshot out;
 
     out.systemId = systemId;
 
@@ -1830,7 +2083,7 @@ GameServer::buildPlanetMapSnapshot(
         out.rings.clear();
 
 
-        
+
         for (const auto& sourceRing :
             definition.rings)
         {
@@ -1855,6 +2108,13 @@ GameServer::buildPlanetMapSnapshot(
 
     out.valid = true;
 
+    out.scene.anchorClass = DetailObjectClass::CelestialBody;
+    out.scene.anchorId = planetBodyId;
+    out.scene.focusId = planetBodyId;
+    out.scene.coordinateSpace =
+        LocalSceneCoordinateSpace::SystemWorldMeters;
+    out.scene.originWorldMeters = out.planetCenterMeters;
+
     /*
         Статическая часть snapshot уже построена:
             - planet definition;
@@ -1865,7 +2125,7 @@ GameServer::buildPlanetMapSnapshot(
 
         Все динамические объекты строятся только в одном месте.
     */
-    refreshPlanetMapDynamicState(
+    refreshDetailMapDynamicState(
         out
     );
 
@@ -1892,14 +2152,31 @@ GameServer::buildPlanetMapSnapshot(
                 << "hubOrbitCount,playerOrbitCount\n";
         }
 
+        const auto countObjects =
+            [&](DetailObjectClass objectClass,
+                const std::string& kind = std::string())
+            {
+                return std::count_if(
+                    out.scene.objects.begin(),
+                    out.scene.objects.end(),
+                    [&](const LocalSceneObject& object)
+                    {
+                        return
+                            object.objectClass == objectClass &&
+                            (kind.empty() || object.kind == kind);
+                    }
+                );
+            };
+
         dbg
             << row << ","
             << out.systemId << ","
             << out.planetBodyId << ","
             << (out.valid ? 1 : 0) << ","
-            << out.hubs.size() << ","
-            << out.stations.size() << ","
-            << out.ships.size() << ","
+            << countObjects(DetailObjectClass::Hub, "hub") << ","
+            << countObjects(DetailObjectClass::Hub) -
+                countObjects(DetailObjectClass::Hub, "hub") << ","
+            << countObjects(DetailObjectClass::Ship) << ","
             << out.hubOrbits.size() << ","
             << out.playerOrbits.size()
             << "\n";
@@ -1934,8 +2211,8 @@ GameServer::buildPlanetMapSnapshot(
 
 
 
-void GameServer::refreshPlanetMapDynamicState(
-    world::celestial::PlanetMapSnapshot& snapshot
+void GameServer::refreshDetailMapDynamicState(
+    world::celestial::DetailMapSnapshot& snapshot
 ) const
 {
     using namespace world::celestial;
@@ -1948,10 +2225,17 @@ void GameServer::refreshPlanetMapDynamicState(
 
     if (!snapshot.hasCentralBody)
     {
-        if (!snapshot.detailAnchorHubId.empty())
+        if (snapshot.detailTarget.valid())
         {
             snapshot =
-                buildLocalSpaceMapSnapshot(
+                buildDetailMapSnapshot(
+                    snapshot.detailTarget
+                );
+        }
+        else if (!snapshot.detailAnchorHubId.empty())
+        {
+            snapshot =
+                buildLocalObjectDetailSnapshot(
                     snapshot.systemId,
                     snapshot.detailAnchorHubId
                 );
@@ -2057,6 +2341,9 @@ void GameServer::refreshPlanetMapDynamicState(
         }
     }
 
+    snapshot.scene.originWorldMeters =
+        snapshot.planetCenterMeters;
+
     snapshot.planetVelocityMps =
         glm::dvec3(0.0);
 
@@ -2076,12 +2363,20 @@ void GameServer::refreshPlanetMapDynamicState(
     //   - замороженная орбита игрока.
     // ------------------------------------------------------------
 
-    snapshot.hubs.clear();
+    snapshot.scene.objects.erase(
+        std::remove_if(
+            snapshot.scene.objects.begin(),
+            snapshot.scene.objects.end(),
+            [](const LocalSceneObject& object)
+            {
+                return
+                    object.objectClass !=
+                        DetailObjectClass::CelestialBody;
+            }
+        ),
+        snapshot.scene.objects.end()
+    );
     snapshot.hubOrbits.clear();
-
-    snapshot.stations.clear();
-
-    snapshot.ships.clear();
     snapshot.playerOrbits.clear();
 
     /*
@@ -2225,7 +2520,7 @@ void GameServer::refreshPlanetMapDynamicState(
             normal
         );
 
-        PlanetMapObject hubObject;
+        LocalSceneObject hubObject;
 
         hubObject.stableId =
             hubId;
@@ -2237,6 +2532,12 @@ void GameServer::refreshPlanetMapDynamicState(
 
         hubObject.kind =
             "hub";
+        hubObject.parentStableId =
+            snapshot.planetBodyId;
+        hubObject.objectClass =
+            DetailObjectClass::Hub;
+        hubObject.origin =
+            DetailObjectOrigin::Runtime;
 
         /*
             Абсолютная авторитетная серверная позиция.
@@ -2268,11 +2569,11 @@ void GameServer::refreshPlanetMapDynamicState(
         hubObject.valid =
             true;
 
-        snapshot.hubs.push_back(
+        snapshot.scene.objects.push_back(
             hubObject
         );
 
-        PlanetMapOrbit orbit;
+        DetailMapOrbit orbit;
 
         orbit.id =
             hubId +
@@ -2358,7 +2659,7 @@ void GameServer::refreshPlanetMapDynamicState(
             continue;
         }
 
-        PlanetMapObject station;
+        LocalSceneObject station;
 
         station.id =
             id;
@@ -2375,6 +2676,14 @@ void GameServer::refreshPlanetMapDynamicState(
 
         station.kind =
             "station";
+        station.parentStableId =
+            object.hubId.empty()
+                ? object.mapParentBodyId
+                : object.hubId;
+        station.objectClass =
+            DetailObjectClass::Hub;
+        station.origin =
+            DetailObjectOrigin::Runtime;
 
         station.positionMeters =
             world::coordinates::fullMeters(
@@ -2523,7 +2832,7 @@ void GameServer::refreshPlanetMapDynamicState(
         station.valid =
             true;
 
-        snapshot.stations.push_back(
+        snapshot.scene.objects.push_back(
             station
         );
     }
@@ -2564,7 +2873,7 @@ void GameServer::refreshPlanetMapDynamicState(
         if (playerDistanceMeters <=
             planetMapObjectRadiusMeters)
         {
-            PlanetMapObject playerObject;
+            LocalSceneObject playerObject;
 
             playerObject.id =
                 m_simulation.playerId();
@@ -2577,6 +2886,14 @@ void GameServer::refreshPlanetMapDynamicState(
 
             playerObject.kind =
                 "player";
+            playerObject.objectClass =
+                DetailObjectClass::Ship;
+            playerObject.origin =
+                DetailObjectOrigin::Runtime;
+            playerObject.role =
+                LocalSceneObjectRole::Participant;
+            playerObject.parentStableId =
+                transform.motion.hubId;
 
             playerObject.positionMeters =
                 playerPositionMeters;
@@ -2598,7 +2915,7 @@ void GameServer::refreshPlanetMapDynamicState(
             playerObject.valid =
                 true;
 
-            snapshot.ships.push_back(
+            snapshot.scene.objects.push_back(
                 playerObject
             );
         }
@@ -2609,7 +2926,7 @@ void GameServer::refreshPlanetMapDynamicState(
 
         playerOrbits намеренно остаётся пустым.
 
-        Текущий PlanetMapOrbit умеет рисовать только окружность:
+        Текущий DetailMapOrbit умеет рисовать только окружность:
             center + radial*cos(a)*radius
                    + prograde*sin(a)*radius
 
@@ -2761,6 +3078,13 @@ GameServer::buildHubMapSnapshot(
             ? hub.id
             : hub.name;
 
+    out.scene.anchorClass = DetailObjectClass::Hub;
+    out.scene.anchorId = hubId;
+    out.scene.focusId = hubId;
+    out.scene.coordinateSpace =
+        LocalSceneCoordinateSpace::AnchorLocalMeters;
+    out.scene.originWorldMeters = frame->originMeters;
+
     /*
         Локальная Hub Map convention:
 
@@ -2890,6 +3214,9 @@ void GameServer::refreshHubMapDynamicState(
     // ------------------------------------------------------------
 
     snapshot.hubWorldPositionMeters =
+        frame->originMeters;
+
+    snapshot.scene.originWorldMeters =
         frame->originMeters;
 
     snapshot.hubWorldVelocityMps =
@@ -3065,7 +3392,7 @@ void GameServer::refreshHubMapDynamicState(
     // Так из snapshot исчезают удалённые или перемещённые модули.
     // ------------------------------------------------------------
 
-    snapshot.modules.clear();
+    snapshot.scene.objects.clear();
 
     for (const auto& [id, object] :
          m_simulation.staticObjects())
@@ -3099,18 +3426,23 @@ void GameServer::refreshHubMapDynamicState(
                 ObjectType::Station
                     ? "station"
                     : "module";
+        module.objectClass = DetailObjectClass::Hub;
+        module.role = LocalSceneObjectRole::Component;
+        module.coordinateSpace =
+            LocalSceneCoordinateSpace::AnchorLocalMeters;
+        module.parentStableId = snapshot.hubId;
 
         const glm::dvec3 moduleWorldMeters =
             world::coordinates::fullMeters(
                 object.worldPosition
             );
 
-        module.localPositionMeters =
+        module.positionMeters =
             frame->worldToLocalPosition(
                 moduleWorldMeters
             );
 
-        module.localAxes =
+        module.axes =
             axesToHubLocal(
                 object.orientation,
                 *frame
@@ -3129,7 +3461,7 @@ void GameServer::refreshHubMapDynamicState(
         module.valid =
             true;
 
-        snapshot.modules.push_back(
+        snapshot.scene.objects.push_back(
             module
         );
     }
@@ -3139,8 +3471,6 @@ void GameServer::refreshHubMapDynamicState(
     // Сейчас snapshot содержит игрока.
     // Позже сюда тем же способом добавим другие реальные ships.
     // ------------------------------------------------------------
-
-    snapshot.ships.clear();
 
     const Ship* player =
         m_simulation.playerShip();
@@ -3165,6 +3495,12 @@ void GameServer::refreshHubMapDynamicState(
 
         ship.name =
             "Player";
+        ship.kind = "ship";
+        ship.objectClass = DetailObjectClass::Ship;
+        ship.role = LocalSceneObjectRole::Participant;
+        ship.coordinateSpace =
+            LocalSceneCoordinateSpace::AnchorLocalMeters;
+        ship.parentStableId = snapshot.hubId;
 
         /*
             Позиция всегда вычисляется из абсолютной
@@ -3173,7 +3509,7 @@ void GameServer::refreshHubMapDynamicState(
             Поэтому Details и Hub Map неизбежно показывают
             одну и ту же точку пространства.
         */
-        ship.localPositionMeters =
+        ship.positionMeters =
             frame->worldToLocalPosition(
                 playerWorldMeters
             );
@@ -3186,7 +3522,7 @@ void GameServer::refreshHubMapDynamicState(
             transform.motion.mode ==
                 game::navigation::MotionMode::Docked)
         {
-            ship.localVelocityMps =
+            ship.velocityMps =
                 glm::dvec3(0.0);
         }
         else if (
@@ -3200,7 +3536,7 @@ void GameServer::refreshHubMapDynamicState(
 
                 Не target speed и не desired velocity.
             */
-            ship.localVelocityMps =
+            ship.velocityMps =
                 transform.motion.localVelocityMps;
         }
         else
@@ -3209,13 +3545,13 @@ void GameServer::refreshHubMapDynamicState(
                 Для корабля вне HubTactical переводим его
                 текущую абсолютную world velocity в frame хаба.
             */
-            ship.localVelocityMps =
+            ship.velocityMps =
                 frame->worldToLocalVelocity(
                     transform.motion.worldVelocityMps
                 );
         }
 
-        ship.localAxes =
+        ship.axes =
             axesToHubLocal(
                 transform.orientation,
                 *frame
@@ -3232,7 +3568,7 @@ void GameServer::refreshHubMapDynamicState(
         ship.valid =
             true;
 
-        snapshot.ships.push_back(
+        snapshot.scene.objects.push_back(
             ship
         );
 
@@ -3244,7 +3580,7 @@ void GameServer::refreshHubMapDynamicState(
         */
         const glm::dvec3 reconstructedPlayerWorld =
             frame->localToWorldPosition(
-                ship.localPositionMeters
+                ship.positionMeters
             );
 
         const double playerRoundTripErrorMeters =
@@ -3274,6 +3610,27 @@ void GameServer::refreshHubMapDynamicState(
                     << "\n";
             }
         }
+    }
+
+    snapshot.scene.halfExtentMeters = 1000.0;
+
+    for (const auto& object : snapshot.scene.objects)
+    {
+        if (!object.valid)
+            continue;
+
+        const double objectExtent =
+            std::max(
+                object.boundingRadiusMeters,
+                glm::length(object.sizeMeters) * 0.5
+            );
+
+        snapshot.scene.halfExtentMeters =
+            std::max(
+                snapshot.scene.halfExtentMeters,
+                glm::length(object.positionMeters) +
+                    objectExtent
+            );
     }
 
     // ------------------------------------------------------------

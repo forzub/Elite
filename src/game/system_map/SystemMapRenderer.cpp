@@ -609,7 +609,7 @@ namespace
     }
 
     glm::dvec3 planetNorthAxisWorld(
-        const world::celestial::PlanetMapSnapshot& planet
+        const world::celestial::DetailMapSnapshot& planet
     )
     {
         const double tilt =
@@ -660,8 +660,52 @@ namespace
         );
     }
 
+    glm::dvec3 systemBodyPrimeAxisWorld(
+        const glm::dvec3& north
+    )
+    {
+        return planetPrimeAxisWorld(
+            north
+        );
+    }
+
+    glm::dvec3 systemBodyEastAxisWorld(
+        const glm::dvec3& north,
+        const glm::dvec3& prime
+    )
+    {
+        return planetEastAxisWorld(
+            north,
+            prime
+        );
+    }
+
+    glm::dvec3 systemBodyRingAxisYWorld(
+        const world::celestial::SystemMapBody& body,
+        const glm::dvec3& north,
+        const glm::dvec3& prime
+    )
+    {
+        const glm::dvec3 east =
+            systemBodyEastAxisWorld(
+                north,
+                prime
+            );
+
+        const double inclination =
+            degToRadD(
+                body.ringPlaneInclinationOffsetDeg
+            );
+
+        return safeNormalizeD(
+            east * std::cos(inclination) +
+            north * std::sin(inclination),
+            east
+        );
+    }
+
     glm::dvec3 planetSurfacePointMeters(
-        const world::celestial::PlanetMapSnapshot& planet,
+        const world::celestial::DetailMapSnapshot& planet,
         double latitudeRad,
         double textureLongitudeRad,
         double radiusScale = 1.0
@@ -3069,49 +3113,44 @@ void SystemMapRenderer::resetView()
 {
     m_mode = Mode::Galaxy;
     m_galaxyView.reset();
-    m_systemCamera = SystemCamera{};
-    m_systemCameraFlight = SystemCameraFlight{};
+    m_systemView.state().camera = SystemCamera{};
+    m_systemView.state().cameraFlight = SystemCameraFlight{};
 
-    m_systemHoverVisualCell.reset();
-    m_systemHoverVisualAlpha = 0.0f;
-    m_systemHoverOutgoingCell.reset();
-    m_systemHoverOutgoingAlpha = 0.0f;
-    m_systemHoverVisualLastTimeSeconds = 0.0;
-    m_systemCubeClickTracker.reset();
-    m_lastSystemCameraFitSystemId = -1;
+    m_systemView.state().hoverVisualCell.reset();
+    m_systemView.state().hoverVisualAlpha = 0.0f;
+    m_systemView.state().hoverOutgoingCell.reset();
+    m_systemView.state().hoverOutgoingAlpha = 0.0f;
+    m_systemView.state().hoverVisualLastTimeSeconds = 0.0;
+    m_systemView.state().cubeClickTracker.reset();
+    m_systemView.state().lastCameraFitSystemId = -1;
 
     m_navigationLevelAnnouncement.text.clear();
     m_navigationLevelAnnouncement.startedAtSeconds = -1.0;
 
-    m_planetCamera = DetailCamera{};
-    m_hubCamera = DetailCamera{};
-    m_selectedBodyId.clear();
-    m_selectedHubId.clear();
-    m_selectedHubParentBodyId.clear();
+    m_detailView.reset();
+    m_hubView.reset();
+    m_systemView.state().selectedBodyId.clear();
+    m_systemView.state().selectedHubId.clear();
+    m_systemView.state().selectedHubParentBodyId.clear();
+    m_systemView.state().navigationCellExplicitlySelected = false;
     m_pendingScrollY = 0.0;
-    m_systemOrbitPivotAbsolute = glm::dvec3(0.0, 0.0, 0.0);
-    m_systemOrbitPivotActive = false;
-    m_hubMapOrbitPivotLocalMeters = glm::dvec3(0.0, 0.0, 0.0);
-    m_hubMapOrbitPivotScreenPx = glm::dvec2(0.0, 0.0);
-    m_lastHubMapScale = 1.0;
-    m_lastHubMapCenterPx = glm::dvec2(0.0, 0.0);
-    m_lastSystemBodyScreenPoints.clear();
-    m_lastSystemHubScreenPoints.clear();
-    m_lastPlanetHubScreenPoints.clear();
-    m_lastHubMapPickables.clear();
-    m_lastSystemBodyAbsolutePosById.clear();
-    m_lastSystemObjectAbsolutePosById.clear();
+    m_systemView.state().orbitPivotAbsolute = glm::dvec3(0.0, 0.0, 0.0);
+    m_systemView.state().orbitPivotActive = false;
+    m_systemFrameData.bodyScreenPoints.clear();
+    m_systemFrameData.hubScreenPoints.clear();
+    m_systemFrameData.bodyAbsolutePositionById.clear();
+    m_systemFrameData.objectAbsolutePositionById.clear();
     m_smoothBodyPositions.clear();
     m_smoothObjectPositions.clear();
 
 
     m_lastSmoothTimeSeconds = 0.0;
-    m_lastSystemScale = 1.0f;
+    m_systemView.state().lastScale = 1.0f;
 
-    m_systemPresentationSystemId = -1;
-    m_systemPresentationSourceTimeSeconds = 0.0;
-    m_systemPresentationWallTimeSeconds = 0.0;
-    m_systemPresentationTimeScale = 1.0;
+    m_systemView.state().presentationSystemId = -1;
+    m_systemView.state().presentationSourceTimeSeconds = 0.0;
+    m_systemView.state().presentationWallTimeSeconds = 0.0;
+    m_systemView.state().presentationTimeScale = 1.0;
 
     m_environmentVisualTimeSeconds = 0.0;
     m_environmentLastSourceTimeSeconds = 0.0;
@@ -3229,40 +3268,11 @@ void SystemMapRenderer::setMode(Mode mode)
 
 
 
-    if (m_mode == Mode::Planet)
-    {
-        m_planetCamera =
-            DetailCamera{};
-    }
+    if (m_mode == Mode::Detail)
+        m_detailView.reset();
 
     if (m_mode == Mode::Hub)
-    {
-        m_hubCamera =
-            DetailCamera{};
-
-        // Стартовый cinematic-orbit вид:
-        // станция/хаб на фоне горизонта планеты.
-        m_hubCamera.yaw =
-            0.60;
-
-        m_hubCamera.pitch =
-            0.18;
-
-        m_hubCamera.zoom =
-            1.0;
-
-        m_hubCamera.pan =
-            glm::dvec2(
-                0.0,
-                0.0
-            );
-
-        m_hubMapOrbitPivotLocalMeters =
-            glm::dvec3(0.0, 0.0, 0.0);
-
-        m_hubMapOrbitPivotScreenPx =
-            glm::dvec2(0.0, 0.0);
-    }
+        m_hubView.beginScene();
 }
 
 
@@ -3279,27 +3289,27 @@ SystemMapRenderer::DetailCamera&
 SystemMapRenderer::activeDetailCamera()
 {
     if (m_mode == Mode::Hub)
-        return m_hubCamera;
+        return m_hubView.camera();
 
-    return m_planetCamera;
+    return m_detailView.camera();
 }
 
 const SystemMapRenderer::DetailCamera&
 SystemMapRenderer::activeDetailCamera() const
 {
     if (m_mode == Mode::Hub)
-        return m_hubCamera;
+        return m_hubView.camera();
 
-    return m_planetCamera;
+    return m_detailView.camera();
 }
 
 const SystemMapRenderer::DetailControlSettings&
 SystemMapRenderer::activeDetailControls() const
 {
     if (m_mode == Mode::Hub)
-        return m_hubControls;
+        return m_hubView.controls();
 
-    return m_planetControls;
+    return m_detailView.controls();
 }
 
 
@@ -3563,6 +3573,63 @@ void SystemMapRenderer::addSphereWire(
 
 
 
+
+void SystemMapRenderer::addRingBand3D(
+    const glm::vec3& center,
+    const glm::vec3& axisX,
+    const glm::vec3& axisY,
+    float innerRadius,
+    float outerRadius,
+    const glm::vec4& color,
+    int segments
+)
+{
+    if (outerRadius <= innerRadius ||
+        outerRadius <= 0.0f)
+    {
+        return;
+    }
+
+    segments = std::max(48, segments);
+
+    for (int i = 0; i < segments; ++i)
+    {
+        const float a0 =
+            glm::two_pi<float>() *
+            static_cast<float>(i) /
+            static_cast<float>(segments);
+
+        const float a1 =
+            glm::two_pi<float>() *
+            static_cast<float>(i + 1) /
+            static_cast<float>(segments);
+
+        const glm::vec3 d0 =
+            axisX * std::cos(a0) +
+            axisY * std::sin(a0);
+
+        const glm::vec3 d1 =
+            axisX * std::cos(a1) +
+            axisY * std::sin(a1);
+
+        const glm::vec3 inner0 =
+            center + d0 * innerRadius;
+        const glm::vec3 outer0 =
+            center + d0 * outerRadius;
+        const glm::vec3 inner1 =
+            center + d1 * innerRadius;
+        const glm::vec3 outer1 =
+            center + d1 * outerRadius;
+
+        m_solidVertices.push_back({inner0, color});
+        m_solidVertices.push_back({outer0, color});
+        m_solidVertices.push_back({outer1, color});
+
+        m_solidVertices.push_back({inner0, color});
+        m_solidVertices.push_back({outer1, color});
+        m_solidVertices.push_back({inner1, color});
+    }
+}
 
 void SystemMapRenderer::beginSolids()
 {
@@ -4623,7 +4690,7 @@ void SystemMapRenderer::render(
     const Viewport& viewport,
     const world::celestial::GalaxyMapSnapshot& galaxy,
     const world::celestial::SystemMapSnapshot& system,
-    const world::celestial::PlanetMapSnapshot& planet,
+    const world::celestial::DetailMapSnapshot& planet,
     const world::celestial::HubMapSnapshot& hub,
     const world::celestial::PlayerNavigationState& nav
 )
@@ -4640,7 +4707,7 @@ void SystemMapRenderer::render(
         nowSeconds
     );
 
-    updateSystemCameraFlight(
+    m_systemView.updateCameraFlight(
         nowSeconds
     );
 
@@ -4689,16 +4756,20 @@ void SystemMapRenderer::render(
 
 
 
-    if (m_mode == Mode::Planet)
+    if (m_mode == Mode::Detail)
     {
-        renderPlanetMap(
+        m_detailSceneRenderer.render(
+            m_detailView,
+            *this,
             viewport,
             planet
         );
     }
     else if (m_mode == Mode::Hub)
     {
-        renderHubMap(
+        m_hubSceneRenderer.render(
+            m_hubView,
+            *this,
             viewport,
             hub
         );
@@ -4785,6 +4856,8 @@ void SystemMapRenderer::render(
 
 
 
+#include "src/game/system_map/SystemMapInteraction.inl"
+#include "src/game/system_map/SystemMapSceneRenderer.inl"
 #include "src/game/system_map/SystemMapRendererSystem.inl"
 
 
@@ -4841,7 +4914,7 @@ SystemMapRenderer::handleInput(
 {
     if (m_mode != Mode::Galaxy &&
         m_mode != Mode::System &&
-        m_mode != Mode::Planet &&
+        m_mode != Mode::Detail &&
         m_mode != Mode::Hub)
     {
         return std::nullopt;
@@ -4962,34 +5035,55 @@ SystemMapRenderer::handleInput(
         m_galaxyView.state().camera.lastMouseX = mx;
         m_galaxyView.state().camera.lastMouseY = my;
 
-        m_systemCamera.rotating = false;
-        m_systemCamera.panning = false;
-        m_systemCamera.leftWasDown = leftDown;
-        m_systemCamera.rightWasDown = rightDown;
-        m_systemCamera.lastMouseX = mx;
-        m_systemCamera.lastMouseY = my;
+        m_systemView.state().camera.rotating = false;
+        m_systemView.state().camera.panning = false;
+        m_systemView.state().camera.leftWasDown = leftDown;
+        m_systemView.state().camera.rightWasDown = rightDown;
+        m_systemView.state().camera.lastMouseX = mx;
+        m_systemView.state().camera.lastMouseY = my;
 
         return std::nullopt;
     }
 
     if (m_mode == Mode::System)
     {
-        handleSystemInput(
-            vp,
-            window,
-            mx,
-            my,
-            localMx,
-            localMy,
-            inside,
-            leftDown,
-            rightDown
-        );
+        game::system_map::SystemMapInputFrame frame;
+        frame.viewport = vp;
+        frame.mouseX = mx;
+        frame.mouseY = my;
+        frame.localMouseX = localMx;
+        frame.localMouseY = localMy;
+        frame.inside = inside;
+        frame.leftDown = leftDown;
+        frame.rightDown = rightDown;
+        frame.zoomInKeyDown =
+            glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS;
+        frame.zoomOutKeyDown =
+            glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS ||
+            glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
+        frame.nowSeconds = glfwGetTime();
+
+        const auto result =
+            m_systemInteraction.handleInput(
+                m_systemView,
+                *this,
+                frame,
+                m_pendingScrollY
+            );
+
+        if (result.systemLevelChanged.has_value())
+        {
+            announceNavigationLevel(
+                'S',
+                result.systemLevelChanged.value()
+            );
+        }
 
         return std::nullopt;
     }
 
-    if (m_mode == Mode::Planet ||
+    if (m_mode == Mode::Detail ||
         m_mode == Mode::Hub)
     {
         handleDetailAndHubInput(
@@ -5060,7 +5154,7 @@ SystemMapRenderer::handleInput(
             {
                 announceNavigationLevel(
                     'S',
-                    m_systemNavigationGrid
+                    m_systemView.state().navigationGrid
                         .definition()
                         .minimumLevel
                 );
@@ -5784,6 +5878,10 @@ void SystemMapRenderer::setRightPanelRatio(float ratio)
 }
 
 
+
+#include "src/game/system_map/LocalMapInteraction.inl"
+#include "src/game/system_map/DetailMapSceneRenderer.inl"
+#include "src/game/system_map/HubMapSceneRenderer.inl"
 
 #include "src/game/system_map/SystemMapRendererDetail.inl"
 

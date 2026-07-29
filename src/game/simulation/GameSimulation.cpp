@@ -2359,6 +2359,13 @@ std::unordered_map<EntityId, std::unique_ptr<Ship>>& GameSimulation::ships()
 }
 
 
+const std::unordered_map<EntityId, std::unique_ptr<Ship>>&
+GameSimulation::ships() const
+{
+    return m_ships;
+}
+
+
 bool GameSimulation::startBestRepairJobForMissingSlot(
     EntityId targetShipId,
     const std::string& targetModuleId

@@ -1,9 +1,8 @@
 /*
     System map scene orchestration.
 
-    Included from SystemMapRenderer.cpp during the incremental extraction.
-    The class itself is independent of SystemMapRenderer and communicates
-    only through SystemMapRenderContext.
+    This standalone translation unit is independent of SystemMapRenderer and
+    communicates only through SystemMapRenderContext.
 */
 
 #include <algorithm>
@@ -13,7 +12,11 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "src/game/system_map/SystemMapFrameData.h"
 #include "src/game/system_map/SystemMapRenderContext.h"

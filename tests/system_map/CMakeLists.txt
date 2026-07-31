@@ -18,6 +18,7 @@ add_executable(
     system_map_behavior_tests
     SystemMapBehaviorTests.cpp
     "${ELITE_SOURCE_ROOT}/src/game/system_map/SystemMapInteraction.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/system_map/SystemMapSceneRenderer.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/CubicNavigationGrid.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/GalaxyNavigationConfig.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/SystemNavigationGrid.cpp"

@@ -104,3 +104,16 @@ the presentation, while picking keeps an independent minimum hit radius.
 
 Text files use UTF-8, LF endings and no trailing whitespace. Generated `.orig`
 and `.rej` files are not source files and must not be committed.
+
+## Behavior regression gate
+
+Before changing camera, navigation or map-mode architecture, run:
+
+```bash
+bash tests/system_map/run_mingw64.sh
+```
+
+The standalone test target does not initialize GLFW or OpenGL. It verifies the
+camera invariants, pivot priority, refine/coarsen behavior, anchor versus
+explicit selection semantics, deferred mode transitions and deterministic
+mouse/scroll replay against the production interaction code.

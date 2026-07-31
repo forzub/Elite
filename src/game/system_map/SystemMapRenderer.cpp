@@ -4392,7 +4392,6 @@ void SystemMapRenderer::render(
 
 
 
-#include "src/game/system_map/SystemMapInteraction.inl"
 #include "src/game/system_map/SystemMapSceneRenderer.inl"
 #include "src/game/system_map/SystemMapRendererSystem.inl"
 

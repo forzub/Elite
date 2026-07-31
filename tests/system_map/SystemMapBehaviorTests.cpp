@@ -23,13 +23,6 @@
 #include "src/game/system_map/SystemMapInteraction.h"
 #include "src/game/system_map/SystemMapView.h"
 
-/*
-    SystemMapInteraction is intentionally still implemented in an .inl file
-    included by SystemMapRenderer.cpp. The regression executable has its own
-    translation unit, so it includes the same production implementation here.
-*/
-#include "src/game/system_map/SystemMapInteraction.inl"
-
 namespace
 {
 using game::navigation::CubicGridIndex;

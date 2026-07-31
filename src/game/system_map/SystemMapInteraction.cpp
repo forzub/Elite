@@ -1,9 +1,8 @@
 /*
     System map interaction implementation.
 
-    Included by SystemMapRenderer.cpp during the incremental phase-3 split.
-    The class boundary is complete; moving this file to its own translation
-    unit later only requires adding SystemMapInteraction.cpp to CMake.
+    This is a standalone translation unit. It deliberately depends only on
+    SystemMapView and the semantic SystemMapInteractionContext contract.
 */
 
 #include <algorithm>

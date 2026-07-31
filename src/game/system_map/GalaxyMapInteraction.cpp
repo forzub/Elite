@@ -100,7 +100,8 @@ namespace game::system_map
             view.viewMatrix();
 
         bool found = false;
-        float bestDistancePx = 18.0f;
+        float bestDistancePx =
+            view.controls().navigationCellPickRadiusPx;
         float bestDepth = 1.0f;
 
         std::vector<navigation::GalaxyNavigationCell> cells;

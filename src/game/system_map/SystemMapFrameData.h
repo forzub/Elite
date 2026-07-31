@@ -18,6 +18,16 @@ namespace game::system_map
         float screenRadiusPx = 0.0f;
     };
 
+    struct SystemMapOrbitPivotScreenPoint
+    {
+        std::string bodyId;
+        glm::vec2 screen {0.0f};
+        float depth = 0.0f;
+        double cameraDepthWorld = 0.0;
+        bool visible = false;
+        float screenRadiusPx = 0.0f;
+    };
+
     struct SystemMapHubScreenPoint
     {
         std::string hubId;
@@ -39,10 +49,14 @@ namespace game::system_map
     struct SystemMapFrameData
     {
         std::vector<SystemMapBodyScreenPoint> bodyScreenPoints;
+        std::vector<SystemMapOrbitPivotScreenPoint> orbitPivotScreenPoints;
         std::vector<SystemMapHubScreenPoint> hubScreenPoints;
 
         std::unordered_map<std::string, glm::dvec3>
             bodyAbsolutePositionById;
+
+        std::unordered_map<std::string, float>
+            bodyPhysicalRadiusWorldById;
 
         std::unordered_map<std::string, glm::dvec3>
             objectAbsolutePositionById;
@@ -50,8 +64,10 @@ namespace game::system_map
         void clearPresentation()
         {
             bodyScreenPoints.clear();
+            orbitPivotScreenPoints.clear();
             hubScreenPoints.clear();
             bodyAbsolutePositionById.clear();
+            bodyPhysicalRadiusWorldById.clear();
             objectAbsolutePositionById.clear();
         }
     };

@@ -35,7 +35,11 @@ struct SystemSceneVisualSettings
     int moonOrbitSegments = 64;
     int primaryOrbitSegments = 160;
 
-    glm::vec4 moonMarkerColor {0.72f, 0.78f, 0.86f, 0.90f};
+    /* System-map ring LOD and edge-on stability. */
+    float ringFadeStartOuterRadiusPx = 18.0f;
+    float ringFullOpacityOuterRadiusPx = 42.0f;
+    float ringMinimumProjectedMinorAxisPx = 0.85f;
+
     glm::vec4 planetMarkerColor {0.48f, 0.76f, 1.00f, 0.90f};
     glm::vec4 asteroidMarkerColor {0.74f, 0.70f, 0.62f, 0.88f};
 
@@ -90,6 +94,11 @@ struct SystemMapVisualSettings
     float labelMinimumOffsetBasePx = 14.0f;
     float labelTitleYOffsetBasePx = -6.0f;
     float labelSubtitleOffsetBasePx = 16.0f;
+
+    /* Visibility policy expressed in presentation units. */
+    double moonLabelMaximumKmPerPixel = 200.0;
+    float asteroidBeltLabelMinimumRadiusPx = 2.0f;
+    float subtitleMinimumBodyRadiusPx = 10.0f;
 
     /*
         Reuse the world star catalog as a system-map sky.

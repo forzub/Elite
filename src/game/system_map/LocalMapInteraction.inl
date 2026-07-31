@@ -8,7 +8,6 @@
 #include "src/game/system_map/DetailMapView.h"
 #include "src/game/system_map/HubMapView.h"
 #include "src/game/system_map/LocalMapInteraction.h"
-#include "src/game/system_map/SystemMapView.h"
 
 namespace game::system_map
 {
@@ -26,11 +25,10 @@ double wrapLocalMapAngle(double angle)
 }
 }
 
-void LocalMapInteraction::handle(
+LocalMapInteractionResult LocalMapInteraction::handle(
     MapMode mode,
     DetailMapView& detailView,
     HubMapView& hubView,
-    SystemMapView& systemView,
     const Viewport& viewport,
     GLFWwindow*,
     double mouseX,
@@ -43,6 +41,8 @@ void LocalMapInteraction::handle(
     double& pendingScrollY
 ) const
 {
+    LocalMapInteractionResult result;
+
     const bool hubMode = mode == MapMode::Hub;
     DetailCameraState& camera =
         hubMode ? hubView.camera() : detailView.camera();
@@ -100,12 +100,13 @@ void LocalMapInteraction::handle(
             std::abs(mouseX - camera.mouseDownX) +
             std::abs(mouseY - camera.mouseDownY);
 
-        if (inside && mode == MapMode::Detail && movement <= 8.0)
+        if (inside &&
+            mode == MapMode::Detail &&
+            movement <= controls.clickMoveThresholdPx)
         {
             const int picked =
                 detailView.pickHub(localMouseX, localMouseY);
 
-            auto& state = systemView.state();
             if (picked >= 0 &&
                 picked < static_cast<int>(
                     detailView.frame().hubScreenPoints.size()
@@ -113,14 +114,16 @@ void LocalMapInteraction::handle(
             {
                 const auto& point =
                     detailView.frame().hubScreenPoints[picked];
-                state.selectedBodyId.clear();
-                state.selectedHubId = point.hubId;
-                state.selectedHubParentBodyId = point.parentBodyId;
+
+                result.selectionAction =
+                    LocalMapInteractionResult::SelectionAction::SelectHub;
+                result.hubId = point.hubId;
+                result.parentBodyId = point.parentBodyId;
             }
             else
             {
-                state.selectedHubId.clear();
-                state.selectedHubParentBodyId.clear();
+                result.selectionAction =
+                    LocalMapInteractionResult::SelectionAction::ClearHub;
             }
         }
 
@@ -148,15 +151,28 @@ void LocalMapInteraction::handle(
     if (camera.rotating && leftDown && !leftStartedThisFrame)
     {
         const double sensitivity =
-            controls.rotateSensitivity * (hubMode ? 0.65 : 1.0);
+            controls.rotateSensitivity *
+            controls.rotateSensitivityScale;
 
         camera.yaw = wrapLocalMapAngle(camera.yaw + dx * sensitivity);
         camera.pitch += dy * sensitivity;
 
-        if (hubMode)
-            camera.pitch = std::clamp(camera.pitch, 0.12, 1.20);
+        if (controls.constrainPitch)
+        {
+            camera.pitch =
+                std::clamp(
+                    camera.pitch,
+                    controls.minimumPitchRad,
+                    controls.maximumPitchRad
+                );
+        }
         else
-            camera.pitch = wrapLocalMapAngle(camera.pitch);
+        {
+            camera.pitch =
+                wrapLocalMapAngle(
+                    camera.pitch
+                );
+        }
     }
 
     if (camera.panning && rightDown && !rightStartedThisFrame)
@@ -212,21 +228,40 @@ void LocalMapInteraction::handle(
 
     if (hubMode)
     {
-        camera.pitch = std::clamp(camera.pitch, 0.12, 1.20);
-        camera.pan.x = std::clamp(
-            camera.pan.x,
-            -static_cast<double>(viewport.width) * 0.55,
-            static_cast<double>(viewport.width) * 0.55
-        );
-        camera.pan.y = std::clamp(
-            camera.pan.y,
-            -static_cast<double>(viewport.height) * 0.45,
-            static_cast<double>(viewport.height) * 0.45
-        );
+        camera.pitch =
+            std::clamp(
+                camera.pitch,
+                controls.minimumPitchRad,
+                controls.maximumPitchRad
+            );
+
+        const double panLimitX =
+            static_cast<double>(viewport.width) *
+            controls.panLimitViewportFractionX;
+
+        const double panLimitY =
+            static_cast<double>(viewport.height) *
+            controls.panLimitViewportFractionY;
+
+        camera.pan.x =
+            std::clamp(
+                camera.pan.x,
+                -panLimitX,
+                panLimitX
+            );
+
+        camera.pan.y =
+            std::clamp(
+                camera.pan.y,
+                -panLimitY,
+                panLimitY
+            );
     }
 
     camera.lastMouseX = mouseX;
     camera.lastMouseY = mouseY;
+
+    return result;
 }
 
 } // namespace game::system_map

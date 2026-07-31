@@ -12,6 +12,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "src/game/system_map/SystemMapFrameData.h"
@@ -50,6 +51,56 @@ namespace
             );
 
         return (halfHeight * 2.0) / safeHeight;
+    }
+
+    double calculatePerspectiveWorldUnitsPerPixel(
+        const glm::vec3& renderPosition,
+        const glm::mat4& view,
+        float fieldOfViewDeg,
+        int viewportHeight,
+        double fallbackWorldUnitsPerPixel
+    )
+    {
+        const glm::vec4 cameraSpace =
+            view *
+            glm::vec4(
+                renderPosition,
+                1.0f
+            );
+
+        const double cameraDepth =
+            -static_cast<double>(cameraSpace.z);
+
+        if (!std::isfinite(cameraDepth) ||
+            cameraDepth <= 0.000000001)
+        {
+            return fallbackWorldUnitsPerPixel;
+        }
+
+        const double halfFovRad =
+            glm::radians(
+                static_cast<double>(fieldOfViewDeg) *
+                0.5
+            );
+
+        const double safeViewportHeight =
+            static_cast<double>(
+                std::max(viewportHeight, 1)
+            );
+
+        const double localWorldUnitsPerPixel =
+            2.0 *
+            cameraDepth *
+            std::tan(halfFovRad) /
+            safeViewportHeight;
+
+        if (!std::isfinite(localWorldUnitsPerPixel) ||
+            localWorldUnitsPerPixel <= 0.0)
+        {
+            return fallbackWorldUnitsPerPixel;
+        }
+
+        return localWorldUnitsPerPixel;
     }
 
     double niceScaleNumber(double value)
@@ -572,62 +623,183 @@ for (const auto& b : bodies)
 
 
 frame.bodyAbsolutePositionById = absolutePosById;
+frame.bodyPhysicalRadiusWorldById = drawRadiusById;
 
 /*
-    A selected moving body owns only its highlighted cell.
-    It must not move the navigation anchor or camera behind the user's back.
+    Body selection is rendered by the body overlay only. Scene rendering must
+    never rewrite CubicNavigationGrid::selectedCell; that cell is reserved for
+    an explicit user cube selection.
 */
-if (!viewState.state().selectedBodyId.empty())
-{
-    const auto selectedPositionIt =
-        visualBodyPositionAuById.find(
-            viewState.state().selectedBodyId
-        );
 
-    if (selectedPositionIt !=
-        visualBodyPositionAuById.end())
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    std::unordered_map<
+        std::string,
+        SystemBodyVisualMetrics
+    > presentationById;
+
+    std::unordered_map<
+        std::string,
+        double
+    > bodyWorldUnitsPerPixelById;
+
+    presentationById.reserve(
+        bodies.size()
+    );
+
+    bodyWorldUnitsPerPixelById.reserve(
+        bodies.size()
+    );
+
+    for (const auto& body : bodies)
     {
-        const int selectedLevel =
-            viewState.state().navigationGrid.level();
+        const double bodyWorldUnitsPerPixel =
+            calculatePerspectiveWorldUnitsPerPixel(
+                posById[body.id],
+                view,
+                viewState.visuals()
+                    .projectionFieldOfViewDeg,
+                vp.height,
+                systemWorldUnitsPerPixel
+            );
 
-        const auto selectedIndex =
-            viewState.state().navigationGrid
-                .nearestIndexForPosition(
-                    selectedPositionIt->second,
-                    selectedLevel
+        bodyWorldUnitsPerPixelById[body.id] =
+            bodyWorldUnitsPerPixel;
+
+        presentationById[body.id] =
+            context.computeSystemBodyVisualMetrics(
+                body,
+                drawRadiusById[body.id],
+                bodyWorldUnitsPerPixel
+            );
+    }
+
+    for (const auto& body : bodies)
+    {
+        const auto metricsIt =
+            presentationById.find(
+                body.id
+            );
+
+        if (metricsIt == presentationById.end())
+            continue;
+
+        const auto& metrics =
+            metricsIt->second;
+
+        const float visiblePickRadiusPx =
+            std::max({
+                metrics.physicalRadiusPx,
+                metrics.drawMarker
+                    ? metrics.markerRadiusPx *
+                        metrics.markerAlpha
+                    : 0.0f,
+                metrics.drawPointProxy
+                    ? metrics.pointProxyRadiusPx *
+                        metrics.pointProxyAlpha
+                    : 0.0f
+            });
+
+        const float pickRadiusPx =
+            std::max(
+                visiblePickRadiusPx,
+                viewState.controls()
+                    .pickMinBodyRadiusPx
+            );
+
+        const auto bodyScaleIt =
+            bodyWorldUnitsPerPixelById.find(
+                body.id
+            );
+
+        const double bodyWorldUnitsPerPixel =
+            bodyScaleIt !=
+                bodyWorldUnitsPerPixelById.end()
+                ? bodyScaleIt->second
+                : systemWorldUnitsPerPixel;
+
+        selectionRadiusById[body.id] =
+            std::max(
+                metrics.physicalRadiusWorld,
+                static_cast<float>(
+                    bodyWorldUnitsPerPixel *
+                    static_cast<double>(pickRadiusPx)
+                )
+            );
+
+        if (body.type == BodyType::Planet ||
+            body.type == BodyType::Moon)
+        {
+            SystemMapBodyScreenPoint point;
+            point.bodyId = body.id;
+            point.name = body.name;
+            point.screenRadiusPx = pickRadiusPx;
+            point.screen =
+                context.projectToScreen(
+                    posById[body.id],
+                    mvp,
+                    vp,
+                    point.visible,
+                    point.depth
                 );
 
-        viewState.state().navigationGrid.selectCell(
-            viewState.state().navigationGrid.cell(
-                selectedIndex,
-                selectedLevel
-            )
-        );
+            frame.bodyScreenPoints.push_back(
+                std::move(point)
+            );
+        }
+
+        if (body.type == BodyType::Star ||
+            body.type == BodyType::Planet ||
+            body.type == BodyType::Moon)
+        {
+            SystemMapOrbitPivotScreenPoint pivotPoint;
+            pivotPoint.bodyId = body.id;
+            pivotPoint.screenRadiusPx =
+                std::max(
+                    visiblePickRadiusPx,
+                    1.0f
+                );
+            pivotPoint.screen =
+                context.projectToScreen(
+                    posById[body.id],
+                    mvp,
+                    vp,
+                    pivotPoint.visible,
+                    pivotPoint.depth
+                );
+
+            const glm::vec4 cameraSpacePosition =
+                view *
+                glm::vec4(
+                    posById[body.id],
+                    1.0f
+                );
+
+            pivotPoint.cameraDepthWorld =
+                -static_cast<double>(
+                    cameraSpacePosition.z
+                );
+
+            frame.orbitPivotScreenPoints.push_back(
+                std::move(pivotPoint)
+            );
+        }
     }
-}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /* Base cartographic lines: grid, orbits, belts and player position. */
     context.beginLines();
-    context.beginSolids();
-    context.beginTexturedBodies();
-
-
-
-
-
 
     context.drawSystemNavigationGrid(
         vp,
@@ -635,376 +807,360 @@ if (!viewState.state().selectedBodyId.empty())
         systemScale
     );
 
-
-
-    // Орбиты планет, лун и астероидных поясов.
-    for (const auto& b : bodies)
+    for (const auto& body : bodies)
     {
-        if (b.type != BodyType::Planet &&
-            b.type != BodyType::Moon)
+        if (body.type != BodyType::Planet &&
+            body.type != BodyType::AsteroidBelt)
         {
             continue;
         }
 
-
-        if (!b.drawOrbit || b.orbitRadiusAu <= 0.0)
+        if (!body.drawOrbit ||
+            body.orbitRadiusAu <= 0.0)
+        {
             continue;
+        }
 
-
-
-
-        const glm::dvec3 orbitCenterAbsolute =
-            auToMapUnits(
-                b.orbitCenterAu
-            );
-
-        const glm::vec3 center =
+        const glm::vec3 orbitCenter =
             toRenderPos(
-                orbitCenterAbsolute
+                auToMapUnits(
+                    body.orbitCenterAu
+                )
             );
 
-        float orbitR =
-            static_cast<float>(b.orbitRadiusAu) * systemScale;
-
-
-
-
-
-
-
-
+        const float orbitRadius =
+            static_cast<float>(
+                body.orbitRadiusAu
+            ) *
+            systemScale;
 
         const glm::vec4 orbitColor =
-            b.type == BodyType::Moon
-                ? viewState.visuals().scene.moonOrbitColor
-                : b.type == BodyType::AsteroidBelt
-                    ? viewState.visuals().scene.asteroidBeltOrbitColor
-                    : viewState.visuals().scene.planetOrbitColor;
+            body.type == BodyType::AsteroidBelt
+                ? viewState.visuals().scene
+                    .asteroidBeltOrbitColor
+                : viewState.visuals().scene
+                    .planetOrbitColor;
 
         context.addCircleXZ(
-            center,
-            orbitR,
+            orbitCenter,
+            orbitRadius,
             orbitColor,
-            b.type == BodyType::Moon
-                ? viewState.visuals().scene.moonOrbitSegments
-                : viewState.visuals().scene.primaryOrbitSegments
+            viewState.visuals().scene
+                .primaryOrbitSegments
         );
     }
 
-
-
-
-
-
-
-
-
-    // Тела, кольца, пояса.
-    for (const auto& b : bodies)
+    for (const auto& body : bodies)
     {
-        const glm::vec3 p = posById[b.id];
-        const glm::vec4 c = context.colorForBodyType(b.type);
-        const float r = drawRadiusById[b.id];
+        if (body.type != BodyType::AsteroidBelt)
+            continue;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-       SystemBodyVisualMetrics bodyMetrics =
-    context.computeSystemBodyVisualMetrics(
-        b,
-        r,
-        systemWorldUnitsPerPixel
-    );
-
-if (b.type == BodyType::Moon &&
-    bodyMetrics.drawMarker &&
-    !bodyMetrics.drawPhysicalBody &&
-    b.id != viewState.state().selectedBodyId &&
-    !b.parentId.empty())
-{
-    const auto parentBodyIt =
-        std::find_if(
-            bodies.begin(),
-            bodies.end(),
-            [&](const auto& candidate)
-            {
-                return candidate.id == b.parentId;
-            }
-        );
-
-    if (parentBodyIt != bodies.end())
-    {
-        const auto parentRadiusIt =
-            drawRadiusById.find(
-                parentBodyIt->id
+        const glm::vec3 beltCenter =
+            toRenderPos(
+                auToMapUnits(
+                    body.orbitCenterAu
+                )
             );
 
-        if (parentRadiusIt != drawRadiusById.end())
-        {
-            const auto parentMetrics =
-                context.computeSystemBodyVisualMetrics(
-                    *parentBodyIt,
-                    parentRadiusIt->second,
-                    systemWorldUnitsPerPixel
-                );
+        const float beltRadius =
+            static_cast<float>(
+                body.orbitRadiusAu
+            ) *
+            systemScale;
 
-            if (parentMetrics.drawPhysicalBody &&
-                parentMetrics.physicalRadiusPx >= 22.0f)
-            {
-                bodyMetrics.drawMarker = false;
-                bodyMetrics.markerRadiusPx = 0.0f;
-                bodyMetrics.markerRadiusWorld = 0.0f;
-                bodyMetrics.pickRadiusPx =
-                    std::max(
-                        bodyMetrics.physicalRadiusPx,
-                        viewState.controls().pickMinBodyRadiusPx
-                    );
-            }
-        }
-    }
-}
+        const float beltHalfWidth =
+            std::max(
+                0.12f,
+                static_cast<float>(
+                    systemWorldUnitsPerPixel * 2.0
+                )
+            );
 
-const float selectionRadiusWorld =
-    std::max(
-        bodyMetrics.physicalRadiusWorld,
-        static_cast<float>(
-            systemWorldUnitsPerPixel *
-            static_cast<double>(
-                bodyMetrics.pickRadiusPx
-            )
-        )
-    );
-
-selectionRadiusById[b.id] =
-    selectionRadiusWorld;
-
-if (b.type == BodyType::Planet ||
-    b.type == BodyType::Moon)
-{
-    SystemMapBodyScreenPoint bp;
-
-    bp.bodyId = b.id;
-    bp.name = b.name;
-
-    // Это уже не "физический радиус диска".
-    // Это интерактивный радиус выбора.
-    bp.screenRadiusPx =
-        bodyMetrics.pickRadiusPx;
-
-    bp.screen =
-        context.projectToScreen(
-            p,
-            mvp,
-            vp,
-            bp.visible,
-            bp.depth
+        context.addCircleXZ(
+            beltCenter,
+            std::max(
+                0.0f,
+                beltRadius - beltHalfWidth
+            ),
+            glm::vec4(0.65f, 0.68f, 0.72f, 0.12f),
+            160
         );
 
-    frame.bodyScreenPoints.push_back(
-        bp
-    );
-}
-
-if (b.type == BodyType::AsteroidBelt)
-{
-    const glm::dvec3 orbitCenterAbsolute =
-        auToMapUnits(
-            b.orbitCenterAu
+        context.addCircleXZ(
+            beltCenter,
+            beltRadius,
+            glm::vec4(0.65f, 0.68f, 0.72f, 0.24f),
+            160
         );
 
-    const glm::vec3 center =
-        toRenderPos(
-            orbitCenterAbsolute
+        context.addCircleXZ(
+            beltCenter,
+            beltRadius + beltHalfWidth,
+            glm::vec4(0.65f, 0.68f, 0.72f, 0.12f),
+            160
         );
-
-    const float beltR =
-        static_cast<float>(b.orbitRadiusAu) *
-        systemScale;
-
-    context.addCircleXZ(
-        center,
-        beltR - 0.12f,
-        {0.65f, 0.68f, 0.72f, 0.12f},
-        160
-    );
-
-    context.addCircleXZ(
-        center,
-        beltR,
-        {0.65f, 0.68f, 0.72f, 0.24f},
-        160
-    );
-
-    context.addCircleXZ(
-        center,
-        beltR + 0.12f,
-        {0.65f, 0.68f, 0.72f, 0.12f},
-        160
-    );
-
-    continue;
-}
-
-context.addSystemBodyRingVisuals(
-    b,
-    p,
-    bodyMetrics,
-    systemScale,
-    systemWorldUnitsPerPixel,
-    view
-);
-
-context.addSystemBodyVisual(
-    b,
-    p,
-    bodyMetrics,
-    c,
-    view
-);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
 
     if (system.systemId == nav.currentSystemId)
     {
         const glm::dvec3 playerAbsolute(
-                nav.systemLocalAu.x * static_cast<double>(systemScale),
-                nav.systemLocalAu.y * static_cast<double>(systemScale),
-                nav.systemLocalAu.z * static_cast<double>(systemScale)
+            nav.systemLocalAu.x *
+                static_cast<double>(systemScale),
+            nav.systemLocalAu.y *
+                static_cast<double>(systemScale),
+            nav.systemLocalAu.z *
+                static_cast<double>(systemScale)
+        );
+
+        const glm::vec3 player =
+            glm::vec3(
+                playerAbsolute -
+                systemCameraOrigin
             );
-
-        const glm::dvec3 playerRelative =
-            playerAbsolute -
-            systemCameraOrigin;
-
-        glm::vec3 player {
-            static_cast<float>(playerRelative.x),
-            static_cast<float>(playerRelative.y),
-            static_cast<float>(playerRelative.z)
-        };
-
-        const float playerCrossSize =
-            systemWorldUnitsPerPixel *
-            10.0f;
-
-        const float playerCircleRadius =
-            systemWorldUnitsPerPixel *
-            17.0f;
 
         context.addCross(
             player,
-            playerCrossSize,
+            static_cast<float>(
+                systemWorldUnitsPerPixel * 10.0
+            ),
             glm::vec4(1.0f, 0.82f, 0.35f, 1.0f)
         );
 
         context.addCircleXZ(
             player,
-            playerCircleRadius,
+            static_cast<float>(
+                systemWorldUnitsPerPixel * 17.0
+            ),
             glm::vec4(1.0f, 0.82f, 0.35f, 0.55f),
             48
         );
     }
 
+    std::unordered_map<std::string, glm::vec3>
+        objectVisualPosById;
 
-    std::unordered_map<std::string, glm::vec3> objectVisualPosById;
     frame.objectAbsolutePositionById.clear();
 
-
-
-
-
-
-
-
-
-
-    for (const auto& obj : system.objects)
+    for (const auto& object : system.objects)
     {
         const glm::dvec3 objectAbsolute =
             auToMapUnits(
-                obj.positionAu
+                object.positionAu
             );
 
-        const glm::vec3 p =
+        const glm::vec3 objectPosition =
             toRenderPos(
                 objectAbsolute
             );
 
         const std::string objectKey =
             systemObjectStableKey(
-                obj
+                object
             );
 
         objectVisualPosById[objectKey] =
-            p;
+            objectPosition;
+
         frame.objectAbsolutePositionById[objectKey] =
             objectAbsolute;
 
-        if (obj.kind ==
-            world::celestial::
-                SystemMapObjectKind::Hub)
+        if (object.kind !=
+            world::celestial::SystemMapObjectKind::Hub)
         {
-            SystemMapHubScreenPoint point;
-            point.hubId = objectKey;
-            point.parentBodyId = obj.parentBodyId;
-            point.name = obj.name;
-            point.screen =
-                context.projectToScreen(
-                    p,
-                    mvp,
-                    vp,
-                    point.visible,
-                    point.depth
-                );
-            point.screenRadiusPx = 15.0f;
+            continue;
+        }
 
-            frame.hubScreenPoints.push_back(
-                std::move(point)
+        SystemMapHubScreenPoint point;
+        point.hubId = objectKey;
+        point.parentBodyId = object.parentBodyId;
+        point.name = object.name;
+        point.screen =
+            context.projectToScreen(
+                objectPosition,
+                mvp,
+                vp,
+                point.visible,
+                point.depth
+            );
+        point.screenRadiusPx = 15.0f;
+
+        frame.hubScreenPoints.push_back(
+            std::move(point)
+        );
+    }
+
+    context.flushLines(mvp);
+
+    /*
+        Explicit ring order:
+            back half -> parent body -> front half -> satellites/other bodies
+
+        The last step is intentional cartographic precedence: moons and their
+        markers stay readable instead of being swallowed by a translucent
+        ring sheet. The shared ring shader still uses the actual Jupiter,
+        Saturn, Uranus or Neptune visual profile.
+    */
+    std::vector<const world::celestial::SystemMapBody*>
+        ringedBodies;
+
+    std::unordered_set<std::string>
+        ringedBodyIds;
+
+    for (const auto& body : bodies)
+    {
+        if (body.type == BodyType::AsteroidBelt)
+            continue;
+
+        const auto metricsIt =
+            presentationById.find(
+                body.id
+            );
+
+        if (metricsIt == presentationById.end())
+            continue;
+
+        if (context.renderSystemBodyRings(
+                body,
+                posById[body.id],
+                metricsIt->second,
+                view,
+                mvp,
+                vp,
+                SystemMapRingPart::Back
+            ))
+        {
+            ringedBodies.push_back(
+                &body
+            );
+
+            ringedBodyIds.insert(
+                body.id
             );
         }
     }
 
+    context.beginSolids();
+    context.beginTexturedBodies();
 
+    for (const auto* body : ringedBodies)
+    {
+        context.addSystemBodyGeometry(
+            *body,
+            posById[body->id],
+            presentationById[body->id],
+            context.colorForBodyType(
+                body->type
+            ),
+            view
+        );
+    }
 
-
-
-
-
-    context.flushLines(mvp);
-
-    // Draw old solid bodies first.
-    // Textured bodies are drawn after them.
     context.flushSolids(mvp);
     context.flushTexturedBodies(mvp);
 
+    for (const auto* body : ringedBodies)
+    {
+        context.renderSystemBodyRings(
+            *body,
+            posById[body->id],
+            presentationById[body->id],
+            view,
+            mvp,
+            vp,
+            SystemMapRingPart::Front
+        );
+    }
+
+    /*
+        Moon orbits are cartographic overlays. Rendering them after
+        ring sheets prevents Saturn/Jupiter rings from erasing the
+        satellite hierarchy, while moon geometry is still drawn
+        afterwards and remains visually dominant at its position.
+    */
+    context.beginLines();
+
+    for (const auto& body : bodies)
+    {
+        if (body.type != BodyType::Moon ||
+            !body.drawOrbit ||
+            body.orbitRadiusAu <= 0.0)
+        {
+            continue;
+        }
+
+        const glm::vec3 orbitCenter =
+            toRenderPos(
+                auToMapUnits(
+                    body.orbitCenterAu
+                )
+            );
+
+        const float orbitRadius =
+            static_cast<float>(
+                body.orbitRadiusAu
+            ) *
+            systemScale;
+
+        context.addCircleXZ(
+            orbitCenter,
+            orbitRadius,
+            viewState.visuals().scene
+                .moonOrbitColor,
+            viewState.visuals().scene
+                .moonOrbitSegments
+        );
+    }
+
+    context.flushLines(mvp);
+
+    context.beginSolids();
+    context.beginTexturedBodies();
+
+    for (const auto& body : bodies)
+    {
+        if (body.type == BodyType::AsteroidBelt ||
+            ringedBodyIds.find(body.id) !=
+                ringedBodyIds.end())
+        {
+            continue;
+        }
+
+        context.addSystemBodyGeometry(
+            body,
+            posById[body.id],
+            presentationById[body.id],
+            context.colorForBodyType(
+                body.type
+            ),
+            view
+        );
+    }
+
+    context.flushSolids(mvp);
+    context.flushTexturedBodies(mvp);
+
+    /* Proxy markers are overlays, never opaque celestial geometry. */
+    context.beginLines();
+
+    for (const auto& body : bodies)
+    {
+        if (body.type == BodyType::AsteroidBelt)
+            continue;
+
+        context.addSystemBodyMarker(
+            body,
+            posById[body.id],
+            presentationById[body.id],
+            context.colorForBodyType(
+                body.type
+            ),
+            view
+        );
+    }
+
+    context.flushLines(mvp);
 
 
-
-    // Selection overlay must be drawn AFTER bodies,
-    // otherwise the planet texture overpaints the marker.
     if (!viewState.state().selectedBodyId.empty())
     {
         auto posIt =
@@ -1128,28 +1284,6 @@ context.addSystemBodyVisual(
             viewState.state().selectedHubId.clear();
             viewState.state().selectedHubParentBodyId.clear();
         }
-        else
-        {
-            const glm::dvec3 hubPositionAu =
-                selectedHubPosition->second /
-                static_cast<double>(
-                    viewState.state().lastScale
-                );
-
-            const int selectedLevel =
-                viewState.state().navigationGrid.level();
-
-            viewState.state().navigationGrid.selectCell(
-                viewState.state().navigationGrid.cell(
-                    viewState.state().navigationGrid
-                        .nearestIndexForPosition(
-                            hubPositionAu,
-                            selectedLevel
-                        ),
-                    selectedLevel
-                )
-            );
-        }
     }
 
 
@@ -1180,7 +1314,7 @@ context.addSystemBodyVisual(
         system,
         mvp,
         posById,
-        drawRadiusById
+        presentationById
     );
 
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "src/game/system_map/MapMode.h"
 #include "src/render/types/Viewport.h"
 
@@ -9,16 +11,28 @@ namespace game::system_map
 {
 class DetailMapView;
 class HubMapView;
-class SystemMapView;
+
+struct LocalMapInteractionResult
+{
+    enum class SelectionAction
+    {
+        None = 0,
+        SelectHub,
+        ClearHub
+    };
+
+    SelectionAction selectionAction = SelectionAction::None;
+    std::string hubId;
+    std::string parentBodyId;
+};
 
 class LocalMapInteraction
 {
 public:
-    void handle(
+    LocalMapInteractionResult handle(
         MapMode mode,
         DetailMapView& detailView,
         HubMapView& hubView,
-        SystemMapView& systemView,
         const Viewport& viewport,
         GLFWwindow* window,
         double mouseX,

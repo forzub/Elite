@@ -42,6 +42,7 @@ namespace game::system_map
 
         float navigationCellInteractiveViewportFraction = 0.075f;
         float navigationCellInteractiveMinPx = 56.0f;
+        float navigationCellPickRadiusPx = 18.0f;
 
         float navigationHoverFadeInSeconds = 0.18f;
         float navigationHoverFadeOutSeconds = 0.14f;
@@ -107,10 +108,9 @@ namespace game::system_map
     /*
         Galaxy-specific persistent state and camera/navigation math.
 
-        OpenGL resources and primitive drawing remain in SystemMapRenderer.
-        This keeps one shared render-resource owner while removing Galaxy state
-        from the old all-maps renderer. Later phases can move interaction and
-        draw passes behind this boundary without changing saved map behaviour.
+        GalaxyMapRenderer owns scene orchestration and GalaxyMapInteraction
+        owns input. SystemMapRenderer is only the shared OpenGL/resource
+        backend used by the map render contexts.
     */
     class GalaxyMapView
     {

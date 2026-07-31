@@ -48,138 +48,6 @@ glm::dvec2 SystemMapRenderer::hubMapProject(
 
 
 
-    bool SystemMapRenderer::pickHubMapOrbitPivot(
-        const glm::dvec2& mousePx,
-        glm::dvec3& outPivotLocalMeters
-    ) const
-    {
-        if (m_hubView.frame().pickables.empty())
-            return false;
-
-        const HubMapPickable* best = nullptr;
-
-        double bestScore =
-            std::numeric_limits<double>::max();
-
-        for (const auto& p : m_hubView.frame().pickables)
-        {
-            const double dx =
-                mousePx.x - p.screenCenterPx.x;
-
-            const double dy =
-                mousePx.y - p.screenCenterPx.y;
-
-            const double dist =
-                std::sqrt(dx * dx + dy * dy);
-
-            // Не даём огромной станции захватывать весь экран.
-            // Но и не требуем попадания в пиксель.
-            const double pickRadius =
-                std::clamp(
-                    p.screenRadiusPx,
-                    18.0,
-                    140.0
-                );
-
-            // Разрешаем брать ближайший объект чуть за пределами радиуса,
-            // иначе при wireframe-модели будет раздражающе трудно попасть.
-            const double softLimit =
-                pickRadius + 80.0;
-
-            if (dist > softLimit)
-                continue;
-
-            // priority слегка улучшает счёт.
-            // Игрок/корабли выигрывают у станции при близком расстоянии.
-            const double priorityBonus =
-                static_cast<double>(p.priority) * 18.0;
-
-            const double score =
-                dist - priorityBonus;
-
-            if (score < bestScore)
-            {
-                bestScore = score;
-                best = &p;
-            }
-        }
-
-        if (!best)
-            return false;
-
-        outPivotLocalMeters =
-            best->localCenterMeters;
-
-        return true;
-    }
-
-
-
-
-
-
-
-
-
-glm::dvec3 SystemMapRenderer::hubMapUnprojectCursorToLocal(
-    const glm::dvec2& mousePx,
-    double scale,
-    const glm::dvec2& centerPx
-) const
-{
-    const double finalScale =
-        scale * activeDetailCamera().zoom;
-
-    if (std::abs(finalScale) < 0.000001)
-        return glm::dvec3(0.0);
-
-    // hubMapProject:
-    //
-    // screen.x = center.x + pan.x + b.x * finalScale
-    // screen.y = center.y + pan.y - b.y * finalScale
-    //
-    // Reverse that first.
-    const double bx =
-        (mousePx.x - centerPx.x - activeDetailCamera().pan.x) /
-        finalScale;
-
-    const double by =
-        -(mousePx.y - centerPx.y - activeDetailCamera().pan.y) /
-        finalScale;
-
-    // No real depth information under cursor yet.
-    // We choose the current view plane depth = 0.
-    const glm::dvec3 b(
-        bx,
-        by,
-        0.0
-    );
-
-    const double cy = std::cos(activeDetailCamera().yaw);
-    const double sy = std::sin(activeDetailCamera().yaw);
-    const double cp = std::cos(activeDetailCamera().pitch);
-    const double sp = std::sin(activeDetailCamera().pitch);
-
-    // Inverse pitch.
-    glm::dvec3 a;
-    a.x = b.x;
-    a.y = b.y * cp + b.z * sp;
-    a.z = -b.y * sp + b.z * cp;
-
-    // Inverse yaw.
-    glm::dvec3 p;
-    p.x = a.x * cy + a.z * sy;
-    p.y = a.y;
-    p.z = -a.x * sy + a.z * cy;
-
-    return p;
-}
-
-
-
-
-
-
 
 
 
@@ -547,21 +415,6 @@ void SystemMapRenderer::drawHubMapScreenMarker(
 
 
 
-glm::dvec3 SystemMapRenderer::hubMapObjectLocalToHubLocal(
-    const glm::dvec3& objectCenter,
-    const world::celestial::LocalSceneAxes& objectAxes,
-    const glm::dvec3& localPoint
-) const
-{
-    return
-        objectCenter +
-        objectAxes.x * localPoint.x +
-        objectAxes.y * localPoint.y +
-        objectAxes.z * localPoint.z;
-}
-
-
-
 
 
 bool SystemMapRenderer::drawHubMapAssemblyWire(
@@ -651,25 +504,24 @@ bool SystemMapRenderer::drawHubMapAssemblyWire(
             if (meshGpu.getEdgeVertexCount() == 0)
                 continue;
 
-            /*
-                Старый CPU renderer учитывал localPosition
-                и localOffset, но не localRotationDeg.
+            const glm::mat4 moduleToObject =
+                world::modules::
+                    buildAssemblyModuleStaticHierarchicalLocalModel(
+                        assembly,
+                        module.id
+                    );
 
-                Поведение пока сохраняем без изменений.
-            */
-            const glm::vec3 localOffset =
-                module.localPosition +
-                part.localOffset;
-
-            const glm::mat4 localTranslation =
+            const glm::mat4 partToModule =
                 glm::translate(
                     glm::mat4(1.0f),
-                    localOffset
+                    part.localOffset
                 );
 
             m_hubMapGpuGeometryRenderer.submitMesh(
                 meshGpu,
-                objectToHub * localTranslation,
+                objectToHub *
+                    moduleToObject *
+                    partToModule,
                 color
             );
 
@@ -679,83 +531,6 @@ bool SystemMapRenderer::drawHubMapAssemblyWire(
 
     return submittedAnything;
 }
-
-
-
-
-
-
-void SystemMapRenderer::drawHubMapPlanetHorizonBand(
-    const glm::dvec2& planetCenterPx,
-    double planetRadiusPx,
-    const glm::vec4& innerColor,
-    const glm::vec4& outerColor,
-    double innerRadiusFactor,
-    double outerRadiusFactor,
-    int segments
-)
-{
-    if (planetRadiusPx <= 1.0)
-        return;
-
-    segments =
-        std::max(
-            48,
-            segments
-        );
-
-    const double innerR =
-        planetRadiusPx *
-        innerRadiusFactor;
-
-    const double outerR =
-        planetRadiusPx *
-        outerRadiusFactor;
-
-    glBegin(GL_TRIANGLE_STRIP);
-
-    for (int i = 0; i <= segments; ++i)
-    {
-        const double a =
-            glm::two_pi<double>() *
-            static_cast<double>(i) /
-            static_cast<double>(segments);
-
-        const double ca =
-            std::cos(a);
-
-        const double sa =
-            std::sin(a);
-
-        glColor4f(
-            innerColor.r,
-            innerColor.g,
-            innerColor.b,
-            innerColor.a
-        );
-
-        glVertex2d(
-            planetCenterPx.x + ca * innerR,
-            planetCenterPx.y + sa * innerR
-        );
-
-        glColor4f(
-            outerColor.r,
-            outerColor.g,
-            outerColor.b,
-            outerColor.a
-        );
-
-        glVertex2d(
-            planetCenterPx.x + ca * outerR,
-            planetCenterPx.y + sa * outerR
-        );
-    }
-
-    glEnd();
-}
-
-
 
 
 
@@ -1634,370 +1409,6 @@ void SystemMapRenderer::drawHubMapCircleLocalXY(
 
 
 
-void SystemMapRenderer::drawHubMapTexturedSphereDiskLayer(
-    GLuint texture,
-    const glm::dvec2& centerPx,
-    double radiusPx,
-    const glm::vec4& color,
-    double uOffset,
-    int gridX,
-    int gridY
-)
-{
-    if (texture == 0 ||
-        radiusPx <= 1.0)
-    {
-        return;
-    }
-
-    gridX =
-        std::max(
-            96,
-            gridX
-        );
-
-    gridY =
-        std::max(
-            64,
-            gridY
-        );
-
-    GLint viewport[4] =
-    {
-        0,
-        0,
-        1,
-        1
-    };
-
-    glGetIntegerv(
-        GL_VIEWPORT,
-        viewport
-    );
-
-    const double viewW =
-        static_cast<double>(
-            std::max(
-                viewport[2],
-                1
-            )
-        );
-
-    const double viewH =
-        static_cast<double>(
-            std::max(
-                viewport[3],
-                1
-            )
-        );
-
-    GLboolean textureWasEnabled =
-        glIsEnabled(GL_TEXTURE_2D);
-
-    GLboolean blendWasEnabled =
-        glIsEnabled(GL_BLEND);
-
-    GLint oldTextureBinding =
-        0;
-
-    glGetIntegerv(
-        GL_TEXTURE_BINDING_2D,
-        &oldTextureBinding
-    );
-
-    glUseProgram(0);
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(
-        GL_TEXTURE_2D,
-        texture
-    );
-
-    glTexParameteri(
-        GL_TEXTURE_2D,
-        GL_TEXTURE_MIN_FILTER,
-        GL_LINEAR
-    );
-
-    glTexParameteri(
-        GL_TEXTURE_2D,
-        GL_TEXTURE_MAG_FILTER,
-        GL_LINEAR
-    );
-
-    glEnable(GL_BLEND);
-    glBlendFunc(
-        GL_SRC_ALPHA,
-        GL_ONE_MINUS_SRC_ALPHA
-    );
-
-    auto wrap01 =
-        [](double x) -> double
-        {
-            x =
-                std::fmod(x, 1.0);
-
-            if (x < 0.0)
-                x += 1.0;
-
-            return x;
-        };
-
-    auto smoothStep =
-        [](double edge0, double edge1, double x) -> double
-        {
-            const double t =
-                std::clamp(
-                    (x - edge0) /
-                    std::max(0.000001, edge1 - edge0),
-                    0.0,
-                    1.0
-                );
-
-            return
-                t * t *
-                (3.0 - 2.0 * t);
-        };
-
-    auto emit =
-        [&](double sx, double sy)
-        {
-            const double nx =
-                (sx - centerPx.x) /
-                radiusPx;
-
-            const double ny =
-                -(sy - centerPx.y) /
-                radiusPx;
-
-            const double rr =
-                nx * nx +
-                ny * ny;
-
-            if (rr > 1.0)
-                return;
-
-            // Видимая полусфера.
-            const double nz =
-                std::sqrt(
-                    std::max(
-                        0.0,
-                        1.0 - rr
-                    )
-                );
-
-
-
-
-
-            // ВАЖНО:
-            // Это всё ещё сфера: screen point -> visible hemisphere -> UV.
-            // Но для cinematic orbital view нужно брать больший angular field,
-            // иначе один кусок суши раздувается на пол-экрана.
-            constexpr double kLongitudeAngularScale =
-                2.15;
-
-            constexpr double kLatitudeAngularScale =
-                1.08;
-
-            const double lon =
-                std::atan2(
-                    nx * kLongitudeAngularScale,
-                    std::max(
-                        0.000001,
-                        nz
-                    )
-                );
-
-            const double lat =
-                std::asin(
-                    std::clamp(
-                        ny * kLatitudeAngularScale,
-                        -0.96,
-                        0.96
-                    )
-                );
-
-            double u =
-                0.5 +
-                lon / glm::two_pi<double>() +
-                uOffset;
-
-            double v =
-                0.5 -
-                lat / glm::pi<double>();
-
-            u =
-                wrap01(u);
-
-            // Полюса всё ещё не пускаем в кадр слишком агрессивно,
-            // но диапазон шире, чтобы не было размазанной локальной суши.
-            v =
-                std::clamp(
-                    v,
-                    0.12,
-                    0.88
-                );
-
-
-
-
-
-
-
-            // К горизонту текстуру гасим.
-            const double limb =
-                std::sqrt(
-                    std::max(
-                        0.0,
-                        1.0 - rr
-                    )
-                );
-
-            const double textureFade =
-                smoothStep(
-                    0.18,
-                    0.58,
-                    limb
-                );
-
-            const float alpha =
-                static_cast<float>(
-                    color.a *
-                    textureFade
-                );
-
-            glColor4f(
-                color.r,
-                color.g,
-                color.b,
-                alpha
-            );
-
-            glTexCoord2d(
-                u,
-                v
-            );
-
-            glVertex2d(
-                sx,
-                sy
-            );
-        };
-
-    const double cellW =
-        viewW /
-        static_cast<double>(gridX);
-
-    const double cellH =
-        viewH /
-        static_cast<double>(gridY);
-
-    glBegin(GL_TRIANGLES);
-
-    for (int iy = 0; iy < gridY; ++iy)
-    {
-        const double y0 =
-            static_cast<double>(iy) *
-            cellH;
-
-        const double y1 =
-            static_cast<double>(iy + 1) *
-            cellH;
-
-        for (int ix = 0; ix < gridX; ++ix)
-        {
-            const double x0 =
-                static_cast<double>(ix) *
-                cellW;
-
-            const double x1 =
-                static_cast<double>(ix + 1) *
-                cellW;
-
-            const double nx00 =
-                (x0 - centerPx.x) /
-                radiusPx;
-
-            const double ny00 =
-                -(y0 - centerPx.y) /
-                radiusPx;
-
-            const double nx10 =
-                (x1 - centerPx.x) /
-                radiusPx;
-
-            const double ny10 =
-                -(y0 - centerPx.y) /
-                radiusPx;
-
-            const double nx11 =
-                (x1 - centerPx.x) /
-                radiusPx;
-
-            const double ny11 =
-                -(y1 - centerPx.y) /
-                radiusPx;
-
-            const double nx01 =
-                (x0 - centerPx.x) /
-                radiusPx;
-
-            const double ny01 =
-                -(y1 - centerPx.y) /
-                radiusPx;
-
-            const bool q00 =
-                nx00 * nx00 + ny00 * ny00 <= 1.0;
-
-            const bool q10 =
-                nx10 * nx10 + ny10 * ny10 <= 1.0;
-
-            const bool q11 =
-                nx11 * nx11 + ny11 * ny11 <= 1.0;
-
-            const bool q01 =
-                nx01 * nx01 + ny01 * ny01 <= 1.0;
-
-            if (q00 && q10 && q11)
-            {
-                emit(x0, y0);
-                emit(x1, y0);
-                emit(x1, y1);
-            }
-
-            if (q00 && q11 && q01)
-            {
-                emit(x0, y0);
-                emit(x1, y1);
-                emit(x0, y1);
-            }
-        }
-    }
-
-    glEnd();
-
-    glBindTexture(
-        GL_TEXTURE_2D,
-        static_cast<GLuint>(oldTextureBinding)
-    );
-
-    if (textureWasEnabled)
-        glEnable(GL_TEXTURE_2D);
-    else
-        glDisable(GL_TEXTURE_2D);
-
-    if (blendWasEnabled)
-        glEnable(GL_BLEND);
-    else
-        glDisable(GL_BLEND);
-}
-
-
-
-
-
-
 
 
 glm::mat3
@@ -2589,13 +2000,9 @@ endHubGpuStage();
 
 
 // -----------------------------------------------------------------
-    // 2. Текстура поверхности.
-    // ВРЕМЕННО ОТКЛЮЧЕНА.
-    //
-    // Причина:
-    // equirectangular albedo сейчас натягивается на cinematic fake-hemisphere.
-    // Для карты Хаба это даёт растянутую сушу и грязные пятна.
-    // Пока оставляем чистую океаническую массу + haze + atmosphere.
+    // 2. Поверхность родительского тела.
+    // Renderer получает ориентацию из server snapshot и использует
+    // отдельную Hub-map screen-space проекцию, а не Detail globe path.
     // -----------------------------------------------------------------
         /*
         Одно общее время для поверхности и облаков.
@@ -2814,8 +2221,7 @@ const glm::mat3 cameraToPlanetBody =
                 );
 
             /*
-                Сохраняем вертикальную ориентацию старого
-                HubBackdropCloudRenderer.
+                Hub backdrop textures use a top-left screen-space origin.
             */
             draw.flipV =
                 true;
@@ -4379,23 +3785,5 @@ SystemMapRenderer::hubPlanetCloudStylesForHub(
 
 
 
-GLuint SystemMapRenderer::globalCloudsTextureForHubSnapshot(
-    const world::celestial::HubMapSnapshot& hub
-)
-{
-    const auto* asset =
-        generatedAssetForIdentity(
-            hub.systemId,
-            hub.parentBodyId,
-            hub.parentBodyId
-        );
-
-    if (!asset)
-        return 0;
-
-    return globalCloudsTextureForGeneratedAsset(
-        *asset
-    );
-}
 
 

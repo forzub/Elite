@@ -66,7 +66,10 @@ void SystemMapRenderer::drawSystemLabels(
     const world::celestial::SystemMapSnapshot& system,
     const glm::mat4& mvp,
     const std::unordered_map<std::string, glm::vec3>& posById,
-    const std::unordered_map<std::string, float>& drawRadiusById
+    const std::unordered_map<
+        std::string,
+        game::system_map::SystemBodyVisualMetrics
+    >& presentationById
 )
 {
     using world::celestial::BodyType;
@@ -152,32 +155,33 @@ void SystemMapRenderer::drawSystemLabels(
         if (posIt == posById.end())
             continue;
 
-        
-        auto radiusIt =
-            drawRadiusById.find(
+
+        const auto metricsIt =
+            presentationById.find(
                 b.id
             );
 
-        const float physicalRadiusWorld =
-            radiusIt != drawRadiusById.end()
-                ? radiusIt->second
-                : 0.0f;
+        if (metricsIt == presentationById.end())
+            continue;
 
-        const SystemBodyVisualMetrics labelMetrics =
-            computeSystemBodyVisualMetrics(
-                b,
-                physicalRadiusWorld,
-                worldUnitsPerPixel
-            );
+        const SystemBodyVisualMetrics& labelMetrics =
+            metricsIt->second;
 
         const bool selected =
             b.id == m_systemView.state().selectedBodyId;
 
         const float screenRadiusPx =
-            std::max(
+            std::max({
                 labelMetrics.physicalRadiusPx,
-                labelMetrics.markerRadiusPx
-            );
+                labelMetrics.drawMarker
+                    ? labelMetrics.markerRadiusPx *
+                        labelMetrics.markerAlpha
+                    : 0.0f,
+                labelMetrics.drawPointProxy
+                    ? labelMetrics.pointProxyRadiusPx *
+                        labelMetrics.pointProxyAlpha
+                    : 0.0f
+            });
 
 
 
@@ -201,13 +205,17 @@ void SystemMapRenderer::drawSystemLabels(
             );
 
             if (b.type == BodyType::Moon &&
-                kmPerPixel > 200.0)
+                kmPerPixel >
+                    m_systemView.visuals()
+                        .moonLabelMaximumKmPerPixel)
             {
                 continue;
             }
 
             if (b.type == BodyType::AsteroidBelt &&
-                screenRadiusPx < 2.0f)
+                screenRadiusPx <
+                    m_systemView.visuals()
+                        .asteroidBeltLabelMinimumRadiusPx)
             {
                 continue;
             }
@@ -288,7 +296,10 @@ void SystemMapRenderer::drawSystemLabels(
         );
 
         if (!subtitle.empty() &&
-            (selected || screenRadiusPx >= 10.0f))
+            (selected ||
+             screenRadiusPx >=
+                m_systemView.visuals()
+                    .subtitleMinimumBodyRadiusPx))
         {
             text.textDrawPx(
                 "(" + subtitle + ")",
@@ -849,7 +860,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
         const glm::vec3 halfAxisZ(0.0f, 0.0f, halfSize);
 
 
-        
+
 
         const bool rootBoundary =
             cell.level ==
@@ -940,7 +951,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
         );
 
 
-        
+
 
 
         const float markerWorldPerPixel =
@@ -1002,67 +1013,68 @@ SystemMapRenderer::systemFrameData()
 }
 
 
-void SystemMapRenderer::addSystemBodyRingVisuals(
+bool SystemMapRenderer::renderSystemBodyRings(
     const world::celestial::SystemMapBody& body,
     const glm::vec3& center,
     const game::system_map::SystemBodyVisualMetrics& metrics,
-    float systemScale,
-    double worldUnitsPerPixel,
-    const glm::mat4& view
+    const glm::mat4& view,
+    const glm::mat4& mvp,
+    const Viewport& viewport,
+    game::system_map::SystemMapRingPart part
 )
 {
-    using world::celestial::SystemMapRingVisibilityClass;
+    using render::celestial::rings::PlanetRingRenderContext;
+    using render::celestial::rings::PlanetRingRenderPart;
 
     if (!metrics.drawPhysicalBody ||
-        body.rings.empty() ||
-        systemScale <= 0.0f ||
-        worldUnitsPerPixel <= 0.0)
+        metrics.physicalRadiusWorld <= 0.0f ||
+        body.radiusKm <= 0.0 ||
+        body.rings.empty())
     {
-        return;
+        return false;
     }
 
-    double maximumOuterRadiusKm = 0.0;
-    double maximumBandWidthKm = 0.0;
+    std::vector<world::celestial::SystemMapRing>
+        normalizedBands;
 
-    for (const auto& ring : body.rings)
+    normalizedBands.reserve(
+        body.rings.size()
+    );
+
+    double maximumOuterRadius = 0.0;
+
+    for (const auto& sourceBand : body.rings)
     {
-        maximumOuterRadiusKm =
+        if (sourceBand.outerRadiusKm <=
+            sourceBand.innerRadiusKm)
+        {
+            continue;
+        }
+
+        auto band =
+            sourceBand;
+
+        band.innerRadiusKm /=
+            body.radiusKm;
+
+        band.outerRadiusKm /=
+            body.radiusKm;
+
+        maximumOuterRadius =
             std::max(
-                maximumOuterRadiusKm,
-                ring.outerRadiusKm
+                maximumOuterRadius,
+                band.outerRadiusKm
             );
 
-        maximumBandWidthKm =
-            std::max(
-                maximumBandWidthKm,
-                std::max(
-                    0.0,
-                    ring.outerRadiusKm - ring.innerRadiusKm
-                )
-            );
+        normalizedBands.push_back(
+            std::move(band)
+        );
     }
 
-    if (maximumOuterRadiusKm <= 0.0)
-        return;
-
-    const double outerRadiusWorld =
-        maximumOuterRadiusKm /
-        AU_KM * static_cast<double>(systemScale);
-
-    const double bandWidthWorld =
-        maximumBandWidthKm /
-        AU_KM * static_cast<double>(systemScale);
-
-    const double outerRadiusPx =
-        outerRadiusWorld / worldUnitsPerPixel;
-
-    const double widestBandPx =
-        bandWidthWorld / worldUnitsPerPixel;
-
-    if (outerRadiusPx < 28.0 ||
-        widestBandPx < 0.75)
+    if (normalizedBands.empty() ||
+        maximumOuterRadius <= 0.0)
     {
-        return;
+        return false;
     }
 
     const glm::dvec3 north =
@@ -1082,187 +1094,160 @@ void SystemMapRenderer::addSystemBodyRingVisuals(
             ringAxisXWorld
         );
 
-    const glm::vec3 axisX(
+    const glm::vec3 axisXWorld(
         static_cast<float>(ringAxisXWorld.x),
         static_cast<float>(ringAxisXWorld.y),
         static_cast<float>(ringAxisXWorld.z)
     );
 
-    const glm::vec3 axisY(
+    const glm::vec3 axisYWorld(
         static_cast<float>(ringAxisYWorld.x),
         static_cast<float>(ringAxisYWorld.y),
         static_cast<float>(ringAxisYWorld.z)
     );
 
-    glm::vec3 cameraForward {
-        view[0][2],
-        view[1][2],
-        view[2][2]
-    };
+    bool centerVisible = false;
+    float centerDepth = 1.0f;
 
-    if (glm::length(cameraForward) <= 0.000001f)
-    {
-        cameraForward = glm::vec3(0.0f, 0.0f, 1.0f);
-    }
-    else
-    {
-        cameraForward = glm::normalize(cameraForward);
-    }
-
-    glm::vec3 ringNormal =
-        glm::cross(
-            axisX,
-            axisY
+    const glm::vec2 centerPx =
+        projectToScreen(
+            center,
+            mvp,
+            viewport,
+            centerVisible,
+            centerDepth
         );
 
-    if (glm::length(ringNormal) <= 0.000001f)
-    {
-        return;
-    }
+    bool axisXVisible = false;
+    bool axisYVisible = false;
+    float axisXDepth = 1.0f;
+    float axisYDepth = 1.0f;
 
-    ringNormal =
-        glm::normalize(
-            ringNormal
+    const glm::vec2 axisXEndPx =
+        projectToScreen(
+            center +
+                axisXWorld *
+                metrics.physicalRadiusWorld,
+            mvp,
+            viewport,
+            axisXVisible,
+            axisXDepth
         );
 
-    const float ringOpenFactor =
-        std::abs(
-            glm::dot(
-                ringNormal,
-                cameraForward
+    const glm::vec2 axisYEndPx =
+        projectToScreen(
+            center +
+                axisYWorld *
+                metrics.physicalRadiusWorld,
+            mvp,
+            viewport,
+            axisYVisible,
+            axisYDepth
+        );
+
+    const glm::dvec2 axisXPx =
+        glm::dvec2(
+            axisXEndPx -
+            centerPx
+        );
+
+    const glm::dvec2 axisYPx =
+        glm::dvec2(
+            axisYEndPx -
+            centerPx
+        );
+
+    const double planetRadiusPx =
+        std::max(
+            glm::length(axisXPx),
+            glm::length(axisYPx)
+        );
+
+    const double outerRadiusPx =
+        planetRadiusPx *
+        maximumOuterRadius;
+
+    const float fadeStartPx =
+        m_systemView.visuals().scene
+            .ringFadeStartOuterRadiusPx;
+
+    const float fullOpacityPx =
+        std::max(
+            fadeStartPx + 1.0f,
+            m_systemView.visuals().scene
+                .ringFullOpacityOuterRadiusPx
+        );
+
+    if (!std::isfinite(outerRadiusPx) ||
+        outerRadiusPx <=
+            static_cast<double>(fadeStartPx))
+    {
+        return false;
+    }
+
+    const float opacityScale =
+        glm::smoothstep(
+            fadeStartPx,
+            fullOpacityPx,
+            static_cast<float>(outerRadiusPx)
+        );
+
+    PlanetRingRenderContext ringContext;
+    ringContext.planetCenterPx =
+        glm::dvec2(centerPx);
+    ringContext.ringAxisXPx = axisXPx;
+    ringContext.ringAxisYPx = axisYPx;
+
+    const glm::dvec3 axisXCamera =
+        glm::dvec3(
+            view *
+            glm::vec4(
+                axisXWorld,
+                0.0f
             )
         );
 
-    if (ringOpenFactor < 0.16f)
-    {
-        return;
-    }
-
-    auto visibilityMultiplier =
-        [&](SystemMapRingVisibilityClass visibility) -> float
-        {
-            switch (visibility)
-            {
-                case SystemMapRingVisibilityClass::Main:
-                    return body.ringVisual.mainBandEmphasis;
-                case SystemMapRingVisibilityClass::Secondary:
-                    return body.ringVisual.secondaryBandEmphasis;
-                case SystemMapRingVisibilityClass::Faint:
-                    return body.ringVisual.faintBandEmphasis;
-                case SystemMapRingVisibilityClass::Diffuse:
-                    return body.ringVisual.diffuseBandEmphasis;
-            }
-
-            return 1.0f;
-        };
-
-    const float minimumVisibleWidthPx =
-        std::max(
-            0.85f,
-            body.ringVisual.minimumVisibleWidthPx
+    const glm::dvec3 axisYCamera =
+        glm::dvec3(
+            view *
+            glm::vec4(
+                axisYWorld,
+                0.0f
+            )
         );
 
-    const float widthScale =
-        std::max(
-            1.0f,
-            body.ringVisual.artisticWidthScale
+    ringContext.ringDepthCoefficients =
+        glm::dvec2(
+            axisXCamera.z,
+            axisYCamera.z
         );
 
-    const int segments =
-        outerRadiusPx > 180.0
-            ? 160
-            : outerRadiusPx > 96.0
-                ? 128
-                : 96;
+    /*
+        A single rigid phase made every ring system rotate with the parent
+        planet's day. Keep the pattern stable until differential particle
+        motion exists as an explicit simulation/presentation layer.
+    */
+    ringContext.patternPhaseRad = 0.0;
+    ringContext.minimumProjectedMinorAxisPx =
+        m_systemView.visuals().scene
+            .ringMinimumProjectedMinorAxisPx;
+    ringContext.opacityScale = opacityScale;
+    ringContext.visual = body.ringVisual;
+    ringContext.bands = &normalizedBands;
 
-    for (const auto& ring : body.rings)
-    {
-        const double ringInnerWorldRaw =
-            ring.innerRadiusKm /
-            AU_KM * static_cast<double>(systemScale);
+    m_planetRingRenderer.render(
+        ringContext,
+        part ==
+            game::system_map::SystemMapRingPart::Front
+            ? PlanetRingRenderPart::Front
+            : PlanetRingRenderPart::Back
+    );
 
-        const double ringOuterWorldRaw =
-            ring.outerRadiusKm /
-            AU_KM * static_cast<double>(systemScale);
-
-        if (ringOuterWorldRaw <= ringInnerWorldRaw)
-            continue;
-
-        double ringInnerWorld = ringInnerWorldRaw;
-        double ringOuterWorld = ringOuterWorldRaw;
-
-        const double midRadiusWorld =
-            0.5 * (ringInnerWorld + ringOuterWorld);
-
-        double halfWidthWorld =
-            0.5 * (ringOuterWorld - ringInnerWorld) *
-            static_cast<double>(widthScale);
-
-        const double minimumHalfWidthWorld =
-            0.5 * static_cast<double>(minimumVisibleWidthPx) *
-            worldUnitsPerPixel;
-
-        halfWidthWorld =
-            std::max(
-                halfWidthWorld,
-                minimumHalfWidthWorld
-            );
-
-        ringInnerWorld =
-            std::max(
-                0.0,
-                midRadiusWorld - halfWidthWorld
-            );
-
-        ringOuterWorld =
-            midRadiusWorld + halfWidthWorld;
-
-        float alpha =
-            ring.opacity *
-            ring.visualOpacityScale *
-            visibilityMultiplier(
-                ring.visibilityClass
-            );
-
-        alpha *=
-            0.55f +
-            0.45f *
-            std::clamp(
-                body.ringVisual.recognizabilityPriority,
-                0.0f,
-                1.0f
-            );
-
-        alpha *=
-            std::clamp(
-                0.35f + 0.65f * ringOpenFactor,
-                0.0f,
-                1.0f
-            );
-
-        alpha = std::clamp(alpha, 0.06f, 0.72f);
-
-        glm::vec4 ringColor(
-            ring.tint.r,
-            ring.tint.g,
-            ring.tint.b,
-            alpha
-        );
-
-        addRingBand3D(
-            center,
-            axisX,
-            axisY,
-            static_cast<float>(ringInnerWorld),
-            static_cast<float>(ringOuterWorld),
-            ringColor,
-            segments
-        );
-    }
+    return true;
 }
 
 
-void SystemMapRenderer::addSystemBodyVisual(
+void SystemMapRenderer::addSystemBodyGeometry(
     const world::celestial::SystemMapBody& body,
     const glm::vec3& center,
     const game::system_map::SystemBodyVisualMetrics& metrics,
@@ -1272,64 +1257,96 @@ void SystemMapRenderer::addSystemBodyVisual(
 {
     using world::celestial::BodyType;
 
-    if (metrics.drawPhysicalBody)
+    if (body.type == BodyType::Moon &&
+        metrics.drawPointProxy &&
+        metrics.pointProxyRadiusWorld > 0.0f)
     {
-        GLuint albedoTexture = 0;
-
-        if (body.type != BodyType::Star)
-        {
-            albedoTexture =
-                globalAlbedoTextureForBody(
-                    body
-                );
-        }
-
-        if (albedoTexture != 0 &&
-            m_texturedShader != 0 &&
-            m_texturedVao != 0 &&
-            m_texturedVbo != 0)
-        {
-            const bool largeBody =
-                body.type == BodyType::Planet &&
-                metrics.physicalRadiusWorld > 0.16f;
-
-            addTexturedSystemBodySphere(
-                body,
-                albedoTexture,
-                center,
-                metrics.physicalRadiusWorld,
-                glm::vec4(1.0f),
-                largeBody ? 64 : 24,
-                largeBody ? 128 : 48
+        glm::vec4 pointColor = fallbackColor;
+        pointColor.a *=
+            std::clamp(
+                metrics.pointProxyAlpha,
+                0.0f,
+                1.0f
             );
-        }
-        else
-        {
-            addBillboardBall(
-                center,
-                metrics.physicalRadiusWorld,
-                fallbackColor,
-                view,
-                32
-            );
-        }
+
+        addBillboardBall(
+            center,
+            metrics.pointProxyRadiusWorld,
+            pointColor,
+            view,
+            20
+        );
     }
 
-    if (!metrics.drawMarker)
+    if (!metrics.drawPhysicalBody)
         return;
+
+    GLuint albedoTexture = 0;
+
+    if (body.type != BodyType::Star)
+    {
+        albedoTexture =
+            globalAlbedoTextureForBody(
+                body
+            );
+    }
+
+    if (albedoTexture != 0 &&
+        m_texturedShader != 0 &&
+        m_texturedVao != 0 &&
+        m_texturedVbo != 0)
+    {
+        const bool largeBody =
+            body.type == BodyType::Planet &&
+            metrics.physicalRadiusWorld > 0.16f;
+
+        addTexturedSystemBodySphere(
+            body,
+            albedoTexture,
+            center,
+            metrics.physicalRadiusWorld,
+            glm::vec4(1.0f),
+            largeBody ? 64 : 24,
+            largeBody ? 128 : 48
+        );
+    }
+    else
+    {
+        addBillboardBall(
+            center,
+            metrics.physicalRadiusWorld,
+            fallbackColor,
+            view,
+            32
+        );
+    }
+}
+
+
+void SystemMapRenderer::addSystemBodyMarker(
+    const world::celestial::SystemMapBody& body,
+    const glm::vec3& center,
+    const game::system_map::SystemBodyVisualMetrics& metrics,
+    const glm::vec4& fallbackColor,
+    const glm::mat4& view
+)
+{
+    using world::celestial::BodyType;
+
+    if (!metrics.drawMarker ||
+        metrics.markerAlpha <= 0.001f)
+    {
+        return;
+    }
 
     glm::vec4 markerColor =
         fallbackColor;
 
-    if (body.type == BodyType::Moon)
+    if (body.type == BodyType::Planet)
     {
         markerColor =
-            m_systemView.visuals().scene.moonMarkerColor;
-    }
-    else if (body.type == BodyType::Planet)
-    {
-        markerColor =
-            m_systemView.visuals().scene.planetMarkerColor;
+            m_systemView.visuals().scene
+                .planetMarkerColor;
     }
     else if (body.type == BodyType::Star)
     {
@@ -1342,7 +1359,14 @@ void SystemMapRenderer::addSystemBodyVisual(
             );
     }
 
-    addSystemBodyMarker(
+    markerColor.a *=
+        std::clamp(
+            metrics.markerAlpha,
+            0.0f,
+            1.0f
+        );
+
+    addSystemBodyMarkerPrimitive(
         center,
         metrics.markerRadiusWorld,
         markerColor,
@@ -1393,7 +1417,7 @@ void SystemMapRenderer::renderSystem(
 
 
 
-void SystemMapRenderer::addSystemBodyMarker(
+void SystemMapRenderer::addSystemBodyMarkerPrimitive(
     const glm::vec3& center,
     float radius,
     const glm::vec4& color,
@@ -1800,20 +1824,33 @@ SystemMapRenderer::computeSystemBodyVisualMetrics(
                 m_systemView.controls().planetMarkerRadiusPx;
         }
     }
-    else if (body.type == BodyType::Moon)
-    {
-        if (out.physicalRadiusPx < m_systemView.controls().tinyMoonProxyRadiusPx)
-        {
-            desiredMarkerRadiusPx =
-                m_systemView.controls().tinyMoonProxyRadiusPx;
-        }
-    }
 
     if (desiredMarkerRadiusPx > 0.0f &&
         worldUnitsPerPixel > 0.0 &&
         std::isfinite(worldUnitsPerPixel))
     {
-        out.drawMarker = true;
+        const float fadeStartRatio =
+            std::clamp(
+                m_systemView.controls()
+                    .proxyFadeStartRadiusRatio,
+                0.0f,
+                0.99f
+            );
+
+        const float fadeStartPx =
+            desiredMarkerRadiusPx *
+            fadeStartRatio;
+
+        out.markerAlpha =
+            1.0f -
+            glm::smoothstep(
+                fadeStartPx,
+                desiredMarkerRadiusPx,
+                out.physicalRadiusPx
+            );
+
+        out.drawMarker =
+            out.markerAlpha > 0.001f;
 
         out.markerRadiusPx =
             desiredMarkerRadiusPx;
@@ -1825,11 +1862,62 @@ SystemMapRenderer::computeSystemBodyVisualMetrics(
             );
     }
 
+    if (body.type == BodyType::Moon &&
+        worldUnitsPerPixel > 0.0 &&
+        std::isfinite(worldUnitsPerPixel))
+    {
+        const float proxyRadiusPx =
+            std::max(
+                0.0f,
+                m_systemView.controls()
+                    .moonPointProxyRadiusPx
+            );
+
+        const float fadeStartPx =
+            m_systemView.controls()
+                .minPhysicalBodyRadiusPx;
+
+        const float fadeEndPx =
+            std::max(
+                fadeStartPx + 0.001f,
+                m_systemView.controls()
+                    .moonPointProxyFadeEndRadiusPx
+            );
+
+        out.pointProxyAlpha =
+            1.0f -
+            glm::smoothstep(
+                fadeStartPx,
+                fadeEndPx,
+                out.physicalRadiusPx
+            );
+
+        out.drawPointProxy =
+            proxyRadiusPx > 0.0f &&
+            out.pointProxyAlpha > 0.001f;
+
+        out.pointProxyRadiusPx =
+            proxyRadiusPx;
+
+        out.pointProxyRadiusWorld =
+            static_cast<float>(
+                worldUnitsPerPixel *
+                static_cast<double>(proxyRadiusPx)
+            );
+    }
+
     const float visibleRadiusPx =
-        std::max(
+        std::max({
             out.physicalRadiusPx,
-            out.markerRadiusPx
-        );
+            out.drawMarker
+                ? out.markerRadiusPx *
+                    out.markerAlpha
+                : 0.0f,
+            out.drawPointProxy
+                ? out.pointProxyRadiusPx *
+                    out.pointProxyAlpha
+                : 0.0f
+        });
 
     out.pickRadiusPx =
         std::max(
@@ -1851,24 +1939,6 @@ SystemMapRenderer::computeSystemBodyVisualMetrics(
 
 
 
-glm::vec3 SystemMapRenderer::systemObjectVisualPosition(
-    const world::celestial::SystemMapSnapshot& system,
-    const world::celestial::SystemMapObject& obj,
-    const std::unordered_map<std::string, glm::vec3>& posById,
-    const std::unordered_map<std::string, float>& drawRadiusById,
-    float systemScale
-) const
-{
-    (void)system;
-    (void)posById;
-    (void)drawRadiusById;
-
-    return glm::vec3 {
-        static_cast<float>(obj.positionAu.x) * systemScale,
-        static_cast<float>(obj.positionAu.y) * systemScale,
-        static_cast<float>(obj.positionAu.z) * systemScale
-    };
-}
 
 
 float SystemMapRenderer::systemObjectOcclusionAlpha(
@@ -2454,23 +2524,22 @@ int SystemMapRenderer::pickSystemBody(
 
 
 
-int SystemMapRenderer::pickSystemOrbitPivotBody(
+int SystemMapRenderer::pickSystemCameraBodyAnchor(
     double mouseX,
-    double mouseY,
-    const Viewport& vp
+    double mouseY
 ) const
 {
-    /*
-        vp пока сохраняем в сигнатуре, чтобы не менять
-        объявление и все места вызова.
-    */
-    (void)vp;
+    int bestIndex = -1;
 
-    int bestIndex =
-        -1;
-
-    float bestScore =
+    float bestCenterDistance =
         std::numeric_limits<float>::max();
+
+    double bestCameraDepth =
+        std::numeric_limits<double>::max();
+
+    const float maximumAnchorDistance =
+        m_systemView.controls()
+            .cameraBodyAnchorMaxDistancePx;
 
     const glm::vec2 mouse(
         static_cast<float>(mouseX),
@@ -2478,82 +2547,61 @@ int SystemMapRenderer::pickSystemOrbitPivotBody(
     );
 
     for (int i = 0;
-         i <
-            static_cast<int>(
-                m_systemFrameData.bodyScreenPoints.size()
-            );
+         i < static_cast<int>(
+             m_systemFrameData.orbitPivotScreenPoints.size()
+         );
          ++i)
     {
         const auto& point =
-            m_systemFrameData.bodyScreenPoints[i];
+            m_systemFrameData.orbitPivotScreenPoints[i];
 
         if (!std::isfinite(point.screen.x) ||
             !std::isfinite(point.screen.y) ||
-            !std::isfinite(point.screenRadiusPx))
+            !std::isfinite(point.cameraDepthWorld) ||
+            point.cameraDepthWorld <= 0.0)
         {
             continue;
         }
 
         const bool depthOk =
+            std::isfinite(point.depth) &&
             point.depth >= -1.0f &&
             point.depth <= 1.0f;
 
-        if (!point.visible &&
-            !depthOk)
-        {
+        if (!depthOk)
             continue;
-        }
 
-        const float bodyRadiusPx =
-            std::max(
-                0.0f,
-                point.screenRadiusPx
-            );
-
-        const float centerDistancePx =
+        const float centerDistance =
             glm::length(
                 point.screen -
                 mouse
             );
 
-        /*
-            Если курсор внутри диска, расстояние равно нулю.
-
-            Если снаружи — измеряем расстояние именно
-            до края диска, а не до центра тела.
-        */
-        const float distanceToDiskPx =
-            std::max(
-                0.0f,
-                centerDistancePx -
-                    bodyRadiusPx
-            );
-
-        if (distanceToDiskPx >
-            m_systemView.controls()
-                .rotationPivotMaxDistancePx)
-        {
+        if (centerDistance > maximumAnchorDistance)
             continue;
-        }
 
-        /*
-            Сначала выигрывает объект, ближе всего
-            к курсору своим видимым диском.
+        const bool nearerToCursor =
+            centerDistance <
+                bestCenterDistance - 0.01f;
 
-            Небольшая добавка centerDistance помогает
-            выбрать более близкий центр при пересечении тел.
-        */
-        const float score =
-            distanceToDiskPx +
-            centerDistancePx * 0.001f;
+        const bool sameCursorDistance =
+            std::abs(
+                centerDistance -
+                bestCenterDistance
+            ) <= 0.01f;
 
-        if (score < bestScore)
+        const bool inFrontAtSameDistance =
+            sameCursorDistance &&
+            point.cameraDepthWorld <
+                bestCameraDepth;
+
+        if (bestIndex < 0 ||
+            nearerToCursor ||
+            inFrontAtSameDistance)
         {
-            bestScore =
-                score;
-
-            bestIndex =
-                i;
+            bestIndex = i;
+            bestCenterDistance = centerDistance;
+            bestCameraDepth = point.cameraDepthWorld;
         }
     }
 
@@ -2610,9 +2658,7 @@ SystemMapRenderer::pickSystemHubSelection(
     const auto& point =
         m_systemFrameData.hubScreenPoints[index];
 
-    game::system_map::SystemMapHubSelection
-        result;
-
+    game::system_map::SystemMapHubSelection result;
     result.hubId = point.hubId;
     result.parentBodyId = point.parentBodyId;
 
@@ -2620,31 +2666,61 @@ SystemMapRenderer::pickSystemHubSelection(
 }
 
 
-std::optional<std::string>
-SystemMapRenderer::pickSystemOrbitPivotBodyId(
+std::optional<game::system_map::SystemMapCameraBodyTarget>
+SystemMapRenderer::pickSystemCameraBodyTarget(
     double localMouseX,
     double localMouseY,
-    const Viewport& viewport
+    const Viewport&
 ) const
 {
     const int index =
-        pickSystemOrbitPivotBody(
+        pickSystemCameraBodyAnchor(
             localMouseX,
-            localMouseY,
-            viewport
+            localMouseY
         );
 
     if (index < 0 ||
         index >= static_cast<int>(
-            m_systemFrameData.bodyScreenPoints.size()
+            m_systemFrameData.orbitPivotScreenPoints.size()
         ))
     {
         return std::nullopt;
     }
 
-    return m_systemFrameData.bodyScreenPoints[
-        index
-    ].bodyId;
+    const auto& point =
+        m_systemFrameData.orbitPivotScreenPoints[index];
+
+    const auto positionIt =
+        m_systemFrameData.bodyAbsolutePositionById.find(
+            point.bodyId
+        );
+
+    if (positionIt ==
+        m_systemFrameData.bodyAbsolutePositionById.end())
+    {
+        return std::nullopt;
+    }
+
+    game::system_map::SystemMapCameraBodyTarget result;
+    result.bodyId = point.bodyId;
+    result.absolutePosition = positionIt->second;
+
+    const auto radiusIt =
+        m_systemFrameData.bodyPhysicalRadiusWorldById.find(
+            point.bodyId
+        );
+
+    if (radiusIt !=
+        m_systemFrameData.bodyPhysicalRadiusWorldById.end())
+    {
+        result.physicalRadiusWorld =
+            std::max(
+                0.0,
+                static_cast<double>(radiusIt->second)
+            );
+    }
+
+    return result;
 }
 
 

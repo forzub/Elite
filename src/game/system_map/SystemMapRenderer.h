@@ -40,7 +40,6 @@
 
 #include "src/render/navigation/NavigationCoordinateOverlay.h"
 
-#include "src/render/celestial/clouds/HubBackdropCloudRenderer.h"
 #include "src/render/celestial/rings/PlanetRingRenderer.h"
 #include "src/render/system_map/HubMapGpuGeometryRenderer.h"
 #include "src/render/system_map/HubPlanetOverlayRenderer.h"
@@ -210,12 +209,6 @@ private:
     game::system_map::DetailMapSceneRenderer m_detailSceneRenderer;
     game::system_map::HubMapSceneRenderer m_hubSceneRenderer;
 
-    bool pickHubMapOrbitPivot(
-        const glm::dvec2& mousePx,
-        glm::dvec3& outPivotLocalMeters
-    ) const;
-
-
 
     void drawPlanetSphereGrid(
         const world::celestial::DetailMapSnapshot& planet,
@@ -303,18 +296,6 @@ private:
         const world::celestial::HubMapSnapshot& hub
     );
 
-    GLuint globalCloudsTextureForGeneratedAsset(
-        const world::celestial::visual::CelestialGeneratedAssetSet& asset
-    );
-
-    GLuint globalCloudsTextureForHubSnapshot(
-        const world::celestial::HubMapSnapshot& hub
-    );
-
-
-
-
-
 
     const world::celestial::visual::CelestialGeneratedAssetSet*
     generatedAssetForIdentity(
@@ -325,23 +306,7 @@ private:
 
 
 
-    void drawTexturedDisk2D(
-        GLuint texture,
-        const glm::dvec2& centerPx,
-        double radiusPx,
-        const glm::vec4& color,
-        int segments = 192
-    );
 
-    void drawPlanetTexturedDisk(
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx
-    );
-
-    GLuint mapPreviewTextureForPlanetSnapshot(
-        const world::celestial::DetailMapSnapshot& planet
-    );
 
     GLuint mapPreviewTextureForHubSnapshot(
         const world::celestial::HubMapSnapshot& hub
@@ -419,12 +384,6 @@ private:
         const glm::dvec2& centerPx
     ) const;
 
-    glm::dvec3 hubMapUnprojectCursorToLocal(
-        const glm::dvec2& mousePx,
-        double scale,
-        const glm::dvec2& centerPx
-    ) const;
-
 
     void drawHubMapBox(
         const glm::dvec3& center,
@@ -464,11 +423,6 @@ private:
 
 
 
-    glm::dvec3 hubMapObjectLocalToHubLocal(
-        const glm::dvec3& objectCenter,
-        const world::celestial::LocalSceneAxes& objectAxes,
-        const glm::dvec3& localPoint
-    ) const;
 
     bool drawHubMapAssemblyWire(
         ObjectType typeId,
@@ -487,29 +441,6 @@ private:
 
 
 
-
-
-
-
-    void drawHubMapTexturedSphereDiskLayer(
-    GLuint texture,
-    const glm::dvec2& centerPx,
-    double radiusPx,
-    const glm::vec4& color,
-    double uOffset = 0.0,
-    int gridX = 120,
-    int gridY = 120
-);
-
-void drawHubMapPlanetHorizonBand(
-    const glm::dvec2& centerPx,
-    double radiusPx,
-    const glm::vec4& innerColor,
-    const glm::vec4& outerColor,
-    double innerRadiusFactor,
-    double outerRadiusFactor,
-    int segments = 192
-);
 
 
 
@@ -738,12 +669,6 @@ private:
         int segments = 96
     ) override;
 
-    void addCircleYZ(
-        const glm::vec3& center,
-        float radius,
-        const glm::vec4& color,
-        int segments = 96
-    );
 
     void addOrbitCircle3D(
         const glm::vec3& center,
@@ -753,12 +678,6 @@ private:
         double argumentOfPeriapsisDeg,
         const glm::vec4& color,
         int segments = 160
-    );
-
-    void addSphereWire(
-        const glm::vec3& center,
-        float radius,
-        const glm::vec4& color
     );
 
 
@@ -788,7 +707,7 @@ private:
 
 
 
-    void addSystemBodyMarker(
+    void addSystemBodyMarkerPrimitive(
         const glm::vec3& center,
         float radius,
         const glm::vec4& color,
@@ -800,13 +719,6 @@ private:
 
     void beginTexturedBodies() override;
 
-    void addTexturedBillboard(
-        GLuint texture,
-        const glm::vec3& center,
-        float radius,
-        const glm::vec4& color,
-        const glm::mat4& view
-    );
 
     void addTexturedSystemBodySphere(
         const world::celestial::SystemMapBody& body,
@@ -820,20 +732,9 @@ private:
 
 
 
-    void addTexturedSphere(
-        GLuint texture,
-        const glm::vec3& center,
-        float radius,
-        const glm::vec4& color,
-        int latSegments = 24,
-        int lonSegments = 48
-    );
 
     void flushTexturedBodies(const glm::mat4& mvp) override;
 
-    GLuint mapPreviewTextureForBody(
-        const world::celestial::SystemMapBody& body
-    );
 
     const world::celestial::visual::CelestialGeneratedAssetSet*
     generatedAssetForBody(
@@ -915,26 +816,25 @@ private:
     game::system_map::SystemMapFrameData&
     systemFrameData() override;
 
-    void addRingBand3D(
-        const glm::vec3& center,
-        const glm::vec3& axisX,
-        const glm::vec3& axisY,
-        float innerRadius,
-        float outerRadius,
-        const glm::vec4& color,
-        int segments
-    );
-
-    void addSystemBodyRingVisuals(
+    bool renderSystemBodyRings(
         const world::celestial::SystemMapBody& body,
         const glm::vec3& center,
         const game::system_map::SystemBodyVisualMetrics& metrics,
-        float systemScale,
-        double worldUnitsPerPixel,
+        const glm::mat4& view,
+        const glm::mat4& mvp,
+        const Viewport& viewport,
+        game::system_map::SystemMapRingPart part
+    ) override;
+
+    void addSystemBodyGeometry(
+        const world::celestial::SystemMapBody& body,
+        const glm::vec3& center,
+        const game::system_map::SystemBodyVisualMetrics& metrics,
+        const glm::vec4& fallbackColor,
         const glm::mat4& view
     ) override;
 
-    void addSystemBodyVisual(
+    void addSystemBodyMarker(
         const world::celestial::SystemMapBody& body,
         const glm::vec3& center,
         const game::system_map::SystemBodyVisualMetrics& metrics,
@@ -948,11 +848,6 @@ private:
         const world::celestial::PlayerNavigationState& nav
     );
 
-    void drawPanelText(
-        const Viewport& vp,
-        const std::string& title,
-        const std::vector<std::string>& lines
-    );
 
     glm::vec4 colorForBodyType(
         world::celestial::BodyType type
@@ -986,7 +881,10 @@ private:
         const world::celestial::SystemMapSnapshot& system,
         const glm::mat4& mvp,
         const std::unordered_map<std::string, glm::vec3>& posById,
-        const std::unordered_map<std::string, float>& drawRadiusById
+        const std::unordered_map<
+            std::string,
+            game::system_map::SystemBodyVisualMetrics
+        >& presentationById
     ) override;
 
     int pickSystemBody(
@@ -999,16 +897,10 @@ private:
         double mouseY
     ) const;
 
-    int pickPlanetHub(
+
+    int pickSystemCameraBodyAnchor(
         double mouseX,
         double mouseY
-    ) const;
-
-
-    int pickSystemOrbitPivotBody(
-        double mouseX,
-        double mouseY,
-        const Viewport& vp
     ) const;
 
     std::optional<std::string> pickSystemBodyId(
@@ -1022,7 +914,8 @@ private:
         double localMouseY
     ) const override;
 
-    std::optional<std::string> pickSystemOrbitPivotBodyId(
+    std::optional<game::system_map::SystemMapCameraBodyTarget>
+    pickSystemCameraBodyTarget(
         double localMouseX,
         double localMouseY,
         const Viewport& viewport
@@ -1044,13 +937,6 @@ private:
         const glm::vec4& color
     );
 
-    glm::vec3 systemObjectVisualPosition(
-        const world::celestial::SystemMapSnapshot& system,
-        const world::celestial::SystemMapObject& obj,
-        const std::unordered_map<std::string, glm::vec3>& posById,
-        const std::unordered_map<std::string, float>& drawRadiusById,
-        float systemScale
-    ) const;
 
     float systemObjectOcclusionAlpha(
         const world::celestial::SystemMapObject& obj,
@@ -1093,7 +979,6 @@ private:
     DetailCamera& activeDetailCamera();
     const DetailCamera& activeDetailCamera() const;
 
-    const DetailControlSettings& activeDetailControls() const;
 
     void handleDetailAndHubInput(
         const Viewport& vp,
@@ -1294,24 +1179,6 @@ private:
 
 
 
-    struct SmoothPoint
-    {
-        glm::vec3 visual {0.0f};
-        bool initialized = false;
-    };
-
-    std::unordered_map<std::string, SmoothPoint> m_smoothBodyPositions;
-    std::unordered_map<uint32_t, SmoothPoint> m_smoothObjectPositions;
-
-    double m_lastSmoothTimeSeconds = 0.0;
-
-    float smoothingAlpha() const;
-    glm::vec3 smoothVec3(
-        SmoothPoint& point,
-        const glm::vec3& target,
-        float alpha
-    );
-
     world::celestial::visual::CelestialGeneratedAssetLibrary m_generatedCelestialAssets;
 
     bool m_generatedCelestialAssetsAttempted = false;
@@ -1331,8 +1198,6 @@ private:
     std::unordered_map<std::string, GLuint> m_mapPreviewTextureByAssetKey;
     std::unordered_map<std::string, GLuint> m_globalAlbedoTextureByAssetKey;
     std::unordered_map<std::string, GLuint> m_globalNormalTextureByAssetKey;
-    std::unordered_map<std::string, GLuint> m_globalCloudsTextureByAssetKey;
-    render::celestial::HubBackdropCloudRenderer m_hubBackdropCloudRenderer;
 
     render::celestial::CelestialShapeMeshLibrary m_celestialShapeMeshes;
     render::celestial::HubPlanetSurfaceRenderer m_hubPlanetSurfaceRenderer;

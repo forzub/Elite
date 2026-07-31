@@ -26,16 +26,28 @@ namespace game::system_map
         float markerRadiusPx = 0.0f;
         float markerRadiusWorld = 0.0f;
 
+        float pointProxyRadiusPx = 0.0f;
+        float pointProxyRadiusWorld = 0.0f;
+
         float pickRadiusPx = 0.0f;
+        float markerAlpha = 1.0f;
+        float pointProxyAlpha = 0.0f;
 
         bool drawPhysicalBody = false;
         bool drawMarker = false;
+        bool drawPointProxy = false;
+    };
+
+    enum class SystemMapRingPart
+    {
+        Back = 0,
+        Front = 1
     };
 
     /*
         Shared rendering backend used by SystemMapSceneRenderer.
 
-        The scene renderer owns System-map orchestration. The legacy facade
+        The scene renderer owns System-map orchestration. The shared backend
         remains the single owner of OpenGL buffers, shaders, generated
         textures, text services and the shared map background renderers.
         This interface contains rendering operations only; input is handled
@@ -129,16 +141,25 @@ namespace game::system_map
             double worldUnitsPerPixel
         ) const = 0;
 
-        virtual void addSystemBodyRingVisuals(
+        virtual bool renderSystemBodyRings(
             const world::celestial::SystemMapBody& body,
             const glm::vec3& center,
             const SystemBodyVisualMetrics& metrics,
-            float systemScale,
-            double worldUnitsPerPixel,
+            const glm::mat4& view,
+            const glm::mat4& mvp,
+            const Viewport& viewport,
+            SystemMapRingPart part
+        ) = 0;
+
+        virtual void addSystemBodyGeometry(
+            const world::celestial::SystemMapBody& body,
+            const glm::vec3& center,
+            const SystemBodyVisualMetrics& metrics,
+            const glm::vec4& fallbackColor,
             const glm::mat4& view
         ) = 0;
 
-        virtual void addSystemBodyVisual(
+        virtual void addSystemBodyMarker(
             const world::celestial::SystemMapBody& body,
             const glm::vec3& center,
             const SystemBodyVisualMetrics& metrics,
@@ -176,7 +197,8 @@ namespace game::system_map
             const world::celestial::SystemMapSnapshot& system,
             const glm::mat4& mvp,
             const std::unordered_map<std::string, glm::vec3>& bodyVisualPosById,
-            const std::unordered_map<std::string, float>& drawRadiusById
+            const std::unordered_map<std::string, SystemBodyVisualMetrics>&
+                presentationById
         ) = 0;
 
         virtual void drawSystemObjectLabels(

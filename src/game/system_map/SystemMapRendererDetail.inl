@@ -1232,47 +1232,6 @@ if (!shapeModelDrawn)
 }
 
 
-int SystemMapRenderer::pickPlanetHub(
-    double mouseX,
-    double mouseY
-) const
-{
-    int bestIndex = -1;
-    float bestDistance = std::numeric_limits<float>::max();
-
-    const glm::vec2 mouse(
-        static_cast<float>(mouseX),
-        static_cast<float>(mouseY)
-    );
-
-    for (int i = 0;
-         i < static_cast<int>(
-             m_detailView.frame().hubScreenPoints.size()
-         );
-         ++i)
-    {
-        const HubScreenPoint& point =
-            m_detailView.frame().hubScreenPoints[i];
-
-        if (!point.visible)
-            continue;
-
-        const float distance =
-            glm::length(
-                point.screen - mouse
-            );
-
-        if (distance <= point.screenRadiusPx &&
-            distance < bestDistance)
-        {
-            bestDistance = distance;
-            bestIndex = i;
-        }
-    }
-
-    return bestIndex;
-}
-
 
 
 // ============================================================================
@@ -1667,124 +1626,6 @@ void SystemMapRenderer::drawPlanetTexturedGlobe(
 }
 
 
-void SystemMapRenderer::drawTexturedDisk2D(
-    GLuint texture,
-    const glm::dvec2& centerPx,
-    double radiusPx,
-    const glm::vec4& color,
-    int segments
-)
-{
-    if (texture == 0 ||
-        radiusPx <= 1.0)
-    {
-        return;
-    }
-
-    segments =
-        std::max(segments, 32);
-
-    GLboolean textureWasEnabled =
-        glIsEnabled(GL_TEXTURE_2D);
-
-    GLboolean blendWasEnabled =
-        glIsEnabled(GL_BLEND);
-
-    glUseProgram(0);
-
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glColor4f(
-        color.r,
-        color.g,
-        color.b,
-        color.a
-    );
-
-    glBegin(GL_TRIANGLE_FAN);
-
-    glTexCoord2d(0.5, 0.5);
-    glVertex2d(centerPx.x, centerPx.y);
-
-    for (int i = 0; i <= segments; ++i)
-    {
-        const double a =
-            glm::two_pi<double>() *
-            static_cast<double>(i) /
-            static_cast<double>(segments);
-
-        const double ca =
-            std::cos(a);
-
-        const double sa =
-            std::sin(a);
-
-        const double u =
-            0.5 + ca * 0.5;
-
-        const double v =
-            0.5 + sa * 0.5;
-
-        glTexCoord2d(u, v);
-
-        glVertex2d(
-            centerPx.x + ca * radiusPx,
-            centerPx.y + sa * radiusPx
-        );
-    }
-
-    glEnd();
-
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    if (textureWasEnabled)
-        glEnable(GL_TEXTURE_2D);
-    else
-        glDisable(GL_TEXTURE_2D);
-
-    if (blendWasEnabled)
-        glEnable(GL_BLEND);
-    else
-        glDisable(GL_BLEND);
-}
-
-
-
-void SystemMapRenderer::drawPlanetTexturedDisk(
-    const world::celestial::DetailMapSnapshot& planet,
-    double scale,
-    const glm::dvec2& centerPx
-)
-{
-    const GLuint texture =
-        mapPreviewTextureForPlanetSnapshot(planet);
-
-    if (texture == 0)
-        return;
-
-    const double radiusPx =
-        planet.planetRadiusMeters *
-        scale *
-        activeDetailCamera().zoom;
-
-    const glm::dvec2 screenCenter {
-        centerPx.x + activeDetailCamera().pan.x,
-        centerPx.y + activeDetailCamera().pan.y
-    };
-
-    drawTexturedDisk2D(
-        texture,
-        screenCenter,
-        radiusPx,
-        glm::vec4(1.0f, 1.0f, 1.0f, 0.96f),
-        192
-    );
-}
-
 
 
 void SystemMapRenderer::drawDetailMapOrbit3D(
@@ -2149,8 +1990,14 @@ SystemMapRenderer::planetRingRenderContext(
                 planet.planetRadiusMeters
         );
 
-    context.planetRotationPhaseRad =
-        planet.planetRotationPhaseRad;
+    /*
+        Do not rotate the entire ring pattern with the planet day. Real ring
+        particles have differential orbital motion, so a rigid-body phase is
+        visually wrong and becomes absurd under accelerated game time.
+    */
+    context.patternPhaseRad = 0.0;
+    context.minimumProjectedMinorAxisPx =
+        m_detailVisuals.ringMinimumProjectedMinorAxisPx;
 
     return context;
 }
@@ -3429,23 +3276,6 @@ bool SystemMapRenderer::drawPlanetShapeModelDetail(
 // Details resource adapters
 // ============================================================================
 
-
-GLuint SystemMapRenderer::mapPreviewTextureForPlanetSnapshot(
-    const world::celestial::DetailMapSnapshot& planet
-)
-{
-    const auto* asset =
-        generatedAssetForIdentity(
-            planet.systemId,
-            planet.planetBodyId,
-            planet.planetName
-        );
-
-    if (!asset)
-        return 0;
-
-    return mapPreviewTextureForGeneratedAsset(*asset);
-}
 
 
 

@@ -18,6 +18,13 @@ namespace game::system_map
         std::string parentBodyId;
     };
 
+    struct SystemMapCameraBodyTarget
+    {
+        std::string bodyId;
+        glm::dvec3 absolutePosition {0.0};
+        double physicalRadiusWorld = 0.0;
+    };
+
     struct SystemMapInputFrame
     {
         Viewport viewport;
@@ -64,7 +71,8 @@ namespace game::system_map
             double localMouseY
         ) const = 0;
 
-        virtual std::optional<std::string> pickSystemOrbitPivotBodyId(
+        virtual std::optional<SystemMapCameraBodyTarget>
+        pickSystemCameraBodyTarget(
             double localMouseX,
             double localMouseY,
             const Viewport& viewport

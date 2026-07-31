@@ -10,8 +10,6 @@
 #include <cmath>
 #include <vector>
 
-#include <glm/gtc/constants.hpp>
-
 #include "src/game/navigation/CubicNavigationHierarchy.h"
 #include "src/game/navigation/CubicNavigationInteraction.h"
 #include "src/game/system_map/SystemMapInteraction.h"
@@ -22,235 +20,7 @@ namespace
     constexpr double SystemInteractionKilometersPerAu =
         149597870.7;
 
-    double systemInteractionWorldUnitsPerPixel(
-        double cameraHalfHeight,
-        int viewportHeight
-    )
-    {
-        const double safeHeight =
-            static_cast<double>(
-                std::max(
-                    viewportHeight,
-                    1
-                )
-            );
 
-        const double halfHeight =
-            std::clamp(
-                cameraHalfHeight,
-                static_cast<double>(
-                    game::system_map::SystemMapView::
-                        minimumCameraHalfHeight
-                ),
-                static_cast<double>(
-                    game::system_map::SystemMapView::
-                        maximumCameraHalfHeight
-                )
-            );
-
-        return
-            (halfHeight * 2.0) /
-            safeHeight;
-    }
-
-    glm::vec3 systemInteractionViewRight(
-        const glm::mat4& view
-    )
-    {
-        return glm::normalize(
-            glm::vec3(
-                view[0][0],
-                view[1][0],
-                view[2][0]
-            )
-        );
-    }
-
-    glm::vec3 systemInteractionViewUp(
-        const glm::mat4& view
-    )
-    {
-        return glm::normalize(
-            glm::vec3(
-                view[0][1],
-                view[1][1],
-                view[2][1]
-            )
-        );
-    }
-
-    glm::dvec3 systemInteractionTargetPlanePointFromScreen(
-        const Viewport& viewport,
-        const glm::mat4& view,
-        const glm::dvec3& target,
-        double cameraHalfHeight,
-        double localMouseX,
-        double localMouseY
-    )
-    {
-        const double safeWidth =
-            static_cast<double>(
-                std::max(
-                    viewport.width,
-                    1
-                )
-            );
-
-        const double safeHeight =
-            static_cast<double>(
-                std::max(
-                    viewport.height,
-                    1
-                )
-            );
-
-        const double aspect =
-            safeWidth /
-            safeHeight;
-
-        const double halfHeightWorld =
-            std::clamp(
-                cameraHalfHeight,
-                static_cast<double>(
-                    game::system_map::SystemMapView::
-                        minimumCameraHalfHeight
-                ),
-                static_cast<double>(
-                    game::system_map::SystemMapView::
-                        maximumCameraHalfHeight
-                )
-            );
-
-        const double halfWidthWorld =
-            halfHeightWorld *
-            aspect;
-
-        const double ndcX =
-            localMouseX /
-            safeWidth *
-            2.0 -
-            1.0;
-
-        const double ndcY =
-            1.0 -
-            localMouseY /
-            safeHeight *
-            2.0;
-
-        const glm::vec3 rightF =
-            systemInteractionViewRight(
-                view
-            );
-
-        const glm::vec3 upF =
-            systemInteractionViewUp(
-                view
-            );
-
-        const glm::dvec3 right(
-            rightF.x,
-            rightF.y,
-            rightF.z
-        );
-
-        const glm::dvec3 up(
-            upF.x,
-            upF.y,
-            upF.z
-        );
-
-        return
-            target +
-            right * ndcX * halfWidthWorld +
-            up * ndcY * halfHeightWorld;
-    }
-
-    glm::vec2 systemInteractionProjectToScreen(
-        const glm::vec3& world,
-        const glm::mat4& mvp,
-        const Viewport& viewport,
-        bool& visible,
-        float& depth
-    )
-    {
-        const glm::vec4 clip =
-            mvp *
-            glm::vec4(
-                world,
-                1.0f
-            );
-
-        visible = false;
-        depth = 1.0f;
-
-        if (std::abs(clip.w) < 0.00001f)
-            return glm::vec2(0.0f);
-
-        const glm::vec3 ndc =
-            glm::vec3(clip) /
-            clip.w;
-
-        visible =
-            ndc.x >= -1.0f && ndc.x <= 1.0f &&
-            ndc.y >= -1.0f && ndc.y <= 1.0f &&
-            ndc.z >= -1.0f && ndc.z <= 1.0f;
-
-        depth = ndc.z;
-
-        return {
-            (ndc.x * 0.5f + 0.5f) *
-                static_cast<float>(viewport.width),
-            (1.0f - (ndc.y * 0.5f + 0.5f)) *
-                static_cast<float>(viewport.height)
-        };
-    }
-
-    glm::vec2 systemInteractionProjectAbsoluteToScreen(
-        const game::system_map::SystemMapView& view,
-        const Viewport& viewport,
-        const glm::dvec3& absolutePosition,
-        bool& visible,
-        float& depth
-    )
-    {
-        const glm::dvec3 relative =
-            absolutePosition -
-            view.state().camera.target;
-
-        const glm::vec3 renderPosition(
-            static_cast<float>(relative.x),
-            static_cast<float>(relative.y),
-            static_cast<float>(relative.z)
-        );
-
-        const glm::mat4 mvp =
-            view.projectionMatrix(viewport) *
-            view.viewMatrix();
-
-        return systemInteractionProjectToScreen(
-            renderPosition,
-            mvp,
-            viewport,
-            visible,
-            depth
-        );
-    }
-
-    float systemInteractionWrapAngleRad(
-        float angle
-    )
-    {
-        const float twoPi =
-            glm::two_pi<float>();
-
-        while (angle > glm::pi<float>())
-            angle -= twoPi;
-
-        while (angle < -glm::pi<float>())
-            angle += twoPi;
-
-        return angle;
-    }
 }
 
 namespace game::system_map
@@ -274,17 +44,9 @@ void SystemMapInteraction::updateNavigationHoverFromCursor(
         return;
     }
 
-    const glm::mat4 cameraView =
-        view.viewMatrix();
-
     const glm::dvec3 cursorMapPosition =
-        systemInteractionTargetPlanePointFromScreen(
+        view.targetPlanePointFromScreen(
             viewport,
-            cameraView,
-            state.camera.target,
-            static_cast<double>(
-                state.camera.distance
-            ),
             localMouseX,
             localMouseY
         );
@@ -376,7 +138,8 @@ bool SystemMapInteraction::pickNavigationCell(
                 cells.push_back(cell);
         };
 
-    if (state.navigationGrid.hasSelectedCell())
+    if (state.navigationCellExplicitlySelected &&
+        state.navigationGrid.hasSelectedCell())
     {
         const auto selected =
             state.navigationGrid.selectedCell();
@@ -395,12 +158,9 @@ bool SystemMapInteraction::pickNavigationCell(
         );
     }
 
-    const glm::mat4 mvp =
-        view.projectionMatrix(viewport) *
-        view.viewMatrix();
-
     bool found = false;
-    float bestDistance = 18.0f;
+    float bestDistance =
+        view.controls().navigationCellPickRadiusPx;
     float bestDepth = 1.0f;
 
     for (const auto& cell : cells)
@@ -411,20 +171,13 @@ bool SystemMapInteraction::pickNavigationCell(
                 state.lastScale
             );
 
-        const glm::vec3 relative =
-            glm::vec3(
-                absoluteMap -
-                state.camera.target
-            );
-
         bool visible = false;
-        float depth = 1.0f;
+        float depth = 2.0f;
 
         const glm::vec2 screen =
-            systemInteractionProjectToScreen(
-                relative,
-                mvp,
+            view.projectAbsoluteToScreen(
                 viewport,
+                absoluteMap,
                 visible,
                 depth
             );
@@ -498,9 +251,7 @@ void SystemMapInteraction::focusBody(
         bodyPositionAu
     );
 
-    state.navigationGrid.selectCell(
-        state.navigationGrid.anchorCell()
-    );
+    state.navigationGrid.clearSelectedCell();
 
     state.navigationGrid.clearHoveredCell();
 
@@ -510,11 +261,7 @@ void SystemMapInteraction::focusBody(
     state.hoverOutgoingAlpha = 0.0f;
     state.cubeClickTracker.reset();
 
-    view.beginCameraFlight(
-        *absolutePosition,
-        state.camera.distance,
-        nowSeconds
-    );
+    (void)nowSeconds;
 }
 
 void SystemMapInteraction::focusHub(
@@ -558,17 +305,11 @@ void SystemMapInteraction::focusHub(
         hubPositionAu
     );
 
-    state.navigationGrid.selectCell(
-        state.navigationGrid.anchorCell()
-    );
+    state.navigationGrid.clearSelectedCell();
 
     state.navigationGrid.clearHoveredCell();
 
-    view.beginCameraFlight(
-        *absolutePosition,
-        state.camera.distance,
-        nowSeconds
-    );
+    (void)nowSeconds;
 }
 
 SystemMapInputResult SystemMapInteraction::handleInput(
@@ -596,10 +337,6 @@ SystemMapInputResult SystemMapInteraction::handleInput(
     const double dy =
         frame.mouseY -
         state.camera.lastMouseY;
-
-    view.constrainCameraToNavigationBoundary(
-        viewport
-    );
 
     bool leftStartedThisFrame = false;
     bool rightStartedThisFrame = false;
@@ -667,33 +404,48 @@ SystemMapInputResult SystemMapInteraction::handleInput(
         state.navigationGrid.clearHoveredCell();
     }
 
+    const auto cursorBodyTarget =
+        frame.inside
+            ? context.pickSystemCameraBodyTarget(
+                frame.localMouseX,
+                frame.localMouseY,
+                viewport
+            )
+            : std::nullopt;
+
     const auto captureSystemOrbitPivot =
         [&]()
         {
-            const float maximumDistance =
-                view.navigationMaximumCameraDistance(
-                    viewport
-                );
+            /*
+                Rotation priority:
 
-            const float maximumDistanceEpsilon =
-                std::max(
-                    0.000001f,
-                    maximumDistance * 0.0005f
-                );
-
-            if (state.camera.distance >=
-                maximumDistance -
-                    maximumDistanceEpsilon)
+                1. nearest visible star / planet / moon;
+                2. explicitly selected cube centre;
+                3. cube centre under the cursor;
+                4. physical point under the mouse.
+            */
+            if (cursorBodyTarget)
             {
                 state.orbitPivotAbsolute =
-                    view.navigationBoundaryCenterWorld();
-
-                state.orbitPivotActive = false;
+                    cursorBodyTarget->absolutePosition;
+                state.orbitPivotActive = true;
                 return;
             }
 
-            navigation::CubicNavigationCell
-                pivotCell;
+            if (state.navigationGrid.enabled() &&
+                state.navigationGrid.hasSelectedCell() &&
+                state.navigationCellExplicitlySelected)
+            {
+                state.orbitPivotAbsolute =
+                    state.navigationGrid
+                        .selectedCell()
+                        .center *
+                    static_cast<double>(state.lastScale);
+                state.orbitPivotActive = true;
+                return;
+            }
+
+            navigation::CubicNavigationCell pivotCell;
 
             const bool cubePivotFound =
                 state.navigationGrid.enabled() &&
@@ -709,42 +461,18 @@ SystemMapInputResult SystemMapInteraction::handleInput(
             {
                 state.orbitPivotAbsolute =
                     pivotCell.center *
-                    static_cast<double>(
-                        state.lastScale
-                    );
-
+                    static_cast<double>(state.lastScale);
                 state.orbitPivotActive = true;
                 return;
             }
 
-            const auto pivotBodyId =
-                context.pickSystemOrbitPivotBodyId(
-                    frame.localMouseX,
-                    frame.localMouseY,
-                    viewport
-                );
-
-            if (pivotBodyId)
-            {
-                const auto absolutePosition =
-                    context.systemBodyAbsolutePosition(
-                        *pivotBodyId
-                    );
-
-                if (absolutePosition)
-                {
-                    state.orbitPivotAbsolute =
-                        *absolutePosition;
-
-                    state.orbitPivotActive = true;
-                    return;
-                }
-            }
-
             state.orbitPivotAbsolute =
-                state.camera.target;
-
-            state.orbitPivotActive = false;
+                view.targetPlanePointFromScreen(
+                    viewport,
+                    frame.localMouseX,
+                    frame.localMouseY
+                );
+            state.orbitPivotActive = true;
         };
 
     if (frame.inside &&
@@ -792,8 +520,17 @@ SystemMapInputResult SystemMapInteraction::handleInput(
                         frame.localMouseY
                     );
 
+                const auto pickedBodyId =
+                    pickedHub
+                        ? std::optional<std::string>{}
+                        : context.pickSystemBodyId(
+                            frame.localMouseX,
+                            frame.localMouseY
+                        );
+
                 const bool cubeCenterPicked =
                     !pickedHub &&
+                    !pickedBodyId &&
                     state.navigationGrid.enabled() &&
                     pickNavigationCell(
                         view,
@@ -802,14 +539,6 @@ SystemMapInputResult SystemMapInteraction::handleInput(
                         frame.localMouseY,
                         cubeCenterCell
                     );
-
-                const auto pickedBodyId =
-                    cubeCenterPicked || pickedHub
-                        ? std::optional<std::string>{}
-                        : context.pickSystemBodyId(
-                            frame.localMouseX,
-                            frame.localMouseY
-                        );
 
                 if (pickedHub)
                 {
@@ -962,22 +691,22 @@ SystemMapInputResult SystemMapInteraction::handleInput(
     if (!frame.rightDown)
         state.camera.panning = false;
 
+    const double leftDragDistance =
+        std::abs(
+            frame.mouseX -
+            state.camera.mouseDownX
+        ) +
+        std::abs(
+            frame.mouseY -
+            state.camera.mouseDownY
+        );
+
     if (state.camera.rotating &&
         frame.leftDown &&
-        !leftStartedThisFrame)
+        !leftStartedThisFrame &&
+        leftDragDistance >=
+            controls.clickMoveThresholdPx)
     {
-        bool beforeVisible = false;
-        float beforeDepth = 1.0f;
-
-        const glm::vec2 pivotBefore =
-            systemInteractionProjectAbsoluteToScreen(
-                view,
-                viewport,
-                state.orbitPivotAbsolute,
-                beforeVisible,
-                beforeDepth
-            );
-
         const float yawStep =
             std::clamp(
                 -static_cast<float>(dx) *
@@ -994,139 +723,33 @@ SystemMapInputResult SystemMapInteraction::handleInput(
                 controls.rotationMaxStepRad
             );
 
-        state.camera.yaw += yawStep;
-        state.camera.pitch += pitchStep;
-
-        state.camera.yaw =
-            systemInteractionWrapAngleRad(
-                state.camera.yaw
-            );
-
-        state.camera.pitch =
-            std::clamp(
-                state.camera.pitch,
-                -controls.pitchLimitRad,
+        if (state.orbitPivotActive)
+        {
+            view.orbitCameraAroundPivot(
+                state.orbitPivotAbsolute,
+                yawStep,
+                pitchStep,
                 controls.pitchLimitRad
             );
 
-        if (state.orbitPivotActive)
-        {
-            bool afterVisible = false;
-            float afterDepth = 1.0f;
-
-            const glm::vec2 pivotAfter =
-                systemInteractionProjectAbsoluteToScreen(
-                    view,
-                    viewport,
-                    state.orbitPivotAbsolute,
-                    afterVisible,
-                    afterDepth
-                );
-
-            const glm::vec2 screenDelta =
-                pivotBefore -
-                pivotAfter;
-
-            if (beforeVisible &&
-                afterVisible &&
-                std::isfinite(screenDelta.x) &&
-                std::isfinite(screenDelta.y))
-            {
-                const glm::mat4 viewAfter =
-                    view.viewMatrix();
-
-                const glm::vec3 rightF =
-                    systemInteractionViewRight(
-                        viewAfter
-                    );
-
-                const glm::vec3 upF =
-                    systemInteractionViewUp(
-                        viewAfter
-                    );
-
-                const glm::dvec3 right(
-                    rightF.x,
-                    rightF.y,
-                    rightF.z
-                );
-
-                const glm::dvec3 up(
-                    upF.x,
-                    upF.y,
-                    upF.z
-                );
-
-                const double worldUnitsPerPixel =
-                    systemInteractionWorldUnitsPerPixel(
-                        static_cast<double>(
-                            state.camera.distance
-                        ),
-                        viewport.height
-                    );
-
-                state.camera.target -=
-                    right *
-                    static_cast<double>(screenDelta.x) *
-                    worldUnitsPerPixel;
-
-                state.camera.target +=
-                    up *
-                    static_cast<double>(screenDelta.y) *
-                    worldUnitsPerPixel;
-            }
+            view.syncNavigationAnchorToCursor();
         }
     }
+
 
     if (state.camera.panning &&
         frame.rightDown &&
         !rightStartedThisFrame)
     {
-        const glm::mat4 cameraView =
-            view.viewMatrix();
-
-        const glm::vec3 rightF =
-            systemInteractionViewRight(
-                cameraView
-            );
-
-        const glm::vec3 upF =
-            systemInteractionViewUp(
-                cameraView
-            );
-
-        const glm::dvec3 right(
-            rightF.x,
-            rightF.y,
-            rightF.z
+        view.panCameraByScreenDelta(
+            viewport,
+            dx,
+            dy
         );
-
-        const glm::dvec3 up(
-            upF.x,
-            upF.y,
-            upF.z
-        );
-
-        const double worldUnitsPerPixel =
-            systemInteractionWorldUnitsPerPixel(
-                static_cast<double>(
-                    state.camera.distance
-                ),
-                viewport.height
-            );
-
-        state.camera.target -=
-            right *
-            dx *
-            worldUnitsPerPixel;
-
-        state.camera.target +=
-            up *
-            dy *
-            worldUnitsPerPixel;
 
         view.syncNavigationAnchorToCursor();
     }
+
 
     if (frame.inside)
     {
@@ -1150,178 +773,110 @@ SystemMapInputResult SystemMapInteraction::handleInput(
 
         if (zoom != 0.0f)
         {
-            glm::dvec3 navigationPointAu =
-                view.navigationCursorAu();
+            /*
+                Zoom priority:
 
-            const auto pivotBodyId =
-                context.pickSystemOrbitPivotBodyId(
-                    frame.localMouseX,
-                    frame.localMouseY,
-                    viewport
-                );
+                1. nearest front-facing body anchor near the cursor;
+                2. the current camera target.
 
-            if (pivotBodyId)
+                Cube selection changes navigation state, but it is not a
+                hidden wheel pivot. A body selection is not sticky either.
+            */
+            glm::dvec3 navigationPointWorld =
+                state.camera.target;
+
+            double minimumEyeDistanceFromPivot = 0.0;
+
+            if (cursorBodyTarget)
             {
-                const auto absolutePosition =
-                    context.systemBodyAbsolutePosition(
-                        *pivotBodyId
+                navigationPointWorld =
+                    cursorBodyTarget->absolutePosition;
+
+                minimumEyeDistanceFromPivot =
+                    cursorBodyTarget->physicalRadiusWorld *
+                    static_cast<double>(
+                        controls.bodyZoomClearanceScale
+                    );
+            }
+
+            glm::dvec3 navigationPointAu =
+                navigationPointWorld /
+                static_cast<double>(state.lastScale);
+
+            if (state.navigationGrid.enabled())
+            {
+                const auto rootIndexForNavigationPoint =
+                    state.navigationGrid.nearestIndexForPosition(
+                        navigationPointAu,
+                        state.navigationGrid
+                            .definition()
+                            .minimumLevel
                     );
 
-                if (absolutePosition)
+                if (rootIndexForNavigationPoint !=
+                    navigation::CubicGridIndex {})
                 {
+                    /*
+                        Keep hierarchy refinement inside S0 without changing
+                        the camera's cursor-centred zoom pivot.
+                    */
                     navigationPointAu =
-                        *absolutePosition /
-                        static_cast<double>(
-                            state.lastScale
-                        );
+                        view.navigationCursorAu();
                 }
             }
-            else if (state.navigationGrid.enabled() &&
-                state.navigationGrid.hasHoveredCell())
-            {
-                navigationPointAu =
-                    state.navigationGrid
-                        .hoveredCell()
-                        .center;
-            }
-
-            const auto rootIndexForNavigationPoint =
-                state.navigationGrid.nearestIndexForPosition(
-                    navigationPointAu,
-                    state.navigationGrid
-                        .definition()
-                        .minimumLevel
-                );
-
-            if (rootIndexForNavigationPoint !=
-                navigation::CubicGridIndex {})
-            {
-                navigationPointAu =
-                    view.navigationCursorAu();
-            }
-
-            const glm::dvec3 navigationPointWorld =
-                navigationPointAu *
-                static_cast<double>(
-                    state.lastScale
-                );
-
-            bool pivotBeforeVisible = false;
-            float pivotBeforeDepth = 1.0f;
-
-            const glm::vec2 pivotBeforeScreen =
-                systemInteractionProjectAbsoluteToScreen(
-                    view,
-                    viewport,
-                    navigationPointWorld,
-                    pivotBeforeVisible,
-                    pivotBeforeDepth
-                );
 
             const float factor =
-                std::pow(
-                    controls.zoomStep,
-                    -zoom
-                );
-
-            state.camera.distance *= factor;
+                zoom > 0.0f
+                    ? std::pow(
+                        controls.zoomInFactor,
+                        zoom
+                    )
+                    : std::pow(
+                        controls.zoomOutFactor,
+                        -zoom
+                    );
 
             const float minHalfHeightForConfiguredKmPerPixel =
                 static_cast<float>(
                     (
                         controls.minKmPerPixel *
-                        static_cast<double>(
-                            state.lastScale
-                        ) /
+                        static_cast<double>(state.lastScale) /
                         SystemInteractionKilometersPerAu
                     ) *
-                    static_cast<double>(
-                        viewport.height
-                    ) *
+                    static_cast<double>(viewport.height) *
                     0.5
                 );
 
-            const float dynamicMinHalfHeight =
+            float minimumHalfHeight =
                 std::max(
                     SystemMapView::minimumCameraHalfHeight,
                     minHalfHeightForConfiguredKmPerPixel
                 );
 
-            state.camera.distance =
-                std::clamp(
-                    state.camera.distance,
-                    dynamicMinHalfHeight,
-                    SystemMapView::maximumCameraHalfHeight
-                );
+            float maximumHalfHeight =
+                SystemMapView::maximumCameraHalfHeight;
 
-            bool pivotAfterVisible = false;
-            float pivotAfterDepth = 1.0f;
-
-            const glm::vec2 pivotAfterScreen =
-                systemInteractionProjectAbsoluteToScreen(
-                    view,
-                    viewport,
-                    navigationPointWorld,
-                    pivotAfterVisible,
-                    pivotAfterDepth
-                );
-
-            const glm::vec2 pivotScreenDelta =
-                pivotBeforeScreen -
-                pivotAfterScreen;
-
-            if (pivotBeforeVisible &&
-                pivotAfterVisible &&
-                std::isfinite(pivotScreenDelta.x) &&
-                std::isfinite(pivotScreenDelta.y))
+            if (state.navigationGrid.enabled())
             {
-                const glm::mat4 viewAfter =
-                    view.viewMatrix();
-
-                const glm::vec3 rightF =
-                    systemInteractionViewRight(
-                        viewAfter
+                maximumHalfHeight =
+                    view.navigationMaximumCameraDistance(
+                        viewport
                     );
 
-                const glm::vec3 upF =
-                    systemInteractionViewUp(
-                        viewAfter
+                minimumHalfHeight =
+                    std::min(
+                        maximumHalfHeight,
+                        minimumHalfHeight
                     );
-
-                const glm::dvec3 right(
-                    rightF.x,
-                    rightF.y,
-                    rightF.z
-                );
-
-                const glm::dvec3 up(
-                    upF.x,
-                    upF.y,
-                    upF.z
-                );
-
-                const double worldUnitsPerPixel =
-                    systemInteractionWorldUnitsPerPixel(
-                        static_cast<double>(
-                            state.camera.distance
-                        ),
-                        viewport.height
-                    );
-
-                state.camera.target -=
-                    right *
-                    static_cast<double>(
-                        pivotScreenDelta.x
-                    ) *
-                    worldUnitsPerPixel;
-
-                state.camera.target +=
-                    up *
-                    static_cast<double>(
-                        pivotScreenDelta.y
-                    ) *
-                    worldUnitsPerPixel;
             }
+
+            view.zoomCameraAroundPivot(
+                navigationPointWorld,
+                factor,
+                minimumHalfHeight,
+                maximumHalfHeight,
+                minimumEyeDistanceFromPivot
+            );
 
             view.syncNavigationAnchorToCursor();
 
@@ -1373,44 +928,9 @@ SystemMapInputResult SystemMapInteraction::handleInput(
                     state.hoverOutgoingAlpha = 0.0f;
                     state.cubeClickTracker.reset();
                 }
-
-                const float terminalMinHalfHeight =
-                    static_cast<float>(
-                        (
-                            controls.minKmPerPixel *
-                            static_cast<double>(
-                                state.lastScale
-                            ) /
-                            SystemInteractionKilometersPerAu
-                        ) *
-                        static_cast<double>(
-                            viewport.height
-                        ) *
-                        0.5
-                    );
-
-                const float navigationMaximumHalfHeight =
-                    view.navigationMaximumCameraDistance(
-                        viewport
-                    );
-
-                const float navigationMinimumHalfHeight =
-                    std::min(
-                        navigationMaximumHalfHeight,
-                        std::max(
-                            SystemMapView::minimumCameraHalfHeight,
-                            terminalMinHalfHeight
-                        )
-                    );
-
-                state.camera.distance =
-                    std::clamp(
-                        state.camera.distance,
-                        navigationMinimumHalfHeight,
-                        navigationMaximumHalfHeight
-                    );
             }
         }
+
     }
 
     view.constrainCameraToNavigationBoundary(

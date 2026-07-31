@@ -11,19 +11,18 @@
 #include <fstream>
 #include <GLFW/glfw3.h>
 #include <chrono>
-#include <cmath>
 #include <limits>
 #include <filesystem>
 #include <cctype>
 #include <utility>
 
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "render/HUD/TextRenderer.h"
 #include "src/game/navigation/NavigationAddressFormatter.h"
 #include "src/render/ShaderLibrary.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
+#include "src/world/modules/ObjectAssemblyTransformUtils.h"
 #include "src/render/bitmap/TextureLoader.h"
 #include <nlohmann/json.hpp>
 
@@ -3140,11 +3139,8 @@ void SystemMapRenderer::resetView()
     m_systemFrameData.hubScreenPoints.clear();
     m_systemFrameData.bodyAbsolutePositionById.clear();
     m_systemFrameData.objectAbsolutePositionById.clear();
-    m_smoothBodyPositions.clear();
-    m_smoothObjectPositions.clear();
 
 
-    m_lastSmoothTimeSeconds = 0.0;
     m_systemView.state().lastScale = 1.0f;
 
     m_systemView.state().presentationSystemId = -1;
@@ -3303,25 +3299,6 @@ SystemMapRenderer::activeDetailCamera() const
     return m_detailView.camera();
 }
 
-const SystemMapRenderer::DetailControlSettings&
-SystemMapRenderer::activeDetailControls() const
-{
-    if (m_mode == Mode::Hub)
-        return m_hubView.controls();
-
-    return m_detailView.controls();
-}
-
-
-
-
-
-
-
-
-
-
-
 
 
 void SystemMapRenderer::beginLines()
@@ -3392,33 +3369,6 @@ void SystemMapRenderer::addCircleXY(
         addLine(p0, p1, color);
     }
 }
-
-void SystemMapRenderer::addCircleYZ(
-    const glm::vec3& center,
-    float radius,
-    const glm::vec4& color,
-    int segments
-)
-{
-    if (radius <= 0.0f)
-        return;
-
-    segments = std::max(12, segments);
-
-    for (int i = 0; i < segments; ++i)
-    {
-        const float a0 = float(i) / float(segments) * glm::two_pi<float>();
-        const float a1 = float(i + 1) / float(segments) * glm::two_pi<float>();
-
-        glm::vec3 p0 = center + glm::vec3(0.0f, std::cos(a0) * radius, std::sin(a0) * radius);
-        glm::vec3 p1 = center + glm::vec3(0.0f, std::cos(a1) * radius, std::sin(a1) * radius);
-
-        addLine(p0, p1, color);
-    }
-}
-
-
-
 
 
 
@@ -3559,77 +3509,7 @@ void SystemMapRenderer::addOrbitCircle3D(
 
 
 
-void SystemMapRenderer::addSphereWire(
-    const glm::vec3& center,
-    float radius,
-    const glm::vec4& color
-)
-{
-    addCircleXZ(center, radius, color, 64);
-    addCircleXY(center, radius, glm::vec4(color.r, color.g, color.b, color.a * 0.65f), 64);
-    addCircleYZ(center, radius, glm::vec4(color.r, color.g, color.b, color.a * 0.65f), 64);
-}
 
-
-
-
-
-void SystemMapRenderer::addRingBand3D(
-    const glm::vec3& center,
-    const glm::vec3& axisX,
-    const glm::vec3& axisY,
-    float innerRadius,
-    float outerRadius,
-    const glm::vec4& color,
-    int segments
-)
-{
-    if (outerRadius <= innerRadius ||
-        outerRadius <= 0.0f)
-    {
-        return;
-    }
-
-    segments = std::max(48, segments);
-
-    for (int i = 0; i < segments; ++i)
-    {
-        const float a0 =
-            glm::two_pi<float>() *
-            static_cast<float>(i) /
-            static_cast<float>(segments);
-
-        const float a1 =
-            glm::two_pi<float>() *
-            static_cast<float>(i + 1) /
-            static_cast<float>(segments);
-
-        const glm::vec3 d0 =
-            axisX * std::cos(a0) +
-            axisY * std::sin(a0);
-
-        const glm::vec3 d1 =
-            axisX * std::cos(a1) +
-            axisY * std::sin(a1);
-
-        const glm::vec3 inner0 =
-            center + d0 * innerRadius;
-        const glm::vec3 outer0 =
-            center + d0 * outerRadius;
-        const glm::vec3 inner1 =
-            center + d1 * innerRadius;
-        const glm::vec3 outer1 =
-            center + d1 * outerRadius;
-
-        m_solidVertices.push_back({inner0, color});
-        m_solidVertices.push_back({outer0, color});
-        m_solidVertices.push_back({outer1, color});
-
-        m_solidVertices.push_back({inner0, color});
-        m_solidVertices.push_back({outer1, color});
-        m_solidVertices.push_back({inner1, color});
-    }
-}
 
 void SystemMapRenderer::beginSolids()
 {
@@ -3799,266 +3679,6 @@ void SystemMapRenderer::beginTexturedBodies()
         batch.vertices.clear();
     }
 }
-
-void SystemMapRenderer::addTexturedBillboard(
-    GLuint texture,
-    const glm::vec3& center,
-    float radius,
-    const glm::vec4& color,
-    const glm::mat4& view
-)
-{
-    if (texture == 0 || radius <= 0.0f)
-        return;
-
-    const glm::vec3 right {
-        view[0][0],
-        view[1][0],
-        view[2][0]
-    };
-
-    const glm::vec3 up {
-        view[0][1],
-        view[1][1],
-        view[2][1]
-    };
-
-    const glm::vec3 p0 =
-        center + (-right - up) * radius;
-
-    const glm::vec3 p1 =
-        center + ( right - up) * radius;
-
-    const glm::vec3 p2 =
-        center + ( right + up) * radius;
-
-    const glm::vec3 p3 =
-        center + (-right + up) * radius;
-
-    TexturedBatch* batch = nullptr;
-
-    for (auto& b : m_texturedBatches)
-    {
-        if (b.texture == texture)
-        {
-            batch = &b;
-            break;
-        }
-    }
-
-    if (!batch)
-    {
-        TexturedBatch newBatch;
-        newBatch.texture = texture;
-
-        m_texturedBatches.push_back(std::move(newBatch));
-        batch = &m_texturedBatches.back();
-    }
-
-    batch->vertices.reserve(
-        batch->vertices.size() + 6u
-    );
-
-
-
-    // TextureLoader currently flips loaded images vertically.
-    // This UV layout matches the existing OpenGL texture convention.
-    batch->vertices.push_back({ p0, glm::vec2(0.0f, 0.0f), color });
-    batch->vertices.push_back({ p1, glm::vec2(1.0f, 0.0f), color });
-    batch->vertices.push_back({ p2, glm::vec2(1.0f, 1.0f), color });
-
-    batch->vertices.push_back({ p0, glm::vec2(0.0f, 0.0f), color });
-    batch->vertices.push_back({ p2, glm::vec2(1.0f, 1.0f), color });
-    batch->vertices.push_back({ p3, glm::vec2(0.0f, 1.0f), color });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void SystemMapRenderer::addTexturedSphere(
-    GLuint texture,
-    const glm::vec3& center,
-    float radius,
-    const glm::vec4& color,
-    int latSegments,
-    int lonSegments
-)
-{
-    if (texture == 0 || radius <= 0.0f)
-        return;
-
-    latSegments =
-        std::max(
-            latSegments,
-            8
-        );
-
-    lonSegments =
-        std::max(
-            lonSegments,
-            16
-        );
-
-    TexturedBatch* batch = nullptr;
-
-    for (auto& b : m_texturedBatches)
-    {
-        if (b.texture == texture)
-        {
-            batch = &b;
-            break;
-        }
-    }
-
-    if (!batch)
-    {
-        TexturedBatch newBatch;
-        newBatch.texture = texture;
-
-        m_texturedBatches.push_back(
-            std::move(newBatch)
-        );
-
-        batch =
-            &m_texturedBatches.back();
-    }
-
-
-    const std::size_t vertexCountToAdd =
-        static_cast<std::size_t>(latSegments) *
-        static_cast<std::size_t>(lonSegments) *
-        6u;
-
-    batch->vertices.reserve(
-        batch->vertices.size() + vertexCountToAdd
-    );
-
-
-
-    auto spherePoint =
-        [&](float lat, float lon) -> glm::vec3
-        {
-            const float cosLat =
-                std::cos(lat);
-
-            return center +
-                glm::vec3(
-                    std::cos(lon) * cosLat,
-                    std::sin(lat),
-                    std::sin(lon) * cosLat
-                ) * radius;
-        };
-
-    for (int iy = 0; iy < latSegments; ++iy)
-    {
-        const float v0 =
-            static_cast<float>(iy) /
-            static_cast<float>(latSegments);
-
-        const float v1 =
-            static_cast<float>(iy + 1) /
-            static_cast<float>(latSegments);
-
-        const float lat0 =
-            -glm::half_pi<float>() +
-            v0 * glm::pi<float>();
-
-        const float lat1 =
-            -glm::half_pi<float>() +
-            v1 * glm::pi<float>();
-
-        for (int ix = 0; ix < lonSegments; ++ix)
-        {
-            const float u0 =
-                static_cast<float>(ix) /
-                static_cast<float>(lonSegments);
-
-            const float u1 =
-                static_cast<float>(ix + 1) /
-                static_cast<float>(lonSegments);
-
-            const float lon0 =
-                -glm::pi<float>() +
-                u0 * glm::two_pi<float>();
-
-            const float lon1 =
-                -glm::pi<float>() +
-                u1 * glm::two_pi<float>();
-
-
-            const glm::vec3 p00 =
-                spherePoint(
-                    lat0,
-                    lon0
-                );
-
-            const glm::vec3 p10 =
-                spherePoint(
-                    lat0,
-                    lon1
-                );
-
-            const glm::vec3 p11 =
-                spherePoint(
-                    lat1,
-                    lon1
-                );
-
-            const glm::vec3 p01 =
-                spherePoint(
-                    lat1,
-                    lon0
-                );
-
-            batch->vertices.push_back(
-                { p00, glm::vec2(u0, v0), color }
-            );
-
-            batch->vertices.push_back(
-                { p10, glm::vec2(u1, v0), color }
-            );
-
-            batch->vertices.push_back(
-                { p11, glm::vec2(u1, v1), color }
-            );
-
-            batch->vertices.push_back(
-                { p00, glm::vec2(u0, v0), color }
-            );
-
-            batch->vertices.push_back(
-                { p11, glm::vec2(u1, v1), color }
-            );
-
-            batch->vertices.push_back(
-                { p01, glm::vec2(u0, v1), color }
-            );
-        }
-    }
-}
-
-
-
-
-
-
-
-
 
 
 
@@ -4504,65 +4124,6 @@ GLuint SystemMapRenderer::globalNormalTextureForGeneratedAsset(
 
 
 
-GLuint SystemMapRenderer::globalCloudsTextureForGeneratedAsset(
-    const world::celestial::visual::CelestialGeneratedAssetSet& asset
-)
-{
-    std::string cloudsPath;
-
-    if (!asset.global.cloudsPath.empty())
-    {
-        cloudsPath =
-            asset.global.cloudsPath;
-    }
-    else if (!asset.base.cloudsPath.empty())
-    {
-        cloudsPath =
-            asset.base.cloudsPath;
-    }
-
-    if (cloudsPath.empty())
-        return 0;
-
-    const std::string key =
-        generatedAssetKey(asset);
-
-    auto existing =
-        m_globalCloudsTextureByAssetKey.find(key);
-
-    if (existing != m_globalCloudsTextureByAssetKey.end())
-        return existing->second;
-
-    const std::filesystem::path resolvedPath =
-        resolveSystemMapAssetPath(
-            cloudsPath
-        );
-
-    const GLuint tex =
-        TextureLoader::load2D(
-            resolvedPath.generic_string(),
-            false
-        );
-
-    m_globalCloudsTextureByAssetKey[key] =
-        tex;
-
-    if (tex == 0)
-    {
-        std::cerr
-            << "[SystemMapRenderer] failed to load global clouds texture for "
-            << key
-            << " path="
-            << resolvedPath.generic_string()
-            << "\n";
-    }
-
-    return tex;
-}
-
-
-
-
 
 
 GLuint SystemMapRenderer::globalAlbedoTextureForBody(
@@ -4581,28 +4142,6 @@ GLuint SystemMapRenderer::globalAlbedoTextureForBody(
         *asset
     );
 }
-
-
-GLuint SystemMapRenderer::mapPreviewTextureForBody(
-    const world::celestial::SystemMapBody& body
-)
-{
-    const auto* asset =
-        generatedAssetForBody(body);
-
-    if (!asset)
-        return 0;
-
-    return mapPreviewTextureForGeneratedAsset(*asset);
-}
-
-
-
-
-
-
-
-
 
 
 
@@ -4707,9 +4246,6 @@ void SystemMapRenderer::render(
         nowSeconds
     );
 
-    m_systemView.updateCameraFlight(
-        nowSeconds
-    );
 
     m_mapTransition.update(
         nowSeconds
@@ -4875,9 +4411,9 @@ glm::vec2 SystemMapRenderer::projectToScreen(
     const glm::vec4 clip = mvp * glm::vec4(world, 1.0f);
 
     visible = false;
-    depth = 1.0f;
+    depth = 2.0f;
 
-    if (std::abs(clip.w) < 0.00001f)
+    if (clip.w <= 0.00001f)
         return {0.0f, 0.0f};
 
     const glm::vec3 ndc = glm::vec3(clip) / clip.w;
@@ -4920,6 +4456,16 @@ SystemMapRenderer::handleInput(
         return std::nullopt;
     }
 
+    const double inputNowSeconds =
+        glfwGetTime();
+
+    if (m_mode == Mode::System)
+    {
+        m_systemView.updateCameraFlight(
+            inputNowSeconds
+        );
+    }
+
     /*
         Scroll input belongs to the application-wide Input service.
         SystemMapRenderer must not replace GLFW callbacks or keep raw
@@ -4938,6 +4484,13 @@ SystemMapRenderer::handleInput(
     */
     if (m_mapTransition.blocksInput())
     {
+        if (m_mode == Mode::System)
+        {
+            m_systemView.constrainCameraToNavigationBoundary(
+                vp
+            );
+        }
+
         m_pendingScrollY = 0.0;
         m_navigationLevelZeroButtonHovered = false;
         m_navigationOverlayLeftWasDown = false;
@@ -5062,7 +4615,7 @@ SystemMapRenderer::handleInput(
         frame.zoomOutKeyDown =
             glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS ||
             glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
-        frame.nowSeconds = glfwGetTime();
+        frame.nowSeconds = inputNowSeconds;
 
         const auto result =
             m_systemInteraction.handleInput(
@@ -5185,36 +4738,6 @@ SystemMapRenderer::handleInput(
 
 
 
-
-
-
-
-float SystemMapRenderer::smoothingAlpha() const
-{
-    using Clock = std::chrono::steady_clock;
-
-    static double lastTime = 0.0;
-
-    const auto now = Clock::now().time_since_epoch();
-    const double nowSec =
-        std::chrono::duration<double>(now).count();
-
-    if (lastTime <= 0.0)
-    {
-        lastTime = nowSec;
-        return 1.0f;
-    }
-
-    const double dt = std::clamp(nowSec - lastTime, 0.0, 0.1);
-    lastTime = nowSec;
-
-    // Чем больше число, тем быстрее карта догоняет новую позицию.
-    constexpr double smoothSpeed = 6.0;
-
-    return static_cast<float>(
-        1.0 - std::exp(-smoothSpeed * dt)
-    );
-}
 
 
 
@@ -5370,82 +4893,6 @@ double SystemMapRenderer::environmentVisualTimeSeconds(
 
 
 
-
-glm::vec3 SystemMapRenderer::smoothVec3(
-    SmoothPoint& point,
-    const glm::vec3& target,
-    float alpha
-)
-{
-    if (!point.initialized)
-    {
-        point.visual = target;
-        point.initialized = true;
-        return target;
-    }
-
-    point.visual += (target - point.visual) * alpha;
-    return point.visual;
-}
-
-
-
-
-
-void SystemMapRenderer::drawPanelText(
-    const Viewport& vp,
-    const std::string& title,
-    const std::vector<std::string>& lines
-)
-{
-    auto& text = TextRenderer::instance();
-
-    text.beginFrame();
-
-    const float panelX = static_cast<float>(vp.width) - 386.0f;
-    float y = 48.0f;
-
-    // Title: same family as loading screen — orange, thin, technical.
-    text.textDraw(
-        title,
-        panelX,
-        y,
-        0.34f,
-        glm::vec3(1.0f, 0.68f, 0.38f)
-    );
-
-    y += 42.0f;
-
-    for (const auto& line : lines)
-    {
-        if (line.empty())
-        {
-            y += 12.0f;
-            continue;
-        }
-
-        const bool isHint =
-            line.find("F11") != std::string::npos ||
-            line.find("Next") != std::string::npos;
-
-        const glm::vec3 color =
-            isHint
-                ? glm::vec3(0.38f, 0.58f, 0.78f)
-                : glm::vec3(0.78f, 0.86f, 0.96f);
-
-        text.textDraw(
-            line,
-            panelX,
-            y,
-            0.24f,
-            color
-        );
-
-        y += 24.0f;
-    }
-
-    text.endFrame();
-}
 
 
 

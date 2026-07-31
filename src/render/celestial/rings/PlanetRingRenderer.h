@@ -25,7 +25,21 @@ struct PlanetRingRenderContext
 
     glm::dvec2 ringDepthCoefficients {0.0};
 
-    double planetRotationPhaseRad = 0.0;
+    /*
+        Ring texture/pattern phase is independent from planet rotation.
+        A ring system does not rotate as a rigid extension of the planet.
+    */
+    double patternPhaseRad = 0.0;
+
+    /*
+        Prevent a projected ring ellipse from collapsing to zero area when
+        viewed edge-on. The renderer preserves a thin cartographic line
+        instead of popping the ring out of existence.
+    */
+    double minimumProjectedMinorAxisPx = 0.75;
+
+    /* Smooth System-map LOD fade. Details normally leaves this at 1.0. */
+    float opacityScale = 1.0f;
 
     world::celestial::SystemMapRingVisualProfile visual;
 
@@ -61,7 +75,8 @@ private:
     GLint m_ringDepthCoefficientsLocation = -1;
 
     GLint m_renderPartLocation = -1;
-    GLint m_rotationPhaseLocation = -1;
+    GLint m_patternPhaseLocation = -1;
+    GLint m_opacityScaleLocation = -1;
 
     GLint m_visualModeLocation = -1;
     GLint m_visualBandEmphasisLocation = -1;

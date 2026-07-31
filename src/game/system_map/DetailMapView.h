@@ -49,7 +49,7 @@ public:
 
         m_state.minimumZoom =
             m_state.sceneIsSpatialVolume
-                ? 1.40
+                ? m_controls.spatialVolumeMinimumZoom
                 : m_controls.minZoom;
 
         m_state.camera.zoom =

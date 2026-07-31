@@ -1365,22 +1365,40 @@ void SystemMapRenderer::handleDetailAndHubInput(
     bool rightDown
 )
 {
-    m_localMapInteraction.handle(
-        m_mode,
-        m_detailView,
-        m_hubView,
-        m_systemView,
-        vp,
-        window,
-        mx,
-        my,
-        localMx,
-        localMy,
-        inside,
-        leftDown,
-        rightDown,
-        m_pendingScrollY
-    );
+    const auto result =
+        m_localMapInteraction.handle(
+            m_mode,
+            m_detailView,
+            m_hubView,
+            vp,
+            window,
+            mx,
+            my,
+            localMx,
+            localMy,
+            inside,
+            leftDown,
+            rightDown,
+            m_pendingScrollY
+        );
+
+    auto& systemState =
+        m_systemView.state();
+
+    using SelectionAction =
+        game::system_map::LocalMapInteractionResult::SelectionAction;
+
+    if (result.selectionAction == SelectionAction::SelectHub)
+    {
+        systemState.selectedBodyId.clear();
+        systemState.selectedHubId = result.hubId;
+        systemState.selectedHubParentBodyId = result.parentBodyId;
+    }
+    else if (result.selectionAction == SelectionAction::ClearHub)
+    {
+        systemState.selectedHubId.clear();
+        systemState.selectedHubParentBodyId.clear();
+    }
 }
 
 

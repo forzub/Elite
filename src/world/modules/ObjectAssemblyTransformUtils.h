@@ -21,6 +21,16 @@ const game::ship::geometry::AssemblyMeshPart* findAssemblyMeshPartById(
     const game::ship::geometry::AssemblyModule** outOwnerModule = nullptr
 );
 
+
+glm::mat4 buildAssemblyModuleStaticLocalModel(
+    const game::ship::geometry::AssemblyModule& module
+);
+
+glm::mat4 buildAssemblyModuleStaticHierarchicalLocalModel(
+    const game::ship::geometry::ObjectAssembly& assembly,
+    const std::string& moduleId
+);
+
 glm::mat4 buildAssemblyModuleOwnLocalModel(
     const game::ship::geometry::AssemblyModule& module,
     const ObjectAssemblyRuntime& assemblyRuntime

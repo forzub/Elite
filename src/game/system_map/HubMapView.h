@@ -23,9 +23,11 @@ class HubMapView
 public:
     HubMapView()
     {
+        m_controls.rotateSensitivityScale = 0.65;
         m_controls.zoomStep = 1.06;
         m_controls.minZoom = 0.15;
         m_controls.maxZoom = 8.0;
+        m_controls.constrainPitch = true;
     }
 
     HubMapViewState& state() noexcept { return m_state; }
@@ -131,14 +133,20 @@ public:
             const double distance =
                 glm::length(mousePx - pickable.screenCenterPx);
             const double pickRadius =
-                std::clamp(pickable.screenRadiusPx, 18.0, 140.0);
+                std::clamp(
+                    pickable.screenRadiusPx,
+                    m_controls.pivotPickMinimumRadiusPx,
+                    m_controls.pivotPickMaximumRadiusPx
+                );
 
-            if (distance > pickRadius + 80.0)
+            if (distance >
+                pickRadius + m_controls.pivotPickMarginPx)
                 continue;
 
             const double score =
                 distance -
-                static_cast<double>(pickable.priority) * 18.0;
+                static_cast<double>(pickable.priority) *
+                    m_controls.pivotPriorityBiasPx;
 
             if (score < bestScore)
             {

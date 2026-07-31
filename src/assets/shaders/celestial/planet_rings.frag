@@ -32,7 +32,8 @@ uniform vec4 uBandExtra[MAX_RING_BANDS];
 */
 uniform vec4 uBandParticle[MAX_RING_BANDS];
 
-uniform float uRotationPhase;
+uniform float uPatternPhase;
+uniform float uOpacityScale;
 
 /*
     0 = layered_bands
@@ -500,7 +501,7 @@ float particleCloudMask(
     vec4 bandParticle
 )
 {
-    
+
 
 /*
     Размер procedural-cell выбирается в экранных
@@ -788,8 +789,8 @@ float normalizedRadius =
         0.34
     );
 
-    
-    
+
+
     float softness =
         mix(
             0.040,
@@ -856,8 +857,8 @@ void main()
         localFragmentPx -
         planetCenterGlPx;
 
-    
-    
+
+
     /*
     uRingAxisXPx и uRingAxisYPx рассчитаны
     в экранных координатах карты:
@@ -1006,7 +1007,7 @@ ringCoordinate.y =
             ringCoordinate.y,
             ringCoordinate.x
         ) +
-        uRotationPhase;
+        uPatternPhase;
 
     vec4 accumulated =
         vec4(0.0);
@@ -1116,9 +1117,9 @@ float halfWidth =
 
             Берём среднюю длину двух проекционных осей.
         */
-        
 
-        
+
+
 
 
 
@@ -2008,6 +2009,13 @@ if (uVisualMode == 1)
                 accumulated.a
             );
     }
+
+    accumulated *=
+        clamp(
+            uOpacityScale,
+            0.0,
+            1.0
+        );
 
     if (accumulated.a <=
         0.0001)

@@ -79,13 +79,17 @@ void PlanetRingRenderer::ensureResources()
                 "uRenderPart"
             );
 
-        m_rotationPhaseLocation =
+        m_patternPhaseLocation =
             glGetUniformLocation(
                 m_shader,
-                "uRotationPhase"
+                "uPatternPhase"
             );
 
-
+        m_opacityScaleLocation =
+            glGetUniformLocation(
+                m_shader,
+                "uOpacityScale"
+            );
 
         m_visualModeLocation =
             glGetUniformLocation(
@@ -192,98 +196,110 @@ void PlanetRingRenderer::render(
 
 
 
-    static bool ringTracePrinted = false;
+    glm::dvec2 ringAxisX =
+        context.ringAxisXPx;
 
-if (!ringTracePrinted)
-{
-    ringTracePrinted = true;
+    glm::dvec2 ringAxisY =
+        context.ringAxisYPx;
 
-    std::cerr
-        << "[PlanetRingRenderer TRACE]"
-        << " bands="
-        << context.bands->size()
-        << " mode="
-        << (
-            context.visual.renderMode ==
-                world::celestial::
-                    SystemMapRingDisplayMode::
-                        ParticleCloud
-                ? "particle_cloud"
-                : "layered_bands"
-        )
-        << " center=("
-        << context.planetCenterPx.x
-        << ", "
-        << context.planetCenterPx.y
-        << ")"
-        << " axisX=("
-        << context.ringAxisXPx.x
-        << ", "
-        << context.ringAxisXPx.y
-        << ")"
-        << " axisY=("
-        << context.ringAxisYPx.x
-        << ", "
-        << context.ringAxisYPx.y
-        << ")"
-        << '\n';
+    const double axisXLength =
+        glm::length(ringAxisX);
 
-    for (std::size_t index = 0;
-         index < context.bands->size();
-         ++index)
-    {
-        const auto& band =
-            (*context.bands)[index];
+    const double axisYLength =
+        glm::length(ringAxisY);
 
-        std::cerr
-            << "  band["
-            << index
-            << "] "
-            << band.name
-            << " radius=("
-            << band.innerRadiusKm
-            << ", "
-            << band.outerRadiusKm
-            << ") opacity="
-            << band.opacity
-            << " opticalDepth="
-            << band.opticalDepth
-            << " visualScale="
-            << band.visualOpacityScale
-            << " class="
-            << static_cast<int>(
-                band.visibilityClass
-            )
-            << " densityScale="
-            << band.particleDensityScale
-            << " particleSize=("
-            << band.particleSizePxRange.x
-            << ", "
-            << band.particleSizePxRange.y
-            << ")"
-            << '\n';
-    }
-}
+    const double maximumAxisLength =
+        std::max(
+            axisXLength,
+            axisYLength
+        );
 
-
-
-
-
-    const double determinant =
-        context.ringAxisXPx.x *
-            context.ringAxisYPx.y -
-        context.ringAxisXPx.y *
-            context.ringAxisYPx.x;
-
-    /*
-        Если кольца смотрят почти точно с ребра,
-        screen-space ellipse вырождается.
-    */
-    if (std::abs(determinant) <
-        0.00001)
+    if (maximumAxisLength <= 0.000001)
     {
         return;
     }
+
+    double determinant =
+        ringAxisX.x * ringAxisY.y -
+        ringAxisX.y * ringAxisY.x;
+
+    const double minimumMinorAxisPx =
+        std::max(
+            0.0,
+            context.minimumProjectedMinorAxisPx
+        );
+
+    const double minimumDeterminantMagnitude =
+        maximumAxisLength *
+        minimumMinorAxisPx;
+
+    if (minimumMinorAxisPx > 0.0 &&
+        std::abs(determinant) <
+            minimumDeterminantMagnitude)
+    {
+        const bool xIsMajor =
+            axisXLength >= axisYLength;
+
+        const glm::dvec2 majorAxis =
+            xIsMajor
+                ? ringAxisX
+                : ringAxisY;
+
+        glm::dvec2& minorAxis =
+            xIsMajor
+                ? ringAxisY
+                : ringAxisX;
+
+        const glm::dvec2 majorPerpendicular =
+            glm::normalize(
+                glm::dvec2(
+                    -majorAxis.y,
+                    majorAxis.x
+                )
+            );
+
+        const double perpendicularComponent =
+            glm::dot(
+                minorAxis,
+                majorPerpendicular
+            );
+
+        double handedness = 1.0;
+
+        if (perpendicularComponent < -0.000000001)
+        {
+            handedness = -1.0;
+        }
+        else if (perpendicularComponent > 0.000000001)
+        {
+            handedness = 1.0;
+        }
+        else if (determinant < 0.0)
+        {
+            handedness = -1.0;
+        }
+
+        const double stablePerpendicularComponent =
+            handedness *
+            std::max(
+                std::abs(perpendicularComponent),
+                minimumMinorAxisPx
+            );
+
+        minorAxis +=
+            majorPerpendicular *
+            (
+                stablePerpendicularComponent -
+                perpendicularComponent
+            );
+
+        determinant =
+            ringAxisX.x * ringAxisY.y -
+            ringAxisX.y * ringAxisY.x;
+    }
+
+    if (std::abs(determinant) < 0.00000001)
+        return;
 
     ensureResources();
 
@@ -547,20 +563,20 @@ if (!ringTracePrinted)
     glUniform2f(
         m_ringAxisXLocation,
         static_cast<float>(
-            context.ringAxisXPx.x
+            ringAxisX.x
         ),
         static_cast<float>(
-            context.ringAxisXPx.y
+            ringAxisX.y
         )
     );
 
     glUniform2f(
         m_ringAxisYLocation,
         static_cast<float>(
-            context.ringAxisYPx.x
+            ringAxisY.x
         ),
         static_cast<float>(
-            context.ringAxisYPx.y
+            ringAxisY.y
         )
     );
 
@@ -583,12 +599,20 @@ if (!ringTracePrinted)
     );
 
     glUniform1f(
-        m_rotationPhaseLocation,
+        m_patternPhaseLocation,
         static_cast<float>(
-            context.planetRotationPhaseRad
+            context.patternPhaseRad
         )
     );
 
+    glUniform1f(
+        m_opacityScaleLocation,
+        std::clamp(
+            context.opacityScale,
+            0.0f,
+            1.0f
+        )
+    );
 
     glUniform1i(
         m_visualModeLocation,

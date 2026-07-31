@@ -34,24 +34,35 @@ namespace game::system_map
         float fittedSystemRadiusWorld = 70.0f;
         float initialFitPadding = 1.35f;
 
-        // Screen-space navigation proxies. These are not physical radii.
-        float tinyMoonProxyRadiusPx = 4.0f;
+        /*
+            Ring-and-cross markers are reserved for stars and planets.
+            Sub-pixel moons use a compact filled point proxy instead; this
+            preserves the satellite hierarchy without recreating reticle
+            clutter around giant planets.
+        */
+        float proxyFadeStartRadiusRatio = 0.62f;
+
         float minPhysicalBodyRadiusPx = 0.70f;
         float starMarkerRadiusPx = 3.0f;
         float planetMarkerRadiusPx = 3.5f;
+        float moonPointProxyRadiusPx = 2.25f;
+        float moonPointProxyFadeEndRadiusPx = 2.75f;
         float pickMinBodyRadiusPx = 6.0f;
 
         float rotateSensitivity = 0.0055f;
         float pitchLimitRad = 1.32f;
 
-        float rotationPivotMaxDistancePx = 28.0f;
+        float cameraBodyAnchorMaxDistancePx = 28.0f;
         float rotationMaxStepRad = 0.10f;
 
-        float zoomStep = 1.28f;
+        float zoomInFactor = 0.935f;
+        float zoomOutFactor = 1.07f;
+        float bodyZoomClearanceScale = 1.12f;
         double clickMoveThresholdPx = 5.0;
 
         float navigationCellInteractiveViewportFraction = 0.075f;
         float navigationCellInteractiveMinPx = 56.0f;
+        float navigationCellPickRadiusPx = 18.0f;
 
         float navigationHoverFadeInSeconds = 0.18f;
         float navigationHoverFadeOutSeconds = 0.14f;
@@ -86,8 +97,8 @@ namespace game::system_map
         Mutable state belonging exclusively to the System map mode.
 
         Input is coordinated by SystemMapInteraction and draw orchestration
-        by SystemMapSceneRenderer. The legacy SystemMapRenderer facade owns
-        only shared rendering resources and the frame-local pick cache.
+        by SystemMapSceneRenderer. SystemMapRenderer owns only shared rendering
+        resources and the frame-local pick cache.
     */
     struct SystemMapViewState
     {
@@ -180,33 +191,24 @@ namespace game::system_map
 
         glm::mat4 viewMatrix() const
         {
-            const glm::vec3 direction =
-                cameraDirectionFromYawPitch(
-                    m_state.camera.yaw,
-                    m_state.camera.pitch
-                );
+            const glm::dvec3 direction =
+                cameraDirectionWorld();
 
-            const glm::vec3 up =
-                cameraUpFromYawPitch(
-                    m_state.camera.yaw,
-                    m_state.camera.pitch
-                );
+            const glm::dvec3 up =
+                cameraUpWorld();
 
             /*
                 All System-map render positions are camera-target relative,
                 so the perspective camera always looks at local zero.
             */
-            const glm::vec3 eye =
+            const glm::dvec3 eye =
                 direction *
-                perspectiveEyeDistance(
-                    m_state.camera.distance,
-                    m_visuals.projectionFieldOfViewDeg
-                );
+                cameraEyeDistance();
 
             return glm::lookAt(
-                eye,
+                glm::vec3(eye),
                 glm::vec3(0.0f),
-                up
+                glm::vec3(up)
             );
         }
 
@@ -238,6 +240,402 @@ namespace game::system_map
                     m_visuals.projectionFieldOfViewDeg
                 )
             );
+        }
+
+        glm::dvec3 cameraDirectionWorld() const
+        {
+            return glm::dvec3(
+                cameraDirectionFromYawPitch(
+                    m_state.camera.yaw,
+                    m_state.camera.pitch
+                )
+            );
+        }
+
+        glm::dvec3 cameraUpWorld() const
+        {
+            return glm::dvec3(
+                cameraUpFromYawPitch(
+                    m_state.camera.yaw,
+                    m_state.camera.pitch
+                )
+            );
+        }
+
+        glm::dvec3 cameraRightWorld() const
+        {
+            const glm::dvec3 right =
+                glm::cross(
+                    cameraUpWorld(),
+                    cameraDirectionWorld()
+                );
+
+            const double length =
+                glm::length(right);
+
+            if (length <= 0.000000001)
+                return glm::dvec3(1.0, 0.0, 0.0);
+
+            return right / length;
+        }
+
+        double cameraEyeDistance() const
+        {
+            return static_cast<double>(
+                perspectiveEyeDistance(
+                    m_state.camera.distance,
+                    m_visuals.projectionFieldOfViewDeg
+                )
+            );
+        }
+
+        glm::dvec3 cameraEyeAbsolute() const
+        {
+            return
+                m_state.camera.target +
+                cameraDirectionWorld() *
+                    cameraEyeDistance();
+        }
+
+        double targetPlaneWorldUnitsPerPixel(
+            const Viewport& viewport
+        ) const
+        {
+            return
+                static_cast<double>(
+                    std::clamp(
+                        m_state.camera.distance,
+                        minimumCameraHalfHeight,
+                        maximumCameraHalfHeight
+                    )
+                ) *
+                2.0 /
+                static_cast<double>(
+                    std::max(viewport.height, 1)
+                );
+        }
+
+        glm::vec2 projectAbsoluteToScreen(
+            const Viewport& viewport,
+            const glm::dvec3& absolutePosition,
+            bool& visible,
+            float& depth
+        ) const
+        {
+            const glm::dvec3 relative =
+                absolutePosition -
+                m_state.camera.target;
+
+            const glm::vec4 clip =
+                projectionMatrix(viewport) *
+                viewMatrix() *
+                glm::vec4(
+                    glm::vec3(relative),
+                    1.0f
+                );
+
+            visible = false;
+            depth = 2.0f;
+
+            if (clip.w <= 0.00001f)
+                return glm::vec2(0.0f);
+
+            const glm::vec3 ndc =
+                glm::vec3(clip) /
+                clip.w;
+
+            visible =
+                ndc.x >= -1.0f && ndc.x <= 1.0f &&
+                ndc.y >= -1.0f && ndc.y <= 1.0f &&
+                ndc.z >= -1.0f && ndc.z <= 1.0f;
+
+            depth = ndc.z;
+
+            return glm::vec2(
+                (ndc.x * 0.5f + 0.5f) *
+                    static_cast<float>(viewport.width),
+                (1.0f - (ndc.y * 0.5f + 0.5f)) *
+                    static_cast<float>(viewport.height)
+            );
+        }
+
+        glm::dvec3 targetPlanePointFromScreen(
+            const Viewport& viewport,
+            double localMouseX,
+            double localMouseY
+        ) const
+        {
+            const double safeWidth =
+                static_cast<double>(
+                    std::max(viewport.width, 1)
+                );
+
+            const double safeHeight =
+                static_cast<double>(
+                    std::max(viewport.height, 1)
+                );
+
+            const double aspect =
+                safeWidth / safeHeight;
+
+            const double halfHeight =
+                static_cast<double>(
+                    std::clamp(
+                        m_state.camera.distance,
+                        minimumCameraHalfHeight,
+                        maximumCameraHalfHeight
+                    )
+                );
+
+            const double ndcX =
+                localMouseX / safeWidth * 2.0 - 1.0;
+
+            const double ndcY =
+                1.0 - localMouseY / safeHeight * 2.0;
+
+            return
+                m_state.camera.target +
+                cameraRightWorld() *
+                    ndcX * halfHeight * aspect +
+                cameraUpWorld() *
+                    ndcY * halfHeight;
+        }
+
+        void panCameraByScreenDelta(
+            const Viewport& viewport,
+            double deltaX,
+            double deltaY
+        )
+        {
+            const double worldUnitsPerPixel =
+                targetPlaneWorldUnitsPerPixel(
+                    viewport
+                );
+
+            m_state.camera.target -=
+                cameraRightWorld() *
+                deltaX *
+                worldUnitsPerPixel;
+
+            m_state.camera.target +=
+                cameraUpWorld() *
+                deltaY *
+                worldUnitsPerPixel;
+        }
+
+        void orbitCameraAroundPivot(
+            const glm::dvec3& pivotAbsolute,
+            float yawDelta,
+            float pitchDelta,
+            float pitchLimitRad
+        )
+        {
+            const float oldYaw =
+                m_state.camera.yaw;
+
+            const float oldPitch =
+                m_state.camera.pitch;
+
+            const float newYaw =
+                wrapAngleRad(
+                    oldYaw + yawDelta
+                );
+
+            const float newPitch =
+                std::clamp(
+                    oldPitch + pitchDelta,
+                    -pitchLimitRad,
+                    pitchLimitRad
+                );
+
+            const glm::dvec3 oldDirection(
+                cameraDirectionFromYawPitch(
+                    oldYaw,
+                    oldPitch
+                )
+            );
+
+            const glm::dvec3 oldUp(
+                cameraUpFromYawPitch(
+                    oldYaw,
+                    oldPitch
+                )
+            );
+
+            const glm::dvec3 oldRight =
+                normalizedCameraRight(
+                    oldUp,
+                    oldDirection
+                );
+
+            const glm::dvec3 newDirection(
+                cameraDirectionFromYawPitch(
+                    newYaw,
+                    newPitch
+                )
+            );
+
+            const glm::dvec3 newUp(
+                cameraUpFromYawPitch(
+                    newYaw,
+                    newPitch
+                )
+            );
+
+            const glm::dvec3 newRight =
+                normalizedCameraRight(
+                    newUp,
+                    newDirection
+                );
+
+            const glm::dmat3 oldBasis(
+                oldRight,
+                oldUp,
+                oldDirection
+            );
+
+            const glm::dmat3 newBasis(
+                newRight,
+                newUp,
+                newDirection
+            );
+
+            const glm::dmat3 worldRotation =
+                newBasis *
+                glm::transpose(oldBasis);
+
+            m_state.camera.target =
+                pivotAbsolute +
+                worldRotation *
+                    (
+                        m_state.camera.target -
+                        pivotAbsolute
+                    );
+
+            m_state.camera.yaw =
+                newYaw;
+
+            m_state.camera.pitch =
+                newPitch;
+        }
+
+        void zoomCameraAroundPivot(
+            const glm::dvec3& pivotAbsolute,
+            float zoomFactor,
+            float minimumDistance,
+            float maximumDistance,
+            double minimumEyeDistanceFromPivot = 0.0
+        )
+        {
+            minimumDistance =
+                std::clamp(
+                    minimumDistance,
+                    minimumCameraHalfHeight,
+                    maximumCameraHalfHeight
+                );
+
+            maximumDistance =
+                std::clamp(
+                    maximumDistance,
+                    minimumDistance,
+                    maximumCameraHalfHeight
+                );
+
+            const float oldDistance =
+                std::clamp(
+                    m_state.camera.distance,
+                    minimumDistance,
+                    maximumDistance
+                );
+
+            const float requestedDistance =
+                std::clamp(
+                    oldDistance * zoomFactor,
+                    minimumDistance,
+                    maximumDistance
+                );
+
+            double poseScale =
+                static_cast<double>(requestedDistance) /
+                static_cast<double>(
+                    std::max(
+                        oldDistance,
+                        minimumCameraHalfHeight
+                    )
+                );
+
+            /*
+                A body pivot uses distance above its safe surface rather than
+                distance to its centre. Zoom-in therefore approaches the
+                surface asymptotically and cannot jump through the body.
+
+                Zoom-out keeps the ordinary pose scale so a camera recovered
+                from legacy inside-body state moves outward immediately.
+            */
+            if (minimumEyeDistanceFromPivot > 0.0 &&
+                poseScale < 1.0)
+            {
+                const double currentEyeDistance =
+                    glm::length(
+                        cameraEyeAbsolute() -
+                        pivotAbsolute
+                    );
+
+                const double clearanceEpsilon =
+                    std::max(
+                        0.000000001,
+                        minimumEyeDistanceFromPivot * 0.000001
+                    );
+
+                if (currentEyeDistance <=
+                    minimumEyeDistanceFromPivot +
+                        clearanceEpsilon)
+                {
+                    return;
+                }
+
+                const double currentClearance =
+                    currentEyeDistance -
+                    minimumEyeDistanceFromPivot;
+
+                const double requestedEyeDistance =
+                    minimumEyeDistanceFromPivot +
+                    currentClearance * poseScale;
+
+                poseScale =
+                    requestedEyeDistance /
+                    currentEyeDistance;
+            }
+
+            float newDistance =
+                std::clamp(
+                    static_cast<float>(
+                        static_cast<double>(oldDistance) *
+                        poseScale
+                    ),
+                    minimumDistance,
+                    maximumDistance
+                );
+
+            poseScale =
+                static_cast<double>(newDistance) /
+                static_cast<double>(
+                    std::max(
+                        oldDistance,
+                        minimumCameraHalfHeight
+                    )
+                );
+
+            m_state.camera.target =
+                pivotAbsolute +
+                (
+                    m_state.camera.target -
+                    pivotAbsolute
+                ) *
+                poseScale;
+
+            m_state.camera.distance =
+                newDistance;
         }
 
         void beginCameraFlight(
@@ -838,6 +1236,42 @@ namespace game::system_map
         }
 
     private:
+        static float wrapAngleRad(
+            float angle
+        )
+        {
+            const float twoPi =
+                6.28318530717958647692f;
+
+            while (angle > 3.14159265358979323846f)
+                angle -= twoPi;
+
+            while (angle < -3.14159265358979323846f)
+                angle += twoPi;
+
+            return angle;
+        }
+
+        static glm::dvec3 normalizedCameraRight(
+            const glm::dvec3& up,
+            const glm::dvec3& direction
+        )
+        {
+            const glm::dvec3 right =
+                glm::cross(
+                    up,
+                    direction
+                );
+
+            const double length =
+                glm::length(right);
+
+            if (length <= 0.000000001)
+                return glm::dvec3(1.0, 0.0, 0.0);
+
+            return right / length;
+        }
+
         static constexpr float depthMultiplier =
             8.0f;
 

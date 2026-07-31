@@ -25,6 +25,14 @@ A scene renderer must use only the view and context passed to it. References to
 facade members such as `m_systemView`, `m_detailView` or `m_hubView` inside an
 extracted scene renderer are contract violations.
 
+## Translation-unit boundary
+
+View, interaction and scene-orchestration implementations are standalone `.cpp`
+translation units. They must not be included into `SystemMapRenderer.cpp`. The
+remaining `SystemMapRenderer*.inl` files are temporary low-level backend splits;
+they stay included by the facade until backend/resource ownership is extracted in
+a later stage.
+
 ## Local-scene object model
 
 A local scene contains three entity classes:

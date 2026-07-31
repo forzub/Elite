@@ -5324,9 +5324,6 @@ void SystemMapRenderer::setRightPanelRatio(float ratio)
 
 
 
-#include "src/game/system_map/LocalMapInteraction.inl"
-#include "src/game/system_map/DetailMapSceneRenderer.inl"
-#include "src/game/system_map/HubMapSceneRenderer.inl"
 
 #include "src/game/system_map/SystemMapRendererDetail.inl"
 

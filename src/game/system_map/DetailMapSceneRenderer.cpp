@@ -1,4 +1,4 @@
-/* Included from SystemMapRenderer.cpp during phase 4 extraction. */
+/* Standalone translation unit for the local-map subsystem. */
 #include "src/game/system_map/DetailMapRenderContext.h"
 #include "src/game/system_map/DetailMapSceneRenderer.h"
 #include "src/game/system_map/DetailMapView.h"

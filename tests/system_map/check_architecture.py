@@ -584,6 +584,114 @@ if root_cmake.is_file():
             fail(root_cmake, f"main target is missing extracted Hub pass: {required}")
 
 
+# Stage 6C: Detail passes/resources are physically extracted from the facade.
+detail_geometry_header = MAP_DIR / "DetailMapGeometryPass.h"
+detail_geometry_cpp = MAP_DIR / "DetailMapGeometryPass.cpp"
+detail_planet_header = MAP_DIR / "DetailMapPlanetPass.h"
+detail_planet_cpp = MAP_DIR / "DetailMapPlanetPass.cpp"
+local_primitives_header = MAP_DIR / "LocalMapPrimitiveRenderer.h"
+local_primitives_cpp = MAP_DIR / "LocalMapPrimitiveRenderer.cpp"
+
+for required in (
+    detail_geometry_header,
+    detail_geometry_cpp,
+    detail_planet_header,
+    detail_planet_cpp,
+    local_primitives_header,
+    local_primitives_cpp,
+):
+    if not required.is_file():
+        fail(required, "required Stage-6C Detail pass component is missing")
+
+if detail_inl.is_file():
+    fail(detail_inl, "legacy Detail facade implementation must be removed")
+
+if renderer_header.is_file():
+    text = renderer_header.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "m_celestialShapeMeshes",
+        "m_planetDetailSculptShader",
+        "m_planetDetailSculptVao",
+        "void drawPlanetSphereGrid(",
+        "void drawPlanetFilledDisk(",
+        "void drawPlanetTexturedGlobe(",
+        "bool drawPlanetShapeModelDetail(",
+        "void drawDetailMapOrbit3D(",
+        "void drawPlanetMapLine(",
+        "void drawPlanetMapCross(",
+        "void drawPlanetMapCircle(",
+    ):
+        if forbidden in text:
+            fail(renderer_header, f"facade still owns Detail pass/resource: {forbidden}")
+
+if renderer_cpp.is_file():
+    text = renderer_cpp.read_text(encoding="utf-8", errors="replace")
+    if "SystemMapRendererDetail.inl" in text:
+        fail(renderer_cpp, "facade still includes legacy Detail implementation")
+
+if detail_backend_header.is_file():
+    text = detail_backend_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "DetailMapPlanetPass m_planetPass",
+        "DetailMapGeometryPass m_geometryPass",
+    ):
+        if required not in text:
+            fail(detail_backend_header, f"Detail backend does not own extracted pass: {required}")
+
+if detail_backend_cpp.is_file():
+    text = detail_backend_cpp.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "m_planetPass.renderCentralBody(",
+        "m_geometryPass.renderScene(",
+        "presentation.camera.starfieldViewMatrix()",
+    ):
+        if required not in text:
+            fail(detail_backend_cpp, f"Detail backend is not routing through extracted pass: {required}")
+    if "m_activeLocalCameraSnapshot" in text:
+        fail(detail_backend_cpp, "Detail backend still mutates facade camera bridge")
+
+if detail_planet_header.is_file():
+    text = detail_planet_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "CelestialShapeMeshLibrary m_shapeMeshes",
+        "m_detailSculptShader",
+        "m_detailSculptVao",
+    ):
+        if required not in text:
+            fail(detail_planet_header, f"Detail planet pass does not own Detail resource: {required}")
+
+if local_primitives_cpp.is_file():
+    text = local_primitives_cpp.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "void drawLocalMapLine(",
+        "void drawLocalMapCross(",
+        "void drawLocalMapCircle(",
+    ):
+        if required not in text:
+            fail(local_primitives_cpp, f"shared local primitive pass is incomplete: {required}")
+
+for hub_file in (hub_backend_cpp, hub_geometry_cpp, hub_planet_cpp):
+    if hub_file.is_file():
+        text = hub_file.read_text(encoding="utf-8", errors="replace")
+        for forbidden in (
+            "m_host.drawPlanetMapLine(",
+            "m_host.drawPlanetMapCross(",
+            "m_host.drawPlanetMapCircle(",
+        ):
+            if forbidden in text:
+                fail(hub_file, f"Hub still depends on Detail-era facade primitive: {forbidden}")
+
+if root_cmake.is_file():
+    text = root_cmake.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "src/game/system_map/DetailMapGeometryPass.cpp",
+        "src/game/system_map/DetailMapPlanetPass.cpp",
+        "src/game/system_map/LocalMapPrimitiveRenderer.cpp",
+    ):
+        if required not in text:
+            fail(root_cmake, f"main target is missing extracted Detail pass: {required}")
+
+
 if errors:
     print("System map architecture check failed:", file=sys.stderr)
     for error in errors:

@@ -1,5 +1,4 @@
 #include "src/game/system_map/SystemMapRenderer.h"
-#include "src/game/system_map/LocalMapAtmosphereRenderer.h"
 #include "src/input/Input.h"
 
 #include <cmath>
@@ -1163,46 +1162,6 @@ void SystemMapRenderer::drawTextPx(
 void SystemMapRenderer::endTextFrame()
 {
     TextRenderer::instance().endFrame();
-}
-
-
-void SystemMapRenderer::drawHubMapPlanetSoftBand(
-    const glm::dvec2& planetCenterPx,
-    double planetRadiusPx,
-    const glm::vec4& peakColor,
-    double startRadiusFactor,
-    double peakRadiusFactor,
-    double endRadiusFactor,
-    int radialSteps,
-    int segments
-)
-{
-    game::system_map::drawLocalMapAtmosphereSoftBand(
-        planetCenterPx,
-        planetRadiusPx,
-        peakColor,
-        startRadiusFactor,
-        peakRadiusFactor,
-        endRadiusFactor,
-        radialSteps,
-        segments
-    );
-}
-
-
-void SystemMapRenderer::drawHubMapPlanetAtmosphereStack(
-    const glm::dvec2& planetCenterPx,
-    double planetRadiusPx,
-    const HubPlanetAtmosphereStyle& style,
-    bool premultipliedTarget
-)
-{
-    game::system_map::drawLocalMapAtmosphereStack(
-        planetCenterPx,
-        planetRadiusPx,
-        style,
-        premultipliedTarget
-    );
 }
 
 
@@ -5209,7 +5168,6 @@ void SystemMapRenderer::setRightPanelRatio(float ratio)
 
 
 
-#include "src/game/system_map/SystemMapRendererDetail.inl"
 
 
 

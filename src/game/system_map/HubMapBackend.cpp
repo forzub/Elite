@@ -1,4 +1,5 @@
 #include "src/game/system_map/HubMapBackend.h"
+#include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 #include "src/game/system_map/SystemMapRenderer.h"
 
 #include <algorithm>
@@ -592,7 +593,7 @@ m_performanceStats.cpuPlanetBackdropMs =
             hubOriginColor.a
         );
 
-        m_host.drawPlanetMapCross(
+        drawLocalMapCross(
             hubOriginScreen,
             6.0f
         );

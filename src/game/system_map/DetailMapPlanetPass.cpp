@@ -1,21 +1,263 @@
-/*
-    Details / Planet map implementation.
+#include "src/game/system_map/DetailMapPlanetPass.h"
+#include "src/game/system_map/LocalMapAtmosphereRenderer.h"
+#include "src/game/system_map/LocalMapPrimitiveRenderer.h"
+#include "src/game/system_map/SystemMapRenderer.h"
 
-    В интерфейсе режим называется Details.
-    В исходном коде ему соответствует Mode::Detail.
+#include <algorithm>
+#include <cmath>
+#include <filesystem>
+#include <iostream>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
-    Этот файл включается из SystemMapRenderer.cpp.
-    Не добавлять его в CMake как отдельную единицу компиляции.
-*/
+#include <GLFW/glfw3.h>
+#include <glm/gtc/constants.hpp>
 
+#include "src/render/ShaderLibrary.h"
 
-// ============================================================================
-// Details camera, projection and scene
-// ============================================================================
+namespace
+{
+double degToRadD(double degrees)
+{
+    return degrees * glm::pi<double>() / 180.0;
+}
 
+glm::dvec3 safeNormalizeD(
+    const glm::dvec3& value,
+    const glm::dvec3& fallback
+)
+{
+    const double length = glm::length(value);
+    return length <= 1.0e-12 ? fallback : value / length;
+}
 
+glm::dvec3 planetNorthAxisWorld(
+    const world::celestial::DetailMapSnapshot& planet
+)
+{
+    const double tilt = degToRadD(planet.planetAxialTiltDeg);
+    const double node = degToRadD(planet.planetAxisNodeDeg);
 
-glm::mat3 SystemMapRenderer::planetBodyToDetailCameraMatrix(
+    return safeNormalizeD(
+        glm::dvec3(
+            std::sin(tilt) * std::cos(node),
+            std::cos(tilt),
+            std::sin(tilt) * std::sin(node)
+        ),
+        glm::dvec3(0.0, 1.0, 0.0)
+    );
+}
+
+glm::dvec3 planetPrimeAxisWorld(const glm::dvec3& north)
+{
+    glm::dvec3 reference(1.0, 0.0, 0.0);
+
+    if (std::abs(glm::dot(reference, north)) > 0.92)
+        reference = glm::dvec3(0.0, 0.0, 1.0);
+
+    return safeNormalizeD(
+        reference - north * glm::dot(reference, north),
+        glm::dvec3(1.0, 0.0, 0.0)
+    );
+}
+
+glm::dvec3 planetEastAxisWorld(
+    const glm::dvec3& north,
+    const glm::dvec3& prime
+)
+{
+    return safeNormalizeD(
+        glm::cross(north, prime),
+        glm::dvec3(0.0, 0.0, 1.0)
+    );
+}
+
+glm::dvec3 planetSurfacePointMeters(
+    const world::celestial::DetailMapSnapshot& planet,
+    double latitudeRad,
+    double textureLongitudeRad,
+    double radiusScale = 1.0
+)
+{
+    const double radius = planet.planetRadiusMeters * radiusScale;
+    const glm::dvec3 north = planetNorthAxisWorld(planet);
+    const glm::dvec3 prime = planetPrimeAxisWorld(north);
+    const glm::dvec3 east = planetEastAxisWorld(north, prime);
+
+    const double worldLongitude =
+        textureLongitudeRad +
+        degToRadD(planet.planetTextureLongitudeOffsetDeg) +
+        planet.planetRotationPhaseRad;
+
+    const double cosLatitude = std::cos(latitudeRad);
+    const double sinLatitude = std::sin(latitudeRad);
+
+    return
+        planet.planetCenterMeters +
+        prime * (std::cos(worldLongitude) * cosLatitude * radius) +
+        north * (sinLatitude * radius) +
+        east * (std::sin(worldLongitude) * cosLatitude * radius);
+}
+
+std::filesystem::path resolveDetailMapAssetPath(
+    const std::string& assetPath
+)
+{
+    namespace fs = std::filesystem;
+
+    const fs::path raw(assetPath);
+
+    if (raw.is_absolute())
+        return raw.lexically_normal();
+
+    const fs::path cwd = fs::current_path();
+
+    const std::vector<fs::path> candidates = {
+        cwd / raw,
+        cwd.parent_path() / raw,
+        cwd.parent_path().parent_path() / raw,
+        fs::path("D:/__elite/work") / raw
+    };
+
+    for (const fs::path& candidate : candidates)
+    {
+        if (fs::exists(candidate))
+            return candidate.lexically_normal();
+    }
+
+    return (cwd.parent_path() / raw).lexically_normal();
+}
+}
+
+namespace game::system_map
+{
+const LocalMapCameraSnapshot& DetailMapPlanetPass::activeCamera() const
+{
+    if (!m_activeCamera)
+        throw std::logic_error("DetailMapPlanetPass camera is unavailable");
+
+    return *m_activeCamera;
+}
+
+void DetailMapPlanetPass::drawPlanetMapCross(
+    const glm::dvec2& point,
+    float size
+)
+{
+    drawLocalMapCross(point, size);
+}
+
+void DetailMapPlanetPass::renderCentralBody(
+    const DetailMapPresentation& presentation,
+    const world::celestial::DetailMapSnapshot& planet
+)
+{
+    if (!planet.hasCentralBody)
+        return;
+
+    const LocalMapCameraSnapshot* previousCamera = m_activeCamera;
+    m_activeCamera = &presentation.camera;
+
+    struct RestoreCamera
+    {
+        const LocalMapCameraSnapshot*& slot;
+        const LocalMapCameraSnapshot* previous;
+
+        ~RestoreCamera()
+        {
+            slot = previous;
+        }
+    } restoreCamera {m_activeCamera, previousCamera};
+
+    m_host.beginEnvironmentRenderSessionIfNeeded(
+        SystemMapRenderer::Mode::Detail,
+        planet.systemId,
+        planet.planetBodyId
+    );
+
+    const glm::dvec2& centerPx = presentation.centerPx;
+    const double scale = presentation.scale;
+
+    std::vector<world::celestial::SystemMapRing> normalizedRingBands;
+
+    const auto ringContext =
+        planetRingRenderContext(
+            planet,
+            scale,
+            centerPx,
+            normalizedRingBands
+        );
+
+    const auto environmentProfile =
+        m_host.resolvedEnvironmentProfileForBody(
+            planet.systemId,
+            planet.planetBodyId,
+            planet.planetName,
+            planet.environmentPresetId
+        );
+
+    const bool hidePhysicalSurface =
+        environmentProfile.found &&
+        (
+            environmentProfile.rendering.surfaceVisibility == "hidden" ||
+            !environmentProfile.rendering.loadSurfaceTextures
+        );
+
+    m_host.m_planetRingRenderer.render(
+        ringContext,
+        render::celestial::rings::PlanetRingRenderPart::Back
+    );
+
+    const bool shapeModelDrawn =
+        !hidePhysicalSurface &&
+        drawPlanetShapeModelDetail(
+            planet,
+            scale,
+            centerPx
+        );
+
+    if (!shapeModelDrawn)
+    {
+        drawPlanetFilledDisk(
+            planet,
+            scale,
+            centerPx
+        );
+
+        if (!hidePhysicalSurface)
+        {
+            drawPlanetTexturedGlobe(
+                planet,
+                scale,
+                centerPx
+            );
+        }
+    }
+
+    drawPlanetEnvironmentLayers(
+        planet,
+        scale,
+        centerPx,
+        !shapeModelDrawn
+    );
+
+    m_host.m_planetRingRenderer.render(
+        ringContext,
+        render::celestial::rings::PlanetRingRenderPart::Front
+    );
+
+    if (!shapeModelDrawn)
+    {
+        drawPlanetSphereGrid(
+            planet,
+            scale,
+            centerPx
+        );
+    }
+}
+
+glm::mat3 DetailMapPlanetPass::planetBodyToDetailCameraMatrix(
     const world::celestial::DetailMapSnapshot& planet
 ) const
 {
@@ -79,13 +321,13 @@ glm::mat3 SystemMapRenderer::planetBodyToDetailCameraMatrix(
             cosine;
 
     const glm::dvec3 cameraPrime =
-        activeLocalCameraSnapshot().vectorToCamera(rotatedPrime);
+        activeCamera().vectorToCamera(rotatedPrime);
 
     const glm::dvec3 cameraNorth =
-        activeLocalCameraSnapshot().vectorToCamera(north);
+        activeCamera().vectorToCamera(north);
 
     const glm::dvec3 cameraEast =
-        activeLocalCameraSnapshot().vectorToCamera(rotatedEast);
+        activeCamera().vectorToCamera(rotatedEast);
 
     /*
         glm::mat3 принимает столбцы.
@@ -114,130 +356,7 @@ glm::mat3 SystemMapRenderer::planetBodyToDetailCameraMatrix(
         );
 }
 
-
-void SystemMapRenderer::drawPlanetMapLine(
-    const glm::dvec2& a,
-    const glm::dvec2& b
-)
-{
-    glBegin(GL_LINES);
-    glVertex2d(a.x, a.y);
-    glVertex2d(b.x, b.y);
-    glEnd();
-}
-
-
-void SystemMapRenderer::drawPlanetMapCross(
-    const glm::dvec2& p,
-    float size
-)
-{
-    glBegin(GL_LINES);
-    glVertex2d(p.x - size, p.y);
-    glVertex2d(p.x + size, p.y);
-    glVertex2d(p.x, p.y - size);
-    glVertex2d(p.x, p.y + size);
-    glEnd();
-}
-
-
-void SystemMapRenderer::drawPlanetMapCircle(
-    const glm::dvec2& center,
-    double radiusPx,
-    int segments
-)
-{
-    if (segments < 8)
-        segments = 8;
-
-    glBegin(GL_LINE_LOOP);
-
-    for (int i = 0; i < segments; ++i)
-    {
-        const double a =
-            glm::two_pi<double>() *
-            static_cast<double>(i) /
-            static_cast<double>(segments);
-
-        glVertex2d(
-            center.x + std::cos(a) * radiusPx,
-            center.y + std::sin(a) * radiusPx
-        );
-    }
-
-    glEnd();
-}
-
-
-void SystemMapRenderer::drawPlanetMapAxes(
-    const glm::dvec3& originMeters,
-    const world::celestial::LocalSceneAxes& axes,
-    const world::celestial::DetailMapSnapshot& planet,
-    double scale,
-    const glm::dvec2& centerPx,
-    double axisLenMeters
-)
-{
-    const glm::dvec2 o =
-        activeLocalCameraSnapshot().project(originMeters);
-
-    const glm::dvec2 x =
-        activeLocalCameraSnapshot().project(originMeters + axes.x * axisLenMeters);
-
-    const glm::dvec2 y =
-        activeLocalCameraSnapshot().project(originMeters + axes.y * axisLenMeters);
-
-    const glm::dvec2 z =
-        activeLocalCameraSnapshot().project(originMeters + axes.z * axisLenMeters);
-
-    glColor4f(1.0f, 0.25f, 0.25f, 0.9f);
-    drawPlanetMapLine(o, x);
-
-    glColor4f(0.25f, 1.0f, 0.25f, 0.9f);
-    drawPlanetMapLine(o, y);
-
-    glColor4f(0.25f, 0.55f, 1.0f, 0.9f);
-    drawPlanetMapLine(o, z);
-}
-
-
-void SystemMapRenderer::drawPlanetMapVelocityArrow(
-    const glm::dvec3& originMeters,
-    const glm::dvec3& velocityMps,
-    const world::celestial::DetailMapSnapshot& planet,
-    double scale,
-    const glm::dvec2& centerPx,
-    double lenMeters
-)
-{
-    const double speed =
-        glm::length(velocityMps);
-
-    if (speed < 0.001)
-        return;
-
-    const glm::dvec3 dir =
-        velocityMps / speed;
-
-    const glm::dvec2 a =
-        activeLocalCameraSnapshot().project(originMeters);
-
-    const glm::dvec2 b =
-        activeLocalCameraSnapshot().project(originMeters + dir * lenMeters);
-
-    glColor4f(1.0f, 0.92f, 0.25f, 0.95f);
-    drawPlanetMapLine(a, b);
-
-    drawPlanetMapCross(
-        b,
-        4.0f
-    );
-}
-
-
-// Detail orchestration moved to DetailMapBackend.cpp.
-
-void SystemMapRenderer::drawPlanetSphereGrid(
+void DetailMapPlanetPass::drawPlanetSphereGrid(
     const world::celestial::DetailMapSnapshot& planet,
     double scale,
     const glm::dvec2& centerPx
@@ -262,7 +381,7 @@ void SystemMapRenderer::drawPlanetSphereGrid(
                 worldPoint -
                 planet.planetCenterMeters;
 
-            return activeLocalCameraSnapshot().vectorToCamera(relative);
+            return activeCamera().vectorToCamera(relative);
         };
 
     auto emitVisibleSurfaceSegment =
@@ -320,10 +439,10 @@ void SystemMapRenderer::drawPlanetSphereGrid(
             }
 
             const glm::dvec2 sa =
-                activeLocalCameraSnapshot().project(a);
+                activeCamera().project(a);
 
             const glm::dvec2 sb =
-                activeLocalCameraSnapshot().project(b);
+                activeCamera().project(b);
 
             glVertex2d(sa.x, sa.y);
             glVertex2d(sb.x, sb.y);
@@ -462,7 +581,7 @@ void SystemMapRenderer::drawPlanetSphereGrid(
     if (cameraSpaceForWorldPoint(northWorld).z >= 0.0)
     {
         const glm::dvec2 north =
-            activeLocalCameraSnapshot().project(northWorld);
+            activeCamera().project(northWorld);
 
         drawPlanetMapCross(
             north,
@@ -473,7 +592,7 @@ void SystemMapRenderer::drawPlanetSphereGrid(
     if (cameraSpaceForWorldPoint(southWorld).z >= 0.0)
     {
         const glm::dvec2 south =
-            activeLocalCameraSnapshot().project(southWorld);
+            activeCamera().project(southWorld);
 
         drawPlanetMapCross(
             south,
@@ -482,9 +601,7 @@ void SystemMapRenderer::drawPlanetSphereGrid(
     }
 }
 
-
-
-void SystemMapRenderer::drawPlanetFilledDisk(
+void DetailMapPlanetPass::drawPlanetFilledDisk(
     const world::celestial::DetailMapSnapshot& planet,
     double scale,
     const glm::dvec2& centerPx
@@ -493,11 +610,11 @@ void SystemMapRenderer::drawPlanetFilledDisk(
     const double r =
         planet.planetRadiusMeters *
         scale *
-        activeLocalCameraSnapshot().state.zoom;
+        activeCamera().state.zoom;
 
     const glm::dvec2 c {
-        centerPx.x + activeLocalCameraSnapshot().state.pan.x,
-        centerPx.y + activeLocalCameraSnapshot().state.pan.y
+        centerPx.x + activeCamera().state.pan.x,
+        centerPx.y + activeCamera().state.pan.y
     };
 
     glColor4f(0.035f, 0.09f, 0.18f, 0.92f);
@@ -522,8 +639,7 @@ void SystemMapRenderer::drawPlanetFilledDisk(
     glEnd();
 }
 
-
-void SystemMapRenderer::drawPlanetTexturedGlobe(
+void DetailMapPlanetPass::drawPlanetTexturedGlobe(
     const world::celestial::DetailMapSnapshot& planet,
     double scale,
     const glm::dvec2& centerPx
@@ -548,16 +664,16 @@ void SystemMapRenderer::drawPlanetTexturedGlobe(
     draw.centerPx =
         glm::dvec2(
             centerPx.x +
-                activeLocalCameraSnapshot().state.pan.x,
+                activeCamera().state.pan.x,
 
             centerPx.y +
-                activeLocalCameraSnapshot().state.pan.y
+                activeCamera().state.pan.y
         );
 
     draw.radiusPx =
         planet.planetRadiusMeters *
         scale *
-        activeLocalCameraSnapshot().state.zoom;
+        activeCamera().state.zoom;
 
     draw.bodyToCamera =
         planetBodyToDetailCameraMatrix(
@@ -594,182 +710,19 @@ void SystemMapRenderer::drawPlanetTexturedGlobe(
     draw.usePolarFade =
         false;
 
-    m_planetGlobeMeshRenderer.render(
+    m_host.m_planetGlobeMeshRenderer.render(
         draw
     );
 }
 
-
-
-
-void SystemMapRenderer::drawDetailMapOrbit3D(
-    const world::celestial::DetailMapOrbit& orbit,
-    const world::celestial::DetailMapSnapshot& planet,
-    double scale,
-    const glm::dvec2& centerPx,
-    int segments
-)
-{
-    if (!orbit.valid || orbit.radiusMeters <= 1.0)
-        return;
-
-    segments =
-        std::max(segments, 32);
-
-    glm::dvec3 radial =
-        orbit.radialAxis;
-
-    glm::dvec3 prograde =
-        orbit.progradeAxis;
-
-    if (glm::length(radial) < 0.001)
-        radial = glm::dvec3(1.0, 0.0, 0.0);
-
-    if (glm::length(prograde) < 0.001)
-        prograde = glm::dvec3(0.0, 0.0, 1.0);
-
-    radial =
-        glm::normalize(radial);
-
-    prograde =
-        glm::normalize(
-            prograde -
-            radial * glm::dot(prograde, radial)
-        );
-
-    GLfloat baseColor[4] =
-    {
-        1.0f,
-        1.0f,
-        1.0f,
-        1.0f
-    };
-
-    glGetFloatv(
-        GL_CURRENT_COLOR,
-        baseColor
-    );
-
-    auto orbitPoint =
-        [&](int i) -> glm::dvec3
-        {
-            const double a =
-                glm::two_pi<double>() *
-                static_cast<double>(i) /
-                static_cast<double>(segments);
-
-            return
-                orbit.centerMeters +
-                radial * std::cos(a) * orbit.radiusMeters +
-                prograde * std::sin(a) * orbit.radiusMeters;
-        };
-
-    auto isHiddenBehindPlanet =
-        [&](const glm::dvec3& worldPoint) -> bool
-        {
-            const glm::dvec3 relative =
-                worldPoint -
-                planet.planetCenterMeters;
-
-            const glm::dvec3 cameraSpace =
-                activeLocalCameraSnapshot().vectorToCamera(relative);
-
-            const double projectedDistance2 =
-                cameraSpace.x * cameraSpace.x +
-                cameraSpace.y * cameraSpace.y;
-
-            const double planetRadius =
-                planet.planetRadiusMeters;
-
-            const bool behindPlanetCenter =
-                cameraSpace.z < 0.0;
-
-            const bool insidePlanetDisc =
-                projectedDistance2 <
-                planetRadius * planetRadius;
-
-            return
-                behindPlanetCenter &&
-                insidePlanetDisc;
-        };
-
-    glBegin(GL_LINES);
-
-    for (int i = 0; i < segments; ++i)
-    {
-        const glm::dvec3 p0 =
-            orbitPoint(i);
-
-        const glm::dvec3 p1 =
-            orbitPoint((i + 1) % segments);
-
-
-
-const glm::dvec3 mid =
-    (p0 + p1) * 0.5;
-
-/*
-    В Planet Details дальняя половина орбиты остаётся
-    видимой как очень слабая навигационная подсказка.
-
-    Это относится только к карте Details. На карте Hub
-    эта функция не используется.
-*/
-const bool hidden =
-    isHiddenBehindPlanet(mid);
-
-const float alpha =
-    hidden
-        ? baseColor[3] * 0.16f
-        : baseColor[3];
-
-glColor4f(
-    baseColor[0],
-    baseColor[1],
-    baseColor[2],
-    alpha
-);
-
-
-
-
-        const glm::dvec2 s0 =
-            activeLocalCameraSnapshot().project(p0);
-
-        const glm::dvec2 s1 =
-            activeLocalCameraSnapshot().project(p1);
-
-        glVertex2d(s0.x, s0.y);
-        glVertex2d(s1.x, s1.y);
-    }
-
-    glEnd();
-
-    glColor4f(
-        baseColor[0],
-        baseColor[1],
-        baseColor[2],
-        baseColor[3]
-    );
-}
-
-
-
-// ============================================================================
-// Details environment, rings, atmosphere and clouds
-// ============================================================================
-
-
-
-
 std::vector<
     render::celestial::ProceduralCloudStyle
 >
-SystemMapRenderer::planetCloudStylesForPlanet(
+DetailMapPlanetPass::planetCloudStylesForPlanet(
     const world::celestial::DetailMapSnapshot& planet
 ) const
 {
-    return cloudStylesForBody(
+    return m_host.cloudStylesForBody(
         planet.systemId,
         planet.planetBodyId,
         planet.planetName,
@@ -780,14 +733,12 @@ SystemMapRenderer::planetCloudStylesForPlanet(
     );
 }
 
-
-
-SystemMapRenderer::HubPlanetAtmosphereStyle
-SystemMapRenderer::planetAtmosphereStyleForPlanet(
+LocalMapAtmosphereStyle
+DetailMapPlanetPass::planetAtmosphereStyleForPlanet(
     const world::celestial::DetailMapSnapshot& planet
 ) const
 {
-    return atmosphereStyleForBody(
+    return m_host.atmosphereStyleForBody(
         planet.systemId,
         planet.planetBodyId,
         planet.planetName,
@@ -795,9 +746,8 @@ SystemMapRenderer::planetAtmosphereStyleForPlanet(
     );
 }
 
-
 render::celestial::rings::PlanetRingRenderContext
-SystemMapRenderer::planetRingRenderContext(
+DetailMapPlanetPass::planetRingRenderContext(
     const world::celestial::DetailMapSnapshot& planet,
     double scale,
     const glm::dvec2& centerPx,
@@ -814,9 +764,9 @@ SystemMapRenderer::planetRingRenderContext(
     context.planetCenterPx =
         glm::dvec2(
             centerPx.x +
-                activeLocalCameraSnapshot().state.pan.x,
+                activeCamera().state.pan.x,
             centerPx.y +
-                activeLocalCameraSnapshot().state.pan.y
+                activeCamera().state.pan.y
         );
 
     if (planet.planetRadiusMeters <= 1.0)
@@ -904,16 +854,16 @@ SystemMapRenderer::planetRingRenderContext(
         tiltedEast;
 
     const glm::dvec3 ringAxisXCamera =
-        activeLocalCameraSnapshot().vectorToCamera(ringAxisXWorld *
+        activeCamera().vectorToCamera(ringAxisXWorld *
                 planet.planetRadiusMeters);
 
     const glm::dvec3 ringAxisYCamera =
-        activeLocalCameraSnapshot().vectorToCamera(ringAxisYWorld *
+        activeCamera().vectorToCamera(ringAxisYWorld *
                 planet.planetRadiusMeters);
 
     const double finalScale =
         scale *
-        activeLocalCameraSnapshot().state.zoom;
+        activeCamera().state.zoom;
 
     /*
         planetMapProject использует:
@@ -955,13 +905,12 @@ SystemMapRenderer::planetRingRenderContext(
     */
     context.patternPhaseRad = 0.0;
     context.minimumProjectedMinorAxisPx =
-        m_detailVisuals.ringMinimumProjectedMinorAxisPx;
+        m_host.m_detailVisuals.ringMinimumProjectedMinorAxisPx;
 
     return context;
 }
 
-
-void SystemMapRenderer::drawPlanetDetailSculpt(
+void DetailMapPlanetPass::drawPlanetDetailSculpt(
     const glm::dvec2& planetCenterPx,
     double planetRadiusPx
 )
@@ -973,18 +922,18 @@ void SystemMapRenderer::drawPlanetDetailSculpt(
         Shader и VAO инициализируются лениво,
         только при первом открытии Planet Details.
     */
-    if (m_planetDetailSculptShader == 0)
+    if (m_detailSculptShader == 0)
     {
-        m_planetDetailSculptShader =
+        m_detailSculptShader =
             ShaderLibrary::instance().get(
                 "planet_detail_sculpt"
             );
 
-        if (m_planetDetailSculptShader == 0)
+        if (m_detailSculptShader == 0)
         {
-            if (!m_planetDetailSculptWarningPrinted)
+            if (!m_detailSculptWarningPrinted)
             {
-                m_planetDetailSculptWarningPrinted = true;
+                m_detailSculptWarningPrinted = true;
 
                 std::cerr
                     << "[SystemMapRenderer]"
@@ -996,15 +945,15 @@ void SystemMapRenderer::drawPlanetDetailSculpt(
         }
     }
 
-    if (m_planetDetailSculptVao == 0)
+    if (m_detailSculptVao == 0)
     {
         glGenVertexArrays(
             1,
-            &m_planetDetailSculptVao
+            &m_detailSculptVao
         );
     }
 
-    if (m_planetDetailSculptVao == 0)
+    if (m_detailSculptVao == 0)
         return;
 
     GLint viewport[4] =
@@ -1115,48 +1064,48 @@ void SystemMapRenderer::drawPlanetDetailSculpt(
     );
 
     glUseProgram(
-        m_planetDetailSculptShader
+        m_detailSculptShader
     );
 
     const GLint viewportOriginLocation =
         glGetUniformLocation(
-            m_planetDetailSculptShader,
+            m_detailSculptShader,
             "uViewportOriginPx"
         );
 
     const GLint viewportSizeLocation =
         glGetUniformLocation(
-            m_planetDetailSculptShader,
+            m_detailSculptShader,
             "uViewportSize"
         );
 
     const GLint planetCenterLocation =
         glGetUniformLocation(
-            m_planetDetailSculptShader,
+            m_detailSculptShader,
             "uPlanetCenterPx"
         );
 
     const GLint planetRadiusLocation =
         glGetUniformLocation(
-            m_planetDetailSculptShader,
+            m_detailSculptShader,
             "uPlanetRadiusPx"
         );
 
     const GLint lightDirectionLocation =
         glGetUniformLocation(
-            m_planetDetailSculptShader,
+            m_detailSculptShader,
             "uLightDirection"
         );
 
     const GLint shadowStrengthLocation =
         glGetUniformLocation(
-            m_planetDetailSculptShader,
+            m_detailSculptShader,
             "uShadowStrength"
         );
 
     const GLint limbDarkeningLocation =
         glGetUniformLocation(
-            m_planetDetailSculptShader,
+            m_detailSculptShader,
             "uLimbDarkening"
         );
 
@@ -1252,7 +1201,7 @@ void SystemMapRenderer::drawPlanetDetailSculpt(
     }
 
     glBindVertexArray(
-        m_planetDetailSculptVao
+        m_detailSculptVao
     );
 
     glDrawArrays(
@@ -1316,9 +1265,7 @@ void SystemMapRenderer::drawPlanetDetailSculpt(
         glDisable(GL_CULL_FACE);
 }
 
-
-
-void SystemMapRenderer::drawPlanetEnvironmentLayers(
+void DetailMapPlanetPass::drawPlanetEnvironmentLayers(
     const world::celestial::DetailMapSnapshot& planet,
     double scale,
     const glm::dvec2& centerPx,
@@ -1336,7 +1283,7 @@ void SystemMapRenderer::drawPlanetEnvironmentLayers(
             planet
         );
 
-    const HubPlanetAtmosphereStyle atmosphereStyle =
+    const LocalMapAtmosphereStyle atmosphereStyle =
         planetAtmosphereStyleForPlanet(
             planet
         );
@@ -1349,15 +1296,15 @@ void SystemMapRenderer::drawPlanetEnvironmentLayers(
     */
     const glm::dvec2 planetCenterPx(
         centerPx.x +
-            activeLocalCameraSnapshot().state.pan.x,
+            activeCamera().state.pan.x,
         centerPx.y +
-            activeLocalCameraSnapshot().state.pan.y
+            activeCamera().state.pan.y
     );
 
     const double planetRadiusPx =
         planet.planetRadiusMeters *
         scale *
-        activeLocalCameraSnapshot().state.zoom;
+        activeCamera().state.zoom;
 
     /*
         Сначала рисуем облачные оболочки.
@@ -1401,7 +1348,7 @@ void SystemMapRenderer::drawPlanetEnvironmentLayers(
     */
     if (atmosphereStyle.enabled)
     {
-        drawHubMapPlanetAtmosphereStack(
+        drawLocalMapAtmosphereStack(
             planetCenterPx,
             planetRadiusPx,
             atmosphereStyle
@@ -1409,12 +1356,11 @@ void SystemMapRenderer::drawPlanetEnvironmentLayers(
     }
 }
 
-
-void SystemMapRenderer::drawPlanetAtmosphereInterior(
+void DetailMapPlanetPass::drawPlanetAtmosphereInterior(
     const world::celestial::DetailMapSnapshot& planet,
     double scale,
     const glm::dvec2& centerPx,
-    const HubPlanetAtmosphereStyle& style
+    const LocalMapAtmosphereStyle& style
 )
 {
     if (!style.enabled ||
@@ -1424,14 +1370,14 @@ void SystemMapRenderer::drawPlanetAtmosphereInterior(
     }
 
     const glm::dvec2 planetCenterPx(
-        centerPx.x + activeLocalCameraSnapshot().state.pan.x,
-        centerPx.y + activeLocalCameraSnapshot().state.pan.y
+        centerPx.x + activeCamera().state.pan.x,
+        centerPx.y + activeCamera().state.pan.y
     );
 
     const double planetRadiusPx =
         planet.planetRadiusMeters *
         scale *
-        activeLocalCameraSnapshot().state.zoom;
+        activeCamera().state.zoom;
 
     glm::vec4 haze =
         style.surfaceHaze;
@@ -1442,7 +1388,7 @@ void SystemMapRenderer::drawPlanetAtmosphereInterior(
             style.visualIntensity
         );
 
-    drawHubMapPlanetSoftBand(
+    drawLocalMapAtmosphereSoftBand(
         planetCenterPx,
         planetRadiusPx,
         haze,
@@ -1454,12 +1400,11 @@ void SystemMapRenderer::drawPlanetAtmosphereInterior(
     );
 }
 
-
-void SystemMapRenderer::drawPlanetAtmosphereLimb(
+void DetailMapPlanetPass::drawPlanetAtmosphereLimb(
     const world::celestial::DetailMapSnapshot& planet,
     double scale,
     const glm::dvec2& centerPx,
-    const HubPlanetAtmosphereStyle& style
+    const LocalMapAtmosphereStyle& style
 )
 {
     if (!style.enabled ||
@@ -1469,14 +1414,14 @@ void SystemMapRenderer::drawPlanetAtmosphereLimb(
     }
 
     const glm::dvec2 planetCenterPx(
-        centerPx.x + activeLocalCameraSnapshot().state.pan.x,
-        centerPx.y + activeLocalCameraSnapshot().state.pan.y
+        centerPx.x + activeCamera().state.pan.x,
+        centerPx.y + activeCamera().state.pan.y
     );
 
     const double planetRadiusPx =
         planet.planetRadiusMeters *
         scale *
-        activeLocalCameraSnapshot().state.zoom;
+        activeCamera().state.zoom;
 
     const float intensity =
         std::max(
@@ -1497,7 +1442,7 @@ void SystemMapRenderer::drawPlanetAtmosphereLimb(
     nearAtmosphere.a *= intensity;
     outerAtmosphere.a *= intensity;
 
-    drawHubMapPlanetSoftBand(
+    drawLocalMapAtmosphereSoftBand(
         planetCenterPx,
         planetRadiusPx,
         limbCore,
@@ -1508,7 +1453,7 @@ void SystemMapRenderer::drawPlanetAtmosphereLimb(
         256
     );
 
-    drawHubMapPlanetSoftBand(
+    drawLocalMapAtmosphereSoftBand(
         planetCenterPx,
         planetRadiusPx,
         nearAtmosphere,
@@ -1519,7 +1464,7 @@ void SystemMapRenderer::drawPlanetAtmosphereLimb(
         256
     );
 
-    drawHubMapPlanetSoftBand(
+    drawLocalMapAtmosphereSoftBand(
         planetCenterPx,
         planetRadiusPx,
         outerAtmosphere,
@@ -1531,9 +1476,7 @@ void SystemMapRenderer::drawPlanetAtmosphereLimb(
     );
 }
 
-
-
-void SystemMapRenderer::drawPlanetAnimatedCloudLayers(
+void DetailMapPlanetPass::drawPlanetAnimatedCloudLayers(
     const world::celestial::DetailMapSnapshot& planet,
     double scale,
     const glm::dvec2& centerPx,
@@ -1547,7 +1490,7 @@ void SystemMapRenderer::drawPlanetAnimatedCloudLayers(
     }
 
     const double renderTimeSeconds =
-        environmentVisualTimeSeconds(
+        m_host.environmentVisualTimeSeconds(
             planet.universeTimeSeconds
         );
 
@@ -1596,9 +1539,7 @@ void SystemMapRenderer::drawPlanetAnimatedCloudLayers(
     );
 }
 
-
-
-void SystemMapRenderer::drawPlanetProceduralCloudGlobeLayer(
+void DetailMapPlanetPass::drawPlanetProceduralCloudGlobeLayer(
     const world::celestial::DetailMapSnapshot& planet,
     double scale,
     const glm::dvec2& centerPx,
@@ -1619,7 +1560,7 @@ void SystemMapRenderer::drawPlanetProceduralCloudGlobeLayer(
         средствами GPU и возвращает актуальную display texture.
     */
     const GLuint texture =
-        m_proceduralCloudLayer.textureForStyle(
+        m_host.m_proceduralCloudLayer.textureForStyle(
             style,
             timeSeconds
         );
@@ -1662,16 +1603,16 @@ void SystemMapRenderer::drawPlanetProceduralCloudGlobeLayer(
     draw.centerPx =
         glm::dvec2(
             centerPx.x +
-                activeLocalCameraSnapshot().state.pan.x,
+                activeCamera().state.pan.x,
 
             centerPx.y +
-                activeLocalCameraSnapshot().state.pan.y
+                activeCamera().state.pan.y
         );
 
     draw.radiusPx =
         planet.planetRadiusMeters *
         scale *
-        activeLocalCameraSnapshot().state.zoom *
+        activeCamera().state.zoom *
         cloudRadiusScale;
 
     draw.bodyToCamera =
@@ -1748,28 +1689,19 @@ void SystemMapRenderer::drawPlanetProceduralCloudGlobeLayer(
     draw.polarFadeEnd =
         0.995f;
 
-    m_planetGlobeMeshRenderer.render(
+    m_host.m_planetGlobeMeshRenderer.render(
         draw
     );
 }
 
-
-// ============================================================================
-// Details planet shape model
-// ============================================================================
-
-
-
-
-
-bool SystemMapRenderer::drawPlanetShapeModelDetail(
+bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
     const world::celestial::DetailMapSnapshot& planet,
     double scale,
     const glm::dvec2& centerPx
 )
 {
     const auto* asset =
-        generatedAssetForIdentity(
+        m_host.generatedAssetForIdentity(
             planet.systemId,
             planet.planetBodyId,
             planet.planetName
@@ -1785,7 +1717,7 @@ bool SystemMapRenderer::drawPlanetShapeModelDetail(
         return false;
 
     const std::string objPath =
-        resolveSystemMapAssetPath(
+        resolveDetailMapAssetPath(
             asset->base.shapeModelPath
         ).generic_string();
 
@@ -1794,20 +1726,20 @@ bool SystemMapRenderer::drawPlanetShapeModelDetail(
     if (!asset->global.albedoPath.empty())
     {
         albedoPath =
-            resolveSystemMapAssetPath(
+            resolveDetailMapAssetPath(
                 asset->global.albedoPath
             ).generic_string();
     }
     else if (!asset->base.albedoPath.empty())
     {
         albedoPath =
-            resolveSystemMapAssetPath(
+            resolveDetailMapAssetPath(
                 asset->base.albedoPath
             ).generic_string();
     }
 
     const render::celestial::CelestialShapeMesh* mesh =
-        m_celestialShapeMeshes.load(
+        m_shapeMeshes.load(
             objPath,
             albedoPath,
             true
@@ -1908,13 +1840,13 @@ bool SystemMapRenderer::drawPlanetShapeModelDetail(
             );
 
         const glm::dvec3 aCam =
-            activeLocalCameraSnapshot().vectorToCamera(aRel);
+            activeCamera().vectorToCamera(aRel);
 
         const glm::dvec3 bCam =
-            activeLocalCameraSnapshot().vectorToCamera(bRel);
+            activeCamera().vectorToCamera(bRel);
 
         const glm::dvec3 cCam =
-            activeLocalCameraSnapshot().vectorToCamera(cRel);
+            activeCamera().vectorToCamera(cRel);
 
         const glm::dvec3 midCam =
             (
@@ -1978,13 +1910,13 @@ bool SystemMapRenderer::drawPlanetShapeModelDetail(
         ProjectedTri out;
 
         out.aScreen =
-            activeLocalCameraSnapshot().project(aWorld);
+            activeCamera().project(aWorld);
 
         out.bScreen =
-            activeLocalCameraSnapshot().project(bWorld);
+            activeCamera().project(bWorld);
 
         out.cScreen =
-            activeLocalCameraSnapshot().project(cWorld);
+            activeCamera().project(cWorld);
 
 
 
@@ -2208,20 +2140,12 @@ bool SystemMapRenderer::drawPlanetShapeModelDetail(
     return true;
 }
 
-
-// ============================================================================
-// Details resource adapters
-// ============================================================================
-
-
-
-
-GLuint SystemMapRenderer::globalAlbedoTextureForPlanetSnapshot(
+GLuint DetailMapPlanetPass::globalAlbedoTextureForPlanetSnapshot(
     const world::celestial::DetailMapSnapshot& planet
 )
 {
     const auto* asset =
-        generatedAssetForIdentity(
+        m_host.generatedAssetForIdentity(
             planet.systemId,
             planet.planetBodyId,
             planet.planetName
@@ -2230,8 +2154,9 @@ GLuint SystemMapRenderer::globalAlbedoTextureForPlanetSnapshot(
     if (!asset)
         return 0;
 
-    return globalAlbedoTextureForGeneratedAsset(
+    return m_host.globalAlbedoTextureForGeneratedAsset(
         *asset
     );
 }
 
+}

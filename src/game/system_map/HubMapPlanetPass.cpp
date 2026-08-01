@@ -1,4 +1,5 @@
 #include "src/game/system_map/HubMapPlanetPass.h"
+#include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 #include "src/game/system_map/HubMapBackend.h"
 #include "src/game/system_map/LocalMapAtmosphereRenderer.h"
 #include "src/game/system_map/SystemMapRenderer.h"
@@ -1099,7 +1100,7 @@ const glm::mat3 cameraToPlanetBody =
         m_host.m_hubVisuals.hubOriginColor.a
     );
 
-    m_host.drawPlanetMapCross(
+    drawLocalMapCross(
         m_host.activeLocalCameraSnapshot().project(surfacePoint),
         5.0f
     );

@@ -1,4 +1,5 @@
 #include "src/game/system_map/HubMapGeometryPass.h"
+#include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 #include "src/game/system_map/SystemMapRenderer.h"
 
 #include <algorithm>
@@ -77,7 +78,7 @@ void HubMapGeometryPass::drawHubMapBox(
 
     for (const auto& edge : edges)
     {
-        m_host.drawPlanetMapLine(
+        drawLocalMapLine(
             m_host.activeLocalCameraSnapshot().project(points[edge[0]]),
             m_host.activeLocalCameraSnapshot().project(points[edge[1]])
         );
@@ -143,21 +144,21 @@ void HubMapGeometryPass::drawHubMapAxes(
 
     glColor4f(xColor.r, xColor.g, xColor.b, xColor.a);
 
-    m_host.drawPlanetMapLine(
+    drawLocalMapLine(
         origin,
         m_host.activeLocalCameraSnapshot().project(center + axes.x * axisLenMeters)
     );
 
     glColor4f(yColor.r, yColor.g, yColor.b, yColor.a);
 
-    m_host.drawPlanetMapLine(
+    drawLocalMapLine(
         origin,
         m_host.activeLocalCameraSnapshot().project(center + axes.y * axisLenMeters)
     );
 
     glColor4f(zColor.r, zColor.g, zColor.b, zColor.a);
 
-    m_host.drawPlanetMapLine(
+    drawLocalMapLine(
         origin,
         m_host.activeLocalCameraSnapshot().project(center + axes.z * axisLenMeters)
     );
@@ -207,7 +208,7 @@ void HubMapGeometryPass::drawHubMapVelocityArrow(
         color.a
     );
 
-    m_host.drawPlanetMapLine(
+    drawLocalMapLine(
         m_host.activeLocalCameraSnapshot().project(center),
         m_host.activeLocalCameraSnapshot().project(center + direction * lenMeters)
     );
@@ -269,7 +270,7 @@ void HubMapGeometryPass::drawHubMapScreenMarker(
         color.a
     );
 
-    m_host.drawPlanetMapCircle(
+    drawLocalMapCircle(
         screenPx,
         radiusPx,
         segments
@@ -473,12 +474,12 @@ void HubMapGeometryPass::drawHubMapAdaptiveGrid(
             static_cast<double>(i) *
             gridStep;
 
-        m_host.drawPlanetMapLine(
+        drawLocalMapLine(
             m_host.activeLocalCameraSnapshot().project(glm::dvec3(-gridN * gridStep, 0.0, v)),
             m_host.activeLocalCameraSnapshot().project(glm::dvec3( gridN * gridStep, 0.0, v))
         );
 
-        m_host.drawPlanetMapLine(
+        drawLocalMapLine(
             m_host.activeLocalCameraSnapshot().project(glm::dvec3(v, 0.0, -gridN * gridStep)),
             m_host.activeLocalCameraSnapshot().project(glm::dvec3(v, 0.0,  gridN * gridStep))
         );
@@ -492,12 +493,12 @@ void HubMapGeometryPass::drawHubMapAdaptiveGrid(
         m_host.m_hubVisuals.localGridAxisColor.a
     );
 
-    m_host.drawPlanetMapLine(
+    drawLocalMapLine(
         m_host.activeLocalCameraSnapshot().project(glm::dvec3(-gridN * gridStep, 0.0, 0.0)),
         m_host.activeLocalCameraSnapshot().project(glm::dvec3( gridN * gridStep, 0.0, 0.0))
     );
 
-    m_host.drawPlanetMapLine(
+    drawLocalMapLine(
         m_host.activeLocalCameraSnapshot().project(glm::dvec3(0.0, 0.0, -gridN * gridStep)),
         m_host.activeLocalCameraSnapshot().project(glm::dvec3(0.0, 0.0,  gridN * gridStep))
     );

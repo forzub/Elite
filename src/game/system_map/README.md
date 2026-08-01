@@ -190,7 +190,21 @@ planet visual geometry. `HubMapBackend` coordinates these passes and owns GPU
 timing, while `SystemMapRenderer` only supplies shared celestial assets and
 common local-map primitives through a temporary friend bridge.
 
-`SystemMapRendererHub.inl` has been removed. The remaining
-`SystemMapRendererDetail.inl` still contains Detail-specific low-level helpers;
-the next Stage-6 slice extracts those resources and passes without changing
-visual output.
+Both legacy local-map implementation files have now been removed.
+
+Detail rendering is physically split into `DetailMapPlanetPass` and
+`DetailMapGeometryPass`. The planet pass owns the Detail-only shape-mesh cache
+and screen-space sculpt shader/VAO; the geometry pass owns spatial-volume,
+orbit, marker, axes, velocity and label drawing. `DetailMapBackend` coordinates
+both passes.
+
+The simple line, cross and circle primitives that were historically defined in
+the Detail implementation are now provided by `LocalMapPrimitiveRenderer` and
+shared by Detail and Hub. This prevents Hub from depending on a Detail-named
+facade method after `SystemMapRendererDetail.inl` is removed.
+
+`SystemMapRenderer` remains the subsystem facade and still supplies resources
+that are genuinely shared with System or Hub rendering, such as generated
+celestial assets, the planet globe mesh renderer, ring renderer, procedural
+cloud cache and environment timing. Those shared services are the remaining
+friend bridge rather than Detail-specific ownership.

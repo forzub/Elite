@@ -152,6 +152,8 @@ public:
 
 private:
     friend class game::system_map::DetailMapBackend;
+    friend class game::system_map::DetailMapGeometryPass;
+    friend class game::system_map::DetailMapPlanetPass;
     friend class game::system_map::HubMapBackend;
     friend class game::system_map::HubMapGeometryPass;
     friend class game::system_map::HubMapPlanetPass;
@@ -175,13 +177,11 @@ private:
         std::vector<TexturedVertex> vertices;
     };
 
-    using HubScreenPoint = game::system_map::DetailHubScreenPoint;
     using HubMapPickable = game::system_map::HubMapPickable;
 
     using SystemBodyVisualMetrics =
         game::system_map::SystemBodyVisualMetrics;
 
-    using DetailControlSettings = game::system_map::LocalMapControlSettings;
 
     game::system_map::DetailMapView m_detailView;
     game::system_map::HubMapView m_hubView;
@@ -197,35 +197,6 @@ private:
     game::system_map::DetailMapBackend m_detailBackend;
     game::system_map::HubMapBackend m_hubBackend;
 
-
-    void drawPlanetSphereGrid(
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx
-    );
-
-    void drawPlanetFilledDisk(
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx
-    );
-
-    void drawPlanetTexturedGlobe(
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx
-    );
-
-
-
-
-    bool drawPlanetShapeModelDetail(
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx
-    );
-
-
     void ensureMapTransitionSnapshot(
     const Viewport& viewport
     );
@@ -237,15 +208,6 @@ private:
     void drawMapTransitionSnapshot(
         const Viewport& viewport,
         float alpha
-    );
-
-    glm::mat3 planetBodyToDetailCameraMatrix(
-        const world::celestial::DetailMapSnapshot& planet
-    ) const;
-
-
-    GLuint globalAlbedoTextureForPlanetSnapshot(
-        const world::celestial::DetailMapSnapshot& planet
     );
 
     GLuint globalAlbedoTextureForGeneratedAsset(
@@ -471,41 +433,6 @@ private:
         const world::celestial::SystemMapBody& body
     ) const;
 
-    void drawPlanetMapCircle(
-        const glm::dvec2& center,
-        double radiusPx,
-        int segments
-    );
-
-    void drawPlanetMapLine(
-        const glm::dvec2& a,
-        const glm::dvec2& b
-    );
-
-    void drawPlanetMapCross(
-        const glm::dvec2& p,
-        float size
-    );
-
-    void drawPlanetMapAxes(
-        const glm::dvec3& originMeters,
-        const world::celestial::LocalSceneAxes& axes,
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx,
-        double axisLenMeters
-    );
-
-    void drawPlanetMapVelocityArrow(
-        const glm::dvec3& originMeters,
-        const glm::dvec3& velocityMps,
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx,
-        double lenMeters
-    );
-
-
     void addCross(
         const glm::vec3& center,
         float size,
@@ -640,13 +567,6 @@ private:
         const std::unordered_map<std::string, float>& drawRadiusById
     ) override;
 
-    void drawDetailMapOrbit3D(
-        const world::celestial::DetailMapOrbit& orbit,
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx,
-        int segments
-    );
 
 
     const game::system_map::LocalMapCameraSnapshot&
@@ -665,85 +585,6 @@ private:
         bool rightDown
     );
 
-
-    std::vector<
-        render::celestial::ProceduralCloudStyle
-    >
-    planetCloudStylesForPlanet(
-        const world::celestial::DetailMapSnapshot& planet
-    ) const;
-
-
-
-    HubPlanetAtmosphereStyle planetAtmosphereStyleForPlanet(
-        const world::celestial::DetailMapSnapshot& planet
-    ) const;
-
-    void drawPlanetEnvironmentLayers(
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx,
-        bool applySphericalSculpt
-    );
-
-    void drawPlanetDetailSculpt(
-        const glm::dvec2& planetCenterPx,
-        double planetRadiusPx
-    );
-
-    void drawPlanetAnimatedCloudLayers(
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx,
-        const render::celestial::ProceduralCloudStyle& baseStyle
-    );
-
-    void drawPlanetProceduralCloudGlobeLayer(
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx,
-        double cloudRadiusScale,
-        double longitudeOffset,
-        double timeSeconds,
-        const render::celestial::ProceduralCloudStyle& style
-    );
-
-
-    void drawPlanetAtmosphereInterior(
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx,
-        const HubPlanetAtmosphereStyle& style
-    );
-
-    void drawPlanetAtmosphereLimb(
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx,
-        const HubPlanetAtmosphereStyle& style
-    );
-
-    // Temporary Detail compatibility bridge. Stage 6C removes these
-    // Hub-era names together with SystemMapRendererDetail.inl.
-    void drawHubMapPlanetSoftBand(
-        const glm::dvec2& planetCenterPx,
-        double planetRadiusPx,
-        const glm::vec4& peakColor,
-        double startRadiusFactor,
-        double peakRadiusFactor,
-        double endRadiusFactor,
-        int radialSteps = 24,
-        int segments = 256
-    );
-
-    void drawHubMapPlanetAtmosphereStack(
-        const glm::dvec2& planetCenterPx,
-        double planetRadiusPx,
-        const HubPlanetAtmosphereStyle& style,
-        bool premultipliedTarget = false
-    );
-
-
     void drawMapStarfield(
         const Viewport& viewport,
         const glm::dvec3& observerPositionLy
@@ -761,22 +602,7 @@ private:
         const glm::vec3& milkyWayColorTint = glm::vec3(1.0f)
     ) override;
 
-
-
-    render::celestial::rings::PlanetRingRenderContext
-    planetRingRenderContext(
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx,
-        std::vector<
-            world::celestial::SystemMapRing
-        >& normalizedBands
-    ) const;
-
-
-
-
-   double environmentVisualTimeSeconds(
+    double environmentVisualTimeSeconds(
         double sourceTimeSeconds
     );
 
@@ -883,8 +709,6 @@ private:
     std::unordered_map<std::string, GLuint> m_mapPreviewTextureByAssetKey;
     std::unordered_map<std::string, GLuint> m_globalAlbedoTextureByAssetKey;
     std::unordered_map<std::string, GLuint> m_globalNormalTextureByAssetKey;
-
-    render::celestial::CelestialShapeMeshLibrary m_celestialShapeMeshes;
     render::celestial::HubPlanetSurfaceRenderer m_hubPlanetSurfaceRenderer;
     render::celestial::PlanetGlobeMeshRenderer m_planetGlobeMeshRenderer;
 
@@ -894,16 +718,6 @@ private:
 
     GalaxyStarfieldRenderer m_mapStarfieldRenderer;
     GalaxyStarfieldRenderer m_galaxyBackdropStarfieldRenderer;
-
-    /*
-        Details-only screen-space sculpt pass.
-        Shader принадлежит ShaderLibrary, поэтому удалять program
-        внутри SystemMapRenderer не нужно.
-    */
-    GLuint m_planetDetailSculptShader = 0;
-    GLuint m_planetDetailSculptVao = 0;
-
-    bool m_planetDetailSculptWarningPrinted = false;
 
     double m_environmentVisualTimeSeconds = 0.0;
     double m_environmentLastSourceTimeSeconds = 0.0;

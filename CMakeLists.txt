@@ -238,10 +238,13 @@ add_executable(EliteGame
     src/game/system_map/SystemMapView.cpp
     src/game/system_map/LocalMapInteraction.cpp
     src/game/system_map/LocalMapPresentationBuilder.cpp
+    src/game/system_map/LocalMapAtmosphereRenderer.cpp
     src/game/system_map/DetailMapSceneRenderer.cpp
     src/game/system_map/HubMapSceneRenderer.cpp
     src/game/system_map/DetailMapBackend.cpp
     src/game/system_map/HubMapBackend.cpp
+    src/game/system_map/HubMapGeometryPass.cpp
+    src/game/system_map/HubMapPlanetPass.cpp
     src/game/system_map/GalaxyMapView.cpp
     src/game/system_map/GalaxyMapInteraction.cpp
     src/game/system_map/GalaxyMapRenderer.cpp

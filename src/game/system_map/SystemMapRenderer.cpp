@@ -1,4 +1,5 @@
 #include "src/game/system_map/SystemMapRenderer.h"
+#include "src/game/system_map/LocalMapAtmosphereRenderer.h"
 #include "src/input/Input.h"
 
 #include <cmath>
@@ -29,20 +30,6 @@
 namespace
 {
     constexpr double AU_KM = 149597870.7;
-
-    double hubPerfNowMs()
-    {
-        using Clock =
-            std::chrono::steady_clock;
-
-        return
-            std::chrono::duration<
-                double,
-                std::milli
-            >(
-                Clock::now().time_since_epoch()
-            ).count();
-    }
 
     double cloudWindTimeScale()
     {
@@ -1176,6 +1163,46 @@ void SystemMapRenderer::drawTextPx(
 void SystemMapRenderer::endTextFrame()
 {
     TextRenderer::instance().endFrame();
+}
+
+
+void SystemMapRenderer::drawHubMapPlanetSoftBand(
+    const glm::dvec2& planetCenterPx,
+    double planetRadiusPx,
+    const glm::vec4& peakColor,
+    double startRadiusFactor,
+    double peakRadiusFactor,
+    double endRadiusFactor,
+    int radialSteps,
+    int segments
+)
+{
+    game::system_map::drawLocalMapAtmosphereSoftBand(
+        planetCenterPx,
+        planetRadiusPx,
+        peakColor,
+        startRadiusFactor,
+        peakRadiusFactor,
+        endRadiusFactor,
+        radialSteps,
+        segments
+    );
+}
+
+
+void SystemMapRenderer::drawHubMapPlanetAtmosphereStack(
+    const glm::dvec2& planetCenterPx,
+    double planetRadiusPx,
+    const HubPlanetAtmosphereStyle& style,
+    bool premultipliedTarget
+)
+{
+    game::system_map::drawLocalMapAtmosphereStack(
+        planetCenterPx,
+        planetRadiusPx,
+        style,
+        premultipliedTarget
+    );
 }
 
 
@@ -5184,7 +5211,6 @@ void SystemMapRenderer::setRightPanelRatio(float ratio)
 
 #include "src/game/system_map/SystemMapRendererDetail.inl"
 
-#include "src/game/system_map/SystemMapRendererHub.inl"
 
 
 #include "src/game/system_map/SystemMapRendererCommon.inl"

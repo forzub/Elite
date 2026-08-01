@@ -479,6 +479,111 @@ if hub_backend_header.is_file():
             fail(hub_backend_header, f"Hub backend does not own profiling/render contract: {required}")
 
 
+# Stage 6B: Hub passes/resources are physically extracted from the facade.
+hub_geometry_header = MAP_DIR / "HubMapGeometryPass.h"
+hub_geometry_cpp = MAP_DIR / "HubMapGeometryPass.cpp"
+hub_planet_header = MAP_DIR / "HubMapPlanetPass.h"
+hub_planet_cpp = MAP_DIR / "HubMapPlanetPass.cpp"
+local_environment_style = MAP_DIR / "LocalMapEnvironmentStyle.h"
+local_atmosphere_header = MAP_DIR / "LocalMapAtmosphereRenderer.h"
+local_atmosphere_cpp = MAP_DIR / "LocalMapAtmosphereRenderer.cpp"
+root_cmake = ROOT / "CMakeLists.txt"
+
+for required in (
+    hub_geometry_header,
+    hub_geometry_cpp,
+    hub_planet_header,
+    hub_planet_cpp,
+    local_environment_style,
+    local_atmosphere_header,
+    local_atmosphere_cpp,
+):
+    if not required.is_file():
+        fail(required, "required Stage-6B Hub pass component is missing")
+
+if hub_inl.is_file():
+    fail(hub_inl, "legacy Hub facade implementation must be removed")
+
+
+if renderer_header.is_file():
+    text = renderer_header.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "m_hubMapGpuGeometryRenderer",
+        "m_hubPlanetOverlayRenderer",
+        "m_hubSphericalGridRenderer",
+        "m_lastHubPlanetVisualRadiusPx",
+        "void drawHubMapBox(",
+        "void drawHubMapPlanetSurfaceHint(",
+        "glm::dvec3 visualSizeForHubShip(",
+    ):
+        if forbidden in text:
+            fail(renderer_header, f"facade still owns Hub pass/resource: {forbidden}")
+
+if hub_backend_header.is_file():
+    text = hub_backend_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "HubMapGeometryPass m_geometryPass",
+        "HubMapPlanetPass m_planetPass",
+    ):
+        if required not in text:
+            fail(hub_backend_header, f"Hub backend does not own extracted pass: {required}")
+
+if hub_geometry_header.is_file():
+    text = hub_geometry_header.read_text(encoding="utf-8", errors="replace")
+    if "HubMapGpuGeometryRenderer" not in text:
+        fail(hub_geometry_header, "Hub geometry pass must own GPU geometry renderer")
+
+if local_atmosphere_cpp.is_file():
+    text = local_atmosphere_cpp.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "void drawLocalMapAtmosphereSoftBand(",
+        "void drawLocalMapAtmosphereStack(",
+    ):
+        if required not in text:
+            fail(local_atmosphere_cpp, f"shared local atmosphere pass is incomplete: {required}")
+
+if hub_planet_header.is_file():
+    text = hub_planet_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "HubPlanetOverlayRenderer",
+        "HubSphericalGridRenderer",
+        "m_lastHubPlanetVisualRadiusPx",
+    ):
+        if required not in text:
+            fail(hub_planet_header, f"Hub planet pass does not own planet resource/state: {required}")
+
+if hub_planet_cpp.is_file():
+    text = hub_planet_cpp.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "HubMapPlanetPass::drawHubMapPlanetSoftBand(",
+        "HubMapPlanetPass::drawHubMapPlanetAtmosphereStack(",
+    ):
+        if forbidden in text:
+            fail(hub_planet_cpp, f"Hub pass duplicates shared atmosphere implementation: {forbidden}")
+    if "drawLocalMapAtmosphereStack(" not in text:
+        fail(hub_planet_cpp, "Hub planet pass is not routed through shared atmosphere renderer")
+
+if hub_backend_cpp.is_file():
+    text = hub_backend_cpp.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "m_planetPass.drawHubMapPlanetSurfaceHint(",
+        "m_geometryPass.beginFrame(",
+        "m_geometryPass.flush()",
+    ):
+        if required not in text:
+            fail(hub_backend_cpp, f"Hub backend is not routing through extracted pass: {required}")
+
+if root_cmake.is_file():
+    text = root_cmake.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "src/game/system_map/HubMapGeometryPass.cpp",
+        "src/game/system_map/HubMapPlanetPass.cpp",
+        "src/game/system_map/LocalMapAtmosphereRenderer.cpp",
+    ):
+        if required not in text:
+            fail(root_cmake, f"main target is missing extracted Hub pass: {required}")
+
+
 if errors:
     print("System map architecture check failed:", file=sys.stderr)
     for error in errors:

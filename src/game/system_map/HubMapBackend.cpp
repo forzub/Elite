@@ -22,6 +22,16 @@ namespace
 
 namespace game::system_map
 {
+HubMapBackend::HubMapBackend(
+    SystemMapRenderer& host
+) noexcept
+    : m_host(host),
+      m_geometryPass(host),
+      m_planetPass(host, *this)
+{
+}
+
+
 void HubMapBackend::ensureGpuQueries()
 {
     if (m_gpuQueriesInitialized)
@@ -492,7 +502,7 @@ void HubMapBackend::renderHubMapPasses(
    const double cpuPlanetBackdropStartMs =
         hubPerfNowMs();
 
-    m_host.drawHubMapPlanetSurfaceHint(
+    m_planetPass.drawHubMapPlanetSurfaceHint(
         hub,
         scale,
         centerPx
@@ -502,53 +512,11 @@ m_performanceStats.cpuPlanetBackdropMs =
     hubPerfNowMs() -
     cpuPlanetBackdropStartMs;
 
-    // render::celestial::HubSphericalGridStyle sphericalGridStyle =
-    // m_host.hubSphericalGridStyleForHub(
-    //     hub
-    // );
-
-
-
-    // // Сетка Хаба должна быть не на поверхности планеты,
-    // // а на визуальной высоте хаба.
-    // //
-    // // centerPx — это экранная позиция hub-local origin,
-    // // то есть центр старой плоской сетки.
-    // // Поэтому радиус сферической оболочки сетки должен проходить через centerPx.
-    // const double hubGridShellRadiusPx =
-    //     glm::length(
-    //         centerPx -
-    //         m_host.m_lastHubPlanetVisualCenterPx
-    //     );
-
-    // if (m_host.m_lastHubPlanetVisualRadiusPx > 1.0 &&
-    //     hubGridShellRadiusPx > m_host.m_lastHubPlanetVisualRadiusPx)
-    // {
-    //     sphericalGridStyle.radiusScale =
-    //         std::clamp(
-    //             hubGridShellRadiusPx /
-    //                 m_host.m_lastHubPlanetVisualRadiusPx,
-    //             1.02,
-    //             2.20
-    //         );
-
-    //     m_host.m_hubSphericalGridRenderer.render(
-    //         m_host.m_lastHubPlanetVisualCenterPx,
-    //         m_host.m_lastHubPlanetVisualRadiusPx,
-    //         m_host.activeLocalCameraSnapshot().state.yaw *
-    //             0.35,
-    //         sphericalGridStyle
-    //     );
-    // }
-
-
-
-    // m_host.drawHubMapAdaptiveGrid(
-    //     viewport,
-    //     scale,
-    //     centerPx,
-    //     maxDist
-    // );
+    /*
+        The spherical Hub grid remains disabled exactly as before. Its
+        renderer and cached planet geometry now belong to HubMapPlanetPass;
+        HubMapBackend only coordinates enabled passes.
+    */
 
 
     const double cpuGeometryStartMs =
@@ -559,7 +527,7 @@ m_performanceStats.cpuPlanetBackdropMs =
     );
 
 
-    m_host.m_hubMapGpuGeometryRenderer.beginFrame(
+    m_geometryPass.beginFrame(
         viewport.width,
         viewport.height,
 
@@ -588,7 +556,7 @@ m_performanceStats.cpuPlanetBackdropMs =
 
 
     // Оси хаба.
-    m_host.drawHubMapAxes(
+    m_geometryPass.drawHubMapAxes(
         glm::dvec3(0.0),
         hub.hubAxes,
         900.0,
@@ -607,9 +575,9 @@ m_performanceStats.cpuPlanetBackdropMs =
         0.95f
     );
 
-    if (m_host.m_hubMapGpuGeometryRenderer.active())
+    if (m_geometryPass.active())
     {
-        m_host.m_hubMapGpuGeometryRenderer.submitScreenCross(
+        m_geometryPass.submitScreenCross(
             hubOriginScreen,
             6.0,
             hubOriginColor
@@ -662,7 +630,7 @@ m_performanceStats.cpuPlanetBackdropMs =
                 : m_host.m_hubVisuals.regularModuleWireColor;
 
         const bool modelDrawn =
-            m_host.drawHubMapAssemblyWire(
+            m_geometryPass.drawHubMapAssemblyWire(
                 mod.typeId,
                 mod.positionMeters,
                 mod.axes,
@@ -671,7 +639,7 @@ m_performanceStats.cpuPlanetBackdropMs =
 
         if (!modelDrawn)
         {
-            m_host.drawHubMapBox(
+            m_geometryPass.drawHubMapBox(
                 mod.positionMeters,
                 mod.axes,
                 mod.sizeMeters,
@@ -687,7 +655,7 @@ m_performanceStats.cpuPlanetBackdropMs =
                 glm::length(mod.sizeMeters) * 0.08
             );
 
-        m_host.drawHubMapAxes(
+        m_geometryPass.drawHubMapAxes(
             mod.positionMeters,
             mod.axes,
             moduleAxisLen,
@@ -704,7 +672,7 @@ m_performanceStats.cpuPlanetBackdropMs =
                     ? m_host.m_hubVisuals.primeModuleMarkerColor
                     : m_host.m_hubVisuals.regularModuleMarkerColor;
 
-            m_host.drawHubMapScreenMarker(
+            m_geometryPass.drawHubMapScreenMarker(
                 modScreen,
                 mod.prime
                     ? m_host.m_hubVisuals.primeModuleMarkerRadiusPx
@@ -734,7 +702,7 @@ m_performanceStats.cpuPlanetBackdropMs =
             m_host.activeLocalCameraSnapshot().project(ship.positionMeters);
 
         const glm::dvec3 shipVisualSize =
-            m_host.visualSizeForHubShip(
+            m_geometryPass.visualSizeForHubShip(
                 ship,
                 scale
             );
@@ -764,7 +732,7 @@ m_performanceStats.cpuPlanetBackdropMs =
         if (allowWireModel)
         {
             shipModelDrawn =
-                m_host.drawHubMapAssemblyWire(
+                m_geometryPass.drawHubMapAssemblyWire(
                     ship.typeId,
                     ship.positionMeters,
                     ship.axes,
@@ -774,7 +742,7 @@ m_performanceStats.cpuPlanetBackdropMs =
 
         if (!shipModelDrawn)
         {
-            m_host.drawHubMapBox(
+            m_geometryPass.drawHubMapBox(
                 ship.positionMeters,
                 ship.axes,
                 shipVisualSize,
@@ -790,7 +758,7 @@ m_performanceStats.cpuPlanetBackdropMs =
                 glm::length(shipVisualSize) * 0.65
             );
 
-        m_host.drawHubMapAxes(
+        m_geometryPass.drawHubMapAxes(
             ship.positionMeters,
             ship.axes,
             shipAxisLen,
@@ -798,7 +766,7 @@ m_performanceStats.cpuPlanetBackdropMs =
             centerPx
         );
 
-        m_host.drawHubMapVelocityArrow(
+        m_geometryPass.drawHubMapVelocityArrow(
             ship.positionMeters,
             ship.velocityMps,
             std::max(
@@ -819,7 +787,7 @@ m_performanceStats.cpuPlanetBackdropMs =
                     ? m_host.m_hubVisuals.playerShipMarkerColor
                     : m_host.m_hubVisuals.regularShipMarkerColor;
 
-            m_host.drawHubMapScreenMarker(
+            m_geometryPass.drawHubMapScreenMarker(
                 shipScreen,
                 ship.player
                     ? m_host.m_hubVisuals.playerShipMarkerRadiusPx
@@ -832,7 +800,7 @@ m_performanceStats.cpuPlanetBackdropMs =
     }
 
 
-        m_host.m_hubMapGpuGeometryRenderer.flush();
+        m_geometryPass.flush();
         endGpuStage();
 
         m_performanceStats.cpuGeometryMs =

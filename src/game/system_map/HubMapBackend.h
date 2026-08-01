@@ -7,6 +7,8 @@
 #include <glad/gl.h>
 
 #include "src/game/system_map/HubMapRenderContext.h"
+#include "src/game/system_map/HubMapGeometryPass.h"
+#include "src/game/system_map/HubMapPlanetPass.h"
 
 class SystemMapRenderer;
 
@@ -34,10 +36,7 @@ struct HubMapPerformanceStats
 class HubMapBackend final : public HubMapRenderContext
 {
 public:
-    explicit HubMapBackend(SystemMapRenderer& host) noexcept
-        : m_host(host)
-    {
-    }
+    explicit HubMapBackend(SystemMapRenderer& host) noexcept;
 
     void renderHubMapPasses(
         const HubMapPresentation& presentation,
@@ -52,6 +51,7 @@ public:
 
 private:
     friend class ::SystemMapRenderer;
+    friend class HubMapPlanetPass;
 
     enum class GpuStage : std::size_t
     {
@@ -78,6 +78,8 @@ private:
 
 private:
     SystemMapRenderer& m_host;
+    HubMapGeometryPass m_geometryPass;
+    HubMapPlanetPass m_planetPass;
     HubMapPerformanceStats m_performanceStats;
 
     std::array<

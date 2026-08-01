@@ -183,7 +183,14 @@ Detail and Hub scene renderers target dedicated `DetailMapBackend` and
 render-context interfaces. The Hub backend owns its asynchronous GPU timer-query
 state and exposes read-only performance statistics to the facade.
 
-The remaining `SystemMapRendererDetail.inl` and `SystemMapRendererHub.inl`
-contain low-level pass helpers only. Their orchestration functions are forbidden,
-and later Stage-6 slices move those pass/resource groups behind the dedicated
-backend owners without changing visual output.
+Hub rendering is now physically split into `HubMapGeometryPass` and
+`HubMapPlanetPass`. The geometry pass owns the Hub GPU geometry renderer; the
+planet pass owns the soft-layer overlay, spherical-grid renderer and cached
+planet visual geometry. `HubMapBackend` coordinates these passes and owns GPU
+timing, while `SystemMapRenderer` only supplies shared celestial assets and
+common local-map primitives through a temporary friend bridge.
+
+`SystemMapRendererHub.inl` has been removed. The remaining
+`SystemMapRendererDetail.inl` still contains Detail-specific low-level helpers;
+the next Stage-6 slice extracts those resources and passes without changing
+visual output.

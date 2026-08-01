@@ -7,79 +7,38 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "src/game/navigation/CoordinateDisplayService.h"
 #include "src/game/navigation/CubicNavigationGrid.h"
 
 namespace game::navigation
 {
 
-enum class NavigationCoordinateFormat
-{
-    Hierarchical,
-    Axis,
-    PackedBase32
-};
+using NavigationCoordinateFormat = CoordinateDisplayFormat;
 
 inline NavigationCoordinateFormat navigationCoordinateFormatFromString(
     std::string value
 )
 {
-    std::transform(
-        value.begin(),
-        value.end(),
-        value.begin(),
-        [](unsigned char c)
-        {
-            return static_cast<char>(std::tolower(c));
-        }
+    return coordinateDisplayFormatFromString(
+        std::move(value)
     );
-
-    if (value == "axis")
-        return NavigationCoordinateFormat::Axis;
-
-    if (value == "packed" ||
-        value == "packed_base32" ||
-        value == "base32")
-    {
-        return NavigationCoordinateFormat::PackedBase32;
-    }
-
-    return NavigationCoordinateFormat::Hierarchical;
 }
 
 inline const char* navigationCoordinateFormatName(
     NavigationCoordinateFormat format
 )
 {
-    switch (format)
-    {
-        case NavigationCoordinateFormat::Hierarchical:
-            return "PATH";
-        case NavigationCoordinateFormat::Axis:
-            return "AXIS";
-        case NavigationCoordinateFormat::PackedBase32:
-            return "PACKED";
-    }
-
-    return "PATH";
+    return coordinateDisplayMode(format).displayName;
 }
 
 inline NavigationCoordinateFormat nextNavigationCoordinateFormat(
     NavigationCoordinateFormat format
 )
 {
-    switch (format)
-    {
-        case NavigationCoordinateFormat::Hierarchical:
-            return NavigationCoordinateFormat::Axis;
-        case NavigationCoordinateFormat::Axis:
-            return NavigationCoordinateFormat::PackedBase32;
-        case NavigationCoordinateFormat::PackedBase32:
-            return NavigationCoordinateFormat::Hierarchical;
-    }
-
-    return NavigationCoordinateFormat::Hierarchical;
+    return nextCoordinateDisplayFormat(format);
 }
 
 template <typename Index>
@@ -328,6 +287,47 @@ inline std::string formatNavigationAddress(
                 mapPrefix, level, index, subdivision
             );
     }
+}
+
+template <typename Index>
+inline std::string formatNavigationAddressLine(
+    NavigationCoordinateFormat format,
+    const std::string& mapPrefix,
+    int level,
+    const Index& index,
+    int subdivision
+)
+{
+    return formatCoordinateDisplayLine(
+        format,
+        formatNavigationAddress(
+            format,
+            mapPrefix,
+            level,
+            index,
+            subdivision
+        )
+    );
+}
+
+template <typename Index>
+inline std::string formatCurrentNavigationAddressLine(
+    const std::string& mapPrefix,
+    int level,
+    const Index& index,
+    int subdivision
+)
+{
+    const NavigationCoordinateFormat format =
+        CoordinateDisplayService::instance().format();
+
+    return formatNavigationAddressLine(
+        format,
+        mapPrefix,
+        level,
+        index,
+        subdivision
+    );
 }
 
 inline glm::dvec3 terminalOffsetKmFromAu(

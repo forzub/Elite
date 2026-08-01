@@ -2,6 +2,7 @@
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 #include "src/game/system_map/HubMapBackend.h"
 #include "src/game/system_map/LocalMapAtmosphereRenderer.h"
+#include "src/game/system_map/PlanetBodyOrientation.h"
 
 #include <algorithm>
 #include <cctype>
@@ -15,11 +16,6 @@
 
 namespace
 {
-    double degToRadD(double degrees)
-    {
-        return degrees * glm::pi<double>() / 180.0;
-    }
-
     glm::dvec3 safeNormalizeD(
         const glm::dvec3& value,
         const glm::dvec3& fallback
@@ -29,32 +25,6 @@ namespace
         if (lengthSquared <= 1.0e-18)
             return fallback;
         return value / std::sqrt(lengthSquared);
-    }
-
-    glm::dvec3 planetPrimeAxisWorld(
-        const glm::dvec3& north
-    )
-    {
-        const glm::dvec3 reference =
-            std::abs(north.y) < 0.95
-                ? glm::dvec3(0.0, 1.0, 0.0)
-                : glm::dvec3(1.0, 0.0, 0.0);
-
-        return safeNormalizeD(
-            glm::cross(reference, north),
-            glm::dvec3(1.0, 0.0, 0.0)
-        );
-    }
-
-    glm::dvec3 planetEastAxisWorld(
-        const glm::dvec3& north,
-        const glm::dvec3& prime
-    )
-    {
-        return safeNormalizeD(
-            glm::cross(north, prime),
-            glm::dvec3(0.0, 0.0, 1.0)
-        );
     }
 
     std::string normalizeGeneratedIdentityToken(
@@ -277,105 +247,17 @@ radialWorld =
         3. Body-fixed система родительской планеты
         ====================================================
     */
-    const double tilt =
-        degToRadD(
-            hub.parentPlanetAxialTiltDeg
-        );
-
-    const double node =
-        degToRadD(
-            hub.parentPlanetAxisNodeDeg
-        );
-
-    const glm::dvec3 planetNorthWorld =
-        safeNormalizeD(
-            glm::dvec3(
-                std::sin(tilt) *
-                    std::cos(node),
-
-                std::cos(tilt),
-
-                std::sin(tilt) *
-                    std::sin(node)
-            ),
-            glm::dvec3(
-                0.0,
-                1.0,
-                0.0
-            )
-        );
-
-    const glm::dvec3 planetPrime0World =
-        planetPrimeAxisWorld(
-            planetNorthWorld
-        );
-
-    const glm::dvec3 planetEast0World =
-        planetEastAxisWorld(
-            planetNorthWorld,
-            planetPrime0World
-        );
-
     /*
-        Полностью повторяет CelestialSystemRuntime:
-
-            rotationPhase =
-                universeTime / dayLength
-                + rotationOffset
+        Та же body-fixed система, которую использует Planet Details.
+        Нулевой меридиан нельзя строить отдельной Hub-формулой:
+        даже при одинаковом north это даёт постоянный сдвиг по долготе.
     */
-
-
-
-
-        /*
-    Rotation phase приходит из того же CelestialSystemRuntime,
-    который используется Planet Details.
-*/
-const double rotationPhase =
-    hub.parentPlanetRotationPhaseRad;
-
-
-
-
-
-
-
-
-    /*
-        Texture longitude zero в мировом пространстве.
-    */
-    const double textureSpin =
-        rotationPhase +
-        degToRadD(
+    const auto planetOrientation =
+        game::system_map::makePlanetTextureOrientation(
+            hub.parentPlanetAxialTiltDeg,
+            hub.parentPlanetAxisNodeDeg,
+            hub.parentPlanetRotationPhaseRad,
             hub.parentPlanetTextureLongitudeOffsetDeg
-        );
-
-    const double textureCos =
-        std::cos(
-            textureSpin
-        );
-
-    const double textureSin =
-        std::sin(
-            textureSpin
-        );
-
-    const glm::dvec3 texturePrimeWorld =
-        safeNormalizeD(
-            planetPrime0World *
-                textureCos +
-            planetEast0World *
-                textureSin,
-            planetPrime0World
-        );
-
-    const glm::dvec3 textureEastWorld =
-        safeNormalizeD(
-            -planetPrime0World *
-                textureSin +
-            planetEast0World *
-                textureCos,
-            planetEast0World
         );
 
     /*
@@ -386,43 +268,14 @@ const double rotationPhase =
             Z = longitude +90°.
     */
     auto worldDirectionToBody =
-        [&](
-            const glm::dvec3& worldDirection
-        ) -> glm::vec3
+        [&](const glm::dvec3& worldDirection) -> glm::vec3
         {
-            const glm::dvec3 direction =
-                safeNormalizeD(
-                    worldDirection,
-                    glm::dvec3(
-                        0.0,
-                        0.0,
-                        1.0
-                    )
-                );
-
-            return
-                glm::vec3(
-                    static_cast<float>(
-                        glm::dot(
-                            direction,
-                            texturePrimeWorld
-                        )
-                    ),
-
-                    static_cast<float>(
-                        glm::dot(
-                            direction,
-                            planetNorthWorld
-                        )
-                    ),
-
-                    static_cast<float>(
-                        glm::dot(
-                            direction,
-                            textureEastWorld
-                        )
-                    )
-                );
+            return glm::vec3(
+                game::system_map::worldDirectionToPlanetBody(
+                    planetOrientation,
+                    worldDirection
+                )
+            );
         };
 
     /*

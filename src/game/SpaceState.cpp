@@ -776,14 +776,6 @@ void SpaceState::handleInput()
             mapVp.height = fullVp.height;
 
 
-            if (m_systemMapRenderer.mode() ==
-                    SystemMapRenderer::Mode::Galaxy &&
-                Input::instance().isKeyPressedOnce(GLFW_KEY_F9))
-            {
-                m_systemMapRenderer
-                    .cycleNavigationCoordinateFormat();
-            }
-
 
             /*
                 Refresh local-map snapshots before presentation/picking.
@@ -2087,17 +2079,6 @@ void SpaceState::processHtmlCommands()
                     continue;
                 }
 
-                if (msg.command == "cycle_coordinate_format")
-                {
-                    if (m_systemMapRenderer.mode() ==
-                        SystemMapRenderer::Mode::Galaxy)
-                    {
-                        m_systemMapRenderer
-                            .cycleNavigationCoordinateFormat();
-                    }
-
-                    continue;
-                }
 
                 if (msg.command == "close")
                 {

@@ -1,6 +1,7 @@
 #include "src/game/system_map/DetailMapPlanetPass.h"
 #include "src/game/system_map/LocalMapAtmosphereRenderer.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
+#include "src/game/system_map/PlanetBodyOrientation.h"
 
 #include <algorithm>
 #include <cmath>
@@ -35,30 +36,15 @@ glm::dvec3 planetNorthAxisWorld(
     const world::celestial::DetailMapSnapshot& planet
 )
 {
-    const double tilt = degToRadD(planet.planetAxialTiltDeg);
-    const double node = degToRadD(planet.planetAxisNodeDeg);
-
-    return safeNormalizeD(
-        glm::dvec3(
-            std::sin(tilt) * std::cos(node),
-            std::cos(tilt),
-            std::sin(tilt) * std::sin(node)
-        ),
-        glm::dvec3(0.0, 1.0, 0.0)
-    );
+    return game::system_map::makePlanetBodyOrientation(
+        planet.planetAxialTiltDeg,
+        planet.planetAxisNodeDeg
+    ).north;
 }
 
 glm::dvec3 planetPrimeAxisWorld(const glm::dvec3& north)
 {
-    glm::dvec3 reference(1.0, 0.0, 0.0);
-
-    if (std::abs(glm::dot(reference, north)) > 0.92)
-        reference = glm::dvec3(0.0, 0.0, 1.0);
-
-    return safeNormalizeD(
-        reference - north * glm::dot(reference, north),
-        glm::dvec3(1.0, 0.0, 0.0)
-    );
+    return game::system_map::planetPrimeAxisFromNorth(north);
 }
 
 glm::dvec3 planetEastAxisWorld(
@@ -66,9 +52,9 @@ glm::dvec3 planetEastAxisWorld(
     const glm::dvec3& prime
 )
 {
-    return safeNormalizeD(
-        glm::cross(north, prime),
-        glm::dvec3(0.0, 0.0, 1.0)
+    return game::system_map::planetEastAxisFromNorthAndPrime(
+        north,
+        prime
     );
 }
 

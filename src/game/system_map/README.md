@@ -223,3 +223,23 @@ for the still-shared Galaxy/System primitive pipeline. It owns mode state,
 Views, interactions, presentation builders, scene frames, transitions and the
 backend objects, but no Detail/Hub-specific rendering resources or hidden local
 camera state.
+
+
+## Shared coordinate display format
+
+`CoordinateDisplayService` owns the active coordinate notation for the entire
+running game rather than for one map renderer. Galaxy and System addresses,
+including the addresses shown while Detail or Hub is active, are formatted
+through `formatCurrentNavigationAddressLine()`.
+
+The three reserved display names are:
+
+- `STRAIGHT THERE` — hierarchical path notation;
+- `THREE AXES` — separate X/Y/Z hierarchy notation;
+- `VERY SECRET CODE` — packed Crockford Base32 notation.
+
+Every rendered address line carries its format name. F9 is polled at the
+application/Windows level, so changing the notation does not depend on whether
+GLFW or the WebView currently owns keyboard focus. Reports and future
+navigation interfaces must use the same service rather than store their own
+format setting.

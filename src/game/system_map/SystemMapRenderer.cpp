@@ -729,12 +729,13 @@ void SystemMapRenderer::init()
         m_galaxyView.visuals().starfieldMinimumDistanceLy
     );
 
-    m_navigationCoordinateFormat =
+    game::navigation::CoordinateDisplayService::instance().setFormat(
         game::navigation::navigationCoordinateFormatFromString(
             m_galaxyView.state().navigationGrid
                 .config()
                 .defaultCoordinateFormat
-        );
+        )
+    );
 
     if (!m_navigationRegionCatalog.loaded())
     {
@@ -999,14 +1000,6 @@ void SystemMapRenderer::resetView()
 
 }
 
-
-void SystemMapRenderer::cycleNavigationCoordinateFormat()
-{
-    m_navigationCoordinateFormat =
-        game::navigation::nextNavigationCoordinateFormat(
-            m_navigationCoordinateFormat
-        );
-}
 
 
 

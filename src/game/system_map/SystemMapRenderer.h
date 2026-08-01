@@ -100,8 +100,6 @@ public:
         const world::celestial::PlayerNavigationState& nav
     );
 
-    void cycleNavigationCoordinateFormat();
-
     void focusGalaxySystem(
         int systemId,
         const world::celestial::GalaxyMapSnapshot& galaxy
@@ -544,10 +542,6 @@ private:
 
     game::navigation::NavigationRegionCatalog
         m_navigationRegionCatalog;
-
-    game::navigation::NavigationCoordinateFormat
-        m_navigationCoordinateFormat =
-            game::navigation::NavigationCoordinateFormat::Hierarchical;
 
     render::navigation::NavigationCoordinateOverlay
         m_navigationCoordinateOverlay;

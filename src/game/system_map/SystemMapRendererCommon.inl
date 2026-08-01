@@ -211,8 +211,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         {
             return
                 game::navigation::
-                    formatNavigationAddress(
-                        m_navigationCoordinateFormat,
+                    formatCurrentNavigationAddressLine(
                         "G",
                         cell.level,
                         cell.index,
@@ -225,7 +224,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         {
             return
             game::navigation::
-                formatHierarchicalAddress(
+                formatCurrentNavigationAddressLine(
                     "S",
                     cell.level,
                     cell.index,
@@ -635,9 +634,8 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         }
 
         footer << " · FORMAT "
-               << game::navigation::navigationCoordinateFormatName(
-                    m_navigationCoordinateFormat
-                  )
+               << game::navigation::CoordinateDisplayService::instance()
+                    .formatName()
                << " [F9]";
 
         footerText = footer.str();
@@ -675,9 +673,8 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         }
 
         footer << " · FORMAT "
-               << game::navigation::navigationCoordinateFormatName(
-                    m_navigationCoordinateFormat
-                  )
+               << game::navigation::CoordinateDisplayService::instance()
+                    .formatName()
                << " [F9]";
 
         footerText = footer.str();

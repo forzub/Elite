@@ -737,13 +737,6 @@ document.getElementById("btnExit").onclick = async () => {
 };
 
 window.addEventListener("keydown", async ev => {
-    if (ev.key === "F9") {
-        ev.preventDefault();
-        ev.stopPropagation();
-        sendCommand("cycle_coordinate_format");
-        return;
-    }
-
     if (ev.key !== "Escape") return;
 
     ev.preventDefault();

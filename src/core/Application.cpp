@@ -6,6 +6,7 @@
 #include "core/Log.h"
 #include "ui/MainMenuState.h"
 #include "game/SpaceState.h"
+#include "src/game/navigation/CoordinateDisplayService.h"
 #include "input/Input.h"
 #include "render/HUD/TextRenderer.h"
 #include <windows.h>
@@ -265,11 +266,24 @@ void Application::mainLoop()
         #ifdef _WIN32
         {
             /*
-                F11 опрашивается на уровне Windows, поэтому работает
+                F9/F11 опрашиваются на уровне Windows, поэтому работают
                 независимо от фокуса GLFW/WebView.
 
                 F10 пока зарезервирована для будущей функции.
             */
+            const bool f9Down =
+                (GetAsyncKeyState(VK_F9) & 0x8000) != 0;
+
+            if (m_gameUi.consumeF9Press(f9Down))
+            {
+                if (dynamic_cast<SpaceState*>(m_states.current()))
+                {
+                    game::navigation::CoordinateDisplayService::instance()
+                        .cycle();
+                }
+            }
+
+
             const bool f11Down =
                 (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
 

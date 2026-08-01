@@ -6,6 +6,7 @@
 
 #include "src/game/system_map/LocalMapControlSettings.h"
 #include "src/game/system_map/LocalMapFrameData.h"
+#include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/MapCameraState.h"
 
 namespace game::system_map
@@ -52,34 +53,31 @@ public:
         m_state.camera.zoom = 1.0;
     }
 
+    HubMapCameraSnapshot cameraSnapshot(
+        double scale,
+        const glm::dvec2& centerPx
+    ) const
+    {
+        HubMapCameraSnapshot snapshot;
+        snapshot.state = m_state.camera;
+        snapshot.scale = scale;
+        snapshot.centerPx = centerPx;
+        snapshot.originMeters = glm::dvec3(0.0);
+        snapshot.perspectiveEnabled = false;
+        snapshot.perspectiveCameraDistanceMeters = 1.0;
+        return snapshot;
+    }
+
     glm::dvec2 project(
         const glm::dvec3& localMeters,
         double scale,
         const glm::dvec2& centerPx
     ) const
     {
-        const auto& camera = m_state.camera;
-        const double cy = std::cos(camera.yaw);
-        const double sy = std::sin(camera.yaw);
-        const double cp = std::cos(camera.pitch);
-        const double sp = std::sin(camera.pitch);
-
-        glm::dvec3 a;
-        a.x = localMeters.x * cy - localMeters.z * sy;
-        a.y = localMeters.y;
-        a.z = localMeters.x * sy + localMeters.z * cy;
-
-        glm::dvec3 b;
-        b.x = a.x;
-        b.y = a.y * cp - a.z * sp;
-        b.z = a.y * sp + a.z * cp;
-
-        const double finalScale = scale * camera.zoom;
-
-        return {
-            centerPx.x + camera.pan.x + b.x * finalScale,
-            centerPx.y + camera.pan.y - b.y * finalScale
-        };
+        return cameraSnapshot(
+            scale,
+            centerPx
+        ).project(localMeters);
     }
 
     glm::dvec3 unprojectCursorToLocal(
@@ -88,32 +86,10 @@ public:
         const glm::dvec2& centerPx
     ) const
     {
-        const auto& camera = m_state.camera;
-        const double finalScale = scale * camera.zoom;
-        if (std::abs(finalScale) < 0.000001)
-            return glm::dvec3(0.0);
-
-        const glm::dvec3 b(
-            (mousePx.x - centerPx.x - camera.pan.x) / finalScale,
-            -(mousePx.y - centerPx.y - camera.pan.y) / finalScale,
-            0.0
-        );
-
-        const double cy = std::cos(camera.yaw);
-        const double sy = std::sin(camera.yaw);
-        const double cp = std::cos(camera.pitch);
-        const double sp = std::sin(camera.pitch);
-
-        glm::dvec3 a;
-        a.x = b.x;
-        a.y = b.y * cp + b.z * sp;
-        a.z = -b.y * sp + b.z * cp;
-
-        return {
-            a.x * cy + a.z * sy,
-            a.y,
-            -a.x * sy + a.z * cy
-        };
+        return cameraSnapshot(
+            scale,
+            centerPx
+        ).unprojectPlane(mousePx);
     }
 
     bool pickOrbitPivot(

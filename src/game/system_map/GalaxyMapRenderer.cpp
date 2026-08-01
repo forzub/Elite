@@ -25,22 +25,6 @@
 
 namespace
 {
-    glm::vec3 orbitCameraDirectionFromYawPitch(
-        float yaw,
-        float pitch
-    )
-    {
-        const float cp = std::cos(pitch);
-        const float sp = std::sin(pitch);
-        const float cy = std::cos(yaw);
-        const float sy = std::sin(yaw);
-
-        return glm::vec3(
-            cp * sy,
-            sp,
-            cp * cy
-        );
-    }
 
     float starTypeVisualScale(
         const std::string& starType
@@ -393,14 +377,12 @@ namespace game::system_map
     {
         viewState.synchronizeCatalogRoots(galaxy);
 
-        const glm::mat4 projection =
-            viewState.projectionMatrix(viewport);
+        const GalaxyMapCameraSnapshot camera =
+            viewState.cameraSnapshot(viewport);
 
-        const glm::mat4 view =
-            viewState.viewMatrix();
-
-        const glm::mat4 mvp =
-            projection * view;
+        const glm::mat4& projection = camera.projection;
+        const glm::mat4& view = camera.view;
+        const glm::mat4& mvp = camera.mvp;
 
         if (viewState.visuals().drawStarfield)
         {
@@ -434,7 +416,8 @@ namespace game::system_map
             drawNavigationGrid(
                 viewState,
                 context,
-                viewport
+                viewport,
+                camera
             );
         }
         else
@@ -471,15 +454,10 @@ namespace game::system_map
         viewState.state().screenPoints.clear();
 
         const glm::vec3 cameraDirection =
-            orbitCameraDirectionFromYawPitch(
-                viewState.state().camera.yaw,
-                viewState.state().camera.pitch
-            );
+            glm::vec3(camera.basis.direction);
 
         const glm::vec3 cameraPosition =
-            viewState.state().camera.target +
-            cameraDirection *
-                viewState.state().camera.distance;
+            glm::vec3(camera.eye);
 
         const float safeViewportHeight =
             static_cast<float>(
@@ -692,7 +670,8 @@ namespace game::system_map
 void GalaxyMapRenderer::drawNavigationGrid(
     GalaxyMapView& viewState,
     GalaxyMapRenderContext& context,
-    const Viewport& vp
+    const Viewport& vp,
+    const GalaxyMapCameraSnapshot& camera
 ) const
 {
     if (!viewState.state().navigationGrid.enabled())
@@ -910,20 +889,11 @@ void GalaxyMapRenderer::drawNavigationGrid(
                 cells.push_back(outgoingCell);
         }
 
-        const glm::mat4 cameraView =
-            viewState.viewMatrix();
+        const glm::vec3 cameraRight =
+            glm::vec3(camera.basis.right);
 
-        const glm::vec3 cameraRight(
-            cameraView[0][0],
-            cameraView[1][0],
-            cameraView[2][0]
-        );
-
-        const glm::vec3 cameraUp(
-            cameraView[0][1],
-            cameraView[1][1],
-            cameraView[2][1]
-        );
+        const glm::vec3 cameraUp =
+            glm::vec3(camera.basis.up);
 
 
         /*
@@ -932,15 +902,10 @@ void GalaxyMapRenderer::drawNavigationGrid(
             независимо от удаления камеры.
         */
         const glm::vec3 cameraDirection =
-            orbitCameraDirectionFromYawPitch(
-                viewState.state().camera.yaw,
-                viewState.state().camera.pitch
-            );
+            glm::vec3(camera.basis.direction);
 
         const glm::vec3 cameraPosition =
-            viewState.state().camera.target +
-            cameraDirection *
-            viewState.state().camera.distance;
+            glm::vec3(camera.eye);
 
     const glm::vec3 cameraRayDirection =
         -cameraDirection;

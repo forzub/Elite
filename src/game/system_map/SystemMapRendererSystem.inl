@@ -82,10 +82,7 @@ void SystemMapRenderer::drawSystemLabels(
         );
 
         const double worldUnitsPerPixel =
-            systemMapWorldUnitsPerPixel(
-                static_cast<double>(m_systemView.state().camera.distance),
-                vp.height
-            );
+            m_systemSceneFrame.camera.worldUnitsPerPixel;
 
     const float screenFactor =
         std::clamp(
@@ -396,19 +393,14 @@ void SystemMapRenderer::drawSystemNavigationGrid(
             cells.push_back(outgoing);
     }
 
-    const glm::mat4 view = m_systemView.viewMatrix();
+    const auto& camera =
+        m_systemSceneFrame.camera;
 
-    const glm::vec3 cameraRight(
-        view[0][0],
-        view[1][0],
-        view[2][0]
-    );
+    const glm::vec3 cameraRight =
+        glm::vec3(camera.basis.right);
 
-    const glm::vec3 cameraUp(
-        view[0][1],
-        view[1][1],
-        view[2][1]
-    );
+    const glm::vec3 cameraUp =
+        glm::vec3(camera.basis.up);
 
     auto toRender =
         [&](const glm::dvec3& positionAu) -> glm::vec3
@@ -416,27 +408,20 @@ void SystemMapRenderer::drawSystemNavigationGrid(
             const glm::dvec3 absoluteMap =
                 positionAu * static_cast<double>(systemScale);
 
-            return glm::vec3(absoluteMap - m_systemView.state().camera.target);
+            return camera.relativePosition(absoluteMap);
         };
 
     const glm::vec3 cameraDirection =
-        orbitCameraDirectionFromYawPitch(
-            m_systemView.state().camera.yaw,
-            m_systemView.state().camera.pitch
-        );
+        glm::vec3(camera.basis.direction);
 
     const glm::vec3 cameraPosition =
-        cameraDirection *
-        systemMapPerspectiveEyeDistance(
-            m_systemView.state().camera.distance,
-            m_systemView.visuals().projectionFieldOfViewDeg
+        glm::vec3(
+            camera.basis.direction *
+            camera.eyeDistance
         );
 
     const double worldUnitsPerPixel =
-        systemMapWorldUnitsPerPixel(
-            static_cast<double>(m_systemView.state().camera.distance),
-            vp.height
-        );
+        camera.worldUnitsPerPixel;
 
     const float gridFullSizePx =
         static_cast<float>(
@@ -646,7 +631,7 @@ void SystemMapRenderer::drawSystemNavigationGrid(
 
             const glm::dvec3 delta =
                 parentAbsoluteMap -
-                m_systemView.state().camera.target;
+                camera.targetAbsolute;
 
             const double rightDistance =
                 glm::dot(

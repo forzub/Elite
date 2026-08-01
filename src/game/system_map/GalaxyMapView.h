@@ -10,6 +10,7 @@
 #include "src/game/navigation/CubicNavigationInteraction.h"
 #include "src/game/navigation/GalaxyNavigationGrid.h"
 #include "src/game/system_map/GalaxyMapVisualSettings.h"
+#include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/MapIntent.h"
 #include "src/render/types/Viewport.h"
@@ -162,6 +163,13 @@ namespace game::system_map
 
         void resetNavigationToEntry();
 
+        void suppressCameraGesture(
+            bool leftDown,
+            bool rightDown,
+            double mouseX,
+            double mouseY
+        );
+
         glm::dvec3 playerPositionLy(
             const world::celestial::GalaxyMapSnapshot& galaxy,
             const world::celestial::PlayerNavigationState& playerNavigation,
@@ -180,8 +188,17 @@ namespace game::system_map
             const glm::vec3& renderPosition
         ) const;
 
+        GalaxyMapCameraSnapshot cameraSnapshot(
+            const Viewport& viewport
+        ) const;
+
         glm::mat4 viewMatrix() const;
         glm::mat4 projectionMatrix(const Viewport& viewport) const;
+
+        glm::dvec3 cameraDirectionWorld() const;
+        glm::dvec3 cameraUpWorld() const;
+        glm::dvec3 cameraRightWorld() const;
+        glm::dvec3 cameraEyeWorld() const;
 
         float navigationAnchorDiameterPx(
             const Viewport& viewport

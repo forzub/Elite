@@ -37,26 +37,178 @@ const SystemMapVisualSettings& SystemMapView::visuals() const noexcept
     return m_visuals;
 }
 
+void SystemMapView::reset()
+{
+    m_state.camera = SystemCameraState {};
+    m_state.cameraFlight = SystemCameraFlightState {};
+
+    m_state.hoverVisualCell.reset();
+    m_state.hoverVisualAlpha = 0.0f;
+    m_state.hoverOutgoingCell.reset();
+    m_state.hoverOutgoingAlpha = 0.0f;
+    m_state.hoverVisualLastTimeSeconds = 0.0;
+    m_state.cubeClickTracker.reset();
+    m_state.lastCameraFitSystemId = -1;
+
+    m_state.selectedBodyId.clear();
+    m_state.selectedHubId.clear();
+    m_state.selectedHubParentBodyId.clear();
+    m_state.navigationCellExplicitlySelected = false;
+
+    m_state.orbitPivotAbsolute = glm::dvec3(0.0);
+    m_state.orbitPivotActive = false;
+}
+
+void SystemMapView::resetNavigationToLevelZero(
+    const Viewport& viewport
+)
+{
+    if (!m_state.navigationGrid.enabled())
+        return;
+
+    cancelCameraFlight(false);
+
+    m_state.navigationGrid.reset();
+    m_state.navigationGrid.setAnchorFromPosition(
+        glm::dvec3(0.0)
+    );
+    m_state.navigationGrid.selectCell(
+        m_state.navigationGrid.anchorCell()
+    );
+    m_state.navigationCellExplicitlySelected = false;
+    m_state.navigationGrid.clearHoveredCell();
+
+    m_state.camera = SystemCameraState {};
+
+    const float defaultDistance =
+        m_controls.fittedSystemRadiusWorld *
+        m_controls.initialFitPadding;
+
+    const float maximumDistance =
+        std::max(
+            minimumCameraHalfHeight,
+            navigationMaximumCameraDistance(viewport)
+        );
+
+    m_state.camera.distance =
+        std::clamp(
+            defaultDistance,
+            minimumCameraHalfHeight,
+            maximumDistance
+        );
+
+    m_state.cameraFlight = SystemCameraFlightState {};
+
+    m_state.hoverVisualCell.reset();
+    m_state.hoverVisualAlpha = 0.0f;
+    m_state.hoverOutgoingCell.reset();
+    m_state.hoverOutgoingAlpha = 0.0f;
+    m_state.hoverVisualLastTimeSeconds = 0.0;
+    m_state.cubeClickTracker.reset();
+    m_state.orbitPivotActive = false;
+}
+
+void SystemMapView::suppressCameraGesture(
+    bool leftDown,
+    bool rightDown,
+    double mouseX,
+    double mouseY
+)
+{
+    m_state.camera.rotating = false;
+    m_state.camera.panning = false;
+    m_state.camera.leftWasDown = leftDown;
+    m_state.camera.rightWasDown = rightDown;
+    m_state.camera.lastMouseX = mouseX;
+    m_state.camera.lastMouseY = mouseY;
+}
+
+SystemMapCameraSnapshot SystemMapView::cameraSnapshot(
+    const Viewport& viewport
+) const
+{
+    SystemMapCameraSnapshot snapshot;
+    snapshot.viewport = viewport;
+    snapshot.targetAbsolute = m_state.camera.target;
+    snapshot.basis = orbitCameraBasis(
+        m_state.camera.yaw,
+        m_state.camera.pitch
+    );
+    snapshot.halfHeight =
+        static_cast<double>(
+            std::clamp(
+                m_state.camera.distance,
+                minimumCameraHalfHeight,
+                maximumCameraHalfHeight
+            )
+        );
+    snapshot.eyeDistance =
+        static_cast<double>(
+            perspectiveEyeDistance(
+                static_cast<float>(snapshot.halfHeight),
+                m_visuals.projectionFieldOfViewDeg
+            )
+        );
+    snapshot.eyeAbsolute =
+        snapshot.targetAbsolute +
+        snapshot.basis.direction *
+            snapshot.eyeDistance;
+    snapshot.worldUnitsPerPixel =
+        snapshot.halfHeight * 2.0 /
+        static_cast<double>(
+            std::max(viewport.height, 1)
+        );
+
+    const glm::dvec3 relativeEye =
+        snapshot.basis.direction *
+        snapshot.eyeDistance;
+
+    snapshot.view = glm::lookAt(
+        glm::vec3(relativeEye),
+        glm::vec3(0.0f),
+        glm::vec3(snapshot.basis.up)
+    );
+
+    const float aspect =
+        viewport.height > 0
+            ? static_cast<float>(viewport.width) /
+                static_cast<float>(viewport.height)
+            : 1.0f;
+
+    snapshot.projection = glm::perspective(
+        glm::radians(
+            m_visuals.projectionFieldOfViewDeg
+        ),
+        aspect,
+        nearPlane(
+            static_cast<float>(snapshot.halfHeight)
+        ),
+        farPlane(
+            static_cast<float>(snapshot.halfHeight),
+            m_visuals.projectionFieldOfViewDeg
+        )
+    );
+    snapshot.mvp =
+        snapshot.projection * snapshot.view;
+    return snapshot;
+}
+
 glm::mat4 SystemMapView::viewMatrix() const
 {
-    const glm::dvec3 direction =
-        cameraDirectionWorld();
+    const OrbitCameraBasis basis =
+        orbitCameraBasis(
+            m_state.camera.yaw,
+            m_state.camera.pitch
+        );
 
-    const glm::dvec3 up =
-        cameraUpWorld();
-
-    /*
-        All System-map render positions are camera-target relative,
-        so the perspective camera always looks at local zero.
-    */
     const glm::dvec3 eye =
-        direction *
+        basis.direction *
         cameraEyeDistance();
 
     return glm::lookAt(
         glm::vec3(eye),
         glm::vec3(0.0f),
-        glm::vec3(up)
+        glm::vec3(basis.up)
     );
 }
 
@@ -92,39 +244,26 @@ glm::mat4 SystemMapView::projectionMatrix(
 
 glm::dvec3 SystemMapView::cameraDirectionWorld() const
 {
-    return glm::dvec3(
-        cameraDirectionFromYawPitch(
-            m_state.camera.yaw,
-            m_state.camera.pitch
-        )
-    );
+    return orbitCameraBasis(
+        m_state.camera.yaw,
+        m_state.camera.pitch
+    ).direction;
 }
 
 glm::dvec3 SystemMapView::cameraUpWorld() const
 {
-    return glm::dvec3(
-        cameraUpFromYawPitch(
-            m_state.camera.yaw,
-            m_state.camera.pitch
-        )
-    );
+    return orbitCameraBasis(
+        m_state.camera.yaw,
+        m_state.camera.pitch
+    ).up;
 }
 
 glm::dvec3 SystemMapView::cameraRightWorld() const
 {
-    const glm::dvec3 right =
-        glm::cross(
-            cameraUpWorld(),
-            cameraDirectionWorld()
-        );
-
-    const double length =
-        glm::length(right);
-
-    if (length <= 0.000000001)
-        return glm::dvec3(1.0, 0.0, 0.0);
-
-    return right / length;
+    return orbitCameraBasis(
+        m_state.camera.yaw,
+        m_state.camera.pitch
+    ).right;
 }
 
 double SystemMapView::cameraEyeDistance() const
@@ -296,45 +435,29 @@ void SystemMapView::orbitCameraAroundPivot(
             pitchLimitRad
         );
 
-    const glm::dvec3 oldDirection(
-        cameraDirectionFromYawPitch(
-            oldYaw,
-            oldPitch
-        )
-    );
+    const OrbitCameraBasis oldCameraBasis =
+        orbitCameraBasis(oldYaw, oldPitch);
 
-    const glm::dvec3 oldUp(
-        cameraUpFromYawPitch(
-            oldYaw,
-            oldPitch
-        )
-    );
+    const OrbitCameraBasis newCameraBasis =
+        orbitCameraBasis(newYaw, newPitch);
 
-    const glm::dvec3 oldRight =
-        normalizedCameraRight(
-            oldUp,
-            oldDirection
-        );
+    const glm::dvec3& oldDirection =
+        oldCameraBasis.direction;
 
-    const glm::dvec3 newDirection(
-        cameraDirectionFromYawPitch(
-            newYaw,
-            newPitch
-        )
-    );
+    const glm::dvec3& oldUp =
+        oldCameraBasis.up;
 
-    const glm::dvec3 newUp(
-        cameraUpFromYawPitch(
-            newYaw,
-            newPitch
-        )
-    );
+    const glm::dvec3& oldRight =
+        oldCameraBasis.right;
 
-    const glm::dvec3 newRight =
-        normalizedCameraRight(
-            newUp,
-            newDirection
-        );
+    const glm::dvec3& newDirection =
+        newCameraBasis.direction;
+
+    const glm::dvec3& newUp =
+        newCameraBasis.up;
+
+    const glm::dvec3& newRight =
+        newCameraBasis.right;
 
     const glm::dmat3 oldBasis(
         oldRight,
@@ -1243,26 +1366,6 @@ float SystemMapView::wrapAngleRad(
     return angle;
 }
 
-glm::dvec3 SystemMapView::normalizedCameraRight(
-    const glm::dvec3& up,
-    const glm::dvec3& direction
-)
-{
-    const glm::dvec3 right =
-        glm::cross(
-            up,
-            direction
-        );
-
-    const double length =
-        glm::length(right);
-
-    if (length <= 0.000000001)
-        return glm::dvec3(1.0, 0.0, 0.0);
-
-    return right / length;
-}
-
 float SystemMapView::depthHalfRange(
     float cameraHalfHeight
 )
@@ -1330,43 +1433,5 @@ float SystemMapView::farPlane(
             2.0f;
 }
 
-glm::vec3 SystemMapView::cameraDirectionFromYawPitch(
-    float yaw,
-    float pitch
-)
-{
-    const float cp = std::cos(pitch);
-    const float sp = std::sin(pitch);
-    const float cy = std::cos(yaw);
-    const float sy = std::sin(yaw);
-
-    return glm::vec3(
-        cp * sy,
-        sp,
-        cp * cy
-    );
-}
-
-glm::vec3 SystemMapView::cameraUpFromYawPitch(
-    float yaw,
-    float pitch
-)
-{
-    const float cp = std::cos(pitch);
-    const float sp = std::sin(pitch);
-    const float cy = std::cos(yaw);
-    const float sy = std::sin(yaw);
-
-    glm::vec3 up(
-        -sp * sy,
-        cp,
-        -sp * cy
-    );
-
-    if (glm::length(up) < 0.000001f)
-        return glm::vec3(0.0f, 1.0f, 0.0f);
-
-    return glm::normalize(up);
-}
 
 } // namespace game::system_map

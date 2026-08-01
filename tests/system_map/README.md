@@ -17,7 +17,8 @@ Covered contracts:
 - body selection clears explicit cell selection and reanchors navigation;
 - mode changes are applied only after outgoing-frame capture;
 - a fixed mouse/scroll trace produces the same state after every replay;
-- semantic System picking reads a supplied CPU presentation frame.
+- semantic System picking reads a supplied CPU presentation frame;
+- immutable camera snapshots own System and local-map projection math.
 
 ## Run from MSYS2 MinGW64
 
@@ -50,3 +51,7 @@ cache mutation.
 Stage-3 architecture checks require System pick geometry to be built before
 input, forbid `SystemMapRenderer` from implementing the interaction context and
 forbid scene rendering from rebuilding body/hub screen-point caches.
+
+Stage-4 checks require Galaxy/System/Detail/Hub render paths to consume camera
+snapshots owned by their Views. Renderer-side orbit/projection helpers and
+direct renderer mutation of camera state are rejected.

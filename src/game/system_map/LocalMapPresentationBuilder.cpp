@@ -25,81 +25,6 @@ double detailSpatialCameraDistanceMeters(
 }
 
 
-double detailSpatialPerspectiveFactor(
-    double cameraSpaceZ,
-    double cameraDistanceMeters
-)
-{
-    const double denominator =
-        std::max(
-            cameraDistanceMeters - cameraSpaceZ,
-            cameraDistanceMeters * 0.20
-        );
-
-    return cameraDistanceMeters / denominator;
-}
-
-
-glm::dvec3 detailCameraSpaceRelative(
-    const DetailCameraState& camera,
-    const glm::dvec3& relativeMeters
-)
-{
-    const double cy = std::cos(camera.yaw);
-    const double sy = std::sin(camera.yaw);
-    const double cp = std::cos(camera.pitch);
-    const double sp = std::sin(camera.pitch);
-
-    glm::dvec3 yawed;
-    yawed.x = relativeMeters.x * cy - relativeMeters.z * sy;
-    yawed.y = relativeMeters.y;
-    yawed.z = relativeMeters.x * sy + relativeMeters.z * cy;
-
-    glm::dvec3 pitched;
-    pitched.x = yawed.x;
-    pitched.y = yawed.y * cp - yawed.z * sp;
-    pitched.z = yawed.y * sp + yawed.z * cp;
-    return pitched;
-}
-
-
-glm::dvec2 projectDetailPoint(
-    const DetailCameraState& camera,
-    const glm::dvec3& worldMeters,
-    const world::celestial::DetailMapSnapshot& snapshot,
-    double scale,
-    const glm::dvec2& centerPx,
-    bool sceneIsSpatialVolume
-)
-{
-    const glm::dvec3 cameraSpace =
-        detailCameraSpaceRelative(
-            camera,
-            worldMeters - snapshot.planetCenterMeters
-        );
-
-    double perspectiveFactor = 1.0;
-
-    if (sceneIsSpatialVolume &&
-        snapshot.detailHalfExtentMeters > 0.0)
-    {
-        perspectiveFactor =
-            detailSpatialPerspectiveFactor(
-                cameraSpace.z,
-                detailSpatialCameraDistanceMeters(snapshot)
-            );
-    }
-
-    const double finalScale = scale * camera.zoom;
-
-    return {
-        centerPx.x + camera.pan.x +
-            cameraSpace.x * finalScale * perspectiveFactor,
-        centerPx.y + camera.pan.y -
-            cameraSpace.y * finalScale * perspectiveFactor
-    };
-}
-
 
 glm::dvec3 visualSizeForHubShip(
     const world::celestial::HubMapShip& ship,
@@ -196,6 +121,21 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
     presentation.selectedHubParentBodyId =
         state.selectedHubParentBodyId;
 
+    const double spatialCameraDistanceMeters =
+        detailSpatialCameraDistanceMeters(snapshot);
+
+    const DetailMapCameraSnapshot fitCamera =
+        view.cameraSnapshot(
+            1.0,
+            presentation.centerPx,
+            snapshot.planetCenterMeters,
+            state.sceneIsSpatialVolume &&
+                snapshot.detailHalfExtentMeters > 0.0,
+            spatialCameraDistanceMeters
+        );
+
+    presentation.camera = fitCamera;
+
     if (!snapshot.valid)
         return presentation;
 
@@ -260,9 +200,6 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
     {
         const double halfExtent =
             snapshot.detailHalfExtentMeters;
-        const double cameraDistanceMeters =
-            detailSpatialCameraDistanceMeters(snapshot);
-
         fitExtentMeters = 1.0;
 
         for (int x = -1; x <= 1; x += 2)
@@ -272,8 +209,7 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
                 for (int z = -1; z <= 1; z += 2)
                 {
                     const glm::dvec3 cameraSpace =
-                        detailCameraSpaceRelative(
-                            state.camera,
+                        fitCamera.vectorToCamera(
                             glm::dvec3(
                                 static_cast<double>(x) * halfExtent,
                                 static_cast<double>(y) * halfExtent,
@@ -282,9 +218,8 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
                         );
 
                     const double perspectiveFactor =
-                        detailSpatialPerspectiveFactor(
-                            cameraSpace.z,
-                            cameraDistanceMeters
+                        fitCamera.perspectiveFactor(
+                            cameraSpace.z
                         );
 
                     fitExtentMeters =
@@ -309,6 +244,16 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
         mapHalfPx /
         std::max(1.0, fitExtentMeters);
 
+    presentation.camera =
+        view.cameraSnapshot(
+            presentation.scale,
+            presentation.centerPx,
+            snapshot.planetCenterMeters,
+            state.sceneIsSpatialVolume &&
+                snapshot.detailHalfExtentMeters > 0.0,
+            spatialCameraDistanceMeters
+        );
+
     for (const auto& object : snapshot.scene.objects)
     {
         if (!object.valid ||
@@ -320,14 +265,7 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
         }
 
         const glm::dvec2 projected =
-            projectDetailPoint(
-                state.camera,
-                object.positionMeters,
-                snapshot,
-                presentation.scale,
-                presentation.centerPx,
-                state.sceneIsSpatialVolume
-            );
+            presentation.camera.project(object.positionMeters);
 
         DetailHubScreenPoint point;
         point.hubId = object.stableId;
@@ -389,6 +327,11 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
             static_cast<double>(viewport.width) * 0.5,
             static_cast<double>(viewport.height) * 0.5
         );
+    presentation.camera =
+        view.cameraSnapshot(
+            presentation.scale,
+            presentation.centerPx
+        );
 
     if (!snapshot.valid)
         return presentation;
@@ -434,12 +377,17 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
     presentation.scale =
         halfPx /
         std::max(1.0, maxDistance);
+    presentation.camera =
+        view.cameraSnapshot(
+            presentation.scale,
+            presentation.centerPx
+        );
 
     presentation.frame.scale = presentation.scale;
     presentation.frame.centerPx = presentation.centerPx;
 
     const double finalScale =
-        presentation.scale * view.camera().zoom;
+        presentation.scale * presentation.camera.state.zoom;
 
     const auto addPickable =
         [&](
@@ -450,10 +398,8 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
             HubMapPickable pickable;
             pickable.localCenterMeters = object.positionMeters;
             pickable.screenCenterPx =
-                view.project(
-                    object.positionMeters,
-                    presentation.scale,
-                    presentation.centerPx
+                presentation.camera.project(
+                    object.positionMeters
                 );
             pickable.label = object.name;
 
@@ -475,7 +421,7 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
                     visualSizeForHubShip(
                         object,
                         presentation.scale,
-                        view.camera().zoom
+                        presentation.camera.state.zoom
                     );
 
                 pickable.screenRadiusPx =

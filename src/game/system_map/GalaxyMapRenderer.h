@@ -13,6 +13,7 @@ namespace world::celestial
 namespace game::system_map
 {
     class GalaxyMapView;
+    struct GalaxyMapCameraSnapshot;
     class GalaxyMapRenderContext;
 
     /*
@@ -37,7 +38,8 @@ namespace game::system_map
         void drawNavigationGrid(
             GalaxyMapView& view,
             GalaxyMapRenderContext& context,
-            const Viewport& viewport
+            const Viewport& viewport,
+            const GalaxyMapCameraSnapshot& camera
         ) const;
 
         void drawLabels(

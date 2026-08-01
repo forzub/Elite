@@ -207,9 +207,6 @@ private:
     using SystemBodyVisualMetrics =
         game::system_map::SystemBodyVisualMetrics;
 
-    using SystemCameraFlight = game::system_map::SystemCameraFlightState;
-    using SystemCamera = game::system_map::SystemCameraState;
-    using DetailCamera = game::system_map::DetailCameraState;
     using DetailControlSettings = game::system_map::LocalMapControlSettings;
 
     game::system_map::DetailMapView m_detailView;
@@ -219,6 +216,8 @@ private:
         m_localMapPresentationBuilder;
     game::system_map::DetailMapPresentation m_detailPresentation;
     game::system_map::HubMapPresentation m_hubPresentation;
+    const game::system_map::LocalMapCameraSnapshot*
+        m_activeLocalCameraSnapshot = nullptr;
     game::system_map::DetailMapSceneRenderer m_detailSceneRenderer;
     game::system_map::HubMapSceneRenderer m_hubSceneRenderer;
 
@@ -266,15 +265,6 @@ private:
         const Viewport& viewport,
         float alpha
     );
-
-
-
-
-
-
-    glm::dvec3 planetMapCameraSpaceRelative(
-        const glm::dvec3& relativeMeters
-    ) const;
 
     glm::mat3 planetBodyToDetailCameraMatrix(
         const world::celestial::DetailMapSnapshot& planet
@@ -336,7 +326,6 @@ private:
 
 
     void renderHubMapPasses(
-        const game::system_map::HubMapView& view,
         const game::system_map::HubMapPresentation& presentation,
         const Viewport& viewport,
         const world::celestial::HubMapSnapshot& hub
@@ -391,12 +380,6 @@ private:
     );
 
     void endHubGpuStage();
-
-    glm::dvec2 hubMapProject(
-        const glm::dvec3& localMeters,
-        double scale,
-        const glm::dvec2& centerPx
-    ) const;
 
 
     void drawHubMapBox(
@@ -756,18 +739,10 @@ private:
     ) const;
 
     void renderDetailMapPasses(
-        const game::system_map::DetailMapView& view,
         const game::system_map::DetailMapPresentation& presentation,
         const Viewport& viewport,
         const world::celestial::DetailMapSnapshot& planet
     ) override;
-
-    glm::dvec2 planetMapProject(
-        const glm::dvec3& worldMeters,
-        const world::celestial::DetailMapSnapshot& planet,
-        double scale,
-        const glm::dvec2& centerPx
-    ) const;
 
     void drawPlanetMapCircle(
         const glm::dvec2& center,
@@ -947,8 +922,8 @@ private:
     );
 
 
-    DetailCamera& activeDetailCamera();
-    const DetailCamera& activeDetailCamera() const;
+    const game::system_map::LocalMapCameraSnapshot&
+    activeLocalCameraSnapshot() const;
 
 
     void handleDetailAndHubInput(

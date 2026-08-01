@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/system_map/LocalMapFrameData.h"
+#include "src/game/system_map/MapCameraSnapshot.h"
 
 namespace game::system_map
 {
@@ -17,6 +18,7 @@ struct DetailMapPresentation
     double maxRadiusMeters = 1.0;
     double scale = 1.0;
     glm::dvec2 centerPx {0.0};
+    DetailMapCameraSnapshot camera;
 
     std::string selectedHubId;
     std::string selectedHubParentBodyId;
@@ -31,6 +33,7 @@ struct HubMapPresentation
     std::string hubId;
     double scale = 1.0;
     glm::dvec2 centerPx {0.0};
+    HubMapCameraSnapshot camera;
 
     HubMapFrameData frame;
 };

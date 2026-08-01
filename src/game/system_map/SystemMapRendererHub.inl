@@ -11,47 +11,6 @@
 
 
 
-glm::dvec2 SystemMapRenderer::hubMapProject(
-    const glm::dvec3& localMeters,
-    double scale,
-    const glm::dvec2& centerPx
-) const
-{
-    glm::dvec3 p =
-        localMeters;
-
-    const double cy = std::cos(activeDetailCamera().yaw);
-    const double sy = std::sin(activeDetailCamera().yaw);
-    const double cp = std::cos(activeDetailCamera().pitch);
-    const double sp = std::sin(activeDetailCamera().pitch);
-
-    glm::dvec3 a;
-    a.x = p.x * cy - p.z * sy;
-    a.y = p.y;
-    a.z = p.x * sy + p.z * cy;
-
-    glm::dvec3 b;
-    b.x = a.x;
-    b.y = a.y * cp - a.z * sp;
-    b.z = a.y * sp + a.z * cp;
-
-    const double finalScale =
-        scale * activeDetailCamera().zoom;
-
-    return glm::dvec2(
-        centerPx.x + activeDetailCamera().pan.x + b.x * finalScale,
-        centerPx.y + activeDetailCamera().pan.y - b.y * finalScale
-    );
-}
-
-
-
-
-
-
-
-
-
 void SystemMapRenderer::drawHubMapBox(
     const glm::dvec3& center,
     const world::celestial::LocalSceneAxes& axes,
@@ -117,16 +76,8 @@ void SystemMapRenderer::drawHubMapBox(
     for (const auto& edge : edges)
     {
         drawPlanetMapLine(
-            hubMapProject(
-                points[edge[0]],
-                scale,
-                centerPx
-            ),
-            hubMapProject(
-                points[edge[1]],
-                scale,
-                centerPx
-            )
+            activeLocalCameraSnapshot().project(points[edge[0]]),
+            activeLocalCameraSnapshot().project(points[edge[1]])
         );
     }
 }
@@ -197,43 +148,27 @@ void SystemMapRenderer::drawHubMapAxes(
     }
 
     const glm::dvec2 origin =
-        hubMapProject(
-            center,
-            scale,
-            centerPx
-        );
+        activeLocalCameraSnapshot().project(center);
 
     glColor4f(xColor.r, xColor.g, xColor.b, xColor.a);
 
     drawPlanetMapLine(
         origin,
-        hubMapProject(
-            center + axes.x * axisLenMeters,
-            scale,
-            centerPx
-        )
+        activeLocalCameraSnapshot().project(center + axes.x * axisLenMeters)
     );
 
     glColor4f(yColor.r, yColor.g, yColor.b, yColor.a);
 
     drawPlanetMapLine(
         origin,
-        hubMapProject(
-            center + axes.y * axisLenMeters,
-            scale,
-            centerPx
-        )
+        activeLocalCameraSnapshot().project(center + axes.y * axisLenMeters)
     );
 
     glColor4f(zColor.r, zColor.g, zColor.b, zColor.a);
 
     drawPlanetMapLine(
         origin,
-        hubMapProject(
-            center + axes.z * axisLenMeters,
-            scale,
-            centerPx
-        )
+        activeLocalCameraSnapshot().project(center + axes.z * axisLenMeters)
     );
 }
 
@@ -289,16 +224,8 @@ void SystemMapRenderer::drawHubMapVelocityArrow(
     );
 
     drawPlanetMapLine(
-        hubMapProject(
-            center,
-            scale,
-            centerPx
-        ),
-        hubMapProject(
-            center + direction * lenMeters,
-            scale,
-            centerPx
-        )
+        activeLocalCameraSnapshot().project(center),
+        activeLocalCameraSnapshot().project(center + direction * lenMeters)
     );
 }
 
@@ -1386,11 +1313,7 @@ void SystemMapRenderer::drawHubMapCircleLocalXY(
             );
 
         const glm::dvec2 s =
-            hubMapProject(
-                p,
-                scale,
-                centerPx
-            );
+            activeLocalCameraSnapshot().project(p);
 
         glVertex2d(
             s.x,
@@ -1497,7 +1420,7 @@ radialWorld =
         но не физическое положение наблюдателя над планетой.
     */
     const double cameraYaw =
-        activeDetailCamera().yaw;
+        activeLocalCameraSnapshot().state.yaw;
 
     const double yawCos =
         std::cos(
@@ -1771,7 +1694,7 @@ void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
 
     const double pitch =
         std::clamp(
-            activeDetailCamera().pitch,
+            activeLocalCameraSnapshot().state.pitch,
             0.12,
             1.20
         );
@@ -1821,7 +1744,7 @@ void SystemMapRenderer::drawHubMapPlanetSurfaceHint(
 
     const glm::dvec2 visualPlanetCenterPx(
         viewW * 0.50 +
-            activeDetailCamera().pan.x * 0.015,
+            activeLocalCameraSnapshot().state.pan.x * 0.015,
         (1.0 - lookDownT) * horizonCenterY +
             lookDownT * nadirCenterY
     );
@@ -2361,11 +2284,7 @@ const glm::mat3 cameraToPlanetBody =
     );
 
     drawPlanetMapCross(
-        hubMapProject(
-            surfacePoint,
-            scale,
-            centerPx
-        ),
+        activeLocalCameraSnapshot().project(surfacePoint),
         5.0f
     );
 
@@ -2398,10 +2317,10 @@ void SystemMapRenderer::drawHubMapAdaptiveGrid(
     double gridStep =
         100.0;
 
-    while ((gridStep * scale * activeDetailCamera().zoom) < 28.0)
+    while ((gridStep * scale * activeLocalCameraSnapshot().state.zoom) < 28.0)
         gridStep *= 2.0;
 
-    while ((gridStep * scale * activeDetailCamera().zoom) > 90.0 &&
+    while ((gridStep * scale * activeLocalCameraSnapshot().state.zoom) > 90.0 &&
            gridStep > 25.0)
     {
         gridStep *= 0.5;
@@ -2428,13 +2347,13 @@ void SystemMapRenderer::drawHubMapAdaptiveGrid(
             gridStep;
 
         drawPlanetMapLine(
-            hubMapProject(glm::dvec3(-gridN * gridStep, 0.0, v), scale, centerPx),
-            hubMapProject(glm::dvec3( gridN * gridStep, 0.0, v), scale, centerPx)
+            activeLocalCameraSnapshot().project(glm::dvec3(-gridN * gridStep, 0.0, v)),
+            activeLocalCameraSnapshot().project(glm::dvec3( gridN * gridStep, 0.0, v))
         );
 
         drawPlanetMapLine(
-            hubMapProject(glm::dvec3(v, 0.0, -gridN * gridStep), scale, centerPx),
-            hubMapProject(glm::dvec3(v, 0.0,  gridN * gridStep), scale, centerPx)
+            activeLocalCameraSnapshot().project(glm::dvec3(v, 0.0, -gridN * gridStep)),
+            activeLocalCameraSnapshot().project(glm::dvec3(v, 0.0,  gridN * gridStep))
         );
     }
 
@@ -2447,13 +2366,13 @@ void SystemMapRenderer::drawHubMapAdaptiveGrid(
     );
 
     drawPlanetMapLine(
-        hubMapProject(glm::dvec3(-gridN * gridStep, 0.0, 0.0), scale, centerPx),
-        hubMapProject(glm::dvec3( gridN * gridStep, 0.0, 0.0), scale, centerPx)
+        activeLocalCameraSnapshot().project(glm::dvec3(-gridN * gridStep, 0.0, 0.0)),
+        activeLocalCameraSnapshot().project(glm::dvec3( gridN * gridStep, 0.0, 0.0))
     );
 
     drawPlanetMapLine(
-        hubMapProject(glm::dvec3(0.0, 0.0, -gridN * gridStep), scale, centerPx),
-        hubMapProject(glm::dvec3(0.0, 0.0,  gridN * gridStep), scale, centerPx)
+        activeLocalCameraSnapshot().project(glm::dvec3(0.0, 0.0, -gridN * gridStep)),
+        activeLocalCameraSnapshot().project(glm::dvec3(0.0, 0.0,  gridN * gridStep))
     );
 }
 
@@ -2485,7 +2404,7 @@ glm::dvec3 SystemMapRenderer::visualSizeForHubShip(
 
     const double pixelsPerMeter =
         scale *
-        activeDetailCamera().zoom;
+        activeLocalCameraSnapshot().state.zoom;
 
     if (pixelsPerMeter <= 0.0)
         return physicalSizeMeters;
@@ -2833,12 +2752,25 @@ void SystemMapRenderer::endHubGpuStage()
 
 
 void SystemMapRenderer::renderHubMapPasses(
-    const game::system_map::HubMapView& view,
     const game::system_map::HubMapPresentation& presentation,
     const Viewport& viewport,
     const world::celestial::HubMapSnapshot& hub
 )
 {
+    const auto* previousCameraSnapshot =
+        m_activeLocalCameraSnapshot;
+    m_activeLocalCameraSnapshot =
+        &presentation.camera;
+
+    struct RestoreCameraSnapshot
+    {
+        const game::system_map::LocalMapCameraSnapshot*& slot;
+        const game::system_map::LocalMapCameraSnapshot* previous;
+        ~RestoreCameraSnapshot() { slot = previous; }
+    } restoreCameraSnapshot {
+        m_activeLocalCameraSnapshot,
+        previousCameraSnapshot
+    };
 
     const double cpuTotalStartMs =
         hubPerfNowMs();
@@ -2976,7 +2908,7 @@ void SystemMapRenderer::renderHubMapPasses(
     const double scale =
         presentation.scale;
     const double finalScale =
-        scale * view.camera().zoom;
+        scale * activeLocalCameraSnapshot().state.zoom;
 
 
 
@@ -3026,7 +2958,7 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
     //     m_hubSphericalGridRenderer.render(
     //         m_lastHubPlanetVisualCenterPx,
     //         m_lastHubPlanetVisualRadiusPx,
-    //         activeDetailCamera().yaw *
+    //         activeLocalCameraSnapshot().state.yaw *
     //             0.35,
     //         sphericalGridStyle
     //     );
@@ -3060,10 +2992,10 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
         */
         glm::dvec2(
             centerPx.x +
-                activeDetailCamera().pan.x,
+                activeLocalCameraSnapshot().state.pan.x,
 
             centerPx.y +
-                activeDetailCamera().pan.y
+                activeLocalCameraSnapshot().state.pan.y
         ),
 
         /*
@@ -3072,8 +3004,8 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
         */
         finalScale,
 
-        activeDetailCamera().yaw,
-        activeDetailCamera().pitch
+        activeLocalCameraSnapshot().state.yaw,
+        activeLocalCameraSnapshot().state.pitch
     );
 
 
@@ -3089,11 +3021,7 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
 
     // Центр хаба / текущая орбитальная точка.
     const glm::dvec2 hubOriginScreen =
-        hubMapProject(
-            glm::dvec3(0.0),
-            scale,
-            centerPx
-        );
+        activeLocalCameraSnapshot().project(glm::dvec3(0.0));
 
     const glm::vec4 hubOriginColor(
         1.0f,
@@ -3139,11 +3067,7 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
         }
 
         const glm::dvec2 modScreen =
-            hubMapProject(
-                mod.positionMeters,
-                scale,
-                centerPx
-            );
+            activeLocalCameraSnapshot().project(mod.positionMeters);
 
         const double moduleRadiusMeters =
             glm::length(
@@ -3230,11 +3154,7 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
         }
 
         const glm::dvec2 shipScreen =
-            hubMapProject(
-                ship.positionMeters,
-                scale,
-                centerPx
-            );
+            activeLocalCameraSnapshot().project(ship.positionMeters);
 
         const glm::dvec3 shipVisualSize =
             visualSizeForHubShip(
@@ -3369,11 +3289,7 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
                 }
 
                 const glm::dvec2 p =
-                    hubMapProject(
-                        mod.positionMeters,
-                        scale,
-                        centerPx
-                    );
+                    activeLocalCameraSnapshot().project(mod.positionMeters);
 
 
                 if (p.x < -160.0 ||
@@ -3414,11 +3330,7 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
                 }
 
                 const glm::dvec2 p =
-                    hubMapProject(
-                        ship.positionMeters,
-                        scale,
-                        centerPx
-                    );
+                    activeLocalCameraSnapshot().project(ship.positionMeters);
 
 
 

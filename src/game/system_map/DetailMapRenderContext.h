@@ -5,7 +5,6 @@
 namespace world::celestial { struct DetailMapSnapshot; }
 namespace game::system_map
 {
-class DetailMapView;
 struct DetailMapPresentation;
 }
 
@@ -17,7 +16,6 @@ public:
     virtual ~DetailMapRenderContext() = default;
 
     virtual void renderDetailMapPasses(
-        const DetailMapView& view,
         const DetailMapPresentation& presentation,
         const Viewport& viewport,
         const world::celestial::DetailMapSnapshot& snapshot

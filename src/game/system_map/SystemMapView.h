@@ -13,6 +13,7 @@
 
 #include "src/game/navigation/CubicNavigationInteraction.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
+#include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/MapCameraState.h"
 #include "src/game/system_map/SystemMapVisualSettings.h"
 
@@ -171,6 +172,23 @@ namespace game::system_map
 
         const SystemMapVisualSettings& visuals() const noexcept;
 
+        void reset();
+
+        void resetNavigationToLevelZero(
+            const Viewport& viewport
+        );
+
+        void suppressCameraGesture(
+            bool leftDown,
+            bool rightDown,
+            double mouseX,
+            double mouseY
+        );
+
+        SystemMapCameraSnapshot cameraSnapshot(
+            const Viewport& viewport
+        ) const;
+
         glm::mat4 viewMatrix() const;
 
         glm::mat4 projectionMatrix(
@@ -274,11 +292,6 @@ namespace game::system_map
             float angle
         );
 
-        static glm::dvec3 normalizedCameraRight(
-            const glm::dvec3& up,
-            const glm::dvec3& direction
-        );
-
         static constexpr float depthMultiplier =
             8.0f;
 
@@ -298,16 +311,6 @@ namespace game::system_map
         static float farPlane(
             float cameraHalfHeight,
             float fieldOfViewDeg
-        );
-
-        static glm::vec3 cameraDirectionFromYawPitch(
-            float yaw,
-            float pitch
-        );
-
-        static glm::vec3 cameraUpFromYawPitch(
-            float yaw,
-            float pitch
         );
 
     private:

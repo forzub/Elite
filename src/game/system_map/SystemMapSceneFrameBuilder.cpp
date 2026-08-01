@@ -14,29 +14,6 @@ namespace game::system_map
 {
 namespace
 {
-    double calculateSystemWorldUnitsPerPixel(
-        double cameraHalfHeight,
-        int viewportHeight
-    )
-    {
-        const double safeHeight =
-            static_cast<double>(
-                std::max(viewportHeight, 1)
-            );
-
-        const double halfHeight =
-            std::clamp(
-                cameraHalfHeight,
-                static_cast<double>(
-                    SystemMapView::minimumCameraHalfHeight
-                ),
-                static_cast<double>(
-                    SystemMapView::maximumCameraHalfHeight
-                )
-            );
-
-        return (halfHeight * 2.0) / safeHeight;
-    }
 
     double calculatePerspectiveWorldUnitsPerPixel(
         const glm::vec3& worldPosition,
@@ -97,17 +74,13 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
     frame.systemId = system.systemId;
     frame.viewport = viewport;
     frame.systemScale = presentation.systemScale;
-    frame.cameraOrigin = viewState.state().camera.target;
-    frame.projection = viewState.projectionMatrix(viewport);
-    frame.view = viewState.viewMatrix();
-    frame.mvp = frame.projection * frame.view;
+    frame.camera = viewState.cameraSnapshot(viewport);
+    frame.cameraOrigin = frame.camera.targetAbsolute;
+    frame.projection = frame.camera.projection;
+    frame.view = frame.camera.view;
+    frame.mvp = frame.camera.mvp;
     frame.worldUnitsPerPixel =
-        calculateSystemWorldUnitsPerPixel(
-            static_cast<double>(
-                viewState.state().camera.distance
-            ),
-            viewport.height
-        );
+        frame.camera.worldUnitsPerPixel;
 
     const auto auToMapUnits =
         [&](const glm::dvec3& au) -> glm::dvec3

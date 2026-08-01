@@ -21,6 +21,7 @@
 #include "src/game/system_map/DetailMapView.h"
 #include "src/game/system_map/HubMapView.h"
 #include "src/game/system_map/LocalMapPresentationBuilder.h"
+#include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/MapMode.h"
 #include "src/game/system_map/MapTransitionController.h"
 #include "src/game/system_map/SystemMapInteraction.h"
@@ -38,6 +39,7 @@ using game::navigation::CubicNavigationGridDefinition;
 using game::navigation::CubicNavigationLevelAction;
 using game::system_map::DetailMapView;
 using game::system_map::HubMapView;
+using game::system_map::LocalMapCameraSnapshot;
 using game::system_map::LocalMapPresentationBuilder;
 using game::system_map::MapMode;
 using game::system_map::SystemMapCameraBodyTarget;
@@ -1315,6 +1317,136 @@ void testPreparedFrameDrivesSystemPicking()
     );
 }
 
+void testCameraSnapshotsOwnProjectionContracts()
+{
+    const Viewport viewport = testViewport();
+
+    SystemMapView systemView = makeSystemView();
+    systemView.state().camera.target = glm::dvec3(7.0, -3.0, 4.0);
+    systemView.state().camera.yaw = 0.73f;
+    systemView.state().camera.pitch = -0.41f;
+    systemView.state().camera.distance = 86.0f;
+
+    const auto systemCamera =
+        systemView.cameraSnapshot(viewport);
+
+    REQUIRE_VEC_NEAR(
+        systemCamera.targetAbsolute,
+        systemView.state().camera.target,
+        1.0e-12
+    );
+    REQUIRE_VEC_NEAR(
+        systemCamera.basis.direction,
+        systemView.cameraDirectionWorld(),
+        1.0e-12
+    );
+    REQUIRE_VEC_NEAR(
+        systemCamera.basis.up,
+        systemView.cameraUpWorld(),
+        1.0e-12
+    );
+    REQUIRE_VEC_NEAR(
+        systemCamera.basis.right,
+        systemView.cameraRightWorld(),
+        1.0e-12
+    );
+    REQUIRE_NEAR(
+        glm::dot(
+            systemCamera.basis.direction,
+            systemCamera.basis.up
+        ),
+        0.0,
+        1.0e-6
+    );
+    REQUIRE_NEAR(
+        glm::length(systemCamera.basis.direction),
+        1.0,
+        1.0e-6
+    );
+    REQUIRE_NEAR(
+        glm::length(systemCamera.basis.up),
+        1.0,
+        1.0e-6
+    );
+
+    const glm::mat4 expectedView = systemView.viewMatrix();
+    const glm::mat4 expectedProjection =
+        systemView.projectionMatrix(viewport);
+
+    for (int column = 0; column < 4; ++column)
+    {
+        for (int row = 0; row < 4; ++row)
+        {
+            REQUIRE_NEAR(
+                systemCamera.view[column][row],
+                expectedView[column][row],
+                1.0e-6
+            );
+            REQUIRE_NEAR(
+                systemCamera.projection[column][row],
+                expectedProjection[column][row],
+                1.0e-6
+            );
+        }
+    }
+
+    LocalMapCameraSnapshot localCamera;
+    localCamera.state.yaw = 0.42;
+    localCamera.state.pitch = -0.31;
+    localCamera.state.zoom = 1.7;
+    localCamera.state.pan = glm::dvec2(12.0, -9.0);
+    localCamera.scale = 0.035;
+    localCamera.centerPx = glm::dvec2(640.0, 360.0);
+    localCamera.originMeters = glm::dvec3(20.0, -8.0, 11.0);
+
+    const glm::dvec3 cameraPlanePoint(
+        17.0,
+        -6.0,
+        0.0
+    );
+    const glm::dvec3 worldPoint =
+        localCamera.originMeters +
+        localCamera.vectorFromCamera(cameraPlanePoint);
+
+    const glm::dvec2 screenPoint =
+        localCamera.project(worldPoint);
+
+    REQUIRE_VEC_NEAR(
+        localCamera.unprojectPlane(screenPoint),
+        worldPoint,
+        1.0e-9
+    );
+
+    localCamera.perspectiveEnabled = true;
+    localCamera.perspectiveCameraDistanceMeters = 1000.0;
+
+    const glm::dvec3 nearPoint =
+        localCamera.originMeters +
+        localCamera.vectorFromCamera(
+            glm::dvec3(20.0, 0.0, 100.0)
+        );
+    const glm::dvec3 farPoint =
+        localCamera.originMeters +
+        localCamera.vectorFromCamera(
+            glm::dvec3(20.0, 0.0, -100.0)
+        );
+
+    const double nearOffset =
+        std::abs(
+            localCamera.project(nearPoint).x -
+            localCamera.centerPx.x -
+            localCamera.state.pan.x
+        );
+    const double farOffset =
+        std::abs(
+            localCamera.project(farPoint).x -
+            localCamera.centerPx.x -
+            localCamera.state.pan.x
+        );
+
+    REQUIRE(nearOffset > farOffset);
+}
+
 void testGalaxySystemDetailHubTransitionSequence()
 {
     MapMode mode = MapMode::Galaxy;
@@ -1487,6 +1619,7 @@ int main()
         {"presentation builder prepares state before render", testPresentationBuilderPreparesStateBeforeRender},
         {"local presentation builder prepares Detail and Hub", testLocalPresentationBuilderPreparesDetailAndHub},
         {"prepared frame drives System picking", testPreparedFrameDrivesSystemPicking},
+        {"camera snapshots own projection contracts", testCameraSnapshotsOwnProjectionContracts},
         {"Galaxy -> System -> Detail -> Hub transition sequence", testGalaxySystemDetailHubTransitionSequence},
         {"mouse and scroll trace is repeatable", testMouseAndScrollTraceIsRepeatable}
     };

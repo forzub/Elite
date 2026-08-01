@@ -935,228 +935,6 @@ namespace
 
 
 
-    constexpr float SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT =
-        0.0000005f;
-
-    constexpr float SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT =
-        5000.0f;
-
-    /*
-        System использует ортографическую камеру от масштаба
-        всей системы до последнего уровня System map.
-
-        Фиксированный диапазон глубины 0.001...120000 терял
-        точность уже около S3. Глубина камеры теперь вычисляется
-        относительно текущего half-height.
-    */
-    constexpr float SYSTEM_MAP_ORTHO_DEPTH_MULTIPLIER =
-        8.0f;
-
-    float systemMapOrthoDepthHalfRange(
-        float cameraHalfHeight
-    )
-    {
-        const float safeHalfHeight =
-            std::clamp(
-                cameraHalfHeight,
-                SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-                SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT
-            );
-
-        return std::max(
-            safeHalfHeight *
-                SYSTEM_MAP_ORTHO_DEPTH_MULTIPLIER,
-            0.000001f
-        );
-    }
-
-    float systemMapOrthoNearPlane(
-        float cameraHalfHeight
-    )
-    {
-        return std::max(
-            systemMapOrthoDepthHalfRange(
-                cameraHalfHeight
-            ) * 0.0001f,
-            0.000000001f
-        );
-    }
-
-    float systemMapPerspectiveEyeDistance(
-        float cameraHalfHeight,
-        float fieldOfViewDeg
-    )
-    {
-        const float safeHalfHeight =
-            std::clamp(
-                cameraHalfHeight,
-                SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-                SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT
-            );
-
-        const float halfFovRad =
-            glm::radians(
-                fieldOfViewDeg * 0.5f
-            );
-
-        return
-            safeHalfHeight /
-            std::max(
-                std::tan(halfFovRad),
-                0.0001f
-            );
-    }
-
-    float systemMapPerspectiveFarPlane(
-        float cameraHalfHeight,
-        float fieldOfViewDeg
-    )
-    {
-        return
-            systemMapPerspectiveEyeDistance(
-                cameraHalfHeight,
-                fieldOfViewDeg
-            ) +
-            systemMapOrthoDepthHalfRange(
-                cameraHalfHeight
-            ) * 2.0f;
-    }
-
-        double systemMapWorldUnitsPerPixel(
-        double cameraHalfHeight,
-        int viewportHeight
-    )
-    {
-        const double safeHeight =
-            static_cast<double>(
-                std::max(
-                    viewportHeight,
-                    1
-                )
-            );
-
-        const double halfHeight =
-            std::clamp(
-                cameraHalfHeight,
-                static_cast<double>(SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT),
-                static_cast<double>(SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT)
-            );
-
-        return
-            (halfHeight * 2.0) /
-            safeHeight;
-    }
-
-    glm::vec3 systemMapViewRight(
-        const glm::mat4& view
-    )
-    {
-        return glm::normalize(
-            glm::vec3(
-                view[0][0],
-                view[1][0],
-                view[2][0]
-            )
-        );
-    }
-
-    glm::vec3 systemMapViewUp(
-        const glm::mat4& view
-    )
-    {
-        return glm::normalize(
-            glm::vec3(
-                view[0][1],
-                view[1][1],
-                view[2][1]
-            )
-        );
-    }
-
-    glm::dvec3 systemMapTargetPlanePointFromScreen(
-        const Viewport& vp,
-        const glm::mat4& view,
-        const glm::dvec3& target,
-        double cameraHalfHeight,
-        double localMouseX,
-        double localMouseY
-    )
-    {
-        const double safeWidth =
-            static_cast<double>(
-                std::max(
-                    vp.width,
-                    1
-                )
-            );
-
-        const double safeHeight =
-            static_cast<double>(
-                std::max(
-                    vp.height,
-                    1
-                )
-            );
-
-        const double aspect =
-            safeWidth /
-            safeHeight;
-
-        const double halfHeightWorld =
-            std::clamp(
-                cameraHalfHeight,
-                static_cast<double>(SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT),
-                static_cast<double>(SYSTEM_MAP_ORTHO_MAX_HALF_HEIGHT)
-            );
-
-        const double halfWidthWorld =
-            halfHeightWorld *
-            aspect;
-
-        const double ndcX =
-            localMouseX / safeWidth * 2.0 - 1.0;
-
-        const double ndcY =
-            1.0 -
-            localMouseY / safeHeight * 2.0;
-
-        const glm::vec3 rightF =
-            systemMapViewRight(
-                view
-            );
-
-        const glm::vec3 upF =
-            systemMapViewUp(
-                view
-            );
-
-        const glm::dvec3 right(
-            rightF.x,
-            rightF.y,
-            rightF.z
-        );
-
-        const glm::dvec3 up(
-            upF.x,
-            upF.y,
-            upF.z
-        );
-
-        return
-            target +
-            right * ndcX * halfWidthWorld +
-            up    * ndcY * halfHeightWorld;
-    }
-
-
-
-
-
-
-
-
-
-
     double niceSystemMapScaleNumber(
         double value
     )
@@ -1278,65 +1056,6 @@ namespace
 
         return a;
     }
-
-    glm::vec3 orbitCameraDirectionFromYawPitch(
-        float yaw,
-        float pitch
-    )
-    {
-        const float cp =
-            std::cos(pitch);
-
-        const float sp =
-            std::sin(pitch);
-
-        const float cy =
-            std::cos(yaw);
-
-        const float sy =
-            std::sin(yaw);
-
-        return glm::vec3(
-            cp * sy,
-            sp,
-            cp * cy
-        );
-    }
-
-    glm::vec3 orbitCameraUpFromYawPitch(
-        float yaw,
-        float pitch
-    )
-    {
-        const float cp =
-            std::cos(pitch);
-
-        const float sp =
-            std::sin(pitch);
-
-        const float cy =
-            std::cos(yaw);
-
-        const float sy =
-            std::sin(yaw);
-
-        // Это производная direction по pitch.
-        // Она всегда перпендикулярна направлению взгляда,
-        // даже когда камера переваливает через верх/низ.
-        glm::vec3 up(
-            -sp * sy,
-            cp,
-            -sp * cy
-        );
-
-        if (glm::length(up) < 0.000001f)
-            return glm::vec3(0.0f, 1.0f, 0.0f);
-
-        return glm::normalize(up);
-    }
-
-
-
 
     float galaxyStarTypeVisualScale(
         const std::string& starType
@@ -1556,37 +1275,8 @@ void SystemMapRenderer::drawMapStarfield(
     const glm::dvec3& observerPositionLy
 )
 {
-    /*
-        Небо вращается вместе с detail camera,
-        но не зависит от zoom и pan.
-    */
-    glm::mat4 view(1.0f);
-
-    view =
-        glm::rotate(
-            view,
-            static_cast<float>(
-                -activeDetailCamera().pitch
-            ),
-            glm::vec3(
-                1.0f,
-                0.0f,
-                0.0f
-            )
-        );
-
-    view =
-        glm::rotate(
-            view,
-            static_cast<float>(
-                -activeDetailCamera().yaw
-            ),
-            glm::vec3(
-                0.0f,
-                1.0f,
-                0.0f
-            )
-        );
+    const glm::mat4 view =
+        activeLocalCameraSnapshot().starfieldViewMatrix();
 
     const bool hubMode =
         m_mode == Mode::Hub;
@@ -3112,16 +2802,7 @@ void SystemMapRenderer::resetView()
 {
     m_mode = Mode::Galaxy;
     m_galaxyView.reset();
-    m_systemView.state().camera = SystemCamera{};
-    m_systemView.state().cameraFlight = SystemCameraFlight{};
-
-    m_systemView.state().hoverVisualCell.reset();
-    m_systemView.state().hoverVisualAlpha = 0.0f;
-    m_systemView.state().hoverOutgoingCell.reset();
-    m_systemView.state().hoverOutgoingAlpha = 0.0f;
-    m_systemView.state().hoverVisualLastTimeSeconds = 0.0;
-    m_systemView.state().cubeClickTracker.reset();
-    m_systemView.state().lastCameraFitSystemId = -1;
+    m_systemView.reset();
 
     m_navigationLevelAnnouncement.text.clear();
     m_navigationLevelAnnouncement.startedAtSeconds = -1.0;
@@ -3132,13 +2813,7 @@ void SystemMapRenderer::resetView()
         game::system_map::DetailMapPresentation{};
     m_hubPresentation =
         game::system_map::HubMapPresentation{};
-    m_systemView.state().selectedBodyId.clear();
-    m_systemView.state().selectedHubId.clear();
-    m_systemView.state().selectedHubParentBodyId.clear();
-    m_systemView.state().navigationCellExplicitlySelected = false;
     m_pendingScrollY = 0.0;
-    m_systemView.state().orbitPivotAbsolute = glm::dvec3(0.0, 0.0, 0.0);
-    m_systemView.state().orbitPivotActive = false;
     m_systemPresentation =
         game::system_map::SystemMapPresentation{};
     m_systemSceneFrame =
@@ -3332,23 +3007,18 @@ SystemMapRenderer::Mode SystemMapRenderer::mode() const
 
 
 
-SystemMapRenderer::DetailCamera&
-SystemMapRenderer::activeDetailCamera()
+const game::system_map::LocalMapCameraSnapshot&
+SystemMapRenderer::activeLocalCameraSnapshot() const
 {
-    if (m_mode == Mode::Hub)
-        return m_hubView.camera();
+    static const game::system_map::LocalMapCameraSnapshot
+        fallback;
 
-    return m_detailView.camera();
+    if (!m_activeLocalCameraSnapshot)
+        return fallback;
+
+    return *m_activeLocalCameraSnapshot;
 }
 
-const SystemMapRenderer::DetailCamera&
-SystemMapRenderer::activeDetailCamera() const
-{
-    if (m_mode == Mode::Hub)
-        return m_hubView.camera();
-
-    return m_detailView.camera();
-}
 
 
 
@@ -4358,7 +4028,6 @@ void SystemMapRenderer::render(
         }
 
         m_detailSceneRenderer.render(
-            m_detailView,
             m_detailPresentation,
             *this,
             viewport,
@@ -4383,7 +4052,6 @@ void SystemMapRenderer::render(
         }
 
         m_hubSceneRenderer.render(
-            m_hubView,
             m_hubPresentation,
             *this,
             viewport,
@@ -4665,19 +4333,19 @@ SystemMapRenderer::handleInput(
             The button is part of the map viewport, so explicitly prevent
             the scene behind it from receiving the same mouse gesture.
         */
-        m_galaxyView.state().camera.rotating = false;
-        m_galaxyView.state().camera.panning = false;
-        m_galaxyView.state().camera.leftWasDown = leftDown;
-        m_galaxyView.state().camera.rightWasDown = rightDown;
-        m_galaxyView.state().camera.lastMouseX = mx;
-        m_galaxyView.state().camera.lastMouseY = my;
+        m_galaxyView.suppressCameraGesture(
+            leftDown,
+            rightDown,
+            mx,
+            my
+        );
 
-        m_systemView.state().camera.rotating = false;
-        m_systemView.state().camera.panning = false;
-        m_systemView.state().camera.leftWasDown = leftDown;
-        m_systemView.state().camera.rightWasDown = rightDown;
-        m_systemView.state().camera.lastMouseX = mx;
-        m_systemView.state().camera.lastMouseY = my;
+        m_systemView.suppressCameraGesture(
+            leftDown,
+            rightDown,
+            mx,
+            my
+        );
 
         return std::nullopt;
     }
@@ -4797,7 +4465,9 @@ SystemMapRenderer::handleInput(
         }
 
         const auto cameraBefore =
-            activeDetailCamera();
+            m_mode == Mode::Hub
+                ? m_hubView.camera()
+                : m_detailView.camera();
 
         handleDetailAndHubInput(
             vp,
@@ -4812,7 +4482,9 @@ SystemMapRenderer::handleInput(
         );
 
         const auto& cameraAfter =
-            activeDetailCamera();
+            m_mode == Mode::Hub
+                ? m_hubView.camera()
+                : m_detailView.camera();
 
         const bool projectionChanged =
             cameraBefore.yaw != cameraAfter.yaw ||

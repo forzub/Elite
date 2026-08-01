@@ -5,6 +5,7 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/SystemMapFrameData.h"
 #include "src/game/system_map/SystemMapRenderContext.h"
 #include "src/render/types/Viewport.h"
@@ -24,6 +25,7 @@ namespace game::system_map
         Viewport viewport;
 
         float systemScale = 1.0f;
+        SystemMapCameraSnapshot camera;
         double worldUnitsPerPixel = 1.0;
         glm::dvec3 cameraOrigin {0.0};
 

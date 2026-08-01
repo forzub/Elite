@@ -12,22 +12,6 @@
 
 namespace
 {
-    glm::vec3 orbitCameraDirectionFromYawPitch(
-        float yaw,
-        float pitch
-    )
-    {
-        const float cp = std::cos(pitch);
-        const float sp = std::sin(pitch);
-        const float cy = std::cos(yaw);
-        const float sy = std::sin(yaw);
-
-        return glm::vec3(
-            cp * sy,
-            sp,
-            cp * cy
-        );
-    }
 
     float wrapAngleRadF(float angle)
     {
@@ -231,10 +215,7 @@ namespace game::system_map
 
         const glm::vec3 planePoint = state.camera.target;
         const glm::vec3 planeNormal =
-            orbitCameraDirectionFromYawPitch(
-                state.camera.yaw,
-                state.camera.pitch
-            );
+            glm::vec3(view.cameraDirectionWorld());
 
         const float denominator =
             glm::dot(rayDirection, planeNormal);
@@ -1160,10 +1141,7 @@ namespace game::system_map
                     );
 
                     const glm::vec3 dir =
-                        orbitCameraDirectionFromYawPitch(
-                            view.state().camera.yaw,
-                            view.state().camera.pitch
-                        );
+                        glm::vec3(view.cameraDirectionWorld());
 
                     const glm::vec3 eye =
                         view.state().camera.target +
@@ -1471,10 +1449,7 @@ namespace game::system_map
                         );
 
                         const glm::vec3 direction =
-                            orbitCameraDirectionFromYawPitch(
-                                view.state().camera.yaw,
-                                view.state().camera.pitch
-                            );
+                            glm::vec3(view.cameraDirectionWorld());
 
                         const glm::vec3 eye =
                             view.state().camera.target +

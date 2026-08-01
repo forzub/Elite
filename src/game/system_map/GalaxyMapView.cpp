@@ -9,47 +9,6 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace
-{
-    glm::vec3 orbitCameraDirectionFromYawPitch(
-        float yaw,
-        float pitch
-    )
-    {
-        const float cp = std::cos(pitch);
-        const float sp = std::sin(pitch);
-        const float cy = std::cos(yaw);
-        const float sy = std::sin(yaw);
-
-        return glm::vec3(
-            cp * sy,
-            sp,
-            cp * cy
-        );
-    }
-
-    glm::vec3 orbitCameraUpFromYawPitch(
-        float yaw,
-        float pitch
-    )
-    {
-        const float cp = std::cos(pitch);
-        const float sp = std::sin(pitch);
-        const float cy = std::cos(yaw);
-        const float sy = std::sin(yaw);
-
-        glm::vec3 up(
-            -sp * sy,
-            cp,
-            -sp * cy
-        );
-
-        if (glm::length(up) < 0.000001f)
-            return glm::vec3(0.0f, 1.0f, 0.0f);
-
-        return glm::normalize(up);
-    }
-}
 
 namespace game::system_map
 {
@@ -86,6 +45,21 @@ namespace game::system_map
         m_state.mouseDownY = 0.0;
     }
 
+
+    void GalaxyMapView::suppressCameraGesture(
+        bool leftDown,
+        bool rightDown,
+        double mouseX,
+        double mouseY
+    )
+    {
+        m_state.camera.rotating = false;
+        m_state.camera.panning = false;
+        m_state.camera.leftWasDown = leftDown;
+        m_state.camera.rightWasDown = rightDown;
+        m_state.camera.lastMouseX = mouseX;
+        m_state.camera.lastMouseY = mouseY;
+    }
 
     glm::dvec3 GalaxyMapView::playerPositionLy(
         const world::celestial::GalaxyMapSnapshot& galaxy,
@@ -318,28 +292,78 @@ namespace game::system_map
         );
     }
 
-    glm::mat4 GalaxyMapView::viewMatrix() const
+    GalaxyMapCameraSnapshot GalaxyMapView::cameraSnapshot(
+        const Viewport& viewport
+    ) const
     {
-        const glm::vec3 direction =
-            orbitCameraDirectionFromYawPitch(
-                m_state.camera.yaw,
-                m_state.camera.pitch
-            );
+        GalaxyMapCameraSnapshot snapshot;
+        snapshot.viewport = viewport;
+        snapshot.basis = orbitCameraBasis(
+            m_state.camera.yaw,
+            m_state.camera.pitch
+        );
+        snapshot.distance =
+            static_cast<double>(m_state.camera.distance);
+        snapshot.fieldOfViewDeg = 48.0f;
 
-        const glm::vec3 up =
-            orbitCameraUpFromYawPitch(
-                m_state.camera.yaw,
-                m_state.camera.pitch
-            );
+        const glm::vec3 direction =
+            glm::vec3(snapshot.basis.direction);
+
+        const glm::vec3 target =
+            m_state.camera.target;
 
         const glm::vec3 eye =
-            m_state.camera.target +
+            target +
+            direction * m_state.camera.distance;
+
+        snapshot.target = glm::dvec3(target);
+        snapshot.eye = glm::dvec3(eye);
+
+        snapshot.view = glm::lookAt(
+            eye,
+            target,
+            glm::vec3(snapshot.basis.up)
+        );
+
+        const float aspect =
+            viewport.height > 0
+                ? static_cast<float>(viewport.width) /
+                    static_cast<float>(viewport.height)
+                : 1.0f;
+
+        snapshot.projection = glm::perspective(
+            glm::radians(snapshot.fieldOfViewDeg),
+            aspect,
+            0.0001f,
+            2000.0f
+        );
+        snapshot.mvp =
+            snapshot.projection * snapshot.view;
+        return snapshot;
+    }
+
+    glm::mat4 GalaxyMapView::viewMatrix() const
+    {
+        const OrbitCameraBasis basis =
+            orbitCameraBasis(
+                m_state.camera.yaw,
+                m_state.camera.pitch
+            );
+
+        const glm::vec3 direction =
+            glm::vec3(basis.direction);
+
+        const glm::vec3 target =
+            m_state.camera.target;
+
+        const glm::vec3 eye =
+            target +
             direction * m_state.camera.distance;
 
         return glm::lookAt(
             eye,
-            m_state.camera.target,
-            up
+            target,
+            glm::vec3(basis.up)
         );
     }
 
@@ -359,6 +383,38 @@ namespace game::system_map
             0.0001f,
             2000.0f
         );
+    }
+
+    glm::dvec3 GalaxyMapView::cameraDirectionWorld() const
+    {
+        return orbitCameraBasis(
+            m_state.camera.yaw,
+            m_state.camera.pitch
+        ).direction;
+    }
+
+    glm::dvec3 GalaxyMapView::cameraUpWorld() const
+    {
+        return orbitCameraBasis(
+            m_state.camera.yaw,
+            m_state.camera.pitch
+        ).up;
+    }
+
+    glm::dvec3 GalaxyMapView::cameraRightWorld() const
+    {
+        return orbitCameraBasis(
+            m_state.camera.yaw,
+            m_state.camera.pitch
+        ).right;
+    }
+
+    glm::dvec3 GalaxyMapView::cameraEyeWorld() const
+    {
+        return
+            glm::dvec3(m_state.camera.target) +
+            cameraDirectionWorld() *
+                static_cast<double>(m_state.camera.distance);
     }
 
     float GalaxyMapView::navigationAnchorDiameterPx(

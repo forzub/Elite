@@ -111,8 +111,8 @@ for scene_path, view_type, presentation_type in (
         continue
 
     scene_text = scene_path.read_text(encoding="utf-8", errors="replace")
-    if f"const {view_type}& view" not in scene_text:
-        fail(scene_path, f"scene renderer must consume const {view_type}")
+    if view_type in scene_text:
+        fail(scene_path, f"scene renderer must not depend on mutable {view_type}")
     if f"const {presentation_type}& presentation" not in scene_text:
         fail(scene_path, f"scene renderer must consume {presentation_type}")
 
@@ -244,6 +244,110 @@ if space_state_cpp.is_file():
             space_state_cpp,
             "local snapshots must refresh before input and render",
         )
+
+# Stage 4: Views own camera math and renderers consume immutable snapshots.
+camera_snapshot_header = MAP_DIR / "MapCameraSnapshot.h"
+system_view_header = MAP_DIR / "SystemMapView.h"
+system_view_cpp = MAP_DIR / "SystemMapView.cpp"
+galaxy_view_header = MAP_DIR / "GalaxyMapView.h"
+galaxy_renderer_cpp = MAP_DIR / "GalaxyMapRenderer.cpp"
+local_presentation_header = MAP_DIR / "LocalMapPresentation.h"
+
+if not camera_snapshot_header.is_file():
+    fail(camera_snapshot_header, "shared camera snapshot contract is missing")
+else:
+    camera_text = camera_snapshot_header.read_text(
+        encoding="utf-8", errors="replace"
+    )
+    for required in (
+        "struct SystemMapCameraSnapshot",
+        "struct GalaxyMapCameraSnapshot",
+        "struct LocalMapCameraSnapshot",
+        "orbitCameraBasis(",
+        "glm::dvec2 project(",
+    ):
+        if required not in camera_text:
+            fail(camera_snapshot_header, f"missing camera contract: {required}")
+
+if system_view_header.is_file():
+    text = system_view_header.read_text(encoding="utf-8", errors="replace")
+    if "SystemMapCameraSnapshot cameraSnapshot(" not in text:
+        fail(system_view_header, "System View must publish a camera snapshot")
+
+if galaxy_view_header.is_file():
+    text = galaxy_view_header.read_text(encoding="utf-8", errors="replace")
+    if "GalaxyMapCameraSnapshot cameraSnapshot(" not in text:
+        fail(galaxy_view_header, "Galaxy View must publish a camera snapshot")
+
+if scene_frame_header.is_file():
+    text = scene_frame_header.read_text(encoding="utf-8", errors="replace")
+    if "SystemMapCameraSnapshot camera" not in text:
+        fail(scene_frame_header, "System frame must carry its camera snapshot")
+
+if local_presentation_header.is_file():
+    text = local_presentation_header.read_text(
+        encoding="utf-8", errors="replace"
+    )
+    if text.count("MapCameraSnapshot camera") < 2:
+        fail(
+            local_presentation_header,
+            "Detail and Hub presentations must carry camera snapshots",
+        )
+
+for context_path, forbidden_view in (
+    (MAP_DIR / "DetailMapRenderContext.h", "DetailMapView"),
+    (MAP_DIR / "HubMapRenderContext.h", "HubMapView"),
+):
+    if context_path.is_file():
+        text = context_path.read_text(encoding="utf-8", errors="replace")
+        if forbidden_view in text:
+            fail(context_path, f"render context depends on {forbidden_view}")
+
+if galaxy_renderer_cpp.is_file():
+    text = galaxy_renderer_cpp.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "orbitCameraDirectionFromYawPitch(",
+        "viewState.viewMatrix()",
+        "viewState.projectionMatrix(",
+    ):
+        if forbidden in text:
+            fail(galaxy_renderer_cpp, f"Galaxy renderer owns camera math: {forbidden}")
+    if "const GalaxyMapCameraSnapshot camera" not in text:
+        fail(galaxy_renderer_cpp, "Galaxy renderer must consume a camera snapshot")
+
+for renderer_path in (
+    renderer_cpp,
+    MAP_DIR / "SystemMapRendererSystem.inl",
+    detail_backend,
+    hub_backend,
+):
+    if not renderer_path.is_file():
+        continue
+    text = renderer_path.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "activeDetailCamera(",
+        "planetMapProject(",
+        "hubMapProject(",
+        "planetMapCameraSpaceRelative(",
+        "orbitCameraDirectionFromYawPitch(",
+        "orbitCameraUpFromYawPitch(",
+        "systemMapPerspectiveEyeDistance(",
+        "systemMapWorldUnitsPerPixel(",
+    ):
+        # Historical names inside explanatory comments are harmless.
+        code_text = re.sub(r"/\*[\s\S]*?\*/|//[^\n]*", "", text)
+        if forbidden in code_text:
+            fail(renderer_path, f"renderer-side camera helper remains: {forbidden}")
+
+if renderer_cpp.is_file():
+    text = renderer_cpp.read_text(encoding="utf-8", errors="replace")
+    direct_camera_assignment = re.search(
+        r"m_(?:galaxy|system|detail|hub)View"
+        r"\.(?:state\(\)\.camera|camera\(\))[^;\n]*=",
+        text,
+    )
+    if direct_camera_assignment:
+        fail(renderer_cpp, "renderer facade directly mutates View camera state")
 
 if errors:
     print("System map architecture check failed:", file=sys.stderr)

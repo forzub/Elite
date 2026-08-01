@@ -778,50 +778,9 @@ void SystemMapRenderer::resetNavigationViewToLevelZero(
     if (m_mode == Mode::System &&
         m_systemView.state().navigationGrid.enabled())
     {
-        m_systemView.cancelCameraFlight(false);
-
-        m_systemView.state().navigationGrid.reset();
-        m_systemView.state().navigationGrid.setAnchorFromPosition(
-            glm::dvec3(0.0)
+        m_systemView.resetNavigationToLevelZero(
+            viewport
         );
-        m_systemView.state().navigationGrid.selectCell(
-            m_systemView.state().navigationGrid.anchorCell()
-        );
-        m_systemView.state().navigationCellExplicitlySelected = false;
-        m_systemView.state().navigationGrid.clearHoveredCell();
-
-        m_systemView.state().camera =
-            SystemCamera{};
-
-        const float defaultDistance =
-            m_systemView.controls().fittedSystemRadiusWorld *
-            m_systemView.controls().initialFitPadding;
-
-        const float maximumDistance =
-            std::max(
-                SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-                m_systemView.navigationMaximumCameraDistance(
-                    viewport
-                )
-            );
-
-        m_systemView.state().camera.distance =
-            std::clamp(
-                defaultDistance,
-                SYSTEM_MAP_ORTHO_MIN_HALF_HEIGHT,
-                maximumDistance
-            );
-
-        m_systemView.state().cameraFlight =
-            SystemCameraFlight{};
-
-        m_systemView.state().hoverVisualCell.reset();
-        m_systemView.state().hoverVisualAlpha = 0.0f;
-        m_systemView.state().hoverOutgoingCell.reset();
-        m_systemView.state().hoverOutgoingAlpha = 0.0f;
-        m_systemView.state().hoverVisualLastTimeSeconds = 0.0;
-        m_systemView.state().cubeClickTracker.reset();
-        m_systemView.state().orbitPivotActive = false;
 
         announceNavigationLevel(
             'S',

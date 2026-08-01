@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "src/game/system_map/LocalMapControlSettings.h"
+#include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/MapCameraState.h"
 
 namespace game::system_map
@@ -34,6 +35,26 @@ public:
     {
         m_state = DetailMapViewState{};
         m_state.minimumZoom = m_controls.minZoom;
+    }
+
+
+    DetailMapCameraSnapshot cameraSnapshot(
+        double scale,
+        const glm::dvec2& centerPx,
+        const glm::dvec3& originMeters,
+        bool perspectiveEnabled,
+        double perspectiveCameraDistanceMeters
+    ) const
+    {
+        DetailMapCameraSnapshot snapshot;
+        snapshot.state = m_state.camera;
+        snapshot.scale = scale;
+        snapshot.centerPx = centerPx;
+        snapshot.originMeters = originMeters;
+        snapshot.perspectiveEnabled = perspectiveEnabled;
+        snapshot.perspectiveCameraDistanceMeters =
+            perspectiveCameraDistanceMeters;
+        return snapshot;
     }
 
     void selectHub(

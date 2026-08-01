@@ -785,10 +785,64 @@ void SpaceState::handleInput()
             }
 
 
+            /*
+                Refresh local-map snapshots before presentation/picking.
+                The same snapshot is then consumed by input and render.
+            */
+            if (m_systemMapRenderer.mode() ==
+                SystemMapRenderer::Mode::Detail)
+            {
+                if (m_loadedDetailTarget.valid())
+                {
+                    requestDetailMapSnapshot(
+                        m_loadedDetailTarget,
+                        false
+                    );
+                }
+
+                if (m_hasDetailMapSnapshot &&
+                    m_loadedDetailTarget.valid())
+                {
+                    m_server->refreshDetailMapDynamicState(
+                        m_detailMapSnapshot
+                    );
+                }
+            }
+
+            if (m_systemMapRenderer.mode() ==
+                SystemMapRenderer::Mode::Hub)
+            {
+                const int focusedId =
+                    m_systemMapRenderer.focusedSystemId() >= 0
+                        ? m_systemMapRenderer.focusedSystemId()
+                        : m_server->playerNavigation().currentSystemId;
+
+                const std::string requestedHubId =
+                    m_loadedHubMapHubId;
+
+                requestHubMapSnapshot(
+                    focusedId,
+                    requestedHubId,
+                    false
+                );
+
+                if (m_hasHubMapSnapshot &&
+                    m_loadedHubMapSystemId == focusedId &&
+                    m_loadedHubMapHubId == requestedHubId)
+                {
+                    m_server->refreshHubMapDynamicState(
+                        m_hubMapSnapshot
+                    );
+                }
+            }
+
             const auto mapIntent =
                 m_systemMapRenderer.handleInput(
                     mapVp,
-                    m_galaxyMapSnapshot
+                    m_galaxyMapSnapshot,
+                    m_systemMapSnapshot,
+                    m_detailMapSnapshot,
+                    m_hubMapSnapshot
                 );
 
             if (mapIntent.has_value())
@@ -1570,85 +1624,7 @@ void SpaceState::renderHUD()
 
 
 
-if (m_systemMapRenderer.mode() ==
-    SystemMapRenderer::Mode::Detail)
-{
-    /*
-        Details is now refreshed by its explicit target. This covers a
-        planet, a free-space hub and a terminal navigation cube without
-        inferring scene type from legacy body/hub strings.
-    */
-    if (m_loadedDetailTarget.valid())
-    {
-        requestDetailMapSnapshot(
-            m_loadedDetailTarget,
-            false
-        );
-    }
-
-    if (m_hasDetailMapSnapshot &&
-        m_loadedDetailTarget.valid())
-    {
-        m_server->refreshDetailMapDynamicState(
-            m_detailMapSnapshot
-        );
-    }
-}
-
-
-
-
-
-if (m_systemMapRenderer.mode() ==
-    SystemMapRenderer::Mode::Hub)
-{
-    const int focusedId =
-        m_systemMapRenderer.focusedSystemId() >= 0
-            ? m_systemMapRenderer.focusedSystemId()
-            : m_server->playerNavigation().currentSystemId;
-
-    const std::string requestedHubId =
-        m_loadedHubMapHubId;
-
-    /*
-        Полный snapshot строится только при смене
-        системы или хаба.
-    */
-    requestHubMapSnapshot(
-        focusedId,
-        requestedHubId,
-        false
-    );
-
-
-
-
-
-    /*
-        Текущий серверный kinematic state обновляется
-        перед каждым render Hub Map.
-
-        Renderer больше не симулирует орбиту самостоятельно.
-    */
-    if (m_hasHubMapSnapshot &&
-        m_loadedHubMapSystemId ==
-            focusedId &&
-        m_loadedHubMapHubId ==
-            requestedHubId)
-    {
-        m_server
-            ->refreshHubMapDynamicState(
-                m_hubMapSnapshot
-            );
-}
-
-
-
-
-}
-
-
-
+/* Local-map snapshots were refreshed before input. */
 
 
 m_systemMapRenderer.render(

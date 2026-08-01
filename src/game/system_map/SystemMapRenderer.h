@@ -58,8 +58,12 @@
 #include "src/game/system_map/GalaxyMapRenderer.h"
 #include "src/game/system_map/SystemMapView.h"
 #include "src/game/system_map/SystemMapInteraction.h"
+#include "src/game/system_map/SystemMapFrameInteractionContext.h"
 #include "src/game/system_map/SystemMapFrameData.h"
+#include "src/game/system_map/SystemMapPresentation.h"
 #include "src/game/system_map/SystemMapPresentationBuilder.h"
+#include "src/game/system_map/SystemMapSceneFrame.h"
+#include "src/game/system_map/SystemMapSceneFrameBuilder.h"
 #include "src/game/system_map/SystemMapRenderContext.h"
 #include "src/game/system_map/SystemMapSceneRenderer.h"
 #include "src/game/system_map/DetailMapView.h"
@@ -76,7 +80,6 @@ struct GLFWwindow;
 class SystemMapRenderer
     : private game::system_map::GalaxyMapRenderContext,
       private game::system_map::SystemMapRenderContext,
-      private game::system_map::SystemMapInteractionContext,
       private game::system_map::DetailMapRenderContext,
       private game::system_map::HubMapRenderContext
 {
@@ -148,7 +151,10 @@ public:
 
     std::optional<game::system_map::MapIntent> handleInput(
         const Viewport& vp,
-        const world::celestial::GalaxyMapSnapshot& galaxy
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::SystemMapSnapshot& system,
+        const world::celestial::DetailMapSnapshot& detail,
+        const world::celestial::HubMapSnapshot& hub
     );
 
     void setMode(Mode mode);
@@ -822,9 +828,6 @@ private:
 
     void ensureSystemRenderResources() override;
 
-    game::system_map::SystemMapFrameData&
-    systemFrameData() override;
-
     bool renderSystemBodyRings(
         const world::celestial::SystemMapBody& body,
         const glm::vec3& center,
@@ -896,47 +899,6 @@ private:
         >& presentationById
     ) override;
 
-    int pickSystemBody(
-        double mouseX,
-        double mouseY
-    ) const;
-
-    int pickSystemHub(
-        double mouseX,
-        double mouseY
-    ) const;
-
-
-    int pickSystemCameraBodyAnchor(
-        double mouseX,
-        double mouseY
-    ) const;
-
-    std::optional<std::string> pickSystemBodyId(
-        double localMouseX,
-        double localMouseY
-    ) const override;
-
-    std::optional<game::system_map::SystemMapHubSelection>
-    pickSystemHubSelection(
-        double localMouseX,
-        double localMouseY
-    ) const override;
-
-    std::optional<game::system_map::SystemMapCameraBodyTarget>
-    pickSystemCameraBodyTarget(
-        double localMouseX,
-        double localMouseY,
-        const Viewport& viewport
-    ) const override;
-
-    std::optional<glm::dvec3> systemBodyAbsolutePosition(
-        const std::string& bodyId
-    ) const override;
-
-    std::optional<glm::dvec3> systemObjectAbsolutePosition(
-        const std::string& objectId
-    ) const override;
 
 
 
@@ -1154,8 +1116,18 @@ private:
     game::system_map::SystemMapInteraction m_systemInteraction;
     game::system_map::SystemMapPresentationBuilder
         m_systemPresentationBuilder;
+    game::system_map::SystemMapPresentation m_systemPresentation;
+    game::system_map::SystemMapSceneFrameBuilder
+        m_systemSceneFrameBuilder;
+    game::system_map::SystemMapSceneFrame m_systemSceneFrame;
     game::system_map::SystemMapSceneRenderer m_systemSceneRenderer;
-    game::system_map::SystemMapFrameData m_systemFrameData;
+
+    bool m_systemFramePrepared = false;
+    bool m_systemSceneFrameDirty = true;
+    bool m_detailFramePrepared = false;
+    bool m_detailFrameDirty = true;
+    bool m_hubFramePrepared = false;
+    bool m_hubFrameDirty = true;
 
     game::navigation::NavigationRegionCatalog
         m_navigationRegionCatalog;

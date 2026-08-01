@@ -50,11 +50,9 @@ namespace game::system_map
     };
 
     /*
-        Frame-local hit-test data owned by the System renderer.
-
-        SystemMapInteraction receives only semantic picks and authoritative
-        absolute positions. It does not see OpenGL resources, render batches
-        or the renderer's private screen-point containers.
+        Semantic hit-test contract over one prepared System presentation
+        frame. SystemMapInteraction receives only picks and authoritative
+        absolute positions; it does not see OpenGL resources or render batches.
     */
     class SystemMapInteractionContext
     {
@@ -91,8 +89,8 @@ namespace game::system_map
         System-specific input, picking coordination and camera navigation.
 
         The class owns no persistent state and no rendering resources. All
-        mutable map state lives in SystemMapView; the renderer only supplies
-        hit-test results from the most recent presentation frame.
+        mutable map state lives in SystemMapView. A concrete frame adapter
+        supplies hit-test results from the same presentation used for render.
     */
     class SystemMapInteraction
     {

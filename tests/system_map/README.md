@@ -16,7 +16,8 @@ Covered contracts:
 - explicit cells resolve to a deterministic terminal descendant;
 - body selection clears explicit cell selection and reanchors navigation;
 - mode changes are applied only after outgoing-frame capture;
-- a fixed mouse/scroll trace produces the same state after every replay.
+- a fixed mouse/scroll trace produces the same state after every replay;
+- semantic System picking reads a supplied CPU presentation frame.
 
 ## Run from MSYS2 MinGW64
 
@@ -45,3 +46,7 @@ selection validation and Hub pick geometry are prepared before rendering.
 Detail and Hub scene renderers consume const views and immutable local-map
 presentations; architecture checks reject render-time camera, selection or pick
 cache mutation.
+
+Stage-3 architecture checks require System pick geometry to be built before
+input, forbid `SystemMapRenderer` from implementing the interaction context and
+forbid scene rendering from rebuilding body/hub screen-point caches.

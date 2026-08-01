@@ -24,6 +24,8 @@
 #include "src/game/system_map/MapMode.h"
 #include "src/game/system_map/MapTransitionController.h"
 #include "src/game/system_map/SystemMapInteraction.h"
+#include "src/game/system_map/SystemMapFrameInteractionContext.h"
+#include "src/game/system_map/SystemMapFrameData.h"
 #include "src/game/system_map/SystemMapPresentationBuilder.h"
 #include "src/game/system_map/SystemMapView.h"
 
@@ -42,6 +44,8 @@ using game::system_map::SystemMapCameraBodyTarget;
 using game::system_map::SystemMapHubSelection;
 using game::system_map::SystemMapInputFrame;
 using game::system_map::SystemMapInteraction;
+using game::system_map::SystemMapFrameData;
+using game::system_map::SystemMapFrameInteractionContext;
 using game::system_map::SystemMapInteractionContext;
 using game::system_map::SystemMapPresentationBuilder;
 using game::system_map::SystemMapView;
@@ -1221,6 +1225,96 @@ void testLocalPresentationBuilderPreparesDetailAndHub()
 }
 
 
+
+void testPreparedFrameDrivesSystemPicking()
+{
+    SystemMapView view = makeSystemView();
+    SystemMapFrameData frame;
+
+    game::system_map::SystemMapBodyScreenPoint bodyPoint;
+    bodyPoint.bodyId = "planet";
+    bodyPoint.name = "Planet";
+    bodyPoint.screen = glm::vec2(320.0f, 240.0f);
+    bodyPoint.depth = 0.0f;
+    bodyPoint.visible = true;
+    bodyPoint.screenRadiusPx = 18.0f;
+    frame.bodyScreenPoints.push_back(bodyPoint);
+    frame.bodyAbsolutePositionById.emplace(
+        "planet",
+        glm::dvec3(12.0, 3.0, -4.0)
+    );
+    frame.bodyPhysicalRadiusWorldById.emplace(
+        "planet",
+        2.5f
+    );
+
+    game::system_map::SystemMapOrbitPivotScreenPoint pivotPoint;
+    pivotPoint.bodyId = "planet";
+    pivotPoint.screen = bodyPoint.screen;
+    pivotPoint.depth = 0.0f;
+    pivotPoint.cameraDepthWorld = 25.0;
+    pivotPoint.visible = true;
+    pivotPoint.screenRadiusPx = 18.0f;
+    frame.orbitPivotScreenPoints.push_back(pivotPoint);
+
+    game::system_map::SystemMapHubScreenPoint hubPoint;
+    hubPoint.hubId = "hub-alpha";
+    hubPoint.parentBodyId = "planet";
+    hubPoint.name = "Hub Alpha";
+    hubPoint.screen = glm::vec2(500.0f, 260.0f);
+    hubPoint.depth = 0.0f;
+    hubPoint.visible = true;
+    hubPoint.screenRadiusPx = 15.0f;
+    frame.hubScreenPoints.push_back(hubPoint);
+    frame.objectAbsolutePositionById.emplace(
+        "hub-alpha",
+        glm::dvec3(20.0, 0.0, 1.0)
+    );
+
+    const SystemMapFrameInteractionContext context(
+        frame,
+        view.controls()
+    );
+
+    REQUIRE(
+        context.pickSystemBodyId(320.0, 240.0) ==
+        std::optional<std::string>("planet")
+    );
+
+    const auto cameraTarget =
+        context.pickSystemCameraBodyTarget(
+            320.0,
+            240.0,
+            testViewport()
+        );
+
+    REQUIRE(cameraTarget.has_value());
+    REQUIRE(cameraTarget->bodyId == "planet");
+    REQUIRE_VEC_NEAR(
+        cameraTarget->absolutePosition,
+        glm::dvec3(12.0, 3.0, -4.0),
+        1.0e-12
+    );
+    REQUIRE_NEAR(cameraTarget->physicalRadiusWorld, 2.5, 1.0e-12);
+
+    const auto hub =
+        context.pickSystemHubSelection(500.0, 260.0);
+
+    REQUIRE(hub.has_value());
+    REQUIRE(hub->hubId == "hub-alpha");
+    REQUIRE(hub->parentBodyId == "planet");
+
+    const auto hubPosition =
+        context.systemObjectAbsolutePosition("hub-alpha");
+
+    REQUIRE(hubPosition.has_value());
+    REQUIRE_VEC_NEAR(
+        *hubPosition,
+        glm::dvec3(20.0, 0.0, 1.0),
+        1.0e-12
+    );
+}
+
 void testGalaxySystemDetailHubTransitionSequence()
 {
     MapMode mode = MapMode::Galaxy;
@@ -1392,6 +1486,7 @@ int main()
         {"anchor and explicit selection semantics", testAnchorAndExplicitSelectionSemantics},
         {"presentation builder prepares state before render", testPresentationBuilderPreparesStateBeforeRender},
         {"local presentation builder prepares Detail and Hub", testLocalPresentationBuilderPreparesDetailAndHub},
+        {"prepared frame drives System picking", testPreparedFrameDrivesSystemPicking},
         {"Galaxy -> System -> Detail -> Hub transition sequence", testGalaxySystemDetailHubTransitionSequence},
         {"mouse and scroll trace is repeatable", testMouseAndScrollTraceIsRepeatable}
     };

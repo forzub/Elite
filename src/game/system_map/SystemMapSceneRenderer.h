@@ -11,6 +11,7 @@ namespace world::celestial
 namespace game::system_map
 {
     struct SystemMapPresentation;
+    struct SystemMapSceneFrame;
     class SystemMapRenderContext;
     class SystemMapView;
 
@@ -18,8 +19,8 @@ namespace game::system_map
         System draw-pass orchestrator.
 
         It consumes immutable view and presentation state, owns no OpenGL
-        objects and performs no persistent state synchronization. Frame-local
-        pick data is written through SystemMapRenderContext.
+        objects and performs no persistent state synchronization. CPU geometry
+        and pick data arrive in the same prepared SystemMapSceneFrame.
     */
     class SystemMapSceneRenderer
     {
@@ -30,7 +31,8 @@ namespace game::system_map
             const Viewport& viewport,
             const world::celestial::SystemMapSnapshot& system,
             const world::celestial::PlayerNavigationState& navigation,
-            const SystemMapPresentation& presentation
+            const SystemMapPresentation& presentation,
+            const SystemMapSceneFrame& frame
         ) const;
     };
 }

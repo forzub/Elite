@@ -16,8 +16,6 @@ namespace world::celestial
 
 namespace game::system_map
 {
-    class SystemMapFrameData;
-
     struct SystemBodyVisualMetrics
     {
         float physicalRadiusWorld = 0.0f;
@@ -59,7 +57,6 @@ namespace game::system_map
         virtual ~SystemMapRenderContext() = default;
 
         virtual void ensureSystemRenderResources() = 0;
-        virtual SystemMapFrameData& systemFrameData() = 0;
 
         virtual void drawMapStarfield(
             const Viewport& viewport,

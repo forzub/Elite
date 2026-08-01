@@ -26,7 +26,8 @@ namespace game::system_map
             SystemMapView& view,
             const Viewport& viewport,
             const world::celestial::SystemMapSnapshot& system,
-            double wallNowSeconds
+            double wallNowSeconds,
+            bool updateHoverPresentation = true
         ) const;
     };
 }

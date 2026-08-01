@@ -290,7 +290,8 @@ SystemMapPresentation SystemMapPresentationBuilder::build(
     SystemMapView& view,
     const Viewport& viewport,
     const world::celestial::SystemMapSnapshot& system,
-    double wallNowSeconds
+    double wallNowSeconds,
+    bool updateHoverPresentation
 ) const
 {
     synchronizeSystemState(view, system.systemId);
@@ -318,7 +319,8 @@ SystemMapPresentation SystemMapPresentationBuilder::build(
 
     fitCameraOnce(view, system.systemId);
 
-    if (view.state().navigationGrid.enabled() &&
+    if (updateHoverPresentation &&
+        view.state().navigationGrid.enabled() &&
         presentation.systemScale > 0.0f)
     {
         view.updateNavigationHoverPresentation(

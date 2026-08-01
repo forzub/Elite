@@ -20,6 +20,7 @@
 
 #include "src/game/system_map/SystemMapFrameData.h"
 #include "src/game/system_map/SystemMapPresentation.h"
+#include "src/game/system_map/SystemMapSceneFrame.h"
 #include "src/game/system_map/SystemMapRenderContext.h"
 #include "src/game/system_map/SystemMapSceneRenderer.h"
 #include "src/game/system_map/SystemMapView.h"
@@ -31,80 +32,6 @@ namespace game::system_map
 namespace
 {
     constexpr double SystemMapAuKm = 149597870.7;
-
-    double calculateSystemWorldUnitsPerPixel(
-        double cameraHalfHeight,
-        int viewportHeight
-    )
-    {
-        const double safeHeight =
-            static_cast<double>(
-                std::max(viewportHeight, 1)
-            );
-
-        const double halfHeight =
-            std::clamp(
-                cameraHalfHeight,
-                static_cast<double>(
-                    SystemMapView::minimumCameraHalfHeight
-                ),
-                static_cast<double>(
-                    SystemMapView::maximumCameraHalfHeight
-                )
-            );
-
-        return (halfHeight * 2.0) / safeHeight;
-    }
-
-    double calculatePerspectiveWorldUnitsPerPixel(
-        const glm::vec3& renderPosition,
-        const glm::mat4& view,
-        float fieldOfViewDeg,
-        int viewportHeight,
-        double fallbackWorldUnitsPerPixel
-    )
-    {
-        const glm::vec4 cameraSpace =
-            view *
-            glm::vec4(
-                renderPosition,
-                1.0f
-            );
-
-        const double cameraDepth =
-            -static_cast<double>(cameraSpace.z);
-
-        if (!std::isfinite(cameraDepth) ||
-            cameraDepth <= 0.000000001)
-        {
-            return fallbackWorldUnitsPerPixel;
-        }
-
-        const double halfFovRad =
-            glm::radians(
-                static_cast<double>(fieldOfViewDeg) *
-                0.5
-            );
-
-        const double safeViewportHeight =
-            static_cast<double>(
-                std::max(viewportHeight, 1)
-            );
-
-        const double localWorldUnitsPerPixel =
-            2.0 *
-            cameraDepth *
-            std::tan(halfFovRad) /
-            safeViewportHeight;
-
-        if (!std::isfinite(localWorldUnitsPerPixel) ||
-            localWorldUnitsPerPixel <= 0.0)
-        {
-            return fallbackWorldUnitsPerPixel;
-        }
-
-        return localWorldUnitsPerPixel;
-    }
 
     double niceScaleNumber(double value)
     {
@@ -172,24 +99,33 @@ void SystemMapSceneRenderer::render(
     const Viewport& vp,
     const world::celestial::SystemMapSnapshot& system,
     const world::celestial::PlayerNavigationState& nav,
-    const SystemMapPresentation& presentation
+    const SystemMapPresentation& presentation,
+    const SystemMapSceneFrame& frame
 ) const
 {
     context.ensureSystemRenderResources();
 
-    auto& frame = context.systemFrameData();
-    frame.clearPresentation();
-
     const auto& bodies = presentation.bodies;
-    const float systemScale = presentation.systemScale;
+    const float systemScale = frame.systemScale;
+    const glm::mat4& view = frame.view;
+    const glm::mat4& mvp = frame.mvp;
+    const double systemWorldUnitsPerPixel =
+        frame.worldUnitsPerPixel;
+    const glm::dvec3& systemCameraOrigin =
+        frame.cameraOrigin;
 
-    const glm::mat4 proj =
-        viewState.projectionMatrix(
-            vp
-        );
+    const auto& drawRadiusById =
+        frame.bodyVisualRadiusById;
+    const auto& selectionRadiusById =
+        frame.bodySelectionRadiusById;
+    const auto& posById =
+        frame.bodyVisualPositionById;
+    const auto& presentationById =
+        frame.bodyVisualMetricsById;
+    const auto& objectVisualPosById =
+        frame.objectVisualPositionById;
 
-    const glm::mat4 view =
-        viewState.viewMatrix();
+    using world::celestial::BodyType;
 
     if (viewState.visuals().drawStarfield)
     {
@@ -215,296 +151,23 @@ void SystemMapSceneRenderer::render(
         );
     }
 
-    const glm::mat4 mvp =
-        proj * view;
-
-    const double systemWorldUnitsPerPixel =
-        calculateSystemWorldUnitsPerPixel(
-            static_cast<double>(
-                viewState.state().camera.distance
-            ),
-            vp.height
-        );
-
-    using world::celestial::BodyType;
-
-    // =========================================================
-    // Static lookup data.
-    // Эти таблицы нужны дальше для выбора, радиусов, орбит,
-    // подписей и selection overlay.
-    // =========================================================
-    std::unordered_map<
-        std::string,
-        const world::celestial::SystemMapBody*
-    > bodyById;
-
-    std::unordered_map<
-        std::string,
-        float
-    > drawRadiusById;
-
-
-
-
-    std::unordered_map<
-        std::string,
-        float
-    > selectionRadiusById;
-
-
-
-
-
-
-    for (const auto& b : bodies)
-    {
-        bodyById[b.id] =
-            &b;
-
-        drawRadiusById[b.id] =
-            context.bodyVisualRadius(
-                b,
-                systemScale
-            );
-    }
-
-// Если выбранная цель исчезла или это звезда — сбрасываем выбор.
-// =========================================================
-// Floating origin для system map.
-//
-// absolutePosById хранит точные double-позиции в map units.
-// posById хранит render-relative float-позиции около нуля.
-// В GPU отдаём только relative position.
-// =========================================================
-std::unordered_map<
-    std::string,
-    glm::dvec3
-> absolutePosById;
-
-std::unordered_map<
-    std::string,
-    glm::vec3
-> posById;
-
-const glm::dvec3 systemCameraOrigin =
-    viewState.state().camera.target;
-
-auto auToMapUnits =
-    [&](const glm::dvec3& au) -> glm::dvec3
-    {
-        return glm::dvec3(
-            au.x * static_cast<double>(systemScale),
-            au.y * static_cast<double>(systemScale),
-            au.z * static_cast<double>(systemScale)
-        );
-    };
-
-auto toRenderPos =
-    [&](const glm::dvec3& absoluteMapUnits) -> glm::vec3
-    {
-        const glm::dvec3 relative =
-            absoluteMapUnits -
-            systemCameraOrigin;
-
-        return glm::vec3(
-            static_cast<float>(relative.x),
-            static_cast<float>(relative.y),
-            static_cast<float>(relative.z)
-        );
-    };
-
-for (const auto& b : bodies)
-{
-    const glm::dvec3 absolutePos =
-        auToMapUnits(
-            b.positionAu
-        );
-
-    absolutePosById[b.id] =
-        absolutePos;
-
-    posById[b.id] =
-        toRenderPos(
-            absolutePos
-        );
-}
-
-
-frame.bodyAbsolutePositionById = absolutePosById;
-frame.bodyPhysicalRadiusWorldById = drawRadiusById;
-
-/*
-    Body selection is rendered by the body overlay only. Scene rendering must
-    never rewrite CubicNavigationGrid::selectedCell; that cell is reserved for
-    an explicit user cube selection.
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    std::unordered_map<
-        std::string,
-        SystemBodyVisualMetrics
-    > presentationById;
-
-    std::unordered_map<
-        std::string,
-        double
-    > bodyWorldUnitsPerPixelById;
-
-    presentationById.reserve(
-        bodies.size()
-    );
-
-    bodyWorldUnitsPerPixelById.reserve(
-        bodies.size()
-    );
-
-    for (const auto& body : bodies)
-    {
-        const double bodyWorldUnitsPerPixel =
-            calculatePerspectiveWorldUnitsPerPixel(
-                posById[body.id],
-                view,
-                viewState.visuals()
-                    .projectionFieldOfViewDeg,
-                vp.height,
-                systemWorldUnitsPerPixel
-            );
-
-        bodyWorldUnitsPerPixelById[body.id] =
-            bodyWorldUnitsPerPixel;
-
-        presentationById[body.id] =
-            context.computeSystemBodyVisualMetrics(
-                body,
-                drawRadiusById[body.id],
-                bodyWorldUnitsPerPixel
-            );
-    }
-
-    for (const auto& body : bodies)
-    {
-        const auto metricsIt =
-            presentationById.find(
-                body.id
-            );
-
-        if (metricsIt == presentationById.end())
-            continue;
-
-        const auto& metrics =
-            metricsIt->second;
-
-        const float visiblePickRadiusPx =
-            std::max({
-                metrics.physicalRadiusPx,
-                metrics.drawMarker
-                    ? metrics.markerRadiusPx *
-                        metrics.markerAlpha
-                    : 0.0f,
-                metrics.drawPointProxy
-                    ? metrics.pointProxyRadiusPx *
-                        metrics.pointProxyAlpha
-                    : 0.0f
-            });
-
-        const float pickRadiusPx =
-            std::max(
-                visiblePickRadiusPx,
-                viewState.controls()
-                    .pickMinBodyRadiusPx
-            );
-
-        const auto bodyScaleIt =
-            bodyWorldUnitsPerPixelById.find(
-                body.id
-            );
-
-        const double bodyWorldUnitsPerPixel =
-            bodyScaleIt !=
-                bodyWorldUnitsPerPixelById.end()
-                ? bodyScaleIt->second
-                : systemWorldUnitsPerPixel;
-
-        selectionRadiusById[body.id] =
-            std::max(
-                metrics.physicalRadiusWorld,
-                static_cast<float>(
-                    bodyWorldUnitsPerPixel *
-                    static_cast<double>(pickRadiusPx)
-                )
-            );
-
-        if (body.type == BodyType::Planet ||
-            body.type == BodyType::Moon)
+    const auto auToMapUnits =
+        [&](const glm::dvec3& au) -> glm::dvec3
         {
-            SystemMapBodyScreenPoint point;
-            point.bodyId = body.id;
-            point.name = body.name;
-            point.screenRadiusPx = pickRadiusPx;
-            point.screen =
-                context.projectToScreen(
-                    posById[body.id],
-                    mvp,
-                    vp,
-                    point.visible,
-                    point.depth
-                );
-
-            frame.bodyScreenPoints.push_back(
-                std::move(point)
+            return glm::dvec3(
+                au.x * static_cast<double>(systemScale),
+                au.y * static_cast<double>(systemScale),
+                au.z * static_cast<double>(systemScale)
             );
-        }
+        };
 
-        if (body.type == BodyType::Star ||
-            body.type == BodyType::Planet ||
-            body.type == BodyType::Moon)
+    const auto toRenderPos =
+        [&](const glm::dvec3& absoluteMapUnits) -> glm::vec3
         {
-            SystemMapOrbitPivotScreenPoint pivotPoint;
-            pivotPoint.bodyId = body.id;
-            pivotPoint.screenRadiusPx =
-                std::max(
-                    visiblePickRadiusPx,
-                    1.0f
-                );
-            pivotPoint.screen =
-                context.projectToScreen(
-                    posById[body.id],
-                    mvp,
-                    vp,
-                    pivotPoint.visible,
-                    pivotPoint.depth
-                );
-
-            const glm::vec4 cameraSpacePosition =
-                view *
-                glm::vec4(
-                    posById[body.id],
-                    1.0f
-                );
-
-            pivotPoint.cameraDepthWorld =
-                -static_cast<double>(
-                    cameraSpacePosition.z
-                );
-
-            frame.orbitPivotScreenPoints.push_back(
-                std::move(pivotPoint)
+            return glm::vec3(
+                absoluteMapUnits - systemCameraOrigin
             );
-        }
-    }
+        };
 
     /* Base cartographic lines: grid, orbits, belts and player position. */
     context.beginLines();
@@ -644,59 +307,6 @@ frame.bodyPhysicalRadiusWorldById = drawRadiusById;
         );
     }
 
-    std::unordered_map<std::string, glm::vec3>
-        objectVisualPosById;
-
-    frame.objectAbsolutePositionById.clear();
-
-    for (const auto& object : system.objects)
-    {
-        const glm::dvec3 objectAbsolute =
-            auToMapUnits(
-                object.positionAu
-            );
-
-        const glm::vec3 objectPosition =
-            toRenderPos(
-                objectAbsolute
-            );
-
-        const std::string objectKey =
-            systemMapObjectStableKey(
-                object
-            );
-
-        objectVisualPosById[objectKey] =
-            objectPosition;
-
-        frame.objectAbsolutePositionById[objectKey] =
-            objectAbsolute;
-
-        if (object.kind !=
-            world::celestial::SystemMapObjectKind::Hub)
-        {
-            continue;
-        }
-
-        SystemMapHubScreenPoint point;
-        point.hubId = objectKey;
-        point.parentBodyId = object.parentBodyId;
-        point.name = object.name;
-        point.screen =
-            context.projectToScreen(
-                objectPosition,
-                mvp,
-                vp,
-                point.visible,
-                point.depth
-            );
-        point.screenRadiusPx = 15.0f;
-
-        frame.hubScreenPoints.push_back(
-            std::move(point)
-        );
-    }
-
     context.flushLines(mvp);
 
     /*
@@ -729,7 +339,7 @@ frame.bodyPhysicalRadiusWorldById = drawRadiusById;
 
         if (context.renderSystemBodyRings(
                 body,
-                posById[body.id],
+                posById.at(body.id),
                 metricsIt->second,
                 view,
                 mvp,
@@ -754,8 +364,8 @@ frame.bodyPhysicalRadiusWorldById = drawRadiusById;
     {
         context.addSystemBodyGeometry(
             *body,
-            posById[body->id],
-            presentationById[body->id],
+            posById.at(body->id),
+            presentationById.at(body->id),
             context.colorForBodyType(
                 body->type
             ),
@@ -770,8 +380,8 @@ frame.bodyPhysicalRadiusWorldById = drawRadiusById;
     {
         context.renderSystemBodyRings(
             *body,
-            posById[body->id],
-            presentationById[body->id],
+            posById.at(body->id),
+            presentationById.at(body->id),
             view,
             mvp,
             vp,
@@ -835,8 +445,8 @@ frame.bodyPhysicalRadiusWorldById = drawRadiusById;
 
         context.addSystemBodyGeometry(
             body,
-            posById[body.id],
-            presentationById[body.id],
+            posById.at(body.id),
+            presentationById.at(body.id),
             context.colorForBodyType(
                 body.type
             ),
@@ -857,8 +467,8 @@ frame.bodyPhysicalRadiusWorldById = drawRadiusById;
 
         context.addSystemBodyMarker(
             body,
-            posById[body.id],
-            presentationById[body.id],
+            posById.at(body.id),
+            presentationById.at(body.id),
             context.colorForBodyType(
                 body.type
             ),
@@ -896,15 +506,22 @@ frame.bodyPhysicalRadiusWorldById = drawRadiusById;
             );
 
             const auto selectedBodyIt =
-                bodyById.find(
-                    viewState.state().selectedBodyId
+                std::find_if(
+                    bodies.begin(),
+                    bodies.end(),
+                    [&](const auto& body)
+                    {
+                        return
+                            body.id ==
+                            viewState.state().selectedBodyId;
+                    }
                 );
 
-            if (selectedBodyIt != bodyById.end())
+            if (selectedBodyIt != bodies.end())
             {
                 haloColor =
                     context.colorForBodyType(
-                        selectedBodyIt->second->type
+                        selectedBodyIt->type
                     );
 
                 haloColor.a = 1.0f;
@@ -1025,14 +642,8 @@ frame.bodyPhysicalRadiusWorldById = drawRadiusById;
 
 
     {
-        const double worldUnitsPerPixel =
-            calculateSystemWorldUnitsPerPixel(
-                static_cast<double>(viewState.state().camera.distance),
-                vp.height
-            );
-
         const double kmPerPixel =
-            static_cast<double>(worldUnitsPerPixel) /
+            systemWorldUnitsPerPixel /
             static_cast<double>(systemScale) *
             SystemMapAuKm;
 

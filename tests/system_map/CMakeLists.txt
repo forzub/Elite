@@ -18,7 +18,9 @@ add_executable(
     system_map_behavior_tests
     SystemMapBehaviorTests.cpp
     "${ELITE_SOURCE_ROOT}/src/game/system_map/SystemMapInteraction.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/system_map/SystemMapFrameInteractionContext.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/system_map/SystemMapSceneRenderer.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/system_map/SystemMapSceneFrameBuilder.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/system_map/SystemMapPresentationBuilder.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/system_map/SystemMapView.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/system_map/LocalMapInteraction.cpp"

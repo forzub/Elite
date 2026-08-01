@@ -871,13 +871,6 @@ void SystemMapRenderer::ensureSystemRenderResources()
 }
 
 
-game::system_map::SystemMapFrameData&
-SystemMapRenderer::systemFrameData()
-{
-    return m_systemFrameData;
-}
-
-
 bool SystemMapRenderer::renderSystemBodyRings(
     const world::celestial::SystemMapBody& body,
     const glm::vec3& center,
@@ -1247,13 +1240,32 @@ void SystemMapRenderer::renderSystem(
     const world::celestial::PlayerNavigationState& navigation
 )
 {
-    const auto presentation =
-        m_systemPresentationBuilder.build(
-            m_systemView,
-            viewport,
-            system,
-            currentTimeSeconds()
-        );
+    if (!m_systemFramePrepared)
+    {
+        m_systemPresentation =
+            m_systemPresentationBuilder.build(
+                m_systemView,
+                viewport,
+                system,
+                currentTimeSeconds()
+            );
+
+        m_systemSceneFrameDirty = true;
+    }
+
+    if (m_systemSceneFrameDirty)
+    {
+        m_systemSceneFrame =
+            m_systemSceneFrameBuilder.build(
+                m_systemView,
+                *this,
+                viewport,
+                system,
+                m_systemPresentation
+            );
+
+        m_systemSceneFrameDirty = false;
+    }
 
     m_systemSceneRenderer.render(
         m_systemView,
@@ -1261,25 +1273,13 @@ void SystemMapRenderer::renderSystem(
         viewport,
         system,
         navigation,
-        presentation
+        m_systemPresentation,
+        m_systemSceneFrame
     );
+
+    m_systemFramePrepared = false;
+    m_systemSceneFrameDirty = true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2235,424 +2235,4 @@ bool SystemMapRenderer::canOpenSelectedDetail() const
     }
 
     return selectedTerminalDetailCell().has_value();
-}
-
-
-int SystemMapRenderer::pickSystemHub(
-    double mouseX,
-    double mouseY
-) const
-{
-    int bestIndex = -1;
-    float bestDistance = std::numeric_limits<float>::max();
-
-    const glm::vec2 mouse(
-        static_cast<float>(mouseX),
-        static_cast<float>(mouseY)
-    );
-
-    for (int i = 0;
-         i < static_cast<int>(
-             m_systemFrameData.hubScreenPoints.size()
-         );
-         ++i)
-    {
-        const auto& point =
-            m_systemFrameData.hubScreenPoints[i];
-
-        if (!point.visible ||
-            !std::isfinite(point.screen.x) ||
-            !std::isfinite(point.screen.y))
-        {
-            continue;
-        }
-
-        const float distance =
-            glm::length(
-                point.screen - mouse
-            );
-
-        if (distance <= point.screenRadiusPx &&
-            distance < bestDistance)
-        {
-            bestDistance = distance;
-            bestIndex = i;
-        }
-    }
-
-    return bestIndex;
-}
-
-
-
-int SystemMapRenderer::pickSystemBody(
-    double mouseX,
-    double mouseY
-) const
-{
-    int bestIndex =
-        -1;
-
-    float bestScore =
-        std::numeric_limits<float>::max();
-
-    const glm::vec2 mouse(
-        static_cast<float>(mouseX),
-        static_cast<float>(mouseY)
-    );
-
-    for (int i = 0;
-         i < static_cast<int>(m_systemFrameData.bodyScreenPoints.size());
-         ++i)
-    {
-        const auto& p =
-            m_systemFrameData.bodyScreenPoints[i];
-
-        if (!std::isfinite(p.screen.x) ||
-            !std::isfinite(p.screen.y) ||
-            !std::isfinite(p.screenRadiusPx))
-        {
-            continue;
-        }
-
-        // Центр тела может быть за экраном, когда тело сильно увеличено.
-        // Это нормально: видимый диск всё ещё может занимать viewport.
-        const bool depthOk =
-            p.depth >= -1.0f &&
-            p.depth <= 1.0f;
-
-        if (!p.visible &&
-            !depthOk)
-        {
-            continue;
-        }
-
-        const glm::vec2 delta =
-            p.screen -
-            mouse;
-
-        const float centerDistance =
-            glm::length(
-                delta
-            );
-
-        // ВАЖНО:
-        // Для проверки попадания в диск используем реальный экранный радиус.
-        // Нельзя ограничивать его 8000 px, иначе при большом zoom тело
-        // перестаёт выбираться за пределами зоны вокруг центра.
-        const float realBodyRadiusPx =
-            std::max(
-                0.0f,
-                p.screenRadiusPx
-            );
-
-        // А вот для размера halo радиус можно ограничить,
-        // чтобы огромная планета не создавала бесконечную зону липкости.
-        const float haloBodyRadiusPx =
-            std::clamp(
-                realBodyRadiusPx,
-                0.0f,
-                m_systemView.controls().pickMaxBodyRadiusPx
-            );
-
-        const float distanceToRealDisk =
-            std::max(
-                0.0f,
-                centerDistance -
-                realBodyRadiusPx
-            );
-
-        const float pickHaloPx =
-            std::clamp(
-                haloBodyRadiusPx *
-                    m_systemView.controls().pickHaloRadiusFactor +
-                    m_systemView.controls().pickHaloBasePx,
-                m_systemView.controls().pickHaloBasePx,
-                m_systemView.controls().pickHaloMaxPx
-            );
-
-        if (distanceToRealDisk > pickHaloPx)
-        {
-            continue;
-        }
-
-        const bool mouseInsideRealDisk =
-            centerDistance <= realBodyRadiusPx;
-
-        float score =
-            0.0f;
-
-        if (mouseInsideRealDisk)
-        {
-            // Если мышь реально внутри диска тела, это сильный hit.
-            // При нескольких вложенных дисках выигрывает тело,
-            // чей центр ближе к курсору. Так Луна может перебить Землю,
-            // если курсор возле Луны.
-            score =
-                centerDistance *
-                0.001f;
-        }
-        else
-        {
-            // Halo-hit слабее, чем реальное попадание в диск.
-            score =
-                1000000.0f +
-                distanceToRealDisk *
-                    m_systemView.controls().pickScoreDiskWeight +
-                centerDistance;
-        }
-
-        if (score < bestScore)
-        {
-            bestScore =
-                score;
-
-            bestIndex =
-                i;
-        }
-    }
-
-    return bestIndex;
-}
-
-
-
-
-int SystemMapRenderer::pickSystemCameraBodyAnchor(
-    double mouseX,
-    double mouseY
-) const
-{
-    int bestIndex = -1;
-
-    float bestCenterDistance =
-        std::numeric_limits<float>::max();
-
-    double bestCameraDepth =
-        std::numeric_limits<double>::max();
-
-    const float maximumAnchorDistance =
-        m_systemView.controls()
-            .cameraBodyAnchorMaxDistancePx;
-
-    const glm::vec2 mouse(
-        static_cast<float>(mouseX),
-        static_cast<float>(mouseY)
-    );
-
-    for (int i = 0;
-         i < static_cast<int>(
-             m_systemFrameData.orbitPivotScreenPoints.size()
-         );
-         ++i)
-    {
-        const auto& point =
-            m_systemFrameData.orbitPivotScreenPoints[i];
-
-        if (!std::isfinite(point.screen.x) ||
-            !std::isfinite(point.screen.y) ||
-            !std::isfinite(point.cameraDepthWorld) ||
-            point.cameraDepthWorld <= 0.0)
-        {
-            continue;
-        }
-
-        const bool depthOk =
-            std::isfinite(point.depth) &&
-            point.depth >= -1.0f &&
-            point.depth <= 1.0f;
-
-        if (!depthOk)
-            continue;
-
-        const float centerDistance =
-            glm::length(
-                point.screen -
-                mouse
-            );
-
-        if (centerDistance > maximumAnchorDistance)
-            continue;
-
-        const bool nearerToCursor =
-            centerDistance <
-                bestCenterDistance - 0.01f;
-
-        const bool sameCursorDistance =
-            std::abs(
-                centerDistance -
-                bestCenterDistance
-            ) <= 0.01f;
-
-        const bool inFrontAtSameDistance =
-            sameCursorDistance &&
-            point.cameraDepthWorld <
-                bestCameraDepth;
-
-        if (bestIndex < 0 ||
-            nearerToCursor ||
-            inFrontAtSameDistance)
-        {
-            bestIndex = i;
-            bestCenterDistance = centerDistance;
-            bestCameraDepth = point.cameraDepthWorld;
-        }
-    }
-
-    return bestIndex;
-}
-
-
-std::optional<std::string>
-SystemMapRenderer::pickSystemBodyId(
-    double localMouseX,
-    double localMouseY
-) const
-{
-    const int index =
-        pickSystemBody(
-            localMouseX,
-            localMouseY
-        );
-
-    if (index < 0 ||
-        index >= static_cast<int>(
-            m_systemFrameData.bodyScreenPoints.size()
-        ))
-    {
-        return std::nullopt;
-    }
-
-    return m_systemFrameData.bodyScreenPoints[
-        index
-    ].bodyId;
-}
-
-
-std::optional<game::system_map::SystemMapHubSelection>
-SystemMapRenderer::pickSystemHubSelection(
-    double localMouseX,
-    double localMouseY
-) const
-{
-    const int index =
-        pickSystemHub(
-            localMouseX,
-            localMouseY
-        );
-
-    if (index < 0 ||
-        index >= static_cast<int>(
-            m_systemFrameData.hubScreenPoints.size()
-        ))
-    {
-        return std::nullopt;
-    }
-
-    const auto& point =
-        m_systemFrameData.hubScreenPoints[index];
-
-    game::system_map::SystemMapHubSelection result;
-    result.hubId = point.hubId;
-    result.parentBodyId = point.parentBodyId;
-
-    return result;
-}
-
-
-std::optional<game::system_map::SystemMapCameraBodyTarget>
-SystemMapRenderer::pickSystemCameraBodyTarget(
-    double localMouseX,
-    double localMouseY,
-    const Viewport&
-) const
-{
-    const int index =
-        pickSystemCameraBodyAnchor(
-            localMouseX,
-            localMouseY
-        );
-
-    if (index < 0 ||
-        index >= static_cast<int>(
-            m_systemFrameData.orbitPivotScreenPoints.size()
-        ))
-    {
-        return std::nullopt;
-    }
-
-    const auto& point =
-        m_systemFrameData.orbitPivotScreenPoints[index];
-
-    const auto positionIt =
-        m_systemFrameData.bodyAbsolutePositionById.find(
-            point.bodyId
-        );
-
-    if (positionIt ==
-        m_systemFrameData.bodyAbsolutePositionById.end())
-    {
-        return std::nullopt;
-    }
-
-    game::system_map::SystemMapCameraBodyTarget result;
-    result.bodyId = point.bodyId;
-    result.absolutePosition = positionIt->second;
-
-    const auto radiusIt =
-        m_systemFrameData.bodyPhysicalRadiusWorldById.find(
-            point.bodyId
-        );
-
-    if (radiusIt !=
-        m_systemFrameData.bodyPhysicalRadiusWorldById.end())
-    {
-        result.physicalRadiusWorld =
-            std::max(
-                0.0,
-                static_cast<double>(radiusIt->second)
-            );
-    }
-
-    return result;
-}
-
-
-std::optional<glm::dvec3>
-SystemMapRenderer::systemBodyAbsolutePosition(
-    const std::string& bodyId
-) const
-{
-    const auto it =
-        m_systemFrameData.bodyAbsolutePositionById.find(
-            bodyId
-        );
-
-    if (it ==
-        m_systemFrameData.bodyAbsolutePositionById.end())
-    {
-        return std::nullopt;
-    }
-
-    return it->second;
-}
-
-
-std::optional<glm::dvec3>
-SystemMapRenderer::systemObjectAbsolutePosition(
-    const std::string& objectId
-) const
-{
-    const auto it =
-        m_systemFrameData.objectAbsolutePositionById.find(
-            objectId
-        );
-
-    if (it ==
-        m_systemFrameData.objectAbsolutePositionById.end())
-    {
-        return std::nullopt;
-    }
-
-    return it->second;
 }

@@ -178,6 +178,73 @@ if hub_backend.is_file():
                     f"Hub render mutates persistent/pick state: {forbidden}",
                 )
 
+# Stage 3: one prepared CPU frame for picking and System rendering.
+scene_frame_header = MAP_DIR / "SystemMapSceneFrame.h"
+scene_frame_builder_header = MAP_DIR / "SystemMapSceneFrameBuilder.h"
+scene_frame_builder_cpp = MAP_DIR / "SystemMapSceneFrameBuilder.cpp"
+frame_interaction_header = MAP_DIR / "SystemMapFrameInteractionContext.h"
+frame_interaction_cpp = MAP_DIR / "SystemMapFrameInteractionContext.cpp"
+renderer_header = MAP_DIR / "SystemMapRenderer.h"
+renderer_cpp = MAP_DIR / "SystemMapRenderer.cpp"
+space_state_cpp = ROOT / "src" / "game" / "SpaceState.cpp"
+
+for required in (
+    scene_frame_header,
+    scene_frame_builder_header,
+    scene_frame_builder_cpp,
+    frame_interaction_header,
+    frame_interaction_cpp,
+):
+    if not required.is_file():
+        fail(required, "required Stage-3 presentation-frame component is missing")
+
+if scene_header.is_file():
+    header_text = scene_header.read_text(encoding="utf-8", errors="replace")
+    if "const SystemMapSceneFrame& frame" not in header_text:
+        fail(scene_header, "System render must consume the prepared CPU frame")
+
+if scene_cpp.is_file():
+    scene_text = scene_cpp.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "systemFrameData()",
+        "frame.clearPresentation()",
+        "bodyScreenPoints.push_back",
+        "orbitPivotScreenPoints.push_back",
+        "hubScreenPoints.push_back",
+    ):
+        if forbidden in scene_text:
+            fail(scene_cpp, f"render rebuilds interaction frame: {forbidden}")
+
+if renderer_header.is_file():
+    renderer_header_text = renderer_header.read_text(
+        encoding="utf-8", errors="replace"
+    )
+    if "private game::system_map::SystemMapInteractionContext" in renderer_header_text:
+        fail(renderer_header, "renderer facade still implements input context")
+
+if renderer_cpp.is_file():
+    renderer_text = renderer_cpp.read_text(encoding="utf-8", errors="replace")
+    build_pos = renderer_text.find("m_systemSceneFrameBuilder.build(")
+    input_pos = renderer_text.find("m_systemInteraction.handleInput(")
+    if build_pos < 0 or input_pos < 0 or build_pos > input_pos:
+        fail(renderer_cpp, "System CPU frame must be built before input/picking")
+
+if space_state_cpp.is_file():
+    space_text = space_state_cpp.read_text(encoding="utf-8", errors="replace")
+    refresh_pos = space_text.find("refreshDetailMapDynamicState(")
+    input_pos = space_text.find("m_systemMapRenderer.handleInput(")
+    render_pos = space_text.find("m_systemMapRenderer.render(")
+    if (
+        refresh_pos < 0 or
+        input_pos < 0 or
+        render_pos < 0 or
+        not (refresh_pos < input_pos < render_pos)
+    ):
+        fail(
+            space_state_cpp,
+            "local snapshots must refresh before input and render",
+        )
+
 if errors:
     print("System map architecture check failed:", file=sys.stderr)
     for error in errors:

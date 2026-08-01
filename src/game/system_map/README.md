@@ -87,16 +87,25 @@ receives `const SystemMapView&` and must not mutate persistent view state.
 The System map frame follows one directional lifecycle:
 
 ```text
-synchronize snapshot/view state
+refresh authoritative snapshot
+-> synchronize persistent view state
 -> build immutable SystemMapPresentation
--> render draw passes
--> expose frame-local pick data to the next input cycle
+-> build CPU SystemMapSceneFrame
+-> input/picking consumes that frame
+-> rebuild only camera-dependent projection data when input moved the camera
+-> render the current frame
 ```
 
-`SystemMapPresentation` owns the visual-time body copy and map scale for one
-frame. The authoritative `SystemMapSnapshot` is never rewritten. OpenGL code may
-populate `SystemMapFrameData`, but it must not reset selections, fit the camera
-or advance presentation animation.
+`SystemMapPresentation` owns the visual-time body copy and map scale.
+`SystemMapSceneFrame` owns matrices, visual positions, LOD metrics and semantic
+pick geometry for the same snapshot. The authoritative `SystemMapSnapshot` is
+never rewritten. OpenGL code consumes the prepared frame and must not create a
+second renderer-owned pick cache.
+
+`SystemMapFrameInteractionContext` is a concrete adapter over the prepared CPU
+frame. `SystemMapRenderer` no longer implements the interaction context and
+cannot answer picks from whatever happened to be rendered on the previous
+frame.
 
 ## System-map pass order
 
@@ -153,10 +162,12 @@ mouse/scroll replay against the production interaction code.
 Detail and Hub follow the same pre-render boundary as System:
 
 ```text
-synchronize persistent local-map state
+refresh local snapshot
+-> synchronize persistent local-map state
 -> build immutable DetailMapPresentation / HubMapPresentation
+-> input/picking consumes the prepared frame
+-> rebuild projection data only when camera input changed it
 -> render from const view + presentation
--> reuse the presentation pick frame for input until the next build
 ```
 
 `LocalMapPresentationBuilder` owns spatial-volume zoom/pan constraints,

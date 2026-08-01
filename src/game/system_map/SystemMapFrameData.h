@@ -42,9 +42,10 @@ namespace game::system_map
     /*
         Presentation-frame data shared by System rendering and interaction.
 
-        It is rebuilt by SystemMapSceneRenderer and consumed by the facade's
-        SystemMapInteractionContext implementation. No OpenGL resource or
-        persistent world state is stored here.
+        It is rebuilt by SystemMapSceneFrameBuilder before input and consumed
+        by SystemMapFrameInteractionContext. The scene renderer receives the
+        same prepared CPU frame. No OpenGL resource or persistent world state
+        is stored here.
     */
     struct SystemMapFrameData
     {

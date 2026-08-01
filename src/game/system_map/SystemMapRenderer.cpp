@@ -3139,10 +3139,16 @@ void SystemMapRenderer::resetView()
     m_pendingScrollY = 0.0;
     m_systemView.state().orbitPivotAbsolute = glm::dvec3(0.0, 0.0, 0.0);
     m_systemView.state().orbitPivotActive = false;
-    m_systemFrameData.bodyScreenPoints.clear();
-    m_systemFrameData.hubScreenPoints.clear();
-    m_systemFrameData.bodyAbsolutePositionById.clear();
-    m_systemFrameData.objectAbsolutePositionById.clear();
+    m_systemPresentation =
+        game::system_map::SystemMapPresentation{};
+    m_systemSceneFrame =
+        game::system_map::SystemMapSceneFrame{};
+    m_systemFramePrepared = false;
+    m_systemSceneFrameDirty = true;
+    m_detailFramePrepared = false;
+    m_detailFrameDirty = true;
+    m_hubFramePrepared = false;
+    m_hubFrameDirty = true;
 
 
     m_systemView.state().lastScale = 1.0f;
@@ -3270,6 +3276,13 @@ void SystemMapRenderer::setMode(Mode mode)
     }
 
     m_mode = mode;
+
+    m_systemFramePrepared = false;
+    m_systemSceneFrameDirty = true;
+    m_detailFramePrepared = false;
+    m_detailFrameDirty = true;
+    m_hubFramePrepared = false;
+    m_hubFrameDirty = true;
 
     /*
         Если пользователь открыл другую карту во время перелёта,
@@ -4332,12 +4345,17 @@ void SystemMapRenderer::render(
 
     if (m_mode == Mode::Detail)
     {
-        m_detailPresentation =
-            m_localMapPresentationBuilder.buildDetail(
-                m_detailView,
-                viewport,
-                planet
-            );
+        if (!m_detailFramePrepared || m_detailFrameDirty)
+        {
+            m_detailPresentation =
+                m_localMapPresentationBuilder.buildDetail(
+                    m_detailView,
+                    viewport,
+                    planet
+                );
+
+            m_detailFrameDirty = false;
+        }
 
         m_detailSceneRenderer.render(
             m_detailView,
@@ -4346,15 +4364,23 @@ void SystemMapRenderer::render(
             viewport,
             planet
         );
+
+        m_detailFramePrepared = false;
+        m_detailFrameDirty = true;
     }
     else if (m_mode == Mode::Hub)
     {
-        m_hubPresentation =
-            m_localMapPresentationBuilder.buildHub(
-                m_hubView,
-                viewport,
-                hub
-            );
+        if (!m_hubFramePrepared || m_hubFrameDirty)
+        {
+            m_hubPresentation =
+                m_localMapPresentationBuilder.buildHub(
+                    m_hubView,
+                    viewport,
+                    hub
+                );
+
+            m_hubFrameDirty = false;
+        }
 
         m_hubSceneRenderer.render(
             m_hubView,
@@ -4363,6 +4389,9 @@ void SystemMapRenderer::render(
             viewport,
             hub
         );
+
+        m_hubFramePrepared = false;
+        m_hubFrameDirty = true;
     }
     else if (m_mode == Mode::Galaxy)
     {
@@ -4497,7 +4526,10 @@ glm::vec2 SystemMapRenderer::projectToScreen(
 std::optional<game::system_map::MapIntent>
 SystemMapRenderer::handleInput(
     const Viewport& vp,
-    const world::celestial::GalaxyMapSnapshot& galaxy
+    const world::celestial::GalaxyMapSnapshot& galaxy,
+    const world::celestial::SystemMapSnapshot& system,
+    const world::celestial::DetailMapSnapshot& detail,
+    const world::celestial::HubMapSnapshot& hub
 )
 {
     if (m_mode != Mode::Galaxy &&
@@ -4652,6 +4684,30 @@ SystemMapRenderer::handleInput(
 
     if (m_mode == Mode::System)
     {
+        m_systemPresentation =
+            m_systemPresentationBuilder.build(
+                m_systemView,
+                vp,
+                system,
+                inputNowSeconds,
+                false
+            );
+
+        m_systemSceneFrame =
+            m_systemSceneFrameBuilder.build(
+                m_systemView,
+                *this,
+                vp,
+                system,
+                m_systemPresentation
+            );
+
+        m_systemFramePrepared = true;
+        m_systemSceneFrameDirty = false;
+
+        const auto cameraBefore =
+            m_systemView.state().camera;
+
         game::system_map::SystemMapInputFrame frame;
         frame.viewport = vp;
         frame.mouseX = mx;
@@ -4669,13 +4725,39 @@ SystemMapRenderer::handleInput(
             glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
         frame.nowSeconds = inputNowSeconds;
 
+        const game::system_map::SystemMapFrameInteractionContext
+            interactionContext(
+                m_systemSceneFrame.interaction,
+                m_systemView.controls()
+            );
+
         const auto result =
             m_systemInteraction.handleInput(
                 m_systemView,
-                *this,
+                interactionContext,
                 frame,
                 m_pendingScrollY
             );
+
+        if (m_systemView.state().navigationGrid.enabled() &&
+            m_systemPresentation.systemScale > 0.0f)
+        {
+            m_systemView.updateNavigationHoverPresentation(
+                vp,
+                inputNowSeconds
+            );
+        }
+
+        const auto& cameraAfter =
+            m_systemView.state().camera;
+
+        m_systemSceneFrameDirty =
+            glm::length(
+                cameraBefore.target - cameraAfter.target
+            ) > 0.0 ||
+            cameraBefore.yaw != cameraAfter.yaw ||
+            cameraBefore.pitch != cameraAfter.pitch ||
+            cameraBefore.distance != cameraAfter.distance;
 
         if (result.systemLevelChanged.has_value())
         {
@@ -4691,6 +4773,32 @@ SystemMapRenderer::handleInput(
     if (m_mode == Mode::Detail ||
         m_mode == Mode::Hub)
     {
+        if (m_mode == Mode::Detail)
+        {
+            m_detailPresentation =
+                m_localMapPresentationBuilder.buildDetail(
+                    m_detailView,
+                    vp,
+                    detail
+                );
+            m_detailFramePrepared = true;
+            m_detailFrameDirty = false;
+        }
+        else
+        {
+            m_hubPresentation =
+                m_localMapPresentationBuilder.buildHub(
+                    m_hubView,
+                    vp,
+                    hub
+                );
+            m_hubFramePrepared = true;
+            m_hubFrameDirty = false;
+        }
+
+        const auto cameraBefore =
+            activeDetailCamera();
+
         handleDetailAndHubInput(
             vp,
             window,
@@ -4702,6 +4810,22 @@ SystemMapRenderer::handleInput(
             leftDown,
             rightDown
         );
+
+        const auto& cameraAfter =
+            activeDetailCamera();
+
+        const bool projectionChanged =
+            cameraBefore.yaw != cameraAfter.yaw ||
+            cameraBefore.pitch != cameraAfter.pitch ||
+            cameraBefore.zoom != cameraAfter.zoom ||
+            glm::length(
+                cameraBefore.pan - cameraAfter.pan
+            ) > 0.0;
+
+        if (m_mode == Mode::Detail)
+            m_detailFrameDirty = projectionChanged;
+        else
+            m_hubFrameDirty = projectionChanged;
 
         return std::nullopt;
     }

@@ -1220,7 +1220,7 @@ void GalaxyMapRenderer::drawNavigationGrid(
          viewState.state().navigationGrid.allowedRootCells())
     {
         const glm::dvec3 rootCenterLy =
-            frame.originLy +
+            frame.origin +
             frame.axisX *
                 (static_cast<double>(rootIndex[0]) * rootEdgeLy) +
             frame.axisY *
@@ -1279,7 +1279,7 @@ void GalaxyMapRenderer::drawNavigationGrid(
          viewState.state().navigationGrid.allowedRootCells())
     {
         const glm::dvec3 rootCenterLy =
-            frame.originLy +
+            frame.origin +
             frame.axisX *
                 (static_cast<double>(rootIndex[0]) * rootEdgeLy) +
             frame.axisY *
@@ -1405,11 +1405,11 @@ void GalaxyMapRenderer::drawNavigationGrid(
 
             const glm::vec3 parentCenter =
                 viewState.positionLyToRender(
-                    parentCell.centerLy
+                    parentCell.center
                 );
 
             const double parentHalfSizeLy =
-                parentCell.sizeLy * 0.5;
+                parentCell.size * 0.5;
 
             const glm::vec3 parentHalfAxisX =
                 viewState.vectorLyToRender(
@@ -1479,11 +1479,11 @@ void GalaxyMapRenderer::drawNavigationGrid(
 
             const glm::vec3 parentCenter =
                 viewState.positionLyToRender(
-                    parentCell.centerLy
+                    parentCell.center
                 );
 
             const double parentHalfSizeLy =
-                parentCell.sizeLy * 0.5;
+                parentCell.size * 0.5;
 
             const glm::vec3 parentHalfAxisX =
                 viewState.vectorLyToRender(
@@ -1542,11 +1542,11 @@ void GalaxyMapRenderer::drawNavigationGrid(
 
         const glm::vec3 center =
             viewState.positionLyToRender(
-                cell.centerLy
+                cell.center
             );
 
         const double halfSizeLy =
-            cell.sizeLy * 0.5;
+            cell.size * 0.5;
 
         const glm::vec3 halfAxisX =
             viewState.vectorLyToRender(
@@ -2129,14 +2129,14 @@ void GalaxyMapRenderer::drawPlayerMarker(
             );
 
         const float halfEdge =
-            static_cast<float>(terminalCell.sizeLy * 0.5) *
+            static_cast<float>(terminalCell.size * 0.5) *
             GalaxyMapView::RenderUnitsPerLightYear;
 
         context.beginLines();
 
         addNavigationCubeEdges(
             context,
-            viewState.positionLyToRender(terminalCell.centerLy),
+            viewState.positionLyToRender(terminalCell.center),
             glm::vec3(halfEdge, 0.0f, 0.0f),
             glm::vec3(0.0f, halfEdge, 0.0f),
             glm::vec3(0.0f, 0.0f, halfEdge),

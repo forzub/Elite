@@ -1179,6 +1179,13 @@ void SystemMapRenderer::endTextFrame()
 }
 
 
+SystemMapRenderer::SystemMapRenderer()
+    : m_detailBackend(*this),
+      m_hubBackend(*this)
+{
+}
+
+
 void SystemMapRenderer::init()
 {
     ensureGlObjects();
@@ -4029,7 +4036,7 @@ void SystemMapRenderer::render(
 
         m_detailSceneRenderer.render(
             m_detailPresentation,
-            *this,
+            m_detailBackend,
             viewport,
             planet
         );
@@ -4053,7 +4060,7 @@ void SystemMapRenderer::render(
 
         m_hubSceneRenderer.render(
             m_hubPresentation,
-            *this,
+            m_hubBackend,
             viewport,
             hub
         );

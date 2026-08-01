@@ -175,3 +175,15 @@ Detail hub-selection validation, local-map scale calculation and Detail/Hub pick
 geometry. Detail hub selection belongs to `DetailMapView`; it is synchronized
 back to the System selection only when the mode changes. OpenGL passes must not
 reset cameras, clear selection or append pick records to view state.
+
+## Detail and Hub backend ownership
+
+Detail and Hub scene renderers target dedicated `DetailMapBackend` and
+`HubMapBackend` objects. `SystemMapRenderer` no longer implements the local-map
+render-context interfaces. The Hub backend owns its asynchronous GPU timer-query
+state and exposes read-only performance statistics to the facade.
+
+The remaining `SystemMapRendererDetail.inl` and `SystemMapRendererHub.inl`
+contain low-level pass helpers only. Their orchestration functions are forbidden,
+and later Stage-6 slices move those pass/resource groups behind the dedicated
+backend owners without changing visual output.

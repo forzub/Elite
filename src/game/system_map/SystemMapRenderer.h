@@ -75,52 +75,23 @@
 #include "src/game/system_map/DetailMapSceneRenderer.h"
 #include "src/game/system_map/HubMapRenderContext.h"
 #include "src/game/system_map/HubMapSceneRenderer.h"
+#include "src/game/system_map/DetailMapBackend.h"
+#include "src/game/system_map/HubMapBackend.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
     : private game::system_map::GalaxyMapRenderContext,
-      private game::system_map::SystemMapRenderContext,
-      private game::system_map::DetailMapRenderContext,
-      private game::system_map::HubMapRenderContext
+      private game::system_map::SystemMapRenderContext
 {
 public:
     using Mode = game::system_map::MapMode;
 
-    struct HubMapPerformanceStats
-    {
-        /*
-            CPU wall-clock timings.
-
-            Они показывают стоимость подготовки команд:
-            расчётов, циклов, immediate mode, сборки геометрии,
-            вызовов renderer-ов и текста.
-        */
-        double cpuTotalMs = 0.0;
-        double cpuBackgroundMs = 0.0;
-        double cpuPlanetBackdropMs = 0.0;
-        double cpuGeometryMs = 0.0;
-        double cpuLabelsMs = 0.0;
-
-        /*
-            GPU timer query results.
-
-            Значения приходят с задержкой в несколько кадров,
-            чтобы не делать glFinish и не тормозить игру самим
-            профайлером.
-        */
-        bool gpuValid = false;
-
-        double gpuTotalMs = 0.0;
-        double gpuBackgroundMs = 0.0;
-        double gpuFallbackBodyMs = 0.0;
-        double gpuSurfaceMs = 0.0;
-        double gpuCloudsMs = 0.0;
-        double gpuAtmosphereMs = 0.0;
-        double gpuGeometryMs = 0.0;
-        double gpuLabelsMs = 0.0;
-    };
+    using HubMapPerformanceStats =
+        game::system_map::HubMapPerformanceStats;
 
 public:
+    SystemMapRenderer();
+
     void init();
 
     void setRightPanelRatio(float ratio);
@@ -169,7 +140,7 @@ public:
     const HubMapPerformanceStats&
     hubMapPerformanceStats() const
     {
-        return m_hubMapPerformanceStats;
+        return m_hubBackend.performanceStats();
     }
 
     const std::string& selectedBodyId() const;
@@ -182,6 +153,9 @@ public:
     selectedTerminalDetailCell() const;
 
 private:
+    friend class game::system_map::DetailMapBackend;
+    friend class game::system_map::HubMapBackend;
+
     struct Vertex
     {
         glm::vec3 pos;
@@ -220,6 +194,8 @@ private:
         m_activeLocalCameraSnapshot = nullptr;
     game::system_map::DetailMapSceneRenderer m_detailSceneRenderer;
     game::system_map::HubMapSceneRenderer m_hubSceneRenderer;
+    game::system_map::DetailMapBackend m_detailBackend;
+    game::system_map::HubMapBackend m_hubBackend;
 
 
     void drawPlanetSphereGrid(
@@ -325,43 +301,6 @@ private:
 
 
 
-    void renderHubMapPasses(
-        const game::system_map::HubMapPresentation& presentation,
-        const Viewport& viewport,
-        const world::celestial::HubMapSnapshot& hub
-    ) override;
-
-
-    enum class HubGpuStage : std::size_t
-    {
-        Background = 0,
-        FallbackBody,
-        Surface,
-        Clouds,
-        Atmosphere,
-        Geometry,
-        Labels,
-        Count
-    };
-
-    static constexpr std::size_t kHubGpuStageCount =
-        static_cast<std::size_t>(
-            HubGpuStage::Count
-        );
-
-    static constexpr std::size_t kHubGpuQuerySlotCount =
-        4;
-
-    void ensureHubGpuQueries();
-    void collectHubGpuQueries();
-
-    void beginHubGpuFrame();
-    void endHubGpuFrame();
-
-    void beginHubGpuStage(
-        HubGpuStage stage
-    );
-
 
     void drawNavigationCoordinateOverlay(
         const Viewport& viewport,
@@ -378,8 +317,6 @@ private:
     void resetNavigationViewToLevelZero(
         const Viewport& viewport
     );
-
-    void endHubGpuStage();
 
 
     void drawHubMapBox(
@@ -737,12 +674,6 @@ private:
     generatedAssetForBody(
         const world::celestial::SystemMapBody& body
     ) const;
-
-    void renderDetailMapPasses(
-        const game::system_map::DetailMapPresentation& presentation,
-        const Viewport& viewport,
-        const world::celestial::DetailMapSnapshot& planet
-    ) override;
 
     void drawPlanetMapCircle(
         const glm::dvec2& center,
@@ -1194,44 +1125,6 @@ private:
     double m_lastHubPlanetVisualRadiusPx = 0.0;
     glm::dvec2 m_lastHubPlanetVisualCenterPx {0.0, 0.0};
 
-
-    HubMapPerformanceStats m_hubMapPerformanceStats;
-
-    /*
-        Четыре набора query позволяют читать результат
-        старого кадра без ожидания GPU.
-    */
-    std::array<
-        std::array<
-            GLuint,
-            kHubGpuStageCount
-        >,
-        kHubGpuQuerySlotCount
-    > m_hubGpuQueries {};
-
-    std::array<
-        std::uint32_t,
-        kHubGpuQuerySlotCount
-    > m_hubGpuIssuedMasks {};
-
-    std::array<
-        bool,
-        kHubGpuQuerySlotCount
-    > m_hubGpuSlotPending {};
-
-    std::array<
-        std::uint64_t,
-        kHubGpuQuerySlotCount
-    > m_hubGpuSlotSerials {};
-
-    bool m_hubGpuQueriesInitialized = false;
-    bool m_hubGpuFrameActive = false;
-    bool m_hubGpuStageOpen = false;
-
-    std::size_t m_hubGpuCurrentSlot = 0;
-
-    std::uint64_t m_hubGpuFrameSerial = 0;
-    std::uint64_t m_hubGpuLastCollectedSerial = 0;
 
     /*
         Отдельный single-sample framebuffer нужен для разрешения

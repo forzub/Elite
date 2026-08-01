@@ -112,7 +112,7 @@ namespace game::system_map
 
             const glm::vec2 screen =
                 projectToScreen(
-                    view.positionLyToRender(cell.centerLy),
+                    view.positionLyToRender(cell.center),
                     mvp,
                     viewport,
                     visible,
@@ -647,7 +647,7 @@ namespace game::system_map
                     view.positionLyToRender(
                         view.state().navigationGrid
                             .hoveredCell()
-                            .centerLy
+                            .center
                     );
 
                 view.state().orbitPivotActive =
@@ -824,7 +824,7 @@ namespace game::system_map
                                 view.state().focusedSystemId = -1;
 
                                 view.state().navigationFocusLy =
-                                    pickedCell.centerLy;
+                                    pickedCell.center;
 
                                 view.state().navigationFocusValid =
                                     true;
@@ -886,7 +886,7 @@ namespace game::system_map
                                             applyCubicNavigationLevelActionAtPosition(
                                                 levelAction,
                                                 view.state().navigationGrid,
-                                                pickedCell.centerLy,
+                                                pickedCell.center,
                                                 [](
                                                     auto& grid,
                                                     const glm::dvec3& positionLy
@@ -923,7 +923,7 @@ namespace game::system_map
                                         */
                                         const float parentEdgeRender =
                                             static_cast<float>(
-                                                zoomReferenceCell.sizeLy
+                                                zoomReferenceCell.size
                                             ) *
                                             GalaxyMapView::RenderUnitsPerLightYear;
 
@@ -943,7 +943,7 @@ namespace game::system_map
                                         */
                                         beginCameraFlight(
                                             view.positionLyToRender(
-                                                zoomReferenceCell.centerLy
+                                                zoomReferenceCell.center
                                             ),
                                             std::clamp(
                                                 fittedDistance,
@@ -972,7 +972,7 @@ namespace game::system_map
                                     const MapIntent entryIntent =
                                         view.entryIntentForPosition(
                                             galaxy,
-                                            pickedCell.centerLy
+                                            pickedCell.center
                                         );
 
                                     if (entryIntent.entersKnownSystem())
@@ -988,7 +988,7 @@ namespace game::system_map
                                         view.state().selectedSystemId = -1;
                                         view.state().focusedSystemId = -1;
                                         view.state().navigationFocusLy =
-                                            pickedCell.centerLy;
+                                            pickedCell.center;
                                         view.state().navigationFocusValid = true;
                                     }
 
@@ -1329,7 +1329,7 @@ namespace game::system_map
                     navigationPointLy =
                         view.state().navigationGrid
                             .hoveredCell()
-                            .centerLy;
+                            .center;
 
                     zoomPivotWorld =
                         view.positionLyToRender(
@@ -1358,7 +1358,7 @@ namespace game::system_map
                     navigationPointLy =
                         view.state().navigationGrid
                             .anchorCell()
-                            .centerLy;
+                            .center;
 
                     zoomPivotWorld =
                         view.state().camera.target;

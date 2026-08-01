@@ -55,3 +55,9 @@ forbid scene rendering from rebuilding body/hub screen-point caches.
 Stage-4 checks require Galaxy/System/Detail/Hub render paths to consume camera
 snapshots owned by their Views. Renderer-side orbit/projection helpers and
 direct renderer mutation of camera state are rejected.
+
+Stage-5 checks require Galaxy and System navigation to share
+`CubicNavigationGrid`, `CubicGridIndex` and `CubicNavigationCell`. Galaxy may
+supply only its root-domain policy and light-year convenience API. Anchor,
+hover and explicit selection remain independent states owned by the common
+core.

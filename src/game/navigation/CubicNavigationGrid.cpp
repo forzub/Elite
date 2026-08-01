@@ -8,8 +8,10 @@ namespace game::navigation
 {
 
 CubicNavigationGrid::CubicNavigationGrid(
-    const CubicNavigationGridDefinition& definition
+    const CubicNavigationGridDefinition& definition,
+    std::shared_ptr<const CubicNavigationPolicy> policy
 )
+    : m_policy(std::move(policy))
 {
     configure(definition);
 }
@@ -21,6 +23,14 @@ void CubicNavigationGrid::configure(
     m_definition = definition;
     validateDefinition();
     reset();
+}
+
+void CubicNavigationGrid::setPolicy(
+    std::shared_ptr<const CubicNavigationPolicy> policy
+)
+{
+    m_policy = std::move(policy);
+    normalizeStateForPolicy();
 }
 
 void CubicNavigationGrid::validateDefinition() const
@@ -48,10 +58,14 @@ void CubicNavigationGrid::validateDefinition() const
 void CubicNavigationGrid::reset()
 {
     m_enabled = true;
-    m_level = m_definition.initialLevel;
-    m_anchorIndex = {};
-    m_selectedCell = cell(m_anchorIndex, m_level);
-    m_hoveredCell.reset();
+    m_anchor.level = m_definition.initialLevel;
+    m_anchor.index = {};
+    m_hover.cell.reset();
+
+    if (isCellNavigable(m_anchor.index, m_anchor.level))
+        m_selection.cell = anchorCell();
+    else
+        m_selection.cell.reset();
 }
 
 const CubicNavigationGridDefinition&
@@ -70,16 +84,36 @@ bool CubicNavigationGrid::enabled() const
     return m_enabled;
 }
 
-void CubicNavigationGrid::setEnabled(bool enabled)
+void CubicNavigationGrid::setEnabled(bool enabledValue)
 {
-    m_enabled = enabled;
-    if (!enabled)
-        m_hoveredCell.reset();
+    m_enabled = enabledValue;
+    if (!m_enabled)
+        m_hover.cell.reset();
+}
+
+void CubicNavigationGrid::toggleEnabled()
+{
+    setEnabled(!m_enabled);
 }
 
 int CubicNavigationGrid::level() const
 {
-    return m_level;
+    return m_anchor.level;
+}
+
+int CubicNavigationGrid::minimumLevel() const
+{
+    return m_definition.minimumLevel;
+}
+
+int CubicNavigationGrid::initialLevel() const
+{
+    return m_definition.initialLevel;
+}
+
+int CubicNavigationGrid::maximumLevel() const
+{
+    return m_definition.maximumLevel;
 }
 
 int CubicNavigationGrid::subdivision() const
@@ -89,7 +123,7 @@ int CubicNavigationGrid::subdivision() const
 
 double CubicNavigationGrid::cellSize() const
 {
-    return cellSize(m_level);
+    return cellSize(m_anchor.level);
 }
 
 double CubicNavigationGrid::cellSize(int levelValue) const
@@ -107,92 +141,119 @@ double CubicNavigationGrid::cellSize(int levelValue) const
     return m_definition.baseCellSize / divisor;
 }
 
+const CubicNavigationAnchorState&
+CubicNavigationGrid::anchorState() const
+{
+    return m_anchor;
+}
+
+const CubicNavigationHoverState&
+CubicNavigationGrid::hoverState() const
+{
+    return m_hover;
+}
+
+const CubicNavigationSelectionState&
+CubicNavigationGrid::selectionState() const
+{
+    return m_selection;
+}
+
 const CubicGridIndex& CubicNavigationGrid::anchorIndex() const
 {
-    return m_anchorIndex;
+    return m_anchor.index;
 }
 
 CubicNavigationCell CubicNavigationGrid::anchorCell() const
 {
-    return cell(m_anchorIndex, m_level);
+    return cell(m_anchor.index, m_anchor.level);
 }
 
 void CubicNavigationGrid::setAnchorIndex(
     const CubicGridIndex& index
 )
 {
-    m_anchorIndex = index;
+    if (isCellNavigable(index, m_anchor.level))
+        m_anchor.index = index;
 }
 
 void CubicNavigationGrid::setAnchorFromPosition(
     const glm::dvec3& position
 )
 {
-    m_anchorIndex = nearestIndexForPosition(position, m_level);
+    setAnchorIndex(
+        nearestIndexForPosition(position, m_anchor.level)
+    );
 }
 
 bool CubicNavigationGrid::hasHoveredCell() const
 {
-    return m_hoveredCell.has_value();
+    return m_hover.cell.has_value();
 }
 
 const CubicNavigationCell& CubicNavigationGrid::hoveredCell() const
 {
-    return m_hoveredCell.value();
+    return m_hover.cell.value();
 }
 
 void CubicNavigationGrid::setHoveredCell(
     const CubicNavigationCell& cellValue
 )
 {
-    m_hoveredCell = cellValue;
+    const CubicNavigationCell normalized =
+        cell(cellValue.index, cellValue.level);
+
+    if (isCellNavigable(normalized))
+        m_hover.cell = normalized;
+    else
+        m_hover.cell.reset();
 }
 
 void CubicNavigationGrid::clearHoveredCell()
 {
-    m_hoveredCell.reset();
+    m_hover.cell.reset();
 }
 
 bool CubicNavigationGrid::hasSelectedCell() const
 {
-    return m_selectedCell.has_value();
+    return m_selection.cell.has_value();
 }
 
 const CubicNavigationCell& CubicNavigationGrid::selectedCell() const
 {
-    return m_selectedCell.value();
+    return m_selection.cell.value();
 }
 
 void CubicNavigationGrid::selectCell(
     const CubicNavigationCell& cellValue
 )
 {
-    /*
-        Selection is an address/route target.
+    const CubicNavigationCell normalized =
+        cell(cellValue.index, cellValue.level);
 
-        It must not change the view level or the cell used by camera
-        navigation. GalaxyNavigationGrid follows the same rule.
+    if (!isCellNavigable(normalized))
+        return;
+
+    /*
+        Selection is an address/route target. It does not change the view
+        anchor or the current hierarchy level.
     */
-    m_selectedCell =
-        cell(
-            cellValue.index,
-            cellValue.level
-        );
+    m_selection.cell = normalized;
 }
 
 void CubicNavigationGrid::clearSelectedCell()
 {
-    m_selectedCell.reset();
+    m_selection.cell.reset();
 }
 
 bool CubicNavigationGrid::canRefine() const
 {
-    return m_level < m_definition.maximumLevel;
+    return m_anchor.level < m_definition.maximumLevel;
 }
 
 bool CubicNavigationGrid::canCoarsen() const
 {
-    return m_level > m_definition.minimumLevel;
+    return m_anchor.level > m_definition.minimumLevel;
 }
 
 bool CubicNavigationGrid::refineAroundAnchor()
@@ -200,12 +261,18 @@ bool CubicNavigationGrid::refineAroundAnchor()
     if (!canRefine())
         return false;
 
-    m_anchorIndex.x *= m_definition.subdivision;
-    m_anchorIndex.y *= m_definition.subdivision;
-    m_anchorIndex.z *= m_definition.subdivision;
-    ++m_level;
+    CubicGridIndex refined = m_anchor.index;
+    refined.x *= m_definition.subdivision;
+    refined.y *= m_definition.subdivision;
+    refined.z *= m_definition.subdivision;
 
-    m_hoveredCell.reset();
+    const int refinedLevel = m_anchor.level + 1;
+    if (!isCellNavigable(refined, refinedLevel))
+        return false;
+
+    m_anchor.index = refined;
+    m_anchor.level = refinedLevel;
+    m_hover.cell.reset();
     return true;
 }
 
@@ -214,12 +281,15 @@ bool CubicNavigationGrid::coarsenAroundAnchor()
     if (!canCoarsen())
         return false;
 
-    m_anchorIndex.x = nearestParentIndex(m_anchorIndex.x);
-    m_anchorIndex.y = nearestParentIndex(m_anchorIndex.y);
-    m_anchorIndex.z = nearestParentIndex(m_anchorIndex.z);
-    --m_level;
+    const CubicGridIndex coarsened = parentIndex(m_anchor.index);
+    const int coarsenedLevel = m_anchor.level - 1;
 
-    m_hoveredCell.reset();
+    if (!isCellNavigable(coarsened, coarsenedLevel))
+        return false;
+
+    m_anchor.index = coarsened;
+    m_anchor.level = coarsenedLevel;
+    m_hover.cell.reset();
     return true;
 }
 
@@ -277,6 +347,80 @@ CubicGridIndex CubicNavigationGrid::nearestIndexForPosition(
     };
 }
 
+CubicGridIndex CubicNavigationGrid::parentIndex(
+    const CubicGridIndex& child
+) const
+{
+    return {
+        nearestParentIndex(child.x),
+        nearestParentIndex(child.y),
+        nearestParentIndex(child.z)
+    };
+}
+
+CubicGridIndex CubicNavigationGrid::ancestorIndex(
+    const CubicGridIndex& index,
+    int levelValue,
+    int ancestorLevel
+) const
+{
+    CubicGridIndex result = index;
+
+    for (int levelCursor = levelValue;
+         levelCursor > ancestorLevel;
+         --levelCursor)
+    {
+        result = parentIndex(result);
+    }
+
+    return result;
+}
+
+bool CubicNavigationGrid::isCellNavigable(
+    const CubicGridIndex& index,
+    int levelValue
+) const
+{
+    return !m_policy || m_policy->isCellNavigable(index, levelValue);
+}
+
+bool CubicNavigationGrid::isCellNavigable(
+    const CubicNavigationCell& cellValue
+) const
+{
+    return isCellNavigable(cellValue.index, cellValue.level);
+}
+
+std::vector<CubicNavigationCell> CubicNavigationGrid::neighborhood(
+    int radius
+) const
+{
+    radius = std::max(0, radius);
+    const int side = radius * 2 + 1;
+
+    std::vector<CubicNavigationCell> result;
+    result.reserve(static_cast<std::size_t>(side * side * side));
+
+    for (int dz = -radius; dz <= radius; ++dz)
+    {
+        for (int dy = -radius; dy <= radius; ++dy)
+        {
+            for (int dx = -radius; dx <= radius; ++dx)
+            {
+                CubicGridIndex index;
+                index.x = m_anchor.index.x + dx;
+                index.y = m_anchor.index.y + dy;
+                index.z = m_anchor.index.z + dz;
+
+                if (isCellNavigable(index, m_anchor.level))
+                    result.push_back(cell(index, m_anchor.level));
+            }
+        }
+    }
+
+    return result;
+}
+
 std::int64_t CubicNavigationGrid::nearestParentIndex(
     std::int64_t child
 ) const
@@ -287,6 +431,22 @@ std::int64_t CubicNavigationGrid::nearestParentIndex(
             static_cast<double>(m_definition.subdivision)
         )
     );
+}
+
+void CubicNavigationGrid::normalizeStateForPolicy()
+{
+    if (!isCellNavigable(m_anchor.index, m_anchor.level))
+    {
+        const CubicGridIndex origin {};
+        if (isCellNavigable(origin, m_anchor.level))
+            m_anchor.index = origin;
+    }
+
+    if (m_hover.cell && !isCellNavigable(*m_hover.cell))
+        m_hover.cell.reset();
+
+    if (m_selection.cell && !isCellNavigable(*m_selection.cell))
+        m_selection.cell.reset();
 }
 
 } // namespace game::navigation

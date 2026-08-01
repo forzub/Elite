@@ -2,81 +2,146 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 namespace game::navigation
 {
+namespace
+{
+
+CubicGridIndex parentIndex(
+    const CubicGridIndex& child,
+    int subdivision
+)
+{
+    const double divisor = static_cast<double>(subdivision);
+
+    return {
+        static_cast<std::int64_t>(
+            std::llround(static_cast<double>(child.x) / divisor)
+        ),
+        static_cast<std::int64_t>(
+            std::llround(static_cast<double>(child.y) / divisor)
+        ),
+        static_cast<std::int64_t>(
+            std::llround(static_cast<double>(child.z) / divisor)
+        )
+    };
+}
+
+} // namespace
+
+class GalaxyNavigationDomainPolicy final
+    : public CubicNavigationPolicy
+{
+public:
+    GalaxyNavigationDomainPolicy(
+        int subdivision,
+        std::vector<std::array<std::int64_t, 3>> allowedRootCells
+    )
+        : m_subdivision(subdivision),
+          m_allowedRootCells(std::move(allowedRootCells))
+    {
+    }
+
+    bool isCellNavigable(
+        const CubicGridIndex& index,
+        int level
+    ) const override
+    {
+        CubicGridIndex root = index;
+
+        for (int levelCursor = level;
+             levelCursor > 0;
+             --levelCursor)
+        {
+            root = parentIndex(root, m_subdivision);
+        }
+
+        return std::find(
+            m_allowedRootCells.begin(),
+            m_allowedRootCells.end(),
+            std::array<std::int64_t, 3>{
+                root.x,
+                root.y,
+                root.z
+            }
+        ) != m_allowedRootCells.end();
+    }
+
+    void setAllowedRootCells(
+        std::vector<std::array<std::int64_t, 3>> cells
+    )
+    {
+        m_allowedRootCells = std::move(cells);
+    }
+
+    const std::vector<std::array<std::int64_t, 3>>&
+    allowedRootCells() const
+    {
+        return m_allowedRootCells;
+    }
+
+private:
+    int m_subdivision = 3;
+    std::vector<std::array<std::int64_t, 3>> m_allowedRootCells;
+};
 
 GalaxyNavigationGrid::GalaxyNavigationGrid()
+    : GalaxyNavigationGrid(loadConfig())
 {
-    m_config =
-        GalaxyNavigationConfig::loadFromRuntimeOrSource(
-            "assets/data/navigation/navigation_grid.json",
-            "src/assets/data/navigation/navigation_grid.json"
-        );
+}
 
-    m_allowedRootCells = m_config.allowedRootCells;
-
+GalaxyNavigationGrid::GalaxyNavigationGrid(
+    GalaxyNavigationConfig config
+)
+    : CubicNavigationGrid(makeDefinition(config)),
+      m_config(std::move(config)),
+      m_domainPolicy(
+          std::make_shared<GalaxyNavigationDomainPolicy>(
+              m_config.subdivisionPerAxis,
+              m_config.allowedRootCells
+          )
+      )
+{
+    setPolicy(m_domainPolicy);
     reset();
 }
 
+GalaxyNavigationConfig GalaxyNavigationGrid::loadConfig()
+{
+    return GalaxyNavigationConfig::loadFromRuntimeOrSource(
+        "assets/data/navigation/navigation_grid.json",
+        "src/assets/data/navigation/navigation_grid.json"
+    );
+}
 
+CubicNavigationGridDefinition GalaxyNavigationGrid::makeDefinition(
+    const GalaxyNavigationConfig& config
+)
+{
+    CubicNavigationGridDefinition result;
 
+    result.frame.id = "sol_equatorial_j2000";
+    result.frame.unit = "LY";
+    result.frame.origin = glm::dvec3(0.0);
+    result.frame.axisX = glm::dvec3(1.0, 0.0, 0.0);
+    result.frame.axisY = glm::dvec3(0.0, 1.0, 0.0);
+    result.frame.axisZ = glm::dvec3(0.0, 0.0, 1.0);
 
+    result.subdivision = config.subdivisionPerAxis;
+    result.minimumLevel = config.minimumLevel;
+    result.initialLevel = config.initialLevel;
+    result.maximumLevel = config.galaxyMaximumLevel();
+    result.baseCellSize = config.rootEdgeLy();
 
+    return result;
+}
 
 void GalaxyNavigationGrid::reset()
 {
-    m_enabled = true;
-    m_level = m_config.initialLevel;
+    CubicNavigationGrid::reset();
     m_displayRadius = 1;
-
-    /*
-        Начальный куб расположен вокруг начала координат:
-        Sol, индекс 0/0/0.
-    */
-    m_anchorIndex = {};
-
-    /*
-        При первом открытии карты центральный куб уже является
-        зафиксированным выбранным кубом.
-    */
-    m_selectedCell =
-        cell(
-            m_anchorIndex,
-            m_level
-        );
-
-    /*
-        Hover появляется только после движения курсора.
-    */
-    m_hoveredCell.reset();
-}
-
-
-
-
-
-bool GalaxyNavigationGrid::enabled() const
-{
-    return m_enabled;
-}
-
-void GalaxyNavigationGrid::setEnabled(bool enabled)
-{
-    m_enabled = enabled;
-
-    if (!m_enabled)
-        m_hoveredCell.reset();
-}
-
-void GalaxyNavigationGrid::toggleEnabled()
-{
-    setEnabled(!m_enabled);
-}
-
-const GalaxyNavigationFrame& GalaxyNavigationGrid::frame() const
-{
-    return m_frame;
 }
 
 const GalaxyNavigationConfig& GalaxyNavigationGrid::config() const
@@ -88,73 +153,38 @@ void GalaxyNavigationGrid::synchronizeCatalogPositions(
     const std::vector<glm::dvec3>& positionsLy
 )
 {
-    m_allowedRootCells = m_config.allowedRootCells;
+    std::vector<std::array<std::int64_t, 3>> allowed =
+        m_config.allowedRootCells;
 
     for (const glm::dvec3& positionLy : positionsLy)
     {
         const auto root = rootIndexForPositionLy(positionLy);
 
-        if (std::find(
-                m_allowedRootCells.begin(),
-                m_allowedRootCells.end(),
-                root
-            ) == m_allowedRootCells.end())
-        {
-            m_allowedRootCells.push_back(root);
-        }
+        if (std::find(allowed.begin(), allowed.end(), root) == allowed.end())
+            allowed.push_back(root);
     }
 
-    std::sort(
-        m_allowedRootCells.begin(),
-        m_allowedRootCells.end()
-    );
+    std::sort(allowed.begin(), allowed.end());
+    m_domainPolicy->setAllowedRootCells(std::move(allowed));
+
+    /* Revalidate transient/explicit state against the updated domain. */
+    setPolicy(m_domainPolicy);
 }
 
 const std::vector<std::array<std::int64_t, 3>>&
 GalaxyNavigationGrid::allowedRootCells() const
 {
-    return m_allowedRootCells;
-}
-
-int GalaxyNavigationGrid::subdivision() const
-{
-    return m_config.subdivisionPerAxis;
-}
-
-int GalaxyNavigationGrid::minimumLevel() const
-{
-    return m_config.minimumLevel;
-}
-
-int GalaxyNavigationGrid::initialLevel() const
-{
-    return m_config.initialLevel;
-}
-
-int GalaxyNavigationGrid::maximumLevel() const
-{
-    return m_config.galaxyMaximumLevel();
-}
-
-int GalaxyNavigationGrid::level() const
-{
-    return m_level;
+    return m_domainPolicy->allowedRootCells();
 }
 
 double GalaxyNavigationGrid::cellSizeLy() const
 {
-    return cellSizeLy(m_level);
+    return cellSize();
 }
 
-double GalaxyNavigationGrid::cellSizeLy(int level) const
+double GalaxyNavigationGrid::cellSizeLy(int levelValue) const
 {
-    level = std::clamp(
-        level,
-        minimumLevel(),
-        maximumLevel()
-    );
-
-    return m_config.cellEdgeLy(level);
+    return cellSize(levelValue);
 }
 
 int GalaxyNavigationGrid::displayRadius() const
@@ -164,171 +194,14 @@ int GalaxyNavigationGrid::displayRadius() const
 
 void GalaxyNavigationGrid::setDisplayRadius(int radius)
 {
-    /*
-        radius=1 -> 3x3x3
-        radius=2 -> 5x5x5
-    */
     m_displayRadius = std::clamp(radius, 1, 2);
-}
-
-const GalaxyGridIndex& GalaxyNavigationGrid::anchorIndex() const
-{
-    return m_anchorIndex;
-}
-
-GalaxyNavigationCell GalaxyNavigationGrid::anchorCell() const
-{
-    return cell(m_anchorIndex, m_level);
-}
-
-void GalaxyNavigationGrid::setAnchorIndex(
-    const GalaxyGridIndex& index
-)
-{
-    if (isCellNavigable(index, m_level))
-        m_anchorIndex = index;
 }
 
 void GalaxyNavigationGrid::setAnchorFromPositionLy(
     const glm::dvec3& positionLy
 )
 {
-    const GalaxyGridIndex candidate =
-        nearestIndexForPositionLy(
-            positionLy,
-            m_level
-        );
-
-    if (isCellNavigable(candidate, m_level))
-        m_anchorIndex = candidate;
-}
-
-bool GalaxyNavigationGrid::hasHoveredCell() const
-{
-    return m_hoveredCell.has_value();
-}
-
-const GalaxyNavigationCell& GalaxyNavigationGrid::hoveredCell() const
-{
-    return m_hoveredCell.value();
-}
-
-void GalaxyNavigationGrid::setHoveredCell(
-    const GalaxyNavigationCell& cellValue
-)
-{
-    if (isCellNavigable(cellValue))
-        m_hoveredCell = cellValue;
-    else
-        m_hoveredCell.reset();
-}
-
-void GalaxyNavigationGrid::clearHoveredCell()
-{
-    m_hoveredCell.reset();
-}
-
-bool GalaxyNavigationGrid::hasSelectedCell() const
-{
-    return m_selectedCell.has_value();
-}
-
-const GalaxyNavigationCell& GalaxyNavigationGrid::selectedCell() const
-{
-    return m_selectedCell.value();
-}
-
-void GalaxyNavigationGrid::selectCell(
-    const GalaxyNavigationCell& cellValue
-)
-{
-    if (!isCellNavigable(cellValue))
-        return;
-
-    /*
-        Selection is a route/address target, not the camera anchor.
-
-        Changing the selected cube must not change:
-        - the current view level;
-        - the local render neighborhood;
-        - the point used by wheel navigation.
-    */
-    m_selectedCell =
-        cell(
-            cellValue.index,
-            cellValue.level
-        );
-}
-
-void GalaxyNavigationGrid::clearSelectedCell()
-{
-    m_selectedCell.reset();
-}
-
-bool GalaxyNavigationGrid::canRefine() const
-{
-    return m_level < maximumLevel();
-}
-
-bool GalaxyNavigationGrid::canCoarsen() const
-{
-    return m_level > minimumLevel();
-}
-
-bool GalaxyNavigationGrid::refineAroundAnchor()
-{
-    if (!canRefine())
-        return false;
-
-    m_anchorIndex.x *= subdivision();
-    m_anchorIndex.y *= subdivision();
-    m_anchorIndex.z *= subdivision();
-
-    ++m_level;
-
-    /*
-        The view anchor changes resolution, while the explicit
-        user selection keeps its original address.
-    */
-    m_hoveredCell.reset();
-
-    return true;
-}
-
-bool GalaxyNavigationGrid::coarsenAroundAnchor()
-{
-    if (!canCoarsen())
-        return false;
-
-    m_anchorIndex.x = nearestParentIndex(m_anchorIndex.x);
-    m_anchorIndex.y = nearestParentIndex(m_anchorIndex.y);
-    m_anchorIndex.z = nearestParentIndex(m_anchorIndex.z);
-
-    --m_level;
-
-    m_hoveredCell.reset();
-
-    return true;
-}
-
-GalaxyNavigationCell GalaxyNavigationGrid::cell(
-    const GalaxyGridIndex& index,
-    int levelValue
-) const
-{
-    GalaxyNavigationCell result;
-
-    result.index = index;
-    result.level = std::clamp(
-        levelValue,
-        minimumLevel(),
-        maximumLevel()
-    );
-
-    result.sizeLy = cellSizeLy(result.level);
-    result.centerLy = cellCenterLy(index, result.level);
-
-    return result;
+    setAnchorFromPosition(positionLy);
 }
 
 glm::dvec3 GalaxyNavigationGrid::cellCenterLy(
@@ -336,16 +209,7 @@ glm::dvec3 GalaxyNavigationGrid::cellCenterLy(
     int levelValue
 ) const
 {
-    const double size = cellSizeLy(levelValue);
-
-    return
-        m_frame.originLy +
-        m_frame.axisX *
-            (static_cast<double>(index.x) * size) +
-        m_frame.axisY *
-            (static_cast<double>(index.y) * size) +
-        m_frame.axisZ *
-            (static_cast<double>(index.z) * size);
+    return cellCenter(index, levelValue);
 }
 
 GalaxyGridIndex GalaxyNavigationGrid::nearestIndexForPositionLy(
@@ -353,32 +217,7 @@ GalaxyGridIndex GalaxyNavigationGrid::nearestIndexForPositionLy(
     int levelValue
 ) const
 {
-    const double size = cellSizeLy(levelValue);
-
-    const glm::dvec3 relative =
-        positionLy - m_frame.originLy;
-
-    GalaxyGridIndex result;
-
-    result.x = static_cast<std::int64_t>(
-        std::llround(
-            glm::dot(relative, m_frame.axisX) / size
-        )
-    );
-
-    result.y = static_cast<std::int64_t>(
-        std::llround(
-            glm::dot(relative, m_frame.axisY) / size
-        )
-    );
-
-    result.z = static_cast<std::int64_t>(
-        std::llround(
-            glm::dot(relative, m_frame.axisZ) / size
-        )
-    );
-
-    return result;
+    return nearestIndexForPosition(positionLy, levelValue);
 }
 
 GalaxyGridIndex GalaxyNavigationGrid::rootIndexForCell(
@@ -386,45 +225,13 @@ GalaxyGridIndex GalaxyNavigationGrid::rootIndexForCell(
     int levelValue
 ) const
 {
-    GalaxyGridIndex root = index;
-
-    for (int level = levelValue; level > 0; --level)
-    {
-        root.x = nearestParentIndex(root.x);
-        root.y = nearestParentIndex(root.y);
-        root.z = nearestParentIndex(root.z);
-    }
-
-    return root;
+    return ancestorIndex(index, levelValue, 0);
 }
 
-bool GalaxyNavigationGrid::isCellNavigable(
-    const GalaxyGridIndex& index,
-    int levelValue
-) const
+std::vector<GalaxyNavigationCell>
+GalaxyNavigationGrid::neighborhood() const
 {
-    const GalaxyGridIndex root =
-        rootIndexForCell(index, levelValue);
-
-    return std::find(
-        m_allowedRootCells.begin(),
-        m_allowedRootCells.end(),
-        std::array<std::int64_t, 3>{
-            root.x,
-            root.y,
-            root.z
-        }
-    ) != m_allowedRootCells.end();
-}
-
-bool GalaxyNavigationGrid::isCellNavigable(
-    const GalaxyNavigationCell& cellValue
-) const
-{
-    return isCellNavigable(
-        cellValue.index,
-        cellValue.level
-    );
+    return CubicNavigationGrid::neighborhood(m_displayRadius);
 }
 
 std::array<std::int64_t, 3>
@@ -433,81 +240,26 @@ GalaxyNavigationGrid::rootIndexForPositionLy(
 ) const
 {
     const double rootSizeLy = m_config.rootEdgeLy();
-
-    const glm::dvec3 relative =
-        positionLy - m_frame.originLy;
+    const CubicNavigationFrame& navigationFrame = frame();
+    const glm::dvec3 relative = positionLy - navigationFrame.origin;
 
     return {
         static_cast<std::int64_t>(
             std::llround(
-                glm::dot(relative, m_frame.axisX) /
-                    rootSizeLy
+                glm::dot(relative, navigationFrame.axisX) / rootSizeLy
             )
         ),
         static_cast<std::int64_t>(
             std::llround(
-                glm::dot(relative, m_frame.axisY) /
-                    rootSizeLy
+                glm::dot(relative, navigationFrame.axisY) / rootSizeLy
             )
         ),
         static_cast<std::int64_t>(
             std::llround(
-                glm::dot(relative, m_frame.axisZ) /
-                    rootSizeLy
+                glm::dot(relative, navigationFrame.axisZ) / rootSizeLy
             )
         )
     };
-}
-
-std::vector<GalaxyNavigationCell>
-GalaxyNavigationGrid::neighborhood() const
-{
-    const int radius = m_displayRadius;
-    const int side = radius * 2 + 1;
-
-    std::vector<GalaxyNavigationCell> result;
-
-    result.reserve(
-        static_cast<std::size_t>(
-            side * side * side
-        )
-    );
-
-    for (int dz = -radius; dz <= radius; ++dz)
-    {
-        for (int dy = -radius; dy <= radius; ++dy)
-        {
-            for (int dx = -radius; dx <= radius; ++dx)
-            {
-                GalaxyGridIndex index;
-
-                index.x = m_anchorIndex.x + dx;
-                index.y = m_anchorIndex.y + dy;
-                index.z = m_anchorIndex.z + dz;
-
-                if (isCellNavigable(index, m_level))
-                {
-                    result.push_back(
-                        cell(index, m_level)
-                    );
-                }
-            }
-        }
-    }
-
-    return result;
-}
-
-std::int64_t GalaxyNavigationGrid::nearestParentIndex(
-    std::int64_t childIndex
-) const
-{
-    return static_cast<std::int64_t>(
-        std::llround(
-            static_cast<double>(childIndex) /
-            static_cast<double>(subdivision())
-        )
-    );
 }
 
 } // namespace game::navigation

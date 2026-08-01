@@ -179,14 +179,14 @@ namespace game::system_map
                 positionLyToRender(
                     m_state.navigationGrid
                         .anchorCell()
-                        .centerLy
+                        .center
                 );
 
             const float initialCellEdgeRender =
                 static_cast<float>(
                     m_state.navigationGrid
                         .anchorCell()
-                        .sizeLy
+                        .size
                 ) *
                 RenderUnitsPerLightYear;
 
@@ -225,14 +225,14 @@ namespace game::system_map
             positionLyToRender(
                 m_state.navigationGrid
                     .anchorCell()
-                    .centerLy
+                    .center
             );
 
         const float initialCellEdgeRender =
             static_cast<float>(
                 m_state.navigationGrid
                     .anchorCell()
-                    .sizeLy
+                    .size
             ) *
             RenderUnitsPerLightYear;
 
@@ -698,7 +698,7 @@ namespace game::system_map
             );
 
         return MapIntent::enterEmptySector(
-            terminalCell.centerLy
+            terminalCell.center
         );
     }
 

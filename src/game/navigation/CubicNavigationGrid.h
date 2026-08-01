@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <glm/glm.hpp>
 
@@ -57,29 +59,85 @@ struct CubicNavigationGridDefinition
     double baseCellSize = 1.0;
 };
 
+/*
+    Optional domain policy for a cubic grid.
+
+    System navigation uses the unrestricted default policy. Galaxy navigation
+    supplies a root-cell whitelist policy. The core owns hierarchy and state;
+    the policy only decides whether a cell address belongs to the domain.
+*/
+class CubicNavigationPolicy
+{
+public:
+    virtual ~CubicNavigationPolicy() = default;
+
+    virtual bool isCellNavigable(
+        const CubicGridIndex& index,
+        int level
+    ) const = 0;
+};
+
+/*
+    Persistent navigation states are deliberately independent:
+
+    - anchor controls the rendered neighborhood and level transitions;
+    - hover is transient cursor feedback;
+    - selection is an explicit route/address target.
+*/
+struct CubicNavigationAnchorState
+{
+    int level = 0;
+    CubicGridIndex index;
+};
+
+struct CubicNavigationHoverState
+{
+    std::optional<CubicNavigationCell> cell;
+};
+
+struct CubicNavigationSelectionState
+{
+    std::optional<CubicNavigationCell> cell;
+};
+
 class CubicNavigationGrid
 {
 public:
     explicit CubicNavigationGrid(
-        const CubicNavigationGridDefinition& definition
+        const CubicNavigationGridDefinition& definition,
+        std::shared_ptr<const CubicNavigationPolicy> policy = {}
     );
+
+    virtual ~CubicNavigationGrid() = default;
 
     void configure(
         const CubicNavigationGridDefinition& definition
     );
 
-    void reset();
+    void setPolicy(
+        std::shared_ptr<const CubicNavigationPolicy> policy
+    );
+
+    virtual void reset();
 
     const CubicNavigationGridDefinition& definition() const;
     const CubicNavigationFrame& frame() const;
 
     bool enabled() const;
     void setEnabled(bool enabled);
+    void toggleEnabled();
 
     int level() const;
+    int minimumLevel() const;
+    int initialLevel() const;
+    int maximumLevel() const;
     int subdivision() const;
     double cellSize() const;
     double cellSize(int level) const;
+
+    const CubicNavigationAnchorState& anchorState() const;
+    const CubicNavigationHoverState& hoverState() const;
+    const CubicNavigationSelectionState& selectionState() const;
 
     const CubicGridIndex& anchorIndex() const;
     CubicNavigationCell anchorCell() const;
@@ -117,17 +175,44 @@ public:
         int level
     ) const;
 
-private:
-    std::int64_t nearestParentIndex(std::int64_t child) const;
+    CubicGridIndex parentIndex(
+        const CubicGridIndex& child
+    ) const;
+
+    CubicGridIndex ancestorIndex(
+        const CubicGridIndex& index,
+        int level,
+        int ancestorLevel
+    ) const;
+
+    bool isCellNavigable(
+        const CubicGridIndex& index,
+        int level
+    ) const;
+
+    bool isCellNavigable(
+        const CubicNavigationCell& cell
+    ) const;
+
+    std::vector<CubicNavigationCell> neighborhood(
+        int radius
+    ) const;
+
+protected:
     void validateDefinition() const;
 
 private:
+    std::int64_t nearestParentIndex(std::int64_t child) const;
+    void normalizeStateForPolicy();
+
+private:
     CubicNavigationGridDefinition m_definition;
+    std::shared_ptr<const CubicNavigationPolicy> m_policy;
+
     bool m_enabled = true;
-    int m_level = 0;
-    CubicGridIndex m_anchorIndex;
-    std::optional<CubicNavigationCell> m_hoveredCell;
-    std::optional<CubicNavigationCell> m_selectedCell;
+    CubicNavigationAnchorState m_anchor;
+    CubicNavigationHoverState m_hover;
+    CubicNavigationSelectionState m_selection;
 };
 
 } // namespace game::navigation

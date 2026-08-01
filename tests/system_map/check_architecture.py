@@ -88,8 +88,8 @@ detail_scene_header = MAP_DIR / "DetailMapSceneRenderer.h"
 detail_scene_cpp = MAP_DIR / "DetailMapSceneRenderer.cpp"
 hub_scene_header = MAP_DIR / "HubMapSceneRenderer.h"
 hub_scene_cpp = MAP_DIR / "HubMapSceneRenderer.cpp"
-detail_backend = MAP_DIR / "SystemMapRendererDetail.inl"
-hub_backend = MAP_DIR / "SystemMapRendererHub.inl"
+detail_backend = MAP_DIR / "DetailMapBackend.cpp"
+hub_backend = MAP_DIR / "HubMapBackend.cpp"
 
 for required in (
     local_builder_header,
@@ -137,14 +137,12 @@ for scene_path in (detail_scene_cpp, hub_scene_cpp):
 
 if detail_backend.is_file():
     detail_text = detail_backend.read_text(encoding="utf-8", errors="replace")
-    start_marker = "void SystemMapRenderer::renderDetailMapPasses("
-    end_marker = "void SystemMapRenderer::drawPlanetSphereGrid("
+    start_marker = "void DetailMapBackend::renderDetailMapPasses("
     start_index = detail_text.find(start_marker)
-    end_index = detail_text.find(end_marker, start_index + 1)
-    if start_index < 0 or end_index < 0:
+    if start_index < 0:
         fail(detail_backend, "could not locate renderDetailMapPasses")
     else:
-        render_text = detail_text[start_index:end_index]
+        render_text = detail_text[start_index:]
         for forbidden in (
             "m_detailView.frame()",
             "m_systemView.state().selectedHubId.clear()",
@@ -159,14 +157,12 @@ if detail_backend.is_file():
 
 if hub_backend.is_file():
     hub_text = hub_backend.read_text(encoding="utf-8", errors="replace")
-    start_marker = "void SystemMapRenderer::renderHubMapPasses("
-    end_marker = "std::vector<"
+    start_marker = "void HubMapBackend::renderHubMapPasses("
     start_index = hub_text.find(start_marker)
-    end_index = hub_text.find(end_marker, start_index + 1)
-    if start_index < 0 or end_index < 0:
+    if start_index < 0:
         fail(hub_backend, "could not locate renderHubMapPasses")
     else:
-        render_text = hub_text[start_index:end_index]
+        render_text = hub_text[start_index:]
         for forbidden in (
             "m_hubView.frame()",
             "pickables.push_back",
@@ -348,6 +344,140 @@ if renderer_cpp.is_file():
     )
     if direct_camera_assignment:
         fail(renderer_cpp, "renderer facade directly mutates View camera state")
+
+# Stage 5: Galaxy and System share one cubic-navigation state core.
+cubic_grid_header = ROOT / "src" / "game" / "navigation" / "CubicNavigationGrid.h"
+galaxy_grid_header = ROOT / "src" / "game" / "navigation" / "GalaxyNavigationGrid.h"
+galaxy_grid_cpp = ROOT / "src" / "game" / "navigation" / "GalaxyNavigationGrid.cpp"
+system_grid_header = ROOT / "src" / "game" / "navigation" / "SystemNavigationGrid.h"
+
+if cubic_grid_header.is_file():
+    text = cubic_grid_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "class CubicNavigationPolicy",
+        "struct CubicNavigationAnchorState",
+        "struct CubicNavigationHoverState",
+        "struct CubicNavigationSelectionState",
+        "std::vector<CubicNavigationCell> neighborhood(",
+    ):
+        if required not in text:
+            fail(cubic_grid_header, f"missing shared navigation core contract: {required}")
+
+if galaxy_grid_header.is_file():
+    text = galaxy_grid_header.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "struct GalaxyNavigationFrame",
+        "struct GalaxyGridIndex",
+        "struct GalaxyNavigationCell",
+    ):
+        if forbidden in text:
+            fail(galaxy_grid_header, f"Galaxy duplicates shared navigation type: {forbidden}")
+
+    for required in (
+        "using GalaxyNavigationFrame = CubicNavigationFrame",
+        "using GalaxyGridIndex = CubicGridIndex",
+        "using GalaxyNavigationCell = CubicNavigationCell",
+        "class GalaxyNavigationGrid final : public CubicNavigationGrid",
+    ):
+        if required not in text:
+            fail(galaxy_grid_header, f"Galaxy does not use shared core: {required}")
+
+if system_grid_header.is_file():
+    text = system_grid_header.read_text(encoding="utf-8", errors="replace")
+    if "class SystemNavigationGrid final : public CubicNavigationGrid" not in text:
+        fail(system_grid_header, "System navigation must use shared cubic core")
+
+if galaxy_grid_cpp.is_file():
+    text = galaxy_grid_cpp.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "m_anchorIndex",
+        "m_hoveredCell",
+        "m_selectedCell",
+        "GalaxyNavigationGrid::refineAroundAnchor",
+        "GalaxyNavigationGrid::coarsenAroundAnchor",
+        "GalaxyNavigationGrid::cell(",
+    ):
+        if forbidden in text:
+            fail(galaxy_grid_cpp, f"Galaxy reimplements shared grid state/math: {forbidden}")
+
+
+# Stage 6A: local-map render contexts are owned by dedicated backends.
+detail_backend_header = MAP_DIR / "DetailMapBackend.h"
+detail_backend_cpp = MAP_DIR / "DetailMapBackend.cpp"
+hub_backend_header = MAP_DIR / "HubMapBackend.h"
+hub_backend_cpp = MAP_DIR / "HubMapBackend.cpp"
+renderer_header = MAP_DIR / "SystemMapRenderer.h"
+renderer_cpp = MAP_DIR / "SystemMapRenderer.cpp"
+detail_inl = MAP_DIR / "SystemMapRendererDetail.inl"
+hub_inl = MAP_DIR / "SystemMapRendererHub.inl"
+
+for required in (
+    detail_backend_header,
+    detail_backend_cpp,
+    hub_backend_header,
+    hub_backend_cpp,
+):
+    if not required.is_file():
+        fail(required, "required Stage-6 backend owner is missing")
+
+if renderer_header.is_file():
+    text = renderer_header.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "private game::system_map::DetailMapRenderContext",
+        "private game::system_map::HubMapRenderContext",
+        "void renderDetailMapPasses(",
+        "void renderHubMapPasses(",
+        "m_hubGpuQueries",
+        "m_hubGpuFrameActive",
+        "m_hubMapPerformanceStats",
+    ):
+        if forbidden in text:
+            fail(renderer_header, f"facade still owns local backend contract/state: {forbidden}")
+
+    for required in (
+        "game::system_map::DetailMapBackend m_detailBackend",
+        "game::system_map::HubMapBackend m_hubBackend",
+        "return m_hubBackend.performanceStats()",
+    ):
+        if required not in text:
+            fail(renderer_header, f"facade is not routing through backend owner: {required}")
+
+if renderer_cpp.is_file():
+    text = renderer_cpp.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "m_detailBackend(*this)",
+        "m_hubBackend(*this)",
+        "m_detailBackend,",
+        "m_hubBackend,",
+    ):
+        if required not in text:
+            fail(renderer_cpp, f"local scene is not wired to backend owner: {required}")
+
+for old_backend, forbidden in (
+    (detail_inl, "SystemMapRenderer::renderDetailMapPasses("),
+    (hub_inl, "SystemMapRenderer::renderHubMapPasses("),
+    (hub_inl, "SystemMapRenderer::ensureHubGpuQueries("),
+):
+    if old_backend.is_file():
+        text = old_backend.read_text(encoding="utf-8", errors="replace")
+        if forbidden in text:
+            fail(old_backend, f"orchestration/profiling remains in facade backend: {forbidden}")
+
+if detail_backend_header.is_file():
+    text = detail_backend_header.read_text(encoding="utf-8", errors="replace")
+    if "class DetailMapBackend final : public DetailMapRenderContext" not in text:
+        fail(detail_backend_header, "Detail backend must own DetailMapRenderContext")
+
+if hub_backend_header.is_file():
+    text = hub_backend_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "class HubMapBackend final : public HubMapRenderContext",
+        "HubMapPerformanceStats m_performanceStats",
+        "m_gpuQueries",
+    ):
+        if required not in text:
+            fail(hub_backend_header, f"Hub backend does not own profiling/render contract: {required}")
+
 
 if errors:
     print("System map architecture check failed:", file=sys.stderr)

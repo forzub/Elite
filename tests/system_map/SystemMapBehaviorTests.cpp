@@ -10,6 +10,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -18,6 +19,8 @@
 
 #include "src/game/navigation/CubicNavigationGrid.h"
 #include "src/game/navigation/CubicNavigationInteraction.h"
+#include "src/game/navigation/GalaxyNavigationGrid.h"
+#include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/system_map/DetailMapView.h"
 #include "src/game/system_map/HubMapView.h"
 #include "src/game/system_map/LocalMapPresentationBuilder.h"
@@ -37,6 +40,8 @@ using game::navigation::CubicNavigationCell;
 using game::navigation::CubicNavigationGrid;
 using game::navigation::CubicNavigationGridDefinition;
 using game::navigation::CubicNavigationLevelAction;
+using game::navigation::GalaxyNavigationGrid;
+using game::navigation::SystemNavigationGrid;
 using game::system_map::DetailMapView;
 using game::system_map::HubMapView;
 using game::system_map::LocalMapCameraSnapshot;
@@ -907,6 +912,99 @@ void testAnchorAndExplicitSelectionSemantics()
     }
 }
 
+void testGalaxyAndSystemShareCubicNavigationCore()
+{
+    static_assert(
+        std::is_same_v<
+            game::navigation::GalaxyGridIndex,
+            game::navigation::CubicGridIndex
+        >
+    );
+
+    static_assert(
+        std::is_same_v<
+            game::navigation::GalaxyNavigationCell,
+            game::navigation::CubicNavigationCell
+        >
+    );
+
+    static_assert(
+        std::is_base_of_v<CubicNavigationGrid, GalaxyNavigationGrid>
+    );
+
+    static_assert(
+        std::is_base_of_v<CubicNavigationGrid, SystemNavigationGrid>
+    );
+
+    GalaxyNavigationGrid galaxy;
+    CubicNavigationGrid& galaxyCore = galaxy;
+
+    REQUIRE(galaxyCore.anchorState().level == galaxy.level());
+    REQUIRE(galaxyCore.anchorState().index == galaxy.anchorIndex());
+    REQUIRE(galaxy.hasSelectedCell());
+
+    const CubicNavigationCell initialSelection = galaxy.selectedCell();
+    const CubicNavigationCell hover = galaxy.cell(
+        CubicGridIndex {1, 0, 0},
+        galaxy.level()
+    );
+
+    REQUIRE(galaxy.isCellNavigable(hover));
+    galaxy.setHoveredCell(hover);
+    REQUIRE(galaxy.hasHoveredCell());
+
+    REQUIRE(galaxy.refineAroundAnchor());
+    REQUIRE(!galaxy.hasHoveredCell());
+    REQUIRE(galaxy.hasSelectedCell());
+    REQUIRE(galaxy.selectedCell().level == initialSelection.level);
+    REQUIRE(galaxy.selectedCell().index == initialSelection.index);
+    REQUIRE(galaxy.anchorState().level == initialSelection.level + 1);
+
+    const CubicGridIndex anchorBeforeInvalid = galaxy.anchorIndex();
+    const CubicNavigationCell invalid = galaxy.cell(
+        CubicGridIndex {1000000, 0, 0},
+        galaxy.level()
+    );
+
+    REQUIRE(!galaxy.isCellNavigable(invalid));
+    galaxy.setAnchorIndex(invalid.index);
+    galaxy.selectCell(invalid);
+    galaxy.setHoveredCell(invalid);
+
+    REQUIRE(galaxy.anchorIndex() == anchorBeforeInvalid);
+    REQUIRE(galaxy.selectedCell().index == initialSelection.index);
+    REQUIRE(!galaxy.hasHoveredCell());
+
+    const CubicNavigationCell galaxyAnchor = galaxy.anchorCell();
+    REQUIRE_VEC_NEAR(
+        galaxyAnchor.center,
+        galaxy.cellCenterLy(galaxyAnchor.index, galaxyAnchor.level),
+        1.0e-12
+    );
+    REQUIRE_NEAR(
+        galaxyAnchor.size,
+        galaxy.cellSizeLy(galaxyAnchor.level),
+        1.0e-12
+    );
+
+    SystemNavigationGrid system;
+    system.activateSystem(42);
+
+    const CubicNavigationCell explicitSystemSelection = system.cell(
+        CubicGridIndex {2, -1, 3},
+        system.level()
+    );
+
+    system.selectCell(explicitSystemSelection);
+    system.setHoveredCell(system.cell(CubicGridIndex {1, 0, 0}, system.level()));
+
+    REQUIRE(system.refineAroundAnchor());
+    REQUIRE(!system.hasHoveredCell());
+    REQUIRE(system.selectedCell().level == explicitSystemSelection.level);
+    REQUIRE(system.selectedCell().index == explicitSystemSelection.index);
+    REQUIRE(system.anchorState().level == explicitSystemSelection.level + 1);
+}
+
 void testPresentationBuilderPreparesStateBeforeRender()
 {
     using world::celestial::BodyType;
@@ -1616,6 +1714,7 @@ int main()
         {"zoom pivot is cursor body or current target", testZoomPivotIsCursorBodyOrCurrentTarget},
         {"refine/coarsen preserve navigation point", testRefineCoarsenPreserveNavigationPoint},
         {"anchor and explicit selection semantics", testAnchorAndExplicitSelectionSemantics},
+        {"Galaxy and System share cubic navigation core", testGalaxyAndSystemShareCubicNavigationCore},
         {"presentation builder prepares state before render", testPresentationBuilderPreparesStateBeforeRender},
         {"local presentation builder prepares Detail and Hub", testLocalPresentationBuilderPreparesDetailAndHub},
         {"prepared frame drives System picking", testPreparedFrameDrivesSystemPicking},

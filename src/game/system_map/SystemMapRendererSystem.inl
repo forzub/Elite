@@ -852,7 +852,7 @@ void SystemMapRenderer::ensureSystemRenderResources()
 {
     ensureTexturedGlObjects();
     ensureTexturedShader();
-    ensureGeneratedCelestialAssets();
+    m_mapResources.ensureGeneratedCelestialAssets();
 }
 
 
@@ -1078,7 +1078,7 @@ bool SystemMapRenderer::renderSystemBodyRings(
     ringContext.visual = body.ringVisual;
     ringContext.bands = &normalizedBands;
 
-    m_planetRingRenderer.render(
+    m_mapResources.planetRingRenderer().render(
         ringContext,
         part ==
             game::system_map::SystemMapRingPart::Front
@@ -1129,7 +1129,7 @@ void SystemMapRenderer::addSystemBodyGeometry(
     if (body.type != BodyType::Star)
     {
         albedoTexture =
-            globalAlbedoTextureForBody(
+            m_mapResources.globalAlbedoTextureForBody(
                 body
             );
     }

@@ -4,18 +4,24 @@
 
 #include "render/types/Viewport.h"
 #include "src/render/system_map/HubMapGpuGeometryRenderer.h"
+#include "src/game/system_map/HubMapVisualSettings.h"
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/world/types/ObjectType.h"
 
-class SystemMapRenderer;
 
 namespace game::system_map
 {
+class HubMapBackend;
+
 class HubMapGeometryPass
 {
 public:
-    explicit HubMapGeometryPass(SystemMapRenderer& host) noexcept
-        : m_host(host)
+    HubMapGeometryPass(
+        HubMapBackend& owner,
+        const HubMapVisualSettings& visuals
+    ) noexcept
+        : m_owner(owner),
+          m_visuals(visuals)
     {
     }
 
@@ -114,7 +120,8 @@ public:
     ) const;
 
 private:
-    SystemMapRenderer& m_host;
+    HubMapBackend& m_owner;
+    const HubMapVisualSettings& m_visuals;
     render::system_map::HubMapGpuGeometryRenderer
         m_gpuGeometryRenderer;
 };

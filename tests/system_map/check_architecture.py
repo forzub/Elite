@@ -445,8 +445,8 @@ if renderer_header.is_file():
 if renderer_cpp.is_file():
     text = renderer_cpp.read_text(encoding="utf-8", errors="replace")
     for required in (
-        "m_detailBackend(*this)",
-        "m_hubBackend(*this)",
+        "m_detailBackend(m_mapResources)",
+        "m_hubBackend(m_mapResources)",
         "m_detailBackend,",
         "m_hubBackend,",
     ):
@@ -690,6 +690,126 @@ if root_cmake.is_file():
     ):
         if required not in text:
             fail(root_cmake, f"main target is missing extracted Detail pass: {required}")
+
+
+# Stage 6D: shared celestial resources are explicit and local backends no longer
+# depend on the SystemMapRenderer facade.
+map_resources_header = MAP_DIR / "MapCelestialRenderResources.h"
+map_resources_cpp = MAP_DIR / "MapCelestialRenderResources.cpp"
+
+for required in (map_resources_header, map_resources_cpp):
+    if not required.is_file():
+        fail(required, "required Stage-6D shared-resource owner is missing")
+
+if map_resources_header.is_file():
+    text = map_resources_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "class MapCelestialRenderResources",
+        "DetailMapVisualSettings m_detailVisuals",
+        "HubMapVisualSettings m_hubVisuals",
+        "m_generatedCelestialAssets",
+        "m_environmentProfiles",
+        "m_planetGlobeMeshRenderer",
+        "m_planetRingRenderer",
+        "m_proceduralCloudLayer",
+        "m_mapStarfieldRenderer",
+    ):
+        if required not in text:
+            fail(map_resources_header, f"shared-resource owner is incomplete: {required}")
+
+if renderer_header.is_file():
+    text = renderer_header.read_text(encoding="utf-8", errors="replace")
+    required_owner = "MapCelestialRenderResources m_mapResources"
+    if required_owner not in text:
+        fail(renderer_header, "facade does not own the shared map resource service")
+
+    for forbidden in (
+        "m_activeLocalCameraSnapshot",
+        "m_detailVisuals",
+        "m_hubVisuals",
+        "m_generatedCelestialAssets",
+        "m_environmentProfiles",
+        "m_mapPreviewTextureByAssetKey",
+        "m_globalAlbedoTextureByAssetKey",
+        "m_globalNormalTextureByAssetKey",
+        "m_hubPlanetSurfaceRenderer",
+        "m_planetGlobeMeshRenderer",
+        "m_planetRingRenderer",
+        "m_proceduralCloudLayer",
+        "m_mapStarfieldRenderer",
+        "m_galaxyBackdropStarfieldRenderer",
+        "friend class game::system_map::DetailMap",
+        "friend class game::system_map::HubMap",
+    ):
+        if forbidden in text:
+            fail(renderer_header, f"facade still owns local/shared render state: {forbidden}")
+
+if renderer_cpp.is_file():
+    text = renderer_cpp.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "m_detailBackend(m_mapResources)",
+        "m_hubBackend(m_mapResources)",
+        "m_mapResources.init(",
+        "m_mapResources.beginFrame()",
+        "m_mapResources.resetPresentationTime()",
+        "m_mapResources.drawStarfield(",
+    ):
+        if required not in text:
+            fail(renderer_cpp, f"facade is not coordinating the shared owner: {required}")
+
+    for forbidden in (
+        "SystemMapRenderer::ensureGeneratedCelestialAssets(",
+        "SystemMapRenderer::ensureEnvironmentProfiles(",
+        "SystemMapRenderer::cloudStylesForBody(",
+        "SystemMapRenderer::atmosphereStyleForBody(",
+        "SystemMapRenderer::environmentVisualTimeSeconds(",
+    ):
+        if forbidden in text:
+            fail(renderer_cpp, f"shared resource implementation leaked back into facade: {forbidden}")
+
+local_backend_files = (
+    detail_backend_header,
+    detail_backend_cpp,
+    detail_geometry_header,
+    detail_geometry_cpp,
+    detail_planet_header,
+    detail_planet_cpp,
+    hub_backend_header,
+    hub_backend_cpp,
+    hub_geometry_header,
+    hub_geometry_cpp,
+    hub_planet_header,
+    hub_planet_cpp,
+)
+
+for local_file in local_backend_files:
+    if local_file.is_file():
+        text = local_file.read_text(encoding="utf-8", errors="replace")
+        for forbidden in (
+            "SystemMapRenderer",
+            "m_host",
+        ):
+            if forbidden in text:
+                fail(local_file, f"local backend still depends on facade: {forbidden}")
+
+if detail_backend_header.is_file():
+    text = detail_backend_header.read_text(encoding="utf-8", errors="replace")
+    if "DetailMapBackend(MapCelestialRenderResources& resources)" not in text:
+        fail(detail_backend_header, "Detail backend does not receive explicit resources")
+
+if hub_backend_header.is_file():
+    text = hub_backend_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "HubMapBackend(MapCelestialRenderResources& resources)",
+        "const LocalMapCameraSnapshot* m_activeCamera",
+    ):
+        if required not in text:
+            fail(hub_backend_header, f"Hub backend ownership is incomplete: {required}")
+
+if root_cmake.is_file():
+    text = root_cmake.read_text(encoding="utf-8", errors="replace")
+    if "src/game/system_map/MapCelestialRenderResources.cpp" not in text:
+        fail(root_cmake, "main target is missing shared map resource owner")
 
 
 if errors:

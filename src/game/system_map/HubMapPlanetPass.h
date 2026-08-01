@@ -6,12 +6,12 @@
 #include <glm/glm.hpp>
 
 #include "src/game/system_map/LocalMapEnvironmentStyle.h"
+#include "src/game/system_map/MapCelestialRenderResources.h"
 #include "src/render/celestial/HubSphericalGridRenderer.h"
 #include "src/render/celestial/ProceduralCloudLayer.h"
 #include "src/render/system_map/HubPlanetOverlayRenderer.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
-class SystemMapRenderer;
 
 namespace game::system_map
 {
@@ -21,10 +21,10 @@ class HubMapPlanetPass
 {
 public:
     HubMapPlanetPass(
-        SystemMapRenderer& host,
+        MapCelestialRenderResources& resources,
         HubMapBackend& owner
     ) noexcept
-        : m_host(host),
+        : m_resources(resources),
           m_owner(owner)
     {
     }
@@ -72,7 +72,7 @@ private:
     ) const;
 
 private:
-    SystemMapRenderer& m_host;
+    MapCelestialRenderResources& m_resources;
     HubMapBackend& m_owner;
 
     render::system_map::HubPlanetOverlayRenderer

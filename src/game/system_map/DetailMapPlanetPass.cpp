@@ -1,7 +1,6 @@
 #include "src/game/system_map/DetailMapPlanetPass.h"
 #include "src/game/system_map/LocalMapAtmosphereRenderer.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
-#include "src/game/system_map/SystemMapRenderer.h"
 
 #include <algorithm>
 #include <cmath>
@@ -170,8 +169,8 @@ void DetailMapPlanetPass::renderCentralBody(
         }
     } restoreCamera {m_activeCamera, previousCamera};
 
-    m_host.beginEnvironmentRenderSessionIfNeeded(
-        SystemMapRenderer::Mode::Detail,
+    m_resources.beginEnvironmentRenderSessionIfNeeded(
+        MapMode::Detail,
         planet.systemId,
         planet.planetBodyId
     );
@@ -190,7 +189,7 @@ void DetailMapPlanetPass::renderCentralBody(
         );
 
     const auto environmentProfile =
-        m_host.resolvedEnvironmentProfileForBody(
+        m_resources.resolvedEnvironmentProfileForBody(
             planet.systemId,
             planet.planetBodyId,
             planet.planetName,
@@ -204,7 +203,7 @@ void DetailMapPlanetPass::renderCentralBody(
             !environmentProfile.rendering.loadSurfaceTextures
         );
 
-    m_host.m_planetRingRenderer.render(
+    m_resources.planetRingRenderer().render(
         ringContext,
         render::celestial::rings::PlanetRingRenderPart::Back
     );
@@ -242,7 +241,7 @@ void DetailMapPlanetPass::renderCentralBody(
         !shapeModelDrawn
     );
 
-    m_host.m_planetRingRenderer.render(
+    m_resources.planetRingRenderer().render(
         ringContext,
         render::celestial::rings::PlanetRingRenderPart::Front
     );
@@ -710,7 +709,7 @@ void DetailMapPlanetPass::drawPlanetTexturedGlobe(
     draw.usePolarFade =
         false;
 
-    m_host.m_planetGlobeMeshRenderer.render(
+    m_resources.planetGlobeMeshRenderer().render(
         draw
     );
 }
@@ -722,7 +721,7 @@ DetailMapPlanetPass::planetCloudStylesForPlanet(
     const world::celestial::DetailMapSnapshot& planet
 ) const
 {
-    return m_host.cloudStylesForBody(
+    return m_resources.cloudStylesForBody(
         planet.systemId,
         planet.planetBodyId,
         planet.planetName,
@@ -738,7 +737,7 @@ DetailMapPlanetPass::planetAtmosphereStyleForPlanet(
     const world::celestial::DetailMapSnapshot& planet
 ) const
 {
-    return m_host.atmosphereStyleForBody(
+    return m_resources.atmosphereStyleForBody(
         planet.systemId,
         planet.planetBodyId,
         planet.planetName,
@@ -905,7 +904,7 @@ DetailMapPlanetPass::planetRingRenderContext(
     */
     context.patternPhaseRad = 0.0;
     context.minimumProjectedMinorAxisPx =
-        m_host.m_detailVisuals.ringMinimumProjectedMinorAxisPx;
+        m_resources.detailVisuals().ringMinimumProjectedMinorAxisPx;
 
     return context;
 }
@@ -936,7 +935,7 @@ void DetailMapPlanetPass::drawPlanetDetailSculpt(
                 m_detailSculptWarningPrinted = true;
 
                 std::cerr
-                    << "[SystemMapRenderer]"
+                    << "[DetailMapPlanetPass]"
                     << " shader 'planet_detail_sculpt'"
                     << " is unavailable\n";
             }
@@ -1490,7 +1489,7 @@ void DetailMapPlanetPass::drawPlanetAnimatedCloudLayers(
     }
 
     const double renderTimeSeconds =
-        m_host.environmentVisualTimeSeconds(
+        m_resources.environmentVisualTimeSeconds(
             planet.universeTimeSeconds
         );
 
@@ -1560,7 +1559,7 @@ void DetailMapPlanetPass::drawPlanetProceduralCloudGlobeLayer(
         средствами GPU и возвращает актуальную display texture.
     */
     const GLuint texture =
-        m_host.m_proceduralCloudLayer.textureForStyle(
+        m_resources.proceduralCloudLayer().textureForStyle(
             style,
             timeSeconds
         );
@@ -1689,7 +1688,7 @@ void DetailMapPlanetPass::drawPlanetProceduralCloudGlobeLayer(
     draw.polarFadeEnd =
         0.995f;
 
-    m_host.m_planetGlobeMeshRenderer.render(
+    m_resources.planetGlobeMeshRenderer().render(
         draw
     );
 }
@@ -1701,7 +1700,7 @@ bool DetailMapPlanetPass::drawPlanetShapeModelDetail(
 )
 {
     const auto* asset =
-        m_host.generatedAssetForIdentity(
+        m_resources.generatedAssetForIdentity(
             planet.systemId,
             planet.planetBodyId,
             planet.planetName
@@ -2145,7 +2144,7 @@ GLuint DetailMapPlanetPass::globalAlbedoTextureForPlanetSnapshot(
 )
 {
     const auto* asset =
-        m_host.generatedAssetForIdentity(
+        m_resources.generatedAssetForIdentity(
             planet.systemId,
             planet.planetBodyId,
             planet.planetName
@@ -2154,7 +2153,7 @@ GLuint DetailMapPlanetPass::globalAlbedoTextureForPlanetSnapshot(
     if (!asset)
         return 0;
 
-    return m_host.globalAlbedoTextureForGeneratedAsset(
+    return m_resources.globalAlbedoTextureForGeneratedAsset(
         *asset
     );
 }

@@ -2,7 +2,6 @@
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 #include "src/game/system_map/HubMapBackend.h"
 #include "src/game/system_map/LocalMapAtmosphereRenderer.h"
-#include "src/game/system_map/SystemMapRenderer.h"
 
 #include <algorithm>
 #include <cctype>
@@ -141,7 +140,7 @@ void HubMapPlanetPass::drawHubMapCircleLocalXY(
             );
 
         const glm::dvec2 s =
-            m_host.activeLocalCameraSnapshot().project(p);
+            m_owner.activeCamera().project(p);
 
         glVertex2d(
             s.x,
@@ -240,7 +239,7 @@ radialWorld =
         но не физическое положение наблюдателя над планетой.
     */
     const double cameraYaw =
-        m_host.activeLocalCameraSnapshot().state.yaw;
+        m_owner.activeCamera().state.yaw;
 
     const double yawCos =
         std::cos(
@@ -466,8 +465,8 @@ void HubMapPlanetPass::drawHubMapPlanetSurfaceHint(
     }
 
 
-    m_host.beginEnvironmentRenderSessionIfNeeded(
-        SystemMapRenderer::Mode::Hub,
+    m_resources.beginEnvironmentRenderSessionIfNeeded(
+        MapMode::Hub,
         hub.systemId,
         hub.parentBodyId
     );
@@ -511,7 +510,7 @@ void HubMapPlanetPass::drawHubMapPlanetSurfaceHint(
 
     const double pitch =
         std::clamp(
-            m_host.activeLocalCameraSnapshot().state.pitch,
+            m_owner.activeCamera().state.pitch,
             0.12,
             1.20
         );
@@ -561,7 +560,7 @@ void HubMapPlanetPass::drawHubMapPlanetSurfaceHint(
 
     const glm::dvec2 visualPlanetCenterPx(
         viewW * 0.50 +
-            m_host.activeLocalCameraSnapshot().state.pan.x * 0.015,
+            m_owner.activeCamera().state.pan.x * 0.015,
         (1.0 - lookDownT) * horizonCenterY +
             lookDownT * nadirCenterY
     );
@@ -597,7 +596,7 @@ void HubMapPlanetPass::drawHubMapPlanetSurfaceHint(
 
 
     const GLuint albedoTexture =
-        m_host.globalAlbedoTextureForHubSnapshot(
+        m_resources.globalAlbedoTextureForHubSnapshot(
             hub
         );
 
@@ -752,7 +751,7 @@ m_owner.endGpuStage();
     procedural clouds.
 */
 const double cloudVisualTimeSeconds =
-    m_host.environmentVisualTimeSeconds(
+    m_resources.environmentVisualTimeSeconds(
         hub.universeTimeSeconds
     );
 
@@ -789,7 +788,7 @@ const glm::mat3 cameraToPlanetBody =
                 )
             );
 
-        m_host.m_hubPlanetSurfaceRenderer.render(
+        m_resources.hubPlanetSurfaceRenderer().render(
             surfaceTexture,
             normalTexture,
             visualPlanetCenterPx,
@@ -860,7 +859,7 @@ const glm::mat3 cameraToPlanetBody =
                 готовую динамическую текстуру на сферу.
             */
             const GLuint cloudTexture =
-                m_host.m_proceduralCloudLayer.textureForStyle(
+                m_resources.proceduralCloudLayer().textureForStyle(
                     cloudStyle,
                     cloudVisualTimeSeconds
                 );
@@ -1000,7 +999,7 @@ const glm::mat3 cameraToPlanetBody =
             draw.usePolarFade =
                 false;
 
-            m_host.m_planetGlobeMeshRenderer.render(
+            m_resources.planetGlobeMeshRenderer().render(
                 draw
             );
         }
@@ -1062,10 +1061,10 @@ const glm::mat3 cameraToPlanetBody =
             Поэтому орбита лежит в локальной плоскости XY.
         */
         glColor4f(
-            m_host.m_hubVisuals.planetOrbitColor.r,
-            m_host.m_hubVisuals.planetOrbitColor.g,
-            m_host.m_hubVisuals.planetOrbitColor.b,
-            m_host.m_hubVisuals.planetOrbitColor.a
+            m_resources.hubVisuals().planetOrbitColor.r,
+            m_resources.hubVisuals().planetOrbitColor.g,
+            m_resources.hubVisuals().planetOrbitColor.b,
+            m_resources.hubVisuals().planetOrbitColor.a
         );
 
         drawHubMapCircleLocalXY(
@@ -1094,14 +1093,14 @@ const glm::mat3 cameraToPlanetBody =
         );
 
     glColor4f(
-        m_host.m_hubVisuals.hubOriginColor.r,
-        m_host.m_hubVisuals.hubOriginColor.g,
-        m_host.m_hubVisuals.hubOriginColor.b,
-        m_host.m_hubVisuals.hubOriginColor.a
+        m_resources.hubVisuals().hubOriginColor.r,
+        m_resources.hubVisuals().hubOriginColor.g,
+        m_resources.hubVisuals().hubOriginColor.b,
+        m_resources.hubVisuals().hubOriginColor.a
     );
 
     drawLocalMapCross(
-        m_host.activeLocalCameraSnapshot().project(surfacePoint),
+        m_owner.activeCamera().project(surfacePoint),
         5.0f
     );
 
@@ -1118,7 +1117,7 @@ GLuint HubMapPlanetPass::mapPreviewTextureForHubSnapshot(
 )
 {
     const auto* asset =
-        m_host.generatedAssetForIdentity(
+        m_resources.generatedAssetForIdentity(
             hub.systemId,
             hub.parentBodyId,
             hub.parentBodyId
@@ -1127,7 +1126,7 @@ GLuint HubMapPlanetPass::mapPreviewTextureForHubSnapshot(
     if (!asset)
         return 0;
 
-    return m_host.mapPreviewTextureForGeneratedAsset(*asset);
+    return m_resources.mapPreviewTextureForGeneratedAsset(*asset);
 }
 
 
@@ -1137,7 +1136,7 @@ GLuint HubMapPlanetPass::globalNormalTextureForHubSnapshot(
 )
 {
     const auto* asset =
-        m_host.generatedAssetForIdentity(
+        m_resources.generatedAssetForIdentity(
             hub.systemId,
             hub.parentBodyId,
             hub.parentBodyId
@@ -1146,7 +1145,7 @@ GLuint HubMapPlanetPass::globalNormalTextureForHubSnapshot(
     if (!asset)
         return 0;
 
-    return m_host.globalNormalTextureForGeneratedAsset(
+    return m_resources.globalNormalTextureForGeneratedAsset(
         *asset
     );
 }
@@ -1158,7 +1157,7 @@ HubMapPlanetPass::hubPlanetAtmosphereStyleForHub(
     const world::celestial::HubMapSnapshot& hub
 ) const
 {
-    return m_host.atmosphereStyleForBody(
+    return m_resources.atmosphereStyleForBody(
         hub.systemId,
         hub.parentBodyId,
         hub.parentBodyId,
@@ -1183,7 +1182,7 @@ HubMapPlanetPass::hubSphericalGridStyleForHub(
         );
 
     const auto* asset =
-        m_host.generatedAssetForIdentity(
+        m_resources.generatedAssetForIdentity(
             hub.systemId,
             hub.parentBodyId,
             hub.parentBodyId
@@ -1203,43 +1202,43 @@ HubMapPlanetPass::hubSphericalGridStyleForHub(
     // По умолчанию — холодная голубая сетка.
     style.radiusScale = 1.12;
     style.latitudeStepDeg =
-        m_host.m_hubVisuals.sphericalGridLatitudeStepDeg;
+        m_resources.hubVisuals().sphericalGridLatitudeStepDeg;
     style.longitudeStepDeg =
-        m_host.m_hubVisuals.sphericalGridLongitudeStepDeg;
+        m_resources.hubVisuals().sphericalGridLongitudeStepDeg;
     style.majorEvery =
-        m_host.m_hubVisuals.sphericalGridMajorEvery;
+        m_resources.hubVisuals().sphericalGridMajorEvery;
     style.samplesPerLine =
-        m_host.m_hubVisuals.sphericalGridSamplesPerLine;
+        m_resources.hubVisuals().sphericalGridSamplesPerLine;
     style.minorColor =
-        m_host.m_hubVisuals.sphericalGridMinorColor;
+        m_resources.hubVisuals().sphericalGridMinorColor;
     style.majorColor =
-        m_host.m_hubVisuals.sphericalGridMajorColor;
+        m_resources.hubVisuals().sphericalGridMajorColor;
     style.horizonFadeStart =
-        m_host.m_hubVisuals.sphericalGridHorizonFadeStart;
+        m_resources.hubVisuals().sphericalGridHorizonFadeStart;
     style.horizonFadeEnd =
-        m_host.m_hubVisuals.sphericalGridHorizonFadeEnd;
+        m_resources.hubVisuals().sphericalGridHorizonFadeEnd;
 
     if (bodyKey == "mars" ||
         bodyKey == "ares")
     {
         style.minorColor =
-            m_host.m_hubVisuals.marsGridMinorColor;
+            m_resources.hubVisuals().marsGridMinorColor;
         style.majorColor =
-            m_host.m_hubVisuals.marsGridMajorColor;
+            m_resources.hubVisuals().marsGridMajorColor;
     }
     else if (bodyKey == "venus")
     {
         style.minorColor =
-            m_host.m_hubVisuals.venusGridMinorColor;
+            m_resources.hubVisuals().venusGridMinorColor;
         style.majorColor =
-            m_host.m_hubVisuals.venusGridMajorColor;
+            m_resources.hubVisuals().venusGridMajorColor;
     }
     else if (bodyKey == "titan")
     {
         style.minorColor =
-            m_host.m_hubVisuals.titanGridMinorColor;
+            m_resources.hubVisuals().titanGridMinorColor;
         style.majorColor =
-            m_host.m_hubVisuals.titanGridMajorColor;
+            m_resources.hubVisuals().titanGridMajorColor;
     }
 
     return style;
@@ -1255,7 +1254,7 @@ HubMapPlanetPass::hubPlanetCloudStylesForHub(
 ) const
 {
     auto styles =
-        m_host.cloudStylesForBody(
+        m_resources.cloudStylesForBody(
             hub.systemId,
             hub.parentBodyId,
             hub.parentBodyId,

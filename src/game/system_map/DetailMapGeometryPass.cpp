@@ -1,5 +1,4 @@
 #include "src/game/system_map/DetailMapGeometryPass.h"
-#include "src/game/system_map/SystemMapRenderer.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
 
 #include <algorithm>
@@ -266,7 +265,7 @@ void DetailMapGeometryPass::renderScene(
                 selectedPoint->screen.x + 18.0f,
                 selectedPoint->screen.y - 9.0f,
                 13,
-                m_host.m_detailVisuals.selectedHubLabelColor
+                m_visuals.selectedHubLabelColor
             );
 
             text.endFrame();
@@ -325,10 +324,10 @@ void DetailMapGeometryPass::renderScene(
             activeCamera().project(station.positionMeters);
 
         glColor4f(
-            m_host.m_detailVisuals.stationMarkerColor.r,
-            m_host.m_detailVisuals.stationMarkerColor.g,
-            m_host.m_detailVisuals.stationMarkerColor.b,
-            m_host.m_detailVisuals.stationMarkerColor.a
+            m_visuals.stationMarkerColor.r,
+            m_visuals.stationMarkerColor.g,
+            m_visuals.stationMarkerColor.b,
+            m_visuals.stationMarkerColor.a
         );
         drawPlanetMapCross(p, 6.0f);
 
@@ -369,10 +368,10 @@ void DetailMapGeometryPass::renderScene(
             activeCamera().project(ship.positionMeters);
 
         glColor4f(
-            m_host.m_detailVisuals.selectedStationMarkerColor.r,
-            m_host.m_detailVisuals.selectedStationMarkerColor.g,
-            m_host.m_detailVisuals.selectedStationMarkerColor.b,
-            m_host.m_detailVisuals.selectedStationMarkerColor.a
+            m_visuals.selectedStationMarkerColor.r,
+            m_visuals.selectedStationMarkerColor.g,
+            m_visuals.selectedStationMarkerColor.b,
+            m_visuals.selectedStationMarkerColor.a
         );
         drawPlanetMapCross(p, 8.0f);
 
@@ -466,7 +465,7 @@ void DetailMapGeometryPass::renderScene(
         text.endFrame();
     }
 
-    if (m_host.m_detailVisuals.drawBodyTitle &&
+    if (m_visuals.drawBodyTitle &&
         planet.hasCentralBody &&
         !planet.planetName.empty())
     {
@@ -478,13 +477,13 @@ void DetailMapGeometryPass::renderScene(
                             viewport.height
                         ) *
                         static_cast<double>(
-                            m_host.m_detailVisuals
+                            m_visuals
                                 .bodyTitleHeightFraction
                         )
                     )
                 ),
-                m_host.m_detailVisuals.bodyTitleMinimumPx,
-                m_host.m_detailVisuals.bodyTitleMaximumPx
+                m_visuals.bodyTitleMinimumPx,
+                m_visuals.bodyTitleMaximumPx
             );
 
         const float titleMarginPx =
@@ -493,7 +492,7 @@ void DetailMapGeometryPass::renderScene(
                 static_cast<float>(
                     viewport.height
                 ) *
-                m_host.m_detailVisuals
+                m_visuals
                     .bodyTitleMarginHeightFraction
             );
 
@@ -514,7 +513,7 @@ void DetailMapGeometryPass::renderScene(
             ) -
             titleMarginPx,
             titleSizePx,
-            m_host.m_detailVisuals.bodyTitleColor
+            m_visuals.bodyTitleColor
         );
 
         text.endFrame();

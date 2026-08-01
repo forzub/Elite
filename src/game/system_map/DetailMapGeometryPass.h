@@ -3,9 +3,9 @@
 #include <glm/glm.hpp>
 
 #include "src/game/system_map/LocalMapPresentation.h"
+#include "src/game/system_map/DetailMapVisualSettings.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
-class SystemMapRenderer;
 struct Viewport;
 
 namespace game::system_map
@@ -13,8 +13,10 @@ namespace game::system_map
 class DetailMapGeometryPass
 {
 public:
-    explicit DetailMapGeometryPass(SystemMapRenderer& host) noexcept
-        : m_host(host)
+    explicit DetailMapGeometryPass(
+        const DetailMapVisualSettings& visuals
+    ) noexcept
+        : m_visuals(visuals)
     {
     }
 
@@ -70,7 +72,7 @@ private:
     );
 
 private:
-    SystemMapRenderer& m_host;
+    const DetailMapVisualSettings& m_visuals;
     const LocalMapCameraSnapshot* m_activeCamera = nullptr;
 };
 }

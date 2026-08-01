@@ -61,3 +61,9 @@ Stage-5 checks require Galaxy and System navigation to share
 supply only its root-domain policy and light-year convenience API. Anchor,
 hover and explicit selection remain independent states owned by the common
 core.
+
+
+Stage-6D checks require shared celestial assets, texture caches, environment
+timing, clouds, globe/ring renderers and map starfields to belong to
+`MapCelestialRenderResources`. Detail and Hub backend/pass components may not
+include, reference or friend the `SystemMapRenderer` facade.

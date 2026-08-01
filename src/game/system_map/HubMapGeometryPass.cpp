@@ -1,6 +1,6 @@
 #include "src/game/system_map/HubMapGeometryPass.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
-#include "src/game/system_map/SystemMapRenderer.h"
+#include "src/game/system_map/HubMapBackend.h"
 
 #include <algorithm>
 #include <cmath>
@@ -79,8 +79,8 @@ void HubMapGeometryPass::drawHubMapBox(
     for (const auto& edge : edges)
     {
         drawLocalMapLine(
-            m_host.activeLocalCameraSnapshot().project(points[edge[0]]),
-            m_host.activeLocalCameraSnapshot().project(points[edge[1]])
+            m_owner.activeCamera().project(points[edge[0]]),
+            m_owner.activeCamera().project(points[edge[1]])
         );
     }
 }
@@ -140,27 +140,27 @@ void HubMapGeometryPass::drawHubMapAxes(
     }
 
     const glm::dvec2 origin =
-        m_host.activeLocalCameraSnapshot().project(center);
+        m_owner.activeCamera().project(center);
 
     glColor4f(xColor.r, xColor.g, xColor.b, xColor.a);
 
     drawLocalMapLine(
         origin,
-        m_host.activeLocalCameraSnapshot().project(center + axes.x * axisLenMeters)
+        m_owner.activeCamera().project(center + axes.x * axisLenMeters)
     );
 
     glColor4f(yColor.r, yColor.g, yColor.b, yColor.a);
 
     drawLocalMapLine(
         origin,
-        m_host.activeLocalCameraSnapshot().project(center + axes.y * axisLenMeters)
+        m_owner.activeCamera().project(center + axes.y * axisLenMeters)
     );
 
     glColor4f(zColor.r, zColor.g, zColor.b, zColor.a);
 
     drawLocalMapLine(
         origin,
-        m_host.activeLocalCameraSnapshot().project(center + axes.z * axisLenMeters)
+        m_owner.activeCamera().project(center + axes.z * axisLenMeters)
     );
 }
 
@@ -209,8 +209,8 @@ void HubMapGeometryPass::drawHubMapVelocityArrow(
     );
 
     drawLocalMapLine(
-        m_host.activeLocalCameraSnapshot().project(center),
-        m_host.activeLocalCameraSnapshot().project(center + direction * lenMeters)
+        m_owner.activeCamera().project(center),
+        m_owner.activeCamera().project(center + direction * lenMeters)
     );
 }
 
@@ -445,10 +445,10 @@ void HubMapGeometryPass::drawHubMapAdaptiveGrid(
     double gridStep =
         100.0;
 
-    while ((gridStep * scale * m_host.activeLocalCameraSnapshot().state.zoom) < 28.0)
+    while ((gridStep * scale * m_owner.activeCamera().state.zoom) < 28.0)
         gridStep *= 2.0;
 
-    while ((gridStep * scale * m_host.activeLocalCameraSnapshot().state.zoom) > 90.0 &&
+    while ((gridStep * scale * m_owner.activeCamera().state.zoom) > 90.0 &&
            gridStep > 25.0)
     {
         gridStep *= 0.5;
@@ -462,10 +462,10 @@ void HubMapGeometryPass::drawHubMapAdaptiveGrid(
         ) + 2;
 
     glColor4f(
-        m_host.m_hubVisuals.localGridColor.r,
-        m_host.m_hubVisuals.localGridColor.g,
-        m_host.m_hubVisuals.localGridColor.b,
-        m_host.m_hubVisuals.localGridColor.a
+        m_visuals.localGridColor.r,
+        m_visuals.localGridColor.g,
+        m_visuals.localGridColor.b,
+        m_visuals.localGridColor.a
     );
 
     for (int i = -gridN; i <= gridN; ++i)
@@ -475,32 +475,32 @@ void HubMapGeometryPass::drawHubMapAdaptiveGrid(
             gridStep;
 
         drawLocalMapLine(
-            m_host.activeLocalCameraSnapshot().project(glm::dvec3(-gridN * gridStep, 0.0, v)),
-            m_host.activeLocalCameraSnapshot().project(glm::dvec3( gridN * gridStep, 0.0, v))
+            m_owner.activeCamera().project(glm::dvec3(-gridN * gridStep, 0.0, v)),
+            m_owner.activeCamera().project(glm::dvec3( gridN * gridStep, 0.0, v))
         );
 
         drawLocalMapLine(
-            m_host.activeLocalCameraSnapshot().project(glm::dvec3(v, 0.0, -gridN * gridStep)),
-            m_host.activeLocalCameraSnapshot().project(glm::dvec3(v, 0.0,  gridN * gridStep))
+            m_owner.activeCamera().project(glm::dvec3(v, 0.0, -gridN * gridStep)),
+            m_owner.activeCamera().project(glm::dvec3(v, 0.0,  gridN * gridStep))
         );
     }
 
     // Главные оси плоскости хаба.
     glColor4f(
-        m_host.m_hubVisuals.localGridAxisColor.r,
-        m_host.m_hubVisuals.localGridAxisColor.g,
-        m_host.m_hubVisuals.localGridAxisColor.b,
-        m_host.m_hubVisuals.localGridAxisColor.a
+        m_visuals.localGridAxisColor.r,
+        m_visuals.localGridAxisColor.g,
+        m_visuals.localGridAxisColor.b,
+        m_visuals.localGridAxisColor.a
     );
 
     drawLocalMapLine(
-        m_host.activeLocalCameraSnapshot().project(glm::dvec3(-gridN * gridStep, 0.0, 0.0)),
-        m_host.activeLocalCameraSnapshot().project(glm::dvec3( gridN * gridStep, 0.0, 0.0))
+        m_owner.activeCamera().project(glm::dvec3(-gridN * gridStep, 0.0, 0.0)),
+        m_owner.activeCamera().project(glm::dvec3( gridN * gridStep, 0.0, 0.0))
     );
 
     drawLocalMapLine(
-        m_host.activeLocalCameraSnapshot().project(glm::dvec3(0.0, 0.0, -gridN * gridStep)),
-        m_host.activeLocalCameraSnapshot().project(glm::dvec3(0.0, 0.0,  gridN * gridStep))
+        m_owner.activeCamera().project(glm::dvec3(0.0, 0.0, -gridN * gridStep)),
+        m_owner.activeCamera().project(glm::dvec3(0.0, 0.0,  gridN * gridStep))
     );
 }
 
@@ -532,7 +532,7 @@ glm::dvec3 HubMapGeometryPass::visualSizeForHubShip(
 
     const double pixelsPerMeter =
         scale *
-        m_host.activeLocalCameraSnapshot().state.zoom;
+        m_owner.activeCamera().state.zoom;
 
     if (pixelsPerMeter <= 0.0)
         return physicalSizeMeters;

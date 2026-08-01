@@ -1,10 +1,10 @@
 #include "src/game/system_map/HubMapBackend.h"
 #include "src/game/system_map/LocalMapPrimitiveRenderer.h"
-#include "src/game/system_map/SystemMapRenderer.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <stdexcept>
 
 #include <GLFW/glfw3.h>
 
@@ -24,12 +24,22 @@ namespace
 namespace game::system_map
 {
 HubMapBackend::HubMapBackend(
-    SystemMapRenderer& host
+    MapCelestialRenderResources& resources
 ) noexcept
-    : m_host(host),
-      m_geometryPass(host),
-      m_planetPass(host, *this)
+    : m_resources(resources),
+      m_geometryPass(*this, resources.hubVisuals()),
+      m_planetPass(resources, *this)
 {
+}
+
+
+const LocalMapCameraSnapshot&
+HubMapBackend::activeCamera() const
+{
+    if (!m_activeCamera)
+        throw std::logic_error("HubMapBackend camera is unavailable");
+
+    return *m_activeCamera;
 }
 
 
@@ -345,18 +355,16 @@ void HubMapBackend::renderHubMapPasses(
     const world::celestial::HubMapSnapshot& hub
 )
 {
-    const auto* previousCameraSnapshot =
-        m_host.m_activeLocalCameraSnapshot;
-    m_host.m_activeLocalCameraSnapshot =
-        &presentation.camera;
+    const auto* previousCameraSnapshot = m_activeCamera;
+    m_activeCamera = &presentation.camera;
 
     struct RestoreCameraSnapshot
     {
-        const game::system_map::LocalMapCameraSnapshot*& slot;
-        const game::system_map::LocalMapCameraSnapshot* previous;
+        const LocalMapCameraSnapshot*& slot;
+        const LocalMapCameraSnapshot* previous;
         ~RestoreCameraSnapshot() { slot = previous; }
     } restoreCameraSnapshot {
-        m_host.m_activeLocalCameraSnapshot,
+        m_activeCamera,
         previousCameraSnapshot
     };
 
@@ -379,7 +387,7 @@ void HubMapBackend::renderHubMapPasses(
     );
 
 
-    m_host.ensureGeneratedCelestialAssets();
+    m_resources.ensureGeneratedCelestialAssets();
 
     GLboolean depthWasEnabled =
         glIsEnabled(
@@ -443,10 +451,10 @@ void HubMapBackend::renderHubMapPasses(
     glLoadIdentity();
 
     glColor4f(
-        m_host.m_hubVisuals.backgroundColor.r,
-        m_host.m_hubVisuals.backgroundColor.g,
-        m_host.m_hubVisuals.backgroundColor.b,
-        m_host.m_hubVisuals.backgroundColor.a
+        m_resources.hubVisuals().backgroundColor.r,
+        m_resources.hubVisuals().backgroundColor.g,
+        m_resources.hubVisuals().backgroundColor.b,
+        m_resources.hubVisuals().backgroundColor.a
     );
 
     glBegin(GL_QUADS);
@@ -476,11 +484,21 @@ void HubMapBackend::renderHubMapPasses(
     }
 
 
-    if (m_host.m_hubVisuals.drawStarfield)
+    if (m_resources.hubVisuals().drawStarfield)
     {
-        m_host.drawMapStarfield(
+        const auto& visuals =
+            m_resources.hubVisuals();
+
+        m_resources.drawStarfield(
             viewport,
-            hub.systemPositionLy
+            hub.systemPositionLy,
+            presentation.camera.starfieldViewMatrix(),
+            visuals.starfieldFieldOfViewDeg,
+            visuals.starfieldSizeScale,
+            false,
+            visuals.starfieldBrightnessScale,
+            visuals.milkyWayIntensityScale,
+            visuals.milkyWayColorTint
         );
     }
 
@@ -496,7 +514,7 @@ void HubMapBackend::renderHubMapPasses(
     const double scale =
         presentation.scale;
     const double finalScale =
-        scale * m_host.activeLocalCameraSnapshot().state.zoom;
+        scale * activeCamera().state.zoom;
 
 
 
@@ -538,10 +556,10 @@ m_performanceStats.cpuPlanetBackdropMs =
         */
         glm::dvec2(
             centerPx.x +
-                m_host.activeLocalCameraSnapshot().state.pan.x,
+                activeCamera().state.pan.x,
 
             centerPx.y +
-                m_host.activeLocalCameraSnapshot().state.pan.y
+                activeCamera().state.pan.y
         ),
 
         /*
@@ -550,8 +568,8 @@ m_performanceStats.cpuPlanetBackdropMs =
         */
         finalScale,
 
-        m_host.activeLocalCameraSnapshot().state.yaw,
-        m_host.activeLocalCameraSnapshot().state.pitch
+        activeCamera().state.yaw,
+        activeCamera().state.pitch
     );
 
 
@@ -567,7 +585,7 @@ m_performanceStats.cpuPlanetBackdropMs =
 
     // Центр хаба / текущая орбитальная точка.
     const glm::dvec2 hubOriginScreen =
-        m_host.activeLocalCameraSnapshot().project(glm::dvec3(0.0));
+        activeCamera().project(glm::dvec3(0.0));
 
     const glm::vec4 hubOriginColor(
         1.0f,
@@ -613,7 +631,7 @@ m_performanceStats.cpuPlanetBackdropMs =
         }
 
         const glm::dvec2 modScreen =
-            m_host.activeLocalCameraSnapshot().project(mod.positionMeters);
+            activeCamera().project(mod.positionMeters);
 
         const double moduleRadiusMeters =
             glm::length(
@@ -627,8 +645,8 @@ m_performanceStats.cpuPlanetBackdropMs =
         const glm::vec4 moduleWireColor =
             mod.prime ||
             mod.kind == "station"
-                ? m_host.m_hubVisuals.primeModuleWireColor
-                : m_host.m_hubVisuals.regularModuleWireColor;
+                ? m_resources.hubVisuals().primeModuleWireColor
+                : m_resources.hubVisuals().regularModuleWireColor;
 
         const bool modelDrawn =
             m_geometryPass.drawHubMapAssemblyWire(
@@ -666,21 +684,21 @@ m_performanceStats.cpuPlanetBackdropMs =
 
         // Если модуль на текущем масштабе слишком мелкий,
         // добавляем screen-space маркер. Это не физический размер.
-        if (moduleRadiusPx < m_host.m_hubVisuals.moduleMarkerThresholdPx)
+        if (moduleRadiusPx < m_resources.hubVisuals().moduleMarkerThresholdPx)
         {
             const glm::vec4 markerColor =
                 mod.prime
-                    ? m_host.m_hubVisuals.primeModuleMarkerColor
-                    : m_host.m_hubVisuals.regularModuleMarkerColor;
+                    ? m_resources.hubVisuals().primeModuleMarkerColor
+                    : m_resources.hubVisuals().regularModuleMarkerColor;
 
             m_geometryPass.drawHubMapScreenMarker(
                 modScreen,
                 mod.prime
-                    ? m_host.m_hubVisuals.primeModuleMarkerRadiusPx
-                    : m_host.m_hubVisuals.regularModuleMarkerRadiusPx,
+                    ? m_resources.hubVisuals().primeModuleMarkerRadiusPx
+                    : m_resources.hubVisuals().regularModuleMarkerRadiusPx,
                 markerColor,
                 mod.prime,
-                m_host.m_hubVisuals.moduleMarkerSegments
+                m_resources.hubVisuals().moduleMarkerSegments
             );
         }
     }
@@ -700,7 +718,7 @@ m_performanceStats.cpuPlanetBackdropMs =
         }
 
         const glm::dvec2 shipScreen =
-            m_host.activeLocalCameraSnapshot().project(ship.positionMeters);
+            activeCamera().project(ship.positionMeters);
 
         const glm::dvec3 shipVisualSize =
             m_geometryPass.visualSizeForHubShip(
@@ -719,8 +737,8 @@ m_performanceStats.cpuPlanetBackdropMs =
 
        const glm::vec4 shipWireColor =
         ship.player
-            ? m_host.m_hubVisuals.playerShipWireColor
-            : m_host.m_hubVisuals.regularShipWireColor;
+            ? m_resources.hubVisuals().playerShipWireColor
+            : m_resources.hubVisuals().regularShipWireColor;
 
         // Если корабль на карте слишком маленький, wire-модель будет шумом.
         // Тогда рисуем fallback box с увеличенным visual size.
@@ -781,21 +799,21 @@ m_performanceStats.cpuPlanetBackdropMs =
         // Экранный маркер поверх корабля.
         // PLAYER виден всегда, остальные — когда мелкие.
         if (ship.player ||
-            shipRadiusPx < m_host.m_hubVisuals.shipMarkerThresholdPx)
+            shipRadiusPx < m_resources.hubVisuals().shipMarkerThresholdPx)
         {
             const glm::vec4 markerColor =
                 ship.player
-                    ? m_host.m_hubVisuals.playerShipMarkerColor
-                    : m_host.m_hubVisuals.regularShipMarkerColor;
+                    ? m_resources.hubVisuals().playerShipMarkerColor
+                    : m_resources.hubVisuals().regularShipMarkerColor;
 
             m_geometryPass.drawHubMapScreenMarker(
                 shipScreen,
                 ship.player
-                    ? m_host.m_hubVisuals.playerShipMarkerRadiusPx
-                    : m_host.m_hubVisuals.regularShipMarkerRadiusPx,
+                    ? m_resources.hubVisuals().playerShipMarkerRadiusPx
+                    : m_resources.hubVisuals().regularShipMarkerRadiusPx,
                 markerColor,
                 true,
-                m_host.m_hubVisuals.shipMarkerSegments
+                m_resources.hubVisuals().shipMarkerSegments
             );
         }
     }
@@ -835,7 +853,7 @@ m_performanceStats.cpuPlanetBackdropMs =
                 }
 
                 const glm::dvec2 p =
-                    m_host.activeLocalCameraSnapshot().project(mod.positionMeters);
+                    activeCamera().project(mod.positionMeters);
 
 
                 if (p.x < -160.0 ||
@@ -850,8 +868,8 @@ m_performanceStats.cpuPlanetBackdropMs =
                     mod.name,
                     static_cast<float>(p.x + 10.0),
                     static_cast<float>(p.y - 8.0),
-                    m_host.m_hubVisuals.primaryLabelPx,
-                    m_host.m_hubVisuals.moduleLabelColor
+                    m_resources.hubVisuals().primaryLabelPx,
+                    m_resources.hubVisuals().moduleLabelColor
                 );
 
                 if (!mod.kind.empty())
@@ -860,8 +878,8 @@ m_performanceStats.cpuPlanetBackdropMs =
                         mod.kind,
                         static_cast<float>(p.x + 10.0),
                         static_cast<float>(p.y + 8.0),
-                        m_host.m_hubVisuals.secondaryLabelPx,
-                        m_host.m_hubVisuals.moduleSubtitleColor
+                        m_resources.hubVisuals().secondaryLabelPx,
+                        m_resources.hubVisuals().moduleSubtitleColor
                     );
                 }
             }
@@ -876,7 +894,7 @@ m_performanceStats.cpuPlanetBackdropMs =
                 }
 
                 const glm::dvec2 p =
-                    m_host.activeLocalCameraSnapshot().project(ship.positionMeters);
+                    activeCamera().project(ship.positionMeters);
 
 
 
@@ -907,8 +925,8 @@ m_performanceStats.cpuPlanetBackdropMs =
                     label,
                     static_cast<float>(p.x + 10.0),
                     static_cast<float>(p.y - 8.0),
-                    m_host.m_hubVisuals.primaryLabelPx,
-                    m_host.m_hubVisuals.shipLabelColor
+                    m_resources.hubVisuals().primaryLabelPx,
+                    m_resources.hubVisuals().shipLabelColor
                 );
             }
 

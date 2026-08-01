@@ -7,10 +7,11 @@
 #include <glad/gl.h>
 
 #include "src/game/system_map/HubMapRenderContext.h"
+#include "src/game/system_map/LocalMapPresentation.h"
 #include "src/game/system_map/HubMapGeometryPass.h"
 #include "src/game/system_map/HubMapPlanetPass.h"
+#include "src/game/system_map/MapCelestialRenderResources.h"
 
-class SystemMapRenderer;
 
 namespace game::system_map
 {
@@ -36,7 +37,7 @@ struct HubMapPerformanceStats
 class HubMapBackend final : public HubMapRenderContext
 {
 public:
-    explicit HubMapBackend(SystemMapRenderer& host) noexcept;
+    explicit HubMapBackend(MapCelestialRenderResources& resources) noexcept;
 
     void renderHubMapPasses(
         const HubMapPresentation& presentation,
@@ -50,8 +51,8 @@ public:
     }
 
 private:
-    friend class ::SystemMapRenderer;
     friend class HubMapPlanetPass;
+    friend class HubMapGeometryPass;
 
     enum class GpuStage : std::size_t
     {
@@ -69,6 +70,8 @@ private:
         static_cast<std::size_t>(GpuStage::Count);
     static constexpr std::size_t kGpuQuerySlotCount = 4;
 
+    const LocalMapCameraSnapshot& activeCamera() const;
+
     void ensureGpuQueries();
     void collectGpuQueries();
     void beginGpuFrame();
@@ -77,7 +80,8 @@ private:
     void endGpuStage();
 
 private:
-    SystemMapRenderer& m_host;
+    MapCelestialRenderResources& m_resources;
+    const LocalMapCameraSnapshot* m_activeCamera = nullptr;
     HubMapGeometryPass m_geometryPass;
     HubMapPlanetPass m_planetPass;
     HubMapPerformanceStats m_performanceStats;

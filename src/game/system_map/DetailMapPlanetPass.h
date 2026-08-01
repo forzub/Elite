@@ -7,20 +7,22 @@
 
 #include "src/game/system_map/LocalMapEnvironmentStyle.h"
 #include "src/game/system_map/LocalMapPresentation.h"
+#include "src/game/system_map/MapCelestialRenderResources.h"
 #include "src/render/celestial/CelestialShapeMesh.h"
 #include "src/render/celestial/ProceduralCloudLayer.h"
 #include "src/render/celestial/rings/PlanetRingRenderer.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
-class SystemMapRenderer;
 
 namespace game::system_map
 {
 class DetailMapPlanetPass
 {
 public:
-    explicit DetailMapPlanetPass(SystemMapRenderer& host) noexcept
-        : m_host(host)
+    explicit DetailMapPlanetPass(
+        MapCelestialRenderResources& resources
+    ) noexcept
+        : m_resources(resources)
     {
     }
 
@@ -130,7 +132,7 @@ private:
     );
 
 private:
-    SystemMapRenderer& m_host;
+    MapCelestialRenderResources& m_resources;
     const LocalMapCameraSnapshot* m_activeCamera = nullptr;
 
     render::celestial::CelestialShapeMeshLibrary m_shapeMeshes;

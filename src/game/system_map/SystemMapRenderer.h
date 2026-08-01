@@ -28,23 +28,14 @@
 
 #include "src/game/navigation/NavigationAddressFormatter.h"
 #include "src/game/navigation/NavigationRegionCatalog.h"
-#include "src/world/celestial/visual/CelestialGeneratedAssetLibrary.h"
-#include "src/world/celestial/visual/CelestialEnvironmentProfile.h"
 
 #include "src/render/celestial/CelestialShapeMesh.h"
-#include "src/render/celestial/ProceduralCloudLayer.h"
-#include "src/render/celestial/HubPlanetSurfaceRenderer.h"
-#include "src/render/celestial/PlanetGlobeMeshRenderer.h"
-#include "src/render/starfield/GalaxyStarfieldRenderer.h"
 
 #include "src/render/navigation/NavigationCoordinateOverlay.h"
 
-#include "src/render/celestial/rings/PlanetRingRenderer.h"
 
 
 #include "src/game/system_map/SystemMapVisualSettings.h"
-#include "src/game/system_map/DetailMapVisualSettings.h"
-#include "src/game/system_map/HubMapVisualSettings.h"
 #include "src/game/system_map/MapTransitionController.h"
 #include "src/game/system_map/MapMode.h"
 #include "src/game/system_map/MapIntent.h"
@@ -74,7 +65,7 @@
 #include "src/game/system_map/HubMapSceneRenderer.h"
 #include "src/game/system_map/DetailMapBackend.h"
 #include "src/game/system_map/HubMapBackend.h"
-#include "src/game/system_map/LocalMapEnvironmentStyle.h"
+#include "src/game/system_map/MapCelestialRenderResources.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
@@ -151,12 +142,6 @@ public:
     selectedTerminalDetailCell() const;
 
 private:
-    friend class game::system_map::DetailMapBackend;
-    friend class game::system_map::DetailMapGeometryPass;
-    friend class game::system_map::DetailMapPlanetPass;
-    friend class game::system_map::HubMapBackend;
-    friend class game::system_map::HubMapGeometryPass;
-    friend class game::system_map::HubMapPlanetPass;
 
     struct Vertex
     {
@@ -190,10 +175,9 @@ private:
         m_localMapPresentationBuilder;
     game::system_map::DetailMapPresentation m_detailPresentation;
     game::system_map::HubMapPresentation m_hubPresentation;
-    const game::system_map::LocalMapCameraSnapshot*
-        m_activeLocalCameraSnapshot = nullptr;
     game::system_map::DetailMapSceneRenderer m_detailSceneRenderer;
     game::system_map::HubMapSceneRenderer m_hubSceneRenderer;
+    game::system_map::MapCelestialRenderResources m_mapResources;
     game::system_map::DetailMapBackend m_detailBackend;
     game::system_map::HubMapBackend m_hubBackend;
 
@@ -209,37 +193,6 @@ private:
         const Viewport& viewport,
         float alpha
     );
-
-    GLuint globalAlbedoTextureForGeneratedAsset(
-        const world::celestial::visual::CelestialGeneratedAssetSet& asset
-    );
-
-    GLuint globalAlbedoTextureForBody(
-        const world::celestial::SystemMapBody& body
-    );
-
-    GLuint globalNormalTextureForGeneratedAsset(
-        const world::celestial::visual::CelestialGeneratedAssetSet& asset
-    );
-
-
-    GLuint globalAlbedoTextureForHubSnapshot(
-        const world::celestial::HubMapSnapshot& hub
-    );
-
-
-    const world::celestial::visual::CelestialGeneratedAssetSet*
-    generatedAssetForIdentity(
-        int systemId,
-        const std::string& bodyId,
-        const std::string& displayName
-    ) const;
-
-
-    GLuint mapPreviewTextureForGeneratedAsset(
-        const world::celestial::visual::CelestialGeneratedAssetSet& asset
-    );
-
 
     void drawNavigationCoordinateOverlay(
         const Viewport& viewport,
@@ -257,61 +210,12 @@ private:
         const Viewport& viewport
     );
 
-
-using HubPlanetAtmosphereStyle =
-    game::system_map::LocalMapAtmosphereStyle;
-
-
 private:
     void ensureGlObjects();
     void ensureShader();
 
     void ensureTexturedGlObjects();
     void ensureTexturedShader();
-
-    void ensureGeneratedCelestialAssets();
-
-
-    void ensureEnvironmentProfiles();
-
-    void beginEnvironmentRenderSessionIfNeeded(
-        Mode mode,
-        int systemId,
-        const std::string& bodyId
-    );
-
-    world::celestial::visual::CelestialEnvironmentProfile
-    resolvedEnvironmentProfileForBody(
-        int systemId,
-        const std::string& bodyId,
-        const std::string& displayName,
-        const std::string& environmentPresetId
-    ) const;
-
-
-
-    std::vector<
-        render::celestial::ProceduralCloudStyle
-    >
-    cloudStylesForBody(
-        int systemId,
-        const std::string& bodyId,
-        const std::string& displayName,
-        const std::string& environmentPresetId,
-        double planetRadiusMeters,
-        int textureWidth,
-        int textureHeight
-    ) const;
-
-
-
-    HubPlanetAtmosphereStyle atmosphereStyleForBody(
-        int systemId,
-        const std::string& bodyId,
-        const std::string& displayName,
-        const std::string& environmentPresetId
-    ) const;
-
 
     void ensureBackground();
     void drawBackground();
@@ -427,11 +331,6 @@ private:
 
     void flushTexturedBodies(const glm::mat4& mvp) override;
 
-
-    const world::celestial::visual::CelestialGeneratedAssetSet*
-    generatedAssetForBody(
-        const world::celestial::SystemMapBody& body
-    ) const;
 
     void addCross(
         const glm::vec3& center,
@@ -569,10 +468,6 @@ private:
 
 
 
-    const game::system_map::LocalMapCameraSnapshot&
-    activeLocalCameraSnapshot() const;
-
-
     void handleDetailAndHubInput(
         const Viewport& vp,
         GLFWwindow* window,
@@ -587,11 +482,6 @@ private:
 
     void drawMapStarfield(
         const Viewport& viewport,
-        const glm::dvec3& observerPositionLy
-    );
-
-    void drawMapStarfield(
-        const Viewport& viewport,
         const glm::dvec3& observerPositionLy,
         const glm::mat4& cameraView,
         float fieldOfViewDeg,
@@ -601,11 +491,6 @@ private:
         float milkyWayIntensityScale = 1.0f,
         const glm::vec3& milkyWayColorTint = glm::vec3(1.0f)
     ) override;
-
-    double environmentVisualTimeSeconds(
-        double sourceTimeSeconds
-    );
-
 
 
 private:
@@ -682,52 +567,6 @@ private:
 
     std::string m_navigationNamingFactionId = "sol_authority";
     std::string m_navigationNamingLocale = "ru";
-
-
-
-    DetailMapVisualSettings m_detailVisuals;
-    HubMapVisualSettings m_hubVisuals;
-
-
-
-    world::celestial::visual::CelestialGeneratedAssetLibrary m_generatedCelestialAssets;
-
-    bool m_generatedCelestialAssetsAttempted = false;
-    bool m_generatedCelestialAssetsLoaded = false;
-
-
-    world::celestial::visual::CelestialEnvironmentProfileLibrary m_environmentProfiles;
-
-    bool m_environmentProfilesAttempted = false;
-    bool m_environmentProfilesLoaded = false;
-
-    std::uint32_t m_environmentMapOpenSeed = 0u;
-    std::string m_environmentRenderSessionKey;
-
-
-
-    std::unordered_map<std::string, GLuint> m_mapPreviewTextureByAssetKey;
-    std::unordered_map<std::string, GLuint> m_globalAlbedoTextureByAssetKey;
-    std::unordered_map<std::string, GLuint> m_globalNormalTextureByAssetKey;
-    render::celestial::HubPlanetSurfaceRenderer m_hubPlanetSurfaceRenderer;
-    render::celestial::PlanetGlobeMeshRenderer m_planetGlobeMeshRenderer;
-
-
-    render::celestial::rings::PlanetRingRenderer m_planetRingRenderer;
-
-
-    GalaxyStarfieldRenderer m_mapStarfieldRenderer;
-    GalaxyStarfieldRenderer m_galaxyBackdropStarfieldRenderer;
-
-    double m_environmentVisualTimeSeconds = 0.0;
-    double m_environmentLastSourceTimeSeconds = 0.0;
-    double m_environmentLastWallClockSeconds = 0.0;
-    bool m_environmentVisualTimeInitialized = false;
-
-    bool m_mapStarfieldInitialized = false;
-    bool m_galaxyBackdropStarfieldInitialized = false;
-    render::celestial::ProceduralCloudLayer m_proceduralCloudLayer;
-
 
 
 

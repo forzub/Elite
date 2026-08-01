@@ -183,14 +183,13 @@ Detail and Hub scene renderers target dedicated `DetailMapBackend` and
 render-context interfaces. The Hub backend owns its asynchronous GPU timer-query
 state and exposes read-only performance statistics to the facade.
 
-Hub rendering is now physically split into `HubMapGeometryPass` and
+Hub rendering is physically split into `HubMapGeometryPass` and
 `HubMapPlanetPass`. The geometry pass owns the Hub GPU geometry renderer; the
 planet pass owns the soft-layer overlay, spherical-grid renderer and cached
 planet visual geometry. `HubMapBackend` coordinates these passes and owns GPU
-timing, while `SystemMapRenderer` only supplies shared celestial assets and
-common local-map primitives through a temporary friend bridge.
+timing.
 
-Both legacy local-map implementation files have now been removed.
+Both legacy local-map implementation files have been removed.
 
 Detail rendering is physically split into `DetailMapPlanetPass` and
 `DetailMapGeometryPass`. The planet pass owns the Detail-only shape-mesh cache
@@ -199,12 +198,28 @@ orbit, marker, axes, velocity and label drawing. `DetailMapBackend` coordinates
 both passes.
 
 The simple line, cross and circle primitives that were historically defined in
-the Detail implementation are now provided by `LocalMapPrimitiveRenderer` and
-shared by Detail and Hub. This prevents Hub from depending on a Detail-named
-facade method after `SystemMapRendererDetail.inl` is removed.
+the Detail implementation are provided by `LocalMapPrimitiveRenderer` and
+shared by Detail and Hub.
 
-`SystemMapRenderer` remains the subsystem facade and still supplies resources
-that are genuinely shared with System or Hub rendering, such as generated
-celestial assets, the planet globe mesh renderer, ring renderer, procedural
-cloud cache and environment timing. Those shared services are the remaining
-friend bridge rather than Detail-specific ownership.
+## Shared map celestial resources
+
+`MapCelestialRenderResources` is the explicit owner of resources shared across
+map modes:
+
+- generated celestial asset and environment-profile libraries;
+- preview, albedo and normal texture caches;
+- procedural cloud cache and environment presentation clock;
+- globe, ring and Hub surface renderers;
+- astronomical map and distant-galaxy starfields;
+- Detail and Hub visual settings.
+
+Detail and Hub backends receive this owner explicitly. They do not include,
+reference or friend `SystemMapRenderer`. The Hub camera snapshot is owned by
+`HubMapBackend` for the duration of its immutable presentation frame, rather
+than being stored in the facade.
+
+`SystemMapRenderer` is now the map subsystem coordinator and the render context
+for the still-shared Galaxy/System primitive pipeline. It owns mode state,
+Views, interactions, presentation builders, scene frames, transitions and the
+backend objects, but no Detail/Hub-specific rendering resources or hidden local
+camera state.

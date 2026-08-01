@@ -687,6 +687,150 @@ bool SystemMapView::navigationCellsInteractive(
             minimumInteractiveDiameterPx;
 }
 
+void SystemMapView::updateNavigationHoverPresentation(
+    const Viewport& viewport,
+    double nowSeconds
+)
+{
+    const bool currentLevelCellsInteractive =
+        navigationCellsInteractive(viewport);
+
+    double hoverDeltaSeconds = 0.0;
+
+    if (m_state.hoverVisualLastTimeSeconds > 0.0)
+    {
+        hoverDeltaSeconds =
+            std::clamp(
+                nowSeconds -
+                    m_state.hoverVisualLastTimeSeconds,
+                0.0,
+                0.10
+            );
+    }
+
+    m_state.hoverVisualLastTimeSeconds = nowSeconds;
+
+    const auto anchor =
+        m_state.navigationGrid.anchorCell();
+
+    const std::optional<navigation::CubicNavigationCell>
+        selectedCell =
+            m_state.navigationGrid.hasSelectedCell()
+                ? std::optional<navigation::CubicNavigationCell>(
+                    m_state.navigationGrid.selectedCell()
+                  )
+                : std::nullopt;
+
+    std::optional<navigation::CubicNavigationCell>
+        hoverTargetCell;
+
+    if (currentLevelCellsInteractive &&
+        m_state.navigationGrid.hasHoveredCell())
+    {
+        const auto& logicalHovered =
+            m_state.navigationGrid.hoveredCell();
+
+        const bool sameAsAnchor =
+            logicalHovered.level == anchor.level &&
+            logicalHovered.index == anchor.index;
+
+        const bool sameAsSelected =
+            selectedCell.has_value() &&
+            logicalHovered.level == selectedCell->level &&
+            logicalHovered.index == selectedCell->index;
+
+        if (!sameAsAnchor && !sameAsSelected)
+            hoverTargetCell = logicalHovered;
+    }
+
+    const bool hoverTargetChanged =
+        hoverTargetCell.has_value() &&
+        (
+            !m_state.hoverVisualCell.has_value() ||
+            hoverTargetCell->level !=
+                m_state.hoverVisualCell->level ||
+            hoverTargetCell->index !=
+                m_state.hoverVisualCell->index
+        );
+
+    if (hoverTargetChanged)
+    {
+        if (m_state.hoverVisualCell.has_value() &&
+            m_state.hoverVisualAlpha > 0.001f)
+        {
+            m_state.hoverOutgoingCell =
+                m_state.hoverVisualCell;
+            m_state.hoverOutgoingAlpha =
+                m_state.hoverVisualAlpha;
+        }
+
+        m_state.hoverVisualCell = hoverTargetCell;
+        m_state.hoverVisualAlpha = 0.0f;
+    }
+
+    if (hoverTargetCell.has_value())
+    {
+        const float fadeInSeconds =
+            std::max(
+                0.001f,
+                m_controls.navigationHoverFadeInSeconds
+            );
+
+        m_state.hoverVisualAlpha =
+            std::min(
+                1.0f,
+                m_state.hoverVisualAlpha +
+                    static_cast<float>(hoverDeltaSeconds) /
+                        fadeInSeconds
+            );
+    }
+    else
+    {
+        const float fadeOutSeconds =
+            std::max(
+                0.001f,
+                m_controls.navigationHoverFadeOutSeconds
+            );
+
+        m_state.hoverVisualAlpha =
+            std::max(
+                0.0f,
+                m_state.hoverVisualAlpha -
+                    static_cast<float>(hoverDeltaSeconds) /
+                        fadeOutSeconds
+            );
+
+        if (m_state.hoverVisualAlpha <= 0.001f)
+        {
+            m_state.hoverVisualAlpha = 0.0f;
+            m_state.hoverVisualCell.reset();
+        }
+    }
+
+    if (m_state.hoverOutgoingCell.has_value())
+    {
+        const float fadeOutSeconds =
+            std::max(
+                0.001f,
+                m_controls.navigationHoverFadeOutSeconds
+            );
+
+        m_state.hoverOutgoingAlpha =
+            std::max(
+                0.0f,
+                m_state.hoverOutgoingAlpha -
+                    static_cast<float>(hoverDeltaSeconds) /
+                        fadeOutSeconds
+            );
+
+        if (m_state.hoverOutgoingAlpha <= 0.001f)
+        {
+            m_state.hoverOutgoingAlpha = 0.0f;
+            m_state.hoverOutgoingCell.reset();
+        }
+    }
+}
+
 glm::dvec3 SystemMapView::navigationCursorAu() const
 {
     if (m_state.lastScale <= 0.0f)

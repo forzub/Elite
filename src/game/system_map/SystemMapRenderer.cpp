@@ -3128,6 +3128,10 @@ void SystemMapRenderer::resetView()
 
     m_detailView.reset();
     m_hubView.reset();
+    m_detailPresentation =
+        game::system_map::DetailMapPresentation{};
+    m_hubPresentation =
+        game::system_map::HubMapPresentation{};
     m_systemView.state().selectedBodyId.clear();
     m_systemView.state().selectedHubId.clear();
     m_systemView.state().selectedHubParentBodyId.clear();
@@ -3249,6 +3253,22 @@ void SystemMapRenderer::setMode(Mode mode)
     if (m_mode == mode)
         return;
 
+    const Mode previousMode = m_mode;
+
+    if (previousMode == Mode::Detail)
+    {
+        auto& systemState = m_systemView.state();
+        const auto& detailState = m_detailView.state();
+
+        systemState.selectedHubId =
+            detailState.selectedHubId;
+        systemState.selectedHubParentBodyId =
+            detailState.selectedHubParentBodyId;
+
+        if (!systemState.selectedHubId.empty())
+            systemState.selectedBodyId.clear();
+    }
+
     m_mode = mode;
 
     /*
@@ -3262,13 +3282,31 @@ void SystemMapRenderer::setMode(Mode mode)
         );
     }
 
-
-
     if (m_mode == Mode::Detail)
+    {
         m_detailView.reset();
+        m_detailView.selectHub(
+            m_systemView.state().selectedHubId,
+            m_systemView.state().selectedHubParentBodyId
+        );
+        m_detailPresentation =
+            game::system_map::DetailMapPresentation{};
+    }
 
     if (m_mode == Mode::Hub)
+    {
+        if (previousMode != Mode::Detail)
+        {
+            m_detailView.selectHub(
+                m_systemView.state().selectedHubId,
+                m_systemView.state().selectedHubParentBodyId
+            );
+        }
+
         m_hubView.beginScene();
+        m_hubPresentation =
+            game::system_map::HubMapPresentation{};
+    }
 }
 
 
@@ -4294,8 +4332,16 @@ void SystemMapRenderer::render(
 
     if (m_mode == Mode::Detail)
     {
+        m_detailPresentation =
+            m_localMapPresentationBuilder.buildDetail(
+                m_detailView,
+                viewport,
+                planet
+            );
+
         m_detailSceneRenderer.render(
             m_detailView,
+            m_detailPresentation,
             *this,
             viewport,
             planet
@@ -4303,8 +4349,16 @@ void SystemMapRenderer::render(
     }
     else if (m_mode == Mode::Hub)
     {
+        m_hubPresentation =
+            m_localMapPresentationBuilder.buildHub(
+                m_hubView,
+                viewport,
+                hub
+            );
+
         m_hubSceneRenderer.render(
             m_hubView,
+            m_hubPresentation,
             *this,
             viewport,
             hub

@@ -23,12 +23,49 @@ double wrapLocalMapAngle(double angle)
         angle += twoPi;
     return angle;
 }
+
+int pickDetailHub(
+    const DetailMapFrameData& frame,
+    double mouseX,
+    double mouseY
+)
+{
+    int bestIndex = -1;
+    float bestDistance = 1.0e30f;
+    const glm::vec2 mouse(
+        static_cast<float>(mouseX),
+        static_cast<float>(mouseY)
+    );
+
+    for (int i = 0;
+         i < static_cast<int>(frame.hubScreenPoints.size());
+         ++i)
+    {
+        const auto& point = frame.hubScreenPoints[i];
+        if (!point.visible)
+            continue;
+
+        const float distance =
+            glm::length(point.screen - mouse);
+
+        if (distance <= point.screenRadiusPx &&
+            distance < bestDistance)
+        {
+            bestDistance = distance;
+            bestIndex = i;
+        }
+    }
+
+    return bestIndex;
+}
 }
 
 LocalMapInteractionResult LocalMapInteraction::handle(
     MapMode mode,
     DetailMapView& detailView,
     HubMapView& hubView,
+    const DetailMapFrameData& detailFrame,
+    const HubMapFrameData& hubFrame,
     const Viewport& viewport,
     GLFWwindow*,
     double mouseX,
@@ -76,10 +113,10 @@ LocalMapInteractionResult LocalMapInteraction::handle(
             );
             const glm::dvec2 mousePx(localMouseX, localMouseY);
             const double safeScale =
-                std::max(0.000001, hubView.frame().scale);
+                std::max(0.000001, hubFrame.scale);
 
             glm::dvec3 pivot(0.0);
-            if (!hubView.pickOrbitPivot(mousePx, pivot))
+            if (!hubView.pickOrbitPivot(hubFrame, mousePx, pivot))
             {
                 pivot = hubView.unprojectCursorToLocal(
                     mousePx,
@@ -105,15 +142,19 @@ LocalMapInteractionResult LocalMapInteraction::handle(
             movement <= controls.clickMoveThresholdPx)
         {
             const int picked =
-                detailView.pickHub(localMouseX, localMouseY);
+                pickDetailHub(
+                    detailFrame,
+                    localMouseX,
+                    localMouseY
+                );
 
             if (picked >= 0 &&
                 picked < static_cast<int>(
-                    detailView.frame().hubScreenPoints.size()
+                    detailFrame.hubScreenPoints.size()
                 ))
             {
                 const auto& point =
-                    detailView.frame().hubScreenPoints[picked];
+                    detailFrame.hubScreenPoints[picked];
 
                 result.selectionAction =
                     LocalMapInteractionResult::SelectionAction::SelectHub;

@@ -61,8 +61,6 @@ namespace game::system_map
         virtual void ensureSystemRenderResources() = 0;
         virtual SystemMapFrameData& systemFrameData() = 0;
 
-        virtual double currentTimeSeconds() const = 0;
-
         virtual void drawMapStarfield(
             const Viewport& viewport,
             const glm::dvec3& observerPositionLy,

@@ -2833,7 +2833,8 @@ void SystemMapRenderer::endHubGpuStage()
 
 
 void SystemMapRenderer::renderHubMapPasses(
-    game::system_map::HubMapView& view,
+    const game::system_map::HubMapView& view,
+    const game::system_map::HubMapPresentation& presentation,
     const Viewport& viewport,
     const world::celestial::HubMapSnapshot& hub
 )
@@ -2970,83 +2971,12 @@ void SystemMapRenderer::renderHubMapPasses(
         cpuBackgroundStartMs;
 
 
-    const glm::dvec2 centerPx(
-        static_cast<double>(viewport.width) * 0.5,
-        static_cast<double>(viewport.height) * 0.5
-    );
-
-    double maxDist =
-        std::max(
-            1000.0,
-            hub.scene.halfExtentMeters
-        );
-
-    for (const auto& m : hub.scene.objects)
-    {
-        if (!m.valid ||
-            m.objectClass !=
-                world::celestial::DetailObjectClass::Hub)
-        {
-            continue;
-        }
-
-        maxDist =
-            std::max(
-                maxDist,
-                glm::length(m.positionMeters) +
-                glm::length(m.sizeMeters)
-            );
-    }
-
-    for (const auto& s : hub.scene.objects)
-    {
-        if (!s.valid ||
-            s.objectClass !=
-                world::celestial::DetailObjectClass::Ship)
-        {
-            continue;
-        }
-
-        maxDist =
-            std::max(
-                maxDist,
-                glm::length(s.positionMeters) +
-                800.0
-            );
-    }
-
-    // Планета и орбита не должны раздувать масштаб карты до состояния:
-    // "станция стала точкой, поздравляем, вы снова ничего не видите".
-    //
-    // Поэтому масштаб выбираем по объектам хаба, а планету рисуем как
-    // ориентир в том же масштабе. Если центр планеты далеко за экраном,
-    // видна будет дуга поверхности/орбиты — именно это и нужно.
-    maxDist =
-        std::max(
-            maxDist,
-            2500.0
-        );
-
-    const double halfPx =
-        std::min(
-            viewport.width,
-            viewport.height
-        ) * 0.38;
-
+    const glm::dvec2& centerPx =
+        presentation.centerPx;
     const double scale =
-        halfPx /
-        std::max(
-            1.0,
-            maxDist
-        );
-
-    m_hubView.frame().scale = scale;
-    m_hubView.frame().centerPx = centerPx;
-    m_hubView.frame().pickables.clear();
+        presentation.scale;
     const double finalScale =
-        scale *
-        activeDetailCamera().zoom;
-
+        scale * view.camera().zoom;
 
 
 
@@ -3224,32 +3154,6 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
             moduleRadiusMeters *
             finalScale;
 
-        {
-            HubMapPickable pickable;
-
-            pickable.localCenterMeters =
-                mod.positionMeters;
-
-            pickable.screenCenterPx =
-                modScreen;
-
-            pickable.screenRadiusPx =
-                std::max(
-                    18.0,
-                    moduleRadiusPx
-                );
-
-            pickable.priority =
-                mod.prime ? 20 : 10;
-
-            pickable.label =
-                mod.name;
-
-            m_hubView.frame().pickables.push_back(
-                pickable
-            );
-        }
-
         const glm::vec4 moduleWireColor =
             mod.prime ||
             mod.kind == "station"
@@ -3346,34 +3250,6 @@ m_hubMapPerformanceStats.cpuPlanetBackdropMs =
         const double shipRadiusPx =
             shipRadiusMeters *
             finalScale;
-
-        {
-            HubMapPickable pickable;
-
-            pickable.localCenterMeters =
-                ship.positionMeters;
-
-            pickable.screenCenterPx =
-                shipScreen;
-
-            pickable.screenRadiusPx =
-                std::max(
-                    ship.player ? 22.0 : 18.0,
-                    shipRadiusPx
-                );
-
-            pickable.priority =
-                ship.player ? 100 : 50;
-
-            pickable.label =
-                ship.player
-                    ? "PLAYER"
-                    : ship.name;
-
-            m_hubView.frame().pickables.push_back(
-                pickable
-            );
-        }
 
        const glm::vec4 shipWireColor =
         ship.player

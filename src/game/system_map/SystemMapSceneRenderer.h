@@ -10,32 +10,27 @@ namespace world::celestial
 
 namespace game::system_map
 {
+    struct SystemMapPresentation;
     class SystemMapRenderContext;
     class SystemMapView;
 
     /*
         System draw-pass orchestrator.
 
-        It owns no OpenGL objects and no input state. Persistent presentation
-        state lives in SystemMapView; frame-local pick data is written through
-        SystemMapRenderContext into SystemMapFrameData.
+        It consumes immutable view and presentation state, owns no OpenGL
+        objects and performs no persistent state synchronization. Frame-local
+        pick data is written through SystemMapRenderContext.
     */
     class SystemMapSceneRenderer
     {
     public:
         void render(
-            SystemMapView& view,
+            const SystemMapView& view,
             SystemMapRenderContext& context,
             const Viewport& viewport,
             const world::celestial::SystemMapSnapshot& system,
-            const world::celestial::PlayerNavigationState& navigation
-        ) const;
-
-    private:
-        double resolvePresentationTimeSeconds(
-            SystemMapView& view,
-            const world::celestial::SystemMapSnapshot& system,
-            double wallNowSeconds
+            const world::celestial::PlayerNavigationState& navigation,
+            const SystemMapPresentation& presentation
         ) const;
     };
 }

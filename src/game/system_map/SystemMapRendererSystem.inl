@@ -337,25 +337,6 @@ void SystemMapRenderer::drawSystemNavigationGrid(
     const bool currentLevelCellsInteractive =
         m_systemView.navigationCellsInteractive(vp);
 
-    const double hoverNowSeconds =
-        glfwGetTime();
-
-    double hoverDeltaSeconds = 0.0;
-
-    if (m_systemView.state().hoverVisualLastTimeSeconds > 0.0)
-    {
-        hoverDeltaSeconds =
-            std::clamp(
-                hoverNowSeconds -
-                    m_systemView.state().hoverVisualLastTimeSeconds,
-                0.0,
-                0.10
-            );
-    }
-
-    m_systemView.state().hoverVisualLastTimeSeconds =
-        hoverNowSeconds;
-
     const auto anchor =
         m_systemView.state().navigationGrid.anchorCell();
 
@@ -366,122 +347,6 @@ void SystemMapRenderer::drawSystemNavigationGrid(
                     m_systemView.state().navigationGrid.selectedCell()
                   )
                 : std::nullopt;
-
-    std::optional<game::navigation::CubicNavigationCell>
-        hoverTargetCell;
-
-    if (currentLevelCellsInteractive &&
-        m_systemView.state().navigationGrid.hasHoveredCell())
-    {
-        const auto& logicalHovered =
-            m_systemView.state().navigationGrid.hoveredCell();
-
-        const bool sameAsAnchor =
-            logicalHovered.level == anchor.level &&
-            logicalHovered.index == anchor.index;
-
-        const bool sameAsSelected =
-            selectedCell.has_value() &&
-            logicalHovered.level == selectedCell->level &&
-            logicalHovered.index == selectedCell->index;
-
-        if (!sameAsAnchor &&
-            !sameAsSelected)
-        {
-            hoverTargetCell = logicalHovered;
-        }
-    }
-
-    const bool hoverTargetChanged =
-        hoverTargetCell.has_value() &&
-        (
-            !m_systemView.state().hoverVisualCell.has_value() ||
-            hoverTargetCell->level !=
-                m_systemView.state().hoverVisualCell->level ||
-            hoverTargetCell->index !=
-                m_systemView.state().hoverVisualCell->index
-        );
-
-    if (hoverTargetChanged)
-    {
-        if (m_systemView.state().hoverVisualCell.has_value() &&
-            m_systemView.state().hoverVisualAlpha > 0.001f)
-        {
-            m_systemView.state().hoverOutgoingCell =
-                m_systemView.state().hoverVisualCell;
-
-            m_systemView.state().hoverOutgoingAlpha =
-                m_systemView.state().hoverVisualAlpha;
-        }
-
-        m_systemView.state().hoverVisualCell =
-            hoverTargetCell;
-
-        m_systemView.state().hoverVisualAlpha =
-            0.0f;
-    }
-
-    if (hoverTargetCell.has_value())
-    {
-        const float fadeInSeconds =
-            std::max(
-                0.001f,
-                m_systemView.controls().navigationHoverFadeInSeconds
-            );
-
-        m_systemView.state().hoverVisualAlpha =
-            std::min(
-                1.0f,
-                m_systemView.state().hoverVisualAlpha +
-                    static_cast<float>(hoverDeltaSeconds) /
-                        fadeInSeconds
-            );
-    }
-    else
-    {
-        const float fadeOutSeconds =
-            std::max(
-                0.001f,
-                m_systemView.controls().navigationHoverFadeOutSeconds
-            );
-
-        m_systemView.state().hoverVisualAlpha =
-            std::max(
-                0.0f,
-                m_systemView.state().hoverVisualAlpha -
-                    static_cast<float>(hoverDeltaSeconds) /
-                        fadeOutSeconds
-            );
-
-        if (m_systemView.state().hoverVisualAlpha <= 0.001f)
-        {
-            m_systemView.state().hoverVisualAlpha = 0.0f;
-            m_systemView.state().hoverVisualCell.reset();
-        }
-    }
-
-    if (m_systemView.state().hoverOutgoingCell.has_value())
-    {
-        const float fadeOutSeconds =
-            std::max(
-                0.001f,
-                m_systemView.controls().navigationHoverFadeOutSeconds
-            );
-
-        m_systemView.state().hoverOutgoingAlpha =
-            std::max(
-                0.0f,
-                m_systemView.state().hoverOutgoingAlpha -
-                    static_cast<float>(hoverDeltaSeconds) /
-                        fadeOutSeconds
-            );
-
-        if (m_systemView.state().hoverOutgoingAlpha <= 0.001f)
-        {
-            m_systemView.state().hoverOutgoingAlpha = 0.0f;
-            m_systemView.state().hoverOutgoingCell.reset();
-        }
-    }
 
     std::vector<game::navigation::CubicNavigationCell> cells;
     cells.reserve(4);
@@ -1382,12 +1247,21 @@ void SystemMapRenderer::renderSystem(
     const world::celestial::PlayerNavigationState& navigation
 )
 {
+    const auto presentation =
+        m_systemPresentationBuilder.build(
+            m_systemView,
+            viewport,
+            system,
+            currentTimeSeconds()
+        );
+
     m_systemSceneRenderer.render(
         m_systemView,
         *this,
         viewport,
         system,
-        navigation
+        navigation,
+        presentation
     );
 }
 
@@ -2290,12 +2164,26 @@ void SystemMapRenderer::drawSystemObjectLabels(
 
 const std::string& SystemMapRenderer::selectedBodyId() const
 {
+    if ((m_mode == Mode::Detail ||
+         m_mode == Mode::Hub) &&
+        !m_detailView.state().selectedHubId.empty())
+    {
+        static const std::string noBodySelection;
+        return noBodySelection;
+    }
+
     return m_systemView.state().selectedBodyId;
 }
 
 
 const std::string& SystemMapRenderer::selectedHubId() const
 {
+    if (m_mode == Mode::Detail ||
+        m_mode == Mode::Hub)
+    {
+        return m_detailView.state().selectedHubId;
+    }
+
     return m_systemView.state().selectedHubId;
 }
 
@@ -2303,6 +2191,12 @@ const std::string& SystemMapRenderer::selectedHubId() const
 const std::string&
 SystemMapRenderer::selectedHubParentBodyId() const
 {
+    if (m_mode == Mode::Detail ||
+        m_mode == Mode::Hub)
+    {
+        return m_detailView.state().selectedHubParentBodyId;
+    }
+
     return m_systemView.state().selectedHubParentBodyId;
 }
 

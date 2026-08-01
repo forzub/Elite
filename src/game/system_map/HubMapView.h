@@ -39,13 +39,9 @@ public:
     LocalMapControlSettings& controls() noexcept { return m_controls; }
     const LocalMapControlSettings& controls() const noexcept { return m_controls; }
 
-    HubMapFrameData& frame() noexcept { return m_frame; }
-    const HubMapFrameData& frame() const noexcept { return m_frame; }
-
     void reset()
     {
         m_state = HubMapViewState{};
-        m_frame = HubMapFrameData{};
     }
 
     void beginScene()
@@ -121,6 +117,7 @@ public:
     }
 
     bool pickOrbitPivot(
+        const HubMapFrameData& frame,
         const glm::dvec2& mousePx,
         glm::dvec3& outPivotLocalMeters
     ) const
@@ -128,7 +125,7 @@ public:
         const HubMapPickable* best = nullptr;
         double bestScore = std::numeric_limits<double>::max();
 
-        for (const auto& pickable : m_frame.pickables)
+        for (const auto& pickable : frame.pickables)
         {
             const double distance =
                 glm::length(mousePx - pickable.screenCenterPx);
@@ -165,7 +162,6 @@ public:
 private:
     HubMapViewState m_state;
     LocalMapControlSettings m_controls;
-    HubMapFrameData m_frame;
 };
 
 } // namespace game::system_map

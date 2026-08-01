@@ -8,12 +8,14 @@ namespace game::system_map
 {
 class DetailMapRenderContext;
 class DetailMapView;
+struct DetailMapPresentation;
 
 class DetailMapSceneRenderer
 {
 public:
     void render(
-        DetailMapView& view,
+        const DetailMapView& view,
+        const DetailMapPresentation& presentation,
         DetailMapRenderContext& context,
         const Viewport& viewport,
         const world::celestial::DetailMapSnapshot& snapshot

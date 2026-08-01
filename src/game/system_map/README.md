@@ -15,8 +15,10 @@ Each mode follows the same ownership split:
 - `*View` owns persistent camera, selection and presentation state.
 - `*Interaction` mutates a view from input and returns intents. It does not
   render and does not own OpenGL resources.
-- `*SceneRenderer` owns pass order and scene-level presentation policy. It does
-  not access `SystemMapRenderer` members directly.
+- `*PresentationBuilder` synchronizes persistent view state and produces an
+  immutable frame presentation before any draw pass begins.
+- `*SceneRenderer` owns pass order and consumes only const view/presentation
+  input. It does not access `SystemMapRenderer` members directly.
 - `*RenderContext` is the low-level rendering contract.
 - `SystemMapRenderer` is the shared OpenGL/resource backend and the public
   facade used by `SpaceState`.
@@ -73,8 +75,28 @@ because they become singular when a close pivot reaches or crosses the eye
 plane.
 
 Camera flight is advanced before manual System-map input, and the navigation
-boundary is applied once after the resulting pose. Scene renderers must not
-modify camera state or logical cube selection outside one-time initialization.
+boundary is applied once after the resulting pose. System-change reset, initial
+camera fit, presentation-clock advancement, orbit interpolation, stale-selection
+cleanup and navigation-hover animation are performed by
+`SystemMapPresentationBuilder` before rendering. `SystemMapSceneRenderer`
+receives `const SystemMapView&` and must not mutate persistent view state.
+
+
+## System presentation lifecycle
+
+The System map frame follows one directional lifecycle:
+
+```text
+synchronize snapshot/view state
+-> build immutable SystemMapPresentation
+-> render draw passes
+-> expose frame-local pick data to the next input cycle
+```
+
+`SystemMapPresentation` owns the visual-time body copy and map scale for one
+frame. The authoritative `SystemMapSnapshot` is never rewritten. OpenGL code may
+populate `SystemMapFrameData`, but it must not reset selections, fit the camera
+or advance presentation animation.
 
 ## System-map pass order
 
@@ -125,3 +147,20 @@ The standalone test target does not initialize GLFW or OpenGL. It verifies the
 camera invariants, pivot priority, refine/coarsen behavior, anchor versus
 explicit selection semantics, deferred mode transitions and deterministic
 mouse/scroll replay against the production interaction code.
+
+## Detail and Hub presentation lifecycle
+
+Detail and Hub follow the same pre-render boundary as System:
+
+```text
+synchronize persistent local-map state
+-> build immutable DetailMapPresentation / HubMapPresentation
+-> render from const view + presentation
+-> reuse the presentation pick frame for input until the next build
+```
+
+`LocalMapPresentationBuilder` owns spatial-volume zoom/pan constraints,
+Detail hub-selection validation, local-map scale calculation and Detail/Hub pick
+geometry. Detail hub selection belongs to `DetailMapView`; it is synchronized
+back to the System selection only when the mode changes. OpenGL passes must not
+reset cameras, clear selection or append pick records to view state.

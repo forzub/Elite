@@ -247,6 +247,11 @@ namespace game::system_map
             const Viewport& viewport
         ) const;
 
+        void updateNavigationHoverPresentation(
+            const Viewport& viewport,
+            double nowSeconds
+        );
+
         glm::dvec3 navigationCursorAu() const;
 
         void syncNavigationAnchorToCursor();

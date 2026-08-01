@@ -59,11 +59,14 @@
 #include "src/game/system_map/SystemMapView.h"
 #include "src/game/system_map/SystemMapInteraction.h"
 #include "src/game/system_map/SystemMapFrameData.h"
+#include "src/game/system_map/SystemMapPresentationBuilder.h"
 #include "src/game/system_map/SystemMapRenderContext.h"
 #include "src/game/system_map/SystemMapSceneRenderer.h"
 #include "src/game/system_map/DetailMapView.h"
 #include "src/game/system_map/HubMapView.h"
 #include "src/game/system_map/LocalMapInteraction.h"
+#include "src/game/system_map/LocalMapPresentation.h"
+#include "src/game/system_map/LocalMapPresentationBuilder.h"
 #include "src/game/system_map/DetailMapRenderContext.h"
 #include "src/game/system_map/DetailMapSceneRenderer.h"
 #include "src/game/system_map/HubMapRenderContext.h"
@@ -206,6 +209,10 @@ private:
     game::system_map::DetailMapView m_detailView;
     game::system_map::HubMapView m_hubView;
     game::system_map::LocalMapInteraction m_localMapInteraction;
+    game::system_map::LocalMapPresentationBuilder
+        m_localMapPresentationBuilder;
+    game::system_map::DetailMapPresentation m_detailPresentation;
+    game::system_map::HubMapPresentation m_hubPresentation;
     game::system_map::DetailMapSceneRenderer m_detailSceneRenderer;
     game::system_map::HubMapSceneRenderer m_hubSceneRenderer;
 
@@ -323,7 +330,8 @@ private:
 
 
     void renderHubMapPasses(
-        game::system_map::HubMapView& view,
+        const game::system_map::HubMapView& view,
+        const game::system_map::HubMapPresentation& presentation,
         const Viewport& viewport,
         const world::celestial::HubMapSnapshot& hub
     ) override;
@@ -742,7 +750,8 @@ private:
     ) const;
 
     void renderDetailMapPasses(
-        game::system_map::DetailMapView& view,
+        const game::system_map::DetailMapView& view,
+        const game::system_map::DetailMapPresentation& presentation,
         const Viewport& viewport,
         const world::celestial::DetailMapSnapshot& planet
     ) override;
@@ -1143,6 +1152,8 @@ private:
 
     game::system_map::SystemMapView m_systemView;
     game::system_map::SystemMapInteraction m_systemInteraction;
+    game::system_map::SystemMapPresentationBuilder
+        m_systemPresentationBuilder;
     game::system_map::SystemMapSceneRenderer m_systemSceneRenderer;
     game::system_map::SystemMapFrameData m_systemFrameData;
 

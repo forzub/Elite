@@ -2,16 +2,23 @@
 #include "src/game/system_map/HubMapRenderContext.h"
 #include "src/game/system_map/HubMapSceneRenderer.h"
 #include "src/game/system_map/HubMapView.h"
+#include "src/game/system_map/LocalMapPresentation.h"
 
 namespace game::system_map
 {
 void HubMapSceneRenderer::render(
-    HubMapView& view,
+    const HubMapView& view,
+    const HubMapPresentation& presentation,
     HubMapRenderContext& context,
     const Viewport& viewport,
     const world::celestial::HubMapSnapshot& snapshot
 ) const
 {
-    context.renderHubMapPasses(view, viewport, snapshot);
+    context.renderHubMapPasses(
+        view,
+        presentation,
+        viewport,
+        snapshot
+    );
 }
 }

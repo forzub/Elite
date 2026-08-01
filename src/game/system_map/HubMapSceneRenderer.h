@@ -8,12 +8,14 @@ namespace game::system_map
 {
 class HubMapRenderContext;
 class HubMapView;
+struct HubMapPresentation;
 
 class HubMapSceneRenderer
 {
 public:
     void render(
-        HubMapView& view,
+        const HubMapView& view,
+        const HubMapPresentation& presentation,
         HubMapRenderContext& context,
         const Viewport& viewport,
         const world::celestial::HubMapSnapshot& snapshot

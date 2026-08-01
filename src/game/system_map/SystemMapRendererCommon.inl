@@ -1370,6 +1370,8 @@ void SystemMapRenderer::handleDetailAndHubInput(
             m_mode,
             m_detailView,
             m_hubView,
+            m_detailPresentation.frame,
+            m_hubPresentation.frame,
             vp,
             window,
             mx,
@@ -1382,22 +1384,22 @@ void SystemMapRenderer::handleDetailAndHubInput(
             m_pendingScrollY
         );
 
-    auto& systemState =
-        m_systemView.state();
-
     using SelectionAction =
         game::system_map::LocalMapInteractionResult::SelectionAction;
 
+    if (m_mode != Mode::Detail)
+        return;
+
     if (result.selectionAction == SelectionAction::SelectHub)
     {
-        systemState.selectedBodyId.clear();
-        systemState.selectedHubId = result.hubId;
-        systemState.selectedHubParentBodyId = result.parentBodyId;
+        m_detailView.selectHub(
+            result.hubId,
+            result.parentBodyId
+        );
     }
     else if (result.selectionAction == SelectionAction::ClearHub)
     {
-        systemState.selectedHubId.clear();
-        systemState.selectedHubParentBodyId.clear();
+        m_detailView.clearHubSelection();
     }
 }
 

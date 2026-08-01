@@ -32,3 +32,16 @@ CTest.
 
 The project already needs GLM and nlohmann/json. The test target uses the same
 headers and does not add another dependency or test framework.
+
+The suite also verifies that `SystemMapPresentationBuilder` owns system-change
+reset, one-time camera fitting, presentation-time advancement and stale
+selection cleanup before the immutable scene renderer is called.
+
+Before compilation, `check_architecture.py` rejects render-time System view
+mutation and accidental removal of the immutable presentation boundary.
+
+The local-map checks verify that Detail spatial-volume constraints, Detail hub
+selection validation and Hub pick geometry are prepared before rendering.
+Detail and Hub scene renderers consume const views and immutable local-map
+presentations; architecture checks reject render-time camera, selection or pick
+cache mutation.

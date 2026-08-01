@@ -19,10 +19,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "src/game/system_map/SystemMapFrameData.h"
+#include "src/game/system_map/SystemMapPresentation.h"
 #include "src/game/system_map/SystemMapRenderContext.h"
 #include "src/game/system_map/SystemMapSceneRenderer.h"
 #include "src/game/system_map/SystemMapView.h"
-#include "src/world/celestial/CelestialOrbitKinematics.h"
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
@@ -163,72 +163,16 @@ namespace
         return text.str();
     }
 
-    std::string systemObjectStableKey(
-        const world::celestial::SystemMapObject& object
-    )
-    {
-        if (!object.stableId.empty())
-            return object.stableId;
-
-        return
-            "entity:" +
-            std::to_string(object.id.value);
-    }
 }
 
-
-double SystemMapSceneRenderer::resolvePresentationTimeSeconds(
-    SystemMapView& viewState,
-    const world::celestial::SystemMapSnapshot& system,
-    double wallNowSeconds
-) const
-{
-    const bool sourceChanged =
-        viewState.state().presentationSystemId !=
-            system.systemId ||
-        std::abs(
-            viewState.state().presentationSourceTimeSeconds -
-                system.universeTimeSeconds
-        ) > 0.000001 ||
-        std::abs(
-            viewState.state().presentationTimeScale -
-                system.universeTimeScale
-        ) > 0.000001;
-
-    if (sourceChanged)
-    {
-        viewState.state().presentationSystemId =
-            system.systemId;
-
-        viewState.state().presentationSourceTimeSeconds =
-            system.universeTimeSeconds;
-
-        viewState.state().presentationWallTimeSeconds =
-            wallNowSeconds;
-
-        viewState.state().presentationTimeScale =
-            std::max(
-                0.0,
-                system.universeTimeScale
-            );
-    }
-
-    return
-        viewState.state().presentationSourceTimeSeconds +
-        std::max(
-            0.0,
-            wallNowSeconds -
-                viewState.state().presentationWallTimeSeconds
-        ) *
-        viewState.state().presentationTimeScale;
-}
 
 void SystemMapSceneRenderer::render(
-    SystemMapView& viewState,
+    const SystemMapView& viewState,
     SystemMapRenderContext& context,
-        const Viewport& vp,
-        const world::celestial::SystemMapSnapshot& system,
-        const world::celestial::PlayerNavigationState& nav
+    const Viewport& vp,
+    const world::celestial::SystemMapSnapshot& system,
+    const world::celestial::PlayerNavigationState& nav,
+    const SystemMapPresentation& presentation
 ) const
 {
     context.ensureSystemRenderResources();
@@ -236,233 +180,8 @@ void SystemMapSceneRenderer::render(
     auto& frame = context.systemFrameData();
     frame.clearPresentation();
 
-
-    const bool navigationSystemChanged =
-        viewState.state().navigationGrid.systemId() !=
-            system.systemId;
-
-    if (navigationSystemChanged)
-    {
-        viewState.state().navigationGrid.activateSystem(
-            system.systemId
-        );
-
-        viewState.state().hoverVisualCell.reset();
-        viewState.state().hoverVisualAlpha = 0.0f;
-        viewState.state().hoverOutgoingCell.reset();
-        viewState.state().hoverOutgoingAlpha = 0.0f;
-        viewState.state().hoverVisualLastTimeSeconds = 0.0;
-        viewState.state().cubeClickTracker.reset();
-        viewState.state().navigationCellExplicitlySelected = false;
-        viewState.state().selectedBodyId.clear();
-        viewState.state().selectedHubId.clear();
-        viewState.state().selectedHubParentBodyId.clear();
-    }
-
-    const double presentationTimeSeconds =
-        resolvePresentationTimeSeconds(
-            viewState,
-            system,
-            context.currentTimeSeconds()
-        );
-
-    /*
-        Build a presentation snapshot from the last authoritative server
-        snapshot. The shared orbit equations are the same ones used by
-        CelestialSystemRuntime, so accelerated time remains continuous
-        without creating a second independent simulation.
-    */
-    std::vector<
-        world::celestial::SystemMapBody
-    > visualBodies =
-        system.bodies;
-
-    std::unordered_map<
-        std::string,
-        glm::dvec3
-    > visualBodyPositionAuById;
-
-    for (auto& body : visualBodies)
-    {
-        glm::dvec3 visualOrbitCenter =
-            body.orbitCenterAu;
-
-        const auto parentIt =
-            visualBodyPositionAuById.find(
-                body.parentId
-            );
-
-        if (parentIt !=
-            visualBodyPositionAuById.end())
-        {
-            visualOrbitCenter =
-                parentIt->second;
-        }
-
-        if (body.drawOrbit &&
-            body.orbitRadiusAu > 0.0 &&
-            body.orbitalPeriodDays > 0.0)
-        {
-            const double phaseRad =
-                world::celestial::
-                    circularOrbitPhaseRad(
-                        presentationTimeSeconds,
-                        body.orbitalPeriodDays,
-                        body.orbitalDirection,
-                        body.orbitalPhaseOffsetRad
-                    );
-
-            body.positionAu =
-                visualOrbitCenter +
-                world::celestial::
-                    circularOrbitPositionAu(
-                        body.orbitRadiusAu,
-                        phaseRad
-                    );
-        }
-        else if (parentIt !=
-                 visualBodyPositionAuById.end())
-        {
-            /*
-                Preserve a static relative offset if a child has no period.
-            */
-            body.positionAu =
-                visualOrbitCenter +
-                (
-                    body.positionAu -
-                    body.orbitCenterAu
-                );
-        }
-
-        body.orbitCenterAu =
-            visualOrbitCenter;
-
-        if (body.dayLengthHours > 0.0)
-        {
-            const double snapshotRotationOffset =
-                body.rotationPhaseRad -
-                static_cast<double>(
-                    body.rotationDirection < 0
-                        ? -1
-                        : 1
-                ) *
-                std::fmod(
-                    system.universeTimeSeconds /
-                        (
-                            body.dayLengthHours *
-                            3600.0
-                        ),
-                    1.0
-                ) *
-                world::celestial::OrbitTwoPi;
-
-            body.rotationPhaseRad =
-                world::celestial::
-                    bodyRotationPhaseRad(
-                        presentationTimeSeconds,
-                        body.dayLengthHours,
-                        body.rotationDirection,
-                        snapshotRotationOffset
-                    );
-        }
-
-        visualBodyPositionAuById[body.id] =
-            body.positionAu;
-    }
-
-    const auto& bodies =
-        visualBodies;
-
-
-    /*
-        Пустой межзвёздный сектор всё равно должен рисовать
-        System navigation grid.
-
-        Для известной системы масштаб определяется орбитами.
-        Для пустого сектора S0 вписывается целиком и становится
-        исходным материнским кубом.
-    */
-    double maxAu =
-        bodies.empty()
-            ? std::max(
-                1.0,
-                viewState.state().navigationGrid.cellSize(
-                    viewState.state().navigationGrid
-                        .definition()
-                        .minimumLevel
-                ) * 0.5
-            )
-            : 1.0;
-
-    for (const auto& b : bodies)
-    {
-        const double r =
-            std::sqrt(
-                b.positionAu.x * b.positionAu.x +
-                b.positionAu.y * b.positionAu.y +
-                b.positionAu.z * b.positionAu.z
-            );
-
-        maxAu = std::max(maxAu, r);
-
-        if (b.drawOrbit &&
-            b.orbitRadiusAu > 0.0)
-        {
-            const double orbitCenterRadius =
-                std::sqrt(
-                    b.orbitCenterAu.x * b.orbitCenterAu.x +
-                    b.orbitCenterAu.y * b.orbitCenterAu.y +
-                    b.orbitCenterAu.z * b.orbitCenterAu.z
-                );
-
-            maxAu =
-                std::max(
-                    maxAu,
-                    orbitCenterRadius +
-                        b.orbitRadiusAu
-                );
-        }
-
-    }
-
-    const float systemScale =
-        viewState.controls().fittedSystemRadiusWorld /
-        static_cast<float>(maxAu);
-
-    viewState.state().lastScale = systemScale;
-
-    /*
-        Fit each system once. Returning from another map mode preserves the
-        existing view, while opening a different system starts with readable
-        orbits instead of inheriting an unrelated extreme zoom.
-    */
-    if (viewState.state().lastCameraFitSystemId != system.systemId)
-    {
-        viewState.cancelCameraFlight(false);
-
-        viewState.state().camera.target =
-            glm::dvec3(0.0);
-
-        viewState.state().camera.distance =
-            std::clamp(
-                viewState.controls().fittedSystemRadiusWorld *
-                    viewState.controls().initialFitPadding,
-                SystemMapView::minimumCameraHalfHeight,
-                SystemMapView::maximumCameraHalfHeight
-            );
-
-        viewState.state().navigationGrid.setAnchorFromPosition(
-            glm::dvec3(0.0)
-        );
-
-        viewState.state().navigationGrid.selectCell(
-            viewState.state().navigationGrid.anchorCell()
-        );
-        viewState.state().navigationCellExplicitlySelected = false;
-
-        viewState.state().lastCameraFitSystemId =
-            system.systemId;
-    }
+    const auto& bodies = presentation.bodies;
+    const float systemScale = presentation.systemScale;
 
     const glm::mat4 proj =
         viewState.projectionMatrix(
@@ -550,20 +269,6 @@ void SystemMapSceneRenderer::render(
     }
 
 // Если выбранная цель исчезла или это звезда — сбрасываем выбор.
-if (!viewState.state().selectedBodyId.empty())
-{
-    auto selectedIt =
-        bodyById.find(
-            viewState.state().selectedBodyId
-        );
-
-    if (selectedIt == bodyById.end() ||
-        selectedIt->second->type == BodyType::Star)
-    {
-        viewState.state().selectedBodyId.clear();
-    }
-}
-
 // =========================================================
 // Floating origin для system map.
 //
@@ -957,7 +662,7 @@ frame.bodyPhysicalRadiusWorldById = drawRadiusById;
             );
 
         const std::string objectKey =
-            systemObjectStableKey(
+            systemMapObjectStableKey(
                 object
             );
 
@@ -1273,23 +978,6 @@ frame.bodyPhysicalRadiusWorldById = drawRadiusById;
             context.flushLines(mvp);
         }
     }
-
-    if (!viewState.state().selectedHubId.empty())
-    {
-        const auto selectedHubPosition =
-            frame.objectAbsolutePositionById.find(
-                viewState.state().selectedHubId
-            );
-
-        if (selectedHubPosition ==
-            frame.objectAbsolutePositionById.end())
-        {
-            viewState.state().selectedHubId.clear();
-            viewState.state().selectedHubParentBodyId.clear();
-        }
-    }
-
-
 
     context.drawSystemObjectOverlays(
         system,

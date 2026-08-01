@@ -18,9 +18,13 @@
 
 #include "src/game/navigation/CubicNavigationGrid.h"
 #include "src/game/navigation/CubicNavigationInteraction.h"
+#include "src/game/system_map/DetailMapView.h"
+#include "src/game/system_map/HubMapView.h"
+#include "src/game/system_map/LocalMapPresentationBuilder.h"
 #include "src/game/system_map/MapMode.h"
 #include "src/game/system_map/MapTransitionController.h"
 #include "src/game/system_map/SystemMapInteraction.h"
+#include "src/game/system_map/SystemMapPresentationBuilder.h"
 #include "src/game/system_map/SystemMapView.h"
 
 namespace
@@ -30,12 +34,16 @@ using game::navigation::CubicNavigationCell;
 using game::navigation::CubicNavigationGrid;
 using game::navigation::CubicNavigationGridDefinition;
 using game::navigation::CubicNavigationLevelAction;
+using game::system_map::DetailMapView;
+using game::system_map::HubMapView;
+using game::system_map::LocalMapPresentationBuilder;
 using game::system_map::MapMode;
 using game::system_map::SystemMapCameraBodyTarget;
 using game::system_map::SystemMapHubSelection;
 using game::system_map::SystemMapInputFrame;
 using game::system_map::SystemMapInteraction;
 using game::system_map::SystemMapInteractionContext;
+using game::system_map::SystemMapPresentationBuilder;
 using game::system_map::SystemMapView;
 
 class TestFailure final : public std::runtime_error
@@ -893,6 +901,150 @@ void testAnchorAndExplicitSelectionSemantics()
     }
 }
 
+void testPresentationBuilderPreparesStateBeforeRender()
+{
+    using world::celestial::BodyType;
+    using world::celestial::SystemMapBody;
+    using world::celestial::SystemMapObject;
+    using world::celestial::SystemMapObjectKind;
+    using world::celestial::SystemMapSnapshot;
+
+    const Viewport viewport = testViewport();
+    const SystemMapPresentationBuilder builder;
+
+    SystemMapView view;
+    view.state().selectedBodyId = "stale-body";
+    view.state().selectedHubId = "stale-hub";
+    view.state().selectedHubParentBodyId = "stale-parent";
+    view.state().navigationCellExplicitlySelected = true;
+
+    SystemMapSnapshot snapshot;
+    snapshot.systemId = 77;
+    snapshot.universeTimeSeconds = 1000.0;
+    snapshot.universeTimeScale = 2.0;
+
+    SystemMapBody star;
+    star.id = "star";
+    star.name = "Star";
+    star.type = BodyType::Star;
+    snapshot.bodies.push_back(star);
+
+    SystemMapBody planet;
+    planet.id = "planet";
+    planet.name = "Planet";
+    planet.parentId = "star";
+    planet.type = BodyType::Planet;
+    planet.positionAu = glm::dvec3(2.0, 0.0, 0.0);
+    planet.orbitCenterAu = glm::dvec3(0.0);
+    planet.orbitRadiusAu = 2.0;
+    planet.drawOrbit = true;
+    planet.orbitalPeriodDays = 10.0;
+    planet.dayLengthHours = 20.0;
+    snapshot.bodies.push_back(planet);
+
+    SystemMapObject hub;
+    hub.stableId = "hub-alpha";
+    hub.name = "Hub Alpha";
+    hub.parentBodyId = "planet";
+    hub.kind = SystemMapObjectKind::Hub;
+    snapshot.objects.push_back(hub);
+
+    const auto first =
+        builder.build(
+            view,
+            viewport,
+            snapshot,
+            50.0
+        );
+
+    REQUIRE(first.systemId == snapshot.systemId);
+    REQUIRE_NEAR(first.timeSeconds, 1000.0, 1.0e-10);
+    REQUIRE_CLOSE(first.systemScale, 35.0, 1.0e-6, 1.0e-7);
+    REQUIRE(first.bodies.size() == 2);
+
+    REQUIRE(view.state().navigationGrid.systemId() == 77);
+    REQUIRE(view.state().lastCameraFitSystemId == 77);
+    REQUIRE_VEC_NEAR(view.state().camera.target, glm::dvec3(0.0), 1.0e-12);
+    REQUIRE_CLOSE(
+        view.state().camera.distance,
+        view.controls().fittedSystemRadiusWorld *
+            view.controls().initialFitPadding,
+        1.0e-6,
+        1.0e-7
+    );
+    REQUIRE(view.state().selectedBodyId.empty());
+    REQUIRE(view.state().selectedHubId.empty());
+    REQUIRE(view.state().selectedHubParentBodyId.empty());
+    REQUIRE(!view.state().navigationCellExplicitlySelected);
+
+    const auto firstPlanet =
+        std::find_if(
+            first.bodies.begin(),
+            first.bodies.end(),
+            [](const auto& body)
+            {
+                return body.id == "planet";
+            }
+        );
+
+    REQUIRE(firstPlanet != first.bodies.end());
+
+    const glm::dvec3 preservedTarget(8.0, -3.0, 1.5);
+    view.state().camera.target = preservedTarget;
+    view.state().camera.distance = 17.0f;
+    view.state().selectedBodyId = "planet";
+    view.state().selectedHubId = "hub-alpha";
+    view.state().selectedHubParentBodyId = "planet";
+
+    const auto second =
+        builder.build(
+            view,
+            viewport,
+            snapshot,
+            55.0
+        );
+
+    REQUIRE_NEAR(second.timeSeconds, 1010.0, 1.0e-10);
+    REQUIRE_VEC_NEAR(view.state().camera.target, preservedTarget, 1.0e-12);
+    REQUIRE_NEAR(view.state().camera.distance, 17.0f, 1.0e-7);
+    REQUIRE(view.state().selectedBodyId == "planet");
+    REQUIRE(view.state().selectedHubId == "hub-alpha");
+    REQUIRE(view.state().selectedHubParentBodyId == "planet");
+
+    const auto secondPlanet =
+        std::find_if(
+            second.bodies.begin(),
+            second.bodies.end(),
+            [](const auto& body)
+            {
+                return body.id == "planet";
+            }
+        );
+
+    REQUIRE(secondPlanet != second.bodies.end());
+    REQUIRE(
+        glm::length(
+            secondPlanet->positionAu -
+            firstPlanet->positionAu
+        ) > 0.0
+    );
+
+    view.state().selectedBodyId = "star";
+    view.state().selectedHubId = "missing-hub";
+    view.state().selectedHubParentBodyId = "planet";
+
+    builder.build(
+        view,
+        viewport,
+        snapshot,
+        56.0
+    );
+
+    REQUIRE(view.state().selectedBodyId.empty());
+    REQUIRE(view.state().selectedHubId.empty());
+    REQUIRE(view.state().selectedHubParentBodyId.empty());
+}
+
 void completeTransition(
     MapTransitionController& transition,
     double startedAt
@@ -928,6 +1080,146 @@ void completeTransition(
     REQUIRE(!transition.blocksInput());
     REQUIRE_NEAR(transition.outgoingAlpha(), 0.0f, 1.0e-7);
 }
+
+void testLocalPresentationBuilderPreparesDetailAndHub()
+{
+    using world::celestial::DetailMapSnapshot;
+    using world::celestial::DetailObjectClass;
+    using world::celestial::DetailSceneKind;
+    using world::celestial::HubMapSnapshot;
+    using world::celestial::LocalSceneObject;
+
+    const Viewport viewport = testViewport();
+    const LocalMapPresentationBuilder builder;
+
+    DetailMapView detailView;
+    detailView.camera().zoom = 0.1;
+    detailView.camera().pan = glm::dvec2(75.0, -35.0);
+    detailView.selectHub("stale-hub", "stale-parent");
+
+    DetailMapSnapshot invalidDetail;
+    invalidDetail.valid = false;
+
+    const auto invalidPresentation =
+        builder.buildDetail(
+            detailView,
+            viewport,
+            invalidDetail
+        );
+
+    REQUIRE(!invalidPresentation.valid);
+    REQUIRE(detailView.state().selectedHubId == "stale-hub");
+
+    DetailMapSnapshot spatial;
+    spatial.valid = true;
+    spatial.hasCentralBody = false;
+    spatial.detailTarget.sceneKind =
+        DetailSceneKind::SpatialVolume;
+    spatial.detailHalfExtentMeters = 1000.0;
+
+    const auto spatialPresentation =
+        builder.buildDetail(
+            detailView,
+            viewport,
+            spatial
+        );
+
+    REQUIRE(spatialPresentation.valid);
+    REQUIRE(spatialPresentation.sceneIsSpatialVolume);
+    REQUIRE_CLOSE(
+        detailView.camera().zoom,
+        detailView.controls().spatialVolumeMinimumZoom,
+        1.0e-12,
+        1.0e-12
+    );
+    REQUIRE_VEC_NEAR(
+        glm::dvec3(detailView.camera().pan, 0.0),
+        glm::dvec3(0.0),
+        1.0e-12
+    );
+    REQUIRE(detailView.state().selectedHubId.empty());
+    REQUIRE(spatialPresentation.frame.hubScreenPoints.empty());
+    REQUIRE(spatialPresentation.scale > 0.0);
+
+    DetailMapSnapshot bodyScene;
+    bodyScene.valid = true;
+    bodyScene.hasCentralBody = true;
+    bodyScene.planetBodyId = "planet";
+    bodyScene.planetRadiusMeters = 1000.0;
+    bodyScene.detailTarget.sceneKind =
+        DetailSceneKind::CelestialBody;
+
+    LocalSceneObject hub;
+    hub.valid = true;
+    hub.objectClass = DetailObjectClass::Hub;
+    hub.kind = "hub";
+    hub.stableId = "hub-alpha";
+    hub.name = "Hub Alpha";
+    hub.positionMeters = glm::dvec3(1500.0, 0.0, 0.0);
+    bodyScene.scene.objects.push_back(hub);
+
+    detailView.selectHub("hub-alpha", "planet");
+
+    const auto bodyPresentation =
+        builder.buildDetail(
+            detailView,
+            viewport,
+            bodyScene
+        );
+
+    REQUIRE(!bodyPresentation.sceneIsSpatialVolume);
+    REQUIRE(bodyPresentation.selectedHubId == "hub-alpha");
+    REQUIRE(bodyPresentation.selectedHubParentBodyId == "planet");
+    REQUIRE(bodyPresentation.frame.hubScreenPoints.size() == 1);
+    REQUIRE(
+        bodyPresentation.frame.hubScreenPoints.front().hubId ==
+        "hub-alpha"
+    );
+
+    HubMapView hubView;
+    hubView.beginScene();
+
+    HubMapSnapshot hubScene;
+    hubScene.valid = true;
+    hubScene.systemId = 77;
+    hubScene.hubId = "hub-alpha";
+    hubScene.scene.halfExtentMeters = 4000.0;
+
+    LocalSceneObject module;
+    module.valid = true;
+    module.objectClass = DetailObjectClass::Hub;
+    module.name = "Prime module";
+    module.prime = true;
+    module.positionMeters = glm::dvec3(300.0, 0.0, 0.0);
+    module.sizeMeters = glm::dvec3(200.0, 100.0, 300.0);
+    LocalSceneObject ship;
+    ship.valid = true;
+    ship.objectClass = DetailObjectClass::Ship;
+    ship.name = "Player ship";
+    ship.player = true;
+    ship.positionMeters = glm::dvec3(-500.0, 0.0, 0.0);
+
+    // Snapshot order is deliberately reversed. Presentation order must stay
+    // compatible with the old render path: modules first, ships second.
+    hubScene.scene.objects.push_back(ship);
+    hubScene.scene.objects.push_back(module);
+
+    const auto hubPresentation =
+        builder.buildHub(
+            hubView,
+            viewport,
+            hubScene
+        );
+
+    REQUIRE(hubPresentation.valid);
+    REQUIRE(hubPresentation.systemId == 77);
+    REQUIRE(hubPresentation.hubId == "hub-alpha");
+    REQUIRE(hubPresentation.scale > 0.0);
+    REQUIRE(hubPresentation.frame.pickables.size() == 2);
+    REQUIRE(hubPresentation.frame.pickables[0].priority == 20);
+    REQUIRE(hubPresentation.frame.pickables[1].priority == 100);
+}
+
 
 void testGalaxySystemDetailHubTransitionSequence()
 {
@@ -1098,6 +1390,8 @@ int main()
         {"zoom pivot is cursor body or current target", testZoomPivotIsCursorBodyOrCurrentTarget},
         {"refine/coarsen preserve navigation point", testRefineCoarsenPreserveNavigationPoint},
         {"anchor and explicit selection semantics", testAnchorAndExplicitSelectionSemantics},
+        {"presentation builder prepares state before render", testPresentationBuilderPreparesStateBeforeRender},
+        {"local presentation builder prepares Detail and Hub", testLocalPresentationBuilderPreparesDetailAndHub},
         {"Galaxy -> System -> Detail -> Hub transition sequence", testGalaxySystemDetailHubTransitionSequence},
         {"mouse and scroll trace is repeatable", testMouseAndScrollTraceIsRepeatable}
     };

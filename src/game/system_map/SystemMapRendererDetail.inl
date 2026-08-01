@@ -381,12 +381,13 @@ void SystemMapRenderer::drawPlanetMapVelocityArrow(
 
 
 void SystemMapRenderer::renderDetailMapPasses(
-    game::system_map::DetailMapView& view,
+    const game::system_map::DetailMapView& view,
+    const game::system_map::DetailMapPresentation& presentation,
     const Viewport& viewport,
     const world::celestial::DetailMapSnapshot& planet
 )
 {
-    view.frame().hubScreenPoints.clear();
+    (void)view;
 
     ensureGeneratedCelestialAssets();
     ensureEnvironmentProfiles();
@@ -459,136 +460,12 @@ void SystemMapRenderer::renderDetailMapPasses(
         );
     }
 
-    const glm::dvec2 centerPx(
-        static_cast<double>(viewport.width) * 0.5,
-        static_cast<double>(viewport.height) * 0.5
-    );
-
-    double maxRadiusMeters =
-        planet.planetRadiusMeters;
-
-    for (const auto& o : planet.hubOrbits)
-    {
-        if (o.valid)
-            maxRadiusMeters = std::max(maxRadiusMeters, o.radiusMeters);
-    }
-
-    for (const auto& o : planet.playerOrbits)
-    {
-        if (o.valid)
-            maxRadiusMeters = std::max(maxRadiusMeters, o.radiusMeters);
-    }
-
-    const auto includeObjectDistance =
-        [&](const world::celestial::LocalSceneObject& object)
-        {
-            if (!object.valid ||
-                m_detailView.state().sceneIsSpatialVolume)
-            {
-                return;
-            }
-
-            maxRadiusMeters =
-                std::max(
-                    maxRadiusMeters,
-                    glm::length(
-                        object.positionMeters -
-                        planet.planetCenterMeters
-                    )
-                );
-        };
-
-    for (const auto& object : planet.scene.objects)
-        includeObjectDistance(object);
-
-    if (m_detailView.state().sceneIsSpatialVolume &&
-        planet.detailHalfExtentMeters > 0.0)
-    {
-        // Fit the complete cube, including the farthest corner. At zoom 1.0
-        // the selected terminal cell is the highest visible hierarchy.
-        maxRadiusMeters =
-            std::max(
-                maxRadiusMeters,
-                planet.detailHalfExtentMeters *
-                    std::sqrt(3.0)
-            );
-    }
-    else if (!planet.hasCentralBody)
-    {
-        maxRadiusMeters =
-            std::max(
-                maxRadiusMeters,
-                100000.0
-            );
-    }
-
-    double fitExtentMeters =
-        maxRadiusMeters;
-
-    if (m_detailView.state().sceneIsSpatialVolume &&
-        planet.detailHalfExtentMeters > 0.0)
-    {
-        const double h =
-            planet.detailHalfExtentMeters;
-
-        const double cameraDistanceMeters =
-            detailSpatialCameraDistanceMeters(
-                planet
-            );
-
-        fitExtentMeters = 1.0;
-
-        for (int x = -1; x <= 1; x += 2)
-        {
-            for (int y = -1; y <= 1; y += 2)
-            {
-                for (int z = -1; z <= 1; z += 2)
-                {
-                    const glm::dvec3 cameraSpace =
-                        planetMapCameraSpaceRelative(
-                            glm::dvec3(
-                                static_cast<double>(x) * h,
-                                static_cast<double>(y) * h,
-                                static_cast<double>(z) * h
-                            )
-                        );
-
-                    const double perspectiveFactor =
-                        detailSpatialPerspectiveFactor(
-                            cameraSpace.z,
-                            cameraDistanceMeters
-                        );
-
-                    fitExtentMeters =
-                        std::max(
-                            fitExtentMeters,
-                            std::max(
-                                std::abs(cameraSpace.x),
-                                std::abs(cameraSpace.y)
-                            ) *
-                            perspectiveFactor
-                        );
-                }
-            }
-        }
-    }
-
-    const double mapHalfPx =
-        std::min(
-            viewport.width,
-            viewport.height
-        ) *
-        (m_detailView.state().sceneIsSpatialVolume
-            ? 0.43
-            : 0.42);
-
+    const glm::dvec2& centerPx =
+        presentation.centerPx;
+    const double maxRadiusMeters =
+        presentation.maxRadiusMeters;
     const double scale =
-        mapHalfPx /
-        std::max(
-            1.0,
-            fitExtentMeters
-        );
-
+        presentation.scale;
 
 
     if (planet.hasCentralBody)
@@ -727,7 +604,7 @@ if (!shapeModelDrawn)
 
 
 
-    if (m_detailView.state().sceneIsSpatialVolume &&
+    if (presentation.sceneIsSpatialVolume &&
         planet.detailHalfExtentMeters > 0.0)
     {
         const double h =
@@ -840,32 +717,11 @@ if (!shapeModelDrawn)
                 centerPx
             );
 
-        HubScreenPoint point;
-        point.hubId = hub.stableId;
-        point.parentBodyId =
-            planet.planetBodyId;
-        point.name = hub.name;
-        point.screen =
-            glm::vec2(
-                static_cast<float>(p.x),
-                static_cast<float>(p.y)
-            );
-        point.visible =
-            p.x >= 0.0 &&
-            p.y >= 0.0 &&
-            p.x <= viewport.width &&
-            p.y <= viewport.height;
-        point.screenRadiusPx = 15.0f;
-
-        m_detailView.frame().hubScreenPoints.push_back(
-            point
-        );
-
         glColor4f(0.3f, 0.9f, 1.0f, 1.0f);
         drawPlanetMapCross(p, 7.0f);
 
         if (hub.stableId ==
-            m_systemView.state().selectedHubId)
+            presentation.selectedHubId)
         {
             glColor4f(
                 0.38f,
@@ -924,27 +780,23 @@ if (!shapeModelDrawn)
         );
     }
 
-    if (!m_systemView.state().selectedHubId.empty())
+    if (!presentation.selectedHubId.empty())
     {
         const auto selectedPoint =
             std::find_if(
-                m_detailView.frame().hubScreenPoints.begin(),
-                m_detailView.frame().hubScreenPoints.end(),
+                presentation.frame.hubScreenPoints.begin(),
+                presentation.frame.hubScreenPoints.end(),
                 [&](const HubScreenPoint& point)
                 {
                     return
                         point.hubId ==
-                        m_systemView.state().selectedHubId;
+                        presentation.selectedHubId;
                 }
             );
 
-        if (selectedPoint ==
-            m_detailView.frame().hubScreenPoints.end())
-        {
-            m_systemView.state().selectedHubId.clear();
-            m_systemView.state().selectedHubParentBodyId.clear();
-        }
-        else if (selectedPoint->visible)
+        if (selectedPoint !=
+                presentation.frame.hubScreenPoints.end() &&
+            selectedPoint->visible)
         {
             auto& text =
                 TextRenderer::instance();
@@ -1108,7 +960,7 @@ if (!shapeModelDrawn)
     }
 
     const bool detailVolumeEmpty =
-        m_detailView.state().sceneIsSpatialVolume &&
+        presentation.sceneIsSpatialVolume &&
         planet.scene.empty();
 
     if (detailVolumeEmpty)
@@ -1128,7 +980,7 @@ if (!shapeModelDrawn)
         text.endFrame();
     }
 
-    if (m_detailView.state().sceneIsSpatialVolume &&
+    if (presentation.sceneIsSpatialVolume &&
         planet.detailHalfExtentMeters > 0.0)
     {
         const double edgeKm =

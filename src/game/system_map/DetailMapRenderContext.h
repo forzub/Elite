@@ -3,7 +3,11 @@
 #include "src/render/types/Viewport.h"
 
 namespace world::celestial { struct DetailMapSnapshot; }
-namespace game::system_map { class DetailMapView; }
+namespace game::system_map
+{
+class DetailMapView;
+struct DetailMapPresentation;
+}
 
 namespace game::system_map
 {
@@ -13,7 +17,8 @@ public:
     virtual ~DetailMapRenderContext() = default;
 
     virtual void renderDetailMapPasses(
-        DetailMapView& view,
+        const DetailMapView& view,
+        const DetailMapPresentation& presentation,
         const Viewport& viewport,
         const world::celestial::DetailMapSnapshot& snapshot
     ) = 0;

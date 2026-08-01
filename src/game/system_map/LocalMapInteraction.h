@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "src/game/system_map/LocalMapFrameData.h"
 #include "src/game/system_map/MapMode.h"
 #include "src/render/types/Viewport.h"
 
@@ -33,6 +34,8 @@ public:
         MapMode mode,
         DetailMapView& detailView,
         HubMapView& hubView,
+        const DetailMapFrameData& detailFrame,
+        const HubMapFrameData& hubFrame,
         const Viewport& viewport,
         GLFWwindow* window,
         double mouseX,

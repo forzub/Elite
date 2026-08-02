@@ -14,85 +14,41 @@ void DynamicMotionSystem::updateHubTactical(
     double dt
 )
 {
-
-
-
-
-
-
-
-
-
-
     motion.referenceVelocityMps =
         frame.velocityMetersPerSecond;
 
-    
+    // HubTactical state is authoritative in the hub-local reference frame.
+    // The hub may move by a large amount when universe time is accelerated;
+    // that movement must not be interpreted as free flight of the ship.
+    const glm::dvec3 worldAcceleration =
+        motion.gravityAccelerationMps2 +
+        motion.engineAccelerationMps2;
 
+    const glm::dvec3 localAcceleration {
+        glm::dot(worldAcceleration, frame.progradeAxis),
+        glm::dot(worldAcceleration, frame.radialAxis),
+        glm::dot(worldAcceleration, frame.normalAxis)
+    };
 
+    motion.localVelocityMps +=
+        localAcceleration * dt;
 
+    motion.localPositionMeters +=
+        motion.localVelocityMps * dt;
 
+    const glm::dvec3 worldMeters =
+        frame.localToWorldPosition(
+            motion.localPositionMeters
+        );
 
-
-
-
-
-
-
-
-    // Глобальная динамика.
-    // Истина движения — worldVelocityMps.
-    // Гравитация меняет глобальный вектор скорости.
-    // Поворот корпуса сам по себе worldVelocity не трогает.
-    motion.worldVelocityMps +=
-        motion.gravityAccelerationMps2 * dt;
-
-    // Двигатели меняют глобальную скорость только через ускорение.
-    motion.worldVelocityMps +=
-        motion.engineAccelerationMps2 * dt;
-
-    glm::dvec3 worldMeters =
-        world::coordinates::fullMeters(worldPosition);
-
-    worldMeters +=
-        motion.worldVelocityMps * dt;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    motion.worldVelocityMps =
+        frame.localToWorldVelocity(
+            motion.localVelocityMps
+        );
 
     worldPosition =
         world::coordinates::makeWorldPositionFromMeters(
             worldMeters
-        );
-
-    motion.localPositionMeters =
-        frame.worldToLocalPosition(worldMeters);
-
-    motion.localVelocityMps =
-        frame.worldToLocalVelocity(
-            motion.worldVelocityMps
         );
 }
 

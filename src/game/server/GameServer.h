@@ -15,6 +15,7 @@
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/world/celestial/CelestialSystemRuntime.h"
 #include "src/world/time/UniverseClock.h"
+#include "src/game/server/ServerTimeContext.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
 class GameServer
@@ -173,6 +174,7 @@ private:
     std::unordered_map<uint32_t, std::deque<ClientShipCommand>> m_pendingClientShipCommands;
     uint32_t m_serverTick = 0;
     world::time::UniverseClock m_universeClock;
+    double m_lastUniverseTimeSeconds = 0.0;
     uint32_t m_snapshotInterval = 3;
     SimulationSnapshot m_lastSnapshot;
 

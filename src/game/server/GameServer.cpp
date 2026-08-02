@@ -479,6 +479,9 @@ GameServer::GameServer()
             m_debugFastUniverseTimeScale
         );
 
+        m_lastUniverseTimeSeconds =
+            m_universeClock.timeSeconds();
+
         bool atlasLoaded =
         m_starAtlas.load(
             "assets/data/galaxy_details"
@@ -606,7 +609,14 @@ m_simulation.setCelestialBodyKinematicStateAu(
             playerStartFrame
         );
 
-        m_simulation.update(0.0);
+        game::server::ServerTimeContext initialTime;
+        initialTime.serverTick = 0;
+        initialTime.universeTimeSeconds = universeTime;
+        initialTime.universeTimeScale = m_universeClock.timeScale();
+        initialTime.universeTimeSimulation =
+            m_universeClock.simulationMode();
+
+        m_simulation.update(initialTime);
         m_simulation.setTick(0);
 
 
@@ -676,6 +686,22 @@ void GameServer::update(double dt)
     m_universeClock.update(dt);
     m_serverTick++;
 
+    const double universeTime =
+        m_universeClock.timeSeconds();
+
+    game::server::ServerTimeContext time;
+    time.serverTick = m_serverTick;
+    time.gameplayDeltaSeconds = std::max(0.0, dt);
+    time.universeTimeSeconds = universeTime;
+    time.universeDeltaSeconds =
+        universeTime - m_lastUniverseTimeSeconds;
+    time.universeTimeSimulation =
+        m_universeClock.simulationMode();
+    time.universeTimeScale =
+        m_universeClock.timeScale();
+
+    m_lastUniverseTimeSeconds = universeTime;
+
     // 1. Применяем команды
     for (auto& [id, shipPtr] : m_simulation.ships())
     {
@@ -716,9 +742,6 @@ void GameServer::update(double dt)
     }
 
 
-const double universeTime =
-    m_universeClock.timeSeconds();
-
 m_celestialRuntime.update(universeTime);
 
 m_simulation.setOrbitalUniverseTimeSeconds(
@@ -739,7 +762,7 @@ m_simulation.setCelestialBodyWorldPositionsAu(
     celestialPositionsAu
 );
 
-m_simulation.update(dt);
+m_simulation.update(time);
 m_simulation.setTick(m_serverTick);
 
 
@@ -832,7 +855,16 @@ void GameServer::debugRefreshSnapshot()
     // This keeps regular published snapshots lightweight, while
     // structure_debug.html still receives modules/links on demand.
     m_simulation.debugForceFullShipGraphPayload();
-    m_simulation.update(0.0);
+    game::server::ServerTimeContext time;
+    time.serverTick = m_serverTick;
+    time.universeTimeSeconds =
+        m_universeClock.timeSeconds();
+    time.universeTimeScale =
+        m_universeClock.timeScale();
+    time.universeTimeSimulation =
+        m_universeClock.simulationMode();
+
+    m_simulation.update(time);
     m_simulation.setTick(m_serverTick);
     m_lastSnapshot = m_simulation.snapshot();
 }

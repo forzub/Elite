@@ -25,6 +25,7 @@
 #include "src/game/navigation/ReferenceFrame.h"
 #include "src/game/navigation/HubNavigationFrame.h"
 #include "src/game/diagnostics/ServerDiagnostics.h"
+#include "src/game/server/ServerTimeContext.h"
 
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/OrbitalCorridorSystem.h"
@@ -45,7 +46,7 @@ public:
     GameSimulation& operator=(GameSimulation&&) = delete;
 
     
-    void update(double dt);
+    void update(const game::server::ServerTimeContext& time);
     WorldParams& world();
 
     const std::vector<WorldSignal>& worldSignals() const;

@@ -362,8 +362,12 @@ void GameSimulation::buildInitialScene()
 //   ######   ##       ######   #####      ###    #####
 //           ####
 
-void GameSimulation::update(double dt)
+void GameSimulation::update(
+    const game::server::ServerTimeContext& time
+)
 {
+    const double dt = time.gameplayDeltaSeconds;
+    m_orbitalUniverseTimeSeconds = time.universeTimeSeconds;
     m_npcRepairThinkTimerSeconds += dt;
 
     const bool npcRepairThinkTick =
@@ -400,7 +404,10 @@ void GameSimulation::update(double dt)
 // Иначе стартовый update(0.0) убивает скорость Земли,
 // и игрок спаунится с неполным орбитальным вектором.
 // ------------------------------------------------------------
-if (dt > 0.000001)
+const double celestialSampleDtSeconds =
+    std::abs(time.universeDeltaSeconds);
+
+if (celestialSampleDtSeconds > 0.000001)
 {
     m_celestialBodyVelocitiesMetersPerSecond.clear();
 
@@ -417,7 +424,8 @@ if (dt > 0.000001)
         if (prevIt != m_previousCelestialBodyPositionsMeters.end())
         {
             velocityMetersPerSecond =
-                (positionMeters - prevIt->second) / dt;
+                (positionMeters - prevIt->second) /
+                time.universeDeltaSeconds;
         }
 
         m_celestialBodyVelocitiesMetersPerSecond[bodyId] =

@@ -21,6 +21,7 @@
 #include "game/ship/controller/PlayerInputMapper.h"
 #include "game/ship/view/PlayerShipView.h"
 #include "src/game/client/ClientWorldState.h"
+#include "src/game/debug/IDebugSessionControl.h"
 #include "src/game/host/LocalGameHost.h"
 #include "src/game/client/GameClient.h"
 #include "src/scene/SceneRenderer.h"
@@ -165,6 +166,7 @@ private:
 
     // std::unique_ptr<GameSimulation>                 m_simulation;
     std::unique_ptr<game::host::LocalGameHost>      m_localHost;
+    game::debug::IDebugSessionControl*              m_debugSession = nullptr;
     std::unique_ptr<GameClient>                      m_client;
     std::unique_ptr<ClientWorldState>               m_clientWorld;
 

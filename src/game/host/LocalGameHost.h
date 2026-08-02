@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include "src/game/debug/IDebugSessionControl.h"
 #include "src/game/server/ServerRunner.h"
 #include "src/game/simulation/SimulationSnapshot.h"
 #include "src/scene/EntityID.h"
@@ -21,7 +22,7 @@ namespace game::host
     authoring operations are exposed as a narrow host facade; GameServer itself
     never leaks into client-facing state types.
 */
-class LocalGameHost
+class LocalGameHost final : public game::debug::IDebugSessionControl
 {
 public:
     LocalGameHost();
@@ -41,24 +42,24 @@ public:
     // Local-only authoring/debug seam. Normal gameplay still uses transport.
     void configureWorld(float linearDrag, float maxSafeDecel);
 
-    const SimulationSnapshot& debugSnapshot() const;
-    void debugRefreshSnapshot();
-    bool debugDestroyShipModule(EntityId shipId, const std::string& moduleId);
-    bool debugRestoreShipModule(EntityId shipId, const std::string& moduleId);
-    bool debugResetShipStructure(EntityId shipId);
-    void debugResetAllShipStructures();
-    bool debugDetachShipModule(EntityId shipId, const std::string& moduleId);
-    bool debugHangShipModule(EntityId shipId, const std::string& moduleId);
-    bool debugReevaluateShipStructure(EntityId shipId);
-    bool debugSetShipStructuralLinkHealth(
+    const SimulationSnapshot& snapshot() const override;
+    void refreshSnapshot() override;
+    bool destroyShipModule(EntityId shipId, const std::string& moduleId) override;
+    bool restoreShipModule(EntityId shipId, const std::string& moduleId) override;
+    bool resetShipStructure(EntityId shipId) override;
+    void resetAllShipStructures() override;
+    bool detachShipModule(EntityId shipId, const std::string& moduleId) override;
+    bool hangShipModule(EntityId shipId, const std::string& moduleId) override;
+    bool reevaluateShipStructure(EntityId shipId) override;
+    bool setShipStructuralLinkHealth(
         EntityId shipId,
         const std::string& linkId,
         float health,
         bool destroyed
-    );
+    ) override;
 
-    bool debugFastUniverseTime() const;
-    void setDebugUniverseTimeSimulation(bool enabled, double timeScale);
+    bool fastUniverseTime() const override;
+    void setUniverseTimeSimulation(bool enabled, double timeScale) override;
 
 
 private:

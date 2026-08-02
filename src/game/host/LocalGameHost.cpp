@@ -56,52 +56,52 @@ void LocalGameHost::configureWorld(float linearDrag, float maxSafeDecel)
     m_server->world().maxSafeDecel = maxSafeDecel;
 }
 
-const SimulationSnapshot& LocalGameHost::debugSnapshot() const
+const SimulationSnapshot& LocalGameHost::snapshot() const
 {
     return m_server->snapshot();
 }
 
-void LocalGameHost::debugRefreshSnapshot()
+void LocalGameHost::refreshSnapshot()
 {
     m_server->debugRefreshSnapshot();
 }
 
-bool LocalGameHost::debugDestroyShipModule(EntityId shipId, const std::string& moduleId)
+bool LocalGameHost::destroyShipModule(EntityId shipId, const std::string& moduleId)
 {
     return m_server->debugDestroyShipModule(shipId, moduleId);
 }
 
-bool LocalGameHost::debugRestoreShipModule(EntityId shipId, const std::string& moduleId)
+bool LocalGameHost::restoreShipModule(EntityId shipId, const std::string& moduleId)
 {
     return m_server->debugRestoreShipModule(shipId, moduleId);
 }
 
-bool LocalGameHost::debugResetShipStructure(EntityId shipId)
+bool LocalGameHost::resetShipStructure(EntityId shipId)
 {
     return m_server->debugResetShipStructure(shipId);
 }
 
-void LocalGameHost::debugResetAllShipStructures()
+void LocalGameHost::resetAllShipStructures()
 {
     m_server->debugResetAllShipStructures();
 }
 
-bool LocalGameHost::debugDetachShipModule(EntityId shipId, const std::string& moduleId)
+bool LocalGameHost::detachShipModule(EntityId shipId, const std::string& moduleId)
 {
     return m_server->debugDetachShipModule(shipId, moduleId);
 }
 
-bool LocalGameHost::debugHangShipModule(EntityId shipId, const std::string& moduleId)
+bool LocalGameHost::hangShipModule(EntityId shipId, const std::string& moduleId)
 {
     return m_server->debugHangShipModule(shipId, moduleId);
 }
 
-bool LocalGameHost::debugReevaluateShipStructure(EntityId shipId)
+bool LocalGameHost::reevaluateShipStructure(EntityId shipId)
 {
     return m_server->debugReevaluateShipStructure(shipId);
 }
 
-bool LocalGameHost::debugSetShipStructuralLinkHealth(
+bool LocalGameHost::setShipStructuralLinkHealth(
     EntityId shipId,
     const std::string& linkId,
     float health,
@@ -111,12 +111,12 @@ bool LocalGameHost::debugSetShipStructuralLinkHealth(
         shipId, linkId, health, destroyed);
 }
 
-bool LocalGameHost::debugFastUniverseTime() const
+bool LocalGameHost::fastUniverseTime() const
 {
     return m_server->debugFastUniverseTime();
 }
 
-void LocalGameHost::setDebugUniverseTimeSimulation(bool enabled, double timeScale)
+void LocalGameHost::setUniverseTimeSimulation(bool enabled, double timeScale)
 {
     m_server->setDebugUniverseTimeSimulation(enabled, timeScale);
 }

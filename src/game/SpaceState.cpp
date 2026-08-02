@@ -2289,8 +2289,8 @@ if (msg.command == "destroy_module")
     {
         EntityId id{ static_cast<uint32_t>(entityId) };
 
-        m_localHost->debugDestroyShipModule(id, moduleId);
-        m_localHost->debugRefreshSnapshot();
+        m_debugSession->destroyShipModule(id, moduleId);
+        m_debugSession->refreshSnapshot();
     }
 
     pushStructureDebugState();
@@ -2311,8 +2311,8 @@ if (msg.command == "detach_module")
     {
         EntityId id{ static_cast<uint32_t>(entityId) };
 
-        m_localHost->debugDetachShipModule(id, moduleId);
-        m_localHost->debugRefreshSnapshot();
+        m_debugSession->detachShipModule(id, moduleId);
+        m_debugSession->refreshSnapshot();
     }
 
     pushStructureDebugState();
@@ -2333,8 +2333,8 @@ if (msg.command == "hang_module")
     {
         EntityId id{ static_cast<uint32_t>(entityId) };
 
-        m_localHost->debugHangShipModule(id, moduleId);
-        m_localHost->debugRefreshSnapshot();
+        m_debugSession->hangShipModule(id, moduleId);
+        m_debugSession->refreshSnapshot();
     }
 
     pushStructureDebugState();
@@ -2350,8 +2350,8 @@ if (msg.command == "reevaluate_structure")
 
     EntityId id{ static_cast<uint32_t>(entityId) };
 
-    m_localHost->debugReevaluateShipStructure(id);
-    m_localHost->debugRefreshSnapshot();
+    m_debugSession->reevaluateShipStructure(id);
+    m_debugSession->refreshSnapshot();
 
     pushStructureDebugState();
     continue;
@@ -2371,8 +2371,8 @@ if (msg.command == "restore_module")
     {
         EntityId id{ static_cast<uint32_t>(entityId) };
 
-        m_localHost->debugRestoreShipModule(id, moduleId);
-        m_localHost->debugRefreshSnapshot();
+        m_debugSession->restoreShipModule(id, moduleId);
+        m_debugSession->refreshSnapshot();
     }
 
     pushStructureDebugState();
@@ -2397,13 +2397,13 @@ if (msg.command == "restore_module")
                         if (!linkId.empty())
                         {
                             EntityId id{ static_cast<uint32_t>(entityId) };
-                            m_localHost->debugSetShipStructuralLinkHealth(
+                            m_debugSession->setShipStructuralLinkHealth(
                                 id,
                                 linkId,
                                 health,
                                 destroyed
                             );
-                            m_localHost->debugRefreshSnapshot();
+                            m_debugSession->refreshSnapshot();
                         }
 
                         pushStructureDebugState();
@@ -2417,8 +2417,8 @@ if (msg.command == "reset_ship")
 
     EntityId id{ static_cast<uint32_t>(entityId) };
 
-    m_localHost->debugResetShipStructure(id);
-    m_localHost->debugRefreshSnapshot();
+    m_debugSession->resetShipStructure(id);
+    m_debugSession->refreshSnapshot();
 
     pushStructureDebugState();
     continue;
@@ -2426,8 +2426,8 @@ if (msg.command == "reset_ship")
 
 if (msg.command == "reset_all_ships")
 {
-    m_localHost->debugResetAllShipStructures();
-    m_localHost->debugRefreshSnapshot();
+    m_debugSession->resetAllShipStructures();
+    m_debugSession->refreshSnapshot();
 
     pushStructureDebugState();
     continue;
@@ -2501,9 +2501,9 @@ void SpaceState::pushStructureDebugState()
     payload["hasData"] = false;
     payload["reason"] = "no_server_ships";
 
-    m_localHost->debugRefreshSnapshot();
+    m_debugSession->refreshSnapshot();
 
-    const auto& snapshot = m_localHost->debugSnapshot();
+    const auto& snapshot = m_debugSession->snapshot();
 
     if (snapshot.ships.empty())
     {
@@ -2889,8 +2889,8 @@ void SpaceState::pushDebugControlState()
 
     payload["performance"] = perf;
     payload["debugFastUniverseTime"] =
-        m_localHost
-            ? m_localHost->debugFastUniverseTime()
+        m_debugSession
+            ? m_debugSession->fastUniverseTime()
             : false;
 
     payload["debugUniverseTimeSimulation"] =
@@ -3144,7 +3144,7 @@ void SpaceState::applyDebugControlPayload(const json& payload)
                 m_client->sessionSnapshot().configuredUniverseTimeScale
             );
 
-        m_localHost->setDebugUniverseTimeSimulation(
+        m_debugSession->setUniverseTimeSimulation(
             simulationEnabled,
             simulationScale
         );

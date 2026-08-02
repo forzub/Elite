@@ -35,6 +35,7 @@ void SpaceState::initServer()
         std::make_unique<game::host::LocalGameHost>();
 
     m_playerId = m_localHost->playerId();
+    m_debugSession = m_localHost.get();
 }
 
 

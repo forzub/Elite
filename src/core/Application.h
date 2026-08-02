@@ -13,9 +13,9 @@
 #include "ui/browser/GameWebView.h"
 #endif
 
-namespace game::host
+namespace game::session
 {
-class LocalGameSession;
+class IGameSession;
 }
 
 enum class GameUiMode
@@ -182,8 +182,8 @@ public:
 
     void startLocalGameSession();
     void stopGameSession();
-    game::host::LocalGameSession& localGameSession();
-    const game::host::LocalGameSession& localGameSession() const;
+    game::session::IGameSession& gameSession();
+    const game::session::IGameSession& gameSession() const;
 
 private:
     void init();
@@ -199,7 +199,7 @@ private:
     Renderer m_renderer;
     Window* m_window;
     StateContext m_context;
-    std::unique_ptr<game::host::LocalGameSession> m_localGameSession;
+    std::unique_ptr<game::session::IGameSession> m_gameSession;
     StateStack   m_states;
     RenderContext renderContext;
     HtmlUiManager m_htmlUi;

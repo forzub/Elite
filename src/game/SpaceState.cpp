@@ -45,7 +45,7 @@
 #include <mutex>
 
 #include "src/core/Application.h"
-#include "src/game/host/LocalGameSession.h"
+#include "src/game/session/IGameSession.h"
 
 #include <chrono>
 #include <algorithm>

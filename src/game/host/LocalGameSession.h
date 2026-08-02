@@ -2,8 +2,7 @@
 
 #include <memory>
 
-#include "src/scene/EntityID.h"
-#include "src/game/server/ServerRunner.h"
+#include "src/game/session/IGameSession.h"
 
 class GameClient;
 
@@ -18,7 +17,7 @@ class LocalGameHost;
 
 // Application-owned local session. Client-facing states borrow its endpoints
 // but never own or construct the authoritative runtime.
-class LocalGameSession final
+class LocalGameSession final : public game::session::IGameSession
 {
 public:
     LocalGameSession();
@@ -27,18 +26,23 @@ public:
     LocalGameSession(const LocalGameSession&) = delete;
     LocalGameSession& operator=(const LocalGameSession&) = delete;
 
-    GameClient& client();
-    const GameClient& client() const;
+    GameClient& client() override;
+    const GameClient& client() const override;
 
-    game::debug::IDebugSessionControl& debugControl();
-    const game::debug::IDebugSessionControl& debugControl() const;
+    game::debug::IDebugSessionControl* debugControl() override;
+    const game::debug::IDebugSessionControl* debugControl() const override;
 
-    EntityId playerId() const;
+    EntityId playerId() const override;
 
-    server::ServerAdvanceResult advance(double elapsedSeconds);
-    double fixedStepSeconds() const;
+    game::session::GameSessionAdvanceResult advance(
+        double elapsedSeconds
+    ) override;
+    double fixedStepSeconds() const override;
 
-    void configureWorld(float linearDrag, float maxSafeDecel);
+    void configureWorld(
+        float linearDrag,
+        float maxSafeDecel
+    ) override;
 
 private:
     std::unique_ptr<LocalGameHost> m_host;

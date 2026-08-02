@@ -9,6 +9,41 @@ GameClient::GameClient(ITransport* transport, EntityId playerId)
     : m_transport(transport)
     , m_playerId(playerId)
 {
+    m_connectionState = m_transport
+        ? ClientConnectionState::Connecting
+        : ClientConnectionState::Disconnected;
+}
+
+void GameClient::beginSynchronization()
+{
+    if (!m_transport)
+    {
+        failSynchronization("Client transport is not available");
+        return;
+    }
+
+    m_connectionError.clear();
+    m_connectionState = ClientConnectionState::Synchronizing;
+
+    requestStarAtlas();
+    requestCelestialSnapshot();
+    refreshConnectionState();
+}
+
+void GameClient::failSynchronization(std::string message)
+{
+    m_connectionError = std::move(message);
+    m_connectionState = ClientConnectionState::Failed;
+}
+
+ClientConnectionState GameClient::connectionState() const
+{
+    return m_connectionState;
+}
+
+const std::string& GameClient::connectionError() const
+{
+    return m_connectionError;
 }
 
 
@@ -161,7 +196,7 @@ bool GameClient::hasSessionSnapshot() const
     return m_hasSessionSnapshot;
 }
 
-bool GameClient::readyForGameplay() const
+bool GameClient::hasGameplayCoreState() const
 {
     if (!m_hasSessionSnapshot)
         return false;
@@ -176,6 +211,31 @@ bool GameClient::readyForGameplay() const
     return
         ship.descriptor != nullptr &&
         ship.assembly != nullptr;
+}
+
+void GameClient::refreshConnectionState()
+{
+    if (m_connectionState == ClientConnectionState::Failed ||
+        m_connectionState == ClientConnectionState::Disconnected)
+    {
+        return;
+    }
+
+    if (hasGameplayCoreState() &&
+        m_hasStarAtlas &&
+        m_hasCelestialSnapshot)
+    {
+        m_connectionState = ClientConnectionState::Ready;
+    }
+    else if (m_connectionState != ClientConnectionState::Connecting)
+    {
+        m_connectionState = ClientConnectionState::Synchronizing;
+    }
+}
+
+bool GameClient::readyForGameplay() const
+{
+    return m_connectionState == ClientConnectionState::Ready;
 }
 
 
@@ -204,6 +264,7 @@ bool GameClient::requestStarAtlas()
         m_hasStarAtlas = true;
     }
 
+    refreshConnectionState();
     return m_hasStarAtlas;
 }
 
@@ -218,6 +279,7 @@ bool GameClient::requestCelestialSnapshot()
         m_hasCelestialSnapshot = true;
     }
 
+    refreshConnectionState();
     return m_hasCelestialSnapshot;
 }
 
@@ -354,6 +416,7 @@ void GameClient::update(
     }
 
     m_world.update(dt);
+    refreshConnectionState();
 }
 
 

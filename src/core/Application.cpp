@@ -7,6 +7,7 @@
 #include "ui/MainMenuState.h"
 #include "game/SpaceState.h"
 #include "src/game/host/LocalGameSession.h"
+#include "src/game/session/IGameSession.h"
 #include "src/game/navigation/CoordinateDisplayService.h"
 #include "input/Input.h"
 #include "render/HUD/TextRenderer.h"
@@ -134,29 +135,29 @@ static int systemMapPanelWidth(int framebufferWidth)
 
 void Application::startLocalGameSession()
 {
-    m_localGameSession =
+    m_gameSession =
         std::make_unique<game::host::LocalGameSession>();
 }
 
 void Application::stopGameSession()
 {
-    m_localGameSession.reset();
+    m_gameSession.reset();
 }
 
-game::host::LocalGameSession& Application::localGameSession()
+game::session::IGameSession& Application::gameSession()
 {
-    if (!m_localGameSession)
-        throw std::runtime_error("Local game session is not running");
+    if (!m_gameSession)
+        throw std::runtime_error("Game session is not running");
 
-    return *m_localGameSession;
+    return *m_gameSession;
 }
 
-const game::host::LocalGameSession& Application::localGameSession() const
+const game::session::IGameSession& Application::gameSession() const
 {
-    if (!m_localGameSession)
-        throw std::runtime_error("Local game session is not running");
+    if (!m_gameSession)
+        throw std::runtime_error("Game session is not running");
 
-    return *m_localGameSession;
+    return *m_gameSession;
 }
 
 

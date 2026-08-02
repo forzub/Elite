@@ -44,9 +44,9 @@ using json = nlohmann::json;
 
 class StateStack;
 
-namespace game::host
+namespace game::session
 {
-class LocalGameSession;
+class IGameSession;
 }
 
 
@@ -169,7 +169,7 @@ private:
 
 
     // std::unique_ptr<GameSimulation>                 m_simulation;
-    game::host::LocalGameSession*                  m_session = nullptr;
+    game::session::IGameSession*                   m_session = nullptr;
     game::debug::IDebugSessionControl*              m_debugSession = nullptr;
     GameClient*                                      m_client = nullptr;
     std::unique_ptr<ClientWorldState>               m_clientWorld;

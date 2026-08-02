@@ -10,7 +10,7 @@
 #include "src/render/camera/RenderCameraViewport.h"
 #include "src/ui/components/UIText.h"
 #include "src/core/Application.h"
-#include "src/game/host/LocalGameSession.h"
+#include "src/game/session/IGameSession.h"
 
 #include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
@@ -36,9 +36,9 @@ void SpaceState::initServer()
     if (!context().app)
         throw std::runtime_error("SpaceState has no Application context");
 
-    m_session = &context().app->localGameSession();
+    m_session = &context().app->gameSession();
     m_playerId = m_session->playerId();
-    m_debugSession = &m_session->debugControl();
+    m_debugSession = m_session->debugControl();
 }
 
 
@@ -54,10 +54,16 @@ void SpaceState::initClient()
 
 void SpaceState::initHUD()
 {
-    if (!m_client || !m_client->readyForGameplay())
+    if (!m_client)
+        throw std::runtime_error("SpaceState has no game client");
+
+    if (!m_client->readyForGameplay())
     {
+        const std::string& reason = m_client->connectionError();
         throw std::runtime_error(
-            "Client startup handshake is incomplete: gameplay state is not ready"
+            reason.empty()
+                ? "Client session is not ready for gameplay"
+                : reason
         );
     }
 

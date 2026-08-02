@@ -14,6 +14,15 @@
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/world/celestial/CelestialTypes.h"
 
+enum class ClientConnectionState
+{
+    Disconnected,
+    Connecting,
+    Synchronizing,
+    Ready,
+    Failed
+};
+
 class GameClient
 {
 public:
@@ -49,6 +58,11 @@ public:
             int systemId,
             const std::string& hubId) const;
 
+    void beginSynchronization();
+    void failSynchronization(std::string message);
+    ClientConnectionState connectionState() const;
+    const std::string& connectionError() const;
+
     bool hasSessionSnapshot() const;
     bool readyForGameplay() const;
     const game::simulation::ClientSessionSnapshot&
@@ -64,6 +78,8 @@ public:
 
 
 private:
+    bool hasGameplayCoreState() const;
+    void refreshConnectionState();
     void receiveMapResponses();
     void reconcile(const SimulationSnapshot& snapshot,
                const WorldParams& world,
@@ -72,6 +88,9 @@ private:
 
 private:
     ITransport*                     m_transport;
+    ClientConnectionState           m_connectionState =
+        ClientConnectionState::Disconnected;
+    std::string                     m_connectionError;
     EntityId                        m_playerId;
 
     ClientWorldState                m_world;

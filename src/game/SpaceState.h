@@ -22,6 +22,7 @@
 #include "game/ship/view/PlayerShipView.h"
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/server/GameServer.h"
+#include "src/game/server/ServerRunner.h"
 #include "src/game/client/GameClient.h"
 #include "src/game/network/ITransport.h"
 #include "src/game/network/LocalLoopbackTransport.h"
@@ -166,6 +167,7 @@ private:
     std::unique_ptr<GameServer>                     m_server;
     std::unique_ptr<GameClient>                     m_client;
     std::unique_ptr<ITransport>                     m_transport;
+    std::unique_ptr<game::server::ServerRunner>      m_serverRunner;
     std::unique_ptr<ClientWorldState>               m_clientWorld;
 
     PlayerInputMapper                               m_inputMapper;
@@ -175,12 +177,6 @@ private:
     ShipControlState                                m_playerControl;
     std::deque<ShipControlState>                    m_sentInputs;
     uint32_t m_localTick = 0;
-
-    // =======================================
-    //  =========== Simulation Tick ==========
-    // =======================================
-    float                                           m_simAccumulator = 0.0f;
-    static constexpr float                          SIM_FIXED_DT = 0.02f;           // 50 Hz
 
     // =======================================
     //  ===========       HUD       ==========
@@ -230,6 +226,11 @@ private:
     double m_perfUpdateMs = 0.0;
     double m_perfProcessHtmlMs = 0.0;
     double m_perfFixedSimMs = 0.0;
+    std::uint32_t m_perfServerFixedSteps = 0;
+    double m_perfServerTickDebtMs = 0.0;
+    double m_perfServerDiscardedMs = 0.0;
+    double m_perfServerTotalDiscardedMs = 0.0;
+    bool m_perfServerCatchUpLimited = false;
     double m_perfClientUpdateMs = 0.0;
     double m_perfPlayerViewMs = 0.0;
     double m_perfUiRootUpdateMs = 0.0;

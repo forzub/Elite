@@ -40,6 +40,12 @@ void SpaceState::initServer()
     );
 
     m_server->update(0.0f);
+
+    m_serverRunner =
+        std::make_unique<game::server::ServerRunner>(
+            *m_server,
+            *m_transport
+        );
 }
 
 

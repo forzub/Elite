@@ -996,9 +996,6 @@ void SpaceState::update(float dt)
     const double updateStartMs = nowMs();
     m_perfFrameIndex++;
 
-    const float rawFrameDt = dt;
-    int debugFixedSteps = 0;
-
     const double htmlStartMs = nowMs();
     processHtmlCommands();
     m_perfProcessHtmlMs = nowMs() - htmlStartMs;
@@ -1007,43 +1004,36 @@ void SpaceState::update(float dt)
 
     const double simStartMs = nowMs();
 
-// Не даём стартовому лагу/фризу накопить огромный долг симуляции.
-// Иначе первые секунды сервер будет "догонять время",
-// делая по 2 fixed-step за кадр, и станция визуально крутится быстрее.
-const float clampedFrameDt = std::min(dt, 0.05f);
-
-m_simAccumulator += clampedFrameDt;
-
-constexpr int MAX_SIM_STEPS_PER_FRAME = 1;
-
-int steps = 0;
-
-while (m_simAccumulator >= SIM_FIXED_DT && steps < MAX_SIM_STEPS_PER_FRAME)
-{
-    m_transport->update(SIM_FIXED_DT);
-    m_server->update(SIM_FIXED_DT);
-    m_transport->update(0.0f);
-
-    m_simAccumulator -= SIM_FIXED_DT;
-    steps++;
-    debugFixedSteps++;
-}
-
-// Если симуляция не успела догнать — не тащим долг дальше.
-// Лучше потерять кусок времени, чем первые секунды жить в ускоренной вселенной.
-if (m_simAccumulator >= SIM_FIXED_DT)
-{
-    m_simAccumulator = 0.0;
-}
+    const auto serverAdvance =
+        m_serverRunner->advance(
+            static_cast<double>(dt)
+        );
 
     m_perfFixedSimMs = nowMs() - simStartMs;
+    m_perfServerFixedSteps = serverAdvance.stepsExecuted;
+    m_perfServerTickDebtMs =
+        serverAdvance.remainingDebtSeconds * 1000.0;
+    m_perfServerDiscardedMs =
+        serverAdvance.discardedSeconds * 1000.0;
+    m_perfServerTotalDiscardedMs =
+        serverAdvance.totalDiscardedSeconds * 1000.0;
+    m_perfServerCatchUpLimited =
+        serverAdvance.catchUpLimited;
 
-        const double clientStartMs = nowMs();
+    // Client prediction remains protected from a single extreme frame spike.
+    // The authoritative server uses its own accumulator and no longer loses
+    // ordinary fixed steps when client FPS falls below 50.
+    const float clientFrameDt =
+        std::clamp(dt, 0.0f, 0.05f);
+
+    const double clientStartMs = nowMs();
 
     m_client->update(
-        clampedFrameDt,
+        clientFrameDt,
         m_server->world(),
-        SIM_FIXED_DT
+        static_cast<float>(
+            m_serverRunner->fixedStepSeconds()
+        )
     );
 
     if constexpr (game::promo::PromoSceneScenario::Enabled)
@@ -2781,6 +2771,11 @@ void SpaceState::pushDebugControlState()
     perf["updateMs"] = m_perfUpdateMs;
     perf["processHtmlMs"] = m_perfProcessHtmlMs;
     perf["fixedSimMs"] = m_perfFixedSimMs;
+    perf["serverFixedSteps"] = m_perfServerFixedSteps;
+    perf["serverTickDebtMs"] = m_perfServerTickDebtMs;
+    perf["serverDiscardedMs"] = m_perfServerDiscardedMs;
+    perf["serverTotalDiscardedMs"] = m_perfServerTotalDiscardedMs;
+    perf["serverCatchUpLimited"] = m_perfServerCatchUpLimited;
     perf["clientUpdateMs"] = m_perfClientUpdateMs;
     perf["playerViewMs"] = m_perfPlayerViewMs;
     perf["uiRootUpdateMs"] = m_perfUiRootUpdateMs;

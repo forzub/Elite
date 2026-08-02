@@ -47,6 +47,16 @@ void SpaceState::initClient()
 
     // Consume the initial snapshot queued by LocalGameHost.
     m_client->update(0.0f, static_cast<float>(m_localHost->fixedStepSeconds()));
+
+    // Static catalog and initial presentation state also cross the transport
+    // boundary. SpaceState must not read them from LocalGameHost.
+    if (!m_client->requestStarAtlas() ||
+        !m_client->requestCelestialSnapshot())
+    {
+        throw std::runtime_error(
+            "Client startup catalog handshake is incomplete"
+        );
+    }
 }
 
 

@@ -193,6 +193,46 @@ GameClient::playerNavigation() const
 }
 
 
+bool GameClient::requestStarAtlas()
+{
+    m_transport->requestStarAtlas();
+
+    world::celestial::StarAtlasDatabase atlas;
+    while (m_transport->receiveStarAtlas(atlas))
+    {
+        m_starAtlas = std::move(atlas);
+        m_hasStarAtlas = true;
+    }
+
+    return m_hasStarAtlas;
+}
+
+bool GameClient::requestCelestialSnapshot()
+{
+    m_transport->requestCelestialSnapshot();
+
+    world::celestial::CelestialSystemSnapshot snapshot;
+    while (m_transport->receiveCelestialSnapshot(snapshot))
+    {
+        m_celestialSnapshot = std::move(snapshot);
+        m_hasCelestialSnapshot = true;
+    }
+
+    return m_hasCelestialSnapshot;
+}
+
+const world::celestial::StarAtlasDatabase* GameClient::starAtlas() const
+{
+    return m_hasStarAtlas ? &m_starAtlas : nullptr;
+}
+
+const world::celestial::CelestialSystemSnapshot*
+GameClient::celestialSnapshot() const
+{
+    return m_hasCelestialSnapshot ? &m_celestialSnapshot : nullptr;
+}
+
+
 void GameClient::receiveMapResponses()
 {
     game::network::MapResponse response;

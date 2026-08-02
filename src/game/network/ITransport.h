@@ -4,6 +4,8 @@
 #include "src/game/simulation/SimulationSnapshot.h"
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/MapSnapshotMessage.h"
+#include "src/world/celestial/StarAtlasDatabase.h"
+#include "src/world/celestial/CelestialTypes.h"
 #include "src/scene/EntityID.h"
 
 class ITransport
@@ -31,5 +33,17 @@ public:
 
     virtual bool receiveMapResponse(
         game::network::MapResponse& outResponse
+    ) = 0;
+
+    // Read-only presentation data. The atlas is static session catalog data;
+    // the celestial snapshot is the current authoritative system state.
+    virtual void requestStarAtlas() = 0;
+    virtual bool receiveStarAtlas(
+        world::celestial::StarAtlasDatabase& outAtlas
+    ) = 0;
+
+    virtual void requestCelestialSnapshot() = 0;
+    virtual bool receiveCelestialSnapshot(
+        world::celestial::CelestialSystemSnapshot& outSnapshot
     ) = 0;
 };

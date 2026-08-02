@@ -121,13 +121,4 @@ void LocalGameHost::setDebugUniverseTimeSimulation(bool enabled, double timeScal
     m_server->setDebugUniverseTimeSimulation(enabled, timeScale);
 }
 
-const world::celestial::StarAtlasDatabase& LocalGameHost::starAtlas() const
-{
-    return m_server->starAtlas();
-}
-
-const world::celestial::CelestialSystemSnapshot& LocalGameHost::celestialSnapshot() const
-{
-    return m_server->celestialSnapshot();
-}
 }

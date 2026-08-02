@@ -3290,8 +3290,16 @@ void SpaceState::pushSystemMapState()
     if (!m_client)
         return;
 
-    const auto& atlas = m_localHost->starAtlas();
-    const auto& celestial = m_localHost->celestialSnapshot();
+    if (!m_client->requestCelestialSnapshot())
+        return;
+
+    const auto* atlasPtr = m_client->starAtlas();
+    const auto* celestialPtr = m_client->celestialSnapshot();
+    if (!atlasPtr || !celestialPtr)
+        return;
+
+    const auto& atlas = *atlasPtr;
+    const auto& celestial = *celestialPtr;
     const auto& nav = m_client->playerNavigation();
 
     json payload;
@@ -3842,8 +3850,16 @@ void SpaceState::pushSystemMapPanelState()
     if (!m_client || !context().app)
         return;
 
-    const auto& atlas = m_localHost->starAtlas();
-    const auto& celestial = m_localHost->celestialSnapshot();
+    if (!m_client->requestCelestialSnapshot())
+        return;
+
+    const auto* atlasPtr = m_client->starAtlas();
+    const auto* celestialPtr = m_client->celestialSnapshot();
+    if (!atlasPtr || !celestialPtr)
+        return;
+
+    const auto& atlas = *atlasPtr;
+    const auto& celestial = *celestialPtr;
     const auto& nav = m_client->playerNavigation();
 
     json payload;

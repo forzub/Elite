@@ -166,3 +166,35 @@ bool LocalLoopbackTransport::receiveMapResponse(
     m_mapResponses.pop();
     return true;
 }
+
+void LocalLoopbackTransport::requestStarAtlas()
+{
+    m_starAtlasResponses.push(m_server->starAtlas());
+}
+
+bool LocalLoopbackTransport::receiveStarAtlas(
+    world::celestial::StarAtlasDatabase& outAtlas)
+{
+    if (m_starAtlasResponses.empty())
+        return false;
+
+    outAtlas = std::move(m_starAtlasResponses.front());
+    m_starAtlasResponses.pop();
+    return true;
+}
+
+void LocalLoopbackTransport::requestCelestialSnapshot()
+{
+    m_celestialResponses.push(m_server->celestialSnapshot());
+}
+
+bool LocalLoopbackTransport::receiveCelestialSnapshot(
+    world::celestial::CelestialSystemSnapshot& outSnapshot)
+{
+    if (m_celestialResponses.empty())
+        return false;
+
+    outSnapshot = std::move(m_celestialResponses.front());
+    m_celestialResponses.pop();
+    return true;
+}

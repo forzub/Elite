@@ -7,8 +7,6 @@
 #include "src/game/simulation/SimulationSnapshot.h"
 #include "src/scene/EntityID.h"
 #include "src/world/WorldParams.h"
-#include "src/world/celestial/StarAtlasDatabase.h"
-#include "src/world/celestial/CelestialSystemRuntime.h"
 
 class GameServer;
 class ITransport;
@@ -62,8 +60,6 @@ public:
     bool debugFastUniverseTime() const;
     void setDebugUniverseTimeSimulation(bool enabled, double timeScale);
 
-    const world::celestial::StarAtlasDatabase& starAtlas() const;
-    const world::celestial::CelestialSystemSnapshot& celestialSnapshot() const;
 
 private:
     std::unique_ptr<GameServer> m_server;

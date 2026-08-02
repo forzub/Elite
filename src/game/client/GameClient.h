@@ -11,6 +11,8 @@
 #include "src/game/network/ITransport.h"
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/MapSnapshotMessage.h"
+#include "src/world/celestial/StarAtlasDatabase.h"
+#include "src/world/celestial/CelestialTypes.h"
 
 class GameClient
 {
@@ -53,6 +55,12 @@ public:
         sessionSnapshot() const;
     const world::celestial::PlayerNavigationState&
         playerNavigation() const;
+
+    bool requestStarAtlas();
+    bool requestCelestialSnapshot();
+    const world::celestial::StarAtlasDatabase* starAtlas() const;
+    const world::celestial::CelestialSystemSnapshot*
+        celestialSnapshot() const;
 
 
 private:
@@ -100,4 +108,9 @@ private:
 
     bool m_hasSessionSnapshot = false;
     game::simulation::ClientSessionSnapshot m_sessionSnapshot;
+
+    bool m_hasStarAtlas = false;
+    bool m_hasCelestialSnapshot = false;
+    world::celestial::StarAtlasDatabase m_starAtlas;
+    world::celestial::CelestialSystemSnapshot m_celestialSnapshot;
 };

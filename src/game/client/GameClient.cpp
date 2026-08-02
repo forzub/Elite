@@ -78,74 +78,44 @@ void GameClient::sendMessage(const game::network::ClientMessage& msg)
 }
 
 
-bool GameClient::requestGalaxyMapSnapshot()
+bool GameClient::requestGalaxyMapSnapshot(bool forceRefresh)
 {
-    game::network::GalaxyMapRequest request;
-    request.requestId = m_nextMapRequestId++;
-    m_lastGalaxyMapRequestId = request.requestId;
-
-    m_transport->sendMapRequest(request);
     receiveMapResponses();
-
-    return m_hasGalaxyMapSnapshot;
+    if (m_galaxyMapResponseReady) { m_galaxyMapResponseReady = false; return m_hasGalaxyMapSnapshot; }
+    if (m_lastGalaxyMapRequestId != 0) return false;
+    if (!forceRefresh && m_hasGalaxyMapSnapshot) return true;
+    game::network::GalaxyMapRequest request; request.requestId = m_nextMapRequestId++;
+    m_lastGalaxyMapRequestId = request.requestId; m_transport->sendMapRequest(request); return false;
 }
 
-
-bool GameClient::requestSystemMapSnapshot(int systemId)
+bool GameClient::requestSystemMapSnapshot(int systemId, bool forceRefresh)
 {
-    game::network::SystemMapRequest request;
-    request.requestId = m_nextMapRequestId++;
-    request.systemId = systemId;
-    m_lastSystemMapRequestId = request.requestId;
-    m_requestedSystemMapId = systemId;
-
-    m_transport->sendMapRequest(request);
     receiveMapResponses();
-
-    return
-        m_hasSystemMapSnapshot &&
-        m_systemMapSnapshotId == systemId;
+    if (m_systemMapResponseReady && m_systemMapSnapshotId == systemId) { m_systemMapResponseReady = false; return true; }
+    if (m_lastSystemMapRequestId != 0) return false;
+    if (!forceRefresh && m_hasSystemMapSnapshot && m_systemMapSnapshotId == systemId) return true;
+    game::network::SystemMapRequest request; request.requestId = m_nextMapRequestId++; request.systemId = systemId;
+    m_lastSystemMapRequestId = request.requestId; m_requestedSystemMapId = systemId; m_transport->sendMapRequest(request); return false;
 }
 
-
-bool GameClient::requestDetailMapSnapshot(
-    const world::celestial::DetailTarget& target)
+bool GameClient::requestDetailMapSnapshot(const world::celestial::DetailTarget& target, bool forceRefresh)
 {
-    if (!target.valid())
-        return false;
-
-    game::network::DetailMapRequest request;
-    request.requestId = m_nextMapRequestId++;
-    request.target = target;
-    m_lastDetailMapRequestId = request.requestId;
-    m_requestedDetailMapTarget = target;
-    m_transport->sendMapRequest(request);
-    receiveMapResponses();
-
-    return m_hasDetailMapSnapshot &&
-        m_detailMapSnapshotTarget == target;
+    if (!target.valid()) return false; receiveMapResponses();
+    if (m_detailMapResponseReady && m_detailMapSnapshotTarget == target) { m_detailMapResponseReady = false; return true; }
+    if (m_lastDetailMapRequestId != 0) return false;
+    if (!forceRefresh && m_hasDetailMapSnapshot && m_detailMapSnapshotTarget == target) return true;
+    game::network::DetailMapRequest request; request.requestId = m_nextMapRequestId++; request.target = target;
+    m_lastDetailMapRequestId = request.requestId; m_requestedDetailMapTarget = target; m_transport->sendMapRequest(request); return false;
 }
 
-bool GameClient::requestHubMapSnapshot(
-    int systemId,
-    const std::string& hubId)
+bool GameClient::requestHubMapSnapshot(int systemId, const std::string& hubId, bool forceRefresh)
 {
-    if (systemId < 0 || hubId.empty())
-        return false;
-
-    game::network::HubMapRequest request;
-    request.requestId = m_nextMapRequestId++;
-    request.systemId = systemId;
-    request.hubId = hubId;
-    m_lastHubMapRequestId = request.requestId;
-    m_requestedHubMapSystemId = systemId;
-    m_requestedHubMapHubId = hubId;
-    m_transport->sendMapRequest(request);
-    receiveMapResponses();
-
-    return m_hasHubMapSnapshot &&
-        m_hubMapSnapshotSystemId == systemId &&
-        m_hubMapSnapshotHubId == hubId;
+    if (systemId < 0 || hubId.empty()) return false; receiveMapResponses();
+    if (m_hubMapResponseReady && m_hubMapSnapshotSystemId == systemId && m_hubMapSnapshotHubId == hubId) { m_hubMapResponseReady = false; return true; }
+    if (m_lastHubMapRequestId != 0) return false;
+    if (!forceRefresh && m_hasHubMapSnapshot && m_hubMapSnapshotSystemId == systemId && m_hubMapSnapshotHubId == hubId) return true;
+    game::network::HubMapRequest request; request.requestId = m_nextMapRequestId++; request.systemId = systemId; request.hubId = hubId;
+    m_lastHubMapRequestId = request.requestId; m_requestedHubMapSystemId = systemId; m_requestedHubMapHubId = hubId; m_transport->sendMapRequest(request); return false;
 }
 
 
@@ -340,6 +310,8 @@ void GameClient::receiveMapResponses()
                     m_galaxyMapSnapshot =
                         std::move(typedResponse.snapshot);
                     m_hasGalaxyMapSnapshot = true;
+                    m_lastGalaxyMapRequestId = 0;
+                    m_galaxyMapResponseReady = true;
                 }
                 else if constexpr (
                     std::is_same_v<
@@ -359,6 +331,8 @@ void GameClient::receiveMapResponses()
                     m_systemMapSnapshotId =
                         typedResponse.systemId;
                     m_hasSystemMapSnapshot = true;
+                    m_lastSystemMapRequestId = 0;
+                    m_systemMapResponseReady = true;
                 }
                 else if constexpr (
                     std::is_same_v<ResponseT,
@@ -371,6 +345,8 @@ void GameClient::receiveMapResponses()
                     m_detailMapSnapshot = std::move(typedResponse.snapshot);
                     m_detailMapSnapshotTarget = typedResponse.target;
                     m_hasDetailMapSnapshot = true;
+                    m_lastDetailMapRequestId = 0;
+                    m_detailMapResponseReady = true;
                 }
                 else if constexpr (
                     std::is_same_v<ResponseT,
@@ -385,6 +361,8 @@ void GameClient::receiveMapResponses()
                     m_hubMapSnapshotSystemId = typedResponse.systemId;
                     m_hubMapSnapshotHubId = std::move(typedResponse.hubId);
                     m_hasHubMapSnapshot = true;
+                    m_lastHubMapRequestId = 0;
+                    m_hubMapResponseReady = true;
                 }
             },
             std::move(response)

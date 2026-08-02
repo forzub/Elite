@@ -479,7 +479,7 @@ void SpaceState::requestSystemMapSnapshot(
         return;
     }
 
-    if (!m_client->requestSystemMapSnapshot(systemId))
+    if (!m_client->requestSystemMapSnapshot(systemId, forceRefresh))
         return;
 
     const auto* snapshot =
@@ -511,7 +511,7 @@ void SpaceState::requestDetailMapSnapshot(
         m_loadedDetailTarget == target)
         return;
 
-    if (!m_client->requestDetailMapSnapshot(target))
+    if (!m_client->requestDetailMapSnapshot(target, forceRefresh))
         return;
 
     const auto* snapshot = m_client->detailMapSnapshot(target);
@@ -538,7 +538,7 @@ void SpaceState::requestHubMapSnapshot(
         m_loadedHubMapHubId == hubId)
         return;
 
-    if (!m_client->requestHubMapSnapshot(systemId, hubId))
+    if (!m_client->requestHubMapSnapshot(systemId, hubId, forceRefresh))
         return;
 
     const auto* snapshot = m_client->hubMapSnapshot(systemId, hubId);

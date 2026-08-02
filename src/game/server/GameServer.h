@@ -9,6 +9,7 @@
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/ProtocolMetadata.h"
+#include "src/game/network/MapSnapshotMessage.h"
 #include "src/scene/EntityID.h"
 #include "src/game/network/ClientShipCommand.h"
 #include "src/game/diagnostics/ServerDiagnostics.h"
@@ -69,11 +70,14 @@ public:
     {
         game::network::SnapshotMetadata metadata;
         metadata.serverTick = m_serverTick;
-        metadata.serverTimeSeconds = m_lastSnapshot.serverTime;
+        metadata.serverTimeSeconds = m_simulation.serverTime();
         metadata.universeTimeSeconds = m_universeClock.timeSeconds();
         metadata.worldRevision = m_serverTick;
         return metadata;
     }
+
+    void enqueueMapRequest(const game::network::MapRequest& request);
+    bool popMapResponse(game::network::MapResponse& outResponse);
 
     std::uint64_t catalogRevision() const
     {
@@ -173,6 +177,8 @@ public:
     double debugUniverseTimeScale() const;
 
 private:
+    void processPendingMapRequests();
+
     void populateClientSessionSnapshot(
         SimulationSnapshot& snapshot
     ) const;
@@ -194,6 +200,8 @@ private:
     std::unordered_map<uint32_t, std::deque<ShipControlState>> m_pendingCommands;
     std::unordered_map<uint32_t, std::uint64_t> m_lastProcessedControlTicks;
     std::unordered_map<uint32_t, std::deque<ClientShipCommand>> m_pendingClientShipCommands;
+    std::deque<game::network::MapRequest> m_pendingMapRequests;
+    std::deque<game::network::MapResponse> m_completedMapResponses;
     std::uint64_t m_serverTick = 0;
     world::time::UniverseClock m_universeClock;
     double m_lastUniverseTimeSeconds = 0.0;

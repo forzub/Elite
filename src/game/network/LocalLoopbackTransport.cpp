@@ -88,10 +88,11 @@ void LocalLoopbackTransport::update(float dt)
         m_incoming.push(m_latencyBuffer.front().snapshot);
         m_latencyBuffer.erase(m_latencyBuffer.begin());
     }
+
+    game::network::MapResponse response;
+    while (m_server->popMapResponse(response))
+        m_mapResponses.push(std::move(response));
 }
-
-
-
 
 
 void LocalLoopbackTransport::sendClientMessage(
@@ -105,58 +106,7 @@ void LocalLoopbackTransport::sendClientMessage(
 void LocalLoopbackTransport::sendMapRequest(
     const game::network::MapRequest& request)
 {
-    std::visit(
-        [this](const auto& typedRequest)
-        {
-            using RequestT = std::decay_t<decltype(typedRequest)>;
-
-            if constexpr (
-                std::is_same_v<RequestT, game::network::GalaxyMapRequest>)
-            {
-                game::network::GalaxyMapResponse response;
-                response.requestId = typedRequest.requestId;
-                response.metadata = m_server->protocolMetadata();
-                response.snapshot = m_server->buildGalaxyMapSnapshot();
-                m_mapResponses.push(std::move(response));
-            }
-            else if constexpr (
-                std::is_same_v<RequestT, game::network::SystemMapRequest>)
-            {
-                game::network::SystemMapResponse response;
-                response.requestId = typedRequest.requestId;
-                response.metadata = m_server->protocolMetadata();
-                response.systemId = typedRequest.systemId;
-                response.snapshot =
-                    m_server->buildSystemMapSnapshot(typedRequest.systemId);
-                m_mapResponses.push(std::move(response));
-            }
-            else if constexpr (
-                std::is_same_v<RequestT, game::network::DetailMapRequest>)
-            {
-                game::network::DetailMapResponse response;
-                response.requestId = typedRequest.requestId;
-                response.metadata = m_server->protocolMetadata();
-                response.target = typedRequest.target;
-                response.snapshot = m_server->buildDetailMapSnapshot(
-                    typedRequest.target);
-                m_mapResponses.push(std::move(response));
-            }
-            else if constexpr (
-                std::is_same_v<RequestT, game::network::HubMapRequest>)
-            {
-                game::network::HubMapResponse response;
-                response.requestId = typedRequest.requestId;
-                response.metadata = m_server->protocolMetadata();
-                response.systemId = typedRequest.systemId;
-                response.hubId = typedRequest.hubId;
-                response.snapshot = m_server->buildHubMapSnapshot(
-                    typedRequest.systemId,
-                    typedRequest.hubId);
-                m_mapResponses.push(std::move(response));
-            }
-        },
-        request
-    );
+    m_server->enqueueMapRequest(request);
 }
 
 

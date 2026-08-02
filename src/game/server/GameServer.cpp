@@ -817,10 +817,65 @@ m_simulation.setTick(m_serverTick);
         m_lastSnapshot = m_simulation.snapshot();
         populateClientSessionSnapshot(m_lastSnapshot);
     }
+
+    processPendingMapRequests();
 }
 
+void GameServer::enqueueMapRequest(const game::network::MapRequest& request)
+{
+    m_pendingMapRequests.push_back(request);
+}
 
+bool GameServer::popMapResponse(game::network::MapResponse& outResponse)
+{
+    if (m_completedMapResponses.empty())
+        return false;
+    outResponse = std::move(m_completedMapResponses.front());
+    m_completedMapResponses.pop_front();
+    return true;
+}
 
+void GameServer::processPendingMapRequests()
+{
+    const auto metadata = protocolMetadata();
+    while (!m_pendingMapRequests.empty())
+    {
+        auto request = std::move(m_pendingMapRequests.front());
+        m_pendingMapRequests.pop_front();
+        std::visit([this, &metadata](const auto& typedRequest)
+        {
+            using RequestT = std::decay_t<decltype(typedRequest)>;
+            if constexpr (std::is_same_v<RequestT, game::network::GalaxyMapRequest>)
+            {
+                game::network::GalaxyMapResponse response;
+                response.requestId = typedRequest.requestId; response.metadata = metadata;
+                response.snapshot = buildGalaxyMapSnapshot();
+                m_completedMapResponses.push_back(std::move(response));
+            }
+            else if constexpr (std::is_same_v<RequestT, game::network::SystemMapRequest>)
+            {
+                game::network::SystemMapResponse response;
+                response.requestId = typedRequest.requestId; response.metadata = metadata; response.systemId = typedRequest.systemId;
+                response.snapshot = buildSystemMapSnapshot(typedRequest.systemId);
+                m_completedMapResponses.push_back(std::move(response));
+            }
+            else if constexpr (std::is_same_v<RequestT, game::network::DetailMapRequest>)
+            {
+                game::network::DetailMapResponse response;
+                response.requestId = typedRequest.requestId; response.metadata = metadata; response.target = typedRequest.target;
+                response.snapshot = buildDetailMapSnapshot(typedRequest.target);
+                m_completedMapResponses.push_back(std::move(response));
+            }
+            else if constexpr (std::is_same_v<RequestT, game::network::HubMapRequest>)
+            {
+                game::network::HubMapResponse response;
+                response.requestId = typedRequest.requestId; response.metadata = metadata; response.systemId = typedRequest.systemId; response.hubId = typedRequest.hubId;
+                response.snapshot = buildHubMapSnapshot(typedRequest.systemId, typedRequest.hubId);
+                m_completedMapResponses.push_back(std::move(response));
+            }
+        }, request);
+    }
+}
 
 void GameServer::populateClientSessionSnapshot(
     SimulationSnapshot& snapshot

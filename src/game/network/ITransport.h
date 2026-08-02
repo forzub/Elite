@@ -4,6 +4,7 @@
 #include "src/game/simulation/SimulationSnapshot.h"
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/MapSnapshotMessage.h"
+#include "src/game/network/PresentationDataMessage.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/scene/EntityID.h"
@@ -39,11 +40,11 @@ public:
     // the celestial snapshot is the current authoritative system state.
     virtual void requestStarAtlas() = 0;
     virtual bool receiveStarAtlas(
-        world::celestial::StarAtlasDatabase& outAtlas
+        game::network::StarAtlasResponse& outResponse
     ) = 0;
 
     virtual void requestCelestialSnapshot() = 0;
     virtual bool receiveCelestialSnapshot(
-        world::celestial::CelestialSystemSnapshot& outSnapshot
+        game::network::CelestialSnapshotResponse& outResponse
     ) = 0;
 };

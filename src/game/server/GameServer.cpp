@@ -1,4 +1,5 @@
 #include "GameServer.h"
+#include <type_traits>
 #include "src/game/network/ClientMessage.h"
 #include <algorithm>
 #include <iostream>
@@ -825,6 +826,11 @@ void GameServer::populateClientSessionSnapshot(
     SimulationSnapshot& snapshot
 ) const
 {
+    snapshot.metadata.serverTick = snapshot.snapshotTick;
+    snapshot.metadata.serverTimeSeconds = snapshot.serverTime;
+    snapshot.metadata.universeTimeSeconds = m_universeClock.timeSeconds();
+    snapshot.metadata.worldRevision = m_serverTick;
+
     for (auto& ship : snapshot.ships)
     {
         const auto it = m_lastProcessedControlTicks.find(ship.id.value);
@@ -861,28 +867,22 @@ void GameServer::receiveClientMessage(
     EntityId playerId,
     const game::network::ClientMessage& msg)
 {
-
-    switch (msg.type)
-    {
-        case game::network::ClientMessageType::ControlInput:
+    std::visit(
+        [this, playerId](const auto& payload)
         {
-            const auto& control =
-                std::get<ShipControlState>(msg.payload);
+            using PayloadT = std::decay_t<decltype(payload)>;
 
-            submitCommand(playerId, control);
-            break;
-        }
-
-        case game::network::ClientMessageType::ClientShipCommand:
-{
-
-            const auto& cmd =
-                std::get<ClientShipCommand>(msg.payload);
-
-            m_pendingClientShipCommands[playerId.value].push_back(cmd);
-            break;
-        }
-    }
+            if constexpr (std::is_same_v<PayloadT, ShipControlState>)
+            {
+                submitCommand(playerId, payload);
+            }
+            else if constexpr (std::is_same_v<PayloadT, ClientShipCommand>)
+            {
+                m_pendingClientShipCommands[playerId.value].push_back(payload);
+            }
+        },
+        msg.payload
+    );
 }
 
 

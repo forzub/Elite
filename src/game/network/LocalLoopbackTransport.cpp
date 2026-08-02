@@ -115,6 +115,7 @@ void LocalLoopbackTransport::sendMapRequest(
             {
                 game::network::GalaxyMapResponse response;
                 response.requestId = typedRequest.requestId;
+                response.metadata = m_server->protocolMetadata();
                 response.snapshot = m_server->buildGalaxyMapSnapshot();
                 m_mapResponses.push(std::move(response));
             }
@@ -123,6 +124,7 @@ void LocalLoopbackTransport::sendMapRequest(
             {
                 game::network::SystemMapResponse response;
                 response.requestId = typedRequest.requestId;
+                response.metadata = m_server->protocolMetadata();
                 response.systemId = typedRequest.systemId;
                 response.snapshot =
                     m_server->buildSystemMapSnapshot(typedRequest.systemId);
@@ -133,6 +135,7 @@ void LocalLoopbackTransport::sendMapRequest(
             {
                 game::network::DetailMapResponse response;
                 response.requestId = typedRequest.requestId;
+                response.metadata = m_server->protocolMetadata();
                 response.target = typedRequest.target;
                 response.snapshot = m_server->buildDetailMapSnapshot(
                     typedRequest.target);
@@ -143,6 +146,7 @@ void LocalLoopbackTransport::sendMapRequest(
             {
                 game::network::HubMapResponse response;
                 response.requestId = typedRequest.requestId;
+                response.metadata = m_server->protocolMetadata();
                 response.systemId = typedRequest.systemId;
                 response.hubId = typedRequest.hubId;
                 response.snapshot = m_server->buildHubMapSnapshot(
@@ -169,32 +173,38 @@ bool LocalLoopbackTransport::receiveMapResponse(
 
 void LocalLoopbackTransport::requestStarAtlas()
 {
-    m_starAtlasResponses.push(m_server->starAtlas());
+    game::network::StarAtlasResponse response;
+    response.metadata.catalogRevision = m_server->catalogRevision();
+    response.atlas = m_server->starAtlas();
+    m_starAtlasResponses.push(std::move(response));
 }
 
 bool LocalLoopbackTransport::receiveStarAtlas(
-    world::celestial::StarAtlasDatabase& outAtlas)
+    game::network::StarAtlasResponse& outResponse)
 {
     if (m_starAtlasResponses.empty())
         return false;
 
-    outAtlas = std::move(m_starAtlasResponses.front());
+    outResponse = std::move(m_starAtlasResponses.front());
     m_starAtlasResponses.pop();
     return true;
 }
 
 void LocalLoopbackTransport::requestCelestialSnapshot()
 {
-    m_celestialResponses.push(m_server->celestialSnapshot());
+    game::network::CelestialSnapshotResponse response;
+    response.metadata = m_server->protocolMetadata();
+    response.snapshot = m_server->celestialSnapshot();
+    m_celestialResponses.push(std::move(response));
 }
 
 bool LocalLoopbackTransport::receiveCelestialSnapshot(
-    world::celestial::CelestialSystemSnapshot& outSnapshot)
+    game::network::CelestialSnapshotResponse& outResponse)
 {
     if (m_celestialResponses.empty())
         return false;
 
-    outSnapshot = std::move(m_celestialResponses.front());
+    outResponse = std::move(m_celestialResponses.front());
     m_celestialResponses.pop();
     return true;
 }

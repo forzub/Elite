@@ -46,18 +46,18 @@ public:
 
     void requestStarAtlas() override;
     bool receiveStarAtlas(
-        world::celestial::StarAtlasDatabase& outAtlas) override;
+        game::network::StarAtlasResponse& outResponse) override;
 
     void requestCelestialSnapshot() override;
     bool receiveCelestialSnapshot(
-        world::celestial::CelestialSystemSnapshot& outSnapshot) override;
+        game::network::CelestialSnapshotResponse& outResponse) override;
 
 private:
     GameServer* m_server;
     std::queue<SimulationSnapshot> m_incoming;
     std::queue<game::network::MapResponse> m_mapResponses;
-    std::queue<world::celestial::StarAtlasDatabase> m_starAtlasResponses;
-    std::queue<world::celestial::CelestialSystemSnapshot> m_celestialResponses;
+    std::queue<game::network::StarAtlasResponse> m_starAtlasResponses;
+    std::queue<game::network::CelestialSnapshotResponse> m_celestialResponses;
     std::vector<DelayedSnapshot> m_latencyBuffer;
     float m_fakeLatency = 0.1f; // 100ms
     float m_packetLoss = 0.0f;

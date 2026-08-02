@@ -931,8 +931,6 @@ const bool ejectPressed =
 if (ejectPressed)
 {
     game::network::ClientMessage msg;
-    msg.type = game::network::ClientMessageType::ClientShipCommand;
-
     ClientShipCommand command;
     command.type = ClientShipCommand::EjectCockpitCapsule;
     msg.payload = command;
@@ -950,8 +948,6 @@ const bool ctrlDown =
 if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
 {
     game::network::ClientMessage msg;
-    msg.type = game::network::ClientMessageType::ClientShipCommand;
-
     ClientShipCommand command;
     command.type = ClientShipCommand::StartBestRepairJob;
     msg.payload = command;
@@ -1125,7 +1121,6 @@ m_playerView->updateCockpitStateFromSnapshot(
 
                     game::network::ClientMessage  msg;
                     msg.clientTick = 0;
-                    msg.type = game::network::ClientMessageType::ClientShipCommand;
                     msg.payload = ship_cmd;
                     m_client->sendMessage(msg);
 
@@ -1138,7 +1133,6 @@ m_playerView->updateCockpitStateFromSnapshot(
 
                     game::network::ClientMessage  msg;
                     msg.clientTick = 0;
-                    msg.type = game::network::ClientMessageType::ClientShipCommand;
                     msg.payload = ship_cmd;
                     m_client->sendMessage(msg);
                     break;

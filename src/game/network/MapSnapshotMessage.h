@@ -5,6 +5,7 @@
 #include <variant>
 
 #include "src/world/celestial/SystemMapTypes.h"
+#include "src/game/network/ProtocolMetadata.h"
 
 namespace game::network
 {
@@ -42,12 +43,14 @@ using MapRequest = std::variant<
 struct GalaxyMapResponse
 {
     std::uint64_t requestId = 0;
+    SnapshotMetadata metadata;
     world::celestial::GalaxyMapSnapshot snapshot;
 };
 
 struct SystemMapResponse
 {
     std::uint64_t requestId = 0;
+    SnapshotMetadata metadata;
     int systemId = -1;
     world::celestial::SystemMapSnapshot snapshot;
 };
@@ -55,6 +58,7 @@ struct SystemMapResponse
 struct DetailMapResponse
 {
     std::uint64_t requestId = 0;
+    SnapshotMetadata metadata;
     world::celestial::DetailTarget target;
     world::celestial::DetailMapSnapshot snapshot;
 };
@@ -62,6 +66,7 @@ struct DetailMapResponse
 struct HubMapResponse
 {
     std::uint64_t requestId = 0;
+    SnapshotMetadata metadata;
     int systemId = -1;
     std::string hubId;
     world::celestial::HubMapSnapshot snapshot;

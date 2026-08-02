@@ -63,7 +63,6 @@ void GameClient::submitInput(const ShipControlState& control)
 
     game::network::ClientMessage msg;
     msg.clientTick = m_clientTick;
-    msg.type = game::network::ClientMessageType::ControlInput;
     msg.payload = c;
 
     m_transport->sendClientMessage(m_playerId, msg);
@@ -98,6 +97,7 @@ bool GameClient::requestSystemMapSnapshot(int systemId)
     request.requestId = m_nextMapRequestId++;
     request.systemId = systemId;
     m_lastSystemMapRequestId = request.requestId;
+    m_requestedSystemMapId = systemId;
 
     m_transport->sendMapRequest(request);
     receiveMapResponses();
@@ -118,6 +118,7 @@ bool GameClient::requestDetailMapSnapshot(
     request.requestId = m_nextMapRequestId++;
     request.target = target;
     m_lastDetailMapRequestId = request.requestId;
+    m_requestedDetailMapTarget = target;
     m_transport->sendMapRequest(request);
     receiveMapResponses();
 
@@ -137,6 +138,8 @@ bool GameClient::requestHubMapSnapshot(
     request.systemId = systemId;
     request.hubId = hubId;
     m_lastHubMapRequestId = request.requestId;
+    m_requestedHubMapSystemId = systemId;
+    m_requestedHubMapHubId = hubId;
     m_transport->sendMapRequest(request);
     receiveMapResponses();
 
@@ -257,10 +260,17 @@ bool GameClient::requestStarAtlas()
 {
     m_transport->requestStarAtlas();
 
-    world::celestial::StarAtlasDatabase atlas;
-    while (m_transport->receiveStarAtlas(atlas))
+    game::network::StarAtlasResponse response;
+    while (m_transport->receiveStarAtlas(response))
     {
-        m_starAtlas = std::move(atlas);
+        if (m_hasStarAtlas &&
+            response.metadata.catalogRevision < m_starAtlasRevision)
+        {
+            continue;
+        }
+
+        m_starAtlasRevision = response.metadata.catalogRevision;
+        m_starAtlas = std::move(response.atlas);
         m_hasStarAtlas = true;
     }
 
@@ -272,10 +282,18 @@ bool GameClient::requestCelestialSnapshot()
 {
     m_transport->requestCelestialSnapshot();
 
-    world::celestial::CelestialSystemSnapshot snapshot;
-    while (m_transport->receiveCelestialSnapshot(snapshot))
+    game::network::CelestialSnapshotResponse response;
+    while (m_transport->receiveCelestialSnapshot(response))
     {
-        m_celestialSnapshot = std::move(snapshot);
+        if (m_hasCelestialSnapshot &&
+            response.metadata.serverTick <
+                m_celestialSnapshotMetadata.serverTick)
+        {
+            continue;
+        }
+
+        m_celestialSnapshotMetadata = response.metadata;
+        m_celestialSnapshot = std::move(response.snapshot);
         m_hasCelestialSnapshot = true;
     }
 
@@ -312,12 +330,13 @@ void GameClient::receiveMapResponses()
                         ResponseT,
                         game::network::GalaxyMapResponse>)
                 {
-                    if (typedResponse.requestId <
+                    if (typedResponse.requestId !=
                         m_lastGalaxyMapRequestId)
                     {
                         return;
                     }
 
+                    m_lastGalaxyMapMetadata = typedResponse.metadata;
                     m_galaxyMapSnapshot =
                         std::move(typedResponse.snapshot);
                     m_hasGalaxyMapSnapshot = true;
@@ -327,12 +346,14 @@ void GameClient::receiveMapResponses()
                         ResponseT,
                         game::network::SystemMapResponse>)
                 {
-                    if (typedResponse.requestId <
-                        m_lastSystemMapRequestId)
+                    if (typedResponse.requestId !=
+                        m_lastSystemMapRequestId ||
+                        typedResponse.systemId != m_requestedSystemMapId)
                     {
                         return;
                     }
 
+                    m_lastSystemMapMetadata = typedResponse.metadata;
                     m_systemMapSnapshot =
                         std::move(typedResponse.snapshot);
                     m_systemMapSnapshotId =
@@ -343,8 +364,10 @@ void GameClient::receiveMapResponses()
                     std::is_same_v<ResponseT,
                         game::network::DetailMapResponse>)
                 {
-                    if (typedResponse.requestId < m_lastDetailMapRequestId)
+                    if (typedResponse.requestId != m_lastDetailMapRequestId ||
+                        typedResponse.target != m_requestedDetailMapTarget)
                         return;
+                    m_lastDetailMapMetadata = typedResponse.metadata;
                     m_detailMapSnapshot = std::move(typedResponse.snapshot);
                     m_detailMapSnapshotTarget = typedResponse.target;
                     m_hasDetailMapSnapshot = true;
@@ -353,8 +376,11 @@ void GameClient::receiveMapResponses()
                     std::is_same_v<ResponseT,
                         game::network::HubMapResponse>)
                 {
-                    if (typedResponse.requestId < m_lastHubMapRequestId)
+                    if (typedResponse.requestId != m_lastHubMapRequestId ||
+                        typedResponse.systemId != m_requestedHubMapSystemId ||
+                        typedResponse.hubId != m_requestedHubMapHubId)
                         return;
+                    m_lastHubMapMetadata = typedResponse.metadata;
                     m_hubMapSnapshot = std::move(typedResponse.snapshot);
                     m_hubMapSnapshotSystemId = typedResponse.systemId;
                     m_hubMapSnapshotHubId = std::move(typedResponse.hubId);
@@ -385,12 +411,12 @@ void GameClient::update(
     while (m_transport->receiveSnapshot(snapshot))
     {
         if (m_hasAcceptedSnapshot &&
-            snapshot.snapshotTick <= m_lastAcceptedSnapshotTick)
+            snapshot.metadata.serverTick <= m_lastAcceptedSnapshotTick)
         {
             continue;
         }
 
-        m_lastAcceptedSnapshotTick = snapshot.snapshotTick;
+        m_lastAcceptedSnapshotTick = snapshot.metadata.serverTick;
         m_hasAcceptedSnapshot = true;
 
         m_sessionSnapshot = snapshot.session;

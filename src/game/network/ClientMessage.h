@@ -9,19 +9,9 @@
 namespace game::network
 {
 
-// Типы сообщений клиента
-enum class ClientMessageType
-{
-    ControlInput,           // уже существующий поток управления
-    ClientShipCommand       // новые событийные команды
-};
-
-
 struct ClientMessage
 {
     std::uint64_t clientTick = 0;
-    ClientMessageType type;
-
     std::variant<
         ShipControlState,
         ClientShipCommand

@@ -8,6 +8,7 @@
 #include "src/game/simulation/SimulationSnapshot.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/network/ClientMessage.h"
+#include "src/game/network/ProtocolMetadata.h"
 #include "src/scene/EntityID.h"
 #include "src/game/network/ClientShipCommand.h"
 #include "src/game/diagnostics/ServerDiagnostics.h"
@@ -62,6 +63,22 @@ public:
     );
 
     void debugRefreshSnapshot();
+
+
+    game::network::SnapshotMetadata protocolMetadata() const
+    {
+        game::network::SnapshotMetadata metadata;
+        metadata.serverTick = m_serverTick;
+        metadata.serverTimeSeconds = m_lastSnapshot.serverTime;
+        metadata.universeTimeSeconds = m_universeClock.timeSeconds();
+        metadata.worldRevision = m_serverTick;
+        return metadata;
+    }
+
+    std::uint64_t catalogRevision() const
+    {
+        return 1;
+    }
 
     const world::celestial::StarAtlasDatabase& starAtlas() const
     {

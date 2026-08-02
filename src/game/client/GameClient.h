@@ -11,6 +11,7 @@
 #include "src/game/network/ITransport.h"
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/MapSnapshotMessage.h"
+#include "src/game/network/ProtocolMetadata.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/world/celestial/CelestialTypes.h"
 
@@ -109,6 +110,10 @@ private:
     std::uint64_t                    m_lastSystemMapRequestId = 0;
     std::uint64_t                    m_lastDetailMapRequestId = 0;
     std::uint64_t                    m_lastHubMapRequestId = 0;
+    int                              m_requestedSystemMapId = -1;
+    world::celestial::DetailTarget   m_requestedDetailMapTarget;
+    int                              m_requestedHubMapSystemId = -1;
+    std::string                      m_requestedHubMapHubId;
 
     bool                             m_hasGalaxyMapSnapshot = false;
     bool                             m_hasSystemMapSnapshot = false;
@@ -118,6 +123,12 @@ private:
     int                              m_hubMapSnapshotSystemId = -1;
     std::string                      m_hubMapSnapshotHubId;
     world::celestial::DetailTarget   m_detailMapSnapshotTarget;
+
+
+    game::network::SnapshotMetadata m_lastGalaxyMapMetadata;
+    game::network::SnapshotMetadata m_lastSystemMapMetadata;
+    game::network::SnapshotMetadata m_lastDetailMapMetadata;
+    game::network::SnapshotMetadata m_lastHubMapMetadata;
 
     world::celestial::GalaxyMapSnapshot m_galaxyMapSnapshot;
     world::celestial::SystemMapSnapshot m_systemMapSnapshot;
@@ -129,6 +140,8 @@ private:
 
     bool m_hasStarAtlas = false;
     bool m_hasCelestialSnapshot = false;
+    std::uint64_t m_starAtlasRevision = 0;
+    game::network::SnapshotMetadata m_celestialSnapshotMetadata;
     world::celestial::StarAtlasDatabase m_starAtlas;
     world::celestial::CelestialSystemSnapshot m_celestialSnapshot;
 };

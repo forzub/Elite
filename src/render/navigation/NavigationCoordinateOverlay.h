@@ -63,11 +63,20 @@ public:
         const std::string& levelAnnouncement = {},
         float levelAnnouncementAlpha = 0.0f,
         bool showLevelZeroButton = false,
-        bool levelZeroButtonHovered = false
+        bool levelZeroButtonHovered = false,
+        bool showTrackButton = false,
+        bool trackButtonHovered = false,
+        bool trackButtonActive = false,
+        bool trackButtonEnabled = false
     );
 
     static NavigationOverlayButtonBounds
         levelZeroButtonBounds(
+            const Viewport& viewport
+        );
+
+    static NavigationOverlayButtonBounds
+        trackButtonBounds(
             const Viewport& viewport
         );
 

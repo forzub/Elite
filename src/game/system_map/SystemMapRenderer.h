@@ -208,6 +208,12 @@ private:
         const Viewport& viewport
     );
 
+    void toggleSelectedBodyTracking();
+
+    void updateSelectedBodyTracking(
+        const game::system_map::SystemMapPresentation& presentation
+    );
+
 private:
     void ensureGlObjects();
     void ensureShader();
@@ -547,6 +553,7 @@ private:
         m_navigationCoordinateOverlay;
 
     bool m_navigationLevelZeroButtonHovered = false;
+    bool m_navigationTrackButtonHovered = false;
     bool m_navigationOverlayLeftWasDown = false;
 
     struct NavigationLevelAnnouncement

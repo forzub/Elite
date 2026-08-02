@@ -145,6 +145,17 @@ namespace game::system_map
 
         glm::dvec3 orbitPivotAbsolute {0.0, 0.0, 0.0};
         bool orbitPivotActive = false;
+
+        /*
+            TRACK keeps the camera in the selected body's moving reference
+            frame. The camera target is translated by the body's presentation
+            delta every frame, so the user may still orbit, pan and zoom while
+            following it.
+        */
+        bool selectedBodyTrackingEnabled = false;
+        std::string trackedBodyId;
+        glm::dvec3 trackedBodyLastAbsolute {0.0, 0.0, 0.0};
+        bool trackedBodyPositionValid = false;
     };
 
     class SystemMapView

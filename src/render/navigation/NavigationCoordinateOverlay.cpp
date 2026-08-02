@@ -101,6 +101,39 @@ NavigationCoordinateOverlay::levelZeroButtonBounds(
     };
 }
 
+
+NavigationOverlayButtonBounds
+NavigationCoordinateOverlay::trackButtonBounds(
+    const Viewport& viewport
+)
+{
+    const NavigationOverlayVisualSettings visuals;
+
+    const float screenScale =
+        std::clamp(
+            static_cast<float>(viewport.height) /
+                visuals.referenceHeightPx,
+            visuals.minimumScreenScale,
+            visuals.maximumScreenScale
+        );
+
+    const NavigationOverlayButtonBounds levelBounds =
+        levelZeroButtonBounds(viewport);
+
+    const float width =
+        visuals.trackButtonWidthPx * screenScale;
+
+    const float gap =
+        visuals.overlayButtonGapPx * screenScale;
+
+    return {
+        levelBounds.left - gap - width,
+        levelBounds.top,
+        levelBounds.left - gap,
+        levelBounds.bottom
+    };
+}
+
 void NavigationCoordinateOverlay::ensureFont()
 {
     if (m_font)
@@ -140,7 +173,11 @@ void NavigationCoordinateOverlay::draw(
     const std::string& levelAnnouncement,
     float levelAnnouncementAlpha,
     bool showLevelZeroButton,
-    bool levelZeroButtonHovered
+    bool levelZeroButtonHovered,
+    bool showTrackButton,
+    bool trackButtonHovered,
+    bool trackButtonActive,
+    bool trackButtonEnabled
 )
 {
     if (viewport.width <= 0 ||
@@ -152,7 +189,8 @@ void NavigationCoordinateOverlay::draw(
                 levelAnnouncement.empty() ||
                 levelAnnouncementAlpha <= 0.001f
             ) &&
-            !showLevelZeroButton
+            !showLevelZeroButton &&
+            !showTrackButton
         ))
     {
         return;
@@ -353,6 +391,95 @@ void NavigationCoordinateOverlay::draw(
 
         const std::string buttonText =
             "[  LEVEL 0  ]";
+
+        const float textWidth =
+            m_font->measureText(
+                buttonText
+            ) *
+            buttonScale;
+
+        const float x =
+            bounds.left +
+            (
+                bounds.right -
+                bounds.left -
+                textWidth
+            ) *
+            0.5f;
+
+        const float y =
+            bounds.top +
+            m_visuals.levelZeroButtonBaselinePx *
+            screenScale;
+
+        text.textDraw(
+            *m_font,
+            buttonText,
+            x,
+            y,
+            buttonColor,
+            buttonScale
+        );
+    }
+
+    if (showTrackButton)
+    {
+        const NavigationOverlayButtonBounds bounds =
+            trackButtonBounds(
+                viewport
+            );
+
+        glm::vec4 buttonColor;
+
+        if (!trackButtonEnabled)
+        {
+            buttonColor = glm::vec4(
+                0.30f,
+                0.36f,
+                0.40f,
+                0.34f
+            );
+        }
+        else if (trackButtonActive)
+        {
+            buttonColor = trackButtonHovered
+                ? glm::vec4(
+                    0.96f,
+                    0.82f,
+                    0.42f,
+                    1.0f
+                  )
+                : glm::vec4(
+                    0.88f,
+                    0.70f,
+                    0.30f,
+                    0.88f
+                  );
+        }
+        else
+        {
+            buttonColor = trackButtonHovered
+                ? glm::vec4(
+                    0.64f,
+                    0.84f,
+                    0.96f,
+                    0.92f
+                  )
+                : glm::vec4(
+                    0.44f,
+                    0.62f,
+                    0.74f,
+                    0.66f
+                  );
+        }
+
+        const float buttonScale =
+            bodyScale;
+
+        const std::string buttonText =
+            trackButtonActive
+                ? "[ TRACK ON ]"
+                : "[  TRACK  ]";
 
         const float textWidth =
             m_font->measureText(

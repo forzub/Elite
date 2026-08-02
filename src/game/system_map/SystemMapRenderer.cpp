@@ -996,6 +996,7 @@ void SystemMapRenderer::resetView()
     m_mapResources.resetPresentationTime();
 
     m_navigationLevelZeroButtonHovered = false;
+    m_navigationTrackButtonHovered = false;
     m_navigationOverlayLeftWasDown = false;
 
 }
@@ -2067,6 +2068,7 @@ SystemMapRenderer::handleInput(
 
         m_pendingScrollY = 0.0;
         m_navigationLevelZeroButtonHovered = false;
+        m_navigationTrackButtonHovered = false;
         m_navigationOverlayLeftWasDown = false;
         return std::nullopt;
     }
@@ -2132,15 +2134,37 @@ SystemMapRenderer::handleInput(
                     localMy
                 );
 
+    const bool showTrackButton =
+        m_mode == Mode::System;
+
+    m_navigationTrackButtonHovered =
+        showTrackButton &&
+        inside &&
+        render::navigation::
+            NavigationCoordinateOverlay::
+                trackButtonBounds(
+                    vp
+                )
+                .contains(
+                    localMx,
+                    localMy
+                );
+
     const bool levelZeroPressed =
         m_navigationLevelZeroButtonHovered &&
+        leftDown &&
+        !m_navigationOverlayLeftWasDown;
+
+    const bool trackPressed =
+        m_navigationTrackButtonHovered &&
         leftDown &&
         !m_navigationOverlayLeftWasDown;
 
     m_navigationOverlayLeftWasDown =
         leftDown;
 
-    if (m_navigationLevelZeroButtonHovered)
+    if (m_navigationLevelZeroButtonHovered ||
+        m_navigationTrackButtonHovered)
     {
         m_pendingScrollY = 0.0;
 
@@ -2150,6 +2174,9 @@ SystemMapRenderer::handleInput(
                 vp
             );
         }
+
+        if (trackPressed)
+            toggleSelectedBodyTracking();
 
         /*
             The button is part of the map viewport, so explicitly prevent
@@ -2182,6 +2209,10 @@ SystemMapRenderer::handleInput(
                 inputNowSeconds,
                 false
             );
+
+        updateSelectedBodyTracking(
+            m_systemPresentation
+        );
 
         m_systemSceneFrame =
             m_systemSceneFrameBuilder.build(

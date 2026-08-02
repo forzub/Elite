@@ -41,6 +41,8 @@ struct NavigationOverlayVisualSettings
     float levelZeroButtonRightPx = 18.0f;
     float levelZeroButtonBottomPx = 10.0f;
     float levelZeroButtonBaselinePx = 27.0f;
+    float trackButtonWidthPx = 150.0f;
+    float overlayButtonGapPx = 10.0f;
 
     float levelAnnouncementScale = 2.15f;
     float levelAnnouncementRightPx = 32.0f;

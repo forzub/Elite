@@ -746,7 +746,11 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         levelAnnouncementAlpha,
         m_mode == Mode::Galaxy ||
             m_mode == Mode::System,
-        m_navigationLevelZeroButtonHovered
+        m_navigationLevelZeroButtonHovered,
+        m_mode == Mode::System,
+        m_navigationTrackButtonHovered,
+        m_systemView.state().selectedBodyTrackingEnabled,
+        !m_systemView.state().selectedBodyId.empty()
     );
 }
 
@@ -754,6 +758,100 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
 
 
 
+
+
+void SystemMapRenderer::toggleSelectedBodyTracking()
+{
+    auto& state =
+        m_systemView.state();
+
+    if (m_mode != Mode::System ||
+        state.selectedBodyId.empty())
+    {
+        return;
+    }
+
+    state.selectedBodyTrackingEnabled =
+        !state.selectedBodyTrackingEnabled;
+
+    state.trackedBodyId.clear();
+    state.trackedBodyPositionValid = false;
+
+    /*
+        A camera flight owns the target absolutely. Cancel it when entering
+        TRACK so the following frame cannot fight the flight interpolator.
+    */
+    if (state.selectedBodyTrackingEnabled)
+        state.cameraFlight.active = false;
+}
+
+
+void SystemMapRenderer::updateSelectedBodyTracking(
+    const game::system_map::SystemMapPresentation& presentation
+)
+{
+    auto& state =
+        m_systemView.state();
+
+    if (!state.selectedBodyTrackingEnabled)
+    {
+        state.trackedBodyId.clear();
+        state.trackedBodyPositionValid = false;
+        return;
+    }
+
+    if (state.selectedBodyId.empty())
+    {
+        state.selectedBodyTrackingEnabled = false;
+        state.trackedBodyId.clear();
+        state.trackedBodyPositionValid = false;
+        return;
+    }
+
+    const auto bodyIt =
+        std::find_if(
+            presentation.bodies.begin(),
+            presentation.bodies.end(),
+            [&](const auto& body)
+            {
+                return body.id == state.selectedBodyId;
+            }
+        );
+
+    if (bodyIt == presentation.bodies.end())
+    {
+        state.selectedBodyTrackingEnabled = false;
+        state.trackedBodyId.clear();
+        state.trackedBodyPositionValid = false;
+        return;
+    }
+
+    const glm::dvec3 bodyAbsolute =
+        bodyIt->positionAu *
+        static_cast<double>(
+            presentation.systemScale
+        );
+
+    const bool sameBody =
+        state.trackedBodyPositionValid &&
+        state.trackedBodyId == state.selectedBodyId;
+
+    if (sameBody)
+    {
+        const glm::dvec3 delta =
+            bodyAbsolute -
+            state.trackedBodyLastAbsolute;
+
+        state.camera.target += delta;
+
+        if (state.orbitPivotActive)
+            state.orbitPivotAbsolute += delta;
+    }
+
+    state.trackedBodyId = state.selectedBodyId;
+    state.trackedBodyLastAbsolute = bodyAbsolute;
+    state.trackedBodyPositionValid = true;
+}
 
 
 void SystemMapRenderer::resetNavigationViewToLevelZero(

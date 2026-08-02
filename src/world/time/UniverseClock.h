@@ -23,31 +23,71 @@ namespace world::time
     public:
         void reset()
         {
-            m_timeScale = 1.0;
-            m_currentTimeSeconds = realSecondsSinceEpoch();
+            m_simulationMode = false;
+            m_simulationTimeScale = 1.0;
+            m_simulationTimeSeconds = realSecondsSinceEpoch();
         }
 
         void update(double realDtSeconds)
         {
+            if (!m_simulationMode)
+                return;
+
             const double safeDt =
                 std::max(0.0, realDtSeconds);
 
-            m_currentTimeSeconds += safeDt * m_timeScale;
+            m_simulationTimeSeconds +=
+                safeDt * m_simulationTimeScale;
         }
 
         double timeSeconds() const
         {
-            return m_currentTimeSeconds;
+            return m_simulationMode
+                ? m_simulationTimeSeconds
+                : realSecondsSinceEpoch();
+        }
+
+        bool simulationMode() const
+        {
+            return m_simulationMode;
+        }
+
+        void setSimulationMode(bool enabled)
+        {
+            if (enabled == m_simulationMode)
+                return;
+
+            if (enabled)
+            {
+                m_simulationTimeSeconds =
+                    realSecondsSinceEpoch();
+            }
+
+            m_simulationMode = enabled;
         }
 
         double timeScale() const
         {
-            return m_timeScale;
+            return m_simulationMode
+                ? m_simulationTimeScale
+                : 1.0;
+        }
+
+        double configuredTimeScale() const
+        {
+            return m_simulationTimeScale;
         }
 
         void setTimeScale(double scale)
         {
-            m_timeScale = std::max(0.0, scale);
+            constexpr double MaxAbsTimeScale = 1000000.0;
+
+            m_simulationTimeScale =
+                std::clamp(
+                    scale,
+                    -MaxAbsTimeScale,
+                    MaxAbsTimeScale
+                );
         }
 
         std::string dateTimeString() const
@@ -197,7 +237,8 @@ namespace world::time
         }
 
     private:
-        double m_timeScale = 1.0;
-        double m_currentTimeSeconds = 0.0;
+        bool m_simulationMode = false;
+        double m_simulationTimeScale = 1.0;
+        double m_simulationTimeSeconds = 0.0;
     };
 }

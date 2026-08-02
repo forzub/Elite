@@ -145,6 +145,13 @@ public:
 
     void setDebugFastUniverseTime(bool enabled);
     bool debugFastUniverseTime() const;
+
+    void setDebugUniverseTimeSimulation(
+        bool enabled,
+        double timeScale
+    );
+
+    bool debugUniverseTimeSimulation() const;
     double debugUniverseTimeScale() const;
 
 private:

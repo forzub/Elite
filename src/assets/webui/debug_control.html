@@ -436,8 +436,9 @@
       <div class="section">
         <div class="title">Universe / system map</div>
         <div class="sectionGrid three">
-          <div class="row"><label>Fast universe time x10000</label><input id="debugFastUniverseTime" type="checkbox"></div>
-          <div class="row"><label>Universe time scale</label><span id="debugUniverseTimeScale">—</span></div>
+          <div class="row"><label>Universe time simulation</label><input id="debugUniverseTimeSimulation" type="checkbox"></div>
+          <div class="row"><label>Simulation time scale</label><input id="debugUniverseTimeScaleInput" type="number" step="1" min="-1000000" max="1000000"></div>
+          <div class="row"><label>Active universe time scale</label><span id="debugUniverseTimeScale">—</span></div>
           <div class="row"><label>System map visible</label><span id="systemMapVisible">—</span></div>
           <div class="row"><label>System map live snapshots</label><span id="systemMapLiveSnapshotsEnabled">—</span></div>
           <div class="row"><label>Live system id</label><span id="liveSystemMapId">—</span></div>
@@ -946,7 +947,8 @@
       setChecked('drawObjectAxes', !!p.drawObjectAxes);
       setChecked('drawModulePivots', !!p.drawModulePivots);
       setChecked('drawHitVolumes', !!p.drawHitVolumes);
-      setChecked('debugFastUniverseTime', !!p.debugFastUniverseTime);
+      setChecked('debugUniverseTimeSimulation', !!p.debugUniverseTimeSimulation);
+      setValue('debugUniverseTimeScaleInput', p.debugUniverseTimeConfiguredScale ?? 10000);
 
       setValue('systemMapLiveRefreshSec', p.systemMapLiveRefreshSec ?? 0.25);
 
@@ -1036,7 +1038,8 @@
         drawObjectAxes: document.getElementById('drawObjectAxes').checked,
         drawModulePivots: document.getElementById('drawModulePivots').checked,
         drawHitVolumes: document.getElementById('drawHitVolumes').checked,
-        debugFastUniverseTime: document.getElementById('debugFastUniverseTime').checked,
+        debugUniverseTimeSimulation: document.getElementById('debugUniverseTimeSimulation').checked,
+        debugUniverseTimeScale: numberValue('debugUniverseTimeScaleInput', 10000),
         debugControlAutoUpdates: document.getElementById('debugControlAutoUpdates').checked,
         systemMapLiveRefreshSec: Number(document.getElementById('systemMapLiveRefreshSec').value) || 0.25,
 

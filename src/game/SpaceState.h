@@ -141,6 +141,9 @@ private:
     bool wantsConfirmExit() const override;
     bool onGlobalEscape() override;
     bool isInSafeZone() const;
+    void renderUniverseTimeSimulationOverlay(
+        const Viewport& viewport
+    );
 
     // std::vector<Planet>                         m_planets;                  // "world/Planet.h"
     // std::vector<WorldSignal>                    m_worldSignals;             // "world/WorldSignal.h"

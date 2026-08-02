@@ -475,6 +475,9 @@ GameServer::GameServer()
 {
 
         m_universeClock.reset();
+        m_universeClock.setTimeScale(
+            m_debugFastUniverseTimeScale
+        );
 
         bool atlasLoaded =
         m_starAtlas.load(
@@ -2998,18 +3001,35 @@ void GameServer::resetDiagnosticsCapture()
 
 void GameServer::setDebugFastUniverseTime(bool enabled)
 {
-    m_debugFastUniverseTime = enabled;
-
-    m_universeClock.setTimeScale(
-        enabled
-            ? m_debugFastUniverseTimeScale
-            : 1.0
+    setDebugUniverseTimeSimulation(
+        enabled,
+        m_debugFastUniverseTimeScale
     );
 }
 
 bool GameServer::debugFastUniverseTime() const
 {
-    return m_debugFastUniverseTime;
+    return
+        debugUniverseTimeSimulation() &&
+        std::abs(
+            debugUniverseTimeScale() -
+            m_debugFastUniverseTimeScale
+        ) < 0.0001;
+}
+
+void GameServer::setDebugUniverseTimeSimulation(
+    bool enabled,
+    double timeScale
+)
+{
+    m_universeClock.setTimeScale(timeScale);
+    m_universeClock.setSimulationMode(enabled);
+    m_debugFastUniverseTime = debugFastUniverseTime();
+}
+
+bool GameServer::debugUniverseTimeSimulation() const
+{
+    return m_universeClock.simulationMode();
 }
 
 double GameServer::debugUniverseTimeScale() const

@@ -9,6 +9,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 #include <unordered_map>
 
 #include "SpaceState.h"
@@ -1623,6 +1624,8 @@ m_systemMapRenderer.render(
 
         glEnable(GL_DEPTH_TEST);
 
+        renderUniverseTimeSimulationOverlay(vp);
+
         m_perfHudMs = nowMs() - hudStartMs;
         return;
     }
@@ -1908,9 +1911,46 @@ if (m_server)
     // // 3. векторные приборы
     glEnable(GL_DEPTH_TEST);
 
-
+    renderUniverseTimeSimulationOverlay(vp);
 
     m_perfHudMs = nowMs() - hudStartMs;
+}
+
+void SpaceState::renderUniverseTimeSimulationOverlay(
+    const Viewport& viewport
+)
+{
+    if (!m_server ||
+        !m_server->debugUniverseTimeSimulation())
+    {
+        return;
+    }
+
+    auto& text = TextRenderer::instance();
+
+    text.beginFrameForViewport(
+        viewport.width,
+        viewport.height
+    );
+
+    std::ostringstream label;
+    label
+        << "TIME SIMULATION MODE  x"
+        << std::fixed
+        << std::setprecision(1)
+        << m_server->debugUniverseTimeScale()
+        << "  |  "
+        << m_server->universeClock().dateTimeString();
+
+    text.textDrawPx(
+        label.str(),
+        24.0f,
+        28.0f,
+        14,
+        glm::vec4(1.0f, 0.42f, 0.18f, 0.98f)
+    );
+
+    text.endFrame();
 }
 
 
@@ -2857,10 +2897,21 @@ void SpaceState::pushDebugControlState()
         m_server
             ? m_server->debugFastUniverseTime()
             : false;
+
+    payload["debugUniverseTimeSimulation"] =
+        m_server
+            ? m_server->debugUniverseTimeSimulation()
+            : false;
+
     payload["debugUniverseTimeScale"] =
-    m_server
-        ? m_server->debugUniverseTimeScale()
-        : 1.0;
+        m_server
+            ? m_server->debugUniverseTimeScale()
+            : 1.0;
+
+    payload["debugUniverseTimeConfiguredScale"] =
+        m_server
+            ? m_server->universeClock().configuredTimeScale()
+            : 10000.0;
 
     payload["systemMapVisible"] =
         m_systemMapVisible;
@@ -3086,15 +3137,22 @@ void SpaceState::applyDebugControlPayload(const json& payload)
 
     if (m_server)
     {
-        m_server->setDebugFastUniverseTime(
+        const bool simulationEnabled =
             payload.value(
-                "debugFastUniverseTime",
-                m_server->debugFastUniverseTime()
-            )
+                "debugUniverseTimeSimulation",
+                m_server->debugUniverseTimeSimulation()
+            );
+
+        const double simulationScale =
+            payload.value(
+                "debugUniverseTimeScale",
+                m_server->universeClock().configuredTimeScale()
+            );
+
+        m_server->setDebugUniverseTimeSimulation(
+            simulationEnabled,
+            simulationScale
         );
-
-
-
     }
 
 

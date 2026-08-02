@@ -28,7 +28,6 @@
 #include "src/render/camera/RenderCameraViewport.h"
 #include "src/debug/DebugSettings.h"
 #include "ui/components/UIText.h"
-#include "src/game/network/LocalLoopbackTransport.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 
 #include "ui/components/radar/RadarWidgetBase.h"
@@ -409,8 +408,7 @@ SpaceState::SpaceState(StateStack& states)
     // world = vacuum
     // =======================================================================
 
-    m_server->world().linearDrag = 0.0f;
-    m_server->world().maxSafeDecel = 50.0f;
+    m_localHost->configureWorld(0.0f, 50.0f);
 
 
     // InterferenceSource jammer;
@@ -505,28 +503,23 @@ void SpaceState::requestDetailMapSnapshot(
     bool forceRefresh
 )
 {
-    if (!m_server ||
-        !target.valid())
-    {
+    if (!m_client || !target.valid())
         return;
-    }
 
-    if (!forceRefresh &&
-        m_hasDetailMapSnapshot &&
+    if (!forceRefresh && m_hasDetailMapSnapshot &&
         m_loadedDetailTarget == target)
-    {
         return;
-    }
 
-    m_detailMapSnapshot =
-        m_server->buildDetailMapSnapshot(
-            target
-        );
+    if (!m_client->requestDetailMapSnapshot(target))
+        return;
 
+    const auto* snapshot = m_client->detailMapSnapshot(target);
+    if (!snapshot)
+        return;
+
+    m_detailMapSnapshot = *snapshot;
     m_loadedDetailTarget = target;
-
-    m_hasDetailMapSnapshot =
-        m_detailMapSnapshot.valid;
+    m_hasDetailMapSnapshot = m_detailMapSnapshot.valid;
 }
 
 
@@ -536,35 +529,27 @@ void SpaceState::requestHubMapSnapshot(
     bool forceRefresh
 )
 {
-    if (!m_server)
+    if (!m_client || systemId < 0 || hubId.empty())
         return;
 
-    if (hubId.empty())
-        return;
-
-    if (!forceRefresh &&
-        m_hasHubMapSnapshot &&
+    if (!forceRefresh && m_hasHubMapSnapshot &&
         m_loadedHubMapSystemId == systemId &&
         m_loadedHubMapHubId == hubId)
-    {
         return;
-    }
 
-    m_hubMapSnapshot =
-        m_server->buildHubMapSnapshot(
-            systemId,
-            hubId
-        );
+    if (!m_client->requestHubMapSnapshot(systemId, hubId))
+        return;
 
-    m_loadedHubMapSystemId =
-        systemId;
+    const auto* snapshot = m_client->hubMapSnapshot(systemId, hubId);
+    if (!snapshot)
+        return;
 
-    m_loadedHubMapHubId =
-        hubId;
-
-    m_hasHubMapSnapshot =
-        true;
+    m_hubMapSnapshot = *snapshot;
+    m_loadedHubMapSystemId = systemId;
+    m_loadedHubMapHubId = hubId;
+    m_hasHubMapSnapshot = m_hubMapSnapshot.valid;
 }
+
 
 
 
@@ -576,7 +561,7 @@ void SpaceState::requestHubMapSnapshot(
 
 void SpaceState::setSystemMapHubMode()
 {
-    if (!m_server)
+    if (!m_client)
         return;
 
     if (m_systemMapRenderer.mode() ==
@@ -588,9 +573,7 @@ void SpaceState::setSystemMapHubMode()
     const int selectedId =
         m_systemMapRenderer.selectedSystemId() >= 0
             ? m_systemMapRenderer.selectedSystemId()
-            : m_server
-                ->playerNavigation()
-                .currentSystemId;
+            : m_client->playerNavigation().currentSystemId;
 
     const std::string hubId =
         m_systemMapRenderer.selectedHubId();
@@ -607,7 +590,7 @@ void SpaceState::setSystemMapHubMode()
 
         [this, selectedId, hubId]()
         {
-            if (!m_server)
+            if (!m_client)
                 return;
 
             /*
@@ -656,11 +639,11 @@ void SpaceState::updateSystemMapLiveFlags()
     */
     if (m_systemMapVisible &&
         !wasSystemMapVisible &&
-        m_server)
+        m_client)
     {
         m_systemMapRenderer.onGalaxyMapEntered(
             m_galaxyMapSnapshot,
-            m_server->playerNavigation()
+            m_client->playerNavigation()
         );
     }
 
@@ -689,10 +672,10 @@ void SpaceState::updateSystemMapLiveFlags()
         m_liveSystemMapId =
             m_systemMapRenderer.focusedSystemId();
     }
-    else if (m_server)
+    else if (m_client)
     {
         m_liveSystemMapId =
-            m_server->playerNavigation().currentSystemId;
+            m_client->playerNavigation().currentSystemId;
     }
     else
     {
@@ -705,7 +688,7 @@ bool SpaceState::shouldRefreshSystemMapSnapshot() const
     return
         m_systemMapLiveSnapshotsEnabled &&
         m_liveSystemMapId >= 0 &&
-        m_server != nullptr;
+        m_client != nullptr;
 }
 
 
@@ -776,7 +759,7 @@ void SpaceState::handleInput()
     if (context().app &&
         context().app->gameUiMode() == GameUiMode::SystemMap)
     {
-        if (m_server)
+        if (m_client)
         {
             const Viewport& fullVp = context().viewport();
 
@@ -807,11 +790,11 @@ void SpaceState::handleInput()
                     );
                 }
 
-                if (m_hasDetailMapSnapshot &&
-                    m_loadedDetailTarget.valid())
+                if (m_loadedDetailTarget.valid())
                 {
-                    m_server->refreshDetailMapDynamicState(
-                        m_detailMapSnapshot
+                    requestDetailMapSnapshot(
+                        m_loadedDetailTarget,
+                        true
                     );
                 }
             }
@@ -822,7 +805,7 @@ void SpaceState::handleInput()
                 const int focusedId =
                     m_systemMapRenderer.focusedSystemId() >= 0
                         ? m_systemMapRenderer.focusedSystemId()
-                        : m_server->playerNavigation().currentSystemId;
+                        : m_client->playerNavigation().currentSystemId;
 
                 const std::string requestedHubId =
                     m_loadedHubMapHubId;
@@ -833,12 +816,13 @@ void SpaceState::handleInput()
                     false
                 );
 
-                if (m_hasHubMapSnapshot &&
-                    m_loadedHubMapSystemId == focusedId &&
+                if (m_loadedHubMapSystemId == focusedId &&
                     m_loadedHubMapHubId == requestedHubId)
                 {
-                    m_server->refreshHubMapDynamicState(
-                        m_hubMapSnapshot
+                    requestHubMapSnapshot(
+                        focusedId,
+                        requestedHubId,
+                        true
                     );
                 }
             }
@@ -945,10 +929,14 @@ const bool ejectPressed =
 
 if (ejectPressed)
 {
-    const bool ok = m_server->ejectShipCockpitCapsule(m_playerId);
+    game::network::ClientMessage msg;
+    msg.type = game::network::ClientMessageType::ClientShipCommand;
 
-    m_server->debugRefreshSnapshot();
+    ClientShipCommand command;
+    command.type = ClientShipCommand::EjectCockpitCapsule;
+    msg.payload = command;
 
+    m_client->sendMessage(msg);
     return;
 }
 
@@ -960,30 +948,20 @@ const bool ctrlDown =
 
 if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
 {
-    const bool ok = m_server->startBestRepairJobForFirstMissingSlot(
-        m_playerId
-    );
+    game::network::ClientMessage msg;
+    msg.type = game::network::ClientMessageType::ClientShipCommand;
 
-    m_server->debugRefreshSnapshot();
+    ClientShipCommand command;
+    command.type = ClientShipCommand::StartBestRepairJob;
+    msg.payload = command;
 
-
-
+    m_client->sendMessage(msg);
     return;
 }
 
     // === управление кораблём ===
     m_inputMapper.update(m_playerControl);
-m_localTick++;
-m_playerControl.controlTick = m_localTick;
-
-m_sentInputs.push_back(m_playerControl);
-
-m_server->submitCommand(m_playerId, m_playerControl);
-
-// ВРЕМЕННО отключаем, чтобы не было двойной системы ввода.
-// Если клиентский loopback тоже шлёт команду на сервер,
-// он может перетирать/дублировать состояние.
- // m_client->submitInput(m_playerControl);
+m_client->submitInput(m_playerControl);
 
 
 }
@@ -1020,7 +998,7 @@ void SpaceState::update(float dt)
     const double simStartMs = nowMs();
 
     const auto serverAdvance =
-        m_serverRunner->advance(
+        m_localHost->advance(
             static_cast<double>(dt)
         );
 
@@ -1045,9 +1023,8 @@ void SpaceState::update(float dt)
 
     m_client->update(
         clientFrameDt,
-        m_server->world(),
         static_cast<float>(
-            m_serverRunner->fixedStepSeconds()
+            m_localHost->fixedStepSeconds()
         )
     );
 
@@ -1602,7 +1579,7 @@ void SpaceState::renderHUD()
 
         if (context().app &&
         context().app->gameUiMode() == GameUiMode::SystemMap &&
-        m_server)
+        m_client)
     {
         glDisable(GL_DEPTH_TEST);
 
@@ -1630,7 +1607,7 @@ m_systemMapRenderer.render(
     m_systemMapSnapshot,
     m_detailMapSnapshot,
     m_hubMapSnapshot,
-    m_server->playerNavigation()
+    m_client->playerNavigation()
 );
 
 
@@ -1756,7 +1733,7 @@ m_systemMapRenderer.render(
         // -------------------------------------------------
 // DEBUG: координатная таблица ключевых объектов
 // -------------------------------------------------
-if (m_server)
+if (m_client)
 {
     const auto& ships = m_client->world().ships();
     auto playerIt = ships.find(m_playerId.value);
@@ -1772,7 +1749,7 @@ if (m_server)
 
         const auto* systemSnapshot =
             m_client->systemMapSnapshot(
-                m_server->playerNavigation().currentSystemId
+                m_client->playerNavigation().currentSystemId
             );
 
         bool haveEarth = false;
@@ -1937,8 +1914,9 @@ void SpaceState::renderUniverseTimeSimulationOverlay(
     const Viewport& viewport
 )
 {
-    if (!m_server ||
-        !m_server->debugUniverseTimeSimulation())
+    if (!m_client ||
+        !m_client->hasSessionSnapshot() ||
+        !m_client->sessionSnapshot().universeTimeSimulation)
     {
         return;
     }
@@ -1955,9 +1933,9 @@ void SpaceState::renderUniverseTimeSimulationOverlay(
         << "TIME SIMULATION MODE  x"
         << std::fixed
         << std::setprecision(1)
-        << m_server->debugUniverseTimeScale()
+        << m_client->sessionSnapshot().universeTimeScale
         << "  |  "
-        << m_server->universeClock().dateTimeString();
+        << m_client->sessionSnapshot().universeDate;
 
     text.textDrawPx(
         label.str(),
@@ -2311,8 +2289,8 @@ if (msg.command == "destroy_module")
     {
         EntityId id{ static_cast<uint32_t>(entityId) };
 
-        m_server->debugDestroyShipModule(id, moduleId);
-        m_server->debugRefreshSnapshot();
+        m_localHost->debugDestroyShipModule(id, moduleId);
+        m_localHost->debugRefreshSnapshot();
     }
 
     pushStructureDebugState();
@@ -2333,8 +2311,8 @@ if (msg.command == "detach_module")
     {
         EntityId id{ static_cast<uint32_t>(entityId) };
 
-        m_server->debugDetachShipModule(id, moduleId);
-        m_server->debugRefreshSnapshot();
+        m_localHost->debugDetachShipModule(id, moduleId);
+        m_localHost->debugRefreshSnapshot();
     }
 
     pushStructureDebugState();
@@ -2355,8 +2333,8 @@ if (msg.command == "hang_module")
     {
         EntityId id{ static_cast<uint32_t>(entityId) };
 
-        m_server->debugHangShipModule(id, moduleId);
-        m_server->debugRefreshSnapshot();
+        m_localHost->debugHangShipModule(id, moduleId);
+        m_localHost->debugRefreshSnapshot();
     }
 
     pushStructureDebugState();
@@ -2372,8 +2350,8 @@ if (msg.command == "reevaluate_structure")
 
     EntityId id{ static_cast<uint32_t>(entityId) };
 
-    m_server->debugReevaluateShipStructure(id);
-    m_server->debugRefreshSnapshot();
+    m_localHost->debugReevaluateShipStructure(id);
+    m_localHost->debugRefreshSnapshot();
 
     pushStructureDebugState();
     continue;
@@ -2393,8 +2371,8 @@ if (msg.command == "restore_module")
     {
         EntityId id{ static_cast<uint32_t>(entityId) };
 
-        m_server->debugRestoreShipModule(id, moduleId);
-        m_server->debugRefreshSnapshot();
+        m_localHost->debugRestoreShipModule(id, moduleId);
+        m_localHost->debugRefreshSnapshot();
     }
 
     pushStructureDebugState();
@@ -2419,13 +2397,13 @@ if (msg.command == "restore_module")
                         if (!linkId.empty())
                         {
                             EntityId id{ static_cast<uint32_t>(entityId) };
-                            m_server->debugSetShipStructuralLinkHealth(
+                            m_localHost->debugSetShipStructuralLinkHealth(
                                 id,
                                 linkId,
                                 health,
                                 destroyed
                             );
-                            m_server->debugRefreshSnapshot();
+                            m_localHost->debugRefreshSnapshot();
                         }
 
                         pushStructureDebugState();
@@ -2439,8 +2417,8 @@ if (msg.command == "reset_ship")
 
     EntityId id{ static_cast<uint32_t>(entityId) };
 
-    m_server->debugResetShipStructure(id);
-    m_server->debugRefreshSnapshot();
+    m_localHost->debugResetShipStructure(id);
+    m_localHost->debugRefreshSnapshot();
 
     pushStructureDebugState();
     continue;
@@ -2448,8 +2426,8 @@ if (msg.command == "reset_ship")
 
 if (msg.command == "reset_all_ships")
 {
-    m_server->debugResetAllShipStructures();
-    m_server->debugRefreshSnapshot();
+    m_localHost->debugResetAllShipStructures();
+    m_localHost->debugRefreshSnapshot();
 
     pushStructureDebugState();
     continue;
@@ -2523,9 +2501,9 @@ void SpaceState::pushStructureDebugState()
     payload["hasData"] = false;
     payload["reason"] = "no_server_ships";
 
-    m_server->debugRefreshSnapshot();
+    m_localHost->debugRefreshSnapshot();
 
-    const auto& snapshot = m_server->snapshot();
+    const auto& snapshot = m_localHost->debugSnapshot();
 
     if (snapshot.ships.empty())
     {
@@ -2911,23 +2889,23 @@ void SpaceState::pushDebugControlState()
 
     payload["performance"] = perf;
     payload["debugFastUniverseTime"] =
-        m_server
-            ? m_server->debugFastUniverseTime()
+        m_localHost
+            ? m_localHost->debugFastUniverseTime()
             : false;
 
     payload["debugUniverseTimeSimulation"] =
-        m_server
-            ? m_server->debugUniverseTimeSimulation()
+        m_client
+            ? m_client->sessionSnapshot().universeTimeSimulation
             : false;
 
     payload["debugUniverseTimeScale"] =
-        m_server
-            ? m_server->debugUniverseTimeScale()
+        m_client
+            ? m_client->sessionSnapshot().universeTimeScale
             : 1.0;
 
     payload["debugUniverseTimeConfiguredScale"] =
-        m_server
-            ? m_server->universeClock().configuredTimeScale()
+        m_client
+            ? m_client->sessionSnapshot().configuredUniverseTimeScale
             : 10000.0;
 
     payload["systemMapVisible"] =
@@ -3152,21 +3130,21 @@ void SpaceState::applyDebugControlPayload(const json& payload)
     if (payload.contains("rotationAxisColor"))  dbg.rotationAxisColor = jsonToVec4(payload["rotationAxisColor"], dbg.rotationAxisColor);
 
 
-    if (m_server)
+    if (m_client)
     {
         const bool simulationEnabled =
             payload.value(
                 "debugUniverseTimeSimulation",
-                m_server->debugUniverseTimeSimulation()
+                m_client->sessionSnapshot().universeTimeSimulation
             );
 
         const double simulationScale =
             payload.value(
                 "debugUniverseTimeScale",
-                m_server->universeClock().configuredTimeScale()
+                m_client->sessionSnapshot().configuredUniverseTimeScale
             );
 
-        m_server->setDebugUniverseTimeSimulation(
+        m_localHost->setDebugUniverseTimeSimulation(
             simulationEnabled,
             simulationScale
         );
@@ -3309,23 +3287,23 @@ void SpaceState::updatePromoPlayerShipTracking(float dt)
 
 void SpaceState::pushSystemMapState()
 {
-    if (!m_server)
+    if (!m_client)
         return;
 
-    const auto& atlas = m_server->starAtlas();
-    const auto& celestial = m_server->celestialSnapshot();
-    const auto& nav = m_server->playerNavigation();
+    const auto& atlas = m_localHost->starAtlas();
+    const auto& celestial = m_localHost->celestialSnapshot();
+    const auto& nav = m_client->playerNavigation();
 
     json payload;
 
     payload["universeTimeSeconds"] =
-        m_server->universeClock().timeSeconds();
+        m_client->sessionSnapshot().universeTimeSeconds;
 
     payload["universeDate"] =
-        m_server->universeClock().dateTimeString();
+        m_client->sessionSnapshot().universeDate;
 
     payload["universeTimeScale"] =
-        m_server->universeClock().timeScale();
+        m_client->sessionSnapshot().universeTimeScale;
 
     payload["currentSystemId"] = nav.currentSystemId;
     payload["system"]["id"] = celestial.systemId;
@@ -3472,7 +3450,7 @@ void SpaceState::selectSystemMapSystem(
     int systemId
 )
 {
-    if (!m_server)
+    if (!m_client)
         return;
 
     requestGalaxyMapSnapshotOnce();
@@ -3526,7 +3504,7 @@ void SpaceState::setSystemMapGalaxyMode()
 
         [this]()
         {
-            if (!m_server)
+            if (!m_client)
                 return;
 
             requestGalaxyMapSnapshotOnce();
@@ -3537,7 +3515,7 @@ void SpaceState::setSystemMapGalaxyMode()
 
             m_systemMapRenderer.onGalaxyMapEntered(
                 m_galaxyMapSnapshot,
-                m_server->playerNavigation()
+                m_client->playerNavigation()
             );
 
             pushSystemMapPanelState();
@@ -3558,7 +3536,7 @@ void SpaceState::setSystemMapEmptySectorMode(
     const glm::dvec3& positionLy
 )
 {
-    if (!m_server)
+    if (!m_client)
         return;
 
     world::celestial::SystemMapSnapshot
@@ -3577,13 +3555,13 @@ void SpaceState::setSystemMapEmptySectorMode(
         "Deep Space Sector";
 
     emptySector.universeTimeSeconds =
-        m_server->universeClock().timeSeconds();
+        m_client->sessionSnapshot().universeTimeSeconds;
 
     emptySector.universeTimeScale =
-        m_server->universeClock().timeScale();
+        m_client->sessionSnapshot().universeTimeScale;
 
     emptySector.universeDate =
-        m_server->universeClock().dateTimeString();
+        m_client->sessionSnapshot().universeDate;
 
     emptySector.systemPositionLy =
         positionLy;
@@ -3593,7 +3571,7 @@ void SpaceState::setSystemMapEmptySectorMode(
 
         [this, emptySector]()
         {
-            if (!m_server)
+            if (!m_client)
                 return;
 
             m_systemMapSnapshot =
@@ -3625,7 +3603,7 @@ void SpaceState::setSystemMapKnownSystemMode(
     int systemId
 )
 {
-    if (!m_server ||
+    if (!m_client ||
         systemId < 0)
     {
         return;
@@ -3647,7 +3625,7 @@ void SpaceState::setSystemMapKnownSystemMode(
 
         [this, systemId]()
         {
-            if (!m_server)
+            if (!m_client)
                 return;
 
             m_systemMapShowsEmptySector =
@@ -3678,7 +3656,7 @@ void SpaceState::setSystemMapKnownSystemMode(
 
 void SpaceState::setSystemMapCurrentSystemMode()
 {
-    if (!m_server)
+    if (!m_client)
         return;
 
     if (m_systemMapRenderer.mode() ==
@@ -3690,9 +3668,7 @@ void SpaceState::setSystemMapCurrentSystemMode()
     const int selectedId =
         m_systemMapRenderer.selectedSystemId() >= 0
             ? m_systemMapRenderer.selectedSystemId()
-            : m_server
-                ->playerNavigation()
-                .currentSystemId;
+            : m_client->playerNavigation().currentSystemId;
 
     setSystemMapKnownSystemMode(
         selectedId
@@ -3711,7 +3687,7 @@ void SpaceState::setSystemMapDetailMode()
 {
     using namespace world::celestial;
 
-    if (!m_server)
+    if (!m_client)
         return;
 
     if (m_systemMapRenderer.mode() ==
@@ -3723,9 +3699,7 @@ void SpaceState::setSystemMapDetailMode()
     const int selectedId =
         m_systemMapRenderer.selectedSystemId() >= 0
             ? m_systemMapRenderer.selectedSystemId()
-            : m_server
-                ->playerNavigation()
-                .currentSystemId;
+            : m_client->playerNavigation().currentSystemId;
 
     const std::string selectedBodyId =
         m_systemMapRenderer.selectedBodyId();
@@ -3798,7 +3772,7 @@ void SpaceState::setSystemMapDetailMode()
 
         [this, target]()
         {
-            if (!m_server)
+            if (!m_client)
                 return;
 
             requestDetailMapSnapshot(
@@ -3825,7 +3799,7 @@ void SpaceState::setSystemMapDetailMode()
 
 void SpaceState::setSystemMapLoadedDetailMode()
 {
-    if (!m_server)
+    if (!m_client)
         return;
 
     if (!m_hasDetailMapSnapshot)
@@ -3842,7 +3816,7 @@ void SpaceState::setSystemMapLoadedDetailMode()
 
         [this]()
         {
-            if (!m_server)
+            if (!m_client)
                 return;
 
             m_systemMapRenderer.setMode(
@@ -3865,23 +3839,23 @@ void SpaceState::pushSystemMapPanelState()
 {
     requestGalaxyMapSnapshotOnce();
 
-    if (!m_server || !context().app)
+    if (!m_client || !context().app)
         return;
 
-    const auto& atlas = m_server->starAtlas();
-    const auto& celestial = m_server->celestialSnapshot();
-    const auto& nav = m_server->playerNavigation();
+    const auto& atlas = m_localHost->starAtlas();
+    const auto& celestial = m_localHost->celestialSnapshot();
+    const auto& nav = m_client->playerNavigation();
 
     json payload;
 
     payload["universeTimeSeconds"] =
-        m_server->universeClock().timeSeconds();
+        m_client->sessionSnapshot().universeTimeSeconds;
 
     payload["universeDate"] =
-        m_server->universeClock().dateTimeString();
+        m_client->sessionSnapshot().universeDate;
 
     payload["universeTimeScale"] =
-        m_server->universeClock().timeScale();
+        m_client->sessionSnapshot().universeTimeScale;
 
     if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Galaxy)
     {

@@ -35,7 +35,15 @@ bool LocalLoopbackTransport::receiveSnapshot(
 }
 
 
+void LocalLoopbackTransport::enqueueCurrentSnapshotImmediately()
+{
+    const SimulationSnapshot snap = m_server->snapshot();
 
+    m_incoming.push(snap);
+    m_hasLastQueuedSnapshot = true;
+    m_lastQueuedSnapshotTick = snap.snapshotTick;
+    m_lastQueuedServerTime = snap.serverTime;
+}
 
 
 void LocalLoopbackTransport::update(float dt)
@@ -118,6 +126,28 @@ void LocalLoopbackTransport::sendMapRequest(
                 response.systemId = typedRequest.systemId;
                 response.snapshot =
                     m_server->buildSystemMapSnapshot(typedRequest.systemId);
+                m_mapResponses.push(std::move(response));
+            }
+            else if constexpr (
+                std::is_same_v<RequestT, game::network::DetailMapRequest>)
+            {
+                game::network::DetailMapResponse response;
+                response.requestId = typedRequest.requestId;
+                response.target = typedRequest.target;
+                response.snapshot = m_server->buildDetailMapSnapshot(
+                    typedRequest.target);
+                m_mapResponses.push(std::move(response));
+            }
+            else if constexpr (
+                std::is_same_v<RequestT, game::network::HubMapRequest>)
+            {
+                game::network::HubMapResponse response;
+                response.requestId = typedRequest.requestId;
+                response.systemId = typedRequest.systemId;
+                response.hubId = typedRequest.hubId;
+                response.snapshot = m_server->buildHubMapSnapshot(
+                    typedRequest.systemId,
+                    typedRequest.hubId);
                 m_mapResponses.push(std::move(response));
             }
         },

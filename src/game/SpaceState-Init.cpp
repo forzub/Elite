@@ -9,7 +9,6 @@
 #include "render/DebugGrid.h"
 #include "src/render/camera/RenderCameraViewport.h"
 #include "src/ui/components/UIText.h"
-#include "src/game/network/LocalLoopbackTransport.h"
 
 #include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
@@ -32,60 +31,59 @@ using namespace game::debug;
 
 void SpaceState::initServer()
 {
-    m_server = std::make_unique<GameServer>();
-    m_playerId = m_server->playerId();
-     
-    m_transport = std::make_unique<LocalLoopbackTransport>(
-        m_server.get()
-    );
+    m_localHost =
+        std::make_unique<game::host::LocalGameHost>();
 
-    m_server->update(0.0f);
-
-    m_serverRunner =
-        std::make_unique<game::server::ServerRunner>(
-            *m_server,
-            *m_transport
-        );
+    m_playerId = m_localHost->playerId();
 }
-
-
-
-
 
 
 void SpaceState::initClient()
 {
     m_client = std::make_unique<GameClient>(
-        m_transport.get(),
+        &m_localHost->transport(),
         m_playerId
     );
+
+    // Consume the initial snapshot queued by LocalGameHost.
+    m_client->update(0.0f, static_cast<float>(m_localHost->fixedStepSeconds()));
 }
 
 
 
 void SpaceState::initHUD()
 {
-    const Viewport& vp = context().viewport();
-    const auto& snap = m_server->snapshot();
-    const ShipSnapshot* playerSnap = nullptr;
-
-    for (const auto& s : snap.ships)
+    if (!m_client || !m_client->readyForGameplay())
     {
-        if (s.id == m_playerId)
-        {
-            playerSnap = &s;
-            break;
-        }
+        throw std::runtime_error(
+            "Client startup handshake is incomplete: gameplay state is not ready"
+        );
     }
 
-    if (!playerSnap)
+    const Viewport& vp = context().viewport();
+    const auto& ships = m_client->world().ships();
+    const ClientShipState* playerShip = nullptr;
+
+    const auto playerIt = ships.find(m_playerId.value);
+    if (playerIt != ships.end())
+    {
+        playerShip = &playerIt->second;
+    }
+
+    if (!playerShip)
     {
         throw std::runtime_error("Player ship not found in snapshot");
     }
 
-    const ShipDescriptor& desc =
-    ShipDescriptorRegistry::get(playerSnap->typeId);
-    ShipTransform initialTransform = playerSnap->transform;
+    if (!playerShip->descriptor)
+    {
+        throw std::runtime_error(
+            "Player ship descriptor is missing from client startup state"
+        );
+    }
+
+    const ShipDescriptor& desc = *playerShip->descriptor;
+    ShipTransform initialTransform = playerShip->transform;
     m_playerView = std::make_unique<PlayerShipView>();
     m_playerView->init(context(), &desc, initialTransform);
 

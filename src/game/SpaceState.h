@@ -21,11 +21,8 @@
 #include "game/ship/controller/PlayerInputMapper.h"
 #include "game/ship/view/PlayerShipView.h"
 #include "src/game/client/ClientWorldState.h"
-#include "src/game/server/GameServer.h"
-#include "src/game/server/ServerRunner.h"
+#include "src/game/host/LocalGameHost.h"
 #include "src/game/client/GameClient.h"
-#include "src/game/network/ITransport.h"
-#include "src/game/network/LocalLoopbackTransport.h"
 #include "src/scene/SceneRenderer.h"
 #include "src/ui/components/radar/RadarWidgetBase.h"
 
@@ -167,10 +164,8 @@ private:
 
 
     // std::unique_ptr<GameSimulation>                 m_simulation;
-    std::unique_ptr<GameServer>                     m_server;
-    std::unique_ptr<GameClient>                     m_client;
-    std::unique_ptr<ITransport>                     m_transport;
-    std::unique_ptr<game::server::ServerRunner>      m_serverRunner;
+    std::unique_ptr<game::host::LocalGameHost>      m_localHost;
+    std::unique_ptr<GameClient>                      m_client;
     std::unique_ptr<ClientWorldState>               m_clientWorld;
 
     PlayerInputMapper                               m_inputMapper;

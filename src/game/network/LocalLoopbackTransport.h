@@ -26,6 +26,11 @@ public:
     bool receiveSnapshot(
         SimulationSnapshot& outSnapshot) override;
 
+    // Startup handshake for an in-process client. The initial authoritative
+    // snapshot must be available before client-facing state is initialized;
+    // normal runtime snapshots still pass through the latency buffer.
+    void enqueueCurrentSnapshotImmediately();
+
     void update(float dt) override;
 
     void sendClientMessage(

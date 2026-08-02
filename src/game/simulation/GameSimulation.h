@@ -48,6 +48,7 @@ public:
     
     void update(const game::server::ServerTimeContext& time);
     WorldParams& world();
+    const WorldParams& world() const;
 
     const std::vector<WorldSignal>& worldSignals() const;
     const std::vector<Planet>& planets() const;

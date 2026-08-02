@@ -625,6 +625,7 @@ m_simulation.setCelestialBodyKinematicStateAu(
 
 
         m_lastSnapshot = m_simulation.snapshot();
+        populateClientSessionSnapshot(m_lastSnapshot);
 
 
 }
@@ -734,7 +735,20 @@ void GameServer::update(double dt)
                 std::cout << "GameServer::update  - ClientShipCommand received: "
                         << shipCmd.type << "\n";
 
-                ship.applyCommand(shipCmd);
+                switch (shipCmd.type)
+                {
+                    case ClientShipCommand::EjectCockpitCapsule:
+                        m_simulation.ejectShipCockpitCapsule(id);
+                        break;
+
+                    case ClientShipCommand::StartBestRepairJob:
+                        m_simulation.startBestRepairJobForFirstMissingSlot(id);
+                        break;
+
+                    default:
+                        ship.applyCommand(shipCmd);
+                        break;
+                }
 
                 cmdQueue.pop_front();
             }
@@ -799,10 +813,30 @@ m_simulation.setTick(m_serverTick);
     if (m_serverTick % m_snapshotInterval == 0)
     {
         m_lastSnapshot = m_simulation.snapshot();
+        populateClientSessionSnapshot(m_lastSnapshot);
     }
 }
 
 
+
+
+void GameServer::populateClientSessionSnapshot(
+    SimulationSnapshot& snapshot
+) const
+{
+    snapshot.session.playerNavigation = m_playerNavigation;
+    snapshot.session.predictionWorldParams = m_simulation.world();
+    snapshot.session.universeTimeSeconds =
+        m_universeClock.timeSeconds();
+    snapshot.session.universeTimeScale =
+        m_universeClock.timeScale();
+    snapshot.session.configuredUniverseTimeScale =
+        m_universeClock.configuredTimeScale();
+    snapshot.session.universeTimeSimulation =
+        m_universeClock.simulationMode();
+    snapshot.session.universeDate =
+        m_universeClock.dateTimeString();
+}
 
 
 
@@ -867,6 +901,7 @@ void GameServer::debugRefreshSnapshot()
     m_simulation.update(time);
     m_simulation.setTick(m_serverTick);
     m_lastSnapshot = m_simulation.snapshot();
+    populateClientSessionSnapshot(m_lastSnapshot);
 }
 
 

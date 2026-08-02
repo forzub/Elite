@@ -11,6 +11,7 @@
 #include "src/game/equipment/radar/RadarContact.h"
 #include "src/game/damage/DamageEvent.h"
 #include "src/game/simulation/ShipCoreStatus.h"
+#include "src/game/simulation/ShipReferenceFrameSnapshot.h"
 // #include "src/game/geometry/MeshData.h"
 
 #include "src/game/simulation/ObjectGraphSnapshot.h"
@@ -22,6 +23,7 @@ struct ShipSnapshot
     ObjectType                                          typeId;
     
     ShipTransform                                       transform;
+    game::simulation::ShipReferenceFrameSnapshot         referenceFrame;
     std::vector<SignalReceptionResult>                  receptions;
     std::vector<game::RadarContact>                     radarContacts;
     std::vector<game::damage::DamageEvent>              damageEvents;

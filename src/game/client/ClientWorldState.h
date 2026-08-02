@@ -7,6 +7,7 @@
 #include <deque>
 
 #include "src/game/simulation/SimulationSnapshot.h"
+#include "src/game/simulation/ShipReferenceFrameSnapshot.h"
 
 #include "render/HUD/WorldLabel.h"
 #include "src/world/WorldParams.h"
@@ -50,6 +51,8 @@ struct ClientShipState
 
     ShipTransform                                   transform;      // 🔥 единственный источник sim state
     ShipTransform                                   renderTransform;
+    game::simulation::ShipReferenceFrameSnapshot    referenceFrame;
+    game::simulation::ShipReferenceFrameSnapshot    renderReferenceFrame;
     const ShipDescriptor*                           descriptor = nullptr;
 
     ShipSignalPresentation                          signalPresentation; 
@@ -175,7 +178,7 @@ public:
 
     void applySoftCorrection(
         EntityId id,
-        const world::coordinates::WorldPosition& authoritativeWorldPosition
+        const ShipSnapshot& authoritativeShip
     );
 
 private:

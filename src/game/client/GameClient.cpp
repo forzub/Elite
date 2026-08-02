@@ -2,11 +2,9 @@
 #include <type_traits>
 #include <utility>
 #include "GameClient.h"
-#include "src/game/server/GameServer.h"
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/network/ClientMessage.h"
 
-// GameClient::GameClient(GameServer* server, EntityId playerId)
 GameClient::GameClient(ITransport* transport, EntityId playerId)
     : m_transport(transport)
     , m_playerId(playerId)
@@ -20,17 +18,13 @@ GameClient::GameClient(ITransport* transport, EntityId playerId)
 
 void GameClient::submitInput(const ShipControlState& control)
 {
-    
+
     ShipControlState c = control;
 
     m_clientTick++;
     c.controlTick = m_clientTick;
 
     m_pendingInputs.push_back({ m_clientTick, c });
-
-    // m_server->submitCommand(m_playerId, c);
-
-
 
     game::network::ClientMessage msg;
     msg.clientTick = m_clientTick;
@@ -79,6 +73,44 @@ bool GameClient::requestSystemMapSnapshot(int systemId)
 }
 
 
+bool GameClient::requestDetailMapSnapshot(
+    const world::celestial::DetailTarget& target)
+{
+    if (!target.valid())
+        return false;
+
+    game::network::DetailMapRequest request;
+    request.requestId = m_nextMapRequestId++;
+    request.target = target;
+    m_lastDetailMapRequestId = request.requestId;
+    m_transport->sendMapRequest(request);
+    receiveMapResponses();
+
+    return m_hasDetailMapSnapshot &&
+        m_detailMapSnapshotTarget == target;
+}
+
+bool GameClient::requestHubMapSnapshot(
+    int systemId,
+    const std::string& hubId)
+{
+    if (systemId < 0 || hubId.empty())
+        return false;
+
+    game::network::HubMapRequest request;
+    request.requestId = m_nextMapRequestId++;
+    request.systemId = systemId;
+    request.hubId = hubId;
+    m_lastHubMapRequestId = request.requestId;
+    m_transport->sendMapRequest(request);
+    receiveMapResponses();
+
+    return m_hasHubMapSnapshot &&
+        m_hubMapSnapshotSystemId == systemId &&
+        m_hubMapSnapshotHubId == hubId;
+}
+
+
 const world::celestial::GalaxyMapSnapshot*
 GameClient::galaxyMapSnapshot() const
 {
@@ -98,6 +130,66 @@ GameClient::systemMapSnapshot(int systemId) const
     }
 
     return &m_systemMapSnapshot;
+}
+
+
+const world::celestial::DetailMapSnapshot*
+GameClient::detailMapSnapshot(
+    const world::celestial::DetailTarget& target) const
+{
+    if (!m_hasDetailMapSnapshot ||
+        m_detailMapSnapshotTarget != target)
+        return nullptr;
+    return &m_detailMapSnapshot;
+}
+
+const world::celestial::HubMapSnapshot*
+GameClient::hubMapSnapshot(
+    int systemId,
+    const std::string& hubId) const
+{
+    if (!m_hasHubMapSnapshot ||
+        m_hubMapSnapshotSystemId != systemId ||
+        m_hubMapSnapshotHubId != hubId)
+        return nullptr;
+    return &m_hubMapSnapshot;
+}
+
+
+bool GameClient::hasSessionSnapshot() const
+{
+    return m_hasSessionSnapshot;
+}
+
+bool GameClient::readyForGameplay() const
+{
+    if (!m_hasSessionSnapshot)
+        return false;
+
+    const auto& ships = m_world.ships();
+    const auto it = ships.find(m_playerId.value);
+
+    if (it == ships.end())
+        return false;
+
+    const ClientShipState& ship = it->second;
+    return
+        ship.descriptor != nullptr &&
+        ship.assembly != nullptr;
+}
+
+
+const game::simulation::ClientSessionSnapshot&
+GameClient::sessionSnapshot() const
+{
+    return m_sessionSnapshot;
+}
+
+
+const world::celestial::PlayerNavigationState&
+GameClient::playerNavigation() const
+{
+    return m_sessionSnapshot.playerNavigation;
 }
 
 
@@ -145,6 +237,27 @@ void GameClient::receiveMapResponses()
                         typedResponse.systemId;
                     m_hasSystemMapSnapshot = true;
                 }
+                else if constexpr (
+                    std::is_same_v<ResponseT,
+                        game::network::DetailMapResponse>)
+                {
+                    if (typedResponse.requestId < m_lastDetailMapRequestId)
+                        return;
+                    m_detailMapSnapshot = std::move(typedResponse.snapshot);
+                    m_detailMapSnapshotTarget = typedResponse.target;
+                    m_hasDetailMapSnapshot = true;
+                }
+                else if constexpr (
+                    std::is_same_v<ResponseT,
+                        game::network::HubMapResponse>)
+                {
+                    if (typedResponse.requestId < m_lastHubMapRequestId)
+                        return;
+                    m_hubMapSnapshot = std::move(typedResponse.snapshot);
+                    m_hubMapSnapshotSystemId = typedResponse.systemId;
+                    m_hubMapSnapshotHubId = std::move(typedResponse.hubId);
+                    m_hasHubMapSnapshot = true;
+                }
             },
             std::move(response)
         );
@@ -159,7 +272,6 @@ void GameClient::receiveMapResponses()
 
 void GameClient::update(
     float dt,
-    const WorldParams& world,
     float fixedDt)
 {
     m_accumulator += dt;
@@ -170,6 +282,8 @@ void GameClient::update(
 
     while (m_transport->receiveSnapshot(snapshot))
     {
+        m_sessionSnapshot = snapshot.session;
+        m_hasSessionSnapshot = true;
         m_world.applySnapshot(snapshot);
 
         while (!m_pendingInputs.empty() &&
@@ -178,6 +292,9 @@ void GameClient::update(
             m_pendingInputs.pop_front();
         }
     }
+
+    const WorldParams& predictionWorld =
+        m_sessionSnapshot.predictionWorldParams;
 
     while (m_accumulator >= fixedDt)
     {
@@ -188,7 +305,7 @@ void GameClient::update(
             m_world.predict(
                 m_playerId,
                 last.control,
-                world,
+                predictionWorld,
                 fixedDt
             );
         }
@@ -216,21 +333,20 @@ void GameClient::reconcile(
         m_pendingInputs.pop_front();
     }
 
-    // 2️⃣ Найти authoritative позицию игрока в snapshot
-    world::coordinates::WorldPosition authoritativeWorldPosition;
-    bool found = false;
+    // Authoritative ship state. Reference-frame local coordinates are
+    // the source of truth when the server supplies a valid frame.
+    const ShipSnapshot* authoritativeShip = nullptr;
 
     for (const auto& s : snapshot.ships)
     {
         if (s.id == m_playerId)
         {
-            authoritativeWorldPosition = s.transform.worldPosition;
-            found = true;
+            authoritativeShip = &s;
             break;
         }
     }
 
-    if (!found)
+    if (!authoritativeShip)
         return;
 
     // 3️⃣ Найти текущий клиентский корабль
@@ -242,25 +358,42 @@ void GameClient::reconcile(
     const auto& clientShip = it->second;
 
     // 4️⃣ Посчитать ошибку
-    
 
-    const double error =
-    glm::length(
-        world::coordinates::relativeMeters(
-            authoritativeWorldPosition,
-            clientShip.transform.worldPosition
-        )
-    );
+
+    double error = 0.0;
+
+    const bool sameFrame =
+        clientShip.referenceFrame.valid &&
+        authoritativeShip->referenceFrame.valid &&
+        clientShip.referenceFrame.type == authoritativeShip->referenceFrame.type &&
+        clientShip.referenceFrame.bodyId == authoritativeShip->referenceFrame.bodyId &&
+        clientShip.referenceFrame.hubId == authoritativeShip->referenceFrame.hubId &&
+        clientShip.referenceFrame.moduleId == authoritativeShip->referenceFrame.moduleId;
+
+    if (sameFrame)
+    {
+        error = glm::length(
+            authoritativeShip->referenceFrame.localPositionMeters -
+            clientShip.referenceFrame.localPositionMeters
+        );
+    }
+    else
+    {
+        error = glm::length(
+            world::coordinates::relativeMeters(
+                authoritativeShip->transform.worldPosition,
+                clientShip.transform.worldPosition
+            )
+        );
+    }
 
     if (error > 0.01)
     {
         m_world.applySoftCorrection(
             m_playerId,
-            authoritativeWorldPosition
+            *authoritativeShip
         );
     }
-
-
 
 
     // 6️⃣ Переигрываем неподтверждённые инпуты

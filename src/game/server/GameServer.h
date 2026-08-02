@@ -156,6 +156,10 @@ public:
     double debugUniverseTimeScale() const;
 
 private:
+    void populateClientSessionSnapshot(
+        SimulationSnapshot& snapshot
+    ) const;
+
     void debugLogDetailMapSnapshot(
         const world::celestial::DetailMapSnapshot& snapshot
     ) const;

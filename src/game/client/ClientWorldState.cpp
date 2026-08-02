@@ -55,57 +55,85 @@ namespace
         return glm::mat4_cast(glm::normalize(q));
     }
 
+    bool sameReferenceFrame(
+        const game::simulation::ShipReferenceFrameSnapshot& a,
+        const game::simulation::ShipReferenceFrameSnapshot& b
+    )
+    {
+        return a.valid && b.valid &&
+            a.type == b.type &&
+            a.bodyId == b.bodyId &&
+            a.hubId == b.hubId &&
+            a.moduleId == b.moduleId;
+    }
+
+    void applyReferenceFrameState(
+        ShipTransform& transform,
+        const game::simulation::ShipReferenceFrameSnapshot& frame
+    )
+    {
+        if (!frame.valid)
+            return;
+
+        transform.motion.hubId = frame.hubId;
+        transform.motion.parentBodyId = frame.bodyId;
+        transform.motion.localPositionMeters = frame.localPositionMeters;
+        transform.motion.localVelocityMps = frame.localVelocityMetersPerSecond;
+        transform.motion.referenceVelocityMps = frame.velocityMetersPerSecond;
+        transform.referenceVelocityMetersPerSecond = frame.velocityMetersPerSecond;
+        transform.setWorldPositionMeters(
+            frame.localToWorldPosition(frame.localPositionMeters)
+        );
+    }
+
     ShipTransform smoothShipRenderTransform(
         const ShipTransform& current,
         const ShipTransform& target,
+        const game::simulation::ShipReferenceFrameSnapshot& currentFrame,
+        const game::simulation::ShipReferenceFrameSnapshot& targetFrame,
         float dt
     )
     {
         ShipTransform out = target;
+        const float posAlpha = renderSmoothingAlpha(dt, 18.0f);
+        const float rotAlpha = renderSmoothingAlpha(dt, 22.0f);
 
-        const glm::dvec3 worldDelta =
-            world::coordinates::relativeMeters(
+        if (sameReferenceFrame(currentFrame, targetFrame))
+        {
+            const glm::dvec3 smoothedLocal =
+                currentFrame.localPositionMeters +
+                (targetFrame.localPositionMeters - currentFrame.localPositionMeters) *
+                static_cast<double>(posAlpha);
+
+            out.motion.localPositionMeters = smoothedLocal;
+            out.motion.localVelocityMps = targetFrame.localVelocityMetersPerSecond;
+            out.setWorldPositionMeters(targetFrame.localToWorldPosition(smoothedLocal));
+        }
+        else
+        {
+            const glm::dvec3 worldDelta = world::coordinates::relativeMeters(
                 target.worldPosition,
                 current.worldPosition
             );
 
-        const double error = glm::length(worldDelta);
-
-        if (error > 500.0)
-        {
-            out.setWorldPosition(target.worldPosition);
-            out.orientation = target.orientation;
-            return out;
+            if (glm::length(worldDelta) > 500.0)
+                out.setWorldPosition(target.worldPosition);
+            else
+                out.setWorldPosition(
+                    world::coordinates::translated(
+                        current.worldPosition,
+                        worldDelta * static_cast<double>(posAlpha)
+                    )
+                );
         }
 
-        const float posAlpha =
-            renderSmoothingAlpha(dt, 18.0f);
-
-        const float rotAlpha =
-            renderSmoothingAlpha(dt, 22.0f);
-
-        const world::coordinates::WorldPosition smoothedWorld =
-            world::coordinates::translated(
-                current.worldPosition,
-                worldDelta * static_cast<double>(posAlpha)
-            );
-
-        out.setWorldPosition(smoothedWorld);
-
-        out.orientation =
-            smoothOrientationMatrix(
-                current.orientation,
-                target.orientation,
-                rotAlpha
-            );
-
+        out.orientation = smoothOrientationMatrix(
+            current.orientation,
+            target.orientation,
+            rotAlpha
+        );
         return out;
     }
-
-    
-
-    
-
 
     static void applyGraphSnapshot(
         const game::simulation::ObjectGraphSnapshot& graph,
@@ -353,12 +381,16 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             auto& state = m_ships[s.id.value];
             state.id   = s.id;
             state.role = s.role;
+            state.typeId = s.typeId;
             state.descriptor =
                 &ShipDescriptorRegistry::get(s.typeId);
                 // &ObjectDescriptorRegistry::get(s.typeId);
 
             state.transform       = s.transform;
-            state.renderTransform = s.transform;
+            state.referenceFrame  = s.referenceFrame;
+            applyReferenceFrameState(state.transform, state.referenceFrame);
+            state.renderTransform = state.transform;
+            state.renderReferenceFrame = state.referenceFrame;
             applyGraphSnapshot(
                 s.graph,
                 state.modules,
@@ -392,7 +424,11 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         {
             auto& state = it->second;
 
+            state.role = s.role;
+            state.typeId = s.typeId;
             state.transform = s.transform;
+            state.referenceFrame = s.referenceFrame;
+            applyReferenceFrameState(state.transform, state.referenceFrame);
             state.receptions = s.receptions;
             state.radarContacts = s.radarContacts;
             state.shipCoreStatus = s.shipCoreStatus;
@@ -605,8 +641,17 @@ void ClientWorldState::update(float dt)
                 smoothShipRenderTransform(
                     ship.renderTransform,
                     ship.transform,
+                    ship.renderReferenceFrame,
+                    ship.referenceFrame,
                     dt
                 );
+
+            if (ship.referenceFrame.valid)
+            {
+                ship.renderReferenceFrame = ship.referenceFrame;
+                ship.renderReferenceFrame.localPositionMeters =
+                    ship.renderTransform.motion.localPositionMeters;
+            }
         }
         else
         {
@@ -862,7 +907,10 @@ void ClientWorldState::forceState(
 
         // Полная синхронизация
         state.transform       = s.transform;
-        state.renderTransform = s.transform;
+        state.referenceFrame  = s.referenceFrame;
+        applyReferenceFrameState(state.transform, state.referenceFrame);
+        state.renderTransform = state.transform;
+        state.renderReferenceFrame = state.referenceFrame;
         state.role            = s.role;
     }
 }
@@ -871,7 +919,7 @@ void ClientWorldState::forceState(
 
 void ClientWorldState::applySoftCorrection(
     EntityId id,
-    const world::coordinates::WorldPosition& authoritativeWorldPosition
+    const ShipSnapshot& authoritativeShip
 )
 {
     auto it = m_ships.find(id.value);
@@ -880,26 +928,34 @@ void ClientWorldState::applySoftCorrection(
 
     auto& ship = it->second;
 
-    const glm::dvec3 delta =
-        world::coordinates::relativeMeters(
-            authoritativeWorldPosition,
-            ship.transform.worldPosition
-        );
+    if (sameReferenceFrame(ship.referenceFrame, authoritativeShip.referenceFrame))
+    {
+        const glm::dvec3 delta =
+            authoritativeShip.referenceFrame.localPositionMeters -
+            ship.referenceFrame.localPositionMeters;
 
-    const double error = glm::length(delta);
+        if (glm::length(delta) <= 0.001)
+            return;
 
-    if (error <= 0.001)
+        ship.referenceFrame = authoritativeShip.referenceFrame;
+        ship.referenceFrame.localPositionMeters =
+            ship.transform.motion.localPositionMeters + delta * 0.02;
+        applyReferenceFrameState(ship.transform, ship.referenceFrame);
+        return;
+    }
+
+    const glm::dvec3 delta = world::coordinates::relativeMeters(
+        authoritativeShip.transform.worldPosition,
+        ship.transform.worldPosition
+    );
+
+    if (glm::length(delta) <= 0.001)
         return;
 
-    const world::coordinates::WorldPosition corrected =
+    ship.transform.setWorldPosition(
         world::coordinates::translated(
             ship.transform.worldPosition,
             delta * 0.02
-        );
-
-    ship.transform.setWorldPosition(corrected);
-
-    // renderTransform НЕ дёргаем напрямую.
-    // Его сгладит ClientWorldState::update() через smoothShipRenderTransform.
-    // Если двигать оба transform сразу, камера получает видимый микропинок.
+        )
+    );
 }

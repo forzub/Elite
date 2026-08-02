@@ -286,6 +286,8 @@ add_executable(EliteGame
 
     src/render/navigation/NavigationCoordinateOverlay.cpp
     src/game/navigation/GalaxyNavigationConfig.cpp
+
+    src/game/host/LocalGameHost.cpp
 )
 
 

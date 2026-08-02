@@ -1041,6 +1041,36 @@ m_previousHubPositionMeters[hubId] =
 
         s.transform = tr;
 
+        s.referenceFrame.type = tr.motion.mode;
+        s.referenceFrame.bodyId = tr.motion.parentBodyId;
+        s.referenceFrame.hubId = tr.motion.hubId;
+        s.referenceFrame.localPositionMeters =
+            tr.motion.localPositionMeters;
+        s.referenceFrame.localVelocityMetersPerSecond =
+            tr.motion.localVelocityMps;
+        s.referenceFrame.universeTimeSeconds =
+            m_orbitalUniverseTimeSeconds;
+
+        if (tr.motion.mode == game::navigation::MotionMode::HubTactical)
+        {
+            const auto* frame =
+                hubNavigationFrame(tr.motion.hubId);
+
+            if (frame && frame->valid)
+            {
+                s.referenceFrame.bodyId = frame->parentBodyId;
+                s.referenceFrame.hubId = frame->hubId;
+                s.referenceFrame.moduleId = frame->primeModuleId;
+                s.referenceFrame.originMeters = frame->originMeters;
+                s.referenceFrame.velocityMetersPerSecond =
+                    frame->velocityMetersPerSecond;
+                s.referenceFrame.radialAxis = frame->radialAxis;
+                s.referenceFrame.progradeAxis = frame->progradeAxis;
+                s.referenceFrame.normalAxis = frame->normalAxis;
+                s.referenceFrame.valid = true;
+            }
+        }
+
 
  
         s.receptions = ship.core().signalResults();
@@ -2134,6 +2164,11 @@ bool GameSimulation::debugSetShipStructuralLinkHealth(
 
 
 WorldParams& GameSimulation::world()
+{
+    return m_world;
+}
+
+const WorldParams& GameSimulation::world() const
 {
     return m_world;
 }

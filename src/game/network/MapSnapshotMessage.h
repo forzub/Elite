@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <variant>
 
 #include "src/world/celestial/SystemMapTypes.h"
@@ -18,9 +19,24 @@ struct SystemMapRequest
     int systemId = -1;
 };
 
+struct DetailMapRequest
+{
+    std::uint64_t requestId = 0;
+    world::celestial::DetailTarget target;
+};
+
+struct HubMapRequest
+{
+    std::uint64_t requestId = 0;
+    int systemId = -1;
+    std::string hubId;
+};
+
 using MapRequest = std::variant<
     GalaxyMapRequest,
-    SystemMapRequest
+    SystemMapRequest,
+    DetailMapRequest,
+    HubMapRequest
 >;
 
 struct GalaxyMapResponse
@@ -36,8 +52,25 @@ struct SystemMapResponse
     world::celestial::SystemMapSnapshot snapshot;
 };
 
+struct DetailMapResponse
+{
+    std::uint64_t requestId = 0;
+    world::celestial::DetailTarget target;
+    world::celestial::DetailMapSnapshot snapshot;
+};
+
+struct HubMapResponse
+{
+    std::uint64_t requestId = 0;
+    int systemId = -1;
+    std::string hubId;
+    world::celestial::HubMapSnapshot snapshot;
+};
+
 using MapResponse = std::variant<
     GalaxyMapResponse,
-    SystemMapResponse
+    SystemMapResponse,
+    DetailMapResponse,
+    HubMapResponse
 >;
 }

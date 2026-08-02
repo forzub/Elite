@@ -232,7 +232,10 @@ namespace
     }
 }
 
-GameSimulation::GameSimulation()
+GameSimulation::GameSimulation(
+    game::diagnostics::ServerDiagnostics& diagnostics
+)
+    : m_diagnostics(diagnostics)
 {
     // ===================== ObjectDescriptor =========================
 
@@ -361,21 +364,13 @@ void GameSimulation::buildInitialScene()
 
 void GameSimulation::update(double dt)
 {
-    static float npcRepairThinkTimer = 0.0f;
-    npcRepairThinkTimer += static_cast<float>(dt);
+    m_npcRepairThinkTimerSeconds += dt;
 
-    const bool npcRepairThinkTick = npcRepairThinkTimer >= 15.0f;
+    const bool npcRepairThinkTick =
+        m_npcRepairThinkTimerSeconds >= 15.0;
 
     if (npcRepairThinkTick)
-        npcRepairThinkTimer = 0.0f;
-
-    
-    static bool initialized = false;
-
-    if (!initialized)
-    {
-        initialized = true;
-    }
+        m_npcRepairThinkTimerSeconds = 0.0;
 
     // Режим 1: нормальная мощность
       
@@ -955,15 +950,14 @@ m_previousHubPositionMeters[hubId] =
 
 
     
-    // debugLogHubPlayerChain(dt);
+    if (m_diagnostics.settings.hubPlayerChainCsv)
+        debugLogHubPlayerChain(dt);
 
+    if (m_diagnostics.settings.serverNavigationCsv)
+        debugLogServerNavState(dt);
 
-
-    // Старый огромный лог временно отключаем.
-    // debugLogServerNavState(dt);
-
-    // Главный диагностический лог движения игрока.
-    debugLogPlayerMotion(dt);
+    if (m_diagnostics.settings.playerMotionCsv)
+        debugLogPlayerMotion(dt);
 
 
 
@@ -3164,69 +3158,8 @@ void GameSimulation::updateDynamicNavigationContext(double dt)
 
 
 
-            static int row = 0;
-
-if (row < 1200)
-{
-    std::ofstream out(
-        "gravity_debug.csv",
-        row == 0
-            ? std::ios::out
-            : std::ios::app
-    );
-
-    if (row == 0)
-    {
-        out
-            << "row,"
-            << "worldX,worldY,worldZ,"
-            << "localX,localY,localZ,"
-            << "worldVx,worldVy,worldVz,"
-            << "gravityX,gravityY,gravityZ,"
-            << "gravityMag,"
-            << "referenceVx,referenceVy,referenceVz\n";
-    }
-
-    const auto& tr =
-        shipPtr->core().transform();
-
-    const double gravityMag =
-        glm::length(
-            tr.motion.gravityAccelerationMps2
-        );
-
-    const glm::dvec3 p =
-        world::coordinates::fullMeters(
-            tr.worldPosition
-        );
-
-    out
-        << row << ","
-        << p.x << ","
-        << p.y << ","
-        << p.z << ","
-
-        << tr.motion.localPositionMeters.x << ","
-        << tr.motion.localPositionMeters.y << ","
-        << tr.motion.localPositionMeters.z << ","
-
-        << tr.motion.worldVelocityMps.x << ","
-        << tr.motion.worldVelocityMps.y << ","
-        << tr.motion.worldVelocityMps.z << ","
-
-        << tr.motion.gravityAccelerationMps2.x << ","
-        << tr.motion.gravityAccelerationMps2.y << ","
-        << tr.motion.gravityAccelerationMps2.z << ","
-
-        << gravityMag << ","
-
-        << tr.motion.referenceVelocityMps.x << ","
-        << tr.motion.referenceVelocityMps.y << ","
-        << tr.motion.referenceVelocityMps.z
-        << "\n";
-
-    ++row;
-}
+        if (m_diagnostics.settings.gravityCsv)
+            debugLogGravitySample(*shipPtr);
 
 
 
@@ -3344,9 +3277,85 @@ if (row < 1200)
 
 
 
+void GameSimulation::debugLogGravitySample(const Ship& ship)
+{
+    auto& row =
+        m_diagnostics.simulation.gravityRows;
+
+    if (row >= 1200)
+        return;
+
+    const auto& tr =
+        ship.core().transform();
+
+    std::ofstream out(
+        "gravity_debug.csv",
+        row == 0
+            ? std::ios::out
+            : std::ios::app
+    );
+
+    if (!out.is_open())
+        return;
+
+    if (row == 0)
+    {
+        out
+            << "row,"
+            << "worldX,worldY,worldZ,"
+            << "localX,localY,localZ,"
+            << "worldVx,worldVy,worldVz,"
+            << "gravityX,gravityY,gravityZ,"
+            << "gravityMag,"
+            << "referenceVx,referenceVy,referenceVz\n";
+    }
+
+    const double gravityMag =
+        glm::length(
+            tr.motion.gravityAccelerationMps2
+        );
+
+    const glm::dvec3 positionMeters =
+        world::coordinates::fullMeters(
+            tr.worldPosition
+        );
+
+    out
+        << row << ","
+        << positionMeters.x << ","
+        << positionMeters.y << ","
+        << positionMeters.z << ","
+
+        << tr.motion.localPositionMeters.x << ","
+        << tr.motion.localPositionMeters.y << ","
+        << tr.motion.localPositionMeters.z << ","
+
+        << tr.motion.worldVelocityMps.x << ","
+        << tr.motion.worldVelocityMps.y << ","
+        << tr.motion.worldVelocityMps.z << ","
+
+        << tr.motion.gravityAccelerationMps2.x << ","
+        << tr.motion.gravityAccelerationMps2.y << ","
+        << tr.motion.gravityAccelerationMps2.z << ","
+
+        << gravityMag << ","
+
+        << tr.motion.referenceVelocityMps.x << ","
+        << tr.motion.referenceVelocityMps.y << ","
+        << tr.motion.referenceVelocityMps.z
+        << "\n";
+
+    ++row;
+}
+
+
 void GameSimulation::debugLogServerNavState(double dt)
 {
-    static int row = 0;
+    auto& state =
+        m_diagnostics.simulation;
+
+    auto& row =
+        state.serverNavigationRows;
 
     if (row >= 3600)
         return;
@@ -3415,10 +3424,14 @@ void GameSimulation::debugLogServerNavState(double dt)
 
     glm::dvec3 parentM {0.0};
 
-    static bool hubOrbitDebugInitialized = false;
-    static glm::dvec3 hubStartM {0.0};
-    static glm::dvec3 hubStartRadial {1.0, 0.0, 0.0};
-    static double hubStartAngleDeg = 0.0;
+    bool& hubOrbitDebugInitialized =
+        state.serverNavigationHubOrbitInitialized;
+    glm::dvec3& hubStartM =
+        state.serverNavigationHubStartMeters;
+    glm::dvec3& hubStartRadial =
+        state.serverNavigationHubStartRadial;
+    double& hubStartAngleDeg =
+        state.serverNavigationHubStartAngleDeg;
 
     glm::dvec3 playerLocal {0.0};
     glm::dvec3 motionLocal {0.0};
@@ -3705,7 +3718,8 @@ if (haveHub)
 
 void GameSimulation::debugLogPlayerMotion(double dt)
 {
-    static int row = 0;
+    auto& row =
+        m_diagnostics.simulation.playerMotionRows;
 
     if (row >= 2400)
         return;
@@ -3913,7 +3927,11 @@ void GameSimulation::debugLogPlayerMotion(double dt)
 
 void GameSimulation::debugLogHubPlayerChain(double dt)
 {
-    static int row = 0;
+    auto& state =
+        m_diagnostics.simulation;
+
+    auto& row =
+        state.hubPlayerChainRows;
 
     if (row >= 1200)
         return;
@@ -3997,10 +4015,14 @@ void GameSimulation::debugLogHubPlayerChain(double dt)
     glm::dvec3 observedPlayerLocalV {0.0};
     glm::dvec3 observedStationLocalV {0.0};
 
-    static bool havePrev = false;
-    static glm::dvec3 prevHubM {0.0};
-    static glm::dvec3 prevPlayerLocal {0.0};
-    static glm::dvec3 prevStationLocal {0.0};
+    bool& havePrev =
+        state.hubPlayerChainHasPreviousSample;
+    glm::dvec3& prevHubM =
+        state.hubPlayerChainPreviousHubMeters;
+    glm::dvec3& prevPlayerLocal =
+        state.hubPlayerChainPreviousPlayerLocalMeters;
+    glm::dvec3& prevStationLocal =
+        state.hubPlayerChainPreviousStationLocalMeters;
 
     if (havePrev && dt > 0.000001)
     {

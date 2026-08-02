@@ -24,6 +24,7 @@
 #include "src/world/hubs/OrbitalHubRuntime.h"
 #include "src/game/navigation/ReferenceFrame.h"
 #include "src/game/navigation/HubNavigationFrame.h"
+#include "src/game/diagnostics/ServerDiagnostics.h"
 
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/OrbitalCorridorSystem.h"
@@ -34,7 +35,14 @@ class StateContext;
 class GameSimulation
 {
 public:
-    GameSimulation();
+    explicit GameSimulation(
+        game::diagnostics::ServerDiagnostics& diagnostics
+    );
+
+    GameSimulation(const GameSimulation&) = delete;
+    GameSimulation& operator=(const GameSimulation&) = delete;
+    GameSimulation(GameSimulation&&) = delete;
+    GameSimulation& operator=(GameSimulation&&) = delete;
 
     
     void update(double dt);
@@ -218,12 +226,16 @@ private:
     void debugLogServerNavState(double dt);
     void debugLogPlayerMotion(double dt);
     void debugLogHubPlayerChain(double dt);
+    void debugLogGravitySample(const Ship& ship);
 
     void rebuildNavigationGravityContext();
     void updateDynamicNavigationContext(double dt);
 
 
 private:
+    game::diagnostics::ServerDiagnostics& m_diagnostics;
+    double m_npcRepairThinkTimerSeconds = 0.0;
+
     uint32_t                            m_nextEntityId = 1;
 
     std::unordered_map<EntityId, std::unique_ptr<Ship>> m_ships;

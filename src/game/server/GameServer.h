@@ -10,6 +10,7 @@
 #include "src/game/network/ClientMessage.h"
 #include "src/scene/EntityID.h"
 #include "src/game/network/ClientShipCommand.h"
+#include "src/game/diagnostics/ServerDiagnostics.h"
 
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/world/celestial/CelestialSystemRuntime.h"
@@ -133,18 +134,32 @@ public:
     ) const;
 
 
+    void setDiagnosticsSettings(
+        const game::diagnostics::ServerDiagnosticsSettings& settings
+    );
+
+    const game::diagnostics::ServerDiagnosticsSettings&
+    diagnosticsSettings() const;
+
+    void resetDiagnosticsCapture();
+
     void setDebugFastUniverseTime(bool enabled);
     bool debugFastUniverseTime() const;
     double debugUniverseTimeScale() const;
 
 private:
+    void debugLogDetailMapSnapshot(
+        const world::celestial::DetailMapSnapshot& snapshot
+    ) const;
+
     void appendLocalDetailObjects(
         world::celestial::DetailMapSnapshot& snapshot,
         double extentMeters,
         bool cubicBounds
     ) const;
 
-    GameSimulation                                                          m_simulation;
+    mutable game::diagnostics::ServerDiagnostics m_diagnostics;
+    GameSimulation m_simulation;
 
 
     std::unordered_map<uint32_t, std::deque<ShipControlState>> m_pendingCommands;

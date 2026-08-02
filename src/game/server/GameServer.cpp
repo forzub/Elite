@@ -46,13 +46,17 @@ namespace {
 
 
     void appendSystemMapMotionDebugCsv(
-        const world::celestial::SystemMapSnapshot& snapshot
+        const world::celestial::SystemMapSnapshot& snapshot,
+        game::diagnostics::ServerDiagnostics& diagnostics
     )
     {
-        static double lastLoggedUniverseTime = -1.0;
+        if (!diagnostics.settings.systemMapMotionCsv)
+            return;
 
-        // Логируем не чаще одного раза на 1 секунду universe time,
-        // чтобы не засрать файл.
+        double& lastLoggedUniverseTime =
+            diagnostics.server.systemMapLastLoggedUniverseTime;
+
+        // Log no more than once per universe-time second.
         if (lastLoggedUniverseTime >= 0.0 &&
             std::abs(snapshot.universeTimeSeconds - lastLoggedUniverseTime) < 1.0)
         {
@@ -465,7 +469,10 @@ namespace
 
 
 
-GameServer::GameServer(){
+GameServer::GameServer()
+    : m_diagnostics{}
+    , m_simulation(m_diagnostics)
+{
 
         m_universeClock.reset();
 
@@ -1526,7 +1533,7 @@ GameServer::buildSystemMapSnapshot(
 
 
 
-    appendSystemMapMotionDebugCsv(out);
+    appendSystemMapMotionDebugCsv(out, m_diagnostics);
 
     return out;
 }
@@ -1977,6 +1984,71 @@ GameServer::buildLocalObjectDetailSnapshot(
 }
 
 
+void GameServer::debugLogDetailMapSnapshot(
+    const world::celestial::DetailMapSnapshot& snapshot
+) const
+{
+    if (!m_diagnostics.settings.detailMapSnapshotCsv)
+        return;
+
+    auto& row =
+        m_diagnostics.server.detailMapSnapshotRows;
+
+    if (row >= 300)
+        return;
+
+    std::ofstream out(
+        "planet_map_snapshot_debug.csv",
+        row == 0 ? std::ios::out : std::ios::app
+    );
+
+    if (!out.is_open())
+        return;
+
+    if (row == 0)
+    {
+        out
+            << "row,systemId,planetBodyId,valid,"
+            << "hubCount,stationCount,shipCount,"
+            << "hubOrbitCount,playerOrbitCount\n";
+    }
+
+    using world::celestial::DetailObjectClass;
+    using world::celestial::LocalSceneObject;
+
+    const auto countObjects =
+        [&](DetailObjectClass objectClass,
+            const std::string& kind = std::string())
+        {
+            return std::count_if(
+                snapshot.scene.objects.begin(),
+                snapshot.scene.objects.end(),
+                [&](const LocalSceneObject& object)
+                {
+                    return
+                        object.objectClass == objectClass &&
+                        (kind.empty() || object.kind == kind);
+                }
+            );
+        };
+
+    out
+        << row << ","
+        << snapshot.systemId << ","
+        << snapshot.planetBodyId << ","
+        << (snapshot.valid ? 1 : 0) << ","
+        << countObjects(DetailObjectClass::Hub, "hub") << ","
+        << countObjects(DetailObjectClass::Hub) -
+            countObjects(DetailObjectClass::Hub, "hub") << ","
+        << countObjects(DetailObjectClass::Ship) << ","
+        << snapshot.hubOrbits.size() << ","
+        << snapshot.playerOrbits.size()
+        << "\n";
+
+    ++row;
+}
+
+
 world::celestial::DetailMapSnapshot
 GameServer::buildCelestialBodyDetailSnapshot(
     int systemId,
@@ -2134,57 +2206,8 @@ GameServer::buildCelestialBodyDetailSnapshot(
 
 
 
-{
-    static int row = 0;
 
-    if (row < 300)
-    {
-        std::ofstream dbg(
-            "planet_map_snapshot_debug.csv",
-            row == 0 ? std::ios::out : std::ios::app
-        );
-
-        if (row == 0)
-        {
-            dbg
-                << "row,systemId,planetBodyId,valid,"
-                << "hubCount,stationCount,shipCount,"
-                << "hubOrbitCount,playerOrbitCount\n";
-        }
-
-        const auto countObjects =
-            [&](DetailObjectClass objectClass,
-                const std::string& kind = std::string())
-            {
-                return std::count_if(
-                    out.scene.objects.begin(),
-                    out.scene.objects.end(),
-                    [&](const LocalSceneObject& object)
-                    {
-                        return
-                            object.objectClass == objectClass &&
-                            (kind.empty() || object.kind == kind);
-                    }
-                );
-            };
-
-        dbg
-            << row << ","
-            << out.systemId << ","
-            << out.planetBodyId << ","
-            << (out.valid ? 1 : 0) << ","
-            << countObjects(DetailObjectClass::Hub, "hub") << ","
-            << countObjects(DetailObjectClass::Hub) -
-                countObjects(DetailObjectClass::Hub, "hub") << ","
-            << countObjects(DetailObjectClass::Ship) << ","
-            << out.hubOrbits.size() << ","
-            << out.playerOrbits.size()
-            << "\n";
-
-        ++row;
-    }
-}
-
+    debugLogDetailMapSnapshot(out);
 
 
 
@@ -2951,6 +2974,28 @@ void GameServer::refreshDetailMapDynamicState(
 
 
 
+void GameServer::setDiagnosticsSettings(
+    const game::diagnostics::ServerDiagnosticsSettings& settings
+)
+{
+    m_diagnostics.settings = settings;
+    m_diagnostics.resetCaptureState();
+}
+
+
+const game::diagnostics::ServerDiagnosticsSettings&
+GameServer::diagnosticsSettings() const
+{
+    return m_diagnostics.settings;
+}
+
+
+void GameServer::resetDiagnosticsCapture()
+{
+    m_diagnostics.resetCaptureState();
+}
+
+
 void GameServer::setDebugFastUniverseTime(bool enabled)
 {
     m_debugFastUniverseTime = enabled;
@@ -3592,8 +3637,8 @@ void GameServer::refreshHubMapDynamicState(
         if (playerRoundTripErrorMeters >
             0.01)
         {
-            static int warningCount =
-                0;
+            auto& warningCount =
+                m_diagnostics.server.hubPlayerRoundTripWarnings;
 
             if (warningCount <
                 20)
@@ -3663,8 +3708,8 @@ void GameServer::refreshHubMapDynamicState(
         hubOriginErrorMeters >
             0.01)
     {
-        static int warningCount =
-            0;
+        auto& warningCount =
+            m_diagnostics.server.hubGeometryWarnings;
 
         if (warningCount <
             20)

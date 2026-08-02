@@ -9,6 +9,8 @@
 #include "render/DebugGrid.h"
 #include "src/render/camera/RenderCameraViewport.h"
 #include "src/ui/components/UIText.h"
+#include "src/core/Application.h"
+#include "src/game/host/LocalGameSession.h"
 
 #include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/game/ship/descriptors/EliteCobraMk1.h"
@@ -31,33 +33,21 @@ using namespace game::debug;
 
 void SpaceState::initServer()
 {
-    m_localHost =
-        std::make_unique<game::host::LocalGameHost>();
+    if (!context().app)
+        throw std::runtime_error("SpaceState has no Application context");
 
-    m_playerId = m_localHost->playerId();
-    m_debugSession = m_localHost.get();
+    m_session = &context().app->localGameSession();
+    m_playerId = m_session->playerId();
+    m_debugSession = &m_session->debugControl();
 }
 
 
 void SpaceState::initClient()
 {
-    m_client = std::make_unique<GameClient>(
-        &m_localHost->transport(),
-        m_playerId
-    );
+    if (!m_session)
+        throw std::runtime_error("SpaceState has no active game session");
 
-    // Consume the initial snapshot queued by LocalGameHost.
-    m_client->update(0.0f, static_cast<float>(m_localHost->fixedStepSeconds()));
-
-    // Static catalog and initial presentation state also cross the transport
-    // boundary. SpaceState must not read them from LocalGameHost.
-    if (!m_client->requestStarAtlas() ||
-        !m_client->requestCelestialSnapshot())
-    {
-        throw std::runtime_error(
-            "Client startup catalog handshake is incomplete"
-        );
-    }
+    m_client = &m_session->client();
 }
 
 

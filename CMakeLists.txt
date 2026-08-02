@@ -288,6 +288,8 @@ add_executable(EliteGame
     src/game/navigation/GalaxyNavigationConfig.cpp
 
     src/game/host/LocalGameHost.cpp
+    src/game/host/LocalGameSession.h
+    src/game/host/LocalGameSession.cpp
 )
 
 

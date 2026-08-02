@@ -1,6 +1,7 @@
 #include "ui/MainMenuState.h"
 #include "game/SpaceState.h"
 #include "core/StateStack.h"
+#include "src/core/Application.h"
 
 #include <cassert>
 
@@ -173,6 +174,7 @@ void MainMenuState::activateSelected()
     switch (m_selected)
     {
         case MenuItem::NewGame:
+            context().app->startLocalGameSession();
             m_states.pop();
             m_states.push(std::make_unique<SpaceState>(m_states));
             break;
@@ -272,6 +274,7 @@ void MainMenuState::processHtmlCommands()
 
         if (msg.command == "new_game")
         {
+            context().app->startLocalGameSession();
             m_states.pop();
             m_states.push(std::make_unique<SpaceState>(m_states));
             return;

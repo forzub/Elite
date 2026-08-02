@@ -45,6 +45,7 @@
 #include <mutex>
 
 #include "src/core/Application.h"
+#include "src/game/host/LocalGameSession.h"
 
 #include <chrono>
 #include <algorithm>
@@ -408,7 +409,7 @@ SpaceState::SpaceState(StateStack& states)
     // world = vacuum
     // =======================================================================
 
-    m_localHost->configureWorld(0.0f, 50.0f);
+    m_session->configureWorld(0.0f, 50.0f);
 
 
     // InterferenceSource jammer;
@@ -998,7 +999,7 @@ void SpaceState::update(float dt)
     const double simStartMs = nowMs();
 
     const auto serverAdvance =
-        m_localHost->advance(
+        m_session->advance(
             static_cast<double>(dt)
         );
 
@@ -1024,7 +1025,7 @@ void SpaceState::update(float dt)
     m_client->update(
         clientFrameDt,
         static_cast<float>(
-            m_localHost->fixedStepSeconds()
+            m_session->fixedStepSeconds()
         )
     );
 

@@ -22,7 +22,6 @@
 #include "game/ship/view/PlayerShipView.h"
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/debug/IDebugSessionControl.h"
-#include "src/game/host/LocalGameHost.h"
 #include "src/game/client/GameClient.h"
 #include "src/scene/SceneRenderer.h"
 #include "src/ui/components/radar/RadarWidgetBase.h"
@@ -44,6 +43,11 @@
 using json = nlohmann::json;
 
 class StateStack;
+
+namespace game::host
+{
+class LocalGameSession;
+}
 
 
 enum class ScreenLayout
@@ -165,9 +169,9 @@ private:
 
 
     // std::unique_ptr<GameSimulation>                 m_simulation;
-    std::unique_ptr<game::host::LocalGameHost>      m_localHost;
+    game::host::LocalGameSession*                  m_session = nullptr;
     game::debug::IDebugSessionControl*              m_debugSession = nullptr;
-    std::unique_ptr<GameClient>                      m_client;
+    GameClient*                                      m_client = nullptr;
     std::unique_ptr<ClientWorldState>               m_clientWorld;
 
     PlayerInputMapper                               m_inputMapper;

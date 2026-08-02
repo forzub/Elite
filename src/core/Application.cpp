@@ -6,6 +6,7 @@
 #include "core/Log.h"
 #include "ui/MainMenuState.h"
 #include "game/SpaceState.h"
+#include "src/game/host/LocalGameSession.h"
 #include "src/game/navigation/CoordinateDisplayService.h"
 #include "input/Input.h"
 #include "render/HUD/TextRenderer.h"
@@ -128,6 +129,34 @@ static int systemMapPanelWidth(int framebufferWidth)
         360,
         640
     );
+}
+
+
+void Application::startLocalGameSession()
+{
+    m_localGameSession =
+        std::make_unique<game::host::LocalGameSession>();
+}
+
+void Application::stopGameSession()
+{
+    m_localGameSession.reset();
+}
+
+game::host::LocalGameSession& Application::localGameSession()
+{
+    if (!m_localGameSession)
+        throw std::runtime_error("Local game session is not running");
+
+    return *m_localGameSession;
+}
+
+const game::host::LocalGameSession& Application::localGameSession() const
+{
+    if (!m_localGameSession)
+        throw std::runtime_error("Local game session is not running");
+
+    return *m_localGameSession;
 }
 
 
@@ -961,6 +990,7 @@ void Application::updatePendingNewGameLoad()
     m_gameWebView.evalScript("setLoadingProgress(0.25, 'PREPARING WORLD');");
 
     m_states.clear();
+    startLocalGameSession();
     m_states.push(std::make_unique<SpaceState>(m_states));
 
     m_gameWebView.evalScript("setLoadingProgress(0.80, 'APPLYING GAME STATE');");

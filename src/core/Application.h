@@ -7,10 +7,16 @@
 #include "render/RenderContext.h"
 #include "ui/html/HtmlUiManager.h"
 #include <string>
+#include <memory>
 
 #ifdef _WIN32
 #include "ui/browser/GameWebView.h"
 #endif
+
+namespace game::host
+{
+class LocalGameSession;
+}
 
 enum class GameUiMode
 {
@@ -174,6 +180,11 @@ public:
 
     void evalGameUiScript(const std::string& script);
 
+    void startLocalGameSession();
+    void stopGameSession();
+    game::host::LocalGameSession& localGameSession();
+    const game::host::LocalGameSession& localGameSession() const;
+
 private:
     void init();
     void mainLoop();
@@ -188,6 +199,7 @@ private:
     Renderer m_renderer;
     Window* m_window;
     StateContext m_context;
+    std::unique_ptr<game::host::LocalGameSession> m_localGameSession;
     StateStack   m_states;
     RenderContext renderContext;
     HtmlUiManager m_htmlUi;

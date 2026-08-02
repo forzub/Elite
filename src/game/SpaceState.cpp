@@ -439,15 +439,22 @@ SpaceState::SpaceState(StateStack& states)
 
 void SpaceState::requestGalaxyMapSnapshotOnce()
 {
-    if (!m_server)
+    if (!m_client)
         return;
 
     if (m_hasGalaxyMapSnapshot)
         return;
 
-    m_galaxyMapSnapshot =
-        m_server->buildGalaxyMapSnapshot();
+    if (!m_client->requestGalaxyMapSnapshot())
+        return;
 
+    const auto* snapshot =
+        m_client->galaxyMapSnapshot();
+
+    if (!snapshot)
+        return;
+
+    m_galaxyMapSnapshot = *snapshot;
     m_hasGalaxyMapSnapshot = true;
 }
 
@@ -460,7 +467,7 @@ void SpaceState::requestSystemMapSnapshot(
     bool forceRefresh
 )
 {
-    if (!m_server)
+    if (!m_client)
         return;
 
     m_systemMapShowsEmptySector =
@@ -473,9 +480,16 @@ void SpaceState::requestSystemMapSnapshot(
         return;
     }
 
-    m_systemMapSnapshot =
-        m_server->buildSystemMapSnapshot(systemId);
+    if (!m_client->requestSystemMapSnapshot(systemId))
+        return;
 
+    const auto* snapshot =
+        m_client->systemMapSnapshot(systemId);
+
+    if (!snapshot)
+        return;
+
+    m_systemMapSnapshot = *snapshot;
     m_loadedSystemMapId = systemId;
     m_hasSystemMapSnapshot = true;
 }
@@ -1756,8 +1770,8 @@ if (m_server)
                 playerShip.renderTransform.worldPosition
             );
 
-        const auto systemSnapshot =
-            m_server->buildSystemMapSnapshot(
+        const auto* systemSnapshot =
+            m_client->systemMapSnapshot(
                 m_server->playerNavigation().currentSystemId
             );
 
@@ -1769,34 +1783,37 @@ if (m_server)
         glm::dvec3 moonM {0.0};
         glm::dvec3 hubM {0.0};
 
-        for (const auto& b : systemSnapshot.bodies)
+        if (systemSnapshot)
         {
-            const glm::dvec3 bodyM =
-                b.positionAu * world::celestial::MetersPerAu;
-
-            if (b.id == "system_0.Sol.Земля")
+            for (const auto& b : systemSnapshot->bodies)
             {
-                earthM = bodyM;
-                haveEarth = true;
+                const glm::dvec3 bodyM =
+                    b.positionAu * world::celestial::MetersPerAu;
+
+                if (b.id == "system_0.Sol.Земля")
+                {
+                    earthM = bodyM;
+                    haveEarth = true;
+                }
+
+                if (b.name == "Луна" ||
+                    b.id.find("Луна") != std::string::npos)
+                {
+                    moonM = bodyM;
+                    haveMoon = true;
+                }
             }
 
-            if (b.name == "Луна" ||
-                b.id.find("Луна") != std::string::npos)
+            for (const auto& obj : systemSnapshot->objects)
             {
-                moonM = bodyM;
-                haveMoon = true;
-            }
-        }
+                if (obj.name.find("Earth High Orbital") != std::string::npos)
+                {
+                    hubM =
+                        obj.positionAu * world::celestial::MetersPerAu;
 
-        for (const auto& obj : systemSnapshot.objects)
-        {
-            if (obj.name.find("Earth High Orbital") != std::string::npos)
-            {
-                hubM =
-                    obj.positionAu * world::celestial::MetersPerAu;
-
-                haveHub = true;
-                break;
+                    haveHub = true;
+                    break;
+                }
             }
         }
 

@@ -3,6 +3,7 @@
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/simulation/SimulationSnapshot.h"
 #include "src/game/network/ClientMessage.h"
+#include "src/game/network/MapSnapshotMessage.h"
 #include "src/scene/EntityID.h"
 
 class ITransport
@@ -22,5 +23,13 @@ public:
     virtual void sendClientMessage(
         EntityId playerId,
         const game::network::ClientMessage& msg
+    ) = 0;
+
+    virtual void sendMapRequest(
+        const game::network::MapRequest& request
+    ) = 0;
+
+    virtual bool receiveMapResponse(
+        game::network::MapResponse& outResponse
     ) = 0;
 };

@@ -1,4 +1,6 @@
 #include <iostream>
+#include <type_traits>
+#include <utility>
 #include "GameClient.h"
 #include "src/game/server/GameServer.h"
 #include "src/game/client/ClientWorldState.h"
@@ -48,6 +50,108 @@ void GameClient::sendMessage(const game::network::ClientMessage& msg)
 }
 
 
+bool GameClient::requestGalaxyMapSnapshot()
+{
+    game::network::GalaxyMapRequest request;
+    request.requestId = m_nextMapRequestId++;
+    m_lastGalaxyMapRequestId = request.requestId;
+
+    m_transport->sendMapRequest(request);
+    receiveMapResponses();
+
+    return m_hasGalaxyMapSnapshot;
+}
+
+
+bool GameClient::requestSystemMapSnapshot(int systemId)
+{
+    game::network::SystemMapRequest request;
+    request.requestId = m_nextMapRequestId++;
+    request.systemId = systemId;
+    m_lastSystemMapRequestId = request.requestId;
+
+    m_transport->sendMapRequest(request);
+    receiveMapResponses();
+
+    return
+        m_hasSystemMapSnapshot &&
+        m_systemMapSnapshotId == systemId;
+}
+
+
+const world::celestial::GalaxyMapSnapshot*
+GameClient::galaxyMapSnapshot() const
+{
+    return m_hasGalaxyMapSnapshot
+        ? &m_galaxyMapSnapshot
+        : nullptr;
+}
+
+
+const world::celestial::SystemMapSnapshot*
+GameClient::systemMapSnapshot(int systemId) const
+{
+    if (!m_hasSystemMapSnapshot ||
+        m_systemMapSnapshotId != systemId)
+    {
+        return nullptr;
+    }
+
+    return &m_systemMapSnapshot;
+}
+
+
+void GameClient::receiveMapResponses()
+{
+    game::network::MapResponse response;
+
+    while (m_transport->receiveMapResponse(response))
+    {
+        std::visit(
+            [this](auto&& typedResponse)
+            {
+                using ResponseT =
+                    std::decay_t<decltype(typedResponse)>;
+
+                if constexpr (
+                    std::is_same_v<
+                        ResponseT,
+                        game::network::GalaxyMapResponse>)
+                {
+                    if (typedResponse.requestId <
+                        m_lastGalaxyMapRequestId)
+                    {
+                        return;
+                    }
+
+                    m_galaxyMapSnapshot =
+                        std::move(typedResponse.snapshot);
+                    m_hasGalaxyMapSnapshot = true;
+                }
+                else if constexpr (
+                    std::is_same_v<
+                        ResponseT,
+                        game::network::SystemMapResponse>)
+                {
+                    if (typedResponse.requestId <
+                        m_lastSystemMapRequestId)
+                    {
+                        return;
+                    }
+
+                    m_systemMapSnapshot =
+                        std::move(typedResponse.snapshot);
+                    m_systemMapSnapshotId =
+                        typedResponse.systemId;
+                    m_hasSystemMapSnapshot = true;
+                }
+            },
+            std::move(response)
+        );
+    }
+}
+
+
 
 
 
@@ -59,6 +163,8 @@ void GameClient::update(
     float fixedDt)
 {
     m_accumulator += dt;
+
+    receiveMapResponses();
 
     SimulationSnapshot snapshot;
 

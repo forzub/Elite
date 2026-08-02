@@ -32,9 +32,16 @@ public:
         EntityId playerId,
         const game::network::ClientMessage& msg) override;
 
+    void sendMapRequest(
+        const game::network::MapRequest& request) override;
+
+    bool receiveMapResponse(
+        game::network::MapResponse& outResponse) override;
+
 private:
     GameServer* m_server;
     std::queue<SimulationSnapshot> m_incoming;
+    std::queue<game::network::MapResponse> m_mapResponses;
     std::vector<DelayedSnapshot> m_latencyBuffer;
     float m_fakeLatency = 0.1f; // 100ms
     float m_packetLoss = 0.0f;

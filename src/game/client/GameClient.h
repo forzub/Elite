@@ -81,9 +81,6 @@ private:
     bool hasGameplayCoreState() const;
     void refreshConnectionState();
     void receiveMapResponses();
-    void reconcile(const SimulationSnapshot& snapshot,
-               const WorldParams& world,
-               float fixedDt);
     void replayPendingInputs(const WorldParams& world, float fixedDt);
 
 private:
@@ -97,13 +94,15 @@ private:
 
     struct TimedInput
     {
-        uint32_t                    controlTick;
+        std::uint64_t               controlTick = 0;
         ShipControlState            control;
     };
 
     std::deque<TimedInput>          m_pendingInputs;
     float                           m_accumulator = 0.0f;
-    uint32_t                        m_clientTick = 0;
+    std::uint64_t                   m_clientTick = 0;
+    std::uint64_t                   m_lastAcceptedSnapshotTick = 0;
+    bool                            m_hasAcceptedSnapshot = false;
 
     std::uint64_t                    m_nextMapRequestId = 1;
     std::uint64_t                    m_lastGalaxyMapRequestId = 0;

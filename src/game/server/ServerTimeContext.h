@@ -7,7 +7,7 @@ namespace game::server
 
 struct ServerTimeContext
 {
-    std::uint32_t serverTick = 0;
+    std::uint64_t serverTick = 0;
 
     // Fixed authoritative gameplay step used by ship physics, controls,
     // repairs, AI and other tick-based simulation systems.

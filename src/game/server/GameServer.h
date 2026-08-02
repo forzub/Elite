@@ -175,8 +175,9 @@ private:
 
 
     std::unordered_map<uint32_t, std::deque<ShipControlState>> m_pendingCommands;
+    std::unordered_map<uint32_t, std::uint64_t> m_lastProcessedControlTicks;
     std::unordered_map<uint32_t, std::deque<ClientShipCommand>> m_pendingClientShipCommands;
-    uint32_t m_serverTick = 0;
+    std::uint64_t m_serverTick = 0;
     world::time::UniverseClock m_universeClock;
     double m_lastUniverseTimeSeconds = 0.0;
     uint32_t m_snapshotInterval = 3;

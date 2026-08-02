@@ -20,6 +20,7 @@
 #include "src/world/types/SignalReceptionResult.h"
 #include "src/game/equipment/radar/RadarContact.h"
 #include "src/game/simulation/ShipCoreStatus.h"
+#include "src/game/damage/DamageEvent.h"
 
 #include "scene/EntityID.h"
 #include "src/world/types/ObjectType.h"
@@ -38,7 +39,7 @@
 
 struct PendingCommand
 {
-    uint32_t tick;
+    std::uint64_t tick = 0;
     ShipControlState control;
 };
 
@@ -62,6 +63,7 @@ struct ClientShipState
     const game::ship::geometry::ObjectAssembly*     assembly = nullptr;
     
     game::ShipCoreStatus                            shipCoreStatus;
+    std::vector<game::damage::DamageEvent>           damageEvents;
 
     std::vector<game::simulation::ObjectModuleSnapshot> modules;
     std::vector<game::simulation::StructuralLinkSnapshot> structuralLinks;
@@ -173,12 +175,6 @@ public:
         const ShipControlState& control,
         const WorldParams& world,
         float dt
-    );
-    void forceState(const SimulationSnapshot& snapshot);
-
-    void applySoftCorrection(
-        EntityId id,
-        const ShipSnapshot& authoritativeShip
     );
 
 private:

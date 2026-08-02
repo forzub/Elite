@@ -2,6 +2,7 @@
 
 #include "ITransport.h"
 #include "src/game/network/ClientMessage.h"
+#include <cstdint>
 #include <queue>
 
 class GameServer;
@@ -62,6 +63,6 @@ private:
     float m_packetLoss = 0.0f;
 
     bool m_hasLastQueuedSnapshot = false;
-    uint32_t m_lastQueuedSnapshotTick = 0;
+    std::uint64_t m_lastQueuedSnapshotTick = 0;
     double m_lastQueuedServerTime = -1.0;
 };

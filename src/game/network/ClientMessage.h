@@ -19,7 +19,7 @@ enum class ClientMessageType
 
 struct ClientMessage
 {
-    uint32_t clientTick = 0;
+    std::uint64_t clientTick = 0;
     ClientMessageType type;
 
     std::variant<

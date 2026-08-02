@@ -718,6 +718,7 @@ void GameServer::update(double dt)
             const auto& cmd = queue.front();
 
             ship.setControlState(cmd);
+            m_lastProcessedControlTicks[id.value] = cmd.controlTick;
             queue.pop_front();
         }
 
@@ -824,6 +825,13 @@ void GameServer::populateClientSessionSnapshot(
     SimulationSnapshot& snapshot
 ) const
 {
+    for (auto& ship : snapshot.ships)
+    {
+        const auto it = m_lastProcessedControlTicks.find(ship.id.value);
+        ship.acknowledgedControlTick =
+            it != m_lastProcessedControlTicks.end() ? it->second : 0;
+    }
+
     snapshot.session.playerNavigation = m_playerNavigation;
     snapshot.session.predictionWorldParams = m_simulation.world();
     snapshot.session.universeTimeSeconds =

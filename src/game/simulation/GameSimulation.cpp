@@ -1363,7 +1363,7 @@ void GameSimulation::debugForceFullShipGraphPayload()
 }
 
 
-void GameSimulation::setTick(uint32_t tick)
+void GameSimulation::setTick(std::uint64_t tick)
 {
     m_snapshot.snapshotTick = tick;
 }

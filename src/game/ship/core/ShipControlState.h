@@ -17,6 +17,6 @@ struct ShipControlState
     float liftInput    = 0.0f;
     float forwardInput = 0.0f;
 
-    uint32_t controlTick;
+    std::uint64_t controlTick = 0;
 
 };

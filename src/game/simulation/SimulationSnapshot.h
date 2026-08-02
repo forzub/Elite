@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <vector>
 #include <glm/glm.hpp>
 
@@ -13,7 +14,7 @@
 struct SimulationSnapshot
 {
     double                      serverTime = 0.0;
-    uint32_t                    snapshotTick;       //---Это копия m_serverTick в snapshot.---
+    std::uint64_t               snapshotTick = 0;  // Authoritative server tick.
     std::vector<ShipSnapshot>   ships;
     std::vector<WorldSignal>    signals;
     std::vector<ObjectSnapshot> objects;

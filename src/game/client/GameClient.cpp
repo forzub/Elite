@@ -384,132 +384,79 @@ void GameClient::update(
 
     while (m_transport->receiveSnapshot(snapshot))
     {
+        if (m_hasAcceptedSnapshot &&
+            snapshot.snapshotTick <= m_lastAcceptedSnapshotTick)
+        {
+            continue;
+        }
+
+        m_lastAcceptedSnapshotTick = snapshot.snapshotTick;
+        m_hasAcceptedSnapshot = true;
+
         m_sessionSnapshot = snapshot.session;
         m_hasSessionSnapshot = true;
+
+        // Every accepted snapshot is a complete authoritative baseline.
+        // Apply it once, discard acknowledged controls, then replay only
+        // commands that the server has not processed yet.
         m_world.applySnapshot(snapshot);
 
+        std::uint64_t acknowledgedControlTick = 0;
+        for (const auto& ship : snapshot.ships)
+        {
+            if (ship.id == m_playerId)
+            {
+                acknowledgedControlTick = ship.acknowledgedControlTick;
+                break;
+            }
+        }
+
         while (!m_pendingInputs.empty() &&
-               m_pendingInputs.front().controlTick <= snapshot.snapshotTick)
+               m_pendingInputs.front().controlTick <= acknowledgedControlTick)
         {
             m_pendingInputs.pop_front();
         }
-    }
 
-    const WorldParams& predictionWorld =
-        m_sessionSnapshot.predictionWorldParams;
-
-    while (m_accumulator >= fixedDt)
-    {
-        if (!m_pendingInputs.empty())
-        {
-            const auto& last = m_pendingInputs.back();
-
-            m_world.predict(
-                m_playerId,
-                last.control,
-                predictionWorld,
-                fixedDt
-            );
-        }
-
-        m_accumulator -= fixedDt;
-    }
-
-    m_world.update(dt);
-    refreshConnectionState();
-}
-
-
-
-
-
-
-void GameClient::reconcile(
-    const SimulationSnapshot& snapshot,
-    const WorldParams& world,
-    float fixedDt)
-{
-    // 1️⃣ Удаляем подтверждённые инпуты
-    while (!m_pendingInputs.empty() &&
-           m_pendingInputs.front().controlTick <= snapshot.snapshotTick)
-    {
-        m_pendingInputs.pop_front();
-    }
-
-    // Authoritative ship state. Reference-frame local coordinates are
-    // the source of truth when the server supplies a valid frame.
-    const ShipSnapshot* authoritativeShip = nullptr;
-
-    for (const auto& s : snapshot.ships)
-    {
-        if (s.id == m_playerId)
-        {
-            authoritativeShip = &s;
-            break;
-        }
-    }
-
-    if (!authoritativeShip)
-        return;
-
-    // 3️⃣ Найти текущий клиентский корабль
-    const auto& ships = m_world.ships();
-    auto it = ships.find(m_playerId.value);
-    if (it == ships.end())
-        return;
-
-    const auto& clientShip = it->second;
-
-    // 4️⃣ Посчитать ошибку
-
-
-    double error = 0.0;
-
-    const bool sameFrame =
-        clientShip.referenceFrame.valid &&
-        authoritativeShip->referenceFrame.valid &&
-        clientShip.referenceFrame.type == authoritativeShip->referenceFrame.type &&
-        clientShip.referenceFrame.bodyId == authoritativeShip->referenceFrame.bodyId &&
-        clientShip.referenceFrame.hubId == authoritativeShip->referenceFrame.hubId &&
-        clientShip.referenceFrame.moduleId == authoritativeShip->referenceFrame.moduleId;
-
-    if (sameFrame)
-    {
-        error = glm::length(
-            authoritativeShip->referenceFrame.localPositionMeters -
-            clientShip.referenceFrame.localPositionMeters
-        );
-    }
-    else
-    {
-        error = glm::length(
-            world::coordinates::relativeMeters(
-                authoritativeShip->transform.worldPosition,
-                clientShip.transform.worldPosition
-            )
-        );
-    }
-
-    if (error > 0.01)
-    {
-        m_world.applySoftCorrection(
-            m_playerId,
-            *authoritativeShip
-        );
-    }
-
-
-    // 6️⃣ Переигрываем неподтверждённые инпуты
-    for (const auto& input : m_pendingInputs)
-    {
-        m_world.predict(
-            m_playerId,
-            input.control,
-            world,
+        replayPendingInputs(
+            m_sessionSnapshot.predictionWorldParams,
             fixedDt
         );
     }
+
+    refreshConnectionState();
+
+    if (readyForGameplay())
+    {
+        const WorldParams& predictionWorld =
+            m_sessionSnapshot.predictionWorldParams;
+
+        while (m_accumulator >= fixedDt)
+        {
+            if (!m_pendingInputs.empty())
+            {
+                const auto& last = m_pendingInputs.back();
+
+                m_world.predict(
+                    m_playerId,
+                    last.control,
+                    predictionWorld,
+                    fixedDt
+                );
+            }
+
+            m_accumulator -= fixedDt;
+        }
+    }
+    else
+    {
+        // Do not accumulate a prediction debt while startup data is incomplete.
+        m_accumulator = 0.0f;
+    }
+
+    m_world.update(dt);
 }
+
+
 
 
 

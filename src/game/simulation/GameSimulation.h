@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 
 #include <vector>
 #include <unordered_map>
@@ -133,7 +134,7 @@ public:
     void applyControl(EntityId id, const ShipControlState& control);
     const SimulationSnapshot& snapshot() const;
     void debugForceFullShipGraphPayload();
-    void setTick(uint32_t tick);
+    void setTick(std::uint64_t tick);
     EntityId playerId() const { return m_playerId; }
     double serverTime() const { return m_serverTime; }
     std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships();

@@ -21,6 +21,7 @@ struct ShipSnapshot
     EntityId                                            id;
     ShipRole                                            role;
     ObjectType                                          typeId;
+    std::uint64_t                                       acknowledgedControlTick = 0;
     
     ShipTransform                                       transform;
     game::simulation::ShipReferenceFrameSnapshot         referenceFrame;

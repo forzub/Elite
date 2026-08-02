@@ -370,10 +370,16 @@ static float findAssemblyAngleRad(
 
 void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 {
+    std::unordered_set<std::uint32_t> authoritativeShipIds;
+    authoritativeShipIds.reserve(snapshot.ships.size());
+
+    std::unordered_set<std::uint32_t> authoritativeObjectIds;
+    authoritativeObjectIds.reserve(snapshot.objects.size());
 
     // ------- передача ShipSnapshot ------
     for (const auto& s : snapshot.ships)
     {
+        authoritativeShipIds.insert(s.id.value);
         auto it = m_ships.find(s.id.value);
 
         if (it == m_ships.end())
@@ -391,6 +397,10 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             applyReferenceFrameState(state.transform, state.referenceFrame);
             state.renderTransform = state.transform;
             state.renderReferenceFrame = state.referenceFrame;
+            state.receptions = s.receptions;
+            state.radarContacts = s.radarContacts;
+            state.damageEvents = s.damageEvents;
+            state.shipCoreStatus = s.shipCoreStatus;
             applyGraphSnapshot(
                 s.graph,
                 state.modules,
@@ -431,6 +441,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             applyReferenceFrameState(state.transform, state.referenceFrame);
             state.receptions = s.receptions;
             state.radarContacts = s.radarContacts;
+            state.damageEvents = s.damageEvents;
             state.shipCoreStatus = s.shipCoreStatus;
             applyGraphSnapshot(
                 s.graph,
@@ -448,9 +459,18 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
     }
 
 
+    for (auto it = m_ships.begin(); it != m_ships.end();)
+    {
+        if (authoritativeShipIds.find(it->first) == authoritativeShipIds.end())
+            it = m_ships.erase(it);
+        else
+            ++it;
+    }
+
     // ------- передача ObjectSnapshot ------
     for (const auto& o : snapshot.objects)
     {
+        authoritativeObjectIds.insert(o.id.value);
         auto it = m_objects.find(o.id.value);
 
         if (it == m_objects.end())
@@ -524,6 +544,13 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         }
     }
 
+    for (auto it = m_objects.begin(); it != m_objects.end();)
+    {
+        if (authoritativeObjectIds.find(it->first) == authoritativeObjectIds.end())
+            it = m_objects.erase(it);
+        else
+            ++it;
+    }
 
     m_visualDrones.clear();
 
@@ -892,70 +919,3 @@ void ClientWorldState::predict(
 //   ##      ##  ##    ##      ##       ######             #####     ##      #####     ##     ######
 //   ##      ##  ##    ##      ##  ##   ##                     ##    ## ##  ##  ##     ## ##  ##
 //  ####      ####    ####      ####     #####            ######      ###    #####      ###    #####
-
-
-void ClientWorldState::forceState(
-    const SimulationSnapshot& snapshot)
-{
-    for (const auto& s : snapshot.ships)
-    {
-        auto it = m_ships.find(s.id.value);
-        if (it == m_ships.end())
-            continue;
-
-        auto& state = it->second;
-
-        // Полная синхронизация
-        state.transform       = s.transform;
-        state.referenceFrame  = s.referenceFrame;
-        applyReferenceFrameState(state.transform, state.referenceFrame);
-        state.renderTransform = state.transform;
-        state.renderReferenceFrame = state.referenceFrame;
-        state.role            = s.role;
-    }
-}
-
-
-
-void ClientWorldState::applySoftCorrection(
-    EntityId id,
-    const ShipSnapshot& authoritativeShip
-)
-{
-    auto it = m_ships.find(id.value);
-    if (it == m_ships.end())
-        return;
-
-    auto& ship = it->second;
-
-    if (sameReferenceFrame(ship.referenceFrame, authoritativeShip.referenceFrame))
-    {
-        const glm::dvec3 delta =
-            authoritativeShip.referenceFrame.localPositionMeters -
-            ship.referenceFrame.localPositionMeters;
-
-        if (glm::length(delta) <= 0.001)
-            return;
-
-        ship.referenceFrame = authoritativeShip.referenceFrame;
-        ship.referenceFrame.localPositionMeters =
-            ship.transform.motion.localPositionMeters + delta * 0.02;
-        applyReferenceFrameState(ship.transform, ship.referenceFrame);
-        return;
-    }
-
-    const glm::dvec3 delta = world::coordinates::relativeMeters(
-        authoritativeShip.transform.worldPosition,
-        ship.transform.worldPosition
-    );
-
-    if (glm::length(delta) <= 0.001)
-        return;
-
-    ship.transform.setWorldPosition(
-        world::coordinates::translated(
-            ship.transform.worldPosition,
-            delta * 0.02
-        )
-    );
-}

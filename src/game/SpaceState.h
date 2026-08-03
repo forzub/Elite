@@ -301,6 +301,5 @@ private:
     int m_pendingMapSystemId = -1;
     world::celestial::DetailTarget m_pendingMapDetailTarget;
     std::string m_pendingMapHubId;
-    float m_pendingMapTransitionSeconds = 0.0f;
 
 };

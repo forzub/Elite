@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 
+#include "src/game/client/ClientRequestStatus.h"
 #include "src/game/network/ITransport.h"
 #include "src/game/network/ProtocolMetadata.h"
 #include "src/world/celestial/CelestialTypes.h"
@@ -14,7 +15,9 @@ class ClientMapService
 public:
     explicit ClientMapService(ITransport& transport);
 
+    void update(float dt);
     void pumpResponses();
+    void resetPendingRequests();
 
     bool requestGalaxy(bool forceRefresh = false);
     bool requestSystem(int systemId, bool forceRefresh = false);
@@ -25,6 +28,11 @@ public:
         int systemId,
         const std::string& hubId,
         bool forceRefresh = false);
+
+    ClientRequestStatus galaxyStatus() const;
+    ClientRequestStatus systemStatus() const;
+    ClientRequestStatus detailStatus() const;
+    ClientRequestStatus hubStatus() const;
 
     const game::network::SnapshotMetadata& galaxyMetadata() const;
     const game::network::SnapshotMetadata& systemMetadata() const;
@@ -40,17 +48,36 @@ public:
         const std::string& hubId) const;
 
 private:
+    struct RequestState
+    {
+        ClientRequestStatus status = ClientRequestStatus::Idle;
+        std::uint64_t requestId = 0;
+        float elapsedSeconds = 0.0f;
+        int attempts = 0;
+    };
+
+    static constexpr float RequestTimeoutSeconds = 2.0f;
+    static constexpr int MaxRequestAttempts = 3;
+
+    std::uint64_t nextRequestId();
+    void begin(RequestState& state, std::uint64_t requestId);
+    void complete(RequestState& state);
+    void cancel(RequestState& state);
+    bool advanceTimeout(RequestState& state, float dt);
+
+    void sendGalaxyRequest();
+    void sendSystemRequest();
+    void sendDetailRequest();
+    void sendHubRequest();
+
+private:
     ITransport& m_transport;
     std::uint64_t m_nextRequestId = 1;
-    std::uint64_t m_galaxyRequestId = 0;
-    std::uint64_t m_systemRequestId = 0;
-    std::uint64_t m_detailRequestId = 0;
-    std::uint64_t m_hubRequestId = 0;
 
-    bool m_galaxyResponseReady = false;
-    bool m_systemResponseReady = false;
-    bool m_detailResponseReady = false;
-    bool m_hubResponseReady = false;
+    RequestState m_galaxyRequest;
+    RequestState m_systemRequest;
+    RequestState m_detailRequest;
+    RequestState m_hubRequest;
 
     int m_requestedSystemId = -1;
     world::celestial::DetailTarget m_requestedDetailTarget;

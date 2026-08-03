@@ -2,6 +2,8 @@
 
 #include <unordered_map>
 #include <deque>
+#include <cstddef>
+#include <cstdint>
 
 
 #include "src/game/simulation/GameSimulation.h"
@@ -20,6 +22,18 @@
 #include "src/world/time/UniverseClock.h"
 #include "src/game/server/ServerTimeContext.h"
 #include "src/world/celestial/SystemMapTypes.h"
+
+struct ServerQueueDiagnostics
+{
+    std::uint64_t droppedControlCommands = 0;
+    std::uint64_t staleControlCommands = 0;
+    std::uint64_t coalescedControlCommands = 0;
+    std::uint64_t droppedShipCommands = 0;
+    std::uint64_t droppedMapRequests = 0;
+    std::uint64_t droppedMapResponses = 0;
+    std::uint64_t droppedPresentationRequests = 0;
+    std::uint64_t droppedPresentationResponses = 0;
+};
 
 class GameServer
 {
@@ -89,6 +103,11 @@ public:
     std::uint64_t catalogRevision() const
     {
         return 1;
+    }
+
+    const ServerQueueDiagnostics& queueDiagnostics() const
+    {
+        return m_queueDiagnostics;
     }
 
     const world::celestial::StarAtlasDatabase& starAtlas() const
@@ -205,7 +224,17 @@ private:
     GameSimulation m_simulation;
 
 
+    static constexpr std::size_t MaxControlCommandsPerShip = 64;
+    static constexpr std::size_t MaxShipCommandsPerShip = 32;
+    static constexpr std::size_t MaxPendingMapRequests = 64;
+    static constexpr std::size_t MaxCompletedMapResponses = 64;
+    static constexpr std::size_t MaxPendingPresentationRequests = 16;
+    static constexpr std::size_t MaxCompletedPresentationResponses = 16;
+
+    ServerQueueDiagnostics m_queueDiagnostics;
+
     std::unordered_map<uint32_t, std::deque<ShipControlState>> m_pendingCommands;
+    std::unordered_map<uint32_t, std::uint64_t> m_lastReceivedControlTicks;
     std::unordered_map<uint32_t, std::uint64_t> m_lastProcessedControlTicks;
     std::unordered_map<uint32_t, std::deque<ClientShipCommand>> m_pendingClientShipCommands;
     std::deque<game::network::MapRequest> m_pendingMapRequests;

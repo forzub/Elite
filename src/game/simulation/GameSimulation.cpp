@@ -21,6 +21,7 @@
 
 
 #include "game/equipment/radar/RadarModule.h"
+#include "src/game/RuntimeFeatureFlags.h"
 // #include "src/world/modules/ObjectHitBuilder.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 
@@ -992,31 +993,32 @@ m_previousHubPositionMeters[hubId] =
         ship.updateSignals(fdt, m_worldSignals, m_planets, m_interferenceSources);
     }
 
-    for (auto& [id, shipPtr] : m_ships)
+    if constexpr (game::runtime::RadarSimulationEnabled)
     {
-        Ship& ship = *shipPtr;
-
-        std::vector<world::RadarContactInput> inputs;
-
-        for (auto& [otherId, otherPtr] : m_ships)
+        for (auto& [id, shipPtr] : m_ships)
         {
-            if (id == otherId)
-                continue;
+            Ship& ship = *shipPtr;
 
-            Ship& other = *otherPtr;
+            std::vector<world::RadarContactInput> inputs;
+            inputs.reserve(m_ships.size() > 0 ? m_ships.size() - 1 : 0);
 
-            const auto& otherTransform = other.core().transform();
+            for (auto& [otherId, otherPtr] : m_ships)
+            {
+                if (id == otherId)
+                    continue;
 
-            inputs.push_back({
-                otherId,
-                otherTransform.worldPosition,
-                other.core().desc().radarCrossSection
-            });
+                Ship& other = *otherPtr;
+                const auto& otherTransform = other.core().transform();
+
+                inputs.push_back({
+                    otherId,
+                    otherTransform.worldPosition,
+                    other.core().desc().radarCrossSection
+                });
+            }
+
+            ship.updatePerception(fdt, inputs);
         }
-
-
-
-        ship.updatePerception(fdt, inputs);
     }
 
 

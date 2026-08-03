@@ -32,6 +32,7 @@
 
 #include "ui/components/radar/RadarWidgetBase.h"
 #include "src/game/network/ClientMessage.h"
+#include "src/game/RuntimeFeatureFlags.h"
 
 #include "src/render/InitShaders.h"
 
@@ -617,36 +618,39 @@ void SpaceState::setSystemMapHubMode()
     m_pendingMapSystemId = selectedId;
     m_pendingMapHubId = hubId;
     m_pendingMapDetailTarget = {};
-    m_pendingMapTransitionSeconds = 0.0f;
 }
 
 
-void SpaceState::updatePendingMapTransition(float dt)
+void SpaceState::updatePendingMapTransition(float /*dt*/)
 {
-    if (m_pendingMapTransition == PendingMapTransitionKind::None)
+    if (m_pendingMapTransition == PendingMapTransitionKind::None || !m_client)
         return;
 
-    m_pendingMapTransitionSeconds += std::max(dt, 0.0f);
-
-    constexpr float kMapRequestTimeoutSeconds = 5.0f;
-    if (m_pendingMapTransitionSeconds > kMapRequestTimeoutSeconds)
+    const auto requestFailed = [](game::client::ClientRequestStatus status)
     {
-        std::cerr
-            << "[SystemMap] map request timed out"
-            << std::endl;
+        return status == game::client::ClientRequestStatus::TimedOut ||
+               status == game::client::ClientRequestStatus::Failed ||
+               status == game::client::ClientRequestStatus::Cancelled;
+    };
 
+    auto cancelTransition = [this](const char* message)
+    {
+        std::cerr << "[SystemMap] " << message << std::endl;
         m_pendingMapTransition = PendingMapTransitionKind::None;
         m_pendingMapSystemId = -1;
         m_pendingMapHubId.clear();
         m_pendingMapDetailTarget = {};
-        m_pendingMapTransitionSeconds = 0.0f;
-        return;
-    }
+    };
 
     switch (m_pendingMapTransition)
     {
         case PendingMapTransitionKind::System:
         {
+            if (requestFailed(m_client->systemMapRequestStatus()))
+            {
+                cancelTransition("system map request failed");
+                return;
+            }
             if (!requestSystemMapSnapshot(m_pendingMapSystemId, false))
                 return;
 
@@ -658,6 +662,11 @@ void SpaceState::updatePendingMapTransition(float dt)
 
         case PendingMapTransitionKind::Detail:
         {
+            if (requestFailed(m_client->detailMapRequestStatus()))
+            {
+                cancelTransition("detail map request failed");
+                return;
+            }
             if (!requestDetailMapSnapshot(
                     m_pendingMapDetailTarget,
                     false))
@@ -673,6 +682,11 @@ void SpaceState::updatePendingMapTransition(float dt)
 
         case PendingMapTransitionKind::Hub:
         {
+            if (requestFailed(m_client->hubMapRequestStatus()))
+            {
+                cancelTransition("hub map request failed");
+                return;
+            }
             if (!requestHubMapSnapshot(
                     m_pendingMapSystemId,
                     m_pendingMapHubId,
@@ -1224,26 +1238,30 @@ m_playerView->updateCockpitStateFromSnapshot(
 
 
     // ========= обновление радара ====================
-    if (m_radarWidget)
+    if constexpr (game::runtime::RadarHudEnabled)
     {
-        m_radarWidget->setPlayerTransform(
-            world::coordinates::legacyFloatMeters(
-                ship.renderTransform.worldPosition
-            ),
-            ship.renderTransform.orientation
-        );
-
-        std::vector<RadarContactView> views;
-
-        for (const auto& c : ship.radarContacts)
+        if (m_radarWidget)
         {
-            views.push_back({
-                c.id,
-                c.localPosition
-            });
-        }
+            m_radarWidget->setPlayerTransform(
+                world::coordinates::legacyFloatMeters(
+                    ship.renderTransform.worldPosition
+                ),
+                ship.renderTransform.orientation
+            );
 
-        m_radarWidget->setContacts(views);
+            std::vector<RadarContactView> views;
+            views.reserve(ship.radarContacts.size());
+
+            for (const auto& c : ship.radarContacts)
+            {
+                views.push_back({
+                    c.id,
+                    c.localPosition
+                });
+            }
+
+            m_radarWidget->setContacts(views);
+        }
     }
 
     // ========= обновление UI ====================
@@ -3722,7 +3740,6 @@ void SpaceState::setSystemMapKnownSystemMode(
     m_pendingMapSystemId = systemId;
     m_pendingMapHubId.clear();
     m_pendingMapDetailTarget = {};
-    m_pendingMapTransitionSeconds = 0.0f;
 }
 
 
@@ -3851,7 +3868,6 @@ void SpaceState::setSystemMapDetailMode()
     m_pendingMapSystemId = target.systemId;
     m_pendingMapHubId.clear();
     m_pendingMapDetailTarget = target;
-    m_pendingMapTransitionSeconds = 0.0f;
 }
 
 

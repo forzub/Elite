@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <deque>
 #include <string>
@@ -32,7 +33,7 @@ public:
     GameClient(ITransport& transport, EntityId playerId);
 
     void submitInput(const ShipControlState& control);
-    bool updateSynchronization();
+    bool updateSynchronization(float dt);
     void updateGameplay(float dt, float fixedDt);
     void update(float dt, float fixedDt);
 
@@ -66,6 +67,11 @@ public:
             int systemId,
             const std::string& hubId) const;
 
+    game::client::ClientRequestStatus galaxyMapRequestStatus() const;
+    game::client::ClientRequestStatus systemMapRequestStatus() const;
+    game::client::ClientRequestStatus detailMapRequestStatus() const;
+    game::client::ClientRequestStatus hubMapRequestStatus() const;
+
     const game::network::SnapshotMetadata& lastSimulationMetadata() const;
     const game::network::SnapshotMetadata& galaxyMapMetadata() const;
     const game::network::SnapshotMetadata& systemMapMetadata() const;
@@ -73,6 +79,21 @@ public:
     const game::network::SnapshotMetadata& hubMapMetadata() const;
     const game::network::CatalogMetadata& starAtlasMetadata() const;
     const game::network::SnapshotMetadata& celestialMetadata() const;
+
+    std::uint64_t droppedPendingInputCount() const
+    {
+        return m_droppedPendingInputCount;
+    }
+
+    std::uint64_t predictionResyncCount() const
+    {
+        return m_predictionResyncCount;
+    }
+
+    bool predictionSuspended() const
+    {
+        return m_predictionSuspended;
+    }
 
     void beginSynchronization();
     void failSynchronization(std::string message);
@@ -114,7 +135,12 @@ private:
         ShipControlState            control;
     };
 
+    static constexpr std::size_t MaxPendingInputs = 240;
+
     std::deque<TimedInput>          m_pendingInputs;
+    std::uint64_t                   m_droppedPendingInputCount = 0;
+    std::uint64_t                   m_predictionResyncCount = 0;
+    bool                            m_predictionSuspended = false;
     ShipControlState                m_latestControl;
     bool                            m_hasLatestControl = false;
     float                           m_accumulator = 0.0f;

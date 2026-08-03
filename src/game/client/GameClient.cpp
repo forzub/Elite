@@ -18,6 +18,11 @@ void GameClient::beginSynchronization()
 {
     m_connectionError.clear();
     m_connectionState = ClientConnectionState::Synchronizing;
+    m_maps.resetPendingRequests();
+    m_catalogs.resetPendingRequests();
+    m_pendingInputs.clear();
+    m_predictionSuspended = false;
+    m_accumulator = 0.0f;
 
     requestStarAtlas();
     requestCelestialSnapshot();
@@ -84,6 +89,26 @@ bool GameClient::requestHubMapSnapshot(
     bool forceRefresh)
 {
     return m_maps.requestHub(systemId, hubId, forceRefresh);
+}
+
+game::client::ClientRequestStatus GameClient::galaxyMapRequestStatus() const
+{
+    return m_maps.galaxyStatus();
+}
+
+game::client::ClientRequestStatus GameClient::systemMapRequestStatus() const
+{
+    return m_maps.systemStatus();
+}
+
+game::client::ClientRequestStatus GameClient::detailMapRequestStatus() const
+{
+    return m_maps.detailStatus();
+}
+
+game::client::ClientRequestStatus GameClient::hubMapRequestStatus() const
+{
+    return m_maps.hubStatus();
 }
 
 const world::celestial::GalaxyMapSnapshot*
@@ -200,15 +225,24 @@ GameClient::celestialSnapshot() const
     return m_catalogs.celestialSnapshot();
 }
 
-bool GameClient::updateSynchronization()
+bool GameClient::updateSynchronization(float dt)
 {
-    m_maps.pumpResponses();
-    m_catalogs.pumpResponses();
+    m_maps.update(dt);
+    m_catalogs.update(dt);
 
     if (!m_catalogs.hasStarAtlas())
         m_catalogs.requestStarAtlas();
     if (!m_catalogs.hasCelestialSnapshot())
         m_catalogs.requestCelestialSnapshot();
+
+    if (m_catalogs.starAtlasStatus() == game::client::ClientRequestStatus::TimedOut ||
+        m_catalogs.celestialStatus() == game::client::ClientRequestStatus::TimedOut)
+    {
+        failSynchronization(
+            "Timed out while synchronizing presentation data"
+        );
+        return false;
+    }
 
     bool acceptedSnapshot = false;
 
@@ -245,6 +279,14 @@ bool GameClient::updateSynchronization()
         {
             m_pendingInputs.pop_front();
         }
+
+        if (m_predictionSuspended)
+        {
+            // The accepted authoritative snapshot is the resynchronization
+            // boundary. Do not replay an incomplete input history.
+            m_pendingInputs.clear();
+            m_predictionSuspended = false;
+        }
     }
 
     refreshConnectionState();
@@ -253,7 +295,7 @@ bool GameClient::updateSynchronization()
 
 void GameClient::updateGameplay(float dt, float fixedDt)
 {
-    const bool acceptedSnapshot = updateSynchronization();
+    const bool acceptedSnapshot = updateSynchronization(dt);
 
     if (!readyForGameplay())
     {
@@ -289,7 +331,7 @@ void GameClient::update(float dt, float fixedDt)
         updateGameplay(dt, fixedDt);
     else
     {
-        (void)updateSynchronization();
+        (void)updateSynchronization(dt);
         m_accumulator = 0.0f;
         m_world.update(dt);
     }
@@ -305,22 +347,41 @@ void GameClient::sendAndPredictFixedStep(
     ShipControlState control = m_latestControl;
     control.controlTick = ++m_clientTick;
 
-    TimedInput step;
-    step.controlTick = control.controlTick;
-    step.control = control;
-    m_pendingInputs.push_back(step);
+    bool predictThisStep = !m_predictionSuspended;
+    if (predictThisStep && m_pendingInputs.size() >= MaxPendingInputs)
+    {
+        // Silently dropping only the oldest inputs leaves a non-contiguous
+        // replay history and produces invalid reconciliation. Fall back to
+        // authoritative rendering until the next accepted snapshot instead.
+        m_droppedPendingInputCount += m_pendingInputs.size();
+        m_pendingInputs.clear();
+        m_predictionSuspended = true;
+        ++m_predictionResyncCount;
+        predictThisStep = false;
+    }
+
+    if (predictThisStep)
+    {
+        TimedInput step;
+        step.controlTick = control.controlTick;
+        step.control = control;
+        m_pendingInputs.push_back(step);
+    }
 
     game::network::ClientMessage msg;
     msg.clientTick = control.controlTick;
     msg.payload = control;
     m_transport.sendClientMessage(m_playerId, msg);
 
-    m_world.predict(
-        m_playerId,
-        control,
-        world,
-        fixedDt
-    );
+    if (predictThisStep)
+    {
+        m_world.predict(
+            m_playerId,
+            control,
+            world,
+            fixedDt
+        );
+    }
 }
 
 void GameClient::replayPendingInputs(

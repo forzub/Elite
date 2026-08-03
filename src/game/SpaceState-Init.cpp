@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "SpaceState.h"
+#include "src/game/RuntimeFeatureFlags.h"
 #include "core/StateStack.h"
 #include "core/Log.h"
 
@@ -219,38 +220,41 @@ void SpaceState::initHUD()
 
     // ================== Radar HUD creation =========================
 
-    if (!desc.defaultEquipment.radar.has_value())
+    m_radarWidget = nullptr;
+
+    if constexpr (game::runtime::RadarHudEnabled)
+    {
+        if (desc.defaultEquipment.radar.has_value())
         {
-            std::cout << "No radar installed in descriptor\n";
-            return;
-        }
-    
-    const game::RadarDesc& radarDesc =
+            const game::RadarDesc& radarDesc =
                 desc.defaultEquipment.radar.value();
 
-    auto radar = RadarWidgetFactory::create(radarDesc.type, radarDesc.visualProfile);
-    
-    if (radarDesc.visual)
-        radar->applyVisualConfig(*radarDesc.visual);
-    
-    if (radarDesc.effects) 
-        radar->applyEffectsConfig(*radarDesc.effects);
-        
-     
-    radar->id       = "radar";
-    radar->position = desc.radarMount.normalizedPosition;
-    radar->size     = desc.radarMount.normalizedSize;
-    radar->anchor   = UIAnchor::Center;
-    
-    m_radarWidget = radar.get();
-    m_radarWidget->configureFromDesc(
-        radarDesc.sweepSpeedDegPerSec,
-        radarDesc.maxRange
-    );
+            auto radar = RadarWidgetFactory::create(
+                radarDesc.type,
+                radarDesc.visualProfile
+            );
 
-    uiRoot->addChild(std::move(radar));
+            if (radarDesc.visual)
+                radar->applyVisualConfig(*radarDesc.visual);
 
- 
+            if (radarDesc.effects)
+                radar->applyEffectsConfig(*radarDesc.effects);
+
+            radar->id       = "radar";
+            radar->position = desc.radarMount.normalizedPosition;
+            radar->size     = desc.radarMount.normalizedSize;
+            radar->anchor   = UIAnchor::Center;
+
+            m_radarWidget = radar.get();
+            m_radarWidget->configureFromDesc(
+                radarDesc.sweepSpeedDegPerSec,
+                radarDesc.maxRange
+            );
+
+            uiRoot->addChild(std::move(radar));
+        }
+    }
+
 
     // =======================================================================
     // инициализация параметров рендера

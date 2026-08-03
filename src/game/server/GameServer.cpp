@@ -826,6 +826,12 @@ m_simulation.setTick(m_serverTick);
 
 void GameServer::enqueueMapRequest(const game::network::MapRequest& request)
 {
+    if (m_pendingMapRequests.size() >= MaxPendingMapRequests)
+    {
+        m_pendingMapRequests.pop_front();
+        ++m_queueDiagnostics.droppedMapRequests;
+    }
+
     m_pendingMapRequests.push_back(request);
 }
 
@@ -853,6 +859,11 @@ void GameServer::processPendingMapRequests()
                 game::network::GalaxyMapResponse response;
                 response.requestId = typedRequest.requestId; response.metadata = metadata;
                 response.snapshot = buildGalaxyMapSnapshot();
+                if (m_completedMapResponses.size() >= MaxCompletedMapResponses)
+                {
+                    m_completedMapResponses.pop_front();
+                    ++m_queueDiagnostics.droppedMapResponses;
+                }
                 m_completedMapResponses.push_back(std::move(response));
             }
             else if constexpr (std::is_same_v<RequestT, game::network::SystemMapRequest>)
@@ -860,6 +871,11 @@ void GameServer::processPendingMapRequests()
                 game::network::SystemMapResponse response;
                 response.requestId = typedRequest.requestId; response.metadata = metadata; response.systemId = typedRequest.systemId;
                 response.snapshot = buildSystemMapSnapshot(typedRequest.systemId);
+                if (m_completedMapResponses.size() >= MaxCompletedMapResponses)
+                {
+                    m_completedMapResponses.pop_front();
+                    ++m_queueDiagnostics.droppedMapResponses;
+                }
                 m_completedMapResponses.push_back(std::move(response));
             }
             else if constexpr (std::is_same_v<RequestT, game::network::DetailMapRequest>)
@@ -867,6 +883,11 @@ void GameServer::processPendingMapRequests()
                 game::network::DetailMapResponse response;
                 response.requestId = typedRequest.requestId; response.metadata = metadata; response.target = typedRequest.target;
                 response.snapshot = buildDetailMapSnapshot(typedRequest.target);
+                if (m_completedMapResponses.size() >= MaxCompletedMapResponses)
+                {
+                    m_completedMapResponses.pop_front();
+                    ++m_queueDiagnostics.droppedMapResponses;
+                }
                 m_completedMapResponses.push_back(std::move(response));
             }
             else if constexpr (std::is_same_v<RequestT, game::network::HubMapRequest>)
@@ -874,6 +895,11 @@ void GameServer::processPendingMapRequests()
                 game::network::HubMapResponse response;
                 response.requestId = typedRequest.requestId; response.metadata = metadata; response.systemId = typedRequest.systemId; response.hubId = typedRequest.hubId;
                 response.snapshot = buildHubMapSnapshot(typedRequest.systemId, typedRequest.hubId);
+                if (m_completedMapResponses.size() >= MaxCompletedMapResponses)
+                {
+                    m_completedMapResponses.pop_front();
+                    ++m_queueDiagnostics.droppedMapResponses;
+                }
                 m_completedMapResponses.push_back(std::move(response));
             }
         }, request);
@@ -883,6 +909,13 @@ void GameServer::processPendingMapRequests()
 void GameServer::enqueuePresentationDataRequest(
     const game::network::PresentationDataRequest& request)
 {
+    if (m_pendingPresentationDataRequests.size() >=
+        MaxPendingPresentationRequests)
+    {
+        m_pendingPresentationDataRequests.pop_front();
+        ++m_queueDiagnostics.droppedPresentationRequests;
+    }
+
     m_pendingPresentationDataRequests.push_back(request);
 }
 
@@ -919,6 +952,12 @@ void GameServer::processPendingPresentationDataRequests()
                     response.requestId = typedRequest.requestId;
                     response.metadata.catalogRevision = catalogRevision();
                     response.atlas = m_starAtlas;
+                    if (m_completedPresentationDataResponses.size() >=
+                        MaxCompletedPresentationResponses)
+                    {
+                        m_completedPresentationDataResponses.pop_front();
+                        ++m_queueDiagnostics.droppedPresentationResponses;
+                    }
                     m_completedPresentationDataResponses.push_back(
                         std::move(response)
                     );
@@ -931,6 +970,12 @@ void GameServer::processPendingPresentationDataRequests()
                     response.requestId = typedRequest.requestId;
                     response.metadata = metadata;
                     response.snapshot = m_celestialRuntime.snapshot();
+                    if (m_completedPresentationDataResponses.size() >=
+                        MaxCompletedPresentationResponses)
+                    {
+                        m_completedPresentationDataResponses.pop_front();
+                        ++m_queueDiagnostics.droppedPresentationResponses;
+                    }
                     m_completedPresentationDataResponses.push_back(
                         std::move(response)
                     );
@@ -974,8 +1019,33 @@ void GameServer::populateClientSessionSnapshot(
 
 void GameServer::submitCommand(EntityId id, const ShipControlState& control)
 {
+    if (control.controlTick == 0)
+    {
+        ++m_queueDiagnostics.staleControlCommands;
+        return;
+    }
 
-    m_pendingCommands[id.value].push_back(control);
+    auto& lastReceivedTick = m_lastReceivedControlTicks[id.value];
+    if (control.controlTick <= lastReceivedTick)
+    {
+        ++m_queueDiagnostics.staleControlCommands;
+        return;
+    }
+
+    lastReceivedTick = control.controlTick;
+
+    // ShipControlState is a complete control state, not an event. If several
+    // states arrive before the next authoritative simulation step, only the
+    // newest one is relevant. Keeping all of them creates permanent backlog
+    // and makes acknowledgement lag unrelated to the current controls.
+    auto& queue = m_pendingCommands[id.value];
+    if (!queue.empty())
+    {
+        m_queueDiagnostics.coalescedControlCommands += queue.size();
+        queue.clear();
+    }
+
+    queue.push_back(control);
 }
 
 
@@ -996,7 +1066,14 @@ void GameServer::receiveClientMessage(
             }
             else if constexpr (std::is_same_v<PayloadT, ClientShipCommand>)
             {
-                m_pendingClientShipCommands[playerId.value].push_back(payload);
+                auto& queue = m_pendingClientShipCommands[playerId.value];
+                if (queue.size() >= MaxShipCommandsPerShip)
+                {
+                    ++m_queueDiagnostics.droppedShipCommands;
+                    return;
+                }
+
+                queue.push_back(payload);
             }
         },
         msg.payload

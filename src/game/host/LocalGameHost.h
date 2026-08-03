@@ -25,7 +25,7 @@ namespace game::host
 class LocalGameHost final : public game::debug::IDebugSessionControl
 {
 public:
-    LocalGameHost();
+    explicit LocalGameHost(const WorldParams& worldParams);
     ~LocalGameHost();
 
     LocalGameHost(const LocalGameHost&) = delete;
@@ -39,8 +39,6 @@ public:
     server::ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
 
-    // Local-only authoring/debug seam. Normal gameplay still uses transport.
-    void configureWorld(float linearDrag, float maxSafeDecel);
 
     const SimulationSnapshot& snapshot() const override;
     void refreshSnapshot() override;

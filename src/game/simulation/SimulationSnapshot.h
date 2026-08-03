@@ -16,10 +16,6 @@ struct SimulationSnapshot
 {
     game::network::SnapshotMetadata metadata;
 
-    // Legacy interpolation fields. They mirror metadata and remain until
-    // ClientWorldState is migrated to consume SnapshotMetadata directly.
-    double                      serverTime = 0.0;
-    std::uint64_t               snapshotTick = 0;  // Authoritative server tick.
     std::vector<ShipSnapshot>   ships;
     std::vector<WorldSignal>    signals;
     std::vector<ObjectSnapshot> objects;

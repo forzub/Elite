@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "src/game/session/IGameSession.h"
+#include "src/world/WorldParams.h"
 
 class GameClient;
 
@@ -13,6 +14,11 @@ class IDebugSessionControl;
 
 namespace game::host
 {
+struct LocalGameSessionConfig
+{
+    WorldParams world { 0.0f, 50.0f };
+};
+
 class LocalGameHost;
 
 // Application-owned local session. Client-facing states borrow its endpoints
@@ -20,7 +26,9 @@ class LocalGameHost;
 class LocalGameSession final : public game::session::IGameSession
 {
 public:
-    LocalGameSession();
+    explicit LocalGameSession(
+        const LocalGameSessionConfig& config = {}
+    );
     ~LocalGameSession();
 
     LocalGameSession(const LocalGameSession&) = delete;
@@ -39,10 +47,6 @@ public:
     ) override;
     double fixedStepSeconds() const override;
 
-    void configureWorld(
-        float linearDrag,
-        float maxSafeDecel
-    ) override;
 
 private:
     std::unique_ptr<LocalGameHost> m_host;

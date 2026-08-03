@@ -1020,7 +1020,7 @@ m_previousHubPositionMeters[hubId] =
     }
 
 
-    m_snapshot.serverTime = m_serverTime;
+    m_snapshot.metadata.serverTimeSeconds = m_serverTime;
     m_snapshot.ships.clear();
     m_snapshot.objects.clear();
     m_snapshot.signals = m_worldSignals;
@@ -1365,7 +1365,7 @@ void GameSimulation::debugForceFullShipGraphPayload()
 
 void GameSimulation::setTick(std::uint64_t tick)
 {
-    m_snapshot.snapshotTick = tick;
+    m_snapshot.metadata.serverTick = tick;
 }
 
 

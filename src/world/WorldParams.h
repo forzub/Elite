@@ -1,12 +1,7 @@
 #pragma once
 
-
-
 struct WorldParams
 {
-    float linearDrag;      // сопротивление среды
-    float maxSafeDecel;    // безопасное торможение (для крашей)
+    float linearDrag = 0.0f;      // сопротивление среды
+    float maxSafeDecel = 50.0f;   // безопасное торможение (для крашей)
 };
-
-
-

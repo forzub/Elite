@@ -290,6 +290,8 @@ add_executable(EliteGame
     src/game/host/LocalGameHost.cpp
     src/game/host/LocalGameSession.h
     src/game/host/LocalGameSession.cpp
+   src/game/client/ClientMapService.cpp
+   src/game/client/ClientCatalogService.cpp
 )
 
 

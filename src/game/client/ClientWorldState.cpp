@@ -630,8 +630,8 @@ void ClientWorldState::update(float dt)
 
     if (!m_snapshotBuffer.empty())
     {
-        const double oldest = m_snapshotBuffer.front().serverTime;
-        const double newest = m_snapshotBuffer.back().serverTime;
+        const double oldest = m_snapshotBuffer.front().metadata.serverTimeSeconds;
+        const double newest = m_snapshotBuffer.back().metadata.serverTimeSeconds;
 
         // Если renderTime вылетает за диапазон —
         // зажимаем его внутрь буфера
@@ -649,8 +649,8 @@ void ClientWorldState::update(float dt)
     {
         for (size_t i = 0; i + 1 < m_snapshotBuffer.size(); ++i)
         {
-            if (m_snapshotBuffer[i].serverTime <= renderTime &&
-                m_snapshotBuffer[i+1].serverTime >= renderTime)
+            if (m_snapshotBuffer[i].metadata.serverTimeSeconds <= renderTime &&
+                m_snapshotBuffer[i+1].metadata.serverTimeSeconds >= renderTime)
             {
                 older = &m_snapshotBuffer[i];
                 newer = &m_snapshotBuffer[i+1];
@@ -685,11 +685,11 @@ void ClientWorldState::update(float dt)
             // ===== 2️⃣ NPC — INTERPOLATION =====
             if (older && newer)
             {
-                double span = newer->serverTime - older->serverTime;
+                double span = newer->metadata.serverTimeSeconds - older->metadata.serverTimeSeconds;
 
                 if (span > 0.0)
                 {
-                    float t = float((renderTime - older->serverTime) / span);
+                    float t = float((renderTime - older->metadata.serverTimeSeconds) / span);
                     t = glm::clamp(t, 0.0f, 1.0f);
 
                     auto itOld = std::find_if(
@@ -760,11 +760,11 @@ void ClientWorldState::update(float dt)
 
         if (older && newer)
         {
-            double span = newer->serverTime - older->serverTime;
+            double span = newer->metadata.serverTimeSeconds - older->metadata.serverTimeSeconds;
 
             if (span > 0.0)
             {
-                float t = float((renderTime - older->serverTime) / span);
+                float t = float((renderTime - older->metadata.serverTimeSeconds) / span);
                 t = glm::clamp(t, 0.0f, 1.0f);
 
                 debugT = t;

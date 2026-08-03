@@ -36,6 +36,5 @@ public:
     virtual GameSessionAdvanceResult advance(double elapsedSeconds) = 0;
     virtual double fixedStepSeconds() const = 0;
 
-    virtual void configureWorld(float linearDrag, float maxSafeDecel) = 0;
 };
 }

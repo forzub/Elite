@@ -8,14 +8,22 @@
 
 namespace game::host
 {
-LocalGameSession::LocalGameSession()
-    : m_host(std::make_unique<LocalGameHost>())
+LocalGameSession::LocalGameSession(
+    const LocalGameSessionConfig& config
+)
+    : m_host(std::make_unique<LocalGameHost>(config.world))
     , m_client(std::make_unique<GameClient>(
-          &m_host->transport(),
+          m_host->transport(),
           m_host->playerId()
       ))
 {
     m_client->beginSynchronization();
+
+    // Catalog and celestial requests are authoritative server requests.
+    // Advance one fixed tick so the local server can process them before the
+    // client evaluates startup readiness.
+    m_host->advance(m_host->fixedStepSeconds());
+
     m_client->update(
         0.0f,
         static_cast<float>(m_host->fixedStepSeconds())
@@ -75,13 +83,5 @@ game::session::GameSessionAdvanceResult LocalGameSession::advance(
 double LocalGameSession::fixedStepSeconds() const
 {
     return m_host->fixedStepSeconds();
-}
-
-void LocalGameSession::configureWorld(
-    float linearDrag,
-    float maxSafeDecel
-)
-{
-    m_host->configureWorld(linearDrag, maxSafeDecel);
 }
 }

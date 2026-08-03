@@ -111,7 +111,7 @@ public:
     void applyDebugControlPayload(const nlohmann::json& payload);
 
     void requestGalaxyMapSnapshotOnce();
-    void requestSystemMapSnapshot(
+    bool requestSystemMapSnapshot(
         int systemId,
         bool forceRefresh = false
     );
@@ -119,17 +119,35 @@ public:
     void updateSystemMapLiveFlags();
     bool shouldRefreshSystemMapSnapshot() const;
 
-    void requestDetailMapSnapshot(
+    bool requestDetailMapSnapshot(
         const world::celestial::DetailTarget& target,
         bool forceRefresh = false
     );
 
     void setSystemMapDetailMode();
 
-    void requestHubMapSnapshot(
+    bool requestHubMapSnapshot(
         int systemId,
         const std::string& hubId,
         bool forceRefresh = false
+    );
+
+    enum class PendingMapTransitionKind
+    {
+        None,
+        System,
+        Detail,
+        Hub
+    };
+
+    void updatePendingMapTransition(float dt);
+    void beginSystemMapSystemTransition(int systemId);
+    void beginSystemMapDetailTransition(
+        const world::celestial::DetailTarget& target
+    );
+    void beginSystemMapHubTransition(
+        int systemId,
+        const std::string& hubId
     );
 
     void setSystemMapHubMode();
@@ -277,5 +295,12 @@ private:
     bool m_systemMapVisible = false;
     bool m_systemMapLiveSnapshotsEnabled = false;
     int m_liveSystemMapId = -1;
+
+    PendingMapTransitionKind m_pendingMapTransition =
+        PendingMapTransitionKind::None;
+    int m_pendingMapSystemId = -1;
+    world::celestial::DetailTarget m_pendingMapDetailTarget;
+    std::string m_pendingMapHubId;
+    float m_pendingMapTransitionSeconds = 0.0f;
 
 };

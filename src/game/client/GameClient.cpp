@@ -5,23 +5,17 @@
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/network/ClientMessage.h"
 
-GameClient::GameClient(ITransport* transport, EntityId playerId)
+GameClient::GameClient(ITransport& transport, EntityId playerId)
     : m_transport(transport)
     , m_playerId(playerId)
+    , m_maps(transport)
+    , m_catalogs(transport)
 {
-    m_connectionState = m_transport
-        ? ClientConnectionState::Connecting
-        : ClientConnectionState::Disconnected;
+    m_connectionState = ClientConnectionState::Connecting;
 }
 
 void GameClient::beginSynchronization()
 {
-    if (!m_transport)
-    {
-        failSynchronization("Client transport is not available");
-        return;
-    }
-
     m_connectionError.clear();
     m_connectionState = ClientConnectionState::Synchronizing;
 
@@ -53,102 +47,62 @@ const std::string& GameClient::connectionError() const
 
 void GameClient::submitInput(const ShipControlState& control)
 {
-
-    ShipControlState c = control;
-
-    m_clientTick++;
-    c.controlTick = m_clientTick;
-
-    m_pendingInputs.push_back({ m_clientTick, c });
-
-    game::network::ClientMessage msg;
-    msg.clientTick = m_clientTick;
-    msg.payload = c;
-
-    m_transport->sendClientMessage(m_playerId, msg);
-    // m_transport->sendInput(m_playerId, c);
-
+    // Input sampling is frame-rate dependent; network commands and prediction
+    // are emitted only on fixed client steps in updateGameplay().
+    m_latestControl = control;
+    m_hasLatestControl = true;
 }
 
 
 
 void GameClient::sendMessage(const game::network::ClientMessage& msg)
 {
-    m_transport->sendClientMessage(m_playerId, msg);
+    m_transport.sendClientMessage(m_playerId, msg);
 }
 
 
 bool GameClient::requestGalaxyMapSnapshot(bool forceRefresh)
 {
-    receiveMapResponses();
-    if (m_galaxyMapResponseReady) { m_galaxyMapResponseReady = false; return m_hasGalaxyMapSnapshot; }
-    if (m_lastGalaxyMapRequestId != 0) return false;
-    if (!forceRefresh && m_hasGalaxyMapSnapshot) return true;
-    game::network::GalaxyMapRequest request; request.requestId = m_nextMapRequestId++;
-    m_lastGalaxyMapRequestId = request.requestId; m_transport->sendMapRequest(request); return false;
+    return m_maps.requestGalaxy(forceRefresh);
 }
 
 bool GameClient::requestSystemMapSnapshot(int systemId, bool forceRefresh)
 {
-    receiveMapResponses();
-    if (m_systemMapResponseReady && m_systemMapSnapshotId == systemId) { m_systemMapResponseReady = false; return true; }
-    if (m_lastSystemMapRequestId != 0) return false;
-    if (!forceRefresh && m_hasSystemMapSnapshot && m_systemMapSnapshotId == systemId) return true;
-    game::network::SystemMapRequest request; request.requestId = m_nextMapRequestId++; request.systemId = systemId;
-    m_lastSystemMapRequestId = request.requestId; m_requestedSystemMapId = systemId; m_transport->sendMapRequest(request); return false;
+    return m_maps.requestSystem(systemId, forceRefresh);
 }
 
-bool GameClient::requestDetailMapSnapshot(const world::celestial::DetailTarget& target, bool forceRefresh)
+bool GameClient::requestDetailMapSnapshot(
+    const world::celestial::DetailTarget& target,
+    bool forceRefresh)
 {
-    if (!target.valid()) return false; receiveMapResponses();
-    if (m_detailMapResponseReady && m_detailMapSnapshotTarget == target) { m_detailMapResponseReady = false; return true; }
-    if (m_lastDetailMapRequestId != 0) return false;
-    if (!forceRefresh && m_hasDetailMapSnapshot && m_detailMapSnapshotTarget == target) return true;
-    game::network::DetailMapRequest request; request.requestId = m_nextMapRequestId++; request.target = target;
-    m_lastDetailMapRequestId = request.requestId; m_requestedDetailMapTarget = target; m_transport->sendMapRequest(request); return false;
+    return m_maps.requestDetail(target, forceRefresh);
 }
 
-bool GameClient::requestHubMapSnapshot(int systemId, const std::string& hubId, bool forceRefresh)
+bool GameClient::requestHubMapSnapshot(
+    int systemId,
+    const std::string& hubId,
+    bool forceRefresh)
 {
-    if (systemId < 0 || hubId.empty()) return false; receiveMapResponses();
-    if (m_hubMapResponseReady && m_hubMapSnapshotSystemId == systemId && m_hubMapSnapshotHubId == hubId) { m_hubMapResponseReady = false; return true; }
-    if (m_lastHubMapRequestId != 0) return false;
-    if (!forceRefresh && m_hasHubMapSnapshot && m_hubMapSnapshotSystemId == systemId && m_hubMapSnapshotHubId == hubId) return true;
-    game::network::HubMapRequest request; request.requestId = m_nextMapRequestId++; request.systemId = systemId; request.hubId = hubId;
-    m_lastHubMapRequestId = request.requestId; m_requestedHubMapSystemId = systemId; m_requestedHubMapHubId = hubId; m_transport->sendMapRequest(request); return false;
+    return m_maps.requestHub(systemId, hubId, forceRefresh);
 }
-
 
 const world::celestial::GalaxyMapSnapshot*
 GameClient::galaxyMapSnapshot() const
 {
-    return m_hasGalaxyMapSnapshot
-        ? &m_galaxyMapSnapshot
-        : nullptr;
+    return m_maps.galaxy();
 }
-
 
 const world::celestial::SystemMapSnapshot*
 GameClient::systemMapSnapshot(int systemId) const
 {
-    if (!m_hasSystemMapSnapshot ||
-        m_systemMapSnapshotId != systemId)
-    {
-        return nullptr;
-    }
-
-    return &m_systemMapSnapshot;
+    return m_maps.system(systemId);
 }
-
 
 const world::celestial::DetailMapSnapshot*
 GameClient::detailMapSnapshot(
     const world::celestial::DetailTarget& target) const
 {
-    if (!m_hasDetailMapSnapshot ||
-        m_detailMapSnapshotTarget != target)
-        return nullptr;
-    return &m_detailMapSnapshot;
+    return m_maps.detail(target);
 }
 
 const world::celestial::HubMapSnapshot*
@@ -156,13 +110,8 @@ GameClient::hubMapSnapshot(
     int systemId,
     const std::string& hubId) const
 {
-    if (!m_hasHubMapSnapshot ||
-        m_hubMapSnapshotSystemId != systemId ||
-        m_hubMapSnapshotHubId != hubId)
-        return nullptr;
-    return &m_hubMapSnapshot;
+    return m_maps.hub(systemId, hubId);
 }
-
 
 bool GameClient::hasSessionSnapshot() const
 {
@@ -195,8 +144,8 @@ void GameClient::refreshConnectionState()
     }
 
     if (hasGameplayCoreState() &&
-        m_hasStarAtlas &&
-        m_hasCelestialSnapshot)
+        m_catalogs.hasStarAtlas() &&
+        m_catalogs.hasCelestialSnapshot())
     {
         m_connectionState = ClientConnectionState::Ready;
     }
@@ -228,165 +177,43 @@ GameClient::playerNavigation() const
 
 bool GameClient::requestStarAtlas()
 {
-    m_transport->requestStarAtlas();
-
-    game::network::StarAtlasResponse response;
-    while (m_transport->receiveStarAtlas(response))
-    {
-        if (m_hasStarAtlas &&
-            response.metadata.catalogRevision < m_starAtlasRevision)
-        {
-            continue;
-        }
-
-        m_starAtlasRevision = response.metadata.catalogRevision;
-        m_starAtlas = std::move(response.atlas);
-        m_hasStarAtlas = true;
-    }
-
+    const bool ready = m_catalogs.requestStarAtlas();
     refreshConnectionState();
-    return m_hasStarAtlas;
+    return ready;
 }
 
 bool GameClient::requestCelestialSnapshot()
 {
-    m_transport->requestCelestialSnapshot();
-
-    game::network::CelestialSnapshotResponse response;
-    while (m_transport->receiveCelestialSnapshot(response))
-    {
-        if (m_hasCelestialSnapshot &&
-            response.metadata.serverTick <
-                m_celestialSnapshotMetadata.serverTick)
-        {
-            continue;
-        }
-
-        m_celestialSnapshotMetadata = response.metadata;
-        m_celestialSnapshot = std::move(response.snapshot);
-        m_hasCelestialSnapshot = true;
-    }
-
+    const bool ready = m_catalogs.requestCelestialSnapshot();
     refreshConnectionState();
-    return m_hasCelestialSnapshot;
+    return ready;
 }
 
 const world::celestial::StarAtlasDatabase* GameClient::starAtlas() const
 {
-    return m_hasStarAtlas ? &m_starAtlas : nullptr;
+    return m_catalogs.starAtlas();
 }
 
 const world::celestial::CelestialSystemSnapshot*
 GameClient::celestialSnapshot() const
 {
-    return m_hasCelestialSnapshot ? &m_celestialSnapshot : nullptr;
+    return m_catalogs.celestialSnapshot();
 }
 
-
-void GameClient::receiveMapResponses()
+bool GameClient::updateSynchronization()
 {
-    game::network::MapResponse response;
+    m_maps.pumpResponses();
+    m_catalogs.pumpResponses();
 
-    while (m_transport->receiveMapResponse(response))
-    {
-        std::visit(
-            [this](auto&& typedResponse)
-            {
-                using ResponseT =
-                    std::decay_t<decltype(typedResponse)>;
+    if (!m_catalogs.hasStarAtlas())
+        m_catalogs.requestStarAtlas();
+    if (!m_catalogs.hasCelestialSnapshot())
+        m_catalogs.requestCelestialSnapshot();
 
-                if constexpr (
-                    std::is_same_v<
-                        ResponseT,
-                        game::network::GalaxyMapResponse>)
-                {
-                    if (typedResponse.requestId !=
-                        m_lastGalaxyMapRequestId)
-                    {
-                        return;
-                    }
-
-                    m_lastGalaxyMapMetadata = typedResponse.metadata;
-                    m_galaxyMapSnapshot =
-                        std::move(typedResponse.snapshot);
-                    m_hasGalaxyMapSnapshot = true;
-                    m_lastGalaxyMapRequestId = 0;
-                    m_galaxyMapResponseReady = true;
-                }
-                else if constexpr (
-                    std::is_same_v<
-                        ResponseT,
-                        game::network::SystemMapResponse>)
-                {
-                    if (typedResponse.requestId !=
-                        m_lastSystemMapRequestId ||
-                        typedResponse.systemId != m_requestedSystemMapId)
-                    {
-                        return;
-                    }
-
-                    m_lastSystemMapMetadata = typedResponse.metadata;
-                    m_systemMapSnapshot =
-                        std::move(typedResponse.snapshot);
-                    m_systemMapSnapshotId =
-                        typedResponse.systemId;
-                    m_hasSystemMapSnapshot = true;
-                    m_lastSystemMapRequestId = 0;
-                    m_systemMapResponseReady = true;
-                }
-                else if constexpr (
-                    std::is_same_v<ResponseT,
-                        game::network::DetailMapResponse>)
-                {
-                    if (typedResponse.requestId != m_lastDetailMapRequestId ||
-                        typedResponse.target != m_requestedDetailMapTarget)
-                        return;
-                    m_lastDetailMapMetadata = typedResponse.metadata;
-                    m_detailMapSnapshot = std::move(typedResponse.snapshot);
-                    m_detailMapSnapshotTarget = typedResponse.target;
-                    m_hasDetailMapSnapshot = true;
-                    m_lastDetailMapRequestId = 0;
-                    m_detailMapResponseReady = true;
-                }
-                else if constexpr (
-                    std::is_same_v<ResponseT,
-                        game::network::HubMapResponse>)
-                {
-                    if (typedResponse.requestId != m_lastHubMapRequestId ||
-                        typedResponse.systemId != m_requestedHubMapSystemId ||
-                        typedResponse.hubId != m_requestedHubMapHubId)
-                        return;
-                    m_lastHubMapMetadata = typedResponse.metadata;
-                    m_hubMapSnapshot = std::move(typedResponse.snapshot);
-                    m_hubMapSnapshotSystemId = typedResponse.systemId;
-                    m_hubMapSnapshotHubId = std::move(typedResponse.hubId);
-                    m_hasHubMapSnapshot = true;
-                    m_lastHubMapRequestId = 0;
-                    m_hubMapResponseReady = true;
-                }
-            },
-            std::move(response)
-        );
-    }
-}
-
-
-
-
-
-
-
-void GameClient::update(
-    float dt,
-    float fixedDt)
-{
-    m_accumulator += dt;
-
-    receiveMapResponses();
+    bool acceptedSnapshot = false;
 
     SimulationSnapshot snapshot;
-
-    while (m_transport->receiveSnapshot(snapshot))
+    while (m_transport.receiveSnapshot(snapshot))
     {
         if (m_hasAcceptedSnapshot &&
             snapshot.metadata.serverTick <= m_lastAcceptedSnapshotTick)
@@ -394,15 +221,13 @@ void GameClient::update(
             continue;
         }
 
+        acceptedSnapshot = true;
         m_lastAcceptedSnapshotTick = snapshot.metadata.serverTick;
+        m_lastSimulationMetadata = snapshot.metadata;
         m_hasAcceptedSnapshot = true;
-
         m_sessionSnapshot = snapshot.session;
         m_hasSessionSnapshot = true;
 
-        // Every accepted snapshot is a complete authoritative baseline.
-        // Apply it once, discard acknowledged controls, then replay only
-        // commands that the server has not processed yet.
         m_world.applySnapshot(snapshot);
 
         std::uint64_t acknowledgedControlTick = 0;
@@ -420,50 +245,83 @@ void GameClient::update(
         {
             m_pendingInputs.pop_front();
         }
+    }
 
+    refreshConnectionState();
+    return acceptedSnapshot;
+}
+
+void GameClient::updateGameplay(float dt, float fixedDt)
+{
+    const bool acceptedSnapshot = updateSynchronization();
+
+    if (!readyForGameplay())
+    {
+        m_accumulator = 0.0f;
+        m_world.update(dt);
+        return;
+    }
+
+    if (acceptedSnapshot)
+    {
         replayPendingInputs(
             m_sessionSnapshot.predictionWorldParams,
             fixedDt
         );
     }
 
-    refreshConnectionState();
+    m_accumulator += dt;
+    const WorldParams& predictionWorld =
+        m_sessionSnapshot.predictionWorldParams;
 
-    if (readyForGameplay())
+    while (m_accumulator >= fixedDt)
     {
-        const WorldParams& predictionWorld =
-            m_sessionSnapshot.predictionWorldParams;
-
-        while (m_accumulator >= fixedDt)
-        {
-            if (!m_pendingInputs.empty())
-            {
-                const auto& last = m_pendingInputs.back();
-
-                m_world.predict(
-                    m_playerId,
-                    last.control,
-                    predictionWorld,
-                    fixedDt
-                );
-            }
-
-            m_accumulator -= fixedDt;
-        }
-    }
-    else
-    {
-        // Do not accumulate a prediction debt while startup data is incomplete.
-        m_accumulator = 0.0f;
+        sendAndPredictFixedStep(predictionWorld, fixedDt);
+        m_accumulator -= fixedDt;
     }
 
     m_world.update(dt);
 }
 
+void GameClient::update(float dt, float fixedDt)
+{
+    if (readyForGameplay())
+        updateGameplay(dt, fixedDt);
+    else
+    {
+        (void)updateSynchronization();
+        m_accumulator = 0.0f;
+        m_world.update(dt);
+    }
+}
 
+void GameClient::sendAndPredictFixedStep(
+    const WorldParams& world,
+    float fixedDt)
+{
+    if (!m_hasLatestControl)
+        return;
 
+    ShipControlState control = m_latestControl;
+    control.controlTick = ++m_clientTick;
 
+    TimedInput step;
+    step.controlTick = control.controlTick;
+    step.control = control;
+    m_pendingInputs.push_back(step);
 
+    game::network::ClientMessage msg;
+    msg.clientTick = control.controlTick;
+    msg.payload = control;
+    m_transport.sendClientMessage(m_playerId, msg);
+
+    m_world.predict(
+        m_playerId,
+        control,
+        world,
+        fixedDt
+    );
+}
 
 void GameClient::replayPendingInputs(
     const WorldParams& world,
@@ -484,6 +342,48 @@ void GameClient::replayPendingInputs(
 
 
 
+
+const game::network::SnapshotMetadata&
+GameClient::lastSimulationMetadata() const
+{
+    return m_lastSimulationMetadata;
+}
+
+const game::network::SnapshotMetadata&
+GameClient::galaxyMapMetadata() const
+{
+    return m_maps.galaxyMetadata();
+}
+
+const game::network::SnapshotMetadata&
+GameClient::systemMapMetadata() const
+{
+    return m_maps.systemMetadata();
+}
+
+const game::network::SnapshotMetadata&
+GameClient::detailMapMetadata() const
+{
+    return m_maps.detailMetadata();
+}
+
+const game::network::SnapshotMetadata&
+GameClient::hubMapMetadata() const
+{
+    return m_maps.hubMetadata();
+}
+
+const game::network::CatalogMetadata&
+GameClient::starAtlasMetadata() const
+{
+    return m_catalogs.starAtlasMetadata();
+}
+
+const game::network::SnapshotMetadata&
+GameClient::celestialMetadata() const
+{
+    return m_catalogs.celestialMetadata();
+}
 
 const ClientWorldState& GameClient::world() const
 {

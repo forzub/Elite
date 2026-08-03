@@ -14,10 +14,6 @@ class ITransport
 public:
     virtual ~ITransport() = default;
 
-    virtual void sendInput(
-        EntityId id,
-        const ShipControlState& control) = 0;
-
     virtual bool receiveSnapshot(
         SimulationSnapshot& outSnapshot) = 0;
 
@@ -36,15 +32,11 @@ public:
         game::network::MapResponse& outResponse
     ) = 0;
 
-    // Read-only presentation data. The atlas is static session catalog data;
-    // the celestial snapshot is the current authoritative system state.
-    virtual void requestStarAtlas() = 0;
-    virtual bool receiveStarAtlas(
-        game::network::StarAtlasResponse& outResponse
+    virtual void sendPresentationDataRequest(
+        const game::network::PresentationDataRequest& request
     ) = 0;
 
-    virtual void requestCelestialSnapshot() = 0;
-    virtual bool receiveCelestialSnapshot(
-        game::network::CelestialSnapshotResponse& outResponse
+    virtual bool receivePresentationDataResponse(
+        game::network::PresentationDataResponse& outResponse
     ) = 0;
 };

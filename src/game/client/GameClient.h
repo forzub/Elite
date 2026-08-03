@@ -4,6 +4,8 @@
 #include <deque>
 #include <string>
 #include "src/game/client/ClientWorldState.h"
+#include "src/game/client/ClientCatalogService.h"
+#include "src/game/client/ClientMapService.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/simulation/SimulationSnapshot.h"
 // #include "src/game/SpaceState.h"
@@ -27,11 +29,12 @@ enum class ClientConnectionState
 class GameClient
 {
 public:
-    GameClient(ITransport* transport, EntityId playerId);
+    GameClient(ITransport& transport, EntityId playerId);
 
     void submitInput(const ShipControlState& control);
-    void update(float dt,
-            float fixedDt);
+    bool updateSynchronization();
+    void updateGameplay(float dt, float fixedDt);
+    void update(float dt, float fixedDt);
 
     const ClientWorldState& world() const;
     ClientWorldState& world();
@@ -63,6 +66,14 @@ public:
             int systemId,
             const std::string& hubId) const;
 
+    const game::network::SnapshotMetadata& lastSimulationMetadata() const;
+    const game::network::SnapshotMetadata& galaxyMapMetadata() const;
+    const game::network::SnapshotMetadata& systemMapMetadata() const;
+    const game::network::SnapshotMetadata& detailMapMetadata() const;
+    const game::network::SnapshotMetadata& hubMapMetadata() const;
+    const game::network::CatalogMetadata& starAtlasMetadata() const;
+    const game::network::SnapshotMetadata& celestialMetadata() const;
+
     void beginSynchronization();
     void failSynchronization(std::string message);
     ClientConnectionState connectionState() const;
@@ -85,11 +96,11 @@ public:
 private:
     bool hasGameplayCoreState() const;
     void refreshConnectionState();
-    void receiveMapResponses();
     void replayPendingInputs(const WorldParams& world, float fixedDt);
+    void sendAndPredictFixedStep(const WorldParams& world, float fixedDt);
 
 private:
-    ITransport*                     m_transport;
+    ITransport&                     m_transport;
     ClientConnectionState           m_connectionState =
         ClientConnectionState::Disconnected;
     std::string                     m_connectionError;
@@ -104,52 +115,18 @@ private:
     };
 
     std::deque<TimedInput>          m_pendingInputs;
+    ShipControlState                m_latestControl;
+    bool                            m_hasLatestControl = false;
     float                           m_accumulator = 0.0f;
     std::uint64_t                   m_clientTick = 0;
     std::uint64_t                   m_lastAcceptedSnapshotTick = 0;
     bool                            m_hasAcceptedSnapshot = false;
+    game::network::SnapshotMetadata m_lastSimulationMetadata;
 
-    std::uint64_t                    m_nextMapRequestId = 1;
-    std::uint64_t                    m_lastGalaxyMapRequestId = 0;
-    std::uint64_t                    m_lastSystemMapRequestId = 0;
-    std::uint64_t                    m_lastDetailMapRequestId = 0;
-    std::uint64_t                    m_lastHubMapRequestId = 0;
-    bool m_galaxyMapResponseReady = false;
-    bool m_systemMapResponseReady = false;
-    bool m_detailMapResponseReady = false;
-    bool m_hubMapResponseReady = false;
-    int                              m_requestedSystemMapId = -1;
-    world::celestial::DetailTarget   m_requestedDetailMapTarget;
-    int                              m_requestedHubMapSystemId = -1;
-    std::string                      m_requestedHubMapHubId;
-
-    bool                             m_hasGalaxyMapSnapshot = false;
-    bool                             m_hasSystemMapSnapshot = false;
-    bool                             m_hasDetailMapSnapshot = false;
-    bool                             m_hasHubMapSnapshot = false;
-    int                              m_systemMapSnapshotId = -1;
-    int                              m_hubMapSnapshotSystemId = -1;
-    std::string                      m_hubMapSnapshotHubId;
-    world::celestial::DetailTarget   m_detailMapSnapshotTarget;
-
-
-    game::network::SnapshotMetadata m_lastGalaxyMapMetadata;
-    game::network::SnapshotMetadata m_lastSystemMapMetadata;
-    game::network::SnapshotMetadata m_lastDetailMapMetadata;
-    game::network::SnapshotMetadata m_lastHubMapMetadata;
-
-    world::celestial::GalaxyMapSnapshot m_galaxyMapSnapshot;
-    world::celestial::SystemMapSnapshot m_systemMapSnapshot;
-    world::celestial::DetailMapSnapshot m_detailMapSnapshot;
-    world::celestial::HubMapSnapshot m_hubMapSnapshot;
+    game::client::ClientMapService m_maps;
+    game::client::ClientCatalogService m_catalogs;
 
     bool m_hasSessionSnapshot = false;
     game::simulation::ClientSessionSnapshot m_sessionSnapshot;
 
-    bool m_hasStarAtlas = false;
-    bool m_hasCelestialSnapshot = false;
-    std::uint64_t m_starAtlasRevision = 0;
-    game::network::SnapshotMetadata m_celestialSnapshotMetadata;
-    world::celestial::StarAtlasDatabase m_starAtlas;
-    world::celestial::CelestialSystemSnapshot m_celestialSnapshot;
 };

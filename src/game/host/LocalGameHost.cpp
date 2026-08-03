@@ -6,10 +6,13 @@
 
 namespace game::host
 {
-LocalGameHost::LocalGameHost()
+LocalGameHost::LocalGameHost(const WorldParams& worldParams)
     : m_server(std::make_unique<GameServer>())
-    , m_transport(std::make_unique<LocalLoopbackTransport>(m_server.get()))
+    , m_transport(std::make_unique<LocalLoopbackTransport>(*m_server))
 {
+    // Session configuration is applied before the first authoritative tick.
+    m_server->world() = worldParams;
+
     // Publish an initial authoritative snapshot before the client is created.
     m_server->update(0.0);
 
@@ -48,12 +51,6 @@ server::ServerAdvanceResult LocalGameHost::advance(double elapsedSeconds)
 double LocalGameHost::fixedStepSeconds() const
 {
     return m_runner->fixedStepSeconds();
-}
-
-void LocalGameHost::configureWorld(float linearDrag, float maxSafeDecel)
-{
-    m_server->world().linearDrag = linearDrag;
-    m_server->world().maxSafeDecel = maxSafeDecel;
 }
 
 const SimulationSnapshot& LocalGameHost::snapshot() const

@@ -10,6 +10,7 @@
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/ProtocolMetadata.h"
 #include "src/game/network/MapSnapshotMessage.h"
+#include "src/game/network/PresentationDataMessage.h"
 #include "src/scene/EntityID.h"
 #include "src/game/network/ClientShipCommand.h"
 #include "src/game/diagnostics/ServerDiagnostics.h"
@@ -72,12 +73,18 @@ public:
         metadata.serverTick = m_serverTick;
         metadata.serverTimeSeconds = m_simulation.serverTime();
         metadata.universeTimeSeconds = m_universeClock.timeSeconds();
-        metadata.worldRevision = m_serverTick;
         return metadata;
     }
 
     void enqueueMapRequest(const game::network::MapRequest& request);
     bool popMapResponse(game::network::MapResponse& outResponse);
+
+    void enqueuePresentationDataRequest(
+        const game::network::PresentationDataRequest& request
+    );
+    bool popPresentationDataResponse(
+        game::network::PresentationDataResponse& outResponse
+    );
 
     std::uint64_t catalogRevision() const
     {
@@ -178,6 +185,7 @@ public:
 
 private:
     void processPendingMapRequests();
+    void processPendingPresentationDataRequests();
 
     void populateClientSessionSnapshot(
         SimulationSnapshot& snapshot
@@ -202,11 +210,16 @@ private:
     std::unordered_map<uint32_t, std::deque<ClientShipCommand>> m_pendingClientShipCommands;
     std::deque<game::network::MapRequest> m_pendingMapRequests;
     std::deque<game::network::MapResponse> m_completedMapResponses;
+    std::deque<game::network::PresentationDataRequest>
+        m_pendingPresentationDataRequests;
+    std::deque<game::network::PresentationDataResponse>
+        m_completedPresentationDataResponses;
     std::uint64_t m_serverTick = 0;
     world::time::UniverseClock m_universeClock;
     double m_lastUniverseTimeSeconds = 0.0;
     uint32_t m_snapshotInterval = 3;
     SimulationSnapshot m_lastSnapshot;
+    bool m_forceSnapshotPublication = false;
 
     world::celestial::StarAtlasDatabase      m_starAtlas;
     world::celestial::CelestialSystemRuntime m_celestialRuntime;

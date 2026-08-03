@@ -714,13 +714,13 @@ void GameServer::update(double dt)
 
         auto& queue = it->second;
 
-        while (!queue.empty())
+        if (!queue.empty())
         {
-            const auto& cmd = queue.front();
+            const auto cmd = queue.front();
+            queue.pop_front();
 
             ship.setControlState(cmd);
             m_lastProcessedControlTicks[id.value] = cmd.controlTick;
-            queue.pop_front();
         }
 
 
@@ -812,13 +812,16 @@ m_simulation.setTick(m_serverTick);
 
 
 
-    if (m_serverTick % m_snapshotInterval == 0)
+    if (m_forceSnapshotPublication ||
+        m_serverTick % m_snapshotInterval == 0)
     {
         m_lastSnapshot = m_simulation.snapshot();
         populateClientSessionSnapshot(m_lastSnapshot);
+        m_forceSnapshotPublication = false;
     }
 
     processPendingMapRequests();
+    processPendingPresentationDataRequests();
 }
 
 void GameServer::enqueueMapRequest(const game::network::MapRequest& request)
@@ -877,14 +880,74 @@ void GameServer::processPendingMapRequests()
     }
 }
 
+void GameServer::enqueuePresentationDataRequest(
+    const game::network::PresentationDataRequest& request)
+{
+    m_pendingPresentationDataRequests.push_back(request);
+}
+
+bool GameServer::popPresentationDataResponse(
+    game::network::PresentationDataResponse& outResponse)
+{
+    if (m_completedPresentationDataResponses.empty())
+        return false;
+
+    outResponse = std::move(m_completedPresentationDataResponses.front());
+    m_completedPresentationDataResponses.pop_front();
+    return true;
+}
+
+void GameServer::processPendingPresentationDataRequests()
+{
+    const auto metadata = protocolMetadata();
+
+    while (!m_pendingPresentationDataRequests.empty())
+    {
+        auto request = std::move(m_pendingPresentationDataRequests.front());
+        m_pendingPresentationDataRequests.pop_front();
+
+        std::visit(
+            [this, &metadata](const auto& typedRequest)
+            {
+                using RequestT = std::decay_t<decltype(typedRequest)>;
+
+                if constexpr (std::is_same_v<
+                                  RequestT,
+                                  game::network::StarAtlasRequest>)
+                {
+                    game::network::StarAtlasResponse response;
+                    response.requestId = typedRequest.requestId;
+                    response.metadata.catalogRevision = catalogRevision();
+                    response.atlas = m_starAtlas;
+                    m_completedPresentationDataResponses.push_back(
+                        std::move(response)
+                    );
+                }
+                else if constexpr (std::is_same_v<
+                                       RequestT,
+                                       game::network::CelestialSnapshotRequest>)
+                {
+                    game::network::CelestialSnapshotResponse response;
+                    response.requestId = typedRequest.requestId;
+                    response.metadata = metadata;
+                    response.snapshot = m_celestialRuntime.snapshot();
+                    m_completedPresentationDataResponses.push_back(
+                        std::move(response)
+                    );
+                }
+            },
+            request
+        );
+    }
+}
+
 void GameServer::populateClientSessionSnapshot(
     SimulationSnapshot& snapshot
 ) const
 {
-    snapshot.metadata.serverTick = snapshot.snapshotTick;
-    snapshot.metadata.serverTimeSeconds = snapshot.serverTime;
+    snapshot.metadata.serverTick = m_serverTick;
+    snapshot.metadata.serverTimeSeconds = m_simulation.serverTime();
     snapshot.metadata.universeTimeSeconds = m_universeClock.timeSeconds();
-    snapshot.metadata.worldRevision = m_serverTick;
 
     for (auto& ship : snapshot.ships)
     {
@@ -952,19 +1015,10 @@ void GameServer::debugRefreshSnapshot()
     // This keeps regular published snapshots lightweight, while
     // structure_debug.html still receives modules/links on demand.
     m_simulation.debugForceFullShipGraphPayload();
-    game::server::ServerTimeContext time;
-    time.serverTick = m_serverTick;
-    time.universeTimeSeconds =
-        m_universeClock.timeSeconds();
-    time.universeTimeScale =
-        m_universeClock.timeScale();
-    time.universeTimeSimulation =
-        m_universeClock.simulationMode();
 
-    m_simulation.update(time);
-    m_simulation.setTick(m_serverTick);
-    m_lastSnapshot = m_simulation.snapshot();
-    populateClientSessionSnapshot(m_lastSnapshot);
+    // The full graph is published by the next normal authoritative tick.
+    // Debug UI must never run GameSimulation::update() out of band.
+    m_forceSnapshotPublication = true;
 }
 
 

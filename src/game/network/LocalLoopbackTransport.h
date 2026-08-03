@@ -18,11 +18,8 @@ struct DelayedSnapshot
 class LocalLoopbackTransport : public ITransport
 {
 public:
-    LocalLoopbackTransport(GameServer* server);
+    explicit LocalLoopbackTransport(GameServer& server);
 
-    void sendInput(
-        EntityId id,
-        const ShipControlState& control) override;
 
     bool receiveSnapshot(
         SimulationSnapshot& outSnapshot) override;
@@ -44,20 +41,17 @@ public:
     bool receiveMapResponse(
         game::network::MapResponse& outResponse) override;
 
-    void requestStarAtlas() override;
-    bool receiveStarAtlas(
-        game::network::StarAtlasResponse& outResponse) override;
+    void sendPresentationDataRequest(
+        const game::network::PresentationDataRequest& request) override;
 
-    void requestCelestialSnapshot() override;
-    bool receiveCelestialSnapshot(
-        game::network::CelestialSnapshotResponse& outResponse) override;
+    bool receivePresentationDataResponse(
+        game::network::PresentationDataResponse& outResponse) override;
 
 private:
-    GameServer* m_server;
+    GameServer& m_server;
     std::queue<SimulationSnapshot> m_incoming;
     std::queue<game::network::MapResponse> m_mapResponses;
-    std::queue<game::network::StarAtlasResponse> m_starAtlasResponses;
-    std::queue<game::network::CelestialSnapshotResponse> m_celestialResponses;
+    std::queue<game::network::PresentationDataResponse> m_presentationResponses;
     std::vector<DelayedSnapshot> m_latencyBuffer;
     float m_fakeLatency = 0.1f; // 100ms
     float m_packetLoss = 0.0f;

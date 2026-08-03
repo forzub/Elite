@@ -6,20 +6,10 @@
 #include <utility>
 
 
-LocalLoopbackTransport::LocalLoopbackTransport(GameServer* server)
+LocalLoopbackTransport::LocalLoopbackTransport(GameServer& server)
     : m_server(server)
 {
 }
-
-
-
-void LocalLoopbackTransport::sendInput(
-    EntityId id,
-    const ShipControlState& control)
-{
-    m_server->submitCommand(id, control);
-}
-
 
 
 
@@ -37,23 +27,23 @@ bool LocalLoopbackTransport::receiveSnapshot(
 
 void LocalLoopbackTransport::enqueueCurrentSnapshotImmediately()
 {
-    const SimulationSnapshot snap = m_server->snapshot();
+    const SimulationSnapshot snap = m_server.snapshot();
 
     m_incoming.push(snap);
     m_hasLastQueuedSnapshot = true;
-    m_lastQueuedSnapshotTick = snap.snapshotTick;
-    m_lastQueuedServerTime = snap.serverTime;
+    m_lastQueuedSnapshotTick = snap.metadata.serverTick;
+    m_lastQueuedServerTime = snap.metadata.serverTimeSeconds;
 }
 
 
 void LocalLoopbackTransport::update(float dt)
 {
-    const SimulationSnapshot snap = m_server->snapshot();
+    const SimulationSnapshot snap = m_server.snapshot();
 
     const bool snapshotChanged =
         !m_hasLastQueuedSnapshot ||
-        snap.snapshotTick != m_lastQueuedSnapshotTick ||
-        snap.serverTime != m_lastQueuedServerTime;
+        snap.metadata.serverTick != m_lastQueuedSnapshotTick ||
+        snap.metadata.serverTimeSeconds != m_lastQueuedServerTime;
 
     // ВАЖНО:
     // Не кладём в latency buffer один и тот же snapshot много раз.
@@ -67,8 +57,8 @@ void LocalLoopbackTransport::update(float dt)
         });
 
         m_hasLastQueuedSnapshot = true;
-        m_lastQueuedSnapshotTick = snap.snapshotTick;
-        m_lastQueuedServerTime = snap.serverTime;
+        m_lastQueuedSnapshotTick = snap.metadata.serverTick;
+        m_lastQueuedServerTime = snap.metadata.serverTimeSeconds;
     }
 
     for (auto& s : m_latencyBuffer)
@@ -90,8 +80,12 @@ void LocalLoopbackTransport::update(float dt)
     }
 
     game::network::MapResponse response;
-    while (m_server->popMapResponse(response))
+    while (m_server.popMapResponse(response))
         m_mapResponses.push(std::move(response));
+
+    game::network::PresentationDataResponse presentationResponse;
+    while (m_server.popPresentationDataResponse(presentationResponse))
+        m_presentationResponses.push(std::move(presentationResponse));
 }
 
 
@@ -99,14 +93,14 @@ void LocalLoopbackTransport::sendClientMessage(
     EntityId playerId,
     const game::network::ClientMessage& msg)
 {
-    m_server->receiveClientMessage(playerId, msg);
+    m_server.receiveClientMessage(playerId, msg);
 }
 
 
 void LocalLoopbackTransport::sendMapRequest(
     const game::network::MapRequest& request)
 {
-    m_server->enqueueMapRequest(request);
+    m_server.enqueueMapRequest(request);
 }
 
 
@@ -121,40 +115,19 @@ bool LocalLoopbackTransport::receiveMapResponse(
     return true;
 }
 
-void LocalLoopbackTransport::requestStarAtlas()
+void LocalLoopbackTransport::sendPresentationDataRequest(
+    const game::network::PresentationDataRequest& request)
 {
-    game::network::StarAtlasResponse response;
-    response.metadata.catalogRevision = m_server->catalogRevision();
-    response.atlas = m_server->starAtlas();
-    m_starAtlasResponses.push(std::move(response));
+    m_server.enqueuePresentationDataRequest(request);
 }
 
-bool LocalLoopbackTransport::receiveStarAtlas(
-    game::network::StarAtlasResponse& outResponse)
+bool LocalLoopbackTransport::receivePresentationDataResponse(
+    game::network::PresentationDataResponse& outResponse)
 {
-    if (m_starAtlasResponses.empty())
+    if (m_presentationResponses.empty())
         return false;
 
-    outResponse = std::move(m_starAtlasResponses.front());
-    m_starAtlasResponses.pop();
-    return true;
-}
-
-void LocalLoopbackTransport::requestCelestialSnapshot()
-{
-    game::network::CelestialSnapshotResponse response;
-    response.metadata = m_server->protocolMetadata();
-    response.snapshot = m_server->celestialSnapshot();
-    m_celestialResponses.push(std::move(response));
-}
-
-bool LocalLoopbackTransport::receiveCelestialSnapshot(
-    game::network::CelestialSnapshotResponse& outResponse)
-{
-    if (m_celestialResponses.empty())
-        return false;
-
-    outResponse = std::move(m_celestialResponses.front());
-    m_celestialResponses.pop();
+    outResponse = std::move(m_presentationResponses.front());
+    m_presentationResponses.pop();
     return true;
 }

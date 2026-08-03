@@ -608,101 +608,111 @@ void SpaceState::setSystemMapHubMode()
     if (hubId.empty())
         return;
 
-    if (requestHubMapSnapshot(selectedId, hubId, true))
+    if (requestHubMapSnapshot(selectedId, hubId, true) &&
+        game::client::MapTransitionController::simulationHasReached(
+            m_client->hubMapMetadata(),
+            m_client->lastSimulationMetadata()))
     {
         beginSystemMapHubTransition(selectedId, hubId);
         return;
     }
 
-    m_pendingMapTransition = PendingMapTransitionKind::Hub;
-    m_pendingMapSystemId = selectedId;
-    m_pendingMapHubId = hubId;
-    m_pendingMapDetailTarget = {};
+    m_mapTransitions.beginHub(selectedId, hubId);
 }
 
 
 void SpaceState::updatePendingMapTransition(float /*dt*/)
 {
-    if (m_pendingMapTransition == PendingMapTransitionKind::None || !m_client)
+    if (!m_mapTransitions.pending() || !m_client)
         return;
-
-    const auto requestFailed = [](game::client::ClientRequestStatus status)
-    {
-        return status == game::client::ClientRequestStatus::TimedOut ||
-               status == game::client::ClientRequestStatus::Failed ||
-               status == game::client::ClientRequestStatus::Cancelled;
-    };
 
     auto cancelTransition = [this](const char* message)
     {
         std::cerr << "[SystemMap] " << message << std::endl;
-        m_pendingMapTransition = PendingMapTransitionKind::None;
-        m_pendingMapSystemId = -1;
-        m_pendingMapHubId.clear();
-        m_pendingMapDetailTarget = {};
+        m_mapTransitions.clear();
     };
 
-    switch (m_pendingMapTransition)
+    using Transition = game::client::MapTransitionController;
+
+    switch (m_mapTransitions.kind())
     {
-        case PendingMapTransitionKind::System:
+        case Transition::Kind::System:
         {
-            if (requestFailed(m_client->systemMapRequestStatus()))
+            if (Transition::requestFailed(
+                    m_client->systemMapRequestStatus()))
             {
                 cancelTransition("system map request failed");
                 return;
             }
-            if (!requestSystemMapSnapshot(m_pendingMapSystemId, false))
+
+            const int systemId = m_mapTransitions.systemId();
+            if (!requestSystemMapSnapshot(systemId, false))
                 return;
 
-            const int systemId = m_pendingMapSystemId;
-            m_pendingMapTransition = PendingMapTransitionKind::None;
+            if (!Transition::simulationHasReached(
+                    m_client->systemMapMetadata(),
+                    m_client->lastSimulationMetadata()))
+            {
+                return;
+            }
+
+            m_mapTransitions.clear();
             beginSystemMapSystemTransition(systemId);
             return;
         }
 
-        case PendingMapTransitionKind::Detail:
+        case Transition::Kind::Detail:
         {
-            if (requestFailed(m_client->detailMapRequestStatus()))
+            if (Transition::requestFailed(
+                    m_client->detailMapRequestStatus()))
             {
                 cancelTransition("detail map request failed");
                 return;
             }
-            if (!requestDetailMapSnapshot(
-                    m_pendingMapDetailTarget,
-                    false))
+
+            const auto target = m_mapTransitions.detailTarget();
+            if (!requestDetailMapSnapshot(target, false))
+                return;
+
+            if (!Transition::simulationHasReached(
+                    m_client->detailMapMetadata(),
+                    m_client->lastSimulationMetadata()))
             {
                 return;
             }
 
-            const auto target = m_pendingMapDetailTarget;
-            m_pendingMapTransition = PendingMapTransitionKind::None;
+            m_mapTransitions.clear();
             beginSystemMapDetailTransition(target);
             return;
         }
 
-        case PendingMapTransitionKind::Hub:
+        case Transition::Kind::Hub:
         {
-            if (requestFailed(m_client->hubMapRequestStatus()))
+            if (Transition::requestFailed(
+                    m_client->hubMapRequestStatus()))
             {
                 cancelTransition("hub map request failed");
                 return;
             }
-            if (!requestHubMapSnapshot(
-                    m_pendingMapSystemId,
-                    m_pendingMapHubId,
-                    false))
+
+            const int systemId = m_mapTransitions.systemId();
+            const std::string hubId = m_mapTransitions.hubId();
+            if (!requestHubMapSnapshot(systemId, hubId, false))
+                return;
+
+            if (!Transition::simulationHasReached(
+                    m_client->hubMapMetadata(),
+                    m_client->lastSimulationMetadata()))
             {
                 return;
             }
 
-            const int systemId = m_pendingMapSystemId;
-            const std::string hubId = m_pendingMapHubId;
-            m_pendingMapTransition = PendingMapTransitionKind::None;
+            m_mapTransitions.clear();
             beginSystemMapHubTransition(systemId, hubId);
             return;
         }
 
-        case PendingMapTransitionKind::None:
+        case Transition::Kind::None:
             return;
     }
 }
@@ -3730,16 +3740,16 @@ void SpaceState::setSystemMapKnownSystemMode(
 
     requestGalaxyMapSnapshotOnce();
 
-    if (requestSystemMapSnapshot(systemId, true))
+    if (requestSystemMapSnapshot(systemId, true) &&
+        game::client::MapTransitionController::simulationHasReached(
+            m_client->systemMapMetadata(),
+            m_client->lastSimulationMetadata()))
     {
         beginSystemMapSystemTransition(systemId);
         return;
     }
 
-    m_pendingMapTransition = PendingMapTransitionKind::System;
-    m_pendingMapSystemId = systemId;
-    m_pendingMapHubId.clear();
-    m_pendingMapDetailTarget = {};
+    m_mapTransitions.beginSystem(systemId);
 }
 
 
@@ -3858,16 +3868,16 @@ void SpaceState::setSystemMapDetailMode()
     if (!target.valid())
         return;
 
-    if (requestDetailMapSnapshot(target, true))
+    if (requestDetailMapSnapshot(target, true) &&
+        game::client::MapTransitionController::simulationHasReached(
+            m_client->detailMapMetadata(),
+            m_client->lastSimulationMetadata()))
     {
         beginSystemMapDetailTransition(target);
         return;
     }
 
-    m_pendingMapTransition = PendingMapTransitionKind::Detail;
-    m_pendingMapSystemId = target.systemId;
-    m_pendingMapHubId.clear();
-    m_pendingMapDetailTarget = target;
+    m_mapTransitions.beginDetail(target);
 }
 
 

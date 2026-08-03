@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "src/scene/EntityID.h"
 
 class GameClient;
@@ -11,6 +13,14 @@ class IDebugSessionControl;
 
 namespace game::session
 {
+enum class GameSessionState
+{
+    Created,
+    Synchronizing,
+    Ready,
+    Failed
+};
+
 struct GameSessionAdvanceResult
 {
     int stepsExecuted = 0;
@@ -32,6 +42,11 @@ public:
     virtual const game::debug::IDebugSessionControl* debugControl() const = 0;
 
     virtual EntityId playerId() const = 0;
+
+    virtual void beginSynchronization() = 0;
+    virtual void updateSynchronization(double elapsedSeconds) = 0;
+    virtual GameSessionState state() const = 0;
+    virtual const std::string& error() const = 0;
 
     virtual GameSessionAdvanceResult advance(double elapsedSeconds) = 0;
     virtual double fixedStepSeconds() const = 0;

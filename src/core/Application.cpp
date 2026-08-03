@@ -487,6 +487,9 @@ void Application::mainLoop()
 
                         m_pendingNewGameLoad = true;
                         m_newGameLoadStartTime = glfwGetTime();
+                        m_newGameLoadLastUpdateTime = m_newGameLoadStartTime;
+                        m_newGameLoadStage =
+                            NewGameLoadStage::WaitingForLoadingScreen;
 
                         break;
                     }
@@ -981,21 +984,70 @@ void Application::updatePendingNewGameLoad()
         return;
 
     const double now = glfwGetTime();
-    const double elapsed = now - m_newGameLoadStartTime;
 
-    if (elapsed < 0.10)
+    if (m_newGameLoadStage == NewGameLoadStage::WaitingForLoadingScreen)
     {
+        if ((now - m_newGameLoadStartTime) < 0.10)
+            return;
+
+        m_gameWebView.evalScript(
+            "setLoadingProgress(0.25, 'PREPARING WORLD');"
+        );
+
+        stopGameSession();
+        startLocalGameSession();
+        m_gameSession->beginSynchronization();
+
+        m_newGameLoadLastUpdateTime = now;
+        m_newGameLoadStage = NewGameLoadStage::SynchronizingSession;
         return;
     }
 
-    m_gameWebView.evalScript("setLoadingProgress(0.25, 'PREPARING WORLD');");
+    if (m_newGameLoadStage != NewGameLoadStage::SynchronizingSession)
+        return;
 
+    const double elapsed = std::clamp(
+        now - m_newGameLoadLastUpdateTime,
+        0.0,
+        0.05
+    );
+    m_newGameLoadLastUpdateTime = now;
+
+    m_gameSession->updateSynchronization(elapsed);
+
+    const auto sessionState = m_gameSession->state();
+    if (sessionState == game::session::GameSessionState::Synchronizing ||
+        sessionState == game::session::GameSessionState::Created)
+    {
+        m_gameWebView.evalScript(
+            "setLoadingProgress(0.55, 'SYNCHRONIZING SESSION');"
+        );
+        return;
+    }
+
+    if (sessionState == game::session::GameSessionState::Failed)
+    {
+        std::cerr << "[App] Session synchronization failed: "
+                  << m_gameSession->error() << std::endl;
+        m_gameWebView.evalScript(
+            "setLoadingProgress(1.00, 'SESSION FAILED');"
+        );
+        stopGameSession();
+        m_pendingNewGameLoad = false;
+        m_newGameLoadStage = NewGameLoadStage::Idle;
+        return;
+    }
+
+    m_gameWebView.evalScript(
+        "setLoadingProgress(0.80, 'APPLYING GAME STATE');"
+    );
+
+    // Keep the loading/menu state alive while synchronization is pending.
+    // The main loop terminates when the state stack is empty, so replace it
+    // only after the session has reached Ready.
     m_states.clear();
-    startLocalGameSession();
+    m_states.applyPendingChanges();
     m_states.push(std::make_unique<SpaceState>(m_states));
-
-    m_gameWebView.evalScript("setLoadingProgress(0.80, 'APPLYING GAME STATE');");
-
     m_states.applyPendingChanges();
 
     m_gameWebView.evalScript("setLoadingProgress(1.00, 'READY');");
@@ -1003,7 +1055,6 @@ void Application::updatePendingNewGameLoad()
     closeGameUi();
     m_gameUi.clearLoaded();
     Input::instance().reset();
-
     m_window->focus();
 
     glfwSetInputMode(
@@ -1013,6 +1064,7 @@ void Application::updatePendingNewGameLoad()
     );
 
     m_pendingNewGameLoad = false;
+    m_newGameLoadStage = NewGameLoadStage::Idle;
 
     std::cout << "[App] New game loaded, WebView hidden\n";
 #endif

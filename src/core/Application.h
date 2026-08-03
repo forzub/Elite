@@ -204,8 +204,17 @@ private:
     RenderContext renderContext;
     HtmlUiManager m_htmlUi;
 
+    enum class NewGameLoadStage
+    {
+        Idle,
+        WaitingForLoadingScreen,
+        SynchronizingSession
+    };
+
     bool m_pendingNewGameLoad = false;
     double m_newGameLoadStartTime = 0.0;
+    double m_newGameLoadLastUpdateTime = 0.0;
+    NewGameLoadStage m_newGameLoadStage = NewGameLoadStage::Idle;
 
     GameUiController m_gameUi;
    

@@ -1,7 +1,5 @@
 #include "src/game/host/LocalGameSession.h"
 
-#include <stdexcept>
-
 #include "src/game/client/GameClient.h"
 #include "src/game/debug/IDebugSessionControl.h"
 #include "src/game/host/LocalGameHost.h"
@@ -17,28 +15,49 @@ LocalGameSession::LocalGameSession(
           m_host->playerId()
       ))
 {
-    m_client->beginSynchronization();
-
-    // Catalog and celestial requests are authoritative server requests.
-    // Advance one fixed tick so the local server can process them before the
-    // client evaluates startup readiness.
-    m_host->advance(m_host->fixedStepSeconds());
-
-    m_client->update(
-        0.0f,
-        static_cast<float>(m_host->fixedStepSeconds())
-    );
-
-    if (!m_client->readyForGameplay())
-    {
-        m_client->failSynchronization(
-            "Local session did not provide the complete startup state"
-        );
-        throw std::runtime_error(m_client->connectionError());
-    }
 }
 
 LocalGameSession::~LocalGameSession() = default;
+
+void LocalGameSession::beginSynchronization()
+{
+    m_client->beginSynchronization();
+}
+
+void LocalGameSession::updateSynchronization(double elapsedSeconds)
+{
+    if (state() != game::session::GameSessionState::Synchronizing)
+        return;
+
+    m_host->advance(elapsedSeconds);
+    m_client->updateSynchronization(
+        static_cast<float>(elapsedSeconds)
+    );
+}
+
+game::session::GameSessionState LocalGameSession::state() const
+{
+    switch (m_client->connectionState())
+    {
+        case ClientConnectionState::Connecting:
+            return game::session::GameSessionState::Created;
+        case ClientConnectionState::Synchronizing:
+            return game::session::GameSessionState::Synchronizing;
+        case ClientConnectionState::Ready:
+            return game::session::GameSessionState::Ready;
+        case ClientConnectionState::Failed:
+            return game::session::GameSessionState::Failed;
+        case ClientConnectionState::Disconnected:
+        default:
+            return game::session::GameSessionState::Created;
+    }
+}
+
+const std::string& LocalGameSession::error() const
+{
+    return m_client->connectionError();
+}
+
 
 GameClient& LocalGameSession::client()
 {

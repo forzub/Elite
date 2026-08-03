@@ -42,6 +42,11 @@ public:
 
     EntityId playerId() const override;
 
+    void beginSynchronization() override;
+    void updateSynchronization(double elapsedSeconds) override;
+    game::session::GameSessionState state() const override;
+    const std::string& error() const override;
+
     game::session::GameSessionAdvanceResult advance(
         double elapsedSeconds
     ) override;

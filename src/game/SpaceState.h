@@ -23,6 +23,7 @@
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/debug/IDebugSessionControl.h"
 #include "src/game/client/GameClient.h"
+#include "src/game/client/MapTransitionController.h"
 #include "src/scene/SceneRenderer.h"
 #include "src/ui/components/radar/RadarWidgetBase.h"
 
@@ -131,14 +132,6 @@ public:
         const std::string& hubId,
         bool forceRefresh = false
     );
-
-    enum class PendingMapTransitionKind
-    {
-        None,
-        System,
-        Detail,
-        Hub
-    };
 
     void updatePendingMapTransition(float dt);
     void beginSystemMapSystemTransition(int systemId);
@@ -296,10 +289,6 @@ private:
     bool m_systemMapLiveSnapshotsEnabled = false;
     int m_liveSystemMapId = -1;
 
-    PendingMapTransitionKind m_pendingMapTransition =
-        PendingMapTransitionKind::None;
-    int m_pendingMapSystemId = -1;
-    world::celestial::DetailTarget m_pendingMapDetailTarget;
-    std::string m_pendingMapHubId;
+    game::client::MapTransitionController m_mapTransitions;
 
 };

@@ -23,6 +23,10 @@ public:
     virtual void onEnter() {}
     virtual void onExit()  {}
 
+    // Called once per application frame before input. States may resolve an
+    // immutable presentation/input snapshot here. The default is a no-op.
+    virtual void prepareFrame(float dt) { (void)dt; }
+
     virtual void handleInput() = 0;
     virtual void update(float dt) = 0;
 

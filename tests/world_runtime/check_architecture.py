@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -215,6 +216,10 @@ client_world_header = SRC / "game/client/ClientWorldState.h"
 client_world_cpp = SRC / "game/client/ClientWorldState.cpp"
 session_header = SRC / "game/simulation/ClientSessionSnapshot.h"
 local_session_cpp = SRC / "game/host/LocalGameSession.cpp"
+server_timeline_clock_header = SRC / "game/server/ServerTimelineClock.h"
+server_time_context_header = SRC / "game/server/ServerTimeContext.h"
+simulation_header = SRC / "game/simulation/GameSimulation.h"
+simulation_cpp = SRC / "game/simulation/GameSimulation.cpp"
 
 for path in (
     server_clock_header,
@@ -228,6 +233,10 @@ for path in (
     client_world_cpp,
     session_header,
     local_session_cpp,
+    server_timeline_clock_header,
+    server_time_context_header,
+    simulation_header,
+    simulation_cpp,
 ):
     if not path.is_file():
         fail(path, "required Stage-3 time-contract file is missing")
@@ -362,9 +371,53 @@ if server_cpp.is_file():
     for required in (
         "m_universeTimelineRevision",
         "snapshot.session.universeTimelineRevision",
+        "time.serverDeltaSeconds = std::max(0.0, dt)",
+        "time.gameplayDeltaSeconds =",
+        "time.universeTimeSimulation",
     ):
         if required not in text:
             fail(server_cpp, f"server universe timeline revision is incomplete: {required}")
+
+if server_timeline_clock_header.is_file():
+    text = server_timeline_clock_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "class ServerTimelineClock",
+        "void advance(double serverDeltaSeconds)",
+        "m_timeSeconds += serverDeltaSeconds",
+    ):
+        if required not in text:
+            fail(server_timeline_clock_header, f"server timeline clock contract is incomplete: {required}")
+
+if server_time_context_header.is_file():
+    text = server_time_context_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "double serverDeltaSeconds",
+        "double gameplayDeltaSeconds",
+        "double universeDeltaSeconds",
+    ):
+        if required not in text:
+            fail(server_time_context_header, f"server time domains are not explicit: {required}")
+
+if simulation_header.is_file():
+    text = simulation_header.read_text(encoding="utf-8", errors="replace")
+    if "ServerTimelineClock" not in text or "m_serverTimelineClock" not in text:
+        fail(simulation_header, "GameSimulation lost the dedicated monotonic server clock")
+    if re.search(r"\bm_serverTime\b", text):
+        fail(simulation_header, "raw server-time accumulator returned to GameSimulation")
+
+if simulation_cpp.is_file():
+    text = simulation_cpp.read_text(encoding="utf-8", errors="replace")
+    if "m_serverTimelineClock.advance(time.serverDeltaSeconds);" not in text:
+        fail(
+            simulation_cpp,
+            "server timeline is not advanced from serverDeltaSeconds independently of gameplay freeze",
+        )
+    for forbidden in (
+        "m_serverTime += dt",
+        "m_serverTime += time.gameplayDeltaSeconds",
+    ):
+        if forbidden in text:
+            fail(simulation_cpp, f"server clock can freeze with gameplay again: {forbidden}")
 
 
 if errors:

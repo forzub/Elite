@@ -27,6 +27,7 @@
 #include "src/game/navigation/HubNavigationFrame.h"
 #include "src/game/diagnostics/ServerDiagnostics.h"
 #include "src/game/server/ServerTimeContext.h"
+#include "src/game/server/ServerTimelineClock.h"
 
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/OrbitalCorridorSystem.h"
@@ -136,7 +137,7 @@ public:
     void debugForceFullShipGraphPayload();
     void setTick(std::uint64_t tick);
     EntityId playerId() const { return m_playerId; }
-    double serverTime() const { return m_serverTime; }
+    double serverTime() const { return m_serverTimelineClock.timeSeconds(); }
     std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships();
     const std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships() const;
     const std::unordered_map<EntityId, StaticObject>& staticObjects() const;
@@ -270,7 +271,7 @@ private:
     std::unordered_set<EntityId>        m_shipsWithDetachedFragmentPayload;
     std::unordered_set<EntityId>        m_shipsWithRepairJobPayload;
 
-    double                              m_serverTime = 0.0;
+    game::server::ServerTimelineClock  m_serverTimelineClock;
     
     
     std::unordered_map<EntityId, ShipReferenceBinding> m_shipReferenceBindings;

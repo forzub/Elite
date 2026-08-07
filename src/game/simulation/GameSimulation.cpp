@@ -906,9 +906,8 @@ void GameSimulation::update(
     // Normal gameplay systems remain frozen while universe time is being
     // accelerated for trajectory diagnostics. Only passive orbital/ballistic
     // motion advances by universeDeltaSeconds.
-    const double dt = trajectoryDebugMode
-        ? 0.0
-        : time.gameplayDeltaSeconds;
+    const double dt =
+        std::max(0.0, time.gameplayDeltaSeconds);
 
     const double trajectoryDeltaSeconds = trajectoryDebugMode
         ? time.universeDeltaSeconds
@@ -926,7 +925,7 @@ void GameSimulation::update(
     // Режим 1: нормальная мощность
       
     float fdt = static_cast<float>(dt);
-    m_serverTime += dt;
+    m_serverTimelineClock.advance(time.serverDeltaSeconds);
 
 
 // Celestial positions and velocities are injected atomically by GameServer
@@ -1498,7 +1497,7 @@ m_previousHubPositionMeters[hubId] =
     }
 
 
-    m_snapshot.metadata.serverTimeSeconds = m_serverTime;
+    m_snapshot.metadata.serverTimeSeconds = m_serverTimelineClock.timeSeconds();
     m_snapshot.ships.clear();
     m_snapshot.objects.clear();
     m_snapshot.signals = m_worldSignals;
@@ -3172,7 +3171,7 @@ void GameSimulation::updatePromoPlayerTracking(float dt)
 
     const float localTime =
         std::fmod(
-            static_cast<float>(m_serverTime),
+            static_cast<float>(m_serverTimelineClock.timeSeconds()),
             22.0f
         );
 

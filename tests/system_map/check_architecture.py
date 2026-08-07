@@ -225,21 +225,80 @@ if renderer_cpp.is_file():
     if build_pos < 0 or input_pos < 0 or build_pos > input_pos:
         fail(renderer_cpp, "System CPU frame must be built before input/picking")
 
-if space_state_cpp.is_file():
-    space_text = space_state_cpp.read_text(encoding="utf-8", errors="replace")
-    refresh_pos = space_text.find("refreshDetailMapDynamicState(")
-    input_pos = space_text.find("m_systemMapRenderer.handleInput(")
-    render_pos = space_text.find("m_systemMapRenderer.render(")
+# Local map input and rendering must consume one frame-stable snapshot.
+# The application lifecycle now has an explicit prepareFrame() phase before
+# input; SpaceState resolves map responses/presentation there and update() must
+# not mutate those snapshots later in the same frame.
+game_state_header = ROOT / "src" / "core" / "GameState.h"
+application_cpp = ROOT / "src" / "core" / "Application.cpp"
+space_state_header = ROOT / "src" / "game" / "SpaceState.h"
+
+for required in (game_state_header, application_cpp, space_state_header):
+    if not required.is_file():
+        fail(required, "required frame-preparation lifecycle file is missing")
+
+if game_state_header.is_file():
+    text = game_state_header.read_text(encoding="utf-8", errors="replace")
+    if "virtual void prepareFrame(float dt)" not in text:
+        fail(game_state_header, "GameState lost the pre-input frame preparation hook")
+
+if application_cpp.is_file():
+    text = application_cpp.read_text(encoding="utf-8", errors="replace")
+    prepare_pos = text.find("state->prepareFrame(dt);")
+    input_pos = text.find("state->handleInput();")
+    update_pos = text.find("state->update(dt);")
     if (
-        refresh_pos < 0 or
+        prepare_pos < 0 or
         input_pos < 0 or
-        render_pos < 0 or
-        not (refresh_pos < input_pos < render_pos)
+        update_pos < 0 or
+        not (prepare_pos < input_pos < update_pos)
     ):
         fail(
-            space_state_cpp,
-            "local snapshots must refresh before input and render",
+            application_cpp,
+            "frame preparation must run before input and simulation update",
         )
+
+if space_state_header.is_file():
+    text = space_state_header.read_text(encoding="utf-8", errors="replace")
+    if "void prepareFrame(float dt) override;" not in text:
+        fail(space_state_header, "SpaceState does not own map-frame preparation")
+
+if space_state_cpp.is_file():
+    space_text = space_state_cpp.read_text(encoding="utf-8", errors="replace")
+    prepare_match = re.search(
+        r"void SpaceState::prepareFrame\(float dt\)[\s\S]*?\n}\r?\n",
+        space_text,
+    )
+    if not prepare_match:
+        fail(space_state_cpp, "could not locate SpaceState::prepareFrame")
+    else:
+        prepare_text = prepare_match.group(0)
+        for required_call in (
+            "updateSystemMapLiveFlags();",
+            "updateLiveMapSnapshots(",
+            "updateLocalMapPresentationSnapshots(",
+        ):
+            if required_call not in prepare_text:
+                fail(
+                    space_state_cpp,
+                    f"map frame preparation is incomplete: {required_call}",
+                )
+
+    update_match = re.search(
+        r"void SpaceState::update\(float dt\)[\s\S]*?// Render",
+        space_text,
+    )
+    if update_match:
+        update_text = update_match.group(0)
+        for forbidden_call in (
+            "updateLiveMapSnapshots(",
+            "updateLocalMapPresentationSnapshots(",
+        ):
+            if forbidden_call in update_text:
+                fail(
+                    space_state_cpp,
+                    f"update mutates a map frame after input: {forbidden_call}",
+                )
 
 # Stage 4: Views own camera math and renderers consume immutable snapshots.
 camera_snapshot_header = MAP_DIR / "MapCameraSnapshot.h"

@@ -1,0 +1,39 @@
+# Regression gates
+
+Run all blocks that are currently treated as stable from the repository root:
+
+```bash
+bash tests/run_all_mingw64.sh
+```
+
+The launcher deliberately runs every block even if an earlier block fails, so
+one regression does not hide another.
+
+## Ready blocks
+
+### World runtime + global time contract
+
+`tests/world_runtime/run_mingw64.sh`
+
+Locks down:
+
+- one client estimate of authoritative server time;
+- bounded clock-rate correction under latency/jitter/drift;
+- frame-rate-independent clock estimation;
+- one server-time -> universe-time affine timeline per revision;
+- monotonic server time even while gameplay is frozen for accelerated universe
+  diagnostics;
+- accelerated universe time remaining an exact affine function of server time;
+- rotating Hub-frame coordinate/velocity invariants already covered by the
+  world-runtime suite.
+
+### System map behavior + architecture
+
+`tests/system_map/run_mingw64.sh`
+
+Locks down the existing map camera/navigation/picking/presentation contracts.
+Local map data is now resolved in `GameState::prepareFrame()` before input, and
+must not be replaced again between map input and rendering.
+
+When another subsystem is considered stable, add its runner here and to
+`tests/run_all_mingw64.sh` instead of creating another top-level command.

@@ -548,6 +548,7 @@ void Application::mainLoop()
                 }
             }
 
+            state->prepareFrame(dt);
             state->handleInput();
             state->update(dt);
 

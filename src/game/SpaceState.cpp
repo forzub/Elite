@@ -1032,6 +1032,24 @@ SpaceState::~SpaceState()
 //   ####    ##  ##    ##       ######     ###
 //                    ####
 // =====================================================================================
+// Frame preparation
+// =====================================================================================
+void SpaceState::prepareFrame(float dt)
+{
+    /*
+        Resolve the map frame once before input. handleInput() and renderHUD()
+        then consume the same local snapshot for the whole application frame.
+        Network/server updates performed later by update() become visible on
+        the next frame instead of mutating picking geometry between input and
+        rendering.
+    */
+    updateSystemMapLiveFlags();
+    updateLiveMapSnapshots(std::max(0.0f, dt));
+    updateLocalMapPresentationSnapshots(std::max(0.0f, dt));
+}
+
+
+// =====================================================================================
 // Input
 // =====================================================================================
 void SpaceState::handleInput()
@@ -1071,9 +1089,8 @@ void SpaceState::handleInput()
 
 
             /*
-                Live map snapshots are consumed and refreshed once per
-                update() by updateLiveMapSnapshots(). Input and rendering
-                only read the last accepted local copy here.
+                prepareFrame() resolved the local map snapshot before input.
+                Input and rendering consume that same immutable local copy.
             */
 
             const auto mapIntent =
@@ -1481,15 +1498,6 @@ m_playerView->updateCockpitStateFromSnapshot(
             pushSystemMapPanelState();
         }
     }
-
-
-
-updateSystemMapLiveFlags();
-updateLiveMapSnapshots(dt);
-updateLocalMapPresentationSnapshots(dt);
-
-
-
 
 
 

@@ -72,3 +72,17 @@ Universe time is no longer frame-integrated on the client. A versioned
 universe time, and all snapshot interpolation consumes one delayed
 `renderServerTimeSeconds` value. `ClientWorldState` may not own another render
 clock.
+
+## Stage 4: monotonic server timeline
+
+The authoritative server timeline is now a separate clock from gameplay time.
+During accelerated-universe diagnostics gameplay may be frozen, but server time
+must continue advancing by the fixed authoritative server step. Universe time
+then remains an affine mapping of server time even at high scales such as
+`500x`.
+
+The clock tests cover the production `ServerTimelineClock`, accelerated
+`UniverseClock` mapping and client `ClientUniverseTimeline` agreement. The
+architecture gate rejects a return to a raw `m_serverTime += gameplayDt`
+accumulator, which was able to freeze server time while universe time kept
+moving.

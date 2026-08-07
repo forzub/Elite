@@ -70,6 +70,7 @@ public:
     void renderUI() override;
     void renderHUD() override;
 
+    void prepareFrame(float dt) override;
     void handleInput() override;
     void update(float dt) override;
     void render() override;

@@ -13,6 +13,8 @@
 
 #include "src/game/client/ClientServerClock.h"
 #include "src/game/client/ClientUniverseTimeline.h"
+#include "src/game/server/ServerTimelineClock.h"
+#include "src/world/time/UniverseClock.h"
 
 namespace
 {
@@ -493,6 +495,81 @@ void testClockIsFrameRateIndependent()
     REQUIRE(variable.maxSpeedErrorPercent < 0.20);
 }
 
+void testServerTimelineNeverFreezesWithGameplay()
+{
+    game::server::ServerTimelineClock serverClock;
+
+    constexpr double FixedStep = 0.020;
+    for (int i = 0; i < 500; ++i)
+        serverClock.advance(FixedStep);
+
+    requireNear(
+        serverClock.timeSeconds(),
+        10.0,
+        1.0e-12,
+        "server timeline after 500 fixed steps"
+    );
+
+    // Invalid/negative deltas are ignored rather than making the authoritative
+    // server clock non-monotonic.
+    serverClock.advance(-1.0);
+    serverClock.advance(std::numeric_limits<double>::quiet_NaN());
+    requireNear(
+        serverClock.timeSeconds(),
+        10.0,
+        1.0e-12,
+        "server timeline monotonicity"
+    );
+}
+
+void testAcceleratedUniverseRemainsAffineToServerTimeline()
+{
+    game::server::ServerTimelineClock serverClock;
+    world::time::UniverseClock universeClock;
+
+    universeClock.reset();
+    const double universeStart = universeClock.timeSeconds();
+
+    universeClock.setTimeScale(500.0);
+    universeClock.setSimulationMode(true);
+
+    constexpr double FixedStep = 0.020;
+    constexpr int Steps = 250;
+
+    for (int i = 0; i < Steps; ++i)
+    {
+        serverClock.advance(FixedStep);
+        universeClock.update(FixedStep);
+    }
+
+    const double serverDelta = serverClock.timeSeconds();
+    const double universeDelta =
+        universeClock.timeSeconds() - universeStart;
+
+    requireNear(serverDelta, 5.0, 1.0e-12, "server timeline delta");
+    requireNear(
+        universeDelta,
+        serverDelta * 500.0,
+        1.0e-6,
+        "accelerated universe/server affine relation"
+    );
+
+    game::client::ClientUniverseTimeline clientTimeline;
+    clientTimeline.synchronize(
+        0.0,
+        universeStart,
+        500.0,
+        77
+    );
+
+    requireNear(
+        clientTimeline.timeAtServerTime(serverDelta),
+        universeClock.timeSeconds(),
+        1.0e-6,
+        "client/server accelerated universe agreement"
+    );
+}
+
 void testUniverseTimelineUsesServerTimeOnly()
 {
     game::client::ClientUniverseTimeline timeline;
@@ -564,6 +641,14 @@ int main()
         {
             "clock is frame-rate independent",
             testClockIsFrameRateIndependent
+        },
+        {
+            "server timeline never freezes with gameplay",
+            testServerTimelineNeverFreezesWithGameplay
+        },
+        {
+            "accelerated universe stays affine to server time",
+            testAcceleratedUniverseRemainsAffineToServerTimeline
         },
         {
             "universe timeline uses server time only",

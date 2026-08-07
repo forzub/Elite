@@ -712,12 +712,16 @@ void GameServer::update(double dt)
 
     game::server::ServerTimeContext time;
     time.serverTick = m_serverTick;
-    time.gameplayDeltaSeconds = std::max(0.0, dt);
+    time.serverDeltaSeconds = std::max(0.0, dt);
+    time.universeTimeSimulation =
+        m_universeClock.simulationMode();
+    time.gameplayDeltaSeconds =
+        time.universeTimeSimulation
+            ? 0.0
+            : time.serverDeltaSeconds;
     time.universeTimeSeconds = universeTime;
     time.universeDeltaSeconds =
         universeTime - m_lastUniverseTimeSeconds;
-    time.universeTimeSimulation =
-        m_universeClock.simulationMode();
     time.universeTimeScale =
         m_universeClock.timeScale();
 

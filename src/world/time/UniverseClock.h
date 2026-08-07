@@ -25,26 +25,21 @@ namespace world::time
         {
             m_simulationMode = false;
             m_simulationTimeScale = 1.0;
-            m_simulationTimeSeconds = realSecondsSinceEpoch();
+            m_timeSeconds = realSecondsSinceEpoch();
         }
 
         void update(double realDtSeconds)
         {
-            if (!m_simulationMode)
-                return;
-
             const double safeDt =
                 std::max(0.0, realDtSeconds);
 
-            m_simulationTimeSeconds +=
-                safeDt * m_simulationTimeScale;
+            m_timeSeconds +=
+                safeDt * timeScale();
         }
 
         double timeSeconds() const
         {
-            return m_simulationMode
-                ? m_simulationTimeSeconds
-                : realSecondsSinceEpoch();
+            return m_timeSeconds;
         }
 
         bool simulationMode() const
@@ -57,11 +52,14 @@ namespace world::time
             if (enabled == m_simulationMode)
                 return;
 
-            if (enabled)
-            {
-                m_simulationTimeSeconds =
-                    realSecondsSinceEpoch();
-            }
+            /*
+                Normal operation advances from the authoritative server step,
+                not from repeated system_clock reads. Leaving accelerated
+                debug mode intentionally re-anchors to real time; the server
+                publishes a new universe-timeline revision for that jump.
+            */
+            if (!enabled)
+                m_timeSeconds = realSecondsSinceEpoch();
 
             m_simulationMode = enabled;
         }
@@ -125,8 +123,8 @@ namespace world::time
             const auto now =
                 system_clock::now().time_since_epoch();
 
-            const int64_t nowSeconds =
-                duration_cast<seconds>(now).count();
+            const double nowSeconds =
+                duration<double>(now).count();
 
             const int64_t realEpochSeconds =
                 unixSecondsUtc(
@@ -135,7 +133,7 @@ namespace world::time
                     RealEpochDay
                 );
 
-            return static_cast<double>(nowSeconds - realEpochSeconds);
+            return nowSeconds - static_cast<double>(realEpochSeconds);
         }
 
         static bool isLeapYear(int year)
@@ -239,6 +237,6 @@ namespace world::time
     private:
         bool m_simulationMode = false;
         double m_simulationTimeScale = 1.0;
-        double m_simulationTimeSeconds = 0.0;
+        double m_timeSeconds = 0.0;
     };
 }

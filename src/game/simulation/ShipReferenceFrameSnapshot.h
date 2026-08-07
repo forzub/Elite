@@ -22,6 +22,7 @@ struct ShipReferenceFrameSnapshot
 
     glm::dvec3 originMeters {0.0};
     glm::dvec3 velocityMetersPerSecond {0.0};
+    glm::dvec3 angularVelocityWorldRadPerSecond {0.0};
 
     glm::dvec3 radialAxis {0.0, 1.0, 0.0};
     glm::dvec3 progradeAxis {1.0, 0.0, 0.0};
@@ -43,14 +44,31 @@ struct ShipReferenceFrameSnapshot
             + normalAxis   * localMeters.z;
     }
 
+    glm::dvec3 localToWorldVector(
+        const glm::dvec3& localVector
+    ) const
+    {
+        return
+            progradeAxis * localVector.x +
+            radialAxis   * localVector.y +
+            normalAxis   * localVector.z;
+    }
+
     glm::dvec3 localToWorldVelocity(
+        const glm::dvec3& localPosition,
         const glm::dvec3& localVelocity
     ) const
     {
-        return velocityMetersPerSecond
-            + progradeAxis * localVelocity.x
-            + radialAxis   * localVelocity.y
-            + normalAxis   * localVelocity.z;
+        const glm::dvec3 worldOffset =
+            localToWorldVector(localPosition);
+
+        return
+            velocityMetersPerSecond +
+            glm::cross(
+                angularVelocityWorldRadPerSecond,
+                worldOffset
+            ) +
+            localToWorldVector(localVelocity);
     }
 };
 

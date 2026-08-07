@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <cmath>
 #include <utility>
 #include "GameClient.h"
 #include "src/game/client/ClientWorldState.h"
@@ -21,7 +23,10 @@ void GameClient::beginSynchronization()
     m_pendingInputs.clear();
     m_predictionSuspended = false;
     m_accumulator = 0.0f;
-    m_universeClock.reset();
+    m_serverClock.reset();
+    m_universeTimeline.reset();
+    m_timeSyncSequence = 0;
+    m_nextTimeSyncLocalSeconds = 0.0;
 
     requestStarAtlas();
     refreshConnectionState();
@@ -167,6 +172,8 @@ void GameClient::refreshConnectionState()
     }
 
     if (hasGameplayCoreState() &&
+        m_serverClock.synchronized() &&
+        m_universeTimeline.synchronized() &&
         m_catalogs.hasStarAtlas() &&
         m_catalogs.hasCelestialSnapshot())
     {
@@ -198,10 +205,37 @@ GameClient::playerNavigation() const
 }
 
 
+double GameClient::estimatedServerTimeSeconds() const
+{
+    return m_serverClock.synchronized()
+        ? m_serverClock.estimatedServerTimeSeconds()
+        : m_lastSimulationMetadata.serverTimeSeconds;
+}
+
+double GameClient::renderServerTimeSeconds() const
+{
+    return std::max(
+        0.0,
+        estimatedServerTimeSeconds() -
+            RenderInterpolationDelaySeconds
+    );
+}
+
 double GameClient::universeTimeSeconds() const
 {
-    return m_universeClock.synchronized()
-        ? m_universeClock.timeSeconds()
+    return m_universeTimeline.synchronized()
+        ? m_universeTimeline.timeAtServerTime(
+            estimatedServerTimeSeconds()
+          )
+        : m_sessionSnapshot.universeTimeSeconds;
+}
+
+double GameClient::renderUniverseTimeSeconds() const
+{
+    return m_universeTimeline.synchronized()
+        ? m_universeTimeline.timeAtServerTime(
+            renderServerTimeSeconds()
+          )
         : m_sessionSnapshot.universeTimeSeconds;
 }
 
@@ -216,7 +250,7 @@ bool GameClient::requestStarAtlas()
 bool GameClient::resolveCelestialSnapshot(bool forceRefresh)
 {
     if (!m_hasSessionSnapshot ||
-        !m_universeClock.synchronized())
+        !m_universeTimeline.synchronized())
     {
         refreshConnectionState();
         return false;
@@ -225,7 +259,7 @@ bool GameClient::resolveCelestialSnapshot(bool forceRefresh)
     const bool ready =
         m_catalogs.resolveCelestialSnapshot(
             m_sessionSnapshot.playerNavigation.currentSystemId,
-            m_universeClock.timeSeconds(),
+            renderUniverseTimeSeconds(),
             m_lastSimulationMetadata,
             forceRefresh
         );
@@ -245,10 +279,57 @@ GameClient::celestialSnapshot() const
     return m_catalogs.celestialSnapshot();
 }
 
-bool GameClient::updateSynchronization(float dt)
+void GameClient::updateTimeSynchronization(double wallDeltaSeconds)
 {
-    m_maps.update(dt);
-    m_catalogs.update(dt);
+    const double safeWallDelta =
+        std::isfinite(wallDeltaSeconds)
+            ? std::max(0.0, wallDeltaSeconds)
+            : 0.0;
+
+    m_serverClock.advance(safeWallDelta);
+
+    game::network::TimeSyncResponse response;
+    while (m_transport.receiveTimeSyncResponse(response))
+    {
+        m_serverClock.addSyncSample(
+            response.clientSendTimeSeconds,
+            m_serverClock.localTimeSeconds(),
+            response.serverReceiveTimeSeconds
+        );
+    }
+
+    sendTimeSyncRequestIfDue();
+}
+
+void GameClient::sendTimeSyncRequestIfDue()
+{
+    const double localNow = m_serverClock.localTimeSeconds();
+
+    if (localNow + 1.0e-12 < m_nextTimeSyncLocalSeconds)
+        return;
+
+    game::network::TimeSyncRequest request;
+    request.sequence = ++m_timeSyncSequence;
+    request.clientSendTimeSeconds = localNow;
+    m_transport.sendTimeSyncRequest(request);
+
+    const double interval =
+        m_serverClock.synchronized()
+            ? SteadyTimeSyncIntervalSeconds
+            : StartupTimeSyncIntervalSeconds;
+
+    m_nextTimeSyncLocalSeconds = localNow + interval;
+}
+
+bool GameClient::updateSynchronization(double wallDeltaSeconds)
+{
+    const float serviceDt = static_cast<float>(
+        std::max(0.0, wallDeltaSeconds)
+    );
+
+    m_maps.update(serviceDt);
+    m_catalogs.update(serviceDt);
+    updateTimeSynchronization(wallDeltaSeconds);
 
     if (!m_catalogs.hasStarAtlas())
         m_catalogs.requestStarAtlas();
@@ -279,9 +360,12 @@ bool GameClient::updateSynchronization(float dt)
         m_hasAcceptedSnapshot = true;
         m_sessionSnapshot = snapshot.session;
         m_hasSessionSnapshot = true;
-        m_universeClock.synchronize(
+
+        m_universeTimeline.synchronize(
+            snapshot.metadata.serverTimeSeconds,
             snapshot.session.universeTimeSeconds,
-            snapshot.session.universeTimeScale
+            snapshot.session.universeTimeScale,
+            snapshot.session.universeTimelineRevision
         );
 
         m_world.applySnapshot(snapshot);
@@ -304,18 +388,9 @@ bool GameClient::updateSynchronization(float dt)
 
         if (m_predictionSuspended)
         {
-            // The accepted authoritative snapshot is the resynchronization
-            // boundary. Do not replay an incomplete input history.
             m_pendingInputs.clear();
             m_predictionSuspended = false;
         }
-    }
-
-    if (!acceptedSnapshot)
-    {
-        m_universeClock.advance(
-            static_cast<double>(dt)
-        );
     }
 
     (void)resolveCelestialSnapshot(acceptedSnapshot);
@@ -323,14 +398,23 @@ bool GameClient::updateSynchronization(float dt)
     return acceptedSnapshot;
 }
 
-void GameClient::updateGameplay(float dt, float fixedDt)
+void GameClient::updateGameplay(
+    float simulationDt,
+    float fixedDt,
+    double wallDeltaSeconds
+)
 {
-    const bool acceptedSnapshot = updateSynchronization(dt);
+    const bool acceptedSnapshot =
+        updateSynchronization(wallDeltaSeconds);
 
     if (!readyForGameplay())
     {
         m_accumulator = 0.0f;
-        m_world.update(dt, false);
+        m_world.update(
+            simulationDt,
+            false,
+            renderServerTimeSeconds()
+        );
         return;
     }
 
@@ -339,9 +423,6 @@ void GameClient::updateGameplay(float dt, float fixedDt)
 
     if (trajectoryDebugMode)
     {
-        // During accelerated universe-time diagnostics the server owns a
-        // passive ballistic trajectory. Client controls and prediction must
-        // not fight that authoritative path.
         m_pendingInputs.clear();
         m_predictionSuspended = false;
         m_accumulator = 0.0f;
@@ -356,7 +437,7 @@ void GameClient::updateGameplay(float dt, float fixedDt)
 
     if (!trajectoryDebugMode)
     {
-        m_accumulator += dt;
+        m_accumulator += simulationDt;
         const WorldParams& predictionWorld =
             m_sessionSnapshot.predictionWorldParams;
 
@@ -367,18 +448,36 @@ void GameClient::updateGameplay(float dt, float fixedDt)
         }
     }
 
-    m_world.update(dt, trajectoryDebugMode);
+    m_world.update(
+        simulationDt,
+        trajectoryDebugMode,
+        renderServerTimeSeconds()
+    );
 }
 
-void GameClient::update(float dt, float fixedDt)
+void GameClient::update(
+    float simulationDt,
+    float fixedDt,
+    double wallDeltaSeconds
+)
 {
     if (readyForGameplay())
-        updateGameplay(dt, fixedDt);
+    {
+        updateGameplay(
+            simulationDt,
+            fixedDt,
+            wallDeltaSeconds
+        );
+    }
     else
     {
-        (void)updateSynchronization(dt);
+        (void)updateSynchronization(wallDeltaSeconds);
         m_accumulator = 0.0f;
-        m_world.update(dt, false);
+        m_world.update(
+            simulationDt,
+            false,
+            renderServerTimeSeconds()
+        );
     }
 }
 

@@ -685,9 +685,6 @@ void GameSimulation::exitPassiveTrajectoryMode()
                 motion.parentBodyId =
                     frame->parentBodyId;
 
-                motion.referenceVelocityMps =
-                    frame->velocityMetersPerSecond;
-
                 motion.localPositionMeters =
                     frame->worldToLocalPosition(
                         tr.fullWorldMeters()
@@ -695,11 +692,18 @@ void GameSimulation::exitPassiveTrajectoryMode()
 
                 motion.localVelocityMps =
                     frame->worldToLocalVelocity(
+                        tr.fullWorldMeters(),
                         motion.worldVelocityMps
                     );
 
+                motion.referenceVelocityMps =
+                    frame->localToWorldVelocity(
+                        motion.localPositionMeters,
+                        glm::dvec3(0.0)
+                    );
+
                 tr.referenceVelocityMetersPerSecond =
-                    frame->velocityMetersPerSecond;
+                    motion.referenceVelocityMps;
             }
             else
             {
@@ -859,9 +863,6 @@ void GameSimulation::advancePassiveTrajectories(
 
         if (frame && frame->valid)
         {
-            motion.referenceVelocityMps =
-                frame->velocityMetersPerSecond;
-
             motion.localPositionMeters =
                 frame->worldToLocalPosition(
                     tr.fullWorldMeters()
@@ -869,11 +870,18 @@ void GameSimulation::advancePassiveTrajectories(
 
             motion.localVelocityMps =
                 frame->worldToLocalVelocity(
+                    tr.fullWorldMeters(),
                     motion.worldVelocityMps
                 );
 
+            motion.referenceVelocityMps =
+                frame->localToWorldVelocity(
+                    motion.localPositionMeters,
+                    glm::dvec3(0.0)
+                );
+
             tr.referenceVelocityMetersPerSecond =
-                frame->velocityMetersPerSecond;
+                motion.referenceVelocityMps;
         }
     }
 }
@@ -1534,6 +1542,8 @@ m_previousHubPositionMeters[hubId] =
                 s.referenceFrame.originMeters = frame->originMeters;
                 s.referenceFrame.velocityMetersPerSecond =
                     frame->velocityMetersPerSecond;
+                s.referenceFrame.angularVelocityWorldRadPerSecond =
+                    frame->angularVelocityWorldRadPerSecond;
                 s.referenceFrame.radialAxis = frame->radialAxis;
                 s.referenceFrame.progradeAxis = frame->progradeAxis;
                 s.referenceFrame.normalAxis = frame->normalAxis;
@@ -2168,6 +2178,31 @@ void GameSimulation::rebuildHubNavigationFrames(double dt)
         frame.radialAxis = radial;
         frame.progradeAxis = prograde;
         frame.normalAxis = normal;
+
+        const double orbitRadiusMeters =
+            glm::length(frame.originMeters - parentMeters);
+
+        const glm::dvec3 tangentialVelocityMetersPerSecond =
+            relativeOrbitalVelocityMetersPerSecond -
+            radial *
+                glm::dot(
+                    relativeOrbitalVelocityMetersPerSecond,
+                    radial
+                );
+
+        const double angularSpeedRadPerSecond =
+            orbitRadiusMeters > 1.0
+                ? glm::length(tangentialVelocityMetersPerSecond) /
+                    orbitRadiusMeters
+                : 0.0;
+
+        /*
+            Basis convention is X=prograde, Y=radial, Z=normal with
+            normal = cross(prograde, radial). Therefore the orbital frame
+            rotates around -normal for positive prograde motion.
+        */
+        frame.angularVelocityWorldRadPerSecond =
+            -normal * angularSpeedRadPerSecond;
 
         // Пока prime ищем как первый модуль.
         // Позже лучше сохранить явно из initial_world_state.json.
@@ -3323,6 +3358,12 @@ game::navigation::ResolvedFrameState GameSimulation::resolveReferenceFrame(
                 frame.localOffsetMeters
             );
 
+        result.velocityMetersPerSecond =
+            hubFrame->localToWorldVelocity(
+                frame.localOffsetMeters,
+                glm::dvec3(0.0)
+            );
+
         result.valid = true;
         return result;
     }
@@ -3485,12 +3526,30 @@ void GameSimulation::updateShipReferenceFrames(double dt)
 
         // Обновляем только скорость системы отсчёта.
         // Позицию свободного корабля не телепортируем.
-        tr.referenceVelocityMetersPerSecond =
+        glm::dvec3 referenceVelocityMetersPerSecond =
             resolved.velocityMetersPerSecond;
 
+        if (tr.motion.mode ==
+                game::navigation::MotionMode::HubTactical)
+        {
+            const auto* hubFrame =
+                hubNavigationFrame(tr.motion.hubId);
+
+            if (hubFrame && hubFrame->valid)
+            {
+                referenceVelocityMetersPerSecond =
+                    hubFrame->localToWorldVelocity(
+                        tr.motion.localPositionMeters,
+                        glm::dvec3(0.0)
+                    );
+            }
+        }
+
+        tr.referenceVelocityMetersPerSecond =
+            referenceVelocityMetersPerSecond;
 
         tr.motion.referenceVelocityMps =
-    resolved.velocityMetersPerSecond;
+            referenceVelocityMetersPerSecond;
 
 if (tr.motion.pendingReferenceVelocityMatch)
 {
@@ -4299,6 +4358,7 @@ void GameSimulation::debugLogPlayerMotion(double dt)
 
         worldVelocity =
             frame->localToWorldVelocity(
+                tr.motion.localPositionMeters,
                 tr.motion.localVelocityMps
             );
 
@@ -4543,12 +4603,19 @@ void GameSimulation::debugLogHubPlayerChain(double dt)
 
     const glm::dvec3 predictedLocalV =
         frame->worldToLocalVelocity(
+            playerM,
             tr.motion.worldVelocityMps
         );
 
+    const glm::dvec3 rotatingVelocityAtPlayer =
+        glm::cross(
+            frame->angularVelocityWorldRadPerSecond,
+            playerM - frame->originMeters
+        );
+
     const glm::dvec3 predictedRelativeLocalV =
-        frame->worldToLocalVelocity(
-            relativeWorldV
+        frame->worldToLocalVector(
+            relativeWorldV - rotatingVelocityAtPlayer
         );
 
     std::ofstream out(

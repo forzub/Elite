@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include "src/world/celestial/CelestialTypes.h"
@@ -15,6 +16,7 @@ struct ClientSessionSnapshot
 
     double universeTimeSeconds = 0.0;
     double universeTimeScale = 1.0;
+    std::uint64_t universeTimelineRevision = 1;
     double configuredUniverseTimeScale = 10000.0;
 
     bool universeTimeSimulation = false;

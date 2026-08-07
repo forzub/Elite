@@ -47,6 +47,7 @@
 
 #include "src/core/Application.h"
 #include "src/game/session/IGameSession.h"
+#include "src/game/client/ClientCelestialMapBridge.h"
 
 #include <chrono>
 #include <algorithm>
@@ -882,6 +883,36 @@ void SpaceState::updateLocalMapPresentationSnapshots(float dt)
         m_hubMapSnapshot =
             m_authoritativeMapInterpolator.hub();
     }
+
+    /*
+        Celestial rotation is predictable state. It is reconstructed every
+        client frame from the synchronized universe clock, instead of being
+        held/interpolated from a low-rate map response.
+    */
+    if (m_client)
+    {
+        const auto* celestial =
+            m_client->celestialSnapshot();
+
+        if (celestial)
+        {
+            if (m_hasDetailMapSnapshot)
+            {
+                game::client::applyClientCelestialPresentation(
+                    m_detailMapSnapshot,
+                    *celestial
+                );
+            }
+
+            if (m_hasHubMapSnapshot)
+            {
+                game::client::applyClientCelestialPresentation(
+                    m_hubMapSnapshot,
+                    *celestial
+                );
+            }
+        }
+    }
 }
 
 
@@ -1239,7 +1270,8 @@ void SpaceState::update(float dt)
         clientFrameDt,
         static_cast<float>(
             m_session->fixedStepSeconds()
-        )
+        ),
+        static_cast<double>(std::max(0.0f, dt))
     );
 
     updatePendingMapTransition(clientFrameDt);

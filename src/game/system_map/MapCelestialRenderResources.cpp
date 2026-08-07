@@ -1,7 +1,6 @@
 #include "src/game/system_map/MapCelestialRenderResources.h"
 
 #include <algorithm>
-#include <chrono>
 #include <cctype>
 #include <cmath>
 #include <filesystem>
@@ -589,10 +588,10 @@ void MapCelestialRenderResources::beginFrame()
 
 void MapCelestialRenderResources::resetPresentationTime()
 {
-    m_visualEffectTimeSeconds = 0.0;
-    m_visualEffectLastSourceTimeSeconds = 0.0;
-    m_visualEffectLastWallClockSeconds = 0.0;
-    m_visualEffectTimeInitialized = false;
+    /*
+        Celestial/cloud animation no longer owns a second clock. The caller
+        supplies reconstructed universe time for every frame.
+    */
 }
 
 void MapCelestialRenderResources::ensureGeneratedCelestialAssets()
@@ -1986,141 +1985,14 @@ double MapCelestialRenderResources::visualEffectTimeSeconds(
     double sourceTimeSeconds
 )
 {
-    using Clock =
-        std::chrono::steady_clock;
-
-    const double nowSeconds =
-        std::chrono::duration<double>(
-            Clock::now().time_since_epoch()
-        ).count();
-
-    if (!std::isfinite(sourceTimeSeconds))
-    {
-        sourceTimeSeconds =
-            0.0;
-    }
-
     /*
-        Первый кадр синхронизируем с universe time,
-        чтобы разные тела получали детерминированную
-        исходную фазу.
+        One time source only. The client reconstructs canonical universe time
+        from the latest server anchor; render resources never advance, rewind
+        or correct that time independently.
     */
-    if (!m_visualEffectTimeInitialized)
-    {
-        m_visualEffectTimeSeconds =
-            sourceTimeSeconds;
-
-        m_visualEffectLastSourceTimeSeconds =
-            sourceTimeSeconds;
-
-        m_visualEffectLastWallClockSeconds =
-            nowSeconds;
-
-        m_visualEffectTimeInitialized =
-            true;
-
-        return
-            m_visualEffectTimeSeconds;
-    }
-
-    /*
-        Реальное время кадра.
-
-        Верхнее ограничение защищает анимацию от большого
-        скачка после breakpoint, сворачивания окна или лагов.
-    */
-    const double wallDeltaSeconds =
-        std::clamp(
-            nowSeconds -
-                m_visualEffectLastWallClockSeconds,
-            0.0,
-            0.10
-        );
-
-    m_visualEffectLastWallClockSeconds =
-        nowSeconds;
-
-    const bool sourceWentBackward =
-        sourceTimeSeconds <
-        m_visualEffectLastSourceTimeSeconds -
-            0.001;
-
-    const bool sourceAdvanced =
-        sourceTimeSeconds >
-        m_visualEffectLastSourceTimeSeconds +
-            0.000001;
-
-    m_visualEffectLastSourceTimeSeconds =
-        sourceTimeSeconds;
-
-    /*
-        Явный откат universe time:
-        загрузка состояния, перемотка или сброс сервера.
-
-        В этом случае локальное визуальное время тоже
-        должно немедленно синхронизироваться.
-    */
-    if (sourceWentBackward)
-    {
-        m_visualEffectTimeSeconds =
-            sourceTimeSeconds;
-
-        return
-            m_visualEffectTimeSeconds;
-    }
-
-    /*
-        Главное изменение:
-
-        визуальное время всегда движется по steady_clock,
-        даже если snapshot кэширован и его universeTimeSeconds
-        несколько секунд не обновляется.
-    */
-    m_visualEffectTimeSeconds +=
-        wallDeltaSeconds;
-
-    /*
-        Когда свежий snapshot всё-таки приходит, мягко
-        корректируем небольшое расхождение.
-
-        Большой скачок синхронизируем сразу — например,
-        при ускоренном universe time или смене состояния.
-    */
-    if (sourceAdvanced)
-    {
-        const double timeError =
-            sourceTimeSeconds -
-            m_visualEffectTimeSeconds;
-
-        if (std::abs(timeError) > 2.0)
-        {
-            m_visualEffectTimeSeconds =
-                sourceTimeSeconds;
-        }
-        else
-        {
-            const double correctionBlend =
-                1.0 -
-                std::exp(
-                    -6.0 *
-                    wallDeltaSeconds
-                );
-
-            const double limitedError =
-                std::clamp(
-                    timeError,
-                    -0.25,
-                    0.25
-                );
-
-            m_visualEffectTimeSeconds +=
-                limitedError *
-                correctionBlend;
-        }
-    }
-
-    return
-        m_visualEffectTimeSeconds;
+    return std::isfinite(sourceTimeSeconds)
+        ? sourceTimeSeconds
+        : 0.0;
 }
 
 void MapCelestialRenderResources::drawStarfield(

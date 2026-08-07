@@ -30,9 +30,7 @@ void LocalGameSession::updateSynchronization(double elapsedSeconds)
         return;
 
     m_host->advance(elapsedSeconds);
-    m_client->updateSynchronization(
-        static_cast<float>(elapsedSeconds)
-    );
+    m_client->updateSynchronization(elapsedSeconds);
 }
 
 game::session::GameSessionState LocalGameSession::state() const

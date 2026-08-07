@@ -7,7 +7,8 @@
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/client/ClientCatalogService.h"
 #include "src/game/client/ClientMapService.h"
-#include "src/game/client/ClientUniverseClock.h"
+#include "src/game/client/ClientServerClock.h"
+#include "src/game/client/ClientUniverseTimeline.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/simulation/SimulationSnapshot.h"
 // #include "src/game/SpaceState.h"
@@ -34,9 +35,17 @@ public:
     GameClient(ITransport& transport, EntityId playerId);
 
     void submitInput(const ShipControlState& control);
-    bool updateSynchronization(float dt);
-    void updateGameplay(float dt, float fixedDt);
-    void update(float dt, float fixedDt);
+    bool updateSynchronization(double wallDeltaSeconds);
+    void updateGameplay(
+        float simulationDt,
+        float fixedDt,
+        double wallDeltaSeconds
+    );
+    void update(
+        float simulationDt,
+        float fixedDt,
+        double wallDeltaSeconds
+    );
 
     const ClientWorldState& world() const;
     ClientWorldState& world();
@@ -108,7 +117,10 @@ public:
     const world::celestial::PlayerNavigationState&
         playerNavigation() const;
 
+    double estimatedServerTimeSeconds() const;
+    double renderServerTimeSeconds() const;
     double universeTimeSeconds() const;
+    double renderUniverseTimeSeconds() const;
 
     bool requestStarAtlas();
     bool resolveCelestialSnapshot(bool forceRefresh = false);
@@ -122,6 +134,8 @@ private:
     void refreshConnectionState();
     void replayPendingInputs(const WorldParams& world, float fixedDt);
     void sendAndPredictFixedStep(const WorldParams& world, float fixedDt);
+    void updateTimeSynchronization(double wallDeltaSeconds);
+    void sendTimeSyncRequestIfDue();
 
 private:
     ITransport&                     m_transport;
@@ -154,7 +168,15 @@ private:
 
     game::client::ClientMapService m_maps;
     game::client::ClientCatalogService m_catalogs;
-    game::client::ClientUniverseClock m_universeClock;
+    game::client::ClientServerClock m_serverClock;
+    game::client::ClientUniverseTimeline m_universeTimeline;
+
+    std::uint64_t m_timeSyncSequence = 0;
+    double m_nextTimeSyncLocalSeconds = 0.0;
+
+    static constexpr double StartupTimeSyncIntervalSeconds = 0.050;
+    static constexpr double SteadyTimeSyncIntervalSeconds = 2.0;
+    static constexpr double RenderInterpolationDelaySeconds = 0.200;
 
     bool m_hasSessionSnapshot = false;
     game::simulation::ClientSessionSnapshot m_sessionSnapshot;

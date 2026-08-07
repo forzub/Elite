@@ -5,6 +5,7 @@
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/MapSnapshotMessage.h"
 #include "src/game/network/PresentationDataMessage.h"
+#include "src/game/network/TimeSyncMessage.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/scene/EntityID.h"
@@ -38,5 +39,13 @@ public:
 
     virtual bool receivePresentationDataResponse(
         game::network::PresentationDataResponse& outResponse
+    ) = 0;
+
+    virtual void sendTimeSyncRequest(
+        const game::network::TimeSyncRequest& request
+    ) = 0;
+
+    virtual bool receiveTimeSyncResponse(
+        game::network::TimeSyncResponse& outResponse
     ) = 0;
 };

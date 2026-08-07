@@ -124,6 +124,11 @@ public:
         return snapshot ? *snapshot : empty;
     }
 
+    double serverTimeSeconds() const
+    {
+        return m_simulation.serverTime();
+    }
+
     const world::time::UniverseClock& universeClock() const
     {
         return m_universeClock;
@@ -248,6 +253,7 @@ private:
     std::deque<game::network::PresentationDataResponse>
         m_completedPresentationDataResponses;
     std::uint64_t m_serverTick = 0;
+    std::uint64_t m_universeTimelineRevision = 1;
     world::time::UniverseClock m_universeClock;
     double m_lastUniverseTimeSeconds = 0.0;
     uint32_t m_snapshotInterval = 3;

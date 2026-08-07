@@ -79,8 +79,14 @@ namespace
         transform.motion.parentBodyId = frame.bodyId;
         transform.motion.localPositionMeters = frame.localPositionMeters;
         transform.motion.localVelocityMps = frame.localVelocityMetersPerSecond;
-        transform.motion.referenceVelocityMps = frame.velocityMetersPerSecond;
-        transform.referenceVelocityMetersPerSecond = frame.velocityMetersPerSecond;
+        const glm::dvec3 referenceVelocity =
+            frame.localToWorldVelocity(
+                frame.localPositionMeters,
+                glm::dvec3(0.0)
+            );
+
+        transform.motion.referenceVelocityMps = referenceVelocity;
+        transform.referenceVelocityMetersPerSecond = referenceVelocity;
         transform.setWorldPositionMeters(
             frame.localToWorldPosition(frame.localPositionMeters)
         );
@@ -624,12 +630,11 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
 void ClientWorldState::update(
     float dt,
-    bool authoritativePlayerRendering
+    bool authoritativePlayerRendering,
+    double renderServerTimeSeconds
 )
 {
-    m_clientTime += dt;
-
-    double renderTime = m_clientTime - m_renderDelay;
+    double renderTime = renderServerTimeSeconds;
 
     if (!m_snapshotBuffer.empty())
     {

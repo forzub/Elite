@@ -186,9 +186,5 @@ private:
     bool m_mapStarfieldInitialized = false;
     bool m_galaxyBackdropStarfieldInitialized = false;
 
-    double m_visualEffectTimeSeconds = 0.0;
-    double m_visualEffectLastSourceTimeSeconds = 0.0;
-    double m_visualEffectLastWallClockSeconds = 0.0;
-    bool m_visualEffectTimeInitialized = false;
 };
 }

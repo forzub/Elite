@@ -130,7 +130,11 @@ class ClientWorldState
 public:
 
     void applySnapshot(const SimulationSnapshot& snapshot);
-    void update(float dt, bool authoritativePlayerRendering = false);
+    void update(
+        float dt,
+        bool authoritativePlayerRendering,
+        double renderServerTimeSeconds
+    );
 
     const std::unordered_map<uint32_t, ClientShipState>& ships() const {return m_ships;}
     const std::unordered_map<uint32_t, ClientObjectState>& objects() const {return m_objects;}
@@ -182,7 +186,5 @@ private:
     ShipSignalPresentation                          signalPresentation;
 
 
-    double m_renderDelay = 0.45; // 100 ms
-    double m_clientTime = 0.0;
 
 };

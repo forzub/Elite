@@ -1038,6 +1038,8 @@ void GameServer::populateClientSessionSnapshot(
         m_universeClock.timeSeconds();
     snapshot.session.universeTimeScale =
         m_universeClock.timeScale();
+    snapshot.session.universeTimelineRevision =
+        m_universeTimelineRevision;
     snapshot.session.configuredUniverseTimeScale =
         m_universeClock.configuredTimeScale();
     snapshot.session.universeTimeSimulation =
@@ -3224,6 +3226,8 @@ void GameServer::setDebugUniverseTimeSimulation(
 {
     const bool wasEnabled =
         m_universeClock.simulationMode();
+    const double previousEffectiveScale =
+        m_universeClock.timeScale();
 
     if (enabled && !wasEnabled)
     {
@@ -3239,6 +3243,16 @@ void GameServer::setDebugUniverseTimeSimulation(
 
     m_universeClock.setTimeScale(timeScale);
     m_universeClock.setSimulationMode(enabled);
+
+    const bool timelineChanged =
+        wasEnabled != m_universeClock.simulationMode() ||
+        std::abs(
+            previousEffectiveScale - m_universeClock.timeScale()
+        ) > 1.0e-12;
+
+    if (timelineChanged)
+        ++m_universeTimelineRevision;
+
     m_debugFastUniverseTime = debugFastUniverseTime();
 
     // Publish the changed time contract on the next authoritative tick so
@@ -3686,21 +3700,29 @@ void GameServer::refreshHubMapDynamicState(
             LocalSceneCoordinateSpace::AnchorLocalMeters;
         ship.parentStableId = snapshot.hubId;
 
-        /*
-            Позиция всегда вычисляется из абсолютной
-            серверной world position.
-
-            Поэтому Details и Hub Map неизбежно показывают
-            одну и ту же точку пространства.
-        */
-        ship.positionMeters =
-            frame->worldToLocalPosition(
-                playerWorldMeters
-            );
-
         const bool playerUsesThisHubFrame =
             transform.motion.hubId ==
             snapshot.hubId;
+
+        /*
+            HubTactical localPositionMeters is the authoritative state of a
+            ship inside this rotating frame. Do not reconstruct the same
+            quantity from a compatibility world pose in the map builder.
+        */
+        if (playerUsesThisHubFrame &&
+            transform.motion.mode ==
+                game::navigation::MotionMode::HubTactical)
+        {
+            ship.positionMeters =
+                transform.motion.localPositionMeters;
+        }
+        else
+        {
+            ship.positionMeters =
+                frame->worldToLocalPosition(
+                    playerWorldMeters
+                );
+        }
 
         if (playerUsesThisHubFrame &&
             transform.motion.mode ==
@@ -3731,6 +3753,7 @@ void GameServer::refreshHubMapDynamicState(
             */
             ship.velocityMps =
                 frame->worldToLocalVelocity(
+                    playerWorldMeters,
                     transform.motion.worldVelocityMps
                 );
         }

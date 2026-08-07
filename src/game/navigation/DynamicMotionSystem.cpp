@@ -14,21 +14,24 @@ void DynamicMotionSystem::updateHubTactical(
     double dt
 )
 {
-    motion.referenceVelocityMps =
-        frame.velocityMetersPerSecond;
-
     // HubTactical state is authoritative in the hub-local reference frame.
     // The hub may move by a large amount when universe time is accelerated;
     // that movement must not be interpreted as free flight of the ship.
-    const glm::dvec3 worldAcceleration =
-        motion.gravityAccelerationMps2 +
-        motion.engineAccelerationMps2;
+    /*
+        HubTactical is a controlled coordinate mode relative to the orbital
+        hub. Applying absolute planetary gravity directly to local motion is
+        incorrect because the hub frame itself is in the same gravitational
+        fall. That old path pulled an idle player toward the planet on the
+        Hub Map.
 
-    const glm::dvec3 localAcceleration {
-        glm::dot(worldAcceleration, frame.progradeAxis),
-        glm::dot(worldAcceleration, frame.radialAxis),
-        glm::dot(worldAcceleration, frame.normalAxis)
-    };
+        Free orbital/gravity propagation belongs to PassiveTrajectory. In
+        HubTactical only commanded engine acceleration changes the local
+        relative state.
+    */
+    const glm::dvec3 localAcceleration =
+        frame.worldToLocalVector(
+            motion.engineAccelerationMps2
+        );
 
     motion.localVelocityMps +=
         localAcceleration * dt;
@@ -41,8 +44,15 @@ void DynamicMotionSystem::updateHubTactical(
             motion.localPositionMeters
         );
 
+    motion.referenceVelocityMps =
+        frame.localToWorldVelocity(
+            motion.localPositionMeters,
+            glm::dvec3(0.0)
+        );
+
     motion.worldVelocityMps =
         frame.localToWorldVelocity(
+            motion.localPositionMeters,
             motion.localVelocityMps
         );
 

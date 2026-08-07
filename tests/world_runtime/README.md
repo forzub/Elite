@@ -18,3 +18,57 @@ The suite locks the first client-world migration contract:
 This gate deliberately does not initialize GLFW or OpenGL. Render-coordinate
 contracts are added in the following migration stages when map frame builders
 start consuming the client-owned reconstructed world.
+
+## Stage 2 coordinate/render-time contract
+
+The suite also locks two runtime regressions that were visible in the maps:
+
+- celestial and cloud presentation must consume the client-reconstructed
+  universe time directly; render resources may not own a second wall-clock
+  timeline or correct it independently;
+- HubTactical coordinates are a rotating reference frame. Velocity transforms
+  include the `omega x r` term, and an idle ship in HubTactical may not be
+  accelerated toward the parent planet by absolute gravity. Free gravitational
+  flight belongs to PassiveTrajectory.
+
+`ClientCelestialMapBridge` is intentionally a migration boundary: it currently
+replaces only predictable celestial time/orientation fields in Detail and Hub
+presentation snapshots. Dynamic positions remain at the map-snapshot epoch
+until the next client-world migration stage, preventing mixed-epoch geometry.
+
+## Stage 3: clock synchronization and render timeline
+
+`clock_sync_tests` is dependency-free and can be run independently with:
+
+```bash
+bash tests/world_runtime/run_clock_sync.sh
+```
+
+It emulates an 80 ppm client clock drift, 50 ms one-way base latency, jitter,
+latency spikes, 20 ms authoritative server ticks and variable render frame
+rates. Four synchronization strategies are compared on the same deterministic
+network trace:
+
+- latest midpoint offset;
+- EMA offset;
+- bounded phase correction without rate learning;
+- the production robust affine PLL (`ClientServerClock`).
+
+The production strategy is selected for smoothness rather than the smallest
+instantaneous phase error. The deterministic reference scenario measured:
+
+- latest midpoint: 22.133 ms RMS, 1543.485% maximum rate spike;
+- EMA offset: 7.808 ms RMS, 132.208% maximum rate spike;
+- bounded phase: 39.602 ms RMS, 0.258% maximum rate error;
+- robust affine PLL: 31.606 ms RMS, 0.124% maximum rate error.
+
+The regression gate therefore requires the production estimator to remain
+within 45 ms RMS / 60 ms maximum phase error while keeping rate excursions
+below 0.40%, and to outperform the bounded-phase baseline on both phase RMS and
+maximum rate error in the fixed deterministic scenario.
+
+Universe time is no longer frame-integrated on the client. A versioned
+`ClientUniverseTimeline` maps the synchronized server simulation timeline to
+universe time, and all snapshot interpolation consumes one delayed
+`renderServerTimeSeconds` value. `ClientWorldState` may not own another render
+clock.

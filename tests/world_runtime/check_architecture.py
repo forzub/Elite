@@ -76,8 +76,10 @@ if client_cpp.is_file():
     text = client_cpp.read_text(encoding="utf-8", errors="replace")
 
     for required in (
-        "m_universeClock.synchronize(",
-        "m_universeClock.advance(",
+        "m_serverClock.advance(",
+        "m_serverClock.addSyncSample(",
+        "m_universeTimeline.synchronize(",
+        "renderUniverseTimeSeconds()",
         "m_catalogs.resolveCelestialSnapshot(",
     ):
         if required not in text:
@@ -92,6 +94,278 @@ if server_cpp.is_file():
 
     if "m_celestialRuntimes.resolve(" not in text:
         fail(server_cpp, "server does not use the shared demand-driven resolver")
+
+
+
+# Stage 2: render-time and rotating-frame contracts.
+map_resources_header = SRC / "game/system_map/MapCelestialRenderResources.h"
+map_resources_cpp = SRC / "game/system_map/MapCelestialRenderResources.cpp"
+client_bridge = SRC / "game/client/ClientCelestialMapBridge.h"
+space_state_cpp = SRC / "game/SpaceState.cpp"
+hub_frame_header = SRC / "game/navigation/HubNavigationFrame.h"
+dynamic_motion_cpp = SRC / "game/navigation/DynamicMotionSystem.cpp"
+ship_frame_header = SRC / "game/simulation/ShipReferenceFrameSnapshot.h"
+
+for path in (
+    map_resources_header,
+    map_resources_cpp,
+    client_bridge,
+    space_state_cpp,
+    hub_frame_header,
+    dynamic_motion_cpp,
+    ship_frame_header,
+):
+    if not path.is_file():
+        fail(path, "required Stage-2 coordinate/time contract file is missing")
+
+if map_resources_header.is_file():
+    text = map_resources_header.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "m_visualEffectTimeSeconds",
+        "m_visualEffectLastSourceTimeSeconds",
+        "m_visualEffectLastWallClockSeconds",
+        "m_visualEffectTimeInitialized",
+    ):
+        if forbidden in text:
+            fail(map_resources_header, f"independent render clock returned: {forbidden}")
+
+if map_resources_cpp.is_file():
+    text = map_resources_cpp.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "steady_clock",
+        "sourceWentBackward",
+        "correctionBlend",
+        "m_visualEffectTimeSeconds",
+    ):
+        if forbidden in text:
+            fail(map_resources_cpp, f"render layer still owns/corrects universe time: {forbidden}")
+
+if client_bridge.is_file():
+    text = client_bridge.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "applyClientCelestialPresentation(",
+        "detail.planetRotationPhaseRad = body->rotationPhaseRad",
+        "hub.parentPlanetRotationPhaseRad = body->rotationPhaseRad",
+        "detail.universeTimeSeconds = celestial.simTimeSeconds",
+        "hub.universeTimeSeconds = celestial.simTimeSeconds",
+    ):
+        if required not in text:
+            fail(client_bridge, f"predictable client map bridge is incomplete: {required}")
+
+if space_state_cpp.is_file():
+    text = space_state_cpp.read_text(encoding="utf-8", errors="replace")
+    if "applyClientCelestialPresentation(" not in text:
+        fail(space_state_cpp, "local maps do not consume client-reconstructed celestial presentation")
+
+if hub_frame_header.is_file():
+    text = hub_frame_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "angularVelocityWorldRadPerSecond",
+        "worldToLocalVector(",
+        "localToWorldVector(",
+        "worldToLocalVelocity(",
+        "worldPositionMeters",
+        "localToWorldVelocity(",
+        "localPositionMeters",
+        "glm::cross(",
+    ):
+        if required not in text:
+            fail(hub_frame_header, f"rotating-frame velocity contract is incomplete: {required}")
+
+if ship_frame_header.is_file():
+    text = ship_frame_header.read_text(encoding="utf-8", errors="replace")
+    if "angularVelocityWorldRadPerSecond" not in text:
+        fail(ship_frame_header, "ship reference-frame snapshot lost angular velocity")
+
+if dynamic_motion_cpp.is_file():
+    text = dynamic_motion_cpp.read_text(encoding="utf-8", errors="replace")
+    if "motion.gravityAccelerationMps2" in text:
+        fail(
+            dynamic_motion_cpp,
+            "HubTactical again integrates absolute gravity in an orbiting local frame",
+        )
+    for required in (
+        "frame.worldToLocalVector(",
+        "frame.localToWorldVelocity(",
+        "motion.localPositionMeters",
+    ):
+        if required not in text:
+            fail(dynamic_motion_cpp, f"HubTactical coordinate contract is incomplete: {required}")
+
+server_cpp = SRC / "game/server/GameServer.cpp"
+if server_cpp.is_file():
+    text = server_cpp.read_text(encoding="utf-8", errors="replace")
+    if "ship.positionMeters =\n                transform.motion.localPositionMeters" not in text:
+        fail(server_cpp, "Hub Map player marker is not sourced from authoritative HubTactical local position")
+
+
+
+# Stage 3: one global server-time estimate, one universe timeline and one
+# delayed render timeline. Frame dt may drive local effects/prediction, but it
+# may not independently integrate world/universe time.
+server_clock_header = SRC / "game/client/ClientServerClock.h"
+universe_timeline_header = SRC / "game/client/ClientUniverseTimeline.h"
+old_client_clock_header = SRC / "game/client/ClientUniverseClock.h"
+time_sync_header = SRC / "game/network/TimeSyncMessage.h"
+transport_header = SRC / "game/network/ITransport.h"
+loopback_header = SRC / "game/network/LocalLoopbackTransport.h"
+loopback_cpp = SRC / "game/network/LocalLoopbackTransport.cpp"
+universe_clock_header = SRC / "world/time/UniverseClock.h"
+client_world_header = SRC / "game/client/ClientWorldState.h"
+client_world_cpp = SRC / "game/client/ClientWorldState.cpp"
+session_header = SRC / "game/simulation/ClientSessionSnapshot.h"
+local_session_cpp = SRC / "game/host/LocalGameSession.cpp"
+
+for path in (
+    server_clock_header,
+    universe_timeline_header,
+    time_sync_header,
+    transport_header,
+    loopback_header,
+    loopback_cpp,
+    universe_clock_header,
+    client_world_header,
+    client_world_cpp,
+    session_header,
+    local_session_cpp,
+):
+    if not path.is_file():
+        fail(path, "required Stage-3 time-contract file is missing")
+
+if old_client_clock_header.exists():
+    fail(old_client_clock_header, "obsolete frame-integrated client universe clock returned")
+
+if server_clock_header.is_file():
+    text = server_clock_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "class ClientServerClock",
+        "addSyncSample(",
+        "modelRate()",
+        "effectiveRate()",
+        "phaseCorrectionWindowSeconds",
+        "maxPhaseCorrectionRate",
+        "rttSlackSeconds",
+    ):
+        if required not in text:
+            fail(server_clock_header, f"server-clock estimator contract is incomplete: {required}")
+
+    for forbidden in (
+        "maxPhaseCorrectionRate = 0.35",
+        "1.35",
+        "0.65",
+    ):
+        if forbidden in text:
+            fail(server_clock_header, f"large old clock-rate correction returned: {forbidden}")
+
+if universe_timeline_header.is_file():
+    text = universe_timeline_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "class ClientUniverseTimeline",
+        "timeAtServerTime(",
+        "std::uint64_t revision",
+        "m_anchorServerTimeSeconds",
+        "m_anchorUniverseTimeSeconds",
+    ):
+        if required not in text:
+            fail(universe_timeline_header, f"universe timeline contract is incomplete: {required}")
+
+    if "advance(" in text:
+        fail(universe_timeline_header, "universe timeline must not integrate frame delta")
+
+if time_sync_header.is_file():
+    text = time_sync_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "struct TimeSyncRequest",
+        "clientSendTimeSeconds",
+        "struct TimeSyncResponse",
+        "serverReceiveTimeSeconds",
+    ):
+        if required not in text:
+            fail(time_sync_header, f"time-sync protocol is incomplete: {required}")
+
+if transport_header.is_file():
+    text = transport_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "sendTimeSyncRequest(",
+        "receiveTimeSyncResponse(",
+    ):
+        if required not in text:
+            fail(transport_header, f"transport does not expose clock sync: {required}")
+
+if loopback_cpp.is_file():
+    text = loopback_cpp.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "m_timeSyncRequestBuffer",
+        "m_timeSyncResponseBuffer",
+        "m_server.serverTimeSeconds()",
+        "sendTimeSyncRequest(",
+        "receiveTimeSyncResponse(",
+    ):
+        if required not in text:
+            fail(loopback_cpp, f"loopback time-sync path is incomplete: {required}")
+
+if universe_clock_header.is_file():
+    text = universe_clock_header.read_text(encoding="utf-8", errors="replace")
+    if "duration_cast<seconds>" in text:
+        fail(universe_clock_header, "server universe clock is quantized to whole seconds")
+    if "duration<double>(now).count()" not in text:
+        fail(universe_clock_header, "server universe anchor is not high-resolution")
+    if "m_timeSeconds +=" not in text or "safeDt * timeScale()" not in text:
+        fail(universe_clock_header, "universe timeline is not advanced from authoritative server dt")
+
+if session_header.is_file():
+    text = session_header.read_text(encoding="utf-8", errors="replace")
+    if "universeTimelineRevision" not in text:
+        fail(session_header, "session snapshot does not version universe timeline changes")
+
+if client_cpp.is_file():
+    text = client_cpp.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "estimatedServerTimeSeconds()",
+        "renderServerTimeSeconds()",
+        "renderUniverseTimeSeconds()",
+        "RenderInterpolationDelaySeconds",
+        "m_transport.sendTimeSyncRequest(request)",
+        "m_transport.receiveTimeSyncResponse(response)",
+    ):
+        if required not in text:
+            fail(client_cpp, f"global client time pipeline is incomplete: {required}")
+
+    for forbidden in (
+        "m_universeClock",
+        "m_clientTime",
+        "m_renderDelay",
+    ):
+        if forbidden in text:
+            fail(client_cpp, f"obsolete independent client time source returned: {forbidden}")
+
+if client_world_header.is_file():
+    text = client_world_header.read_text(encoding="utf-8", errors="replace")
+    for forbidden in ("m_clientTime", "m_renderDelay"):
+        if forbidden in text:
+            fail(client_world_header, f"ClientWorldState owns a second render clock: {forbidden}")
+    if "double renderServerTimeSeconds" not in text:
+        fail(client_world_header, "ClientWorldState does not consume global render server time")
+
+if client_world_cpp.is_file():
+    text = client_world_cpp.read_text(encoding="utf-8", errors="replace")
+    if "double renderTime = renderServerTimeSeconds" not in text:
+        fail(client_world_cpp, "snapshot interpolation does not use global render server time")
+
+if space_state_cpp.is_file():
+    text = space_state_cpp.read_text(encoding="utf-8", errors="replace")
+    if "static_cast<double>(std::max(0.0f, dt))" not in text:
+        fail(space_state_cpp, "raw wall delta is not separated from clamped prediction delta")
+
+if server_cpp.is_file():
+    text = server_cpp.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "m_universeTimelineRevision",
+        "snapshot.session.universeTimelineRevision",
+    ):
+        if required not in text:
+            fail(server_cpp, f"server universe timeline revision is incomplete: {required}")
+
 
 if errors:
     print("World runtime architecture check failed:", file=sys.stderr)

@@ -56,27 +56,27 @@ struct ClientShipState
     game::simulation::ShipReferenceFrameSnapshot    renderReferenceFrame;
     const ShipDescriptor*                           descriptor = nullptr;
 
-    ShipSignalPresentation                          signalPresentation; 
+    ShipSignalPresentation                          signalPresentation;
     std::vector<SignalReceptionResult>              receptions;
     std::vector<game::RadarContact>                 radarContacts;
-    
+
     const game::ship::geometry::ObjectAssembly*     assembly = nullptr;
-    
+
     game::ShipCoreStatus                            shipCoreStatus;
     std::vector<game::damage::DamageEvent>           damageEvents;
 
     std::vector<game::simulation::ObjectModuleSnapshot> modules;
     std::vector<game::simulation::StructuralLinkSnapshot> structuralLinks;
     std::vector<game::simulation::ObjectAssemblyModuleSnapshot> assemblyModules;
-    
+
     std::vector<game::simulation::ObjectDetachedFragmentSnapshot> detachedFragments;
     std::vector<game::simulation::ObjectRepairJobSnapshot> repairJobs;
     std::unordered_set<std::string>                     hiddenPartIds;
     std::unordered_map<std::string, float> detachedVisualAge;
     std::vector<game::simulation::DebugHitVolumeSnapshot> debugHitVolumes;
 
-    
-    
+
+
 };
 
 
@@ -89,16 +89,16 @@ struct ClientObjectState
     // Legacy mirror of worldPosition.
     // Do not use as source of truth.
     glm::vec3 position {0.0f};
-    
+
     // glm::vec3                                       rotation;
     // glm::vec3                                       renderRotation;
     glm::mat4 orientation {1.0f};
-    glm::mat4 renderOrientation {1.0f}; 
-    
+    glm::mat4 renderOrientation {1.0f};
+
     // текущие (для рендера)
     world::coordinates::WorldPosition renderWorldPosition;
-    
-    
+
+
     const game::ship::geometry::ObjectAssembly*     assembly = nullptr;
 
     const IObjectDescriptor*                                        descriptor = nullptr;
@@ -130,15 +130,10 @@ class ClientWorldState
 public:
 
     void applySnapshot(const SimulationSnapshot& snapshot);
-    void update(float dt);
+    void update(float dt, bool authoritativePlayerRendering = false);
 
     const std::unordered_map<uint32_t, ClientShipState>& ships() const {return m_ships;}
     const std::unordered_map<uint32_t, ClientObjectState>& objects() const {return m_objects;}
-
-    std::unordered_map<uint32_t, ClientShipState>& ships()
-    {
-        return m_ships;
-    }
 
     std::vector<game::visual::VisualShip>& visualShips()
     {
@@ -169,7 +164,7 @@ public:
     {
         m_visualShips.clear();
     }
-    
+
     void predict(
         EntityId id,
         const ShipControlState& control,
@@ -186,7 +181,7 @@ private:
     std::deque<SimulationSnapshot>                  m_snapshotBuffer;
     ShipSignalPresentation                          signalPresentation;
 
-    
+
     double m_renderDelay = 0.45; // 100 ms
     double m_clientTime = 0.0;
 

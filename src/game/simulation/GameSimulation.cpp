@@ -46,6 +46,68 @@
 
 namespace
 {
+    glm::dvec3 passiveTrajectoryAcceleration(
+        const glm::dvec3& relativePositionMeters,
+        double gravitationalParameterM3s2
+    )
+    {
+        const double radiusSquared =
+            glm::length2(relativePositionMeters);
+
+        if (gravitationalParameterM3s2 <= 0.0 ||
+            radiusSquared <= 1.0)
+        {
+            return glm::dvec3(0.0);
+        }
+
+        const double radius =
+            std::sqrt(radiusSquared);
+
+        return
+            -gravitationalParameterM3s2 *
+            relativePositionMeters /
+            (radiusSquared * radius);
+    }
+
+    bool isFiniteVector(const glm::dvec3& value)
+    {
+        return
+            std::isfinite(value.x) &&
+            std::isfinite(value.y) &&
+            std::isfinite(value.z);
+    }
+
+    void integratePassiveTrajectoryStep(
+        glm::dvec3& relativePositionMeters,
+        glm::dvec3& relativeVelocityMps,
+        double gravitationalParameterM3s2,
+        double dt
+    )
+    {
+        const glm::dvec3 accelerationBefore =
+            passiveTrajectoryAcceleration(
+                relativePositionMeters,
+                gravitationalParameterM3s2
+            );
+
+        const glm::dvec3 halfStepVelocity =
+            relativeVelocityMps +
+            accelerationBefore * (0.5 * dt);
+
+        relativePositionMeters +=
+            halfStepVelocity * dt;
+
+        const glm::dvec3 accelerationAfter =
+            passiveTrajectoryAcceleration(
+                relativePositionMeters,
+                gravitationalParameterM3s2
+            );
+
+        relativeVelocityMps =
+            halfStepVelocity +
+            accelerationAfter * (0.5 * dt);
+    }
+
     glm::dvec3 transformPointNoTranslation(
         const glm::mat4& m,
         const glm::dvec3& v
@@ -354,6 +416,469 @@ void GameSimulation::buildInitialScene()
 }
 
 
+bool GameSimulation::enterPassiveTrajectoryMode(
+    double startUniverseTimeSeconds
+)
+{
+    bool playerEntered = false;
+
+    for (auto& [id, shipPtr] : m_ships)
+    {
+        if (!shipPtr)
+            continue;
+
+        auto& tr = shipPtr->core().transform();
+        auto& motion = tr.motion;
+
+        if (motion.mode ==
+            game::navigation::MotionMode::PassiveTrajectory)
+        {
+            if (id == m_playerId)
+                playerEntered = true;
+
+            continue;
+        }
+
+        if (motion.mode ==
+            game::navigation::MotionMode::Destroyed)
+        {
+            continue;
+        }
+
+        std::string parentBodyId;
+        const game::navigation::HubNavigationFrame* sourceHubFrame = nullptr;
+
+        if (!motion.hubId.empty())
+        {
+            sourceHubFrame = hubNavigationFrame(motion.hubId);
+
+            if (sourceHubFrame && sourceHubFrame->valid)
+                parentBodyId = sourceHubFrame->parentBodyId;
+        }
+
+        if (parentBodyId.empty())
+            parentBodyId = motion.primaryGravityBodyId;
+
+        if (parentBodyId.empty())
+            parentBodyId = motion.parentBodyId;
+
+        const auto gravityIt =
+            m_celestialBodyGravityParameters.find(parentBodyId);
+
+        if (gravityIt ==
+                m_celestialBodyGravityParameters.end() ||
+            gravityIt->second.gravitationalParameterM3s2 <= 0.0 ||
+            gravityIt->second.radiusMeters <= 0.0)
+        {
+            std::cerr
+                << "[PassiveTrajectory] rejected ship=" << id
+                << " epoch=" << startUniverseTimeSeconds
+                << " reason=missing_parent_gravity"
+                << " parent=" << parentBodyId << "\n";
+
+            continue;
+        }
+
+        // The seed must be captured entirely from the last completed
+        // authoritative epoch. Do not mix the previous celestial position
+        // with the current velocity cache or vice versa.
+        const auto parentPositionIt =
+            m_celestialBodyPositionsAu.find(parentBodyId);
+
+        const auto parentVelocityIt =
+            m_celestialBodyVelocitiesMetersPerSecond.find(
+                parentBodyId
+            );
+
+        if (parentPositionIt ==
+                m_celestialBodyPositionsAu.end() ||
+            parentVelocityIt ==
+                m_celestialBodyVelocitiesMetersPerSecond.end())
+        {
+            std::cerr
+                << "[PassiveTrajectory] rejected ship=" << id
+                << " epoch=" << startUniverseTimeSeconds
+                << " reason=incomplete_parent_kinematics"
+                << " parent=" << parentBodyId << "\n";
+
+            continue;
+        }
+
+        const glm::dvec3 parentCenterMeters =
+            parentPositionIt->second *
+            world::celestial::MetersPerAu;
+
+        const glm::dvec3 parentVelocityMps =
+            parentVelocityIt->second;
+
+        const glm::dvec3 shipWorldPositionMeters =
+            tr.fullWorldMeters();
+
+        const glm::dvec3 shipWorldVelocityMps =
+            motion.worldVelocityMps;
+
+        const glm::dvec3 relativePositionMeters =
+            shipWorldPositionMeters - parentCenterMeters;
+
+        const glm::dvec3 relativeVelocityMps =
+            shipWorldVelocityMps - parentVelocityMps;
+
+        const double radiusMeters =
+            glm::length(relativePositionMeters);
+
+        const bool finiteSeed =
+            std::isfinite(startUniverseTimeSeconds) &&
+            isFiniteVector(parentCenterMeters) &&
+            isFiniteVector(parentVelocityMps) &&
+            isFiniteVector(shipWorldPositionMeters) &&
+            isFiniteVector(shipWorldVelocityMps) &&
+            isFiniteVector(relativePositionMeters) &&
+            isFiniteVector(relativeVelocityMps) &&
+            std::isfinite(radiusMeters);
+
+        if (!finiteSeed ||
+            radiusMeters <= gravityIt->second.radiusMeters)
+        {
+            std::cerr
+                << "[PassiveTrajectory] rejected ship=" << id
+                << " epoch=" << startUniverseTimeSeconds
+                << " reason=invalid_seed"
+                << " parent=" << parentBodyId
+                << " radius_m=" << radiusMeters
+                << " parent_radius_m="
+                << gravityIt->second.radiusMeters
+                << "\n";
+
+            continue;
+        }
+
+        const double relativeSpeedMps =
+            glm::length(relativeVelocityMps);
+
+        const double circularSpeedMps =
+            std::sqrt(
+                gravityIt->second.gravitationalParameterM3s2 /
+                radiusMeters
+            );
+
+        double distanceFromHubMeters = -1.0;
+
+        if (sourceHubFrame && sourceHubFrame->valid)
+        {
+            distanceFromHubMeters =
+                glm::length(
+                    shipWorldPositionMeters -
+                    sourceHubFrame->originMeters
+                );
+        }
+
+        std::cout
+            << "[PassiveTrajectory] seed ship=" << id
+            << " epoch=" << startUniverseTimeSeconds
+            << " parent=" << parentBodyId
+            << " radius_m=" << radiusMeters
+            << " altitude_m="
+            << radiusMeters - gravityIt->second.radiusMeters
+            << " relative_speed_mps=" << relativeSpeedMps
+            << " circular_speed_mps=" << circularSpeedMps
+            << " speed_error_mps="
+            << relativeSpeedMps - circularSpeedMps
+            << " hub_distance_m=" << distanceFromHubMeters
+            << "\n";
+
+        motion.resumeModeAfterPassiveTrajectory =
+            motion.mode;
+
+        motion.passiveTrajectoryParentBodyId =
+            parentBodyId;
+
+        motion.passiveTrajectoryRelativePositionMeters =
+            relativePositionMeters;
+
+        motion.passiveTrajectoryRelativeVelocityMps =
+            relativeVelocityMps;
+
+        motion.passiveTrajectoryEpochUniverseTimeSeconds =
+            startUniverseTimeSeconds;
+
+        motion.mode =
+            game::navigation::MotionMode::PassiveTrajectory;
+
+        motion.parentBodyId = parentBodyId;
+        motion.engineAccelerationMps2 = glm::dvec3(0.0);
+        motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
+        motion.desiredRelativeVelocityMps = glm::dvec3(0.0);
+
+        if (id == m_playerId)
+            playerEntered = true;
+    }
+
+    return playerEntered;
+}
+
+void GameSimulation::exitPassiveTrajectoryMode()
+{
+    for (auto& [id, shipPtr] : m_ships)
+    {
+        if (!shipPtr)
+            continue;
+
+        auto& tr = shipPtr->core().transform();
+        auto& motion = tr.motion;
+
+        if (motion.mode !=
+            game::navigation::MotionMode::PassiveTrajectory)
+        {
+            continue;
+        }
+
+        const std::string parentBodyId =
+            motion.passiveTrajectoryParentBodyId;
+
+        const auto parentPositionIt =
+            m_celestialBodyPositionsAu.find(parentBodyId);
+
+        if (parentPositionIt !=
+            m_celestialBodyPositionsAu.end())
+        {
+            const glm::dvec3 parentCenterMeters =
+                parentPositionIt->second *
+                world::celestial::MetersPerAu;
+
+            tr.setWorldPositionMeters(
+                parentCenterMeters +
+                motion.passiveTrajectoryRelativePositionMeters
+            );
+        }
+
+        glm::dvec3 parentVelocityMps {0.0};
+
+        const auto parentVelocityIt =
+            m_celestialBodyVelocitiesMetersPerSecond.find(
+                parentBodyId
+            );
+
+        if (parentVelocityIt !=
+            m_celestialBodyVelocitiesMetersPerSecond.end())
+        {
+            parentVelocityMps = parentVelocityIt->second;
+        }
+
+        motion.worldVelocityMps =
+            parentVelocityMps +
+            motion.passiveTrajectoryRelativeVelocityMps;
+
+        const auto resumeMode =
+            motion.resumeModeAfterPassiveTrajectory;
+
+        if (resumeMode ==
+            game::navigation::MotionMode::HubTactical)
+        {
+            const auto* frame =
+                hubNavigationFrame(motion.hubId);
+
+            if (frame && frame->valid)
+            {
+                motion.mode =
+                    game::navigation::MotionMode::HubTactical;
+
+                motion.parentBodyId =
+                    frame->parentBodyId;
+
+                motion.referenceVelocityMps =
+                    frame->velocityMetersPerSecond;
+
+                motion.localPositionMeters =
+                    frame->worldToLocalPosition(
+                        tr.fullWorldMeters()
+                    );
+
+                motion.localVelocityMps =
+                    frame->worldToLocalVelocity(
+                        motion.worldVelocityMps
+                    );
+
+                tr.referenceVelocityMetersPerSecond =
+                    frame->velocityMetersPerSecond;
+            }
+            else
+            {
+                motion.mode =
+                    game::navigation::MotionMode::Inertial;
+            }
+        }
+        else
+        {
+            motion.mode =
+                resumeMode ==
+                    game::navigation::MotionMode::PassiveTrajectory
+                ? game::navigation::MotionMode::Inertial
+                : resumeMode;
+        }
+
+        motion.passiveTrajectoryParentBodyId.clear();
+        motion.passiveTrajectoryRelativePositionMeters =
+            glm::dvec3(0.0);
+        motion.passiveTrajectoryRelativeVelocityMps =
+            glm::dvec3(0.0);
+        motion.passiveTrajectoryEpochUniverseTimeSeconds = 0.0;
+        motion.resumeModeAfterPassiveTrajectory =
+            game::navigation::MotionMode::Inertial;
+        motion.engineAccelerationMps2 = glm::dvec3(0.0);
+        motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
+    }
+}
+
+
+void GameSimulation::advancePassiveTrajectories(
+    double universeDeltaSeconds
+)
+{
+    constexpr double MaxSubstepSeconds = 5.0;
+    constexpr int MaxSubsteps = 512;
+
+    const double absDelta =
+        std::abs(universeDeltaSeconds);
+
+    const int substeps =
+        absDelta > 0.000001
+        ? std::clamp(
+            static_cast<int>(
+                std::ceil(absDelta / MaxSubstepSeconds)
+            ),
+            1,
+            MaxSubsteps
+        )
+        : 0;
+
+    const double substepDelta =
+        substeps > 0
+        ? universeDeltaSeconds /
+            static_cast<double>(substeps)
+        : 0.0;
+
+    for (auto& [id, shipPtr] : m_ships)
+    {
+        if (!shipPtr)
+            continue;
+
+        auto& tr = shipPtr->core().transform();
+        auto& motion = tr.motion;
+
+        if (motion.mode !=
+            game::navigation::MotionMode::PassiveTrajectory)
+        {
+            continue;
+        }
+
+        const auto gravityIt =
+            m_celestialBodyGravityParameters.find(
+                motion.passiveTrajectoryParentBodyId
+            );
+
+        if (gravityIt ==
+            m_celestialBodyGravityParameters.end())
+        {
+            continue;
+        }
+
+        const double gravitationalParameter =
+            gravityIt->second.gravitationalParameterM3s2;
+
+        for (int step = 0; step < substeps; ++step)
+        {
+            integratePassiveTrajectoryStep(
+                motion.passiveTrajectoryRelativePositionMeters,
+                motion.passiveTrajectoryRelativeVelocityMps,
+                gravitationalParameter,
+                substepDelta
+            );
+        }
+
+        const glm::dvec3 relativeAcceleration =
+            passiveTrajectoryAcceleration(
+                motion.passiveTrajectoryRelativePositionMeters,
+                gravitationalParameter
+            );
+
+        motion.gravityAccelerationMps2 =
+            relativeAcceleration;
+
+        const double distanceMeters =
+            glm::length(
+                motion.passiveTrajectoryRelativePositionMeters
+            );
+
+        motion.primaryGravityBodyId =
+            motion.passiveTrajectoryParentBodyId;
+        motion.primaryGravityDistanceMeters = distanceMeters;
+        motion.primaryGravityAltitudeMeters =
+            distanceMeters - gravityIt->second.radiusMeters;
+        motion.primaryGravityAccelerationMps2 =
+            glm::length(relativeAcceleration);
+
+        const auto parentPositionIt =
+            m_celestialBodyPositionsAu.find(
+                motion.passiveTrajectoryParentBodyId
+            );
+
+        if (parentPositionIt ==
+            m_celestialBodyPositionsAu.end())
+        {
+            continue;
+        }
+
+        const glm::dvec3 parentCenterMeters =
+            parentPositionIt->second *
+            world::celestial::MetersPerAu;
+
+        glm::dvec3 parentVelocityMps {0.0};
+
+        const auto parentVelocityIt =
+            m_celestialBodyVelocitiesMetersPerSecond.find(
+                motion.passiveTrajectoryParentBodyId
+            );
+
+        if (parentVelocityIt !=
+            m_celestialBodyVelocitiesMetersPerSecond.end())
+        {
+            parentVelocityMps = parentVelocityIt->second;
+        }
+
+        tr.setWorldPositionMeters(
+            parentCenterMeters +
+            motion.passiveTrajectoryRelativePositionMeters
+        );
+
+        motion.worldVelocityMps =
+            parentVelocityMps +
+            motion.passiveTrajectoryRelativeVelocityMps;
+
+        const auto* frame =
+            hubNavigationFrame(motion.hubId);
+
+        if (frame && frame->valid)
+        {
+            motion.referenceVelocityMps =
+                frame->velocityMetersPerSecond;
+
+            motion.localPositionMeters =
+                frame->worldToLocalPosition(
+                    tr.fullWorldMeters()
+                );
+
+            motion.localVelocityMps =
+                frame->worldToLocalVelocity(
+                    motion.worldVelocityMps
+                );
+
+            tr.referenceVelocityMetersPerSecond =
+                frame->velocityMetersPerSecond;
+        }
+    }
+}
+
+
 //                       ###              ##
 //                        ##              ##
 //  ##  ##   ######       ##    ####     #####    ####
@@ -367,7 +892,20 @@ void GameSimulation::update(
     const game::server::ServerTimeContext& time
 )
 {
-    const double dt = time.gameplayDeltaSeconds;
+    const bool trajectoryDebugMode =
+        time.universeTimeSimulation;
+
+    // Normal gameplay systems remain frozen while universe time is being
+    // accelerated for trajectory diagnostics. Only passive orbital/ballistic
+    // motion advances by universeDeltaSeconds.
+    const double dt = trajectoryDebugMode
+        ? 0.0
+        : time.gameplayDeltaSeconds;
+
+    const double trajectoryDeltaSeconds = trajectoryDebugMode
+        ? time.universeDeltaSeconds
+        : time.gameplayDeltaSeconds;
+
     m_orbitalUniverseTimeSeconds = time.universeTimeSeconds;
     m_npcRepairThinkTimerSeconds += dt;
 
@@ -383,59 +921,8 @@ void GameSimulation::update(
     m_serverTime += dt;
 
 
-
-
-
-
-
-// ------------------------------------------------------------
-// Celestial body velocity cache.
-//
-// Позиции тел приходят из CelestialRuntime в AU.
-// Для хабов нам нужна не только локальная скорость вокруг планеты,
-// но и скорость самой планеты вокруг звезды.
-// Поэтому считаем производную позиции каждого небесного тела.
-// ------------------------------------------------------------
-// ------------------------------------------------------------
-// Celestial body velocity cache.
-//
-// ВАЖНО:
-// при dt == 0 не пересчитываем и не очищаем скорости.
-// На старте они уже посеяны через setCelestialBodyKinematicStateAu().
-// Иначе стартовый update(0.0) убивает скорость Земли,
-// и игрок спаунится с неполным орбитальным вектором.
-// ------------------------------------------------------------
-const double celestialSampleDtSeconds =
-    std::abs(time.universeDeltaSeconds);
-
-if (celestialSampleDtSeconds > 0.000001)
-{
-    m_celestialBodyVelocitiesMetersPerSecond.clear();
-
-    for (const auto& [bodyId, positionAu] : m_celestialBodyPositionsAu)
-    {
-        const glm::dvec3 positionMeters =
-            positionAu * world::celestial::MetersPerAu;
-
-        glm::dvec3 velocityMetersPerSecond {0.0};
-
-        auto prevIt =
-            m_previousCelestialBodyPositionsMeters.find(bodyId);
-
-        if (prevIt != m_previousCelestialBodyPositionsMeters.end())
-        {
-            velocityMetersPerSecond =
-                (positionMeters - prevIt->second) /
-                time.universeDeltaSeconds;
-        }
-
-        m_celestialBodyVelocitiesMetersPerSecond[bodyId] =
-            velocityMetersPerSecond;
-
-        m_previousCelestialBodyPositionsMeters[bodyId] =
-            positionMeters;
-    }
-}
+// Celestial positions and velocities are injected atomically by GameServer
+// from the server-owned CelestialRuntimeRegistry before this update.
 
 
 
@@ -646,6 +1133,9 @@ m_previousHubPositionMeters[hubId] =
 
     rebuildHubNavigationFrames(dt);
 
+    if (!trajectoryDebugMode)
+        exitPassiveTrajectoryMode();
+
 
 
     for (auto& [id, obj] : m_staticObjects)
@@ -751,161 +1241,139 @@ m_previousHubPositionMeters[hubId] =
 
 
 
-    // === 1. AI phase ===
-    for (auto& [id, shipPtr] : m_ships)
+    // === 1. AI / controls / attitude ===
+    if (!trajectoryDebugMode)
     {
-        Ship& ship = *shipPtr;        
-        if (id == m_playerId)
-            continue;
+        for (auto& [id, shipPtr] : m_ships)
+        {
+            Ship& ship = *shipPtr;
+            if (id == m_playerId)
+                continue;
 
-        ShipControlState aiControl = m_npcAiSystem.computeControl(ship, fdt);
-        ship.setControlState(aiControl);
+            ShipControlState aiControl =
+                m_npcAiSystem.computeControl(ship, fdt);
+            ship.setControlState(aiControl);
+        }
+
+        for (auto& [id, shipPtr] : m_ships)
+        {
+            Ship& ship = *shipPtr;
+            ship.applyControl();
+        }
+
+        for (auto& [id, shipPtr] : m_ships)
+        {
+            if (!shipPtr)
+                continue;
+
+            Ship& ship = *shipPtr;
+            ship.updatePhysics(fdt, m_world);
+        }
+
+        for (auto& [id, shipPtr] : m_ships)
+        {
+            if (!shipPtr)
+                continue;
+
+            auto& tr = shipPtr->core().transform();
+
+            if (tr.motion.mode !=
+                game::navigation::MotionMode::HubTactical)
+            {
+                continue;
+            }
+
+            const auto* frame =
+                hubNavigationFrame(tr.motion.hubId);
+
+            if (!frame || !frame->valid)
+                continue;
+
+            const auto& control = shipPtr->core().control();
+
+            game::navigation::DynamicMotionSystem::applyHubTacticalInput(
+                tr.motion,
+                *frame,
+                fdt,
+                control.targetSpeedRate,
+                control.cruiseActive,
+                control.forwardInput,
+                control.liftInput,
+                control.strafeInput,
+                tr.forward(),
+                tr.right(),
+                tr.up()
+            );
+        }
     }
-
-    for (auto& [id, shipPtr] : m_ships)
+    else
     {
-        Ship& ship = *shipPtr;
-        ship.applyControl();
+        for (auto& [id, shipPtr] : m_ships)
+        {
+            if (!shipPtr)
+                continue;
+
+            auto& motion = shipPtr->core().transform().motion;
+            motion.engineAccelerationMps2 = glm::dvec3(0.0);
+            motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
+        }
     }
-
-
-
-    for (auto& [id, shipPtr] : m_ships)
-    {
-        if (!shipPtr)
-            continue;
-
-        Ship& ship =
-            *shipPtr;
-
-        // Теперь это только attitude/orientation.
-        // Линейное движение здесь не считается.
-        ship.updatePhysics(fdt, m_world);
-    }
-
-
-
-
-
-    for (auto& [id, shipPtr] : m_ships)
-    {
-        if (!shipPtr)
-            continue;
-
-        auto& tr =
-            shipPtr->core().transform();
-
-        if (tr.motion.mode != game::navigation::MotionMode::HubTactical)
-            continue;
-
-        const auto* frame =
-            hubNavigationFrame(tr.motion.hubId);
-
-        if (!frame || !frame->valid)
-            continue;
-
-
-        const auto& control =
-            shipPtr->core().control();
-
-        game::navigation::DynamicMotionSystem::applyHubTacticalInput(
-            tr.motion,
-            *frame,
-            fdt,
-            control.targetSpeedRate,
-            control.cruiseActive,
-            control.forwardInput,
-            control.liftInput,
-            control.strafeInput,
-            tr.forward(),
-            tr.right(),
-            tr.up()
-        );
-
-
-    }
-
-
-
-
-
-
-
-
-
 
 
     updateShipReferenceFrames(dt);
 
     rebuildNavigationGravityContext();
 
-    // Сначала считаем гравитацию и орбитальный контекст
-    // по текущей позиции.
-    updateDynamicNavigationContext(dt);
-
-
-
-
-
-    // Потом применяем гравитацию и двигаем корабль.
-    for (auto& [id, shipPtr] : m_ships)
+    // In debug trajectory mode the ship is propagated relative to its
+    // celestial parent. The parent continues along the authoritative
+    // ephemeris, while the ship follows an unpowered two-body trajectory.
+    if (trajectoryDebugMode)
     {
-        if (!shipPtr)
-            continue;
-
-        auto& tr =
-            shipPtr->core().transform();
-
-        if (tr.motion.mode != game::navigation::MotionMode::HubTactical)
-            continue;
-
-        const auto* frame =
-            hubNavigationFrame(tr.motion.hubId);
-
-        if (!frame || !frame->valid)
-            continue;
-
-        game::navigation::DynamicMotionSystem::updateHubTactical(
-            tr.motion,
-            tr.worldPosition,
-            *frame,
-            dt
+        advancePassiveTrajectories(
+            trajectoryDeltaSeconds
         );
 
+        // Populate final-frame diagnostics after converting the authoritative
+        // parent-relative state back to world space.
+        updateDynamicNavigationContext(0.0);
+    }
+    else
+    {
+        updateDynamicNavigationContext(dt);
 
+        for (auto& [id, shipPtr] : m_ships)
+        {
+            if (!shipPtr)
+                continue;
 
+            auto& tr = shipPtr->core().transform();
 
+            if (tr.motion.mode !=
+                game::navigation::MotionMode::HubTactical)
+            {
+                continue;
+            }
 
+            const auto* frame =
+                hubNavigationFrame(tr.motion.hubId);
 
+            if (!frame || !frame->valid)
+                continue;
 
+            game::navigation::DynamicMotionSystem::updateHubTactical(
+                tr.motion,
+                tr.worldPosition,
+                *frame,
+                dt
+            );
 
+            tr.referenceVelocityMetersPerSecond =
+                tr.motion.referenceVelocityMps;
+        }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        tr.referenceVelocityMetersPerSecond =
-            tr.motion.referenceVelocityMps;
+        updateDynamicNavigationContext(dt);
     }
 
-
-    updateDynamicNavigationContext(dt);
 
 
 
@@ -1471,54 +1939,18 @@ GameSimulation::staticObjects() const
 }
 
 
-void GameSimulation::setCelestialBodyWorldPositionsAu(
-    const std::unordered_map<std::string, glm::dvec3>& positionsAu
+void GameSimulation::setCelestialBodyKinematicStateAu(
+    const std::unordered_map<std::string, glm::dvec3>& positionsAu,
+    const std::unordered_map<std::string, glm::dvec3>& velocitiesAuPerSecond
 )
 {
     m_celestialBodyPositionsAu = positionsAu;
-}
-
-
-
-void GameSimulation::setCelestialBodyKinematicStateAu(
-    const std::unordered_map<std::string, glm::dvec3>& currentPositionsAu,
-    const std::unordered_map<std::string, glm::dvec3>& previousPositionsAu,
-    double sampleDtSeconds
-)
-{
-    m_celestialBodyPositionsAu =
-        currentPositionsAu;
-
-    m_previousCelestialBodyPositionsMeters.clear();
     m_celestialBodyVelocitiesMetersPerSecond.clear();
 
-    if (sampleDtSeconds <= 0.000001)
-        return;
-
-    for (const auto& [bodyId, currentAu] : currentPositionsAu)
+    for (const auto& [bodyId, velocityAuPerSecond] : velocitiesAuPerSecond)
     {
-        const glm::dvec3 currentMeters =
-            currentAu * world::celestial::MetersPerAu;
-
-        m_previousCelestialBodyPositionsMeters[bodyId] =
-            currentMeters;
-
-        auto prevIt =
-            previousPositionsAu.find(bodyId);
-
-        if (prevIt == previousPositionsAu.end())
-        {
-            m_celestialBodyVelocitiesMetersPerSecond[bodyId] =
-                glm::dvec3(0.0);
-
-            continue;
-        }
-
-        const glm::dvec3 previousMeters =
-            prevIt->second * world::celestial::MetersPerAu;
-
         m_celestialBodyVelocitiesMetersPerSecond[bodyId] =
-            (currentMeters - previousMeters) / sampleDtSeconds;
+            velocityAuPerSecond * world::celestial::MetersPerAu;
     }
 }
 
@@ -1526,6 +1958,26 @@ void GameSimulation::setCelestialBodyKinematicStateAu(
 
 
 
+
+
+void GameSimulation::setCelestialBodyGravityParameters(
+    const std::string& bodyId,
+    double radiusMeters,
+    double gravitationalParameterM3s2
+)
+{
+    if (bodyId.empty())
+        return;
+
+    CelestialBodyGravityParameters parameters;
+    parameters.radiusMeters =
+        std::max(0.0, radiusMeters);
+    parameters.gravitationalParameterM3s2 =
+        std::max(0.0, gravitationalParameterM3s2);
+
+    m_celestialBodyGravityParameters[bodyId] =
+        parameters;
+}
 
 
 void GameSimulation::setOrbitalUniverseTimeSeconds(double t)
@@ -2780,15 +3232,14 @@ bool GameSimulation::resolveCelestialBodyMeters(
     outCenterMeters =
         it->second * world::celestial::MetersPerAu;
 
-    // Пока радиусы ещё не храним в GameSimulation.
-    // Для Земли ставим правильный радиус, позже перенесём радиусы из CelestialRuntime.
-    if (bodyId == "system_0.Sol.Земля")
-    {
-        outRadiusMeters = 6371000.0;
-        return true;
-    }
+    const auto gravityIt =
+        m_celestialBodyGravityParameters.find(bodyId);
 
-    outRadiusMeters = 0.0;
+    outRadiusMeters =
+        gravityIt != m_celestialBodyGravityParameters.end()
+        ? gravityIt->second.radiusMeters
+        : 0.0;
+
     return true;
 }
 
@@ -3121,8 +3572,13 @@ void GameSimulation::rebuildNavigationGravityContext()
     earth.radiusMeters =
         earthRadiusMeters;
 
+    const auto earthGravityIt =
+        m_celestialBodyGravityParameters.find(earthId);
+
     earth.gravitationalParameterM3s2 =
-        3.986004418e14;
+        earthGravityIt != m_celestialBodyGravityParameters.end()
+        ? earthGravityIt->second.gravitationalParameterM3s2
+        : 3.986004418e14;
 
     earth.atmosphereRadiusMeters =
         earth.radiusMeters + 120000.0;

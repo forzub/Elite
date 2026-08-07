@@ -1,5 +1,3 @@
-#include <iostream>
-#include <type_traits>
 #include <utility>
 #include "GameClient.h"
 #include "src/game/client/ClientWorldState.h"
@@ -23,9 +21,9 @@ void GameClient::beginSynchronization()
     m_pendingInputs.clear();
     m_predictionSuspended = false;
     m_accumulator = 0.0f;
+    m_universeClock.reset();
 
     requestStarAtlas();
-    requestCelestialSnapshot();
     refreshConnectionState();
 }
 
@@ -200,6 +198,14 @@ GameClient::playerNavigation() const
 }
 
 
+double GameClient::universeTimeSeconds() const
+{
+    return m_universeClock.synchronized()
+        ? m_universeClock.timeSeconds()
+        : m_sessionSnapshot.universeTimeSeconds;
+}
+
+
 bool GameClient::requestStarAtlas()
 {
     const bool ready = m_catalogs.requestStarAtlas();
@@ -207,9 +213,23 @@ bool GameClient::requestStarAtlas()
     return ready;
 }
 
-bool GameClient::requestCelestialSnapshot()
+bool GameClient::resolveCelestialSnapshot(bool forceRefresh)
 {
-    const bool ready = m_catalogs.requestCelestialSnapshot();
+    if (!m_hasSessionSnapshot ||
+        !m_universeClock.synchronized())
+    {
+        refreshConnectionState();
+        return false;
+    }
+
+    const bool ready =
+        m_catalogs.resolveCelestialSnapshot(
+            m_sessionSnapshot.playerNavigation.currentSystemId,
+            m_universeClock.timeSeconds(),
+            m_lastSimulationMetadata,
+            forceRefresh
+        );
+
     refreshConnectionState();
     return ready;
 }
@@ -232,14 +252,12 @@ bool GameClient::updateSynchronization(float dt)
 
     if (!m_catalogs.hasStarAtlas())
         m_catalogs.requestStarAtlas();
-    if (!m_catalogs.hasCelestialSnapshot())
-        m_catalogs.requestCelestialSnapshot();
 
-    if (m_catalogs.starAtlasStatus() == game::client::ClientRequestStatus::TimedOut ||
-        m_catalogs.celestialStatus() == game::client::ClientRequestStatus::TimedOut)
+    if (m_catalogs.starAtlasStatus() ==
+        game::client::ClientRequestStatus::TimedOut)
     {
         failSynchronization(
-            "Timed out while synchronizing presentation data"
+            "Timed out while synchronizing the world catalog"
         );
         return false;
     }
@@ -261,6 +279,10 @@ bool GameClient::updateSynchronization(float dt)
         m_hasAcceptedSnapshot = true;
         m_sessionSnapshot = snapshot.session;
         m_hasSessionSnapshot = true;
+        m_universeClock.synchronize(
+            snapshot.session.universeTimeSeconds,
+            snapshot.session.universeTimeScale
+        );
 
         m_world.applySnapshot(snapshot);
 
@@ -289,6 +311,14 @@ bool GameClient::updateSynchronization(float dt)
         }
     }
 
+    if (!acceptedSnapshot)
+    {
+        m_universeClock.advance(
+            static_cast<double>(dt)
+        );
+    }
+
+    (void)resolveCelestialSnapshot(acceptedSnapshot);
     refreshConnectionState();
     return acceptedSnapshot;
 }
@@ -300,11 +330,23 @@ void GameClient::updateGameplay(float dt, float fixedDt)
     if (!readyForGameplay())
     {
         m_accumulator = 0.0f;
-        m_world.update(dt);
+        m_world.update(dt, false);
         return;
     }
 
-    if (acceptedSnapshot)
+    const bool trajectoryDebugMode =
+        m_sessionSnapshot.universeTimeSimulation;
+
+    if (trajectoryDebugMode)
+    {
+        // During accelerated universe-time diagnostics the server owns a
+        // passive ballistic trajectory. Client controls and prediction must
+        // not fight that authoritative path.
+        m_pendingInputs.clear();
+        m_predictionSuspended = false;
+        m_accumulator = 0.0f;
+    }
+    else if (acceptedSnapshot)
     {
         replayPendingInputs(
             m_sessionSnapshot.predictionWorldParams,
@@ -312,17 +354,20 @@ void GameClient::updateGameplay(float dt, float fixedDt)
         );
     }
 
-    m_accumulator += dt;
-    const WorldParams& predictionWorld =
-        m_sessionSnapshot.predictionWorldParams;
-
-    while (m_accumulator >= fixedDt)
+    if (!trajectoryDebugMode)
     {
-        sendAndPredictFixedStep(predictionWorld, fixedDt);
-        m_accumulator -= fixedDt;
+        m_accumulator += dt;
+        const WorldParams& predictionWorld =
+            m_sessionSnapshot.predictionWorldParams;
+
+        while (m_accumulator >= fixedDt)
+        {
+            sendAndPredictFixedStep(predictionWorld, fixedDt);
+            m_accumulator -= fixedDt;
+        }
     }
 
-    m_world.update(dt);
+    m_world.update(dt, trajectoryDebugMode);
 }
 
 void GameClient::update(float dt, float fixedDt)
@@ -333,7 +378,7 @@ void GameClient::update(float dt, float fixedDt)
     {
         (void)updateSynchronization(dt);
         m_accumulator = 0.0f;
-        m_world.update(dt);
+        m_world.update(dt, false);
     }
 }
 

@@ -108,7 +108,7 @@ public:
         const world::celestial::SystemMapBody& body
     );
 
-    double environmentVisualTimeSeconds(
+    double visualEffectTimeSeconds(
         double sourceTimeSeconds
     );
 
@@ -186,9 +186,9 @@ private:
     bool m_mapStarfieldInitialized = false;
     bool m_galaxyBackdropStarfieldInitialized = false;
 
-    double m_environmentVisualTimeSeconds = 0.0;
-    double m_environmentLastSourceTimeSeconds = 0.0;
-    double m_environmentLastWallClockSeconds = 0.0;
-    bool m_environmentVisualTimeInitialized = false;
+    double m_visualEffectTimeSeconds = 0.0;
+    double m_visualEffectLastSourceTimeSeconds = 0.0;
+    double m_visualEffectLastWallClockSeconds = 0.0;
+    bool m_visualEffectTimeInitialized = false;
 };
 }

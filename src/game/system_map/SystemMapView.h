@@ -138,10 +138,6 @@ namespace game::system_map
 
         float lastScale = 1.0f;
 
-        int presentationSystemId = -1;
-        double presentationSourceTimeSeconds = 0.0;
-        double presentationWallTimeSeconds = 0.0;
-        double presentationTimeScale = 1.0;
 
         glm::dvec3 orbitPivotAbsolute {0.0, 0.0, 0.0};
         bool orbitPivotActive = false;

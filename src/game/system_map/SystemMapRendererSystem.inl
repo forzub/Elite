@@ -5,7 +5,6 @@
     Не добавлять его в CMake как отдельную единицу компиляции.
 */
 
-#include "src/world/celestial/CelestialOrbitKinematics.h"
 
 namespace
 {

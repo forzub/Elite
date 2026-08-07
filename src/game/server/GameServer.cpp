@@ -514,10 +514,7 @@ GameServer::GameServer()
 
         m_playerNavigation.currentSystemId = 0;
 
-        const auto* sol =
-            m_starAtlas.findSystem(m_playerNavigation.currentSystemId);
-
-        m_celestialRuntime.setSystem(sol);
+        m_celestialRuntimes.initialize(m_starAtlas);
 
 
 
@@ -525,47 +522,30 @@ GameServer::GameServer()
 const double universeTime =
     m_universeClock.timeSeconds();
 
-constexpr double kinematicSampleDtSeconds =
-    1.0;
 
-auto collectCelestialPositionsAu =
-    [this]()
+std::unordered_map<std::string, glm::dvec3>
+    currentCelestialPositionsAu;
+std::unordered_map<std::string, glm::dvec3>
+    currentCelestialVelocitiesAuPerSecond;
+
+if (const auto* celestial =
+        celestialSnapshotForSystem(
+            m_playerNavigation.currentSystemId
+        ))
+{
+    for (const auto& state : celestial->bodies)
     {
-        std::unordered_map<std::string, glm::dvec3> result;
+        currentCelestialPositionsAu[state.id] =
+            state.positionAu;
+        currentCelestialVelocitiesAuPerSecond[state.id] =
+            state.velocityAuPerSecond;
+    }
+}
 
-        for (const auto& state : m_celestialRuntime.snapshot().bodies)
-        {
-            result[state.id] =
-                state.positionAu;
-        }
-
-        return result;
-    };
-
-// Сэмпл на секунду раньше.
-m_celestialRuntime.update(
-    universeTime - kinematicSampleDtSeconds
-);
-
-const auto previousCelestialPositionsAu =
-    collectCelestialPositionsAu();
-
-// Текущий сэмпл.
-m_celestialRuntime.update(
-    universeTime
-);
-
-const auto currentCelestialPositionsAu =
-    collectCelestialPositionsAu();
-
-m_simulation.setOrbitalUniverseTimeSeconds(
-    universeTime
-);
-
+m_simulation.setOrbitalUniverseTimeSeconds(universeTime);
 m_simulation.setCelestialBodyKinematicStateAu(
     currentCelestialPositionsAu,
-    previousCelestialPositionsAu,
-    kinematicSampleDtSeconds
+    currentCelestialVelocitiesAuPerSecond
 );
 
 
@@ -637,6 +617,16 @@ m_simulation.setCelestialBodyKinematicStateAu(
 
 
 
+const world::celestial::CelestialSystemSnapshot*
+GameServer::celestialSnapshotForSystem(int systemId) const
+{
+    return m_celestialRuntimes.resolve(
+        systemId,
+        m_universeClock.timeSeconds()
+    );
+}
+
+
 void GameServer::applyCelestialOrbitParentParameters()
 {
     const int systemId =
@@ -656,9 +646,18 @@ void GameServer::applyCelestialOrbitParentParameters()
         if (body.radiusKm <= 0.0)
             continue;
 
+        const double radiusMeters =
+            body.radiusKm * 1000.0;
+
+        m_simulation.setCelestialBodyGravityParameters(
+            body.id,
+            radiusMeters,
+            body.gravitationalParameterM3s2
+        );
+
         m_simulation.updateStaticObjectOrbitParentParameters(
             body.id,
-            body.radiusKm * 1000.0,
+            radiusMeters,
             body.gravitationalParameterM3s2,
             true
         );
@@ -682,8 +681,28 @@ void GameServer::applyCelestialOrbitParentParameters()
 
 void GameServer::update(double dt)
 {
+    // Capture the passive-trajectory seed before the accelerated clock is
+    // advanced. At this point celestial bodies, hubs, reference frames and
+    // ships all belong to the same last completed authoritative epoch.
+    if (m_pendingPassiveTrajectoryEntry)
+    {
+        const bool playerEntered =
+            m_simulation.enterPassiveTrajectoryMode(
+                m_pendingPassiveTrajectoryEpochSeconds
+            );
 
+        m_pendingPassiveTrajectoryEntry = false;
 
+        if (!playerEntered)
+        {
+            std::cerr
+                << "[PassiveTrajectory] activation cancelled: "
+                << "player seed was not valid\n";
+
+            m_universeClock.setSimulationMode(false);
+            m_forceSnapshotPublication = true;
+        }
+    }
 
     m_universeClock.update(dt);
     m_serverTick++;
@@ -704,61 +723,82 @@ void GameServer::update(double dt)
 
     m_lastUniverseTimeSeconds = universeTime;
 
-    // 1. Применяем команды
+    // 1. Apply commands. In accelerated universe-time diagnostics ships are
+    // passive bodies: controls and event commands are acknowledged/discarded
+    // but never affect the trajectory. This prevents delayed commands from
+    // firing when normal gameplay resumes.
     for (auto& [id, shipPtr] : m_simulation.ships())
     {
         Ship& ship = *shipPtr;
-        auto it = m_pendingCommands.find(id.value);
-        if (it == m_pendingCommands.end())
-            continue;
 
-        auto& queue = it->second;
-
-        if (!queue.empty())
+        auto controlIt = m_pendingCommands.find(id.value);
+        if (controlIt != m_pendingCommands.end())
         {
-            const auto cmd = queue.front();
-            queue.pop_front();
+            auto& queue = controlIt->second;
 
-            ship.setControlState(cmd);
-            m_lastProcessedControlTicks[id.value] = cmd.controlTick;
+            if (!queue.empty())
+            {
+                const auto cmd = queue.back();
+                queue.clear();
+
+                m_lastProcessedControlTicks[id.value] = cmd.controlTick;
+
+                if (!time.universeTimeSimulation)
+                {
+                    ship.setControlState(cmd);
+                }
+            }
         }
 
-
-        // --- Обработка событийных ShipCommand ---
-        auto cmdIt = m_pendingClientShipCommands.find(id.value);
-        if (cmdIt != m_pendingClientShipCommands.end())
+        if (time.universeTimeSimulation)
         {
-            auto& cmdQueue = cmdIt->second;
+            ShipControlState neutralControl;
+            const auto ackIt = m_lastProcessedControlTicks.find(id.value);
+            if (ackIt != m_lastProcessedControlTicks.end())
+                neutralControl.controlTick = ackIt->second;
 
-            while (!cmdQueue.empty())
+            ship.setControlState(neutralControl);
+        }
+
+        auto cmdIt = m_pendingClientShipCommands.find(id.value);
+        if (cmdIt == m_pendingClientShipCommands.end())
+            continue;
+
+        auto& cmdQueue = cmdIt->second;
+
+        if (time.universeTimeSimulation)
+        {
+            cmdQueue.clear();
+            continue;
+        }
+
+        while (!cmdQueue.empty())
+        {
+            const auto& shipCmd = cmdQueue.front();
+
+            std::cout << "GameServer::update  - ClientShipCommand received: "
+                    << shipCmd.type << "\n";
+
+            switch (shipCmd.type)
             {
-                const auto& shipCmd = cmdQueue.front();
+                case ClientShipCommand::EjectCockpitCapsule:
+                    m_simulation.ejectShipCockpitCapsule(id);
+                    break;
 
-                std::cout << "GameServer::update  - ClientShipCommand received: "
-                        << shipCmd.type << "\n";
+                case ClientShipCommand::StartBestRepairJob:
+                    m_simulation.startBestRepairJobForFirstMissingSlot(id);
+                    break;
 
-                switch (shipCmd.type)
-                {
-                    case ClientShipCommand::EjectCockpitCapsule:
-                        m_simulation.ejectShipCockpitCapsule(id);
-                        break;
-
-                    case ClientShipCommand::StartBestRepairJob:
-                        m_simulation.startBestRepairJobForFirstMissingSlot(id);
-                        break;
-
-                    default:
-                        ship.applyCommand(shipCmd);
-                        break;
-                }
-
-                cmdQueue.pop_front();
+                default:
+                    ship.applyCommand(shipCmd);
+                    break;
             }
+
+            cmdQueue.pop_front();
         }
     }
 
 
-m_celestialRuntime.update(universeTime);
 
 m_simulation.setOrbitalUniverseTimeSeconds(
     universeTime
@@ -768,14 +808,25 @@ m_simulation.setOrbitalUniverseTimeSeconds(
 
 
 std::unordered_map<std::string, glm::dvec3> celestialPositionsAu;
+std::unordered_map<std::string, glm::dvec3>
+    celestialVelocitiesAuPerSecond;
 
-for (const auto& state : m_celestialRuntime.snapshot().bodies)
+if (const auto* celestial =
+        celestialSnapshotForSystem(
+            m_playerNavigation.currentSystemId
+        ))
 {
-    celestialPositionsAu[state.id] = state.positionAu;
+    for (const auto& state : celestial->bodies)
+    {
+        celestialPositionsAu[state.id] = state.positionAu;
+        celestialVelocitiesAuPerSecond[state.id] =
+            state.velocityAuPerSecond;
+    }
 }
 
-m_simulation.setCelestialBodyWorldPositionsAu(
-    celestialPositionsAu
+m_simulation.setCelestialBodyKinematicStateAu(
+    celestialPositionsAu,
+    celestialVelocitiesAuPerSecond
 );
 
 m_simulation.update(time);
@@ -932,15 +983,13 @@ bool GameServer::popPresentationDataResponse(
 
 void GameServer::processPendingPresentationDataRequests()
 {
-    const auto metadata = protocolMetadata();
-
     while (!m_pendingPresentationDataRequests.empty())
     {
         auto request = std::move(m_pendingPresentationDataRequests.front());
         m_pendingPresentationDataRequests.pop_front();
 
         std::visit(
-            [this, &metadata](const auto& typedRequest)
+            [this](const auto& typedRequest)
             {
                 using RequestT = std::decay_t<decltype(typedRequest)>;
 
@@ -952,24 +1001,6 @@ void GameServer::processPendingPresentationDataRequests()
                     response.requestId = typedRequest.requestId;
                     response.metadata.catalogRevision = catalogRevision();
                     response.atlas = m_starAtlas;
-                    if (m_completedPresentationDataResponses.size() >=
-                        MaxCompletedPresentationResponses)
-                    {
-                        m_completedPresentationDataResponses.pop_front();
-                        ++m_queueDiagnostics.droppedPresentationResponses;
-                    }
-                    m_completedPresentationDataResponses.push_back(
-                        std::move(response)
-                    );
-                }
-                else if constexpr (std::is_same_v<
-                                       RequestT,
-                                       game::network::CelestialSnapshotRequest>)
-                {
-                    game::network::CelestialSnapshotResponse response;
-                    response.requestId = typedRequest.requestId;
-                    response.metadata = metadata;
-                    response.snapshot = m_celestialRuntime.snapshot();
                     if (m_completedPresentationDataResponses.size() >=
                         MaxCompletedPresentationResponses)
                     {
@@ -1390,19 +1421,6 @@ namespace
         return axes;
     }
 
-    double planetMapMuForBodyId(
-        const std::string& bodyId
-    )
-    {
-        if (bodyId == "system_0.Sol.Земля")
-            return 3.986004418e14;
-
-        return 0.0;
-    }
-
-
-
-
 
     glm::dvec3 assemblySizeMetersForType(
         ObjectType typeId
@@ -1481,23 +1499,20 @@ GameServer::buildSystemMapSnapshot(
 
 
 
-    world::celestial::CelestialSystemRuntime runtime;
+    const auto* runtimeSnapshot =
+        celestialSnapshotForSystem(systemId);
 
-    runtime.setSystem(system);
-    runtime.update(out.universeTimeSeconds);
-
-    const auto& runtimeSnapshot =
-        runtime.snapshot();
+    if (!runtimeSnapshot)
+        return out;
 
     std::unordered_map<
-    std::string,
-    world::celestial::CelestialBodyState
+        std::string,
+        const world::celestial::CelestialBodyState*
     > runtimeStateById;
 
-    for (const auto& state : runtimeSnapshot.bodies)
+    for (const auto& state : runtimeSnapshot->bodies)
     {
-        runtimeStateById[state.id] =
-            state;
+        runtimeStateById[state.id] = &state;
     }
 
 
@@ -1553,23 +1568,14 @@ GameServer::buildSystemMapSnapshot(
         if (stateIt != runtimeStateById.end())
         {
             const auto& state =
-                stateIt->second;
+                *stateIt->second;
 
-            item.positionAu =
-                state.positionAu;
-
-            item.rotationPhaseRad =
-                state.rotationPhaseRad;
-
-            item.dayLengthHours =
-                state.dayLengthHours;
-
-            item.axialTiltDeg =
-                state.axialTiltDeg;
-
-            item.axisNodeDeg =
-                state.axisNodeDeg;
-
+            item.positionAu = state.positionAu;
+            item.rotationPhaseRad = state.rotationPhaseRad;
+            item.dayLengthHours = state.dayLengthHours;
+            item.rotationDirection = state.rotationDirection;
+            item.axialTiltDeg = state.axialTiltDeg;
+            item.axisNodeDeg = state.axisNodeDeg;
             item.textureLongitudeOffsetDeg =
                 state.textureLongitudeOffsetDeg;
         }
@@ -1589,7 +1595,7 @@ GameServer::buildSystemMapSnapshot(
                 runtimeStateById.find(body.parentId);
 
             if (parentIt != runtimeStateById.end())
-                item.orbitCenterAu = parentIt->second.positionAu;
+                item.orbitCenterAu = parentIt->second->positionAu;
             else
                 item.orbitCenterAu = glm::dvec3(0.0);
         }
@@ -1888,18 +1894,10 @@ void GameServer::appendLocalDetailObjects(
         Authored and procedural asteroids use this same collection. A body
         crossing a cube boundary is included when its sphere intersects it.
     */
-    if (const auto* system =
-            m_starAtlas.findSystem(out.systemId))
+    if (const auto* celestial =
+            celestialSnapshotForSystem(out.systemId))
     {
-        CelestialSystemRuntime localRuntime;
-
-        localRuntime.setSystem(system);
-        localRuntime.update(
-            out.universeTimeSeconds
-        );
-
-        for (const auto& body :
-             localRuntime.snapshot().bodies)
+        for (const auto& body : celestial->bodies)
         {
             const glm::dvec3 positionMeters =
                 body.positionAu *
@@ -2076,17 +2074,10 @@ GameServer::buildDetailMapSnapshot(
                 that body's own Details scene. A mere surface intersection
                 remains SpatialVolume and is rendered as local context.
             */
-            if (const auto* system =
-                    m_starAtlas.findSystem(target.systemId))
+            if (const auto* celestial =
+                    celestialSnapshotForSystem(target.systemId))
             {
-                CelestialSystemRuntime localRuntime;
-                localRuntime.setSystem(system);
-                localRuntime.update(
-                    out.universeTimeSeconds
-                );
-
-                for (const auto& body :
-                     localRuntime.snapshot().bodies)
+                for (const auto& body : celestial->bodies)
                 {
                     const double radiusMeters =
                         std::max(
@@ -2343,22 +2334,15 @@ GameServer::buildCelestialBodyDetailSnapshot(
             summary->positionLy;
     }
 
-    world::celestial::CelestialSystemRuntime planetMapRuntime;
+    const auto* celestial =
+        celestialSnapshotForSystem(systemId);
 
-    planetMapRuntime.setSystem(
-        system
-    );
-
-    planetMapRuntime.update(
-        out.universeTimeSeconds
-    );
-
-    const auto& celestial =
-        planetMapRuntime.snapshot();
+    if (!celestial)
+        return out;
 
     bool foundPlanet = false;
 
-    for (const auto& body : celestial.bodies)
+    for (const auto& body : celestial->bodies)
     {
         if (body.id != planetBodyId)
             continue;
@@ -2379,6 +2363,9 @@ GameServer::buildCelestialBodyDetailSnapshot(
         out.planetDayLengthHours =
             body.dayLengthHours;
 
+        out.planetRotationDirection =
+            body.rotationDirection;
+
         out.planetAxialTiltDeg =
             body.axialTiltDeg;
 
@@ -2387,12 +2374,6 @@ GameServer::buildCelestialBodyDetailSnapshot(
 
         out.planetTextureLongitudeOffsetDeg =
             body.textureLongitudeOffsetDeg;
-
-        out.gravitationalParameterM3s2 =
-            planetMapMuForBodyId(
-                body.id
-            );
-
 
         foundPlanet = true;
         break;
@@ -2407,6 +2388,9 @@ GameServer::buildCelestialBodyDetailSnapshot(
     {
         if (definition.id != planetBodyId)
             continue;
+
+        out.gravitationalParameterM3s2 =
+            definition.gravitationalParameterM3s2;
 
         out.ringPlaneInclinationOffsetDeg =
             definition.ringPlaneInclinationOffsetDeg;
@@ -2547,98 +2531,53 @@ void GameServer::refreshDetailMapDynamicState(
     // 1. Текущее состояние выбранной планеты.
     // ------------------------------------------------------------
 
-    bool currentPlanetFound =
-        false;
+    const auto* celestial =
+        celestialSnapshotForSystem(snapshot.systemId);
 
-    for (const auto& body :
-         m_celestialRuntime.snapshot().bodies)
+    if (!celestial)
     {
-        if (body.id !=
-            snapshot.planetBodyId)
-        {
-            continue;
-        }
-
-        snapshot.planetCenterMeters =
-            body.positionAu *
-            world::celestial::MetersPerAu;
-
-        if (body.radiusKm > 0.0)
-        {
-            snapshot.planetRadiusMeters =
-                body.radiusKm *
-                1000.0;
-        }
-
-        /*
-            Это тоже динамическое состояние.
-
-            Иначе текстура планеты застывает при длительно
-            открытом Details.
-        */
-        snapshot.planetRotationPhaseRad =
-            body.rotationPhaseRad;
-
-        snapshot.planetDayLengthHours =
-            body.dayLengthHours;
-
-        snapshot.planetAxialTiltDeg =
-            body.axialTiltDeg;
-
-        snapshot.planetAxisNodeDeg =
-            body.axisNodeDeg;
-
-        snapshot.planetTextureLongitudeOffsetDeg =
-            body.textureLongitudeOffsetDeg;
-
-        currentPlanetFound =
-            true;
-
-        break;
+        snapshot.valid = false;
+        return;
     }
 
-    /*
-        Fallback на simulation cache.
+    const world::celestial::CelestialBodyState* currentPlanet = nullptr;
 
-        Обычно currentPlanetFound будет true, но карта не должна
-        ломаться из-за временного отсутствия body в runtime snapshot.
-    */
-    if (!currentPlanetFound)
+    for (const auto& body : celestial->bodies)
     {
-        glm::dvec3 currentCenter =
-            snapshot.planetCenterMeters;
-
-        double currentRadius =
-            snapshot.planetRadiusMeters;
-
-        if (m_simulation.resolveCelestialBodyMeters(
-                snapshot.planetBodyId,
-                currentCenter,
-                currentRadius
-            ))
+        if (body.id == snapshot.planetBodyId)
         {
-            snapshot.planetCenterMeters =
-                currentCenter;
-
-            if (currentRadius > 1.0)
-            {
-                snapshot.planetRadiusMeters =
-                    currentRadius;
-            }
+            currentPlanet = &body;
+            break;
         }
     }
 
-    snapshot.scene.originWorldMeters =
-        snapshot.planetCenterMeters;
+    if (!currentPlanet)
+    {
+        snapshot.valid = false;
+        return;
+    }
 
+    snapshot.planetCenterMeters = currentPlanet->worldMeters;
     snapshot.planetVelocityMps =
-        glm::dvec3(0.0);
+        currentPlanet->worldVelocityMetersPerSecond;
 
-    m_simulation
-        .resolveCelestialBodyVelocityMetersPerSecond(
-            snapshot.planetBodyId,
-            snapshot.planetVelocityMps
-        );
+    if (currentPlanet->radiusKm > 0.0)
+        snapshot.planetRadiusMeters = currentPlanet->radiusKm * 1000.0;
+
+    snapshot.planetRotationPhaseRad =
+        currentPlanet->rotationPhaseRad;
+    snapshot.planetDayLengthHours =
+        currentPlanet->dayLengthHours;
+    snapshot.planetRotationDirection =
+        currentPlanet->rotationDirection;
+    snapshot.planetAxialTiltDeg =
+        currentPlanet->axialTiltDeg;
+    snapshot.planetAxisNodeDeg =
+        currentPlanet->axisNodeDeg;
+    snapshot.planetTextureLongitudeOffsetDeg =
+        currentPlanet->textureLongitudeOffsetDeg;
+
+    snapshot.scene.originWorldMeters = snapshot.planetCenterMeters;
 
     // ------------------------------------------------------------
     // 2. Dynamic arrays полностью пересобираются.
@@ -3283,9 +3222,29 @@ void GameServer::setDebugUniverseTimeSimulation(
     double timeScale
 )
 {
+    const bool wasEnabled =
+        m_universeClock.simulationMode();
+
+    if (enabled && !wasEnabled)
+    {
+        m_pendingPassiveTrajectoryEntry = true;
+        m_pendingPassiveTrajectoryEpochSeconds =
+            m_lastUniverseTimeSeconds;
+    }
+    else if (!enabled)
+    {
+        m_pendingPassiveTrajectoryEntry = false;
+        m_pendingPassiveTrajectoryEpochSeconds = 0.0;
+    }
+
     m_universeClock.setTimeScale(timeScale);
     m_universeClock.setSimulationMode(enabled);
     m_debugFastUniverseTime = debugFastUniverseTime();
+
+    // Publish the changed time contract on the next authoritative tick so
+    // every client observes the new mode and scale without waiting for the
+    // normal snapshot cadence.
+    m_forceSnapshotPublication = true;
 }
 
 bool GameServer::debugUniverseTimeSimulation() const
@@ -3380,17 +3339,11 @@ GameServer::buildHubMapSnapshot(
             out.parentEnvironmentPresetId =
                 body.environmentPresetId;
 
-            out.parentPlanetDayLengthHours =
-                body.dayLengthHours;
-
             out.parentPlanetAxialTiltDeg =
                 body.axialTiltDeg;
 
             out.parentPlanetAxisNodeDeg =
                 body.axisNodeDeg;
-
-            out.parentPlanetRotationOffsetDeg =
-                body.rotationOffsetDeg;
 
             out.parentPlanetTextureLongitudeOffsetDeg =
                 body.textureLongitudeOffsetDeg;
@@ -3454,9 +3407,6 @@ GameServer::buildHubMapSnapshot(
     out.hubOrbitRadiusMeters =
         hub.motion.parentRadiusMeters +
         hub.motion.altitudeMeters;
-
-    out.hubOrbitalPeriodSeconds =
-        hub.motion.orbitalPeriodSeconds;
 
     /*
         Теперь snapshot считается валидным по статической части.
@@ -3532,9 +3482,6 @@ void GameServer::refreshHubMapDynamicState(
     snapshot.universeTimeSeconds =
         currentUniverseTimeSeconds;
 
-    snapshot.kinematicTimeSeconds =
-        currentUniverseTimeSeconds;
-
     // ------------------------------------------------------------
     // 1. Текущее абсолютное состояние хаба.
     // ------------------------------------------------------------
@@ -3557,159 +3504,70 @@ void GameServer::refreshHubMapDynamicState(
     snapshot.hubWorldAxes.z =
         frame->normalAxis;
 
-    /*
-        Временно обновляем и legacy epoch-поля.
-
-        Если где-то остался старый код, он получит текущий
-        frame, а не старую orbital phase.
-    */
-    snapshot.hubWorldAxesAtEpoch =
-        snapshot.hubWorldAxes;
-
-    snapshot.hubWorldAxesEpochSeconds =
-        currentUniverseTimeSeconds;
-
     // ------------------------------------------------------------
-    // 2. Текущее абсолютное состояние родительской планеты.
+    // 2. Родительская планета из того же CelestialRuntimeRegistry.
     // ------------------------------------------------------------
 
-    glm::dvec3 parentPlanetWorldMeters =
-        hub.motion.centerMeters;
+    const auto* celestial =
+        celestialSnapshotForSystem(snapshot.systemId);
 
-    double resolvedParentRadiusMeters =
-        snapshot.parentPlanetRadiusMeters;
-
-    if (m_simulation.resolveCelestialBodyMeters(
-            snapshot.parentBodyId,
-            parentPlanetWorldMeters,
-            resolvedParentRadiusMeters
-        ))
+    if (!celestial)
     {
-        snapshot.parentPlanetWorldPositionMeters =
-            parentPlanetWorldMeters;
+        snapshot.valid = false;
+        return;
+    }
 
-        if (resolvedParentRadiusMeters >
-            1.0)
+    const world::celestial::CelestialBodyState* parentPlanet = nullptr;
+
+    for (const auto& body : celestial->bodies)
+    {
+        if (body.id == snapshot.parentBodyId)
         {
-            snapshot.parentPlanetRadiusMeters =
-                resolvedParentRadiusMeters;
+            parentPlanet = &body;
+            break;
         }
     }
-    else
+
+    if (!parentPlanet)
     {
-        /*
-            hub.motion.centerMeters обновляется сервером вместе
-            с текущей позицией родительского тела.
-        */
-        snapshot.parentPlanetWorldPositionMeters =
-            hub.motion.centerMeters;
+        snapshot.valid = false;
+        return;
     }
 
-    /*
-        Критическая часть.
-
-        Центр планеты в Hub Map больше не задаётся условным:
-
-            (0, -orbitRadius, 0)
-
-        Он вычисляется из тех же абсолютных координат,
-        которые сервер использует в Details.
-    */
+    snapshot.parentPlanetWorldPositionMeters =
+        parentPlanet->worldMeters;
     snapshot.parentPlanetCenterLocalMeters =
-        frame->worldToLocalPosition(
-            snapshot.parentPlanetWorldPositionMeters
-        );
+        frame->worldToLocalPosition(parentPlanet->worldMeters);
 
-    const glm::dvec3 hubFromPlanetMeters =
-        snapshot.hubWorldPositionMeters -
-        snapshot.parentPlanetWorldPositionMeters;
+    if (parentPlanet->radiusKm > 0.0)
+    {
+        snapshot.parentPlanetRadiusMeters =
+            parentPlanet->radiusKm * 1000.0;
+    }
 
+    snapshot.parentPlanetRotationPhaseRad =
+        parentPlanet->rotationPhaseRad;
+    snapshot.parentPlanetAxialTiltDeg =
+        parentPlanet->axialTiltDeg;
+    snapshot.parentPlanetAxisNodeDeg =
+        parentPlanet->axisNodeDeg;
+    snapshot.parentPlanetTextureLongitudeOffsetDeg =
+        parentPlanet->textureLongitudeOffsetDeg;
+
+    // Authored radius is only a guide parameter. It never replaces the
+    // authoritative relative pose above.
     snapshot.hubOrbitRadiusMeters =
-        glm::length(
-            hubFromPlanetMeters
+        std::max(
+            1.0,
+            snapshot.parentPlanetRadiusMeters +
+                hub.motion.altitudeMeters
         );
+    snapshot.hubAltitudeMeters = hub.motion.altitudeMeters;
 
-    snapshot.hubAltitudeMeters =
-        snapshot.hubOrbitRadiusMeters -
-        snapshot.parentPlanetRadiusMeters;
-
-    // ------------------------------------------------------------
-    // 3. Текущая rotation phase планеты.
-    // ------------------------------------------------------------
-
-    bool currentPlanetStateFound =
-        false;
-
-    const auto& celestialSnapshot =
-        m_celestialRuntime.snapshot();
-
-    for (const auto& body :
-         celestialSnapshot.bodies)
-    {
-        if (body.id !=
-            snapshot.parentBodyId)
-        {
-            continue;
-        }
-
-        snapshot.parentPlanetRotationPhaseRad =
-            body.rotationPhaseRad;
-
-        snapshot.parentPlanetDayLengthHours =
-            body.dayLengthHours;
-
-        snapshot.parentPlanetAxialTiltDeg =
-            body.axialTiltDeg;
-
-        snapshot.parentPlanetAxisNodeDeg =
-            body.axisNodeDeg;
-
-        snapshot.parentPlanetTextureLongitudeOffsetDeg =
-            body.textureLongitudeOffsetDeg;
-
-        currentPlanetStateFound =
-            true;
-
-        break;
-    }
-
-    /*
-        Fallback на ту же аналитическую формулу, если выбранное
-        тело временно отсутствует в runtime snapshot.
-    */
-    if (!currentPlanetStateFound)
-    {
-        constexpr double pi =
-            3.14159265358979323846;
-
-        snapshot.parentPlanetRotationPhaseRad =
-            snapshot.parentPlanetRotationOffsetDeg *
-            pi /
-            180.0;
-
-        if (snapshot.parentPlanetDayLengthHours >
-            0.0)
-        {
-            const double rotationPeriodSeconds =
-                snapshot.parentPlanetDayLengthHours *
-                3600.0;
-
-            const double turns =
-                currentUniverseTimeSeconds /
-                rotationPeriodSeconds;
-
-            const double wrappedTurns =
-                turns -
-                std::floor(
-                    turns
-                );
-
-            snapshot.parentPlanetRotationPhaseRad +=
-                wrappedTurns *
-                2.0 *
-                pi;
-        }
-    }
+    const double measuredOrbitRadiusMeters =
+        glm::length(snapshot.parentPlanetCenterLocalMeters);
+    const double authoredOrbitRadiusMeters =
+        snapshot.hubOrbitRadiusMeters;
 
     // ------------------------------------------------------------
     // 4. Modules.
@@ -3963,15 +3821,10 @@ void GameServer::refreshHubMapDynamicState(
     // 6. Контроль геометрии planet <-> hub.
     // ------------------------------------------------------------
 
-    const glm::dvec3 reconstructedPlanetWorld =
-        frame->localToWorldPosition(
-            snapshot.parentPlanetCenterLocalMeters
-        );
-
-    const double planetRoundTripErrorMeters =
-        glm::length(
-            reconstructedPlanetWorld -
-            snapshot.parentPlanetWorldPositionMeters
+    const double orbitRadiusErrorMeters =
+        std::abs(
+            measuredOrbitRadiusMeters -
+            authoredOrbitRadiusMeters
         );
 
     const glm::dvec3 hubLocalOrigin =
@@ -3984,8 +3837,8 @@ void GameServer::refreshHubMapDynamicState(
             hubLocalOrigin
         );
 
-    if (planetRoundTripErrorMeters >
-            0.01 ||
+    if (orbitRadiusErrorMeters >
+            1.0 ||
         hubOriginErrorMeters >
             0.01)
     {
@@ -3999,14 +3852,14 @@ void GameServer::refreshHubMapDynamicState(
 
             std::cerr
                 << "[HubMapConsistency]"
-                << " planetRoundTripError="
-                << planetRoundTripErrorMeters
+                << " orbitRadiusError="
+                << orbitRadiusErrorMeters
                 << " m"
                 << " hubOriginError="
                 << hubOriginErrorMeters
                 << " m"
                 << " time="
-                << snapshot.kinematicTimeSeconds
+                << snapshot.universeTimeSeconds
                 << "\n";
         }
     }

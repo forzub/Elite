@@ -294,6 +294,8 @@ add_executable(EliteGame
     src/game/client/ClientCatalogService.cpp
 
     src/game/client/MapTransitionController.cpp
+    src/game/system_map/AuthoritativeMapInterpolator.cpp
+    src/world/celestial/CelestialRuntimeRegistry.cpp
 )
 
 

@@ -150,13 +150,14 @@ public:
         const std::string& hubModuleId = {}
     );
 
-    void setCelestialBodyWorldPositionsAu(
-        const std::unordered_map<std::string, glm::dvec3>& positionsAu
-    );
     void setCelestialBodyKinematicStateAu(
-        const std::unordered_map<std::string, glm::dvec3>& currentPositionsAu,
-        const std::unordered_map<std::string, glm::dvec3>& previousPositionsAu,
-        double sampleDtSeconds
+        const std::unordered_map<std::string, glm::dvec3>& positionsAu,
+        const std::unordered_map<std::string, glm::dvec3>& velocitiesAuPerSecond
+    );
+    void setCelestialBodyGravityParameters(
+        const std::string& bodyId,
+        double radiusMeters,
+        double gravitationalParameterM3s2
     );
     void setOrbitalUniverseTimeSeconds(double t);
 
@@ -185,6 +186,11 @@ public:
         EntityId shipId,
         const game::navigation::ReferenceFrame& frame
     );
+
+    // Starts debug-only passive trajectories from one already-published
+    // authoritative epoch. The caller must invoke this before advancing
+    // universe time for the first accelerated tick.
+    bool enterPassiveTrajectoryMode(double startUniverseTimeSeconds);
 
     void updateShipReferenceFrames(double dt);
 
@@ -233,6 +239,8 @@ private:
 
     void rebuildNavigationGravityContext();
     void updateDynamicNavigationContext(double dt);
+    void exitPassiveTrajectoryMode();
+    void advancePassiveTrajectories(double universeDeltaSeconds);
 
 
 private:
@@ -273,8 +281,17 @@ private:
     
     
     std::unordered_map<std::string, glm::dvec3> m_celestialBodyPositionsAu;
-    std::unordered_map<std::string, glm::dvec3> m_previousCelestialBodyPositionsMeters;
     std::unordered_map<std::string, glm::dvec3> m_celestialBodyVelocitiesMetersPerSecond;
+
+    struct CelestialBodyGravityParameters
+    {
+        double radiusMeters = 0.0;
+        double gravitationalParameterM3s2 = 0.0;
+    };
+
+    std::unordered_map<std::string, CelestialBodyGravityParameters>
+        m_celestialBodyGravityParameters;
+
     double m_orbitalUniverseTimeSeconds = 0.0;
     std::unordered_map<std::string, game::navigation::HubNavigationFrame>
         m_hubNavigationFrames;

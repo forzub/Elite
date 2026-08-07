@@ -1475,7 +1475,7 @@ void DetailMapPlanetPass::drawPlanetAnimatedCloudLayers(
     }
 
     const double renderTimeSeconds =
-        m_resources.environmentVisualTimeSeconds(
+        m_resources.visualEffectTimeSeconds(
             planet.universeTimeSeconds
         );
 

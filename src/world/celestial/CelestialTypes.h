@@ -246,7 +246,7 @@ struct CelestialBodyDefinition
     double ringPlaneInclinationOffsetDeg = 0.0;
     CelestialRingSystemVisualProfile ringVisual;
     std::vector<CelestialRingDefinition> rings;
-  
+
 
 
     double distanceAu = 0.0;
@@ -275,7 +275,7 @@ struct CelestialBodyDefinition
     glm::dvec3 staticPositionAu {0.0};
 
     std::vector<CelestialBodyDisplayName> alternativeNames;
-    
+
 
 };
 
@@ -301,7 +301,9 @@ struct CelestialBodyState
     std::string environmentPresetId;
 
     glm::dvec3 positionAu {0.0};
+    glm::dvec3 velocityAuPerSecond {0.0};
     glm::dvec3 worldMeters {0.0};
+    glm::dvec3 worldVelocityMetersPerSecond {0.0};
 
     double radiusKm = 0.0;
 
@@ -309,6 +311,7 @@ struct CelestialBodyState
     double rotationPhaseRad = 0.0;
 
     double dayLengthHours = 0.0;
+    int rotationDirection = 1;
 
     double axialTiltDeg = 0.0;
     double axisNodeDeg = 0.0;

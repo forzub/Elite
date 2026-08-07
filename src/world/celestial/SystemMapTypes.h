@@ -352,6 +352,7 @@ struct DetailMapSnapshot
 
     double planetRotationPhaseRad = 0.0;
     double planetDayLengthHours = 0.0;
+    int planetRotationDirection = 1;
 
     double planetAxialTiltDeg = 0.0;
     double planetAxisNodeDeg = 0.0;
@@ -403,25 +404,12 @@ struct HubMapSnapshot
             Z = normal.
 
         Она получена непосредственно из серверного
-        HubNavigationFrame на kinematicTimeSeconds.
+        HubNavigationFrame на universeTimeSeconds.
 
         Renderer не имеет права самостоятельно продвигать
         эти оси по орбите.
     */
     LocalSceneAxes hubWorldAxes;
-
-    /*
-        Universe time, которому одновременно соответствуют:
-
-            hubWorldPositionMeters;
-            hubWorldVelocityMps;
-            hubWorldAxes;
-            parentPlanetWorldPositionMeters;
-            parentPlanetRotationPhaseRad;
-            modules;
-            ships.
-    */
-    double kinematicTimeSeconds = 0.0;
 
     /*
         Текущая абсолютная мировая позиция центра
@@ -438,37 +426,9 @@ struct HubMapSnapshot
     */
     double parentPlanetRotationPhaseRad = 0.0;
 
-        /*
-        Реальная мировая орбитальная система хаба
-        в момент построения snapshot:
-
-            X = prograde;
-            Y = radial — от центра планеты к хабу;
-            Z = normal.
-
-        hubAxes выше остаётся локальной единичной системой
-        карты. Эти поля нужны именно для ориентации
-        поверхности родительской планеты.
-    */
-    LocalSceneAxes hubWorldAxesAtEpoch;
-
-    /*
-        Universe time, которому соответствуют
-        hubWorldAxesAtEpoch.
-    */
-    double hubWorldAxesEpochSeconds = 0.0;
-
-    /*
-        Статические параметры ориентации родительской
-        планеты. По ним renderer вычисляет текущую
-        body-fixed систему без пересборки всего snapshot.
-    */
-    double parentPlanetDayLengthHours = 0.0;
-
     double parentPlanetAxialTiltDeg = 0.0;
     double parentPlanetAxisNodeDeg = 0.0;
 
-    double parentPlanetRotationOffsetDeg = 0.0;
     double parentPlanetTextureLongitudeOffsetDeg = 0.0;
 
     // Родительская планета в локальных координатах хаба.
@@ -479,7 +439,6 @@ struct HubMapSnapshot
     double parentPlanetRadiusMeters = 0.0;
     double hubAltitudeMeters = 0.0;
     double hubOrbitRadiusMeters = 0.0;
-    double hubOrbitalPeriodSeconds = 0.0;
 
     // Hub components and nearby ships share the same scene inventory.
     LocalSceneInventory scene;

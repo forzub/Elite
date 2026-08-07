@@ -15,9 +15,9 @@ namespace game::system_map
     /*
         Updates persistent presentation state and builds one immutable frame.
 
-        This is the only System-map component allowed to perform render-cycle
-        synchronization such as system-change reset, initial camera fitting,
-        presentation-clock advancement and stale-selection cleanup.
+        This component performs view synchronization only. Dynamic body poses
+        and rotation phases are copied from the authoritative server snapshot;
+        no celestial mechanics are evaluated on the client.
     */
     class SystemMapPresentationBuilder
     {

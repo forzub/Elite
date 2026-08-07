@@ -240,39 +240,6 @@ namespace
     }
 
 
-    glm::mat4 makePromoPitchOnlyOrientationClient(
-        const glm::vec3& toTarget
-    )
-    {
-        // Promo rule: player ship may only pitch while tracking the wing.
-        // X/right axis is fixed, so no yaw/roll can leak from look-at/slerp.
-        glm::vec3 f = glm::vec3(0.0f, toTarget.y, toTarget.z);
-
-        if (glm::length2(f) < 0.000001f)
-            f = glm::vec3(0.0f, 0.0f, -1.0f);
-
-        f = glm::normalize(f);
-
-        const glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
-        const glm::vec3 up = glm::normalize(glm::cross(right, f));
-
-        glm::mat4 m(1.0f);
-
-        // Engine convention:
-        // +X = right
-        // +Y = up
-        // -Z = forward
-        m[0] = glm::vec4(right, 0.0f);
-        m[1] = glm::vec4(up, 0.0f);
-        m[2] = glm::vec4(-f, 0.0f);
-        m[3] = glm::vec4(0, 0, 0, 1);
-
-        return m;
-    }
-
-
-
-
     json celestialDefinitionToJson(
         const world::celestial::CelestialSystemDefinition& system
     )
@@ -467,28 +434,37 @@ bool SpaceState::requestSystemMapSnapshot(
 
     m_systemMapShowsEmptySector = false;
 
-    if (!forceRefresh &&
-        m_hasSystemMapSnapshot &&
-        m_loadedSystemMapId == systemId)
-    {
-        return true;
-    }
-
-    if (!m_client->requestSystemMapSnapshot(systemId, forceRefresh))
-        return false;
+    const bool requestReady =
+        m_client->requestSystemMapSnapshot(systemId, forceRefresh);
 
     const auto* snapshot =
         m_client->systemMapSnapshot(systemId);
 
-    if (!snapshot)
-        return false;
+    const auto& metadata =
+        m_client->systemMapMetadata();
 
-    m_systemMapSnapshot = *snapshot;
-    m_loadedSystemMapId = systemId;
-    m_hasSystemMapSnapshot = true;
-    return true;
+    const bool sameTarget =
+        m_hasSystemMapSnapshot &&
+        m_loadedSystemMapId == systemId;
+
+    const bool newerSnapshot =
+        snapshot != nullptr &&
+        metadata.serverTick > m_appliedSystemMapServerTick;
+
+    if (newerSnapshot || !sameTarget)
+    {
+        if (!snapshot)
+            return requestReady && sameTarget;
+
+        m_systemMapSnapshot = *snapshot;
+        m_loadedSystemMapId = systemId;
+        m_hasSystemMapSnapshot = true;
+        m_appliedSystemMapServerTick = metadata.serverTick;
+    }
+
+    return m_hasSystemMapSnapshot &&
+           m_loadedSystemMapId == systemId;
 }
-
 
 
 
@@ -501,26 +477,52 @@ bool SpaceState::requestDetailMapSnapshot(
     if (!m_client || !target.valid())
         return false;
 
-    if (!forceRefresh &&
-        m_hasDetailMapSnapshot &&
-        m_loadedDetailTarget == target)
-    {
-        return true;
-    }
-
-    if (!m_client->requestDetailMapSnapshot(target, forceRefresh))
-        return false;
+    const bool requestReady =
+        m_client->requestDetailMapSnapshot(target, forceRefresh);
 
     const auto* snapshot =
         m_client->detailMapSnapshot(target);
 
-    if (!snapshot)
-        return false;
+    const auto& metadata =
+        m_client->detailMapMetadata();
 
-    m_detailMapSnapshot = *snapshot;
-    m_loadedDetailTarget = target;
-    m_hasDetailMapSnapshot = m_detailMapSnapshot.valid;
-    return m_hasDetailMapSnapshot;
+    const bool sameTarget =
+        m_hasDetailMapSnapshot &&
+        m_loadedDetailTarget == target;
+
+    const bool newerSnapshot =
+        snapshot != nullptr &&
+        metadata.serverTick > m_appliedDetailMapServerTick;
+
+    if (newerSnapshot || !sameTarget)
+    {
+        if (!snapshot)
+            return requestReady && sameTarget;
+
+        const double blendDurationSeconds =
+            sameTarget
+                ? std::max(
+                    0.02,
+                    static_cast<double>(
+                        debug::get().render.systemMapLiveRefreshSec
+                    )
+                )
+                : 0.0;
+
+        m_authoritativeMapInterpolator.acceptDetail(
+            *snapshot,
+            blendDurationSeconds
+        );
+
+        m_detailMapSnapshot =
+            m_authoritativeMapInterpolator.detail();
+        m_loadedDetailTarget = target;
+        m_hasDetailMapSnapshot = m_detailMapSnapshot.valid;
+        m_appliedDetailMapServerTick = metadata.serverTick;
+    }
+
+    return m_hasDetailMapSnapshot &&
+           m_loadedDetailTarget == target;
 }
 
 
@@ -533,28 +535,55 @@ bool SpaceState::requestHubMapSnapshot(
     if (!m_client || systemId < 0 || hubId.empty())
         return false;
 
-    if (!forceRefresh &&
-        m_hasHubMapSnapshot &&
-        m_loadedHubMapSystemId == systemId &&
-        m_loadedHubMapHubId == hubId)
-    {
-        return true;
-    }
-
-    if (!m_client->requestHubMapSnapshot(systemId, hubId, forceRefresh))
-        return false;
+    const bool requestReady =
+        m_client->requestHubMapSnapshot(systemId, hubId, forceRefresh);
 
     const auto* snapshot =
         m_client->hubMapSnapshot(systemId, hubId);
 
-    if (!snapshot)
-        return false;
+    const auto& metadata =
+        m_client->hubMapMetadata();
 
-    m_hubMapSnapshot = *snapshot;
-    m_loadedHubMapSystemId = systemId;
-    m_loadedHubMapHubId = hubId;
-    m_hasHubMapSnapshot = m_hubMapSnapshot.valid;
-    return m_hasHubMapSnapshot;
+    const bool sameTarget =
+        m_hasHubMapSnapshot &&
+        m_loadedHubMapSystemId == systemId &&
+        m_loadedHubMapHubId == hubId;
+
+    const bool newerSnapshot =
+        snapshot != nullptr &&
+        metadata.serverTick > m_appliedHubMapServerTick;
+
+    if (newerSnapshot || !sameTarget)
+    {
+        if (!snapshot)
+            return requestReady && sameTarget;
+
+        const double blendDurationSeconds =
+            sameTarget
+                ? std::max(
+                    0.02,
+                    static_cast<double>(
+                        debug::get().render.systemMapLiveRefreshSec
+                    )
+                )
+                : 0.0;
+
+        m_authoritativeMapInterpolator.acceptHub(
+            *snapshot,
+            blendDurationSeconds
+        );
+
+        m_hubMapSnapshot =
+            m_authoritativeMapInterpolator.hub();
+        m_loadedHubMapSystemId = systemId;
+        m_loadedHubMapHubId = hubId;
+        m_hasHubMapSnapshot = m_hubMapSnapshot.valid;
+        m_appliedHubMapServerTick = metadata.serverTick;
+    }
+
+    return m_hasHubMapSnapshot &&
+           m_loadedHubMapSystemId == systemId &&
+           m_loadedHubMapHubId == hubId;
 }
 
 
@@ -718,6 +747,144 @@ void SpaceState::updatePendingMapTransition(float /*dt*/)
 }
 
 
+void SpaceState::updateLiveMapSnapshots(float dt)
+{
+    if (!m_client || !m_systemMapVisible)
+    {
+        m_systemMapLiveRefreshTimer = 0.0;
+        m_detailMapLiveRefreshTimer = 0.0;
+        m_hubMapLiveRefreshTimer = 0.0;
+        return;
+    }
+
+    const double refreshSeconds = std::max(
+        0.02,
+        static_cast<double>(debug::get().render.systemMapLiveRefreshSec)
+    );
+
+    using Mode = SystemMapRenderer::Mode;
+    switch (m_systemMapRenderer.mode())
+    {
+        case Mode::System:
+        {
+            m_detailMapLiveRefreshTimer = 0.0;
+            m_hubMapLiveRefreshTimer = 0.0;
+
+            if (!shouldRefreshSystemMapSnapshot())
+            {
+                m_systemMapLiveRefreshTimer = 0.0;
+                return;
+            }
+
+            // First consume a completed response, if one arrived.
+            requestSystemMapSnapshot(m_liveSystemMapId, false);
+
+            m_systemMapLiveRefreshTimer += dt;
+            if (m_systemMapLiveRefreshTimer >= refreshSeconds &&
+                m_client->systemMapRequestStatus() !=
+                    game::client::ClientRequestStatus::Pending)
+            {
+                m_systemMapLiveRefreshTimer = 0.0;
+                requestSystemMapSnapshot(m_liveSystemMapId, true);
+            }
+            return;
+        }
+
+        case Mode::Detail:
+        {
+            m_systemMapLiveRefreshTimer = 0.0;
+            m_hubMapLiveRefreshTimer = 0.0;
+
+            if (!m_loadedDetailTarget.valid())
+            {
+                m_detailMapLiveRefreshTimer = 0.0;
+                return;
+            }
+
+            // Consume before scheduling the next refresh. This guarantees
+            // that a completed response is copied into SpaceState exactly
+            // once instead of being hidden by an immediate force-refresh.
+            requestDetailMapSnapshot(m_loadedDetailTarget, false);
+
+            m_detailMapLiveRefreshTimer += dt;
+            if (m_detailMapLiveRefreshTimer >= refreshSeconds &&
+                m_client->detailMapRequestStatus() !=
+                    game::client::ClientRequestStatus::Pending)
+            {
+                m_detailMapLiveRefreshTimer = 0.0;
+                requestDetailMapSnapshot(m_loadedDetailTarget, true);
+            }
+            return;
+        }
+
+        case Mode::Hub:
+        {
+            m_systemMapLiveRefreshTimer = 0.0;
+            m_detailMapLiveRefreshTimer = 0.0;
+
+            const int systemId =
+                m_systemMapRenderer.focusedSystemId() >= 0
+                    ? m_systemMapRenderer.focusedSystemId()
+                    : m_client->playerNavigation().currentSystemId;
+
+            if (systemId < 0 || m_loadedHubMapHubId.empty())
+            {
+                m_hubMapLiveRefreshTimer = 0.0;
+                return;
+            }
+
+            requestHubMapSnapshot(
+                systemId,
+                m_loadedHubMapHubId,
+                false
+            );
+
+            m_hubMapLiveRefreshTimer += dt;
+            if (m_hubMapLiveRefreshTimer >= refreshSeconds &&
+                m_client->hubMapRequestStatus() !=
+                    game::client::ClientRequestStatus::Pending)
+            {
+                m_hubMapLiveRefreshTimer = 0.0;
+                requestHubMapSnapshot(
+                    systemId,
+                    m_loadedHubMapHubId,
+                    true
+                );
+            }
+            return;
+        }
+
+        default:
+            m_systemMapLiveRefreshTimer = 0.0;
+            m_detailMapLiveRefreshTimer = 0.0;
+            m_hubMapLiveRefreshTimer = 0.0;
+            return;
+    }
+}
+
+
+void SpaceState::updateLocalMapPresentationSnapshots(float dt)
+{
+    m_authoritativeMapInterpolator.update(
+        static_cast<double>(dt)
+    );
+
+    if (m_hasDetailMapSnapshot &&
+        m_authoritativeMapInterpolator.hasDetail())
+    {
+        m_detailMapSnapshot =
+            m_authoritativeMapInterpolator.detail();
+    }
+
+    if (m_hasHubMapSnapshot &&
+        m_authoritativeMapInterpolator.hasHub())
+    {
+        m_hubMapSnapshot =
+            m_authoritativeMapInterpolator.hub();
+    }
+}
+
+
 void SpaceState::updateSystemMapLiveFlags()
 {
     const bool wasSystemMapVisible =
@@ -873,56 +1040,10 @@ void SpaceState::handleInput()
 
 
             /*
-                Refresh local-map snapshots before presentation/picking.
-                The same snapshot is then consumed by input and render.
+                Live map snapshots are consumed and refreshed once per
+                update() by updateLiveMapSnapshots(). Input and rendering
+                only read the last accepted local copy here.
             */
-            if (m_systemMapRenderer.mode() ==
-                SystemMapRenderer::Mode::Detail)
-            {
-                if (m_loadedDetailTarget.valid())
-                {
-                    requestDetailMapSnapshot(
-                        m_loadedDetailTarget,
-                        false
-                    );
-                }
-
-                if (m_loadedDetailTarget.valid())
-                {
-                    requestDetailMapSnapshot(
-                        m_loadedDetailTarget,
-                        true
-                    );
-                }
-            }
-
-            if (m_systemMapRenderer.mode() ==
-                SystemMapRenderer::Mode::Hub)
-            {
-                const int focusedId =
-                    m_systemMapRenderer.focusedSystemId() >= 0
-                        ? m_systemMapRenderer.focusedSystemId()
-                        : m_client->playerNavigation().currentSystemId;
-
-                const std::string requestedHubId =
-                    m_loadedHubMapHubId;
-
-                requestHubMapSnapshot(
-                    focusedId,
-                    requestedHubId,
-                    false
-                );
-
-                if (m_loadedHubMapSystemId == focusedId &&
-                    m_loadedHubMapHubId == requestedHubId)
-                {
-                    requestHubMapSnapshot(
-                        focusedId,
-                        requestedHubId,
-                        true
-                    );
-                }
-            }
 
             const auto mapIntent =
                 m_systemMapRenderer.handleInput(
@@ -1153,15 +1274,8 @@ void SpaceState::update(float dt)
     m_perfClientUpdateMs = nowMs() - clientStartMs;
 
 
-// Сначала двигаем visual ships и поворачиваем renderTransform игрока.
-// Только потом PlayerShipView получает уже финальный transform кадра.
-// Promo tracking отключён для нормального старта возле станции.
-// Иначе клиент насильно возвращает игрока в старую promo-позицию.
-if (isPromo1SceneMode() && game::scene::GameSceneSetupConfig::PromoScene)
-{
-    updatePromoPlayerShipTracking(static_cast<float>(dt));
-}
-
+// Promo ships are presentation-only visual entities.
+// The replicated player ship is never repositioned or reoriented on the client.
 const auto& ships = m_client->world().ships();
 
 auto it = ships.find(m_playerId.value);
@@ -1339,24 +1453,8 @@ m_playerView->updateCockpitStateFromSnapshot(
 
 
 updateSystemMapLiveFlags();
-
-if (shouldRefreshSystemMapSnapshot())
-{
-    m_systemMapLiveRefreshTimer += dt;
-
-    const double refreshSec =
-        static_cast<double>(debug::get().render.systemMapLiveRefreshSec);
-
-    if (m_systemMapLiveRefreshTimer >= refreshSec)
-    {
-        m_systemMapLiveRefreshTimer = 0.0;
-
-        requestSystemMapSnapshot(
-            m_liveSystemMapId,
-            true
-        );
-    }
-}
+updateLiveMapSnapshots(dt);
+updateLocalMapPresentationSnapshots(dt);
 
 
 
@@ -3038,8 +3136,6 @@ void SpaceState::applyDebugControlPayload(const json& payload)
         if (m_client)
             m_promoSceneScenario.reset(m_client->world());
 
-        m_promoTrackingInitialized = false;
-        m_promoPlayerOrientation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
     }
 
     dbg.showConstellationHover = payload.value("showConstellationHover", dbg.showConstellationHover);
@@ -3279,115 +3375,12 @@ void SpaceState::pushVolumeViewerState()
 
 
 
-void SpaceState::updatePromoPlayerShipTracking(float dt)
-{
-    if constexpr (!game::promo::PromoSceneScenario::Enabled)
-        return;
-
-    if (!m_promoSceneScenario.cameraTargetValid(m_client->world()))
-        return;
-
-    auto& ships =
-        m_client->world().ships();
-
-    auto it =
-        ships.find(m_playerId.value);
-
-    if (it == ships.end())
-        return;
-
-    ClientShipState& playerShip =
-        it->second;
-
-    const glm::vec3 playerPos =
-        glm::vec3(0.0f, 50.0f, 0.0f);
-
-    const glm::vec3 target =
-        m_promoSceneScenario.cameraTarget(m_client->world());
-
-    glm::vec3 toTarget =
-        target - playerPos;
-
-    if (glm::length2(toTarget) < 0.000001f)
-        return;
-
-    const glm::vec3 forward =
-        glm::normalize(toTarget);
-
-    glm::mat4 targetOrientation =
-        makePromoPitchOnlyOrientationClient(toTarget);
-
-
-
-    glm::quat targetQ =
-        glm::quat_cast(targetOrientation);
-
-    if (glm::dot(m_promoPlayerOrientation, targetQ) < 0.0f)
-    {
-        targetQ = -targetQ;
-    }
-
-    if (!m_promoTrackingInitialized)
-    {
-        m_promoPlayerOrientation =
-            targetQ;
-
-        m_promoTrackingInitialized = true;
-    }
-
-    // Плавное сопровождение.
-    // Теперь цель — реальное звено, а не прогноз по времени,
-    // поэтому можно держать response выше без "обгона".
-    const float response =
-        2.6f;
-
-    const float blend =
-        1.0f - std::exp(-response * dt);
-
-    m_promoPlayerOrientation =
-        glm::slerp(
-            m_promoPlayerOrientation,
-            targetQ,
-            blend
-        );
-
-    m_promoPlayerOrientation =
-        glm::normalize(m_promoPlayerOrientation);
-
-    playerShip.transform.setWorldPositionMeters(glm::dvec3(playerPos));
-    playerShip.renderTransform.setWorldPosition(playerShip.transform.worldPosition);
-
-    playerShip.transform.orientation =
-        glm::toMat4(m_promoPlayerOrientation);
-
-    playerShip.renderTransform.orientation =
-        glm::toMat4(m_promoPlayerOrientation);
-
-    playerShip.transform.forwardVelocity = 0.0f;
-    playerShip.transform.targetSpeed = 0.0f;
-    playerShip.transform.localVelocity = glm::vec3(0.0f);
-
-    playerShip.renderTransform.forwardVelocity = 0.0f;
-    playerShip.renderTransform.targetSpeed = 0.0f;
-    playerShip.renderTransform.localVelocity = glm::vec3(0.0f);
-}
-
-
-
-
-
-
-
-
-
-
-
 void SpaceState::pushSystemMapState()
 {
     if (!m_client)
         return;
 
-    if (!m_client->requestCelestialSnapshot())
+    if (!m_client->resolveCelestialSnapshot())
         return;
 
     const auto* atlasPtr = m_client->starAtlas();
@@ -3402,7 +3395,7 @@ void SpaceState::pushSystemMapState()
     json payload;
 
     payload["universeTimeSeconds"] =
-        m_client->sessionSnapshot().universeTimeSeconds;
+        m_client->universeTimeSeconds();
 
     payload["universeDate"] =
         m_client->sessionSnapshot().universeDate;
@@ -3660,7 +3653,7 @@ void SpaceState::setSystemMapEmptySectorMode(
         "Deep Space Sector";
 
     emptySector.universeTimeSeconds =
-        m_client->sessionSnapshot().universeTimeSeconds;
+        m_client->universeTimeSeconds();
 
     emptySector.universeTimeScale =
         m_client->sessionSnapshot().universeTimeScale;
@@ -3952,7 +3945,7 @@ void SpaceState::pushSystemMapPanelState()
     if (!m_client || !context().app)
         return;
 
-    if (!m_client->requestCelestialSnapshot())
+    if (!m_client->resolveCelestialSnapshot())
         return;
 
     const auto* atlasPtr = m_client->starAtlas();
@@ -3967,7 +3960,7 @@ void SpaceState::pushSystemMapPanelState()
     json payload;
 
     payload["universeTimeSeconds"] =
-        m_client->sessionSnapshot().universeTimeSeconds;
+        m_client->universeTimeSeconds();
 
     payload["universeDate"] =
         m_client->sessionSnapshot().universeDate;

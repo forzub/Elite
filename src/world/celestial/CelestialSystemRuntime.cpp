@@ -31,6 +31,7 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
         return;
 
     std::unordered_map<std::string, glm::dvec3> worldAuById;
+    std::unordered_map<std::string, glm::dvec3> worldVelocityAuById;
 
     for (const auto& body : m_definition->bodies)
     {
@@ -45,6 +46,9 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
         state.dayLengthHours =
             body.dayLengthHours;
 
+        state.rotationDirection =
+            body.rotationDirection;
+
         state.axialTiltDeg =
             body.axialTiltDeg;
 
@@ -57,19 +61,31 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
         state.rings = body.rings;
 
         glm::dvec3 parentAu {0.0};
+        glm::dvec3 parentVelocityAuPerSecond {0.0};
 
         if (!body.parentId.empty())
         {
-            auto it = worldAuById.find(body.parentId);
-            if (it != worldAuById.end())
-                parentAu = it->second;
+            auto positionIt = worldAuById.find(body.parentId);
+            if (positionIt != worldAuById.end())
+                parentAu = positionIt->second;
+
+            auto velocityIt = worldVelocityAuById.find(body.parentId);
+            if (velocityIt != worldVelocityAuById.end())
+                parentVelocityAuPerSecond = velocityIt->second;
         }
 
         const glm::dvec3 relativeAu =
             computeRelativePositionAu(body, simTimeSeconds);
 
+        const glm::dvec3 relativeVelocityAuPerSecond =
+            computeRelativeVelocityAuPerSecond(body, simTimeSeconds);
+
         state.positionAu = parentAu + relativeAu;
+        state.velocityAuPerSecond =
+            parentVelocityAuPerSecond + relativeVelocityAuPerSecond;
         state.worldMeters = state.positionAu * MetersPerAu;
+        state.worldVelocityMetersPerSecond =
+            state.velocityAuPerSecond * MetersPerAu;
 
         if (body.orbitalPeriodDays > 0.0)
         {
@@ -98,6 +114,7 @@ void CelestialSystemRuntime::update(double simTimeSeconds)
         }
 
         worldAuById[state.id] = state.positionAu;
+        worldVelocityAuById[state.id] = state.velocityAuPerSecond;
         m_snapshot.bodies.push_back(std::move(state));
     }
 }
@@ -134,6 +151,41 @@ glm::dvec3 CelestialSystemRuntime::computeRelativePositionAu(
     return circularOrbitPositionAu(
         body.distanceAu,
         phase
+    );
+}
+
+
+glm::dvec3 CelestialSystemRuntime::computeRelativeVelocityAuPerSecond(
+    const CelestialBodyDefinition& body,
+    double simTimeSeconds
+) const
+{
+    if (body.type == BodyType::Star ||
+        body.distanceAu <= 0.0 ||
+        body.orbitalPeriodDays <= 0.0)
+    {
+        return glm::dvec3(0.0);
+    }
+
+    const double phase =
+        circularOrbitPhaseRad(
+            simTimeSeconds,
+            body.orbitalPeriodDays,
+            body.orbitalDirection,
+            body.orbitalPhaseOffsetDeg * OrbitTwoPi / 360.0
+        );
+
+    const double direction =
+        body.orbitalDirection < 0 ? -1.0 : 1.0;
+
+    const double angularVelocityRadPerSecond =
+        direction * OrbitTwoPi /
+        (body.orbitalPeriodDays * SecondsPerDay);
+
+    return glm::dvec3(
+        -std::sin(phase) * body.distanceAu * angularVelocityRadPerSecond,
+        0.0,
+        -std::cos(phase) * body.distanceAu * angularVelocityRadPerSecond
     );
 }
 

@@ -18,7 +18,7 @@
 #include "src/game/diagnostics/ServerDiagnostics.h"
 
 #include "src/world/celestial/StarAtlasDatabase.h"
-#include "src/world/celestial/CelestialSystemRuntime.h"
+#include "src/world/celestial/CelestialRuntimeRegistry.h"
 #include "src/world/time/UniverseClock.h"
 #include "src/game/server/ServerTimeContext.h"
 #include "src/world/celestial/SystemMapTypes.h"
@@ -117,7 +117,11 @@ public:
 
     const world::celestial::CelestialSystemSnapshot& celestialSnapshot() const
     {
-        return m_celestialRuntime.snapshot();
+        static const world::celestial::CelestialSystemSnapshot empty;
+        const auto* snapshot = celestialSnapshotForSystem(
+            m_playerNavigation.currentSystemId
+        );
+        return snapshot ? *snapshot : empty;
     }
 
     const world::time::UniverseClock& universeClock() const
@@ -250,14 +254,24 @@ private:
     SimulationSnapshot m_lastSnapshot;
     bool m_forceSnapshotPublication = false;
 
-    world::celestial::StarAtlasDatabase      m_starAtlas;
-    world::celestial::CelestialSystemRuntime m_celestialRuntime;
+    // Enabling accelerated universe time is a two-phase transition. The
+    // request is recorded by the debug API, then the trajectory seed is
+    // captured at the last complete authoritative epoch before the clock is
+    // advanced by the accelerated delta.
+    bool m_pendingPassiveTrajectoryEntry = false;
+    double m_pendingPassiveTrajectoryEpochSeconds = 0.0;
+
+    world::celestial::StarAtlasDatabase       m_starAtlas;
+    world::celestial::CelestialRuntimeRegistry m_celestialRuntimes;
     world::celestial::PlayerNavigationState  m_playerNavigation;
 
     bool m_debugFastUniverseTime = false;
     double m_debugFastUniverseTimeScale = 10000.0;
     int m_debugFastUniverseTimeTraceFrames = 0;
 
+
+    const world::celestial::CelestialSystemSnapshot*
+    celestialSnapshotForSystem(int systemId) const;
 
     void applyCelestialOrbitParentParameters();
 };

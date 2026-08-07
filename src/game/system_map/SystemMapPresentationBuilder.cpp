@@ -1,12 +1,9 @@
 #include "src/game/system_map/SystemMapPresentationBuilder.h"
 
 #include <algorithm>
-#include <cmath>
 #include <string>
-#include <unordered_map>
 
 #include "src/game/system_map/SystemMapView.h"
-#include "src/world/celestial/CelestialOrbitKinematics.h"
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
@@ -35,124 +32,6 @@ namespace
         state.selectedBodyId.clear();
         state.selectedHubId.clear();
         state.selectedHubParentBodyId.clear();
-    }
-
-    double resolvePresentationTimeSeconds(
-        SystemMapView& view,
-        const world::celestial::SystemMapSnapshot& system,
-        double wallNowSeconds
-    )
-    {
-        auto& state = view.state();
-
-        const bool sourceChanged =
-            state.presentationSystemId != system.systemId ||
-            std::abs(
-                state.presentationSourceTimeSeconds -
-                    system.universeTimeSeconds
-            ) > 0.000001 ||
-            std::abs(
-                state.presentationTimeScale -
-                    system.universeTimeScale
-            ) > 0.000001;
-
-        if (sourceChanged)
-        {
-            state.presentationSystemId = system.systemId;
-            state.presentationSourceTimeSeconds =
-                system.universeTimeSeconds;
-            state.presentationWallTimeSeconds = wallNowSeconds;
-            state.presentationTimeScale =
-                std::max(0.0, system.universeTimeScale);
-        }
-
-        return
-            state.presentationSourceTimeSeconds +
-            std::max(
-                0.0,
-                wallNowSeconds -
-                    state.presentationWallTimeSeconds
-            ) *
-            state.presentationTimeScale;
-    }
-
-    std::vector<world::celestial::SystemMapBody>
-    buildVisualBodies(
-        const world::celestial::SystemMapSnapshot& system,
-        double presentationTimeSeconds
-    )
-    {
-        std::vector<world::celestial::SystemMapBody> visualBodies =
-            system.bodies;
-
-        std::unordered_map<std::string, glm::dvec3>
-            visualBodyPositionAuById;
-
-        for (auto& body : visualBodies)
-        {
-            glm::dvec3 visualOrbitCenter = body.orbitCenterAu;
-
-            const auto parentIt =
-                visualBodyPositionAuById.find(body.parentId);
-
-            if (parentIt != visualBodyPositionAuById.end())
-                visualOrbitCenter = parentIt->second;
-
-            if (body.drawOrbit &&
-                body.orbitRadiusAu > 0.0 &&
-                body.orbitalPeriodDays > 0.0)
-            {
-                const double phaseRad =
-                    world::celestial::circularOrbitPhaseRad(
-                        presentationTimeSeconds,
-                        body.orbitalPeriodDays,
-                        body.orbitalDirection,
-                        body.orbitalPhaseOffsetRad
-                    );
-
-                body.positionAu =
-                    visualOrbitCenter +
-                    world::celestial::circularOrbitPositionAu(
-                        body.orbitRadiusAu,
-                        phaseRad
-                    );
-            }
-            else if (parentIt != visualBodyPositionAuById.end())
-            {
-                body.positionAu =
-                    visualOrbitCenter +
-                    (body.positionAu - body.orbitCenterAu);
-            }
-
-            body.orbitCenterAu = visualOrbitCenter;
-
-            if (body.dayLengthHours > 0.0)
-            {
-                const double snapshotRotationOffset =
-                    body.rotationPhaseRad -
-                    static_cast<double>(
-                        body.rotationDirection < 0 ? -1 : 1
-                    ) *
-                    std::fmod(
-                        system.universeTimeSeconds /
-                            (body.dayLengthHours * 3600.0),
-                        1.0
-                    ) *
-                    world::celestial::OrbitTwoPi;
-
-                body.rotationPhaseRad =
-                    world::celestial::bodyRotationPhaseRad(
-                        presentationTimeSeconds,
-                        body.dayLengthHours,
-                        body.rotationDirection,
-                        snapshotRotationOffset
-                    );
-            }
-
-            visualBodyPositionAuById[body.id] = body.positionAu;
-        }
-
-        return visualBodies;
     }
 
     float calculateSystemScale(
@@ -298,17 +177,8 @@ SystemMapPresentation SystemMapPresentationBuilder::build(
 
     SystemMapPresentation presentation;
     presentation.systemId = system.systemId;
-    presentation.timeSeconds =
-        resolvePresentationTimeSeconds(
-            view,
-            system,
-            wallNowSeconds
-        );
-    presentation.bodies =
-        buildVisualBodies(
-            system,
-            presentation.timeSeconds
-        );
+    presentation.timeSeconds = system.universeTimeSeconds;
+    presentation.bodies = system.bodies;
     presentation.systemScale =
         calculateSystemScale(
             view,

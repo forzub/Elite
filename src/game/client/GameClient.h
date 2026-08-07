@@ -7,6 +7,7 @@
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/client/ClientCatalogService.h"
 #include "src/game/client/ClientMapService.h"
+#include "src/game/client/ClientUniverseClock.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/simulation/SimulationSnapshot.h"
 // #include "src/game/SpaceState.h"
@@ -107,8 +108,10 @@ public:
     const world::celestial::PlayerNavigationState&
         playerNavigation() const;
 
+    double universeTimeSeconds() const;
+
     bool requestStarAtlas();
-    bool requestCelestialSnapshot();
+    bool resolveCelestialSnapshot(bool forceRefresh = false);
     const world::celestial::StarAtlasDatabase* starAtlas() const;
     const world::celestial::CelestialSystemSnapshot*
         celestialSnapshot() const;
@@ -151,6 +154,7 @@ private:
 
     game::client::ClientMapService m_maps;
     game::client::ClientCatalogService m_catalogs;
+    game::client::ClientUniverseClock m_universeClock;
 
     bool m_hasSessionSnapshot = false;
     game::simulation::ClientSessionSnapshot m_sessionSnapshot;

@@ -622,7 +622,10 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 //   ######   ##       ######   #####      ###    #####
 //           ####
 
-void ClientWorldState::update(float dt)
+void ClientWorldState::update(
+    float dt,
+    bool authoritativePlayerRendering
+)
 {
     m_clientTime += dt;
 
@@ -661,8 +664,11 @@ void ClientWorldState::update(float dt)
 
     for (auto& [id, ship] : m_ships)
     {
-        // ===== 1️⃣ ИГРОК — ВСЕГДА PREDICTION =====
-        if (ship.role == ShipRole::Player)
+        const bool usePredictedPlayerPresentation =
+            ship.role == ShipRole::Player &&
+            !authoritativePlayerRendering;
+
+        if (usePredictedPlayerPresentation)
         {
             ship.renderTransform =
                 smoothShipRenderTransform(
@@ -682,7 +688,8 @@ void ClientWorldState::update(float dt)
         }
         else
         {
-            // ===== 2️⃣ NPC — INTERPOLATION =====
+            // NPCs and debug passive trajectories are rendered only from
+            // authoritative server snapshots.
             if (older && newer)
             {
                 double span = newer->metadata.serverTimeSeconds - older->metadata.serverTimeSeconds;

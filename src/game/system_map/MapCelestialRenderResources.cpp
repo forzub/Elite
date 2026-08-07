@@ -589,10 +589,10 @@ void MapCelestialRenderResources::beginFrame()
 
 void MapCelestialRenderResources::resetPresentationTime()
 {
-    m_environmentVisualTimeSeconds = 0.0;
-    m_environmentLastSourceTimeSeconds = 0.0;
-    m_environmentLastWallClockSeconds = 0.0;
-    m_environmentVisualTimeInitialized = false;
+    m_visualEffectTimeSeconds = 0.0;
+    m_visualEffectLastSourceTimeSeconds = 0.0;
+    m_visualEffectLastWallClockSeconds = 0.0;
+    m_visualEffectTimeInitialized = false;
 }
 
 void MapCelestialRenderResources::ensureGeneratedCelestialAssets()
@@ -1982,7 +1982,7 @@ GLuint MapCelestialRenderResources::globalAlbedoTextureForBody(
     );
 }
 
-double MapCelestialRenderResources::environmentVisualTimeSeconds(
+double MapCelestialRenderResources::visualEffectTimeSeconds(
     double sourceTimeSeconds
 )
 {
@@ -2005,22 +2005,22 @@ double MapCelestialRenderResources::environmentVisualTimeSeconds(
         чтобы разные тела получали детерминированную
         исходную фазу.
     */
-    if (!m_environmentVisualTimeInitialized)
+    if (!m_visualEffectTimeInitialized)
     {
-        m_environmentVisualTimeSeconds =
+        m_visualEffectTimeSeconds =
             sourceTimeSeconds;
 
-        m_environmentLastSourceTimeSeconds =
+        m_visualEffectLastSourceTimeSeconds =
             sourceTimeSeconds;
 
-        m_environmentLastWallClockSeconds =
+        m_visualEffectLastWallClockSeconds =
             nowSeconds;
 
-        m_environmentVisualTimeInitialized =
+        m_visualEffectTimeInitialized =
             true;
 
         return
-            m_environmentVisualTimeSeconds;
+            m_visualEffectTimeSeconds;
     }
 
     /*
@@ -2032,25 +2032,25 @@ double MapCelestialRenderResources::environmentVisualTimeSeconds(
     const double wallDeltaSeconds =
         std::clamp(
             nowSeconds -
-                m_environmentLastWallClockSeconds,
+                m_visualEffectLastWallClockSeconds,
             0.0,
             0.10
         );
 
-    m_environmentLastWallClockSeconds =
+    m_visualEffectLastWallClockSeconds =
         nowSeconds;
 
     const bool sourceWentBackward =
         sourceTimeSeconds <
-        m_environmentLastSourceTimeSeconds -
+        m_visualEffectLastSourceTimeSeconds -
             0.001;
 
     const bool sourceAdvanced =
         sourceTimeSeconds >
-        m_environmentLastSourceTimeSeconds +
+        m_visualEffectLastSourceTimeSeconds +
             0.000001;
 
-    m_environmentLastSourceTimeSeconds =
+    m_visualEffectLastSourceTimeSeconds =
         sourceTimeSeconds;
 
     /*
@@ -2062,11 +2062,11 @@ double MapCelestialRenderResources::environmentVisualTimeSeconds(
     */
     if (sourceWentBackward)
     {
-        m_environmentVisualTimeSeconds =
+        m_visualEffectTimeSeconds =
             sourceTimeSeconds;
 
         return
-            m_environmentVisualTimeSeconds;
+            m_visualEffectTimeSeconds;
     }
 
     /*
@@ -2076,7 +2076,7 @@ double MapCelestialRenderResources::environmentVisualTimeSeconds(
         даже если snapshot кэширован и его universeTimeSeconds
         несколько секунд не обновляется.
     */
-    m_environmentVisualTimeSeconds +=
+    m_visualEffectTimeSeconds +=
         wallDeltaSeconds;
 
     /*
@@ -2090,11 +2090,11 @@ double MapCelestialRenderResources::environmentVisualTimeSeconds(
     {
         const double timeError =
             sourceTimeSeconds -
-            m_environmentVisualTimeSeconds;
+            m_visualEffectTimeSeconds;
 
         if (std::abs(timeError) > 2.0)
         {
-            m_environmentVisualTimeSeconds =
+            m_visualEffectTimeSeconds =
                 sourceTimeSeconds;
         }
         else
@@ -2113,14 +2113,14 @@ double MapCelestialRenderResources::environmentVisualTimeSeconds(
                     0.25
                 );
 
-            m_environmentVisualTimeSeconds +=
+            m_visualEffectTimeSeconds +=
                 limitedError *
                 correctionBlend;
         }
     }
 
     return
-        m_environmentVisualTimeSeconds;
+        m_visualEffectTimeSeconds;
 }
 
 void MapCelestialRenderResources::drawStarfield(

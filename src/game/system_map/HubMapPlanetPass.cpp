@@ -604,7 +604,7 @@ m_owner.endGpuStage();
     procedural clouds.
 */
 const double cloudVisualTimeSeconds =
-    m_resources.environmentVisualTimeSeconds(
+    m_resources.visualEffectTimeSeconds(
         hub.universeTimeSeconds
     );
 

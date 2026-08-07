@@ -988,10 +988,6 @@ void SystemMapRenderer::resetView()
 
     m_systemView.state().lastScale = 1.0f;
 
-    m_systemView.state().presentationSystemId = -1;
-    m_systemView.state().presentationSourceTimeSeconds = 0.0;
-    m_systemView.state().presentationWallTimeSeconds = 0.0;
-    m_systemView.state().presentationTimeScale = 1.0;
 
     m_mapResources.resetPresentationTime();
 

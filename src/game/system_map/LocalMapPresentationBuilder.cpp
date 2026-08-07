@@ -166,6 +166,19 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
             if (!object.valid)
                 continue;
 
+            /*
+                Camera fit belongs to the scene anchor, not to transient
+                participants. A fast ship must not pull the camera away from
+                the selected planet and cause zoom pumping on every snapshot.
+            */
+            if (object.objectClass ==
+                    world::celestial::DetailObjectClass::Ship &&
+                object.role ==
+                    world::celestial::LocalSceneObjectRole::Participant)
+            {
+                continue;
+            }
+
             maxRadiusMeters =
                 std::max(
                     maxRadiusMeters,
@@ -336,40 +349,30 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
     if (!snapshot.valid)
         return presentation;
 
-    double maxDistance =
-        std::max(
-            1000.0,
-            snapshot.scene.halfExtentMeters
-        );
+    /*
+        Hub Map is anchored on the hub origin. Its camera fit is determined by
+        infrastructure only. Ships are dynamic participants and may leave the
+        local scene; including them in auto-fit makes the whole map breathe,
+        shrink and jump as their trajectory changes.
+    */
+    double maxDistance = 2500.0;
 
     for (const auto& object : snapshot.scene.objects)
     {
-        if (!object.valid)
+        if (!object.valid ||
+            object.objectClass !=
+                world::celestial::DetailObjectClass::Hub)
+        {
             continue;
+        }
 
-        if (object.objectClass ==
-            world::celestial::DetailObjectClass::Hub)
-        {
-            maxDistance =
-                std::max(
-                    maxDistance,
-                    glm::length(object.positionMeters) +
-                    glm::length(object.sizeMeters)
-                );
-        }
-        else if (object.objectClass ==
-            world::celestial::DetailObjectClass::Ship)
-        {
-            maxDistance =
-                std::max(
-                    maxDistance,
-                    glm::length(object.positionMeters) +
-                    800.0
-                );
-        }
+        maxDistance =
+            std::max(
+                maxDistance,
+                glm::length(object.positionMeters) +
+                glm::length(object.sizeMeters)
+            );
     }
-
-    maxDistance = std::max(maxDistance, 2500.0);
 
     const double halfPx =
         std::min(viewport.width, viewport.height) * 0.38;

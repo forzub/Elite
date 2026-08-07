@@ -23,6 +23,11 @@ private:
         double simTimeSeconds
     ) const;
 
+    glm::dvec3 computeRelativeVelocityAuPerSecond(
+        const CelestialBodyDefinition& body,
+        double simTimeSeconds
+    ) const;
+
 private:
     const CelestialSystemDefinition* m_definition = nullptr;
     CelestialSystemSnapshot m_snapshot;

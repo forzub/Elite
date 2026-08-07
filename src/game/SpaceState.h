@@ -38,6 +38,7 @@
 #include "src/game/promo/PromoSceneScenario.h"
 #include "src/game/traffic/StationTrafficSystem.h"
 #include "src/game/system_map/SystemMapRenderer.h"
+#include "src/game/system_map/AuthoritativeMapInterpolator.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
 #include <nlohmann/json.hpp>
@@ -118,6 +119,8 @@ public:
     );
 
     void updateSystemMapLiveFlags();
+    void updateLiveMapSnapshots(float dt);
+    void updateLocalMapPresentationSnapshots(float dt);
     bool shouldRefreshSystemMapSnapshot() const;
 
     bool requestDetailMapSnapshot(
@@ -254,16 +257,6 @@ private:
 
     game::promo::PromoSceneScenario m_promoSceneScenario;
     game::traffic::StationTrafficSystem m_stationTrafficSystem;
-    void updatePromoPlayerShipTracking(float dt);
-
-    bool m_promoTrackingInitialized = false;
-    glm::quat m_promoPlayerOrientation {1.0f, 0.0f, 0.0f, 0.0f};
-
-    bool m_promoRollStarted = false;
-    bool m_promoRollFinished = false;
-
-    float m_promoRollAngle = 0.0f;
-
 
     world::celestial::GalaxyMapSnapshot m_galaxyMapSnapshot;
 
@@ -274,21 +267,28 @@ private:
     bool m_hasHubMapSnapshot = false;
     int m_loadedHubMapSystemId = -1;
     std::string m_loadedHubMapHubId;
+    std::uint64_t m_appliedHubMapServerTick = 0;
 
     bool m_hasDetailMapSnapshot = false;
     world::celestial::DetailTarget m_loadedDetailTarget;
+    std::uint64_t m_appliedDetailMapServerTick = 0;
 
     int m_loadedSystemMapId = -1;
+    std::uint64_t m_appliedSystemMapServerTick = 0;
     bool m_hasGalaxyMapSnapshot = false;
     bool m_hasSystemMapSnapshot = false;
     bool m_systemMapShowsEmptySector = false;
     int m_nextEmptySystemMapId = -2;
     double m_systemMapLiveRefreshTimer = 0.0;
+    double m_detailMapLiveRefreshTimer = 0.0;
+    double m_hubMapLiveRefreshTimer = 0.0;
 
     bool m_systemMapVisible = false;
     bool m_systemMapLiveSnapshotsEnabled = false;
     int m_liveSystemMapId = -1;
 
     game::client::MapTransitionController m_mapTransitions;
+    game::system_map::AuthoritativeMapInterpolator
+        m_authoritativeMapInterpolator;
 
 };

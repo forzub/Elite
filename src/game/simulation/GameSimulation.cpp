@@ -511,11 +511,37 @@ bool GameSimulation::enterPassiveTrajectoryMode(
         const glm::dvec3 parentVelocityMps =
             parentVelocityIt->second;
 
+        /*
+            HubTactical is authoritative in hub-local coordinates. When a
+            ship is released into PassiveTrajectory, reconstruct the seed
+            directly from that authoritative local state and the canonical
+            rotating HubNavigationFrame.
+
+            Do not seed from compatibility world caches here: a stale cache
+            can omit the frame's omega x r contribution and turn a nearby
+            orbital trajectory into an apparent straight-line departure on
+            the Hub map.
+        */
+        const bool seedFromHubLocalState =
+            sourceHubFrame &&
+            sourceHubFrame->valid &&
+            motion.mode ==
+                game::navigation::MotionMode::HubTactical;
+
         const glm::dvec3 shipWorldPositionMeters =
-            tr.fullWorldMeters();
+            seedFromHubLocalState
+                ? sourceHubFrame->localToWorldPosition(
+                    motion.localPositionMeters
+                )
+                : tr.fullWorldMeters();
 
         const glm::dvec3 shipWorldVelocityMps =
-            motion.worldVelocityMps;
+            seedFromHubLocalState
+                ? sourceHubFrame->localToWorldVelocity(
+                    motion.localPositionMeters,
+                    motion.localVelocityMps
+                )
+                : motion.worldVelocityMps;
 
         const glm::dvec3 relativePositionMeters =
             shipWorldPositionMeters - parentCenterMeters;

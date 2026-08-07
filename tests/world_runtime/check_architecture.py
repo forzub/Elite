@@ -405,6 +405,26 @@ if simulation_header.is_file():
     if re.search(r"\bm_serverTime\b", text):
         fail(simulation_header, "raw server-time accumulator returned to GameSimulation")
 
+cloud_resources_cpp = SRC / "game/system_map/MapCelestialRenderResources.cpp"
+if cloud_resources_cpp.is_file():
+    text = cloud_resources_cpp.read_text(encoding="utf-8", errors="replace")
+    start = text.find("double cloudWindTimeScale()")
+    end = text.find("std::string normalizeCloudToken", start)
+    if start < 0 or end < 0:
+        fail(cloud_resources_cpp, "could not locate cloud wind time-scale contract")
+    else:
+        cloud_scale = text[start:end]
+        if '"default_debug"' in cloud_scale:
+            fail(
+                cloud_resources_cpp,
+                "production cloud wind still uses the debug time multiplier",
+            )
+        if '"physical"' not in cloud_scale:
+            fail(
+                cloud_resources_cpp,
+                "production cloud wind does not select the physical time scale",
+            )
+
 if simulation_cpp.is_file():
     text = simulation_cpp.read_text(encoding="utf-8", errors="replace")
     if "m_serverTimelineClock.advance(time.serverDeltaSeconds);" not in text:
@@ -418,6 +438,27 @@ if simulation_cpp.is_file():
     ):
         if forbidden in text:
             fail(simulation_cpp, f"server clock can freeze with gameplay again: {forbidden}")
+
+    passive_match = re.search(
+        r"bool GameSimulation::enterPassiveTrajectoryMode\([\s\S]*?\n}\r?\n\r?\nvoid GameSimulation::exitPassiveTrajectoryMode",
+        text,
+    )
+    if not passive_match:
+        fail(simulation_cpp, "could not locate PassiveTrajectory entry contract")
+    else:
+        passive_entry = passive_match.group(0)
+        for required in (
+            "seedFromHubLocalState",
+            "sourceHubFrame->localToWorldPosition(",
+            "sourceHubFrame->localToWorldVelocity(",
+            "motion.localPositionMeters",
+            "motion.localVelocityMps",
+        ):
+            if required not in passive_entry:
+                fail(
+                    simulation_cpp,
+                    f"PassiveTrajectory seed bypasses canonical Hub frame state: {required}",
+                )
 
 
 if errors:

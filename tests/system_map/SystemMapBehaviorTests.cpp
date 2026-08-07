@@ -1108,7 +1108,11 @@ void testPresentationBuilderPreparesStateBeforeRender()
             55.0
         );
 
-    REQUIRE_NEAR(second.timeSeconds, 1010.0, 1.0e-10);
+    /*
+        wallNowSeconds drives hover/presentation timing only. A second build
+        from the same world snapshot must not locally advance universe time.
+    */
+    REQUIRE_NEAR(second.timeSeconds, 1000.0, 1.0e-10);
     REQUIRE_VEC_NEAR(view.state().camera.target, preservedTarget, 1.0e-12);
     REQUIRE_NEAR(view.state().camera.distance, 17.0f, 1.0e-7);
     REQUIRE(view.state().selectedBodyId == "planet");
@@ -1126,11 +1130,10 @@ void testPresentationBuilderPreparesStateBeforeRender()
         );
 
     REQUIRE(secondPlanet != second.bodies.end());
-    REQUIRE(
-        glm::length(
-            secondPlanet->positionAu -
-            firstPlanet->positionAu
-        ) > 0.0
+    REQUIRE_VEC_NEAR(
+        secondPlanet->positionAu,
+        firstPlanet->positionAu,
+        1.0e-15
     );
 
     view.state().selectedBodyId = "star";

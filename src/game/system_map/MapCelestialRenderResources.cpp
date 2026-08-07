@@ -56,10 +56,19 @@ namespace
                                     nlohmann::json::object()
                                 );
 
+                            /*
+                                Production rendering follows physical wind.
+
+                                The debug/preview multipliers in
+                                environment_debug.json are tooling values.
+                                Multiplying them by accelerated universe time
+                                made cloud advection effectively millions of
+                                times faster than the body rotation.
+                            */
                             const double value =
                                 windScale.value(
-                                    "default_debug",
-                                    600.0
+                                    "physical",
+                                    1.0
                                 );
 
                             std::cout
@@ -84,7 +93,7 @@ namespace
                                 << error.what()
                                 << "\n";
 
-                            return 600.0;
+                            return 1.0;
                         }
                     }
 
@@ -104,10 +113,10 @@ namespace
                 std::cerr
                     << "[CloudWind]"
                     << " environment_debug.json not found;"
-                    << " fallback scale=600"
+                    << " fallback physical scale=1"
                     << "\n";
 
-                return 600.0;
+                return 1.0;
             }();
 
         return cachedValue;

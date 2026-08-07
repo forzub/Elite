@@ -25,13 +25,17 @@ Locks down:
   diagnostics;
 - accelerated universe time remaining an exact affine function of server time;
 - rotating Hub-frame coordinate/velocity invariants already covered by the
-  world-runtime suite.
+  world-runtime suite;
+- HubTactical -> PassiveTrajectory transition reconstructs its seed from the
+  canonical hub-local state, including the rotating-frame `omega x r` term.
 
 ### System map behavior + architecture
 
 `tests/system_map/run_mingw64.sh`
 
 Locks down the existing map camera/navigation/picking/presentation contracts.
+Wall-clock presentation time may not locally advance world snapshots, and production
+cloud motion may not apply tooling-only debug wind multipliers.
 Local map data is now resolved in `GameState::prepareFrame()` before input, and
 must not be replaced again between map input and rendering.
 

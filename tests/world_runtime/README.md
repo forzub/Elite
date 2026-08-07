@@ -86,3 +86,13 @@ The clock tests cover the production `ServerTimelineClock`, accelerated
 architecture gate rejects a return to a raw `m_serverTime += gameplayDt`
 accumulator, which was able to freeze server time while universe time kept
 moving.
+
+
+## Hub -> PassiveTrajectory seed contract
+
+A ship in `HubTactical` is authoritative in hub-local position and velocity. When
+accelerated-universe diagnostics release it into `PassiveTrajectory`, the world seed
+is reconstructed directly through `HubNavigationFrame::localToWorldPosition()` and
+`localToWorldVelocity()`. Compatibility world caches may be used only for objects
+that are not in the active HubTactical frame. This preserves the rotating-frame
+`omega x r` term at the transition.

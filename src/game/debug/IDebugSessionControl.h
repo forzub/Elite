@@ -28,6 +28,9 @@ public:
         bool destroyed
     ) = 0;
     virtual bool fastUniverseTime() const = 0;
+    virtual bool universeTimeSimulation() const = 0;
+    virtual double universeTimeScale() const = 0;
+    virtual double configuredUniverseTimeScale() const = 0;
     virtual void setUniverseTimeSimulation(bool enabled, double timeScale) = 0;
 };
 }

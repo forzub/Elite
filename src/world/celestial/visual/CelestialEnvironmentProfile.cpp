@@ -593,6 +593,26 @@ bool readEnvironmentDocument(
             1.0f
         );
 
+    /*
+        Keep the authored render-speed contract separate from physical
+        circulation. Older body profiles already carry a deliberately visible
+        longitude_drift_speed; the v2 layer wind data below is physical m/s.
+        Reusing one value for both was what made clouds tens of thousands of
+        times slower after the physical-wind refactor.
+    */
+    const json visualWind =
+        clouds.value(
+            "wind",
+            json::object()
+        );
+
+    out.clouds.visualLongitudeDriftUvPerSecond =
+        jsonFloat(
+            visualWind,
+            "longitude_drift_speed",
+            0.0f
+        );
+
     const json appearance =
         clouds.value(
             "appearance",

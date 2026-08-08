@@ -57,6 +57,9 @@ public:
     ) override;
 
     bool fastUniverseTime() const override;
+    bool universeTimeSimulation() const override;
+    double universeTimeScale() const override;
+    double configuredUniverseTimeScale() const override;
     void setUniverseTimeSimulation(bool enabled, double timeScale) override;
 
 

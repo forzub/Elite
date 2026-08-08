@@ -416,6 +416,7 @@ struct HubMapSnapshot
         родительской планеты.
     */
     glm::dvec3 parentPlanetWorldPositionMeters {0.0};
+    glm::dvec3 parentPlanetWorldVelocityMps {0.0};
 
     /*
         Текущая rotation phase родительской планеты,

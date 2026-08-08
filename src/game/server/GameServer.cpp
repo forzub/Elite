@@ -3275,6 +3275,10 @@ double GameServer::debugUniverseTimeScale() const
     return m_universeClock.timeScale();
 }
 
+double GameServer::debugUniverseTimeConfiguredScale() const
+{
+    return m_universeClock.configuredTimeScale();
+}
 
 
 
@@ -3554,6 +3558,8 @@ void GameServer::refreshHubMapDynamicState(
 
     snapshot.parentPlanetWorldPositionMeters =
         parentPlanet->worldMeters;
+    snapshot.parentPlanetWorldVelocityMps =
+        parentPlanet->worldVelocityMetersPerSecond;
     snapshot.parentPlanetCenterLocalMeters =
         frame->worldToLocalPosition(parentPlanet->worldMeters);
 

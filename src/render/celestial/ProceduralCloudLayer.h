@@ -121,6 +121,11 @@ namespace render::celestial
         // Скорость смещения текстуры по долготе.
         float driftSpeed = 0.000008f;
 
+        // Debug multiplier for the procedural morphology clock. Advection
+        // still uses driftSpeed directly; this value only controls how fast
+        // the cached cloud states morph between one another.
+        float animationSpeedMultiplier = 1.0f;
+
         glm::vec3 cloudColor {
             0.96f,
             0.985f,
@@ -288,6 +293,15 @@ private:
 
     std::uint64_t m_frameSerial = 0;
     bool m_generationPerformedThisFrame = false;
+
+    /*
+        Procedural morphology is a presentation workload, not a world clock.
+        Keep its cadence on bounded wall time so x200/x10000 universe-time
+        diagnostics cannot multiply expensive GPU texture generations.
+    */
+    double m_frameWallDeltaSeconds = 0.0;
+    double m_lastFrameWallClockSeconds = 0.0;
+    bool m_frameWallClockInitialized = false;
 
     bool m_gpuWarningPrinted = false;
 };

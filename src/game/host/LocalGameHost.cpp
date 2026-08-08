@@ -113,6 +113,21 @@ bool LocalGameHost::fastUniverseTime() const
     return m_server->debugFastUniverseTime();
 }
 
+bool LocalGameHost::universeTimeSimulation() const
+{
+    return m_server->debugUniverseTimeSimulation();
+}
+
+double LocalGameHost::universeTimeScale() const
+{
+    return m_server->debugUniverseTimeScale();
+}
+
+double LocalGameHost::configuredUniverseTimeScale() const
+{
+    return m_server->debugUniverseTimeConfiguredScale();
+}
+
 void LocalGameHost::setUniverseTimeSimulation(bool enabled, double timeScale)
 {
     m_server->setDebugUniverseTimeSimulation(enabled, timeScale);

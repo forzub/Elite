@@ -210,6 +210,7 @@ public:
 
     bool debugUniverseTimeSimulation() const;
     double debugUniverseTimeScale() const;
+    double debugUniverseTimeConfiguredScale() const;
 
 private:
     void processPendingMapRequests();

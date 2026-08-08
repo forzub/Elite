@@ -96,16 +96,16 @@ struct DebugRenderSettings
     float postGrain = 0.012f;
     float postHaze = 0.24f;
 
-
-
-    
+    // Runtime multiplier for physical cloud advection/evolution.
+    // 1.0 preserves the environment-defined physical wind speed.
+    float cloudSpeedMultiplier = 1.0f;
 
     // Debug UI behaviour.
     // Не выключает WebSocket/HTML-сервер. Только останавливает автопуш state_update.
     bool debugControlAutoUpdates = true;
 
     // System map live refresh interval.
-    float systemMapLiveRefreshSec = 0.25f;
+    float systemMapLiveRefreshSec = 0.10f;
 
     // Scene mode selected from debug UI.
     // "game"   = normal update, no scripted promo wing.

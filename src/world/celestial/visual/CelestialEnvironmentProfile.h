@@ -181,6 +181,16 @@ struct EnvironmentCloudProfile
     EnvironmentCloudCirculationProfile circulation;
     EnvironmentCloudGenerationProfile generation;
 
+    /*
+        Authored visual longitudinal advection in UV turns per second.
+
+        This is intentionally separate from the physical layer wind speeds
+        measured in m/s. The environment JSON already contains this value for
+        hand-authored bodies (for example Earth = 0.01035), and it defines the
+        normal on-screen cloud motion at debug multiplier 1.0.
+    */
+    float visualLongitudeDriftUvPerSecond = 0.0f;
+
     // Derived compatibility values for current adapters.
     float opacity = 0.34f;
     float longitudeDriftSpeed = 0.0f;

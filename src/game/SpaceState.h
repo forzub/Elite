@@ -99,6 +99,9 @@ public:
     void pushVolumeViewerState();
     void pushFrustumDebugState(const nlohmann::json& payload);
     void pushDebugControlState();
+    void loadDebugControlDefaults();
+    bool saveDebugControlDefaults(const nlohmann::json& payload);
+    void resetDebugControlSettings();
     void pushSystemMapState();
     void pushSystemMapPanelState();
     void selectSystemMapSystem(int systemId);
@@ -224,6 +227,7 @@ private:
     std::string m_attachmentEditorSelectedShipTypeId = "cobra_mk1";
     uint64_t    m_shipCoreSelectedShipEntityId = 0;
     uint64_t    m_structureDebugSelectedShipEntityId = 0;
+    std::uint64_t m_debugControlSettingsRevision = 1;
 
 
 

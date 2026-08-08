@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <sstream>
@@ -1188,6 +1189,36 @@ void ProceduralCloudLayer::blendGpuTextures(
 
 void ProceduralCloudLayer::beginFrame()
 {
+    using Clock = std::chrono::steady_clock;
+
+    const double nowSeconds =
+        std::chrono::duration<double>(
+            Clock::now().time_since_epoch()
+        ).count();
+
+    if (!m_frameWallClockInitialized)
+    {
+        m_lastFrameWallClockSeconds = nowSeconds;
+        m_frameWallDeltaSeconds = 0.0;
+        m_frameWallClockInitialized = true;
+    }
+    else
+    {
+        const double rawDelta =
+            nowSeconds - m_lastFrameWallClockSeconds;
+
+        m_lastFrameWallClockSeconds = nowSeconds;
+
+        m_frameWallDeltaSeconds =
+            std::clamp(
+                std::isfinite(rawDelta)
+                    ? rawDelta
+                    : 0.0,
+                0.0,
+                0.05
+            );
+    }
+
     ++m_frameSerial;
     m_generationPerformedThisFrame = false;
 }
@@ -1311,14 +1342,7 @@ GLuint ProceduralCloudLayer::textureForStyle(
             Само изображение меняется каждый кадр через blend.
         */
         constexpr double stateIntervalSeconds =
-            2.40;
-
-        /*
-            Не позволяем внешнему серверному времени заставить
-            визуальный renderer одномоментно догонять большой скачок.
-        */
-        constexpr double maximumAnimationDeltaSeconds =
-            0.10;
+            8.0;
 
         if (!entry.initialized)
         {
@@ -1394,39 +1418,38 @@ GLuint ProceduralCloudLayer::textureForStyle(
         if (entry.lastAdvancedFrameSerial !=
             m_frameSerial)
         {
-            double sourceDelta =
-                timeSeconds -
-                entry.lastSourceTimeSeconds;
+            /*
+                IMPORTANT: do not derive expensive procedural-generation
+                cadence from universe time.
 
+                At x200 the previous code saw several universe seconds between
+                rendered frames, clamped that to 0.10 s, and consequently
+                requested a new 1024x512 cloud state roughly every 0.4 wall
+                seconds per layer. Those synchronous GPU passes produced the
+                recurring whole-frame hitch visible in both Detail and Hub.
+
+                UV drift remains universe-time based and therefore stays fully
+                deterministic. Only the costly morphology cache uses bounded
+                wall time.
+            */
             entry.lastSourceTimeSeconds =
                 timeSeconds;
 
             entry.lastAdvancedFrameSerial =
                 m_frameSerial;
 
-            if (!std::isfinite(sourceDelta) ||
-                sourceDelta < 0.0)
-            {
-                sourceDelta =
-                    0.0;
-            }
+            const double sourceDelta =
+                m_frameWallDeltaSeconds;
 
-            /*
-                environmentVisualTimeSeconds() теперь самостоятельно
-                продолжает время при кэшированном snapshot.
-
-                Поэтому искусственный fallback 1/60 здесь больше
-                не нужен и не должен зависеть от числа вызовов.
-            */
-            sourceDelta =
+            const double animationSpeedMultiplier =
                 std::clamp(
-                    sourceDelta,
+                    static_cast<double>(style.animationSpeedMultiplier),
                     0.0,
-                    maximumAnimationDeltaSeconds
+                    2.0
                 );
 
             entry.animationTimeSeconds +=
-                sourceDelta;
+                sourceDelta * animationSpeedMultiplier;
         }
 
 

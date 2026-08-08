@@ -14,6 +14,7 @@
 #include <nlohmann/json.hpp>
 
 #include "src/render/bitmap/TextureLoader.h"
+#include "src/debug/DebugSettings.h"
 
 namespace
 {
@@ -1487,8 +1488,56 @@ MapCelestialRenderResources::cloudStylesForBody(
                 cloudRadiusMeters
             );
 
-        const double windScale =
-            cloudWindTimeScale();
+        const double debugCloudSpeed =
+            std::clamp(
+                static_cast<double>(
+                    debug::get().render.cloudSpeedMultiplier
+                ),
+                0.0,
+                100000.0
+            );
+
+        /*
+            There are two deliberately different notions of cloud speed:
+
+              * layer.wind.* is physical circulation in m/s;
+              * clouds.wind.longitude_drift_speed is authored presentation
+                speed in UV turns/second.
+
+            Detail/Hub historically used the authored value and that is the
+            visibly useful baseline the debug control is expected to scale.
+            Generated profiles that do not provide an authored value fall back
+            to the physical conversion.
+        */
+        const double authoredVisualUvSpeed =
+            static_cast<double>(
+                clouds.visualLongitudeDriftUvPerSecond
+            );
+
+        const double baseVisualUvSpeed =
+            std::abs(authoredVisualUvSpeed) > 1.0e-12
+                ? authoredVisualUvSpeed
+                : physicalUvSpeed * cloudWindTimeScale();
+
+        /*
+            Preserve some layer parallax without changing the authored global
+            direction. longitudeDriftSpeed is the weighted physical mean wind
+            retained by the profile loader for this compatibility purpose.
+        */
+        const double referenceWindMps =
+            std::max(
+                0.001,
+                static_cast<double>(
+                    clouds.longitudeDriftSpeed
+                )
+            );
+
+        const double layerWindRatio =
+            std::clamp(
+                meanWindMps / referenceWindMps,
+                0.25,
+                4.0
+            );
 
         style.windSpeedMps =
             static_cast<float>(
@@ -1500,30 +1549,29 @@ MapCelestialRenderResources::cloudStylesForBody(
 
         style.driftSpeed =
             static_cast<float>(
-                physicalUvSpeed *
-                windScale
+                baseVisualUvSpeed *
+                layerWindRatio *
+                debugCloudSpeed
             );
 
-        std::cout
-            << "[CloudLayerStyle]"
-            << " body=" << bodyId
-            << " layer=" << style.layerId
-            << " type=" << style.layerType
-            << " heightKm="
-            << style.baseHeightKm
-            << ".."
-            << style.topHeightKm
-            << " coverage="
-            << style.globalCoverage
-            << " opacity="
-            << style.opacity
-            << " windMps="
-            << style.windSpeedMps
-            << " directionDeg="
-            << style.windDirectionDeg
-            << " driftUvPerSecond="
-            << style.driftSpeed
-            << "\n";
+        /*
+            Procedural morphology is intentionally much more conservative than
+            cheap UV advection. It is generated into 1024x512 textures on the
+            render thread, so allowing x1000/x10000 here creates regular frame
+            stalls. Zero still freezes it; normal value 1.0 stays unchanged;
+            large debug multipliers top out at x2 morphology speed while the
+            visible longitudinal drift keeps the full requested multiplier.
+        */
+        style.animationSpeedMultiplier =
+            debugCloudSpeed <= 0.0
+                ? 0.0f
+                : static_cast<float>(
+                    std::clamp(
+                        std::sqrt(debugCloudSpeed),
+                        0.25,
+                        2.0
+                    )
+                );
 
         result.push_back(
             std::move(style)

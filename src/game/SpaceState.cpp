@@ -1,11 +1,13 @@
 #include <glad/gl.h>
 #include <iostream>
 #include <cstdio>
+#include <cstdlib>
 #include <cmath>
 
 #include <chrono>
 #include <algorithm>
 #include <functional>
+#include <filesystem>
 
 #include <fstream>
 #include <iomanip>
@@ -88,6 +90,47 @@ namespace
         return std::chrono::duration<double, std::milli>(
             clock::now().time_since_epoch()
         ).count();
+    }
+
+    std::filesystem::path debugControlDefaultsPath()
+    {
+        namespace fs = std::filesystem;
+
+#ifdef _WIN32
+        if (const char* localAppData = std::getenv("LOCALAPPDATA"))
+        {
+            if (*localAppData != '\0')
+            {
+                return fs::path(localAppData) /
+                    "EliteGame" /
+                    "debug_control_defaults.json";
+            }
+        }
+#endif
+
+        if (const char* xdgConfig = std::getenv("XDG_CONFIG_HOME"))
+        {
+            if (*xdgConfig != '\0')
+            {
+                return fs::path(xdgConfig) /
+                    "EliteGame" /
+                    "debug_control_defaults.json";
+            }
+        }
+
+        if (const char* home = std::getenv("HOME"))
+        {
+            if (*home != '\0')
+            {
+                return fs::path(home) /
+                    ".config" /
+                    "EliteGame" /
+                    "debug_control_defaults.json";
+            }
+        }
+
+        return fs::current_path() /
+            "debug_control_defaults.json";
     }
 
 
@@ -351,6 +394,7 @@ SpaceState::SpaceState(StateStack& states)
 
     initServer();
     initClient();
+    loadDebugControlDefaults();
 
     InitShaders();
 
@@ -500,19 +544,9 @@ bool SpaceState::requestDetailMapSnapshot(
         if (!snapshot)
             return requestReady && sameTarget;
 
-        const double blendDurationSeconds =
-            sameTarget
-                ? std::max(
-                    0.02,
-                    static_cast<double>(
-                        debug::get().render.systemMapLiveRefreshSec
-                    )
-                )
-                : 0.0;
-
         m_authoritativeMapInterpolator.acceptDetail(
             *snapshot,
-            blendDurationSeconds
+            metadata.serverTimeSeconds
         );
 
         m_detailMapSnapshot =
@@ -559,19 +593,9 @@ bool SpaceState::requestHubMapSnapshot(
         if (!snapshot)
             return requestReady && sameTarget;
 
-        const double blendDurationSeconds =
-            sameTarget
-                ? std::max(
-                    0.02,
-                    static_cast<double>(
-                        debug::get().render.systemMapLiveRefreshSec
-                    )
-                )
-                : 0.0;
-
         m_authoritativeMapInterpolator.acceptHub(
             *snapshot,
-            blendDurationSeconds
+            metadata.serverTimeSeconds
         );
 
         m_hubMapSnapshot =
@@ -864,11 +888,15 @@ void SpaceState::updateLiveMapSnapshots(float dt)
 }
 
 
-void SpaceState::updateLocalMapPresentationSnapshots(float dt)
+void SpaceState::updateLocalMapPresentationSnapshots(float /*dt*/)
 {
-    m_authoritativeMapInterpolator.update(
-        static_cast<double>(dt)
-    );
+    if (m_client)
+    {
+        m_authoritativeMapInterpolator.update(
+            m_client->renderServerTimeSeconds(),
+            m_client->renderUniverseTimeSeconds()
+        );
+    }
 
     if (m_hasDetailMapSnapshot &&
         m_authoritativeMapInterpolator.hasDetail())
@@ -2473,6 +2501,24 @@ void SpaceState::processHtmlCommands()
                 if (msg.command == "apply_settings")
                 {
                     applyDebugControlPayload(msg.payload);
+                    ++m_debugControlSettingsRevision;
+                    pushDebugControlState();
+                    continue;
+                }
+
+                if (msg.command == "save_defaults")
+                {
+                    applyDebugControlPayload(msg.payload);
+                    saveDebugControlDefaults(msg.payload);
+                    ++m_debugControlSettingsRevision;
+                    pushDebugControlState();
+                    continue;
+                }
+
+                if (msg.command == "reset_settings")
+                {
+                    resetDebugControlSettings();
+                    ++m_debugControlSettingsRevision;
                     pushDebugControlState();
                     continue;
                 }
@@ -2943,6 +2989,7 @@ void SpaceState::pushDebugControlState()
     const auto& dbg = debug::get().render;
 
     json payload;
+    payload["debugSettingsRevision"] = m_debugControlSettingsRevision;
     payload["drawMeshes"] = dbg.drawMeshes;
     payload["renderCockpit"] = dbg.renderCockpit;
     payload["renderShipUi"] = dbg.renderShipUi;
@@ -2996,6 +3043,9 @@ void SpaceState::pushDebugControlState()
 
     payload["postHaze"] =
         dbg.postHaze;
+
+    payload["cloudSpeedMultiplier"] =
+        dbg.cloudSpeedMultiplier;
 
     payload["debugControlAutoUpdates"] = dbg.debugControlAutoUpdates;
     payload["systemMapLiveRefreshSec"] = dbg.systemMapLiveRefreshSec;
@@ -3128,19 +3178,24 @@ void SpaceState::pushDebugControlState()
             ? m_debugSession->fastUniverseTime()
             : false;
 
+    /*
+        These are debug settings, so publish them from the authoritative
+        debug session itself. The client session snapshot is telemetry and
+        may still be one network publication behind immediately after Apply.
+    */
     payload["debugUniverseTimeSimulation"] =
-        m_client
-            ? m_client->sessionSnapshot().universeTimeSimulation
+        m_debugSession
+            ? m_debugSession->universeTimeSimulation()
             : false;
 
     payload["debugUniverseTimeScale"] =
-        m_client
-            ? m_client->sessionSnapshot().universeTimeScale
+        m_debugSession
+            ? m_debugSession->universeTimeScale()
             : 1.0;
 
     payload["debugUniverseTimeConfiguredScale"] =
-        m_client
-            ? m_client->sessionSnapshot().configuredUniverseTimeScale
+        m_debugSession
+            ? m_debugSession->configuredUniverseTimeScale()
             : 10000.0;
 
     payload["systemMapVisible"] =
@@ -3152,7 +3207,111 @@ void SpaceState::pushDebugControlState()
     payload["liveSystemMapId"] =
         m_liveSystemMapId;
 
+    payload["detailMapSampleMode"] =
+        m_authoritativeMapInterpolator.detailSampleModeName();
+    payload["detailMapNewestGapMs"] =
+        m_authoritativeMapInterpolator.detailNewestGapSeconds() * 1000.0;
+    payload["detailMapBufferedSnapshots"] =
+        m_authoritativeMapInterpolator.detailBufferedSnapshotCount();
+
+    payload["hubMapSampleMode"] =
+        m_authoritativeMapInterpolator.hubSampleModeName();
+    payload["hubMapNewestGapMs"] =
+        m_authoritativeMapInterpolator.hubNewestGapSeconds() * 1000.0;
+    payload["hubMapBufferedSnapshots"] =
+        m_authoritativeMapInterpolator.hubBufferedSnapshotCount();
+
     context().htmlUi().broadcastState(HtmlUiPanelId::DebugControl, payload);
+}
+
+void SpaceState::loadDebugControlDefaults()
+{
+    namespace fs = std::filesystem;
+
+    const fs::path path = debugControlDefaultsPath();
+    if (!fs::exists(path))
+        return;
+
+    try
+    {
+        std::ifstream input(path);
+        if (!input)
+            return;
+
+        json payload;
+        input >> payload;
+        if (!payload.is_object())
+            return;
+
+        applyDebugControlPayload(payload);
+
+        std::cout
+            << "[DebugControl] loaded startup defaults from "
+            << path.string()
+            << "\n";
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << "[DebugControl] failed to load startup defaults: "
+            << e.what()
+            << "\n";
+    }
+}
+
+bool SpaceState::saveDebugControlDefaults(const json& payload)
+{
+    namespace fs = std::filesystem;
+
+    const fs::path path = debugControlDefaultsPath();
+
+    try
+    {
+        if (!path.parent_path().empty())
+            fs::create_directories(path.parent_path());
+
+        std::ofstream output(path, std::ios::trunc);
+        if (!output)
+            return false;
+
+        output << std::setw(2) << payload << '\n';
+
+        std::cout
+            << "[DebugControl] saved startup defaults to "
+            << path.string()
+            << "\n";
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << "[DebugControl] failed to save startup defaults: "
+            << e.what()
+            << "\n";
+        return false;
+    }
+}
+
+void SpaceState::resetDebugControlSettings()
+{
+    namespace fs = std::filesystem;
+
+    debug::get().render = debug::DebugRenderSettings{};
+
+    if (m_debugSession)
+        m_debugSession->setUniverseTimeSimulation(false, 1.0);
+
+    const fs::path path = debugControlDefaultsPath();
+    std::error_code ec;
+    fs::remove(path, ec);
+
+    if (ec)
+    {
+        std::cerr
+            << "[DebugControl] failed to remove startup defaults: "
+            << ec.message()
+            << "\n";
+    }
 }
 
 void SpaceState::applyDebugControlPayload(const json& payload)
@@ -3256,6 +3415,12 @@ void SpaceState::applyDebugControlPayload(const json& payload)
             dbg.postHaze
         );
 
+    dbg.cloudSpeedMultiplier =
+        payload.value(
+            "cloudSpeedMultiplier",
+            dbg.cloudSpeedMultiplier
+        );
+
     /*
         Защита от случайных или повреждённых значений.
         HTML имеет min/max, но C++ всё равно должен
@@ -3324,6 +3489,13 @@ void SpaceState::applyDebugControlPayload(const json& payload)
             1.0f
         );
 
+    dbg.cloudSpeedMultiplier =
+        std::clamp(
+            dbg.cloudSpeedMultiplier,
+            0.0f,
+            100000.0f
+        );
+
     dbg.debugControlAutoUpdates = payload.value("debugControlAutoUpdates", dbg.debugControlAutoUpdates);
     dbg.systemMapLiveRefreshSec = payload.value("systemMapLiveRefreshSec", dbg.systemMapLiveRefreshSec);
 
@@ -3363,18 +3535,18 @@ void SpaceState::applyDebugControlPayload(const json& payload)
     if (payload.contains("rotationAxisColor"))  dbg.rotationAxisColor = jsonToVec4(payload["rotationAxisColor"], dbg.rotationAxisColor);
 
 
-    if (m_client)
+    if (m_debugSession)
     {
         const bool simulationEnabled =
             payload.value(
                 "debugUniverseTimeSimulation",
-                m_client->sessionSnapshot().universeTimeSimulation
+                m_debugSession->universeTimeSimulation()
             );
 
         const double simulationScale =
             payload.value(
                 "debugUniverseTimeScale",
-                m_client->sessionSnapshot().configuredUniverseTimeScale
+                m_debugSession->configuredUniverseTimeScale()
             );
 
         m_debugSession->setUniverseTimeSimulation(

@@ -17,6 +17,7 @@
 
     body {
       padding: 12px;
+      padding-bottom: 82px;
     }
 
     .topbar {
@@ -134,8 +135,46 @@
       cursor: pointer;
     }
 
-    button:hover {
+    button:hover:not(:disabled) {
       background: #223246;
+    }
+
+    button:disabled {
+      opacity: 0.38;
+      cursor: default;
+    }
+
+    .actionDock {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(11, 15, 20, 0.96);
+      border: 1px solid #304055;
+      border-radius: 6px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(5px);
+    }
+
+    .actionDock .dockStatus {
+      color: #6f879f;
+      font-size: 12px;
+    }
+
+    .actionDock .dockButtons {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    #applyButton:not(:disabled) {
+      border-color: #5d94c7;
+      background: #214061;
     }
 
     .hint {
@@ -229,8 +268,6 @@
 <body>
   <div class="topbar">
     <strong>Debug Control</strong>
-    <button onclick="app.requestSnapshot()">Reload</button>
-    <button onclick="app.apply()">Apply</button>
     <span class="status" id="status">offline</span>
   </div>
 
@@ -443,10 +480,14 @@
           <div class="row"><label>System map live snapshots</label><span id="systemMapLiveSnapshotsEnabled">—</span></div>
           <div class="row"><label>Live system id</label><span id="liveSystemMapId">—</span></div>
           <div class="row"><label>Map live refresh sec</label><input id="systemMapLiveRefreshSec" type="number" step="0.01" min="0.02"></div>
+          <div class="row"><label>Cloud speed multiplier</label><input id="cloudSpeedMultiplier" type="number" step="0.1" min="0" max="100000"></div>
           <div class="row"><label>Debug Control auto updates</label><input id="debugControlAutoUpdates" type="checkbox"></div>
+          <div class="row"><label>Detail sampler</label><span id="detailMapSampler">—</span></div>
+          <div class="row"><label>Hub sampler</label><span id="hubMapSampler">—</span></div>
         </div>
         <div class="hint">
-          Refresh interval пока тоже уйдёт в payload. Если C++ ещё не читает поле — оно просто будет проигнорировано до следующего шага.
+          Cloud speed 1.0 использует штатную визуальную скорость из профиля тела; 0 останавливает движение, значения выше 1 ускоряют его. Procedural-морфинг живёт на отдельном ограниченном presentation-clock, чтобы ускорение времени не создавало GPU-рывки.
+          Detail/Hub sampler: interp — работаем между двумя snapshot; extrap — render-time обогнал последний snapshot; gap со знаком + показывает величину этого отставания. Штатный refresh — 0.10 s.
         </div>
       </div>
 
@@ -611,12 +652,23 @@
     </div>
   </div>
 
+  <div class="actionDock">
+    <span class="dockStatus" id="dirtyState">Нет изменений</span>
+    <div class="dockButtons">
+      <button onclick="app.requestSnapshot()">Reload</button>
+      <button onclick="app.resetSettings()">Сброс</button>
+      <button onclick="app.saveDefaults()">По умолчанию</button>
+      <button id="applyButton" onclick="app.apply()" disabled>Apply</button>
+    </div>
+  </div>
+
   <script>
     const state = { ws: null };
     const MAX_LOG_LINES = 300;
 
     let debugSettingsInitialized = false;
     let debugSettingsDirty = false;
+    let debugSettingsRevision = -1;
 
     function nowStamp() {
       const d = new Date();
@@ -650,8 +702,36 @@
 
 
 
+    function updateActionButtons() {
+      const connected =
+        state.ws &&
+        state.ws.readyState === WebSocket.OPEN;
+
+      const applyButton = document.getElementById('applyButton');
+      if (applyButton) {
+        applyButton.disabled = !connected || !debugSettingsDirty;
+      }
+
+      setText(
+        'dirtyState',
+        debugSettingsDirty ? 'Есть неприменённые изменения' : 'Нет изменений'
+      );
+    }
+
     function markDebugSettingsDirty() {
       debugSettingsDirty = true;
+      updateActionButtons();
+    }
+
+    function markDebugSettingsClean() {
+      debugSettingsDirty = false;
+      updateActionButtons();
+    }
+
+    function allowSettingsReload() {
+      debugSettingsDirty = false;
+      debugSettingsInitialized = false;
+      updateActionButtons();
     }
 
     function logLine(text, kind = 'info') {
@@ -848,9 +928,21 @@
     function applyPayload(p) {
       if (!p) return;
 
-      if (!debugSettingsInitialized && !debugSettingsDirty) {
+      const incomingRevision = Number(p.debugSettingsRevision);
+      const hasRevision = Number.isFinite(incomingRevision);
+      const settingsChanged =
+        hasRevision && incomingRevision > debugSettingsRevision;
+
+      if (
+        !debugSettingsDirty &&
+        (!debugSettingsInitialized || settingsChanged)
+      ) {
         applySettingsPayload(p);
         debugSettingsInitialized = true;
+
+        if (hasRevision) {
+          debugSettingsRevision = incomingRevision;
+        }
       }
 
       if (p.performance) {
@@ -861,6 +953,31 @@
       setText('systemMapVisible', p.systemMapVisible ? 'yes' : 'no');
       setText('systemMapLiveSnapshotsEnabled', p.systemMapLiveSnapshotsEnabled ? 'yes' : 'no');
       setText('liveSystemMapId', p.liveSystemMapId ?? '—');
+
+      const samplerText = (mode, gapMs, buffered) => {
+        const gap = Number(gapMs);
+        const gapText = Number.isFinite(gap)
+          ? `${gap >= 0 ? '+' : ''}${gap.toFixed(1)} ms`
+          : '—';
+        return `${mode || 'none'} / ${gapText} / ${buffered ?? 0} buf`;
+      };
+
+      setText(
+        'detailMapSampler',
+        samplerText(
+          p.detailMapSampleMode,
+          p.detailMapNewestGapMs,
+          p.detailMapBufferedSnapshots
+        )
+      );
+      setText(
+        'hubMapSampler',
+        samplerText(
+          p.hubMapSampleMode,
+          p.hubMapNewestGapMs,
+          p.hubMapBufferedSnapshots
+        )
+      );
     }
 
     function applySettingsPayload(p) {
@@ -950,7 +1067,11 @@
       setChecked('debugUniverseTimeSimulation', !!p.debugUniverseTimeSimulation);
       setValue('debugUniverseTimeScaleInput', p.debugUniverseTimeConfiguredScale ?? 10000);
 
-      setValue('systemMapLiveRefreshSec', p.systemMapLiveRefreshSec ?? 0.25);
+      setValue(
+        'systemMapLiveRefreshSec',
+        Number(p.systemMapLiveRefreshSec ?? 0.10).toFixed(2)
+      );
+      setValue('cloudSpeedMultiplier', p.cloudSpeedMultiplier ?? 1.0);
 
       const filter = document.getElementById('hitVolumeFilterMode');
       if (filter) filter.value = String(p.hitVolumeFilterMode ?? 0);
@@ -1041,7 +1162,8 @@
         debugUniverseTimeSimulation: document.getElementById('debugUniverseTimeSimulation').checked,
         debugUniverseTimeScale: numberValue('debugUniverseTimeScaleInput', 10000),
         debugControlAutoUpdates: document.getElementById('debugControlAutoUpdates').checked,
-        systemMapLiveRefreshSec: Number(document.getElementById('systemMapLiveRefreshSec').value) || 0.25,
+        systemMapLiveRefreshSec: numberValue('systemMapLiveRefreshSec', 0.10),
+        cloudSpeedMultiplier: numberValue('cloudSpeedMultiplier', 1.0),
 
         hitVolumeFilterMode: parseInt(document.getElementById('hitVolumeFilterMode').value, 10) || 0,
         publishObjectOrientation: document.getElementById('publishObjectOrientation').checked,
@@ -1075,6 +1197,7 @@
       state.ws.addEventListener('open', () => {
         setStatus('connected');
         logLine('WebSocket connected');
+        updateActionButtons();
 
         state.ws.send(JSON.stringify({
           type: 'subscribe',
@@ -1086,11 +1209,13 @@
       state.ws.addEventListener('close', () => {
         setStatus('disconnected');
         logLine('WebSocket disconnected', 'warn');
+        updateActionButtons();
       });
 
       state.ws.addEventListener('error', () => {
         setStatus('error');
         logLine('WebSocket error', 'error');
+        updateActionButtons();
       });
 
       state.ws.addEventListener('message', (event) => {
@@ -1125,7 +1250,9 @@
 
     window.app = {
       requestSnapshot() {
-        if (!state.ws) return;
+        if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
+
+        allowSettingsReload();
         state.ws.send(JSON.stringify({
           type: 'command',
           panel: 'debug_control',
@@ -1135,7 +1262,7 @@
       },
 
       apply() {
-        if (!state.ws) return;
+        if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
 
         state.ws.send(JSON.stringify({
           type: 'command',
@@ -1144,14 +1271,40 @@
           payload: buildPayload()
         }));
 
-        debugSettingsDirty = false;
-        debugSettingsInitialized = false;
-
+        markDebugSettingsClean();
         logLine('Debug settings applied');
+      },
+
+      saveDefaults() {
+        if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
+
+        state.ws.send(JSON.stringify({
+          type: 'command',
+          panel: 'debug_control',
+          command: 'save_defaults',
+          payload: buildPayload()
+        }));
+
+        markDebugSettingsClean();
+        logLine('Current debug settings saved as startup defaults');
+      },
+
+      resetSettings() {
+        if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
+
+        state.ws.send(JSON.stringify({
+          type: 'command',
+          panel: 'debug_control',
+          command: 'reset_settings',
+          payload: {}
+        }));
+
+        markDebugSettingsClean();
+        logLine('Debug settings reset to factory gameplay defaults');
       }
     };
 
-    document.addEventListener('change', (event) => {
+    document.addEventListener('input', (event) => {
       const target = event.target;
 
       if (
@@ -1163,6 +1316,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+      updateActionButtons();
       connectWs();
     });
   </script>

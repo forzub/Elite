@@ -49,6 +49,7 @@ private:
 
 private:
     bool m_active = false;
+    int m_systemId = -1;
 
     double m_trafficTime = 0.0;
 

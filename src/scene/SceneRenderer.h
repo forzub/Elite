@@ -209,7 +209,8 @@ private:
         const ClientWorldState& world,
         const glm::mat4& view,
         const glm::vec3& cameraPos,
-        const world::coordinates::WorldFrame& frame
+        const world::coordinates::WorldFrame& frame,
+        int activeSystemId
     );
 
     void renderVisualShips(
@@ -232,6 +233,7 @@ private:
         const glm::mat4& proj,
         const glm::vec3& cameraPos,
         const world::coordinates::WorldFrame& frame,
+        int activeSystemId,
         unsigned int fillShader,
         unsigned int edgeShader
     );

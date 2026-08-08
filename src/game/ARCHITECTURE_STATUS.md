@@ -99,8 +99,17 @@ new client-side celestial translations with old server dynamic geometry.
 
 - `GameServer` still builds Galaxy/System/Detail/Hub snapshots, including much
   deterministic catalog/celestial data already available on the client.
+- The gameplay `SceneRenderer` still contains a legacy Sol/Earth/Moon celestial
+  pass with hard-coded geometry, while the canonical client celestial runtime is
+  already available. That legacy pass must not become a second celestial
+  authority; migrating gameplay celestial presentation to the client runtime is
+  the next safe presentation seam before/alongside dynamic System-map composition.
 - Runtime system membership is now first-class for ships, hub reference frames,
-  static objects and sensor-space sources. The current dynamic simulation remains
+  static objects and sensor-space sources. Client interpolation/prediction and
+  gameplay scene preparation are fenced by the same system domain: no render
+  smoother may blend system-local coordinates across a system change, and
+  presentation-only traffic/drones carry explicit system membership.
+  The current dynamic simulation remains
   deliberately **single-active-system**: its celestial/gravity/reference caches
   carry an explicit active system id, foreign-system runtime creation is rejected,
   and foreign-system entities are frozen rather than advanced by the active

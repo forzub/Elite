@@ -33,6 +33,7 @@
 #include <cstdio>
 
 #include "src/game/visual/VisualShip.h"
+#include "src/game/client/ClientSpatialDomain.h"
 #include "src/world/coordinates/WorldFrame.h"
 
 #include <fstream>
@@ -854,7 +855,8 @@ void SceneRenderer::renderFarStationProxyPass(
     const ClientWorldState& world,
     const glm::mat4& view,
     const glm::vec3& cameraLocalPosition,
-    const world::coordinates::WorldFrame& frame
+    const world::coordinates::WorldFrame& frame,
+    int activeSystemId
 )
 {
     if (!m_debugLines || !m_debugLines->isInitialized())
@@ -880,6 +882,14 @@ void SceneRenderer::renderFarStationProxyPass(
     for (const auto& pair : world.objects())
     {
         const auto& obj = pair.second;
+
+        if (!game::client::belongsToRenderSystem(
+                obj.systemId,
+                activeSystemId
+            ))
+        {
+            continue;
+        }
 
         if (obj.type != ObjectType::Station)
             continue;
@@ -967,6 +977,12 @@ PreparedScene SceneRenderer::prepareScene(
     if (itPlayer == ships.end())
         return prepared;
 
+    prepared.activeSystemId =
+        itPlayer->second.renderTransform.motion.systemId;
+
+    if (prepared.activeSystemId < 0)
+        return prepared;
+
     prepared.frame =
         world::coordinates::makeRenderFrameFromCamera(
             itPlayer->second.renderTransform.worldPosition
@@ -978,6 +994,14 @@ PreparedScene SceneRenderer::prepareScene(
         for (const auto& pair : ships)
         {
             const auto& ship = pair.second;
+
+            if (!game::client::belongsToRenderSystem(
+                    ship.renderTransform.motion.systemId,
+                    prepared.activeSystemId
+                ))
+            {
+                continue;
+            }
 
             if (!ship.assembly)
                 continue;
@@ -1023,6 +1047,14 @@ PreparedScene SceneRenderer::prepareScene(
         for (const auto& pair : world.objects())
         {
             const auto& obj = pair.second;
+
+            if (!game::client::belongsToRenderSystem(
+                    obj.systemId,
+                    prepared.activeSystemId
+                ))
+            {
+                continue;
+            }
 
             if (!obj.assembly)
                 continue;
@@ -1078,6 +1110,14 @@ PreparedScene SceneRenderer::prepareScene(
 
         for (const auto& ship : world.visualShips())
         {
+            if (!game::client::belongsToRenderSystem(
+                    ship.renderTransform.motion.systemId,
+                    prepared.activeSystemId
+                ))
+            {
+                continue;
+            }
+
             if (!ship.visible)
                 continue;
 
@@ -1437,7 +1477,8 @@ profileAfterSetupMs = renderProfileNowMs();
             world,
             view,
             cameraLocalPosition,
-            frame
+            frame,
+            prepared.activeSystemId
         );
     }
 
@@ -2219,6 +2260,7 @@ if (policy.drawVisualDrones)
         proj,
         cameraLocalPosition,
         frame,
+        prepared.activeSystemId,
         fillShader,
         edgeShader
     );
@@ -3412,6 +3454,7 @@ void SceneRenderer::renderVisualDrones(
     const glm::mat4& proj,
     const glm::vec3& cameraLocalPosition,
     const world::coordinates::WorldFrame& frame,
+    int activeSystemId,
     unsigned int fillShader,
     unsigned int edgeShader
 )
@@ -3428,6 +3471,14 @@ void SceneRenderer::renderVisualDrones(
 
     for (const auto& drone : world.visualDrones())
     {
+        if (!game::client::belongsToRenderSystem(
+                drone.renderTransform.motion.systemId,
+                activeSystemId
+            ))
+        {
+            continue;
+        }
+
         if (!drone.visible || !drone.assembly)
             continue;
 

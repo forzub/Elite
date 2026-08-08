@@ -9,6 +9,7 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/client/ClientSpatialDomain.h"
 #include "src/game/client/MapTransitionController.h"
 #include "src/game/navigation/DynamicMotionState.h"
 #include "src/game/navigation/HubNavigationFrame.h"
@@ -355,10 +356,29 @@ struct TestCase
 };
 } // namespace
 
+void testClientSpatialDomainNeverInterpolatesAcrossSystems()
+{
+    using game::client::belongsToRenderSystem;
+    using game::client::canInterpolateSystemLocalState;
+
+    REQUIRE(canInterpolateSystemLocalState(0, 0));
+    REQUIRE(canInterpolateSystemLocalState(7, 7));
+    REQUIRE(!canInterpolateSystemLocalState(0, 1));
+    REQUIRE(!canInterpolateSystemLocalState(-1, -1));
+
+    REQUIRE(belongsToRenderSystem(3, 3));
+    REQUIRE(!belongsToRenderSystem(2, 3));
+    REQUIRE(!belongsToRenderSystem(-1, 3));
+}
+
 int main()
 {
     const std::vector<TestCase> tests =
     {
+        {
+            "client spatial domains never interpolate across systems",
+            testClientSpatialDomainNeverInterpolatesAcrossSystems
+        },
         {
             "universe clock rewinds after accelerated diagnostic",
             testUniverseClockRewindsAfterAcceleratedDiagnostic

@@ -82,9 +82,19 @@ glm::mat4 smoothOrientation(
 
 void StationTrafficSystem::setup(ClientWorldState& world)
 {
-    if (m_active)
+    const int activeSystemId =
+        world.playerSystemId();
+
+    if (activeSystemId < 0)
         return;
 
+    if (m_active && m_systemId == activeSystemId)
+        return;
+
+    if (m_active)
+        reset(world);
+
+    m_systemId = activeSystemId;
     spawnTraffic(world);
     m_active = true;
 }
@@ -120,6 +130,7 @@ void StationTrafficSystem::reset(ClientWorldState& world)
 
     m_ships.clear();
     m_active = false;
+    m_systemId = -1;
     m_trafficTime = 0.0;
 
     std::cout
@@ -203,6 +214,7 @@ void StationTrafficSystem::spawnTraffic(ClientWorldState& world)
 
 
                
+        visual.transform.motion.systemId = m_systemId;
         visual.transform.setWorldPositionMeters(glm::dvec3(pos));
 
         visual.renderTransform.setWorldPosition(visual.transform.worldPosition);

@@ -36,6 +36,7 @@ private:
 
 private:
     bool m_active = false;
+    int m_systemId = -1;
 
     float m_time = 0.0f;
 

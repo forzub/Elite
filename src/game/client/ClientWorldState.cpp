@@ -1,4 +1,5 @@
 #include "ClientWorldState.h"
+#include "src/game/client/ClientSpatialDomain.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include <iostream>
 #include "src/game/ship/ShipDescriptorRegistry.h"
@@ -102,6 +103,16 @@ namespace
         float dt
     )
     {
+        // A system transfer is a spatial discontinuity. WorldPosition values
+        // on the two sides are expressed in different system-local domains.
+        if (!game::client::canInterpolateSystemLocalState(
+                current.motion.systemId,
+                target.motion.systemId
+            ))
+        {
+            return target;
+        }
+
         ShipTransform out = target;
         const float posAlpha = renderSmoothingAlpha(dt, 18.0f);
         const float rotAlpha = renderSmoothingAlpha(dt, 22.0f);
@@ -385,15 +396,23 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         m_snapshotTimelineRevision != 0 &&
         incomingTimelineRevision != m_snapshotTimelineRevision;
 
-    if (timelineRevisionChanged)
+    const int incomingActiveSystemId =
+        snapshot.session.playerNavigation.currentSystemId;
+
+    const bool activeSystemChanged =
+        m_snapshotActiveSystemId >= 0 &&
+        incomingActiveSystemId != m_snapshotActiveSystemId;
+
+    if (timelineRevisionChanged || activeSystemChanged)
     {
-        // Server time is monotonic across a universe-time rewind. Old and new
-        // snapshots therefore look adjacent unless the revision is treated as
-        // a hard interpolation fence.
+        // Both events are hard presentation discontinuities. Server time stays
+        // monotonic, so without this fence snapshots from different universe
+        // branches or different system-local coordinate domains look adjacent.
         m_snapshotBuffer.clear();
     }
 
     m_snapshotTimelineRevision = incomingTimelineRevision;
+    m_snapshotActiveSystemId = incomingActiveSystemId;
 
     std::unordered_set<std::uint32_t> authoritativeShipIds;
     authoritativeShipIds.reserve(snapshot.ships.size());
@@ -607,6 +626,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             drone.assembly =
                 &game::ship::geometry::AssemblyMeshLibrary::get(drone.type);
 
+            drone.transform.motion.systemId =
+                ship.transform.motion.systemId;
             drone.transform.setWorldPosition(job.droneWorldPosition);
             drone.renderTransform = drone.transform;
 
@@ -756,25 +777,37 @@ void ClientWorldState::update(
                     if (itOld != older->ships.end() &&
                         itNew != newer->ships.end())
                     {
-                        const glm::dvec3 delta =
-                        world::coordinates::relativeMeters(
-                            itNew->transform.worldPosition,
-                            itOld->transform.worldPosition
-                        );
+                        if (!game::client::canInterpolateSystemLocalState(
+                                itOld->transform.motion.systemId,
+                                itNew->transform.motion.systemId
+                            ))
+                        {
+                            // Never draw a path between two star systems.
+                            ship.renderTransform = ship.transform;
+                        }
+                        else
+                        {
+                            const glm::dvec3 delta =
+                                world::coordinates::relativeMeters(
+                                    itNew->transform.worldPosition,
+                                    itOld->transform.worldPosition
+                                );
 
-                    const auto interpolatedWorld =
-                        world::coordinates::translated(
-                            itOld->transform.worldPosition,
-                            delta * static_cast<double>(t)
-                        );
+                            const auto interpolatedWorld =
+                                world::coordinates::translated(
+                                    itOld->transform.worldPosition,
+                                    delta * static_cast<double>(t)
+                                );
 
-                    ship.renderTransform.setWorldPosition(interpolatedWorld);
-                    ship.renderTransform.orientation =
-                        smoothOrientationMatrix(
-                            itOld->transform.orientation,
-                            itNew->transform.orientation,
-                            t
-                        );
+                            ship.renderTransform = itNew->transform;
+                            ship.renderTransform.setWorldPosition(interpolatedWorld);
+                            ship.renderTransform.orientation =
+                                smoothOrientationMatrix(
+                                    itOld->transform.orientation,
+                                    itNew->transform.orientation,
+                                    t
+                                );
+                        }
                     }
                     else
                     {
@@ -841,44 +874,57 @@ void ClientWorldState::update(
                 if (itOld != older->objects.end() &&
                     itNew != newer->objects.end())
                 {
-                    const glm::dvec3 delta =
-                        world::coordinates::relativeMeters(
-                            itNew->worldPosition,
-                            itOld->worldPosition
-                        );
+                    if (!game::client::canInterpolateSystemLocalState(
+                            itOld->systemId,
+                            itNew->systemId
+                        ))
+                    {
+                        // Object coordinates are system-local too. A transfer
+                        // is a hard snap, not a short numerical interpolation.
+                        obj.renderWorldPosition = obj.worldPosition;
+                        obj.renderOrientation = obj.orientation;
+                        obj.renderAssemblyModules = obj.assemblyModules;
+                        usedFallback = true;
+                    }
+                    else
+                    {
+                        const glm::dvec3 delta =
+                            world::coordinates::relativeMeters(
+                                itNew->worldPosition,
+                                itOld->worldPosition
+                            );
 
-                    obj.renderWorldPosition =
-                        world::coordinates::translated(
-                            itOld->worldPosition,
-                            delta * static_cast<double>(t)
-                        );
+                        obj.renderWorldPosition =
+                            world::coordinates::translated(
+                                itOld->worldPosition,
+                                delta * static_cast<double>(t)
+                            );
 
-                    obj.renderOrientation =
-                        smoothOrientationMatrix(
-                            itOld->orientation,
-                            itNew->orientation,
-                            t
-                        );
+                        obj.renderOrientation =
+                            smoothOrientationMatrix(
+                                itOld->orientation,
+                                itNew->orientation,
+                                t
+                            );
 
+                        if (itOld->graph.hasAssemblyModules &&
+                            itNew->graph.hasAssemblyModules)
+                        {
+                            obj.renderAssemblyModules =
+                                interpolateAssemblyModules(
+                                    itOld->graph.assemblyModules,
+                                    itNew->graph.assemblyModules,
+                                    obj.assemblyModules,
+                                    t
+                                );
 
-                if (itOld->graph.hasAssemblyModules &&
-                    itNew->graph.hasAssemblyModules)
-                {
-                    obj.renderAssemblyModules =
-                        interpolateAssemblyModules(
-                            itOld->graph.assemblyModules,
-                            itNew->graph.assemblyModules,
-                            obj.assemblyModules,
-                            t
-                        );
-
-                    usedInterpolation = true;
-                }
-                else
-                {
-                    obj.renderAssemblyModules = obj.assemblyModules;
-                }
-
+                            usedInterpolation = true;
+                        }
+                        else
+                        {
+                            obj.renderAssemblyModules = obj.assemblyModules;
+                        }
+                    }
 
                 }
                 else

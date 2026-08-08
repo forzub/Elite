@@ -33,6 +33,7 @@ struct PreparedScene
 {
     const ClientWorldState* world = nullptr;
     EntityId playerId{0};
+    int activeSystemId = -1;
 
     world::coordinates::WorldFrame frame;
 

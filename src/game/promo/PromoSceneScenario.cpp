@@ -53,8 +53,19 @@ float PromoSceneScenario::smootherStep(float x)
 
 void PromoSceneScenario::setup(ClientWorldState& world)
 {
-    if (m_active)
+    const int activeSystemId =
+        world.playerSystemId();
+
+    if (activeSystemId < 0)
         return;
+
+    if (m_active && m_systemId == activeSystemId)
+        return;
+
+    if (m_active)
+        reset(world);
+
+    m_systemId = activeSystemId;
 
     const auto& desc =
         EliteCobraMk1::EliteCobraMk1Descriptor();
@@ -98,6 +109,7 @@ void PromoSceneScenario::reset(ClientWorldState& world)
     m_wing.clear();
     m_time = 0.0f;
     m_active = false;
+    m_systemId = -1;
     m_lastCameraTarget = glm::vec3(0.0f, 100.0f, 0.0f);
 }
 
@@ -148,6 +160,7 @@ void PromoSceneScenario::spawnWing(ClientWorldState& world)
             const glm::vec3 pos =
                 computeShipPosition(group, slot, 0.0f);
 
+            ship.transform.motion.systemId = m_systemId;
             ship.transform.setWorldPositionMeters(glm::dvec3(pos));
             ship.transform.orientation =
                 makeOrientation(

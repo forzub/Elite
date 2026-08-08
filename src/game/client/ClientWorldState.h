@@ -140,6 +140,18 @@ public:
     const std::unordered_map<uint32_t, ClientShipState>& ships() const {return m_ships;}
     const std::unordered_map<uint32_t, ClientObjectState>& objects() const {return m_objects;}
 
+    int playerSystemId() const
+    {
+        for (const auto& [id, ship] : m_ships)
+        {
+            (void)id;
+            if (ship.role == ShipRole::Player)
+                return ship.transform.motion.systemId;
+        }
+
+        return -1;
+    }
+
     std::vector<game::visual::VisualShip>& visualShips()
     {
         return m_visualShips;
@@ -185,6 +197,7 @@ private:
     std::vector<game::visual::VisualDrone>          m_visualDrones;
     std::deque<SimulationSnapshot>                  m_snapshotBuffer;
     std::uint64_t                                   m_snapshotTimelineRevision = 0;
+    int                                             m_snapshotActiveSystemId = -1;
     ShipSignalPresentation                          signalPresentation;
 
 

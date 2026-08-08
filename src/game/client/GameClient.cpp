@@ -375,6 +375,11 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             snapshot.session.universeTimelineRevision !=
                 m_sessionSnapshot.universeTimelineRevision;
 
+        const bool playerSystemChanged =
+            m_hasSessionSnapshot &&
+            snapshot.session.playerNavigation.currentSystemId !=
+                m_sessionSnapshot.playerNavigation.currentSystemId;
+
         acceptedSnapshot = true;
         m_lastAcceptedSnapshotTick = snapshot.metadata.serverTick;
         m_lastSimulationMetadata = snapshot.metadata;
@@ -386,10 +391,11 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             snapshot.session.universeTimelineRevision
         );
 
-        if (timelineRevisionChanged)
+        if (timelineRevisionChanged || playerSystemChanged)
         {
-            // Prediction and interpolation history belong to one universe-time
-            // branch. A debug rewind is a hard resynchronization boundary.
+            // Prediction history belongs to one universe-time branch and one
+            // system-local coordinate domain. Rewind and inter-system transfer
+            // are both hard reconciliation boundaries.
             m_pendingInputs.clear();
             m_predictionSuspended = false;
             m_accumulator = 0.0f;

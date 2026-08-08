@@ -38,6 +38,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include "src/game/client/HubFramePresentation.h"
 
 namespace
 {
@@ -1006,9 +1007,32 @@ PreparedScene SceneRenderer::prepareScene(
             if (!ship.assembly)
                 continue;
 
+            world::coordinates::WorldPosition shipRenderWorldPosition =
+                ship.renderTransform.worldPosition;
+
+            if (
+                !(ship.id == playerId) &&
+                ship.renderTransform.motion.mode ==
+                    game::navigation::MotionMode::HubTactical &&
+                game::client::canResolveHubLocalPosition(
+                    ship.renderTransform.motion.systemId,
+                    ship.renderTransform.motion.hubId,
+                    itPlayer->second.renderReferenceFrame
+                )
+            )
+            {
+                shipRenderWorldPosition =
+                    world::coordinates::makeWorldPositionFromMeters(
+                        game::client::resolveHubLocalPosition(
+                            ship.renderTransform.motion.localPositionMeters,
+                            itPlayer->second.renderReferenceFrame
+                        )
+                    );
+            }
+
             glm::mat4 shipModel =
                 world::coordinates::makeRenderModelMatrix(
-                    ship.renderTransform.worldPosition,
+                    shipRenderWorldPosition,
                     glm::mat4(ship.renderTransform.orientation),
                     prepared.frame
                 );
@@ -1059,10 +1083,41 @@ PreparedScene SceneRenderer::prepareScene(
             if (!obj.assembly)
                 continue;
 
+            world::coordinates::WorldPosition objectRenderWorldPosition =
+                obj.renderWorldPosition;
+            glm::mat4 objectRenderOrientation =
+                obj.renderOrientation;
+
+            /*
+                A hub-attached object and the player/camera belong to one
+                rotating reference frame. Rendering the player from the newest
+                frame while rendering the station from a separately delayed
+                world-pose interpolation creates visible micro-jitter even
+                though both server trajectories are correct.
+
+                Reconstruct co-frame infrastructure from the exact same
+                presentation frame used by the player. The authoritative world
+                pose remains the fallback when the player is not in that hub.
+            */
+            const auto hubPose =
+                game::client::resolveHubAttachedObjectPresentation(
+                    obj.hubAttachment,
+                    itPlayer->second.renderReferenceFrame
+                );
+
+            if (hubPose.valid)
+            {
+                objectRenderWorldPosition =
+                    world::coordinates::makeWorldPositionFromMeters(
+                        hubPose.worldPositionMeters
+                    );
+                objectRenderOrientation = hubPose.worldOrientation;
+            }
+
             glm::mat4 objectBaseModel =
                 world::coordinates::makeRenderModelMatrix(
-                    obj.renderWorldPosition,
-                    obj.renderOrientation,
+                    objectRenderWorldPosition,
+                    objectRenderOrientation,
                     prepared.frame
                 );
 

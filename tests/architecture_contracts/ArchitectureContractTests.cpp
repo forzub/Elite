@@ -10,6 +10,8 @@
 #include <glm/glm.hpp>
 
 #include "src/game/client/ClientSpatialDomain.h"
+#include "src/game/client/HubFramePresentation.h"
+#include "src/game/client/ReferenceFramePresentation.h"
 #include "src/game/client/MapTransitionController.h"
 #include "src/game/navigation/DynamicMotionState.h"
 #include "src/game/navigation/HubNavigationFrame.h"
@@ -371,6 +373,124 @@ void testClientSpatialDomainNeverInterpolatesAcrossSystems()
     REQUIRE(!belongsToRenderSystem(-1, 3));
 }
 
+void testReferenceFramePresentationUsesRenderEpoch()
+{
+    game::simulation::ShipReferenceFrameSnapshot from;
+    from.systemId = 0;
+    from.hubId = "hub";
+    from.valid = true;
+    from.originMeters = glm::dvec3(0.0, 0.0, 0.0);
+    from.progradeAxis = glm::dvec3(1.0, 0.0, 0.0);
+    from.radialAxis = glm::dvec3(0.0, 1.0, 0.0);
+    from.normalAxis = glm::dvec3(0.0, 0.0, 1.0);
+    from.localPositionMeters = glm::dvec3(10.0, 0.0, 0.0);
+    from.universeTimeSeconds = 100.0;
+
+    auto to = from;
+    to.originMeters = glm::dvec3(100.0, 200.0, 300.0);
+    // Rotate the orbital triad 90 degrees around +Y.
+    to.progradeAxis = glm::dvec3(0.0, 0.0, -1.0);
+    to.radialAxis = glm::dvec3(0.0, 1.0, 0.0);
+    to.normalAxis = glm::dvec3(1.0, 0.0, 0.0);
+    to.localPositionMeters = glm::dvec3(30.0, 0.0, 0.0);
+    to.universeTimeSeconds = 102.0;
+
+    const auto mid =
+        game::client::interpolateReferenceFramePresentation(
+            from,
+            to,
+            0.5
+        );
+
+    REQUIRE(mid.valid);
+    REQUIRE_VEC_NEAR(mid.originMeters, glm::dvec3(50.0, 100.0, 150.0), 1.0e-9);
+    REQUIRE_NEAR(mid.universeTimeSeconds, 101.0, 1.0e-12);
+    REQUIRE_NEAR(glm::length(mid.progradeAxis), 1.0, 1.0e-12);
+    REQUIRE_NEAR(glm::length(mid.radialAxis), 1.0, 1.0e-12);
+    REQUIRE_NEAR(glm::length(mid.normalAxis), 1.0, 1.0e-12);
+    REQUIRE_NEAR(glm::dot(mid.progradeAxis, mid.radialAxis), 0.0, 1.0e-12);
+    REQUIRE_VEC_NEAR(
+        mid.normalAxis,
+        glm::normalize(glm::cross(mid.progradeAxis, mid.radialAxis)),
+        1.0e-12
+    );
+
+    auto otherSystem = to;
+    otherSystem.systemId = 1;
+    const auto snapped =
+        game::client::interpolateReferenceFramePresentation(
+            from,
+            otherSystem,
+            0.5
+        );
+    REQUIRE(snapped.systemId == 1);
+    REQUIRE_VEC_NEAR(snapped.originMeters, otherSystem.originMeters, 0.0);
+}
+
+void testHubAttachedPresentationUsesOneSharedFrameSample()
+{
+    game::simulation::HubAttachmentSnapshot attachment;
+    attachment.systemId = 0;
+    attachment.hubId = "hub";
+    attachment.moduleId = "station";
+    attachment.localOffsetMeters = glm::dvec3(120.0, 30.0, -45.0);
+    attachment.localRotationDeg = glm::dvec3(0.0);
+    attachment.inheritHubOrientation = true;
+    attachment.valid = true;
+
+    game::simulation::ShipReferenceFrameSnapshot frameA;
+    frameA.systemId = 0;
+    frameA.hubId = "hub";
+    frameA.valid = true;
+    frameA.originMeters = glm::dvec3(1000.0, 2000.0, 3000.0);
+    frameA.progradeAxis = glm::dvec3(1.0, 0.0, 0.0);
+    frameA.radialAxis = glm::dvec3(0.0, 1.0, 0.0);
+    frameA.normalAxis = glm::dvec3(0.0, 0.0, 1.0);
+
+    game::simulation::ShipReferenceFrameSnapshot frameB = frameA;
+    frameB.originMeters = glm::dvec3(9000.0, -4000.0, 7000.0);
+    // Same orthonormal orbital triad rotated 90 degrees around +Y.
+    frameB.progradeAxis = glm::dvec3(0.0, 0.0, -1.0);
+    frameB.radialAxis = glm::dvec3(0.0, 1.0, 0.0);
+    frameB.normalAxis = glm::dvec3(1.0, 0.0, 0.0);
+
+    const auto poseA =
+        game::client::resolveHubAttachedObjectPresentation(attachment, frameA);
+    const auto poseB =
+        game::client::resolveHubAttachedObjectPresentation(attachment, frameB);
+
+    REQUIRE(poseA.valid);
+    REQUIRE(poseB.valid);
+    REQUIRE(game::client::canResolveHubLocalPosition(0, "hub", frameA));
+    REQUIRE(!game::client::canResolveHubLocalPosition(0, "other_hub", frameA));
+    REQUIRE(!game::client::canResolveHubLocalPosition(9, "hub", frameA));
+
+    const glm::dvec3 playerLocal(-10000.0, 2500.0, 0.0);
+    const glm::dvec3 playerA = frameA.localToWorldPosition(playerLocal);
+    const glm::dvec3 playerB = frameB.localToWorldPosition(playerLocal);
+
+    // Moving/rotating the shared frame must not change co-frame distance.
+    REQUIRE_NEAR(
+        glm::length(poseA.worldPositionMeters - playerA),
+        glm::length(poseB.worldPositionMeters - playerB),
+        1.0e-9
+    );
+
+    auto wrongHub = frameA;
+    wrongHub.hubId = "other_hub";
+    REQUIRE(
+        !game::client::resolveHubAttachedObjectPresentation(
+            attachment, wrongHub).valid
+    );
+
+    auto wrongSystem = frameA;
+    wrongSystem.systemId = 7;
+    REQUIRE(
+        !game::client::resolveHubAttachedObjectPresentation(
+            attachment, wrongSystem).valid
+    );
+}
+
 int main()
 {
     const std::vector<TestCase> tests =
@@ -378,6 +498,14 @@ int main()
         {
             "client spatial domains never interpolate across systems",
             testClientSpatialDomainNeverInterpolatesAcrossSystems
+        },
+        {
+            "reference frame presentation uses render epoch",
+            testReferenceFramePresentationUsesRenderEpoch
+        },
+        {
+            "hub attached presentation uses one shared frame sample",
+            testHubAttachedPresentationUsesOneSharedFrameSample
         },
         {
             "universe clock rewinds after accelerated diagnostic",

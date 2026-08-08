@@ -1,5 +1,6 @@
 #include "ClientWorldState.h"
 #include "src/game/client/ClientSpatialDomain.h"
+#include "src/game/client/ReferenceFramePresentation.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include <iostream>
 #include "src/game/ship/ShipDescriptorRegistry.h"
@@ -61,12 +62,8 @@ namespace
         const game::simulation::ShipReferenceFrameSnapshot& b
     )
     {
-        return a.valid && b.valid &&
-            a.systemId == b.systemId &&
-            a.type == b.type &&
-            a.bodyId == b.bodyId &&
-            a.hubId == b.hubId &&
-            a.moduleId == b.moduleId;
+        // Membership is part of frame identity: a.systemId == b.systemId.
+        return game::client::sameReferenceFrameIdentity(a, b);
     }
 
     void applyReferenceFrameState(
@@ -533,6 +530,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
             state.orientation = o.orientation;
             state.renderOrientation = o.orientation;
+            state.hubAttachment = o.hubAttachment;
 
             applyGraphSnapshot(
                 o.graph,
@@ -568,6 +566,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             // state.worldPosition = o.worldPosition;
             state.setWorldPosition(o.worldPosition);
             state.orientation = o.orientation;
+            state.hubAttachment = o.hubAttachment;
 
             // Static object payload is sparse: for a rotating station the server sends
             // only graph.assemblyModules every tick. Heavy module/debug payload arrives
@@ -727,6 +726,60 @@ void ClientWorldState::update(
         }
     }
 
+    auto sampleRenderReferenceFrame =
+        [&](std::uint32_t shipId)
+            -> game::simulation::ShipReferenceFrameSnapshot
+        {
+            auto currentIt = m_ships.find(shipId);
+            if (currentIt == m_ships.end())
+                return {};
+
+            const auto& fallback = currentIt->second.referenceFrame;
+
+            if (!older || !newer)
+                return fallback;
+
+            const double span =
+                newer->metadata.serverTimeSeconds -
+                older->metadata.serverTimeSeconds;
+
+            if (span <= 0.0)
+                return fallback;
+
+            const auto oldIt = std::find_if(
+                older->ships.begin(),
+                older->ships.end(),
+                [&](const ShipSnapshot& snapshot)
+                {
+                    return snapshot.id.value == shipId;
+                }
+            );
+
+            const auto newIt = std::find_if(
+                newer->ships.begin(),
+                newer->ships.end(),
+                [&](const ShipSnapshot& snapshot)
+                {
+                    return snapshot.id.value == shipId;
+                }
+            );
+
+            if (oldIt == older->ships.end() ||
+                newIt == newer->ships.end())
+            {
+                return fallback;
+            }
+
+            const double alpha =
+                (renderTime - older->metadata.serverTimeSeconds) / span;
+
+            return game::client::interpolateReferenceFramePresentation(
+                oldIt->referenceFrame,
+                newIt->referenceFrame,
+                alpha
+            );
+        };
+
     for (auto& [id, ship] : m_ships)
     {
         const bool usePredictedPlayerPresentation =
@@ -746,9 +799,33 @@ void ClientWorldState::update(
 
             if (ship.referenceFrame.valid)
             {
-                ship.renderReferenceFrame = ship.referenceFrame;
+                const auto presentationFrame =
+                    sampleRenderReferenceFrame(id);
+
+                ship.renderReferenceFrame =
+                    game::client::sameReferenceFrameIdentity(
+                        presentationFrame,
+                        ship.referenceFrame
+                    )
+                        ? presentationFrame
+                        : ship.referenceFrame;
+
                 ship.renderReferenceFrame.localPositionMeters =
                     ship.renderTransform.motion.localPositionMeters;
+                ship.renderReferenceFrame.localVelocityMetersPerSecond =
+                    ship.renderTransform.motion.localVelocityMps;
+
+                /*
+                    The camera/player and every hub-attached object must use
+                    one reference-frame sample. Rebase the smoothed local ship
+                    position through the render-time frame instead of through
+                    the newest discrete authoritative frame.
+                */
+                ship.renderTransform.setWorldPositionMeters(
+                    ship.renderReferenceFrame.localToWorldPosition(
+                        ship.renderTransform.motion.localPositionMeters
+                    )
+                );
             }
         }
         else
@@ -801,6 +878,46 @@ void ClientWorldState::update(
 
                             ship.renderTransform = itNew->transform;
                             ship.renderTransform.setWorldPosition(interpolatedWorld);
+
+                            if (sameReferenceFrame(
+                                    itOld->referenceFrame,
+                                    itNew->referenceFrame
+                                ))
+                            {
+                                const glm::dvec3 localPosition =
+                                    itOld->referenceFrame.localPositionMeters +
+                                    (itNew->referenceFrame.localPositionMeters -
+                                     itOld->referenceFrame.localPositionMeters) *
+                                        static_cast<double>(t);
+
+                                const glm::dvec3 localVelocity =
+                                    itOld->referenceFrame.localVelocityMetersPerSecond +
+                                    (itNew->referenceFrame.localVelocityMetersPerSecond -
+                                     itOld->referenceFrame.localVelocityMetersPerSecond) *
+                                        static_cast<double>(t);
+
+                                ship.renderTransform.motion.localPositionMeters =
+                                    localPosition;
+                                ship.renderTransform.motion.localVelocityMps =
+                                    localVelocity;
+                                ship.renderReferenceFrame =
+                                    game::client::interpolateReferenceFramePresentation(
+                                        itOld->referenceFrame,
+                                        itNew->referenceFrame,
+                                        static_cast<double>(t)
+                                    );
+                                ship.renderReferenceFrame.localPositionMeters =
+                                    localPosition;
+                                ship.renderReferenceFrame.localVelocityMetersPerSecond =
+                                    localVelocity;
+
+                                ship.renderTransform.setWorldPositionMeters(
+                                    ship.renderReferenceFrame.localToWorldPosition(
+                                        localPosition
+                                    )
+                                );
+                            }
+
                             ship.renderTransform.orientation =
                                 smoothOrientationMatrix(
                                     itOld->transform.orientation,

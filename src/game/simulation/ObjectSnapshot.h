@@ -7,6 +7,7 @@
 #include <string>
 #include "src/game/simulation/ObjectGraphSnapshot.h"
 #include "src/world/coordinates/WorldPosition.h"
+#include "src/game/simulation/HubAttachmentSnapshot.h"
 
 struct ObjectSnapshot
 {
@@ -18,6 +19,7 @@ struct ObjectSnapshot
     glm::vec3 position; // legacy mirror
     
     glm::mat4 orientation {1.0f};
+    game::simulation::HubAttachmentSnapshot hubAttachment;
     // glm::vec3 rotation;
 
     game::simulation::ObjectGraphSnapshot graph;

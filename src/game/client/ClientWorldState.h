@@ -8,6 +8,7 @@
 
 #include "src/game/simulation/SimulationSnapshot.h"
 #include "src/game/simulation/ShipReferenceFrameSnapshot.h"
+#include "src/game/simulation/HubAttachmentSnapshot.h"
 
 #include "render/HUD/WorldLabel.h"
 #include "src/world/WorldParams.h"
@@ -95,6 +96,7 @@ struct ClientObjectState
     // glm::vec3                                       renderRotation;
     glm::mat4 orientation {1.0f};
     glm::mat4 renderOrientation {1.0f};
+    game::simulation::HubAttachmentSnapshot hubAttachment;
 
     // текущие (для рендера)
     world::coordinates::WorldPosition renderWorldPosition;

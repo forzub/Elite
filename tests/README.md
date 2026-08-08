@@ -55,3 +55,12 @@ must not be replaced again between map input and rendering.
 
 When another subsystem is considered stable, add its runner here and to
 `tests/run_all_mingw64.sh` instead of creating another top-level command.
+
+### Hub co-frame presentation
+
+Hub-attached infrastructure carries its stable local hub binding in simulation
+snapshots. When the player is rendered in the same hub frame, gameplay
+presentation reconstructs the infrastructure from that exact frame sample rather
+than blending an independently delayed world pose. This prevents mixed-epoch
+micro-jitter near rotating orbital infrastructure while preserving the
+authoritative world pose as a fallback outside that frame.

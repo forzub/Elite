@@ -1,4 +1,5 @@
 #include "src/game/system_map/MapCelestialRenderResources.h"
+#include "src/render/celestial/CloudMotionPolicy.h"
 
 #include <algorithm>
 #include <cctype>
@@ -1448,46 +1449,6 @@ MapCelestialRenderResources::cloudStylesForBody(
         /*
             Собственный ветер каждого слоя.
         */
-        const double meanWindMps =
-            (
-                static_cast<double>(
-                    layer.wind.minimumSpeedMps
-                ) +
-                static_cast<double>(
-                    layer.wind.maximumSpeedMps
-                )
-            ) * 0.5;
-
-        const double directionRadians =
-            glm::radians(
-                static_cast<double>(
-                    layer.wind.predominantDirectionDeg
-                )
-            );
-
-        const double longitudinalWindMps =
-            meanWindMps *
-            std::sin(
-                directionRadians
-            );
-
-        const double cloudRadiusMeters =
-            std::max(
-                1.0,
-                planetRadiusMeters +
-                    static_cast<double>(
-                        layer.baseHeightKm
-                    ) *
-                    1000.0
-            );
-
-        const double physicalUvSpeed =
-            longitudinalWindMps /
-            (
-                glm::two_pi<double>() *
-                cloudRadiusMeters
-            );
-
         const double debugCloudSpeed =
             std::clamp(
                 static_cast<double>(
@@ -1497,51 +1458,33 @@ MapCelestialRenderResources::cloudStylesForBody(
                 100000.0
             );
 
-        /*
-            There are two deliberately different notions of cloud speed:
-
-              * layer.wind.* is physical circulation in m/s;
-              * clouds.wind.longitude_drift_speed is authored presentation
-                speed in UV turns/second.
-
-            Detail/Hub historically used the authored value and that is the
-            visibly useful baseline the debug control is expected to scale.
-            Generated profiles that do not provide an authored value fall back
-            to the physical conversion.
-        */
-        const double authoredVisualUvSpeed =
+        render::celestial::CloudMotionPolicyInput motionInput;
+        motionInput.minimumWindSpeedMps =
+            static_cast<double>(layer.wind.minimumSpeedMps);
+        motionInput.maximumWindSpeedMps =
+            static_cast<double>(layer.wind.maximumSpeedMps);
+        motionInput.predominantDirectionDeg =
+            static_cast<double>(layer.wind.predominantDirectionDeg);
+        motionInput.planetRadiusMeters = planetRadiusMeters;
+        motionInput.baseHeightKm =
+            static_cast<double>(layer.baseHeightKm);
+        motionInput.authoredVisualUvPerSecond =
             static_cast<double>(
                 clouds.visualLongitudeDriftUvPerSecond
             );
+        motionInput.referenceMeanWindMps =
+            static_cast<double>(clouds.longitudeDriftSpeed);
+        motionInput.physicalTimeScale = cloudWindTimeScale();
+        motionInput.debugSpeedMultiplier = debugCloudSpeed;
 
-        const double baseVisualUvSpeed =
-            std::abs(authoredVisualUvSpeed) > 1.0e-12
-                ? authoredVisualUvSpeed
-                : physicalUvSpeed * cloudWindTimeScale();
-
-        /*
-            Preserve some layer parallax without changing the authored global
-            direction. longitudeDriftSpeed is the weighted physical mean wind
-            retained by the profile loader for this compatibility purpose.
-        */
-        const double referenceWindMps =
-            std::max(
-                0.001,
-                static_cast<double>(
-                    clouds.longitudeDriftSpeed
-                )
-            );
-
-        const double layerWindRatio =
-            std::clamp(
-                meanWindMps / referenceWindMps,
-                0.25,
-                4.0
+        const auto motionPolicy =
+            render::celestial::resolveCloudMotionPolicy(
+                motionInput
             );
 
         style.windSpeedMps =
             static_cast<float>(
-                meanWindMps
+                motionPolicy.meanWindSpeedMps
             );
 
         style.windDirectionDeg =
@@ -1549,29 +1492,19 @@ MapCelestialRenderResources::cloudStylesForBody(
 
         style.driftSpeed =
             static_cast<float>(
-                baseVisualUvSpeed *
-                layerWindRatio *
-                debugCloudSpeed
+                motionPolicy.driftUvPerSecond
             );
 
         /*
             Procedural morphology is intentionally much more conservative than
-            cheap UV advection. It is generated into 1024x512 textures on the
-            render thread, so allowing x1000/x10000 here creates regular frame
-            stalls. Zero still freezes it; normal value 1.0 stays unchanged;
-            large debug multipliers top out at x2 morphology speed while the
-            visible longitudinal drift keeps the full requested multiplier.
+            cheap UV advection. It is generated into large textures on the
+            render thread, so the pure policy caps morphology while the cheap
+            UV drift keeps the complete debug multiplier.
         */
         style.animationSpeedMultiplier =
-            debugCloudSpeed <= 0.0
-                ? 0.0f
-                : static_cast<float>(
-                    std::clamp(
-                        std::sqrt(debugCloudSpeed),
-                        0.25,
-                        2.0
-                    )
-                );
+            static_cast<float>(
+                motionPolicy.morphologySpeedMultiplier
+            );
 
         result.push_back(
             std::move(style)

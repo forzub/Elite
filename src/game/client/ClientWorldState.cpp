@@ -61,6 +61,7 @@ namespace
     )
     {
         return a.valid && b.valid &&
+            a.systemId == b.systemId &&
             a.type == b.type &&
             a.bodyId == b.bodyId &&
             a.hubId == b.hubId &&
@@ -75,6 +76,7 @@ namespace
         if (!frame.valid)
             return;
 
+        transform.motion.systemId = frame.systemId;
         transform.motion.hubId = frame.hubId;
         transform.motion.parentBodyId = frame.bodyId;
         transform.motion.localPositionMeters = frame.localPositionMeters;
@@ -376,6 +378,23 @@ static float findAssemblyAngleRad(
 
 void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 {
+    const std::uint64_t incomingTimelineRevision =
+        snapshot.metadata.universeTimelineRevision;
+
+    const bool timelineRevisionChanged =
+        m_snapshotTimelineRevision != 0 &&
+        incomingTimelineRevision != m_snapshotTimelineRevision;
+
+    if (timelineRevisionChanged)
+    {
+        // Server time is monotonic across a universe-time rewind. Old and new
+        // snapshots therefore look adjacent unless the revision is treated as
+        // a hard interpolation fence.
+        m_snapshotBuffer.clear();
+    }
+
+    m_snapshotTimelineRevision = incomingTimelineRevision;
+
     std::unordered_set<std::uint32_t> authoritativeShipIds;
     authoritativeShipIds.reserve(snapshot.ships.size());
 
@@ -484,6 +503,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             auto& state = m_objects[o.id.value];
             state.id   = o.id;
             state.type = o.type;
+            state.systemId = o.systemId;
             state.descriptor = &ObjectDescriptorRegistry::get(o.type);
 
             // Новая истинная позиция
@@ -524,6 +544,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         else
         {
             auto& state = it->second;
+            state.systemId = o.systemId;
 
             // state.worldPosition = o.worldPosition;
             state.setWorldPosition(o.worldPosition);
@@ -603,6 +624,24 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
 
 
+
+    if (timelineRevisionChanged)
+    {
+        for (auto& [id, ship] : m_ships)
+        {
+            (void)id;
+            ship.renderTransform = ship.transform;
+            ship.renderReferenceFrame = ship.referenceFrame;
+        }
+
+        for (auto& [id, object] : m_objects)
+        {
+            (void)id;
+            object.renderWorldPosition = object.worldPosition;
+            object.renderOrientation = object.orientation;
+            object.renderAssemblyModules = object.assemblyModules;
+        }
+    }
 
     // ------- передача в буфер Snapshot ------
     m_snapshotBuffer.push_back(snapshot);

@@ -27,6 +27,8 @@ void GameClient::beginSynchronization()
     m_universeTimeline.reset();
     m_timeSyncSequence = 0;
     m_nextTimeSyncLocalSeconds = 0.0;
+    m_gameplayFramePrepared = false;
+    m_preparedAcceptedSnapshot = false;
 
     requestStarAtlas();
     refreshConnectionState();
@@ -327,9 +329,14 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
         std::max(0.0, wallDeltaSeconds)
     );
 
-    m_maps.update(serviceDt);
-    m_catalogs.update(serviceDt);
+    /*
+        Simulation metadata establishes the active universe-timeline branch.
+        Consume it before map responses so a response can never be accepted
+        against the previous branch merely because the network queues happened
+        to be pumped in the opposite order.
+    */
     updateTimeSynchronization(wallDeltaSeconds);
+    m_catalogs.update(serviceDt);
 
     if (!m_catalogs.hasStarAtlas())
         m_catalogs.requestStarAtlas();
@@ -348,11 +355,25 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
     SimulationSnapshot snapshot;
     while (m_transport.receiveSnapshot(snapshot))
     {
+        if (snapshot.metadata.universeTimelineRevision !=
+            snapshot.session.universeTimelineRevision)
+        {
+            failSynchronization(
+                "Simulation snapshot timeline revision mismatch"
+            );
+            return false;
+        }
+
         if (m_hasAcceptedSnapshot &&
             snapshot.metadata.serverTick <= m_lastAcceptedSnapshotTick)
         {
             continue;
         }
+
+        const bool timelineRevisionChanged =
+            m_hasSessionSnapshot &&
+            snapshot.session.universeTimelineRevision !=
+                m_sessionSnapshot.universeTimelineRevision;
 
         acceptedSnapshot = true;
         m_lastAcceptedSnapshotTick = snapshot.metadata.serverTick;
@@ -360,6 +381,20 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
         m_hasAcceptedSnapshot = true;
         m_sessionSnapshot = snapshot.session;
         m_hasSessionSnapshot = true;
+
+        m_maps.setUniverseTimelineRevision(
+            snapshot.session.universeTimelineRevision
+        );
+
+        if (timelineRevisionChanged)
+        {
+            // Prediction and interpolation history belong to one universe-time
+            // branch. A debug rewind is a hard resynchronization boundary.
+            m_pendingInputs.clear();
+            m_predictionSuspended = false;
+            m_accumulator = 0.0f;
+            ++m_predictionResyncCount;
+        }
 
         m_universeTimeline.synchronize(
             snapshot.metadata.serverTimeSeconds,
@@ -393,9 +428,22 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
         }
     }
 
+    /*
+        Map responses are branch-tagged too. Pump them only after the newest
+        simulation snapshot has selected the active revision.
+    */
+    m_maps.update(serviceDt);
+
     (void)resolveCelestialSnapshot(acceptedSnapshot);
     refreshConnectionState();
     return acceptedSnapshot;
+}
+
+void GameClient::prepareGameplayFrame(double wallDeltaSeconds)
+{
+    m_preparedAcceptedSnapshot =
+        updateSynchronization(wallDeltaSeconds);
+    m_gameplayFramePrepared = true;
 }
 
 void GameClient::updateGameplay(
@@ -404,8 +452,25 @@ void GameClient::updateGameplay(
     double wallDeltaSeconds
 )
 {
-    const bool acceptedSnapshot =
-        updateSynchronization(wallDeltaSeconds);
+    bool acceptedSnapshot = false;
+
+    if (m_gameplayFramePrepared)
+    {
+        acceptedSnapshot = m_preparedAcceptedSnapshot;
+    }
+    else
+    {
+        /*
+            Compatibility fallback for non-SpaceState callers. Production
+            gameplay prepares synchronization before input so branch changes
+            cannot land between map picking and rendering.
+        */
+        acceptedSnapshot =
+            updateSynchronization(wallDeltaSeconds);
+    }
+
+    m_gameplayFramePrepared = false;
+    m_preparedAcceptedSnapshot = false;
 
     if (!readyForGameplay())
     {
@@ -471,7 +536,11 @@ void GameClient::update(
     }
     else
     {
-        (void)updateSynchronization(wallDeltaSeconds);
+        if (!m_gameplayFramePrepared)
+            (void)updateSynchronization(wallDeltaSeconds);
+
+        m_gameplayFramePrepared = false;
+        m_preparedAcceptedSnapshot = false;
         m_accumulator = 0.0f;
         m_world.update(
             simulationDt,

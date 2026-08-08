@@ -72,6 +72,12 @@ bool MapTransitionController::simulationHasReached(
     const game::network::SnapshotMetadata& mapMetadata,
     const game::network::SnapshotMetadata& simulationMetadata)
 {
+    if (mapMetadata.universeTimelineRevision !=
+        simulationMetadata.universeTimelineRevision)
+    {
+        return false;
+    }
+
     return mapMetadata.serverTick == 0 ||
            simulationMetadata.serverTick >= mapMetadata.serverTick;
 }

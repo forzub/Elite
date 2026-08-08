@@ -16,6 +16,7 @@
 #include "world/WorldSignalTxSystem.h"
 #include "game/simulation/NpcAiSystem.h"
 #include "game/simulation/SimulationSnapshot.h"
+#include "src/game/simulation/UniverseDiagnosticTrajectorySession.h"
 
 #include "src/world/objects/StaticObject.h"
 #include "src/world/types/ObjectType.h"
@@ -90,6 +91,7 @@ public:
     
     EntityId spawnShip(
         ShipRole role,
+        int systemId,
         const ShipDescriptor& descriptor,
         const glm::dvec3& positionMeters,
         const ShipInitData& initData,
@@ -98,12 +100,14 @@ public:
 
     EntityId spawnStation(
         ObjectType type,
+        int systemId,
         const glm::dvec3& positionMeters,
         const glm::mat4& orientation = glm::mat4(1.0f)
     );
 
     bool setStaticObjectOrbitalMotion(
         EntityId id,
+        const std::string& parentBodyId,
         const world::orbits::OrbitalMotion& motion
     );
 
@@ -121,6 +125,7 @@ public:
     );
 
     void updateStaticObjectOrbitParentParameters(
+        int systemId,
         const std::string& parentBodyId,
         double parentRadiusMeters,
         double parentGravitationalParameterM3s2,
@@ -145,26 +150,33 @@ public:
         EntityId id,
         const std::string& name,
         const std::string& owner,
-        int systemId = -1,
         const std::string& parentBodyId = {},
         const std::string& hubId = {},
         const std::string& hubModuleId = {}
     );
 
     void setCelestialBodyKinematicStateAu(
+        int systemId,
         const std::unordered_map<std::string, glm::dvec3>& positionsAu,
         const std::unordered_map<std::string, glm::dvec3>& velocitiesAuPerSecond
     );
     void setCelestialBodyGravityParameters(
+        int systemId,
         const std::string& bodyId,
         double radiusMeters,
         double gravitationalParameterM3s2
     );
     void setOrbitalUniverseTimeSeconds(double t);
 
+    int activeCelestialSystemId() const noexcept
+    {
+        return m_activeCelestialSystemId;
+    }
+
     void buildInitialScene();
 
     bool resolveCelestialBodyMeters(
+        int systemId,
         const std::string& bodyId,
         glm::dvec3& outCenterMeters,
         double& outRadiusMeters
@@ -175,6 +187,7 @@ public:
         небесного тела из текущего серверного kinematic cache.
     */
     bool resolveCelestialBodyVelocityMetersPerSecond(
+        int systemId,
         const std::string& bodyId,
         glm::dvec3& outVelocityMetersPerSecond
     ) const;
@@ -188,10 +201,20 @@ public:
         const game::navigation::ReferenceFrame& frame
     );
 
-    // Starts debug-only passive trajectories from one already-published
-    // authoritative epoch. The caller must invoke this before advancing
-    // universe time for the first accelerated tick.
-    bool enterPassiveTrajectoryMode(double startUniverseTimeSeconds);
+    // Starts a transactional debug-only trajectory branch from one already-
+    // published authoritative epoch. Production ship state is never moved onto
+    // that branch; disabling the diagnostic simply discards it.
+    bool beginUniverseTrajectoryDiagnostic(double startUniverseTimeSeconds);
+
+    // Read-only presentation transform. During accelerated diagnostics this is
+    // resolved from the diagnostic branch; otherwise it is the production
+    // transform. Gameplay systems must continue to use Ship::transform().
+    ShipTransform presentationShipTransform(EntityId shipId) const;
+
+    bool universeDiagnosticTrajectoryActive() const noexcept
+    {
+        return m_universeDiagnosticTrajectories.active();
+    }
 
     void updateShipReferenceFrames(double dt);
 
@@ -240,8 +263,12 @@ private:
 
     void rebuildNavigationGravityContext();
     void updateDynamicNavigationContext(double dt);
-    void exitPassiveTrajectoryMode();
-    void advancePassiveTrajectories(double universeDeltaSeconds);
+    void endUniverseTrajectoryDiagnostic();
+    void advanceUniverseTrajectoryDiagnostic(double universeDeltaSeconds);
+    bool applyDiagnosticTrajectoryTransform(
+        EntityId shipId,
+        ShipTransform& transform
+    ) const;
 
 
 private:
@@ -272,15 +299,20 @@ private:
     std::unordered_set<EntityId>        m_shipsWithRepairJobPayload;
 
     game::server::ServerTimelineClock  m_serverTimelineClock;
-    
-    
+    game::simulation::UniverseDiagnosticTrajectorySession
+        m_universeDiagnosticTrajectories;
+
     std::unordered_map<EntityId, ShipReferenceBinding> m_shipReferenceBindings;
 
-    std::unordered_map<std::string, glm::dvec3> m_previousHubPositionMeters;
     std::unordered_map<std::string, glm::dvec3> m_hubVelocityMetersPerSecond;
 
     
     
+    // The dynamic simulation currently advances one star-system context at a
+    // time. The id is explicit so entities from another system can never be
+    // evaluated against the active system's celestial cache by accident.
+    int m_activeCelestialSystemId = -1;
+
     std::unordered_map<std::string, glm::dvec3> m_celestialBodyPositionsAu;
     std::unordered_map<std::string, glm::dvec3> m_celestialBodyVelocitiesMetersPerSecond;
 

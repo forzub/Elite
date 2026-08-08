@@ -20,6 +20,10 @@ struct ReferenceFrame
     ReferenceFrameType type =
         ReferenceFrameType::InertialWorld;
 
+    // A body/hub id alone is not a complete spatial address once multiple
+    // systems are live.
+    int systemId = -1;
+
     std::string bodyId;
     std::string hubId;
     std::string moduleId;
@@ -29,6 +33,7 @@ struct ReferenceFrame
 
 struct ResolvedFrameState
 {
+    int systemId = -1;
     glm::dvec3 positionMeters {0.0};
     glm::dvec3 velocityMetersPerSecond {0.0};
     glm::mat4 orientation {1.0f};

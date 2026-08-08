@@ -26,8 +26,22 @@ Locks down:
 - accelerated universe time remaining an exact affine function of server time;
 - rotating Hub-frame coordinate/velocity invariants already covered by the
   world-runtime suite;
-- HubTactical -> PassiveTrajectory transition reconstructs its seed from the
-  canonical hub-local state, including the rotating-frame `omega x r` term.
+- accelerated trajectory diagnostics use a transactional alternate branch for
+  every eligible real ship; the production branch is frozen and the alternate
+  branch is discarded on exit;
+- HubTactical diagnostic seeds are reconstructed from canonical hub-local
+  state, including the rotating-frame `omega x r` term;
+- universe-timeline revision changes are hard interpolation/cache fences.
+
+### Cross-timeline + entity architecture contracts
+
+`tests/architecture_contracts/run_mingw64.sh`
+
+Locks down the seams between runtime time/revision ownership and map state,
+including transactional accelerated diagnostics, Hub -> Detail reacquisition
+after a revision fence, first-class star-system membership, explicit
+single-active-system runtime context, inactive-system gameplay freezing,
+spatial-vs-map parent separation, and system-isolated repair/signal/radar domains.
 
 ### System map behavior + architecture
 

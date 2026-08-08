@@ -27,6 +27,10 @@ run_suite \
     "tests/world_runtime/run_mingw64.sh"
 
 run_suite \
+    "CROSS-TIMELINE + DIAGNOSTIC CONTRACTS" \
+    "tests/architecture_contracts/run_mingw64.sh"
+
+run_suite \
     "SYSTEM MAP BEHAVIOR + ARCHITECTURE" \
     "tests/system_map/run_mingw64.sh"
 

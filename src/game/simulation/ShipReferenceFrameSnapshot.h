@@ -13,6 +13,8 @@ namespace game::simulation
 // world coordinates remain a derived compatibility representation.
 struct ShipReferenceFrameSnapshot
 {
+    int systemId = -1;
+
     game::navigation::MotionMode type =
         game::navigation::MotionMode::Inertial;
 

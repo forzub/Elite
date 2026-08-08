@@ -6,6 +6,8 @@
 
 struct Planet
 {
+    int systemId = -1;
+
     world::coordinates::WorldPosition worldPosition;
 
     // Legacy mirror. Не источник истины.

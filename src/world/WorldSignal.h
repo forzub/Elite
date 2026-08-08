@@ -16,6 +16,10 @@
 
 struct WorldSignal
 {
+    // Spatial membership is authoritative. Signals from different star
+    // systems must never interact just because their local coordinates match.
+    int                     systemId = -1;
+
     SignalType              type;
     SignalDisplayClass      displayClass;
     SignalAddress           address;

@@ -85,6 +85,7 @@ struct ClientObjectState
 {
     EntityId                                        id;
     ObjectType                                      type;
+    int                                             systemId = -1;
     world::coordinates::WorldPosition worldPosition;
     // Legacy mirror of worldPosition.
     // Do not use as source of truth.
@@ -183,6 +184,7 @@ private:
     std::vector<game::visual::VisualShip>           m_visualShips;
     std::vector<game::visual::VisualDrone>          m_visualDrones;
     std::deque<SimulationSnapshot>                  m_snapshotBuffer;
+    std::uint64_t                                   m_snapshotTimelineRevision = 0;
     ShipSignalPresentation                          signalPresentation;
 
 

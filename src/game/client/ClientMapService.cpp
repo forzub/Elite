@@ -119,6 +119,51 @@ void ClientMapService::resetPendingRequests()
     cancel(m_hubRequest);
 }
 
+bool ClientMapService::acceptsTimeline(
+    const game::network::SnapshotMetadata& metadata
+) const
+{
+    return
+        m_universeTimelineRevision == 0 ||
+        metadata.universeTimelineRevision ==
+            m_universeTimelineRevision;
+}
+
+void ClientMapService::setUniverseTimelineRevision(
+    std::uint64_t revision
+)
+{
+    if (revision == 0 ||
+        revision == m_universeTimelineRevision)
+    {
+        return;
+    }
+
+    m_universeTimelineRevision = revision;
+
+    /*
+        A universe-time discontinuity invalidates every dynamic map result.
+        serverTick/serverTimeSeconds remain monotonic, so stale responses from
+        the previous branch must not be allowed to repopulate the cache.
+    */
+    resetPendingRequests();
+
+    m_hasGalaxy = false;
+    m_hasSystem = false;
+    m_hasDetail = false;
+    m_hasHub = false;
+
+    m_systemSnapshotId = -1;
+    m_hubSnapshotSystemId = -1;
+    m_hubSnapshotId.clear();
+    m_detailSnapshotTarget = {};
+
+    m_galaxyMetadata = {};
+    m_systemMetadata = {};
+    m_detailMetadata = {};
+    m_hubMetadata = {};
+}
+
 void ClientMapService::pumpResponses()
 {
     game::network::MapResponse response;
@@ -129,6 +174,9 @@ void ClientMapService::pumpResponses()
             [this](auto&& typedResponse)
             {
                 using ResponseT = std::decay_t<decltype(typedResponse)>;
+
+                if (!acceptsTimeline(typedResponse.metadata))
+                    return;
 
                 if constexpr (std::is_same_v<ResponseT, game::network::GalaxyMapResponse>)
                 {

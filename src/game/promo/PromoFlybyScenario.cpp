@@ -161,6 +161,7 @@ void PromoFlybyScenario::spawnPromoShips(GameSimulation& sim)
 
             EntityId id = sim.spawnShip(
                 ShipRole::NPC,
+                0,
                 desc,
                 start,
                 initData,

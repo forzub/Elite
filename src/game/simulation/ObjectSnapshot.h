@@ -12,6 +12,7 @@ struct ObjectSnapshot
 {
     EntityId id;
     ObjectType type;
+    int systemId = -1;
 
     world::coordinates::WorldPosition worldPosition;
     glm::vec3 position; // legacy mirror

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <deque>
 
 #include "src/world/celestial/SystemMapTypes.h"
@@ -21,12 +22,14 @@ class AuthoritativeMapInterpolator
 public:
     void acceptDetail(
         const world::celestial::DetailMapSnapshot& snapshot,
-        double serverTimeSeconds
+        double serverTimeSeconds,
+        std::uint64_t universeTimelineRevision
     );
 
     void acceptHub(
         const world::celestial::HubMapSnapshot& snapshot,
-        double serverTimeSeconds
+        double serverTimeSeconds,
+        std::uint64_t universeTimelineRevision
     );
 
     void update(
@@ -78,12 +81,14 @@ private:
     struct TimedDetailSnapshot
     {
         double serverTimeSeconds = 0.0;
+        std::uint64_t universeTimelineRevision = 1;
         world::celestial::DetailMapSnapshot snapshot;
     };
 
     struct TimedHubSnapshot
     {
         double serverTimeSeconds = 0.0;
+        std::uint64_t universeTimelineRevision = 1;
         world::celestial::HubMapSnapshot snapshot;
     };
 

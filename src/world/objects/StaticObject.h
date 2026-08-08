@@ -25,8 +25,20 @@ struct StaticObject
     ObjectType type;
     std::string displayName = "Object";
     std::string ownerName = "Independent";
+
+    // Spatial authority. This exists even for infrastructure that is not a
+    // top-level marker on the System map.
+    int systemId = -1;
+
+    // Presentation/indexing metadata. Child modules may belong to a system
+    // without becoming independent top-level map objects.
+    bool systemMapVisible = false;
     std::string mapParentBodyId;
-    int mapSystemId = -1;
+
+    // Spatial parent for authoritative orbital motion. This is deliberately
+    // separate from mapParentBodyId: presentation metadata must never drive
+    // simulation placement.
+    std::string orbitalParentBodyId;
     std::string hubId;
     std::string hubModuleId;
     

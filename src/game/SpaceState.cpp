@@ -546,7 +546,8 @@ bool SpaceState::requestDetailMapSnapshot(
 
         m_authoritativeMapInterpolator.acceptDetail(
             *snapshot,
-            metadata.serverTimeSeconds
+            metadata.serverTimeSeconds,
+            metadata.universeTimelineRevision
         );
 
         m_detailMapSnapshot =
@@ -595,7 +596,8 @@ bool SpaceState::requestHubMapSnapshot(
 
         m_authoritativeMapInterpolator.acceptHub(
             *snapshot,
-            metadata.serverTimeSeconds
+            metadata.serverTimeSeconds,
+            metadata.universeTimelineRevision
         );
 
         m_hubMapSnapshot =
@@ -1064,6 +1066,65 @@ SpaceState::~SpaceState()
 // =====================================================================================
 void SpaceState::prepareFrame(float dt)
 {
+    /*
+        Consume authoritative client/network state before map preparation and
+        before input. The server advances later in update(), so any new
+        universe-timeline branch becomes visible only on the next frame as one
+        coherent world/map boundary instead of halfway through a rendered
+        frame.
+    */
+    if (m_client)
+    {
+        m_client->prepareGameplayFrame(
+            static_cast<double>(std::max(0.0f, dt))
+        );
+    }
+
+    if (m_client && m_client->hasSessionSnapshot())
+    {
+        const std::uint64_t revision =
+            m_client->sessionSnapshot().universeTimelineRevision;
+
+        if (m_mapUniverseTimelineRevision != 0 &&
+            revision != m_mapUniverseTimelineRevision)
+        {
+            /*
+                A debug rewind is a new universe-time branch. Keep no local
+                map snapshot, transition or interpolation state from the old
+                branch while fresh authoritative map data is requested.
+            */
+            m_galaxyMapSnapshot = {};
+            m_systemMapSnapshot = {};
+            m_detailMapSnapshot = {};
+            m_hubMapSnapshot = {};
+
+            m_hasGalaxyMapSnapshot = false;
+            m_hasSystemMapSnapshot = false;
+            m_hasDetailMapSnapshot = false;
+            m_hasHubMapSnapshot = false;
+
+            /*
+                Keep the semantic target (system/detail/hub) across the fence.
+                Only the data from the old timeline is invalid. Clearing the
+                target itself would strand an already-open Detail/Hub view
+                with no way to request its first snapshot on the new branch.
+            */
+
+            m_appliedSystemMapServerTick = 0;
+            m_appliedDetailMapServerTick = 0;
+            m_appliedHubMapServerTick = 0;
+
+            m_systemMapLiveRefreshTimer = 0.0;
+            m_detailMapLiveRefreshTimer = 0.0;
+            m_hubMapLiveRefreshTimer = 0.0;
+
+            m_mapTransitions.clear();
+            m_authoritativeMapInterpolator = {};
+        }
+
+        m_mapUniverseTimelineRevision = revision;
+    }
+
     /*
         Resolve the map frame once before input. handleInput() and renderHUD()
         then consume the same local snapshot for the whole application frame.
@@ -3243,6 +3304,14 @@ void SpaceState::loadDebugControlDefaults()
         if (!payload.is_object())
             return;
 
+        /*
+            Older Debug Control files may predate the transactional diagnostic
+            contract and contain an active simulation flag. Startup preferences
+            may configure the scale, but they must never start a debug timeline.
+        */
+        payload.erase("debugUniverseTimeSimulation");
+        payload.erase("debugFastUniverseTime");
+
         applyDebugControlPayload(payload);
 
         std::cout
@@ -3274,7 +3343,15 @@ bool SpaceState::saveDebugControlDefaults(const json& payload)
         if (!output)
             return false;
 
-        output << std::setw(2) << payload << '\n';
+        json persistentPayload = payload;
+
+        // Runtime session state is transactional, not a startup preference.
+        // Persist the configured scale if desired, but never boot directly
+        // into an accelerated diagnostic branch.
+        persistentPayload.erase("debugUniverseTimeSimulation");
+        persistentPayload.erase("debugFastUniverseTime");
+
+        output << std::setw(2) << persistentPayload << '\n';
 
         std::cout
             << "[DebugControl] saved startup defaults to "
@@ -4117,30 +4194,41 @@ void SpaceState::setSystemMapLoadedDetailMode()
     if (!m_client)
         return;
 
-    if (!m_hasDetailMapSnapshot)
-        return;
-
     if (m_systemMapRenderer.mode() ==
         SystemMapRenderer::Mode::Detail)
     {
         return;
     }
 
-    m_systemMapRenderer.beginMapTransition(
-        MapTransitionPresets::modeChange(),
+    /*
+        Hub -> Detail returns to the semantic Detail target that opened this
+        Hub. A timeline-revision fence invalidates the cached snapshot bytes,
+        but deliberately preserves m_loadedDetailTarget. If the cache is gone,
+        reacquire the same target on the active revision instead of disabling
+        navigation.
+    */
+    const world::celestial::DetailTarget target =
+        m_loadedDetailTarget;
 
-        [this]()
-        {
-            if (!m_client)
-                return;
+    if (!target.valid())
+        return;
 
-            m_systemMapRenderer.setMode(
-                SystemMapRenderer::Mode::Detail
-            );
+    if (m_hasDetailMapSnapshot)
+    {
+        beginSystemMapDetailTransition(target);
+        return;
+    }
 
-            pushSystemMapPanelState();
-        }
-    );
+    if (requestDetailMapSnapshot(target, true) &&
+        game::client::MapTransitionController::simulationHasReached(
+            m_client->detailMapMetadata(),
+            m_client->lastSimulationMetadata()))
+    {
+        beginSystemMapDetailTransition(target);
+        return;
+    }
+
+    m_mapTransitions.beginDetail(target);
 }
 
 

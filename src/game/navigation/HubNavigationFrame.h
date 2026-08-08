@@ -9,6 +9,7 @@ namespace game::navigation
 
 struct HubNavigationFrame
 {
+    int systemId = -1;
     std::string hubId;
     std::string parentBodyId;
     std::string primeModuleId;

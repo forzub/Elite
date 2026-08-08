@@ -12,6 +12,8 @@ enum class InterferenceType
 
 struct InterferenceSource
 {
+    int systemId = -1;
+
     InterferenceType type = InterferenceType::Passive;
 
     world::coordinates::WorldPosition worldPosition;

@@ -87,6 +87,7 @@ public:
         metadata.serverTick = m_serverTick;
         metadata.serverTimeSeconds = m_simulation.serverTime();
         metadata.universeTimeSeconds = m_universeClock.timeSeconds();
+        metadata.universeTimelineRevision = m_universeTimelineRevision;
         return metadata;
     }
 
@@ -130,11 +131,6 @@ public:
     }
 
     const world::time::UniverseClock& universeClock() const
-    {
-        return m_universeClock;
-    }
-
-    world::time::UniverseClock& universeClock()
     {
         return m_universeClock;
     }
@@ -257,6 +253,7 @@ private:
     std::uint64_t m_universeTimelineRevision = 1;
     world::time::UniverseClock m_universeClock;
     double m_lastUniverseTimeSeconds = 0.0;
+    int m_appliedSimulationContextSystemId = -1;
     uint32_t m_snapshotInterval = 3;
     SimulationSnapshot m_lastSnapshot;
     bool m_forceSnapshotPublication = false;
@@ -265,8 +262,8 @@ private:
     // request is recorded by the debug API, then the trajectory seed is
     // captured at the last complete authoritative epoch before the clock is
     // advanced by the accelerated delta.
-    bool m_pendingPassiveTrajectoryEntry = false;
-    double m_pendingPassiveTrajectoryEpochSeconds = 0.0;
+    bool m_pendingUniverseTrajectoryDiagnosticEntry = false;
+    double m_pendingUniverseTrajectoryDiagnosticEpochSeconds = 0.0;
 
     world::celestial::StarAtlasDatabase       m_starAtlas;
     world::celestial::CelestialRuntimeRegistry m_celestialRuntimes;
@@ -280,5 +277,6 @@ private:
     const world::celestial::CelestialSystemSnapshot*
     celestialSnapshotForSystem(int systemId) const;
 
+    void synchronizePlayerSystemMembership();
     void applyCelestialOrbitParentParameters();
 };

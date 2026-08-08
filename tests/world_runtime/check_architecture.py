@@ -439,26 +439,59 @@ if simulation_cpp.is_file():
         if forbidden in text:
             fail(simulation_cpp, f"server clock can freeze with gameplay again: {forbidden}")
 
-    passive_match = re.search(
-        r"bool GameSimulation::enterPassiveTrajectoryMode\([\s\S]*?\n}\r?\n\r?\nvoid GameSimulation::exitPassiveTrajectoryMode",
+    diagnostic_match = re.search(
+        r"bool GameSimulation::beginUniverseTrajectoryDiagnostic\([\s\S]*?\n}\r?\n\r?\nvoid GameSimulation::endUniverseTrajectoryDiagnostic",
         text,
     )
-    if not passive_match:
-        fail(simulation_cpp, "could not locate PassiveTrajectory entry contract")
+    if not diagnostic_match:
+        fail(simulation_cpp, "could not locate transactional universe diagnostic entry contract")
     else:
-        passive_entry = passive_match.group(0)
+        diagnostic_entry = diagnostic_match.group(0)
         for required in (
             "seedFromHubLocalState",
             "sourceHubFrame->localToWorldPosition(",
             "sourceHubFrame->localToWorldVelocity(",
             "motion.localPositionMeters",
             "motion.localVelocityMps",
+            "m_universeDiagnosticTrajectories.add(",
+            "seededShipCount == eligibleShipCount",
+            "m_universeDiagnosticTrajectories.discard()",
         ):
-            if required not in passive_entry:
+            if required not in diagnostic_entry:
                 fail(
                     simulation_cpp,
-                    f"PassiveTrajectory seed bypasses canonical Hub frame state: {required}",
+                    f"transactional diagnostic entry is incomplete: {required}",
                 )
+
+        for forbidden in (
+            "motion.mode = game::navigation::MotionMode::PassiveTrajectory",
+            "tr.setWorldPositionMeters(",
+            "motion.worldVelocityMps =",
+        ):
+            if forbidden in diagnostic_entry:
+                fail(
+                    simulation_cpp,
+                    f"diagnostic entry mutates production ship state: {forbidden}",
+                )
+
+    exit_match = re.search(
+        r"void GameSimulation::endUniverseTrajectoryDiagnostic\(\)[\s\S]*?\n}\r?\n\r?\nvoid GameSimulation::advanceUniverseTrajectoryDiagnostic",
+        text,
+    )
+    if not exit_match:
+        fail(simulation_cpp, "could not locate transactional universe diagnostic exit contract")
+    else:
+        diagnostic_exit = exit_match.group(0)
+        if "m_universeDiagnosticTrajectories.discard()" not in diagnostic_exit:
+            fail(simulation_cpp, "diagnostic exit does not discard the alternate branch")
+        for forbidden in (
+            "setWorldPositionMeters(",
+            "worldVelocityMps =",
+            "localPositionMeters =",
+            "localVelocityMps =",
+        ):
+            if forbidden in diagnostic_exit:
+                fail(simulation_cpp, f"diagnostic exit commits future state: {forbidden}")
 
 
 if errors:

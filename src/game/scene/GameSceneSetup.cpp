@@ -150,12 +150,14 @@ namespace SolarTestScene
 
 bool resolveParentBodyForInitialWorldState(
     const GameSimulation& sim,
+    int systemId,
     const std::string& parentBodyId,
     glm::dvec3& centerMeters,
     double& parentRadiusMeters
 )
 {
     return sim.resolveCelestialBodyMeters(
+        systemId,
         parentBodyId,
         centerMeters,
         parentRadiusMeters
@@ -175,6 +177,7 @@ bool resolveParentBodyForInitialWorldState(
 
             if (!resolveParentBodyForInitialWorldState(
                     sim,
+                    hub.systemId,
                     hub.parentBodyId,
                     parentCenterMeters,
                     parentRadiusMeters
@@ -267,6 +270,7 @@ sim.registerOrbitalHub(runtimeHub);
                 const EntityId objectId =
                     sim.spawnStation(
                         objectType,
+                        hub.systemId,
                         modulePositionMeters,
                         hubOrientation
                     );
@@ -286,7 +290,6 @@ sim.registerOrbitalHub(runtimeHub);
                         objectId,
                         mapName,
                         hub.owner,
-                        hub.systemId,
                         hub.parentBodyId,
                         hub.id,
                         module.id
@@ -317,9 +320,12 @@ bool spawnInitialWorldStateObjects(
     if (!game::world_state::loadInitialWorldStateWithFallbacks(state))
         return false;
 
+    const int activeSystemId =
+        sim.activeCelestialSystemId();
+
     for (const auto& hub : state.orbitalHubs)
     {
-        if (hub.systemId != 0)
+        if (hub.systemId != activeSystemId)
             continue;
 
         spawnOrbitalHubFromInitialState(
@@ -416,6 +422,7 @@ EntityId spawnPromoPlayer(GameSimulation& sim)
 
     return sim.spawnShip(
         ShipRole::Player,
+        0,
         EliteCobraMk1::EliteCobraMk1Descriptor(),
         playerPos,
         initData,
@@ -467,6 +474,7 @@ void spawnPromoStation(GameSimulation& sim)
     const EntityId stationId =
         sim.spawnStation(
             ObjectType::Station,
+            0,
             stationPos,
             stationOrientation
         );
@@ -475,7 +483,6 @@ void spawnPromoStation(GameSimulation& sim)
         stationId,
         "Earth High Orbital",
         "Sol Authority",
-        0,
         "system_0.Sol.Земля",
         "earth_orbital_hub",
         "earth_high_orbital"
@@ -483,6 +490,7 @@ void spawnPromoStation(GameSimulation& sim)
 
     sim.setStaticObjectOrbitalMotion(
         stationId,
+        "system_0.Sol.Земля",
         motion
     );
 }
@@ -537,6 +545,7 @@ EntityId buildGameScene(GameSimulation& sim)
     const EntityId playerId =
         sim.spawnShip(
             ShipRole::Player,
+            0,
             EliteCobraMk1::EliteCobraMk1Descriptor(),
             playerPos,
             playerInitData,

@@ -640,10 +640,17 @@ const char* AuthoritativeMapInterpolator::hubSampleModeName() const noexcept
 
 void AuthoritativeMapInterpolator::acceptDetail(
     const world::celestial::DetailMapSnapshot& snapshot,
-    double serverTimeSeconds
+    double serverTimeSeconds,
+    std::uint64_t universeTimelineRevision
 )
 {
+    const bool sameTimeline =
+        m_detailHistory.empty() ||
+        m_detailHistory.back().universeTimelineRevision ==
+            universeTimelineRevision;
+
     const bool sameTarget =
+        sameTimeline &&
         m_hasDetail &&
         !m_detailHistory.empty() &&
         m_detailHistory.back().snapshot.valid &&
@@ -669,7 +676,11 @@ void AuthoritativeMapInterpolator::acceptDetail(
         return;
     }
 
-    m_detailHistory.push_back({serverTimeSeconds, snapshot});
+    m_detailHistory.push_back({
+        serverTimeSeconds,
+        universeTimelineRevision,
+        snapshot
+    });
 
     while (m_detailHistory.size() > MaxBufferedSnapshots)
         m_detailHistory.pop_front();
@@ -681,10 +692,17 @@ void AuthoritativeMapInterpolator::acceptDetail(
 
 void AuthoritativeMapInterpolator::acceptHub(
     const world::celestial::HubMapSnapshot& snapshot,
-    double serverTimeSeconds
+    double serverTimeSeconds,
+    std::uint64_t universeTimelineRevision
 )
 {
+    const bool sameTimeline =
+        m_hubHistory.empty() ||
+        m_hubHistory.back().universeTimelineRevision ==
+            universeTimelineRevision;
+
     const bool sameTarget =
+        sameTimeline &&
         m_hasHub &&
         !m_hubHistory.empty() &&
         m_hubHistory.back().snapshot.valid &&
@@ -711,7 +729,11 @@ void AuthoritativeMapInterpolator::acceptHub(
         return;
     }
 
-    m_hubHistory.push_back({serverTimeSeconds, snapshot});
+    m_hubHistory.push_back({
+        serverTimeSeconds,
+        universeTimelineRevision,
+        snapshot
+    });
 
     while (m_hubHistory.size() > MaxBufferedSnapshots)
         m_hubHistory.pop_front();

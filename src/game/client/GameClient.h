@@ -36,6 +36,7 @@ public:
 
     void submitInput(const ShipControlState& control);
     bool updateSynchronization(double wallDeltaSeconds);
+    void prepareGameplayFrame(double wallDeltaSeconds);
     void updateGameplay(
         float simulationDt,
         float fixedDt,
@@ -180,5 +181,8 @@ private:
 
     bool m_hasSessionSnapshot = false;
     game::simulation::ClientSessionSnapshot m_sessionSnapshot;
+
+    bool m_gameplayFramePrepared = false;
+    bool m_preparedAcceptedSnapshot = false;
 
 };

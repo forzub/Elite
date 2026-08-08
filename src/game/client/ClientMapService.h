@@ -18,6 +18,7 @@ public:
     void update(float dt);
     void pumpResponses();
     void resetPendingRequests();
+    void setUniverseTimelineRevision(std::uint64_t revision);
 
     bool requestGalaxy(bool forceRefresh = false);
     bool requestSystem(int systemId, bool forceRefresh = false);
@@ -69,10 +70,14 @@ private:
     void sendSystemRequest();
     void sendDetailRequest();
     void sendHubRequest();
+    bool acceptsTimeline(
+        const game::network::SnapshotMetadata& metadata
+    ) const;
 
 private:
     ITransport& m_transport;
     std::uint64_t m_nextRequestId = 1;
+    std::uint64_t m_universeTimelineRevision = 0;
 
     RequestState m_galaxyRequest;
     RequestState m_systemRequest;

@@ -16,11 +16,8 @@
 
 // =========== симулейшен ==================
 
-#include "game/simulation/GameSimulation.h"
-#include "game/simulation/SimulationSnapshot.h"
 #include "game/ship/controller/PlayerInputMapper.h"
 #include "game/ship/view/PlayerShipView.h"
-#include "src/game/client/ClientWorldState.h"
 #include "src/game/debug/IDebugSessionControl.h"
 #include "src/game/client/GameClient.h"
 #include "src/game/client/MapTransitionController.h"
@@ -186,11 +183,9 @@ private:
     ShipCameraMode                              m_activeCameraMode = ShipCameraMode::Cockpit;
 
 
-    // std::unique_ptr<GameSimulation>                 m_simulation;
     game::session::IGameSession*                   m_session = nullptr;
     game::debug::IDebugSessionControl*              m_debugSession = nullptr;
     GameClient*                                      m_client = nullptr;
-    std::unique_ptr<ClientWorldState>               m_clientWorld;
 
     PlayerInputMapper                               m_inputMapper;
     std::unique_ptr<PlayerShipView>                 m_playerView;
@@ -295,5 +290,6 @@ private:
     game::client::MapTransitionController m_mapTransitions;
     game::system_map::AuthoritativeMapInterpolator
         m_authoritativeMapInterpolator;
+    std::uint64_t m_mapUniverseTimelineRevision = 0;
 
 };

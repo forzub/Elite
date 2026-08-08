@@ -24,6 +24,11 @@ struct DynamicMotionState
 {
     MotionMode mode = MotionMode::Inertial;
 
+    // Authoritative star-system membership for this dynamic entity.
+    // WorldPosition is system-local; identical numeric meter coordinates in
+    // different systems do not describe the same place.
+    int systemId = -1;
+
     std::string parentBodyId;
     std::string hubId;
 
@@ -55,15 +60,6 @@ struct DynamicMotionState
     glm::dvec3 desiredTacticalVelocityMps {0.0};
 
     glm::dvec3 worldVelocityMps {0.0};
-
-    // Debug-only unpowered trajectory state. The authoritative state is
-    // stored relative to a celestial parent so that the parent can continue
-    // along its ephemeris without dragging or abandoning the ship.
-    MotionMode resumeModeAfterPassiveTrajectory = MotionMode::Inertial;
-    std::string passiveTrajectoryParentBodyId;
-    glm::dvec3 passiveTrajectoryRelativePositionMeters {0.0};
-    glm::dvec3 passiveTrajectoryRelativeVelocityMps {0.0};
-    double passiveTrajectoryEpochUniverseTimeSeconds = 0.0;
 
     // Локальная желаемая скорость относительно навигационного ориентира.
     // Это НЕ вся глобальная скорость корабля.

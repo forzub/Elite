@@ -544,6 +544,7 @@ if (const auto* celestial =
 
 m_simulation.setOrbitalUniverseTimeSeconds(universeTime);
 m_simulation.setCelestialBodyKinematicStateAu(
+    m_playerNavigation.currentSystemId,
     currentCelestialPositionsAu,
     currentCelestialVelocitiesAuPerSecond
 );
@@ -559,6 +560,7 @@ m_simulation.setCelestialBodyKinematicStateAu(
 
 
         m_simulation.buildInitialScene();
+        synchronizePlayerSystemMembership();
 
         applyCelestialOrbitParentParameters();
 
@@ -578,6 +580,9 @@ m_simulation.setCelestialBodyKinematicStateAu(
 
         playerStartFrame.type =
             game::navigation::ReferenceFrameType::OrbitalHub;
+
+        playerStartFrame.systemId =
+            m_playerNavigation.currentSystemId;
 
         playerStartFrame.hubId =
             "earth_orbital_hub";
@@ -617,6 +622,20 @@ m_simulation.setCelestialBodyKinematicStateAu(
 
 
 
+void GameServer::synchronizePlayerSystemMembership()
+{
+    const Ship* player = m_simulation.playerShip();
+    if (!player)
+        return;
+
+    const int shipSystemId =
+        player->core().transform().motion.systemId;
+
+    if (shipSystemId >= 0)
+        m_playerNavigation.currentSystemId = shipSystemId;
+}
+
+
 const world::celestial::CelestialSystemSnapshot*
 GameServer::celestialSnapshotForSystem(int systemId) const
 {
@@ -650,18 +669,22 @@ void GameServer::applyCelestialOrbitParentParameters()
             body.radiusKm * 1000.0;
 
         m_simulation.setCelestialBodyGravityParameters(
+            systemId,
             body.id,
             radiusMeters,
             body.gravitationalParameterM3s2
         );
 
         m_simulation.updateStaticObjectOrbitParentParameters(
+            systemId,
             body.id,
             radiusMeters,
             body.gravitationalParameterM3s2,
             true
         );
     }
+
+    m_appliedSimulationContextSystemId = systemId;
 }
 
 
@@ -684,23 +707,30 @@ void GameServer::update(double dt)
     // Capture the passive-trajectory seed before the accelerated clock is
     // advanced. At this point celestial bodies, hubs, reference frames and
     // ships all belong to the same last completed authoritative epoch.
-    if (m_pendingPassiveTrajectoryEntry)
+    if (m_pendingUniverseTrajectoryDiagnosticEntry)
     {
-        const bool playerEntered =
-            m_simulation.enterPassiveTrajectoryMode(
-                m_pendingPassiveTrajectoryEpochSeconds
+        const bool diagnosticReady =
+            m_simulation.beginUniverseTrajectoryDiagnostic(
+                m_pendingUniverseTrajectoryDiagnosticEpochSeconds
             );
 
-        m_pendingPassiveTrajectoryEntry = false;
+        m_pendingUniverseTrajectoryDiagnosticEntry = false;
 
-        if (!playerEntered)
+        if (!diagnosticReady)
         {
             std::cerr
-                << "[PassiveTrajectory] activation cancelled: "
-                << "player seed was not valid\n";
+                << "[UniverseDiagnosticTrajectory] activation cancelled: "
+                << "not every eligible ship could enter the diagnostic branch\n";
 
-            m_universeClock.setSimulationMode(false);
-            m_forceSnapshotPublication = true;
+            /*
+                Failure is itself a timeline transition: setSimulationMode(false)
+                rewinds UniverseClock to the real epoch. Route it through the
+                normal setter so revision fencing is published as well.
+            */
+            setDebugUniverseTimeSimulation(
+                false,
+                m_universeClock.configuredTimeScale()
+            );
         }
     }
 
@@ -754,16 +784,12 @@ void GameServer::update(double dt)
             }
         }
 
-        if (time.universeTimeSimulation)
-        {
-            ShipControlState neutralControl;
-            const auto ackIt = m_lastProcessedControlTicks.find(id.value);
-            if (ackIt != m_lastProcessedControlTicks.end())
-                neutralControl.controlTick = ackIt->second;
-
-            ship.setControlState(neutralControl);
-        }
-
+        /*
+            Accelerated diagnostics consume/acknowledge incoming controls but
+            never overwrite the frozen production control state. The branch is
+            observational; leaving it resumes from the same gameplay state
+            that existed before the diagnostic session.
+        */
         auto cmdIt = m_pendingClientShipCommands.find(id.value);
         if (cmdIt == m_pendingClientShipCommands.end())
             continue;
@@ -808,8 +834,10 @@ m_simulation.setOrbitalUniverseTimeSeconds(
     universeTime
 );
 
-
-
+// The player's current system is entity authority, not an independent server
+// navigation variable. Resolve the active celestial context from membership
+// before injecting this tick's kinematics.
+synchronizePlayerSystemMembership();
 
 std::unordered_map<std::string, glm::dvec3> celestialPositionsAu;
 std::unordered_map<std::string, glm::dvec3>
@@ -829,20 +857,29 @@ if (const auto* celestial =
 }
 
 m_simulation.setCelestialBodyKinematicStateAu(
+    m_playerNavigation.currentSystemId,
     celestialPositionsAu,
     celestialVelocitiesAuPerSecond
 );
+
+if (m_appliedSimulationContextSystemId !=
+    m_playerNavigation.currentSystemId)
+{
+    applyCelestialOrbitParentParameters();
+}
 
 m_simulation.update(time);
 m_simulation.setTick(m_serverTick);
 
 
 
-    if (const Ship* player = m_simulation.playerShip())
+    if (m_simulation.playerShip())
     {
-        const auto& tr = player->core().transform();
+        const ShipTransform tr =
+            m_simulation.presentationShipTransform(
+                m_simulation.playerId()
+            );
 
-        m_playerNavigation.currentSystemId = 0;
         m_playerNavigation.worldPosition = tr.worldPosition;
         m_playerNavigation.orientation = tr.orientation;
 
@@ -1028,6 +1065,8 @@ void GameServer::populateClientSessionSnapshot(
     snapshot.metadata.serverTick = m_serverTick;
     snapshot.metadata.serverTimeSeconds = m_simulation.serverTime();
     snapshot.metadata.universeTimeSeconds = m_universeClock.timeSeconds();
+    snapshot.metadata.universeTimelineRevision =
+        m_universeTimelineRevision;
 
     for (auto& ship : snapshot.ships)
     {
@@ -1648,8 +1687,11 @@ GameServer::buildSystemMapSnapshot(
 
     for (const auto& [id, obj] : m_simulation.staticObjects())
     {
-        if (obj.mapSystemId != systemId)
+        if (obj.systemId != systemId ||
+            !obj.systemMapVisible)
+        {
             continue;
+        }
 
         world::celestial::SystemMapObject mapObj;
 
@@ -1662,7 +1704,7 @@ GameServer::buildSystemMapSnapshot(
 
         mapObj.owner = obj.ownerName;
 
-        mapObj.systemId = obj.mapSystemId;
+        mapObj.systemId = obj.systemId;
 
         mapObj.parentBodyId = obj.mapParentBodyId;
 
@@ -1807,6 +1849,46 @@ GameServer::buildSystemMapSnapshot(
         );
     }
 
+    // Real ships are first-class System-map objects. A single instantaneous
+    // position is not enough to invent orbit metadata, so hasOrbit stays false.
+    for (const auto& [entityId, shipPtr] : m_simulation.ships())
+    {
+        if (!shipPtr)
+            continue;
+
+        const ShipTransform transform =
+            m_simulation.presentationShipTransform(entityId);
+
+        if (transform.motion.systemId != systemId)
+            continue;
+
+        const bool isPlayer =
+            entityId == m_simulation.playerId();
+
+        world::celestial::SystemMapObject mapShip;
+        mapShip.id = entityId;
+        mapShip.stableId =
+            isPlayer
+                ? "player"
+                : "entity:" + std::to_string(entityId.value);
+        mapShip.name =
+            isPlayer
+                ? "Player"
+                : (shipPtr->core().descriptor().identity.shipName.empty()
+                    ? "Ship " + std::to_string(entityId.value)
+                    : shipPtr->core().descriptor().identity.shipName);
+        mapShip.parentBodyId = transform.motion.parentBodyId;
+        mapShip.kind =
+            world::celestial::SystemMapObjectKind::Ship;
+        mapShip.positionAu =
+            transform.fullWorldMeters() /
+            world::celestial::MetersPerAu;
+        mapShip.systemId = transform.motion.systemId;
+        mapShip.hasOrbit = false;
+
+        out.objects.push_back(std::move(mapShip));
+    }
+
 
 
     appendSystemMapMotionDebugCsv(out, m_diagnostics);
@@ -1866,6 +1948,7 @@ void GameServer::appendLocalDetailObjects(
 
         if (!frame ||
             !frame->valid ||
+            frame->systemId != out.systemId ||
             !intersectsBounds(frame->originMeters))
         {
             continue;
@@ -1951,7 +2034,7 @@ void GameServer::appendLocalDetailObjects(
     for (const auto& [entityId, object] :
          m_simulation.staticObjects())
     {
-        if (object.mapSystemId != out.systemId)
+        if (object.systemId != out.systemId)
             continue;
 
         const glm::dvec3 positionMeters =
@@ -1992,7 +2075,12 @@ void GameServer::appendLocalDetailObjects(
             continue;
 
         const auto& core = ship->core();
-        const auto& transform = core.transform();
+        const ShipTransform transform =
+            m_simulation.presentationShipTransform(entityId);
+
+        if (transform.motion.systemId != out.systemId)
+            continue;
+
         const glm::dvec3 positionMeters =
             transform.fullWorldMeters();
 
@@ -2201,7 +2289,8 @@ GameServer::buildLocalObjectDetailSnapshot(
     if (hubIt == m_simulation.orbitalHubs().end() ||
         hubIt->second.systemId != systemId ||
         !anchorFrame ||
-        !anchorFrame->valid)
+        !anchorFrame->valid ||
+        anchorFrame->systemId != systemId)
     {
         return out;
     }
@@ -2733,7 +2822,8 @@ void GameServer::refreshDetailMapDynamicState(
             );
 
         if (!frame ||
-            !frame->valid)
+            !frame->valid ||
+            frame->systemId != snapshot.systemId)
         {
             continue;
         }
@@ -2877,7 +2967,7 @@ void GameServer::refreshDetailMapDynamicState(
     for (const auto& [id, object] :
          m_simulation.staticObjects())
     {
-        if (object.mapSystemId !=
+        if (object.systemId !=
                 snapshot.systemId ||
             object.mapParentBodyId !=
                 snapshot.planetBodyId)
@@ -3034,11 +3124,12 @@ void GameServer::refreshDetailMapDynamicState(
                 0.0
             };
 
-            if (!object.mapParentBodyId.empty())
+            if (!object.orbitalParentBodyId.empty())
             {
                 m_simulation
                     .resolveCelestialBodyVelocityMetersPerSecond(
-                        object.mapParentBodyId,
+                        object.systemId,
+                        object.orbitalParentBodyId,
                         parentVelocityMps
                     );
             }
@@ -3070,87 +3161,94 @@ void GameServer::refreshDetailMapDynamicState(
     }
 
     // ------------------------------------------------------------
-    // 5. Игрок.
+    // 5. Ships.
+    //
+    // Detail uses the same presentation branch as SimulationSnapshot/Hub.
+    // This is important both for NPC visibility and for transactional
+    // accelerated diagnostics: no map is allowed to bypass the alternate
+    // diagnostic transform and read a frozen production transform directly.
     // ------------------------------------------------------------
 
-    const Ship* player =
-        m_simulation.playerShip();
+    constexpr double planetMapObjectRadiusMeters =
+        100000000.0;
 
-    if (player)
+    for (const auto& [entityId, shipPtr] :
+         m_simulation.ships())
     {
-        const auto& transform =
-            player->core().transform();
+        if (!shipPtr)
+            continue;
 
-        const glm::dvec3 playerPositionMeters =
+        const ShipTransform transform =
+            m_simulation.presentationShipTransform(entityId);
+
+        if (transform.motion.systemId != snapshot.systemId)
+            continue;
+
+        const glm::dvec3 shipPositionMeters =
             world::coordinates::fullMeters(
                 transform.worldPosition
             );
 
-        const glm::dvec3 fromPlanet =
-            playerPositionMeters -
-            snapshot.planetCenterMeters;
-
-        const double playerDistanceMeters =
+        const double shipDistanceMeters =
             glm::length(
-                fromPlanet
+                shipPositionMeters -
+                snapshot.planetCenterMeters
             );
 
-        /*
-            Пока сохраняем существующий Details radius:
-            100 000 км от центра выбранной планеты.
-        */
-        constexpr double planetMapObjectRadiusMeters =
-            100000000.0;
-
-        if (playerDistanceMeters <=
+        if (shipDistanceMeters >
             planetMapObjectRadiusMeters)
         {
-            LocalSceneObject playerObject;
-
-            playerObject.id =
-                m_simulation.playerId();
-
-            playerObject.stableId =
-                "player";
-
-            playerObject.name =
-                "Player";
-
-            playerObject.kind =
-                "player";
-            playerObject.objectClass =
-                DetailObjectClass::Ship;
-            playerObject.origin =
-                DetailObjectOrigin::Runtime;
-            playerObject.role =
-                LocalSceneObjectRole::Participant;
-            playerObject.parentStableId =
-                transform.motion.hubId;
-
-            playerObject.positionMeters =
-                playerPositionMeters;
-
-            /*
-                Это настоящий world velocity сервера.
-
-                Не target speed, не desired tactical velocity
-                и не reference velocity.
-            */
-            playerObject.velocityMps =
-                transform.motion.worldVelocityMps;
-
-            playerObject.axes =
-                planetMapAxesFromOrientation(
-                    transform.orientation
-                );
-
-            playerObject.valid =
-                true;
-
-            snapshot.scene.objects.push_back(
-                playerObject
-            );
+            continue;
         }
+
+        const bool isPlayer =
+            entityId == m_simulation.playerId();
+
+        LocalSceneObject shipObject;
+
+        shipObject.id = entityId;
+        shipObject.stableId =
+            isPlayer
+                ? "player"
+                : "entity:" + std::to_string(entityId.value);
+
+        shipObject.name =
+            isPlayer
+                ? "Player"
+                : (shipPtr->core().descriptor().identity.shipName.empty()
+                    ? "Ship " + std::to_string(entityId.value)
+                    : shipPtr->core().descriptor().identity.shipName);
+
+        shipObject.kind =
+            isPlayer
+                ? "player"
+                : "ship";
+        shipObject.objectClass =
+            DetailObjectClass::Ship;
+        shipObject.origin =
+            DetailObjectOrigin::Runtime;
+        shipObject.role =
+            LocalSceneObjectRole::Participant;
+        shipObject.parentStableId =
+            transform.motion.hubId;
+
+        shipObject.positionMeters =
+            shipPositionMeters;
+
+        shipObject.velocityMps =
+            transform.motion.worldVelocityMps;
+
+        shipObject.axes =
+            planetMapAxesFromOrientation(
+                transform.orientation
+            );
+
+        shipObject.valid =
+            true;
+
+        snapshot.scene.objects.push_back(
+            std::move(shipObject)
+        );
     }
 
     /*
@@ -3235,14 +3333,14 @@ void GameServer::setDebugUniverseTimeSimulation(
 
     if (enabled && !wasEnabled)
     {
-        m_pendingPassiveTrajectoryEntry = true;
-        m_pendingPassiveTrajectoryEpochSeconds =
+        m_pendingUniverseTrajectoryDiagnosticEntry = true;
+        m_pendingUniverseTrajectoryDiagnosticEpochSeconds =
             m_lastUniverseTimeSeconds;
     }
     else if (!enabled)
     {
-        m_pendingPassiveTrajectoryEntry = false;
-        m_pendingPassiveTrajectoryEpochSeconds = 0.0;
+        m_pendingUniverseTrajectoryDiagnosticEntry = false;
+        m_pendingUniverseTrajectoryDiagnosticEpochSeconds = 0.0;
     }
 
     m_universeClock.setTimeScale(timeScale);
@@ -3319,13 +3417,17 @@ GameServer::buildHubMapSnapshot(
     const auto& hub =
         hubIt->second;
 
+    if (hub.systemId != systemId)
+        return out;
+
     const auto* frame =
         m_simulation.hubNavigationFrame(
             hubId
         );
 
     if (!frame ||
-        !frame->valid)
+        !frame->valid ||
+        frame->systemId != systemId)
     {
         return out;
     }
@@ -3605,7 +3707,8 @@ void GameServer::refreshHubMapDynamicState(
     for (const auto& [id, object] :
          m_simulation.staticObjects())
     {
-        if (object.hubId !=
+        if (object.systemId != snapshot.systemId ||
+            object.hubId !=
             snapshot.hubId)
         {
             continue;
@@ -3676,33 +3779,50 @@ void GameServer::refreshHubMapDynamicState(
 
     // ------------------------------------------------------------
     // 5. Ships.
-    // Сейчас snapshot содержит игрока.
-    // Позже сюда тем же способом добавим другие реальные ships.
+    //
+    // Hub map consumes the same presentation branch as the main simulation
+    // snapshot. During accelerated diagnostics this includes every real ship
+    // associated with the hub, while production transforms remain untouched.
     // ------------------------------------------------------------
 
-    const Ship* player =
-        m_simulation.playerShip();
-
-    if (player)
+    for (const auto& [entityId, shipPtr] :
+         m_simulation.ships())
     {
-        const auto& transform =
-            player->core().transform();
+        if (!shipPtr)
+            continue;
 
-        const glm::dvec3 playerWorldMeters =
+        const bool isPlayer =
+            entityId == m_simulation.playerId();
+
+        const ShipTransform transform =
+            m_simulation.presentationShipTransform(entityId);
+
+        if (transform.motion.systemId != snapshot.systemId)
+            continue;
+
+        const bool usesThisHubFrame =
+            transform.motion.hubId == snapshot.hubId;
+
+        // Preserve the historical player marker even when inspecting the
+        // current hub during a transition; other ships belong only to their
+        // actual hub frame.
+        if (!usesThisHubFrame && !isPlayer)
+            continue;
+
+        const glm::dvec3 shipWorldMeters =
             world::coordinates::fullMeters(
                 transform.worldPosition
             );
 
         HubMapShip ship;
-
-        ship.id =
-            m_simulation.playerId();
-
-        ship.typeId =
-            player->typeId();
-
+        ship.id = entityId;
+        ship.typeId = shipPtr->typeId();
         ship.name =
-            "Player";
+            isPlayer
+                ? "Player"
+                : (shipPtr->core().descriptor().identity.shipName.empty()
+                    ? "Ship " + std::to_string(entityId.value)
+                    : shipPtr->core().descriptor().identity.shipName);
         ship.kind = "ship";
         ship.objectClass = DetailObjectClass::Ship;
         ship.role = LocalSceneObjectRole::Participant;
@@ -3710,16 +3830,12 @@ void GameServer::refreshHubMapDynamicState(
             LocalSceneCoordinateSpace::AnchorLocalMeters;
         ship.parentStableId = snapshot.hubId;
 
-        const bool playerUsesThisHubFrame =
-            transform.motion.hubId ==
-            snapshot.hubId;
-
         /*
-            HubTactical localPositionMeters is the authoritative state of a
-            ship inside this rotating frame. Do not reconstruct the same
-            quantity from a compatibility world pose in the map builder.
+            HubTactical is canonical in local coordinates. Diagnostic passive
+            trajectories and all other modes are presentation world states and
+            are projected into the requested hub frame here.
         */
-        if (playerUsesThisHubFrame &&
+        if (usesThisHubFrame &&
             transform.motion.mode ==
                 game::navigation::MotionMode::HubTactical)
         {
@@ -3730,40 +3846,29 @@ void GameServer::refreshHubMapDynamicState(
         {
             ship.positionMeters =
                 frame->worldToLocalPosition(
-                    playerWorldMeters
+                    shipWorldMeters
                 );
         }
 
-        if (playerUsesThisHubFrame &&
+        if (usesThisHubFrame &&
             transform.motion.mode ==
                 game::navigation::MotionMode::Docked)
         {
-            ship.velocityMps =
-                glm::dvec3(0.0);
+            ship.velocityMps = glm::dvec3(0.0);
         }
         else if (
-            playerUsesThisHubFrame &&
+            usesThisHubFrame &&
             transform.motion.mode ==
                 game::navigation::MotionMode::HubTactical)
         {
-            /*
-                Это серверная локальная скорость текущего
-                HubNavigationFrame.
-
-                Не target speed и не desired velocity.
-            */
             ship.velocityMps =
                 transform.motion.localVelocityMps;
         }
         else
         {
-            /*
-                Для корабля вне HubTactical переводим его
-                текущую абсолютную world velocity в frame хаба.
-            */
             ship.velocityMps =
                 frame->worldToLocalVelocity(
-                    playerWorldMeters,
+                    shipWorldMeters,
                     transform.motion.worldVelocityMps
                 );
         }
@@ -3779,52 +3884,42 @@ void GameServer::refreshHubMapDynamicState(
                 ship.typeId
             );
 
-        ship.player =
-            true;
+        ship.player = isPlayer;
+        ship.valid = true;
 
-        ship.valid =
-            true;
+        snapshot.scene.objects.push_back(ship);
 
-        snapshot.scene.objects.push_back(
-            ship
-        );
-
-        /*
-            Контроль round-trip преобразования.
-
-            local -> world должен восстановить исходную
-            серверную позицию практически без ошибки.
-        */
-        const glm::dvec3 reconstructedPlayerWorld =
-            frame->localToWorldPosition(
-                ship.positionMeters
-            );
-
-        const double playerRoundTripErrorMeters =
-            glm::length(
-                reconstructedPlayerWorld -
-                playerWorldMeters
-            );
-
-        if (playerRoundTripErrorMeters >
-            0.01)
+        if (isPlayer)
         {
-            auto& warningCount =
-                m_diagnostics.server.hubPlayerRoundTripWarnings;
+            const glm::dvec3 reconstructedPlayerWorld =
+                frame->localToWorldPosition(
+                    ship.positionMeters
+                );
 
-            if (warningCount <
-                20)
+            const double playerRoundTripErrorMeters =
+                glm::length(
+                    reconstructedPlayerWorld -
+                    shipWorldMeters
+                );
+
+            if (playerRoundTripErrorMeters > 0.01)
             {
-                ++warningCount;
+                auto& warningCount =
+                    m_diagnostics.server.hubPlayerRoundTripWarnings;
 
-                std::cerr
-                    << "[HubMapConsistency]"
-                    << " player round-trip error="
-                    << playerRoundTripErrorMeters
-                    << " m"
-                    << " hub="
-                    << snapshot.hubId
-                    << "\n";
+                if (warningCount < 20)
+                {
+                    ++warningCount;
+
+                    std::cerr
+                        << "[HubMapConsistency]"
+                        << " player round-trip error="
+                        << playerRoundTripErrorMeters
+                        << " m"
+                        << " hub="
+                        << snapshot.hubId
+                        << "\n";
+                }
             }
         }
     }

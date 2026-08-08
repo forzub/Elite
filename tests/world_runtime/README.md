@@ -88,11 +88,17 @@ accumulator, which was able to freeze server time while universe time kept
 moving.
 
 
-## Hub -> PassiveTrajectory seed contract
+## Transactional universe trajectory diagnostics
 
-A ship in `HubTactical` is authoritative in hub-local position and velocity. When
-accelerated-universe diagnostics release it into `PassiveTrajectory`, the world seed
-is reconstructed directly through `HubNavigationFrame::localToWorldPosition()` and
-`localToWorldVelocity()`. Compatibility world caches may be used only for objects
-that are not in the active HubTactical frame. This preserves the rotating-frame
-`omega x r` term at the transition.
+Accelerated-universe diagnostics are not a production `MotionMode` transition.
+`UniverseDiagnosticTrajectorySession` owns an alternate trajectory for every
+eligible real ship. Production transforms, motion state, controls, sensors and
+gameplay jobs stay frozen while the diagnostic branch is active, and exiting the
+mode discards the branch rather than committing future coordinates.
+
+For a `HubTactical` ship the diagnostic seed is reconstructed directly through
+`HubNavigationFrame::localToWorldPosition()` and `localToWorldVelocity()`,
+preserving the rotating-frame `omega x r` term. Diagnostic entry is
+all-or-nothing: if any eligible ship cannot be seeded coherently, the branch is
+rejected and the server returns to the normal timeline through the revisioned
+debug-session API.

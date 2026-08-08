@@ -172,10 +172,15 @@ std::optional<WorldSignal> Ship::emitSignal() const
 {
     const auto& tx = m_core.equipment().transmitter;
 
-    return tx.emit(
+    auto signal = tx.emit(
         m_core.transform().worldPosition,
         m_id
     );
+
+    if (signal)
+        signal->systemId = m_core.transform().motion.systemId;
+
+    return signal;
 }
 
 

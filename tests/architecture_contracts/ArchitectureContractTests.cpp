@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/client/ClientSpatialDomain.h"
+#include "src/game/client/ClientHubTacticalPrediction.h"
 #include "src/game/client/HubFramePresentation.h"
 #include "src/game/client/ReferenceFramePresentation.h"
 #include "src/game/client/MapTransitionController.h"
@@ -17,6 +18,7 @@
 #include "src/game/navigation/HubNavigationFrame.h"
 #include "src/game/navigation/ReferenceFrame.h"
 #include "src/game/network/ProtocolMetadata.h"
+#include "src/game/server/FixedStepControlQueue.h"
 #include "src/game/simulation/ObjectSnapshot.h"
 #include "src/game/simulation/RuntimeSystemPolicy.h"
 #include "src/game/simulation/ShipReferenceFrameSnapshot.h"
@@ -373,6 +375,66 @@ void testClientSpatialDomainNeverInterpolatesAcrossSystems()
     REQUIRE(!belongsToRenderSystem(-1, 3));
 }
 
+void testHubTacticalClientPredictionAdvancesLocalMotion()
+{
+    ShipTransform transform;
+    transform.motion.mode = game::navigation::MotionMode::HubTactical;
+    transform.motion.systemId = 0;
+    transform.motion.hubId = "hub";
+    transform.motion.localPositionMeters = glm::dvec3(10.0, 20.0, 30.0);
+    transform.motion.localVelocityMps = glm::dvec3(4.0, -2.0, 1.0);
+
+    game::simulation::ShipReferenceFrameSnapshot frame;
+    frame.systemId = 0;
+    frame.hubId = "hub";
+    frame.valid = true;
+    frame.originMeters = glm::dvec3(1000.0, 2000.0, 3000.0);
+    frame.progradeAxis = glm::dvec3(1.0, 0.0, 0.0);
+    frame.radialAxis = glm::dvec3(0.0, 1.0, 0.0);
+    frame.normalAxis = glm::dvec3(0.0, 0.0, 1.0);
+
+    transform.setWorldPositionMeters(
+        frame.localToWorldPosition(transform.motion.localPositionMeters)
+    );
+
+    ShipControlState control;
+
+    const bool predicted =
+        game::client::predictHubTacticalMotion(
+            transform,
+            frame,
+            control,
+            0.25f
+        );
+
+    REQUIRE(predicted);
+    REQUIRE_VEC_NEAR(
+        transform.motion.localPositionMeters,
+        glm::dvec3(11.0, 19.5, 30.25),
+        1.0e-12
+    );
+    REQUIRE_VEC_NEAR(
+        transform.fullWorldMeters(),
+        frame.localToWorldPosition(
+            transform.motion.localPositionMeters
+        ),
+        1.0e-12
+    );
+
+    auto wrongFrame = frame;
+    wrongFrame.hubId = "other";
+    const glm::dvec3 before = transform.motion.localPositionMeters;
+    REQUIRE(
+        !game::client::predictHubTacticalMotion(
+            transform,
+            wrongFrame,
+            control,
+            0.25f
+        )
+    );
+    REQUIRE_VEC_NEAR(transform.motion.localPositionMeters, before, 0.0);
+}
+
 void testReferenceFramePresentationUsesRenderEpoch()
 {
     game::simulation::ShipReferenceFrameSnapshot from;
@@ -491,13 +553,82 @@ void testHubAttachedPresentationUsesOneSharedFrameSample()
     );
 }
 
+
+void testFixedStepControlQueueAcknowledgesOnlyConsumedStep()
+{
+    game::server::FixedStepControlQueue queue;
+
+    ShipControlState a;
+    a.controlTick = 101;
+    a.yawInput = -1.0f;
+
+    ShipControlState b;
+    b.controlTick = 102;
+    b.yawInput = 0.25f;
+
+    ShipControlState c;
+    c.controlTick = 103;
+    c.yawInput = 1.0f;
+
+    using Result = game::server::FixedStepControlQueue::EnqueueResult;
+
+    REQUIRE(queue.enqueue(a) == Result::Accepted);
+    REQUIRE(queue.enqueue(b) == Result::Accepted);
+    REQUIRE(queue.enqueue(c) == Result::Accepted);
+    REQUIRE(queue.pendingCount() == 3u);
+    REQUIRE(queue.lastReceivedTick() == 103u);
+    REQUIRE(queue.lastProcessedTick() == 0u);
+
+    ShipControlState consumed;
+    REQUIRE(queue.consumeNext(consumed));
+    REQUIRE(consumed.controlTick == 101u);
+    REQUIRE_NEAR(consumed.yawInput, -1.0, 1.0e-9);
+    REQUIRE(queue.lastProcessedTick() == 101u);
+    REQUIRE(queue.pendingCount() == 2u);
+
+    REQUIRE(queue.consumeNext(consumed));
+    REQUIRE(consumed.controlTick == 102u);
+    REQUIRE_NEAR(consumed.yawInput, 0.25, 1.0e-9);
+    REQUIRE(queue.lastProcessedTick() == 102u);
+    REQUIRE(queue.pendingCount() == 1u);
+
+    REQUIRE(queue.enqueue(b) == Result::Stale);
+    REQUIRE(queue.pendingCount() == 1u);
+
+    REQUIRE(queue.consumeNext(consumed));
+    REQUIRE(consumed.controlTick == 103u);
+    REQUIRE(queue.lastProcessedTick() == 103u);
+    REQUIRE(queue.pendingCount() == 0u);
+
+    // Diagnostic branches do not predict gameplay input. They may discard the
+    // remaining production queue, but the acknowledgement must move to the
+    // newest discarded sequence so those commands cannot reappear on exit.
+    ShipControlState d;
+    d.controlTick = 104;
+    ShipControlState e;
+    e.controlTick = 105;
+    REQUIRE(queue.enqueue(d) == Result::Accepted);
+    REQUIRE(queue.enqueue(e) == Result::Accepted);
+    REQUIRE(queue.discardPendingAndAcknowledgeNewest());
+    REQUIRE(queue.pendingCount() == 0u);
+    REQUIRE(queue.lastProcessedTick() == 105u);
+}
+
 int main()
 {
     const std::vector<TestCase> tests =
     {
         {
+            "fixed-step control acknowledgement follows consumed steps",
+            testFixedStepControlQueueAcknowledgesOnlyConsumedStep
+        },
+        {
             "client spatial domains never interpolate across systems",
             testClientSpatialDomainNeverInterpolatesAcrossSystems
+        },
+        {
+            "hub tactical client prediction advances local motion",
+            testHubTacticalClientPredictionAdvancesLocalMotion
         },
         {
             "reference frame presentation uses render epoch",

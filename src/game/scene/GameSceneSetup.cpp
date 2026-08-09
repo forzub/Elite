@@ -1,6 +1,8 @@
 #include "game/scene/GameSceneSetup.h"
 
 #include <cmath>
+#include <cstdint>
+#include <string>
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
 
@@ -15,6 +17,7 @@
 #include "game/items/cryptocard/CryptoCard.h"
 #include "game/player/ActorCodeGenerator.h"
 #include "src/game/player/ActorIdProvider.h"
+#include "src/game/diagnostics/HubMotionLab.h"
 
 #include "src/world/types/ObjectType.h"
 #include "src/world/orbits/OrbitalMotion.h"
@@ -496,6 +499,85 @@ void spawnPromoStation(GameSimulation& sim)
 }
 
 
+EntityId spawnHubMotionLabNpc(
+    GameSimulation& sim,
+    game::diagnostics::HubMotionLabActorKind kind,
+    std::uint64_t instanceId,
+    const glm::dvec3& stationPos
+)
+{
+    const auto* spec =
+        game::diagnostics::hubMotionLabSpec(kind);
+
+    if (!spec)
+        return EntityId{};
+
+    ShipVisualIdentity visual {
+        .shipType = "Cobra MK1",
+        .shipName = spec->label
+    };
+
+    ShipRegistry registry {
+        .instanceId = instanceId,
+        .ownerName = "Hub Motion Lab",
+        .ownerActor = ActorIds::Unknown(),
+        .registrationId =
+            "LAB-" + std::to_string(instanceId),
+        .homePort = "Earth High Orbital",
+        .shipRole = ShipRoleType::Civilian
+    };
+
+    ShipInitData initData;
+    initData.visual = visual;
+    initData.registry = registry;
+
+    const EntityId id =
+        sim.spawnShip(
+            ShipRole::NPC,
+            0, // Sol; explicit membership is part of the spawn contract.
+            EliteCobraMk1::EliteCobraMk1Descriptor(),
+            stationPos,
+            initData,
+            glm::mat4(1.0f)
+        );
+
+    sim.registerHubMotionLabShip(
+        id,
+        kind,
+        std::string(game::diagnostics::HubMotionLabHubId)
+    );
+
+    return id;
+}
+
+void spawnHubMotionLabNpcs(
+    GameSimulation& sim,
+    const glm::dvec3& stationPos
+)
+{
+    spawnHubMotionLabNpc(
+        sim,
+        game::diagnostics::HubMotionLabActorKind::SlowOrbit,
+        9001,
+        stationPos
+    );
+
+    spawnHubMotionLabNpc(
+        sim,
+        game::diagnostics::HubMotionLabActorKind::FastOrbit,
+        9002,
+        stationPos
+    );
+
+    spawnHubMotionLabNpc(
+        sim,
+        game::diagnostics::HubMotionLabActorKind::MatchPlayer,
+        9003,
+        stationPos
+    );
+}
+
+
 EntityId buildGameScene(GameSimulation& sim)
 {
     if (!spawnInitialWorldStateObjects(sim))
@@ -551,6 +633,9 @@ EntityId buildGameScene(GameSimulation& sim)
             playerInitData,
             makeLookOrientation(glm::vec3(stationPos - playerPos))
         );
+
+    if constexpr (game::diagnostics::HubMotionLabEnabled)
+        spawnHubMotionLabNpcs(sim, stationPos);
 
     return playerId;
 }

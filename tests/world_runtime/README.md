@@ -69,9 +69,12 @@ maximum rate error in the fixed deterministic scenario.
 
 Universe time is no longer frame-integrated on the client. A versioned
 `ClientUniverseTimeline` maps the synchronized server simulation timeline to
-universe time, and all snapshot interpolation consumes one delayed
-`renderServerTimeSeconds` value. `ClientWorldState` may not own another render
-clock.
+universe time. `ClientServerClock` estimates authoritative server "now", while
+`ClientPresentationClock` owns the single delayed render playhead consumed by
+map/world presentation. The playhead normally follows the synchronized clock
+but is constrained by actual snapshot history, so a long frame or fixed-step
+debt discard cannot leave rendering permanently clamped to the newest
+snapshot. `ClientWorldState` may not own another render clock.
 
 ## Stage 4: monotonic server timeline
 

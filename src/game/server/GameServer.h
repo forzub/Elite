@@ -21,13 +21,12 @@
 #include "src/world/celestial/CelestialRuntimeRegistry.h"
 #include "src/world/time/UniverseClock.h"
 #include "src/game/server/ServerTimeContext.h"
+#include "src/game/server/FixedStepControlQueue.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
 struct ServerQueueDiagnostics
 {
-    std::uint64_t droppedControlCommands = 0;
     std::uint64_t staleControlCommands = 0;
-    std::uint64_t coalescedControlCommands = 0;
     std::uint64_t droppedShipCommands = 0;
     std::uint64_t droppedMapRequests = 0;
     std::uint64_t droppedMapResponses = 0;
@@ -230,7 +229,6 @@ private:
     GameSimulation m_simulation;
 
 
-    static constexpr std::size_t MaxControlCommandsPerShip = 64;
     static constexpr std::size_t MaxShipCommandsPerShip = 32;
     static constexpr std::size_t MaxPendingMapRequests = 64;
     static constexpr std::size_t MaxCompletedMapResponses = 64;
@@ -239,9 +237,8 @@ private:
 
     ServerQueueDiagnostics m_queueDiagnostics;
 
-    std::unordered_map<uint32_t, std::deque<ShipControlState>> m_pendingCommands;
-    std::unordered_map<uint32_t, std::uint64_t> m_lastReceivedControlTicks;
-    std::unordered_map<uint32_t, std::uint64_t> m_lastProcessedControlTicks;
+    std::unordered_map<uint32_t, game::server::FixedStepControlQueue>
+        m_controlStreams;
     std::unordered_map<uint32_t, std::deque<ClientShipCommand>> m_pendingClientShipCommands;
     std::deque<game::network::MapRequest> m_pendingMapRequests;
     std::deque<game::network::MapResponse> m_completedMapResponses;

@@ -361,6 +361,11 @@ bool GameSimulation::beginUniverseTrajectoryDiagnostic(
         if (!shipPtr)
             continue;
 
+        // Hub Motion Lab actors belong to the server/render interpolation
+        // experiment, not to the accelerated universe-trajectory branch.
+        if (isHubMotionLabShip(id))
+            continue;
+
         const auto& tr = shipPtr->core().transform();
         const auto& motion = tr.motion;
 
@@ -1272,6 +1277,9 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
             }
 
+            if (isHubMotionLabShip(id))
+                continue;
+
             Ship& ship = *shipPtr;
             if (id == m_playerId)
                 continue;
@@ -1291,6 +1299,9 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
             }
 
+            if (isHubMotionLabShip(id))
+                continue;
+
             Ship& ship = *shipPtr;
             ship.applyControl();
         }
@@ -1305,6 +1316,9 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
             }
 
+            if (isHubMotionLabShip(id))
+                continue;
+
             Ship& ship = *shipPtr;
             ship.updatePhysics(fdt, m_world);
         }
@@ -1318,6 +1332,9 @@ m_hubVelocityMetersPerSecond[hubId] =
             {
                 continue;
             }
+
+            if (isHubMotionLabShip(id))
+                continue;
 
             auto& tr = shipPtr->core().transform();
 
@@ -1373,6 +1390,9 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (!shipPtr)
                 continue;
 
+            if (isHubMotionLabShip(id))
+                continue;
+
             auto& tr = shipPtr->core().transform();
 
             if (tr.motion.mode !=
@@ -1399,6 +1419,11 @@ m_hubVelocityMetersPerSecond[hubId] =
         }
 
         updateDynamicNavigationContext(dt);
+
+        // Controlled server-time samples for the Hub Motion Lab. They are
+        // excluded from production AI/physics above, then published through
+        // the ordinary authoritative ShipSnapshot path below.
+        updateHubMotionLabActors();
     }
 
 
@@ -1639,6 +1664,7 @@ m_hubVelocityMetersPerSecond[hubId] =
         s.id = id;
         s.typeId = ship.core().desc().typeId;
         s.role = ship.core().role();
+        s.motionLabKind = hubMotionLabActorKind(id);
 
         s.transform = tr;
 
@@ -1697,10 +1723,12 @@ m_hubVelocityMetersPerSecond[hubId] =
                 
         auto& graph = s.graph;
 
+        const bool motionLabProbe = isHubMotionLabShip(id);
         auto resendIt = m_shipGraphPayloadFramesRemaining.find(id);
         const bool sendStructuralGraph =
-            m_initializedShipGraphIds.find(id) == m_initializedShipGraphIds.end() ||
-            resendIt != m_shipGraphPayloadFramesRemaining.end();
+            !motionLabProbe &&
+            (m_initializedShipGraphIds.find(id) == m_initializedShipGraphIds.end() ||
+             resendIt != m_shipGraphPayloadFramesRemaining.end());
 
         if (sendStructuralGraph)
         {
@@ -1758,65 +1786,72 @@ m_hubVelocityMetersPerSecond[hubId] =
             ship.core().clearHitVolumesDirty();
         }
 
-        auto detachedFragments =
-            ship.core().detachedFragmentRuntime().buildSnapshots(
-                tr.worldPosition
-            );
-
-
-        const bool hadDetachedFragments =
-            m_shipsWithDetachedFragmentPayload.find(id) != m_shipsWithDetachedFragmentPayload.end();
-
-        if (!detachedFragments.empty() || hadDetachedFragments)
+        // Motion-lab probes exercise only authoritative transform -> snapshot
+        // -> client presentation. Shipping their complete damage/repair graph
+        // multiplies startup snapshot memory without testing anything useful.
+        if (!motionLabProbe)
         {
-            graph.hasDetachedFragments = true;
-            graph.detachedFragments = std::move(detachedFragments);
+            auto detachedFragments =
+                ship.core().detachedFragmentRuntime().buildSnapshots(
+                    tr.worldPosition
+                );
 
-            if (graph.detachedFragments.empty())
-                m_shipsWithDetachedFragmentPayload.erase(id);
-            else
-                m_shipsWithDetachedFragmentPayload.insert(id);
-        }
+            const bool hadDetachedFragments =
+                m_shipsWithDetachedFragmentPayload.find(id) !=
+                    m_shipsWithDetachedFragmentPayload.end();
 
-        auto repairJobs = ship.core().buildRepairJobSnapshots();
-
-        if (m_universeDiagnosticTrajectories.find(id))
-        {
-            const auto rebaseWorldPosition =
-                [&](const world::coordinates::WorldPosition& p)
-                {
-                    return world::coordinates::translated(
-                        tr.worldPosition,
-                        world::coordinates::relativeMeters(
-                            p,
-                            productionTransform.worldPosition
-                        )
-                    );
-                };
-
-            for (auto& job : repairJobs)
+            if (!detachedFragments.empty() || hadDetachedFragments)
             {
-                job.droneWorldPosition =
-                    rebaseWorldPosition(job.droneWorldPosition);
-                job.fragmentWorldPosition =
-                    rebaseWorldPosition(job.fragmentWorldPosition);
-                job.homeWorldPosition =
-                    rebaseWorldPosition(job.homeWorldPosition);
+                graph.hasDetachedFragments = true;
+                graph.detachedFragments = std::move(detachedFragments);
+
+                if (graph.detachedFragments.empty())
+                    m_shipsWithDetachedFragmentPayload.erase(id);
+                else
+                    m_shipsWithDetachedFragmentPayload.insert(id);
             }
-        }
 
-        const bool hadRepairJobs =
-            m_shipsWithRepairJobPayload.find(id) != m_shipsWithRepairJobPayload.end();
+            auto repairJobs = ship.core().buildRepairJobSnapshots();
 
-        if (!repairJobs.empty() || hadRepairJobs)
-        {
-            graph.hasRepairJobs = true;
-            graph.repairJobs = std::move(repairJobs);
+            if (m_universeDiagnosticTrajectories.find(id))
+            {
+                const auto rebaseWorldPosition =
+                    [&](const world::coordinates::WorldPosition& p)
+                    {
+                        return world::coordinates::translated(
+                            tr.worldPosition,
+                            world::coordinates::relativeMeters(
+                                p,
+                                productionTransform.worldPosition
+                            )
+                        );
+                    };
 
-            if (graph.repairJobs.empty())
-                m_shipsWithRepairJobPayload.erase(id);
-            else
-                m_shipsWithRepairJobPayload.insert(id);
+                for (auto& job : repairJobs)
+                {
+                    job.droneWorldPosition =
+                        rebaseWorldPosition(job.droneWorldPosition);
+                    job.fragmentWorldPosition =
+                        rebaseWorldPosition(job.fragmentWorldPosition);
+                    job.homeWorldPosition =
+                        rebaseWorldPosition(job.homeWorldPosition);
+                }
+            }
+
+            const bool hadRepairJobs =
+                m_shipsWithRepairJobPayload.find(id) !=
+                    m_shipsWithRepairJobPayload.end();
+
+            if (!repairJobs.empty() || hadRepairJobs)
+            {
+                graph.hasRepairJobs = true;
+                graph.repairJobs = std::move(repairJobs);
+
+                if (graph.repairJobs.empty())
+                    m_shipsWithRepairJobPayload.erase(id);
+                else
+                    m_shipsWithRepairJobPayload.insert(id);
+            }
         }
 
         m_snapshot.ships.push_back(s);
@@ -2020,6 +2055,136 @@ EntityId GameSimulation::generateEntityId()
     EntityId id;
     id.value = m_nextEntityId++;
     return id;
+}
+
+void GameSimulation::registerHubMotionLabShip(
+    EntityId shipId,
+    game::diagnostics::HubMotionLabActorKind kind,
+    const std::string& hubId
+)
+{
+    if (shipId.value == 0 ||
+        kind == game::diagnostics::HubMotionLabActorKind::None ||
+        hubId.empty())
+    {
+        return;
+    }
+
+    m_hubMotionLabShips[shipId] = {kind, hubId};
+}
+
+bool GameSimulation::isHubMotionLabShip(
+    EntityId shipId
+) const noexcept
+{
+    return m_hubMotionLabShips.find(shipId) !=
+        m_hubMotionLabShips.end();
+}
+
+game::diagnostics::HubMotionLabActorKind
+GameSimulation::hubMotionLabActorKind(
+    EntityId shipId
+) const noexcept
+{
+    const auto it = m_hubMotionLabShips.find(shipId);
+    return it == m_hubMotionLabShips.end()
+        ? game::diagnostics::HubMotionLabActorKind::None
+        : it->second.kind;
+}
+
+void GameSimulation::updateHubMotionLabActors()
+{
+    if (m_hubMotionLabShips.empty())
+        return;
+
+    glm::dvec3 playerLocalPositionMeters {0.0};
+    glm::dvec3 playerLocalVelocityMetersPerSecond {0.0};
+
+    if (const Ship* player = playerShip())
+    {
+        const auto& playerMotion =
+            player->core().transform().motion;
+
+        if (playerMotion.mode ==
+                game::navigation::MotionMode::HubTactical &&
+            playerMotion.hubId ==
+                game::diagnostics::HubMotionLabHubId)
+        {
+            playerLocalPositionMeters =
+                playerMotion.localPositionMeters;
+            playerLocalVelocityMetersPerSecond =
+                playerMotion.localVelocityMps;
+        }
+    }
+
+    const double t = m_serverTimelineClock.timeSeconds();
+
+    for (const auto& [shipId, registration] :
+         m_hubMotionLabShips)
+    {
+        Ship* ship = getShip(shipId);
+        if (!ship)
+            continue;
+
+        const auto* frame =
+            hubNavigationFrame(registration.hubId);
+
+        if (!frame || !frame->valid)
+            continue;
+
+        const auto localState =
+            game::diagnostics::evaluateHubMotionLabActor(
+                registration.kind,
+                t,
+                playerLocalPositionMeters,
+                playerLocalVelocityMetersPerSecond
+            );
+
+        auto& tr = ship->core().transform();
+
+        tr.motion.mode =
+            game::navigation::MotionMode::HubTactical;
+        tr.motion.systemId = frame->systemId;
+        tr.motion.hubId = registration.hubId;
+        tr.motion.parentBodyId = frame->parentBodyId;
+        tr.motion.localPositionMeters =
+            localState.positionMeters;
+        tr.motion.localVelocityMps =
+            localState.velocityMetersPerSecond;
+        tr.motion.referenceVelocityMps =
+            frame->localToWorldVelocity(
+                localState.positionMeters,
+                glm::dvec3(0.0)
+            );
+        tr.motion.worldVelocityMps =
+            frame->localToWorldVelocity(
+                localState.positionMeters,
+                localState.velocityMetersPerSecond
+            );
+
+        tr.referenceVelocityMetersPerSecond =
+            tr.motion.referenceVelocityMps;
+
+        tr.setWorldPositionMeters(
+            frame->localToWorldPosition(
+                localState.positionMeters
+            )
+        );
+
+        const glm::dvec3 relativeWorldVelocity =
+            frame->localToWorldVector(
+                localState.velocityMetersPerSecond
+            );
+
+        if (glm::length(relativeWorldVelocity) > 0.001)
+        {
+            tr.orientation =
+                makePromoLookOrientation(
+                    glm::normalize(glm::vec3(relativeWorldVelocity)),
+                    glm::vec3(frame->radialAxis)
+                );
+        }
+    }
 }
 
 

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <functional>
 #include <filesystem>
+#include <new>
 
 #include <fstream>
 #include <iomanip>
@@ -398,14 +399,53 @@ SpaceState::SpaceState(StateStack& states)
 
     InitShaders();
 
+    std::cerr << "[HubMotionLab][startup] shaders-ready\n";
+
     // Важно: после InitShaders(), потому что starfield renderer использует
     // galaxy_starfield / galaxy_haze shader paths.
-    m_sceneRenderer.initializeStaticResources();
-    m_systemMapRenderer.init();
+    try
+    {
+        m_sceneRenderer.initializeStaticResources();
+    }
+    catch (const std::bad_alloc&)
+    {
+        std::cerr << "[HubMotionLab][bad_alloc] phase=scene-renderer-initialize\n";
+        throw;
+    }
+    std::cerr << "[HubMotionLab][startup] scene-renderer-ready\n";
 
-    requestGalaxyMapSnapshotOnce();
+    try
+    {
+        m_systemMapRenderer.init();
+    }
+    catch (const std::bad_alloc&)
+    {
+        std::cerr << "[HubMotionLab][bad_alloc] phase=system-map-renderer-init\n";
+        throw;
+    }
+    std::cerr << "[HubMotionLab][startup] system-map-renderer-ready\n";
 
-    initHUD();
+    try
+    {
+        requestGalaxyMapSnapshotOnce();
+    }
+    catch (const std::bad_alloc&)
+    {
+        std::cerr << "[HubMotionLab][bad_alloc] phase=galaxy-snapshot-request\n";
+        throw;
+    }
+    std::cerr << "[HubMotionLab][startup] galaxy-request-ready\n";
+
+    try
+    {
+        initHUD();
+    }
+    catch (const std::bad_alloc&)
+    {
+        std::cerr << "[HubMotionLab][bad_alloc] phase=hud-init\n";
+        throw;
+    }
+    std::cerr << "[HubMotionLab][startup] hud-ready\n";
 
 
     /*
@@ -1075,9 +1115,17 @@ void SpaceState::prepareFrame(float dt)
     */
     if (m_client)
     {
-        m_client->prepareGameplayFrame(
-            static_cast<double>(std::max(0.0f, dt))
-        );
+        try
+        {
+            m_client->prepareGameplayFrame(
+                static_cast<double>(std::max(0.0f, dt))
+            );
+        }
+        catch (const std::bad_alloc&)
+        {
+            std::cerr << "[HubMotionLab][bad_alloc] phase=client-prepareGameplayFrame\n";
+            throw;
+        }
     }
 
     if (m_client && m_client->hasSessionSnapshot())
@@ -1348,10 +1396,19 @@ void SpaceState::update(float dt)
 
     const double simStartMs = nowMs();
 
-    const auto serverAdvance =
-        m_session->advance(
-            static_cast<double>(dt)
-        );
+    game::session::GameSessionAdvanceResult serverAdvance;
+    try
+    {
+        serverAdvance =
+            m_session->advance(
+                static_cast<double>(dt)
+            );
+    }
+    catch (const std::bad_alloc&)
+    {
+        std::cerr << "[HubMotionLab][bad_alloc] phase=server-advance\n";
+        throw;
+    }
 
     m_perfFixedSimMs = nowMs() - simStartMs;
     m_perfServerFixedSteps = serverAdvance.stepsExecuted;
@@ -1372,13 +1429,21 @@ void SpaceState::update(float dt)
 
     const double clientStartMs = nowMs();
 
-    m_client->update(
-        clientFrameDt,
-        static_cast<float>(
-            m_session->fixedStepSeconds()
-        ),
-        static_cast<double>(std::max(0.0f, dt))
-    );
+    try
+    {
+        m_client->update(
+            clientFrameDt,
+            static_cast<float>(
+                m_session->fixedStepSeconds()
+            ),
+            static_cast<double>(std::max(0.0f, dt))
+        );
+    }
+    catch (const std::bad_alloc&)
+    {
+        std::cerr << "[HubMotionLab][bad_alloc] phase=client-update\n";
+        throw;
+    }
 
     updatePendingMapTransition(clientFrameDt);
 
@@ -1402,11 +1467,23 @@ void SpaceState::update(float dt)
 
 
 
-        m_stationTrafficSystem.setup(m_client->world());
-        m_stationTrafficSystem.update(
-            m_client->world(),
-            dt
-        );
+        try
+        {
+            m_stationTrafficSystem.setup(m_client->world());
+            m_stationTrafficSystem.update(
+                m_client->world(),
+                dt
+            );
+        }
+        catch (const std::bad_alloc&)
+        {
+            std::cerr
+                << "[HubMotionLab][bad_alloc] phase=station-traffic"
+                << " visualShips=" << m_client->world().visualShips().size()
+                << " realShips=" << m_client->world().ships().size()
+                << "\n";
+            throw;
+        }
     }
 
     m_perfClientUpdateMs = nowMs() - clientStartMs;

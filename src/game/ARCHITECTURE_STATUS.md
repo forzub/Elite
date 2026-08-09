@@ -58,6 +58,50 @@ shared celestial render services no longer depend on privileged facade access.
 Galaxy/System still use the shared facade/low-level `.inl` backend pipeline, so
 the map decomposition is not finished.
 
+## Runtime entity policy foundation
+
+The first policy layer for the next migration stages is now explicit and
+independent of existing production object code:
+
+- `EntityType` identifies what a persistent/runtime entity is.
+- `MotionModel` identifies the mathematical law currently owning its motion.
+- `SimulationMode` identifies how much server work is currently allocated to it.
+- `TimelineDomain` and `AuthorityPolicy` identify the authoritative clock/owner.
+- client `PresentationPolicy` is resolved per observer; it is not stored as a
+  permanent property of the entity. The same dynamic player ship is locally
+  predicted for its controller and snapshot-interpolated for remote clients.
+- scheduled materialization is fenced: an entity cannot jump directly from
+  `Scheduled` to `Active`; it must enter `Prewarm`, establish a valid dynamic
+  state, and only then become active. Collapse back to scheduled/coarse motion
+  is similarly explicit.
+
+These contracts are currently infrastructure and regression guards. Existing
+production ships/hubs/modules have **not yet been migrated** wholesale to the new
+policy objects.
+
+The Hub Motion Lab presentation investigation is now accepted as a stable
+server-to-render baseline:
+
+- `ClientPresentationClock` owns the single delayed render playhead derived from
+  authoritative server time and received snapshot history;
+- `SnapshotPresentationWindow` selects one adjacent snapshot pair and one alpha
+  shared by remote dynamic objects and interpolated reference frames in a frame;
+- mature snapshot history must not silently degrade into newest-snapshot hold;
+- the local controlled ship keeps fixed-step prediction/reconciliation, while a
+  presentation-only copy is advanced by the remaining fixed-step accumulator so
+  the camera is not fed a 50 Hz staircase;
+- the fixed predicted state is never overwritten by the fractional presentation
+  sample;
+- deterministic analytic presentation remains time-derived rather than
+  snapshot-stepped.
+
+The accepted end-to-end capture after this change showed no oldest/newest clamps,
+an interpolation bracket on every captured frame, sub-millimeter SLOW remote
+error, ~1.4 mm maximum FAST remote error, and micrometer-scale MATCH error when
+compared on the same delayed timeline. These runtime measurements are acceptance
+evidence, not hard-coded gameplay constants; automated tests use looser
+architecture-safe thresholds.
+
 ## Server -> client presentation migration
 
 Functional migration is currently at **Migration Stage 2 complete**:
@@ -131,3 +175,24 @@ new client-side celestial translations with old server dynamic geometry.
 - Procedural cloud morphology is presentation-only wall-time work. Its timing is
   intentionally separate from universe time, but texture generation still runs
   synchronously on the render thread and remains a performance/LOD concern.
+
+## Fixed-step player prediction/reconciliation contract
+
+Client prediction and authoritative player motion share one fixed-step input
+stream. `ShipControlState::controlTick` is a prediction-step sequence, not merely
+a version number for a coalescible state packet. In normal gameplay the server
+consumes at most one queued sample per authoritative fixed step and publishes
+`acknowledgedControlTick` from the sample actually consumed. The client may then
+remove and replay pending predicted steps using that acknowledgement without
+inventing or deleting simulation time.
+
+Several control samples must never be collapsed into the newest sample while
+advancing the acknowledgement across all of them. Doing so makes the
+acknowledgement claim that client-predicted fixed steps exist in the
+Authoritative snapshot when they were never simulated, which can force the
+predicted/render target backwards on snapshot arrival. Accelerated diagnostic
+branches are the explicit exception: gameplay prediction is disabled there, so
+pending production controls are discarded and acknowledged without being
+applied to production motion. A fixed-step stream is not silently truncated on queue
+overflow; a future remote-network implementation must use an explicit
+reconciliation reset/disconnect contract rather than skip predicted steps.

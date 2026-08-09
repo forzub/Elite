@@ -202,9 +202,11 @@ if server_cpp.is_file():
 
 
 # Stage 3: one global server-time estimate, one universe timeline and one
-# delayed render timeline. Frame dt may drive local effects/prediction, but it
-# may not independently integrate world/universe time.
+# buffered presentation timeline. Frame dt may advance the presentation
+# playhead, but snapshot history constrains it; frame dt may never independently
+# integrate authoritative world/universe state.
 server_clock_header = SRC / "game/client/ClientServerClock.h"
+presentation_clock_header = SRC / "game/client/ClientPresentationClock.h"
 universe_timeline_header = SRC / "game/client/ClientUniverseTimeline.h"
 old_client_clock_header = SRC / "game/client/ClientUniverseClock.h"
 time_sync_header = SRC / "game/network/TimeSyncMessage.h"
@@ -223,6 +225,7 @@ simulation_cpp = SRC / "game/simulation/GameSimulation.cpp"
 
 for path in (
     server_clock_header,
+    presentation_clock_header,
     universe_timeline_header,
     time_sync_header,
     transport_header,
@@ -265,6 +268,20 @@ if server_clock_header.is_file():
     ):
         if forbidden in text:
             fail(server_clock_header, f"large old clock-rate correction returned: {forbidden}")
+
+if presentation_clock_header.is_file():
+    text = presentation_clock_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "class ClientPresentationClock",
+        "minimumSnapshotLeadSeconds",
+        "recoverySnapshotLeadSeconds",
+        "hardRebaseThresholdSeconds",
+        "hardRebaseCount()",
+        "starvationCount()",
+        "newestSnapshotServerTimeSeconds",
+    ):
+        if required not in text:
+            fail(presentation_clock_header, f"presentation-clock contract is incomplete: {required}")
 
 if universe_timeline_header.is_file():
     text = universe_timeline_header.read_text(encoding="utf-8", errors="replace")
@@ -334,6 +351,8 @@ if client_cpp.is_file():
         "renderServerTimeSeconds()",
         "renderUniverseTimeSeconds()",
         "RenderInterpolationDelaySeconds",
+        "m_presentationClock.update(",
+        "m_presentationClock.renderTimeSeconds()",
         "m_transport.sendTimeSyncRequest(request)",
         "m_transport.receiveTimeSyncResponse(response)",
     ):
@@ -358,8 +377,39 @@ if client_world_header.is_file():
 
 if client_world_cpp.is_file():
     text = client_world_cpp.read_text(encoding="utf-8", errors="replace")
-    if "double renderTime = renderServerTimeSeconds" not in text:
-        fail(client_world_cpp, "snapshot interpolation does not use global render server time")
+
+    # ClientWorldState must consume the one presentation playhead selected by
+    # GameClient. Stage 2e deliberately moved snapshot-pair selection and alpha
+    # calculation behind SnapshotPresentationWindow, so requiring the obsolete
+    # direct assignment ``double renderTime = renderServerTimeSeconds`` would
+    # reject the stronger single-window contract.
+    required_presentation_window_tokens = (
+        "resolveSnapshotPresentationWindow(",
+        "m_snapshotBuffer,",
+        "renderServerTimeSeconds,",
+        "presentationWindow.renderTimeSeconds",
+        "presentationWindow.interpolationAlpha",
+    )
+    for required in required_presentation_window_tokens:
+        if required not in text:
+            fail(
+                client_world_cpp,
+                f"snapshot interpolation is not derived from the global presentation playhead: {required}",
+            )
+
+    # Do not allow a second local render clock or a second hand-written alpha
+    # path to creep back into ClientWorldState. Sampling mechanics belong to
+    # SnapshotPresentationWindow.
+    for forbidden in (
+        "double renderTime = renderServerTimeSeconds",
+        "(renderTime - olderTime) /",
+        "(renderServerTimeSeconds - olderTime) /",
+    ):
+        if forbidden in text:
+            fail(
+                client_world_cpp,
+                f"obsolete independent snapshot presentation path returned: {forbidden}",
+            )
 
 if space_state_cpp.is_file():
     text = space_state_cpp.read_text(encoding="utf-8", errors="replace")

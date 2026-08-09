@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <memory>
+#include <new>
 #include <cmath>
 #include <utility>
 #include <unordered_map>
@@ -39,6 +40,7 @@
 #include <fstream>
 #include <iomanip>
 #include "src/game/client/HubFramePresentation.h"
+#include "src/game/diagnostics/HubMotionLab.h"
 
 namespace
 {
@@ -962,6 +964,119 @@ const float distance =
 
 
 
+void SceneRenderer::renderHubMotionLabAnalyticCube(
+    const ClientWorldState& world,
+    EntityId playerId,
+    const glm::mat4& view,
+    const glm::mat4& proj,
+    const world::coordinates::WorldFrame& frame
+)
+{
+    if constexpr (!game::diagnostics::HubMotionLabEnabled)
+        return;
+
+    if (!m_debugLines || !m_debugLines->isInitialized())
+        return;
+
+    const auto playerIt = world.ships().find(playerId.value);
+    if (playerIt == world.ships().end())
+        return;
+
+    const auto& hubFrame =
+        playerIt->second.renderReferenceFrame;
+
+    if (!hubFrame.valid ||
+        hubFrame.systemId != game::diagnostics::HubMotionLabSystemId ||
+        hubFrame.hubId != game::diagnostics::HubMotionLabHubId)
+    {
+        return;
+    }
+
+    const auto pose =
+        game::diagnostics::evaluateHubMotionLabCube(
+            world.presentationServerTimeSeconds()
+        );
+
+    const glm::dvec3 centerWorldMeters =
+        hubFrame.localToWorldPosition(
+            pose.localPositionMeters
+        );
+
+    const glm::vec3 centerRender =
+        world::coordinates::toRenderLocal(
+            world::coordinates::makeWorldPositionFromMeters(
+                centerWorldMeters
+            ),
+            frame
+        );
+
+    const double h = pose.halfExtentMeters;
+    const double c = std::cos(pose.localRotationRadians);
+    const double si = std::sin(pose.localRotationRadians);
+
+    glm::vec3 corners[8];
+    int index = 0;
+
+    for (int zSign : {-1, 1})
+    {
+        for (int ySign : {-1, 1})
+        {
+            for (int xSign : {-1, 1})
+            {
+                const glm::dvec3 localCorner {
+                    static_cast<double>(xSign) * h,
+                    static_cast<double>(ySign) * h,
+                    static_cast<double>(zSign) * h
+                };
+
+                // Self rotation around hub-local radial (+Y) axis.
+                const glm::dvec3 rotatedLocal {
+                    c * localCorner.x + si * localCorner.z,
+                    localCorner.y,
+                    -si * localCorner.x + c * localCorner.z
+                };
+
+                corners[index++] =
+                    centerRender +
+                    glm::vec3(
+                        hubFrame.localToWorldVector(rotatedLocal)
+                    );
+            }
+        }
+    }
+
+    // Corner indexing produced above: z, y, x. Connect every pair that
+    // differs by exactly one bit to obtain the 12 cube edges.
+    constexpr int edges[12][2] = {
+        {0,1}, {0,2}, {0,4},
+        {1,3}, {1,5},
+        {2,3}, {2,6},
+        {3,7},
+        {4,5}, {4,6},
+        {5,7}, {6,7}
+    };
+
+    const glm::vec4 color {0.25f, 1.0f, 0.40f, 0.95f};
+
+    m_debugLines->begin();
+    for (const auto& edge : edges)
+    {
+        m_debugLines->addLine(
+            corners[edge[0]],
+            corners[edge[1]],
+            color
+        );
+    }
+
+    const glm::mat4 renderView =
+        world::coordinates::makeRenderView(view);
+
+    m_debugLines->end(proj * renderView);
+    m_lastStats.drawCalls += 1;
+}
+
+
+
 PreparedScene SceneRenderer::prepareScene(
     const ClientWorldState& world,
     EntityId playerId
@@ -1306,7 +1421,22 @@ void SceneRenderer::render(
     const SceneRenderPolicy& policy
 )
 {
-    PreparedScene prepared = prepareScene(world, playerId);
+    PreparedScene prepared;
+
+    try
+    {
+        prepared = prepareScene(world, playerId);
+    }
+    catch (const std::bad_alloc&)
+    {
+        std::cerr
+            << "[HubMotionLab][bad_alloc] phase=SceneRenderer::prepareScene"
+            << " ships=" << world.ships().size()
+            << " objects=" << world.objects().size()
+            << " visualShips=" << world.visualShips().size()
+            << "\n";
+        throw;
+    }
 
     SceneCameraParams camera;
     camera.view = view;
@@ -1314,11 +1444,25 @@ void SceneRenderer::render(
     camera.cameraId = cameraId;
     camera.cameraName = cameraName;
 
-    renderPrepared(
-        prepared,
-        camera,
-        policy
-    );
+    try
+    {
+        renderPrepared(
+            prepared,
+            camera,
+            policy
+        );
+    }
+    catch (const std::bad_alloc&)
+    {
+        std::cerr
+            << "[HubMotionLab][bad_alloc] phase=SceneRenderer::renderPrepared"
+            << " realShipMeshes=" << prepared.realShipMeshes.size()
+            << " objectMeshes=" << prepared.objectMeshes.size()
+            << " visualShips=" << prepared.visualShips.size()
+            << " visualShipParts=" << prepared.visualShipParts.size()
+            << "\n";
+        throw;
+    }
 }
 
 
@@ -2733,10 +2877,16 @@ if (policy.drawObjects)
 
     profileAfterObjectsMs = renderProfileNowMs();
 
-
-
-
-
+    if (policy.drawDebug)
+    {
+        renderHubMotionLabAnalyticCube(
+            world,
+            playerId,
+            view,
+            proj,
+            frame
+        );
+    }
 
 
 

@@ -13,6 +13,7 @@
 
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
+#include "src/game/diagnostics/HubMotionLab.h"
 
 
 
@@ -765,22 +766,24 @@ void GameServer::update(double dt)
     {
         Ship& ship = *shipPtr;
 
-        auto controlIt = m_pendingCommands.find(id.value);
-        if (controlIt != m_pendingCommands.end())
+        auto controlIt = m_controlStreams.find(id.value);
+        if (controlIt != m_controlStreams.end())
         {
-            auto& queue = controlIt->second;
+            auto& stream = controlIt->second;
 
-            if (!queue.empty())
+            if (time.universeTimeSimulation)
             {
-                const auto cmd = queue.back();
-                queue.clear();
+                // Prediction is disabled on the client for this branch. Drain
+                // every queued production input now so none can leak through
+                // after the diagnostic branch is discarded.
+                stream.discardPendingAndAcknowledgeNewest();
+            }
 
-                m_lastProcessedControlTicks[id.value] = cmd.controlTick;
-
-                if (!time.universeTimeSimulation)
-                {
+            if (!time.universeTimeSimulation)
+            {
+                ShipControlState cmd;
+                if (stream.consumeNext(cmd))
                     ship.setControlState(cmd);
-                }
             }
         }
 
@@ -1070,9 +1073,11 @@ void GameServer::populateClientSessionSnapshot(
 
     for (auto& ship : snapshot.ships)
     {
-        const auto it = m_lastProcessedControlTicks.find(ship.id.value);
+        const auto it = m_controlStreams.find(ship.id.value);
         ship.acknowledgedControlTick =
-            it != m_lastProcessedControlTicks.end() ? it->second : 0;
+            it != m_controlStreams.end()
+                ? it->second.lastProcessedTick()
+                : 0;
     }
 
     snapshot.session.playerNavigation = m_playerNavigation;
@@ -1095,34 +1100,21 @@ void GameServer::populateClientSessionSnapshot(
 
 void GameServer::submitCommand(EntityId id, const ShipControlState& control)
 {
-    if (control.controlTick == 0)
+    auto& stream = m_controlStreams[id.value];
+
+    const auto result = stream.enqueue(control);
+
+    using EnqueueResult =
+        game::server::FixedStepControlQueue::EnqueueResult;
+
+    if (result == EnqueueResult::Stale)
     {
         ++m_queueDiagnostics.staleControlCommands;
         return;
     }
 
-    auto& lastReceivedTick = m_lastReceivedControlTicks[id.value];
-    if (control.controlTick <= lastReceivedTick)
-    {
-        ++m_queueDiagnostics.staleControlCommands;
-        return;
-    }
-
-    lastReceivedTick = control.controlTick;
-
-    // ShipControlState is a complete control state, not an event. If several
-    // states arrive before the next authoritative simulation step, only the
-    // newest one is relevant. Keeping all of them creates permanent backlog
-    // and makes acknowledgement lag unrelated to the current controls.
-    auto& queue = m_pendingCommands[id.value];
-    if (!queue.empty())
-    {
-        m_queueDiagnostics.coalescedControlCommands += queue.size();
-        queue.clear();
-    }
-
-    queue.push_back(control);
 }
+
 
 
 
@@ -1871,12 +1863,18 @@ GameServer::buildSystemMapSnapshot(
             isPlayer
                 ? "player"
                 : "entity:" + std::to_string(entityId.value);
+        const auto motionLabKind =
+            m_simulation.hubMotionLabActorKind(entityId);
+
         mapShip.name =
             isPlayer
                 ? "Player"
-                : (shipPtr->core().descriptor().identity.shipName.empty()
-                    ? "Ship " + std::to_string(entityId.value)
-                    : shipPtr->core().descriptor().identity.shipName);
+                : (motionLabKind !=
+                        game::diagnostics::HubMotionLabActorKind::None
+                    ? game::diagnostics::hubMotionLabLabel(motionLabKind)
+                    : (shipPtr->core().descriptor().identity.shipName.empty()
+                        ? "Ship " + std::to_string(entityId.value)
+                        : shipPtr->core().descriptor().identity.shipName));
         mapShip.parentBodyId = transform.motion.parentBodyId;
         mapShip.kind =
             world::celestial::SystemMapObjectKind::Ship;
@@ -1887,6 +1885,40 @@ GameServer::buildSystemMapSnapshot(
         mapShip.hasOrbit = false;
 
         out.objects.push_back(std::move(mapShip));
+    }
+
+
+    // Presentation-only analytic reference used by Hub Motion Lab. It is not a
+    // gameplay entity and has no physics state; maps evaluate the same shared
+    // time function only so the reference remains visible while diagnosing
+    // spatial-domain transitions.
+    if (game::diagnostics::HubMotionLabEnabled &&
+        systemId == game::diagnostics::HubMotionLabSystemId)
+    {
+        const auto* frame =
+            m_simulation.hubNavigationFrame(
+                std::string(game::diagnostics::HubMotionLabHubId)
+            );
+
+        if (frame && frame->valid)
+        {
+            const auto pose =
+                game::diagnostics::evaluateHubMotionLabCube(
+                    m_simulation.serverTime()
+                );
+
+            world::celestial::SystemMapObject cube;
+            cube.stableId = "diagnostic:hub_motion_lab_cube";
+            cube.name = "LAB ANALYTIC CUBE";
+            cube.parentBodyId = frame->parentBodyId;
+            cube.kind = world::celestial::SystemMapObjectKind::Ship;
+            cube.positionAu =
+                frame->localToWorldPosition(pose.localPositionMeters) /
+                world::celestial::MetersPerAu;
+            cube.systemId = frame->systemId;
+            cube.hasOrbit = false;
+            out.objects.push_back(std::move(cube));
+        }
     }
 
 
@@ -2092,10 +2124,16 @@ void GameServer::appendLocalDetailObjects(
         object.stableId =
             "entity:" +
             std::to_string(entityId.value);
+        const auto motionLabKind =
+            m_simulation.hubMotionLabActorKind(entityId);
+
         object.name =
-            core.descriptor().identity.shipName.empty()
-                ? "Ship " + std::to_string(entityId.value)
-                : core.descriptor().identity.shipName;
+            motionLabKind !=
+                    game::diagnostics::HubMotionLabActorKind::None
+                ? game::diagnostics::hubMotionLabLabel(motionLabKind)
+                : (core.descriptor().identity.shipName.empty()
+                    ? "Ship " + std::to_string(entityId.value)
+                    : core.descriptor().identity.shipName);
         object.kind = "ship";
         object.parentStableId = transform.motion.hubId;
         object.objectClass = DetailObjectClass::Ship;
@@ -2113,6 +2151,43 @@ void GameServer::appendLocalDetailObjects(
         out.scene.objects.push_back(
             std::move(object)
         );
+    }
+
+
+    if (game::diagnostics::HubMotionLabEnabled &&
+        out.systemId == game::diagnostics::HubMotionLabSystemId)
+    {
+        const auto* frame =
+            m_simulation.hubNavigationFrame(
+                std::string(game::diagnostics::HubMotionLabHubId)
+            );
+
+        if (frame && frame->valid)
+        {
+            const auto pose =
+                game::diagnostics::evaluateHubMotionLabCube(
+                    m_simulation.serverTime()
+                );
+
+            const glm::dvec3 positionMeters =
+                frame->localToWorldPosition(pose.localPositionMeters);
+
+            if (intersectsBounds(positionMeters))
+            {
+                LocalSceneObject cube;
+                cube.stableId = "diagnostic:hub_motion_lab_cube";
+                cube.name = "LAB ANALYTIC CUBE";
+                cube.kind = "diagnostic_probe";
+                cube.parentStableId =
+                    std::string(game::diagnostics::HubMotionLabHubId);
+                cube.objectClass = DetailObjectClass::Ship;
+                cube.origin = DetailObjectOrigin::Runtime;
+                cube.role = LocalSceneObjectRole::Participant;
+                cube.positionMeters = positionMeters;
+                cube.valid = true;
+                out.scene.objects.push_back(std::move(cube));
+            }
+        }
     }
 }
 
@@ -3212,12 +3287,18 @@ void GameServer::refreshDetailMapDynamicState(
                 ? "player"
                 : "entity:" + std::to_string(entityId.value);
 
+        const auto motionLabKind =
+            m_simulation.hubMotionLabActorKind(entityId);
+
         shipObject.name =
             isPlayer
                 ? "Player"
-                : (shipPtr->core().descriptor().identity.shipName.empty()
-                    ? "Ship " + std::to_string(entityId.value)
-                    : shipPtr->core().descriptor().identity.shipName);
+                : (motionLabKind !=
+                        game::diagnostics::HubMotionLabActorKind::None
+                    ? game::diagnostics::hubMotionLabLabel(motionLabKind)
+                    : (shipPtr->core().descriptor().identity.shipName.empty()
+                        ? "Ship " + std::to_string(entityId.value)
+                        : shipPtr->core().descriptor().identity.shipName));
 
         shipObject.kind =
             isPlayer
@@ -3249,6 +3330,44 @@ void GameServer::refreshDetailMapDynamicState(
         snapshot.scene.objects.push_back(
             std::move(shipObject)
         );
+    }
+
+    if (game::diagnostics::HubMotionLabEnabled &&
+        snapshot.systemId == game::diagnostics::HubMotionLabSystemId)
+    {
+        const auto* frame =
+            m_simulation.hubNavigationFrame(
+                std::string(game::diagnostics::HubMotionLabHubId)
+            );
+
+        if (frame && frame->valid)
+        {
+            const auto pose =
+                game::diagnostics::evaluateHubMotionLabCube(
+                    m_simulation.serverTime()
+                );
+
+            const glm::dvec3 cubeWorldMeters =
+                frame->localToWorldPosition(pose.localPositionMeters);
+
+            if (glm::length(cubeWorldMeters - snapshot.planetCenterMeters) <=
+                planetMapObjectRadiusMeters)
+            {
+                LocalSceneObject cube;
+                cube.stableId = "diagnostic:hub_motion_lab_cube";
+                cube.name = "LAB ANALYTIC CUBE";
+                cube.kind = "diagnostic_probe";
+                cube.objectClass = DetailObjectClass::Ship;
+                cube.origin = DetailObjectOrigin::Runtime;
+                cube.role = LocalSceneObjectRole::Participant;
+                cube.parentStableId =
+                    std::string(game::diagnostics::HubMotionLabHubId);
+                cube.positionMeters = cubeWorldMeters;
+                cube.sizeMeters = glm::dvec3(pose.halfExtentMeters * 2.0);
+                cube.valid = true;
+                snapshot.scene.objects.push_back(std::move(cube));
+            }
+        }
     }
 
     /*
@@ -3817,12 +3936,18 @@ void GameServer::refreshHubMapDynamicState(
         HubMapShip ship;
         ship.id = entityId;
         ship.typeId = shipPtr->typeId();
+        const auto motionLabKind =
+            m_simulation.hubMotionLabActorKind(entityId);
+
         ship.name =
             isPlayer
                 ? "Player"
-                : (shipPtr->core().descriptor().identity.shipName.empty()
-                    ? "Ship " + std::to_string(entityId.value)
-                    : shipPtr->core().descriptor().identity.shipName);
+                : (motionLabKind !=
+                        game::diagnostics::HubMotionLabActorKind::None
+                    ? game::diagnostics::hubMotionLabLabel(motionLabKind)
+                    : (shipPtr->core().descriptor().identity.shipName.empty()
+                        ? "Ship " + std::to_string(entityId.value)
+                        : shipPtr->core().descriptor().identity.shipName));
         ship.kind = "ship";
         ship.objectClass = DetailObjectClass::Ship;
         ship.role = LocalSceneObjectRole::Participant;
@@ -3922,6 +4047,31 @@ void GameServer::refreshHubMapDynamicState(
                 }
             }
         }
+    }
+
+
+    if (game::diagnostics::HubMotionLabEnabled &&
+        snapshot.systemId == game::diagnostics::HubMotionLabSystemId &&
+        snapshot.hubId == game::diagnostics::HubMotionLabHubId)
+    {
+        const auto pose =
+            game::diagnostics::evaluateHubMotionLabCube(
+                m_simulation.serverTime()
+            );
+
+        HubMapShip cube;
+        cube.stableId = "diagnostic:hub_motion_lab_cube";
+        cube.name = "LAB ANALYTIC CUBE";
+        cube.kind = "diagnostic_probe";
+        cube.objectClass = DetailObjectClass::Ship;
+        cube.role = LocalSceneObjectRole::Participant;
+        cube.coordinateSpace =
+            LocalSceneCoordinateSpace::AnchorLocalMeters;
+        cube.parentStableId = snapshot.hubId;
+        cube.positionMeters = pose.localPositionMeters;
+        cube.sizeMeters = glm::dvec3(pose.halfExtentMeters * 2.0);
+        cube.valid = true;
+        snapshot.scene.objects.push_back(std::move(cube));
     }
 
     snapshot.scene.halfExtentMeters = 1000.0;

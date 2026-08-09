@@ -1,6 +1,9 @@
 #include "ClientWorldState.h"
 #include "src/game/client/ClientSpatialDomain.h"
 #include "src/game/client/ReferenceFramePresentation.h"
+#include "src/game/client/ClientHubTacticalPrediction.h"
+#include "src/game/client/SnapshotPresentationWindow.h"
+#include "src/game/client/presentation/LocalPredictedPresentation.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include <iostream>
 #include "src/game/ship/ShipDescriptorRegistry.h"
@@ -20,6 +23,64 @@
 
 namespace
 {
+    void appendHubMotionLabPresentationCsv(
+        const game::diagnostics::HubMotionLabPresentationSample& sample
+    )
+    {
+        if constexpr (!game::diagnostics::HubMotionLabTelemetryCsvEnabled)
+            return;
+
+        static std::ofstream out(
+            game::diagnostics::HubMotionLabTelemetryCsvPath,
+            std::ios::out | std::ios::trunc
+        );
+        static bool headerWritten = false;
+
+        if (!out)
+            return;
+
+        if (!headerWritten)
+        {
+            out
+                << "frame,frame_dt_ms,requested_render_s,actual_render_s,"
+                << "oldest_snapshot_s,newest_snapshot_s,requested_minus_newest_ms,"
+                << "clamped_oldest,clamped_newest,has_bracket,"
+                << "older_tick,newer_tick,alpha,"
+                << "slow_error_m,fast_error_m,"
+                << "match_vs_predicted_player_delta_m,"
+                << "match_vs_delayed_player_error_m,"
+                << "player_prediction_remainder_ms,"
+                << "player_fixed_to_fractional_m,"
+                << "player_render_to_fractional_m,"
+                << "player_render_step_m\n";
+            headerWritten = true;
+        }
+
+        out
+            << sample.frameIndex << ','
+            << std::setprecision(12) << sample.frameDtMilliseconds << ','
+            << sample.requestedRenderTimeSeconds << ','
+            << sample.actualRenderTimeSeconds << ','
+            << sample.oldestSnapshotTimeSeconds << ','
+            << sample.newestSnapshotTimeSeconds << ','
+            << sample.requestedMinusNewestMilliseconds << ','
+            << (sample.clampedToOldest ? 1 : 0) << ','
+            << (sample.clampedToNewest ? 1 : 0) << ','
+            << (sample.hasInterpolationBracket ? 1 : 0) << ','
+            << sample.olderServerTick << ','
+            << sample.newerServerTick << ','
+            << sample.interpolationAlpha << ','
+            << sample.slowNpcLocalErrorMeters << ','
+            << sample.fastNpcLocalErrorMeters << ','
+            << sample.matchVsPredictedPlayerDistanceDeltaMeters << ','
+            << sample.matchVsDelayedPlayerErrorMeters << ','
+            << sample.playerPredictionRemainderMilliseconds << ','
+            << sample.playerFixedToFractionalTargetMeters << ','
+            << sample.playerRenderToFractionalTargetMeters << ','
+            << sample.playerRenderStepMeters
+            << '\n';
+    }
+
     bool isModuleLocallyVisible(uint8_t state)
     {
         return state == 0; // Attached
@@ -116,14 +177,24 @@ namespace
 
         if (sameReferenceFrame(currentFrame, targetFrame))
         {
+            /*
+                The reference-frame snapshot describes the frame geometry.
+                The entity's predicted hub-local motion belongs to ShipTransform.
+                Using targetFrame.localPositionMeters here silently discarded
+                client linear prediction and turned the camera translation into
+                a low-pass response to 16.7 Hz authoritative snapshots.
+            */
             const glm::dvec3 smoothedLocal =
-                currentFrame.localPositionMeters +
-                (targetFrame.localPositionMeters - currentFrame.localPositionMeters) *
-                static_cast<double>(posAlpha);
+                current.motion.localPositionMeters +
+                (target.motion.localPositionMeters -
+                 current.motion.localPositionMeters) *
+                    static_cast<double>(posAlpha);
 
             out.motion.localPositionMeters = smoothedLocal;
-            out.motion.localVelocityMps = targetFrame.localVelocityMetersPerSecond;
-            out.setWorldPositionMeters(targetFrame.localToWorldPosition(smoothedLocal));
+            out.motion.localVelocityMps = target.motion.localVelocityMps;
+            out.setWorldPositionMeters(
+                targetFrame.localToWorldPosition(smoothedLocal)
+            );
         }
         else
         {
@@ -429,6 +500,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.id   = s.id;
             state.role = s.role;
             state.typeId = s.typeId;
+            state.motionLabKind = s.motionLabKind;
             state.descriptor =
                 &ShipDescriptorRegistry::get(s.typeId);
                 // &ObjectDescriptorRegistry::get(s.typeId);
@@ -477,6 +549,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
             state.role = s.role;
             state.typeId = s.typeId;
+            state.motionLabKind = s.motionLabKind;
             state.transform = s.transform;
             state.referenceFrame = s.referenceFrame;
             applyReferenceFrameState(state.transform, state.referenceFrame);
@@ -693,37 +766,61 @@ void ClientWorldState::update(
     double renderServerTimeSeconds
 )
 {
-    double renderTime = renderServerTimeSeconds;
+    m_presentationServerTimeSeconds = renderServerTimeSeconds;
 
-    if (!m_snapshotBuffer.empty())
-    {
-        const double oldest = m_snapshotBuffer.front().metadata.serverTimeSeconds;
-        const double newest = m_snapshotBuffer.back().metadata.serverTimeSeconds;
+    auto& labTelemetry = m_hubMotionLabPresentationSample;
+    labTelemetry = {};
+    labTelemetry.frameIndex = ++m_hubMotionLabFrameIndex;
+    labTelemetry.frameDtMilliseconds = static_cast<double>(dt) * 1000.0;
+    labTelemetry.requestedRenderTimeSeconds = renderServerTimeSeconds;
 
-        // Если renderTime вылетает за диапазон —
-        // зажимаем его внутрь буфера
-        if (renderTime < oldest)
-            renderTime = oldest;
+    const auto presentationWindow =
+        game::client::resolveSnapshotPresentationWindow(
+            m_snapshotBuffer,
+            renderServerTimeSeconds,
+            [](const SimulationSnapshot& snapshot)
+            {
+                return snapshot.metadata.serverTimeSeconds;
+            }
+        );
 
-        if (renderTime > newest)
-            renderTime = newest;
-    }
+    const double renderTime =
+        presentationWindow.renderTimeSeconds;
+
+    labTelemetry.hasSnapshots =
+        presentationWindow.hasSnapshots;
+    labTelemetry.oldestSnapshotTimeSeconds =
+        presentationWindow.oldestSnapshotTimeSeconds;
+    labTelemetry.newestSnapshotTimeSeconds =
+        presentationWindow.newestSnapshotTimeSeconds;
+    labTelemetry.requestedMinusNewestMilliseconds =
+        presentationWindow.hasSnapshots
+            ? (renderServerTimeSeconds -
+               presentationWindow.newestSnapshotTimeSeconds) * 1000.0
+            : 0.0;
+    labTelemetry.clampedToOldest =
+        presentationWindow.clampedToOldest;
+    labTelemetry.clampedToNewest =
+        presentationWindow.clampedToNewest;
+    labTelemetry.actualRenderTimeSeconds =
+        renderTime;
+    labTelemetry.hasInterpolationBracket =
+        presentationWindow.hasInterpolationBracket;
+    labTelemetry.interpolationAlpha =
+        presentationWindow.interpolationAlpha;
 
     SimulationSnapshot* older = nullptr;
     SimulationSnapshot* newer = nullptr;
 
-    if (m_snapshotBuffer.size() >= 2)
+    if (presentationWindow.hasInterpolationBracket)
     {
-        for (size_t i = 0; i + 1 < m_snapshotBuffer.size(); ++i)
-        {
-            if (m_snapshotBuffer[i].metadata.serverTimeSeconds <= renderTime &&
-                m_snapshotBuffer[i+1].metadata.serverTimeSeconds >= renderTime)
-            {
-                older = &m_snapshotBuffer[i];
-                newer = &m_snapshotBuffer[i+1];
-                break;
-            }
-        }
+        older = &m_snapshotBuffer[presentationWindow.olderIndex];
+        newer = &m_snapshotBuffer[presentationWindow.newerIndex];
+
+        labTelemetry.olderServerTick =
+            older->metadata.serverTick;
+        labTelemetry.newerServerTick =
+            newer->metadata.serverTick;
     }
 
     auto sampleRenderReferenceFrame =
@@ -770,13 +867,10 @@ void ClientWorldState::update(
                 return fallback;
             }
 
-            const double alpha =
-                (renderTime - older->metadata.serverTimeSeconds) / span;
-
             return game::client::interpolateReferenceFramePresentation(
                 oldIt->referenceFrame,
                 newIt->referenceFrame,
-                alpha
+                presentationWindow.interpolationAlpha
             );
         };
 
@@ -788,10 +882,19 @@ void ClientWorldState::update(
 
         if (usePredictedPlayerPresentation)
         {
+            const ShipTransform* presentationTarget = &ship.transform;
+
+            if (m_hasLocalPredictedPresentationTarget &&
+                m_localPredictedPresentationShipId == id)
+            {
+                presentationTarget =
+                    &m_localPredictedPresentationTarget;
+            }
+
             ship.renderTransform =
                 smoothShipRenderTransform(
                     ship.renderTransform,
-                    ship.transform,
+                    *presentationTarget,
                     ship.renderReferenceFrame,
                     ship.referenceFrame,
                     dt
@@ -838,8 +941,10 @@ void ClientWorldState::update(
 
                 if (span > 0.0)
                 {
-                    float t = float((renderTime - older->metadata.serverTimeSeconds) / span);
-                    t = glm::clamp(t, 0.0f, 1.0f);
+                    const float t =
+                        static_cast<float>(
+                            presentationWindow.interpolationAlpha
+                        );
 
                     auto itOld = std::find_if(
                         older->ships.begin(),
@@ -949,6 +1054,157 @@ void ClientWorldState::update(
         );
     }
 
+    if constexpr (game::diagnostics::HubMotionLabEnabled)
+    {
+        const ClientShipState* playerState = nullptr;
+
+        for (const auto& [id, ship] : m_ships)
+        {
+            (void)id;
+            if (ship.role == ShipRole::Player)
+            {
+                playerState = &ship;
+                break;
+            }
+        }
+
+        game::simulation::ShipReferenceFrameSnapshot delayedPlayerFrame;
+        bool haveDelayedPlayerFrame = false;
+
+        if (playerState)
+        {
+            delayedPlayerFrame =
+                sampleRenderReferenceFrame(playerState->id.value);
+
+            haveDelayedPlayerFrame =
+                delayedPlayerFrame.valid &&
+                delayedPlayerFrame.systemId ==
+                    playerState->renderTransform.motion.systemId;
+
+            if (m_hasLocalPredictedPresentationTarget &&
+                m_localPredictedPresentationShipId == playerState->id.value)
+            {
+                labTelemetry.playerPredictionRemainderMilliseconds =
+                    static_cast<double>(m_localPredictionRemainderSeconds) *
+                    1000.0;
+
+                labTelemetry.playerFixedToFractionalTargetMeters =
+                    glm::length(
+                        m_localPredictedPresentationTarget.motion.localPositionMeters -
+                        playerState->transform.motion.localPositionMeters
+                    );
+
+                labTelemetry.playerRenderToFractionalTargetMeters =
+                    glm::length(
+                        m_localPredictedPresentationTarget.motion.localPositionMeters -
+                        playerState->renderTransform.motion.localPositionMeters
+                    );
+            }
+
+            if (m_hasPreviousLabPlayerRenderLocal)
+            {
+                labTelemetry.playerRenderStepMeters =
+                    glm::length(
+                        playerState->renderTransform.motion.localPositionMeters -
+                        m_previousLabPlayerRenderLocalMeters
+                    );
+            }
+
+            m_previousLabPlayerRenderLocalMeters =
+                playerState->renderTransform.motion.localPositionMeters;
+            m_hasPreviousLabPlayerRenderLocal = true;
+        }
+        else
+        {
+            m_hasPreviousLabPlayerRenderLocal = false;
+        }
+
+        for (const auto& [id, ship] : m_ships)
+        {
+            (void)id;
+
+            if (ship.motionLabKind ==
+                    game::diagnostics::HubMotionLabActorKind::SlowOrbit ||
+                ship.motionLabKind ==
+                    game::diagnostics::HubMotionLabActorKind::FastOrbit)
+            {
+                const auto expected =
+                    game::diagnostics::evaluateHubMotionLabActor(
+                        ship.motionLabKind,
+                        renderTime
+                    );
+
+                const double errorMeters = glm::length(
+                    ship.renderTransform.motion.localPositionMeters -
+                    expected.positionMeters
+                );
+
+                if (ship.motionLabKind ==
+                    game::diagnostics::HubMotionLabActorKind::SlowOrbit)
+                {
+                    labTelemetry.slowNpcLocalErrorMeters = errorMeters;
+                }
+                else
+                {
+                    labTelemetry.fastNpcLocalErrorMeters = errorMeters;
+                }
+            }
+            else if (ship.motionLabKind ==
+                         game::diagnostics::HubMotionLabActorKind::MatchPlayer &&
+                     playerState)
+            {
+                const glm::dvec3 relativeToPredictedPlayer =
+                    ship.renderTransform.motion.localPositionMeters -
+                    playerState->renderTransform.motion.localPositionMeters;
+
+                const auto* spec =
+                    game::diagnostics::hubMotionLabSpec(
+                        game::diagnostics::HubMotionLabActorKind::MatchPlayer
+                    );
+
+                if (spec)
+                {
+                    const double expectedDistance = std::sqrt(
+                        spec->radiusMeters * spec->radiusMeters +
+                        spec->radialOffsetMeters * spec->radialOffsetMeters
+                    );
+
+                    /*
+                        Remote actors intentionally render on the delayed
+                        presentation timeline while the local player is
+                        predicted toward server-now. The resulting distance
+                        delta is therefore a cross-timeline diagnostic, not a
+                        remote interpolation error.
+                    */
+                    labTelemetry.matchVsPredictedPlayerDistanceDeltaMeters =
+                        std::abs(
+                            glm::length(relativeToPredictedPlayer) -
+                            expectedDistance
+                        );
+                }
+
+                if (haveDelayedPlayerFrame)
+                {
+                    const auto expectedAtRenderEpoch =
+                        game::diagnostics::evaluateHubMotionLabActor(
+                            game::diagnostics::HubMotionLabActorKind::MatchPlayer,
+                            renderTime,
+                            delayedPlayerFrame.localPositionMeters,
+                            delayedPlayerFrame.localVelocityMetersPerSecond
+                        );
+
+                    labTelemetry.matchVsDelayedPlayerErrorMeters =
+                        glm::length(
+                            ship.renderTransform.motion.localPositionMeters -
+                            expectedAtRenderEpoch.positionMeters
+                        );
+                }
+            }
+        }
+
+        appendHubMotionLabPresentationCsv(labTelemetry);
+    }
+
 
     for (auto& [id, obj] : m_objects)
     {
@@ -965,8 +1221,10 @@ void ClientWorldState::update(
 
             if (span > 0.0)
             {
-                float t = float((renderTime - older->metadata.serverTimeSeconds) / span);
-                t = glm::clamp(t, 0.0f, 1.0f);
+                const float t =
+                    static_cast<float>(
+                        presentationWindow.interpolationAlpha
+                    );
 
                 debugT = t;
 
@@ -1103,6 +1361,53 @@ void ClientWorldState::update(
 //  ####
 
 
+void ClientWorldState::prepareLocalPredictedPresentation(
+    EntityId id,
+    const ShipControlState& control,
+    const WorldParams& world,
+    float fractionalStepSeconds,
+    float fixedStepSeconds
+)
+{
+    clearLocalPredictedPresentation();
+
+    auto it = m_ships.find(id.value);
+    if (it == m_ships.end())
+        return;
+
+    const auto& ship = it->second;
+    if (ship.role != ShipRole::Player || !ship.descriptor)
+        return;
+
+    m_localPredictedPresentationTarget =
+        game::client::presentation::sampleLocalPredictedPresentationTarget(
+            ship.transform,
+            ship.referenceFrame,
+            ship.descriptor->physics,
+            control,
+            world,
+            fractionalStepSeconds,
+            fixedStepSeconds
+        );
+
+    m_localPredictedPresentationShipId = id.value;
+    m_localPredictionRemainderSeconds =
+        std::clamp(
+            fractionalStepSeconds,
+            0.0f,
+            std::max(0.0f, fixedStepSeconds)
+        );
+    m_hasLocalPredictedPresentationTarget = true;
+}
+
+void ClientWorldState::clearLocalPredictedPresentation() noexcept
+{
+    m_hasLocalPredictedPresentationTarget = false;
+    m_localPredictedPresentationShipId = 0;
+    m_localPredictionRemainderSeconds = 0.0f;
+}
+
+
 void ClientWorldState::predict(
     EntityId id,
     const ShipControlState& control,
@@ -1120,6 +1425,21 @@ void ClientWorldState::predict(
         ship.descriptor->physics,
         control,
         world,
+        dt
+    );
+
+    /*
+        SharedShipPhysics currently owns attitude prediction only. The server
+        advances HubTactical translation through DynamicMotionSystem, so the
+        client must run that same deterministic motion step as part of input
+        prediction. Otherwise localPositionMeters changes only when a server
+        snapshot arrives and nearby co-frame infrastructure appears to pulse
+        even though the hub frame itself is smooth.
+    */
+    (void)game::client::predictHubTacticalMotion(
+        ship.transform,
+        ship.referenceFrame,
+        control,
         dt
     );
 }

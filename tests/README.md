@@ -43,6 +43,21 @@ after a revision fence, first-class star-system membership, explicit
 single-active-system runtime context, inactive-system gameplay freezing,
 spatial-vs-map parent separation, and system-isolated repair/signal/radar domains.
 
+### Client presentation pipeline
+
+`tests/presentation_pipeline/run_mingw64.sh`
+
+Locks down the accepted server-to-render path: buffered presentation time, one
+shared snapshot bracket/alpha, remote interpolation without newest-snapshot
+hold, recovery after a large client/server timing discontinuity, and
+fractional local-player presentation between fixed prediction ticks.
+
+A live Hub Motion Lab CSV can additionally be checked with:
+
+```bash
+python tests/hub_motion_lab/verify_capture.py hub_motion_lab_presentation.csv
+```
+
 ### System map behavior + architecture
 
 `tests/system_map/run_mingw64.sh`

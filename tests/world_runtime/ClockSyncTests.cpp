@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "src/game/client/ClientServerClock.h"
+#include "src/game/client/ClientPresentationClock.h"
 #include "src/game/client/ClientUniverseTimeline.h"
 #include "src/game/server/ServerTimelineClock.h"
 #include "src/world/time/UniverseClock.h"
@@ -589,36 +590,114 @@ void testUniverseTimelineUsesServerTimeOnly()
     REQUIRE(timeline.revision() == 8);
 }
 
-void testRenderTimeIsSingleDelayedServerTimeline()
+void testPresentationClockUsesBufferedSnapshotHistory()
 {
-    game::client::ClientServerClock clock;
+    game::client::ClientPresentationClock clock;
 
-    // Perfect startup samples: local clock is deliberately 100 ms ahead in
-    // phase, but has the same rate.
-    for (int i = 0; i < 6; ++i)
+    double trueServerTime = 0.0;
+    double newestSnapshotTime = 0.0;
+    double nextSnapshotTime = 0.0;
+    double previousRenderTime = 0.0;
+    bool havePrevious = false;
+
+    constexpr double FrameDt = 1.0 / 120.0;
+    constexpr double SnapshotInterval = 0.060;
+    constexpr double OneWayLatency = 0.100;
+
+    for (int frame = 0; frame < 2400; ++frame)
     {
-        const double send = static_cast<double>(i) * 0.1;
-        const double receive = send + 0.1;
-        const double server = send + 0.05 - 0.1;
-        clock.advance(i == 0 ? 0.0 : 0.1);
-        clock.addSyncSample(send, receive, server);
+        trueServerTime += FrameDt;
+
+        // Deliver snapshots at 16.7 Hz after 100 ms one-way latency.
+        while (nextSnapshotTime + OneWayLatency <= trueServerTime)
+        {
+            newestSnapshotTime = nextSnapshotTime;
+            nextSnapshotTime += SnapshotInterval;
+        }
+
+        const bool hasSnapshot = trueServerTime >= OneWayLatency;
+        clock.update(
+            FrameDt,
+            trueServerTime,
+            hasSnapshot,
+            newestSnapshotTime
+        );
+
+        if (!clock.ready() || !hasSnapshot || trueServerTime < 2.0)
+            continue;
+
+        const double render = clock.renderTimeSeconds();
+        REQUIRE(render <= newestSnapshotTime + 1.0e-12);
+
+        if (havePrevious)
+        {
+            REQUIRE(render + 1.0e-12 >= previousRenderTime);
+            REQUIRE(render - previousRenderTime < 0.020);
+        }
+
+        previousRenderTime = render;
+        havePrevious = true;
     }
 
-    REQUIRE(clock.synchronized());
+    REQUIRE(clock.hardRebaseCount() == 0);
+    REQUIRE(clock.starvationCount() == 0);
 
-    constexpr double RenderDelay = 0.200;
-    double previousRender =
-        clock.estimatedServerTimeSeconds() - RenderDelay;
-
-    for (int i = 0; i < 600; ++i)
-    {
-        clock.advance(1.0 / 60.0);
-        const double render =
-            clock.estimatedServerTimeSeconds() - RenderDelay;
-        REQUIRE(render >= previousRender);
-        previousRender = render;
-    }
+    // 100 ms transport age + 100 ms buffered interpolation is the nominal
+    // 200 ms presentation delay in this deterministic trace.
+    requireNear(
+        trueServerTime - clock.renderTimeSeconds(),
+        0.200,
+        0.025,
+        "buffered presentation delay"
+    );
 }
+
+void testPresentationClockRecoversFromLargeEstimatorLead()
+{
+    game::client::ClientPresentationClock clock;
+
+    // Stable history before a long synchronous-host frame.
+    clock.update(0.016, 1.000, true, 0.900);
+    const double before = clock.renderTimeSeconds();
+
+    // The client wall clock advances by 2.2 s, while the capped authoritative
+    // runner has advanced only 0.25 s. This reproduces the captured Hub Motion
+    // Lab failure: estimated render time is now ~2 seconds beyond snapshot
+    // history.
+    clock.update(2.200, 3.200, true, 1.150);
+
+    REQUIRE(clock.hardRebaseCount() >= 1);
+    REQUIRE(clock.renderTimeSeconds() <= 1.150 + 1.0e-12);
+    REQUIRE(clock.renderTimeSeconds() + 1.0e-12 >= before);
+    REQUIRE(clock.snapshotLeadSeconds() >= 0.050);
+
+    double newest = 1.150;
+    double estimated = 3.200;
+    double previous = clock.renderTimeSeconds();
+
+    // Continue with a still-wrong estimated clock. Snapshot history itself
+    // must keep the presentation playhead smooth instead of falling back to
+    // latest-snapshot hold at 16.7 Hz.
+    for (int frame = 0; frame < 600; ++frame)
+    {
+        constexpr double Dt = 1.0 / 120.0;
+        estimated += Dt;
+
+        if ((frame % 7) == 0)
+            newest += 0.060;
+
+        clock.update(Dt, estimated, true, newest);
+        const double render = clock.renderTimeSeconds();
+
+        REQUIRE(render + 1.0e-12 >= previous);
+        REQUIRE(render <= newest + 1.0e-12);
+        REQUIRE(render - previous < 0.020);
+        previous = render;
+    }
+
+    REQUIRE(clock.starvationCount() == 0);
+}
+
 
 using TestFunction = void (*)();
 
@@ -655,8 +734,12 @@ int main()
             testUniverseTimelineUsesServerTimeOnly
         },
         {
-            "render time is one delayed server timeline",
-            testRenderTimeIsSingleDelayedServerTimeline
+            "presentation clock uses buffered snapshot history",
+            testPresentationClockUsesBufferedSnapshotHistory
+        },
+        {
+            "presentation clock recovers from estimator lead",
+            testPresentationClockRecoversFromLargeEstimatorLead
         },
     };
 

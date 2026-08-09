@@ -213,6 +213,14 @@ private:
         int activeSystemId
     );
 
+    void renderHubMotionLabAnalyticCube(
+        const ClientWorldState& world,
+        EntityId playerId,
+        const glm::mat4& view,
+        const glm::mat4& proj,
+        const world::coordinates::WorldFrame& frame
+    );
+
     void renderVisualShips(
     const ClientWorldState& world,
     const Frustum& frustum,

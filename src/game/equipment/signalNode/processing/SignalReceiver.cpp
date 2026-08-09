@@ -163,8 +163,9 @@ void SignalReceiver::update(
 
         // === БЛОК 8. Формирование результата ===
         SignalReceptionResult result;
-        result.source = &signal;
         result.owner = signal.owner;
+        result.sourceDisplayClass = signal.displayClass;
+        result.sourceLabel = signal.label;
         
         result.sourceWorldPosition = signal.worldPosition;
 

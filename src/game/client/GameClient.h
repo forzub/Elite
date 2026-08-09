@@ -8,6 +8,7 @@
 #include "src/game/client/ClientCatalogService.h"
 #include "src/game/client/ClientMapService.h"
 #include "src/game/client/ClientServerClock.h"
+#include "src/game/client/ClientPresentationClock.h"
 #include "src/game/client/ClientUniverseTimeline.h"
 #include "src/game/ship/core/ShipControlState.h"
 #include "src/game/simulation/SimulationSnapshot.h"
@@ -170,6 +171,7 @@ private:
     game::client::ClientMapService m_maps;
     game::client::ClientCatalogService m_catalogs;
     game::client::ClientServerClock m_serverClock;
+    game::client::ClientPresentationClock m_presentationClock;
     game::client::ClientUniverseTimeline m_universeTimeline;
 
     std::uint64_t m_timeSyncSequence = 0;

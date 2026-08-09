@@ -31,6 +31,10 @@ run_suite \
     "tests/architecture_contracts/run_mingw64.sh"
 
 run_suite \
+    "CLIENT PRESENTATION PIPELINE" \
+    "tests/presentation_pipeline/run_mingw64.sh"
+
+run_suite \
     "SYSTEM MAP BEHAVIOR + ARCHITECTURE" \
     "tests/system_map/run_mingw64.sh"
 

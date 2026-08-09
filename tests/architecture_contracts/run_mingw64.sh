@@ -19,6 +19,13 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_active_system_context.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_spatial_domain.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_hub_frame_presentation.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_hub_tactical_prediction.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_local_predicted_presentation.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_presentation_pipeline.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_prediction_reconciliation.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_runtime_policy_boundaries.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_hub_motion_lab.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_signal_reception_snapshot.py"
 
 cmake \
     -S "${ROOT_DIR}/tests/architecture_contracts" \

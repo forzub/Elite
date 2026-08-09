@@ -2,12 +2,13 @@
 
 #include <vector>
 
+#include "src/scene/EntityID.h"
 
 struct NpcSignalAwareness
 {
     struct NpcPerceivedSignal
     {
-        const void* source;   // пока opaque, потом можно типизировать
+        EntityId sourceOwner;
         float snr;
         bool decoded;
     };
@@ -25,7 +26,7 @@ struct NpcSignalAwareness
                 continue;
 
             signals.push_back({
-                r.source,
+                r.owner,
                 r.signalToNoiseRatio,
                 r.semanticState == SignalSemanticState::Decoded
             });

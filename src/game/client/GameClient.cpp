@@ -24,6 +24,7 @@ void GameClient::beginSynchronization()
     m_predictionSuspended = false;
     m_accumulator = 0.0f;
     m_serverClock.reset();
+    m_presentationClock.reset();
     m_universeTimeline.reset();
     m_timeSyncSequence = 0;
     m_nextTimeSyncLocalSeconds = 0.0;
@@ -216,6 +217,9 @@ double GameClient::estimatedServerTimeSeconds() const
 
 double GameClient::renderServerTimeSeconds() const
 {
+    if (m_presentationClock.ready())
+        return m_presentationClock.renderTimeSeconds();
+
     return std::max(
         0.0,
         estimatedServerTimeSeconds() -
@@ -435,6 +439,22 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
     }
 
     /*
+        Keep one buffered presentation playhead. The server-clock estimator
+        answers "what time is it on the server now?"; rendering needs a
+        different question: "what delayed authoritative time can the current
+        snapshot history represent smoothly?". A long frame/server hitch may
+        separate those two by seconds, so the render playhead is constrained
+        by the newest accepted snapshot instead of silently degenerating into
+        latest-snapshot hold.
+    */
+    m_presentationClock.update(
+        wallDeltaSeconds,
+        estimatedServerTimeSeconds(),
+        m_hasAcceptedSnapshot,
+        m_lastSimulationMetadata.serverTimeSeconds
+    );
+
+    /*
         Map responses are branch-tagged too. Pump them only after the newest
         simulation snapshot has selected the active revision.
     */
@@ -481,6 +501,7 @@ void GameClient::updateGameplay(
     if (!readyForGameplay())
     {
         m_accumulator = 0.0f;
+        m_world.clearLocalPredictedPresentation();
         m_world.update(
             simulationDt,
             false,
@@ -506,6 +527,8 @@ void GameClient::updateGameplay(
         );
     }
 
+    m_world.clearLocalPredictedPresentation();
+
     if (!trajectoryDebugMode)
     {
         m_accumulator += simulationDt;
@@ -516,6 +539,17 @@ void GameClient::updateGameplay(
         {
             sendAndPredictFixedStep(predictionWorld, fixedDt);
             m_accumulator -= fixedDt;
+        }
+
+        if (m_hasLatestControl && !m_predictionSuspended)
+        {
+            m_world.prepareLocalPredictedPresentation(
+                m_playerId,
+                m_latestControl,
+                predictionWorld,
+                m_accumulator,
+                fixedDt
+            );
         }
     }
 
@@ -548,6 +582,7 @@ void GameClient::update(
         m_gameplayFramePrepared = false;
         m_preparedAcceptedSnapshot = false;
         m_accumulator = 0.0f;
+        m_world.clearLocalPredictedPresentation();
         m_world.update(
             simulationDt,
             false,

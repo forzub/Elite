@@ -53,12 +53,12 @@ void ShipSignalPresentation::update(
         label.data.signalToNoiseRatio = result.signalToNoiseRatio;
         label.data.receivedPower      = result.receivedPower;
         label.data.stability          = result.stability;
-        label.data.displayClass       = result.source->displayClass;
+        label.data.displayClass       = result.sourceDisplayClass;
 
         if (result.semanticState == SignalSemanticState::Decoded ||
             label.data.displayClass == SignalDisplayClass::Global)
         {
-            label.data.displayName  = result.source->label;
+            label.data.displayName  = result.sourceLabel;
             label.data.distance     = result.distance;
             label.data.hasDistance  = true;
             label.visual.presence   = SignalPresence::Present;

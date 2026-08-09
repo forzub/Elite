@@ -9,6 +9,8 @@
 #include "src/game/simulation/SimulationSnapshot.h"
 #include "src/game/simulation/ShipReferenceFrameSnapshot.h"
 #include "src/game/simulation/HubAttachmentSnapshot.h"
+#include "src/game/diagnostics/HubMotionLab.h"
+#include "src/game/diagnostics/HubMotionLabTelemetry.h"
 
 #include "render/HUD/WorldLabel.h"
 #include "src/world/WorldParams.h"
@@ -50,6 +52,7 @@ struct ClientShipState
     EntityId                                        id;
     ShipRole                                        role;
     ObjectType                                      typeId;
+    game::diagnostics::HubMotionLabActorKind        motionLabKind = game::diagnostics::HubMotionLabActorKind::None;
 
     ShipTransform                                   transform;      // 🔥 единственный источник sim state
     ShipTransform                                   renderTransform;
@@ -142,6 +145,17 @@ public:
     const std::unordered_map<uint32_t, ClientShipState>& ships() const {return m_ships;}
     const std::unordered_map<uint32_t, ClientObjectState>& objects() const {return m_objects;}
 
+    double presentationServerTimeSeconds() const noexcept
+    {
+        return m_presentationServerTimeSeconds;
+    }
+
+    const game::diagnostics::HubMotionLabPresentationSample&
+    hubMotionLabPresentationSample() const noexcept
+    {
+        return m_hubMotionLabPresentationSample;
+    }
+
     int playerSystemId() const
     {
         for (const auto& [id, ship] : m_ships)
@@ -191,6 +205,18 @@ public:
         float dt
     );
 
+    // Prepare a presentation-only transform between fixed prediction ticks.
+    // This never mutates the fixed predicted state used by reconciliation.
+    void prepareLocalPredictedPresentation(
+        EntityId id,
+        const ShipControlState& control,
+        const WorldParams& world,
+        float fractionalStepSeconds,
+        float fixedStepSeconds
+    );
+
+    void clearLocalPredictedPresentation() noexcept;
+
 private:
 
     std::unordered_map<uint32_t, ClientShipState>   m_ships;
@@ -201,6 +227,17 @@ private:
     std::uint64_t                                   m_snapshotTimelineRevision = 0;
     int                                             m_snapshotActiveSystemId = -1;
     ShipSignalPresentation                          signalPresentation;
+    double                                          m_presentationServerTimeSeconds = 0.0;
+    std::uint64_t                                   m_hubMotionLabFrameIndex = 0;
+    game::diagnostics::HubMotionLabPresentationSample m_hubMotionLabPresentationSample;
+
+    bool                                            m_hasLocalPredictedPresentationTarget = false;
+    std::uint32_t                                   m_localPredictedPresentationShipId = 0;
+    ShipTransform                                   m_localPredictedPresentationTarget;
+    float                                           m_localPredictionRemainderSeconds = 0.0f;
+
+    bool                                            m_hasPreviousLabPlayerRenderLocal = false;
+    glm::dvec3                                      m_previousLabPlayerRenderLocalMeters {0.0};
 
 
 

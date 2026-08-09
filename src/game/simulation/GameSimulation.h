@@ -27,6 +27,7 @@
 #include "src/game/navigation/ReferenceFrame.h"
 #include "src/game/navigation/HubNavigationFrame.h"
 #include "src/game/diagnostics/ServerDiagnostics.h"
+#include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/server/ServerTimeContext.h"
 #include "src/game/server/ServerTimelineClock.h"
 
@@ -232,6 +233,18 @@ public:
     void rebuildHubNavigationFrames(double dt);
     void prepareReferenceFramesForSpawn();
 
+    void registerHubMotionLabShip(
+        EntityId shipId,
+        game::diagnostics::HubMotionLabActorKind kind,
+        const std::string& hubId
+    );
+
+    bool isHubMotionLabShip(EntityId shipId) const noexcept;
+
+    game::diagnostics::HubMotionLabActorKind hubMotionLabActorKind(
+        EntityId shipId
+    ) const noexcept;
+
 private:
     EntityId generateEntityId();
     void markShipGraphDirty(EntityId id);
@@ -263,6 +276,7 @@ private:
 
     void rebuildNavigationGravityContext();
     void updateDynamicNavigationContext(double dt);
+    void updateHubMotionLabActors();
     void endUniverseTrajectoryDiagnostic();
     void advanceUniverseTrajectoryDiagnostic(double universeDeltaSeconds);
     bool applyDiagnosticTrajectoryTransform(
@@ -303,6 +317,16 @@ private:
         m_universeDiagnosticTrajectories;
 
     std::unordered_map<EntityId, ShipReferenceBinding> m_shipReferenceBindings;
+
+    struct HubMotionLabRegistration
+    {
+        game::diagnostics::HubMotionLabActorKind kind =
+            game::diagnostics::HubMotionLabActorKind::None;
+        std::string hubId;
+    };
+
+    std::unordered_map<EntityId, HubMotionLabRegistration>
+        m_hubMotionLabShips;
 
     std::unordered_map<std::string, glm::dvec3> m_hubVelocityMetersPerSecond;
 

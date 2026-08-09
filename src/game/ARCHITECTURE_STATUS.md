@@ -196,3 +196,21 @@ pending production controls are discarded and acknowledged without being
 applied to production motion. A fixed-step stream is not silently truncated on queue
 overflow; a future remote-network implementation must use an explicit
 reconciliation reset/disconnect contract rather than skip predicted steps.
+
+## Simulation activation foundation — Stage 3A
+
+The first server-side activation primitive is now explicit and tested:
+
+- `SpatialBounds` derives a conservative interaction radius from the existing
+  logical object dimensions instead of inventing a second size contract.
+- `InteractionHorizon` evaluates relative motion using closest point of
+  approach over a bounded look-ahead interval.
+- object size, physical safety padding and gameplay effect range are separate
+  inputs.
+- radar/sensor visibility is intentionally excluded from simulation
+  activation; sensor knowledge and network relevancy remain separate layers.
+
+Stage 3A is observation-only infrastructure. It does not yet change production
+`SimulationMode` or skip any server update loop. Stage 3B should consume this
+prediction to build `Prewarm/Active` membership without changing EntityId or
+motion authority.

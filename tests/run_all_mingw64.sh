@@ -35,6 +35,10 @@ run_suite \
     "tests/presentation_pipeline/run_mingw64.sh"
 
 run_suite \
+    "SERVER INTERACTION ACTIVATION" \
+    "tests/interaction_activation/run_mingw64.sh"
+
+run_suite \
     "SYSTEM MAP BEHAVIOR + ARCHITECTURE" \
     "tests/system_map/run_mingw64.sh"
 

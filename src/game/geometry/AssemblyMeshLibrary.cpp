@@ -93,16 +93,33 @@ bool AssemblyMeshLibrary::has(ObjectType typeId)
     return ObjectAssemblyRegistry::has(typeId);
 }
 
-const ObjectAssembly& AssemblyMeshLibrary::get(ObjectType typeId)
+ObjectAssembly& AssemblyMeshLibrary::getMutable(ObjectType typeId)
 {
-    uint16_t key = static_cast<uint16_t>(typeId);
+    const uint16_t key = static_cast<uint16_t>(typeId);
 
     auto it = s_cache.find(key);
     if (it != s_cache.end())
         return it->second;
 
-    s_cache[key] = loadAssembly(typeId);
-    return s_cache[key];
+    auto [insertedIt, inserted] =
+        s_cache.emplace(key, loadAssembly(typeId));
+    (void)inserted;
+    return insertedIt->second;
+}
+
+const ObjectAssembly& AssemblyMeshLibrary::get(ObjectType typeId)
+{
+    return getMutable(typeId);
+}
+
+const ObjectAssembly& AssemblyMeshLibrary::getGpuReady(ObjectType typeId)
+{
+    ObjectAssembly& assembly = getMutable(typeId);
+
+    if (!assembly.gpuReady)
+        uploadGpu(assembly);
+
+    return assembly;
 }
 
 ObjectAssembly AssemblyMeshLibrary::loadAssembly(ObjectType typeId)
@@ -251,37 +268,6 @@ ObjectAssembly AssemblyMeshLibrary::loadAssembly(ObjectType typeId)
     computeAssemblyBounds(assembly);
     computeAssemblyBoundingSphere(assembly);
 
-    for (auto& module : assembly.modules)
-    {
-        for (auto& part : module.meshes)
-        {
-            part.lod0Gpu.upload(part.lod0Mesh);
-            part.lod1Gpu.upload(part.lod1Mesh);
-        }
-    }
-
-
-
-
-        if (assembly.hasWholeShipProxy)
-    {
-        assembly.wholeShipProxyGpu.upload(assembly.wholeShipProxyMesh);
-
-        std::cout
-            << "[AssemblyMeshLibrary] WHOLE SHIP PROXY loaded: "
-            << assembly.wholeShipProxyPath
-            << " vertices="
-            << assembly.wholeShipProxyMesh.vertices.size()
-            << " triangles="
-            << assembly.wholeShipProxyMesh.triangles.size()
-            << std::endl;
-    }
-
-
-    
-
-
-
     glm::vec3 finalSize = assembly.maxBounds - assembly.minBounds;
     std::cout << "[AssemblyMeshLibrary] FINAL SIZE "
               << finalSize.x << " "
@@ -294,6 +280,27 @@ ObjectAssembly AssemblyMeshLibrary::loadAssembly(ObjectType typeId)
 
 
 
+
+
+void AssemblyMeshLibrary::uploadGpu(ObjectAssembly& assembly)
+{
+    if (assembly.gpuReady)
+        return;
+
+    for (auto& module : assembly.modules)
+    {
+        for (auto& part : module.meshes)
+        {
+            part.lod0Gpu.upload(part.lod0Mesh);
+            part.lod1Gpu.upload(part.lod1Mesh);
+        }
+    }
+
+    if (assembly.hasWholeShipProxy)
+        assembly.wholeShipProxyGpu.upload(assembly.wholeShipProxyMesh);
+
+    assembly.gpuReady = true;
+}
 
 
 void AssemblyMeshLibrary::computeRawBoundsFromObj(

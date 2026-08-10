@@ -34,6 +34,7 @@
 #include <cstdio>
 
 #include "src/game/visual/VisualShip.h"
+#include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/game/client/ClientSpatialDomain.h"
 #include "src/world/coordinates/WorldFrame.h"
 
@@ -1122,6 +1123,10 @@ PreparedScene SceneRenderer::prepareScene(
             if (!ship.assembly)
                 continue;
 
+            (void)game::ship::geometry::AssemblyMeshLibrary::getGpuReady(
+                ship.typeId
+            );
+
             world::coordinates::WorldPosition shipRenderWorldPosition =
                 ship.renderTransform.worldPosition;
 
@@ -1197,6 +1202,10 @@ PreparedScene SceneRenderer::prepareScene(
 
             if (!obj.assembly)
                 continue;
+
+            (void)game::ship::geometry::AssemblyMeshLibrary::getGpuReady(
+                obj.type
+            );
 
             world::coordinates::WorldPosition objectRenderWorldPosition =
                 obj.renderWorldPosition;
@@ -1293,6 +1302,10 @@ PreparedScene SceneRenderer::prepareScene(
 
             if (!ship.descriptor || !ship.assembly)
                 continue;
+
+            (void)game::ship::geometry::AssemblyMeshLibrary::getGpuReady(
+                ship.descriptor->typeId
+            );
 
             glm::mat4 shipModel =
                 world::coordinates::makeRenderModelMatrix(
@@ -3686,6 +3699,10 @@ void SceneRenderer::renderVisualDrones(
 
         if (!drone.visible || !drone.assembly)
             continue;
+
+        (void)game::ship::geometry::AssemblyMeshLibrary::getGpuReady(
+            drone.type
+        );
 
         glm::mat4 droneModel =
             world::coordinates::makeRenderModelMatrix(

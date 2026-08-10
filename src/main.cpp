@@ -1,7 +1,10 @@
+#include <cmath>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 #include "core/Application.h"
+#include "game/server/GameServer.h"
 #include "core/ConsoleOutput.h"
 #include "world/celestial/visual/CelestialTextureBaker.h"
 #include "render/bitmap/stb_image.h"
@@ -17,6 +20,73 @@ bool isBakeCommandToken(const std::string& arg)
 {
     return arg == "--bake-celestial-textures" ||
            arg == "bake-celestial-textures";
+}
+
+bool isFastUniverseSmokeTestToken(const std::string& arg)
+{
+    return arg == "--self-test-fast-universe";
+}
+
+int runFastUniverseSmokeTest()
+{
+    // This intentionally boots the real server and initial scene.
+    // It catches integration failures that pure clock/session tests miss.
+    core::disableRuntimeStdoutNoise();
+
+    std::cerr << "[SELFTEST] fast-universe stage=construct-server\n";
+    auto server = std::make_unique<GameServer>();
+    std::cerr << "[SELFTEST] fast-universe stage=server-ready\n";
+
+    const auto before = server->protocolMetadata();
+    constexpr double TestScale = 200.0;
+    constexpr double StepSeconds = 0.02;
+
+    server->setDebugUniverseTimeSimulation(true, TestScale);
+    server->update(StepSeconds);
+
+    const auto accelerated = server->protocolMetadata();
+    const auto& acceleratedSnapshot = server->snapshot();
+
+    const bool entered =
+        server->debugUniverseTimeSimulation() &&
+        std::abs(server->debugUniverseTimeScale() - TestScale) < 1.0e-9 &&
+        accelerated.universeTimelineRevision > before.universeTimelineRevision &&
+        accelerated.universeTimeSeconds - before.universeTimeSeconds > 2.0 &&
+        acceleratedSnapshot.session.universeTimeSimulation &&
+        std::abs(acceleratedSnapshot.session.universeTimeScale - TestScale) < 1.0e-9;
+
+    if (!entered)
+    {
+        std::cerr
+            << "[FAIL] fast-universe smoke: real server/scene rejected "
+            << "accelerated timeline entry\n";
+        return 2;
+    }
+
+    server->setDebugUniverseTimeSimulation(false, TestScale);
+    server->update(StepSeconds);
+
+    const auto restored = server->protocolMetadata();
+    const auto& restoredSnapshot = server->snapshot();
+
+    const bool exited =
+        !server->debugUniverseTimeSimulation() &&
+        std::abs(server->debugUniverseTimeScale() - 1.0) < 1.0e-9 &&
+        restored.universeTimelineRevision > accelerated.universeTimelineRevision &&
+        restored.universeTimeSeconds < accelerated.universeTimeSeconds &&
+        !restoredSnapshot.session.universeTimeSimulation &&
+        std::abs(restoredSnapshot.session.universeTimeScale - 1.0) < 1.0e-9;
+
+    if (!exited)
+    {
+        std::cerr
+            << "[FAIL] fast-universe smoke: real server did not return "
+            << "to normal timeline\n";
+        return 3;
+    }
+
+    std::cerr << "[PASS] fast-universe real-scene smoke\n";
+    return 0;
 }
 
 bool isOptionToken(const std::string& arg)
@@ -235,6 +305,9 @@ int main(int argc, char** argv)
         for (int i = 1; i < argc; ++i)
         {
             const std::string arg = argv[i];
+
+            if (isFastUniverseSmokeTestToken(arg))
+                return runFastUniverseSmokeTest();
 
             if (isBakeCommandToken(arg))
             {

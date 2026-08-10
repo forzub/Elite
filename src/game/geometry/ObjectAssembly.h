@@ -120,6 +120,10 @@ struct ObjectAssembly
     MeshData wholeShipProxyMesh;
     render::MeshGPU wholeShipProxyGpu;
 
+    // GPU resources are presentation-only. Server/headless code may load the
+    // same CPU assembly without requiring an OpenGL context.
+    bool gpuReady = false;
+
     glm::vec3 wholeShipProxyBoundCenter {0.0f};
     float wholeShipProxyBoundRadius = 1.0f;
 };

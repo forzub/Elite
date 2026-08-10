@@ -37,10 +37,11 @@ Required invariants:
 - Gameplay ship transforms, motion state, controls, sensors, repair state and
   detached-fragment state remain frozen while the diagnostic branch is active.
 - `UniverseDiagnosticTrajectorySession` owns alternate trajectories for every
-  eligible real ship (player and NPC). Entry is all-or-nothing: a partial branch
-  is rejected rather than mixing accelerated and frozen production ships.
-  Leaving the mode discards that session; it never commits diagnostic
-  coordinates into production state.
+  live ship that can be published to a client (player, production NPC, and
+  diagnostic motion probes). Entry is all-or-nothing: a partial branch is
+  rejected rather than mixing accelerated and frozen production ships in one
+  snapshot/timeline revision. Leaving the mode discards that session; it never
+  commits diagnostic coordinates into production state.
 - Celestial bodies, orbital hubs and orbital static infrastructure are derived
   from absolute universe time. They do not require a checkpoint: after a
   timeline rewind they are recomputed from the new canonical time. Their
@@ -210,7 +211,22 @@ The first server-side activation primitive is now explicit and tested:
 - radar/sensor visibility is intentionally excluded from simulation
   activation; sensor knowledge and network relevancy remain separate layers.
 
-Stage 3A is observation-only infrastructure. It does not yet change production
-`SimulationMode` or skip any server update loop. Stage 3B should consume this
-prediction to build `Prewarm/Active` membership without changing EntityId or
-motion authority.
+Stage 3B consumes this math as a physical shadow demand on real ships while
+keeping every production ship fully simulated. Stage 3C adds a persistent,
+stabilized activation plan: gameplay systems may raise demand explicitly for
+combat/projectile/docking interactions, promotions are immediate, and
+demotions use `Active -> Prewarm -> Coarse` hysteresis. Radar/sensor visibility
+remains a separate perception domain and cannot raise activation directly.
+
+Stage 3D replaces the temporary all-pairs planner with a conservative spatial
+broad-phase. Candidate pruning uses a per-system co-moving velocity origin so
+shared orbital bulk velocity does not inflate the search radius; exact CPA remains
+the authority for the final interaction decision. The planner remains 5 Hz.
+
+Stage 3E is the first production execution gate, deliberately limited to NPC
+tactical AI think cadence. `Active` NPC AI keeps the existing fixed-tick cadence,
+`Prewarm` runs at roughly 10 Hz and `Coarse` at roughly 1 Hz. The last computed
+control continues to be applied while dynamic physics, HubTactical integration,
+signals and snapshots remain full-rate. Physics must not consume planned mode
+until coarse/scheduled motion and materialization/dematerialization semantics are
+explicit.

@@ -328,7 +328,7 @@ bool HubMapGeometryPass::drawHubMapAssemblyWire(
         return false;
 
     const auto& assembly =
-        AssemblyMeshLibrary::get(typeId);
+        AssemblyMeshLibrary::getGpuReady(typeId);
 
     /*
         Локальная система объекта → hub-local meters.

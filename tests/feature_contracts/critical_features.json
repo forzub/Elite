@@ -1,0 +1,65 @@
+{
+  "features": [
+    {
+      "id": "debug.control.settings",
+      "description": "Every user-facing Debug Control setting is wired UI -> payload -> C++ -> state payload and round-trips through one codec.",
+      "evidence": [
+        "debug-schema",
+        "compiled-roundtrip"
+      ]
+    },
+    {
+      "id": "debug.diagnostic-panels",
+      "description": "Diagnostic panel ids, message routes and HTML assets remain present.",
+      "evidence": [
+        "diagnostic-panel-route",
+        "compiled-roundtrip"
+      ]
+    },
+    {
+      "id": "debug.fast-universe",
+      "description": "Universe time acceleration can be entered and exited by the real startup scene.",
+      "evidence": [
+        "debug-route",
+        "real-scene-smoke"
+      ]
+    },
+    {
+      "id": "map.navigation-modes",
+      "description": "Galaxy, System, Detail and Hub navigation modes remain reachable and transition-tested.",
+      "evidence": [
+        "application-route",
+        "system-map-behavior"
+      ]
+    },
+    {
+      "id": "client.presentation-timeline",
+      "description": "Buffered presentation clock and local/remote presentation contracts remain covered.",
+      "evidence": [
+        "suite:CLIENT PRESENTATION PIPELINE"
+      ]
+    },
+    {
+      "id": "server.interaction-activation",
+      "description": "Interaction-horizon activation, hysteresis and broad-phase contracts remain covered.",
+      "evidence": [
+        "suite:SERVER INTERACTION ACTIVATION"
+      ]
+    },
+    {
+      "id": "server.headless-authority",
+      "description": "Authoritative server construction and CPU assembly geometry do not require an OpenGL context.",
+      "evidence": [
+        "headless-authority-boundary",
+        "real-scene-smoke"
+      ]
+    },
+    {
+      "id": "game.main-target",
+      "description": "The real EliteGame target builds before readiness is reported.",
+      "evidence": [
+        "main-target-build"
+      ]
+    }
+  ]
+}

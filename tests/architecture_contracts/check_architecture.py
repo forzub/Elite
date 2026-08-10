@@ -58,6 +58,8 @@ space_h = SRC / "game/SpaceState.h"
 cloud_policy = SRC / "render/celestial/CloudMotionPolicy.h"
 cloud_resources = SRC / "game/system_map/MapCelestialRenderResources.cpp"
 status_doc = SRC / "game/ARCHITECTURE_STATUS.md"
+debug_control_html = SRC / "assets/webui/debug_control.html"
+main_cpp = SRC / "main.cpp"
 
 protocol_text = text(protocol)
 if "std::uint64_t universeTimelineRevision" not in protocol_text:
@@ -131,6 +133,7 @@ else:
         "sourceHubFrame->localToWorldPosition(",
         "sourceHubFrame->localToWorldVelocity(",
         "m_universeDiagnosticTrajectories.add(",
+        "GravityFieldSystem::sample(",
         "seededShipCount == eligibleShipCount",
         "m_universeDiagnosticTrajectories.discard()",
     ):
@@ -143,6 +146,12 @@ else:
     ):
         if forbidden in begin_diag:
             fail(simulation_cpp, f"diagnostic entry mutates production ship state: {forbidden}")
+
+    # Every ship emitted in an accelerated snapshot must belong to the same
+    # universe-timeline revision. Diagnostic motion probes are visible ships,
+    # so exempting them would recreate the frozen/accelerated mixed epoch.
+    if "isHubMotionLabShip(" in begin_diag:
+        fail(simulation_cpp, "diagnostic branch can leave Hub Motion Lab ships on a frozen mixed epoch")
 
 if end_diag is None:
     fail(simulation_cpp, "could not locate diagnostic branch exit")
@@ -251,6 +260,48 @@ for body, name in ((load_defaults, "load"), (save_defaults, "save")):
         ):
             if forbidden_key not in body:
                 fail(space_cpp, f"Debug Control defaults {name} can persist active diagnostic state")
+
+# Fast-universe is a user-visible debug control, so protect the complete
+# command path rather than only testing UniverseClock in isolation.
+debug_control_text = text(debug_control_html)
+for required in (
+    'id="debugUniverseTimeSimulation"',
+    'id="debugUniverseTimeScaleInput"',
+    'debugUniverseTimeSimulation: document.getElementById',
+    'debugUniverseTimeScale: numberValue',
+):
+    if required not in debug_control_text:
+        fail(debug_control_html, f"fast-universe UI control path is incomplete: {required}")
+
+apply_debug = function_body(space_text, "void SpaceState::applyDebugControlPayload(")
+if apply_debug is None:
+    fail(space_cpp, "could not locate Debug Control payload application")
+else:
+    for required in (
+        '"debugUniverseTimeSimulation"',
+        '"debugUniverseTimeScale"',
+        "m_debugSession->setUniverseTimeSimulation(",
+    ):
+        if required not in apply_debug:
+            fail(space_cpp, f"fast-universe Debug Control command is not wired: {required}")
+
+main_text = text(main_cpp)
+for required in (
+    "--self-test-fast-universe",
+    "runFastUniverseSmokeTest()",
+    "std::make_unique<GameServer>()",
+    "server->setDebugUniverseTimeSimulation(true, TestScale);",
+    "server->update(StepSeconds);",
+    "server->debugUniverseTimeSimulation()",
+):
+    if required not in main_text:
+        fail(main_cpp, f"real-scene fast-universe smoke contract missing: {required}")
+
+if "GameServer server;" in main_text:
+    fail(
+        main_cpp,
+        "real-scene fast-universe smoke must heap-allocate GameServer like LocalGameHost",
+    )
 
 space_h_text = text(space_h)
 for forbidden in (

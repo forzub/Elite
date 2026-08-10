@@ -28,8 +28,11 @@
 #include "src/game/navigation/HubNavigationFrame.h"
 #include "src/game/diagnostics/ServerDiagnostics.h"
 #include "src/game/diagnostics/HubMotionLab.h"
+#include "src/game/diagnostics/ActivationCadenceLab.h"
 #include "src/game/server/ServerTimeContext.h"
 #include "src/game/server/ServerTimelineClock.h"
+#include "src/game/simulation/activation/ActivationPlanner.h"
+#include "src/game/simulation/activation/ActivationExecutionPolicy.h"
 
 #include "src/game/navigation/GravityFieldSystem.h"
 #include "src/game/navigation/OrbitalCorridorSystem.h"
@@ -245,6 +248,23 @@ public:
         EntityId shipId
     ) const noexcept;
 
+    void registerActivationCadenceLabShip(EntityId shipId);
+    bool isActivationCadenceLabShip(EntityId shipId) const noexcept;
+
+    const std::unordered_map<
+        EntityId,
+        game::simulation::activation::ActivationPlannerDecision
+    >& activationPlannerDecisions() const noexcept
+    {
+        return m_activationPlannerDecisions;
+    }
+
+    void upsertActivationClaim(
+        const game::simulation::activation::ActivationClaim& claim
+    );
+
+    void clearActivationClaimsFromSource(EntityId sourceId);
+
 private:
     EntityId generateEntityId();
     void markShipGraphDirty(EntityId id);
@@ -272,11 +292,14 @@ private:
     void debugLogServerNavState(double dt);
     void debugLogPlayerMotion(double dt);
     void debugLogHubPlayerChain(double dt);
+    void debugLogActivationShadow(double dt);
     void debugLogGravitySample(const Ship& ship);
 
     void rebuildNavigationGravityContext();
     void updateDynamicNavigationContext(double dt);
     void updateHubMotionLabActors();
+    void updateActivationCadenceLabClaim(double serverTimeSeconds);
+    void updateActivationShadow();
     void endUniverseTrajectoryDiagnostic();
     void advanceUniverseTrajectoryDiagnostic(double universeDeltaSeconds);
     bool applyDiagnosticTrajectoryTransform(
@@ -327,6 +350,44 @@ private:
 
     std::unordered_map<EntityId, HubMotionLabRegistration>
         m_hubMotionLabShips;
+
+    EntityId m_activationCadenceLabShipId {0};
+
+    // Stage 3E keeps the spatial/CPA planner and allows only NPC tactical AI
+    // think cadence to consume plannedMode. Physics, HubTactical integration,
+    // signals and snapshots remain full-rate until coarse/scheduled motion is
+    // explicit. Sensors and signal visibility remain outside this domain.
+    std::unordered_map<
+        EntityId,
+        game::simulation::activation::ActivationPlannerDecision
+    > m_activationPlannerDecisions;
+
+    std::unordered_map<
+        EntityId,
+        game::simulation::activation::ActivationPlanState
+    > m_activationPlanStates;
+
+    std::vector<game::simulation::activation::ActivationClaim>
+        m_activationClaims;
+
+    game::simulation::activation::InteractionHorizonPolicy
+        m_activationInteractionPolicy {};
+
+    game::simulation::activation::ActivationHysteresisPolicy
+        m_activationHysteresisPolicy {};
+
+    game::simulation::activation::ActivationExecutionPolicy
+        m_activationExecutionPolicy {};
+
+    std::unordered_map<
+        EntityId,
+        game::simulation::activation::ActivationCadenceState
+    > m_npcAiCadenceStates;
+
+    double m_activationShadowEvaluationAccumulatorSeconds = 0.0;
+    bool m_activationShadowEvaluated = false;
+    double m_activationShadowCsvAccumulatorSeconds = 0.0;
+    bool m_activationShadowCsvInitialized = false;
 
     std::unordered_map<std::string, glm::dvec3> m_hubVelocityMetersPerSecond;
 

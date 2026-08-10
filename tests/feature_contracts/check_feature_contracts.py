@@ -1,0 +1,407 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def read(rel: str) -> str:
+    path = ROOT / rel
+    if not path.exists():
+        fail(f"missing required file: {rel}")
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
+def fail(message: str) -> None:
+    print(f"[FAIL] feature contract: {message}", file=sys.stderr)
+    raise SystemExit(1)
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        fail(message)
+
+
+def extract_braced_function(text: str, signature: str) -> str:
+    start = text.find(signature)
+    if start < 0:
+        fail(f"missing function: {signature}")
+
+    brace = text.find("{", start)
+    if brace < 0:
+        fail(f"function has no body: {signature}")
+
+    depth = 0
+    for index in range(brace, len(text)):
+        ch = text[index]
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:index + 1]
+
+    fail(f"unterminated function body: {signature}")
+    return ""
+
+
+def extract_struct_body(text: str, name: str) -> str:
+    match = re.search(rf"struct\s+{re.escape(name)}\s*\{{(.*?)\n\}};", text, re.S)
+    if not match:
+        fail(f"missing struct body: {name}")
+    return match.group(1)
+
+
+def check_debug_control_schema() -> None:
+    settings_h = read("src/debug/DebugSettings.h")
+    codec_h = read("src/game/debug/DebugControlSettingsCodec.h")
+    space_cpp = read("src/game/SpaceState.cpp")
+    html = read("src/assets/webui/debug_control.html")
+    debug_iface = read("src/game/debug/IDebugSessionControl.h")
+    local_host = read("src/game/host/LocalGameHost.cpp")
+    main_cpp = read("src/main.cpp")
+
+    body = extract_struct_body(settings_h, "DebugRenderSettings")
+    fields = [
+        name
+        for _, name in re.findall(
+            r"^\s*(bool|int|float|double|std::string|glm::vec4)\s+"
+            r"([A-Za-z_]\w*)\s*(?:=|\{)",
+            body,
+            re.M,
+        )
+    ]
+
+    # These are diagnostic/runtime implementation details rather than Debug
+    # Control preferences. Adding another field requires an explicit decision
+    # here instead of silently leaving a user-facing setting unwired.
+    internal_only = {
+        "drawSeamDebug",
+        "captureSeamDebug",
+    }
+
+    require(internal_only.issubset(set(fields)), "internal-only debug field list is stale")
+    exposed = [field for field in fields if field not in internal_only]
+
+    encode = extract_braced_function(codec_h, "inline json encodeRenderSettings")
+    apply = extract_braced_function(codec_h, "inline void applyRenderSettings")
+    push = extract_braced_function(space_cpp, "void SpaceState::pushDebugControlState()")
+    apply_space = extract_braced_function(
+        space_cpp,
+        "void SpaceState::applyDebugControlPayload(const json& payload)",
+    )
+    html_build = extract_braced_function(html, "function buildPayload()")
+    html_apply = extract_braced_function(html, "function applySettingsPayload(p)")
+
+    encoded_keys = set(re.findall(r'payload\["([A-Za-z_]\w*)"\]', encode))
+    require(
+        encoded_keys == set(exposed),
+        "Debug Control codec key set differs from exposed DebugRenderSettings fields: "
+        f"missing={sorted(set(exposed) - encoded_keys)}, "
+        f"extra={sorted(encoded_keys - set(exposed))}",
+    )
+
+    build_keys = set(re.findall(r"^\s*([A-Za-z_]\w*)\s*:", html_build, re.M))
+    special_build_keys = {"debugUniverseTimeSimulation", "debugUniverseTimeScale"}
+    require(
+        build_keys == set(exposed) | special_build_keys,
+        "Debug Control HTML payload key set drifted from C++ settings contract: "
+        f"missing={sorted((set(exposed) | special_build_keys) - build_keys)}, "
+        f"extra={sorted(build_keys - (set(exposed) | special_build_keys))}",
+    )
+
+    for field in exposed:
+        require(
+            re.search(rf'payload\["{re.escape(field)}"\]', encode) is not None,
+            f"DebugRenderSettings.{field} is not encoded into Debug Control state",
+        )
+        require(
+            (
+                re.search(rf'payload\.value\(\s*"{re.escape(field)}"', apply) is not None
+                or re.search(rf'payload\.contains\(\s*"{re.escape(field)}"', apply) is not None
+            ),
+            f"DebugRenderSettings.{field} is not applied from Debug Control payload",
+        )
+        require(
+            re.search(rf"\b{re.escape(field)}\s*:", html_build) is not None,
+            f"DebugRenderSettings.{field} is not emitted by debug_control.html buildPayload()",
+        )
+        require(
+            re.search(rf"\bp\.{re.escape(field)}\b", html_apply) is not None,
+            f"DebugRenderSettings.{field} is not restored into debug_control.html controls",
+        )
+
+    for field in internal_only:
+        require(
+            f'payload["{field}"]' not in encode,
+            f"internal-only debug field {field} leaked into persisted/UI settings",
+        )
+
+    dom_ids = set(re.findall(r'id=["\']([^"\']+)["\']', html))
+    referenced_ids = set(
+        re.findall(r"document\.getElementById\(['\"]([^'\"]+)['\"]\)", html_build + html_apply)
+    )
+    missing_ids = sorted(referenced_ids - dom_ids)
+    require(not missing_ids, f"Debug Control JS references missing DOM ids: {missing_ids}")
+
+    for command in ("request_snapshot", "apply_settings", "save_defaults", "reset_settings"):
+        require(command in html, f"Debug Control HTML lost command '{command}'")
+        require(command in space_cpp, f"SpaceState lost Debug Control command route '{command}'")
+
+    for key in ("debugUniverseTimeSimulation", "debugUniverseTimeScale"):
+        require(
+            re.search(rf"\b{key}\s*:", html_build) is not None,
+            f"Debug Control HTML no longer sends {key}",
+        )
+        require(key in apply_space, f"SpaceState no longer consumes {key}")
+
+    require(
+        "debugUniverseTimeSimulation" in push
+        and "debugUniverseTimeConfiguredScale" in push,
+        "Debug Control state no longer publishes authoritative fast-universe status",
+    )
+
+    for method in (
+        "universeTimeSimulation() const",
+        "universeTimeScale() const",
+        "configuredUniverseTimeScale() const",
+        "setUniverseTimeSimulation(bool enabled, double timeScale)",
+    ):
+        require(method in debug_iface, f"debug-session interface lost {method}")
+
+    require(
+        "setDebugUniverseTimeSimulation" in local_host,
+        "LocalGameHost no longer routes universe-time debug control to GameServer",
+    )
+    require(
+        re.search(r'arg\s*==\s*"--self-test-fast-universe"', main_cpp) is not None,
+        "real-scene fast-universe smoke command is missing from EliteGame",
+    )
+
+
+def check_debug_panels() -> None:
+    panel_h = read("src/ui/html/HtmlUiPanelId.h")
+    message_h = read("src/ui/html/HtmlUiMessage.h")
+    space_cpp = read("src/game/SpaceState.cpp")
+
+    diagnostic_panels = {
+        "DebugControl": "debug_control",
+        "AttachmentEditor": "attachment_editor",
+        "StructureDebug": "structure_debug",
+        "VolumeViewer": "volume_viewer",
+        "ShipCore": "ship_core",
+        "FrustumDebug": "frustum_debug",
+        "SystemMap": "system_map",
+    }
+
+    for enum_name, wire_name in diagnostic_panels.items():
+        require(
+            f"HtmlUiPanelId::{enum_name}" in panel_h,
+            f"diagnostic panel enum disappeared: {enum_name}",
+        )
+        require(
+            f'return "{wire_name}"' in panel_h,
+            f"diagnostic panel lost toString route: {wire_name}",
+        )
+        require(
+            f'panel == "{wire_name}"' in message_h,
+            f"diagnostic panel lost incoming message route: {wire_name}",
+        )
+        require(
+            (ROOT / "src/assets/webui" / f"{wire_name}.html").exists(),
+            f"diagnostic panel asset disappeared: {wire_name}.html",
+        )
+
+    for enum_name in (
+        "DebugControl",
+        "AttachmentEditor",
+        "StructureDebug",
+        "VolumeViewer",
+        "ShipCore",
+        "FrustumDebug",
+        "SystemMap",
+    ):
+        require(
+            f"HtmlUiPanelId::{enum_name}" in space_cpp,
+            f"SpaceState no longer handles diagnostic panel {enum_name}",
+        )
+
+
+def check_map_feature_surface() -> None:
+    map_mode = read("src/game/system_map/MapMode.h")
+    space_h = read("src/game/SpaceState.h")
+    space_cpp = read("src/game/SpaceState.cpp")
+    app_cpp = read("src/core/Application.cpp")
+    map_tests = read("tests/system_map/SystemMapBehaviorTests.cpp")
+
+    for mode in ("Galaxy", "System", "Detail", "Hub"):
+        require(
+            re.search(rf"\b{mode}\b", map_mode) is not None,
+            f"MapMode::{mode} disappeared",
+        )
+        require(
+            f"MapMode::{mode}" in map_tests,
+            f"system-map behavior tests no longer exercise MapMode::{mode}",
+        )
+
+    required_space_routes = (
+        "setSystemMapGalaxyMode()",
+        "setSystemMapCurrentSystemMode()",
+        "setSystemMapDetailMode()",
+        "setSystemMapHubMode()",
+        "setSystemMapLoadedDetailMode()",
+    )
+    for route in required_space_routes:
+        require(route in space_h, f"SpaceState public map route disappeared: {route}")
+        require(route in space_cpp, f"SpaceState map route has no implementation: {route}")
+
+    for command in (
+        "system_map_galaxy",
+        "system_map_current_system",
+        "system_map_detail",
+        "system_map_hub",
+        "close_system_map",
+    ):
+        require(
+            (f'"{command}"' in app_cpp or f'== "{command}"' in app_cpp),
+            f"Application lost map UI command route '{command}'",
+        )
+
+    require("VK_F11" in app_cpp, "F11 map hotkey route disappeared")
+    require("toggleSystemMapUi()" in app_cpp, "F11 no longer reaches map visibility toggle")
+    require(
+        "testGalaxySystemDetailHubTransitionSequence" in map_tests,
+        "Galaxy -> System -> Detail -> Hub vertical behavior test disappeared",
+    )
+
+
+
+def check_headless_server_geometry_boundary() -> None:
+    library_cpp = read("src/game/geometry/AssemblyMeshLibrary.cpp")
+    library_h = read("src/game/geometry/AssemblyMeshLibrary.h")
+    scene_renderer = read("src/scene/SceneRenderer.cpp")
+    hub_map = read("src/game/system_map/HubMapGeometryPass.cpp")
+
+    cpu_load = extract_braced_function(
+        library_cpp,
+        "ObjectAssembly AssemblyMeshLibrary::loadAssembly",
+    )
+    gpu_lookup = extract_braced_function(
+        library_cpp,
+        "const ObjectAssembly& AssemblyMeshLibrary::getGpuReady",
+    )
+
+    require(
+        ".upload(" not in cpu_load,
+        "CPU AssemblyMeshLibrary::loadAssembly performs GPU upload; "
+        "headless authoritative server would require an OpenGL context",
+    )
+    require(
+        "getGpuReady(ObjectType typeId)" in library_h
+        and "uploadGpu(assembly)" in gpu_lookup,
+        "assembly GPU upload is no longer isolated behind the render-only lookup",
+    )
+
+    authoritative_roots = (
+        ROOT / "src/game/server",
+        ROOT / "src/game/simulation",
+        ROOT / "src/game/ship/core",
+        ROOT / "src/world/modules",
+    )
+    forbidden_gpu_markers = (
+        "getGpuReady(",
+        "lod0Gpu",
+        "lod1Gpu",
+        "wholeShipProxyGpu",
+    )
+
+    for authoritative_root in authoritative_roots:
+        for path in list(authoritative_root.rglob("*.cpp")) + list(authoritative_root.rglob("*.h")):
+            text = path.read_text(encoding="utf-8", errors="replace")
+            rel = path.relative_to(ROOT)
+            for marker in forbidden_gpu_markers:
+                require(
+                    marker not in text,
+                    f"authoritative/CPU path {rel} depends on GPU assembly state ({marker})",
+                )
+            require(
+                re.search(r"\bgl[A-Z][A-Za-z0-9_]*\s*\(", text) is None,
+                f"authoritative/CPU path {rel} calls OpenGL directly",
+            )
+
+    require(
+        "AssemblyMeshLibrary::getGpuReady" in scene_renderer,
+        "SceneRenderer no longer explicitly prepares assembly GPU resources",
+    )
+    require(
+        "AssemblyMeshLibrary::getGpuReady" in hub_map,
+        "HubMapGeometryPass no longer explicitly prepares assembly GPU resources",
+    )
+
+def check_ready_orchestration() -> None:
+    run_all = read("tests/run_all_mingw64.sh")
+    manifest = json.loads(read("tests/feature_contracts/critical_features.json"))
+
+    required_suites = (
+        "WORLD RUNTIME + GLOBAL TIME CONTRACT",
+        "CROSS-TIMELINE + DIAGNOSTIC CONTRACTS",
+        "CLIENT PRESENTATION PIPELINE",
+        "SERVER INTERACTION ACTIVATION",
+        "SYSTEM MAP BEHAVIOR + ARCHITECTURE",
+        "FEATURE SURFACE CONTRACTS",
+    )
+    for suite in required_suites:
+        require(suite in run_all, f"readiness runner no longer executes '{suite}'")
+
+    require(
+        re.search(r'EliteGame\.exe\s+--self-test-fast-universe(?:\s|\)|;|$)', run_all) is not None,
+        "readiness runner no longer executes the real-scene fast-universe smoke",
+    )
+    require(
+        "--target EliteGame" in run_all,
+        "readiness runner no longer builds the main EliteGame target",
+    )
+
+    features = manifest.get("features", [])
+    require(features, "critical feature manifest is empty")
+    ids = [entry.get("id") for entry in features]
+    require(len(ids) == len(set(ids)), "critical feature manifest contains duplicate ids")
+
+    allowed_evidence = {
+        "debug-schema",
+        "compiled-roundtrip",
+        "debug-route",
+        "diagnostic-panel-route",
+        "real-scene-smoke",
+        "application-route",
+        "system-map-behavior",
+        "main-target-build",
+        "headless-authority-boundary",
+        "suite:CLIENT PRESENTATION PIPELINE",
+        "suite:SERVER INTERACTION ACTIVATION",
+    }
+
+    for entry in features:
+        feature_id = entry.get("id")
+        evidence = entry.get("evidence", [])
+        require(feature_id and evidence, "every critical feature needs id and evidence")
+        unknown = set(evidence) - allowed_evidence
+        require(not unknown, f"feature {feature_id} uses unknown evidence: {sorted(unknown)}")
+
+
+def main() -> int:
+    check_debug_control_schema()
+    check_debug_panels()
+    check_map_feature_surface()
+    check_headless_server_geometry_boundary()
+    check_ready_orchestration()
+    print("[PASS] critical feature surface contracts")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

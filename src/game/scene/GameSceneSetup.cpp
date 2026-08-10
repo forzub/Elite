@@ -18,6 +18,7 @@
 #include "game/player/ActorCodeGenerator.h"
 #include "src/game/player/ActorIdProvider.h"
 #include "src/game/diagnostics/HubMotionLab.h"
+#include "src/game/diagnostics/ActivationCadenceLab.h"
 
 #include "src/world/types/ObjectType.h"
 #include "src/world/orbits/OrbitalMotion.h"
@@ -577,6 +578,56 @@ void spawnHubMotionLabNpcs(
     );
 }
 
+EntityId spawnActivationCadenceLabNpc(
+    GameSimulation& sim,
+    const glm::dvec3& stationPos
+)
+{
+    using namespace game::diagnostics;
+
+    ShipVisualIdentity visual {
+        .shipType = "Cobra MK1",
+        .shipName = ActivationCadenceLabLabel
+    };
+
+    ShipRegistry registry {
+        .instanceId = ActivationCadenceLabInstanceId,
+        .ownerName = "Activation Diagnostics",
+        .ownerActor = ActorIds::Unknown(),
+        .registrationId = "ACT-AI-9010",
+        .homePort = "Earth High Orbital",
+        .shipRole = ShipRoleType::Civilian
+    };
+
+    ShipInitData initData;
+    initData.visual = visual;
+    initData.registry = registry;
+
+    // Keep the actor well outside the station interaction envelope so the
+    // diagnostic claim sequence, rather than geometry, drives Coarse /
+    // Prewarm / Active transitions.
+    const glm::dvec3 spawnPosition =
+        stationPos + glm::dvec3(
+            game::diagnostics::ActivationCadenceLabLocalOffsetMeters,
+            0.0,
+            0.0
+        );
+
+    const EntityId id =
+        sim.spawnShip(
+            ShipRole::NPC,
+            0,
+            EliteCobraMk1::EliteCobraMk1Descriptor(),
+            spawnPosition,
+            initData,
+            glm::mat4(1.0f)
+        );
+
+    sim.registerActivationCadenceLabShip(id);
+    return id;
+}
+
+
 
 EntityId buildGameScene(GameSimulation& sim)
 {
@@ -636,6 +687,9 @@ EntityId buildGameScene(GameSimulation& sim)
 
     if constexpr (game::diagnostics::HubMotionLabEnabled)
         spawnHubMotionLabNpcs(sim, stationPos);
+
+    if constexpr (game::diagnostics::ActivationCadenceLabEnabled)
+        spawnActivationCadenceLabNpc(sim, stationPos);
 
     return playerId;
 }

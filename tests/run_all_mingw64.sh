@@ -42,6 +42,28 @@ run_suite \
     "SYSTEM MAP BEHAVIOR + ARCHITECTURE" \
     "tests/system_map/run_mingw64.sh"
 
+run_suite \
+    "FEATURE SURFACE CONTRACTS" \
+    "tests/feature_contracts/run_mingw64.sh"
+
+run_main_target_build() {
+    echo
+    echo "================================================================"
+    echo "TEST BLOCK: MAIN GAME BUILD"
+    echo "================================================================"
+
+    if cmake -S "${ROOT_DIR}" -B "${ROOT_DIR}/build" -G Ninja \
+        && cmake --build "${ROOT_DIR}/build" --target EliteGame \
+        && (cd "${ROOT_DIR}/build" && ./EliteGame.exe --self-test-fast-universe); then
+        echo "[PASS BLOCK] MAIN GAME BUILD + FAST UNIVERSE SMOKE"
+    else
+        echo "[FAIL BLOCK] MAIN GAME BUILD + FAST UNIVERSE SMOKE" >&2
+        failures=$((failures + 1))
+    fi
+}
+
+run_main_target_build
+
 echo
 echo "================================================================"
 if (( failures == 0 )); then

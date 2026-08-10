@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include "game/scene/GameSceneSetup.h"
 
 #include <cmath>
@@ -171,171 +172,114 @@ bool resolveParentBodyForInitialWorldState(
 
 
 
-    void spawnOrbitalHubFromInitialState(
-            GameSimulation& sim,
-            const game::world_state::InitialWorldStateOrbitalHub& hub
-        )
-        {
-            glm::dvec3 parentCenterMeters {0.0};
-            double parentRadiusMeters = 0.0;
-
-            if (!resolveParentBodyForInitialWorldState(
-                    sim,
-                    hub.systemId,
-                    hub.parentBodyId,
-                    parentCenterMeters,
-                    parentRadiusMeters
-                ))
-            {
-                return;
-            }
-
-            world::orbits::OrbitalMotion motion;
-
-motion.enabled = true;
-motion.centerMeters = parentCenterMeters;
-motion.parentRadiusMeters = parentRadiusMeters;
-motion.altitudeMeters =
-    hub.motion.altitudeKm * 1000.0;
-
-motion.orbitalPeriodSeconds =
-    hub.motion.orbitalPeriodSeconds;
-
-motion.selfRotationPeriodSeconds =
-    hub.motion.selfRotationPeriodSeconds;
-
-motion.inclinationDeg =
-    hub.motion.inclinationDeg;
-
-motion.longitudeOfAscendingNodeDeg =
-    hub.motion.longitudeOfAscendingNodeDeg;
-
-motion.argumentOfPeriapsisDeg =
-    hub.motion.argumentOfPeriapsisDeg;
-
-motion.initialPhaseDeg =
-    hub.motion.initialPhaseDeg;
-
-motion.epochSeconds =
-    hub.motion.epochSeconds;
-
-const glm::dvec3 hubCenterMeters =
-    world::orbits::computeOrbitPositionMeters(
-        motion,
-        0.0
-    );
-
-const glm::mat4 hubOrientation =
-    world::orbits::computeSelfRotation(
-        motion,
-        0.0
-    );
-
-world::hubs::OrbitalHubRuntime runtimeHub;
-
-runtimeHub.id = hub.id;
-runtimeHub.name = hub.name;
-runtimeHub.owner = hub.owner;
-runtimeHub.systemId = hub.systemId;
-runtimeHub.parentBodyId = hub.parentBodyId;
-runtimeHub.motion = motion;
-
-runtimeHub.worldPosition =
-    world::coordinates::makeWorldPositionFromMeters(
-        hubCenterMeters
-    );
-
-runtimeHub.orientation =
-    hubOrientation;
-
-sim.registerOrbitalHub(runtimeHub);
-
-
-
-
-            for (const auto& module : hub.modules)
-            {
-                if (!module.exists)
-                    continue;
-
-                
-
-                ObjectType objectType =
-                    ObjectType::Station;
-
-                // Первый слой: command_station -> Station.
-                // Позже добавим ObjectType::Buoy, Relay, Mine, Dock и т.д.
-                if (module.type == "command_station")
-                    objectType = ObjectType::Station;
-
-                const glm::dvec3 modulePositionMeters =
-                    hubCenterMeters + module.offsetMeters;
-
-                const EntityId objectId =
-                    sim.spawnStation(
-                        objectType,
-                        hub.systemId,
-                        modulePositionMeters,
-                        hubOrientation
-                    );
-
-                const bool isMapRepresentative =
-                    !hub.mapObjectModuleId.empty() &&
-                    module.id == hub.mapObjectModuleId;
-
-                if (isMapRepresentative)
-                {
-                    std::string mapName = module.name;
-
-                    if (hub.modules.size() > 1)
-                        mapName += " (Hub)";
-
-                    sim.setStaticObjectMapInfo(
-                        objectId,
-                        mapName,
-                        hub.owner,
-                        hub.parentBodyId,
-                        hub.id,
-                        module.id
-                    );
-                }
-
-               sim.attachStaticObjectToHub(
-                    objectId,
-                    hub.id,
-                    module.id,
-                    module.offsetMeters,
-                    module.localRotationDeg,
-                    true
-                );
-            }
-        }
-
-
-
-
-
-bool spawnInitialWorldStateObjects(
-    GameSimulation& sim
+bool spawnOrbitalHubFromInitialState(
+    GameSimulation& sim,
+    const game::world_state::InitialWorldStateOrbitalHub& hub
 )
 {
-    game::world_state::InitialWorldState state;
+    glm::dvec3 parentCenterMeters {0.0};
+    double parentRadiusMeters = 0.0;
 
-    if (!game::world_state::loadInitialWorldStateWithFallbacks(state))
-        return false;
-
-    const int activeSystemId =
-        sim.activeCelestialSystemId();
-
-    for (const auto& hub : state.orbitalHubs)
+    if (!resolveParentBodyForInitialWorldState(
+            sim,
+            hub.systemId,
+            hub.parentBodyId,
+            parentCenterMeters,
+            parentRadiusMeters))
     {
-        if (hub.systemId != activeSystemId)
+        std::cerr
+            << "[InitialWorldState] cannot resolve parent body for hub "
+            << hub.id << ": " << hub.parentBodyId << "\n";
+        return false;
+    }
+
+    world::orbits::OrbitalMotion motion;
+    motion.enabled = true;
+    motion.centerMeters = parentCenterMeters;
+    motion.parentRadiusMeters = parentRadiusMeters;
+    motion.altitudeMeters = hub.motion.altitudeKm * 1000.0;
+    motion.orbitalPeriodSeconds = hub.motion.orbitalPeriodSeconds;
+    motion.orbitalPeriodPolicy = hub.motion.orbitalPeriodPolicy;
+    motion.selfRotationPeriodSeconds = hub.motion.selfRotationPeriodSeconds;
+    motion.inclinationDeg = hub.motion.inclinationDeg;
+    motion.longitudeOfAscendingNodeDeg =
+        hub.motion.longitudeOfAscendingNodeDeg;
+    motion.argumentOfPeriapsisDeg = hub.motion.argumentOfPeriapsisDeg;
+    motion.initialPhaseDeg = hub.motion.initialPhaseDeg;
+    motion.epochSeconds = hub.motion.epochSeconds;
+
+    const glm::dvec3 hubCenterMeters =
+        world::orbits::computeOrbitPositionMeters(motion, 0.0);
+    const glm::mat4 hubOrientation =
+        world::orbits::computeSelfRotation(motion, 0.0);
+
+    world::hubs::OrbitalHubRuntime runtimeHub;
+    runtimeHub.id = hub.id;
+    runtimeHub.name = hub.name;
+    runtimeHub.owner = hub.owner;
+    runtimeHub.systemId = hub.systemId;
+    runtimeHub.parentBodyId = hub.parentBodyId;
+    runtimeHub.motion = motion;
+    runtimeHub.worldPosition =
+        world::coordinates::makeWorldPositionFromMeters(hubCenterMeters);
+    runtimeHub.orientation = hubOrientation;
+
+    sim.registerOrbitalHub(runtimeHub);
+
+    for (const auto& module : hub.modules)
+    {
+        if (!module.exists)
             continue;
 
-        spawnOrbitalHubFromInitialState(
-            sim,
-            hub
-        );
+        // Schema validation currently admits only command_station.  New
+        // authoritative module kinds must get an explicit mapping here rather
+        // than silently becoming a station.
+        const ObjectType objectType = ObjectType::Station;
+        const glm::dvec3 modulePositionMeters =
+            hubCenterMeters + module.offsetMeters;
+
+        const EntityId objectId =
+            sim.spawnStation(
+                objectType,
+                hub.systemId,
+                modulePositionMeters,
+                hubOrientation
+            );
+
+        const bool isMapRepresentative =
+            module.mapVisible &&
+            !hub.mapObjectModuleId.empty() &&
+            module.id == hub.mapObjectModuleId;
+
+        if (isMapRepresentative)
+        {
+            std::string mapName = module.name;
+            if (hub.modules.size() > 1)
+                mapName += " (Hub)";
+
+            sim.setStaticObjectMapInfo(
+                objectId,
+                mapName,
+                hub.owner,
+                hub.parentBodyId,
+                hub.id,
+                module.id
+            );
+        }
+
+        if (!sim.attachStaticObjectToHub(
+                objectId,
+                hub.id,
+                module.id,
+                module.offsetMeters,
+                module.localRotationDeg,
+                true))
+        {
+            std::cerr
+                << "[InitialWorldState] failed to attach module "
+                << module.id << " to hub " << hub.id << "\n";
+            return false;
+        }
     }
 
     return true;
@@ -345,18 +289,51 @@ bool spawnInitialWorldStateObjects(
 
 
 
+bool spawnInitialWorldStateObjects(
+    GameSimulation& sim,
+    const game::world_state::InitialWorldState& state
+)
+{
+    const int activeSystemId =
+        sim.activeCelestialSystemId();
 
-bool findEarthHighOrbitalPositionMeters(
+    bool spawnedForActiveSystem = false;
+
+    for (const auto& hub : state.orbitalHubs)
+    {
+        if (hub.systemId != activeSystemId)
+            continue;
+
+        if (!spawnOrbitalHubFromInitialState(sim, hub))
+            return false;
+
+        spawnedForActiveSystem = true;
+    }
+
+    return spawnedForActiveSystem;
+}
+
+
+
+
+
+
+bool findHubMapObjectPositionMeters(
     const GameSimulation& sim,
+    const std::string& hubId,
+    const std::string& moduleId,
     glm::dvec3& outPositionMeters
 )
 {
+    if (hubId.empty())
+        return false;
+
     for (const auto& [id, obj] : sim.staticObjects())
     {
-        if (obj.hubId != "earth_orbital_hub")
+        if (obj.hubId != hubId)
             continue;
 
-        if (obj.hubModuleId != "earth_high_orbital")
+        if (!moduleId.empty() && obj.hubModuleId != moduleId)
             continue;
 
         outPositionMeters =
@@ -368,6 +345,21 @@ bool findEarthHighOrbitalPositionMeters(
     }
 
     return false;
+}
+
+const game::world_state::InitialWorldStateOrbitalHub*
+findInitialHub(
+    const game::world_state::InitialWorldState& state,
+    const std::string& hubId
+)
+{
+    for (const auto& hub : state.orbitalHubs)
+    {
+        if (hub.id == hubId)
+            return &hub;
+    }
+
+    return nullptr;
 }
 
 
@@ -629,23 +621,50 @@ EntityId spawnActivationCadenceLabNpc(
 
 
 
-EntityId buildGameScene(GameSimulation& sim)
+EntityId buildGameScene(
+    GameSimulation& sim,
+    const game::world_state::InitialWorldState& initialState
+)
 {
-    if (!spawnInitialWorldStateObjects(sim))
+    if (!spawnInitialWorldStateObjects(sim, initialState))
     {
-        spawnPromoStation(sim);
+        throw std::runtime_error(
+            "initial world contains no orbital hub for the active system"
+        );
     }
 
-    glm::dvec3 stationPos =
-        SolarTestScene::StationPositionM;
+    const auto* playerHub =
+        findInitialHub(
+            initialState,
+            initialState.playerStart.hubId
+        );
 
-    findEarthHighOrbitalPositionMeters(
-        sim,
-        stationPos
-    );
+    if (!playerHub)
+    {
+        throw std::runtime_error(
+            "validated player_start hub disappeared during scene bootstrap"
+        );
+    }
 
+    const int initialSystemId =
+        initialState.playerStart.systemId;
+
+    glm::dvec3 stationPos {0.0};
+    if (!findHubMapObjectPositionMeters(
+            sim,
+            playerHub->id,
+            playerHub->mapObjectModuleId,
+            stationPos))
+    {
+        throw std::runtime_error(
+            "player_start hub has no spawned map representative"
+        );
+    }
+
+    // This is only a bootstrap position until GameServer resolves the authored
+    // reference frame after hub frames have been prepared.
     const glm::dvec3 playerPos =
-        stationPos + glm::dvec3(0.0, 2500.0, -9000.0);
+        stationPos + initialState.playerStart.localOffsetMeters;
 
     ShipVisualIdentity playerVisual {
         .shipType = "Cobra MK1",
@@ -657,7 +676,7 @@ EntityId buildGameScene(GameSimulation& sim)
         .ownerName       = "Jeraya",
         .ownerActor      = ActorIds::Player(),
         .registrationId  = "PL-0001",
-        .homePort        = "Earth High Orbital",
+        .homePort        = playerHub->name,
         .shipRole        = ShipRoleType::Civilian
     };
 
@@ -678,18 +697,27 @@ EntityId buildGameScene(GameSimulation& sim)
     const EntityId playerId =
         sim.spawnShip(
             ShipRole::Player,
-            0,
+            initialSystemId,
             EliteCobraMk1::EliteCobraMk1Descriptor(),
             playerPos,
             playerInitData,
             makeLookOrientation(glm::vec3(stationPos - playerPos))
         );
 
+    const bool diagnosticHubAvailable =
+        playerHub->id == game::diagnostics::HubMotionLabHubId;
+
     if constexpr (game::diagnostics::HubMotionLabEnabled)
-        spawnHubMotionLabNpcs(sim, stationPos);
+    {
+        if (diagnosticHubAvailable)
+            spawnHubMotionLabNpcs(sim, stationPos);
+    }
 
     if constexpr (game::diagnostics::ActivationCadenceLabEnabled)
-        spawnActivationCadenceLabNpc(sim, stationPos);
+    {
+        if (diagnosticHubAvailable)
+            spawnActivationCadenceLabNpc(sim, stationPos);
+    }
 
     return playerId;
 }
@@ -707,14 +735,15 @@ EntityId buildGameScene(GameSimulation& sim)
 
 
 
-
-
-EntityId buildPromoScene(GameSimulation& sim)
+EntityId buildPromoScene(
+    GameSimulation& sim,
+    const game::world_state::InitialWorldState& initialState
+)
 {
     EntityId playerId =
         spawnPromoPlayer(sim);
 
-    if (!spawnInitialWorldStateObjects(sim))
+    if (!spawnInitialWorldStateObjects(sim, initialState))
     {
         spawnPromoStation(sim);
     }
@@ -724,14 +753,17 @@ EntityId buildPromoScene(GameSimulation& sim)
 
 } // namespace
 
-EntityId buildInitialScene(GameSimulation& sim)
+EntityId buildInitialScene(
+    GameSimulation& sim,
+    const game::world_state::InitialWorldState& initialState
+)
 {
     if constexpr (GameSceneSetupConfig::PromoScene)
     {
-        return buildPromoScene(sim);
+        return buildPromoScene(sim, initialState);
     }
 
-    return buildGameScene(sim);
+    return buildGameScene(sim, initialState);
 }
 
 } // namespace game::scene

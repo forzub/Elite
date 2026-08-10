@@ -59,21 +59,45 @@ int runFastUniverseSmokeTest()
     {
         std::cerr
             << "[FAIL] fast-universe smoke: real server/scene rejected "
-            << "accelerated timeline entry\n";
+            << "accelerated timeline entry"
+            << " mode=" << server->debugUniverseTimeSimulation()
+            << " scale=" << server->debugUniverseTimeScale()
+            << " before_revision=" << before.universeTimelineRevision
+            << " accelerated_revision=" << accelerated.universeTimelineRevision
+            << " delta_universe_s="
+            << (accelerated.universeTimeSeconds - before.universeTimeSeconds)
+            << " snapshot_mode="
+            << acceleratedSnapshot.session.universeTimeSimulation
+            << " snapshot_scale="
+            << acceleratedSnapshot.session.universeTimeScale
+            << "\n";
         return 2;
     }
 
     server->setDebugUniverseTimeSimulation(false, TestScale);
+
+    // Leaving the diagnostic branch re-anchors UniverseClock to wall time.
+    // Do not compare that absolute timestamp with the accelerated timestamp:
+    // server construction itself may take longer than the synthetic +4 s jump.
+    // The invariant is that normal mode resumes at x1 and then advances by the
+    // authoritative server step again.
+    const auto restoredAtExit = server->protocolMetadata();
+
     server->update(StepSeconds);
 
     const auto restored = server->protocolMetadata();
     const auto& restoredSnapshot = server->snapshot();
 
+    const double restoredNormalStep =
+        restored.universeTimeSeconds - restoredAtExit.universeTimeSeconds;
+
     const bool exited =
         !server->debugUniverseTimeSimulation() &&
         std::abs(server->debugUniverseTimeScale() - 1.0) < 1.0e-9 &&
-        restored.universeTimelineRevision > accelerated.universeTimelineRevision &&
-        restored.universeTimeSeconds < accelerated.universeTimeSeconds &&
+        restoredAtExit.universeTimelineRevision > accelerated.universeTimelineRevision &&
+        restored.universeTimelineRevision == restoredAtExit.universeTimelineRevision &&
+        restoredNormalStep >= 0.0 &&
+        std::abs(restoredNormalStep - StepSeconds) < 0.01 &&
         !restoredSnapshot.session.universeTimeSimulation &&
         std::abs(restoredSnapshot.session.universeTimeScale - 1.0) < 1.0e-9;
 
@@ -81,7 +105,18 @@ int runFastUniverseSmokeTest()
     {
         std::cerr
             << "[FAIL] fast-universe smoke: real server did not return "
-            << "to normal timeline\n";
+            << "to normal timeline"
+            << " mode=" << server->debugUniverseTimeSimulation()
+            << " scale=" << server->debugUniverseTimeScale()
+            << " accelerated_revision=" << accelerated.universeTimelineRevision
+            << " exit_revision=" << restoredAtExit.universeTimelineRevision
+            << " post_tick_revision=" << restored.universeTimelineRevision
+            << " normal_step_s=" << restoredNormalStep
+            << " snapshot_mode="
+            << restoredSnapshot.session.universeTimeSimulation
+            << " snapshot_scale="
+            << restoredSnapshot.session.universeTimeScale
+            << "\n";
         return 3;
     }
 

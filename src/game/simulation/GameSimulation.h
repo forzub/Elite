@@ -30,6 +30,7 @@
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/diagnostics/ActivationCadenceLab.h"
 #include "src/game/server/ServerTimeContext.h"
+#include "src/game/world_state/InitialWorldState.h"
 #include "src/game/server/ServerTimelineClock.h"
 #include "src/game/simulation/activation/ActivationPlanner.h"
 #include "src/game/simulation/activation/ActivationExecutionPolicy.h"
@@ -132,8 +133,7 @@ public:
         int systemId,
         const std::string& parentBodyId,
         double parentRadiusMeters,
-        double parentGravitationalParameterM3s2,
-        bool forceKeplerPeriod
+        double parentGravitationalParameterM3s2
     );
 
 
@@ -177,7 +177,9 @@ public:
         return m_activeCelestialSystemId;
     }
 
-    void buildInitialScene();
+    void buildInitialScene(
+        const game::world_state::InitialWorldState& initialState
+    );
 
     bool resolveCelestialBodyMeters(
         int systemId,

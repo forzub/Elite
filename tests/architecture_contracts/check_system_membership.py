@@ -228,7 +228,8 @@ for path, source in ((scene_cpp, scene_text), (promo_cpp, promo_text)):
     )
     for match in re.finditer(r"spawnShip\s*\(\s*ShipRole::(?:Player|NPC)\s*,", uncommented, re.S):
         tail = uncommented[match.end():match.end() + 160]
-        if not re.match(r"\s*[-+]?\d+\s*,", tail):
+        system_arg = re.match(r"\s*([^,]+)\s*,", tail)
+        if not system_arg or not system_arg.group(1).strip():
             fail(path, "active spawnShip call does not pass an explicit system id")
             break
 
@@ -238,11 +239,16 @@ scene_uncommented = "\n".join(
 )
 for match in re.finditer(r"spawnStation\s*\(\s*ObjectType::[A-Za-z0-9_]+\s*,", scene_uncommented, re.S):
     tail = scene_uncommented[match.end():match.end() + 160]
-    if not re.match(r"\s*[-+]?\d+\s*,", tail):
+    system_arg = re.match(r"\s*([^,]+)\s*,", tail)
+    if not system_arg or not system_arg.group(1).strip():
         fail(scene_cpp, "literal spawnStation call does not pass an explicit system id")
         break
 # Data-driven hub modules pass their authored hub.systemId instead of a magic zero.
-if "sim.spawnStation(\n                        objectType,\n                        hub.systemId," not in scene_text:
+if not re.search(
+    r"sim\.spawnStation\s*\(\s*objectType\s*,\s*hub\.systemId\s*,",
+    scene_text,
+    re.S,
+):
     fail(scene_cpp, "hub-module spawn does not inherit the authored hub system id")
 
 server_text = read(server_cpp)

@@ -278,6 +278,171 @@ def check_map_feature_surface() -> None:
         "Galaxy -> System -> Detail -> Hub vertical behavior test disappeared",
     )
 
+    renderer_cpp = read("src/scene/SceneRenderer.cpp")
+    renderer_h = read("src/scene/SceneRenderer.h")
+    for overlay in ("renderStarSystemLabels", "renderConstellationHoverOverlay"):
+        require(
+            f"void SceneRenderer::{overlay}(" in renderer_cpp,
+            f"live map/sky overlay lost implementation: SceneRenderer::{overlay}",
+        )
+        require(
+            f"void {overlay}(" in renderer_h,
+            f"live map/sky overlay lost declaration: SceneRenderer::{overlay}",
+        )
+        require(
+            f"{overlay}(renderView, proj);" in renderer_cpp,
+            f"live map/sky overlay is no longer reached by SceneRenderer: {overlay}",
+        )
+
+
+
+def check_world_authority_boundaries() -> None:
+    initial_json = json.loads(read("src/assets/data/initial_world_state.json"))
+    initial_h = read("src/game/world_state/InitialWorldState.h")
+    scene_cpp = read("src/game/scene/GameSceneSetup.cpp")
+    server_cpp = read("src/game/server/GameServer.cpp")
+    server_h = read("src/game/server/GameServer.h")
+    space_cpp = read("src/game/SpaceState.cpp")
+    snapshot_h = read("src/game/simulation/SimulationSnapshot.h")
+    ship_core_h = read("src/game/ship/core/ShipCore.h")
+    renderer_cpp = read("src/scene/SceneRenderer.cpp")
+    orbital_h = read("src/world/orbits/OrbitalMotion.h")
+    sim_cpp = read("src/game/simulation/GameSimulation.cpp")
+    architecture = read("src/game/ARCHITECTURE_STATUS.md")
+
+    # Keep the authored schema honest: settings that are not consumed by the
+    # authoritative bootstrap must not masquerade as working world features.
+    for unsupported_key in ("epoch_universe_time_seconds", "unique_npcs"):
+        require(
+            unsupported_key not in initial_json,
+            f"initial world exposes unsupported setting: {unsupported_key}",
+        )
+
+    for hub in initial_json.get("orbital_hubs", []):
+        for unsupported_key in ("routes", "traffic_zones", "hub_kind", "map_label_suffix"):
+            require(
+                unsupported_key not in hub,
+                f"orbital hub exposes unsupported setting: {unsupported_key}",
+            )
+        for module in hub.get("modules", []):
+            for unsupported_key in ("parent_hub_id", "map_object", "infrastructure_role"):
+                require(
+                    unsupported_key not in module,
+                    f"hub module exposes unsupported/redundant setting: {unsupported_key}",
+                )
+            state = module.get("state", {})
+            for unsupported_key in ("hull", "power"):
+                require(
+                    unsupported_key not in state,
+                    f"hub module state exposes unsupported setting: {unsupported_key}",
+                )
+
+    player_start = initial_json.get("player_start")
+    require(isinstance(player_start, dict), "initial world lost authored player_start")
+    require(
+        isinstance(player_start.get("system_id"), int)
+        and isinstance(player_start.get("hub_id"), str)
+        and bool(player_start.get("hub_id")),
+        "player_start must identify a physical system and hub",
+    )
+
+    system_states = initial_json.get("system_states")
+    require(
+        isinstance(system_states, list) and system_states,
+        "initial world lost server-owned physical-system map state",
+    )
+    require(
+        "InitialWorldStateSystemState" in initial_h
+        and 'root.contains("system_states")' in initial_h,
+        "InitialWorldState no longer parses server-owned system map facts",
+    )
+    require(
+        "validateInitialWorldState" in initial_h
+        and "InitialWorldState candidate" in initial_h
+        and "out = std::move(candidate)" in initial_h,
+        "initial-world loading is no longer transactional/validated",
+    )
+
+    game_scene = extract_braced_function(scene_cpp, "EntityId buildGameScene(")
+    require(
+        "spawnPromoStation" not in game_scene,
+        "production scene silently falls back to a hard-coded promo station",
+    )
+    require(
+        "initialState.playerStart" in game_scene,
+        "production player bootstrap no longer comes from authoritative world state",
+    )
+    require(
+        "module.mapVisible" in scene_cpp,
+        "authored hub-module map_visible setting is parsed but not consumed",
+    )
+
+    require(
+        '"earth_orbital_hub"' not in extract_braced_function(server_cpp, "GameServer::GameServer()"),
+        "GameServer startup hard-codes the Earth diagnostic hub",
+    )
+    require(
+        "jurisdictionForSystemId" not in server_cpp
+        and "Core Jurisdiction" not in server_cpp
+        and "Colonial Administration" not in server_cpp,
+        "server still infers political/map facts from numeric physical-system IDs",
+    )
+    require(
+        "m_systemJurisdictions" in server_h
+        and "m_systemJurisdictions.find(s.id)" in server_cpp,
+        "Galaxy map jurisdiction is no longer sourced from server world state",
+    )
+
+    for forbidden in (
+        "Core Jurisdiction",
+        "Colonial Administration",
+        "Frontier / Independent",
+        "COORD DEBUG",
+        '"system_0.Sol.Земля"',
+        '"Earth High Orbital"',
+        "fallback: если currentSystemId не найден — считаем от Sol",
+    ):
+        require(
+            forbidden not in space_cpp,
+            f"client SpaceState still contains world-specific authority/debug hack: {forbidden}",
+        )
+
+    require(
+        'src/render/HUD/WorldLabel.h' not in snapshot_h,
+        "authoritative SimulationSnapshot includes client HUD presentation types",
+    )
+    require(
+        "ShipSignalPresentation.h" not in ship_core_h,
+        "authoritative ShipCore includes client signal-presentation state",
+    )
+
+    for dead_path in ("renderCelestialPass", "renderVisualShips"):
+        require(
+            dead_path not in renderer_cpp,
+            f"legacy duplicate SceneRenderer path survived cleanup: {dead_path}",
+        )
+    for fake_world in ("MoonDistanceM", "EarthRadiusM", "SunRadiusM"):
+        require(
+            fake_world not in renderer_cpp,
+            f"gameplay SceneRenderer still owns hard-coded celestial truth: {fake_world}",
+        )
+
+    require(
+        "enum class OrbitalPeriodPolicy" in orbital_h
+        and "OrbitalPeriodPolicy::Kepler" in sim_cpp,
+        "orbital-period policy is no longer preserved into authoritative runtime motion",
+    )
+    require(
+        "forceKeplerPeriod" not in sim_cpp,
+        "runtime still globally forces Kepler periods and ignores authored orbit policy",
+    )
+
+    require(
+        "Render-style boundary" in architecture
+        and "server" in architecture.lower()
+        and "client" in architecture.lower(),
+        "future render-style ownership boundary is not documented",
+    )
 
 
 def check_headless_server_geometry_boundary() -> None:
@@ -381,6 +546,7 @@ def check_ready_orchestration() -> None:
         "system-map-behavior",
         "main-target-build",
         "headless-authority-boundary",
+        "world-authority-boundary",
         "suite:CLIENT PRESENTATION PIPELINE",
         "suite:SERVER INTERACTION ACTIVATION",
     }
@@ -397,6 +563,7 @@ def main() -> int:
     check_debug_control_schema()
     check_debug_panels()
     check_map_feature_surface()
+    check_world_authority_boundaries()
     check_headless_server_geometry_boundary()
     check_ready_orchestration()
     print("[PASS] critical feature surface contracts")

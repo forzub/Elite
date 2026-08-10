@@ -5,6 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <stdexcept>
 
 #include "src/world/coordinates/WorldPosition.h"
 #include <cmath>
@@ -14,6 +15,7 @@
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/game/diagnostics/HubMotionLab.h"
+#include "src/game/world_state/InitialWorldState.h"
 
 
 
@@ -357,23 +359,6 @@ namespace {
 
 
 
-    std::string jurisdictionForSystemId(int systemId)
-    {
-        if (systemId == 0)
-            return "Sol Authority";
-
-        if (systemId >= 1 && systemId <= 9)
-            return "Core Jurisdiction";
-
-        if (systemId >= 10 && systemId <= 29)
-            return "Colonial Administration";
-
-        if (systemId >= 30 && systemId <= 44)
-            return "Frontier / Independent";
-
-        return "Unregistered";
-    }
-
     double stablePhaseRadians(const std::string& id)
     {
         uint32_t h = 2166136261u;
@@ -513,7 +498,37 @@ GameServer::GameServer()
                 << "[GameServer] galaxy details catalog was not loaded\n";
         }
 
-        m_playerNavigation.currentSystemId = 0;
+        game::world_state::InitialWorldState initialWorldState;
+        const bool initialWorldLoaded =
+            game::world_state::loadInitialWorldStateWithFallbacks(
+                initialWorldState
+            );
+
+        if (!initialWorldLoaded)
+        {
+            throw std::runtime_error(
+                "authoritative initial world state is missing or invalid"
+            );
+        }
+
+        for (const auto& systemState : initialWorldState.systemStates)
+        {
+            m_systemJurisdictions[systemState.systemId] =
+                systemState.jurisdiction;
+        }
+
+        const int initialSystemId =
+            initialWorldState.playerStart.systemId;
+
+        if (!m_starAtlas.findSystem(initialSystemId))
+        {
+            throw std::runtime_error(
+                "player_start references a physical system absent from StarAtlas"
+            );
+        }
+
+        m_playerNavigation.currentSystemId =
+            initialSystemId;
 
         m_celestialRuntimes.initialize(m_starAtlas);
 
@@ -560,7 +575,7 @@ m_simulation.setCelestialBodyKinematicStateAu(
 
 
 
-        m_simulation.buildInitialScene();
+        m_simulation.buildInitialScene(initialWorldState);
         synchronizePlayerSystemMembership();
 
         applyCelestialOrbitParentParameters();
@@ -570,31 +585,23 @@ m_simulation.setCelestialBodyKinematicStateAu(
         m_simulation.prepareReferenceFramesForSpawn();
 
         game::navigation::ReferenceFrame playerStartFrame;
-
-
-
-
-
-
-
-
-
         playerStartFrame.type =
             game::navigation::ReferenceFrameType::OrbitalHub;
-
         playerStartFrame.systemId =
-            m_playerNavigation.currentSystemId;
-
+            initialWorldState.playerStart.systemId;
         playerStartFrame.hubId =
-            "earth_orbital_hub";
-
+            initialWorldState.playerStart.hubId;
         playerStartFrame.localOffsetMeters =
-            glm::dvec3(-10000.0, 2500.0, 0.0);
+            initialWorldState.playerStart.localOffsetMeters;
 
-        m_simulation.placeShipInReferenceFrame(
-            m_simulation.playerId(),
-            playerStartFrame
-        );
+        if (!m_simulation.placeShipInReferenceFrame(
+                m_simulation.playerId(),
+                playerStartFrame))
+        {
+            throw std::runtime_error(
+                "validated player_start reference frame could not be resolved"
+            );
+        }
 
         game::server::ServerTimeContext initialTime;
         initialTime.serverTick = 0;
@@ -680,8 +687,7 @@ void GameServer::applyCelestialOrbitParentParameters()
             systemId,
             body.id,
             radiusMeters,
-            body.gravitationalParameterM3s2,
-            true
+            body.gravitationalParameterM3s2
         );
     }
 
@@ -1402,7 +1408,12 @@ world::celestial::GalaxyMapSnapshot GameServer::buildGalaxyMapSnapshot() const
         item.starType = s.starType;
         item.starsCount = s.starsCount;
         item.positionLy = s.positionLy;
-        item.jurisdiction = jurisdictionForSystemId(s.id);
+        const auto jurisdictionIt =
+            m_systemJurisdictions.find(s.id);
+        item.jurisdiction =
+            jurisdictionIt != m_systemJurisdictions.end()
+                ? jurisdictionIt->second
+                : "Unregistered";
 
         out.systems.push_back(std::move(item));
     }

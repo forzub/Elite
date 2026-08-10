@@ -3,10 +3,14 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <stdexcept>
 #include <vector>
+#include <utility>
 
 #include <glm/glm.hpp>
 #include <nlohmann/json.hpp>
+
+#include "src/world/orbits/OrbitalMotion.h"
 
 namespace game::world_state
 {
@@ -14,9 +18,8 @@ namespace game::world_state
 struct InitialWorldStateMotion
 {
     std::string type = "fixed";
-    // "fixed"  — использовать orbital_period_seconds из JSON.
-    // "kepler" — вычислить период по массе родительского тела и высоте орбиты.
-    std::string orbitalPeriodMode = "fixed";
+    world::orbits::OrbitalPeriodPolicy orbitalPeriodPolicy =
+        world::orbits::OrbitalPeriodPolicy::Fixed;
 
     double altitudeKm = 0.0;
 
@@ -48,8 +51,6 @@ struct InitialWorldStateHubModule
     glm::dvec3 localRotationDeg {0.0};
 
     bool exists = true;
-    double hull = 1.0;
-    double power = 1.0;
 };
 
 struct InitialWorldStateOrbitalHub
@@ -66,11 +67,32 @@ struct InitialWorldStateOrbitalHub
     std::vector<InitialWorldStateHubModule> modules;
 };
 
+
+struct InitialWorldStatePlayerStart
+{
+    int systemId = -1;
+    std::string hubId;
+    glm::dvec3 localOffsetMeters {0.0};
+
+    bool valid() const noexcept
+    {
+        return systemId >= 0 && !hubId.empty();
+    }
+};
+
+struct InitialWorldStateSystemState
+{
+    int systemId = -1;
+    std::string jurisdiction = "Unregistered";
+};
+
 struct InitialWorldState
 {
     int version = 1;
-    double epochUniverseTimeSeconds = 0.0;
 
+    InitialWorldStatePlayerStart playerStart;
+    // Mutable/authored facts keyed by physical StarAtlas system id.
+    std::vector<InitialWorldStateSystemState> systemStates;
     std::vector<InitialWorldStateOrbitalHub> orbitalHubs;
 };
 
@@ -108,8 +130,25 @@ inline InitialWorldStateMotion readMotion(
     out.type =
         j.value("type", "fixed");
         
-    out.orbitalPeriodMode =
+    const std::string periodMode =
         j.value("orbital_period_mode", "fixed");
+
+    if (periodMode == "kepler")
+    {
+        out.orbitalPeriodPolicy =
+            world::orbits::OrbitalPeriodPolicy::Kepler;
+    }
+    else if (periodMode == "fixed")
+    {
+        out.orbitalPeriodPolicy =
+            world::orbits::OrbitalPeriodPolicy::Fixed;
+    }
+    else
+    {
+        throw std::runtime_error(
+            "unsupported orbital_period_mode: " + periodMode
+        );
+    }
 
     out.altitudeKm =
         j.value("altitude_km", 0.0);
@@ -175,11 +214,6 @@ inline InitialWorldStateHubModule readHubModule(
         out.exists =
             state.value("exists", true);
 
-        out.hull =
-            state.value("hull", 1.0);
-
-        out.power =
-            state.value("power", 1.0);
     }
 
     return out;
@@ -230,6 +264,193 @@ inline InitialWorldStateOrbitalHub readOrbitalHub(
     return out;
 }
 
+inline InitialWorldStatePlayerStart readPlayerStart(
+    const nlohmann::json& j
+)
+{
+    InitialWorldStatePlayerStart out;
+
+    out.systemId = j.value("system_id", -1);
+    out.hubId = j.value("hub_id", "");
+
+    if (j.contains("local_offset_m") &&
+        j["local_offset_m"].is_object())
+    {
+        out.localOffsetMeters =
+            readDvec3Meters(j["local_offset_m"]);
+    }
+
+    return out;
+}
+
+inline InitialWorldStateSystemState readSystemState(
+    const nlohmann::json& j
+)
+{
+    InitialWorldStateSystemState out;
+    out.systemId = j.value("system_id", -1);
+    out.jurisdiction = j.value("jurisdiction", "Unregistered");
+    return out;
+}
+
+inline bool validateInitialWorldState(
+    const InitialWorldState& state,
+    std::string& error
+)
+{
+    if (state.version != 1)
+    {
+        error = "unsupported initial world version: " +
+            std::to_string(state.version);
+        return false;
+    }
+
+    if (!state.playerStart.valid())
+    {
+        error = "player_start must define system_id and hub_id";
+        return false;
+    }
+
+    const InitialWorldStateOrbitalHub* playerHub = nullptr;
+    for (const auto& hub : state.orbitalHubs)
+    {
+        if (hub.id == state.playerStart.hubId)
+        {
+            playerHub = &hub;
+            break;
+        }
+    }
+
+    if (!playerHub)
+    {
+        error = "player_start references unknown hub: " +
+            state.playerStart.hubId;
+        return false;
+    }
+
+    if (playerHub->systemId != state.playerStart.systemId)
+    {
+        error = "player_start system_id does not match its hub";
+        return false;
+    }
+
+    for (std::size_t i = 0; i < state.systemStates.size(); ++i)
+    {
+        const auto& systemState = state.systemStates[i];
+        if (systemState.systemId < 0)
+        {
+            error = "system state has invalid system_id";
+            return false;
+        }
+
+        for (std::size_t j = i + 1; j < state.systemStates.size(); ++j)
+        {
+            if (systemState.systemId == state.systemStates[j].systemId)
+            {
+                error = "duplicate system state for system_id=" +
+                    std::to_string(systemState.systemId);
+                return false;
+            }
+        }
+    }
+
+    for (std::size_t i = 0; i < state.orbitalHubs.size(); ++i)
+    {
+        const auto& hub = state.orbitalHubs[i];
+        if (hub.id.empty() || hub.systemId < 0 || hub.parentBodyId.empty())
+        {
+            error = "orbital hub has incomplete identity/reference data";
+            return false;
+        }
+
+        if (hub.motion.type != "parent_orbit")
+        {
+            error = "unsupported orbital hub motion type: " + hub.motion.type;
+            return false;
+        }
+
+        if (hub.motion.orbitalPeriodPolicy ==
+                world::orbits::OrbitalPeriodPolicy::Fixed &&
+            hub.motion.orbitalPeriodSeconds <= 0.0)
+        {
+            error = "fixed orbital period must be positive for hub: " + hub.id;
+            return false;
+        }
+
+        if (hub.motion.selfRotationPeriodSeconds <= 0.0)
+        {
+            error = "self rotation period must be positive for hub: " + hub.id;
+            return false;
+        }
+
+        for (std::size_t j = i + 1; j < state.orbitalHubs.size(); ++j)
+        {
+            if (hub.id == state.orbitalHubs[j].id)
+            {
+                error = "duplicate orbital hub id: " + hub.id;
+                return false;
+            }
+        }
+
+        for (std::size_t moduleIndex = 0;
+             moduleIndex < hub.modules.size();
+             ++moduleIndex)
+        {
+            if (hub.modules[moduleIndex].type != "command_station")
+            {
+                error = "unsupported hub module type: " +
+                    hub.modules[moduleIndex].type;
+                return false;
+            }
+
+            for (std::size_t other = moduleIndex + 1;
+                 other < hub.modules.size();
+                 ++other)
+            {
+                if (hub.modules[moduleIndex].id == hub.modules[other].id)
+                {
+                    error = "duplicate hub module id: " +
+                        hub.modules[moduleIndex].id;
+                    return false;
+                }
+            }
+        }
+
+        if (!hub.mapObjectModuleId.empty())
+        {
+            const InitialWorldStateHubModule* mapModule = nullptr;
+            for (const auto& module : hub.modules)
+            {
+                if (module.id == hub.mapObjectModuleId)
+                {
+                    mapModule = &module;
+                    break;
+                }
+            }
+            if (!mapModule)
+            {
+                error = "hub map_object_module_id is not a declared module: " +
+                    hub.id;
+                return false;
+            }
+
+            if (hub.id == state.playerStart.hubId && !mapModule->exists)
+            {
+                error = "player_start hub map representative does not exist";
+                return false;
+            }
+
+            if (hub.id == state.playerStart.hubId && !mapModule->mapVisible)
+            {
+                error = "player_start hub map representative is hidden";
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 inline bool loadInitialWorldState(
     const std::string& path,
     InitialWorldState& out
@@ -245,11 +466,30 @@ inline bool loadInitialWorldState(
         nlohmann::json root;
         f >> root;
 
-        out.version =
+        InitialWorldState candidate;
+        candidate.version =
             root.value("version", 1);
 
-        out.epochUniverseTimeSeconds =
-            root.value("epoch_universe_time_seconds", 0.0);
+        if (root.contains("player_start") &&
+            root["player_start"].is_object())
+        {
+            candidate.playerStart =
+                readPlayerStart(root["player_start"]);
+        }
+
+        if (root.contains("system_states") &&
+            root["system_states"].is_array())
+        {
+            for (const auto& systemJson : root["system_states"])
+            {
+                if (!systemJson.is_object())
+                    continue;
+
+                auto systemState = readSystemState(systemJson);
+                if (systemState.systemId >= 0)
+                    candidate.systemStates.push_back(std::move(systemState));
+            }
+        }
 
         if (root.contains("orbital_hubs") && root["orbital_hubs"].is_array())
         {
@@ -262,10 +502,20 @@ inline bool loadInitialWorldState(
                     readOrbitalHub(hubJson);
 
                 if (!hub.id.empty())
-                    out.orbitalHubs.push_back(std::move(hub));
+                    candidate.orbitalHubs.push_back(std::move(hub));
             }
         }
 
+        std::string validationError;
+        if (!validateInitialWorldState(candidate, validationError))
+        {
+            std::cerr
+                << "[InitialWorldState] invalid " << path
+                << ": " << validationError << "\n";
+            return false;
+        }
+
+        out = std::move(candidate);
         return true;
     }
     catch (const std::exception& e)

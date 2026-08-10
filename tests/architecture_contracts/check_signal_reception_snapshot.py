@@ -31,6 +31,9 @@ if "result.source->" in presentation_text:
 if "const void* source" in awareness_text or "r.source" in awareness_text:
     errors.append("NpcSignalAwareness must use a stable source identifier, not a pointer")
 
+if '#include "world/types/SignalSemanticState.h"' not in awareness_text:
+    errors.append("NpcSignalAwareness must include SignalSemanticState directly instead of relying on transitive includes")
+
 if errors:
     print("Signal reception snapshot contract FAILED:")
     for error in errors:

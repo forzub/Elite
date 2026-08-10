@@ -325,30 +325,6 @@ namespace
 
 
 
-    std::string fmtMeters0(double v)
-    {
-        std::ostringstream ss;
-        ss << std::fixed << std::setprecision(0) << v;
-        return ss.str();
-    }
-
-    std::string fmtKm2(double meters)
-    {
-        std::ostringstream ss;
-        ss << std::fixed << std::setprecision(2) << (meters / 1000.0);
-        return ss.str();
-    }
-
-    glm::dvec3 worldPositionToMeters(
-        const world::coordinates::WorldPosition& wp
-    )
-    {
-        return glm::dvec3(
-            static_cast<double>(wp.cell.x),
-            static_cast<double>(wp.cell.y),
-            static_cast<double>(wp.cell.z)
-        ) * world::coordinates::GalacticCellSizeM + wp.localMeters;
-    }
 
 
 } // namespace
@@ -2116,168 +2092,6 @@ m_systemMapRenderer.render(
 
 
 
-        // -------------------------------------------------
-// DEBUG: координатная таблица ключевых объектов
-// -------------------------------------------------
-if (m_client)
-{
-    const auto& ships = m_client->world().ships();
-    auto playerIt = ships.find(m_playerId.value);
-
-    if (playerIt != ships.end())
-    {
-        const auto& playerShip = playerIt->second;
-
-        const glm::dvec3 playerM =
-            worldPositionToMeters(
-                playerShip.renderTransform.worldPosition
-            );
-
-        const auto* systemSnapshot =
-            m_client->systemMapSnapshot(
-                m_client->playerNavigation().currentSystemId
-            );
-
-        bool haveEarth = false;
-        bool haveMoon = false;
-        bool haveHub = false;
-
-        glm::dvec3 earthM {0.0};
-        glm::dvec3 moonM {0.0};
-        glm::dvec3 hubM {0.0};
-
-        if (systemSnapshot)
-        {
-            for (const auto& b : systemSnapshot->bodies)
-            {
-                const glm::dvec3 bodyM =
-                    b.positionAu * world::celestial::MetersPerAu;
-
-                if (b.id == "system_0.Sol.Земля")
-                {
-                    earthM = bodyM;
-                    haveEarth = true;
-                }
-
-                if (b.name == "Луна" ||
-                    b.id.find("Луна") != std::string::npos)
-                {
-                    moonM = bodyM;
-                    haveMoon = true;
-                }
-            }
-
-            for (const auto& obj : systemSnapshot->objects)
-            {
-                if (obj.name.find("Earth High Orbital") != std::string::npos)
-                {
-                    hubM =
-                        obj.positionAu * world::celestial::MetersPerAu;
-
-                    haveHub = true;
-                    break;
-                }
-            }
-        }
-
-        const double distPlayerEarthM =
-            haveEarth ? glm::length(playerM - earthM) : -1.0;
-
-        const double distPlayerMoonM =
-            haveMoon ? glm::length(playerM - moonM) : -1.0;
-
-        const double distPlayerHubM =
-            haveHub ? glm::length(playerM - hubM) : -1.0;
-
-
-
-        // -------------------------------------------------
-        // SCREEN OVERLAY: то же самое на HUD
-        // -------------------------------------------------
-        auto& text = TextRenderer::instance();
-
-        text.beginFrameForViewport(
-            vp.width,
-            vp.height
-        );
-
-        float x = 24.0f;
-        float y = 230.0f;
-        const float line = 15.0f;
-
-        auto drawLine =
-            [&](const std::string& s, const glm::vec4& color)
-            {
-                text.textDrawPx(
-                    s,
-                    x,
-                    y,
-                    11,
-                    color
-                );
-
-                y += line;
-            };
-
-        const glm::vec4 headerColor {1.0f, 0.78f, 0.35f, 0.95f};
-        const glm::vec4 normalColor {0.45f, 0.82f, 1.0f, 0.78f};
-        const glm::vec4 warnColor   {1.0f, 0.38f, 0.28f, 0.90f};
-
-        drawLine("COORD DEBUG", headerColor);
-
-        drawLine(
-            "PLAYER X " + fmtMeters0(playerM.x) +
-            " Y " + fmtMeters0(playerM.y) +
-            " Z " + fmtMeters0(playerM.z),
-            normalColor
-        );
-
-        if (haveEarth)
-        {
-            drawLine(
-                "DIST PLAYER-EARTH " +
-                fmtKm2(distPlayerEarthM) +
-                " km",
-                distPlayerEarthM < 6371000.0 ? warnColor : normalColor
-            );
-        }
-        else
-        {
-            drawLine("EARTH NOT FOUND", warnColor);
-        }
-
-        if (haveMoon)
-        {
-            drawLine(
-                "DIST PLAYER-MOON " +
-                fmtKm2(distPlayerMoonM) +
-                " km",
-                normalColor
-            );
-        }
-        else
-        {
-            drawLine("MOON NOT FOUND", warnColor);
-        }
-
-        if (haveHub)
-        {
-            drawLine(
-                "DIST PLAYER-HUB " +
-                fmtKm2(distPlayerHubM) +
-                " km",
-                distPlayerHubM > 50000.0 ? warnColor : normalColor
-            );
-        }
-        else
-        {
-            drawLine("HUB NOT FOUND", warnColor);
-        }
-
-        text.endFrame();
-    }
-}
-
 
 
 
@@ -3504,23 +3318,6 @@ auto distanceFromPlayerLy =
     return std::sqrt(dx * dx + dy * dy + dz * dz);
 };
 
-auto jurisdictionForSystem =
-    [](int systemId) -> std::string
-{
-    if (systemId == 0)
-        return "Sol Authority";
-
-    if (systemId >= 1 && systemId <= 9)
-        return "Core Jurisdiction";
-
-    if (systemId >= 10 && systemId <= 29)
-        return "Colonial Administration";
-
-    if (systemId >= 30 && systemId <= 44)
-        return "Frontier / Independent";
-
-    return "Unregistered";
-};
 
 const int selectedId =
     m_systemMapRenderer.selectedSystemId() >= 0
@@ -3541,7 +3338,7 @@ for (const auto& s : m_galaxyMapSnapshot.systems)
     item["selected"] = (s.id == selectedId);
 
     item["distanceFromPlayerLy"] = distanceFromPlayerLy(s);
-    item["jurisdiction"] = jurisdictionForSystem(s.id);
+    item["jurisdiction"] = s.jurisdiction.empty() ? "Unregistered" : s.jurisdiction;
 
     payload["systems"].push_back(std::move(item));
 }
@@ -4123,19 +3920,6 @@ for (const auto& s : m_galaxyMapSnapshot.systems)
     }
 }
 
-// fallback: если currentSystemId не найден — считаем от Sol
-if (!currentSystem)
-{
-    for (const auto& s : m_galaxyMapSnapshot.systems)
-    {
-        if (s.id == 0)
-        {
-            currentSystem = &s;
-            break;
-        }
-    }
-}
-
 auto distanceFromPlayerLy =
     [&](const world::celestial::GalaxyMapSystem& s) -> double
 {
@@ -4149,23 +3933,6 @@ auto distanceFromPlayerLy =
     return std::sqrt(dx * dx + dy * dy + dz * dz);
 };
 
-auto jurisdictionForSystem =
-    [](int systemId) -> std::string
-{
-    if (systemId == 0)
-        return "Sol Authority";
-
-    if (systemId >= 1 && systemId <= 9)
-        return "Core Jurisdiction";
-
-    if (systemId >= 10 && systemId <= 29)
-        return "Colonial Administration";
-
-    if (systemId >= 30 && systemId <= 44)
-        return "Frontier / Independent";
-
-    return "Unregistered";
-};
 
 for (const auto& s : m_galaxyMapSnapshot.systems)
 {
@@ -4181,7 +3948,7 @@ for (const auto& s : m_galaxyMapSnapshot.systems)
     item["selected"] = (s.id == selectedId);
 
     item["distanceFromPlayerLy"] = distanceFromPlayerLy(s);
-    item["jurisdiction"] = jurisdictionForSystem(s.id);
+    item["jurisdiction"] = s.jurisdiction.empty() ? "Unregistered" : s.jurisdiction;
 
     payload["systems"].push_back(std::move(item));
 }

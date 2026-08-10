@@ -8,7 +8,6 @@
 #include "src/game/simulation/ClientSessionSnapshot.h"
 #include "src/game/network/ProtocolMetadata.h"
 #include "src/world/WorldSignal.h"
-#include "src/render/HUD/WorldLabel.h"
 
 
 

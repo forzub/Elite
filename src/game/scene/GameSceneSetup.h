@@ -14,6 +14,9 @@ struct GameSceneSetupConfig
     static constexpr bool PromoScene = false;
 };
 
-EntityId buildInitialScene(GameSimulation& sim);
+EntityId buildInitialScene(
+    GameSimulation& sim,
+    const game::world_state::InitialWorldState& initialState
+);
 
 } // namespace game::scene

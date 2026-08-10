@@ -224,7 +224,7 @@ for token in (
 if "spawnActivationCadenceLabNpc" not in scene_cpp:
     violations.append("activation cadence lab NPC spawn helper is missing")
 
-build_scene_start = scene_cpp.find("EntityId buildGameScene(GameSimulation& sim)")
+build_scene_start = scene_cpp.find("EntityId buildGameScene(")
 build_scene_end = scene_cpp.find("EntityId buildPromoScene", build_scene_start)
 build_scene_region = (
     scene_cpp[build_scene_start:build_scene_end]

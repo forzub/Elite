@@ -8,6 +8,7 @@
 #include "src/debug/DebugSettings.h"
 #include "src/game/debug/DebugControlSettingsCodec.h"
 #include "src/ui/html/HtmlUiMessage.h"
+#include "src/game/world_state/InitialWorldState.h"
 
 namespace
 {
@@ -131,6 +132,60 @@ void testInternalDiagnosticsAreNotPersistedAsUserSettings()
     require(!payload.contains("seamDebugProxies"), "runtime seam data leaked into UI contract");
 }
 
+void testInitialWorldStateContract()
+{
+    game::world_state::InitialWorldState state;
+    require(
+        game::world_state::loadInitialWorldState(
+            "src/assets/data/initial_world_state.json",
+            state
+        ),
+        "initial world state did not load/validate"
+    );
+
+    require(state.playerStart.valid(), "initial world lost player_start");
+    require(!state.orbitalHubs.empty(), "initial world has no orbital hubs");
+    require(!state.systemStates.empty(), "initial world has no server map state");
+
+    const auto* playerHub = static_cast<const game::world_state::InitialWorldStateOrbitalHub*>(nullptr);
+    for (const auto& hub : state.orbitalHubs)
+    {
+        if (hub.id == state.playerStart.hubId)
+        {
+            playerHub = &hub;
+            break;
+        }
+    }
+
+    require(playerHub != nullptr, "player_start hub was not loaded");
+    require(
+        playerHub->systemId == state.playerStart.systemId,
+        "player_start and hub system membership diverged"
+    );
+    require(
+        playerHub->motion.orbitalPeriodPolicy ==
+            world::orbits::OrbitalPeriodPolicy::Kepler,
+        "authored orbital_period_mode=kepler was not preserved"
+    );
+
+    auto invalid = state;
+    invalid.playerStart.systemId += 1000;
+    std::string error;
+    require(
+        !game::world_state::validateInitialWorldState(invalid, error),
+        "initial-world validation accepted a player/hub system mismatch"
+    );
+    require(!error.empty(), "initial-world validation failure had no diagnostic");
+
+    const auto fixedMotion = game::world_state::readMotion(
+        json{{"orbital_period_mode", "fixed"}, {"orbital_period_seconds", 123.0}}
+    );
+    require(
+        fixedMotion.orbitalPeriodPolicy == world::orbits::OrbitalPeriodPolicy::Fixed,
+        "authored fixed orbital period policy was not preserved"
+    );
+}
+
 void testDiagnosticPanelMessageRoutes()
 {
     const std::pair<const char*, HtmlUiPanelId> panels[] = {
@@ -169,6 +224,7 @@ int main()
         testPartialPayloadPreservesOtherSettings();
         testClampsRemainServerAuthoritative();
         testInternalDiagnosticsAreNotPersistedAsUserSettings();
+        testInitialWorldStateContract();
         testDiagnosticPanelMessageRoutes();
     }
     catch (const std::exception& e)
@@ -177,6 +233,6 @@ int main()
         return 1;
     }
 
-    std::cout << "[PASS] debug-control settings round-trip contract\n";
+    std::cout << "[PASS] debug-control + authoritative world feature contracts\n";
     return 0;
 }

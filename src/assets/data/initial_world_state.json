@@ -1,7 +1,21 @@
 {
   "version": 1,
   "description": "Initial dynamic world state. Orbital hubs own orbital motion; modules are local children of hubs. Save-game state may override this baseline.",
-  "epoch_universe_time_seconds": 0,
+  "system_states": [
+    {
+      "system_id": 0,
+      "jurisdiction": "Sol Authority"
+    }
+  ],
+  "player_start": {
+    "system_id": 0,
+    "hub_id": "earth_orbital_hub",
+    "local_offset_m": {
+      "x": -10000,
+      "y": 2500,
+      "z": 0
+    }
+  },
   "orbital_hubs": [
     {
       "id": "earth_orbital_hub",
@@ -33,63 +47,16 @@
             "z": 0
           },
           "state": {
-            "exists": true,
-            "hull": 1.0,
-            "power": 1.0
+            "exists": true
           },
-          "parent_hub_id": "earth_orbital_hub",
           "local_rotation_deg": {
             "pitch": 45,
             "yaw": 0,
             "roll": 0
           },
-          "map_object": true,
-          "infrastructure_role": "command_station"
+          "map_visible": true
         }
-      ],
-      "routes": [],
-      "traffic_zones": [
-        {
-          "id": "earth_orbit_debug_traffic",
-          "enabled": true,
-          "debug": true,
-          "max_ships": 500,
-          "radius_m": 12000,
-          "roles": [
-            "trader",
-            "patrol",
-            "worker"
-          ]
-        }
-      ],
-      "hub_kind": "orbital_hub",
-      "map_label_suffix": "Hub"
-    }
-  ],
-  "unique_npcs": [
-    {
-      "id": "npc_test_alpha",
-      "name": "Test NPC Alpha",
-      "actor": "Civilian",
-      "system_id": 0,
-      "home_hub_id": "earth_orbital_hub",
-      "state": {
-        "exists": true,
-        "hull": 1.0,
-        "current_order": "idle"
-      }
-    },
-    {
-      "id": "npc_test_beta",
-      "name": "Test NPC Beta",
-      "actor": "Civilian",
-      "system_id": 0,
-      "home_hub_id": "earth_orbital_hub",
-      "state": {
-        "exists": true,
-        "hull": 1.0,
-        "current_order": "idle"
-      }
+      ]
     }
   ]
 }

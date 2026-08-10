@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "src/scene/EntityID.h"
+#include "world/types/SignalSemanticState.h"
 
 struct NpcSignalAwareness
 {

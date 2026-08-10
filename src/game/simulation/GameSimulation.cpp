@@ -332,10 +332,12 @@ GameSimulation::GameSimulation(
 
 
 
-void GameSimulation::buildInitialScene()
+void GameSimulation::buildInitialScene(
+    const game::world_state::InitialWorldState& initialState
+)
 {
     m_playerId =
-        game::scene::buildInitialScene(*this);
+        game::scene::buildInitialScene(*this, initialState);
 
     if constexpr (game::promo::PromoFlybyScenario::Enabled)
     {
@@ -3477,8 +3479,7 @@ void GameSimulation::updateStaticObjectOrbitParentParameters(
     int systemId,
     const std::string& parentBodyId,
     double parentRadiusMeters,
-    double parentGravitationalParameterM3s2,
-    bool forceKeplerPeriod
+    double parentGravitationalParameterM3s2
 )
 {
     for (auto& [id, obj] : m_staticObjects)
@@ -3495,7 +3496,8 @@ void GameSimulation::updateStaticObjectOrbitParentParameters(
         obj.orbitalMotion.parentRadiusMeters =
             parentRadiusMeters;
 
-        if (forceKeplerPeriod)
+        if (obj.orbitalMotion.orbitalPeriodPolicy ==
+            world::orbits::OrbitalPeriodPolicy::Kepler)
         {
             obj.orbitalMotion.orbitalPeriodSeconds =
                 world::orbits::computeCircularOrbitPeriodSeconds(
@@ -3524,7 +3526,8 @@ void GameSimulation::updateStaticObjectOrbitParentParameters(
         hub.motion.parentRadiusMeters =
             parentRadiusMeters;
 
-        if (forceKeplerPeriod)
+        if (hub.motion.orbitalPeriodPolicy ==
+            world::orbits::OrbitalPeriodPolicy::Kepler)
         {
             hub.motion.orbitalPeriodSeconds =
                 world::orbits::computeCircularOrbitPeriodSeconds(

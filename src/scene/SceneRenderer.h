@@ -16,7 +16,6 @@
 #include "src/debug/DebugSettings.h"
 
 #include "src/render/Font.h"
-#include "src/render/planet/PlanetWireRenderer.h"
 #include "src/world/coordinates/WorldFrame.h"
 
 
@@ -199,12 +198,6 @@ private:
 
 
 
-    void renderCelestialPass(
-        const glm::mat4& view,
-        const world::coordinates::WorldFrame& frame,
-        float timeSeconds
-    );
-
     void renderFarStationProxyPass(
         const ClientWorldState& world,
         const glm::mat4& view,
@@ -220,19 +213,6 @@ private:
         const glm::mat4& proj,
         const world::coordinates::WorldFrame& frame
     );
-
-    void renderVisualShips(
-    const ClientWorldState& world,
-    const Frustum& frustum,
-    const glm::mat4& view,
-    const glm::mat4& proj,
-    const glm::vec3& cameraPos,
-    const world::coordinates::WorldFrame& frame,
-    unsigned int fillShader,
-    unsigned int edgeShader,
-    int maxVisualShipsToDraw
-);
-
 
     void renderVisualDrones(
         const ClientWorldState& world,
@@ -257,6 +237,5 @@ private:
     uint64_t m_frameCounter = 0;
 
     SceneRenderStats m_lastStats;
-    PlanetWireRenderer m_planetRenderer;
     
 };

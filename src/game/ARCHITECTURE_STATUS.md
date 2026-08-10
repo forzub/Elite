@@ -59,6 +59,23 @@ shared celestial render services no longer depend on privileged facade access.
 Galaxy/System still use the shared facade/low-level `.inl` backend pipeline, so
 the map decomposition is not finished.
 
+## Render-style boundary
+
+Render style is a client-side presentation policy, not world state. The planned
+wireframe/technical renderer and anime/cel-shaded renderer are mutually exclusive
+ways to visualize the same `ClientWorldState`, map presentation state and
+authoritative entity identities.
+
+Required invariant:
+
+- the server, snapshots and persistent world records never branch on render style;
+- physics, activation, map membership and entity identity are identical for every
+  style;
+- a visual asset may expose semantic material/surface slots, but each client
+  renderer decides how those semantics look;
+- switching style must not require rebuilding or re-authoring the authoritative
+  world.
+
 ## Runtime entity policy foundation
 
 The first policy layer for the next migration stages is now explicit and
@@ -140,15 +157,23 @@ Until that stage is complete, `GameServer` still builds the full map DTOs and
 `ClientCelestialMapBridge` must update only predictable fields; it must not mix
 new client-side celestial translations with old server dynamic geometry.
 
+## Authoritative world bootstrap
+
+The initial dynamic world is data-driven through `initial_world_state.json`.
+Player start, physical-system map facts and orbital hubs are validated before
+scene construction. Production startup must fail loudly on invalid authored world
+data; it must not fabricate a Sol/Earth promo fallback. Political/map labels are
+server-owned world facts and must never be inferred on the client from numeric
+physical-system IDs. Diagnostic scenarios may keep explicit Sol/Earth constants,
+but those constants must stay inside diagnostic/promo code paths.
+
 ## Known migration blockers / debt
 
 - `GameServer` still builds Galaxy/System/Detail/Hub snapshots, including much
   deterministic catalog/celestial data already available on the client.
-- The gameplay `SceneRenderer` still contains a legacy Sol/Earth/Moon celestial
-  pass with hard-coded geometry, while the canonical client celestial runtime is
-  already available. That legacy pass must not become a second celestial
-  authority; migrating gameplay celestial presentation to the client runtime is
-  the next safe presentation seam before/alongside dynamic System-map composition.
+- The legacy duplicate Sol/Earth/Moon gameplay pass has been removed from
+  `SceneRenderer`; gameplay and maps must consume canonical client presentation
+  state instead of maintaining a second hard-coded celestial world.
 - Runtime system membership is now first-class for ships, hub reference frames,
   static objects and sensor-space sources. Client interpolation/prediction and
   gameplay scene preparation are fenced by the same system domain: no render

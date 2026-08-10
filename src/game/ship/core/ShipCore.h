@@ -21,7 +21,6 @@
 #include "src/game/ship/core/ShipSlotsState.h"
 #include "src/game/ship/core/ShipRole.h"
 
-#include "src/game/ship/sensors/ShipSignalPresentation.h"
 #include "src/game/ship/sensors/NpcSignalAwareness.h"
 
 #include "src/game/ship/ShipInitData.h"

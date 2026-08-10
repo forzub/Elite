@@ -8,6 +8,12 @@
 namespace world::orbits
 {
 
+enum class OrbitalPeriodPolicy
+{
+    Fixed = 0,
+    Kepler
+};
+
 struct OrbitalMotion
 {
     bool enabled = false;
@@ -18,6 +24,7 @@ struct OrbitalMotion
     double altitudeMeters = 0.0;
 
     double orbitalPeriodSeconds = 1.0;
+    OrbitalPeriodPolicy orbitalPeriodPolicy = OrbitalPeriodPolicy::Fixed;
     double selfRotationPeriodSeconds = 1.0;
 
     double inclinationDeg = 0.0;

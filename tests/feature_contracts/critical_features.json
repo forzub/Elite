@@ -47,6 +47,14 @@
       ]
     },
     {
+      "id": "server.world-bootstrap",
+      "description": "Initial player location, system map facts and orbital policy are authored/validated server world state rather than client or Sol-specific heuristics.",
+      "evidence": [
+        "world-authority-boundary",
+        "compiled-roundtrip"
+      ]
+    },
+    {
       "id": "server.headless-authority",
       "description": "Authoritative server construction and CPU assembly geometry do not require an OpenGL context.",
       "evidence": [

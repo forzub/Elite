@@ -3765,17 +3765,20 @@ void SpaceState::pushSystemMapPanelState()
     if (!m_client || !context().app)
         return;
 
-    if (!m_client->resolveCelestialSnapshot())
-        return;
-
-    const auto* atlasPtr = m_client->starAtlas();
-    const auto* celestialPtr = m_client->celestialSnapshot();
-    if (!atlasPtr || !celestialPtr)
-        return;
-
-    (void)atlasPtr;
-
     const auto& nav = m_client->playerNavigation();
+
+    std::string currentSystemName = "INTERSTELLAR";
+    if (nav.currentSystemId >= 0)
+    {
+        if (!m_client->resolveCelestialSnapshot())
+            return;
+
+        const auto* celestialPtr = m_client->celestialSnapshot();
+        if (!celestialPtr)
+            return;
+
+        currentSystemName = celestialPtr->systemName;
+    }
 
     int selectedId = -1;
     if (!m_systemMapShowsEmptySector)
@@ -3795,7 +3798,7 @@ void SpaceState::pushSystemMapPanelState()
     input.galaxy = &m_galaxyMapSnapshot;
     input.system = &m_systemMapSnapshot;
     input.navigation = &nav;
-    input.currentSystemName = celestialPtr->systemName;
+    input.currentSystemName = currentSystemName;
     input.selectedEmptySector = m_systemMapShowsEmptySector;
     input.selectedSystemId = selectedId;
     input.selectedBodyId = m_systemMapRenderer.selectedBodyId();

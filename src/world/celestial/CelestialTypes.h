@@ -331,8 +331,13 @@ struct CelestialSystemSnapshot
 
 struct PlayerNavigationState
 {
+    // >= 0: player is inside a known star-system navigation domain.
+    // < 0: player is in interstellar space.
     int currentSystemId = 0;
 
+    // Domain-aware navigation position:
+    // - inside a system: local to currentSystemId;
+    // - interstellar: galactic-absolute.
     world::coordinates::WorldPosition worldPosition;
     glm::mat4 orientation {1.0f};
 

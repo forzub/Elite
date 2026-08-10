@@ -269,6 +269,7 @@ private:
     std::unordered_map<int, std::string> m_systemJurisdictions;
     world::celestial::CelestialRuntimeRegistry m_celestialRuntimes;
     world::celestial::PlayerNavigationState  m_playerNavigation;
+    double m_systemMembershipRadiusAu = 100.0;
 
     bool m_debugFastUniverseTime = false;
     double m_debugFastUniverseTimeScale = 10000.0;

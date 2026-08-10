@@ -60,6 +60,9 @@ server_h = SRC / "game/server/GameServer.h"
 server_cpp = SRC / "game/server/GameServer.cpp"
 scene_cpp = SRC / "game/scene/GameSceneSetup.cpp"
 promo_cpp = SRC / "game/promo/PromoFlybyScenario.cpp"
+spatial_resolver_h = SRC / "game/navigation/PlayerSpatialDomainResolver.h"
+spatial_resolver_cpp = SRC / "game/navigation/PlayerSpatialDomainResolver.cpp"
+navigation_config_h = SRC / "game/navigation/GalaxyNavigationConfig.h"
 
 motion_text = read(motion_h)
 if not re.search(r"\bint\s+systemId\s*=\s*-1\s*;", motion_text):
@@ -273,6 +276,52 @@ else:
 server_update = function_body(server_text, "void GameServer::update(double dt)")
 if server_update is None or "synchronizePlayerSystemMembership();" not in server_update:
     fail(server_cpp, "active celestial context is not synchronized from player membership each tick")
+
+resolver_h_text = read(spatial_resolver_h)
+resolver_cpp_text = read(spatial_resolver_cpp)
+navigation_config_text = read(navigation_config_h)
+
+require_text(
+    spatial_resolver_h,
+    resolver_h_text,
+    (
+        "currentSystemId = -1",
+        "galacticPositionLy",
+        "systemMembershipRadiusAu",
+    ),
+    "interstellar navigation-domain contract is incomplete",
+)
+
+require_text(
+    spatial_resolver_cpp,
+    resolver_cpp_text,
+    (
+        "sourceSystem->positionLy",
+        "world::coordinates::toGalacticLy",
+        "nearestDistanceLy <= membershipRadiusLy",
+        "result.currentSystemId = -1",
+        "result.currentSystemId = nearestSystem->id",
+    ),
+    "interstellar navigation-domain resolver is incomplete",
+)
+
+if "systemMembershipRadiusAu" not in navigation_config_text:
+    fail(navigation_config_h, "system-membership radius is not data-driven")
+
+if server_update is not None:
+    require_text(
+        server_cpp,
+        server_update,
+        (
+            "resolvePlayerSpatialDomain(",
+            "m_systemMembershipRadiusAu",
+            "m_playerNavigation.currentSystemId =",
+            "spatialDomain.currentSystemId",
+            "m_playerNavigation.worldPosition =",
+            "spatialDomain.worldPosition",
+        ),
+        "server does not publish resolved interstellar navigation state",
+    )
 
 system_snapshot = function_body(server_text, "GameServer::buildSystemMapSnapshot(")
 if system_snapshot is None:

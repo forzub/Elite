@@ -16,6 +16,8 @@
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/world_state/InitialWorldState.h"
+#include "src/game/navigation/GalaxyNavigationConfig.h"
+#include "src/game/navigation/PlayerSpatialDomainResolver.h"
 
 
 
@@ -469,6 +471,14 @@ GameServer::GameServer()
         m_lastUniverseTimeSeconds =
             m_universeClock.timeSeconds();
 
+        const auto navigationConfig =
+            game::navigation::GalaxyNavigationConfig::loadFromRuntimeOrSource(
+                "assets/data/navigation/navigation_grid.json",
+                "src/assets/data/navigation/navigation_grid.json"
+            );
+        m_systemMembershipRadiusAu =
+            navigationConfig.systemMembershipRadiusAu;
+
         bool atlasLoaded =
         m_starAtlas.load(
             "assets/data/galaxy_details"
@@ -889,16 +899,40 @@ m_simulation.setTick(m_serverTick);
                 m_simulation.playerId()
             );
 
-        m_playerNavigation.worldPosition = tr.worldPosition;
+        const auto spatialDomain =
+            game::navigation::resolvePlayerSpatialDomain(
+                m_starAtlas.systems(),
+                tr.motion.systemId,
+                tr.worldPosition,
+                m_systemMembershipRadiusAu
+            );
+
+        if (spatialDomain.valid)
+        {
+            m_playerNavigation.currentSystemId =
+                spatialDomain.currentSystemId;
+            m_playerNavigation.worldPosition =
+                spatialDomain.worldPosition;
+            m_playerNavigation.systemLocalMeters =
+                spatialDomain.systemLocalMeters;
+            m_playerNavigation.systemLocalAu =
+                spatialDomain.systemLocalAu;
+        }
+        else
+        {
+            // Catalog/source mismatch is not allowed to fabricate a spatial
+            // transfer. Preserve the production entity membership and local
+            // coordinates as a safe fallback.
+            m_playerNavigation.currentSystemId = tr.motion.systemId;
+            m_playerNavigation.worldPosition = tr.worldPosition;
+            m_playerNavigation.systemLocalMeters =
+                world::coordinates::fullMeters(tr.worldPosition);
+            m_playerNavigation.systemLocalAu =
+                m_playerNavigation.systemLocalMeters /
+                world::celestial::MetersPerAu;
+        }
+
         m_playerNavigation.orientation = tr.orientation;
-
-        m_playerNavigation.systemLocalMeters =
-            world::coordinates::fullMeters(tr.worldPosition);
-
-        m_playerNavigation.systemLocalAu =
-            m_playerNavigation.systemLocalMeters /
-            world::celestial::MetersPerAu;
-
         m_playerNavigation.forward = tr.forward();
         m_playerNavigation.up = tr.up();
     }

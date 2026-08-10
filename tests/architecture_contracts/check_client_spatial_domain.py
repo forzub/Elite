@@ -57,6 +57,8 @@ if client_world_cpp.is_file():
             fail(client_world_cpp, f"client interpolation can lose system domain: {required}")
     if "if (timelineRevisionChanged || activeSystemChanged)" not in text:
         fail(client_world_cpp, "snapshot history is not fenced on active-system changes")
+    if "m_snapshotActiveSystemId >= 0 &&" in text:
+        fail(client_world_cpp, "interstellar -> system transition is not treated as a snapshot-domain fence")
 
 if game_client_cpp.is_file():
     text = game_client_cpp.read_text(encoding="utf-8", errors="replace")

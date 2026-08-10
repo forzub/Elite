@@ -27,6 +27,7 @@ comparisons are deliberately outside this matrix.
 | F12 constellation overlay (current binding) | F12 input toggles the gameplay starfield constellation overlay | client acceptance + architecture guard | protected, binding temporary |
 | Game-system names on sky | Authored game-system name survives astronomical-star merge and reaches the sky-label formatter | client acceptance + architecture guard | protected |
 | Galaxy player navigation marker | Real player navigation position -> shared Galaxy marker resolver -> Galaxy map/panel | client acceptance + architecture guard | protected |
+| Interstellar navigation presentation | Outside configured system-membership radius, navigation publishes `currentSystemId = -1` with galactic-absolute position; entering another catalog system rebases local coordinates | architecture contracts | protected |
 | Map distance from player | `distanceFromPlayerLy` uses actual Galaxy player-marker position, not merely current-system center | client acceptance + architecture guard | protected |
 | System-map WebView commands | Actual HTML command vocabulary -> production parser -> production command dispatcher | client acceptance + architecture guard | protected |
 | Map command meaning | Select/open/Galaxy/System/Details/Hub/close commands dispatch the expected actions | client acceptance | protected |
@@ -78,6 +79,13 @@ What is protected now is the real navigation/display chain that already exists:
 normal player thrust changes the authoritative navigation position; the Galaxy
 map player marker resolves from that live position; a selected game-system star
 remains visible in the panel; and `distanceFromPlayerLy` is measured from the
-actual player marker rather than from the center of the current system. A true
-interstellar/cruise travel mode should add its own acceptance scenario when it
-exists.
+actual player marker rather than from the center of the current system.
+
+The accelerated diagnostic branch may also cross the navigation-domain boundary
+without committing that travel into production state. Outside the configured
+system-membership radius the published navigation state becomes interstellar
+(`currentSystemId = -1`) and the Galaxy marker uses galactic-absolute position;
+inside another catalog system it is rebased to that system. This makes the
+in-game "point at a catalog star, accelerate time, watch the Galaxy marker"
+check a geography diagnostic. It is still not a production interstellar/cruise
+travel mode.

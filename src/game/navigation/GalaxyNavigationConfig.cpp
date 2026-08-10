@@ -91,6 +91,12 @@ bool loadFile(
             result.systemEntryRequiredEdgeAu
         ));
 
+    result.systemMembershipRadiusAu =
+        std::max(0.001, galaxy.value(
+            "systemMembershipRadiusAu",
+            result.systemMembershipRadiusAu
+        ));
+
     const json system =
         root.value("system", json::object());
 

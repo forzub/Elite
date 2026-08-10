@@ -25,6 +25,10 @@ struct GalaxyNavigationConfig
     double terminalCellEdgeKm = 100.0;
     double systemEntryRequiredEdgeAu = 3400.0;
 
+    // Technical navigation-domain radius, not an astrophysical boundary.
+    // Outside it PlayerNavigationState is published as interstellar.
+    double systemMembershipRadiusAu = 100.0;
+
     std::string defaultCoordinateFormat =
         "hierarchical";
 

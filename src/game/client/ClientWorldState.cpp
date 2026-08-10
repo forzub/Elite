@@ -468,7 +468,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         snapshot.session.playerNavigation.currentSystemId;
 
     const bool activeSystemChanged =
-        m_snapshotActiveSystemId >= 0 &&
+        m_snapshotTimelineRevision != 0 &&
         incomingActiveSystemId != m_snapshotActiveSystemId;
 
     if (timelineRevisionChanged || activeSystemChanged)

@@ -117,6 +117,8 @@ add_executable(EliteGame
     src/game/simulation/GameSimulation.cpp
     src/game/simulation/NpcAiSystem.cpp
 
+    src/game/diagnostics/ClientAcceptanceHarness.cpp
+
     src/game/client/ClientWorldState.cpp
     src/game/server/GameServer.cpp
     src/game/server/ServerRunner.cpp

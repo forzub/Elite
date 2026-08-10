@@ -5,6 +5,7 @@
 #include <vector>
 #include "core/Application.h"
 #include "game/server/GameServer.h"
+#include "game/diagnostics/ClientAcceptanceHarness.h"
 #include "core/ConsoleOutput.h"
 #include "world/celestial/visual/CelestialTextureBaker.h"
 #include "render/bitmap/stb_image.h"
@@ -25,6 +26,11 @@ bool isBakeCommandToken(const std::string& arg)
 bool isFastUniverseSmokeTestToken(const std::string& arg)
 {
     return arg == "--self-test-fast-universe";
+}
+
+bool isClientAcceptanceSelfTestToken(const std::string& arg)
+{
+    return arg == "--self-test-client-acceptance";
 }
 
 int runFastUniverseSmokeTest()
@@ -343,6 +349,12 @@ int main(int argc, char** argv)
 
             if (isFastUniverseSmokeTestToken(arg))
                 return runFastUniverseSmokeTest();
+
+            if (isClientAcceptanceSelfTestToken(arg))
+            {
+                core::disableRuntimeStdoutNoise();
+                return game::diagnostics::runClientAcceptanceSelfTest();
+            }
 
             if (isBakeCommandToken(arg))
             {

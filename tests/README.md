@@ -71,6 +71,20 @@ must not be replaced again between map input and rendering.
 When another subsystem is considered stable, add its runner here and to
 `tests/run_all_mingw64.sh` instead of creating another top-level command.
 
+### Client acceptance harness
+
+`tests/client_acceptance/run_mingw64.sh`
+
+Boots the real headless local client/server session and drives production
+control/network paths. It locks down keyboard-to-control mapping, startup/idle
+invariants, accelerated-time round trips, player orientation and manoeuvre
+motion, remote NPC presentation, command acknowledgement, and the live
+Galaxy/System/Details/Hub request pipeline.
+
+The existing `system_map` block remains the owner of map camera, picking and
+cubic-navigation interaction contracts; the acceptance harness verifies the
+live authoritative data path feeding those views.
+
 ### Hub co-frame presentation
 
 Hub-attached infrastructure carries its stable local hub binding in simulation

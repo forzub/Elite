@@ -46,6 +46,10 @@ run_suite \
     "FEATURE SURFACE CONTRACTS" \
     "tests/feature_contracts/run_mingw64.sh"
 
+run_suite \
+    "CLIENT ACCEPTANCE HARNESS" \
+    "tests/client_acceptance/run_mingw64.sh"
+
 run_main_target_build() {
     echo
     echo "================================================================"

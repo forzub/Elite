@@ -581,6 +581,7 @@ bool GalaxyStarfieldRenderer::mergeGameSystemsFromCatalog(
     {
         star.isGameSystem = false;
         star.gameSystemId = -1;
+        star.gameSystemName.clear();
     }
 
     std::vector<bool> claimed(
@@ -624,6 +625,7 @@ bool GalaxyStarfieldRenderer::mergeGameSystemsFromCatalog(
             RealStar& star = m_realStars[bestIndex];
             star.isGameSystem = true;
             star.gameSystemId = system.id;
+            star.gameSystemName = system.name;
             claimed[bestIndex] = true;
             ++mergedCount;
             continue;
@@ -634,6 +636,7 @@ bool GalaxyStarfieldRenderer::mergeGameSystemsFromCatalog(
             "GAME_SYSTEM_" +
             std::to_string(system.id);
         star.name = system.name;
+        star.gameSystemName = system.name;
         star.positionLy = position;
         star.color = colorForStarType(system.starType);
         star.absoluteMagnitude =

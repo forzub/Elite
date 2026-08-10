@@ -17,6 +17,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "src/game/navigation/SystemNavigationGrid.h"
+#include "src/game/presentation/GalaxyNavigationPresentation.h"
 #include "src/game/system_map/GalaxyMapRenderContext.h"
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/world/celestial/CelestialTypes.h"
@@ -128,32 +129,14 @@ namespace
         bool& outInsideKnownSystem
     )
     {
-        const auto system =
-            std::find_if(
-                galaxy.systems.begin(),
-                galaxy.systems.end(),
-                [&](const auto& candidate)
-                {
-                    return
-                        candidate.id ==
-                        navigation.currentSystemId;
-                }
+        const auto marker =
+            game::presentation::resolveGalaxyPlayerMarkerPosition(
+                galaxy,
+                navigation
             );
 
-        outInsideKnownSystem =
-            system != galaxy.systems.end();
-
-        if (outInsideKnownSystem)
-        {
-            return
-                system->positionLy +
-                navigation.systemLocalAu /
-                    game::navigation::SystemNavigationGrid::AuPerLightYear;
-        }
-
-        return world::coordinates::toGalacticLy(
-            navigation.worldPosition
-        );
+        outInsideKnownSystem = marker.insideKnownSystem;
+        return marker.positionLy;
     }
 
     glm::dvec3 playerPositionLy(
@@ -161,13 +144,11 @@ namespace
         const world::celestial::PlayerNavigationState& navigation
     )
     {
-        bool insideKnownSystem = false;
-
-        return playerPositionLy(
-            galaxy,
-            navigation,
-            insideKnownSystem
-        );
+        return
+            game::presentation::resolveGalaxyPlayerMarkerPosition(
+                galaxy,
+                navigation
+            ).positionLy;
     }
 
     std::string formatDistanceLy(double distanceLy)

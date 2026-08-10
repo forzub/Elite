@@ -29,6 +29,7 @@
 #include "src/debug/render/ServerHitVolumeRenderer.h"
 
 #include "src/game/math/OrientationBasis.h"
+#include "src/game/presentation/StarSystemLabelPresentation.h"
 
 #include "src/render/HUD/TextRenderer.h"
 #include <cstdio>
@@ -2945,14 +2946,13 @@ void SceneRenderer::renderStarSystemLabels(
     {
         const auto& star = *candidate.star;
 
-        char text[160];
-        std::snprintf(
-            text,
-            sizeof(text),
-            "%s  %.1f ly",
-            star.name.empty() ? star.id.c_str() : star.name.c_str(),
-            candidate.distLy
-        );
+        const std::string text =
+            game::presentation::buildGameSystemSkyLabel(
+                star.gameSystemName,
+                star.name,
+                star.id,
+                candidate.distLy
+            );
 
         float alpha =
             std::max(0.18f, std::min(0.62f, 1.0f - candidate.distLy / 90.0f));
@@ -2961,7 +2961,7 @@ void SceneRenderer::renderStarSystemLabels(
 
         TextRenderer::instance().textDraw(
             *m_starLabelFont,
-            text,
+            text.c_str(),
             candidate.screen.x + 8.0f,
             candidate.screen.y - 6.0f,
             glm::vec4(0.65f, 0.82f, 1.0f, alpha)

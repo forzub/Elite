@@ -52,6 +52,8 @@
 #include "src/core/Application.h"
 #include "src/game/session/IGameSession.h"
 #include "src/game/client/ClientCelestialMapBridge.h"
+#include "src/game/presentation/ClientHudPresentation.h"
+#include "src/game/presentation/SystemMapPanelPresentation.h"
 
 #include <chrono>
 #include <algorithm>
@@ -1748,68 +1750,22 @@ void SpaceState::renderUI()
 
 
     // -------------------------------------------------
-    // HUD telemetry: player global coordinates + speed
+    // HUD telemetry: client presentation -> visible UIText bindings.
+    // The same presenter is exercised by Client Acceptance.
     // -------------------------------------------------
     {
-        auto setText =
-            [&](const std::string& id, const std::string& value)
-            {
-                if (auto* comp = uiRoot->findById(id))
-                {
-                    if (auto* text = dynamic_cast<UIText*>(comp))
-                        text->label = value;
-                }
-            };
-
         const auto& ships = m_client->world().ships();
-        auto it = ships.find(m_playerId.value);
+        const auto it = ships.find(m_playerId.value);
 
         if (it != ships.end())
         {
-            const auto& ship = it->second;
-            const auto& wp = ship.renderTransform.worldPosition;
+            const auto telemetry =
+                game::presentation::buildPlayerHudTelemetry(it->second);
 
-            const glm::dvec3 globalMeters =
-                glm::dvec3(
-                    static_cast<double>(wp.cell.x),
-                    static_cast<double>(wp.cell.y),
-                    static_cast<double>(wp.cell.z)
-                ) * world::coordinates::GalacticCellSizeM +
-                wp.localMeters;
-
-            double speedMps =
-                glm::length(glm::dvec3(ship.renderTransform.localVelocity));
-
-            if (std::abs(static_cast<double>(ship.renderTransform.forwardVelocity)) > speedMps)
-                speedMps = std::abs(static_cast<double>(ship.renderTransform.forwardVelocity));
-
-            char buf[128];
-
-            std::snprintf(
-                buf,
-                sizeof(buf),
-                "CELL %lld %lld %lld",
-                static_cast<long long>(wp.cell.x),
-                static_cast<long long>(wp.cell.y),
-                static_cast<long long>(wp.cell.z)
+            game::presentation::applyPlayerHudTelemetry(
+                *uiRoot,
+                telemetry
             );
-
-            setText("main_coord_cell", buf);
-
-
-            std::snprintf(buf, sizeof(buf), "X %.0f m", globalMeters.x);
-            setText("main_coord_x", buf);
-
-            std::snprintf(buf, sizeof(buf), "Y %.0f m", globalMeters.y);
-            setText("main_coord_y", buf);
-
-            std::snprintf(buf, sizeof(buf), "Z %.0f m", globalMeters.z);
-            setText("main_coord_z", buf);
-
-
-            std::snprintf(buf, sizeof(buf), "V %.1f m/s", speedMps);
-            setText("main_coord_v", buf);
-
         }
     }
 
@@ -3817,45 +3773,11 @@ void SpaceState::pushSystemMapPanelState()
     if (!atlasPtr || !celestialPtr)
         return;
 
-    const auto& atlas = *atlasPtr;
-    const auto& celestial = *celestialPtr;
+    (void)atlasPtr;
+
     const auto& nav = m_client->playerNavigation();
 
-    json payload;
-
-    payload["universeTimeSeconds"] =
-        m_client->universeTimeSeconds();
-
-    payload["universeDate"] =
-        m_client->sessionSnapshot().universeDate;
-
-    payload["universeTimeScale"] =
-        m_client->sessionSnapshot().universeTimeScale;
-
-    if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Galaxy)
-    {
-        payload["mode"] = "Galaxy";
-    }
-    else if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Detail)
-    {
-        payload["mode"] = "Detail";
-    }
-    else if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Hub)
-    {
-
-        payload["mode"] = "Hub";
-    }
-    else
-    {
-        payload["mode"] = "System";
-    }
-
-    payload["systemsCount"] = m_galaxyMapSnapshot.systems.size();
-    payload["currentSystemId"] = nav.currentSystemId;
-    payload["currentSystemName"] = celestial.systemName;
-
     int selectedId = -1;
-
     if (!m_systemMapShowsEmptySector)
     {
         selectedId =
@@ -3864,94 +3786,31 @@ void SpaceState::pushSystemMapPanelState()
                 : nav.currentSystemId;
     }
 
-    payload["selectedSystemId"] = selectedId;
-    payload["selectedEmptySector"] =
-        m_systemMapShowsEmptySector;
-
-    if (m_systemMapShowsEmptySector)
-    {
-        payload["selectedEmptySectorPositionLy"] = {
-            {"x", m_systemMapSnapshot.systemPositionLy.x},
-            {"y", m_systemMapSnapshot.systemPositionLy.y},
-            {"z", m_systemMapSnapshot.systemPositionLy.z}
-        };
-    }
-
-    payload["systems"] = json::array();
-    payload["selectedBodyId"] =
-        m_systemMapRenderer.selectedBodyId();
-    payload["selectedHubId"] =
-        m_systemMapRenderer.selectedHubId();
-
-    payload["canOpenDetail"] =
-        m_systemMapRenderer.mode() ==
-            SystemMapRenderer::Mode::System &&
+    game::presentation::SystemMapPanelPresentationInput input;
+    input.universeTimeSeconds = m_client->universeTimeSeconds();
+    input.universeDate = m_client->sessionSnapshot().universeDate;
+    input.universeTimeScale =
+        m_client->sessionSnapshot().universeTimeScale;
+    input.mode = m_systemMapRenderer.mode();
+    input.galaxy = &m_galaxyMapSnapshot;
+    input.system = &m_systemMapSnapshot;
+    input.navigation = &nav;
+    input.currentSystemName = celestialPtr->systemName;
+    input.selectedEmptySector = m_systemMapShowsEmptySector;
+    input.selectedSystemId = selectedId;
+    input.selectedBodyId = m_systemMapRenderer.selectedBodyId();
+    input.selectedHubId = m_systemMapRenderer.selectedHubId();
+    input.canOpenDetail =
+        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System &&
         m_systemMapRenderer.canOpenSelectedDetail();
-
-    if (const auto selectedCell =
-            m_systemMapRenderer
-                .selectedTerminalDetailCell())
-    {
-        payload["selectedDetailCell"] = {
-            {"level", selectedCell->level},
-            {"maximumLevel", selectedCell->maximumLevel},
-            {"x", selectedCell->x},
-            {"y", selectedCell->y},
-            {"z", selectedCell->z},
-            {"edgeAu", selectedCell->edgeAu}
-        };
-    }
-
-    payload["canOpenHub"] =
-        m_systemMapRenderer.mode() ==
-            SystemMapRenderer::Mode::Detail &&
+    input.selectedDetailCell =
+        m_systemMapRenderer.selectedTerminalDetailCell();
+    input.canOpenHub =
+        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Detail &&
         !m_systemMapRenderer.selectedHubId().empty();
 
-
-
-const world::celestial::GalaxyMapSystem* currentSystem = nullptr;
-
-for (const auto& s : m_galaxyMapSnapshot.systems)
-{
-    if (s.id == nav.currentSystemId)
-    {
-        currentSystem = &s;
-        break;
-    }
-}
-
-auto distanceFromPlayerLy =
-    [&](const world::celestial::GalaxyMapSystem& s) -> double
-{
-    if (!currentSystem)
-        return 0.0;
-
-    const double dx = s.positionLy.x - currentSystem->positionLy.x;
-    const double dy = s.positionLy.y - currentSystem->positionLy.y;
-    const double dz = s.positionLy.z - currentSystem->positionLy.z;
-
-    return std::sqrt(dx * dx + dy * dy + dz * dz);
-};
-
-
-for (const auto& s : m_galaxyMapSnapshot.systems)
-{
-    json item;
-    item["id"] = s.id;
-    item["name"] = s.name;
-    item["starType"] = s.starType;
-    item["starsCount"] = s.starsCount;
-    item["xLy"] = s.positionLy.x;
-    item["yLy"] = s.positionLy.y;
-    item["zLy"] = s.positionLy.z;
-    item["current"] = (s.id == nav.currentSystemId);
-    item["selected"] = (s.id == selectedId);
-
-    item["distanceFromPlayerLy"] = distanceFromPlayerLy(s);
-    item["jurisdiction"] = s.jurisdiction.empty() ? "Unregistered" : s.jurisdiction;
-
-    payload["systems"].push_back(std::move(item));
-}
+    const json payload =
+        game::presentation::buildSystemMapPanelPayload(input);
 
     context().app->evalGameUiScript(
         "if (window.setSystemMapPanel) window.setSystemMapPanel(" +

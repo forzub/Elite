@@ -9,6 +9,7 @@
 #include "src/game/host/LocalGameSession.h"
 #include "src/game/session/IGameSession.h"
 #include "src/game/navigation/CoordinateDisplayService.h"
+#include "src/game/ui/SystemMapUiCommandRouter.h"
 #include "input/Input.h"
 #include "render/HUD/TextRenderer.h"
 #include <windows.h>
@@ -341,134 +342,22 @@ void Application::mainLoop()
                 std::string webCommand;
                 while (m_gameWebView.pollCommand(webCommand))
                 {
-                    if (webCommand.rfind(
-                            "system_map_open_selected:",
-                            0
-                        ) == 0)
+                    if (const auto mapCommand =
+                            game::ui::parseSystemMapUiCommand(webCommand))
                     {
-                        const std::string idText =
-                            webCommand.substr(
-                                std::string(
-                                    "system_map_open_selected:"
-                                ).size()
-                            );
+                        auto* space = dynamic_cast<SpaceState*>(
+                            m_states.current()
+                        );
 
-                        try
-                        {
-                            const int systemId =
-                                std::stoi(idText);
-
-                            if (auto* space =
-                                dynamic_cast<SpaceState*>(
-                                    m_states.current()
-                                ))
+                        game::ui::dispatchSystemMapUiCommand(
+                            *mapCommand,
+                            space,
+                            [this]()
                             {
-                                /*
-                                    Обе операции выполняются последовательно
-                                    внутри обработки одной команды.
-                                */
-                                space->selectSystemMapSystem(
-                                    systemId
-                                );
-
-                                space->setSystemMapCurrentSystemMode();
+                                closeGameUi();
                             }
-                        }
-                        catch (...)
-                        {
-                            std::cout
-                                << "[App] bad system_map_open_selected command: "
-                                << webCommand
-                                << "\n";
-                        }
+                        );
 
-                        continue;
-                    }
-                    // std::cout << "[App] WebView command: " << webCommand << "\n";
-                    if (webCommand.rfind("system_map_select:", 0) == 0)
-                    {
-                        const std::string idText =
-                            webCommand.substr(std::string("system_map_select:").size());
-
-                        try
-                        {
-                            const int systemId = std::stoi(idText);
-
-                            if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
-                            {
-                                space->selectSystemMapSystem(systemId);
-                            }
-                        }
-                        catch (...)
-                        {
-                            std::cout << "[App] bad system_map_select command: "
-                                    << webCommand << "\n";
-                        }
-
-                        continue;
-                    }
-
-                    if (webCommand == "system_map_galaxy")
-                    {
-                        if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
-                        {
-                            space->setSystemMapGalaxyMode();
-                        }
-
-                        continue;
-                    }
-
-
-
-
-
-
-
-                    if (webCommand == "system_map_current_system")
-                    {
-                        if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
-                        {
-                            space->setSystemMapCurrentSystemMode();
-                        }
-
-                        continue;
-                    }
-
-                    if (webCommand == "system_map_hub")
-                    {
-
-                        if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
-                        {
-                            space->setSystemMapHubMode();
-                        }
-
-                        continue;
-                    }
-
-                    if (webCommand == "system_map_detail")
-                    {
-
-                        if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
-                        {
-                            space->setSystemMapLoadedDetailMode();
-                        }
-
-                        continue;
-                    }
-
-                    if (webCommand == "system_map_planet")
-                    {
-                        if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
-                        {
-                            space->setSystemMapDetailMode();
-                        }
-
-                        continue;
-                    }
-
-                    if (webCommand == "close_system_map")
-                    {
-                        closeGameUi();
                         continue;
                     }
 

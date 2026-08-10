@@ -4,23 +4,35 @@
 #include <cmath>
 #include <cstdint>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
+#include "src/core/Application.h"
 #include "src/game/client/GameClient.h"
+#include "src/game/navigation/CoordinateDisplayService.h"
+#include "src/game/presentation/ClientHudPresentation.h"
+#include "src/game/presentation/GalaxyNavigationPresentation.h"
+#include "src/game/presentation/StarSystemLabelPresentation.h"
+#include "src/game/presentation/SystemMapPanelPresentation.h"
+#include "src/game/ui/SystemMapUiCommandRouter.h"
 #include "src/game/debug/IDebugSessionControl.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/host/LocalGameSession.h"
 #include "src/game/session/IGameSession.h"
 #include "src/game/ship/controller/PlayerInputMapper.h"
 #include "src/game/simulation/ShipSnapshot.h"
+#include "src/render/starfield/GalaxyStarfieldRenderer.h"
 #include "src/world/celestial/DetailMapTypes.h"
 #include "src/world/celestial/SystemMapTypes.h"
+#include "src/ui/components/UIContainer.h"
+#include "src/ui/components/UIText.h"
 
 namespace game::diagnostics
 {
@@ -136,6 +148,202 @@ ShipControlState mapKeys(
     return control;
 }
 
+void testGameUiToggleContract()
+{
+    GameUiController ui;
+
+    require(!ui.isOpen(), "game UI controller no longer starts closed");
+    require(ui.consumeF11Press(true), "first F11 press is no longer consumed");
+    require(!ui.consumeF11Press(true), "held F11 now retriggers instead of latching");
+    require(!ui.consumeF11Press(false), "F11 release unexpectedly triggers an action");
+    require(ui.consumeF11Press(true), "F11 latch did not reset after release");
+
+    require(ui.toggle(GameUiMode::SystemMap), "SystemMap UI did not open through toggle contract");
+    require(ui.isMode(GameUiMode::SystemMap), "SystemMap UI mode was not recorded as open");
+    require(ui.toggle(GameUiMode::SystemMap), "SystemMap UI did not close through toggle contract");
+    require(!ui.isOpen(), "SystemMap UI remained open after second toggle");
+
+    pass("F11 + GAME UI TOGGLE");
+}
+
+void testCoordinateDisplayHotkeyContract()
+{
+    GameUiController ui;
+
+    require(ui.consumeF9Press(true), "first F9 press is no longer consumed");
+    require(!ui.consumeF9Press(true), "held F9 now retriggers instead of latching");
+    require(!ui.consumeF9Press(false), "F9 release unexpectedly triggers an action");
+    require(ui.consumeF9Press(true), "F9 latch did not reset after release");
+
+    auto& display = game::navigation::CoordinateDisplayService::instance();
+    const auto saved = display.format();
+
+    display.setFormat(game::navigation::CoordinateDisplayFormat::Hierarchical);
+    require(std::string(display.formatName()) == "STRAIGHT THERE", "hierarchical coordinate display name changed");
+    require(
+        display.formatLine("G1 0/0/0").find("[STRAIGHT THERE]") == 0,
+        "hierarchical coordinate display no longer reaches visible formatted line"
+    );
+
+    display.cycle();
+    require(display.format() == game::navigation::CoordinateDisplayFormat::Axis, "first coordinate-format cycle no longer selects Axis");
+    require(std::string(display.formatName()) == "THREE AXES", "Axis coordinate display name changed");
+
+    display.cycle();
+    require(display.format() == game::navigation::CoordinateDisplayFormat::PackedBase32, "second coordinate-format cycle no longer selects PackedBase32");
+    require(std::string(display.formatName()) == "VERY SECRET CODE", "PackedBase32 coordinate display name changed");
+
+    display.cycle();
+    require(display.format() == game::navigation::CoordinateDisplayFormat::Hierarchical, "coordinate-format cycle no longer wraps to Hierarchical");
+
+    display.setFormat(saved);
+    pass("F9 + COORDINATE DISPLAY FORMAT");
+}
+
+void testConstellationOverlayContract()
+{
+    GalaxyStarfieldRenderer starfield;
+
+    require(!starfield.constellationOverlayEnabled(), "constellation overlay no longer starts disabled");
+    starfield.setConstellationOverlayEnabled(true);
+    require(starfield.constellationOverlayEnabled(), "constellation overlay cannot be enabled");
+    starfield.setConstellationOverlayEnabled(false);
+    require(!starfield.constellationOverlayEnabled(), "constellation overlay cannot be disabled");
+
+    pass("F12 + CONSTELLATION OVERLAY STATE");
+}
+
+class SystemMapUiTargetSpy final : public game::ui::ISystemMapUiTarget
+{
+public:
+    void reset()
+    {
+        actions.clear();
+    }
+
+    void selectSystemMapSystem(int systemId) override
+    {
+        actions.push_back("select:" + std::to_string(systemId));
+    }
+
+    void setSystemMapGalaxyMode() override
+    {
+        actions.push_back("galaxy");
+    }
+
+    void setSystemMapCurrentSystemMode() override
+    {
+        actions.push_back("current-system");
+    }
+
+    void setSystemMapHubMode() override
+    {
+        actions.push_back("hub");
+    }
+
+    void setSystemMapLoadedDetailMode() override
+    {
+        actions.push_back("loaded-detail");
+    }
+
+    void setSystemMapDetailMode() override
+    {
+        actions.push_back("selected-detail");
+    }
+
+    std::vector<std::string> actions;
+};
+
+void testSystemMapUiCommandContract()
+{
+    using game::ui::SystemMapUiCommandType;
+
+    auto expect = [](
+        const char* text,
+        SystemMapUiCommandType expectedType,
+        int expectedSystemId = -1
+    )
+    {
+        const auto command = game::ui::parseSystemMapUiCommand(text);
+        require(command.has_value(), std::string("map UI command no longer parses: ") + text);
+        require(command->type == expectedType, std::string("map UI command changed meaning: ") + text);
+        require(command->systemId == expectedSystemId, std::string("map UI command changed system id: ") + text);
+    };
+
+    expect("system_map_open_selected:42", SystemMapUiCommandType::OpenSelectedSystem, 42);
+    expect("system_map_select:17", SystemMapUiCommandType::SelectSystem, 17);
+    expect("system_map_galaxy", SystemMapUiCommandType::Galaxy);
+    expect("system_map_current_system", SystemMapUiCommandType::CurrentSystem);
+    expect("system_map_hub", SystemMapUiCommandType::Hub);
+    expect("system_map_detail", SystemMapUiCommandType::LoadedDetail);
+    expect("system_map_planet", SystemMapUiCommandType::SelectedDetail);
+    expect("close_system_map", SystemMapUiCommandType::Close);
+
+    require(!game::ui::parseSystemMapUiCommand("system_map_select:not-a-number"), "malformed map selection command is accepted");
+    require(!game::ui::parseSystemMapUiCommand("system_map_open_selected:-1"), "negative map system id is accepted");
+    require(!game::ui::parseSystemMapUiCommand("unrelated_command"), "unrelated UI command was captured by map router");
+
+    pass("SYSTEM MAP UI COMMAND CONTRACT");
+}
+
+void testSystemMapUiCommandDispatchContract()
+{
+    SystemMapUiTargetSpy target;
+    bool closed = false;
+
+    auto dispatch = [&](const char* text)
+    {
+        target.reset();
+        closed = false;
+
+        const auto command = game::ui::parseSystemMapUiCommand(text);
+        require(command.has_value(), std::string("dispatch input no longer parses: ") + text);
+
+        game::ui::dispatchSystemMapUiCommand(
+            *command,
+            &target,
+            [&]()
+            {
+                closed = true;
+            }
+        );
+    };
+
+    dispatch("system_map_open_selected:42");
+    require(
+        target.actions == std::vector<std::string>{"select:42", "current-system"},
+        "open-selected no longer selects a system before entering System mode"
+    );
+    require(!closed, "open-selected unexpectedly closes map UI");
+
+    dispatch("system_map_select:17");
+    require(
+        target.actions == std::vector<std::string>{"select:17"},
+        "system selection command changed action"
+    );
+
+    dispatch("system_map_galaxy");
+    require(target.actions == std::vector<std::string>{"galaxy"}, "Galaxy command changed action");
+
+    dispatch("system_map_current_system");
+    require(target.actions == std::vector<std::string>{"current-system"}, "current-system command changed action");
+
+    dispatch("system_map_hub");
+    require(target.actions == std::vector<std::string>{"hub"}, "Hub command changed action");
+
+    dispatch("system_map_detail");
+    require(target.actions == std::vector<std::string>{"loaded-detail"}, "loaded Details command changed action");
+
+    dispatch("system_map_planet");
+    require(target.actions == std::vector<std::string>{"selected-detail"}, "selected Details command changed action");
+
+    dispatch("close_system_map");
+    require(target.actions.empty(), "close command touched map state target");
+    require(closed, "close command no longer closes map UI");
+
+    pass("SYSTEM MAP UI COMMAND DISPATCH");
+}
+
 const ShipSnapshot& findServerShip(
     const game::debug::IDebugSessionControl& debug,
     EntityId id
@@ -249,6 +457,15 @@ void testInputMapping()
     require(control.yawInput == 1.0f, "Q no longer maps to positive yaw");
 
     keys.clear();
+    keys.press(GLFW_KEY_S);
+    keys.press(GLFW_KEY_A);
+    keys.press(GLFW_KEY_E);
+    control = mapKeys(mapper, keys);
+    require(control.pitchInput == 1.0f, "S no longer maps to positive pitch");
+    require(control.rollInput == -1.0f, "A no longer maps to negative roll");
+    require(control.yawInput == -1.0f, "E no longer maps to negative yaw");
+
+    keys.clear();
     keys.press(GLFW_KEY_KP_8);
     keys.press(GLFW_KEY_KP_6);
     keys.press(GLFW_KEY_KP_9);
@@ -258,9 +475,23 @@ void testInputMapping()
     require(control.liftInput == 1.0f, "KP9 no longer maps to positive lift");
 
     keys.clear();
+    keys.press(GLFW_KEY_KP_2);
+    keys.press(GLFW_KEY_KP_4);
+    keys.press(GLFW_KEY_KP_3);
+    control = mapKeys(mapper, keys);
+    require(control.forwardInput == -1.0f, "KP2 no longer maps to reverse manoeuvre thrust");
+    require(control.strafeInput == -1.0f, "KP4 no longer maps to negative strafe");
+    require(control.liftInput == -1.0f, "KP3 no longer maps to negative lift");
+
+    keys.clear();
     keys.press(GLFW_KEY_EQUAL);
     control = mapKeys(mapper, keys);
     require(control.targetSpeedRate == 1.0f, "= no longer increases target speed");
+
+    keys.clear();
+    keys.press(GLFW_KEY_KP_ADD);
+    control = mapKeys(mapper, keys);
+    require(control.targetSpeedRate == 1.0f, "KP+ no longer increases target speed");
 
     keys.clear();
     keys.press(GLFW_KEY_MINUS);
@@ -268,10 +499,21 @@ void testInputMapping()
     require(control.targetSpeedRate == -1.0f, "- no longer decreases target speed");
 
     keys.clear();
+    keys.press(GLFW_KEY_KP_SUBTRACT);
+    control = mapKeys(mapper, keys);
+    require(control.targetSpeedRate == -1.0f, "KP- no longer decreases target speed");
+
+    keys.clear();
     keys.press(GLFW_KEY_LEFT_CONTROL);
     keys.press(GLFW_KEY_Q);
     control = mapKeys(mapper, keys);
     require(control.yawInput == 0.0f, "Ctrl+Q leaked into yaw instead of command chord handling");
+
+    keys.clear();
+    keys.press(GLFW_KEY_RIGHT_CONTROL);
+    keys.press(GLFW_KEY_E);
+    control = mapKeys(mapper, keys);
+    require(control.yawInput == 0.0f, "Right-Ctrl+E leaked into yaw instead of command chord handling");
 
     keys.clear();
     keys.press(GLFW_KEY_J);
@@ -492,6 +734,63 @@ void testOrientationAndMovement(
     pass("ORIENTATION + PLAYER FLIGHT + ENGINE CONTROL");
 }
 
+UIText* addHudText(UIContainer& root, const char* id)
+{
+    auto text = std::make_unique<UIText>();
+    text->id = id;
+    UIText* raw = text.get();
+    root.addChild(std::move(text));
+    return raw;
+}
+
+void testHudPresentationBindings(
+    game::host::LocalGameSession& session,
+    EntityId playerId
+)
+{
+    const auto& ship = findClientShip(session.client(), playerId);
+    const auto telemetry =
+        game::presentation::buildPlayerHudTelemetry(ship);
+
+    require(finiteVec(telemetry.globalMeters), "HUD global coordinates became non-finite");
+    require(std::isfinite(telemetry.speedMps), "HUD speed became non-finite");
+    require(!telemetry.cellLabel.empty(), "HUD cell label became empty");
+    require(!telemetry.xLabel.empty(), "HUD X label became empty");
+    require(!telemetry.yLabel.empty(), "HUD Y label became empty");
+    require(!telemetry.zLabel.empty(), "HUD Z label became empty");
+    require(!telemetry.speedLabel.empty(), "HUD speed label became empty");
+
+    UIContainer root;
+    UIText* cell = addHudText(root, "main_coord_cell");
+    UIText* x = addHudText(root, "main_coord_x");
+    UIText* y = addHudText(root, "main_coord_y");
+    UIText* z = addHudText(root, "main_coord_z");
+    UIText* speed = addHudText(root, "main_coord_v");
+
+    require(
+        game::presentation::applyPlayerHudTelemetry(root, telemetry),
+        "HUD presenter no longer resolves production UIText bindings"
+    );
+
+    require(cell->label == telemetry.cellLabel, "HUD CELL binding displays stale/wrong data");
+    require(x->label == telemetry.xLabel, "HUD X binding displays stale/wrong data");
+    require(y->label == telemetry.yLabel, "HUD Y binding displays stale/wrong data");
+    require(z->label == telemetry.zLabel, "HUD Z binding displays stale/wrong data");
+    require(speed->label == telemetry.speedLabel, "HUD speed binding displays stale/wrong data");
+
+    UIContainer brokenRoot;
+    addHudText(brokenRoot, "main_coord_cell");
+    addHudText(brokenRoot, "main_coord_x");
+    addHudText(brokenRoot, "main_coord_y");
+    addHudText(brokenRoot, "main_coord_z");
+    require(
+        !game::presentation::applyPlayerHudTelemetry(brokenRoot, telemetry),
+        "HUD presenter stopped reporting a missing production binding"
+    );
+
+    pass("HUD TELEMETRY -> SCREEN BINDINGS");
+}
+
 void testRemoteMotion(game::host::LocalGameSession& session)
 {
     auto capture = [&]()
@@ -560,6 +859,28 @@ void testMapDataPipeline(game::host::LocalGameSession& session)
         ),
         "current system is missing from Galaxy map snapshot"
     );
+
+    for (const auto& candidate : galaxy->systems)
+    {
+        require(!candidate.name.empty(), "Galaxy map contains a game system with no display name");
+
+        const std::string skyLabel =
+            game::presentation::buildGameSystemSkyLabel(
+                candidate.name,
+                {},
+                std::to_string(candidate.id),
+                glm::length(candidate.positionLy)
+            );
+
+        require(
+            skyLabel.rfind(candidate.name, 0) == 0,
+            "game-system sky label no longer starts with the authored game-system name"
+        );
+        require(
+            skyLabel.find(" ly") != std::string::npos,
+            "game-system sky label lost its distance suffix"
+        );
+    }
 
     client.requestSystemMapSnapshot(currentSystemId, true);
     waitFor(
@@ -636,7 +957,214 @@ void testMapDataPipeline(game::host::LocalGameSession& session)
     require(client.detailMapMetadata().universeTimelineRevision == revision, "Details map timeline revision differs from gameplay");
     require(client.hubMapMetadata().universeTimelineRevision == revision, "Hub map timeline revision differs from gameplay");
 
-    pass("MAP DATA PIPELINE");
+    game::presentation::SystemMapPanelPresentationInput panelInput;
+    panelInput.universeTimeSeconds = client.universeTimeSeconds();
+    panelInput.universeDate = client.sessionSnapshot().universeDate;
+    panelInput.universeTimeScale = client.sessionSnapshot().universeTimeScale;
+    panelInput.mode = game::system_map::MapMode::System;
+    panelInput.galaxy = galaxy;
+    panelInput.system = system;
+    panelInput.navigation = &client.playerNavigation();
+    panelInput.currentSystemName = system->systemName;
+    panelInput.selectedSystemId = currentSystemId;
+    panelInput.selectedHubId = hubIt->stableId;
+    panelInput.canOpenDetail = true;
+
+    auto panel =
+        game::presentation::buildSystemMapPanelPayload(panelInput);
+
+    require(panel.at("mode") == "System", "map panel lost System mode");
+    require(panel.at("currentSystemId") == currentSystemId, "map panel displays wrong current system");
+    require(panel.at("currentSystemName") == system->systemName, "map panel displays wrong current system name");
+    require(panel.at("selectedSystemId") == currentSystemId, "map panel displays wrong selected system");
+    require(panel.at("selectedHubId") == hubIt->stableId, "map panel displays wrong selected hub");
+    require(panel.at("canOpenDetail") == true, "map panel lost Details availability state");
+    require(
+        panel.at("systemsCount").get<std::size_t>() == galaxy->systems.size(),
+        "map panel systems count differs from Galaxy snapshot"
+    );
+    require(
+        panel.at("systems").size() == galaxy->systems.size(),
+        "map panel systems list differs from Galaxy snapshot"
+    );
+
+    const auto selectedItem = std::find_if(
+        panel.at("systems").begin(),
+        panel.at("systems").end(),
+        [currentSystemId](const nlohmann::json& item)
+        {
+            return item.at("id").get<int>() == currentSystemId;
+        }
+    );
+    require(selectedItem != panel.at("systems").end(), "map panel omitted current system row");
+    require(selectedItem->at("current") == true, "map panel current-system marker disappeared");
+    require(selectedItem->at("selected") == true, "map panel selected-system marker disappeared");
+
+    panelInput.mode = game::system_map::MapMode::Detail;
+    panelInput.canOpenDetail = false;
+    panelInput.canOpenHub = true;
+    panel = game::presentation::buildSystemMapPanelPayload(panelInput);
+    require(panel.at("mode") == "Detail", "map panel lost Details mode");
+    require(panel.at("canOpenHub") == true, "map panel lost Hub availability state");
+
+    panelInput.mode = game::system_map::MapMode::Hub;
+    panelInput.canOpenHub = false;
+    panel = game::presentation::buildSystemMapPanelPayload(panelInput);
+    require(panel.at("mode") == "Hub", "map panel lost Hub mode");
+
+    panelInput.mode = game::system_map::MapMode::Galaxy;
+    panel = game::presentation::buildSystemMapPanelPayload(panelInput);
+    require(panel.at("mode") == "Galaxy", "map panel lost Galaxy mode");
+
+    pass("MAP DATA + PANEL PRESENTATION");
+}
+
+void testGalaxyNavigationFlightPresentation(
+    game::host::LocalGameSession& session,
+    game::debug::IDebugSessionControl& debug,
+    EntityId playerId
+)
+{
+    GameClient& client = session.client();
+
+    client.requestGalaxyMapSnapshot(true);
+    waitFor(
+        session,
+        [&]() { return client.galaxyMapSnapshot() != nullptr; },
+        "Galaxy map did not become available for navigation-flight acceptance"
+    );
+
+    const auto* galaxy = client.galaxyMapSnapshot();
+    require(galaxy && galaxy->systems.size() > 1, "Galaxy navigation test has no destination systems");
+
+    const auto beforeNavigation = client.playerNavigation();
+    const auto beforeMarker =
+        game::presentation::resolveGalaxyPlayerMarkerPosition(
+            *galaxy,
+            beforeNavigation
+        );
+
+    require(beforeMarker.insideKnownSystem, "player marker is not anchored to the current known system before flight");
+
+    const glm::dvec3 forward =
+        glm::normalize(glm::dvec3(beforeNavigation.forward));
+
+    const world::celestial::GalaxyMapSystem* target = nullptr;
+    glm::dvec3 targetDirection {0.0};
+    double bestAlignment = -2.0;
+
+    for (const auto& candidate : galaxy->systems)
+    {
+        if (candidate.id == beforeNavigation.currentSystemId)
+            continue;
+
+        const glm::dvec3 delta =
+            candidate.positionLy - beforeMarker.positionLy;
+        const double distance = glm::length(delta);
+        if (distance <= 0.000001)
+            continue;
+
+        const glm::dvec3 direction = delta / distance;
+        const double alignment = glm::dot(forward, direction);
+
+        if (alignment > bestAlignment)
+        {
+            bestAlignment = alignment;
+            target = &candidate;
+            targetDirection = direction;
+        }
+    }
+
+    require(target != nullptr, "could not select a destination star for navigation-flight acceptance");
+    require(bestAlignment > 0.0, "no game-system star lies in the player's current forward hemisphere");
+
+    const ShipSnapshot beforeShip =
+        findServerShip(debug, playerId);
+    require(beforeShip.referenceFrame.valid, "navigation-flight test lost the player reference frame before thrust");
+
+    PlayerInputMapper mapper;
+    SyntheticKeyState keys;
+    keys.press(GLFW_KEY_KP_8);
+    const ShipControlState forwardControl = mapKeys(mapper, keys);
+    runFrames(session, forwardControl, 150);
+
+    keys.clear();
+    const ShipControlState neutral = mapKeys(mapper, keys);
+    runFrames(session, neutral, 15);
+
+    const auto afterNavigation = client.playerNavigation();
+    const auto afterMarker =
+        game::presentation::resolveGalaxyPlayerMarkerPosition(
+            *galaxy,
+            afterNavigation
+        );
+
+    const ShipSnapshot afterShip =
+        findServerShip(debug, playerId);
+    require(afterShip.referenceFrame.valid, "navigation-flight test lost the player reference frame after thrust");
+
+    const glm::dvec3 relativeFlightLocalMeters =
+        afterShip.referenceFrame.localPositionMeters -
+        beforeShip.referenceFrame.localPositionMeters;
+
+    const glm::dvec3 relativeFlightWorldMeters =
+        beforeShip.referenceFrame.localToWorldVector(
+            relativeFlightLocalMeters
+        );
+
+    require(
+        glm::length(relativeFlightWorldMeters) > 0.25,
+        "real player thrust did not change hub-relative flight position"
+    );
+    require(
+        glm::dot(relativeFlightWorldMeters, targetDirection) > 0.0,
+        "real player thrust moved away from the game-system star nearest the forward sightline"
+    );
+
+    const glm::dvec3 markerDeltaLy =
+        afterMarker.positionLy - beforeMarker.positionLy;
+
+    require(
+        glm::length(markerDeltaLy) > 0.0,
+        "Galaxy map player marker did not follow real player movement"
+    );
+    const double afterDistanceLy =
+        glm::length(target->positionLy - afterMarker.positionLy);
+
+    game::presentation::SystemMapPanelPresentationInput panelInput;
+    panelInput.mode = game::system_map::MapMode::Galaxy;
+    panelInput.galaxy = galaxy;
+    panelInput.navigation = &afterNavigation;
+    panelInput.selectedSystemId = target->id;
+    panelInput.currentSystemName = "navigation-flight";
+
+    const auto panel =
+        game::presentation::buildSystemMapPanelPayload(panelInput);
+
+    const auto targetRow =
+        std::find_if(
+            panel.at("systems").begin(),
+            panel.at("systems").end(),
+            [&](const nlohmann::json& item)
+            {
+                return item.at("id").get<int>() == target->id;
+            }
+        );
+
+    require(targetRow != panel.at("systems").end(), "selected navigation star disappeared from map panel");
+    require(targetRow->at("selected") == true, "selected navigation star lost its selected marker");
+
+    const double panelDistanceLy =
+        targetRow->at("distanceFromPlayerLy").get<double>();
+
+    require(
+        std::abs(panelDistanceLy - afterDistanceLy) < 1.0e-9,
+        "map panel distance is no longer measured from the actual player marker"
+    );
+
+    requireOrientationBasis(afterShip.transform, "server player after galaxy navigation flight");
+
+    pass("GALAXY NAVIGATION + REAL PLAYER FLIGHT PRESENTATION");
 }
 
 } // namespace
@@ -647,6 +1175,17 @@ int runClientAcceptanceSelfTest()
     {
         std::cerr << "[SELFTEST] client-acceptance stage=input-mapping\n";
         testInputMapping();
+
+        std::cerr << "[SELFTEST] client-acceptance stage=game-ui-toggle\n";
+        testGameUiToggleContract();
+
+        std::cerr << "[SELFTEST] client-acceptance stage=current-function-hotkeys\n";
+        testCoordinateDisplayHotkeyContract();
+        testConstellationOverlayContract();
+
+        std::cerr << "[SELFTEST] client-acceptance stage=map-ui-command-contract\n";
+        testSystemMapUiCommandContract();
+        testSystemMapUiCommandDispatchContract();
 
         std::cerr << "[SELFTEST] client-acceptance stage=construct-local-session\n";
         game::host::LocalGameSession session;
@@ -667,11 +1206,17 @@ int runClientAcceptanceSelfTest()
         std::cerr << "[SELFTEST] client-acceptance stage=flight\n";
         testOrientationAndMovement(session, *debug, playerId);
 
+        std::cerr << "[SELFTEST] client-acceptance stage=hud-bindings\n";
+        testHudPresentationBindings(session, playerId);
+
         std::cerr << "[SELFTEST] client-acceptance stage=remote-motion\n";
         testRemoteMotion(session);
 
         std::cerr << "[SELFTEST] client-acceptance stage=maps\n";
         testMapDataPipeline(session);
+
+        std::cerr << "[SELFTEST] client-acceptance stage=galaxy-navigation-flight\n";
+        testGalaxyNavigationFlightPresentation(session, *debug, playerId);
 
         std::cerr << "[PASS] client-acceptance real local-session scenarios\n";
         return 0;

@@ -36,6 +36,7 @@
 #include "src/game/traffic/StationTrafficSystem.h"
 #include "src/game/system_map/SystemMapRenderer.h"
 #include "src/game/system_map/AuthoritativeMapInterpolator.h"
+#include "src/game/ui/SystemMapUiCommandRouter.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
 #include <nlohmann/json.hpp>
@@ -58,7 +59,7 @@ enum class ScreenLayout
 };
 
 
-class SpaceState : public GameState
+class SpaceState : public GameState, public game::ui::ISystemMapUiTarget
 {
 public:
     explicit SpaceState(StateStack& states);
@@ -101,10 +102,10 @@ public:
     void resetDebugControlSettings();
     void pushSystemMapState();
     void pushSystemMapPanelState();
-    void selectSystemMapSystem(int systemId);
-    void setSystemMapGalaxyMode();
+    void selectSystemMapSystem(int systemId) override;
+    void setSystemMapGalaxyMode() override;
     void setSystemMapKnownSystemMode(int systemId);
-    void setSystemMapCurrentSystemMode();
+    void setSystemMapCurrentSystemMode() override;
     void setSystemMapEmptySectorMode(
         const glm::dvec3& positionLy
     );
@@ -129,7 +130,7 @@ public:
         bool forceRefresh = false
     );
 
-    void setSystemMapDetailMode();
+    void setSystemMapDetailMode() override;
 
     bool requestHubMapSnapshot(
         int systemId,
@@ -147,8 +148,8 @@ public:
         const std::string& hubId
     );
 
-    void setSystemMapHubMode();
-    void setSystemMapLoadedDetailMode();
+    void setSystemMapHubMode() override;
+    void setSystemMapLoadedDetailMode() override;
 private:
 
 

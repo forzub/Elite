@@ -17,6 +17,9 @@ public:
     {
         std::string id;
         std::string name;
+        // Authored gameplay system label. Kept separate from the astronomical
+        // catalog name so the gameplay sky always displays the game-system name.
+        std::string gameSystemName;
 
         glm::vec3 positionLy {0.0f};
         glm::vec3 color {1.0f};

@@ -236,6 +236,7 @@ def check_map_feature_surface() -> None:
     space_h = read("src/game/SpaceState.h")
     space_cpp = read("src/game/SpaceState.cpp")
     app_cpp = read("src/core/Application.cpp")
+    map_router = read("src/game/ui/SystemMapUiCommandRouter.cpp")
     map_tests = read("tests/system_map/SystemMapBehaviorTests.cpp")
 
     for mode in ("Galaxy", "System", "Detail", "Hub"):
@@ -259,6 +260,12 @@ def check_map_feature_surface() -> None:
         require(route in space_h, f"SpaceState public map route disappeared: {route}")
         require(route in space_cpp, f"SpaceState map route has no implementation: {route}")
 
+    require(
+        "parseSystemMapUiCommand(webCommand)" in app_cpp
+        and "dispatchSystemMapUiCommand(" in app_cpp,
+        "Application no longer routes map UI commands through the production router",
+    )
+
     for command in (
         "system_map_galaxy",
         "system_map_current_system",
@@ -267,8 +274,8 @@ def check_map_feature_surface() -> None:
         "close_system_map",
     ):
         require(
-            (f'"{command}"' in app_cpp or f'== "{command}"' in app_cpp),
-            f"Application lost map UI command route '{command}'",
+            f'"{command}"' in map_router,
+            f"production map UI router lost command '{command}'",
         )
 
     require("VK_F11" in app_cpp, "F11 map hotkey route disappeared")

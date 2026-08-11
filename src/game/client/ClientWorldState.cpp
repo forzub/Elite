@@ -138,6 +138,11 @@ namespace
         transform.motion.systemId = frame.systemId;
         transform.motion.hubId = frame.hubId;
         transform.motion.parentBodyId = frame.bodyId;
+        transform.motion.travelFrame = frame.kinematicFrame();
+        transform.motion.matchedToReferenceFrame =
+            frame.matchedToReferenceFrame;
+        transform.motion.matchedReferenceFrameId =
+            frame.matchedToReferenceFrame ? frame.hubId : std::string{};
         transform.motion.localPositionMeters = frame.localPositionMeters;
         transform.motion.localVelocityMps = frame.localVelocityMetersPerSecond;
         const glm::dvec3 referenceVelocity =
@@ -1439,6 +1444,7 @@ void ClientWorldState::predict(
     (void)game::client::predictHubTacticalMotion(
         ship.transform,
         ship.referenceFrame,
+        ship.descriptor->physics,
         control,
         dt
     );

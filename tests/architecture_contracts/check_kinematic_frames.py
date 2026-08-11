@@ -68,11 +68,10 @@ for required in (
         fail(sim_path, f"server no longer publishes frame acceleration: {required}")
 
 for required in (
-    "source.accelerationMetersPerSecond2",
-    "source.angularAccelerationWorldRadPerSecond2",
+    "source.kinematicFrame()",
 ):
     if required not in prediction:
-        fail(prediction_path, f"prediction adapter dropped frame acceleration: {required}")
+        fail(prediction_path, f"prediction adapter stopped consuming complete frame kinematics: {required}")
 
 for required in (
     "out.accelerationMetersPerSecond2",

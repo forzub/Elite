@@ -15,7 +15,7 @@
   },
   "coordinateDisplay": {
     "defaultFormat": "hierarchical",
-    "cycleKey": "F9"
+    "cycleKey": "CTRL+F11"
   },
   "rootNavigation": {
     "defaultPolicy": "blocked",

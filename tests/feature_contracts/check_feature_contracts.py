@@ -346,6 +346,9 @@ def check_map_feature_surface() -> None:
     required_space_routes = (
         "setSystemMapGalaxyMode()",
         "setSystemMapCurrentSystemMode()",
+        "setSystemMapPlayerSystemMode()",
+        "setSystemMapPlayerDetailMode()",
+        "setSystemMapPlayerLocalMode()",
         "setSystemMapDetailMode()",
         "setSystemMapHubMode()",
         "setSystemMapLoadedDetailMode()",
@@ -372,8 +375,23 @@ def check_map_feature_surface() -> None:
             f"production map UI router lost command '{command}'",
         )
 
-    require("VK_F11" in app_cpp, "F11 map hotkey route disappeared")
-    require("toggleSystemMapUi()" in app_cpp, "F11 no longer reaches map visibility toggle")
+    for hotkey, route in (
+        ("VK_F9", "setSystemMapGalaxyMode()"),
+        ("VK_F10", "setSystemMapPlayerSystemMode()"),
+        ("VK_F11", "setSystemMapPlayerDetailMode()"),
+        ("VK_F12", "setSystemMapPlayerLocalMode()"),
+    ):
+        require(hotkey in app_cpp, f"{hotkey} navigation hotkey route disappeared")
+        require(route in app_cpp, f"{hotkey} no longer reaches {route}")
+
+    require(
+        "CoordinateDisplayService::instance()" in app_cpp and ".cycle();" in app_cpp,
+        "Ctrl+F11 coordinate-format route disappeared",
+    )
+    require(
+        "toggleConstellationOverlay()" in app_cpp,
+        "Ctrl+F12 constellation-overlay route disappeared",
+    )
     require(
         "testGalaxySystemDetailHubTransitionSequence" in map_tests,
         "Galaxy -> System -> Detail -> Hub vertical behavior test disappeared",

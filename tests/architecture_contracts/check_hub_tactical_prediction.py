@@ -23,14 +23,14 @@ if prediction_h.is_file():
     text = prediction_h.read_text(encoding="utf-8", errors="replace")
     for required in (
         "canPredictHubTacticalMotion(",
-        "hubNavigationFrameForPrediction(",
-        "DynamicMotionSystem::applyHubTacticalInput(",
-        "DynamicMotionSystem::updateHubTactical(",
+        "travelFrameForPrediction(",
+        "DynamicMotionSystem::applyLocalFrameInput(",
+        "DynamicMotionSystem::updateLocalFrameMotion(",
         "transform.motion.systemId == frame.systemId",
-        "transform.motion.hubId == frame.hubId",
+        "transform.motion.travelFrame.frameId",
     ):
         if required not in text:
-            fail(prediction_h, f"client prediction does not reuse authoritative HubTactical motion: {required}")
+            fail(prediction_h, f"client prediction does not reuse authoritative local-frame motion: {required}")
 
 if client_world_cpp.is_file():
     text = client_world_cpp.read_text(encoding="utf-8", errors="replace")

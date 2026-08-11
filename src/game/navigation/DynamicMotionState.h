@@ -3,6 +3,8 @@
 #include <string>
 #include <glm/glm.hpp>
 #include "src/game/navigation/NavigationPlan.h"
+#include "src/game/navigation/KinematicFrame.h"
+#include "src/game/navigation/LocalFlightControlLaw.h"
 
 namespace game::navigation
 {
@@ -31,6 +33,27 @@ struct DynamicMotionState
 
     std::string parentBodyId;
     std::string hubId;
+
+    // Authoritative moving frame owned by this ship. Local position/velocity
+    // below are expressed in this frame, not directly in the hub frame.
+    // While matchedToReferenceFrame is true the kinematics are refreshed from
+    // the selected external frame (currently a hub). Later J propulsion will
+    // detach and accelerate this frame without changing the local flight state.
+    KinematicFrame travelFrame;
+    bool matchedToReferenceFrame = false;
+    std::string matchedReferenceFrameId;
+
+    // Pilot control law for motion *inside* travelFrame. Both laws obey the
+    // same physical acceleration/speed limits. They differ only in how pilot
+    // input is converted into engine acceleration.
+    LocalFlightControlLaw localControlLaw =
+        LocalFlightControlLaw::Newtonian;
+
+    // Persistent velocity-vector alignment/autobrake action. HOME/INSERT/END
+    // populate this through ShipControlState; ShipController and
+    // DynamicMotionSystem execute it using normal ship limits.
+    VelocityAlignmentMode velocityAlignmentMode =
+        VelocityAlignmentMode::None;
 
     bool pendingReferenceVelocityMatch = false;
     // Скорость большой системы отсчёта:

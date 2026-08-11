@@ -436,10 +436,15 @@ void testHubTacticalIdleDoesNotFallTowardPlanet()
     const glm::dvec3 initialLocalPosition =
         motion.localPositionMeters;
 
-    game::navigation::DynamicMotionSystem::updateHubTactical(
+    ShipParams params{};
+    params.maxCombatSpeed = 350.0f;
+    params.maxGs = 5.0f;
+
+    game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
         motion,
         worldPosition,
-        frame,
+        frame.kinematicFrame(),
+        params,
         1.0
     );
 

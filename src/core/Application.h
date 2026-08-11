@@ -145,15 +145,30 @@ public:
         m_f10Latch = true;
         return true;
     }
-        
+
+    bool consumeF12Press(bool physicallyDown)
+    {
+        if (!physicallyDown)
+        {
+            m_f12Latch = false;
+            return false;
+        }
+
+        if (m_f12Latch)
+            return false;
+
+        m_f12Latch = true;
+        return true;
+    }
 
 private:
     GameUiMode m_mode = GameUiMode::None;
     GameUiMode m_loadedMode = GameUiMode::None;
 
     bool m_f9Latch = false;
-    bool m_f11Latch = false;
     bool m_f10Latch = false;
+    bool m_f11Latch = false;
+    bool m_f12Latch = false;
 };
 
 

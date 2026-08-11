@@ -20,13 +20,13 @@ Current acceptance coverage:
 - local-session synchronization and player startup/reference-frame invariants;
 - idle stability in canonical HubTactical space;
 - yaw/orientation basis integrity and forward manoeuvre motion after rotation;
-- engine target-speed controls and authoritative fixed-step acknowledgement;
+- Newtonian thrust/coast, Assisted target-VREL control, Ctrl+F10 mode mapping and authoritative fixed-step acknowledgement;
 - accelerated universe-time entry/exit with no frozen-branch control leakage;
 - remote Hub Motion Lab NPC movement through
   `ShipSnapshot -> ClientWorldState -> renderTransform`;
 - HUD coordinate/speed calculation and writes to the exact production
   `main_coord_*` UIText bindings;
-- F11 edge/latch and SystemMap UI toggle semantics;
+- F9/F10/F11/F12 navigation-key latch semantics plus Ctrl+F11/Ctrl+F12 service chords;
 - actual `system_map_panel.html` command vocabulary tied by architecture guard
   to the same parser/dispatcher exercised by the headless suite;
 - command meaning for Galaxy/System/Details/Hub/select/open/close actions;
@@ -50,10 +50,10 @@ there is no active keyboard mapping for `jumpActive`.
 
 ### Functional sky/navigation coverage
 
-The final functional layer also protects the current F9 coordinate-format cycle,
-current F12 constellation-overlay toggle, authored game-system names reaching
-star-sky labels, and the Galaxy player marker following real player navigation
-movement. The map-panel distance-to-system calculation shares the exact player
+The final functional layer also protects the F9/F10/F11/F12 navigation layout,
+Ctrl+F11 coordinate-format service, Ctrl+F12 constellation-overlay toggle,
+authored game-system names reaching star-sky labels, and the Galaxy player
+marker following real player navigation movement. The map-panel distance-to-system calculation shares the exact player
 marker resolver used by the Galaxy map, so the panel cannot silently fall back
 to the current system center while the ship is moving.
 

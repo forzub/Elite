@@ -67,6 +67,7 @@ inline ShipTransform sampleLocalPredictedPresentationTarget(
     (void)game::client::predictHubTacticalMotion(
         target,
         referenceFrame,
+        shipParams,
         control,
         dt
     );

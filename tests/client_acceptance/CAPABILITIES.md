@@ -13,18 +13,18 @@ comparisons are deliberately outside this matrix.
 |---|---|---|---|
 | Local session boot/sync | Real `LocalGameSession` reaches gameplay-ready client state | client acceptance | protected |
 | Player system/reference frame | Player starts in the authoritative active system with a valid hub frame | client acceptance | protected |
-| Keyboard -> ship control | W/S, A/D, Q/E, target-speed keys, keypad manoeuvre thrusters, J cruise gating | client acceptance | protected |
+| Keyboard -> ship control | W/S, A/D, Q/E, +/- longitudinal command, keypad manoeuvre thrusters, Ctrl+F10 local-law switch, HOME/INSERT/END vector actions, J gating | client acceptance | protected |
 | Player attitude | Production fixed-step control changes orientation; forward/right/up remain orthonormal and handed correctly | client acceptance | protected |
-| Player HubTactical motion | Client command -> server acknowledgement -> authoritative hub-local movement | client acceptance | protected |
+| Player HubTactical motion | Client command -> server acknowledgement -> authoritative ship-local movement inside owned travel frame | client acceptance | protected |
 | Orientation drives thrust direction | After yaw, forward manoeuvre movement remains on the ship's forward side | client acceptance | protected |
-| Engine target-speed control | Increase/decrease input changes authoritative target forward speed | client acceptance | protected |
-| Idle stability | No-command player does not drift or rotate in canonical hub-local state | client acceptance | protected |
+| Dual local flight laws | Newtonian thrust/coast and Assisted target-VREL control share per-ship speed/acceleration limits | client acceptance + architecture contracts | protected |
+| Idle stability | No-command player does not drift or rotate in canonical local state while its travel frame is matched | client acceptance | protected |
 | Accelerated universe-time diagnostic | Enter/exit revision fence; controls touched while frozen do not leak back into gameplay | client acceptance + world runtime | protected |
 | Remote NPC presentation | Hub Motion Lab ships move through authoritative snapshot/interpolation path | client acceptance + presentation pipeline | protected |
-| HUD coordinates/speed data | Client render state -> production formatter -> exact `main_coord_*` UIText bindings | client acceptance + architecture guard | protected |
-| F9 coordinate-format cycle (current binding) | F9 edge/latch -> `CoordinateDisplayService` cycle -> map footer format name | client acceptance + architecture guard | protected, binding temporary |
-| F11 map open/close latch | F11 edge/latch semantics and `SystemMap` UI toggle remain connected in `Application` | client acceptance + architecture guard | protected |
-| F12 constellation overlay (current binding) | F12 input toggles the gameplay starfield constellation overlay | client acceptance + architecture guard | protected, binding temporary |
+| HUD coordinates/speed data | Client render state -> canonical travel-frame `VREL` -> production formatter -> exact `main_coord_*` UIText bindings | client acceptance + architecture guard | protected |
+| F9-F12 navigation layout | F9 Galaxy, F10 current System/sector, F11 current Details context, F12 current Hub/local cube | client acceptance + architecture guard | protected |
+| Ctrl+F11 coordinate format | Ctrl+F11 cycles `CoordinateDisplayService`; map footer advertises the chord | client acceptance + architecture guard | protected |
+| Ctrl+F12 constellations | Ctrl+F12 toggles the gameplay starfield constellation overlay | client acceptance + architecture guard | protected |
 | Game-system names on sky | Authored game-system name survives astronomical-star merge and reaches the sky-label formatter | client acceptance + architecture guard | protected |
 | Galaxy player navigation marker | Real player navigation position -> shared Galaxy marker resolver -> Galaxy map/panel | client acceptance + architecture guard | protected |
 | Interstellar navigation presentation | Outside configured system-membership radius, navigation publishes `currentSystemId = -1` with galactic-absolute position; entering another catalog system rebases local coordinates | architecture contracts | protected |
@@ -53,19 +53,20 @@ When a protected mechanic later regresses, add the smallest reproduction to
 this suite before fixing it. This keeps the harness growing from real failures
 instead of becoming a second game engine.
 
-## Current function-key coverage and planned remap
+## Current function-key coverage
 
-The acceptance suite currently protects the bindings that actually ship today:
+The navigation layout is now the product contract:
 
-- `F9` cycles the map coordinate display format through `CoordinateDisplayService`.
-- `F11` toggles the System Map UI.
-- `F12` toggles the gameplay constellation overlay.
+- `F9` opens Galaxy.
+- `F10` opens the player's current System, or the highest meaningful interstellar sector.
+- `F11` opens the player's current Details context (body/hub/local spatial volume).
+- `F12` opens the currently matched Hub, otherwise the player's terminal local cube.
+- `Ctrl+F10` switches Newtonian / Assisted local flight laws.
+- `Ctrl+F11` cycles coordinate display format.
+- `Ctrl+F12` toggles constellations.
 
-These key numbers are **not** treated as permanent product semantics. The planned
-layout is `F9 = Galaxy`, `F10 = System`, `F11 = Details`, `F12 = Hub/local area`,
-with coordinate-format and constellation toggles moving to `Alt`/`Ctrl` chords.
-When that remap lands, update the hotkey assertions while keeping the protected
-map actions, coordinate-display service and constellation-overlay behavior.
+The acceptance harness protects key-edge semantics and the production services/actions;
+visual map rendering remains covered by the map contracts rather than screenshots.
 
 ## Interstellar-flight boundary
 

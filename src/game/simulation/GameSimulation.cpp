@@ -46,6 +46,7 @@
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/orbits/OrbitalMotion.h"
 #include "src/game/navigation/DynamicMotionSystem.h"
+#include "src/game/navigation/TravelFrameSystem.h"
 
 namespace
 {
@@ -477,10 +478,11 @@ bool GameSimulation::beginUniverseTrajectoryDiagnostic(
         }
 
         /*
-            Capture one coherent production epoch. HubTactical is canonical in
-            hub-local coordinates, so reconstruct its world seed through the
-            rotating HubNavigationFrame (including omega x r). All other modes
-            use their production world transform directly.
+            Capture one coherent production epoch. Local tactical motion is
+            canonical in the ship-owned travel frame, so reconstruct its world
+            seed through that frame (including omega x r). The external hub is
+            metadata/reference only; all other modes use their production
+            world transform directly.
         */
         const auto parentPositionIt =
             m_celestialBodyPositionsAu.find(parentBodyId);
@@ -512,22 +514,22 @@ bool GameSimulation::beginUniverseTrajectoryDiagnostic(
         const glm::dvec3 parentVelocityMps =
             parentVelocityIt->second;
 
-        const bool seedFromHubLocalState =
-            sourceHubFrame &&
-            sourceHubFrame->valid &&
+        const bool seedFromLocalTravelFrame =
+            motion.travelFrame.valid &&
+            motion.travelFrame.systemId == motion.systemId &&
             motion.mode ==
                 game::navigation::MotionMode::HubTactical;
 
         const glm::dvec3 shipWorldPositionMeters =
-            seedFromHubLocalState
-                ? sourceHubFrame->localToWorldPosition(
+            seedFromLocalTravelFrame
+                ? motion.travelFrame.localToWorldPosition(
                     motion.localPositionMeters
                 )
                 : tr.fullWorldMeters();
 
         const glm::dvec3 shipWorldVelocityMps =
-            seedFromHubLocalState
-                ? sourceHubFrame->localToWorldVelocity(
+            seedFromLocalTravelFrame
+                ? motion.travelFrame.localToWorldVelocity(
                     motion.localPositionMeters,
                     motion.localVelocityMps
                 )
@@ -1402,17 +1404,30 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
             }
 
-            const auto* frame =
-                hubNavigationFrame(tr.motion.hubId);
+            if (tr.motion.matchedToReferenceFrame)
+            {
+                const auto* matchedHubFrame =
+                    hubNavigationFrame(tr.motion.matchedReferenceFrameId);
 
-            if (!frame || !frame->valid)
+                if (matchedHubFrame && matchedHubFrame->valid)
+                {
+                    game::navigation::TravelFrameSystem::refreshMatchedReference(
+                        tr.motion,
+                        matchedHubFrame->kinematicFrame(),
+                        matchedHubFrame->hubId
+                    );
+                }
+            }
+
+            if (!tr.motion.travelFrame.valid)
                 continue;
 
             const auto& control = shipPtr->core().control();
 
-            game::navigation::DynamicMotionSystem::applyHubTacticalInput(
+            game::navigation::DynamicMotionSystem::applyLocalFrameInput(
                 tr.motion,
-                *frame,
+                tr.motion.travelFrame,
+                shipPtr->core().desc().physics,
                 fdt,
                 control.targetSpeedRate,
                 control.cruiseActive,
@@ -1459,16 +1474,14 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
             }
 
-            const auto* frame =
-                hubNavigationFrame(tr.motion.hubId);
-
-            if (!frame || !frame->valid)
+            if (!tr.motion.travelFrame.valid)
                 continue;
 
-            game::navigation::DynamicMotionSystem::updateHubTactical(
+            game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
                 tr.motion,
                 tr.worldPosition,
-                *frame,
+                tr.motion.travelFrame,
+                shipPtr->core().desc().physics,
                 dt
             );
 
@@ -1742,6 +1755,9 @@ m_hubVelocityMetersPerSecond[hubId] =
         s.transform = tr;
 
         s.referenceFrame.systemId = tr.motion.systemId;
+        s.referenceFrame.frameId = tr.motion.travelFrame.frameId;
+        s.referenceFrame.matchedToReferenceFrame =
+            tr.motion.matchedToReferenceFrame;
         s.referenceFrame.type = tr.motion.mode;
         s.referenceFrame.bodyId = tr.motion.parentBodyId;
         s.referenceFrame.hubId = tr.motion.hubId;
@@ -1752,30 +1768,36 @@ m_hubVelocityMetersPerSecond[hubId] =
         s.referenceFrame.universeTimeSeconds =
             m_orbitalUniverseTimeSeconds;
 
-        if (tr.motion.mode == game::navigation::MotionMode::HubTactical)
+        if (tr.motion.mode == game::navigation::MotionMode::HubTactical &&
+            tr.motion.travelFrame.valid)
         {
-            const auto* frame =
-                hubNavigationFrame(tr.motion.hubId);
+            const auto& frame = tr.motion.travelFrame;
+            s.referenceFrame.systemId = frame.systemId;
+            s.referenceFrame.frameId = frame.frameId;
+            s.referenceFrame.originMeters = frame.originMeters;
+            s.referenceFrame.velocityMetersPerSecond =
+                frame.linearVelocityMps;
+            s.referenceFrame.accelerationMetersPerSecond2 =
+                frame.linearAccelerationMps2;
+            s.referenceFrame.angularVelocityWorldRadPerSecond =
+                frame.angularVelocityWorldRadPerSecond;
+            s.referenceFrame.angularAccelerationWorldRadPerSecond2 =
+                frame.angularAccelerationWorldRadPerSecond2;
+            s.referenceFrame.progradeAxis = frame.localToWorldBasis[0];
+            s.referenceFrame.radialAxis = frame.localToWorldBasis[1];
+            s.referenceFrame.normalAxis = frame.localToWorldBasis[2];
+            s.referenceFrame.valid = true;
 
-            if (frame && frame->valid)
+            // Hub identity remains target/reference metadata. Kinematics above
+            // come from the ship-owned travel frame even while the two frames
+            // are currently matched.
+            const auto* hubFrame =
+                hubNavigationFrame(tr.motion.hubId);
+            if (hubFrame && hubFrame->valid)
             {
-                s.referenceFrame.systemId = frame->systemId;
-                s.referenceFrame.bodyId = frame->parentBodyId;
-                s.referenceFrame.hubId = frame->hubId;
-                s.referenceFrame.moduleId = frame->primeModuleId;
-                s.referenceFrame.originMeters = frame->originMeters;
-                s.referenceFrame.velocityMetersPerSecond =
-                    frame->velocityMetersPerSecond;
-                s.referenceFrame.accelerationMetersPerSecond2 =
-                    frame->accelerationMetersPerSecond2;
-                s.referenceFrame.angularVelocityWorldRadPerSecond =
-                    frame->angularVelocityWorldRadPerSecond;
-                s.referenceFrame.angularAccelerationWorldRadPerSecond2 =
-                    frame->angularAccelerationWorldRadPerSecond2;
-                s.referenceFrame.radialAxis = frame->radialAxis;
-                s.referenceFrame.progradeAxis = frame->progradeAxis;
-                s.referenceFrame.normalAxis = frame->normalAxis;
-                s.referenceFrame.valid = true;
+                s.referenceFrame.bodyId = hubFrame->parentBodyId;
+                s.referenceFrame.hubId = hubFrame->hubId;
+                s.referenceFrame.moduleId = hubFrame->primeModuleId;
             }
         }
 
@@ -2653,17 +2675,23 @@ void GameSimulation::updateHubMotionLabActors()
         tr.motion.systemId = frame->systemId;
         tr.motion.hubId = registration.hubId;
         tr.motion.parentBodyId = frame->parentBodyId;
+        game::navigation::TravelFrameSystem::matchToReference(
+            tr.motion,
+            frame->kinematicFrame(),
+            "ship_travel_" + std::to_string(shipId.value),
+            frame->hubId
+        );
         tr.motion.localPositionMeters =
             localState.positionMeters;
         tr.motion.localVelocityMps =
             localState.velocityMetersPerSecond;
         tr.motion.referenceVelocityMps =
-            frame->localToWorldVelocity(
+            tr.motion.travelFrame.localToWorldVelocity(
                 localState.positionMeters,
                 glm::dvec3(0.0)
             );
         tr.motion.worldVelocityMps =
-            frame->localToWorldVelocity(
+            tr.motion.travelFrame.localToWorldVelocity(
                 localState.positionMeters,
                 localState.velocityMetersPerSecond
             );
@@ -2672,7 +2700,7 @@ void GameSimulation::updateHubMotionLabActors()
             tr.motion.referenceVelocityMps;
 
         tr.setWorldPositionMeters(
-            frame->localToWorldPosition(
+            tr.motion.travelFrame.localToWorldPosition(
                 localState.positionMeters
             )
         );
@@ -4443,9 +4471,18 @@ bool GameSimulation::placeShipInReferenceFrame(
     tr.motion.hubId =
         frame.hubId;
 
+    if (hubFrame && hubFrame->valid)
+    {
+        const std::string ownedTravelFrameId =
+            "ship_travel_" + std::to_string(shipId.value);
 
-
-
+        game::navigation::TravelFrameSystem::matchToReference(
+            tr.motion,
+            hubFrame->kinematicFrame(),
+            ownedTravelFrameId,
+            hubFrame->hubId
+        );
+    }
 
     tr.motion.referenceVelocityMps =
         resolved.velocityMetersPerSecond;
@@ -4529,8 +4566,12 @@ void GameSimulation::updateShipReferenceFrames(double dt)
         auto& tr =
             ship->core().transform();
 
-        // A bound reference frame is also an authoritative membership source.
-        tr.motion.systemId = resolved.systemId;
+        // External reference membership is authoritative only while the
+        // ship-owned travel frame is explicitly matched to it. A detached
+        // travel frame (future J transit) must not be silently pulled back to
+        // the hub's system/domain by a stale binding.
+        if (tr.motion.matchedToReferenceFrame)
+            tr.motion.systemId = resolved.systemId;
 
         // Обновляем только скорость системы отсчёта.
         // Позицию свободного корабля не телепортируем.
@@ -4545,8 +4586,29 @@ void GameSimulation::updateShipReferenceFrames(double dt)
 
             if (hubFrame && hubFrame->valid)
             {
+                if (tr.motion.travelFrame.valid)
+                {
+                    game::navigation::TravelFrameSystem::refreshMatchedReference(
+                        tr.motion,
+                        hubFrame->kinematicFrame(),
+                        hubFrame->hubId
+                    );
+                }
+                else
+                {
+                    game::navigation::TravelFrameSystem::matchToReference(
+                        tr.motion,
+                        hubFrame->kinematicFrame(),
+                        "ship_travel_" + std::to_string(shipId.value),
+                        hubFrame->hubId
+                    );
+                }
+            }
+
+            if (tr.motion.travelFrame.valid)
+            {
                 referenceVelocityMetersPerSecond =
-                    hubFrame->localToWorldVelocity(
+                    tr.motion.travelFrame.localToWorldVelocity(
                         tr.motion.localPositionMeters,
                         glm::dvec3(0.0)
                     );

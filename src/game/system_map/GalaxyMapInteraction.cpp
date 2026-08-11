@@ -553,8 +553,8 @@ namespace game::system_map
                     клавиатурный фокус. При клике по 3D-карте возвращаем
                     фокус GLFW-окну.
 
-                    Обработчик F10 в HTML при этом остаётся нужен:
-                    он работает, пока курсор находится в правой панели.
+                    Navigation function keys are handled by Application, so
+                    returning focus here only restores normal GLFW map input.
                 */
                 const bool mapMousePressed =
                     (

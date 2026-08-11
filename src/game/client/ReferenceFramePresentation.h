@@ -15,13 +15,16 @@ inline bool sameReferenceFrameIdentity(
     const game::simulation::ShipReferenceFrameSnapshot& b
 ) noexcept
 {
+    const std::string& aFrameId =
+        a.frameId.empty() ? a.hubId : a.frameId;
+    const std::string& bFrameId =
+        b.frameId.empty() ? b.hubId : b.frameId;
+
     return
         a.valid && b.valid &&
         a.systemId == b.systemId &&
         a.type == b.type &&
-        a.bodyId == b.bodyId &&
-        a.hubId == b.hubId &&
-        a.moduleId == b.moduleId;
+        aFrameId == bFrameId;
 }
 
 inline glm::dvec3 safeNormalizePresentationAxis(

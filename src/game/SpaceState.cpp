@@ -55,6 +55,7 @@
 #include "src/game/presentation/ClientHudPresentation.h"
 #include "src/game/presentation/GalaxyNavigationPresentation.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
+#include "src/game/navigation/SystemNavigationGrid.h"
 
 #include <chrono>
 #include <algorithm>
@@ -463,6 +464,126 @@ bool SpaceState::resolvePlayerGalacticPositionLy(
 
     outPositionLy = marker.positionLy;
     return true;
+}
+
+
+void SpaceState::toggleConstellationOverlay()
+{
+    m_constellationOverlayEnabled =
+        !m_constellationOverlayEnabled;
+
+    m_sceneRenderer.setConstellationOverlayEnabled(
+        m_constellationOverlayEnabled
+    );
+
+    std::cout
+        << "[Constellations] gameplay layer "
+        << (m_constellationOverlayEnabled ? "enabled" : "disabled")
+        << std::endl;
+}
+
+
+bool SpaceState::buildPlayerDetailTarget(
+    world::celestial::DetailTarget& outTarget,
+    bool preferReferenceContext
+) const
+{
+    using namespace world::celestial;
+
+    outTarget = {};
+
+    if (!m_client)
+        return false;
+
+    const auto& nav = m_client->playerNavigation();
+    if (nav.currentSystemId < 0)
+        return false;
+
+    outTarget.systemId = nav.currentSystemId;
+
+    // This value is presentation metadata. Resolve it from the authoritative
+    // galaxy catalog when available; Detail request identity itself is the
+    // system id + anchor/cell below.
+    if (m_hasGalaxyMapSnapshot)
+    {
+        const auto systemIt = std::find_if(
+            m_galaxyMapSnapshot.systems.begin(),
+            m_galaxyMapSnapshot.systems.end(),
+            [&](const auto& system)
+            {
+                return system.id == nav.currentSystemId;
+            }
+        );
+        if (systemIt != m_galaxyMapSnapshot.systems.end())
+            outTarget.systemPositionLy = systemIt->positionLy;
+    }
+
+    const auto& ships = m_client->world().ships();
+    const auto playerIt = ships.find(m_playerId.value);
+
+    const game::navigation::DynamicMotionState* motion = nullptr;
+    if (playerIt != ships.end())
+        motion = &playerIt->second.transform.motion;
+
+    if (preferReferenceContext && motion)
+    {
+        const std::string bodyId =
+            !motion->parentBodyId.empty()
+                ? motion->parentBodyId
+                : motion->primaryGravityBodyId;
+
+        const bool activeHubReference =
+            motion->matchedToReferenceFrame && !motion->hubId.empty();
+
+        if (activeHubReference && !bodyId.empty())
+        {
+            outTarget.sceneKind = DetailSceneKind::CelestialBody;
+            outTarget.focusClass = DetailObjectClass::Hub;
+            outTarget.anchorId = bodyId;
+            outTarget.focusId = motion->hubId;
+            return outTarget.valid();
+        }
+
+        if (!bodyId.empty())
+        {
+            outTarget.sceneKind = DetailSceneKind::CelestialBody;
+            outTarget.focusClass = DetailObjectClass::CelestialBody;
+            outTarget.anchorId = bodyId;
+            outTarget.focusId = bodyId;
+            return outTarget.valid();
+        }
+
+        if (activeHubReference)
+        {
+            outTarget.sceneKind = DetailSceneKind::LocalObject;
+            outTarget.focusClass = DetailObjectClass::Hub;
+            outTarget.anchorId = motion->hubId;
+            outTarget.focusId = motion->hubId;
+            return outTarget.valid();
+        }
+    }
+
+    // No semantic body/hub target (or F12 explicitly requested local space):
+    // address the exact terminal system-navigation cube that contains player.
+    game::navigation::SystemNavigationGrid grid;
+    grid.activateSystem(nav.currentSystemId);
+
+    const int level = grid.maximumLevel();
+    const auto index =
+        grid.nearestIndexForPosition(nav.systemLocalAu, level);
+    const auto cell = grid.cell(index, level);
+
+    outTarget.sceneKind = DetailSceneKind::SpatialVolume;
+    outTarget.focusClass = DetailObjectClass::None;
+    outTarget.spatialCell.level = cell.level;
+    outTarget.spatialCell.maximumLevel = grid.maximumLevel();
+    outTarget.spatialCell.x = cell.index.x;
+    outTarget.spatialCell.y = cell.index.y;
+    outTarget.spatialCell.z = cell.index.z;
+    outTarget.spatialCell.centerAu = cell.center;
+    outTarget.spatialCell.edgeAu = cell.size;
+
+    return outTarget.valid();
 }
 
 
@@ -1173,21 +1294,6 @@ void SpaceState::prepareFrame(float dt)
 // =====================================================================================
 void SpaceState::handleInput()
 {
-    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F12))
-    {
-        m_constellationOverlayEnabled =
-            !m_constellationOverlayEnabled;
-
-        m_sceneRenderer.setConstellationOverlayEnabled(
-            m_constellationOverlayEnabled
-        );
-
-        std::cout
-            << "[Constellations] gameplay layer "
-            << (m_constellationOverlayEnabled ? "enabled" : "disabled")
-            << std::endl;
-    }
-
     if (context().app &&
         context().app->gameUiMode() == GameUiMode::SystemMap)
     {
@@ -3603,6 +3709,124 @@ void SpaceState::setSystemMapCurrentSystemMode()
 
 
 
+
+
+void SpaceState::setSystemMapPlayerSystemMode()
+{
+    if (!m_client)
+        return;
+
+    const auto& nav = m_client->playerNavigation();
+    if (nav.currentSystemId >= 0)
+    {
+        setSystemMapKnownSystemMode(nav.currentSystemId);
+        return;
+    }
+
+    requestGalaxyMapSnapshotOnce();
+
+    glm::dvec3 playerGalacticPositionLy {0.0};
+    if (resolvePlayerGalacticPositionLy(playerGalacticPositionLy))
+        setSystemMapEmptySectorMode(playerGalacticPositionLy);
+}
+
+
+void SpaceState::setSystemMapPlayerDetailMode()
+{
+    if (!m_client)
+        return;
+
+    requestGalaxyMapSnapshotOnce();
+
+    world::celestial::DetailTarget target;
+    if (!buildPlayerDetailTarget(target, true))
+    {
+        // Interstellar space has no system-local Details address. F10 remains
+        // the highest meaningful navigation level there.
+        setSystemMapPlayerSystemMode();
+        return;
+    }
+
+    if (requestDetailMapSnapshot(target, true) &&
+        game::client::MapTransitionController::simulationHasReached(
+            m_client->detailMapMetadata(),
+            m_client->lastSimulationMetadata()))
+    {
+        beginSystemMapDetailTransition(target);
+        return;
+    }
+
+    m_mapTransitions.beginDetail(target);
+}
+
+
+void SpaceState::setSystemMapPlayerLocalMode()
+{
+    if (!m_client)
+        return;
+
+    const auto& nav = m_client->playerNavigation();
+    if (nav.currentSystemId < 0)
+    {
+        setSystemMapPlayerSystemMode();
+        return;
+    }
+
+    const auto& ships = m_client->world().ships();
+    const auto playerIt = ships.find(m_playerId.value);
+
+    if (playerIt != ships.end())
+    {
+        const auto& motion = playerIt->second.transform.motion;
+
+        // A hub is the current local frame only while player is actually
+        // matched to it. A future detached/J-travel ship may keep the hub id as
+        // navigation metadata, but F12 must not jump back to an old hub.
+        if (motion.matchedToReferenceFrame && !motion.hubId.empty())
+        {
+            if (requestHubMapSnapshot(
+                    nav.currentSystemId,
+                    motion.hubId,
+                    true) &&
+                game::client::MapTransitionController::simulationHasReached(
+                    m_client->hubMapMetadata(),
+                    m_client->lastSimulationMetadata()))
+            {
+                beginSystemMapHubTransition(
+                    nav.currentSystemId,
+                    motion.hubId
+                );
+                return;
+            }
+
+            m_mapTransitions.beginHub(
+                nav.currentSystemId,
+                motion.hubId
+            );
+            return;
+        }
+    }
+
+    // No active hub: F12 is the exact terminal navigation cube containing the
+    // player. The existing Detail SpatialVolume backend is the current local
+    // cube renderer; it can later be promoted to a dedicated Local mode without
+    // changing this hotkey meaning.
+    requestGalaxyMapSnapshotOnce();
+    world::celestial::DetailTarget target;
+    if (!buildPlayerDetailTarget(target, false))
+        return;
+
+    if (requestDetailMapSnapshot(target, true) &&
+        game::client::MapTransitionController::simulationHasReached(
+            m_client->detailMapMetadata(),
+            m_client->lastSimulationMetadata()))
+    {
+        beginSystemMapDetailTransition(target);
+        return;
+    }
+
+    m_mapTransitions.beginDetail(target);
+}
 
 
 

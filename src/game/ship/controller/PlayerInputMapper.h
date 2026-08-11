@@ -22,5 +22,10 @@ struct PlayerInputMapper
     void updateFromKeyState(
         ShipControlState& control,
         const IPlayerInputKeyState& keys
-    ) const;
+    );
+
+private:
+    bool m_ctrlF10Latch = false;
+    game::navigation::LocalFlightControlLaw m_requestedLocalControlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian;
 };

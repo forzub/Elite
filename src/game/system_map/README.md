@@ -238,8 +238,8 @@ The three reserved display names are:
 - `THREE AXES` — separate X/Y/Z hierarchy notation;
 - `VERY SECRET CODE` — packed Crockford Base32 notation.
 
-Every rendered address line carries its format name. F9 is polled at the
-application/Windows level, so changing the notation does not depend on whether
-GLFW or the WebView currently owns keyboard focus. Reports and future
+Every rendered address line carries its format name. `Ctrl+F11` is polled at
+the application/Windows level, so changing the notation does not depend on
+whether GLFW or the WebView currently owns keyboard focus. Reports and future
 navigation interfaces must use the same service rather than store their own
 format setting.

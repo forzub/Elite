@@ -3,6 +3,7 @@
 #include "src/game/navigation/DynamicMotionSystem.h"
 #include "src/game/simulation/ShipReferenceFrameSnapshot.h"
 #include "src/game/ship/core/ShipControlState.h"
+#include "src/game/ship/core/ShipParams.h"
 #include "src/game/ship/core/ShipTransform.h"
 
 namespace game::client
@@ -18,37 +19,24 @@ inline bool canPredictHubTacticalMotion(
         frame.valid &&
         transform.motion.systemId >= 0 &&
         transform.motion.systemId == frame.systemId &&
-        !transform.motion.hubId.empty() &&
-        transform.motion.hubId == frame.hubId;
+        transform.motion.travelFrame.valid &&
+        !transform.motion.travelFrame.frameId.empty() &&
+        transform.motion.travelFrame.frameId ==
+            (frame.frameId.empty() ? frame.hubId : frame.frameId);
 }
 
-inline game::navigation::HubNavigationFrame
-hubNavigationFrameForPrediction(
+inline game::navigation::KinematicFrame
+travelFrameForPrediction(
     const game::simulation::ShipReferenceFrameSnapshot& source
 )
 {
-    game::navigation::HubNavigationFrame frame;
-    frame.systemId = source.systemId;
-    frame.hubId = source.hubId;
-    frame.parentBodyId = source.bodyId;
-    frame.primeModuleId = source.moduleId;
-    frame.originMeters = source.originMeters;
-    frame.velocityMetersPerSecond = source.velocityMetersPerSecond;
-    frame.accelerationMetersPerSecond2 = source.accelerationMetersPerSecond2;
-    frame.angularVelocityWorldRadPerSecond =
-        source.angularVelocityWorldRadPerSecond;
-    frame.angularAccelerationWorldRadPerSecond2 =
-        source.angularAccelerationWorldRadPerSecond2;
-    frame.radialAxis = source.radialAxis;
-    frame.progradeAxis = source.progradeAxis;
-    frame.normalAxis = source.normalAxis;
-    frame.valid = source.valid;
-    return frame;
+    return source.kinematicFrame();
 }
 
 inline bool predictHubTacticalMotion(
     ShipTransform& transform,
     const game::simulation::ShipReferenceFrameSnapshot& frameSnapshot,
+    const ShipParams& params,
     const ShipControlState& control,
     float dt
 )
@@ -56,12 +44,17 @@ inline bool predictHubTacticalMotion(
     if (!canPredictHubTacticalMotion(transform, frameSnapshot))
         return false;
 
-    const game::navigation::HubNavigationFrame frame =
-        hubNavigationFrameForPrediction(frameSnapshot);
+    const game::navigation::KinematicFrame frame =
+        travelFrameForPrediction(frameSnapshot);
 
-    game::navigation::DynamicMotionSystem::applyHubTacticalInput(
+    transform.motion.travelFrame = frame;
+    transform.motion.matchedToReferenceFrame =
+        frameSnapshot.matchedToReferenceFrame;
+
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
         transform.motion,
         frame,
+        params,
         dt,
         control.targetSpeedRate,
         control.cruiseActive,
@@ -73,10 +66,11 @@ inline bool predictHubTacticalMotion(
         transform.up()
     );
 
-    game::navigation::DynamicMotionSystem::updateHubTactical(
+    game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
         transform.motion,
         transform.worldPosition,
         frame,
+        params,
         static_cast<double>(dt)
     );
 

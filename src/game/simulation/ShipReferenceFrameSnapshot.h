@@ -15,6 +15,8 @@ namespace game::simulation
 struct ShipReferenceFrameSnapshot
 {
     int systemId = -1;
+    std::string frameId;
+    bool matchedToReferenceFrame = false;
 
     game::navigation::MotionMode type =
         game::navigation::MotionMode::Inertial;
@@ -43,7 +45,7 @@ struct ShipReferenceFrameSnapshot
     {
         game::navigation::KinematicFrame frame;
         frame.systemId = systemId;
-        frame.frameId = hubId;
+        frame.frameId = frameId.empty() ? hubId : frameId;
         frame.originMeters = originMeters;
         frame.linearVelocityMps = velocityMetersPerSecond;
         frame.linearAccelerationMps2 = accelerationMetersPerSecond2;

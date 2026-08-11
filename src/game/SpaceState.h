@@ -106,6 +106,10 @@ public:
     void setSystemMapGalaxyMode() override;
     void setSystemMapKnownSystemMode(int systemId);
     void setSystemMapCurrentSystemMode() override;
+    void setSystemMapPlayerSystemMode();
+    void setSystemMapPlayerDetailMode();
+    void setSystemMapPlayerLocalMode();
+    void toggleConstellationOverlay();
     void setSystemMapEmptySectorMode(
         const glm::dvec3& positionLy
     );
@@ -160,6 +164,10 @@ private:
     bool onGlobalEscape() override;
     bool isInSafeZone() const;
     bool resolvePlayerGalacticPositionLy(glm::dvec3& outPositionLy) const;
+    bool buildPlayerDetailTarget(
+        world::celestial::DetailTarget& outTarget,
+        bool preferReferenceContext
+    ) const;
     void renderUniverseTimeSimulationOverlay(
         const Viewport& viewport
     );

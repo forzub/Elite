@@ -130,8 +130,9 @@ if begin_diag is None:
     fail(simulation_cpp, "could not locate diagnostic branch entry")
 else:
     for required in (
-        "sourceHubFrame->localToWorldPosition(",
-        "sourceHubFrame->localToWorldVelocity(",
+        "motion.travelFrame.localToWorldPosition(",
+        "motion.travelFrame.localToWorldVelocity(",
+        "seedFromLocalTravelFrame",
         "m_universeDiagnosticTrajectories.add(",
         "GravityFieldSystem::sample(",
         "seededShipCount == eligibleShipCount",

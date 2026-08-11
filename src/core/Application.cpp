@@ -297,40 +297,92 @@ void Application::mainLoop()
         #ifdef _WIN32
         {
             /*
-                F9/F11 опрашиваются на уровне Windows, поэтому работают
-                независимо от фокуса GLFW/WebView.
+                Navigation function keys are polled at the Windows level so
+                they remain deterministic even when the embedded WebView has
+                keyboard focus.
 
-                F10 пока зарезервирована для будущей функции.
+                F9  = Galaxy
+                F10 = current System / highest-level current sector
+                F11 = current Details context
+                F12 = current Hub / local spatial cube
+
+                Ctrl+F10 is reserved for local flight-law switching and must
+                reach PlayerInputMapper. Ctrl+F11 cycles coordinate display;
+                Ctrl+F12 toggles gameplay constellations.
             */
+            const bool ctrlDown =
+                (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+
             const bool f9Down =
                 (GetAsyncKeyState(VK_F9) & 0x8000) != 0;
+            const bool f10Down =
+                (GetAsyncKeyState(VK_F10) & 0x8000) != 0;
+            const bool f11Down =
+                (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
+            const bool f12Down =
+                (GetAsyncKeyState(VK_F12) & 0x8000) != 0;
 
-            if (m_gameUi.consumeF9Press(f9Down))
+            auto* space = dynamic_cast<SpaceState*>(m_states.current());
+            bool consumedNavigationHotkey = false;
+
+            if (m_gameUi.consumeF9Press(f9Down) && space && !ctrlDown)
             {
-                if (dynamic_cast<SpaceState*>(m_states.current()))
+                if (!m_gameUi.isMode(GameUiMode::SystemMap))
+                    openGameUi(GameUiMode::SystemMap);
+                space->setSystemMapGalaxyMode();
+                consumedNavigationHotkey = true;
+            }
+
+            // Ctrl+F10 belongs to PlayerInputMapper. Still latch the physical
+            // F10 press here so releasing Ctrl before F10 cannot accidentally
+            // turn the same chord into a plain-F10 map command.
+            const bool f10PressedEdge =
+                m_gameUi.consumeF10Press(f10Down);
+            if (f10PressedEdge && space && !ctrlDown)
+            {
+                if (!m_gameUi.isMode(GameUiMode::SystemMap))
+                    openGameUi(GameUiMode::SystemMap);
+                space->setSystemMapPlayerSystemMode();
+                consumedNavigationHotkey = true;
+            }
+
+            if (m_gameUi.consumeF11Press(f11Down) && space)
+            {
+                if (ctrlDown)
                 {
                     game::navigation::CoordinateDisplayService::instance()
                         .cycle();
                 }
-            }
-
-
-            const bool f11Down =
-                (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
-
-            if (m_gameUi.consumeF11Press(f11Down))
-            {
-                if (dynamic_cast<SpaceState*>(m_states.current()))
+                else
                 {
-                    toggleSystemMapUi();
-
-                    Input::instance().reset();
-                    m_window->swapBuffers();
-                    continue;
+                    if (!m_gameUi.isMode(GameUiMode::SystemMap))
+                        openGameUi(GameUiMode::SystemMap);
+                    space->setSystemMapPlayerDetailMode();
                 }
+                consumedNavigationHotkey = true;
             }
 
+            if (m_gameUi.consumeF12Press(f12Down) && space)
+            {
+                if (ctrlDown)
+                {
+                    space->toggleConstellationOverlay();
+                }
+                else
+                {
+                    if (!m_gameUi.isMode(GameUiMode::SystemMap))
+                        openGameUi(GameUiMode::SystemMap);
+                    space->setSystemMapPlayerLocalMode();
+                }
+                consumedNavigationHotkey = true;
+            }
 
+            if (consumedNavigationHotkey)
+            {
+                Input::instance().reset();
+                m_window->swapBuffers();
+                continue;
+            }
         }
         #endif
 

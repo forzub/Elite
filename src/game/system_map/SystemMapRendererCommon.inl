@@ -636,7 +636,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         footer << " · FORMAT "
                << game::navigation::CoordinateDisplayService::instance()
                     .formatName()
-               << " [F9]";
+               << " [CTRL+F11]";
 
         footerText = footer.str();
     }
@@ -675,7 +675,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         footer << " · FORMAT "
                << game::navigation::CoordinateDisplayService::instance()
                     .formatName()
-               << " [F9]";
+               << " [CTRL+F11]";
 
         footerText = footer.str();
     }

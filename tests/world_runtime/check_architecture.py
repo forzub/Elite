@@ -498,9 +498,11 @@ if simulation_cpp.is_file():
     else:
         diagnostic_entry = diagnostic_match.group(0)
         for required in (
-            "seedFromHubLocalState",
-            "sourceHubFrame->localToWorldPosition(",
-            "sourceHubFrame->localToWorldVelocity(",
+            "seedFromLocalTravelFrame",
+            "motion.travelFrame.valid",
+            "motion.travelFrame.systemId == motion.systemId",
+            "motion.travelFrame.localToWorldPosition(",
+            "motion.travelFrame.localToWorldVelocity(",
             "motion.localPositionMeters",
             "motion.localVelocityMps",
             "m_universeDiagnosticTrajectories.add(",
@@ -517,6 +519,8 @@ if simulation_cpp.is_file():
             "motion.mode = game::navigation::MotionMode::PassiveTrajectory",
             "tr.setWorldPositionMeters(",
             "motion.worldVelocityMps =",
+            "sourceHubFrame->localToWorldPosition(",
+            "sourceHubFrame->localToWorldVelocity(",
         ):
             if forbidden in diagnostic_entry:
                 fail(

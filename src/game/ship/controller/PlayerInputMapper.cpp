@@ -23,14 +23,41 @@ void PlayerInputMapper::update(ShipControlState& control)
 void PlayerInputMapper::updateFromKeyState(
     ShipControlState& control,
     const IPlayerInputKeyState& keys
-) const
+)
 {
     auto& ctrl = control;
     ctrl = ShipControlState{};
 
+    const bool ctrlDown =
+        keys.isKeyPressed(GLFW_KEY_LEFT_CONTROL) ||
+        keys.isKeyPressed(GLFW_KEY_RIGHT_CONTROL);
+
+    // Ctrl+F10 switches the *local* flight law. Send the requested state as an
+    // idempotent command: prediction/replay may evaluate one control sample
+    // more than once, but setting a mode twice is harmless.
+    const bool ctrlF10Down =
+        ctrlDown && keys.isKeyPressed(GLFW_KEY_F10);
+
+    if (!ctrlF10Down)
+    {
+        m_ctrlF10Latch = false;
+    }
+    else if (!m_ctrlF10Latch)
+    {
+        m_ctrlF10Latch = true;
+        m_requestedLocalControlLaw =
+            m_requestedLocalControlLaw ==
+                    game::navigation::LocalFlightControlLaw::Newtonian
+                ? game::navigation::LocalFlightControlLaw::Assisted
+                : game::navigation::LocalFlightControlLaw::Newtonian;
+
+        ctrl.localControlLawCommandValid = true;
+        ctrl.requestedLocalControlLaw = m_requestedLocalControlLaw;
+    }
+
     ctrl.cruiseActive = keys.isKeyPressed(GLFW_KEY_J);
 
-    // --- Rotation (disabled in cruise) ---
+    // --- Rotation (disabled in J/cruise placeholder) ---
     if (!ctrl.cruiseActive)
     {
         ctrl.pitchInput =
@@ -41,16 +68,14 @@ void PlayerInputMapper::updateFromKeyState(
             (keys.isKeyPressed(GLFW_KEY_D) ? 1.0f : 0.0f) -
             (keys.isKeyPressed(GLFW_KEY_A) ? 1.0f : 0.0f);
 
-        const bool ctrlDown =
-            keys.isKeyPressed(GLFW_KEY_LEFT_CONTROL) ||
-            keys.isKeyPressed(GLFW_KEY_RIGHT_CONTROL);
-
         ctrl.yawInput =
             (!ctrlDown && keys.isKeyPressed(GLFW_KEY_Q) ? 1.0f : 0.0f) -
             (!ctrlDown && keys.isKeyPressed(GLFW_KEY_E) ? 1.0f : 0.0f);
     }
 
-    // --- Target speed control ---
+    // +/- is deliberately a generic longitudinal command. DynamicMotionSystem
+    // interprets it as thrust in Newtonian mode and as target-speed change in
+    // Assisted mode.
     if (keys.isKeyPressed(GLFW_KEY_KP_ADD) ||
         keys.isKeyPressed(GLFW_KEY_EQUAL))
     {
@@ -63,7 +88,7 @@ void PlayerInputMapper::updateFromKeyState(
         ctrl.targetSpeedRate = -1.0f;
     }
 
-    // --- Manoeuvre thrusters (disabled in cruise) ---
+    // --- Manoeuvre thrusters (disabled in J/cruise placeholder) ---
     if (!ctrl.cruiseActive)
     {
         ctrl.strafeInput =
@@ -77,5 +102,21 @@ void PlayerInputMapper::updateFromKeyState(
         ctrl.liftInput =
             (keys.isKeyPressed(GLFW_KEY_KP_9) ? 1.0f : 0.0f) -
             (keys.isKeyPressed(GLFW_KEY_KP_3) ? 1.0f : 0.0f);
+
+        if (keys.isKeyPressed(GLFW_KEY_HOME))
+        {
+            ctrl.velocityAlignmentCommand =
+                game::navigation::VelocityAlignmentMode::ForwardToVelocity;
+        }
+        else if (keys.isKeyPressed(GLFW_KEY_INSERT))
+        {
+            ctrl.velocityAlignmentCommand =
+                game::navigation::VelocityAlignmentMode::BackwardToVelocity;
+        }
+        else if (keys.isKeyPressed(GLFW_KEY_END))
+        {
+            ctrl.velocityAlignmentCommand =
+                game::navigation::VelocityAlignmentMode::BrakeToStop;
+        }
     }
 }

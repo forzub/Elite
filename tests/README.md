@@ -29,7 +29,7 @@ Locks down:
 - accelerated trajectory diagnostics use a transactional alternate branch for
   every eligible real ship; the production branch is frozen and the alternate
   branch is discarded on exit;
-- HubTactical diagnostic seeds are reconstructed from canonical hub-local
+- HubTactical diagnostic seeds are reconstructed from canonical ship-owned travel-frame
   state, including the rotating-frame `omega x r` term;
 - universe-timeline revision changes are hard interpolation/cache fences.
 

@@ -56,6 +56,10 @@ ShipTransform makeHubTacticalTransform()
     transform.motion.mode = game::navigation::MotionMode::HubTactical;
     transform.motion.systemId = 0;
     transform.motion.hubId = "test_hub";
+    transform.motion.travelFrame.systemId = 0;
+    transform.motion.travelFrame.frameId = "ship_travel_test";
+    transform.motion.travelFrame.localToWorldBasis = glm::dmat3(1.0);
+    transform.motion.travelFrame.valid = true;
     transform.motion.localPositionMeters = glm::dvec3(0.0);
     transform.motion.localVelocityMps = glm::dvec3(100.0, 0.0, 0.0);
     transform.motion.worldVelocityMps = glm::dvec3(100.0, 0.0, 0.0);
@@ -67,6 +71,7 @@ game::simulation::ShipReferenceFrameSnapshot makeHubFrame()
 {
     game::simulation::ShipReferenceFrameSnapshot frame;
     frame.systemId = 0;
+    frame.frameId = "ship_travel_test";
     frame.type = game::navigation::MotionMode::HubTactical;
     frame.hubId = "test_hub";
     frame.originMeters = glm::dvec3(0.0);

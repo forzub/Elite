@@ -153,28 +153,32 @@ void testGameUiToggleContract()
     GameUiController ui;
 
     require(!ui.isOpen(), "game UI controller no longer starts closed");
-    require(ui.consumeF11Press(true), "first F11 press is no longer consumed");
-    require(!ui.consumeF11Press(true), "held F11 now retriggers instead of latching");
-    require(!ui.consumeF11Press(false), "F11 release unexpectedly triggers an action");
-    require(ui.consumeF11Press(true), "F11 latch did not reset after release");
 
-    require(ui.toggle(GameUiMode::SystemMap), "SystemMap UI did not open through toggle contract");
+    auto checkLatch = [&](auto consume, const char* name)
+    {
+        require((ui.*consume)(true), std::string("first ") + name + " press is no longer consumed");
+        require(!(ui.*consume)(true), std::string("held ") + name + " now retriggers instead of latching");
+        require(!(ui.*consume)(false), std::string(name) + " release unexpectedly triggers an action");
+        require((ui.*consume)(true), std::string(name) + " latch did not reset after release");
+        (ui.*consume)(false);
+    };
+
+    checkLatch(&GameUiController::consumeF9Press, "F9");
+    checkLatch(&GameUiController::consumeF10Press, "F10");
+    checkLatch(&GameUiController::consumeF11Press, "F11");
+    checkLatch(&GameUiController::consumeF12Press, "F12");
+
+    require(ui.open(GameUiMode::SystemMap), "SystemMap UI did not open through direct-open contract");
     require(ui.isMode(GameUiMode::SystemMap), "SystemMap UI mode was not recorded as open");
-    require(ui.toggle(GameUiMode::SystemMap), "SystemMap UI did not close through toggle contract");
-    require(!ui.isOpen(), "SystemMap UI remained open after second toggle");
+    require(!ui.open(GameUiMode::SystemMap), "opening the same SystemMap mode retriggered state change");
+    require(ui.close(), "SystemMap UI did not close through close contract");
+    require(!ui.isOpen(), "SystemMap UI remained open after close");
 
-    pass("F11 + GAME UI TOGGLE");
+    pass("F9-F12 MAP UI LATCHES");
 }
 
 void testCoordinateDisplayHotkeyContract()
 {
-    GameUiController ui;
-
-    require(ui.consumeF9Press(true), "first F9 press is no longer consumed");
-    require(!ui.consumeF9Press(true), "held F9 now retriggers instead of latching");
-    require(!ui.consumeF9Press(false), "F9 release unexpectedly triggers an action");
-    require(ui.consumeF9Press(true), "F9 latch did not reset after release");
-
     auto& display = game::navigation::CoordinateDisplayService::instance();
     const auto saved = display.format();
 
@@ -197,7 +201,7 @@ void testCoordinateDisplayHotkeyContract()
     require(display.format() == game::navigation::CoordinateDisplayFormat::Hierarchical, "coordinate-format cycle no longer wraps to Hierarchical");
 
     display.setFormat(saved);
-    pass("F9 + COORDINATE DISPLAY FORMAT");
+    pass("CTRL+F11 + COORDINATE DISPLAY FORMAT");
 }
 
 void testConstellationOverlayContract()
@@ -210,7 +214,7 @@ void testConstellationOverlayContract()
     starfield.setConstellationOverlayEnabled(false);
     require(!starfield.constellationOverlayEnabled(), "constellation overlay cannot be disabled");
 
-    pass("F12 + CONSTELLATION OVERLAY STATE");
+    pass("CTRL+F12 + CONSTELLATION OVERLAY STATE");
 }
 
 class SystemMapUiTargetSpy final : public game::ui::ISystemMapUiTarget
@@ -486,22 +490,22 @@ void testInputMapping()
     keys.clear();
     keys.press(GLFW_KEY_EQUAL);
     control = mapKeys(mapper, keys);
-    require(control.targetSpeedRate == 1.0f, "= no longer increases target speed");
+    require(control.targetSpeedRate == 1.0f, "= no longer maps to positive longitudinal command");
 
     keys.clear();
     keys.press(GLFW_KEY_KP_ADD);
     control = mapKeys(mapper, keys);
-    require(control.targetSpeedRate == 1.0f, "KP+ no longer increases target speed");
+    require(control.targetSpeedRate == 1.0f, "KP+ no longer maps to positive longitudinal command");
 
     keys.clear();
     keys.press(GLFW_KEY_MINUS);
     control = mapKeys(mapper, keys);
-    require(control.targetSpeedRate == -1.0f, "- no longer decreases target speed");
+    require(control.targetSpeedRate == -1.0f, "- no longer maps to negative longitudinal command");
 
     keys.clear();
     keys.press(GLFW_KEY_KP_SUBTRACT);
     control = mapKeys(mapper, keys);
-    require(control.targetSpeedRate == -1.0f, "KP- no longer decreases target speed");
+    require(control.targetSpeedRate == -1.0f, "KP- no longer maps to negative longitudinal command");
 
     keys.clear();
     keys.press(GLFW_KEY_LEFT_CONTROL);
@@ -514,6 +518,53 @@ void testInputMapping()
     keys.press(GLFW_KEY_E);
     control = mapKeys(mapper, keys);
     require(control.yawInput == 0.0f, "Right-Ctrl+E leaked into yaw instead of command chord handling");
+
+    keys.clear();
+    keys.press(GLFW_KEY_LEFT_CONTROL);
+    keys.press(GLFW_KEY_F10);
+    control = mapKeys(mapper, keys);
+    require(control.localControlLawCommandValid, "first Ctrl+F10 no longer emits a flight-law command");
+    require(
+        control.requestedLocalControlLaw == game::navigation::LocalFlightControlLaw::Assisted,
+        "first Ctrl+F10 no longer selects Assisted mode"
+    );
+    control = mapKeys(mapper, keys);
+    require(!control.localControlLawCommandValid, "held Ctrl+F10 retriggers local flight-law switching");
+
+    keys.clear();
+    (void)mapKeys(mapper, keys);
+    keys.press(GLFW_KEY_LEFT_CONTROL);
+    keys.press(GLFW_KEY_F10);
+    control = mapKeys(mapper, keys);
+    require(control.localControlLawCommandValid, "second Ctrl+F10 press was not latched");
+    require(
+        control.requestedLocalControlLaw == game::navigation::LocalFlightControlLaw::Newtonian,
+        "second Ctrl+F10 no longer returns to Newtonian mode"
+    );
+
+    keys.clear();
+    keys.press(GLFW_KEY_HOME);
+    control = mapKeys(mapper, keys);
+    require(
+        control.velocityAlignmentCommand == game::navigation::VelocityAlignmentMode::ForwardToVelocity,
+        "HOME no longer requests nose-to-velocity alignment"
+    );
+
+    keys.clear();
+    keys.press(GLFW_KEY_INSERT);
+    control = mapKeys(mapper, keys);
+    require(
+        control.velocityAlignmentCommand == game::navigation::VelocityAlignmentMode::BackwardToVelocity,
+        "INSERT no longer requests tail-to-velocity alignment"
+    );
+
+    keys.clear();
+    keys.press(GLFW_KEY_END);
+    control = mapKeys(mapper, keys);
+    require(
+        control.velocityAlignmentCommand == game::navigation::VelocityAlignmentMode::BrakeToStop,
+        "END no longer requests velocity autobrake"
+    );
 
     keys.clear();
     keys.press(GLFW_KEY_J);
@@ -547,6 +598,13 @@ void testBootAndIdle(
     require(serverPlayer.transform.motion.mode == game::navigation::MotionMode::HubTactical, "initial player is no longer in HubTactical runtime mode");
     require(serverPlayer.referenceFrame.valid, "initial player reference frame is invalid");
     require(!serverPlayer.referenceFrame.hubId.empty(), "initial player has no hub reference frame");
+    require(serverPlayer.transform.motion.travelFrame.valid, "initial player has no owned travel frame");
+    require(serverPlayer.transform.motion.matchedToReferenceFrame, "initial player travel frame is not matched to spawn hub");
+    require(!serverPlayer.transform.motion.travelFrame.frameId.empty(), "initial player travel frame has no identity");
+    require(
+        serverPlayer.referenceFrame.frameId == serverPlayer.transform.motion.travelFrame.frameId,
+        "snapshot reference frame is not sourced from the owned player travel frame"
+    );
     require(finiteVec(serverPlayer.transform.motion.localPositionMeters), "server player local position is non-finite");
     require(finiteVec(clientPlayer.renderTransform.motion.localPositionMeters), "client player render position is non-finite");
     requireOrientationBasis(serverPlayer.transform, "server player boot orientation");
@@ -693,9 +751,58 @@ void testOrientationAndMovement(
     require(glm::length(localForward) > 0.9, "could not project ship forward into hub-local basis");
     require(glm::dot(displacement, glm::normalize(localForward)) > 0.0, "ship moved opposite to its forward vector after yaw");
 
-    const double targetSpeedBeforeThrottle =
-        afterThrust.transform.motion.targetForwardSpeedMps;
+    const double speedBeforeMainThrust =
+        glm::length(afterThrust.transform.motion.localVelocityMps);
 
+    keys.press(GLFW_KEY_EQUAL);
+    const ShipControlState newtonianThrustControl = mapKeys(mapper, keys);
+    runFrames(session, newtonianThrustControl, 25);
+
+    const auto& afterNewtonianThrust = findServerShip(debug, playerId);
+    require(
+        afterNewtonianThrust.transform.motion.localControlLaw ==
+            game::navigation::LocalFlightControlLaw::Newtonian,
+        "player no longer starts local flight in Newtonian mode"
+    );
+    require(
+        glm::length(afterNewtonianThrust.transform.motion.localVelocityMps) >
+            speedBeforeMainThrust + 1.0,
+        "Newtonian + did not increase authoritative VREL"
+    );
+
+    // Switch through the real Ctrl+F10 mapper path. The command is a single
+    // fixed-step event. Server snapshots are intentionally published at a
+    // lower cadence than the authoritative simulation, so never assume that
+    // N render frames imply that the corresponding state is already visible
+    // in m_lastSnapshot. Send the event once, then wait for an authoritative
+    // publication that contains the new persistent motion law.
+    keys.clear();
+    (void)mapKeys(mapper, keys);
+    keys.press(GLFW_KEY_LEFT_CONTROL);
+    keys.press(GLFW_KEY_F10);
+    const ShipControlState assistedModeControl = mapKeys(mapper, keys);
+    require(assistedModeControl.localControlLawCommandValid,
+            "Ctrl+F10 did not emit Assisted mode command during real flight");
+    runFrame(session, assistedModeControl);
+
+    waitFor(
+        session,
+        [&]()
+        {
+            return
+                findServerShip(debug, playerId).transform.motion.localControlLaw ==
+                game::navigation::LocalFlightControlLaw::Assisted;
+        },
+        "authoritative player did not publish Assisted local flight law"
+    );
+
+    const auto& afterModeSwitch = findServerShip(debug, playerId);
+
+    const double targetSpeedBeforeThrottle =
+        afterModeSwitch.transform.motion.targetForwardSpeedMps;
+
+    keys.clear();
+    (void)mapKeys(mapper, keys);
     keys.press(GLFW_KEY_EQUAL);
     const ShipControlState throttleUpControl = mapKeys(mapper, keys);
     runFrames(session, throttleUpControl, 25);
@@ -704,7 +811,7 @@ void testOrientationAndMovement(
     require(
         afterThrottleUp.transform.motion.targetForwardSpeedMps >
             targetSpeedBeforeThrottle + 1.0,
-        "target-speed control did not increase authoritative engine setpoint"
+        "Assisted target-speed control did not increase authoritative setpoint"
     );
 
     const double raisedTargetSpeed =
@@ -719,7 +826,7 @@ void testOrientationAndMovement(
     require(
         afterThrottleDown.transform.motion.targetForwardSpeedMps <
             raisedTargetSpeed - 1.0,
-        "target-speed control did not decrease authoritative engine setpoint"
+        "Assisted target-speed control did not decrease authoritative setpoint"
     );
 
     keys.clear();

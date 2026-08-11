@@ -381,28 +381,42 @@ void testHubTacticalClientPredictionAdvancesLocalMotion()
     transform.motion.mode = game::navigation::MotionMode::HubTactical;
     transform.motion.systemId = 0;
     transform.motion.hubId = "hub";
+    transform.motion.travelFrame.systemId = 0;
+    transform.motion.travelFrame.frameId = "ship_travel_test";
+    transform.motion.travelFrame.localToWorldBasis = glm::dmat3(1.0);
+    transform.motion.travelFrame.valid = true;
     transform.motion.localPositionMeters = glm::dvec3(10.0, 20.0, 30.0);
     transform.motion.localVelocityMps = glm::dvec3(4.0, -2.0, 1.0);
 
     game::simulation::ShipReferenceFrameSnapshot frame;
     frame.systemId = 0;
+    frame.frameId = "ship_travel_test";
     frame.hubId = "hub";
     frame.valid = true;
     frame.originMeters = glm::dvec3(1000.0, 2000.0, 3000.0);
     frame.progradeAxis = glm::dvec3(1.0, 0.0, 0.0);
     frame.radialAxis = glm::dvec3(0.0, 1.0, 0.0);
     frame.normalAxis = glm::dvec3(0.0, 0.0, 1.0);
+    transform.motion.travelFrame = frame.kinematicFrame();
 
     transform.setWorldPositionMeters(
         frame.localToWorldPosition(transform.motion.localPositionMeters)
     );
 
     ShipControlState control;
+    ShipParams params{};
+    params.maxCombatSpeed = 350.0f;
+    params.maxGs = 5.0f;
+    params.strafeAccel = 20.0f;
+    params.strafeDamping = 6.0f;
+    params.maxStrafeSpeed = 80.0f;
+    params.throttleAccel = 5.0f;
 
     const bool predicted =
         game::client::predictHubTacticalMotion(
             transform,
             frame,
+            params,
             control,
             0.25f
         );
@@ -422,12 +436,13 @@ void testHubTacticalClientPredictionAdvancesLocalMotion()
     );
 
     auto wrongFrame = frame;
-    wrongFrame.hubId = "other";
+    wrongFrame.frameId = "other_travel_frame";
     const glm::dvec3 before = transform.motion.localPositionMeters;
     REQUIRE(
         !game::client::predictHubTacticalMotion(
             transform,
             wrongFrame,
+            params,
             control,
             0.25f
         )

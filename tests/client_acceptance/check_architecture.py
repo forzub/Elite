@@ -70,7 +70,9 @@ required_harness_tokens = (
     "buildGameSystemSkyLabel",
     "CoordinateDisplayService",
     "consumeF9Press",
+    "consumeF10Press",
     "consumeF11Press",
+    "consumeF12Press",
     "constellationOverlayEnabled",
 )
 
@@ -82,6 +84,7 @@ for forbidden in (
     ".world().predict(",
     "SharedShipPhysics::integrate(",
     "DynamicMotionSystem::applyHubTacticalInput(",
+    "DynamicMotionSystem::applyLocalFrameInput(",
     "GameServer server",
     "GameSimulation simulation",
 ):
@@ -91,41 +94,83 @@ for forbidden in (
 if "updateFromKeyState(control, keys)" not in mapper:
     fail("runtime PlayerInputMapper no longer shares the injectable mapping path")
 
-# F11 must still enter the same GameUiController latch/toggle path tested headlessly.
-for token in (
-    "consumeF11Press",
-    "toggleSystemMapUi",
-):
-    if token not in application:
-        fail(f"Application F11 map path no longer uses: {token}")
-
-# Current function-key bindings are functional behavior, not permanent API.
-# F9 is scheduled for future reassignment to Galaxy map, but until that change
-# lands it must still cycle the coordinate display through the production service.
+# Function-key map layout is now a protected player-facing contract.
 for token in (
     "VK_F9",
+    "VK_F10",
+    "VK_F11",
+    "VK_F12",
     "consumeF9Press",
-    "CoordinateDisplayService::instance()",
-    ".cycle()",
+    "consumeF10Press",
+    "consumeF11Press",
+    "consumeF12Press",
+    "setSystemMapGalaxyMode()",
+    "setSystemMapPlayerSystemMode()",
+    "setSystemMapPlayerDetailMode()",
+    "setSystemMapPlayerLocalMode()",
 ):
     if token not in application:
-        fail(f"current F9 coordinate-format path no longer uses: {token}")
+        fail(f"current F9-F12 navigation layout no longer uses: {token}")
+
+# Ctrl+F10 must remain available to the production flight mapper instead of
+# being consumed as an F10 map command. Application still latches physical F10
+# so releasing Ctrl first cannot turn one chord into a second map command.
+for token in (
+    "f10PressedEdge",
+    "consumeF10Press(f10Down)",
+    "f10PressedEdge && space && !ctrlDown",
+):
+    if token not in application:
+        fail(f"F10/Ctrl+F10 edge separation lost: {token}")
 
 for token in (
-    "GLFW_KEY_F12",
+    "ctrlDown && keys.isKeyPressed(GLFW_KEY_F10)",
+    "localControlLawCommandValid",
+    "requestedLocalControlLaw",
+):
+    if token not in mapper:
+        fail(f"Ctrl+F10 flight-law mapping lost: {token}")
+
+for token in (
+    "CoordinateDisplayService::instance()",
+    ".cycle()",
+    "if (ctrlDown)",
+):
+    if token not in application:
+        fail(f"Ctrl+F11 coordinate-format path no longer uses: {token}")
+
+for token in (
+    "toggleConstellationOverlay()",
+    "consumeF12Press",
+):
+    if token not in application:
+        fail(f"Ctrl+F12 constellation path no longer uses: {token}")
+
+for token in (
     "m_constellationOverlayEnabled",
     "setConstellationOverlayEnabled",
 ):
     if token not in space:
-        fail(f"current F12 constellation path no longer uses: {token}")
+        fail(f"constellation overlay runtime path no longer uses: {token}")
 
 for token in (
     "CoordinateDisplayService::instance()",
     ".formatName()",
-    '" [F9]"',
+    '" [CTRL+F11]"',
 ):
     if token not in system_map_common:
         fail(f"map coordinate footer stopped exposing current format state: {token}")
+
+# HUD speed must be canonical travel-frame-relative velocity; legacy mirrors
+# are explicitly forbidden because they diverge from DynamicMotionState.
+if "motion.localVelocityMps" not in hud_presentation:
+    fail("HUD no longer reads canonical travel-frame relative velocity")
+for forbidden in (
+    "renderTransform.localVelocity",
+    "renderTransform.forwardVelocity",
+):
+    if forbidden in hud_presentation:
+        fail(f"HUD regressed to legacy velocity mirror: {forbidden}")
 
 # Browser command parsing + dispatch must be the exact production seam exercised by acceptance.
 for token in (
@@ -189,7 +234,7 @@ for token in (
 # Keep formatting/data ownership in the tested presenter, not duplicated in SpaceState.
 for token in (
     '"CELL %lld %lld %lld"',
-    '"V %.1f m/s"',
+    '"VREL %.1f m/s  %s"',
 ):
     if token in space:
         fail(f"HUD formatting escaped the tested presenter back into SpaceState: {token}")

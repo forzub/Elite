@@ -45,15 +45,10 @@ PlayerHudTelemetry buildPlayerHudTelemetry(
         ) * world::coordinates::GalacticCellSizeM +
         wp.localMeters;
 
+    // Pilot-local speed is defined relative to the ship travel frame. Legacy
+    // float mirrors are not authoritative and may legitimately remain zero.
     out.speedMps =
-        glm::length(glm::dvec3(ship.renderTransform.localVelocity));
-
-    if (std::abs(static_cast<double>(
-            ship.renderTransform.forwardVelocity)) > out.speedMps)
-    {
-        out.speedMps = std::abs(static_cast<double>(
-            ship.renderTransform.forwardVelocity));
-    }
+        glm::length(ship.renderTransform.motion.localVelocityMps);
 
     char buffer[128];
 
@@ -76,7 +71,15 @@ PlayerHudTelemetry buildPlayerHudTelemetry(
     std::snprintf(buffer, sizeof(buffer), "Z %.0f m", out.globalMeters.z);
     out.zLabel = buffer;
 
-    std::snprintf(buffer, sizeof(buffer), "V %.1f m/s", out.speedMps);
+    std::snprintf(
+        buffer,
+        sizeof(buffer),
+        "VREL %.1f m/s  %s",
+        out.speedMps,
+        game::navigation::localFlightControlLawName(
+            ship.renderTransform.motion.localControlLaw
+        )
+    );
     out.speedLabel = buffer;
 
     return out;

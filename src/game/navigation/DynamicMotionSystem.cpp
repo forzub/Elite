@@ -1,33 +1,67 @@
-#include <cmath>
 #include <algorithm>
-#include <fstream>
+#include <cmath>
 
 #include "DynamicMotionSystem.h"
 
 namespace game::navigation
 {
+namespace
+{
+constexpr double StandardGravityMps2 = 9.80665;
+constexpr double StopSpeedEpsilonMps = 0.05;
+constexpr double BrakeAlignmentCos = 0.995;
 
-void DynamicMotionSystem::updateHubTactical(
+inline double positiveOr(double value, double fallback)
+{
+    return value > 0.0 ? value : fallback;
+}
+
+inline double localSpeedLimit(const ShipParams& params)
+{
+    return std::max(0.0, static_cast<double>(params.maxCombatSpeed));
+}
+
+inline double linearAccelerationLimit(const ShipParams& params)
+{
+    // maxGs is the common safety envelope. For a crewed craft it normally
+    // represents crew tolerance; for an unmanned craft the descriptor can set
+    // a higher structural/equipment limit without changing the motion code.
+    return std::max(
+        0.0,
+        static_cast<double>(params.maxGs) * StandardGravityMps2
+    );
+}
+
+inline glm::dvec3 clampMagnitude(
+    glm::dvec3 value,
+    double maxLength
+)
+{
+    if (maxLength <= 0.0)
+        return glm::dvec3(0.0);
+
+    const double length = glm::length(value);
+    if (length > maxLength && length > 1.0e-12)
+        value *= maxLength / length;
+
+    return value;
+}
+}
+
+void DynamicMotionSystem::updateLocalFrameMotion(
     DynamicMotionState& motion,
     world::coordinates::WorldPosition& worldPosition,
-    const HubNavigationFrame& frame,
+    const KinematicFrame& frame,
+    const ShipParams& params,
     double dt
 )
 {
-    // HubTactical state is authoritative in the hub-local reference frame.
-    // The hub may move by a large amount when universe time is accelerated;
-    // that movement must not be interpreted as free flight of the ship.
-    /*
-        HubTactical is a controlled coordinate mode relative to the orbital
-        hub. Applying absolute planetary gravity directly to local motion is
-        incorrect because the hub frame itself is in the same gravitational
-        fall. That old path pulled an idle player toward the planet on the
-        Hub Map.
+    if (dt <= 0.0)
+        return;
 
-        Free orbital/gravity propagation belongs to PassiveTrajectory. In
-        HubTactical only commanded engine acceleration changes the local
-        relative state.
-    */
+    // Local translation is authoritative in the ship-owned travel frame. The
+    // travel frame carries large-scale motion; ordinary engines only change
+    // motion inside it. Future J propulsion owns travel-frame acceleration.
     const glm::dvec3 localAcceleration =
         frame.worldToLocalVector(
             motion.engineAccelerationMps2
@@ -35,6 +69,29 @@ void DynamicMotionSystem::updateHubTactical(
 
     motion.localVelocityMps +=
         localAcceleration * dt;
+
+    // Both local control laws are deliberately bounded. The separate J layer
+    // exists for high-energy travel; normal local flight must remain inside a
+    // survivable/structurally permitted envelope.
+    const double maxLocalSpeed = localSpeedLimit(params);
+    if (maxLocalSpeed > 0.0)
+    {
+        motion.localVelocityMps =
+            clampMagnitude(
+                motion.localVelocityMps,
+                maxLocalSpeed
+            );
+    }
+
+    if (motion.velocityAlignmentMode ==
+            VelocityAlignmentMode::BrakeToStop &&
+        glm::length(motion.localVelocityMps) <= StopSpeedEpsilonMps)
+    {
+        motion.localVelocityMps = glm::dvec3(0.0);
+        motion.engineAccelerationMps2 = glm::dvec3(0.0);
+        motion.velocityAlignmentMode = VelocityAlignmentMode::None;
+        motion.targetForwardSpeedMps = 0.0;
+    }
 
     motion.localPositionMeters +=
         motion.localVelocityMps * dt;
@@ -62,12 +119,10 @@ void DynamicMotionSystem::updateHubTactical(
         );
 }
 
-
-
-
-void DynamicMotionSystem::applyHubTacticalInput(
+void DynamicMotionSystem::applyLocalFrameInput(
     DynamicMotionState& motion,
-    const HubNavigationFrame& frame,
+    const KinematicFrame& frame,
+    const ShipParams& params,
     float dt,
     float targetSpeedRate,
     bool cruiseActive,
@@ -79,207 +134,175 @@ void DynamicMotionSystem::applyHubTacticalInput(
     const glm::vec3& shipUp
 )
 {
-    const double dtD =
-        static_cast<double>(dt);
-
-    const double maxCombatSpeed =
-        500.0;
-
+    const double dtD = std::max(0.0, static_cast<double>(dt));
+    const double maxSpeed = localSpeedLimit(params);
+    const double maxAccel = linearAccelerationLimit(params);
+    const double manoeuvreAccel =
+        positiveOr(static_cast<double>(params.strafeAccel), 0.0);
     const double maxStrafeSpeed =
-        80.0;
-
-    const double targetSpeedAccel =
-        200.0;
-
-    const double throttleAccel =
-        5.0;
-
-    const double strafeAccel =
-        80.0;
-
+        std::max(0.0, static_cast<double>(params.maxStrafeSpeed));
     const double strafeDamping =
-        4.0;
+        std::max(0.0, static_cast<double>(params.strafeDamping));
 
- 
-
-    const glm::dvec3 f =
-        glm::normalize(glm::dvec3(shipForward));
-
-    const glm::dvec3 r =
-        glm::normalize(glm::dvec3(shipRight));
-
-    const glm::dvec3 u =
-        glm::normalize(glm::dvec3(shipUp));
-
-    glm::dvec3 relativeWorldVelocity {0.0};
+    const glm::dvec3 f = glm::normalize(glm::dvec3(shipForward));
+    const glm::dvec3 r = glm::normalize(glm::dvec3(shipRight));
+    const glm::dvec3 u = glm::normalize(glm::dvec3(shipUp));
 
     if (cruiseActive)
     {
-        motion.targetForwardSpeedMps =
-            motion.forwardSpeedMps;
+        // Stage 3 deliberately leaves J/cruise semantics untouched. The next
+        // propulsion stage will detach/accelerate the travel frame itself.
+        motion.engineAccelerationMps2 = glm::dvec3(0.0);
+        motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
+        return;
+    }
+
+    const glm::dvec3 relativeWorldVelocity =
+        frame.localToWorldVector(motion.localVelocityMps);
+
+    motion.forwardSpeedMps =
+        glm::dot(relativeWorldVelocity, f);
+
+    if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
+    {
+        // END: rotate tail-to-velocity via ShipController, then use bounded
+        // main-engine deceleration. The translation vector itself is never
+        // rotated merely because the hull turned.
+        if (motion.velocityAlignmentMode ==
+                VelocityAlignmentMode::BrakeToStop)
+        {
+            const double speed = glm::length(relativeWorldVelocity);
+            if (speed <= StopSpeedEpsilonMps || dtD <= 0.0)
+            {
+                motion.localVelocityMps = glm::dvec3(0.0);
+                motion.engineAccelerationMps2 = glm::dvec3(0.0);
+                motion.velocityAlignmentMode = VelocityAlignmentMode::None;
+                motion.targetForwardSpeedMps = 0.0;
+                return;
+            }
+
+            const glm::dvec3 antiVelocity =
+                -relativeWorldVelocity / speed;
+
+            if (glm::dot(f, antiVelocity) >= BrakeAlignmentCos)
+            {
+                const double brakeAccel = std::min(
+                    maxAccel,
+                    speed / dtD
+                );
+                motion.engineAccelerationMps2 =
+                    antiVelocity * brakeAccel;
+            }
+            else
+            {
+                motion.engineAccelerationMps2 = glm::dvec3(0.0);
+            }
+
+            motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
+            return;
+        }
+
+        // +/- is actual longitudinal thrust. Releasing the key removes thrust;
+        // the velocity vector persists. Turning the hull alone does not alter
+        // that vector.
+        glm::dvec3 desiredAcceleration =
+            f * (static_cast<double>(targetSpeedRate) * maxAccel) +
+            f * (static_cast<double>(forwardInput) * manoeuvreAccel) +
+            r * (static_cast<double>(strafeInput) * manoeuvreAccel) +
+            u * (static_cast<double>(liftInput) * manoeuvreAccel);
 
         motion.engineAccelerationMps2 =
-            glm::dvec3(0.0);
+            clampMagnitude(desiredAcceleration, maxAccel);
 
-        motion.desiredTacticalVelocityMps =
-            glm::dvec3(0.0);
-
-
+        motion.desiredTacticalVelocityMps = relativeWorldVelocity;
+        motion.targetForwardSpeedMps = glm::length(motion.localVelocityMps);
         return;
-
-        
     }
-    else
+
+    // ---------------- Assisted / Elite-style law ----------------
+    // +/- changes target local speed. The flight computer then uses the same
+    // bounded engine acceleration to make VREL follow the current ship nose.
+    const double targetSpeedChangeRate =
+        std::max(50.0, maxSpeed * 0.6);
+
+    motion.targetForwardSpeedMps +=
+        static_cast<double>(targetSpeedRate) *
+        targetSpeedChangeRate *
+        dtD;
+
+    motion.targetForwardSpeedMps =
+        std::clamp(
+            motion.targetForwardSpeedMps,
+            0.0,
+            maxSpeed
+        );
+
+    if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop)
     {
-        // +/- меняет ЖЕЛАЕМУЮ скорость, как в старой физике.
-        motion.targetForwardSpeedMps +=
-            static_cast<double>(targetSpeedRate) *
-            targetSpeedAccel *
-            dtD;
+        motion.targetForwardSpeedMps = 0.0;
+        motion.strafeSpeedMps = 0.0;
+        motion.liftSpeedMps = 0.0;
+    }
 
-        motion.targetForwardSpeedMps =
-            std::clamp(
-                motion.targetForwardSpeedMps,
-                0.0,
-                maxCombatSpeed
-            );
+    motion.strafeSpeedMps +=
+        static_cast<double>(strafeInput) *
+        manoeuvreAccel * dtD;
 
-        // forwardSpeed догоняет targetForwardSpeed.
-        // Это имитация системы управления двигателями.
-        const double speedError =
-            motion.targetForwardSpeedMps -
-            motion.forwardSpeedMps;
+    motion.liftSpeedMps +=
+        static_cast<double>(liftInput) *
+        manoeuvreAccel * dtD;
 
-        const double engineAccel =
-            speedError * throttleAccel;
+    motion.strafeSpeedMps =
+        std::clamp(
+            motion.strafeSpeedMps,
+            -maxStrafeSpeed,
+            maxStrafeSpeed
+        );
 
-        motion.forwardSpeedMps +=
-            engineAccel * dtD;
+    motion.liftSpeedMps =
+        std::clamp(
+            motion.liftSpeedMps,
+            -maxStrafeSpeed,
+            maxStrafeSpeed
+        );
 
-        motion.forwardSpeedMps =
-            std::max(
-                motion.forwardSpeedMps,
-                0.0
-            );
-
-        // KP8/KP2 — манёвровый вперёд/назад, не основной throttle.
-        // Если он тебе не нужен — потом уберём.
-        motion.forwardSpeedMps +=
-            static_cast<double>(forwardInput) *
-            strafeAccel *
-            dtD;
-
-        motion.forwardSpeedMps =
-            std::clamp(
-                motion.forwardSpeedMps,
-                0.0,
-                maxCombatSpeed
-            );
-
-        // Боковые скорости — как старая localVelocity.x/y.
-        motion.strafeSpeedMps +=
-            static_cast<double>(strafeInput) *
-            strafeAccel *
-            dtD;
-
-        motion.liftSpeedMps +=
-            static_cast<double>(liftInput) *
-            strafeAccel *
-            dtD;
-
-        motion.strafeSpeedMps =
-            std::clamp(
-                motion.strafeSpeedMps,
-                -maxStrafeSpeed,
-                maxStrafeSpeed
-            );
-
-        motion.liftSpeedMps =
-            std::clamp(
-                motion.liftSpeedMps,
-                -maxStrafeSpeed,
-                maxStrafeSpeed
-            );
-
-        const double damp =
-            std::exp(-strafeDamping * dtD);
-
+    if (strafeDamping > 0.0)
+    {
+        const double damp = std::exp(-strafeDamping * dtD);
         motion.strafeSpeedMps *= damp;
-        motion.liftSpeedMps   *= damp;
-
-        // Главное:
-        // каждый кадр пересобираем скорость из ТЕКУЩИХ осей корабля.
-        relativeWorldVelocity =
-            f * motion.forwardSpeedMps +
-            r * motion.strafeSpeedMps +
-            u * motion.liftSpeedMps;
+        motion.liftSpeedMps *= damp;
     }
 
-    // ВАЖНО:
-    // applyHubTacticalInput НЕ имеет права перезаписывать worldVelocityMps.
-    // Он только формирует желаемую локальную скорость относительно ориентира.
-    // Это НЕ глобальная скорость.
-    // Это только желаемая тактическая скорость относительно текущего frame.
-    motion.desiredTacticalVelocityMps =
-        relativeWorldVelocity;
+    const glm::dvec3 desiredWorldVelocity =
+        f * motion.targetForwardSpeedMps +
+        r * motion.strafeSpeedMps +
+        u * motion.liftSpeedMps;
 
-    // Ошибка между желаемой тактической скоростью и текущей
-    // скоростью корабля относительно reference frame.
-    const glm::dvec3 currentRelativeVelocity =
-        motion.worldVelocityMps -
-        frame.velocityMetersPerSecond;
+    motion.desiredTacticalVelocityMps = desiredWorldVelocity;
 
+    // Crucially this runs even with no fresh +/- input: the Assisted law is a
+    // persistent velocity controller, so rotating the hull makes the velocity
+    // vector follow at a bounded acceleration instead of snapping instantly.
     const glm::dvec3 velocityError =
-        motion.desiredTacticalVelocityMps -
-        currentRelativeVelocity;
+        desiredWorldVelocity - relativeWorldVelocity;
 
-
-    const bool haveInput =
-        std::abs(targetSpeedRate) > 0.001f ||
-        std::abs(forwardInput) > 0.001f ||
-        std::abs(strafeInput) > 0.001f ||
-        std::abs(liftInput) > 0.001f;
-
-    if (!haveInput)
-    {
-        motion.engineAccelerationMps2 =
-            glm::dvec3(0.0);
-
-        return;
-    }
-
-    // Flight assist: двигатели пытаются догнать желаемую локальную скорость,
-    // но меняют worldVelocity только через ускорение.
-    const double tacticalResponse = 1.0;
-
-    glm::dvec3 desiredAcceleration =
-        velocityError * tacticalResponse;
-
-    // Ограничение перегрузки.
-    // 5G примерно 49 м/с².
-    const double maxTacticalAccel =
-        49.0;
-
-    const double accelLen =
-        glm::length(desiredAcceleration);
-
-    if (accelLen > maxTacticalAccel)
-    {
-        desiredAcceleration =
-            desiredAcceleration / accelLen * maxTacticalAccel;
-    }
+    const double response =
+        positiveOr(static_cast<double>(params.throttleAccel), 1.0);
 
     motion.engineAccelerationMps2 =
-        desiredAcceleration;
+        clampMagnitude(
+            velocityError * response +
+                f * (static_cast<double>(forwardInput) * manoeuvreAccel),
+            maxAccel
+        );
 
-
-
-
+    if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop &&
+        glm::length(motion.localVelocityMps) <= StopSpeedEpsilonMps)
+    {
+        motion.localVelocityMps = glm::dvec3(0.0);
+        motion.engineAccelerationMps2 = glm::dvec3(0.0);
+        motion.velocityAlignmentMode = VelocityAlignmentMode::None;
+    }
 }
-
-
-
-
-
 
 } // namespace game::navigation

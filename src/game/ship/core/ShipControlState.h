@@ -13,7 +13,9 @@ struct ShipControlState
     float rollInput  = 0.0f;
 
     // +/- meaning depends on localControlLaw:
-    // Newtonian -> signed main-engine thrust command.
+    // Newtonian -> '+' commands the main engine; '-' is intentionally ignored.
+    //              Braking is performed by turning the hull and applying the
+    //              same forward thrust (or by END autobrake).
     // Assisted  -> signed target-VREL change command.
     float targetSpeedRate = 0.0f;
 

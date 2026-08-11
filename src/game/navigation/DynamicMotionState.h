@@ -44,8 +44,9 @@ struct DynamicMotionState
     std::string matchedReferenceFrameId;
 
     // Pilot control law for motion *inside* travelFrame. Both laws obey the
-    // same physical acceleration/speed limits. They differ only in how pilot
-    // input is converted into engine acceleration.
+    // same propulsion/control envelope. External impulses remain physical and
+    // may push linear/angular motion beyond those normal control limits.
+    // The laws differ only in how pilot input becomes engine acceleration.
     LocalFlightControlLaw localControlLaw =
         LocalFlightControlLaw::Newtonian;
 

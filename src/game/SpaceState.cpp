@@ -2128,6 +2128,20 @@ m_systemMapRenderer.render(
             vp.height
         );
 
+        if (debug::get().render.shouldRenderCockpit() &&
+            m_activeCameraMode != ShipCameraMode::Drone)
+        {
+            const auto flightInstrument =
+                game::presentation::buildFlightVectorIndicatorPresentation(
+                    playerShip
+                );
+
+            m_flightVectorIndicatorRenderer.render(
+                flightInstrument,
+                vp
+            );
+        }
+
         uiRoot->render(vp);
 
 
@@ -3709,6 +3723,40 @@ void SpaceState::setSystemMapCurrentSystemMode()
 
 
 
+
+
+bool SpaceState::isPlayerNavigationMapLevel(
+    PlayerNavigationMapLevel level
+) const
+{
+    using Mode = SystemMapRenderer::Mode;
+    using world::celestial::DetailSceneKind;
+
+    const Mode mode = m_systemMapRenderer.mode();
+
+    switch (level)
+    {
+        case PlayerNavigationMapLevel::Galaxy:
+            return mode == Mode::Galaxy;
+
+        case PlayerNavigationMapLevel::System:
+            return mode == Mode::System;
+
+        case PlayerNavigationMapLevel::Detail:
+            return
+                mode == Mode::Detail &&
+                m_loadedDetailTarget.sceneKind != DetailSceneKind::SpatialVolume;
+
+        case PlayerNavigationMapLevel::Local:
+            return
+                mode == Mode::Hub ||
+                (mode == Mode::Detail &&
+                 m_loadedDetailTarget.sceneKind == DetailSceneKind::SpatialVolume);
+
+        default:
+            return false;
+    }
+}
 
 
 void SpaceState::setSystemMapPlayerSystemMode()

@@ -22,6 +22,8 @@ simulation = read("src/game/simulation/GameSimulation.cpp")
 prediction = read("src/game/client/ClientHubTacticalPrediction.h")
 params = read("src/game/ship/core/ShipParams.h")
 controller = read("src/game/ship/ShipController.cpp")
+impulse = read("src/game/ship/physics/ShipImpulseSystem.cpp")
+cobra = read("src/game/ship/descriptors/EliteCobraMk1.cpp")
 
 for token in (
     "LocalFlightControlLaw localControlLaw",
@@ -87,5 +89,45 @@ for token in (
 ):
     if token not in controller:
         fail(f"shared angular safety envelope lost: {token}")
+
+# Normal-flight limits constrain propulsion/RCS authority, never physical state.
+# External collision/explosion impulses are allowed to create linear and angular
+# overspeed, which real engines then have to remove over time.
+for forbidden in (
+    "motion.localVelocityMps =\n            clampMagnitude",
+    "ship.pitchRate = glm::clamp",
+    "ship.yawRate = glm::clamp",
+    "ship.rollRate = glm::clamp",
+):
+    if forbidden in system or forbidden in controller:
+        fail(f"physical velocity/rate hard clamp returned: {forbidden}")
+
+for token in (
+    "limitPropulsionAccelerationToControlledSpeed",
+    "allowedRadius = std::max(controlledSpeedLimit, currentSpeed)",
+):
+    if token not in system:
+        fail(f"controlled-speed propulsion boundary lost: {token}")
+
+for token in (
+    "glm::cross(leverArmWorldMeters, impulseWorldNewtonSeconds)",
+    "deltaAngularVelocityBodyRadPerSec",
+    "ship.motion.localVelocityMps +=",
+    "ship.yawRate +=",
+):
+    if token not in impulse:
+        fail(f"rigid-body collision impulse response lost: {token}")
+
+for token in (
+    "massKg",
+    "pitchInertiaKgM2",
+    "yawInertiaKgM2",
+    "rollInertiaKgM2",
+):
+    if token not in params:
+        fail(f"ship mass property lost: {token}")
+
+if "desc.physics.maxCombatSpeed         = 500.0f" not in cobra:
+    fail("Cobra controlled local speed envelope is no longer 500 m/s")
 
 print("Local-flight-control architecture check passed.")

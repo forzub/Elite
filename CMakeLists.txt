@@ -79,6 +79,7 @@ add_executable(EliteGame
     src/game/ship/controller/PlayerInputMapper.cpp
     
     src/game/ship/ShipController.cpp
+    src/game/ship/physics/ShipImpulseSystem.cpp
     src/game/ship/Ship.cpp
     src/game/ship/ShipDescriptorRegistry.cpp
     
@@ -106,6 +107,7 @@ add_executable(EliteGame
     src/render/HUD/WorldLabelRenderer.cpp
     src/render/RenderCockpitPass.cpp
     src/render/RenderCockpitBitmapPass.cpp
+    src/render/cockpit/FlightVectorIndicatorRenderer.cpp
     src/render/bitmap/TextureLoader.cpp
     src/render/camera/RenderCameraViewport.cpp
 

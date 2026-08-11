@@ -26,6 +26,12 @@ enum class GameUiMode
     SystemMap
 };
 
+enum class GameUiNavigationAction
+{
+    OpenOrSwitch,
+    Close
+};
+
 
 class GameUiController
 {
@@ -99,6 +105,17 @@ public:
             return close();
 
         return open(mode);
+    }
+
+    GameUiNavigationAction navigationAction(
+        bool requestedLevelIsCurrentlyVisible
+    ) const
+    {
+        return
+            isMode(GameUiMode::SystemMap) &&
+            requestedLevelIsCurrentlyVisible
+                ? GameUiNavigationAction::Close
+                : GameUiNavigationAction::OpenOrSwitch;
     }
 
     bool consumeF9Press(bool physicallyDown)

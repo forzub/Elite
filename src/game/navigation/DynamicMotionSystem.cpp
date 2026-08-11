@@ -46,6 +46,45 @@ inline glm::dvec3 clampMagnitude(
 
     return value;
 }
+
+inline glm::dvec3 limitPropulsionAccelerationToControlledSpeed(
+    const glm::dvec3& currentVelocity,
+    const glm::dvec3& requestedAcceleration,
+    double controlledSpeedLimit,
+    double dt
+)
+{
+    if (dt <= 0.0 || controlledSpeedLimit <= 0.0)
+        return glm::dvec3(0.0);
+
+    const glm::dvec3 requestedDeltaV = requestedAcceleration * dt;
+    const double currentSpeed = glm::length(currentVelocity);
+    const double allowedRadius = std::max(controlledSpeedLimit, currentSpeed);
+    const glm::dvec3 candidateVelocity =
+        currentVelocity + requestedDeltaV;
+
+    if (glm::length(candidateVelocity) <= allowedRadius + 1.0e-12)
+        return requestedAcceleration;
+
+    // Clip only the ENGINE-produced delta-V to the current admissible speed
+    // sphere. The physical velocity itself is never clamped. If an external
+    // impulse has already pushed the craft above the normal control envelope,
+    // propulsion may reduce that overspeed but may not make its magnitude
+    // larger. This keeps collision/explosion impulses physically observable.
+    const double a = glm::dot(requestedDeltaV, requestedDeltaV);
+    if (a <= 1.0e-24)
+        return glm::dvec3(0.0);
+
+    const double b = 2.0 * glm::dot(currentVelocity, requestedDeltaV);
+    const double c =
+        glm::dot(currentVelocity, currentVelocity) -
+        allowedRadius * allowedRadius;
+    const double discriminant = std::max(0.0, b * b - 4.0 * a * c);
+    const double root = (-b + std::sqrt(discriminant)) / (2.0 * a);
+    const double fraction = std::clamp(root, 0.0, 1.0);
+
+    return requestedAcceleration * fraction;
+}
 }
 
 void DynamicMotionSystem::updateLocalFrameMotion(
@@ -62,26 +101,28 @@ void DynamicMotionSystem::updateLocalFrameMotion(
     // Local translation is authoritative in the ship-owned travel frame. The
     // travel frame carries large-scale motion; ordinary engines only change
     // motion inside it. Future J propulsion owns travel-frame acceleration.
-    const glm::dvec3 localAcceleration =
+    const glm::dvec3 requestedLocalAcceleration =
         frame.worldToLocalVector(
             motion.engineAccelerationMps2
         );
 
+    // maxCombatSpeed is a propulsion/control envelope, never a hard physical
+    // velocity cap. Only this frame's engine-produced delta-V is limited. A
+    // collision, explosion or other external impulse may leave VREL above the
+    // envelope and that overspeed persists until real forces remove it.
+    const glm::dvec3 localAcceleration =
+        limitPropulsionAccelerationToControlledSpeed(
+            motion.localVelocityMps,
+            requestedLocalAcceleration,
+            localSpeedLimit(params),
+            dt
+        );
+
+    motion.engineAccelerationMps2 =
+        frame.localToWorldVector(localAcceleration);
+
     motion.localVelocityMps +=
         localAcceleration * dt;
-
-    // Both local control laws are deliberately bounded. The separate J layer
-    // exists for high-energy travel; normal local flight must remain inside a
-    // survivable/structurally permitted envelope.
-    const double maxLocalSpeed = localSpeedLimit(params);
-    if (maxLocalSpeed > 0.0)
-    {
-        motion.localVelocityMps =
-            clampMagnitude(
-                motion.localVelocityMps,
-                maxLocalSpeed
-            );
-    }
 
     if (motion.velocityAlignmentMode ==
             VelocityAlignmentMode::BrakeToStop &&
@@ -190,8 +231,12 @@ void DynamicMotionSystem::applyLocalFrameInput(
                     maxAccel,
                     speed / dtD
                 );
+                // The automatic brake uses the same main-engine direction as
+                // manual '+'. Alignment guarantees that forward is already
+                // almost anti-parallel to VREL; do not inject a magic force
+                // directly along -velocity.
                 motion.engineAccelerationMps2 =
-                    antiVelocity * brakeAccel;
+                    f * brakeAccel;
             }
             else
             {
@@ -202,11 +247,19 @@ void DynamicMotionSystem::applyLocalFrameInput(
             return;
         }
 
-        // +/- is actual longitudinal thrust. Releasing the key removes thrust;
-        // the velocity vector persists. Turning the hull alone does not alter
-        // that vector.
+        // Newtonian main propulsion is intentionally one-directional from the
+        // pilot's +/- control: '+' applies the main engine, '-' is a no-op.
+        // To reduce VREL the pilot turns the hull so its nose points opposite
+        // the velocity vector and applies the same '+'. Releasing thrust leaves
+        // the inertial velocity vector untouched.
+        const double mainThrustCommand = std::clamp(
+            static_cast<double>(targetSpeedRate),
+            0.0,
+            1.0
+        );
+
         glm::dvec3 desiredAcceleration =
-            f * (static_cast<double>(targetSpeedRate) * maxAccel) +
+            f * (mainThrustCommand * maxAccel) +
             f * (static_cast<double>(forwardInput) * manoeuvreAccel) +
             r * (static_cast<double>(strafeInput) * manoeuvreAccel) +
             u * (static_cast<double>(liftInput) * manoeuvreAccel);
@@ -220,22 +273,17 @@ void DynamicMotionSystem::applyLocalFrameInput(
     }
 
     // ---------------- Assisted / Elite-style law ----------------
-    // +/- changes target local speed. The flight computer then uses the same
-    // bounded engine acceleration to make VREL follow the current ship nose.
+    // +/- is a throttle/setpoint trim, not a request that keeps running after
+    // the key is released. While the pilot holds a key we move the requested
+    // VREL setpoint. As soon as the input returns to neutral, capture the
+    // *actually reached* local speed as the new setpoint. This prevents the
+    // ship from continuing to accelerate/decelerate toward an old setpoint
+    // after the pilot has released the throttle trim. The direction controller
+    // remains active, so VREL may still bend toward the nose at bounded G.
     const double targetSpeedChangeRate =
         std::max(50.0, maxSpeed * 0.6);
-
-    motion.targetForwardSpeedMps +=
-        static_cast<double>(targetSpeedRate) *
-        targetSpeedChangeRate *
-        dtD;
-
-    motion.targetForwardSpeedMps =
-        std::clamp(
-            motion.targetForwardSpeedMps,
-            0.0,
-            maxSpeed
-        );
+    const bool throttleTrimActive =
+        std::abs(static_cast<double>(targetSpeedRate)) > 1.0e-6;
 
     if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop)
     {
@@ -243,6 +291,25 @@ void DynamicMotionSystem::applyLocalFrameInput(
         motion.strafeSpeedMps = 0.0;
         motion.liftSpeedMps = 0.0;
     }
+    else if (throttleTrimActive)
+    {
+        motion.targetForwardSpeedMps +=
+            static_cast<double>(targetSpeedRate) *
+            targetSpeedChangeRate *
+            dtD;
+    }
+    else
+    {
+        motion.targetForwardSpeedMps =
+            glm::length(relativeWorldVelocity);
+    }
+
+    motion.targetForwardSpeedMps =
+        std::clamp(
+            motion.targetForwardSpeedMps,
+            0.0,
+            maxSpeed
+        );
 
     motion.strafeSpeedMps +=
         static_cast<double>(strafeInput) *

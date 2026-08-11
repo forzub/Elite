@@ -46,7 +46,7 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.physics.maxYawRate             = 2.5f;     // Макс. скорость рысканья (рад/с)
         desc.physics.maxRollRate            = 3.0f;     // Макс. скорость крена (рад/с)
         
-        desc.physics.maxCombatSpeed         = 350.0f;   // Боевая скорость (м/с) = 1260 км/ч
+        desc.physics.maxCombatSpeed         = 500.0f;   // Controlled local speed envelope (m/s); external impulse may exceed it
         // desc.physics.maxCruiseSpeed         = 13500.0f; // Крейсерская (м/с) = 48000 км/ч
         desc.physics.maxCruiseSpeed         = 29979245.0f; // Крейсерская (м/с) = 0.1с
         desc.physics.throttleAccel          = 5.0f;     // Рывок дросселя
@@ -59,6 +59,15 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
 
         desc.physics.maxGs                  = 5.0f;     // Макс. перегрузка (для пилота)
         desc.physics.turnRadius             = 20.0f;    // Радиус поворота (м)
+
+        // Cobra is a broad, flat platform. 260 t is the current baseline mass.
+        // Principal inertias use a conservative box approximation for the
+        // 26.0 x 5.0 x 22.2 m logical hull and are intentionally explicit so
+        // off-centre impacts can produce physically meaningful spin.
+        desc.physics.massKg                  = 260000.0;
+        desc.physics.pitchInertiaKgM2        = 11219866.6666667;
+        desc.physics.yawInertiaKgM2          = 25324866.6666667;
+        desc.physics.rollInertiaKgM2         = 15188333.3333333;
 
 
         // -------------------------

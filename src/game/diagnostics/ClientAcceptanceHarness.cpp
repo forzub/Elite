@@ -168,13 +168,26 @@ void testGameUiToggleContract()
     checkLatch(&GameUiController::consumeF11Press, "F11");
     checkLatch(&GameUiController::consumeF12Press, "F12");
 
+    require(
+        ui.navigationAction(true) == GameUiNavigationAction::OpenOrSwitch,
+        "closed map UI now treats a function key as close instead of open"
+    );
+
     require(ui.open(GameUiMode::SystemMap), "SystemMap UI did not open through direct-open contract");
     require(ui.isMode(GameUiMode::SystemMap), "SystemMap UI mode was not recorded as open");
     require(!ui.open(GameUiMode::SystemMap), "opening the same SystemMap mode retriggered state change");
+    require(
+        ui.navigationAction(true) == GameUiNavigationAction::Close,
+        "same F9-F12 level no longer closes an already-visible map"
+    );
+    require(
+        ui.navigationAction(false) == GameUiNavigationAction::OpenOrSwitch,
+        "different F9-F12 level now closes instead of switching maps"
+    );
     require(ui.close(), "SystemMap UI did not close through close contract");
     require(!ui.isOpen(), "SystemMap UI remained open after close");
 
-    pass("F9-F12 MAP UI LATCHES");
+    pass("F9-F12 SAME-LEVEL CLOSE + CROSS-LEVEL SWITCH");
 }
 
 void testCoordinateDisplayHotkeyContract()
@@ -867,6 +880,49 @@ void testHudPresentationBindings(
     require(!telemetry.zLabel.empty(), "HUD Z label became empty");
     require(!telemetry.speedLabel.empty(), "HUD speed label became empty");
 
+    const auto flightInstrument =
+        game::presentation::buildFlightVectorIndicatorPresentation(ship);
+
+    require(flightInstrument.visible, "flight-vector cockpit instrument became hidden");
+    require(std::isfinite(flightInstrument.speedMps), "flight-vector speed became non-finite");
+    require(
+        flightInstrument.speedFraction01 >= 0.0f &&
+        flightInstrument.speedFraction01 <= 1.0f,
+        "flight-vector speed fraction escaped normalized range"
+    );
+    require(!flightInstrument.speedText.empty(), "flight-vector speed text became empty");
+    require(!flightInstrument.modeText.empty(), "flight-vector mode text became empty");
+    require(!flightInstrument.fontPath.empty(), "flight-vector instrument lost its font profile");
+
+    for (int c = 0; c < 3; ++c)
+    {
+        const glm::vec3 axis = flightInstrument.shipModelToIndicatorBasis[c];
+        require(finiteVec(axis), "flight-vector hull basis became non-finite");
+    }
+
+    game::presentation::FlightInstrumentTextProfile localizedProfile;
+    localizedProfile.displayUnitsPerMps = 3.6;
+    localizedProfile.speedDecimals = 0;
+    localizedProfile.speedUnitLabel = "km/h";
+    localizedProfile.newtonianModeLabel = "INERCIAL";
+    localizedProfile.assistedModeLabel = "ASISTIDO";
+
+    const auto localizedInstrument =
+        game::presentation::buildFlightVectorIndicatorPresentation(
+            ship,
+            localizedProfile
+        );
+
+    require(
+        localizedInstrument.speedText.find("km/h") != std::string::npos,
+        "flight-vector renderer contract hard-coded m/s instead of formatted text"
+    );
+    require(
+        localizedInstrument.modeText == "INERCIAL" ||
+        localizedInstrument.modeText == "ASISTIDO",
+        "flight-vector mode label ignored the localization profile"
+    );
+
     UIContainer root;
     UIText* cell = addHudText(root, "main_coord_cell");
     UIText* x = addHudText(root, "main_coord_x");
@@ -895,7 +951,7 @@ void testHudPresentationBindings(
         "HUD presenter stopped reporting a missing production binding"
     );
 
-    pass("HUD TELEMETRY -> SCREEN BINDINGS");
+    pass("HUD TELEMETRY + FLIGHT-VECTOR INSTRUMENT PRESENTATION");
 }
 
 void testRemoteMotion(game::host::LocalGameSession& session)

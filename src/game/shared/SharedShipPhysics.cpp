@@ -68,9 +68,17 @@ void integrate(
             game::navigation::VelocityAlignmentMode::None;
     }
 
-    // A fresh +/- command cancels an existing autobrake action. The pilot has
-    // explicitly taken longitudinal control again.
-    if (std::abs(control.targetSpeedRate) > 0.001f &&
+    // A fresh longitudinal command cancels autobrake only if that command has
+    // meaning in the active law. Newtonian '-' is intentionally a no-op: the
+    // pilot must turn the ship and apply forward thrust to brake, so tapping
+    // '-' must not accidentally cancel an END autobrake already in progress.
+    const bool manualLongitudinalOverride =
+        motion.localControlLaw ==
+                game::navigation::LocalFlightControlLaw::Newtonian
+            ? control.targetSpeedRate > 0.001f
+            : std::abs(control.targetSpeedRate) > 0.001f;
+
+    if (manualLongitudinalOverride &&
         motion.velocityAlignmentMode ==
             game::navigation::VelocityAlignmentMode::BrakeToStop)
     {

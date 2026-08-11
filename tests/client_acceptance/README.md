@@ -20,7 +20,7 @@ Current acceptance coverage:
 - local-session synchronization and player startup/reference-frame invariants;
 - idle stability in canonical HubTactical space;
 - yaw/orientation basis integrity and forward manoeuvre motion after rotation;
-- Newtonian thrust/coast, Assisted target-VREL control, Ctrl+F10 mode mapping and authoritative fixed-step acknowledgement;
+- Newtonian forward-thrust/coast, Assisted target-VREL control, Ctrl+F10 mode mapping and authoritative fixed-step acknowledgement;
 - accelerated universe-time entry/exit with no frozen-branch control leakage;
 - remote Hub Motion Lab NPC movement through
   `ShipSnapshot -> ClientWorldState -> renderTransform`;

@@ -325,12 +325,37 @@ void Application::mainLoop()
             auto* space = dynamic_cast<SpaceState*>(m_states.current());
             bool consumedNavigationHotkey = false;
 
+            auto requestNavigationLevel =
+                [&](PlayerNavigationMapLevel level, auto&& openLevel)
+                {
+                    // Function keys are direct selectors and same-level
+                    // toggles. The result depends only on the map currently
+                    // visible, never on how the player reached it.
+                    const auto action = m_gameUi.navigationAction(
+                        space->isPlayerNavigationMapLevel(level)
+                    );
+
+                    if (action == GameUiNavigationAction::Close)
+                    {
+                        closeGameUi();
+                    }
+                    else
+                    {
+                        if (!m_gameUi.isMode(GameUiMode::SystemMap))
+                            openGameUi(GameUiMode::SystemMap);
+
+                        openLevel();
+                    }
+
+                    consumedNavigationHotkey = true;
+                };
+
             if (m_gameUi.consumeF9Press(f9Down) && space && !ctrlDown)
             {
-                if (!m_gameUi.isMode(GameUiMode::SystemMap))
-                    openGameUi(GameUiMode::SystemMap);
-                space->setSystemMapGalaxyMode();
-                consumedNavigationHotkey = true;
+                requestNavigationLevel(
+                    PlayerNavigationMapLevel::Galaxy,
+                    [&]() { space->setSystemMapGalaxyMode(); }
+                );
             }
 
             // Ctrl+F10 belongs to PlayerInputMapper. Still latch the physical
@@ -340,10 +365,10 @@ void Application::mainLoop()
                 m_gameUi.consumeF10Press(f10Down);
             if (f10PressedEdge && space && !ctrlDown)
             {
-                if (!m_gameUi.isMode(GameUiMode::SystemMap))
-                    openGameUi(GameUiMode::SystemMap);
-                space->setSystemMapPlayerSystemMode();
-                consumedNavigationHotkey = true;
+                requestNavigationLevel(
+                    PlayerNavigationMapLevel::System,
+                    [&]() { space->setSystemMapPlayerSystemMode(); }
+                );
             }
 
             if (m_gameUi.consumeF11Press(f11Down) && space)
@@ -352,14 +377,15 @@ void Application::mainLoop()
                 {
                     game::navigation::CoordinateDisplayService::instance()
                         .cycle();
+                    consumedNavigationHotkey = true;
                 }
                 else
                 {
-                    if (!m_gameUi.isMode(GameUiMode::SystemMap))
-                        openGameUi(GameUiMode::SystemMap);
-                    space->setSystemMapPlayerDetailMode();
+                    requestNavigationLevel(
+                        PlayerNavigationMapLevel::Detail,
+                        [&]() { space->setSystemMapPlayerDetailMode(); }
+                    );
                 }
-                consumedNavigationHotkey = true;
             }
 
             if (m_gameUi.consumeF12Press(f12Down) && space)
@@ -367,14 +393,15 @@ void Application::mainLoop()
                 if (ctrlDown)
                 {
                     space->toggleConstellationOverlay();
+                    consumedNavigationHotkey = true;
                 }
                 else
                 {
-                    if (!m_gameUi.isMode(GameUiMode::SystemMap))
-                        openGameUi(GameUiMode::SystemMap);
-                    space->setSystemMapPlayerLocalMode();
+                    requestNavigationLevel(
+                        PlayerNavigationMapLevel::Local,
+                        [&]() { space->setSystemMapPlayerLocalMode(); }
+                    );
                 }
-                consumedNavigationHotkey = true;
             }
 
             if (consumedNavigationHotkey)

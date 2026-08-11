@@ -267,6 +267,7 @@ void SpaceState::initHUD()
     // =======================================================================
     m_hudRenderer.init(context());
     m_worldLabelRenderer.init(context());
+    m_flightVectorIndicatorRenderer.init();
 
 
 

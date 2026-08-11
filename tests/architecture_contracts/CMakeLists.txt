@@ -134,6 +134,7 @@ add_executable(
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/shared/SharedShipPhysics.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/ShipController.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/physics/ShipImpulseSystem.cpp"
 )
 
 target_include_directories(
@@ -338,6 +339,7 @@ add_executable(
     LocalFlightControlContractTests.cpp
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/ship/ShipController.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/ship/physics/ShipImpulseSystem.cpp"
 )
 
 target_include_directories(

@@ -20,6 +20,7 @@ SYSTEM_MAP_COMMON = ROOT / "src/game/system_map/SystemMapRendererCommon.inl"
 STARFIELD_RENDERER = ROOT / "src/render/starfield/GalaxyStarfieldRenderer.cpp"
 SCENE_RENDERER = ROOT / "src/scene/SceneRenderer.cpp"
 CMAKE = ROOT / "CMakeLists.txt"
+FLIGHT_INDICATOR_RENDERER = ROOT / "src/render/cockpit/FlightVectorIndicatorRenderer.cpp"
 
 
 def fail(message: str) -> None:
@@ -48,6 +49,7 @@ system_map_common = read(SYSTEM_MAP_COMMON)
 starfield_renderer = read(STARFIELD_RENDERER)
 scene_renderer = read(SCENE_RENDERER)
 cmake = read(CMAKE)
+flight_indicator_renderer = read(FLIGHT_INDICATOR_RENDERER)
 
 # The headless suite must continue to exercise the production session path.
 required_harness_tokens = (
@@ -62,6 +64,7 @@ required_harness_tokens = (
     "requestHubMapSnapshot",
     "acknowledgedControlTick",
     "buildPlayerHudTelemetry",
+    "buildFlightVectorIndicatorPresentation",
     "applyPlayerHudTelemetry",
     "parseSystemMapUiCommand",
     "dispatchSystemMapUiCommand",
@@ -111,6 +114,25 @@ for token in (
 ):
     if token not in application:
         fail(f"current F9-F12 navigation layout no longer uses: {token}")
+
+for token in (
+    "navigationAction(",
+    "isPlayerNavigationMapLevel(level)",
+    "GameUiNavigationAction::Close",
+    "closeGameUi()",
+):
+    if token not in application:
+        fail(f"same-level map close / cross-level switch contract lost: {token}")
+
+for token in (
+    "PlayerNavigationMapLevel::Galaxy",
+    "PlayerNavigationMapLevel::System",
+    "PlayerNavigationMapLevel::Detail",
+    "PlayerNavigationMapLevel::Local",
+    "DetailSceneKind::SpatialVolume",
+):
+    if token not in space:
+        fail(f"map hotkey level classifier lost: {token}")
 
 # Ctrl+F10 must remain available to the production flight mapper instead of
 # being consumed as an F10 map command. Application still latches physical F10
@@ -171,6 +193,43 @@ for forbidden in (
 ):
     if forbidden in hud_presentation:
         fail(f"HUD regressed to legacy velocity mirror: {forbidden}")
+
+for token in (
+    "buildFlightVectorIndicatorPresentation",
+    "motion.localVelocityMps",
+    "shipModelToIndicatorBasis",
+    "displayUnitsPerMps",
+    "speedUnitLabel",
+):
+    if token not in hud_presentation:
+        fail(f"flight-vector instrument presentation contract lost: {token}")
+
+for token in (
+    "buildFlightVectorIndicatorPresentation(",
+    "m_flightVectorIndicatorRenderer.render(",
+):
+    if token not in space:
+        fail(f"cockpit flight-vector instrument left production render path: {token}")
+
+for token in (
+    "shipModelToIndicatorBasis",
+    "speedFraction01",
+    "presentation.speedText",
+    "presentation.modeText",
+):
+    if token not in flight_indicator_renderer:
+        fail(f"flight-vector cockpit renderer lost presentation field: {token}")
+
+for forbidden in (
+    "localVelocityMps",
+    "worldVelocityMps",
+    "referenceVelocityMps",
+):
+    if forbidden in flight_indicator_renderer:
+        fail(f"flight-vector renderer started owning motion semantics: {forbidden}")
+
+if "src/render/cockpit/FlightVectorIndicatorRenderer.cpp" not in cmake:
+    fail("flight-vector cockpit renderer disappeared from production build")
 
 # Browser command parsing + dispatch must be the exact production seam exercised by acceptance.
 for token in (

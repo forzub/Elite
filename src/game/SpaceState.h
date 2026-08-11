@@ -22,6 +22,7 @@
 #include "src/game/client/GameClient.h"
 #include "src/game/client/MapTransitionController.h"
 #include "src/scene/SceneRenderer.h"
+#include "src/render/cockpit/FlightVectorIndicatorRenderer.h"
 #include "src/ui/components/radar/RadarWidgetBase.h"
 
 // #include "src/WebSocket/DebugServer.h"
@@ -48,6 +49,15 @@ namespace game::session
 {
 class IGameSession;
 }
+
+
+enum class PlayerNavigationMapLevel
+{
+    Galaxy,
+    System,
+    Detail,
+    Local
+};
 
 
 enum class ScreenLayout
@@ -109,6 +119,7 @@ public:
     void setSystemMapPlayerSystemMode();
     void setSystemMapPlayerDetailMode();
     void setSystemMapPlayerLocalMode();
+    bool isPlayerNavigationMapLevel(PlayerNavigationMapLevel level) const;
     void toggleConstellationOverlay();
     void setSystemMapEmptySectorMode(
         const glm::dvec3& positionLy
@@ -181,6 +192,7 @@ private:
     std::vector<HudLineRect>                    m_hudRects;
     HudMessage*                                 m_activeMessage = nullptr;
     HudRenderer                                 m_hudRenderer;
+    render::cockpit::FlightVectorIndicatorRenderer m_flightVectorIndicatorRenderer;
 
     WorldLabelRenderer                          m_worldLabelRenderer;
 

@@ -2,6 +2,9 @@
 
 #include <cmath>
 #include <cstdio>
+#include <algorithm>
+#include <sstream>
+#include <iomanip>
 
 #include "src/ui/components/UIComponent.h"
 #include "src/ui/components/UIText.h"
@@ -28,6 +31,138 @@ bool setText(
     text->label = value;
     return true;
 }
+}
+
+namespace
+{
+glm::dvec3 safeNormalized(
+    const glm::dvec3& value,
+    const glm::dvec3& fallback
+)
+{
+    const double length = glm::length(value);
+    if (length <= 1.0e-9)
+        return fallback;
+    return value / length;
+}
+
+std::string formatSpeedText(
+    double speedMps,
+    const FlightInstrumentTextProfile& profile
+)
+{
+    std::ostringstream out;
+    out << std::fixed
+        << std::setprecision(std::max(0, profile.speedDecimals))
+        << speedMps * profile.displayUnitsPerMps;
+
+    if (!profile.speedUnitLabel.empty())
+        out << ' ' << profile.speedUnitLabel;
+
+    return out.str();
+}
+}
+
+FlightVectorIndicatorPresentation buildFlightVectorIndicatorPresentation(
+    const ClientShipState& ship,
+    const FlightInstrumentTextProfile& textProfile
+)
+{
+    FlightVectorIndicatorPresentation out;
+    out.visible = true;
+
+    const auto& transform = ship.renderTransform;
+    const auto& motion = transform.motion;
+
+    out.controlLaw = motion.localControlLaw;
+    out.alignmentMode = motion.velocityAlignmentMode;
+    out.speedMps = glm::length(motion.localVelocityMps);
+
+    if (ship.descriptor)
+        out.speedLimitMps = std::max(
+            0.0,
+            static_cast<double>(ship.descriptor->physics.maxCombatSpeed)
+        );
+
+    if (out.speedLimitMps > 0.0)
+    {
+        out.speedFraction01 = static_cast<float>(
+            std::clamp(out.speedMps / out.speedLimitMps, 0.0, 1.0)
+        );
+    }
+
+    out.speedText = formatSpeedText(out.speedMps, textProfile);
+    out.fontPath = textProfile.fontPath;
+    out.modeText =
+        motion.localControlLaw == game::navigation::LocalFlightControlLaw::Assisted
+            ? textProfile.assistedModeLabel
+            : textProfile.newtonianModeLabel;
+
+    switch (motion.velocityAlignmentMode)
+    {
+        case game::navigation::VelocityAlignmentMode::ForwardToVelocity:
+            out.actionText = textProfile.alignForwardLabel;
+            break;
+        case game::navigation::VelocityAlignmentMode::BackwardToVelocity:
+            out.actionText = textProfile.alignBackwardLabel;
+            break;
+        case game::navigation::VelocityAlignmentMode::BrakeToStop:
+            out.actionText = textProfile.brakingLabel;
+            break;
+        default:
+            break;
+    }
+
+    // Velocity is fixed as +Y in indicator space. Hull attitude is expressed
+    // relative to it; no galactic/system coordinates enter the HUD renderer.
+    if (out.speedMps <= 1.0e-6 || !motion.travelFrame.valid)
+    {
+        out.shipModelToIndicatorBasis = glm::mat3(1.0f);
+        return out;
+    }
+
+    const glm::dvec3 velocityWorld =
+        motion.travelFrame.localToWorldVector(motion.localVelocityMps);
+    const glm::dvec3 indicatorY =
+        safeNormalized(velocityWorld, glm::dvec3(0.0, 0.0, -1.0));
+
+    glm::dvec3 referenceUp = motion.travelFrame.localToWorldVector(
+        glm::dvec3(0.0, 1.0, 0.0)
+    );
+
+    if (glm::length(glm::cross(indicatorY, referenceUp)) <= 1.0e-6)
+    {
+        referenceUp = motion.travelFrame.localToWorldVector(
+            glm::dvec3(1.0, 0.0, 0.0)
+        );
+    }
+
+    const glm::dvec3 indicatorX = safeNormalized(
+        glm::cross(indicatorY, referenceUp),
+        glm::dvec3(1.0, 0.0, 0.0)
+    );
+    const glm::dvec3 indicatorZ = safeNormalized(
+        glm::cross(indicatorX, indicatorY),
+        glm::dvec3(0.0, 0.0, 1.0)
+    );
+
+    auto toIndicator = [&](const glm::vec3& worldAxis)
+    {
+        const glm::dvec3 axis(worldAxis);
+        return glm::vec3(
+            static_cast<float>(glm::dot(axis, indicatorX)),
+            static_cast<float>(glm::dot(axis, indicatorY)),
+            static_cast<float>(glm::dot(axis, indicatorZ))
+        );
+    };
+
+    out.shipModelToIndicatorBasis = glm::mat3(
+        toIndicator(transform.right()),
+        toIndicator(transform.forward()),
+        toIndicator(transform.up())
+    );
+
+    return out;
 }
 
 PlayerHudTelemetry buildPlayerHudTelemetry(

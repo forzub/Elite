@@ -74,8 +74,10 @@ void PlayerInputMapper::updateFromKeyState(
     }
 
     // +/- is deliberately a generic longitudinal command. DynamicMotionSystem
-    // interprets it as thrust in Newtonian mode and as target-speed change in
-    // Assisted mode.
+    // interprets '+' as main-engine thrust in Newtonian mode; '-' is ignored
+    // there because braking requires turning the craft and using the same main
+    // engine. Assisted mode keeps +/- as a held target-speed trim; releasing
+    // the key freezes the setpoint at the speed actually reached.
     if (keys.isKeyPressed(GLFW_KEY_KP_ADD) ||
         keys.isKeyPressed(GLFW_KEY_EQUAL))
     {

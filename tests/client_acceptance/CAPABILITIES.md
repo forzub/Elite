@@ -17,12 +17,13 @@ comparisons are deliberately outside this matrix.
 | Player attitude | Production fixed-step control changes orientation; forward/right/up remain orthonormal and handed correctly | client acceptance | protected |
 | Player HubTactical motion | Client command -> server acknowledgement -> authoritative ship-local movement inside owned travel frame | client acceptance | protected |
 | Orientation drives thrust direction | After yaw, forward manoeuvre movement remains on the ship's forward side | client acceptance | protected |
-| Dual local flight laws | Newtonian thrust/coast and Assisted target-VREL control share per-ship speed/acceleration limits | client acceptance + architecture contracts | protected |
+| Dual local flight laws | Newtonian forward-thrust/coast and Assisted target-VREL control share per-ship speed/acceleration limits | client acceptance + architecture contracts | protected |
 | Idle stability | No-command player does not drift or rotate in canonical local state while its travel frame is matched | client acceptance | protected |
 | Accelerated universe-time diagnostic | Enter/exit revision fence; controls touched while frozen do not leak back into gameplay | client acceptance + world runtime | protected |
 | Remote NPC presentation | Hub Motion Lab ships move through authoritative snapshot/interpolation path | client acceptance + presentation pipeline | protected |
 | HUD coordinates/speed data | Client render state -> canonical travel-frame `VREL` -> production formatter -> exact `main_coord_*` UIText bindings | client acceptance + architecture guard | protected |
-| F9-F12 navigation layout | F9 Galaxy, F10 current System/sector, F11 current Details context, F12 current Hub/local cube | client acceptance + architecture guard | protected |
+| Cockpit flight-vector instrument | One circular instrument consumes canonical VREL, bounded speed fraction, hull-vs-velocity basis, localized/preformatted speed + mode text | client acceptance + architecture guard | protected |
+| F9-F12 navigation layout | F9 Galaxy, F10 current System/sector, F11 current Details context, F12 current Hub/local cube; same-level repeat closes, another key switches in-place | client acceptance + architecture guard | protected |
 | Ctrl+F11 coordinate format | Ctrl+F11 cycles `CoordinateDisplayService`; map footer advertises the chord | client acceptance + architecture guard | protected |
 | Ctrl+F12 constellations | Ctrl+F12 toggles the gameplay starfield constellation overlay | client acceptance + architecture guard | protected |
 | Game-system names on sky | Authored game-system name survives astronomical-star merge and reaches the sky-label formatter | client acceptance + architecture guard | protected |
@@ -61,6 +62,7 @@ The navigation layout is now the product contract:
 - `F10` opens the player's current System, or the highest meaningful interstellar sector.
 - `F11` opens the player's current Details context (body/hub/local spatial volume).
 - `F12` opens the currently matched Hub, otherwise the player's terminal local cube.
+- Repeating the function key for the currently visible map level returns to gameplay; pressing another F9-F12 switches directly to that map level.
 - `Ctrl+F10` switches Newtonian / Assisted local flight laws.
 - `Ctrl+F11` cycles coordinate display format.
 - `Ctrl+F12` toggles constellations.

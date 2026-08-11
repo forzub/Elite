@@ -53,6 +53,7 @@
 #include "src/game/session/IGameSession.h"
 #include "src/game/client/ClientCelestialMapBridge.h"
 #include "src/game/presentation/ClientHudPresentation.h"
+#include "src/game/presentation/GalaxyNavigationPresentation.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 
 #include <chrono>
@@ -444,6 +445,24 @@ SpaceState::SpaceState(StateStack& states)
     testDamageSystem();
 
 
+}
+
+
+bool SpaceState::resolvePlayerGalacticPositionLy(
+    glm::dvec3& outPositionLy
+) const
+{
+    if (!m_client || !m_hasGalaxyMapSnapshot)
+        return false;
+
+    const auto marker =
+        game::presentation::resolveGalaxyPlayerMarkerPosition(
+            m_galaxyMapSnapshot,
+            m_client->playerNavigation()
+        );
+
+    outPositionLy = marker.positionLy;
+    return true;
 }
 
 
@@ -1572,37 +1591,8 @@ m_playerView->updateCockpitStateFromSnapshot(
     m_perfUiRootUpdateMs = nowMs() - uiRootStartMs;
 
 
-    // DEBUG: отправляем состояние корабля в браузер
-    // --------------------------------------------
-    static float shipCoreTimer = 0.0f;
-    shipCoreTimer += dt;
-
-    if (shipCoreTimer > 0.25f)
-    {
-        shipCoreTimer = 0.0f;
-
-        if (context().htmlUi().state().activePanel == HtmlUiPanelId::ShipCore)
-        {
-            pushShipCoreState();
-        }
-    }
-
-
-
-
-    static float structureDebugTimer = 0.0f;
-    structureDebugTimer += dt;
-    if (structureDebugTimer > 0.25f)
-    {
-        structureDebugTimer = 0.0f;
-
-        if (context().htmlUi().state().activePanel == HtmlUiPanelId::StructureDebug)
-        {
-            pushStructureDebugState();
-        }
-    }
-
-
+    // Browser diagnostics request their own live snapshots. They must not
+    // compete for the single in-game activePanel slot.
 
     m_perfFrameMs = static_cast<double>(dt) * 1000.0;
 
@@ -1614,12 +1604,6 @@ m_playerView->updateCockpitStateFromSnapshot(
     if (m_perfPushTimer >= 0.25f)
     {
         m_perfPushTimer = 0.0f;
-
-        if (context().htmlUi().state().activePanel == HtmlUiPanelId::DebugControl &&
-            debug::get().render.debugControlAutoUpdates)
-        {
-            pushDebugControlState();
-        }
 
         if (context().app &&
             context().app->gameUiMode() == GameUiMode::SystemMap)
@@ -1803,10 +1787,16 @@ void SpaceState::renderUI()
 
 
 
+    glm::dvec3 observerGalacticPositionLy {0.0};
+    const glm::dvec3* observerGalacticPositionPtr = nullptr;
+    if (resolvePlayerGalacticPositionLy(observerGalacticPositionLy))
+        observerGalacticPositionPtr = &observerGalacticPositionLy;
+
     m_preparedScene =
         m_sceneRenderer.prepareScene(
             m_client->world(),
-            m_playerId
+            m_playerId,
+            observerGalacticPositionPtr
         );
 
 
@@ -2378,7 +2368,6 @@ void SpaceState::processHtmlCommands()
         {
             if (msg.type == HtmlUiMessageType::Subscribe)
             {
-                context().htmlUi().setActivePanel(HtmlUiPanelId::DebugControl);
                 pushDebugControlState();
                 continue;
             }
@@ -2427,7 +2416,6 @@ void SpaceState::processHtmlCommands()
         {
             if (msg.type == HtmlUiMessageType::Subscribe)
             {
-                context().htmlUi().setActivePanel(HtmlUiPanelId::StructureDebug);
                 pushStructureDebugState();
                 continue;
             }
@@ -2436,7 +2424,6 @@ void SpaceState::processHtmlCommands()
             {
                 if (msg.command == "request_snapshot")
                 {
-                    context().htmlUi().setActivePanel(HtmlUiPanelId::StructureDebug);
                     pushStructureDebugState();
                     continue;
                 }
@@ -2446,7 +2433,6 @@ void SpaceState::processHtmlCommands()
                     m_structureDebugSelectedShipEntityId =
                         msg.payload.value("entityId", m_structureDebugSelectedShipEntityId);
 
-                    context().htmlUi().setActivePanel(HtmlUiPanelId::StructureDebug);
                     pushStructureDebugState();
                     continue;
                 }
@@ -2617,7 +2603,6 @@ if (msg.command == "reset_all_ships")
         {
             if (msg.type == HtmlUiMessageType::Subscribe)
             {
-                context().htmlUi().setActivePanel(HtmlUiPanelId::ShipCore);
                 pushShipCoreState();
                 continue;
             }
@@ -2626,7 +2611,6 @@ if (msg.command == "reset_all_ships")
             {
                 if (msg.command == "request_snapshot")
                 {
-                    context().htmlUi().setActivePanel(HtmlUiPanelId::ShipCore);
                     pushShipCoreState();
                     continue;
                 }
@@ -2639,6 +2623,43 @@ if (msg.command == "reset_all_ships")
                     pushShipCoreState();
                     continue;
                 }
+
+                if (msg.command == "repair_all_panels")
+                {
+                    if (m_shipCoreSelectedShipEntityId != m_playerId.value)
+                    {
+                        pushShipCoreState();
+                        continue;
+                    }
+
+                    ClientShipCommand cmd;
+                    cmd.type = ClientShipCommand::RepairAllPanels;
+
+                    std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
+                    m_debugCommands.push_back(cmd);
+                    continue;
+                }
+
+                if (msg.command == "damage_radiator")
+                {
+                    // ClientShipCommand is player-owned on the authoritative
+                    // server. Do not let a browser selection make this command
+                    // appear to target an NPC while actually damaging the player.
+                    if (m_shipCoreSelectedShipEntityId != m_playerId.value)
+                    {
+                        pushShipCoreState();
+                        continue;
+                    }
+
+                    ClientShipCommand cmd;
+                    cmd.type = ClientShipCommand::DamageRadiator;
+                    cmd.index = msg.payload.value("panel_index", 0);
+                    cmd.amount = msg.payload.value("amount", 0.2);
+
+                    std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
+                    m_debugCommands.push_back(cmd);
+                    continue;
+                }
             }
         }
 
@@ -2649,14 +2670,12 @@ if (msg.command == "reset_all_ships")
         {
             if (msg.type == HtmlUiMessageType::Subscribe)
             {
-                context().htmlUi().setActivePanel(HtmlUiPanelId::FrustumDebug);
                 continue;
             }
 
             if (msg.type == HtmlUiMessageType::Command &&
                 msg.command == "request_snapshot")
             {
-                context().htmlUi().setActivePanel(HtmlUiPanelId::FrustumDebug);
                 continue;
             }
         }
@@ -2872,7 +2891,8 @@ void SpaceState::pushShipCoreState()
 
 void SpaceState::pushFrustumDebugState(const json& payload)
 {
-    context().htmlUi().setActivePanel(HtmlUiPanelId::FrustumDebug);
+    // Frustum telemetry is an external diagnostic stream. It must not steal
+    // the global in-game activePanel from other browser tools.
     context().htmlUi().broadcastState(HtmlUiPanelId::FrustumDebug, payload);
 }
 

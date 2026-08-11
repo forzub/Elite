@@ -55,10 +55,19 @@ interpolateReferenceFramePresentation(
         from.velocityMetersPerSecond +
         (to.velocityMetersPerSecond - from.velocityMetersPerSecond) * t;
 
+    out.accelerationMetersPerSecond2 =
+        from.accelerationMetersPerSecond2 +
+        (to.accelerationMetersPerSecond2 - from.accelerationMetersPerSecond2) * t;
+
     out.angularVelocityWorldRadPerSecond =
         from.angularVelocityWorldRadPerSecond +
         (to.angularVelocityWorldRadPerSecond -
          from.angularVelocityWorldRadPerSecond) * t;
+
+    out.angularAccelerationWorldRadPerSecond2 =
+        from.angularAccelerationWorldRadPerSecond2 +
+        (to.angularAccelerationWorldRadPerSecond2 -
+         from.angularAccelerationWorldRadPerSecond2) * t;
 
     /*
         A reference-frame basis is presentation state too. Taking the newest

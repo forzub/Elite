@@ -160,6 +160,11 @@ void SpaceState::initHUD()
         policy.drawVisualDrones = dbg.renderVisualShips;
              
         
+        glm::dvec3 observerGalacticPositionLy {0.0};
+        const glm::dvec3* observerGalacticPositionPtr = nullptr;
+        if (resolvePlayerGalacticPositionLy(observerGalacticPositionLy))
+            observerGalacticPositionPtr = &observerGalacticPositionLy;
+
         m_sceneRenderer.render(
                 m_client->world(),
                 m_playerId,
@@ -167,7 +172,8 @@ void SpaceState::initHUD()
                 proj,
                 1,
                 "secondCam",
-                policy
+                policy,
+                observerGalacticPositionPtr
             );
 
 
@@ -278,39 +284,9 @@ void SpaceState::initServerAndClient()
 {
     
     
-    // m_debugServer = std::make_unique<game::debug::DebugServer>();
-    // m_debugServer->start(8080);
+    // Browser diagnostics are served by the shared HtmlUiServer.
+    // Individual debug pages use panel routing over the same WebSocket.
 
-    // m_coreStatusServer = std::make_unique<game::debug::DebugServer>();
-    // m_coreStatusServer->start(8080, "core_status", 
-    //     { "D:/__elite/work/src/WebSocket/debug/shipcore_viewer.html" });
-    
-    // Сервис 2: Frustum Debug (WebSocket + HTML)
-    // m_frustumDebugServer = std::make_unique<game::debug::DebugServer>();
-    // m_frustumDebugServer->start(8081, "frustum_debug", 
-    //     {"D:/__elite/work/src/WebSocket/debug/frustum_viewer.html"});
-
-
-    // ============================================================
-    // Колбэки для Core Status
-    // ============================================================
-    
-    // m_coreStatusServer->onDamageRadiator([this](int index) {
-    //     std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
-    //     ClientShipCommand cmd;
-    //     cmd.type = ClientShipCommand::DamageRadiator;
-    //     cmd.index = index;
-    //     cmd.amount = 0.3;
-    //     m_debugCommands.push_back(cmd);
-    // });
-
-    // m_coreStatusServer->onRepairAllPanels([this]() {
-    //     std::lock_guard<std::mutex> lock(m_debugCommandsMutex);
-    //     ClientShipCommand cmd;
-    //     cmd.type = ClientShipCommand::RepairAllPanels;
-    //     m_debugCommands.push_back(cmd);
-    // });
-    
     // ============================================================
     // Колбэк для Frustum Debug данных
     // ============================================================

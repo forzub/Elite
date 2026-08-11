@@ -93,6 +93,16 @@
       min-width: 0;
     }
 
+    .row.checkboxRow {
+      grid-template-columns: auto minmax(0, 1fr);
+      justify-content: start;
+      gap: 8px;
+    }
+
+    .row.checkboxRow label {
+      cursor: pointer;
+    }
+
     .inlineControls {
       display: flex;
       gap: 14px;
@@ -142,6 +152,33 @@
     button:disabled {
       opacity: 0.38;
       cursor: default;
+    }
+
+    .toolGrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 8px;
+    }
+
+    .toolLink {
+      display: block;
+      padding: 9px 10px;
+      background: #101923;
+      color: #d7dde8;
+      border: 1px solid #35506f;
+      border-radius: 4px;
+      text-decoration: none;
+      line-height: 1.25;
+    }
+
+    .toolLink:hover {
+      background: #1c2a3a;
+    }
+
+    .toolLink small {
+      display: block;
+      margin-top: 3px;
+      color: #7890aa;
     }
 
     .actionDock {
@@ -269,6 +306,21 @@
   <div class="topbar">
     <strong>Debug Control</strong>
     <span class="status" id="status">offline</span>
+  </div>
+
+  <div class="section">
+    <div class="title">Debug tools</div>
+    <div class="toolGrid">
+      <a class="toolLink" href="attachment_editor.html" target="_blank">Attachment editor<small>Cameras, weapons, missiles, containers, drones and equipment mounts</small></a>
+      <a class="toolLink" href="volume_viewer.html" target="_blank">Hit-volume viewer<small>Primary and support collision / damage volumes</small></a>
+      <a class="toolLink" href="frustum_debug.html" target="_blank">Frustum monitor<small>Front and rear camera frustum diagnostics</small></a>
+      <a class="toolLink" href="ship_core.html" target="_blank">Ship core<small>Reactor, power bus, thermal system, coolant and radiators</small></a>
+      <a class="toolLink" href="structure_debug.html" target="_blank">Structure / damage<small>Hull modules, support graph, health, detach and damage controls</small></a>
+    </div>
+    <div class="hint">
+      These pages use the same HTTP/WebSocket host as this launcher. On the local network open
+      <code>http://&lt;game-pc-ip&gt;:8090/</code>; the root URL opens this page.
+    </div>
   </div>
 
   <div class="layout">
@@ -430,15 +482,15 @@
       <div class="section">
         <div class="title">Scene object visibility</div>
         <div class="sectionGrid three">
-          <div class="row"><label>Render player ship</label><input id="renderPlayerShip" type="checkbox"></div>
-          <div class="row"><label>Render NPC ships</label><input id="renderNpcShips" type="checkbox"></div>
-          <div class="row"><label>Render traffic ships</label><input id="renderTrafficShips" type="checkbox"></div>
-          <div class="row"><label>Render real ships</label><input id="renderRealShips" type="checkbox"></div>
-          <div class="row"><label>Render visual ships</label><input id="renderVisualShips" type="checkbox"></div>
-          <div class="row"><label>Render hubs / stations</label><input id="renderHubs" type="checkbox"></div>
-          <div class="row"><label>Render large objects</label><input id="renderLargeObjects" type="checkbox"></div>
-          <div class="row"><label>Render celestial bodies</label><input id="renderCelestialBodies" type="checkbox"></div>
-          <div class="row"><label>Render system map objects</label><input id="renderSystemMapObjects" type="checkbox"></div>
+          <div class="row checkboxRow"><input id="renderPlayerShip" type="checkbox"><label for="renderPlayerShip">Render player ship</label></div>
+          <div class="row checkboxRow"><input id="renderNpcShips" type="checkbox"><label for="renderNpcShips">Render NPC ships</label></div>
+          <div class="row checkboxRow"><input id="renderTrafficShips" type="checkbox"><label for="renderTrafficShips">Render traffic ships</label></div>
+          <div class="row checkboxRow"><input id="renderRealShips" type="checkbox"><label for="renderRealShips">Render real ships</label></div>
+          <div class="row checkboxRow"><input id="renderVisualShips" type="checkbox"><label for="renderVisualShips">Render visual ships</label></div>
+          <div class="row checkboxRow"><input id="renderHubs" type="checkbox"><label for="renderHubs">Render hubs / stations</label></div>
+          <div class="row checkboxRow"><input id="renderLargeObjects" type="checkbox"><label for="renderLargeObjects">Render large objects</label></div>
+          <div class="row checkboxRow"><input id="renderCelestialBodies" type="checkbox"><label for="renderCelestialBodies">Render celestial bodies</label></div>
+          <div class="row checkboxRow"><input id="renderSystemMapObjects" type="checkbox"><label for="renderSystemMapObjects">Render system map objects</label></div>
         </div>
         <div class="hint">
           Новые диагностические флаги. Сейчас HTML уже отправляет их в payload; C++-обработчики добавим следующим шагом.
@@ -1318,6 +1370,21 @@
     document.addEventListener('DOMContentLoaded', () => {
       updateActionButtons();
       connectWs();
+
+      // Browser debug pages are independent diagnostics. Do not make live
+      // telemetry depend on the in-game activePanel selection.
+      setInterval(() => {
+        const auto = document.getElementById('debugControlAutoUpdates');
+        if (!auto || !auto.checked) return;
+        if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
+
+        state.ws.send(JSON.stringify({
+          type: 'command',
+          panel: 'debug_control',
+          command: 'request_snapshot',
+          payload: {}
+        }));
+      }, 250);
     });
   </script>
 </body>

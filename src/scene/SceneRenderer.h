@@ -134,7 +134,8 @@ public:
 
     PreparedScene prepareScene(
         const ClientWorldState& world,
-        EntityId playerId
+        EntityId playerId,
+        const glm::dvec3* observerGalacticPositionLy = nullptr
     );
 
     void renderPrepared(
@@ -151,7 +152,8 @@ public:
             const glm::mat4& proj,
             int cameraId,
             const std::string& cameraName,
-            const SceneRenderPolicy& policy
+            const SceneRenderPolicy& policy,
+            const glm::dvec3* observerGalacticPositionLy = nullptr
         );  
 
     // --- DEBUG ---

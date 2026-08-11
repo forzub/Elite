@@ -37,6 +37,11 @@ struct PreparedScene
 
     world::coordinates::WorldFrame frame;
 
+    // Absolute observer position used only by galaxy-scale presentation
+    // (starfield/parallax). Object rendering remains player-relative via
+    // WorldFrame and never consumes this large coordinate directly.
+    glm::dvec3 observerGalacticPositionLy {0.0};
+    bool observerGalacticPositionValid = false;
 
 
     struct RealShipMeshItem

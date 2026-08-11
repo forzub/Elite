@@ -211,3 +211,84 @@ set_tests_properties(
     PROPERTIES
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+add_executable(
+    coordinate_frame_contract_tests
+    CoordinateFrameContractTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/presentation/GalaxyNavigationPresentation.cpp"
+)
+
+target_include_directories(
+    coordinate_frame_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        coordinate_frame_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        coordinate_frame_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME coordinate_frame_contracts
+    COMMAND coordinate_frame_contract_tests
+)
+
+set_tests_properties(
+    coordinate_frame_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
+    kinematic_frame_contract_tests
+    KinematicFrameContractTests.cpp
+)
+
+target_include_directories(
+    kinematic_frame_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        kinematic_frame_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        kinematic_frame_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME kinematic_frame_contracts
+    COMMAND kinematic_frame_contract_tests
+)
+
+set_tests_properties(
+    kinematic_frame_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

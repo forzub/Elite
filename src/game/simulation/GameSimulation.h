@@ -235,7 +235,7 @@ public:
         return m_orbitalHubs;
     }
 
-    void rebuildHubNavigationFrames(double dt);
+    void rebuildHubNavigationFrames(double frameDeltaSeconds);
     void prepareReferenceFramesForSpawn();
 
     void registerHubMotionLabShip(

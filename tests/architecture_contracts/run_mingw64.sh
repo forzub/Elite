@@ -16,6 +16,8 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_architecture.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_hub_detail_revision.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_system_membership.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_coordinate_frames.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_kinematic_frames.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_active_system_context.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_spatial_domain.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_hub_frame_presentation.py"

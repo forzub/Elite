@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 #include <glm/mat4x4.hpp>
 
+#include "src/game/navigation/KinematicFrame.h"
+
 namespace game::navigation
 {
 
@@ -16,11 +18,13 @@ struct HubNavigationFrame
 
     glm::dvec3 originMeters {0.0};
     glm::dvec3 velocityMetersPerSecond {0.0};
+    glm::dvec3 accelerationMetersPerSecond2 {0.0};
 
     // Angular velocity of the rotating hub frame in world coordinates.
     // A point fixed at a non-zero local offset therefore has a different
     // world velocity than the frame origin.
     glm::dvec3 angularVelocityWorldRadPerSecond {0.0};
+    glm::dvec3 angularAccelerationWorldRadPerSecond2 {0.0};
 
     // От центра планеты к хабу.
     glm::dvec3 radialAxis {0.0, 1.0, 0.0};
@@ -32,6 +36,27 @@ struct HubNavigationFrame
     glm::dvec3 normalAxis {0.0, 0.0, 1.0};
 
     bool valid = false;
+
+    KinematicFrame kinematicFrame() const
+    {
+        KinematicFrame frame;
+        frame.systemId = systemId;
+        frame.frameId = hubId;
+        frame.originMeters = originMeters;
+        frame.linearVelocityMps = velocityMetersPerSecond;
+        frame.linearAccelerationMps2 = accelerationMetersPerSecond2;
+        frame.localToWorldBasis = glm::dmat3(
+            progradeAxis,
+            radialAxis,
+            normalAxis
+        );
+        frame.angularVelocityWorldRadPerSecond =
+            angularVelocityWorldRadPerSecond;
+        frame.angularAccelerationWorldRadPerSecond2 =
+            angularAccelerationWorldRadPerSecond2;
+        frame.valid = valid;
+        return frame;
+    }
 
     glm::dvec3 worldToLocalPosition(
         const glm::dvec3& worldMeters

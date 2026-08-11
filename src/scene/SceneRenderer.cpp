@@ -935,7 +935,8 @@ void SceneRenderer::renderHubMotionLabAnalyticCube(
 
 PreparedScene SceneRenderer::prepareScene(
     const ClientWorldState& world,
-    EntityId playerId
+    EntityId playerId,
+    const glm::dvec3* observerGalacticPositionLy
 )
 {
     PreparedScene prepared;
@@ -959,6 +960,13 @@ PreparedScene SceneRenderer::prepareScene(
         world::coordinates::makeRenderFrameFromCamera(
             itPlayer->second.renderTransform.worldPosition
         );
+
+    if (observerGalacticPositionLy)
+    {
+        prepared.observerGalacticPositionLy =
+            *observerGalacticPositionLy;
+        prepared.observerGalacticPositionValid = true;
+    }
 
 
         prepared.realShipMeshes.clear();
@@ -1286,14 +1294,15 @@ void SceneRenderer::render(
     const glm::mat4& proj,
     int cameraId,
     const std::string& cameraName,
-    const SceneRenderPolicy& policy
+    const SceneRenderPolicy& policy,
+    const glm::dvec3* observerGalacticPositionLy
 )
 {
     PreparedScene prepared;
 
     try
     {
-        prepared = prepareScene(world, playerId);
+        prepared = prepareScene(world, playerId, observerGalacticPositionLy);
     }
     catch (const std::bad_alloc&)
     {
@@ -1401,9 +1410,6 @@ void SceneRenderer::renderInternal(
 
 
 
-    static float debugTimer = 0;
-    debugTimer += 0.016f; // примерно dt, но лучше передавать dt параметром
-    
     bool shouldDebug = false;
     if(m_debugCallback  && cameraName == "mainCam")
     {
@@ -1454,9 +1460,13 @@ void SceneRenderer::renderInternal(
         }
     }
 
-// В render-frame камера находится в локальном нуле.
-// Все world objects уже переведены через WorldFrame -> render-local.
-const glm::vec3 cameraLocalPosition(0.0f);
+// WorldFrame origin is the player, not necessarily the optical camera.
+// Cockpit/rear/drone cameras keep their small player-local attachment offset.
+glm::mat4 renderView =
+    world::coordinates::makeRenderView(view);
+
+const glm::vec3 cameraLocalPosition =
+    glm::vec3(glm::inverse(renderView)[3]);
 
 
 // auto itPlayer = ships.find(playerId.value);
@@ -1471,10 +1481,6 @@ const glm::vec3 cameraLocalPosition(0.0f);
 
 
    
-glm::mat4 renderView =
-    world::coordinates::makeRenderView(view);
-
-
 profileAfterSetupMs = renderProfileNowMs();
     
     // Включаем необходимые состояния
@@ -1494,9 +1500,9 @@ profileAfterSetupMs = renderProfileNowMs();
         m_starfieldRenderer.isInitialized())
     {
         const glm::dvec3 observerPositionLy =
-            world::coordinates::toGalacticLy(
-                frame.origin
-            );
+            prepared.observerGalacticPositionValid
+                ? prepared.observerGalacticPositionLy
+                : glm::dvec3(0.0);
 
         m_starfieldRenderer.setObserverPositionLy(
             glm::vec3(

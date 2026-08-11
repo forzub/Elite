@@ -1113,7 +1113,7 @@ m_hubVelocityMetersPerSecond[hubId] =
 
 
 
-    rebuildHubNavigationFrames(dt);
+    rebuildHubNavigationFrames(trajectoryDeltaSeconds);
 
     if (!trajectoryDebugMode)
         endUniverseTrajectoryDiagnostic();
@@ -1766,8 +1766,12 @@ m_hubVelocityMetersPerSecond[hubId] =
                 s.referenceFrame.originMeters = frame->originMeters;
                 s.referenceFrame.velocityMetersPerSecond =
                     frame->velocityMetersPerSecond;
+                s.referenceFrame.accelerationMetersPerSecond2 =
+                    frame->accelerationMetersPerSecond2;
                 s.referenceFrame.angularVelocityWorldRadPerSecond =
                     frame->angularVelocityWorldRadPerSecond;
+                s.referenceFrame.angularAccelerationWorldRadPerSecond2 =
+                    frame->angularAccelerationWorldRadPerSecond2;
                 s.referenceFrame.radialAxis = frame->radialAxis;
                 s.referenceFrame.progradeAxis = frame->progradeAxis;
                 s.referenceFrame.normalAxis = frame->normalAxis;
@@ -2880,8 +2884,13 @@ GameSimulation::hubNavigationFrame(
 }
 
 
-void GameSimulation::rebuildHubNavigationFrames(double dt)
+void GameSimulation::rebuildHubNavigationFrames(double frameDeltaSeconds)
 {
+    // Keep the previous kinematic epoch long enough to derive frame
+    // acceleration. The current production motion path still consumes the
+    // legacy HubNavigationFrame fields; acceleration is shadow state only in
+    // this migration stage.
+    const auto previousFrames = m_hubNavigationFrames;
     m_hubNavigationFrames.clear();
 
     for (auto& [hubId, hub] : m_orbitalHubs)
@@ -3077,6 +3086,34 @@ void GameSimulation::rebuildHubNavigationFrames(double dt)
         */
         frame.angularVelocityWorldRadPerSecond =
             -normal * angularSpeedRadPerSecond;
+
+        const auto previousFrameIt = previousFrames.find(hubId);
+        if (std::abs(frameDeltaSeconds) > 1.0e-9 &&
+            previousFrameIt != previousFrames.end() &&
+            previousFrameIt->second.valid &&
+            previousFrameIt->second.systemId == frame.systemId)
+        {
+            frame.accelerationMetersPerSecond2 =
+                (frame.velocityMetersPerSecond -
+                 previousFrameIt->second.velocityMetersPerSecond) /
+                frameDeltaSeconds;
+
+            frame.angularAccelerationWorldRadPerSecond2 =
+                (frame.angularVelocityWorldRadPerSecond -
+                 previousFrameIt->second.angularVelocityWorldRadPerSecond) /
+                frameDeltaSeconds;
+        }
+        else if (!m_gravityBodies.empty())
+        {
+            // First-epoch fallback: for an orbital hub the physical frame
+            // acceleration is gravity-driven. Subsequent ticks use the actual
+            // derivative of the authoritative frame velocity above.
+            frame.accelerationMetersPerSecond2 =
+                game::navigation::GravityFieldSystem::sample(
+                    frame.originMeters,
+                    m_gravityBodies
+                ).accelerationMps2;
+        }
 
         // Пока prime ищем как первый модуль.
         // Позже лучше сохранить явно из initial_world_state.json.

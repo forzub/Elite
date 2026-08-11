@@ -159,6 +159,7 @@ private:
     bool wantsConfirmExit() const override;
     bool onGlobalEscape() override;
     bool isInSafeZone() const;
+    bool resolvePlayerGalacticPositionLy(glm::dvec3& outPositionLy) const;
     void renderUniverseTimeSimulationOverlay(
         const Viewport& viewport
     );

@@ -231,6 +231,100 @@ def check_debug_panels() -> None:
         )
 
 
+    debug_control = read("src/assets/webui/debug_control.html")
+    attachment_html = read("src/assets/webui/attachment_editor.html")
+    attachment_payload = read("src/game/debug/AttachmentEditorPayload.cpp")
+    ship_core_html = read("src/assets/webui/ship_core.html")
+    structure_html = read("src/assets/webui/structure_debug.html")
+    frustum_html = read("src/assets/webui/frustum_debug.html")
+    volume_html = read("src/assets/webui/volume_viewer.html")
+    server_cpp = read("src/ui/html/HtmlUiServer.cpp")
+
+    launcher_pages = (
+        "attachment_editor.html",
+        "volume_viewer.html",
+        "frustum_debug.html",
+        "ship_core.html",
+        "structure_debug.html",
+    )
+    for page in launcher_pages:
+        require(
+            f'href="{page}"' in debug_control,
+            f"Debug Control launcher lost link to {page}",
+        )
+
+    for kind in (
+        "CameraCockpit",
+        "CameraRear",
+        "CameraDrone",
+        "DroneDock",
+        "DroneLaunch",
+        "DroneRecovery",
+        "RepairWorkPoint",
+        "EquipmentMount",
+        "WeaponMuzzle",
+        "MissileRack",
+        "ContainerMount",
+    ):
+        require(
+            f'ShipAttachmentKind::{kind}' in attachment_payload,
+            f"unified attachment editor lost attachment kind {kind}",
+        )
+
+    for page_name, page_text in (
+        ("debug_control.html", debug_control),
+        ("attachment_editor.html", attachment_html),
+        ("structure_debug.html", structure_html),
+        ("volume_viewer.html", volume_html),
+        ("ship_core.html", ship_core_html),
+        ("frustum_debug.html", frustum_html),
+    ):
+        require(
+            "location.host" in page_text,
+            f"{page_name} no longer connects WebSocket through the page host (LAN contract)",
+        )
+
+    require(
+        'resource = "/debug_control.html"' in server_cpp,
+        "HtmlUiServer root URL no longer opens the debug launcher",
+    )
+    require(
+        'part == ".."' in server_cpp and "lexically_normal" in server_cpp,
+        "LAN debug HTTP server lost path traversal guard",
+    )
+
+    require(
+        "panel: 'ship_core'" in ship_core_html
+        and "payload: params" in ship_core_html
+        and "sendCommand('request_snapshot')" in ship_core_html,
+        "Ship Core browser page lost current HtmlUiMessage envelope/live polling",
+    )
+    require(
+        'msg.command == "damage_radiator"' in space_cpp,
+        "Ship Core damage_radiator route is not handled by SpaceState",
+    )
+    require(
+        "repairAllPanels()" in ship_core_html
+        and "sendCommand('repair_all_panels')" in ship_core_html
+        and 'msg.command == "repair_all_panels"' in space_cpp,
+        "Ship Core repair-all debug control is not wired end-to-end",
+    )
+    require(
+        "setInterval(requestSnapshot, 250)" in structure_html,
+        "Structure Debug no longer polls independently of in-game activePanel",
+    )
+    require(
+        "command: 'request_snapshot'" in debug_control
+        and "setInterval(() =>" in debug_control,
+        "Debug Control lost independent browser telemetry polling",
+    )
+
+    for panel in ("DebugControl", "StructureDebug", "ShipCore", "FrustumDebug"):
+        require(
+            f"setActivePanel(HtmlUiPanelId::{panel})" not in space_cpp,
+            f"external browser panel {panel} again steals the in-game activePanel",
+        )
+
 def check_map_feature_surface() -> None:
     map_mode = read("src/game/system_map/MapMode.h")
     space_h = read("src/game/SpaceState.h")

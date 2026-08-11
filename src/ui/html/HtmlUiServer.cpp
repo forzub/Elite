@@ -38,6 +38,8 @@ void HtmlUiServer::start(int port, const std::string& rootDir)
 {
     m_rootDir = rootDir;
 
+    // WebSocket++ listen(port) uses the configured dual-stack endpoint, so the
+    // same HTTP/WebSocket server can be opened from localhost or the LAN.
     m_server.listen(port);
     m_server.start_accept();
 
@@ -46,6 +48,8 @@ void HtmlUiServer::start(int port, const std::string& rootDir)
 
     std::cout << "[HtmlUiServer] started on port " << port << "\n";
     std::cout << "[HtmlUiServer] root dir: " << m_rootDir << "\n";
+    std::cout << "[HtmlUiServer] debug UI: http://<this-pc-ip>:"
+              << port << "/\n";
 }
 
 void HtmlUiServer::stop()
@@ -119,10 +123,44 @@ void HtmlUiServer::onHttp(websocketpp::connection_hdl hdl)
     auto con = m_server.get_con_from_hdl(hdl);
     std::string resource = con->get_resource();
 
-    if (resource == "/")
-        resource = "/index.html";
+    const std::size_t suffixPos = resource.find_first_of("?#");
+    if (suffixPos != std::string::npos)
+        resource.resize(suffixPos);
 
-    std::filesystem::path fullPath = std::filesystem::path(m_rootDir) / resource.substr(1);
+    if (resource.empty() || resource == "/")
+        resource = "/debug_control.html";
+
+    // This server is intentionally reachable from the local network. Never
+    // allow a URL to escape the configured webui root on the host machine.
+    if (resource.find('\\') != std::string::npos)
+    {
+        con->set_status(websocketpp::http::status_code::not_found);
+        con->set_body("<html><body><h1>404 Not Found</h1></body></html>");
+        return;
+    }
+
+    const std::filesystem::path relativePath =
+        std::filesystem::path(resource.substr(1)).lexically_normal();
+
+    if (relativePath.is_absolute())
+    {
+        con->set_status(websocketpp::http::status_code::not_found);
+        con->set_body("<html><body><h1>404 Not Found</h1></body></html>");
+        return;
+    }
+
+    for (const auto& part : relativePath)
+    {
+        if (part == "..")
+        {
+            con->set_status(websocketpp::http::status_code::not_found);
+            con->set_body("<html><body><h1>404 Not Found</h1></body></html>");
+            return;
+        }
+    }
+
+    const std::filesystem::path fullPath =
+        std::filesystem::path(m_rootDir) / relativePath;
     std::string content = readFile(fullPath.string());
 
     if (content.empty())

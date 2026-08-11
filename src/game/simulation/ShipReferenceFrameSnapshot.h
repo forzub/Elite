@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/DynamicMotionState.h"
+#include "src/game/navigation/KinematicFrame.h"
 
 namespace game::simulation
 {
@@ -24,7 +25,9 @@ struct ShipReferenceFrameSnapshot
 
     glm::dvec3 originMeters {0.0};
     glm::dvec3 velocityMetersPerSecond {0.0};
+    glm::dvec3 accelerationMetersPerSecond2 {0.0};
     glm::dvec3 angularVelocityWorldRadPerSecond {0.0};
+    glm::dvec3 angularAccelerationWorldRadPerSecond2 {0.0};
 
     glm::dvec3 radialAxis {0.0, 1.0, 0.0};
     glm::dvec3 progradeAxis {1.0, 0.0, 0.0};
@@ -35,6 +38,27 @@ struct ShipReferenceFrameSnapshot
 
     double universeTimeSeconds = 0.0;
     bool valid = false;
+
+    game::navigation::KinematicFrame kinematicFrame() const
+    {
+        game::navigation::KinematicFrame frame;
+        frame.systemId = systemId;
+        frame.frameId = hubId;
+        frame.originMeters = originMeters;
+        frame.linearVelocityMps = velocityMetersPerSecond;
+        frame.linearAccelerationMps2 = accelerationMetersPerSecond2;
+        frame.localToWorldBasis = glm::dmat3(
+            progradeAxis,
+            radialAxis,
+            normalAxis
+        );
+        frame.angularVelocityWorldRadPerSecond =
+            angularVelocityWorldRadPerSecond;
+        frame.angularAccelerationWorldRadPerSecond2 =
+            angularAccelerationWorldRadPerSecond2;
+        frame.valid = valid;
+        return frame;
+    }
 
     glm::dvec3 localToWorldPosition(
         const glm::dvec3& localMeters

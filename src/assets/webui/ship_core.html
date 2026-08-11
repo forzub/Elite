@@ -315,8 +315,8 @@
     <h1>COBRETTY MK.I - CORE SYSTEMS [v2.0]</h1>
     
     <div class="toolbar">
-        <button disabled>REPAIR ALL</button>
-        <button disabled>DAMAGE RANDOM</button>
+        <button onclick="repairAllPanels()">REPAIR ALL</button>
+        <button onclick="damageRandomPanel()">DAMAGE RANDOM</button>
         <button disabled>FULL THROTTLE</button>
         <button disabled>HALF THROTTLE</button>
         <button disabled>SIMULATE FAILURE</button>
@@ -1008,10 +1008,19 @@ function selectShipEntity() {
         }
         
         function sendCommand(command, params = {}) {
-            const msg = { command, ...params };
-            ws.send(JSON.stringify(msg));
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            ws.send(JSON.stringify({
+                type: 'command',
+                panel: 'ship_core',
+                command,
+                payload: params
+            }));
         }
         
+        function repairAllPanels() {
+            sendCommand('repair_all_panels');
+        }
+
         function damageRandomPanel() {
             let panelCount = 160;
             if (lastData?.cooling?.panels) {
@@ -1025,12 +1034,11 @@ function selectShipEntity() {
             sendCommand('damage_radiator', { panel_index: selectedPanel, amount: 0.2 });
         }
         
-        // Request update every second
+        // External browser tools poll independently; they must not depend on
+        // whichever in-game WebUI panel currently owns the activePanel slot.
         setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-                sendCommand('ping');
-            }
-        }, 1000);
+            sendCommand('request_snapshot');
+        }, 250);
 
 
 

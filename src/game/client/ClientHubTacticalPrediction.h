@@ -34,8 +34,11 @@ hubNavigationFrameForPrediction(
     frame.primeModuleId = source.moduleId;
     frame.originMeters = source.originMeters;
     frame.velocityMetersPerSecond = source.velocityMetersPerSecond;
+    frame.accelerationMetersPerSecond2 = source.accelerationMetersPerSecond2;
     frame.angularVelocityWorldRadPerSecond =
         source.angularVelocityWorldRadPerSecond;
+    frame.angularAccelerationWorldRadPerSecond2 =
+        source.angularAccelerationWorldRadPerSecond2;
     frame.radialAxis = source.radialAxis;
     frame.progradeAxis = source.progradeAxis;
     frame.normalAxis = source.normalAxis;

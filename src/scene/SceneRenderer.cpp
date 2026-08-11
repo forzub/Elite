@@ -36,6 +36,7 @@
 
 #include "src/game/visual/VisualShip.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
+#include "src/render/geometry/AssemblyGpuLibrary.h"
 #include "src/game/client/ClientSpatialDomain.h"
 #include "src/world/coordinates/WorldFrame.h"
 
@@ -541,6 +542,11 @@ namespace
             if (!owner.assembly)
                 return;
 
+            const auto& gpuAssembly =
+                render::geometry::AssemblyGpuLibrary::get(
+                    owner.assembly->typeId
+                );
+
             for (const auto& fragment : owner.detachedFragments)
             {
                 const game::ship::geometry::AssemblyModule* detachedModule = nullptr;
@@ -588,8 +594,15 @@ namespace
                     const glm::mat4 partMvp =
                         proj * renderView * partModel;
 
+                    const auto& gpuPart =
+                        gpuAssembly.forPart(
+                            *owner.assembly,
+                            *detachedModule,
+                            part
+                        );
+
                     const render::MeshGPU& gpu =
-                        useLod1 ? part.lod1Gpu : part.lod0Gpu;
+                        useLod1 ? gpuPart.lod1 : gpuPart.lod0;
 
                     meshRenderer.draw(
                         gpu,
@@ -986,9 +999,10 @@ PreparedScene SceneRenderer::prepareScene(
             if (!ship.assembly)
                 continue;
 
-            (void)game::ship::geometry::AssemblyMeshLibrary::getGpuReady(
-                ship.typeId
-            );
+            const auto& gpuAssembly =
+                render::geometry::AssemblyGpuLibrary::get(
+                    ship.assembly->typeId
+                );
 
             world::coordinates::WorldPosition shipRenderWorldPosition =
                 ship.renderTransform.worldPosition;
@@ -1034,9 +1048,16 @@ PreparedScene SceneRenderer::prepareScene(
                     if (ship.hiddenPartIds.find(part.id) != ship.hiddenPartIds.end())
                         continue;
 
+                    const auto& gpuPart =
+                        gpuAssembly.forPart(
+                            *ship.assembly,
+                            module,
+                            part
+                        );
+
                     PreparedScene::RealShipMeshItem item;
-                    item.gpuLod0 = &part.lod0Gpu;
-                    item.gpuLod1 = &part.lod1Gpu;
+                    item.gpuLod0 = &gpuPart.lod0;
+                    item.gpuLod1 = &gpuPart.lod1;
                     item.model = glm::translate(moduleModel, part.localOffset);
                     item.boundCenter = part.boundCenter;
                     item.boundHalfSize = part.boundHalfSize;
@@ -1066,9 +1087,10 @@ PreparedScene SceneRenderer::prepareScene(
             if (!obj.assembly)
                 continue;
 
-            (void)game::ship::geometry::AssemblyMeshLibrary::getGpuReady(
-                obj.type
-            );
+            const auto& gpuAssembly =
+                render::geometry::AssemblyGpuLibrary::get(
+                    obj.assembly->typeId
+                );
 
             world::coordinates::WorldPosition objectRenderWorldPosition =
                 obj.renderWorldPosition;
@@ -1127,10 +1149,17 @@ PreparedScene SceneRenderer::prepareScene(
                     if (obj.hiddenPartIds.find(part.id) != obj.hiddenPartIds.end())
                         continue;
 
+                    const auto& gpuPart =
+                        gpuAssembly.forPart(
+                            *obj.assembly,
+                            module,
+                            part
+                        );
+
                     PreparedScene::ObjectMeshItem item;
                     item.type = obj.type;
-                    item.gpuLod0 = &part.lod0Gpu;
-                    item.gpuLod1 = &part.lod1Gpu;
+                    item.gpuLod0 = &gpuPart.lod0;
+                    item.gpuLod1 = &gpuPart.lod1;
                     item.model = glm::translate(moduleModel, part.localOffset);
                     item.boundCenter = part.boundCenter;
                     item.boundHalfSize = part.boundHalfSize;
@@ -1166,9 +1195,10 @@ PreparedScene SceneRenderer::prepareScene(
             if (!ship.descriptor || !ship.assembly)
                 continue;
 
-            (void)game::ship::geometry::AssemblyMeshLibrary::getGpuReady(
-                ship.descriptor->typeId
-            );
+            const auto& gpuAssembly =
+                render::geometry::AssemblyGpuLibrary::get(
+                    ship.assembly->typeId
+                );
 
             glm::mat4 shipModel =
                 world::coordinates::makeRenderModelMatrix(
@@ -1187,7 +1217,7 @@ PreparedScene SceneRenderer::prepareScene(
             }
 
             PreparedScene::VisualShipItem shipItem;
-            shipItem.wholeShipProxyGpu = &ship.assembly->wholeShipProxyGpu;
+            shipItem.wholeShipProxyGpu = &gpuAssembly.wholeShipProxy;
             shipItem.model = shipModel;
             shipItem.boundCenter = ship.assembly->boundCenter;
             shipItem.boundRadius = ship.assembly->boundRadius;
@@ -1237,10 +1267,17 @@ PreparedScene SceneRenderer::prepareScene(
                     glm::mat4 partModel =
                         glm::translate(moduleModel, part.localOffset);
 
+                    const auto& gpuPart =
+                        gpuAssembly.forPart(
+                            *ship.assembly,
+                            module,
+                            part
+                        );
+
                     PreparedScene::VisualShipPartItem partItem;
                     partItem.shipIndex = shipIndex;
-                    partItem.gpuLod0 = &part.lod0Gpu;
-                    partItem.gpuLod1 = &part.lod1Gpu;
+                    partItem.gpuLod0 = &gpuPart.lod0;
+                    partItem.gpuLod1 = &gpuPart.lod1;
                     partItem.model = partModel;
                     partItem.boundCenter = part.boundCenter;
                     partItem.boundHalfSize = part.boundHalfSize;
@@ -1658,6 +1695,11 @@ profileAfterSetupMs = renderProfileNowMs();
                 // ===== НОВОЕ: модульная сборка =====
         if (ship.assembly)
         {
+            const auto& gpuAssembly =
+                render::geometry::AssemblyGpuLibrary::get(
+                    ship.assembly->typeId
+                );
+
             bool visible = frustum.sphereVisible(
                 ship.assembly->boundCenter,
                 ship.assembly->boundRadius,
@@ -1768,7 +1810,15 @@ profileAfterSetupMs = renderProfileNowMs();
 
                         glm::mat4 partMvp = proj * renderView * partModel;
 
-                        const render::MeshGPU& gpu = useLod1 ? part.lod1Gpu : part.lod0Gpu;
+                        const auto& gpuPart =
+                            gpuAssembly.forPart(
+                                *ship.assembly,
+                                module,
+                                part
+                            );
+
+                        const render::MeshGPU& gpu =
+                            useLod1 ? gpuPart.lod1 : gpuPart.lod0;
 
                         queuedShipMeshDraws.push_back(
                             QueuedMeshDraw{
@@ -2363,6 +2413,10 @@ if (policy.drawObjects)
         // --------------------------------------------------------
         if (obj.assembly)
         {
+            const auto& gpuAssembly =
+                render::geometry::AssemblyGpuLibrary::get(
+                    obj.assembly->typeId
+                );
 
         const glm::vec3 objectLocalPosition =
             world::coordinates::toRenderLocal(
@@ -2519,7 +2573,15 @@ if (policy.drawObjects)
                         if (obj.hiddenPartIds.find(part.id) != obj.hiddenPartIds.end())
                             continue;
 
-                        const render::MeshGPU& gpu = useLod1 ? part.lod1Gpu : part.lod0Gpu;
+                        const auto& gpuPart =
+                            gpuAssembly.forPart(
+                                *obj.assembly,
+                                module,
+                                part
+                            );
+
+                        const render::MeshGPU& gpu =
+                            useLod1 ? gpuPart.lod1 : gpuPart.lod0;
 
                         queuedObjectMeshDraws.push_back(
                             QueuedMeshDraw{
@@ -3310,9 +3372,10 @@ void SceneRenderer::renderVisualDrones(
         if (!drone.visible || !drone.assembly)
             continue;
 
-        (void)game::ship::geometry::AssemblyMeshLibrary::getGpuReady(
-            drone.type
-        );
+        const auto& gpuAssembly =
+            render::geometry::AssemblyGpuLibrary::get(
+                drone.assembly->typeId
+            );
 
         glm::mat4 droneModel =
             world::coordinates::makeRenderModelMatrix(
@@ -3396,8 +3459,15 @@ void SceneRenderer::renderVisualDrones(
                 const glm::mat4 partMvp =
                     proj * renderView * partModel;
 
+                const auto& gpuPart =
+                    gpuAssembly.forPart(
+                        *drone.assembly,
+                        module,
+                        part
+                    );
+
                 const render::MeshGPU& gpu =
-                    useLod1 ? part.lod1Gpu : part.lod0Gpu;
+                    useLod1 ? gpuPart.lod1 : gpuPart.lod0;
 
                 queuedDroneDraws.push_back(
                     QueuedMeshDraw{

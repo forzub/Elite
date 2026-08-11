@@ -323,12 +323,22 @@ if loopback_cpp.is_file():
     for required in (
         "m_timeSyncRequestBuffer",
         "m_timeSyncResponseBuffer",
-        "m_server.serverTimeSeconds()",
+        "m_serverTimeSyncRequests",
         "sendTimeSyncRequest(",
+        "receiveTimeSyncRequest(",
+        "sendTimeSyncResponse(",
         "receiveTimeSyncResponse(",
     ):
         if required not in text:
             fail(loopback_cpp, f"loopback time-sync path is incomplete: {required}")
+
+    for forbidden in (
+        "GameServer",
+        "m_server.",
+        "serverTimeSeconds()",
+    ):
+        if forbidden in text:
+            fail(loopback_cpp, f"loopback transport regained server ownership: {forbidden}")
 
 if universe_clock_header.is_file():
     text = universe_clock_header.read_text(encoding="utf-8", errors="replace")

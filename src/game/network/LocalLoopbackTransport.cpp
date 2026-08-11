@@ -1,17 +1,7 @@
 #include "LocalLoopbackTransport.h"
-#include "src/game/server/GameServer.h"
-#include "src/game/network/ClientMessage.h"
-#include <iostream>
-#include <type_traits>
+
+#include <cstdlib>
 #include <utility>
-
-
-LocalLoopbackTransport::LocalLoopbackTransport(GameServer& server)
-    : m_server(server)
-{
-}
-
-
 
 bool LocalLoopbackTransport::receiveSnapshot(
     SimulationSnapshot& outSnapshot)
@@ -19,52 +9,48 @@ bool LocalLoopbackTransport::receiveSnapshot(
     if (m_incoming.empty())
         return false;
 
-    outSnapshot = m_incoming.front();
+    outSnapshot = std::move(m_incoming.front());
     m_incoming.pop();
     return true;
 }
 
-
-void LocalLoopbackTransport::enqueueCurrentSnapshotImmediately()
+void LocalLoopbackTransport::publishSnapshotImmediately(
+    const SimulationSnapshot& snapshot)
 {
-    const SimulationSnapshot snap = m_server.snapshot();
-
-    m_incoming.push(snap);
+    m_incoming.push(snapshot);
     m_hasLastQueuedSnapshot = true;
-    m_lastQueuedSnapshotTick = snap.metadata.serverTick;
-    m_lastQueuedServerTime = snap.metadata.serverTimeSeconds;
+    m_lastQueuedSnapshotTick = snapshot.metadata.serverTick;
+    m_lastQueuedServerTime = snapshot.metadata.serverTimeSeconds;
 }
 
+void LocalLoopbackTransport::publishSnapshot(
+    const SimulationSnapshot& snapshot)
+{
+    const bool snapshotChanged =
+        !m_hasLastQueuedSnapshot ||
+        snapshot.metadata.serverTick != m_lastQueuedSnapshotTick ||
+        snapshot.metadata.serverTimeSeconds != m_lastQueuedServerTime;
+
+    // Do not enqueue the same publication more than once. Duplicate
+    // serverTime/serverTick samples make interpolation of moving reference
+    // frames look stepped even though the authoritative state is unchanged.
+    if (!snapshotChanged)
+        return;
+
+    m_latencyBuffer.push_back({
+        snapshot,
+        m_fakeLatency
+    });
+
+    m_hasLastQueuedSnapshot = true;
+    m_lastQueuedSnapshotTick = snapshot.metadata.serverTick;
+    m_lastQueuedServerTime = snapshot.metadata.serverTimeSeconds;
+}
 
 void LocalLoopbackTransport::update(float dt)
 {
-    const SimulationSnapshot snap = m_server.snapshot();
-
-    const bool snapshotChanged =
-        !m_hasLastQueuedSnapshot ||
-        snap.metadata.serverTick != m_lastQueuedSnapshotTick ||
-        snap.metadata.serverTimeSeconds != m_lastQueuedServerTime;
-
-    // ВАЖНО:
-    // Не кладём в latency buffer один и тот же snapshot много раз.
-    // Иначе ClientWorldState получает дубли serverTime/snapshotTick,
-    // а интерполяция вращения станции превращается в ступеньки.
-    if (snapshotChanged)
-    {
-        m_latencyBuffer.push_back({
-            snap,
-            m_fakeLatency
-        });
-
-        m_hasLastQueuedSnapshot = true;
-        m_lastQueuedSnapshotTick = snap.metadata.serverTick;
-        m_lastQueuedServerTime = snap.metadata.serverTimeSeconds;
-    }
-
-    for (auto& s : m_latencyBuffer)
-    {
-        s.delay -= dt;
-    }
+    for (auto& snapshot : m_latencyBuffer)
+        snapshot.delay -= dt;
 
     while (!m_latencyBuffer.empty() &&
            m_latencyBuffer.front().delay <= 0.0f)
@@ -75,7 +61,7 @@ void LocalLoopbackTransport::update(float dt)
             continue;
         }
 
-        m_incoming.push(m_latencyBuffer.front().snapshot);
+        m_incoming.push(std::move(m_latencyBuffer.front().snapshot));
         m_latencyBuffer.erase(m_latencyBuffer.begin());
     }
 
@@ -89,7 +75,7 @@ void LocalLoopbackTransport::update(float dt)
            m_timeSyncResponseBuffer.front().delay <= 0.0f)
     {
         m_timeSyncResponses.push(
-            m_timeSyncResponseBuffer.front().response
+            std::move(m_timeSyncResponseBuffer.front().response)
         );
         m_timeSyncResponseBuffer.erase(
             m_timeSyncResponseBuffer.begin()
@@ -102,47 +88,55 @@ void LocalLoopbackTransport::update(float dt)
     while (!m_timeSyncRequestBuffer.empty() &&
            m_timeSyncRequestBuffer.front().delay <= 0.0f)
     {
-        const auto request =
-            m_timeSyncRequestBuffer.front().request;
+        m_serverTimeSyncRequests.push(
+            m_timeSyncRequestBuffer.front().request
+        );
         m_timeSyncRequestBuffer.erase(m_timeSyncRequestBuffer.begin());
-
-        game::network::TimeSyncResponse response;
-        response.sequence = request.sequence;
-        response.clientSendTimeSeconds =
-            request.clientSendTimeSeconds;
-        response.serverReceiveTimeSeconds =
-            m_server.serverTimeSeconds();
-
-        m_timeSyncResponseBuffer.push_back({
-            response,
-            m_fakeLatency
-        });
     }
-
-    game::network::MapResponse response;
-    while (m_server.popMapResponse(response))
-        m_mapResponses.push(std::move(response));
-
-    game::network::PresentationDataResponse presentationResponse;
-    while (m_server.popPresentationDataResponse(presentationResponse))
-        m_presentationResponses.push(std::move(presentationResponse));
 }
-
 
 void LocalLoopbackTransport::sendClientMessage(
     EntityId playerId,
     const game::network::ClientMessage& msg)
 {
-    m_server.receiveClientMessage(playerId, msg);
+    m_clientMessages.emplace(playerId, msg);
 }
 
+bool LocalLoopbackTransport::receiveClientMessage(
+    EntityId& outPlayerId,
+    game::network::ClientMessage& outMessage)
+{
+    if (m_clientMessages.empty())
+        return false;
+
+    outPlayerId = m_clientMessages.front().first;
+    outMessage = std::move(m_clientMessages.front().second);
+    m_clientMessages.pop();
+    return true;
+}
 
 void LocalLoopbackTransport::sendMapRequest(
     const game::network::MapRequest& request)
 {
-    m_server.enqueueMapRequest(request);
+    m_mapRequests.push(request);
 }
 
+bool LocalLoopbackTransport::receiveMapRequest(
+    game::network::MapRequest& outRequest)
+{
+    if (m_mapRequests.empty())
+        return false;
+
+    outRequest = std::move(m_mapRequests.front());
+    m_mapRequests.pop();
+    return true;
+}
+
+void LocalLoopbackTransport::sendMapResponse(
+    game::network::MapResponse response)
+{
+    m_mapResponses.push(std::move(response));
+}
 
 bool LocalLoopbackTransport::receiveMapResponse(
     game::network::MapResponse& outResponse)
@@ -158,7 +152,24 @@ bool LocalLoopbackTransport::receiveMapResponse(
 void LocalLoopbackTransport::sendPresentationDataRequest(
     const game::network::PresentationDataRequest& request)
 {
-    m_server.enqueuePresentationDataRequest(request);
+    m_presentationRequests.push(request);
+}
+
+bool LocalLoopbackTransport::receivePresentationDataRequest(
+    game::network::PresentationDataRequest& outRequest)
+{
+    if (m_presentationRequests.empty())
+        return false;
+
+    outRequest = std::move(m_presentationRequests.front());
+    m_presentationRequests.pop();
+    return true;
+}
+
+void LocalLoopbackTransport::sendPresentationDataResponse(
+    game::network::PresentationDataResponse response)
+{
+    m_presentationResponses.push(std::move(response));
 }
 
 bool LocalLoopbackTransport::receivePresentationDataResponse(
@@ -172,12 +183,31 @@ bool LocalLoopbackTransport::receivePresentationDataResponse(
     return true;
 }
 
-
 void LocalLoopbackTransport::sendTimeSyncRequest(
     const game::network::TimeSyncRequest& request)
 {
     m_timeSyncRequestBuffer.push_back({
         request,
+        m_fakeLatency
+    });
+}
+
+bool LocalLoopbackTransport::receiveTimeSyncRequest(
+    game::network::TimeSyncRequest& outRequest)
+{
+    if (m_serverTimeSyncRequests.empty())
+        return false;
+
+    outRequest = m_serverTimeSyncRequests.front();
+    m_serverTimeSyncRequests.pop();
+    return true;
+}
+
+void LocalLoopbackTransport::sendTimeSyncResponse(
+    game::network::TimeSyncResponse response)
+{
+    m_timeSyncResponseBuffer.push_back({
+        std::move(response),
         m_fakeLatency
     });
 }
@@ -188,7 +218,7 @@ bool LocalLoopbackTransport::receiveTimeSyncResponse(
     if (m_timeSyncResponses.empty())
         return false;
 
-    outResponse = m_timeSyncResponses.front();
+    outResponse = std::move(m_timeSyncResponses.front());
     m_timeSyncResponses.pop();
     return true;
 }

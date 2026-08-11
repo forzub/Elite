@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "src/game/geometry/AssemblyMeshLibrary.h"
+#include "src/render/geometry/AssemblyGpuLibrary.h"
 #include "src/world/modules/ObjectAssemblyTransformUtils.h"
 
 namespace game::system_map
@@ -328,7 +329,9 @@ bool HubMapGeometryPass::drawHubMapAssemblyWire(
         return false;
 
     const auto& assembly =
-        AssemblyMeshLibrary::getGpuReady(typeId);
+        AssemblyMeshLibrary::get(typeId);
+    const auto& gpuAssembly =
+        render::geometry::AssemblyGpuLibrary::get(typeId);
 
     /*
         Локальная система объекта → hub-local meters.
@@ -371,10 +374,10 @@ bool HubMapGeometryPass::drawHubMapAssemblyWire(
         сборку не рисуем.
     */
     if (assembly.hasWholeShipProxy &&
-        assembly.wholeShipProxyGpu.getEdgeVertexCount() > 0)
+        gpuAssembly.wholeShipProxy.getEdgeVertexCount() > 0)
     {
         m_gpuGeometryRenderer.submitMesh(
-            assembly.wholeShipProxyGpu,
+            gpuAssembly.wholeShipProxy,
             objectToHub,
             color
         );
@@ -388,10 +391,17 @@ bool HubMapGeometryPass::drawHubMapAssemblyWire(
     {
         for (const auto& part : module.meshes)
         {
+            const auto& gpuPart =
+                gpuAssembly.forPart(
+                    assembly,
+                    module,
+                    part
+                );
+
             const auto& meshGpu =
-                part.lod1Gpu.getEdgeVertexCount() > 0
-                    ? part.lod1Gpu
-                    : part.lod0Gpu;
+                gpuPart.lod1.getEdgeVertexCount() > 0
+                    ? gpuPart.lod1
+                    : gpuPart.lod0;
 
             if (meshGpu.getEdgeVertexCount() == 0)
                 continue;

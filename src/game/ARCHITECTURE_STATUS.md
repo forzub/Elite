@@ -72,6 +72,31 @@ Required invariants:
   server-side replication component after the headless compile boundary is in
   place.
 
+## Headless server compile boundary
+
+Shared assembly geometry is now split at the CPU/GPU ownership boundary.
+`ObjectAssembly` and `AssemblyMeshLibrary` contain only local CPU-side definition
+data (mesh topology, bounds, module hierarchy and logical transforms) that may be
+loaded independently by authoritative/headless code and by the client. OpenGL
+objects are owned by the render-side `AssemblyGpuLibrary` as a presentation-only
+sidecar derived from the same CPU assembly.
+
+Required invariants:
+
+- authoritative/server headers must be includable without glad/OpenGL include
+  paths or libraries;
+- `ObjectAssembly` must never own `MeshGPU`, `GLuint` or GPU-ready state;
+- `AssemblyMeshLibrary` must never allocate/upload GPU resources;
+- render code may derive/cache GPU resources from the shared CPU definition, but
+  the shared assembly/simulation dependency may not point back into GPU/render
+  resource ownership;
+- server and client may each load the same static assembly/descriptor library
+  locally. Static mesh/definition payloads are not replication state.
+
+This establishes the first compile-time headless seam. It does not yet create a
+separate `EliteServer` target or thread; transport ownership and server runtime
+extraction remain pending.
+
 ## Map subsystem decomposition
 
 Detail/Hub have completed the Stage-6D ownership split: their backends and
@@ -146,6 +171,13 @@ Functional migration is currently at **Migration Stage 2 complete**:
 
 - Stage 0: client-facing state stopped depending directly on `GameServer`;
   `IGameSession`/`ITransport` and the local host own the server boundary.
+- Stage 0B: the in-process loopback transport no longer owns a `GameServer&`.
+  Client and server now see distinct `ITransport` / `IServerTransport` protocol
+  surfaces, while `ServerRunner` is the only runtime bridge that consumes client
+  messages, advances authority and publishes replicated values. The current
+  loopback queues are still deliberately single-threaded; making the queue
+  implementation thread-safe and moving `ServerRunner` to a worker thread is a
+  later execution step, not part of this logical ownership split.
 - Stage 1: the client owns `StarAtlasDatabase` and
   `CelestialRuntimeRegistry` and can resolve deterministic celestial state from
   synchronized universe time.
@@ -214,6 +246,12 @@ but those constants must stay inside diagnostic/promo code paths.
   system. The current System-map interaction path still has explicit picking and
   selection only for hubs/bodies, so ship selection/Details navigation remains an
   unfinished functional contract.
+- `LocalGameHost` remains the synchronous composition/debug owner and therefore
+  still has direct bootstrap/debug access to `GameServer` (`playerId`, world
+  configuration and `IDebugSessionControl`). Production transport traffic no
+  longer uses that path. Before moving authority to a worker thread, those host
+  reads/writes must become startup configuration, handshake data or queued debug
+  commands so the server thread can remain the sole mutable owner.
 - `IDebugSessionControl::snapshot()` still exposes a complete
   `SimulationSnapshot` to local tooling. Production client code does not depend
   on `GameServer`, but this debug facade should eventually return a narrower
@@ -221,6 +259,12 @@ but those constants must stay inside diagnostic/promo code paths.
 - Procedural cloud morphology is presentation-only wall-time work. Its timing is
   intentionally separate from universe time, but texture generation still runs
   synchronously on the render thread and remains a performance/LOD concern.
+
+- Signal reception still reads gameplay reception thresholds from the legacy
+  `render/VisualTuning.h` location. That header currently carries no OpenGL/GPU
+  dependency, so it does not block the headless compile seam, but its ownership
+  is mislabeled. Keep signal/radar behavior untouched during the server split;
+  move only the neutral shared tuning contract in a later isolated cleanup.
 
 ## Fixed-step player prediction/reconciliation contract
 

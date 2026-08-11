@@ -8,7 +8,7 @@ namespace game::host
 {
 LocalGameHost::LocalGameHost(const WorldParams& worldParams)
     : m_server(std::make_unique<GameServer>())
-    , m_transport(std::make_unique<LocalLoopbackTransport>(*m_server))
+    , m_transport(std::make_unique<LocalLoopbackTransport>())
 {
     // Session configuration is applied before the first authoritative tick.
     m_server->world() = worldParams;
@@ -23,7 +23,7 @@ LocalGameHost::LocalGameHost(const WorldParams& worldParams)
 
     // Startup handshake is delivered immediately. Artificial latency applies
     // only after the client has consumed this initial authoritative state.
-    m_transport->enqueueCurrentSnapshotImmediately();
+    m_transport->publishSnapshotImmediately(m_server->snapshot());
 }
 
 LocalGameHost::~LocalGameHost() = default;

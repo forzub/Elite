@@ -5,7 +5,6 @@
 #include <glm/glm.hpp>
 
 #include "MeshData.h"
-#include "MeshGPU.h"
 #include "src/world/types/ObjectType.h"
 
 namespace game::ship::geometry
@@ -73,9 +72,6 @@ struct AssemblyMeshPart
 
     MeshData lod0Mesh;
     MeshData lod1Mesh;
-
-    render::MeshGPU lod0Gpu;
-    render::MeshGPU lod1Gpu;
 };
 
 struct AssemblyModule
@@ -117,12 +113,14 @@ struct ObjectAssembly
     bool hasWholeShipProxy = false;
     std::string wholeShipProxyPath;
 
+    /*
+        Shared CPU-side assembly definition. Server/headless simulation and the
+        client may both load this local definition, but OpenGL/GPU resources
+        are deliberately stored in render::geometry::AssemblyGpuLibrary.
+        Keeping presentation resources out of this type is a hard dependency
+        boundary: authoritative simulation must compile without glad/OpenGL.
+    */
     MeshData wholeShipProxyMesh;
-    render::MeshGPU wholeShipProxyGpu;
-
-    // GPU resources are presentation-only. Server/headless code may load the
-    // same CPU assembly without requiring an OpenGL context.
-    bool gpuReady = false;
 
     glm::vec3 wholeShipProxyBoundCenter {0.0f};
     float wholeShipProxyBoundRadius = 1.0f;

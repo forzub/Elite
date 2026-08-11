@@ -167,3 +167,10 @@ frames.
 `check_replication_snapshot_boundary.py` rejects the old continuously rebuilt
 snapshot cache, DTO construction inside `GameSimulation::update()`, and direct
 server use of the removed `GameSimulation::snapshot()/setTick()` lifecycle.
+
+### Headless server assembly boundary
+
+`check_headless_server_boundary.py` and
+`HeadlessServerBoundaryCompileTests.cpp` lock the CPU/GPU assembly split:
+server/simulation headers and the shared assembly library must compile without
+glad/OpenGL, while GPU uploads live only in `render::geometry::AssemblyGpuLibrary`.

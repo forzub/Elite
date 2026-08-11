@@ -1,14 +1,13 @@
 #pragma once
 
 #include "ITransport.h"
+#include "IServerTransport.h"
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/TimeSyncMessage.h"
 #include <cstdint>
 #include <queue>
+#include <utility>
 #include <vector>
-
-class GameServer;
-
 
 struct DelayedSnapshot
 {
@@ -29,21 +28,23 @@ struct DelayedTimeSyncResponse
 };
 
 
-class LocalLoopbackTransport : public ITransport
+/*
+    In-process transport link exposing distinct client and server interfaces.
+
+    It intentionally owns no GameServer reference. Client calls can only enqueue
+    protocol messages; ServerRunner consumes them through IServerTransport and
+    publishes responses back through the same message seam. The queues are still
+    single-threaded at this stage; thread-safe ownership comes after this logical
+    boundary is regression-protected.
+*/
+class LocalLoopbackTransport final : public ITransport, public IServerTransport
 {
 public:
-    explicit LocalLoopbackTransport(GameServer& server);
+    LocalLoopbackTransport() = default;
 
-
+    // ----- client endpoint (ITransport) -----
     bool receiveSnapshot(
         SimulationSnapshot& outSnapshot) override;
-
-    // Startup handshake for an in-process client. The initial authoritative
-    // snapshot must be available before client-facing state is initialized;
-    // normal runtime snapshots still pass through the latency buffer.
-    void enqueueCurrentSnapshotImmediately();
-
-    void update(float dt) override;
 
     void sendClientMessage(
         EntityId playerId,
@@ -67,16 +68,52 @@ public:
     bool receiveTimeSyncResponse(
         game::network::TimeSyncResponse& outResponse) override;
 
+    // ----- server endpoint (IServerTransport) -----
+    void update(float dt) override;
+
+    bool receiveClientMessage(
+        EntityId& outPlayerId,
+        game::network::ClientMessage& outMessage) override;
+
+    bool receiveMapRequest(
+        game::network::MapRequest& outRequest) override;
+
+    bool receivePresentationDataRequest(
+        game::network::PresentationDataRequest& outRequest) override;
+
+    bool receiveTimeSyncRequest(
+        game::network::TimeSyncRequest& outRequest) override;
+
+    void publishSnapshot(
+        const SimulationSnapshot& snapshot) override;
+
+    void publishSnapshotImmediately(
+        const SimulationSnapshot& snapshot) override;
+
+    void sendMapResponse(
+        game::network::MapResponse response) override;
+
+    void sendPresentationDataResponse(
+        game::network::PresentationDataResponse response) override;
+
+    void sendTimeSyncResponse(
+        game::network::TimeSyncResponse response) override;
+
 private:
-    GameServer& m_server;
     std::queue<SimulationSnapshot> m_incoming;
+    std::queue<std::pair<EntityId, game::network::ClientMessage>> m_clientMessages;
+    std::queue<game::network::MapRequest> m_mapRequests;
+    std::queue<game::network::PresentationDataRequest> m_presentationRequests;
+    std::queue<game::network::TimeSyncRequest> m_serverTimeSyncRequests;
+
     std::queue<game::network::MapResponse> m_mapResponses;
     std::queue<game::network::PresentationDataResponse> m_presentationResponses;
     std::queue<game::network::TimeSyncResponse> m_timeSyncResponses;
+
     std::vector<DelayedSnapshot> m_latencyBuffer;
     std::vector<DelayedTimeSyncRequest> m_timeSyncRequestBuffer;
     std::vector<DelayedTimeSyncResponse> m_timeSyncResponseBuffer;
-    float m_fakeLatency = 0.1f; // 100ms
+    float m_fakeLatency = 0.1f; // 100ms per simulated leg
     float m_packetLoss = 0.0f;
 
     bool m_hasLastQueuedSnapshot = false;

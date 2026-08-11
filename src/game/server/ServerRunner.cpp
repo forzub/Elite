@@ -3,8 +3,9 @@
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 
-#include "src/game/network/ITransport.h"
+#include "src/game/network/IServerTransport.h"
 #include "src/game/server/GameServer.h"
 
 namespace game::server
@@ -48,7 +49,7 @@ void validatePolicy(const ServerTickPolicy& policy)
 
 ServerRunner::ServerRunner(
     GameServer& server,
-    ITransport& transport,
+    IServerTransport& transport,
     ServerTickPolicy policy
 )
     : m_server(server)
@@ -125,15 +126,68 @@ void ServerRunner::resetTiming()
     m_totalDiscardedSeconds = 0.0;
 }
 
+void ServerRunner::receiveInboundMessages()
+{
+    EntityId playerId;
+    game::network::ClientMessage clientMessage;
+    while (m_transport.receiveClientMessage(playerId, clientMessage))
+        m_server.receiveClientMessage(playerId, clientMessage);
+
+    game::network::MapRequest mapRequest;
+    while (m_transport.receiveMapRequest(mapRequest))
+        m_server.enqueueMapRequest(mapRequest);
+
+    game::network::PresentationDataRequest presentationRequest;
+    while (m_transport.receivePresentationDataRequest(presentationRequest))
+        m_server.enqueuePresentationDataRequest(presentationRequest);
+
+    game::network::TimeSyncRequest timeSyncRequest;
+    while (m_transport.receiveTimeSyncRequest(timeSyncRequest))
+    {
+        game::network::TimeSyncResponse response;
+        response.sequence = timeSyncRequest.sequence;
+        response.clientSendTimeSeconds =
+            timeSyncRequest.clientSendTimeSeconds;
+        response.serverReceiveTimeSeconds =
+            m_server.serverTimeSeconds();
+
+        m_transport.sendTimeSyncResponse(std::move(response));
+    }
+}
+
+void ServerRunner::publishOutboundMessages()
+{
+    // The transport receives only a replicated value object; it never reaches
+    // back into GameServer to discover or retain authoritative state.
+    m_transport.publishSnapshot(m_server.snapshot());
+
+    game::network::MapResponse mapResponse;
+    while (m_server.popMapResponse(mapResponse))
+        m_transport.sendMapResponse(std::move(mapResponse));
+
+    game::network::PresentationDataResponse presentationResponse;
+    while (m_server.popPresentationDataResponse(presentationResponse))
+    {
+        m_transport.sendPresentationDataResponse(
+            std::move(presentationResponse)
+        );
+    }
+}
+
 void ServerRunner::runFixedStep()
 {
     const float fixedStep =
         static_cast<float>(m_policy.fixedStepSeconds);
 
-    // Preserve the established loopback order: deliver older packets,
-    // advance the authoritative simulation, then expose the new snapshot.
+    // Preserve the established loopback ordering without allowing transport
+    // code to call GameServer directly: older packets arrive first, commands
+    // are consumed by this fixed step, then newly published state is exposed.
     m_transport.update(fixedStep);
+    receiveInboundMessages();
+
     m_server.update(m_policy.fixedStepSeconds);
+
+    publishOutboundMessages();
     m_transport.update(0.0f);
 }
 }

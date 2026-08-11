@@ -376,3 +376,53 @@ set_tests_properties(
     PROPERTIES
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+add_executable(
+    headless_server_boundary_compile_tests
+    HeadlessServerBoundaryCompileTests.cpp
+)
+
+target_include_directories(
+    headless_server_boundary_compile_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+# The main game target enables GLM's GTX extensions globally. This standalone
+# compile-contract intentionally omits render/OpenGL dependencies, but must still
+# compile the shared CPU geometry under the same GLM language contract.
+target_compile_definitions(
+    headless_server_boundary_compile_tests
+    PRIVATE
+        GLM_ENABLE_EXPERIMENTAL
+)
+
+if(MSVC)
+    target_compile_options(
+        headless_server_boundary_compile_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        headless_server_boundary_compile_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME headless_server_boundary_compile
+    COMMAND headless_server_boundary_compile_tests
+)
+
+set_tests_properties(
+    headless_server_boundary_compile
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

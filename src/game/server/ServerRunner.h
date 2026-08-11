@@ -3,7 +3,7 @@
 #include <cstdint>
 
 class GameServer;
-class ITransport;
+class IServerTransport;
 
 namespace game::server
 {
@@ -29,16 +29,17 @@ struct ServerAdvanceResult
 /*
     Owns the fixed-step lifecycle of the local authoritative server.
 
-    The runner is deliberately synchronous for now: it establishes the same
-    update contract that a future threaded or dedicated runner will use,
-    without introducing shared mutable state or locks prematurely.
+    The runner is deliberately synchronous for now. Its only external runtime
+    dependency is the server-side transport endpoint; it never sees the client
+    transport interface or client state. This is the execution contract that a
+    later threaded/dedicated runner will keep.
 */
 class ServerRunner
 {
 public:
     ServerRunner(
         GameServer& server,
-        ITransport& transport,
+        IServerTransport& transport,
         ServerTickPolicy policy = {}
     );
 
@@ -68,9 +69,11 @@ public:
 
 private:
     void runFixedStep();
+    void receiveInboundMessages();
+    void publishOutboundMessages();
 
     GameServer& m_server;
-    ITransport& m_transport;
+    IServerTransport& m_transport;
     ServerTickPolicy m_policy;
 
     double m_accumulatorSeconds = 0.0;

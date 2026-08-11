@@ -171,6 +171,7 @@ add_executable(EliteGame
     src/game/damage/TestDamageHandler.cpp
 
     src/render/ship/ShipMeshRenderer.cpp
+    src/render/geometry/AssemblyGpuLibrary.cpp
     
     src/game/geometry/ObjLoader.cpp
     # src/game/geometry/MeshLibrary.cpp

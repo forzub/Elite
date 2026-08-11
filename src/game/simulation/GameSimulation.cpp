@@ -1728,10 +1728,23 @@ m_hubVelocityMetersPerSecond[hubId] =
     }
 
 
-    m_snapshot.metadata.serverTimeSeconds = m_serverTimelineClock.timeSeconds();
-    m_snapshot.ships.clear();
-    m_snapshot.objects.clear();
-    m_snapshot.signals = m_worldSignals;
+}
+
+
+SimulationSnapshot GameSimulation::buildReplicationSnapshot(
+    std::uint64_t serverTick
+)
+{
+    // Replication is a publication concern, not part of the 50 Hz simulation
+    // step. Build/copy DTO state only when GameServer actually publishes it.
+    // Besides saving work, this guarantees dirty payload flags are consumed by
+    // a snapshot that can really leave the authoritative runtime.
+    SimulationSnapshot snapshot;
+    snapshot.metadata.serverTimeSeconds = m_serverTimelineClock.timeSeconds();
+    snapshot.metadata.serverTick = serverTick;
+    snapshot.ships.clear();
+    snapshot.objects.clear();
+    snapshot.signals = m_worldSignals;
 
 
     // ----- тут собираем snapshot для кораблей ----------
@@ -1823,11 +1836,11 @@ m_hubVelocityMetersPerSecond[hubId] =
         auto& graph = s.graph;
 
         const bool motionLabProbe = isHubMotionLabShip(id);
-        auto resendIt = m_shipGraphPayloadFramesRemaining.find(id);
+        auto resendIt = m_shipGraphPayloadPublicationsRemaining.find(id);
         const bool sendStructuralGraph =
             !motionLabProbe &&
             (m_initializedShipGraphIds.find(id) == m_initializedShipGraphIds.end() ||
-             resendIt != m_shipGraphPayloadFramesRemaining.end());
+             resendIt != m_shipGraphPayloadPublicationsRemaining.end());
 
         if (sendStructuralGraph)
         {
@@ -1865,11 +1878,11 @@ m_hubVelocityMetersPerSecond[hubId] =
 
             m_initializedShipGraphIds.insert(id);
 
-            if (resendIt != m_shipGraphPayloadFramesRemaining.end())
+            if (resendIt != m_shipGraphPayloadPublicationsRemaining.end())
             {
                 --resendIt->second;
                 if (resendIt->second <= 0)
-                    m_shipGraphPayloadFramesRemaining.erase(resendIt);
+                    m_shipGraphPayloadPublicationsRemaining.erase(resendIt);
             }
 
             ship.core().clearHitVolumesDirty();
@@ -1953,7 +1966,7 @@ m_hubVelocityMetersPerSecond[hubId] =
             }
         }
 
-        m_snapshot.ships.push_back(s);
+        snapshot.ships.push_back(s);
     }
 
 
@@ -2103,8 +2116,11 @@ m_hubVelocityMetersPerSecond[hubId] =
                 obj.worldPosition
             );
 
-        m_snapshot.objects.push_back(o);
+        snapshot.objects.push_back(o);
     }
+
+
+    return snapshot;
 
 }
 
@@ -2120,11 +2136,10 @@ m_hubVelocityMetersPerSecond[hubId] =
 
 void GameSimulation::markShipGraphDirty(EntityId id)
 {
-    // GameSimulation builds an internal snapshot every simulation tick,
-    // while GameServer publishes only every m_snapshotInterval ticks.
-    // Keep heavy graph payload alive for several frames so the published
-    // snapshot cannot miss the dirty structural update.
-    m_shipGraphPayloadFramesRemaining[id] = 6;
+    // Structural graph redundancy is counted in snapshots that are actually
+    // published, not in simulation ticks. Two publications preserve the old
+    // delivery redundancy without coupling GameSimulation to server cadence.
+    m_shipGraphPayloadPublicationsRemaining[id] = 2;
 }
 
 
@@ -2139,12 +2154,6 @@ void GameSimulation::debugForceFullShipGraphPayload()
 
         markShipGraphDirty(id);
     }
-}
-
-
-void GameSimulation::setTick(std::uint64_t tick)
-{
-    m_snapshot.metadata.serverTick = tick;
 }
 
 
@@ -3875,11 +3884,6 @@ void GameSimulation::debugResetAllShipStructures()
 void GameSimulation::setPlayerControl(const ShipControlState& control)
 {
     m_playerControlState = control;
-}
-
-const SimulationSnapshot& GameSimulation::snapshot() const
-{
-    return m_snapshot;
 }
 
 std::unordered_map<EntityId, std::unique_ptr<Ship>>& GameSimulation::ships()

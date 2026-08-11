@@ -142,9 +142,8 @@ public:
 
     void setPlayerControl(const ShipControlState& control);
     void applyControl(EntityId id, const ShipControlState& control);
-    const SimulationSnapshot& snapshot() const;
+    SimulationSnapshot buildReplicationSnapshot(std::uint64_t serverTick);
     void debugForceFullShipGraphPayload();
-    void setTick(std::uint64_t tick);
     EntityId playerId() const { return m_playerId; }
     double serverTime() const { return m_serverTimelineClock.timeSeconds(); }
     std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships();
@@ -328,12 +327,11 @@ private:
     std::vector<InterferenceSource>     m_interferenceSources;
     ShipControlState                    m_playerControlState;
     NpcAiSystem                         m_npcAiSystem;
-    SimulationSnapshot                  m_snapshot;
 
     // Snapshot graph payload control.
     // Heavy structural data is sent only on first sight / explicit dirty events.
     std::unordered_set<EntityId>        m_initializedShipGraphIds;
-    std::unordered_map<EntityId, int>   m_shipGraphPayloadFramesRemaining;
+    std::unordered_map<EntityId, int>   m_shipGraphPayloadPublicationsRemaining;
     std::unordered_set<EntityId>        m_shipsWithDetachedFragmentPayload;
     std::unordered_set<EntityId>        m_shipsWithRepairJobPayload;
 

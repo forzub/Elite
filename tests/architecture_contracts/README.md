@@ -149,3 +149,21 @@ than one fixed step.
 
 The cadence/interpolation behavior itself lives in
 `tests/presentation_pipeline` and is also part of `tests/run_all_mingw64.sh`.
+
+
+## Replication snapshot publication boundary
+
+`GameSimulation::update()` advances authoritative simulation state only. It must
+not materialize `SimulationSnapshot` DTOs on every 50 Hz fixed step. Snapshot
+construction is explicitly requested by `GameServer` only when a snapshot is
+actually being published.
+
+This contract is not merely a CPU optimization. Structural dirty flags are
+consumed by replication serialization, so consuming them on a non-published
+simulation tick can silently drop a structural update. Ship graph resend
+redundancy is therefore counted in published snapshots rather than simulation
+frames.
+
+`check_replication_snapshot_boundary.py` rejects the old continuously rebuilt
+snapshot cache, DTO construction inside `GameSimulation::update()`, and direct
+server use of the removed `GameSimulation::snapshot()/setTick()` lifecycle.

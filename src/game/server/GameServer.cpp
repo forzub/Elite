@@ -621,14 +621,14 @@ m_simulation.setCelestialBodyKinematicStateAu(
             m_universeClock.simulationMode();
 
         m_simulation.update(initialTime);
-        m_simulation.setTick(0);
 
 
 
 
 
 
-        m_lastSnapshot = m_simulation.snapshot();
+        m_lastSnapshot =
+            m_simulation.buildReplicationSnapshot(0);
         populateClientSessionSnapshot(m_lastSnapshot);
 
 
@@ -888,7 +888,6 @@ if (m_appliedSimulationContextSystemId !=
 }
 
 m_simulation.update(time);
-m_simulation.setTick(m_serverTick);
 
 
 
@@ -950,7 +949,11 @@ m_simulation.setTick(m_serverTick);
     if (m_forceSnapshotPublication ||
         m_serverTick % m_snapshotInterval == 0)
     {
-        m_lastSnapshot = m_simulation.snapshot();
+        // Snapshot construction belongs to the publication cadence. The
+        // simulation step above mutates authoritative state only; replication
+        // DTOs are materialized here when they can actually be delivered.
+        m_lastSnapshot =
+            m_simulation.buildReplicationSnapshot(m_serverTick);
         populateClientSessionSnapshot(m_lastSnapshot);
         m_forceSnapshotPublication = false;
     }
@@ -1209,7 +1212,6 @@ void GameServer::debugRefreshSnapshot()
 
 const SimulationSnapshot& GameServer::snapshot() const
 {
-    // return m_simulation.snapshot();
     return m_lastSnapshot;
 }
 

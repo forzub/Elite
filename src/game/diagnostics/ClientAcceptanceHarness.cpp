@@ -1005,7 +1005,13 @@ void testMapDataPipeline(game::host::LocalGameSession& session)
     client.requestGalaxyMapSnapshot(true);
     waitFor(
         session,
-        [&]() { return client.galaxyMapSnapshot() != nullptr; },
+        [&]()
+        {
+            return
+                client.galaxyMapRequestStatus() ==
+                    game::client::ClientRequestStatus::Ready &&
+                client.galaxyMapSnapshot() != nullptr;
+        },
         "Galaxy map request did not complete through client/server transport"
     );
 
@@ -1193,10 +1199,20 @@ void testGalaxyNavigationFlightPresentation(
     client.requestGalaxyMapSnapshot(true);
     waitFor(
         session,
-        [&]() { return client.galaxyMapSnapshot() != nullptr; },
+        [&]()
+        {
+            return
+                client.galaxyMapRequestStatus() ==
+                    game::client::ClientRequestStatus::Ready &&
+                client.galaxyMapSnapshot() != nullptr;
+        },
         "Galaxy map did not become available for navigation-flight acceptance"
     );
 
+    // forceRefresh can replace the cached GalaxyMapSnapshot storage. Never
+    // retain pointers into its systems vector until the requested refresh has
+    // completed; otherwise the acceptance test itself introduces dangling
+    // pointers and becomes allocator/timing dependent.
     const auto* galaxy = client.galaxyMapSnapshot();
     require(galaxy && galaxy->systems.size() > 1, "Galaxy navigation test has no destination systems");
 

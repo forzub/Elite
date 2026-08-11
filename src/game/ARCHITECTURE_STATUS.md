@@ -52,6 +52,26 @@ Required invariants:
 - Active diagnostic mode is runtime state and must never be persisted as a
   startup Debug Control default.
 
+## Simulation / replication publication boundary
+
+Authoritative fixed-step simulation and client replication now have separate
+lifecycles. `GameSimulation::update()` advances world state; it does not build a
+throw-away `SimulationSnapshot` every fixed tick. `GameServer` explicitly
+materializes a replication snapshot only on its publication cadence (or an
+explicit forced publication).
+
+Required invariants:
+
+- snapshot DTO construction must not return to the fixed simulation step;
+- replication dirty flags are consumed only by a snapshot that is actually
+  published;
+- ship structural-graph resend lifetime is measured in publications, not
+  simulation ticks;
+- this is the first seam toward a dedicated server runtime. The snapshot builder
+  still lives on `GameSimulation` temporarily and can be extracted behind a
+  server-side replication component after the headless compile boundary is in
+  place.
+
 ## Map subsystem decomposition
 
 Detail/Hub have completed the Stage-6D ownership split: their backends and

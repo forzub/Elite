@@ -816,7 +816,7 @@ bool GalaxyStarfieldRenderer::loadConstellationSupportStars(
         if (!item.is_object())
             continue;
 
-        // v2 is catalog-neutral. Keep accepting the original HR shape so
+        // v3 is catalog-neutral. Keep accepting the original HR id shape so
         // developer data can be upgraded independently without a hard crash.
         std::string catalog;
         int id = -1;
@@ -841,38 +841,24 @@ bool GalaxyStarfieldRenderer::loadConstellationSupportStars(
         else
             star.hipparcosCatalogId = id;
 
-        if (item.contains("position_ly") && item["position_ly"].is_array() &&
-            item["position_ly"].size() == 3 &&
-            item["position_ly"][0].is_number() &&
-            item["position_ly"][1].is_number() &&
-            item["position_ly"][2].is_number())
-        {
-            const auto& position = item["position_ly"];
-            star.positionLy = glm::vec3(
-                static_cast<float>(position[0].get<double>()),
-                static_cast<float>(position[1].get<double>()),
-                static_cast<float>(position[2].get<double>())
-            );
-        }
-        else if (item.contains("sky_direction") &&
-                 item["sky_direction"].is_array() &&
-                 item["sky_direction"].size() == 3 &&
-                 item["sky_direction"][0].is_number() &&
-                 item["sky_direction"][1].is_number() &&
-                 item["sky_direction"][2].is_number())
-        {
-            const auto& direction = item["sky_direction"];
-            star.fixedSkyDirection = glm::vec3(
-                static_cast<float>(direction[0].get<double>()),
-                static_cast<float>(direction[1].get<double>()),
-                static_cast<float>(direction[2].get<double>())
-            );
-            star.useFixedSkyDirection = true;
-        }
-        else
+        // Constellation reference stars are full 3D points.  A missing distance
+        // must not silently degrade to a fixed direction because that would freeze
+        // the endpoint when the observer moves to another star system.
+        if (!item.contains("position_ly") || !item["position_ly"].is_array() ||
+            item["position_ly"].size() != 3 ||
+            !item["position_ly"][0].is_number() ||
+            !item["position_ly"][1].is_number() ||
+            !item["position_ly"][2].is_number())
         {
             continue;
         }
+
+        const auto& position = item["position_ly"];
+        star.positionLy = glm::vec3(
+            static_cast<float>(position[0].get<double>()),
+            static_cast<float>(position[1].get<double>()),
+            static_cast<float>(position[2].get<double>())
+        );
 
         loaded.push_back(star);
     }

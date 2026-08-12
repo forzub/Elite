@@ -138,14 +138,26 @@ def main() -> int:
         "hip": {s["hip"] for s in real_stars if isinstance(s.get("hip"), int) and s["hip"] > 0},
     }
     support = json.loads(read("src/assets/data/galaxy/constellation_support_stars.json"))
+    require(support.get("version") == 3, "constellation support-star schema must remain finite-3D v3")
+    support_stars = support.get("stars", [])
+    require(len(support_stars) == 23, "constellation support-star set changed")
     support_ids = {"hr": set(), "hip": set()}
-    for star in support.get("stars", []):
+    for star in support_stars:
         catalog = star.get("catalog")
         ident = star.get("id")
         require(catalog in support_ids and isinstance(ident, int) and ident > 0,
                 "invalid support-star entry")
         require(ident not in support_ids[catalog], f"duplicate support {catalog.upper()} {ident}")
         require(ident not in visible[catalog], f"support {catalog.upper()} {ident} duplicates visible catalog")
+        position = star.get("position_ly")
+        require(isinstance(position, list) and len(position) == 3 and
+                all(isinstance(value, (int, float)) for value in position),
+                f"support {catalog.upper()} {ident} lost finite 3D position")
+        distance = star.get("distance_ly")
+        require(isinstance(distance, (int, float)) and distance > 0.0,
+                f"support {catalog.upper()} {ident} lost distance metadata")
+        require("sky_direction" not in star,
+                f"support {catalog.upper()} {ident} regressed to fixed sky direction")
         support_ids[catalog].add(ident)
 
     referenced = {"hr": set(), "hip": set()}
@@ -172,8 +184,15 @@ def main() -> int:
             "starfield does not load unified sky localization root")
     require("displayName(\n                m_uiLocale" in scene_cpp or "displayName(m_uiLocale)" in scene_cpp,
             "constellation labels are no longer driven by global UI locale")
+    overlay_h = read("src/render/starfield/ConstellationOverlayRenderer.h")
+    overlay_cpp = read("src/render/starfield/ConstellationOverlayRenderer.cpp")
+    require("fixedSkyDirection" not in overlay_h + overlay_cpp and
+            "useFixedSkyDirection" not in overlay_h + overlay_cpp,
+            "constellation reference stars regained a fixed-direction bypass")
+    require("positionLy - observerPositionLy" in overlay_cpp,
+            "constellation reference stars lost observer-relative 3D projection")
 
-    print("[PASS] topology-only sky cultures + separated recursive localized names")
+    print("[PASS] topology-only sky cultures + full-3D constellation reference stars + separated localized names")
     return 0
 
 

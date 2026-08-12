@@ -26,6 +26,8 @@ Source: https://github.com/Stellarium/stellarium-skycultures/tree/master/hawaiia
 Additional cultural reference: Polynesian Voyaging Society / Hōkūleʻa Hawaiian Star Lines.
 Snapshot curated for this project: 2026-08-12.
 
-## Support stars
+## Constellation reference stars
 
-`../constellation_support_stars.json` contains topology-only points that are absent from the approved visible top-3000 star catalog. They must never be promoted to ordinary star sprites solely because a sky culture references them. HR support points retain finite HYG positions; HIP-only support points use fixed J2000 sky directions so the renderer does not invent parallax/distance data.
+`../constellation_support_stars.json` contains 23 catalog stars used by sky-culture topology that are absent from the restrained visible top-3000 sprite selection. They remain separate from the sprite-selection policy, but all 23 now carry finite 3D `position_ly` coordinates and therefore use the same observer-relative perspective calculation as ordinary catalog stars. There is no fixed-sky-direction runtime exception.
+
+The pre-existing HR entries retain their curated finite project positions. HIP entries use HYG v4.1 Cartesian positions where HYG provides a finite distance. HIP 89341 (Polis / Mu Sagittarii) keeps its J2000 direction with an explicitly approximate 5000 ly system distance; that approximation is sufficient for the current Solar-neighbourhood fidelity target and is marked in the data.

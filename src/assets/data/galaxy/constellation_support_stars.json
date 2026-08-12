@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "purpose": "Topology-only support points for sky cultures. These entries must never be added to the visible top-3000 star sprite catalog.",
+  "version": 3,
+  "purpose": "Finite 3D constellation reference stars absent from the visible top-3000 sprite selection. Every entry participates in the same observer-relative perspective calculation as catalog stars; no fixed sky directions remain.",
   "stars": [
     {
       "catalog": "hr",
@@ -9,7 +9,9 @@
         200.273829,
         59.403031,
         -221.819213
-      ]
+      ],
+      "distance_ly": 304.7,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -18,7 +20,9 @@
         129.577946,
         76.363042,
         7.260688
-      ]
+      ],
+      "distance_ly": 150.580463,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -27,7 +31,9 @@
         244.929034,
         170.441524,
         -15.520805
-      ]
+      ],
+      "distance_ly": 298.8,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -36,7 +42,9 @@
         352.563549,
         334.180706,
         -576.661252
-      ]
+      ],
+      "distance_ly": 754.0,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -45,7 +53,9 @@
         219.726271,
         218.220652,
         120.989841
-      ]
+      ],
+      "distance_ly": 332.4732,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -54,7 +64,9 @@
         87.597417,
         86.278241,
         -104.28828
-      ]
+      ],
+      "distance_ly": 161.22434,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -63,7 +75,9 @@
         71.099396,
         110.111385,
         -101.01183
-      ]
+      ],
+      "distance_ly": 165.478189,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -72,7 +86,9 @@
         626.353525,
         2116.229349,
         5037.782707
-      ]
+      ],
+      "distance_ly": 5500.0,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -81,7 +97,9 @@
         -380.437563,
         2631.918515,
         342.207001
-      ]
+      ],
+      "distance_ly": 2681.2,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -90,7 +108,9 @@
         -540.825831,
         2247.660542,
         -1038.201304
-      ]
+      ],
+      "distance_ly": 2534.23212,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -99,7 +119,9 @@
         -453.940924,
         716.101936,
         -920.264823
-      ]
+      ],
+      "distance_ly": 1251.3,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -108,7 +130,9 @@
         -110.902291,
         51.730747,
         44.157464
-      ]
+      ],
+      "distance_ly": 130.097156,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hr",
@@ -117,137 +141,160 @@
         -135.62486,
         -118.926159,
         92.203563
-      ]
+      ],
+      "distance_ly": 202.580925,
+      "position_source": "project-curated finite 3D support position"
     },
     {
       "catalog": "hip",
       "id": 5175,
-      "sky_direction": [
-        0.811320077,
-        0.241030078,
-        0.532601383
-      ],
       "source_ra_dec_j2000": {
         "ra": "01:06:11",
         "dec": "+32:10:53"
-      }
+      },
+      "position_ly": [
+        457.022815,
+        135.781356,
+        300.020861
+      ],
+      "distance_ly": 563.310702,
+      "position_source": "HYG v4.1 Cartesian position"
     },
     {
       "catalog": "hip",
       "id": 17579,
-      "sky_direction": [
-        0.502355572,
-        0.75825742,
-        0.415553322
-      ],
       "source_ra_dec_j2000": {
         "ra": "03:45:54",
         "dec": "+24:33:15"
-      }
+      },
+      "position_ly": [
+        186.815954,
+        282.001934,
+        154.546479
+      ],
+      "distance_ly": 371.900398,
+      "position_source": "HYG v4.1 Cartesian position"
     },
     {
       "catalog": "hip",
       "id": 46744,
-      "sky_direction": [
-        -0.784182458,
-        0.592893263,
-        -0.183126871
-      ],
       "source_ra_dec_j2000": {
         "ra": "09:31:38",
         "dec": "-10:33:07"
-      }
+      },
+      "position_ly": [
+        -131.506036,
+        99.41232,
+        -30.708592
+      ],
+      "distance_ly": 167.689191,
+      "position_source": "HYG v4.1 Cartesian position"
     },
     {
       "catalog": "hip",
       "id": 49321,
-      "sky_direction": [
-        -0.831400218,
-        0.460694602,
-        -0.310699471
-      ],
       "source_ra_dec_j2000": {
         "ra": "10:04:02",
         "dec": "-18:06:05"
-      }
+      },
+      "position_ly": [
+        -423.050781,
+        234.387809,
+        -158.091718
+      ],
+      "distance_ly": 508.824724,
+      "position_source": "HYG v4.1 Cartesian position"
     },
     {
       "catalog": "hip",
       "id": 55874,
-      "sky_direction": [
-        -0.96682213,
-        0.139500625,
-        -0.213996599
-      ],
       "source_ra_dec_j2000": {
         "ra": "11:27:09.50",
         "dec": "-12:21:24.0"
-      }
+      },
+      "position_ly": [
+        -220.977903,
+        31.884144,
+        -48.91162
+      ],
+      "distance_ly": 228.561105,
+      "position_source": "HYG v4.1 Cartesian position"
     },
     {
       "catalog": "hip",
       "id": 57587,
-      "sky_direction": [
-        -0.98258164,
-        0.049811258,
-        -0.179031171
-      ],
       "source_ra_dec_j2000": {
         "ra": "11:48:23.50",
         "dec": "-10:18:48.0"
-      }
+      },
+      "position_ly": [
+        -137.958078,
+        6.993814,
+        -25.136066
+      ],
+      "distance_ly": 140.403585,
+      "position_source": "HYG v4.1 Cartesian position"
     },
     {
       "catalog": "hip",
       "id": 89341,
-      "sky_direction": [
-        0.055955199,
-        -0.931534304,
-        -0.359322774
-      ],
       "source_ra_dec_j2000": {
         "ra": "18:13:45",
         "dec": "-21:03:31"
-      }
+      },
+      "position_ly": [
+        279.775995,
+        -4657.671521,
+        -1796.61387
+      ],
+      "distance_ly": 5000.0,
+      "position_source": "J2000 direction + approximately 5000 ly Mu Sagittarii distance",
+      "position_quality": "approximate_distance"
     },
     {
       "catalog": "hip",
       "id": 99572,
-      "sky_direction": [
-        0.533026596,
-        -0.817414242,
-        -0.218441308
-      ],
       "source_ra_dec_j2000": {
         "ra": "20:12:25.90",
         "dec": "-12:37:03"
-      }
+      },
+      "position_ly": [
+        48.158043,
+        -73.852322,
+        -19.735859
+      ],
+      "distance_ly": 90.348585,
+      "position_source": "HYG v4.1 Cartesian position"
     },
     {
       "catalog": "hip",
       "id": 101123,
-      "sky_direction": [
-        0.576687667,
-        -0.752244706,
-        -0.318683601
-      ],
       "source_ra_dec_j2000": {
         "ra": "20:29:53.90",
         "dec": "-18:35:00"
-      }
+      },
+      "position_ly": [
+        124.811122,
+        -162.806324,
+        -68.971255
+      ],
+      "distance_ly": 216.427238,
+      "position_source": "HYG v4.1 Cartesian position"
     },
     {
       "catalog": "hip",
       "id": 102945,
-      "sky_direction": [
-        0.676895146,
-        -0.729520988,
-        -0.098041264
-      ],
       "source_ra_dec_j2000": {
         "ra": "20:51:25.70",
         "dec": "-05:37:35"
-      }
+      },
+      "position_ly": [
+        134.046002,
+        -144.466515,
+        -19.415952
+      ],
+      "distance_ly": 198.030008,
+      "position_source": "HYG v4.1 Cartesian position"
     }
   ]
 }

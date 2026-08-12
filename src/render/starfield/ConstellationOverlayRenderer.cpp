@@ -30,15 +30,6 @@ bool ConstellationOverlayRenderer::StarReference::skyDirection(
     glm::vec3& outDirection
 ) const
 {
-    if (useFixedSkyDirection)
-    {
-        const float length = glm::length(fixedSkyDirection);
-        if (length < kMinimumDirectionLength)
-            return false;
-        outDirection = fixedSkyDirection / length;
-        return true;
-    }
-
     const glm::vec3 relative = positionLy - observerPositionLy;
     const float length = glm::length(relative);
     if (length < kMinimumDirectionLength)

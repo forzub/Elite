@@ -16,8 +16,6 @@ public:
         int brightStarCatalogId = -1; // HR
         int hipparcosCatalogId = -1;  // HIP
         glm::vec3 positionLy {0.0f};
-        glm::vec3 fixedSkyDirection {0.0f};
-        bool useFixedSkyDirection = false;
 
         int catalogId(SkyCultureCatalog::StarIdentifier identifier) const;
         bool skyDirection(

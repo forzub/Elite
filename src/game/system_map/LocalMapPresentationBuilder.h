@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <utility>
+
 #include "src/game/system_map/LocalMapPresentation.h"
 #include "src/render/types/Viewport.h"
 
@@ -18,6 +21,11 @@ class HubMapView;
 class LocalMapPresentationBuilder
 {
 public:
+    void setPlayerLabel(std::string label)
+    {
+        m_playerLabel = std::move(label);
+    }
+
     DetailMapPresentation buildDetail(
         DetailMapView& view,
         const Viewport& viewport,
@@ -29,6 +37,9 @@ public:
         const Viewport& viewport,
         const world::celestial::HubMapSnapshot& snapshot
     ) const;
+
+private:
+    std::string m_playerLabel = "PLAYER";
 };
 
 } // namespace game::system_map

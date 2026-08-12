@@ -100,6 +100,17 @@ namespace
         ).count();
     }
 
+    std::string localizedUiText(
+        const Application* app,
+        const std::string& key,
+        const std::string& fallback
+    )
+    {
+        return app
+            ? app->localization().text(key, fallback)
+            : fallback;
+    }
+
     std::filesystem::path debugControlDefaultsPath()
     {
         namespace fs = std::filesystem;
@@ -381,6 +392,9 @@ SpaceState::SpaceState(StateStack& states)
     }
     std::cerr << "[HubMotionLab][startup] scene-renderer-ready\n";
 
+    if (context().app)
+        m_sceneRenderer.setUiLocale(context().app->localization().locale());
+
     try
     {
         m_systemMapRenderer.init();
@@ -482,6 +496,35 @@ void SpaceState::toggleConstellationOverlay()
         << "[Constellations] gameplay layer "
         << (m_constellationOverlayEnabled ? "enabled" : "disabled")
         << std::endl;
+}
+
+
+void SpaceState::cycleSkyCulture()
+{
+    if (!m_sceneRenderer.cycleConstellationCulture())
+        return;
+
+    const std::string locale =
+        context().app ? context().app->localization().locale() : "en";
+
+    std::cout
+        << "[Constellations] sky culture="
+        << m_sceneRenderer.constellationCultureId()
+        << " / "
+        << m_sceneRenderer.constellationCultureDisplayName(locale)
+        << std::endl;
+}
+
+void SpaceState::onUiLanguageChanged()
+{
+    if (!context().app)
+        return;
+
+    m_sceneRenderer.setUiLocale(context().app->localization().locale());
+    applyClientCatalogLocalization();
+
+    if (context().app->gameUiMode() == GameUiMode::SystemMap)
+        pushSystemMapPanelState();
 }
 
 
@@ -1288,6 +1331,10 @@ void SpaceState::prepareFrame(float dt)
     updateSystemMapLiveFlags();
     updateLiveMapSnapshots(std::max(0.0f, dt));
     updateLocalMapPresentationSnapshots(std::max(0.0f, dt));
+
+    if (context().app)
+        m_sceneRenderer.setUiLocale(context().app->localization().locale());
+    applyClientCatalogLocalization();
 }
 
 
@@ -1786,6 +1833,13 @@ void SpaceState::renderUI()
     Camera*                                     mainCam = nullptr;
     Camera*                                     miniCam = nullptr;
 
+    const std::string frontLabel =
+        localizedUiText(context().app, "cockpit.front", "FRONT");
+    const std::string rearLabel =
+        localizedUiText(context().app, "cockpit.rear", "REAR");
+    const std::string droneLabel =
+        localizedUiText(context().app, "cockpit.drone", "DRONE");
+
 
 
     switch (m_layout)
@@ -1796,11 +1850,11 @@ void SpaceState::renderUI()
             m_activeCameraMode = ShipCameraMode::Cockpit;
             if (auto* comp = uiRoot->findById("main_label"))
             {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "FRONT";}
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = frontLabel;}
             }
             if (auto* comp = uiRoot->findById("rear_label"))
             {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "REAR";}
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = rearLabel;}
             }
             break;
 
@@ -1810,11 +1864,11 @@ void SpaceState::renderUI()
             m_activeCameraMode = ShipCameraMode::Rear;
             if (auto* comp = uiRoot->findById("main_label"))
             {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "REAR";}
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = rearLabel;}
             }
             if (auto* comp = uiRoot->findById("rear_label"))
             {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "FRONT";}
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = frontLabel;}
             }
             break;
 
@@ -1824,11 +1878,11 @@ void SpaceState::renderUI()
             m_activeCameraMode = ShipCameraMode::Cockpit;
             if (auto* comp = uiRoot->findById("main_label"))
             {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "FRONT";}
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = frontLabel;}
             }
             if (auto* comp = uiRoot->findById("rear_label"))
             {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "DRONE";}
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = droneLabel;}
             }
             break;
 
@@ -1838,11 +1892,11 @@ void SpaceState::renderUI()
             m_activeCameraMode = ShipCameraMode::Drone;
             if (auto* comp = uiRoot->findById("main_label"))
             {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "DRONE";}
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = droneLabel;}
             }
             if (auto* comp = uiRoot->findById("rear_label"))
             {
-                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = "FRONT";}
+                if (auto* text = dynamic_cast<UIText*>(comp)){text->label = frontLabel;}
             }
             break;
     }
@@ -1860,8 +1914,19 @@ void SpaceState::renderUI()
 
         if (it != ships.end())
         {
+            game::presentation::PlayerHudTelemetryTextProfile textProfile;
+            textProfile.cellLabel = localizedUiText(context().app, "cockpit.cell", "CELL");
+            textProfile.relativeVelocityLabel = localizedUiText(context().app, "cockpit.vrel", "VREL");
+            textProfile.newtonianModeLabel =
+                localizedUiText(context().app, "cockpit.mode.newtonian", "NEWTONIAN");
+            textProfile.assistedModeLabel =
+                localizedUiText(context().app, "cockpit.mode.assisted", "ASSISTED");
+
             const auto telemetry =
-                game::presentation::buildPlayerHudTelemetry(it->second);
+                game::presentation::buildPlayerHudTelemetry(
+                    it->second,
+                    textProfile
+                );
 
             game::presentation::applyPlayerHudTelemetry(
                 *uiRoot,
@@ -2151,9 +2216,22 @@ m_systemMapRenderer.render(
         if (debug::get().render.shouldRenderCockpit() &&
             m_activeCameraMode != ShipCameraMode::Drone)
         {
+            game::presentation::FlightInstrumentTextProfile textProfile;
+            textProfile.newtonianModeLabel =
+                localizedUiText(context().app, "cockpit.mode.newtonian", "NEWTONIAN");
+            textProfile.assistedModeLabel =
+                localizedUiText(context().app, "cockpit.mode.assisted", "ASSISTED");
+            textProfile.alignForwardLabel =
+                localizedUiText(context().app, "cockpit.action.align_forward", "ALIGN +V");
+            textProfile.alignBackwardLabel =
+                localizedUiText(context().app, "cockpit.action.align_backward", "ALIGN -V");
+            textProfile.brakingLabel =
+                localizedUiText(context().app, "cockpit.action.brake", "BRAKE");
+
             const auto flightInstrument =
                 game::presentation::buildFlightVectorIndicatorPresentation(
-                    playerShip
+                    playerShip,
+                    textProfile
                 );
 
             m_flightVectorIndicatorRenderer.render(
@@ -2192,8 +2270,59 @@ m_systemMapRenderer.render(
     glEnable(GL_DEPTH_TEST);
 
     renderUniverseTimeSimulationOverlay(vp);
+    renderUiLanguageIndicator(vp);
 
     m_perfHudMs = nowMs() - hudStartMs;
+}
+
+void SpaceState::renderUiLanguageIndicator(const Viewport& viewport)
+{
+    if (!context().app)
+        return;
+
+    const auto& localization = context().app->localization();
+
+    std::string label =
+        "UI: " + localization.languageIndicator();
+
+    if (m_constellationOverlayEnabled)
+    {
+        const std::string cultureName =
+            m_sceneRenderer.constellationCultureDisplayName(
+                localization.locale()
+            );
+
+        if (!cultureName.empty())
+            label += "  ·  " + cultureName;
+    }
+
+    auto& text = TextRenderer::instance();
+    text.beginFrameForViewport(viewport.width, viewport.height);
+
+    constexpr int fontPx = 11;
+    const float labelWidth = text.measureTextPx(label, fontPx);
+    const float baselineY =
+        std::max(14.0f, static_cast<float>(viewport.height) - 14.0f);
+    const float textX = std::max(8.0f,
+        static_cast<float>(viewport.width) - 12.0f - labelWidth);
+
+    text.solidRectPx(
+        textX - 7.0f,
+        baselineY - 14.0f,
+        labelWidth + 14.0f,
+        20.0f,
+        glm::vec4(0.01f, 0.025f, 0.04f, 0.74f)
+    );
+
+    text.textDrawPx(
+        label,
+        textX,
+        baselineY,
+        fontPx,
+        glm::vec4(0.64f, 0.79f, 0.90f, 0.78f)
+    );
+
+    text.endFrame();
 }
 
 void SpaceState::renderUniverseTimeSimulationOverlay(
@@ -2215,8 +2344,15 @@ void SpaceState::renderUniverseTimeSimulationOverlay(
     );
 
     std::ostringstream label;
+    const std::string modeLabel =
+        context().app
+            ? context().app->localization().text(
+                "hud.time_simulation_mode",
+                "TIME SIMULATION MODE"
+            )
+            : "TIME SIMULATION MODE";
     label
-        << "TIME SIMULATION MODE  x"
+        << modeLabel << "  x"
         << std::fixed
         << std::setprecision(1)
         << m_client->sessionSnapshot().universeTimeScale
@@ -4113,6 +4249,158 @@ void SpaceState::setSystemMapLoadedDetailMode()
 
 
 
+void SpaceState::applyClientCatalogLocalization()
+{
+    if (!context().app)
+        return;
+
+    const auto& loc = context().app->localization();
+
+    for (auto& system : m_galaxyMapSnapshot.systems)
+    {
+        system.name = loc.catalogName(
+            "systems",
+            std::to_string(system.id),
+            system.name
+        );
+    }
+
+    for (auto& object : m_galaxyMapSnapshot.objects)
+    {
+        object.name = loc.catalogName(
+            "galaxy_objects",
+            object.id,
+            object.name
+        );
+    }
+
+    std::unordered_map<int, std::string> systemDisplayNames;
+    systemDisplayNames.reserve(m_galaxyMapSnapshot.systems.size());
+    for (const auto& system : m_galaxyMapSnapshot.systems)
+        systemDisplayNames[system.id] = system.name;
+    m_sceneRenderer.setGameSystemDisplayNames(systemDisplayNames);
+
+    if (m_systemMapSnapshot.systemId >= 0)
+    {
+        m_systemMapSnapshot.systemName = loc.catalogName(
+            "systems",
+            std::to_string(m_systemMapSnapshot.systemId),
+            m_systemMapSnapshot.systemName
+        );
+
+        for (auto& body : m_systemMapSnapshot.bodies)
+        {
+            body.name = loc.catalogName(
+                "bodies",
+                std::to_string(m_systemMapSnapshot.systemId) + ":" + body.id,
+                body.name
+            );
+        }
+
+        for (auto& object : m_systemMapSnapshot.objects)
+        {
+            if (!object.stableId.empty())
+            {
+                object.name = loc.catalogName(
+                    "hubs",
+                    object.stableId,
+                    object.name
+                );
+            }
+        }
+    }
+
+    const auto localizeSceneObject =
+        [&](world::celestial::LocalSceneObject& object, int systemId)
+        {
+            if (object.stableId.empty())
+                return;
+
+            switch (object.objectClass)
+            {
+                case world::celestial::DetailObjectClass::CelestialBody:
+                    if (systemId >= 0)
+                    {
+                        object.name = loc.catalogName(
+                            "bodies",
+                            std::to_string(systemId) + ":" + object.stableId,
+                            object.name
+                        );
+                    }
+                    break;
+
+                case world::celestial::DetailObjectClass::Hub:
+                    object.name = loc.catalogName(
+                        "hubs",
+                        object.stableId,
+                        object.name
+                    );
+                    break;
+
+                default:
+                    break;
+            }
+        };
+
+    if (m_hasDetailMapSnapshot && m_detailMapSnapshot.valid)
+    {
+        if (m_detailMapSnapshot.systemId >= 0 &&
+            !m_detailMapSnapshot.planetBodyId.empty())
+        {
+            m_detailMapSnapshot.planetName = loc.catalogName(
+                "bodies",
+                std::to_string(m_detailMapSnapshot.systemId) + ":" +
+                    m_detailMapSnapshot.planetBodyId,
+                m_detailMapSnapshot.planetName
+            );
+        }
+
+        for (auto& orbit : m_detailMapSnapshot.hubOrbits)
+        {
+            orbit.name = loc.catalogName(
+                "hubs",
+                orbit.id,
+                orbit.name
+            );
+        }
+
+        for (auto& object : m_detailMapSnapshot.scene.objects)
+            localizeSceneObject(object, m_detailMapSnapshot.systemId);
+    }
+
+    if (m_hasHubMapSnapshot && m_hubMapSnapshot.valid)
+    {
+        m_hubMapSnapshot.displayName = loc.catalogName(
+            "hubs",
+            m_hubMapSnapshot.hubId,
+            m_hubMapSnapshot.displayName
+        );
+
+        for (auto& object : m_hubMapSnapshot.scene.objects)
+            localizeSceneObject(object, m_hubMapSnapshot.systemId);
+    }
+
+    render::navigation::NavigationOverlayTextProfile overlayText;
+    overlayText.player = loc.text("overlay.player", "PLAYER");
+    overlayText.selected = loc.text("overlay.selected", "SELECTED");
+    overlayText.cursor = loc.text("overlay.cursor", "CURSOR");
+    overlayText.galaxy = loc.text("overlay.galaxy", "GALAXY");
+    overlayText.system = loc.text("overlay.system", "SYSTEM");
+    overlayText.edge = loc.text("overlay.edge", "EDGE");
+    overlayText.format = loc.text("overlay.format", "FORMAT");
+    overlayText.level = loc.text("overlay.level", "LEVEL");
+    overlayText.track = loc.text("overlay.track", "TRACK");
+    overlayText.trackOn = loc.text("overlay.track_on", "TRACK ON");
+    overlayText.hierarchicalFormat =
+        loc.text("nav.format.hierarchical", "STRAIGHT THERE");
+    overlayText.axisFormat =
+        loc.text("nav.format.axis", "THREE AXES");
+    overlayText.packedFormat =
+        loc.text("nav.format.packed", "VERY SECRET CODE");
+    m_systemMapRenderer.setNavigationOverlayTextProfile(overlayText);
+    m_systemMapRenderer.setNavigationNamingLocale(loc.locale());
+}
+
 void SpaceState::pushSystemMapPanelState()
 {
     requestGalaxyMapSnapshotOnce();
@@ -4122,7 +4410,11 @@ void SpaceState::pushSystemMapPanelState()
 
     const auto& nav = m_client->playerNavigation();
 
-    std::string currentSystemName = "INTERSTELLAR";
+    std::string currentSystemName =
+        context().app->localization().text(
+            "map.interstellar",
+            "INTERSTELLAR"
+        );
     if (nav.currentSystemId >= 0)
     {
         if (!m_client->resolveCelestialSnapshot())
@@ -4132,7 +4424,11 @@ void SpaceState::pushSystemMapPanelState()
         if (!celestialPtr)
             return;
 
-        currentSystemName = celestialPtr->systemName;
+        currentSystemName = context().app->localization().catalogName(
+            "systems",
+            std::to_string(nav.currentSystemId),
+            celestialPtr->systemName
+        );
     }
 
     int selectedId = -1;

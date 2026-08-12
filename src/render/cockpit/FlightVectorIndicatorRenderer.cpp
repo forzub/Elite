@@ -407,6 +407,25 @@ void FlightVectorIndicatorRenderer::render(
     if (!m_primaryFont || !m_secondaryFont)
         return;
 
+    if (!presentation.modeText.empty())
+    {
+        const float modeBaselineY =
+            center.y + radius + secondaryPx * 0.25f;
+        const float modeTextWidth =
+            m_secondaryFont->measureText(presentation.modeText);
+        const float padX = std::max(7.0f, secondaryPx * 0.48f);
+        const float padY = std::max(3.0f, secondaryPx * 0.24f);
+        const float panelHeight = secondaryPx + padY * 2.0f;
+
+        TextRenderer::instance().solidRectPx(
+            center.x - modeTextWidth * 0.5f - padX,
+            modeBaselineY - secondaryPx - padY,
+            modeTextWidth + padX * 2.0f,
+            panelHeight,
+            glm::vec4(0.01f, 0.025f, 0.04f, 0.72f)
+        );
+    }
+
     drawCenteredText(
         *m_primaryFont,
         presentation.speedText,

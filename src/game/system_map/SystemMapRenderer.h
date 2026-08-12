@@ -84,6 +84,21 @@ public:
     void init();
 
     void setRightPanelRatio(float ratio);
+
+    void setNavigationOverlayTextProfile(
+        const render::navigation::NavigationOverlayTextProfile& profile
+    )
+    {
+        m_navigationCoordinateOverlay.setTextProfile(profile);
+        m_galaxyRenderer.setPlayerLabel(profile.player);
+        m_hubBackend.setPlayerLabel(profile.player);
+        m_localMapPresentationBuilder.setPlayerLabel(profile.player);
+    }
+
+    void setNavigationNamingLocale(const std::string& locale)
+    {
+        m_navigationNamingLocale = locale;
+    }
     void render(
         const Viewport& viewport,
         const world::celestial::GalaxyMapSnapshot& galaxy,

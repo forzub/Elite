@@ -1,41 +1,49 @@
 #pragma once
 
 #include <cstddef>
-#include <string>
 #include <vector>
 
 #include <glad/gl.h>
 #include <glm/glm.hpp>
+
+#include "src/render/starfield/SkyCultureCatalog.h"
 
 class ConstellationOverlayRenderer
 {
 public:
     struct StarReference
     {
-        int brightStarCatalogId = -1;
+        int brightStarCatalogId = -1; // HR
+        int hipparcosCatalogId = -1;  // HIP
         glm::vec3 positionLy {0.0f};
+        glm::vec3 fixedSkyDirection {0.0f};
+        bool useFixedSkyDirection = false;
+
+        int catalogId(SkyCultureCatalog::StarIdentifier identifier) const;
+        bool skyDirection(
+            const glm::vec3& observerPositionLy,
+            glm::vec3& outDirection
+        ) const;
     };
 
-    struct ConstellationDefinition
+    using ConstellationDefinition = SkyCultureCatalog::Constellation;
+
+    struct LabelAnchor
     {
-        std::string id;
-        std::string name;
-        std::vector<std::vector<int>> polylinesHr;
+        std::size_t definitionIndex = 0;
+        glm::vec3 skyPosition {0.0f};
     };
 
     ConstellationOverlayRenderer() = default;
     ~ConstellationOverlayRenderer();
 
-    ConstellationOverlayRenderer(
-        const ConstellationOverlayRenderer&
-    ) = delete;
+    ConstellationOverlayRenderer(const ConstellationOverlayRenderer&) = delete;
+    ConstellationOverlayRenderer& operator=(const ConstellationOverlayRenderer&) = delete;
 
-    ConstellationOverlayRenderer& operator=(
-        const ConstellationOverlayRenderer&
-    ) = delete;
-
-    bool initialize(const std::string& path);
+    bool initialize();
     void shutdown();
+
+    void setCulture(const SkyCultureCatalog::Culture& culture);
 
     void rebuild(
         const std::vector<StarReference>& stars,
@@ -45,19 +53,22 @@ public:
 
     void render(const glm::mat4& mvp) const;
 
-    bool isInitialized() const
-    {
-        return m_initialized;
-    }
-
-    std::size_t segmentCount() const
-    {
-        return m_vertices.size() / 2;
-    }
+    bool isInitialized() const { return m_initialized; }
+    std::size_t segmentCount() const { return m_vertices.size() / 2; }
 
     const std::vector<ConstellationDefinition>& definitions() const
     {
         return m_definitions;
+    }
+
+    const std::vector<LabelAnchor>& labelAnchors() const
+    {
+        return m_labelAnchors;
+    }
+
+    SkyCultureCatalog::StarIdentifier starIdentifier() const
+    {
+        return m_starIdentifier;
     }
 
 private:
@@ -67,15 +78,15 @@ private:
         glm::vec4 color {1.0f};
     };
 
-    bool loadDefinitions(const std::string& path);
     void uploadVertices();
 
 private:
     bool m_initialized = false;
-
     GLuint m_vao = 0;
     GLuint m_vbo = 0;
-
+    SkyCultureCatalog::StarIdentifier m_starIdentifier =
+        SkyCultureCatalog::StarIdentifier::BrightStarHr;
     std::vector<ConstellationDefinition> m_definitions;
+    std::vector<LabelAnchor> m_labelAnchors;
     std::vector<LineVertex> m_vertices;
 };

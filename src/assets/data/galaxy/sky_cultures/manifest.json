@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "default_culture": "iau-western",
+  "cultures": [
+    {
+      "id": "iau-western",
+      "file": "iau-western.json"
+    },
+    {
+      "id": "chinese-28-mansions",
+      "file": "chinese-28-mansions.json"
+    },
+    {
+      "id": "hawaiian-starlines",
+      "file": "hawaiian-starlines.json"
+    }
+  ]
+}

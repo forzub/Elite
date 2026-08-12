@@ -59,7 +59,7 @@
     .status {
       position: fixed;
       right: 12px;
-      bottom: 10px;
+      bottom: 30px;
       opacity: 0.65;
       font-size: 12px;
     }
@@ -67,11 +67,12 @@
 </head>
 <body>
   <div class="root">
-    <h1 id="title">CONFIRM EXIT</h1>
+    <h1 id="title" data-i18n="confirm.title">CONFIRM EXIT</h1>
     <div class="menu" id="menu"></div>
   </div>
-  <div class="status" id="status">offline</div>
+  <div class="status" id="status" data-i18n="status.offline">offline</div>
 
+  <script src="/game_i18n.js"></script>
   <script>
     const titleEl = document.getElementById('title');
     const menuEl = document.getElementById('menu');
@@ -80,7 +81,7 @@
     const ws = new WebSocket(`ws://${location.host}`);
 
     ws.addEventListener('open', () => {
-      statusEl.textContent = 'connected';
+      statusEl.textContent = window.GameI18n ? GameI18n.t('status.connected', 'connected') : 'connected';
       ws.send(JSON.stringify({
         type: 'subscribe',
         panel: 'confirm_exit',
@@ -89,7 +90,7 @@
     });
 
     ws.addEventListener('close', () => {
-      statusEl.textContent = 'disconnected';
+      statusEl.textContent = window.GameI18n ? GameI18n.t('status.disconnected', 'disconnected') : 'disconnected';
     });
 
     ws.addEventListener('message', (ev) => {

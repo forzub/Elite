@@ -1,0 +1,341 @@
+{
+  "version": 1,
+  "culture_id": "hawaiian-starlines",
+  "culture_names": {
+    "en": "Hawaiian Star Lines",
+    "native": "Hawaiian Star Lines",
+    "ru": "Гавайские звёздные линии",
+    "zh": "夏威夷星线",
+    "zh-Hans": "夏威夷星线",
+    "ja": "ハワイのスターライン"
+  },
+  "star_identifier": "hip",
+  "scope_note": "Modern Hawaiian star-line organization associated with Polynesian Voyaging Society navigation.",
+  "source": {
+    "title": "Hawaiian Star Lines",
+    "project": "Stellarium Sky Cultures / Polynesian Voyaging Society tradition",
+    "license": "CC BY-SA",
+    "url": "https://github.com/Stellarium/stellarium-skycultures/tree/master/hawaiian_starlines"
+  },
+  "constellations": [
+    {
+      "id": "kom",
+      "name": "The Canoe Bailer of Makali‘i",
+      "names": {
+        "native": "Ke Ka o Makali‘i",
+        "en": "The Canoe Bailer of Makali‘i",
+        "zh-Hans": "玛卡利伊的舀水器",
+        "ja": "マカリイのカヌーのあか汲み"
+      },
+      "polylines": [
+        [
+          32349,
+          37279,
+          37826,
+          36850,
+          28360,
+          28380,
+          25428,
+          23015,
+          24608,
+          28360
+        ],
+        [
+          32349,
+          30324,
+          30438
+        ]
+      ]
+    },
+    {
+      "id": "khk",
+      "name": "The Cat's Cradle",
+      "names": {
+        "native": "Ka Hei-Hei o Na Keiki",
+        "en": "The Cat's Cradle",
+        "zh-Hans": "翻花绳",
+        "ja": "あやとり"
+      },
+      "polylines": [
+        [
+          27989,
+          26727,
+          27366,
+          24436,
+          25930,
+          25336,
+          27989
+        ],
+        [
+          26727,
+          26311,
+          25930
+        ]
+      ]
+    },
+    {
+      "id": "mak",
+      "name": "The Chief's Eyes",
+      "names": {
+        "native": "Makali‘i",
+        "en": "The Chief's Eyes",
+        "zh-Hans": "酋长之眼",
+        "ja": "首長の目"
+      },
+      "polylines": [
+        [
+          17499,
+          17489
+        ]
+      ]
+    },
+    {
+      "id": "mee",
+      "name": "Voice of Joy",
+      "names": {
+        "native": "Me‘e",
+        "en": "Voice of Joy",
+        "zh-Hans": "喜悦之声",
+        "ja": "喜びの声"
+      },
+      "polylines": [
+        [
+          60965,
+          59803,
+          59316,
+          61359,
+          60965
+        ]
+      ]
+    },
+    {
+      "id": "nah",
+      "name": "The Seven",
+      "names": {
+        "native": "Na Hiku",
+        "en": "The Seven",
+        "zh-Hans": "七星",
+        "ja": "七つ星"
+      },
+      "polylines": [
+        [
+          67301,
+          65378,
+          62956,
+          59774,
+          54061,
+          53910,
+          58001,
+          59774
+        ]
+      ]
+    },
+    {
+      "id": "iwi",
+      "name": "The Backbone",
+      "names": {
+        "native": "Ka Iwikuamo‘o",
+        "en": "The Backbone",
+        "zh-Hans": "脊柱",
+        "ja": "背骨"
+      },
+      "polylines": [
+        [
+          11767,
+          54061
+        ],
+        [
+          67301,
+          69673,
+          65474
+        ],
+        [
+          60965,
+          65474
+        ],
+        [
+          60221,
+          61084
+        ]
+      ]
+    },
+    {
+      "id": "man",
+      "name": "The Chief's Fishline",
+      "names": {
+        "native": "Manaiakalani",
+        "en": "The Chief's Fishline",
+        "zh-Hans": "酋长的钓线",
+        "ja": "首長の釣り糸"
+      },
+      "polylines": [
+        [
+          85927,
+          86670,
+          87073,
+          86228,
+          84143,
+          82671,
+          82514,
+          82396,
+          81266,
+          80763,
+          80112,
+          78401
+        ],
+        [
+          78820,
+          78401,
+          78265
+        ]
+      ]
+    },
+    {
+      "id": "nav",
+      "name": "Navigator's Triangle",
+      "names": {
+        "native": "Navigator's Triangle",
+        "en": "Navigator's Triangle",
+        "zh-Hans": "航海者三角",
+        "ja": "航海士の三角"
+      },
+      "polylines": [
+        [
+          102098,
+          97649,
+          91262,
+          102098
+        ],
+        [
+          95947,
+          97165,
+          100453,
+          102488,
+          102098,
+          100453
+        ]
+      ]
+    },
+    {
+      "id": "lup",
+      "name": "Kite of Kawelo",
+      "names": {
+        "native": "Ka Lupe o Kawelo",
+        "en": "Kite of Kawelo",
+        "zh-Hans": "卡韦洛的风筝",
+        "ja": "カウェロの凧"
+      },
+      "polylines": [
+        [
+          677,
+          113881,
+          113963,
+          1067,
+          677
+        ],
+        [
+          113368,
+          113963
+        ],
+        [
+          746,
+          677
+        ],
+        [
+          3419,
+          2081
+        ],
+        [
+          1067,
+          3419
+        ],
+        [
+          113881,
+          112731
+        ]
+      ]
+    },
+    {
+      "id": "iwa",
+      "name": "Chief Frigate Bird",
+      "names": {
+        "native": "‘Iwa Keli‘i",
+        "en": "Chief Frigate Bird",
+        "zh-Hans": "酋长军舰鸟",
+        "ja": "首長のグンカンドリ"
+      },
+      "polylines": [
+        [
+          8886,
+          6686,
+          4427,
+          3179,
+          746
+        ]
+      ]
+    },
+    {
+      "id": "han",
+      "name": "Cared for by Moon",
+      "names": {
+        "native": "Hanaiakamalama",
+        "en": "Cared for by Moon",
+        "zh-Hans": "月之眷顾",
+        "ja": "月に育てられし者"
+      },
+      "polylines": [
+        [
+          61084,
+          60718
+        ],
+        [
+          62434,
+          59747
+        ]
+      ]
+    },
+    {
+      "id": "nak",
+      "name": "The Pointers",
+      "names": {
+        "native": "Nakuhikuhi",
+        "en": "The Pointers",
+        "zh-Hans": "指引星",
+        "ja": "指標星"
+      },
+      "polylines": [
+        [
+          71683,
+          68702
+        ]
+      ]
+    },
+    {
+      "id": "kao",
+      "name": "Leo",
+      "names": {
+        "native": "Ka‘ohiweliweli",
+        "en": "Leo",
+        "zh-Hans": "狮子座",
+        "ja": "しし座"
+      },
+      "polylines": [
+        [
+          57632,
+          54872,
+          54879,
+          49669,
+          49583,
+          50583,
+          50335,
+          48455,
+          47908
+        ],
+        [
+          57632,
+          54879
+        ]
+      ]
+    }
+  ]
+}

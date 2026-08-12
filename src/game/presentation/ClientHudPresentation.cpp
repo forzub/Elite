@@ -166,7 +166,8 @@ FlightVectorIndicatorPresentation buildFlightVectorIndicatorPresentation(
 }
 
 PlayerHudTelemetry buildPlayerHudTelemetry(
-    const ClientShipState& ship
+    const ClientShipState& ship,
+    const PlayerHudTelemetryTextProfile& textProfile
 )
 {
     PlayerHudTelemetry out;
@@ -190,7 +191,8 @@ PlayerHudTelemetry buildPlayerHudTelemetry(
     std::snprintf(
         buffer,
         sizeof(buffer),
-        "CELL %lld %lld %lld",
+        "%s %lld %lld %lld",
+        textProfile.cellLabel.c_str(),
         static_cast<long long>(wp.cell.x),
         static_cast<long long>(wp.cell.y),
         static_cast<long long>(wp.cell.z)
@@ -206,14 +208,19 @@ PlayerHudTelemetry buildPlayerHudTelemetry(
     std::snprintf(buffer, sizeof(buffer), "Z %.0f m", out.globalMeters.z);
     out.zLabel = buffer;
 
+    const std::string& controlLawLabel =
+        ship.renderTransform.motion.localControlLaw ==
+                game::navigation::LocalFlightControlLaw::Assisted
+            ? textProfile.assistedModeLabel
+            : textProfile.newtonianModeLabel;
+
     std::snprintf(
         buffer,
         sizeof(buffer),
-        "VREL %.1f m/s  %s",
+        "%s %.1f m/s  %s",
+        textProfile.relativeVelocityLabel.c_str(),
         out.speedMps,
-        game::navigation::localFlightControlLawName(
-            ship.renderTransform.motion.localControlLaw
-        )
+        controlLawLabel.c_str()
     );
     out.speedLabel = buffer;
 

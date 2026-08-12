@@ -4,7 +4,7 @@
 #include "core/StateContext.h"
 
 
-// class StateStack;   
+// class StateStack;
 // struct StateContext;
 
 class GameState
@@ -36,7 +36,11 @@ public:
 
     virtual bool isModal() const { return false; }
     virtual void handleResize(int width, int height) {}
-    
+
+    // Player-facing UI language changed. Cockpit/manufacturer-language layers
+    // may intentionally ignore this global locale.
+    virtual void onUiLanguageChanged() {}
+
 
     // === ГЛОБАЛЬНЫЙ ESC ===
 
@@ -52,5 +56,5 @@ protected:
         return m_states.context();
     }
 
-    
+
 };

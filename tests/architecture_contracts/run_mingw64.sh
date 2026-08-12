@@ -32,6 +32,8 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_system_map_celestial.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_system_map_ships.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_galaxy_map_catalog.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_sky_culture_catalogs.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_localization_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_headless_server_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_transport_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_runtime_ownership.py"

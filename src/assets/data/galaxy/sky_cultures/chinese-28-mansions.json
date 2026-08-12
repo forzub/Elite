@@ -1,0 +1,1067 @@
+{
+  "version": 1,
+  "culture_id": "chinese-28-mansions",
+  "culture_names": {
+    "en": "Traditional Chinese Sky",
+    "native": "中国传统星官",
+    "ru": "Китайская традиционная",
+    "zh": "中国传统星官",
+    "zh-Hans": "中国传统星官",
+    "ja": "中国伝統星官"
+  },
+  "star_identifier": "hip",
+  "scope_note": "Curated traditional Chinese sky: all 28 Lunar Mansions plus 14 selected surrounding asterisms above and below the mansion belt; not the full Xingguan catalog.",
+  "source": {
+    "title": "Stellarium traditional Chinese sky culture (28 Lunar Mansions + curated surrounding asterisms)",
+    "project": "Stellarium Sky Cultures",
+    "license": "CC BY-SA",
+    "url": "https://github.com/Stellarium/stellarium-skycultures/tree/master/chinese"
+  },
+  "constellations": [
+    {
+      "id": "01-net",
+      "name": "Net",
+      "names": {
+        "native": "毕宿",
+        "pronounce": "Bìxiù",
+        "en": "Net",
+        "zh": "毕宿",
+        "zh-Hans": "毕宿",
+        "ja": "毕宿"
+      },
+      "polylines": [
+        [
+          20889,
+          20648,
+          20455,
+          20205
+        ],
+        [
+          21421,
+          20885,
+          20713,
+          20205,
+          18724
+        ],
+        [
+          21421,
+          21683
+        ]
+      ]
+    },
+    {
+      "id": "02-wall",
+      "name": "Wall",
+      "names": {
+        "native": "壁宿",
+        "pronounce": "Bìxiù",
+        "en": "Wall",
+        "zh": "壁宿",
+        "zh-Hans": "壁宿",
+        "ja": "壁宿"
+      },
+      "polylines": [
+        [
+          1067,
+          677
+        ]
+      ]
+    },
+    {
+      "id": "03-three-stars",
+      "name": "Three Stars",
+      "names": {
+        "native": "参宿",
+        "pronounce": "Shēnxiù",
+        "en": "Three Stars",
+        "zh": "参宿",
+        "zh-Hans": "参宿",
+        "ja": "参宿"
+      },
+      "polylines": [
+        [
+          27989,
+          26727,
+          26311,
+          25930,
+          24436
+        ],
+        [
+          25930,
+          25336
+        ],
+        [
+          26727,
+          27366
+        ]
+      ]
+    },
+    {
+      "id": "04-root",
+      "name": "Root",
+      "names": {
+        "native": "氐宿",
+        "pronounce": "Dīxiù",
+        "en": "Root",
+        "zh": "氐宿",
+        "zh-Hans": "氐宿",
+        "ja": "氐宿"
+      },
+      "polylines": [
+        [
+          72622,
+          74392,
+          76333,
+          74785
+        ]
+      ]
+    },
+    {
+      "id": "05-dipper",
+      "name": "Dipper",
+      "names": {
+        "native": "斗宿",
+        "pronounce": "Dǒuxiù",
+        "en": "Dipper",
+        "zh": "斗宿",
+        "zh-Hans": "斗宿",
+        "ja": "斗宿"
+      },
+      "polylines": [
+        [
+          89341,
+          90496,
+          92041,
+          92855,
+          93864,
+          93506
+        ]
+      ]
+    },
+    {
+      "id": "06-room",
+      "name": "Room",
+      "names": {
+        "native": "房宿",
+        "pronounce": "Fángxiù",
+        "en": "Room",
+        "zh": "房宿",
+        "zh-Hans": "房宿",
+        "ja": "房宿"
+      },
+      "polylines": [
+        [
+          78820,
+          78401,
+          78265,
+          78104
+        ]
+      ]
+    },
+    {
+      "id": "07-ghosts",
+      "name": "Ghosts",
+      "names": {
+        "native": "鬼宿",
+        "pronounce": "Guǐxiù",
+        "en": "Ghosts",
+        "zh": "鬼宿",
+        "zh-Hans": "鬼宿",
+        "ja": "鬼宿"
+      },
+      "polylines": [
+        [
+          41822,
+          41909,
+          42806,
+          42911
+        ]
+      ]
+    },
+    {
+      "id": "08-winnowing-basket",
+      "name": "Winnowing Basket",
+      "names": {
+        "native": "箕宿",
+        "pronounce": "Jīxiù",
+        "en": "Winnowing Basket",
+        "zh": "箕宿",
+        "zh-Hans": "箕宿",
+        "ja": "箕宿"
+      },
+      "polylines": [
+        [
+          88635,
+          89931,
+          90185,
+          89642
+        ]
+      ]
+    },
+    {
+      "id": "09-horn",
+      "name": "Horn",
+      "names": {
+        "native": "角宿",
+        "pronounce": "Jiǎoxiù",
+        "en": "Horn",
+        "zh": "角宿",
+        "zh-Hans": "角宿",
+        "ja": "角宿"
+      },
+      "polylines": [
+        [
+          65474,
+          66249
+        ]
+      ]
+    },
+    {
+      "id": "10-well",
+      "name": "Well",
+      "names": {
+        "native": "井宿",
+        "pronounce": "Jǐngxiù",
+        "en": "Well",
+        "zh": "井宿",
+        "zh-Hans": "井宿",
+        "ja": "井宿"
+      },
+      "polylines": [
+        [
+          35350,
+          34088,
+          32921,
+          32246
+        ],
+        [
+          32921,
+          30883,
+          30343
+        ],
+        [
+          30883,
+          31681,
+          34088
+        ],
+        [
+          31681,
+          32362
+        ],
+        [
+          30343,
+          29655
+        ]
+      ]
+    },
+    {
+      "id": "11-neck",
+      "name": "Neck",
+      "names": {
+        "native": "亢宿",
+        "pronounce": "Kàngxiù",
+        "en": "Neck",
+        "zh": "亢宿",
+        "zh-Hans": "亢宿",
+        "ja": "亢宿"
+      },
+      "polylines": [
+        [
+          69427,
+          69701,
+          70755
+        ],
+        [
+          69427,
+          69974
+        ]
+      ]
+    },
+    {
+      "id": "12-legs",
+      "name": "Legs",
+      "names": {
+        "native": "奎宿",
+        "pronounce": "Kuíxiù",
+        "en": "Legs",
+        "zh": "奎宿",
+        "zh-Hans": "奎宿",
+        "ja": "奎宿"
+      },
+      "polylines": [
+        [
+          4463,
+          3693,
+          3885,
+          3031,
+          3092,
+          2912,
+          3881,
+          4436,
+          5447,
+          5175,
+          5586,
+          6315,
+          6193,
+          5742,
+          5571,
+          5131,
+          4463
+        ]
+      ]
+    },
+    {
+      "id": "13-willow",
+      "name": "Willow",
+      "names": {
+        "native": "柳宿",
+        "pronounce": "Liǔxiù",
+        "en": "Willow",
+        "zh": "柳宿",
+        "zh-Hans": "柳宿",
+        "ja": "柳宿"
+      },
+      "polylines": [
+        [
+          42402,
+          42799,
+          43234,
+          43109
+        ],
+        [
+          42313,
+          43109
+        ],
+        [
+          43234,
+          43813,
+          44659,
+          45336
+        ]
+      ]
+    },
+    {
+      "id": "14-bond",
+      "name": "Bond",
+      "names": {
+        "native": "娄宿",
+        "pronounce": "Loúxiù",
+        "en": "Bond",
+        "zh": "娄宿",
+        "zh-Hans": "娄宿",
+        "ja": "娄宿"
+      },
+      "polylines": [
+        [
+          9884,
+          8903,
+          8832
+        ]
+      ]
+    },
+    {
+      "id": "15-hairy-head",
+      "name": "Hairy Head",
+      "names": {
+        "native": "昴宿",
+        "pronounce": "Mǎoxiù",
+        "en": "Hairy Head",
+        "zh": "昴宿",
+        "zh-Hans": "昴宿",
+        "ja": "昴宿"
+      },
+      "polylines": [
+        [
+          17499,
+          17531,
+          17579,
+          17573
+        ],
+        [
+          17499,
+          17608,
+          17702,
+          17847
+        ]
+      ]
+    },
+    {
+      "id": "16-ox",
+      "name": "Ox",
+      "names": {
+        "native": "牛宿",
+        "pronounce": "Niúxiù",
+        "en": "Ox",
+        "zh": "牛宿",
+        "zh-Hans": "牛宿",
+        "ja": "牛宿"
+      },
+      "polylines": [
+        [
+          100345,
+          100064,
+          99572
+        ],
+        [
+          100345,
+          100881,
+          101123,
+          101027
+        ],
+        [
+          100881,
+          101027
+        ]
+      ]
+    },
+    {
+      "id": "17-girl",
+      "name": "Girl",
+      "names": {
+        "native": "女宿",
+        "pronounce": "Nǚxiù",
+        "en": "Girl",
+        "zh": "女宿",
+        "zh-Hans": "女宿",
+        "ja": "女宿"
+      },
+      "polylines": [
+        [
+          102618,
+          103045,
+          102945,
+          102624
+        ]
+      ]
+    },
+    {
+      "id": "18-encampment",
+      "name": "Encampment",
+      "names": {
+        "native": "室宿",
+        "pronounce": "Shìxiù",
+        "en": "Encampment",
+        "zh": "室宿",
+        "zh-Hans": "室宿",
+        "ja": "室宿"
+      },
+      "polylines": [
+        [
+          113963,
+          113881
+        ]
+      ]
+    },
+    {
+      "id": "19-rooftop",
+      "name": "Rooftop",
+      "names": {
+        "native": "危宿",
+        "pronounce": "Wēixiù",
+        "en": "Rooftop",
+        "zh": "危宿",
+        "zh-Hans": "危宿",
+        "ja": "危宿"
+      },
+      "polylines": [
+        [
+          109074,
+          109427,
+          107315
+        ]
+      ]
+    },
+    {
+      "id": "20-tail",
+      "name": "Tail",
+      "names": {
+        "native": "尾宿",
+        "pronounce": "Wěixiù",
+        "en": "Tail",
+        "zh": "尾宿",
+        "zh-Hans": "尾宿",
+        "ja": "尾宿"
+      },
+      "polylines": [
+        [
+          82396,
+          82514,
+          82671,
+          84143,
+          86228,
+          87073,
+          86670,
+          85927,
+          85696
+        ],
+        [
+          82514,
+          82545
+        ]
+      ]
+    },
+    {
+      "id": "21-stomach",
+      "name": "Stomach",
+      "names": {
+        "native": "胃宿",
+        "pronounce": "Wèixiù",
+        "en": "Stomach",
+        "zh": "胃宿",
+        "zh-Hans": "胃宿",
+        "ja": "胃宿"
+      },
+      "polylines": [
+        [
+          12719,
+          13061,
+          13209
+        ]
+      ]
+    },
+    {
+      "id": "22-heart",
+      "name": "Heart",
+      "names": {
+        "native": "心宿",
+        "pronounce": "Xīnxiù",
+        "en": "Heart",
+        "zh": "心宿",
+        "zh-Hans": "心宿",
+        "ja": "心宿"
+      },
+      "polylines": [
+        [
+          80112,
+          80763,
+          81266
+        ]
+      ]
+    },
+    {
+      "id": "23-star",
+      "name": "Star",
+      "names": {
+        "native": "星宿",
+        "pronounce": "Xīngxiù",
+        "en": "Star",
+        "zh": "星宿",
+        "zh-Hans": "星宿",
+        "ja": "星宿"
+      },
+      "polylines": [
+        [
+          46390,
+          46509,
+          46776,
+          47431
+        ],
+        [
+          46390,
+          45811,
+          45751,
+          46744
+        ],
+        [
+          46390,
+          46744
+        ]
+      ]
+    },
+    {
+      "id": "24-emptiness",
+      "name": "Emptiness",
+      "names": {
+        "native": "虚宿",
+        "pronounce": "Xūxiù",
+        "en": "Emptiness",
+        "zh": "虚宿",
+        "zh-Hans": "虚宿",
+        "ja": "虚宿"
+      },
+      "polylines": [
+        [
+          106278,
+          104987
+        ]
+      ]
+    },
+    {
+      "id": "25-wings",
+      "name": "Wings",
+      "names": {
+        "native": "翼宿",
+        "pronounce": "Yìxiù",
+        "en": "Wings",
+        "zh": "翼宿",
+        "zh-Hans": "翼宿",
+        "ja": "翼宿"
+      },
+      "polylines": [
+        [
+          53740,
+          55705
+        ],
+        [
+          53740,
+          55598
+        ],
+        [
+          53740,
+          52943
+        ],
+        [
+          55705,
+          57283,
+          55598
+        ],
+        [
+          57283,
+          58188
+        ],
+        [
+          55705,
+          55282,
+          56802,
+          55874,
+          55687
+        ],
+        [
+          55687,
+          56633,
+          57587
+        ],
+        [
+          55598,
+          54682,
+          54204
+        ]
+      ],
+      "omitted_source_star_ids": [
+        53975
+      ],
+      "omission_note": "HIP 53975 from the source topology is intentionally not bundled until its coordinate is independently verified."
+    },
+    {
+      "id": "26-extended-net",
+      "name": "Extended Net",
+      "names": {
+        "native": "张宿",
+        "pronounce": "Zhāngxiù",
+        "en": "Extended Net",
+        "zh": "张宿",
+        "zh-Hans": "张宿",
+        "ja": "张宿"
+      },
+      "polylines": [
+        [
+          48356,
+          49841,
+          51069,
+          49321
+        ],
+        [
+          48356,
+          49321
+        ],
+        [
+          48356,
+          47452
+        ],
+        [
+          51069,
+          52085
+        ]
+      ]
+    },
+    {
+      "id": "27-chariot",
+      "name": "Chariot",
+      "names": {
+        "native": "轸宿",
+        "pronounce": "Zhěnxiù",
+        "en": "Chariot",
+        "zh": "轸宿",
+        "zh-Hans": "轸宿",
+        "ja": "轸宿"
+      },
+      "polylines": [
+        [
+          61359,
+          60965,
+          59803,
+          59316
+        ],
+        [
+          59803,
+          60189
+        ],
+        [
+          60965,
+          61174
+        ],
+        [
+          59316,
+          59199
+        ]
+      ]
+    },
+    {
+      "id": "28-turtle-beak",
+      "name": "Turtle Beak",
+      "names": {
+        "native": "觜宿",
+        "pronounce": "Zīxiù",
+        "en": "Turtle Beak",
+        "zh": "觜宿",
+        "zh-Hans": "觜宿",
+        "ja": "觜宿"
+      },
+      "polylines": [
+        [
+          26207,
+          26176
+        ],
+        [
+          26207,
+          26366
+        ]
+      ]
+    },
+    {
+      "id": "extra-northern-dipper",
+      "name": "Northern Dipper",
+      "names": {
+        "native": "北斗",
+        "pronounce": "Běidǒu",
+        "en": "Northern Dipper",
+        "zh": "北斗",
+        "zh-Hans": "北斗",
+        "ja": "北斗"
+      },
+      "polylines": [
+        [
+          54061,
+          53910,
+          58001,
+          59774,
+          62956,
+          65378,
+          67301
+        ]
+      ]
+    },
+    {
+      "id": "extra-northern-pole",
+      "name": "Northern Pole",
+      "names": {
+        "native": "北极",
+        "pronounce": "Běijí",
+        "en": "Northern Pole",
+        "zh": "北极",
+        "zh-Hans": "北极",
+        "ja": "北極"
+      },
+      "polylines": [
+        [
+          75097,
+          72607,
+          70692,
+          69112,
+          62572
+        ]
+      ]
+    },
+    {
+      "id": "extra-north-river",
+      "name": "North River",
+      "names": {
+        "native": "北河",
+        "pronounce": "Běihé",
+        "en": "North River",
+        "zh": "北河",
+        "zh-Hans": "北河",
+        "ja": "北河"
+      },
+      "polylines": [
+        [
+          37826,
+          36850,
+          36366
+        ]
+      ]
+    },
+    {
+      "id": "extra-five-chariots",
+      "name": "Five Chariots",
+      "names": {
+        "native": "五车",
+        "pronounce": "Wǔchē",
+        "en": "Five Chariots",
+        "zh": "五车",
+        "zh-Hans": "五车",
+        "ja": "五車"
+      },
+      "polylines": [
+        [
+          23015,
+          24608,
+          28360,
+          28380,
+          25428
+        ]
+      ]
+    },
+    {
+      "id": "extra-celestial-boat",
+      "name": "Celestial Boat",
+      "names": {
+        "native": "天船",
+        "pronounce": "Tiānchuán",
+        "en": "Celestial Boat",
+        "zh": "天船",
+        "zh-Hans": "天船",
+        "ja": "天船"
+      },
+      "polylines": [
+        [
+          13268,
+          14328,
+          15863,
+          16826,
+          17358,
+          19343,
+          19812,
+          20156,
+          19949
+        ]
+      ]
+    },
+    {
+      "id": "extra-celestial-ford",
+      "name": "Celestial Ford",
+      "names": {
+        "native": "天津",
+        "pronounce": "Tiānjīn",
+        "en": "Celestial Ford",
+        "zh": "天津",
+        "zh-Hans": "天津",
+        "ja": "天津"
+      },
+      "polylines": [
+        [
+          104732,
+          105138,
+          104887,
+          103413,
+          102098,
+          99639,
+          97165,
+          100453,
+          102488,
+          104732
+        ]
+      ]
+    },
+    {
+      "id": "extra-purple-forbidden-left-wall",
+      "name": "Purple Forbidden Left Wall",
+      "names": {
+        "native": "紫微左垣",
+        "pronounce": "Zǐwēi Zuǒyuán",
+        "en": "Purple Forbidden Left Wall",
+        "zh": "紫微左垣",
+        "zh-Hans": "紫微左垣",
+        "ja": "紫微左垣"
+      },
+      "polylines": [
+        [
+          75458,
+          78527,
+          80331,
+          83895,
+          92782,
+          101260,
+          114222,
+          3721
+        ]
+      ]
+    },
+    {
+      "id": "extra-celestial-meadows",
+      "name": "Celestial Meadows",
+      "names": {
+        "native": "天苑",
+        "pronounce": "Tiānyuàn",
+        "en": "Celestial Meadows",
+        "zh": "天苑",
+        "zh-Hans": "天苑",
+        "ja": "天苑"
+      },
+      "polylines": [
+        [
+          18543,
+          17593,
+          17378,
+          16537,
+          15197,
+          13701,
+          12770,
+          12843,
+          13288,
+          14146,
+          15474,
+          16611,
+          17651,
+          17717,
+          18216,
+          18673
+        ]
+      ]
+    },
+    {
+      "id": "extra-celestial-orchard",
+      "name": "Celestial Orchard",
+      "names": {
+        "native": "天园",
+        "pronounce": "Tiānyuán",
+        "en": "Celestial Orchard",
+        "zh": "天园",
+        "zh-Hans": "天园",
+        "ja": "天園"
+      },
+      "polylines": [
+        [
+          7083,
+          9007,
+          10602,
+          11407,
+          12413,
+          13847,
+          17351,
+          17797,
+          17874,
+          20042,
+          20535,
+          21393,
+          21248
+        ]
+      ]
+    },
+    {
+      "id": "extra-bow-and-arrow",
+      "name": "Bow and Arrow",
+      "names": {
+        "native": "弧矢",
+        "pronounce": "Húshǐ",
+        "en": "Bow and Arrow",
+        "zh": "弧矢",
+        "zh-Hans": "弧矢",
+        "ja": "弧矢"
+      },
+      "polylines": [
+        [
+          34444,
+          35904,
+          37819,
+          38901,
+          38070,
+          37229,
+          35904,
+          33579,
+          32759,
+          35264,
+          37819
+        ]
+      ]
+    },
+    {
+      "id": "extra-southern-boat",
+      "name": "Southern Boat",
+      "names": {
+        "native": "南船",
+        "pronounce": "Nánchuán",
+        "en": "Southern Boat",
+        "zh": "南船",
+        "zh-Hans": "南船",
+        "ja": "南船"
+      },
+      "polylines": [
+        [
+          50371,
+          51576,
+          52419,
+          50099,
+          45238
+        ]
+      ]
+    },
+    {
+      "id": "extra-cross",
+      "name": "Cross",
+      "names": {
+        "native": "十字架",
+        "pronounce": "Shízìjià",
+        "en": "Cross",
+        "zh": "十字架",
+        "zh-Hans": "十字架",
+        "ja": "十字架"
+      },
+      "polylines": [
+        [
+          61084,
+          60718
+        ],
+        [
+          62434,
+          59747
+        ]
+      ]
+    },
+    {
+      "id": "extra-southern-gate",
+      "name": "Southern Gate",
+      "names": {
+        "native": "南门",
+        "pronounce": "Nánmén",
+        "en": "Southern Gate",
+        "zh": "南门",
+        "zh-Hans": "南门",
+        "ja": "南門"
+      },
+      "polylines": [
+        [
+          66657,
+          71683
+        ]
+      ]
+    },
+    {
+      "id": "extra-peafowl",
+      "name": "Peafowl",
+      "names": {
+        "native": "孔雀",
+        "pronounce": "Kǒngquè",
+        "en": "Peafowl",
+        "zh": "孔雀",
+        "zh-Hans": "孔雀",
+        "ja": "孔雀"
+      },
+      "polylines": [
+        [
+          86929,
+          88866,
+          90797,
+          92609,
+          93015,
+          99240,
+          102395,
+          91792,
+          98495,
+          105858,
+          100751
+        ]
+      ]
+    }
+  ]
+}

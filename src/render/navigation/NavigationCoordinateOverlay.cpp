@@ -390,7 +390,7 @@ void NavigationCoordinateOverlay::draw(
             bodyScale;
 
         const std::string buttonText =
-            "[  LEVEL 0  ]";
+            "[  " + m_textProfile.level + " 0  ]";
 
         const float textWidth =
             m_font->measureText(
@@ -478,8 +478,8 @@ void NavigationCoordinateOverlay::draw(
 
         const std::string buttonText =
             trackButtonActive
-                ? "[ TRACK ON ]"
-                : "[  TRACK  ]";
+                ? "[ " + m_textProfile.trackOn + " ]"
+                : "[  " + m_textProfile.track + "  ]";
 
         const float textWidth =
             m_font->measureText(

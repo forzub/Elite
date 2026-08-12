@@ -30,6 +30,7 @@ public:
 
     bool isModal() const override { return true; }
     void renderUI() override;
+    void onUiLanguageChanged() override;
 
     void handleInput() override;
     void update(float dt) override;
@@ -38,7 +39,7 @@ public:
     bool wantsConfirmExit() const override { return false; }
     bool onGlobalEscape() override;
 
-   
+
 
     void pushHtmlState();
     void processHtmlCommands();
@@ -66,5 +67,3 @@ private:
     bool m_htmlInitialized = false;
 
 };
-
-

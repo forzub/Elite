@@ -30,6 +30,26 @@ struct NavigationCoordinateBlock
     std::vector<std::string> addressLines;
 };
 
+struct NavigationOverlayTextProfile
+{
+    std::string player = "PLAYER";
+    std::string selected = "SELECTED";
+    std::string cursor = "CURSOR";
+
+    std::string galaxy = "GALAXY";
+    std::string system = "SYSTEM";
+    std::string edge = "EDGE";
+    std::string format = "FORMAT";
+    std::string level = "LEVEL";
+
+    std::string track = "TRACK";
+    std::string trackOn = "TRACK ON";
+
+    std::string hierarchicalFormat = "STRAIGHT THERE";
+    std::string axisFormat = "THREE AXES";
+    std::string packedFormat = "VERY SECRET CODE";
+};
+
 struct NavigationOverlayButtonBounds
 {
     float left = 0.0f;
@@ -55,6 +75,16 @@ class NavigationCoordinateOverlay
 public:
     NavigationCoordinateOverlay();
     ~NavigationCoordinateOverlay();
+
+    void setTextProfile(const NavigationOverlayTextProfile& profile)
+    {
+        m_textProfile = profile;
+    }
+
+    const NavigationOverlayTextProfile& textProfile() const noexcept
+    {
+        return m_textProfile;
+    }
 
     void draw(
         const Viewport& viewport,
@@ -86,6 +116,7 @@ private:
 private:
     std::unique_ptr<Font> m_font;
     NavigationOverlayVisualSettings m_visuals;
+    NavigationOverlayTextProfile m_textProfile;
 };
 
 } // namespace render::navigation

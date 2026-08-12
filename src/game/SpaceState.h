@@ -124,6 +124,8 @@ public:
     void setSystemMapPlayerLocalMode();
     bool isPlayerNavigationMapLevel(PlayerNavigationMapLevel level) const;
     void toggleConstellationOverlay();
+    void cycleSkyCulture();
+    void onUiLanguageChanged() override;
     void setSystemMapEmptySectorMode(
         const glm::dvec3& positionLy
     );
@@ -185,6 +187,8 @@ private:
     void renderUniverseTimeSimulationOverlay(
         const Viewport& viewport
     );
+    void renderUiLanguageIndicator(const Viewport& viewport);
+    void applyClientCatalogLocalization();
 
     // std::vector<Planet>                         m_planets;                  // "world/Planet.h"
     // std::vector<WorldSignal>                    m_worldSignals;             // "world/WorldSignal.h"

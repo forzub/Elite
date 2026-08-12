@@ -3,6 +3,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
+#include <utility>
 
 #include <glad/gl.h>
 
@@ -50,6 +52,11 @@ public:
         return m_performanceStats;
     }
 
+    void setPlayerLabel(std::string label)
+    {
+        m_playerLabel = std::move(label);
+    }
+
 private:
     friend class HubMapPlanetPass;
     friend class HubMapGeometryPass;
@@ -85,6 +92,7 @@ private:
     HubMapGeometryPass m_geometryPass;
     HubMapPlanetPass m_planetPass;
     HubMapPerformanceStats m_performanceStats;
+    std::string m_playerLabel = "PLAYER";
 
     std::array<
         std::array<GLuint, kGpuStageCount>,

@@ -22,12 +22,13 @@ class MainMenuState : public GameState
 
 public:
     explicit MainMenuState(StateStack& states);
-    
+
 
     void handleInput() override;
     void update(float dt) override;
     void renderUI() override;
     void render() override;
+    void onUiLanguageChanged() override;
 
     bool m_htmlInitialized = false;
     void processHtmlCommands();
@@ -48,7 +49,7 @@ private:
 
 private:
     void activateSelected();
-    
+
     bool m_shouldExit;
 
     MenuItem m_selected;
@@ -62,6 +63,6 @@ private:
 
     bool isSelected(size_t index) const;
 
-    
+
 
 };

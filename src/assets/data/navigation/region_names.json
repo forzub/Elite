@@ -43,6 +43,24 @@
           "short_name": "太阳",
           "kind": "official",
           "preferred": true
+        },
+        {
+          "faction_id": "sol_authority",
+          "language": "zh-Hans",
+          "script": "Hans",
+          "name": "太阳区",
+          "short_name": "太阳",
+          "kind": "official",
+          "preferred": true
+        },
+        {
+          "faction_id": "sol_authority",
+          "language": "ja",
+          "script": "Jpan",
+          "name": "太陽区域",
+          "short_name": "太陽",
+          "kind": "official",
+          "preferred": true
         }
       ]
     },
@@ -68,6 +86,24 @@
           "script": "Latn",
           "name": "Sol System",
           "short_name": "Sol",
+          "kind": "official",
+          "preferred": true
+        },
+        {
+          "faction_id": "sol_authority",
+          "language": "zh-Hans",
+          "script": "Hans",
+          "name": "太阳系",
+          "short_name": "太阳",
+          "kind": "official",
+          "preferred": true
+        },
+        {
+          "faction_id": "sol_authority",
+          "language": "ja",
+          "script": "Jpan",
+          "name": "太陽系",
+          "short_name": "太陽",
           "kind": "official",
           "preferred": true
         }

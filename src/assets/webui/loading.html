@@ -69,9 +69,9 @@
 
 <body>
   <div class="screen">
-    <div class="title">INITIALIZING FLIGHT SYSTEMS</div>
+    <div class="title" data-i18n="loading.title">INITIALIZING FLIGHT SYSTEMS</div>
 
-    <div class="hint" id="hint">
+    <div class="hint" id="hint" data-i18n="loading.hint">
       Warming up reactor control. Loading telemetry. Aligning local frame.
     </div>
 
@@ -80,24 +80,38 @@
     </div>
 
     <div class="row">
-      <span id="stage">BOOT</span>
+      <span id="stage" data-i18n="loading.boot">BOOT</span>
       <span id="percent">0%</span>
     </div>
   </div>
 
+  <script src="/game_i18n.js"></script>
   <script>
-    function setLoadingProgress(value, stage) {
+    let currentStageKey = "loading.boot";
+    let currentStageFallback = "BOOT";
+
+    function renderLoadingStage() {
+      document.getElementById("stage").textContent =
+        window.GameI18n
+          ? GameI18n.t(currentStageKey, currentStageFallback)
+          : currentStageFallback;
+    }
+
+    function setLoadingProgress(value, stageKey, englishFallback) {
       const p = Math.max(0, Math.min(100, Math.round(value * 100)));
 
       document.getElementById("bar").style.width = p + "%";
       document.getElementById("percent").textContent = p + "%";
 
-      if (stage) {
-        document.getElementById("stage").textContent = stage;
+      if (stageKey) {
+        currentStageKey = stageKey;
+        currentStageFallback = englishFallback || stageKey;
       }
+      renderLoadingStage();
     }
 
-    setLoadingProgress(0.05, "BOOT");
+    window.addEventListener("game-ui-language-changed", renderLoadingStage);
+    setLoadingProgress(0.05, "loading.boot", "BOOT");
   </script>
 </body>
 </html>

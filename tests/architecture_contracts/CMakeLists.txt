@@ -691,3 +691,85 @@ set_tests_properties(
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
+
+add_executable(
+    sky_culture_catalog_contract_tests
+    SkyCultureCatalogContractTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/render/starfield/SkyCultureCatalog.cpp"
+)
+
+target_include_directories(
+    sky_culture_catalog_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        sky_culture_catalog_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        sky_culture_catalog_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME sky_culture_catalogs
+    COMMAND sky_culture_catalog_contract_tests
+)
+
+set_tests_properties(
+    sky_culture_catalogs
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
+    localization_contract_tests
+    LocalizationContractTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/localization/LocalizationService.cpp"
+)
+
+target_include_directories(
+    localization_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        localization_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        localization_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME localization_contracts
+    COMMAND localization_contract_tests
+)
+
+set_tests_properties(
+    localization_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

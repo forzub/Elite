@@ -26,6 +26,8 @@ comparisons are deliberately outside this matrix.
 | F9-F12 navigation layout | F9 Galaxy, F10 current System/sector, F11 current Details context, F12 current Hub/local cube; same-level repeat closes, another key switches in-place | client acceptance + architecture guard | protected |
 | Ctrl+F11 coordinate format | Ctrl+F11 cycles `CoordinateDisplayService`; map footer advertises the chord | client acceptance + architecture guard | protected |
 | Ctrl+F12 constellations | Ctrl+F12 toggles the gameplay starfield constellation overlay | client acceptance + architecture guard | protected |
+| Alt+F12 sky culture | Alt+F12 cycles the selected star-culture topology without changing overlay visibility | architecture + catalog contracts | protected |
+| Ctrl+Alt+F12 UI language | Ctrl+Alt+F12 cycles the global player-facing UI locale; missing translations fall back to English | localization + hotkey contracts | protected |
 | Game-system names on sky | Authored game-system name survives astronomical-star merge and reaches the sky-label formatter | client acceptance + architecture guard | protected |
 | Galaxy player navigation marker | Real player navigation position -> shared Galaxy marker resolver -> Galaxy map/panel | client acceptance + architecture guard | protected |
 | Interstellar navigation presentation | Outside configured system-membership radius, navigation publishes `currentSystemId = -1` with galactic-absolute position; entering another catalog system rebases local coordinates | architecture contracts | protected |
@@ -66,6 +68,8 @@ The navigation layout is now the product contract:
 - `Ctrl+F10` switches Newtonian / Assisted local flight laws.
 - `Ctrl+F11` cycles coordinate display format.
 - `Ctrl+F12` toggles constellations.
+- `Alt+F12` cycles sky culture without changing constellation visibility.
+- `Ctrl+Alt+F12` cycles the global player-facing UI language, including menus/maps/constellation labels; missing translations fall back to English.
 
 The acceptance harness protects key-edge semantics and the production services/actions;
 visual map rendering remains covered by the map contracts rather than screenshots.

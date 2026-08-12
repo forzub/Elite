@@ -2196,7 +2196,7 @@ void GalaxyMapRenderer::drawPlayerMarker(
     );
 
     context.drawTextPx(
-        "PLAYER",
+        m_playerLabel,
         leaderEnd.x + 4.0f * screenScale,
         leaderEnd.y + 3.0f * screenScale,
         std::clamp(

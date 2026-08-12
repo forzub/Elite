@@ -26,7 +26,7 @@ Current acceptance coverage:
   `ShipSnapshot -> ClientWorldState -> renderTransform`;
 - HUD coordinate/speed calculation and writes to the exact production
   `main_coord_*` UIText bindings;
-- F9/F10/F11/F12 navigation-key latch semantics plus Ctrl+F11/Ctrl+F12 service chords;
+- F9/F10/F11/F12 navigation-key latch semantics plus Ctrl+F11, Ctrl+F12, Alt+F12 and Ctrl+Alt+F12 service chords;
 - actual `system_map_panel.html` command vocabulary tied by architecture guard
   to the same parser/dispatcher exercised by the headless suite;
 - command meaning for Galaxy/System/Details/Hub/select/open/close actions;
@@ -51,7 +51,7 @@ there is no active keyboard mapping for `jumpActive`.
 ### Functional sky/navigation coverage
 
 The final functional layer also protects the F9/F10/F11/F12 navigation layout,
-Ctrl+F11 coordinate-format service, Ctrl+F12 constellation-overlay toggle,
+Ctrl+F11 coordinate-format service, Ctrl+F12 constellation-overlay toggle, Alt+F12 sky-culture cycling, Ctrl+Alt+F12 global UI-language cycling,
 authored game-system names reaching star-sky labels, and the Galaxy player
 marker following real player navigation movement. The map-panel distance-to-system calculation shares the exact player
 marker resolver used by the Galaxy map, so the panel cannot silently fall back

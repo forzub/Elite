@@ -6,6 +6,7 @@
 #include "core/Log.h"
 #include "ui/MainMenuState.h"
 #include "game/SpaceState.h"
+#include "src/game/ui/GameUiHotkeyPolicy.h"
 #include "src/game/host/LocalGameSession.h"
 #include "src/game/session/IGameSession.h"
 #include "src/game/navigation/CoordinateDisplayService.h"
@@ -109,9 +110,15 @@ static std::string findGameUiRoot()
     return (cwd / "assets" / "webui").string();
 }
 
-static std::string makeGameUiHttpUrl(const std::string& relativeFile)
+static std::string makeGameUiHttpUrl(
+    const std::string& relativeFile,
+    const std::string& locale = std::string()
+)
 {
-    return "http://localhost:8090/" + relativeFile;
+    std::string url = "http://localhost:8090/" + relativeFile;
+    if (!locale.empty())
+        url += "?locale=" + locale;
+    return url;
 }
 
 
@@ -219,6 +226,19 @@ void Application::init()
     // ---------------------------------------------------
             std::string webUiRoot = findGameUiRoot();
 
+            // Global UI localization is client-only. The server sees stable IDs;
+            // translated display strings are resolved here and in WebUI.
+            {
+                const std::filesystem::path webRoot(webUiRoot);
+                const std::filesystem::path assetsRoot = webRoot.parent_path();
+                if (!m_localization.load(
+                        (webRoot / "localization" / "ui_strings.json").string(),
+                        (assetsRoot / "data" / "localization" / "catalog_names.json").string()))
+                {
+                    std::cerr << "[Localization] failed to load client tables; English/key fallback remains active\n";
+                }
+            }
+
             m_htmlUi.start(8090, webUiRoot);
 
             int w, h;
@@ -255,7 +275,7 @@ void Application::init()
             "EliteGame UI",
             uiW,
             uiH,
-            makeGameUiHttpUrl("main_menu.html")
+            makeGameUiHttpUrl("main_menu.html", m_localization.locale())
         );
         m_gameUi.forceMode(GameUiMode::MainMenu);
         m_gameUi.markLoaded(GameUiMode::MainMenu);
@@ -309,9 +329,13 @@ void Application::mainLoop()
                 Ctrl+F10 is reserved for local flight-law switching and must
                 reach PlayerInputMapper. Ctrl+F11 cycles coordinate display;
                 Ctrl+F12 toggles gameplay constellations.
+                Alt+F12 cycles the active sky culture.
+                Ctrl+Alt+F12 cycles the global player-facing UI language.
             */
             const bool ctrlDown =
                 (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+            const bool altDown =
+                (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
 
             const bool f9Down =
                 (GetAsyncKeyState(VK_F9) & 0x8000) != 0;
@@ -388,19 +412,46 @@ void Application::mainLoop()
                 }
             }
 
-            if (m_gameUi.consumeF12Press(f12Down) && space)
+            const bool f12PressedEdge =
+                m_gameUi.consumeF12Press(f12Down);
+
+            if (f12PressedEdge)
             {
-                if (ctrlDown)
-                {
-                    space->toggleConstellationOverlay();
-                    consumedNavigationHotkey = true;
-                }
-                else
-                {
-                    requestNavigationLevel(
-                        PlayerNavigationMapLevel::Local,
-                        [&]() { space->setSystemMapPlayerLocalMode(); }
+                using game::ui::F12HotkeyAction;
+                const F12HotkeyAction action =
+                    game::ui::resolveF12HotkeyAction(
+                        ctrlDown,
+                        altDown,
+                        space != nullptr
                     );
+
+                switch (action)
+                {
+                    case F12HotkeyAction::CycleUiLanguage:
+                        cycleUiLanguage();
+                        consumedNavigationHotkey = true;
+                        break;
+
+                    case F12HotkeyAction::CycleSkyCulture:
+                        space->cycleSkyCulture();
+                        consumedNavigationHotkey = true;
+                        break;
+
+                    case F12HotkeyAction::ToggleConstellations:
+                        space->toggleConstellationOverlay();
+                        consumedNavigationHotkey = true;
+                        break;
+
+                    case F12HotkeyAction::NavigateLocal:
+                        requestNavigationLevel(
+                            PlayerNavigationMapLevel::Local,
+                            [&]() { space->setSystemMapPlayerLocalMode(); }
+                        );
+                        break;
+
+                    case F12HotkeyAction::None:
+                    default:
+                        break;
                 }
             }
 
@@ -450,8 +501,8 @@ void Application::mainLoop()
                         m_htmlUi.setActivePanel(HtmlUiPanelId::None);
 
                         m_gameWebView.setVisible(true);
-                        m_gameWebView.navigate(makeGameUiHttpUrl("loading.html"));
-                        m_gameWebView.evalScript("setLoadingProgress(0.10, 'OPENING LOADING SCREEN');");
+                        m_gameWebView.navigate(makeGameUiHttpUrl("loading.html", m_localization.locale()));
+                        m_gameWebView.evalScript("setLoadingProgress(0.10, 'loading.stage.opening', 'OPENING LOADING SCREEN');");
 
                         m_pendingNewGameLoad = true;
                         m_newGameLoadStartTime = glfwGetTime();
@@ -761,15 +812,15 @@ void Application::navigateGameUi(GameUiMode mode)
     switch (mode)
     {
         case GameUiMode::MainMenu:
-            m_gameWebView.navigate(makeGameUiHttpUrl("main_menu.html"));
+            m_gameWebView.navigate(makeGameUiHttpUrl("main_menu.html", m_localization.locale()));
             break;
 
         case GameUiMode::Loading:
-            m_gameWebView.navigate(makeGameUiHttpUrl("loading.html"));
+            m_gameWebView.navigate(makeGameUiHttpUrl("loading.html", m_localization.locale()));
             break;
 
         case GameUiMode::SystemMap:
-            m_gameWebView.navigate(makeGameUiHttpUrl("system_map_panel.html"));
+            m_gameWebView.navigate(makeGameUiHttpUrl("system_map_panel.html", m_localization.locale()));
             break;
 
         case GameUiMode::None:
@@ -898,6 +949,25 @@ void Application::evalGameUiScript(const std::string& script)
 
 
 
+void Application::cycleUiLanguage()
+{
+    const std::string locale = m_localization.cycleLocale();
+
+#ifdef _WIN32
+    // C++ owns the global locale. WebUI receives the same value and stores it
+    // only as a page-navigation convenience; it never owns gameplay state.
+    m_gameWebView.evalScript(
+        "localStorage.setItem('elite.ui.locale','" + locale + "');"
+        "if (window.GameI18n) window.GameI18n.setLocale('" + locale + "');"
+    );
+#endif
+
+    if (GameState* state = m_states.current())
+        state->onUiLanguageChanged();
+
+    std::cout << "[Localization] UI locale=" << locale << std::endl;
+}
+
 void Application::closeGameUi()
 {
     if (!m_gameUi.close())
@@ -960,7 +1030,7 @@ void Application::updatePendingNewGameLoad()
             return;
 
         m_gameWebView.evalScript(
-            "setLoadingProgress(0.25, 'PREPARING WORLD');"
+            "setLoadingProgress(0.25, 'loading.stage.world', 'PREPARING WORLD');"
         );
 
         stopGameSession();
@@ -989,7 +1059,7 @@ void Application::updatePendingNewGameLoad()
         sessionState == game::session::GameSessionState::Created)
     {
         m_gameWebView.evalScript(
-            "setLoadingProgress(0.55, 'SYNCHRONIZING SESSION');"
+            "setLoadingProgress(0.55, 'loading.stage.sync', 'SYNCHRONIZING SESSION');"
         );
         return;
     }
@@ -999,7 +1069,7 @@ void Application::updatePendingNewGameLoad()
         std::cerr << "[App] Session synchronization failed: "
                   << m_gameSession->error() << std::endl;
         m_gameWebView.evalScript(
-            "setLoadingProgress(1.00, 'SESSION FAILED');"
+            "setLoadingProgress(1.00, 'loading.stage.failed', 'SESSION FAILED');"
         );
         stopGameSession();
         m_pendingNewGameLoad = false;
@@ -1008,7 +1078,7 @@ void Application::updatePendingNewGameLoad()
     }
 
     m_gameWebView.evalScript(
-        "setLoadingProgress(0.80, 'APPLYING GAME STATE');"
+        "setLoadingProgress(0.80, 'loading.stage.apply', 'APPLYING GAME STATE');"
     );
 
     // Keep the loading/menu state alive while synchronization is pending.
@@ -1019,7 +1089,7 @@ void Application::updatePendingNewGameLoad()
     m_states.push(std::make_unique<SpaceState>(m_states));
     m_states.applyPendingChanges();
 
-    m_gameWebView.evalScript("setLoadingProgress(1.00, 'READY');");
+    m_gameWebView.evalScript("setLoadingProgress(1.00, 'loading.stage.ready', 'READY');");
 
     closeGameUi();
     m_gameUi.clearLoaded();

@@ -118,6 +118,19 @@ public:
         const glm::vec4& color
     );
 
+    float measureTextPx(
+        const std::string& text,
+        int pixelSize
+    );
+
+    void solidRectPx(
+        float x,
+        float y,
+        float width,
+        float height,
+        const glm::vec4& color
+    );
+
 private:
     TextRenderer() = default;
 
@@ -148,6 +161,7 @@ private:
     unsigned int m_vao    = 0;
     unsigned int m_vbo    = 0;
     unsigned int m_shader = 0;
+    unsigned int m_solidTexture = 0;
 
     bool  m_batchActive = false;
     float m_screenW = 1.0f;

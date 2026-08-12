@@ -6,6 +6,7 @@
 #include "render/Renderer.h"
 #include "render/RenderContext.h"
 #include "ui/html/HtmlUiManager.h"
+#include "game/localization/LocalizationService.h"
 #include <string>
 #include <memory>
 
@@ -41,7 +42,7 @@ public:
         return m_mode;
     }
 
-    
+
 
     GameUiMode loadedMode() const
     {
@@ -198,9 +199,13 @@ public:
 
     void run();
     Viewport viewport() const;
-    
+
     HtmlUiManager& htmlUi() { return m_htmlUi; }
     const HtmlUiManager& htmlUi() const { return m_htmlUi; }
+
+    game::localization::LocalizationService& localization() { return m_localization; }
+    const game::localization::LocalizationService& localization() const { return m_localization; }
+    void cycleUiLanguage();
 
     void updatePendingNewGameLoad();
     void openGameUi(GameUiMode mode);
@@ -226,7 +231,7 @@ private:
 private:
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
     void handleResize(int width, int height);
-    
+
     bool m_running;
     Renderer m_renderer;
     Window* m_window;
@@ -235,6 +240,7 @@ private:
     StateStack   m_states;
     RenderContext renderContext;
     HtmlUiManager m_htmlUi;
+    game::localization::LocalizationService m_localization;
 
     enum class NewGameLoadStage
     {
@@ -249,7 +255,7 @@ private:
     NewGameLoadStage m_newGameLoadStage = NewGameLoadStage::Idle;
 
     GameUiController m_gameUi;
-   
+
     #ifdef _WIN32
         GameWebView m_gameWebView;
     #endif

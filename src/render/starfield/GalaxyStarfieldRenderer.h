@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include <glad/gl.h>
@@ -8,6 +9,7 @@
 
 #include "src/render/starfield/MilkyWayRenderer.h"
 #include "src/render/starfield/ConstellationOverlayRenderer.h"
+#include "src/render/starfield/SkyCultureCatalog.h"
 
 class GalaxyStarfieldRenderer
 {
@@ -27,8 +29,9 @@ public:
         float visualMagnitudeFromSol = 6.0f;
         float absoluteMagnitude = 6.0f;
 
-        // Bright Star Catalogue number used by constellation topology.
+        // Catalog IDs used by switchable sky-culture topology.
         int brightStarCatalogId = -1;
+        int hipparcosCatalogId = -1;
 
         // True only for stars that came from real_star_catalog.json.
         // Runtime-only game-system proxies are kept for labels/debug, but
@@ -82,10 +85,37 @@ public:
         return m_constellationOverlayEnabled;
     }
 
+    bool cycleConstellationCulture();
+
+    std::string constellationCultureId() const;
+    std::string constellationCultureDisplayName(
+        const std::string& locale = "en"
+    ) const;
+
+    void setGameSystemDisplayNames(
+        const std::unordered_map<int, std::string>& names
+    );
+    SkyCultureCatalog::StarIdentifier constellationStarIdentifier() const
+    {
+        return m_constellationOverlayRenderer.starIdentifier();
+    }
+
     const std::vector<ConstellationOverlayRenderer::ConstellationDefinition>&
     getConstellationDefinitions() const
     {
         return m_constellationOverlayRenderer.definitions();
+    }
+
+    const std::vector<ConstellationOverlayRenderer::LabelAnchor>&
+    getConstellationLabelAnchors() const
+    {
+        return m_constellationOverlayRenderer.labelAnchors();
+    }
+
+    const std::vector<ConstellationOverlayRenderer::StarReference>&
+    getConstellationStarReferences() const
+    {
+        return m_constellationStarReferences;
     }
 
     void render(
@@ -143,6 +173,9 @@ private:
     bool loadAtlasStars(const std::string& galaxyDetailsRoot);
     bool mergeGameSystemsFromCatalog(const std::string& galaxyDetailsRoot);
     bool loadRealStarCatalog(const std::string& path);
+    bool loadConstellationSupportStars(const std::string& path);
+    bool loadSkyCultureCatalog(const std::string& path);
+    void applyActiveSkyCulture();
 
     void generateProceduralField();
 
@@ -190,6 +223,12 @@ private:
 
     bool m_constellationOverlayAvailable = true;
     bool m_constellationOverlayEnabled = false;
+    SkyCultureCatalog m_skyCultureCatalog;
+    std::size_t m_activeSkyCultureIndex = 0;
+    std::vector<ConstellationOverlayRenderer::StarReference>
+        m_constellationSupportStars;
+    std::vector<ConstellationOverlayRenderer::StarReference>
+        m_constellationStarReferences;
     ConstellationOverlayRenderer m_constellationOverlayRenderer;
     MilkyWayRenderer m_milkyWayRenderer;
 };

@@ -1,0 +1,1944 @@
+{
+  "version": 1,
+  "default_locale": "en",
+  "note": "Client-only display names keyed by stable catalog IDs. Server/protocol code must use IDs, never localized strings.",
+  "domains": {
+    "systems": {
+      "0": {
+        "en": "Sol",
+        "ru": "Солнечная система",
+        "zh-Hans": "太阳系",
+        "es": "Sistema Solar",
+        "ja": "太陽系"
+      },
+      "1": {
+        "en": "Alpha Centauri A+B",
+        "ru": "Альфа Центавра A+B",
+        "zh-Hans": "南门二 A+B",
+        "es": "Alfa Centauri A+B",
+        "ja": "アルファ・ケンタウリ A+B"
+      },
+      "2": {
+        "en": "Barnard's Star",
+        "ru": "Звезда Барнарда",
+        "zh-Hans": "巴纳德星",
+        "es": "Estrella de Barnard",
+        "ja": "バーナード星"
+      },
+      "3": {
+        "en": "Wolf 359"
+      },
+      "4": {
+        "en": "Lalande 21185"
+      },
+      "5": {
+        "en": "Sirius A+B",
+        "ru": "Сириус A+B",
+        "zh-Hans": "天狼星 A+B",
+        "es": "Sirio A+B",
+        "ja": "シリウス A+B"
+      },
+      "6": {
+        "en": "Luyten's Star"
+      },
+      "7": {
+        "en": "Kapteyn's Star"
+      },
+      "8": {
+        "en": "Tau Ceti",
+        "ru": "Тау Кита",
+        "zh-Hans": "天仓五",
+        "es": "Tau Ceti",
+        "ja": "くじら座タウ星"
+      },
+      "9": {
+        "en": "Epsilon Eridani"
+      },
+      "10": {
+        "en": "Gliese 581"
+      },
+      "11": {
+        "en": "Gliese 667 (A+B+C)"
+      },
+      "12": {
+        "en": "Gliese 832"
+      },
+      "13": {
+        "en": "Gliese 876"
+      },
+      "14": {
+        "en": "HD 20794 (82 G. Eridani)"
+      },
+      "15": {
+        "en": "HD 40307"
+      },
+      "16": {
+        "en": "HD 69830"
+      },
+      "17": {
+        "en": "TRAPPIST-1"
+      },
+      "19": {
+        "en": "HD 102194"
+      },
+      "20": {
+        "en": "HD 93083"
+      },
+      "21": {
+        "en": "GJ 1214"
+      },
+      "22": {
+        "en": "Delta Pavonis"
+      },
+      "23": {
+        "en": "Gliese 892"
+      },
+      "24": {
+        "en": "Gliese 436"
+      },
+      "25": {
+        "en": "Gliese 357"
+      },
+      "26": {
+        "en": "Teegarden's Star"
+      },
+      "27": {
+        "en": "Ross 128"
+      },
+      "28": {
+        "en": "YZ Ceti"
+      },
+      "29": {
+        "en": "Gliese 229"
+      },
+      "30": {
+        "en": "Epsilon Indi"
+      },
+      "31": {
+        "en": "61 Cygni",
+        "ru": "61 Лебедя",
+        "zh-Hans": "天鹅座61",
+        "es": "61 Cygni",
+        "ja": "はくちょう座61番星"
+      },
+      "32": {
+        "en": "Aldebaran"
+      },
+      "33": {
+        "en": "Hamal"
+      },
+      "34": {
+        "en": "Gamma Doradus"
+      },
+      "35": {
+        "en": "Tau Cygni"
+      },
+      "36": {
+        "en": "9 Ceti"
+      },
+      "37": {
+        "en": "HD 114783"
+      },
+      "38": {
+        "en": "Sigma² Ursae Majoris"
+      },
+      "39": {
+        "en": "HD 114613"
+      },
+      "40": {
+        "en": "HD 24496"
+      },
+      "41": {
+        "en": "HD 104067"
+      },
+      "42": {
+        "en": "17 Cygni"
+      },
+      "43": {
+        "en": "Theta Draconis"
+      },
+      "44": {
+        "en": "HD 33564"
+      },
+      "45": {
+        "en": "83 Leonis"
+      },
+      "46": {
+        "en": "GJ 3021"
+      },
+      "47": {
+        "en": "HD 154345"
+      },
+      "48": {
+        "en": "HD 102365"
+      },
+      "49": {
+        "en": "GJ 176"
+      },
+      "50": {
+        "en": "GJ 3293"
+      },
+      "51": {
+        "en": "GJ 433"
+      },
+      "52": {
+        "en": "Procyon A+B"
+      },
+      "53": {
+        "en": "Gliese 674"
+      },
+      "54": {
+        "en": "HD 85512"
+      },
+      "55": {
+        "en": "Gliese 163"
+      },
+      "56": {
+        "en": "Gliese 422"
+      },
+      "57": {
+        "en": "HD 10360"
+      },
+      "58": {
+        "en": "Gliese 514"
+      },
+      "59": {
+        "en": "Gliese 625"
+      },
+      "60": {
+        "en": "Proxima Centauri"
+      },
+      "100062": {
+        "en": "Kepler-62"
+      }
+    },
+    "bodies": {
+      "0:system_0.Sol": {
+        "en": "Sun",
+        "ru": "Солнце",
+        "zh-Hans": "太阳",
+        "es": "Sol",
+        "ja": "太陽"
+      },
+      "0:system_0.Sol.Венера": {
+        "en": "Venus",
+        "ru": "Венера",
+        "zh-Hans": "金星",
+        "es": "Venus",
+        "ja": "金星"
+      },
+      "0:system_0.Sol.Земля": {
+        "en": "Earth",
+        "ru": "Земля",
+        "zh-Hans": "地球",
+        "es": "Tierra",
+        "ja": "地球"
+      },
+      "0:system_0.Sol.Земля.Луна": {
+        "en": "Moon",
+        "ru": "Луна",
+        "zh-Hans": "月球",
+        "es": "Luna",
+        "ja": "月"
+      },
+      "0:system_0.Sol.Марс": {
+        "en": "Mars",
+        "ru": "Марс",
+        "zh-Hans": "火星",
+        "es": "Marte",
+        "ja": "火星"
+      },
+      "0:system_0.Sol.Марс.Деймос": {
+        "en": "Deimos"
+      },
+      "0:system_0.Sol.Марс.Фобос": {
+        "en": "Phobos"
+      },
+      "0:system_0.Sol.Меркурий": {
+        "en": "Mercury",
+        "ru": "Меркурий",
+        "zh-Hans": "水星",
+        "es": "Mercurio",
+        "ja": "水星"
+      },
+      "0:system_0.Sol.Нептун": {
+        "en": "Neptune",
+        "ru": "Нептун",
+        "zh-Hans": "海王星",
+        "es": "Neptuno",
+        "ja": "海王星"
+      },
+      "0:system_0.Sol.Нептун.Ларисса": {
+        "en": "Larissa"
+      },
+      "0:system_0.Sol.Нептун.Нереида": {
+        "en": "Nereid"
+      },
+      "0:system_0.Sol.Нептун.Протей": {
+        "en": "Proteus"
+      },
+      "0:system_0.Sol.Нептун.Тритон": {
+        "en": "Triton"
+      },
+      "0:system_0.Sol.Сатурн": {
+        "en": "Saturn",
+        "ru": "Сатурн",
+        "zh-Hans": "土星",
+        "es": "Saturno",
+        "ja": "土星"
+      },
+      "0:system_0.Sol.Сатурн.Диона": {
+        "en": "Dione"
+      },
+      "0:system_0.Sol.Сатурн.Мимас": {
+        "en": "Mimas"
+      },
+      "0:system_0.Sol.Сатурн.Рея": {
+        "en": "Rhea"
+      },
+      "0:system_0.Sol.Сатурн.Тетис": {
+        "en": "Tethys"
+      },
+      "0:system_0.Sol.Сатурн.Титан": {
+        "en": "Titan"
+      },
+      "0:system_0.Sol.Сатурн.Феба": {
+        "en": "Phoebe"
+      },
+      "0:system_0.Sol.Сатурн.Энцелад": {
+        "en": "Enceladus"
+      },
+      "0:system_0.Sol.Сатурн.Япет": {
+        "en": "Iapetus"
+      },
+      "0:system_0.Sol.Уран": {
+        "en": "Uranus",
+        "ru": "Уран",
+        "zh-Hans": "天王星",
+        "es": "Urano",
+        "ja": "天王星"
+      },
+      "0:system_0.Sol.Уран.Ариэль": {
+        "en": "Ariel"
+      },
+      "0:system_0.Sol.Уран.Миранда": {
+        "en": "Miranda"
+      },
+      "0:system_0.Sol.Уран.Оберон": {
+        "en": "Oberon"
+      },
+      "0:system_0.Sol.Уран.Титания": {
+        "en": "Titania"
+      },
+      "0:system_0.Sol.Уран.Умбриэль": {
+        "en": "Umbriel"
+      },
+      "0:system_0.Sol.Юпитер": {
+        "en": "Jupiter",
+        "ru": "Юпитер",
+        "zh-Hans": "木星",
+        "es": "Júpiter",
+        "ja": "木星"
+      },
+      "0:system_0.Sol.Юпитер.Амальтея": {
+        "en": "Amalthea"
+      },
+      "0:system_0.Sol.Юпитер.Ганимед": {
+        "en": "Ganymede"
+      },
+      "0:system_0.Sol.Юпитер.Гималия": {
+        "en": "Himalia"
+      },
+      "0:system_0.Sol.Юпитер.Европа": {
+        "en": "Europa"
+      },
+      "0:system_0.Sol.Юпитер.Ио": {
+        "en": "Io"
+      },
+      "0:system_0.Sol.Юпитер.Каллисто": {
+        "en": "Callisto"
+      },
+      "0:system_0.Sol.Юпитер.Пасифе": {
+        "en": "Pasiphae"
+      },
+      "0:system_0.Sol.Юпитер.Элара": {
+        "en": "Elara"
+      },
+      "0:system_0.barycenter.belt_0": {
+        "en": "Asteroid Belt"
+      },
+      "0:system_0.barycenter.belt_1": {
+        "en": "Kuiper Belt"
+      },
+      "1:system_1.Alpha_Centauri_A": {
+        "en": "Alpha Centauri A"
+      },
+      "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ab": {
+        "en": "Alpha Centauri Ab"
+      },
+      "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ac": {
+        "en": "Alpha Centauri Ac"
+      },
+      "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ac.Alpha_Centauri_Ac-I": {
+        "en": "Alpha Centauri Ac-I"
+      },
+      "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ad": {
+        "en": "Alpha Centauri Ad"
+      },
+      "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ad.Alpha_Centauri_Ad-I": {
+        "en": "Alpha Centauri Ad-I"
+      },
+      "1:system_1.Alpha_Centauri_A.belt_0": {
+        "en": "Alpha Centauri A+B Belt"
+      },
+      "1:system_1.Alpha_Centauri_B": {
+        "en": "Alpha Centauri B"
+      },
+      "1:system_1.Alpha_Centauri_B.Alpha_Centauri_Ba": {
+        "en": "Alpha Centauri Ba"
+      },
+      "1:system_1.Alpha_Centauri_B.Alpha_Centauri_Bb": {
+        "en": "Alpha Centauri Bb"
+      },
+      "1:system_1.barycenter.belt_0": {
+        "en": "Alpha Centauri Kuiper Belt"
+      },
+      "2:system_2.Barnard's_Star": {
+        "en": "Barnard's Star"
+      },
+      "2:system_2.Barnard's_Star.Barnard_b": {
+        "en": "Barnard b"
+      },
+      "2:system_2.Barnard's_Star.Barnard_c": {
+        "en": "Barnard c"
+      },
+      "2:system_2.Barnard's_Star.Barnard_c.Barnard_c-I": {
+        "en": "Barnard c-I"
+      },
+      "2:system_2.Barnard's_Star.Barnard_d": {
+        "en": "Barnard d"
+      },
+      "2:system_2.Barnard's_Star.Barnard_e": {
+        "en": "Barnard e"
+      },
+      "2:system_2.Barnard's_Star.Barnard_f": {
+        "en": "Barnard f"
+      },
+      "2:system_2.Barnard's_Star.Barnard_f.Barnard_f-I": {
+        "en": "Barnard f-I"
+      },
+      "2:system_2.Barnard's_Star.Barnard_g": {
+        "en": "Barnard g"
+      },
+      "2:system_2.Barnard's_Star.Barnard_g.Barnard_g-I": {
+        "en": "Barnard g-I"
+      },
+      "2:system_2.barycenter.belt_0": {
+        "en": "Barnard's Star Belt"
+      },
+      "2:system_2.barycenter.belt_1": {
+        "en": "Barnard's Star Kuiper Belt"
+      },
+      "3:system_3.Wolf_359": {
+        "en": "Wolf 359"
+      },
+      "3:system_3.Wolf_359.belt_0": {
+        "en": "Wolf 359 Belt"
+      },
+      "3:system_3.barycenter.belt_0": {
+        "en": "Wolf 359 Belt"
+      },
+      "3:system_3.barycenter.belt_1": {
+        "en": "Wolf 359 Kuiper Belt"
+      },
+      "4:system_4.Lalande_21185": {
+        "en": "Lalande 21185"
+      },
+      "4:system_4.Lalande_21185.Lalande_b": {
+        "en": "Lalande b"
+      },
+      "4:system_4.Lalande_21185.Lalande_b.Lalande_b-I": {
+        "en": "Lalande b-I"
+      },
+      "4:system_4.Lalande_21185.Lalande_c": {
+        "en": "Lalande c"
+      },
+      "4:system_4.Lalande_21185.Lalande_d": {
+        "en": "Lalande d"
+      },
+      "4:system_4.Lalande_21185.Lalande_e": {
+        "en": "Lalande e"
+      },
+      "4:system_4.Lalande_21185.Lalande_e.Lalande_e-I": {
+        "en": "Lalande e-I"
+      },
+      "4:system_4.Lalande_21185.Lalande_e.Lalande_e-II": {
+        "en": "Lalande e-II"
+      },
+      "4:system_4.barycenter.belt_0": {
+        "en": "Lalande 21185 Belt"
+      },
+      "4:system_4.barycenter.belt_1": {
+        "en": "Lalande 21185 Kuiper Belt"
+      },
+      "5:system_5.Sirius_A": {
+        "en": "Sirius A"
+      },
+      "5:system_5.Sirius_A.belt_0": {
+        "en": "Sirius A+B Belt"
+      },
+      "5:system_5.Sirius_B": {
+        "en": "Sirius B"
+      },
+      "5:system_5.Sirius_B.belt_0": {
+        "en": "Sirius A+B Belt"
+      },
+      "5:system_5.barycenter.belt_0": {
+        "en": "Sirius Kuiper Belt"
+      },
+      "6:system_6.Luyten's_Star": {
+        "en": "Luyten's Star"
+      },
+      "6:system_6.Luyten's_Star.Luyten_b": {
+        "en": "Luyten b"
+      },
+      "6:system_6.Luyten's_Star.Luyten_b.Luyten_b-I": {
+        "en": "Luyten b-I"
+      },
+      "6:system_6.Luyten's_Star.Luyten_c": {
+        "en": "Luyten c"
+      },
+      "6:system_6.Luyten's_Star.Luyten_d": {
+        "en": "Luyten d"
+      },
+      "6:system_6.Luyten's_Star.Luyten_e": {
+        "en": "Luyten e"
+      },
+      "6:system_6.Luyten's_Star.Luyten_e.Luyten_e-I": {
+        "en": "Luyten e-I"
+      },
+      "6:system_6.Luyten's_Star.Luyten_e.Luyten_e-II": {
+        "en": "Luyten e-II"
+      },
+      "6:system_6.barycenter.belt_0": {
+        "en": "Luyten's Star Belt"
+      },
+      "6:system_6.barycenter.belt_1": {
+        "en": "Luyten's Star Kuiper Belt"
+      },
+      "7:system_7.Kapteyn's_Star": {
+        "en": "Kapteyn's Star"
+      },
+      "7:system_7.Kapteyn's_Star.Kapteyn_b": {
+        "en": "Kapteyn b"
+      },
+      "7:system_7.Kapteyn's_Star.Kapteyn_c": {
+        "en": "Kapteyn c"
+      },
+      "7:system_7.Kapteyn's_Star.Kapteyn_d": {
+        "en": "Kapteyn d"
+      },
+      "7:system_7.Kapteyn's_Star.Kapteyn_d.Kapteyn_d-I": {
+        "en": "Kapteyn d-I"
+      },
+      "7:system_7.barycenter.belt_0": {
+        "en": "Kapteyn's Star Belt"
+      },
+      "7:system_7.barycenter.belt_1": {
+        "en": "Kapteyn's Star Kuiper Belt"
+      },
+      "8:system_8.Tau_Ceti": {
+        "en": "Tau Ceti",
+        "ru": "Тау Кита",
+        "zh-Hans": "天仓五",
+        "es": "Tau Ceti",
+        "ja": "くじら座タウ星"
+      },
+      "8:system_8.Tau_Ceti.Tau_Ceti_e": {
+        "en": "Tau Ceti e"
+      },
+      "8:system_8.Tau_Ceti.Tau_Ceti_e.Tau_Ceti_e-I": {
+        "en": "Tau Ceti e-I"
+      },
+      "8:system_8.Tau_Ceti.Tau_Ceti_e.Tau_Ceti_e-II": {
+        "en": "Tau Ceti e-II"
+      },
+      "8:system_8.Tau_Ceti.Tau_Ceti_f": {
+        "en": "Tau Ceti f"
+      },
+      "8:system_8.Tau_Ceti.Tau_Ceti_g": {
+        "en": "Tau Ceti g"
+      },
+      "8:system_8.Tau_Ceti.Tau_Ceti_h": {
+        "en": "Tau Ceti h"
+      },
+      "8:system_8.Tau_Ceti.Tau_Ceti_i": {
+        "en": "Tau Ceti i"
+      },
+      "8:system_8.Tau_Ceti.Tau_Ceti_i.Tau_Ceti_i-I": {
+        "en": "Tau Ceti i-I"
+      },
+      "8:system_8.Tau_Ceti.Tau_Ceti_i.Tau_Ceti_i-II": {
+        "en": "Tau Ceti i-II"
+      },
+      "8:system_8.barycenter.belt_0": {
+        "en": "Tau Ceti Belt"
+      },
+      "8:system_8.barycenter.belt_1": {
+        "en": "Tau Ceti Kuiper Belt"
+      },
+      "9:system_9.Epsilon_Eridani": {
+        "en": "Epsilon Eridani"
+      },
+      "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b": {
+        "en": "Epsilon Eridani b"
+      },
+      "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b.Epsilon_Eridani_b-I": {
+        "en": "Epsilon Eridani b-I"
+      },
+      "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b.Epsilon_Eridani_b-II": {
+        "en": "Epsilon Eridani b-II"
+      },
+      "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b.Epsilon_Eridani_b-III": {
+        "en": "Epsilon Eridani b-III"
+      },
+      "9:system_9.Epsilon_Eridani.Epsilon_Eridani_c": {
+        "en": "Epsilon Eridani c"
+      },
+      "9:system_9.barycenter.belt_0": {
+        "en": "Epsilon Eridani Belt"
+      },
+      "9:system_9.barycenter.belt_1": {
+        "en": "Epsilon Eridani Kuiper Belt"
+      },
+      "10:system_10.Gliese_581": {
+        "en": "Gliese 581"
+      },
+      "10:system_10.Gliese_581.Gliese_581_b": {
+        "en": "Gliese 581 b"
+      },
+      "10:system_10.Gliese_581.Gliese_581_c": {
+        "en": "Gliese 581 c"
+      },
+      "10:system_10.Gliese_581.Gliese_581_d": {
+        "en": "Gliese 581 d"
+      },
+      "10:system_10.Gliese_581.Gliese_581_d.Gliese_581_d-I": {
+        "en": "Gliese 581 d-I"
+      },
+      "10:system_10.Gliese_581.Gliese_581_e": {
+        "en": "Gliese 581 e"
+      },
+      "10:system_10.Gliese_581.Gliese_581_g": {
+        "en": "Gliese 581 g"
+      },
+      "10:system_10.barycenter.belt_0": {
+        "en": "Gliese 581 Belt"
+      },
+      "10:system_10.barycenter.belt_1": {
+        "en": "Gliese 581 Kuiper Belt"
+      },
+      "11:system_11.Gliese_667_A": {
+        "en": "Gliese 667 A"
+      },
+      "11:system_11.Gliese_667_B": {
+        "en": "Gliese 667 B"
+      },
+      "11:system_11.Gliese_667_C": {
+        "en": "Gliese 667 C"
+      },
+      "11:system_11.Gliese_667_C.GJ_667_Cb": {
+        "en": "GJ 667 Cb"
+      },
+      "11:system_11.Gliese_667_C.GJ_667_Cc": {
+        "en": "GJ 667 Cc"
+      },
+      "11:system_11.Gliese_667_C.GJ_667_Cc.GJ_667_Cc-I": {
+        "en": "GJ 667 Cc-I"
+      },
+      "11:system_11.Gliese_667_C.GJ_667_Cd": {
+        "en": "GJ 667 Cd"
+      },
+      "11:system_11.Gliese_667_C.GJ_667_Ce": {
+        "en": "GJ 667 Ce"
+      },
+      "11:system_11.Gliese_667_C.GJ_667_Cf": {
+        "en": "GJ 667 Cf"
+      },
+      "11:system_11.Gliese_667_C.GJ_667_Cg": {
+        "en": "GJ 667 Cg"
+      },
+      "11:system_11.Gliese_667_C.GJ_667_Cg.GJ_667_Cg-I": {
+        "en": "GJ 667 Cg-I"
+      },
+      "11:system_11.barycenter.belt_0": {
+        "en": "Gliese 667 (A+B+C) Belt"
+      },
+      "11:system_11.barycenter.belt_1": {
+        "en": "Gliese 667 (A+B+C) Kuiper Belt"
+      },
+      "12:system_12.Gliese_832": {
+        "en": "Gliese 832"
+      },
+      "12:system_12.Gliese_832.Gliese_832_b": {
+        "en": "Gliese 832 b"
+      },
+      "12:system_12.Gliese_832.Gliese_832_b.Gliese_832_b-I": {
+        "en": "Gliese 832 b-I"
+      },
+      "12:system_12.Gliese_832.Gliese_832_b.Gliese_832_b-II": {
+        "en": "Gliese 832 b-II"
+      },
+      "12:system_12.Gliese_832.Gliese_832_b.Gliese_832_b-III": {
+        "en": "Gliese 832 b-III"
+      },
+      "12:system_12.Gliese_832.Gliese_832_b.Gliese_832_b-IV": {
+        "en": "Gliese 832 b-IV"
+      },
+      "12:system_12.Gliese_832.Gliese_832_c": {
+        "en": "Gliese 832 c"
+      },
+      "12:system_12.Gliese_832.Gliese_832_c.Gliese_832_c-I": {
+        "en": "Gliese 832 c-I"
+      },
+      "12:system_12.Gliese_832.Gliese_832_d": {
+        "en": "Gliese 832 d"
+      },
+      "12:system_12.Gliese_832.Gliese_832_e": {
+        "en": "Gliese 832 e"
+      },
+      "12:system_12.Gliese_832.Gliese_832_e.Gliese_832_e-I": {
+        "en": "Gliese 832 e-I"
+      },
+      "12:system_12.barycenter.belt_0": {
+        "en": "Inner Gliese 832 Belt"
+      },
+      "12:system_12.barycenter.belt_1": {
+        "en": "Outer Gliese 832 Belt"
+      },
+      "13:system_13.Gliese_876": {
+        "en": "Gliese 876"
+      },
+      "13:system_13.Gliese_876.Gliese_876_b": {
+        "en": "Gliese 876 b"
+      },
+      "13:system_13.Gliese_876.Gliese_876_b.Gliese_876_b-I": {
+        "en": "Gliese 876 b-I"
+      },
+      "13:system_13.Gliese_876.Gliese_876_b.Gliese_876_b-II": {
+        "en": "Gliese 876 b-II"
+      },
+      "13:system_13.Gliese_876.Gliese_876_c": {
+        "en": "Gliese 876 c"
+      },
+      "13:system_13.Gliese_876.Gliese_876_d": {
+        "en": "Gliese 876 d"
+      },
+      "13:system_13.Gliese_876.Gliese_876_e": {
+        "en": "Gliese 876 e"
+      },
+      "13:system_13.Gliese_876.Gliese_876_e.Gliese_876_e-I": {
+        "en": "Gliese 876 e-I"
+      },
+      "13:system_13.Gliese_876.Gliese_876_f": {
+        "en": "Gliese 876 f"
+      },
+      "13:system_13.barycenter.belt_0": {
+        "en": "Gliese 876 Belt"
+      },
+      "13:system_13.barycenter.belt_1": {
+        "en": "Gliese 876 Kuiper Belt"
+      },
+      "14:system_14.HD_20794": {
+        "en": "HD 20794"
+      },
+      "14:system_14.HD_20794.HD_20794_b": {
+        "en": "HD 20794 b"
+      },
+      "14:system_14.HD_20794.HD_20794_c": {
+        "en": "HD 20794 c"
+      },
+      "14:system_14.HD_20794.HD_20794_c.HD_20794_c-I": {
+        "en": "HD 20794 c-I"
+      },
+      "14:system_14.HD_20794.HD_20794_d": {
+        "en": "HD 20794 d"
+      },
+      "14:system_14.HD_20794.HD_20794_d.HD_20794_d-I": {
+        "en": "HD 20794 d-I"
+      },
+      "14:system_14.HD_20794.HD_20794_e": {
+        "en": "HD 20794 e"
+      },
+      "14:system_14.HD_20794.HD_20794_f": {
+        "en": "HD 20794 f"
+      },
+      "14:system_14.HD_20794.HD_20794_f.HD_20794_f-I": {
+        "en": "HD 20794 f-I"
+      },
+      "14:system_14.barycenter.belt_0": {
+        "en": "HD 20794 (82 G. Eridani) Belt"
+      },
+      "14:system_14.barycenter.belt_1": {
+        "en": "HD 20794 (82 G. Eridani) Kuiper Belt"
+      },
+      "15:system_15.HD_40307": {
+        "en": "HD 40307"
+      },
+      "15:system_15.HD_40307.HD_40307_b": {
+        "en": "HD 40307 b"
+      },
+      "15:system_15.HD_40307.HD_40307_c": {
+        "en": "HD 40307 c"
+      },
+      "15:system_15.HD_40307.HD_40307_d": {
+        "en": "HD 40307 d"
+      },
+      "15:system_15.HD_40307.HD_40307_e": {
+        "en": "HD 40307 e"
+      },
+      "15:system_15.HD_40307.HD_40307_f": {
+        "en": "HD 40307 f"
+      },
+      "15:system_15.HD_40307.HD_40307_g": {
+        "en": "HD 40307 g"
+      },
+      "15:system_15.HD_40307.HD_40307_g.HD_40307_g-I": {
+        "en": "HD 40307 g-I"
+      },
+      "15:system_15.HD_40307.HD_40307_g.HD_40307_g-II": {
+        "en": "HD 40307 g-II"
+      },
+      "15:system_15.HD_40307.HD_40307_h": {
+        "en": "HD 40307 h"
+      },
+      "15:system_15.HD_40307.HD_40307_h.HD_40307_h-I": {
+        "en": "HD 40307 h-I"
+      },
+      "15:system_15.barycenter.belt_0": {
+        "en": "HD 40307 Belt"
+      },
+      "15:system_15.barycenter.belt_1": {
+        "en": "HD 40307 Kuiper Belt"
+      },
+      "16:system_16.HD_69830": {
+        "en": "HD 69830"
+      },
+      "16:system_16.HD_69830.HD_69830_b": {
+        "en": "HD 69830 b"
+      },
+      "16:system_16.HD_69830.HD_69830_c": {
+        "en": "HD 69830 c"
+      },
+      "16:system_16.HD_69830.HD_69830_c.HD_69830_c-I": {
+        "en": "HD 69830 c-I"
+      },
+      "16:system_16.HD_69830.HD_69830_d": {
+        "en": "HD 69830 d"
+      },
+      "16:system_16.HD_69830.HD_69830_e": {
+        "en": "HD 69830 e"
+      },
+      "16:system_16.HD_69830.HD_69830_f": {
+        "en": "HD 69830 f"
+      },
+      "16:system_16.HD_69830.HD_69830_f.HD_69830_f-I": {
+        "en": "HD 69830 f-I"
+      },
+      "16:system_16.barycenter.belt_0": {
+        "en": "HD 69830 Belt"
+      },
+      "16:system_16.barycenter.belt_1": {
+        "en": "HD 69830 Kuiper Belt"
+      },
+      "17:system_17.TRAPPIST-1": {
+        "en": "TRAPPIST-1"
+      },
+      "17:system_17.TRAPPIST-1.TRAPPIST-1_b": {
+        "en": "TRAPPIST-1 b"
+      },
+      "17:system_17.TRAPPIST-1.TRAPPIST-1_c": {
+        "en": "TRAPPIST-1 c"
+      },
+      "17:system_17.TRAPPIST-1.TRAPPIST-1_d": {
+        "en": "TRAPPIST-1 d"
+      },
+      "17:system_17.TRAPPIST-1.TRAPPIST-1_e": {
+        "en": "TRAPPIST-1 e"
+      },
+      "17:system_17.TRAPPIST-1.TRAPPIST-1_f": {
+        "en": "TRAPPIST-1 f"
+      },
+      "17:system_17.TRAPPIST-1.TRAPPIST-1_g": {
+        "en": "TRAPPIST-1 g"
+      },
+      "17:system_17.TRAPPIST-1.TRAPPIST-1_h": {
+        "en": "TRAPPIST-1 h"
+      },
+      "17:system_17.barycenter.belt_0": {
+        "en": "TRAPPIST-1 Belt"
+      },
+      "17:system_17.barycenter.belt_1": {
+        "en": "TRAPPIST-1 Kuiper Belt"
+      },
+      "19:system_19.HD_102194": {
+        "en": "HD 102194"
+      },
+      "19:system_19.HD_102194.HD_102194_b": {
+        "en": "HD 102194 b"
+      },
+      "19:system_19.HD_102194.HD_102194_c": {
+        "en": "HD 102194 c"
+      },
+      "19:system_19.HD_102194.HD_102194_d": {
+        "en": "HD 102194 d"
+      },
+      "19:system_19.HD_102194.HD_102194_d.HD_102194_d-I": {
+        "en": "HD 102194 d-I"
+      },
+      "19:system_19.HD_102194.HD_102194_d.HD_102194_d-II": {
+        "en": "HD 102194 d-II"
+      },
+      "19:system_19.barycenter.belt_0": {
+        "en": "HD 102194 Belt"
+      },
+      "19:system_19.barycenter.belt_1": {
+        "en": "HD 102194 Kuiper Belt"
+      },
+      "20:system_20.HD_93083": {
+        "en": "HD 93083"
+      },
+      "20:system_20.HD_93083.GJ_1137_c": {
+        "en": "GJ 1137 c"
+      },
+      "20:system_20.HD_93083.HD_93083_b": {
+        "en": "HD 93083 b"
+      },
+      "21:system_21.GJ_1214": {
+        "en": "GJ 1214"
+      },
+      "21:system_21.GJ_1214.GJ_1214_b": {
+        "en": "GJ 1214 b"
+      },
+      "21:system_21.GJ_1214.GJ_1214_c": {
+        "en": "GJ 1214 c"
+      },
+      "21:system_21.GJ_1214.GJ_1214_d": {
+        "en": "GJ 1214 d"
+      },
+      "21:system_21.GJ_1214.GJ_1214_d.GJ_1214_d-I": {
+        "en": "GJ 1214 d-I"
+      },
+      "21:system_21.barycenter.belt_0": {
+        "en": "GJ 1214 Belt"
+      },
+      "21:system_21.barycenter.belt_1": {
+        "en": "GJ 1214 Kuiper Belt"
+      },
+      "22:system_22.Delta_Pavonis": {
+        "en": "Delta Pavonis"
+      },
+      "22:system_22.Delta_Pavonis.Delta_Pavonis_b": {
+        "en": "Delta Pavonis b"
+      },
+      "22:system_22.Delta_Pavonis.Delta_Pavonis_c": {
+        "en": "Delta Pavonis c"
+      },
+      "22:system_22.Delta_Pavonis.Delta_Pavonis_d": {
+        "en": "Delta Pavonis d"
+      },
+      "22:system_22.Delta_Pavonis.Delta_Pavonis_d.Delta_Pavonis_d-I": {
+        "en": "Delta Pavonis d-I"
+      },
+      "22:system_22.barycenter.belt_0": {
+        "en": "Delta Pavonis Belt"
+      },
+      "22:system_22.barycenter.belt_1": {
+        "en": "Delta Pavonis Kuiper Belt"
+      },
+      "23:system_23.Gliese_892": {
+        "en": "Gliese 892"
+      },
+      "23:system_23.Gliese_892.Gliese_892_b": {
+        "en": "Gliese 892 b"
+      },
+      "23:system_23.Gliese_892.Gliese_892_c": {
+        "en": "Gliese 892 c"
+      },
+      "23:system_23.Gliese_892.Gliese_892_d": {
+        "en": "Gliese 892 d"
+      },
+      "23:system_23.Gliese_892.Gliese_892_d.Gliese_892_d-I": {
+        "en": "Gliese 892 d-I"
+      },
+      "23:system_23.barycenter.belt_0": {
+        "en": "Gliese 892 Belt"
+      },
+      "23:system_23.barycenter.belt_1": {
+        "en": "Gliese 892 Kuiper Belt"
+      },
+      "24:system_24.Gliese_436": {
+        "en": "Gliese 436"
+      },
+      "24:system_24.Gliese_436.GJ_436_b": {
+        "en": "GJ 436 b"
+      },
+      "24:system_24.Gliese_436.GJ_436_c": {
+        "en": "GJ 436 c"
+      },
+      "24:system_24.Gliese_436.GJ_436_d": {
+        "en": "GJ 436 d"
+      },
+      "24:system_24.Gliese_436.GJ_436_d.GJ_436_d-I": {
+        "en": "GJ 436 d-I"
+      },
+      "24:system_24.barycenter.belt_0": {
+        "en": "Gliese 436 Belt"
+      },
+      "24:system_24.barycenter.belt_1": {
+        "en": "Gliese 436 Kuiper Belt"
+      },
+      "25:system_25.Gliese_357": {
+        "en": "Gliese 357"
+      },
+      "25:system_25.Gliese_357.GJ_357_b": {
+        "en": "GJ 357 b"
+      },
+      "25:system_25.Gliese_357.GJ_357_c": {
+        "en": "GJ 357 c"
+      },
+      "25:system_25.Gliese_357.GJ_357_d": {
+        "en": "GJ 357 d"
+      },
+      "25:system_25.Gliese_357.GJ_357_d.GJ_357_d-I": {
+        "en": "GJ 357 d-I"
+      },
+      "25:system_25.Gliese_357.GJ_357_e": {
+        "en": "GJ 357 e"
+      },
+      "25:system_25.Gliese_357.GJ_357_f": {
+        "en": "GJ 357 f"
+      },
+      "25:system_25.Gliese_357.GJ_357_f.GJ_357_f-I": {
+        "en": "GJ 357 f-I"
+      },
+      "25:system_25.barycenter.belt_0": {
+        "en": "Gliese 357 Belt"
+      },
+      "25:system_25.barycenter.belt_1": {
+        "en": "Gliese 357 Kuiper Belt"
+      },
+      "26:system_26.Teegarden's_Star": {
+        "en": "Teegarden's Star"
+      },
+      "26:system_26.Teegarden's_Star.Teegarden_b": {
+        "en": "Teegarden b"
+      },
+      "26:system_26.Teegarden's_Star.Teegarden_b.Teegarden_b-I": {
+        "en": "Teegarden b-I"
+      },
+      "26:system_26.Teegarden's_Star.Teegarden_c": {
+        "en": "Teegarden c"
+      },
+      "26:system_26.Teegarden's_Star.Teegarden_d": {
+        "en": "Teegarden d"
+      },
+      "26:system_26.Teegarden's_Star.Teegarden_e": {
+        "en": "Teegarden e"
+      },
+      "26:system_26.Teegarden's_Star.Teegarden_e.Teegarden_e-I": {
+        "en": "Teegarden e-I"
+      },
+      "26:system_26.barycenter.belt_0": {
+        "en": "Teegarden's Star Belt"
+      },
+      "26:system_26.barycenter.belt_1": {
+        "en": "Teegarden's Star Kuiper Belt"
+      },
+      "27:system_27.Ross_128": {
+        "en": "Ross 128"
+      },
+      "27:system_27.Ross_128.Ross_128_b": {
+        "en": "Ross 128 b"
+      },
+      "27:system_27.Ross_128.Ross_128_b.Ross_128_b-I": {
+        "en": "Ross 128 b-I"
+      },
+      "27:system_27.Ross_128.Ross_128_c": {
+        "en": "Ross 128 c"
+      },
+      "27:system_27.Ross_128.Ross_128_d": {
+        "en": "Ross 128 d"
+      },
+      "27:system_27.Ross_128.Ross_128_e": {
+        "en": "Ross 128 e"
+      },
+      "27:system_27.Ross_128.Ross_128_e.Ross_128_e-I": {
+        "en": "Ross 128 e-I"
+      },
+      "27:system_27.barycenter.belt_0": {
+        "en": "Ross 128 Belt"
+      },
+      "27:system_27.barycenter.belt_1": {
+        "en": "Ross 128 Kuiper Belt"
+      },
+      "28:system_28.YZ_Ceti": {
+        "en": "YZ Ceti"
+      },
+      "28:system_28.YZ_Ceti.YZ_Ceti_b": {
+        "en": "YZ Ceti b"
+      },
+      "28:system_28.YZ_Ceti.YZ_Ceti_c": {
+        "en": "YZ Ceti c"
+      },
+      "28:system_28.YZ_Ceti.YZ_Ceti_d": {
+        "en": "YZ Ceti d"
+      },
+      "28:system_28.YZ_Ceti.YZ_Ceti_d.YZ_Ceti_d-I": {
+        "en": "YZ Ceti d-I"
+      },
+      "28:system_28.YZ_Ceti.YZ_Ceti_e": {
+        "en": "YZ Ceti e"
+      },
+      "28:system_28.YZ_Ceti.YZ_Ceti_f": {
+        "en": "YZ Ceti f"
+      },
+      "28:system_28.YZ_Ceti.YZ_Ceti_f.YZ_Ceti_f-I": {
+        "en": "YZ Ceti f-I"
+      },
+      "28:system_28.barycenter.belt_0": {
+        "en": "YZ Ceti Belt"
+      },
+      "28:system_28.barycenter.belt_1": {
+        "en": "YZ Ceti Kuiper Belt"
+      },
+      "29:system_29.Gliese_229_A": {
+        "en": "Gliese 229 A"
+      },
+      "29:system_29.Gliese_229_A.Gliese_229_Ab": {
+        "en": "Gliese 229 Ab"
+      },
+      "29:system_29.Gliese_229_A.Gliese_229_Ac": {
+        "en": "Gliese 229 Ac"
+      },
+      "29:system_29.Gliese_229_A.Gliese_229_Ac.Gliese_229_Ac-I": {
+        "en": "Gliese 229 Ac-I"
+      },
+      "29:system_29.Gliese_229_A.Gliese_229_Ad": {
+        "en": "Gliese 229 Ad"
+      },
+      "29:system_29.Gliese_229_A.Gliese_229_Ae": {
+        "en": "Gliese 229 Ae"
+      },
+      "29:system_29.Gliese_229_A.Gliese_229_Ae.Gliese_229_Ae-I": {
+        "en": "Gliese 229 Ae-I"
+      },
+      "29:system_29.Gliese_229_B": {
+        "en": "Gliese 229 B"
+      },
+      "29:system_29.barycenter.belt_0": {
+        "en": "Gliese 229 Belt"
+      },
+      "29:system_29.barycenter.belt_1": {
+        "en": "Gliese 229 Kuiper Belt"
+      },
+      "30:system_30.Epsilon_Indi_A": {
+        "en": "Epsilon Indi A"
+      },
+      "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ab": {
+        "en": "Epsilon Indi Ab"
+      },
+      "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ab.Epsilon_Indi_Ab-I": {
+        "en": "Epsilon Indi Ab-I"
+      },
+      "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ab.Epsilon_Indi_Ab-II": {
+        "en": "Epsilon Indi Ab-II"
+      },
+      "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ac": {
+        "en": "Epsilon Indi Ac"
+      },
+      "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ad": {
+        "en": "Epsilon Indi Ad"
+      },
+      "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ad.Epsilon_Indi_Ad-I": {
+        "en": "Epsilon Indi Ad-I"
+      },
+      "30:system_30.Epsilon_Indi_Ba": {
+        "en": "Epsilon Indi Ba"
+      },
+      "30:system_30.Epsilon_Indi_Bb": {
+        "en": "Epsilon Indi Bb"
+      },
+      "30:system_30.barycenter.belt_0": {
+        "en": "Epsilon Indi Belt"
+      },
+      "30:system_30.barycenter.belt_1": {
+        "en": "Epsilon Indi Kuiper Belt"
+      },
+      "31:system_31.61_Cygni_A": {
+        "en": "61 Cygni A",
+        "zh-Hans": "天鹅座61 A",
+        "ja": "はくちょう座61番星 A",
+        "ru": "61 Лебедя A"
+      },
+      "31:system_31.61_Cygni_A.61_Cygni_Ab": {
+        "en": "61 Cygni Ab",
+        "zh-Hans": "天鹅座61 Ab",
+        "ja": "はくちょう座61番星 Ab",
+        "ru": "61 Лебедя Ab"
+      },
+      "31:system_31.61_Cygni_A.61_Cygni_Ac": {
+        "en": "61 Cygni Ac",
+        "zh-Hans": "天鹅座61 Ac",
+        "ja": "はくちょう座61番星 Ac",
+        "ru": "61 Лебедя Ac"
+      },
+      "31:system_31.61_Cygni_A.61_Cygni_Ad": {
+        "en": "61 Cygni Ad",
+        "zh-Hans": "天鹅座61 Ad",
+        "ja": "はくちょう座61番星 Ad",
+        "ru": "61 Лебедя Ad"
+      },
+      "31:system_31.61_Cygni_A.61_Cygni_Ad.61_Cygni_Ad-I": {
+        "en": "61 Cygni Ad-I",
+        "zh-Hans": "天鹅座61 Ad-I",
+        "ja": "はくちょう座61番星 Ad-I",
+        "ru": "61 Лебедя Ad-I"
+      },
+      "31:system_31.61_Cygni_B": {
+        "en": "61 Cygni B",
+        "zh-Hans": "天鹅座61 B",
+        "ja": "はくちょう座61番星 B",
+        "ru": "61 Лебедя B"
+      },
+      "31:system_31.61_Cygni_B.61_Cygni_Ba": {
+        "en": "61 Cygni Ba",
+        "zh-Hans": "天鹅座61 Ba",
+        "ja": "はくちょう座61番星 Ba",
+        "ru": "61 Лебедя Ba"
+      },
+      "31:system_31.61_Cygni_B.61_Cygni_Bb": {
+        "en": "61 Cygni Bb",
+        "zh-Hans": "天鹅座61 Bb",
+        "ja": "はくちょう座61番星 Bb",
+        "ru": "61 Лебедя Bb"
+      },
+      "31:system_31.barycenter.belt_0": {
+        "en": "61 Cygni Belt",
+        "zh-Hans": "天鹅座61 Belt",
+        "ja": "はくちょう座61番星 Belt",
+        "ru": "61 Лебедя Belt"
+      },
+      "31:system_31.barycenter.belt_1": {
+        "en": "61 Cygni Kuiper Belt",
+        "zh-Hans": "天鹅座61 Kuiper Belt",
+        "ja": "はくちょう座61番星 Kuiper Belt",
+        "ru": "61 Лебедя Kuiper Belt"
+      },
+      "32:system_32.Aldebaran": {
+        "en": "Aldebaran"
+      },
+      "32:system_32.Aldebaran.Aldebaran_b": {
+        "en": "Aldebaran b"
+      },
+      "32:system_32.Aldebaran.Aldebaran_c": {
+        "en": "Aldebaran c"
+      },
+      "32:system_32.Aldebaran.Aldebaran_c.Aldebaran_c-I": {
+        "en": "Aldebaran c-I"
+      },
+      "32:system_32.barycenter.belt_0": {
+        "en": "Aldebaran Belt"
+      },
+      "32:system_32.barycenter.belt_1": {
+        "en": "Aldebaran Kuiper Belt"
+      },
+      "33:system_33.Hamal": {
+        "en": "Hamal"
+      },
+      "33:system_33.Hamal.Hamal_b": {
+        "en": "Hamal b"
+      },
+      "33:system_33.Hamal.Hamal_b.Hamal_b-I": {
+        "en": "Hamal b-I"
+      },
+      "33:system_33.Hamal.Hamal_c": {
+        "en": "Hamal c"
+      },
+      "33:system_33.Hamal.Hamal_c.Hamal_c-I": {
+        "en": "Hamal c-I"
+      },
+      "33:system_33.barycenter.belt_0": {
+        "en": "Hamal Belt"
+      },
+      "33:system_33.barycenter.belt_1": {
+        "en": "Hamal Kuiper Belt"
+      },
+      "34:system_34.Gamma_Doradus": {
+        "en": "Gamma Doradus"
+      },
+      "34:system_34.barycenter.belt_0": {
+        "en": "Gamma Doradus Belt"
+      },
+      "34:system_34.barycenter.belt_1": {
+        "en": "Gamma Doradus Kuiper Belt"
+      },
+      "35:system_35.Tau_Cygni_A": {
+        "en": "Tau Cygni A"
+      },
+      "35:system_35.Tau_Cygni_A.Tau_Cygni_Ab": {
+        "en": "Tau Cygni Ab"
+      },
+      "35:system_35.Tau_Cygni_A.Tau_Cygni_Ac": {
+        "en": "Tau Cygni Ac"
+      },
+      "35:system_35.Tau_Cygni_A.Tau_Cygni_Ac.Tau_Cygni_Ac-I": {
+        "en": "Tau Cygni Ac-I"
+      },
+      "35:system_35.Tau_Cygni_B": {
+        "en": "Tau Cygni B"
+      },
+      "35:system_35.Tau_Cygni_B.Tau_Cygni_Ba": {
+        "en": "Tau Cygni Ba"
+      },
+      "35:system_35.Tau_Cygni_B.Tau_Cygni_Bb": {
+        "en": "Tau Cygni Bb"
+      },
+      "35:system_35.Tau_Cygni_B.Tau_Cygni_Bb.Tau_Cygni_Bb-I": {
+        "en": "Tau Cygni Bb-I"
+      },
+      "35:system_35.barycenter.belt_0": {
+        "en": "Tau Cygni Belt"
+      },
+      "35:system_35.barycenter.belt_1": {
+        "en": "Tau Cygni Kuiper Belt"
+      },
+      "36:system_36.9_Ceti": {
+        "en": "9 Ceti"
+      },
+      "36:system_36.9_Ceti.9_Ceti_b": {
+        "en": "9 Ceti b"
+      },
+      "36:system_36.9_Ceti.9_Ceti_c": {
+        "en": "9 Ceti c"
+      },
+      "36:system_36.9_Ceti.9_Ceti_d": {
+        "en": "9 Ceti d"
+      },
+      "36:system_36.9_Ceti.9_Ceti_d.9_Ceti_d-I": {
+        "en": "9 Ceti d-I"
+      },
+      "36:system_36.9_Ceti.9_Ceti_e": {
+        "en": "9 Ceti e"
+      },
+      "36:system_36.9_Ceti.9_Ceti_e.9_Ceti_e-I": {
+        "en": "9 Ceti e-I"
+      },
+      "36:system_36.9_Ceti.9_Ceti_e.9_Ceti_e-II": {
+        "en": "9 Ceti e-II"
+      },
+      "36:system_36.9_Ceti.9_Ceti_f": {
+        "en": "9 Ceti f"
+      },
+      "36:system_36.9_Ceti.9_Ceti_f.9_Ceti_f-I": {
+        "en": "9 Ceti f-I"
+      },
+      "36:system_36.9_Ceti.9_Ceti_f.9_Ceti_f-II": {
+        "en": "9 Ceti f-II"
+      },
+      "36:system_36.9_Ceti.9_Ceti_f.9_Ceti_f-III": {
+        "en": "9 Ceti f-III"
+      },
+      "36:system_36.barycenter.belt_0": {
+        "en": "9 Ceti Belt"
+      },
+      "36:system_36.barycenter.belt_1": {
+        "en": "9 Ceti Kuiper Belt"
+      },
+      "37:system_37.HD_114783": {
+        "en": "HD 114783"
+      },
+      "37:system_37.HD_114783.HD_114783_b": {
+        "en": "HD 114783 b"
+      },
+      "37:system_37.HD_114783.HD_114783_b.HD_114783_b-I": {
+        "en": "HD 114783 b-I"
+      },
+      "37:system_37.HD_114783.HD_114783_b.HD_114783_b-II": {
+        "en": "HD 114783 b-II"
+      },
+      "37:system_37.HD_114783.HD_114783_c": {
+        "en": "HD 114783 c"
+      },
+      "37:system_37.HD_114783.HD_114783_d": {
+        "en": "HD 114783 d"
+      },
+      "37:system_37.HD_114783.HD_114783_d.HD_114783_d-I": {
+        "en": "HD 114783 d-I"
+      },
+      "37:system_37.barycenter.belt_0": {
+        "en": "HD 114783 Belt"
+      },
+      "37:system_37.barycenter.belt_1": {
+        "en": "HD 114783 Kuiper Belt"
+      },
+      "38:system_38.Sigma²_UMa_A": {
+        "en": "Sigma² UMa A"
+      },
+      "38:system_38.Sigma²_UMa_A.Sigma²_UMa_Ab": {
+        "en": "Sigma² UMa Ab"
+      },
+      "38:system_38.Sigma²_UMa_B": {
+        "en": "Sigma² UMa B"
+      },
+      "38:system_38.Sigma²_UMa_B.Sigma²_UMa_Bb": {
+        "en": "Sigma² UMa Bb"
+      },
+      "38:system_38.Sigma²_UMa_C": {
+        "en": "Sigma² UMa C"
+      },
+      "38:system_38.barycenter.belt_0": {
+        "en": "Sigma² Ursae Majoris Belt"
+      },
+      "38:system_38.barycenter.belt_1": {
+        "en": "Sigma² Ursae Majoris Kuiper Belt"
+      },
+      "39:system_39.HD_114613": {
+        "en": "HD 114613"
+      },
+      "39:system_39.HD_114613.HD_114613_b": {
+        "en": "HD 114613 b"
+      },
+      "39:system_39.HD_114613.HD_114613_b.HD_114613_b-I": {
+        "en": "HD 114613 b-I"
+      },
+      "39:system_39.HD_114613.HD_114613_b.HD_114613_b-II": {
+        "en": "HD 114613 b-II"
+      },
+      "39:system_39.HD_114613.HD_114613_c": {
+        "en": "HD 114613 c"
+      },
+      "39:system_39.HD_114613.HD_114613_d": {
+        "en": "HD 114613 d"
+      },
+      "39:system_39.HD_114613.HD_114613_d.HD_114613_d-I": {
+        "en": "HD 114613 d-I"
+      },
+      "39:system_39.barycenter.belt_0": {
+        "en": "HD 114613 Belt"
+      },
+      "39:system_39.barycenter.belt_1": {
+        "en": "HD 114613 Kuiper Belt"
+      },
+      "40:system_40.HD_24496": {
+        "en": "HD 24496"
+      },
+      "40:system_40.HD_24496.HD_24496_b": {
+        "en": "HD 24496 b"
+      },
+      "40:system_40.HD_24496.HD_24496_b.HD_24496_b-I": {
+        "en": "HD 24496 b-I"
+      },
+      "40:system_40.HD_24496.HD_24496_b.HD_24496_b-II": {
+        "en": "HD 24496 b-II"
+      },
+      "40:system_40.HD_24496.HD_24496_c": {
+        "en": "HD 24496 c"
+      },
+      "40:system_40.HD_24496.HD_24496_d": {
+        "en": "HD 24496 d"
+      },
+      "40:system_40.HD_24496.HD_24496_d.HD_24496_d-I": {
+        "en": "HD 24496 d-I"
+      },
+      "40:system_40.barycenter.belt_0": {
+        "en": "HD 24496 Belt"
+      },
+      "40:system_40.barycenter.belt_1": {
+        "en": "HD 24496 Kuiper Belt"
+      },
+      "41:system_41.HD_104067": {
+        "en": "HD 104067"
+      },
+      "41:system_41.HD_104067.HD_104067_b": {
+        "en": "HD 104067 b"
+      },
+      "41:system_41.HD_104067.HD_104067_b.HD_104067_b-I": {
+        "en": "HD 104067 b-I"
+      },
+      "41:system_41.HD_104067.HD_104067_b.HD_104067_b-II": {
+        "en": "HD 104067 b-II"
+      },
+      "41:system_41.HD_104067.HD_104067_c": {
+        "en": "HD 104067 c"
+      },
+      "41:system_41.HD_104067.HD_104067_d": {
+        "en": "HD 104067 d"
+      },
+      "41:system_41.HD_104067.HD_104067_d.HD_104067_d-I": {
+        "en": "HD 104067 d-I"
+      },
+      "41:system_41.barycenter.belt_0": {
+        "en": "HD 104067 Belt"
+      },
+      "41:system_41.barycenter.belt_1": {
+        "en": "HD 104067 Kuiper Belt"
+      },
+      "42:system_42.17_Cygni_A": {
+        "en": "17 Cygni A"
+      },
+      "42:system_42.17_Cygni_A.17_Cygni_Ab": {
+        "en": "17 Cygni Ab"
+      },
+      "42:system_42.17_Cygni_B": {
+        "en": "17 Cygni B"
+      },
+      "42:system_42.17_Cygni_B.17_Cygni_Bb": {
+        "en": "17 Cygni Bb"
+      },
+      "42:system_42.barycenter.belt_0": {
+        "en": "17 Cygni Belt"
+      },
+      "42:system_42.barycenter.belt_1": {
+        "en": "17 Cygni Kuiper Belt"
+      },
+      "43:system_43.Theta_Draconis_A": {
+        "en": "Theta Draconis A"
+      },
+      "43:system_43.Theta_Draconis_A.Theta_Draconis_Ab": {
+        "en": "Theta Draconis Ab"
+      },
+      "43:system_43.Theta_Draconis_B": {
+        "en": "Theta Draconis B"
+      },
+      "43:system_43.Theta_Draconis_B.Theta_Draconis_Bb": {
+        "en": "Theta Draconis Bb"
+      },
+      "43:system_43.barycenter.belt_0": {
+        "en": "Theta Draconis Belt"
+      },
+      "43:system_43.barycenter.belt_1": {
+        "en": "Theta Draconis Kuiper Belt"
+      },
+      "44:system_44.HD_33564_A": {
+        "en": "HD 33564 A"
+      },
+      "44:system_44.HD_33564_A.HD_33564_b": {
+        "en": "HD 33564 b"
+      },
+      "44:system_44.HD_33564_A.HD_33564_b.HD_33564_b-I": {
+        "en": "HD 33564 b-I"
+      },
+      "44:system_44.HD_33564_A.HD_33564_b.HD_33564_b-II": {
+        "en": "HD 33564 b-II"
+      },
+      "44:system_44.HD_33564_B": {
+        "en": "HD 33564 B"
+      },
+      "44:system_44.barycenter.belt_0": {
+        "en": "HD 33564 Belt"
+      },
+      "44:system_44.barycenter.belt_1": {
+        "en": "HD 33564 Kuiper Belt"
+      },
+      "45:system_45.83_Leonis_A": {
+        "en": "83 Leonis A"
+      },
+      "45:system_45.83_Leonis_A.83_Leonis_b": {
+        "en": "83 Leonis b"
+      },
+      "45:system_45.83_Leonis_A.83_Leonis_b.83_Leonis_b-I": {
+        "en": "83 Leonis b-I"
+      },
+      "45:system_45.83_Leonis_B": {
+        "en": "83 Leonis B"
+      },
+      "45:system_45.83_Leonis_B.83_Leonis_c": {
+        "en": "83 Leonis c"
+      },
+      "45:system_45.83_Leonis_B.83_Leonis_c.83_Leonis_c-I": {
+        "en": "83 Leonis c-I"
+      },
+      "45:system_45.barycenter.belt_0": {
+        "en": "83 Leonis Belt"
+      },
+      "45:system_45.barycenter.belt_1": {
+        "en": "83 Leonis Kuiper Belt"
+      },
+      "46:system_46.GJ_3021_A": {
+        "en": "GJ 3021 A"
+      },
+      "46:system_46.GJ_3021_A.GJ_3021_b": {
+        "en": "GJ 3021 b"
+      },
+      "46:system_46.GJ_3021_A.GJ_3021_b.GJ_3021_b-I": {
+        "en": "GJ 3021 b-I"
+      },
+      "46:system_46.GJ_3021_A.GJ_3021_b.GJ_3021_b-II": {
+        "en": "GJ 3021 b-II"
+      },
+      "46:system_46.GJ_3021_B": {
+        "en": "GJ 3021 B"
+      },
+      "46:system_46.barycenter.belt_0": {
+        "en": "GJ 3021 Belt"
+      },
+      "46:system_46.barycenter.belt_1": {
+        "en": "GJ 3021 Kuiper Belt"
+      },
+      "47:system_47.HD_154345": {
+        "en": "HD 154345"
+      },
+      "47:system_47.HD_154345.HD_154345_b": {
+        "en": "HD 154345 b"
+      },
+      "47:system_47.HD_154345.HD_154345_b.HD_154345_b-I": {
+        "en": "HD 154345 b-I"
+      },
+      "47:system_47.HD_154345.HD_154345_b.HD_154345_b-II": {
+        "en": "HD 154345 b-II"
+      },
+      "47:system_47.HD_154345.HD_154345_c": {
+        "en": "HD 154345 c"
+      },
+      "47:system_47.HD_154345.HD_154345_d": {
+        "en": "HD 154345 d"
+      },
+      "47:system_47.HD_154345.HD_154345_d.HD_154345_d-I": {
+        "en": "HD 154345 d-I"
+      },
+      "47:system_47.barycenter.belt_0": {
+        "en": "HD 154345 Belt"
+      },
+      "47:system_47.barycenter.belt_1": {
+        "en": "HD 154345 Kuiper Belt"
+      },
+      "48:system_48.HD_102365_A": {
+        "en": "HD 102365 A"
+      },
+      "48:system_48.HD_102365_A.HD_102365_b": {
+        "en": "HD 102365 b"
+      },
+      "48:system_48.HD_102365_A.HD_102365_b.HD_102365_b-I": {
+        "en": "HD 102365 b-I"
+      },
+      "48:system_48.HD_102365_B": {
+        "en": "HD 102365 B"
+      },
+      "48:system_48.barycenter.belt_0": {
+        "en": "HD 102365 Belt"
+      },
+      "48:system_48.barycenter.belt_1": {
+        "en": "HD 102365 Kuiper Belt"
+      },
+      "49:system_49.GJ_176": {
+        "en": "GJ 176"
+      },
+      "49:system_49.GJ_176.GJ_176_b": {
+        "en": "GJ 176 b"
+      },
+      "49:system_49.GJ_176.GJ_176_c": {
+        "en": "GJ 176 c"
+      },
+      "49:system_49.GJ_176.GJ_176_d": {
+        "en": "GJ 176 d"
+      },
+      "49:system_49.GJ_176.GJ_176_d.GJ_176_d-I": {
+        "en": "GJ 176 d-I"
+      },
+      "49:system_49.barycenter.belt_0": {
+        "en": "GJ 176 Belt"
+      },
+      "49:system_49.barycenter.belt_1": {
+        "en": "GJ 176 Kuiper Belt"
+      },
+      "50:system_50.GJ_3293": {
+        "en": "GJ 3293"
+      },
+      "50:system_50.GJ_3293.GJ_3293_b": {
+        "en": "GJ 3293 b"
+      },
+      "50:system_50.GJ_3293.GJ_3293_c": {
+        "en": "GJ 3293 c"
+      },
+      "50:system_50.GJ_3293.GJ_3293_c.GJ_3293_c-I": {
+        "en": "GJ 3293 c-I"
+      },
+      "50:system_50.GJ_3293.GJ_3293_d": {
+        "en": "GJ 3293 d"
+      },
+      "50:system_50.GJ_3293.GJ_3293_e": {
+        "en": "GJ 3293 e"
+      },
+      "50:system_50.GJ_3293.GJ_3293_e.GJ_3293_e-I": {
+        "en": "GJ 3293 e-I"
+      },
+      "50:system_50.barycenter.belt_0": {
+        "en": "GJ 3293 Belt"
+      },
+      "50:system_50.barycenter.belt_1": {
+        "en": "GJ 3293 Kuiper Belt"
+      },
+      "51:system_51.GJ_433": {
+        "en": "GJ 433"
+      },
+      "51:system_51.GJ_433.GJ_433_b": {
+        "en": "GJ 433 b"
+      },
+      "51:system_51.GJ_433.GJ_433_b.GJ_433_b-I": {
+        "en": "GJ 433 b-I"
+      },
+      "51:system_51.GJ_433.GJ_433_c": {
+        "en": "GJ 433 c"
+      },
+      "51:system_51.GJ_433.GJ_433_d": {
+        "en": "GJ 433 d"
+      },
+      "51:system_51.GJ_433.GJ_433_d.GJ_433_d-I": {
+        "en": "GJ 433 d-I"
+      },
+      "51:system_51.barycenter.belt_0": {
+        "en": "GJ 433 Belt"
+      },
+      "51:system_51.barycenter.belt_1": {
+        "en": "GJ 433 Kuiper Belt"
+      },
+      "52:system_52.Procyon_A": {
+        "en": "Procyon A"
+      },
+      "52:system_52.Procyon_B": {
+        "en": "Procyon B"
+      },
+      "52:system_52.Procyon_B.belt_0": {
+        "en": "Procyon A+B Belt"
+      },
+      "52:system_52.barycenter.belt_0": {
+        "en": "Procyon Kuiper Belt"
+      },
+      "53:system_53.Gliese_674": {
+        "en": "Gliese 674"
+      },
+      "53:system_53.Gliese_674.GJ_674_b": {
+        "en": "GJ 674 b"
+      },
+      "53:system_53.Gliese_674.GJ_674_c": {
+        "en": "GJ 674 c"
+      },
+      "53:system_53.Gliese_674.GJ_674_d": {
+        "en": "GJ 674 d"
+      },
+      "53:system_53.Gliese_674.GJ_674_d.GJ_674_d-I": {
+        "en": "GJ 674 d-I"
+      },
+      "53:system_53.barycenter.belt_0": {
+        "en": "Gliese 674 Belt"
+      },
+      "53:system_53.barycenter.belt_1": {
+        "en": "Gliese 674 Kuiper Belt"
+      },
+      "54:system_54.HD_85512": {
+        "en": "HD 85512"
+      },
+      "54:system_54.HD_85512.HD_85512_b": {
+        "en": "HD 85512 b"
+      },
+      "54:system_54.HD_85512.HD_85512_b.HD_85512_b-I": {
+        "en": "HD 85512 b-I"
+      },
+      "54:system_54.HD_85512.HD_85512_c": {
+        "en": "HD 85512 c"
+      },
+      "54:system_54.HD_85512.HD_85512_d": {
+        "en": "HD 85512 d"
+      },
+      "54:system_54.HD_85512.HD_85512_d.HD_85512_d-I": {
+        "en": "HD 85512 d-I"
+      },
+      "54:system_54.barycenter.belt_0": {
+        "en": "HD 85512 Belt"
+      },
+      "54:system_54.barycenter.belt_1": {
+        "en": "HD 85512 Kuiper Belt"
+      },
+      "55:system_55.Gliese_163": {
+        "en": "Gliese 163"
+      },
+      "55:system_55.Gliese_163.GJ_163_b": {
+        "en": "GJ 163 b"
+      },
+      "55:system_55.Gliese_163.GJ_163_c": {
+        "en": "GJ 163 c"
+      },
+      "55:system_55.Gliese_163.GJ_163_c.GJ_163_c-I": {
+        "en": "GJ 163 c-I"
+      },
+      "55:system_55.Gliese_163.GJ_163_d": {
+        "en": "GJ 163 d"
+      },
+      "55:system_55.Gliese_163.GJ_163_e": {
+        "en": "GJ 163 e"
+      },
+      "55:system_55.Gliese_163.GJ_163_e.GJ_163_e-I": {
+        "en": "GJ 163 e-I"
+      },
+      "55:system_55.barycenter.belt_0": {
+        "en": "Gliese 163 Belt"
+      },
+      "55:system_55.barycenter.belt_1": {
+        "en": "Gliese 163 Kuiper Belt"
+      },
+      "56:system_56.Gliese_422": {
+        "en": "Gliese 422"
+      },
+      "56:system_56.Gliese_422.GJ_422_b": {
+        "en": "GJ 422 b"
+      },
+      "56:system_56.Gliese_422.GJ_422_b.GJ_422_b-I": {
+        "en": "GJ 422 b-I"
+      },
+      "56:system_56.Gliese_422.GJ_422_c": {
+        "en": "GJ 422 c"
+      },
+      "56:system_56.Gliese_422.GJ_422_d": {
+        "en": "GJ 422 d"
+      },
+      "56:system_56.Gliese_422.GJ_422_d.GJ_422_d-I": {
+        "en": "GJ 422 d-I"
+      },
+      "56:system_56.barycenter.belt_0": {
+        "en": "Gliese 422 Belt"
+      },
+      "56:system_56.barycenter.belt_1": {
+        "en": "Gliese 422 Kuiper Belt"
+      },
+      "57:system_57.HD_10360": {
+        "en": "HD 10360"
+      },
+      "57:system_57.HD_10360.HD_10360_b": {
+        "en": "HD 10360 b"
+      },
+      "57:system_57.HD_10360.HD_10360_c": {
+        "en": "HD 10360 c"
+      },
+      "57:system_57.HD_10360.HD_10360_c.HD_10360_c-I": {
+        "en": "HD 10360 c-I"
+      },
+      "57:system_57.HD_10360.HD_10360_d": {
+        "en": "HD 10360 d"
+      },
+      "57:system_57.HD_10360.HD_10360_e": {
+        "en": "HD 10360 e"
+      },
+      "57:system_57.HD_10360.HD_10360_e.HD_10360_e-I": {
+        "en": "HD 10360 e-I"
+      },
+      "57:system_57.barycenter.belt_0": {
+        "en": "HD 10360 Belt"
+      },
+      "57:system_57.barycenter.belt_1": {
+        "en": "HD 10360 Kuiper Belt"
+      },
+      "58:system_58.Gliese_514": {
+        "en": "Gliese 514"
+      },
+      "58:system_58.Gliese_514.GJ_514_b": {
+        "en": "GJ 514 b"
+      },
+      "58:system_58.Gliese_514.GJ_514_b.GJ_514_b-I": {
+        "en": "GJ 514 b-I"
+      },
+      "58:system_58.Gliese_514.GJ_514_c": {
+        "en": "GJ 514 c"
+      },
+      "58:system_58.Gliese_514.GJ_514_d": {
+        "en": "GJ 514 d"
+      },
+      "58:system_58.Gliese_514.GJ_514_d.GJ_514_d-I": {
+        "en": "GJ 514 d-I"
+      },
+      "58:system_58.barycenter.belt_0": {
+        "en": "Gliese 514 Belt"
+      },
+      "58:system_58.barycenter.belt_1": {
+        "en": "Gliese 514 Kuiper Belt"
+      },
+      "59:system_59.Gliese_625": {
+        "en": "Gliese 625"
+      },
+      "59:system_59.Gliese_625.GJ_625_b": {
+        "en": "GJ 625 b"
+      },
+      "59:system_59.Gliese_625.GJ_625_c": {
+        "en": "GJ 625 c"
+      },
+      "59:system_59.Gliese_625.GJ_625_d": {
+        "en": "GJ 625 d"
+      },
+      "59:system_59.Gliese_625.GJ_625_d.GJ_625_d-I": {
+        "en": "GJ 625 d-I"
+      },
+      "59:system_59.barycenter.belt_0": {
+        "en": "Gliese 625 Belt"
+      },
+      "59:system_59.barycenter.belt_1": {
+        "en": "Gliese 625 Kuiper Belt"
+      },
+      "60:system_60.Proxima_Centauri": {
+        "en": "Proxima Centauri"
+      },
+      "60:system_60.Proxima_Centauri.Proxima_Centauri_b": {
+        "en": "Proxima Centauri b"
+      },
+      "60:system_60.Proxima_Centauri.Proxima_Centauri_c": {
+        "en": "Proxima Centauri c"
+      },
+      "60:system_60.Proxima_Centauri.Proxima_Centauri_d": {
+        "en": "Proxima Centauri d"
+      },
+      "100062:system_100062.Kepler-62": {
+        "en": "Kepler-62"
+      },
+      "100062:system_100062.Kepler-62.Kepler-62_b": {
+        "en": "Kepler-62 b"
+      },
+      "100062:system_100062.Kepler-62.Kepler-62_c": {
+        "en": "Kepler-62 c"
+      },
+      "100062:system_100062.Kepler-62.Kepler-62_d": {
+        "en": "Kepler-62 d"
+      },
+      "100062:system_100062.Kepler-62.Kepler-62_e": {
+        "en": "Kepler-62 e"
+      },
+      "100062:system_100062.Kepler-62.Kepler-62_f": {
+        "en": "Kepler-62 f"
+      },
+      "100062:system_100062.Kepler-62.Kepler-62_f.Kepler-62_f-I": {
+        "en": "Kepler-62 f-I"
+      },
+      "100062:system_100062.barycenter.belt_0": {
+        "en": "Kepler-62 Belt"
+      },
+      "100062:system_100062.barycenter.belt_1": {
+        "en": "Kepler-62 Kuiper Belt"
+      }
+    },
+    "hubs": {
+      "earth_orbital_hub": {
+        "en": "Earth Orbital Hub",
+        "ru": "Орбитальный хаб Земли",
+        "zh-Hans": "地球轨道枢纽",
+        "es": "Nodo orbital terrestre",
+        "ja": "地球軌道ハブ"
+      },
+      "earth_high_orbital": {
+        "en": "Earth High Orbital",
+        "ru": "Высокоорбитальная станция Земли",
+        "zh-Hans": "地球高轨站",
+        "es": "Estación orbital alta terrestre",
+        "ja": "地球高軌道ステーション"
+      }
+    },
+    "galaxy_objects": {}
+  }
+}

@@ -1,6 +1,8 @@
 {
   "version": 1,
   "catalog": "Western constellation stick figures",
+  "culture_id": "iau-western",
+  "default_locale": "en",
   "star_identifier": "Bright Star Catalogue HR number",
   "source": {
     "title": "ConstellationLines",

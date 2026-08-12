@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <utility>
+
 #include <glm/glm.hpp>
 
 #include "src/render/types/Viewport.h"
@@ -26,6 +29,11 @@ namespace game::system_map
     class GalaxyMapRenderer
     {
     public:
+        void setPlayerLabel(std::string label)
+        {
+            m_playerLabel = std::move(label);
+        }
+
         void render(
             GalaxyMapView& view,
             GalaxyMapRenderContext& context,
@@ -59,5 +67,8 @@ namespace game::system_map
             const world::celestial::PlayerNavigationState& navigation,
             const glm::mat4& mvp
         ) const;
+
+    private:
+        std::string m_playerLabel = "PLAYER";
     };
 }

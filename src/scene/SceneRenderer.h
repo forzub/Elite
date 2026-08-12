@@ -1,6 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <memory>
+#include <unordered_map>
 
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/geometry/MeshLibrary.h"
@@ -108,6 +109,40 @@ public:
         m_starfieldRenderer.setConstellationOverlayEnabled(enabled);
     }
 
+    bool cycleConstellationCulture()
+    {
+        return m_starfieldRenderer.cycleConstellationCulture();
+    }
+
+    std::string constellationCultureId() const
+    {
+        return m_starfieldRenderer.constellationCultureId();
+    }
+
+    std::string constellationCultureDisplayName(
+        const std::string& locale = "en"
+    ) const
+    {
+        return m_starfieldRenderer.constellationCultureDisplayName(locale);
+    }
+
+    void setUiLocale(const std::string& locale)
+    {
+        if (m_uiLocale == locale)
+            return;
+        m_uiLocale = locale;
+        m_constellationLabelFont.reset();
+    }
+
+    const std::string& uiLocale() const { return m_uiLocale; }
+
+    void setGameSystemDisplayNames(
+        const std::unordered_map<int, std::string>& names
+    )
+    {
+        m_starfieldRenderer.setGameSystemDisplayNames(names);
+    }
+
 
     PreparedScene prepareScene(
         const ClientWorldState& world,
@@ -139,7 +174,13 @@ public:
         m_debugCallback = callback;
     }
 
+
     void renderStarSystemLabels(
+        const glm::mat4& view,
+        const glm::mat4& proj
+    );
+
+    void renderConstellationLabels(
         const glm::mat4& view,
         const glm::mat4& proj
     );
@@ -149,7 +190,11 @@ public:
         const glm::mat4& proj
     );
 
+    void ensureConstellationLabelFont();
+
     std::unique_ptr<Font> m_starLabelFont;
+    std::unique_ptr<Font> m_constellationLabelFont;
+    std::string m_uiLocale = "en";
 
     const SceneRenderStats& lastStats() const
     {

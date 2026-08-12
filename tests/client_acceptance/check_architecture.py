@@ -162,11 +162,17 @@ for token in (
         fail(f"Ctrl+F11 coordinate-format path no longer uses: {token}")
 
 for token in (
-    "toggleConstellationOverlay()",
     "consumeF12Press",
+    "resolveF12HotkeyAction",
+    "F12HotkeyAction::ToggleConstellations",
+    "toggleConstellationOverlay()",
+    "F12HotkeyAction::CycleSkyCulture",
+    "cycleSkyCulture()",
+    "F12HotkeyAction::CycleUiLanguage",
+    "cycleUiLanguage()",
 ):
     if token not in application:
-        fail(f"Ctrl+F12 constellation path no longer uses: {token}")
+        fail(f"F12 service-chord path no longer uses: {token}")
 
 for token in (
     "m_constellationOverlayEnabled",
@@ -177,7 +183,8 @@ for token in (
 
 for token in (
     "CoordinateDisplayService::instance()",
-    ".formatName()",
+    ".format()",
+    "formatDisplayName()",
     '" [CTRL+F11]"',
 ):
     if token not in system_map_common:
@@ -272,7 +279,7 @@ for token in (
 # created by SpaceState initialization. The architecture guard catches a renamed/missing
 # visible field even before the C++ runtime scenario gets a chance to run.
 for token in (
-    "buildPlayerHudTelemetry(it->second)",
+    "buildPlayerHudTelemetry(",
     "applyPlayerHudTelemetry(",
 ):
     if token not in space:
@@ -292,8 +299,10 @@ for token in (
 
 # Keep formatting/data ownership in the tested presenter, not duplicated in SpaceState.
 for token in (
-    '"CELL %lld %lld %lld"',
-    '"VREL %.1f m/s  %s"',
+    '"%s %lld %lld %lld"',
+    '"%s %.1f m/s  %s"',
+    "textProfile.cellLabel.c_str()",
+    "textProfile.relativeVelocityLabel.c_str()",
 ):
     if token in space:
         fail(f"HUD formatting escaped the tested presenter back into SpaceState: {token}")

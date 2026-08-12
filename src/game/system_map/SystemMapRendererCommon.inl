@@ -22,8 +22,11 @@ void SystemMapRenderer::announceNavigationLevel(
     int level
 )
 {
+    const auto& ui =
+        m_navigationCoordinateOverlay.textProfile();
+
     m_navigationLevelAnnouncement.text =
-        "LEVEL " +
+        ui.level + " " +
         std::string(1, mapPrefix) +
         std::to_string(level);
 
@@ -48,6 +51,28 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
 
     using render::navigation::
         NavigationCoordinateRole;
+
+    const auto& ui =
+        m_navigationCoordinateOverlay.textProfile();
+
+    const auto coordinateFormat =
+        game::navigation::CoordinateDisplayService::instance().format();
+
+    const auto formatDisplayName = [&]() -> const std::string&
+    {
+        switch (coordinateFormat)
+        {
+            case game::navigation::CoordinateDisplayFormat::Axis:
+                return ui.axisFormat;
+
+            case game::navigation::CoordinateDisplayFormat::PackedBase32:
+                return ui.packedFormat;
+
+            case game::navigation::CoordinateDisplayFormat::Hierarchical:
+            default:
+                return ui.hierarchicalFormat;
+        }
+    };
 
     std::vector<NavigationCoordinateBlock>
         blocks;
@@ -142,9 +167,17 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
                 NavigationRegionName*
                 alternative = nullptr;
 
-            const game::navigation::
-                NavigationRegionName*
-                fallback = nullptr;
+            int alternativeLanguageScore = -1;
+
+            const auto baseLocale =
+                [](const std::string& locale)
+                {
+                    const std::size_t split =
+                        locale.find_first_of("-_");
+                    return split == std::string::npos
+                        ? locale
+                        : locale.substr(0, split);
+                };
 
             for (const auto& record :
                  m_navigationRegionCatalog.records())
@@ -159,35 +192,35 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
                      record.names)
                 {
                     if (name.name.empty() ||
-                        name.name ==
-                            primary->value.name)
+                        name.name == primary->value.name ||
+                        name.factionId == primary->value.factionId)
                     {
                         continue;
                     }
 
-                    if (!fallback)
+                    int languageScore = -1;
+                    if (name.language == m_navigationNamingLocale)
                     {
-                        fallback =
-                            &name;
+                        languageScore = 30;
+                    }
+                    else if (baseLocale(name.language) ==
+                             baseLocale(m_navigationNamingLocale))
+                    {
+                        languageScore = 20;
+                    }
+                    else if (name.language == "en")
+                    {
+                        languageScore = 10;
                     }
 
-                    if (name.factionId !=
-                        primary->value.factionId)
+                    if (languageScore > alternativeLanguageScore)
                     {
-                        alternative =
-                            &name;
-
-                        break;
+                        alternative = &name;
+                        alternativeLanguageScore = languageScore;
                     }
                 }
 
                 break;
-            }
-
-            if (!alternative)
-            {
-                alternative =
-                    fallback;
             }
 
             std::string result =
@@ -211,7 +244,9 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         {
             return
                 game::navigation::
-                    formatCurrentNavigationAddressLine(
+                    formatNavigationAddressLine(
+                        coordinateFormat,
+                        formatDisplayName(),
                         "G",
                         cell.level,
                         cell.index,
@@ -224,7 +259,9 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         {
             return
             game::navigation::
-                formatCurrentNavigationAddressLine(
+                formatNavigationAddressLine(
+                    coordinateFormat,
+                    formatDisplayName(),
                     "S",
                     cell.level,
                     cell.index,
@@ -348,7 +385,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
         NavigationCoordinateRole::Player;
 
     playerBlock.title =
-        "PLAYER";
+        ui.player;
 
     /*
         В Galaxy показываем имя межзвёздного сектора.
@@ -431,7 +468,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
             NavigationCoordinateRole::Selected;
 
         selectedBlock.title =
-            "SELECTED";
+            ui.selected;
 
         selectedBlock.regionNames =
             regionNames(
@@ -473,7 +510,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
                     NavigationCoordinateRole::Hovered;
 
                 hoveredBlock.title =
-                    "CURSOR";
+                    ui.cursor;
 
                 hoveredBlock.regionNames =
                     regionNames(
@@ -513,7 +550,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
             NavigationCoordinateRole::Selected;
 
         selectedBlock.title =
-            "SELECTED";
+            ui.selected;
 
         selectedBlock.regionNames =
             regionNames(
@@ -569,7 +606,7 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
                     NavigationCoordinateRole::Hovered;
 
                 hoveredBlock.title =
-                    "CURSOR";
+                    ui.cursor;
 
                 hoveredBlock.regionNames =
                     regionNames(
@@ -615,8 +652,8 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
             m_galaxyView.state().navigationGrid.cellSizeLy(level);
 
         std::ostringstream footer;
-        footer << "GALAXY G" << level
-               << " · EDGE ";
+        footer << ui.galaxy << " G" << level
+               << " · " << ui.edge << " ";
 
         const double edgeAu =
             edgeLy *
@@ -633,9 +670,8 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
                    << edgeAu << " AU";
         }
 
-        footer << " · FORMAT "
-               << game::navigation::CoordinateDisplayService::instance()
-                    .formatName()
+        footer << " · " << ui.format << " "
+               << formatDisplayName()
                << " [CTRL+F11]";
 
         footerText = footer.str();
@@ -653,8 +689,8 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
             edgeAu * AU_KM;
 
         std::ostringstream footer;
-        footer << "SYSTEM S" << level
-               << " · EDGE ";
+        footer << ui.system << " S" << level
+               << " · " << ui.edge << " ";
 
         if (edgeAu >= 0.01)
         {
@@ -672,9 +708,8 @@ void SystemMapRenderer::drawNavigationCoordinateOverlay(
                    << edgeKm << " km";
         }
 
-        footer << " · FORMAT "
-               << game::navigation::CoordinateDisplayService::instance()
-                    .formatName()
+        footer << " · " << ui.format << " "
+               << formatDisplayName()
                << " [CTRL+F11]";
 
         footerText = footer.str();

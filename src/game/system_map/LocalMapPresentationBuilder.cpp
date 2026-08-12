@@ -434,7 +434,7 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
                     );
                 pickable.priority = object.player ? 100 : 50;
                 pickable.label =
-                    object.player ? "PLAYER" : object.name;
+                    object.player ? m_playerLabel : object.name;
             }
 
             presentation.frame.pickables.push_back(

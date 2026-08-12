@@ -84,6 +84,25 @@ uint32_t nextUtf8Codepoint(
     ++i;
     return static_cast<uint32_t>('?');
 }
+
+Font& fontForPixelSize(int pixelSize)
+{
+    pixelSize = std::clamp(pixelSize, 8, 48);
+
+    static std::unordered_map<int, std::unique_ptr<Font>> fonts;
+
+    auto it = fonts.find(pixelSize);
+    if (it == fonts.end())
+    {
+        auto font = std::make_unique<Font>(
+            "assets/fonts/Roboto-Medium.ttf",
+            pixelSize
+        );
+        it = fonts.emplace(pixelSize, std::move(font)).first;
+    }
+
+    return *it->second;
+}
 }
 
 TextRenderer& TextRenderer::instance()
@@ -129,6 +148,29 @@ void TextRenderer::init()
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    if (!m_solidTexture)
+    {
+        const unsigned char whitePixel[4] = {255, 255, 255, 255};
+        glGenTextures(1, &m_solidTexture);
+        glBindTexture(GL_TEXTURE_2D, m_solidTexture);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA8,
+            1,
+            1,
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            whitePixel
+        );
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
     m_shader = compileShaderFromFiles(
         "assets/shaders/hud/textRenderer.vert",
@@ -674,33 +716,56 @@ void TextRenderer::textDrawPx(
     const glm::vec4& color
 )
 {
-    
-    
+    Font& font = fontForPixelSize(pixelSize);
+    textDraw(font, text, x, y, color);
+}
 
+float TextRenderer::measureTextPx(
+    const std::string& text,
+    int pixelSize
+)
+{
+    return fontForPixelSize(pixelSize).measureText(text);
+}
 
+void TextRenderer::solidRectPx(
+    float x,
+    float y,
+    float width,
+    float height,
+    const glm::vec4& color
+)
+{
+    if (width <= 0.0f || height <= 0.0f || !m_solidTexture)
+        return;
 
-    pixelSize = std::clamp(pixelSize, 8, 48);
-
-    static std::unordered_map<int, std::unique_ptr<Font>> fonts;
-
-    auto it = fonts.find(pixelSize);
-
-    if (it == fonts.end())
+    if (!m_batchActive)
     {
-        auto font = std::make_unique<Font>(
-            "assets/fonts/Roboto-Medium.ttf",
-            pixelSize
-        );
-
-        it = fonts.emplace(pixelSize, std::move(font)).first;
+        beginFrame();
+        solidRectPx(x, y, width, height, color);
+        endFrame();
+        return;
     }
 
-    textDraw(
-        *it->second,
-        text,
-        x,
-        y,
-        color
+    const float x0 = (2.0f * x / m_screenW) - 1.0f;
+    const float y0 = 1.0f - (2.0f * y / m_screenH);
+    const float x1 = (2.0f * (x + width) / m_screenW) - 1.0f;
+    const float y1 = 1.0f - (2.0f * (y + height) / m_screenH);
+
+    TextBatch& batch = batchForTexture(m_solidTexture);
+    const TextVertex vertices[6] = {
+        {x0, y1, 0.5f, 0.5f, color.r, color.g, color.b, color.a},
+        {x0, y0, 0.5f, 0.5f, color.r, color.g, color.b, color.a},
+        {x1, y0, 0.5f, 0.5f, color.r, color.g, color.b, color.a},
+        {x0, y1, 0.5f, 0.5f, color.r, color.g, color.b, color.a},
+        {x1, y0, 0.5f, 0.5f, color.r, color.g, color.b, color.a},
+        {x1, y1, 0.5f, 0.5f, color.r, color.g, color.b, color.a}
+    };
+
+    batch.vertices.insert(
+        batch.vertices.end(),
+        std::begin(vertices),
+        std::end(vertices)
     );
 }
 

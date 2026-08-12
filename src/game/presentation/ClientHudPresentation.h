@@ -23,8 +23,17 @@ struct PlayerHudTelemetry
     std::string speedLabel;
 };
 
+struct PlayerHudTelemetryTextProfile
+{
+    std::string cellLabel = "CELL";
+    std::string relativeVelocityLabel = "VREL";
+    std::string newtonianModeLabel = "NEWTONIAN";
+    std::string assistedModeLabel = "ASSISTED";
+};
+
 PlayerHudTelemetry buildPlayerHudTelemetry(
-    const ClientShipState& ship
+    const ClientShipState& ship,
+    const PlayerHudTelemetryTextProfile& textProfile = {}
 );
 
 struct FlightInstrumentTextProfile

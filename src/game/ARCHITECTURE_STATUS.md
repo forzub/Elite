@@ -359,3 +359,38 @@ explicit.
 - Static module definition data (hierarchy, subsystem, policies, mesh-part ids, support topology, health limits) lives in the local descriptor catalogs on both server and client and is not repeated in ordinary snapshots.
 - `ShipSnapshot::typeId` / `ObjectSnapshot::type` are the compact catalog keys used to join authoritative runtime state to those local definitions.
 - Rich debug/presentation views are rehydrated client-side from `ModuleDescriptor + ObjectModuleSnapshot`; debug tooling is not a reason to widen the gameplay replication DTO.
+
+## Client localization and sky-culture presentation contract
+
+Player-facing localization is a client presentation concern and must not widen
+server/protocol authority. `Application` owns one global UI locale and
+`LocalizationService` resolves player-facing strings and catalog display names
+with the mandatory fallback chain `exact locale -> base locale -> English`.
+Authoritative server/simulation code continues to use stable ids and does not
+load translation tables.
+
+Current F12 service chords are protected player-facing behavior:
+
+- plain `F12`: current Local/Hub navigation;
+- `Ctrl+F12`: constellation overlay visibility;
+- `Alt+F12`: active sky-culture topology;
+- `Ctrl+Alt+F12`: global player-facing UI language, including menus/maps and
+  constellation labels. This chord is global and does not require `SpaceState`.
+
+Sky culture and UI language are deliberately independent state. The selected
+culture owns only topology plus localized name alternatives; it does not own a
+second language selector. Missing culture-label translations fall back to
+English. The current catalog contains the accepted IAU/Western topology, a
+curated Chinese 28-lunar-mansion topology and Hawaiian star lines. Topology-only
+support stars remain separate from the visible top-3000 star sprite catalog.
+
+`catalog_names.json` is the client display-name table for stable star-system,
+celestial-body and galaxy-object ids. Every currently authored catalog entity
+must have an English entry so changing away from a translated locale cannot
+leave a stale previous-language name. Additional translations may be added
+without changing simulation/network DTOs.
+
+Cockpit/manufacturer labeling is a separate presentation language domain and is
+intentionally not driven by the global UI locale. A ship may therefore retain
+manufacturer-language indicator legends while surrounding game UI follows the
+player-selected global locale.

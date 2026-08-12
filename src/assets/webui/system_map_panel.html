@@ -184,7 +184,7 @@ html, body {
     position: absolute;
     left: clamp(18px, 1.8vw, 30px);
     right: clamp(18px, 1.8vw, 30px);
-    bottom: clamp(18px, 1.8vw, 30px);
+    bottom: clamp(38px, 3vw, 48px);
     display: grid;
     gap: 10px;
 }
@@ -239,59 +239,59 @@ button:hover {
 <body>
 <div id="panel">
     <div id="header">
-        <div id="title" data-i18n="title">STAR ATLAS</div>
-        <div id="subtitle" data-i18n="subtitle">Navigation interface</div>
+        <div id="title" data-i18n="map.title">STAR ATLAS</div>
+        <div id="subtitle" data-i18n="map.subtitle">Navigation interface</div>
     </div>
 
     <div id="body">
         <div class="row">
-            <div class="key" data-i18n="mode">Mode</div>
+            <div class="key" data-i18n="map.mode">Mode</div>
             <div class="value" id="modeValue">Galaxy</div>
         </div>
         <div class="row">
-            <div class="key">Universe time</div>
+            <div class="key" data-i18n="map.universe_time">Universe time</div>
             <div class="value" id="universeTimeValue">—</div>
         </div>
 
 
 
         <div class="row">
-            <div class="key" data-i18n="currentSystem">Current system</div>
+            <div class="key" data-i18n="map.current_system">Current system</div>
             <div class="value" id="currentSystemValue">—</div>
         </div>
         <div class="sep"></div>
 
         <div class="detailsBlock">
-            <div class="sectionTitle">Selected system</div>
+            <div class="sectionTitle" data-i18n="map.selected_system">Selected system</div>
 
             <div class="row">
-                <div class="key">Name</div>
+                <div class="key" data-i18n="map.name">Name</div>
                 <div class="value accent" id="selectedNameValue">—</div>
             </div>
 
             <div class="row">
-                <div class="key">Star</div>
+                <div class="key" data-i18n="map.star">Star</div>
                 <div class="value" id="selectedStarValue">—</div>
             </div>
 
             <div class="row">
-                <div class="key">Jurisdiction</div>
+                <div class="key" data-i18n="map.jurisdiction">Jurisdiction</div>
                 <div class="value" id="selectedJurisdictionValue">—</div>
             </div>
 
             <div class="row">
-                <div class="key">Distance</div>
+                <div class="key" data-i18n="map.distance">Distance</div>
                 <div class="value" id="selectedDistanceValue">—</div>
             </div>
         </div>
 
         <div class="row">
-            <div class="key">Map target</div>
+            <div class="key" data-i18n="map.target">Map target</div>
             <div class="value" id="selectedSystemValue">—</div>
         </div>
 
         <div class="selectBlock">
-            <div class="selectTitle">System list</div>
+            <div class="selectTitle" data-i18n="map.system_list">System list</div>
 
             <div id="systemDropdown" class="dropdown">
                 <button id="systemDropdownButton" class="dropdownButton" type="button">
@@ -305,7 +305,7 @@ button:hover {
 
 
         <div class="section">
-            <div class="section-title">Objects</div>
+            <div class="section-title" data-i18n="map.objects">Objects</div>
             <div id="systemObjectsList" class="objects-list"></div>
         </div>
 
@@ -313,85 +313,32 @@ button:hover {
 
         <div class="sep"></div>
 
-        <div class="hint" id="hintText" data-i18n="hint">
+        <div class="hint" id="hintText" data-i18n="map.hint">
             F9 Galaxy · F10 System · F11 Details · F12 Local / Hub
         </div>
     </div>
 
     <div id="actions">
         <button id="btnToggleMode">SHOW SYSTEM</button>
-        <button id="btnDetail">DETAIL</button>
-        <button id="btnHub">HUB</button>
-        <button id="btnClose" data-i18n="btnClose">CLOSE</button>
+        <button id="btnDetail" data-i18n="map.detail">DETAIL</button>
+        <button id="btnHub" data-i18n="map.hub">HUB</button>
+        <button id="btnClose" data-i18n="map.close">CLOSE</button>
     </div>
 </div>
 
+<script src="/game_i18n.js"></script>
 <script>
-const LANG = "en";
 
-const I18N = {
-    en: {
-        title: "STAR ATLAS",
-        subtitle: "Navigation interface",
-        mode: "Mode",
-        systems: "Systems",
-        currentSystem: "Current system",
-        hint: "F9 Galaxy · F10 System · F11 Details · F12 Local / Hub · Ctrl+F11 coordinates · Ctrl+F12 constellations.",
-        btnGalaxy: "GALAXY",
-        btnSystem: "CURRENT SYSTEM",
-        btnClose: "CLOSE"
-    },
-    ru: {
-        title: "ЗВЁЗДНЫЙ АТЛАС",
-        subtitle: "Навигационный интерфейс",
-        mode: "Режим",
-        systems: "Системы",
-        currentSystem: "Текущая система",
-        hint: "F9 Галактика · F10 Система · F11 Детали · F12 Локально / Хаб · Ctrl+F11 координаты · Ctrl+F12 созвездия.",
-        btnGalaxy: "ГАЛАКТИКА",
-        btnSystem: "ТЕКУЩАЯ СИСТЕМА",
-        btnClose: "ЗАКРЫТЬ"
-    },
-    es: {
-        title: "ATLAS ESTELAR",
-        subtitle: "Interfaz de navegación",
-        mode: "Modo",
-        systems: "Sistemas",
-        currentSystem: "Sistema actual",
-        hint: "F9 Galaxia · F10 Sistema · F11 Detalles · F12 Local / Hub · Ctrl+F11 coordenadas · Ctrl+F12 constelaciones.",
-        btnGalaxy: "GALAXIA",
-        btnSystem: "SISTEMA ACTUAL",
-        btnClose: "CERRAR"
-    },
-    zh: {
-        title: "星图",
-        subtitle: "导航界面",
-        mode: "模式",
-        systems: "星系",
-        currentSystem: "当前星系",
-        hint: "F9 银河 · F10 星系 · F11 详情 · F12 本地 / 枢纽 · Ctrl+F11 坐标 · Ctrl+F12 星座。",
-        btnGalaxy: "银河",
-        btnSystem: "当前星系",
-        btnClose: "关闭"
-    },
-    ja: {
-        title: "スターアトラス",
-        subtitle: "航法インターフェース",
-        mode: "モード",
-        systems: "星系",
-        currentSystem: "現在の星系",
-        hint: "F9 銀河 · F10 星系 · F11 詳細 · F12 ローカル / ハブ · Ctrl+F11 座標 · Ctrl+F12 星座。",
-        btnClose: "閉じる"
-    }
-};
+function tr(key, fallback) {
+    return window.GameI18n ? GameI18n.t(key, fallback) : fallback;
+}
 
-function applyLanguage(lang) {
-    const dict = I18N[lang] || I18N.en;
-
-    document.querySelectorAll("[data-i18n]").forEach(el => {
-        const key = el.getAttribute("data-i18n");
-        if (dict[key]) el.textContent = dict[key];
-    });
+function modeText(mode) {
+    if (mode === "Galaxy") return tr("map.galaxy", "GALAXY");
+    if (mode === "System") return tr("map.system", "SYSTEM");
+    if (mode === "Planet" || mode === "Detail") return tr("map.detail", "DETAIL");
+    if (mode === "Hub") return tr("map.hub", "HUB");
+    return mode || tr("map.unknown", "Unknown");
 }
 
 function closeMap() {
@@ -537,7 +484,7 @@ function renderSystemDropdown() {
     );
 
     systemDropdownLabel.textContent =
-        selectedSystem ? systemLabel(selectedSystem) : "Select system";
+        selectedSystem ? systemLabel(selectedSystem) : tr("map.select_system", "Select system");
 
     for (const s of cachedSystems) {
         const item = document.createElement("div");
@@ -569,25 +516,26 @@ function renderSystemDropdown() {
 
 window.setSystemMapPanel = function(payload) {
     if (!payload) return;
+    window.__lastSystemMapPanel = payload;
 
     currentMode = payload.mode || "Galaxy";
 
-    document.getElementById("modeValue").textContent = currentMode;
+    document.getElementById("modeValue").textContent = modeText(currentMode);
     document.getElementById("universeTimeValue").textContent =
         payload.universeDate || "—";
 
 
 
-let modeButtonText = "SYSTEM";
+let modeButtonText = tr("map.system", "SYSTEM");
 
 if (currentMode === "Galaxy") {
-    modeButtonText = "SYSTEM";
+    modeButtonText = tr("map.system", "SYSTEM");
 } else if (currentMode === "System") {
-    modeButtonText = "GALAXY";
+    modeButtonText = tr("map.galaxy", "GALAXY");
 } else if (currentMode === "Planet" || currentMode === "Detail") {
-    modeButtonText = "SYSTEM";
+    modeButtonText = tr("map.system", "SYSTEM");
 } else if (currentMode === "Hub") {
-    modeButtonText = "DETAIL";
+    modeButtonText = tr("map.detail", "DETAIL");
 }
 
 document.getElementById("btnToggleMode").textContent = modeButtonText;
@@ -620,7 +568,7 @@ if ((currentMode === "Planet" ||
     // if (currentMode === "Hub") {
     //     sendGameCommand("system_map_detail");
     //     return;
-    // }   
+    // }
 
     document.getElementById("currentSystemValue").textContent =
         payload.currentSystemName || "—";
@@ -641,10 +589,15 @@ if ((currentMode === "Planet" ||
         selectedSystem ? selectedSystem.name : "—";
 
     document.getElementById("selectedStarValue").textContent =
-        selectedSystem ? (selectedSystem.starType || "Unknown") : "—";
+        selectedSystem ? (selectedSystem.starType || tr("map.unknown", "Unknown")) : "—";
 
+    const jurisdiction = selectedSystem?.jurisdiction || "";
     document.getElementById("selectedJurisdictionValue").textContent =
-        selectedSystem ? (selectedSystem.jurisdiction || "Unregistered") : "—";
+        selectedSystem
+            ? ((!jurisdiction || jurisdiction === "Unregistered")
+                ? tr("map.unregistered", "Unregistered")
+                : jurisdiction)
+            : "—";
 
     const distanceLy =
         selectedSystem?.distanceFromPlayerLy ??
@@ -659,7 +612,7 @@ if ((currentMode === "Planet" ||
 
     document.getElementById("selectedSystemValue").textContent =
         selectedSystem
-            ? `${selectedSystem.name} / ${currentMode}`
+            ? `${selectedSystem.name} / ${modeText(currentMode)}`
             : "—";
 
     renderSystemDropdown();
@@ -678,7 +631,7 @@ if ((currentMode === "Planet" ||
         if (objects.length === 0) {
             const empty = document.createElement("div");
             empty.className = "object-owner";
-            empty.textContent = "No large objects";
+            empty.textContent = tr("map.no_large_objects", "No large objects");
             objectsList.appendChild(empty);
         } else {
             for (const obj of objects) {
@@ -701,8 +654,8 @@ if ((currentMode === "Planet" ||
 
                 const text = document.createElement("div");
                 text.innerHTML =
-                    `<div>${obj.name || "Object"}</div>` +
-                    `<div class="object-owner">${obj.owner || "Independent"}</div>`;
+                    `<div>${obj.name || tr("map.object", "Object")}</div>` +
+                    `<div class="object-owner">${obj.owner || tr("map.independent", "Independent")}</div>`;
 
                 row.appendChild(checkbox);
                 row.appendChild(text);
@@ -714,7 +667,10 @@ if ((currentMode === "Planet" ||
 
 };
 
-applyLanguage(LANG);
+window.addEventListener("game-ui-language-changed", () => {
+    if (window.setSystemMapPanel && window.__lastSystemMapPanel)
+        window.setSystemMapPanel(window.__lastSystemMapPanel);
+});
 </script>
 </body>
 </html>

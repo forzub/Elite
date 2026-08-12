@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <glad/gl.h>
 #include <glm/glm.hpp>
@@ -56,6 +57,7 @@ private:
 
     void* m_ftLibrary = nullptr;
     void* m_face = nullptr;
+    std::vector<void*> m_fallbackFaces;
 
     unsigned int m_atlasTexture = 0;
 

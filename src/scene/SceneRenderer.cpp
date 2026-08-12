@@ -10,6 +10,7 @@
 #include <utility>
 #include <unordered_map>
 #include <unordered_set>
+#include <filesystem>
 
 // #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
@@ -1681,6 +1682,7 @@ profileAfterSetupMs = renderProfileNowMs();
     if (policy.drawLabels)
     {
         renderStarSystemLabels(renderView, proj);
+        renderConstellationLabels(renderView, proj);
         renderConstellationHoverOverlay(renderView, proj);
     }
 
@@ -3282,19 +3284,151 @@ void SceneRenderer::renderStarSystemLabels(
 }
 
 
+void SceneRenderer::ensureConstellationLabelFont()
+{
+    if (m_constellationLabelFont)
+        return;
+
+    const std::string baseLocale = [&]()
+    {
+        const std::size_t split = m_uiLocale.find_first_of("-_");
+        return split == std::string::npos
+            ? m_uiLocale
+            : m_uiLocale.substr(0, split);
+    }();
+
+    std::vector<std::string> candidates;
+    if (baseLocale == "zh" || baseLocale == "ja" || baseLocale == "ko")
+    {
+        candidates = {
+            "assets/fonts/NotoSansCJK-Regular.otf",
+            "src/assets/fonts/NotoSansCJK-Regular.otf",
+            "C:/Windows/Fonts/msyh.ttc",
+            "C:/Windows/Fonts/msgothic.ttc",
+            "C:/Windows/Fonts/malgun.ttf"
+        };
+    }
+
+    candidates.push_back("assets/fonts/Roboto-Light.ttf");
+    candidates.push_back("src/assets/fonts/Roboto-Light.ttf");
+
+    for (const std::string& path : candidates)
+    {
+        if (!std::filesystem::exists(path))
+            continue;
+
+        m_constellationLabelFont = std::make_unique<Font>(path, 13);
+        return;
+    }
+}
+
+
+void SceneRenderer::renderConstellationLabels(
+    const glm::mat4& view,
+    const glm::mat4& proj
+)
+{
+    if (!m_starfieldRenderer.isInitialized() ||
+        !m_starfieldRenderer.constellationOverlayEnabled())
+    {
+        return;
+    }
+
+    const auto& definitions =
+        m_starfieldRenderer.getConstellationDefinitions();
+    const auto& anchors =
+        m_starfieldRenderer.getConstellationLabelAnchors();
+
+    if (definitions.empty() || anchors.empty())
+        return;
+
+    ensureConstellationLabelFont();
+    if (!m_constellationLabelFont)
+        return;
+
+    GLint viewport[4] = {0, 0, 1, 1};
+    glGetIntegerv(GL_VIEWPORT, viewport);
+
+    const float screenW = static_cast<float>(viewport[2]);
+    const float screenH = static_cast<float>(viewport[3]);
+
+    if (screenW <= 1.0f || screenH <= 1.0f)
+        return;
+
+    // Same no-translation sky transform as the stars/lines, followed by 2D
+    // text drawing. The label therefore always faces the player's screen.
+    const glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(view));
+
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    constexpr float kLabelAlpha = 0.28f;
+    const glm::vec4 labelColor(0.58f, 0.76f, 0.92f, kLabelAlpha);
+
+    for (const auto& anchor : anchors)
+    {
+        if (anchor.definitionIndex >= definitions.size())
+            continue;
+
+        const std::string label =
+            definitions[anchor.definitionIndex].displayName(
+                m_uiLocale
+            );
+
+        if (label.empty())
+            continue;
+
+        const glm::vec4 clip =
+            proj * viewNoTranslation * glm::vec4(anchor.skyPosition, 1.0f);
+
+        if (clip.w <= 0.0001f)
+            continue;
+
+        const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+
+        if (std::abs(ndc.x) > 1.0f ||
+            std::abs(ndc.y) > 1.0f ||
+            ndc.z < -1.0f ||
+            ndc.z > 1.0f)
+        {
+            continue;
+        }
+
+        const float screenX =
+            (ndc.x * 0.5f + 0.5f) * screenW;
+        const float screenY =
+            (1.0f - (ndc.y * 0.5f + 0.5f)) * screenH;
+
+        const float textWidth =
+            m_constellationLabelFont->measureText(label);
+
+        TextRenderer::instance().textDraw(
+            *m_constellationLabelFont,
+            label.c_str(),
+            screenX - textWidth * 0.5f,
+            screenY + m_constellationLabelFont->lineHeight() * 0.5f,
+            labelColor
+        );
+    }
+
+    // The world pass immediately restores its complete depth state too, but
+    // keep this helper locally well-behaved for future reuse.
+    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+}
+
+
 void SceneRenderer::renderConstellationHoverOverlay(
     const glm::mat4& view,
     const glm::mat4& proj
 )
 {
     const auto& dbg = debug::get().render;
-
-    if (!dbg.showConstellationHover)
+    if (!dbg.showConstellationHover || !m_starfieldRenderer.isInitialized())
         return;
-
-    if (!m_starfieldRenderer.isInitialized())
-        return;
-
     if (!m_debugLines || !m_debugLines->isInitialized())
         return;
 
@@ -3308,29 +3442,25 @@ void SceneRenderer::renderConstellationHoverOverlay(
 
     GLint viewport[4] = {0, 0, 1, 1};
     glGetIntegerv(GL_VIEWPORT, viewport);
-
     const float screenW = static_cast<float>(viewport[2]);
     const float screenH = static_cast<float>(viewport[3]);
-
     if (screenW <= 1.0f || screenH <= 1.0f)
         return;
-
     if (mouseX < 0.0 || mouseY < 0.0 || mouseX > screenW || mouseY > screenH)
         return;
 
-    const auto& constellations =
-        m_starfieldRenderer.getConstellationDefinitions();
-
+    const auto& constellations = m_starfieldRenderer.getConstellationDefinitions();
     if (constellations.empty())
         return;
 
     struct ScreenStar
     {
-        const GalaxyStarfieldRenderer::RealStar* star = nullptr;
+        int catalogId = -1;
         glm::vec2 screen {0.0f};
     };
 
-    const auto& stars = m_starfieldRenderer.getRealStars();
+    const auto identifier = m_starfieldRenderer.constellationStarIdentifier();
+    const auto& stars = m_starfieldRenderer.getConstellationStarReferences();
     const glm::vec3 observerLy = m_starfieldRenderer.getObserverPositionLy();
     const glm::mat4 viewNoTranslation = glm::mat4(glm::mat3(view));
     const float skyRadius = m_starfieldRenderer.renderRadius();
@@ -3338,136 +3468,85 @@ void SceneRenderer::renderConstellationHoverOverlay(
     std::vector<ScreenStar> projected;
     projected.reserve(stars.size());
 
-    auto projectStar = [&](const GalaxyStarfieldRenderer::RealStar& star, glm::vec2& outScreen) -> bool
-    {
-        const glm::vec3 rel = star.positionLy - observerLy;
-        const float distLy = glm::length(rel);
-
-        if (distLy < 0.001f)
-            return false;
-
-        const glm::vec3 dir = rel / distLy;
-        const glm::vec3 skyPos = dir * skyRadius;
-
-        const glm::vec4 clip =
-            proj * viewNoTranslation * glm::vec4(skyPos, 1.0f);
-
-        if (clip.w <= 0.0001f)
-            return false;
-
-        const glm::vec3 ndc = glm::vec3(clip) / clip.w;
-
-        if (std::abs(ndc.x) > 1.15f || std::abs(ndc.y) > 1.15f)
-            return false;
-
-        outScreen.x = (ndc.x * 0.5f + 0.5f) * screenW;
-        outScreen.y = (1.0f - (ndc.y * 0.5f + 0.5f)) * screenH;
-
-        return true;
-    };
-
     for (const auto& star : stars)
     {
+        const int catalogId = star.catalogId(identifier);
+        if (catalogId <= 0)
+            continue;
+
+        glm::vec3 direction;
+        if (!star.skyDirection(observerLy, direction))
+            continue;
+
+        const glm::vec3 skyPos = direction * skyRadius;
+        const glm::vec4 clip =
+            proj * viewNoTranslation * glm::vec4(skyPos, 1.0f);
+        if (clip.w <= 0.0001f)
+            continue;
+
+        const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+        if (std::abs(ndc.x) > 1.15f || std::abs(ndc.y) > 1.15f)
+            continue;
+
         glm::vec2 screen;
-        if (!projectStar(star, screen))
-            continue;
-
-        projected.push_back(ScreenStar{&star, screen});
+        screen.x = (ndc.x * 0.5f + 0.5f) * screenW;
+        screen.y = (1.0f - (ndc.y * 0.5f + 0.5f)) * screenH;
+        projected.push_back(ScreenStar{catalogId, screen});
     }
 
-    std::unordered_map<int, const ScreenStar*> projectedByHr;
-    projectedByHr.reserve(projected.size());
-
+    std::unordered_map<int, const ScreenStar*> projectedById;
+    projectedById.reserve(projected.size());
     for (const ScreenStar& screenStar : projected)
-    {
-        if (!screenStar.star ||
-            screenStar.star->brightStarCatalogId <= 0)
-        {
-            continue;
-        }
+        projectedById.emplace(screenStar.catalogId, &screenStar);
 
-        projectedByHr.emplace(
-            screenStar.star->brightStarCatalogId,
-            &screenStar
-        );
-    }
-
-    auto findByHr = [&](int hr) -> const ScreenStar*
+    auto findById = [&](int id) -> const ScreenStar*
     {
-        const auto it = projectedByHr.find(hr);
-        return it == projectedByHr.end() ? nullptr : it->second;
+        const auto it = projectedById.find(id);
+        return it == projectedById.end() ? nullptr : it->second;
     };
 
-    const glm::vec2 mouse(
-        static_cast<float>(mouseX),
-        static_cast<float>(mouseY)
-    );
-
-    const ConstellationOverlayRenderer::ConstellationDefinition*
-        bestConstellation = nullptr;
+    const glm::vec2 mouse(static_cast<float>(mouseX), static_cast<float>(mouseY));
+    const ConstellationOverlayRenderer::ConstellationDefinition* bestConstellation = nullptr;
     float bestDistance = 999999.0f;
 
     for (const auto& constellation : constellations)
     {
         float minDistance = 999999.0f;
         int visibleEdges = 0;
-
-        for (const auto& polyline : constellation.polylinesHr)
+        for (const auto& polyline : constellation.polylines)
         {
             for (std::size_t i = 1; i < polyline.size(); ++i)
             {
-                const ScreenStar* a = findByHr(polyline[i - 1]);
-                const ScreenStar* b = findByHr(polyline[i]);
-
+                const ScreenStar* a = findById(polyline[i - 1]);
+                const ScreenStar* b = findById(polyline[i]);
                 if (!a || !b)
                     continue;
 
                 const glm::vec2 ab = b->screen - a->screen;
                 const float abLen2 = glm::dot(ab, ab);
-
                 if (abLen2 < 0.0001f)
                     continue;
 
-                const float t =
-                    std::max(
-                        0.0f,
-                        std::min(
-                            1.0f,
-                            glm::dot(mouse - a->screen, ab) / abLen2
-                        )
-                    );
-
+                const float t = std::max(0.0f, std::min(
+                    1.0f, glm::dot(mouse - a->screen, ab) / abLen2));
                 const glm::vec2 closest = a->screen + ab * t;
-                const float distance = glm::length(mouse - closest);
-
-                minDistance = std::min(minDistance, distance);
+                minDistance = std::min(minDistance, glm::length(mouse - closest));
                 ++visibleEdges;
             }
         }
-
-        if (visibleEdges <= 0)
-            continue;
-
-        if (minDistance < bestDistance)
+        if (visibleEdges > 0 && minDistance < bestDistance)
         {
             bestDistance = minDistance;
             bestConstellation = &constellation;
         }
     }
 
-    if (!bestConstellation)
+    if (!bestConstellation || bestDistance > dbg.constellationHoverRadiusPx)
         return;
 
-    if (bestDistance > dbg.constellationHoverRadiusPx)
+    ensureConstellationLabelFont();
+    if (!m_constellationLabelFont)
         return;
-
-    if (!m_starLabelFont)
-    {
-        m_starLabelFont = std::make_unique<Font>(
-            "assets/fonts/Roboto-Light.ttf",
-            12
-        );
-    }
 
     auto pxToNdc = [&](const glm::vec2& p) -> glm::vec3
     {
@@ -3479,57 +3558,46 @@ void SceneRenderer::renderConstellationHoverOverlay(
     };
 
     m_debugLines->begin();
-
     const glm::vec4 lineColor(0.45f, 0.78f, 1.0f, 0.72f);
-
     glm::vec2 labelAnchor(0.0f);
     int labelCount = 0;
 
-    for (const auto& polyline : bestConstellation->polylinesHr)
+    for (const auto& polyline : bestConstellation->polylines)
     {
         for (std::size_t i = 1; i < polyline.size(); ++i)
         {
-            const ScreenStar* a = findByHr(polyline[i - 1]);
-            const ScreenStar* b = findByHr(polyline[i]);
-
+            const ScreenStar* a = findById(polyline[i - 1]);
+            const ScreenStar* b = findById(polyline[i]);
             if (!a || !b)
                 continue;
-
-            m_debugLines->addLine(
-                pxToNdc(a->screen),
-                pxToNdc(b->screen),
-                lineColor
-            );
-
-            labelAnchor += a->screen;
-            labelAnchor += b->screen;
+            m_debugLines->addLine(pxToNdc(a->screen), pxToNdc(b->screen), lineColor);
+            labelAnchor += a->screen + b->screen;
             labelCount += 2;
         }
     }
-
     m_debugLines->endOverlay(glm::mat4(1.0f));
 
-    if (labelCount > 0)
-        labelAnchor /= static_cast<float>(labelCount);
-    else
-        labelAnchor = mouse;
+    labelAnchor = labelCount > 0
+        ? labelAnchor / static_cast<float>(labelCount)
+        : mouse;
 
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    const std::string hoverLabel = bestConstellation->displayName(
+        m_uiLocale
+    );
     TextRenderer::instance().textDraw(
-        *m_starLabelFont,
-        bestConstellation->name,
+        *m_constellationLabelFont,
+        hoverLabel.c_str(),
         labelAnchor.x + 12.0f,
         labelAnchor.y - 12.0f,
         glm::vec4(0.65f, 0.86f, 1.0f, 0.92f)
     );
-
     glEnable(GL_DEPTH_TEST);
 }
-
 
 
 

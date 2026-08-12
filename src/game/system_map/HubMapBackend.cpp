@@ -918,7 +918,7 @@ m_performanceStats.cpuPlanetBackdropMs =
 
                 const std::string label =
                     ship.player
-                        ? "PLAYER"
+                        ? m_playerLabel
                         : ship.name;
 
                 text.textDrawPx(

@@ -14,6 +14,7 @@ else
 fi
 
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/feature_contracts/check_feature_contracts.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/feature_contracts/check_constellation_overlay.py"
 
 cmake \
     -S "${ROOT_DIR}/tests/feature_contracts" \

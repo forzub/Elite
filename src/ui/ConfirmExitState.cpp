@@ -1,4 +1,5 @@
 #include "ui/ConfirmExitState.h"
+#include "core/Application.h"
 
 #include "core/StateStack.h"
 #include "ui/MainMenuState.h"
@@ -22,7 +23,7 @@ ConfirmExitState::ConfirmExitState(StateStack& states, const ConfirmExitOptions&
     , m_options(options)
 {
 
-    
+
     // ВСЕ кнопки рисуются всегда
     m_actions.push_back(ExitAction::Continue);
     m_actions.push_back(ExitAction::Save);
@@ -36,7 +37,7 @@ ConfirmExitState::ConfirmExitState(StateStack& states, const ConfirmExitOptions&
 
 ConfirmExitState::~ConfirmExitState()
 {
-    
+
 }
 
 // =====================================================================================
@@ -45,7 +46,7 @@ ConfirmExitState::~ConfirmExitState()
 
 void ConfirmExitState::handleInput()
 {
-    
+
 
     GLFWwindow* window = glfwGetCurrentContext();
 
@@ -97,7 +98,7 @@ void ConfirmExitState::render(){}
 
 void ConfirmExitState::renderUI()
 {
-    
+
     // Пока пусто.
     // Здесь позже будет:
     // - затемнение фона
@@ -233,26 +234,27 @@ bool ConfirmExitState::onGlobalEscape()
 void ConfirmExitState::pushHtmlState()
 {
     json payload;
-    payload["title"] = "CONFIRM EXIT";
+    const auto& loc = context().app->localization();
+    payload["title"] = loc.text("confirm.title", "CONFIRM EXIT");
     payload["items"] = json::array({
         {
             { "id", "continue" },
-            { "label", "CONTINUE" },
+            { "label", loc.text("confirm.continue", "CONTINUE") },
             { "enabled", true }
         },
         {
             { "id", "save" },
-            { "label", "SAVE" },
+            { "label", loc.text("confirm.save", "SAVE") },
             { "enabled", m_options.canSave }
         },
         {
             { "id", "load" },
-            { "label", "LOAD" },
+            { "label", loc.text("confirm.load", "LOAD") },
             { "enabled", m_options.canLoad }
         },
         {
             { "id", "exit_to_menu" },
-            { "label", "EXIT TO MENU" },
+            { "label", loc.text("confirm.exit_to_menu", "EXIT TO MENU") },
             { "enabled", true }
         }
     });
@@ -261,6 +263,11 @@ void ConfirmExitState::pushHtmlState()
     context().htmlUi().broadcastState(HtmlUiPanelId::ConfirmExit, payload);
 }
 
+
+void ConfirmExitState::onUiLanguageChanged()
+{
+    pushHtmlState();
+}
 
 void ConfirmExitState::processHtmlCommands()
 {
@@ -308,5 +315,3 @@ void ConfirmExitState::processHtmlCommands()
         }
     }
 }
-
-

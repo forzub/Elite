@@ -6,7 +6,9 @@
 #include <cstddef>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <random>
+#include <utility>
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/geometric.hpp>
@@ -259,31 +261,47 @@ bool GalaxyStarfieldRenderer::initialize(
 
     if (m_constellationOverlayAvailable)
     {
-        bool constellationDefinitionsLoaded =
-            m_constellationOverlayRenderer.initialize(
-                "assets/data/galaxy/constellation_lines.json"
+        bool culturesLoaded = loadSkyCultureCatalog(
+            "assets/data/galaxy/sky_cultures/manifest.json"
+        );
+        if (!culturesLoaded)
+            culturesLoaded = loadSkyCultureCatalog(
+                "../assets/data/galaxy/sky_cultures/manifest.json"
+            );
+        if (!culturesLoaded)
+            culturesLoaded = loadSkyCultureCatalog(
+                "../src/assets/data/galaxy/sky_cultures/manifest.json"
             );
 
-        if (!constellationDefinitionsLoaded)
+        bool constellationSupportLoaded = loadConstellationSupportStars(
+            "assets/data/galaxy/constellation_support_stars.json"
+        );
+        if (!constellationSupportLoaded)
+            constellationSupportLoaded = loadConstellationSupportStars(
+                "../assets/data/galaxy/constellation_support_stars.json"
+            );
+        if (!constellationSupportLoaded)
+            constellationSupportLoaded = loadConstellationSupportStars(
+                "../src/assets/data/galaxy/constellation_support_stars.json"
+            );
+        if (!constellationSupportLoaded)
         {
-            constellationDefinitionsLoaded =
-                m_constellationOverlayRenderer.initialize(
-                    "../assets/data/galaxy/constellation_lines.json"
-                );
+            std::cerr << "[Constellations] support-star catalog was not loaded"
+                      << std::endl;
         }
 
-        if (!constellationDefinitionsLoaded)
+        const bool overlayReady =
+            culturesLoaded && m_constellationOverlayRenderer.initialize();
+        if (overlayReady)
         {
-            constellationDefinitionsLoaded =
-                m_constellationOverlayRenderer.initialize(
-                    "../src/assets/data/galaxy/constellation_lines.json"
-                );
-        }
-
-        if (constellationDefinitionsLoaded)
+            applyActiveSkyCulture();
             rebuildConstellationOverlay();
+        }
         else
-            std::cerr << "[Constellations] overlay data was not loaded" << std::endl;
+        {
+            std::cerr << "[Constellations] sky-culture catalog was not loaded"
+                      << std::endl;
+        }
     }
 
     glGenVertexArrays(1, &m_vao);
@@ -676,6 +694,182 @@ bool GalaxyStarfieldRenderer::mergeGameSystemsFromCatalog(
 }
 
 
+bool GalaxyStarfieldRenderer::loadSkyCultureCatalog(
+    const std::string& path
+)
+{
+    if (!m_skyCultureCatalog.loadManifest(path))
+        return false;
+
+    m_activeSkyCultureIndex = m_skyCultureCatalog.defaultCultureIndex();
+    const auto* culture = m_skyCultureCatalog.culture(m_activeSkyCultureIndex);
+    if (!culture)
+        return false;
+
+    std::cout
+        << "[Constellations] sky-cultures="
+        << m_skyCultureCatalog.cultures().size()
+        << " default="
+        << culture->id
+        << " source="
+        << path
+        << std::endl;
+
+    return true;
+}
+
+void GalaxyStarfieldRenderer::applyActiveSkyCulture()
+{
+    const auto* culture = m_skyCultureCatalog.culture(m_activeSkyCultureIndex);
+    if (!culture)
+        return;
+
+    m_constellationOverlayRenderer.setCulture(*culture);
+}
+
+bool GalaxyStarfieldRenderer::cycleConstellationCulture()
+{
+    const auto& cultures = m_skyCultureCatalog.cultures();
+    if (cultures.empty())
+        return false;
+
+    m_activeSkyCultureIndex = (m_activeSkyCultureIndex + 1) % cultures.size();
+    applyActiveSkyCulture();
+    rebuildConstellationOverlay();
+    return true;
+}
+
+std::string GalaxyStarfieldRenderer::constellationCultureId() const
+{
+    const auto* culture = m_skyCultureCatalog.culture(m_activeSkyCultureIndex);
+    return culture ? culture->id : std::string();
+}
+
+std::string GalaxyStarfieldRenderer::constellationCultureDisplayName(
+    const std::string& locale
+) const
+{
+    const auto* culture = m_skyCultureCatalog.culture(m_activeSkyCultureIndex);
+    return culture ? culture->displayName(locale) : std::string();
+}
+
+void GalaxyStarfieldRenderer::setGameSystemDisplayNames(
+    const std::unordered_map<int, std::string>& names
+)
+{
+    for (RealStar& star : m_realStars)
+    {
+        if (!star.isGameSystem || star.gameSystemId < 0)
+            continue;
+
+        const auto it = names.find(star.gameSystemId);
+        if (it != names.end() && !it->second.empty())
+            star.gameSystemName = it->second;
+    }
+}
+
+bool GalaxyStarfieldRenderer::loadConstellationSupportStars(
+    const std::string& path
+)
+{
+    std::ifstream in(path);
+    if (!in.is_open())
+        return false;
+
+    json root;
+    try
+    {
+        in >> root;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[Constellations] failed to parse support-star catalog: "
+                  << e.what() << std::endl;
+        return false;
+    }
+
+    if (!root.contains("stars") || !root["stars"].is_array())
+        return false;
+
+    std::vector<ConstellationOverlayRenderer::StarReference> loaded;
+    loaded.reserve(root["stars"].size());
+
+    for (const auto& item : root["stars"])
+    {
+        if (!item.is_object())
+            continue;
+
+        // v2 is catalog-neutral. Keep accepting the original HR shape so
+        // developer data can be upgraded independently without a hard crash.
+        std::string catalog;
+        int id = -1;
+        if (item.contains("catalog") && item["catalog"].is_string() &&
+            item.contains("id") && item["id"].is_number_integer())
+        {
+            catalog = item["catalog"].get<std::string>();
+            id = item["id"].get<int>();
+        }
+        else if (item.contains("hr") && item["hr"].is_number_integer())
+        {
+            catalog = "hr";
+            id = item["hr"].get<int>();
+        }
+
+        if (id <= 0 || (catalog != "hr" && catalog != "hip"))
+            continue;
+
+        ConstellationOverlayRenderer::StarReference star;
+        if (catalog == "hr")
+            star.brightStarCatalogId = id;
+        else
+            star.hipparcosCatalogId = id;
+
+        if (item.contains("position_ly") && item["position_ly"].is_array() &&
+            item["position_ly"].size() == 3 &&
+            item["position_ly"][0].is_number() &&
+            item["position_ly"][1].is_number() &&
+            item["position_ly"][2].is_number())
+        {
+            const auto& position = item["position_ly"];
+            star.positionLy = glm::vec3(
+                static_cast<float>(position[0].get<double>()),
+                static_cast<float>(position[1].get<double>()),
+                static_cast<float>(position[2].get<double>())
+            );
+        }
+        else if (item.contains("sky_direction") &&
+                 item["sky_direction"].is_array() &&
+                 item["sky_direction"].size() == 3 &&
+                 item["sky_direction"][0].is_number() &&
+                 item["sky_direction"][1].is_number() &&
+                 item["sky_direction"][2].is_number())
+        {
+            const auto& direction = item["sky_direction"];
+            star.fixedSkyDirection = glm::vec3(
+                static_cast<float>(direction[0].get<double>()),
+                static_cast<float>(direction[1].get<double>()),
+                static_cast<float>(direction[2].get<double>())
+            );
+            star.useFixedSkyDirection = true;
+        }
+        else
+        {
+            continue;
+        }
+
+        loaded.push_back(star);
+    }
+
+    if (loaded.empty())
+        return false;
+
+    m_constellationSupportStars = std::move(loaded);
+    std::cout << "[Constellations] support-stars="
+              << m_constellationSupportStars.size()
+              << " source=" << path << std::endl;
+    return true;
+}
+
 bool GalaxyStarfieldRenderer::loadRealStarCatalog(const std::string& path)
 {
     std::ifstream in(path);
@@ -781,6 +975,12 @@ bool GalaxyStarfieldRenderer::loadRealStarCatalog(const std::string& path)
     if (item.contains("hr") && item["hr"].is_number_integer())
     {
         s.brightStarCatalogId = item["hr"].get<int>();
+    }
+
+    s.hipparcosCatalogId = -1;
+    if (item.contains("hip") && item["hip"].is_number_integer())
+    {
+        s.hipparcosCatalogId = item["hip"].get<int>();
     }
 
     s.isAstronomicalCatalogStar = true;
@@ -1275,31 +1475,51 @@ void GalaxyStarfieldRenderer::rebuildConstellationOverlay()
         !m_constellationOverlayRenderer.isInitialized())
         return;
 
-    std::vector<ConstellationOverlayRenderer::StarReference> references;
-    references.reserve(m_realStars.size());
+    m_constellationStarReferences.clear();
+    m_constellationStarReferences.reserve(
+        m_realStars.size() + m_constellationSupportStars.size()
+    );
 
     for (const RealStar& star : m_realStars)
     {
-        if (!star.isAstronomicalCatalogStar ||
-            star.brightStarCatalogId <= 0)
-        {
+        if (!star.isAstronomicalCatalogStar)
             continue;
-        }
+        if (star.brightStarCatalogId <= 0 && star.hipparcosCatalogId <= 0)
+            continue;
 
         ConstellationOverlayRenderer::StarReference reference;
         reference.brightStarCatalogId = star.brightStarCatalogId;
+        reference.hipparcosCatalogId = star.hipparcosCatalogId;
         reference.positionLy = star.positionLy;
-        references.push_back(reference);
+        m_constellationStarReferences.push_back(reference);
+    }
+
+    // Support points repair topology only. They never enter m_realStars, so
+    // switching cultures cannot mutate the approved visible top-3000 catalog.
+    for (const auto& supportStar : m_constellationSupportStars)
+    {
+        const auto duplicate = std::find_if(
+            m_constellationStarReferences.begin(),
+            m_constellationStarReferences.end(),
+            [&](const auto& existing)
+            {
+                return
+                    (supportStar.brightStarCatalogId > 0 &&
+                     existing.brightStarCatalogId == supportStar.brightStarCatalogId) ||
+                    (supportStar.hipparcosCatalogId > 0 &&
+                     existing.hipparcosCatalogId == supportStar.hipparcosCatalogId);
+            }
+        );
+        if (duplicate == m_constellationStarReferences.end())
+            m_constellationStarReferences.push_back(supportStar);
     }
 
     m_constellationOverlayRenderer.rebuild(
-        references,
+        m_constellationStarReferences,
         m_observerPositionLy,
         m_renderRadius
     );
 }
-
-
 
 void GalaxyStarfieldRenderer::render(
     const glm::mat4& view,

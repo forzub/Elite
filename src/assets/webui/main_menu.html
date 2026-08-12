@@ -79,17 +79,18 @@
   <div class="screen">
     <div class="panel">
       <h1>ELITE</h1>
-      <div class="subtitle">HTML GAME UI PROTOTYPE</div>
+      <div class="subtitle" data-i18n="main.subtitle">HTML GAME UI PROTOTYPE</div>
 
-      <button onclick="sendCommand('new_game')">NEW GAME</button>
-      <button onclick="sendCommand('load_game')">LOAD GAME</button>
-      <button onclick="sendCommand('shipyard')">SHIPYARD</button>
-      <button onclick="sendCommand('exit')">EXIT</button>
+      <button data-i18n="main.new_game" onclick="sendCommand('new_game')">NEW GAME</button>
+      <button data-i18n="main.load_game" onclick="sendCommand('load_game')">LOAD GAME</button>
+      <button data-i18n="main.shipyard" onclick="sendCommand('shipyard')">SHIPYARD</button>
+      <button data-i18n="main.exit" onclick="sendCommand('exit')">EXIT</button>
 
-      <div class="hint">WebView layer. Not the debug browser.</div>
+      <div class="hint" data-i18n="main.hint">WebView layer. Not the debug browser.</div>
     </div>
   </div>
 
+  <script src="/game_i18n.js"></script>
   <script>
     async function sendCommand(command) {
       if (window.gameCommand) {

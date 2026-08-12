@@ -43,6 +43,7 @@ add_executable(EliteGame
     src/core/Application.cpp
     src/core/StateStack.cpp
     src/core/StateContext.cpp
+    src/game/localization/LocalizationService.cpp
 
 
     src/window/Window.cpp
@@ -229,6 +230,7 @@ add_executable(EliteGame
     
     src/render/starfield/GalaxyStarfieldRenderer.cpp
     src/render/starfield/ConstellationOverlayRenderer.cpp
+    src/render/starfield/SkyCultureCatalog.cpp
     src/render/starfield/MilkyWayRenderer.cpp
 
     src/game/promo/PromoFlybyScenario.cpp

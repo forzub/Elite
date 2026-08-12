@@ -1,4 +1,5 @@
 #include "ui/MainMenuState.h"
+#include "core/Application.h"
 #include "game/SpaceState.h"
 #include "core/StateStack.h"
 #include "src/core/Application.h"
@@ -170,7 +171,7 @@ void MainMenuState::activateSelected()
     #ifdef _WIN32
         return;
     #endif
-    
+
     switch (m_selected)
     {
         case MenuItem::NewGame:
@@ -233,19 +234,20 @@ bool MainMenuState::isSelected(size_t index) const
 void MainMenuState::pushMainMenuState()
 {
     json payload;
+    const auto& loc = context().app->localization();
     payload["title"] = "ELITE GAME";
     payload["items"] = json::array({
         {
             { "id", "new_game" },
-            { "label", "NEW GAME" }
+            { "label", loc.text("main.new_game", "NEW GAME") }
         },
         {
             { "id", "load_game" },
-            { "label", "LOAD GAME" }
+            { "label", loc.text("main.load_game", "LOAD GAME") }
         },
         {
             { "id", "exit" },
-            { "label", "EXIT" }
+            { "label", loc.text("main.exit", "EXIT") }
         }
     });
 
@@ -253,6 +255,12 @@ void MainMenuState::pushMainMenuState()
     context().htmlUi().broadcastState(HtmlUiPanelId::MainMenu, payload);
 }
 
+
+
+void MainMenuState::onUiLanguageChanged()
+{
+    pushMainMenuState();
+}
 
 void MainMenuState::processHtmlCommands()
 {

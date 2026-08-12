@@ -311,6 +311,34 @@ inline std::string formatNavigationAddressLine(
 }
 
 template <typename Index>
+inline std::string formatNavigationAddressLine(
+    NavigationCoordinateFormat format,
+    const std::string& displayName,
+    const std::string& mapPrefix,
+    int level,
+    const Index& index,
+    int subdivision
+)
+{
+    std::string result;
+    const std::string address =
+        formatNavigationAddress(
+            format,
+            mapPrefix,
+            level,
+            index,
+            subdivision
+        );
+
+    result.reserve(displayName.size() + address.size() + 4);
+    result += '[';
+    result += displayName;
+    result += "] ";
+    result += address;
+    return result;
+}
+
+template <typename Index>
 inline std::string formatCurrentNavigationAddressLine(
     const std::string& mapPrefix,
     int level,

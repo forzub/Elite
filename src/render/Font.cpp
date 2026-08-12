@@ -4,6 +4,8 @@
 #include FT_FREETYPE_H
 
 #include <algorithm>
+#include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
@@ -78,6 +80,38 @@ uint32_t nextUtf8Codepoint(
     ++i;
     return static_cast<uint32_t>('?');
 }
+
+std::vector<std::string> fallbackFontCandidates()
+{
+    std::vector<std::string> result = {
+        "assets/fonts/NotoSansCJK-Regular.otf",
+        "src/assets/fonts/NotoSansCJK-Regular.otf"
+    };
+
+#ifdef _WIN32
+    std::filesystem::path windowsDir = "C:/Windows";
+    if (const char* env = std::getenv("WINDIR"))
+    {
+        if (*env)
+            windowsDir = env;
+    }
+
+    const std::filesystem::path fontsDir = windowsDir / "Fonts";
+    result.push_back((fontsDir / "msyh.ttc").string());
+    result.push_back((fontsDir / "msyhbd.ttc").string());
+    result.push_back((fontsDir / "simhei.ttf").string());
+    result.push_back((fontsDir / "simsun.ttc").string());
+    result.push_back((fontsDir / "YuGothR.ttc").string());
+    result.push_back((fontsDir / "YuGothM.ttc").string());
+    result.push_back((fontsDir / "meiryo.ttc").string());
+    result.push_back((fontsDir / "msgothic.ttc").string());
+#else
+    result.push_back("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc");
+    result.push_back("/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.otf");
+#endif
+
+    return result;
+}
 }
 
 Font::Font(const std::string& path, int pixelSize)
@@ -101,6 +135,29 @@ Font::Font(const std::string& path, int pixelSize)
 
     m_ftLibrary = ft;
     m_face = face;
+
+    // Roboto remains the requested visual face for Latin/Cyrillic. CJK
+    // glyphs are resolved lazily from an installed/bundled Unicode fallback
+    // face instead of collapsing to '?'. No player-facing renderer has to
+    // know which script a particular string uses.
+    for (const std::string& fallbackPath : fallbackFontCandidates())
+    {
+        if (fallbackPath == path || !std::filesystem::exists(fallbackPath))
+            continue;
+
+        FT_Face fallback = nullptr;
+        if (FT_New_Face(ft, fallbackPath.c_str(), 0, &fallback) != 0)
+            continue;
+
+        if (FT_Select_Charmap(fallback, FT_ENCODING_UNICODE) != 0)
+        {
+            FT_Done_Face(fallback);
+            continue;
+        }
+
+        FT_Set_Pixel_Sizes(fallback, 0, pixelSize);
+        m_fallbackFaces.push_back(fallback);
+    }
 
     if (face->size)
     {
@@ -171,6 +228,13 @@ Font::~Font()
         m_atlasTexture = 0;
     }
 
+    for (void* fallbackFace : m_fallbackFaces)
+    {
+        if (fallbackFace)
+            FT_Done_Face(static_cast<FT_Face>(fallbackFace));
+    }
+    m_fallbackFaces.clear();
+
     if (m_face)
     {
         FT_Done_Face(static_cast<FT_Face>(m_face));
@@ -196,7 +260,8 @@ Character& Font::glyph(uint32_t codepoint)
 
 Character& Font::loadGlyph(uint32_t codepoint)
 {
-    FT_Face face = static_cast<FT_Face>(m_face);
+    FT_Face primaryFace = static_cast<FT_Face>(m_face);
+    FT_Face face = primaryFace;
 
     if (!face)
         throw std::runtime_error("Font face is null");
@@ -205,16 +270,35 @@ Character& Font::loadGlyph(uint32_t codepoint)
 
     FT_UInt glyphIndex = FT_Get_Char_Index(face, actualCodepoint);
 
+    if (glyphIndex == 0)
+    {
+        for (void* fallbackPtr : m_fallbackFaces)
+        {
+            FT_Face fallback = static_cast<FT_Face>(fallbackPtr);
+            const FT_UInt fallbackGlyph =
+                FT_Get_Char_Index(fallback, actualCodepoint);
+
+            if (fallbackGlyph == 0)
+                continue;
+
+            face = fallback;
+            glyphIndex = fallbackGlyph;
+            break;
+        }
+    }
+
     if (glyphIndex == 0 && actualCodepoint != static_cast<uint32_t>('?'))
     {
         actualCodepoint = static_cast<uint32_t>('?');
-        glyphIndex = FT_Get_Char_Index(face, actualCodepoint);
+        face = primaryFace;
+        glyphIndex = FT_Get_Char_Index(primaryFace, actualCodepoint);
     }
 
     if (FT_Load_Char(face, actualCodepoint, FT_LOAD_RENDER))
     {
         actualCodepoint = static_cast<uint32_t>('?');
-        FT_Load_Char(face, actualCodepoint, FT_LOAD_RENDER);
+        face = primaryFace;
+        FT_Load_Char(primaryFace, actualCodepoint, FT_LOAD_RENDER);
     }
 
     FT_GlyphSlot g = face->glyph;

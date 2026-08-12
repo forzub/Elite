@@ -221,3 +221,30 @@ dependency/epoch join. `SystemMapCelestialMigrationContractTests.cpp` verifies
 that dynamic objects survive the join untouched, parent-relative orbit centers
 are rebuilt from the same celestial sample, authored fallback positions survive,
 and cross-system/cross-epoch composition is rejected.
+
+### Client-owned System-map real-ship layer
+
+Stage 3B removes ordinary player/NPC ships from `GameServer::buildSystemMapSnapshot`.
+Those transforms already arrive through normal `SimulationSnapshot` replication,
+so `ClientMapService` samples retained authoritative history at the exact
+`SystemMapResponse::metadata.serverTimeSeconds` and composes the map ship layer
+locally. A response that falls between replication publications waits until a
+newer snapshot forms an interpolation bracket; stale responses are rejected
+instead of being silently clamped to another epoch. Cross-system coordinates
+are never interpolated.
+
+`check_client_system_map_ships.py` prevents the duplicate server ship loop from
+returning and locks the exact-epoch join. `SystemMapShipSamplingContractTests.cpp`
+checks temporal interpolation, future/stale response handling and the system-domain
+fence across an inter-system transfer.
+
+
+## Galaxy-map catalog ownership
+
+`check_client_galaxy_map_catalog.py` and
+`GalaxyMapCatalogMigrationContractTests.cpp` lock the Stage 3C seam:
+static Galaxy systems/objects come from the client's local `StarAtlasDatabase`,
+while the server response carries only authoritative world-state overlays
+(currently jurisdiction) plus the authoritative universe epoch/date. Galaxy-map
+requests must not become a second transport for catalog names, types, positions,
+descriptions, or tags.

@@ -11,6 +11,7 @@
 #include "src/game/simulation/HubAttachmentSnapshot.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/diagnostics/HubMotionLabTelemetry.h"
+#include "src/game/client/ClientSystemMapShipSampler.h"
 
 #include "render/HUD/WorldLabel.h"
 #include "src/world/WorldParams.h"
@@ -191,6 +192,18 @@ public:
     const std::vector<game::visual::VisualShip>& visualShips() const
     {
         return m_visualShips;
+    }
+
+    game::client::SystemMapShipSampleResult sampleSystemMapShipsAtServerTime(
+        int systemId,
+        double serverTimeSeconds
+    ) const
+    {
+        return game::client::sampleSystemMapShipsAtServerTime(
+            m_snapshotBuffer,
+            systemId,
+            serverTimeSeconds
+        );
     }
 
     void clearVisualShips()

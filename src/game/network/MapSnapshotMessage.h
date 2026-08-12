@@ -44,6 +44,11 @@ struct GalaxyMapResponse
 {
     std::uint64_t requestId = 0;
     SnapshotMetadata metadata;
+
+    // Stage 3C protocol seam: systems contain only authoritative world-state
+    // overlays (currently id + jurisdiction). Static system/object catalog
+    // fields are reconstructed from the client's local StarAtlas. The
+    // snapshot still carries authoritative universe time/date for the map.
     world::celestial::GalaxyMapSnapshot snapshot;
 };
 
@@ -53,10 +58,13 @@ struct SystemMapResponse
     SnapshotMetadata metadata;
     int systemId = -1;
 
-    // Stage 3A protocol seam: the authoritative server publishes the dynamic
-    // System-map layer and epoch in this snapshot, but leaves `bodies` empty.
-    // ClientMapService reconstructs deterministic celestial bodies from its
-    // local catalog/runtime at snapshot.universeTimeSeconds before exposing it.
+    // Stage 3B protocol seam: the authoritative server publishes map-specific
+    // infrastructure/hub metadata and the map epoch, but leaves deterministic
+    // celestial bodies and ordinary replicated ships to the client. Bodies are
+    // rebuilt from the local catalog/runtime at snapshot.universeTimeSeconds;
+    // ships are sampled from normal SimulationSnapshot history at the exact
+    // response metadata.serverTimeSeconds. This prevents System-map requests
+    // from becoming a second replication channel for moving ships.
     world::celestial::SystemMapSnapshot snapshot;
 };
 

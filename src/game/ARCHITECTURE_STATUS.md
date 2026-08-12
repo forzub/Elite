@@ -167,7 +167,7 @@ architecture-safe thresholds.
 
 ## Server -> client presentation migration
 
-Functional migration is currently at **Migration Stage 3A complete**:
+Functional migration is currently at **Migration Stage 3C in progress**:
 
 - Stage 0: client-facing state stopped depending directly on `GameServer`;
   `IGameSession`/`ITransport` and the local host own the server boundary.
@@ -189,6 +189,9 @@ Functional migration is currently at **Migration Stage 3A complete**:
   `CelestialRuntimeRegistry` at the **same response universe-time epoch**. The
   optional server motion CSV may still resolve celestial state explicitly when
   that diagnostic is enabled.
+- Stage 3B: ordinary player/NPC System-map ships are reconstructed from exact-epoch normal replication history instead of a second map-specific ship channel.
+- Stage 3C: Galaxy systems/objects are reconstructed from the client-local `StarAtlasDatabase`; `GameServer` now emits only authoritative Galaxy world overlays (currently jurisdiction) plus universe epoch/date.
+
 
 The clock/revision work that followed is infrastructure for this migration.
 First-class entity system membership and the response-epoch rule are now the
@@ -197,8 +200,10 @@ map epochs.
 
 ### Next functional migration stage
 
-**Migration Stage 3 is in progress:** dynamic System-map objects and the complete
-Galaxy/Detail/Hub DTOs are still server-built.
+**Migration Stage 3 is in progress:** deterministic System-map celestial bodies
+and ordinary real-ship map objects are now client-composed. Map-specific
+infrastructure/hub metadata and the complete Detail/Hub DTOs are still
+server-built.
 
 The server should eventually publish compact authoritative dynamic entity state
 (ships, hubs/infrastructure identities and gameplay-owned transforms/bindings),
@@ -223,11 +228,14 @@ but those constants must stay inside diagnostic/promo code paths.
 
 ## Known migration blockers / debt
 
-- `GameServer` still builds Galaxy/Detail/Hub snapshots and the authoritative
-  dynamic-object portion of System snapshots. Deterministic System celestial
-  bodies have migrated to client-side composition; the remaining map DTOs still
-  contain deterministic catalog/presentation data to remove in later Stage-3
-  slices.
+- `GameServer` still builds the authoritative Galaxy overlay plus Detail/Hub snapshots and the map-specific
+  infrastructure/hub portion of System snapshots. Deterministic System celestial
+  bodies and ordinary real ships have migrated to client-side composition. Real
+  ship transforms are sampled from retained `SimulationSnapshot` history at the
+  exact `SystemMapResponse::metadata.serverTimeSeconds`, so System-map requests
+  no longer form a second replication channel for moving ships. The remaining
+  map DTOs still contain deterministic/presentation data to remove in later
+  Stage-3 slices.
 - The legacy duplicate Sol/Earth/Moon gameplay pass has been removed from
   `SceneRenderer`; gameplay and maps must consume canonical client presentation
   state instead of maintaining a second hard-coded celestial world.
@@ -247,10 +255,12 @@ but those constants must stay inside diagnostic/promo code paths.
 - Static-object spatial authority is split from map metadata: `systemId` is fixed
   at spawn/transfer, `orbitalParentBodyId` owns physical orbital parenting, and
   `mapParentBodyId` is presentation/index metadata only.
-- System-map snapshots now publish player/NPC ships that belong to the requested
-  system. The current System-map interaction path still has explicit picking and
-  selection only for hubs/bodies, so ship selection/Details navigation remains an
-  unfinished functional contract.
+- System-map player/NPC ships are reconstructed on the client from ordinary
+  authoritative replication history and filtered by explicit `systemId` before
+  conversion to map coordinates. Cross-system `WorldPosition` values are never
+  interpolated. The current System-map interaction path still has explicit
+  picking and selection only for hubs/bodies, so ship selection/Details
+  navigation remains an unfinished functional contract.
 - `ServerRuntime` is now the sole in-process production owner of `GameServer`.
   `LocalGameHost` composes the gameplay transport, a separate local debug/control
   channel, and `ServerRuntime`; bootstrap world configuration and the initial

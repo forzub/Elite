@@ -54,11 +54,9 @@ for forbidden in (
 for required in (
     "m_simulation.staticObjects()",
     "m_simulation.orbitalHubs()",
-    "m_simulation.ships()",
-    "transform.motion.systemId != systemId",
 ):
     if required not in server_system:
-        fail(f"authoritative dynamic System-map layer was lost: {required}")
+        fail(f"map-specific infrastructure layer was lost: {required}")
 
 if "if (m_diagnostics.settings.systemMapMotionCsv)" not in server_system:
     fail("server celestial resolution for motion CSV is not explicitly diagnostic-gated")
@@ -113,7 +111,7 @@ if catalog_member < 0 or map_member < 0 or catalog_member > map_member:
     fail("GameClient must construct the catalog service before ClientMapService")
 
 if "m_catalogs(transport)" not in game_client_cpp or \
-   "m_maps(transport, m_catalogs)" not in game_client_cpp:
-    fail("GameClient does not inject its local catalog into ClientMapService")
+   "m_maps(transport, m_catalogs, m_world)" not in game_client_cpp:
+    fail("GameClient does not inject its local catalog/world into ClientMapService")
 
 print("[PASS] System-map deterministic celestial layer is client-owned")

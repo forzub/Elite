@@ -679,7 +679,8 @@ def check_world_authority_boundaries() -> None:
     )
     require(
         "m_systemJurisdictions" in server_h
-        and "m_systemJurisdictions.find(s.id)" in server_cpp,
+        and "for (const auto& [systemId, jurisdiction] : m_systemJurisdictions)" in server_cpp
+        and "overlay.jurisdiction = jurisdiction" in server_cpp,
         "Galaxy map jurisdiction is no longer sourced from server world state",
     )
 

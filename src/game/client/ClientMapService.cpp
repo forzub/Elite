@@ -1,6 +1,9 @@
 #include "src/game/client/ClientMapService.h"
 #include "src/game/client/ClientCatalogService.h"
 #include "src/game/client/ClientCelestialMapBridge.h"
+#include "src/game/client/ClientGalaxyMapBridge.h"
+#include "src/game/client/ClientSystemMapShipBridge.h"
+#include "src/game/client/ClientWorldState.h"
 
 #include <algorithm>
 #include <type_traits>
@@ -10,10 +13,12 @@ namespace game::client
 {
 ClientMapService::ClientMapService(
     ITransport& transport,
-    const ClientCatalogService& catalogs
+    const ClientCatalogService& catalogs,
+    const ::ClientWorldState& world
 )
     : m_transport(transport)
     , m_catalogs(catalogs)
+    , m_world(world)
 {
 }
 
@@ -84,6 +89,8 @@ void ClientMapService::sendGalaxyRequest()
 
 void ClientMapService::sendSystemRequest()
 {
+    m_deferredSystemResponse.reset();
+
     game::network::SystemMapRequest request;
     request.requestId = nextRequestId();
     request.systemId = m_requestedSystemId;
@@ -116,8 +123,23 @@ void ClientMapService::update(float dt)
 
     if (advanceTimeout(m_galaxyRequest, dt))
         sendGalaxyRequest();
-    if (advanceTimeout(m_systemRequest, dt))
+
+    if (m_deferredSystemResponse)
+    {
+        // The map reply is already in hand; only the matching replication
+        // bracket is missing. Bound this wait, but do not resend an otherwise
+        // valid map response and create another competing epoch.
+        m_systemRequest.elapsedSeconds += std::max(dt, 0.0f);
+        if (m_systemRequest.elapsedSeconds >= RequestTimeoutSeconds)
+        {
+            m_deferredSystemResponse.reset();
+            fail(m_systemRequest);
+        }
+    }
+    else if (advanceTimeout(m_systemRequest, dt))
+    {
         sendSystemRequest();
+    }
     if (advanceTimeout(m_detailRequest, dt))
         sendDetailRequest();
     if (advanceTimeout(m_hubRequest, dt))
@@ -128,6 +150,7 @@ void ClientMapService::resetPendingRequests()
 {
     cancel(m_galaxyRequest);
     cancel(m_systemRequest);
+    m_deferredSystemResponse.reset();
     cancel(m_detailRequest);
     cancel(m_hubRequest);
 }
@@ -173,12 +196,103 @@ void ClientMapService::setUniverseTimelineRevision(
 
     m_galaxyMetadata = {};
     m_systemMetadata = {};
+    m_deferredSystemResponse.reset();
     m_detailMetadata = {};
     m_hubMetadata = {};
 }
 
+ClientMapService::SystemResponseResult
+ClientMapService::tryCompleteSystemResponse(
+    game::network::SystemMapResponse& response
+)
+{
+    const auto shipSample =
+        m_world.sampleSystemMapShipsAtServerTime(
+            response.systemId,
+            response.metadata.serverTimeSeconds
+        );
+
+    if (shipSample.status ==
+        SystemMapShipSampleStatus::AwaitingNewerSnapshot)
+    {
+        return SystemResponseResult::AwaitingSimulationHistory;
+    }
+
+    if (shipSample.status == SystemMapShipSampleStatus::TooOld)
+    {
+        // The map response itself may have been delayed longer than the
+        // retained replication history. Request a fresh epoch instead of
+        // clamping ships to unrelated state or permanently failing the map.
+        return SystemResponseResult::RetryFreshResponse;
+    }
+
+    auto rebuiltSnapshot = response.snapshot;
+
+    const auto* atlas = m_catalogs.starAtlas();
+    const auto* celestial =
+        m_catalogs.resolveCelestialSystem(
+            response.systemId,
+            rebuiltSnapshot.universeTimeSeconds
+        );
+
+    if (!atlas ||
+        !celestial ||
+        !rebuildSystemMapCelestialLayer(
+            rebuiltSnapshot,
+            *atlas,
+            *celestial
+        ))
+    {
+        return SystemResponseResult::Failed;
+    }
+
+    rebuildSystemMapShipLayer(
+        rebuiltSnapshot,
+        shipSample.ships
+    );
+
+    m_systemMetadata = response.metadata;
+    m_systemSnapshot = std::move(rebuiltSnapshot);
+    m_systemSnapshotId = response.systemId;
+    m_hasSystem = true;
+    complete(m_systemRequest);
+    return SystemResponseResult::Ready;
+}
+
+void ClientMapService::retrySystemRequestOrFail()
+{
+    m_deferredSystemResponse.reset();
+
+    if (m_systemRequest.attempts >= MaxRequestAttempts)
+    {
+        fail(m_systemRequest);
+        return;
+    }
+
+    sendSystemRequest();
+}
+
 void ClientMapService::pumpResponses()
 {
+    if (m_deferredSystemResponse)
+    {
+        const auto result =
+            tryCompleteSystemResponse(*m_deferredSystemResponse);
+
+        if (result == SystemResponseResult::Ready)
+        {
+            m_deferredSystemResponse.reset();
+        }
+        else if (result == SystemResponseResult::RetryFreshResponse)
+        {
+            retrySystemRequestOrFail();
+        }
+        else if (result == SystemResponseResult::Failed)
+        {
+            m_deferredSystemResponse.reset();
+            fail(m_systemRequest);
+        }
+    }
     game::network::MapResponse response;
 
     while (m_transport.receiveMapResponse(response))
@@ -195,8 +309,19 @@ void ClientMapService::pumpResponses()
                 {
                     if (typedResponse.requestId != m_galaxyRequest.requestId)
                         return;
+
+                    const auto* atlas = m_catalogs.starAtlas();
+                    if (!atlas)
+                    {
+                        fail(m_galaxyRequest);
+                        return;
+                    }
+
+                    auto rebuiltSnapshot = std::move(typedResponse.snapshot);
+                    rebuildGalaxyMapCatalogLayer(rebuiltSnapshot, *atlas);
+
                     m_galaxyMetadata = typedResponse.metadata;
-                    m_galaxySnapshot = std::move(typedResponse.snapshot);
+                    m_galaxySnapshot = std::move(rebuiltSnapshot);
                     m_hasGalaxy = true;
                     complete(m_galaxyRequest);
                 }
@@ -208,36 +333,31 @@ void ClientMapService::pumpResponses()
                         return;
                     }
 
-                    auto rebuiltSnapshot =
-                        std::move(typedResponse.snapshot);
+                    const auto result =
+                        tryCompleteSystemResponse(typedResponse);
 
-                    const auto* atlas = m_catalogs.starAtlas();
-                    const auto* celestial =
-                        m_catalogs.resolveCelestialSystem(
-                            typedResponse.systemId,
-                            rebuiltSnapshot.universeTimeSeconds
-                        );
-
-                    if (!atlas ||
-                        !celestial ||
-                        !rebuildSystemMapCelestialLayer(
-                            rebuiltSnapshot,
-                            *atlas,
-                            *celestial
-                        ))
+                    if (result ==
+                        SystemResponseResult::AwaitingSimulationHistory)
                     {
-                        // A System-map result is not complete until its local
-                        // deterministic celestial layer can be reconstructed
-                        // at the same authoritative epoch as dynamic objects.
-                        fail(m_systemRequest);
-                        return;
+                        // A map request may be answered on a fixed server tick
+                        // between normal replication publications. Preserve the
+                        // response until snapshot history brackets that exact
+                        // server-time epoch instead of mixing two map epochs.
+                        m_deferredSystemResponse =
+                            std::move(typedResponse);
+                        // Start a fresh bounded wait for the replication
+                        // bracket; map transport latency has already ended.
+                        m_systemRequest.elapsedSeconds = 0.0f;
                     }
-
-                    m_systemMetadata = typedResponse.metadata;
-                    m_systemSnapshot = std::move(rebuiltSnapshot);
-                    m_systemSnapshotId = typedResponse.systemId;
-                    m_hasSystem = true;
-                    complete(m_systemRequest);
+                    else if (result ==
+                             SystemResponseResult::RetryFreshResponse)
+                    {
+                        retrySystemRequestOrFail();
+                    }
+                    else if (result == SystemResponseResult::Failed)
+                    {
+                        fail(m_systemRequest);
+                    }
                 }
                 else if constexpr (std::is_same_v<ResponseT, game::network::DetailMapResponse>)
                 {
@@ -271,6 +391,13 @@ void ClientMapService::pumpResponses()
 bool ClientMapService::requestGalaxy(bool forceRefresh)
 {
     pumpResponses();
+
+    // Galaxy catalog geometry is deterministic client-owned data. A server
+    // reply only supplies authoritative overlays/epoch, so do not request one
+    // until the local StarAtlas needed to complete it is available.
+    if (!m_catalogs.hasStarAtlas())
+        return false;
+
     if (!forceRefresh && m_hasGalaxy)
         return true;
     if (m_galaxyRequest.status == ClientRequestStatus::Pending)
@@ -303,6 +430,7 @@ bool ClientMapService::requestSystem(int systemId, bool forceRefresh)
         if (m_requestedSystemId == systemId)
             return false;
         cancel(m_systemRequest);
+        m_deferredSystemResponse.reset();
     }
     if (!forceRefresh && m_requestedSystemId == systemId &&
         (m_systemRequest.status == ClientRequestStatus::TimedOut ||

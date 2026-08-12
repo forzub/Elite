@@ -1428,51 +1428,30 @@ world::celestial::GalaxyMapSnapshot GameServer::buildGalaxyMapSnapshot() const
     out.universeDate =
         m_universeClock.dateTimeString();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-    for (const auto& s : m_starAtlas.systems())
+    /*
+        Stage 3C: Galaxy catalog geometry is deterministic client-owned data.
+        The server sends only world-state overlays that are not part of the
+        StarAtlas. Jurisdiction is sourced from authoritative initial/world
+        state and keyed by physical system id; ClientMapService joins it with
+        its local StarAtlas.
+    */
+    out.systems.reserve(m_systemJurisdictions.size());
+    for (const auto& [systemId, jurisdiction] : m_systemJurisdictions)
     {
-        world::celestial::GalaxyMapSystem item;
-
-        item.id = s.id;
-        item.name = s.name;
-        item.starType = s.starType;
-        item.starsCount = s.starsCount;
-        item.positionLy = s.positionLy;
-        const auto jurisdictionIt =
-            m_systemJurisdictions.find(s.id);
-        item.jurisdiction =
-            jurisdictionIt != m_systemJurisdictions.end()
-                ? jurisdictionIt->second
-                : "Unregistered";
-
-        out.systems.push_back(std::move(item));
+        world::celestial::GalaxyMapSystem overlay;
+        overlay.id = systemId;
+        overlay.jurisdiction = jurisdiction;
+        out.systems.push_back(std::move(overlay));
     }
 
-    for (const auto& source : m_starAtlas.objects())
-    {
-        world::celestial::GalaxyMapObject item;
-
-        item.id = source.id;
-        item.name = source.name;
-        item.objectType = source.objectType;
-        item.positionLy = source.positionLy;
-        item.description = source.description;
-        item.tags = source.tags;
-
-        out.objects.push_back(std::move(item));
-    }
+    std::sort(
+        out.systems.begin(),
+        out.systems.end(),
+        [](const auto& a, const auto& b)
+        {
+            return a.id < b.id;
+        }
+    );
 
     return out;
 }
@@ -1776,51 +1755,14 @@ GameServer::buildSystemMapSnapshot(
         );
     }
 
-    // Real ships are first-class System-map objects. A single instantaneous
-    // position is not enough to invent orbit metadata, so hasOrbit stays false.
-    for (const auto& [entityId, shipPtr] : m_simulation.ships())
-    {
-        if (!shipPtr)
-            continue;
-
-        const ShipTransform transform =
-            m_simulation.presentationShipTransform(entityId);
-
-        if (transform.motion.systemId != systemId)
-            continue;
-
-        const bool isPlayer =
-            entityId == m_simulation.playerId();
-
-        world::celestial::SystemMapObject mapShip;
-        mapShip.id = entityId;
-        mapShip.stableId =
-            isPlayer
-                ? "player"
-                : "entity:" + std::to_string(entityId.value);
-        const auto motionLabKind =
-            m_simulation.hubMotionLabActorKind(entityId);
-
-        mapShip.name =
-            isPlayer
-                ? "Player"
-                : (motionLabKind !=
-                        game::diagnostics::HubMotionLabActorKind::None
-                    ? game::diagnostics::hubMotionLabLabel(motionLabKind)
-                    : (shipPtr->core().descriptor().identity.shipName.empty()
-                        ? "Ship " + std::to_string(entityId.value)
-                        : shipPtr->core().descriptor().identity.shipName));
-        mapShip.parentBodyId = transform.motion.parentBodyId;
-        mapShip.kind =
-            world::celestial::SystemMapObjectKind::Ship;
-        mapShip.positionAu =
-            transform.fullWorldMeters() /
-            world::celestial::MetersPerAu;
-        mapShip.systemId = transform.motion.systemId;
-        mapShip.hasOrbit = false;
-
-        out.objects.push_back(std::move(mapShip));
-    }
+    /*
+        Ordinary player/NPC ships are intentionally absent here. Their
+        authoritative transforms already leave the server through the normal
+        SimulationSnapshot stream. ClientMapService samples that retained
+        replication history at this response's exact server-time epoch and
+        constructs the System-map ship layer locally, avoiding a second
+        network channel for the same moving entities.
+    */
 
 
     // Presentation-only analytic reference used by Hub Motion Lab. It is not a

@@ -333,12 +333,24 @@ else:
         (
             "obj.systemId != systemId",
             "!obj.systemMapVisible",
-            "transform.motion.systemId != systemId",
-            "SystemMapObjectKind::Ship",
-            "mapShip.hasOrbit = false",
+            "hub.systemId != systemId",
         ),
-        "System map does not enforce/publish first-class membership",
+        "server System-map infrastructure does not enforce first-class membership",
     )
+
+client_ship_sampler = ROOT / "src/game/client/ClientSystemMapShipSampler.h"
+client_ship_sampler_text = client_ship_sampler.read_text(encoding="utf-8")
+require_text(
+    client_ship_sampler,
+    client_ship_sampler_text,
+    (
+        "olderSystemId",
+        "newerSystemId",
+        "canInterpolateSystemLocalState(",
+        "olderSystemId != requestedSystemId",
+    ),
+    "client System-map ship sampling can mix system-local coordinate domains",
+)
 
 local_detail = function_body(server_text, "void GameServer::appendLocalDetailObjects(")
 if local_detail is None:

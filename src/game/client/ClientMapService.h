@@ -1,12 +1,15 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 #include "src/game/client/ClientRequestStatus.h"
 #include "src/game/network/ITransport.h"
 #include "src/game/network/ProtocolMetadata.h"
 #include "src/world/celestial/CelestialTypes.h"
+
+class ClientWorldState;
 
 namespace game::client
 {
@@ -17,7 +20,8 @@ class ClientMapService
 public:
     ClientMapService(
         ITransport& transport,
-        const ClientCatalogService& catalogs
+        const ClientCatalogService& catalogs,
+        const ::ClientWorldState& world
     );
 
     void update(float dt);
@@ -80,9 +84,23 @@ private:
         const game::network::SnapshotMetadata& metadata
     ) const;
 
+    enum class SystemResponseResult
+    {
+        Ready,
+        AwaitingSimulationHistory,
+        RetryFreshResponse,
+        Failed
+    };
+
+    SystemResponseResult tryCompleteSystemResponse(
+        game::network::SystemMapResponse& response
+    );
+    void retrySystemRequestOrFail();
+
 private:
     ITransport& m_transport;
     const ClientCatalogService& m_catalogs;
+    const ::ClientWorldState& m_world;
     std::uint64_t m_nextRequestId = 1;
     std::uint64_t m_universeTimelineRevision = 0;
 
@@ -95,6 +113,8 @@ private:
     world::celestial::DetailTarget m_requestedDetailTarget;
     int m_requestedHubSystemId = -1;
     std::string m_requestedHubId;
+    std::optional<game::network::SystemMapResponse>
+        m_deferredSystemResponse;
 
     bool m_hasGalaxy = false;
     bool m_hasSystem = false;

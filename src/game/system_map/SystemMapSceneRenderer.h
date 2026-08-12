@@ -15,6 +15,13 @@ namespace game::system_map
     class SystemMapRenderContext;
     class SystemMapView;
 
+    struct SystemMapSceneRenderOptions
+    {
+        // Presentation-only: hiding map objects must not change map data,
+        // selection, picking, or authoritative navigation state.
+        bool drawObjects = true;
+    };
+
     /*
         System draw-pass orchestrator.
 
@@ -32,7 +39,8 @@ namespace game::system_map
             const world::celestial::SystemMapSnapshot& system,
             const world::celestial::PlayerNavigationState& navigation,
             const SystemMapPresentation& presentation,
-            const SystemMapSceneFrame& frame
+            const SystemMapSceneFrame& frame,
+            const SystemMapSceneRenderOptions& options
         ) const;
     };
 }

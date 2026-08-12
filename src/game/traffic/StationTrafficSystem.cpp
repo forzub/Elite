@@ -201,6 +201,7 @@ void StationTrafficSystem::spawnTraffic(ClientWorldState& world)
 
         visual.descriptor = &desc;
         visual.assembly = &assembly;
+        visual.kind = game::visual::VisualShipKind::Traffic;
         visual.visible = true;
 
         visual.visualScale =

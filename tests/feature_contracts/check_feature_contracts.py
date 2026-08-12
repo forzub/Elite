@@ -183,6 +183,177 @@ def check_debug_control_schema() -> None:
     )
 
 
+
+def check_debug_control_runtime_wiring() -> None:
+    html = read("src/assets/webui/debug_control.html")
+    space_cpp = read("src/game/SpaceState.cpp")
+    space_init = read("src/game/SpaceState-Init.cpp")
+    scene_cpp = read("src/scene/SceneRenderer.cpp")
+    policy_h = read("src/scene/SceneRenderPolicy.h")
+    prepared_h = read("src/scene/PreparedScene.h")
+    traffic_cpp = read("src/game/traffic/StationTrafficSystem.cpp")
+    promo_cpp = read("src/game/promo/PromoSceneScenario.cpp")
+    system_scene_cpp = read("src/game/system_map/SystemMapSceneRenderer.cpp")
+    system_renderer = read("src/game/system_map/SystemMapRendererSystem.inl")
+    application_cpp = read("src/core/Application.cpp")
+    settings_h = read("src/debug/DebugSettings.h")
+    debug_renderer_cpp = read("src/debug/render/DebugRenderer.cpp")
+    hit_volume_renderer_cpp = read("src/debug/render/ServerHitVolumeRenderer.cpp")
+
+    checkbox_rows = re.findall(
+        r'<div class="([^"]*\brow\b[^"]*)">(.*?)</div>',
+        html,
+        re.S,
+    )
+    checkbox_ids = set()
+    for classes, body in checkbox_rows:
+        if 'type="checkbox"' not in body:
+            continue
+
+        id_match = re.search(r'<input\s+id="([^"]+)"\s+type="checkbox"[^>]*>', body, re.S)
+        require(id_match is not None, "Debug Control checkbox row lost an input id")
+        checkbox_id = id_match.group(1)
+        checkbox_ids.add(checkbox_id)
+
+        require(
+            "checkboxRow" in classes.split(),
+            f"checkbox {checkbox_id} no longer uses left-aligned checkboxRow layout",
+        )
+        label_match = re.search(
+            rf'<label\s+for="{re.escape(checkbox_id)}">.*?</label>',
+            body,
+            re.S,
+        )
+        require(
+            label_match is not None,
+            f"checkbox {checkbox_id} lost its matching label/for association",
+        )
+        require(
+            body.find("<input") < body.find("<label"),
+            f"checkbox {checkbox_id} moved back to the right of its label",
+        )
+
+    require(len(checkbox_ids) >= 20, "Debug Control checkbox surface unexpectedly shrank")
+    require(
+        "C++-обработчики добавим следующим шагом" not in html,
+        "Debug Control still advertises intentionally unwired visibility controls",
+    )
+
+    # Every checkbox must have a concrete runtime consumer, not merely survive
+    # the HTML/JSON round trip. This is intentionally explicit: adding a new
+    # checkbox requires deciding which client/server subsystem owns its effect.
+    checkbox_runtime_consumers = {
+        "postProcessEnabled": (application_cpp, "debugRender.postProcessEnabled"),
+        "drawMeshes": (scene_cpp, "dbg.shouldDrawMeshes()"),
+        "renderStarfield": (space_cpp, "mainPolicy.drawStarfield = dbg.renderStarfield;"),
+        "renderShipUi": (space_cpp, "shouldRenderShipUi()"),
+        "renderCockpit": (space_cpp, "shouldRenderCockpit()"),
+        "renderRearCamera": (space_cpp, "shouldRenderRearCamera()"),
+        "showStarLabels": (scene_cpp, "dbg.showStarLabels"),
+        "showAllStarLabels": (scene_cpp, "dbg.showAllStarLabels"),
+        "showConstellationHover": (scene_cpp, "dbg.showConstellationHover"),
+        "renderPlayerShip": (space_cpp, "mainPolicy.drawPlayerShip = dbg.renderPlayerShip;"),
+        "renderNpcShips": (space_cpp, "mainPolicy.drawNpcShips = dbg.renderNpcShips;"),
+        "renderTrafficShips": (space_cpp, "mainPolicy.drawTrafficShips = dbg.renderTrafficShips;"),
+        "renderRealShips": (space_cpp, "mainPolicy.drawRealShips = dbg.renderRealShips;"),
+        "renderVisualShips": (space_cpp, "mainPolicy.drawVisualShips = dbg.renderVisualShips;"),
+        "renderHubs": (space_cpp, "mainPolicy.drawHubs = dbg.renderHubs;"),
+        "renderLargeObjects": (space_cpp, "mainPolicy.drawLargeObjects = dbg.renderLargeObjects;"),
+        "renderCelestialBodies": (space_cpp, "mainPolicy.drawCelestial = dbg.renderCelestialBodies;"),
+        "renderSystemMapObjects": (system_renderer, "debug::get().render.renderSystemMapObjects"),
+        "drawAxes": (settings_h, "return drawAxes || drawWorldAxes;"),
+        "drawWorldAxes": (scene_cpp, "dbg.shouldDrawWorldAxes()"),
+        "drawObjectAxes": (scene_cpp, "dbg.shouldDrawObjectAxes()"),
+        "drawModulePivots": (scene_cpp, "dbg.drawModulePivots"),
+        "drawHitVolumes": (hit_volume_renderer_cpp, "if (!dbg.drawHitVolumes)"),
+        "publishObjectOrientation": (scene_cpp, "dbg.publishObjectOrientation"),
+        "hitVolumesOverlay": (hit_volume_renderer_cpp, "if (dbg.hitVolumesOverlay)"),
+        "hideMeshesWhenDrawingHitVolumes": (settings_h, "drawHitVolumes && hideMeshesWhenDrawingHitVolumes"),
+        "axesOverlay": (debug_renderer_cpp, "if (dbg.axesOverlay)"),
+        "crossesOverlay": (debug_renderer_cpp, "if (dbg.crossesOverlay)"),
+        "linesOverlay": (debug_renderer_cpp, "if (dbg.linesOverlay)"),
+        "debugUniverseTimeSimulation": (space_cpp, 'payload.value(\n                "debugUniverseTimeSimulation"'),
+        "debugControlAutoUpdates": (html, "if (!auto || !auto.checked) return;"),
+    }
+
+    require(
+        checkbox_ids == set(checkbox_runtime_consumers),
+        "Debug Control checkbox runtime-consumer table drifted: "
+        f"missing={sorted(checkbox_ids - set(checkbox_runtime_consumers))}, "
+        f"extra={sorted(set(checkbox_runtime_consumers) - checkbox_ids)}",
+    )
+
+    for checkbox_id, (source, token) in checkbox_runtime_consumers.items():
+        require(
+            token in source,
+            f"Debug Control checkbox {checkbox_id} has no verified runtime consumer",
+        )
+
+    main_policy_bindings = {
+        "renderPlayerShip": "mainPolicy.drawPlayerShip = dbg.renderPlayerShip;",
+        "renderNpcShips": "mainPolicy.drawNpcShips = dbg.renderNpcShips;",
+        "renderTrafficShips": "mainPolicy.drawTrafficShips = dbg.renderTrafficShips;",
+        "renderRealShips": "mainPolicy.drawRealShips = dbg.renderRealShips;",
+        "renderVisualShips": "mainPolicy.drawVisualShips = dbg.renderVisualShips;",
+        "renderHubs": "mainPolicy.drawHubs = dbg.renderHubs;",
+        "renderLargeObjects": "mainPolicy.drawLargeObjects = dbg.renderLargeObjects;",
+        "renderCelestialBodies": "mainPolicy.drawCelestial = dbg.renderCelestialBodies;",
+    }
+    rear_policy_bindings = {
+        key: value.replace("mainPolicy", "policy")
+        for key, value in main_policy_bindings.items()
+    }
+
+    for field, token in main_policy_bindings.items():
+        require(token in space_cpp, f"Debug Control {field} is not wired into main-scene policy")
+    for field, token in rear_policy_bindings.items():
+        require(token in space_init, f"Debug Control {field} is not wired into rear-camera policy")
+
+    for token in (
+        "bool shouldDrawRealShip(ShipRole role) const noexcept",
+        "bool shouldDrawVisualShip(game::visual::VisualShipKind kind) const noexcept",
+        "bool shouldDrawObject(ObjectType type) const noexcept",
+        "return drawTrafficShips;",
+        "return drawHubs;",
+        "return drawCelestial;",
+        "return drawLargeObjects;",
+    ):
+        require(token in policy_h, f"scene visibility policy lost runtime decision: {token}")
+
+    require(
+        "visual.kind = game::visual::VisualShipKind::Traffic;" in traffic_cpp,
+        "station traffic is no longer tagged for the traffic visibility filter",
+    )
+    require(
+        "ship.kind = game::visual::VisualShipKind::Promo;" in promo_cpp,
+        "promo ships are no longer distinguished from traffic ships",
+    )
+
+    for token in (
+        "policy.shouldDrawRealShip(item.role)",
+        "policy.shouldDrawVisualShip(ship.kind)",
+        "policy.shouldDrawObject(item.type)",
+        "prepared.debugAssemblies",
+        "dbg.publishObjectOrientation",
+        "dbg.drawModulePivots",
+        "ServerHitVolumeRenderer::render",
+    ):
+        require(token in scene_cpp, f"prepared renderer lost Debug Control runtime wiring: {token}")
+
+    require(
+        "std::vector<DebugAssemblyItem> debugAssemblies;" in prepared_h,
+        "prepared scene no longer carries presentation-frame debug geometry data",
+    )
+
+    require(
+        "debug::get().render.renderSystemMapObjects" in system_renderer,
+        "Render system map objects checkbox is no longer consumed by the map renderer",
+    )
+    require(
+        system_scene_cpp.count("if (options.drawObjects)") >= 2,
+        "system-map object overlays/labels are no longer gated by the debug render option",
+    )
+
 def check_debug_panels() -> None:
     panel_h = read("src/ui/html/HtmlUiPanelId.h")
     message_h = read("src/ui/html/HtmlUiMessage.h")
@@ -698,6 +869,7 @@ def check_ready_orchestration() -> None:
 
 def main() -> int:
     check_debug_control_schema()
+    check_debug_control_runtime_wiring()
     check_debug_panels()
     check_map_feature_surface()
     check_world_authority_boundaries()

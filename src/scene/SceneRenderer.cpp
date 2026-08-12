@@ -9,6 +9,7 @@
 #include <cmath>
 #include <utility>
 #include <unordered_map>
+#include <unordered_set>
 
 // #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
@@ -981,6 +982,7 @@ PreparedScene SceneRenderer::prepareScene(
         prepared.observerGalacticPositionValid = true;
     }
 
+    prepared.debugAssemblies.clear();
 
         prepared.realShipMeshes.clear();
 
@@ -1034,6 +1036,21 @@ PreparedScene SceneRenderer::prepareScene(
                     prepared.frame
                 );
 
+            PreparedScene::DebugAssemblyItem shipDebug;
+            shipDebug.kind = PreparedScene::DebugAssemblyItem::Kind::RealShip;
+            shipDebug.entityId = ship.id;
+            shipDebug.shipRole = ship.role;
+            shipDebug.model = shipModel;
+            shipDebug.position = glm::vec3(shipModel[3]);
+            shipDebug.forward = ship.renderTransform.forward();
+            shipDebug.up = ship.renderTransform.up();
+            shipDebug.right = ship.renderTransform.right();
+            shipDebug.boundRadius = ship.assembly->boundRadius;
+            shipDebug.assembly = ship.assembly;
+            shipDebug.assemblyModules = &ship.assemblyModules;
+            shipDebug.debugHitVolumes = &ship.debugHitVolumes;
+            prepared.debugAssemblies.push_back(shipDebug);
+
             for (const auto& module : ship.assembly->modules)
             {
                 glm::mat4 moduleModel =
@@ -1056,6 +1073,8 @@ PreparedScene SceneRenderer::prepareScene(
                         );
 
                     PreparedScene::RealShipMeshItem item;
+                    item.entityId = ship.id;
+                    item.role = ship.role;
                     item.gpuLod0 = &gpuPart.lod0;
                     item.gpuLod1 = &gpuPart.lod1;
                     item.model = glm::translate(moduleModel, part.localOffset);
@@ -1134,6 +1153,21 @@ PreparedScene SceneRenderer::prepareScene(
                 obj.renderAssemblyModules.empty()
                     ? obj.assemblyModules
                     : obj.renderAssemblyModules;
+
+            PreparedScene::DebugAssemblyItem objectDebug;
+            objectDebug.kind = PreparedScene::DebugAssemblyItem::Kind::Object;
+            objectDebug.entityId = obj.id;
+            objectDebug.objectType = obj.type;
+            objectDebug.model = objectBaseModel;
+            objectDebug.position = glm::vec3(objectBaseModel[3]);
+            objectDebug.forward = game::math::forwardFromOrientation(objectRenderOrientation);
+            objectDebug.up = game::math::upFromOrientation(objectRenderOrientation);
+            objectDebug.right = game::math::rightFromOrientation(objectRenderOrientation);
+            objectDebug.boundRadius = obj.assembly->boundRadius;
+            objectDebug.assembly = obj.assembly;
+            objectDebug.assemblyModules = &renderAssemblyModules;
+            objectDebug.debugHitVolumes = &obj.debugHitVolumes;
+            prepared.debugAssemblies.push_back(objectDebug);
 
             for (const auto& module : obj.assembly->modules)
             {
@@ -1217,6 +1251,7 @@ PreparedScene SceneRenderer::prepareScene(
             }
 
             PreparedScene::VisualShipItem shipItem;
+            shipItem.kind = ship.kind;
             shipItem.wholeShipProxyGpu = &gpuAssembly.wholeShipProxy;
             shipItem.model = shipModel;
             shipItem.boundCenter = ship.assembly->boundCenter;
@@ -1631,7 +1666,7 @@ profileAfterSetupMs = renderProfileNowMs();
     const bool drawWorldAxes = dbg.shouldDrawWorldAxes();
     const bool drawObjectAxes = dbg.shouldDrawObjectAxes();
 
-    if (drawWorldAxes)
+    if (policy.drawDebug && drawWorldAxes)
     {
         m_debugRenderer.renderAxes(
             glm::mat4(1.0f),
@@ -2018,11 +2053,15 @@ profileAfterSetupMs = renderProfileNowMs();
 
     std::vector<QueuedMeshDraw> queuedPreparedShipDraws;
     queuedPreparedShipDraws.reserve(prepared.realShipMeshes.size());
+    std::unordered_set<uint32_t> visibleRealShips;
 
     if (dbg.shouldDrawMeshes())
     {
         for (const auto& item : prepared.realShipMeshes)
         {
+            if (!policy.shouldDrawRealShip(item.role))
+                continue;
+
             const float partRadius = safeRadiusFromHalfSize(item.boundHalfSize);
 
             if (!frustum.sphereVisible(item.boundCenter, partRadius, item.model))
@@ -2045,6 +2084,8 @@ profileAfterSetupMs = renderProfileNowMs();
 
             if (!gpu)
                 continue;
+
+            visibleRealShips.insert(item.entityId.value);
 
             glm::mat4 mvp = proj * renderView * item.model;
 
@@ -2069,6 +2110,9 @@ profileAfterSetupMs = renderProfileNowMs();
             shipParams,
             cameraLocalPosition
         );
+
+        m_lastStats.realShipsDrawn +=
+            static_cast<uint32_t>(visibleRealShips.size());
     }
 
     profileAfterRealShipsMs = renderProfileNowMs();
@@ -2125,6 +2169,12 @@ profileAfterSetupMs = renderProfileNowMs();
                 for (size_t i = 0; i < prepared.visualShips.size(); ++i)
                 {
                     const auto& ship = prepared.visualShips[i];
+
+                    if (!policy.shouldDrawVisualShip(ship.kind))
+                    {
+                        m_lastStats.visualShipsCulled++;
+                        continue;
+                    }
 
                     if (policy.maxVisualShipsToDraw >= 0 &&
                         visualShipsActuallyDrawn >= policy.maxVisualShipsToDraw)
@@ -2708,6 +2758,9 @@ if (policy.drawObjects)
 
         for (const auto& item : prepared.objectMeshes)
         {
+            if (!policy.shouldDrawObject(item.type))
+                continue;
+
             const float partRadius = safeRadiusFromHalfSize(item.boundHalfSize);
 
             if (!frustum.sphereVisible(item.boundCenter, partRadius, item.model))
@@ -2808,6 +2861,149 @@ if (policy.drawObjects)
                 LightingParams::station(),
                 cameraLocalPosition
             );
+        }
+    }
+
+    if (policy.drawDebug)
+    {
+        for (const auto& item : prepared.debugAssemblies)
+        {
+            const bool categoryVisible =
+                item.kind == PreparedScene::DebugAssemblyItem::Kind::RealShip
+                    ? policy.shouldDrawRealShip(item.shipRole)
+                    : policy.shouldDrawObject(item.objectType);
+
+            if (!categoryVisible || !item.assembly)
+                continue;
+
+            const bool visible = frustum.sphereVisible(
+                item.assembly->boundCenter,
+                item.boundRadius,
+                item.model
+            );
+
+            if (shouldDebug && dbg.publishObjectOrientation)
+            {
+                if (item.kind == PreparedScene::DebugAssemblyItem::Kind::RealShip)
+                {
+                    DebugShipInfo info;
+                    info.id = item.entityId.value;
+                    info.position = item.position;
+                    info.forward = item.forward;
+                    info.up = item.up;
+                    info.right = item.right;
+                    info.radius = item.boundRadius;
+                    info.visible = visible;
+                    info.distance = glm::length(item.position - cameraLocalPosition);
+                    info.type = "Ship";
+                    debugData.ships.push_back(info);
+                }
+                else
+                {
+                    DebugObjectInfo info;
+                    info.id = item.entityId.value;
+                    info.position = item.position;
+                    info.forward = item.forward;
+                    info.up = item.up;
+                    info.right = item.right;
+                    info.type = std::to_string(static_cast<int>(item.objectType));
+                    info.distance = glm::length(item.position - cameraLocalPosition);
+                    info.visible = visible;
+                    debugData.objects.push_back(info);
+                }
+            }
+
+            if (!visible)
+                continue;
+
+            if (drawObjectAxes)
+            {
+                const float axisLength =
+                    item.kind == PreparedScene::DebugAssemblyItem::Kind::RealShip
+                        ? dbg.shipAxisLength
+                        : dbg.objectAxisLength;
+
+                m_debugRenderer.renderAxes(
+                    item.model,
+                    renderView,
+                    proj,
+                    axisLength
+                );
+            }
+
+            if (dbg.drawModulePivots && item.assemblyModules)
+            {
+                for (const auto& module : item.assembly->modules)
+                {
+                    const glm::mat4 moduleBaseModel =
+                        buildAssemblyModuleBaseModel(item.model, module);
+
+                    const glm::mat4 moduleModel =
+                        buildAssemblyModuleModel(
+                            item.model,
+                            module,
+                            *item.assemblyModules
+                        );
+
+                    const glm::vec3 moduleOrigin =
+                        glm::vec3(moduleBaseModel[3]);
+
+                    const glm::mat4 pivotAxesModel =
+                        moduleModel *
+                        glm::translate(glm::mat4(1.0f), module.pivot);
+
+                    const glm::vec3 pivot =
+                        glm::vec3(pivotAxesModel[3]);
+
+                    glm::vec3 rotationAxis =
+                        glm::mat3(moduleModel) * module.rotationAxis;
+
+                    if (glm::length(rotationAxis) > 1e-6f)
+                        rotationAxis = glm::normalize(rotationAxis);
+
+                    m_debugRenderer.renderCross(
+                        moduleOrigin,
+                        dbg.moduleCrossSize,
+                        dbg.moduleOriginColor,
+                        renderView,
+                        proj
+                    );
+
+                    m_debugRenderer.renderCross(
+                        pivot,
+                        dbg.moduleCrossSize,
+                        dbg.modulePivotColor,
+                        renderView,
+                        proj
+                    );
+
+                    m_debugRenderer.renderAxes(
+                        pivotAxesModel,
+                        renderView,
+                        proj,
+                        dbg.moduleAxisLength
+                    );
+
+                    m_debugRenderer.renderLine(
+                        pivot,
+                        pivot + rotationAxis * dbg.rotAxisLength,
+                        dbg.rotationAxisColor,
+                        renderView,
+                        proj
+                    );
+                }
+            }
+
+            if (item.debugHitVolumes)
+            {
+                debug::render::ServerHitVolumeRenderer::render(
+                    *m_debugLines,
+                    *item.debugHitVolumes,
+                    item.model,
+                    renderView,
+                    proj
+                );
+            }
         }
     }
 

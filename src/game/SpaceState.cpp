@@ -1509,6 +1509,12 @@ void SpaceState::update(float dt)
     m_perfServerCatchUpLimited =
         serverAdvance.catchUpLimited;
 
+    // Debug/control commands are asynchronous requests to ServerRuntime. Flush
+    // UI responses only after a newer copied diagnostic revision has crossed
+    // back over that boundary. This remains correct when the server later runs
+    // on a worker thread and a response takes more than one render frame.
+    flushPendingDebugUiState();
+
     // Client prediction remains protected from a single extreme frame spike.
     // The authoritative server uses its own accumulator and no longer loses
     // ordinary fixed steps when client FPS falls below 50.
@@ -1886,8 +1892,17 @@ void SpaceState::renderUI()
     mainPolicy.drawStarfield = dbg.renderStarfield;
     mainPolicy.drawCelestial = dbg.renderCelestialBodies;
     mainPolicy.drawFarStationProxy = dbg.renderHubs;
-    mainPolicy.drawObjects = dbg.renderHubs || dbg.renderLargeObjects;
+    mainPolicy.drawHubs = dbg.renderHubs;
+    mainPolicy.drawLargeObjects = dbg.renderLargeObjects;
+    mainPolicy.drawObjects =
+        dbg.renderHubs ||
+        dbg.renderLargeObjects ||
+        dbg.renderCelestialBodies;
+    mainPolicy.drawRealShips = dbg.renderRealShips;
+    mainPolicy.drawPlayerShip = dbg.renderPlayerShip;
+    mainPolicy.drawNpcShips = dbg.renderNpcShips;
     mainPolicy.drawVisualShips = dbg.renderVisualShips;
+    mainPolicy.drawTrafficShips = dbg.renderTrafficShips;
     mainPolicy.drawVisualDrones = dbg.renderVisualShips;
 
 
@@ -2504,7 +2519,7 @@ void SpaceState::processHtmlCommands()
                 {
                     applyDebugControlPayload(msg.payload);
                     ++m_debugControlSettingsRevision;
-                    pushDebugControlState();
+                    deferDebugControlStatePush();
                     continue;
                 }
 
@@ -2513,7 +2528,7 @@ void SpaceState::processHtmlCommands()
                     applyDebugControlPayload(msg.payload);
                     saveDebugControlDefaults(msg.payload);
                     ++m_debugControlSettingsRevision;
-                    pushDebugControlState();
+                    deferDebugControlStatePush();
                     continue;
                 }
 
@@ -2521,7 +2536,7 @@ void SpaceState::processHtmlCommands()
                 {
                     resetDebugControlSettings();
                     ++m_debugControlSettingsRevision;
-                    pushDebugControlState();
+                    deferDebugControlStatePush();
                     continue;
                 }
             }
@@ -2536,7 +2551,7 @@ void SpaceState::processHtmlCommands()
         {
             if (msg.type == HtmlUiMessageType::Subscribe)
             {
-                pushStructureDebugState();
+                requestStructureDebugStateRefresh();
                 continue;
             }
 
@@ -2544,7 +2559,7 @@ void SpaceState::processHtmlCommands()
             {
                 if (msg.command == "request_snapshot")
                 {
-                    pushStructureDebugState();
+                    requestStructureDebugStateRefresh();
                     continue;
                 }
 
@@ -2570,10 +2585,9 @@ if (msg.command == "destroy_module")
         EntityId id{ static_cast<uint32_t>(entityId) };
 
         m_debugSession->destroyShipModule(id, moduleId);
-        m_debugSession->refreshSnapshot();
     }
 
-    pushStructureDebugState();
+    requestStructureDebugStateRefresh();
     continue;
 }
 
@@ -2592,10 +2606,9 @@ if (msg.command == "detach_module")
         EntityId id{ static_cast<uint32_t>(entityId) };
 
         m_debugSession->detachShipModule(id, moduleId);
-        m_debugSession->refreshSnapshot();
     }
 
-    pushStructureDebugState();
+    requestStructureDebugStateRefresh();
     continue;
 }
 
@@ -2614,10 +2627,9 @@ if (msg.command == "hang_module")
         EntityId id{ static_cast<uint32_t>(entityId) };
 
         m_debugSession->hangShipModule(id, moduleId);
-        m_debugSession->refreshSnapshot();
     }
 
-    pushStructureDebugState();
+    requestStructureDebugStateRefresh();
     continue;
 }
 
@@ -2631,9 +2643,7 @@ if (msg.command == "reevaluate_structure")
     EntityId id{ static_cast<uint32_t>(entityId) };
 
     m_debugSession->reevaluateShipStructure(id);
-    m_debugSession->refreshSnapshot();
-
-    pushStructureDebugState();
+    requestStructureDebugStateRefresh();
     continue;
 }
 
@@ -2652,10 +2662,9 @@ if (msg.command == "restore_module")
         EntityId id{ static_cast<uint32_t>(entityId) };
 
         m_debugSession->restoreShipModule(id, moduleId);
-        m_debugSession->refreshSnapshot();
     }
 
-    pushStructureDebugState();
+    requestStructureDebugStateRefresh();
     continue;
 }
 
@@ -2683,10 +2692,9 @@ if (msg.command == "restore_module")
                                 health,
                                 destroyed
                             );
-                            m_debugSession->refreshSnapshot();
                         }
 
-                        pushStructureDebugState();
+                        requestStructureDebugStateRefresh();
                         continue;
                     }
 
@@ -2698,18 +2706,14 @@ if (msg.command == "reset_ship")
     EntityId id{ static_cast<uint32_t>(entityId) };
 
     m_debugSession->resetShipStructure(id);
-    m_debugSession->refreshSnapshot();
-
-    pushStructureDebugState();
+    requestStructureDebugStateRefresh();
     continue;
 }
 
 if (msg.command == "reset_all_ships")
 {
     m_debugSession->resetAllShipStructures();
-    m_debugSession->refreshSnapshot();
-
-    pushStructureDebugState();
+    requestStructureDebugStateRefresh();
     continue;
 }
             }
@@ -2803,6 +2807,50 @@ if (msg.command == "reset_all_ships")
 }
 
 
+void SpaceState::requestStructureDebugStateRefresh()
+{
+    if (!m_debugSession)
+        return;
+
+    m_structureDebugAwaitingSnapshotRevision =
+        m_debugSession->snapshotRevision();
+    m_structureDebugRefreshPending = true;
+    m_debugSession->refreshStructureSnapshot();
+}
+
+void SpaceState::deferDebugControlStatePush()
+{
+    if (!m_debugSession)
+    {
+        pushDebugControlState();
+        return;
+    }
+
+    m_debugControlAwaitingStateRevision =
+        m_debugSession->stateRevision();
+    m_debugControlStatePushPending = true;
+}
+
+void SpaceState::flushPendingDebugUiState()
+{
+    if (m_structureDebugRefreshPending && m_debugSession &&
+        m_debugSession->snapshotRevision() >
+            m_structureDebugAwaitingSnapshotRevision)
+    {
+        m_structureDebugRefreshPending = false;
+        pushStructureDebugState();
+    }
+
+    if (m_debugControlStatePushPending && m_debugSession &&
+        m_debugSession->stateRevision() >
+            m_debugControlAwaitingStateRevision)
+    {
+        m_debugControlStatePushPending = false;
+        pushDebugControlState();
+    }
+}
+
+
 void SpaceState::pushStructureDebugState()
 {
 
@@ -2814,9 +2862,10 @@ void SpaceState::pushStructureDebugState()
     payload["hasData"] = false;
     payload["reason"] = "no_server_ships";
 
-    m_debugSession->refreshSnapshot();
-
-    const auto& snapshot = m_debugSession->snapshot();
+    // snapshot() is a copied diagnostic value. A refresh request is issued by
+    // the UI command path before the server advances; never retain a reference
+    // into authoritative runtime memory here.
+    const auto snapshot = m_debugSession->snapshot();
 
     if (snapshot.ships.empty())
     {
@@ -3125,9 +3174,9 @@ void SpaceState::pushDebugControlState()
             : false;
 
     /*
-        These are debug settings, so publish them from the authoritative
-        debug session itself. The client session snapshot is telemetry and
-        may still be one network publication behind immediately after Apply.
+        These values come from the latest copied server-side debug state.
+        Apply/reset waits for stateRevision() to advance before this payload is
+        pushed, so the HTML page never needs a direct read of ServerRuntime.
     */
     payload["debugUniverseTimeSimulation"] =
         m_debugSession

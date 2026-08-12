@@ -19,6 +19,7 @@
 #include "src/render/ShaderLibrary.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/world/modules/ObjectAssemblyTransformUtils.h"
+#include "src/debug/DebugSettings.h"
 
 namespace
 {

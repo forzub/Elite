@@ -156,6 +156,7 @@ void PromoSceneScenario::spawnWing(ClientWorldState& world)
 
             ship.descriptor = &desc;
             ship.assembly = &assembly;
+            ship.kind = game::visual::VisualShipKind::Promo;
 
             const glm::vec3 pos =
                 computeShipPosition(group, slot, 0.0f);

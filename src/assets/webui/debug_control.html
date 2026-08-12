@@ -349,13 +349,7 @@
         <div class="title">Cinematic post-process</div>
 
         <div class="sectionGrid three">
-          <div class="row">
-            <label>Enabled</label>
-            <input
-              id="postProcessEnabled"
-              type="checkbox"
-            >
-          </div>
+          <div class="row checkboxRow"><input id="postProcessEnabled" type="checkbox"><label for="postProcessEnabled">Enabled</label></div>
 
           <div class="row">
             <label>Bloom threshold</label>
@@ -464,14 +458,14 @@
         </div>
       </div>
         <div class="sectionGrid three">
-          <div class="row"><label>Draw meshes</label><input id="drawMeshes" type="checkbox"></div>
-          <div class="row"><label>Render starfield</label><input id="renderStarfield" type="checkbox"></div>
-          <div class="row"><label>Render ship UI</label><input id="renderShipUi" type="checkbox"></div>
-          <div class="row"><label>Render cockpit inside ship UI</label><input id="renderCockpit" type="checkbox"></div>
-          <div class="row"><label>Render rear camera</label><input id="renderRearCamera" type="checkbox"></div>
-          <div class="row"><label>Show star labels</label><input id="showStarLabels" type="checkbox"></div>
-          <div class="row"><label>Show all star labels</label><input id="showAllStarLabels" type="checkbox"></div>
-          <div class="row"><label>Show constellation hover</label><input id="showConstellationHover" type="checkbox"></div>
+          <div class="row checkboxRow"><input id="drawMeshes" type="checkbox"><label for="drawMeshes">Draw meshes</label></div>
+          <div class="row checkboxRow"><input id="renderStarfield" type="checkbox"><label for="renderStarfield">Render starfield</label></div>
+          <div class="row checkboxRow"><input id="renderShipUi" type="checkbox"><label for="renderShipUi">Render ship UI</label></div>
+          <div class="row checkboxRow"><input id="renderCockpit" type="checkbox"><label for="renderCockpit">Render cockpit inside ship UI</label></div>
+          <div class="row checkboxRow"><input id="renderRearCamera" type="checkbox"><label for="renderRearCamera">Render rear camera</label></div>
+          <div class="row checkboxRow"><input id="showStarLabels" type="checkbox"><label for="showStarLabels">Show star labels</label></div>
+          <div class="row checkboxRow"><input id="showAllStarLabels" type="checkbox"><label for="showAllStarLabels">Show all star labels</label></div>
+          <div class="row checkboxRow"><input id="showConstellationHover" type="checkbox"><label for="showConstellationHover">Show constellation hover</label></div>
           <div class="row"><label>Constellation hover radius px</label><input id="constellationHoverRadiusPx" type="number" step="1" min="10"></div>
         </div>
         <div class="hint">
@@ -493,24 +487,24 @@
           <div class="row checkboxRow"><input id="renderSystemMapObjects" type="checkbox"><label for="renderSystemMapObjects">Render system map objects</label></div>
         </div>
         <div class="hint">
-          Новые диагностические флаги. Сейчас HTML уже отправляет их в payload; C++-обработчики добавим следующим шагом.
+          Диагностические фильтры применяются только к клиентскому представлению и не меняют authoritative state.
         </div>
       </div>
 
       <div class="section">
         <div class="title">Debug geometry</div>
         <div class="sectionGrid three">
-          <div class="row"><label>Draw axes (legacy)</label><input id="drawAxes" type="checkbox"></div>
-          <div class="row"><label>Draw world axes</label><input id="drawWorldAxes" type="checkbox"></div>
-          <div class="row"><label>Draw object axes</label><input id="drawObjectAxes" type="checkbox"></div>
-          <div class="row"><label>Draw module pivots</label><input id="drawModulePivots" type="checkbox"></div>
-          <div class="row"><label>Draw hit volumes</label><input id="drawHitVolumes" type="checkbox"></div>
-          <div class="row"><label>Publish object orientation</label><input id="publishObjectOrientation" type="checkbox"></div>
-          <div class="row"><label>Hit volumes overlay</label><input id="hitVolumesOverlay" type="checkbox"></div>
-          <div class="row"><label>Hide meshes with hit volumes</label><input id="hideMeshesWhenDrawingHitVolumes" type="checkbox"></div>
-          <div class="row"><label>Axes overlay</label><input id="axesOverlay" type="checkbox"></div>
-          <div class="row"><label>Crosses overlay</label><input id="crossesOverlay" type="checkbox"></div>
-          <div class="row"><label>Lines overlay</label><input id="linesOverlay" type="checkbox"></div>
+          <div class="row checkboxRow"><input id="drawAxes" type="checkbox"><label for="drawAxes">Draw axes (legacy)</label></div>
+          <div class="row checkboxRow"><input id="drawWorldAxes" type="checkbox"><label for="drawWorldAxes">Draw world axes</label></div>
+          <div class="row checkboxRow"><input id="drawObjectAxes" type="checkbox"><label for="drawObjectAxes">Draw object axes</label></div>
+          <div class="row checkboxRow"><input id="drawModulePivots" type="checkbox"><label for="drawModulePivots">Draw module pivots</label></div>
+          <div class="row checkboxRow"><input id="drawHitVolumes" type="checkbox"><label for="drawHitVolumes">Draw hit volumes</label></div>
+          <div class="row checkboxRow"><input id="publishObjectOrientation" type="checkbox"><label for="publishObjectOrientation">Publish object orientation</label></div>
+          <div class="row checkboxRow"><input id="hitVolumesOverlay" type="checkbox"><label for="hitVolumesOverlay">Hit volumes overlay</label></div>
+          <div class="row checkboxRow"><input id="hideMeshesWhenDrawingHitVolumes" type="checkbox"><label for="hideMeshesWhenDrawingHitVolumes">Hide meshes with hit volumes</label></div>
+          <div class="row checkboxRow"><input id="axesOverlay" type="checkbox"><label for="axesOverlay">Axes overlay</label></div>
+          <div class="row checkboxRow"><input id="crossesOverlay" type="checkbox"><label for="crossesOverlay">Crosses overlay</label></div>
+          <div class="row checkboxRow"><input id="linesOverlay" type="checkbox"><label for="linesOverlay">Lines overlay</label></div>
           <div class="row">
             <label>Hit volume filter</label>
             <select id="hitVolumeFilterMode">
@@ -525,7 +519,7 @@
       <div class="section">
         <div class="title">Universe / system map</div>
         <div class="sectionGrid three">
-          <div class="row"><label>Universe time simulation</label><input id="debugUniverseTimeSimulation" type="checkbox"></div>
+          <div class="row checkboxRow"><input id="debugUniverseTimeSimulation" type="checkbox"><label for="debugUniverseTimeSimulation">Universe time simulation</label></div>
           <div class="row"><label>Simulation time scale</label><input id="debugUniverseTimeScaleInput" type="number" step="1" min="-1000000" max="1000000"></div>
           <div class="row"><label>Active universe time scale</label><span id="debugUniverseTimeScale">—</span></div>
           <div class="row"><label>System map visible</label><span id="systemMapVisible">—</span></div>
@@ -533,7 +527,7 @@
           <div class="row"><label>Live system id</label><span id="liveSystemMapId">—</span></div>
           <div class="row"><label>Map live refresh sec</label><input id="systemMapLiveRefreshSec" type="number" step="0.01" min="0.02"></div>
           <div class="row"><label>Cloud speed multiplier</label><input id="cloudSpeedMultiplier" type="number" step="0.1" min="0" max="100000"></div>
-          <div class="row"><label>Debug Control auto updates</label><input id="debugControlAutoUpdates" type="checkbox"></div>
+          <div class="row checkboxRow"><input id="debugControlAutoUpdates" type="checkbox"><label for="debugControlAutoUpdates">Debug Control auto updates</label></div>
           <div class="row"><label>Detail sampler</label><span id="detailMapSampler">—</span></div>
           <div class="row"><label>Hub sampler</label><span id="hubMapSampler">—</span></div>
         </div>

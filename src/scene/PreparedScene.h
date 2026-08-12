@@ -9,6 +9,8 @@
 #include "src/world/coordinates/WorldFrame.h"
 
 #include "src/world/types/ObjectType.h"
+#include "src/game/ship/core/ShipRole.h"
+#include "src/game/visual/VisualShipKind.h"
 
 
 
@@ -46,6 +48,9 @@ struct PreparedScene
 
     struct RealShipMeshItem
     {
+        EntityId entityId{0};
+        ShipRole role = ShipRole::NPC;
+
         const render::MeshGPU* gpuLod0 = nullptr;
         const render::MeshGPU* gpuLod1 = nullptr;
 
@@ -81,6 +86,7 @@ struct PreparedScene
 
     struct VisualShipItem
     {
+        game::visual::VisualShipKind kind = game::visual::VisualShipKind::Generic;
         const render::MeshGPU* wholeShipProxyGpu = nullptr;
 
         glm::mat4 model = glm::mat4(1.0f);
@@ -113,8 +119,35 @@ struct PreparedScene
     std::vector<VisualShipPartItem> visualShipParts;
 
 
+    struct DebugAssemblyItem
+    {
+        enum class Kind
+        {
+            RealShip,
+            Object
+        };
 
+        Kind kind = Kind::Object;
+        EntityId entityId{0};
+        ShipRole shipRole = ShipRole::NPC;
+        ObjectType objectType = ObjectType::None;
 
+        glm::mat4 model = glm::mat4(1.0f);
+        glm::vec3 position = glm::vec3(0.0f);
+        glm::vec3 forward = glm::vec3(0.0f, 0.0f, -1.0f);
+        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0f);
+        float boundRadius = 0.0f;
+
+        const game::ship::geometry::ObjectAssembly* assembly = nullptr;
+        const std::vector<game::simulation::ObjectAssemblyModuleSnapshot>* assemblyModules = nullptr;
+        const std::vector<game::simulation::DebugHitVolumeSnapshot>* debugHitVolumes = nullptr;
+    };
+
+    // Debug geometry is prepared from the exact same presentation transforms
+    // as meshes. This prevents diagnostic axes/volumes from drifting back to
+    // stale authoritative/world-space paths when render frames evolve.
+    std::vector<DebugAssemblyItem> debugAssemblies;
 
     bool valid = false;
 };

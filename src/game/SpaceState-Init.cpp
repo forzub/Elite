@@ -155,8 +155,17 @@ void SpaceState::initHUD()
         policy.drawStarfield = dbg.renderStarfield;
         policy.drawCelestial = dbg.renderCelestialBodies;
         policy.drawFarStationProxy = dbg.renderHubs;
-        policy.drawObjects = dbg.renderHubs || dbg.renderLargeObjects;
+        policy.drawHubs = dbg.renderHubs;
+        policy.drawLargeObjects = dbg.renderLargeObjects;
+        policy.drawObjects =
+            dbg.renderHubs ||
+            dbg.renderLargeObjects ||
+            dbg.renderCelestialBodies;
+        policy.drawRealShips = dbg.renderRealShips;
+        policy.drawPlayerShip = dbg.renderPlayerShip;
+        policy.drawNpcShips = dbg.renderNpcShips;
         policy.drawVisualShips = dbg.renderVisualShips;
+        policy.drawTrafficShips = dbg.renderTrafficShips;
         policy.drawVisualDrones = dbg.renderVisualShips;
              
         

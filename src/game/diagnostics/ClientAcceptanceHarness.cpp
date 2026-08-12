@@ -361,12 +361,38 @@ void testSystemMapUiCommandDispatchContract()
     pass("SYSTEM MAP UI COMMAND DISPATCH");
 }
 
-const ShipSnapshot& findServerShip(
-    const game::debug::IDebugSessionControl& debug,
+void runFrame(
+    game::host::LocalGameSession& session,
+    const ShipControlState& control
+);
+
+ShipSnapshot findServerShip(
+    game::host::LocalGameSession& session,
+    game::debug::IDebugSessionControl& debug,
     EntityId id
 )
 {
-    const auto& ships = debug.snapshot().ships;
+    // Debug snapshots now cross the server ownership boundary as copied values.
+    // Request a fresh authoritative publication explicitly instead of relying
+    // on a reference into GameServer's current m_lastSnapshot.
+    const std::uint64_t previousRevision = debug.snapshotRevision();
+    debug.refreshSnapshot();
+
+    ShipControlState neutral;
+    for (int frame = 0; frame < WaitFrameLimit; ++frame)
+    {
+        runFrame(session, neutral);
+        if (debug.snapshotRevision() > previousRevision)
+            break;
+    }
+
+    require(
+        debug.snapshotRevision() > previousRevision,
+        "authoritative debug snapshot refresh did not cross the server boundary"
+    );
+
+    const auto snapshot = debug.snapshot();
+    const auto& ships = snapshot.ships;
     const auto it = std::find_if(
         ships.begin(),
         ships.end(),
@@ -602,7 +628,7 @@ void testBootAndIdle(
     require(client.readyForGameplay(), "client is not ready after synchronization");
     require(client.hasSessionSnapshot(), "client has no session snapshot after synchronization");
 
-    const auto& serverPlayer = findServerShip(debug, playerId);
+    const auto serverPlayer = findServerShip(session, debug, playerId);
     const auto& clientPlayer = findClientShip(client, playerId);
 
     require(serverPlayer.role == ShipRole::Player, "authoritative player role changed");
@@ -629,7 +655,7 @@ void testBootAndIdle(
     ShipControlState neutral;
     runFrames(session, neutral, 50);
 
-    const auto& after = findServerShip(debug, playerId);
+    const auto after = findServerShip(session, debug, playerId);
     require(glm::length(after.transform.motion.localPositionMeters - startLocal) < 0.05, "idle player drifted in hub-local space");
 
     double orientationDelta = 0.0;
@@ -651,7 +677,7 @@ void testFastUniverseRoundTrip(
     SyntheticKeyState keys;
 
     const auto beforeRevision = client.sessionSnapshot().universeTimelineRevision;
-    const auto before = findServerShip(debug, playerId);
+    const auto before = findServerShip(session, debug, playerId);
     const glm::dvec3 beforeLocal = before.transform.motion.localPositionMeters;
     const glm::mat4 beforeOrientation = before.transform.orientation;
 
@@ -698,7 +724,7 @@ void testFastUniverseRoundTrip(
     ShipControlState neutral;
     runFrames(session, neutral, 20);
 
-    const auto& restored = findServerShip(debug, playerId);
+    const auto restored = findServerShip(session, debug, playerId);
     require(glm::length(restored.transform.motion.localPositionMeters - beforeLocal) < 0.05, "controls leaked from accelerated branch into restored gameplay position");
 
     double orientationDelta = 0.0;
@@ -718,7 +744,7 @@ void testOrientationAndMovement(
     PlayerInputMapper mapper;
     SyntheticKeyState keys;
 
-    const auto& beforeTurn = findServerShip(debug, playerId);
+    const auto beforeTurn = findServerShip(session, debug, playerId);
     const glm::vec3 initialForward = beforeTurn.transform.forward();
 
     keys.press(GLFW_KEY_Q);
@@ -729,7 +755,7 @@ void testOrientationAndMovement(
     ShipControlState neutral = mapKeys(mapper, keys);
     runFrames(session, neutral, 50);
 
-    const auto& afterTurn = findServerShip(debug, playerId);
+    const auto afterTurn = findServerShip(session, debug, playerId);
     requireOrientationBasis(afterTurn.transform, "server player after yaw");
     require(glm::length(afterTurn.transform.forward() - initialForward) > 0.02f, "yaw input did not change authoritative forward vector");
 
@@ -744,7 +770,7 @@ void testOrientationAndMovement(
     neutral = mapKeys(mapper, keys);
     runFrames(session, neutral, 20);
 
-    const auto& afterThrust = findServerShip(debug, playerId);
+    const auto afterThrust = findServerShip(session, debug, playerId);
     const glm::dvec3 displacement =
         afterThrust.transform.motion.localPositionMeters - localBeforeThrust;
 
@@ -771,7 +797,7 @@ void testOrientationAndMovement(
     const ShipControlState newtonianThrustControl = mapKeys(mapper, keys);
     runFrames(session, newtonianThrustControl, 25);
 
-    const auto& afterNewtonianThrust = findServerShip(debug, playerId);
+    const auto afterNewtonianThrust = findServerShip(session, debug, playerId);
     require(
         afterNewtonianThrust.transform.motion.localControlLaw ==
             game::navigation::LocalFlightControlLaw::Newtonian,
@@ -803,13 +829,13 @@ void testOrientationAndMovement(
         [&]()
         {
             return
-                findServerShip(debug, playerId).transform.motion.localControlLaw ==
+                findServerShip(session, debug, playerId).transform.motion.localControlLaw ==
                 game::navigation::LocalFlightControlLaw::Assisted;
         },
         "authoritative player did not publish Assisted local flight law"
     );
 
-    const auto& afterModeSwitch = findServerShip(debug, playerId);
+    const auto afterModeSwitch = findServerShip(session, debug, playerId);
 
     const double targetSpeedBeforeThrottle =
         afterModeSwitch.transform.motion.targetForwardSpeedMps;
@@ -820,7 +846,7 @@ void testOrientationAndMovement(
     const ShipControlState throttleUpControl = mapKeys(mapper, keys);
     runFrames(session, throttleUpControl, 25);
 
-    const auto& afterThrottleUp = findServerShip(debug, playerId);
+    const auto afterThrottleUp = findServerShip(session, debug, playerId);
     require(
         afterThrottleUp.transform.motion.targetForwardSpeedMps >
             targetSpeedBeforeThrottle + 1.0,
@@ -835,7 +861,7 @@ void testOrientationAndMovement(
     const ShipControlState throttleDownControl = mapKeys(mapper, keys);
     runFrames(session, throttleDownControl, 25);
 
-    const auto& afterThrottleDown = findServerShip(debug, playerId);
+    const auto afterThrottleDown = findServerShip(session, debug, playerId);
     require(
         afterThrottleDown.transform.motion.targetForwardSpeedMps <
             raisedTargetSpeed - 1.0,
@@ -1258,7 +1284,7 @@ void testGalaxyNavigationFlightPresentation(
     require(bestAlignment > 0.0, "no game-system star lies in the player's current forward hemisphere");
 
     const ShipSnapshot beforeShip =
-        findServerShip(debug, playerId);
+        findServerShip(session, debug, playerId);
     require(beforeShip.referenceFrame.valid, "navigation-flight test lost the player reference frame before thrust");
 
     PlayerInputMapper mapper;
@@ -1279,7 +1305,7 @@ void testGalaxyNavigationFlightPresentation(
         );
 
     const ShipSnapshot afterShip =
-        findServerShip(debug, playerId);
+        findServerShip(session, debug, playerId);
     require(afterShip.referenceFrame.valid, "navigation-flight test lost the player reference frame after thrust");
 
     const glm::dvec3 relativeFlightLocalMeters =

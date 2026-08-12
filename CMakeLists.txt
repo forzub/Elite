@@ -209,6 +209,7 @@ add_executable(EliteGame
 
     src/game/debug/AttachmentEditorPayload.cpp
     src/game/debug/AttachmentEditorResolve.cpp
+    src/game/debug/LocalDebugSessionControl.cpp
 
     src/world/modules/ObjectAssemblyTransformUtils.cpp
     src/game/debug/VolumeViewerPayload.cpp

@@ -1251,6 +1251,10 @@ void SystemMapRenderer::renderSystem(
         m_systemSceneFrameDirty = false;
     }
 
+    game::system_map::SystemMapSceneRenderOptions renderOptions;
+    renderOptions.drawObjects =
+        debug::get().render.renderSystemMapObjects;
+
     m_systemSceneRenderer.render(
         m_systemView,
         *this,
@@ -1258,7 +1262,8 @@ void SystemMapRenderer::renderSystem(
         system,
         navigation,
         m_systemPresentation,
-        m_systemSceneFrame
+        m_systemSceneFrame,
+        renderOptions
     );
 
     m_systemFramePrepared = false;

@@ -40,25 +40,36 @@ for forbidden in (
         fail(f"LocalGameHost regained direct GameServer access: {forbidden}")
 
 for required in (
+    "std::unique_ptr<game::debug::LocalDebugSessionControl> m_debugControl",
     "std::unique_ptr<server::ServerRuntime> m_runtime",
+    "std::make_unique<game::debug::LocalDebugSessionControl>()",
     "std::make_unique<server::ServerRuntime>(",
+    "*m_debugControl",
     "m_runtime->advance(",
     "m_runtime->fixedStepSeconds()",
-    "return *m_runtime;",
+    "return *m_debugControl;",
 ):
     if required not in host_h and required not in host_cpp:
         fail(f"LocalGameHost no longer composes through ServerRuntime: {required}")
 
 # Exactly the server-side runtime owns GameServer during local production play.
 for required in (
-    "class ServerRuntime",
+    "class ServerRuntime final",
     "std::unique_ptr<GameServer> m_server",
     "std::make_unique<GameServer>()",
     "m_server->world() = worldParams",
+    "game::debug::IServerDebugChannel& debugChannel",
     "transport.publishSnapshotImmediately(m_server->snapshot())",
+    "m_debugChannel.publishSnapshot(m_server->snapshot())",
 ):
     if required not in runtime_h and required not in runtime_cpp:
         fail(f"ServerRuntime ownership/bootstrap contract is incomplete: {required}")
+
+if "public game::debug::IDebugSessionControl" in runtime_h:
+    fail("ServerRuntime regained the application-side debug facade")
+
+if "return *m_runtime;" in host_cpp:
+    fail("LocalGameHost exposes ServerRuntime itself as debug control")
 
 # Stable session identity is server-assigned one-time bootstrap metadata, not a
 # field repeated in every simulation snapshot and not a value selected in each

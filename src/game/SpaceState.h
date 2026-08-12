@@ -104,6 +104,9 @@ public:
     void processHtmlCommands();
     void pushShipCoreState();
     void pushStructureDebugState();
+    void requestStructureDebugStateRefresh();
+    void deferDebugControlStatePush();
+    void flushPendingDebugUiState();
     void pushVolumeViewerState();
     void pushFrustumDebugState(const nlohmann::json& payload);
     void pushDebugControlState();
@@ -245,6 +248,14 @@ private:
     uint64_t    m_shipCoreSelectedShipEntityId = 0;
     uint64_t    m_structureDebugSelectedShipEntityId = 0;
     std::uint64_t m_debugControlSettingsRevision = 1;
+
+    // Debug/control crosses an asynchronous server boundary. UI refreshes wait
+    // for a newer copied diagnostic revision instead of assuming that a server
+    // mutation completed synchronously inside the HTML command handler.
+    bool m_structureDebugRefreshPending = false;
+    std::uint64_t m_structureDebugAwaitingSnapshotRevision = 0;
+    bool m_debugControlStatePushPending = false;
+    std::uint64_t m_debugControlAwaitingStateRevision = 0;
 
 
 

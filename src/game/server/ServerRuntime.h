@@ -1,14 +1,20 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
-#include <string>
 
-#include "src/game/debug/IDebugSessionControl.h"
 #include "src/game/server/ServerRunner.h"
 #include "src/world/WorldParams.h"
 
 class GameServer;
 class IServerTransport;
+
+namespace game::debug
+{
+class IServerDebugChannel;
+struct DebugCommand;
+struct DebugSessionState;
+}
 
 namespace game::server
 {
@@ -16,16 +22,17 @@ namespace game::server
     Sole owner of the in-process authoritative GameServer.
 
     LocalGameHost owns this runtime, but never reaches through it to GameServer.
-    Keeping ownership behind one server-side object is the prerequisite for
-    moving the whole runtime to a worker thread without exposing authoritative
-    memory to the client/application thread.
+    Gameplay transport and debug/control both cross explicit message/value seams,
+    so this object can later become exclusively owned by a worker thread without
+    exposing authoritative memory to the application/client thread.
 */
-class ServerRuntime final : public game::debug::IDebugSessionControl
+class ServerRuntime final
 {
 public:
     ServerRuntime(
         const WorldParams& worldParams,
-        IServerTransport& transport
+        IServerTransport& transport,
+        game::debug::IServerDebugChannel& debugChannel
     );
     ~ServerRuntime();
 
@@ -35,30 +42,17 @@ public:
     ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
 
-    const SimulationSnapshot& snapshot() const override;
-    void refreshSnapshot() override;
-    bool destroyShipModule(EntityId shipId, const std::string& moduleId) override;
-    bool restoreShipModule(EntityId shipId, const std::string& moduleId) override;
-    bool resetShipStructure(EntityId shipId) override;
-    void resetAllShipStructures() override;
-    bool detachShipModule(EntityId shipId, const std::string& moduleId) override;
-    bool hangShipModule(EntityId shipId, const std::string& moduleId) override;
-    bool reevaluateShipStructure(EntityId shipId) override;
-    bool setShipStructuralLinkHealth(
-        EntityId shipId,
-        const std::string& linkId,
-        float health,
-        bool destroyed
-    ) override;
-
-    bool fastUniverseTime() const override;
-    bool universeTimeSimulation() const override;
-    double universeTimeScale() const override;
-    double configuredUniverseTimeScale() const override;
-    void setUniverseTimeSimulation(bool enabled, double timeScale) override;
-
 private:
+    void receiveDebugCommands();
+    void publishPendingDebugSnapshot();
+    game::debug::DebugSessionState makeDebugState() const;
+
     std::unique_ptr<GameServer> m_server;
     std::unique_ptr<ServerRunner> m_runner;
+    game::debug::IServerDebugChannel& m_debugChannel;
+
+    bool m_debugSnapshotPending = false;
+    std::uint64_t m_debugSnapshotBaseServerTick = 0;
+    bool m_debugStateDirty = false;
 };
 }

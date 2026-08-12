@@ -20,6 +20,7 @@
 
 
 #include "src/scene/PreparedScene.h"
+#include "src/scene/SceneRenderPolicy.h"
 
 // Forward declaration
 class DebugLineRenderer;
@@ -90,30 +91,6 @@ struct SceneRenderStats
         visualShipPartsDrawn += other.visualShipPartsDrawn;
     }
 };
-
-
-
-
-
-struct SceneRenderPolicy
-{
-    bool drawStarfield = true;
-    bool drawCelestial = true;
-    bool drawFarStationProxy = true;
-    bool drawLabels = true;
-    bool drawDebug = true;
-    bool drawVisualShips = true;
-    bool drawVisualDrones = true;
-    bool drawObjects = true;
-
-    bool drawRealShips = true;
-    bool drawPlayerShip = true;
-    bool drawNpcShips = true;
-    bool drawTrafficShips = true;
-
-    int maxVisualShipsToDraw = -1;
-};
-
 
 
 

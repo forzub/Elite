@@ -100,7 +100,8 @@ void SystemMapSceneRenderer::render(
     const world::celestial::SystemMapSnapshot& system,
     const world::celestial::PlayerNavigationState& nav,
     const SystemMapPresentation& presentation,
-    const SystemMapSceneFrame& frame
+    const SystemMapSceneFrame& frame,
+    const SystemMapSceneRenderOptions& options
 ) const
 {
     context.ensureSystemRenderResources();
@@ -560,7 +561,7 @@ void SystemMapSceneRenderer::render(
         }
     }
 
-    if (!viewState.state().selectedHubId.empty())
+    if (options.drawObjects && !viewState.state().selectedHubId.empty())
     {
         const auto selectedHubPosition =
             objectVisualPosById.find(
@@ -596,16 +597,19 @@ void SystemMapSceneRenderer::render(
         }
     }
 
-    context.drawSystemObjectOverlays(
-        system,
-        view,
-        mvp,
-        objectVisualPosById,
-        posById,
-        drawRadiusById,
-        systemWorldUnitsPerPixel,
-        systemScale
-    );
+    if (options.drawObjects)
+    {
+        context.drawSystemObjectOverlays(
+            system,
+            view,
+            mvp,
+            objectVisualPosById,
+            posById,
+            drawRadiusById,
+            systemWorldUnitsPerPixel,
+            systemScale
+        );
+    }
 
 
 
@@ -628,15 +632,18 @@ void SystemMapSceneRenderer::render(
 
 
 
-    context.drawSystemObjectLabels(
-        vp,
-        system,
-        mvp,
-        view,
-        objectVisualPosById,
-        posById,
-        drawRadiusById
-    );
+    if (options.drawObjects)
+    {
+        context.drawSystemObjectLabels(
+            vp,
+            system,
+            mvp,
+            view,
+            objectVisualPosById,
+            posById,
+            drawRadiusById
+        );
+    }
 
 
 

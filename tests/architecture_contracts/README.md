@@ -174,3 +174,25 @@ server use of the removed `GameSimulation::snapshot()/setTick()` lifecycle.
 `HeadlessServerBoundaryCompileTests.cpp` lock the CPU/GPU assembly split:
 server/simulation headers and the shared assembly library must compile without
 glad/OpenGL, while GPU uploads live only in `render::geometry::AssemblyGpuLibrary`.
+
+### Server runtime / transport ownership boundary
+
+`check_server_transport_boundary.py` and `check_server_runtime_ownership.py`
+lock the local-session ownership seam: `LocalLoopbackTransport` carries messages
+and copied snapshots only, `ServerRuntime` is the sole production owner of
+`GameServer`, and the client learns its controlled entity from server-assigned
+session metadata rather than choosing an `EntityId` in command packets.
+
+### Asynchronous debug/control boundary
+
+Debug HTML pages are retained, but they are not allowed to bypass server
+ownership. `LocalDebugSessionControl` exposes separate tool-side
+`IDebugSessionControl` and server-side `IServerDebugChannel` endpoints. Commands
+are queued requests; structural snapshots and universe-time diagnostic state
+cross back as copied value state with monotonically increasing local revisions.
+
+`check_debug_session_boundary.py` rejects direct `ServerRuntime`/`GameServer`
+access and reference-returning debug snapshots. `DebugSessionBoundaryContractTests.cpp`
+verifies the value-copy and command-queue semantics at runtime. This seam is
+still single-threaded intentionally; queue synchronization and the actual server
+worker thread are the next isolation layer.

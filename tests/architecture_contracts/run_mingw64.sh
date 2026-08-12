@@ -31,6 +31,7 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_headless_server_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_transport_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_runtime_ownership.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_debug_session_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_runtime_policy_boundaries.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_hub_motion_lab.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_signal_reception_snapshot.py"

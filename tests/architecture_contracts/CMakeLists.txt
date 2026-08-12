@@ -426,3 +426,50 @@ set_tests_properties(
     PROPERTIES
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+add_executable(
+    debug_session_boundary_contract_tests
+    DebugSessionBoundaryContractTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/debug/LocalDebugSessionControl.cpp"
+)
+
+target_include_directories(
+    debug_session_boundary_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_definitions(
+    debug_session_boundary_contract_tests
+    PRIVATE
+        GLM_ENABLE_EXPERIMENTAL
+)
+
+if(MSVC)
+    target_compile_options(
+        debug_session_boundary_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        debug_session_boundary_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME debug_session_boundary_contracts
+    COMMAND debug_session_boundary_contract_tests
+)
+
+set_tests_properties(
+    debug_session_boundary_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

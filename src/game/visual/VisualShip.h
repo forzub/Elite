@@ -6,6 +6,7 @@
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/game/geometry/ObjectAssembly.h"
+#include "src/game/visual/VisualShipKind.h"
 
 namespace game::visual
 {
@@ -25,6 +26,7 @@ struct VisualShip
     ShipTransform transform;
     ShipTransform renderTransform;
 
+    VisualShipKind kind = VisualShipKind::Generic;
     bool visible = true;
 
     float alpha = 1.0f;

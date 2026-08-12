@@ -247,21 +247,23 @@ but those constants must stay inside diagnostic/promo code paths.
   selection only for hubs/bodies, so ship selection/Details navigation remains an
   unfinished functional contract.
 - `ServerRuntime` is now the sole in-process production owner of `GameServer`.
-  `LocalGameHost` composes only the local transport link plus `ServerRuntime`;
-  bootstrap world configuration and the initial authoritative publication happen
-  inside the server runtime. Client identity is also server-owned: a one-time
-  `SessionWelcome` publishes `controlledEntityId`, while recurring simulation
-  snapshots do not repeat that stable metadata and client command packets carry
-  intent only—they cannot select an `EntityId` to control. This ownership seam is
-  intentionally still synchronous so behavior can be regression-checked before
-  a worker thread is introduced.
-- `IDebugSessionControl` is now exposed by `ServerRuntime`, not by direct host
-  access to `GameServer`. Its methods are still synchronous and
-  `IDebugSessionControl::snapshot()` still returns a reference to a complete
-  `SimulationSnapshot`. Before `ServerRuntime` actually moves to another thread,
-  debug commands/results must cross a thread-safe control queue (and the snapshot
-  reference must become a copied/narrow debug DTO) so the application thread never
-  reads authoritative memory concurrently.
+  `LocalGameHost` composes the gameplay transport, a separate local debug/control
+  channel, and `ServerRuntime`; bootstrap world configuration and the initial
+  authoritative publication happen inside the server runtime. Client identity is
+  also server-owned: a one-time `SessionWelcome` publishes `controlledEntityId`,
+  while recurring simulation snapshots do not repeat that stable metadata and
+  client command packets carry intent only—they cannot select an `EntityId` to
+  control.
+- Debug tools no longer expose `ServerRuntime` or read `GameServer` memory.
+  `LocalDebugSessionControl` provides separate `IDebugSessionControl` (tool side)
+  and `IServerDebugChannel` (server side) endpoints. Mutating debug operations are
+  queued requests; structural snapshots and universe-time status return as copied
+  value state with revisions. `SpaceState` waits for a newer revision before
+  refreshing the HTML debug panels, so the UI no longer assumes that an
+  authoritative mutation completed synchronously inside its command handler. The
+  queues are deliberately still single-threaded at this stage; the next server
+  isolation step is to make both gameplay and debug local channels thread-safe,
+  then move `ServerRuntime` behind a worker-thread lifecycle.
 - Procedural cloud morphology is presentation-only wall-time work. Its timing is
   intentionally separate from universe time, but texture generation still runs
   synchronously on the render thread and remains a performance/LOD concern.

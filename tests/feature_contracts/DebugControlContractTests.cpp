@@ -9,6 +9,7 @@
 #include "src/game/debug/DebugControlSettingsCodec.h"
 #include "src/ui/html/HtmlUiMessage.h"
 #include "src/game/world_state/InitialWorldState.h"
+#include "src/scene/SceneRenderPolicy.h"
 
 namespace
 {
@@ -122,6 +123,51 @@ void testClampsRemainServerAuthoritative()
     require(settings.sceneMode == "game", "invalid scene mode was not rejected");
 }
 
+
+void testSceneRenderVisibilityPolicy()
+{
+    SceneRenderPolicy policy;
+
+    require(policy.shouldDrawRealShip(ShipRole::Player), "default policy hid player ship");
+    require(policy.shouldDrawRealShip(ShipRole::NPC), "default policy hid NPC ship");
+
+    policy.drawPlayerShip = false;
+    require(!policy.shouldDrawRealShip(ShipRole::Player), "player visibility flag is not consumed");
+    require(policy.shouldDrawRealShip(ShipRole::NPC), "player visibility flag leaked into NPCs");
+
+    policy.drawRealShips = false;
+    require(!policy.shouldDrawRealShip(ShipRole::NPC), "real-ships master flag is not consumed");
+
+    policy = SceneRenderPolicy{};
+    policy.drawTrafficShips = false;
+    require(
+        !policy.shouldDrawVisualShip(game::visual::VisualShipKind::Traffic),
+        "traffic visibility flag is not consumed"
+    );
+    require(
+        policy.shouldDrawVisualShip(game::visual::VisualShipKind::Promo),
+        "traffic visibility flag incorrectly hides promo ships"
+    );
+
+    policy.drawVisualShips = false;
+    require(
+        !policy.shouldDrawVisualShip(game::visual::VisualShipKind::Promo),
+        "visual-ships master flag is not consumed"
+    );
+
+    policy = SceneRenderPolicy{};
+    policy.drawHubs = false;
+    require(!policy.shouldDrawObject(ObjectType::Station), "hub visibility flag is not consumed");
+    require(policy.shouldDrawObject(ObjectType::Asteroid), "hub visibility flag leaked into asteroids");
+
+    policy.drawLargeObjects = false;
+    require(!policy.shouldDrawObject(ObjectType::Asteroid), "large-object visibility flag is not consumed");
+    require(policy.shouldDrawObject(ObjectType::Planet), "large-object visibility flag leaked into planets");
+
+    policy.drawCelestial = false;
+    require(!policy.shouldDrawObject(ObjectType::Planet), "celestial visibility flag is not consumed");
+}
+
 void testInternalDiagnosticsAreNotPersistedAsUserSettings()
 {
     debug::DebugRenderSettings settings;
@@ -223,6 +269,7 @@ int main()
         testFullSettingsRoundTrip();
         testPartialPayloadPreservesOtherSettings();
         testClampsRemainServerAuthoritative();
+        testSceneRenderVisibilityPolicy();
         testInternalDiagnosticsAreNotPersistedAsUserSettings();
         testInitialWorldStateContract();
         testDiagnosticPanelMessageRoutes();

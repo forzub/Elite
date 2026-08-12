@@ -473,3 +473,99 @@ set_tests_properties(
     PROPERTIES
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+find_package(Threads REQUIRED)
+
+add_executable(
+    thread_boundary_channel_contract_tests
+    ThreadBoundaryChannelContractTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/network/LocalLoopbackTransport.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/debug/LocalDebugSessionControl.cpp"
+)
+
+target_include_directories(
+    thread_boundary_channel_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_compile_definitions(
+    thread_boundary_channel_contract_tests
+    PRIVATE
+        GLM_ENABLE_EXPERIMENTAL
+)
+
+target_link_libraries(
+    thread_boundary_channel_contract_tests
+    PRIVATE
+        Threads::Threads
+)
+
+if(MSVC)
+    target_compile_options(
+        thread_boundary_channel_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        thread_boundary_channel_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME thread_boundary_channels
+    COMMAND thread_boundary_channel_contract_tests
+)
+
+set_tests_properties(
+    thread_boundary_channels
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
+    module_replication_contract_tests
+    ModuleReplicationContractTests.cpp
+)
+
+target_include_directories(
+    module_replication_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        module_replication_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        module_replication_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME module_replication_contracts
+    COMMAND module_replication_contract_tests
+)
+
+set_tests_properties(
+    module_replication_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

@@ -28,6 +28,7 @@ struct GameSessionAdvanceResult
     double discardedSeconds = 0.0;
     double totalDiscardedSeconds = 0.0;
     bool catchUpLimited = false;
+    double serverExecutionWallSeconds = 0.0;
 };
 
 class IGameSession

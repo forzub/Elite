@@ -24,15 +24,19 @@ struct ServerAdvanceResult
     double discardedSeconds = 0.0;
     double totalDiscardedSeconds = 0.0;
     bool catchUpLimited = false;
+
+    // Filled by ServerWorker around the authoritative runtime call. The runner
+    // itself stays deterministic and wall-clock agnostic.
+    double executionWallSeconds = 0.0;
 };
 
 /*
     Owns the fixed-step lifecycle of the local authoritative server.
 
-    The runner is deliberately synchronous for now. Its only external runtime
-    dependency is the server-side transport endpoint; it never sees the client
-    transport interface or client state. This is the execution contract that a
-    later threaded/dedicated runner will keep.
+    The runner is synchronous inside the authoritative server thread. Its only
+    external runtime dependency is the server-side transport endpoint; it never
+    sees the client transport interface or client state. ServerWorker owns any
+    cross-thread pacing/overlap policy around this deterministic fixed-step core.
 */
 class ServerRunner
 {

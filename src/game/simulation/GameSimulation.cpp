@@ -162,23 +162,10 @@ namespace
     {
         game::simulation::ObjectModuleSnapshot ms;
 
+        // Only authoritative per-instance state crosses the replication
+        // boundary. Static module metadata is available from the same local
+        // descriptor library on both server and client.
         ms.moduleId = descMod.moduleId;
-        ms.parentModuleId = descMod.parentModuleId;
-        ms.subsystemId = descMod.subsystemId;
-
-        ms.maxHealth = descMod.maxHealth;
-        ms.destructible = descMod.destructible;
-        ms.detachable = descMod.detachable;
-        ms.hangable = descMod.hangable;
-
-        ms.destroyPolicy = static_cast<int>(descMod.destroyPolicy);
-        ms.detachPolicy = static_cast<int>(descMod.detachPolicy);
-        ms.attachmentType = static_cast<int>(descMod.attachmentType);
-
-        ms.meshPartIds = descMod.meshPartIds;
-        ms.supportModuleIds = descMod.supportModuleIds;
-        ms.minSupportsForAttached = descMod.minSupportsForAttached;
-        ms.minSupportsForStable = descMod.minSupportsForStable;
 
         if (rt)
         {
@@ -2024,23 +2011,9 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             {
                 game::simulation::ObjectModuleSnapshot ms;
 
+                // Static descriptor data stays local to each runtime. The
+                // replicated module row contains only mutable instance state.
                 ms.moduleId = descMod.moduleId;
-                ms.parentModuleId = descMod.parentModuleId;
-                ms.subsystemId = descMod.subsystemId;
-
-                ms.maxHealth = descMod.maxHealth;
-                ms.destructible = descMod.destructible;
-                ms.detachable = descMod.detachable;
-                ms.hangable = descMod.hangable;
-
-                ms.destroyPolicy = static_cast<int>(descMod.destroyPolicy);
-                ms.detachPolicy = static_cast<int>(descMod.detachPolicy);
-                ms.attachmentType = static_cast<int>(descMod.attachmentType);
-
-                ms.meshPartIds = descMod.meshPartIds;
-                ms.supportModuleIds = descMod.supportModuleIds;
-                ms.minSupportsForAttached = descMod.minSupportsForAttached;
-                ms.minSupportsForStable = descMod.minSupportsForStable;
 
                 auto itRt = runtimeById.find(descMod.moduleId);
                 if (itRt != runtimeById.end() && itRt->second)

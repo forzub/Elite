@@ -21,10 +21,10 @@ namespace game::server
 /*
     Sole owner of the in-process authoritative GameServer.
 
-    LocalGameHost owns this runtime, but never reaches through it to GameServer.
-    Gameplay transport and debug/control both cross explicit message/value seams,
-    so this object can later become exclusively owned by a worker thread without
-    exposing authoritative memory to the application/client thread.
+    ServerWorker constructs, advances and destroys this runtime exclusively on
+    its OS thread. Gameplay transport and debug/control cross explicit
+    mutex-protected message/value seams; application/client code cannot reach
+    authoritative memory directly.
 */
 class ServerRuntime final
 {

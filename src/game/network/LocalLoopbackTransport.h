@@ -5,7 +5,9 @@
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/TimeSyncMessage.h"
 #include <cstdint>
+#include <mutex>
 #include <queue>
+#include <random>
 #include <utility>
 #include <vector>
 
@@ -33,9 +35,9 @@ struct DelayedTimeSyncResponse
 
     It intentionally owns no GameServer reference. Client calls can only enqueue
     protocol messages; ServerRunner consumes them through IServerTransport and
-    publishes responses back through the same message seam. The queues are still
-    single-threaded at this stage; thread-safe ownership comes after this logical
-    boundary is regression-protected.
+    publishes responses back through the same message seam. Every mutable
+    delivery queue/latency buffer is protected by one local mutex so client and
+    authoritative worker endpoints never share unsynchronized state.
 */
 class LocalLoopbackTransport final : public ITransport, public IServerTransport
 {
@@ -104,6 +106,8 @@ public:
         game::network::TimeSyncResponse response) override;
 
 private:
+    mutable std::mutex m_mutex;
+
     std::queue<game::network::SessionWelcome> m_sessionWelcome;
     std::queue<SimulationSnapshot> m_incoming;
     std::queue<game::network::ClientMessage> m_clientMessages;
@@ -120,6 +124,9 @@ private:
     std::vector<DelayedTimeSyncResponse> m_timeSyncResponseBuffer;
     float m_fakeLatency = 0.1f; // 100ms per simulated leg
     float m_packetLoss = 0.0f;
+    // Transport-local RNG avoids sharing C rand() state with render/gameplay
+    // code now that latency delivery executes on the server worker thread.
+    std::minstd_rand m_packetLossRng {0x5EEDu};
 
     bool m_hasLastQueuedSnapshot = false;
     std::uint64_t m_lastQueuedSnapshotTick = 0;

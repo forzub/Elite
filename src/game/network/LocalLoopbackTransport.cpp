@@ -1,11 +1,12 @@
 #include "LocalLoopbackTransport.h"
 
-#include <cstdlib>
 #include <utility>
 
 bool LocalLoopbackTransport::receiveSessionWelcome(
     game::network::SessionWelcome& outWelcome)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     if (m_sessionWelcome.empty())
         return false;
 
@@ -17,12 +18,16 @@ bool LocalLoopbackTransport::receiveSessionWelcome(
 void LocalLoopbackTransport::publishSessionWelcomeImmediately(
     const game::network::SessionWelcome& welcome)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_sessionWelcome.push(welcome);
 }
 
 bool LocalLoopbackTransport::receiveSnapshot(
     SimulationSnapshot& outSnapshot)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     if (m_incoming.empty())
         return false;
 
@@ -34,6 +39,8 @@ bool LocalLoopbackTransport::receiveSnapshot(
 void LocalLoopbackTransport::publishSnapshotImmediately(
     const SimulationSnapshot& snapshot)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_incoming.push(snapshot);
     m_hasLastQueuedSnapshot = true;
     m_lastQueuedSnapshotTick = snapshot.metadata.serverTick;
@@ -43,6 +50,8 @@ void LocalLoopbackTransport::publishSnapshotImmediately(
 void LocalLoopbackTransport::publishSnapshot(
     const SimulationSnapshot& snapshot)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     const bool snapshotChanged =
         !m_hasLastQueuedSnapshot ||
         snapshot.metadata.serverTick != m_lastQueuedSnapshotTick ||
@@ -66,16 +75,22 @@ void LocalLoopbackTransport::publishSnapshot(
 
 void LocalLoopbackTransport::update(float dt)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     for (auto& snapshot : m_latencyBuffer)
         snapshot.delay -= dt;
 
     while (!m_latencyBuffer.empty() &&
            m_latencyBuffer.front().delay <= 0.0f)
     {
-        if ((rand() / static_cast<float>(RAND_MAX)) < m_packetLoss)
+        if (m_packetLoss > 0.0f)
         {
-            m_latencyBuffer.erase(m_latencyBuffer.begin());
-            continue;
+            std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+            if (distribution(m_packetLossRng) < m_packetLoss)
+            {
+                m_latencyBuffer.erase(m_latencyBuffer.begin());
+                continue;
+            }
         }
 
         m_incoming.push(std::move(m_latencyBuffer.front().snapshot));
@@ -115,12 +130,16 @@ void LocalLoopbackTransport::update(float dt)
 void LocalLoopbackTransport::sendClientMessage(
     const game::network::ClientMessage& msg)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_clientMessages.push(msg);
 }
 
 bool LocalLoopbackTransport::receiveClientMessage(
     game::network::ClientMessage& outMessage)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     if (m_clientMessages.empty())
         return false;
 
@@ -132,12 +151,16 @@ bool LocalLoopbackTransport::receiveClientMessage(
 void LocalLoopbackTransport::sendMapRequest(
     const game::network::MapRequest& request)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_mapRequests.push(request);
 }
 
 bool LocalLoopbackTransport::receiveMapRequest(
     game::network::MapRequest& outRequest)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     if (m_mapRequests.empty())
         return false;
 
@@ -149,12 +172,16 @@ bool LocalLoopbackTransport::receiveMapRequest(
 void LocalLoopbackTransport::sendMapResponse(
     game::network::MapResponse response)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_mapResponses.push(std::move(response));
 }
 
 bool LocalLoopbackTransport::receiveMapResponse(
     game::network::MapResponse& outResponse)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     if (m_mapResponses.empty())
         return false;
 
@@ -166,12 +193,16 @@ bool LocalLoopbackTransport::receiveMapResponse(
 void LocalLoopbackTransport::sendPresentationDataRequest(
     const game::network::PresentationDataRequest& request)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_presentationRequests.push(request);
 }
 
 bool LocalLoopbackTransport::receivePresentationDataRequest(
     game::network::PresentationDataRequest& outRequest)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     if (m_presentationRequests.empty())
         return false;
 
@@ -183,12 +214,16 @@ bool LocalLoopbackTransport::receivePresentationDataRequest(
 void LocalLoopbackTransport::sendPresentationDataResponse(
     game::network::PresentationDataResponse response)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_presentationResponses.push(std::move(response));
 }
 
 bool LocalLoopbackTransport::receivePresentationDataResponse(
     game::network::PresentationDataResponse& outResponse)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     if (m_presentationResponses.empty())
         return false;
 
@@ -200,6 +235,8 @@ bool LocalLoopbackTransport::receivePresentationDataResponse(
 void LocalLoopbackTransport::sendTimeSyncRequest(
     const game::network::TimeSyncRequest& request)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_timeSyncRequestBuffer.push_back({
         request,
         m_fakeLatency
@@ -209,6 +246,8 @@ void LocalLoopbackTransport::sendTimeSyncRequest(
 bool LocalLoopbackTransport::receiveTimeSyncRequest(
     game::network::TimeSyncRequest& outRequest)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     if (m_serverTimeSyncRequests.empty())
         return false;
 
@@ -220,6 +259,8 @@ bool LocalLoopbackTransport::receiveTimeSyncRequest(
 void LocalLoopbackTransport::sendTimeSyncResponse(
     game::network::TimeSyncResponse response)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_timeSyncResponseBuffer.push_back({
         std::move(response),
         m_fakeLatency
@@ -229,6 +270,8 @@ void LocalLoopbackTransport::sendTimeSyncResponse(
 bool LocalLoopbackTransport::receiveTimeSyncResponse(
     game::network::TimeSyncResponse& outResponse)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     if (m_timeSyncResponses.empty())
         return false;
 

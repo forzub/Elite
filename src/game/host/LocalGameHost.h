@@ -16,19 +16,18 @@ class LocalDebugSessionControl;
 
 namespace game::server
 {
-class ServerRuntime;
+class ServerWorker;
 }
 
 namespace game::host
 {
 /*
-    Owns the in-process connection and authoritative runtime as separate peers.
+    Owns the in-process connection and the server worker as separate peers.
 
-    The host never owns or exposes GameServer. Gameplay transport and debug
-    control each have client/tool and server endpoints, while ServerRuntime is
-    the sole owner of authoritative memory. This is the composition shape that
-    can later move the runtime to another thread/process without changing UI or
-    client code.
+    The host never owns or exposes GameServer/ServerRuntime. Gameplay transport
+    and debug control each have client/tool and server endpoints, while
+    ServerWorker exclusively constructs, advances and destroys authoritative
+    state on its OS thread.
 */
 class LocalGameHost final
 {
@@ -51,6 +50,6 @@ public:
 private:
     std::unique_ptr<LocalLoopbackTransport> m_transport;
     std::unique_ptr<game::debug::LocalDebugSessionControl> m_debugControl;
-    std::unique_ptr<server::ServerRuntime> m_runtime;
+    std::unique_ptr<server::ServerWorker> m_worker;
 };
 }

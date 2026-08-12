@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <mutex>
 #include <queue>
 #include <utility>
 
@@ -14,7 +15,9 @@ namespace game::debug
 
     The application side only sees IDebugSessionControl. ServerRuntime only sees
     IServerDebugChannel. No method returns or stores a reference to authoritative
-    server memory; snapshots crossing the seam are copied value objects.
+    server memory; snapshots crossing the seam are copied value objects. All
+    bridge state is mutex-protected because the two endpoints now live on
+    different OS threads.
 */
 class LocalDebugSessionControl final
     : public IDebugSessionControl
@@ -58,6 +61,7 @@ public:
 private:
     void enqueue(DebugCommand command);
 
+    mutable std::mutex m_mutex;
     std::queue<DebugCommand> m_commands;
     SimulationSnapshot m_snapshot;
     DebugSessionState m_state;

@@ -52,6 +52,8 @@
 #include "src/core/Application.h"
 #include "src/game/session/IGameSession.h"
 #include "src/game/client/ClientCelestialMapBridge.h"
+#include "src/game/client/ClientModuleViewBuilder.h"
+#include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "src/game/presentation/ClientHudPresentation.h"
 #include "src/game/presentation/GalaxyNavigationPresentation.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
@@ -1482,8 +1484,6 @@ void SpaceState::update(float dt)
 
 
 
-    const double simStartMs = nowMs();
-
     game::session::GameSessionAdvanceResult serverAdvance;
     try
     {
@@ -1498,7 +1498,12 @@ void SpaceState::update(float dt)
         throw;
     }
 
-    m_perfFixedSimMs = nowMs() - simStartMs;
+    // ServerWorker overlaps the current client/render frame, so measuring the
+    // duration of session.advance() would now report pipeline back-pressure,
+    // not authoritative CPU work. Keep the existing "Fixed simulation" metric
+    // attached to the server batch that actually completed.
+    m_perfFixedSimMs =
+        serverAdvance.serverExecutionWallSeconds * 1000.0;
     m_perfServerFixedSteps = serverAdvance.stepsExecuted;
     m_perfServerTickDebtMs =
         serverAdvance.remainingDebtSeconds * 1000.0;
@@ -2925,7 +2930,16 @@ void SpaceState::pushStructureDebugState()
 
     if (ship.graph.hasModules)
     {
-        for (const auto& mod : ship.graph.modules)
+        // The debug page needs a rich view, but static ship/module definitions
+        // are deliberately not replicated. Rehydrate them from the same local
+        // descriptor catalog used by the normal client presentation.
+        const auto& descriptor = ObjectDescriptorRegistry::get(ship.typeId);
+        const auto moduleViews = game::client::buildModuleViews(
+            descriptor.moduleDescriptors(),
+            ship.graph.modules
+        );
+
+        for (const auto& mod : moduleViews)
         {
             json m;
 

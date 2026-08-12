@@ -12,9 +12,10 @@
 
     This interface deliberately contains messages and replicated snapshots only.
     It must not expose GameServer or any mutable authoritative runtime object.
-    The local loopback implementation is still synchronous today, but keeping
-    the server endpoint explicit lets the authoritative runtime move to another
-    thread/process without changing GameClient or GameServer ownership.
+    The local loopback implementation is mutex-protected and may be consumed
+    from the authoritative worker thread while the client endpoint is used by
+    the application thread. The protocol surface remains suitable for a later
+    process/socket transport without changing GameClient or GameServer ownership.
 */
 class IServerTransport
 {

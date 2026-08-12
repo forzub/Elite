@@ -22,6 +22,7 @@ runner_h = read("src/game/server/ServerRunner.h")
 runner_cpp = read("src/game/server/ServerRunner.cpp")
 host_cpp = read("src/game/host/LocalGameHost.cpp")
 runtime_cpp = read("src/game/server/ServerRuntime.cpp")
+worker_cpp = read("src/game/server/ServerWorker.cpp")
 
 # Client-facing transport must not own the server loop/pump anymore.
 if "virtual void update(float dt)" in client_transport_h:
@@ -111,10 +112,10 @@ if "std::make_unique<LocalLoopbackTransport>()" not in host_cpp:
     fail("LocalGameHost no longer creates the local transport link")
 
 for required in (
-    "std::make_unique<server::ServerRuntime>(",
+    "std::make_unique<server::ServerWorker>(",
     "transport.publishSnapshotImmediately(m_server->snapshot())",
 ):
-    if required not in host_cpp and required not in runtime_cpp:
+    if required not in host_cpp and required not in runtime_cpp and required not in worker_cpp:
         fail(f"local-server bootstrap no longer uses the endpoint seam: {required}")
 
 print("[PASS] server/client transport ownership boundary")

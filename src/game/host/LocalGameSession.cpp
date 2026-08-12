@@ -92,6 +92,7 @@ game::session::GameSessionAdvanceResult LocalGameSession::advance(
     sessionResult.discardedSeconds = result.discardedSeconds;
     sessionResult.totalDiscardedSeconds = result.totalDiscardedSeconds;
     sessionResult.catchUpLimited = result.catchUpLimited;
+    sessionResult.serverExecutionWallSeconds = result.executionWallSeconds;
     return sessionResult;
 }
 

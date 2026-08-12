@@ -93,9 +93,9 @@ Required invariants:
 - server and client may each load the same static assembly/descriptor library
   locally. Static mesh/definition payloads are not replication state.
 
-This establishes the first compile-time headless seam. It does not yet create a
-separate `EliteServer` target or thread; transport ownership and server runtime
-extraction remain pending.
+This establishes the first compile-time headless seam. A separate
+`EliteServer` executable target is still pending, but local authoritative
+execution now owns `ServerRuntime`/`GameServer` on a dedicated worker thread.
 
 ## Map subsystem decomposition
 
@@ -174,10 +174,9 @@ Functional migration is currently at **Migration Stage 2 complete**:
 - Stage 0B: the in-process loopback transport no longer owns a `GameServer&`.
   Client and server now see distinct `ITransport` / `IServerTransport` protocol
   surfaces, while `ServerRunner` is the only runtime bridge that consumes client
-  messages, advances authority and publishes replicated values. The current
-  loopback queues are still deliberately single-threaded; making the queue
-  implementation thread-safe and moving `ServerRunner` to a worker thread is a
-  later execution step, not part of this logical ownership split.
+  messages, advances authority and publishes replicated values. The local
+  loopback queues are mutex-protected and `ServerRuntime` is constructed,
+  advanced and destroyed on a dedicated `ServerWorker` thread.
 - Stage 1: the client owns `StarAtlasDatabase` and
   `CelestialRuntimeRegistry` and can resolve deterministic celestial state from
   synchronized universe time.
@@ -260,10 +259,20 @@ but those constants must stay inside diagnostic/promo code paths.
   queued requests; structural snapshots and universe-time status return as copied
   value state with revisions. `SpaceState` waits for a newer revision before
   refreshing the HTML debug panels, so the UI no longer assumes that an
-  authoritative mutation completed synchronously inside its command handler. The
-  queues are deliberately still single-threaded at this stage; the next server
-  isolation step is to make both gameplay and debug local channels thread-safe,
-  then move `ServerRuntime` behind a worker-thread lifecycle.
+  authoritative mutation completed synchronously inside its command handler.
+  Gameplay and debug local channels are mutex-protected because their two
+  endpoints now execute on different OS threads.
+- `ServerWorker` is the execution owner of `ServerRuntime`. The runtime itself is
+  a local variable of the worker thread, so `GameServer` is constructed,
+  advanced and destroyed on that same thread. Local play now uses a bounded
+  one-batch asynchronous pipeline: `LocalGameHost::advance()` waits only for the
+  previous authoritative batch when necessary, then submits the current elapsed
+  time and returns the previous completed result. At most one server batch can
+  be in flight, so server work overlaps client/render work without an unbounded
+  backlog or silent fixed-step/input loss. If the server exceeds the available
+  frame budget, the next submission applies back-pressure until that one batch
+  completes; `ServerRunner` remains the sole owner of fixed-step debt/catch-up
+  policy.
 - Procedural cloud morphology is presentation-only wall-time work. Its timing is
   intentionally separate from universe time, but texture generation still runs
   synchronously on the render thread and remains a performance/LOD concern.
@@ -327,3 +336,10 @@ control continues to be applied while dynamic physics, HubTactical integration,
 signals and snapshots remain full-rate. Physics must not consume planned mode
 until coarse/scheduled motion and materialization/dematerialization semantics are
 explicit.
+
+### Static definition / runtime replication boundary
+
+- `ObjectModuleSnapshot` is runtime-only: module id, state, health and live support count.
+- Static module definition data (hierarchy, subsystem, policies, mesh-part ids, support topology, health limits) lives in the local descriptor catalogs on both server and client and is not repeated in ordinary snapshots.
+- `ShipSnapshot::typeId` / `ObjectSnapshot::type` are the compact catalog keys used to join authoritative runtime state to those local definitions.
+- Rich debug/presentation views are rehydrated client-side from `ModuleDescriptor + ObjectModuleSnapshot`; debug tooling is not a reason to widen the gameplay replication DTO.

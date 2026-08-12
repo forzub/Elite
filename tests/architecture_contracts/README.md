@@ -193,6 +193,15 @@ cross back as copied value state with monotonically increasing local revisions.
 
 `check_debug_session_boundary.py` rejects direct `ServerRuntime`/`GameServer`
 access and reference-returning debug snapshots. `DebugSessionBoundaryContractTests.cpp`
-verifies the value-copy and command-queue semantics at runtime. This seam is
-still single-threaded intentionally; queue synchronization and the actual server
-worker thread are the next isolation layer.
+verifies the value-copy and command-queue semantics at runtime.
+
+### Server worker thread boundary
+
+`check_server_worker_thread.py` locks the next execution seam: `LocalGameHost`
+owns only a `ServerWorker`, `ServerRuntime` is constructed/advanced/destroyed
+inside that worker, and both local gameplay/debug bridges must protect shared
+state with mutexes. `ThreadBoundaryChannelContractTests.cpp` exercises the
+message/debug queues concurrently. The first worker stage intentionally keeps a
+synchronous per-frame completion barrier so all already-approved input,
+server-advance and client-update ordering remains unchanged; asynchronous overlap
+is a later isolated optimization.

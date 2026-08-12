@@ -11,8 +11,8 @@ namespace game::debug
     Debug pages are application-side tools, but their commands may mutate
     authoritative state. They therefore cross the same ownership boundary as
     gameplay messages instead of reaching into ServerRuntime/GameServer memory.
-    The current local implementation is single-threaded; the endpoint exists so
-    queue synchronization can be added without changing either side's API.
+    The local implementation is thread-safe because the application/debug-tool
+    endpoint and ServerRuntime now execute on different OS threads.
 */
 class IServerDebugChannel
 {

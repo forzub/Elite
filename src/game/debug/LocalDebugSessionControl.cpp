@@ -6,6 +6,8 @@ namespace game::debug
 {
 SimulationSnapshot LocalDebugSessionControl::snapshot() const
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     // Return a value copy: application/debug code must never retain a reference
     // into memory that can later belong exclusively to a server worker thread.
     return m_snapshot;
@@ -13,16 +15,22 @@ SimulationSnapshot LocalDebugSessionControl::snapshot() const
 
 std::uint64_t LocalDebugSessionControl::snapshotRevision() const
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     return m_snapshotRevision;
 }
 
 std::uint64_t LocalDebugSessionControl::stateRevision() const
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     return m_stateRevision;
 }
 
 void LocalDebugSessionControl::enqueue(DebugCommand command)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_commands.push(std::move(command));
 }
 
@@ -124,21 +132,29 @@ void LocalDebugSessionControl::setShipStructuralLinkHealth(
 
 bool LocalDebugSessionControl::fastUniverseTime() const
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     return m_state.fastUniverseTime;
 }
 
 bool LocalDebugSessionControl::universeTimeSimulation() const
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     return m_state.universeTimeSimulation;
 }
 
 double LocalDebugSessionControl::universeTimeScale() const
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     return m_state.universeTimeScale;
 }
 
 double LocalDebugSessionControl::configuredUniverseTimeScale() const
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     return m_state.configuredUniverseTimeScale;
 }
 
@@ -155,6 +171,8 @@ void LocalDebugSessionControl::setUniverseTimeSimulation(
 
 bool LocalDebugSessionControl::receiveCommand(DebugCommand& outCommand)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     if (m_commands.empty())
         return false;
 
@@ -166,6 +184,8 @@ bool LocalDebugSessionControl::receiveCommand(DebugCommand& outCommand)
 void LocalDebugSessionControl::publishSnapshot(
     const SimulationSnapshot& snapshot)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_snapshot = snapshot;
     ++m_snapshotRevision;
 }
@@ -173,6 +193,8 @@ void LocalDebugSessionControl::publishSnapshot(
 void LocalDebugSessionControl::publishState(
     const DebugSessionState& state)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
     m_state = state;
     ++m_stateRevision;
 }

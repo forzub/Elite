@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "31",
+  "names": {
+    "en": "61 Cygni",
+    "ru": "61 Лебедя",
+    "zh-Hans": "天鹅座61",
+    "es": "61 Cygni",
+    "ja": "はくちょう座61番星"
+  },
+  "bodies": {
+    "31:system_31.61_Cygni_A": {
+      "en": "61 Cygni A",
+      "zh-Hans": "天鹅座61 A",
+      "ja": "はくちょう座61番星 A",
+      "ru": "61 Лебедя A"
+    },
+    "31:system_31.61_Cygni_A.61_Cygni_Ab": {
+      "en": "61 Cygni Ab",
+      "zh-Hans": "天鹅座61 Ab",
+      "ja": "はくちょう座61番星 Ab",
+      "ru": "61 Лебедя Ab"
+    },
+    "31:system_31.61_Cygni_A.61_Cygni_Ac": {
+      "en": "61 Cygni Ac",
+      "zh-Hans": "天鹅座61 Ac",
+      "ja": "はくちょう座61番星 Ac",
+      "ru": "61 Лебедя Ac"
+    },
+    "31:system_31.61_Cygni_A.61_Cygni_Ad": {
+      "en": "61 Cygni Ad",
+      "zh-Hans": "天鹅座61 Ad",
+      "ja": "はくちょう座61番星 Ad",
+      "ru": "61 Лебедя Ad"
+    },
+    "31:system_31.61_Cygni_A.61_Cygni_Ad.61_Cygni_Ad-I": {
+      "en": "61 Cygni Ad-I",
+      "zh-Hans": "天鹅座61 Ad-I",
+      "ja": "はくちょう座61番星 Ad-I",
+      "ru": "61 Лебедя Ad-I"
+    },
+    "31:system_31.61_Cygni_B": {
+      "en": "61 Cygni B",
+      "zh-Hans": "天鹅座61 B",
+      "ja": "はくちょう座61番星 B",
+      "ru": "61 Лебедя B"
+    },
+    "31:system_31.61_Cygni_B.61_Cygni_Ba": {
+      "en": "61 Cygni Ba",
+      "zh-Hans": "天鹅座61 Ba",
+      "ja": "はくちょう座61番星 Ba",
+      "ru": "61 Лебедя Ba"
+    },
+    "31:system_31.61_Cygni_B.61_Cygni_Bb": {
+      "en": "61 Cygni Bb",
+      "zh-Hans": "天鹅座61 Bb",
+      "ja": "はくちょう座61番星 Bb",
+      "ru": "61 Лебедя Bb"
+    },
+    "31:system_31.barycenter.belt_0": {
+      "en": "61 Cygni Belt",
+      "zh-Hans": "天鹅座61 Belt",
+      "ja": "はくちょう座61番星 Belt",
+      "ru": "61 Лебедя Belt"
+    },
+    "31:system_31.barycenter.belt_1": {
+      "en": "61 Cygni Kuiper Belt",
+      "zh-Hans": "天鹅座61 Kuiper Belt",
+      "ja": "はくちょう座61番星 Kuiper Belt",
+      "ru": "61 Лебедя Kuiper Belt"
+    }
+  }
+}

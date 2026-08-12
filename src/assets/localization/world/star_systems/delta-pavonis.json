@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "22",
+  "names": {
+    "en": "Delta Pavonis"
+  },
+  "bodies": {
+    "22:system_22.Delta_Pavonis": {
+      "en": "Delta Pavonis"
+    },
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_b": {
+      "en": "Delta Pavonis b"
+    },
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_c": {
+      "en": "Delta Pavonis c"
+    },
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_d": {
+      "en": "Delta Pavonis d"
+    },
+    "22:system_22.Delta_Pavonis.Delta_Pavonis_d.Delta_Pavonis_d-I": {
+      "en": "Delta Pavonis d-I"
+    },
+    "22:system_22.barycenter.belt_0": {
+      "en": "Delta Pavonis Belt"
+    },
+    "22:system_22.barycenter.belt_1": {
+      "en": "Delta Pavonis Kuiper Belt"
+    }
+  }
+}

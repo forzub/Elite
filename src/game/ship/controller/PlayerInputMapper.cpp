@@ -32,27 +32,58 @@ void PlayerInputMapper::updateFromKeyState(
         keys.isKeyPressed(GLFW_KEY_LEFT_CONTROL) ||
         keys.isKeyPressed(GLFW_KEY_RIGHT_CONTROL);
 
-    // Ctrl+F10 switches the *local* flight law. Send the requested state as an
-    // idempotent command: prediction/replay may evaluate one control sample
-    // more than once, but setting a mode twice is harmless.
-    const bool ctrlF10Down =
-        ctrlDown && keys.isKeyPressed(GLFW_KEY_F10);
+    // Ctrl+F10 switches the *local* flight law on F10 release, not on press.
+    // This makes the chord deliberate and prevents a held key from feeling
+    // like a hair trigger. A short release debounce also filters a transient
+    // up/down sample before the command is committed. Ctrl is required only
+    // to arm the chord; once armed, releasing Ctrl before F10 does not cancel
+    // the intended switch.
+    const bool f10Down = keys.isKeyPressed(GLFW_KEY_F10);
 
-    if (!ctrlF10Down)
+    switch (m_ctrlF10State)
     {
-        m_ctrlF10Latch = false;
-    }
-    else if (!m_ctrlF10Latch)
-    {
-        m_ctrlF10Latch = true;
-        m_requestedLocalControlLaw =
-            m_requestedLocalControlLaw ==
-                    game::navigation::LocalFlightControlLaw::Newtonian
-                ? game::navigation::LocalFlightControlLaw::Assisted
-                : game::navigation::LocalFlightControlLaw::Newtonian;
+        case CtrlF10State::Idle:
+            if (ctrlDown && f10Down)
+            {
+                m_ctrlF10State = CtrlF10State::Pressed;
+                m_ctrlF10ReleaseSamples = 0;
+            }
+            break;
 
-        ctrl.localControlLawCommandValid = true;
-        ctrl.requestedLocalControlLaw = m_requestedLocalControlLaw;
+        case CtrlF10State::Pressed:
+            if (!f10Down)
+            {
+                m_ctrlF10State = CtrlF10State::ReleaseDebounce;
+                m_ctrlF10ReleaseSamples = 1;
+            }
+            break;
+
+        case CtrlF10State::ReleaseDebounce:
+            if (f10Down)
+            {
+                // A brief return to DOWN is treated as release bounce. Keep
+                // the already-armed chord, but restart release qualification.
+                m_ctrlF10State = CtrlF10State::Pressed;
+                m_ctrlF10ReleaseSamples = 0;
+                break;
+            }
+
+            ++m_ctrlF10ReleaseSamples;
+            if (m_ctrlF10ReleaseSamples >= kCtrlF10ReleaseDebounceSamples)
+            {
+                m_requestedLocalControlLaw =
+                    m_requestedLocalControlLaw ==
+                            game::navigation::LocalFlightControlLaw::Newtonian
+                        ? game::navigation::LocalFlightControlLaw::Assisted
+                        : game::navigation::LocalFlightControlLaw::Newtonian;
+
+                ctrl.localControlLawCommandValid = true;
+                ctrl.requestedLocalControlLaw = m_requestedLocalControlLaw;
+
+                m_ctrlF10State = CtrlF10State::Idle;
+                m_ctrlF10ReleaseSamples = 0;
+            }
+            break;
     }
 
     ctrl.cruiseActive = keys.isKeyPressed(GLFW_KEY_J);

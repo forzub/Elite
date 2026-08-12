@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "42",
+  "names": {
+    "en": "17 Cygni"
+  },
+  "bodies": {
+    "42:system_42.17_Cygni_A": {
+      "en": "17 Cygni A"
+    },
+    "42:system_42.17_Cygni_A.17_Cygni_Ab": {
+      "en": "17 Cygni Ab"
+    },
+    "42:system_42.17_Cygni_B": {
+      "en": "17 Cygni B"
+    },
+    "42:system_42.17_Cygni_B.17_Cygni_Bb": {
+      "en": "17 Cygni Bb"
+    },
+    "42:system_42.barycenter.belt_0": {
+      "en": "17 Cygni Belt"
+    },
+    "42:system_42.barycenter.belt_1": {
+      "en": "17 Cygni Kuiper Belt"
+    }
+  }
+}

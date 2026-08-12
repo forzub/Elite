@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "11",
+  "names": {
+    "en": "Gliese 667 (A+B+C)"
+  },
+  "bodies": {
+    "11:system_11.Gliese_667_A": {
+      "en": "Gliese 667 A"
+    },
+    "11:system_11.Gliese_667_B": {
+      "en": "Gliese 667 B"
+    },
+    "11:system_11.Gliese_667_C": {
+      "en": "Gliese 667 C"
+    },
+    "11:system_11.Gliese_667_C.GJ_667_Cb": {
+      "en": "GJ 667 Cb"
+    },
+    "11:system_11.Gliese_667_C.GJ_667_Cc": {
+      "en": "GJ 667 Cc"
+    },
+    "11:system_11.Gliese_667_C.GJ_667_Cc.GJ_667_Cc-I": {
+      "en": "GJ 667 Cc-I"
+    },
+    "11:system_11.Gliese_667_C.GJ_667_Cd": {
+      "en": "GJ 667 Cd"
+    },
+    "11:system_11.Gliese_667_C.GJ_667_Ce": {
+      "en": "GJ 667 Ce"
+    },
+    "11:system_11.Gliese_667_C.GJ_667_Cf": {
+      "en": "GJ 667 Cf"
+    },
+    "11:system_11.Gliese_667_C.GJ_667_Cg": {
+      "en": "GJ 667 Cg"
+    },
+    "11:system_11.Gliese_667_C.GJ_667_Cg.GJ_667_Cg-I": {
+      "en": "GJ 667 Cg-I"
+    },
+    "11:system_11.barycenter.belt_0": {
+      "en": "Gliese 667 (A+B+C) Belt"
+    },
+    "11:system_11.barycenter.belt_1": {
+      "en": "Gliese 667 (A+B+C) Kuiper Belt"
+    }
+  }
+}

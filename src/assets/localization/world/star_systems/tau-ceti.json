@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "8",
+  "names": {
+    "en": "Tau Ceti",
+    "ru": "Тау Кита",
+    "zh-Hans": "天仓五",
+    "es": "Tau Ceti",
+    "ja": "くじら座タウ星"
+  },
+  "bodies": {
+    "8:system_8.Tau_Ceti": {
+      "en": "Tau Ceti",
+      "ru": "Тау Кита",
+      "zh-Hans": "天仓五",
+      "es": "Tau Ceti",
+      "ja": "くじら座タウ星"
+    },
+    "8:system_8.Tau_Ceti.Tau_Ceti_e": {
+      "en": "Tau Ceti e"
+    },
+    "8:system_8.Tau_Ceti.Tau_Ceti_e.Tau_Ceti_e-I": {
+      "en": "Tau Ceti e-I"
+    },
+    "8:system_8.Tau_Ceti.Tau_Ceti_e.Tau_Ceti_e-II": {
+      "en": "Tau Ceti e-II"
+    },
+    "8:system_8.Tau_Ceti.Tau_Ceti_f": {
+      "en": "Tau Ceti f"
+    },
+    "8:system_8.Tau_Ceti.Tau_Ceti_g": {
+      "en": "Tau Ceti g"
+    },
+    "8:system_8.Tau_Ceti.Tau_Ceti_h": {
+      "en": "Tau Ceti h"
+    },
+    "8:system_8.Tau_Ceti.Tau_Ceti_i": {
+      "en": "Tau Ceti i"
+    },
+    "8:system_8.Tau_Ceti.Tau_Ceti_i.Tau_Ceti_i-I": {
+      "en": "Tau Ceti i-I"
+    },
+    "8:system_8.Tau_Ceti.Tau_Ceti_i.Tau_Ceti_i-II": {
+      "en": "Tau Ceti i-II"
+    },
+    "8:system_8.barycenter.belt_0": {
+      "en": "Tau Ceti Belt"
+    },
+    "8:system_8.barycenter.belt_1": {
+      "en": "Tau Ceti Kuiper Belt"
+    }
+  }
+}

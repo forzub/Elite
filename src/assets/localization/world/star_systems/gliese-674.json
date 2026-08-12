@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "53",
+  "names": {
+    "en": "Gliese 674"
+  },
+  "bodies": {
+    "53:system_53.Gliese_674": {
+      "en": "Gliese 674"
+    },
+    "53:system_53.Gliese_674.GJ_674_b": {
+      "en": "GJ 674 b"
+    },
+    "53:system_53.Gliese_674.GJ_674_c": {
+      "en": "GJ 674 c"
+    },
+    "53:system_53.Gliese_674.GJ_674_d": {
+      "en": "GJ 674 d"
+    },
+    "53:system_53.Gliese_674.GJ_674_d.GJ_674_d-I": {
+      "en": "GJ 674 d-I"
+    },
+    "53:system_53.barycenter.belt_0": {
+      "en": "Gliese 674 Belt"
+    },
+    "53:system_53.barycenter.belt_1": {
+      "en": "Gliese 674 Kuiper Belt"
+    }
+  }
+}

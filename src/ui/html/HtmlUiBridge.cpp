@@ -36,6 +36,15 @@ void HtmlUiBridge::stop()
     m_server.stop();
 }
 
+void HtmlUiBridge::setVirtualFile(
+    const std::string& resource,
+    const std::string& content,
+    const std::string& contentType
+)
+{
+    m_server.setVirtualFile(resource, content, contentType);
+}
+
 void HtmlUiBridge::broadcast(const HtmlUiMessage& msg)
 {
     m_server.broadcastText(msg.toJson().dump());

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "29",
+  "names": {
+    "en": "Gliese 229"
+  },
+  "bodies": {
+    "29:system_29.Gliese_229_A": {
+      "en": "Gliese 229 A"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_Ab": {
+      "en": "Gliese 229 Ab"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_Ac": {
+      "en": "Gliese 229 Ac"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_Ac.Gliese_229_Ac-I": {
+      "en": "Gliese 229 Ac-I"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_Ad": {
+      "en": "Gliese 229 Ad"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_Ae": {
+      "en": "Gliese 229 Ae"
+    },
+    "29:system_29.Gliese_229_A.Gliese_229_Ae.Gliese_229_Ae-I": {
+      "en": "Gliese 229 Ae-I"
+    },
+    "29:system_29.Gliese_229_B": {
+      "en": "Gliese 229 B"
+    },
+    "29:system_29.barycenter.belt_0": {
+      "en": "Gliese 229 Belt"
+    },
+    "29:system_29.barycenter.belt_1": {
+      "en": "Gliese 229 Kuiper Belt"
+    }
+  }
+}

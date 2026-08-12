@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "30",
+  "names": {
+    "en": "Epsilon Indi"
+  },
+  "bodies": {
+    "30:system_30.Epsilon_Indi_A": {
+      "en": "Epsilon Indi A"
+    },
+    "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ab": {
+      "en": "Epsilon Indi Ab"
+    },
+    "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ab.Epsilon_Indi_Ab-I": {
+      "en": "Epsilon Indi Ab-I"
+    },
+    "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ab.Epsilon_Indi_Ab-II": {
+      "en": "Epsilon Indi Ab-II"
+    },
+    "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ac": {
+      "en": "Epsilon Indi Ac"
+    },
+    "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ad": {
+      "en": "Epsilon Indi Ad"
+    },
+    "30:system_30.Epsilon_Indi_A.Epsilon_Indi_Ad.Epsilon_Indi_Ad-I": {
+      "en": "Epsilon Indi Ad-I"
+    },
+    "30:system_30.Epsilon_Indi_Ba": {
+      "en": "Epsilon Indi Ba"
+    },
+    "30:system_30.Epsilon_Indi_Bb": {
+      "en": "Epsilon Indi Bb"
+    },
+    "30:system_30.barycenter.belt_0": {
+      "en": "Epsilon Indi Belt"
+    },
+    "30:system_30.barycenter.belt_1": {
+      "en": "Epsilon Indi Kuiper Belt"
+    }
+  }
+}

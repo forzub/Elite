@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "28",
+  "names": {
+    "en": "YZ Ceti"
+  },
+  "bodies": {
+    "28:system_28.YZ_Ceti": {
+      "en": "YZ Ceti"
+    },
+    "28:system_28.YZ_Ceti.YZ_Ceti_b": {
+      "en": "YZ Ceti b"
+    },
+    "28:system_28.YZ_Ceti.YZ_Ceti_c": {
+      "en": "YZ Ceti c"
+    },
+    "28:system_28.YZ_Ceti.YZ_Ceti_d": {
+      "en": "YZ Ceti d"
+    },
+    "28:system_28.YZ_Ceti.YZ_Ceti_d.YZ_Ceti_d-I": {
+      "en": "YZ Ceti d-I"
+    },
+    "28:system_28.YZ_Ceti.YZ_Ceti_e": {
+      "en": "YZ Ceti e"
+    },
+    "28:system_28.YZ_Ceti.YZ_Ceti_f": {
+      "en": "YZ Ceti f"
+    },
+    "28:system_28.YZ_Ceti.YZ_Ceti_f.YZ_Ceti_f-I": {
+      "en": "YZ Ceti f-I"
+    },
+    "28:system_28.barycenter.belt_0": {
+      "en": "YZ Ceti Belt"
+    },
+    "28:system_28.barycenter.belt_1": {
+      "en": "YZ Ceti Kuiper Belt"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "20",
+  "names": {
+    "en": "HD 93083"
+  },
+  "bodies": {
+    "20:system_20.HD_93083": {
+      "en": "HD 93083"
+    },
+    "20:system_20.HD_93083.GJ_1137_c": {
+      "en": "GJ 1137 c"
+    },
+    "20:system_20.HD_93083.HD_93083_b": {
+      "en": "HD 93083 b"
+    }
+  }
+}

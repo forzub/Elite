@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "1",
+  "names": {
+    "en": "Alpha Centauri A+B",
+    "ru": "Альфа Центавра A+B",
+    "zh-Hans": "南门二 A+B",
+    "es": "Alfa Centauri A+B",
+    "ja": "アルファ・ケンタウリ A+B"
+  },
+  "bodies": {
+    "1:system_1.Alpha_Centauri_A": {
+      "en": "Alpha Centauri A"
+    },
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ab": {
+      "en": "Alpha Centauri Ab"
+    },
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ac": {
+      "en": "Alpha Centauri Ac"
+    },
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ac.Alpha_Centauri_Ac-I": {
+      "en": "Alpha Centauri Ac-I"
+    },
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ad": {
+      "en": "Alpha Centauri Ad"
+    },
+    "1:system_1.Alpha_Centauri_A.Alpha_Centauri_Ad.Alpha_Centauri_Ad-I": {
+      "en": "Alpha Centauri Ad-I"
+    },
+    "1:system_1.Alpha_Centauri_A.belt_0": {
+      "en": "Alpha Centauri A+B Belt"
+    },
+    "1:system_1.Alpha_Centauri_B": {
+      "en": "Alpha Centauri B"
+    },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_Ba": {
+      "en": "Alpha Centauri Ba"
+    },
+    "1:system_1.Alpha_Centauri_B.Alpha_Centauri_Bb": {
+      "en": "Alpha Centauri Bb"
+    },
+    "1:system_1.barycenter.belt_0": {
+      "en": "Alpha Centauri Kuiper Belt"
+    }
+  }
+}

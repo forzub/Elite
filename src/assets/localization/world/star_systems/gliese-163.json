@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "55",
+  "names": {
+    "en": "Gliese 163"
+  },
+  "bodies": {
+    "55:system_55.Gliese_163": {
+      "en": "Gliese 163"
+    },
+    "55:system_55.Gliese_163.GJ_163_b": {
+      "en": "GJ 163 b"
+    },
+    "55:system_55.Gliese_163.GJ_163_c": {
+      "en": "GJ 163 c"
+    },
+    "55:system_55.Gliese_163.GJ_163_c.GJ_163_c-I": {
+      "en": "GJ 163 c-I"
+    },
+    "55:system_55.Gliese_163.GJ_163_d": {
+      "en": "GJ 163 d"
+    },
+    "55:system_55.Gliese_163.GJ_163_e": {
+      "en": "GJ 163 e"
+    },
+    "55:system_55.Gliese_163.GJ_163_e.GJ_163_e-I": {
+      "en": "GJ 163 e-I"
+    },
+    "55:system_55.barycenter.belt_0": {
+      "en": "Gliese 163 Belt"
+    },
+    "55:system_55.barycenter.belt_1": {
+      "en": "Gliese 163 Kuiper Belt"
+    }
+  }
+}

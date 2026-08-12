@@ -377,20 +377,38 @@ Current F12 service chords are protected player-facing behavior:
 - `Ctrl+Alt+F12`: global player-facing UI language, including menus/maps and
   constellation labels. This chord is global and does not require `SpaceState`.
 
-Sky culture and UI language are deliberately independent state. The selected
-culture owns only topology plus localized name alternatives; it does not own a
-second language selector. Missing culture-label translations fall back to
-English. The current catalog contains the accepted IAU/Western topology, a
-curated Chinese 28-lunar-mansion topology and Hawaiian star lines. Topology-only
-support stars remain separate from the visible top-3000 star sprite catalog.
+Sky culture and UI language are deliberately independent state. Sky-culture
+**topology only** remains under `assets/data/galaxy/sky_cultures`; all
+player-facing culture/constellation names live under `assets/localization/sky`.
+The culture never owns a second language selector. Missing labels fall back to
+English. The current topology contains the accepted IAU/Western set, the curated
+Chinese 28-lunar-mansion + surrounding asterisms set, and Hawaiian star lines.
+Topology-only support stars remain separate from the visible top-3000 catalog.
 
-`catalog_names.json` is the client display-name table for stable star-system,
-celestial-body and galaxy-object ids. Every currently authored catalog entity
-must have an English entry so changing away from a translated locale cannot
-leave a stale previous-language name. Additional translations may be added
-without changing simulation/network DTOs.
+`assets/localization` is the single editable localization root.
+`LocalizationService` discovers every `*.json` recursively in deterministic path
+order. Malformed/unsupported files are logged and skipped at runtime; duplicate
+UI keys or catalog stable IDs are rejected with first-valid-definition wins.
+`languages.json` is the only locale enable/order registry. UI text is divided by
+category (`ui/maps`, `ui/cockpit`, `ui/common`), while world/game display names
+use stable IDs. English remains mandatory for every player-facing record.
 
-Cockpit/manufacturer labeling is a separate presentation language domain and is
-intentionally not driven by the global UI locale. A ship may therefore retain
-manufacturer-language indicator legends while surrounding game UI follows the
-player-selected global locale.
+Gameplay star systems are deliberately isolated one file per system under
+`assets/localization/world/star_systems`. Each file owns only that system's
+display name plus its celestial-body/hub names, and the loader rejects body IDs
+whose system prefix does not match the containing `system_id`. Filenames are
+human-readable and have no identity meaning. Interstellar objects, navigation
+regions, manufacturers, ship/station/beacon types and equipment have separate
+localization categories and may grow without a manifest edit.
+
+WebUI does not own a second translation file. `Application` loads the unified
+localization tree once and exposes an in-memory `runtime_ui.json` bundle through
+`HtmlUiServer`; native OpenGL UI and WebUI therefore share the same source and
+fallback rules. Release packaging may later compile the development JSON tree
+into a single binary/obfuscated localization package without changing callers.
+
+Manufacturer-specific cockpit legends remain a distinct future presentation
+language domain from the global UI locale. The current global cockpit/service
+overlays use `assets/localization/ui/cockpit`; manufacturer-native instrument
+legends can be layered separately when ship definitions begin owning cockpit
+language.

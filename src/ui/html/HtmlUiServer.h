@@ -33,6 +33,12 @@ public:
 
     void broadcastText(const std::string& text);
 
+    void setVirtualFile(
+        const std::string& resource,
+        const std::string& content,
+        const std::string& contentType
+    );
+
     void setOnMessage(std::function<void(const std::string&)> callback);
 
 private:
@@ -48,7 +54,14 @@ private:
     std::thread m_thread;
     bool m_running = false;
 
+    struct VirtualFile
+    {
+        std::string content;
+        std::string contentType;
+    };
+
     std::string m_rootDir;
+    std::unordered_map<std::string, VirtualFile> m_virtualFiles;
     std::function<void(const std::string&)> m_onMessage;
 
     std::set<websocketpp::connection_hdl, std::owner_less<websocketpp::connection_hdl>> m_connections;

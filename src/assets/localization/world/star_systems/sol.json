@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "0",
+  "names": {
+    "en": "Sol",
+    "ru": "Солнечная система",
+    "zh-Hans": "太阳系",
+    "es": "Sistema Solar",
+    "ja": "太陽系"
+  },
+  "bodies": {
+    "0:system_0.Sol": {
+      "en": "Sun",
+      "ru": "Солнце",
+      "zh-Hans": "太阳",
+      "es": "Sol",
+      "ja": "太陽"
+    },
+    "0:system_0.Sol.Венера": {
+      "en": "Venus",
+      "ru": "Венера",
+      "zh-Hans": "金星",
+      "es": "Venus",
+      "ja": "金星"
+    },
+    "0:system_0.Sol.Земля": {
+      "en": "Earth",
+      "ru": "Земля",
+      "zh-Hans": "地球",
+      "es": "Tierra",
+      "ja": "地球"
+    },
+    "0:system_0.Sol.Земля.Луна": {
+      "en": "Moon",
+      "ru": "Луна",
+      "zh-Hans": "月球",
+      "es": "Luna",
+      "ja": "月"
+    },
+    "0:system_0.Sol.Марс": {
+      "en": "Mars",
+      "ru": "Марс",
+      "zh-Hans": "火星",
+      "es": "Marte",
+      "ja": "火星"
+    },
+    "0:system_0.Sol.Марс.Деймос": {
+      "en": "Deimos"
+    },
+    "0:system_0.Sol.Марс.Фобос": {
+      "en": "Phobos"
+    },
+    "0:system_0.Sol.Меркурий": {
+      "en": "Mercury",
+      "ru": "Меркурий",
+      "zh-Hans": "水星",
+      "es": "Mercurio",
+      "ja": "水星"
+    },
+    "0:system_0.Sol.Нептун": {
+      "en": "Neptune",
+      "ru": "Нептун",
+      "zh-Hans": "海王星",
+      "es": "Neptuno",
+      "ja": "海王星"
+    },
+    "0:system_0.Sol.Нептун.Ларисса": {
+      "en": "Larissa"
+    },
+    "0:system_0.Sol.Нептун.Нереида": {
+      "en": "Nereid"
+    },
+    "0:system_0.Sol.Нептун.Протей": {
+      "en": "Proteus"
+    },
+    "0:system_0.Sol.Нептун.Тритон": {
+      "en": "Triton"
+    },
+    "0:system_0.Sol.Сатурн": {
+      "en": "Saturn",
+      "ru": "Сатурн",
+      "zh-Hans": "土星",
+      "es": "Saturno",
+      "ja": "土星"
+    },
+    "0:system_0.Sol.Сатурн.Диона": {
+      "en": "Dione"
+    },
+    "0:system_0.Sol.Сатурн.Мимас": {
+      "en": "Mimas"
+    },
+    "0:system_0.Sol.Сатурн.Рея": {
+      "en": "Rhea"
+    },
+    "0:system_0.Sol.Сатурн.Тетис": {
+      "en": "Tethys"
+    },
+    "0:system_0.Sol.Сатурн.Титан": {
+      "en": "Titan"
+    },
+    "0:system_0.Sol.Сатурн.Феба": {
+      "en": "Phoebe"
+    },
+    "0:system_0.Sol.Сатурн.Энцелад": {
+      "en": "Enceladus"
+    },
+    "0:system_0.Sol.Сатурн.Япет": {
+      "en": "Iapetus"
+    },
+    "0:system_0.Sol.Уран": {
+      "en": "Uranus",
+      "ru": "Уран",
+      "zh-Hans": "天王星",
+      "es": "Urano",
+      "ja": "天王星"
+    },
+    "0:system_0.Sol.Уран.Ариэль": {
+      "en": "Ariel"
+    },
+    "0:system_0.Sol.Уран.Миранда": {
+      "en": "Miranda"
+    },
+    "0:system_0.Sol.Уран.Оберон": {
+      "en": "Oberon"
+    },
+    "0:system_0.Sol.Уран.Титания": {
+      "en": "Titania"
+    },
+    "0:system_0.Sol.Уран.Умбриэль": {
+      "en": "Umbriel"
+    },
+    "0:system_0.Sol.Юпитер": {
+      "en": "Jupiter",
+      "ru": "Юпитер",
+      "zh-Hans": "木星",
+      "es": "Júpiter",
+      "ja": "木星"
+    },
+    "0:system_0.Sol.Юпитер.Амальтея": {
+      "en": "Amalthea"
+    },
+    "0:system_0.Sol.Юпитер.Ганимед": {
+      "en": "Ganymede"
+    },
+    "0:system_0.Sol.Юпитер.Гималия": {
+      "en": "Himalia"
+    },
+    "0:system_0.Sol.Юпитер.Европа": {
+      "en": "Europa"
+    },
+    "0:system_0.Sol.Юпитер.Ио": {
+      "en": "Io"
+    },
+    "0:system_0.Sol.Юпитер.Каллисто": {
+      "en": "Callisto"
+    },
+    "0:system_0.Sol.Юпитер.Пасифе": {
+      "en": "Pasiphae"
+    },
+    "0:system_0.Sol.Юпитер.Элара": {
+      "en": "Elara"
+    },
+    "0:system_0.barycenter.belt_0": {
+      "en": "Asteroid Belt"
+    },
+    "0:system_0.barycenter.belt_1": {
+      "en": "Kuiper Belt"
+    }
+  },
+  "hubs": {
+    "earth_orbital_hub": {
+      "en": "Earth Orbital Hub",
+      "ru": "Орбитальный хаб Земли",
+      "zh-Hans": "地球轨道枢纽",
+      "es": "Nodo orbital terrestre",
+      "ja": "地球軌道ハブ"
+    },
+    "earth_high_orbital": {
+      "en": "Earth High Orbital",
+      "ru": "Высокоорбитальная станция Земли",
+      "zh-Hans": "地球高轨站",
+      "es": "Estación orbital alta terrestre",
+      "ja": "地球高軌道ステーション"
+    }
+  }
+}

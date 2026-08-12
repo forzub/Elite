@@ -1,8 +1,12 @@
 #include "src/game/navigation/NavigationRegionCatalog.h"
 
+#include <algorithm>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <limits>
+#include <unordered_set>
 
 #include <nlohmann/json.hpp>
 
@@ -11,6 +15,7 @@ namespace game::navigation
 namespace
 {
 using json = nlohmann::json;
+namespace fs = std::filesystem;
 
 std::string baseLanguage(const std::string& locale)
 {
@@ -53,36 +58,28 @@ int nameScore(
 
     return score;
 }
-}
 
-bool NavigationRegionCatalog::loadFromFile(
-    const std::string& path
-)
+bool parseRegionRoot(const json& root, std::vector<NavigationRegionRecord>& parsed)
 {
-    std::ifstream input(path);
-    if (!input)
-        return false;
-
-    json root;
-
-    try
-    {
-        input >> root;
-    }
-    catch (...)
+    if (!root.is_object() || root.value("schema_version", 0) != 1 ||
+        root.value("kind", std::string()) != "navigation_regions" ||
+        !root.contains("regions") || !root["regions"].is_array())
     {
         return false;
     }
 
-    std::vector<NavigationRegionRecord> parsed;
-
-    for (const json& region : root.value("regions", json::array()))
+    for (const json& region : root["regions"])
     {
         const json cellJson = region.value("cell", json::object());
         const json indexJson = cellJson.value("index", json::array());
 
-        if (indexJson.size() != 3)
-            continue;
+        if (indexJson.size() != 3 ||
+            !indexJson[0].is_number_integer() ||
+            !indexJson[1].is_number_integer() ||
+            !indexJson[2].is_number_integer())
+        {
+            return false;
+        }
 
         NavigationRegionRecord record;
         record.cell.frameId = cellJson.value("frame_id", "");
@@ -92,10 +89,9 @@ bool NavigationRegionCatalog::loadFromFile(
         record.cell.z = indexJson[2].get<std::int64_t>();
 
         if (record.cell.frameId.empty())
-            continue;
+            return false;
 
-        for (const json& nameJson :
-             region.value("names", json::array()))
+        for (const json& nameJson : region.value("names", json::array()))
         {
             NavigationRegionName name;
             name.factionId = nameJson.value("faction_id", "common");
@@ -110,13 +106,132 @@ bool NavigationRegionCatalog::loadFromFile(
                 record.names.push_back(std::move(name));
         }
 
-        if (!record.names.empty())
-            parsed.push_back(std::move(record));
+        if (record.names.empty())
+            return false;
+
+        parsed.push_back(std::move(record));
     }
+
+    return true;
+}
+
+std::string cellKey(const NavigationCellId& cell)
+{
+    return cell.frameId + "|" + std::to_string(cell.level) + "|" +
+           std::to_string(cell.x) + "|" + std::to_string(cell.y) + "|" +
+           std::to_string(cell.z);
+}
+}
+
+bool NavigationRegionCatalog::loadFromFile(const std::string& path)
+{
+    std::ifstream input(path);
+    if (!input)
+        return false;
+
+    json root;
+    try
+    {
+        input >> root;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[NavigationRegionCatalog] skipped " << path
+                  << ": " << e.what() << '\n';
+        return false;
+    }
+
+    std::vector<NavigationRegionRecord> parsed;
+    if (!parseRegionRoot(root, parsed))
+        return false;
 
     m_records = std::move(parsed);
     m_loaded = true;
     return true;
+}
+
+bool NavigationRegionCatalog::loadFromDirectory(const std::string& path)
+{
+    const fs::path root(path);
+    if (!fs::exists(root) || !fs::is_directory(root))
+        return false;
+
+    std::vector<fs::path> files;
+    try
+    {
+        for (const auto& entry : fs::recursive_directory_iterator(root))
+        {
+            if (entry.is_regular_file() && entry.path().extension() == ".json")
+                files.push_back(entry.path());
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[NavigationRegionCatalog] scan failed: " << e.what() << '\n';
+        return false;
+    }
+
+    std::sort(files.begin(), files.end(), [](const fs::path& a, const fs::path& b)
+    {
+        return a.generic_string() < b.generic_string();
+    });
+
+    std::vector<NavigationRegionRecord> combined;
+    std::unordered_set<std::string> cells;
+    std::size_t skipped = 0;
+
+    for (const fs::path& file : files)
+    {
+        json rootJson;
+        try
+        {
+            std::ifstream input(file);
+            if (!input)
+            {
+                ++skipped;
+                continue;
+            }
+            input >> rootJson;
+        }
+        catch (const std::exception& e)
+        {
+            ++skipped;
+            std::cerr << "[NavigationRegionCatalog] skipped "
+                      << file.generic_string() << ": " << e.what() << '\n';
+            continue;
+        }
+
+        std::vector<NavigationRegionRecord> parsed;
+        if (!parseRegionRoot(rootJson, parsed))
+        {
+            ++skipped;
+            std::cerr << "[NavigationRegionCatalog] skipped "
+                      << file.generic_string() << ": invalid schema\n";
+            continue;
+        }
+
+        for (NavigationRegionRecord& record : parsed)
+        {
+            const std::string key = cellKey(record.cell);
+            if (!cells.emplace(key).second)
+            {
+                std::cerr << "[NavigationRegionCatalog] duplicate cell ignored: "
+                          << key << " in " << file.generic_string() << '\n';
+                continue;
+            }
+            combined.push_back(std::move(record));
+        }
+    }
+
+    m_records = std::move(combined);
+    m_loaded = !m_records.empty();
+    if (m_loaded)
+    {
+        std::cout << "[NavigationRegionCatalog] root=" << path
+                  << " records=" << m_records.size()
+                  << " skipped=" << skipped << '\n';
+    }
+    return m_loaded;
 }
 
 bool NavigationRegionCatalog::loadFromRuntimeOrSource(
@@ -124,7 +239,8 @@ bool NavigationRegionCatalog::loadFromRuntimeOrSource(
     const std::string& sourcePath
 )
 {
-    return loadFromFile(runtimePath) || loadFromFile(sourcePath);
+    return loadFromDirectory(runtimePath) || loadFromDirectory(sourcePath) ||
+           loadFromFile(runtimePath) || loadFromFile(sourcePath);
 }
 
 std::optional<ResolvedNavigationRegionName>

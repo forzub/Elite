@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "32",
+  "names": {
+    "en": "Aldebaran"
+  },
+  "bodies": {
+    "32:system_32.Aldebaran": {
+      "en": "Aldebaran"
+    },
+    "32:system_32.Aldebaran.Aldebaran_b": {
+      "en": "Aldebaran b"
+    },
+    "32:system_32.Aldebaran.Aldebaran_c": {
+      "en": "Aldebaran c"
+    },
+    "32:system_32.Aldebaran.Aldebaran_c.Aldebaran_c-I": {
+      "en": "Aldebaran c-I"
+    },
+    "32:system_32.barycenter.belt_0": {
+      "en": "Aldebaran Belt"
+    },
+    "32:system_32.barycenter.belt_1": {
+      "en": "Aldebaran Kuiper Belt"
+    }
+  }
+}

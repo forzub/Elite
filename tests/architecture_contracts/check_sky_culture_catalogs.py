@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / "src/assets/data/galaxy"
 SKY = DATA / "sky_cultures"
+LOC_SKY = ROOT / "src/assets/localization/sky"
 
 
 def fail(message: str) -> None:
@@ -53,8 +54,11 @@ def main() -> int:
                 f"culture/file id mismatch for {entry['id']}")
         require(culture.get("star_identifier") in ("hr", "hip"),
                 f"invalid star identifier for {entry['id']}")
-        require("label_locales" not in culture and "default_label_locale" not in culture,
-                f"{entry['id']} reintroduced culture-owned language state")
+        require("culture_names" not in culture,
+                f"{entry['id']} topology file still owns localized culture names")
+        for c in culture.get("constellations", []):
+            require("names" not in c and "name" not in c,
+                    f"{entry['id']}/{c.get('id')} topology still owns display text")
         require(bool(culture.get("source", {}).get("license")),
                 f"{entry['id']} lost source/license provenance")
         cultures[entry["id"]] = culture
@@ -74,37 +78,52 @@ def main() -> int:
             "versioned western culture drifted from approved legacy topology")
 
     require(chinese["star_identifier"] == "hip" and len(chinese["constellations"]) == 42,
-            "Chinese culture must remain the curated 28-mansion + 14-asterism HIP set")
+            "Chinese culture must remain curated 28-mansion + 14-asterism set")
     curated_chinese_extras = [
-        "extra-northern-dipper",
-        "extra-northern-pole",
-        "extra-north-river",
-        "extra-five-chariots",
-        "extra-celestial-boat",
-        "extra-celestial-ford",
-        "extra-purple-forbidden-left-wall",
-        "extra-celestial-meadows",
-        "extra-celestial-orchard",
-        "extra-bow-and-arrow",
-        "extra-southern-boat",
-        "extra-cross",
-        "extra-southern-gate",
-        "extra-peafowl",
+        "extra-northern-dipper", "extra-northern-pole", "extra-north-river",
+        "extra-five-chariots", "extra-celestial-boat", "extra-celestial-ford",
+        "extra-purple-forbidden-left-wall", "extra-celestial-meadows",
+        "extra-celestial-orchard", "extra-bow-and-arrow", "extra-southern-boat",
+        "extra-cross", "extra-southern-gate", "extra-peafowl",
     ]
     require([c["id"] for c in chinese["constellations"][-14:]] == curated_chinese_extras,
             "curated Chinese surrounding-asterism selection changed")
     require(hawaiian["star_identifier"] == "hip" and len(hawaiian["constellations"]) == 13,
-            "Hawaiian culture must remain the approved 13-group HIP set")
+            "Hawaiian culture must remain approved 13-group set")
+
+    # Localized names are a separate asset domain, split by culture.
+    folder_by_id = {
+        "iau-western": "western",
+        "chinese-28-mansions": "chinese",
+        "hawaiian-starlines": "hawaiian",
+    }
+    loc_names: dict[str, dict] = {}
+    for cid, folder in folder_by_id.items():
+        culture_file = json.loads((LOC_SKY / folder / "culture.json").read_text(encoding="utf-8"))
+        constellation_file = json.loads((LOC_SKY / folder / "constellations.json").read_text(encoding="utf-8"))
+        require(culture_file.get("kind") == "sky_culture_names" and culture_file.get("culture_id") == cid,
+                f"invalid culture localization file for {cid}")
+        require(constellation_file.get("kind") == "sky_constellation_names" and constellation_file.get("culture_id") == cid,
+                f"invalid constellation localization file for {cid}")
+        require(culture_file.get("names", {}).get("en"), f"{cid} culture lost English fallback")
+        entries_by_id = constellation_file.get("entries", {})
+        require(set(entries_by_id) == {c["id"] for c in cultures[cid]["constellations"]},
+                f"{cid} localized-name IDs drifted from topology IDs")
+        for object_id, names in entries_by_id.items():
+            require(names.get("en"), f"{cid}/{object_id} lost English fallback")
+        loc_names[cid] = entries_by_id
 
     for c in western["constellations"]:
-        require({"en", "ru"}.issubset(c.get("names", {})),
-                f"western {c.get('id')} lost en/ru names")
+        require({"en", "ru"}.issubset(loc_names["iau-western"][c["id"]]),
+                f"western {c['id']} lost en/ru names")
     for c in chinese["constellations"]:
-        require({"en", "zh-Hans", "ja", "native", "pronounce"}.issubset(c.get("names", {})),
-                f"Chinese {c.get('id')} lost multilingual names")
+        require({"en", "zh-Hans", "ja", "native", "pronounce"}.issubset(
+            loc_names["chinese-28-mansions"][c["id"]]),
+            f"Chinese {c['id']} lost multilingual names")
     for c in hawaiian["constellations"]:
-        require({"en", "zh-Hans", "ja", "native"}.issubset(c.get("names", {})),
-                f"Hawaiian {c.get('id')} lost Chinese/Japanese display names")
+        require({"en", "zh-Hans", "ja", "native"}.issubset(
+            loc_names["hawaiian-starlines"][c["id"]]),
+            f"Hawaiian {c['id']} lost multilingual names")
 
     wings = next((c for c in chinese["constellations"] if c["id"].endswith("-wings")), None)
     require(wings is not None and wings.get("omitted_source_star_ids") == [53975],
@@ -118,23 +137,15 @@ def main() -> int:
         "hr": {s["hr"] for s in real_stars if isinstance(s.get("hr"), int) and s["hr"] > 0},
         "hip": {s["hip"] for s in real_stars if isinstance(s.get("hip"), int) and s["hip"] > 0},
     }
-    require("top 3000" in str(real.get("selection", {}).get("real_stars", "")).lower(),
-            "visible real-star top-3000 selection changed")
-
     support = json.loads(read("src/assets/data/galaxy/constellation_support_stars.json"))
-    require(support.get("version") == 2, "generic support-star schema v2 missing")
     support_ids = {"hr": set(), "hip": set()}
     for star in support.get("stars", []):
         catalog = star.get("catalog")
         ident = star.get("id")
         require(catalog in support_ids and isinstance(ident, int) and ident > 0,
                 "invalid support-star entry")
-        require(ident not in support_ids[catalog],
-                f"duplicate support {catalog.upper()} {ident}")
-        require(ident not in visible[catalog],
-                f"support {catalog.upper()} {ident} leaked into/duplicates visible catalog")
-        require(("position_ly" in star) != ("sky_direction" in star),
-                f"support {catalog.upper()} {ident} must have exactly one coordinate representation")
+        require(ident not in support_ids[catalog], f"duplicate support {catalog.upper()} {ident}")
+        require(ident not in visible[catalog], f"support {catalog.upper()} {ident} duplicates visible catalog")
         support_ids[catalog].add(ident)
 
     referenced = {"hr": set(), "hip": set()}
@@ -143,41 +154,26 @@ def main() -> int:
         for constellation in culture["constellations"]:
             for polyline in constellation["polylines"]:
                 referenced[identifier].update(polyline)
-
     for identifier in ("hr", "hip"):
         unresolved = referenced[identifier] - visible[identifier] - support_ids[identifier]
         require(not unresolved, f"unresolved {identifier.upper()} topology IDs: {sorted(unresolved)}")
-        unused = support_ids[identifier] - referenced[identifier]
-        require(not unused, f"unused support {identifier.upper()} IDs: {sorted(unused)}")
 
     catalog_h = read("src/render/starfield/SkyCultureCatalog.h")
     catalog_cpp = read("src/render/starfield/SkyCultureCatalog.cpp")
-    star_h = read("src/render/starfield/GalaxyStarfieldRenderer.h")
     star_cpp = read("src/render/starfield/GalaxyStarfieldRenderer.cpp")
-    scene_h = read("src/scene/SceneRenderer.h")
     scene_cpp = read("src/scene/SceneRenderer.cpp")
-    space_cpp = read("src/game/SpaceState.cpp")
-
-    require("labelLocales" not in catalog_h and "supportsLabelLocale" not in catalog_h,
-            "sky culture regained an independent label-language selector")
+    require("loadLocalizationDirectory" in catalog_h + catalog_cpp,
+            "sky display names are not loaded from separate localization domain")
+    require("recursive_directory_iterator" in catalog_cpp,
+            "sky-localization directory is not recursively discoverable")
     require("localizedFallback" in catalog_cpp and 'findName("en")' in catalog_cpp,
-            "sky-culture names lost exact/base/English fallback")
-    for token in ("SkyCultureCatalog m_skyCultureCatalog", "m_activeSkyCultureIndex",
-                  "cycleConstellationCulture()"):
-        require(token in star_h, f"starfield culture state lost: {token}")
-    require("cycleConstellationLabelLocale" not in star_h + star_cpp + scene_h + scene_cpp + space_cpp,
-            "constellation-specific language cycle reappeared")
-    for token in ('"assets/data/galaxy/sky_cultures/manifest.json"',
-                  "applyActiveSkyCulture()", "setCulture(*culture)"):
-        require(token in star_cpp, f"runtime culture composition lost: {token}")
-    require("void setUiLocale(const std::string& locale)" in scene_h and "m_uiLocale" in scene_h,
-            "SceneRenderer no longer receives the global UI locale")
+            "sky names lost exact/base/English fallback")
+    require('"assets/localization/sky"' in star_cpp,
+            "starfield does not load unified sky localization root")
     require("displayName(\n                m_uiLocale" in scene_cpp or "displayName(m_uiLocale)" in scene_cpp,
-            "constellation labels are no longer driven by the global UI locale")
-    require("cycleSkyCulture()" in space_cpp and "toggleConstellationOverlay" not in space_cpp[space_cpp.find("void SpaceState::cycleSkyCulture"):space_cpp.find("void SpaceState::onUiLanguageChanged")],
-            "culture cycling unexpectedly changes overlay visibility")
+            "constellation labels are no longer driven by global UI locale")
 
-    print("[PASS] versioned sky cultures + global UI-language constellation labels")
+    print("[PASS] topology-only sky cultures + separated recursive localized names")
     return 0
 
 

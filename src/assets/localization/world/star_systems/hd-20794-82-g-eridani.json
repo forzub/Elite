@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "14",
+  "names": {
+    "en": "HD 20794 (82 G. Eridani)"
+  },
+  "bodies": {
+    "14:system_14.HD_20794": {
+      "en": "HD 20794"
+    },
+    "14:system_14.HD_20794.HD_20794_b": {
+      "en": "HD 20794 b"
+    },
+    "14:system_14.HD_20794.HD_20794_c": {
+      "en": "HD 20794 c"
+    },
+    "14:system_14.HD_20794.HD_20794_c.HD_20794_c-I": {
+      "en": "HD 20794 c-I"
+    },
+    "14:system_14.HD_20794.HD_20794_d": {
+      "en": "HD 20794 d"
+    },
+    "14:system_14.HD_20794.HD_20794_d.HD_20794_d-I": {
+      "en": "HD 20794 d-I"
+    },
+    "14:system_14.HD_20794.HD_20794_e": {
+      "en": "HD 20794 e"
+    },
+    "14:system_14.HD_20794.HD_20794_f": {
+      "en": "HD 20794 f"
+    },
+    "14:system_14.HD_20794.HD_20794_f.HD_20794_f-I": {
+      "en": "HD 20794 f-I"
+    },
+    "14:system_14.barycenter.belt_0": {
+      "en": "HD 20794 (82 G. Eridani) Belt"
+    },
+    "14:system_14.barycenter.belt_1": {
+      "en": "HD 20794 (82 G. Eridani) Kuiper Belt"
+    }
+  }
+}

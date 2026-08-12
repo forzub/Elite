@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "100062",
+  "names": {
+    "en": "Kepler-62"
+  },
+  "bodies": {
+    "100062:system_100062.Kepler-62": {
+      "en": "Kepler-62"
+    },
+    "100062:system_100062.Kepler-62.Kepler-62_b": {
+      "en": "Kepler-62 b"
+    },
+    "100062:system_100062.Kepler-62.Kepler-62_c": {
+      "en": "Kepler-62 c"
+    },
+    "100062:system_100062.Kepler-62.Kepler-62_d": {
+      "en": "Kepler-62 d"
+    },
+    "100062:system_100062.Kepler-62.Kepler-62_e": {
+      "en": "Kepler-62 e"
+    },
+    "100062:system_100062.Kepler-62.Kepler-62_f": {
+      "en": "Kepler-62 f"
+    },
+    "100062:system_100062.Kepler-62.Kepler-62_f.Kepler-62_f-I": {
+      "en": "Kepler-62 f-I"
+    },
+    "100062:system_100062.barycenter.belt_0": {
+      "en": "Kepler-62 Belt"
+    },
+    "100062:system_100062.barycenter.belt_1": {
+      "en": "Kepler-62 Kuiper Belt"
+    }
+  }
+}

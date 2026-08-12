@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "58",
+  "names": {
+    "en": "Gliese 514"
+  },
+  "bodies": {
+    "58:system_58.Gliese_514": {
+      "en": "Gliese 514"
+    },
+    "58:system_58.Gliese_514.GJ_514_b": {
+      "en": "GJ 514 b"
+    },
+    "58:system_58.Gliese_514.GJ_514_b.GJ_514_b-I": {
+      "en": "GJ 514 b-I"
+    },
+    "58:system_58.Gliese_514.GJ_514_c": {
+      "en": "GJ 514 c"
+    },
+    "58:system_58.Gliese_514.GJ_514_d": {
+      "en": "GJ 514 d"
+    },
+    "58:system_58.Gliese_514.GJ_514_d.GJ_514_d-I": {
+      "en": "GJ 514 d-I"
+    },
+    "58:system_58.barycenter.belt_0": {
+      "en": "Gliese 514 Belt"
+    },
+    "58:system_58.barycenter.belt_1": {
+      "en": "Gliese 514 Kuiper Belt"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "24",
+  "names": {
+    "en": "Gliese 436"
+  },
+  "bodies": {
+    "24:system_24.Gliese_436": {
+      "en": "Gliese 436"
+    },
+    "24:system_24.Gliese_436.GJ_436_b": {
+      "en": "GJ 436 b"
+    },
+    "24:system_24.Gliese_436.GJ_436_c": {
+      "en": "GJ 436 c"
+    },
+    "24:system_24.Gliese_436.GJ_436_d": {
+      "en": "GJ 436 d"
+    },
+    "24:system_24.Gliese_436.GJ_436_d.GJ_436_d-I": {
+      "en": "GJ 436 d-I"
+    },
+    "24:system_24.barycenter.belt_0": {
+      "en": "Gliese 436 Belt"
+    },
+    "24:system_24.barycenter.belt_1": {
+      "en": "Gliese 436 Kuiper Belt"
+    }
+  }
+}

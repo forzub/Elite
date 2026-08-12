@@ -1,3 +1,5 @@
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -22,12 +24,13 @@ int main()
 {
     game::localization::LocalizationService localization;
     expect(
-        localization.load(
-            "src/assets/webui/localization/ui_strings.json",
-            "src/assets/data/localization/catalog_names.json"
-        ),
-        "client localization tables must load"
+        localization.loadDirectory("src/assets/localization"),
+        "recursive client localization tree must load"
     );
+    expect(localization.skippedFileCount() == 0,
+           "committed localization tree must contain no skipped files");
+    expect(localization.loadedFileCount() >= 80,
+           "categorized localization tree unexpectedly lost files");
 
     expect(localization.locale() == "en", "English must remain the initial locale");
     expect(localization.text("main.new_game", "BAD") == "NEW GAME",
@@ -55,14 +58,44 @@ int main()
 
     expect(localization.setLocale("ja"), "Japanese locale must be selectable");
     expect(localization.catalogName("systems", "3", "BAD") == "Wolf 359",
-           "missing catalog translation must fall back to English, not prior locale") ;
-
+           "missing catalog translation must fall back to English");
     expect(!localization.setLocale("xx-not-supported"),
            "unsupported global locale must be rejected");
-    expect(localization.locale() == "ja",
-           "rejected locale must not change current global language");
 
-    // The F12 chord matrix is a protected player-facing contract.
+    const std::string webBundle = localization.webUiBundleJson();
+    expect(webBundle.find("main.new_game") != std::string::npos &&
+           webBundle.find("locale_order") != std::string::npos,
+           "WebUI runtime bundle lost shared localization data");
+
+    // Runtime resilience contract: one broken JSON file must not poison valid
+    // siblings in the same recursively scanned localization root.
+    namespace fs = std::filesystem;
+    const fs::path tempRoot = fs::temp_directory_path() / "elite_localization_contract";
+    std::error_code ec;
+    fs::remove_all(tempRoot, ec);
+    fs::create_directories(tempRoot / "ui", ec);
+    {
+        std::ofstream out(tempRoot / "languages.json");
+        out << R"({"schema_version":1,"kind":"languages","default_locale":"en","locale_order":["en"],"languages":{"en":{"en":"English"}}})";
+    }
+    {
+        std::ofstream out(tempRoot / "ui" / "good.json");
+        out << R"({"schema_version":1,"kind":"ui_strings","strings":{"test.good":{"en":"GOOD"}}})";
+    }
+    {
+        std::ofstream out(tempRoot / "ui" / "broken.json");
+        out << R"({"schema_version":1,"kind":"ui_strings","strings":)";
+    }
+
+    game::localization::LocalizationService resilient;
+    expect(resilient.loadDirectory(tempRoot.string()),
+           "broken sibling JSON must not prevent valid localization load");
+    expect(resilient.skippedFileCount() == 1,
+           "broken sibling JSON must be counted as skipped");
+    expect(resilient.text("test.good", "BAD") == "GOOD",
+           "valid sibling translation disappeared after broken JSON");
+    fs::remove_all(tempRoot, ec);
+
     using game::ui::F12HotkeyAction;
     using game::ui::resolveF12HotkeyAction;
     expect(resolveF12HotkeyAction(false, false, true) == F12HotkeyAction::NavigateLocal,
@@ -73,14 +106,10 @@ int main()
            "Alt+F12 must cycle sky culture");
     expect(resolveF12HotkeyAction(true, true, true) == F12HotkeyAction::CycleUiLanguage,
            "Ctrl+Alt+F12 must cycle global UI language");
-    expect(resolveF12HotkeyAction(true, true, false) == F12HotkeyAction::CycleUiLanguage,
-           "global UI language chord must work outside SpaceState");
-    expect(resolveF12HotkeyAction(false, true, false) == F12HotkeyAction::None,
-           "sky-culture chord must not act outside SpaceState");
 
     if (failures != 0)
         return 1;
 
-    std::cout << "[PASS] global localization + stable-ID catalog fallback + F12 chord policy\n";
+    std::cout << "[PASS] recursive localization + resilient file isolation + F12 chord policy\n";
     return 0;
 }

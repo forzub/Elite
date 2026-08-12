@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "7",
+  "names": {
+    "en": "Kapteyn's Star"
+  },
+  "bodies": {
+    "7:system_7.Kapteyn's_Star": {
+      "en": "Kapteyn's Star"
+    },
+    "7:system_7.Kapteyn's_Star.Kapteyn_b": {
+      "en": "Kapteyn b"
+    },
+    "7:system_7.Kapteyn's_Star.Kapteyn_c": {
+      "en": "Kapteyn c"
+    },
+    "7:system_7.Kapteyn's_Star.Kapteyn_d": {
+      "en": "Kapteyn d"
+    },
+    "7:system_7.Kapteyn's_Star.Kapteyn_d.Kapteyn_d-I": {
+      "en": "Kapteyn d-I"
+    },
+    "7:system_7.barycenter.belt_0": {
+      "en": "Kapteyn's Star Belt"
+    },
+    "7:system_7.barycenter.belt_1": {
+      "en": "Kapteyn's Star Kuiper Belt"
+    }
+  }
+}

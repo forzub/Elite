@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "5",
+  "names": {
+    "en": "Sirius A+B",
+    "ru": "Сириус A+B",
+    "zh-Hans": "天狼星 A+B",
+    "es": "Sirio A+B",
+    "ja": "シリウス A+B"
+  },
+  "bodies": {
+    "5:system_5.Sirius_A": {
+      "en": "Sirius A"
+    },
+    "5:system_5.Sirius_A.belt_0": {
+      "en": "Sirius A+B Belt"
+    },
+    "5:system_5.Sirius_B": {
+      "en": "Sirius B"
+    },
+    "5:system_5.Sirius_B.belt_0": {
+      "en": "Sirius A+B Belt"
+    },
+    "5:system_5.barycenter.belt_0": {
+      "en": "Sirius Kuiper Belt"
+    }
+  }
+}

@@ -55,7 +55,7 @@
 
   async function load() {
     try {
-      const response = await fetch('/localization/ui_strings.json', { cache: 'no-store' });
+      const response = await fetch('/localization/runtime_ui.json', { cache: 'no-store' });
       data = await response.json();
       allowedLocales = Array.isArray(data.locale_order) && data.locale_order.length
         ? data.locale_order.slice()

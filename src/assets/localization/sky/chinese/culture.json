@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "sky_culture_names",
+  "culture_id": "chinese-28-mansions",
+  "names": {
+    "en": "Traditional Chinese Sky",
+    "native": "中国传统星官",
+    "ru": "Китайская традиционная",
+    "zh": "中国传统星官",
+    "zh-Hans": "中国传统星官",
+    "ja": "中国伝統星官"
+  }
+}

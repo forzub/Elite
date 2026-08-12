@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "main.subtitle": {
+      "en": "HTML GAME UI PROTOTYPE",
+      "ru": "ПРОТОТИП ИГРОВОГО ИНТЕРФЕЙСА",
+      "zh-Hans": "游戏界面原型",
+      "es": "PROTOTIPO DE INTERFAZ",
+      "ja": "ゲームUIプロトタイプ"
+    },
+    "main.new_game": {
+      "en": "NEW GAME",
+      "ru": "НОВАЯ ИГРА",
+      "zh-Hans": "新游戏",
+      "es": "NUEVA PARTIDA",
+      "ja": "ニューゲーム"
+    },
+    "main.load_game": {
+      "en": "LOAD GAME",
+      "ru": "ЗАГРУЗИТЬ ИГРУ",
+      "zh-Hans": "载入游戏",
+      "es": "CARGAR PARTIDA",
+      "ja": "ロード"
+    },
+    "main.shipyard": {
+      "en": "SHIPYARD",
+      "ru": "ВЕРФЬ",
+      "zh-Hans": "船坞",
+      "es": "ASTILLERO",
+      "ja": "造船所"
+    },
+    "main.exit": {
+      "en": "EXIT",
+      "ru": "ВЫХОД",
+      "zh-Hans": "退出",
+      "es": "SALIR",
+      "ja": "終了"
+    },
+    "main.hint": {
+      "en": "WebView layer. Not the debug browser.",
+      "ru": "Игровой слой WebView. Не отладочный браузер.",
+      "zh-Hans": "游戏 WebView 层，不是调试浏览器。",
+      "es": "Capa WebView del juego. No es el navegador de depuración.",
+      "ja": "ゲーム用WebViewレイヤー。デバッグブラウザではありません。"
+    }
+  }
+}

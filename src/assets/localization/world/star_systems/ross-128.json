@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "27",
+  "names": {
+    "en": "Ross 128"
+  },
+  "bodies": {
+    "27:system_27.Ross_128": {
+      "en": "Ross 128"
+    },
+    "27:system_27.Ross_128.Ross_128_b": {
+      "en": "Ross 128 b"
+    },
+    "27:system_27.Ross_128.Ross_128_b.Ross_128_b-I": {
+      "en": "Ross 128 b-I"
+    },
+    "27:system_27.Ross_128.Ross_128_c": {
+      "en": "Ross 128 c"
+    },
+    "27:system_27.Ross_128.Ross_128_d": {
+      "en": "Ross 128 d"
+    },
+    "27:system_27.Ross_128.Ross_128_e": {
+      "en": "Ross 128 e"
+    },
+    "27:system_27.Ross_128.Ross_128_e.Ross_128_e-I": {
+      "en": "Ross 128 e-I"
+    },
+    "27:system_27.barycenter.belt_0": {
+      "en": "Ross 128 Belt"
+    },
+    "27:system_27.barycenter.belt_1": {
+      "en": "Ross 128 Kuiper Belt"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "43",
+  "names": {
+    "en": "Theta Draconis"
+  },
+  "bodies": {
+    "43:system_43.Theta_Draconis_A": {
+      "en": "Theta Draconis A"
+    },
+    "43:system_43.Theta_Draconis_A.Theta_Draconis_Ab": {
+      "en": "Theta Draconis Ab"
+    },
+    "43:system_43.Theta_Draconis_B": {
+      "en": "Theta Draconis B"
+    },
+    "43:system_43.Theta_Draconis_B.Theta_Draconis_Bb": {
+      "en": "Theta Draconis Bb"
+    },
+    "43:system_43.barycenter.belt_0": {
+      "en": "Theta Draconis Belt"
+    },
+    "43:system_43.barycenter.belt_1": {
+      "en": "Theta Draconis Kuiper Belt"
+    }
+  }
+}

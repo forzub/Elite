@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "13",
+  "names": {
+    "en": "Gliese 876"
+  },
+  "bodies": {
+    "13:system_13.Gliese_876": {
+      "en": "Gliese 876"
+    },
+    "13:system_13.Gliese_876.Gliese_876_b": {
+      "en": "Gliese 876 b"
+    },
+    "13:system_13.Gliese_876.Gliese_876_b.Gliese_876_b-I": {
+      "en": "Gliese 876 b-I"
+    },
+    "13:system_13.Gliese_876.Gliese_876_b.Gliese_876_b-II": {
+      "en": "Gliese 876 b-II"
+    },
+    "13:system_13.Gliese_876.Gliese_876_c": {
+      "en": "Gliese 876 c"
+    },
+    "13:system_13.Gliese_876.Gliese_876_d": {
+      "en": "Gliese 876 d"
+    },
+    "13:system_13.Gliese_876.Gliese_876_e": {
+      "en": "Gliese 876 e"
+    },
+    "13:system_13.Gliese_876.Gliese_876_e.Gliese_876_e-I": {
+      "en": "Gliese 876 e-I"
+    },
+    "13:system_13.Gliese_876.Gliese_876_f": {
+      "en": "Gliese 876 f"
+    },
+    "13:system_13.barycenter.belt_0": {
+      "en": "Gliese 876 Belt"
+    },
+    "13:system_13.barycenter.belt_1": {
+      "en": "Gliese 876 Kuiper Belt"
+    }
+  }
+}

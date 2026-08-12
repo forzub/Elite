@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "kind": "sky_constellation_names",
+  "culture_id": "hawaiian-starlines",
+  "entries": {
+    "kom": {
+      "native": "Ke Ka o Makali‘i",
+      "en": "The Canoe Bailer of Makali‘i",
+      "zh-Hans": "玛卡利伊的舀水器",
+      "ja": "マカリイのカヌーのあか汲み"
+    },
+    "khk": {
+      "native": "Ka Hei-Hei o Na Keiki",
+      "en": "The Cat's Cradle",
+      "zh-Hans": "翻花绳",
+      "ja": "あやとり"
+    },
+    "mak": {
+      "native": "Makali‘i",
+      "en": "The Chief's Eyes",
+      "zh-Hans": "酋长之眼",
+      "ja": "首長の目"
+    },
+    "mee": {
+      "native": "Me‘e",
+      "en": "Voice of Joy",
+      "zh-Hans": "喜悦之声",
+      "ja": "喜びの声"
+    },
+    "nah": {
+      "native": "Na Hiku",
+      "en": "The Seven",
+      "zh-Hans": "七星",
+      "ja": "七つ星"
+    },
+    "iwi": {
+      "native": "Ka Iwikuamo‘o",
+      "en": "The Backbone",
+      "zh-Hans": "脊柱",
+      "ja": "背骨"
+    },
+    "man": {
+      "native": "Manaiakalani",
+      "en": "The Chief's Fishline",
+      "zh-Hans": "酋长的钓线",
+      "ja": "首長の釣り糸"
+    },
+    "nav": {
+      "native": "Navigator's Triangle",
+      "en": "Navigator's Triangle",
+      "zh-Hans": "航海者三角",
+      "ja": "航海士の三角"
+    },
+    "lup": {
+      "native": "Ka Lupe o Kawelo",
+      "en": "Kite of Kawelo",
+      "zh-Hans": "卡韦洛的风筝",
+      "ja": "カウェロの凧"
+    },
+    "iwa": {
+      "native": "‘Iwa Keli‘i",
+      "en": "Chief Frigate Bird",
+      "zh-Hans": "酋长军舰鸟",
+      "ja": "首長のグンカンドリ"
+    },
+    "han": {
+      "native": "Hanaiakamalama",
+      "en": "Cared for by Moon",
+      "zh-Hans": "月之眷顾",
+      "ja": "月に育てられし者"
+    },
+    "nak": {
+      "native": "Nakuhikuhi",
+      "en": "The Pointers",
+      "zh-Hans": "指引星",
+      "ja": "指標星"
+    },
+    "kao": {
+      "native": "Ka‘ohiweliweli",
+      "en": "Leo",
+      "zh-Hans": "狮子座",
+      "ja": "しし座"
+    }
+  }
+}

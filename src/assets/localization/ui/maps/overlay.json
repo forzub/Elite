@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "overlay.player": {
+      "en": "PLAYER",
+      "ru": "ИГРОК",
+      "zh-Hans": "玩家",
+      "es": "JUGADOR",
+      "ja": "プレイヤー"
+    },
+    "overlay.selected": {
+      "en": "SELECTED",
+      "ru": "ВЫБРАНО",
+      "zh-Hans": "已选",
+      "es": "SELECCIONADO",
+      "ja": "選択"
+    },
+    "overlay.cursor": {
+      "en": "CURSOR",
+      "ru": "КУРСОР",
+      "zh-Hans": "光标",
+      "es": "CURSOR",
+      "ja": "カーソル"
+    },
+    "overlay.galaxy": {
+      "en": "GALAXY",
+      "ru": "ГАЛАКТИКА",
+      "zh-Hans": "银河",
+      "es": "GALAXIA",
+      "ja": "銀河"
+    },
+    "overlay.system": {
+      "en": "SYSTEM",
+      "ru": "СИСТЕМА",
+      "zh-Hans": "星系",
+      "es": "SISTEMA",
+      "ja": "星系"
+    },
+    "overlay.edge": {
+      "en": "EDGE",
+      "ru": "РЕБРО",
+      "zh-Hans": "边长",
+      "es": "ARISTA",
+      "ja": "辺長"
+    },
+    "overlay.format": {
+      "en": "FORMAT",
+      "ru": "ФОРМАТ",
+      "zh-Hans": "格式",
+      "es": "FORMATO",
+      "ja": "形式"
+    },
+    "overlay.level": {
+      "en": "LEVEL",
+      "ru": "УРОВЕНЬ",
+      "zh-Hans": "层级",
+      "es": "NIVEL",
+      "ja": "レベル"
+    },
+    "overlay.track": {
+      "en": "TRACK",
+      "ru": "СЛЕЖЕНИЕ",
+      "zh-Hans": "跟踪",
+      "es": "SEGUIR",
+      "ja": "追跡"
+    },
+    "overlay.track_on": {
+      "en": "TRACK ON",
+      "ru": "СЛЕЖЕНИЕ ВКЛ",
+      "zh-Hans": "跟踪开启",
+      "es": "SEGUIMIENTO",
+      "ja": "追跡中"
+    }
+  }
+}

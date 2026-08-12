@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "46",
+  "names": {
+    "en": "GJ 3021"
+  },
+  "bodies": {
+    "46:system_46.GJ_3021_A": {
+      "en": "GJ 3021 A"
+    },
+    "46:system_46.GJ_3021_A.GJ_3021_b": {
+      "en": "GJ 3021 b"
+    },
+    "46:system_46.GJ_3021_A.GJ_3021_b.GJ_3021_b-I": {
+      "en": "GJ 3021 b-I"
+    },
+    "46:system_46.GJ_3021_A.GJ_3021_b.GJ_3021_b-II": {
+      "en": "GJ 3021 b-II"
+    },
+    "46:system_46.GJ_3021_B": {
+      "en": "GJ 3021 B"
+    },
+    "46:system_46.barycenter.belt_0": {
+      "en": "GJ 3021 Belt"
+    },
+    "46:system_46.barycenter.belt_1": {
+      "en": "GJ 3021 Kuiper Belt"
+    }
+  }
+}

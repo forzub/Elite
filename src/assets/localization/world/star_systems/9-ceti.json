@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "36",
+  "names": {
+    "en": "9 Ceti"
+  },
+  "bodies": {
+    "36:system_36.9_Ceti": {
+      "en": "9 Ceti"
+    },
+    "36:system_36.9_Ceti.9_Ceti_b": {
+      "en": "9 Ceti b"
+    },
+    "36:system_36.9_Ceti.9_Ceti_c": {
+      "en": "9 Ceti c"
+    },
+    "36:system_36.9_Ceti.9_Ceti_d": {
+      "en": "9 Ceti d"
+    },
+    "36:system_36.9_Ceti.9_Ceti_d.9_Ceti_d-I": {
+      "en": "9 Ceti d-I"
+    },
+    "36:system_36.9_Ceti.9_Ceti_e": {
+      "en": "9 Ceti e"
+    },
+    "36:system_36.9_Ceti.9_Ceti_e.9_Ceti_e-I": {
+      "en": "9 Ceti e-I"
+    },
+    "36:system_36.9_Ceti.9_Ceti_e.9_Ceti_e-II": {
+      "en": "9 Ceti e-II"
+    },
+    "36:system_36.9_Ceti.9_Ceti_f": {
+      "en": "9 Ceti f"
+    },
+    "36:system_36.9_Ceti.9_Ceti_f.9_Ceti_f-I": {
+      "en": "9 Ceti f-I"
+    },
+    "36:system_36.9_Ceti.9_Ceti_f.9_Ceti_f-II": {
+      "en": "9 Ceti f-II"
+    },
+    "36:system_36.9_Ceti.9_Ceti_f.9_Ceti_f-III": {
+      "en": "9 Ceti f-III"
+    },
+    "36:system_36.barycenter.belt_0": {
+      "en": "9 Ceti Belt"
+    },
+    "36:system_36.barycenter.belt_1": {
+      "en": "9 Ceti Kuiper Belt"
+    }
+  }
+}

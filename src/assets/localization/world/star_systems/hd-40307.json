@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "15",
+  "names": {
+    "en": "HD 40307"
+  },
+  "bodies": {
+    "15:system_15.HD_40307": {
+      "en": "HD 40307"
+    },
+    "15:system_15.HD_40307.HD_40307_b": {
+      "en": "HD 40307 b"
+    },
+    "15:system_15.HD_40307.HD_40307_c": {
+      "en": "HD 40307 c"
+    },
+    "15:system_15.HD_40307.HD_40307_d": {
+      "en": "HD 40307 d"
+    },
+    "15:system_15.HD_40307.HD_40307_e": {
+      "en": "HD 40307 e"
+    },
+    "15:system_15.HD_40307.HD_40307_f": {
+      "en": "HD 40307 f"
+    },
+    "15:system_15.HD_40307.HD_40307_g": {
+      "en": "HD 40307 g"
+    },
+    "15:system_15.HD_40307.HD_40307_g.HD_40307_g-I": {
+      "en": "HD 40307 g-I"
+    },
+    "15:system_15.HD_40307.HD_40307_g.HD_40307_g-II": {
+      "en": "HD 40307 g-II"
+    },
+    "15:system_15.HD_40307.HD_40307_h": {
+      "en": "HD 40307 h"
+    },
+    "15:system_15.HD_40307.HD_40307_h.HD_40307_h-I": {
+      "en": "HD 40307 h-I"
+    },
+    "15:system_15.barycenter.belt_0": {
+      "en": "HD 40307 Belt"
+    },
+    "15:system_15.barycenter.belt_1": {
+      "en": "HD 40307 Kuiper Belt"
+    }
+  }
+}

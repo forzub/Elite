@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "35",
+  "names": {
+    "en": "Tau Cygni"
+  },
+  "bodies": {
+    "35:system_35.Tau_Cygni_A": {
+      "en": "Tau Cygni A"
+    },
+    "35:system_35.Tau_Cygni_A.Tau_Cygni_Ab": {
+      "en": "Tau Cygni Ab"
+    },
+    "35:system_35.Tau_Cygni_A.Tau_Cygni_Ac": {
+      "en": "Tau Cygni Ac"
+    },
+    "35:system_35.Tau_Cygni_A.Tau_Cygni_Ac.Tau_Cygni_Ac-I": {
+      "en": "Tau Cygni Ac-I"
+    },
+    "35:system_35.Tau_Cygni_B": {
+      "en": "Tau Cygni B"
+    },
+    "35:system_35.Tau_Cygni_B.Tau_Cygni_Ba": {
+      "en": "Tau Cygni Ba"
+    },
+    "35:system_35.Tau_Cygni_B.Tau_Cygni_Bb": {
+      "en": "Tau Cygni Bb"
+    },
+    "35:system_35.Tau_Cygni_B.Tau_Cygni_Bb.Tau_Cygni_Bb-I": {
+      "en": "Tau Cygni Bb-I"
+    },
+    "35:system_35.barycenter.belt_0": {
+      "en": "Tau Cygni Belt"
+    },
+    "35:system_35.barycenter.belt_1": {
+      "en": "Tau Cygni Kuiper Belt"
+    }
+  }
+}

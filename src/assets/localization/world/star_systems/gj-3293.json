@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "50",
+  "names": {
+    "en": "GJ 3293"
+  },
+  "bodies": {
+    "50:system_50.GJ_3293": {
+      "en": "GJ 3293"
+    },
+    "50:system_50.GJ_3293.GJ_3293_b": {
+      "en": "GJ 3293 b"
+    },
+    "50:system_50.GJ_3293.GJ_3293_c": {
+      "en": "GJ 3293 c"
+    },
+    "50:system_50.GJ_3293.GJ_3293_c.GJ_3293_c-I": {
+      "en": "GJ 3293 c-I"
+    },
+    "50:system_50.GJ_3293.GJ_3293_d": {
+      "en": "GJ 3293 d"
+    },
+    "50:system_50.GJ_3293.GJ_3293_e": {
+      "en": "GJ 3293 e"
+    },
+    "50:system_50.GJ_3293.GJ_3293_e.GJ_3293_e-I": {
+      "en": "GJ 3293 e-I"
+    },
+    "50:system_50.barycenter.belt_0": {
+      "en": "GJ 3293 Belt"
+    },
+    "50:system_50.barycenter.belt_1": {
+      "en": "GJ 3293 Kuiper Belt"
+    }
+  }
+}

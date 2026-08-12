@@ -1,13 +1,6 @@
 {
   "version": 1,
   "culture_id": "iau-western",
-  "culture_names": {
-    "en": "Western / IAU",
-    "ru": "Западная / IAU",
-    "zh": "西方 / IAU",
-    "zh-Hans": "西方 / IAU",
-    "ja": "西洋 / IAU"
-  },
   "star_identifier": "hr",
   "scope_note": "88 IAU constellation figures using the project's existing western stick topology. IAU standardizes constellation regions/names, not a single official stick-figure topology.",
   "source": {
@@ -20,11 +13,6 @@
   "constellations": [
     {
       "id": "And",
-      "name": "Andromeda",
-      "names": {
-        "en": "Andromeda",
-        "ru": "Андромеда"
-      },
       "polylines": [
         [
           8961,
@@ -52,11 +40,6 @@
     },
     {
       "id": "Ant",
-      "name": "Antlia",
-      "names": {
-        "en": "Antlia",
-        "ru": "Насос"
-      },
       "polylines": [
         [
           4273,
@@ -68,11 +51,6 @@
     },
     {
       "id": "Aps",
-      "name": "Apus",
-      "names": {
-        "en": "Apus",
-        "ru": "Райская Птица"
-      },
       "polylines": [
         [
           5470,
@@ -84,11 +62,6 @@
     },
     {
       "id": "Aql",
-      "name": "Aquila",
-      "names": {
-        "en": "Aquila",
-        "ru": "Орёл"
-      },
       "polylines": [
         [
           7602,
@@ -108,11 +81,6 @@
     },
     {
       "id": "Aqr",
-      "name": "Aquarius",
-      "names": {
-        "en": "Aquarius",
-        "ru": "Водолей"
-      },
       "polylines": [
         [
           8812,
@@ -135,11 +103,6 @@
     },
     {
       "id": "Ara",
-      "name": "Ara",
-      "names": {
-        "en": "Ara",
-        "ru": "Жертвенник"
-      },
       "polylines": [
         [
           6743,
@@ -158,11 +121,6 @@
     },
     {
       "id": "Ari",
-      "name": "Aries",
-      "names": {
-        "en": "Aries",
-        "ru": "Овен"
-      },
       "polylines": [
         [
           951,
@@ -176,11 +134,6 @@
     },
     {
       "id": "Aur",
-      "name": "Auriga",
-      "names": {
-        "en": "Auriga",
-        "ru": "Возничий"
-      },
       "polylines": [
         [
           1708,
@@ -197,11 +150,6 @@
     },
     {
       "id": "Boo",
-      "name": "Boötes",
-      "names": {
-        "en": "Boötes",
-        "ru": "Волопас"
-      },
       "polylines": [
         [
           5435,
@@ -220,11 +168,6 @@
     },
     {
       "id": "CMa",
-      "name": "Canis Major",
-      "names": {
-        "en": "Canis Major",
-        "ru": "Большой Пёс"
-      },
       "polylines": [
         [
           2596,
@@ -247,11 +190,6 @@
     },
     {
       "id": "CMi",
-      "name": "Canis Minor",
-      "names": {
-        "en": "Canis Minor",
-        "ru": "Малый Пёс"
-      },
       "polylines": [
         [
           2943,
@@ -261,11 +199,6 @@
     },
     {
       "id": "CVn",
-      "name": "Canes Venatici",
-      "names": {
-        "en": "Canes Venatici",
-        "ru": "Гончие Псы"
-      },
       "polylines": [
         [
           4915,
@@ -275,11 +208,6 @@
     },
     {
       "id": "Cae",
-      "name": "Caelum",
-      "names": {
-        "en": "Caelum",
-        "ru": "Резец"
-      },
       "polylines": [
         [
           1443,
@@ -290,11 +218,6 @@
     },
     {
       "id": "Cam",
-      "name": "Camelopardalis",
-      "names": {
-        "en": "Camelopardalis",
-        "ru": "Жираф"
-      },
       "polylines": [
         [
           1040,
@@ -309,11 +232,6 @@
     },
     {
       "id": "Cap",
-      "name": "Capricornus",
-      "names": {
-        "en": "Capricornus",
-        "ru": "Козерог"
-      },
       "polylines": [
         [
           7754,
@@ -332,11 +250,6 @@
     },
     {
       "id": "Car",
-      "name": "Carina",
-      "names": {
-        "en": "Carina",
-        "ru": "Киль"
-      },
       "polylines": [
         [
           2326,
@@ -355,11 +268,6 @@
     },
     {
       "id": "Cas",
-      "name": "Cassiopeia",
-      "names": {
-        "en": "Cassiopeia",
-        "ru": "Кассиопея"
-      },
       "polylines": [
         [
           542,
@@ -372,11 +280,6 @@
     },
     {
       "id": "Cen",
-      "name": "Centaurus",
-      "names": {
-        "en": "Centaurus",
-        "ru": "Центавр"
-      },
       "polylines": [
         [
           4467,
@@ -407,11 +310,6 @@
     },
     {
       "id": "Cep",
-      "name": "Cepheus",
-      "names": {
-        "en": "Cepheus",
-        "ru": "Цефей"
-      },
       "polylines": [
         [
           8974,
@@ -425,11 +323,6 @@
     },
     {
       "id": "Cet",
-      "name": "Cetus",
-      "names": {
-        "en": "Cetus",
-        "ru": "Кит"
-      },
       "polylines": [
         [
           804,
@@ -452,11 +345,6 @@
     },
     {
       "id": "Cha",
-      "name": "Chamaeleon",
-      "names": {
-        "en": "Chamaeleon",
-        "ru": "Хамелеон"
-      },
       "polylines": [
         [
           3318,
@@ -470,11 +358,6 @@
     },
     {
       "id": "Cir",
-      "name": "Circinus",
-      "names": {
-        "en": "Circinus",
-        "ru": "Циркуль"
-      },
       "polylines": [
         [
           5670,
@@ -485,11 +368,6 @@
     },
     {
       "id": "Cnc",
-      "name": "Cancer",
-      "names": {
-        "en": "Cancer",
-        "ru": "Рак"
-      },
       "polylines": [
         [
           3572,
@@ -503,11 +381,6 @@
     },
     {
       "id": "Col",
-      "name": "Columba",
-      "names": {
-        "en": "Columba",
-        "ru": "Голубь"
-      },
       "polylines": [
         [
           2296,
@@ -523,11 +396,6 @@
     },
     {
       "id": "Com",
-      "name": "Coma Berenices",
-      "names": {
-        "en": "Coma Berenices",
-        "ru": "Волосы Вероники"
-      },
       "polylines": [
         [
           4968,
@@ -538,11 +406,6 @@
     },
     {
       "id": "CrA",
-      "name": "Corona Australis",
-      "names": {
-        "en": "Corona Australis",
-        "ru": "Южная Корона"
-      },
       "polylines": [
         [
           7152,
@@ -556,11 +419,6 @@
     },
     {
       "id": "CrB",
-      "name": "Corona Borealis",
-      "names": {
-        "en": "Corona Borealis",
-        "ru": "Северная Корона"
-      },
       "polylines": [
         [
           5971,
@@ -575,11 +433,6 @@
     },
     {
       "id": "Crt",
-      "name": "Crater",
-      "names": {
-        "en": "Crater",
-        "ru": "Чаша"
-      },
       "polylines": [
         [
           4567,
@@ -597,11 +450,6 @@
     },
     {
       "id": "Cru",
-      "name": "Crux",
-      "names": {
-        "en": "Crux",
-        "ru": "Южный Крест"
-      },
       "polylines": [
         [
           4730,
@@ -615,11 +463,6 @@
     },
     {
       "id": "Crv",
-      "name": "Corvus",
-      "names": {
-        "en": "Corvus",
-        "ru": "Ворон"
-      },
       "polylines": [
         [
           4623,
@@ -633,11 +476,6 @@
     },
     {
       "id": "Cyg",
-      "name": "Cygnus",
-      "names": {
-        "en": "Cygnus",
-        "ru": "Лебедь"
-      },
       "polylines": [
         [
           7417,
@@ -656,11 +494,6 @@
     },
     {
       "id": "Del",
-      "name": "Delphinus",
-      "names": {
-        "en": "Delphinus",
-        "ru": "Дельфин"
-      },
       "polylines": [
         [
           7852,
@@ -674,11 +507,6 @@
     },
     {
       "id": "Dor",
-      "name": "Dorado",
-      "names": {
-        "en": "Dorado",
-        "ru": "Золотая Рыба"
-      },
       "polylines": [
         [
           1338,
@@ -693,11 +521,6 @@
     },
     {
       "id": "Dra",
-      "name": "Draco",
-      "names": {
-        "en": "Draco",
-        "ru": "Дракон"
-      },
       "polylines": [
         [
           6688,
@@ -722,11 +545,6 @@
     },
     {
       "id": "Equ",
-      "name": "Equuleus",
-      "names": {
-        "en": "Equuleus",
-        "ru": "Малый Конь"
-      },
       "polylines": [
         [
           8131,
@@ -738,11 +556,6 @@
     },
     {
       "id": "Eri",
-      "name": "Eridanus",
-      "names": {
-        "en": "Eridanus",
-        "ru": "Эридан"
-      },
       "polylines": [
         [
           1666,
@@ -781,11 +594,6 @@
     },
     {
       "id": "For",
-      "name": "Fornax",
-      "names": {
-        "en": "Fornax",
-        "ru": "Печь"
-      },
       "polylines": [
         [
           963,
@@ -796,11 +604,6 @@
     },
     {
       "id": "Gem",
-      "name": "Gemini",
-      "names": {
-        "en": "Gemini",
-        "ru": "Близнецы"
-      },
       "polylines": [
         [
           2134,
@@ -834,11 +637,6 @@
     },
     {
       "id": "Gru",
-      "name": "Grus",
-      "names": {
-        "en": "Grus",
-        "ru": "Журавль"
-      },
       "polylines": [
         [
           8353,
@@ -857,11 +655,6 @@
     },
     {
       "id": "Her",
-      "name": "Hercules",
-      "names": {
-        "en": "Hercules",
-        "ru": "Геркулес"
-      },
       "polylines": [
         [
           6324,
@@ -888,11 +681,6 @@
     },
     {
       "id": "Hor",
-      "name": "Horologium",
-      "names": {
-        "en": "Horologium",
-        "ru": "Часы"
-      },
       "polylines": [
         [
           909,
@@ -908,11 +696,6 @@
     },
     {
       "id": "Hya",
-      "name": "Hydra",
-      "names": {
-        "en": "Hydra",
-        "ru": "Гидра"
-      },
       "polylines": [
         [
           3492,
@@ -938,11 +721,6 @@
     },
     {
       "id": "Hyi",
-      "name": "Hydrus",
-      "names": {
-        "en": "Hydrus",
-        "ru": "Южная Гидра"
-      },
       "polylines": [
         [
           591,
@@ -955,11 +733,6 @@
     },
     {
       "id": "Ind",
-      "name": "Indus",
-      "names": {
-        "en": "Indus",
-        "ru": "Индеец"
-      },
       "polylines": [
         [
           7869,
@@ -975,11 +748,6 @@
     },
     {
       "id": "LMi",
-      "name": "Leo Minor",
-      "names": {
-        "en": "Leo Minor",
-        "ru": "Малый Лев"
-      },
       "polylines": [
         [
           4247,
@@ -990,11 +758,6 @@
     },
     {
       "id": "Lac",
-      "name": "Lacerta",
-      "names": {
-        "en": "Lacerta",
-        "ru": "Ящерица"
-      },
       "polylines": [
         [
           8498,
@@ -1014,11 +777,6 @@
     },
     {
       "id": "Leo",
-      "name": "Leo",
-      "names": {
-        "en": "Leo",
-        "ru": "Лев"
-      },
       "polylines": [
         [
           3873,
@@ -1042,11 +800,6 @@
     },
     {
       "id": "Lep",
-      "name": "Lepus",
-      "names": {
-        "en": "Lepus",
-        "ru": "Заяц"
-      },
       "polylines": [
         [
           1654,
@@ -1061,11 +814,6 @@
     },
     {
       "id": "Lib",
-      "name": "Libra",
-      "names": {
-        "en": "Libra",
-        "ru": "Весы"
-      },
       "polylines": [
         [
           5908,
@@ -1082,11 +830,6 @@
     },
     {
       "id": "Lup",
-      "name": "Lupus",
-      "names": {
-        "en": "Lupus",
-        "ru": "Волк"
-      },
       "polylines": [
         [
           5987,
@@ -1107,11 +850,6 @@
     },
     {
       "id": "Lyn",
-      "name": "Lynx",
-      "names": {
-        "en": "Lynx",
-        "ru": "Рысь"
-      },
       "polylines": [
         [
           3705,
@@ -1127,11 +865,6 @@
     },
     {
       "id": "Lyr",
-      "name": "Lyra",
-      "names": {
-        "en": "Lyra",
-        "ru": "Лира"
-      },
       "polylines": [
         [
           7001,
@@ -1145,11 +878,6 @@
     },
     {
       "id": "Men",
-      "name": "Mensa",
-      "names": {
-        "en": "Mensa",
-        "ru": "Столовая Гора"
-      },
       "polylines": [
         [
           2261,
@@ -1161,11 +889,6 @@
     },
     {
       "id": "Mic",
-      "name": "Microscopium",
-      "names": {
-        "en": "Microscopium",
-        "ru": "Микроскоп"
-      },
       "polylines": [
         [
           8151,
@@ -1177,11 +900,6 @@
     },
     {
       "id": "Mon",
-      "name": "Monoceros",
-      "names": {
-        "en": "Monoceros",
-        "ru": "Единорог"
-      },
       "polylines": [
         [
           2385,
@@ -1199,11 +917,6 @@
     },
     {
       "id": "Mus",
-      "name": "Musca",
-      "names": {
-        "en": "Musca",
-        "ru": "Муха"
-      },
       "polylines": [
         [
           4844,
@@ -1219,11 +932,6 @@
     },
     {
       "id": "Nor",
-      "name": "Norma",
-      "names": {
-        "en": "Norma",
-        "ru": "Наугольник"
-      },
       "polylines": [
         [
           6115,
@@ -1234,11 +942,6 @@
     },
     {
       "id": "Oct",
-      "name": "Octans",
-      "names": {
-        "en": "Octans",
-        "ru": "Октант"
-      },
       "polylines": [
         [
           8630,
@@ -1250,11 +953,6 @@
     },
     {
       "id": "Oph",
-      "name": "Ophiuchus",
-      "names": {
-        "en": "Ophiuchus",
-        "ru": "Змееносец"
-      },
       "polylines": [
         [
           6556,
@@ -1271,11 +969,6 @@
     },
     {
       "id": "Ori",
-      "name": "Orion",
-      "names": {
-        "en": "Orion",
-        "ru": "Орион"
-      },
       "polylines": [
         [
           1948,
@@ -1313,11 +1006,6 @@
     },
     {
       "id": "Pav",
-      "name": "Pavo",
-      "names": {
-        "en": "Pavo",
-        "ru": "Павлин"
-      },
       "polylines": [
         [
           7790,
@@ -1337,11 +1025,6 @@
     },
     {
       "id": "Peg",
-      "name": "Pegasus",
-      "names": {
-        "en": "Pegasus",
-        "ru": "Пегас"
-      },
       "polylines": [
         [
           8454,
@@ -1362,11 +1045,6 @@
     },
     {
       "id": "Per",
-      "name": "Perseus",
-      "names": {
-        "en": "Perseus",
-        "ru": "Персей"
-      },
       "polylines": [
         [
           936,
@@ -1383,11 +1061,6 @@
     },
     {
       "id": "Phe",
-      "name": "Phoenix",
-      "names": {
-        "en": "Phoenix",
-        "ru": "Феникс"
-      },
       "polylines": [
         [
           99,
@@ -1405,11 +1078,6 @@
     },
     {
       "id": "Pic",
-      "name": "Pictor",
-      "names": {
-        "en": "Pictor",
-        "ru": "Живописец"
-      },
       "polylines": [
         [
           2550,
@@ -1420,11 +1088,6 @@
     },
     {
       "id": "PsA",
-      "name": "Piscis Austrinus",
-      "names": {
-        "en": "Piscis Austrinus",
-        "ru": "Южная Рыба"
-      },
       "polylines": [
         [
           8728,
@@ -1443,11 +1106,6 @@
     },
     {
       "id": "Psc",
-      "name": "Pisces",
-      "names": {
-        "en": "Pisces",
-        "ru": "Рыбы"
-      },
       "polylines": [
         [
           360,
@@ -1474,11 +1132,6 @@
     },
     {
       "id": "Pup",
-      "name": "Puppis",
-      "names": {
-        "en": "Puppis",
-        "ru": "Корма"
-      },
       "polylines": [
         [
           3185,
@@ -1496,11 +1149,6 @@
     },
     {
       "id": "Pyx",
-      "name": "Pyxis",
-      "names": {
-        "en": "Pyxis",
-        "ru": "Компас"
-      },
       "polylines": [
         [
           3438,
@@ -1511,11 +1159,6 @@
     },
     {
       "id": "Ret",
-      "name": "Reticulum",
-      "names": {
-        "en": "Reticulum",
-        "ru": "Сетка"
-      },
       "polylines": [
         [
           1336,
@@ -1529,11 +1172,6 @@
     },
     {
       "id": "Scl",
-      "name": "Sculptor",
-      "names": {
-        "en": "Sculptor",
-        "ru": "Скульптор"
-      },
       "polylines": [
         [
           280,
@@ -1545,11 +1183,6 @@
     },
     {
       "id": "Sco",
-      "name": "Scorpius",
-      "names": {
-        "en": "Scorpius",
-        "ru": "Скорпион"
-      },
       "polylines": [
         [
           5985,
@@ -1574,11 +1207,6 @@
     },
     {
       "id": "Sct",
-      "name": "Scutum",
-      "names": {
-        "en": "Scutum",
-        "ru": "Щит"
-      },
       "polylines": [
         [
           7063,
@@ -1591,11 +1219,6 @@
     },
     {
       "id": "Ser",
-      "name": "Serpens",
-      "names": {
-        "en": "Serpens",
-        "ru": "Змея"
-      },
       "polylines": [
         [
           6446,
@@ -1619,11 +1242,6 @@
     },
     {
       "id": "Sex",
-      "name": "Sextans",
-      "names": {
-        "en": "Sextans",
-        "ru": "Секстант"
-      },
       "polylines": [
         [
           4119,
@@ -1634,11 +1252,6 @@
     },
     {
       "id": "Sge",
-      "name": "Sagitta",
-      "names": {
-        "en": "Sagitta",
-        "ru": "Стрела"
-      },
       "polylines": [
         [
           7635,
@@ -1651,11 +1264,6 @@
     },
     {
       "id": "Sgr",
-      "name": "Sagittarius",
-      "names": {
-        "en": "Sagittarius",
-        "ru": "Стрелец"
-      },
       "polylines": [
         [
           7348,
@@ -1694,11 +1302,6 @@
     },
     {
       "id": "Tau",
-      "name": "Taurus",
-      "names": {
-        "en": "Taurus",
-        "ru": "Телец"
-      },
       "polylines": [
         [
           1910,
@@ -1716,11 +1319,6 @@
     },
     {
       "id": "Tel",
-      "name": "Telescopium",
-      "names": {
-        "en": "Telescopium",
-        "ru": "Телескоп"
-      },
       "polylines": [
         [
           6783,
@@ -1731,11 +1329,6 @@
     },
     {
       "id": "TrA",
-      "name": "Triangulum Australe",
-      "names": {
-        "en": "Triangulum Australe",
-        "ru": "Южный Треугольник"
-      },
       "polylines": [
         [
           6217,
@@ -1748,11 +1341,6 @@
     },
     {
       "id": "Tri",
-      "name": "Triangulum",
-      "names": {
-        "en": "Triangulum",
-        "ru": "Треугольник"
-      },
       "polylines": [
         [
           622,
@@ -1764,11 +1352,6 @@
     },
     {
       "id": "Tuc",
-      "name": "Tucana",
-      "names": {
-        "en": "Tucana",
-        "ru": "Тукан"
-      },
       "polylines": [
         [
           8540,
@@ -1783,11 +1366,6 @@
     },
     {
       "id": "UMa",
-      "name": "Ursa Major",
-      "names": {
-        "en": "Ursa Major",
-        "ru": "Большая Медведица"
-      },
       "polylines": [
         [
           5191,
@@ -1824,11 +1402,6 @@
     },
     {
       "id": "UMi",
-      "name": "Ursa Minor",
-      "names": {
-        "en": "Ursa Minor",
-        "ru": "Малая Медведица"
-      },
       "polylines": [
         [
           424,
@@ -1844,11 +1417,6 @@
     },
     {
       "id": "Vel",
-      "name": "Vela",
-      "names": {
-        "en": "Vela",
-        "ru": "Паруса"
-      },
       "polylines": [
         [
           3206,
@@ -1868,11 +1436,6 @@
     },
     {
       "id": "Vir",
-      "name": "Virgo",
-      "names": {
-        "en": "Virgo",
-        "ru": "Дева"
-      },
       "polylines": [
         [
           5056,
@@ -1886,11 +1449,6 @@
     },
     {
       "id": "Vol",
-      "name": "Volans",
-      "names": {
-        "en": "Volans",
-        "ru": "Летучая Рыба"
-      },
       "polylines": [
         [
           3615,
@@ -1905,11 +1463,6 @@
     },
     {
       "id": "Vul",
-      "name": "Vulpecula",
-      "names": {
-        "en": "Vulpecula",
-        "ru": "Лисичка"
-      },
       "polylines": [
         [
           7306,

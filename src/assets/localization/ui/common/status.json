@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "status.connected": {
+      "en": "connected",
+      "ru": "подключено",
+      "zh-Hans": "已连接",
+      "es": "conectado",
+      "ja": "接続済み"
+    },
+    "status.disconnected": {
+      "en": "disconnected",
+      "ru": "отключено",
+      "zh-Hans": "已断开",
+      "es": "desconectado",
+      "ja": "切断"
+    },
+    "status.offline": {
+      "en": "offline",
+      "ru": "офлайн",
+      "zh-Hans": "离线",
+      "es": "sin conexión",
+      "ja": "オフライン"
+    }
+  }
+}

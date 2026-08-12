@@ -273,6 +273,23 @@ bool GalaxyStarfieldRenderer::initialize(
                 "../src/assets/data/galaxy/sky_cultures/manifest.json"
             );
 
+        if (culturesLoaded)
+        {
+            bool namesLoaded = m_skyCultureCatalog.loadLocalizationDirectory(
+                "assets/localization/sky"
+            );
+            if (!namesLoaded)
+                namesLoaded = m_skyCultureCatalog.loadLocalizationDirectory(
+                    "../assets/localization/sky"
+                );
+            if (!namesLoaded)
+                namesLoaded = m_skyCultureCatalog.loadLocalizationDirectory(
+                    "../src/assets/localization/sky"
+                );
+            if (!namesLoaded)
+                std::cerr << "[Constellations] localized names were not loaded" << std::endl;
+        }
+
         bool constellationSupportLoaded = loadConstellationSupportStars(
             "assets/data/galaxy/constellation_support_stars.json"
         );

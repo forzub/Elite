@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "9",
+  "names": {
+    "en": "Epsilon Eridani"
+  },
+  "bodies": {
+    "9:system_9.Epsilon_Eridani": {
+      "en": "Epsilon Eridani"
+    },
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b": {
+      "en": "Epsilon Eridani b"
+    },
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b.Epsilon_Eridani_b-I": {
+      "en": "Epsilon Eridani b-I"
+    },
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b.Epsilon_Eridani_b-II": {
+      "en": "Epsilon Eridani b-II"
+    },
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_b.Epsilon_Eridani_b-III": {
+      "en": "Epsilon Eridani b-III"
+    },
+    "9:system_9.Epsilon_Eridani.Epsilon_Eridani_c": {
+      "en": "Epsilon Eridani c"
+    },
+    "9:system_9.barycenter.belt_0": {
+      "en": "Epsilon Eridani Belt"
+    },
+    "9:system_9.barycenter.belt_1": {
+      "en": "Epsilon Eridani Kuiper Belt"
+    }
+  }
+}

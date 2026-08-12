@@ -1,0 +1,343 @@
+{
+  "schema_version": 1,
+  "kind": "sky_constellation_names",
+  "culture_id": "chinese-28-mansions",
+  "entries": {
+    "01-net": {
+      "native": "毕宿",
+      "pronounce": "Bìxiù",
+      "en": "Net",
+      "zh": "毕宿",
+      "zh-Hans": "毕宿",
+      "ja": "毕宿"
+    },
+    "02-wall": {
+      "native": "壁宿",
+      "pronounce": "Bìxiù",
+      "en": "Wall",
+      "zh": "壁宿",
+      "zh-Hans": "壁宿",
+      "ja": "壁宿"
+    },
+    "03-three-stars": {
+      "native": "参宿",
+      "pronounce": "Shēnxiù",
+      "en": "Three Stars",
+      "zh": "参宿",
+      "zh-Hans": "参宿",
+      "ja": "参宿"
+    },
+    "04-root": {
+      "native": "氐宿",
+      "pronounce": "Dīxiù",
+      "en": "Root",
+      "zh": "氐宿",
+      "zh-Hans": "氐宿",
+      "ja": "氐宿"
+    },
+    "05-dipper": {
+      "native": "斗宿",
+      "pronounce": "Dǒuxiù",
+      "en": "Dipper",
+      "zh": "斗宿",
+      "zh-Hans": "斗宿",
+      "ja": "斗宿"
+    },
+    "06-room": {
+      "native": "房宿",
+      "pronounce": "Fángxiù",
+      "en": "Room",
+      "zh": "房宿",
+      "zh-Hans": "房宿",
+      "ja": "房宿"
+    },
+    "07-ghosts": {
+      "native": "鬼宿",
+      "pronounce": "Guǐxiù",
+      "en": "Ghosts",
+      "zh": "鬼宿",
+      "zh-Hans": "鬼宿",
+      "ja": "鬼宿"
+    },
+    "08-winnowing-basket": {
+      "native": "箕宿",
+      "pronounce": "Jīxiù",
+      "en": "Winnowing Basket",
+      "zh": "箕宿",
+      "zh-Hans": "箕宿",
+      "ja": "箕宿"
+    },
+    "09-horn": {
+      "native": "角宿",
+      "pronounce": "Jiǎoxiù",
+      "en": "Horn",
+      "zh": "角宿",
+      "zh-Hans": "角宿",
+      "ja": "角宿"
+    },
+    "10-well": {
+      "native": "井宿",
+      "pronounce": "Jǐngxiù",
+      "en": "Well",
+      "zh": "井宿",
+      "zh-Hans": "井宿",
+      "ja": "井宿"
+    },
+    "11-neck": {
+      "native": "亢宿",
+      "pronounce": "Kàngxiù",
+      "en": "Neck",
+      "zh": "亢宿",
+      "zh-Hans": "亢宿",
+      "ja": "亢宿"
+    },
+    "12-legs": {
+      "native": "奎宿",
+      "pronounce": "Kuíxiù",
+      "en": "Legs",
+      "zh": "奎宿",
+      "zh-Hans": "奎宿",
+      "ja": "奎宿"
+    },
+    "13-willow": {
+      "native": "柳宿",
+      "pronounce": "Liǔxiù",
+      "en": "Willow",
+      "zh": "柳宿",
+      "zh-Hans": "柳宿",
+      "ja": "柳宿"
+    },
+    "14-bond": {
+      "native": "娄宿",
+      "pronounce": "Loúxiù",
+      "en": "Bond",
+      "zh": "娄宿",
+      "zh-Hans": "娄宿",
+      "ja": "娄宿"
+    },
+    "15-hairy-head": {
+      "native": "昴宿",
+      "pronounce": "Mǎoxiù",
+      "en": "Hairy Head",
+      "zh": "昴宿",
+      "zh-Hans": "昴宿",
+      "ja": "昴宿"
+    },
+    "16-ox": {
+      "native": "牛宿",
+      "pronounce": "Niúxiù",
+      "en": "Ox",
+      "zh": "牛宿",
+      "zh-Hans": "牛宿",
+      "ja": "牛宿"
+    },
+    "17-girl": {
+      "native": "女宿",
+      "pronounce": "Nǚxiù",
+      "en": "Girl",
+      "zh": "女宿",
+      "zh-Hans": "女宿",
+      "ja": "女宿"
+    },
+    "18-encampment": {
+      "native": "室宿",
+      "pronounce": "Shìxiù",
+      "en": "Encampment",
+      "zh": "室宿",
+      "zh-Hans": "室宿",
+      "ja": "室宿"
+    },
+    "19-rooftop": {
+      "native": "危宿",
+      "pronounce": "Wēixiù",
+      "en": "Rooftop",
+      "zh": "危宿",
+      "zh-Hans": "危宿",
+      "ja": "危宿"
+    },
+    "20-tail": {
+      "native": "尾宿",
+      "pronounce": "Wěixiù",
+      "en": "Tail",
+      "zh": "尾宿",
+      "zh-Hans": "尾宿",
+      "ja": "尾宿"
+    },
+    "21-stomach": {
+      "native": "胃宿",
+      "pronounce": "Wèixiù",
+      "en": "Stomach",
+      "zh": "胃宿",
+      "zh-Hans": "胃宿",
+      "ja": "胃宿"
+    },
+    "22-heart": {
+      "native": "心宿",
+      "pronounce": "Xīnxiù",
+      "en": "Heart",
+      "zh": "心宿",
+      "zh-Hans": "心宿",
+      "ja": "心宿"
+    },
+    "23-star": {
+      "native": "星宿",
+      "pronounce": "Xīngxiù",
+      "en": "Star",
+      "zh": "星宿",
+      "zh-Hans": "星宿",
+      "ja": "星宿"
+    },
+    "24-emptiness": {
+      "native": "虚宿",
+      "pronounce": "Xūxiù",
+      "en": "Emptiness",
+      "zh": "虚宿",
+      "zh-Hans": "虚宿",
+      "ja": "虚宿"
+    },
+    "25-wings": {
+      "native": "翼宿",
+      "pronounce": "Yìxiù",
+      "en": "Wings",
+      "zh": "翼宿",
+      "zh-Hans": "翼宿",
+      "ja": "翼宿"
+    },
+    "26-extended-net": {
+      "native": "张宿",
+      "pronounce": "Zhāngxiù",
+      "en": "Extended Net",
+      "zh": "张宿",
+      "zh-Hans": "张宿",
+      "ja": "张宿"
+    },
+    "27-chariot": {
+      "native": "轸宿",
+      "pronounce": "Zhěnxiù",
+      "en": "Chariot",
+      "zh": "轸宿",
+      "zh-Hans": "轸宿",
+      "ja": "轸宿"
+    },
+    "28-turtle-beak": {
+      "native": "觜宿",
+      "pronounce": "Zīxiù",
+      "en": "Turtle Beak",
+      "zh": "觜宿",
+      "zh-Hans": "觜宿",
+      "ja": "觜宿"
+    },
+    "extra-northern-dipper": {
+      "native": "北斗",
+      "pronounce": "Běidǒu",
+      "en": "Northern Dipper",
+      "zh": "北斗",
+      "zh-Hans": "北斗",
+      "ja": "北斗"
+    },
+    "extra-northern-pole": {
+      "native": "北极",
+      "pronounce": "Běijí",
+      "en": "Northern Pole",
+      "zh": "北极",
+      "zh-Hans": "北极",
+      "ja": "北極"
+    },
+    "extra-north-river": {
+      "native": "北河",
+      "pronounce": "Běihé",
+      "en": "North River",
+      "zh": "北河",
+      "zh-Hans": "北河",
+      "ja": "北河"
+    },
+    "extra-five-chariots": {
+      "native": "五车",
+      "pronounce": "Wǔchē",
+      "en": "Five Chariots",
+      "zh": "五车",
+      "zh-Hans": "五车",
+      "ja": "五車"
+    },
+    "extra-celestial-boat": {
+      "native": "天船",
+      "pronounce": "Tiānchuán",
+      "en": "Celestial Boat",
+      "zh": "天船",
+      "zh-Hans": "天船",
+      "ja": "天船"
+    },
+    "extra-celestial-ford": {
+      "native": "天津",
+      "pronounce": "Tiānjīn",
+      "en": "Celestial Ford",
+      "zh": "天津",
+      "zh-Hans": "天津",
+      "ja": "天津"
+    },
+    "extra-purple-forbidden-left-wall": {
+      "native": "紫微左垣",
+      "pronounce": "Zǐwēi Zuǒyuán",
+      "en": "Purple Forbidden Left Wall",
+      "zh": "紫微左垣",
+      "zh-Hans": "紫微左垣",
+      "ja": "紫微左垣"
+    },
+    "extra-celestial-meadows": {
+      "native": "天苑",
+      "pronounce": "Tiānyuàn",
+      "en": "Celestial Meadows",
+      "zh": "天苑",
+      "zh-Hans": "天苑",
+      "ja": "天苑"
+    },
+    "extra-celestial-orchard": {
+      "native": "天园",
+      "pronounce": "Tiānyuán",
+      "en": "Celestial Orchard",
+      "zh": "天园",
+      "zh-Hans": "天园",
+      "ja": "天園"
+    },
+    "extra-bow-and-arrow": {
+      "native": "弧矢",
+      "pronounce": "Húshǐ",
+      "en": "Bow and Arrow",
+      "zh": "弧矢",
+      "zh-Hans": "弧矢",
+      "ja": "弧矢"
+    },
+    "extra-southern-boat": {
+      "native": "南船",
+      "pronounce": "Nánchuán",
+      "en": "Southern Boat",
+      "zh": "南船",
+      "zh-Hans": "南船",
+      "ja": "南船"
+    },
+    "extra-cross": {
+      "native": "十字架",
+      "pronounce": "Shízìjià",
+      "en": "Cross",
+      "zh": "十字架",
+      "zh-Hans": "十字架",
+      "ja": "十字架"
+    },
+    "extra-southern-gate": {
+      "native": "南门",
+      "pronounce": "Nánmén",
+      "en": "Southern Gate",
+      "zh": "南门",
+      "zh-Hans": "南门",
+      "ja": "南門"
+    },
+    "extra-peafowl": {
+      "native": "孔雀",
+      "pronounce": "Kǒngquè",
+      "en": "Peafowl",
+      "zh": "孔雀",
+      "zh-Hans": "孔雀",
+      "ja": "孔雀"
+    }
+  }
+}

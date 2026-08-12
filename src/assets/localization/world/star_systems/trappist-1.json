@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "17",
+  "names": {
+    "en": "TRAPPIST-1"
+  },
+  "bodies": {
+    "17:system_17.TRAPPIST-1": {
+      "en": "TRAPPIST-1"
+    },
+    "17:system_17.TRAPPIST-1.TRAPPIST-1_b": {
+      "en": "TRAPPIST-1 b"
+    },
+    "17:system_17.TRAPPIST-1.TRAPPIST-1_c": {
+      "en": "TRAPPIST-1 c"
+    },
+    "17:system_17.TRAPPIST-1.TRAPPIST-1_d": {
+      "en": "TRAPPIST-1 d"
+    },
+    "17:system_17.TRAPPIST-1.TRAPPIST-1_e": {
+      "en": "TRAPPIST-1 e"
+    },
+    "17:system_17.TRAPPIST-1.TRAPPIST-1_f": {
+      "en": "TRAPPIST-1 f"
+    },
+    "17:system_17.TRAPPIST-1.TRAPPIST-1_g": {
+      "en": "TRAPPIST-1 g"
+    },
+    "17:system_17.TRAPPIST-1.TRAPPIST-1_h": {
+      "en": "TRAPPIST-1 h"
+    },
+    "17:system_17.barycenter.belt_0": {
+      "en": "TRAPPIST-1 Belt"
+    },
+    "17:system_17.barycenter.belt_1": {
+      "en": "TRAPPIST-1 Kuiper Belt"
+    }
+  }
+}

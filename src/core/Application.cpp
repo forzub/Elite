@@ -226,17 +226,25 @@ void Application::init()
     // ---------------------------------------------------
             std::string webUiRoot = findGameUiRoot();
 
-            // Global UI localization is client-only. The server sees stable IDs;
-            // translated display strings are resolved here and in WebUI.
+            // Global localization is a client-only asset domain. All editable
+            // translations live under assets/localization and are discovered
+            // recursively; the server/protocol continues to use stable IDs.
             {
                 const std::filesystem::path webRoot(webUiRoot);
-                const std::filesystem::path assetsRoot = webRoot.parent_path();
-                if (!m_localization.load(
-                        (webRoot / "localization" / "ui_strings.json").string(),
-                        (assetsRoot / "data" / "localization" / "catalog_names.json").string()))
+                const std::filesystem::path localizationRoot =
+                    webRoot.parent_path() / "localization";
+                if (!m_localization.loadDirectory(localizationRoot.string()))
                 {
-                    std::cerr << "[Localization] failed to load client tables; English/key fallback remains active\n";
+                    std::cerr << "[Localization] core tables incomplete; English/key fallback remains active\n";
                 }
+
+                // WebUI consumes an in-memory bundle generated from the exact
+                // same LocalizationService tables as native OpenGL UI.
+                m_htmlUi.setVirtualFile(
+                    "/localization/runtime_ui.json",
+                    m_localization.webUiBundleJson(),
+                    "application/json; charset=utf-8"
+                );
             }
 
             m_htmlUi.start(8090, webUiRoot);

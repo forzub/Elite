@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "16",
+  "names": {
+    "en": "HD 69830"
+  },
+  "bodies": {
+    "16:system_16.HD_69830": {
+      "en": "HD 69830"
+    },
+    "16:system_16.HD_69830.HD_69830_b": {
+      "en": "HD 69830 b"
+    },
+    "16:system_16.HD_69830.HD_69830_c": {
+      "en": "HD 69830 c"
+    },
+    "16:system_16.HD_69830.HD_69830_c.HD_69830_c-I": {
+      "en": "HD 69830 c-I"
+    },
+    "16:system_16.HD_69830.HD_69830_d": {
+      "en": "HD 69830 d"
+    },
+    "16:system_16.HD_69830.HD_69830_e": {
+      "en": "HD 69830 e"
+    },
+    "16:system_16.HD_69830.HD_69830_f": {
+      "en": "HD 69830 f"
+    },
+    "16:system_16.HD_69830.HD_69830_f.HD_69830_f-I": {
+      "en": "HD 69830 f-I"
+    },
+    "16:system_16.barycenter.belt_0": {
+      "en": "HD 69830 Belt"
+    },
+    "16:system_16.barycenter.belt_1": {
+      "en": "HD 69830 Kuiper Belt"
+    }
+  }
+}

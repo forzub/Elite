@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "59",
+  "names": {
+    "en": "Gliese 625"
+  },
+  "bodies": {
+    "59:system_59.Gliese_625": {
+      "en": "Gliese 625"
+    },
+    "59:system_59.Gliese_625.GJ_625_b": {
+      "en": "GJ 625 b"
+    },
+    "59:system_59.Gliese_625.GJ_625_c": {
+      "en": "GJ 625 c"
+    },
+    "59:system_59.Gliese_625.GJ_625_d": {
+      "en": "GJ 625 d"
+    },
+    "59:system_59.Gliese_625.GJ_625_d.GJ_625_d-I": {
+      "en": "GJ 625 d-I"
+    },
+    "59:system_59.barycenter.belt_0": {
+      "en": "Gliese 625 Belt"
+    },
+    "59:system_59.barycenter.belt_1": {
+      "en": "Gliese 625 Kuiper Belt"
+    }
+  }
+}

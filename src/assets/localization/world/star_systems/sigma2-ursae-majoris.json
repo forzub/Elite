@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "38",
+  "names": {
+    "en": "Sigma² Ursae Majoris"
+  },
+  "bodies": {
+    "38:system_38.Sigma²_UMa_A": {
+      "en": "Sigma² UMa A"
+    },
+    "38:system_38.Sigma²_UMa_A.Sigma²_UMa_Ab": {
+      "en": "Sigma² UMa Ab"
+    },
+    "38:system_38.Sigma²_UMa_B": {
+      "en": "Sigma² UMa B"
+    },
+    "38:system_38.Sigma²_UMa_B.Sigma²_UMa_Bb": {
+      "en": "Sigma² UMa Bb"
+    },
+    "38:system_38.Sigma²_UMa_C": {
+      "en": "Sigma² UMa C"
+    },
+    "38:system_38.barycenter.belt_0": {
+      "en": "Sigma² Ursae Majoris Belt"
+    },
+    "38:system_38.barycenter.belt_1": {
+      "en": "Sigma² Ursae Majoris Kuiper Belt"
+    }
+  }
+}

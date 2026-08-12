@@ -78,6 +78,19 @@ void HtmlUiServer::setOnMessage(std::function<void(const std::string&)> callback
     m_onMessage = std::move(callback);
 }
 
+void HtmlUiServer::setVirtualFile(
+    const std::string& resource,
+    const std::string& content,
+    const std::string& contentType
+)
+{
+    std::string key = resource;
+    if (key.empty() || key.front() != '/')
+        key.insert(key.begin(), '/');
+    m_virtualFiles[key] = VirtualFile {content, contentType};
+}
+
+
 
 
 
@@ -129,6 +142,15 @@ void HtmlUiServer::onHttp(websocketpp::connection_hdl hdl)
 
     if (resource.empty() || resource == "/")
         resource = "/debug_control.html";
+
+    const auto virtualIt = m_virtualFiles.find(resource);
+    if (virtualIt != m_virtualFiles.end())
+    {
+        con->set_status(websocketpp::http::status_code::ok);
+        con->replace_header("Content-Type", virtualIt->second.contentType);
+        con->set_body(virtualIt->second.content);
+        return;
+    }
 
     // This server is intentionally reachable from the local network. Never
     // allow a URL to escape the configured webui root on the host machine.

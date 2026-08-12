@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "23",
+  "names": {
+    "en": "Gliese 892"
+  },
+  "bodies": {
+    "23:system_23.Gliese_892": {
+      "en": "Gliese 892"
+    },
+    "23:system_23.Gliese_892.Gliese_892_b": {
+      "en": "Gliese 892 b"
+    },
+    "23:system_23.Gliese_892.Gliese_892_c": {
+      "en": "Gliese 892 c"
+    },
+    "23:system_23.Gliese_892.Gliese_892_d": {
+      "en": "Gliese 892 d"
+    },
+    "23:system_23.Gliese_892.Gliese_892_d.Gliese_892_d-I": {
+      "en": "Gliese 892 d-I"
+    },
+    "23:system_23.barycenter.belt_0": {
+      "en": "Gliese 892 Belt"
+    },
+    "23:system_23.barycenter.belt_1": {
+      "en": "Gliese 892 Kuiper Belt"
+    }
+  }
+}

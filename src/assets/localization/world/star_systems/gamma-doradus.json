@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "34",
+  "names": {
+    "en": "Gamma Doradus"
+  },
+  "bodies": {
+    "34:system_34.Gamma_Doradus": {
+      "en": "Gamma Doradus"
+    },
+    "34:system_34.barycenter.belt_0": {
+      "en": "Gamma Doradus Belt"
+    },
+    "34:system_34.barycenter.belt_1": {
+      "en": "Gamma Doradus Kuiper Belt"
+    }
+  }
+}

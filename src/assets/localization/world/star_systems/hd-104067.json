@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "41",
+  "names": {
+    "en": "HD 104067"
+  },
+  "bodies": {
+    "41:system_41.HD_104067": {
+      "en": "HD 104067"
+    },
+    "41:system_41.HD_104067.HD_104067_b": {
+      "en": "HD 104067 b"
+    },
+    "41:system_41.HD_104067.HD_104067_b.HD_104067_b-I": {
+      "en": "HD 104067 b-I"
+    },
+    "41:system_41.HD_104067.HD_104067_b.HD_104067_b-II": {
+      "en": "HD 104067 b-II"
+    },
+    "41:system_41.HD_104067.HD_104067_c": {
+      "en": "HD 104067 c"
+    },
+    "41:system_41.HD_104067.HD_104067_d": {
+      "en": "HD 104067 d"
+    },
+    "41:system_41.HD_104067.HD_104067_d.HD_104067_d-I": {
+      "en": "HD 104067 d-I"
+    },
+    "41:system_41.barycenter.belt_0": {
+      "en": "HD 104067 Belt"
+    },
+    "41:system_41.barycenter.belt_1": {
+      "en": "HD 104067 Kuiper Belt"
+    }
+  }
+}

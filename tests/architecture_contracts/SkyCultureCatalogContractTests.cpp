@@ -24,6 +24,10 @@ int main()
         catalog.loadManifest("src/assets/data/galaxy/sky_cultures/manifest.json"),
         "sky-culture manifest must load from the source tree"
     );
+    expect(
+        catalog.loadLocalizationDirectory("src/assets/localization/sky"),
+        "sky-culture display names must load from localization tree"
+    );
 
     const auto& cultures = catalog.cultures();
     expect(cultures.size() == 3, "approved catalog must expose three sky cultures");

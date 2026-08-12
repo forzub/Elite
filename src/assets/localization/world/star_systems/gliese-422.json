@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "56",
+  "names": {
+    "en": "Gliese 422"
+  },
+  "bodies": {
+    "56:system_56.Gliese_422": {
+      "en": "Gliese 422"
+    },
+    "56:system_56.Gliese_422.GJ_422_b": {
+      "en": "GJ 422 b"
+    },
+    "56:system_56.Gliese_422.GJ_422_b.GJ_422_b-I": {
+      "en": "GJ 422 b-I"
+    },
+    "56:system_56.Gliese_422.GJ_422_c": {
+      "en": "GJ 422 c"
+    },
+    "56:system_56.Gliese_422.GJ_422_d": {
+      "en": "GJ 422 d"
+    },
+    "56:system_56.Gliese_422.GJ_422_d.GJ_422_d-I": {
+      "en": "GJ 422 d-I"
+    },
+    "56:system_56.barycenter.belt_0": {
+      "en": "Gliese 422 Belt"
+    },
+    "56:system_56.barycenter.belt_1": {
+      "en": "Gliese 422 Kuiper Belt"
+    }
+  }
+}

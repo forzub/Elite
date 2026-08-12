@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "48",
+  "names": {
+    "en": "HD 102365"
+  },
+  "bodies": {
+    "48:system_48.HD_102365_A": {
+      "en": "HD 102365 A"
+    },
+    "48:system_48.HD_102365_A.HD_102365_b": {
+      "en": "HD 102365 b"
+    },
+    "48:system_48.HD_102365_A.HD_102365_b.HD_102365_b-I": {
+      "en": "HD 102365 b-I"
+    },
+    "48:system_48.HD_102365_B": {
+      "en": "HD 102365 B"
+    },
+    "48:system_48.barycenter.belt_0": {
+      "en": "HD 102365 Belt"
+    },
+    "48:system_48.barycenter.belt_1": {
+      "en": "HD 102365 Kuiper Belt"
+    }
+  }
+}

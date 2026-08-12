@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "nav.format.hierarchical": {
+      "en": "STRAIGHT THERE",
+      "ru": "ПРЯМО ТУДА",
+      "zh-Hans": "直达",
+      "es": "DIRECTO ALLÍ",
+      "ja": "直行"
+    },
+    "nav.format.axis": {
+      "en": "THREE AXES",
+      "ru": "ТРИ ОСИ",
+      "zh-Hans": "三轴",
+      "es": "TRES EJES",
+      "ja": "3軸"
+    },
+    "nav.format.packed": {
+      "en": "VERY SECRET CODE",
+      "ru": "ОЧЕНЬ СЕКРЕТНЫЙ КОД",
+      "zh-Hans": "绝密代码",
+      "es": "CÓDIGO MUY SECRETO",
+      "ja": "極秘コード"
+    }
+  }
+}

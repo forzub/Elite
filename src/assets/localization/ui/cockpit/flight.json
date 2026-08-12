@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "cockpit.front": {
+      "en": "FRONT",
+      "ru": "ПЕРЕД",
+      "zh-Hans": "前方",
+      "es": "FRENTE",
+      "ja": "前方"
+    },
+    "cockpit.rear": {
+      "en": "REAR",
+      "ru": "НАЗАД",
+      "zh-Hans": "后方",
+      "es": "TRASERA",
+      "ja": "後方"
+    },
+    "cockpit.drone": {
+      "en": "DRONE",
+      "ru": "ДРОН",
+      "zh-Hans": "无人机",
+      "es": "DRON",
+      "ja": "ドローン"
+    },
+    "cockpit.cell": {
+      "en": "CELL",
+      "ru": "ЯЧЕЙКА",
+      "zh-Hans": "单元",
+      "es": "CELDA",
+      "ja": "セル"
+    },
+    "cockpit.vrel": {
+      "en": "VREL",
+      "ru": "ОТН.СКОР",
+      "zh-Hans": "相对速度",
+      "es": "VEL.REL",
+      "ja": "相対速度"
+    },
+    "cockpit.mode.newtonian": {
+      "en": "NEWTONIAN",
+      "ru": "НЬЮТОНОВСКИЙ",
+      "zh-Hans": "牛顿模式",
+      "es": "NEWTONIANO",
+      "ja": "ニュートン"
+    },
+    "cockpit.mode.assisted": {
+      "en": "ASSISTED",
+      "ru": "АССИСТИРОВАННЫЙ",
+      "zh-Hans": "辅助模式",
+      "es": "ASISTIDO",
+      "ja": "アシスト"
+    },
+    "cockpit.action.align_forward": {
+      "en": "ALIGN +V",
+      "ru": "НА +V",
+      "zh-Hans": "对准 +V",
+      "es": "ALINEAR +V",
+      "ja": "+V 整列"
+    },
+    "cockpit.action.align_backward": {
+      "en": "ALIGN -V",
+      "ru": "НА -V",
+      "zh-Hans": "对准 -V",
+      "es": "ALINEAR -V",
+      "ja": "-V 整列"
+    },
+    "cockpit.action.brake": {
+      "en": "BRAKE",
+      "ru": "ТОРМОЖЕНИЕ",
+      "zh-Hans": "制动",
+      "es": "FRENAR",
+      "ja": "制動"
+    },
+    "hud.time_simulation_mode": {
+      "en": "TIME SIMULATION MODE",
+      "ru": "РЕЖИМ СИМУЛЯЦИИ ВРЕМЕНИ",
+      "zh-Hans": "时间模拟模式",
+      "es": "MODO DE SIMULACIÓN TEMPORAL",
+      "ja": "時間シミュレーションモード"
+    }
+  }
+}

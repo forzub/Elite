@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "10",
+  "names": {
+    "en": "Gliese 581"
+  },
+  "bodies": {
+    "10:system_10.Gliese_581": {
+      "en": "Gliese 581"
+    },
+    "10:system_10.Gliese_581.Gliese_581_b": {
+      "en": "Gliese 581 b"
+    },
+    "10:system_10.Gliese_581.Gliese_581_c": {
+      "en": "Gliese 581 c"
+    },
+    "10:system_10.Gliese_581.Gliese_581_d": {
+      "en": "Gliese 581 d"
+    },
+    "10:system_10.Gliese_581.Gliese_581_d.Gliese_581_d-I": {
+      "en": "Gliese 581 d-I"
+    },
+    "10:system_10.Gliese_581.Gliese_581_e": {
+      "en": "Gliese 581 e"
+    },
+    "10:system_10.Gliese_581.Gliese_581_g": {
+      "en": "Gliese 581 g"
+    },
+    "10:system_10.barycenter.belt_0": {
+      "en": "Gliese 581 Belt"
+    },
+    "10:system_10.barycenter.belt_1": {
+      "en": "Gliese 581 Kuiper Belt"
+    }
+  }
+}

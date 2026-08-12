@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "44",
+  "names": {
+    "en": "HD 33564"
+  },
+  "bodies": {
+    "44:system_44.HD_33564_A": {
+      "en": "HD 33564 A"
+    },
+    "44:system_44.HD_33564_A.HD_33564_b": {
+      "en": "HD 33564 b"
+    },
+    "44:system_44.HD_33564_A.HD_33564_b.HD_33564_b-I": {
+      "en": "HD 33564 b-I"
+    },
+    "44:system_44.HD_33564_A.HD_33564_b.HD_33564_b-II": {
+      "en": "HD 33564 b-II"
+    },
+    "44:system_44.HD_33564_B": {
+      "en": "HD 33564 B"
+    },
+    "44:system_44.barycenter.belt_0": {
+      "en": "HD 33564 Belt"
+    },
+    "44:system_44.barycenter.belt_1": {
+      "en": "HD 33564 Kuiper Belt"
+    }
+  }
+}

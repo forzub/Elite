@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "kind": "languages",
+  "default_locale": "en",
+  "locale_order": [
+    "en",
+    "ru",
+    "zh-Hans",
+    "es",
+    "ja"
+  ],
+  "languages": {
+    "en": {
+      "en": "English",
+      "ru": "Английский",
+      "zh-Hans": "英语",
+      "es": "Inglés",
+      "ja": "英語"
+    },
+    "ru": {
+      "en": "Russian",
+      "ru": "Русский",
+      "zh-Hans": "俄语",
+      "es": "Ruso",
+      "ja": "ロシア語"
+    },
+    "zh-Hans": {
+      "en": "Chinese",
+      "ru": "Китайский",
+      "zh-Hans": "中文",
+      "es": "Chino",
+      "ja": "中国語"
+    },
+    "es": {
+      "en": "Spanish",
+      "ru": "Испанский",
+      "zh-Hans": "西班牙语",
+      "es": "Español",
+      "ja": "スペイン語"
+    },
+    "ja": {
+      "en": "Japanese",
+      "ru": "Японский",
+      "zh-Hans": "日语",
+      "es": "Japonés",
+      "ja": "日本語"
+    }
+  }
+}

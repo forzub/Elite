@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "21",
+  "names": {
+    "en": "GJ 1214"
+  },
+  "bodies": {
+    "21:system_21.GJ_1214": {
+      "en": "GJ 1214"
+    },
+    "21:system_21.GJ_1214.GJ_1214_b": {
+      "en": "GJ 1214 b"
+    },
+    "21:system_21.GJ_1214.GJ_1214_c": {
+      "en": "GJ 1214 c"
+    },
+    "21:system_21.GJ_1214.GJ_1214_d": {
+      "en": "GJ 1214 d"
+    },
+    "21:system_21.GJ_1214.GJ_1214_d.GJ_1214_d-I": {
+      "en": "GJ 1214 d-I"
+    },
+    "21:system_21.barycenter.belt_0": {
+      "en": "GJ 1214 Belt"
+    },
+    "21:system_21.barycenter.belt_1": {
+      "en": "GJ 1214 Kuiper Belt"
+    }
+  }
+}

@@ -12,6 +12,7 @@ public:
 
     void start(int port, const std::string& rootDir);
     void stop();
+    void setVirtualFile(const std::string& resource, const std::string& content, const std::string& contentType);
 
     void broadcast(const HtmlUiMessage& msg);
     std::vector<HtmlUiMessage> popCommands();

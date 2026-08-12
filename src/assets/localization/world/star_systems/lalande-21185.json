@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "4",
+  "names": {
+    "en": "Lalande 21185"
+  },
+  "bodies": {
+    "4:system_4.Lalande_21185": {
+      "en": "Lalande 21185"
+    },
+    "4:system_4.Lalande_21185.Lalande_b": {
+      "en": "Lalande b"
+    },
+    "4:system_4.Lalande_21185.Lalande_b.Lalande_b-I": {
+      "en": "Lalande b-I"
+    },
+    "4:system_4.Lalande_21185.Lalande_c": {
+      "en": "Lalande c"
+    },
+    "4:system_4.Lalande_21185.Lalande_d": {
+      "en": "Lalande d"
+    },
+    "4:system_4.Lalande_21185.Lalande_e": {
+      "en": "Lalande e"
+    },
+    "4:system_4.Lalande_21185.Lalande_e.Lalande_e-I": {
+      "en": "Lalande e-I"
+    },
+    "4:system_4.Lalande_21185.Lalande_e.Lalande_e-II": {
+      "en": "Lalande e-II"
+    },
+    "4:system_4.barycenter.belt_0": {
+      "en": "Lalande 21185 Belt"
+    },
+    "4:system_4.barycenter.belt_1": {
+      "en": "Lalande 21185 Kuiper Belt"
+    }
+  }
+}

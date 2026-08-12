@@ -9,6 +9,7 @@ class HtmlUiManager
 public:
     void start(int port, const std::string& rootDir);
     void stop();
+    void setVirtualFile(const std::string& resource, const std::string& content, const std::string& contentType);
 
     void setViewport(int width, int height);
     void setActivePanel(HtmlUiPanelId panel);

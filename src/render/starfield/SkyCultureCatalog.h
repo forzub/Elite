@@ -35,6 +35,7 @@ public:
     };
 
     bool loadManifest(const std::string& manifestPath);
+    bool loadLocalizationDirectory(const std::string& rootPath);
 
     const std::vector<Culture>& cultures() const { return m_cultures; }
     const Culture* culture(std::size_t index) const;

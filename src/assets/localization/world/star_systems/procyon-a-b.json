@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "52",
+  "names": {
+    "en": "Procyon A+B"
+  },
+  "bodies": {
+    "52:system_52.Procyon_A": {
+      "en": "Procyon A"
+    },
+    "52:system_52.Procyon_B": {
+      "en": "Procyon B"
+    },
+    "52:system_52.Procyon_B.belt_0": {
+      "en": "Procyon A+B Belt"
+    },
+    "52:system_52.barycenter.belt_0": {
+      "en": "Procyon Kuiper Belt"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "3",
+  "names": {
+    "en": "Wolf 359"
+  },
+  "bodies": {
+    "3:system_3.Wolf_359": {
+      "en": "Wolf 359"
+    },
+    "3:system_3.Wolf_359.belt_0": {
+      "en": "Wolf 359 Belt"
+    },
+    "3:system_3.barycenter.belt_0": {
+      "en": "Wolf 359 Belt"
+    },
+    "3:system_3.barycenter.belt_1": {
+      "en": "Wolf 359 Kuiper Belt"
+    }
+  }
+}

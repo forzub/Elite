@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "2",
+  "names": {
+    "en": "Barnard's Star",
+    "ru": "Звезда Барнарда",
+    "zh-Hans": "巴纳德星",
+    "es": "Estrella de Barnard",
+    "ja": "バーナード星"
+  },
+  "bodies": {
+    "2:system_2.Barnard's_Star": {
+      "en": "Barnard's Star"
+    },
+    "2:system_2.Barnard's_Star.Barnard_b": {
+      "en": "Barnard b"
+    },
+    "2:system_2.Barnard's_Star.Barnard_c": {
+      "en": "Barnard c"
+    },
+    "2:system_2.Barnard's_Star.Barnard_c.Barnard_c-I": {
+      "en": "Barnard c-I"
+    },
+    "2:system_2.Barnard's_Star.Barnard_d": {
+      "en": "Barnard d"
+    },
+    "2:system_2.Barnard's_Star.Barnard_e": {
+      "en": "Barnard e"
+    },
+    "2:system_2.Barnard's_Star.Barnard_f": {
+      "en": "Barnard f"
+    },
+    "2:system_2.Barnard's_Star.Barnard_f.Barnard_f-I": {
+      "en": "Barnard f-I"
+    },
+    "2:system_2.Barnard's_Star.Barnard_g": {
+      "en": "Barnard g"
+    },
+    "2:system_2.Barnard's_Star.Barnard_g.Barnard_g-I": {
+      "en": "Barnard g-I"
+    },
+    "2:system_2.barycenter.belt_0": {
+      "en": "Barnard's Star Belt"
+    },
+    "2:system_2.barycenter.belt_1": {
+      "en": "Barnard's Star Kuiper Belt"
+    }
+  }
+}

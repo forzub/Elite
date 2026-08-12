@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "kind": "sky_constellation_names",
+  "culture_id": "iau-western",
+  "entries": {
+    "And": {
+      "en": "Andromeda",
+      "ru": "Андромеда"
+    },
+    "Ant": {
+      "en": "Antlia",
+      "ru": "Насос"
+    },
+    "Aps": {
+      "en": "Apus",
+      "ru": "Райская Птица"
+    },
+    "Aql": {
+      "en": "Aquila",
+      "ru": "Орёл"
+    },
+    "Aqr": {
+      "en": "Aquarius",
+      "ru": "Водолей"
+    },
+    "Ara": {
+      "en": "Ara",
+      "ru": "Жертвенник"
+    },
+    "Ari": {
+      "en": "Aries",
+      "ru": "Овен"
+    },
+    "Aur": {
+      "en": "Auriga",
+      "ru": "Возничий"
+    },
+    "Boo": {
+      "en": "Boötes",
+      "ru": "Волопас"
+    },
+    "CMa": {
+      "en": "Canis Major",
+      "ru": "Большой Пёс"
+    },
+    "CMi": {
+      "en": "Canis Minor",
+      "ru": "Малый Пёс"
+    },
+    "CVn": {
+      "en": "Canes Venatici",
+      "ru": "Гончие Псы"
+    },
+    "Cae": {
+      "en": "Caelum",
+      "ru": "Резец"
+    },
+    "Cam": {
+      "en": "Camelopardalis",
+      "ru": "Жираф"
+    },
+    "Cap": {
+      "en": "Capricornus",
+      "ru": "Козерог"
+    },
+    "Car": {
+      "en": "Carina",
+      "ru": "Киль"
+    },
+    "Cas": {
+      "en": "Cassiopeia",
+      "ru": "Кассиопея"
+    },
+    "Cen": {
+      "en": "Centaurus",
+      "ru": "Центавр"
+    },
+    "Cep": {
+      "en": "Cepheus",
+      "ru": "Цефей"
+    },
+    "Cet": {
+      "en": "Cetus",
+      "ru": "Кит"
+    },
+    "Cha": {
+      "en": "Chamaeleon",
+      "ru": "Хамелеон"
+    },
+    "Cir": {
+      "en": "Circinus",
+      "ru": "Циркуль"
+    },
+    "Cnc": {
+      "en": "Cancer",
+      "ru": "Рак"
+    },
+    "Col": {
+      "en": "Columba",
+      "ru": "Голубь"
+    },
+    "Com": {
+      "en": "Coma Berenices",
+      "ru": "Волосы Вероники"
+    },
+    "CrA": {
+      "en": "Corona Australis",
+      "ru": "Южная Корона"
+    },
+    "CrB": {
+      "en": "Corona Borealis",
+      "ru": "Северная Корона"
+    },
+    "Crt": {
+      "en": "Crater",
+      "ru": "Чаша"
+    },
+    "Cru": {
+      "en": "Crux",
+      "ru": "Южный Крест"
+    },
+    "Crv": {
+      "en": "Corvus",
+      "ru": "Ворон"
+    },
+    "Cyg": {
+      "en": "Cygnus",
+      "ru": "Лебедь"
+    },
+    "Del": {
+      "en": "Delphinus",
+      "ru": "Дельфин"
+    },
+    "Dor": {
+      "en": "Dorado",
+      "ru": "Золотая Рыба"
+    },
+    "Dra": {
+      "en": "Draco",
+      "ru": "Дракон"
+    },
+    "Equ": {
+      "en": "Equuleus",
+      "ru": "Малый Конь"
+    },
+    "Eri": {
+      "en": "Eridanus",
+      "ru": "Эридан"
+    },
+    "For": {
+      "en": "Fornax",
+      "ru": "Печь"
+    },
+    "Gem": {
+      "en": "Gemini",
+      "ru": "Близнецы"
+    },
+    "Gru": {
+      "en": "Grus",
+      "ru": "Журавль"
+    },
+    "Her": {
+      "en": "Hercules",
+      "ru": "Геркулес"
+    },
+    "Hor": {
+      "en": "Horologium",
+      "ru": "Часы"
+    },
+    "Hya": {
+      "en": "Hydra",
+      "ru": "Гидра"
+    },
+    "Hyi": {
+      "en": "Hydrus",
+      "ru": "Южная Гидра"
+    },
+    "Ind": {
+      "en": "Indus",
+      "ru": "Индеец"
+    },
+    "LMi": {
+      "en": "Leo Minor",
+      "ru": "Малый Лев"
+    },
+    "Lac": {
+      "en": "Lacerta",
+      "ru": "Ящерица"
+    },
+    "Leo": {
+      "en": "Leo",
+      "ru": "Лев"
+    },
+    "Lep": {
+      "en": "Lepus",
+      "ru": "Заяц"
+    },
+    "Lib": {
+      "en": "Libra",
+      "ru": "Весы"
+    },
+    "Lup": {
+      "en": "Lupus",
+      "ru": "Волк"
+    },
+    "Lyn": {
+      "en": "Lynx",
+      "ru": "Рысь"
+    },
+    "Lyr": {
+      "en": "Lyra",
+      "ru": "Лира"
+    },
+    "Men": {
+      "en": "Mensa",
+      "ru": "Столовая Гора"
+    },
+    "Mic": {
+      "en": "Microscopium",
+      "ru": "Микроскоп"
+    },
+    "Mon": {
+      "en": "Monoceros",
+      "ru": "Единорог"
+    },
+    "Mus": {
+      "en": "Musca",
+      "ru": "Муха"
+    },
+    "Nor": {
+      "en": "Norma",
+      "ru": "Наугольник"
+    },
+    "Oct": {
+      "en": "Octans",
+      "ru": "Октант"
+    },
+    "Oph": {
+      "en": "Ophiuchus",
+      "ru": "Змееносец"
+    },
+    "Ori": {
+      "en": "Orion",
+      "ru": "Орион"
+    },
+    "Pav": {
+      "en": "Pavo",
+      "ru": "Павлин"
+    },
+    "Peg": {
+      "en": "Pegasus",
+      "ru": "Пегас"
+    },
+    "Per": {
+      "en": "Perseus",
+      "ru": "Персей"
+    },
+    "Phe": {
+      "en": "Phoenix",
+      "ru": "Феникс"
+    },
+    "Pic": {
+      "en": "Pictor",
+      "ru": "Живописец"
+    },
+    "PsA": {
+      "en": "Piscis Austrinus",
+      "ru": "Южная Рыба"
+    },
+    "Psc": {
+      "en": "Pisces",
+      "ru": "Рыбы"
+    },
+    "Pup": {
+      "en": "Puppis",
+      "ru": "Корма"
+    },
+    "Pyx": {
+      "en": "Pyxis",
+      "ru": "Компас"
+    },
+    "Ret": {
+      "en": "Reticulum",
+      "ru": "Сетка"
+    },
+    "Scl": {
+      "en": "Sculptor",
+      "ru": "Скульптор"
+    },
+    "Sco": {
+      "en": "Scorpius",
+      "ru": "Скорпион"
+    },
+    "Sct": {
+      "en": "Scutum",
+      "ru": "Щит"
+    },
+    "Ser": {
+      "en": "Serpens",
+      "ru": "Змея"
+    },
+    "Sex": {
+      "en": "Sextans",
+      "ru": "Секстант"
+    },
+    "Sge": {
+      "en": "Sagitta",
+      "ru": "Стрела"
+    },
+    "Sgr": {
+      "en": "Sagittarius",
+      "ru": "Стрелец"
+    },
+    "Tau": {
+      "en": "Taurus",
+      "ru": "Телец"
+    },
+    "Tel": {
+      "en": "Telescopium",
+      "ru": "Телескоп"
+    },
+    "TrA": {
+      "en": "Triangulum Australe",
+      "ru": "Южный Треугольник"
+    },
+    "Tri": {
+      "en": "Triangulum",
+      "ru": "Треугольник"
+    },
+    "Tuc": {
+      "en": "Tucana",
+      "ru": "Тукан"
+    },
+    "UMa": {
+      "en": "Ursa Major",
+      "ru": "Большая Медведица"
+    },
+    "UMi": {
+      "en": "Ursa Minor",
+      "ru": "Малая Медведица"
+    },
+    "Vel": {
+      "en": "Vela",
+      "ru": "Паруса"
+    },
+    "Vir": {
+      "en": "Virgo",
+      "ru": "Дева"
+    },
+    "Vol": {
+      "en": "Volans",
+      "ru": "Летучая Рыба"
+    },
+    "Vul": {
+      "en": "Vulpecula",
+      "ru": "Лисичка"
+    }
+  }
+}

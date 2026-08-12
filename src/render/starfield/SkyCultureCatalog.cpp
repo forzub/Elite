@@ -162,6 +162,187 @@ bool SkyCultureCatalog::loadManifest(const std::string& manifestPath)
     return true;
 }
 
+bool SkyCultureCatalog::loadLocalizationDirectory(
+    const std::string& rootPath
+)
+{
+    namespace fs = std::filesystem;
+    const fs::path root(rootPath);
+    if (!fs::exists(root) || !fs::is_directory(root))
+        return false;
+
+    std::vector<fs::path> files;
+    try
+    {
+        for (const auto& entry : fs::recursive_directory_iterator(root))
+        {
+            if (entry.is_regular_file() && entry.path().extension() == ".json")
+                files.push_back(entry.path());
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[SkyCulture] localization scan failed: "
+                  << e.what() << std::endl;
+        return false;
+    }
+
+    std::sort(files.begin(), files.end(), [](const fs::path& a, const fs::path& b)
+    {
+        return a.generic_string() < b.generic_string();
+    });
+
+    std::unordered_set<std::string> cultureNameSources;
+    std::unordered_set<std::string> constellationNameSources;
+    std::size_t loadedFiles = 0;
+    std::size_t skippedFiles = 0;
+
+    for (const fs::path& path : files)
+    {
+        json rootJson;
+        try
+        {
+            std::ifstream input(path);
+            if (!input)
+            {
+                ++skippedFiles;
+                continue;
+            }
+            input >> rootJson;
+        }
+        catch (const std::exception& e)
+        {
+            ++skippedFiles;
+            std::cerr << "[SkyCulture] skipped localization "
+                      << path.generic_string() << ": " << e.what() << std::endl;
+            continue;
+        }
+
+        if (!rootJson.is_object() || rootJson.value("schema_version", 0) != 1)
+        {
+            ++skippedFiles;
+            std::cerr << "[SkyCulture] skipped localization "
+                      << path.generic_string() << ": invalid schema" << std::endl;
+            continue;
+        }
+
+        const std::string kind = rootJson.value("kind", std::string());
+        if (kind != "sky_culture_names" && kind != "sky_constellation_names")
+            continue;
+
+        const std::string cultureId = rootJson.value("culture_id", std::string());
+        Culture* culture = nullptr;
+        for (Culture& candidate : m_cultures)
+        {
+            if (candidate.id == cultureId)
+            {
+                culture = &candidate;
+                break;
+            }
+        }
+        if (!culture)
+        {
+            ++skippedFiles;
+            std::cerr << "[SkyCulture] skipped localization "
+                      << path.generic_string() << ": unknown culture "
+                      << cultureId << std::endl;
+            continue;
+        }
+
+        if (kind == "sky_culture_names")
+        {
+            std::unordered_map<std::string, std::string> names;
+            if (!rootJson.contains("names") ||
+                !parseNameMap(rootJson["names"], names) ||
+                names.find("en") == names.end())
+            {
+                ++skippedFiles;
+                std::cerr << "[SkyCulture] skipped localization "
+                          << path.generic_string() << ": invalid culture names"
+                          << std::endl;
+                continue;
+            }
+            if (!cultureNameSources.emplace(cultureId).second)
+            {
+                ++skippedFiles;
+                std::cerr << "[SkyCulture] duplicate culture names ignored for "
+                          << cultureId << " in " << path.generic_string()
+                          << std::endl;
+                continue;
+            }
+            culture->localizedNames = std::move(names);
+            ++loadedFiles;
+            continue;
+        }
+
+        if (!rootJson.contains("entries") || !rootJson["entries"].is_object())
+        {
+            ++skippedFiles;
+            std::cerr << "[SkyCulture] skipped localization "
+                      << path.generic_string() << ": invalid constellation table"
+                      << std::endl;
+            continue;
+        }
+
+        bool valid = true;
+        std::vector<std::pair<std::size_t, std::unordered_map<std::string, std::string>>> staged;
+        for (auto it = rootJson["entries"].begin(); it != rootJson["entries"].end(); ++it)
+        {
+            auto constellationIt = std::find_if(
+                culture->constellations.begin(), culture->constellations.end(),
+                [&](const Constellation& c) { return c.id == it.key(); }
+            );
+            if (constellationIt == culture->constellations.end())
+            {
+                valid = false;
+                break;
+            }
+
+            std::unordered_map<std::string, std::string> names;
+            if (!parseNameMap(it.value(), names) || names.find("en") == names.end())
+            {
+                valid = false;
+                break;
+            }
+
+            const std::string sourceKey = cultureId + "/" + it.key();
+            if (constellationNameSources.find(sourceKey) != constellationNameSources.end())
+            {
+                valid = false;
+                break;
+            }
+            staged.emplace_back(
+                static_cast<std::size_t>(std::distance(culture->constellations.begin(), constellationIt)),
+                std::move(names)
+            );
+        }
+
+        if (!valid)
+        {
+            ++skippedFiles;
+            std::cerr << "[SkyCulture] skipped localization "
+                      << path.generic_string()
+                      << ": unknown/duplicate constellation or missing English name"
+                      << std::endl;
+            continue;
+        }
+
+        for (auto& [index, names] : staged)
+        {
+            constellationNameSources.emplace(
+                cultureId + "/" + culture->constellations[index].id
+            );
+            culture->constellations[index].localizedNames = std::move(names);
+        }
+        ++loadedFiles;
+    }
+
+    std::cout << "[SkyCulture] localization root=" << rootPath
+              << " loaded=" << loadedFiles
+              << " skipped=" << skippedFiles << std::endl;
+    return loadedFiles > 0;
+}
+
 bool SkyCultureCatalog::loadCultureFile(
     const std::string& path,
     const std::string& expectedId,
@@ -193,9 +374,6 @@ bool SkyCultureCatalog::loadCultureFile(
 
     Culture culture;
     culture.id = expectedId;
-    if (root.contains("culture_names"))
-        parseNameMap(root["culture_names"], culture.localizedNames);
-
     const std::string identifier = root.value("star_identifier", std::string());
     if (identifier == "hr")
         culture.starIdentifier = StarIdentifier::BrightStarHr;
@@ -218,9 +396,7 @@ bool SkyCultureCatalog::loadCultureFile(
         constellation.id = item["id"].get<std::string>();
         if (constellation.id.empty() || !constellationIds.emplace(constellation.id).second)
             return false;
-        constellation.name = item.value("name", constellation.id);
-        if (item.contains("names"))
-            parseNameMap(item["names"], constellation.localizedNames);
+        constellation.name = constellation.id;
 
         for (const auto& polylineJson : item["polylines"])
         {

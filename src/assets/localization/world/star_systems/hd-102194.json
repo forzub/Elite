@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "19",
+  "names": {
+    "en": "HD 102194"
+  },
+  "bodies": {
+    "19:system_19.HD_102194": {
+      "en": "HD 102194"
+    },
+    "19:system_19.HD_102194.HD_102194_b": {
+      "en": "HD 102194 b"
+    },
+    "19:system_19.HD_102194.HD_102194_c": {
+      "en": "HD 102194 c"
+    },
+    "19:system_19.HD_102194.HD_102194_d": {
+      "en": "HD 102194 d"
+    },
+    "19:system_19.HD_102194.HD_102194_d.HD_102194_d-I": {
+      "en": "HD 102194 d-I"
+    },
+    "19:system_19.HD_102194.HD_102194_d.HD_102194_d-II": {
+      "en": "HD 102194 d-II"
+    },
+    "19:system_19.barycenter.belt_0": {
+      "en": "HD 102194 Belt"
+    },
+    "19:system_19.barycenter.belt_1": {
+      "en": "HD 102194 Kuiper Belt"
+    }
+  }
+}

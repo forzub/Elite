@@ -10,6 +10,15 @@ void HtmlUiManager::stop()
     m_bridge.stop();
 }
 
+void HtmlUiManager::setVirtualFile(
+    const std::string& resource,
+    const std::string& content,
+    const std::string& contentType
+)
+{
+    m_bridge.setVirtualFile(resource, content, contentType);
+}
+
 void HtmlUiManager::setViewport(int width, int height)
 {
     m_state.viewport.width = width;

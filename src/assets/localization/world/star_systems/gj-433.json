@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "51",
+  "names": {
+    "en": "GJ 433"
+  },
+  "bodies": {
+    "51:system_51.GJ_433": {
+      "en": "GJ 433"
+    },
+    "51:system_51.GJ_433.GJ_433_b": {
+      "en": "GJ 433 b"
+    },
+    "51:system_51.GJ_433.GJ_433_b.GJ_433_b-I": {
+      "en": "GJ 433 b-I"
+    },
+    "51:system_51.GJ_433.GJ_433_c": {
+      "en": "GJ 433 c"
+    },
+    "51:system_51.GJ_433.GJ_433_d": {
+      "en": "GJ 433 d"
+    },
+    "51:system_51.GJ_433.GJ_433_d.GJ_433_d-I": {
+      "en": "GJ 433 d-I"
+    },
+    "51:system_51.barycenter.belt_0": {
+      "en": "GJ 433 Belt"
+    },
+    "51:system_51.barycenter.belt_1": {
+      "en": "GJ 433 Kuiper Belt"
+    }
+  }
+}

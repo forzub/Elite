@@ -52,7 +52,9 @@ for forbidden in (
         fail(f"hard-coded player-only motion limit returned: {forbidden}")
 
 for token in (
-    "ctrlDown && keys.isKeyPressed(GLFW_KEY_F10)",
+    "const bool f10Down = keys.isKeyPressed(GLFW_KEY_F10)",
+    "CtrlF10State::ReleaseDebounce",
+    "kCtrlF10ReleaseDebounceSamples",
     "GLFW_KEY_HOME",
     "GLFW_KEY_INSERT",
     "GLFW_KEY_END",

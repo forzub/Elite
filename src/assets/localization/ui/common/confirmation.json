@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "confirm.title": {
+      "en": "CONFIRM EXIT",
+      "ru": "ПОДТВЕРДИТЕ ВЫХОД",
+      "zh-Hans": "确认退出",
+      "es": "CONFIRMAR SALIDA",
+      "ja": "終了確認"
+    },
+    "confirm.continue": {
+      "en": "CONTINUE",
+      "ru": "ПРОДОЛЖИТЬ",
+      "zh-Hans": "继续",
+      "es": "CONTINUAR",
+      "ja": "続ける"
+    },
+    "confirm.save": {
+      "en": "SAVE",
+      "ru": "СОХРАНИТЬ",
+      "zh-Hans": "保存",
+      "es": "GUARDAR",
+      "ja": "保存"
+    },
+    "confirm.load": {
+      "en": "LOAD",
+      "ru": "ЗАГРУЗИТЬ",
+      "zh-Hans": "载入",
+      "es": "CARGAR",
+      "ja": "ロード"
+    },
+    "confirm.exit_to_menu": {
+      "en": "EXIT TO MENU",
+      "ru": "ВЫЙТИ В МЕНЮ",
+      "zh-Hans": "退出到菜单",
+      "es": "SALIR AL MENÚ",
+      "ja": "メニューへ戻る"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "57",
+  "names": {
+    "en": "HD 10360"
+  },
+  "bodies": {
+    "57:system_57.HD_10360": {
+      "en": "HD 10360"
+    },
+    "57:system_57.HD_10360.HD_10360_b": {
+      "en": "HD 10360 b"
+    },
+    "57:system_57.HD_10360.HD_10360_c": {
+      "en": "HD 10360 c"
+    },
+    "57:system_57.HD_10360.HD_10360_c.HD_10360_c-I": {
+      "en": "HD 10360 c-I"
+    },
+    "57:system_57.HD_10360.HD_10360_d": {
+      "en": "HD 10360 d"
+    },
+    "57:system_57.HD_10360.HD_10360_e": {
+      "en": "HD 10360 e"
+    },
+    "57:system_57.HD_10360.HD_10360_e.HD_10360_e-I": {
+      "en": "HD 10360 e-I"
+    },
+    "57:system_57.barycenter.belt_0": {
+      "en": "HD 10360 Belt"
+    },
+    "57:system_57.barycenter.belt_1": {
+      "en": "HD 10360 Kuiper Belt"
+    }
+  }
+}

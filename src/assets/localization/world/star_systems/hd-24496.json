@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "40",
+  "names": {
+    "en": "HD 24496"
+  },
+  "bodies": {
+    "40:system_40.HD_24496": {
+      "en": "HD 24496"
+    },
+    "40:system_40.HD_24496.HD_24496_b": {
+      "en": "HD 24496 b"
+    },
+    "40:system_40.HD_24496.HD_24496_b.HD_24496_b-I": {
+      "en": "HD 24496 b-I"
+    },
+    "40:system_40.HD_24496.HD_24496_b.HD_24496_b-II": {
+      "en": "HD 24496 b-II"
+    },
+    "40:system_40.HD_24496.HD_24496_c": {
+      "en": "HD 24496 c"
+    },
+    "40:system_40.HD_24496.HD_24496_d": {
+      "en": "HD 24496 d"
+    },
+    "40:system_40.HD_24496.HD_24496_d.HD_24496_d-I": {
+      "en": "HD 24496 d-I"
+    },
+    "40:system_40.barycenter.belt_0": {
+      "en": "HD 24496 Belt"
+    },
+    "40:system_40.barycenter.belt_1": {
+      "en": "HD 24496 Kuiper Belt"
+    }
+  }
+}

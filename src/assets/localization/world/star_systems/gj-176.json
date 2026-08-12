@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "49",
+  "names": {
+    "en": "GJ 176"
+  },
+  "bodies": {
+    "49:system_49.GJ_176": {
+      "en": "GJ 176"
+    },
+    "49:system_49.GJ_176.GJ_176_b": {
+      "en": "GJ 176 b"
+    },
+    "49:system_49.GJ_176.GJ_176_c": {
+      "en": "GJ 176 c"
+    },
+    "49:system_49.GJ_176.GJ_176_d": {
+      "en": "GJ 176 d"
+    },
+    "49:system_49.GJ_176.GJ_176_d.GJ_176_d-I": {
+      "en": "GJ 176 d-I"
+    },
+    "49:system_49.barycenter.belt_0": {
+      "en": "GJ 176 Belt"
+    },
+    "49:system_49.barycenter.belt_1": {
+      "en": "GJ 176 Kuiper Belt"
+    }
+  }
+}

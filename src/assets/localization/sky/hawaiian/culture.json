@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "sky_culture_names",
+  "culture_id": "hawaiian-starlines",
+  "names": {
+    "en": "Hawaiian Star Lines",
+    "native": "Hawaiian Star Lines",
+    "ru": "Гавайские звёздные линии",
+    "zh": "夏威夷星线",
+    "zh-Hans": "夏威夷星线",
+    "ja": "ハワイのスターライン"
+  }
+}

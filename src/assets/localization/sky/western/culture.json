@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "kind": "sky_culture_names",
+  "culture_id": "iau-western",
+  "names": {
+    "en": "Western / IAU",
+    "ru": "Западная / IAU",
+    "zh": "西方 / IAU",
+    "zh-Hans": "西方 / IAU",
+    "ja": "西洋 / IAU"
+  }
+}

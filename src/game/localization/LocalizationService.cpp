@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <cctype>
 #include <exception>
+#include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <utility>
 
 #include <nlohmann/json.hpp>
@@ -13,6 +15,7 @@ namespace game::localization
 namespace
 {
 using json = nlohmann::json;
+namespace fs = std::filesystem;
 
 bool readTranslationMap(
     const json& source,
@@ -24,7 +27,7 @@ bool readTranslationMap(
 
     for (auto it = source.begin(); it != source.end(); ++it)
     {
-        if (it.value().is_string())
+        if (it.value().is_string() && !it.value().get<std::string>().empty())
             out[it.key()] = it.value().get<std::string>();
     }
 
@@ -33,7 +36,8 @@ bool readTranslationMap(
 
 bool readTranslationTable(
     const json& source,
-    LocalizationService::TranslationTable& out
+    LocalizationService::TranslationTable& out,
+    bool requireEnglish
 )
 {
     if (!source.is_object())
@@ -42,8 +46,11 @@ bool readTranslationTable(
     for (auto it = source.begin(); it != source.end(); ++it)
     {
         LocalizationService::TranslationMap translations;
-        if (readTranslationMap(it.value(), translations))
-            out[it.key()] = std::move(translations);
+        if (!readTranslationMap(it.value(), translations))
+            return false;
+        if (requireEnglish && translations.find("en") == translations.end())
+            return false;
+        out[it.key()] = std::move(translations);
     }
 
     return true;
@@ -54,77 +61,397 @@ std::string baseLocale(const std::string& locale)
     const std::size_t split = locale.find_first_of("-_");
     return split == std::string::npos ? locale : locale.substr(0, split);
 }
+
+std::string pathText(const fs::path& path)
+{
+    return path.generic_string();
 }
 
-bool LocalizationService::load(
-    const std::string& uiStringsPath,
-    const std::string& catalogNamesPath
-)
+bool readJsonFile(const fs::path& path, json& root, std::string& error)
 {
-    json uiRoot;
-    json catalogRoot;
-
     try
     {
-        std::ifstream uiInput(uiStringsPath);
-        std::ifstream catalogInput(catalogNamesPath);
-        if (!uiInput.is_open() || !catalogInput.is_open())
-            return false;
-
-        uiInput >> uiRoot;
-        catalogInput >> catalogRoot;
-    }
-    catch (const std::exception&)
-    {
-        return false;
-    }
-
-    const std::string defaultLocale =
-        uiRoot.value("default_locale", std::string("en"));
-    if (defaultLocale.empty())
-        return false;
-
-    std::vector<std::string> localeOrder;
-    if (uiRoot.contains("locale_order") && uiRoot["locale_order"].is_array())
-    {
-        for (const auto& locale : uiRoot["locale_order"])
+        std::ifstream input(path);
+        if (!input.is_open())
         {
-            if (locale.is_string() && !locale.get<std::string>().empty())
-                localeOrder.push_back(locale.get<std::string>());
+            error = "cannot open file";
+            return false;
+        }
+        input >> root;
+        if (!root.is_object())
+        {
+            error = "root must be a JSON object";
+            return false;
+        }
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        error = e.what();
+        return false;
+    }
+}
+
+bool validateSchema(const json& root)
+{
+    return root.value("schema_version", 0) == 1;
+}
+}
+
+bool LocalizationService::loadDirectory(const std::string& rootPath)
+{
+    m_defaultLocale = "en";
+    m_localeOrder = {"en"};
+    m_uiStrings.clear();
+    m_languages.clear();
+    m_catalogNames.clear();
+    m_uiSources.clear();
+    m_catalogSources.clear();
+    m_loadedFileCount = 0;
+    m_skippedFileCount = 0;
+
+    const fs::path root(rootPath);
+    if (!fs::exists(root) || !fs::is_directory(root))
+    {
+        std::cerr << "[Localization] root not found: " << rootPath << '\n';
+        return false;
+    }
+
+    std::vector<fs::path> files;
+    try
+    {
+        for (const auto& entry : fs::recursive_directory_iterator(root))
+        {
+            if (entry.is_regular_file() && entry.path().extension() == ".json")
+                files.push_back(entry.path());
         }
     }
-    if (localeOrder.empty())
-        localeOrder.push_back(defaultLocale);
-    if (std::find(localeOrder.begin(), localeOrder.end(), "en") == localeOrder.end())
-        return false;
-
-    TranslationTable uiStrings;
-    TranslationTable languages;
-    if (!uiRoot.contains("strings") ||
-        !readTranslationTable(uiRoot["strings"], uiStrings))
+    catch (const std::exception& e)
     {
+        std::cerr << "[Localization] directory scan failed: " << e.what() << '\n';
         return false;
     }
-    if (uiRoot.contains("languages"))
-        readTranslationTable(uiRoot["languages"], languages);
 
-    std::unordered_map<std::string, TranslationTable> catalogNames;
-    if (catalogRoot.contains("domains") && catalogRoot["domains"].is_object())
+    // Filesystem iteration order is not a contract. Sort first so duplicate
+    // handling is deterministic on every platform: first valid definition wins.
+    std::sort(files.begin(), files.end(), [](const fs::path& a, const fs::path& b)
     {
-        for (auto it = catalogRoot["domains"].begin();
-             it != catalogRoot["domains"].end(); ++it)
+        return a.generic_string() < b.generic_string();
+    });
+
+    bool languagesLoaded = false;
+
+    auto reject = [&](const fs::path& path, const std::string& reason)
+    {
+        ++m_skippedFileCount;
+        std::cerr << "[Localization] skipped " << pathText(path)
+                  << ": " << reason << '\n';
+    };
+
+    auto mergeUi = [&](const fs::path& path, const TranslationTable& table)
+    {
+        for (const auto& [key, translations] : table)
+        {
+            const auto sourceIt = m_uiSources.find(key);
+            if (sourceIt != m_uiSources.end())
+            {
+                std::cerr << "[Localization] duplicate UI key " << key
+                          << " in " << pathText(path)
+                          << "; keeping " << sourceIt->second << '\n';
+                continue;
+            }
+            m_uiStrings.emplace(key, translations);
+            m_uiSources.emplace(key, pathText(path));
+        }
+    };
+
+    auto mergeCatalog = [&](const fs::path& path,
+                            const std::string& domain,
+                            const TranslationTable& table)
+    {
+        TranslationTable& target = m_catalogNames[domain];
+        auto& sources = m_catalogSources[domain];
+        for (const auto& [stableId, translations] : table)
+        {
+            const auto sourceIt = sources.find(stableId);
+            if (sourceIt != sources.end())
+            {
+                std::cerr << "[Localization] duplicate catalog object "
+                          << domain << '/' << stableId << " in " << pathText(path)
+                          << "; keeping " << sourceIt->second << '\n';
+                continue;
+            }
+            target.emplace(stableId, translations);
+            sources.emplace(stableId, pathText(path));
+        }
+    };
+
+    for (const fs::path& path : files)
+    {
+        json fileRoot;
+        std::string parseError;
+        if (!readJsonFile(path, fileRoot, parseError))
+        {
+            reject(path, parseError);
+            continue;
+        }
+        if (!validateSchema(fileRoot))
+        {
+            reject(path, "unsupported or missing schema_version");
+            continue;
+        }
+
+        const std::string kind = fileRoot.value("kind", std::string());
+        if (kind.empty())
+        {
+            reject(path, "missing kind");
+            continue;
+        }
+
+        if (kind == "languages")
+        {
+            if (languagesLoaded)
+            {
+                reject(path, "duplicate languages configuration");
+                continue;
+            }
+
+            const std::string defaultLocale =
+                fileRoot.value("default_locale", std::string());
+            std::vector<std::string> localeOrder;
+            bool localeOrderValid =
+                fileRoot.contains("locale_order") && fileRoot["locale_order"].is_array();
+            if (localeOrderValid)
+            {
+                for (const auto& value : fileRoot["locale_order"])
+                {
+                    if (!value.is_string() || value.get<std::string>().empty())
+                    {
+                        localeOrderValid = false;
+                        break;
+                    }
+                    localeOrder.push_back(value.get<std::string>());
+                }
+            }
+
+            TranslationTable languages;
+            const bool validLanguages =
+                localeOrderValid &&
+                !defaultLocale.empty() &&
+                !localeOrder.empty() &&
+                std::find(localeOrder.begin(), localeOrder.end(), "en") != localeOrder.end() &&
+                fileRoot.contains("languages") &&
+                readTranslationTable(fileRoot["languages"], languages, true);
+
+            if (!validLanguages)
+            {
+                reject(path, "invalid language registry or missing English fallback");
+                continue;
+            }
+
+            std::sort(localeOrder.begin(), localeOrder.end());
+            if (std::adjacent_find(localeOrder.begin(), localeOrder.end()) != localeOrder.end())
+            {
+                reject(path, "duplicate locale in locale_order");
+                continue;
+            }
+            // Preserve authored cycle order after duplicate validation.
+            localeOrder.clear();
+            for (const auto& value : fileRoot["locale_order"])
+                localeOrder.push_back(value.get<std::string>());
+
+            m_defaultLocale = defaultLocale;
+            m_localeOrder = std::move(localeOrder);
+            m_languages = std::move(languages);
+            languagesLoaded = true;
+            ++m_loadedFileCount;
+            continue;
+        }
+
+        if (kind == "ui_strings")
         {
             TranslationTable table;
-            if (readTranslationTable(it.value(), table))
-                catalogNames[it.key()] = std::move(table);
+            if (!fileRoot.contains("strings") ||
+                !readTranslationTable(fileRoot["strings"], table, true))
+            {
+                reject(path, "invalid UI translation table or missing English fallback");
+                continue;
+            }
+            mergeUi(path, table);
+            ++m_loadedFileCount;
+            continue;
         }
+
+        if (kind == "catalog")
+        {
+            const std::string domain = fileRoot.value("domain", std::string());
+            TranslationTable table;
+            if (domain.empty() || !fileRoot.contains("entries") ||
+                !readTranslationTable(fileRoot["entries"], table, true))
+            {
+                reject(path, "invalid catalog domain/entries");
+                continue;
+            }
+            mergeCatalog(path, domain, table);
+            ++m_loadedFileCount;
+            continue;
+        }
+
+        if (kind == "star_system")
+        {
+            std::string systemId;
+            if (fileRoot.contains("system_id") && fileRoot["system_id"].is_string())
+                systemId = fileRoot["system_id"].get<std::string>();
+            else if (fileRoot.contains("system_id") && fileRoot["system_id"].is_number_integer())
+                systemId = std::to_string(fileRoot["system_id"].get<long long>());
+
+            TranslationMap systemNames;
+            if (systemId.empty() || !fileRoot.contains("names") ||
+                !readTranslationMap(fileRoot["names"], systemNames) ||
+                systemNames.find("en") == systemNames.end())
+            {
+                reject(path, "invalid star-system ID/names");
+                continue;
+            }
+
+            TranslationTable bodyTable;
+            TranslationTable hubTable;
+            if (fileRoot.contains("bodies") &&
+                !readTranslationTable(fileRoot["bodies"], bodyTable, true))
+            {
+                reject(path, "invalid celestial-body table");
+                continue;
+            }
+            if (fileRoot.contains("hubs") &&
+                !readTranslationTable(fileRoot["hubs"], hubTable, true))
+            {
+                reject(path, "invalid hub table");
+                continue;
+            }
+
+            const std::string bodyPrefix = systemId + ':';
+            bool wrongSystem = false;
+            for (const auto& [stableId, _] : bodyTable)
+            {
+                if (stableId.rfind(bodyPrefix, 0) != 0)
+                {
+                    wrongSystem = true;
+                    break;
+                }
+            }
+            if (wrongSystem)
+            {
+                reject(path, "contains a body stable ID belonging to another system");
+                continue;
+            }
+
+            // Star-system files are isolation units: a semantic conflict in one
+            // file rejects that whole file rather than partially mixing two
+            // authored versions of the same system.
+            const auto systemDomainIt = m_catalogSources.find("systems");
+            if (systemDomainIt != m_catalogSources.end() &&
+                systemDomainIt->second.find(systemId) != systemDomainIt->second.end())
+            {
+                reject(path, "duplicate star-system ID " + systemId);
+                continue;
+            }
+
+            bool duplicateContainedObject = false;
+            const auto bodyDomainIt = m_catalogSources.find("bodies");
+            if (bodyDomainIt != m_catalogSources.end())
+            {
+                for (const auto& [stableId, _] : bodyTable)
+                {
+                    if (bodyDomainIt->second.find(stableId) != bodyDomainIt->second.end())
+                    {
+                        duplicateContainedObject = true;
+                        break;
+                    }
+                }
+            }
+            const auto hubDomainIt = m_catalogSources.find("hubs");
+            if (!duplicateContainedObject && hubDomainIt != m_catalogSources.end())
+            {
+                for (const auto& [stableId, _] : hubTable)
+                {
+                    if (hubDomainIt->second.find(stableId) != hubDomainIt->second.end())
+                    {
+                        duplicateContainedObject = true;
+                        break;
+                    }
+                }
+            }
+            if (duplicateContainedObject)
+            {
+                reject(path, "duplicates a celestial-body/hub stable ID from another file");
+                continue;
+            }
+
+            TranslationTable oneSystem;
+            oneSystem.emplace(systemId, std::move(systemNames));
+            mergeCatalog(path, "systems", oneSystem);
+            mergeCatalog(path, "bodies", bodyTable);
+            mergeCatalog(path, "hubs", hubTable);
+            ++m_loadedFileCount;
+            continue;
+        }
+
+        if (kind == "sky_culture_names")
+        {
+            const std::string cultureId = fileRoot.value("culture_id", std::string());
+            TranslationMap names;
+            if (cultureId.empty() || !fileRoot.contains("names") ||
+                !readTranslationMap(fileRoot["names"], names) ||
+                names.find("en") == names.end())
+            {
+                reject(path, "invalid sky-culture names");
+                continue;
+            }
+            TranslationTable one;
+            one.emplace(cultureId, std::move(names));
+            mergeCatalog(path, "sky_cultures", one);
+            ++m_loadedFileCount;
+            continue;
+        }
+
+        if (kind == "sky_constellation_names")
+        {
+            const std::string cultureId = fileRoot.value("culture_id", std::string());
+            TranslationTable entries;
+            if (cultureId.empty() || !fileRoot.contains("entries") ||
+                !readTranslationTable(fileRoot["entries"], entries, true))
+            {
+                reject(path, "invalid constellation-name table");
+                continue;
+            }
+            mergeCatalog(path, "sky_constellations/" + cultureId, entries);
+            ++m_loadedFileCount;
+            continue;
+        }
+
+        if (kind == "navigation_regions")
+        {
+            // NavigationRegionCatalog owns faction/cell resolution, but this
+            // file is still parsed here so corrupt localization JSON is visible
+            // during the same recursive scan.
+            if (!fileRoot.contains("regions") || !fileRoot["regions"].is_array())
+            {
+                reject(path, "invalid navigation-region table");
+                continue;
+            }
+            ++m_loadedFileCount;
+            continue;
+        }
+
+        reject(path, "unknown localization kind: " + kind);
     }
 
-    m_defaultLocale = defaultLocale;
-    m_localeOrder = std::move(localeOrder);
-    m_uiStrings = std::move(uiStrings);
-    m_languages = std::move(languages);
-    m_catalogNames = std::move(catalogNames);
+    if (!languagesLoaded)
+    {
+        std::cerr << "[Localization] no valid languages.json found under "
+                  << rootPath << '\n';
+        return false;
+    }
 
     if (std::find(m_localeOrder.begin(), m_localeOrder.end(), m_locale) ==
         m_localeOrder.end())
@@ -132,7 +459,13 @@ bool LocalizationService::load(
         m_locale = m_defaultLocale;
     }
 
-    return true;
+    std::cout << "[Localization] root=" << rootPath
+              << " loaded=" << m_loadedFileCount
+              << " skipped=" << m_skippedFileCount
+              << " ui_keys=" << m_uiStrings.size()
+              << " catalog_domains=" << m_catalogNames.size() << '\n';
+
+    return !m_uiStrings.empty();
 }
 
 bool LocalizationService::setLocale(const std::string& locale)
@@ -182,7 +515,6 @@ std::string LocalizationService::resolve(
             return *value;
     }
 
-    // English is the mandatory fallback language for all player-facing UI.
     if (const std::string* english = find("en"))
         return *english;
 
@@ -235,5 +567,16 @@ std::string LocalizationService::languageIndicator() const
     std::transform(value.begin(), value.end(), value.begin(),
         [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
     return value;
+}
+
+std::string LocalizationService::webUiBundleJson() const
+{
+    json root;
+    root["version"] = 1;
+    root["default_locale"] = m_defaultLocale;
+    root["locale_order"] = m_localeOrder;
+    root["languages"] = m_languages;
+    root["strings"] = m_uiStrings;
+    return root.dump();
 }
 }

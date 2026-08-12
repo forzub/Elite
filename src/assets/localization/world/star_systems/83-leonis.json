@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "45",
+  "names": {
+    "en": "83 Leonis"
+  },
+  "bodies": {
+    "45:system_45.83_Leonis_A": {
+      "en": "83 Leonis A"
+    },
+    "45:system_45.83_Leonis_A.83_Leonis_b": {
+      "en": "83 Leonis b"
+    },
+    "45:system_45.83_Leonis_A.83_Leonis_b.83_Leonis_b-I": {
+      "en": "83 Leonis b-I"
+    },
+    "45:system_45.83_Leonis_B": {
+      "en": "83 Leonis B"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_c": {
+      "en": "83 Leonis c"
+    },
+    "45:system_45.83_Leonis_B.83_Leonis_c.83_Leonis_c-I": {
+      "en": "83 Leonis c-I"
+    },
+    "45:system_45.barycenter.belt_0": {
+      "en": "83 Leonis Belt"
+    },
+    "45:system_45.barycenter.belt_1": {
+      "en": "83 Leonis Kuiper Belt"
+    }
+  }
+}

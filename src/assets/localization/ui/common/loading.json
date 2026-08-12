@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "loading.title": {
+      "en": "INITIALIZING FLIGHT SYSTEMS",
+      "ru": "ИНИЦИАЛИЗАЦИЯ БОРТОВЫХ СИСТЕМ",
+      "zh-Hans": "正在初始化飞行系统",
+      "es": "INICIALIZANDO SISTEMAS DE VUELO",
+      "ja": "飛行システム初期化中"
+    },
+    "loading.hint": {
+      "en": "Warming up reactor control. Loading telemetry. Aligning local frame.",
+      "ru": "Запуск управления реактором. Загрузка телеметрии. Выравнивание локальной системы отсчёта.",
+      "zh-Hans": "预热反应堆控制。载入遥测。对准本地参考系。",
+      "es": "Activando control del reactor. Cargando telemetría. Alineando el marco local.",
+      "ja": "リアクター制御を起動。テレメトリ読込。ローカル座標系を整列。"
+    },
+    "loading.boot": {
+      "en": "BOOT",
+      "ru": "ЗАПУСК",
+      "zh-Hans": "启动",
+      "es": "ARRANQUE",
+      "ja": "起動"
+    },
+    "loading.stage.opening": {
+      "en": "OPENING LOADING SCREEN",
+      "ru": "ОТКРЫТИЕ ЭКРАНА ЗАГРУЗКИ",
+      "zh-Hans": "正在打开加载界面",
+      "es": "ABRIENDO PANTALLA DE CARGA",
+      "ja": "ロード画面を開いています"
+    },
+    "loading.stage.world": {
+      "en": "PREPARING WORLD",
+      "ru": "ПОДГОТОВКА МИРА",
+      "zh-Hans": "正在准备世界",
+      "es": "PREPARANDO MUNDO",
+      "ja": "ワールドを準備中"
+    },
+    "loading.stage.sync": {
+      "en": "SYNCHRONIZING SESSION",
+      "ru": "СИНХРОНИЗАЦИЯ СЕССИИ",
+      "zh-Hans": "正在同步会话",
+      "es": "SINCRONIZANDO SESIÓN",
+      "ja": "セッション同期中"
+    },
+    "loading.stage.failed": {
+      "en": "SESSION FAILED",
+      "ru": "ОШИБКА СЕССИИ",
+      "zh-Hans": "会话失败",
+      "es": "FALLO DE SESIÓN",
+      "ja": "セッション失敗"
+    },
+    "loading.stage.apply": {
+      "en": "APPLYING GAME STATE",
+      "ru": "ПРИМЕНЕНИЕ СОСТОЯНИЯ ИГРЫ",
+      "zh-Hans": "正在应用游戏状态",
+      "es": "APLICANDO ESTADO DE JUEGO",
+      "ja": "ゲーム状態を適用中"
+    },
+    "loading.stage.ready": {
+      "en": "READY",
+      "ru": "ГОТОВО",
+      "zh-Hans": "就绪",
+      "es": "LISTO",
+      "ja": "準備完了"
+    }
+  }
+}

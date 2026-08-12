@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "47",
+  "names": {
+    "en": "HD 154345"
+  },
+  "bodies": {
+    "47:system_47.HD_154345": {
+      "en": "HD 154345"
+    },
+    "47:system_47.HD_154345.HD_154345_b": {
+      "en": "HD 154345 b"
+    },
+    "47:system_47.HD_154345.HD_154345_b.HD_154345_b-I": {
+      "en": "HD 154345 b-I"
+    },
+    "47:system_47.HD_154345.HD_154345_b.HD_154345_b-II": {
+      "en": "HD 154345 b-II"
+    },
+    "47:system_47.HD_154345.HD_154345_c": {
+      "en": "HD 154345 c"
+    },
+    "47:system_47.HD_154345.HD_154345_d": {
+      "en": "HD 154345 d"
+    },
+    "47:system_47.HD_154345.HD_154345_d.HD_154345_d-I": {
+      "en": "HD 154345 d-I"
+    },
+    "47:system_47.barycenter.belt_0": {
+      "en": "HD 154345 Belt"
+    },
+    "47:system_47.barycenter.belt_1": {
+      "en": "HD 154345 Kuiper Belt"
+    }
+  }
+}

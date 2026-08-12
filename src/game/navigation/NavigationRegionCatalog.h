@@ -55,6 +55,7 @@ class NavigationRegionCatalog
 {
 public:
     bool loadFromFile(const std::string& path);
+    bool loadFromDirectory(const std::string& path);
 
     bool loadFromRuntimeOrSource(
         const std::string& runtimePath,

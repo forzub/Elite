@@ -146,7 +146,9 @@ for token in (
         fail(f"F10/Ctrl+F10 edge separation lost: {token}")
 
 for token in (
-    "ctrlDown && keys.isKeyPressed(GLFW_KEY_F10)",
+    "const bool f10Down = keys.isKeyPressed(GLFW_KEY_F10)",
+    "CtrlF10State::ReleaseDebounce",
+    "kCtrlF10ReleaseDebounceSamples",
     "localControlLawCommandValid",
     "requestedLocalControlLaw",
 ):

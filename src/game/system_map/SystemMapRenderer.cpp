@@ -742,8 +742,8 @@ void SystemMapRenderer::init()
     {
         const bool namesLoaded =
             m_navigationRegionCatalog.loadFromRuntimeOrSource(
-                "assets/data/navigation/region_names.json",
-                "src/assets/data/navigation/region_names.json"
+                "assets/localization/world/navigation_regions",
+                "src/assets/localization/world/navigation_regions"
             );
 
         if (!namesLoaded)

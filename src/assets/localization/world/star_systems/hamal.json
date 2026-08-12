@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "33",
+  "names": {
+    "en": "Hamal"
+  },
+  "bodies": {
+    "33:system_33.Hamal": {
+      "en": "Hamal"
+    },
+    "33:system_33.Hamal.Hamal_b": {
+      "en": "Hamal b"
+    },
+    "33:system_33.Hamal.Hamal_b.Hamal_b-I": {
+      "en": "Hamal b-I"
+    },
+    "33:system_33.Hamal.Hamal_c": {
+      "en": "Hamal c"
+    },
+    "33:system_33.Hamal.Hamal_c.Hamal_c-I": {
+      "en": "Hamal c-I"
+    },
+    "33:system_33.barycenter.belt_0": {
+      "en": "Hamal Belt"
+    },
+    "33:system_33.barycenter.belt_1": {
+      "en": "Hamal Kuiper Belt"
+    }
+  }
+}

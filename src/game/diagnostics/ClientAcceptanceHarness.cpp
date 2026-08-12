@@ -562,23 +562,49 @@ void testInputMapping()
     keys.press(GLFW_KEY_LEFT_CONTROL);
     keys.press(GLFW_KEY_F10);
     control = mapKeys(mapper, keys);
-    require(control.localControlLawCommandValid, "first Ctrl+F10 no longer emits a flight-law command");
-    require(
-        control.requestedLocalControlLaw == game::navigation::LocalFlightControlLaw::Assisted,
-        "first Ctrl+F10 no longer selects Assisted mode"
-    );
+    require(!control.localControlLawCommandValid, "Ctrl+F10 switched on press instead of release");
     control = mapKeys(mapper, keys);
     require(!control.localControlLawCommandValid, "held Ctrl+F10 retriggers local flight-law switching");
 
+    // First apparent release is not enough: simulate one up sample followed by
+    // a down sample and make sure the release debounce treats it as bounce.
     keys.clear();
-    (void)mapKeys(mapper, keys);
     keys.press(GLFW_KEY_LEFT_CONTROL);
+    control = mapKeys(mapper, keys);
+    require(!control.localControlLawCommandValid, "Ctrl+F10 release debounce committed too early");
+
     keys.press(GLFW_KEY_F10);
     control = mapKeys(mapper, keys);
-    require(control.localControlLawCommandValid, "second Ctrl+F10 press was not latched");
+    require(!control.localControlLawCommandValid, "Ctrl+F10 bounce retriggered flight-law switching");
+
+    keys.clear();
+    keys.press(GLFW_KEY_LEFT_CONTROL);
+    control = mapKeys(mapper, keys);
+    require(!control.localControlLawCommandValid, "Ctrl+F10 release debounce committed on first stable sample");
+    control = mapKeys(mapper, keys);
+    require(!control.localControlLawCommandValid, "Ctrl+F10 release debounce committed on second stable sample");
+    control = mapKeys(mapper, keys);
+    require(control.localControlLawCommandValid, "first debounced Ctrl+F10 release emitted no flight-law command");
+    require(
+        control.requestedLocalControlLaw == game::navigation::LocalFlightControlLaw::Assisted,
+        "first Ctrl+F10 release no longer selects Assisted mode"
+    );
+
+    // Holding Ctrl is allowed between deliberate F10 presses. The second
+    // switch must again occur only after the qualified F10 release.
+    keys.press(GLFW_KEY_F10);
+    control = mapKeys(mapper, keys);
+    require(!control.localControlLawCommandValid, "second Ctrl+F10 switched on press instead of release");
+
+    keys.clear();
+    keys.press(GLFW_KEY_LEFT_CONTROL);
+    (void)mapKeys(mapper, keys);
+    (void)mapKeys(mapper, keys);
+    control = mapKeys(mapper, keys);
+    require(control.localControlLawCommandValid, "second debounced Ctrl+F10 release emitted no command");
     require(
         control.requestedLocalControlLaw == game::navigation::LocalFlightControlLaw::Newtonian,
-        "second Ctrl+F10 no longer returns to Newtonian mode"
+        "second Ctrl+F10 release no longer returns to Newtonian mode"
     );
 
     keys.clear();
@@ -819,9 +845,17 @@ void testOrientationAndMovement(
     (void)mapKeys(mapper, keys);
     keys.press(GLFW_KEY_LEFT_CONTROL);
     keys.press(GLFW_KEY_F10);
-    const ShipControlState assistedModeControl = mapKeys(mapper, keys);
+    ShipControlState assistedModeControl = mapKeys(mapper, keys);
+    require(!assistedModeControl.localControlLawCommandValid,
+            "Ctrl+F10 switched on press during real flight");
+
+    keys.clear();
+    keys.press(GLFW_KEY_LEFT_CONTROL);
+    (void)mapKeys(mapper, keys);
+    (void)mapKeys(mapper, keys);
+    assistedModeControl = mapKeys(mapper, keys);
     require(assistedModeControl.localControlLawCommandValid,
-            "Ctrl+F10 did not emit Assisted mode command during real flight");
+            "debounced Ctrl+F10 release did not emit Assisted mode command during real flight");
     runFrame(session, assistedModeControl);
 
     waitFor(

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "12",
+  "names": {
+    "en": "Gliese 832"
+  },
+  "bodies": {
+    "12:system_12.Gliese_832": {
+      "en": "Gliese 832"
+    },
+    "12:system_12.Gliese_832.Gliese_832_b": {
+      "en": "Gliese 832 b"
+    },
+    "12:system_12.Gliese_832.Gliese_832_b.Gliese_832_b-I": {
+      "en": "Gliese 832 b-I"
+    },
+    "12:system_12.Gliese_832.Gliese_832_b.Gliese_832_b-II": {
+      "en": "Gliese 832 b-II"
+    },
+    "12:system_12.Gliese_832.Gliese_832_b.Gliese_832_b-III": {
+      "en": "Gliese 832 b-III"
+    },
+    "12:system_12.Gliese_832.Gliese_832_b.Gliese_832_b-IV": {
+      "en": "Gliese 832 b-IV"
+    },
+    "12:system_12.Gliese_832.Gliese_832_c": {
+      "en": "Gliese 832 c"
+    },
+    "12:system_12.Gliese_832.Gliese_832_c.Gliese_832_c-I": {
+      "en": "Gliese 832 c-I"
+    },
+    "12:system_12.Gliese_832.Gliese_832_d": {
+      "en": "Gliese 832 d"
+    },
+    "12:system_12.Gliese_832.Gliese_832_e": {
+      "en": "Gliese 832 e"
+    },
+    "12:system_12.Gliese_832.Gliese_832_e.Gliese_832_e-I": {
+      "en": "Gliese 832 e-I"
+    },
+    "12:system_12.barycenter.belt_0": {
+      "en": "Inner Gliese 832 Belt"
+    },
+    "12:system_12.barycenter.belt_1": {
+      "en": "Outer Gliese 832 Belt"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "ui.language": {
+      "en": "UI",
+      "ru": "ИНТЕРФЕЙС",
+      "zh-Hans": "界面",
+      "es": "INTERFAZ",
+      "ja": "UI"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "star_system",
+  "system_id": "25",
+  "names": {
+    "en": "Gliese 357"
+  },
+  "bodies": {
+    "25:system_25.Gliese_357": {
+      "en": "Gliese 357"
+    },
+    "25:system_25.Gliese_357.GJ_357_b": {
+      "en": "GJ 357 b"
+    },
+    "25:system_25.Gliese_357.GJ_357_c": {
+      "en": "GJ 357 c"
+    },
+    "25:system_25.Gliese_357.GJ_357_d": {
+      "en": "GJ 357 d"
+    },
+    "25:system_25.Gliese_357.GJ_357_d.GJ_357_d-I": {
+      "en": "GJ 357 d-I"
+    },
+    "25:system_25.Gliese_357.GJ_357_e": {
+      "en": "GJ 357 e"
+    },
+    "25:system_25.Gliese_357.GJ_357_f": {
+      "en": "GJ 357 f"
+    },
+    "25:system_25.Gliese_357.GJ_357_f.GJ_357_f-I": {
+      "en": "GJ 357 f-I"
+    },
+    "25:system_25.barycenter.belt_0": {
+      "en": "Gliese 357 Belt"
+    },
+    "25:system_25.barycenter.belt_1": {
+      "en": "Gliese 357 Kuiper Belt"
+    }
+  }
+}

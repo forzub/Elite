@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "map.title": {
+      "en": "STAR ATLAS",
+      "ru": "ЗВЁЗДНЫЙ АТЛАС",
+      "zh-Hans": "星图",
+      "es": "ATLAS ESTELAR",
+      "ja": "スターアトラス"
+    },
+    "map.subtitle": {
+      "en": "Navigation interface",
+      "ru": "Навигационный интерфейс",
+      "zh-Hans": "导航界面",
+      "es": "Interfaz de navegación",
+      "ja": "航法インターフェース"
+    },
+    "map.mode": {
+      "en": "Mode",
+      "ru": "Режим",
+      "zh-Hans": "模式",
+      "es": "Modo",
+      "ja": "モード"
+    },
+    "map.universe_time": {
+      "en": "Universe time",
+      "ru": "Время Вселенной",
+      "zh-Hans": "宇宙时间",
+      "es": "Tiempo del universo",
+      "ja": "宇宙時刻"
+    },
+    "map.current_system": {
+      "en": "Current system",
+      "ru": "Текущая система",
+      "zh-Hans": "当前星系",
+      "es": "Sistema actual",
+      "ja": "現在の星系"
+    },
+    "map.selected_system": {
+      "en": "Selected system",
+      "ru": "Выбранная система",
+      "zh-Hans": "已选星系",
+      "es": "Sistema seleccionado",
+      "ja": "選択した星系"
+    },
+    "map.name": {
+      "en": "Name",
+      "ru": "Название",
+      "zh-Hans": "名称",
+      "es": "Nombre",
+      "ja": "名称"
+    },
+    "map.star": {
+      "en": "Star",
+      "ru": "Звезда",
+      "zh-Hans": "恒星",
+      "es": "Estrella",
+      "ja": "恒星"
+    },
+    "map.jurisdiction": {
+      "en": "Jurisdiction",
+      "ru": "Юрисдикция",
+      "zh-Hans": "管辖区",
+      "es": "Jurisdicción",
+      "ja": "管轄"
+    },
+    "map.distance": {
+      "en": "Distance",
+      "ru": "Расстояние",
+      "zh-Hans": "距离",
+      "es": "Distancia",
+      "ja": "距離"
+    },
+    "map.target": {
+      "en": "Map target",
+      "ru": "Цель карты",
+      "zh-Hans": "地图目标",
+      "es": "Objetivo del mapa",
+      "ja": "マップ目標"
+    },
+    "map.system_list": {
+      "en": "System list",
+      "ru": "Список систем",
+      "zh-Hans": "星系列表",
+      "es": "Lista de sistemas",
+      "ja": "星系列表"
+    },
+    "map.objects": {
+      "en": "Objects",
+      "ru": "Объекты",
+      "zh-Hans": "天体/对象",
+      "es": "Objetos",
+      "ja": "オブジェクト"
+    },
+    "map.select_system": {
+      "en": "Select system",
+      "ru": "Выберите систему",
+      "zh-Hans": "选择星系",
+      "es": "Seleccionar sistema",
+      "ja": "星系を選択"
+    },
+    "map.no_large_objects": {
+      "en": "No large objects",
+      "ru": "Крупных объектов нет",
+      "zh-Hans": "无大型对象",
+      "es": "No hay objetos grandes",
+      "ja": "大型オブジェクトなし"
+    },
+    "map.independent": {
+      "en": "Independent",
+      "ru": "Независимый",
+      "zh-Hans": "独立",
+      "es": "Independiente",
+      "ja": "独立"
+    },
+    "map.unknown": {
+      "en": "Unknown",
+      "ru": "Неизвестно",
+      "zh-Hans": "未知",
+      "es": "Desconocido",
+      "ja": "不明"
+    },
+    "map.object": {
+      "en": "Object",
+      "ru": "Объект",
+      "zh-Hans": "对象",
+      "es": "Objeto",
+      "ja": "オブジェクト"
+    },
+    "map.unregistered": {
+      "en": "Unregistered",
+      "ru": "Не зарегистрировано",
+      "zh-Hans": "未注册",
+      "es": "Sin registrar",
+      "ja": "未登録"
+    },
+    "map.galaxy": {
+      "en": "GALAXY",
+      "ru": "ГАЛАКТИКА",
+      "zh-Hans": "银河",
+      "es": "GALAXIA",
+      "ja": "銀河"
+    },
+    "map.system": {
+      "en": "SYSTEM",
+      "ru": "СИСТЕМА",
+      "zh-Hans": "星系",
+      "es": "SISTEMA",
+      "ja": "星系"
+    },
+    "map.detail": {
+      "en": "DETAIL",
+      "ru": "ДЕТАЛИ",
+      "zh-Hans": "详情",
+      "es": "DETALLE",
+      "ja": "詳細"
+    },
+    "map.hub": {
+      "en": "HUB",
+      "ru": "ХАБ",
+      "zh-Hans": "枢纽",
+      "es": "NODO",
+      "ja": "ハブ"
+    },
+    "map.close": {
+      "en": "CLOSE",
+      "ru": "ЗАКРЫТЬ",
+      "zh-Hans": "关闭",
+      "es": "CERRAR",
+      "ja": "閉じる"
+    },
+    "map.hint": {
+      "en": "F9 Galaxy · F10 System · F11 Details · F12 Local / Hub · Ctrl+F11 coordinates · Ctrl+F12 constellations · Alt+F12 sky culture · Ctrl+Alt+F12 UI language.",
+      "ru": "F9 Галактика · F10 Система · F11 Детали · F12 Локально / Хаб · Ctrl+F11 координаты · Ctrl+F12 созвездия · Alt+F12 традиция неба · Ctrl+Alt+F12 язык интерфейса.",
+      "zh-Hans": "F9 银河 · F10 星系 · F11 详情 · F12 本地/枢纽 · Ctrl+F11 坐标 · Ctrl+F12 星图层 · Alt+F12 星空传统 · Ctrl+Alt+F12 界面语言。",
+      "es": "F9 Galaxia · F10 Sistema · F11 Detalles · F12 Local/Nodo · Ctrl+F11 coordenadas · Ctrl+F12 constelaciones · Alt+F12 cultura celeste · Ctrl+Alt+F12 idioma de interfaz.",
+      "ja": "F9 銀河 · F10 星系 · F11 詳細 · F12 ローカル/ハブ · Ctrl+F11 座標 · Ctrl+F12 星座 · Alt+F12 星空文化 · Ctrl+Alt+F12 UI言語。"
+    },
+    "map.interstellar": {
+      "en": "INTERSTELLAR",
+      "ru": "МЕЖЗВЁЗДНОЕ ПРОСТРАНСТВО",
+      "zh-Hans": "星际空间",
+      "es": "ESPACIO INTERESTELAR",
+      "ja": "星間空間"
+    }
+  }
+}

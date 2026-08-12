@@ -246,16 +246,22 @@ but those constants must stay inside diagnostic/promo code paths.
   system. The current System-map interaction path still has explicit picking and
   selection only for hubs/bodies, so ship selection/Details navigation remains an
   unfinished functional contract.
-- `LocalGameHost` remains the synchronous composition/debug owner and therefore
-  still has direct bootstrap/debug access to `GameServer` (`playerId`, world
-  configuration and `IDebugSessionControl`). Production transport traffic no
-  longer uses that path. Before moving authority to a worker thread, those host
-  reads/writes must become startup configuration, handshake data or queued debug
-  commands so the server thread can remain the sole mutable owner.
-- `IDebugSessionControl::snapshot()` still exposes a complete
-  `SimulationSnapshot` to local tooling. Production client code does not depend
-  on `GameServer`, but this debug facade should eventually return a narrower
-  debug DTO.
+- `ServerRuntime` is now the sole in-process production owner of `GameServer`.
+  `LocalGameHost` composes only the local transport link plus `ServerRuntime`;
+  bootstrap world configuration and the initial authoritative publication happen
+  inside the server runtime. Client identity is also server-owned: a one-time
+  `SessionWelcome` publishes `controlledEntityId`, while recurring simulation
+  snapshots do not repeat that stable metadata and client command packets carry
+  intent only—they cannot select an `EntityId` to control. This ownership seam is
+  intentionally still synchronous so behavior can be regression-checked before
+  a worker thread is introduced.
+- `IDebugSessionControl` is now exposed by `ServerRuntime`, not by direct host
+  access to `GameServer`. Its methods are still synchronous and
+  `IDebugSessionControl::snapshot()` still returns a reference to a complete
+  `SimulationSnapshot`. Before `ServerRuntime` actually moves to another thread,
+  debug commands/results must cross a thread-safe control queue (and the snapshot
+  reference must become a copied/narrow debug DTO) so the application thread never
+  reads authoritative memory concurrently.
 - Procedural cloud morphology is presentation-only wall-time work. Its timing is
   intentionally separate from universe time, but texture generation still runs
   synchronously on the render thread and remains a performance/LOD concern.

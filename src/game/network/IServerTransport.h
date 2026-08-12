@@ -4,8 +4,8 @@
 #include "src/game/network/MapSnapshotMessage.h"
 #include "src/game/network/PresentationDataMessage.h"
 #include "src/game/network/TimeSyncMessage.h"
+#include "src/game/network/SessionMessage.h"
 #include "src/game/simulation/SimulationSnapshot.h"
-#include "src/scene/EntityID.h"
 
 /*
     Server-side endpoint of a transport connection.
@@ -26,7 +26,6 @@ public:
     virtual void update(float dt) = 0;
 
     virtual bool receiveClientMessage(
-        EntityId& outPlayerId,
         game::network::ClientMessage& outMessage
     ) = 0;
 
@@ -40,6 +39,10 @@ public:
 
     virtual bool receiveTimeSyncRequest(
         game::network::TimeSyncRequest& outRequest
+    ) = 0;
+
+    virtual void publishSessionWelcomeImmediately(
+        const game::network::SessionWelcome& welcome
     ) = 0;
 
     virtual void publishSnapshot(

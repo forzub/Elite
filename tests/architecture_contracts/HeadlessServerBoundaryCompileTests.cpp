@@ -2,6 +2,7 @@
 
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/game/server/GameServer.h"
+#include "src/game/server/ServerRuntime.h"
 #include "src/game/simulation/GameSimulation.h"
 
 int main()
@@ -19,9 +20,11 @@ int main()
 
     // This target intentionally has no glad/OpenGL include directory or link
     // dependency. A future transitive GPU dependency from GameServer,
-    // GameSimulation or AssemblyMeshLibrary therefore fails at compile time.
+    // ServerRuntime, GameSimulation or AssemblyMeshLibrary therefore fails at
+    // compile time.
     static_assert(sizeof(GameServer) > 0);
     static_assert(sizeof(GameSimulation) > 0);
+    static_assert(sizeof(game::server::ServerRuntime) > 0);
 
     return 0;
 }

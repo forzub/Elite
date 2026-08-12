@@ -20,6 +20,10 @@ behavior/smoke test. Do not rely only on a checkbox, function name, or build.
 
 ## Headless authoritative-server boundary
 
-`AssemblyMeshLibrary::get()` is CPU-only. GPU upload is explicitly requested by
-render paths through `getGpuReady()`. This keeps `GameServer` construction and
-real-scene smoke tests independent of GLFW/OpenGL initialization.
+`AssemblyMeshLibrary::get()` is CPU-only and returns the shared assembly
+definition used independently by authoritative/headless code and the client.
+GPU ownership lives only in the render-side `AssemblyGpuLibrary`, which builds a
+presentation-only `ObjectAssemblyGpuResources` sidecar from that CPU definition.
+This keeps `GameServer` construction and real-scene smoke tests independent of
+GLFW/OpenGL initialization while still requiring real render paths to acquire
+their VAO/VBO resources through the explicit render seam.

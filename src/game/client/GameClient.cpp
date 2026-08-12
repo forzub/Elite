@@ -5,9 +5,8 @@
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/network/ClientMessage.h"
 
-GameClient::GameClient(ITransport& transport, EntityId playerId)
+GameClient::GameClient(ITransport& transport)
     : m_transport(transport)
-    , m_playerId(playerId)
     , m_maps(transport)
     , m_catalogs(transport)
 {
@@ -68,7 +67,7 @@ void GameClient::submitInput(const ShipControlState& control)
 
 void GameClient::sendMessage(const game::network::ClientMessage& msg)
 {
-    m_transport.sendClientMessage(m_playerId, msg);
+    m_transport.sendClientMessage(msg);
 }
 
 
@@ -149,9 +148,14 @@ bool GameClient::hasSessionSnapshot() const
     return m_hasSessionSnapshot;
 }
 
+EntityId GameClient::playerId() const
+{
+    return m_playerId;
+}
+
 bool GameClient::hasGameplayCoreState() const
 {
-    if (!m_hasSessionSnapshot)
+    if (!m_hasSessionSnapshot || !m_hasPlayerIdentity)
         return false;
 
     const auto& ships = m_world.ships();
@@ -332,6 +336,32 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
     const float serviceDt = static_cast<float>(
         std::max(0.0, wallDeltaSeconds)
     );
+
+    game::network::SessionWelcome welcome;
+    while (m_transport.receiveSessionWelcome(welcome))
+    {
+        if (welcome.controlledEntityId.value == 0)
+        {
+            failSynchronization(
+                "Server session welcome has no controlled entity"
+            );
+            return false;
+        }
+
+        if (m_hasPlayerIdentity &&
+            welcome.controlledEntityId.value != m_playerId.value)
+        {
+            // Control transfer/respawn needs an explicit protocol transition:
+            // prediction history and SpaceState ownership are keyed by this id.
+            failSynchronization(
+                "Controlled entity changed without a session transition"
+            );
+            return false;
+        }
+
+        m_playerId = welcome.controlledEntityId;
+        m_hasPlayerIdentity = true;
+    }
 
     /*
         Simulation metadata establishes the active universe-timeline branch.
@@ -625,7 +655,7 @@ void GameClient::sendAndPredictFixedStep(
     game::network::ClientMessage msg;
     msg.clientTick = control.controlTick;
     msg.payload = control;
-    m_transport.sendClientMessage(m_playerId, msg);
+    m_transport.sendClientMessage(msg);
 
     if (predictThisStep)
     {

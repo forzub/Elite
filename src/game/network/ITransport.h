@@ -6,20 +6,23 @@
 #include "src/game/network/MapSnapshotMessage.h"
 #include "src/game/network/PresentationDataMessage.h"
 #include "src/game/network/TimeSyncMessage.h"
+#include "src/game/network/SessionMessage.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/world/celestial/CelestialTypes.h"
-#include "src/scene/EntityID.h"
 
 class ITransport
 {
 public:
     virtual ~ITransport() = default;
 
+    virtual bool receiveSessionWelcome(
+        game::network::SessionWelcome& outWelcome
+    ) = 0;
+
     virtual bool receiveSnapshot(
         SimulationSnapshot& outSnapshot) = 0;
 
     virtual void sendClientMessage(
-        EntityId playerId,
         const game::network::ClientMessage& msg
     ) = 0;
 

@@ -43,11 +43,13 @@ public:
     LocalLoopbackTransport() = default;
 
     // ----- client endpoint (ITransport) -----
+    bool receiveSessionWelcome(
+        game::network::SessionWelcome& outWelcome) override;
+
     bool receiveSnapshot(
         SimulationSnapshot& outSnapshot) override;
 
     void sendClientMessage(
-        EntityId playerId,
         const game::network::ClientMessage& msg) override;
 
     void sendMapRequest(
@@ -72,7 +74,6 @@ public:
     void update(float dt) override;
 
     bool receiveClientMessage(
-        EntityId& outPlayerId,
         game::network::ClientMessage& outMessage) override;
 
     bool receiveMapRequest(
@@ -83,6 +84,9 @@ public:
 
     bool receiveTimeSyncRequest(
         game::network::TimeSyncRequest& outRequest) override;
+
+    void publishSessionWelcomeImmediately(
+        const game::network::SessionWelcome& welcome) override;
 
     void publishSnapshot(
         const SimulationSnapshot& snapshot) override;
@@ -100,8 +104,9 @@ public:
         game::network::TimeSyncResponse response) override;
 
 private:
+    std::queue<game::network::SessionWelcome> m_sessionWelcome;
     std::queue<SimulationSnapshot> m_incoming;
-    std::queue<std::pair<EntityId, game::network::ClientMessage>> m_clientMessages;
+    std::queue<game::network::ClientMessage> m_clientMessages;
     std::queue<game::network::MapRequest> m_mapRequests;
     std::queue<game::network::PresentationDataRequest> m_presentationRequests;
     std::queue<game::network::TimeSyncRequest> m_serverTimeSyncRequests;

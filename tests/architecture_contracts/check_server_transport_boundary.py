@@ -21,6 +21,7 @@ loopback_cpp = read("src/game/network/LocalLoopbackTransport.cpp")
 runner_h = read("src/game/server/ServerRunner.h")
 runner_cpp = read("src/game/server/ServerRunner.cpp")
 host_cpp = read("src/game/host/LocalGameHost.cpp")
+runtime_cpp = read("src/game/server/ServerRuntime.cpp")
 
 # Client-facing transport must not own the server loop/pump anymore.
 if "virtual void update(float dt)" in client_transport_h:
@@ -28,6 +29,7 @@ if "virtual void update(float dt)" in client_transport_h:
 
 for required in (
     "class IServerTransport",
+    "publishSessionWelcomeImmediately(",
     "receiveClientMessage(",
     "receiveMapRequest(",
     "receivePresentationDataRequest(",
@@ -58,6 +60,9 @@ for text, label in (
 
 for required in (
     "public ITransport, public IServerTransport",
+    "receiveSessionWelcome(",
+    "publishSessionWelcomeImmediately(",
+    "m_sessionWelcome",
     "m_clientMessages",
     "m_mapRequests",
     "m_presentationRequests",
@@ -84,7 +89,8 @@ for forbidden in (
         fail(f"ServerRunner still depends on the client transport interface: {forbidden}")
 
 for required in (
-    "m_transport.receiveClientMessage(",
+    "m_transport.receiveClientMessage(clientMessage)",
+    "m_server.playerId()",
     "m_server.receiveClientMessage(",
     "m_transport.receiveMapRequest(",
     "m_server.enqueueMapRequest(",
@@ -101,11 +107,14 @@ for required in (
 if "std::make_unique<LocalLoopbackTransport>(*m_server)" in host_cpp:
     fail("LocalGameHost still injects GameServer into the loopback transport")
 
+if "std::make_unique<LocalLoopbackTransport>()" not in host_cpp:
+    fail("LocalGameHost no longer creates the local transport link")
+
 for required in (
-    "std::make_unique<LocalLoopbackTransport>()",
-    "m_transport->publishSnapshotImmediately(m_server->snapshot())",
+    "std::make_unique<server::ServerRuntime>(",
+    "transport.publishSnapshotImmediately(m_server->snapshot())",
 ):
-    if required not in host_cpp:
-        fail(f"LocalGameHost bootstrap no longer uses the endpoint seam: {required}")
+    if required not in host_cpp and required not in runtime_cpp:
+        fail(f"local-server bootstrap no longer uses the endpoint seam: {required}")
 
 print("[PASS] server/client transport ownership boundary")

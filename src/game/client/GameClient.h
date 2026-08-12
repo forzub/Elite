@@ -33,7 +33,7 @@ enum class ClientConnectionState
 class GameClient
 {
 public:
-    GameClient(ITransport& transport, EntityId playerId);
+    explicit GameClient(ITransport& transport);
 
     void submitInput(const ShipControlState& control);
     bool updateSynchronization(double wallDeltaSeconds);
@@ -113,6 +113,7 @@ public:
     const std::string& connectionError() const;
 
     bool hasSessionSnapshot() const;
+    EntityId playerId() const;
     bool readyForGameplay() const;
     const game::simulation::ClientSessionSnapshot&
         sessionSnapshot() const;
@@ -144,7 +145,8 @@ private:
     ClientConnectionState           m_connectionState =
         ClientConnectionState::Disconnected;
     std::string                     m_connectionError;
-    EntityId                        m_playerId;
+    EntityId                        m_playerId {0};
+    bool                            m_hasPlayerIdentity = false;
 
     ClientWorldState                m_world;
 

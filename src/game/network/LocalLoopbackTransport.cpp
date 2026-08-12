@@ -3,6 +3,23 @@
 #include <cstdlib>
 #include <utility>
 
+bool LocalLoopbackTransport::receiveSessionWelcome(
+    game::network::SessionWelcome& outWelcome)
+{
+    if (m_sessionWelcome.empty())
+        return false;
+
+    outWelcome = m_sessionWelcome.front();
+    m_sessionWelcome.pop();
+    return true;
+}
+
+void LocalLoopbackTransport::publishSessionWelcomeImmediately(
+    const game::network::SessionWelcome& welcome)
+{
+    m_sessionWelcome.push(welcome);
+}
+
 bool LocalLoopbackTransport::receiveSnapshot(
     SimulationSnapshot& outSnapshot)
 {
@@ -96,21 +113,18 @@ void LocalLoopbackTransport::update(float dt)
 }
 
 void LocalLoopbackTransport::sendClientMessage(
-    EntityId playerId,
     const game::network::ClientMessage& msg)
 {
-    m_clientMessages.emplace(playerId, msg);
+    m_clientMessages.push(msg);
 }
 
 bool LocalLoopbackTransport::receiveClientMessage(
-    EntityId& outPlayerId,
     game::network::ClientMessage& outMessage)
 {
     if (m_clientMessages.empty())
         return false;
 
-    outPlayerId = m_clientMessages.front().first;
-    outMessage = std::move(m_clientMessages.front().second);
+    outMessage = std::move(m_clientMessages.front());
     m_clientMessages.pop();
     return true;
 }

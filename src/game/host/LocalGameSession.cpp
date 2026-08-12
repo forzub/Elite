@@ -10,10 +10,7 @@ LocalGameSession::LocalGameSession(
     const LocalGameSessionConfig& config
 )
     : m_host(std::make_unique<LocalGameHost>(config.world))
-    , m_client(std::make_unique<GameClient>(
-          m_host->transport(),
-          m_host->playerId()
-      ))
+    , m_client(std::make_unique<GameClient>(m_host->transport()))
 {
 }
 
@@ -69,17 +66,18 @@ const GameClient& LocalGameSession::client() const
 
 game::debug::IDebugSessionControl* LocalGameSession::debugControl()
 {
-    return m_host.get();
+    return &m_host->debugControl();
 }
 
 const game::debug::IDebugSessionControl* LocalGameSession::debugControl() const
 {
-    return m_host.get();
+    const LocalGameHost& host = *m_host;
+    return &host.debugControl();
 }
 
 EntityId LocalGameSession::playerId() const
 {
-    return m_host->playerId();
+    return m_client->playerId();
 }
 
 game::session::GameSessionAdvanceResult LocalGameSession::advance(

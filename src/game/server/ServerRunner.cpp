@@ -128,10 +128,17 @@ void ServerRunner::resetTiming()
 
 void ServerRunner::receiveInboundMessages()
 {
-    EntityId playerId;
     game::network::ClientMessage clientMessage;
-    while (m_transport.receiveClientMessage(playerId, clientMessage))
-        m_server.receiveClientMessage(playerId, clientMessage);
+    while (m_transport.receiveClientMessage(clientMessage))
+    {
+        // This local endpoint represents one authenticated/control session.
+        // The client sends intent only; authoritative entity ownership is bound
+        // on the server side and must never be selected by a client packet.
+        m_server.receiveClientMessage(
+            m_server.playerId(),
+            clientMessage
+        );
+    }
 
     game::network::MapRequest mapRequest;
     while (m_transport.receiveMapRequest(mapRequest))

@@ -62,7 +62,7 @@ def check_debug_control_schema() -> None:
     space_cpp = read("src/game/SpaceState.cpp")
     html = read("src/assets/webui/debug_control.html")
     debug_iface = read("src/game/debug/IDebugSessionControl.h")
-    local_host = read("src/game/host/LocalGameHost.cpp")
+    server_runtime = read("src/game/server/ServerRuntime.cpp")
     main_cpp = read("src/main.cpp")
 
     body = extract_struct_body(settings_h, "DebugRenderSettings")
@@ -174,8 +174,8 @@ def check_debug_control_schema() -> None:
         require(method in debug_iface, f"debug-session interface lost {method}")
 
     require(
-        "setDebugUniverseTimeSimulation" in local_host,
-        "LocalGameHost no longer routes universe-time debug control to GameServer",
+        "setDebugUniverseTimeSimulation" in server_runtime,
+        "ServerRuntime no longer routes universe-time debug control to GameServer",
     )
     require(
         re.search(r'arg\s*==\s*"--self-test-fast-universe"', main_cpp) is not None,
@@ -567,16 +567,15 @@ def check_world_authority_boundaries() -> None:
 def check_headless_server_geometry_boundary() -> None:
     library_cpp = read("src/game/geometry/AssemblyMeshLibrary.cpp")
     library_h = read("src/game/geometry/AssemblyMeshLibrary.h")
+    gpu_library_cpp = read("src/render/geometry/AssemblyGpuLibrary.cpp")
+    gpu_library_h = read("src/render/geometry/AssemblyGpuLibrary.h")
+    gpu_resources_h = read("src/render/geometry/ObjectAssemblyGpuResources.h")
     scene_renderer = read("src/scene/SceneRenderer.cpp")
     hub_map = read("src/game/system_map/HubMapGeometryPass.cpp")
 
     cpu_load = extract_braced_function(
         library_cpp,
         "ObjectAssembly AssemblyMeshLibrary::loadAssembly",
-    )
-    gpu_lookup = extract_braced_function(
-        library_cpp,
-        "const ObjectAssembly& AssemblyMeshLibrary::getGpuReady",
     )
 
     require(
@@ -585,9 +584,26 @@ def check_headless_server_geometry_boundary() -> None:
         "headless authoritative server would require an OpenGL context",
     )
     require(
-        "getGpuReady(ObjectType typeId)" in library_h
-        and "uploadGpu(assembly)" in gpu_lookup,
-        "assembly GPU upload is no longer isolated behind the render-only lookup",
+        "getGpuReady" not in library_h
+        and "getGpuReady" not in library_cpp,
+        "shared CPU AssemblyMeshLibrary regained render-side GPU ownership",
+    )
+    require(
+        "class AssemblyGpuLibrary" in gpu_library_h
+        and "ObjectAssemblyGpuResources" in gpu_library_h,
+        "render-side assembly GPU library/sidecar is missing",
+    )
+    require(
+        "AssemblyMeshLibrary::get(typeId)" in gpu_library_cpp
+        and "gpuPart.lod0.upload(cpuPart.lod0Mesh)" in gpu_library_cpp
+        and "gpuPart.lod1.upload(cpuPart.lod1Mesh)" in gpu_library_cpp,
+        "render-side AssemblyGpuLibrary no longer derives GPU resources from the shared CPU assembly",
+    )
+    require(
+        "render::MeshGPU lod0" in gpu_resources_h
+        and "render::MeshGPU lod1" in gpu_resources_h
+        and "render::MeshGPU wholeShipProxy" in gpu_resources_h,
+        "assembly GPU resources are no longer isolated in the render-side sidecar",
     )
 
     authoritative_roots = (
@@ -598,6 +614,8 @@ def check_headless_server_geometry_boundary() -> None:
     )
     forbidden_gpu_markers = (
         "getGpuReady(",
+        "AssemblyGpuLibrary",
+        "ObjectAssemblyGpuResources",
         "lod0Gpu",
         "lod1Gpu",
         "wholeShipProxyGpu",
@@ -618,12 +636,12 @@ def check_headless_server_geometry_boundary() -> None:
             )
 
     require(
-        "AssemblyMeshLibrary::getGpuReady" in scene_renderer,
-        "SceneRenderer no longer explicitly prepares assembly GPU resources",
+        "render::geometry::AssemblyGpuLibrary::get(" in scene_renderer,
+        "SceneRenderer no longer obtains assembly GPU resources through the render-side library",
     )
     require(
-        "AssemblyMeshLibrary::getGpuReady" in hub_map,
-        "HubMapGeometryPass no longer explicitly prepares assembly GPU resources",
+        "render::geometry::AssemblyGpuLibrary::get(typeId)" in hub_map,
+        "HubMapGeometryPass no longer obtains assembly GPU resources through the render-side library",
     )
 
 def check_ready_orchestration() -> None:

@@ -129,6 +129,7 @@ add_executable(EliteGame
     src/game/client/ClientWorldState.cpp
     src/game/server/GameServer.cpp
     src/game/server/ServerRunner.cpp
+    src/game/server/ServerRuntime.cpp
 
     src/game/client/GameClient.cpp
     src/game/network/LocalLoopbackTransport.cpp

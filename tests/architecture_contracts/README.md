@@ -197,11 +197,27 @@ verifies the value-copy and command-queue semantics at runtime.
 
 ### Server worker thread boundary
 
-`check_server_worker_thread.py` locks the next execution seam: `LocalGameHost`
-owns only a `ServerWorker`, `ServerRuntime` is constructed/advanced/destroyed
-inside that worker, and both local gameplay/debug bridges must protect shared
-state with mutexes. `ThreadBoundaryChannelContractTests.cpp` exercises the
-message/debug queues concurrently. The first worker stage intentionally keeps a
-synchronous per-frame completion barrier so all already-approved input,
-server-advance and client-update ordering remains unchanged; asynchronous overlap
-is a later isolated optimization.
+`check_server_worker_thread.py` locks the execution seam: `LocalGameHost` owns
+only a `ServerWorker`, `ServerRuntime` is constructed/advanced/destroyed inside
+that worker, and both local gameplay/debug bridges protect shared state with
+mutexes. `ThreadBoundaryChannelContractTests.cpp` exercises the message/debug
+queues concurrently. The worker now uses a bounded single-flight asynchronous
+pipeline: the newly submitted authoritative batch may overlap client/render work,
+but the next submission waits for the previous batch so backlog/latency cannot
+grow without bound and fixed-step inputs are never silently dropped.
+
+### Client-owned System-map celestial layer
+
+Stage 3 begins with deterministic System-map bodies. The server response keeps
+the authoritative dynamic object layer and its universe-time epoch but leaves
+`SystemMapSnapshot::bodies` empty. `ClientMapService` resolves the requested
+system through its local `StarAtlasDatabase`/`CelestialRuntimeRegistry` at that
+**same epoch** and rebuilds bodies, orbits and ring presentation before exposing
+the snapshot to `SpaceState`.
+
+`check_client_system_map_celestial.py` prevents deterministic body composition
+from returning to `GameServer::buildSystemMapSnapshot` and locks the local catalog
+dependency/epoch join. `SystemMapCelestialMigrationContractTests.cpp` verifies
+that dynamic objects survive the join untouched, parent-relative orbit centers
+are rebuilt from the same celestial sample, authored fallback positions survive,
+and cross-system/cross-epoch composition is rejected.

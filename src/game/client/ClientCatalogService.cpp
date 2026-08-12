@@ -237,6 +237,21 @@ ClientCatalogService::celestialSnapshot() const
         : nullptr;
 }
 
+const world::celestial::CelestialSystemSnapshot*
+ClientCatalogService::resolveCelestialSystem(
+    int systemId,
+    double universeTimeSeconds
+) const
+{
+    if (!m_hasStarAtlas)
+        return nullptr;
+
+    return m_celestialRuntimes.resolve(
+        systemId,
+        universeTimeSeconds
+    );
+}
+
 const game::network::CatalogMetadata&
 ClientCatalogService::starAtlasMetadata() const
 {

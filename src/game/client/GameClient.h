@@ -170,8 +170,11 @@ private:
     bool                            m_hasAcceptedSnapshot = false;
     game::network::SnapshotMetadata m_lastSimulationMetadata;
 
-    game::client::ClientMapService m_maps;
+    // Construction order is intentional: System-map presentation depends on
+    // the client's local catalog/runtime and must never query server-owned
+    // static celestial definitions.
     game::client::ClientCatalogService m_catalogs;
+    game::client::ClientMapService m_maps;
     game::client::ClientServerClock m_serverClock;
     game::client::ClientPresentationClock m_presentationClock;
     game::client::ClientUniverseTimeline m_universeTimeline;

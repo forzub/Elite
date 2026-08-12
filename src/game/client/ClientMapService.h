@@ -10,10 +10,15 @@
 
 namespace game::client
 {
+class ClientCatalogService;
+
 class ClientMapService
 {
 public:
-    explicit ClientMapService(ITransport& transport);
+    ClientMapService(
+        ITransport& transport,
+        const ClientCatalogService& catalogs
+    );
 
     void update(float dt);
     void pumpResponses();
@@ -63,6 +68,7 @@ private:
     std::uint64_t nextRequestId();
     void begin(RequestState& state, std::uint64_t requestId);
     void complete(RequestState& state);
+    void fail(RequestState& state);
     void cancel(RequestState& state);
     bool advanceTimeout(RequestState& state, float dt);
 
@@ -76,6 +82,7 @@ private:
 
 private:
     ITransport& m_transport;
+    const ClientCatalogService& m_catalogs;
     std::uint64_t m_nextRequestId = 1;
     std::uint64_t m_universeTimelineRevision = 0;
 

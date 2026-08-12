@@ -52,7 +52,9 @@ namespace {
 
 
     void appendSystemMapMotionDebugCsv(
-        const world::celestial::SystemMapSnapshot& snapshot,
+        const world::celestial::CelestialSystemDefinition& system,
+        const world::celestial::CelestialSystemSnapshot& celestial,
+        double universeTimeSeconds,
         game::diagnostics::ServerDiagnostics& diagnostics
     )
     {
@@ -62,29 +64,23 @@ namespace {
         double& lastLoggedUniverseTime =
             diagnostics.server.systemMapLastLoggedUniverseTime;
 
-        // Log no more than once per universe-time second.
+        // This diagnostic is explicitly opt-in. Normal System-map requests no
+        // longer resolve/build deterministic celestial presentation on the
+        // authoritative server just so the client can draw it.
         if (lastLoggedUniverseTime >= 0.0 &&
-            std::abs(snapshot.universeTimeSeconds - lastLoggedUniverseTime) < 1.0)
+            std::abs(universeTimeSeconds - lastLoggedUniverseTime) < 1.0)
         {
             return;
         }
 
-        lastLoggedUniverseTime =
-            snapshot.universeTimeSeconds;
+        lastLoggedUniverseTime = universeTimeSeconds;
 
-        const char* path =
-            "system_map_motion.csv";
-
+        const char* path = "system_map_motion.csv";
         std::ifstream check(path);
-        const bool needHeader =
-            !check.good();
+        const bool needHeader = !check.good();
         check.close();
 
-        std::ofstream out(
-            path,
-            std::ios::app
-        );
-
+        std::ofstream out(path, std::ios::app);
         if (!out.is_open())
             return;
 
@@ -95,7 +91,7 @@ namespace {
                 << "x_au,y_au,z_au,orbit_radius_au,draw_orbit\n";
         }
 
-        for (const auto& body : snapshot.bodies)
+        for (const auto& body : system.bodies)
         {
             if (body.type != world::celestial::BodyType::Planet &&
                 body.type != world::celestial::BodyType::Moon)
@@ -103,12 +99,22 @@ namespace {
                 continue;
             }
 
+            glm::dvec3 positionAu = body.staticPositionAu;
+            for (const auto& state : celestial.bodies)
+            {
+                if (state.id == body.id)
+                {
+                    positionAu = state.positionAu;
+                    break;
+                }
+            }
+
             out
                 << std::fixed
                 << std::setprecision(6)
-                << snapshot.universeTimeSeconds
+                << universeTimeSeconds
                 << ","
-                << snapshot.systemId
+                << system.systemId
                 << ",\""
                 << body.id
                 << "\",\""
@@ -117,15 +123,15 @@ namespace {
                 << world::celestial::toString(body.type)
                 << ","
                 << std::setprecision(12)
-                << body.positionAu.x
+                << positionAu.x
                 << ","
-                << body.positionAu.y
+                << positionAu.y
                 << ","
-                << body.positionAu.z
+                << positionAu.z
                 << ","
-                << body.orbitRadiusAu
+                << body.distanceAu
                 << ","
-                << (body.drawOrbit ? 1 : 0)
+                << (body.distanceAu > 0.0 ? 1 : 0)
                 << "\n";
         }
     }
@@ -1583,146 +1589,28 @@ GameServer::buildSystemMapSnapshot(
 
 
 
-    const auto* runtimeSnapshot =
-        celestialSnapshotForSystem(systemId);
+    /*
+        System-map celestial bodies are deterministic catalog presentation.
+        ClientMapService reconstructs them from its local StarAtlas and
+        CelestialRuntimeRegistry at this response's universe-time epoch. This
+        keeps predictable map geometry off the authoritative server while the
+        dynamic object layer below remains server-owned during Stage 3.
 
-    if (!runtimeSnapshot)
-        return out;
-
-    std::unordered_map<
-        std::string,
-        const world::celestial::CelestialBodyState*
-    > runtimeStateById;
-
-    for (const auto& state : runtimeSnapshot->bodies)
+        The motion CSV is an explicit server diagnostic, so it may resolve the
+        celestial state on demand only when that diagnostic is enabled.
+    */
+    if (m_diagnostics.settings.systemMapMotionCsv)
     {
-        runtimeStateById[state.id] = &state;
-    }
-
-
-
-    for (const auto& body : system->bodies)
-    {
-        world::celestial::SystemMapBody item;
-
-        item.id = body.id;
-        item.name = body.name;
-        item.alternativeNames = body.alternativeNames;
-
-        item.parentId = body.parentId;
-        item.environmentPresetId = body.environmentPresetId;
-
-        item.type = body.type;
-        item.radiusKm = body.radiusKm;
-
-        item.orbitalPeriodDays =
-            body.orbitalPeriodDays;
-
-        item.orbitalDirection =
-            body.orbitalDirection;
-
-        item.orbitalPhaseOffsetRad =
-            body.orbitalPhaseOffsetDeg *
-            3.14159265358979323846 /
-            180.0;
-
-        item.rotationPhaseRad =
-            body.rotationOffsetDeg *
-            3.14159265358979323846 /
-            180.0;
-
-        item.dayLengthHours =
-            body.dayLengthHours;
-
-        item.rotationDirection =
-            body.rotationDirection;
-
-        item.axialTiltDeg =
-            body.axialTiltDeg;
-
-        item.axisNodeDeg =
-            body.axisNodeDeg;
-
-        item.textureLongitudeOffsetDeg =
-            body.textureLongitudeOffsetDeg;
-
-        auto stateIt =
-            runtimeStateById.find(body.id);
-
-        if (stateIt != runtimeStateById.end())
+        if (const auto* celestial = celestialSnapshotForSystem(systemId))
         {
-            const auto& state =
-                *stateIt->second;
-
-            item.positionAu = state.positionAu;
-            item.rotationPhaseRad = state.rotationPhaseRad;
-            item.dayLengthHours = state.dayLengthHours;
-            item.rotationDirection = state.rotationDirection;
-            item.axialTiltDeg = state.axialTiltDeg;
-            item.axisNodeDeg = state.axisNodeDeg;
-            item.textureLongitudeOffsetDeg =
-                state.textureLongitudeOffsetDeg;
-        }
-        else
-        {
-            item.positionAu =
-                body.staticPositionAu;
-        }
-
-
-
-
-
-        if (!body.parentId.empty())
-        {
-            auto parentIt =
-                runtimeStateById.find(body.parentId);
-
-            if (parentIt != runtimeStateById.end())
-                item.orbitCenterAu = parentIt->second->positionAu;
-            else
-                item.orbitCenterAu = glm::dvec3(0.0);
-        }
-        else
-        {
-            item.orbitCenterAu = glm::dvec3(0.0);
-        }
-
-        item.orbitRadiusAu = body.distanceAu;
-        item.drawOrbit = body.distanceAu > 0.0;
-
-        item.ringPlaneInclinationOffsetDeg =
-            body.ringPlaneInclinationOffsetDeg;
-
-
-        item.ringVisual =
-            toSystemMapRingVisualProfile(
-                body.ringVisual
+            appendSystemMapMotionDebugCsv(
+                *system,
+                *celestial,
+                out.universeTimeSeconds,
+                m_diagnostics
             );
-
-
-
-            for (const auto& ring :
-                body.rings)
-            {
-                item.rings.push_back(
-                    toSystemMapRing(
-                        ring
-                    )
-                );
-            }
-
-
-
-
-
-
-        out.bodies.push_back(std::move(item));
+        }
     }
-
-
-
-
 
     for (const auto& [id, obj] : m_simulation.staticObjects())
     {
@@ -1969,8 +1857,6 @@ GameServer::buildSystemMapSnapshot(
     }
 
 
-
-    appendSystemMapMotionDebugCsv(out, m_diagnostics);
 
     return out;
 }

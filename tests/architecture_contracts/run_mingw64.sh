@@ -29,6 +29,7 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_prediction_reconciliation.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_replication_snapshot_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_replication_static_definitions.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_system_map_celestial.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_headless_server_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_transport_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_runtime_ownership.py"

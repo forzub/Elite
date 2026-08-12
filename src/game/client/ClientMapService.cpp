@@ -1,4 +1,6 @@
 #include "src/game/client/ClientMapService.h"
+#include "src/game/client/ClientCatalogService.h"
+#include "src/game/client/ClientCelestialMapBridge.h"
 
 #include <algorithm>
 #include <type_traits>
@@ -6,8 +8,12 @@
 
 namespace game::client
 {
-ClientMapService::ClientMapService(ITransport& transport)
+ClientMapService::ClientMapService(
+    ITransport& transport,
+    const ClientCatalogService& catalogs
+)
     : m_transport(transport)
+    , m_catalogs(catalogs)
 {
 }
 
@@ -30,6 +36,13 @@ void ClientMapService::complete(RequestState& state)
     state.requestId = 0;
     state.elapsedSeconds = 0.0f;
     state.attempts = 0;
+}
+
+void ClientMapService::fail(RequestState& state)
+{
+    state.status = ClientRequestStatus::Failed;
+    state.requestId = 0;
+    state.elapsedSeconds = 0.0f;
 }
 
 void ClientMapService::cancel(RequestState& state)
@@ -191,9 +204,37 @@ void ClientMapService::pumpResponses()
                 {
                     if (typedResponse.requestId != m_systemRequest.requestId ||
                         typedResponse.systemId != m_requestedSystemId)
+                    {
                         return;
+                    }
+
+                    auto rebuiltSnapshot =
+                        std::move(typedResponse.snapshot);
+
+                    const auto* atlas = m_catalogs.starAtlas();
+                    const auto* celestial =
+                        m_catalogs.resolveCelestialSystem(
+                            typedResponse.systemId,
+                            rebuiltSnapshot.universeTimeSeconds
+                        );
+
+                    if (!atlas ||
+                        !celestial ||
+                        !rebuildSystemMapCelestialLayer(
+                            rebuiltSnapshot,
+                            *atlas,
+                            *celestial
+                        ))
+                    {
+                        // A System-map result is not complete until its local
+                        // deterministic celestial layer can be reconstructed
+                        // at the same authoritative epoch as dynamic objects.
+                        fail(m_systemRequest);
+                        return;
+                    }
+
                     m_systemMetadata = typedResponse.metadata;
-                    m_systemSnapshot = std::move(typedResponse.snapshot);
+                    m_systemSnapshot = std::move(rebuiltSnapshot);
                     m_systemSnapshotId = typedResponse.systemId;
                     m_hasSystem = true;
                     complete(m_systemRequest);
@@ -246,6 +287,14 @@ bool ClientMapService::requestGalaxy(bool forceRefresh)
 bool ClientMapService::requestSystem(int systemId, bool forceRefresh)
 {
     pumpResponses();
+
+    // Static celestial definitions live in the client's local catalog. Do not
+    // ask the server for a System-map dynamic layer until that dependency is
+    // available locally; otherwise a response cannot form one epoch-coherent
+    // map snapshot.
+    if (!m_catalogs.hasStarAtlas())
+        return false;
+
     if (!forceRefresh && m_hasSystem && m_systemSnapshotId == systemId)
         return true;
 

@@ -52,6 +52,11 @@ struct SystemMapResponse
     std::uint64_t requestId = 0;
     SnapshotMetadata metadata;
     int systemId = -1;
+
+    // Stage 3A protocol seam: the authoritative server publishes the dynamic
+    // System-map layer and epoch in this snapshot, but leaves `bodies` empty.
+    // ClientMapService reconstructs deterministic celestial bodies from its
+    // local catalog/runtime at snapshot.universeTimeSeconds before exposing it.
     world::celestial::SystemMapSnapshot snapshot;
 };
 

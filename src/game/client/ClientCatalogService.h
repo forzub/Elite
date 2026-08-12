@@ -38,6 +38,13 @@ public:
     const world::celestial::StarAtlasDatabase* starAtlas() const;
     const world::celestial::CelestialSystemSnapshot* celestialSnapshot() const;
 
+    // Map/detail presentation may resolve any catalog system at an explicit
+    // universe epoch without replacing the primary player-system cache.
+    const world::celestial::CelestialSystemSnapshot* resolveCelestialSystem(
+        int systemId,
+        double universeTimeSeconds
+    ) const;
+
     const game::network::CatalogMetadata& starAtlasMetadata() const;
     const game::network::SnapshotMetadata& celestialMetadata() const;
 

@@ -167,7 +167,7 @@ architecture-safe thresholds.
 
 ## Server -> client presentation migration
 
-Functional migration is currently at **Migration Stage 2 complete**:
+Functional migration is currently at **Migration Stage 3A complete**:
 
 - Stage 0: client-facing state stopped depending directly on `GameServer`;
   `IGameSession`/`ITransport` and the local host own the server boundary.
@@ -182,31 +182,34 @@ Functional migration is currently at **Migration Stage 2 complete**:
   synchronized universe time.
 - Stage 2: predictable celestial presentation fields (time/orientation) for
   Detail/Hub are reconstructed client-side.
+- Stage 3A: the System-map celestial layer is client-owned. `GameServer` no
+  longer serializes `SystemMapBody` rows or resolves celestial state for a
+  normal System-map request. `ClientMapService` combines the authoritative
+  dynamic-object response with its local `StarAtlasDatabase` and
+  `CelestialRuntimeRegistry` at the **same response universe-time epoch**. The
+  optional server motion CSV may still resolve celestial state explicitly when
+  that diagnostic is enabled.
 
-The clock/revision work that followed is infrastructure for this migration; it
-did **not** migrate dynamic map geometry. First-class entity system membership is
-now in place as a prerequisite for Stage 3, but server map DTO construction still
-owns the dynamic composition.
+The clock/revision work that followed is infrastructure for this migration.
+First-class entity system membership and the response-epoch rule are now the
+main safety seams for continuing Stage 3 without mixing coordinate domains or
+map epochs.
 
 ### Next functional migration stage
 
-The authority seams required before Stage 3 are now explicit: timeline branches,
-entity membership, single-active-system runtime context and sensor domains no
-longer rely on coordinate coincidence or map metadata. The next architecture
-change should therefore be the presentation migration itself rather than another
-server-side map feature.
-
-**Migration Stage 3 is still pending:** move dynamic spatial map composition to
-the client.
+**Migration Stage 3 is in progress:** dynamic System-map objects and the complete
+Galaxy/Detail/Hub DTOs are still server-built.
 
 The server should eventually publish compact authoritative dynamic entity state
 (ships, hubs/infrastructure identities and gameplay-owned transforms/bindings),
 while the client combines that stream with its local catalog/celestial runtime
 to construct Galaxy/System/Detail/Hub presentation snapshots.
 
-Until that stage is complete, `GameServer` still builds the full map DTOs and
-`ClientCelestialMapBridge` must update only predictable fields; it must not mix
-new client-side celestial translations with old server dynamic geometry.
+During the partial migration, client-derived celestial translation is allowed
+for the System map only because it is evaluated at the exact universe-time epoch
+carried by that server response. Detail/Hub remain on the narrower Stage-2 bridge:
+their translations/velocities stay at the server dynamic-map epoch until those
+layers migrate together.
 
 ## Authoritative world bootstrap
 
@@ -220,8 +223,11 @@ but those constants must stay inside diagnostic/promo code paths.
 
 ## Known migration blockers / debt
 
-- `GameServer` still builds Galaxy/System/Detail/Hub snapshots, including much
-  deterministic catalog/celestial data already available on the client.
+- `GameServer` still builds Galaxy/Detail/Hub snapshots and the authoritative
+  dynamic-object portion of System snapshots. Deterministic System celestial
+  bodies have migrated to client-side composition; the remaining map DTOs still
+  contain deterministic catalog/presentation data to remove in later Stage-3
+  slices.
 - The legacy duplicate Sol/Earth/Moon gameplay pass has been removed from
   `SceneRenderer`; gameplay and maps must consume canonical client presentation
   state instead of maintaining a second hard-coded celestial world.

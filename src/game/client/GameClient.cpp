@@ -7,8 +7,8 @@
 
 GameClient::GameClient(ITransport& transport)
     : m_transport(transport)
-    , m_maps(transport)
     , m_catalogs(transport)
+    , m_maps(transport, m_catalogs)
 {
     m_connectionState = ClientConnectionState::Connecting;
 }

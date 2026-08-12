@@ -140,11 +140,17 @@ private:
 
 ShipControlState mapKeys(
     PlayerInputMapper& mapper,
-    SyntheticKeyState& keys
+    SyntheticKeyState& keys,
+    game::navigation::LocalFlightControlLaw currentLocalControlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian
 )
 {
     ShipControlState control;
-    mapper.updateFromKeyState(control, keys);
+    mapper.updateFromKeyState(
+        control,
+        keys,
+        currentLocalControlLaw
+    );
     return control;
 }
 
@@ -437,23 +443,32 @@ void synchronize(game::host::LocalGameSession& session)
     );
 }
 
-void runFrame(
+void runFrameForDuration(
     game::host::LocalGameSession& session,
-    const ShipControlState& control
+    const ShipControlState& control,
+    double frameSeconds
 )
 {
     GameClient& client = session.client();
 
     // Mirror the production SpaceState frame order:
     // synchronize/prepare -> sample input -> advance server -> client update.
-    client.prepareGameplayFrame(FrameSeconds);
+    client.prepareGameplayFrame(frameSeconds);
     client.submitInput(control);
-    session.advance(FrameSeconds);
+    session.advance(frameSeconds);
     client.update(
-        static_cast<float>(FrameSeconds),
+        static_cast<float>(frameSeconds),
         static_cast<float>(session.fixedStepSeconds()),
-        FrameSeconds
+        frameSeconds
     );
+}
+
+void runFrame(
+    game::host::LocalGameSession& session,
+    const ShipControlState& control
+)
+{
+    runFrameForDuration(session, control, FrameSeconds);
 }
 
 void runFrames(
@@ -593,14 +608,30 @@ void testInputMapping()
     // Holding Ctrl is allowed between deliberate F10 presses. The second
     // switch must again occur only after the qualified F10 release.
     keys.press(GLFW_KEY_F10);
-    control = mapKeys(mapper, keys);
+    control = mapKeys(
+        mapper,
+        keys,
+        game::navigation::LocalFlightControlLaw::Assisted
+    );
     require(!control.localControlLawCommandValid, "second Ctrl+F10 switched on press instead of release");
 
     keys.clear();
     keys.press(GLFW_KEY_LEFT_CONTROL);
-    (void)mapKeys(mapper, keys);
-    (void)mapKeys(mapper, keys);
-    control = mapKeys(mapper, keys);
+    (void)mapKeys(
+        mapper,
+        keys,
+        game::navigation::LocalFlightControlLaw::Assisted
+    );
+    (void)mapKeys(
+        mapper,
+        keys,
+        game::navigation::LocalFlightControlLaw::Assisted
+    );
+    control = mapKeys(
+        mapper,
+        keys,
+        game::navigation::LocalFlightControlLaw::Assisted
+    );
     require(control.localControlLawCommandValid, "second debounced Ctrl+F10 release emitted no command");
     require(
         control.requestedLocalControlLaw == game::navigation::LocalFlightControlLaw::Newtonian,
@@ -856,7 +887,29 @@ void testOrientationAndMovement(
     assistedModeControl = mapKeys(mapper, keys);
     require(assistedModeControl.localControlLawCommandValid,
             "debounced Ctrl+F10 release did not emit Assisted mode command during real flight");
-    runFrame(session, assistedModeControl);
+
+    // Reproduce the production failure that used to make Ctrl+F10 feel
+    // intermittent: sample the release on a render frame shorter than the
+    // fixed client step, then overwrite the continuous sample with neutral
+    // input before a fixed step occurs. The discrete mode command must remain
+    // pending until a numbered fixed-step input actually carries it.
+    ShipControlState postReleaseNeutral;
+    const double fixedSeconds = session.fixedStepSeconds();
+    runFrameForDuration(
+        session,
+        assistedModeControl,
+        fixedSeconds * 0.25
+    );
+    runFrameForDuration(
+        session,
+        postReleaseNeutral,
+        fixedSeconds * 0.25
+    );
+    runFrameForDuration(
+        session,
+        postReleaseNeutral,
+        fixedSeconds * 0.75
+    );
 
     waitFor(
         session,

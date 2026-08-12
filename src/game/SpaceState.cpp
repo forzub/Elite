@@ -1496,8 +1496,24 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
 }
 
     // === управление кораблём ===
-    m_inputMapper.update(m_playerControl);
-m_client->submitInput(m_playerControl);
+    // The mapper derives the requested opposite mode from the client's
+    // current predicted/authoritative ship state. It must not keep a private
+    // shadow copy of the flight law: a dropped/retried command or a loaded
+    // game that starts in Assisted would otherwise desynchronize the chord.
+    auto currentLocalControlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian;
+
+    if (m_client)
+    {
+        const auto& ships = m_client->world().ships();
+        const auto playerIt = ships.find(m_playerId.value);
+        if (playerIt != ships.end())
+            currentLocalControlLaw =
+                playerIt->second.transform.motion.localControlLaw;
+    }
+
+    m_inputMapper.update(m_playerControl, currentLocalControlLaw);
+    m_client->submitInput(m_playerControl);
 
 
 }

@@ -164,6 +164,19 @@ private:
     bool                            m_predictionSuspended = false;
     ShipControlState                m_latestControl;
     bool                            m_hasLatestControl = false;
+
+    // Render-frame input sampling and fixed-step command emission run at
+    // different cadences. Discrete commands therefore live here until one
+    // fixed client step has actually copied them into a numbered input.
+    // Continuous axes/buttons remain in m_latestControl.
+    bool                            m_hasPendingLocalControlLawCommand = false;
+    game::navigation::LocalFlightControlLaw
+                                    m_pendingLocalControlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian;
+    game::navigation::VelocityAlignmentMode
+                                    m_pendingVelocityAlignmentCommand =
+        game::navigation::VelocityAlignmentMode::None;
+
     float                           m_accumulator = 0.0f;
     std::uint64_t                   m_clientTick = 0;
     std::uint64_t                   m_lastAcceptedSnapshotTick = 0;

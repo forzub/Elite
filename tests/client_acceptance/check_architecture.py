@@ -5,6 +5,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 HARNESS = ROOT / "src/game/diagnostics/ClientAcceptanceHarness.cpp"
 MAPPER = ROOT / "src/game/ship/controller/PlayerInputMapper.cpp"
+GAME_CLIENT = ROOT / "src/game/client/GameClient.cpp"
 APPLICATION = ROOT / "src/core/Application.cpp"
 SPACE = ROOT / "src/game/SpaceState.cpp"
 SPACE_HEADER = ROOT / "src/game/SpaceState.h"
@@ -34,6 +35,7 @@ def read(path: Path) -> str:
 
 harness = read(HARNESS)
 mapper = read(MAPPER)
+game_client = read(GAME_CLIENT)
 application = read(APPLICATION)
 space = read(SPACE)
 space_header = read(SPACE_HEADER)
@@ -94,7 +96,7 @@ for forbidden in (
     if forbidden in harness:
         fail(f"harness bypasses the client/server path via: {forbidden}")
 
-if "updateFromKeyState(control, keys)" not in mapper:
+if "updateFromKeyState(control, keys, currentLocalControlLaw)" not in mapper:
     fail("runtime PlayerInputMapper no longer shares the injectable mapping path")
 
 # Function-key map layout is now a protected player-facing contract.
@@ -154,6 +156,15 @@ for token in (
 ):
     if token not in mapper:
         fail(f"Ctrl+F10 flight-law mapping lost: {token}")
+
+for token in (
+    "m_hasPendingLocalControlLawCommand = true",
+    "m_latestControl.localControlLawCommandValid = false",
+    "consumeLocalControlLawCommand",
+    "m_hasPendingLocalControlLawCommand = false",
+):
+    if token not in game_client:
+        fail(f"render/fixed-step command latch lost: {token}")
 
 for token in (
     "CoordinateDisplayService::instance()",

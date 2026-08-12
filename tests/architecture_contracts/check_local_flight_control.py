@@ -17,6 +17,8 @@ def fail(message: str) -> None:
 state = read("src/game/navigation/DynamicMotionState.h")
 system = read("src/game/navigation/DynamicMotionSystem.cpp")
 mapper = read("src/game/ship/controller/PlayerInputMapper.cpp")
+client = read("src/game/client/GameClient.cpp")
+space = read("src/game/SpaceState.cpp")
 shared = read("src/game/shared/SharedShipPhysics.cpp")
 simulation = read("src/game/simulation/GameSimulation.cpp")
 prediction = read("src/game/client/ClientHubTacticalPrediction.h")
@@ -62,6 +64,23 @@ for token in (
 ):
     if token not in mapper:
         fail(f"production input mapping lost: {token}")
+
+for token in (
+    "currentLocalControlLaw",
+    "playerIt->second.transform.motion.localControlLaw",
+):
+    if token not in (mapper + space):
+        fail(f"flight-law mapping lost current-state derivation: {token}")
+
+for token in (
+    "m_hasPendingLocalControlLawCommand = true",
+    "m_pendingLocalControlLaw",
+    "m_latestControl.localControlLawCommandValid = false",
+    "consumeLocalControlLawCommand",
+    "m_hasPendingLocalControlLawCommand = false",
+):
+    if token not in client:
+        fail(f"fixed-step discrete-command latch lost: {token}")
 
 if "LocalFlightControlLaw::Assisted" not in shared:
     fail("shared mode-switch path lost Assisted law")

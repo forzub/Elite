@@ -17,11 +17,15 @@ public:
 
 struct PlayerInputMapper
 {
-    void update(ShipControlState& control);
+    void update(
+        ShipControlState& control,
+        game::navigation::LocalFlightControlLaw currentLocalControlLaw
+    );
 
     void updateFromKeyState(
         ShipControlState& control,
-        const IPlayerInputKeyState& keys
+        const IPlayerInputKeyState& keys,
+        game::navigation::LocalFlightControlLaw currentLocalControlLaw
     );
 
 private:
@@ -37,6 +41,4 @@ private:
     CtrlF10State m_ctrlF10State = CtrlF10State::Idle;
     int m_ctrlF10ReleaseSamples = 0;
 
-    game::navigation::LocalFlightControlLaw m_requestedLocalControlLaw =
-        game::navigation::LocalFlightControlLaw::Newtonian;
 };

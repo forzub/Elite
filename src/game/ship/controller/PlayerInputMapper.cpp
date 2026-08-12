@@ -14,15 +14,19 @@ public:
 };
 }
 
-void PlayerInputMapper::update(ShipControlState& control)
+void PlayerInputMapper::update(
+    ShipControlState& control,
+    game::navigation::LocalFlightControlLaw currentLocalControlLaw
+)
 {
     const RuntimePlayerInputKeyState keys;
-    updateFromKeyState(control, keys);
+    updateFromKeyState(control, keys, currentLocalControlLaw);
 }
 
 void PlayerInputMapper::updateFromKeyState(
     ShipControlState& control,
-    const IPlayerInputKeyState& keys
+    const IPlayerInputKeyState& keys,
+    game::navigation::LocalFlightControlLaw currentLocalControlLaw
 )
 {
     auto& ctrl = control;
@@ -71,14 +75,12 @@ void PlayerInputMapper::updateFromKeyState(
             ++m_ctrlF10ReleaseSamples;
             if (m_ctrlF10ReleaseSamples >= kCtrlF10ReleaseDebounceSamples)
             {
-                m_requestedLocalControlLaw =
-                    m_requestedLocalControlLaw ==
+                ctrl.localControlLawCommandValid = true;
+                ctrl.requestedLocalControlLaw =
+                    currentLocalControlLaw ==
                             game::navigation::LocalFlightControlLaw::Newtonian
                         ? game::navigation::LocalFlightControlLaw::Assisted
                         : game::navigation::LocalFlightControlLaw::Newtonian;
-
-                ctrl.localControlLawCommandValid = true;
-                ctrl.requestedLocalControlLaw = m_requestedLocalControlLaw;
 
                 m_ctrlF10State = CtrlF10State::Idle;
                 m_ctrlF10ReleaseSamples = 0;

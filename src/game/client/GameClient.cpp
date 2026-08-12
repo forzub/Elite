@@ -20,6 +20,13 @@ void GameClient::beginSynchronization()
     m_maps.resetPendingRequests();
     m_catalogs.resetPendingRequests();
     m_pendingInputs.clear();
+    m_hasLatestControl = false;
+    m_latestControl = ShipControlState{};
+    m_hasPendingLocalControlLawCommand = false;
+    m_pendingLocalControlLaw =
+        game::navigation::LocalFlightControlLaw::Newtonian;
+    m_pendingVelocityAlignmentCommand =
+        game::navigation::VelocityAlignmentMode::None;
     m_predictionSuspended = false;
     m_accumulator = 0.0f;
     m_serverClock.reset();
@@ -57,10 +64,33 @@ const std::string& GameClient::connectionError() const
 
 void GameClient::submitInput(const ShipControlState& control)
 {
-    // Input sampling is frame-rate dependent; network commands and prediction
-    // are emitted only on fixed client steps in updateGameplay().
+    // Input sampling is frame-rate dependent; network inputs and prediction
+    // are emitted only on fixed client steps in updateGameplay(). A transient
+    // command must therefore survive any render frames that happen before the
+    // next fixed step. Otherwise a 60/120-FPS frame can overwrite a released
+    // Ctrl+F10 event with the following neutral sample before it is ever sent.
     m_latestControl = control;
     m_hasLatestControl = true;
+
+    if (control.localControlLawCommandValid)
+    {
+        m_hasPendingLocalControlLawCommand = true;
+        m_pendingLocalControlLaw = control.requestedLocalControlLaw;
+    }
+
+    if (control.velocityAlignmentCommand !=
+            game::navigation::VelocityAlignmentMode::None)
+    {
+        m_pendingVelocityAlignmentCommand =
+            control.velocityAlignmentCommand;
+    }
+
+    // Discrete commands are owned by the pending slots above. Keeping them in
+    // m_latestControl would repeat the same event across every fixed step of a
+    // long render frame.
+    m_latestControl.localControlLawCommandValid = false;
+    m_latestControl.velocityAlignmentCommand =
+        game::navigation::VelocityAlignmentMode::None;
 }
 
 
@@ -629,6 +659,24 @@ void GameClient::sendAndPredictFixedStep(
         return;
 
     ShipControlState control = m_latestControl;
+
+    const bool consumeLocalControlLawCommand =
+        m_hasPendingLocalControlLawCommand;
+    if (consumeLocalControlLawCommand)
+    {
+        control.localControlLawCommandValid = true;
+        control.requestedLocalControlLaw = m_pendingLocalControlLaw;
+    }
+
+    const bool consumeVelocityAlignmentCommand =
+        m_pendingVelocityAlignmentCommand !=
+            game::navigation::VelocityAlignmentMode::None;
+    if (consumeVelocityAlignmentCommand)
+    {
+        control.velocityAlignmentCommand =
+            m_pendingVelocityAlignmentCommand;
+    }
+
     control.controlTick = ++m_clientTick;
 
     bool predictThisStep = !m_predictionSuspended;
@@ -656,6 +704,18 @@ void GameClient::sendAndPredictFixedStep(
     msg.clientTick = control.controlTick;
     msg.payload = control;
     m_transport.sendClientMessage(msg);
+
+    // The numbered fixed-step input now owns these events. Clear the pending
+    // slots only after the transport accepted that input so a render-frame
+    // overwrite cannot make the command disappear before emission.
+    if (consumeLocalControlLawCommand)
+        m_hasPendingLocalControlLawCommand = false;
+
+    if (consumeVelocityAlignmentCommand)
+    {
+        m_pendingVelocityAlignmentCommand =
+            game::navigation::VelocityAlignmentMode::None;
+    }
 
     if (predictThisStep)
     {

@@ -8,6 +8,8 @@ GAME_SIM_CPP = ROOT / "src/game/simulation/GameSimulation.cpp"
 GAME_SIM_H = ROOT / "src/game/simulation/GameSimulation.h"
 CADENCE_LAB = ROOT / "src/game/diagnostics/ActivationCadenceLab.h"
 SCENE_CPP = ROOT / "src/game/scene/GameSceneSetup.cpp"
+SHARED_PHYSICS_CPP = ROOT / "src/game/shared/SharedShipPhysics.cpp"
+SHIP_CONTROLLER_CPP = ROOT / "src/game/ship/ShipController.cpp"
 
 # Activation is a physical/gameplay scheduling domain. Perception,
 # communications and client presentation must remain separate.
@@ -163,9 +165,24 @@ else:
         "activeNpcAiIntervalSeconds",
         "prewarmNpcAiIntervalSeconds",
         "coarseNpcAiIntervalSeconds",
+        "activeShipMotionControlIntervalSeconds",
+        "prewarmShipMotionControlIntervalSeconds",
+        "coarseShipMotionControlIntervalSeconds",
+        "shipMotionControlIntervalSeconds",
+        "advanceShipMotionControlCadence",
+        "activeShipSystemsIntervalSeconds",
+        "prewarmShipSystemsIntervalSeconds",
+        "coarseShipSystemsIntervalSeconds",
+        "activeShipMaintenanceIntervalSeconds",
+        "prewarmShipMaintenanceIntervalSeconds",
+        "coarseShipMaintenanceIntervalSeconds",
         "ActivationCadenceState",
         "npcAiIntervalSeconds",
+        "shipSystemsIntervalSeconds",
+        "shipMaintenanceIntervalSeconds",
         "advanceNpcAiCadence",
+        "advanceShipSystemsCadence",
+        "advanceShipMaintenanceCadence",
         "SimulationMode::Scheduled",
         "std::numeric_limits<double>::infinity()",
     ):
@@ -205,6 +222,10 @@ for token in (
     "m_activationHysteresisPolicy",
     "m_activationExecutionPolicy",
     "m_npcAiCadenceStates",
+    "m_shipMotionControlCadenceStates",
+    "m_shipMotionControlStepDecisions",
+    "m_shipSystemsCadenceStates",
+    "m_shipMaintenanceCadenceStates",
 ):
     if token not in sim_h:
         violations.append(f"GameSimulation activation state missing {token}")
@@ -271,9 +292,10 @@ for token in (
             f"activation cadence lab is not prepared for coherent accelerated timeline: {token}"
         )
 
-# Stage 3E allows exactly one production consumer of the activation plan:
-# NPC tactical AI think cadence. Physics/control application/HubTactical/
-# signals/snapshots must remain full-rate until coarse/scheduled motion exists.
+# Stage 4A/4B materialized runtime-cost slices. Stage 4B may decimate the
+# expensive attitude/control-force solver, but cheap kinematic propagation must
+# remain fixed-step so authoritative transforms and full-presence snapshots stay
+# continuous. Signals/perception remain outside activation scheduling.
 def function_region(text: str, start_token: str, end_token: str) -> tuple[str, str]:
     start = text.find(start_token)
     end = text.find(end_token, start + len(start_token)) if start >= 0 else -1
@@ -299,22 +321,120 @@ ai_region = (
     if ai_start >= 0 and ai_end >= 0
     else ""
 )
-outside_ai_region = (
-    outside_planner_functions[:ai_start] + outside_planner_functions[ai_end:]
-    if ai_region
-    else outside_planner_functions
-)
 
-if "m_activationPlannerDecisions" not in ai_region:
-    violations.append("Stage 3E NPC AI cadence does not consume the activation plan")
-if "advanceNpcAiCadence" not in ai_region:
-    violations.append("Stage 3E NPC AI cadence does not use the execution policy")
-if "ActivationNpcAiCadenceEnabled" not in ai_region:
-    violations.append("Stage 3E NPC AI cadence lacks the rollback feature flag")
-if "m_activationPlannerDecisions" in outside_ai_region:
-    violations.append(
-        "Stage 3E activation plan leaked beyond NPC AI cadence into another production loop"
-    )
+for token in (
+    "activationExecutionMode(id)",
+    "advanceNpcAiCadence",
+    "ActivationNpcAiCadenceEnabled",
+):
+    if token not in ai_region:
+        violations.append(f"Stage 4A NPC AI execution lane missing {token}")
+
+maintenance_start = outside_planner_functions.find(
+    "const auto maintenanceMode = activationExecutionMode(id);"
+)
+maintenance_end = outside_planner_functions.find(
+    "if (npcRepairThinkTick", maintenance_start
+)
+maintenance_region = (
+    outside_planner_functions[maintenance_start:maintenance_end]
+    if maintenance_start >= 0 and maintenance_end >= 0
+    else ""
+)
+for token in (
+    "ActivationShipMaintenanceCadenceEnabled",
+    "advanceShipMaintenanceCadence",
+    "updateAssemblyRuntime(maintenanceDt)",
+    "updateDetachedFragments(",
+    "updateRepairJobs(",
+):
+    if token not in maintenance_region:
+        violations.append(f"Stage 4A maintenance execution lane missing {token}")
+
+motion_start = outside_planner_functions.find(
+    "ActivationCadenceDecision\n                motionControlCadence"
+)
+motion_end = outside_planner_functions.find(
+    "for (auto& [id, shipPtr] : m_ships)", motion_start + 1
+)
+motion_region = (
+    outside_planner_functions[motion_start:motion_end]
+    if motion_start >= 0 and motion_end >= 0
+    else ""
+)
+for token in (
+    "ActivationShipMotionControlCadenceEnabled",
+    "advanceShipMotionControlCadence",
+    "m_shipMotionControlStepDecisions[id]",
+    "ship.updateMotionControl(",
+    "ship.propagateMotionOrientation(fdt);",
+    "ActivationShipSystemsCadenceEnabled",
+    "advanceShipSystemsCadence",
+    "ship.updateSystems(",
+):
+    if token not in motion_region:
+        violations.append(f"Stage 4B ship motion/service lane missing {token}")
+
+if motion_region:
+    control_gate = motion_region.find("if (motionControlCadence.execute)")
+    control_call = motion_region.find("ship.updateMotionControl(")
+    propagate_call = motion_region.find("ship.propagateMotionOrientation(fdt);")
+    systems_gate = motion_region.find("ActivationShipSystemsCadenceEnabled")
+    if min(control_gate, control_call, propagate_call, systems_gate) < 0:
+        violations.append("Stage 4B motion lane is incomplete")
+    elif not (control_gate < control_call < propagate_call < systems_gate):
+        violations.append(
+            "Stage 4B must gate control evaluation, then propagate orientation unconditionally before systems cadence"
+        )
+
+input_start = outside_planner_functions.find(
+    "const auto decisionIt =\n                m_shipMotionControlStepDecisions.find(id);"
+)
+input_end = outside_planner_functions.find(
+    "/*\n        Accelerated trajectory diagnostics", input_start
+)
+input_region = (
+    outside_planner_functions[input_start:input_end]
+    if input_start >= 0 and input_end >= 0
+    else ""
+)
+for token in (
+    "m_shipMotionControlStepDecisions.find(id)",
+    "!decisionIt->second.execute",
+    "motionControlDt",
+    "DynamicMotionSystem::applyLocalFrameInput(",
+):
+    if token not in input_region:
+        violations.append(f"Stage 4B HubTactical control refresh missing {token}")
+
+# Cheap translation propagation must stay fixed-step and outside the control
+# cadence gate. Sparse replication is a later slice with explicit omission
+# semantics; Stage 4B keeps every materialized entity present in snapshots.
+for token in (
+    "DynamicMotionSystem::updateLocalFrameMotion(",
+    "shipPtr->core().desc().physics,\n                dt",
+    "snapshot.ships.push_back(s);",
+):
+    if token not in outside_planner_functions:
+        violations.append(f"Stage 4B fixed-step/full-presence contract missing {token}")
+
+shared_physics = SHARED_PHYSICS_CPP.read_text(encoding="utf-8")
+ship_controller = SHIP_CONTROLLER_CPP.read_text(encoding="utf-8")
+for token in (
+    "evaluateControl(transform, params, control, world, dt);",
+    "propagateOrientation(transform, dt);",
+    "controller.updateControlRates(dt, params, transform, world);",
+):
+    if token not in shared_physics:
+        violations.append(f"SharedShipPhysics Stage 4B split missing {token}")
+for token in (
+    "void ShipController::updateControlRates(",
+    "void ShipController::propagateOrientation(",
+    "updateControlRates(dt, params, ship, world);",
+    "propagateOrientation(dt, ship);",
+):
+    if token not in ship_controller:
+        violations.append(f"ShipController Stage 4B split missing {token}")
 
 if "m_activationPlannerDecisions" not in log_region:
     violations.append("activation planner diagnostic writer is missing")
@@ -323,7 +443,7 @@ if "m_activationPlannerDecisions" not in planner_region:
     violations.append("activation planner evaluator does not publish decisions")
 
 if "simulation_activation_shadow.csv" not in log_region:
-    violations.append("Stage 3D must keep the temporary real-scene activation CSV")
+    violations.append("Stage 4B must keep the real-scene activation CSV")
 
 for token in (
     "requested_mode",
@@ -344,9 +464,16 @@ for token in (
     "npc_ai_think_count",
     "npc_ai_skipped_frames",
     "npc_ai_last_think_time_s",
+    "ship_motion_control_interval_s",
+    "ship_motion_control_update_count",
+    "ship_motion_control_skipped_frames",
+    "ship_systems_interval_s",
+    "ship_systems_update_count",
+    "ship_maintenance_interval_s",
+    "ship_maintenance_update_count",
 ):
     if token not in log_region:
-        violations.append(f"Stage 3D CSV missing {token}")
+        violations.append(f"Stage 4B CSV missing {token}")
 
 # The exact evaluator must now receive only spatial candidates in production.
 if "evaluateActivationShadow(" in planner_region:
@@ -354,7 +481,7 @@ if "evaluateActivationShadow(" in planner_region:
         "Stage 3D GameSimulation must not use the legacy all-pairs shadow evaluator"
     )
 
-# Keep physical planner cadence conservative while only NPC AI think cadence is gated.
+# Keep physical planner cadence conservative while the first materialized work lanes are gated.
 if "m_activationShadowEvaluationAccumulatorSeconds >= 0.20" not in sim_cpp:
     violations.append("activation planner must remain rate-limited at 5 Hz")
 

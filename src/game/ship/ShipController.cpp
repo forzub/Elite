@@ -348,6 +348,17 @@ void ShipController::update(
     const WorldParams& world
 )
 {
+    updateControlRates(dt, params, ship, world);
+    propagateOrientation(dt, ship);
+}
+
+void ShipController::updateControlRates(
+    float dt,
+    const ShipParams& params,
+    ShipTransform& ship,
+    const WorldParams& world
+)
+{
     (void)world;
 
     // ---------------- attitude / rotation only ----------------
@@ -440,6 +451,15 @@ void ShipController::update(
     ship.pitchRate += requestedAngularAcceleration.x * dt;
     ship.yawRate   += requestedAngularAcceleration.y * dt;
     ship.rollRate  += requestedAngularAcceleration.z * dt;
+}
+
+void ShipController::propagateOrientation(
+    float dt,
+    ShipTransform& ship
+)
+{
+    if (dt <= 0.0f)
+        return;
 
     const glm::vec3 right = ship.right();
     const glm::vec3 up = ship.up();

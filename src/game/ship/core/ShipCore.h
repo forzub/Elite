@@ -133,7 +133,17 @@ public:
         ModuleType&     module
     );
 
+    // Full compatibility path used by callers that want one combined step.
     void updatePhysics(float dt, const WorldParams& world);
+
+    // Runtime-scaling seam: motion must stay temporally coherent even when
+    // expensive internal ship systems are executed at a lower activation
+    // cadence. These two calls deliberately separate kinematics/control from
+    // reactor/thermal/life-support bookkeeping.
+    void updateMotionPhysics(float dt, const WorldParams& world);
+    void updateMotionControl(float dt, const WorldParams& world);
+    void propagateMotionOrientation(float dt);
+    void updateSystems(float dt);
     bool canInstallRadar(
         const ShipDescriptor& shipDesc,
         const RadarDesc& radarDesc

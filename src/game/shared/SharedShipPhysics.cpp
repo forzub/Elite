@@ -24,6 +24,17 @@ void integrate(
     const WorldParams& world,
     float dt)
 {
+    evaluateControl(transform, params, control, world, dt);
+    propagateOrientation(transform, dt);
+}
+
+void evaluateControl(
+    ShipTransform& transform,
+    const ShipParams& params,
+    const ShipControlState& control,
+    const WorldParams& world,
+    float dt)
+{
     auto& motion = transform.motion;
 
     if (control.localControlLawCommandValid)
@@ -98,9 +109,10 @@ void integrate(
     transform.jumpActive      = control.jumpActive;
 
     ShipController controller;
-    controller.update(dt, params, transform, world);
+    controller.updateControlRates(dt, params, transform, world);
 
-    // input state is one-frame transient
+    // input state is one-control-evaluation transient. Kinematic orientation
+    // propagation below does not need to retain these commands.
     transform.pitchInput      = 0.0f;
     transform.yawInput        = 0.0f;
     transform.rollInput       = 0.0f;
@@ -108,5 +120,14 @@ void integrate(
     transform.strafeInput     = 0.0f;
     transform.liftInput       = 0.0f;
     transform.targetSpeedRate = 0.0f;
+}
+
+void propagateOrientation(
+    ShipTransform& transform,
+    float dt
+)
+{
+    ShipController controller;
+    controller.propagateOrientation(dt, transform);
 }
 } // namespace SharedShipPhysics

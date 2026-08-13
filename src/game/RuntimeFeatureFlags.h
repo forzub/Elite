@@ -14,9 +14,13 @@ inline constexpr bool RadarHudEnabled = false;
 // policy is being validated against real scenes.
 inline constexpr bool ActivationShadowDiagnosticsEnabled = true;
 
-// Stage 3E gates only NPC tactical AI think cadence. Physics, controls,
-// HubTactical integration, signals and snapshots still run exactly as before.
-// This is deliberately reversible while coarse/scheduled motion is not yet
-// implemented.
+// Stage 4A/4B: planned activation mode controls materialized runtime work.
+// Stage 4B decimates expensive motion-control evaluation for Prewarm/Coarse
+// ships while cheap authoritative kinematic propagation remains on every fixed
+// tick. Signals and entity presence in replication remain full-rate/full-presence
+// until sparse replication/materialization semantics are introduced explicitly.
 inline constexpr bool ActivationNpcAiCadenceEnabled = true;
+inline constexpr bool ActivationShipMotionControlCadenceEnabled = true;
+inline constexpr bool ActivationShipSystemsCadenceEnabled = true;
+inline constexpr bool ActivationShipMaintenanceCadenceEnabled = true;
 }

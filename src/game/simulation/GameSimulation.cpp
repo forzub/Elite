@@ -846,6 +846,27 @@ ShipTransform GameSimulation::presentationShipTransform(
 }
 
 
+game::simulation::SimulationMode
+GameSimulation::activationExecutionMode(EntityId shipId) const noexcept
+{
+    using game::simulation::SimulationMode;
+
+    // The locally controlled player and Hub Motion Lab reference actors remain
+    // fully materialized. The latter are measurement probes and must not have
+    // their baseline altered by the production activation planner.
+    if (shipId == m_playerId || isHubMotionLabShip(shipId))
+        return SimulationMode::Active;
+
+    const auto stateIt = m_activationPlanStates.find(shipId);
+    if (stateIt != m_activationPlanStates.end())
+        return stateIt->second.plannedMode;
+
+    // Before the first 5 Hz planner evaluation, preserve legacy full-rate
+    // behavior rather than demoting an entity speculatively.
+    return SimulationMode::Active;
+}
+
+
 //                       ###              ##
 //                        ##              ##
 //  ##  ##   ######       ##    ####     #####    ####
@@ -913,9 +934,39 @@ void GameSimulation::update(
             continue;
         }
 
-        ship->core().updateAssemblyRuntime(dt);
-        ship->core().updateDetachedFragments(fdt);
-        ship->core().updateRepairJobs(fdt);
+        const auto maintenanceMode = activationExecutionMode(id);
+
+        if constexpr (game::runtime::ActivationShipMaintenanceCadenceEnabled)
+        {
+            auto& maintenanceState = m_shipMaintenanceCadenceStates[id];
+            const auto maintenanceCadence =
+                game::simulation::activation::advanceShipMaintenanceCadence(
+                    maintenanceState,
+                    maintenanceMode,
+                    dt,
+                    m_serverTimelineClock.timeSeconds(),
+                    m_activationExecutionPolicy
+                );
+
+            if (maintenanceCadence.execute)
+            {
+                const double maintenanceDt =
+                    maintenanceCadence.executionDeltaSeconds;
+                ship->core().updateAssemblyRuntime(maintenanceDt);
+                ship->core().updateDetachedFragments(
+                    static_cast<float>(maintenanceDt)
+                );
+                ship->core().updateRepairJobs(
+                    static_cast<float>(maintenanceDt)
+                );
+            }
+        }
+        else
+        {
+            ship->core().updateAssemblyRuntime(dt);
+            ship->core().updateDetachedFragments(fdt);
+            ship->core().updateRepairJobs(fdt);
+        }
 
 
         if (npcRepairThinkTick &&
@@ -1279,6 +1330,12 @@ m_hubVelocityMetersPerSecond[hubId] =
     // === 1. AI / controls / attitude ===
     if (!trajectoryDebugMode)
     {
+        // Stage 4B uses one cadence decision for both attitude/control-force
+        // evaluation and HubTactical engine-command refresh. Reusing the same
+        // accumulated dt prevents the two halves of ship motion from drifting
+        // onto different coarse epochs.
+        m_shipMotionControlStepDecisions.clear();
+
         for (auto& [id, shipPtr] : m_ships)
         {
             if (!shipPtr ||
@@ -1296,24 +1353,14 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (id == m_playerId)
                 continue;
 
-            // Stage 3E is the first production consumer of the activation
-            // plan, but only for NPC tactical AI cadence. Physics, control
-            // application, HubTactical integration, signals and snapshots
-            // remain full-rate until coarse/scheduled motion exists.
+            // Tactical AI is one of the activation-controlled materialized
+            // execution lanes. Stage 4B also decimates motion-control
+            // evaluation, while translation propagation remains fixed-step.
             game::simulation::SimulationMode executionMode =
                 game::simulation::SimulationMode::Active;
 
             if constexpr (game::runtime::ActivationNpcAiCadenceEnabled)
-            {
-                const auto plannerIt =
-                    m_activationPlannerDecisions.find(id);
-
-                if (plannerIt != m_activationPlannerDecisions.end())
-                {
-                    executionMode =
-                        plannerIt->second.planUpdate.plannedMode;
-                }
-            }
+                executionMode = activationExecutionMode(id);
 
             auto& cadenceState = m_npcAiCadenceStates[id];
             const auto cadence =
@@ -1367,7 +1414,76 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
 
             Ship& ship = *shipPtr;
-            ship.updatePhysics(fdt, m_world);
+
+            game::simulation::activation::ActivationCadenceDecision
+                motionControlCadence;
+
+            if constexpr (
+                game::runtime::ActivationShipMotionControlCadenceEnabled)
+            {
+                const auto motionMode = activationExecutionMode(id);
+                auto& motionState = m_shipMotionControlCadenceStates[id];
+                motionControlCadence =
+                    game::simulation::activation::advanceShipMotionControlCadence(
+                        motionState,
+                        motionMode,
+                        dt,
+                        m_serverTimelineClock.timeSeconds(),
+                        m_activationExecutionPolicy
+                    );
+            }
+            else
+            {
+                motionControlCadence.execute = true;
+                motionControlCadence.executionDeltaSeconds = dt;
+                motionControlCadence.thinkDeltaSeconds = dt;
+                motionControlCadence.intervalSeconds = 0.0;
+            }
+
+            m_shipMotionControlStepDecisions[id] = motionControlCadence;
+
+            if (motionControlCadence.execute)
+            {
+                ship.updateMotionControl(
+                    static_cast<float>(
+                        motionControlCadence.executionDeltaSeconds
+                    ),
+                    m_world
+                );
+            }
+
+            // Keep orientation kinematics on the authoritative fixed step.
+            // Coarse mode therefore holds the last angular acceleration/rates
+            // between control evaluations, but snapshots never see a frozen
+            // hull followed by a 200 ms orientation jump.
+            ship.propagateMotionOrientation(fdt);
+
+            if constexpr (game::runtime::ActivationShipSystemsCadenceEnabled)
+            {
+                const auto systemsMode = activationExecutionMode(id);
+                auto& systemsState = m_shipSystemsCadenceStates[id];
+                const auto systemsCadence =
+                    game::simulation::activation::advanceShipSystemsCadence(
+                        systemsState,
+                        systemsMode,
+                        dt,
+                        m_serverTimelineClock.timeSeconds(),
+                        m_activationExecutionPolicy
+                    );
+
+                if (systemsCadence.execute)
+                {
+                    ship.updateSystems(
+                        static_cast<float>(
+                            systemsCadence.executionDeltaSeconds
+                        )
+                    );
+                }
+            }
+            else
+            {
+                ship.updateSystems(fdt);
+            }
         }
 
         for (auto& [id, shipPtr] : m_ships)
@@ -1409,13 +1525,29 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (!tr.motion.travelFrame.valid)
                 continue;
 
+            const auto decisionIt =
+                m_shipMotionControlStepDecisions.find(id);
+
+            if (decisionIt == m_shipMotionControlStepDecisions.end() ||
+                !decisionIt->second.execute)
+            {
+                // Keep the last authoritative engine acceleration between
+                // coarse control evaluations. Translation is still propagated
+                // every fixed tick below, so the entity never freezes or
+                // teleports merely because its control solver is sleeping.
+                continue;
+            }
+
             const auto& control = shipPtr->core().control();
+            const float motionControlDt = static_cast<float>(
+                decisionIt->second.executionDeltaSeconds
+            );
 
             game::navigation::DynamicMotionSystem::applyLocalFrameInput(
                 tr.motion,
                 tr.motion.travelFrame,
                 shipPtr->core().desc().physics,
-                fdt,
+                motionControlDt,
                 control.targetSpeedRate,
                 control.cruiseActive,
                 control.forwardInput,
@@ -1483,9 +1615,10 @@ m_hubVelocityMetersPerSecond[hubId] =
         // the ordinary authoritative ShipSnapshot path below.
         updateHubMotionLabActors();
 
-        // Stage 3E keeps the 5 Hz physical planner, but NPC tactical AI above
-        // is now allowed to consume the stabilized planned mode as a think
-        // cadence. Physics, signals and snapshots still ignore plannedMode.
+        // Stage 4B keeps the 5 Hz physical planner. NPC tactical AI, motion
+        // control, internal systems and structural/repair maintenance consume
+        // the stabilized mode as work cadences. Cheap kinematic propagation,
+        // signals and entity presence in snapshots remain full-rate for now.
         m_activationShadowEvaluationAccumulatorSeconds += dt;
         if (!m_activationShadowEvaluated ||
             m_activationShadowEvaluationAccumulatorSeconds >= 0.20)
@@ -2337,6 +2470,12 @@ void GameSimulation::debugLogActivationShadow(double dt)
             << "npc_ai_interval_s,npc_ai_time_since_think_s,"
             << "npc_ai_think_count,npc_ai_skipped_frames,"
             << "npc_ai_last_think_time_s,"
+            << "ship_motion_control_interval_s,ship_motion_control_time_since_update_s,"
+            << "ship_motion_control_update_count,ship_motion_control_skipped_frames,"
+            << "ship_systems_interval_s,ship_systems_time_since_update_s,"
+            << "ship_systems_update_count,ship_systems_skipped_frames,"
+            << "ship_maintenance_interval_s,ship_maintenance_time_since_update_s,"
+            << "ship_maintenance_update_count,ship_maintenance_skipped_frames,"
             << "anchor_id,anchor_kind,current_center_distance_m,"
             << "current_surface_distance_m,time_to_closest_s,"
             << "closest_center_distance_m,closest_surface_distance_m,"
@@ -2383,6 +2522,38 @@ void GameSimulation::debugLogActivationShadow(double dt)
                 )
                 : 0.0;
 
+        const auto motionIt = m_shipMotionControlCadenceStates.find(id);
+        const auto systemsIt = m_shipSystemsCadenceStates.find(id);
+        const auto maintenanceIt = m_shipMaintenanceCadenceStates.find(id);
+        const auto* motionState =
+            motionIt != m_shipMotionControlCadenceStates.end()
+                ? &motionIt->second
+                : nullptr;
+        const auto* systemsState =
+            systemsIt != m_shipSystemsCadenceStates.end()
+                ? &systemsIt->second
+                : nullptr;
+        const auto* maintenanceState =
+            maintenanceIt != m_shipMaintenanceCadenceStates.end()
+                ? &maintenanceIt->second
+                : nullptr;
+
+        const double motionIntervalSeconds =
+            game::simulation::activation::shipMotionControlIntervalSeconds(
+                plan.plannedMode,
+                m_activationExecutionPolicy
+            );
+        const double systemsIntervalSeconds =
+            game::simulation::activation::shipSystemsIntervalSeconds(
+                plan.plannedMode,
+                m_activationExecutionPolicy
+            );
+        const double maintenanceIntervalSeconds =
+            game::simulation::activation::shipMaintenanceIntervalSeconds(
+                plan.plannedMode,
+                m_activationExecutionPolicy
+            );
+
         out
             << m_serverTimelineClock.timeSeconds() << ','
             << id.value << ','
@@ -2415,6 +2586,18 @@ void GameSimulation::debugLogActivationShadow(double dt)
             << (cadenceState ? cadenceState->executionCount : 0u) << ','
             << (cadenceState ? cadenceState->skippedFrameCount : 0u) << ','
             << (cadenceState ? cadenceState->lastExecutionServerTimeSeconds : 0.0) << ','
+            << (std::isfinite(motionIntervalSeconds) ? motionIntervalSeconds : -1.0) << ','
+            << (motionState ? motionState->timeSinceLastExecutionSeconds : 0.0) << ','
+            << (motionState ? motionState->executionCount : 0u) << ','
+            << (motionState ? motionState->skippedFrameCount : 0u) << ','
+            << (std::isfinite(systemsIntervalSeconds) ? systemsIntervalSeconds : -1.0) << ','
+            << (systemsState ? systemsState->timeSinceLastExecutionSeconds : 0.0) << ','
+            << (systemsState ? systemsState->executionCount : 0u) << ','
+            << (systemsState ? systemsState->skippedFrameCount : 0u) << ','
+            << (std::isfinite(maintenanceIntervalSeconds) ? maintenanceIntervalSeconds : -1.0) << ','
+            << (maintenanceState ? maintenanceState->timeSinceLastExecutionSeconds : 0.0) << ','
+            << (maintenanceState ? maintenanceState->executionCount : 0u) << ','
+            << (maintenanceState ? maintenanceState->skippedFrameCount : 0u) << ','
             << (decision.hasAnchor ? decision.anchorId.value : 0u) << ','
             << (decision.hasAnchor
                     ? activationAnchorKindName(decision.anchorKind)
@@ -2577,9 +2760,10 @@ void GameSimulation::updateActivationShadow()
         subject.bounds =
             makeSpatialBounds(core.descriptor().logicalDimensions());
 
-        // Production systems are still fully simulated, so currentMode remains
-        // truthful Active. Stage 3D keeps a separate persistent plannedMode
-        // with demotion hysteresis; no AI/physics/snapshot loop consumes it yet.
+        // currentMode reports the allocation actually consumed by the Stage 4A
+        // execution lanes. The tactical planner still bottoms out at Coarse;
+        // Scheduled materialization/collapse belongs to a later persistent-world
+        // slice.
         ActivationSpatialQueryResult broadphaseQuery;
         if (!(id == m_playerId))
         {
@@ -2590,12 +2774,14 @@ void GameSimulation::updateActivationShadow()
             );
         }
 
+        const auto currentExecutionMode = activationExecutionMode(id);
+
         auto physicalDecision =
             evaluateActivationShadowCandidates(
                 id,
                 tr.motion.systemId,
                 subject,
-                game::simulation::SimulationMode::Active,
+                currentExecutionMode,
                 id == m_playerId,
                 anchors,
                 broadphaseQuery.candidateIndices,

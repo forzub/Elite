@@ -74,7 +74,7 @@
 
 Подробный технический источник: `src/game/ARCHITECTURE_STATUS.md`.
 
-**Общий статус: `[~]` фундамент разделения готов, presentation migration продолжается.**
+**Общий статус: `[~]` фундамент разделения и presentation ownership основных карт готовы; следующий этап — runtime scaling/multi-system separation.**
 
 ### Уже сделано
 
@@ -90,22 +90,23 @@
 - `[x]` System map celestial layer client-owned.
 - `[x]` Обычные player/NPC ships на System map берутся из normal replication history, а не отдельного map ship channel.
 
-### Текущая незаконченная граница
+### Текущая граница
 
 - `[x]` System-map production infrastructure/hubs теперь берутся из ordinary authoritative `SimulationSnapshot` history на exact response epoch и client-composed; map response больше не является вторым production world-state каналом.
-- `[~]` Detail map DTO всё ещё в значительной степени строится сервером.
-- `[~]` Hub map DTO всё ещё в значительной степени строится сервером.
+- `[x]` Details client-composed из endpoint-local StarAtlas/celestial state + exact-epoch ordinary replication; server-built Detail presentation DTO удалён.
+- `[x]` Hub client-composed из parent celestial state + exact-epoch hub/modules/ships replication; server-built Hub presentation DTO удалён.
 - `[x]` StarAtlas — реально endpoint-local static data: client/server независимо грузят один и тот же каталог; `StarAtlasRequest`/presentation-data transport удалён.
 - `[x]` `SessionWelcome` передаёт только `schemaVersion + contentFingerprint`; несовместимый локальный StarAtlas останавливает синхронизацию вместо тихого рассогласования мира.
-- `[ ]` Отдельный headless `EliteServer` executable target. Compile seam уже подготовлен, но отдельного серверного бинарника ещё нет.
+- `[x]` Отдельный headless `EliteServer` executable target: собирается с `ELITE_BUILD_CLIENT=OFF`, не линкует GLFW/OpenGL/Freetype/WebView/UI/render и имеет authoritative runtime self-test.
 
 ### Ближайший рекомендуемый порядок
 
 1. `[x]` Убрать StarAtlas payload из транспорта: client/server независимо загружают одинаковый static catalog; handshake проверяет schema/content fingerprint.
 2. `[x]` Завершить System-map migration: infrastructure/hub identities/state приходят обычной authoritative replication, а presentation собирается клиентом.
-3. `[ ]` Перевести Details на client-side composition из authoritative entity/hub state + local static/celestial data. **Это следующий функциональный migration slice.**
-4. `[ ]` Перевести Hub на ту же модель.
-5. `[ ]` Создать отдельный headless `EliteServer` target и использовать compile/link boundary как жёсткую проверку server independence от render/UI.
+3. `[x]` Перевести Details на client-side composition из authoritative entity/hub state + local static/celestial data.
+4. `[x]` Перевести Hub на ту же модель.
+5. `[x]` Создать отдельный headless `EliteServer` target и использовать configure/compile/link boundary как жёсткую проверку server independence от render/UI.
+6. `[~]` Runtime scaling: Stage 4A/4B уже применяют `Active / Prewarm / Coarse` к реальной стоимости materialized ships. AI/service/maintenance cadence снижена, а дорогой motion-control solver отделён от дешёвой fixed-step kinematic propagation. Следующие slices — sparse replication и затем настоящие Scheduled materialization/collapse.
 
 ---
 
@@ -203,7 +204,11 @@ Scheduled
 - `[x]` Есть entity runtime-policy foundation: `EntityType`, `MotionModel`, `SimulationMode`, `TimelineDomain`, authority/presentation policy.
 - `[x]` Есть режимы `Scheduled / Coarse / Prewarm / Active` и explicit transition rules.
 - `[x]` Есть activation anchors, spatial broad-phase, predicted interaction/CPA logic и hysteresis/state machine.
-- `[~]` Activation policy уже влияет на часть AI cadence, но ещё не является полной системой снижения стоимости physics/signals/replication.
+- `[x]` Stage 4A: activation policy реально снижает materialized CPU work — NPC tactical AI, reactor/thermal/cooling/life-support и structural/repair maintenance получают разные `Active / Prewarm / Coarse` cadence. Накопленный `dt` сохраняет прошедшее service-time.
+- `[x]` Stage 4A снизил cadence NPC AI, internal ship systems и structural/repair maintenance без изменения motion trajectory.
+- `[x]` Stage 4B разделил motion на дорогой **control/rate evaluation** и дешёвую **kinematic propagation**: `Active` сохраняет старый 50 Hz путь, `Prewarm` пересчитывает control примерно 25 Hz, `Coarse` примерно 5 Hz, но orientation/translation продолжают authoritative fixed-step propagation между этими расчётами. HubTactical engine acceleration удерживается между coarse control updates, поэтому сущность не замирает и не телепортируется.
+- `[x]` Stage 4B сознательно оставляет signals и присутствие сущности в обычных snapshots full-rate/full-presence; sparse replication требует отдельной семантики omission/retention.
+- `[~]` Activation ещё не является полной системой снижения стоимости мира: sparse replication и Scheduled materialization/collapse впереди.
 - `[ ]` Корабль, летящий месяц между точками, не должен считаться полноценной физикой 50 раз/сек.
 - `[ ]` При приближении игрока дальняя сущность materialize в правильной точке своей траектории и получает полноценную физику/NPC/повреждения/столкновения.
 - `[ ]` При удалении сущность должна снова collapse в coarse/scheduled representation без потери persistent identity, состояния и истории.
@@ -270,13 +275,13 @@ SignalIdentity
 
 ## 12. Карты
 
-**Статус: `[~]` migration уже идёт, но server-built presentation DTO ещё не устранены полностью.**
+**Статус: `[~]` presentation ownership migration основных карт завершена; остаются отдельные функциональные возможности карт.**
 
 - `[x]` Есть Galaxy / System / Details / Hub modes.
 - `[x]` Navigation grid/cube hierarchy является базовой системой адресации/навигации.
-- `[x]` Часть Galaxy/System composition уже перенесена на клиент.
-- `[~]` Постепенно убрать с сервера map-specific infrastructure и stations/hubs там, где их можно собрать из runtime + persistent metadata.
-- `[~]` Убрать оставшиеся тяжёлые Detail/Hub map DTO и закончить client-side composition.
+- `[x]` Galaxy/System/Details/Hub production presentation собирается клиентом из local catalogs/celestial state + authoritative replicated facts/epochs.
+- `[x]` Map-specific production infrastructure/hub state не является параллельным world-state каналом.
+- `[x]` Тяжёлые server-built Detail/Hub presentation DTO удалены.
 - `[ ]` Полноценная selection кораблей на System Map -> Details.
 - `[ ]` После завершения migration добавить trajectory presentation как отдельный независимый слой карт.
 
@@ -339,13 +344,13 @@ both clients are observers/predictors
 
 ## 15. Крупные будущие блоки и текущий приоритет
 
-Локализация и sky cultures на текущем этапе уже закрыты. После нынешней архитектурной миграции остаются пять крупных связанных направлений:
+Локализация и sky cultures на текущем этапе уже закрыты. Крупная дорожная карта содержит пять связанных направлений; первое из них теперь также закрыто на текущем архитектурном уровне:
 
-1. `[~]` **Завершить client/server presentation migration** — StarAtlas ownership, System/Details/Hub composition, headless server target.
+1. `[x]` **Client/server presentation migration основных карт + headless server boundary** — StarAtlas ownership, Galaxy/System/Details/Hub composition и отдельный `EliteServer` target готовы.
 2. `[ ]` **Навигационный compass / azimuth / elevation + модель определения абсолютных координат**.
 3. `[ ]` **J и полноценный inter-system runtime**.
 4. `[ ]` **On-demand trajectories + модель знания игрока о маршрутах/истории движения**.
-5. `[~]` **Persistent universe: реальные корабли + Scheduled/Coarse/Prewarm/Active materialization**.
+5. `[~]` **Persistent universe: реальные корабли + Scheduled/Coarse/Prewarm/Active materialization** — Stage 4A/4B materialized execution и coarse motion-control cadences готовы; sparse replication и Scheduled lifecycle впереди.
 
 Эти направления образуют одну связанную навигационно-информационную модель мира, а не набор независимых фич.
 
@@ -356,8 +361,9 @@ both clients are observers/predictors
 1. Локализация — **закрыта**.
 2. Звёздное небо/созвездия — **закрыты**.
 3. `Ctrl+F10` flight-mode switching — **исправлено**.
-4. Следующий фокус — **продолжение client/server presentation migration**.
-5. Текущий следующий технический шаг — **закончить System-map migration: убрать map-specific infrastructure/hub composition с сервера и получать эти authoritative facts через обычную world/entity replication**.
+4. Client/server presentation ownership основных карт — **закрыт на текущем этапе**.
+5. Headless `EliteServer` executable — **готов**; ready harness отдельно конфигурирует его без client/render dependencies и запускает authoritative smoke.
+6. Текущий следующий технический шаг — **sparse replication semantics**, затем `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse. Обычный snapshot не должен трактовать временно неотправленную coarse entity как уничтоженную.
 
 ---
 

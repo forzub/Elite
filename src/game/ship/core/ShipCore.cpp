@@ -173,35 +173,52 @@ void ShipCore::init(
 
 void ShipCore::updatePhysics(float dt, const WorldParams& world)
 {
-    
-    
-    // m_controller.update(
-    //     dt,
-    //     m_desc->physics,
-    //     m_transform,
-    //     world
-    // );
-    
-  
+    updateMotionPhysics(dt, world);
+    updateSystems(dt);
+}
 
+void ShipCore::updateMotionPhysics(float dt, const WorldParams& world)
+{
     SharedShipPhysics::integrate(
         m_transform,
         m_desc->physics,
         m_control,
         world,
         dt
-        );
+    );
+}
 
+void ShipCore::updateMotionControl(float dt, const WorldParams& world)
+{
+    SharedShipPhysics::evaluateControl(
+        m_transform,
+        m_desc->physics,
+        m_control,
+        world,
+        dt
+    );
+}
 
-    // ================================================
-    // --------------- сердце корабля ----------------
-    // ================================================
+void ShipCore::propagateMotionOrientation(float dt)
+{
+    SharedShipPhysics::propagateOrientation(
+        m_transform,
+        dt
+    );
+}
 
-    // 1. Сбрасываем счетчики
+void ShipCore::updateSystems(float dt)
+{
+    if (dt <= 0.0f)
+        return;
+
+    // Internal service simulation is deliberately separated from motion.
+    // Activation may decimate this lane for non-player ships while world
+    // kinematics remain on the authoritative fixed step. The accumulated dt
+    // passed by GameSimulation preserves elapsed service time.
+
     m_thermal.resetHeatVolume();
 
-
-    // 2. определение желаний потребителей.
     m_cooling.setReactorState(
         m_reactor.getTemperature(),
         m_reactor.getWorkTemp(),
@@ -211,57 +228,35 @@ void ShipCore::updatePhysics(float dt, const WorldParams& world)
         m_thermal.getCriticalTemp()
     );
     m_cooling.calcRequestedPower();
-    // 3. PowerBus распределяет энергию (определяет, сколько получит насос)
-    // опрашивает потребителей
-    // задает throttle
-    // распределяет энергию согласно возможностей
-    m_powerBus.update();
 
-    //    ВНУТРИ reactor.update() уже вызывается m_thermal.addHeat()
+    m_powerBus.update();
     m_reactor.update(dt, m_thermal, m_cooling.getPumpCapacity());
 
-    // 4. Тепло от ВСЕХ потребителей (кроме реактора и охлаждения)
-    //    НЕ включая охлаждение - его тепло от насосов учтем отдельно
     for (auto* consumer : m_powerBus.getConsumers())
     {
-        // Пропускаем охлаждение - уже учтено в update
-        if (consumer == &m_cooling) continue;
-        
-        auto* heatSource = dynamic_cast<game::equipment::IHeatSource*>(consumer);
-        if (heatSource) {
-            double heatMW = heatSource->getHeatGeneration();
-            if (heatMW > 0) {
+        if (consumer == &m_cooling)
+            continue;
+
+        auto* heatSource =
+            dynamic_cast<game::equipment::IHeatSource*>(consumer);
+
+        if (heatSource)
+        {
+            const double heatMW = heatSource->getHeatGeneration();
+            if (heatMW > 0.0)
                 m_thermal.addHeat(heatMW * dt);
-            }
         }
     }
 
-    // 6. Система охлаждения забирает тепло из антифриза
-    //    ВНУТРИ cooling.update() вызывается m_thermal.removeHeat()
     m_cooling.update(dt, m_thermal);
-
-    // 7. Обновляем остальные системы (они могут менять свое состояние)
     m_lifeSupport.update(dt);
     m_avionics.update(dt);
     m_radiationShield.update(dt);
 
-    // 8. НЕ добавляем тепло от них снова! Они уже учтены в п.4
-
-    
-    
-    
-
-
-
-
-
-    if (m_powerBus.overloaded()) 
-    {    
+    if (m_powerBus.overloaded())
         m_thermal.addHeat(5.0 * dt);
-    }
 
     m_thermal.update(dt);
-
 }
 
 

@@ -4,12 +4,7 @@
 #include <cstdio>
 #include <fstream>
 
-#include "src/input/Input.h"
 
-#include "src/game/signals/SignalPatternLibrary.h"
-#include "src/game/equipment/EquipmentSlot.h"
-#include "src/game/ship/descriptors/EliteCobraMk1.h"
-#include "src/render/bitmap/TextureLoader.h"
 
 
 
@@ -65,11 +60,26 @@ void Ship::applyControl()
 void Ship::updatePhysics(float dt, const WorldParams& world)
 {
     m_core.updatePhysics(dt, world);
+}
 
-    // m_core.m_signalController.update(dt, m_core.emittedSignal());
+void Ship::updateMotionPhysics(float dt, const WorldParams& world)
+{
+    m_core.updateMotionPhysics(dt, world);
+}
 
-    // if (m_core.emittedSignal().enabled)
-    //     m_core.emittedSignal().position = m_core.transform().position;
+void Ship::updateMotionControl(float dt, const WorldParams& world)
+{
+    m_core.updateMotionControl(dt, world);
+}
+
+void Ship::propagateMotionOrientation(float dt)
+{
+    m_core.propagateMotionOrientation(dt);
+}
+
+void Ship::updateSystems(float dt)
+{
+    m_core.updateSystems(dt);
 }
 
 

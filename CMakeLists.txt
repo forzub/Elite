@@ -3,15 +3,20 @@ cmake_minimum_required(VERSION 3.16)
 project(EliteGame LANGUAGES C CXX)
 include(FetchContent)
 
-set(WEBVIEW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(WEBVIEW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(WEBVIEW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(WEBVIEW_BUILD_STATIC_LIBRARY ON CACHE BOOL "" FORCE)
-set(WEBVIEW_BUILD_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
-set(WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL ON CACHE BOOL "" FORCE)
-set(WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK ON CACHE BOOL "" FORCE)
+option(ELITE_BUILD_CLIENT "Build the graphical EliteGame client" ON)
+option(ELITE_BUILD_SERVER "Build the headless EliteServer executable" ON)
 
-add_subdirectory(third_party/webview)
+if(ELITE_BUILD_CLIENT)
+    set(WEBVIEW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(WEBVIEW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(WEBVIEW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+    set(WEBVIEW_BUILD_STATIC_LIBRARY ON CACHE BOOL "" FORCE)
+    set(WEBVIEW_BUILD_SHARED_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(WEBVIEW_MSWEBVIEW2_BUILTIN_IMPL ON CACHE BOOL "" FORCE)
+    set(WEBVIEW_MSWEBVIEW2_EXPLICIT_LINK ON CACHE BOOL "" FORCE)
+
+    add_subdirectory(third_party/webview)
+endif()
 
 
 
@@ -25,16 +30,20 @@ include_directories(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(glfw3 CONFIG REQUIRED)
-find_package(Freetype REQUIRED)
-
 find_package(nlohmann_json REQUIRED)
+find_package(Threads REQUIRED)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glad)
+if(ELITE_BUILD_CLIENT)
+    find_package(glfw3 CONFIG REQUIRED)
+    find_package(Freetype REQUIRED)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glad)
+endif()
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 
+if(ELITE_BUILD_CLIENT)
 add_executable(EliteGame
     src/main.cpp
 
@@ -313,6 +322,100 @@ add_executable(EliteGame
     src/game/system_map/AuthoritativeMapInterpolator.cpp
     src/world/celestial/CelestialRuntimeRegistry.cpp
 )
+endif()
+
+if(ELITE_BUILD_SERVER)
+    add_executable(EliteServer
+        src/server_main.cpp
+
+        src/game/equipment/signalNode/processing/SignalReceiver.cpp
+        src/world/WorldSignalTxSystem.cpp
+
+        src/game/equipment/data/transmitters.cpp
+        src/game/equipment/data/receivers.cpp
+        src/game/equipment/data/jammers.cpp
+        src/game/equipment/data/decryptors.cpp
+        src/game/equipment/data/radars.cpp
+
+        src/game/signals/SignalPattern.cpp
+        src/game/signals/SignalPatternLibrary.cpp
+
+        src/game/ship/descriptors/EliteCobraMk1.cpp
+        src/game/ship/ShipController.cpp
+        src/game/ship/physics/ShipImpulseSystem.cpp
+        src/game/ship/Ship.cpp
+        src/game/ship/ShipDescriptorRegistry.cpp
+        src/game/ship/core/ShipSignalController.cpp
+        src/game/ship/core/ShipCore.cpp
+        src/game/ship/core/PowerBus.cpp
+        src/game/ship/core/ThermalSystem.cpp
+        src/game/ship/core/ReactorSystem.cpp
+        src/game/ship/core/CoolingSystem.cpp
+        src/game/ship/core/systems/CoreSystem.cpp
+        src/game/ship/core/ShipHitBuilder.cpp
+        src/game/ship/damage/ShipDamageHandler.cpp
+        src/game/ship/view/ShipAttachmentResolver.cpp
+
+        src/game/simulation/GameSimulation.cpp
+        src/game/simulation/NpcAiSystem.cpp
+        src/game/server/GameServer.cpp
+        src/game/server/ServerRunner.cpp
+        src/game/server/ServerRuntime.cpp
+        src/game/shared/SharedShipPhysics.cpp
+
+        src/game/equipment/DamageModel.cpp
+        src/game/equipment/radar/RadarModule.cpp
+        src/game/equipment/signalNode/ReceiverModule.cpp
+        src/game/equipment/signalNode/SignalTransmitterModule.cpp
+        src/game/equipment/EquipmentModule.cpp
+
+        src/game/damage/DamageSystem.cpp
+
+        src/game/geometry/ObjLoader.cpp
+        src/game/geometry/ObjectAssemblyRegistry.cpp
+        src/game/geometry/AssemblyMeshLibrary.cpp
+
+        src/world/descriptors/ObjectDescriptorRegistry.cpp
+        src/world/objects/StaticObjectDamage.cpp
+        src/world/modules/ObjectModuleRuntime.cpp
+        src/world/modules/ObjectAssemblyRuntime.cpp
+        src/world/modules/HitVolumeSnapshotBuilder.cpp
+        src/world/modules/ObjectRuntimeHitBuilder.cpp
+        src/world/modules/ObjectAssemblyTransformUtils.cpp
+        src/world/modules/ObjectStructuralLinkRuntime.cpp
+        src/world/modules/ObjectDetachedFragmentRuntime.cpp
+        src/world/modules/ObjectRepairJobRuntime.cpp
+
+        src/world/navigation/ObstacleAvoidance.cpp
+        src/world/navigation/SmallCraftNavigation.cpp
+        src/world/navigation/TacticalCollisionMonitor.cpp
+        src/world/navigation/NavigationContactAdapters.cpp
+        src/world/navigation/ObstaclePathPlanner.cpp
+        src/world/navigation/NavigationBodyAdapter.cpp
+
+        src/game/promo/PromoFlybyScenario.cpp
+        src/game/scene/GameSceneSetup.cpp
+
+        src/world/celestial/StarAtlasDatabase.cpp
+        src/world/celestial/CelestialSystemRuntime.cpp
+        src/world/celestial/CelestialRuntimeRegistry.cpp
+
+        src/game/navigation/DynamicMotionSystem.cpp
+        src/game/navigation/GalaxyNavigationConfig.cpp
+        src/game/navigation/PlayerSpatialDomainResolver.cpp
+
+        src/debug/DebugSettings.cpp
+    )
+
+    target_include_directories(EliteServer PRIVATE
+        src
+    )
+
+    target_link_libraries(EliteServer PRIVATE
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+    )
+endif()
 
 
 set(ELITE_STATIC_ASSETS_DIR
@@ -410,14 +513,15 @@ add_custom_target(
         copy_external_assets
 )
 
-add_dependencies(
-    EliteGame
-    copy_assets
-)
+if(TARGET EliteGame)
+    add_dependencies(EliteGame copy_assets)
+endif()
 
+if(TARGET EliteServer)
+    add_dependencies(EliteServer copy_assets)
+endif()
 
-
-
+if(TARGET EliteGame)
 set_source_files_properties(
     glad/src/gl.c
     PROPERTIES
@@ -425,6 +529,8 @@ set_source_files_properties(
 )
 
 target_compile_definitions(EliteGame PRIVATE GLFW_INCLUDE_NONE)
+
+target_compile_definitions(EliteGame PRIVATE ELITE_CLIENT_PRESENTATION=1)
 
 target_include_directories(EliteGame PRIVATE
     src
@@ -460,3 +566,4 @@ target_link_libraries(EliteGame PRIVATE
 
 
 )
+endif()

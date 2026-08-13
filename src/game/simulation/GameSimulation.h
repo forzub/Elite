@@ -301,6 +301,9 @@ private:
     void updateHubMotionLabActors();
     void updateActivationCadenceLabClaim(double serverTimeSeconds);
     void updateActivationShadow();
+    game::simulation::SimulationMode activationExecutionMode(
+        EntityId shipId
+    ) const noexcept;
     void endUniverseTrajectoryDiagnostic();
     void advanceUniverseTrajectoryDiagnostic(double universeDeltaSeconds);
     bool applyDiagnosticTrajectoryTransform(
@@ -353,10 +356,12 @@ private:
 
     EntityId m_activationCadenceLabShipId {0};
 
-    // Stage 3E keeps the spatial/CPA planner and allows only NPC tactical AI
-    // think cadence to consume plannedMode. Physics, HubTactical integration,
-    // signals and snapshots remain full-rate until coarse/scheduled motion is
-    // explicit. Sensors and signal visibility remain outside this domain.
+    // Stage 4A/4B: the stabilized activation plan controls real materialized
+    // work lanes. Motion-control evaluation is decimated for Prewarm/Coarse
+    // while cheap kinematic propagation remains fixed-step; signals and entity
+    // presence in snapshots remain full-rate until sparse replication and
+    // Scheduled materialization semantics are introduced explicitly. Sensors
+    // and signal visibility remain outside the activation domain.
     std::unordered_map<
         EntityId,
         game::simulation::activation::ActivationPlannerDecision
@@ -383,6 +388,29 @@ private:
         EntityId,
         game::simulation::activation::ActivationCadenceState
     > m_npcAiCadenceStates;
+
+    std::unordered_map<
+        EntityId,
+        game::simulation::activation::ActivationCadenceState
+    > m_shipMotionControlCadenceStates;
+
+    // Per-fixed-tick cache: attitude/control-force evaluation and
+    // HubTactical engine-command refresh must use the same accumulated dt.
+    // The map is cleared each tick but retains capacity.
+    std::unordered_map<
+        EntityId,
+        game::simulation::activation::ActivationCadenceDecision
+    > m_shipMotionControlStepDecisions;
+
+    std::unordered_map<
+        EntityId,
+        game::simulation::activation::ActivationCadenceState
+    > m_shipSystemsCadenceStates;
+
+    std::unordered_map<
+        EntityId,
+        game::simulation::activation::ActivationCadenceState
+    > m_shipMaintenanceCadenceStates;
 
     double m_activationShadowEvaluationAccumulatorSeconds = 0.0;
     bool m_activationShadowEvaluated = false;

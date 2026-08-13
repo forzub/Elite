@@ -50,6 +50,28 @@ run_suite \
     "CLIENT ACCEPTANCE HARNESS" \
     "tests/client_acceptance/run_mingw64.sh"
 
+run_headless_server_build() {
+    echo
+    echo "================================================================"
+    echo "TEST BLOCK: HEADLESS SERVER BUILD"
+    echo "================================================================"
+
+    local build_dir="${ROOT_DIR}/build/headless_server"
+
+    if cmake -S "${ROOT_DIR}" -B "${build_dir}" -G Ninja \
+        -DELITE_BUILD_CLIENT=OFF \
+        -DELITE_BUILD_SERVER=ON \
+        && cmake --build "${build_dir}" --target EliteServer \
+        && (cd "${build_dir}" && ./EliteServer.exe --self-test); then
+        echo "[PASS BLOCK] HEADLESS SERVER BUILD + AUTHORITATIVE SMOKE"
+    else
+        echo "[FAIL BLOCK] HEADLESS SERVER BUILD + AUTHORITATIVE SMOKE" >&2
+        failures=$((failures + 1))
+    fi
+}
+
+run_headless_server_build
+
 run_main_target_build() {
     echo
     echo "================================================================"

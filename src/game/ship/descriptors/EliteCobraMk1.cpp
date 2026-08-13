@@ -264,12 +264,17 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         // загружаем текстуру кабины или модель корабля
         // -----------------------------
 
+#if defined(ELITE_CLIENT_PRESENTATION)
+        // Cockpit geometry/textures are client presentation assets.
+        // The authoritative/headless descriptor deliberately leaves
+        // this field empty, so the server never needs cockpit geometry.
         CockpitData cp;
         cp.enabled = true;
         cp.geometry = createCockpitGeometry(desc);
         cp.baseTexturePath  = "assets/img/cobra-mk1-2560x1440-cockpits.png";
         cp.glassTexturePath = "assets/img/cobra-mk1-2560x1440-glass.png";
         desc.cockpit = cp;
+#endif
 
 
         // здесь можно задать 3D модель

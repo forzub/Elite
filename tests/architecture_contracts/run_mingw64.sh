@@ -39,6 +39,7 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_sky_culture_catalogs.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_localization_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_headless_server_boundary.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_headless_server_executable.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_transport_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_runtime_ownership.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_debug_session_boundary.py"

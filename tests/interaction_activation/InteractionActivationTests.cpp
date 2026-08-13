@@ -931,6 +931,203 @@ void testNonMaterializedModesDoNotRunTacticalNpcAi()
     }
 }
 
+
+
+void testShipMotionControlCadenceDecimatesControlSolver()
+{
+    using namespace game::simulation::activation;
+
+    ActivationExecutionPolicy policy;
+
+    const auto countExecutions = [&](SimulationMode mode)
+    {
+        ActivationCadenceState state;
+        int executions = 0;
+
+        for (int frame = 1; frame <= 50; ++frame)
+        {
+            const auto decision = advanceShipMotionControlCadence(
+                state,
+                mode,
+                0.02,
+                frame * 0.02,
+                policy
+            );
+            executions += decision.execute ? 1 : 0;
+        }
+
+        return executions;
+    };
+
+    REQUIRE(countExecutions(SimulationMode::Active) == 50);
+    REQUIRE(countExecutions(SimulationMode::Prewarm) == 25);
+    REQUIRE(countExecutions(SimulationMode::Coarse) == 5);
+}
+
+void testCoarseMotionControlCadenceCarriesBoundedElapsedTime()
+{
+    using namespace game::simulation::activation;
+
+    ActivationExecutionPolicy policy;
+    ActivationCadenceState state;
+    ActivationCadenceDecision decision;
+
+    for (int frame = 1; frame <= 10; ++frame)
+    {
+        decision = advanceShipMotionControlCadence(
+            state,
+            SimulationMode::Coarse,
+            0.02,
+            frame * 0.02,
+            policy
+        );
+    }
+
+    REQUIRE(decision.execute);
+    REQUIRE(approx(decision.intervalSeconds, 0.20));
+    REQUIRE(approx(decision.executionDeltaSeconds, 0.20));
+    REQUIRE(state.executionCount == 1);
+    REQUIRE(state.skippedFrameCount == 9);
+}
+
+void testShipSystemsCadenceDecimatesMaterializedServiceWork()
+{
+    using namespace game::simulation::activation;
+
+    ActivationExecutionPolicy policy;
+
+    const auto countExecutions = [&](SimulationMode mode)
+    {
+        ActivationCadenceState state;
+        int executions = 0;
+
+        for (int frame = 1; frame <= 50; ++frame)
+        {
+            const auto decision = advanceShipSystemsCadence(
+                state,
+                mode,
+                0.02,
+                frame * 0.02,
+                policy
+            );
+            executions += decision.execute ? 1 : 0;
+        }
+
+        return executions;
+    };
+
+    REQUIRE(countExecutions(SimulationMode::Active) == 50);
+    REQUIRE(countExecutions(SimulationMode::Prewarm) == 10);
+    REQUIRE(countExecutions(SimulationMode::Coarse) == 1);
+}
+
+void testShipMaintenanceCadenceDecimatesMaterializedMaintenance()
+{
+    using namespace game::simulation::activation;
+
+    ActivationExecutionPolicy policy;
+
+    const auto countExecutions = [&](SimulationMode mode)
+    {
+        ActivationCadenceState state;
+        int executions = 0;
+
+        for (int frame = 1; frame <= 50; ++frame)
+        {
+            const auto decision = advanceShipMaintenanceCadence(
+                state,
+                mode,
+                0.02,
+                frame * 0.02,
+                policy
+            );
+            executions += decision.execute ? 1 : 0;
+        }
+
+        return executions;
+    };
+
+    REQUIRE(countExecutions(SimulationMode::Active) == 50);
+    REQUIRE(countExecutions(SimulationMode::Prewarm) == 10);
+    REQUIRE(countExecutions(SimulationMode::Coarse) == 1);
+}
+
+void testCoarseServiceCadenceCarriesElapsedTimeIntoExecution()
+{
+    using namespace game::simulation::activation;
+
+    ActivationExecutionPolicy policy;
+    ActivationCadenceState state;
+    ActivationCadenceDecision decision;
+
+    for (int frame = 1; frame <= 50; ++frame)
+    {
+        decision = advanceShipSystemsCadence(
+            state,
+            SimulationMode::Coarse,
+            0.02,
+            frame * 0.02,
+            policy
+        );
+    }
+
+    REQUIRE(decision.execute);
+    REQUIRE(approx(decision.intervalSeconds, 1.0));
+    REQUIRE(approx(decision.executionDeltaSeconds, 1.0));
+    REQUIRE(state.executionCount == 1);
+    REQUIRE(state.skippedFrameCount == 49);
+}
+
+void testNonMaterializedModesSkipServiceAndMaintenanceLanes()
+{
+    using namespace game::simulation::activation;
+
+    ActivationExecutionPolicy policy;
+
+    for (const auto mode : {
+        SimulationMode::Scheduled,
+        SimulationMode::OnDemand,
+        SimulationMode::Dormant
+    })
+    {
+        ActivationCadenceState motionState;
+        ActivationCadenceState systemsState;
+        ActivationCadenceState maintenanceState;
+
+        const auto motion = advanceShipMotionControlCadence(
+            motionState,
+            mode,
+            10.0,
+            10.0,
+            policy
+        );
+        const auto systems = advanceShipSystemsCadence(
+            systemsState,
+            mode,
+            10.0,
+            10.0,
+            policy
+        );
+        const auto maintenance = advanceShipMaintenanceCadence(
+            maintenanceState,
+            mode,
+            10.0,
+            10.0,
+            policy
+        );
+
+        REQUIRE(!motion.execute);
+        REQUIRE(!systems.execute);
+        REQUIRE(!maintenance.execute);
+        REQUIRE(!std::isfinite(motion.intervalSeconds));
+        REQUIRE(!std::isfinite(systems.intervalSeconds));
+        REQUIRE(!std::isfinite(maintenance.intervalSeconds));
+        REQUIRE(motionState.executionCount == 0);
+        REQUIRE(systemsState.executionCount == 0);
+        REQUIRE(maintenanceState.executionCount == 0);
+    }
+}
+
 void testTransitionTelemetrySurvivesBetweenDiagnosticSamples()
 {
     using namespace game::simulation::activation;
@@ -1046,9 +1243,15 @@ int main()
     run("coarse NPC AI cadence runs at one hertz", testCoarseNpcAiCadenceRunsAtOneHertz);
     run("promotion to active runs NPC AI immediately", testPromotionToActiveRunsNpcAiImmediately);
     run("non-materialized modes skip tactical NPC AI", testNonMaterializedModesDoNotRunTacticalNpcAi);
+    run("ship motion-control cadence decimates control solver", testShipMotionControlCadenceDecimatesControlSolver);
+    run("coarse motion-control cadence carries bounded elapsed time", testCoarseMotionControlCadenceCarriesBoundedElapsedTime);
+    run("ship systems cadence decimates service work", testShipSystemsCadenceDecimatesMaterializedServiceWork);
+    run("ship maintenance cadence decimates maintenance", testShipMaintenanceCadenceDecimatesMaterializedMaintenance);
+    run("coarse service cadence carries elapsed time", testCoarseServiceCadenceCarriesElapsedTimeIntoExecution);
+    run("non-materialized modes skip service lanes", testNonMaterializedModesSkipServiceAndMaintenanceLanes);
     run("transition telemetry survives diagnostic sampling", testTransitionTelemetrySurvivesBetweenDiagnosticSamples);
     run("activation cadence lab demand schedule", testActivationCadenceLabDemandSchedule);
 
-    std::cout << passed << "/28 tests passed\n";
-    return passed == 28 ? 0 : 1;
+    std::cout << passed << "/34 tests passed\n";
+    return passed == 34 ? 0 : 1;
 }

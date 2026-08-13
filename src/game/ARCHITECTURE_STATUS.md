@@ -93,9 +93,10 @@ Required invariants:
 - server and client may each load the same static assembly/descriptor library
   locally. Static mesh/definition payloads are not replication state.
 
-This establishes the first compile-time headless seam. A separate
-`EliteServer` executable target is still pending, but local authoritative
-execution now owns `ServerRuntime`/`GameServer` on a dedicated worker thread.
+This establishes the shared compile-time headless seam. A standalone
+`EliteServer` executable now also builds this same authoritative runtime with
+client/render/UI dependencies disabled; local play still owns
+`ServerRuntime`/`GameServer` on a dedicated worker thread.
 
 ## Map subsystem decomposition
 
@@ -138,9 +139,20 @@ independent of existing production object code:
   state, and only then become active. Collapse back to scheduled/coarse motion
   is similarly explicit.
 
-These contracts are currently infrastructure and regression guards. Existing
-production ships/hubs/modules have **not yet been migrated** wholesale to the new
-policy objects.
+These contracts are no longer purely shadow infrastructure. **Runtime Stage 4A**
+lets the stabilized `Active / Prewarm / Coarse` plan control NPC tactical AI,
+internal service systems (reactor/thermal/cooling/life-support), and structural/
+repair maintenance. **Stage 4B** additionally splits ship motion into expensive
+control/rate evaluation and cheap kinematic propagation. `Active` remains on the
+established 50 Hz full-control path; `Prewarm` refreshes motion control at roughly
+25 Hz and `Coarse` at roughly 5 Hz, while orientation and HubTactical translation
+continue fixed-step propagation using the last authoritative rates/engine
+acceleration between control evaluations. Client prediction still uses the
+unchanged full `SharedShipPhysics::integrate()` wrapper. Signals and entity
+presence in ordinary replication remain full-rate/full-presence. Sparse
+replication plus true `Scheduled` materialization/collapse are still future
+stages; production ships/hubs/modules have **not yet been migrated** wholesale to
+persistent runtime-policy records.
 
 The Hub Motion Lab presentation investigation is now accepted as a stable
 server-to-render baseline:
@@ -195,6 +207,7 @@ Functional migration is currently at **Migration Stage 3G complete for the four 
 - Stage 3E: production System-map infrastructure and orbital hubs no longer come from `GameServer::buildSystemMapSnapshot()`. `SimulationSnapshot` publishes ordinary authoritative hub state plus static-object instance/navigation facts. `ClientWorldState` retains that history and `ClientMapService` samples hubs/static infrastructure at the exact `SystemMapResponse::metadata.serverTimeSeconds`, then converts them to `SystemMapObject` rows locally. Static System-map name/galactic placement are also rehydrated from the endpoint-local StarAtlas. The System-map response is now an epoch anchor plus explicit diagnostic probes, not a second production world-state channel.
 - Stage 3F: Details presentation is client-composed. `DetailMapResponse` now carries only the semantic `DetailTarget` plus authoritative server/universe epoch metadata. The client resolves deterministic body/ring/environment state from its endpoint-local StarAtlas/CelestialRuntime at that universe epoch and samples ships, hubs and complete local static infrastructure from retained ordinary `SimulationSnapshot` history at the exact response server epoch. Static-object and hub world velocities are first-class replication facts so Details no longer needs `GameServer::buildDetailMapSnapshot()` or its dynamic refresh path.
 - Stage 3G: Hub Map presentation is client-composed. `HubMapResponse` carries only `(systemId, hubId)` plus authoritative server/universe epoch metadata. The client samples the hub, attached modules and ships from the same retained ordinary `SimulationSnapshot` history, resolves the parent planet from its local celestial runtime, reconstructs the tactical `prograde/radial/normal` frame (including frame angular velocity), and builds the complete `HubMapSnapshot` locally. Stable `HubAttachmentSnapshot` offsets reconstruct co-frame modules from one sampled hub frame instead of independently interpolating their world poses. `GameServer::buildHubMapSnapshot()` and its dynamic refresh path are removed.
+- Stage 3H: a real standalone `EliteServer` executable now boots the same authoritative `ServerRuntime` without `GameClient`, loopback client ownership, GLFW/OpenGL/Freetype/WebView/UI or render sources. `ELITE_BUILD_CLIENT=OFF` is a supported configure path, and the ready harness builds `EliteServer` in that mode and runs a finite authoritative fixed-step self-test. The temporary `HeadlessServerTransport`/`HeadlessDebugChannel` are process-local empty/sink endpoints only; they deliberately do **not** pretend to be the future socket transport.
 
 
 The clock/revision work that followed is infrastructure for this migration.
@@ -212,9 +225,13 @@ and Hub dynamic entities are sampled from retained ordinary replication at the
 exact response server-time epoch, while deterministic celestial state is resolved
 at the response universe-time epoch.
 
-The next separation milestone is no longer another map DTO migration: it is a
-real headless `EliteServer` executable target, followed by deeper activation /
-Scheduled-Coarse runtime scaling and multi-system runtime work.
+The map-presentation migration and standalone headless executable boundary are
+complete at this stage. Runtime Stage 4A/4B now consumes the activation plan for
+real materialized CPU work while preserving fixed-step kinematic propagation and
+the established Active trajectory path. The next runtime slice is sparse
+replication semantics; after that comes true
+`Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse, then
+multi-system runtime work.
 
 ## Authoritative world bootstrap
 
@@ -343,13 +360,14 @@ broad-phase. Candidate pruning uses a per-system co-moving velocity origin so
 shared orbital bulk velocity does not inflate the search radius; exact CPA remains
 the authority for the final interaction decision. The planner remains 5 Hz.
 
-Stage 3E is the first production execution gate, deliberately limited to NPC
-tactical AI think cadence. `Active` NPC AI keeps the existing fixed-tick cadence,
-`Prewarm` runs at roughly 10 Hz and `Coarse` at roughly 1 Hz. The last computed
-control continues to be applied while dynamic physics, HubTactical integration,
-signals and snapshots remain full-rate. Physics must not consume planned mode
-until coarse/scheduled motion and materialization/dematerialization semantics are
-explicit.
+Stage 3E is the first production execution gate, initially limited to NPC
+tactical AI think cadence. Runtime Stage 4A extends the gate to internal service
+and maintenance lanes. Runtime Stage 4B then separates control-force/rate
+evaluation from kinematic propagation: `Active` evaluates motion control every
+fixed tick, `Prewarm` roughly 25 Hz, `Coarse` roughly 5 Hz, while orientation and
+HubTactical translation continue to propagate every authoritative fixed tick.
+Signals and snapshots remain full-rate/full-presence pending explicit sparse
+replication semantics.
 
 ### Static definition / runtime replication boundary
 

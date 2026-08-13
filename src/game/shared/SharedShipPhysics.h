@@ -32,11 +32,30 @@
 
 namespace SharedShipPhysics
 {
+    // Established full fixed-step wrapper. Client prediction keeps using this
+    // path so Stage 4B changes only server-side activation cost.
     void integrate(
         ShipTransform& transform,
         const ShipParams& params,
         const ShipControlState& control,
         const WorldParams& world,
+        float dt
+    );
+
+    // Expensive control/rate evaluation may run at a lower cadence for
+    // Prewarm/Coarse server entities.
+    void evaluateControl(
+        ShipTransform& transform,
+        const ShipParams& params,
+        const ShipControlState& control,
+        const WorldParams& world,
+        float dt
+    );
+
+    // Cheap orientation kinematics stays fixed-step so snapshots remain
+    // continuous even while the control solver is decimated.
+    void propagateOrientation(
+        ShipTransform& transform,
         float dt
     );
 }

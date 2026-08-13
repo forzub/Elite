@@ -19,12 +19,14 @@ struct DebugSessionState;
 namespace game::server
 {
 /*
-    Sole owner of the in-process authoritative GameServer.
+    Sole owner of an authoritative GameServer inside one server execution
+    context.
 
-    ServerWorker constructs, advances and destroys this runtime exclusively on
-    its OS thread. Gameplay transport and debug/control cross explicit
-    mutex-protected message/value seams; application/client code cannot reach
-    authoritative memory directly.
+    Local in-process play constructs/advances/destroys this runtime exclusively
+    on ServerWorker's OS thread. The standalone EliteServer process owns the
+    same runtime directly on its server main thread. Gameplay transport and
+    debug/control cross explicit message/value seams; application/client code
+    cannot reach authoritative memory directly.
 */
 class ServerRuntime final
 {

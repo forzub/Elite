@@ -12,18 +12,33 @@ namespace game::simulation::activation
 
 struct ActivationExecutionPolicy
 {
-    // Active tactical NPCs keep the existing per-fixed-tick AI behaviour.
+    // Tactical AI cadence.
     double activeNpcAiIntervalSeconds = 0.0;
-
-    // Prewarm keeps AI responsive without paying the full 50 Hz think cost.
     double prewarmNpcAiIntervalSeconds = 0.10;
-
-    // Coarse materialized ships remain physically integrated for now, but
-    // tactical decision making is reduced to a cheap maintenance cadence.
     double coarseNpcAiIntervalSeconds = 1.00;
-
-    // Never hand an AI system an arbitrarily huge dt after a long dormant gap.
     double maxNpcAiThinkDeltaSeconds = 1.00;
+
+    // Motion-control evaluation (attitude controller + engine command
+    // refresh). Stage 4B keeps cheap kinematic propagation on every fixed
+    // tick, but non-interacting ships do not need to recompute control forces
+    // at 50 Hz. Active remains exactly on the legacy fixed-step path.
+    double activeShipMotionControlIntervalSeconds = 0.0;
+    double prewarmShipMotionControlIntervalSeconds = 0.04;
+    double coarseShipMotionControlIntervalSeconds = 0.20;
+    double maxShipMotionControlDeltaSeconds = 0.20;
+
+    // Internal ship service systems (reactor/thermal/cooling/life-support).
+    double activeShipSystemsIntervalSeconds = 0.0;
+    double prewarmShipSystemsIntervalSeconds = 0.10;
+    double coarseShipSystemsIntervalSeconds = 1.00;
+    double maxShipSystemsDeltaSeconds = 1.00;
+
+    // Materialized structural maintenance: assembly animation, detached
+    // fragments and repair jobs. Dirty hit-volume rebuilds remain immediate.
+    double activeShipMaintenanceIntervalSeconds = 0.0;
+    double prewarmShipMaintenanceIntervalSeconds = 0.10;
+    double coarseShipMaintenanceIntervalSeconds = 1.00;
+    double maxShipMaintenanceDeltaSeconds = 1.00;
 };
 
 struct ActivationCadenceState
@@ -37,23 +52,30 @@ struct ActivationCadenceState
 struct ActivationCadenceDecision
 {
     bool execute = false;
+    double executionDeltaSeconds = 0.0;
+
+    // Backward-compatible alias used by the NPC AI consumer/tests. New lanes
+    // should read executionDeltaSeconds.
     double thinkDeltaSeconds = 0.0;
+
     double intervalSeconds = 0.0;
 };
 
-inline double npcAiIntervalSeconds(
+inline double materializedIntervalSeconds(
     SimulationMode mode,
-    const ActivationExecutionPolicy& policy
+    double activeIntervalSeconds,
+    double prewarmIntervalSeconds,
+    double coarseIntervalSeconds
 ) noexcept
 {
     switch (mode)
     {
         case SimulationMode::Active:
-            return std::max(0.0, policy.activeNpcAiIntervalSeconds);
+            return std::max(0.0, activeIntervalSeconds);
         case SimulationMode::Prewarm:
-            return std::max(0.0, policy.prewarmNpcAiIntervalSeconds);
+            return std::max(0.0, prewarmIntervalSeconds);
         case SimulationMode::Coarse:
-            return std::max(0.0, policy.coarseNpcAiIntervalSeconds);
+            return std::max(0.0, coarseIntervalSeconds);
         case SimulationMode::Scheduled:
         case SimulationMode::OnDemand:
         case SimulationMode::Dormant:
@@ -63,19 +85,19 @@ inline double npcAiIntervalSeconds(
     return std::numeric_limits<double>::infinity();
 }
 
-inline ActivationCadenceDecision advanceNpcAiCadence(
+inline ActivationCadenceDecision advanceActivationCadence(
     ActivationCadenceState& state,
-    SimulationMode mode,
+    double intervalSeconds,
     double frameDeltaSeconds,
     double serverTimeSeconds,
-    const ActivationExecutionPolicy& policy
+    double maxExecutionDeltaSeconds
 ) noexcept
 {
     ActivationCadenceDecision result;
 
     const double dt = std::max(0.0, frameDeltaSeconds);
     state.timeSinceLastExecutionSeconds += dt;
-    result.intervalSeconds = npcAiIntervalSeconds(mode, policy);
+    result.intervalSeconds = intervalSeconds;
 
     if (!std::isfinite(result.intervalSeconds))
     {
@@ -93,20 +115,141 @@ inline ActivationCadenceDecision advanceNpcAiCadence(
         return result;
     }
 
-    const double maxThinkDelta =
-        std::max(dt, std::max(0.0, policy.maxNpcAiThinkDeltaSeconds));
+    const double maxExecutionDelta =
+        std::max(dt, std::max(0.0, maxExecutionDeltaSeconds));
 
     result.execute = true;
-    result.thinkDeltaSeconds = std::min(
+    result.executionDeltaSeconds = std::min(
         std::max(dt, state.timeSinceLastExecutionSeconds),
-        maxThinkDelta
+        maxExecutionDelta
     );
+    result.thinkDeltaSeconds = result.executionDeltaSeconds;
 
     state.timeSinceLastExecutionSeconds = 0.0;
     state.lastExecutionServerTimeSeconds = std::max(0.0, serverTimeSeconds);
     ++state.executionCount;
 
     return result;
+}
+
+inline double npcAiIntervalSeconds(
+    SimulationMode mode,
+    const ActivationExecutionPolicy& policy
+) noexcept
+{
+    return materializedIntervalSeconds(
+        mode,
+        policy.activeNpcAiIntervalSeconds,
+        policy.prewarmNpcAiIntervalSeconds,
+        policy.coarseNpcAiIntervalSeconds
+    );
+}
+
+inline double shipMotionControlIntervalSeconds(
+    SimulationMode mode,
+    const ActivationExecutionPolicy& policy
+) noexcept
+{
+    return materializedIntervalSeconds(
+        mode,
+        policy.activeShipMotionControlIntervalSeconds,
+        policy.prewarmShipMotionControlIntervalSeconds,
+        policy.coarseShipMotionControlIntervalSeconds
+    );
+}
+
+inline double shipSystemsIntervalSeconds(
+    SimulationMode mode,
+    const ActivationExecutionPolicy& policy
+) noexcept
+{
+    return materializedIntervalSeconds(
+        mode,
+        policy.activeShipSystemsIntervalSeconds,
+        policy.prewarmShipSystemsIntervalSeconds,
+        policy.coarseShipSystemsIntervalSeconds
+    );
+}
+
+inline double shipMaintenanceIntervalSeconds(
+    SimulationMode mode,
+    const ActivationExecutionPolicy& policy
+) noexcept
+{
+    return materializedIntervalSeconds(
+        mode,
+        policy.activeShipMaintenanceIntervalSeconds,
+        policy.prewarmShipMaintenanceIntervalSeconds,
+        policy.coarseShipMaintenanceIntervalSeconds
+    );
+}
+
+inline ActivationCadenceDecision advanceNpcAiCadence(
+    ActivationCadenceState& state,
+    SimulationMode mode,
+    double frameDeltaSeconds,
+    double serverTimeSeconds,
+    const ActivationExecutionPolicy& policy
+) noexcept
+{
+    return advanceActivationCadence(
+        state,
+        npcAiIntervalSeconds(mode, policy),
+        frameDeltaSeconds,
+        serverTimeSeconds,
+        policy.maxNpcAiThinkDeltaSeconds
+    );
+}
+
+inline ActivationCadenceDecision advanceShipMotionControlCadence(
+    ActivationCadenceState& state,
+    SimulationMode mode,
+    double frameDeltaSeconds,
+    double serverTimeSeconds,
+    const ActivationExecutionPolicy& policy
+) noexcept
+{
+    return advanceActivationCadence(
+        state,
+        shipMotionControlIntervalSeconds(mode, policy),
+        frameDeltaSeconds,
+        serverTimeSeconds,
+        policy.maxShipMotionControlDeltaSeconds
+    );
+}
+
+inline ActivationCadenceDecision advanceShipSystemsCadence(
+    ActivationCadenceState& state,
+    SimulationMode mode,
+    double frameDeltaSeconds,
+    double serverTimeSeconds,
+    const ActivationExecutionPolicy& policy
+) noexcept
+{
+    return advanceActivationCadence(
+        state,
+        shipSystemsIntervalSeconds(mode, policy),
+        frameDeltaSeconds,
+        serverTimeSeconds,
+        policy.maxShipSystemsDeltaSeconds
+    );
+}
+
+inline ActivationCadenceDecision advanceShipMaintenanceCadence(
+    ActivationCadenceState& state,
+    SimulationMode mode,
+    double frameDeltaSeconds,
+    double serverTimeSeconds,
+    const ActivationExecutionPolicy& policy
+) noexcept
+{
+    return advanceActivationCadence(
+        state,
+        shipMaintenanceIntervalSeconds(mode, policy),
+        frameDeltaSeconds,
+        serverTimeSeconds,
+        policy.maxShipMaintenanceDeltaSeconds
+    );
 }
 
 } // namespace game::simulation::activation

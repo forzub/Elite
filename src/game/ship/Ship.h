@@ -55,6 +55,10 @@ public:
 
     void applyControl();
     void updatePhysics(float dt, const WorldParams& world);
+    void updateMotionPhysics(float dt, const WorldParams& world);
+    void updateMotionControl(float dt, const WorldParams& world);
+    void propagateMotionOrientation(float dt);
+    void updateSystems(float dt);
     void updateSignals(
         float dt,
         const std::vector<WorldSignal>& worldSignals,

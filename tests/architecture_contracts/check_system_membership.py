@@ -385,30 +385,19 @@ require_text(
     "client Detail sampling can mix system-local coordinate domains",
 )
 
-build_hub = function_body(server_text, "GameServer::buildHubMapSnapshot(")
-if build_hub is None:
-    fail(server_cpp, "could not locate buildHubMapSnapshot")
-else:
-    require_text(
-        server_cpp,
-        build_hub,
-        (
-            "hub.systemId != systemId",
-            "frame->systemId != systemId",
-        ),
-        "Hub map request can bind a hub/reference frame from another system",
-    )
-
-refresh_hub = function_body(server_text, "void GameServer::refreshHubMapDynamicState(")
-if refresh_hub is None:
-    fail(server_cpp, "could not locate refreshHubMapDynamicState")
-else:
-    for required in (
-        "object.systemId != snapshot.systemId",
-        "transform.motion.systemId != snapshot.systemId",
-    ):
-        if required not in refresh_hub:
-            fail(server_cpp, f"Hub map dynamic refresh can cross system membership: {required}")
+client_hub_bridge = ROOT / "src/game/client/ClientHubMapBridge.h"
+client_hub_bridge_text = client_hub_bridge.read_text(encoding="utf-8")
+require_text(
+    client_hub_bridge,
+    client_hub_bridge_text,
+    (
+        "hub.systemId == systemId",
+        "source.systemId != systemId",
+        "source.hubAttachment.hubId != hubId",
+        "celestial.systemId != systemId",
+    ),
+    "client Hub Map composition can mix system-local coordinate domains",
+)
 
 if errors:
     print("System-membership architecture check failed:", file=sys.stderr)

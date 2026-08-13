@@ -41,9 +41,13 @@ struct DetailMapShipRuntimeSample
     int systemId = -1;
     std::string parentBodyId;
     std::string hubId;
+    game::navigation::MotionMode motionMode =
+        game::navigation::MotionMode::Inertial;
 
     world::coordinates::WorldPosition worldPosition;
     glm::dvec3 worldVelocityMps {0.0};
+    glm::dvec3 localPositionMeters {0.0};
+    glm::dvec3 localVelocityMps {0.0};
     glm::mat4 orientation {1.0f};
 };
 
@@ -76,7 +80,9 @@ struct DetailMapHubRuntimeSample
 
     world::coordinates::WorldPosition worldPosition;
     glm::dvec3 worldVelocityMps {0.0};
+    glm::dvec3 angularVelocityWorldRadPerSecond {0.0};
     glm::mat4 orientation {1.0f};
+    std::string primeModuleId;
     world::orbits::OrbitalMotion motion;
 };
 
@@ -180,8 +186,11 @@ inline DetailMapShipRuntimeSample makeDetailShipSample(
     out.systemId = ship.transform.motion.systemId;
     out.parentBodyId = ship.transform.motion.parentBodyId;
     out.hubId = ship.transform.motion.hubId;
+    out.motionMode = ship.transform.motion.mode;
     out.worldPosition = ship.transform.worldPosition;
     out.worldVelocityMps = ship.transform.motion.worldVelocityMps;
+    out.localPositionMeters = ship.transform.motion.localPositionMeters;
+    out.localVelocityMps = ship.transform.motion.localVelocityMps;
     out.orientation = ship.transform.orientation;
     return out;
 }
@@ -217,7 +226,10 @@ inline DetailMapHubRuntimeSample makeDetailHubSample(
     out.parentBodyId = hub.parentBodyId;
     out.worldPosition = hub.worldPosition;
     out.worldVelocityMps = hub.worldVelocityMps;
+    out.angularVelocityWorldRadPerSecond =
+        hub.angularVelocityWorldRadPerSecond;
     out.orientation = hub.orientation;
+    out.primeModuleId = hub.primeModuleId;
     out.motion = hub.motion;
     return out;
 }
@@ -361,6 +373,28 @@ inline DetailMapRuntimeSampleResult sampleDetailMapRuntimeAtServerTime(
         sample.worldVelocityMps =
             oldShip.transform.motion.worldVelocityMps * (1.0 - alpha) +
             newShip->transform.motion.worldVelocityMps * alpha;
+
+        if (oldShip.transform.motion.hubId ==
+                newShip->transform.motion.hubId &&
+            oldShip.transform.motion.mode ==
+                newShip->transform.motion.mode)
+        {
+            sample.localPositionMeters =
+                oldShip.transform.motion.localPositionMeters * (1.0 - alpha) +
+                newShip->transform.motion.localPositionMeters * alpha;
+            sample.localVelocityMps =
+                oldShip.transform.motion.localVelocityMps * (1.0 - alpha) +
+                newShip->transform.motion.localVelocityMps * alpha;
+        }
+        else if (alpha < 0.5)
+        {
+            sample.motionMode = oldShip.transform.motion.mode;
+            sample.localPositionMeters =
+                oldShip.transform.motion.localPositionMeters;
+            sample.localVelocityMps =
+                oldShip.transform.motion.localVelocityMps;
+        }
+
         sample.orientation = interpolateDetailMapOrientation(
             oldShip.transform.orientation,
             newShip->transform.orientation,
@@ -463,6 +497,9 @@ inline DetailMapRuntimeSampleResult sampleDetailMapRuntimeAtServerTime(
         sample.worldVelocityMps =
             oldHub.worldVelocityMps * (1.0 - alpha) +
             newHub->worldVelocityMps * alpha;
+        sample.angularVelocityWorldRadPerSecond =
+            oldHub.angularVelocityWorldRadPerSecond * (1.0 - alpha) +
+            newHub->angularVelocityWorldRadPerSecond * alpha;
         sample.orientation = interpolateDetailMapOrientation(
             oldHub.orientation,
             newHub->orientation,

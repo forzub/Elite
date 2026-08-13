@@ -31,7 +31,9 @@ struct OrbitalHubSnapshot
 
     world::coordinates::WorldPosition worldPosition;
     glm::dvec3 worldVelocityMps {0.0};
+    glm::dvec3 angularVelocityWorldRadPerSecond {0.0};
     glm::mat4 orientation {1.0f};
+    std::string primeModuleId;
     world::orbits::OrbitalMotion motion;
 };
 

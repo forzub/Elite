@@ -397,15 +397,13 @@ struct HubMapSnapshot
     LocalSceneAxes hubAxes;
 
     /*
-        Текущая авторитетная мировая система хаба.
+        Текущая мировая система хаба.
 
             X = prograde;
             Y = radial;
             Z = normal.
 
-        Она получена непосредственно из серверного
-        HubNavigationFrame на universeTimeSeconds.
-
+        Клиент восстанавливает её из exact-epoch replicated hub state.
         Renderer не имеет права самостоятельно продвигать
         эти оси по орбите.
     */
@@ -419,11 +417,11 @@ struct HubMapSnapshot
     glm::dvec3 parentPlanetWorldVelocityMps {0.0};
 
     /*
-        Текущая rotation phase родительской планеты,
-        полученная из CelestialSystemRuntime.
+        Текущая rotation phase родительской планеты, полученная клиентом
+        из CelestialSystemRuntime на authoritative universe epoch.
 
-        Hub Map использует то же значение, что и Details,
-        а не пересчитывает вращение отдельно.
+        Hub Map использует то же deterministic celestial state, что и
+        Details, а не получает отдельный server-built presentation DTO.
     */
     double parentPlanetRotationPhaseRad = 0.0;
 

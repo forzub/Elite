@@ -5,6 +5,7 @@
 #include "src/game/client/ClientSystemMapShipBridge.h"
 #include "src/game/client/ClientSystemMapInfrastructureBridge.h"
 #include "src/game/client/ClientDetailMapBridge.h"
+#include "src/game/client/ClientHubMapBridge.h"
 #include "src/game/client/ClientWorldState.h"
 
 #include <algorithm>
@@ -113,6 +114,8 @@ void ClientMapService::sendDetailRequest()
 
 void ClientMapService::sendHubRequest()
 {
+    m_deferredHubResponse.reset();
+
     game::network::HubMapRequest request;
     request.requestId = nextRequestId();
     request.systemId = m_requestedHubSystemId;
@@ -159,8 +162,19 @@ void ClientMapService::update(float dt)
         sendDetailRequest();
     }
 
-    if (advanceTimeout(m_hubRequest, dt))
+    if (m_deferredHubResponse)
+    {
+        m_hubRequest.elapsedSeconds += std::max(dt, 0.0f);
+        if (m_hubRequest.elapsedSeconds >= RequestTimeoutSeconds)
+        {
+            m_deferredHubResponse.reset();
+            fail(m_hubRequest);
+        }
+    }
+    else if (advanceTimeout(m_hubRequest, dt))
+    {
         sendHubRequest();
+    }
 }
 
 void ClientMapService::resetPendingRequests()
@@ -171,6 +185,7 @@ void ClientMapService::resetPendingRequests()
     cancel(m_detailRequest);
     m_deferredDetailResponse.reset();
     cancel(m_hubRequest);
+    m_deferredHubResponse.reset();
 }
 
 bool ClientMapService::acceptsTimeline(
@@ -216,6 +231,7 @@ void ClientMapService::setUniverseTimelineRevision(
     m_systemMetadata = {};
     m_deferredSystemResponse.reset();
     m_deferredDetailResponse.reset();
+    m_deferredHubResponse.reset();
     m_detailMetadata = {};
     m_hubMetadata = {};
 }
@@ -369,6 +385,71 @@ void ClientMapService::retryDetailRequestOrFail()
     sendDetailRequest();
 }
 
+ClientMapService::HubResponseResult
+ClientMapService::tryCompleteHubResponse(
+    game::network::HubMapResponse& response
+)
+{
+    const auto runtimeSample =
+        m_world.sampleHubMapRuntimeAtServerTime(
+            response.systemId,
+            response.metadata.serverTimeSeconds
+        );
+
+    if (runtimeSample.status ==
+        DetailMapRuntimeSampleStatus::AwaitingNewerSnapshot)
+    {
+        return HubResponseResult::AwaitingSimulationHistory;
+    }
+
+    if (runtimeSample.status == DetailMapRuntimeSampleStatus::TooOld)
+        return HubResponseResult::RetryFreshResponse;
+
+    const auto* atlas = m_catalogs.starAtlas();
+    const auto* celestial = m_catalogs.resolveCelestialSystem(
+        response.systemId,
+        response.metadata.universeTimeSeconds
+    );
+
+    if (!atlas || !celestial)
+        return HubResponseResult::Failed;
+
+    world::celestial::HubMapSnapshot rebuiltSnapshot;
+    if (!rebuildHubMapFromClientState(
+            rebuiltSnapshot,
+            response.systemId,
+            response.hubId,
+            *atlas,
+            *celestial,
+            runtimeSample,
+            response.metadata.serverTimeSeconds,
+            response.metadata.universeTimeSeconds))
+    {
+        return HubResponseResult::Failed;
+    }
+
+    m_hubMetadata = response.metadata;
+    m_hubSnapshot = std::move(rebuiltSnapshot);
+    m_hubSnapshotSystemId = response.systemId;
+    m_hubSnapshotId = response.hubId;
+    m_hasHub = true;
+    complete(m_hubRequest);
+    return HubResponseResult::Ready;
+}
+
+void ClientMapService::retryHubRequestOrFail()
+{
+    m_deferredHubResponse.reset();
+
+    if (m_hubRequest.attempts >= MaxRequestAttempts)
+    {
+        fail(m_hubRequest);
+        return;
+    }
+
+    sendHubRequest();
+}
+
 void ClientMapService::pumpResponses()
 {
     if (m_deferredSystemResponse)
@@ -408,6 +489,26 @@ void ClientMapService::pumpResponses()
         {
             m_deferredDetailResponse.reset();
             fail(m_detailRequest);
+        }
+    }
+
+    if (m_deferredHubResponse)
+    {
+        const auto result =
+            tryCompleteHubResponse(*m_deferredHubResponse);
+
+        if (result == HubResponseResult::Ready)
+        {
+            m_deferredHubResponse.reset();
+        }
+        else if (result == HubResponseResult::RetryFreshResponse)
+        {
+            retryHubRequestOrFail();
+        }
+        else if (result == HubResponseResult::Failed)
+        {
+            m_deferredHubResponse.reset();
+            fail(m_hubRequest);
         }
     }
 
@@ -509,13 +610,24 @@ void ClientMapService::pumpResponses()
                     if (typedResponse.requestId != m_hubRequest.requestId ||
                         typedResponse.systemId != m_requestedHubSystemId ||
                         typedResponse.hubId != m_requestedHubId)
+                    {
                         return;
-                    m_hubMetadata = typedResponse.metadata;
-                    m_hubSnapshot = std::move(typedResponse.snapshot);
-                    m_hubSnapshotSystemId = typedResponse.systemId;
-                    m_hubSnapshotId = std::move(typedResponse.hubId);
-                    m_hasHub = true;
-                    complete(m_hubRequest);
+                    }
+
+                    const auto result = tryCompleteHubResponse(typedResponse);
+                    if (result == HubResponseResult::AwaitingSimulationHistory)
+                    {
+                        m_deferredHubResponse = std::move(typedResponse);
+                        m_hubRequest.elapsedSeconds = 0.0f;
+                    }
+                    else if (result == HubResponseResult::RetryFreshResponse)
+                    {
+                        retryHubRequestOrFail();
+                    }
+                    else if (result == HubResponseResult::Failed)
+                    {
+                        fail(m_hubRequest);
+                    }
                 }
             },
             std::move(response));
@@ -610,7 +722,7 @@ bool ClientMapService::requestHub(
     const std::string& hubId,
     bool forceRefresh)
 {
-    if (systemId < 0 || hubId.empty())
+    if (systemId < 0 || hubId.empty() || !m_catalogs.hasStarAtlas())
         return false;
     pumpResponses();
     if (!forceRefresh && m_hasHub &&
@@ -622,6 +734,7 @@ bool ClientMapService::requestHub(
         if (m_requestedHubSystemId == systemId && m_requestedHubId == hubId)
             return false;
         cancel(m_hubRequest);
+        m_deferredHubResponse.reset();
     }
     if (!forceRefresh &&
         m_requestedHubSystemId == systemId && m_requestedHubId == hubId &&

@@ -33,6 +33,7 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_system_map_ships.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_system_map_infrastructure.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_detail_map_migration.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_hub_map_migration.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_galaxy_map_catalog.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_static_star_atlas_ownership.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_sky_culture_catalogs.py"

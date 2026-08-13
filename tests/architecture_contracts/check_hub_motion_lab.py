@@ -61,8 +61,13 @@ require(
 
 require(
     "src/game/server/GameServer.cpp",
-    "hubMotionLabLabel(motionLabKind)",
-    "hubMotionLabActorKind(entityId)",
+    "diagnostic:hub_motion_lab_cube"
+)
+
+require(
+    "src/game/client/ClientHubMapBridge.h",
+    "hubMotionLabLabel(ship.motionLabKind)",
+    "evaluateHubMotionLabCube(serverTimeSeconds)",
     "diagnostic:hub_motion_lab_cube"
 )
 

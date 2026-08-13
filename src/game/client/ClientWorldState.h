@@ -257,6 +257,18 @@ public:
         );
     }
 
+    game::client::DetailMapRuntimeSampleResult sampleHubMapRuntimeAtServerTime(
+        int systemId,
+        double serverTimeSeconds
+    ) const
+    {
+        return game::client::sampleDetailMapRuntimeAtServerTime(
+            m_snapshotBuffer,
+            systemId,
+            serverTimeSeconds
+        );
+    }
+
     void clearVisualShips()
     {
         m_visualShips.clear();

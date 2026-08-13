@@ -210,11 +210,16 @@ if dynamic_motion_cpp.is_file():
         if required not in text:
             fail(dynamic_motion_cpp, f"HubTactical coordinate contract is incomplete: {required}")
 
-server_cpp = SRC / "game/server/GameServer.cpp"
-if server_cpp.is_file():
-    text = server_cpp.read_text(encoding="utf-8", errors="replace")
-    if "ship.positionMeters =\n                transform.motion.localPositionMeters" not in text:
-        fail(server_cpp, "Hub Map player marker is not sourced from authoritative HubTactical local position")
+hub_map_bridge = SRC / "game/client/ClientHubMapBridge.h"
+if hub_map_bridge.is_file():
+    text = hub_map_bridge.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "source.motionMode == game::navigation::MotionMode::HubTactical",
+        "ship.positionMeters = source.localPositionMeters",
+        "ship.velocityMps = source.localVelocityMps",
+    ):
+        if required not in text:
+            fail(hub_map_bridge, f"Hub Map lost authoritative HubTactical local state: {required}")
 
 
 

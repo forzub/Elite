@@ -110,6 +110,19 @@ private:
     );
     void retryDetailRequestOrFail();
 
+    enum class HubResponseResult
+    {
+        Ready,
+        AwaitingSimulationHistory,
+        RetryFreshResponse,
+        Failed
+    };
+
+    HubResponseResult tryCompleteHubResponse(
+        game::network::HubMapResponse& response
+    );
+    void retryHubRequestOrFail();
+
 private:
     ITransport& m_transport;
     const ClientCatalogService& m_catalogs;
@@ -130,6 +143,8 @@ private:
         m_deferredSystemResponse;
     std::optional<game::network::DetailMapResponse>
         m_deferredDetailResponse;
+    std::optional<game::network::HubMapResponse>
+        m_deferredHubResponse;
 
     bool m_hasGalaxy = false;
     bool m_hasSystem = false;

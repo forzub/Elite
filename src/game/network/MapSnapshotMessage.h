@@ -88,7 +88,12 @@ struct HubMapResponse
     SnapshotMetadata metadata;
     int systemId = -1;
     std::string hubId;
-    world::celestial::HubMapSnapshot snapshot;
+
+    // Stage 3G protocol seam: Hub Map is client-composed. The server only
+    // acknowledges the requested hub at an authoritative server/universe
+    // epoch. Hub/frame, module and ship facts arrive through ordinary
+    // SimulationSnapshot replication; parent celestial state is resolved from
+    // the endpoint-local StarAtlas/runtime at metadata.universeTimeSeconds.
 };
 
 using MapResponse = std::variant<

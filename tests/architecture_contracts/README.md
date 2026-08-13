@@ -254,6 +254,23 @@ loops from returning. `SystemMapInfrastructureSamplingContractTests.cpp` locks
 exact-epoch interpolation, system-domain filtering, hub-owned orbit metadata and
 client-side station/hub composition.
 
+### Client-owned Details and Hub local-map composition
+
+Stage 3F removes the complete server-built Details DTO; Stage 3G does the same
+for Hub Map. Both views use the response only as an authoritative identity/epoch
+acknowledgement and join it with retained ordinary `SimulationSnapshot` history.
+The client resolves deterministic parent/body state from its endpoint-local
+celestial runtime at the response universe epoch. Hub Map additionally carries
+ordinary hub-frame angular velocity and prime-module identity through
+`OrbitalHubSnapshot`, preserves authoritative HubTactical local ship state, and
+reconstructs attached modules from stable `HubAttachmentSnapshot` offsets in one
+common hub frame.
+
+`check_client_detail_map_migration.py` / `check_client_hub_map_migration.py`
+prevent server presentation builders from returning. The runtime sampling
+contract tests lock future/stale response handling, local HubTactical state and
+rotating-frame facts.
+
 
 ## Galaxy-map catalog ownership
 

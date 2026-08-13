@@ -2117,6 +2117,16 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         const auto hubVelocityIt = m_hubVelocityMetersPerSecond.find(hub.id);
         if (hubVelocityIt != m_hubVelocityMetersPerSecond.end())
             h.worldVelocityMps = hubVelocityIt->second;
+
+        if (const auto* frame = hubNavigationFrame(hub.id);
+            frame && frame->valid && frame->systemId == hub.systemId)
+        {
+            h.worldVelocityMps = frame->velocityMetersPerSecond;
+            h.angularVelocityWorldRadPerSecond =
+                frame->angularVelocityWorldRadPerSecond;
+            h.primeModuleId = frame->primeModuleId;
+        }
+
         h.orientation = hub.orientation;
         h.motion = hub.motion;
         snapshot.hubs.push_back(std::move(h));

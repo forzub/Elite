@@ -130,21 +130,6 @@ public:
         int systemId
     ) const;
 
-    world::celestial::HubMapSnapshot buildHubMapSnapshot(
-        int systemId,
-        const std::string& hubId
-    ) const;
-
-    /*
-        Обновляет текущий серверный kinematic state Hub Map.
-
-        Статическое описание планеты и visual presets
-        повторно не загружаются.
-    */
-    void refreshHubMapDynamicState(
-        world::celestial::HubMapSnapshot& snapshot
-    ) const;
-
 
     void setDiagnosticsSettings(
         const game::diagnostics::ServerDiagnosticsSettings& settings

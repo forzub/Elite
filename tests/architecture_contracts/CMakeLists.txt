@@ -731,6 +731,46 @@ set_tests_properties(
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
+add_executable(
+    hub_map_runtime_sampling_contract_tests
+    HubMapRuntimeSamplingContractTests.cpp
+)
+
+target_include_directories(
+    hub_map_runtime_sampling_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        hub_map_runtime_sampling_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        hub_map_runtime_sampling_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME hub_map_runtime_sampling_contracts
+    COMMAND hub_map_runtime_sampling_contract_tests
+)
+
+set_tests_properties(
+    hub_map_runtime_sampling_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
 
 add_executable(
     galaxy_map_catalog_migration_contract_tests

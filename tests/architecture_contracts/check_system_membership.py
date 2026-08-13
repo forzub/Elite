@@ -256,26 +256,40 @@ if not re.search(
 
 server_text = read(server_cpp)
 server_h_text = read(server_h)
-if "void synchronizePlayerSystemMembership();" not in server_h_text:
-    fail(server_h, "server has no boundary that derives navigation system from player entity authority")
+if "m_playerNavigation" in server_text or "m_playerNavigation" in server_h_text:
+    fail(server_h, "server still owns a singleton player-navigation state")
 
-sync_player = function_body(server_text, "void GameServer::synchronizePlayerSystemMembership()")
-if sync_player is None:
-    fail(server_cpp, "could not locate synchronizePlayerSystemMembership")
+for token in (
+    "navigationStateForSession(",
+    "navigationStateForEntity(",
+    "resolveSingleActiveSimulationSystemId() const",
+):
+    if token not in server_h_text:
+        fail(server_h, f"multiplayer navigation/system boundary missing: {token}")
+
+simulation_context = function_body(
+    server_text,
+    "int GameServer::resolveSingleActiveSimulationSystemId() const",
+)
+if simulation_context is None:
+    fail(server_cpp, "could not locate single-active simulation-context resolver")
 else:
     require_text(
         server_cpp,
-        sync_player,
+        simulation_context,
         (
-            "player->core().transform().motion.systemId",
-            "m_playerNavigation.currentSystemId = shipSystemId",
+            "m_simulation.playerControlledShipIds()",
+            "ship->core().transform().motion.systemId",
+            "m_simulation.activeCelestialSystemId()",
         ),
-        "player-navigation membership derivation is incomplete",
+        "single-active system context is not derived from all controlled entities",
     )
+    if "m_simulation.playerId()" in simulation_context:
+        fail(server_cpp, "single-active system context still chooses a primary player")
 
 server_update = function_body(server_text, "void GameServer::update(double dt)")
-if server_update is None or "synchronizePlayerSystemMembership();" not in server_update:
-    fail(server_cpp, "active celestial context is not synchronized from player membership each tick")
+if server_update is None or "resolveSingleActiveSimulationSystemId()" not in server_update:
+    fail(server_cpp, "active celestial context is not resolved independently of session navigation")
 
 resolver_h_text = read(spatial_resolver_h)
 resolver_cpp_text = read(spatial_resolver_cpp)
@@ -329,15 +343,21 @@ else:
         "server per-entity interstellar navigation state is incomplete",
     )
 
-if server_update is not None:
+navigation_for_session = function_body(
+    server_text,
+    "bool GameServer::navigationStateForSession(",
+)
+if navigation_for_session is None:
+    fail(server_cpp, "could not locate per-session navigation-state resolver")
+else:
     require_text(
         server_cpp,
-        server_update,
+        navigation_for_session,
         (
-            "m_playerNavigation =",
-            "navigationStateForEntity(m_simulation.playerId())",
+            "m_sessions.controlledEntity(sessionId)",
+            "navigationStateForEntity(controlledEntityId)",
         ),
-        "legacy primary navigation alias is no longer derived from entity authority",
+        "server per-session navigation is not derived from session authority",
     )
 
 system_snapshot = function_body(server_text, "GameServer::buildSystemMapSnapshot(")

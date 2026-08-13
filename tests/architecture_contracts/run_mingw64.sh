@@ -44,6 +44,8 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_runtime_ownership.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_multiplayer_session_foundation.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_multiplayer_transport_fanout.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_multiplayer_client_local_identity.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_multiplayer_session_navigation.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_debug_session_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_worker_thread.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_runtime_policy_boundaries.py"

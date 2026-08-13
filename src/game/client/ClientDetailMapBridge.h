@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/client/ClientDetailMapRuntimeSampler.h"
+#include "src/game/client/ClientLocalAuthority.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/world/celestial/CelestialTypes.h"
@@ -157,11 +158,17 @@ inline void appendDetailDiagnosticCube(
 
 inline std::string detailShipDisplayName(
     const DetailMapShipRuntimeSample& ship,
-    bool identifyPlayer
+    bool identifyLocalPlayer,
+    EntityId localControlledEntityId
 )
 {
-    if (identifyPlayer && ship.role == ShipRole::Player)
+    if (identifyLocalPlayer &&
+        game::client::isLocalControlledEntity(
+            ship.id,
+            localControlledEntityId))
+    {
         return "Player";
+    }
 
     if (ship.motionLabKind !=
         game::diagnostics::HubMotionLabActorKind::None)
@@ -177,18 +184,27 @@ inline std::string detailShipDisplayName(
 
 inline world::celestial::LocalSceneObject makeDetailShipObject(
     const DetailMapShipRuntimeSample& ship,
-    bool identifyPlayer
+    bool identifyLocalPlayer,
+    EntityId localControlledEntityId
 )
 {
     world::celestial::LocalSceneObject object;
     object.id = ship.id;
     object.typeId = ship.typeId;
     const bool playerPresentation =
-        identifyPlayer && ship.role == ShipRole::Player;
+        identifyLocalPlayer &&
+        game::client::isLocalControlledEntity(
+            ship.id,
+            localControlledEntityId
+        );
     object.stableId = playerPresentation
         ? "player"
         : "entity:" + std::to_string(ship.id.value);
-    object.name = detailShipDisplayName(ship, identifyPlayer);
+    object.name = detailShipDisplayName(
+        ship,
+        identifyLocalPlayer,
+        localControlledEntityId
+    );
     object.kind = playerPresentation ? "player" : "ship";
     object.parentStableId = ship.hubId;
     object.objectClass = world::celestial::DetailObjectClass::Ship;
@@ -312,7 +328,8 @@ inline void appendDetailLocalContext(
     const DetailMapRuntimeSampleResult& runtime,
     double serverTimeSeconds,
     double extentMeters,
-    bool cubicBounds
+    bool cubicBounds,
+    EntityId localControlledEntityId
 )
 {
     using namespace world::celestial;
@@ -391,7 +408,9 @@ inline void appendDetailLocalContext(
         if (!intersectsBounds(positionMeters, 0.0))
             continue;
 
-        out.scene.objects.push_back(makeDetailShipObject(ship, false));
+        out.scene.objects.push_back(
+            makeDetailShipObject(ship, false, localControlledEntityId)
+        );
     }
 
     appendDetailDiagnosticCube(
@@ -411,7 +430,8 @@ inline bool buildClientCelestialBodyDetail(
     const world::celestial::CelestialSystemSnapshot& celestial,
     const DetailMapRuntimeSampleResult& runtime,
     double serverTimeSeconds,
-    double universeTimeSeconds
+    double universeTimeSeconds,
+    EntityId localControlledEntityId
 )
 {
     using namespace world::celestial;
@@ -531,7 +551,9 @@ inline bool buildClientCelestialBodyDetail(
             continue;
         }
 
-        out.scene.objects.push_back(makeDetailShipObject(ship, true));
+        out.scene.objects.push_back(
+            makeDetailShipObject(ship, true, localControlledEntityId)
+        );
     }
 
     const auto intersectsPlanetBounds =
@@ -562,7 +584,8 @@ inline bool rebuildDetailMapFromClientState(
     const world::celestial::CelestialSystemSnapshot& celestial,
     const DetailMapRuntimeSampleResult& runtime,
     double serverTimeSeconds,
-    double universeTimeSeconds
+    double universeTimeSeconds,
+    EntityId localControlledEntityId
 )
 {
     using namespace world::celestial;
@@ -589,7 +612,8 @@ inline bool rebuildDetailMapFromClientState(
                     celestial,
                     runtime,
                     serverTimeSeconds,
-                    universeTimeSeconds))
+                    universeTimeSeconds,
+                    localControlledEntityId))
             {
                 return false;
             }
@@ -639,7 +663,8 @@ inline bool rebuildDetailMapFromClientState(
                 runtime,
                 serverTimeSeconds,
                 LocalDetailRadiusMeters,
-                false
+                false,
+                localControlledEntityId
             );
             break;
         }
@@ -686,7 +711,8 @@ inline bool rebuildDetailMapFromClientState(
                         celestial,
                         runtime,
                         serverTimeSeconds,
-                        universeTimeSeconds))
+                        universeTimeSeconds,
+                        localControlledEntityId))
                 {
                     return false;
                 }
@@ -707,7 +733,8 @@ inline bool rebuildDetailMapFromClientState(
                     runtime,
                     serverTimeSeconds,
                     out.detailHalfExtentMeters,
-                    true
+                    true,
+                    localControlledEntityId
                 );
             }
             break;

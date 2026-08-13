@@ -85,14 +85,15 @@ for token in (
     "CompletedSessionMapResponse",
     "game::network::ServerSessionId sessionId",
     "navigationStateForEntity(",
+    "navigationStateForSession(",
 ):
     if token not in server_h:
         fail(f"GameServer per-session replication/map envelope missing: {token}")
 
 for token in (
     "m_sessions.controlledEntity(sessionId)",
-    "outSnapshot.session.playerNavigation =",
-    "navigationStateForEntity(controlledEntityId)",
+    "outSnapshot.session.playerNavigation = sessionNavigation",
+    "navigationStateForSession(sessionId, sessionNavigation)",
     "pending.sessionId = sessionId",
     "completed.sessionId = sessionId",
     "queueMapResponse(sessionId",

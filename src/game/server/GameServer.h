@@ -128,7 +128,7 @@ public:
     {
         static const world::celestial::CelestialSystemSnapshot empty;
         const auto* snapshot = celestialSnapshotForSystem(
-            m_playerNavigation.currentSystemId
+            m_simulation.activeCelestialSystemId()
         );
         return snapshot ? *snapshot : empty;
     }
@@ -143,10 +143,10 @@ public:
         return m_universeClock;
     }
 
-    const world::celestial::PlayerNavigationState& playerNavigation() const
-    {
-        return m_playerNavigation;
-    }
+    bool navigationStateForSession(
+        game::network::ServerSessionId sessionId,
+        world::celestial::PlayerNavigationState& outNavigation
+    ) const;
 
     world::celestial::GalaxyMapSnapshot buildGalaxyMapSnapshot() const;
 
@@ -240,7 +240,6 @@ private:
     // the client from numeric system IDs.
     std::unordered_map<int, std::string> m_systemJurisdictions;
     world::celestial::CelestialRuntimeRegistry m_celestialRuntimes;
-    world::celestial::PlayerNavigationState  m_playerNavigation;
     double m_systemMembershipRadiusAu = 100.0;
 
     bool m_debugFastUniverseTime = false;
@@ -251,6 +250,6 @@ private:
     const world::celestial::CelestialSystemSnapshot*
     celestialSnapshotForSystem(int systemId) const;
 
-    void synchronizePlayerSystemMembership();
-    void applyCelestialOrbitParentParameters();
+    int resolveSingleActiveSimulationSystemId() const;
+    void applyCelestialOrbitParentParameters(int systemId);
 };

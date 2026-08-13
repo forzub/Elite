@@ -420,6 +420,7 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
 
         m_serverSessionId = welcome.sessionId;
         m_playerId = welcome.controlledEntityId;
+        m_world.setLocalControlledEntity(m_playerId);
         m_hasPlayerIdentity = true;
     }
 

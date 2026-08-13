@@ -114,9 +114,8 @@ for token in (
     if token not in sim_cpp:
         fail(f"simulation still depends on one player identity: {token}")
 
-# Primary-player diagnostics/single-system navigation may still use m_playerId
-# until the later per-session-navigation/multi-system stages. NPC/activation
-# authority must no longer use it.
+# Legacy primary-player compatibility may still exist in isolated debug/local
+# APIs, but multiplayer authority and navigation must not depend on it.
 for fragment in (
     "Ship& ship = *shipPtr;\n            if (id == m_playerId)",
     "if (!(id == m_playerId))\n        {\n            broadphaseQuery",
@@ -124,5 +123,8 @@ for fragment in (
 ):
     if fragment in sim_cpp:
         fail("NPC/activation authority still special-cases only m_playerId")
+
+if "m_playerNavigation" in server_h or "m_playerNavigation" in server_cpp:
+    fail("GameServer still owns singleton player navigation instead of session-derived navigation")
 
 print("[PASS] multiplayer server-session authority foundation")

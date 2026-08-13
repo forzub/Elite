@@ -298,7 +298,8 @@ ClientMapService::tryCompleteSystemResponse(
 
     rebuildSystemMapShipLayer(
         rebuiltSnapshot,
-        shipSample.ships
+        shipSample.ships,
+        m_world.localControlledEntityId()
     );
 
     m_systemMetadata = response.metadata;
@@ -359,7 +360,8 @@ ClientMapService::tryCompleteDetailResponse(
             *celestial,
             runtimeSample,
             response.metadata.serverTimeSeconds,
-            response.metadata.universeTimeSeconds))
+            response.metadata.universeTimeSeconds,
+            m_world.localControlledEntityId()))
     {
         return DetailResponseResult::Failed;
     }
@@ -423,7 +425,8 @@ ClientMapService::tryCompleteHubResponse(
             *celestial,
             runtimeSample,
             response.metadata.serverTimeSeconds,
-            response.metadata.universeTimeSeconds))
+            response.metadata.universeTimeSeconds,
+            m_world.localControlledEntityId()))
     {
         return HubResponseResult::Failed;
     }

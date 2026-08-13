@@ -208,9 +208,6 @@ GameServer::GameServer()
             );
         }
 
-        m_playerNavigation.currentSystemId =
-            initialSystemId;
-
         m_celestialRuntimes.initialize(m_starAtlas);
 
 
@@ -227,7 +224,7 @@ std::unordered_map<std::string, glm::dvec3>
 
 if (const auto* celestial =
         celestialSnapshotForSystem(
-            m_playerNavigation.currentSystemId
+            initialSystemId
         ))
 {
     for (const auto& state : celestial->bodies)
@@ -241,7 +238,7 @@ if (const auto* celestial =
 
 m_simulation.setOrbitalUniverseTimeSeconds(universeTime);
 m_simulation.setCelestialBodyKinematicStateAu(
-    m_playerNavigation.currentSystemId,
+    initialSystemId,
     currentCelestialPositionsAu,
     currentCelestialVelocitiesAuPerSecond
 );
@@ -257,9 +254,8 @@ m_simulation.setCelestialBodyKinematicStateAu(
 
 
         m_simulation.buildInitialScene(initialWorldState);
-        synchronizePlayerSystemMembership();
 
-        applyCelestialOrbitParentParameters();
+        applyCelestialOrbitParentParameters(initialSystemId);
 
         // Готовим хабы, станции и reference frames до размещения игрока.
         // Это не полный update и не создаёт грязный стартовый snapshot.
@@ -311,17 +307,45 @@ m_simulation.setCelestialBodyKinematicStateAu(
 
 
 
-void GameServer::synchronizePlayerSystemMembership()
+int GameServer::resolveSingleActiveSimulationSystemId() const
 {
-    const Ship* player = m_simulation.playerShip();
-    if (!player)
-        return;
+    int resolvedSystemId = -1;
 
-    const int shipSystemId =
-        player->core().transform().motion.systemId;
+    for (const EntityId controlledId :
+         m_simulation.playerControlledShipIds())
+    {
+        const Ship* ship = m_simulation.getShip(controlledId);
+        if (!ship)
+            continue;
 
-    if (shipSystemId >= 0)
-        m_playerNavigation.currentSystemId = shipSystemId;
+        const int shipSystemId =
+            ship->core().transform().motion.systemId;
+
+        // Interstellar controlled entities do not nominate a local celestial
+        // runtime. Keep whichever materialized system is already active until
+        // the later multi-system/interstellar runtime stage owns that domain.
+        if (shipSystemId < 0)
+            continue;
+
+        if (resolvedSystemId < 0)
+        {
+            resolvedSystemId = shipSystemId;
+            continue;
+        }
+
+        if (resolvedSystemId != shipSystemId)
+        {
+            // The current production simulation still materializes one local
+            // celestial system at a time. Crucially, do not pick a "primary
+            // player" here: keep the already-active context until a real
+            // multi-system runtime can host both systems simultaneously.
+            return m_simulation.activeCelestialSystemId();
+        }
+    }
+
+    return resolvedSystemId >= 0
+        ? resolvedSystemId
+        : m_simulation.activeCelestialSystemId();
 }
 
 world::celestial::PlayerNavigationState
@@ -385,10 +409,8 @@ GameServer::celestialSnapshotForSystem(int systemId) const
 }
 
 
-void GameServer::applyCelestialOrbitParentParameters()
+void GameServer::applyCelestialOrbitParentParameters(int systemId)
 {
-    const int systemId =
-        m_playerNavigation.currentSystemId;
 
     const auto* system =
         m_starAtlas.findSystem(systemId);
@@ -574,52 +596,45 @@ m_simulation.setOrbitalUniverseTimeSeconds(
     universeTime
 );
 
-// The player's current system is entity authority, not an independent server
-// navigation variable. Resolve the active celestial context from membership
-// before injecting this tick's kinematics.
-synchronizePlayerSystemMembership();
+// The materialized celestial context is a world-runtime concern, not a
+// per-session navigation value. If every connected human ship currently names
+// the same local system, that system may nominate the single materialized
+// context. Split-system play remains explicitly deferred to multi-system
+// runtime; no arbitrary "primary player" is allowed to choose the context.
+const int simulationContextSystemId =
+    resolveSingleActiveSimulationSystemId();
 
-std::unordered_map<std::string, glm::dvec3> celestialPositionsAu;
-std::unordered_map<std::string, glm::dvec3>
-    celestialVelocitiesAuPerSecond;
-
-if (const auto* celestial =
-        celestialSnapshotForSystem(
-            m_playerNavigation.currentSystemId
-        ))
+if (simulationContextSystemId >= 0)
 {
-    for (const auto& state : celestial->bodies)
+    std::unordered_map<std::string, glm::dvec3> celestialPositionsAu;
+    std::unordered_map<std::string, glm::dvec3>
+        celestialVelocitiesAuPerSecond;
+
+    if (const auto* celestial =
+            celestialSnapshotForSystem(simulationContextSystemId))
     {
-        celestialPositionsAu[state.id] = state.positionAu;
-        celestialVelocitiesAuPerSecond[state.id] =
-            state.velocityAuPerSecond;
+        for (const auto& state : celestial->bodies)
+        {
+            celestialPositionsAu[state.id] = state.positionAu;
+            celestialVelocitiesAuPerSecond[state.id] =
+                state.velocityAuPerSecond;
+        }
     }
-}
 
-m_simulation.setCelestialBodyKinematicStateAu(
-    m_playerNavigation.currentSystemId,
-    celestialPositionsAu,
-    celestialVelocitiesAuPerSecond
-);
+    m_simulation.setCelestialBodyKinematicStateAu(
+        simulationContextSystemId,
+        celestialPositionsAu,
+        celestialVelocitiesAuPerSecond
+    );
 
-if (m_appliedSimulationContextSystemId !=
-    m_playerNavigation.currentSystemId)
-{
-    applyCelestialOrbitParentParameters();
+    if (m_appliedSimulationContextSystemId !=
+        simulationContextSystemId)
+    {
+        applyCelestialOrbitParentParameters(simulationContextSystemId);
+    }
 }
 
 m_simulation.update(time);
-
-
-
-    if (m_simulation.playerShip())
-    {
-        // Keep the legacy primary navigation alias alive for the current
-        // single-active-system simulation context. Per-connection snapshots
-        // are composed independently from each session's controlled entity.
-        m_playerNavigation =
-            navigationStateForEntity(m_simulation.playerId());
-    }
 
 
 
@@ -783,7 +798,9 @@ void GameServer::populateClientSessionSnapshot(
                 : 0;
     }
 
-    snapshot.session.playerNavigation = m_playerNavigation;
+    // Shared publication state has no player/session navigation identity.
+    // ServerRunner must compose that field for the destination session.
+    snapshot.session.playerNavigation = {};
     snapshot.session.predictionWorldParams = m_simulation.world();
     snapshot.session.universeTimeSeconds =
         m_universeClock.timeSeconds();
@@ -930,9 +947,9 @@ const SimulationSnapshot& GameServer::snapshot() const
     return m_lastSnapshot;
 }
 
-bool GameServer::copySnapshotForSession(
+bool GameServer::navigationStateForSession(
     game::network::ServerSessionId sessionId,
-    SimulationSnapshot& outSnapshot
+    world::celestial::PlayerNavigationState& outNavigation
 ) const
 {
     const EntityId controlledEntityId =
@@ -941,9 +958,21 @@ bool GameServer::copySnapshotForSession(
     if (controlledEntityId.value == 0)
         return false;
 
+    outNavigation = navigationStateForEntity(controlledEntityId);
+    return true;
+}
+
+bool GameServer::copySnapshotForSession(
+    game::network::ServerSessionId sessionId,
+    SimulationSnapshot& outSnapshot
+) const
+{
+    world::celestial::PlayerNavigationState sessionNavigation;
+    if (!navigationStateForSession(sessionId, sessionNavigation))
+        return false;
+
     outSnapshot = m_lastSnapshot;
-    outSnapshot.session.playerNavigation =
-        navigationStateForEntity(controlledEntityId);
+    outSnapshot.session.playerNavigation = sessionNavigation;
     return true;
 }
 

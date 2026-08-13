@@ -14,6 +14,7 @@
 #include "src/game/client/ClientSystemMapShipSampler.h"
 #include "src/game/client/ClientSystemMapInfrastructureSampler.h"
 #include "src/game/client/ClientDetailMapRuntimeSampler.h"
+#include "src/game/client/ClientLocalAuthority.h"
 
 #include "render/HUD/WorldLabel.h"
 #include "src/world/WorldParams.h"
@@ -184,16 +185,35 @@ public:
         return m_hubMotionLabPresentationSample;
     }
 
+    void setLocalControlledEntity(EntityId id) noexcept
+    {
+        if (m_localControlledEntityId == id)
+            return;
+
+        m_localControlledEntityId = id;
+        clearLocalPredictedPresentation();
+    }
+
+    EntityId localControlledEntityId() const noexcept
+    {
+        return m_localControlledEntityId;
+    }
+
+    bool isLocalControlledEntity(EntityId id) const noexcept
+    {
+        return game::client::isLocalControlledEntity(
+            id,
+            m_localControlledEntityId
+        );
+    }
+
     int playerSystemId() const
     {
-        for (const auto& [id, ship] : m_ships)
-        {
-            (void)id;
-            if (ship.role == ShipRole::Player)
-                return ship.transform.motion.systemId;
-        }
+        const auto it = m_ships.find(m_localControlledEntityId.value);
+        if (it == m_ships.end())
+            return -1;
 
-        return -1;
+        return it->second.transform.motion.systemId;
     }
 
     game::client::SystemMapInfrastructureSampleResult sampleSystemMapInfrastructureAtServerTime(
@@ -307,6 +327,8 @@ private:
     double                                          m_presentationServerTimeSeconds = 0.0;
     std::uint64_t                                   m_hubMotionLabFrameIndex = 0;
     game::diagnostics::HubMotionLabPresentationSample m_hubMotionLabPresentationSample;
+
+    EntityId                                        m_localControlledEntityId {0};
 
     bool                                            m_hasLocalPredictedPresentationTarget = false;
     std::uint32_t                                   m_localPredictedPresentationShipId = 0;

@@ -231,9 +231,10 @@ real materialized CPU work while preserving fixed-step kinematic propagation and
 the established Active trajectory path. Sparse replication is intentionally
 paused behind the multiplayer session/interest boundary: omission cadence is a
 per-client decision, not a property of the simulated entity alone. Multiplayer
-M1/M2 now establish server-owned sessions and multi-transport fan-out. The next
-multiplayer slice is client local-vs-remote human identity, followed by
-per-client interest/sparse replication, true
+M1/M2 establish server-owned sessions and multi-transport fan-out, M3 separates
+local from remote human identity on the client, and M4 makes navigation fully
+session-derived on the server. The next multiplayer slice is a two-`GameClient`
+acceptance path, followed by per-client interest/sparse replication, true
 `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse, and then
 multi-system runtime work.
 
@@ -433,7 +434,7 @@ overlays use `assets/localization/ui/cockpit`; manufacturer-native instrument
 legends can be layered separately when ship definitions begin owning cockpit
 language.
 
-### Multiplayer Stage M1/M2 — session authority + multi-transport fan-out
+### Multiplayer Stage M1-M4 — session authority, client identity and navigation
 
 - M1 added a platform-neutral `ServerSessionId` and `ServerSessionRegistry`; authoritative
   connection/session identity is no longer the same concept as a ship `EntityId`.
@@ -458,12 +459,23 @@ language.
   not the future network transport.
 - Registry reconnect semantics reject stale authority when a replacement live session has
   already claimed the same entity.
-- Remaining multiplayer debt is explicit: client code still has `ShipRole::Player` checks
-  that conflate any human/player-role ship with **the locally controlled ship**. M3 must use
-  server-assigned `SessionWelcome.controlledEntityId` as the local input/prediction identity,
-  leaving remote human ships on the remote/interpolated path. Primary `m_playerNavigation`
-  and the single active celestial-system context also remain compatibility seams for later
-  per-session/multi-system work.
+- M3 removes the client-side identity conflation between `ShipRole::Player` and **my local
+  ship**. `SessionWelcome.controlledEntityId` is copied into `ClientWorldState` and gates
+  prediction, fractional local presentation, player-system lookup and local System/Details/Hub
+  map markers. A different replicated `ShipRole::Player` is a remote human entity and follows
+  ordinary snapshot interpolation; it cannot receive local prediction merely because its role
+  is `Player`.
+- M4 removes the server-side singleton `m_playerNavigation`. Shared publication state carries
+  no player's navigation identity; `copySnapshotForSession()` resolves navigation from the
+  destination session's server-owned `controlledEntityId`. `GameServer` therefore has no
+  primary-player navigation view to leak into another connection.
+- The remaining **single active celestial-system runtime** is a world-materialization limit,
+  not a session-navigation source. Its temporary resolver considers all player-controlled
+  entities in the materialized runtime and refuses to arbitrarily choose a primary player
+  when controlled ships name different systems. True split-system play remains a later
+  multi-system-runtime task.
+- The next multiplayer acceptance milestone is two real `GameClient` instances sharing one
+  authoritative runtime before per-client interest and sparse replication.
 - Session/authority/runner code contains no Win32/POSIX socket primitives. Platform-specific
   networking stays behind transport adapters so the same authoritative runtime can build on
   Windows and Linux.

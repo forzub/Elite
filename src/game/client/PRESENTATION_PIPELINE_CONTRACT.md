@@ -34,6 +34,11 @@ timeline-revision domains must never be blended.
 
 ## Local controlled player
 
+Local-control identity comes only from the server-assigned
+`SessionWelcome.controlledEntityId`. `ShipRole::Player` may describe another
+human-controlled replicated ship and must not grant it local input, prediction,
+camera ownership or local-player map presentation.
+
 The local player's gameplay prediction and reconciliation remain fixed-step.
 Presentation is allowed to sample a copy of the latest fixed predicted state at
 the remaining client accumulator fraction.

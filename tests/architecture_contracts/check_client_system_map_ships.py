@@ -109,7 +109,8 @@ for required in (
 
 for required in (
     "SystemMapObjectKind::Ship",
-    "ship.role == ShipRole::Player",
+    "EntityId localControlledEntityId",
+    "isLocalPlayer",
     '"player"',
     '"entity:" + std::to_string(ship.id.value)',
     "fullMeters(ship.worldPosition)",

@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/client/ClientDetailMapRuntimeSampler.h"
+#include "src/game/client/ClientLocalAuthority.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/game/navigation/HubFrameBasis.h"
@@ -175,10 +176,11 @@ inline const world::celestial::CelestialBodyState* findHubMapParentBody(
 }
 
 inline std::string hubMapShipDisplayName(
-    const DetailMapShipRuntimeSample& ship
+    const DetailMapShipRuntimeSample& ship,
+    bool isLocalPlayer
 )
 {
-    if (ship.role == ShipRole::Player)
+    if (isLocalPlayer)
         return "Player";
 
     if (ship.motionLabKind != game::diagnostics::HubMotionLabActorKind::None)
@@ -198,7 +200,8 @@ inline bool rebuildHubMapFromClientState(
     const world::celestial::CelestialSystemSnapshot& celestial,
     const DetailMapRuntimeSampleResult& runtime,
     double serverTimeSeconds,
-    double universeTimeSeconds
+    double universeTimeSeconds,
+    EntityId localControlledEntityId
 )
 {
     using namespace world::celestial;
@@ -351,9 +354,12 @@ inline bool rebuildHubMapFromClientState(
         if (source.systemId != systemId)
             continue;
 
-        const bool isPlayer = source.role == ShipRole::Player;
+        const bool isLocalPlayer = game::client::isLocalControlledEntity(
+            source.id,
+            localControlledEntityId
+        );
         const bool usesThisHubFrame = source.hubId == hubId;
-        if (!usesThisHubFrame && !isPlayer)
+        if (!usesThisHubFrame && !isLocalPlayer)
             continue;
 
         const glm::dvec3 worldMeters =
@@ -362,10 +368,10 @@ inline bool rebuildHubMapFromClientState(
         HubMapShip ship;
         ship.id = source.id;
         ship.typeId = source.typeId;
-        ship.stableId = isPlayer
+        ship.stableId = isLocalPlayer
             ? "player"
             : "entity:" + std::to_string(source.id.value);
-        ship.name = hubMapShipDisplayName(source);
+        ship.name = hubMapShipDisplayName(source, isLocalPlayer);
         ship.kind = "ship";
         ship.objectClass = DetailObjectClass::Ship;
         ship.origin = DetailObjectOrigin::Runtime;
@@ -395,7 +401,7 @@ inline bool rebuildHubMapFromClientState(
 
         ship.axes = hubMapAxesToLocal(source.orientation, frame);
         ship.sizeMeters = hubMapAssemblySizeMeters(source.typeId);
-        ship.player = isPlayer;
+        ship.player = isLocalPlayer;
         ship.valid = true;
         out.scene.objects.push_back(std::move(ship));
     }

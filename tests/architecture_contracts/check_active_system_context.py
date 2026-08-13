@@ -243,8 +243,8 @@ server_update = function_body(server_text, "void GameServer::update(double dt)")
 if server_update is None:
     fail(server_cpp, "could not locate GameServer update")
 else:
-    if "m_simulation.setCelestialBodyKinematicStateAu(\n    m_playerNavigation.currentSystemId," not in server_update:
-        fail(server_cpp, "server injects celestial kinematics without explicit active system id")
+    if "m_simulation.setCelestialBodyKinematicStateAu(\n        simulationContextSystemId," not in server_update:
+        fail(server_cpp, "server injects celestial kinematics without explicit world-runtime system id")
     if "m_appliedSimulationContextSystemId" not in server_update:
         fail(server_cpp, "server does not rebuild gravity/orbit-parent parameters after a system context change")
 

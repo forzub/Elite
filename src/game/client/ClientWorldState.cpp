@@ -920,7 +920,7 @@ void ClientWorldState::update(
     for (auto& [id, ship] : m_ships)
     {
         const bool usePredictedPlayerPresentation =
-            ship.role == ShipRole::Player &&
+            isLocalControlledEntity(ship.id) &&
             !authoritativePlayerRendering;
 
         if (usePredictedPlayerPresentation)
@@ -1101,15 +1101,10 @@ void ClientWorldState::update(
     {
         const ClientShipState* playerState = nullptr;
 
-        for (const auto& [id, ship] : m_ships)
-        {
-            (void)id;
-            if (ship.role == ShipRole::Player)
-            {
-                playerState = &ship;
-                break;
-            }
-        }
+        const auto localPlayerIt =
+            m_ships.find(m_localControlledEntityId.value);
+        if (localPlayerIt != m_ships.end())
+            playerState = &localPlayerIt->second;
 
         game::simulation::ShipReferenceFrameSnapshot delayedPlayerFrame;
         bool haveDelayedPlayerFrame = false;
@@ -1419,7 +1414,7 @@ void ClientWorldState::prepareLocalPredictedPresentation(
         return;
 
     const auto& ship = it->second;
-    if (ship.role != ShipRole::Player || !ship.descriptor)
+    if (!isLocalControlledEntity(id) || !ship.descriptor)
         return;
 
     m_localPredictedPresentationTarget =
@@ -1462,6 +1457,8 @@ void ClientWorldState::predict(
         return;
 
     auto& ship = it->second;
+    if (!isLocalControlledEntity(id) || !ship.descriptor)
+        return;
 
     SharedShipPhysics::integrate(
         ship.transform,

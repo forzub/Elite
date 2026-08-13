@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "src/game/client/ClientSystemMapShipSampler.h"
+#include "src/game/client/ClientLocalAuthority.h"
 #include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/celestial/SystemMapTypes.h"
@@ -31,7 +32,8 @@ inline bool isServerDiagnosticSystemMapShip(
 */
 inline void rebuildSystemMapShipLayer(
     world::celestial::SystemMapSnapshot& map,
-    const std::vector<SystemMapShipSample>& ships
+    const std::vector<SystemMapShipSample>& ships,
+    EntityId localControlledEntityId
 )
 {
     using world::celestial::SystemMapObject;
@@ -58,12 +60,16 @@ inline void rebuildSystemMapShipLayer(
 
         SystemMapObject object;
         object.id = ship.id;
-        object.stableId =
-            ship.role == ShipRole::Player
-                ? "player"
-                : "entity:" + std::to_string(ship.id.value);
+        const bool isLocalPlayer = game::client::isLocalControlledEntity(
+            ship.id,
+            localControlledEntityId
+        );
 
-        if (ship.role == ShipRole::Player)
+        object.stableId = isLocalPlayer
+            ? "player"
+            : "entity:" + std::to_string(ship.id.value);
+
+        if (isLocalPlayer)
         {
             object.name = "Player";
         }

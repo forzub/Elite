@@ -11,6 +11,11 @@ struct EntityId
     {
         return value == other.value;
     }
+
+    bool operator!=(const EntityId& other) const
+    {
+        return !(*this == other);
+    }
 };
 
 // 👇 ВНЕ структуры

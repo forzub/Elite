@@ -1,5 +1,7 @@
 #include "src/game/server/ServerRuntime.h"
 
+#include <stdexcept>
+
 #include "src/game/debug/DebugSessionMessage.h"
 #include "src/game/debug/IServerDebugChannel.h"
 #include "src/game/network/IServerTransport.h"
@@ -24,25 +26,27 @@ ServerRuntime::ServerRuntime(
     // parameters before the first host-visible authoritative publication.
     m_server->update(0.0);
 
+    // The transport endpoint is bound to an authoritative server session once.
+    // Client packets never choose their controlled EntityId; ServerRunner routes
+    // every inbound intent through this server-owned session identity.
+    m_primarySessionId =
+        m_server->createPlayerSession(m_server->playerId());
+
+    if (!m_primarySessionId)
+        throw std::runtime_error("failed to create primary server session");
+
     m_runner = std::make_unique<ServerRunner>(
         *m_server,
-        transport
+        transport,
+        m_primarySessionId
     );
 
-    // Session authority is bootstrap metadata, not recurring replicated state.
-    // The client learns which entity it controls from the server endpoint and
-    // never selects that EntityId in its command packets.
-    game::network::SessionWelcome welcome;
-    welcome.controlledEntityId = m_server->playerId();
-    welcome.starAtlasCatalog.schemaVersion =
-        world::celestial::StarAtlasDatabase::CatalogSchemaVersion;
-    welcome.starAtlasCatalog.contentFingerprint =
-        m_server->starAtlas().contentFingerprint();
-    transport.publishSessionWelcomeImmediately(welcome);
-
-    // The first authoritative snapshot is bootstrap data, not a
-    // latency-simulated gameplay packet.
-    transport.publishSnapshotImmediately(m_server->snapshot());
+    if (!publishSessionBootstrap(transport, m_primarySessionId))
+    {
+        throw std::runtime_error(
+            "failed to publish primary server session bootstrap"
+        );
+    }
 
     // Debug tools get value copies through a separate diagnostic channel.
     // They must never hold references into GameServer just because local play
@@ -77,6 +81,94 @@ ServerAdvanceResult ServerRuntime::advance(double elapsedSeconds)
 double ServerRuntime::fixedStepSeconds() const
 {
     return m_runner->fixedStepSeconds();
+}
+
+bool ServerRuntime::publishSessionBootstrap(
+    IServerTransport& transport,
+    game::network::ServerSessionId sessionId
+)
+{
+    const EntityId controlledEntityId =
+        m_server->controlledEntityForSession(sessionId);
+
+    if (!sessionId || controlledEntityId.value == 0)
+        return false;
+
+    // Session authority is bootstrap metadata, not recurring replicated state.
+    // A packet never contains a caller-selected controlled EntityId.
+    game::network::SessionWelcome welcome;
+    welcome.sessionId = sessionId;
+    welcome.controlledEntityId = controlledEntityId;
+    welcome.starAtlasCatalog.schemaVersion =
+        world::celestial::StarAtlasDatabase::CatalogSchemaVersion;
+    welcome.starAtlasCatalog.contentFingerprint =
+        m_server->starAtlas().contentFingerprint();
+    transport.publishSessionWelcomeImmediately(welcome);
+
+    SimulationSnapshot bootstrapSnapshot;
+    if (!m_server->copySnapshotForSession(
+            sessionId,
+            bootstrapSnapshot))
+    {
+        return false;
+    }
+
+    // The first authoritative snapshot for each connection is bootstrap data,
+    // not a latency-simulated gameplay packet. Its session navigation view is
+    // already composed from that connection's controlled entity.
+    transport.publishSnapshotImmediately(bootstrapSnapshot);
+    return true;
+}
+
+game::network::ServerSessionId
+ServerRuntime::attachPlayerSessionTransport(
+    IServerTransport& transport,
+    EntityId controlledEntityId
+)
+{
+    const auto sessionId =
+        m_server->createPlayerSession(controlledEntityId);
+
+    if (!sessionId)
+        return {};
+
+    if (!m_runner->attachTransport(transport, sessionId))
+    {
+        m_server->disconnectPlayerSession(sessionId);
+        return {};
+    }
+
+    if (!publishSessionBootstrap(transport, sessionId))
+    {
+        m_runner->detachTransport(sessionId);
+        m_server->disconnectPlayerSession(sessionId);
+        return {};
+    }
+
+    return sessionId;
+}
+
+bool ServerRuntime::detachPlayerSessionTransport(
+    game::network::ServerSessionId sessionId
+)
+{
+    if (!sessionId || sessionId == m_primarySessionId)
+    {
+        // The embedded/local primary connection currently shares the runtime
+        // lifetime. Remote/non-primary sessions may disconnect independently;
+        // primary hot-detach can be added with the later host/session lifecycle.
+        return false;
+    }
+
+    if (!m_runner->detachTransport(sessionId))
+        return false;
+
+    return m_server->disconnectPlayerSession(sessionId);
+}
+
+std::size_t ServerRuntime::connectedPlayerSessionCount() const noexcept
+{
+    return m_server->connectedPlayerSessionCount();
 }
 
 void ServerRuntime::receiveDebugCommands()

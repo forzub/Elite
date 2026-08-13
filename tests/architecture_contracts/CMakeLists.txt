@@ -894,3 +894,37 @@ set_tests_properties(
     PROPERTIES
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+add_executable(
+    server_session_registry_contract_tests
+    ServerSessionRegistryContractTests.cpp
+)
+
+target_include_directories(
+    server_session_registry_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        server_session_registry_contract_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        server_session_registry_contract_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME server_session_registry_contracts
+    COMMAND server_session_registry_contract_tests
+)
+
+set_tests_properties(
+    server_session_registry_contracts
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

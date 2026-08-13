@@ -93,7 +93,8 @@ for required in (
     "game::server::ServerRuntime runtime",
     "--self-test",
     "runtime.advance(step)",
-    "headless-server executable boot + authoritative fixed-step smoke",
+    "runtime.attachPlayerSessionTransport(",
+    "headless-server boot + two-session authoritative routing smoke",
 ):
     if required not in server_main:
         fail(f"EliteServer main does not exercise real authoritative runtime: {required}")

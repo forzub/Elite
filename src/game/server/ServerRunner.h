@@ -1,6 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
+#include <vector>
+
+#include "src/game/network/SessionMessage.h"
 
 class GameServer;
 class IServerTransport;
@@ -13,6 +17,13 @@ struct ServerTickPolicy
     double maxFrameDeltaSeconds = 0.25;
     double maxAccumulatedDebtSeconds = 0.50;
     std::uint32_t maxCatchUpStepsPerAdvance = 8;
+};
+
+struct ServerTransportBinding
+{
+    IServerTransport* transport = nullptr;
+    game::network::ServerSessionId sessionId {};
+    std::uint64_t lastPublishedServerTick = 0;
 };
 
 struct ServerAdvanceResult
@@ -44,10 +55,22 @@ public:
     ServerRunner(
         GameServer& server,
         IServerTransport& transport,
+        game::network::ServerSessionId sessionId,
         ServerTickPolicy policy = {}
     );
 
     ServerAdvanceResult advance(double elapsedSeconds);
+
+    // Attach/detach are called on the authoritative server execution context.
+    // A concrete socket/file-descriptor handle belongs inside IServerTransport;
+    // the runner only binds a platform-neutral endpoint object to server-owned
+    // session authority.
+    bool attachTransport(
+        IServerTransport& transport,
+        game::network::ServerSessionId sessionId
+    );
+    bool detachTransport(game::network::ServerSessionId sessionId);
+    std::size_t transportCount() const noexcept;
 
     void resetTiming();
 
@@ -73,11 +96,14 @@ public:
 
 private:
     void runFixedStep();
-    void receiveInboundMessages();
+    void receiveInboundMessages(ServerTransportBinding& binding);
     void publishOutboundMessages();
+    ServerTransportBinding* findBinding(
+        game::network::ServerSessionId sessionId
+    ) noexcept;
 
     GameServer& m_server;
-    IServerTransport& m_transport;
+    std::vector<ServerTransportBinding> m_transports;
     ServerTickPolicy m_policy;
 
     double m_accumulatorSeconds = 0.0;

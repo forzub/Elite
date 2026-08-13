@@ -18,6 +18,7 @@
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/MapSnapshotMessage.h"
 #include "src/game/network/ProtocolMetadata.h"
+#include "src/game/network/SessionMessage.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/world/celestial/CelestialTypes.h"
 
@@ -143,6 +144,7 @@ private:
     ClientConnectionState           m_connectionState =
         ClientConnectionState::Disconnected;
     std::string                     m_connectionError;
+    game::network::ServerSessionId m_serverSessionId {};
     EntityId                        m_playerId {0};
     bool                            m_hasPlayerIdentity = false;
 

@@ -1,10 +1,13 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 #include <memory>
 
 #include "src/game/server/ServerRunner.h"
+#include "src/game/network/SessionMessage.h"
 #include "src/world/WorldParams.h"
+#include "src/scene/EntityID.h"
 
 class GameServer;
 class IServerTransport;
@@ -44,13 +47,27 @@ public:
     ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
 
+    game::network::ServerSessionId attachPlayerSessionTransport(
+        IServerTransport& transport,
+        EntityId controlledEntityId
+    );
+    bool detachPlayerSessionTransport(
+        game::network::ServerSessionId sessionId
+    );
+    std::size_t connectedPlayerSessionCount() const noexcept;
+
 private:
+    bool publishSessionBootstrap(
+        IServerTransport& transport,
+        game::network::ServerSessionId sessionId
+    );
     void receiveDebugCommands();
     void publishPendingDebugSnapshot();
     game::debug::DebugSessionState makeDebugState() const;
 
     std::unique_ptr<GameServer> m_server;
     std::unique_ptr<ServerRunner> m_runner;
+    game::network::ServerSessionId m_primarySessionId {};
     game::debug::IServerDebugChannel& m_debugChannel;
 
     bool m_debugSnapshotPending = false;

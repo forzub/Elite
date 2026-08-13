@@ -207,7 +207,7 @@ Functional migration is currently at **Migration Stage 3G complete for the four 
 - Stage 3E: production System-map infrastructure and orbital hubs no longer come from `GameServer::buildSystemMapSnapshot()`. `SimulationSnapshot` publishes ordinary authoritative hub state plus static-object instance/navigation facts. `ClientWorldState` retains that history and `ClientMapService` samples hubs/static infrastructure at the exact `SystemMapResponse::metadata.serverTimeSeconds`, then converts them to `SystemMapObject` rows locally. Static System-map name/galactic placement are also rehydrated from the endpoint-local StarAtlas. The System-map response is now an epoch anchor plus explicit diagnostic probes, not a second production world-state channel.
 - Stage 3F: Details presentation is client-composed. `DetailMapResponse` now carries only the semantic `DetailTarget` plus authoritative server/universe epoch metadata. The client resolves deterministic body/ring/environment state from its endpoint-local StarAtlas/CelestialRuntime at that universe epoch and samples ships, hubs and complete local static infrastructure from retained ordinary `SimulationSnapshot` history at the exact response server epoch. Static-object and hub world velocities are first-class replication facts so Details no longer needs `GameServer::buildDetailMapSnapshot()` or its dynamic refresh path.
 - Stage 3G: Hub Map presentation is client-composed. `HubMapResponse` carries only `(systemId, hubId)` plus authoritative server/universe epoch metadata. The client samples the hub, attached modules and ships from the same retained ordinary `SimulationSnapshot` history, resolves the parent planet from its local celestial runtime, reconstructs the tactical `prograde/radial/normal` frame (including frame angular velocity), and builds the complete `HubMapSnapshot` locally. Stable `HubAttachmentSnapshot` offsets reconstruct co-frame modules from one sampled hub frame instead of independently interpolating their world poses. `GameServer::buildHubMapSnapshot()` and its dynamic refresh path are removed.
-- Stage 3H: a real standalone `EliteServer` executable now boots the same authoritative `ServerRuntime` without `GameClient`, loopback client ownership, GLFW/OpenGL/Freetype/WebView/UI or render sources. `ELITE_BUILD_CLIENT=OFF` is a supported configure path, and the ready harness builds `EliteServer` in that mode and runs a finite authoritative fixed-step self-test. The temporary `HeadlessServerTransport`/`HeadlessDebugChannel` are process-local empty/sink endpoints only; they deliberately do **not** pretend to be the future socket transport.
+- Stage 3H: a real standalone `EliteServer` executable now boots the same authoritative `ServerRuntime` without `GameClient`, loopback client ownership, GLFW/OpenGL/Freetype/WebView/UI or render sources. `ELITE_BUILD_CLIENT=OFF` is a supported configure path, and the ready harness builds `EliteServer` in that mode and runs a finite authoritative fixed-step self-test. The temporary `HeadlessServerTransport`/`HeadlessDebugChannel` remain process-local harness endpoints, not a socket transport; normal standalone mode has empty inbound queues, while self-test may inject protocol messages to prove server routing.
 
 
 The clock/revision work that followed is infrastructure for this migration.
@@ -228,9 +228,13 @@ at the response universe-time epoch.
 The map-presentation migration and standalone headless executable boundary are
 complete at this stage. Runtime Stage 4A/4B now consumes the activation plan for
 real materialized CPU work while preserving fixed-step kinematic propagation and
-the established Active trajectory path. The next runtime slice is sparse
-replication semantics; after that comes true
-`Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse, then
+the established Active trajectory path. Sparse replication is intentionally
+paused behind the multiplayer session/interest boundary: omission cadence is a
+per-client decision, not a property of the simulated entity alone. Multiplayer
+M1/M2 now establish server-owned sessions and multi-transport fan-out. The next
+multiplayer slice is client local-vs-remote human identity, followed by
+per-client interest/sparse replication, true
+`Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse, and then
 multi-system runtime work.
 
 ## Authoritative world bootstrap
@@ -428,3 +432,38 @@ language domain from the global UI locale. The current global cockpit/service
 overlays use `assets/localization/ui/cockpit`; manufacturer-native instrument
 legends can be layered separately when ship definitions begin owning cockpit
 language.
+
+### Multiplayer Stage M1/M2 — session authority + multi-transport fan-out
+
+- M1 added a platform-neutral `ServerSessionId` and `ServerSessionRegistry`; authoritative
+  connection/session identity is no longer the same concept as a ship `EntityId`.
+- `GameServer` resolves `session -> controlledEntity` before control/ship commands enter
+  authoritative queues and rejects unknown/disconnected sessions. `GameSimulation` tracks
+  an explicit set of player-controlled ships, so NPC authority and activation pinning no
+  longer depend on the legacy singleton `m_playerId`.
+- M2 turns `ServerRunner` into a multi-endpoint fan-in/fan-out boundary. Multiple
+  `(IServerTransport*, ServerSessionId)` bindings drain inbound traffic before one shared
+  authoritative `GameServer::update()`, then receive session-owned outbound responses.
+  A connection never receives a private simulation tick.
+- `ServerRuntime` can admit/detach secondary player-session transports. Each admitted
+  session gets its own `SessionWelcome` and bootstrap snapshot; map responses retain their
+  destination session, while time-sync responses return directly through the originating
+  endpoint.
+- Ordinary replication is still full-world/full-presence, but the snapshot session view is
+  composed per controlled entity: `snapshot.session.playerNavigation` is no longer copied
+  from the primary player for every connection.
+- `EliteServer --self-test` now drives two process-local transport endpoints in one runtime,
+  assigns two different controlled ships, verifies independent control acknowledgements,
+  map/time-sync routing, per-session navigation, and secondary disconnect. The harness is
+  not the future network transport.
+- Registry reconnect semantics reject stale authority when a replacement live session has
+  already claimed the same entity.
+- Remaining multiplayer debt is explicit: client code still has `ShipRole::Player` checks
+  that conflate any human/player-role ship with **the locally controlled ship**. M3 must use
+  server-assigned `SessionWelcome.controlledEntityId` as the local input/prediction identity,
+  leaving remote human ships on the remote/interpolated path. Primary `m_playerNavigation`
+  and the single active celestial-system context also remain compatibility seams for later
+  per-session/multi-system work.
+- Session/authority/runner code contains no Win32/POSIX socket primitives. Platform-specific
+  networking stays behind transport adapters so the same authoritative runtime can build on
+  Windows and Linux.

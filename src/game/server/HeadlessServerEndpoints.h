@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <queue>
 #include <utility>
 
 #include "src/game/debug/IServerDebugChannel.h"
@@ -28,24 +29,59 @@ public:
     }
 
     bool receiveClientMessage(
-        game::network::ClientMessage&
+        game::network::ClientMessage& outMessage
     ) override
     {
-        return false;
+        if (m_clientMessages.empty())
+            return false;
+
+        outMessage = std::move(m_clientMessages.front());
+        m_clientMessages.pop();
+        return true;
     }
 
     bool receiveMapRequest(
-        game::network::MapRequest&
+        game::network::MapRequest& outRequest
     ) override
     {
-        return false;
+        if (m_mapRequests.empty())
+            return false;
+
+        outRequest = std::move(m_mapRequests.front());
+        m_mapRequests.pop();
+        return true;
     }
 
     bool receiveTimeSyncRequest(
-        game::network::TimeSyncRequest&
+        game::network::TimeSyncRequest& outRequest
     ) override
     {
-        return false;
+        if (m_timeSyncRequests.empty())
+            return false;
+
+        outRequest = m_timeSyncRequests.front();
+        m_timeSyncRequests.pop();
+        return true;
+    }
+
+    // Self-test/admission harness injection. In normal standalone server mode
+    // nobody calls these methods, so the endpoint remains an empty inbound
+    // source until the future real network adapter replaces it.
+    void enqueueClientMessage(game::network::ClientMessage message)
+    {
+        m_clientMessages.push(std::move(message));
+    }
+
+    void enqueueMapRequest(game::network::MapRequest request)
+    {
+        m_mapRequests.push(std::move(request));
+    }
+
+    void enqueueTimeSyncRequest(
+        game::network::TimeSyncRequest request
+    )
+    {
+        m_timeSyncRequests.push(std::move(request));
     }
 
     void publishSessionWelcomeImmediately(
@@ -76,17 +112,21 @@ public:
     }
 
     void sendMapResponse(
-        game::network::MapResponse
+        game::network::MapResponse response
     ) override
     {
-        ++m_discardedMapResponseCount;
+        m_latestMapResponse = std::move(response);
+        m_hasMapResponse = true;
+        ++m_mapResponseCount;
     }
 
     void sendTimeSyncResponse(
-        game::network::TimeSyncResponse
+        game::network::TimeSyncResponse response
     ) override
     {
-        ++m_discardedTimeSyncResponseCount;
+        m_latestTimeSyncResponse = std::move(response);
+        m_hasTimeSyncResponse = true;
+        ++m_timeSyncResponseCount;
     }
 
     bool hasSessionWelcome() const noexcept
@@ -119,17 +159,56 @@ public:
         return m_snapshotPublicationCount;
     }
 
+    bool hasMapResponse() const noexcept
+    {
+        return m_hasMapResponse;
+    }
+
+    const game::network::MapResponse& latestMapResponse() const noexcept
+    {
+        return m_latestMapResponse;
+    }
+
+    std::size_t mapResponseCount() const noexcept
+    {
+        return m_mapResponseCount;
+    }
+
+    bool hasTimeSyncResponse() const noexcept
+    {
+        return m_hasTimeSyncResponse;
+    }
+
+    const game::network::TimeSyncResponse&
+    latestTimeSyncResponse() const noexcept
+    {
+        return m_latestTimeSyncResponse;
+    }
+
+    std::size_t timeSyncResponseCount() const noexcept
+    {
+        return m_timeSyncResponseCount;
+    }
+
 private:
     bool m_hasWelcome = false;
     bool m_hasSnapshot = false;
     bool m_hasBootstrapSnapshot = false;
+    bool m_hasMapResponse = false;
+    bool m_hasTimeSyncResponse = false;
 
     game::network::SessionWelcome m_welcome;
     SimulationSnapshot m_latestSnapshot;
+    game::network::MapResponse m_latestMapResponse;
+    game::network::TimeSyncResponse m_latestTimeSyncResponse;
+
+    std::queue<game::network::ClientMessage> m_clientMessages;
+    std::queue<game::network::MapRequest> m_mapRequests;
+    std::queue<game::network::TimeSyncRequest> m_timeSyncRequests;
 
     std::size_t m_snapshotPublicationCount = 0;
-    std::size_t m_discardedMapResponseCount = 0;
-    std::size_t m_discardedTimeSyncResponseCount = 0;
+    std::size_t m_mapResponseCount = 0;
+    std::size_t m_timeSyncResponseCount = 0;
 };
 
 class HeadlessDebugChannel final : public game::debug::IServerDebugChannel

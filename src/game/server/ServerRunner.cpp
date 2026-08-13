@@ -50,13 +50,20 @@ void validatePolicy(const ServerTickPolicy& policy)
 ServerRunner::ServerRunner(
     GameServer& server,
     IServerTransport& transport,
+    game::network::ServerSessionId sessionId,
     ServerTickPolicy policy
 )
     : m_server(server)
-    , m_transport(transport)
     , m_policy(policy)
 {
     validatePolicy(m_policy);
+
+    if (!attachTransport(transport, sessionId))
+    {
+        throw std::invalid_argument(
+            "ServerRunner primary transport/session binding is invalid"
+        );
+    }
 }
 
 ServerAdvanceResult ServerRunner::advance(double elapsedSeconds)
@@ -126,26 +133,113 @@ void ServerRunner::resetTiming()
     m_totalDiscardedSeconds = 0.0;
 }
 
-void ServerRunner::receiveInboundMessages()
+bool ServerRunner::attachTransport(
+    IServerTransport& transport,
+    game::network::ServerSessionId sessionId
+)
 {
+    if (!sessionId)
+        return false;
+
+    const auto duplicate = std::find_if(
+        m_transports.begin(),
+        m_transports.end(),
+        [&](const ServerTransportBinding& binding)
+        {
+            return
+                binding.sessionId == sessionId ||
+                binding.transport == &transport;
+        }
+    );
+
+    if (duplicate != m_transports.end())
+        return false;
+
+    ServerTransportBinding binding;
+    binding.transport = &transport;
+    binding.sessionId = sessionId;
+    // ServerRuntime immediately publishes bootstrap state when a transport is
+    // admitted. Start at the current publication tick so the normal runner
+    // does not enqueue the same snapshot again on the next fixed step.
+    binding.lastPublishedServerTick =
+        m_server.snapshot().metadata.serverTick;
+
+    m_transports.push_back(binding);
+    return true;
+}
+
+bool ServerRunner::detachTransport(
+    game::network::ServerSessionId sessionId
+)
+{
+    const auto it = std::find_if(
+        m_transports.begin(),
+        m_transports.end(),
+        [&](const ServerTransportBinding& binding)
+        {
+            return binding.sessionId == sessionId;
+        }
+    );
+
+    if (it == m_transports.end())
+        return false;
+
+    m_transports.erase(it);
+    return true;
+}
+
+std::size_t ServerRunner::transportCount() const noexcept
+{
+    return m_transports.size();
+}
+
+ServerTransportBinding* ServerRunner::findBinding(
+    game::network::ServerSessionId sessionId
+) noexcept
+{
+    const auto it = std::find_if(
+        m_transports.begin(),
+        m_transports.end(),
+        [&](const ServerTransportBinding& binding)
+        {
+            return binding.sessionId == sessionId;
+        }
+    );
+
+    return it == m_transports.end() ? nullptr : &*it;
+}
+
+void ServerRunner::receiveInboundMessages(
+    ServerTransportBinding& binding
+)
+{
+    if (!binding.transport)
+        return;
+
+    auto& transport = *binding.transport;
+
     game::network::ClientMessage clientMessage;
-    while (m_transport.receiveClientMessage(clientMessage))
+    while (transport.receiveClientMessage(clientMessage))
     {
-        // This local endpoint represents one authenticated/control session.
-        // The client sends intent only; authoritative entity ownership is bound
-        // on the server side and must never be selected by a client packet.
+        // Each endpoint is bound once to a server-owned session. Packets carry
+        // intent only; they never select another controlled entity.
         m_server.receiveClientMessage(
-            m_server.playerId(),
+            binding.sessionId,
             clientMessage
         );
     }
 
     game::network::MapRequest mapRequest;
-    while (m_transport.receiveMapRequest(mapRequest))
-        m_server.enqueueMapRequest(mapRequest);
+    while (transport.receiveMapRequest(mapRequest))
+    {
+        m_server.enqueueMapRequest(
+            binding.sessionId,
+            mapRequest
+        );
+    }
 
     game::network::TimeSyncRequest timeSyncRequest;
-    while (m_transport.receiveTimeSyncRequest(timeSyncRequest))
+    while (transport.receiveTimeSyncRequest(timeSyncRequest))
     {
         game::network::TimeSyncResponse response;
         response.sequence = timeSyncRequest.sequence;
@@ -154,20 +248,53 @@ void ServerRunner::receiveInboundMessages()
         response.serverReceiveTimeSeconds =
             m_server.serverTimeSeconds();
 
-        m_transport.sendTimeSyncResponse(std::move(response));
+        // Time sync is connection-local and can return directly through the
+        // same endpoint; it never enters a shared response queue.
+        transport.sendTimeSyncResponse(std::move(response));
     }
 }
 
 void ServerRunner::publishOutboundMessages()
 {
-    // The transport receives only a replicated value object; it never reaches
-    // back into GameServer to discover or retain authoritative state.
-    m_transport.publishSnapshot(m_server.snapshot());
+    const auto& sharedSnapshot = m_server.snapshot();
 
+    // Ordinary replication is currently full-world/full-presence, but the
+    // session envelope is already distinct per connection. This is the seam
+    // where per-client interest/sparse replication will be inserted later.
+    for (auto& binding : m_transports)
+    {
+        if (!binding.transport)
+            continue;
+
+        if (binding.lastPublishedServerTick ==
+            sharedSnapshot.metadata.serverTick)
+        {
+            continue;
+        }
+
+        SimulationSnapshot sessionSnapshot;
+        if (!m_server.copySnapshotForSession(
+                binding.sessionId,
+                sessionSnapshot))
+        {
+            continue;
+        }
+
+        binding.transport->publishSnapshot(sessionSnapshot);
+        binding.lastPublishedServerTick =
+            sharedSnapshot.metadata.serverTick;
+    }
+
+    game::network::ServerSessionId responseSessionId;
     game::network::MapResponse mapResponse;
-    while (m_server.popMapResponse(mapResponse))
-        m_transport.sendMapResponse(std::move(mapResponse));
+    while (m_server.popMapResponse(responseSessionId, mapResponse))
+    {
+        auto* binding = findBinding(responseSessionId);
+        if (!binding || !binding->transport)
+            continue;
 
+        binding->transport->sendMapResponse(std::move(mapResponse));
+    }
 }
 
 void ServerRunner::runFixedStep()
@@ -175,15 +302,26 @@ void ServerRunner::runFixedStep()
     const float fixedStep =
         static_cast<float>(m_policy.fixedStepSeconds);
 
-    // Preserve the established loopback ordering without allowing transport
-    // code to call GameServer directly: older packets arrive first, commands
-    // are consumed by this fixed step, then newly published state is exposed.
-    m_transport.update(fixedStep);
-    receiveInboundMessages();
+    // Every attached transport advances/delivers its own latency or socket
+    // queues before the single authoritative simulation step. No connection
+    // owns a private GameServer tick.
+    for (auto& binding : m_transports)
+    {
+        if (binding.transport)
+            binding.transport->update(fixedStep);
+    }
+
+    for (auto& binding : m_transports)
+        receiveInboundMessages(binding);
 
     m_server.update(m_policy.fixedStepSeconds);
 
     publishOutboundMessages();
-    m_transport.update(0.0f);
+
+    for (auto& binding : m_transports)
+    {
+        if (binding.transport)
+            binding.transport->update(0.0f);
+    }
 }
 }

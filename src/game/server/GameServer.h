@@ -21,6 +21,7 @@
 #include "src/world/time/UniverseClock.h"
 #include "src/game/server/ServerTimeContext.h"
 #include "src/game/server/FixedStepControlQueue.h"
+#include "src/game/server/ServerSessionRegistry.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
 struct ServerQueueDiagnostics
@@ -29,6 +30,7 @@ struct ServerQueueDiagnostics
     std::uint64_t droppedShipCommands = 0;
     std::uint64_t droppedMapRequests = 0;
     std::uint64_t droppedMapResponses = 0;
+    std::uint64_t rejectedSessionMessages = 0;
 };
 
 class GameServer
@@ -41,6 +43,10 @@ public:
     void submitCommand(EntityId shipId, const ShipControlState& control);
 
     const SimulationSnapshot& snapshot() const;
+    bool copySnapshotForSession(
+        game::network::ServerSessionId sessionId,
+        SimulationSnapshot& outSnapshot
+    ) const;
 
     EntityId playerId() const;
 
@@ -59,7 +65,19 @@ public:
     bool debugHangShipModule(EntityId id, const std::string& moduleId);
     bool debugReevaluateShipStructure(EntityId id);
 
-    void receiveClientMessage(EntityId playerId, const game::network::ClientMessage& msg);
+    game::network::ServerSessionId createPlayerSession(
+        EntityId controlledEntityId
+    );
+    bool disconnectPlayerSession(game::network::ServerSessionId sessionId);
+    EntityId controlledEntityForSession(
+        game::network::ServerSessionId sessionId
+    ) const noexcept;
+    std::size_t connectedPlayerSessionCount() const noexcept;
+
+    void receiveClientMessage(
+        game::network::ServerSessionId sessionId,
+        const game::network::ClientMessage& msg
+    );
     bool startBestRepairJobForFirstMissingSlot(EntityId targetShipId);
 
     bool startBestRepairJobForMissingSlot(
@@ -87,8 +105,14 @@ public:
         return metadata;
     }
 
-    void enqueueMapRequest(const game::network::MapRequest& request);
-    bool popMapResponse(game::network::MapResponse& outResponse);
+    bool enqueueMapRequest(
+        game::network::ServerSessionId sessionId,
+        const game::network::MapRequest& request
+    );
+    bool popMapResponse(
+        game::network::ServerSessionId& outSessionId,
+        game::network::MapResponse& outResponse
+    );
 
     const ServerQueueDiagnostics& queueDiagnostics() const
     {
@@ -153,14 +177,34 @@ public:
     double debugUniverseTimeConfiguredScale() const;
 
 private:
+    struct PendingSessionMapRequest
+    {
+        game::network::ServerSessionId sessionId {};
+        game::network::MapRequest request;
+    };
+
+    struct CompletedSessionMapResponse
+    {
+        game::network::ServerSessionId sessionId {};
+        game::network::MapResponse response;
+    };
+
     void processPendingMapRequests();
+    void queueMapResponse(
+        game::network::ServerSessionId sessionId,
+        game::network::MapResponse response
+    );
 
     void populateClientSessionSnapshot(
         SimulationSnapshot& snapshot
     ) const;
+    world::celestial::PlayerNavigationState navigationStateForEntity(
+        EntityId entityId
+    ) const;
 
     mutable game::diagnostics::ServerDiagnostics m_diagnostics;
     GameSimulation m_simulation;
+    game::server::ServerSessionRegistry m_sessions;
 
 
     static constexpr std::size_t MaxShipCommandsPerShip = 32;
@@ -172,8 +216,8 @@ private:
     std::unordered_map<uint32_t, game::server::FixedStepControlQueue>
         m_controlStreams;
     std::unordered_map<uint32_t, std::deque<ClientShipCommand>> m_pendingClientShipCommands;
-    std::deque<game::network::MapRequest> m_pendingMapRequests;
-    std::deque<game::network::MapResponse> m_completedMapResponses;
+    std::deque<PendingSessionMapRequest> m_pendingMapRequests;
+    std::deque<CompletedSessionMapResponse> m_completedMapResponses;
     std::uint64_t m_serverTick = 0;
     std::uint64_t m_universeTimelineRevision = 1;
     world::time::UniverseClock m_universeClock;

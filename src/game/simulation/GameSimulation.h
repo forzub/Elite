@@ -145,6 +145,16 @@ public:
     SimulationSnapshot buildReplicationSnapshot(std::uint64_t serverTick);
     void debugForceFullShipGraphPayload();
     EntityId playerId() const { return m_playerId; }
+
+    // Multiplayer ownership is independent from the legacy primary-player
+    // compatibility alias. Every entity controlled by a connected server
+    // session is pinned Active and excluded from NPC authority.
+    bool setPlayerControlled(EntityId id, bool controlled);
+    bool isPlayerControlled(EntityId id) const noexcept;
+    const std::unordered_set<EntityId>& playerControlledShipIds() const noexcept
+    {
+        return m_playerControlledShipIds;
+    }
     double serverTime() const { return m_serverTimelineClock.timeSeconds(); }
     std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships();
     const std::unordered_map<EntityId, std::unique_ptr<Ship>>& ships() const;
@@ -322,7 +332,12 @@ private:
     std::unordered_map<EntityId, StaticObject> m_staticObjects;
     std::unordered_map<std::string, world::hubs::OrbitalHubRuntime> m_orbitalHubs;
 
+    // Compatibility alias used by the current single-system navigation and
+    // local-client presentation paths. Multiplayer authority lives in
+    // m_playerControlledShipIds; this field must not be used to decide whether
+    // a ship is player-controlled.
     EntityId                            m_playerId;
+    std::unordered_set<EntityId>        m_playerControlledShipIds;
     WorldParams                         m_world;
 
     std::vector<WorldSignal>            m_worldSignals;

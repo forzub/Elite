@@ -201,7 +201,7 @@ integration_required = (
     "makeSpatialBounds(descriptor.logicalDimensions())",
     "tr.motion.worldVelocityMps",
     "obj.linearVelocity",
-    "id == m_playerId",
+    "isPlayerControlled(id)",
     "ActivationSpatialIndex spatialIndex",
     "spatialIndex.rebuild(anchors)",
     "spatialIndex.query(",

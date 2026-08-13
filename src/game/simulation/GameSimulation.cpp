@@ -327,6 +327,13 @@ void GameSimulation::buildInitialScene(
     m_playerId =
         game::scene::buildInitialScene(*this, initialState);
 
+    // The authored bootstrap player is the first controlled entity.
+    // ServerSessionRegistry later binds a connection/session to this entity;
+    // keeping the simulation-side ownership set explicit prevents NPC/activation
+    // code from depending on the legacy single m_playerId alias.
+    if (m_playerId.value != 0)
+        m_playerControlledShipIds.insert(m_playerId);
+
     if constexpr (game::promo::PromoFlybyScenario::Enabled)
     {
         m_promoFlybyScenario.setup(*this);
@@ -1350,8 +1357,11 @@ m_hubVelocityMetersPerSecond[hubId] =
                 continue;
 
             Ship& ship = *shipPtr;
-            if (id == m_playerId)
+            if (isPlayerControlled(id) ||
+                ship.core().role() == ShipRole::Player)
+            {
                 continue;
+            }
 
             // Tactical AI is one of the activation-controlled materialized
             // execution lanes. Stage 4B also decimates motion-control
@@ -2501,7 +2511,9 @@ void GameSimulation::debugLogActivationShadow(double dt)
         const auto& plan = planner.planUpdate;
 
         const bool npcAiEligible =
-            !(id == m_playerId) && !isHubMotionLabShip(id);
+            !isPlayerControlled(id) &&
+            ship->core().role() != ShipRole::Player &&
+            !isHubMotionLabShip(id);
         const bool npcAiLab = isActivationCadenceLabShip(id);
         const auto npcAiLabDemand =
             npcAiLab
@@ -2765,7 +2777,7 @@ void GameSimulation::updateActivationShadow()
         // Scheduled materialization/collapse belongs to a later persistent-world
         // slice.
         ActivationSpatialQueryResult broadphaseQuery;
-        if (!(id == m_playerId))
+        if (!isPlayerControlled(id))
         {
             broadphaseQuery = spatialIndex.query(
                 tr.motion.systemId,
@@ -2782,7 +2794,7 @@ void GameSimulation::updateActivationShadow()
                 tr.motion.systemId,
                 subject,
                 currentExecutionMode,
-                id == m_playerId,
+                isPlayerControlled(id),
                 anchors,
                 broadphaseQuery.candidateIndices,
                 m_activationInteractionPolicy,
@@ -4079,6 +4091,26 @@ void GameSimulation::debugResetAllShipStructures()
     std::cout << "[GameSimulation] debugResetAllShipStructures\n";
 }
 
+
+
+bool GameSimulation::setPlayerControlled(EntityId id, bool controlled)
+{
+    if (id.value == 0 || !getShip(id))
+        return false;
+
+    if (controlled)
+        m_playerControlledShipIds.insert(id);
+    else
+        m_playerControlledShipIds.erase(id);
+
+    return true;
+}
+
+bool GameSimulation::isPlayerControlled(EntityId id) const noexcept
+{
+    return m_playerControlledShipIds.find(id) !=
+        m_playerControlledShipIds.end();
+}
 
 void GameSimulation::setPlayerControl(const ShipControlState& control)
 {

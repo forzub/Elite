@@ -69,7 +69,8 @@ for required in (
     "std::make_unique<GameServer>()",
     "m_server->world() = worldParams",
     "game::debug::IServerDebugChannel& debugChannel",
-    "transport.publishSnapshotImmediately(m_server->snapshot())",
+    "publishSessionBootstrap(transport, m_primarySessionId)",
+    "transport.publishSnapshotImmediately(bootstrapSnapshot)",
     "m_debugChannel.publishSnapshot(m_server->snapshot())",
 ):
     if required not in runtime_h and required not in runtime_cpp:
@@ -93,6 +94,7 @@ for required in (
 # client command packet.
 for required in (
     "struct SessionWelcome",
+    "ServerSessionId sessionId {};",
     "EntityId controlledEntityId {0};",
     "CatalogMetadata starAtlasCatalog;",
 ):
@@ -103,7 +105,10 @@ if "controlledEntityId" in client_session_snapshot_h:
     fail("stable controlled-entity identity leaked into recurring simulation snapshots")
 
 for required in (
-    "welcome.controlledEntityId = m_server->playerId()",
+    "m_server->createPlayerSession(m_server->playerId())",
+    "welcome.sessionId = sessionId",
+    "welcome.controlledEntityId = controlledEntityId",
+    "m_server->copySnapshotForSession(",
     "welcome.starAtlasCatalog.schemaVersion",
     "welcome.starAtlasCatalog.contentFingerprint",
     "transport.publishSessionWelcomeImmediately(welcome)",
@@ -119,6 +124,8 @@ if "sendClientMessage(m_playerId" in client_cpp:
 
 for required in (
     "m_transport.receiveSessionWelcome(welcome)",
+    "welcome.sessionId",
+    "m_serverSessionId = welcome.sessionId",
     "m_catalogs.validateServerStarAtlas(",
     "welcome.starAtlasCatalog",
     "m_playerId = welcome.controlledEntityId",
@@ -153,8 +160,8 @@ for text, label in (
         fail(f"{label} transports client-selected command authority identity")
 
 for required in (
-    "m_transport.receiveClientMessage(clientMessage)",
-    "m_server.playerId()",
+    "transport.receiveClientMessage(clientMessage)",
+    "binding.sessionId",
     "m_server.receiveClientMessage(",
 ):
     if required not in runner_cpp:

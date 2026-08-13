@@ -106,7 +106,32 @@
 3. `[x]` Перевести Details на client-side composition из authoritative entity/hub state + local static/celestial data.
 4. `[x]` Перевести Hub на ту же модель.
 5. `[x]` Создать отдельный headless `EliteServer` target и использовать configure/compile/link boundary как жёсткую проверку server independence от render/UI.
-6. `[~]` Runtime scaling: Stage 4A/4B уже применяют `Active / Prewarm / Coarse` к реальной стоимости materialized ships. AI/service/maintenance cadence снижена, а дорогой motion-control solver отделён от дешёвой fixed-step kinematic propagation. Следующие slices — sparse replication и затем настоящие Scheduled materialization/collapse.
+6. `[~]` Runtime scaling: Stage 4A/4B уже применяют `Active / Prewarm / Coarse` к реальной стоимости materialized ships. AI/service/maintenance cadence снижена, а дорогой motion-control solver отделён от дешёвой fixed-step kinematic propagation. **Sparse replication временно отложена до multiplayer session/interest foundation**, потому что cadence/omission должна определяться отдельно для каждого подключённого клиента.
+
+### Multiplayer / session authority foundation
+
+**Статус: `[~]` Stage M2 server-side multi-session transport fan-out реализован; следующий риск — корректно отделить локально управляемого human ship от remote human ships на клиенте, затем per-client interest.**
+
+Server runtime уже принимает несколько transport/session endpoints в одном authoritative execution context. При этом часть старых single-player compatibility state (`m_playerId`, primary `m_playerNavigation`, один global active celestial-system context) пока сознательно остаётся и должна удаляться отдельными этапами, а не маскироваться.
+
+- `[x]` Stage M1: введён server-owned `ServerSessionId` и platform-neutral `ServerSessionRegistry`; session identity отделён от `EntityId`.
+- `[x]` Stage M1: каждая зарегистрированная session имеет authoritative `controlledEntityId`; `GameServer::receiveClientMessage()` сначала разрешает session -> entity, поэтому клиентский packet не выбирает произвольный корабль.
+- `[x]` Stage M1: NPC/activation authority больше не определяет игрока через singleton `m_playerId`; simulation хранит явный set player-controlled entities, они исключены из NPC authority и pinned `Active`. `m_playerId` пока остаётся compatibility alias для старых single-player navigation/diagnostic paths.
+- `[x]` Stage M2: один `ServerRunner` обслуживает несколько `(IServerTransport*, ServerSessionId)` bindings: сначала принимает inbound со всех sessions, затем выполняет **ровно один** authoritative `GameServer::update()`, после чего fan-out'ит ответы обратно по session ownership.
+- `[x]` Stage M2: `ServerRuntime` умеет authoritative admission/detach вторичной player session, публикует ей собственный `SessionWelcome` и bootstrap snapshot; secondary disconnect не останавливает primary session.
+- `[x]` Stage M2: map request/response сохраняет destination `ServerSessionId`, time-sync отвечает через тот же connection endpoint; cross-session response leakage запрещён regression guard'ом.
+- `[x]` Stage M2: обычный world snapshot пока остаётся full-world/full-presence, но `snapshot.session.playerNavigation` собирается отдельно для `controlledEntityId` каждой session. Это уже устраняет передачу primary-player navigation второму клиенту, хотя primary `m_playerNavigation` ещё остаётся серверным compatibility state для текущего single-system runtime.
+- `[x]` Stage M2: headless `EliteServer --self-test` поднимает две transport sessions в одном runtime, назначает два разных controlled ships, проверяет независимые control ticks, map/time-sync routing, per-session navigation и disconnect secondary session.
+- `[x]` Registry защищён от stale reconnect: старая disconnected session не может вернуть authority, если тем же кораблём уже владеет новая connected session.
+- `[ ]` Stage M3: на клиенте перестать использовать `ShipRole::Player` как признак **локально** управляемого корабля. Истина для prediction/input/local presentation — `SessionWelcome.controlledEntityId`; remote human ship должен интерполироваться как remote entity, а не становиться вторым «моим» кораблём.
+- `[ ]` После M3 убрать/разделить оставшиеся singleton navigation assumptions: authoritative navigation/current-system view должен быть per-session/per-controlled-entity; `m_playerNavigation` не должен определять мир для нескольких игроков.
+- `[x]` Local loopback остаётся нормальной односессионной реализацией того же protocol boundary; обычный `EliteGame.exe` не требует внешнего сервера.
+- `[ ]` Разделить **simulation activation** и **replication interest**: сущность может быть `Active` из-за Player A, но для Player B иметь редкий cadence или вообще не входить в его current interest set.
+- `[ ]` После session/local-player identity foundation реализовать per-client interest, затем sparse/delta replication с явной семантикой retain/update/remove; временное отсутствие entity в пакете не означает уничтожение.
+- `[~]` Multiplayer contract уже покрывает две server sessions/two controlled ships и независимый routing; полноценный two-`GameClient` regression добавлять после M3 local-vs-remote human identity.
+- `[ ]` Добавить настоящий network transport + connection accept/auth/admission lifecycle; конкретный socket/wire protocol выбирать отдельно от `GameServer`/`ServerRuntime`.
+- `[ ]` Отдельно добавить Linux headless build/smoke для `EliteServer`; текущий server/session/runtime код остаётся platform-neutral, а Win32/POSIX детали должны жить только в transport/platform adapters.
+- `[ ]` Несколько игроков в разных звёздных системах требуют последующего multi-system runtime; multiplayer session foundation не должна снова зашивать один global `m_activeCelestialSystemId`.
 
 ---
 
@@ -208,7 +233,7 @@ Scheduled
 - `[x]` Stage 4A снизил cadence NPC AI, internal ship systems и structural/repair maintenance без изменения motion trajectory.
 - `[x]` Stage 4B разделил motion на дорогой **control/rate evaluation** и дешёвую **kinematic propagation**: `Active` сохраняет старый 50 Hz путь, `Prewarm` пересчитывает control примерно 25 Hz, `Coarse` примерно 5 Hz, но orientation/translation продолжают authoritative fixed-step propagation между этими расчётами. HubTactical engine acceleration удерживается между coarse control updates, поэтому сущность не замирает и не телепортируется.
 - `[x]` Stage 4B сознательно оставляет signals и присутствие сущности в обычных snapshots full-rate/full-presence; sparse replication требует отдельной семантики omission/retention.
-- `[~]` Activation ещё не является полной системой снижения стоимости мира: sparse replication и Scheduled materialization/collapse впереди.
+- `[~]` Activation ещё не является полной системой снижения стоимости мира: **сначала multiplayer session/interest foundation**, затем sparse replication и Scheduled materialization/collapse.
 - `[ ]` Корабль, летящий месяц между точками, не должен считаться полноценной физикой 50 раз/сек.
 - `[ ]` При приближении игрока дальняя сущность materialize в правильной точке своей траектории и получает полноценную физику/NPC/повреждения/столкновения.
 - `[ ]` При удалении сущность должна снова collapse в coarse/scheduled representation без потери persistent identity, состояния и истории.
@@ -347,10 +372,11 @@ both clients are observers/predictors
 Локализация и sky cultures на текущем этапе уже закрыты. Крупная дорожная карта содержит пять связанных направлений; первое из них теперь также закрыто на текущем архитектурном уровне:
 
 1. `[x]` **Client/server presentation migration основных карт + headless server boundary** — StarAtlas ownership, Galaxy/System/Details/Hub composition и отдельный `EliteServer` target готовы.
-2. `[ ]` **Навигационный compass / azimuth / elevation + модель определения абсолютных координат**.
-3. `[ ]` **J и полноценный inter-system runtime**.
-4. `[ ]` **On-demand trajectories + модель знания игрока о маршрутах/истории движения**.
-5. `[~]` **Persistent universe: реальные корабли + Scheduled/Coarse/Prewarm/Active materialization** — Stage 4A/4B materialized execution и coarse motion-control cadences готовы; sparse replication и Scheduled lifecycle впереди.
+2. `[~]` **Multiplayer session/player authority foundation** — Stage M1/M2 (`ServerSessionId`, registry, session->controlled-entity authority, multi-player activation ownership, multi-transport fan-out и two-session authoritative smoke) готовы; далее M3 local-vs-remote human identity на клиенте, затем per-client replication interest.
+3. `[~]` **Persistent universe: реальные корабли + Scheduled/Coarse/Prewarm/Active materialization** — Stage 4A/4B materialized execution и coarse motion-control cadences готовы; после multiplayer foundation идут sparse replication и Scheduled lifecycle.
+4. `[ ]` **Навигационный compass / azimuth / elevation + модель определения абсолютных координат**.
+5. `[ ]` **J и полноценный inter-system / multi-system runtime**.
+6. `[ ]` **On-demand trajectories + модель знания игрока о маршрутах/истории движения**.
 
 Эти направления образуют одну связанную навигационно-информационную модель мира, а не набор независимых фич.
 
@@ -363,7 +389,7 @@ both clients are observers/predictors
 3. `Ctrl+F10` flight-mode switching — **исправлено**.
 4. Client/server presentation ownership основных карт — **закрыт на текущем этапе**.
 5. Headless `EliteServer` executable — **готов**; ready harness отдельно конфигурирует его без client/render dependencies и запускает authoritative smoke.
-6. Текущий следующий технический шаг — **sparse replication semantics**, затем `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse. Обычный snapshot не должен трактовать временно неотправленную coarse entity как уничтоженную.
+6. Текущий следующий технический шаг — **Multiplayer Stage M3: local-controlled identity на клиенте**. `SessionWelcome.controlledEntityId` должен стать единственным признаком того, какой human ship получает local input/prediction; остальные human ships остаются remote/interpolated. Затем — per-session navigation cleanup, per-client interest + sparse replication semantics, после них `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse. Обычный snapshot не должен трактовать временно неотправленную coarse entity как уничтоженную.
 
 ---
 

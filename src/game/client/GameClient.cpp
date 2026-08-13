@@ -370,6 +370,14 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
     game::network::SessionWelcome welcome;
     while (m_transport.receiveSessionWelcome(welcome))
     {
+        if (!welcome.sessionId)
+        {
+            failSynchronization(
+                "Server session welcome has no session identity"
+            );
+            return false;
+        }
+
         if (welcome.controlledEntityId.value == 0)
         {
             failSynchronization(
@@ -387,6 +395,18 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             return false;
         }
 
+        if (m_serverSessionId &&
+            welcome.sessionId != m_serverSessionId)
+        {
+            // Reconnect/session replacement needs an explicit state transition.
+            // Never silently treat a new server session as continuity of the
+            // old prediction/interest authority.
+            failSynchronization(
+                "Server session changed without a session transition"
+            );
+            return false;
+        }
+
         if (m_hasPlayerIdentity &&
             welcome.controlledEntityId.value != m_playerId.value)
         {
@@ -398,6 +418,7 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             return false;
         }
 
+        m_serverSessionId = welcome.sessionId;
         m_playerId = welcome.controlledEntityId;
         m_hasPlayerIdentity = true;
     }

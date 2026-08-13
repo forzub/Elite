@@ -91,12 +91,15 @@ for required in (
 
 for required in (
     "IServerTransport& transport",
-    "IServerTransport& m_transport",
-    "receiveInboundMessages()",
+    "struct ServerTransportBinding",
+    "IServerTransport* transport = nullptr",
+    "game::network::ServerSessionId sessionId",
+    "std::vector<ServerTransportBinding> m_transports",
+    "receiveInboundMessages(ServerTransportBinding& binding)",
     "publishOutboundMessages()",
 ):
     if required not in runner_h:
-        fail(f"ServerRunner does not own a pure server endpoint: {required}")
+        fail(f"ServerRunner does not own pure server session endpoints: {required}")
 
 for forbidden in (
     "ITransport& transport",
@@ -107,18 +110,20 @@ for forbidden in (
         fail(f"ServerRunner still depends on the client transport interface: {forbidden}")
 
 for required in (
-    "m_transport.receiveClientMessage(clientMessage)",
-    "m_server.playerId()",
+    "for (auto& binding : m_transports)",
+    "transport.receiveClientMessage(clientMessage)",
+    "binding.sessionId",
     "m_server.receiveClientMessage(",
-    "m_transport.receiveMapRequest(",
+    "transport.receiveMapRequest(mapRequest)",
     "m_server.enqueueMapRequest(",
-    "m_transport.receiveTimeSyncRequest(",
+    "transport.receiveTimeSyncRequest(timeSyncRequest)",
     "m_server.serverTimeSeconds()",
-    "m_transport.sendTimeSyncResponse(",
-    "m_transport.publishSnapshot(m_server.snapshot())",
+    "transport.sendTimeSyncResponse(",
+    "m_server.copySnapshotForSession(",
+    "m_server.popMapResponse(responseSessionId, mapResponse)",
 ):
     if required not in runner_cpp:
-        fail(f"ServerRunner message exchange contract is incomplete: {required}")
+        fail(f"ServerRunner multi-endpoint message exchange is incomplete: {required}")
 
 if "std::make_unique<LocalLoopbackTransport>(*m_server)" in host_cpp:
     fail("LocalGameHost still injects GameServer into the loopback transport")
@@ -128,7 +133,7 @@ if "std::make_unique<LocalLoopbackTransport>()" not in host_cpp:
 
 for required in (
     "std::make_unique<server::ServerWorker>(",
-    "transport.publishSnapshotImmediately(m_server->snapshot())",
+    "transport.publishSnapshotImmediately(bootstrapSnapshot)",
 ):
     if required not in host_cpp and required not in runtime_cpp and required not in worker_cpp:
         fail(f"local-server bootstrap no longer uses the endpoint seam: {required}")

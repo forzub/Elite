@@ -324,6 +324,56 @@ void GameServer::synchronizePlayerSystemMembership()
         m_playerNavigation.currentSystemId = shipSystemId;
 }
 
+world::celestial::PlayerNavigationState
+GameServer::navigationStateForEntity(EntityId entityId) const
+{
+    world::celestial::PlayerNavigationState navigation;
+
+    const Ship* ship = m_simulation.getShip(entityId);
+    if (!ship)
+        return navigation;
+
+    const ShipTransform tr =
+        m_simulation.presentationShipTransform(entityId);
+
+    const auto spatialDomain =
+        game::navigation::resolvePlayerSpatialDomain(
+            m_starAtlas.systems(),
+            tr.motion.systemId,
+            tr.worldPosition,
+            m_systemMembershipRadiusAu
+        );
+
+    if (spatialDomain.valid)
+    {
+        navigation.currentSystemId =
+            spatialDomain.currentSystemId;
+        navigation.worldPosition =
+            spatialDomain.worldPosition;
+        navigation.systemLocalMeters =
+            spatialDomain.systemLocalMeters;
+        navigation.systemLocalAu =
+            spatialDomain.systemLocalAu;
+    }
+    else
+    {
+        // A catalog/source mismatch must not invent a transfer. Preserve the
+        // authoritative entity membership and position as a safe fallback.
+        navigation.currentSystemId = tr.motion.systemId;
+        navigation.worldPosition = tr.worldPosition;
+        navigation.systemLocalMeters =
+            world::coordinates::fullMeters(tr.worldPosition);
+        navigation.systemLocalAu =
+            navigation.systemLocalMeters /
+            world::celestial::MetersPerAu;
+    }
+
+    navigation.orientation = tr.orientation;
+    navigation.forward = tr.forward();
+    navigation.up = tr.up();
+    return navigation;
+}
+
 
 const world::celestial::CelestialSystemSnapshot*
 GameServer::celestialSnapshotForSystem(int systemId) const
@@ -564,47 +614,11 @@ m_simulation.update(time);
 
     if (m_simulation.playerShip())
     {
-        const ShipTransform tr =
-            m_simulation.presentationShipTransform(
-                m_simulation.playerId()
-            );
-
-        const auto spatialDomain =
-            game::navigation::resolvePlayerSpatialDomain(
-                m_starAtlas.systems(),
-                tr.motion.systemId,
-                tr.worldPosition,
-                m_systemMembershipRadiusAu
-            );
-
-        if (spatialDomain.valid)
-        {
-            m_playerNavigation.currentSystemId =
-                spatialDomain.currentSystemId;
-            m_playerNavigation.worldPosition =
-                spatialDomain.worldPosition;
-            m_playerNavigation.systemLocalMeters =
-                spatialDomain.systemLocalMeters;
-            m_playerNavigation.systemLocalAu =
-                spatialDomain.systemLocalAu;
-        }
-        else
-        {
-            // Catalog/source mismatch is not allowed to fabricate a spatial
-            // transfer. Preserve the production entity membership and local
-            // coordinates as a safe fallback.
-            m_playerNavigation.currentSystemId = tr.motion.systemId;
-            m_playerNavigation.worldPosition = tr.worldPosition;
-            m_playerNavigation.systemLocalMeters =
-                world::coordinates::fullMeters(tr.worldPosition);
-            m_playerNavigation.systemLocalAu =
-                m_playerNavigation.systemLocalMeters /
-                world::celestial::MetersPerAu;
-        }
-
-        m_playerNavigation.orientation = tr.orientation;
-        m_playerNavigation.forward = tr.forward();
-        m_playerNavigation.up = tr.up();
+        // Keep the legacy primary navigation alias alive for the current
+        // single-active-system simulation context. Per-connection snapshots
+        // are composed independently from each session's controlled entity.
+        m_playerNavigation =
+            navigationStateForEntity(m_simulation.playerId());
     }
 
 
@@ -632,24 +646,61 @@ m_simulation.update(time);
     processPendingMapRequests();
 }
 
-void GameServer::enqueueMapRequest(const game::network::MapRequest& request)
+bool GameServer::enqueueMapRequest(
+    game::network::ServerSessionId sessionId,
+    const game::network::MapRequest& request
+)
 {
+    if (m_sessions.controlledEntity(sessionId).value == 0)
+    {
+        ++m_queueDiagnostics.rejectedSessionMessages;
+        return false;
+    }
+
     if (m_pendingMapRequests.size() >= MaxPendingMapRequests)
     {
         m_pendingMapRequests.pop_front();
         ++m_queueDiagnostics.droppedMapRequests;
     }
 
-    m_pendingMapRequests.push_back(request);
+    PendingSessionMapRequest pending;
+    pending.sessionId = sessionId;
+    pending.request = request;
+    m_pendingMapRequests.push_back(std::move(pending));
+    return true;
 }
 
-bool GameServer::popMapResponse(game::network::MapResponse& outResponse)
+bool GameServer::popMapResponse(
+    game::network::ServerSessionId& outSessionId,
+    game::network::MapResponse& outResponse
+)
 {
     if (m_completedMapResponses.empty())
         return false;
-    outResponse = std::move(m_completedMapResponses.front());
+
+    auto completed = std::move(m_completedMapResponses.front());
     m_completedMapResponses.pop_front();
+
+    outSessionId = completed.sessionId;
+    outResponse = std::move(completed.response);
     return true;
+}
+
+void GameServer::queueMapResponse(
+    game::network::ServerSessionId sessionId,
+    game::network::MapResponse response
+)
+{
+    if (m_completedMapResponses.size() >= MaxCompletedMapResponses)
+    {
+        m_completedMapResponses.pop_front();
+        ++m_queueDiagnostics.droppedMapResponses;
+    }
+
+    CompletedSessionMapResponse completed;
+    completed.sessionId = sessionId;
+    completed.response = std::move(response);
+    m_completedMapResponses.push_back(std::move(completed));
 }
 
 void GameServer::processPendingMapRequests()
@@ -657,58 +708,59 @@ void GameServer::processPendingMapRequests()
     const auto metadata = protocolMetadata();
     while (!m_pendingMapRequests.empty())
     {
-        auto request = std::move(m_pendingMapRequests.front());
+        auto pending = std::move(m_pendingMapRequests.front());
         m_pendingMapRequests.pop_front();
-        std::visit([this, &metadata](const auto& typedRequest)
-        {
-            using RequestT = std::decay_t<decltype(typedRequest)>;
-            if constexpr (std::is_same_v<RequestT, game::network::GalaxyMapRequest>)
+
+        const auto sessionId = pending.sessionId;
+
+        // A disconnect after enqueue but before execution must not leak a map
+        // response to a dead/reused transport binding.
+        if (m_sessions.controlledEntity(sessionId).value == 0)
+            continue;
+
+        std::visit(
+            [this, &metadata, sessionId](const auto& typedRequest)
             {
-                game::network::GalaxyMapResponse response;
-                response.requestId = typedRequest.requestId; response.metadata = metadata;
-                response.snapshot = buildGalaxyMapSnapshot();
-                if (m_completedMapResponses.size() >= MaxCompletedMapResponses)
+                using RequestT = std::decay_t<decltype(typedRequest)>;
+
+                if constexpr (std::is_same_v<RequestT, game::network::GalaxyMapRequest>)
                 {
-                    m_completedMapResponses.pop_front();
-                    ++m_queueDiagnostics.droppedMapResponses;
+                    game::network::GalaxyMapResponse response;
+                    response.requestId = typedRequest.requestId;
+                    response.metadata = metadata;
+                    response.snapshot = buildGalaxyMapSnapshot();
+                    queueMapResponse(sessionId, std::move(response));
                 }
-                m_completedMapResponses.push_back(std::move(response));
-            }
-            else if constexpr (std::is_same_v<RequestT, game::network::SystemMapRequest>)
-            {
-                game::network::SystemMapResponse response;
-                response.requestId = typedRequest.requestId; response.metadata = metadata; response.systemId = typedRequest.systemId;
-                response.snapshot = buildSystemMapSnapshot(typedRequest.systemId);
-                if (m_completedMapResponses.size() >= MaxCompletedMapResponses)
+                else if constexpr (std::is_same_v<RequestT, game::network::SystemMapRequest>)
                 {
-                    m_completedMapResponses.pop_front();
-                    ++m_queueDiagnostics.droppedMapResponses;
+                    game::network::SystemMapResponse response;
+                    response.requestId = typedRequest.requestId;
+                    response.metadata = metadata;
+                    response.systemId = typedRequest.systemId;
+                    response.snapshot =
+                        buildSystemMapSnapshot(typedRequest.systemId);
+                    queueMapResponse(sessionId, std::move(response));
                 }
-                m_completedMapResponses.push_back(std::move(response));
-            }
-            else if constexpr (std::is_same_v<RequestT, game::network::DetailMapRequest>)
-            {
-                game::network::DetailMapResponse response;
-                response.requestId = typedRequest.requestId; response.metadata = metadata; response.target = typedRequest.target;
-                if (m_completedMapResponses.size() >= MaxCompletedMapResponses)
+                else if constexpr (std::is_same_v<RequestT, game::network::DetailMapRequest>)
                 {
-                    m_completedMapResponses.pop_front();
-                    ++m_queueDiagnostics.droppedMapResponses;
+                    game::network::DetailMapResponse response;
+                    response.requestId = typedRequest.requestId;
+                    response.metadata = metadata;
+                    response.target = typedRequest.target;
+                    queueMapResponse(sessionId, std::move(response));
                 }
-                m_completedMapResponses.push_back(std::move(response));
-            }
-            else if constexpr (std::is_same_v<RequestT, game::network::HubMapRequest>)
-            {
-                game::network::HubMapResponse response;
-                response.requestId = typedRequest.requestId; response.metadata = metadata; response.systemId = typedRequest.systemId; response.hubId = typedRequest.hubId;
-                if (m_completedMapResponses.size() >= MaxCompletedMapResponses)
+                else if constexpr (std::is_same_v<RequestT, game::network::HubMapRequest>)
                 {
-                    m_completedMapResponses.pop_front();
-                    ++m_queueDiagnostics.droppedMapResponses;
+                    game::network::HubMapResponse response;
+                    response.requestId = typedRequest.requestId;
+                    response.metadata = metadata;
+                    response.systemId = typedRequest.systemId;
+                    response.hubId = typedRequest.hubId;
+                    queueMapResponse(sessionId, std::move(response));
                 }
-                m_completedMapResponses.push_back(std::move(response));
-            }
-        }, request);
+            },
+            pending.request
+        );
     }
 }
 
@@ -770,22 +822,77 @@ void GameServer::submitCommand(EntityId id, const ShipControlState& control)
 
 
 
+game::network::ServerSessionId GameServer::createPlayerSession(
+    EntityId controlledEntityId
+)
+{
+    if (!m_simulation.getShip(controlledEntityId))
+        return {};
+
+    const auto sessionId = m_sessions.create(controlledEntityId);
+    if (!sessionId)
+        return {};
+
+    m_simulation.setPlayerControlled(controlledEntityId, true);
+    return sessionId;
+}
+
+bool GameServer::disconnectPlayerSession(
+    game::network::ServerSessionId sessionId
+)
+{
+    const EntityId controlledEntityId =
+        m_sessions.controlledEntity(sessionId);
+
+    if (!controlledEntityId.value || !m_sessions.disconnect(sessionId))
+        return false;
+
+    // Do not unpin an entity still owned by another connected session. This is
+    // uncommon today but makes reconnect/session handoff semantics explicit.
+    if (!m_sessions.isControlledEntity(controlledEntityId))
+        m_simulation.setPlayerControlled(controlledEntityId, false);
+
+    return true;
+}
+
+EntityId GameServer::controlledEntityForSession(
+    game::network::ServerSessionId sessionId
+) const noexcept
+{
+    return m_sessions.controlledEntity(sessionId);
+}
+
+std::size_t GameServer::connectedPlayerSessionCount() const noexcept
+{
+    return m_sessions.connectedCount();
+}
+
 void GameServer::receiveClientMessage(
-    EntityId playerId,
+    game::network::ServerSessionId sessionId,
     const game::network::ClientMessage& msg)
 {
+    const EntityId controlledEntityId =
+        m_sessions.controlledEntity(sessionId);
+
+    if (controlledEntityId.value == 0)
+    {
+        ++m_queueDiagnostics.rejectedSessionMessages;
+        return;
+    }
+
     std::visit(
-        [this, playerId](const auto& payload)
+        [this, controlledEntityId](const auto& payload)
         {
             using PayloadT = std::decay_t<decltype(payload)>;
 
             if constexpr (std::is_same_v<PayloadT, ShipControlState>)
             {
-                submitCommand(playerId, payload);
+                submitCommand(controlledEntityId, payload);
             }
             else if constexpr (std::is_same_v<PayloadT, ClientShipCommand>)
             {
-                auto& queue = m_pendingClientShipCommands[playerId.value];
+                auto& queue =
+                    m_pendingClientShipCommands[controlledEntityId.value];
                 if (queue.size() >= MaxShipCommandsPerShip)
                 {
                     ++m_queueDiagnostics.droppedShipCommands;
@@ -821,6 +928,23 @@ void GameServer::debugRefreshSnapshot()
 const SimulationSnapshot& GameServer::snapshot() const
 {
     return m_lastSnapshot;
+}
+
+bool GameServer::copySnapshotForSession(
+    game::network::ServerSessionId sessionId,
+    SimulationSnapshot& outSnapshot
+) const
+{
+    const EntityId controlledEntityId =
+        m_sessions.controlledEntity(sessionId);
+
+    if (controlledEntityId.value == 0)
+        return false;
+
+    outSnapshot = m_lastSnapshot;
+    outSnapshot.session.playerNavigation =
+        navigationStateForEntity(controlledEntityId);
+    return true;
 }
 
 EntityId GameServer::playerId() const

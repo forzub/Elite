@@ -308,19 +308,36 @@ require_text(
 if "systemMembershipRadiusAu" not in navigation_config_text:
     fail(navigation_config_h, "system-membership radius is not data-driven")
 
+navigation_for_entity = function_body(
+    server_text,
+    "GameServer::navigationStateForEntity(EntityId entityId) const",
+)
+if navigation_for_entity is None:
+    fail(server_cpp, "could not locate per-entity navigation-state resolver")
+else:
+    require_text(
+        server_cpp,
+        navigation_for_entity,
+        (
+            "resolvePlayerSpatialDomain(",
+            "m_systemMembershipRadiusAu",
+            "navigation.currentSystemId =",
+            "spatialDomain.currentSystemId",
+            "navigation.worldPosition =",
+            "spatialDomain.worldPosition",
+        ),
+        "server per-entity interstellar navigation state is incomplete",
+    )
+
 if server_update is not None:
     require_text(
         server_cpp,
         server_update,
         (
-            "resolvePlayerSpatialDomain(",
-            "m_systemMembershipRadiusAu",
-            "m_playerNavigation.currentSystemId =",
-            "spatialDomain.currentSystemId",
-            "m_playerNavigation.worldPosition =",
-            "spatialDomain.worldPosition",
+            "m_playerNavigation =",
+            "navigationStateForEntity(m_simulation.playerId())",
         ),
-        "server does not publish resolved interstellar navigation state",
+        "legacy primary navigation alias is no longer derived from entity authority",
     )
 
 system_snapshot = function_body(server_text, "GameServer::buildSystemMapSnapshot(")

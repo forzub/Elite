@@ -3,6 +3,8 @@
 #include "src/game/client/ClientCelestialMapBridge.h"
 #include "src/game/client/ClientGalaxyMapBridge.h"
 #include "src/game/client/ClientSystemMapShipBridge.h"
+#include "src/game/client/ClientSystemMapInfrastructureBridge.h"
+#include "src/game/client/ClientDetailMapBridge.h"
 #include "src/game/client/ClientWorldState.h"
 
 #include <algorithm>
@@ -100,6 +102,8 @@ void ClientMapService::sendSystemRequest()
 
 void ClientMapService::sendDetailRequest()
 {
+    m_deferredDetailResponse.reset();
+
     game::network::DetailMapRequest request;
     request.requestId = nextRequestId();
     request.target = m_requestedDetailTarget;
@@ -140,8 +144,21 @@ void ClientMapService::update(float dt)
     {
         sendSystemRequest();
     }
-    if (advanceTimeout(m_detailRequest, dt))
+
+    if (m_deferredDetailResponse)
+    {
+        m_detailRequest.elapsedSeconds += std::max(dt, 0.0f);
+        if (m_detailRequest.elapsedSeconds >= RequestTimeoutSeconds)
+        {
+            m_deferredDetailResponse.reset();
+            fail(m_detailRequest);
+        }
+    }
+    else if (advanceTimeout(m_detailRequest, dt))
+    {
         sendDetailRequest();
+    }
+
     if (advanceTimeout(m_hubRequest, dt))
         sendHubRequest();
 }
@@ -152,6 +169,7 @@ void ClientMapService::resetPendingRequests()
     cancel(m_systemRequest);
     m_deferredSystemResponse.reset();
     cancel(m_detailRequest);
+    m_deferredDetailResponse.reset();
     cancel(m_hubRequest);
 }
 
@@ -197,6 +215,7 @@ void ClientMapService::setUniverseTimelineRevision(
     m_galaxyMetadata = {};
     m_systemMetadata = {};
     m_deferredSystemResponse.reset();
+    m_deferredDetailResponse.reset();
     m_detailMetadata = {};
     m_hubMetadata = {};
 }
@@ -212,17 +231,27 @@ ClientMapService::tryCompleteSystemResponse(
             response.metadata.serverTimeSeconds
         );
 
+    const auto infrastructureSample =
+        m_world.sampleSystemMapInfrastructureAtServerTime(
+            response.systemId,
+            response.metadata.serverTimeSeconds
+        );
+
     if (shipSample.status ==
-        SystemMapShipSampleStatus::AwaitingNewerSnapshot)
+            SystemMapShipSampleStatus::AwaitingNewerSnapshot ||
+        infrastructureSample.status ==
+            SystemMapInfrastructureSampleStatus::AwaitingNewerSnapshot)
     {
         return SystemResponseResult::AwaitingSimulationHistory;
     }
 
-    if (shipSample.status == SystemMapShipSampleStatus::TooOld)
+    if (shipSample.status == SystemMapShipSampleStatus::TooOld ||
+        infrastructureSample.status ==
+            SystemMapInfrastructureSampleStatus::TooOld)
     {
         // The map response itself may have been delayed longer than the
         // retained replication history. Request a fresh epoch instead of
-        // clamping ships to unrelated state or permanently failing the map.
+        // clamping dynamic world state to an unrelated time.
         return SystemResponseResult::RetryFreshResponse;
     }
 
@@ -245,6 +274,11 @@ ClientMapService::tryCompleteSystemResponse(
     {
         return SystemResponseResult::Failed;
     }
+
+    rebuildSystemMapInfrastructureLayer(
+        rebuiltSnapshot,
+        infrastructureSample
+    );
 
     rebuildSystemMapShipLayer(
         rebuiltSnapshot,
@@ -272,6 +306,69 @@ void ClientMapService::retrySystemRequestOrFail()
     sendSystemRequest();
 }
 
+ClientMapService::DetailResponseResult
+ClientMapService::tryCompleteDetailResponse(
+    game::network::DetailMapResponse& response
+)
+{
+    const auto runtimeSample =
+        m_world.sampleDetailMapRuntimeAtServerTime(
+            response.target.systemId,
+            response.metadata.serverTimeSeconds
+        );
+
+    if (runtimeSample.status ==
+        DetailMapRuntimeSampleStatus::AwaitingNewerSnapshot)
+    {
+        return DetailResponseResult::AwaitingSimulationHistory;
+    }
+
+    if (runtimeSample.status == DetailMapRuntimeSampleStatus::TooOld)
+        return DetailResponseResult::RetryFreshResponse;
+
+    const auto* atlas = m_catalogs.starAtlas();
+    const auto* celestial = m_catalogs.resolveCelestialSystem(
+        response.target.systemId,
+        response.metadata.universeTimeSeconds
+    );
+
+    if (!atlas || !celestial)
+        return DetailResponseResult::Failed;
+
+    world::celestial::DetailMapSnapshot rebuiltSnapshot;
+    if (!rebuildDetailMapFromClientState(
+            rebuiltSnapshot,
+            response.target,
+            *atlas,
+            *celestial,
+            runtimeSample,
+            response.metadata.serverTimeSeconds,
+            response.metadata.universeTimeSeconds))
+    {
+        return DetailResponseResult::Failed;
+    }
+
+    m_detailMetadata = response.metadata;
+    m_detailSnapshot = std::move(rebuiltSnapshot);
+    m_detailSnapshotTarget = response.target;
+    m_hasDetail = true;
+    complete(m_detailRequest);
+    return DetailResponseResult::Ready;
+}
+
+void ClientMapService::retryDetailRequestOrFail()
+{
+    m_deferredDetailResponse.reset();
+
+    if (m_detailRequest.attempts >= MaxRequestAttempts)
+    {
+        fail(m_detailRequest);
+        return;
+    }
+
+    sendDetailRequest();
+}
+
 void ClientMapService::pumpResponses()
 {
     if (m_deferredSystemResponse)
@@ -293,6 +390,27 @@ void ClientMapService::pumpResponses()
             fail(m_systemRequest);
         }
     }
+
+    if (m_deferredDetailResponse)
+    {
+        const auto result =
+            tryCompleteDetailResponse(*m_deferredDetailResponse);
+
+        if (result == DetailResponseResult::Ready)
+        {
+            m_deferredDetailResponse.reset();
+        }
+        else if (result == DetailResponseResult::RetryFreshResponse)
+        {
+            retryDetailRequestOrFail();
+        }
+        else if (result == DetailResponseResult::Failed)
+        {
+            m_deferredDetailResponse.reset();
+            fail(m_detailRequest);
+        }
+    }
+
     game::network::MapResponse response;
 
     while (m_transport.receiveMapResponse(response))
@@ -363,12 +481,28 @@ void ClientMapService::pumpResponses()
                 {
                     if (typedResponse.requestId != m_detailRequest.requestId ||
                         typedResponse.target != m_requestedDetailTarget)
+                    {
                         return;
-                    m_detailMetadata = typedResponse.metadata;
-                    m_detailSnapshot = std::move(typedResponse.snapshot);
-                    m_detailSnapshotTarget = typedResponse.target;
-                    m_hasDetail = true;
-                    complete(m_detailRequest);
+                    }
+
+                    const auto result =
+                        tryCompleteDetailResponse(typedResponse);
+
+                    if (result ==
+                        DetailResponseResult::AwaitingSimulationHistory)
+                    {
+                        m_deferredDetailResponse = std::move(typedResponse);
+                        m_detailRequest.elapsedSeconds = 0.0f;
+                    }
+                    else if (result ==
+                             DetailResponseResult::RetryFreshResponse)
+                    {
+                        retryDetailRequestOrFail();
+                    }
+                    else if (result == DetailResponseResult::Failed)
+                    {
+                        fail(m_detailRequest);
+                    }
                 }
                 else if constexpr (std::is_same_v<ResponseT, game::network::HubMapResponse>)
                 {
@@ -447,7 +581,7 @@ bool ClientMapService::requestDetail(
     const world::celestial::DetailTarget& target,
     bool forceRefresh)
 {
-    if (!target.valid())
+    if (!target.valid() || !m_catalogs.hasStarAtlas())
         return false;
     pumpResponses();
     if (!forceRefresh && m_hasDetail && m_detailSnapshotTarget == target)
@@ -458,6 +592,7 @@ bool ClientMapService::requestDetail(
         if (m_requestedDetailTarget == target)
             return false;
         cancel(m_detailRequest);
+        m_deferredDetailResponse.reset();
     }
     if (!forceRefresh && m_requestedDetailTarget == target &&
         (m_detailRequest.status == ClientRequestStatus::TimedOut ||

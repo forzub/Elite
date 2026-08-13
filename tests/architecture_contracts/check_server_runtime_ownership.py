@@ -94,6 +94,7 @@ for required in (
 for required in (
     "struct SessionWelcome",
     "EntityId controlledEntityId {0};",
+    "CatalogMetadata starAtlasCatalog;",
 ):
     if required not in session_message_h:
         fail(f"one-time session identity contract is incomplete: {required}")
@@ -103,6 +104,8 @@ if "controlledEntityId" in client_session_snapshot_h:
 
 for required in (
     "welcome.controlledEntityId = m_server->playerId()",
+    "welcome.starAtlasCatalog.schemaVersion",
+    "welcome.starAtlasCatalog.contentFingerprint",
     "transport.publishSessionWelcomeImmediately(welcome)",
 ):
     if required not in runtime_cpp:
@@ -116,6 +119,8 @@ if "sendClientMessage(m_playerId" in client_cpp:
 
 for required in (
     "m_transport.receiveSessionWelcome(welcome)",
+    "m_catalogs.validateServerStarAtlas(",
+    "welcome.starAtlasCatalog",
     "m_playerId = welcome.controlledEntityId",
     "m_hasPlayerIdentity = true",
 ):

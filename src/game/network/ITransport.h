@@ -4,11 +4,8 @@
 #include "src/game/simulation/SimulationSnapshot.h"
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/MapSnapshotMessage.h"
-#include "src/game/network/PresentationDataMessage.h"
 #include "src/game/network/TimeSyncMessage.h"
 #include "src/game/network/SessionMessage.h"
-#include "src/world/celestial/StarAtlasDatabase.h"
-#include "src/world/celestial/CelestialTypes.h"
 
 class ITransport
 {
@@ -32,14 +29,6 @@ public:
 
     virtual bool receiveMapResponse(
         game::network::MapResponse& outResponse
-    ) = 0;
-
-    virtual void sendPresentationDataRequest(
-        const game::network::PresentationDataRequest& request
-    ) = 0;
-
-    virtual bool receivePresentationDataResponse(
-        game::network::PresentationDataResponse& outResponse
     ) = 0;
 
     virtual void sendTimeSyncRequest(

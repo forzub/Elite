@@ -10,12 +10,13 @@ namespace game::system_map
 {
 
 /*
-    Presentation-only sampling of authoritative map snapshots.
+    Presentation-only sampling of epoch-coherent map snapshots.
 
-    The snapshots themselves remain server-owned. The client only samples the
-    buffered authoritative history at the same delayed server timestamp used by
-    the rest of client rendering. This prevents map motion from depending on
-    WebSocket/request arrival cadence or on a second locally-integrated clock.
+    Details snapshots are client-composed from local deterministic celestial
+    state plus exact-epoch authoritative replication. Hub snapshots remain
+    server-built until the next migration slice. This class owns neither source;
+    it only samples buffered presentation history at the same delayed server
+    timestamp used by the rest of client rendering.
 */
 class AuthoritativeMapInterpolator
 {

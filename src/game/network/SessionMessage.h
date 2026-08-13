@@ -1,6 +1,7 @@
 #pragma once
 
 #include "src/scene/EntityID.h"
+#include "src/game/network/ProtocolMetadata.h"
 
 namespace game::network
 {
@@ -14,5 +15,9 @@ namespace game::network
 struct SessionWelcome
 {
     EntityId controlledEntityId {0};
+
+    // Static physical catalog is loaded independently at each endpoint. The
+    // server sends only a compatibility fence, never the catalog payload.
+    CatalogMetadata starAtlasCatalog;
 };
 }

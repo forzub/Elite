@@ -51,12 +51,12 @@ for forbidden in (
     if forbidden in server_system:
         fail(f"server still composes deterministic System-map bodies: {forbidden}")
 
-for required in (
+for forbidden in (
     "m_simulation.staticObjects()",
     "m_simulation.orbitalHubs()",
 ):
-    if required not in server_system:
-        fail(f"map-specific infrastructure layer was lost: {required}")
+    if forbidden in server_system:
+        fail(f"production infrastructure still leaks through System-map DTO: {forbidden}")
 
 if "if (m_diagnostics.settings.systemMapMotionCsv)" not in server_system:
     fail("server celestial resolution for motion CSV is not explicitly diagnostic-gated")
@@ -73,6 +73,9 @@ for required in (
     "item.orbitCenterAu = parentIt->second->positionAu",
     "item.positionAu = body.staticPositionAu",
     "map.bodies = std::move(rebuiltBodies)",
+    "map.systemName = definition->name",
+    "atlas.findSystemSummary(map.systemId)",
+    "map.systemPositionLy = summary->positionLy",
     "toSystemMapRingVisualProfile",
     "toSystemMapRing",
 ):
@@ -110,8 +113,8 @@ map_member = game_client_h.find("ClientMapService m_maps")
 if catalog_member < 0 or map_member < 0 or catalog_member > map_member:
     fail("GameClient must construct the catalog service before ClientMapService")
 
-if "m_catalogs(transport)" not in game_client_cpp or \
+if "m_catalogs()" not in game_client_cpp or \
    "m_maps(transport, m_catalogs, m_world)" not in game_client_cpp:
-    fail("GameClient does not inject its local catalog/world into ClientMapService")
+    fail("GameClient does not keep its local catalog independent from transport")
 
 print("[PASS] System-map deterministic celestial layer is client-owned")

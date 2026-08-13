@@ -173,10 +173,17 @@ else:
         if required not in orbital_motion:
             fail(simulation_cpp, f"static orbital motion can bind outside active spatial authority: {required}")
 
-# Physics code may assign mapParentBodyId in setStaticObjectMapInfo, but outside
-# that function it must not use presentation parent metadata to move objects.
+# Physics code may assign mapParentBodyId in setStaticObjectMapInfo, and the
+# replication publisher may copy it as non-spatial instance/navigation metadata.
+# Outside those two boundaries it must never drive physical placement.
 if map_info is not None:
     stripped = simulation_text.replace(map_info, "")
+    replication_builder = function_body(
+        simulation_text,
+        "SimulationSnapshot GameSimulation::buildReplicationSnapshot("
+    )
+    if replication_builder is not None:
+        stripped = stripped.replace(replication_builder, "")
     if "mapParentBodyId" in stripped:
         fail(simulation_cpp, "simulation physics still consumes mapParentBodyId")
 

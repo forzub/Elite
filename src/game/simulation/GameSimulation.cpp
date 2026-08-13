@@ -1731,6 +1731,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
     snapshot.metadata.serverTick = serverTick;
     snapshot.ships.clear();
     snapshot.objects.clear();
+    snapshot.hubs.clear();
     snapshot.signals = m_worldSignals;
 
 
@@ -1974,6 +1975,12 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         o.worldPosition = obj.worldPosition;
         o.setWorldPosition(obj.worldPosition);
         o.orientation = obj.orientation;
+        o.linearVelocityMps = glm::dvec3(obj.linearVelocity);
+        o.displayName = obj.displayName;
+        o.ownerName = obj.ownerName;
+        o.navigationVisible = obj.systemMapVisible;
+        o.navigationParentBodyId = obj.mapParentBodyId;
+        o.orbitalMotion = obj.orbitalMotion;
 
         if (obj.attachedToHub &&
             obj.systemId >= 0 &&
@@ -2090,6 +2097,29 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             );
 
         snapshot.objects.push_back(o);
+    }
+
+    // Composite hubs participate in the same ordinary authoritative
+    // replication stream as ships/static objects. System/Detail/Hub maps must
+    // compose presentation from these facts instead of asking the server to
+    // manufacture a second map-specific hub DTO.
+    snapshot.hubs.reserve(m_orbitalHubs.size());
+    for (const auto& [hubId, hub] : m_orbitalHubs)
+    {
+        (void)hubId;
+        game::simulation::OrbitalHubSnapshot h;
+        h.id = hub.id;
+        h.name = hub.name;
+        h.owner = hub.owner;
+        h.systemId = hub.systemId;
+        h.parentBodyId = hub.parentBodyId;
+        h.worldPosition = hub.worldPosition;
+        const auto hubVelocityIt = m_hubVelocityMetersPerSecond.find(hub.id);
+        if (hubVelocityIt != m_hubVelocityMetersPerSecond.end())
+            h.worldVelocityMps = hubVelocityIt->second;
+        h.orientation = hub.orientation;
+        h.motion = hub.motion;
+        snapshot.hubs.push_back(std::move(h));
     }
 
 

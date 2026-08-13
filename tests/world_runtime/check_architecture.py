@@ -18,7 +18,6 @@ def fail(path: Path, message: str) -> None:
 
 
 for path in (
-    SRC / "game/network/PresentationDataMessage.h",
     SRC / "game/client/ClientCatalogService.h",
     SRC / "game/client/ClientCatalogService.cpp",
     SRC / "game/client/GameClient.cpp",
@@ -71,6 +70,24 @@ if catalog_cpp.is_file():
     ):
         if required not in text:
             fail(catalog_cpp, f"client local celestial reconstruction is missing: {required}")
+
+    for required in (
+        "m_starAtlas.loadFromRuntimeOrSource()",
+        "validateServerStarAtlas(",
+        "contentFingerprint",
+    ):
+        if required not in text:
+            fail(catalog_cpp, f"client static-catalog ownership is incomplete: {required}")
+
+    for forbidden in (
+        "ITransport",
+        "StarAtlasRequest",
+        "StarAtlasResponse",
+        "sendPresentationDataRequest",
+        "receivePresentationDataResponse",
+    ):
+        if forbidden in text:
+            fail(catalog_cpp, f"client static catalog returned to transport ownership: {forbidden}")
 
 client_cpp = SRC / "game/client/GameClient.cpp"
 if client_cpp.is_file():

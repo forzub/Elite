@@ -124,7 +124,7 @@ for text, label in (
     if "mutable std::mutex m_mutex" not in text:
         fail(f"{label} has no mutex protecting cross-thread local state")
 
-if loopback_cpp.count("std::lock_guard<std::mutex> lock(m_mutex)") < 20:
+if loopback_cpp.count("std::lock_guard<std::mutex> lock(m_mutex)") < 16:
     fail("LocalLoopbackTransport endpoint methods are not consistently mutex-protected")
 
 if debug_cpp.count("std::lock_guard<std::mutex> lock(m_mutex)") < 10:

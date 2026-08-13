@@ -209,8 +209,8 @@ grow without bound and fixed-step inputs are never silently dropped.
 ### Client-owned System-map celestial layer
 
 Stage 3 begins with deterministic System-map bodies. The server response keeps
-the authoritative dynamic object layer and its universe-time epoch but leaves
-`SystemMapSnapshot::bodies` empty. `ClientMapService` resolves the requested
+the authoritative map epoch but leaves `SystemMapSnapshot::bodies` empty.
+`ClientMapService` resolves the requested
 system through its local `StarAtlasDatabase`/`CelestialRuntimeRegistry` at that
 **same epoch** and rebuilds bodies, orbits and ring presentation before exposing
 the snapshot to `SpaceState`.
@@ -237,6 +237,22 @@ are never interpolated.
 returning and locks the exact-epoch join. `SystemMapShipSamplingContractTests.cpp`
 checks temporal interpolation, future/stale response handling and the system-domain
 fence across an inter-system transfer.
+
+### Client-owned System-map infrastructure/hub layer
+
+Stage 3E removes production static infrastructure and orbital hubs from
+`GameServer::buildSystemMapSnapshot`. Composite hubs now have ordinary
+`OrbitalHubSnapshot` replication state; static object snapshots carry instance
+identity/navigation facts alongside their authoritative transform.
+`ClientMapService` samples both at the exact System-map response server epoch and
+converts them to `SystemMapObject` presentation locally. Static system name and
+galactic placement are also restored from the endpoint-local StarAtlas. Only
+explicit analytic diagnostic probes may remain as server-built System-map rows.
+
+`check_client_system_map_infrastructure.py` prevents the server infrastructure
+loops from returning. `SystemMapInfrastructureSamplingContractTests.cpp` locks
+exact-epoch interpolation, system-domain filtering, hub-owned orbit metadata and
+client-side station/hub composition.
 
 
 ## Galaxy-map catalog ownership

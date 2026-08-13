@@ -7,7 +7,7 @@
 
 GameClient::GameClient(ITransport& transport)
     : m_transport(transport)
-    , m_catalogs(transport)
+    , m_catalogs()
     , m_maps(transport, m_catalogs, m_world)
 {
     m_connectionState = ClientConnectionState::Connecting;
@@ -18,7 +18,7 @@ void GameClient::beginSynchronization()
     m_connectionError.clear();
     m_connectionState = ClientConnectionState::Synchronizing;
     m_maps.resetPendingRequests();
-    m_catalogs.resetPendingRequests();
+    m_catalogs.resetRuntimeState();
     m_pendingInputs.clear();
     m_hasLatestControl = false;
     m_latestControl = ShipControlState{};
@@ -37,7 +37,14 @@ void GameClient::beginSynchronization()
     m_gameplayFramePrepared = false;
     m_preparedAcceptedSnapshot = false;
 
-    requestStarAtlas();
+    if (!m_catalogs.loadLocalStarAtlas())
+    {
+        failSynchronization(
+            "Local StarAtlas catalog is missing or invalid"
+        );
+        return;
+    }
+
     refreshConnectionState();
 }
 
@@ -280,13 +287,6 @@ double GameClient::renderUniverseTimeSeconds() const
 }
 
 
-bool GameClient::requestStarAtlas()
-{
-    const bool ready = m_catalogs.requestStarAtlas();
-    refreshConnectionState();
-    return ready;
-}
-
 bool GameClient::resolveCelestialSnapshot(bool forceRefresh)
 {
     if (!m_hasSessionSnapshot ||
@@ -378,6 +378,15 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             return false;
         }
 
+        std::string catalogError;
+        if (!m_catalogs.validateServerStarAtlas(
+                welcome.starAtlasCatalog,
+                &catalogError))
+        {
+            failSynchronization(catalogError);
+            return false;
+        }
+
         if (m_hasPlayerIdentity &&
             welcome.controlledEntityId.value != m_playerId.value)
         {
@@ -400,19 +409,6 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
         to be pumped in the opposite order.
     */
     updateTimeSynchronization(wallDeltaSeconds);
-    m_catalogs.update(serviceDt);
-
-    if (!m_catalogs.hasStarAtlas())
-        m_catalogs.requestStarAtlas();
-
-    if (m_catalogs.starAtlasStatus() ==
-        game::client::ClientRequestStatus::TimedOut)
-    {
-        failSynchronization(
-            "Timed out while synchronizing the world catalog"
-        );
-        return false;
-    }
 
     bool acceptedSnapshot = false;
 
@@ -776,12 +772,6 @@ const game::network::SnapshotMetadata&
 GameClient::hubMapMetadata() const
 {
     return m_maps.hubMetadata();
-}
-
-const game::network::CatalogMetadata&
-GameClient::starAtlasMetadata() const
-{
-    return m_catalogs.starAtlasMetadata();
 }
 
 const game::network::SnapshotMetadata&

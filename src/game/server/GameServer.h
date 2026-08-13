@@ -12,7 +12,6 @@
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/ProtocolMetadata.h"
 #include "src/game/network/MapSnapshotMessage.h"
-#include "src/game/network/PresentationDataMessage.h"
 #include "src/scene/EntityID.h"
 #include "src/game/network/ClientShipCommand.h"
 #include "src/game/diagnostics/ServerDiagnostics.h"
@@ -30,8 +29,6 @@ struct ServerQueueDiagnostics
     std::uint64_t droppedShipCommands = 0;
     std::uint64_t droppedMapRequests = 0;
     std::uint64_t droppedMapResponses = 0;
-    std::uint64_t droppedPresentationRequests = 0;
-    std::uint64_t droppedPresentationResponses = 0;
 };
 
 class GameServer
@@ -93,18 +90,6 @@ public:
     void enqueueMapRequest(const game::network::MapRequest& request);
     bool popMapResponse(game::network::MapResponse& outResponse);
 
-    void enqueuePresentationDataRequest(
-        const game::network::PresentationDataRequest& request
-    );
-    bool popPresentationDataResponse(
-        game::network::PresentationDataResponse& outResponse
-    );
-
-    std::uint64_t catalogRevision() const
-    {
-        return 1;
-    }
-
     const ServerQueueDiagnostics& queueDiagnostics() const
     {
         return m_queueDiagnostics;
@@ -143,31 +128,6 @@ public:
 
     world::celestial::SystemMapSnapshot buildSystemMapSnapshot(
         int systemId
-    ) const;
-
-    world::celestial::DetailMapSnapshot buildDetailMapSnapshot(
-        const world::celestial::DetailTarget& target
-    ) const;
-
-    world::celestial::DetailMapSnapshot buildCelestialBodyDetailSnapshot(
-        int systemId,
-        const std::string& planetBodyId
-    ) const;
-
-    world::celestial::DetailMapSnapshot buildLocalObjectDetailSnapshot(
-        int systemId,
-        const std::string& anchorHubId
-    ) const;
-
-    /*
-        Обновляет только движущиеся элементы уже построенной
-        Planet Details map.
-
-        Полное определение планеты, rings, environment и textures
-        при этом заново не строятся.
-    */
-    void refreshDetailMapDynamicState(
-        world::celestial::DetailMapSnapshot& snapshot
     ) const;
 
     world::celestial::HubMapSnapshot buildHubMapSnapshot(
@@ -209,20 +169,9 @@ public:
 
 private:
     void processPendingMapRequests();
-    void processPendingPresentationDataRequests();
 
     void populateClientSessionSnapshot(
         SimulationSnapshot& snapshot
-    ) const;
-
-    void debugLogDetailMapSnapshot(
-        const world::celestial::DetailMapSnapshot& snapshot
-    ) const;
-
-    void appendLocalDetailObjects(
-        world::celestial::DetailMapSnapshot& snapshot,
-        double extentMeters,
-        bool cubicBounds
     ) const;
 
     mutable game::diagnostics::ServerDiagnostics m_diagnostics;
@@ -232,8 +181,6 @@ private:
     static constexpr std::size_t MaxShipCommandsPerShip = 32;
     static constexpr std::size_t MaxPendingMapRequests = 64;
     static constexpr std::size_t MaxCompletedMapResponses = 64;
-    static constexpr std::size_t MaxPendingPresentationRequests = 16;
-    static constexpr std::size_t MaxCompletedPresentationResponses = 16;
 
     ServerQueueDiagnostics m_queueDiagnostics;
 
@@ -242,10 +189,6 @@ private:
     std::unordered_map<uint32_t, std::deque<ClientShipCommand>> m_pendingClientShipCommands;
     std::deque<game::network::MapRequest> m_pendingMapRequests;
     std::deque<game::network::MapResponse> m_completedMapResponses;
-    std::deque<game::network::PresentationDataRequest>
-        m_pendingPresentationDataRequests;
-    std::deque<game::network::PresentationDataResponse>
-        m_completedPresentationDataResponses;
     std::uint64_t m_serverTick = 0;
     std::uint64_t m_universeTimelineRevision = 1;
     world::time::UniverseClock m_universeClock;

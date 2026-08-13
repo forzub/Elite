@@ -12,6 +12,8 @@
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/diagnostics/HubMotionLabTelemetry.h"
 #include "src/game/client/ClientSystemMapShipSampler.h"
+#include "src/game/client/ClientSystemMapInfrastructureSampler.h"
+#include "src/game/client/ClientDetailMapRuntimeSampler.h"
 
 #include "render/HUD/WorldLabel.h"
 #include "src/world/WorldParams.h"
@@ -40,6 +42,7 @@
 #include "src/game/visual/VisualShip.h"
 #include "src/game/visual/VisualDrone.h"
 #include "src/world/coordinates/WorldPosition.h"
+#include "src/world/orbits/OrbitalMotion.h"
 
 struct PendingCommand
 {
@@ -99,8 +102,17 @@ struct ClientObjectState
     // glm::vec3                                       rotation;
     // glm::vec3                                       renderRotation;
     glm::mat4 orientation {1.0f};
+    glm::dvec3 linearVelocityMps {0.0};
     glm::mat4 renderOrientation {1.0f};
     game::simulation::HubAttachmentSnapshot hubAttachment;
+
+    // Replicated instance/navigation facts. They are ordinary world state;
+    // map code decides how to present them.
+    std::string displayName;
+    std::string ownerName;
+    bool navigationVisible = false;
+    std::string navigationParentBodyId;
+    world::orbits::OrbitalMotion orbitalMotion;
 
     // текущие (для рендера)
     world::coordinates::WorldPosition renderWorldPosition;
@@ -131,6 +143,20 @@ struct ClientObjectState
 };
 
 
+struct ClientHubState
+{
+    std::string id;
+    std::string name;
+    std::string owner;
+    int systemId = -1;
+    std::string parentBodyId;
+    world::coordinates::WorldPosition worldPosition;
+    glm::dvec3 worldVelocityMps {0.0};
+    glm::mat4 orientation {1.0f};
+    world::orbits::OrbitalMotion motion;
+};
+
+
 
 class ClientWorldState
 {
@@ -145,6 +171,7 @@ public:
 
     const std::unordered_map<uint32_t, ClientShipState>& ships() const {return m_ships;}
     const std::unordered_map<uint32_t, ClientObjectState>& objects() const {return m_objects;}
+    const std::unordered_map<std::string, ClientHubState>& hubs() const {return m_hubs;}
 
     double presentationServerTimeSeconds() const noexcept
     {
@@ -167,6 +194,18 @@ public:
         }
 
         return -1;
+    }
+
+    game::client::SystemMapInfrastructureSampleResult sampleSystemMapInfrastructureAtServerTime(
+        int systemId,
+        double serverTimeSeconds
+    ) const
+    {
+        return game::client::sampleSystemMapInfrastructureAtServerTime(
+            m_snapshotBuffer,
+            systemId,
+            serverTimeSeconds
+        );
     }
 
     std::vector<game::visual::VisualShip>& visualShips()
@@ -206,6 +245,18 @@ public:
         );
     }
 
+    game::client::DetailMapRuntimeSampleResult sampleDetailMapRuntimeAtServerTime(
+        int systemId,
+        double serverTimeSeconds
+    ) const
+    {
+        return game::client::sampleDetailMapRuntimeAtServerTime(
+            m_snapshotBuffer,
+            systemId,
+            serverTimeSeconds
+        );
+    }
+
     void clearVisualShips()
     {
         m_visualShips.clear();
@@ -234,6 +285,7 @@ private:
 
     std::unordered_map<uint32_t, ClientShipState>   m_ships;
     std::unordered_map<uint32_t, ClientObjectState> m_objects;
+    std::unordered_map<std::string, ClientHubState>  m_hubs;
     std::vector<game::visual::VisualShip>           m_visualShips;
     std::vector<game::visual::VisualDrone>          m_visualDrones;
     std::deque<SimulationSnapshot>                  m_snapshotBuffer;

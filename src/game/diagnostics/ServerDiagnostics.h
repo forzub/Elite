@@ -14,7 +14,6 @@ struct ServerDiagnosticsSettings
     bool playerMotionCsv = false;
     bool gravityCsv = false;
     bool systemMapMotionCsv = false;
-    bool detailMapSnapshotCsv = false;
     bool serverNavigationCsv = false;
     bool hubPlayerChainCsv = false;
 };
@@ -40,7 +39,6 @@ struct SimulationDiagnosticsState
 struct GameServerDiagnosticsState
 {
     double systemMapLastLoggedUniverseTime = -1.0;
-    std::uint32_t detailMapSnapshotRows = 0;
     std::uint32_t hubPlayerRoundTripWarnings = 0;
     std::uint32_t hubGeometryWarnings = 0;
 };

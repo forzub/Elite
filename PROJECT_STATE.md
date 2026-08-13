@@ -92,17 +92,18 @@
 
 ### Текущая незаконченная граница
 
-- `[~]` Migration Stage 3: map-specific infrastructure/hub metadata ещё частично server-built.
+- `[x]` System-map production infrastructure/hubs теперь берутся из ordinary authoritative `SimulationSnapshot` history на exact response epoch и client-composed; map response больше не является вторым production world-state каналом.
 - `[~]` Detail map DTO всё ещё в значительной степени строится сервером.
 - `[~]` Hub map DTO всё ещё в значительной степени строится сервером.
-- `[~]` StarAtlas считается client-owned static data концептуально, но текущий protocol всё ещё содержит `StarAtlasRequest` / presentation-data response path. Это следующий очевидный ownership cleanup.
+- `[x]` StarAtlas — реально endpoint-local static data: client/server независимо грузят один и тот же каталог; `StarAtlasRequest`/presentation-data transport удалён.
+- `[x]` `SessionWelcome` передаёт только `schemaVersion + contentFingerprint`; несовместимый локальный StarAtlas останавливает синхронизацию вместо тихого рассогласования мира.
 - `[ ]` Отдельный headless `EliteServer` executable target. Compile seam уже подготовлен, но отдельного серверного бинарника ещё нет.
 
 ### Ближайший рекомендуемый порядок
 
-1. `[ ]` Убрать StarAtlas payload из транспорта: client/server независимо загружают одинаковый static catalog; handshake проверяет version/hash.
-2. `[ ]` Завершить System-map migration: infrastructure/hub identities/state приходят обычной authoritative entity replication, а presentation собирается клиентом.
-3. `[ ]` Перевести Details на client-side composition из authoritative entity state + local static/celestial data.
+1. `[x]` Убрать StarAtlas payload из транспорта: client/server независимо загружают одинаковый static catalog; handshake проверяет schema/content fingerprint.
+2. `[x]` Завершить System-map migration: infrastructure/hub identities/state приходят обычной authoritative replication, а presentation собирается клиентом.
+3. `[ ]` Перевести Details на client-side composition из authoritative entity/hub state + local static/celestial data. **Это следующий функциональный migration slice.**
 4. `[ ]` Перевести Hub на ту же модель.
 5. `[ ]` Создать отдельный headless `EliteServer` target и использовать compile/link boundary как жёсткую проверку server independence от render/UI.
 
@@ -356,7 +357,7 @@ both clients are observers/predictors
 2. Звёздное небо/созвездия — **закрыты**.
 3. `Ctrl+F10` flight-mode switching — **исправлено**.
 4. Следующий фокус — **продолжение client/server presentation migration**.
-5. Первый рекомендуемый технический шаг — **убрать StarAtlas из transport payload и сделать static catalog действительно локально загружаемым на обеих сторонах с version/hash compatibility check**.
+5. Текущий следующий технический шаг — **закончить System-map migration: убрать map-specific infrastructure/hub composition с сервера и получать эти authoritative facts через обычную world/entity replication**.
 
 ---
 

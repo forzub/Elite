@@ -144,10 +144,6 @@ void ServerRunner::receiveInboundMessages()
     while (m_transport.receiveMapRequest(mapRequest))
         m_server.enqueueMapRequest(mapRequest);
 
-    game::network::PresentationDataRequest presentationRequest;
-    while (m_transport.receivePresentationDataRequest(presentationRequest))
-        m_server.enqueuePresentationDataRequest(presentationRequest);
-
     game::network::TimeSyncRequest timeSyncRequest;
     while (m_transport.receiveTimeSyncRequest(timeSyncRequest))
     {
@@ -172,13 +168,6 @@ void ServerRunner::publishOutboundMessages()
     while (m_server.popMapResponse(mapResponse))
         m_transport.sendMapResponse(std::move(mapResponse));
 
-    game::network::PresentationDataResponse presentationResponse;
-    while (m_server.popPresentationDataResponse(presentationResponse))
-    {
-        m_transport.sendPresentationDataResponse(
-            std::move(presentationResponse)
-        );
-    }
 }
 
 void ServerRunner::runFixedStep()

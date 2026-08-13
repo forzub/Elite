@@ -58,13 +58,14 @@ struct SystemMapResponse
     SnapshotMetadata metadata;
     int systemId = -1;
 
-    // Stage 3B protocol seam: the authoritative server publishes map-specific
-    // infrastructure/hub metadata and the map epoch, but leaves deterministic
-    // celestial bodies and ordinary replicated ships to the client. Bodies are
-    // rebuilt from the local catalog/runtime at snapshot.universeTimeSeconds;
-    // ships are sampled from normal SimulationSnapshot history at the exact
-    // response metadata.serverTimeSeconds. This prevents System-map requests
-    // from becoming a second replication channel for moving ships.
+    // Stage 3E protocol seam: this response is an authoritative map-epoch
+    // anchor, not a second world-state channel. Deterministic celestial/static
+    // catalog fields are rebuilt from the endpoint-local StarAtlas at
+    // snapshot.universeTimeSeconds. production hubs/static infrastructure and
+    // ordinary replicated ships are sampled from ordinary SimulationSnapshot history
+    // at response metadata.serverTimeSeconds and converted to map
+    // presentation on the client. Only explicit diagnostic presentation probes
+    // may remain in snapshot.objects while this migration is incremental.
     world::celestial::SystemMapSnapshot snapshot;
 };
 
@@ -73,7 +74,12 @@ struct DetailMapResponse
     std::uint64_t requestId = 0;
     SnapshotMetadata metadata;
     world::celestial::DetailTarget target;
-    world::celestial::DetailMapSnapshot snapshot;
+
+    // Stage 3F protocol seam: Details is now client-composed. The server only
+    // acknowledges the semantic target at an authoritative server/universe
+    // epoch. Celestial state comes from the endpoint-local StarAtlas/runtime;
+    // ships, hubs and infrastructure come from ordinary SimulationSnapshot
+    // history sampled at metadata.serverTimeSeconds.
 };
 
 struct HubMapResponse

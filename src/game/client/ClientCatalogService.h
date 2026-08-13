@@ -1,9 +1,7 @@
 #pragma once
 
-#include <cstdint>
+#include <string>
 
-#include "src/game/client/ClientRequestStatus.h"
-#include "src/game/network/ITransport.h"
 #include "src/game/network/ProtocolMetadata.h"
 #include "src/world/celestial/CelestialRuntimeRegistry.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
@@ -14,13 +12,17 @@ namespace game::client
 class ClientCatalogService
 {
 public:
-    explicit ClientCatalogService(ITransport& transport);
+    ClientCatalogService() = default;
 
-    void update(float dt);
-    void pumpResponses();
-    void resetPendingRequests();
+    // Static catalog ownership is local. No request/response protocol exists
+    // for StarAtlas; client and server load the same packaged asset domain.
+    bool loadLocalStarAtlas();
+    void resetRuntimeState();
 
-    bool requestStarAtlas();
+    bool validateServerStarAtlas(
+        const game::network::CatalogMetadata& serverMetadata,
+        std::string* errorMessage = nullptr
+    ) const;
 
     bool resolveCelestialSnapshot(
         int systemId,
@@ -28,9 +30,6 @@ public:
         const game::network::SnapshotMetadata& sourceMetadata,
         bool forceRefresh = false
     );
-
-    ClientRequestStatus starAtlasStatus() const;
-    ClientRequestStatus celestialStatus() const;
 
     bool hasStarAtlas() const;
     bool hasCelestialSnapshot() const;
@@ -45,37 +44,13 @@ public:
         double universeTimeSeconds
     ) const;
 
-    const game::network::CatalogMetadata& starAtlasMetadata() const;
+    game::network::CatalogMetadata localStarAtlasMetadata() const;
     const game::network::SnapshotMetadata& celestialMetadata() const;
 
 private:
-    struct RequestState
-    {
-        ClientRequestStatus status = ClientRequestStatus::Idle;
-        std::uint64_t requestId = 0;
-        float elapsedSeconds = 0.0f;
-        int attempts = 0;
-    };
-
-    static constexpr float RequestTimeoutSeconds = 2.0f;
-    static constexpr int MaxRequestAttempts = 3;
-
-    std::uint64_t nextRequestId();
-    void begin(RequestState& state, std::uint64_t requestId);
-    void complete(RequestState& state);
-    void cancel(RequestState& state);
-    bool advanceTimeout(RequestState& state, float dt);
-    void sendStarAtlasRequest();
-
-private:
-    ITransport& m_transport;
-    std::uint64_t m_nextRequestId = 1;
-    RequestState m_starAtlasRequest;
-
     bool m_hasStarAtlas = false;
     bool m_hasCelestialSnapshot = false;
 
-    game::network::CatalogMetadata m_starAtlasMetadata;
     game::network::SnapshotMetadata m_celestialSnapshotMetadata;
     world::celestial::StarAtlasDatabase m_starAtlas;
     world::celestial::CelestialRuntimeRegistry m_celestialRuntimes;

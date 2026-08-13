@@ -327,16 +327,29 @@ system_snapshot = function_body(server_text, "GameServer::buildSystemMapSnapshot
 if system_snapshot is None:
     fail(server_cpp, "could not locate buildSystemMapSnapshot")
 else:
-    require_text(
-        server_cpp,
-        system_snapshot,
-        (
-            "obj.systemId != systemId",
-            "!obj.systemMapVisible",
-            "hub.systemId != systemId",
-        ),
-        "server System-map infrastructure does not enforce first-class membership",
-    )
+    for forbidden in (
+        "m_simulation.staticObjects()",
+        "m_simulation.orbitalHubs()",
+    ):
+        if forbidden in system_snapshot:
+            fail(server_cpp, f"System-map infrastructure returned to server composition: {forbidden}")
+
+client_infrastructure_sampler = ROOT / "src/game/client/ClientSystemMapInfrastructureSampler.h"
+client_infrastructure_sampler_text = client_infrastructure_sampler.read_text(encoding="utf-8")
+require_text(
+    client_infrastructure_sampler,
+    client_infrastructure_sampler_text,
+    (
+        "object.systemId != requestedSystemId",
+        "hub.systemId != requestedSystemId",
+        "olderObject.systemId",
+        "newerObject->systemId",
+        "canInterpolateSystemLocalState(",
+        "olderHub.systemId",
+        "newerHub->systemId",
+    ),
+    "client System-map infrastructure sampling can mix system-local coordinate domains",
+)
 
 client_ship_sampler = ROOT / "src/game/client/ClientSystemMapShipSampler.h"
 client_ship_sampler_text = client_ship_sampler.read_text(encoding="utf-8")
@@ -352,36 +365,25 @@ require_text(
     "client System-map ship sampling can mix system-local coordinate domains",
 )
 
-local_detail = function_body(server_text, "void GameServer::appendLocalDetailObjects(")
-if local_detail is None:
-    fail(server_cpp, "could not locate appendLocalDetailObjects")
-else:
-    require_text(
-        server_cpp,
-        local_detail,
-        (
-            "frame->systemId != out.systemId",
-            "object.systemId != out.systemId",
-            "transform.motion.systemId != out.systemId",
-        ),
-        "local Detail map can mix entities from different systems",
-    )
-
-refresh_detail = function_body(server_text, "void GameServer::refreshDetailMapDynamicState(")
-if refresh_detail is None:
-    fail(server_cpp, "could not locate refreshDetailMapDynamicState")
-else:
-    require_text(
-        server_cpp,
-        refresh_detail,
-        (
-            "frame->systemId != snapshot.systemId",
-            "object.systemId !=",
-            "snapshot.systemId",
-            "transform.motion.systemId != snapshot.systemId",
-        ),
-        "planet Detail dynamic refresh can mix systems",
-    )
+client_detail_sampler = ROOT / "src/game/client/ClientDetailMapRuntimeSampler.h"
+client_detail_sampler_text = client_detail_sampler.read_text(encoding="utf-8")
+require_text(
+    client_detail_sampler,
+    client_detail_sampler_text,
+    (
+        "ship.transform.motion.systemId != requestedSystemId",
+        "object.systemId != requestedSystemId",
+        "hub.systemId != requestedSystemId",
+        "oldShip.transform.motion.systemId",
+        "newShip->transform.motion.systemId",
+        "oldObject.systemId",
+        "newObject->systemId",
+        "oldHub.systemId",
+        "newHub->systemId",
+        "canInterpolateSystemLocalState(",
+    ),
+    "client Detail sampling can mix system-local coordinate domains",
+)
 
 build_hub = function_body(server_text, "GameServer::buildHubMapSnapshot(")
 if build_hub is None:

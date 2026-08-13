@@ -607,8 +607,14 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.setWorldPosition(o.worldPosition);
 
             state.orientation = o.orientation;
+            state.linearVelocityMps = o.linearVelocityMps;
             state.renderOrientation = o.orientation;
             state.hubAttachment = o.hubAttachment;
+            state.displayName = o.displayName;
+            state.ownerName = o.ownerName;
+            state.navigationVisible = o.navigationVisible;
+            state.navigationParentBodyId = o.navigationParentBodyId;
+            state.orbitalMotion = o.orbitalMotion;
 
             applyGraphSnapshot(
                 o.graph,
@@ -644,7 +650,13 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             // state.worldPosition = o.worldPosition;
             state.setWorldPosition(o.worldPosition);
             state.orientation = o.orientation;
+            state.linearVelocityMps = o.linearVelocityMps;
             state.hubAttachment = o.hubAttachment;
+            state.displayName = o.displayName;
+            state.ownerName = o.ownerName;
+            state.navigationVisible = o.navigationVisible;
+            state.navigationParentBodyId = o.navigationParentBodyId;
+            state.orbitalMotion = o.orbitalMotion;
 
             // Static object payload is sparse: for a rotating station the server sends
             // only graph.assemblyModules every tick. Heavy module/debug payload arrives
@@ -671,6 +683,32 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
     {
         if (authoritativeObjectIds.find(it->first) == authoritativeObjectIds.end())
             it = m_objects.erase(it);
+        else
+            ++it;
+    }
+
+    std::unordered_set<std::string> authoritativeHubIds;
+    authoritativeHubIds.reserve(snapshot.hubs.size());
+
+    for (const auto& hub : snapshot.hubs)
+    {
+        authoritativeHubIds.insert(hub.id);
+        auto& state = m_hubs[hub.id];
+        state.id = hub.id;
+        state.name = hub.name;
+        state.owner = hub.owner;
+        state.systemId = hub.systemId;
+        state.parentBodyId = hub.parentBodyId;
+        state.worldPosition = hub.worldPosition;
+        state.worldVelocityMps = hub.worldVelocityMps;
+        state.orientation = hub.orientation;
+        state.motion = hub.motion;
+    }
+
+    for (auto it = m_hubs.begin(); it != m_hubs.end();)
+    {
+        if (authoritativeHubIds.find(it->first) == authoritativeHubIds.end())
+            it = m_hubs.erase(it);
         else
             ++it;
     }

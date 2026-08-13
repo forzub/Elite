@@ -2,7 +2,6 @@
 
 #include "src/game/network/ClientMessage.h"
 #include "src/game/network/MapSnapshotMessage.h"
-#include "src/game/network/PresentationDataMessage.h"
 #include "src/game/network/TimeSyncMessage.h"
 #include "src/game/network/SessionMessage.h"
 #include "src/game/simulation/SimulationSnapshot.h"
@@ -34,10 +33,6 @@ public:
         game::network::MapRequest& outRequest
     ) = 0;
 
-    virtual bool receivePresentationDataRequest(
-        game::network::PresentationDataRequest& outRequest
-    ) = 0;
-
     virtual bool receiveTimeSyncRequest(
         game::network::TimeSyncRequest& outRequest
     ) = 0;
@@ -58,10 +53,6 @@ public:
 
     virtual void sendMapResponse(
         game::network::MapResponse response
-    ) = 0;
-
-    virtual void sendPresentationDataResponse(
-        game::network::PresentationDataResponse response
     ) = 0;
 
     virtual void sendTimeSyncResponse(

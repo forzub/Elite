@@ -167,7 +167,7 @@ architecture-safe thresholds.
 
 ## Server -> client presentation migration
 
-Functional migration is currently at **Migration Stage 3C in progress**:
+Functional migration is currently at **Migration Stage 3F in progress**:
 
 - Stage 0: client-facing state stopped depending directly on `GameServer`;
   `IGameSession`/`ITransport` and the local host own the server boundary.
@@ -191,6 +191,9 @@ Functional migration is currently at **Migration Stage 3C in progress**:
   that diagnostic is enabled.
 - Stage 3B: ordinary player/NPC System-map ships are reconstructed from exact-epoch normal replication history instead of a second map-specific ship channel.
 - Stage 3C: Galaxy systems/objects are reconstructed from the client-local `StarAtlasDatabase`; `GameServer` now emits only authoritative Galaxy world overlays (currently jurisdiction) plus universe epoch/date.
+- Stage 3D: `StarAtlasDatabase` is now genuinely endpoint-local static data. Client and server load the packaged/source catalog independently; the obsolete `PresentationDataMessage` / `StarAtlasRequest` transport path is removed. `SessionWelcome` carries only a catalog schema version + deterministic content fingerprint, and the client refuses synchronization when its local physical catalog is incompatible with the server.
+- Stage 3E: production System-map infrastructure and orbital hubs no longer come from `GameServer::buildSystemMapSnapshot()`. `SimulationSnapshot` publishes ordinary authoritative hub state plus static-object instance/navigation facts. `ClientWorldState` retains that history and `ClientMapService` samples hubs/static infrastructure at the exact `SystemMapResponse::metadata.serverTimeSeconds`, then converts them to `SystemMapObject` rows locally. Static System-map name/galactic placement are also rehydrated from the endpoint-local StarAtlas. The System-map response is now an epoch anchor plus explicit diagnostic probes, not a second production world-state channel.
+- Stage 3F: Details presentation is client-composed. `DetailMapResponse` now carries only the semantic `DetailTarget` plus authoritative server/universe epoch metadata. The client resolves deterministic body/ring/environment state from its endpoint-local StarAtlas/CelestialRuntime at that universe epoch and samples ships, hubs and complete local static infrastructure from retained ordinary `SimulationSnapshot` history at the exact response server epoch. Static-object and hub world velocities are first-class replication facts so Details no longer needs `GameServer::buildDetailMapSnapshot()` or its dynamic refresh path.
 
 
 The clock/revision work that followed is infrastructure for this migration.
@@ -200,21 +203,23 @@ map epochs.
 
 ### Next functional migration stage
 
-**Migration Stage 3 is in progress:** deterministic System-map celestial bodies
-and ordinary real-ship map objects are now client-composed. Map-specific
-infrastructure/hub metadata and the complete Detail/Hub DTOs are still
-server-built.
+**Migration Stage 3 is in progress:** deterministic System-map celestial bodies,
+ordinary real ships, production static infrastructure and orbital hubs are now
+client-composed from local catalogs plus exact-epoch ordinary replication.
+Details has joined the same model: the server only acknowledges target + epoch,
+and the client composes the scene from local celestial state plus exact-epoch
+replicated entities. The complete Hub DTO is still server-built.
 
 The server should eventually publish compact authoritative dynamic entity state
 (ships, hubs/infrastructure identities and gameplay-owned transforms/bindings),
 while the client combines that stream with its local catalog/celestial runtime
 to construct Galaxy/System/Detail/Hub presentation snapshots.
 
-During the partial migration, client-derived celestial translation is allowed
-for the System map only because it is evaluated at the exact universe-time epoch
-carried by that server response. Detail/Hub remain on the narrower Stage-2 bridge:
-their translations/velocities stay at the server dynamic-map epoch until those
-layers migrate together.
+During the partial migration, client-derived celestial translation for System
+and Details is evaluated at the exact universe-time epoch carried by the server
+response, while dynamic entities are sampled from normal replication at the same
+response server-time epoch. Hub remains on the narrower Stage-2 bridge until its
+scene composition migrates to the same model.
 
 ## Authoritative world bootstrap
 
@@ -228,14 +233,17 @@ but those constants must stay inside diagnostic/promo code paths.
 
 ## Known migration blockers / debt
 
-- `GameServer` still builds the authoritative Galaxy overlay plus Detail/Hub snapshots and the map-specific
-  infrastructure/hub portion of System snapshots. Deterministic System celestial
-  bodies and ordinary real ships have migrated to client-side composition. Real
-  ship transforms are sampled from retained `SimulationSnapshot` history at the
-  exact `SystemMapResponse::metadata.serverTimeSeconds`, so System-map requests
-  no longer form a second replication channel for moving ships. The remaining
-  map DTOs still contain deterministic/presentation data to remove in later
-  Stage-3 slices.
+- `GameServer` still builds the authoritative Galaxy overlay plus the complete
+  Hub snapshot. System-map celestial bodies, ordinary real ships, static
+  infrastructure and orbital hubs, and the complete Details scene have migrated
+  to client-side composition.
+  Production dynamic System-map rows are sampled from retained
+  `SimulationSnapshot` history at the exact
+  `SystemMapResponse::metadata.serverTimeSeconds`, so System-map requests no
+  longer form a second replication channel for those world entities. Only an
+  explicit Hub Motion Lab analytic probe remains as presentation-only diagnostic
+  payload. The remaining complete Hub DTO still contains deterministic/
+  presentation data to remove in the next Stage-3 slice.
 - The legacy duplicate Sol/Earth/Moon gameplay pass has been removed from
   `SceneRenderer`; gameplay and maps must consume canonical client presentation
   state instead of maintaining a second hard-coded celestial world.

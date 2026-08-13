@@ -652,6 +652,87 @@ set_tests_properties(
 )
 
 add_executable(
+    system_map_infrastructure_sampling_contract_tests
+    SystemMapInfrastructureSamplingContractTests.cpp
+)
+
+target_include_directories(
+    system_map_infrastructure_sampling_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        system_map_infrastructure_sampling_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        system_map_infrastructure_sampling_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME system_map_infrastructure_sampling_contracts
+    COMMAND system_map_infrastructure_sampling_contract_tests
+)
+
+set_tests_properties(
+    system_map_infrastructure_sampling_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
+    detail_map_runtime_sampling_contract_tests
+    DetailMapRuntimeSamplingContractTests.cpp
+)
+
+target_include_directories(
+    detail_map_runtime_sampling_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        detail_map_runtime_sampling_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        detail_map_runtime_sampling_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME detail_map_runtime_sampling_contracts
+    COMMAND detail_map_runtime_sampling_contract_tests
+)
+
+set_tests_properties(
+    detail_map_runtime_sampling_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+
+add_executable(
     galaxy_map_catalog_migration_contract_tests
     GalaxyMapCatalogMigrationContractTests.cpp
 )

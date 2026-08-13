@@ -34,6 +34,10 @@ ServerRuntime::ServerRuntime(
     // never selects that EntityId in its command packets.
     game::network::SessionWelcome welcome;
     welcome.controlledEntityId = m_server->playerId();
+    welcome.starAtlasCatalog.schemaVersion =
+        world::celestial::StarAtlasDatabase::CatalogSchemaVersion;
+    welcome.starAtlasCatalog.contentFingerprint =
+        m_server->starAtlas().contentFingerprint();
     transport.publishSessionWelcomeImmediately(welcome);
 
     // The first authoritative snapshot is bootstrap data, not a

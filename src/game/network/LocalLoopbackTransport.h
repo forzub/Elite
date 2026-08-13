@@ -60,12 +60,6 @@ public:
     bool receiveMapResponse(
         game::network::MapResponse& outResponse) override;
 
-    void sendPresentationDataRequest(
-        const game::network::PresentationDataRequest& request) override;
-
-    bool receivePresentationDataResponse(
-        game::network::PresentationDataResponse& outResponse) override;
-
     void sendTimeSyncRequest(
         const game::network::TimeSyncRequest& request) override;
 
@@ -80,9 +74,6 @@ public:
 
     bool receiveMapRequest(
         game::network::MapRequest& outRequest) override;
-
-    bool receivePresentationDataRequest(
-        game::network::PresentationDataRequest& outRequest) override;
 
     bool receiveTimeSyncRequest(
         game::network::TimeSyncRequest& outRequest) override;
@@ -99,9 +90,6 @@ public:
     void sendMapResponse(
         game::network::MapResponse response) override;
 
-    void sendPresentationDataResponse(
-        game::network::PresentationDataResponse response) override;
-
     void sendTimeSyncResponse(
         game::network::TimeSyncResponse response) override;
 
@@ -112,11 +100,9 @@ private:
     std::queue<SimulationSnapshot> m_incoming;
     std::queue<game::network::ClientMessage> m_clientMessages;
     std::queue<game::network::MapRequest> m_mapRequests;
-    std::queue<game::network::PresentationDataRequest> m_presentationRequests;
     std::queue<game::network::TimeSyncRequest> m_serverTimeSyncRequests;
 
     std::queue<game::network::MapResponse> m_mapResponses;
-    std::queue<game::network::PresentationDataResponse> m_presentationResponses;
     std::queue<game::network::TimeSyncResponse> m_timeSyncResponses;
 
     std::vector<DelayedSnapshot> m_latencyBuffer;

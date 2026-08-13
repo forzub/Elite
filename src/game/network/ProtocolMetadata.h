@@ -18,6 +18,7 @@ struct SnapshotMetadata
 
 struct CatalogMetadata
 {
-    std::uint64_t catalogRevision = 0;
+    std::uint32_t schemaVersion = 0;
+    std::uint64_t contentFingerprint = 0;
 };
 }

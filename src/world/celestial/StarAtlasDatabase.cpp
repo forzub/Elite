@@ -33,6 +33,97 @@ json loadJson(const std::string& path)
 
 namespace fs = std::filesystem;
 
+constexpr std::uint64_t FnvOffsetBasis64 = 14695981039346656037ull;
+constexpr std::uint64_t FnvPrime64 = 1099511628211ull;
+
+void hashByte(std::uint64_t& hash, unsigned char value)
+{
+    hash ^= static_cast<std::uint64_t>(value);
+    hash *= FnvPrime64;
+}
+
+void hashBytes(std::uint64_t& hash, const std::string& value)
+{
+    for (unsigned char byte : value)
+        hashByte(hash, byte);
+}
+
+std::uint64_t computeCatalogFingerprint(const fs::path& root)
+{
+    std::vector<fs::path> files;
+
+    for (const char* directory : {
+            "systems_details",
+            "distant_systems_details",
+            "objects_details"})
+    {
+        const fs::path catalogDirectory = root / directory;
+        std::error_code ec;
+        if (!fs::is_directory(catalogDirectory, ec))
+            continue;
+
+        for (fs::recursive_directory_iterator it(
+                 catalogDirectory,
+                 fs::directory_options::skip_permission_denied,
+                 ec), end;
+             it != end;
+             it.increment(ec))
+        {
+            if (ec)
+            {
+                ec.clear();
+                continue;
+            }
+
+            if (!it->is_regular_file(ec) || ec)
+            {
+                ec.clear();
+                continue;
+            }
+
+            if (it->path().extension() == ".json")
+                files.push_back(it->path());
+        }
+    }
+
+    std::sort(
+        files.begin(),
+        files.end(),
+        [&root](const fs::path& lhs, const fs::path& rhs)
+        {
+            return lhs.lexically_relative(root).generic_string() <
+                   rhs.lexically_relative(root).generic_string();
+        }
+    );
+
+    std::uint64_t hash = FnvOffsetBasis64;
+
+    for (const fs::path& file : files)
+    {
+        const std::string relative =
+            file.lexically_relative(root).generic_string();
+
+        hashBytes(hash, relative);
+        hashByte(hash, 0u);
+
+        std::ifstream input(file, std::ios::binary);
+        if (!input.is_open())
+        {
+            hashBytes(hash, "<unreadable>");
+        }
+        else
+        {
+            char c = 0;
+            while (input.get(c))
+                hashByte(hash, static_cast<unsigned char>(c));
+        }
+
+        hashByte(hash, 0xffu);
+    }
+
+    return hash;
+}
+
 struct SystemCatalogDocument
 {
     fs::path sourcePath;
@@ -2192,6 +2283,7 @@ bool StarAtlasDatabase::load(
     m_distantSystems = std::move(distantSystems);
     m_details = std::move(details);
     m_objects = std::move(objects);
+    m_contentFingerprint = computeCatalogFingerprint(galaxyDetailsRoot);
 
     const std::size_t skippedSystemFiles =
         localReport.filesSkipped +
@@ -2205,6 +2297,8 @@ bool StarAtlasDatabase::load(
         << " galaxy_objects=" << m_objects.size()
         << " skipped_system_files=" << skippedSystemFiles
         << " skipped_object_files=" << objectReport.filesSkipped
+        << " fingerprint=0x" << std::hex << m_contentFingerprint
+        << std::dec
         << " degraded="
         << (
             skippedSystemFiles > 0 ||
@@ -2217,6 +2311,20 @@ bool StarAtlasDatabase::load(
         << "\n";
 
     return true;
+}
+
+bool StarAtlasDatabase::loadFromRuntimeOrSource()
+{
+    for (const char* root : {
+            "assets/data/galaxy_details",
+            "../assets/data/galaxy_details",
+            "../src/assets/data/galaxy_details"})
+    {
+        if (load(root))
+            return true;
+    }
+
+    return false;
 }
 
 const CelestialSystemDefinition* StarAtlasDatabase::findSystem(int systemId) const

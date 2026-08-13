@@ -89,7 +89,6 @@ public:
     const game::network::SnapshotMetadata& systemMapMetadata() const;
     const game::network::SnapshotMetadata& detailMapMetadata() const;
     const game::network::SnapshotMetadata& hubMapMetadata() const;
-    const game::network::CatalogMetadata& starAtlasMetadata() const;
     const game::network::SnapshotMetadata& celestialMetadata() const;
 
     std::uint64_t droppedPendingInputCount() const
@@ -125,7 +124,6 @@ public:
     double universeTimeSeconds() const;
     double renderUniverseTimeSeconds() const;
 
-    bool requestStarAtlas();
     bool resolveCelestialSnapshot(bool forceRefresh = false);
     const world::celestial::StarAtlasDatabase* starAtlas() const;
     const world::celestial::CelestialSystemSnapshot*

@@ -33,16 +33,34 @@ for required in (
     "publishSessionWelcomeImmediately(",
     "receiveClientMessage(",
     "receiveMapRequest(",
-    "receivePresentationDataRequest(",
     "receiveTimeSyncRequest(",
     "publishSnapshot(",
     "publishSnapshotImmediately(",
     "sendMapResponse(",
-    "sendPresentationDataResponse(",
     "sendTimeSyncResponse(",
 ):
     if required not in server_transport_h:
         fail(f"server transport endpoint is incomplete: {required}")
+
+# Static StarAtlas data must never reopen a generic presentation payload
+# channel. Map requests are authoritative/dynamic queries; local catalogs are
+# loaded independently and compatibility-fenced during session bootstrap.
+for text, label in (
+    (client_transport_h, "ITransport.h"),
+    (server_transport_h, "IServerTransport.h"),
+    (loopback_h, "LocalLoopbackTransport.h"),
+    (loopback_cpp, "LocalLoopbackTransport.cpp"),
+    (runner_cpp, "ServerRunner.cpp"),
+):
+    for forbidden in (
+        "PresentationData",
+        "StarAtlasRequest",
+        "StarAtlasResponse",
+        "presentationRequests",
+        "presentationResponses",
+    ):
+        if forbidden in text:
+            fail(f"{label} regained static presentation-data transport: {forbidden}")
 
 for text, label in (
     (loopback_h, "LocalLoopbackTransport.h"),
@@ -66,7 +84,6 @@ for required in (
     "m_sessionWelcome",
     "m_clientMessages",
     "m_mapRequests",
-    "m_presentationRequests",
     "m_serverTimeSyncRequests",
 ):
     if required not in loopback_h:
@@ -95,8 +112,6 @@ for required in (
     "m_server.receiveClientMessage(",
     "m_transport.receiveMapRequest(",
     "m_server.enqueueMapRequest(",
-    "m_transport.receivePresentationDataRequest(",
-    "m_server.enqueuePresentationDataRequest(",
     "m_transport.receiveTimeSyncRequest(",
     "m_server.serverTimeSeconds()",
     "m_transport.sendTimeSyncResponse(",

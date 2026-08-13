@@ -30,11 +30,11 @@ findCelestialBodyState(
 /*
     Stage-3 System-map seam.
 
-    The response epoch still comes from the authoritative server because the
-    dynamic hub/ship/object layer is sampled there. Celestial bodies are fully
-    deterministic for that epoch, so the client rebuilds this presentation
-    layer from its own catalog/runtime instead of receiving duplicated body
-    geometry over the map protocol.
+    The response carries only the authoritative map epoch/system identity.
+    Celestial bodies are fully deterministic for that epoch, so the client
+    rebuilds this presentation layer from its own catalog/runtime. Production
+    ships, hubs and infrastructure are joined separately from ordinary
+    SimulationSnapshot history at the same server-time response epoch.
 */
 inline bool rebuildSystemMapCelestialLayer(
     world::celestial::SystemMapSnapshot& map,
@@ -142,8 +142,20 @@ inline bool rebuildSystemMapCelestialLayer(
 )
 {
     const auto* definition = atlas.findSystem(map.systemId);
-    return definition &&
-        rebuildSystemMapCelestialLayer(map, *definition, celestial);
+    if (!definition ||
+        !rebuildSystemMapCelestialLayer(map, *definition, celestial))
+    {
+        return false;
+    }
+
+    // Static System-map identity/galactic placement is local catalog data too.
+    // The authoritative map response supplies only the requested system id and
+    // dynamic epoch; it does not serialize duplicate StarAtlas fields.
+    map.systemName = definition->name;
+    if (const auto* summary = atlas.findSystemSummary(map.systemId))
+        map.systemPositionLy = summary->positionLy;
+
+    return true;
 }
 
 /*

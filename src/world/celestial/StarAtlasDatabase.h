@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -12,6 +13,11 @@ namespace world::celestial
 class StarAtlasDatabase
 {
 public:
+    // Bump only when the parser/semantic contract for the static physical
+    // catalog changes incompatibly. Content changes are detected separately
+    // through contentFingerprint().
+    static constexpr std::uint32_t CatalogSchemaVersion = 1;
+
     /*
         Loads every JSON document from:
             <galaxyDetailsRoot>/systems_details
@@ -33,6 +39,15 @@ public:
     bool load(
         const std::string& galaxyDetailsRoot
     );
+
+    // Runtime/source-tree bootstrap used independently by both client and
+    // server. Static StarAtlas data is not a network payload.
+    bool loadFromRuntimeOrSource();
+
+    std::uint64_t contentFingerprint() const
+    {
+        return m_contentFingerprint;
+    }
 
     /*
         Lightweight catalog read used by the starfield. It reads only the
@@ -68,6 +83,7 @@ private:
     std::vector<StarSystemSummary> m_distantSystems;
     std::unordered_map<int, CelestialSystemDefinition> m_details;
     std::vector<GalaxyObjectDefinition> m_objects;
+    std::uint64_t m_contentFingerprint = 0;
 };
 
 } // namespace world::celestial

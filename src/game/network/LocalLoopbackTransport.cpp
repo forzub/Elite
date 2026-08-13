@@ -190,48 +190,6 @@ bool LocalLoopbackTransport::receiveMapResponse(
     return true;
 }
 
-void LocalLoopbackTransport::sendPresentationDataRequest(
-    const game::network::PresentationDataRequest& request)
-{
-    std::lock_guard<std::mutex> lock(m_mutex);
-
-    m_presentationRequests.push(request);
-}
-
-bool LocalLoopbackTransport::receivePresentationDataRequest(
-    game::network::PresentationDataRequest& outRequest)
-{
-    std::lock_guard<std::mutex> lock(m_mutex);
-
-    if (m_presentationRequests.empty())
-        return false;
-
-    outRequest = std::move(m_presentationRequests.front());
-    m_presentationRequests.pop();
-    return true;
-}
-
-void LocalLoopbackTransport::sendPresentationDataResponse(
-    game::network::PresentationDataResponse response)
-{
-    std::lock_guard<std::mutex> lock(m_mutex);
-
-    m_presentationResponses.push(std::move(response));
-}
-
-bool LocalLoopbackTransport::receivePresentationDataResponse(
-    game::network::PresentationDataResponse& outResponse)
-{
-    std::lock_guard<std::mutex> lock(m_mutex);
-
-    if (m_presentationResponses.empty())
-        return false;
-
-    outResponse = std::move(m_presentationResponses.front());
-    m_presentationResponses.pop();
-    return true;
-}
-
 void LocalLoopbackTransport::sendTimeSyncRequest(
     const game::network::TimeSyncRequest& request)
 {

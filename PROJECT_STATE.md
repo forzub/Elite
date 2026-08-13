@@ -40,7 +40,10 @@
 - `[x]` Работают English / Russian / Simplified Chinese / Spanish / Japanese и fallback на English.
 - `[x]` CJK font fallback работает в native renderer.
 - `[x]` Три системы созвездий: Western/IAU, curated Traditional Chinese, Hawaiian Star Lines.
+- `[x]` `Ctrl+Alt+F12` переключает глобальный язык пользовательского интерфейса.
 - `[x]` В HUD показывается текущий язык и активная sky culture; читаемость поддержана фоновыми плашками.
+- `[x]` Сервер локализации не знает: по protocol/runtime должны ходить stable IDs и authoritative state, а display names принадлежат клиенту.
+- `[ ]` Manufacturer/cockpit-native labels при необходимости должны уметь оставаться на родном языке производителя независимо от глобального языка UI.
 - `[D]` Release packaging локализации в единый `.locpak`/binary package с простым преобразованием/обфускацией, checksum и при необходимости signature. Нужен ближе к release, не сейчас.
 
 ---
@@ -52,6 +55,7 @@
 - `[x]` Реальные звёзды хранят 3D galactic positions и пересчитываются относительно текущей позиции наблюдателя.
 - `[x]` Созвездия привязаны к физическим звёздам и геометрически искажаются при смене точки наблюдения.
 - `[x]` 23 вспомогательные constellation reference stars имеют конечные 3D positions/distances и участвуют в том же observer-relative процессе; fixed sky-direction путь удалён.
+- `[x]` Подписи созвездий локализованы, camera-facing и относятся к выбранной sky culture.
 - `[x]` Текущий видимый каталог ориентирован прежде всего на правдоподобное небо в окрестностях Sol и игровых систем порядка ~60 ly.
 - `[D]` Proper motion звёзд во времени 2026–3026 сознательно не моделируем на текущем этапе.
 - `[D]` Расширение каталога для астрономически корректного неба на сотнях/тысячах световых лет от Sol не является текущей целью.
@@ -104,63 +108,227 @@
 
 ---
 
-## 6. Runtime activation / persistent universe
+## 6. Навигация и определение положения
 
-**Статус: `[~]` инфраструктура есть, production migration ещё не закончена.**
+**Статус: `[ ]` концепция определена частично, реализация впереди.**
+
+### Космический компас
+
+- `[ ]` В кокпите нужна горизонтальная шкала условного азимута и вертикальная шкала elevation.
+- `[ ]` Компас показывает направление **носа корабля относительно выбранного navigation/reference frame**, а не просто координатных осей XYZ мира.
+- `[ ]` Отдельно от компаса всегда остаётся **вектор фактической скорости**. В Newtonian режиме особенно важно одновременно видеть: «куда смотрю» и «куда лечу».
+- `[ ]` Навигационные базисы должны учитывать всю иерархию координат: `galactic -> system/local -> kinematic/reference frame -> player-relative render`.
+- `[ ]` Для Hub естественная ориентация строится на базисе `prograde / radial / normal`.
+- `[ ]` Для свободного пространства нужно определить соответствующий system/galactic reference frame и правила его выбора/отображения.
+
+### Ориентация против абсолютных координат
+
+- `[x]` Принцип принят: направление/ориентацию корабля в пространстве можно определять очень точно по звёздному небу.
+- `[ ]` Абсолютные координаты — отдельная навигационная задача; знание ориентации само по себе их не даёт.
+- `[ ]` Для абсолютного положения предполагаются навигационные маяки и/или известные объекты с известными эфемеридами.
+- `[ ]` Без внешней опоры корабль может знать ориентацию и собственную кинематику, но ошибка абсолютного положения должна со временем накапливаться.
+- `[D]` Квазары не вводим как обязательную gameplay-механику. Принцип определения координат можно оформить лором и инфраструктурой навигационной сети.
+- `[ ]` Определить модель точности навигации: начальная ошибка, накопление drift, коррекция по маякам/объектам и поведение при потере связи/опорных сигналов.
+
+---
+
+## 7. J / межсистемный полёт
+
+**Статус: `[ ]` окончательная механика J пока не реализована.**
+
+- `[ ]` Формализовать переход объекта из system-local пространства в **interstellar/galactic domain** (`systemId < 0`).
+- `[ ]` Реализовать реальную транзакцию `system -> interstellar -> system`, а не телепортацию между двумя system-local состояниями.
+- `[ ]` Поддержать несколько одновременных server system-runtime contexts.
+- `[ ]` Корабль вне системы не должен оставаться логически привязанным к старому Hub или старому system runtime.
+- `[ ]` Дальний межсистемный полёт не должен симулироваться миллионами обычных physics ticks.
+- `[ ]` Для дальнего участка должна существовать scheduled/coarse trajectory, которая materialize в полноценную физику только когда это становится необходимо.
+- `[ ]` Финальный gameplay J-mode проектировать после стабилизации runtime ownership, activation и межсистемного transfer boundary.
+
+---
+
+## 8. Траектории на картах
+
+**Статус: `[ ]` отдельная крупная механика, практически ещё не реализована.**
+
+Карты должны уметь по запросу отвечать на вопросы:
+
+- `[ ]` «Покажи траекторию этого судна».
+- `[ ]` «Покажи возможные траектории, которыми оно может достичь этого астероида».
+- `[ ]` «Какими траекториями оно могло попасть туда».
+- `[ ]` «Покажи траектории всех известных судов в этом кубе за последний час».
+
+### Архитектурный принцип
+
+Renderer траекторий должен быть **независим от происхождения данных**. Источником знания могут быть:
+
+- наш radar observation;
+- transponder;
+- SOS;
+- station/beacon;
+- navigation network;
+- historical log;
+- intelligence/recon data.
+
+Существование реальной траектории корабля и **знание игрока об этой траектории — разные вещи**.
+
+Нужно различать как минимум:
+
+- instantaneous velocity vector;
+- planned route;
+- predicted physical trajectory;
+- historical recorded trajectory.
+
+- `[ ]` Не передавать массивы trajectory points в каждом обычном snapshot.
+- `[ ]` Сделать отдельный **on-demand trajectory query/cache** с собственным lifetime/versioning.
+- `[ ]` Источник/качество знания должно определять, какие части траектории игрок вообще имеет право видеть и с какой точностью.
+
+---
+
+## 9. Дальние корабли и масштабирование мира
+
+**Статус: `[~]` архитектурный каркас есть, production materialization ещё не завершена.**
+
+Базовая цепочка runtime fidelity:
+
+```text
+Scheduled
+-> Coarse
+-> Prewarm
+-> Active
+```
+
+и обратно.
 
 - `[x]` Есть entity runtime-policy foundation: `EntityType`, `MotionModel`, `SimulationMode`, `TimelineDomain`, authority/presentation policy.
 - `[x]` Есть режимы `Scheduled / Coarse / Prewarm / Active` и explicit transition rules.
 - `[x]` Есть activation anchors, spatial broad-phase, predicted interaction/CPA logic и hysteresis/state machine.
 - `[~]` Activation policy уже влияет на часть AI cadence, но ещё не является полной системой снижения стоимости physics/signals/replication.
+- `[ ]` Корабль, летящий месяц между точками, не должен считаться полноценной физикой 50 раз/сек.
+- `[ ]` При приближении игрока дальняя сущность materialize в правильной точке своей траектории и получает полноценную физику/NPC/повреждения/столкновения.
+- `[ ]` При удалении сущность должна снова collapse в coarse/scheduled representation без потери persistent identity, состояния и истории.
 - `[ ]` Перевести production ships/hubs/modules на новую runtime policy системно.
-- `[ ]` Реализовать полноценный coarse/scheduled motion для дальних persistent entities.
-- `[ ]` Materialization: `Scheduled -> Prewarm -> Active` с восстановлением полноценного dynamic state.
-- `[ ]` Collapse обратно в coarse/scheduled представление без потери persistent identity/history.
 
 ---
 
-## 7. Multi-system runtime и межзвёздные перелёты
+## 10. Persistent ships
 
-- `[~]` Мир и карты знают несколько систем, но production simulation ещё не является полноценным multi-system runtime.
-- `[ ]` Несколько server system runtime contexts / activation по системам.
-- `[ ]` Реальный inter-system transfer entity между runtime domains.
-- `[ ]` Финальная механика J/travel mode после стабилизации runtime ownership и activation.
-- `[ ]` Навигационные маяки/лоровая система определения координат и точности навигации.
+**Статус: `[~]` модель принята, полноценные persistent records ещё не завершены.**
 
----
+Корабли мира должны быть в основном реальными persistent-сущностями, а не бесконечно рождающимся NPC-фоном.
 
-## 8. Траектории и исторические данные
+Нужно чётко разделять три уровня:
 
-Это обязательная будущая возможность карт, даже если источник данных будет зависеть от gameplay-информации.
+```text
+typeId
+    Cobra Mk.I
 
-- `[ ]` Отрисовка фактической траектории выбранного судна.
-- `[ ]` Отрисовка возможных траекторий достижения цели/объекта.
-- `[ ]` Исторические траектории всех известных судов в выбранном кубе за интервал времени.
-- `[ ]` Источник знания отделён от renderer: локальный radar observation, transponder, SOS, station/network data, intelligence и т. п.
-- `[ ]` Renderer должен уметь показывать trajectory data независимо от того, откуда gameplay получил эти данные.
+persistent ship identity
+    ShipPersistentId
+    собственное имя
+    serial / registration
+    owner
+    faction
+    condition
+    cargo
+    history
 
----
+runtime entity
+    текущая материализованная физическая сущность
+```
 
-## 9. Persistent ships и экономика мира
+И отдельно:
 
-- `[~]` Принцип принят: корабли — в основном конечные persistent entities мира, а не бесконечный spawn/despawn фон.
+```text
+SignalIdentity
+```
+
 - `[x]` Тип корабля отделён от конкретного экземпляра с persistent identity.
-- `[ ]` Persistent ship records: имя, serial/identity, owner, condition, cargo/state и текущий motion/runtime representation.
-- `[ ]` Дальние суда могут существовать как расписание/траектория и materialize при необходимости.
+- `[ ]` Завершить persistent ship records и их lifecycle.
+- `[ ]` Один persistent ship может существовать без materialized runtime entity в `Scheduled/Coarse` состоянии.
+- `[ ]` Runtime entity должна создаваться/уничтожаться без потери identity, cargo, damage, history и owner/faction state.
+- `[ ]` `SignalIdentity` отделить от фактического `typeId`: физически Cobra может называться «Матроскин», а транспондер заявлять `Agricultural Waste Processing Vessel Mk.II`.
 - `[ ]` Экономическая симуляция должна учитывать существующие суда, задержки, нападения, потерю груза, ремонт и т. п. без обязательной full-rate симуляции каждого корабля.
 
 ---
 
-## 10. Карты и навигационная иерархия
+## 11. Информация о корабле / WorldSignal
 
-- `[x]` Есть Galaxy / System / Details / Hub modes.
-- `[x]` Navigation grid/cube hierarchy является базовой системой адресации/навигации.
-- `[~]` Presentation ownership карт ещё переносится с server-built DTO на client-side composition; см. раздел 5.
-- `[ ]` После завершения migration добавить trajectory presentation как отдельный независимый слой карт.
+**Статус: `[ ]` модель UI/идентификации обсуждена, полноценный data path впереди.**
+
+Предполагаемая метка объекта:
+
+- основной крупный текст — тип/класс объекта, потому что пилоту прежде всего важно понимать, с чем он столкнулся;
+- вторая строка — собственное имя, позывной, registration/serial или другой instance identifier.
+
+Важно: отображаемый класс определяется не обязательно фактическим `typeId`, а **качеством и источником идентификации**. Radar, визуальное распознавание, transponder и внешняя intelligence могут давать разные ответы.
+
+- `[ ]` Развести factual entity identity, signal identity и player-known identity.
+- `[ ]` WorldSignal/label presentation строить из того, что игроку известно, а не напрямую из authoritative hidden metadata.
 
 ---
 
-## 11. Render / visual future
+## 12. Карты
+
+**Статус: `[~]` migration уже идёт, но server-built presentation DTO ещё не устранены полностью.**
+
+- `[x]` Есть Galaxy / System / Details / Hub modes.
+- `[x]` Navigation grid/cube hierarchy является базовой системой адресации/навигации.
+- `[x]` Часть Galaxy/System composition уже перенесена на клиент.
+- `[~]` Постепенно убрать с сервера map-specific infrastructure и stations/hubs там, где их можно собрать из runtime + persistent metadata.
+- `[~]` Убрать оставшиеся тяжёлые Detail/Hub map DTO и закончить client-side composition.
+- `[ ]` Полноценная selection кораблей на System Map -> Details.
+- `[ ]` После завершения migration добавить trajectory presentation как отдельный независимый слой карт.
+
+Целевая схема:
+
+```text
+SERVER
+authoritative facts / IDs / state
+
+        ↓
+
+CLIENT
+local catalogs
++ replicated runtime
++ metadata
++ deterministic celestial state
+
+        ↓
+
+maps / presentation
+```
+
+---
+
+## 13. Кто считает физику / delegated simulation islands
+
+**Статус: `[D]` исследовательская идея, не текущий production plan.**
+
+Рассматривалась модель, в которой при единственном наблюдателе около Hub его клиент может временно считать часть дорогой локальной детальной симуляции, например:
+
+- collisions;
+- rotating/destructible structures;
+- локальные NPC interactions.
+
+При появлении второго игрока или другой причины authority должна возвращаться серверу:
+
+```text
+client simulation lease
+        ↓
+server takes simulation authority
+        ↓
+both clients are observers/predictors
+```
+
+Ограничения:
+
+- `[x]` Модель «клиент сообщил `damage=800`, сервер поверил» неприемлема.
+- `[ ]` Если к этой идее возвращаться, нужна формальная authority lease / simulation-island transaction с server-controlled grant/revoke/validation.
+- `[D]` До стабилизации headless server, activation и multiplayer-authority boundary эту механику не реализуем.
+
+---
+
+## 14. Render / visual future
 
 - `[x]` Render style считается исключительно client presentation policy и не должен менять authoritative world state.
 - `[ ]` Два взаимоисключающих presentation style: technical/wire и anime/cel-shaded.
@@ -168,19 +336,31 @@
 
 ---
 
-## 12. Следующий рабочий блок
+## 15. Крупные будущие блоки и текущий приоритет
 
-На момент создания этого файла:
+Локализация и sky cultures на текущем этапе уже закрыты. После нынешней архитектурной миграции остаются пять крупных связанных направлений:
 
-1. Локализация — **закрыта на текущем этапе**.
-2. Звёздное небо/созвездия — **закрыты на текущем этапе**.
+1. `[~]` **Завершить client/server presentation migration** — StarAtlas ownership, System/Details/Hub composition, headless server target.
+2. `[ ]` **Навигационный compass / azimuth / elevation + модель определения абсолютных координат**.
+3. `[ ]` **J и полноценный inter-system runtime**.
+4. `[ ]` **On-demand trajectories + модель знания игрока о маршрутах/истории движения**.
+5. `[~]` **Persistent universe: реальные корабли + Scheduled/Coarse/Prewarm/Active materialization**.
+
+Эти направления образуют одну связанную навигационно-информационную модель мира, а не набор независимых фич.
+
+### Следующий рабочий блок
+
+На текущем этапе:
+
+1. Локализация — **закрыта**.
+2. Звёздное небо/созвездия — **закрыты**.
 3. `Ctrl+F10` flight-mode switching — **исправлено**.
 4. Следующий фокус — **продолжение client/server presentation migration**.
 5. Первый рекомендуемый технический шаг — **убрать StarAtlas из transport payload и сделать static catalog действительно локально загружаемым на обеих сторонах с version/hash compatibility check**.
 
 ---
 
-## Когда обновлять
+## 16. Когда обновлять
 
 Обновлять `PROJECT_STATE.md`, когда:
 

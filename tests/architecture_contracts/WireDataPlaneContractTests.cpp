@@ -117,6 +117,7 @@ SimulationSnapshot makeSnapshot()
     motion.localPositionMeters = glm::dvec3(14.0, 15.0, 16.0);
     motion.localVelocityMps = glm::dvec3(17.0, 18.0, 19.0);
     motion.targetForwardSpeedMps = 20.0;
+    motion.assistedTargetSpeedHold = true;
     motion.forwardSpeedMps = 21.0;
     motion.strafeSpeedMps = 22.0;
     motion.liftSpeedMps = 23.0;

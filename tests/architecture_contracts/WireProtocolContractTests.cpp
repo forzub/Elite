@@ -216,6 +216,7 @@ void testClientMessageRoundTrip()
     control.yawInput = -0.5f;
     control.rollInput = 0.75f;
     control.targetSpeedRate = 1.25f;
+    control.assistedMaxSpeedCommand = true;
     control.strafeInput = -0.2f;
     control.liftInput = 0.3f;
     control.forwardInput = 0.9f;
@@ -242,6 +243,8 @@ void testClientMessageRoundTrip()
     require(nearlyEqual(decodedControl.rollInput, control.rollInput), "roll mismatch");
     require(nearlyEqual(decodedControl.targetSpeedRate, control.targetSpeedRate),
         "target speed rate mismatch");
+    require(decodedControl.assistedMaxSpeedCommand == control.assistedMaxSpeedCommand,
+        "assisted max-speed command mismatch");
     require(nearlyEqual(decodedControl.strafeInput, control.strafeInput), "strafe mismatch");
     require(nearlyEqual(decodedControl.liftInput, control.liftInput), "lift mismatch");
     require(nearlyEqual(decodedControl.forwardInput, control.forwardInput), "forward mismatch");

@@ -37,6 +37,7 @@ void GameClient::beginSynchronization()
         game::navigation::LocalFlightControlLaw::Newtonian;
     m_pendingVelocityAlignmentCommand =
         game::navigation::VelocityAlignmentMode::None;
+    m_hasPendingAssistedMaxSpeedCommand = false;
     m_predictionSuspended = false;
     m_lastAcknowledgedControlTick = 0;
     m_accumulator = 0.0f;
@@ -103,12 +104,16 @@ void GameClient::submitInput(const ShipControlState& control)
             control.velocityAlignmentCommand;
     }
 
+    if (control.assistedMaxSpeedCommand)
+        m_hasPendingAssistedMaxSpeedCommand = true;
+
     // Discrete commands are owned by the pending slots above. Keeping them in
     // m_latestControl would repeat the same event across every fixed step of a
     // long render frame.
     m_latestControl.localControlLawCommandValid = false;
     m_latestControl.velocityAlignmentCommand =
         game::navigation::VelocityAlignmentMode::None;
+    m_latestControl.assistedMaxSpeedCommand = false;
 }
 
 
@@ -724,6 +729,11 @@ void GameClient::sendAndPredictFixedStep(
             m_pendingVelocityAlignmentCommand;
     }
 
+    const bool consumeAssistedMaxSpeedCommand =
+        m_hasPendingAssistedMaxSpeedCommand;
+    if (consumeAssistedMaxSpeedCommand)
+        control.assistedMaxSpeedCommand = true;
+
     control.controlTick = ++m_clientTick;
 
     bool predictThisStep = !m_predictionSuspended;
@@ -763,6 +773,9 @@ void GameClient::sendAndPredictFixedStep(
         m_pendingVelocityAlignmentCommand =
             game::navigation::VelocityAlignmentMode::None;
     }
+
+    if (consumeAssistedMaxSpeedCommand)
+        m_hasPendingAssistedMaxSpeedCommand = false;
 
     if (predictThisStep)
     {

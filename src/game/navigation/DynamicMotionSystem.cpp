@@ -23,13 +23,15 @@ inline double localSpeedLimit(const ShipParams& params)
 
 inline double linearAccelerationLimit(const ShipParams& params)
 {
-    // maxGs is the common safety envelope. For a crewed craft it normally
-    // represents crew tolerance; for an unmanned craft the descriptor can set
-    // a higher structural/equipment limit without changing the motion code.
-    return std::max(
-        0.0,
-        static_cast<double>(params.maxGs) * StandardGravityMps2
-    );
+    // A descriptor may opt into a linear-only envelope so longitudinal
+    // response can be tuned independently from the angular/load envelope.
+    // Zero preserves legacy descriptors and tests by falling back to maxGs.
+    const double linearGs =
+        params.maxLinearGs > 0.0f
+            ? static_cast<double>(params.maxLinearGs)
+            : static_cast<double>(params.maxGs);
+
+    return std::max(0.0, linearGs * StandardGravityMps2);
 }
 
 inline glm::dvec3 clampMagnitude(
@@ -288,17 +290,19 @@ void DynamicMotionSystem::applyLocalFrameInput(
     if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop)
     {
         motion.targetForwardSpeedMps = 0.0;
+        motion.assistedTargetSpeedHold = false;
         motion.strafeSpeedMps = 0.0;
         motion.liftSpeedMps = 0.0;
     }
     else if (throttleTrimActive)
     {
+        motion.assistedTargetSpeedHold = false;
         motion.targetForwardSpeedMps +=
             static_cast<double>(targetSpeedRate) *
             targetSpeedChangeRate *
             dtD;
     }
-    else
+    else if (!motion.assistedTargetSpeedHold)
     {
         motion.targetForwardSpeedMps =
             glm::length(relativeWorldVelocity);

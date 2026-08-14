@@ -66,6 +66,8 @@ The navigation layout is now the product contract:
 - `F12` opens the currently matched Hub, otherwise the player's terminal local cube.
 - Repeating the function key for the currently visible map level returns to gameplay; pressing another F9-F12 switches directly to that map level.
 - `Ctrl+F10` switches Newtonian / Assisted local flight laws on a debounced F10 release.
+- `HOME` remains nose-to-VREL alignment in Newtonian; in Assisted it installs a persistent 100% local-speed target until +/- or END overrides it.
+- Cobra Mk.I linear acceleration envelope is 7.5 g (angular/load envelope remains 5 g), giving 1.5x the previous longitudinal speed-change response in both local flight laws.
 - `Ctrl+F11` cycles coordinate display format.
 - `Ctrl+F12` toggles constellations.
 - `Alt+F12` cycles sky culture without changing constellation visibility.

@@ -49,9 +49,9 @@ public:
         double phaseCorrectionWindowSeconds = 2.0;
         double maxRateCorrection = 0.005;
 
-        // A quarter-second disagreement is far outside the normal clock-sync
-        // jitter envelope and means the snapshot timeline and estimated "now"
-        // no longer describe the same recent history.
+        // A quarter-second disagreement in either direction is far outside the
+        // normal clock-sync jitter envelope and means the snapshot timeline and
+        // estimated "now" no longer describe the same recent history.
         double hardRebaseThresholdSeconds = 0.250;
     };
 
@@ -99,16 +99,15 @@ public:
         if (!hasSnapshot ||
             !std::isfinite(newestSnapshotServerTimeSeconds))
         {
-            if (!m_ready)
-            {
-                m_renderTimeSeconds = nominalRenderTime;
-                m_ready = true;
-            }
-            else
-            {
-                advanceToward(dt, nominalRenderTime);
-            }
-
+            // A presentation playhead is meaningful only once authoritative
+            // snapshot history exists. Before the first snapshot GameClient
+            // already has a delayed server-clock fallback; marking this clock
+            // ready here would freeze a provisional pre-admission epoch into
+            // state. A remote client may connect to a server that has already
+            // been running for seconds, leaving that provisional epoch far
+            // behind the first received snapshot buffer.
+            m_renderTimeSeconds = nominalRenderTime;
+            m_ready = false;
             m_recoveryMode = false;
             m_lastSnapshotLeadSeconds = 0.0;
             return;
@@ -135,7 +134,7 @@ public:
 
         const double estimatorLead = nominalRenderTime - newest;
         const bool largeHistoryDisagreement =
-            estimatorLead >
+            std::abs(estimatorLead) >
                 std::max(0.0, m_config.hardRebaseThresholdSeconds);
 
         if (!m_ready)

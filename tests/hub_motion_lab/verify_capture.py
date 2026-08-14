@@ -24,6 +24,7 @@ def main() -> int:
     parser.add_argument("--max-fast-error-m", type=float, default=0.005)
     parser.add_argument("--max-slow-error-m", type=float, default=0.001)
     parser.add_argument("--max-match-delayed-error-m", type=float, default=0.001)
+    parser.add_argument("--max-clamped-oldest-fraction", type=float, default=0.001)
     parser.add_argument("--max-clamped-newest-fraction", type=float, default=0.001)
     parser.add_argument("--min-bracket-fraction", type=float, default=0.999)
     args = parser.parse_args()
@@ -39,6 +40,7 @@ def main() -> int:
     n = len(rows)
 
     try:
+        clamped_oldest = sum(as_float(r, "clamped_oldest") != 0.0 for r in rows)
         clamped_newest = sum(as_float(r, "clamped_newest") != 0.0 for r in rows)
         bracket = sum(as_float(r, "has_bracket") != 0.0 for r in rows)
         fast_max = max(abs(as_float(r, "fast_error_m")) for r in rows)
@@ -53,12 +55,18 @@ def main() -> int:
         return 1
 
     failures = []
-    clamp_fraction = clamped_newest / n
+    oldest_clamp_fraction = clamped_oldest / n
+    newest_clamp_fraction = clamped_newest / n
     bracket_fraction = bracket / n
 
-    if clamp_fraction > args.max_clamped_newest_fraction:
+    if oldest_clamp_fraction > args.max_clamped_oldest_fraction:
         failures.append(
-            f"clamped_newest fraction {clamp_fraction:.6f} > "
+            f"clamped_oldest fraction {oldest_clamp_fraction:.6f} > "
+            f"{args.max_clamped_oldest_fraction:.6f}"
+        )
+    if newest_clamp_fraction > args.max_clamped_newest_fraction:
+        failures.append(
+            f"clamped_newest fraction {newest_clamp_fraction:.6f} > "
             f"{args.max_clamped_newest_fraction:.6f}"
         )
     if bracket_fraction < args.min_bracket_fraction:
@@ -83,7 +91,8 @@ def main() -> int:
         )
 
     print(f"rows={n}")
-    print(f"clamped_newest={clamped_newest} ({clamp_fraction:.6%})")
+    print(f"clamped_oldest={clamped_oldest} ({oldest_clamp_fraction:.6%})")
+    print(f"clamped_newest={clamped_newest} ({newest_clamp_fraction:.6%})")
     print(f"bracket={bracket} ({bracket_fraction:.6%})")
     print(f"alpha=[{min(alpha):.6f}, {max(alpha):.6f}]")
     print(f"slow_max_error_m={slow_max:.9f}")

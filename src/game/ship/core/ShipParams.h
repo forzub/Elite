@@ -33,6 +33,12 @@ struct ShipParams
     // drones may use a higher descriptor value, but still run the same motion
     // code and remain constrained by their structure/equipment profile.
     float maxGs          = 5.0f;
+
+    // Optional linear-only acceleration envelope. Zero keeps legacy behavior
+    // and falls back to maxGs. This lets a ship tune longitudinal dv/dt
+    // without silently changing its angular/load envelope.
+    float maxLinearGs    = 0.0f;
+
     // Characteristic lever arm used to translate angular rates/acceleration
     // into a local load envelope. Crewed craft normally tune maxGs for crew;
     // uncrewed craft can use their structural/equipment limit instead.

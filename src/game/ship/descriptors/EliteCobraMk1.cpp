@@ -58,6 +58,7 @@ const ShipDescriptor& EliteCobraMk1::EliteCobraMk1Descriptor()
         desc.physics.maxStrafeSpeed         = 80.0f;    // Макс. скорость стрейфа
 
         desc.physics.maxGs                  = 5.0f;     // Макс. перегрузка (для пилота)
+        desc.physics.maxLinearGs            = 7.5f;     // +/- local dv/dt envelope: 1.5x previous response
         desc.physics.turnRadius             = 20.0f;    // Радиус поворота (м)
 
         // Cobra is a broad, flat platform. 260 t is the current baseline mass.

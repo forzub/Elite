@@ -126,6 +126,7 @@ for forbidden in (
 for token in (
     "limitPropulsionAccelerationToControlledSpeed",
     "allowedRadius = std::max(controlledSpeedLimit, currentSpeed)",
+    "params.maxLinearGs > 0.0f",
 ):
     if token not in system:
         fail(f"controlled-speed propulsion boundary lost: {token}")
@@ -140,6 +141,7 @@ for token in (
         fail(f"rigid-body collision impulse response lost: {token}")
 
 for token in (
+    "maxLinearGs",
     "massKg",
     "pitchInertiaKgM2",
     "yawInertiaKgM2",
@@ -150,5 +152,9 @@ for token in (
 
 if "desc.physics.maxCombatSpeed         = 500.0f" not in cobra:
     fail("Cobra controlled local speed envelope is no longer 500 m/s")
+if "desc.physics.maxGs                  = 5.0f" not in cobra:
+    fail("Cobra angular/load envelope is no longer the accepted 5 g")
+if "desc.physics.maxLinearGs            = 7.5f" not in cobra:
+    fail("Cobra linear acceleration envelope is no longer the accepted 7.5 g")
 
 print("Local-flight-control architecture check passed.")

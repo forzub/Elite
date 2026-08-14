@@ -19,6 +19,12 @@ struct ShipControlState
     // Assisted  -> signed target-VREL change command.
     float targetSpeedRate = 0.0f;
 
+    // One-shot Assisted command: set the persistent target VREL magnitude to
+    // this ship's ordinary local maximum. HOME emits this in Assisted mode.
+    // It is explicit instead of overloading targetSpeedRate with a magic value
+    // so replay/network prediction retain deterministic command semantics.
+    bool assistedMaxSpeedCommand = false;
+
     float strafeInput  = 0.0f;
     float liftInput    = 0.0f;
     float forwardInput = 0.0f;
@@ -30,8 +36,10 @@ struct ShipControlState
     game::navigation::LocalFlightControlLaw requestedLocalControlLaw =
         game::navigation::LocalFlightControlLaw::Newtonian;
 
-    // HOME / INSERT / END. The mode persists in DynamicMotionState after the
-    // one-frame command so alignment can finish at bounded angular rates.
+    // Newtonian HOME / INSERT and both-law END alignment commands. The mode
+    // persists in DynamicMotionState after the one-frame command so alignment
+    // can finish at bounded angular rates. Assisted HOME uses the explicit
+    // max-speed command above instead.
     game::navigation::VelocityAlignmentMode velocityAlignmentCommand =
         game::navigation::VelocityAlignmentMode::None;
 

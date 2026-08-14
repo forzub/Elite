@@ -305,6 +305,88 @@ void testAssistedThrottleReleaseCapturesReachedSpeed()
     exerciseRelease(-1.0f, "Assisted '-' release did not capture reached speed");
 }
 
+void testLinearAccelerationOverrideAppliesToBothFlightLaws()
+{
+    const auto frame = makeFrame();
+    ShipParams params = makeParams();
+    params.maxGs = 2.0f;
+    params.maxLinearGs = 3.0f;
+
+    constexpr double Gravity = 9.80665;
+    const double expectedLinearAccel = 3.0 * Gravity;
+
+    game::navigation::DynamicMotionState newtonian;
+    newtonian.localControlLaw = game::navigation::LocalFlightControlLaw::Newtonian;
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        newtonian, frame, params, 0.1f, 1.0f, false,
+        0.0f, 0.0f, 0.0f,
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+    requireNear(
+        glm::length(newtonian.engineAccelerationMps2),
+        expectedLinearAccel,
+        1.0e-6,
+        "Newtonian did not use linear-only acceleration envelope"
+    );
+
+    game::navigation::DynamicMotionState assisted;
+    assisted.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    assisted.targetForwardSpeedMps = params.maxCombatSpeed;
+    assisted.assistedTargetSpeedHold = true;
+
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        assisted, frame, params, 0.1f, 0.0f, false,
+        0.0f, 0.0f, 0.0f,
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+    requireNear(
+        glm::length(assisted.engineAccelerationMps2),
+        expectedLinearAccel,
+        1.0e-6,
+        "Assisted did not use linear-only acceleration envelope"
+    );
+
+}
+
+void testAssistedExplicitMaxTargetPersistsUntilPilotOverrides()
+{
+    const auto frame = makeFrame();
+    const auto params = makeParams();
+
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    motion.localVelocityMps = glm::dvec3(0.0, 0.0, -20.0);
+    motion.targetForwardSpeedMps = params.maxCombatSpeed;
+    motion.assistedTargetSpeedHold = true;
+
+    auto position =
+        world::coordinates::makeWorldPositionFromMeters(frame.originMeters);
+
+    // A neutral frame after HOME must retain the explicit max-speed target and
+    // keep accelerating toward it instead of capturing the currently reached
+    // speed as ordinary +/- release does.
+    step(motion, position, frame, params, 0.1f, 0.0f);
+    requireNear(
+        motion.targetForwardSpeedMps,
+        params.maxCombatSpeed,
+        1.0e-9,
+        "Assisted HOME max target did not persist after key release"
+    );
+    require(motion.assistedTargetSpeedHold,
+            "Assisted HOME max-target hold cleared on neutral input");
+    require(glm::length(motion.localVelocityMps) > 20.0,
+            "Assisted HOME max-target hold stopped accelerating toward max speed");
+
+    // A later manual trim returns to ordinary held-trim/release semantics.
+    step(motion, position, frame, params, 0.1f, -1.0f);
+    require(!motion.assistedTargetSpeedHold,
+            "Assisted +/- did not cancel HOME max-target hold");
+}
+
 void testAngularMotionUsesSharedLoadEnvelope()
 {
     ShipParams params = makeParams();
@@ -673,6 +755,8 @@ int main()
         testNewtonianMinusDoesNotCreateReverseMainThrust();
         testAssistedVelocityFollowsNoseWithBoundedAcceleration();
         testAssistedThrottleReleaseCapturesReachedSpeed();
+        testLinearAccelerationOverrideAppliesToBothFlightLaws();
+        testAssistedExplicitMaxTargetPersistsUntilPilotOverrides();
         testAngularMotionUsesSharedLoadEnvelope();
         testVelocityAlignmentBrakesBeforeTarget();
         testVelocityAlignmentEscapesExactAntiparallelPose();

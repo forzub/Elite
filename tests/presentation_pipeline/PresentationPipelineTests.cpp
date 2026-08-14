@@ -308,6 +308,117 @@ void testLargeClientStallRebuildsHistoryInsteadOfSnapshotHold()
     );
 }
 
+void testRemoteStartupRebasesStalePreSnapshotPlayhead()
+{
+    game::client::ClientPresentationClock clock;
+
+    constexpr double FrameDt = 1.0 / 80.0;
+    constexpr double SnapshotInterval = 0.060;
+
+    // Reproduce a real separate-process startup: the client spends some frames
+    // without authoritative history while its provisional server-time estimate
+    // describes an older epoch. The dedicated server is already several
+    // seconds ahead by the time the first snapshot arrives.
+    double estimatedServerNow = 70.0;
+    for (int frame = 0; frame < 120; ++frame)
+    {
+        estimatedServerNow += FrameDt;
+        clock.update(FrameDt, estimatedServerNow, false, 0.0);
+        require(
+            !clock.ready(),
+            "presentation clock must remain provisional before first snapshot"
+        );
+    }
+
+    std::deque<TestSnapshot> snapshots;
+    double authoritativeServerNow = 78.0;
+    double nextSnapshotTime = 76.86;
+    while (nextSnapshotTime <= authoritativeServerNow + 1.0e-12)
+    {
+        snapshots.push_back({nextSnapshotTime, 0.0});
+        nextSnapshotTime += SnapshotInterval;
+    }
+
+    clock.update(
+        FrameDt,
+        estimatedServerNow,
+        true,
+        snapshots.back().timeSeconds
+    );
+
+    require(clock.ready(), "first authoritative snapshot must arm presentation clock");
+
+    auto firstWindow =
+        game::client::resolveSnapshotPresentationWindow(
+            snapshots,
+            clock.renderTimeSeconds(),
+            snapshotTime
+        );
+
+    require(
+        !firstWindow.clampedToOldest,
+        "remote startup must not leave presentation behind oldest snapshot"
+    );
+    require(
+        !firstWindow.clampedToNewest,
+        "remote startup must keep interpolation lead behind newest snapshot"
+    );
+    require(
+        firstWindow.hasInterpolationBracket,
+        "remote startup must enter representable snapshot history immediately"
+    );
+
+    double minAlpha = 1.0;
+    double maxAlpha = 0.0;
+    std::size_t checkedFrames = 0;
+    std::size_t clampedOldestFrames = 0;
+
+    for (int frame = 0; frame < 600; ++frame)
+    {
+        estimatedServerNow += FrameDt;
+        authoritativeServerNow += FrameDt;
+
+        while (nextSnapshotTime <= authoritativeServerNow + 1.0e-12)
+        {
+            snapshots.push_back({nextSnapshotTime, 0.0});
+            nextSnapshotTime += SnapshotInterval;
+            while (snapshots.size() > 20)
+                snapshots.pop_front();
+        }
+
+        clock.update(
+            FrameDt,
+            estimatedServerNow,
+            true,
+            snapshots.back().timeSeconds
+        );
+
+        const auto window =
+            game::client::resolveSnapshotPresentationWindow(
+                snapshots,
+                clock.renderTimeSeconds(),
+                snapshotTime
+            );
+
+        ++checkedFrames;
+        if (window.clampedToOldest)
+            ++clampedOldestFrames;
+        if (!window.hasInterpolationBracket)
+            continue;
+
+        minAlpha = std::min(minAlpha, window.interpolationAlpha);
+        maxAlpha = std::max(maxAlpha, window.interpolationAlpha);
+    }
+
+    require(checkedFrames == 600, "remote startup trace must run completely");
+    require(
+        clampedOldestFrames == 0,
+        "remote startup must never fall behind retained snapshot history"
+    );
+    require(minAlpha < 0.10, "remote startup alpha must visit low bracket values");
+    require(maxAlpha > 0.90, "remote startup alpha must visit high bracket values");
+}
+
 void testFractionalPredictionTimingRemovesFixedTickStaircase()
 {
     constexpr double FixedDt = 0.020;
@@ -368,6 +479,7 @@ int main()
         {"presentation window clamps only at history boundary", testPresentationWindowClampsOnlyAtHistoryBoundary},
         {"captured cadence keeps remote interpolation alive", testCapturedCadenceKeepsRemoteInterpolationAlive},
         {"large client stall rebuilds history", testLargeClientStallRebuildsHistoryInsteadOfSnapshotHold},
+        {"remote startup rebases stale pre-snapshot playhead", testRemoteStartupRebasesStalePreSnapshotPlayhead},
         {"fractional prediction removes fixed tick staircase", testFractionalPredictionTimingRemovesFixedTickStaircase},
     };
 

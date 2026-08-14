@@ -70,6 +70,12 @@ struct DynamicMotionState
     // Это не мировая инерционная скорость.
     // Это управляемые скорости корабля относительно текущего frame.
     double targetForwardSpeedMps = 0.0;
+
+    // HOME in Assisted mode installs an explicit persistent max-speed
+    // setpoint. Neutral +/- input must not immediately recapture the currently
+    // reached speed on the next frame; any later +/- trim or END cancels it.
+    bool assistedTargetSpeedHold = false;
+
     double forwardSpeedMps = 0.0;
     double strafeSpeedMps = 0.0;
     double liftSpeedMps = 0.0;

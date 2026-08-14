@@ -140,8 +140,16 @@ void PlayerInputMapper::updateFromKeyState(
 
         if (keys.isKeyPressed(GLFW_KEY_HOME))
         {
-            ctrl.velocityAlignmentCommand =
-                game::navigation::VelocityAlignmentMode::ForwardToVelocity;
+            if (currentLocalControlLaw ==
+                    game::navigation::LocalFlightControlLaw::Assisted)
+            {
+                ctrl.assistedMaxSpeedCommand = true;
+            }
+            else
+            {
+                ctrl.velocityAlignmentCommand =
+                    game::navigation::VelocityAlignmentMode::ForwardToVelocity;
+            }
         }
         else if (keys.isKeyPressed(GLFW_KEY_INSERT))
         {

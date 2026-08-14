@@ -218,6 +218,7 @@ ELITE_WIRE_SCHEMA(
     v.localPositionMeters,
     v.localVelocityMps,
     v.targetForwardSpeedMps,
+    v.assistedTargetSpeedHold,
     v.forwardSpeedMps,
     v.strafeSpeedMps,
     v.liftSpeedMps,

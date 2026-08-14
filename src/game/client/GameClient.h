@@ -184,6 +184,7 @@ private:
     game::navigation::VelocityAlignmentMode
                                     m_pendingVelocityAlignmentCommand =
         game::navigation::VelocityAlignmentMode::None;
+    bool                            m_hasPendingAssistedMaxSpeedCommand = false;
 
     float                           m_accumulator = 0.0f;
     std::uint64_t                   m_clientTick = 0;

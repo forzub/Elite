@@ -1,5 +1,6 @@
 #include "SharedShipPhysics.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "src/game/ship/ShipController.h"
@@ -47,12 +48,16 @@ void evaluateControl(
         // Enter Assisted without changing physical velocity. The target is
         // initialized from the current local speed so the controller does not
         // create an artificial braking/acceleration impulse on mode switch.
-        if (oldLaw != motion.localControlLaw &&
-            motion.localControlLaw ==
-                game::navigation::LocalFlightControlLaw::Assisted)
+        if (oldLaw != motion.localControlLaw)
         {
-            motion.targetForwardSpeedMps =
-                glm::length(motion.localVelocityMps);
+            motion.assistedTargetSpeedHold = false;
+
+            if (motion.localControlLaw ==
+                    game::navigation::LocalFlightControlLaw::Assisted)
+            {
+                motion.targetForwardSpeedMps =
+                    glm::length(motion.localVelocityMps);
+            }
         }
     }
 
@@ -69,7 +74,24 @@ void evaluateControl(
         {
             motion.velocityAlignmentMode =
                 control.velocityAlignmentCommand;
+
+            if (control.velocityAlignmentCommand ==
+                    game::navigation::VelocityAlignmentMode::BrakeToStop)
+            {
+                motion.assistedTargetSpeedHold = false;
+            }
         }
+    }
+
+    if (control.assistedMaxSpeedCommand &&
+        motion.localControlLaw ==
+            game::navigation::LocalFlightControlLaw::Assisted)
+    {
+        motion.targetForwardSpeedMps =
+            std::max(0.0f, params.maxCombatSpeed);
+        motion.assistedTargetSpeedHold = true;
+        motion.velocityAlignmentMode =
+            game::navigation::VelocityAlignmentMode::None;
     }
 
     // Direct pilot attitude input always wins over an alignment autopilot.
@@ -87,7 +109,8 @@ void evaluateControl(
         motion.localControlLaw ==
                 game::navigation::LocalFlightControlLaw::Newtonian
             ? control.targetSpeedRate > 0.001f
-            : std::abs(control.targetSpeedRate) > 0.001f;
+            : std::abs(control.targetSpeedRate) > 0.001f ||
+                control.assistedMaxSpeedCommand;
 
     if (manualLongitudinalOverride &&
         motion.velocityAlignmentMode ==

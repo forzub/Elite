@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 2u;
+inline constexpr std::uint16_t WireProtocolVersion = 3u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -496,6 +496,7 @@ inline bool encodeShipControlState(
     writer.f32(value.yawInput);
     writer.f32(value.rollInput);
     writer.f32(value.targetSpeedRate);
+    writer.boolean(value.assistedMaxSpeedCommand);
     writer.f32(value.strafeInput);
     writer.f32(value.liftInput);
     writer.f32(value.forwardInput);
@@ -520,6 +521,7 @@ inline bool decodeShipControlState(
         !reader.f32(outValue.yawInput) ||
         !reader.f32(outValue.rollInput) ||
         !reader.f32(outValue.targetSpeedRate) ||
+        !reader.boolean(outValue.assistedMaxSpeedCommand) ||
         !reader.f32(outValue.strafeInput) ||
         !reader.f32(outValue.liftInput) ||
         !reader.f32(outValue.forwardInput) ||

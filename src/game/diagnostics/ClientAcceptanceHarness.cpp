@@ -642,8 +642,20 @@ void testInputMapping()
     keys.press(GLFW_KEY_HOME);
     control = mapKeys(mapper, keys);
     require(
-        control.velocityAlignmentCommand == game::navigation::VelocityAlignmentMode::ForwardToVelocity,
-        "HOME no longer requests nose-to-velocity alignment"
+        control.velocityAlignmentCommand == game::navigation::VelocityAlignmentMode::ForwardToVelocity &&
+            !control.assistedMaxSpeedCommand,
+        "Newtonian HOME no longer requests nose-to-velocity alignment"
+    );
+
+    control = mapKeys(
+        mapper,
+        keys,
+        game::navigation::LocalFlightControlLaw::Assisted
+    );
+    require(
+        control.assistedMaxSpeedCommand &&
+            control.velocityAlignmentCommand == game::navigation::VelocityAlignmentMode::None,
+        "Assisted HOME no longer requests maximum target speed"
     );
 
     keys.clear();
@@ -955,8 +967,41 @@ void testOrientationAndMovement(
         "Assisted target-speed control did not decrease authoritative setpoint"
     );
 
+    // HOME is an explicit one-shot Assisted throttle command. Sample it on a
+    // render frame shorter than the fixed step, then release it: the pending
+    // command must still cross the next numbered input and the authoritative
+    // max-speed target must persist after release.
     keys.clear();
-    neutral = mapKeys(mapper, keys);
+    keys.press(GLFW_KEY_HOME);
+    const ShipControlState assistedMaxControl = mapKeys(
+        mapper,
+        keys,
+        game::navigation::LocalFlightControlLaw::Assisted
+    );
+    require(assistedMaxControl.assistedMaxSpeedCommand,
+            "Assisted HOME did not emit max-speed command during real flight");
+
+    runFrameForDuration(
+        session,
+        assistedMaxControl,
+        fixedSeconds * 0.25
+    );
+    keys.clear();
+    neutral = mapKeys(
+        mapper,
+        keys,
+        game::navigation::LocalFlightControlLaw::Assisted
+    );
+    runFrameForDuration(session, neutral, fixedSeconds * 1.25);
+    runFrames(session, neutral, 12);
+
+    const auto afterAssistedHome = findServerShip(session, debug, playerId);
+    require(
+        afterAssistedHome.transform.motion.assistedTargetSpeedHold &&
+            afterAssistedHome.transform.motion.targetForwardSpeedMps >= 499.0,
+        "Assisted HOME max-speed target did not survive key release"
+    );
+
     runFrames(session, neutral, 10);
 
     const auto& clientPlayer = findClientShip(session.client(), playerId);

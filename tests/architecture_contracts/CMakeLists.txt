@@ -1088,3 +1088,63 @@ set_tests_properties(
     PROPERTIES
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+
+add_executable(
+    tcp_wire_transport_contract_tests
+    TcpWireTransportContractTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/game/network/TcpWireStream.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/network/TcpTransport.cpp"
+)
+
+target_include_directories(
+    tcp_wire_transport_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+        "${ELITE_SOURCE_ROOT}/third_party/asio/asio/include"
+)
+
+find_package(Threads REQUIRED)
+target_link_libraries(
+    tcp_wire_transport_contract_tests
+    PRIVATE
+        Threads::Threads
+)
+
+if(WIN32)
+    target_link_libraries(
+        tcp_wire_transport_contract_tests
+        PRIVATE
+            ws2_32
+            mswsock
+    )
+endif()
+
+if(MSVC)
+    target_compile_options(
+        tcp_wire_transport_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        tcp_wire_transport_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME tcp_wire_transport_contracts
+    COMMAND tcp_wire_transport_contract_tests
+)
+
+set_tests_properties(
+    tcp_wire_transport_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

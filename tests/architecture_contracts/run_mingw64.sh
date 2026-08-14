@@ -49,6 +49,7 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_replication_interest_retention.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_wire_protocol_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_wire_data_schema.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_tcp_wire_transport.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_case_sensitive_project_includes.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_debug_session_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_worker_thread.py"

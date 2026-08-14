@@ -239,7 +239,7 @@ session-derived on the server, M5 runs two real `GameClient` state machines
 against one authoritative runtime, M6 establishes per-session ship interest plus
 explicit retain/update/remove semantics, and M7 consumes that interest as actual
 sparse per-entity ship cadence with canonical full bootstrap/re-entry hydration.
-Stage M8A defines the process-independent wire boundary: a versioned, network-byte-order byte-stream frame with bounded payloads plus explicit codecs for SessionWelcome, ClientMessage, MapRequest and time sync. Stage M8B now completes the data plane: SimulationSnapshot and MapResponse are serialized by one canonical ordered schema, then handed to an opaque byte-to-byte compression seam. M8C adds the real TCP process transport.
+Stage M8A defines the process-independent wire boundary: a versioned, network-byte-order byte-stream frame with bounded payloads plus explicit codecs for SessionWelcome, ClientMessage, MapRequest and time sync. Stage M8B completes the data plane: SimulationSnapshot and MapResponse are serialized by one canonical ordered schema, then handed to an opaque byte-to-byte compression seam. Stage M8C adds a real standalone-Asio TCP byte stream plus typed transport adapters and validates the complete protocol over localhost kernel sockets; process admission/remote game-session integration follows in M8D.
 Field-level delta compression should be designed only after packet/reliability and
 baseline semantics are explicit. Persistent-world work then returns to true
 `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse and
@@ -516,7 +516,7 @@ language.
 - M8A codecs cover `SessionWelcome`, both `ClientMessage` variants, all `MapRequest` variants and time-sync request/response. Variable-length strings and whole-frame payloads are bounded before allocation/copy.
 - M8A reserved `SimulationSnapshot` and `MapResponse` message ids; M8B now round-trips both payloads, including sparse replication lifecycle, hydrated runtime graph state, per-session state and the existing client-composed map response contracts.
 - Initial process networking uses reliable ordered TCP. Optional future datagram channels must introduce their own loss/reordering/sequence/ack/baseline semantics rather than weakening the authoritative protocol by assumption.
-- No Win32/POSIX socket types belong in `GameServer`, `ServerRuntime`, `ServerRunner` or the wire codec. Concrete Asio TCP adapters arrive in M8C under the existing `ITransport` / `IServerTransport` seam.
+- No Win32/POSIX socket types belong in `GameServer`, `ServerRuntime`, `ServerRunner` or the wire codec. M8C implements standalone-Asio TCP underneath the existing `ITransport` / `IServerTransport` seam; Asio itself is hidden in `TcpWireStream.cpp` and does not leak through public protocol/gameplay headers.
 - M8A also fixes project-local include spelling that was only accidentally valid on case-insensitive Windows filesystems (`EntityId.h` vs `EntityID.h`, `Log.h` vs `log.h`). `check_case_sensitive_project_includes.py` keeps this Linux portability contract from regressing.
 
 ### Multiplayer Stage M8B — canonical ordered data schema
@@ -526,3 +526,12 @@ language.
 - `WireDataCodec.h` serializes one complete logical `SimulationSnapshot` or `MapResponse` to one raw byte buffer with an explicit data-schema version. Adding normal replicated fields should not require changes to framing, TCP, ServerRunner or compression.
 - Compression is a separate byte-to-byte seam (`IWireCompressor`). It never sees entity/module counts or DTO types. M8B ships a `NoWireCompression` passthrough plus compression envelope metadata so M8C can transport the exact same pipeline and a future LZ4/Zstd implementation can be swapped in below serialization.
 - The data-plane contract test exercises a sparse snapshot with lifecycle removals, kinematics, reference frames, signal/radar/damage state, ship systems, module/repair/detached-fragment graphs, objects, hubs, session navigation and all four MapResponse variants. It also checks schema-version rejection, vector/enum bounds, compression opacity and fragmented frame reconstruction.
+
+### Multiplayer Stage M8C — real Asio TCP transport boundary
+
+- `TcpWireStream` is the schema-blind socket layer. It accepts `WireMessageKind + opaque payload`, applies the existing `WireFrame` header, validates strictly monotonic per-direction frame sequence, handles arbitrary TCP fragmentation/coalescing through `WireFrameDecoder`, and bounds pending writes so a stalled peer cannot grow memory without limit.
+- Standalone Asio is included only in `TcpWireStream.cpp`; public TCP headers, `GameServer`, `ServerRuntime` and `ServerRunner` remain free of Asio/WinSock/POSIX socket types. Windows linking adds `ws2_32/mswsock` only to targets that compile the adapter.
+- `WireMessageCodec.h` is the typed bridge between protocol objects and opaque stream payloads. Control-plane payloads remain direct; `SimulationSnapshot` and `MapResponse` go `canonical serializer -> schema-blind compressor envelope -> frame` and reverse. TCP never reads snapshot fields or entity/module counts.
+- `TcpClientTransport` and `TcpServerTransport` implement the existing endpoint interfaces, so later process integration does not alter `GameClient`, `GameServer` or replication semantics. Direction-invalid frame kinds are treated as protocol violations.
+- `TcpWireTransportContractTests` opens a real `127.0.0.1` listener on an ephemeral port and round-trips SessionWelcome, sparse/hydrated SimulationSnapshot lifecycle data, MapResponse, time sync, client control and map request through the OS TCP stack, then verifies peer disconnect observation. This is transport-boundary proof, not yet a separate-process game-session acceptance test.
+- M8D owns process lifecycle/admission: standalone `EliteServer --listen`, remote client session creation, server-owned controlled-entity assignment, disconnect/reconnect semantics and a two-process localhost acceptance gate.

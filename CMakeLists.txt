@@ -145,6 +145,8 @@ add_executable(EliteGame
 
     src/game/client/GameClient.cpp
     src/game/network/LocalLoopbackTransport.cpp
+    src/game/network/TcpWireStream.cpp
+    src/game/network/TcpTransport.cpp
     src/game/shared/SharedShipPhysics.cpp
 
     src/game/equipment/DamageModel.cpp
@@ -362,6 +364,8 @@ if(ELITE_BUILD_SERVER)
         src/game/server/GameServer.cpp
         src/game/server/ServerRunner.cpp
         src/game/server/ServerRuntime.cpp
+        src/game/network/TcpWireStream.cpp
+        src/game/network/TcpTransport.cpp
         src/game/shared/SharedShipPhysics.cpp
 
         src/game/equipment/DamageModel.cpp
@@ -416,6 +420,13 @@ if(ELITE_BUILD_SERVER)
         nlohmann_json::nlohmann_json
         Threads::Threads
     )
+
+    if(WIN32)
+        target_link_libraries(EliteServer PRIVATE
+            ws2_32
+            mswsock
+        )
+    endif()
 endif()
 
 

@@ -895,6 +895,38 @@ std::size_t GameServer::connectedPlayerSessionCount() const noexcept
     return m_sessions.connectedCount();
 }
 
+EntityId GameServer::selectAvailablePlayerEntityForAdmission() const noexcept
+{
+    const EntityId primary = m_simulation.playerId();
+    if (primary.value != 0 &&
+        m_simulation.getShip(primary) &&
+        !m_sessions.isControlledEntity(primary))
+    {
+        return primary;
+    }
+
+    // Temporary pre-persistence admission policy: use an existing ordinary
+    // materialized ship that is not already owned by another live session.
+    // Account/character persistence will later replace this selector without
+    // changing the network/session boundary. Diagnostic Motion Lab actors are
+    // never eligible for player authority.
+    for (const auto& ship : m_lastSnapshot.ships)
+    {
+        if (ship.id.value == 0 ||
+            m_sessions.isControlledEntity(ship.id) ||
+            ship.motionLabKind !=
+                game::diagnostics::HubMotionLabActorKind::None)
+        {
+            continue;
+        }
+
+        if (m_simulation.getShip(ship.id))
+            return ship.id;
+    }
+
+    return {};
+}
+
 void GameServer::receiveClientMessage(
     game::network::ServerSessionId sessionId,
     const game::network::ClientMessage& msg)

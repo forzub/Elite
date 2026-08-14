@@ -1,11 +1,24 @@
 #include "ObjectAssemblyRegistry.h"
 
 #include <stdexcept>
+#include <mutex>
 
 using namespace game::ship::geometry;
 
 std::unordered_map<uint16_t, ObjectAssemblyDesc>
 ObjectAssemblyRegistry::s_registry;
+
+namespace
+{
+std::once_flag g_objectAssemblyRegistryInitFlag;
+}
+
+void ObjectAssemblyRegistry::ensureInitialized()
+{
+    std::call_once(g_objectAssemblyRegistryInitFlag, []() {
+        ObjectAssemblyRegistry::init();
+    });
+}
 
 void ObjectAssemblyRegistry::init()
 {

@@ -49,15 +49,22 @@ void validatePolicy(const ServerTickPolicy& policy)
 
 ServerRunner::ServerRunner(
     GameServer& server,
-    IServerTransport& transport,
-    game::network::ServerSessionId sessionId,
     ServerTickPolicy policy
 )
     : m_server(server)
     , m_policy(policy)
 {
     validatePolicy(m_policy);
+}
 
+ServerRunner::ServerRunner(
+    GameServer& server,
+    IServerTransport& transport,
+    game::network::ServerSessionId sessionId,
+    ServerTickPolicy policy
+)
+    : ServerRunner(server, policy)
+{
     if (!attachTransport(transport, sessionId))
     {
         throw std::invalid_argument(

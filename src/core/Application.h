@@ -9,6 +9,7 @@
 #include "game/localization/LocalizationService.h"
 #include <string>
 #include <memory>
+#include <cstdint>
 
 #ifdef _WIN32
 #include "ui/browser/GameWebView.h"
@@ -217,6 +218,8 @@ public:
 
     void evalGameUiScript(const std::string& script);
 
+    void configureRemoteServer(std::string host, std::uint16_t port);
+    void startConfiguredGameSession();
     void startLocalGameSession();
     void stopGameSession();
     game::session::IGameSession& gameSession();
@@ -237,6 +240,8 @@ private:
     Window* m_window;
     StateContext m_context;
     std::unique_ptr<game::session::IGameSession> m_gameSession;
+    std::string m_remoteServerHost;
+    std::uint16_t m_remoteServerPort = 0;
     StateStack   m_states;
     RenderContext renderContext;
     HtmlUiManager m_htmlUi;

@@ -77,10 +77,14 @@ void testFrameByteOrderAndFragmentation()
     require(bytes.size() == WireHeaderBytes + frame.payload.size(),
         "encoded frame size mismatch");
 
+    const auto version = WireProtocolVersion;
+    const auto kind = static_cast<std::uint16_t>(frame.kind);
     const std::vector<std::uint8_t> expectedHeader = {
         0x45u, 0x4Cu, 0x49u, 0x54u, // ELIT
-        0x00u, 0x01u,               // version
-        0x00u, 0x02u,               // ClientMessage kind
+        static_cast<std::uint8_t>((version >> 8u) & 0xFFu),
+        static_cast<std::uint8_t>(version & 0xFFu),
+        static_cast<std::uint8_t>((kind >> 8u) & 0xFFu),
+        static_cast<std::uint8_t>(kind & 0xFFu),
         0x00u, 0x00u, 0x00u, 0x03u,// payload bytes
         0x01u, 0x02u, 0x03u, 0x04u,
         0x05u, 0x06u, 0x07u, 0x08u
@@ -138,8 +142,11 @@ void testFrameValidation()
     require(magicDecoder.failed(), "bad magic did not fail decoder");
 
     auto badVersion = encodeFrame(frame);
-    badVersion[4] = 0u;
-    badVersion[5] = 2u;
+    const auto invalidVersion =
+        static_cast<std::uint16_t>(WireProtocolVersion ^ 0x0001u);
+    badVersion[4] = static_cast<std::uint8_t>(
+        (invalidVersion >> 8u) & 0xFFu);
+    badVersion[5] = static_cast<std::uint8_t>(invalidVersion & 0xFFu);
     WireFrameDecoder versionDecoder;
     versionDecoder.push(badVersion);
     require(!versionDecoder.pop(ignored), "bad version unexpectedly decoded");
@@ -150,8 +157,16 @@ void testFrameValidation()
     oversized[1] = 0x4Cu;
     oversized[2] = 0x49u;
     oversized[3] = 0x54u;
-    oversized[5] = 0x01u;
-    oversized[7] = 0x02u;
+    oversized[4] = static_cast<std::uint8_t>(
+        (WireProtocolVersion >> 8u) & 0xFFu);
+    oversized[5] = static_cast<std::uint8_t>(
+        WireProtocolVersion & 0xFFu);
+    const auto clientMessageKind =
+        static_cast<std::uint16_t>(WireMessageKind::ClientMessage);
+    oversized[6] = static_cast<std::uint8_t>(
+        (clientMessageKind >> 8u) & 0xFFu);
+    oversized[7] = static_cast<std::uint8_t>(
+        clientMessageKind & 0xFFu);
     const std::uint32_t invalidSize = MaxWirePayloadBytes + 1u;
     oversized[8] = static_cast<std::uint8_t>((invalidSize >> 24u) & 0xFFu);
     oversized[9] = static_cast<std::uint8_t>((invalidSize >> 16u) & 0xFFu);
@@ -169,6 +184,7 @@ void testSessionWelcomeRoundTrip()
     SessionWelcome welcome;
     welcome.sessionId.value = 0x1122334455667788ull;
     welcome.controlledEntityId = EntityId{42u};
+    welcome.fixedStepSeconds = 0.02;
     welcome.starAtlasCatalog.schemaVersion = 7u;
     welcome.starAtlasCatalog.contentFingerprint = 0xABCDEF1020304050ull;
 
@@ -180,6 +196,8 @@ void testSessionWelcomeRoundTrip()
     require(decoded.sessionId == welcome.sessionId, "SessionWelcome session id mismatch");
     require(decoded.controlledEntityId == welcome.controlledEntityId,
         "SessionWelcome controlled entity mismatch");
+    require(std::abs(decoded.fixedStepSeconds - welcome.fixedStepSeconds) < 1.0e-12,
+        "SessionWelcome fixed step mismatch");
     require(decoded.starAtlasCatalog.schemaVersion == welcome.starAtlasCatalog.schemaVersion,
         "SessionWelcome schema version mismatch");
     require(decoded.starAtlasCatalog.contentFingerprint ==

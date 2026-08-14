@@ -119,6 +119,7 @@ public:
 
     bool hasSessionSnapshot() const;
     EntityId playerId() const;
+    double serverFixedStepSeconds() const noexcept;
     bool readyForGameplay() const;
     const game::simulation::ClientSessionSnapshot&
         sessionSnapshot() const;
@@ -152,6 +153,7 @@ private:
     game::network::ServerSessionId m_serverSessionId {};
     EntityId                        m_playerId {0};
     bool                            m_hasPlayerIdentity = false;
+    double                          m_serverFixedStepSeconds = 0.0;
 
     ClientWorldState                m_world;
 

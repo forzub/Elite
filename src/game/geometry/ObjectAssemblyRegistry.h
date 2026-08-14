@@ -10,6 +10,7 @@ class ObjectAssemblyRegistry
 {
 public:
     static void init();
+    static void ensureInitialized();
     static bool has(ObjectType typeId);
     static const ObjectAssemblyDesc& get(ObjectType typeId);
 

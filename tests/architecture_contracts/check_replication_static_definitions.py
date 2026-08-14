@@ -16,6 +16,7 @@ client_builder_h = (ROOT / "src/game/client/ClientModuleViewBuilder.h").read_tex
 space_state_cpp = (ROOT / "src/game/SpaceState.cpp").read_text(encoding="utf-8")
 ship_snapshot_h = (ROOT / "src/game/simulation/ShipSnapshot.h").read_text(encoding="utf-8")
 object_snapshot_h = (ROOT / "src/game/simulation/ObjectSnapshot.h").read_text(encoding="utf-8")
+game_client_cpp = (ROOT / "src/game/client/GameClient.cpp").read_text(encoding="utf-8")
 
 # Runtime replication is allowed to identify a module and report mutable state.
 required_runtime_fields = (
@@ -92,5 +93,15 @@ if "buildModuleViews(" not in space_state_cpp:
     fail("Structure Debug must rehydrate static module metadata on the client")
 if "ObjectDescriptorRegistry::get(ship.typeId)" not in space_state_cpp:
     fail("Structure Debug is not using the local object descriptor catalog")
+
+# Endpoint-local means both executable roles must bootstrap the immutable
+# definition catalogs independently. In-process local play must not be allowed
+# to mask a missing client bootstrap by inheriting server-initialized globals.
+for token in (
+    "ObjectDescriptorRegistry::ensureInitialized()",
+    "ObjectAssemblyRegistry::ensureInitialized()",
+):
+    if token not in game_client_cpp:
+        fail(f"remote client does not initialize endpoint-local static definitions: {token}")
 
 print("[PASS] static definitions stay local; replication carries module runtime only")

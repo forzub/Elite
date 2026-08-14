@@ -44,6 +44,11 @@ struct SessionWelcome
     ServerSessionId sessionId {};
     EntityId controlledEntityId {0};
 
+    // Authoritative fixed simulation cadence used by remote client prediction.
+    // Local sessions can obtain this directly from their host, but a process-
+    // remote client must receive it as session bootstrap metadata.
+    double fixedStepSeconds = 0.0;
+
     // Static physical catalog is loaded independently at each endpoint. The
     // server sends only a compatibility fence, never the catalog payload.
     CatalogMetadata starAtlasCatalog;

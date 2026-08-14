@@ -61,6 +61,11 @@ struct ServerAdvanceResult
 class ServerRunner
 {
 public:
+    explicit ServerRunner(
+        GameServer& server,
+        ServerTickPolicy policy = {}
+    );
+
     ServerRunner(
         GameServer& server,
         IServerTransport& transport,

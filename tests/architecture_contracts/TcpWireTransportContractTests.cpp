@@ -113,6 +113,7 @@ void testFullProtocolAcrossKernelTcp()
     SessionWelcome welcome;
     welcome.sessionId.value = 1234u;
     welcome.controlledEntityId = EntityId{7u};
+    welcome.fixedStepSeconds = 0.02;
     welcome.starAtlasCatalog.schemaVersion = 4u;
     welcome.starAtlasCatalog.contentFingerprint = 0x1122334455667788ull;
     server->publishSessionWelcomeImmediately(welcome);
@@ -167,6 +168,8 @@ void testFullProtocolAcrossKernelTcp()
         "SessionWelcome changed across TCP");
     require(receivedWelcome.controlledEntityId == welcome.controlledEntityId,
         "controlled entity changed across TCP");
+    require(std::abs(receivedWelcome.fixedStepSeconds - welcome.fixedStepSeconds) < 1.0e-12,
+        "authoritative fixed step changed across TCP");
     require(receivedSnapshot.metadata.serverTick == snapshot.metadata.serverTick,
         "snapshot metadata changed across TCP");
     require(receivedSnapshot.replication.entitySetMode ==

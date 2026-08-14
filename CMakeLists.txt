@@ -318,6 +318,7 @@ add_executable(EliteGame
     src/game/host/LocalGameHost.cpp
     src/game/host/LocalGameSession.h
     src/game/host/LocalGameSession.cpp
+    src/game/session/RemoteGameSession.cpp
     src/game/client/ClientMapService.cpp
     src/game/client/ClientCatalogService.cpp
 
@@ -364,6 +365,7 @@ if(ELITE_BUILD_SERVER)
         src/game/server/GameServer.cpp
         src/game/server/ServerRunner.cpp
         src/game/server/ServerRuntime.cpp
+        src/game/server/NetworkServerHost.cpp
         src/game/network/TcpWireStream.cpp
         src/game/network/TcpTransport.cpp
         src/game/shared/SharedShipPhysics.cpp

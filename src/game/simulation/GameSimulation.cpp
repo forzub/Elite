@@ -218,8 +218,8 @@ GameSimulation::GameSimulation(
 {
     // ===================== ObjectDescriptor =========================
 
-    ObjectDescriptorRegistry::init();
-    game::ship::geometry::ObjectAssemblyRegistry::init();
+    ObjectDescriptorRegistry::ensureInitialized();
+    game::ship::geometry::ObjectAssemblyRegistry::ensureInitialized();
 
 
 

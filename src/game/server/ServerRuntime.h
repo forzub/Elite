@@ -34,6 +34,13 @@ namespace game::server
 class ServerRuntime final
 {
 public:
+    // Dedicated/network runtime starts without a synthetic primary gameplay
+    // connection. Real accepted transports are admitted later.
+    ServerRuntime(
+        const WorldParams& worldParams,
+        game::debug::IServerDebugChannel& debugChannel
+    );
+
     ServerRuntime(
         const WorldParams& worldParams,
         IServerTransport& transport,
@@ -47,6 +54,12 @@ public:
     ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
 
+    // Production admission is server-owned: callers provide a connection,
+    // never an EntityId. The explicit-entity overload remains for deterministic
+    // architecture/diagnostic tests and future authenticated handoff code.
+    game::network::ServerSessionId attachPlayerSessionTransport(
+        IServerTransport& transport
+    );
     game::network::ServerSessionId attachPlayerSessionTransport(
         IServerTransport& transport,
         EntityId controlledEntityId

@@ -4,12 +4,21 @@
 #include "GameClient.h"
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/network/ClientMessage.h"
+#include "src/game/geometry/ObjectAssemblyRegistry.h"
+#include "src/world/descriptors/ObjectDescriptorRegistry.h"
 
 GameClient::GameClient(ITransport& transport)
     : m_transport(transport)
     , m_catalogs()
     , m_maps(transport, m_catalogs, m_world)
 {
+    // Static object/assembly definitions are endpoint-local data. In local
+    // play the server used to initialize these process globals first, which
+    // accidentally hid the missing client bootstrap. A remote EliteGame
+    // process has no GameSimulation, so it must initialize its own catalogs.
+    ObjectDescriptorRegistry::ensureInitialized();
+    game::ship::geometry::ObjectAssemblyRegistry::ensureInitialized();
+
     m_connectionState = ClientConnectionState::Connecting;
 }
 
@@ -21,6 +30,7 @@ void GameClient::beginSynchronization()
     m_catalogs.resetRuntimeState();
     m_pendingInputs.clear();
     m_hasLatestControl = false;
+    m_serverFixedStepSeconds = 0.0;
     m_latestControl = ShipControlState{};
     m_hasPendingLocalControlLawCommand = false;
     m_pendingLocalControlLaw =
@@ -189,6 +199,11 @@ bool GameClient::hasSessionSnapshot() const
 EntityId GameClient::playerId() const
 {
     return m_playerId;
+}
+
+double GameClient::serverFixedStepSeconds() const noexcept
+{
+    return m_serverFixedStepSeconds;
 }
 
 bool GameClient::hasGameplayCoreState() const
@@ -387,6 +402,16 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             return false;
         }
 
+        if (!std::isfinite(welcome.fixedStepSeconds) ||
+            welcome.fixedStepSeconds <= 0.0 ||
+            welcome.fixedStepSeconds > 1.0)
+        {
+            failSynchronization(
+                "Server session welcome has invalid fixed simulation step"
+            );
+            return false;
+        }
+
         std::string catalogError;
         if (!m_catalogs.validateServerStarAtlas(
                 welcome.starAtlasCatalog,
@@ -420,6 +445,7 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
         }
 
         m_serverSessionId = welcome.sessionId;
+        m_serverFixedStepSeconds = welcome.fixedStepSeconds;
         m_playerId = welcome.controlledEntityId;
         m_world.setLocalControlledEntity(m_playerId);
         m_hasPlayerIdentity = true;

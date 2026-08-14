@@ -6,8 +6,15 @@
 
 #include "src/game/drone/descriptors/RepairDroneDescriptor.h"
 
+#include <mutex>
+
 std::unordered_map<ObjectType, std::unique_ptr<IObjectDescriptor>>
     ObjectDescriptorRegistry::registry;
+
+namespace
+{
+std::once_flag g_objectDescriptorRegistryInitFlag;
+}
 
 
     const IObjectDescriptor& ObjectDescriptorRegistry::get(ObjectType type)
@@ -15,6 +22,14 @@ std::unordered_map<ObjectType, std::unique_ptr<IObjectDescriptor>>
     return *registry.at(type);
 }
 
+
+
+void ObjectDescriptorRegistry::ensureInitialized()
+{
+    std::call_once(g_objectDescriptorRegistryInitFlag, []() {
+        ObjectDescriptorRegistry::init();
+    });
+}
 
 
 void ObjectDescriptorRegistry::init()

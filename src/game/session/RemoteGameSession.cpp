@@ -1,0 +1,173 @@
+#include "src/game/session/RemoteGameSession.h"
+
+#include <algorithm>
+#include <utility>
+
+#include "src/game/client/GameClient.h"
+#include "src/game/debug/IDebugSessionControl.h"
+#include "src/game/network/TcpTransport.h"
+
+namespace game::session
+{
+struct RemoteGameSession::NullDebugSessionControl final
+    : public game::debug::IDebugSessionControl
+{
+    SimulationSnapshot snapshot() const override { return {}; }
+    std::uint64_t snapshotRevision() const override { return 0; }
+    std::uint64_t stateRevision() const override { return 0; }
+    void refreshSnapshot() override {}
+    void refreshStructureSnapshot() override {}
+    void destroyShipModule(EntityId, const std::string&) override {}
+    void restoreShipModule(EntityId, const std::string&) override {}
+    void resetShipStructure(EntityId) override {}
+    void resetAllShipStructures() override {}
+    void detachShipModule(EntityId, const std::string&) override {}
+    void hangShipModule(EntityId, const std::string&) override {}
+    void reevaluateShipStructure(EntityId) override {}
+    void setShipStructuralLinkHealth(
+        EntityId,
+        const std::string&,
+        float,
+        bool) override {}
+    bool fastUniverseTime() const override { return false; }
+    bool universeTimeSimulation() const override { return false; }
+    double universeTimeScale() const override { return 1.0; }
+    double configuredUniverseTimeScale() const override { return 1.0; }
+    void setUniverseTimeSimulation(bool, double) override {}
+};
+
+RemoteGameSession::RemoteGameSession(RemoteGameSessionConfig config)
+    : m_config(std::move(config))
+    , m_transport(std::make_unique<game::network::TcpClientTransport>())
+    , m_client(std::make_unique<GameClient>(*m_transport))
+    , m_debugControl(std::make_unique<NullDebugSessionControl>())
+{
+}
+
+RemoteGameSession::~RemoteGameSession()
+{
+    if (m_transport)
+        m_transport->disconnect();
+}
+
+GameClient& RemoteGameSession::client()
+{
+    return *m_client;
+}
+
+const GameClient& RemoteGameSession::client() const
+{
+    return *m_client;
+}
+
+game::debug::IDebugSessionControl* RemoteGameSession::debugControl()
+{
+    return m_debugControl.get();
+}
+
+const game::debug::IDebugSessionControl* RemoteGameSession::debugControl() const
+{
+    return m_debugControl.get();
+}
+
+EntityId RemoteGameSession::playerId() const
+{
+    return m_client->playerId();
+}
+
+void RemoteGameSession::beginSynchronization()
+{
+    m_error.clear();
+    m_failed = false;
+    m_started = true;
+
+    if (!m_transport->connect(m_config.host, m_config.port))
+    {
+        m_failed = true;
+        m_error = m_transport->lastError();
+        if (m_error.empty())
+            m_error = "TCP connection to authoritative server failed";
+        return;
+    }
+
+    m_client->beginSynchronization();
+}
+
+void RemoteGameSession::updateSynchronization(double elapsedSeconds)
+{
+    if (!m_started || m_failed)
+        return;
+
+    m_transport->service();
+    captureTransportFailure();
+    if (m_failed)
+        return;
+
+    (void)m_client->updateSynchronization(
+        std::max(0.0, elapsedSeconds)
+    );
+
+    if (m_client->connectionState() == ClientConnectionState::Failed)
+    {
+        m_failed = true;
+        m_error = m_client->connectionError();
+    }
+}
+
+GameSessionState RemoteGameSession::state() const
+{
+    if (m_failed)
+        return GameSessionState::Failed;
+    if (!m_started)
+        return GameSessionState::Created;
+
+    switch (m_client->connectionState())
+    {
+        case ClientConnectionState::Ready:
+            return GameSessionState::Ready;
+        case ClientConnectionState::Failed:
+            return GameSessionState::Failed;
+        case ClientConnectionState::Synchronizing:
+            return GameSessionState::Synchronizing;
+        case ClientConnectionState::Connecting:
+        case ClientConnectionState::Disconnected:
+        default:
+            return GameSessionState::Created;
+    }
+}
+
+const std::string& RemoteGameSession::error() const
+{
+    return m_error.empty() ? m_client->connectionError() : m_error;
+}
+
+GameSessionAdvanceResult RemoteGameSession::advance(double)
+{
+    GameSessionAdvanceResult result;
+    if (!m_started || m_failed)
+        return result;
+
+    // Remote authoritative time advances in EliteServer. This call only pumps
+    // transport completion before GameClient performs prediction/interpolation.
+    m_transport->service();
+    captureTransportFailure();
+    return result;
+}
+
+double RemoteGameSession::fixedStepSeconds() const
+{
+    const double serverStep = m_client->serverFixedStepSeconds();
+    return serverStep > 0.0 ? serverStep : 0.02;
+}
+
+void RemoteGameSession::captureTransportFailure()
+{
+    if (!m_started || !m_transport || m_transport->connected())
+        return;
+
+    m_failed = true;
+    m_error = m_transport->lastError();
+    if (m_error.empty())
+        m_error = "authoritative server disconnected";
+}
+}

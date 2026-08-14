@@ -13,6 +13,8 @@
 #include "src/core/ConsoleOutput.h"
 #include "src/game/server/HeadlessServerEndpoints.h"
 #include "src/game/server/ServerRuntime.h"
+#include "src/game/server/NetworkServerHost.h"
+#include "src/game/network/NetworkEndpoint.h"
 #include "src/world/WorldParams.h"
 #include "src/world/coordinates/WorldPosition.h"
 
@@ -30,9 +32,10 @@ void printUsage()
     std::cout
         << "EliteServer headless authoritative runtime\n"
         << "Usage:\n"
-        << "  EliteServer.exe               Run until Ctrl+C/SIGTERM\n"
-        << "  EliteServer.exe --self-test   Boot and advance the real server, then exit\n"
-        << "  EliteServer.exe --help        Show this help\n";
+        << "  EliteServer.exe                         Run headless without remote clients\n"
+        << "  EliteServer.exe --listen HOST:PORT      Accept remote TCP game sessions\n"
+        << "  EliteServer.exe --self-test             Boot and advance the real server, then exit\n"
+        << "  EliteServer.exe --help                  Show this help\n";
 }
 
 const ShipSnapshot* findShipSnapshot(
@@ -408,6 +411,76 @@ int runHeadlessSelfTest()
     return 0;
 }
 
+
+int runNetworkServer(
+    const game::network::NetworkEndpoint& endpoint,
+    bool oneClientSelfTest)
+{
+    game::server::HeadlessDebugChannel debugChannel;
+    WorldParams worldParams;
+    game::server::NetworkServerHost host(worldParams, debugChannel);
+
+    if (!host.listen(endpoint.host, endpoint.port))
+    {
+        std::cerr << "[EliteServer] listen failed: "
+                  << host.lastError() << "\n";
+        return 2;
+    }
+
+    std::signal(SIGINT, handleTerminationSignal);
+#ifdef SIGTERM
+    std::signal(SIGTERM, handleTerminationSignal);
+#endif
+
+    std::cout
+        << "[EliteServer] listening endpoint="
+        << endpoint.host << ':' << host.localPort()
+        << " fixed_step_s=" << host.fixedStepSeconds()
+        << std::endl;
+
+    using Clock = std::chrono::steady_clock;
+    auto previous = Clock::now();
+    const auto deadline = previous + std::chrono::seconds(15);
+    bool sawClient = false;
+
+    while (g_running.load())
+    {
+        const auto now = Clock::now();
+        const double elapsed =
+            std::chrono::duration<double>(now - previous).count();
+        previous = now;
+
+        host.advance(elapsed);
+        sawClient = sawClient || host.acceptedConnectionCount() > 0;
+
+        if (oneClientSelfTest)
+        {
+            if (sawClient && host.connectedSessionCount() == 0)
+            {
+                std::cerr
+                    << "[PASS] network-server process admitted and detached remote session\n";
+                return 0;
+            }
+
+            if (now >= deadline)
+            {
+                std::cerr
+                    << "[FAIL] network-server one-client self-test timed out"
+                    << " accepted=" << host.acceptedConnectionCount()
+                    << " connected=" << host.connectedSessionCount()
+                    << "\n";
+                return 3;
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    host.close();
+    std::cout << "[EliteServer] stopped\n";
+    return 0;
+}
+
 int runHeadlessServer()
 {
     game::server::HeadlessServerTransport transport;
@@ -430,8 +503,8 @@ int runHeadlessServer()
         << " fixed_step_s=" << runtime.fixedStepSeconds()
         << "\n";
     std::cout
-        << "[EliteServer] no remote socket transport exists yet; "
-        << "running world simulation with empty inbound queues\n";
+        << "[EliteServer] remote listener disabled in this mode; "
+        << "use --listen HOST:PORT to accept clients\n";
 
     using Clock = std::chrono::steady_clock;
     auto previous = Clock::now();
@@ -457,11 +530,45 @@ int runHeadlessServer()
 
 int main(int argc, char** argv)
 {
-    if (argc > 1)
+    bool oneClientSelfTest = false;
+    bool haveListenEndpoint = false;
+    game::network::NetworkEndpoint listenEndpoint;
+
+    for (int i = 1; i < argc; ++i)
     {
-        const std::string arg = argv[1];
+        const std::string arg = argv[i];
+
         if (arg == "--self-test")
             return runHeadlessSelfTest();
+
+        if (arg == "--self-test-one-client")
+        {
+            oneClientSelfTest = true;
+            continue;
+        }
+
+        if (arg == "--listen")
+        {
+            if (i + 1 >= argc)
+            {
+                std::cerr << "[EliteServer] --listen requires HOST:PORT\n";
+                return 1;
+            }
+
+            std::string error;
+            if (!game::network::parseNetworkEndpoint(
+                    argv[++i],
+                    listenEndpoint,
+                    &error))
+            {
+                std::cerr << "[EliteServer] invalid listen endpoint: "
+                          << error << "\n";
+                return 1;
+            }
+            haveListenEndpoint = true;
+            continue;
+        }
+
         if (arg == "--help" || arg == "-h")
         {
             printUsage();
@@ -472,6 +579,16 @@ int main(int argc, char** argv)
         printUsage();
         return 1;
     }
+
+    if (oneClientSelfTest && !haveListenEndpoint)
+    {
+        std::cerr
+            << "[EliteServer] --self-test-one-client requires --listen HOST:PORT\n";
+        return 1;
+    }
+
+    if (haveListenEndpoint)
+        return runNetworkServer(listenEndpoint, oneClientSelfTest);
 
     return runHeadlessServer();
 }

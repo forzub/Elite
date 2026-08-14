@@ -1,12 +1,19 @@
 #include <cmath>
+#include <algorithm>
+#include <utility>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <thread>
 #include "core/Application.h"
 #include "game/server/GameServer.h"
 #include "game/diagnostics/ClientAcceptanceHarness.h"
 #include "game/diagnostics/MultiplayerClientAcceptanceHarness.h"
+#include "src/game/session/RemoteGameSession.h"
+#include "src/game/network/NetworkEndpoint.h"
+#include "src/game/client/GameClient.h"
 #include "core/ConsoleOutput.h"
 #include "world/celestial/visual/CelestialTextureBaker.h"
 #include "render/bitmap/stb_image.h"
@@ -37,6 +44,98 @@ bool isClientAcceptanceSelfTestToken(const std::string& arg)
 bool isMultiplayerClientAcceptanceSelfTestToken(const std::string& arg)
 {
     return arg == "--self-test-multiplayer-client";
+}
+
+int runRemoteClientProcessSelfTest(
+    const game::network::NetworkEndpoint& endpoint)
+{
+    core::disableRuntimeStdoutNoise();
+
+    game::session::RemoteGameSessionConfig config;
+    config.host = endpoint.host;
+    config.port = endpoint.port;
+    game::session::RemoteGameSession session(std::move(config));
+    session.beginSynchronization();
+
+    using Clock = std::chrono::steady_clock;
+    auto previous = Clock::now();
+    const auto syncDeadline = previous + std::chrono::seconds(10);
+
+    while (Clock::now() < syncDeadline &&
+           session.state() != game::session::GameSessionState::Ready &&
+           session.state() != game::session::GameSessionState::Failed)
+    {
+        const auto now = Clock::now();
+        const double elapsed = std::clamp(
+            std::chrono::duration<double>(now - previous).count(),
+            0.0,
+            0.05
+        );
+        previous = now;
+        session.updateSynchronization(elapsed);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+
+    if (session.state() != game::session::GameSessionState::Ready)
+    {
+        std::cerr
+            << "[FAIL] remote-client process synchronization failed: "
+            << session.error() << "\n";
+        return 2;
+    }
+
+    if (session.playerId().value == 0 ||
+        !std::isfinite(session.fixedStepSeconds()) ||
+        session.fixedStepSeconds() <= 0.0)
+    {
+        std::cerr
+            << "[FAIL] remote-client process received invalid session authority/cadence\n";
+        return 3;
+    }
+
+    ShipControlState control;
+    control.forwardInput = 0.25f;
+    session.client().submitInput(control);
+
+    previous = Clock::now();
+    const auto inputDeadline = previous + std::chrono::seconds(10);
+    while (Clock::now() < inputDeadline &&
+           session.client().lastAcknowledgedControlTick() == 0 &&
+           session.state() != game::session::GameSessionState::Failed)
+    {
+        const auto now = Clock::now();
+        const double elapsed = std::clamp(
+            std::chrono::duration<double>(now - previous).count(),
+            0.0,
+            0.05
+        );
+        previous = now;
+
+        (void)session.advance(elapsed);
+        session.client().update(
+            static_cast<float>(elapsed),
+            static_cast<float>(session.fixedStepSeconds()),
+            elapsed
+        );
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+
+    if (session.state() == game::session::GameSessionState::Failed ||
+        session.client().lastAcknowledgedControlTick() == 0)
+    {
+        std::cerr
+            << "[FAIL] remote-client process authoritative input acknowledgement missing"
+            << " error=" << session.error() << "\n";
+        return 4;
+    }
+
+    std::cerr
+        << "[PASS] remote GameClient synchronized and exchanged authoritative input"
+        << " player=" << session.playerId().value
+        << " ack=" << session.client().lastAcknowledgedControlTick()
+        << " fixed_step_s=" << session.fixedStepSeconds()
+        << "\n";
+    return 0;
 }
 
 int runFastUniverseSmokeTest()
@@ -345,6 +444,8 @@ bool parseCelestialBakeOptions(
 
 int main(int argc, char** argv)
 {
+    bool useRemoteServer = false;
+    game::network::NetworkEndpoint remoteEndpoint;
 
     try
     {
@@ -352,6 +453,32 @@ int main(int argc, char** argv)
         for (int i = 1; i < argc; ++i)
         {
             const std::string arg = argv[i];
+
+            if (arg == "--connect" || arg == "--self-test-remote-client")
+            {
+                if (i + 1 >= argc)
+                {
+                    std::cerr << "[App] " << arg << " requires HOST:PORT\n";
+                    return -2;
+                }
+
+                std::string error;
+                game::network::NetworkEndpoint endpoint;
+                if (!game::network::parseNetworkEndpoint(
+                        argv[++i], endpoint, &error))
+                {
+                    std::cerr << "[App] invalid remote endpoint: "
+                              << error << "\n";
+                    return -2;
+                }
+
+                if (arg == "--self-test-remote-client")
+                    return runRemoteClientProcessSelfTest(endpoint);
+
+                useRemoteServer = true;
+                remoteEndpoint = std::move(endpoint);
+                continue;
+            }
 
             if (isFastUniverseSmokeTestToken(arg))
                 return runFastUniverseSmokeTest();
@@ -398,6 +525,13 @@ int main(int argc, char** argv)
         std::setlocale(LC_ALL, "");
         core::disableRuntimeStdoutNoise();
         Application app;
+        if (useRemoteServer)
+        {
+            app.configureRemoteServer(
+                remoteEndpoint.host,
+                remoteEndpoint.port
+            );
+        }
         app.run();
     }
     catch (const std::exception& e)

@@ -11,6 +11,7 @@ class ObjectDescriptorRegistry
 public:
     static const IObjectDescriptor& get(ObjectType type);
     static void init();
+    static void ensureInitialized();
 
 private:
     static std::unordered_map<ObjectType, std::unique_ptr<IObjectDescriptor>> registry;

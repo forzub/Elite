@@ -94,6 +94,7 @@ public:
         game::network::ServerSessionId sessionId
     ) const noexcept;
     std::size_t connectedPlayerSessionCount() const noexcept;
+    EntityId selectAvailablePlayerEntityForAdmission() const noexcept;
 
     void receiveClientMessage(
         game::network::ServerSessionId sessionId,

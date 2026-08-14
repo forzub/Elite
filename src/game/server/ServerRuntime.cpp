@@ -11,7 +11,6 @@ namespace game::server
 {
 ServerRuntime::ServerRuntime(
     const WorldParams& worldParams,
-    IServerTransport& transport,
     game::debug::IServerDebugChannel& debugChannel
 )
     : m_server(std::make_unique<GameServer>())
@@ -19,27 +18,37 @@ ServerRuntime::ServerRuntime(
 {
     // Bootstrap configuration belongs to the authoritative runtime. The host
     // must not mutate GameServer/world state directly, because that access
-    // cannot survive a later server-thread boundary.
+    // cannot survive a process boundary.
     m_server->world() = worldParams;
-
-    // Preserve the established startup semantics: apply configured world
-    // parameters before the first host-visible authoritative publication.
     m_server->update(0.0);
 
-    // The transport endpoint is bound to an authoritative server session once.
-    // Client packets never choose their controlled EntityId; ServerRunner routes
-    // every inbound intent through this server-owned session identity.
+    // A dedicated runtime may legitimately have zero gameplay transports until
+    // the first TCP connection is accepted. The same deterministic runner then
+    // owns every admitted session and still advances one authoritative world.
+    m_runner = std::make_unique<ServerRunner>(*m_server);
+
+    m_debugChannel.publishSnapshot(m_server->snapshot());
+    m_debugChannel.publishState(makeDebugState());
+}
+
+ServerRuntime::ServerRuntime(
+    const WorldParams& worldParams,
+    IServerTransport& transport,
+    game::debug::IServerDebugChannel& debugChannel
+)
+    : ServerRuntime(worldParams, debugChannel)
+{
+    // Embedded/local play preserves its established primary-session semantics.
     m_primarySessionId =
         m_server->createPlayerSession(m_server->playerId());
 
-    if (!m_primarySessionId)
-        throw std::runtime_error("failed to create primary server session");
-
-    m_runner = std::make_unique<ServerRunner>(
-        *m_server,
-        transport,
-        m_primarySessionId
-    );
+    if (!m_primarySessionId ||
+        !m_runner->attachTransport(transport, m_primarySessionId))
+    {
+        throw std::runtime_error(
+            "failed to create/bind primary server session"
+        );
+    }
 
     if (!publishSessionBootstrap(transport, m_primarySessionId))
     {
@@ -47,12 +56,6 @@ ServerRuntime::ServerRuntime(
             "failed to publish primary server session bootstrap"
         );
     }
-
-    // Debug tools get value copies through a separate diagnostic channel.
-    // They must never hold references into GameServer just because local play
-    // currently happens in one OS thread.
-    m_debugChannel.publishSnapshot(m_server->snapshot());
-    m_debugChannel.publishState(makeDebugState());
 }
 
 ServerRuntime::~ServerRuntime() = default;
@@ -99,6 +102,7 @@ bool ServerRuntime::publishSessionBootstrap(
     game::network::SessionWelcome welcome;
     welcome.sessionId = sessionId;
     welcome.controlledEntityId = controlledEntityId;
+    welcome.fixedStepSeconds = m_runner->fixedStepSeconds();
     welcome.starAtlasCatalog.schemaVersion =
         world::celestial::StarAtlasDatabase::CatalogSchemaVersion;
     welcome.starAtlasCatalog.contentFingerprint =
@@ -128,6 +132,20 @@ bool ServerRuntime::publishSessionBootstrap(
     // already composed from that connection's controlled entity.
     transport.publishSnapshotImmediately(bootstrapSnapshot);
     return true;
+}
+
+game::network::ServerSessionId
+ServerRuntime::attachPlayerSessionTransport(
+    IServerTransport& transport
+)
+{
+    const EntityId controlledEntityId =
+        m_server->selectAvailablePlayerEntityForAdmission();
+
+    if (controlledEntityId.value == 0)
+        return {};
+
+    return attachPlayerSessionTransport(transport, controlledEntityId);
 }
 
 game::network::ServerSessionId

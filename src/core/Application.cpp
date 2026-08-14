@@ -2,12 +2,14 @@
 #include <GLFW/glfw3.h>
 #include "Application.h"
 #include <algorithm>
+#include <utility>
 
 #include "core/log.h"
 #include "ui/MainMenuState.h"
 #include "game/SpaceState.h"
 #include "src/game/ui/GameUiHotkeyPolicy.h"
 #include "src/game/host/LocalGameSession.h"
+#include "src/game/session/RemoteGameSession.h"
 #include "src/game/session/IGameSession.h"
 #include "src/game/navigation/CoordinateDisplayService.h"
 #include "src/game/ui/SystemMapUiCommandRouter.h"
@@ -140,6 +142,31 @@ static int systemMapPanelWidth(int framebufferWidth)
     );
 }
 
+
+void Application::configureRemoteServer(
+    std::string host,
+    std::uint16_t port)
+{
+    m_remoteServerHost = std::move(host);
+    m_remoteServerPort = port;
+}
+
+void Application::startConfiguredGameSession()
+{
+    if (!m_remoteServerHost.empty() && m_remoteServerPort != 0)
+    {
+        game::session::RemoteGameSessionConfig config;
+        config.host = m_remoteServerHost;
+        config.port = m_remoteServerPort;
+        m_gameSession =
+            std::make_unique<game::session::RemoteGameSession>(
+                std::move(config)
+            );
+        return;
+    }
+
+    startLocalGameSession();
+}
 
 void Application::startLocalGameSession()
 {
@@ -1042,7 +1069,7 @@ void Application::updatePendingNewGameLoad()
         );
 
         stopGameSession();
-        startLocalGameSession();
+        startConfiguredGameSession();
         m_gameSession->beginSynchronization();
 
         m_newGameLoadLastUpdateTime = now;

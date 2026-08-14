@@ -73,6 +73,7 @@
 ## 5. Client / Server separation
 
 Подробный технический источник: `src/game/ARCHITECTURE_STATUS.md`.
+Operational contract, режимы запуска и ручная проверка: `SERVER_CLIENT.md`.
 
 **Общий статус: `[~]` фундамент разделения и presentation ownership основных карт готовы; следующий этап — runtime scaling/multi-system separation.**
 
@@ -406,7 +407,8 @@ both clients are observers/predictors
 7. Stage M8A — **готов**: зафиксирован ABI-independent, versioned reliable-byte-stream wire framing и control-plane serialization без Win32/POSIX деталей.
 8. Stage M8B — **готов**: `SimulationSnapshot` + `MapResponse` проходят canonical ordered schema -> raw bytes -> schema-blind compression envelope -> framing; adding a field normally touches DTO + `WireDataSchema.h` + schema-version/test, но не TCP/compressor/ServerRunner.
 9. Stage M8C — **готов на transport boundary**: standalone Asio `TcpWireStream` переносит только `WireMessageKind + opaque payload`, typed adapters реализуют существующие transport interfaces, а localhost contract проверяет обе стороны реальным kernel TCP.
-10. Stage M8D — **готов на process boundary**: dedicated `ServerRuntime` может стартовать без synthetic primary connection; `NetworkServerHost` принимает TCP и делает server-owned entity admission; `RemoteGameSession` не содержит embedded server; `EliteServer --listen` и `EliteGame --connect` работают как отдельные процессы. Ready harness проверяет реальный two-process bootstrap/input/disconnect. Следующий шаг — **M8E: два remote clients одновременно + disconnect isolation/reconnect groundwork**, после чего можно закрывать базовый multiplayer transport и возвращаться к `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse.
+10. Stage M8D — **готов на process boundary**: dedicated `ServerRuntime` может стартовать без synthetic primary connection; `NetworkServerHost` принимает TCP и делает server-owned entity admission; `RemoteGameSession` не содержит embedded server; `EliteServer --listen` и `EliteGame --connect` работают как отдельные процессы. Ready harness проверяет реальный two-process bootstrap/input/disconnect. Operational contract и команды запуска зафиксированы в `SERVER_CLIENT.md`.
+11. Перед M8E нужно сделать WebUI endpoint multi-process-safe: сейчас каждый graphical `EliteGame` жёстко поднимает локальный HTTP/WebSocket UI на порту `8090`, поэтому два полноценных client process на одном PC могут конфликтовать ещё до проверки gameplay networking. После этого — **M8E: два remote clients одновременно + disconnect isolation/reconnect groundwork**, затем можно закрывать базовый multiplayer transport и возвращаться к `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse.
 
 ---
 

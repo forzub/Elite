@@ -41,6 +41,51 @@ endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+
+# Runtime deployment policy --------------------------------------------------
+#
+# Developer builds must be directly runnable outside the compiler shell.
+# On MinGW/Windows we recursively stage non-system PE runtime dependencies
+# beside each executable. On ELF platforms we keep system libraries system-
+# owned and make any future project-local shared-library RPATH relative.
+function(elite_configure_executable_runtime TARGET_NAME)
+    if(WIN32 AND MINGW)
+        get_filename_component(ELITE_MINGW_TOOLCHAIN_BIN
+            "${CMAKE_CXX_COMPILER}" DIRECTORY)
+
+        if(NOT CMAKE_OBJDUMP)
+            find_program(ELITE_MINGW_OBJDUMP
+                NAMES objdump
+                HINTS "${ELITE_MINGW_TOOLCHAIN_BIN}")
+            if(NOT ELITE_MINGW_OBJDUMP)
+                message(FATAL_ERROR
+                    "MinGW objdump is required to stage standalone runtime dependencies")
+            endif()
+        else()
+            set(ELITE_MINGW_OBJDUMP "${CMAKE_OBJDUMP}")
+        endif()
+
+        add_custom_command(
+            TARGET ${TARGET_NAME}
+            POST_BUILD
+            COMMAND "${CMAKE_COMMAND}"
+                "-DELITE_RUNTIME_TARGET_FILE=$<TARGET_FILE:${TARGET_NAME}>"
+                "-DELITE_RUNTIME_TARGET_DIR=$<TARGET_FILE_DIR:${TARGET_NAME}>"
+                "-DELITE_RUNTIME_TOOLCHAIN_BIN=${ELITE_MINGW_TOOLCHAIN_BIN}"
+                "-DELITE_RUNTIME_OBJDUMP=${ELITE_MINGW_OBJDUMP}"
+                -P "${CMAKE_SOURCE_DIR}/cmake/StageMinGWRuntime.cmake"
+            COMMENT "Staging standalone MinGW runtime for ${TARGET_NAME}"
+            VERBATIM
+        )
+    elseif(UNIX AND NOT APPLE)
+        # Linux keeps libc/libstdc++ and other system runtime libraries under
+        # the distribution package manager. If we add our own shared objects
+        # later, keep build-tree lookup relocatable instead of baking absolute
+        # developer-machine paths into the executable.
+        set_property(TARGET ${TARGET_NAME} PROPERTY BUILD_RPATH_USE_ORIGIN TRUE)
+    endif()
+endfunction()
+
 add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 
 if(ELITE_BUILD_CLIENT)
@@ -580,4 +625,13 @@ target_link_libraries(EliteGame PRIVATE
 
 
 )
+endif()
+
+
+if(TARGET EliteGame)
+    elite_configure_executable_runtime(EliteGame)
+endif()
+
+if(TARGET EliteServer)
+    elite_configure_executable_runtime(EliteServer)
 endif()

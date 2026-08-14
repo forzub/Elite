@@ -95,6 +95,10 @@ run_main_target_build() {
 run_main_target_build
 
 run_suite \
+    "STANDALONE WINDOWS RUNTIME" \
+    "tests/runtime_standalone/run_mingw64.sh"
+
+run_suite \
     "NETWORK PROCESS ACCEPTANCE" \
     "tests/network_process_acceptance/run_mingw64.sh"
 

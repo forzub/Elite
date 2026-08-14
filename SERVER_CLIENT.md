@@ -49,7 +49,14 @@ Headless target не должен зависеть от GLFW/OpenGL/Freetype/Web
 
 ### A. Local / embedded development mode
 
-Запуск:
+Windows PowerShell:
+
+```powershell
+cd D:\__elite\work\build
+.\EliteGame.exe
+```
+
+MSYS2 MinGW64:
 
 ```bash
 cd /d/__elite/work/build
@@ -68,7 +75,14 @@ boundary; клиент не получает `GameServer&` и не читает 
 
 ### B. Dedicated server + remote client
 
-Сначала сервер:
+Сначала сервер, Windows PowerShell:
+
+```powershell
+cd D:\__elite\work\build\headless_server
+.\EliteServer.exe --listen 127.0.0.1:27351
+```
+
+Эквивалент из MSYS2 MinGW64:
 
 ```bash
 cd /d/__elite/work/build/headless_server
@@ -81,7 +95,14 @@ cd /d/__elite/work/build/headless_server
 [EliteServer] listening endpoint=127.0.0.1:27351 fixed_step_s=0.02
 ```
 
-Затем клиент в другом терминале:
+Затем клиент в другом PowerShell:
+
+```powershell
+cd D:\__elite\work\build
+.\EliteGame.exe --connect 127.0.0.1:27351
+```
+
+Либо из MSYS2 MinGW64:
 
 ```bash
 cd /d/__elite/work/build
@@ -94,9 +115,45 @@ cd /d/__elite/work/build
 `EliteServer`, а клиент выполняет только prediction/presentation и отправляет
 intent/control messages.
 
+
 ---
 
-## 3. Особенности authoritative session bootstrap
+## 3. Runtime dependencies и переносимость запуска
+
+`EliteGame` и `EliteServer` должны запускаться из обычного Windows
+PowerShell/CMD, а не только из MinGW shell. Build-time environment не является
+частью runtime contract.
+
+Для MinGW/Windows после линковки обоих executable CMake рекурсивно сканирует
+их PE imports через toolchain `objdump` и копирует найденные non-system DLL из
+MinGW/MSYS runtime directories рядом с соответствующим `.exe`. Список не
+захардкожен: кроме `libstdc++-6.dll`, `libgcc_s_seh-1.dll` и
+`libwinpthread-1.dll` клиент автоматически получает также транзитивные DLL
+GLFW/Freetype и других динамических зависимостей, если они реально присутствуют
+в import graph. Windows system DLL остаются системными.
+
+Это проверяется отдельным acceptance test, который намеренно запускает оба exe
+с `PATH`, очищенным от MSYS2/MinGW:
+
+```bash
+bash tests/runtime_standalone/run_mingw64.sh
+```
+
+Ожидаемый финал:
+
+```text
+[PASS] EliteServer and EliteGame launch without MinGW/MSYS2 on PATH
+```
+
+Linux не использует Windows staging branch. Для ELF targets build RPATH
+делается относительным (`BUILD_RPATH_USE_ORIGIN`), а системные `libc`,
+`libstdc++`, pthread и другие distribution-owned libraries не копируются рядом
+с executable. Текущий headless server должен собираться отдельно через
+`ELITE_BUILD_CLIENT=OFF`; этот runtime fix не означает, что графический
+`EliteGame` уже полностью портирован на Linux — его UI/render/toolchain
+boundary проверяется отдельно.
+
+## 4. Особенности authoritative session bootstrap
 
 При TCP admission клиент не выбирает себе корабль.
 
@@ -118,7 +175,7 @@ materialized ship. Persistent account/character/ship ownership будет отд
 
 ---
 
-## 4. Static definitions: локально на каждом endpoint
+## 5. Static definitions: локально на каждом endpoint
 
 Server и client независимо загружают одинаковые immutable/static catalogs.
 Обычная replication передаёт instance/runtime state и compact type IDs, а не
@@ -138,7 +195,7 @@ Server и client независимо загружают одинаковые im
 
 ---
 
-## 5. Что сейчас идёт по сети
+## 6. Что сейчас идёт по сети
 
 Текущий production transport — reliable ordered TCP.
 
@@ -159,7 +216,7 @@ Field-level delta compression пока намеренно не введён: с�
 
 ---
 
-## 6. Remote debug и текущие ограничения
+## 7. Remote debug и текущие ограничения
 
 На M8D remote debug control ещё не является сетевым authoritative protocol.
 `RemoteGameSession` использует безопасный no-op debug facade. Debug mutation,
@@ -180,12 +237,20 @@ transport.
 
 ---
 
-## 7. Автоматическая проверка process boundary
+## 8. Автоматическая проверка process boundary
 
 Полный ready harness:
 
 ```bash
 bash tests/run_all_mingw64.sh
+```
+
+В него входят в том числе standalone-runtime и process-boundary gates.
+
+Отдельно проверка запуска без MinGW/MSYS2 в `PATH`:
+
+```bash
+bash tests/runtime_standalone/run_mingw64.sh
 ```
 
 Отдельно process acceptance:
@@ -217,16 +282,16 @@ EliteGame.exe --self-test-remote-client HOST:PORT
 
 ---
 
-## 8. Ручная проверка после M8D
+## 9. Ручная проверка после M8D
 
 После полностью зелёного `tests/run_all_mingw64.sh` отдельно проверить реальный
 interactive remote mode.
 
 ### Check A — local mode regression
 
-```bash
-cd /d/__elite/work/build
-./EliteGame.exe
+```powershell
+cd D:\__elite\work\build
+.\EliteGame.exe
 ```
 
 Проверить:
@@ -240,18 +305,18 @@ cd /d/__elite/work/build
 
 ### Check B — dedicated server + one graphical remote client
 
-Terminal 1:
+PowerShell 1:
 
-```bash
-cd /d/__elite/work/build/headless_server
-./EliteServer.exe --listen 127.0.0.1:27351
+```powershell
+cd D:\__elite\work\build\headless_server
+.\EliteServer.exe --listen 127.0.0.1:27351
 ```
 
-Terminal 2:
+PowerShell 2:
 
-```bash
-cd /d/__elite/work/build
-./EliteGame.exe --connect 127.0.0.1:27351
+```powershell
+cd D:\__elite\work\build
+.\EliteGame.exe --connect 127.0.0.1:27351
 ```
 
 Проверить тот же gameplay surface, особенно:
@@ -282,7 +347,7 @@ entities, независимые input/ack streams и disconnect одного к
 
 ---
 
-## 9. Следующий сетевой этап — M8E
+## 10. Следующий сетевой этап — M8E
 
 M8E должен закрыть базовую multiplayer process foundation следующими gates:
 

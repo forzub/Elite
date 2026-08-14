@@ -11,11 +11,33 @@
 #include <stdexcept>
 #include "input/Input.h"
 
+namespace
+{
+void glfwDiagnosticErrorCallback(int code, const char* description)
+{
+    std::cerr << "[GLFW] error code=" << code
+              << " description=" << (description ? description : "<null>")
+              << "\n";
+}
+
+void glfwDiagnosticCloseCallback(GLFWwindow*)
+{
+#ifdef _WIN32
+    std::cerr << "[GLFW] window close requested pid="
+              << GetCurrentProcessId() << "\n";
+#else
+    std::cerr << "[GLFW] window close requested\n";
+#endif
+}
+}
+
 
 Window::Window(int width, int height, const char* title)
     : m_window(nullptr)
 {
  
+    glfwSetErrorCallback(glfwDiagnosticErrorCallback);
+
     if (!glfwInit())
     {
         throw std::runtime_error("Failed to initialize GLFW");
@@ -30,11 +52,9 @@ Window::Window(int width, int height, const char* title)
     
     m_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 
+    if (m_window)
+        glfwSetWindowCloseCallback(m_window, glfwDiagnosticCloseCallback);
 
-            if (glfwGetWindowAttrib(m_window, GLFW_SRGB_CAPABLE))
-                std::cout << "sRGB framebuffer OK\n";
-            else
-                std::cout << "NO sRGB framebuffer\n";
 
 
 

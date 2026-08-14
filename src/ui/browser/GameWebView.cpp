@@ -3,8 +3,12 @@
 #include "ui/browser/GameWebView.h"
 
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <windows.h>
+#include <objbase.h>
 
 #include <webview/webview.h>
 
@@ -15,34 +19,6 @@ GameWebView::~GameWebView()
     stop();
 }
 
-void GameWebView::start(void* parentHwnd, const std::string& title, int width, int height, const std::string& htmlFile)
-{
-    if (m_running)
-        return;
-
-    m_parentHwnd = parentHwnd;
-    m_running = true;
-
-    m_thread = std::thread(
-        [this, parentHwnd, title, width, height, htmlFile]()
-        {
-            threadMain(parentHwnd, title, width, height, htmlFile);
-        }
-    );
-}
-
-void GameWebView::stop()
-{
-    m_running = false;
-
-    if (m_thread.joinable())
-        m_thread.detach();
-}
-
-
-
-
-
 static bool isUri(const std::string& value)
 {
     return value.rfind("http://", 0) == 0 ||
@@ -50,11 +26,242 @@ static bool isUri(const std::string& value)
            value.rfind("file://", 0) == 0;
 }
 
+static std::string hresultHex(HRESULT hr)
+{
+    std::ostringstream out;
+    out << "0x" << std::hex << std::uppercase
+        << static_cast<unsigned long>(hr);
+    return out.str();
+}
 
+static std::filesystem::path configureProcessLocalWebView2UserDataFolder()
+{
+    // WebView2 otherwise gives multiple EliteGame.exe host processes the same
+    // default user-data folder/session. A game client must own an independent
+    // browser session just like it owns an independent HWND and HTTP endpoint.
+    wchar_t localAppData[32768] = {};
+    constexpr DWORD LocalAppDataCapacity =
+        static_cast<DWORD>(sizeof(localAppData) / sizeof(localAppData[0]));
+    const DWORD length = GetEnvironmentVariableW(
+        L"LOCALAPPDATA",
+        localAppData,
+        LocalAppDataCapacity
+    );
 
+    std::filesystem::path root;
+    if (length > 0 && length < LocalAppDataCapacity)
+        root = std::filesystem::path(localAppData);
+    else
+        root = std::filesystem::temp_directory_path();
 
+    const std::filesystem::path udf =
+        root / "EliteGame" / "WebView2Sessions" /
+        std::to_wstring(GetCurrentProcessId());
 
+    std::filesystem::create_directories(udf);
 
+    if (!SetEnvironmentVariableW(
+            L"WEBVIEW2_USER_DATA_FOLDER",
+            udf.c_str()))
+    {
+        throw std::runtime_error(
+            "GameWebView failed to set process-local WEBVIEW2_USER_DATA_FOLDER"
+        );
+    }
+
+    return udf;
+}
+
+void GameWebView::start(
+    void* parentHwnd,
+    const std::string& title,
+    int width,
+    int height,
+    const std::string& htmlFile)
+{
+    if (m_running)
+        return;
+
+    if (!parentHwnd)
+        throw std::runtime_error("GameWebView requires a valid parent HWND");
+
+    const std::filesystem::path webView2Udf =
+        configureProcessLocalWebView2UserDataFolder();
+
+    std::cerr << "[GameWebView] pid=" << GetCurrentProcessId()
+              << " WebView2 UDF=" << webView2Udf.string() << "\n";
+
+    // Embedded WebView2 must live on the same STA/UI thread that owns the
+    // GLFW Win32 window. The webview backend initializes COM for windows it
+    // owns itself, but when an existing HWND is supplied the caller owns both
+    // COM and application lifecycle.
+    const HRESULT comResult = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    if (FAILED(comResult))
+    {
+        throw std::runtime_error(
+            "GameWebView CoInitializeEx(COINIT_APARTMENTTHREADED) failed: " +
+            hresultHex(comResult)
+        );
+    }
+    m_comInitialized = true;
+
+    try
+    {
+        auto* w = new webview::webview(false, parentHwnd);
+
+        HWND widgetHwnd = nullptr;
+        try
+        {
+            widgetHwnd = reinterpret_cast<HWND>(w->widget().value());
+        }
+        catch (const std::exception& e)
+        {
+            delete w;
+            throw std::runtime_error(
+                std::string("GameWebView widget() failed: ") + e.what()
+            );
+        }
+
+        if (!widgetHwnd)
+        {
+            delete w;
+            throw std::runtime_error("GameWebView embedded widget HWND is null");
+        }
+
+        m_parentHwnd = parentHwnd;
+        m_webviewHwnd = widgetHwnd;
+        m_webviewObject = w;
+        m_running = true;
+
+        std::cerr << "[GameWebView] embedded pid=" << GetCurrentProcessId()
+                  << " parent_hwnd=" << static_cast<HWND>(parentHwnd)
+                  << " widget_hwnd=" << widgetHwnd
+                  << " title=\"" << title << "\"\n";
+
+        // The backend creates the widget as a real WS_CHILD of parentHwnd.
+        // Do not create/re-style/re-parent a second top-level window.
+        MoveWindow(widgetHwnd, 0, 0, width, height, TRUE);
+
+        w->bind(
+            "gameCommand",
+            [this, w](const std::string& seq, const std::string& req, void* arg)
+            {
+                (void)arg;
+
+                // req arrives as a JSON argument array, e.g. ["new_game"].
+                std::string command = req;
+                if (command.size() >= 4 && command.front() == '[')
+                {
+                    const auto firstQuote = command.find('"');
+                    const auto secondQuote = command.find('"', firstQuote + 1);
+                    if (firstQuote != std::string::npos &&
+                        secondQuote != std::string::npos)
+                    {
+                        command = command.substr(
+                            firstQuote + 1,
+                            secondQuote - firstQuote - 1
+                        );
+                    }
+                }
+
+                {
+                    std::lock_guard<std::mutex> lock(m_mutex);
+                    m_commands.push(command);
+                }
+
+                w->resolve(seq, 0, "{}");
+            },
+            nullptr
+        );
+
+        std::string uri;
+        if (isUri(htmlFile))
+        {
+            uri = htmlFile;
+        }
+        else
+        {
+            const std::filesystem::path htmlPath =
+                std::filesystem::absolute(htmlFile);
+
+            std::cout << "[GameWebView] HTML path: " << htmlPath.string() << "\n";
+            std::cout << "[GameWebView] HTML exists: "
+                      << (std::filesystem::exists(htmlPath) ? "YES" : "NO")
+                      << "\n";
+
+            if (!std::filesystem::exists(htmlPath))
+            {
+                w->set_html(R"HTML(
+                    <!doctype html>
+                    <html>
+                    <body style="background:#111;color:#eee;font-family:Arial;padding:32px">
+                        <h1>GameWebView works</h1>
+                        <p>HTML file not found.</p>
+                    </body>
+                    </html>
+                )HTML");
+                return;
+            }
+
+            uri = filePathToUri(htmlPath.string());
+        }
+
+        std::cout << "[GameWebView] navigate initial: " << uri << "\n";
+        w->navigate(uri);
+
+        // No w->run() here. The embedded WebView belongs to the GLFW Win32 UI
+        // thread and glfwPollEvents() is the application-owned message pump.
+    }
+    catch (...)
+    {
+        m_running = false;
+        m_webviewObject = nullptr;
+        m_webviewHwnd = nullptr;
+        m_parentHwnd = nullptr;
+
+        if (m_comInitialized)
+        {
+            CoUninitialize();
+            m_comInitialized = false;
+        }
+        throw;
+    }
+}
+
+void GameWebView::stop()
+{
+    if (!m_running && !m_webviewObject)
+    {
+        if (m_comInitialized)
+        {
+            CoUninitialize();
+            m_comInitialized = false;
+        }
+        return;
+    }
+
+    std::cerr << "[GameWebView] stop pid=" << GetCurrentProcessId()
+              << " parent_hwnd=" << static_cast<HWND>(m_parentHwnd)
+              << " widget_hwnd=" << static_cast<HWND>(m_webviewHwnd)
+              << "\n";
+
+    auto* w = static_cast<webview::webview*>(m_webviewObject);
+
+    m_running = false;
+    m_webviewObject = nullptr;
+    m_webviewHwnd = nullptr;
+    m_parentHwnd = nullptr;
+
+    // Embedded mode means destruction removes only the WebView child. The
+    // parent GLFW HWND and application lifecycle remain owned by Application.
+    delete w;
+
+    if (m_comInitialized)
+    {
+        CoUninitialize();
+        m_comInitialized = false;
+    }
+}
 
 void GameWebView::setCommandCallback(CommandCallback cb)
 {
@@ -73,37 +280,27 @@ bool GameWebView::pollCommand(std::string& outCommand)
     return true;
 }
 
-
-
-
 void GameWebView::resize(int width, int height)
 {
     HWND hwnd = static_cast<HWND>(m_webviewHwnd);
-
     if (!hwnd)
         return;
 
     MoveWindow(hwnd, 0, 0, width, height, TRUE);
 }
 
-
-
 void GameWebView::setBounds(int x, int y, int width, int height)
 {
     HWND hwnd = static_cast<HWND>(m_webviewHwnd);
-
     if (!hwnd)
         return;
 
     MoveWindow(hwnd, x, y, width, height, TRUE);
 }
 
-
-
 void GameWebView::setVisible(bool visible)
 {
     HWND hwnd = static_cast<HWND>(m_webviewHwnd);
-
     if (!hwnd)
         return;
 
@@ -141,244 +338,46 @@ void GameWebView::setVisible(bool visible)
             0,
             SWP_NOMOVE | SWP_NOSIZE
         );
-
         SetFocus(hwnd);
     }
 }
 
-
-
-
 void GameWebView::navigate(const std::string& htmlFile)
 {
-    void* raw = nullptr;
-
-    {
-        std::lock_guard<std::mutex> lock(m_webviewMutex);
-        raw = m_webviewObject;
-    }
-
-    if (!raw)
+    auto* w = static_cast<webview::webview*>(m_webviewObject);
+    if (!w)
         return;
 
-    auto* w = static_cast<webview::webview*>(raw);
-
     std::string uri;
-
     if (isUri(htmlFile))
     {
         uri = htmlFile;
     }
     else
     {
-        std::filesystem::path htmlPath =
+        const std::filesystem::path htmlPath =
             std::filesystem::absolute(htmlFile);
-
         uri = filePathToUri(htmlPath.string());
     }
 
     std::cout << "[GameWebView] navigate request: " << uri << "\n";
-
-    w->dispatch([w, uri]()
-    {
-        w->navigate(uri);
-    });
+    w->navigate(uri);
 }
-
-
-
 
 void GameWebView::evalScript(const std::string& script)
 {
-    void* raw = nullptr;
-
-    {
-        std::lock_guard<std::mutex> lock(m_webviewMutex);
-        raw = m_webviewObject;
-    }
-
-    if (!raw)
+    auto* w = static_cast<webview::webview*>(m_webviewObject);
+    if (!w)
         return;
 
-    auto* w = static_cast<webview::webview*>(raw);
-
-    w->dispatch([w, script]()
-    {
-        w->eval(script);
-    });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void GameWebView::threadMain(void* parentHwnd, std::string title, int width, int height, std::string htmlFile)
-{
-    try
-    {
-        webview::webview w(false, nullptr);
-
-        {
-            std::lock_guard<std::mutex> lock(m_webviewMutex);
-            m_webviewObject = &w;
-        }
-
-        w.set_title(title);
-        w.set_size(width, height, WEBVIEW_HINT_NONE);
-
-
-            HWND childHwnd = nullptr;
-
-            try
-            {
-                childHwnd = reinterpret_cast<HWND>(w.window().value());
-            }
-            catch (const std::exception& e)
-            {
-                std::cout << "[GameWebView] w.window() failed: " << e.what() << "\n";
-            }
-
-            HWND parent = static_cast<HWND>(parentHwnd);
-
-        m_webviewHwnd = childHwnd;
-
-        std::cout << "[GameWebView] parent HWND: " << parent << "\n";
-        std::cout << "[GameWebView] child HWND: " << childHwnd << "\n";
-
-        if (childHwnd && parent)
-        {
-            LONG_PTR style = GetWindowLongPtr(childHwnd, GWL_STYLE);
-
-            style &= ~WS_OVERLAPPEDWINDOW;
-            style &= ~WS_POPUP;
-            style |= WS_CHILD;
-
-            SetWindowLongPtr(childHwnd, GWL_STYLE, style);
-            SetParent(childHwnd, parent);
-
-            SetWindowPos(
-                childHwnd,
-                HWND_TOP,
-                0,
-                0,
-                width,
-                height,
-                SWP_FRAMECHANGED | SWP_SHOWWINDOW
-            );
-
-            std::cout << "[GameWebView] Attached to GLFW window\n";
-        }
-        else
-        {
-            std::cout << "[GameWebView] Attach failed: null HWND\n";
-        }
-
-
-
-        w.bind("gameCommand",
-            [this, &w](const std::string& seq, const std::string& req, void* arg)
-            {
-                (void)arg;
-
-                // req приходит как JSON-массив аргументов.
-                // Например: ["new_game"]
-                std::string command = req;
-
-                if (command.size() >= 4 && command.front() == '[')
-                {
-                    auto firstQuote = command.find('"');
-                    auto secondQuote = command.find('"', firstQuote + 1);
-
-                    if (firstQuote != std::string::npos && secondQuote != std::string::npos)
-                    {
-                        command = command.substr(firstQuote + 1, secondQuote - firstQuote - 1);
-                    }
-                }
-
-                {
-                    std::lock_guard<std::mutex> lock(m_mutex);
-                    m_commands.push(command);
-                }
-
-                w.resolve(seq, 0, "{}");
-            },
-            nullptr
-        );
-
-        std::string uri;
-
-        if (isUri(htmlFile))
-        {
-            uri = htmlFile;
-
-            std::cout << "[GameWebView] Navigate URI: " << uri << "\n";
-            w.navigate(uri);
-        }
-        else
-        {
-            std::filesystem::path htmlPath =
-                std::filesystem::absolute(htmlFile);
-
-            std::cout << "[GameWebView] HTML path: " << htmlPath.string() << "\n";
-            std::cout << "[GameWebView] HTML exists: "
-                    << (std::filesystem::exists(htmlPath) ? "YES" : "NO")
-                    << "\n";
-
-            uri = filePathToUri(htmlPath.string());
-
-            std::cout << "[GameWebView] Navigate file: " << uri << "\n";
-
-            if (std::filesystem::exists(htmlPath))
-            {
-                w.navigate(uri);
-            }
-            else
-            {
-                w.set_html(R"HTML(
-                    <!doctype html>
-                    <html>
-                    <body style="background:#111;color:#eee;font-family:Arial;padding:32px">
-                        <h1>GameWebView works</h1>
-                        <p>HTML file not found.</p>
-                    </body>
-                    </html>
-                )HTML");
-            }
-        }
-
-        w.run();
-
-        std::cout << "[GameWebView] Closed\n";
-    }
-    catch (const std::exception& e)
-    {
-        std::cout << "[GameWebView] Exception: " << e.what() << "\n";
-    }
-
-
-    {
-        std::lock_guard<std::mutex> lock(m_webviewMutex);
-        m_webviewObject = nullptr;
-    }
-
-    m_running = false;
+    w->eval(script);
 }
 
 std::string GameWebView::filePathToUri(const std::string& path)
 {
-    std::filesystem::path absPath = std::filesystem::absolute(path);
-    std::string s = absPath.generic_string();
+    const std::filesystem::path absPath = std::filesystem::absolute(path);
+    const std::string s = absPath.generic_string();
 
-    // Минимальное экранирование пробелов.
     std::string encoded;
     encoded.reserve(s.size());
 

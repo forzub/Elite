@@ -11,7 +11,9 @@ void Input::update(GLFWwindow* window)
     m_scrollY = m_pendingScrollY;
     m_pendingScrollY = 0.0;
 
-    for (int key = 0; key <= GLFW_KEY_LAST; ++key)
+    // glfwGetKey accepts named key tokens only. Codes below
+    // GLFW_KEY_SPACE (32) trigger GLFW_INVALID_ENUM.
+    for (int key = GLFW_KEY_SPACE; key <= GLFW_KEY_LAST; ++key)
     {
         m_prevKeys[key] = m_keys[key];
         m_keys[key] = glfwGetKey(window, key) == GLFW_PRESS;
@@ -33,11 +35,15 @@ void Input::reset()
 
 bool Input::isKeyPressed(int key) const
 {
+    if (key < 0 || key > GLFW_KEY_LAST)
+        return false;
     return m_keys[key];
 }
 
 bool Input::isKeyPressedOnce(int key) const
 {
+    if (key < 0 || key > GLFW_KEY_LAST)
+        return false;
     return m_keys[key] && !m_prevKeys[key];
 }
 

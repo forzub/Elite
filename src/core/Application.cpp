@@ -278,6 +278,13 @@ void Application::init()
 
             m_gameUiHttpPort = m_htmlUi.start(0, webUiRoot);
 
+#ifdef _WIN32
+            std::cerr << "[App] client process pid=" << GetCurrentProcessId()
+                      << " glfw_hwnd=" << m_window->nativeWin32Handle()
+                      << " webui_port=" << m_gameUiHttpPort
+                      << "\n";
+#endif
+
             int w, h;
             glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
             m_htmlUi.setViewport(w, h);
@@ -761,6 +768,12 @@ if (!systemMapMode && top)
         m_states.applyPendingChanges();
         m_window->swapBuffers();
     }
+
+    std::cerr << "[App] main loop exit pid=" << GetCurrentProcessId()
+              << " running=" << (m_running ? "yes" : "no")
+              << " window_should_close=" << (m_window->shouldClose() ? "yes" : "no")
+              << " states_empty=" << (m_states.empty() ? "yes" : "no")
+              << "\n";
 }
 
 // =====================================================================================

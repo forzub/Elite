@@ -7,6 +7,12 @@
 #include <vector>
 #include <chrono>
 #include <thread>
+#include <exception>
+#include <cstdlib>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include "core/Application.h"
 #include "game/server/GameServer.h"
 #include "game/diagnostics/ClientAcceptanceHarness.h"
@@ -24,6 +30,25 @@
 
 namespace
 {
+
+#ifdef _WIN32
+LONG WINAPI eliteUnhandledExceptionFilter(EXCEPTION_POINTERS* info)
+{
+    const DWORD code =
+        info && info->ExceptionRecord
+            ? info->ExceptionRecord->ExceptionCode
+            : 0u;
+    const void* address =
+        info && info->ExceptionRecord
+            ? info->ExceptionRecord->ExceptionAddress
+            : nullptr;
+
+    std::cerr << "[CRASH] EliteGame pid=" << GetCurrentProcessId()
+              << " SEH=0x" << std::hex << code << std::dec
+              << " address=" << address << "\n";
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+#endif
 
 bool isBakeCommandToken(const std::string& arg)
 {
@@ -483,6 +508,21 @@ bool parseCelestialBakeOptions(
 
 int main(int argc, char** argv)
 {
+#ifdef _WIN32
+    SetUnhandledExceptionFilter(eliteUnhandledExceptionFilter);
+#endif
+
+    std::set_terminate([]()
+    {
+#ifdef _WIN32
+        std::cerr << "[CRASH] std::terminate pid="
+                  << GetCurrentProcessId() << "\n";
+#else
+        std::cerr << "[CRASH] std::terminate\n";
+#endif
+        std::abort();
+    });
+
     bool useRemoteServer = false;
     game::network::NetworkEndpoint remoteEndpoint;
 

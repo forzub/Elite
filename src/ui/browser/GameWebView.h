@@ -3,10 +3,7 @@
 #ifdef _WIN32
 
 #include <functional>
-#include <memory>
 #include <string>
-#include <thread>
-#include <atomic>
 #include <mutex>
 #include <queue>
 
@@ -28,19 +25,17 @@ public:
     void resize(int width, int height);
     void setBounds(int x, int y, int width, int height);
 
-    
     void navigate(const std::string& htmlFile);
     void evalScript(const std::string& script);
 
     void setVisible(bool visible);
 
 private:
-    void threadMain(void* parentHwnd, std::string title, int width, int height, std::string htmlFile);
     static std::string filePathToUri(const std::string& path);
 
 private:
-    std::thread m_thread;
-    std::atomic<bool> m_running{false};
+    bool m_running = false;
+    bool m_comInitialized = false;
 
     std::mutex m_mutex;
     std::queue<std::string> m_commands;
@@ -48,8 +43,6 @@ private:
     CommandCallback m_commandCallback;
     void* m_parentHwnd = nullptr;
     void* m_webviewHwnd = nullptr;
-
-    std::mutex m_webviewMutex;
     void* m_webviewObject = nullptr;
 };
 

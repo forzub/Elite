@@ -8,6 +8,7 @@
 #include "src/game/simulation/ClientSessionSnapshot.h"
 #include "src/game/simulation/OrbitalHubSnapshot.h"
 #include "src/game/network/ProtocolMetadata.h"
+#include "src/game/network/ReplicationEnvelope.h"
 #include "src/world/WorldSignal.h"
 
 
@@ -15,6 +16,7 @@
 struct SimulationSnapshot
 {
     game::network::SnapshotMetadata metadata;
+    game::network::ReplicationEnvelope replication;
 
     std::vector<ShipSnapshot>   ships;
     std::vector<WorldSignal>    signals;

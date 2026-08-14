@@ -968,3 +968,43 @@ set_tests_properties(
     PROPERTIES
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+add_executable(
+    replication_interest_contract_tests
+    ReplicationInterestContractTests.cpp
+)
+
+target_include_directories(
+    replication_interest_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        replication_interest_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        replication_interest_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME replication_interest_contracts
+    COMMAND replication_interest_contract_tests
+)
+
+set_tests_properties(
+    replication_interest_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

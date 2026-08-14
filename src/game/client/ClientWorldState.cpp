@@ -3,6 +3,7 @@
 #include "src/game/client/ReferenceFramePresentation.h"
 #include "src/game/client/ClientHubTacticalPrediction.h"
 #include "src/game/client/SnapshotPresentationWindow.h"
+#include "src/game/network/ReplicationSnapshotMerge.h"
 #include "src/game/client/presentation/LocalPredictedPresentation.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include <iostream>
@@ -505,6 +506,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.id   = s.id;
             state.role = s.role;
             state.typeId = s.typeId;
+            state.acknowledgedControlTick = s.acknowledgedControlTick;
             state.motionLabKind = s.motionLabKind;
             state.descriptor =
                 &ShipDescriptorRegistry::get(s.typeId);
@@ -554,6 +556,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
             state.role = s.role;
             state.typeId = s.typeId;
+            state.acknowledgedControlTick = s.acknowledgedControlTick;
             state.motionLabKind = s.motionLabKind;
             state.transform = s.transform;
             state.referenceFrame = s.referenceFrame;
@@ -578,12 +581,26 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
     }
 
 
-    for (auto it = m_ships.begin(); it != m_ships.end();)
+    const bool fullAuthoritativeEntitySet =
+        snapshot.replication.entitySetMode ==
+        game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
+
+    if (fullAuthoritativeEntitySet)
     {
-        if (authoritativeShipIds.find(it->first) == authoritativeShipIds.end())
-            it = m_ships.erase(it);
-        else
-            ++it;
+        for (auto it = m_ships.begin(); it != m_ships.end();)
+        {
+            if (authoritativeShipIds.find(it->first) == authoritativeShipIds.end())
+                it = m_ships.erase(it);
+            else
+                ++it;
+        }
+    }
+    else
+    {
+        // Sparse omission means retain. Only an explicit lifecycle removal may
+        // delete a ship from the replicated client world.
+        for (const auto id : snapshot.replication.removedShipIds)
+            m_ships.erase(id.value);
     }
 
     // ------- передача ObjectSnapshot ------
@@ -679,12 +696,20 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         }
     }
 
-    for (auto it = m_objects.begin(); it != m_objects.end();)
+    if (fullAuthoritativeEntitySet)
     {
-        if (authoritativeObjectIds.find(it->first) == authoritativeObjectIds.end())
-            it = m_objects.erase(it);
-        else
-            ++it;
+        for (auto it = m_objects.begin(); it != m_objects.end();)
+        {
+            if (authoritativeObjectIds.find(it->first) == authoritativeObjectIds.end())
+                it = m_objects.erase(it);
+            else
+                ++it;
+        }
+    }
+    else
+    {
+        for (const auto id : snapshot.replication.removedObjectIds)
+            m_objects.erase(id.value);
     }
 
     std::unordered_set<std::string> authoritativeHubIds;
@@ -705,12 +730,20 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         state.motion = hub.motion;
     }
 
-    for (auto it = m_hubs.begin(); it != m_hubs.end();)
+    if (fullAuthoritativeEntitySet)
     {
-        if (authoritativeHubIds.find(it->first) == authoritativeHubIds.end())
-            it = m_hubs.erase(it);
-        else
-            ++it;
+        for (auto it = m_hubs.begin(); it != m_hubs.end();)
+        {
+            if (authoritativeHubIds.find(it->first) == authoritativeHubIds.end())
+                it = m_hubs.erase(it);
+            else
+                ++it;
+        }
+    }
+    else
+    {
+        for (const auto& id : snapshot.replication.removedHubIds)
+            m_hubs.erase(id);
     }
 
     m_visualDrones.clear();
@@ -780,7 +813,19 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
     }
 
     // ------- передача в буфер Snapshot ------
-    m_snapshotBuffer.push_back(snapshot);
+    // Presentation/map samplers require a canonical full entity set at every
+    // retained epoch even after transport publication becomes sparse. Live
+    // state above applies only actual incoming updates/removals; the history
+    // sample below materializes omitted entities from the previous baseline.
+    const SimulationSnapshot* previousCanonical =
+        m_snapshotBuffer.empty() ? nullptr : &m_snapshotBuffer.back();
+
+    m_snapshotBuffer.push_back(
+        game::network::materializeCanonicalReplicationSnapshot(
+            previousCanonical,
+            snapshot
+        )
+    );
 
     while (m_snapshotBuffer.size() > 20)
         m_snapshotBuffer.pop_front();

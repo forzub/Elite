@@ -85,6 +85,26 @@ The existing `system_map` block remains the owner of map camera, picking and
 cubic-navigation interaction contracts; the acceptance harness verifies the
 live authoritative data path feeding those views.
 
+### Multiplayer client acceptance
+
+`tests/multiplayer_client_acceptance/run_mingw64.sh`
+
+Boots one production `ServerRuntime` with two independent loopback endpoints and
+two real `GameClient` state machines. It locks down distinct server-assigned
+controlled entities, opposite local/remote identity on each client, per-session
+navigation, one shared authoritative world, and independent numbered input /
+authoritative acknowledgement streams without bypassing `ITransport`.
+
+### Replication interest / sparse-retention contract
+
+`tests/architecture_contracts/ReplicationInterestContractTests.cpp` plus
+`check_replication_interest_retention.py` lock down the Stage-M6 seam between
+server simulation and future network decimation. Interest is computed per
+destination session without changing simulation activation. The wire contract
+already distinguishes full authoritative entity sets from sparse retain-missing
+updates, and explicit removals are the only sparse deletion mechanism. Production
+publication remains full-presence until the later sparse-cadence stage.
+
 ### Hub co-frame presentation
 
 Hub-attached infrastructure carries its stable local hub binding in simulation

@@ -272,6 +272,14 @@ void ServerRunner::publishOutboundMessages()
             continue;
         }
 
+        // Interest is computed independently for this destination session and
+        // retained server-side. Stage M6 does not filter payload yet; M7 will
+        // consume this plan together with lifecycle/baseline state.
+        binding.lastShipInterestPlan =
+            m_server.shipReplicationInterestPlanForSession(
+                binding.sessionId
+            );
+
         SimulationSnapshot sessionSnapshot;
         if (!m_server.copySnapshotForSession(
                 binding.sessionId,

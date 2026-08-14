@@ -973,7 +973,35 @@ bool GameServer::copySnapshotForSession(
 
     outSnapshot = m_lastSnapshot;
     outSnapshot.session.playerNavigation = sessionNavigation;
+
+    // Stage M6 introduces sparse-ready protocol semantics without changing
+    // production publication yet. Every session still receives a complete
+    // authoritative entity set; per-session interest remains server-side and
+    // is owned by ServerRunner transport bindings.
+    outSnapshot.replication.entitySetMode =
+        game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
+    outSnapshot.replication.removedShipIds.clear();
+    outSnapshot.replication.removedObjectIds.clear();
+    outSnapshot.replication.removedHubIds.clear();
     return true;
+}
+
+game::server::ShipReplicationInterestPlan
+GameServer::shipReplicationInterestPlanForSession(
+    game::network::ServerSessionId sessionId
+) const
+{
+    const EntityId controlledEntityId =
+        m_sessions.controlledEntity(sessionId);
+
+    if (controlledEntityId.value == 0)
+        return {};
+
+    return game::server::buildShipReplicationInterestPlan(
+        controlledEntityId,
+        m_lastSnapshot,
+        m_replicationInterestPolicy
+    );
 }
 
 EntityId GameServer::playerId() const

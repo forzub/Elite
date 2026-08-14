@@ -50,6 +50,10 @@ run_suite \
     "CLIENT ACCEPTANCE HARNESS" \
     "tests/client_acceptance/run_mingw64.sh"
 
+run_suite \
+    "MULTIPLAYER CLIENT ACCEPTANCE" \
+    "tests/multiplayer_client_acceptance/run_mingw64.sh"
+
 run_headless_server_build() {
     echo
     echo "================================================================"

@@ -6,6 +6,7 @@
 #include "core/Application.h"
 #include "game/server/GameServer.h"
 #include "game/diagnostics/ClientAcceptanceHarness.h"
+#include "game/diagnostics/MultiplayerClientAcceptanceHarness.h"
 #include "core/ConsoleOutput.h"
 #include "world/celestial/visual/CelestialTextureBaker.h"
 #include "render/bitmap/stb_image.h"
@@ -31,6 +32,11 @@ bool isFastUniverseSmokeTestToken(const std::string& arg)
 bool isClientAcceptanceSelfTestToken(const std::string& arg)
 {
     return arg == "--self-test-client-acceptance";
+}
+
+bool isMultiplayerClientAcceptanceSelfTestToken(const std::string& arg)
+{
+    return arg == "--self-test-multiplayer-client";
 }
 
 int runFastUniverseSmokeTest()
@@ -354,6 +360,12 @@ int main(int argc, char** argv)
             {
                 core::disableRuntimeStdoutNoise();
                 return game::diagnostics::runClientAcceptanceSelfTest();
+            }
+
+            if (isMultiplayerClientAcceptanceSelfTestToken(arg))
+            {
+                core::disableRuntimeStdoutNoise();
+                return game::diagnostics::runMultiplayerClientAcceptanceSelfTest();
             }
 
             if (isBakeCommandToken(arg))

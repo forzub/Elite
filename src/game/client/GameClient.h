@@ -107,6 +107,11 @@ public:
         return m_predictionSuspended;
     }
 
+    std::uint64_t lastAcknowledgedControlTick() const
+    {
+        return m_lastAcknowledgedControlTick;
+    }
+
     void beginSynchronization();
     void failSynchronization(std::string message);
     ClientConnectionState connectionState() const;
@@ -161,6 +166,7 @@ private:
     std::deque<TimedInput>          m_pendingInputs;
     std::uint64_t                   m_droppedPendingInputCount = 0;
     std::uint64_t                   m_predictionResyncCount = 0;
+    std::uint64_t                   m_lastAcknowledgedControlTick = 0;
     bool                            m_predictionSuspended = false;
     ShipControlState                m_latestControl;
     bool                            m_hasLatestControl = false;

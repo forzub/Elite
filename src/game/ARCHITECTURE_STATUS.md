@@ -232,9 +232,12 @@ the established Active trajectory path. Sparse replication is intentionally
 paused behind the multiplayer session/interest boundary: omission cadence is a
 per-client decision, not a property of the simulated entity alone. Multiplayer
 M1/M2 establish server-owned sessions and multi-transport fan-out, M3 separates
-local from remote human identity on the client, and M4 makes navigation fully
-session-derived on the server. The next multiplayer slice is a two-`GameClient`
-acceptance path, followed by per-client interest/sparse replication, true
+local from remote human identity on the client, M4 makes navigation fully
+session-derived on the server, M5 runs two real `GameClient` state machines
+against one authoritative runtime, and M6 establishes per-session ship interest
+plus explicit retain/update/remove semantics. Production publication is still
+full-presence; the next slice applies actual sparse per-entity cadence with full
+bootstrap/re-entry hydration, followed by true
 `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse, and then
 multi-system runtime work.
 
@@ -371,8 +374,10 @@ and maintenance lanes. Runtime Stage 4B then separates control-force/rate
 evaluation from kinematic propagation: `Active` evaluates motion control every
 fixed tick, `Prewarm` roughly 25 Hz, `Coarse` roughly 5 Hz, while orientation and
 HubTactical translation continue to propagate every authoritative fixed tick.
-Signals and snapshots remain full-rate/full-presence pending explicit sparse
-replication semantics.
+Signals and production entity snapshots remain full-rate/full-presence in M6,
+but explicit sparse-retention semantics now exist and are regression-locked. The
+next stage may decimate per-session entity publication without treating omission
+as destruction.
 
 ### Static definition / runtime replication boundary
 
@@ -434,7 +439,7 @@ overlays use `assets/localization/ui/cockpit`; manufacturer-native instrument
 legends can be layered separately when ship definitions begin owning cockpit
 language.
 
-### Multiplayer Stage M1-M4 — session authority, client identity and navigation
+### Multiplayer Stage M1-M6 — session authority, client identity, navigation, two-client acceptance and replication interest
 
 - M1 added a platform-neutral `ServerSessionId` and `ServerSessionRegistry`; authoritative
   connection/session identity is no longer the same concept as a ship `EntityId`.
@@ -474,8 +479,18 @@ language.
   entities in the materialized runtime and refuses to arbitrarily choose a primary player
   when controlled ships name different systems. True split-system play remains a later
   multi-system-runtime task.
-- The next multiplayer acceptance milestone is two real `GameClient` instances sharing one
-  authoritative runtime before per-client interest and sparse replication.
+- M5 adds a real two-client acceptance gate: two `LocalLoopbackTransport` endpoints and two `GameClient` instances share one `ServerRuntime`, reach `Ready` independently, receive different controlled entities, preserve opposite local/remote identity, derive navigation from their own entity, and maintain independent numbered input/acknowledgement streams without bypassing `ITransport`.
+- M6 introduces a server-owned per-session ship replication-interest policy that is separate from
+  simulation activation. `Controlled / Tactical / Nearby / Coarse / None` describe transport cost
+  demand from the destination session's controlled entity; they are explicitly **not** sensor or
+  gameplay-visibility authorization. Production payload is still full-presence in M6.
+- `SimulationSnapshot` now carries explicit entity-set semantics: `FullAuthoritativeSet` preserves
+  legacy omission=remove, while `SparseRetainMissing` means omission=no update and requires explicit
+  ship/object/hub removal rows. `ClientWorldState` already honors that distinction and materializes
+  canonical retained history samples so existing interpolation/map samplers do not consume sparse
+  holes directly.
+- The next multiplayer milestone is actual per-entity sparse/cadenced ship publication with full
+  bootstrap/re-entry hydration, followed by a real network transport.
 - Session/authority/runner code contains no Win32/POSIX socket primitives. Platform-specific
   networking stays behind transport adapters so the same authoritative runtime can build on
   Windows and Linux.

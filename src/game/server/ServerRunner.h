@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "src/game/network/SessionMessage.h"
+#include "src/game/server/ReplicationInterestPolicy.h"
 
 class GameServer;
 class IServerTransport;
@@ -24,6 +25,10 @@ struct ServerTransportBinding
     IServerTransport* transport = nullptr;
     game::network::ServerSessionId sessionId {};
     std::uint64_t lastPublishedServerTick = 0;
+
+    // Server-only transport demand. Never serialize this plan to the client:
+    // future sparse publication consumes it after visibility/knowledge gates.
+    game::server::ShipReplicationInterestPlan lastShipInterestPlan;
 };
 
 struct ServerAdvanceResult

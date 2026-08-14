@@ -130,6 +130,7 @@ add_executable(EliteGame
     src/game/simulation/NpcAiSystem.cpp
 
     src/game/diagnostics/ClientAcceptanceHarness.cpp
+    src/game/diagnostics/MultiplayerClientAcceptanceHarness.cpp
     src/game/presentation/ClientHudPresentation.cpp
     src/game/presentation/GalaxyNavigationPresentation.cpp
     src/game/presentation/StarSystemLabelPresentation.cpp

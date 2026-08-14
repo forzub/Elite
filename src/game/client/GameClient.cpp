@@ -28,6 +28,7 @@ void GameClient::beginSynchronization()
     m_pendingVelocityAlignmentCommand =
         game::navigation::VelocityAlignmentMode::None;
     m_predictionSuspended = false;
+    m_lastAcknowledgedControlTick = 0;
     m_accumulator = 0.0f;
     m_serverClock.reset();
     m_presentationClock.reset();
@@ -502,6 +503,8 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
                 break;
             }
         }
+
+        m_lastAcknowledgedControlTick = acknowledgedControlTick;
 
         while (!m_pendingInputs.empty() &&
                m_pendingInputs.front().controlTick <= acknowledgedControlTick)

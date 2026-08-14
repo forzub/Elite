@@ -57,6 +57,7 @@ struct ClientShipState
     EntityId                                        id;
     ShipRole                                        role;
     ObjectType                                      typeId;
+    std::uint64_t                                   acknowledgedControlTick = 0;
     game::diagnostics::HubMotionLabActorKind        motionLabKind = game::diagnostics::HubMotionLabActorKind::None;
 
     ShipTransform                                   transform;      // 🔥 единственный источник sim state

@@ -22,6 +22,7 @@
 #include "src/game/server/ServerTimeContext.h"
 #include "src/game/server/FixedStepControlQueue.h"
 #include "src/game/server/ServerSessionRegistry.h"
+#include "src/game/server/ReplicationInterestPolicy.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
 struct ServerQueueDiagnostics
@@ -46,6 +47,11 @@ public:
     bool copySnapshotForSession(
         game::network::ServerSessionId sessionId,
         SimulationSnapshot& outSnapshot
+    ) const;
+
+    game::server::ShipReplicationInterestPlan
+    shipReplicationInterestPlanForSession(
+        game::network::ServerSessionId sessionId
     ) const;
 
     EntityId playerId() const;
@@ -205,6 +211,7 @@ private:
     mutable game::diagnostics::ServerDiagnostics m_diagnostics;
     GameSimulation m_simulation;
     game::server::ServerSessionRegistry m_sessions;
+    game::server::ReplicationInterestPolicy m_replicationInterestPolicy;
 
 
     static constexpr std::size_t MaxShipCommandsPerShip = 32;

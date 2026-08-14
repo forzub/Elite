@@ -11,6 +11,7 @@
 #include <glm/geometric.hpp>
 
 #include "src/core/ConsoleOutput.h"
+#include "src/platform/ProcessSingleInstanceGuard.h"
 #include "src/game/server/HeadlessServerEndpoints.h"
 #include "src/game/server/ServerRuntime.h"
 #include "src/game/server/NetworkServerHost.h"
@@ -530,6 +531,7 @@ int runHeadlessServer()
 
 int main(int argc, char** argv)
 {
+    bool headlessSelfTest = false;
     bool oneClientSelfTest = false;
     bool haveListenEndpoint = false;
     game::network::NetworkEndpoint listenEndpoint;
@@ -539,7 +541,10 @@ int main(int argc, char** argv)
         const std::string arg = argv[i];
 
         if (arg == "--self-test")
-            return runHeadlessSelfTest();
+        {
+            headlessSelfTest = true;
+            continue;
+        }
 
         if (arg == "--self-test-one-client")
         {
@@ -586,6 +591,29 @@ int main(int argc, char** argv)
             << "[EliteServer] --self-test-one-client requires --listen HOST:PORT\n";
         return 1;
     }
+
+    // Help/argument validation remains available while another server is alive.
+    // Every mode that actually constructs authoritative runtime state must own
+    // the same process-wide OS lock.
+    platform::ProcessSingleInstanceGuard instanceGuard("EliteServer");
+    if (!instanceGuard.ownsInstance())
+    {
+        if (instanceGuard.anotherInstanceRunning())
+        {
+            std::cerr
+                << "[EliteServer] another EliteServer instance is already running; "
+                << "only one server instance is allowed on this machine\n";
+            return 4;
+        }
+
+        std::cerr
+            << "[EliteServer] failed to establish single-instance guard: "
+            << instanceGuard.error() << "\n";
+        return 5;
+    }
+
+    if (headlessSelfTest)
+        return runHeadlessSelfTest();
 
     if (haveListenEndpoint)
         return runNetworkServer(listenEndpoint, oneClientSelfTest);

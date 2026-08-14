@@ -169,13 +169,46 @@ Server-side последовательность:
 7. Сервер отправляет hydrated bootstrap snapshot.
 8. Только после успешной синхронизации `GameClient` переходит в `Ready`.
 
-Текущая admission policy временная: сервер назначает существующий свободный
-materialized ship. Persistent account/character/ship ownership будет отдельным
-слоем и не должен менять сам transport/session authority contract.
+Текущая admission policy временная, но уже не имеет права захватывать случайный
+NPC. Dedicated `ServerRuntime` материализует два explicit `ShipRole::Player`
+bootstrap slots: первый остаётся в authored `player_start`, второй размещается на
+300 м по hub-local X. Production admission выбирает только свободный player-role
+slot. Embedded/local single-player materialизует только один authored player ship.
+Если несколько клиентов одновременно ждут запуска сервера, primary/secondary slot
+получает тот connection, который сервер фактически принял первым; порядок запуска
+окон клиента не является identity contract.
+
+Persistent account/character/ship ownership позже заменит этот bootstrap pool:
+после аутентификации server будет разрешать `account/character -> owned/current
+ship -> session authority`. Клиент по-прежнему не должен присылать произвольный
+`EntityId` для получения управления.
 
 ---
 
-## 5. Static definitions: локально на каждом endpoint
+## 5. Multi-process client preflight: WebUI и ожидание сервера
+
+Каждый `EliteGame` process должен владеть собственным локальным WebUI endpoint.
+`HtmlUiServer` запускается на port `0`, операционная система выбирает свободный
+ephemeral port, а `Application` строит URL WebView из фактически назначенного
+порта. Поэтому два клиента на одном PC не делят `localhost:8090` и не могут
+случайно открыть WebUI другого процесса.
+
+Remote client также может стартовать раньше dedicated server. Начальный TCP
+`connection refused`/отсутствующий listener не является `Session Failed`:
+`RemoteGameSession` остаётся в `WaitingForServer` и периодически повторяет
+connect. После первого успешного TCP connection ошибки protocol/catalog/admission
+и последующий disconnect остаются fatal до отдельного reconnect/resume stage.
+
+Loading screen отображает `loading.stage.waiting_server` через общий localization
+domain (`en/ru/zh-Hans/es/ja`). Presentation анимирован: обычные локализованные
+строки печатаются терминальным блочным курсором, после паузы стираются и
+повторяются; для Simplified Chinese используется визуальная pinyin-IME имитация:
+`zheng zai -> 正在`, `deng dai -> 等待`, `fu wu qi -> 服务器`. Это только WebUI
+presentation и не является частью сетевого/session protocol.
+
+---
+
+## 6. Static definitions: локально на каждом endpoint
 
 Server и client независимо загружают одинаковые immutable/static catalogs.
 Обычная replication передаёт instance/runtime state и compact type IDs, а не
@@ -195,7 +228,7 @@ Server и client независимо загружают одинаковые im
 
 ---
 
-## 6. Что сейчас идёт по сети
+## 7. Что сейчас идёт по сети
 
 Текущий production transport — reliable ordered TCP.
 
@@ -216,7 +249,7 @@ Field-level delta compression пока намеренно не введён: с�
 
 ---
 
-## 7. Remote debug и текущие ограничения
+## 8. Remote debug и текущие ограничения
 
 На M8D remote debug control ещё не является сетевым authoritative protocol.
 `RemoteGameSession` использует безопасный no-op debug facade. Debug mutation,
@@ -237,7 +270,7 @@ transport.
 
 ---
 
-## 8. Автоматическая проверка process boundary
+## 9. Автоматическая проверка process boundary
 
 Полный ready harness:
 
@@ -259,17 +292,29 @@ bash tests/runtime_standalone/run_mingw64.sh
 bash tests/network_process_acceptance/run_mingw64.sh
 ```
 
+Перед server/process acceptance harness проверяет, не запущен ли уже внешний
+`EliteServer`. Если найден, тест немедленно завершается с ошибкой и печатает
+PID/path процесса; developer-owned server автоматически не завершается. Это
+отдельная диагностическая защита от Windows executable lock/stale-binary.
+
+Сам `EliteServer` дополнительно держит атомарный OS-level single-instance lock
+в течение всей жизни authoritative runtime. Второй `EliteServer` на той же
+машине должен сообщить о конфликте и завершиться с ненулевым кодом. `EliteGame`
+этим правилом сейчас не ограничен: M8E требует одновременно как минимум два
+client process.
+
 Этот тест:
 
 1. выбирает свободный localhost TCP port;
-2. запускает отдельный `EliteServer.exe`;
-3. ждёт реальный listening state;
-4. запускает отдельный `EliteGame.exe --self-test-remote-client`;
-5. проверяет bootstrap -> `GameClient::Ready`;
-6. отправляет numbered control input;
-7. ждёт authoritative acknowledgement;
-8. завершает client и проверяет server-side detach;
-9. тем самым доказывает обмен через kernel TCP между двумя executable processes.
+2. **сначала** запускает отдельный `EliteGame.exe --self-test-remote-client`;
+3. подтверждает, что initial connection refusal не завершил client process;
+4. затем запускает отдельный `EliteServer.exe`;
+5. ждёт реальный listening state и автоматический client retry;
+6. пробует запустить второй `EliteServer` и требует отказа single-instance guard;
+7. проверяет bootstrap -> `GameClient::Ready`;
+8. отправляет numbered control input и ждёт authoritative acknowledgement;
+9. завершает client и проверяет server-side detach;
+10. тем самым доказывает client-before-server lifecycle, single-server ownership и обмен через kernel TCP между executable processes.
 
 Test-only flags:
 
@@ -282,7 +327,7 @@ EliteGame.exe --self-test-remote-client HOST:PORT
 
 ---
 
-## 9. Ручная проверка после M8D
+## 10. Ручная проверка после M8D
 
 После полностью зелёного `tests/run_all_mingw64.sh` отдельно проверить реальный
 interactive remote mode.
@@ -338,16 +383,15 @@ remote `EliteGame` process**, проверить разные server-assigned co
 entities, независимые input/ack streams и disconnect одного клиента без влияния
 на второго.
 
-Перед этим есть известный client-process blocker: `Application` сейчас жёстко
-поднимает локальный WebUI server на `localhost:8090`. Два полноценных
-`EliteGame.exe` на одном PC будут претендовать на один и тот же port. Для M8E
-нужно сначала сделать WebUI port per-process/configurable/ephemeral либо иначе
-изолировать этот локальный UI endpoint. Это client tooling/presentation issue,
-не gameplay TCP issue.
+M8E.0 снимает прежние preflight blockers: WebUI port теперь process-local/OS
+assigned, client может ждать ещё не запущенный server, а dedicated bootstrap
+имеет два явных player-role slots с разносом 300 м. Следующая ручная/автоматическая
+проверка должна уже запускать два **графических** `EliteGame.exe`, убедиться, что
+они получают разные controlled entities, видят друг друга и не делят WebUI state.
 
 ---
 
-## 10. Следующий сетевой этап — M8E
+## 11. Следующий сетевой этап — M8E
 
 M8E должен закрыть базовую multiplayer process foundation следующими gates:
 

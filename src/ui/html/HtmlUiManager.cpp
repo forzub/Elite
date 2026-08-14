@@ -1,8 +1,11 @@
 #include "ui/html/HtmlUiManager.h"
 
-void HtmlUiManager::start(int port, const std::string& rootDir)
+std::uint16_t HtmlUiManager::start(
+    std::uint16_t port,
+    const std::string& rootDir
+)
 {
-    m_bridge.start(port, rootDir);
+    return m_bridge.start(port, rootDir);
 }
 
 void HtmlUiManager::stop()

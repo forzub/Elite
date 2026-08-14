@@ -44,6 +44,13 @@
       "es": "SINCRONIZANDO SESIÓN",
       "ja": "セッション同期中"
     },
+    "loading.stage.waiting_server": {
+      "en": "WAITING FOR SERVER",
+      "ru": "ОЖИДАНИЕ СЕРВЕРА",
+      "zh-Hans": "正在等待服务器",
+      "es": "ESPERANDO AL SERVIDOR",
+      "ja": "サーバーを待機中"
+    },
     "loading.stage.failed": {
       "en": "SESSION FAILED",
       "ru": "ОШИБКА СЕССИИ",

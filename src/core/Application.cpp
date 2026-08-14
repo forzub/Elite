@@ -113,11 +113,13 @@ static std::string findGameUiRoot()
 }
 
 static std::string makeGameUiHttpUrl(
+    std::uint16_t localPort,
     const std::string& relativeFile,
     const std::string& locale = std::string()
 )
 {
-    std::string url = "http://localhost:8090/" + relativeFile;
+    std::string url =
+        "http://localhost:" + std::to_string(localPort) + "/" + relativeFile;
     if (!locale.empty())
         url += "?locale=" + locale;
     return url;
@@ -274,7 +276,7 @@ void Application::init()
                 );
             }
 
-            m_htmlUi.start(8090, webUiRoot);
+            m_gameUiHttpPort = m_htmlUi.start(0, webUiRoot);
 
             int w, h;
             glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
@@ -310,7 +312,7 @@ void Application::init()
             "EliteGame UI",
             uiW,
             uiH,
-            makeGameUiHttpUrl("main_menu.html", m_localization.locale())
+            makeGameUiHttpUrl(m_gameUiHttpPort, "main_menu.html", m_localization.locale())
         );
         m_gameUi.forceMode(GameUiMode::MainMenu);
         m_gameUi.markLoaded(GameUiMode::MainMenu);
@@ -536,7 +538,7 @@ void Application::mainLoop()
                         m_htmlUi.setActivePanel(HtmlUiPanelId::None);
 
                         m_gameWebView.setVisible(true);
-                        m_gameWebView.navigate(makeGameUiHttpUrl("loading.html", m_localization.locale()));
+                        m_gameWebView.navigate(makeGameUiHttpUrl(m_gameUiHttpPort, "loading.html", m_localization.locale()));
                         m_gameWebView.evalScript("setLoadingProgress(0.10, 'loading.stage.opening', 'OPENING LOADING SCREEN');");
 
                         m_pendingNewGameLoad = true;
@@ -847,15 +849,15 @@ void Application::navigateGameUi(GameUiMode mode)
     switch (mode)
     {
         case GameUiMode::MainMenu:
-            m_gameWebView.navigate(makeGameUiHttpUrl("main_menu.html", m_localization.locale()));
+            m_gameWebView.navigate(makeGameUiHttpUrl(m_gameUiHttpPort, "main_menu.html", m_localization.locale()));
             break;
 
         case GameUiMode::Loading:
-            m_gameWebView.navigate(makeGameUiHttpUrl("loading.html", m_localization.locale()));
+            m_gameWebView.navigate(makeGameUiHttpUrl(m_gameUiHttpPort, "loading.html", m_localization.locale()));
             break;
 
         case GameUiMode::SystemMap:
-            m_gameWebView.navigate(makeGameUiHttpUrl("system_map_panel.html", m_localization.locale()));
+            m_gameWebView.navigate(makeGameUiHttpUrl(m_gameUiHttpPort, "system_map_panel.html", m_localization.locale()));
             break;
 
         case GameUiMode::None:
@@ -1090,6 +1092,14 @@ void Application::updatePendingNewGameLoad()
     m_gameSession->updateSynchronization(elapsed);
 
     const auto sessionState = m_gameSession->state();
+    if (sessionState == game::session::GameSessionState::WaitingForServer)
+    {
+        m_gameWebView.evalScript(
+            "setLoadingProgress(0.45, 'loading.stage.waiting_server', 'WAITING FOR SERVER');"
+        );
+        return;
+    }
+
     if (sessionState == game::session::GameSessionState::Synchronizing ||
         sessionState == game::session::GameSessionState::Created)
     {

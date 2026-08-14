@@ -66,7 +66,6 @@ for forbidden in (
 for required in (
     "class ServerRuntime final",
     "std::unique_ptr<GameServer> m_server",
-    "std::make_unique<GameServer>()",
     "m_server->world() = worldParams",
     "game::debug::IServerDebugChannel& debugChannel",
     "publishSessionBootstrap(transport, m_primarySessionId)",
@@ -75,6 +74,9 @@ for required in (
 ):
     if required not in runtime_h and required not in runtime_cpp:
         fail(f"ServerRuntime ownership/bootstrap contract is incomplete: {required}")
+
+if not re.search(r"std::make_unique<GameServer>\s*\(\s*bootstrapPlayerSlotCount\s*\)", runtime_cpp):
+    fail("ServerRuntime must remain the sole GameServer owner while passing explicit bootstrap-slot capacity")
 
 if "public game::debug::IDebugSessionControl" in runtime_h:
     fail("ServerRuntime regained the application-side debug facade")

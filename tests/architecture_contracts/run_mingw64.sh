@@ -51,6 +51,8 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_wire_data_schema.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_tcp_wire_transport.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_network_process_boundary.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_single_instance.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_m8e0_process_bootstrap.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_case_sensitive_project_includes.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_debug_session_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_worker_thread.py"

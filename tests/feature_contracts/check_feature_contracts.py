@@ -668,7 +668,7 @@ def check_world_authority_boundaries() -> None:
     )
 
     require(
-        '"earth_orbital_hub"' not in extract_braced_function(server_cpp, "GameServer::GameServer()"),
+        '"earth_orbital_hub"' not in extract_braced_function(server_cpp, "GameServer::GameServer("),
         "GameServer startup hard-codes the Earth diagnostic hub",
     )
     require(

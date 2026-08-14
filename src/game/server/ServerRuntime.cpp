@@ -13,7 +13,16 @@ ServerRuntime::ServerRuntime(
     const WorldParams& worldParams,
     game::debug::IServerDebugChannel& debugChannel
 )
-    : m_server(std::make_unique<GameServer>())
+    : ServerRuntime(worldParams, debugChannel, 2)
+{
+}
+
+ServerRuntime::ServerRuntime(
+    const WorldParams& worldParams,
+    game::debug::IServerDebugChannel& debugChannel,
+    std::size_t bootstrapPlayerSlotCount
+)
+    : m_server(std::make_unique<GameServer>(bootstrapPlayerSlotCount))
     , m_debugChannel(debugChannel)
 {
     // Bootstrap configuration belongs to the authoritative runtime. The host
@@ -36,9 +45,10 @@ ServerRuntime::ServerRuntime(
     IServerTransport& transport,
     game::debug::IServerDebugChannel& debugChannel
 )
-    : ServerRuntime(worldParams, debugChannel)
+    : ServerRuntime(worldParams, debugChannel, 1)
 {
-    // Embedded/local play preserves its established primary-session semantics.
+    // Embedded/local play preserves its established primary-session semantics
+    // and therefore materializes only the authored primary player ship.
     m_primarySessionId =
         m_server->createPlayerSession(m_server->playerId());
 

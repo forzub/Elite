@@ -7,6 +7,7 @@
 #define _WIN32_WINNT 0x0601
 #endif
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <thread>
@@ -28,7 +29,7 @@ public:
     HtmlUiServer();
     ~HtmlUiServer();
 
-    void start(int port, const std::string& rootDir);
+    std::uint16_t start(std::uint16_t port, const std::string& rootDir);
     void stop();
 
     void broadcastText(const std::string& text);
@@ -53,6 +54,7 @@ private:
     WebSocketServer m_server;
     std::thread m_thread;
     bool m_running = false;
+    std::uint16_t m_localPort = 0;
 
     struct VirtualFile
     {

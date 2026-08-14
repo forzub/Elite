@@ -376,6 +376,7 @@ endif()
 if(ELITE_BUILD_SERVER)
     add_executable(EliteServer
         src/server_main.cpp
+        src/platform/ProcessSingleInstanceGuard.cpp
 
         src/game/equipment/signalNode/processing/SignalReceiver.cpp
         src/world/WorldSignalTxSystem.cpp

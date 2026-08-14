@@ -18,6 +18,7 @@
 #include "src/game/world_state/InitialWorldState.h"
 #include "src/game/navigation/GalaxyNavigationConfig.h"
 #include "src/game/navigation/PlayerSpatialDomainResolver.h"
+#include "src/game/ship/ShipInitData.h"
 
 
 
@@ -150,7 +151,7 @@ namespace {
 }
 
 
-GameServer::GameServer()
+GameServer::GameServer(std::size_t bootstrapPlayerSlotCount)
     : m_diagnostics{}
     , m_simulation(m_diagnostics)
 {
@@ -279,6 +280,74 @@ m_simulation.setCelestialBodyKinematicStateAu(
             throw std::runtime_error(
                 "validated player_start reference frame could not be resolved"
             );
+        }
+
+        // Dedicated multiplayer bootstrap temporarily materializes a small
+        // server-owned pool of player-eligible ships. This is deliberately not
+        // account ownership: M8E only needs deterministic admission capacity
+        // without hijacking arbitrary NPCs. Local/embedded play requests one
+        // slot and therefore preserves the historical single-player scene.
+        const std::size_t requestedPlayerSlots =
+            std::max<std::size_t>(1, bootstrapPlayerSlotCount);
+
+        if (requestedPlayerSlots > 1)
+        {
+            Ship* primaryShip =
+                m_simulation.getShip(m_simulation.playerId());
+
+            if (!primaryShip)
+            {
+                throw std::runtime_error(
+                    "bootstrap player ship disappeared before admission pool setup"
+                );
+            }
+
+            constexpr double BootstrapPlayerSpacingMeters = 300.0;
+
+            for (std::size_t slotIndex = 1;
+                 slotIndex < requestedPlayerSlots;
+                 ++slotIndex)
+            {
+                // Sequence around the authored primary spawn:
+                // +300, -300, +600, -600 ... hub-local X meters.
+                const std::size_t ring = (slotIndex + 1) / 2;
+                const double side = (slotIndex % 2 == 1) ? 1.0 : -1.0;
+
+                game::navigation::ReferenceFrame slotFrame = playerStartFrame;
+                slotFrame.localOffsetMeters.x +=
+                    side *
+                    static_cast<double>(ring) *
+                    BootstrapPlayerSpacingMeters;
+
+                ShipInitData slotInitData;
+                slotInitData.visual.shipType = "Cobra MK1";
+                slotInitData.visual.shipName =
+                    "Bootstrap Player " + std::to_string(slotIndex + 1);
+                slotInitData.registry.instanceId =
+                    900000u + static_cast<ShipInstanceId>(slotIndex);
+                slotInitData.registry.ownerName = "Unassigned Player Slot";
+                slotInitData.registry.registrationId =
+                    "BOOT-PL-" + std::to_string(slotIndex + 1);
+                slotInitData.registry.shipRole = ShipRoleType::Civilian;
+
+                const EntityId slotId =
+                    m_simulation.spawnShip(
+                        ShipRole::Player,
+                        playerStartFrame.systemId,
+                        primaryShip->core().descriptor(),
+                        primaryShip->core().transform().fullWorldMeters(),
+                        slotInitData,
+                        primaryShip->core().transform().orientation
+                    );
+
+                if (slotId.value == 0 ||
+                    !m_simulation.placeShipInReferenceFrame(slotId, slotFrame))
+                {
+                    throw std::runtime_error(
+                        "failed to materialize bootstrap player admission slot"
+                    );
+                }
+            }
         }
 
         game::server::ServerTimeContext initialTime;
@@ -905,14 +974,15 @@ EntityId GameServer::selectAvailablePlayerEntityForAdmission() const noexcept
         return primary;
     }
 
-    // Temporary pre-persistence admission policy: use an existing ordinary
-    // materialized ship that is not already owned by another live session.
-    // Account/character persistence will later replace this selector without
-    // changing the network/session boundary. Diagnostic Motion Lab actors are
-    // never eligible for player authority.
+    // Temporary pre-persistence admission policy: use only an explicit
+    // player-role bootstrap slot that is not already owned by another live
+    // session. Arbitrary NPCs are never promoted into player authority merely
+    // because a second client connected. Account/character persistence will
+    // later replace this selector without changing the session boundary.
     for (const auto& ship : m_lastSnapshot.ships)
     {
         if (ship.id.value == 0 ||
+            ship.role != ShipRole::Player ||
             m_sessions.isControlledEntity(ship.id) ||
             ship.motionLabKind !=
                 game::diagnostics::HubMotionLabActorKind::None)

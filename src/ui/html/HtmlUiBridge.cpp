@@ -26,9 +26,12 @@ HtmlUiBridge::~HtmlUiBridge()
     stop();
 }
 
-void HtmlUiBridge::start(int port, const std::string& rootDir)
+std::uint16_t HtmlUiBridge::start(
+    std::uint16_t port,
+    const std::string& rootDir
+)
 {
-    m_server.start(port, rootDir);
+    return m_server.start(port, rootDir);
 }
 
 void HtmlUiBridge::stop()

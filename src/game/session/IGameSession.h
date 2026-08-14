@@ -16,6 +16,7 @@ namespace game::session
 enum class GameSessionState
 {
     Created,
+    WaitingForServer,
     Synchronizing,
     Ready,
     Failed

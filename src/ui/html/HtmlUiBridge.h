@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include "ui/html/HtmlUiServer.h"
 #include "ui/html/HtmlUiCommandQueue.h"
@@ -10,7 +11,7 @@ public:
     HtmlUiBridge();
     ~HtmlUiBridge();
 
-    void start(int port, const std::string& rootDir);
+    std::uint16_t start(std::uint16_t port, const std::string& rootDir);
     void stop();
     void setVirtualFile(const std::string& resource, const std::string& content, const std::string& contentType);
 

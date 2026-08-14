@@ -24,6 +24,7 @@ struct RemoteGameSessionConfig
 {
     std::string host = "127.0.0.1";
     std::uint16_t port = 27351;
+    double retryIntervalSeconds = 1.0;
 };
 
 /*
@@ -59,6 +60,7 @@ public:
     double fixedStepSeconds() const override;
 
 private:
+    bool connectOrWait();
     void captureTransportFailure();
 
     struct NullDebugSessionControl;
@@ -68,7 +70,10 @@ private:
     std::unique_ptr<GameClient> m_client;
     std::unique_ptr<NullDebugSessionControl> m_debugControl;
     std::string m_error;
+    double m_retryElapsedSeconds = 0.0;
     bool m_started = false;
+    bool m_waitingForServer = false;
+    bool m_connectedOnce = false;
     bool m_failed = false;
 };
 }

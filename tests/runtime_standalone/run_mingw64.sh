@@ -2,8 +2,14 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SERVER_DIR="${ROOT_DIR}/build/headless_server"
-CLIENT_DIR="${ROOT_DIR}/build"
+source "${ROOT_DIR}/tests/helpers/elite_server_process_guard.sh"
+
+if ! elite_fail_if_server_running "standalone runtime preflight"; then
+    exit 1
+fi
+
+SERVER_DIR="${ELITE_TEST_SERVER_DIR:-${ROOT_DIR}/build/headless_server}"
+CLIENT_DIR="${ELITE_TEST_CLIENT_DIR:-${ROOT_DIR}/build}"
 SERVER_EXE="${SERVER_DIR}/EliteServer.exe"
 CLIENT_EXE="${CLIENT_DIR}/EliteGame.exe"
 

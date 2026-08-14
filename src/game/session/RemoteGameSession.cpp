@@ -78,19 +78,37 @@ EntityId RemoteGameSession::playerId() const
 void RemoteGameSession::beginSynchronization()
 {
     m_error.clear();
+    m_retryElapsedSeconds = 0.0;
+    m_waitingForServer = false;
+    m_connectedOnce = false;
     m_failed = false;
     m_started = true;
 
-    if (!m_transport->connect(m_config.host, m_config.port))
+    (void)connectOrWait();
+}
+
+bool RemoteGameSession::connectOrWait()
+{
+    if (m_transport->connect(m_config.host, m_config.port))
     {
-        m_failed = true;
-        m_error = m_transport->lastError();
-        if (m_error.empty())
-            m_error = "TCP connection to authoritative server failed";
-        return;
+        m_error.clear();
+        m_waitingForServer = false;
+        m_connectedOnce = true;
+        m_retryElapsedSeconds = 0.0;
+        m_client->beginSynchronization();
+        return true;
     }
 
-    m_client->beginSynchronization();
+    // Initial connection refusal/absence is not a fatal session error. A
+    // remote client may legitimately start before the authoritative server.
+    // Protocol/catalog/admission failures happen only after TCP has connected
+    // and remain fatal through the normal GameClient/transport paths.
+    m_waitingForServer = true;
+    m_retryElapsedSeconds = 0.0;
+    m_error = m_transport->lastError();
+    if (m_error.empty())
+        m_error = "authoritative server is not available yet";
+    return false;
 }
 
 void RemoteGameSession::updateSynchronization(double elapsedSeconds)
@@ -98,14 +116,26 @@ void RemoteGameSession::updateSynchronization(double elapsedSeconds)
     if (!m_started || m_failed)
         return;
 
+    const double dt = std::max(0.0, elapsedSeconds);
+
+    if (m_waitingForServer)
+    {
+        m_retryElapsedSeconds += dt;
+        const double retryInterval =
+            std::max(0.10, m_config.retryIntervalSeconds);
+
+        if (m_retryElapsedSeconds >= retryInterval)
+            (void)connectOrWait();
+
+        return;
+    }
+
     m_transport->service();
     captureTransportFailure();
     if (m_failed)
         return;
 
-    (void)m_client->updateSynchronization(
-        std::max(0.0, elapsedSeconds)
-    );
+    (void)m_client->updateSynchronization(dt);
 
     if (m_client->connectionState() == ClientConnectionState::Failed)
     {
@@ -120,6 +150,8 @@ GameSessionState RemoteGameSession::state() const
         return GameSessionState::Failed;
     if (!m_started)
         return GameSessionState::Created;
+    if (m_waitingForServer)
+        return GameSessionState::WaitingForServer;
 
     switch (m_client->connectionState())
     {
@@ -164,6 +196,15 @@ void RemoteGameSession::captureTransportFailure()
 {
     if (!m_started || !m_transport || m_transport->connected())
         return;
+
+    // Before the first successful TCP connection the session is deliberately
+    // retryable. Once a server has accepted us, a later disconnect is a real
+    // lifecycle failure until explicit reconnect/resume semantics are added.
+    if (!m_connectedOnce)
+    {
+        m_waitingForServer = true;
+        return;
+    }
 
     m_failed = true;
     m_error = m_transport->lastError();

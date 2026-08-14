@@ -242,6 +242,7 @@ private:
     std::unique_ptr<game::session::IGameSession> m_gameSession;
     std::string m_remoteServerHost;
     std::uint16_t m_remoteServerPort = 0;
+    std::uint16_t m_gameUiHttpPort = 0;
     StateStack   m_states;
     RenderContext renderContext;
     HtmlUiManager m_htmlUi;

@@ -1,6 +1,7 @@
 #include "ui/html/HtmlUiServer.h"
 #include <filesystem>
 #include <iostream>
+#include <stdexcept>
 
 HtmlUiServer::HtmlUiServer()
 {
@@ -34,27 +35,47 @@ HtmlUiServer::~HtmlUiServer()
     stop();
 }
 
-void HtmlUiServer::start(int port, const std::string& rootDir)
+std::uint16_t HtmlUiServer::start(
+    std::uint16_t port,
+    const std::string& rootDir
+)
 {
     m_rootDir = rootDir;
 
-    // WebSocket++ listen(port) uses the configured dual-stack endpoint, so the
-    // same HTTP/WebSocket server can be opened from localhost or the LAN.
+    // Port 0 delegates allocation to the OS. This is required for true
+    // multi-process clients on one machine: every EliteGame instance owns its
+    // own HTTP/WebSocket endpoint and its WebView must never attach to another
+    // process' UI server.
     m_server.listen(port);
+
+    websocketpp::lib::asio::error_code endpointError;
+    const auto endpoint = m_server.get_local_endpoint(endpointError);
+    if (endpointError)
+    {
+        throw std::runtime_error(
+            "HtmlUiServer failed to resolve bound local endpoint: " +
+            endpointError.message()
+        );
+    }
+
+    m_localPort = endpoint.port();
     m_server.start_accept();
 
     m_running = true;
     m_thread = std::thread([this]() { run(); });
 
-    std::cout << "[HtmlUiServer] started on port " << port << "\n";
+    std::cout << "[HtmlUiServer] started on port " << m_localPort << "\n";
     std::cout << "[HtmlUiServer] root dir: " << m_rootDir << "\n";
     std::cout << "[HtmlUiServer] debug UI: http://<this-pc-ip>:"
-              << port << "/\n";
+              << m_localPort << "/\n";
+
+    return m_localPort;
 }
 
 void HtmlUiServer::stop()
 {
     m_running = false;
+    m_localPort = 0;
     try { m_server.stop(); } catch (...) {}
 
     if (m_thread.joinable())

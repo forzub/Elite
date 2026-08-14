@@ -59,7 +59,46 @@ int runRemoteClientProcessSelfTest(
 
     using Clock = std::chrono::steady_clock;
     auto previous = Clock::now();
-    const auto syncDeadline = previous + std::chrono::seconds(10);
+
+    // Client-first process acceptance has two distinct phases. Waiting for the
+    // server process to finish booting is not session synchronization time:
+    // authoritative startup may legitimately spend several seconds loading the
+    // world and preparing CPU collision/structural geometry before listen().
+    // Keep a bounded test-only wait, then start the synchronization deadline
+    // only after TCP has actually become available.
+    const auto serverWaitDeadline = previous + std::chrono::seconds(60);
+
+    while (Clock::now() < serverWaitDeadline &&
+           session.state() == game::session::GameSessionState::WaitingForServer)
+    {
+        const auto now = Clock::now();
+        const double elapsed = std::clamp(
+            std::chrono::duration<double>(now - previous).count(),
+            0.0,
+            0.05
+        );
+        previous = now;
+        session.updateSynchronization(elapsed);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+
+    if (session.state() == game::session::GameSessionState::WaitingForServer)
+    {
+        std::cerr
+            << "[FAIL] remote-client process server did not become available"
+            << " error=" << session.error() << "\n";
+        return 2;
+    }
+
+    if (session.state() == game::session::GameSessionState::Failed)
+    {
+        std::cerr
+            << "[FAIL] remote-client process failed while waiting for server: "
+            << session.error() << "\n";
+        return 2;
+    }
+
+    const auto syncDeadline = Clock::now() + std::chrono::seconds(10);
 
     while (Clock::now() < syncDeadline &&
            session.state() != game::session::GameSessionState::Ready &&
@@ -79,7 +118,7 @@ int runRemoteClientProcessSelfTest(
     if (session.state() != game::session::GameSessionState::Ready)
     {
         std::cerr
-            << "[FAIL] remote-client process synchronization failed: "
+            << "[FAIL] remote-client process synchronization failed after server connection: "
             << session.error() << "\n";
         return 2;
     }

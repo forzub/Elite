@@ -70,6 +70,12 @@ public:
     std::size_t connectedPlayerSessionCount() const noexcept;
 
 private:
+    ServerRuntime(
+        const WorldParams& worldParams,
+        game::debug::IServerDebugChannel& debugChannel,
+        std::size_t bootstrapPlayerSlotCount
+    );
+
     bool publishSessionBootstrap(
         IServerTransport& transport,
         game::network::ServerSessionId sessionId

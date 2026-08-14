@@ -64,6 +64,33 @@
       font-size: 12px;
       letter-spacing: 0.08em;
     }
+
+    .stageTerminal {
+      min-width: 0;
+      display: inline-flex;
+      align-items: baseline;
+      font-family: "Courier New", "Microsoft YaHei UI", "Yu Gothic UI", monospace;
+      white-space: pre;
+    }
+
+    .terminalCursor {
+      display: none;
+      width: 0.68em;
+      height: 0.96em;
+      margin-left: 0.16em;
+      transform: translateY(0.12em);
+      background: currentColor;
+      animation: terminalCursorBlink 0.78s steps(1, end) infinite;
+    }
+
+    .terminalCursor.active {
+      display: inline-block;
+    }
+
+    @keyframes terminalCursorBlink {
+      0%, 54% { opacity: 1; }
+      55%, 100% { opacity: 0; }
+    }
   </style>
 </head>
 
@@ -80,7 +107,9 @@
     </div>
 
     <div class="row">
-      <span id="stage" data-i18n="loading.boot">BOOT</span>
+      <span class="stageTerminal">
+        <span id="stageText">BOOT</span><span id="stageCursor" class="terminalCursor" aria-hidden="true"></span>
+      </span>
       <span id="percent">0%</span>
     </div>
   </div>
@@ -89,28 +118,123 @@
   <script>
     let currentStageKey = "loading.boot";
     let currentStageFallback = "BOOT";
+    let stageAnimationGeneration = 0;
 
-    function renderLoadingStage() {
-      document.getElementById("stage").textContent =
-        window.GameI18n
-          ? GameI18n.t(currentStageKey, currentStageFallback)
-          : currentStageFallback;
+    const stageText = document.getElementById("stageText");
+    const stageCursor = document.getElementById("stageCursor");
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function localizedStageText() {
+      return window.GameI18n
+        ? GameI18n.t(currentStageKey, currentStageFallback)
+        : currentStageFallback;
+    }
+
+    function waitingForServer() {
+      return currentStageKey === "loading.stage.waiting_server";
+    }
+
+    async function runPc286Typewriter(generation, text) {
+      while (generation === stageAnimationGeneration && waitingForServer()) {
+        stageText.textContent = "";
+        for (const ch of Array.from(text)) {
+          if (generation !== stageAnimationGeneration || !waitingForServer()) return;
+          stageText.textContent += ch;
+          await sleep(ch === " " ? 70 : 42);
+        }
+
+        await sleep(1350);
+        if (generation !== stageAnimationGeneration || !waitingForServer()) return;
+        stageText.textContent = "";
+        await sleep(420);
+      }
+    }
+
+    async function typeComposition(generation, committed, pinyin) {
+      let composition = "";
+      for (const ch of Array.from(pinyin)) {
+        if (generation !== stageAnimationGeneration || !waitingForServer()) return false;
+        composition += ch;
+        stageText.textContent = committed + (committed ? " " : "") + composition;
+        await sleep(ch === " " ? 85 : 48);
+      }
+      return true;
+    }
+
+    async function runChineseIme(generation) {
+      // Visual imitation of a desktop pinyin IME: phonetic composition appears
+      // first, then committed words replace it with Han characters. This is
+      // presentation only; the C++ session state remains language-neutral.
+      const segments = [
+        ["zheng zai", "正在"],
+        ["deng dai", "等待"],
+        ["fu wu qi", "服务器"]
+      ];
+
+      while (generation === stageAnimationGeneration && waitingForServer()) {
+        let committed = "";
+        stageText.textContent = "";
+
+        for (const [pinyin, hanzi] of segments) {
+          if (!await typeComposition(generation, committed, pinyin)) return;
+          await sleep(180);
+          if (generation !== stageAnimationGeneration || !waitingForServer()) return;
+          committed += hanzi;
+          stageText.textContent = committed;
+          await sleep(210);
+        }
+
+        await sleep(1350);
+        if (generation !== stageAnimationGeneration || !waitingForServer()) return;
+        stageText.textContent = "";
+        await sleep(420);
+      }
+    }
+
+    function renderLoadingStage(restartAnimation = false) {
+      const text = localizedStageText();
+      const activeWaiting = waitingForServer();
+
+      if (!activeWaiting) {
+        ++stageAnimationGeneration;
+        stageCursor.classList.remove("active");
+        stageText.textContent = text;
+        return;
+      }
+
+      if (!restartAnimation && stageCursor.classList.contains("active")) return;
+
+      const generation = ++stageAnimationGeneration;
+      stageCursor.classList.add("active");
+
+      const locale = window.GameI18n ? GameI18n.locale() : "en";
+      if (locale === "zh-Hans")
+        void runChineseIme(generation);
+      else
+        void runPc286Typewriter(generation, text);
     }
 
     function setLoadingProgress(value, stageKey, englishFallback) {
       const p = Math.max(0, Math.min(100, Math.round(value * 100)));
-
       document.getElementById("bar").style.width = p + "%";
       document.getElementById("percent").textContent = p + "%";
 
+      const stageChanged = !!stageKey && stageKey !== currentStageKey;
       if (stageKey) {
         currentStageKey = stageKey;
         currentStageFallback = englishFallback || stageKey;
       }
-      renderLoadingStage();
+
+      renderLoadingStage(stageChanged);
     }
 
-    window.addEventListener("game-ui-language-changed", renderLoadingStage);
+    window.addEventListener("game-ui-language-changed", () => {
+      renderLoadingStage(true);
+    });
+
     setLoadingProgress(0.05, "loading.boot", "BOOT");
   </script>
 </body>

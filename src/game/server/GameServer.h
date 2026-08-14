@@ -38,7 +38,7 @@ struct ServerQueueDiagnostics
 class GameServer
 {
 public:
-    GameServer();
+    explicit GameServer(std::size_t bootstrapPlayerSlotCount = 1);
 
     void update(double dt);
 

@@ -39,7 +39,7 @@ for token in (
     "receiveInboundMessages(binding)",
     "binding.sessionId",
     "m_server.receiveClientMessage(",
-    "m_server.copySnapshotForSession(",
+    "m_server.copySparseSnapshotForSession(",
     "m_server.popMapResponse(responseSessionId, mapResponse)",
     "findBinding(responseSessionId)",
 ):

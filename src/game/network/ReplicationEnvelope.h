@@ -15,8 +15,8 @@ namespace game::network
     FullAuthoritativeSet preserves the legacy contract: if an entity is absent
     from a snapshot, it no longer belongs to the client's replicated world.
 
-    SparseRetainMissing is the future sparse-replication contract: omission is
-    only "no update in this packet". Destruction/interest exit is represented
+    SparseRetainMissing is the sparse-replication contract: omission is only
+    "no update in this packet". Destruction/interest exit is represented
     explicitly through removed* lists. This distinction must exist before the
     server is allowed to decimate per-entity publication cadence.
 */

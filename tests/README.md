@@ -98,12 +98,15 @@ authoritative acknowledgement streams without bypassing `ITransport`.
 ### Replication interest / sparse-retention contract
 
 `tests/architecture_contracts/ReplicationInterestContractTests.cpp` plus
-`check_replication_interest_retention.py` lock down the Stage-M6 seam between
-server simulation and future network decimation. Interest is computed per
-destination session without changing simulation activation. The wire contract
-already distinguishes full authoritative entity sets from sparse retain-missing
-updates, and explicit removals are the only sparse deletion mechanism. Production
-publication remains full-presence until the later sparse-cadence stage.
+`check_replication_interest_retention.py` lock down the Stage-M6/M7 seam between
+server simulation and per-session network decimation. Interest is computed per
+destination session without changing simulation activation. Production ship
+publication now consumes that cadence: Controlled/Tactical rows publish at the
+normal snapshot rate, Nearby/Coarse rows less often, and interest exit/destruction
+uses explicit removals. Full bootstrap and first publication after re-entry are
+hydrated from canonical retained server state so sparse nested graph fields cannot
+leave a late client with a partial runtime baseline. Objects/hubs remain full-cadence
+in M7 but use explicit lifecycle removal under the sparse envelope.
 
 ### Hub co-frame presentation
 
@@ -113,3 +116,8 @@ presentation reconstructs the infrastructure from that exact frame sample rather
 than blending an independently delayed world pose. This prevents mixed-epoch
 micro-jitter near rotating orbital infrastructure while preserving the
 authoritative world pose as a fallback outside that frame.
+
+### Portable wire protocol contract (Stage M8A)
+
+`WireProtocolContractTests.cpp` and `check_wire_protocol_boundary.py` lock down the first real process boundary before sockets are enabled. The test verifies deterministic network-byte-order framing, one-byte TCP-style fragmentation, coalesced frames, magic/version/oversize rejection, and round trips for `SessionWelcome`, both `ClientMessage` variants, every `MapRequest`, and time sync. The architecture guard forbids platform socket APIs and raw aggregate/ABI serialization in the portable codec. `SimulationSnapshot`/`MapResponse` remain intentionally unsupported until M8B.
+`check_case_sensitive_project_includes.py` additionally scans quoted project-local includes using exact filesystem spelling, so Windows-only case mistakes are caught before the dedicated Linux build is introduced.

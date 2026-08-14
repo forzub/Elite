@@ -6,6 +6,7 @@
 
 #include "src/game/network/ReplicationSnapshotMerge.h"
 #include "src/game/server/ReplicationInterestPolicy.h"
+#include "src/game/server/ReplicationPublicationPolicy.h"
 #include "src/world/coordinates/WorldPosition.h"
 
 namespace
@@ -89,6 +90,35 @@ bool hasHub(const SimulationSnapshot& snapshot, const std::string& id)
         }
     );
 }
+
+bool hasEntityId(const std::vector<EntityId>& ids, std::uint32_t id)
+{
+    return std::any_of(
+        ids.begin(),
+        ids.end(),
+        [&](EntityId candidate)
+        {
+            return candidate.value == id;
+        }
+    );
+}
+
+const ShipSnapshot& requireShipSnapshot(
+    const SimulationSnapshot& snapshot,
+    std::uint32_t id
+)
+{
+    const auto it = std::find_if(
+        snapshot.ships.begin(),
+        snapshot.ships.end(),
+        [&](const ShipSnapshot& ship)
+        {
+            return ship.id.value == id;
+        }
+    );
+    require(it != snapshot.ships.end(), "missing expected ship snapshot");
+    return *it;
+}
 }
 
 int main()
@@ -157,6 +187,14 @@ int main()
     baseline.ships.push_back(makeShip(1, 0, 0.0));
     baseline.ships.push_back(makeShip(2, 0, 100.0));
 
+    // Bootstrap carries the heavy structural graph. Later full-presence
+    // publications may omit these fields while the entity itself remains.
+    baseline.ships.front().graph.hasModules = true;
+    game::simulation::ObjectModuleSnapshot engineModule;
+    engineModule.moduleId = "engine";
+    engineModule.health = 77.0f;
+    baseline.ships.front().graph.modules.push_back(engineModule);
+
     ObjectSnapshot objectA;
     objectA.id = EntityId{100};
     baseline.objects.push_back(objectA);
@@ -202,6 +240,12 @@ int main()
             ReplicatedEntitySetMode::FullAuthoritativeSet,
         "canonical history sample must materialize as a full entity set"
     );
+    require(
+        requireShipSnapshot(retained, 1).graph.hasModules &&
+        requireShipSnapshot(retained, 1).graph.modules.size() == 1 &&
+        requireShipSnapshot(retained, 1).graph.modules.front().moduleId == "engine",
+        "canonical sparse history lost an omitted nested ship graph payload"
+    );
 
     // Explicit lifecycle remove is the only sparse deletion mechanism.
     SimulationSnapshot remove;
@@ -238,8 +282,167 @@ int main()
         canonicalFullAgain.ships.size() == 1 && hasShip(canonicalFullAgain, 1),
         "full-authoritative-set did not replace the previous retained set"
     );
+    require(
+        requireShipSnapshot(canonicalFullAgain, 1).graph.hasModules &&
+        requireShipSnapshot(canonicalFullAgain, 1).graph.modules.size() == 1 &&
+        requireShipSnapshot(canonicalFullAgain, 1).graph.modules.front().health == 77.0f,
+        "full-presence publication incorrectly discarded omitted nested graph state"
+    );
+
+    // Stage M7: cadence is now consumed per destination after a full bootstrap.
+    SimulationSnapshot cadenceWorld = world;
+    cadenceWorld.metadata.serverTimeSeconds = 0.0;
+
+    game::server::ReplicationPublicationState publicationState;
+    game::server::seedReplicationPublicationState(
+        publicationState,
+        cadenceWorld
+    );
+
+    cadenceWorld.metadata.serverTimeSeconds = 0.06;
+    auto cadencePlan = game::server::buildShipReplicationInterestPlan(
+        EntityId{1},
+        cadenceWorld,
+        policy
+    );
+    auto firstSparse = game::server::selectReplicationPublications(
+        cadencePlan,
+        cadenceWorld,
+        publicationState
+    );
+
+    require(
+        hasEntityId(firstSparse.shipUpdateIds, 1) &&
+        hasEntityId(firstSparse.shipUpdateIds, 2),
+        "controlled/tactical ships were not selected at normal snapshot cadence"
+    );
+    require(
+        !hasEntityId(firstSparse.shipUpdateIds, 3) &&
+        !hasEntityId(firstSparse.shipUpdateIds, 4),
+        "nearby/coarse ships ignored their lower publication cadence"
+    );
+    require(
+        hasEntityId(firstSparse.removedShipIds, 5),
+        "out-of-scope bootstrap ship did not receive explicit interest-exit removal"
+    );
+
+    cadenceWorld.metadata.serverTimeSeconds = 0.26;
+    cadencePlan = game::server::buildShipReplicationInterestPlan(
+        EntityId{1},
+        cadenceWorld,
+        policy
+    );
+    auto nearbyDue = game::server::selectReplicationPublications(
+        cadencePlan,
+        cadenceWorld,
+        publicationState
+    );
+    require(
+        hasEntityId(nearbyDue.shipUpdateIds, 3) &&
+        !hasEntityId(nearbyDue.shipUpdateIds, 4),
+        "nearby/coarse cadence gates do not mature independently"
+    );
+
+    cadenceWorld.metadata.serverTimeSeconds = 2.10;
+    cadencePlan = game::server::buildShipReplicationInterestPlan(
+        EntityId{1},
+        cadenceWorld,
+        policy
+    );
+    auto coarseDue = game::server::selectReplicationPublications(
+        cadencePlan,
+        cadenceWorld,
+        publicationState
+    );
+    require(
+        hasEntityId(coarseDue.shipUpdateIds, 4),
+        "coarse ship never matured to its target publication interval"
+    );
+
+    // Re-entry after an explicit interest exit must hydrate before ordinary
+    // sparse-field updates are allowed again.
+    cadenceWorld.ships.back().transform.motion.systemId = 0;
+    cadenceWorld.metadata.serverTimeSeconds = 2.16;
+    cadencePlan = game::server::buildShipReplicationInterestPlan(
+        EntityId{1},
+        cadenceWorld,
+        policy
+    );
+    auto reentry = game::server::selectReplicationPublications(
+        cadencePlan,
+        cadenceWorld,
+        publicationState
+    );
+    require(
+        hasEntityId(reentry.shipUpdateIds, 5) &&
+        hasEntityId(reentry.shipHydrationIds, 5),
+        "interest re-entry did not request a full hydration row"
+    );
+
+    // Destruction/removal must not wait for a coarse cadence deadline.
+    cadenceWorld.ships.erase(
+        std::remove_if(
+            cadenceWorld.ships.begin(),
+            cadenceWorld.ships.end(),
+            [](const ShipSnapshot& ship)
+            {
+                return ship.id.value == 4;
+            }
+        ),
+        cadenceWorld.ships.end()
+    );
+    cadenceWorld.metadata.serverTimeSeconds = 2.20;
+    cadencePlan = game::server::buildShipReplicationInterestPlan(
+        EntityId{1},
+        cadenceWorld,
+        policy
+    );
+    auto destroyed = game::server::selectReplicationPublications(
+        cadencePlan,
+        cadenceWorld,
+        publicationState
+    );
+    require(
+        hasEntityId(destroyed.removedShipIds, 4),
+        "authoritative ship removal waited for sparse publication cadence"
+    );
+
+    // Objects/hubs are not decimated yet, but sparse envelope semantics still
+    // require explicit lifecycle removals when their full source set changes.
+    SimulationSnapshot infrastructureBaseline;
+    infrastructureBaseline.metadata.serverTimeSeconds = 5.0;
+    ObjectSnapshot trackedObject;
+    trackedObject.id = EntityId{100};
+    infrastructureBaseline.objects.push_back(trackedObject);
+    game::simulation::OrbitalHubSnapshot trackedHub;
+    trackedHub.id = "hub-A";
+    infrastructureBaseline.hubs.push_back(trackedHub);
+
+    game::server::ReplicationPublicationState infrastructureState;
+    game::server::seedReplicationPublicationState(
+        infrastructureState,
+        infrastructureBaseline
+    );
+
+    SimulationSnapshot infrastructureGone;
+    infrastructureGone.metadata.serverTimeSeconds = 5.1;
+    const auto infrastructureRemoval =
+        game::server::selectReplicationPublications(
+            {},
+            infrastructureGone,
+            infrastructureState
+        );
+    require(
+        hasEntityId(infrastructureRemoval.removedObjectIds, 100) &&
+        std::find(
+            infrastructureRemoval.removedHubIds.begin(),
+            infrastructureRemoval.removedHubIds.end(),
+            "hub-A"
+        ) != infrastructureRemoval.removedHubIds.end(),
+        "sparse envelope lost object/hub lifecycle removal while they remain full-cadence"
+    );
 
     std::cerr
-        << "[PASS] per-session replication interest + retain/update/remove semantics\n";
+        << "[PASS] per-session interest + real sparse cadence + hydration/lifecycle semantics\n";
     return 0;
 }

@@ -23,6 +23,7 @@
 #include "src/game/server/FixedStepControlQueue.h"
 #include "src/game/server/ServerSessionRegistry.h"
 #include "src/game/server/ReplicationInterestPolicy.h"
+#include "src/game/server/ReplicationPublicationPolicy.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
 struct ServerQueueDiagnostics
@@ -46,6 +47,20 @@ public:
     const SimulationSnapshot& snapshot() const;
     bool copySnapshotForSession(
         game::network::ServerSessionId sessionId,
+        SimulationSnapshot& outSnapshot
+    ) const;
+
+    // Full field-retained baseline used for initial connection hydration.
+    bool copyHydratedSnapshotForSession(
+        game::network::ServerSessionId sessionId,
+        SimulationSnapshot& outSnapshot
+    ) const;
+
+    // Compose one sparse per-session packet from runner-owned cadence/lifecycle
+    // selection. Hydration ids are sourced from canonical retained server state.
+    bool copySparseSnapshotForSession(
+        game::network::ServerSessionId sessionId,
+        const game::server::ReplicationPublicationSelection& selection,
         SimulationSnapshot& outSnapshot
     ) const;
 
@@ -232,6 +247,11 @@ private:
     int m_appliedSimulationContextSystemId = -1;
     uint32_t m_snapshotInterval = 3;
     SimulationSnapshot m_lastSnapshot;
+
+    // Field-retained canonical source for late-join/re-entry hydration. Ordinary
+    // published snapshots intentionally omit heavy graph fields when unchanged.
+    SimulationSnapshot m_canonicalReplicationSnapshot;
+
     bool m_forceSnapshotPublication = false;
 
     // Enabling accelerated universe time is a two-phase transition. The

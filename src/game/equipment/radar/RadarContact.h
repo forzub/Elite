@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/scene/EntityId.h"
+#include "src/scene/EntityID.h"
 #include <glm/vec3.hpp>
 
 namespace game

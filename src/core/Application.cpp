@@ -3,7 +3,7 @@
 #include "Application.h"
 #include <algorithm>
 
-#include "core/Log.h"
+#include "core/log.h"
 #include "ui/MainMenuState.h"
 #include "game/SpaceState.h"
 #include "src/game/ui/GameUiHotkeyPolicy.h"

@@ -119,7 +119,7 @@ for required in (
     "transport.receiveTimeSyncRequest(timeSyncRequest)",
     "m_server.serverTimeSeconds()",
     "transport.sendTimeSyncResponse(",
-    "m_server.copySnapshotForSession(",
+    "m_server.copySparseSnapshotForSession(",
     "m_server.popMapResponse(responseSessionId, mapResponse)",
 ):
     if required not in runner_cpp:

@@ -1,4 +1,5 @@
 #include "GameServer.h"
+#include "src/game/network/ReplicationSnapshotMerge.h"
 #include <type_traits>
 #include "src/game/network/ClientMessage.h"
 #include <algorithm>
@@ -297,6 +298,11 @@ m_simulation.setCelestialBodyKinematicStateAu(
         m_lastSnapshot =
             m_simulation.buildReplicationSnapshot(0);
         populateClientSessionSnapshot(m_lastSnapshot);
+        m_canonicalReplicationSnapshot =
+            game::network::materializeCanonicalReplicationSnapshot(
+                nullptr,
+                m_lastSnapshot
+            );
 
 
 }
@@ -655,6 +661,11 @@ m_simulation.update(time);
         m_lastSnapshot =
             m_simulation.buildReplicationSnapshot(m_serverTick);
         populateClientSessionSnapshot(m_lastSnapshot);
+        m_canonicalReplicationSnapshot =
+            game::network::materializeCanonicalReplicationSnapshot(
+                &m_canonicalReplicationSnapshot,
+                m_lastSnapshot
+            );
         m_forceSnapshotPublication = false;
     }
 
@@ -974,15 +985,99 @@ bool GameServer::copySnapshotForSession(
     outSnapshot = m_lastSnapshot;
     outSnapshot.session.playerNavigation = sessionNavigation;
 
-    // Stage M6 introduces sparse-ready protocol semantics without changing
-    // production publication yet. Every session still receives a complete
-    // authoritative entity set; per-session interest remains server-side and
-    // is owned by ServerRunner transport bindings.
+    // Full copy remains available for diagnostics/contracts. Production normal
+    // publication switches to copySparseSnapshotForSession in Stage M7; initial
+    // connection bootstrap uses copyHydratedSnapshotForSession.
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
     outSnapshot.replication.removedShipIds.clear();
     outSnapshot.replication.removedObjectIds.clear();
     outSnapshot.replication.removedHubIds.clear();
+    return true;
+}
+
+
+bool GameServer::copyHydratedSnapshotForSession(
+    game::network::ServerSessionId sessionId,
+    SimulationSnapshot& outSnapshot
+) const
+{
+    world::celestial::PlayerNavigationState sessionNavigation;
+    if (!navigationStateForSession(sessionId, sessionNavigation))
+        return false;
+
+    // Late join must not depend on whether this particular publication happened
+    // to carry a dirty structural graph. The canonical source retains the most
+    // recent authoritative value for every sparse nested graph field.
+    outSnapshot = m_canonicalReplicationSnapshot;
+    outSnapshot.session.playerNavigation = sessionNavigation;
+    outSnapshot.replication.entitySetMode =
+        game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
+    outSnapshot.replication.removedShipIds.clear();
+    outSnapshot.replication.removedObjectIds.clear();
+    outSnapshot.replication.removedHubIds.clear();
+    return true;
+}
+
+bool GameServer::copySparseSnapshotForSession(
+    game::network::ServerSessionId sessionId,
+    const game::server::ReplicationPublicationSelection& selection,
+    SimulationSnapshot& outSnapshot
+) const
+{
+    world::celestial::PlayerNavigationState sessionNavigation;
+    if (!navigationStateForSession(sessionId, sessionNavigation))
+        return false;
+
+    outSnapshot = m_lastSnapshot;
+    outSnapshot.session.playerNavigation = sessionNavigation;
+    outSnapshot.replication.entitySetMode =
+        game::network::ReplicatedEntitySetMode::SparseRetainMissing;
+    outSnapshot.replication.removedShipIds = selection.removedShipIds;
+    outSnapshot.replication.removedObjectIds = selection.removedObjectIds;
+    outSnapshot.replication.removedHubIds = selection.removedHubIds;
+
+    const auto isHydrationId =
+        [&](EntityId id)
+        {
+            return std::find(
+                selection.shipHydrationIds.begin(),
+                selection.shipHydrationIds.end(),
+                id
+            ) != selection.shipHydrationIds.end();
+        };
+
+    std::vector<ShipSnapshot> selectedShips;
+    selectedShips.reserve(selection.shipUpdateIds.size());
+
+    for (const EntityId id : selection.shipUpdateIds)
+    {
+        const auto& source = isHydrationId(id)
+            ? m_canonicalReplicationSnapshot.ships
+            : m_lastSnapshot.ships;
+
+        const auto it = std::find_if(
+            source.begin(),
+            source.end(),
+            [&](const ShipSnapshot& ship)
+            {
+                return ship.id == id;
+            }
+        );
+
+        // A lifecycle removal can race a selection only across programmer
+        // error here because both are derived from one immutable publication.
+        // Fail closed by omitting the missing row; explicit removal is already
+        // carried separately when the entity left the source set.
+        if (it != source.end())
+            selectedShips.push_back(*it);
+    }
+
+    outSnapshot.ships = std::move(selectedShips);
+
+    // Stage M7 decimates ship payload only. Objects/hubs/signals retain their
+    // existing publication cadence, while explicit object/hub removal rows keep
+    // lifecycle semantics correct under the sparse entity-set envelope.
     return true;
 }
 

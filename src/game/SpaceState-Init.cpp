@@ -4,7 +4,7 @@
 #include "SpaceState.h"
 #include "src/game/RuntimeFeatureFlags.h"
 #include "core/StateStack.h"
-#include "core/Log.h"
+#include "core/log.h"
 
 
 #include "render/DebugGrid.h"

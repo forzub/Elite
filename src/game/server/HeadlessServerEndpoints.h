@@ -6,6 +6,7 @@
 
 #include "src/game/debug/IServerDebugChannel.h"
 #include "src/game/network/IServerTransport.h"
+#include "src/game/network/ReplicationSnapshotMerge.h"
 
 namespace game::server
 {
@@ -96,8 +97,7 @@ public:
         const SimulationSnapshot& snapshot
     ) override
     {
-        m_latestSnapshot = snapshot;
-        m_hasSnapshot = true;
+        retainSnapshot(snapshot);
         ++m_snapshotPublicationCount;
     }
 
@@ -105,8 +105,7 @@ public:
         const SimulationSnapshot& snapshot
     ) override
     {
-        m_latestSnapshot = snapshot;
-        m_hasSnapshot = true;
+        retainSnapshot(snapshot);
         m_hasBootstrapSnapshot = true;
         ++m_snapshotPublicationCount;
     }
@@ -154,6 +153,11 @@ public:
         return m_latestSnapshot;
     }
 
+    const SimulationSnapshot& latestCanonicalSnapshot() const noexcept
+    {
+        return m_latestCanonicalSnapshot;
+    }
+
     std::size_t snapshotPublicationCount() const noexcept
     {
         return m_snapshotPublicationCount;
@@ -191,6 +195,20 @@ public:
     }
 
 private:
+    void retainSnapshot(const SimulationSnapshot& snapshot)
+    {
+        const SimulationSnapshot* previousCanonical =
+            m_hasSnapshot ? &m_latestCanonicalSnapshot : nullptr;
+
+        m_latestCanonicalSnapshot =
+            game::network::materializeCanonicalReplicationSnapshot(
+                previousCanonical,
+                snapshot
+            );
+        m_latestSnapshot = snapshot;
+        m_hasSnapshot = true;
+    }
+
     bool m_hasWelcome = false;
     bool m_hasSnapshot = false;
     bool m_hasBootstrapSnapshot = false;
@@ -199,6 +217,7 @@ private:
 
     game::network::SessionWelcome m_welcome;
     SimulationSnapshot m_latestSnapshot;
+    SimulationSnapshot m_latestCanonicalSnapshot;
     game::network::MapResponse m_latestMapResponse;
     game::network::TimeSyncResponse m_latestTimeSyncResponse;
 

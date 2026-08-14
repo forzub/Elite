@@ -4,7 +4,7 @@
 #include <vector>
 #include <glm/mat4x4.hpp>
 #include "src/world/types/ObjectType.h"
-#include "src/scene/EntityId.h"
+#include "src/scene/EntityID.h"
 #include "src/world/modules/ObjectModuleRuntime.h"
 #include "src/game/damage/HitComponent.h"
 #include "src/world/modules/ObjectAssemblyRuntime.h"

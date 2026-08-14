@@ -17,7 +17,7 @@
 
 #include "SpaceState.h"
 #include "core/StateStack.h"
-#include "core/Log.h"
+#include "core/log.h"
 #include "input/Input.h"
 #include <glm/gtx/norm.hpp>
 

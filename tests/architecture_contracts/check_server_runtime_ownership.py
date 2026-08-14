@@ -108,7 +108,7 @@ for required in (
     "m_server->createPlayerSession(m_server->playerId())",
     "welcome.sessionId = sessionId",
     "welcome.controlledEntityId = controlledEntityId",
-    "m_server->copySnapshotForSession(",
+    "m_server->copyHydratedSnapshotForSession(",
     "welcome.starAtlasCatalog.schemaVersion",
     "welcome.starAtlasCatalog.contentFingerprint",
     "transport.publishSessionWelcomeImmediately(welcome)",

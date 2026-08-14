@@ -148,11 +148,13 @@ established 50 Hz full-control path; `Prewarm` refreshes motion control at rough
 25 Hz and `Coarse` at roughly 5 Hz, while orientation and HubTactical translation
 continue fixed-step propagation using the last authoritative rates/engine
 acceleration between control evaluations. Client prediction still uses the
-unchanged full `SharedShipPhysics::integrate()` wrapper. Signals and entity
-presence in ordinary replication remain full-rate/full-presence. Sparse
-replication plus true `Scheduled` materialization/collapse are still future
-stages; production ships/hubs/modules have **not yet been migrated** wholesale to
-persistent runtime-policy records.
+unchanged full `SharedShipPhysics::integrate()` wrapper. GameSimulation still
+produces a full authoritative source set, but Multiplayer Stage M7 now decimates
+**per-session ship transport rows** independently: Controlled/Tactical stay on
+normal publication cadence, Nearby/Coarse are less frequent, and omission means
+retain. Signals/objects/hubs still use the previous publication cadence. True
+`Scheduled` materialization/collapse remains future work; production ships/hubs/
+modules have **not yet been migrated** wholesale to persistent runtime-policy records.
 
 The Hub Motion Lab presentation investigation is now accepted as a stable
 server-to-render baseline:
@@ -234,12 +236,14 @@ per-client decision, not a property of the simulated entity alone. Multiplayer
 M1/M2 establish server-owned sessions and multi-transport fan-out, M3 separates
 local from remote human identity on the client, M4 makes navigation fully
 session-derived on the server, M5 runs two real `GameClient` state machines
-against one authoritative runtime, and M6 establishes per-session ship interest
-plus explicit retain/update/remove semantics. Production publication is still
-full-presence; the next slice applies actual sparse per-entity cadence with full
-bootstrap/re-entry hydration, followed by true
-`Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse, and then
-multi-system runtime work.
+against one authoritative runtime, M6 establishes per-session ship interest plus
+explicit retain/update/remove semantics, and M7 consumes that interest as actual
+sparse per-entity ship cadence with canonical full bootstrap/re-entry hydration.
+Stage M8A defines the process-independent wire boundary: a versioned, network-byte-order byte-stream frame with bounded payloads plus explicit codecs for SessionWelcome, ClientMessage, MapRequest and time sync. Stage M8B now completes the data plane: SimulationSnapshot and MapResponse are serialized by one canonical ordered schema, then handed to an opaque byte-to-byte compression seam. M8C adds the real TCP process transport.
+Field-level delta compression should be designed only after packet/reliability and
+baseline semantics are explicit. Persistent-world work then returns to true
+`Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse and
+multi-system runtime.
 
 ## Authoritative world bootstrap
 
@@ -374,10 +378,11 @@ and maintenance lanes. Runtime Stage 4B then separates control-force/rate
 evaluation from kinematic propagation: `Active` evaluates motion control every
 fixed tick, `Prewarm` roughly 25 Hz, `Coarse` roughly 5 Hz, while orientation and
 HubTactical translation continue to propagate every authoritative fixed tick.
-Signals and production entity snapshots remain full-rate/full-presence in M6,
-but explicit sparse-retention semantics now exist and are regression-locked. The
-next stage may decimate per-session entity publication without treating omission
-as destruction.
+The authoritative simulation/source snapshot remains full-presence, while M7 now
+decimates per-session **ship** publication at the transport boundary. Explicit
+sparse-retention semantics are regression-locked, first/re-entry publication is
+hydrated from canonical retained server state, and destruction/interest exit uses
+explicit removal. Signals/objects/hubs remain on their previous cadence for now.
 
 ### Static definition / runtime replication boundary
 
@@ -439,7 +444,7 @@ overlays use `assets/localization/ui/cockpit`; manufacturer-native instrument
 legends can be layered separately when ship definitions begin owning cockpit
 language.
 
-### Multiplayer Stage M1-M6 — session authority, client identity, navigation, two-client acceptance and replication interest
+### Multiplayer Stage M1-M7 — session authority, client identity, navigation, two-client acceptance and sparse replication
 
 - M1 added a platform-neutral `ServerSessionId` and `ServerSessionRegistry`; authoritative
   connection/session identity is no longer the same concept as a ship `EntityId`.
@@ -455,9 +460,9 @@ language.
   session gets its own `SessionWelcome` and bootstrap snapshot; map responses retain their
   destination session, while time-sync responses return directly through the originating
   endpoint.
-- Ordinary replication is still full-world/full-presence, but the snapshot session view is
-  composed per controlled entity: `snapshot.session.playerNavigation` is no longer copied
-  from the primary player for every connection.
+- The authoritative source snapshot remains full-world/full-presence, while each connection
+  now receives its own sparse ship view. The snapshot session view is composed per controlled
+  entity: `snapshot.session.playerNavigation` is never copied from a primary player.
 - `EliteServer --self-test` now drives two process-local transport endpoints in one runtime,
   assigns two different controlled ships, verifies independent control acknowledgements,
   map/time-sync routing, per-session navigation, and secondary disconnect. The harness is
@@ -483,14 +488,41 @@ language.
 - M6 introduces a server-owned per-session ship replication-interest policy that is separate from
   simulation activation. `Controlled / Tactical / Nearby / Coarse / None` describe transport cost
   demand from the destination session's controlled entity; they are explicitly **not** sensor or
-  gameplay-visibility authorization. Production payload is still full-presence in M6.
-- `SimulationSnapshot` now carries explicit entity-set semantics: `FullAuthoritativeSet` preserves
-  legacy omission=remove, while `SparseRetainMissing` means omission=no update and requires explicit
-  ship/object/hub removal rows. `ClientWorldState` already honors that distinction and materializes
-  canonical retained history samples so existing interpolation/map samplers do not consume sparse
-  holes directly.
-- The next multiplayer milestone is actual per-entity sparse/cadenced ship publication with full
-  bootstrap/re-entry hydration, followed by a real network transport.
+  gameplay-visibility authorization.
+- `SimulationSnapshot` carries explicit entity-set semantics: `FullAuthoritativeSet` preserves legacy
+  omission=remove, while `SparseRetainMissing` means omission=no update and requires explicit
+  ship/object/hub removal rows. `ClientWorldState` honors that distinction and materializes canonical
+  retained history samples so existing interpolation/map samplers do not consume sparse holes directly.
+- M7 makes the policy operational. `ServerRunner` owns per-connection publication memory and sends
+  Controlled/Tactical ship rows at normal snapshot cadence, Nearby/Coarse rows at their target interval,
+  and `None`/destruction as explicit removal. The first packet after interest re-entry is marked for
+  hydration instead of being treated as an ordinary sparse-field update.
+- `GameServer` retains a canonical field-complete replication snapshot by merging nested graph flags
+  independently from entity-presence semantics. Initial/late-join bootstrap and re-entry hydration use
+  that canonical source, so a client cannot join between dirty graph publications and receive only half
+  of an existing ship's runtime state. Objects/hubs remain full-cadence in M7, with explicit lifecycle
+  removal because the shared envelope is sparse.
+- Stage M8A adds `WireProtocol.h`: ABI-independent magic/version/kind/length/sequence framing, bounded stream decoding and explicit connection/control-plane codecs. Stage M8B adds `WireBinaryCodec.h` + canonical `WireDataSchema.h` + top-level `WireDataCodec.h`, so one logical snapshot/map response becomes one raw byte buffer before compression/framing. The first production remote transport is intentionally a reliable ordered TCP byte stream; socket APIs stay below `ITransport`/`IServerTransport`. Field-level
+  delta compression is deferred until packet ordering/reliability and baseline/version semantics are
+  explicit rather than assuming every prior sparse packet arrived.
 - Session/authority/runner code contains no Win32/POSIX socket primitives. Platform-specific
   networking stays behind transport adapters so the same authoritative runtime can build on
   Windows and Linux.
+
+### Multiplayer Stage M8A — portable versioned wire control plane
+
+- `src/game/network/WireProtocol.h` is the first process boundary that is independent from compiler/STL object layout. It never raw-copies `std::string`, `std::vector`, `std::variant` or aggregate protocol structs. Scalars use explicit network byte order; float/double transport their bit patterns through fixed-width integers.
+- Every frame carries `ELIT` magic, protocol version, message kind, bounded payload length and a per-direction sequence field. `WireFrameDecoder` accepts arbitrary TCP-style fragmentation/coalescing and rejects bad magic/version/oversize frames.
+- M8A codecs cover `SessionWelcome`, both `ClientMessage` variants, all `MapRequest` variants and time-sync request/response. Variable-length strings and whole-frame payloads are bounded before allocation/copy.
+- M8A reserved `SimulationSnapshot` and `MapResponse` message ids; M8B now round-trips both payloads, including sparse replication lifecycle, hydrated runtime graph state, per-session state and the existing client-composed map response contracts.
+- Initial process networking uses reliable ordered TCP. Optional future datagram channels must introduce their own loss/reordering/sequence/ack/baseline semantics rather than weakening the authoritative protocol by assumption.
+- No Win32/POSIX socket types belong in `GameServer`, `ServerRuntime`, `ServerRunner` or the wire codec. Concrete Asio TCP adapters arrive in M8C under the existing `ITransport` / `IServerTransport` seam.
+- M8A also fixes project-local include spelling that was only accidentally valid on case-insensitive Windows filesystems (`EntityId.h` vs `EntityID.h`, `Log.h` vs `log.h`). `check_case_sensitive_project_includes.py` keeps this Linux portability contract from regressing.
+
+### Multiplayer Stage M8B — canonical ordered data schema
+
+- `WireDataSchema.h` is the single protocol-order registry for data-plane DTO fields. Encode and decode both traverse the same `std::tie(...)` field tuple, so there are not two manually maintained field-order lists to drift apart.
+- `WireBinaryCodec.h` is generic machinery only: primitives, bounded strings/vectors, variants, GLM vectors/matrices, validated enums and registered schemas. It has no ship/map-specific field list.
+- `WireDataCodec.h` serializes one complete logical `SimulationSnapshot` or `MapResponse` to one raw byte buffer with an explicit data-schema version. Adding normal replicated fields should not require changes to framing, TCP, ServerRunner or compression.
+- Compression is a separate byte-to-byte seam (`IWireCompressor`). It never sees entity/module counts or DTO types. M8B ships a `NoWireCompression` passthrough plus compression envelope metadata so M8C can transport the exact same pipeline and a future LZ4/Zstd implementation can be swapped in below serialization.
+- The data-plane contract test exercises a sparse snapshot with lifecycle removals, kinematics, reference frames, signal/radar/damage state, ship systems, module/repair/detached-fragment graphs, objects, hubs, session navigation and all four MapResponse variants. It also checks schema-version rejection, vector/enum bounds, compression opacity and fragmented frame reconstruction.

@@ -1008,3 +1008,83 @@ set_tests_properties(
     PROPERTIES
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+add_executable(
+    wire_protocol_contract_tests
+    WireProtocolContractTests.cpp
+)
+
+target_include_directories(
+    wire_protocol_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        wire_protocol_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        wire_protocol_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME wire_protocol_contracts
+    COMMAND wire_protocol_contract_tests
+)
+
+set_tests_properties(
+    wire_protocol_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
+    wire_data_plane_contract_tests
+    WireDataPlaneContractTests.cpp
+)
+
+target_include_directories(
+    wire_data_plane_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        wire_data_plane_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        wire_data_plane_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME wire_data_plane_contracts
+    COMMAND wire_data_plane_contract_tests
+)
+
+set_tests_properties(
+    wire_data_plane_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

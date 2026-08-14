@@ -373,9 +373,9 @@ private:
 
     // Stage 4A/4B: the stabilized activation plan controls real materialized
     // work lanes. Motion-control evaluation is decimated for Prewarm/Coarse
-    // while cheap kinematic propagation remains fixed-step; signals and entity
-    // presence in snapshots remain full-rate until sparse replication and
-    // Scheduled materialization semantics are introduced explicitly. Sensors
+    // while cheap kinematic propagation remains fixed-step. GameSimulation still
+    // publishes a full authoritative source set; Stage M7 performs per-session
+    // sparse ship transport later in ServerRunner. Sensors
     // and signal visibility remain outside the activation domain.
     std::unordered_map<
         EntityId,

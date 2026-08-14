@@ -17,12 +17,15 @@ def require(condition: bool, message: str) -> None:
 
 envelope = read("src/game/network/ReplicationEnvelope.h")
 interest = read("src/game/server/ReplicationInterestPolicy.h")
+publication = read("src/game/server/ReplicationPublicationPolicy.h")
 server = read("src/game/server/GameServer.cpp")
+server_h = read("src/game/server/GameServer.h")
 runner = read("src/game/server/ServerRunner.cpp")
-envelope_text = envelope
+runner_h = read("src/game/server/ServerRunner.h")
 client = read("src/game/client/ClientWorldState.cpp")
 merge = read("src/game/network/ReplicationSnapshotMerge.h")
 snapshot = read("src/game/simulation/SimulationSnapshot.h")
+runtime = read("src/game/server/ServerRuntime.cpp")
 
 require(
     "ReplicationEnvelope replication" in snapshot,
@@ -50,22 +53,55 @@ require(
     "ship interest must be derived per controlled entity/system/distance",
 )
 require(
-    "buildShipReplicationInterestPlan" in server
-    and "m_sessions.controlledEntity(sessionId)" in server,
-    "GameServer does not compose replication interest from destination session authority",
+    "ReplicationPublicationState" in publication
+    and "lastShipPublicationTimeSeconds" in publication
+    and "hasBootstrapBaseline" in publication,
+    "M7 lost per-transport sparse publication memory",
 )
 require(
-    "lastShipInterestPlan" in runner
-    and "shipReplicationInterestPlanForSession" in runner,
-    "ServerRunner does not retain a separate interest plan per transport/session binding",
+    "selectReplicationPublications" in publication
+    and "targetIntervalSeconds" in publication
+    and "shipHydrationIds" in publication,
+    "M7 does not consume interest cadence or mark first/re-entry hydration",
 )
 require(
-    "shipInterest" not in envelope_text,
+    "removedObjectIds" in publication and "removedHubIds" in publication,
+    "ship-only decimation must still preserve object/hub lifecycle under sparse envelope semantics",
+)
+require(
+    "m_canonicalReplicationSnapshot" in server_h
+    and "materializeCanonicalReplicationSnapshot" in server,
+    "server lost field-retained canonical hydration state",
+)
+require(
+    "copyHydratedSnapshotForSession" in server
+    and "copySparseSnapshotForSession" in server,
+    "GameServer does not expose distinct full hydration and sparse packet composition seams",
+)
+require(
+    "ReplicatedEntitySetMode::SparseRetainMissing" in server
+    and "selection.shipUpdateIds" in server
+    and "selection.shipHydrationIds" in server,
+    "production session snapshot composition is not actually sparse/hydration-aware",
+)
+require(
+    "seedTransportReplicationBaseline" in runner_h
+    and "replicationPublicationState" in runner_h,
+    "ServerRunner binding lost per-session bootstrap/cadence memory",
+)
+require(
+    "selectReplicationPublications" in runner
+    and "copySparseSnapshotForSession" in runner,
+    "ServerRunner does not consume per-session interest as real sparse publication cadence",
+)
+require(
+    "copyHydratedSnapshotForSession" in runtime
+    and "seedTransportReplicationBaseline" in runtime,
+    "late join/bootstrap is not hydrated before sparse omission becomes legal",
+)
+require(
+    "shipInterest" not in envelope,
     "detailed/server interest metadata must not leak through the client replication envelope",
-)
-require(
-    "ReplicatedEntitySetMode::FullAuthoritativeSet" in server,
-    "M6 must remain full-presence until sparse cadence is enabled in a later stage",
 )
 require(
     "FullAuthoritativeSet" in client
@@ -80,8 +116,14 @@ require(
     "client presentation history is not materializing retained sparse state",
 )
 require(
+    "materializeGraphSnapshot" in merge
+    and "!incoming.hasModules" in merge
+    and "!incoming.hasStructuralLinks" in merge,
+    "canonical history/hydration loses sparse nested graph fields",
+)
+require(
     "canonical.replication.entitySetMode = Mode::FullAuthoritativeSet" in merge,
     "retained history snapshots must be canonical full-presence samples",
 )
 
-print("[PASS] per-session replication interest is separated from retain/update/remove protocol semantics")
+print("[PASS] per-session interest drives real sparse cadence with hydrated re-entry and explicit lifecycle")

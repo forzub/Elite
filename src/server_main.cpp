@@ -252,8 +252,11 @@ int runHeadlessSelfTest()
     for (int i = 0; i < 8; ++i)
         runtime.advance(step);
 
-    const auto& snapshotA = transportA.latestSnapshot();
-    const auto& snapshotB = transportB.latestSnapshot();
+    // Normal M7 packets are sparse. The headless endpoint retains a canonical
+    // view exactly like a real client world so omission is never mistaken for
+    // loss while validating cross-session authoritative state.
+    const auto& snapshotA = transportA.latestCanonicalSnapshot();
+    const auto& snapshotB = transportB.latestCanonicalSnapshot();
     const auto* shipAOnA =
         findShipSnapshot(snapshotA, welcomeA.controlledEntityId);
     const auto* shipBOnA = findShipSnapshot(snapshotA, shipBId);
@@ -371,7 +374,7 @@ int runHeadlessSelfTest()
     }
 
     const auto* shipBAfterDetach =
-        findShipSnapshot(transportA.latestSnapshot(), shipBId);
+        findShipSnapshot(transportA.latestCanonicalSnapshot(), shipBId);
     if (!shipBAfterDetach ||
         shipBAfterDetach->acknowledgedControlTick != 202)
     {

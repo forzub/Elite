@@ -106,7 +106,17 @@ bool ServerRuntime::publishSessionBootstrap(
     transport.publishSessionWelcomeImmediately(welcome);
 
     SimulationSnapshot bootstrapSnapshot;
-    if (!m_server->copySnapshotForSession(
+    if (!m_server->copyHydratedSnapshotForSession(
+            sessionId,
+            bootstrapSnapshot))
+    {
+        return false;
+    }
+
+    // Seed the connection's sparse-publication memory from the exact full
+    // baseline that is about to be delivered. A late join therefore starts
+    // with complete retained graph/runtime state before any omission is legal.
+    if (!m_runner->seedTransportReplicationBaseline(
             sessionId,
             bootstrapSnapshot))
     {

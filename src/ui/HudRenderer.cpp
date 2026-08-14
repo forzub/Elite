@@ -1,6 +1,6 @@
 #include <glad/gl.h>
 
-#include "core/Log.h"
+#include "core/log.h"
 
 #include "ui/HudRenderer.h"
 

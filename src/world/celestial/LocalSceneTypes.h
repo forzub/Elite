@@ -6,7 +6,7 @@
 
 #include <glm/glm.hpp>
 
-#include "src/scene/EntityId.h"
+#include "src/scene/EntityID.h"
 #include "src/world/celestial/DetailMapTypes.h"
 #include "src/world/types/ObjectType.h"
 

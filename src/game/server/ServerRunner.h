@@ -6,6 +6,7 @@
 
 #include "src/game/network/SessionMessage.h"
 #include "src/game/server/ReplicationInterestPolicy.h"
+#include "src/game/server/ReplicationPublicationPolicy.h"
 
 class GameServer;
 class IServerTransport;
@@ -26,9 +27,12 @@ struct ServerTransportBinding
     game::network::ServerSessionId sessionId {};
     std::uint64_t lastPublishedServerTick = 0;
 
-    // Server-only transport demand. Never serialize this plan to the client:
-    // future sparse publication consumes it after visibility/knowledge gates.
+    // Server-only transport demand. Never serialize this plan to the client.
     game::server::ShipReplicationInterestPlan lastShipInterestPlan;
+
+    // Per-destination hydration/cadence/lifecycle memory. It belongs to the
+    // transport session, not to authoritative world simulation.
+    game::server::ReplicationPublicationState replicationPublicationState;
 };
 
 struct ServerAdvanceResult
@@ -76,6 +80,11 @@ public:
     );
     bool detachTransport(game::network::ServerSessionId sessionId);
     std::size_t transportCount() const noexcept;
+
+    bool seedTransportReplicationBaseline(
+        game::network::ServerSessionId sessionId,
+        const SimulationSnapshot& bootstrapSnapshot
+    );
 
     void resetTiming();
 

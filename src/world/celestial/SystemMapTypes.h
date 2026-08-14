@@ -5,7 +5,7 @@
 #include <vector>
 
 #include <glm/glm.hpp>
-#include "src/scene/EntityId.h"
+#include "src/scene/EntityID.h"
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/celestial/DetailMapTypes.h"
 #include "src/world/celestial/LocalSceneTypes.h"

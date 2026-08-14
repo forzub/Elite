@@ -2,7 +2,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "core/Log.h"
+#include "core/log.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/equipment/radar/RadarDesc.h"
 

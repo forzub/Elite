@@ -2,7 +2,7 @@
 #include "GameState.h"
 
 #include "core/StateContext.h"
-#include "core/Log.h"
+#include "core/log.h"
 
 
 #include <iostream>

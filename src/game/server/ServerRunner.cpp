@@ -193,6 +193,24 @@ std::size_t ServerRunner::transportCount() const noexcept
     return m_transports.size();
 }
 
+bool ServerRunner::seedTransportReplicationBaseline(
+    game::network::ServerSessionId sessionId,
+    const SimulationSnapshot& bootstrapSnapshot
+)
+{
+    auto* binding = findBinding(sessionId);
+    if (!binding || !binding->transport)
+        return false;
+
+    game::server::seedReplicationPublicationState(
+        binding->replicationPublicationState,
+        bootstrapSnapshot
+    );
+    binding->lastPublishedServerTick =
+        bootstrapSnapshot.metadata.serverTick;
+    return true;
+}
+
 ServerTransportBinding* ServerRunner::findBinding(
     game::network::ServerSessionId sessionId
 ) noexcept
@@ -258,9 +276,9 @@ void ServerRunner::publishOutboundMessages()
 {
     const auto& sharedSnapshot = m_server.snapshot();
 
-    // Ordinary replication is currently full-world/full-presence, but the
-    // session envelope is already distinct per connection. This is the seam
-    // where per-client interest/sparse replication will be inserted later.
+    // Stage M7 consumes each destination's interest plan as real transport
+    // cadence. The authoritative source snapshot remains full-presence; only
+    // the connection-specific wire packet is sparse.
     for (auto& binding : m_transports)
     {
         if (!binding.transport)
@@ -272,23 +290,36 @@ void ServerRunner::publishOutboundMessages()
             continue;
         }
 
-        // Interest is computed independently for this destination session and
-        // retained server-side. Stage M6 does not filter payload yet; M7 will
-        // consume this plan together with lifecycle/baseline state.
         binding.lastShipInterestPlan =
             m_server.shipReplicationInterestPlanForSession(
                 binding.sessionId
             );
 
+        // Mutate cadence/lifecycle memory only after packet composition has
+        // succeeded. A rejected/stale session must not silently advance its
+        // publication clocks.
+        auto nextPublicationState =
+            binding.replicationPublicationState;
+
+        const auto selection =
+            game::server::selectReplicationPublications(
+                binding.lastShipInterestPlan,
+                sharedSnapshot,
+                nextPublicationState
+            );
+
         SimulationSnapshot sessionSnapshot;
-        if (!m_server.copySnapshotForSession(
+        if (!m_server.copySparseSnapshotForSession(
                 binding.sessionId,
+                selection,
                 sessionSnapshot))
         {
             continue;
         }
 
         binding.transport->publishSnapshot(sessionSnapshot);
+        binding.replicationPublicationState =
+            std::move(nextPublicationState);
         binding.lastPublishedServerTick =
             sharedSnapshot.metadata.serverTick;
     }

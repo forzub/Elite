@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <glm/mat4x4.hpp>
 
-#include "src/scene/EntityId.h"
+#include "src/scene/EntityID.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/world/orbits/OrbitalMotion.h"
 

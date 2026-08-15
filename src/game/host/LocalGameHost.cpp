@@ -8,15 +8,23 @@
 
 namespace game::host
 {
-LocalGameHost::LocalGameHost(const WorldParams& worldParams)
+LocalGameHost::LocalGameHost(
+    const WorldParams& worldParams,
+    const game::network::SessionHello& identityHello
+)
     : m_transport(std::make_unique<LocalLoopbackTransport>())
     , m_debugControl(std::make_unique<game::debug::LocalDebugSessionControl>())
-    , m_worker(std::make_unique<server::ServerWorker>(
-          worldParams,
-          *m_transport,
-          *m_debugControl
-      ))
 {
+    // Queue the same account-authentication message used by a TCP client before
+    // the authoritative worker constructs ServerRuntime. Local play therefore
+    // has no special PlayerId shortcut.
+    m_transport->sendSessionHello(identityHello);
+
+    m_worker = std::make_unique<server::ServerWorker>(
+        worldParams,
+        *m_transport,
+        *m_debugControl
+    );
 }
 
 LocalGameHost::~LocalGameHost() = default;

@@ -3,6 +3,7 @@
 #include "Application.h"
 #include <algorithm>
 #include <utility>
+#include <stdexcept>
 
 #include "core/log.h"
 #include "ui/MainMenuState.h"
@@ -145,6 +146,16 @@ static int systemMapPanelWidth(int framebufferWidth)
 }
 
 
+void Application::configureClientIdentity(
+    const game::network::SessionHello& hello
+)
+{
+    if (!hello.authToken.valid())
+        throw std::invalid_argument("invalid client authentication token");
+
+    m_clientIdentityHello = hello;
+}
+
 void Application::configureRemoteServer(
     std::string host,
     std::uint16_t port)
@@ -160,6 +171,7 @@ void Application::startConfiguredGameSession()
         game::session::RemoteGameSessionConfig config;
         config.host = m_remoteServerHost;
         config.port = m_remoteServerPort;
+        config.identityHello = m_clientIdentityHello;
         m_gameSession =
             std::make_unique<game::session::RemoteGameSession>(
                 std::move(config)
@@ -172,8 +184,10 @@ void Application::startConfiguredGameSession()
 
 void Application::startLocalGameSession()
 {
+    game::host::LocalGameSessionConfig config;
+    config.identityHello = m_clientIdentityHello;
     m_gameSession =
-        std::make_unique<game::host::LocalGameSession>();
+        std::make_unique<game::host::LocalGameSession>(config);
 }
 
 void Application::stopGameSession()

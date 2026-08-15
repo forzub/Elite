@@ -65,6 +65,7 @@ private:
     };
 
     void acceptPendingConnections();
+    void admitPendingConnections();
     void reapDisconnectedConnections();
 
     std::unique_ptr<game::network::TcpServerListener> m_listener;

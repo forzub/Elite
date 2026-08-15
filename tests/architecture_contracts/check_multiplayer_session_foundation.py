@@ -93,8 +93,10 @@ if "m_server.playerId(),\n            clientMessage" in runner_cpp:
     fail("ServerRunner still maps every connection to the legacy singleton player")
 
 for token in (
-    "createPlayerSession(m_server->primaryPlayerIdentity())",
-    "publishSessionBootstrap(transport, m_primarySessionId)",
+    "attachPlayerSessionTransport(transport, hello)",
+    "resolveOrBindAccount(hello)",
+    "m_server->createPlayerSession(playerId)",
+    "publishSessionBootstrap(transport, sessionId)",
     "welcome.sessionId = sessionId",
     "welcome.playerId = playerId",
     "welcome.controlledShipInstanceId = controlledShipInstanceId",

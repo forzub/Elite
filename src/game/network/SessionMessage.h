@@ -1,13 +1,32 @@
 #pragma once
 
+#include <cstdint>
+
 #include "src/scene/EntityID.h"
+#include "src/game/identity/AuthToken.h"
 #include "src/game/identity/PlayerId.h"
 #include "src/game/ship/ShipRegistry.h"
-#include <cstdint>
 #include "src/game/network/ProtocolMetadata.h"
 
 namespace game::network
 {
+
+/*
+    Client -> server authentication claim.
+
+    The client presents only one opaque bearer token. It does not know or
+    choose AccountId, PlayerId, ShipInstanceId or EntityId. The authoritative
+    server hashes this token, resolves/enrolls the account, then derives all
+    gameplay authority from server-owned registries.
+
+    Until TLS is introduced this token must be treated as a development/LAN
+    credential: a bearer token sent over plaintext TCP can be captured.
+*/
+struct SessionHello
+{
+    game::identity::AuthToken authToken {};
+};
+
 struct ServerSessionId
 {
     std::uint64_t value = 0;

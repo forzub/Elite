@@ -7,6 +7,7 @@
 #include "render/RenderContext.h"
 #include "ui/html/HtmlUiManager.h"
 #include "game/localization/LocalizationService.h"
+#include "game/network/SessionMessage.h"
 #include <string>
 #include <memory>
 #include <cstdint>
@@ -218,6 +219,9 @@ public:
 
     void evalGameUiScript(const std::string& script);
 
+    void configureClientIdentity(
+        const game::network::SessionHello& hello
+    );
     void configureRemoteServer(std::string host, std::uint16_t port);
     void startConfiguredGameSession();
     void startLocalGameSession();
@@ -243,6 +247,9 @@ private:
     std::string m_remoteServerHost;
     std::uint16_t m_remoteServerPort = 0;
     std::uint16_t m_gameUiHttpPort = 0;
+    game::network::SessionHello m_clientIdentityHello {
+        game::identity::AuthToken{{1u}}
+    };
     StateStack   m_states;
     RenderContext renderContext;
     HtmlUiManager m_htmlUi;

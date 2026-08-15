@@ -12,6 +12,10 @@ class ITransport
 public:
     virtual ~ITransport() = default;
 
+    virtual void sendSessionHello(
+        const game::network::SessionHello& hello
+    ) = 0;
+
     virtual bool receiveSessionWelcome(
         game::network::SessionWelcome& outWelcome
     ) = 0;

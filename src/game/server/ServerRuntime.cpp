@@ -5,6 +5,7 @@
 #include "src/game/debug/DebugSessionMessage.h"
 #include "src/game/debug/IServerDebugChannel.h"
 #include "src/game/network/IServerTransport.h"
+#include "src/game/identity/Sha256.h"
 #include "src/game/server/GameServer.h"
 
 namespace game::server
@@ -47,23 +48,22 @@ ServerRuntime::ServerRuntime(
 )
     : ServerRuntime(worldParams, debugChannel, 1)
 {
-    // Embedded/local play preserves its established primary-session semantics
-    // and therefore materializes only the authored primary player ship.
-    m_primarySessionId =
-        m_server->createPlayerSession(m_server->primaryPlayerIdentity());
-
-    if (!m_primarySessionId ||
-        !m_runner->attachTransport(transport, m_primarySessionId))
+    // Local play uses the same account identity seam as a remote client. The
+    // loopback transport already contains SessionHello before ServerWorker
+    // constructs the authoritative runtime. No local-only PlayerId shortcut.
+    game::network::SessionHello hello;
+    if (!transport.receiveSessionHello(hello))
     {
         throw std::runtime_error(
-            "failed to create/bind primary server session"
+            "local server runtime started without client identity hello"
         );
     }
 
-    if (!publishSessionBootstrap(transport, m_primarySessionId))
+    m_primarySessionId = attachPlayerSessionTransport(transport, hello);
+    if (!m_primarySessionId)
     {
         throw std::runtime_error(
-            "failed to publish primary server session bootstrap"
+            "failed to authenticate/bind primary local game session"
         );
     }
 }
@@ -154,22 +154,55 @@ bool ServerRuntime::publishSessionBootstrap(
     return true;
 }
 
-game::network::ServerSessionId
-ServerRuntime::attachPlayerSessionTransport(
-    IServerTransport& transport
+PlayerId ServerRuntime::resolveOrBindAccount(
+    const game::network::SessionHello& hello
 )
 {
-    const PlayerId playerId =
-        m_server->selectAvailablePlayerForAdmission();
-
-    if (!playerId)
+    if (!hello.authToken.valid())
         return {};
 
-    return attachPlayerSessionTransport(transport, playerId);
+    // Hash immediately at the server admission boundary. The raw bearer token
+    // exists only in the received SessionHello and is never retained in
+    // AccountRegistry or authoritative world state.
+    const auto credentialDigest =
+        game::identity::authTokenDigest(hello.authToken);
+    if (!credentialDigest.valid())
+        return {};
+
+    AccountId resolvedAccount {};
+    PlayerId resolvedPlayer {};
+    const auto result = m_accounts.resolve(
+        credentialDigest,
+        resolvedAccount,
+        resolvedPlayer
+    );
+
+    if (result == game::server::AccountRegistry::ResolveResult::Bound)
+        return resolvedPlayer;
+
+    // First contact with an unknown strong token enrolls one unbound bootstrap
+    // player. AccountId is created by the server and never supplied by the
+    // client. This is intentionally the only first-contact shortcut; once the
+    // binding exists, reconnecting with the same token resolves the same
+    // PlayerId and therefore the same persistent ShipInstanceId.
+    for (const PlayerId candidate : m_server->playerIdentities())
+    {
+        if (!candidate || m_accounts.isPlayerBound(candidate))
+            continue;
+
+        AccountId accountId {m_nextAccountId++};
+        if (!accountId)
+            accountId = AccountId{m_nextAccountId++};
+
+        if (m_accounts.bind(credentialDigest, accountId, candidate))
+            return candidate;
+    }
+
+    return {};
 }
 
 game::network::ServerSessionId
-ServerRuntime::attachPlayerSessionTransport(
+ServerRuntime::attachResolvedPlayerSessionTransport(
     IServerTransport& transport,
     PlayerId playerId
 )
@@ -194,6 +227,19 @@ ServerRuntime::attachPlayerSessionTransport(
     }
 
     return sessionId;
+}
+
+game::network::ServerSessionId
+ServerRuntime::attachPlayerSessionTransport(
+    IServerTransport& transport,
+    const game::network::SessionHello& hello
+)
+{
+    const PlayerId playerId = resolveOrBindAccount(hello);
+    if (!playerId)
+        return {};
+
+    return attachResolvedPlayerSessionTransport(transport, playerId);
 }
 
 bool ServerRuntime::detachPlayerSessionTransport(

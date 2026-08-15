@@ -2,6 +2,24 @@
 
 #include <utility>
 
+void LocalLoopbackTransport::sendSessionHello(
+    const game::network::SessionHello& hello)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_sessionHello.push(hello);
+}
+
+bool LocalLoopbackTransport::receiveSessionHello(
+    game::network::SessionHello& outHello)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (m_sessionHello.empty())
+        return false;
+    outHello = m_sessionHello.front();
+    m_sessionHello.pop();
+    return true;
+}
+
 bool LocalLoopbackTransport::receiveSessionWelcome(
     game::network::SessionWelcome& outWelcome)
 {

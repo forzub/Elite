@@ -177,6 +177,18 @@ struct TcpServerTransport::Impl
         {
             switch (frame.kind)
             {
+                case wire::WireMessageKind::SessionHello:
+                {
+                    SessionHello value;
+                    if (!wire::decodeMessagePayload(frame, value, compressor))
+                    {
+                        fail("invalid SessionHello wire payload");
+                        return;
+                    }
+                    sessionHellos.push(std::move(value));
+                    break;
+                }
+
                 case wire::WireMessageKind::ClientMessage:
                 {
                     ClientMessage value;
@@ -238,6 +250,7 @@ struct TcpServerTransport::Impl
 
     std::unique_ptr<wire::TcpWireStream> stream;
     wire::NoWireCompression compressor;
+    std::queue<SessionHello> sessionHellos;
     std::queue<ClientMessage> clientMessages;
     std::queue<MapRequest> mapRequests;
     std::queue<TimeSyncRequest> timeSyncRequests;
@@ -283,6 +296,11 @@ const std::string& TcpClientTransport::lastError() const noexcept
     return m_impl->error.empty()
         ? m_impl->stream.lastError()
         : m_impl->error;
+}
+
+void TcpClientTransport::sendSessionHello(const SessionHello& hello)
+{
+    m_impl->send(hello);
 }
 
 bool TcpClientTransport::receiveSessionWelcome(SessionWelcome& outWelcome)
@@ -335,6 +353,12 @@ TcpServerTransport::~TcpServerTransport() = default;
 void TcpServerTransport::update(float)
 {
     m_impl->service();
+}
+
+bool TcpServerTransport::receiveSessionHello(SessionHello& outHello)
+{
+    m_impl->service();
+    return popQueue(m_impl->sessionHellos, outHello);
 }
 
 bool TcpServerTransport::receiveClientMessage(ClientMessage& outMessage)

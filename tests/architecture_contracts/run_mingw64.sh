@@ -43,6 +43,7 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_transport_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_runtime_ownership.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_multiplayer_session_foundation.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_account_identity_handshake.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_multiplayer_transport_fanout.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_multiplayer_client_local_identity.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_multiplayer_session_navigation.py"

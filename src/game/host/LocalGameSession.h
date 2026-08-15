@@ -4,6 +4,7 @@
 
 #include "src/game/session/IGameSession.h"
 #include "src/world/WorldParams.h"
+#include "src/game/network/SessionMessage.h"
 
 class GameClient;
 
@@ -17,6 +18,9 @@ namespace game::host
 struct LocalGameSessionConfig
 {
     WorldParams world { 0.0f, 50.0f };
+    game::network::SessionHello identityHello {
+        game::identity::AuthToken{{1u}}
+    };
 };
 
 class LocalGameHost;

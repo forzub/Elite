@@ -10,17 +10,21 @@
 #include <exception>
 #include <cstdlib>
 #include <cstdint>
+#include <random>
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
 #include "core/Application.h"
+#include "src/platform/RuntimeRoot.h"
 #include "game/server/GameServer.h"
 #include "game/diagnostics/ClientAcceptanceHarness.h"
 #include "game/diagnostics/MultiplayerClientAcceptanceHarness.h"
 #include "src/game/session/RemoteGameSession.h"
 #include "src/game/network/NetworkEndpoint.h"
 #include "src/game/client/GameClient.h"
+#include "src/game/identity/ClientIdentityProfile.h"
+#include "src/game/identity/SecureRandom.h"
 #include "core/ConsoleOutput.h"
 #include "world/celestial/visual/CelestialTextureBaker.h"
 #include "render/bitmap/stb_image.h"
@@ -143,6 +147,17 @@ int runRemoteClientProcessSelfTest(
     game::session::RemoteGameSessionConfig config;
     config.host = endpoint.host;
     config.port = endpoint.port;
+
+    // Process acceptance clients use distinct ephemeral bearer tokens without
+    // touching the workstation's persistent Windows credential slots.
+    if (!game::identity::fillSecureRandom(
+            config.identityHello.authToken.bytes.data(),
+            config.identityHello.authToken.bytes.size()) ||
+        !config.identityHello.authToken.valid())
+    {
+        std::cerr << "[FAIL] remote-client process could not generate auth token\n";
+        return 2;
+    }
     game::session::RemoteGameSession session(std::move(config));
     session.beginSynchronization();
 
@@ -572,6 +587,14 @@ bool parseCelestialBakeOptions(
 
 int main(int argc, char** argv)
 {
+    std::string runtimeRootError;
+    if (!platform::initializeExecutableRuntimeRoot(&runtimeRootError))
+    {
+        std::cerr << "[App] runtime root initialization failed: "
+                  << runtimeRootError << "\n";
+        return -3;
+    }
+
 #ifdef _WIN32
     SetUnhandledExceptionFilter(eliteUnhandledExceptionFilter);
 #endif
@@ -589,6 +612,7 @@ int main(int argc, char** argv)
 
     bool useRemoteServer = false;
     game::network::NetworkEndpoint remoteEndpoint;
+    std::string clientProfileName = "default";
 
     try
     {
@@ -596,6 +620,17 @@ int main(int argc, char** argv)
         for (int i = 1; i < argc; ++i)
         {
             const std::string arg = argv[i];
+
+            if (arg == "--profile")
+            {
+                if (i + 1 >= argc)
+                {
+                    std::cerr << "[App] --profile requires NAME\n";
+                    return -2;
+                }
+                clientProfileName = argv[++i];
+                continue;
+            }
 
             if (arg == "--connect" || arg == "--self-test-remote-client")
             {
@@ -667,7 +702,24 @@ int main(int argc, char** argv)
 
         std::setlocale(LC_ALL, "");
         core::disableRuntimeStdoutNoise();
+
+        game::identity::ClientIdentityProfile identityProfile;
+        std::string identityError;
+        if (!game::identity::ClientIdentityProfileStore::loadOrCreate(
+                clientProfileName,
+                identityProfile,
+                &identityError))
+        {
+            std::cerr << "[Identity] " << identityError << "\n";
+            return -2;
+        }
+
+        std::cerr << "[Identity] credential_slot="
+                  << identityProfile.profileName
+                  << " source=os-store\n";
+
         Application app;
+        app.configureClientIdentity(identityProfile.sessionHello());
         if (useRemoteServer)
         {
             app.configureRemoteServer(

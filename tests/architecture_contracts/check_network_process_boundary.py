@@ -38,21 +38,45 @@ for forbidden in [
 if "NetworkServerHost" not in host_h or "ServerRuntime" not in host_cpp:
     raise SystemExit("NetworkServerHost must own the dedicated authoritative runtime boundary")
 
-if "attachPlayerSessionTransport(*transport)" not in host_cpp:
+if "receiveSessionHello(hello)" not in host_cpp:
     raise SystemExit(
-        "network admission must bind accepted transport without a client-selected EntityId"
+        "network admission must wait for an authentication SessionHello after TCP accept"
     )
 
-if "attachPlayerSessionTransport(*transport," in host_cpp:
+if "attachPlayerSessionTransport(" not in host_cpp or "hello" not in host_cpp:
     raise SystemExit(
-        "network host must not pick authority by passing a connection-supplied EntityId"
+        "network admission must pass SessionHello token into server-owned authority resolution"
     )
+
+for forbidden in [
+    "attachPlayerSessionTransport(*transport)",
+    "controlledEntityId = hello",
+    "playerId = hello",
+]:
+    if forbidden in host_cpp:
+        raise SystemExit(
+            f"network host must not accept client-selected player/entity authority: {forbidden}"
+        )
 
 if "ServerRuntime(\n        const WorldParams& worldParams,\n        game::debug::IServerDebugChannel& debugChannel" not in runtime_h:
     raise SystemExit("dedicated ServerRuntime must support zero initial gameplay transports")
 
-if "selectAvailablePlayerForAdmission" not in runtime_cpp:
-    raise SystemExit("server-owned admission selector is missing from runtime path")
+for token in [
+    "resolveOrBindAccount",
+    "m_accounts.resolve",
+    "m_accounts.bind",
+]:
+    if token not in runtime_cpp:
+        raise SystemExit(f"server-owned account admission resolution is missing: {token}")
+
+for forbidden in ["PlayerId playerId", "ShipInstanceId controlledShipInstanceId", "EntityId controlledEntityId"]:
+    session_hello_start = session_h.find("struct SessionHello")
+    session_welcome_start = session_h.find("struct SessionWelcome")
+    if session_hello_start < 0 or session_welcome_start < 0:
+        raise SystemExit("SessionHello/SessionWelcome boundary is missing")
+    hello_body = session_h[session_hello_start:session_welcome_start]
+    if forbidden in hello_body:
+        raise SystemExit(f"SessionHello must not carry client-selected authority: {forbidden}")
 
 if "double fixedStepSeconds" not in session_h:
     raise SystemExit("SessionWelcome must publish authoritative fixed-step cadence")
@@ -61,7 +85,7 @@ for token in ["--listen", "NetworkServerHost", "--self-test-one-client"]:
     if token not in server_main:
         raise SystemExit(f"EliteServer process lifecycle missing: {token}")
 
-for token in ["--connect", "--self-test-remote-client", "configureRemoteServer"]:
+for token in ["--connect", "--profile", "--self-test-remote-client", "configureRemoteServer"]:
     if token not in client_main:
         raise SystemExit(f"EliteGame remote process lifecycle missing: {token}")
 
@@ -83,4 +107,4 @@ for path, text in [
         if token.lower() in lower:
             raise SystemExit(f"{path} leaked OS socket API/token: {token}")
 
-print("[PASS] separate-process admission keeps TCP below session/runtime authority boundaries")
+print("[PASS] separate-process admission authenticates account identity below server-owned player/entity authority")

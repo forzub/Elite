@@ -29,6 +29,18 @@ public:
     {
     }
 
+    bool receiveSessionHello(
+        game::network::SessionHello& outHello
+    ) override
+    {
+        if (m_sessionHellos.empty())
+            return false;
+
+        outHello = m_sessionHellos.front();
+        m_sessionHellos.pop();
+        return true;
+    }
+
     bool receiveClientMessage(
         game::network::ClientMessage& outMessage
     ) override
@@ -68,6 +80,11 @@ public:
     // Self-test/admission harness injection. In normal standalone server mode
     // nobody calls these methods, so the endpoint remains an empty inbound
     // source until the future real network adapter replaces it.
+    void enqueueSessionHello(game::network::SessionHello hello)
+    {
+        m_sessionHellos.push(hello);
+    }
+
     void enqueueClientMessage(game::network::ClientMessage message)
     {
         m_clientMessages.push(std::move(message));
@@ -221,6 +238,7 @@ private:
     game::network::MapResponse m_latestMapResponse;
     game::network::TimeSyncResponse m_latestTimeSyncResponse;
 
+    std::queue<game::network::SessionHello> m_sessionHellos;
     std::queue<game::network::ClientMessage> m_clientMessages;
     std::queue<game::network::MapRequest> m_mapRequests;
     std::queue<game::network::TimeSyncRequest> m_timeSyncRequests;

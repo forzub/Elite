@@ -2,6 +2,8 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <csignal>
 #include <iostream>
 #include <string>
@@ -11,6 +13,7 @@
 #include <glm/geometric.hpp>
 
 #include "src/core/ConsoleOutput.h"
+#include "src/platform/RuntimeRoot.h"
 #include "src/platform/ProcessSingleInstanceGuard.h"
 #include "src/game/server/HeadlessServerEndpoints.h"
 #include "src/game/server/ServerRuntime.h"
@@ -69,6 +72,24 @@ std::uint64_t mapResponseRequestId(
     );
 }
 
+game::network::SessionHello makeSelfTestIdentity(
+    std::uint64_t tokenSeed,
+    std::uint64_t tokenSalt
+)
+{
+    game::network::SessionHello hello;
+    for (std::size_t i = 0; i < hello.authToken.bytes.size(); ++i)
+    {
+        const unsigned shift = static_cast<unsigned>((i % 8u) * 8u);
+        hello.authToken.bytes[i] = static_cast<std::uint8_t>(
+            ((tokenSeed >> shift) ^ (tokenSalt + i * 37u)) & 0xffu
+        );
+    }
+    if (!hello.authToken.valid())
+        hello.authToken.bytes[0] = 1;
+    return hello;
+}
+
 int runHeadlessSelfTest()
 {
     core::disableRuntimeStdoutNoise();
@@ -84,7 +105,10 @@ int runHeadlessSelfTest()
         debugChannel
     );
 
-    const auto sessionA = runtime.attachPlayerSessionTransport(transportA);
+    const auto sessionA = runtime.attachPlayerSessionTransport(
+        transportA,
+        makeSelfTestIdentity(1001u, 1u)
+    );
 
     if (!sessionA ||
         !transportA.hasSessionWelcome() ||
@@ -124,7 +148,10 @@ int runHeadlessSelfTest()
     // Dedicated runtime owns two explicit persistent bootstrap players/ships.
     // The second transport is admitted by PlayerId availability, never by
     // hijacking an arbitrary NPC EntityId.
-    const auto sessionB = runtime.attachPlayerSessionTransport(transportB);
+    const auto sessionB = runtime.attachPlayerSessionTransport(
+        transportB,
+        makeSelfTestIdentity(1002u, 2u)
+    );
 
     if (!sessionB ||
         runtime.connectedPlayerSessionCount() != 2 ||
@@ -501,6 +528,14 @@ int runHeadlessServer()
 
 int main(int argc, char** argv)
 {
+    std::string runtimeRootError;
+    if (!platform::initializeExecutableRuntimeRoot(&runtimeRootError))
+    {
+        std::cerr << "[EliteServer] runtime root initialization failed: "
+                  << runtimeRootError << "\n";
+        return 6;
+    }
+
     bool headlessSelfTest = false;
     bool oneClientSelfTest = false;
     bool haveListenEndpoint = false;

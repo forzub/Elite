@@ -21,6 +21,24 @@ namespace game::diagnostics
 {
 namespace
 {
+game::network::SessionHello makeAcceptanceIdentity(
+    std::uint64_t tokenSeed,
+    std::uint64_t salt
+)
+{
+    game::network::SessionHello hello;
+    for (std::size_t i = 0; i < hello.authToken.bytes.size(); ++i)
+    {
+        const unsigned shift = static_cast<unsigned>((i % 8u) * 8u);
+        hello.authToken.bytes[i] = static_cast<std::uint8_t>(
+            ((tokenSeed >> shift) ^ (salt + i * 29u)) & 0xffu
+        );
+    }
+    if (!hello.authToken.valid())
+        hello.authToken.bytes[0] = 1;
+    return hello;
+}
+
 constexpr double FrameSeconds = 1.0 / 60.0;
 constexpr int SynchronizationFrameLimit = 600;
 constexpr int AckDrainFrameLimit = 120;
@@ -53,6 +71,34 @@ const ClientShipState& requireShip(
     }
 
     return it->second;
+}
+
+void synchronizeClient(
+    game::server::ServerRuntime& runtime,
+    GameClient& client,
+    const char* label
+)
+{
+    for (int frame = 0; frame < SynchronizationFrameLimit; ++frame)
+    {
+        runtime.advance(FrameSeconds);
+        client.updateSynchronization(FrameSeconds);
+
+        if (client.readyForGameplay())
+            return;
+
+        if (client.connectionState() == ClientConnectionState::Failed)
+        {
+            throw MultiplayerAcceptanceFailure(
+                std::string(label) + " synchronization failed: " +
+                client.connectionError()
+            );
+        }
+    }
+
+    throw MultiplayerAcceptanceFailure(
+        std::string(label) + " did not reach Ready"
+    );
 }
 
 void synchronizeClients(
@@ -184,6 +230,76 @@ void requireNavigationMatchesAuthoritativeLocalEntity(
     );
 }
 
+void requireAccountReconnectReturnsSamePersistentPlayer()
+{
+    game::debug::LocalDebugSessionControl debugChannel;
+    WorldParams worldParams;
+    game::server::ServerRuntime runtime(worldParams, debugChannel);
+    const auto identity = makeAcceptanceIdentity(3001u, 31u);
+
+    LocalLoopbackTransport transportFirst;
+    const auto firstSession = runtime.attachPlayerSessionTransport(
+        transportFirst,
+        identity
+    );
+    require(static_cast<bool>(firstSession), "first account enrollment failed");
+
+    GameClient firstClient(transportFirst);
+    firstClient.beginSynchronization();
+    synchronizeClient(runtime, firstClient, "first account session");
+
+    const PlayerId playerId = firstClient.playerIdentityId();
+    const ShipInstanceId shipId = firstClient.controlledShipInstanceId();
+    const EntityId entityId = firstClient.localControlledEntityId();
+    require(playerId && shipId != 0 && entityId.value != 0,
+            "first account session has incomplete persistent authority");
+
+    LocalLoopbackTransport duplicateTransport;
+    const auto duplicateSession = runtime.attachPlayerSessionTransport(
+        duplicateTransport,
+        identity
+    );
+    require(!duplicateSession,
+            "same account obtained two concurrent gameplay sessions");
+
+    require(
+        runtime.detachPlayerSessionTransport(firstSession),
+        "first account session could not detach for reconnect"
+    );
+
+    LocalLoopbackTransport reconnectTransport;
+    const auto reconnectSession = runtime.attachPlayerSessionTransport(
+        reconnectTransport,
+        identity
+    );
+    require(static_cast<bool>(reconnectSession),
+            "known account could not reconnect after disconnect");
+
+    GameClient reconnectClient(reconnectTransport);
+    reconnectClient.beginSynchronization();
+    synchronizeClient(runtime, reconnectClient, "reconnected account session");
+
+    require(
+        reconnectClient.playerIdentityId() == playerId,
+        "reconnected account was rebound to a different PlayerId"
+    );
+    require(
+        reconnectClient.controlledShipInstanceId() == shipId,
+        "reconnected account was rebound to a different ShipInstanceId"
+    );
+    require(
+        reconnectClient.localControlledEntityId() == entityId,
+        "reconnected account lost the existing materialized ship EntityId"
+    );
+
+    std::cerr
+        << "[PASS] account reconnect returns same persistent player/ship"
+        << " player=" << playerId.value
+        << " ship=" << shipId
+        << " entity=" << entityId.value
+        << "\n";
+}
+
 void requireDedicatedBootstrapAdmissionPath()
 {
     LocalLoopbackTransport transportA;
@@ -195,8 +311,14 @@ void requireDedicatedBootstrapAdmissionPath()
     // It materializes two explicit ShipRole::Player bootstrap admission slots.
     game::server::ServerRuntime runtime(worldParams, debugChannel);
 
-    const auto sessionA = runtime.attachPlayerSessionTransport(transportA);
-    const auto sessionB = runtime.attachPlayerSessionTransport(transportB);
+    const auto sessionA = runtime.attachPlayerSessionTransport(
+        transportA,
+        makeAcceptanceIdentity(2001u, 1u)
+    );
+    const auto sessionB = runtime.attachPlayerSessionTransport(
+        transportB,
+        makeAcceptanceIdentity(2002u, 2u)
+    );
     require(static_cast<bool>(sessionA), "dedicated bootstrap rejected client A");
     require(static_cast<bool>(sessionB), "dedicated bootstrap rejected client B");
     require(
@@ -300,6 +422,7 @@ int runMultiplayerClientAcceptanceSelfTest()
 {
     try
     {
+        requireAccountReconnectReturnsSamePersistentPlayer();
         requireDedicatedBootstrapAdmissionPath();
 
         LocalLoopbackTransport transportA;
@@ -315,8 +438,14 @@ int runMultiplayerClientAcceptanceSelfTest()
             debugChannel
         );
 
-        const auto sessionA = runtime.attachPlayerSessionTransport(transportA);
-        const auto sessionB = runtime.attachPlayerSessionTransport(transportB);
+        const auto sessionA = runtime.attachPlayerSessionTransport(
+            transportA,
+            makeAcceptanceIdentity(2001u, 1u)
+        );
+        const auto sessionB = runtime.attachPlayerSessionTransport(
+            transportB,
+            makeAcceptanceIdentity(2002u, 2u)
+        );
         require(
             static_cast<bool>(sessionA) && static_cast<bool>(sessionB),
             "ServerRuntime did not admit two persistent player identities"

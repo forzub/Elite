@@ -111,6 +111,24 @@ void testFullProtocolAcrossKernelTcp()
     require(client.connected(), "client is not connected after TCP handshake");
     require(server->connected(), "server endpoint is not connected after accept");
 
+    SessionHello hello;
+    for (std::size_t i = 0; i < hello.authToken.bytes.size(); ++i)
+        hello.authToken.bytes[i] = static_cast<std::uint8_t>(0x40u + i);
+    client.sendSessionHello(hello);
+
+    SessionHello receivedHello;
+    const bool receivedIdentity = spinUntil(
+        client,
+        *server,
+        [&]()
+        {
+            return server->receiveSessionHello(receivedHello);
+        }
+    );
+    require(receivedIdentity, "server did not receive SessionHello over TCP");
+    require(receivedHello.authToken == hello.authToken,
+        "opaque SessionHello auth token changed across TCP");
+
     SessionWelcome welcome;
     welcome.sessionId.value = 1234u;
     welcome.playerId = PlayerId{55u};

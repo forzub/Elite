@@ -39,6 +39,7 @@ public:
     bool connected() const noexcept;
     const std::string& lastError() const noexcept;
 
+    void sendSessionHello(const SessionHello& hello) override;
     bool receiveSessionWelcome(SessionWelcome& outWelcome) override;
     bool receiveSnapshot(SimulationSnapshot& outSnapshot) override;
     void sendClientMessage(const ClientMessage& msg) override;
@@ -62,6 +63,7 @@ public:
 
     void update(float dt) override;
 
+    bool receiveSessionHello(SessionHello& outHello) override;
     bool receiveClientMessage(ClientMessage& outMessage) override;
     bool receiveMapRequest(MapRequest& outRequest) override;
     bool receiveTimeSyncRequest(TimeSyncRequest& outRequest) override;

@@ -62,4 +62,19 @@ run_with_clean_windows_path "${SERVER_DIR}" EliteServer.exe --self-test
 echo "[SELFTEST] standalone-runtime stage=client-clean-path"
 run_with_clean_windows_path "${CLIENT_DIR}" EliteGame.exe --self-test-fast-universe
 
-echo "[PASS] EliteServer and EliteGame launch without MinGW/MSYS2 on PATH"
+# Runtime assets are staged beside each executable. Launch once from the
+# repository root as well so the acceptance contract catches accidental
+# dependence on the shell's current working directory.
+echo "[SELFTEST] standalone-runtime stage=headless-server-foreign-cwd"
+(
+    cd "${ROOT_DIR}"
+    PATH="${CLEAN_WINDOWS_PATH}" "${SERVER_EXE}" --self-test
+)
+
+echo "[SELFTEST] standalone-runtime stage=client-foreign-cwd"
+(
+    cd "${ROOT_DIR}"
+    PATH="${CLEAN_WINDOWS_PATH}" "${CLIENT_EXE}" --self-test-fast-universe
+)
+
+echo "[PASS] EliteServer and EliteGame launch without MinGW/MSYS2 on PATH or cwd assumptions"

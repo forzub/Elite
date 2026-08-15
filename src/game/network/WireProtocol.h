@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 4u;
+inline constexpr std::uint16_t WireProtocolVersion = 6u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -51,7 +51,8 @@ enum class WireMessageKind : std::uint16_t
     // Data-plane ids. Payload field order is defined separately in
     // WireDataSchema.h so framing stays independent of world growth.
     SimulationSnapshot = 6,
-    MapResponse = 7
+    MapResponse = 7,
+    SessionHello = 8
 };
 
 struct WireFrame
@@ -447,6 +448,36 @@ private:
 inline bool finishDecode(WireReader& reader)
 {
     return reader.good() && reader.empty();
+}
+
+inline bool encodeSessionHello(
+    const SessionHello& value,
+    std::vector<std::uint8_t>& outPayload
+)
+{
+    if (!value.authToken.valid())
+        return false;
+
+    WireWriter writer;
+    for (const auto byte : value.authToken.bytes)
+        writer.u8(byte);
+    outPayload = writer.take();
+    return true;
+}
+
+inline bool decodeSessionHello(
+    const std::vector<std::uint8_t>& payload,
+    SessionHello& outValue
+)
+{
+    WireReader reader(payload);
+    for (auto& byte : outValue.authToken.bytes)
+    {
+        if (!reader.u8(byte))
+            return false;
+    }
+
+    return finishDecode(reader) && outValue.authToken.valid();
 }
 
 inline bool encodeSessionWelcome(

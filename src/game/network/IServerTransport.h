@@ -25,6 +25,10 @@ public:
     // implementation may make this a no-op and feed the queues asynchronously.
     virtual void update(float dt) = 0;
 
+    virtual bool receiveSessionHello(
+        game::network::SessionHello& outHello
+    ) = 0;
+
     virtual bool receiveClientMessage(
         game::network::ClientMessage& outMessage
     ) = 0;

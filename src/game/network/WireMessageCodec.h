@@ -22,6 +22,16 @@ namespace game::network::wire
     because they are tiny and latency-sensitive.
 */
 inline bool encodeMessagePayload(
+    const SessionHello& value,
+    WireMessageKind& outKind,
+    std::vector<std::uint8_t>& outPayload,
+    const IWireCompressor&)
+{
+    outKind = WireMessageKind::SessionHello;
+    return encodeSessionHello(value, outPayload);
+}
+
+inline bool encodeMessagePayload(
     const SessionWelcome& value,
     WireMessageKind& outKind,
     std::vector<std::uint8_t>& outPayload,
@@ -125,6 +135,15 @@ inline bool encodeMessagePayload(
         compressor,
         outPayload
     );
+}
+
+inline bool decodeMessagePayload(
+    const WireFrame& frame,
+    SessionHello& outValue,
+    const IWireCompressor&)
+{
+    return frame.kind == WireMessageKind::SessionHello &&
+        decodeSessionHello(frame.payload, outValue);
 }
 
 inline bool decodeMessagePayload(

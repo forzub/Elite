@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "src/game/server/ServerRunner.h"
+#include "src/game/server/AccountRegistry.h"
 #include "src/game/network/SessionMessage.h"
 #include "src/game/identity/PlayerId.h"
 #include "src/world/WorldParams.h"
@@ -55,15 +56,12 @@ public:
     ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
 
-    // Production admission is server-owned: callers provide a connection,
-    // never an EntityId. The explicit PlayerId overload is the authenticated
-    // identity/handoff seam; runtime EntityId stays server-resolved.
-    game::network::ServerSessionId attachPlayerSessionTransport(
-        IServerTransport& transport
-    );
+    // Production-shaped admission is token-authenticated. The client presents
+    // only an opaque bearer token; AccountId / PlayerId / ShipInstanceId /
+    // EntityId are resolved entirely by authoritative server registries.
     game::network::ServerSessionId attachPlayerSessionTransport(
         IServerTransport& transport,
-        PlayerId playerId
+        const game::network::SessionHello& hello
     );
     bool detachPlayerSessionTransport(
         game::network::ServerSessionId sessionId
@@ -77,6 +75,13 @@ private:
         std::size_t bootstrapPlayerSlotCount
     );
 
+    game::network::ServerSessionId attachResolvedPlayerSessionTransport(
+        IServerTransport& transport,
+        PlayerId playerId
+    );
+    PlayerId resolveOrBindAccount(
+        const game::network::SessionHello& hello
+    );
     bool publishSessionBootstrap(
         IServerTransport& transport,
         game::network::ServerSessionId sessionId
@@ -87,6 +92,8 @@ private:
 
     std::unique_ptr<GameServer> m_server;
     std::unique_ptr<ServerRunner> m_runner;
+    game::server::AccountRegistry m_accounts;
+    std::uint64_t m_nextAccountId = 1;
     game::network::ServerSessionId m_primarySessionId {};
     game::debug::IServerDebugChannel& m_debugChannel;
 

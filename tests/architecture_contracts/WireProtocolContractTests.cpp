@@ -179,6 +179,22 @@ void testFrameValidation()
     require(sizeDecoder.failed(), "oversized frame did not fail decoder");
 }
 
+void testSessionHelloRoundTrip()
+{
+    SessionHello hello;
+    for (std::size_t i = 0; i < hello.authToken.bytes.size(); ++i)
+        hello.authToken.bytes[i] = static_cast<std::uint8_t>(i + 1u);
+
+    std::vector<std::uint8_t> payload;
+    require(encodeSessionHello(hello, payload), "SessionHello encode failed");
+    require(payload.size() == game::identity::AuthTokenBytes,
+        "SessionHello must contain only the opaque auth token");
+
+    SessionHello decoded;
+    require(decodeSessionHello(payload, decoded), "SessionHello decode failed");
+    require(decoded.authToken == hello.authToken, "SessionHello auth token mismatch");
+}
+
 void testSessionWelcomeRoundTrip()
 {
     SessionWelcome welcome;
@@ -394,6 +410,7 @@ int main()
     testSignedScalarRoundTrip();
     testFrameByteOrderAndFragmentation();
     testFrameValidation();
+    testSessionHelloRoundTrip();
     testSessionWelcomeRoundTrip();
     testClientMessageRoundTrip();
     testTimeSyncRoundTrip();

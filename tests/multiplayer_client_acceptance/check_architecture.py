@@ -58,14 +58,29 @@ for token in (
 
 for token in (
     "game::server::ServerRuntime runtime(worldParams, debugChannel);",
-    "runtime.attachPlayerSessionTransport(transportA)",
-    "runtime.attachPlayerSessionTransport(transportB)",
+    "makeAcceptanceIdentity(2001u, 1u)",
+    "makeAcceptanceIdentity(2002u, 2u)",
     "std::abs(worldDistance - 50.0)",
     "renderDistanceA",
     "renderDistanceB",
 ):
     if token not in harness:
         fail(f"dedicated two-slot bootstrap acceptance token disappeared: {token}")
+
+for token in (
+    "requireAccountReconnectReturnsSamePersistentPlayer()",
+    "same account obtained two concurrent gameplay sessions",
+    "reconnected account was rebound to a different PlayerId",
+    "reconnected account was rebound to a different ShipInstanceId",
+    "clientA.playerIdentityId()",
+    "clientB.playerIdentityId()",
+    "clientA.controlledShipInstanceId()",
+    "clientB.controlledShipInstanceId()",
+    "clientA.localControlledEntityId()",
+    "clientB.localControlledEntityId()",
+):
+    if token not in harness:
+        fail(f"persistent two-client identity assertion disappeared: {token}")
 
 for token, source in (
     ("bool ownsForegroundInput() const;", window_h),

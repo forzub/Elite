@@ -9,7 +9,10 @@ namespace game::host
 LocalGameSession::LocalGameSession(
     const LocalGameSessionConfig& config
 )
-    : m_host(std::make_unique<LocalGameHost>(config.world))
+    : m_host(std::make_unique<LocalGameHost>(
+          config.world,
+          config.identityHello
+      ))
     , m_client(std::make_unique<GameClient>(m_host->transport()))
 {
 }

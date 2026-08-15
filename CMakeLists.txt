@@ -91,6 +91,7 @@ add_compile_definitions(GLM_ENABLE_EXPERIMENTAL)
 if(ELITE_BUILD_CLIENT)
 add_executable(EliteGame
     src/main.cpp
+    src/platform/RuntimeRoot.cpp
 
     glad/src/gl.c
 
@@ -364,6 +365,9 @@ add_executable(EliteGame
     src/game/host/LocalGameSession.h
     src/game/host/LocalGameSession.cpp
     src/game/session/RemoteGameSession.cpp
+    src/game/identity/ClientIdentityProfile.cpp
+    src/game/identity/SecureRandom.cpp
+    src/game/identity/Sha256.cpp
     src/game/client/ClientMapService.cpp
     src/game/client/ClientCatalogService.cpp
 
@@ -376,6 +380,7 @@ endif()
 if(ELITE_BUILD_SERVER)
     add_executable(EliteServer
         src/server_main.cpp
+        src/platform/RuntimeRoot.cpp
         src/platform/ProcessSingleInstanceGuard.cpp
 
         src/game/equipment/signalNode/processing/SignalReceiver.cpp
@@ -412,6 +417,7 @@ if(ELITE_BUILD_SERVER)
         src/game/server/ServerRunner.cpp
         src/game/server/ServerRuntime.cpp
         src/game/server/NetworkServerHost.cpp
+        src/game/identity/Sha256.cpp
         src/game/network/TcpWireStream.cpp
         src/game/network/TcpTransport.cpp
         src/game/shared/SharedShipPhysics.cpp
@@ -612,6 +618,7 @@ target_link_libraries(EliteGame PRIVATE
     pthread     # уже есть
     
     advapi32
+    bcrypt
     ole32
     shell32
     shlwapi

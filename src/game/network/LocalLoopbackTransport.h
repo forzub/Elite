@@ -45,6 +45,9 @@ public:
     LocalLoopbackTransport() = default;
 
     // ----- client endpoint (ITransport) -----
+    void sendSessionHello(
+        const game::network::SessionHello& hello) override;
+
     bool receiveSessionWelcome(
         game::network::SessionWelcome& outWelcome) override;
 
@@ -68,6 +71,9 @@ public:
 
     // ----- server endpoint (IServerTransport) -----
     void update(float dt) override;
+
+    bool receiveSessionHello(
+        game::network::SessionHello& outHello) override;
 
     bool receiveClientMessage(
         game::network::ClientMessage& outMessage) override;
@@ -96,6 +102,7 @@ public:
 private:
     mutable std::mutex m_mutex;
 
+    std::queue<game::network::SessionHello> m_sessionHello;
     std::queue<game::network::SessionWelcome> m_sessionWelcome;
     std::queue<SimulationSnapshot> m_incoming;
     std::queue<game::network::ClientMessage> m_clientMessages;

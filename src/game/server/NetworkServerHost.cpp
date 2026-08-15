@@ -39,6 +39,7 @@ bool NetworkServerHost::listen(
 ServerAdvanceResult NetworkServerHost::advance(double elapsedSeconds)
 {
     acceptPendingConnections();
+    admitPendingConnections();
     const auto result = m_runtime->advance(elapsedSeconds);
     reapDisconnectedConnections();
     return result;
@@ -56,24 +57,46 @@ void NetworkServerHost::acceptPendingConnections()
         if (!transport)
             break;
 
-        const auto sessionId =
-            m_runtime->attachPlayerSessionTransport(*transport);
-
-        if (!sessionId)
-        {
-            transport->disconnect();
-            continue;
-        }
-
+        // TCP accept is not gameplay admission. Keep the connection pending
+        // until the client presents a SessionHello bearer token.
         Connection connection;
         connection.transport = std::move(transport);
-        connection.sessionId = sessionId;
         m_connections.push_back(std::move(connection));
-        ++m_acceptedConnectionCount;
     }
 
     if (!m_listener->lastError().empty() && m_error.empty())
         m_error = m_listener->lastError();
+}
+
+void NetworkServerHost::admitPendingConnections()
+{
+    for (auto& connection : m_connections)
+    {
+        if (!connection.transport || connection.sessionId)
+            continue;
+
+        game::network::SessionHello hello;
+        if (!connection.transport->receiveSessionHello(hello))
+            continue;
+
+        const auto sessionId =
+            m_runtime->attachPlayerSessionTransport(
+                *connection.transport,
+                hello
+            );
+
+        if (!sessionId)
+        {
+            // Unknown/full enrollment capacity or duplicate active login
+            // are all authoritative admission failures. The client never gets
+            // to fall back to selecting another PlayerId or EntityId.
+            connection.transport->disconnect();
+            continue;
+        }
+
+        connection.sessionId = sessionId;
+        ++m_acceptedConnectionCount;
+    }
 }
 
 void NetworkServerHost::reapDisconnectedConnections()

@@ -4,6 +4,7 @@
 
 #include "src/game/server/ServerRunner.h"
 #include "src/world/WorldParams.h"
+#include "src/game/network/SessionMessage.h"
 
 class ITransport;
 class LocalLoopbackTransport;
@@ -32,7 +33,10 @@ namespace game::host
 class LocalGameHost final
 {
 public:
-    explicit LocalGameHost(const WorldParams& worldParams);
+    LocalGameHost(
+        const WorldParams& worldParams,
+        const game::network::SessionHello& identityHello
+    );
     ~LocalGameHost();
 
     LocalGameHost(const LocalGameHost&) = delete;

@@ -411,6 +411,18 @@ m_simulation.setCelestialBodyKinematicStateAu(
                 );
             }
 
+            // Initial human pilots are independent individuals: no organization
+            // membership is implied. Their starter ship is legally self-owned,
+            // while runtime control remains a separate ControlRegistry concern.
+            if (!m_shipOwnership.assign(
+                    registration.instanceId,
+                    game::server::ShipOwnerRef::player(playerId)))
+            {
+                throw std::runtime_error(
+                    "failed to assign bootstrap player ship self-ownership"
+                );
+            }
+
             if (entityId == m_simulation.playerId())
                 m_primaryPlayerId = playerId;
         }
@@ -1077,44 +1089,28 @@ std::size_t GameServer::connectedPlayerSessionCount() const noexcept
     return m_sessions.connectedCount();
 }
 
-PlayerId GameServer::selectAvailablePlayerForAdmission() const noexcept
+std::vector<PlayerId> GameServer::playerIdentities() const
 {
-    if (m_primaryPlayerId &&
-        !m_sessions.isConnectedPlayer(m_primaryPlayerId))
-    {
-        const EntityId entity =
-            m_controls.controlledEntity(m_primaryPlayerId);
-        if (entity.value != 0 && m_simulation.getShip(entity))
-            return m_primaryPlayerId;
-    }
-
-    PlayerId bestAvailable {};
+    std::vector<PlayerId> out;
+    out.reserve(m_players.size());
 
     for (const auto& [rawPlayerId, player] : m_players.all())
     {
-        const PlayerId playerId {rawPlayerId};
-        if (!playerId ||
-            m_sessions.isConnectedPlayer(playerId) ||
-            player.currentShipId == 0)
-        {
-            continue;
-        }
-
-        const EntityId entity = m_controls.controlledEntity(playerId);
-        if (entity.value == 0 || !m_simulation.getShip(entity))
-            continue;
-
-        if (m_shipInstances.instanceForEntity(entity) !=
-            player.currentShipId)
-        {
-            continue;
-        }
-
-        if (!bestAvailable || playerId.value < bestAvailable.value)
-            bestAvailable = playerId;
+        (void)player;
+        const PlayerId id {rawPlayerId};
+        if (id)
+            out.push_back(id);
     }
 
-    return bestAvailable;
+    std::sort(
+        out.begin(),
+        out.end(),
+        [](PlayerId a, PlayerId b)
+        {
+            return a.value < b.value;
+        }
+    );
+    return out;
 }
 
 void GameServer::receiveClientMessage(

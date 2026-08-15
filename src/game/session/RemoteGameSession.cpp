@@ -91,6 +91,15 @@ bool RemoteGameSession::connectOrWait()
 {
     if (m_transport->connect(m_config.host, m_config.port))
     {
+        if (!m_config.identityHello.authToken.valid())
+        {
+            m_transport->disconnect();
+            m_failed = true;
+            m_error = "client authentication token is invalid";
+            return false;
+        }
+
+        m_transport->sendSessionHello(m_config.identityHello);
         m_error.clear();
         m_waitingForServer = false;
         m_connectedOnce = true;

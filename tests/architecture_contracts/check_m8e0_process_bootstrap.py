@@ -71,11 +71,12 @@ for token in (
     "ServerRuntime(worldParams, debugChannel, 2)",
     "ServerRuntime(worldParams, debugChannel, 1)",
     "BootstrapPlayerSpacingMeters = 50.0",
-    "selectAvailablePlayerForAdmission()",
+    "resolveOrBindAccount",
+    "m_accounts.isPlayerBound",
     "m_sessions.isConnectedPlayer",
 ):
     if token not in runtime_cpp + server_cpp:
-        fail(f"dedicated two-slot player admission contract missing: {token}")
+        fail(f"dedicated two-slot account-bound player admission contract missing: {token}")
 
 if "use an existing ordinary" in server_cpp:
     fail("production admission still documents arbitrary materialized/NPC takeover")

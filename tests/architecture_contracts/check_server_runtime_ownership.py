@@ -68,7 +68,8 @@ for required in (
     "std::unique_ptr<GameServer> m_server",
     "m_server->world() = worldParams",
     "game::debug::IServerDebugChannel& debugChannel",
-    "publishSessionBootstrap(transport, m_primarySessionId)",
+    "transport.receiveSessionHello(hello)",
+    "attachPlayerSessionTransport(transport, hello)",
     "transport.publishSnapshotImmediately(bootstrapSnapshot)",
     "m_debugChannel.publishSnapshot(m_server->snapshot())",
 ):
@@ -91,10 +92,12 @@ for required in (
     if required not in worker_cpp:
         fail(f"ServerWorker no longer owns ServerRuntime execution: {required}")
 
-# Stable session identity is server-assigned one-time bootstrap metadata, not a
-# field repeated in every simulation snapshot and not a value selected in each
-# client command packet.
+# The client presents only an opaque bearer token; server-assigned gameplay
+# identity is returned separately in SessionWelcome and never selected by the
+# client command stream.
 for required in (
+    "struct SessionHello",
+    "AuthToken authToken {};",
     "struct SessionWelcome",
     "ServerSessionId sessionId {};",
     "PlayerId playerId {};",
@@ -109,7 +112,10 @@ if "controlledEntityId" in client_session_snapshot_h:
     fail("stable controlled-entity identity leaked into recurring simulation snapshots")
 
 for required in (
-    "m_server->createPlayerSession(m_server->primaryPlayerIdentity())",
+    "resolveOrBindAccount",
+    "m_accounts.resolve",
+    "m_accounts.bind",
+    "m_server->createPlayerSession(playerId)",
     "welcome.sessionId = sessionId",
     "welcome.playerId = playerId",
     "welcome.controlledShipInstanceId = controlledShipInstanceId",
@@ -148,11 +154,11 @@ if "m_host->playerId()" in session_cpp:
 if "return m_client->playerId();" not in session_cpp:
     fail("LocalGameSession player identity is not sourced from synchronized client state")
 
-if "receiveSessionWelcome(" not in client_transport_h:
-    fail("client transport lost the one-time session welcome channel")
+if "sendSessionHello(" not in client_transport_h or "receiveSessionWelcome(" not in client_transport_h:
+    fail("client transport lost the account hello / session welcome control plane")
 
-if "publishSessionWelcomeImmediately(" not in server_transport_h:
-    fail("server transport lost the one-time session welcome channel")
+if "receiveSessionHello(" not in server_transport_h or "publishSessionWelcomeImmediately(" not in server_transport_h:
+    fail("server transport lost the account hello / session welcome control plane")
 
 if "std::queue<std::pair<EntityId" in loopback_h:
     fail("loopback command queue regained client-selected EntityId ownership")
@@ -175,4 +181,4 @@ for required in (
     if required not in runner_cpp:
         fail(f"server-side local-session identity binding is incomplete: {required}")
 
-print("[PASS] server runtime ownership + server-assigned client identity")
+print("[PASS] server runtime ownership + account-authenticated server-assigned client identity")

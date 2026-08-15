@@ -5,6 +5,7 @@
 #include <string>
 
 #include "src/game/session/IGameSession.h"
+#include "src/game/network/SessionMessage.h"
 
 class GameClient;
 
@@ -25,6 +26,9 @@ struct RemoteGameSessionConfig
     std::string host = "127.0.0.1";
     std::uint16_t port = 27351;
     double retryIntervalSeconds = 1.0;
+    game::network::SessionHello identityHello {
+        game::identity::AuthToken{{1u}}
+    };
 };
 
 /*

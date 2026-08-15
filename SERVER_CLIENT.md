@@ -36,7 +36,8 @@
 - одним authoritative `ServerRuntime` / `GameServer` execution context;
 - fixed-step authoritative simulation;
 - universe/server timeline authority;
-- server sessions и `session -> controlledEntityId` ownership;
+- server-owned identity/control chain `ServerSessionId -> PlayerId -> ControlRegistry -> EntityId`;
+- persistent ship-instance mapping `PlayerId -> ShipInstanceId -> materialized EntityId`;
 - authoritative input consumption/acknowledgement;
 - replication interest, sparse ship publication и lifecycle rows;
 - network admission/detach remote clients.
@@ -160,28 +161,29 @@ boundary проверяется отдельно.
 Server-side последовательность:
 
 1. `NetworkServerHost` принимает TCP connection.
-2. `ServerRuntime` сам выбирает доступный player entity.
-3. Создаётся server-owned `ServerSessionId`.
-4. Connection привязывается к `session -> controlledEntityId`.
-5. Сервер отправляет `SessionWelcome`.
-6. Клиент получает authoritative `fixedStepSeconds`, controlled entity и
-   fingerprint статического StarAtlas catalog.
-7. Сервер отправляет hydrated bootstrap snapshot.
-8. Только после успешной синхронизации `GameClient` переходит в `Ready`.
+2. `ServerRuntime` выбирает доступный server-owned `PlayerId`; клиент не выбирает `EntityId`/ship authority.
+3. `PlayerRegistry` разрешает persistent assignment `PlayerId -> current ShipInstanceId`.
+4. `ShipInstanceRegistry` разрешает `ShipInstanceId -> current materialized EntityId`.
+5. `ControlRegistry` подтверждает human control binding `PlayerId -> EntityId`.
+6. Создаётся transient `ServerSessionId`, и `ServerSessionRegistry` сохраняет `session -> PlayerId`, а не ship/entity identity.
+7. Сервер отправляет `SessionWelcome` с `playerId`, `controlledShipInstanceId`, `controlledEntityId`, authoritative `fixedStepSeconds` и fingerprint статического StarAtlas catalog.
+8. Сервер отправляет hydrated bootstrap snapshot; `ShipSnapshot.instanceId` сохраняет persistent identity конкретного корабля через replication.
+9. Только после успешной синхронизации `GameClient` переходит в `Ready`.
 
-Текущая admission policy временная, но уже не имеет права захватывать случайный
-NPC. Dedicated `ServerRuntime` материализует два explicit `ShipRole::Player`
-bootstrap slots: первый остаётся в authored `player_start`, второй размещается на
-300 м по hub-local X. Production admission выбирает только свободный player-role
-slot. Embedded/local single-player materialизует только один authored player ship.
-Если несколько клиентов одновременно ждут запуска сервера, primary/secondary slot
-получает тот connection, который сервер фактически принял первым; порядок запуска
-окон клиента не является identity contract.
+Текущая admission policy всё ещё **временная**: dedicated bootstrap создаёт два
+persistent player/ship bindings, чьи materialized корабли находятся примерно в
+50 м друг от друга. Свободный `PlayerId` выдаётся сервером по фактическому accept
+order — фактически «кто первый подключился, тот получил первый доступный слот».
+Это не production identity contract и не повод добавлять client-authoritative
+`--player`, `--ship` или `--entity` switch.
 
-Persistent account/character/ship ownership позже заменит этот bootstrap pool:
-после аутентификации server будет разрешать `account/character -> owned/current
-ship -> session authority`. Клиент по-прежнему не должен присылать произвольный
-`EntityId` для получения управления.
+Ручной graphical acceptance подтвердил, что два отдельных remote `EliteGame`
+одновременно получают разные identities и видят оба корабля в **одном общем
+authoritative world**. Следующий слой должен заменить временный bootstrap pool
+полноценной server-owned цепочкой `AccountId -> PlayerId -> owned/current
+ShipInstanceId -> session/control authority`, с duplicate-login и reconnect/resume
+policy. Клиент по-прежнему не должен присылать произвольный `EntityId` для
+получения управления.
 
 ---
 
@@ -191,7 +193,17 @@ ship -> session authority`. Клиент по-прежнему не должен
 `HtmlUiServer` запускается на port `0`, операционная система выбирает свободный
 ephemeral port, а `Application` строит URL WebView из фактически назначенного
 порта. Поэтому два клиента на одном PC не делят `localhost:8090` и не могут
-случайно открыть WebUI другого процесса.
+случайно открыть WebUI другого процесса. WebView2 user-data folder также изолирован
+по PID.
+
+При реальном запуске двух graphical clients был отдельно диагностирован Win32
+crash внутри GLFW 3.4: `_glfwPollEventsWin32()` мог получить active HWND другого
+`EliteGame` process, прочитать его window property `GLFW` и попытаться разыменовать
+foreign-process `_GLFWwindow*`. Внешний pre-check оказался TOCTOU-гонкой. Поэтому
+Windows `Window::pollEvents()` использует native `PeekMessageW/TranslateMessage/
+DispatchMessageW` event pump и не входит в опасный GLFW post-poll path; GLFW WndProc
+по-прежнему получает обычные window/input messages. Это platform compatibility
+boundary, а не gameplay/session logic.
 
 Remote client также может стартовать раньше dedicated server. Начальный TCP
 `connection refused`/отсутствующий listener не является `Session Failed`:
@@ -258,8 +270,8 @@ transport.
 
 Также пока **не завершены**:
 
-- reconnect/resume прежней session identity;
-- persistent account/character/ship ownership;
+- durable account/character authentication and ownership storage (`AccountId -> PlayerId -> ShipInstanceId`);
+- reconnect/resume token handoff and server-owned restoration of the same persistent player identity;
 - authenticated/encrypted Internet-facing session layer;
 - true multi-system authoritative runtime для игроков одновременно в разных
   materialized systems;
@@ -327,7 +339,7 @@ EliteGame.exe --self-test-remote-client HOST:PORT
 
 ---
 
-## 10. Ручная проверка после M8D
+## 10. Ручная проверка process/multi-client boundary
 
 После полностью зелёного `tests/run_all_mingw64.sh` отдельно проверить реальный
 interactive remote mode.
@@ -374,36 +386,62 @@ cd D:\__elite\work\build
   продолжает изображать живую сетевую authority.
 
 Reconnect того же running client после рестарта сервера **пока не ожидается**:
-это задача M8E.
+это задача следующего authorization/reconnect этапа.
 
-### Check C — подготовка M8E / два client processes
+### Check C — два graphical client processes
 
-Следующий acceptance должен поднять **один dedicated server и два отдельных
-remote `EliteGame` process**, проверить разные server-assigned controlled
-entities, независимые input/ack streams и disconnect одного клиента без влияния
-на второго.
+Ручной acceptance на 2026-08-15 уже подтвердил базовый общий-мир сценарий:
 
-M8E.0 снимает прежние preflight blockers: WebUI port теперь process-local/OS
-assigned, client может ждать ещё не запущенный server, а dedicated bootstrap
-имеет два явных player-role slots с разносом 300 м. Следующая ручная/автоматическая
-проверка должна уже запускать два **графических** `EliteGame.exe`, убедиться, что
-они получают разные controlled entities, видят друг друга и не делят WebUI state.
+- один dedicated `EliteServer`;
+- два отдельных graphical `EliteGame --connect` process;
+- разные server-owned `PlayerId`, `ShipInstanceId` и materialized `EntityId`;
+- оба клиента одновременно живут в одном authoritative world;
+- оба клиента видят друг друга примерно в 50 м;
+- WebUI/WebView2 state process-local, а второй client process не убивает первый.
+
+Эта проверка **не закрывает** ещё duplicate login, reconnect/resume, durable account
+identity и полный disconnect/input-isolation lifecycle. Их надо проверять после
+следующего identity/authorization этапа, а не обходить временным client-selected
+player/entity CLI switch.
 
 ---
 
-## 11. Следующий сетевой этап — M8E
+## 11. Следующий этап — authorization / persistent identity foundation
 
-M8E должен закрыть базовую multiplayer process foundation следующими gates:
+Текущий код уже имеет правильный in-memory backbone:
 
-1. один `EliteServer`, два настоящих remote client processes;
-2. разные server-assigned controlled entities;
-3. independent prediction/input/ack streams;
-4. общий authoritative world без cross-session leakage;
-5. disconnect client A не останавливает client B;
-6. reconnect получает новую/явно resumed identity только по server-owned rule;
-7. stale disconnected session не может вернуть authority;
-8. после этого reconnect/baseline semantics фиксируются regression tests.
+```text
+PlayerId          persistent player/character identity
+ShipInstanceId    stable concrete ship identity
+ServerSessionId   transient connection/session identity
+EntityId          current materialized simulation handle
+```
 
-После M8E можно считать базовый multiplayer transport/lifecycle достаточно
-стабильным и возвращаться к persistent universe:
-`Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse.
+и server-owned chain:
+
+```text
+ServerSessionId
+    -> PlayerId
+    -> PlayerRegistry.currentShipId
+    -> ShipInstanceRegistry.materializedEntity
+    -> ControlRegistry
+    -> EntityId
+```
+
+Следующий этап должен сделать **полноценную заготовку production identity layer**,
+а не временный dev selector:
+
+1. ввести `AccountId`/authentication boundary отдельно от `PlayerId`;
+2. определить persistent `Account -> Player/character` relation;
+3. определить ownership/current-ship model отдельно от control authority;
+4. запретить две live gameplay sessions для одного `PlayerId`, пока явно не
+   введена takeover/reconnect policy;
+5. определить reconnect/resume token и server-owned handoff старой identity;
+6. сделать persistent ship registry пригодным для кораблей без materialized
+   `EntityId`;
+7. постепенно вывести `ShipRole::Player/NPC` из роли фундаментального control
+   discriminator: human/AI/autopilot/none должны жить в отдельной control axis;
+8. после фиксации identity/ownership storage boundary начать реальное население
+   вселенной и подключить `Scheduled <-> Coarse <-> Prewarm <-> Active`
+   materialization/collapse для торговцев, челноков, барж, пассажирских кораблей,
+   пиратов, флотов и alien fleets.

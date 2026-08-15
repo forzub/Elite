@@ -51,7 +51,7 @@ if "attachPlayerSessionTransport(*transport," in host_cpp:
 if "ServerRuntime(\n        const WorldParams& worldParams,\n        game::debug::IServerDebugChannel& debugChannel" not in runtime_h:
     raise SystemExit("dedicated ServerRuntime must support zero initial gameplay transports")
 
-if "selectAvailablePlayerEntityForAdmission" not in runtime_cpp:
+if "selectAvailablePlayerForAdmission" not in runtime_cpp:
     raise SystemExit("server-owned admission selector is missing from runtime path")
 
 if "double fixedStepSeconds" not in session_h:

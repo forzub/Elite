@@ -5,6 +5,7 @@
 
 #include "src/scene/EntityID.h"
 #include "src/game/ship/core/ShipRole.h"
+#include "src/game/ship/ShipRegistry.h"
 #include "src/world/types/ObjectType.h"
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/world/types/SignalReceptionResult.h"
@@ -20,6 +21,7 @@
 struct ShipSnapshot
 {
     EntityId                                            id;
+    ShipInstanceId                                      instanceId = 0;
     ShipRole                                            role;
     ObjectType                                          typeId;
     std::uint64_t                                       acknowledgedControlTick = 0;

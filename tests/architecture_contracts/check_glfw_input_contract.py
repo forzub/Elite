@@ -17,6 +17,19 @@ if "for (int key = 0; key <= GLFW_KEY_LAST; ++key)" in update_body:
 if "glfwGetWindowAttrib(m_window, GLFW_SRGB_CAPABLE)" in window_cpp:
     errors.append("GLFW_SRGB_CAPABLE is a framebuffer hint, not a glfwGetWindowAttrib token")
 
+if 'activePid != GetCurrentProcessId()' not in window_cpp:
+    errors.append("Win32 GLFW polling must guard against a foreign-process active GLFW HWND")
+
+if 'foreignGlfwProperty != nullptr' not in window_cpp:
+    errors.append("Win32 GLFW polling guard must match the foreign GLFW property condition that triggers GLFW 3.4 AV")
+
+if 'PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE)' not in window_cpp:
+    errors.append("foreign-active-window fallback must pump the local Win32 queue without calling GLFW's unsafe post-poll repair")
+
+if 'DispatchMessageW(&message)' not in window_cpp:
+    errors.append("safe Win32 fallback must still dispatch messages into GLFW's WndProc")
+
+
 if errors:
     for error in errors:
         print(f"[FAIL] {error}")

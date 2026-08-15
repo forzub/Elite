@@ -55,35 +55,6 @@ const ClientShipState& requireShip(
     return it->second;
 }
 
-EntityId chooseSecondaryControlledShip(const GameClient& primaryClient)
-{
-    const EntityId primaryId = primaryClient.playerId();
-    EntityId fallback {0};
-
-    for (const auto& [_, ship] : primaryClient.world().ships())
-    {
-        if (ship.id == primaryId)
-            continue;
-
-        if (ship.motionLabKind !=
-            game::diagnostics::HubMotionLabActorKind::None)
-        {
-            continue;
-        }
-
-        if (fallback.value == 0)
-            fallback = ship.id;
-
-        if (ship.transform.motion.mode ==
-            game::navigation::MotionMode::HubTactical)
-        {
-            return ship.id;
-        }
-    }
-
-    return fallback;
-}
-
 void synchronizeClients(
     game::server::ServerRuntime& runtime,
     GameClient& clientA,
@@ -212,45 +183,169 @@ void requireNavigationMatchesAuthoritativeLocalEntity(
         std::string(label) + " navigation position does not match its authoritative local entity"
     );
 }
+
+void requireDedicatedBootstrapAdmissionPath()
+{
+    LocalLoopbackTransport transportA;
+    LocalLoopbackTransport transportB;
+    game::debug::LocalDebugSessionControl debugChannel;
+    WorldParams worldParams;
+
+    // This constructor is the dedicated-server path used by NetworkServerHost.
+    // It materializes two explicit ShipRole::Player bootstrap admission slots.
+    game::server::ServerRuntime runtime(worldParams, debugChannel);
+
+    const auto sessionA = runtime.attachPlayerSessionTransport(transportA);
+    const auto sessionB = runtime.attachPlayerSessionTransport(transportB);
+    require(static_cast<bool>(sessionA), "dedicated bootstrap rejected client A");
+    require(static_cast<bool>(sessionB), "dedicated bootstrap rejected client B");
+    require(
+        runtime.connectedPlayerSessionCount() == 2,
+        "dedicated bootstrap runtime does not hold two sessions"
+    );
+
+    GameClient clientA(transportA);
+    GameClient clientB(transportB);
+    clientA.beginSynchronization();
+    clientB.beginSynchronization();
+    synchronizeClients(runtime, clientA, clientB);
+
+    const EntityId shipAId = clientA.playerId();
+    const EntityId shipBId = clientB.playerId();
+    require(
+        shipAId.value != 0 && shipBId.value != 0 && shipAId != shipBId,
+        "dedicated bootstrap did not assign two distinct player entities"
+    );
+
+    const auto& aOnA = requireShip(clientA, shipAId, "bootstrap A on client A");
+    const auto& bOnA = requireShip(clientA, shipBId, "bootstrap B on client A");
+    const auto& aOnB = requireShip(clientB, shipAId, "bootstrap A on client B");
+    const auto& bOnB = requireShip(clientB, shipBId, "bootstrap B on client B");
+
+    require(
+        aOnA.role == ShipRole::Player && bOnA.role == ShipRole::Player &&
+        aOnB.role == ShipRole::Player && bOnB.role == ShipRole::Player,
+        "dedicated bootstrap admitted a non-player-role ship"
+    );
+    require(
+        aOnA.typeId == bOnA.typeId && aOnB.typeId == bOnB.typeId,
+        "dedicated bootstrap player slots do not share the authored ship type"
+    );
+    require(
+        aOnA.transform.motion.systemId == bOnA.transform.motion.systemId &&
+        aOnA.transform.motion.hubId == bOnA.transform.motion.hubId,
+        "dedicated bootstrap player slots are not in one hub reference context"
+    );
+
+    const glm::dvec3 worldA =
+        world::coordinates::fullMeters(aOnA.transform.worldPosition);
+    const glm::dvec3 worldB =
+        world::coordinates::fullMeters(bOnA.transform.worldPosition);
+    const double worldDistance = glm::length(worldB - worldA);
+    const double localDistance = glm::length(
+        bOnA.transform.motion.localPositionMeters -
+        aOnA.transform.motion.localPositionMeters
+    );
+
+    require(
+        std::isfinite(worldDistance) && std::abs(worldDistance - 50.0) <= 0.5,
+        "dedicated bootstrap world-space player spacing is not 50 m"
+    );
+    require(
+        std::isfinite(localDistance) && std::abs(localDistance - 50.0) <= 0.5,
+        "dedicated bootstrap hub-local player spacing is not 50 m"
+    );
+
+    // Exercise the same client prediction/presentation update used after NEW GAME.
+    for (int frame = 0; frame < 12; ++frame)
+        runGameplayFrame(runtime, clientA, clientB, nullptr, nullptr);
+
+    const auto& aRenderOnA = requireShip(clientA, shipAId, "bootstrap A render on client A");
+    const auto& bRenderOnA = requireShip(clientA, shipBId, "bootstrap B render on client A");
+    const auto& aRenderOnB = requireShip(clientB, shipAId, "bootstrap A render on client B");
+    const auto& bRenderOnB = requireShip(clientB, shipBId, "bootstrap B render on client B");
+
+    const auto renderDistance = [](const ClientShipState& lhs, const ClientShipState& rhs)
+    {
+        return glm::length(
+            world::coordinates::fullMeters(rhs.renderTransform.worldPosition) -
+            world::coordinates::fullMeters(lhs.renderTransform.worldPosition)
+        );
+    };
+
+    const double renderDistanceA = renderDistance(aRenderOnA, bRenderOnA);
+    const double renderDistanceB = renderDistance(aRenderOnB, bRenderOnB);
+    require(
+        std::isfinite(renderDistanceA) && std::abs(renderDistanceA - 50.0) <= 1.0,
+        "client A presentation does not preserve dedicated bootstrap spacing"
+    );
+    require(
+        std::isfinite(renderDistanceB) && std::abs(renderDistanceB - 50.0) <= 1.0,
+        "client B presentation does not preserve dedicated bootstrap spacing"
+    );
+
+    std::cerr
+        << "[PASS] dedicated two-slot bootstrap admission"
+        << " localA=" << shipAId.value
+        << " localB=" << shipBId.value
+        << " worldDistanceM=" << worldDistance
+        << " renderDistanceA=" << renderDistanceA
+        << " renderDistanceB=" << renderDistanceB
+        << "\n";
+}
+
 }
 
 int runMultiplayerClientAcceptanceSelfTest()
 {
     try
     {
+        requireDedicatedBootstrapAdmissionPath();
+
         LocalLoopbackTransport transportA;
         LocalLoopbackTransport transportB;
         game::debug::LocalDebugSessionControl debugChannel;
         WorldParams worldParams;
 
+        // Exercise the actual dedicated admission path: two persistent player
+        // identities, each assigned to its own persistent bootstrap ship, on
+        // one authoritative ServerRuntime. No NPC EntityId is hijacked.
         game::server::ServerRuntime runtime(
             worldParams,
-            transportA,
             debugChannel
         );
 
+        const auto sessionA = runtime.attachPlayerSessionTransport(transportA);
+        const auto sessionB = runtime.attachPlayerSessionTransport(transportB);
+        require(
+            static_cast<bool>(sessionA) && static_cast<bool>(sessionB),
+            "ServerRuntime did not admit two persistent player identities"
+        );
+
         GameClient clientA(transportA);
+        GameClient clientB(transportB);
         clientA.beginSynchronization();
+        clientB.beginSynchronization();
+        synchronizeClients(runtime, clientA, clientB);
 
-        // Consume A's immediate welcome/bootstrap through the real GameClient
-        // before choosing a second controlled entity. The harness never reads
-        // GameServer/GameSimulation memory and never forges a session welcome.
-        clientA.updateSynchronization(0.0);
         require(
-            clientA.playerId().value != 0,
-            "client A did not accept its server-assigned controlled entity"
+            clientA.playerIdentityId() && clientB.playerIdentityId() &&
+            clientA.playerIdentityId() != clientB.playerIdentityId(),
+            "two clients were not assigned distinct persistent PlayerIds"
+        );
+        require(
+            clientA.controlledShipInstanceId() != 0 &&
+            clientB.controlledShipInstanceId() != 0 &&
+            clientA.controlledShipInstanceId() !=
+                clientB.controlledShipInstanceId(),
+            "two players were not assigned distinct persistent ShipInstanceIds"
         );
 
-        const EntityId shipAId = clientA.playerId();
-        const EntityId shipBId = chooseSecondaryControlledShip(clientA);
+        const EntityId shipAId = clientA.localControlledEntityId();
+        const EntityId shipBId = clientB.localControlledEntityId();
         require(
-            shipBId.value != 0 && shipBId != shipAId,
-            "initial world has no second ship suitable for a second client"
-        );
-
-        const auto sessionB = runtime.attachPlayerSessionTransport(
-            transportB,
-            shipBId
+            shipAId.value != 0 && shipBId.value != 0 && shipAId != shipBId,
+            "two players were not materialized as distinct runtime entities"
         );
         require(
             static_cast<bool>(sessionB),
@@ -261,21 +356,10 @@ int runMultiplayerClientAcceptanceSelfTest()
             "ServerRuntime does not report two connected player sessions"
         );
 
-        GameClient clientB(transportB);
-        clientB.beginSynchronization();
-        synchronizeClients(runtime, clientA, clientB);
-
         require(
-            clientA.playerId() == shipAId,
-            "client A controlled entity changed during synchronization"
-        );
-        require(
-            clientB.playerId() == shipBId,
-            "client B did not receive its own server-assigned controlled entity"
-        );
-        require(
-            clientA.playerId() != clientB.playerId(),
-            "two GameClient instances were assigned the same controlled entity"
+            clientA.localControlledEntityId() == shipAId &&
+            clientB.localControlledEntityId() == shipBId,
+            "client runtime control identity changed during synchronization"
         );
 
         require(
@@ -296,10 +380,30 @@ int runMultiplayerClientAcceptanceSelfTest()
 
         // Both real clients must retain both replicated entities while applying
         // prediction only to their own server-assigned identity.
-        (void)requireShip(clientA, shipAId, "ship A on client A");
-        (void)requireShip(clientA, shipBId, "ship B on client A");
-        (void)requireShip(clientB, shipAId, "ship A on client B");
-        (void)requireShip(clientB, shipBId, "ship B on client B");
+        const auto& shipAOnA = requireShip(clientA, shipAId, "ship A on client A");
+        const auto& shipBOnA = requireShip(clientA, shipBId, "ship B on client A");
+        const auto& shipAOnB = requireShip(clientB, shipAId, "ship A on client B");
+        const auto& shipBOnB = requireShip(clientB, shipBId, "ship B on client B");
+
+        require(
+            shipAOnA.instanceId == clientA.controlledShipInstanceId() &&
+            shipBOnB.instanceId == clientB.controlledShipInstanceId() &&
+            shipAOnA.instanceId == shipAOnB.instanceId &&
+            shipBOnA.instanceId == shipBOnB.instanceId,
+            "persistent ship identity diverged between two client world views"
+        );
+
+        const glm::dvec3 shipAPosition =
+            world::coordinates::fullMeters(shipAOnA.transform.worldPosition);
+        const glm::dvec3 shipBPosition =
+            world::coordinates::fullMeters(shipBOnA.transform.worldPosition);
+        const double bootstrapDistanceMeters =
+            glm::length(shipBPosition - shipAPosition);
+        require(
+            std::isfinite(bootstrapDistanceMeters) &&
+            std::abs(bootstrapDistanceMeters - 50.0) <= 0.05,
+            "two bootstrap player ships are not 50 m apart in one replicated world"
+        );
 
         requireNavigationMatchesAuthoritativeLocalEntity(clientA, shipAId, "client A");
         requireNavigationMatchesAuthoritativeLocalEntity(clientB, shipBId, "client B");

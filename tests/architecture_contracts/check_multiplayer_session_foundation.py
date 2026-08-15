@@ -24,6 +24,8 @@ sim_cpp = read("src/game/simulation/GameSimulation.cpp")
 for token in (
     "struct ServerSessionId",
     "ServerSessionId sessionId {}",
+    "PlayerId playerId {}",
+    "ShipInstanceId controlledShipInstanceId = 0",
     "EntityId controlledEntityId {0}",
 ):
     if token not in session_message:
@@ -31,11 +33,11 @@ for token in (
 
 for token in (
     "class ServerSessionRegistry",
-    "create(EntityId controlledEntityId)",
-    "controlledEntity(",
+    "create(PlayerId playerId)",
+    "player(",
     "disconnect(",
     "reconnect(",
-    "isControlledEntity(EntityId entityId)",
+    "isConnectedPlayer(PlayerId playerId)",
 ):
     if token not in registry:
         fail(f"server session registry missing: {token}")
@@ -61,7 +63,7 @@ for token in (
         fail(f"GameServer session authority API missing: {token}")
 
 for token in (
-    "m_sessions.controlledEntity(sessionId)",
+    "controlledEntityForSession(sessionId)",
     "m_queueDiagnostics.rejectedSessionMessages",
     "submitCommand(controlledEntityId, payload)",
     "m_pendingClientShipCommands[controlledEntityId.value]",
@@ -91,9 +93,11 @@ if "m_server.playerId(),\n            clientMessage" in runner_cpp:
     fail("ServerRunner still maps every connection to the legacy singleton player")
 
 for token in (
-    "createPlayerSession(m_server->playerId())",
+    "createPlayerSession(m_server->primaryPlayerIdentity())",
     "publishSessionBootstrap(transport, m_primarySessionId)",
     "welcome.sessionId = sessionId",
+    "welcome.playerId = playerId",
+    "welcome.controlledShipInstanceId = controlledShipInstanceId",
     "welcome.controlledEntityId = controlledEntityId",
 ):
     if token not in runtime_cpp:
@@ -109,7 +113,7 @@ for token in (
 
 for token in (
     "isPlayerControlled(id)",
-    "m_playerControlledShipIds.insert(m_playerId)",
+    "m_playerControlledShipIds",
 ):
     if token not in sim_cpp:
         fail(f"simulation still depends on one player identity: {token}")

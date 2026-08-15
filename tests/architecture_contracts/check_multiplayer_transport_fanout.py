@@ -70,7 +70,7 @@ for token in (
         fail(f"ServerRuntime admission/lifecycle API missing: {token}")
 
 for token in (
-    "m_server->createPlayerSession(controlledEntityId)",
+    "m_server->createPlayerSession(playerId)",
     "m_runner->attachTransport(transport, sessionId)",
     "publishSessionBootstrap(transport, sessionId)",
     "m_runner->detachTransport(sessionId)",
@@ -91,7 +91,7 @@ for token in (
         fail(f"GameServer per-session replication/map envelope missing: {token}")
 
 for token in (
-    "m_sessions.controlledEntity(sessionId)",
+    "controlledEntityForSession(sessionId)",
     "outSnapshot.session.playerNavigation = sessionNavigation",
     "navigationStateForSession(sessionId, sessionNavigation)",
     "pending.sessionId = sessionId",

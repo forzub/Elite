@@ -81,11 +81,13 @@ int runHeadlessSelfTest()
     std::cerr << "[SELFTEST] headless-server stage=construct-runtime\n";
     game::server::ServerRuntime runtime(
         worldParams,
-        transportA,
         debugChannel
     );
 
-    if (!transportA.hasSessionWelcome() ||
+    const auto sessionA = runtime.attachPlayerSessionTransport(transportA);
+
+    if (!sessionA ||
+        !transportA.hasSessionWelcome() ||
         !transportA.hasBootstrapSnapshot() ||
         !debugChannel.hasBootstrapState())
     {
@@ -95,7 +97,9 @@ int runHeadlessSelfTest()
     }
 
     const auto welcomeA = transportA.sessionWelcome();
-    if (welcomeA.sessionId.value == 0 ||
+    if (welcomeA.sessionId != sessionA ||
+        !welcomeA.playerId ||
+        welcomeA.controlledShipInstanceId == 0 ||
         welcomeA.controlledEntityId.value == 0 ||
         welcomeA.starAtlasCatalog.schemaVersion == 0 ||
         welcomeA.starAtlasCatalog.contentFingerprint == 0)
@@ -117,50 +121,10 @@ int runHeadlessSelfTest()
         return 4;
     }
 
-    // Pick an already-existing non-primary ship for the second authority
-    // session. Admission/spawn persistence is a later layer; this smoke proves
-    // that one runtime can route two independent connection/session streams to
-    // two different authoritative entities without exposing GameServer memory.
-    const auto& bootstrapA = transportA.latestSnapshot();
-    const ShipSnapshot* secondShip = nullptr;
-
-    for (const auto& ship : bootstrapA.ships)
-    {
-        if (ship.id == welcomeA.controlledEntityId)
-            continue;
-
-        if (ship.motionLabKind ==
-            game::diagnostics::HubMotionLabActorKind::None)
-        {
-            secondShip = &ship;
-            break;
-        }
-    }
-
-    if (!secondShip)
-    {
-        for (const auto& ship : bootstrapA.ships)
-        {
-            if (ship.id != welcomeA.controlledEntityId)
-            {
-                secondShip = &ship;
-                break;
-            }
-        }
-    }
-
-    if (!secondShip)
-    {
-        std::cerr
-            << "[FAIL] headless-server multiplayer smoke has no second ship\n";
-        return 5;
-    }
-
-    const EntityId shipBId = secondShip->id;
-    const auto sessionB = runtime.attachPlayerSessionTransport(
-        transportB,
-        shipBId
-    );
+    // Dedicated runtime owns two explicit persistent bootstrap players/ships.
+    // The second transport is admitted by PlayerId availability, never by
+    // hijacking an arbitrary NPC EntityId.
+    const auto sessionB = runtime.attachPlayerSessionTransport(transportB);
 
     if (!sessionB ||
         runtime.connectedPlayerSessionCount() != 2 ||
@@ -173,12 +137,18 @@ int runHeadlessSelfTest()
     }
 
     const auto welcomeB = transportB.sessionWelcome();
+    const EntityId shipBId = welcomeB.controlledEntityId;
     if (welcomeB.sessionId != sessionB ||
         welcomeB.sessionId == welcomeA.sessionId ||
-        welcomeB.controlledEntityId != shipBId)
+        !welcomeB.playerId ||
+        welcomeB.playerId == welcomeA.playerId ||
+        welcomeB.controlledShipInstanceId == 0 ||
+        welcomeB.controlledShipInstanceId == welcomeA.controlledShipInstanceId ||
+        shipBId.value == 0 ||
+        shipBId == welcomeA.controlledEntityId)
     {
         std::cerr
-            << "[FAIL] headless-server second session authority bootstrap is wrong\n";
+            << "[FAIL] headless-server second persistent player/ship authority bootstrap is wrong\n";
         return 7;
     }
 

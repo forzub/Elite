@@ -354,7 +354,7 @@ else:
         server_cpp,
         navigation_for_session,
         (
-            "m_sessions.controlledEntity(sessionId)",
+            "controlledEntityForSession(sessionId)",
             "navigationStateForEntity(controlledEntityId)",
         ),
         "server per-session navigation is not derived from session authority",

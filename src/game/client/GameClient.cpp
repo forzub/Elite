@@ -224,6 +224,9 @@ bool GameClient::hasGameplayCoreState() const
 
     const ClientShipState& ship = it->second;
     return
+        m_playerIdentityId &&
+        m_controlledShipInstanceId != 0 &&
+        ship.instanceId == m_controlledShipInstanceId &&
         ship.descriptor != nullptr &&
         ship.assembly != nullptr;
 }
@@ -399,10 +402,26 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             return false;
         }
 
+        if (!welcome.playerId)
+        {
+            failSynchronization(
+                "Server session welcome has no persistent player identity"
+            );
+            return false;
+        }
+
+        if (welcome.controlledShipInstanceId == 0)
+        {
+            failSynchronization(
+                "Server session welcome has no persistent ship identity"
+            );
+            return false;
+        }
+
         if (welcome.controlledEntityId.value == 0)
         {
             failSynchronization(
-                "Server session welcome has no controlled entity"
+                "Server session welcome has no controlled runtime entity"
             );
             return false;
         }
@@ -439,17 +458,22 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
         }
 
         if (m_hasPlayerIdentity &&
-            welcome.controlledEntityId.value != m_playerId.value)
+            (welcome.playerId != m_playerIdentityId ||
+             welcome.controlledShipInstanceId != m_controlledShipInstanceId ||
+             welcome.controlledEntityId.value != m_playerId.value))
         {
-            // Control transfer/respawn needs an explicit protocol transition:
-            // prediction history and SpaceState ownership are keyed by this id.
+            // Character handoff, ship transfer and rematerialization need an
+            // explicit protocol transition because prediction/presentation
+            // history is bound to the current runtime entity.
             failSynchronization(
-                "Controlled entity changed without a session transition"
+                "Player/ship/control identity changed without a session transition"
             );
             return false;
         }
 
         m_serverSessionId = welcome.sessionId;
+        m_playerIdentityId = welcome.playerId;
+        m_controlledShipInstanceId = welcome.controlledShipInstanceId;
         m_serverFixedStepSeconds = welcome.fixedStepSeconds;
         m_playerId = welcome.controlledEntityId;
         m_world.setLocalControlledEntity(m_playerId);

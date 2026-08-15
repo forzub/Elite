@@ -1,6 +1,8 @@
 #pragma once
 
 #include "src/scene/EntityID.h"
+#include "src/game/identity/PlayerId.h"
+#include "src/game/ship/ShipRegistry.h"
 #include <cstdint>
 #include "src/game/network/ProtocolMetadata.h"
 
@@ -42,6 +44,8 @@ struct ServerSessionId
 struct SessionWelcome
 {
     ServerSessionId sessionId {};
+    PlayerId playerId {};
+    ShipInstanceId controlledShipInstanceId = 0;
     EntityId controlledEntityId {0};
 
     // Authoritative fixed simulation cadence used by remote client prediction.

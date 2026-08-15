@@ -19,6 +19,8 @@
 #include "src/game/network/MapSnapshotMessage.h"
 #include "src/game/network/ProtocolMetadata.h"
 #include "src/game/network/SessionMessage.h"
+#include "src/game/identity/PlayerId.h"
+#include "src/game/ship/ShipRegistry.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
 #include "src/world/celestial/CelestialTypes.h"
 
@@ -118,6 +120,15 @@ public:
     const std::string& connectionError() const;
 
     bool hasSessionSnapshot() const;
+    PlayerId playerIdentityId() const noexcept { return m_playerIdentityId; }
+    ShipInstanceId controlledShipInstanceId() const noexcept
+    {
+        return m_controlledShipInstanceId;
+    }
+    EntityId localControlledEntityId() const noexcept { return m_playerId; }
+    // Transitional compatibility alias: historically playerId() returned the
+    // runtime ship EntityId. New code must use playerIdentityId() or
+    // localControlledEntityId() explicitly.
     EntityId playerId() const;
     double serverFixedStepSeconds() const noexcept;
     bool readyForGameplay() const;
@@ -151,6 +162,8 @@ private:
         ClientConnectionState::Disconnected;
     std::string                     m_connectionError;
     game::network::ServerSessionId m_serverSessionId {};
+    PlayerId                        m_playerIdentityId {};
+    ShipInstanceId                  m_controlledShipInstanceId = 0;
     EntityId                        m_playerId {0};
     bool                            m_hasPlayerIdentity = false;
     double                          m_serverFixedStepSeconds = 0.0;

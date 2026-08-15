@@ -355,7 +355,17 @@ void Application::mainLoop()
 
         // Input::instance().update();
         m_window->pollEvents();
-        Input::instance().update(m_window->nativeHandle());
+
+        // A physical keyboard belongs to exactly one graphical client process.
+        // Embedded WebView2 may own the child HWND focus, so GLFW_FOCUSED on
+        // the parent is not a sufficient ownership test. Gate all gameplay
+        // input by the foreground process instead; inactive EliteGame instances
+        // immediately publish a neutral control state on their next frame.
+        const bool ownsForegroundInput = m_window->ownsForegroundInput();
+        if (ownsForegroundInput)
+            Input::instance().update(m_window->nativeHandle());
+        else
+            Input::instance().reset();
 
 
         #ifdef _WIN32
@@ -377,17 +387,23 @@ void Application::mainLoop()
                 Ctrl+Alt+F12 cycles the global player-facing UI language.
             */
             const bool ctrlDown =
+                ownsForegroundInput &&
                 (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
             const bool altDown =
+                ownsForegroundInput &&
                 (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
 
             const bool f9Down =
+                ownsForegroundInput &&
                 (GetAsyncKeyState(VK_F9) & 0x8000) != 0;
             const bool f10Down =
+                ownsForegroundInput &&
                 (GetAsyncKeyState(VK_F10) & 0x8000) != 0;
             const bool f11Down =
+                ownsForegroundInput &&
                 (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
             const bool f12Down =
+                ownsForegroundInput &&
                 (GetAsyncKeyState(VK_F12) & 0x8000) != 0;
 
             auto* space = dynamic_cast<SpaceState*>(m_states.current());

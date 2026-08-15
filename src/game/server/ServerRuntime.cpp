@@ -50,7 +50,7 @@ ServerRuntime::ServerRuntime(
     // Embedded/local play preserves its established primary-session semantics
     // and therefore materializes only the authored primary player ship.
     m_primarySessionId =
-        m_server->createPlayerSession(m_server->playerId());
+        m_server->createPlayerSession(m_server->primaryPlayerIdentity());
 
     if (!m_primarySessionId ||
         !m_runner->attachTransport(transport, m_primarySessionId))
@@ -101,16 +101,26 @@ bool ServerRuntime::publishSessionBootstrap(
     game::network::ServerSessionId sessionId
 )
 {
+    const PlayerId playerId =
+        m_server->playerForSession(sessionId);
+    const ShipInstanceId controlledShipInstanceId =
+        m_server->controlledShipInstanceForSession(sessionId);
     const EntityId controlledEntityId =
         m_server->controlledEntityForSession(sessionId);
 
-    if (!sessionId || controlledEntityId.value == 0)
+    if (!sessionId || !playerId ||
+        controlledShipInstanceId == 0 ||
+        controlledEntityId.value == 0)
+    {
         return false;
+    }
 
     // Session authority is bootstrap metadata, not recurring replicated state.
     // A packet never contains a caller-selected controlled EntityId.
     game::network::SessionWelcome welcome;
     welcome.sessionId = sessionId;
+    welcome.playerId = playerId;
+    welcome.controlledShipInstanceId = controlledShipInstanceId;
     welcome.controlledEntityId = controlledEntityId;
     welcome.fixedStepSeconds = m_runner->fixedStepSeconds();
     welcome.starAtlasCatalog.schemaVersion =
@@ -149,23 +159,23 @@ ServerRuntime::attachPlayerSessionTransport(
     IServerTransport& transport
 )
 {
-    const EntityId controlledEntityId =
-        m_server->selectAvailablePlayerEntityForAdmission();
+    const PlayerId playerId =
+        m_server->selectAvailablePlayerForAdmission();
 
-    if (controlledEntityId.value == 0)
+    if (!playerId)
         return {};
 
-    return attachPlayerSessionTransport(transport, controlledEntityId);
+    return attachPlayerSessionTransport(transport, playerId);
 }
 
 game::network::ServerSessionId
 ServerRuntime::attachPlayerSessionTransport(
     IServerTransport& transport,
-    EntityId controlledEntityId
+    PlayerId playerId
 )
 {
     const auto sessionId =
-        m_server->createPlayerSession(controlledEntityId);
+        m_server->createPlayerSession(playerId);
 
     if (!sessionId)
         return {};

@@ -930,6 +930,40 @@ set_tests_properties(
 )
 
 add_executable(
+    identity_registry_contract_tests
+    IdentityRegistryContractTests.cpp
+)
+
+target_include_directories(
+    identity_registry_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        identity_registry_contract_tests
+        PRIVATE /W4 /permissive-
+    )
+else()
+    target_compile_options(
+        identity_registry_contract_tests
+        PRIVATE -Wall -Wextra -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME identity_registry_contracts
+    COMMAND identity_registry_contract_tests
+)
+
+set_tests_properties(
+    identity_registry_contracts
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)
+
+add_executable(
     client_local_authority_contract_tests
     ClientLocalAuthorityContractTests.cpp
 )

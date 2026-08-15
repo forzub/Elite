@@ -21,6 +21,7 @@
 
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/game/ship/core/ShipRole.h"
+#include "src/game/ship/ShipRegistry.h"
 #include "src/game/ship/core/ShipTransform.h"
 #include "src/game/ship/sensors/ShipSignalPresentation.h"
 
@@ -55,6 +56,7 @@ struct PendingCommand
 struct ClientShipState
 {
     EntityId                                        id;
+    ShipInstanceId                                  instanceId = 0;
     ShipRole                                        role;
     ObjectType                                      typeId;
     std::uint64_t                                   acknowledgedControlTick = 0;

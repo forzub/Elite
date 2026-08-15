@@ -22,6 +22,9 @@
 #include "src/game/server/ServerTimeContext.h"
 #include "src/game/server/FixedStepControlQueue.h"
 #include "src/game/server/ServerSessionRegistry.h"
+#include "src/game/server/PlayerRegistry.h"
+#include "src/game/server/ShipInstanceRegistry.h"
+#include "src/game/server/ControlRegistry.h"
 #include "src/game/server/ReplicationInterestPolicy.h"
 #include "src/game/server/ReplicationPublicationPolicy.h"
 #include "src/world/celestial/SystemMapTypes.h"
@@ -87,14 +90,24 @@ public:
     bool debugReevaluateShipStructure(EntityId id);
 
     game::network::ServerSessionId createPlayerSession(
-        EntityId controlledEntityId
+        PlayerId playerId
     );
     bool disconnectPlayerSession(game::network::ServerSessionId sessionId);
+    PlayerId playerForSession(
+        game::network::ServerSessionId sessionId
+    ) const noexcept;
     EntityId controlledEntityForSession(
         game::network::ServerSessionId sessionId
     ) const noexcept;
+    ShipInstanceId controlledShipInstanceForSession(
+        game::network::ServerSessionId sessionId
+    ) const noexcept;
     std::size_t connectedPlayerSessionCount() const noexcept;
-    EntityId selectAvailablePlayerEntityForAdmission() const noexcept;
+    PlayerId selectAvailablePlayerForAdmission() const noexcept;
+    PlayerId primaryPlayerIdentity() const noexcept
+    {
+        return m_primaryPlayerId;
+    }
 
     void receiveClientMessage(
         game::network::ServerSessionId sessionId,
@@ -226,7 +239,11 @@ private:
 
     mutable game::diagnostics::ServerDiagnostics m_diagnostics;
     GameSimulation m_simulation;
+    game::server::PlayerRegistry m_players;
+    game::server::ShipInstanceRegistry m_shipInstances;
+    game::server::ControlRegistry m_controls;
     game::server::ServerSessionRegistry m_sessions;
+    PlayerId m_primaryPlayerId {};
     game::server::ReplicationInterestPolicy m_replicationInterestPolicy;
 
 

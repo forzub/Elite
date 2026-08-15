@@ -19,58 +19,58 @@ int main()
 {
     game::server::ServerSessionRegistry registry;
 
-    const EntityId shipA {101};
-    const EntityId shipB {202};
+    const PlayerId playerA {101};
+    const PlayerId playerB {202};
 
-    const auto sessionA = registry.create(shipA);
-    const auto sessionB = registry.create(shipB);
+    const auto sessionA = registry.create(playerA);
+    const auto sessionB = registry.create(playerB);
 
     require(static_cast<bool>(sessionA), "session A was not allocated");
     require(static_cast<bool>(sessionB), "session B was not allocated");
     require(sessionA != sessionB, "server session ids are not unique");
     require(registry.size() == 2, "registry did not retain two sessions");
     require(registry.connectedCount() == 2, "connected count is wrong");
-    require(registry.controlledEntity(sessionA) == shipA,
-            "session A authority did not resolve to ship A");
-    require(registry.controlledEntity(sessionB) == shipB,
-            "session B authority did not resolve to ship B");
-    require(registry.isControlledEntity(shipA),
-            "ship A is not recognized as player-controlled");
-    require(registry.isControlledEntity(shipB),
-            "ship B is not recognized as player-controlled");
+    require(registry.player(sessionA) == playerA,
+            "session A identity did not resolve to player A");
+    require(registry.player(sessionB) == playerB,
+            "session B identity did not resolve to player B");
+    require(registry.isConnectedPlayer(playerA),
+            "player A is not recognized as connected");
+    require(registry.isConnectedPlayer(playerB),
+            "player B is not recognized as connected");
 
-    const auto duplicateController = registry.create(shipA);
-    require(!duplicateController,
-            "two live sessions were allowed to control the same entity");
+    const auto duplicatePlayer = registry.create(playerA);
+    require(!duplicatePlayer,
+            "two live sessions were allowed for the same PlayerId");
 
     require(registry.disconnect(sessionA), "session A disconnect failed");
     require(registry.connectedCount() == 1,
             "disconnect did not reduce connected session count");
-    require(registry.controlledEntity(sessionA).value == 0,
-            "disconnected session still resolves command authority");
-    require(!registry.isControlledEntity(shipA),
-            "disconnected ship remained player-controlled");
-    require(registry.isControlledEntity(shipB),
-            "disconnecting A affected session B authority");
+    require(!registry.player(sessionA),
+            "disconnected session still resolves player identity");
+    require(!registry.isConnectedPlayer(playerA),
+            "disconnected player remained connected");
+    require(registry.isConnectedPlayer(playerB),
+            "disconnecting A affected session B identity");
 
     require(registry.reconnect(sessionA), "session A reconnect failed");
-    require(registry.controlledEntity(sessionA) == shipA,
-            "reconnected session did not recover its controlled entity");
+    require(registry.player(sessionA) == playerA,
+            "reconnected session did not recover PlayerId");
 
     require(registry.disconnect(sessionA),
             "session A second disconnect failed");
-    const auto replacementA = registry.create(shipA);
+    const auto replacementA = registry.create(playerA);
     require(static_cast<bool>(replacementA),
-            "replacement session could not claim disconnected ship A");
+            "replacement session could not claim disconnected player A");
     require(!registry.reconnect(sessionA),
-            "stale disconnected session reconnected over replacement authority");
-    require(registry.controlledEntity(replacementA) == shipA,
-            "replacement session lost ship A authority");
+            "stale disconnected session reconnected over replacement identity");
+    require(registry.player(replacementA) == playerA,
+            "replacement session lost player A identity");
 
-    const auto invalid = registry.create(EntityId{});
-    require(!invalid, "zero EntityId created a valid server session");
+    const auto invalid = registry.create(PlayerId{});
+    require(!invalid, "zero PlayerId created a valid server session");
 
     std::cout
-        << "[PASS] server session registry authority + disconnect/reconnect\n";
+        << "[PASS] server session registry session -> persistent PlayerId\n";
     return 0;
 }

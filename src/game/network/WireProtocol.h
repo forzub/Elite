@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 3u;
+inline constexpr std::uint16_t WireProtocolVersion = 4u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -456,6 +456,8 @@ inline bool encodeSessionWelcome(
 {
     WireWriter writer;
     writer.u64(value.sessionId.value);
+    writer.u64(value.playerId.value);
+    writer.u64(value.controlledShipInstanceId);
     writer.u32(value.controlledEntityId.value);
     writer.f64(value.fixedStepSeconds);
     writer.u32(value.starAtlasCatalog.schemaVersion);
@@ -472,6 +474,8 @@ inline bool decodeSessionWelcome(
     WireReader reader(payload);
     std::uint32_t controlled = 0;
     if (!reader.u64(outValue.sessionId.value) ||
+        !reader.u64(outValue.playerId.value) ||
+        !reader.u64(outValue.controlledShipInstanceId) ||
         !reader.u32(controlled) ||
         !reader.f64(outValue.fixedStepSeconds) ||
         !reader.u32(outValue.starAtlasCatalog.schemaVersion) ||

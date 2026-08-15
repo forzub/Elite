@@ -91,6 +91,52 @@ void SpaceState::initHUD()
     }
 
     const ShipDescriptor& desc = *playerShip->descriptor;
+
+    // One-shot M8E graphical-client bootstrap telemetry. This is emitted at
+    // the presentation boundary so we can distinguish bad replicated spatial
+    // state from a later camera/render transform error.
+    {
+        const glm::dvec3 localWorld = playerShip->transform.fullWorldMeters();
+        std::size_t playerCount = 0;
+        for (const auto& [_, candidate] : ships)
+        {
+            if (candidate.role == ShipRole::Player)
+                ++playerCount;
+        }
+
+        std::cerr
+            << "[M8E-CLIENT] local_entity=" << m_playerId.value
+            << " player_entities=" << playerCount
+            << "\n";
+
+        for (const auto& [_, candidate] : ships)
+        {
+            if (candidate.role != ShipRole::Player)
+                continue;
+
+            const glm::dvec3 world = candidate.transform.fullWorldMeters();
+            const glm::dvec3 renderWorld =
+                candidate.renderTransform.fullWorldMeters();
+            const glm::dvec3 local =
+                candidate.transform.motion.localPositionMeters;
+            const double distance = glm::length(world - localWorld);
+
+            std::cerr
+                << "[M8E-CLIENT] entity=" << candidate.id.value
+                << " local=" << (candidate.id == m_playerId ? "yes" : "no")
+                << " role=player"
+                << " type=" << static_cast<int>(candidate.typeId)
+                << " system=" << candidate.transform.motion.systemId
+                << " hub=" << candidate.transform.motion.hubId
+                << " frame=" << candidate.referenceFrame.frameId
+                << " local_m=(" << local.x << ',' << local.y << ',' << local.z << ')'
+                << " world_m=(" << world.x << ',' << world.y << ',' << world.z << ')'
+                << " render_m=(" << renderWorld.x << ',' << renderWorld.y << ',' << renderWorld.z << ')'
+                << " distance_to_local_m=" << distance
+                << "\n";
+        }
+    }
+
     ShipTransform initialTransform = playerShip->transform;
     m_playerView = std::make_unique<PlayerShipView>();
     m_playerView->init(context(), &desc, initialTransform);

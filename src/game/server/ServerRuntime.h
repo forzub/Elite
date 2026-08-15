@@ -6,6 +6,7 @@
 
 #include "src/game/server/ServerRunner.h"
 #include "src/game/network/SessionMessage.h"
+#include "src/game/identity/PlayerId.h"
 #include "src/world/WorldParams.h"
 #include "src/scene/EntityID.h"
 
@@ -55,14 +56,14 @@ public:
     double fixedStepSeconds() const;
 
     // Production admission is server-owned: callers provide a connection,
-    // never an EntityId. The explicit-entity overload remains for deterministic
-    // architecture/diagnostic tests and future authenticated handoff code.
+    // never an EntityId. The explicit PlayerId overload is the authenticated
+    // identity/handoff seam; runtime EntityId stays server-resolved.
     game::network::ServerSessionId attachPlayerSessionTransport(
         IServerTransport& transport
     );
     game::network::ServerSessionId attachPlayerSessionTransport(
         IServerTransport& transport,
-        EntityId controlledEntityId
+        PlayerId playerId
     );
     bool detachPlayerSessionTransport(
         game::network::ServerSessionId sessionId

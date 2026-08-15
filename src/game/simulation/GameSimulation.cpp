@@ -327,12 +327,10 @@ void GameSimulation::buildInitialScene(
     m_playerId =
         game::scene::buildInitialScene(*this, initialState);
 
-    // The authored bootstrap player is the first controlled entity.
-    // ServerSessionRegistry later binds a connection/session to this entity;
-    // keeping the simulation-side ownership set explicit prevents NPC/activation
-    // code from depending on the legacy single m_playerId alias.
-    if (m_playerId.value != 0)
-        m_playerControlledShipIds.insert(m_playerId);
+    // m_playerId is only the authored primary spawn compatibility alias.
+    // Human control authority is established later by GameServer from
+    // PlayerRegistry -> ControlRegistry -> ServerSessionRegistry. A dedicated
+    // server may therefore boot with zero connected/player-controlled ships.
 
     if constexpr (game::promo::PromoFlybyScenario::Enabled)
     {
@@ -861,7 +859,7 @@ GameSimulation::activationExecutionMode(EntityId shipId) const noexcept
     // The locally controlled player and Hub Motion Lab reference actors remain
     // fully materialized. The latter are measurement probes and must not have
     // their baseline altered by the production activation planner.
-    if (shipId == m_playerId || isHubMotionLabShip(shipId))
+    if (isPlayerControlled(shipId) || isHubMotionLabShip(shipId))
         return SimulationMode::Active;
 
     const auto stateIt = m_activationPlanStates.find(shipId);
@@ -1892,6 +1890,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             presentationShipTransform(id);
 
         s.id = id;
+        s.instanceId = ship.core().registry().instanceId;
         s.typeId = ship.core().desc().typeId;
         s.role = ship.core().role();
         s.motionLabKind = hubMotionLabActorKind(id);

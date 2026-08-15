@@ -447,9 +447,10 @@ language.
 ### Multiplayer Stage M1-M7 — session authority, client identity, navigation, two-client acceptance and sparse replication
 
 - M1 added a platform-neutral `ServerSessionId` and `ServerSessionRegistry`; authoritative
-  connection/session identity is no longer the same concept as a ship `EntityId`.
-- `GameServer` resolves `session -> controlledEntity` before control/ship commands enter
-  authoritative queues and rejects unknown/disconnected sessions. `GameSimulation` tracks
+  connection/session identity is no longer the same concept as a ship `EntityId`. The later
+  persistent-identity migration now stores `PlayerId` in the session registry and resolves
+  `session -> PlayerId -> ControlRegistry -> EntityId` before authoritative commands enter queues.
+- `GameSimulation` tracks
   an explicit set of player-controlled ships, so NPC authority and activation pinning no
   longer depend on the legacy singleton `m_playerId`.
 - M2 turns `ServerRunner` into a multi-endpoint fan-in/fan-out boundary. Multiple
@@ -468,7 +469,8 @@ language.
   map/time-sync routing, per-session navigation, and secondary disconnect. The harness is
   not the future network transport.
 - Registry reconnect semantics reject stale authority when a replacement live session has
-  already claimed the same entity.
+  already claimed the same persistent `PlayerId`; current production reconnect/resume token
+  handoff is still future work.
 - M3 removes the client-side identity conflation between `ShipRole::Player` and **my local
   ship**. `SessionWelcome.controlledEntityId` is copied into `ClientWorldState` and gates
   prediction, fractional local presentation, player-system lookup and local System/Details/Hub
@@ -544,13 +546,28 @@ language.
 - `SessionWelcome` now carries the authoritative fixed-step duration, and wire protocol version is bumped accordingly. Remote prediction therefore does not hard-code the server tick rate after bootstrap.
 - Separate-process acceptance also fences endpoint-local static-definition bootstrap: `EliteGame` initializes object/assembly descriptor catalogs independently instead of inheriting process globals that happened to be initialized by an in-process `GameSimulation`. Initialization is one-time so local server/client coexistence cannot invalidate descriptor pointers by rebuilding the registries.
 - `EliteServer --listen HOST:PORT` and `EliteGame --connect HOST:PORT` are production-facing process seams. `--self-test-one-client` / `--self-test-remote-client` are test-only modes used by the ready harness to launch both executables separately and prove bootstrap, `GameClient::Ready`, numbered authoritative input acknowledgement and peer disconnect through real localhost TCP.
-- M8E.0 removes arbitrary-NPC admission. Dedicated runtime materializes two explicit `ShipRole::Player` bootstrap slots, separated by 300 m in hub-local X; embedded/local runtime still materializes one authored player ship. Production admission may select only an unowned player-role slot. Slot assignment follows actual server accept order and is not player identity. Persistent account/character/ship ownership will later replace this temporary pool without changing transport/session authority.
-- M8E should prove two separate remote clients on one dedicated server and define explicit reconnect/resume handoff. A reconnect must never let the client choose an arbitrary controlled entity.
+- M8E.0 first removed arbitrary-NPC admission. The current dedicated bootstrap now creates two persistent player/ship bindings whose materialized ships are separated by 50 m for graphical acceptance. Admission selects an available server-owned `PlayerId`; accept order currently decides which temporary player record a connection receives. This remains bootstrap policy, not authentication identity.
+- Manual M8E graphical acceptance has now proved two separate remote `EliteGame` processes against one dedicated server: both clients stay alive, receive distinct player/ship/entity identities and see both ships in the same authoritative world. Disconnect/reconnect hardening and production authentication remain open.
 
-### Multiplayer Stage M8E.0 — multi-process client preflight
+### Multiplayer Stage M8E.0 — multi-process client preflight and graphical baseline
 
-- Every graphical client owns a process-local WebUI endpoint. `HtmlUiServer` listens on port `0`, reads back the OS-assigned local port and `Application` builds all WebView URLs from that exact port. A second `EliteGame` process therefore cannot bind or accidentally navigate into the first process' WebUI.
+- Every graphical client owns a process-local WebUI endpoint. `HtmlUiServer` listens on port `0`, reads back the OS-assigned local port and `Application` builds all WebView URLs from that exact port. WebView2 also uses a process-local user-data directory, so a second `EliteGame` does not share UI/browser runtime state with the first.
 - A remote client may start before `EliteServer`. Initial TCP absence maps to `GameSessionState::WaitingForServer`; `RemoteGameSession` retries on a bounded cadence. Once TCP has connected, protocol/catalog/admission failures and later disconnects remain fatal until explicit reconnect/resume semantics are designed.
 - Loading UI represents `WaitingForServer` through the normal localization key path. The status line is an animated terminal presentation: alphabetic/localized strings are typed with a block cursor, cleared and repeated; Simplified Chinese visually imitates pinyin IME composition (`zheng zai` -> `正在`, `deng dai` -> `等待`, `fu wu qi` -> `服务器`). This animation is presentation-only and must never leak locale-specific behavior into session/network code.
-- Process acceptance intentionally starts the remote client before the server and proves that connection refusal is retryable before the normal bootstrap -> Ready -> input/ack path.
-- M8E proper remains the next gate: two full graphical remote clients, independent WebUI processes, distinct server-assigned player slots, shared authoritative world, disconnect isolation, then explicit reconnect/resume identity.
+- Real two-client testing exposed a GLFW 3.4 Win32 process-safety defect in `_glfwPollEventsWin32`: `GetActiveWindow()` could return another process' GLFW HWND and `GetPropW(..., L"GLFW")` then yields a pointer meaningful only in that foreign process. The first client crashed when GLFW dereferenced it. Because an app-side pre-check has a TOCTOU race, Windows `Window::pollEvents()` now uses the native `PeekMessageW/TranslateMessage/DispatchMessageW` pump and avoids the unsafe GLFW post-poll path while still delivering messages to GLFW's WndProc.
+- Manual graphical acceptance then proved two simultaneous remote clients, distinct server-owned identities and shared-world visibility at ~50 m. The next gate is not another client selector hack; it is production identity/authentication plus disconnect/reconnect ownership semantics.
+
+### Persistent identity Phase 1 — player / ship / session / control separation
+
+The server now treats four identifiers as different domains:
+
+- `PlayerId` — persistent player/character identity;
+- `ShipInstanceId` — stable identity of a concrete ship instance;
+- `ServerSessionId` — transient connection identity;
+- `EntityId` — current materialized simulation handle.
+
+`PlayerRegistry` owns `PlayerId -> current ShipInstanceId`. `ShipInstanceRegistry` owns the stable ship record and current `ShipInstanceId <-> materialized EntityId` mapping; its explicit dematerialization seam is the bridge to future Scheduled/Coarse states. `ControlRegistry` is a separate authority axis (`Human / AI / Autopilot / None`), with human control currently wired as `PlayerId -> EntityId`. `ServerSessionRegistry` stores `session -> PlayerId`, never ship/entity identity.
+
+`SessionWelcome` now carries `playerId`, `controlledShipInstanceId` and `controlledEntityId`; `ShipSnapshot.instanceId` lets every client identify the same concrete ship independently of its local presentation role. This fixed the old structural assumption that one `ShipRole::Player` was the only local player and the rest of the world was NPC presentation.
+
+Current limitations are deliberate: registries are in-memory, bootstrap creates temporary player records, admission is first-available by server accept order, and there is no `AccountId`, credential/token validation, durable database or resume token yet. The next architecture stage is a server-owned authorization/persistence layer `AccountId -> PlayerId -> owned/current ShipInstanceId -> ServerSessionId -> ControlAuthority`, followed by durable universe ship records and `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization. A client must never obtain authority by sending an arbitrary PlayerId/ShipInstanceId/EntityId.

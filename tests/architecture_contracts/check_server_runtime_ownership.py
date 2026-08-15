@@ -97,6 +97,8 @@ for required in (
 for required in (
     "struct SessionWelcome",
     "ServerSessionId sessionId {};",
+    "PlayerId playerId {};",
+    "ShipInstanceId controlledShipInstanceId = 0;",
     "EntityId controlledEntityId {0};",
     "CatalogMetadata starAtlasCatalog;",
 ):
@@ -107,8 +109,10 @@ if "controlledEntityId" in client_session_snapshot_h:
     fail("stable controlled-entity identity leaked into recurring simulation snapshots")
 
 for required in (
-    "m_server->createPlayerSession(m_server->playerId())",
+    "m_server->createPlayerSession(m_server->primaryPlayerIdentity())",
     "welcome.sessionId = sessionId",
+    "welcome.playerId = playerId",
+    "welcome.controlledShipInstanceId = controlledShipInstanceId",
     "welcome.controlledEntityId = controlledEntityId",
     "m_server->copyHydratedSnapshotForSession(",
     "welcome.starAtlasCatalog.schemaVersion",
@@ -130,6 +134,8 @@ for required in (
     "m_serverSessionId = welcome.sessionId",
     "m_catalogs.validateServerStarAtlas(",
     "welcome.starAtlasCatalog",
+    "m_playerIdentityId = welcome.playerId",
+    "m_controlledShipInstanceId = welcome.controlledShipInstanceId",
     "m_playerId = welcome.controlledEntityId",
     "m_hasPlayerIdentity = true",
 ):

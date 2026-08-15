@@ -183,6 +183,8 @@ void testSessionWelcomeRoundTrip()
 {
     SessionWelcome welcome;
     welcome.sessionId.value = 0x1122334455667788ull;
+    welcome.playerId = PlayerId{0x8877665544332211ull};
+    welcome.controlledShipInstanceId = 0x1020304050607080ull;
     welcome.controlledEntityId = EntityId{42u};
     welcome.fixedStepSeconds = 0.02;
     welcome.starAtlasCatalog.schemaVersion = 7u;
@@ -194,6 +196,9 @@ void testSessionWelcomeRoundTrip()
     SessionWelcome decoded;
     require(decodeSessionWelcome(payload, decoded), "SessionWelcome decode failed");
     require(decoded.sessionId == welcome.sessionId, "SessionWelcome session id mismatch");
+    require(decoded.playerId == welcome.playerId, "SessionWelcome PlayerId mismatch");
+    require(decoded.controlledShipInstanceId == welcome.controlledShipInstanceId,
+        "SessionWelcome ShipInstanceId mismatch");
     require(decoded.controlledEntityId == welcome.controlledEntityId,
         "SessionWelcome controlled entity mismatch");
     require(std::abs(decoded.fixedStepSeconds - welcome.fixedStepSeconds) < 1.0e-12,

@@ -9,6 +9,7 @@
 #include <thread>
 #include <exception>
 #include <cstdlib>
+#include <cstdint>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -32,20 +33,83 @@ namespace
 {
 
 #ifdef _WIN32
+void logFaultModule(const char* label, const void* address) noexcept
+{
+    if (!address)
+    {
+        std::cerr << " " << label << "=<null>";
+        return;
+    }
+
+    MEMORY_BASIC_INFORMATION memoryInfo{};
+    if (VirtualQuery(address, &memoryInfo, sizeof(memoryInfo)) == 0 ||
+        !memoryInfo.AllocationBase)
+    {
+        std::cerr << " " << label << "=" << address
+                  << " module=<unresolved>";
+        return;
+    }
+
+    const auto moduleBase =
+        reinterpret_cast<std::uintptr_t>(memoryInfo.AllocationBase);
+    const auto faultAddress = reinterpret_cast<std::uintptr_t>(address);
+
+    char modulePath[32768] = {};
+    const DWORD pathLength = GetModuleFileNameA(
+        static_cast<HMODULE>(memoryInfo.AllocationBase),
+        modulePath,
+        static_cast<DWORD>(sizeof(modulePath))
+    );
+
+    std::cerr << " " << label << "=" << address
+              << " module="
+              << (pathLength > 0 ? modulePath : "<non-image allocation>")
+              << " module_base=0x" << std::hex << moduleBase
+              << " module_offset=0x" << (faultAddress - moduleBase)
+              << std::dec;
+}
+
+const char* accessViolationOperation(ULONG_PTR operation) noexcept
+{
+    switch (operation)
+    {
+        case 0: return "read";
+        case 1: return "write";
+        case 8: return "execute";
+        default: return "unknown";
+    }
+}
+
 LONG WINAPI eliteUnhandledExceptionFilter(EXCEPTION_POINTERS* info)
 {
-    const DWORD code =
-        info && info->ExceptionRecord
-            ? info->ExceptionRecord->ExceptionCode
-            : 0u;
-    const void* address =
-        info && info->ExceptionRecord
-            ? info->ExceptionRecord->ExceptionAddress
-            : nullptr;
+    const EXCEPTION_RECORD* record =
+        info ? info->ExceptionRecord : nullptr;
+    const DWORD code = record ? record->ExceptionCode : 0u;
+    const void* instructionAddress =
+        record ? record->ExceptionAddress : nullptr;
 
     std::cerr << "[CRASH] EliteGame pid=" << GetCurrentProcessId()
-              << " SEH=0x" << std::hex << code << std::dec
-              << " address=" << address << "\n";
+              << " tid=" << GetCurrentThreadId()
+              << " SEH=0x" << std::hex << code << std::dec;
+
+    logFaultModule("instruction", instructionAddress);
+
+    if (record &&
+        (code == EXCEPTION_ACCESS_VIOLATION ||
+         code == EXCEPTION_IN_PAGE_ERROR) &&
+        record->NumberParameters >= 2)
+    {
+        const ULONG_PTR operation = record->ExceptionInformation[0];
+        const void* targetAddress = reinterpret_cast<const void*>(
+            record->ExceptionInformation[1]
+        );
+
+        std::cerr << " access=" << accessViolationOperation(operation);
+        logFaultModule("target", targetAddress);
+    }
+
+    std::cerr << "\n";
+    std::cerr.flush();
     return EXCEPTION_EXECUTE_HANDLER;
 }
 #endif

@@ -504,6 +504,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         {
             auto& state = m_ships[s.id.value];
             state.id   = s.id;
+            state.instanceId = s.instanceId;
             state.role = s.role;
             state.typeId = s.typeId;
             state.acknowledgedControlTick = s.acknowledgedControlTick;
@@ -554,6 +555,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         {
             auto& state = it->second;
 
+            state.instanceId = s.instanceId;
             state.role = s.role;
             state.typeId = s.typeId;
             state.acknowledgedControlTick = s.acknowledgedControlTick;

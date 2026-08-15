@@ -12,6 +12,7 @@
 #include <cmath>
 #include <functional>
 #include <unordered_map>
+#include <utility>
 
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/game/diagnostics/HubMotionLab.h"
@@ -282,6 +283,9 @@ m_simulation.setCelestialBodyKinematicStateAu(
             );
         }
 
+        std::vector<EntityId> bootstrapPlayerEntities;
+        bootstrapPlayerEntities.push_back(m_simulation.playerId());
+
         // Dedicated multiplayer bootstrap temporarily materializes a small
         // server-owned pool of player-eligible ships. This is deliberately not
         // account ownership: M8E only needs deterministic admission capacity
@@ -302,14 +306,14 @@ m_simulation.setCelestialBodyKinematicStateAu(
                 );
             }
 
-            constexpr double BootstrapPlayerSpacingMeters = 300.0;
+            constexpr double BootstrapPlayerSpacingMeters = 50.0;
 
             for (std::size_t slotIndex = 1;
                  slotIndex < requestedPlayerSlots;
                  ++slotIndex)
             {
                 // Sequence around the authored primary spawn:
-                // +300, -300, +600, -600 ... hub-local X meters.
+                // +50, -50, +100, -100 ... hub-local X meters.
                 const std::size_t ring = (slotIndex + 1) / 2;
                 const double side = (slotIndex % 2 == 1) ? 1.0 : -1.0;
 
@@ -347,7 +351,75 @@ m_simulation.setCelestialBodyKinematicStateAu(
                         "failed to materialize bootstrap player admission slot"
                     );
                 }
+
+                bootstrapPlayerEntities.push_back(slotId);
             }
+        }
+
+        // Build persistent universe identity before any connection/session is
+        // admitted. Every materialized ship, human or AI-controlled, has one
+        // stable ShipInstanceId. Runtime EntityId remains only a materialized
+        // simulation handle.
+        for (const auto& [entityId, shipPtr] : m_simulation.ships())
+        {
+            if (!shipPtr)
+                continue;
+
+            const auto& core = shipPtr->core();
+            const auto& registration = core.registry();
+
+            game::server::ShipInstanceRecord record;
+            record.instanceId = registration.instanceId;
+            record.materializedEntityId = entityId;
+            record.typeId = core.desc().typeId;
+            record.roleType = registration.shipRole;
+            record.ownerActor = registration.ownerActor;
+            record.name = core.visualIdentity().shipName;
+            record.registrationId = registration.registrationId;
+
+            if (!m_shipInstances.registerMaterialized(std::move(record)))
+            {
+                throw std::runtime_error(
+                    "ship instance registry rejected zero/duplicate persistent identity"
+                );
+            }
+        }
+
+        // Bootstrap players are persistent identities assigned to persistent
+        // ships. Session connections are created later and only authenticate
+        // access to these player identities. No NPC is promoted by connection.
+        for (const EntityId entityId : bootstrapPlayerEntities)
+        {
+            const Ship* ship = m_simulation.getShip(entityId);
+            if (!ship)
+            {
+                throw std::runtime_error(
+                    "bootstrap player entity disappeared before identity registration"
+                );
+            }
+
+            const auto& registration = ship->core().registry();
+            const PlayerId playerId = m_players.create(
+                registration.instanceId,
+                registration.ownerActor
+            );
+
+            if (!playerId || !m_controls.bindHuman(playerId, entityId))
+            {
+                throw std::runtime_error(
+                    "failed to bind bootstrap player identity to ship control"
+                );
+            }
+
+            if (entityId == m_simulation.playerId())
+                m_primaryPlayerId = playerId;
+        }
+
+        if (!m_primaryPlayerId)
+        {
+            throw std::runtime_error(
+                "primary bootstrap player identity was not registered"
+            );
         }
 
         game::server::ServerTimeContext initialTime;
@@ -746,7 +818,7 @@ bool GameServer::enqueueMapRequest(
     const game::network::MapRequest& request
 )
 {
-    if (m_sessions.controlledEntity(sessionId).value == 0)
+    if (controlledEntityForSession(sessionId).value == 0)
     {
         ++m_queueDiagnostics.rejectedSessionMessages;
         return false;
@@ -810,7 +882,7 @@ void GameServer::processPendingMapRequests()
 
         // A disconnect after enqueue but before execution must not leak a map
         // response to a dead/reused transport binding.
-        if (m_sessions.controlledEntity(sessionId).value == 0)
+        if (controlledEntityForSession(sessionId).value == 0)
             continue;
 
         std::visit(
@@ -920,13 +992,32 @@ void GameServer::submitCommand(EntityId id, const ShipControlState& control)
 
 
 game::network::ServerSessionId GameServer::createPlayerSession(
-    EntityId controlledEntityId
+    PlayerId playerId
 )
 {
-    if (!m_simulation.getShip(controlledEntityId))
+    const PlayerState* player = m_players.find(playerId);
+    if (!player)
         return {};
 
-    const auto sessionId = m_sessions.create(controlledEntityId);
+    const EntityId controlledEntityId =
+        m_controls.controlledEntity(playerId);
+
+    if (controlledEntityId.value == 0 ||
+        !m_simulation.getShip(controlledEntityId))
+    {
+        return {};
+    }
+
+    const ShipInstanceId controlledShipInstanceId =
+        m_shipInstances.instanceForEntity(controlledEntityId);
+
+    if (controlledShipInstanceId == 0 ||
+        controlledShipInstanceId != player->currentShipId)
+    {
+        return {};
+    }
+
+    const auto sessionId = m_sessions.create(playerId);
     if (!sessionId)
         return {};
 
@@ -938,25 +1029,47 @@ bool GameServer::disconnectPlayerSession(
     game::network::ServerSessionId sessionId
 )
 {
+    const PlayerId playerId = m_sessions.player(sessionId);
     const EntityId controlledEntityId =
-        m_sessions.controlledEntity(sessionId);
+        m_controls.controlledEntity(playerId);
 
-    if (!controlledEntityId.value || !m_sessions.disconnect(sessionId))
+    if (!playerId ||
+        controlledEntityId.value == 0 ||
+        !m_sessions.disconnect(sessionId))
+    {
         return false;
+    }
 
-    // Do not unpin an entity still owned by another connected session. This is
-    // uncommon today but makes reconnect/session handoff semantics explicit.
-    if (!m_sessions.isControlledEntity(controlledEntityId))
+    // Persistent player->ship control identity survives a disconnect, but the
+    // expensive Active/player-controlled simulation pin is connection-scoped.
+    // A replacement session for the same PlayerId will pin it again.
+    if (!m_sessions.isConnectedPlayer(playerId))
         m_simulation.setPlayerControlled(controlledEntityId, false);
 
     return true;
+}
+
+PlayerId GameServer::playerForSession(
+    game::network::ServerSessionId sessionId
+) const noexcept
+{
+    return m_sessions.player(sessionId);
 }
 
 EntityId GameServer::controlledEntityForSession(
     game::network::ServerSessionId sessionId
 ) const noexcept
 {
-    return m_sessions.controlledEntity(sessionId);
+    return m_controls.controlledEntity(m_sessions.player(sessionId));
+}
+
+ShipInstanceId GameServer::controlledShipInstanceForSession(
+    game::network::ServerSessionId sessionId
+) const noexcept
+{
+    return m_shipInstances.instanceForEntity(
+        controlledEntityForSession(sessionId)
+    );
 }
 
 std::size_t GameServer::connectedPlayerSessionCount() const noexcept
@@ -964,37 +1077,44 @@ std::size_t GameServer::connectedPlayerSessionCount() const noexcept
     return m_sessions.connectedCount();
 }
 
-EntityId GameServer::selectAvailablePlayerEntityForAdmission() const noexcept
+PlayerId GameServer::selectAvailablePlayerForAdmission() const noexcept
 {
-    const EntityId primary = m_simulation.playerId();
-    if (primary.value != 0 &&
-        m_simulation.getShip(primary) &&
-        !m_sessions.isControlledEntity(primary))
+    if (m_primaryPlayerId &&
+        !m_sessions.isConnectedPlayer(m_primaryPlayerId))
     {
-        return primary;
+        const EntityId entity =
+            m_controls.controlledEntity(m_primaryPlayerId);
+        if (entity.value != 0 && m_simulation.getShip(entity))
+            return m_primaryPlayerId;
     }
 
-    // Temporary pre-persistence admission policy: use only an explicit
-    // player-role bootstrap slot that is not already owned by another live
-    // session. Arbitrary NPCs are never promoted into player authority merely
-    // because a second client connected. Account/character persistence will
-    // later replace this selector without changing the session boundary.
-    for (const auto& ship : m_lastSnapshot.ships)
+    PlayerId bestAvailable {};
+
+    for (const auto& [rawPlayerId, player] : m_players.all())
     {
-        if (ship.id.value == 0 ||
-            ship.role != ShipRole::Player ||
-            m_sessions.isControlledEntity(ship.id) ||
-            ship.motionLabKind !=
-                game::diagnostics::HubMotionLabActorKind::None)
+        const PlayerId playerId {rawPlayerId};
+        if (!playerId ||
+            m_sessions.isConnectedPlayer(playerId) ||
+            player.currentShipId == 0)
         {
             continue;
         }
 
-        if (m_simulation.getShip(ship.id))
-            return ship.id;
+        const EntityId entity = m_controls.controlledEntity(playerId);
+        if (entity.value == 0 || !m_simulation.getShip(entity))
+            continue;
+
+        if (m_shipInstances.instanceForEntity(entity) !=
+            player.currentShipId)
+        {
+            continue;
+        }
+
+        if (!bestAvailable || playerId.value < bestAvailable.value)
+            bestAvailable = playerId;
     }
 
-    return {};
+    return bestAvailable;
 }
 
 void GameServer::receiveClientMessage(
@@ -1002,7 +1122,7 @@ void GameServer::receiveClientMessage(
     const game::network::ClientMessage& msg)
 {
     const EntityId controlledEntityId =
-        m_sessions.controlledEntity(sessionId);
+        controlledEntityForSession(sessionId);
 
     if (controlledEntityId.value == 0)
     {
@@ -1066,7 +1186,7 @@ bool GameServer::navigationStateForSession(
 ) const
 {
     const EntityId controlledEntityId =
-        m_sessions.controlledEntity(sessionId);
+        controlledEntityForSession(sessionId);
 
     if (controlledEntityId.value == 0)
         return false;
@@ -1189,7 +1309,7 @@ GameServer::shipReplicationInterestPlanForSession(
 ) const
 {
     const EntityId controlledEntityId =
-        m_sessions.controlledEntity(sessionId);
+        controlledEntityForSession(sessionId);
 
     if (controlledEntityId.value == 0)
         return {};

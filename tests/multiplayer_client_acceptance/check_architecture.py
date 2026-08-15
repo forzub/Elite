@@ -8,6 +8,9 @@ GAME_CLIENT = ROOT / "src/game/client/GameClient.cpp"
 CLIENT_WORLD = ROOT / "src/game/client/ClientWorldState.cpp"
 MAIN = ROOT / "src/main.cpp"
 CMAKE = ROOT / "CMakeLists.txt"
+APPLICATION = ROOT / "src/core/Application.cpp"
+WINDOW_CPP = ROOT / "src/window/Window.cpp"
+WINDOW_H = ROOT / "src/window/Window.h"
 
 
 def fail(message: str) -> None:
@@ -26,6 +29,9 @@ game_client = read(GAME_CLIENT)
 client_world = read(CLIENT_WORLD)
 main = read(MAIN)
 cmake = read(CMAKE)
+application = read(APPLICATION)
+window_cpp = read(WINDOW_CPP)
+window_h = read(WINDOW_H)
 
 for token in (
     "game::server::ServerRuntime runtime(",
@@ -48,6 +54,29 @@ for token in (
 ):
     if token not in harness:
         fail(f"two-client production-path token disappeared: {token}")
+
+
+for token in (
+    "game::server::ServerRuntime runtime(worldParams, debugChannel);",
+    "runtime.attachPlayerSessionTransport(transportA)",
+    "runtime.attachPlayerSessionTransport(transportB)",
+    "std::abs(worldDistance - 50.0)",
+    "renderDistanceA",
+    "renderDistanceB",
+):
+    if token not in harness:
+        fail(f"dedicated two-slot bootstrap acceptance token disappeared: {token}")
+
+for token, source in (
+    ("bool ownsForegroundInput() const;", window_h),
+    ("GetForegroundWindow()", window_cpp),
+    ("foregroundPid == GetCurrentProcessId()", window_cpp),
+    ("const bool ownsForegroundInput = m_window->ownsForegroundInput();", application),
+    ("if (ownsForegroundInput)", application),
+    ("Input::instance().reset();", application),
+):
+    if token not in source:
+        fail(f"graphical-client foreground input ownership token disappeared: {token}")
 
 for forbidden in (
     "GameServer server",

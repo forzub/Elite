@@ -75,7 +75,7 @@
 Подробный технический источник: `src/game/ARCHITECTURE_STATUS.md`.
 Operational contract, режимы запуска и ручная проверка: `SERVER_CLIENT.md`.
 
-**Общий статус: `[~]` фундамент разделения и presentation ownership основных карт готовы; следующий этап — runtime scaling/multi-system separation.**
+**Общий статус: `[~]` client/server separation, real TCP process boundary и multi-client authoritative world уже работают. Текущий архитектурный этап — persistent identity / authorization / ship-control backbone перед полноценным населением и materialization мира.**
 
 ### Уже сделано
 
@@ -107,16 +107,17 @@ Operational contract, режимы запуска и ручная проверк
 3. `[x]` Перевести Details на client-side composition из authoritative entity/hub state + local static/celestial data.
 4. `[x]` Перевести Hub на ту же модель.
 5. `[x]` Создать отдельный headless `EliteServer` target и использовать configure/compile/link boundary как жёсткую проверку server independence от render/UI.
-6. `[~]` Runtime scaling: Stage 4A/4B уже применяют `Active / Prewarm / Coarse` к реальной стоимости materialized ships. AI/service/maintenance cadence снижена, а дорогой motion-control solver отделён от дешёвой fixed-step kinematic propagation. Multiplayer session/client foundation M1–M7 готов: per-session ship interest отделён от simulation activation, production transport уже реально decimate'ит ship rows по `Controlled / Tactical / Nearby / Coarse / None`, а bootstrap/re-entry получают hydrated baseline. Stage M8A добавил platform-neutral versioned wire framing и explicit codecs для connection/control plane; Stage M8B сериализует полный `SimulationSnapshot`/`MapResponse` data plane через один канонический ordered schema-файл, а schema-blind compressor получает только готовый byte buffer. Stage M8C добавляет реальный Asio TCP stream/typed adapters и localhost kernel-socket contract; Stage M8D подключает эти adapters к отдельным `EliteServer`/remote `EliteGame` процессам с server-owned admission, authoritative fixed-step bootstrap и process-level acceptance. Field-delta protocol проектировать только после фиксации delivery/baseline semantics.
+6. `[x]` Real process/multi-client foundation: M8A-M8D дают versioned wire protocol, canonical snapshot schema, Asio TCP adapters и отдельные `EliteServer`/`EliteGame` процессы. Два graphical remote клиента одновременно держатся на одном dedicated server и видят друг друга в одном authoritative world; process-local WebUI/WebView2 и Win32 event-pump fix убрали multi-process crash.
+7. `[~]` Current focus — identity/authorization/persistent-world backbone: `PlayerId`, `ShipInstanceId`, `ServerSessionId` и runtime `EntityId` уже разделены, введены `PlayerRegistry`, `ShipInstanceRegistry` и `ControlRegistry`. Следующий шаг — не временный `--player` switch, а полноценная server-owned account/player/session authorization skeleton + durable ship registry, после чего возвращаемся к `Scheduled / Coarse / Prewarm / Active` materialization/collapse.
 
 ### Multiplayer / session authority foundation
 
-**Статус: `[~]` Stage M7 завершён: два настоящих `GameClient` работают на одном authoritative runtime; server-owned per-session interest уже используется как реальная ship publication cadence. `Controlled/Tactical` идут на normal snapshot cadence, `Nearby/Coarse` реже, `None` выходит из transport set explicit remove'ом. Full bootstrap и interest re-entry используют canonical hydrated runtime baseline. Stage M8A зафиксировал portable/versioned byte-stream framing и connection/control-plane wire codecs. Stage M8B завершил data plane: один логический snapshot/map response сначала бинаризуется по `WireDataSchema.h`, затем может пройти через тупой byte-to-byte compressor и framing. Stage M8C теперь даёт настоящий reliable ordered Asio TCP byte stream, typed `ITransport`/`IServerTransport` adapters, bounded send queue, frame sequencing и localhost kernel-socket round-trip. Stage M8D подключает `EliteServer --listen HOST:PORT` и `EliteGame --connect HOST:PORT` через `NetworkServerHost`/`RemoteGameSession`; отдельный process smoke проверяет bootstrap -> Ready -> authoritative input ack -> disconnect. Reconnect/resume identity остаётся отдельным следующим lifecycle этапом. Field-delta оптимизацию делать уже поверх явной delivery/baseline semantics.**
+**Статус: `[~]` transport/process foundation дошёл до реального graphical two-client baseline. Один dedicated `EliteServer` одновременно обслуживает два отдельных `EliteGame`; оба получают разные server-owned player/ship identities, находятся в одном authoritative world и вручную подтверждено видят друг друга на тестовой дистанции 50 м. Persistent identity Phase 1 уже разделяет `PlayerId`, `ShipInstanceId`, `ServerSessionId` и materialized `EntityId`; введены `PlayerRegistry`, `ShipInstanceRegistry` и `ControlRegistry`. Полноценная account/character authorization, reconnect/resume и durable persistent-universe storage ещё впереди.**
 
-Server runtime уже принимает несколько transport/session endpoints в одном authoritative execution context. `m_playerNavigation` больше не существует: navigation view вычисляется из `session -> controlledEntityId`. Legacy `m_playerId` остаётся только как compatibility alias для старых single-player/debug APIs, а **один global active celestial-system context** остаётся отдельным ограничением world runtime до multi-system stage.
+Server runtime принимает несколько transport/session endpoints в одном authoritative execution context. Session больше не является идентичностью корабля: текущая authority chain — `ServerSessionId -> PlayerId -> ControlRegistry -> EntityId`, а persistent assignment игрока хранит `PlayerId -> ShipInstanceId`; `ShipInstanceRegistry` связывает стабильный экземпляр корабля с текущей materialized `EntityId`. `m_playerNavigation` удалён; legacy `m_playerId` остаётся compatibility alias старых single-player/debug paths. **Один global active celestial-system context** всё ещё остаётся отдельным ограничением world runtime до multi-system stage.
 
-- `[x]` Stage M1: введён server-owned `ServerSessionId` и platform-neutral `ServerSessionRegistry`; session identity отделён от `EntityId`.
-- `[x]` Stage M1: каждая зарегистрированная session имеет authoritative `controlledEntityId`; `GameServer::receiveClientMessage()` сначала разрешает session -> entity, поэтому клиентский packet не выбирает произвольный корабль.
+- `[x]` Stage M1 + identity migration: `ServerSessionId` остаётся transient connection identity, но `ServerSessionRegistry` теперь хранит `PlayerId`, а не `controlledEntityId`. `GameServer` разрешает `session -> PlayerId -> ControlRegistry -> EntityId`; client packet по-прежнему не может выбрать произвольный корабль.
+- `[x]` Persistent identity Phase 1: `PlayerRegistry` хранит persistent player identity и назначенный `ShipInstanceId`; `ShipInstanceRegistry` отделяет стабильный экземпляр корабля от materialized `EntityId`; `ControlRegistry` отделяет human/AI/autopilot control axis от ship type/role.
 - `[x]` Stage M1: NPC/activation authority больше не определяет игрока через singleton `m_playerId`; simulation хранит явный set player-controlled entities, они исключены из NPC authority и pinned `Active`. `m_playerId` пока остаётся compatibility alias для старых single-player navigation/diagnostic paths.
 - `[x]` Stage M2: один `ServerRunner` обслуживает несколько `(IServerTransport*, ServerSessionId)` bindings: сначала принимает inbound со всех sessions, затем выполняет **ровно один** authoritative `GameServer::update()`, после чего fan-out'ит ответы обратно по session ownership.
 - `[x]` Stage M2: `ServerRuntime` умеет authoritative admission/detach вторичной player session, публикует ей собственный `SessionWelcome` и bootstrap snapshot; secondary disconnect не останавливает primary session.
@@ -142,8 +143,9 @@ Server runtime уже принимает несколько transport/session en
 - `[x]` Stage M8C: добавлены schema-blind `TcpWireStream`/listener на standalone Asio и typed `TcpClientTransport`/`TcpServerTransport` adapters под существующие `ITransport`/`IServerTransport`. TCP слой видит только framed bytes, имеет per-direction sequence validation и bounded pending-write queue; localhost contract реально гоняет control plane + sparse/hydrated `SimulationSnapshot` + `MapResponse` через kernel TCP.
 - `[x]` Stage M8D: TCP adapters подключены к process host/session lifecycle: `EliteServer --listen HOST:PORT` + remote `EliteGame --connect HOST:PORT`/`RemoteGameSession`. Dedicated runtime может стартовать с нулём gameplay transports; accepted connection получает controlled entity только через server-owned admission. `SessionWelcome` передаёт authoritative fixed-step cadence для remote prediction. Ready harness запускает `EliteServer.exe` и `EliteGame.exe` как разные процессы и проверяет bootstrap -> synchronization -> numbered input/ack -> disconnect.
 - `[x]` Stage M8D hardening: separate-process acceptance выявил скрытую зависимость клиента от server-initialized process globals. `GameClient` теперь сам bootstrap’ит endpoint-local `ObjectDescriptorRegistry`/`ObjectAssemblyRegistry` через one-time `ensureInitialized()`, а wire byte-order contract следует текущему `WireProtocolVersion` после version bump.
-- `[~]` Stage M8E.0 preflight: WebUI endpoint теперь process-local через OS-assigned ephemeral port; remote client умеет стартовать раньше сервера и остаётся в `WaitingForServer` с retry вместо немедленного `Failed`; loading screen показывает локализованное анимированное ожидание (для `zh-Hans` — pinyin->汉字 IME imitation). Dedicated runtime временно создаёт два explicit `ShipRole::Player` bootstrap slots с разносом 300 м, а production admission больше не захватывает случайный NPC. `EliteServer` теперь сам атомарно запрещает второй server process через OS-level singleton guard; ready/process harness перед стартом отказывается работать, если уже найден внешний `EliteServer`, и печатает его PID/path вместо убийства процесса. Windows/process acceptance ещё должен подтвердить полный graphical two-client сценарий.
-- `[ ]` Stage M8E: два отдельных graphical remote client processes одновременно на одном dedicated server + distinct server-assigned player slots + disconnect isolation; затем explicit reconnect/resume token/session handoff без client-selected EntityId.
+- `[x]` Stage M8E graphical baseline: WebUI endpoint process-local через OS-assigned ephemeral port, WebView2 user-data folder изолирован по process, remote client умеет ждать ещё не запущенный server, а `EliteServer` защищён OS-level singleton guard. Диагностика доказала GLFW 3.4 Win32 cross-process AV: `_glfwPollEventsWin32()` мог получить active HWND другого `EliteGame` и разыменовать его `GLFW` property как локальный `_GLFWwindow*`. На Windows client event pump теперь использует native `PeekMessage/TranslateMessage/DispatchMessage` path и не входит в опасный GLFW post-poll path; два graphical клиента после этого держатся одновременно стабильно.
+- `[x]` Identity backbone Phase 1: dedicated bootstrap создаёт два persistent `PlayerId`/`ShipInstanceId` bindings, materialized ships разведены на 50 м, `SessionWelcome` несёт `playerId + controlledShipInstanceId + controlledEntityId`, а `ShipSnapshot` несёт `instanceId`. Ручной graphical acceptance подтвердил: оба клиента видят оба корабля в одном authoritative world; прежний симптом «второго игрока нет / параллельные реальности» исчез после исправления identity structure.
+- `[~]` Текущая admission policy всё ещё временная: свободный `PlayerId` выдаётся server-side по фактическому accept order («кто первый — того и слот»). Это не production identity. Следующий этап — полноценная account/player authorization skeleton, one-live-session-per-player rule, server-owned reconnect/resume и durable ship ownership; не вводить временный client-selected `--player`/`--entity` authority shortcut.
 - `[ ]` Отдельно добавить Linux headless build/smoke для `EliteServer`; текущий server/session/runtime код остаётся platform-neutral, а Win32/POSIX детали должны жить только в transport/platform adapters.
 - `[ ]` Несколько игроков в разных звёздных системах требуют последующего multi-system runtime; multiplayer session foundation не должна снова зашивать один global `m_activeCelestialSystemId`.
 
@@ -259,7 +261,7 @@ Scheduled
 
 ## 10. Persistent ships
 
-**Статус: `[~]` модель принята, полноценные persistent records ещё не завершены.**
+**Статус: `[~]` stable ship identity и runtime registry уже введены; durable persistent records/storage и Scheduled lifecycle ещё не завершены.**
 
 Корабли мира должны быть в основном реальными persistent-сущностями, а не бесконечно рождающимся NPC-фоном.
 
@@ -270,7 +272,7 @@ typeId
     Cobra Mk.I
 
 persistent ship identity
-    ShipPersistentId
+    ShipInstanceId
     собственное имя
     serial / registration
     owner
@@ -290,8 +292,10 @@ SignalIdentity
 ```
 
 - `[x]` Тип корабля отделён от конкретного экземпляра с persistent identity.
-- `[ ]` Завершить persistent ship records и их lifecycle.
-- `[ ]` Один persistent ship может существовать без materialized runtime entity в `Scheduled/Coarse` состоянии.
+- `[x]` Введён стабильный `ShipInstanceId`, отличный от runtime `EntityId`; instance ID проходит через `SimulationSnapshot`, поэтому два клиента могут ссылаться на один и тот же конкретный корабль независимо от materialization handle.
+- `[x]` `ShipInstanceRegistry` хранит текущую связь `ShipInstanceId <-> materialized EntityId` и имеет explicit dematerialization seam. Текущий registry пока runtime/in-memory и bootstrap'ится из materialized initial world — это ещё не durable universe database.
+- `[ ]` Завершить durable persistent ship records, ownership/location/state storage и lifecycle.
+- `[ ]` Один persistent ship должен существовать без materialized runtime entity в `Scheduled/Coarse` состоянии.
 - `[ ]` Runtime entity должна создаваться/уничтожаться без потери identity, cargo, damage, history и owner/faction state.
 - `[ ]` `SignalIdentity` отделить от фактического `typeId`: физически Cobra может называться «Матроскин», а транспондер заявлять `Agricultural Waste Processing Vessel Mk.II`.
 - `[ ]` Экономическая симуляция должна учитывать существующие суда, задержки, нападения, потерю груза, ремонт и т. п. без обязательной full-rate симуляции каждого корабля.
@@ -388,14 +392,15 @@ both clients are observers/predictors
 Локализация и sky cultures на текущем этапе уже закрыты. Крупная дорожная карта содержит несколько связанных архитектурных направлений плюс отдельные будущие gameplay/content blocks; первый архитектурный блок уже закрыт на текущем уровне:
 
 1. `[x]` **Client/server presentation migration основных карт + headless server boundary** — StarAtlas ownership, Galaxy/System/Details/Hub composition и отдельный `EliteServer` target готовы.
-2. `[~]` **Multiplayer session/player authority foundation** — Stage M1–M7 готовы; M8A зафиксировал portable/versioned control-plane wire protocol; M8B добавил extensible ordered data schema для snapshot/map response и schema-blind compression seam; M8C добавил реальный Asio TCP socket adapter; M8D подключил отдельные `EliteServer`/`EliteGame` процессы. M8E.0 закрывает preflight двух graphical clients: process-local WebUI, client-before-server waiting/retry и explicit two-slot bootstrap admission. Далее M8E — реальный graphical two-client/disconnect/reconnect lifecycle.
-3. `[~]` **Persistent universe: реальные корабли + Scheduled/Coarse/Prewarm/Active materialization** — Stage 4A/4B materialized execution и coarse motion-control cadences готовы, Stage M7 закрыл sparse ship transport; после network transport возвращаемся к Scheduled lifecycle/materialize-collapse.
-4. `[ ]` **Навигационный compass / azimuth / elevation + модель определения абсолютных координат**.
-5. `[ ]` **J и полноценный inter-system / multi-system runtime**.
-6. `[ ]` **On-demand trajectories + модель знания игрока о маршрутах/истории движения**.
-7. `[ ]` **Lemmings-like group rescue / evacuation gameplay** — отдельный будущий realtime-сценарий: например аварийный generation ship, где игрок не микроменеджит каждого человека, а проводит группу выживших к шлюзу коллективными командами/ограничениями. Сценарий должен быть multiplayer-safe и не требовать глобально уникального набора NPC: такой квест можно выдавать игрокам независимо в разных местах/экземплярах, обычно один раз на конкретный сюжетный эпизод.
+2. `[~]` **Multiplayer transport/session foundation** — M1–M8D готовы, а graphical two-client baseline вручную подтверждён: два отдельных клиента работают на одном dedicated authoritative world и видят друг друга. Остались disconnect/reconnect hardening и полная auth identity.
+3. `[~]` **Player/ship/control identity + authorization backbone — текущий приоритет.** Phase 1 уже отделил `PlayerId`, `ShipInstanceId`, `ServerSessionId`, `EntityId` и ввёл `PlayerRegistry`/`ShipInstanceRegistry`/`ControlRegistry`. Следующий шаг — server-owned `AccountId -> PlayerId -> current/owned ShipInstanceId -> session/control authority`, без временного client-selected player/entity shortcut.
+4. `[~]` **Persistent universe: реальные корабли + Scheduled/Coarse/Prewarm/Active materialization** — Stage 4A/4B materialized execution и coarse motion-control cadences готовы; после durable ship/player ownership registry возвращаемся к Scheduled lifecycle/materialize-collapse.
+5. `[ ]` **Навигационный compass / azimuth / elevation + модель определения абсолютных координат**.
+6. `[ ]` **J и полноценный inter-system / multi-system runtime**.
+7. `[ ]` **On-demand trajectories + модель знания игрока о маршрутах/истории движения**.
+8. `[ ]` **Lemmings-like group rescue / evacuation gameplay** — отдельный будущий realtime-сценарий: например аварийный generation ship, где игрок не микроменеджит каждого человека, а проводит группу выживших к шлюзу коллективными командами/ограничениями. Сценарий должен быть multiplayer-safe и не требовать глобально уникального набора NPC: такой квест можно выдавать игрокам независимо в разных местах/экземплярах, обычно один раз на конкретный сюжетный эпизод.
 
-Первые шесть направлений образуют связанную навигационно-информационную модель мира. Lemmings-like rescue — отдельный gameplay/content block и не должен тормозить текущую серверную архитектуру.
+Первые семь направлений образуют связанную навигационно-информационную модель мира. Lemmings-like rescue — отдельный gameplay/content block и не должен тормозить текущую серверную архитектуру.
 
 ### Следующий рабочий блок
 
@@ -411,7 +416,9 @@ both clients are observers/predictors
 8. Stage M8B — **готов**: `SimulationSnapshot` + `MapResponse` проходят canonical ordered schema -> raw bytes -> schema-blind compression envelope -> framing; adding a field normally touches DTO + `WireDataSchema.h` + schema-version/test, но не TCP/compressor/ServerRunner.
 9. Stage M8C — **готов на transport boundary**: standalone Asio `TcpWireStream` переносит только `WireMessageKind + opaque payload`, typed adapters реализуют существующие transport interfaces, а localhost contract проверяет обе стороны реальным kernel TCP.
 10. Stage M8D — **готов на process boundary**: dedicated `ServerRuntime` может стартовать без synthetic primary connection; `NetworkServerHost` принимает TCP и делает server-owned entity admission; `RemoteGameSession` не содержит embedded server; `EliteServer --listen` и `EliteGame --connect` работают как отдельные процессы. Ready harness проверяет реальный two-process bootstrap/input/disconnect. Operational contract и команды запуска зафиксированы в `SERVER_CLIENT.md`.
-11. Перед M8E нужно сделать WebUI endpoint multi-process-safe: сейчас каждый graphical `EliteGame` жёстко поднимает локальный HTTP/WebSocket UI на порту `8090`, поэтому два полноценных client process на одном PC могут конфликтовать ещё до проверки gameplay networking. После этого — **M8E: два remote clients одновременно + disconnect isolation/reconnect groundwork**, затем можно закрывать базовый multiplayer transport и возвращаться к `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse.
+11. Stage M8E graphical baseline — **ручная проверка пройдена**: два отдельных `EliteGame --connect` одновременно работают на одном dedicated server, получают разные persistent player/ship identities и видят друг друга на расстоянии 50 м. Process-local WebUI/WebView2 и Win32 GLFW event-pump issue закрыты на текущем Windows runtime уровне.
+12. Persistent identity Phase 1 — **готов как in-memory backbone**: `PlayerId`, `ShipInstanceId`, `ServerSessionId`, `EntityId`, `PlayerRegistry`, `ShipInstanceRegistry`, `ControlRegistry`, session welcome/snapshot identity fields. Это ещё не account/login и не durable universe database.
+13. **Следующий рабочий блок — полноценная server-owned authorization/identity skeleton**, а не временный CLI-костыль выбора игрока: `AccountId -> PlayerId -> owned/current ShipInstanceId -> ServerSessionId -> ControlAuthority`, duplicate-login/reconnect policy и persistent storage boundary. После фиксации этого слоя начинаем реально населять вселенную и подключать `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse к реестру всех кораблей.
 
 ---
 

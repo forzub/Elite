@@ -10,6 +10,7 @@ public:
 
     bool shouldClose() const;
     void pollEvents();
+    bool ownsForegroundInput() const;
     void swapBuffers();
 
     void focus();

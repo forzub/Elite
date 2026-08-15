@@ -547,6 +547,7 @@ ELITE_WIRE_SCHEMA(
 ELITE_WIRE_SCHEMA(
     ShipSnapshot,
     v.id,
+    v.instanceId,
     v.role,
     v.typeId,
     v.acknowledgedControlTick,

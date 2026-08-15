@@ -70,8 +70,9 @@ if "start(std::uint16_t port" not in ui_server_h:
 for token in (
     "ServerRuntime(worldParams, debugChannel, 2)",
     "ServerRuntime(worldParams, debugChannel, 1)",
-    "BootstrapPlayerSpacingMeters = 300.0",
-    "ship.role != ShipRole::Player",
+    "BootstrapPlayerSpacingMeters = 50.0",
+    "selectAvailablePlayerForAdmission()",
+    "m_sessions.isConnectedPlayer",
 ):
     if token not in runtime_cpp + server_cpp:
         fail(f"dedicated two-slot player admission contract missing: {token}")

@@ -76,6 +76,7 @@ SimulationSnapshot makeSnapshot()
 
     ShipSnapshot ship {};
     ship.id = EntityId{7u};
+    ship.instanceId = 7007u;
     ship.role = ShipRole::Player;
     ship.typeId = ObjectType::CobraMk1;
     ship.acknowledgedControlTick = 77u;
@@ -112,6 +113,8 @@ void testFullProtocolAcrossKernelTcp()
 
     SessionWelcome welcome;
     welcome.sessionId.value = 1234u;
+    welcome.playerId = PlayerId{55u};
+    welcome.controlledShipInstanceId = 7007u;
     welcome.controlledEntityId = EntityId{7u};
     welcome.fixedStepSeconds = 0.02;
     welcome.starAtlasCatalog.schemaVersion = 4u;
@@ -166,6 +169,10 @@ void testFullProtocolAcrossKernelTcp()
         "client did not receive complete server->client protocol plane");
     require(receivedWelcome.sessionId == welcome.sessionId,
         "SessionWelcome changed across TCP");
+    require(receivedWelcome.playerId == welcome.playerId,
+        "PlayerId changed across TCP");
+    require(receivedWelcome.controlledShipInstanceId == welcome.controlledShipInstanceId,
+        "ShipInstanceId changed across TCP");
     require(receivedWelcome.controlledEntityId == welcome.controlledEntityId,
         "controlled entity changed across TCP");
     require(std::abs(receivedWelcome.fixedStepSeconds - welcome.fixedStepSeconds) < 1.0e-12,
@@ -180,6 +187,7 @@ void testFullProtocolAcrossKernelTcp()
         "snapshot lifecycle removals changed across TCP");
     require(receivedSnapshot.ships.size() == 1u &&
             receivedSnapshot.ships.front().id == EntityId{7u} &&
+            receivedSnapshot.ships.front().instanceId == 7007u &&
             receivedSnapshot.ships.front().acknowledgedControlTick == 77u,
         "hydrated ship row changed across TCP");
     require(std::holds_alternative<GalaxyMapResponse>(receivedMapResponse) &&

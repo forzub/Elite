@@ -101,7 +101,49 @@ bool Window::shouldClose() const
 
 void Window::pollEvents()
 {
+#ifdef _WIN32
+    // GLFW 3.4 performs an unchecked GetActiveWindow() ->
+    // GetPropW(hwnd, L"GLFW") -> _GLFWwindow* dereference after dispatching
+    // messages. With embedded WebView2, Windows can report a GLFW HWND owned
+    // by another EliteGame process as active on this input queue. The property
+    // value is then a pointer in that foreign address space and GLFW crashes.
+    //
+    // Pump the Win32 queue directly instead. DispatchMessageW still invokes
+    // GLFW's installed WndProc for this process, preserving ordinary window,
+    // keyboard, mouse, focus, resize and close callbacks while avoiding the
+    // unsafe GLFW 3.4 post-poll foreign-pointer path entirely.
+    MSG message{};
+    while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE))
+    {
+        if (message.message == WM_QUIT)
+        {
+            // EliteGame owns one GLFW top-level window per client process.
+            glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+            continue;
+        }
+
+        TranslateMessage(&message);
+        DispatchMessageW(&message);
+    }
+#else
     glfwPollEvents();
+#endif
+}
+
+bool Window::ownsForegroundInput() const
+{
+#ifdef _WIN32
+    const HWND foreground = GetForegroundWindow();
+    if (!foreground)
+        return false;
+
+    DWORD foregroundPid = 0;
+    GetWindowThreadProcessId(foreground, &foregroundPid);
+    return foregroundPid == GetCurrentProcessId();
+#else
+    return m_window &&
+        glfwGetWindowAttrib(m_window, GLFW_FOCUSED) == GLFW_TRUE;
+#endif
 }
 
 void Window::swapBuffers()

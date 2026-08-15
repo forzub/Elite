@@ -216,6 +216,8 @@ public:
     CargoBay&                                   cargo()                     { return m_cargo; }
 
     ShipRole                                    role() const                { return m_role; }
+    const ShipVisualIdentity&                    visualIdentity() const      { return m_visual; }
+    const ShipRegistry&                          registry() const            { return m_registry; }
 
     const std::vector<SignalReceptionResult>&   signalResults() const       {return m_signalResults;} 
 

@@ -4,44 +4,39 @@
 #include <cstdint>
 #include <unordered_map>
 
+#include "src/game/identity/PlayerId.h"
 #include "src/game/network/SessionMessage.h"
-#include "src/scene/EntityID.h"
 
 namespace game::server
 {
 /*
-    Authoritative connection/session ownership registry.
+    Authoritative transport/session -> persistent player identity registry.
 
-    Session identity is server-owned and independent from EntityId.  A transport
-    connection is bound to a session once; gameplay packets carry intent only
-    and are resolved through this registry before they can reach a controlled
-    entity.  The registry deliberately uses only standard C++ data structures:
-    socket handles, HWNDs, file descriptors and other platform details belong
-    in transport adapters, never in authoritative gameplay ownership.
+    SessionId is transient connection identity. PlayerId is persistent character
+    identity. The controlled runtime EntityId is intentionally NOT stored here:
+    GameServer resolves session -> PlayerId -> ControlRegistry -> EntityId.
+    This prevents a transport session from becoming the identity of a ship.
 */
 struct ServerSessionState
 {
     game::network::ServerSessionId id {};
-    EntityId controlledEntityId {0};
+    PlayerId playerId {};
     bool connected = false;
 };
 
 class ServerSessionRegistry
 {
 public:
-    game::network::ServerSessionId create(EntityId controlledEntityId)
+    game::network::ServerSessionId create(PlayerId playerId)
     {
-        if (controlledEntityId.value == 0 ||
-            isControlledEntity(controlledEntityId))
-        {
+        if (!playerId || isConnectedPlayer(playerId))
             return {};
-        }
 
         const game::network::ServerSessionId id {m_nextSessionId++};
 
         ServerSessionState state;
         state.id = id;
-        state.controlledEntityId = controlledEntityId;
+        state.playerId = playerId;
         state.connected = true;
 
         m_sessions.emplace(id.value, state);
@@ -64,15 +59,15 @@ public:
         return it == m_sessions.end() ? nullptr : &it->second;
     }
 
-    EntityId controlledEntity(
+    PlayerId player(
         game::network::ServerSessionId id
     ) const noexcept
     {
         const auto* state = find(id);
         if (!state || !state->connected)
-            return EntityId{};
+            return {};
 
-        return state->controlledEntityId;
+        return state->playerId;
     }
 
     bool disconnect(game::network::ServerSessionId id) noexcept
@@ -91,38 +86,23 @@ public:
         if (!state || state->connected)
             return false;
 
-        // A disconnected session may be superseded by a new server-side
-        // admission/handoff for the same entity. Never let the stale session
-        // reconnect and create two live command authorities.
-        for (const auto& [otherId, other] : m_sessions)
-        {
-            if (otherId == id.value)
-                continue;
-
-            if (other.connected &&
-                other.controlledEntityId == state->controlledEntityId)
-            {
-                return false;
-            }
-        }
+        if (isConnectedPlayer(state->playerId))
+            return false;
 
         state->connected = true;
         return true;
     }
 
-    bool isControlledEntity(EntityId entityId) const noexcept
+    bool isConnectedPlayer(PlayerId playerId) const noexcept
     {
-        if (entityId.value == 0)
+        if (!playerId)
             return false;
 
         for (const auto& [id, state] : m_sessions)
         {
             (void)id;
-            if (state.connected &&
-                state.controlledEntityId == entityId)
-            {
+            if (state.connected && state.playerId == playerId)
                 return true;
-            }
         }
 
         return false;

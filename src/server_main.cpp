@@ -376,11 +376,20 @@ int runHeadlessSelfTest()
 
     const auto* shipBAfterDetach =
         findShipSnapshot(transportA.latestCanonicalSnapshot(), shipBId);
+    // Disconnect destroys the session-owned numbered-control epoch. The
+    // replicated ACK therefore returns to zero until a fresh session sends
+    // new controls. If the detached transport were still authoritative, the
+    // injected tick 203 above would recreate the stream and ACK 203 instead.
     if (!shipBAfterDetach ||
-        shipBAfterDetach->acknowledgedControlTick != 202)
+        shipBAfterDetach->acknowledgedControlTick != 0)
     {
         std::cerr
-            << "[FAIL] headless-server detached session retained command authority\n";
+            << "[FAIL] headless-server detached session control epoch was not reset"
+            << " ack="
+            << (shipBAfterDetach
+                    ? shipBAfterDetach->acknowledgedControlTick
+                    : 0)
+            << "\n";
         return 17;
     }
 

@@ -835,9 +835,14 @@ def check_ready_orchestration() -> None:
         re.search(r'EliteGame\.exe\s+--self-test-fast-universe(?:\s|\)|;|$)', run_all) is not None,
         "readiness runner no longer executes the real-scene fast-universe smoke",
     )
+    build_layout = read("tests/helpers/build_layout.sh")
     require(
-        "--target EliteGame" in run_all,
-        "readiness runner no longer builds the main EliteGame target",
+        "elite_build_canonical_client" in run_all,
+        "readiness runner no longer invokes the canonical client build helper",
+    )
+    require(
+        "--target EliteGame" in build_layout,
+        "canonical client build helper no longer builds the main EliteGame target",
     )
 
     features = manifest.get("features", [])

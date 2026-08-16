@@ -2,16 +2,16 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BUILD_DIR="${ROOT_DIR}/build/architecture_contract_tests"
+source "${ROOT_DIR}/tests/helpers/build_layout.sh"
+BUILD_DIR="${ELITE_TEST_BUILD_ROOT}/architecture_contracts"
+elite_require_build_toolchain
 
-if command -v python3 >/dev/null 2>&1; then
-    PYTHON_BIN="python3"
-elif command -v python >/dev/null 2>&1; then
-    PYTHON_BIN="python"
-else
-    echo "Python is required for the architecture contract check." >&2
-    exit 1
+
+if ! elite_require_python; then
+    echo "Python 3 is required for this test block." >&2
+    exit 2
 fi
+PYTHON_BIN="${ELITE_PYTHON_BIN}"
 
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_architecture.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_hub_detail_revision.py"
@@ -28,6 +28,7 @@ fi
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_presentation_pipeline.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_prediction_reconciliation.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_reconnect_control_epoch.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_canonical_build_layout.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_replication_snapshot_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_replication_static_definitions.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_system_map_celestial.py"

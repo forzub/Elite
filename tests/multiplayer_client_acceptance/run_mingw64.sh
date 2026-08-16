@@ -2,25 +2,20 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BUILD_DIR="${ROOT_DIR}/build"
+source "${ROOT_DIR}/tests/helpers/build_layout.sh"
+BUILD_DIR="${ELITE_CLIENT_BUILD_DIR}"
 
-if command -v python3 >/dev/null 2>&1; then
-    PYTHON_BIN="python3"
-elif command -v python >/dev/null 2>&1; then
-    PYTHON_BIN="python"
-else
-    echo "Python is required for multiplayer client acceptance architecture checks." >&2
-    exit 1
+if ! elite_require_python; then
+    echo "Python 3 is required for this test block." >&2
+    exit 2
 fi
+PYTHON_BIN="${ELITE_PYTHON_BIN}"
 
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/multiplayer_client_acceptance/check_architecture.py"
 
-cmake \
-    -S "${ROOT_DIR}" \
-    -B "${BUILD_DIR}" \
-    -G Ninja
-
-cmake --build "${BUILD_DIR}" --target EliteGame
+elite_cleanup_legacy_build_layout
+elite_build_canonical_client
+elite_assert_unique_runtime_binaries
 
 (
     cd "${BUILD_DIR}"

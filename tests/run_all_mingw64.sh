@@ -3,14 +3,21 @@ set -uo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${ROOT_DIR}/tests/helpers/elite_server_process_guard.sh"
+source "${ROOT_DIR}/tests/helpers/build_layout.sh"
+
+if ! elite_require_ready_toolchain; then
+    exit 2
+fi
 
 if ! elite_fail_if_server_running "ready harness preflight"; then
     exit 1
 fi
 
+elite_cleanup_legacy_build_layout
+
 failures=0
 headless_server_ready=0
-READY_SERVER_BUILD_DIR="${ROOT_DIR}/build/ready_headless_server"
+client_ready=0
 
 run_suite() {
     local name="$1"
@@ -61,19 +68,16 @@ run_suite \
     "MULTIPLAYER CLIENT ACCEPTANCE" \
     "tests/multiplayer_client_acceptance/run_mingw64.sh"
 
+# elite_build_canonical_server owns the headless-only configure contract:
+# -DELITE_BUILD_CLIENT=OFF, -DELITE_BUILD_SERVER=ON, --target EliteServer.
 run_headless_server_build() {
     echo
     echo "================================================================"
     echo "TEST BLOCK: HEADLESS SERVER BUILD"
     echo "================================================================"
 
-    local build_dir="${READY_SERVER_BUILD_DIR}"
-
-    if cmake -S "${ROOT_DIR}" -B "${build_dir}" -G Ninja \
-        -DELITE_BUILD_CLIENT=OFF \
-        -DELITE_BUILD_SERVER=ON \
-        && cmake --build "${build_dir}" --target EliteServer \
-        && (cd "${build_dir}" && ./EliteServer.exe --self-test); then
+    if elite_build_canonical_server \
+        && (cd "${ELITE_SERVER_BUILD_DIR}" && ./EliteServer.exe --self-test); then
         echo "[PASS BLOCK] HEADLESS SERVER BUILD + AUTHORITATIVE SMOKE"
         headless_server_ready=1
     else
@@ -91,25 +95,28 @@ run_main_target_build() {
     echo "TEST BLOCK: MAIN GAME BUILD"
     echo "================================================================"
 
-    if cmake -S "${ROOT_DIR}" -B "${ROOT_DIR}/build" -G Ninja \
-        && cmake --build "${ROOT_DIR}/build" --target EliteGame \
-        && (cd "${ROOT_DIR}/build" && ./EliteGame.exe --self-test-fast-universe); then
+    if elite_build_canonical_client \
+        && (cd "${ELITE_CLIENT_BUILD_DIR}" && ./EliteGame.exe --self-test-fast-universe); then
         echo "[PASS BLOCK] MAIN GAME BUILD + FAST UNIVERSE SMOKE"
+        client_ready=1
     else
         echo "[FAIL BLOCK] MAIN GAME BUILD + FAST UNIVERSE SMOKE" >&2
         failures=$((failures + 1))
+        client_ready=0
     fi
 }
 
 run_main_target_build
 
-if (( headless_server_ready )); then
-    # Process/runtime tests consume the server binary that was built and smoked
-    # in this ready run. This directory is deliberately separate from the
-    # developer-facing build/headless_server path, which may be occupied by a
-    # manually running server on Windows.
-    export ELITE_TEST_SERVER_DIR="${READY_SERVER_BUILD_DIR}"
-    export ELITE_TEST_CLIENT_DIR="${ROOT_DIR}/build"
+if ! elite_assert_unique_runtime_binaries; then
+    failures=$((failures + 1))
+fi
+
+if (( headless_server_ready && client_ready )); then
+    # Dependent runtime/process blocks consume exactly the same canonical
+    # developer binaries that were built and smoked above. No alternate
+    # ready/network server directories are allowed.
+    export ELITE_CANONICAL_BUILDS_READY=1
 
     run_suite \
         "STANDALONE WINDOWS RUNTIME" \
@@ -119,14 +126,13 @@ if (( headless_server_ready )); then
         "NETWORK PROCESS ACCEPTANCE" \
         "tests/network_process_acceptance/run_mingw64.sh"
 
-    unset ELITE_TEST_SERVER_DIR
-    unset ELITE_TEST_CLIENT_DIR
+    unset ELITE_CANONICAL_BUILDS_READY
 else
     echo
     echo "================================================================"
     echo "SKIPPED DEPENDENT PROCESS BLOCKS"
     echo "================================================================"
-    echo "[SKIP] standalone/network process tests require a freshly built headless server; stale binaries are forbidden" >&2
+    echo "[SKIP] standalone/network process tests require freshly built canonical EliteGame/EliteServer binaries" >&2
 fi
 
 echo

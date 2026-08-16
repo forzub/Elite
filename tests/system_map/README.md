@@ -29,7 +29,7 @@ bash tests/system_map/run_mingw64.sh
 ```
 
 The script configures an isolated Ninja build under
-`build/system_map_behavior_tests`, builds one small executable and runs it with
+`build/tests/system_map`, builds one small executable and runs it with
 CTest.
 
 The project already needs GLM and nlohmann/json. The test target uses the same

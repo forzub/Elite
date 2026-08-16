@@ -2,16 +2,16 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BUILD_DIR="${ROOT_DIR}/build/system_map_behavior_tests"
+source "${ROOT_DIR}/tests/helpers/build_layout.sh"
+BUILD_DIR="${ELITE_TEST_BUILD_ROOT}/system_map"
+elite_require_build_toolchain
 
-if command -v python3 >/dev/null 2>&1; then
-    PYTHON_BIN="python3"
-elif command -v python >/dev/null 2>&1; then
-    PYTHON_BIN="python"
-else
-    echo "Python is required for the map architecture check." >&2
-    exit 1
+
+if ! elite_require_python; then
+    echo "Python 3 is required for this test block." >&2
+    exit 2
 fi
+PYTHON_BIN="${ELITE_PYTHON_BIN}"
 
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/system_map/check_architecture.py"
 

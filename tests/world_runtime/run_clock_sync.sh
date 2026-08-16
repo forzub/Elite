@@ -2,7 +2,10 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BUILD_DIR="${ROOT_DIR}/build/world_runtime_tests"
+source "${ROOT_DIR}/tests/helpers/build_layout.sh"
+BUILD_DIR="${ELITE_TEST_BUILD_ROOT}/world_runtime"
+elite_require_build_toolchain
+
 
 cmake \
     -S "${ROOT_DIR}/tests/world_runtime" \

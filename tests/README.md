@@ -9,6 +9,25 @@ bash tests/run_all_mingw64.sh
 The launcher deliberately runs every block even if an earlier block fails, so
 one regression does not hide another.
 
+The launcher performs a toolchain preflight before any cleanup/build/test work. A valid ready run requires a working Python 3 interpreter plus `cmake`, `ninja`, `ctest`, and MinGW `g++` on the current shell `PATH`. If that preflight fails, the suite exits before reporting subsystem failures; those would be environment failures, not regressions.
+
+
+## Canonical build layout
+
+Runtime acceptance and manual testing use the same physical executables:
+
+- client: `build/EliteGame.exe`;
+- dedicated server: `build/headless_server/EliteServer.exe`.
+
+Small compile/test harnesses are scratch builds under `build/tests/<suite>/`;
+test logs live under `build/test-logs/`. They are never alternative runtime
+binaries. `bash build_mingw64.sh` removes the known legacy build directories,
+rebuilds both canonical runtime targets, and rejects duplicate `EliteGame.exe`
+or `EliteServer.exe` files under `build/`. The full ready runner applies the
+same cleanup and uniqueness gate before process acceptance.
+
+Use `bash clean_build_layout_mingw64.sh` for an explicit cleanup-only pass.
+
 ## Ready blocks
 
 ### World runtime + global time contract

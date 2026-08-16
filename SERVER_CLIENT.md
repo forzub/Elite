@@ -53,9 +53,17 @@ Headless target не должен зависеть от GLFW/OpenGL/Freetype/Web
 - `EliteGame`: `build/EliteGame.exe`;
 - dedicated `EliteServer`: `build/headless_server/EliteServer.exe`.
 
-Test harness может иметь отдельный scratch build только если он **явно test-only**, не используется вручную и автоматически очищается/пересоздаётся. Такие каталоги не являются альтернативными runtime binaries. Долгосрочная задача — свести тесты к общему build layout там, где изоляция configure не нужна, а оставшиеся scratch paths держать под единым `build/tests/` namespace.
+Process/runtime acceptance **не имеет альтернативных runtime binaries**: он использует те же `build/EliteGame.exe` и `build/headless_server/EliteServer.exe`, что и ручной запуск. Отдельные compile-only harness builds разрешены только под `build/tests/<suite>/`; test logs живут под `build/test-logs/`. Эти scratch directories никогда не являются источником `EliteGame.exe`/`EliteServer.exe`.
 
-После изменения server/client source перед ручным acceptance нужно явно пересобрать соответствующий канонический target. Acceptance считается недействительным, если нельзя доказать, какой binary был запущен. В roadmap зафиксирован cleanup: инвентаризировать `build/*`, удалить неиспользуемые старые каталоги и исправить scripts, создающие постоянные дубли.
+Обычный client configure имеет `ELITE_BUILD_SERVER=OFF` по умолчанию, поэтому `build/EliteServer.exe` больше не должен появляться. Канонический dedicated server строится только явной server-конфигурацией в `build/headless_server`.
+
+Перед ручным acceptance после изменения source выполнить из корня репозитория:
+
+```bash
+bash build_mingw64.sh
+```
+
+Этот entry point удаляет известные legacy generated directories/files, собирает оба канонических targets и отказывает, если под `build/` найден второй `EliteGame.exe` или `EliteServer.exe`. Для cleanup без сборки есть `bash clean_build_layout_mingw64.sh`. Acceptance считается недействительным, если canonical build не был обновлён после изменения соответствующего source.
 
 ---
 
@@ -89,7 +97,13 @@ boundary; клиент не получает `GameServer&` и не читает 
 
 ### B. Dedicated server + remote client
 
-Сначала сервер, Windows PowerShell:
+Сначала из Git Bash в корне репозитория обновить канонические binaries:
+
+```bash
+bash build_mingw64.sh
+```
+
+Затем сервер, Windows PowerShell:
 
 ```powershell
 cd D:\__elite\work\build\headless_server
@@ -355,7 +369,8 @@ EliteGame.exe --self-test-remote-client HOST:PORT
 ## 10. Ручная проверка process/multi-client boundary
 
 После полностью зелёного `tests/run_all_mingw64.sh` отдельно проверить реальный
-interactive remote mode.
+interactive remote mode. Ready harness уже пересобирает те же канонические runtime
+binaries, которые используются ниже; альтернативных `ready`/`network` server exe больше нет.
 
 ### Check A — local mode regression
 

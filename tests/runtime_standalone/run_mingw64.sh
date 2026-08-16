@@ -3,22 +3,25 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "${ROOT_DIR}/tests/helpers/elite_server_process_guard.sh"
+source "${ROOT_DIR}/tests/helpers/build_layout.sh"
 
 if ! elite_fail_if_server_running "standalone runtime preflight"; then
     exit 1
 fi
 
-SERVER_DIR="${ELITE_TEST_SERVER_DIR:-${ROOT_DIR}/build/headless_server}"
-CLIENT_DIR="${ELITE_TEST_CLIENT_DIR:-${ROOT_DIR}/build}"
+SERVER_DIR="${ELITE_SERVER_BUILD_DIR}"
+CLIENT_DIR="${ELITE_CLIENT_BUILD_DIR}"
 SERVER_EXE="${SERVER_DIR}/EliteServer.exe"
 CLIENT_EXE="${CLIENT_DIR}/EliteGame.exe"
 
-for exe in "${SERVER_EXE}" "${CLIENT_EXE}"; do
-    if [[ ! -x "${exe}" ]]; then
-        echo "Standalone runtime acceptance requires built EliteServer.exe and EliteGame.exe." >&2
-        exit 1
-    fi
-done
+elite_cleanup_legacy_build_layout
+
+if [[ "${ELITE_CANONICAL_BUILDS_READY:-0}" != "1" ]]; then
+    echo "[SELFTEST] standalone-runtime stage=build-canonical-runtime"
+    elite_build_canonical_runtime
+fi
+
+elite_require_canonical_runtime_binaries
 
 # These are compiler-runtime canaries, not the complete dependency list. The
 # build rule itself discovers/copies dependencies recursively.
@@ -45,11 +48,6 @@ run_with_clean_windows_path() {
     local executable="$2"
     shift 2
 
-    # Invoke the native PE executable directly from MSYS2 while deliberately
-    # removing every MSYS2/MinGW directory from PATH. MSYS2 converts this
-    # POSIX path list to a native Windows PATH for the child process. The
-    # Windows loader may therefore use only the executable directory plus the
-    # normal Windows system locations for DLL resolution.
     (
         cd "${workdir}"
         PATH="${CLEAN_WINDOWS_PATH}" "./${executable}" "$@"
@@ -62,9 +60,6 @@ run_with_clean_windows_path "${SERVER_DIR}" EliteServer.exe --self-test
 echo "[SELFTEST] standalone-runtime stage=client-clean-path"
 run_with_clean_windows_path "${CLIENT_DIR}" EliteGame.exe --self-test-fast-universe
 
-# Runtime assets are staged beside each executable. Launch once from the
-# repository root as well so the acceptance contract catches accidental
-# dependence on the shell's current working directory.
 echo "[SELFTEST] standalone-runtime stage=headless-server-foreign-cwd"
 (
     cd "${ROOT_DIR}"
@@ -77,4 +72,4 @@ echo "[SELFTEST] standalone-runtime stage=client-foreign-cwd"
     PATH="${CLEAN_WINDOWS_PATH}" "${CLIENT_EXE}" --self-test-fast-universe
 )
 
-echo "[PASS] EliteServer and EliteGame launch without MinGW/MSYS2 on PATH or cwd assumptions"
+echo "[PASS] canonical EliteServer and EliteGame launch without MinGW/MSYS2 on PATH or cwd assumptions"

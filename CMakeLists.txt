@@ -4,7 +4,7 @@ project(EliteGame LANGUAGES C CXX)
 include(FetchContent)
 
 option(ELITE_BUILD_CLIENT "Build the graphical EliteGame client" ON)
-option(ELITE_BUILD_SERVER "Build the headless EliteServer executable" ON)
+option(ELITE_BUILD_SERVER "Build the headless EliteServer executable" OFF)
 
 if(ELITE_BUILD_CLIENT)
     set(WEBVIEW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)

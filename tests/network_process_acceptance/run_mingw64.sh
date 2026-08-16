@@ -3,49 +3,37 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "${ROOT_DIR}/tests/helpers/elite_server_process_guard.sh"
+source "${ROOT_DIR}/tests/helpers/build_layout.sh"
 
 if ! elite_fail_if_server_running "network process acceptance preflight"; then
     exit 1
 fi
 
-SERVER_DIR="${ELITE_TEST_SERVER_DIR:-${ROOT_DIR}/build/network_process_server}"
-CLIENT_DIR="${ELITE_TEST_CLIENT_DIR:-${ROOT_DIR}/build}"
+SERVER_DIR="${ELITE_SERVER_BUILD_DIR}"
+CLIENT_DIR="${ELITE_CLIENT_BUILD_DIR}"
 SERVER_EXE="${SERVER_DIR}/EliteServer.exe"
 CLIENT_EXE="${CLIENT_DIR}/EliteGame.exe"
-SERVER_LOG="${ROOT_DIR}/build/network_process_server.log"
-CLIENT_LOG="${ROOT_DIR}/build/network_process_client.log"
+SERVER_LOG="${ELITE_TEST_LOG_DIR}/network_process_server.log"
+CLIENT_LOG="${ELITE_TEST_LOG_DIR}/network_process_client.log"
 
-if command -v python3 >/dev/null 2>&1; then
-    PYTHON_BIN="python3"
-elif command -v python >/dev/null 2>&1; then
-    PYTHON_BIN="python"
-else
-    echo "Python is required for network process acceptance." >&2
-    exit 1
+if ! elite_require_python; then
+    echo "Python 3 is required for this test block." >&2
+    exit 2
+fi
+PYTHON_BIN="${ELITE_PYTHON_BIN}"
+
+elite_cleanup_legacy_build_layout
+
+# Standalone invocation always refreshes the same canonical developer binaries.
+# The ready harness may mark them as already freshly built in this exact run,
+# but alternate server/client build directories are intentionally unsupported.
+if [[ "${ELITE_CANONICAL_BUILDS_READY:-0}" != "1" ]]; then
+    echo "[SELFTEST] network-process stage=build-canonical-runtime"
+    elite_build_canonical_runtime
 fi
 
-# Standalone invocation owns fresh build prerequisites. The ready harness may
-# pass already-validated build directories through ELITE_TEST_*_DIR so this
-# block does not rebuild the same targets twice. Never accept a merely existing
-# binary as proof that it matches the current source tree.
-if [[ -z "${ELITE_TEST_SERVER_DIR:-}" ]]; then
-    echo "[SELFTEST] network-process stage=build-server"
-    cmake -S "${ROOT_DIR}" -B "${SERVER_DIR}" -G Ninja \
-        -DELITE_BUILD_CLIENT=OFF \
-        -DELITE_BUILD_SERVER=ON
-    cmake --build "${SERVER_DIR}" --target EliteServer
-fi
-
-if [[ -z "${ELITE_TEST_CLIENT_DIR:-}" ]]; then
-    echo "[SELFTEST] network-process stage=build-client"
-    cmake -S "${ROOT_DIR}" -B "${CLIENT_DIR}" -G Ninja
-    cmake --build "${CLIENT_DIR}" --target EliteGame
-fi
-
-if [[ ! -x "${SERVER_EXE}" || ! -x "${CLIENT_EXE}" ]]; then
-    echo "Network process acceptance requires current EliteServer.exe and EliteGame.exe builds." >&2
-    exit 1
-fi
+elite_require_canonical_runtime_binaries
+mkdir -p "${ELITE_TEST_LOG_DIR}"
 
 PORT="$(${PYTHON_BIN} - <<'PY'
 import socket
@@ -158,4 +146,4 @@ trap - EXIT
 
 cat "${CLIENT_LOG}"
 cat "${SERVER_LOG}"
-echo "[PASS] client-first startup waited, then separate EliteGame/EliteServer processes exchanged authoritative TCP gameplay"
+echo "[PASS] client-first startup waited, then canonical EliteGame/EliteServer processes exchanged authoritative TCP gameplay"

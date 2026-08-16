@@ -32,6 +32,16 @@ inline bool encodeMessagePayload(
 }
 
 inline bool encodeMessagePayload(
+    const SessionReject& value,
+    WireMessageKind& outKind,
+    std::vector<std::uint8_t>& outPayload,
+    const IWireCompressor&)
+{
+    outKind = WireMessageKind::SessionReject;
+    return encodeSessionReject(value, outPayload);
+}
+
+inline bool encodeMessagePayload(
     const SessionWelcome& value,
     WireMessageKind& outKind,
     std::vector<std::uint8_t>& outPayload,
@@ -144,6 +154,15 @@ inline bool decodeMessagePayload(
 {
     return frame.kind == WireMessageKind::SessionHello &&
         decodeSessionHello(frame.payload, outValue);
+}
+
+inline bool decodeMessagePayload(
+    const WireFrame& frame,
+    SessionReject& outValue,
+    const IWireCompressor&)
+{
+    return frame.kind == WireMessageKind::SessionReject &&
+        decodeSessionReject(frame.payload, outValue);
 }
 
 inline bool decodeMessagePayload(

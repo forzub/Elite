@@ -17,10 +17,10 @@ namespace game::server
     dedicated process therefore boots the same ServerRuntime as local play
     without importing GameClient, LocalLoopbackTransport, UI or render code.
 
-    This is not the future remote-network transport.  Until a socket transport
-    exists, inbound queues are empty and outbound replicated values are retained
-    only for diagnostics/self-test.  Replacing this endpoint later must not
-    change ServerRuntime/GameServer ownership.
+    This endpoint is intentionally self-test/diagnostic only. Real remote
+    sessions use TcpServerTransport through NetworkServerHost; keeping this
+    process-local endpoint separate prevents the headless smoke harness from
+    becoming a second production transport path.
 */
 class HeadlessServerTransport final : public IServerTransport
 {
@@ -77,9 +77,8 @@ public:
         return true;
     }
 
-    // Self-test/admission harness injection. In normal standalone server mode
-    // nobody calls these methods, so the endpoint remains an empty inbound
-    // source until the future real network adapter replaces it.
+    // Self-test/admission harness injection. Normal remote server mode uses
+    // NetworkServerHost + TcpServerTransport instead of these queues.
     void enqueueSessionHello(game::network::SessionHello hello)
     {
         m_sessionHellos.push(hello);
@@ -100,6 +99,14 @@ public:
     )
     {
         m_timeSyncRequests.push(std::move(request));
+    }
+
+    void publishSessionRejectImmediately(
+        const game::network::SessionReject& reject
+    ) override
+    {
+        m_reject = reject;
+        m_hasReject = true;
     }
 
     void publishSessionWelcomeImmediately(
@@ -143,6 +150,16 @@ public:
         m_latestTimeSyncResponse = std::move(response);
         m_hasTimeSyncResponse = true;
         ++m_timeSyncResponseCount;
+    }
+
+    bool hasSessionReject() const noexcept
+    {
+        return m_hasReject;
+    }
+
+    const game::network::SessionReject& sessionReject() const noexcept
+    {
+        return m_reject;
     }
 
     bool hasSessionWelcome() const noexcept
@@ -226,12 +243,14 @@ private:
         m_hasSnapshot = true;
     }
 
+    bool m_hasReject = false;
     bool m_hasWelcome = false;
     bool m_hasSnapshot = false;
     bool m_hasBootstrapSnapshot = false;
     bool m_hasMapResponse = false;
     bool m_hasTimeSyncResponse = false;
 
+    game::network::SessionReject m_reject;
     game::network::SessionWelcome m_welcome;
     SimulationSnapshot m_latestSnapshot;
     SimulationSnapshot m_latestCanonicalSnapshot;

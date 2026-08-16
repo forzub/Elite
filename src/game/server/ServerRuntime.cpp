@@ -1,4 +1,5 @@
 #include "src/game/server/ServerRuntime.h"
+#include "src/core/RuntimeTrace.h"
 
 #include <chrono>
 #include <iostream>
@@ -51,9 +52,10 @@ ServerRuntime::ServerRuntime(
 )
     : ServerRuntime(worldParams, debugChannel, 1)
 {
-    // Local play uses the same account identity seam as a remote client. The
-    // loopback transport already contains SessionHello before ServerWorker
-    // constructs the authoritative runtime. No local-only PlayerId shortcut.
+    // Local play uses the same explicit account identity seam as a remote
+    // client. Application marks the private-runtime hello as Register before
+    // ServerWorker constructs the authoritative runtime. No local-only
+    // PlayerId shortcut.
     game::network::SessionHello hello;
     if (!transport.receiveSessionHello(hello))
     {
@@ -175,34 +177,40 @@ bool ServerRuntime::publishSessionBootstrap(
         Clock::now() - sendBegin
     ).count();
 
-    std::cerr << "[M8E-CONNECT][server] bootstrap-detail session="
-              << sessionId.value
-              << " welcome_ms=" << welcomeMs
-              << " copy_ms=" << copyMs
-              << " seed_ms=" << seedMs
-              << " queue_snapshot_ms=" << sendMs
-              << " ships=" << bootstrapSnapshot.ships.size()
-              << " objects=" << bootstrapSnapshot.objects.size()
-              << " hubs=" << bootstrapSnapshot.hubs.size()
-              << "\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr << "[M8E-CONNECT][server] bootstrap-detail session="
+                  << sessionId.value
+                  << " welcome_ms=" << welcomeMs
+                  << " copy_ms=" << copyMs
+                  << " seed_ms=" << seedMs
+                  << " queue_snapshot_ms=" << sendMs
+                  << " ships=" << bootstrapSnapshot.ships.size()
+                  << " objects=" << bootstrapSnapshot.objects.size()
+                  << " hubs=" << bootstrapSnapshot.hubs.size()
+                  << "\n";
     return true;
 }
 
-PlayerId ServerRuntime::resolveOrBindAccount(
-    const game::network::SessionHello& hello
+PlayerId ServerRuntime::resolveOrRegisterAccount(
+    const game::network::SessionHello& hello,
+    game::network::SessionReject& outReject
 )
 {
-    if (!hello.authToken.valid())
-        return {};
+    outReject = {};
 
-    // Hash immediately at the server admission boundary. The raw bearer token
-    // exists only in the received SessionHello and is never retained in
-    // AccountRegistry or authoritative world state.
+    if (!hello.authToken.valid())
+    {
+        outReject.reason = game::network::SessionRejectReason::InvalidCredential;
+        return {};
+    }
+
+    // Hash immediately at the authoritative admission boundary. Raw bearer
+    // tokens never enter AccountRegistry or world state.
     const auto credentialDigest =
         game::identity::authTokenDigest(hello.authToken);
     if (!credentialDigest.valid())
     {
-        std::cerr << "[M8E-CONNECT][server] auth rejected: invalid digest\n";
+        outReject.reason = game::network::SessionRejectReason::InvalidCredential;
         return {};
     }
 
@@ -216,16 +224,24 @@ PlayerId ServerRuntime::resolveOrBindAccount(
 
     if (result == game::server::AccountRegistry::ResolveResult::Bound)
     {
-        std::cerr << "[M8E-CONNECT][server] auth resolved existing player="
-                  << resolvedPlayer.value << "\n";
+        if (core::runtimeTraceEnabled())
+            std::cerr << "[M8E-AUTH][server] sign-in accepted account="
+                      << resolvedAccount.value
+                      << " player=" << resolvedPlayer.value << "\n";
         return resolvedPlayer;
     }
 
-    // First contact with an unknown strong token enrolls one unbound bootstrap
-    // player. AccountId is created by the server and never supplied by the
-    // client. This is intentionally the only first-contact shortcut; once the
-    // binding exists, reconnecting with the same token resolves the same
-    // PlayerId and therefore the same persistent ShipInstanceId.
+    if (hello.intent != game::network::AuthenticationIntent::Register)
+    {
+        outReject.reason = game::network::SessionRejectReason::UnknownCredential;
+        std::cerr << "[M8E-AUTH][server] sign-in rejected reason="
+                  << game::network::sessionRejectCode(outReject.reason)
+                  << "\n";
+        return {};
+    }
+
+    // Registration is explicit. It may allocate only from authoritative
+    // bootstrap player records and the client never selects a PlayerId.
     for (const PlayerId candidate : m_server->playerIdentities())
     {
         if (!candidate || m_accounts.isPlayerBound(candidate))
@@ -237,22 +253,27 @@ PlayerId ServerRuntime::resolveOrBindAccount(
 
         if (m_accounts.bind(credentialDigest, accountId, candidate))
         {
-            std::cerr << "[M8E-CONNECT][server] auth enrolled account="
-                      << accountId.value
-                      << " player=" << candidate.value << "\n";
+            if (core::runtimeTraceEnabled())
+                std::cerr << "[M8E-AUTH][server] registration accepted account="
+                          << accountId.value
+                          << " player=" << candidate.value << "\n";
             return candidate;
         }
     }
 
-    std::cerr << "[M8E-CONNECT][server] auth rejected: "
-              << "no unbound bootstrap player slot\n";
+    outReject.reason =
+        game::network::SessionRejectReason::RegistrationUnavailable;
+    std::cerr << "[M8E-AUTH][server] registration rejected reason="
+              << game::network::sessionRejectCode(outReject.reason)
+              << "\n";
     return {};
 }
 
 game::network::ServerSessionId
 ServerRuntime::attachResolvedPlayerSessionTransport(
     IServerTransport& transport,
-    PlayerId playerId
+    PlayerId playerId,
+    game::network::SessionReject& outReject
 )
 {
     using Clock = std::chrono::steady_clock;
@@ -266,21 +287,25 @@ ServerRuntime::attachResolvedPlayerSessionTransport(
 
     if (!sessionId)
     {
+        outReject.reason = game::network::SessionRejectReason::AlreadyActive;
         std::cerr << "[M8E-CONNECT][server] session rejected player="
                   << playerId.value
-                  << " reason=already-active-or-invalid"
+                  << " reason=" << game::network::sessionRejectCode(outReject.reason)
                   << " create_ms=" << createMs << "\n";
         return {};
     }
 
-    std::cerr << "[M8E-CONNECT][server] session created player="
-              << playerId.value
-              << " session=" << sessionId.value
-              << " create_ms=" << createMs << "\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr << "[M8E-CONNECT][server] session created player="
+                  << playerId.value
+                  << " session=" << sessionId.value
+                  << " create_ms=" << createMs << "\n";
 
     if (!m_runner->attachTransport(transport, sessionId))
     {
         m_server->disconnectPlayerSession(sessionId);
+        outReject.reason = game::network::SessionRejectReason::SessionUnavailable;
+        outReject.retryable = false;
         return {};
     }
 
@@ -289,6 +314,8 @@ ServerRuntime::attachResolvedPlayerSessionTransport(
     {
         m_runner->detachTransport(sessionId);
         m_server->disconnectPlayerSession(sessionId);
+        outReject.reason = game::network::SessionRejectReason::BootstrapFailed;
+        outReject.retryable = false;
         std::cerr << "[M8E-CONNECT][server] bootstrap failed session="
                   << sessionId.value << "\n";
         return {};
@@ -297,10 +324,11 @@ ServerRuntime::attachResolvedPlayerSessionTransport(
         Clock::now() - bootstrapBegin
     ).count();
 
-    std::cerr << "[M8E-CONNECT][server] bootstrap queued session="
-              << sessionId.value
-              << " duration_ms=" << bootstrapMs
-              << " thread=" << std::this_thread::get_id() << "\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr << "[M8E-CONNECT][server] bootstrap queued session="
+                  << sessionId.value
+                  << " duration_ms=" << bootstrapMs
+                  << " thread=" << std::this_thread::get_id() << "\n";
 
     return sessionId;
 }
@@ -311,11 +339,19 @@ ServerRuntime::attachPlayerSessionTransport(
     const game::network::SessionHello& hello
 )
 {
-    const PlayerId playerId = resolveOrBindAccount(hello);
+    game::network::SessionReject reject;
+    const PlayerId playerId = resolveOrRegisterAccount(hello, reject);
     if (!playerId)
+    {
+        transport.publishSessionRejectImmediately(reject);
         return {};
+    }
 
-    return attachResolvedPlayerSessionTransport(transport, playerId);
+    const auto sessionId =
+        attachResolvedPlayerSessionTransport(transport, playerId, reject);
+    if (!sessionId)
+        transport.publishSessionRejectImmediately(reject);
+    return sessionId;
 }
 
 bool ServerRuntime::detachPlayerSessionTransport(

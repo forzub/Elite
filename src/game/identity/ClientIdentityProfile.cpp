@@ -225,6 +225,33 @@ bool writeFallbackCredential(
 #endif
 }
 
+bool ClientIdentityProfileStore::loadExisting(
+    const std::string& requestedProfileName,
+    ClientIdentityProfile& outProfile,
+    std::string* outError)
+{
+    if (outError)
+        outError->clear();
+
+    const std::string profileName = sanitizeProfileName(requestedProfileName);
+    ClientIdentityProfile profile;
+    profile.profileName = profileName;
+
+#ifdef _WIN32
+    if (!readWindowsCredential(profileName, profile.authToken, outError))
+#else
+    if (!readFallbackCredential(profileName, profile.authToken, outError))
+#endif
+    {
+        if (outError && outError->empty())
+            *outError = "credential slot does not exist: " + profileName;
+        return false;
+    }
+
+    outProfile = std::move(profile);
+    return true;
+}
+
 bool ClientIdentityProfileStore::loadOrCreate(
     const std::string& requestedProfileName,
     ClientIdentityProfile& outProfile,

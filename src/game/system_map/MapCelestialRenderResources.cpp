@@ -528,8 +528,7 @@ namespace
         {
             cwd / raw,
             cwd.parent_path() / raw,
-            cwd.parent_path().parent_path() / raw,
-            fs::path("D:/__elite/work") / raw
+            cwd.parent_path().parent_path() / raw
         };
 
         for (const fs::path& p : candidates)

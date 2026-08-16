@@ -71,6 +71,69 @@
       "zh-Hans": "游戏 WebView 层，不是调试浏览器。",
       "es": "Capa WebView del juego. No es el navegador de depuración.",
       "ja": "ゲーム用WebViewレイヤー。デバッグブラウザではありません。"
+    },
+    "main.credential_profile": {
+      "en": "CREDENTIAL PROFILE",
+      "ru": "ПРОФИЛЬ УЧЁТНЫХ ДАННЫХ",
+      "zh-Hans": "凭据配置文件",
+      "es": "PERFIL DE CREDENCIALES",
+      "ja": "認証プロファイル"
+    },
+    "main.sign_in": {
+      "en": "SIGN IN",
+      "ru": "ВОЙТИ",
+      "zh-Hans": "登录",
+      "es": "INICIAR SESIÓN",
+      "ja": "サインイン"
+    },
+    "main.register": {
+      "en": "REGISTER",
+      "ru": "РЕГИСТРАЦИЯ",
+      "zh-Hans": "注册",
+      "es": "REGISTRARSE",
+      "ja": "登録"
+    },
+    "main.auth.invalid_credential": {
+      "en": "Authentication failed: invalid credential",
+      "ru": "Ошибка авторизации: недействительные учётные данные",
+      "zh-Hans": "身份验证失败：凭据无效",
+      "es": "Error de autenticación: credencial no válida",
+      "ja": "認証に失敗しました：認証情報が無効です"
+    },
+    "main.auth.unknown_credential": {
+      "en": "Account is not registered on this server. Use REGISTER first.",
+      "ru": "Учётная запись не зарегистрирована на этом сервере. Сначала нажмите REGISTER.",
+      "zh-Hans": "此服务器上未注册该账户。请先使用 REGISTER。",
+      "es": "La cuenta no está registrada en este servidor. Usa REGISTER primero.",
+      "ja": "このサーバーにはアカウントが登録されていません。先に REGISTER を使用してください。"
+    },
+    "main.auth.registration_unavailable": {
+      "en": "Registration is unavailable: no free player slot.",
+      "ru": "Регистрация недоступна: нет свободного игрового слота.",
+      "zh-Hans": "无法注册：没有可用的玩家槽位。",
+      "es": "Registro no disponible: no hay una plaza de jugador libre.",
+      "ja": "登録できません：空きプレイヤースロットがありません。"
+    },
+    "main.auth.already_active": {
+      "en": "This account already has an active session on the server.",
+      "ru": "У этой учётной записи уже есть активная сессия на сервере.",
+      "zh-Hans": "此账户在服务器上已有活动会话。",
+      "es": "Esta cuenta ya tiene una sesión activa en el servidor.",
+      "ja": "このアカウントには既にアクティブなサーバーセッションがあります。"
+    },
+    "main.auth.session_unavailable": {
+      "en": "The server cannot create a gameplay session right now.",
+      "ru": "Сервер сейчас не может создать игровую сессию.",
+      "zh-Hans": "服务器目前无法创建游戏会话。",
+      "es": "El servidor no puede crear una sesión de juego en este momento.",
+      "ja": "現在サーバーはゲームセッションを作成できません。"
+    },
+    "main.auth.bootstrap_failed": {
+      "en": "Session bootstrap failed on the server.",
+      "ru": "Сервер не смог подготовить игровую сессию.",
+      "zh-Hans": "服务器会话初始化失败。",
+      "es": "Falló la inicialización de la sesión en el servidor.",
+      "ja": "サーバーでセッションの初期化に失敗しました。"
     }
   }
 }

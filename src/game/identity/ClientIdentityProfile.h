@@ -40,6 +40,16 @@ struct ClientIdentityProfile
 class ClientIdentityProfileStore
 {
 public:
+    // Sign-in must never create a credential as a side effect. It only loads
+    // a slot that already exists in the OS credential store.
+    static bool loadExisting(
+        const std::string& profileName,
+        ClientIdentityProfile& outProfile,
+        std::string* outError = nullptr
+    );
+
+    // Registration/developer bootstrap may explicitly create a new local
+    // credential slot when one does not already exist.
     static bool loadOrCreate(
         const std::string& profileName,
         ClientIdentityProfile& outProfile,

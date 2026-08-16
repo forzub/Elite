@@ -101,8 +101,7 @@ std::filesystem::path resolveDetailMapAssetPath(
     const std::vector<fs::path> candidates = {
         cwd / raw,
         cwd.parent_path() / raw,
-        cwd.parent_path().parent_path() / raw,
-        fs::path("D:/__elite/work") / raw
+        cwd.parent_path().parent_path() / raw
     };
 
     for (const fs::path& candidate : candidates)

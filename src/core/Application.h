@@ -227,6 +227,7 @@ public:
     void evalGameUiScript(const std::string& script);
 
     void configureClientIdentity(
+        std::string profileName,
         const game::network::SessionHello& hello
     );
     void configureRemoteServer(std::string host, std::uint16_t port);
@@ -245,6 +246,11 @@ private:
     void requestSessionStart(GameSessionLaunchKind kind);
     void showMultiplayerConnectionForm();
     void showMainMenu();
+    bool prepareRemoteIdentity(
+        const std::string& profileName,
+        game::network::AuthenticationIntent intent,
+        std::string& outError
+    );
 
 private:
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -258,8 +264,10 @@ private:
     std::string m_remoteServerHost;
     std::uint16_t m_remoteServerPort = 0;
     std::uint16_t m_gameUiHttpPort = 0;
+    std::string m_clientIdentityProfileName = "default";
     game::network::SessionHello m_clientIdentityHello {
-        game::identity::AuthToken{{1u}}
+        game::identity::AuthToken{{1u}},
+        game::network::AuthenticationIntent::SignIn
     };
     StateStack   m_states;
     RenderContext renderContext;

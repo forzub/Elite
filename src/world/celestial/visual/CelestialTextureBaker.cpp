@@ -464,8 +464,7 @@ std::filesystem::path resolveExistingProjectPath(
     {
         cwd / relative,
         cwd.parent_path() / relative,
-        cwd.parent_path().parent_path() / relative,
-        fs::path("D:/__elite/work") / relative
+        cwd.parent_path().parent_path() / relative
     };
 
     for (const auto& p : candidates)
@@ -603,8 +602,7 @@ std::filesystem::path resolveProjectPath(const std::string& relative)
     {
         cwd / relative,
         cwd.parent_path() / relative,
-        cwd.parent_path().parent_path() / relative,
-        fs::path("D:/__elite/work") / relative
+        cwd.parent_path().parent_path() / relative
     };
 
     for (const auto& p : candidates)
@@ -636,8 +634,7 @@ std::string toAssetPath(
     {
         cwd,
         cwd.parent_path(),
-        cwd.parent_path().parent_path(),
-        fs::path("D:/__elite/work")
+        cwd.parent_path().parent_path()
     };
 
     for (const fs::path& rootRaw : roots)

@@ -71,7 +71,7 @@ for token in (
     "ServerRuntime(worldParams, debugChannel, 2)",
     "ServerRuntime(worldParams, debugChannel, 1)",
     "BootstrapPlayerSpacingMeters = 50.0",
-    "resolveOrBindAccount",
+    "resolveOrRegisterAccount",
     "m_accounts.isPlayerBound",
     "m_sessions.isConnectedPlayer",
 ):

@@ -40,6 +40,7 @@ public:
     const std::string& lastError() const noexcept;
 
     void sendSessionHello(const SessionHello& hello) override;
+    bool receiveSessionReject(SessionReject& outReject) override;
     bool receiveSessionWelcome(SessionWelcome& outWelcome) override;
     bool receiveSnapshot(SimulationSnapshot& outSnapshot) override;
     void sendClientMessage(const ClientMessage& msg) override;
@@ -68,6 +69,8 @@ public:
     bool receiveMapRequest(MapRequest& outRequest) override;
     bool receiveTimeSyncRequest(TimeSyncRequest& outRequest) override;
 
+    void publishSessionRejectImmediately(
+        const SessionReject& reject) override;
     void publishSessionWelcomeImmediately(
         const SessionWelcome& welcome) override;
     void publishSnapshot(const SimulationSnapshot& snapshot) override;

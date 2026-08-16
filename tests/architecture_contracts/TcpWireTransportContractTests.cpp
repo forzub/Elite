@@ -114,6 +114,7 @@ void testFullProtocolAcrossKernelTcp()
     SessionHello hello;
     for (std::size_t i = 0; i < hello.authToken.bytes.size(); ++i)
         hello.authToken.bytes[i] = static_cast<std::uint8_t>(0x40u + i);
+    hello.intent = AuthenticationIntent::Register;
     client.sendSessionHello(hello);
 
     SessionHello receivedHello;
@@ -128,6 +129,24 @@ void testFullProtocolAcrossKernelTcp()
     require(receivedIdentity, "server did not receive SessionHello over TCP");
     require(receivedHello.authToken == hello.authToken,
         "opaque SessionHello auth token changed across TCP");
+    require(receivedHello.intent == hello.intent,
+        "SessionHello authentication intent changed across TCP");
+
+    SessionReject reject;
+    reject.reason = SessionRejectReason::UnknownCredential;
+    reject.retryable = true;
+    server->publishSessionRejectImmediately(reject);
+
+    SessionReject receivedReject;
+    const bool receivedRejectFrame = spinUntil(
+        client,
+        *server,
+        [&]() { return client.receiveSessionReject(receivedReject); }
+    );
+    require(receivedRejectFrame, "client did not receive SessionReject over TCP");
+    require(receivedReject.reason == reject.reason &&
+            receivedReject.retryable == reject.retryable,
+        "SessionReject changed across TCP");
 
     SessionWelcome welcome;
     welcome.sessionId.value = 1234u;

@@ -48,6 +48,9 @@ public:
     void sendSessionHello(
         const game::network::SessionHello& hello) override;
 
+    bool receiveSessionReject(
+        game::network::SessionReject& outReject) override;
+
     bool receiveSessionWelcome(
         game::network::SessionWelcome& outWelcome) override;
 
@@ -84,6 +87,9 @@ public:
     bool receiveTimeSyncRequest(
         game::network::TimeSyncRequest& outRequest) override;
 
+    void publishSessionRejectImmediately(
+        const game::network::SessionReject& reject) override;
+
     void publishSessionWelcomeImmediately(
         const game::network::SessionWelcome& welcome) override;
 
@@ -103,6 +109,7 @@ private:
     mutable std::mutex m_mutex;
 
     std::queue<game::network::SessionHello> m_sessionHello;
+    std::queue<game::network::SessionReject> m_sessionReject;
     std::queue<game::network::SessionWelcome> m_sessionWelcome;
     std::queue<SimulationSnapshot> m_incoming;
     std::queue<game::network::ClientMessage> m_clientMessages;

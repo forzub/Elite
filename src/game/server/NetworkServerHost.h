@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
@@ -63,6 +64,9 @@ private:
         std::uint64_t traceId = 0;
         std::unique_ptr<game::network::TcpServerTransport> transport;
         game::network::ServerSessionId sessionId {};
+        std::chrono::steady_clock::time_point acceptedAt {};
+        std::chrono::steady_clock::time_point rejectionSentAt {};
+        bool rejectionSent = false;
     };
 
     void acceptPendingConnections();

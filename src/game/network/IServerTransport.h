@@ -41,6 +41,10 @@ public:
         game::network::TimeSyncRequest& outRequest
     ) = 0;
 
+    virtual void publishSessionRejectImmediately(
+        const game::network::SessionReject& reject
+    ) = 0;
+
     virtual void publishSessionWelcomeImmediately(
         const game::network::SessionWelcome& welcome
     ) = 0;

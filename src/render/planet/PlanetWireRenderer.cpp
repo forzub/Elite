@@ -31,8 +31,7 @@ namespace
         {
             cwd / "assets" / "data" / "planets" / relativeFile,
             cwd.parent_path() / "assets" / "data" / "planets" / relativeFile,
-            cwd.parent_path() / "src" / "assets" / "data" / "planets" / relativeFile,
-            fs::path("D:/__elite/work/src/assets/data/planets") / relativeFile
+            cwd.parent_path() / "src" / "assets" / "data" / "planets" / relativeFile
         };
 
         for (const auto& p : candidates)

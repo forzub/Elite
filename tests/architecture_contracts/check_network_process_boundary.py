@@ -62,7 +62,7 @@ if "ServerRuntime(\n        const WorldParams& worldParams,\n        game::debug
     raise SystemExit("dedicated ServerRuntime must support zero initial gameplay transports")
 
 for token in [
-    "resolveOrBindAccount",
+    "resolveOrRegisterAccount",
     "m_accounts.resolve",
     "m_accounts.bind",
 ]:

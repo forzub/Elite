@@ -11,13 +11,20 @@
 namespace game::network
 {
 
-/*
-    Client -> server authentication claim.
+enum class AuthenticationIntent : std::uint8_t
+{
+    SignIn = 0,
+    Register = 1
+};
 
-    The client presents only one opaque bearer token. It does not know or
-    choose AccountId, PlayerId, ShipInstanceId or EntityId. The authoritative
-    server hashes this token, resolves/enrolls the account, then derives all
-    gameplay authority from server-owned registries.
+/*
+    Client -> server authentication/admission claim.
+
+    The client presents only one opaque bearer token plus an explicit intent.
+    SignIn is never allowed to create an account implicitly. Register is the
+    only first-contact path allowed to bind a new server-owned AccountId and
+    PlayerId. The client still does not know or choose AccountId, PlayerId,
+    ShipInstanceId or EntityId.
 
     Until TLS is introduced this token must be treated as a development/LAN
     credential: a bearer token sent over plaintext TCP can be captured.
@@ -25,7 +32,44 @@ namespace game::network
 struct SessionHello
 {
     game::identity::AuthToken authToken {};
+    AuthenticationIntent intent = AuthenticationIntent::SignIn;
 };
+
+enum class SessionRejectReason : std::uint8_t
+{
+    InvalidCredential = 1,
+    UnknownCredential = 2,
+    RegistrationUnavailable = 3,
+    AlreadyActive = 4,
+    SessionUnavailable = 5,
+    BootstrapFailed = 6
+};
+
+struct SessionReject
+{
+    SessionRejectReason reason = SessionRejectReason::SessionUnavailable;
+    bool retryable = true;
+};
+
+inline const char* sessionRejectCode(SessionRejectReason reason) noexcept
+{
+    switch (reason)
+    {
+        case SessionRejectReason::InvalidCredential:
+            return "INVALID_CREDENTIAL";
+        case SessionRejectReason::UnknownCredential:
+            return "UNKNOWN_CREDENTIAL";
+        case SessionRejectReason::RegistrationUnavailable:
+            return "REGISTRATION_UNAVAILABLE";
+        case SessionRejectReason::AlreadyActive:
+            return "ALREADY_ACTIVE";
+        case SessionRejectReason::BootstrapFailed:
+            return "BOOTSTRAP_FAILED";
+        case SessionRejectReason::SessionUnavailable:
+        default:
+            return "SESSION_UNAVAILABLE";
+    }
+}
 
 struct ServerSessionId
 {

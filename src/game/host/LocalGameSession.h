@@ -19,7 +19,8 @@ struct LocalGameSessionConfig
 {
     WorldParams world { 0.0f, 50.0f };
     game::network::SessionHello identityHello {
-        game::identity::AuthToken{{1u}}
+        game::identity::AuthToken{{1u}},
+        game::network::AuthenticationIntent::Register
     };
 };
 

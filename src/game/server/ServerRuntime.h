@@ -56,9 +56,9 @@ public:
     ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
 
-    // Production-shaped admission is token-authenticated. The client presents
-    // only an opaque bearer token; AccountId / PlayerId / ShipInstanceId /
-    // EntityId are resolved entirely by authoritative server registries.
+    // Admission uses an opaque bearer token plus explicit SignIn/Register
+    // intent. SignIn never creates identity implicitly; all AccountId /
+    // PlayerId / ShipInstanceId / EntityId authority remains server-owned.
     game::network::ServerSessionId attachPlayerSessionTransport(
         IServerTransport& transport,
         const game::network::SessionHello& hello
@@ -77,10 +77,12 @@ private:
 
     game::network::ServerSessionId attachResolvedPlayerSessionTransport(
         IServerTransport& transport,
-        PlayerId playerId
+        PlayerId playerId,
+        game::network::SessionReject& outReject
     );
-    PlayerId resolveOrBindAccount(
-        const game::network::SessionHello& hello
+    PlayerId resolveOrRegisterAccount(
+        const game::network::SessionHello& hello,
+        game::network::SessionReject& outReject
     );
     bool publishSessionBootstrap(
         IServerTransport& transport,

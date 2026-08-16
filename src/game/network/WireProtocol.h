@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 6u;
+inline constexpr std::uint16_t WireProtocolVersion = 7u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -52,7 +52,8 @@ enum class WireMessageKind : std::uint16_t
     // WireDataSchema.h so framing stays independent of world growth.
     SimulationSnapshot = 6,
     MapResponse = 7,
-    SessionHello = 8
+    SessionHello = 8,
+    SessionReject = 9
 };
 
 struct WireFrame
@@ -461,6 +462,7 @@ inline bool encodeSessionHello(
     WireWriter writer;
     for (const auto byte : value.authToken.bytes)
         writer.u8(byte);
+    writer.u8(static_cast<std::uint8_t>(value.intent));
     outPayload = writer.take();
     return true;
 }
@@ -477,7 +479,47 @@ inline bool decodeSessionHello(
             return false;
     }
 
+    std::uint8_t intent = 0;
+    if (!reader.u8(intent) ||
+        intent > static_cast<std::uint8_t>(AuthenticationIntent::Register))
+    {
+        return false;
+    }
+
+    outValue.intent = static_cast<AuthenticationIntent>(intent);
     return finishDecode(reader) && outValue.authToken.valid();
+}
+
+inline bool encodeSessionReject(
+    const SessionReject& value,
+    std::vector<std::uint8_t>& outPayload
+)
+{
+    WireWriter writer;
+    writer.u8(static_cast<std::uint8_t>(value.reason));
+    writer.boolean(value.retryable);
+    outPayload = writer.take();
+    return true;
+}
+
+inline bool decodeSessionReject(
+    const std::vector<std::uint8_t>& payload,
+    SessionReject& outValue
+)
+{
+    WireReader reader(payload);
+    std::uint8_t reason = 0;
+    if (!reader.u8(reason) ||
+        reason < static_cast<std::uint8_t>(SessionRejectReason::InvalidCredential) ||
+        reason > static_cast<std::uint8_t>(SessionRejectReason::BootstrapFailed) ||
+        !reader.boolean(outValue.retryable) ||
+        !finishDecode(reader))
+    {
+        return false;
+    }
+
+    outValue.reason = static_cast<SessionRejectReason>(reason);
+    return true;
 }
 
 inline bool encodeSessionWelcome(

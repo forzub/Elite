@@ -127,21 +127,21 @@ cd /d/__elite/work/build/headless_server
 
 ```powershell
 cd D:\__elite\work\build
-.\EliteGame.exe --connect 127.0.0.1:27351
+.\EliteGame.exe --profile pilot-a --connect 127.0.0.1:27351
 ```
 
 Либо из MSYS2 MinGW64:
 
 ```bash
 cd /d/__elite/work/build
-./EliteGame.exe --connect 127.0.0.1:27351
+./EliteGame.exe --profile pilot-a --connect 127.0.0.1:27351
 ```
 
 В remote mode `EliteGame` создаёт `RemoteGameSession`, который владеет только
 `TcpClientTransport + GameClient`. Он **не создаёт** `ServerRuntime`,
 `ServerWorker` или `GameServer`. Authoritative world продолжает идти в
 `EliteServer`, а клиент выполняет только prediction/presentation и отправляет
-intent/control messages.
+intent/control messages. `--connect` использует выбранный `--profile` как local credential slot и сначала выполняет `SIGN IN`. На fresh server неизвестный credential будет отклонён и UI вернётся в authorization form; для первичной регистрации нужно нажать `REGISTER`, после чего последующие подключения к тому же server runtime используют `SIGN IN`.
 
 
 ---
@@ -181,36 +181,43 @@ Linux не использует Windows staging branch. Для ELF targets build
 `EliteGame` уже полностью портирован на Linux — его UI/render/toolchain
 boundary проверяется отдельно.
 
-## 4. Особенности authoritative session bootstrap
+## 4. Authentication и authoritative session bootstrap
 
-При TCP admission клиент не выбирает себе корабль.
+Remote connection теперь имеет явный authorization step. Локальное имя профиля (`pilot-a`, `pilot-b`, `default`) — это **только selector credential slot на конкретном компьютере**; оно не является `PlayerId`, не передаётся как gameplay authority и не даёт права выбрать корабль. В credential slot хранится opaque bearer token.
 
-Server-side последовательность:
+Multiplayer form содержит:
 
-1. `NetworkServerHost` принимает TCP connection.
-2. `ServerRuntime` выбирает доступный server-owned `PlayerId`; клиент не выбирает `EntityId`/ship authority.
-3. `PlayerRegistry` разрешает persistent assignment `PlayerId -> current ShipInstanceId`.
-4. `ShipInstanceRegistry` разрешает `ShipInstanceId -> current materialized EntityId`.
-5. `ControlRegistry` подтверждает human control binding `PlayerId -> EntityId`.
-6. Создаётся transient `ServerSessionId`, и `ServerSessionRegistry` сохраняет `session -> PlayerId`, а не ship/entity identity.
-7. Сервер отправляет `SessionWelcome` с `playerId`, `controlledShipInstanceId`, `controlledEntityId`, authoritative `fixedStepSeconds` и fingerprint статического StarAtlas catalog.
-8. Сервер отправляет hydrated bootstrap snapshot; `ShipSnapshot.instanceId` сохраняет persistent identity конкретного корабля через replication.
-9. Только после успешной синхронизации `GameClient` переходит в `Ready`.
+```text
+SERVER ADDRESS
+CREDENTIAL PROFILE
 
-Текущая admission policy всё ещё **временная**: dedicated bootstrap создаёт два
-persistent player/ship bindings, чьи materialized корабли находятся примерно в
-50 м друг от друга. Свободный `PlayerId` выдаётся сервером по фактическому accept
-order — фактически «кто первый подключился, тот получил первый доступный слот».
-Это не production identity contract и не повод добавлять client-authoritative
-`--player`, `--ship` или `--entity` switch.
+SIGN IN
+REGISTER
+BACK
+```
 
-Ручной graphical acceptance подтвердил, что два отдельных remote `EliteGame`
-одновременно получают разные identities и видят оба корабля в **одном общем
-authoritative world**. Следующий слой должен заменить временный bootstrap pool
-полноценной server-owned цепочкой `AccountId -> PlayerId -> owned/current
-ShipInstanceId -> session/control authority`, с duplicate-login и reconnect/resume
-policy. Клиент по-прежнему не должен присылать произвольный `EntityId` для
-получения управления.
+`SIGN IN` загружает уже существующий local credential slot и отправляет `SessionHello{authToken, SignIn}`. Если digest неизвестен серверу, admission возвращает typed `SessionReject::UnknownCredential`; **никакого implicit enrollment больше нет**.
+
+`REGISTER` является единственным first-contact path: local credential slot может быть создан явно, сервер хэширует bearer token, создаёт `AccountId` и связывает его с server-owned `PlayerId`. Клиент не передаёт и не выбирает `AccountId`, `PlayerId`, `ShipInstanceId` или `EntityId`.
+
+После успешного credential resolution server-side последовательность такая:
+
+1. `NetworkServerHost` принимает TCP connection и ограничивает pending authentication count.
+2. Connection обязан прислать `SessionHello` до authentication deadline; иначе server disconnect.
+3. `ServerRuntime` хэширует token и либо resolve'ит существующий `AccountId -> PlayerId`, либо — только при `Register` — создаёт binding к свободной authoritative bootstrap player identity.
+4. Duplicate live session для того же `PlayerId` получает typed `SessionReject::AlreadyActive`; rejected transport получает короткий flush grace, чтобы причина гарантированно дошла до клиента до закрытия TCP.
+5. `PlayerRegistry` разрешает `PlayerId -> current ShipInstanceId`; `ShipInstanceRegistry` — `ShipInstanceId -> materialized EntityId`; `ControlRegistry` подтверждает human control binding.
+6. Создаётся transient `ServerSessionId`; `ServerSessionRegistry` хранит `session -> PlayerId`.
+7. `SessionWelcome` возвращает server-assigned `playerId`, `controlledShipInstanceId`, `controlledEntityId`, authoritative `fixedStepSeconds` и StarAtlas fingerprint.
+8. Hydrated bootstrap snapshot завершает synchronization; только затем `GameClient` становится `Ready`.
+
+При любом remote auth/session reject loading page не является terminal state: `Application` возвращает пользователя на multiplayer authorization form, показывает server-provided reason и оставляет доступными `SIGN IN`, `REGISTER` и `BACK`. Это также относится к переходу **Local -> Multiplayer**: local session не наследуется как remote identity и перед remote attach пользователь явно выбирает credential profile/action.
+
+Текущая важная граница: `AccountRegistry` пока in-memory. После restart dedicated server не знает прежних token digests, поэтому первый вход на fresh server требует `REGISTER`; после регистрации reconnect к тому же живому серверу использует `SIGN IN`. Устранение этой границы — M8E.3 durable account/character store.
+
+### Runtime logging policy
+
+Нормальный `EliteGame`/`EliteServer` запуск должен оставлять консоль пригодной для эксплуатации, а не воспроизводить всю M8E-трассировку. Подробные успешные startup/process/WebView/connect/auth/bootstrap/control события являются opt-in diagnostics и включаются через `ELITE_TRACE_RUNTIME=1`. Ошибки авторизации/session admission, handshake timeout, crash/GLFW failures и threshold-based slow-path события остаются безусловными. Self-test output (`[SELFTEST]`, `[PASS]`, `[FAIL]`) всегда остаётся доступным. Это позволяет вернуть глубокую трассировку без нового патча, но не маскирует реальные runtime failures.
 
 ---
 
@@ -297,8 +304,9 @@ transport.
 
 Также пока **не завершены**:
 
-- durable account/character authentication and ownership storage (`AccountId -> PlayerId -> ShipInstanceId`);
-- reconnect/resume token handoff and server-owned restoration of the same persistent player identity;
+- durable account/character storage across dedicated-server restart (`credential digest -> AccountId -> PlayerId -> ShipInstanceId`);
+- production registration/account lifecycle beyond the current explicit development/LAN bearer-token flow;
+- reconnect/resume token handoff beyond ordinary same-account reconnect and server-owned restoration of persistent identity;
 - authenticated/encrypted Internet-facing session layer;
 - true multi-system authoritative runtime для игроков одновременно в разных
   materialized systems;
@@ -477,12 +485,13 @@ bash tests/run_all_mingw64.sh
 4. В логах различать `[M8E-CONTROL]` session reset/ACK и
    `[M8E-XPROC][dispatch] msg=0xa1 wparam=0x2` (оконный modal loop).
 
-Только после зелёного automated + manual gate M8E.1 можно продолжать
-authorization/resume/persistence.
+Automated ready suite и ручной `A -> reconnect A -> B -> reconnect B` gate на canonical binaries 2026-08-16 зелёные; M8E.1 закрыт. Короткие loading-screen stalls остались presentation/responsiveness debt и больше не сопровождаются control anomalies.
+
+M8E.2 authentication/admission layer закрывает этот recovery seam: remote failure возвращается в authorization form, `SIGN IN` и `REGISTER` разделены, implicit enrollment запрещён, а server-owned typed `SessionReject` сохраняет причину отказа до UI. Следующий identity layer — M8E.3 durable account/character storage across server restart.
 
 ---
 
-## 11. Следующий этап — authorization / persistent identity foundation
+## 11. Следующий этап — durable account / character identity storage
 
 Текущий код уже имеет правильный in-memory backbone:
 
@@ -504,20 +513,14 @@ ServerSessionId
     -> EntityId
 ```
 
-Следующий этап должен сделать **полноценную заготовку production identity layer**,
-а не временный dev selector:
+M8E.2 теперь фиксирует explicit authentication/admission boundary: bearer token хранится только в local credential slot, server хранит SHA-256 digest, `SIGN IN` не создаёт account, `REGISTER` является явной операцией, duplicate login rejected typed reason'ом, а gameplay authority IDs остаются server-owned.
 
-1. ввести `AccountId`/authentication boundary отдельно от `PlayerId`;
-2. определить persistent `Account -> Player/character` relation;
-3. определить ownership/current-ship model отдельно от control authority;
-4. запретить две live gameplay sessions для одного `PlayerId`, пока явно не
-   введена takeover/reconnect policy;
-5. определить reconnect/resume token и server-owned handoff старой identity;
-6. сделать persistent ship registry пригодным для кораблей без materialized
-   `EntityId`;
-7. постепенно вывести `ShipRole::Player/NPC` из роли фундаментального control
-   discriminator: human/AI/autopilot/none должны жить в отдельной control axis;
-8. после фиксации identity/ownership storage boundary начать реальное население
-   вселенной и подключить `Scheduled <-> Coarse <-> Prewarm <-> Active`
-   materialization/collapse для торговцев, челноков, барж, пассажирских кораблей,
-   пиратов, флотов и alien fleets.
+Следующий этап — **M8E.3 durable identity storage**, а не новый selector hack:
+
+1. вынести account binding за `IAccountStore`/эквивалентный storage boundary;
+2. сохранять `credential digest -> AccountId -> PlayerId` атомарно и восстанавливать после restart server;
+3. сохранить ownership/current-ship model отдельно от control authority;
+4. определить production registration lifecycle (создание/удаление/rotation credential), не смешивая его с gameplay session;
+5. определить explicit resume/takeover policy поверх уже работающего ordinary reconnect;
+6. сделать persistent ship registry пригодным для кораблей без materialized `EntityId`;
+7. после durable identity/ownership boundary начать реальное население вселенной и `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse.

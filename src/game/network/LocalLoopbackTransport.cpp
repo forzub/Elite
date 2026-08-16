@@ -20,6 +20,26 @@ bool LocalLoopbackTransport::receiveSessionHello(
     return true;
 }
 
+bool LocalLoopbackTransport::receiveSessionReject(
+    game::network::SessionReject& outReject)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    if (m_sessionReject.empty())
+        return false;
+
+    outReject = m_sessionReject.front();
+    m_sessionReject.pop();
+    return true;
+}
+
+void LocalLoopbackTransport::publishSessionRejectImmediately(
+    const game::network::SessionReject& reject)
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_sessionReject.push(reject);
+}
+
 bool LocalLoopbackTransport::receiveSessionWelcome(
     game::network::SessionWelcome& outWelcome)
 {

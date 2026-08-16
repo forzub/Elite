@@ -1,4 +1,5 @@
 #include <glad/gl.h>
+#include "src/core/RuntimeTrace.h"
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -115,17 +116,18 @@ namespace
         const ClientStartupClock::time_point& stageBegin,
         const ClientStartupClock::time_point& totalBegin)
     {
-        std::cerr
-            << "[M8E-STARTUP][space] pid=" << startupProcessId()
-            << " stage=" << stage
-            << " duration_ms=" << startupElapsedMs(stageBegin)
-            << " total_ms=" << startupElapsedMs(totalBegin)
-#ifdef _WIN32
-            << " uptime_ms=" << static_cast<unsigned long long>(GetTickCount64())
-#endif
-            << " foreground_pid=" << startupForegroundProcessId()
-            << " thread=" << std::this_thread::get_id()
-            << "\n";
+        if (core::runtimeTraceEnabled())
+            std::cerr
+                << "[M8E-STARTUP][space] pid=" << startupProcessId()
+                << " stage=" << stage
+                << " duration_ms=" << startupElapsedMs(stageBegin)
+                << " total_ms=" << startupElapsedMs(totalBegin)
+    #ifdef _WIN32
+                << " uptime_ms=" << static_cast<unsigned long long>(GetTickCount64())
+    #endif
+                << " foreground_pid=" << startupForegroundProcessId()
+                << " thread=" << std::this_thread::get_id()
+                << "\n";
     }
 
     double stableBodyPhaseRadians(const std::string& id)
@@ -431,15 +433,16 @@ SpaceState::SpaceState(
 {
     m_startupTotalBegin = ClientStartupClock::now();
 
-    std::cerr
-        << "[M8E-STARTUP][space] pid=" << startupProcessId()
-        << " stage=constructor-begin"
-#ifdef _WIN32
-        << " uptime_ms=" << static_cast<unsigned long long>(GetTickCount64())
-#endif
-        << " foreground_pid=" << startupForegroundProcessId()
-        << " thread=" << std::this_thread::get_id()
-        << "\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr
+            << "[M8E-STARTUP][space] pid=" << startupProcessId()
+            << " stage=constructor-begin"
+    #ifdef _WIN32
+            << " uptime_ms=" << static_cast<unsigned long long>(GetTickCount64())
+    #endif
+            << " foreground_pid=" << startupForegroundProcessId()
+            << " thread=" << std::this_thread::get_id()
+            << "\n";
 
     if (startupMode == StartupMode::Immediate)
     {
@@ -495,7 +498,8 @@ bool SpaceState::advanceStartupInitialization()
                 stageBegin,
                 m_startupTotalBegin
             );
-            std::cerr << "[HubMotionLab][startup] shaders-ready\n";
+            if (core::runtimeTraceEnabled())
+                std::cerr << "[HubMotionLab][startup] shaders-ready\n";
             m_startupStage = StartupStage::SceneRenderer;
             return false;
 
@@ -515,7 +519,8 @@ bool SpaceState::advanceStartupInitialization()
                 stageBegin,
                 m_startupTotalBegin
             );
-            std::cerr << "[HubMotionLab][startup] scene-renderer-ready\n";
+            if (core::runtimeTraceEnabled())
+                std::cerr << "[HubMotionLab][startup] scene-renderer-ready\n";
             m_startupStage = StartupStage::SceneLocale;
             return false;
 
@@ -550,8 +555,9 @@ bool SpaceState::advanceStartupInitialization()
                 stageBegin,
                 m_startupTotalBegin
             );
-            std::cerr
-                << "[HubMotionLab][startup] system-map-renderer-ready\n";
+            if (core::runtimeTraceEnabled())
+                std::cerr
+                    << "[HubMotionLab][startup] system-map-renderer-ready\n";
             m_startupStage = StartupStage::GalaxyRequest;
             return false;
 
@@ -571,7 +577,8 @@ bool SpaceState::advanceStartupInitialization()
                 stageBegin,
                 m_startupTotalBegin
             );
-            std::cerr << "[HubMotionLab][startup] galaxy-request-ready\n";
+            if (core::runtimeTraceEnabled())
+                std::cerr << "[HubMotionLab][startup] galaxy-request-ready\n";
             m_startupStage = StartupStage::Hud;
             return false;
 
@@ -591,22 +598,24 @@ bool SpaceState::advanceStartupInitialization()
                 stageBegin,
                 m_startupTotalBegin
             );
-            std::cerr << "[HubMotionLab][startup] hud-ready\n";
+            if (core::runtimeTraceEnabled())
+                std::cerr << "[HubMotionLab][startup] hud-ready\n";
             m_startupStage = StartupStage::Finalize;
             return false;
 
         case StartupStage::Finalize:
-            std::cerr
-                << "[M8E-STARTUP][space] pid=" << startupProcessId()
-                << " stage=constructor-end"
-                << " total_ms=" << startupElapsedMs(m_startupTotalBegin)
-#ifdef _WIN32
-                << " uptime_ms="
-                << static_cast<unsigned long long>(GetTickCount64())
-#endif
-                << " foreground_pid=" << startupForegroundProcessId()
-                << " thread=" << std::this_thread::get_id()
-                << "\n";
+            if (core::runtimeTraceEnabled())
+                std::cerr
+                    << "[M8E-STARTUP][space] pid=" << startupProcessId()
+                    << " stage=constructor-end"
+                    << " total_ms=" << startupElapsedMs(m_startupTotalBegin)
+    #ifdef _WIN32
+                    << " uptime_ms="
+                    << static_cast<unsigned long long>(GetTickCount64())
+    #endif
+                    << " foreground_pid=" << startupForegroundProcessId()
+                    << " thread=" << std::this_thread::get_id()
+                    << "\n";
 
             /*
                 The legacy political GalaxyDatabase is intentionally not

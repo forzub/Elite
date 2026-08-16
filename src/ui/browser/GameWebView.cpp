@@ -1,6 +1,7 @@
 #ifdef _WIN32
 
 #include "ui/browser/GameWebView.h"
+#include "src/core/RuntimeTrace.h"
 
 #include <filesystem>
 #include <chrono>
@@ -101,8 +102,9 @@ void GameWebView::start(
     const std::filesystem::path webView2Udf =
         configureProcessLocalWebView2UserDataFolder();
 
-    std::cerr << "[GameWebView] pid=" << GetCurrentProcessId()
-              << " WebView2 UDF=" << webView2Udf.string() << "\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr << "[GameWebView] pid=" << GetCurrentProcessId()
+                  << " WebView2 UDF=" << webView2Udf.string() << "\n";
 
     // Embedded WebView2 must live on the same STA/UI thread that owns the
     // GLFW Win32 window. The webview backend initializes COM for windows it
@@ -146,10 +148,11 @@ void GameWebView::start(
         m_webviewObject = w;
         m_running = true;
 
-        std::cerr << "[GameWebView] embedded pid=" << GetCurrentProcessId()
-                  << " parent_hwnd=" << static_cast<HWND>(parentHwnd)
-                  << " widget_hwnd=" << widgetHwnd
-                  << " title=\"" << title << "\"\n";
+        if (core::runtimeTraceEnabled())
+            std::cerr << "[GameWebView] embedded pid=" << GetCurrentProcessId()
+                      << " parent_hwnd=" << static_cast<HWND>(parentHwnd)
+                      << " widget_hwnd=" << widgetHwnd
+                      << " title=\"" << title << "\"\n";
 
         // The backend creates the widget as a real WS_CHILD of parentHwnd.
         // Do not create/re-style/re-parent a second top-level window.
@@ -225,13 +228,14 @@ void GameWebView::start(
         const double xprocStartMs = std::chrono::duration<double, std::milli>(
             std::chrono::steady_clock::now() - xprocStartBegin
         ).count();
-        std::cerr
-            << "[M8E-XPROC][webview] pid=" << GetCurrentProcessId()
-            << " op=start"
-            << " duration_ms=" << xprocStartMs
-            << " uptime_ms=" << GetTickCount64()
-            << " tid=" << GetCurrentThreadId()
-            << "\n";
+        if (core::runtimeTraceEnabled())
+            std::cerr
+                << "[M8E-XPROC][webview] pid=" << GetCurrentProcessId()
+                << " op=start"
+                << " duration_ms=" << xprocStartMs
+                << " uptime_ms=" << GetTickCount64()
+                << " tid=" << GetCurrentThreadId()
+                << "\n";
 
         // No w->run() here. The embedded WebView belongs to the GLFW Win32 UI
         // thread and glfwPollEvents() is the application-owned message pump.
@@ -264,10 +268,11 @@ void GameWebView::stop()
         return;
     }
 
-    std::cerr << "[GameWebView] stop pid=" << GetCurrentProcessId()
-              << " parent_hwnd=" << static_cast<HWND>(m_parentHwnd)
-              << " widget_hwnd=" << static_cast<HWND>(m_webviewHwnd)
-              << "\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr << "[GameWebView] stop pid=" << GetCurrentProcessId()
+                  << " parent_hwnd=" << static_cast<HWND>(m_parentHwnd)
+                  << " widget_hwnd=" << static_cast<HWND>(m_webviewHwnd)
+                  << "\n";
 
     auto* w = static_cast<webview::webview*>(m_webviewObject);
 
@@ -396,13 +401,14 @@ void GameWebView::navigate(const std::string& htmlFile)
     ).count();
     if (xprocDurationMs >= 100.0)
     {
-        std::cerr
-            << "[M8E-XPROC][webview] pid=" << GetCurrentProcessId()
-            << " op=navigate"
-            << " duration_ms=" << xprocDurationMs
-            << " uptime_ms=" << GetTickCount64()
-            << " tid=" << GetCurrentThreadId()
-            << "\n";
+        if (core::runtimeTraceEnabled())
+            std::cerr
+                << "[M8E-XPROC][webview] pid=" << GetCurrentProcessId()
+                << " op=navigate"
+                << " duration_ms=" << xprocDurationMs
+                << " uptime_ms=" << GetTickCount64()
+                << " tid=" << GetCurrentThreadId()
+                << "\n";
     }
 }
 
@@ -419,13 +425,14 @@ void GameWebView::evalScript(const std::string& script)
     ).count();
     if (xprocDurationMs >= 100.0)
     {
-        std::cerr
-            << "[M8E-XPROC][webview] pid=" << GetCurrentProcessId()
-            << " op=eval"
-            << " duration_ms=" << xprocDurationMs
-            << " uptime_ms=" << GetTickCount64()
-            << " tid=" << GetCurrentThreadId()
-            << "\n";
+        if (core::runtimeTraceEnabled())
+            std::cerr
+                << "[M8E-XPROC][webview] pid=" << GetCurrentProcessId()
+                << " op=eval"
+                << " duration_ms=" << xprocDurationMs
+                << " uptime_ms=" << GetTickCount64()
+                << " tid=" << GetCurrentThreadId()
+                << "\n";
     }
 }
 

@@ -43,9 +43,9 @@ struct AuthTokenDigestHash
     AccountId + PlayerId. The client never supplies AccountId, PlayerId,
     ShipInstanceId or EntityId.
 
-    Phase 4 keeps the registry in the live universe runtime. UniverseStore will
-    persist these records across server restarts in the next phase without
-    changing the authentication seam.
+    M8E.2 keeps the registry in the live universe runtime. M8E.3 will move
+    persistence behind a durable account-store boundary without changing the
+    authentication/admission seam.
 */
 class AccountRegistry
 {

@@ -1,4 +1,5 @@
 #include "src/game/session/RemoteGameSession.h"
+#include "src/core/RuntimeTrace.h"
 
 #include <algorithm>
 #include <chrono>
@@ -95,9 +96,10 @@ bool RemoteGameSession::connectOrWait()
     using Clock = std::chrono::steady_clock;
     const auto connectBegin = Clock::now();
 
-    std::cerr << "[M8E-CONNECT][client] tcp-connect begin endpoint="
-              << m_config.host << ':' << m_config.port
-              << " thread=" << std::this_thread::get_id() << "\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr << "[M8E-CONNECT][client] tcp-connect begin endpoint="
+                  << m_config.host << ':' << m_config.port
+                  << " thread=" << std::this_thread::get_id() << "\n";
 
     const bool connected =
         m_transport->connect(m_config.host, m_config.port);
@@ -106,11 +108,12 @@ bool RemoteGameSession::connectOrWait()
         Clock::now() - connectBegin
     ).count();
 
-    std::cerr << "[M8E-CONNECT][client] tcp-connect end endpoint="
-              << m_config.host << ':' << m_config.port
-              << " ok=" << (connected ? "yes" : "no")
-              << " duration_ms=" << connectMs
-              << " thread=" << std::this_thread::get_id() << "\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr << "[M8E-CONNECT][client] tcp-connect end endpoint="
+                  << m_config.host << ':' << m_config.port
+                  << " ok=" << (connected ? "yes" : "no")
+                  << " duration_ms=" << connectMs
+                  << " thread=" << std::this_thread::get_id() << "\n";
 
     if (connected)
     {
@@ -123,8 +126,9 @@ bool RemoteGameSession::connectOrWait()
         }
 
         m_transport->sendSessionHello(m_config.identityHello);
-        std::cerr << "[M8E-CONNECT][client] session-hello queued endpoint="
-                  << m_config.host << ':' << m_config.port << "\n";
+        if (core::runtimeTraceEnabled())
+            std::cerr << "[M8E-CONNECT][client] session-hello queued endpoint="
+                      << m_config.host << ':' << m_config.port << "\n";
         m_error.clear();
         m_waitingForServer = false;
         m_connectedOnce = true;
@@ -174,10 +178,10 @@ void RemoteGameSession::updateSynchronization(double elapsedSeconds)
         std::cerr << "[M8E-XPROC][remote-sync] stage=transport-service duration_ms="
                   << transportMs << "\n";
 
-    captureTransportFailure();
-    if (m_failed)
-        return;
-
+    // Drain typed authentication/admission responses before treating a
+    // transport close as a generic network failure. A rejected server may
+    // flush SessionReject and close immediately afterwards; the structured
+    // reason must win over "peer closed connection".
     const auto clientBegin = std::chrono::steady_clock::now();
     (void)m_client->updateSynchronization(dt);
     const double clientMs =
@@ -192,7 +196,10 @@ void RemoteGameSession::updateSynchronization(double elapsedSeconds)
     {
         m_failed = true;
         m_error = m_client->connectionError();
+        return;
     }
+
+    captureTransportFailure();
 }
 
 GameSessionState RemoteGameSession::state() const

@@ -1,4 +1,5 @@
 #include "src/game/server/NetworkServerHost.h"
+#include "src/core/RuntimeTrace.h"
 
 #include <algorithm>
 #include <chrono>
@@ -53,9 +54,23 @@ void NetworkServerHost::acceptPendingConnections()
     // Bound admission work per host iteration so a connection storm cannot
     // monopolize one simulation frame before the authoritative tick executes.
     constexpr std::size_t MaxAcceptsPerAdvance = 32;
+    constexpr std::size_t MaxPendingAuthenticationConnections = 64;
 
     for (std::size_t i = 0; i < MaxAcceptsPerAdvance; ++i)
     {
+        const std::size_t pendingAuthentication = static_cast<std::size_t>(
+            std::count_if(
+                m_connections.begin(),
+                m_connections.end(),
+                [](const Connection& connection)
+                {
+                    return connection.transport && !connection.sessionId;
+                }
+            )
+        );
+        if (pendingAuthentication >= MaxPendingAuthenticationConnections)
+            break;
+
         auto transport = m_listener->acceptPending();
         if (!transport)
             break;
@@ -65,9 +80,11 @@ void NetworkServerHost::acceptPendingConnections()
         Connection connection;
         connection.traceId = m_nextConnectionTraceId++;
         connection.transport = std::move(transport);
-        std::cerr << "[M8E-CONNECT][server] accepted connection="
-                  << connection.traceId
-                  << " thread=" << std::this_thread::get_id() << "\n";
+        connection.acceptedAt = std::chrono::steady_clock::now();
+        if (core::runtimeTraceEnabled())
+            std::cerr << "[M8E-CONNECT][server] accepted connection="
+                      << connection.traceId
+                      << " thread=" << std::this_thread::get_id() << "\n";
         m_connections.push_back(std::move(connection));
     }
 
@@ -79,16 +96,27 @@ void NetworkServerHost::admitPendingConnections()
 {
     for (auto& connection : m_connections)
     {
-        if (!connection.transport || connection.sessionId)
+        if (!connection.transport || connection.sessionId || connection.rejectionSent)
             continue;
 
         game::network::SessionHello hello;
         if (!connection.transport->receiveSessionHello(hello))
+        {
+            constexpr auto AuthenticationDeadline = std::chrono::seconds(10);
+            if (std::chrono::steady_clock::now() - connection.acceptedAt >
+                AuthenticationDeadline)
+            {
+                std::cerr << "[M8E-AUTH][server] handshake-timeout connection="
+                          << connection.traceId << "\n";
+                connection.transport->disconnect();
+            }
             continue;
+        }
 
-        std::cerr << "[M8E-CONNECT][server] hello connection="
-                  << connection.traceId
-                  << " thread=" << std::this_thread::get_id() << "\n";
+        if (core::runtimeTraceEnabled())
+            std::cerr << "[M8E-CONNECT][server] hello connection="
+                      << connection.traceId
+                      << " thread=" << std::this_thread::get_id() << "\n";
 
         using Clock = std::chrono::steady_clock;
         const auto admitBegin = Clock::now();
@@ -101,19 +129,23 @@ void NetworkServerHost::admitPendingConnections()
             Clock::now() - admitBegin
         ).count();
 
-        std::cerr << "[M8E-CONNECT][server] admission connection="
-                  << connection.traceId
-                  << " session=" << sessionId.value
-                  << " ok=" << (sessionId ? "yes" : "no")
-                  << " duration_ms=" << admitMs
-                  << " thread=" << std::this_thread::get_id() << "\n";
+        if (core::runtimeTraceEnabled())
+            std::cerr << "[M8E-CONNECT][server] admission connection="
+                      << connection.traceId
+                      << " session=" << sessionId.value
+                      << " ok=" << (sessionId ? "yes" : "no")
+                      << " duration_ms=" << admitMs
+                      << " thread=" << std::this_thread::get_id() << "\n";
 
         if (!sessionId)
         {
-            // Unknown/full enrollment capacity or duplicate active login
-            // are all authoritative admission failures. The client never gets
-            // to fall back to selecting another PlayerId or EntityId.
-            connection.transport->disconnect();
+            // ServerRuntime has already queued one typed SessionReject. Keep
+            // the socket alive long enough for the reliable stream to flush;
+            // the client will close after consuming the rejection. A short
+            // grace deadline prevents a rejected peer from lingering forever.
+            connection.rejectionSent = true;
+            connection.rejectionSentAt = std::chrono::steady_clock::now();
+            connection.transport->update(0.0f);
             continue;
         }
 
@@ -127,6 +159,21 @@ void NetworkServerHost::reapDisconnectedConnections()
     auto it = m_connections.begin();
     while (it != m_connections.end())
     {
+        if (it->transport && !it->sessionId)
+        {
+            // Pending/rejected transports are not owned by ServerRunner yet,
+            // so the host must pump their wire stream itself.
+            it->transport->update(0.0f);
+
+            constexpr auto RejectionFlushGrace = std::chrono::seconds(1);
+            if (it->rejectionSent &&
+                std::chrono::steady_clock::now() - it->rejectionSentAt >
+                    RejectionFlushGrace)
+            {
+                it->transport->disconnect();
+            }
+        }
+
         if (it->transport && it->transport->connected())
         {
             ++it;

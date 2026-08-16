@@ -87,6 +87,7 @@ game::network::SessionHello makeSelfTestIdentity(
     }
     if (!hello.authToken.valid())
         hello.authToken.bytes[0] = 1;
+    hello.intent = game::network::AuthenticationIntent::Register;
     return hello;
 }
 

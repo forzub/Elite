@@ -36,6 +36,7 @@ game::network::SessionHello makeAcceptanceIdentity(
     }
     if (!hello.authToken.valid())
         hello.authToken.bytes[0] = 1;
+    hello.intent = game::network::AuthenticationIntent::Register;
     return hello;
 }
 
@@ -235,12 +236,28 @@ void requireAccountReconnectReturnsSamePersistentPlayer()
     game::debug::LocalDebugSessionControl debugChannel;
     WorldParams worldParams;
     game::server::ServerRuntime runtime(worldParams, debugChannel);
-    const auto identity = makeAcceptanceIdentity(3001u, 31u);
+    const auto registrationIdentity = makeAcceptanceIdentity(3001u, 31u);
+    auto signInIdentity = registrationIdentity;
+    signInIdentity.intent = game::network::AuthenticationIntent::SignIn;
+
+    LocalLoopbackTransport unknownSignInTransport;
+    const auto unknownSession = runtime.attachPlayerSessionTransport(
+        unknownSignInTransport,
+        signInIdentity
+    );
+    require(!unknownSession,
+            "unknown credential was implicitly enrolled during sign-in");
+    game::network::SessionReject unknownReject;
+    require(
+        unknownSignInTransport.receiveSessionReject(unknownReject) &&
+        unknownReject.reason == game::network::SessionRejectReason::UnknownCredential,
+        "unknown sign-in did not receive typed UnknownCredential rejection"
+    );
 
     LocalLoopbackTransport transportFirst;
     const auto firstSession = runtime.attachPlayerSessionTransport(
         transportFirst,
-        identity
+        registrationIdentity
     );
     require(static_cast<bool>(firstSession), "first account enrollment failed");
 
@@ -282,10 +299,16 @@ void requireAccountReconnectReturnsSamePersistentPlayer()
     LocalLoopbackTransport duplicateTransport;
     const auto duplicateSession = runtime.attachPlayerSessionTransport(
         duplicateTransport,
-        identity
+        signInIdentity
     );
     require(!duplicateSession,
             "same account obtained two concurrent gameplay sessions");
+    game::network::SessionReject duplicateReject;
+    require(
+        duplicateTransport.receiveSessionReject(duplicateReject) &&
+        duplicateReject.reason == game::network::SessionRejectReason::AlreadyActive,
+        "duplicate live sign-in did not receive typed AlreadyActive rejection"
+    );
 
     require(
         runtime.detachPlayerSessionTransport(firstSession),
@@ -295,7 +318,7 @@ void requireAccountReconnectReturnsSamePersistentPlayer()
     LocalLoopbackTransport reconnectTransport;
     const auto reconnectSession = runtime.attachPlayerSessionTransport(
         reconnectTransport,
-        identity
+        signInIdentity
     );
     require(static_cast<bool>(reconnectSession),
             "known account could not reconnect after disconnect");

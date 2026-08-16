@@ -1,4 +1,5 @@
 #include <algorithm>
+#include "src/core/RuntimeTrace.h"
 #include <cmath>
 #include <chrono>
 #include <iostream>
@@ -64,9 +65,10 @@ void GameClient::startAssemblyPreload(
 
     m_deferredAssemblySnapshot = snapshot;
 
-    std::cerr
-        << "[M8E-ASSET] preload-begin types=" << types.size()
-        << "\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr
+            << "[M8E-ASSET] preload-begin types=" << types.size()
+            << "\n";
 
     m_assemblyPreloadFuture = std::async(
         std::launch::async,
@@ -107,7 +109,8 @@ bool GameClient::pollAssemblyPreload()
         return false;
     }
 
-    std::cerr << "[M8E-ASSET] preload-ready\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr << "[M8E-ASSET] preload-ready\n";
     return true;
 }
 
@@ -481,6 +484,15 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
         std::max(0.0, wallDeltaSeconds)
     );
 
+    game::network::SessionReject reject;
+    while (m_transport.receiveSessionReject(reject))
+    {
+        failSynchronization(
+            game::network::sessionRejectCode(reject.reason)
+        );
+        return false;
+    }
+
     game::network::SessionWelcome welcome;
     while (m_transport.receiveSessionWelcome(welcome))
     {
@@ -572,12 +584,13 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
 
         if (firstWelcome)
         {
-            std::cerr << "[M8E-CONNECT][client] welcome session="
-                      << welcome.sessionId.value
-                      << " player=" << welcome.playerId.value
-                      << " ship_instance=" << welcome.controlledShipInstanceId
-                      << " entity=" << welcome.controlledEntityId.value
-                      << "\n";
+            if (core::runtimeTraceEnabled())
+                std::cerr << "[M8E-CONNECT][client] welcome session="
+                          << welcome.sessionId.value
+                          << " player=" << welcome.playerId.value
+                          << " ship_instance=" << welcome.controlledShipInstanceId
+                          << " entity=" << welcome.controlledEntityId.value
+                          << "\n";
         }
     }
 
@@ -660,12 +673,13 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
 
         if (firstAcceptedSnapshot)
         {
-            std::cerr << "[M8E-CONNECT][client] first-snapshot tick="
-                      << snapshot.metadata.serverTick
-                      << " ships=" << snapshot.ships.size()
-                      << " objects=" << snapshot.objects.size()
-                      << " hubs=" << snapshot.hubs.size()
-                      << "\n";
+            if (core::runtimeTraceEnabled())
+                std::cerr << "[M8E-CONNECT][client] first-snapshot tick="
+                          << snapshot.metadata.serverTick
+                          << " ships=" << snapshot.ships.size()
+                          << " objects=" << snapshot.objects.size()
+                          << " hubs=" << snapshot.hubs.size()
+                          << "\n";
         }
 
         while (!m_pendingInputs.empty() &&

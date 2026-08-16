@@ -57,27 +57,6 @@ void SpaceState::initClient()
 
 void SpaceState::initHUD()
 {
-    using HudClock = std::chrono::steady_clock;
-    const auto hudBegin = HudClock::now();
-    auto hudStageBegin = hudBegin;
-    const auto traceHudStage = [&](const char* stage)
-    {
-        const auto now = HudClock::now();
-        const double stageMs = std::chrono::duration<double, std::milli>(
-            now - hudStageBegin
-        ).count();
-        const double totalMs = std::chrono::duration<double, std::milli>(
-            now - hudBegin
-        ).count();
-        std::cerr
-            << "[M8E-STARTUP][hud] stage=" << stage
-            << " duration_ms=" << stageMs
-            << " total_ms=" << totalMs
-            << " thread=" << std::this_thread::get_id()
-            << "\n";
-        hudStageBegin = now;
-    };
-
     if (!m_client)
         throw std::runtime_error("SpaceState has no game client");
 
@@ -114,60 +93,11 @@ void SpaceState::initHUD()
     }
 
     const ShipDescriptor& desc = *playerShip->descriptor;
-    traceHudStage("resolve-player");
-
-    // One-shot M8E graphical-client bootstrap telemetry. This is emitted at
-    // the presentation boundary so we can distinguish bad replicated spatial
-    // state from a later camera/render transform error.
-    {
-        const glm::dvec3 localWorld = playerShip->transform.fullWorldMeters();
-        std::size_t playerCount = 0;
-        for (const auto& [_, candidate] : ships)
-        {
-            if (candidate.role == ShipRole::Player)
-                ++playerCount;
-        }
-
-        std::cerr
-            << "[M8E-CLIENT] local_entity=" << m_playerId.value
-            << " player_entities=" << playerCount
-            << "\n";
-
-        for (const auto& [_, candidate] : ships)
-        {
-            if (candidate.role != ShipRole::Player)
-                continue;
-
-            const glm::dvec3 world = candidate.transform.fullWorldMeters();
-            const glm::dvec3 renderWorld =
-                candidate.renderTransform.fullWorldMeters();
-            const glm::dvec3 local =
-                candidate.transform.motion.localPositionMeters;
-            const double distance = glm::length(world - localWorld);
-
-            std::cerr
-                << "[M8E-CLIENT] entity=" << candidate.id.value
-                << " local=" << (candidate.id == m_playerId ? "yes" : "no")
-                << " role=player"
-                << " type=" << static_cast<int>(candidate.typeId)
-                << " system=" << candidate.transform.motion.systemId
-                << " hub=" << candidate.transform.motion.hubId
-                << " frame=" << candidate.referenceFrame.frameId
-                << " local_m=(" << local.x << ',' << local.y << ',' << local.z << ')'
-                << " world_m=(" << world.x << ',' << world.y << ',' << world.z << ')'
-                << " render_m=(" << renderWorld.x << ',' << renderWorld.y << ',' << renderWorld.z << ')'
-                << " distance_to_local_m=" << distance
-                << "\n";
-        }
-    }
-    traceHudStage("bootstrap-telemetry");
-
     ShipTransform initialTransform = playerShip->transform;
     m_playerView = std::make_unique<PlayerShipView>();
     m_playerView->init(context(), &desc, initialTransform);
 
     m_playerView->setAttachmentOverrides(&m_attachmentEditorOverrides);
-    traceHudStage("player-view");
 
 
 
@@ -343,22 +273,17 @@ void SpaceState::initHUD()
     }
 
 
-    traceHudStage("ui-tree");
 
     // =======================================================================
     // инициализация параметров рендера
     // =======================================================================
     m_hudRenderer.init(context());
-    traceHudStage("hud-renderer");
 
     m_worldLabelRenderer.init(context());
-    traceHudStage("world-label-renderer");
 
     m_flightVectorIndicatorRenderer.init();
-    traceHudStage("flight-vector-renderer");
 
     initServerAndClient();
-    traceHudStage("server-client-hooks");
 
 
     

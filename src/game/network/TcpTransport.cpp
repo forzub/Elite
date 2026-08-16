@@ -60,6 +60,18 @@ struct TcpClientTransport::Impl
         {
             switch (frame.kind)
             {
+                case wire::WireMessageKind::SessionReject:
+                {
+                    SessionReject value;
+                    if (!wire::decodeMessagePayload(frame, value, compressor))
+                    {
+                        fail("invalid SessionReject wire payload");
+                        return;
+                    }
+                    rejects.push(std::move(value));
+                    break;
+                }
+
                 case wire::WireMessageKind::SessionWelcome:
                 {
                     SessionWelcome value;
@@ -133,6 +145,7 @@ struct TcpClientTransport::Impl
 
     void resetQueues()
     {
+        rejects = std::queue<SessionReject>{};
         welcomes = std::queue<SessionWelcome>{};
         snapshots = std::queue<SimulationSnapshot>{};
         mapResponses = std::queue<MapResponse>{};
@@ -141,6 +154,7 @@ struct TcpClientTransport::Impl
 
     wire::TcpWireStream stream;
     wire::NoWireCompression compressor;
+    std::queue<SessionReject> rejects;
     std::queue<SessionWelcome> welcomes;
     std::queue<SimulationSnapshot> snapshots;
     std::queue<MapResponse> mapResponses;
@@ -303,6 +317,12 @@ void TcpClientTransport::sendSessionHello(const SessionHello& hello)
     m_impl->send(hello);
 }
 
+bool TcpClientTransport::receiveSessionReject(SessionReject& outReject)
+{
+    m_impl->service();
+    return popQueue(m_impl->rejects, outReject);
+}
+
 bool TcpClientTransport::receiveSessionWelcome(SessionWelcome& outWelcome)
 {
     m_impl->service();
@@ -377,6 +397,12 @@ bool TcpServerTransport::receiveTimeSyncRequest(TimeSyncRequest& outRequest)
 {
     m_impl->service();
     return popQueue(m_impl->timeSyncRequests, outRequest);
+}
+
+void TcpServerTransport::publishSessionRejectImmediately(
+    const SessionReject& reject)
+{
+    m_impl->send(reject);
 }
 
 void TcpServerTransport::publishSessionWelcomeImmediately(

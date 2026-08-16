@@ -16,6 +16,10 @@ public:
         const game::network::SessionHello& hello
     ) = 0;
 
+    virtual bool receiveSessionReject(
+        game::network::SessionReject& outReject
+    ) = 0;
+
     virtual bool receiveSessionWelcome(
         game::network::SessionWelcome& outWelcome
     ) = 0;

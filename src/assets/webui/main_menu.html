@@ -124,8 +124,11 @@
       <div id="multiplayer-connection" class="connection">
         <label for="server-endpoint" data-i18n="main.server_address">SERVER ADDRESS</label>
         <input id="server-endpoint" value="127.0.0.1:27351" spellcheck="false" autocomplete="off">
+        <label for="credential-profile" data-i18n="main.credential_profile" style="margin-top:14px">CREDENTIAL PROFILE</label>
+        <input id="credential-profile" value="default" spellcheck="false" autocomplete="off" maxlength="64">
         <div id="connection-error" class="connection-error"></div>
-        <button data-i18n="main.connect" onclick="connectMultiplayer()">CONNECT</button>
+        <button data-i18n="main.sign_in" onclick="authorizeMultiplayer(false)">SIGN IN</button>
+        <button data-i18n="main.register" onclick="authorizeMultiplayer(true)">REGISTER</button>
         <button data-i18n="main.back" onclick="sendCommand('multiplayer_back')">BACK</button>
       </div>
 
@@ -143,11 +146,16 @@
       }
     }
 
+    function setMultiplayerDefaults(endpoint, profile) {
+      if (endpoint) document.getElementById('server-endpoint').value = endpoint;
+      if (profile) document.getElementById('credential-profile').value = profile;
+    }
+
     function showMultiplayerForm() {
       document.getElementById('main-actions').style.display = 'none';
       document.getElementById('multiplayer-connection').style.display = 'block';
       setConnectionError('');
-      const input = document.getElementById('server-endpoint');
+      const input = document.getElementById('credential-profile');
       input.focus();
       input.select();
     }
@@ -158,30 +166,63 @@
       setConnectionError('');
     }
 
+    const connectionErrorI18nKeys = {
+      INVALID_CREDENTIAL: 'main.auth.invalid_credential',
+      UNKNOWN_CREDENTIAL: 'main.auth.unknown_credential',
+      REGISTRATION_UNAVAILABLE: 'main.auth.registration_unavailable',
+      ALREADY_ACTIVE: 'main.auth.already_active',
+      SESSION_UNAVAILABLE: 'main.auth.session_unavailable',
+      BOOTSTRAP_FAILED: 'main.auth.bootstrap_failed'
+    };
+
+    let connectionErrorCode = '';
+
     function setConnectionError(message) {
-      document.getElementById('connection-error').textContent = message || '';
+      connectionErrorCode = message || '';
+      const key = connectionErrorI18nKeys[connectionErrorCode];
+      document.getElementById('connection-error').textContent = key
+        ? window.GameI18n.t(key, connectionErrorCode)
+        : connectionErrorCode;
     }
 
-    async function connectMultiplayer() {
+    window.addEventListener('game-ui-language-changed', () => {
+      if (connectionErrorCode) setConnectionError(connectionErrorCode);
+    });
+
+    async function authorizeMultiplayer(register) {
       const endpoint = document.getElementById('server-endpoint').value.trim();
+      const profile = document.getElementById('credential-profile').value.trim();
       if (!endpoint) {
         setConnectionError('SERVER ADDRESS REQUIRED');
         return;
       }
+      if (!profile) {
+        setConnectionError('CREDENTIAL PROFILE REQUIRED');
+        return;
+      }
+      if (!/^[A-Za-z0-9_-]{1,64}$/.test(profile)) {
+        setConnectionError('PROFILE MAY USE ONLY A-Z, 0-9, _ AND -');
+        return;
+      }
       setConnectionError('');
-      await sendCommand('multiplayer_connect|' + endpoint);
+      await sendCommand(
+        (register ? 'multiplayer_register|' : 'multiplayer_signin|') +
+        endpoint + '|' + profile
+      );
     }
 
-    document.getElementById('server-endpoint').addEventListener('keydown', event => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        connectMultiplayer();
-      }
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        showMainMenu();
-      }
-    });
+    for (const id of ['server-endpoint', 'credential-profile']) {
+      document.getElementById(id).addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          authorizeMultiplayer(false);
+        }
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          showMainMenu();
+        }
+      });
+    }
   </script>
 </body>
 </html>

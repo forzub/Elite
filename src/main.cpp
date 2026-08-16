@@ -1,4 +1,5 @@
 #include <cmath>
+#include "src/core/RuntimeTrace.h"
 #include <algorithm>
 #include <utility>
 #include <iostream>
@@ -158,6 +159,10 @@ int runRemoteClientProcessSelfTest(
         std::cerr << "[FAIL] remote-client process could not generate auth token\n";
         return 2;
     }
+    // A fresh process-acceptance server has no durable account store yet.
+    // Explicitly register this ephemeral test credential; production SIGN IN
+    // must never create an account implicitly.
+    config.identityHello.intent = game::network::AuthenticationIntent::Register;
     game::session::RemoteGameSession session(std::move(config));
     session.beginSynchronization();
 
@@ -588,12 +593,13 @@ bool parseCelestialBakeOptions(
 int main(int argc, char** argv)
 {
 #ifdef _WIN32
-    std::cerr
-        << "[M8E-XPROC][process] pid=" << GetCurrentProcessId()
-        << " stage=main-begin"
-        << " uptime_ms=" << GetTickCount64()
-        << " tid=" << GetCurrentThreadId()
-        << "\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr
+            << "[M8E-XPROC][process] pid=" << GetCurrentProcessId()
+            << " stage=main-begin"
+            << " uptime_ms=" << GetTickCount64()
+            << " tid=" << GetCurrentThreadId()
+            << "\n";
 #endif
     std::string runtimeRootError;
     if (!platform::initializeExecutableRuntimeRoot(&runtimeRootError))
@@ -725,24 +731,29 @@ int main(int argc, char** argv)
             return -2;
         }
 
-        std::cerr << "[Identity] credential_slot="
-                  << identityProfile.profileName
-                  << " source=os-store\n";
+        if (core::runtimeTraceEnabled())
+            std::cerr << "[Identity] credential_slot="
+                      << identityProfile.profileName
+                      << " source=os-store\n";
 #ifdef _WIN32
-        std::cerr
-            << "[M8E-XPROC][process] pid=" << GetCurrentProcessId()
-            << " stage=credential"
-            << " duration_ms="
-            << std::chrono::duration<double, std::milli>(
-                   std::chrono::steady_clock::now() - xprocIdentityBegin
-               ).count()
-            << " uptime_ms=" << GetTickCount64()
-            << " tid=" << GetCurrentThreadId()
-            << "\n";
+        if (core::runtimeTraceEnabled())
+            std::cerr
+                << "[M8E-XPROC][process] pid=" << GetCurrentProcessId()
+                << " stage=credential"
+                << " duration_ms="
+                << std::chrono::duration<double, std::milli>(
+                       std::chrono::steady_clock::now() - xprocIdentityBegin
+                   ).count()
+                << " uptime_ms=" << GetTickCount64()
+                << " tid=" << GetCurrentThreadId()
+                << "\n";
 #endif
 
         Application app;
-        app.configureClientIdentity(identityProfile.sessionHello());
+        app.configureClientIdentity(
+            identityProfile.profileName,
+            identityProfile.sessionHello()
+        );
         if (useRemoteServer)
         {
             app.configureRemoteServer(

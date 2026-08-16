@@ -94,7 +94,7 @@ if "m_server.playerId(),\n            clientMessage" in runner_cpp:
 
 for token in (
     "attachPlayerSessionTransport(transport, hello)",
-    "resolveOrBindAccount(hello)",
+    "resolveOrRegisterAccount(hello, reject)",
     "m_server->createPlayerSession(playerId)",
     "publishSessionBootstrap(transport, sessionId)",
     "welcome.sessionId = sessionId",

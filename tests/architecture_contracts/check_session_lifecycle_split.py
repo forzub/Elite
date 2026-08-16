@@ -37,7 +37,9 @@ for forbidden in [
 for token in [
     'webCommand == "new_local_game"',
     'webCommand == "multiplayer"',
-    '"multiplayer_connect|"',
+    '"multiplayer_signin|"',
+    '"multiplayer_register|"',
+    "prepareRemoteIdentity",
     "parseNetworkEndpoint",
     "GameSessionLaunchKind::LocalNewGame",
     "GameSessionLaunchKind::RemoteMultiplayer",
@@ -49,8 +51,10 @@ for token in [
     "main.new_local_game",
     "main.load_local_game",
     "main.multiplayer",
-    "multiplayer_connect|",
+    "multiplayer_signin|",
+    "multiplayer_register|",
     "server-endpoint",
+    "credential-profile",
 ]:
     if token not in menu_html:
         raise SystemExit(f"main menu lifecycle UI missing: {token}")

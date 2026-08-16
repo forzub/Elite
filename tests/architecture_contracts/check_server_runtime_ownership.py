@@ -98,6 +98,8 @@ for required in (
 for required in (
     "struct SessionHello",
     "AuthToken authToken {};",
+    "AuthenticationIntent intent = AuthenticationIntent::SignIn;",
+    "struct SessionReject",
     "struct SessionWelcome",
     "ServerSessionId sessionId {};",
     "PlayerId playerId {};",
@@ -112,9 +114,11 @@ if "controlledEntityId" in client_session_snapshot_h:
     fail("stable controlled-entity identity leaked into recurring simulation snapshots")
 
 for required in (
-    "resolveOrBindAccount",
+    "resolveOrRegisterAccount",
     "m_accounts.resolve",
     "m_accounts.bind",
+    "AuthenticationIntent::Register",
+    "SessionRejectReason::UnknownCredential",
     "m_server->createPlayerSession(playerId)",
     "welcome.sessionId = sessionId",
     "welcome.playerId = playerId",
@@ -154,11 +158,15 @@ if "m_host->playerId()" in session_cpp:
 if "return m_client->playerId();" not in session_cpp:
     fail("LocalGameSession player identity is not sourced from synchronized client state")
 
-if "sendSessionHello(" not in client_transport_h or "receiveSessionWelcome(" not in client_transport_h:
-    fail("client transport lost the account hello / session welcome control plane")
+if ("sendSessionHello(" not in client_transport_h or
+        "receiveSessionReject(" not in client_transport_h or
+        "receiveSessionWelcome(" not in client_transport_h):
+    fail("client transport lost the auth reject / session welcome control plane")
 
-if "receiveSessionHello(" not in server_transport_h or "publishSessionWelcomeImmediately(" not in server_transport_h:
-    fail("server transport lost the account hello / session welcome control plane")
+if ("receiveSessionHello(" not in server_transport_h or
+        "publishSessionRejectImmediately(" not in server_transport_h or
+        "publishSessionWelcomeImmediately(" not in server_transport_h):
+    fail("server transport lost the auth reject / session welcome control plane")
 
 if "std::queue<std::pair<EntityId" in loopback_h:
     fail("loopback command queue regained client-selected EntityId ownership")

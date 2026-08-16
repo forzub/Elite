@@ -1,4 +1,5 @@
 #include "GameServer.h"
+#include "src/core/RuntimeTrace.h"
 #include "src/game/network/ReplicationSnapshotMerge.h"
 #include <type_traits>
 #include "src/game/network/ClientMessage.h"
@@ -1036,15 +1037,16 @@ void GameServer::resetSessionControlState(
     if (Ship* ship = m_simulation.getShip(controlledEntityId))
         ship->setControlState(ShipControlState{});
 
-    std::cerr
-        << "[M8E-CONTROL][server] stream-reset entity="
-        << controlledEntityId.value
-        << " reason=" << (reason ? reason : "session-boundary")
-        << " previous_last_received=" << previousLastReceived
-        << " previous_last_processed=" << previousLastProcessed
-        << " pending_controls=" << previousPendingControls
-        << " pending_commands=" << previousPendingCommands
-        << "\n";
+    if (core::runtimeTraceEnabled())
+        std::cerr
+            << "[M8E-CONTROL][server] stream-reset entity="
+            << controlledEntityId.value
+            << " reason=" << (reason ? reason : "session-boundary")
+            << " previous_last_received=" << previousLastReceived
+            << " previous_last_processed=" << previousLastProcessed
+            << " pending_controls=" << previousPendingControls
+            << " pending_commands=" << previousPendingCommands
+            << "\n";
 }
 
 

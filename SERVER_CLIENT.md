@@ -44,6 +44,19 @@
 
 Headless target не должен зависеть от GLFW/OpenGL/Freetype/WebView/UI/render.
 
+### Канонические build/runtime каталоги
+
+Для каждой постоянной исполняемой сущности проекта существует **один** канонический build/runtime path. Этот путь используется в документации, ручных запусках и как источник production-development binary для runtime acceptance. Нельзя оставлять параллельные долговечные каталоги по смыслу `server2`, `new_server`, `ready_server`, `final_server`, `latest_server` и т. п.
+
+На текущем Windows/MSYS2 этапе канонические ручные пути считаются:
+
+- `EliteGame`: `build/EliteGame.exe`;
+- dedicated `EliteServer`: `build/headless_server/EliteServer.exe`.
+
+Test harness может иметь отдельный scratch build только если он **явно test-only**, не используется вручную и автоматически очищается/пересоздаётся. Такие каталоги не являются альтернативными runtime binaries. Долгосрочная задача — свести тесты к общему build layout там, где изоляция configure не нужна, а оставшиеся scratch paths держать под единым `build/tests/` namespace.
+
+После изменения server/client source перед ручным acceptance нужно явно пересобрать соответствующий канонический target. Acceptance считается недействительным, если нельзя доказать, какой binary был запущен. В roadmap зафиксирован cleanup: инвентаризировать `build/*`, удалить неиспользуемые старые каталоги и исправить scripts, создающие постоянные дубли.
+
 ---
 
 ## 2. Два штатных режима игры

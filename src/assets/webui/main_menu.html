@@ -72,6 +72,39 @@
       color: #58647a;
       font-size: 12px;
     }
+
+    .connection {
+      display: none;
+      margin-top: 18px;
+      text-align: left;
+    }
+
+    .connection label {
+      display: block;
+      margin-bottom: 8px;
+      color: #9eb2d6;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .connection input {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid rgba(150, 190, 255, 0.45);
+      border-radius: 8px;
+      background: rgba(4, 9, 18, 0.95);
+      color: #e8eefc;
+      font-size: 16px;
+    }
+
+    .connection-error {
+      min-height: 18px;
+      margin-top: 10px;
+      color: #ff9b9b;
+      font-size: 12px;
+      text-align: center;
+    }
   </style>
 </head>
 
@@ -81,10 +114,20 @@
       <h1>ELITE</h1>
       <div class="subtitle" data-i18n="main.subtitle">HTML GAME UI PROTOTYPE</div>
 
-      <button data-i18n="main.new_game" onclick="sendCommand('new_game')">NEW GAME</button>
-      <button data-i18n="main.load_game" onclick="sendCommand('load_game')">LOAD GAME</button>
-      <button data-i18n="main.shipyard" onclick="sendCommand('shipyard')">SHIPYARD</button>
-      <button data-i18n="main.exit" onclick="sendCommand('exit')">EXIT</button>
+      <div id="main-actions">
+        <button data-i18n="main.new_local_game" onclick="sendCommand('new_local_game')">NEW LOCAL GAME</button>
+        <button data-i18n="main.load_local_game" onclick="sendCommand('load_local_game')">LOAD LOCAL GAME</button>
+        <button data-i18n="main.multiplayer" onclick="sendCommand('multiplayer')">MULTIPLAYER</button>
+        <button data-i18n="main.exit" onclick="sendCommand('exit')">EXIT</button>
+      </div>
+
+      <div id="multiplayer-connection" class="connection">
+        <label for="server-endpoint" data-i18n="main.server_address">SERVER ADDRESS</label>
+        <input id="server-endpoint" value="127.0.0.1:27351" spellcheck="false" autocomplete="off">
+        <div id="connection-error" class="connection-error"></div>
+        <button data-i18n="main.connect" onclick="connectMultiplayer()">CONNECT</button>
+        <button data-i18n="main.back" onclick="sendCommand('multiplayer_back')">BACK</button>
+      </div>
 
       <div class="hint" data-i18n="main.hint">WebView layer. Not the debug browser.</div>
     </div>
@@ -99,6 +142,46 @@
         console.log("gameCommand bridge not found:", command);
       }
     }
+
+    function showMultiplayerForm() {
+      document.getElementById('main-actions').style.display = 'none';
+      document.getElementById('multiplayer-connection').style.display = 'block';
+      setConnectionError('');
+      const input = document.getElementById('server-endpoint');
+      input.focus();
+      input.select();
+    }
+
+    function showMainMenu() {
+      document.getElementById('multiplayer-connection').style.display = 'none';
+      document.getElementById('main-actions').style.display = 'block';
+      setConnectionError('');
+    }
+
+    function setConnectionError(message) {
+      document.getElementById('connection-error').textContent = message || '';
+    }
+
+    async function connectMultiplayer() {
+      const endpoint = document.getElementById('server-endpoint').value.trim();
+      if (!endpoint) {
+        setConnectionError('SERVER ADDRESS REQUIRED');
+        return;
+      }
+      setConnectionError('');
+      await sendCommand('multiplayer_connect|' + endpoint);
+    }
+
+    document.getElementById('server-endpoint').addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        connectMultiplayer();
+      }
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        showMainMenu();
+      }
+    });
   </script>
 </body>
 </html>

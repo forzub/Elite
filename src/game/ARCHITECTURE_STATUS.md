@@ -557,6 +557,13 @@ language.
 - Real two-client testing exposed a GLFW 3.4 Win32 process-safety defect in `_glfwPollEventsWin32`: `GetActiveWindow()` could return another process' GLFW HWND and `GetPropW(..., L"GLFW")` then yields a pointer meaningful only in that foreign process. The first client crashed when GLFW dereferenced it. Because an app-side pre-check has a TOCTOU race, Windows `Window::pollEvents()` now uses the native `PeekMessageW/TranslateMessage/DispatchMessageW` pump and avoids the unsafe GLFW post-poll path while still delivering messages to GLFW's WndProc.
 - Manual graphical acceptance then proved two simultaneous remote clients, distinct server-owned identities and shared-world visibility at ~50 m. The next gate is not another client selector hack; it is production identity/authentication plus disconnect/reconnect ownership semantics.
 
+### Multiplayer Stage M8E.1 — reconnect control epoch recovery gate
+
+- `ShipControlState::controlTick` is a **live-session input sequence**, not persistent ship state. A fresh `GameClient` starts its sequence again at `1`. The server must therefore never carry an old `FixedStepControlQueue` acknowledgement across a new `ServerSessionId` merely because the same persistent ship rematerializes as the same `EntityId`.
+- Manual two-process testing on 2026-08-16 exposed the lifetime mismatch: reconnecting to a long-running server inherited the old EntityId-owned control stream; new inputs were rejected as stale, local prediction moved briefly, authoritative snapshots rolled it back, and control became normal only after the new counter overtook the old one.
+- The recovery contract is: on successful session create and on final disconnect for that player, discard the old numbered-input queue, discard pending one-shot ship commands, and neutralize continuous `ShipControlState` while preserving authoritative kinematic state. A reconnect acceptance test must create a **new `GameClient`** for the same persistent player/ship/entity and prove that bootstrap acknowledgement returns to the fresh epoch.
+- This is separate from the remaining Win32 UI-thread responsiveness issue: the native event pump is still required to avoid the GLFW 3.4 foreign-HWND crash, while `WM_NCLBUTTONDOWN/HTCAPTION` may independently hold `DispatchMessageW` inside the Windows move/size modal loop. Do not treat that UI stall as server/session cross-talk.
+
 ### Persistent identity Phase 1 — player / ship / session / control separation
 
 The server now treats four identifiers as different domains:

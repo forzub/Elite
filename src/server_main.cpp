@@ -414,6 +414,12 @@ int runNetworkServer(
     const game::network::NetworkEndpoint& endpoint,
     bool oneClientSelfTest)
 {
+    // The authoritative server has a large amount of legacy subsystem/debug
+    // stdout noise (mesh normalization, hit/seam construction, power-bus
+    // registration, etc.). Keep normal headless operation concise: errors,
+    // lifecycle and temporary connection diagnostics use stderr.
+    core::disableRuntimeStdoutNoise();
+
     game::server::HeadlessDebugChannel debugChannel;
     WorldParams worldParams;
     game::server::NetworkServerHost host(worldParams, debugChannel);
@@ -430,7 +436,7 @@ int runNetworkServer(
     std::signal(SIGTERM, handleTerminationSignal);
 #endif
 
-    std::cout
+    std::cerr
         << "[EliteServer] listening endpoint="
         << endpoint.host << ':' << host.localPort()
         << " fixed_step_s=" << host.fixedStepSeconds()
@@ -475,12 +481,14 @@ int runNetworkServer(
     }
 
     host.close();
-    std::cout << "[EliteServer] stopped\n";
+    std::cerr << "[EliteServer] stopped\n";
     return 0;
 }
 
 int runHeadlessServer()
 {
+    core::disableRuntimeStdoutNoise();
+
     game::server::HeadlessServerTransport transport;
     game::server::HeadlessDebugChannel debugChannel;
     WorldParams worldParams;
@@ -496,11 +504,11 @@ int runHeadlessServer()
     std::signal(SIGTERM, handleTerminationSignal);
 #endif
 
-    std::cout
+    std::cerr
         << "[EliteServer] authoritative headless runtime started"
         << " fixed_step_s=" << runtime.fixedStepSeconds()
         << "\n";
-    std::cout
+    std::cerr
         << "[EliteServer] remote listener disabled in this mode; "
         << "use --listen HOST:PORT to accept clients\n";
 
@@ -521,7 +529,7 @@ int runHeadlessServer()
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    std::cout << "[EliteServer] stopped\n";
+    std::cerr << "[EliteServer] stopped\n";
     return 0;
 }
 }

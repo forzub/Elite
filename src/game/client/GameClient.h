@@ -3,7 +3,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <future>
+#include <optional>
 #include <string>
+#include <vector>
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/client/ClientCatalogService.h"
 #include "src/game/client/ClientMapService.h"
@@ -150,6 +153,14 @@ public:
 
 private:
     bool hasGameplayCoreState() const;
+    std::vector<ObjectType> unloadedAssemblyTypes(
+        const SimulationSnapshot& snapshot
+    ) const;
+    void startAssemblyPreload(
+        const SimulationSnapshot& snapshot,
+        std::vector<ObjectType> types
+    );
+    bool pollAssemblyPreload();
     void refreshConnectionState();
     void replayPendingInputs(const WorldParams& world, float fixedDt);
     void sendAndPredictFixedStep(const WorldParams& world, float fixedDt);
@@ -223,6 +234,13 @@ private:
 
     bool m_hasSessionSnapshot = false;
     game::simulation::ClientSessionSnapshot m_sessionSnapshot;
+
+    // CPU assembly hydration must never hold the Win32/UI thread. A snapshot
+    // that introduces an uncached object type is parked here while one worker
+    // prepares the endpoint-local OBJ data. The authoritative snapshot itself
+    // is applied only after that presentation/static-data prerequisite is ready.
+    std::optional<SimulationSnapshot> m_deferredAssemblySnapshot;
+    std::future<void> m_assemblyPreloadFuture;
 
     bool m_gameplayFramePrepared = false;
     bool m_preparedAcceptedSnapshot = false;

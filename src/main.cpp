@@ -587,6 +587,14 @@ bool parseCelestialBakeOptions(
 
 int main(int argc, char** argv)
 {
+#ifdef _WIN32
+    std::cerr
+        << "[M8E-XPROC][process] pid=" << GetCurrentProcessId()
+        << " stage=main-begin"
+        << " uptime_ms=" << GetTickCount64()
+        << " tid=" << GetCurrentThreadId()
+        << "\n";
+#endif
     std::string runtimeRootError;
     if (!platform::initializeExecutableRuntimeRoot(&runtimeRootError))
     {
@@ -705,6 +713,9 @@ int main(int argc, char** argv)
 
         game::identity::ClientIdentityProfile identityProfile;
         std::string identityError;
+#ifdef _WIN32
+        const auto xprocIdentityBegin = std::chrono::steady_clock::now();
+#endif
         if (!game::identity::ClientIdentityProfileStore::loadOrCreate(
                 clientProfileName,
                 identityProfile,
@@ -717,6 +728,18 @@ int main(int argc, char** argv)
         std::cerr << "[Identity] credential_slot="
                   << identityProfile.profileName
                   << " source=os-store\n";
+#ifdef _WIN32
+        std::cerr
+            << "[M8E-XPROC][process] pid=" << GetCurrentProcessId()
+            << " stage=credential"
+            << " duration_ms="
+            << std::chrono::duration<double, std::milli>(
+                   std::chrono::steady_clock::now() - xprocIdentityBegin
+               ).count()
+            << " uptime_ms=" << GetTickCount64()
+            << " tid=" << GetCurrentThreadId()
+            << "\n";
+#endif
 
         Application app;
         app.configureClientIdentity(identityProfile.sessionHello());

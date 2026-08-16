@@ -8,8 +8,9 @@ class StateStack;
 
 
 enum class MenuItem {
-    NewGame = 0,
-    LoadGame,
+    NewLocalGame = 0,
+    LoadLocalGame,
+    Multiplayer,
     Exit,
     Count
 };

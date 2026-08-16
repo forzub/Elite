@@ -2,11 +2,13 @@
 
 #include <algorithm>
 #include <cmath>
+#include <chrono>
 #include <cstdint>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -39,7 +41,7 @@ namespace game::diagnostics
 namespace
 {
 constexpr double FrameSeconds = 0.02;
-constexpr int SynchronizationFrameLimit = 400;
+constexpr int SynchronizationFrameLimit = 30000;
 constexpr int WaitFrameLimit = 400;
 
 class AcceptanceFailure final : public std::runtime_error
@@ -436,6 +438,7 @@ void synchronize(game::host::LocalGameSession& session)
             break;
 
         session.updateSynchronization(FrameSeconds);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     throw AcceptanceFailure(

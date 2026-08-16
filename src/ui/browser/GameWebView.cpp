@@ -3,6 +3,7 @@
 #include "ui/browser/GameWebView.h"
 
 #include <filesystem>
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -32,6 +33,17 @@ static std::string hresultHex(HRESULT hr)
     out << "0x" << std::hex << std::uppercase
         << static_cast<unsigned long>(hr);
     return out.str();
+}
+
+static bool currentProcessOwnsForegroundWindow()
+{
+    const HWND foreground = GetForegroundWindow();
+    if (!foreground)
+        return false;
+
+    DWORD foregroundPid = 0;
+    GetWindowThreadProcessId(foreground, &foregroundPid);
+    return foregroundPid == GetCurrentProcessId();
 }
 
 static std::filesystem::path configureProcessLocalWebView2UserDataFolder()
@@ -79,6 +91,7 @@ void GameWebView::start(
     int height,
     const std::string& htmlFile)
 {
+    const auto xprocStartBegin = std::chrono::steady_clock::now();
     if (m_running)
         return;
 
@@ -148,7 +161,7 @@ void GameWebView::start(
             {
                 (void)arg;
 
-                // req arrives as a JSON argument array, e.g. ["new_game"].
+                // req arrives as a JSON argument array, e.g. ["new_local_game"].
                 std::string command = req;
                 if (command.size() >= 4 && command.front() == '[')
                 {
@@ -208,6 +221,17 @@ void GameWebView::start(
 
         std::cout << "[GameWebView] navigate initial: " << uri << "\n";
         w->navigate(uri);
+
+        const double xprocStartMs = std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - xprocStartBegin
+        ).count();
+        std::cerr
+            << "[M8E-XPROC][webview] pid=" << GetCurrentProcessId()
+            << " op=start"
+            << " duration_ms=" << xprocStartMs
+            << " uptime_ms=" << GetTickCount64()
+            << " tid=" << GetCurrentThreadId()
+            << "\n";
 
         // No w->run() here. The embedded WebView belongs to the GLFW Win32 UI
         // thread and glfwPollEvents() is the application-owned message pump.
@@ -320,15 +344,17 @@ void GameWebView::setVisible(bool visible)
         );
 
         HWND parent = static_cast<HWND>(m_parentHwnd);
-        if (parent)
+        if (parent && currentProcessOwnsForegroundWindow())
         {
-            SetForegroundWindow(parent);
             SetActiveWindow(parent);
             SetFocus(parent);
         }
     }
     else
     {
+        // Showing/loading UI in a background client must not activate that
+        // process. This is especially important while another EliteGame window
+        // is already in gameplay and a second client is authenticating.
         SetWindowPos(
             hwnd,
             HWND_TOP,
@@ -336,9 +362,11 @@ void GameWebView::setVisible(bool visible)
             0,
             0,
             0,
-            SWP_NOMOVE | SWP_NOSIZE
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE
         );
-        SetFocus(hwnd);
+
+        if (currentProcessOwnsForegroundWindow())
+            SetFocus(hwnd);
     }
 }
 
@@ -361,7 +389,21 @@ void GameWebView::navigate(const std::string& htmlFile)
     }
 
     std::cout << "[GameWebView] navigate request: " << uri << "\n";
+    const auto xprocBegin = std::chrono::steady_clock::now();
     w->navigate(uri);
+    const double xprocDurationMs = std::chrono::duration<double, std::milli>(
+        std::chrono::steady_clock::now() - xprocBegin
+    ).count();
+    if (xprocDurationMs >= 100.0)
+    {
+        std::cerr
+            << "[M8E-XPROC][webview] pid=" << GetCurrentProcessId()
+            << " op=navigate"
+            << " duration_ms=" << xprocDurationMs
+            << " uptime_ms=" << GetTickCount64()
+            << " tid=" << GetCurrentThreadId()
+            << "\n";
+    }
 }
 
 void GameWebView::evalScript(const std::string& script)
@@ -370,7 +412,21 @@ void GameWebView::evalScript(const std::string& script)
     if (!w)
         return;
 
+    const auto xprocBegin = std::chrono::steady_clock::now();
     w->eval(script);
+    const double xprocDurationMs = std::chrono::duration<double, std::milli>(
+        std::chrono::steady_clock::now() - xprocBegin
+    ).count();
+    if (xprocDurationMs >= 100.0)
+    {
+        std::cerr
+            << "[M8E-XPROC][webview] pid=" << GetCurrentProcessId()
+            << " op=eval"
+            << " duration_ms=" << xprocDurationMs
+            << " uptime_ms=" << GetTickCount64()
+            << " tid=" << GetCurrentThreadId()
+            << "\n";
+    }
 }
 
 std::string GameWebView::filePathToUri(const std::string& path)

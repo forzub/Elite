@@ -999,7 +999,53 @@ void GameServer::submitCommand(EntityId id, const ShipControlState& control)
 
 }
 
+void GameServer::resetSessionControlState(
+    EntityId controlledEntityId,
+    const char* reason
+)
+{
+    if (controlledEntityId.value == 0)
+        return;
 
+    std::uint64_t previousLastReceived = 0;
+    std::uint64_t previousLastProcessed = 0;
+    std::size_t previousPendingControls = 0;
+
+    const auto streamIt = m_controlStreams.find(controlledEntityId.value);
+    if (streamIt != m_controlStreams.end())
+    {
+        previousLastReceived = streamIt->second.lastReceivedTick();
+        previousLastProcessed = streamIt->second.lastProcessedTick();
+        previousPendingControls = streamIt->second.pendingCount();
+        m_controlStreams.erase(streamIt);
+    }
+
+    std::size_t previousPendingCommands = 0;
+    const auto commandIt =
+        m_pendingClientShipCommands.find(controlledEntityId.value);
+    if (commandIt != m_pendingClientShipCommands.end())
+    {
+        previousPendingCommands = commandIt->second.size();
+        m_pendingClientShipCommands.erase(commandIt);
+    }
+
+    // Continuous control belongs to the live session too. Do not leave the
+    // ship accelerating or rotating from the final sample of a disconnected
+    // client. Newtonian velocity/orientation remain authoritative state; only
+    // the pilot intent is neutralized.
+    if (Ship* ship = m_simulation.getShip(controlledEntityId))
+        ship->setControlState(ShipControlState{});
+
+    std::cerr
+        << "[M8E-CONTROL][server] stream-reset entity="
+        << controlledEntityId.value
+        << " reason=" << (reason ? reason : "session-boundary")
+        << " previous_last_received=" << previousLastReceived
+        << " previous_last_processed=" << previousLastProcessed
+        << " pending_controls=" << previousPendingControls
+        << " pending_commands=" << previousPendingCommands
+        << "\n";
+}
 
 
 
@@ -1033,6 +1079,13 @@ game::network::ServerSessionId GameServer::createPlayerSession(
     if (!sessionId)
         return {};
 
+    // controlTick is a sequence inside one live client session, not a
+    // persistent property of the materialized ship. A new GameClient starts
+    // at tick 1, so an EntityId-keyed stream from an older session must never
+    // reject the new epoch as stale. This also scrubs any one-shot commands
+    // left behind by an interrupted connection.
+    resetSessionControlState(controlledEntityId, "session-create");
+
     m_simulation.setPlayerControlled(controlledEntityId, true);
     return sessionId;
 }
@@ -1052,11 +1105,15 @@ bool GameServer::disconnectPlayerSession(
         return false;
     }
 
-    // Persistent player->ship control identity survives a disconnect, but the
-    // expensive Active/player-controlled simulation pin is connection-scoped.
-    // A replacement session for the same PlayerId will pin it again.
+    // Persistent player->ship control identity survives a disconnect, but
+    // transport input does not. Once the last live session for this player is
+    // gone, discard its numbered-input epoch and neutralize continuous pilot
+    // intent before releasing the expensive Active/player-controlled pin.
     if (!m_sessions.isConnectedPlayer(playerId))
+    {
+        resetSessionControlState(controlledEntityId, "session-disconnect");
         m_simulation.setPlayerControlled(controlledEntityId, false);
+    }
 
     return true;
 }

@@ -16,10 +16,11 @@ ServerWorker::ServerWorker(
     game::debug::IServerDebugChannel& debugChannel
 )
 {
-    // Construct ServerRuntime on the worker itself. From GameServer's first
-    // constructor instruction onward, authoritative state belongs to exactly
-    // one OS thread; there is no temporary main-thread ownership to forget
-    // about when the execution model becomes more asynchronous later.
+    // Construction is intentionally non-blocking. ServerRuntime still belongs
+    // exclusively to this worker thread, but a local NEW GAME must not freeze
+    // the Win32/WebView thread while the authoritative world loads its static
+    // data. LocalGameSession polls ready()/rethrowIfFailed() during its normal
+    // loading-state update instead.
     m_thread = std::thread(
         &ServerWorker::threadMain,
         this,
@@ -27,24 +28,29 @@ ServerWorker::ServerWorker(
         std::ref(transport),
         std::ref(debugChannel)
     );
-
-    std::unique_lock<std::mutex> lock(m_mutex);
-    m_condition.wait(lock, [this]() {
-        return m_started || static_cast<bool>(m_failure);
-    });
-
-    if (m_failure)
-    {
-        const auto failure = m_failure;
-        lock.unlock();
-        stopAndJoin();
-        std::rethrow_exception(failure);
-    }
 }
 
 ServerWorker::~ServerWorker()
 {
     stopAndJoin();
+}
+
+bool ServerWorker::ready() const
+{
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_started && !m_failure;
+}
+
+void ServerWorker::rethrowIfFailed() const
+{
+    std::exception_ptr failure;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        failure = m_failure;
+    }
+
+    if (failure)
+        std::rethrow_exception(failure);
 }
 
 ServerAdvanceResult ServerWorker::advance(double elapsedSeconds)
@@ -53,6 +59,9 @@ ServerAdvanceResult ServerWorker::advance(double elapsedSeconds)
 
     if (m_failure)
         std::rethrow_exception(m_failure);
+
+    if (!m_started)
+        return m_lastAdvanceResult;
 
     // Keep the pipeline bounded to exactly one authoritative batch. If the
     // previous batch outlived the client/render frame, back-pressure is applied

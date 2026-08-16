@@ -2,6 +2,9 @@
 #include <GLFW/glfw3.h>
 #include "Application.h"
 #include <algorithm>
+#include <chrono>
+#include <cstdint>
+#include <thread>
 #include <utility>
 #include <stdexcept>
 
@@ -12,6 +15,7 @@
 #include "src/game/host/LocalGameSession.h"
 #include "src/game/session/RemoteGameSession.h"
 #include "src/game/session/IGameSession.h"
+#include "src/game/network/NetworkEndpoint.h"
 #include "src/game/navigation/CoordinateDisplayService.h"
 #include "src/game/ui/SystemMapUiCommandRouter.h"
 #include "input/Input.h"
@@ -23,6 +27,55 @@
 #include "render/ViewportUtils.h"
 #include "render/Renderer.h"
 #include "debug/DebugSettings.h"
+
+namespace
+{
+#ifdef _WIN32
+DWORD foregroundProcessIdForTrace()
+{
+    const HWND foreground = GetForegroundWindow();
+    if (!foreground)
+        return 0;
+
+    DWORD pid = 0;
+    GetWindowThreadProcessId(foreground, &pid);
+    return pid;
+}
+
+std::uint64_t xprocTraceTickMs()
+{
+    return static_cast<std::uint64_t>(GetTickCount64());
+}
+
+using XprocTraceClock = std::chrono::steady_clock;
+
+double xprocElapsedMs(const XprocTraceClock::time_point& begin)
+{
+    return std::chrono::duration<double, std::milli>(
+        XprocTraceClock::now() - begin
+    ).count();
+}
+
+void traceSlowMainPhase(
+    const char* phase,
+    const XprocTraceClock::time_point& begin,
+    double thresholdMs = 100.0)
+{
+    const double durationMs = xprocElapsedMs(begin);
+    if (durationMs < thresholdMs)
+        return;
+
+    std::cerr
+        << "[M8E-XPROC][main] pid=" << GetCurrentProcessId()
+        << " phase=" << phase
+        << " duration_ms=" << durationMs
+        << " uptime_ms=" << xprocTraceTickMs()
+        << " foreground_pid=" << foregroundProcessIdForTrace()
+        << " thread=" << std::this_thread::get_id()
+        << "\n";
+}
+#endif
+}
 
 // =====================================================================================
 // Constructor
@@ -164,22 +217,24 @@ void Application::configureRemoteServer(
     m_remoteServerPort = port;
 }
 
-void Application::startConfiguredGameSession()
+bool Application::hasConfiguredRemoteServer() const
 {
-    if (!m_remoteServerHost.empty() && m_remoteServerPort != 0)
-    {
-        game::session::RemoteGameSessionConfig config;
-        config.host = m_remoteServerHost;
-        config.port = m_remoteServerPort;
-        config.identityHello = m_clientIdentityHello;
-        m_gameSession =
-            std::make_unique<game::session::RemoteGameSession>(
-                std::move(config)
-            );
-        return;
-    }
+    return !m_remoteServerHost.empty() && m_remoteServerPort != 0;
+}
 
-    startLocalGameSession();
+void Application::startRemoteGameSession()
+{
+    if (!hasConfiguredRemoteServer())
+        throw std::runtime_error("remote server endpoint is not configured");
+
+    game::session::RemoteGameSessionConfig config;
+    config.host = m_remoteServerHost;
+    config.port = m_remoteServerPort;
+    config.identityHello = m_clientIdentityHello;
+    m_gameSession =
+        std::make_unique<game::session::RemoteGameSession>(
+            std::move(config)
+        );
 }
 
 void Application::startLocalGameSession()
@@ -256,10 +311,31 @@ void Application::init()
 {
     std::cout << "Application init\n";
 
+#ifdef _WIN32
+    const auto xprocInitTotalBegin = XprocTraceClock::now();
+    auto xprocInitStageBegin = xprocInitTotalBegin;
+    std::cerr
+        << "[M8E-XPROC][init] pid=" << GetCurrentProcessId()
+        << " stage=begin"
+        << " uptime_ms=" << xprocTraceTickMs()
+        << " thread=" << std::this_thread::get_id()
+        << "\n";
+#endif
+
     m_context.app           = this;
 
     glfwWindowHint(GLFW_STENCIL_BITS, 8);
     m_window = new Window(1280, 720, "EliteGame");
+#ifdef _WIN32
+    std::cerr
+        << "[M8E-XPROC][init] pid=" << GetCurrentProcessId()
+        << " stage=window"
+        << " duration_ms=" << xprocElapsedMs(xprocInitStageBegin)
+        << " total_ms=" << xprocElapsedMs(xprocInitTotalBegin)
+        << " uptime_ms=" << xprocTraceTickMs()
+        << "\n";
+    xprocInitStageBegin = XprocTraceClock::now();
+#endif
 
     // m_window  = new Window(1920, 1080, "EliteGame");
 
@@ -303,6 +379,16 @@ void Application::init()
             glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
             m_htmlUi.setViewport(w, h);
     // ---------------------------------------------------
+#ifdef _WIN32
+    std::cerr
+        << "[M8E-XPROC][init] pid=" << GetCurrentProcessId()
+        << " stage=localization-htmlui"
+        << " duration_ms=" << xprocElapsedMs(xprocInitStageBegin)
+        << " total_ms=" << xprocElapsedMs(xprocInitTotalBegin)
+        << " uptime_ms=" << xprocTraceTickMs()
+        << "\n";
+    xprocInitStageBegin = XprocTraceClock::now();
+#endif
 
 
     glfwSetWindowUserPointer(m_window->nativeHandle(), this);
@@ -315,6 +401,16 @@ void Application::init()
     glEnable(GL_DEPTH_TEST);
 
     m_renderer.init();
+#ifdef _WIN32
+    std::cerr
+        << "[M8E-XPROC][init] pid=" << GetCurrentProcessId()
+        << " stage=renderer"
+        << " duration_ms=" << xprocElapsedMs(xprocInitStageBegin)
+        << " total_ms=" << xprocElapsedMs(xprocInitTotalBegin)
+        << " uptime_ms=" << xprocTraceTickMs()
+        << "\n";
+    xprocInitStageBegin = XprocTraceClock::now();
+#endif
 
 
     glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
@@ -322,6 +418,16 @@ void Application::init()
     g_stateContext          = &m_context;
 
     TextRenderer::instance().init();
+#ifdef _WIN32
+    std::cerr
+        << "[M8E-XPROC][init] pid=" << GetCurrentProcessId()
+        << " stage=text-renderer"
+        << " duration_ms=" << xprocElapsedMs(xprocInitStageBegin)
+        << " total_ms=" << xprocElapsedMs(xprocInitTotalBegin)
+        << " uptime_ms=" << xprocTraceTickMs()
+        << "\n";
+    xprocInitStageBegin = XprocTraceClock::now();
+#endif
 
      #ifdef _WIN32
         int uiW = 1280;
@@ -335,6 +441,14 @@ void Application::init()
             uiH,
             makeGameUiHttpUrl(m_gameUiHttpPort, "main_menu.html", m_localization.locale())
         );
+        std::cerr
+            << "[M8E-XPROC][init] pid=" << GetCurrentProcessId()
+            << " stage=webview"
+            << " duration_ms=" << xprocElapsedMs(xprocInitStageBegin)
+            << " total_ms=" << xprocElapsedMs(xprocInitTotalBegin)
+            << " uptime_ms=" << xprocTraceTickMs()
+            << "\n";
+        xprocInitStageBegin = XprocTraceClock::now();
         m_gameUi.forceMode(GameUiMode::MainMenu);
         m_gameUi.markLoaded(GameUiMode::MainMenu);
         m_htmlUi.setActivePanel(HtmlUiPanelId::None);
@@ -344,6 +458,25 @@ void Application::init()
     // m_states.push(std::make_unique<SpaceState>(m_states));
 
     m_states.applyPendingChanges();
+#ifdef _WIN32
+    std::cerr
+        << "[M8E-XPROC][init] pid=" << GetCurrentProcessId()
+        << " stage=main-menu-state"
+        << " duration_ms=" << xprocElapsedMs(xprocInitStageBegin)
+        << " total_ms=" << xprocElapsedMs(xprocInitTotalBegin)
+        << " uptime_ms=" << xprocTraceTickMs()
+        << "\n";
+#endif
+
+    // --connect is a lifecycle shortcut into multiplayer. It must never
+    // masquerade as NEW GAME: the remote authoritative universe already
+    // exists and this client only authenticates and attaches to it.
+    if (hasConfiguredRemoteServer())
+    {
+        std::cout << "[App] --connect shortcut: entering multiplayer endpoint="
+                  << m_remoteServerHost << ':' << m_remoteServerPort << "\n";
+        requestSessionStart(GameSessionLaunchKind::RemoteMultiplayer);
+    }
 
 }
 
@@ -364,11 +497,30 @@ void Application::mainLoop()
         double currentTime      = glfwGetTime();
         float dt                = static_cast<float>(currentTime - lastTime);
 
+#ifdef _WIN32
+        if (dt > 0.250f)
+        {
+            std::cerr
+                << "[M8E-STARTUP][frame-gap] pid=" << GetCurrentProcessId()
+                << " gap_ms=" << (static_cast<double>(dt) * 1000.0)
+                << " uptime_ms=" << xprocTraceTickMs()
+                << " foreground_pid=" << foregroundProcessIdForTrace()
+                << " thread=" << std::this_thread::get_id()
+                << "\n";
+        }
+#endif
+
         m_context.dt            = dt;
         lastTime                = currentTime;
 
         // Input::instance().update();
+#ifdef _WIN32
+        auto xprocPhaseBegin = XprocTraceClock::now();
+#endif
         m_window->pollEvents();
+#ifdef _WIN32
+        traceSlowMainPhase("poll-events", xprocPhaseBegin);
+#endif
 
         // A physical keyboard belongs to exactly one graphical client process.
         // Embedded WebView2 may own the child HWND focus, so GLFW_FOCUSED on
@@ -376,6 +528,25 @@ void Application::mainLoop()
         // input by the foreground process instead; inactive EliteGame instances
         // immediately publish a neutral control state on their next frame.
         const bool ownsForegroundInput = m_window->ownsForegroundInput();
+#ifdef _WIN32
+        {
+            static bool focusTraceInitialized = false;
+            static bool previousOwnsForegroundInput = false;
+            if (!focusTraceInitialized ||
+                previousOwnsForegroundInput != ownsForegroundInput)
+            {
+                std::cerr
+                    << "[M8E-STARTUP][focus] pid=" << GetCurrentProcessId()
+                    << " owns_foreground="
+                    << (ownsForegroundInput ? "yes" : "no")
+                    << " foreground_pid=" << foregroundProcessIdForTrace()
+                    << " thread=" << std::this_thread::get_id()
+                    << "\n";
+                previousOwnsForegroundInput = ownsForegroundInput;
+                focusTraceInitialized = true;
+            }
+        }
+#endif
         if (ownsForegroundInput)
             Input::instance().update(m_window->nativeHandle());
         else
@@ -565,31 +736,63 @@ void Application::mainLoop()
                         continue;
                     }
 
-                    if (webCommand == "new_game")
+                    if (webCommand == "new_local_game")
                     {
-                        std::cout << "[App] new_game requested, switching to loading screen\n";
-
-                        m_gameUi.forceMode(GameUiMode::Loading);
-                        m_gameUi.markLoaded(GameUiMode::Loading);
-
-                        m_htmlUi.setActivePanel(HtmlUiPanelId::None);
-
-                        m_gameWebView.setVisible(true);
-                        m_gameWebView.navigate(makeGameUiHttpUrl(m_gameUiHttpPort, "loading.html", m_localization.locale()));
-                        m_gameWebView.evalScript("setLoadingProgress(0.10, 'loading.stage.opening', 'OPENING LOADING SCREEN');");
-
-                        m_pendingNewGameLoad = true;
-                        m_newGameLoadStartTime = glfwGetTime();
-                        m_newGameLoadLastUpdateTime = m_newGameLoadStartTime;
-                        m_newGameLoadStage =
-                            NewGameLoadStage::WaitingForLoadingScreen;
-
+                        std::cout << "[App] local new game requested\n";
+                        requestSessionStart(GameSessionLaunchKind::LocalNewGame);
                         break;
                     }
 
-                    if (webCommand == "load_game")
+                    if (webCommand == "load_local_game")
                     {
-                        std::cout << "[App] load_game not implemented yet\n";
+                        std::cout << "[App] load local game not implemented yet\n";
+                    }
+
+                    if (webCommand == "multiplayer")
+                    {
+                        showMultiplayerConnectionForm();
+                        continue;
+                    }
+
+                    constexpr const char* MultiplayerConnectPrefix =
+                        "multiplayer_connect|";
+                    if (webCommand.rfind(MultiplayerConnectPrefix, 0) == 0)
+                    {
+                        const std::string endpointText =
+                            webCommand.substr(
+                                std::char_traits<char>::length(
+                                    MultiplayerConnectPrefix
+                                )
+                            );
+
+                        game::network::NetworkEndpoint endpoint;
+                        std::string endpointError;
+                        if (!game::network::parseNetworkEndpoint(
+                                endpointText,
+                                endpoint,
+                                &endpointError))
+                        {
+                            std::cerr << "[App] invalid multiplayer endpoint: "
+                                      << endpointError << "\n";
+                            m_gameWebView.evalScript(
+                                "setConnectionError('INVALID SERVER ADDRESS');"
+                            );
+                            continue;
+                        }
+
+                        configureRemoteServer(endpoint.host, endpoint.port);
+                        std::cout << "[App] multiplayer connect requested endpoint="
+                                  << endpoint.host << ':' << endpoint.port << "\n";
+                        requestSessionStart(
+                            GameSessionLaunchKind::RemoteMultiplayer
+                        );
+                        break;
+                    }
+
+                    if (webCommand == "multiplayer_back")
+                    {
+                        showMainMenu();
+                        continue;
                     }
 
                     if (webCommand == "shipyard")
@@ -608,11 +811,41 @@ void Application::mainLoop()
         #endif
 
 
-        updatePendingNewGameLoad();
+#ifdef _WIN32
+        xprocPhaseBegin = XprocTraceClock::now();
+#endif
+        updatePendingSessionStart();
+#ifdef _WIN32
+        traceSlowMainPhase("session-start-update", xprocPhaseBegin);
+#endif
 
-        if (m_pendingNewGameLoad)
+        if (m_pendingSessionLaunch != GameSessionLaunchKind::None)
         {
-            m_window->swapBuffers();
+            /*
+                The WebView loading/menu surface is a native child window and
+                presents independently of the OpenGL back buffer. Swapping the
+                hidden/covered GL surface here is therefore unnecessary.
+
+                Real multi-process testing showed that a second EliteGame
+                process doing heavy OpenGL startup can make SwapBuffers in
+                another client wait inside the graphics driver. That creates
+                an accidental cross-process serialization point and starves
+                the Win32/WebView message pumps for seconds.
+
+                While a session is connecting/synchronizing, keep this thread
+                as a lightweight UI/network pump only. The next loop iteration
+                still calls Window::pollEvents() and advances synchronization;
+                SpaceState resumes normal OpenGL rendering once it is ready.
+            */
+#ifdef _WIN32
+            xprocPhaseBegin = XprocTraceClock::now();
+#endif
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(1)
+            );
+#ifdef _WIN32
+            traceSlowMainPhase("pending-yield", xprocPhaseBegin);
+#endif
             continue;
         }
 
@@ -641,9 +874,16 @@ void Application::mainLoop()
                 }
             }
 
+#ifdef _WIN32
+            xprocPhaseBegin = XprocTraceClock::now();
+#endif
             state->prepareFrame(dt);
             state->handleInput();
             state->update(dt);
+#ifdef _WIN32
+            traceSlowMainPhase("state-update", xprocPhaseBegin);
+            xprocPhaseBegin = XprocTraceClock::now();
+#endif
 
         m_renderer.beginFrame();
 
@@ -796,7 +1036,14 @@ if (!systemMapMode && top)
         glDisable(GL_SCISSOR_TEST);
 
         m_states.applyPendingChanges();
+#ifdef _WIN32
+        traceSlowMainPhase("render", xprocPhaseBegin);
+        xprocPhaseBegin = XprocTraceClock::now();
+#endif
         m_window->swapBuffers();
+#ifdef _WIN32
+        traceSlowMainPhase("swap-buffers", xprocPhaseBegin);
+#endif
     }
 
     std::cerr << "[App] main loop exit pid=" << GetCurrentProcessId()
@@ -1094,61 +1341,218 @@ bool Application::isGameUiOpen() const
 
 
 
-void Application::updatePendingNewGameLoad()
+void Application::requestSessionStart(GameSessionLaunchKind kind)
 {
-#ifndef _WIN32
-    return;
-#else
-    if (!m_pendingNewGameLoad)
+    if (kind == GameSessionLaunchKind::None)
+        return;
+
+    if (kind == GameSessionLaunchKind::RemoteMultiplayer &&
+        !hasConfiguredRemoteServer())
+    {
+        showMultiplayerConnectionForm();
+        return;
+    }
+
+#ifdef _WIN32
+    m_gameUi.forceMode(GameUiMode::Loading);
+    m_gameUi.markLoaded(GameUiMode::Loading);
+    m_htmlUi.setActivePanel(HtmlUiPanelId::None);
+
+    m_gameWebView.setVisible(true);
+    m_gameWebView.navigate(
+        makeGameUiHttpUrl(
+            m_gameUiHttpPort,
+            "loading.html",
+            m_localization.locale()
+        )
+    );
+    m_gameWebView.evalScript(
+        "setLoadingProgress(0.10, 'loading.stage.opening', 'OPENING LOADING SCREEN');"
+    );
+#endif
+
+    std::cerr << "[M8E-CONNECT][client-ui] session-start requested mode="
+              << (kind == GameSessionLaunchKind::RemoteMultiplayer
+                      ? "remote"
+                      : "local")
+              << " thread=" << std::this_thread::get_id();
+    if (kind == GameSessionLaunchKind::RemoteMultiplayer)
+        std::cerr << " endpoint=" << m_remoteServerHost << ':' << m_remoteServerPort;
+    std::cerr << "\n";
+
+    m_pendingSessionLaunch = kind;
+    m_sessionStartTime = glfwGetTime();
+    m_sessionStartLastUpdateTime = m_sessionStartTime;
+    m_sessionStartStage = SessionStartStage::WaitingForLoadingScreen;
+}
+
+void Application::showMultiplayerConnectionForm()
+{
+#ifdef _WIN32
+    m_gameUi.forceMode(GameUiMode::MainMenu);
+    if (!m_gameUi.isLoaded(GameUiMode::MainMenu))
+    {
+        navigateGameUi(GameUiMode::MainMenu);
+        m_gameUi.markLoaded(GameUiMode::MainMenu);
+    }
+    m_gameWebView.setVisible(true);
+    m_gameWebView.evalScript("showMultiplayerForm();");
+#endif
+}
+
+void Application::showMainMenu()
+{
+#ifdef _WIN32
+    m_gameUi.forceMode(GameUiMode::MainMenu);
+    if (!m_gameUi.isLoaded(GameUiMode::MainMenu))
+    {
+        navigateGameUi(GameUiMode::MainMenu);
+        m_gameUi.markLoaded(GameUiMode::MainMenu);
+    }
+    m_gameWebView.setVisible(true);
+    m_gameWebView.evalScript("showMainMenu();");
+#endif
+}
+
+void Application::updatePendingSessionStart()
+{
+    if (m_pendingSessionLaunch == GameSessionLaunchKind::None)
         return;
 
     const double now = glfwGetTime();
 
-    if (m_newGameLoadStage == NewGameLoadStage::WaitingForLoadingScreen)
+    const auto finishReadySession = [this]()
     {
-        if ((now - m_newGameLoadStartTime) < 0.10)
-            return;
-
+#ifdef _WIN32
         m_gameWebView.evalScript(
-            "setLoadingProgress(0.25, 'loading.stage.world', 'PREPARING WORLD');"
+            "setLoadingProgress(1.00, 'loading.stage.ready', 'READY');"
+        );
+#endif
+
+        closeGameUi();
+        m_gameUi.clearLoaded();
+        Input::instance().reset();
+        m_window->focus();
+
+        glfwSetInputMode(
+            m_window->nativeHandle(),
+            GLFW_CURSOR,
+            GLFW_CURSOR_NORMAL
         );
 
-        stopGameSession();
-        startConfiguredGameSession();
-        m_gameSession->beginSynchronization();
+        const bool remote =
+            m_pendingSessionLaunch == GameSessionLaunchKind::RemoteMultiplayer;
+        m_pendingSessionLaunch = GameSessionLaunchKind::None;
+        m_sessionStartStage = SessionStartStage::Idle;
+        m_spaceStateBuildStartTime = 0.0;
 
-        m_newGameLoadLastUpdateTime = now;
-        m_newGameLoadStage = NewGameLoadStage::SynchronizingSession;
+        std::cout << "[App] "
+                  << (remote ? "multiplayer world entered" : "local game loaded")
+                  << ", UI hidden\n";
+        std::cerr << "[M8E-CONNECT][client-ui] session-ready mode="
+                  << (remote ? "remote" : "local")
+                  << " thread=" << std::this_thread::get_id() << "\n";
+    };
+
+    if (m_sessionStartStage == SessionStartStage::BuildingSpaceState)
+    {
+        auto* space = dynamic_cast<SpaceState*>(m_states.current());
+        if (!space)
+        {
+            throw std::runtime_error(
+                "Deferred SpaceState startup lost the pending SpaceState"
+            );
+        }
+
+        if (!space->advanceStartupInitialization())
+            return;
+
+        const double spaceStateMs =
+            (glfwGetTime() - m_spaceStateBuildStartTime) * 1000.0;
+        std::cerr
+            << "[M8E-STARTUP][client-ui] stage=space-state-apply-end"
+            << " duration_ms=" << spaceStateMs
+#ifdef _WIN32
+            << " pid=" << GetCurrentProcessId()
+            << " foreground_pid=" << foregroundProcessIdForTrace()
+#endif
+            << " thread=" << std::this_thread::get_id()
+            << "\n";
+
+        finishReadySession();
         return;
     }
 
-    if (m_newGameLoadStage != NewGameLoadStage::SynchronizingSession)
+    if (m_sessionStartStage == SessionStartStage::WaitingForLoadingScreen)
+    {
+        if ((now - m_sessionStartTime) < 0.10)
+            return;
+
+        const bool remote =
+            m_pendingSessionLaunch == GameSessionLaunchKind::RemoteMultiplayer;
+
+#ifdef _WIN32
+        m_gameWebView.evalScript(
+            remote
+                ? "setLoadingProgress(0.25, 'loading.stage.connecting', 'CONNECTING TO SERVER');"
+                : "setLoadingProgress(0.25, 'loading.stage.world', 'PREPARING LOCAL WORLD');"
+        );
+#endif
+
+        stopGameSession();
+        if (remote)
+            startRemoteGameSession();
+        else
+            startLocalGameSession();
+
+        using SyncClock = std::chrono::steady_clock;
+        const auto syncBegin = SyncClock::now();
+        m_gameSession->beginSynchronization();
+        const double syncBeginMs =
+            std::chrono::duration<double, std::milli>(
+                SyncClock::now() - syncBegin
+            ).count();
+        std::cerr << "[M8E-CONNECT][client-ui] beginSynchronization returned mode="
+                  << (remote ? "remote" : "local")
+                  << " duration_ms=" << syncBeginMs
+                  << " thread=" << std::this_thread::get_id() << "\n";
+
+        m_sessionStartLastUpdateTime = now;
+        m_sessionStartStage = SessionStartStage::SynchronizingSession;
+        return;
+    }
+
+    if (m_sessionStartStage != SessionStartStage::SynchronizingSession)
         return;
 
     const double elapsed = std::clamp(
-        now - m_newGameLoadLastUpdateTime,
+        now - m_sessionStartLastUpdateTime,
         0.0,
         0.05
     );
-    m_newGameLoadLastUpdateTime = now;
+    m_sessionStartLastUpdateTime = now;
 
     m_gameSession->updateSynchronization(elapsed);
 
     const auto sessionState = m_gameSession->state();
     if (sessionState == game::session::GameSessionState::WaitingForServer)
     {
+#ifdef _WIN32
         m_gameWebView.evalScript(
             "setLoadingProgress(0.45, 'loading.stage.waiting_server', 'WAITING FOR SERVER');"
         );
+#endif
         return;
     }
 
     if (sessionState == game::session::GameSessionState::Synchronizing ||
         sessionState == game::session::GameSessionState::Created)
     {
+#ifdef _WIN32
         m_gameWebView.evalScript(
             "setLoadingProgress(0.55, 'loading.stage.sync', 'SYNCHRONIZING SESSION');"
         );
+#endif
         return;
     }
 
@@ -1156,43 +1560,47 @@ void Application::updatePendingNewGameLoad()
     {
         std::cerr << "[App] Session synchronization failed: "
                   << m_gameSession->error() << std::endl;
+#ifdef _WIN32
         m_gameWebView.evalScript(
             "setLoadingProgress(1.00, 'loading.stage.failed', 'SESSION FAILED');"
         );
+#endif
         stopGameSession();
-        m_pendingNewGameLoad = false;
-        m_newGameLoadStage = NewGameLoadStage::Idle;
+        m_pendingSessionLaunch = GameSessionLaunchKind::None;
+        m_sessionStartStage = SessionStartStage::Idle;
         return;
     }
 
+#ifdef _WIN32
     m_gameWebView.evalScript(
         "setLoadingProgress(0.80, 'loading.stage.apply', 'APPLYING GAME STATE');"
     );
+#endif
 
     // Keep the loading/menu state alive while synchronization is pending.
     // The main loop terminates when the state stack is empty, so replace it
-    // only after the session has reached Ready.
+    // only after the session has reached Ready. Heavy OpenGL startup remains
+    // on the owning render thread, but it is advanced one major stage per main
+    // loop iteration. That gives Win32/WebView a message-pump turn between
+    // shader, scene, map and HUD initialization instead of one 2-3 second
+    // uninterrupted UI-thread stall near the end of loading.
     m_states.clear();
     m_states.applyPendingChanges();
-    m_states.push(std::make_unique<SpaceState>(m_states));
-    m_states.applyPendingChanges();
 
-    m_gameWebView.evalScript("setLoadingProgress(1.00, 'loading.stage.ready', 'READY');");
-
-    closeGameUi();
-    m_gameUi.clearLoaded();
-    Input::instance().reset();
-    m_window->focus();
-
-    glfwSetInputMode(
-        m_window->nativeHandle(),
-        GLFW_CURSOR,
-        GLFW_CURSOR_NORMAL
-    );
-
-    m_pendingNewGameLoad = false;
-    m_newGameLoadStage = NewGameLoadStage::Idle;
-
-    std::cout << "[App] New game loaded, WebView hidden\n";
+    m_spaceStateBuildStartTime = glfwGetTime();
+#ifdef _WIN32
+    std::cerr
+        << "[M8E-STARTUP][client-ui] pid=" << GetCurrentProcessId()
+        << " stage=space-state-apply-begin"
+        << " foreground_pid=" << foregroundProcessIdForTrace()
+        << " thread=" << std::this_thread::get_id()
+        << "\n";
 #endif
+
+    m_states.push(std::make_unique<SpaceState>(
+        m_states,
+        SpaceState::StartupMode::Deferred
+    ));
+    m_states.applyPendingChanges();
+    m_sessionStartStage = SessionStartStage::BuildingSpaceState;
 }

@@ -1,6 +1,9 @@
 #include "src/game/session/RemoteGameSession.h"
 
 #include <algorithm>
+#include <chrono>
+#include <iostream>
+#include <thread>
 #include <utility>
 
 #include "src/game/client/GameClient.h"
@@ -89,7 +92,27 @@ void RemoteGameSession::beginSynchronization()
 
 bool RemoteGameSession::connectOrWait()
 {
-    if (m_transport->connect(m_config.host, m_config.port))
+    using Clock = std::chrono::steady_clock;
+    const auto connectBegin = Clock::now();
+
+    std::cerr << "[M8E-CONNECT][client] tcp-connect begin endpoint="
+              << m_config.host << ':' << m_config.port
+              << " thread=" << std::this_thread::get_id() << "\n";
+
+    const bool connected =
+        m_transport->connect(m_config.host, m_config.port);
+
+    const double connectMs = std::chrono::duration<double, std::milli>(
+        Clock::now() - connectBegin
+    ).count();
+
+    std::cerr << "[M8E-CONNECT][client] tcp-connect end endpoint="
+              << m_config.host << ':' << m_config.port
+              << " ok=" << (connected ? "yes" : "no")
+              << " duration_ms=" << connectMs
+              << " thread=" << std::this_thread::get_id() << "\n";
+
+    if (connected)
     {
         if (!m_config.identityHello.authToken.valid())
         {
@@ -100,6 +123,8 @@ bool RemoteGameSession::connectOrWait()
         }
 
         m_transport->sendSessionHello(m_config.identityHello);
+        std::cerr << "[M8E-CONNECT][client] session-hello queued endpoint="
+                  << m_config.host << ':' << m_config.port << "\n";
         m_error.clear();
         m_waitingForServer = false;
         m_connectedOnce = true;
@@ -139,12 +164,29 @@ void RemoteGameSession::updateSynchronization(double elapsedSeconds)
         return;
     }
 
+    const auto transportBegin = std::chrono::steady_clock::now();
     m_transport->service();
+    const double transportMs =
+        std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - transportBegin
+        ).count();
+    if (transportMs >= 100.0)
+        std::cerr << "[M8E-XPROC][remote-sync] stage=transport-service duration_ms="
+                  << transportMs << "\n";
+
     captureTransportFailure();
     if (m_failed)
         return;
 
+    const auto clientBegin = std::chrono::steady_clock::now();
     (void)m_client->updateSynchronization(dt);
+    const double clientMs =
+        std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - clientBegin
+        ).count();
+    if (clientMs >= 100.0)
+        std::cerr << "[M8E-XPROC][remote-sync] stage=client-sync duration_ms="
+                  << clientMs << "\n";
 
     if (m_client->connectionState() == ClientConnectionState::Failed)
     {

@@ -12,6 +12,7 @@
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/game/geometry/ObjectAssemblyRegistry.h"
 #include <algorithm>
+#include <chrono>
 
 #include <cmath>
 #include <glm/gtc/quaternion.hpp>
@@ -463,6 +464,25 @@ static float findAssemblyAngleRad(
 
 void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 {
+    using HydrateClock = std::chrono::steady_clock;
+    const auto hydrateBegin = HydrateClock::now();
+
+    double shipGraphMs = 0.0;
+    double shipAssemblyMs = 0.0;
+    double shipHiddenMs = 0.0;
+    double objectGraphMs = 0.0;
+    double objectAssemblyMs = 0.0;
+    double objectHiddenMs = 0.0;
+    double hubMs = 0.0;
+    double droneMs = 0.0;
+    double canonicalMs = 0.0;
+
+    const auto elapsedMs = [](const auto& begin) {
+        return std::chrono::duration<double, std::milli>(
+            HydrateClock::now() - begin
+        ).count();
+    };
+
     const std::uint64_t incomingTimelineRevision =
         snapshot.metadata.universeTimelineRevision;
 
@@ -522,15 +542,19 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.radarContacts = s.radarContacts;
             state.damageEvents = s.damageEvents;
             state.shipCoreStatus = s.shipCoreStatus;
-            applyGraphSnapshot(
-                s.graph,
-                state.modules,
-                state.structuralLinks,
-                state.assemblyModules,
-                state.detachedFragments,
-                state.repairJobs,
-                state.debugHitVolumes
-            );
+            {
+                const auto phaseBegin = HydrateClock::now();
+                applyGraphSnapshot(
+                    s.graph,
+                    state.modules,
+                    state.structuralLinks,
+                    state.assemblyModules,
+                    state.detachedFragments,
+                    state.repairJobs,
+                    state.debugHitVolumes
+                );
+                shipGraphMs += elapsedMs(phaseBegin);
+            }
 
             
 
@@ -544,10 +568,27 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
                 );
             }
 
-            state.assembly =
-                &game::ship::geometry::AssemblyMeshLibrary::get(s.typeId);
+            {
+                const auto phaseBegin = HydrateClock::now();
+                state.assembly =
+                    &game::ship::geometry::AssemblyMeshLibrary::get(s.typeId);
+                const double phaseMs = elapsedMs(phaseBegin);
+                shipAssemblyMs += phaseMs;
+                if (phaseMs >= 50.0)
+                {
+                    std::cerr
+                        << "[M8E-HYDRATE] ship-assembly type="
+                        << static_cast<unsigned int>(s.typeId)
+                        << " duration_ms=" << phaseMs
+                        << "\n";
+                }
+            }
 
-            rebuildHiddenPartIds(state);
+            {
+                const auto phaseBegin = HydrateClock::now();
+                rebuildHiddenPartIds(state);
+                shipHiddenMs += elapsedMs(phaseBegin);
+            }
 
             
         }
@@ -567,17 +608,25 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.radarContacts = s.radarContacts;
             state.damageEvents = s.damageEvents;
             state.shipCoreStatus = s.shipCoreStatus;
-            applyGraphSnapshot(
-                s.graph,
-                state.modules,
-                state.structuralLinks,
-                state.assemblyModules,
-                state.detachedFragments,
-                state.repairJobs,
-                state.debugHitVolumes
-            );
+            {
+                const auto phaseBegin = HydrateClock::now();
+                applyGraphSnapshot(
+                    s.graph,
+                    state.modules,
+                    state.structuralLinks,
+                    state.assemblyModules,
+                    state.detachedFragments,
+                    state.repairJobs,
+                    state.debugHitVolumes
+                );
+                shipGraphMs += elapsedMs(phaseBegin);
+            }
 
-            rebuildHiddenPartIds(state);
+            {
+                const auto phaseBegin = HydrateClock::now();
+                rebuildHiddenPartIds(state);
+                shipHiddenMs += elapsedMs(phaseBegin);
+            }
         }
 
     }
@@ -635,14 +684,18 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.navigationParentBodyId = o.navigationParentBodyId;
             state.orbitalMotion = o.orbitalMotion;
 
-            applyGraphSnapshot(
-                o.graph,
-                state.modules,
-                state.structuralLinks,
-                state.assemblyModules,
-                state.detachedFragments,
-                state.debugHitVolumes
-            );
+            {
+                const auto phaseBegin = HydrateClock::now();
+                applyGraphSnapshot(
+                    o.graph,
+                    state.modules,
+                    state.structuralLinks,
+                    state.assemblyModules,
+                    state.detachedFragments,
+                    state.debugHitVolumes
+                );
+                objectGraphMs += elapsedMs(phaseBegin);
+            }
 
              state.renderAssemblyModules = state.assemblyModules; 
             
@@ -656,10 +709,27 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
                 );
             }
 
-            state.assembly =
-                &game::ship::geometry::AssemblyMeshLibrary::get(o.type);
+            {
+                const auto phaseBegin = HydrateClock::now();
+                state.assembly =
+                    &game::ship::geometry::AssemblyMeshLibrary::get(o.type);
+                const double phaseMs = elapsedMs(phaseBegin);
+                objectAssemblyMs += phaseMs;
+                if (phaseMs >= 50.0)
+                {
+                    std::cerr
+                        << "[M8E-HYDRATE] object-assembly type="
+                        << static_cast<unsigned int>(o.type)
+                        << " duration_ms=" << phaseMs
+                        << "\n";
+                }
+            }
 
-            rebuildHiddenPartIds(state);
+            {
+                const auto phaseBegin = HydrateClock::now();
+                rebuildHiddenPartIds(state);
+                objectHiddenMs += elapsedMs(phaseBegin);
+            }
         }
         else
         {
@@ -682,19 +752,27 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             // only on first snapshot or after structural changes.
             const bool modulesChanged = o.graph.hasModules;
 
-            applyGraphSnapshot(
-                o.graph,
-                state.modules,
-                state.structuralLinks,
-                state.assemblyModules,
-                state.detachedFragments,
-                state.debugHitVolumes
-            );
+            {
+                const auto phaseBegin = HydrateClock::now();
+                applyGraphSnapshot(
+                    o.graph,
+                    state.modules,
+                    state.structuralLinks,
+                    state.assemblyModules,
+                    state.detachedFragments,
+                    state.debugHitVolumes
+                );
+                objectGraphMs += elapsedMs(phaseBegin);
+            }
 
             state.renderAssemblyModules = state.assemblyModules;
 
             if (modulesChanged)
+            {
+                const auto phaseBegin = HydrateClock::now();
                 rebuildHiddenPartIds(state);
+                objectHiddenMs += elapsedMs(phaseBegin);
+            }
         }
     }
 
@@ -717,6 +795,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
     std::unordered_set<std::string> authoritativeHubIds;
     authoritativeHubIds.reserve(snapshot.hubs.size());
 
+    const auto hubBegin = HydrateClock::now();
     for (const auto& hub : snapshot.hubs)
     {
         authoritativeHubIds.insert(hub.id);
@@ -731,6 +810,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
         state.orientation = hub.orientation;
         state.motion = hub.motion;
     }
+
+    hubMs += elapsedMs(hubBegin);
 
     if (fullAuthoritativeEntitySet)
     {
@@ -748,6 +829,7 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             m_hubs.erase(id);
     }
 
+    const auto droneBegin = HydrateClock::now();
     m_visualDrones.clear();
 
     for (const auto& shipPair : m_ships)
@@ -796,6 +878,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
 
 
+    droneMs += elapsedMs(droneBegin);
+
     if (timelineRevisionChanged)
     {
         for (auto& [id, ship] : m_ships)
@@ -822,17 +906,39 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
     const SimulationSnapshot* previousCanonical =
         m_snapshotBuffer.empty() ? nullptr : &m_snapshotBuffer.back();
 
-    m_snapshotBuffer.push_back(
-        game::network::materializeCanonicalReplicationSnapshot(
-            previousCanonical,
-            snapshot
-        )
-    );
+    {
+        const auto phaseBegin = HydrateClock::now();
+        m_snapshotBuffer.push_back(
+            game::network::materializeCanonicalReplicationSnapshot(
+                previousCanonical,
+                snapshot
+            )
+        );
+        canonicalMs += elapsedMs(phaseBegin);
+    }
 
     while (m_snapshotBuffer.size() > 20)
         m_snapshotBuffer.pop_front();
 
-    
+    const double totalMs = elapsedMs(hydrateBegin);
+    if (totalMs >= 100.0)
+    {
+        std::cerr
+            << "[M8E-HYDRATE] apply-snapshot total_ms=" << totalMs
+            << " ships=" << snapshot.ships.size()
+            << " objects=" << snapshot.objects.size()
+            << " hubs=" << snapshot.hubs.size()
+            << " ship_graph_ms=" << shipGraphMs
+            << " ship_assembly_ms=" << shipAssemblyMs
+            << " ship_hidden_ms=" << shipHiddenMs
+            << " object_graph_ms=" << objectGraphMs
+            << " object_assembly_ms=" << objectAssemblyMs
+            << " object_hidden_ms=" << objectHiddenMs
+            << " hub_ms=" << hubMs
+            << " drone_ms=" << droneMs
+            << " canonical_ms=" << canonicalMs
+            << "\n";
+    }
 }
 
 

@@ -1,6 +1,9 @@
 #include "src/game/server/NetworkServerHost.h"
 
 #include <algorithm>
+#include <chrono>
+#include <iostream>
+#include <thread>
 #include <utility>
 
 #include "src/game/debug/IServerDebugChannel.h"
@@ -60,7 +63,11 @@ void NetworkServerHost::acceptPendingConnections()
         // TCP accept is not gameplay admission. Keep the connection pending
         // until the client presents a SessionHello bearer token.
         Connection connection;
+        connection.traceId = m_nextConnectionTraceId++;
         connection.transport = std::move(transport);
+        std::cerr << "[M8E-CONNECT][server] accepted connection="
+                  << connection.traceId
+                  << " thread=" << std::this_thread::get_id() << "\n";
         m_connections.push_back(std::move(connection));
     }
 
@@ -79,11 +86,27 @@ void NetworkServerHost::admitPendingConnections()
         if (!connection.transport->receiveSessionHello(hello))
             continue;
 
+        std::cerr << "[M8E-CONNECT][server] hello connection="
+                  << connection.traceId
+                  << " thread=" << std::this_thread::get_id() << "\n";
+
+        using Clock = std::chrono::steady_clock;
+        const auto admitBegin = Clock::now();
         const auto sessionId =
             m_runtime->attachPlayerSessionTransport(
                 *connection.transport,
                 hello
             );
+        const double admitMs = std::chrono::duration<double, std::milli>(
+            Clock::now() - admitBegin
+        ).count();
+
+        std::cerr << "[M8E-CONNECT][server] admission connection="
+                  << connection.traceId
+                  << " session=" << sessionId.value
+                  << " ok=" << (sessionId ? "yes" : "no")
+                  << " duration_ms=" << admitMs
+                  << " thread=" << std::this_thread::get_id() << "\n";
 
         if (!sessionId)
         {

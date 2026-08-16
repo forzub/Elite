@@ -120,7 +120,7 @@ def main() -> int:
             require(key not in ui, f"duplicate UI key {key!r} in {path.relative_to(ROOT)}")
             ui[key] = value
     require_english_table(ui, "ui")
-    for required in ("map.title", "overlay.player", "cockpit.mode.newtonian", "main.new_game"):
+    for required in ("map.title", "overlay.player", "cockpit.mode.newtonian", "main.new_local_game", "main.multiplayer"):
         require(required in ui, f"required UI key disappeared: {required}")
     require((LOC / "ui/maps").is_dir() and (LOC / "ui/cockpit").is_dir(),
             "maps/cockpit localization categories are not separated")

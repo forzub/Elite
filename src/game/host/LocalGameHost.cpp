@@ -58,4 +58,14 @@ double LocalGameHost::fixedStepSeconds() const
 {
     return m_worker->fixedStepSeconds();
 }
+
+bool LocalGameHost::ready() const
+{
+    return m_worker->ready();
+}
+
+void LocalGameHost::rethrowIfFailed() const
+{
+    m_worker->rethrowIfFailed();
+}
 }

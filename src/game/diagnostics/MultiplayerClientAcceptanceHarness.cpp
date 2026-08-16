@@ -254,6 +254,31 @@ void requireAccountReconnectReturnsSamePersistentPlayer()
     require(playerId && shipId != 0 && entityId.value != 0,
             "first account session has incomplete persistent authority");
 
+    // Build a non-zero control epoch before disconnect. A fresh GameClient
+    // created below starts its own controlTick sequence at 1; reconnect must
+    // not inherit this old acknowledgement through the persistent EntityId.
+    ShipControlState firstControl;
+    firstControl.yawInput = 0.4f;
+    const float fixedDt = static_cast<float>(runtime.fixedStepSeconds());
+    for (int frame = 0; frame < 36; ++frame)
+    {
+        firstClient.prepareGameplayFrame(FrameSeconds);
+        firstClient.submitInput(firstControl);
+        runtime.advance(FrameSeconds);
+        firstClient.update(
+            static_cast<float>(FrameSeconds),
+            fixedDt,
+            FrameSeconds
+        );
+    }
+
+    const std::uint64_t oldAcknowledgedControlTick =
+        firstClient.lastAcknowledgedControlTick();
+    require(
+        oldAcknowledgedControlTick > 1,
+        "first account session did not establish a control epoch before reconnect"
+    );
+
     LocalLoopbackTransport duplicateTransport;
     const auto duplicateSession = runtime.attachPlayerSessionTransport(
         duplicateTransport,
@@ -291,12 +316,40 @@ void requireAccountReconnectReturnsSamePersistentPlayer()
         reconnectClient.localControlledEntityId() == entityId,
         "reconnected account lost the existing materialized ship EntityId"
     );
+    require(
+        reconnectClient.lastAcknowledgedControlTick() == 0,
+        "reconnected GameClient inherited the previous session control epoch"
+    );
+
+    ShipControlState reconnectControl;
+    reconnectControl.yawInput = -0.35f;
+    for (int frame = 0; frame < 24; ++frame)
+    {
+        reconnectClient.prepareGameplayFrame(FrameSeconds);
+        reconnectClient.submitInput(reconnectControl);
+        runtime.advance(FrameSeconds);
+        reconnectClient.update(
+            static_cast<float>(FrameSeconds),
+            fixedDt,
+            FrameSeconds
+        );
+    }
+
+    const std::uint64_t reconnectAcknowledgedControlTick =
+        reconnectClient.lastAcknowledgedControlTick();
+    require(
+        reconnectAcknowledgedControlTick > 0 &&
+        reconnectAcknowledgedControlTick < oldAcknowledgedControlTick,
+        "new session controlTick sequence was not accepted as a fresh epoch"
+    );
 
     std::cerr
-        << "[PASS] account reconnect returns same persistent player/ship"
+        << "[PASS] account reconnect returns same persistent player/ship with fresh control epoch"
         << " player=" << playerId.value
         << " ship=" << shipId
         << " entity=" << entityId.value
+        << " old_ack=" << oldAcknowledgedControlTick
+        << " reconnect_ack=" << reconnectAcknowledgedControlTick
         << "\n";
 }
 

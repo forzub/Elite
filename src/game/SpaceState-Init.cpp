@@ -1,5 +1,7 @@
 #include <glad/gl.h>
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 #include "SpaceState.h"
 #include "src/game/RuntimeFeatureFlags.h"
@@ -55,6 +57,27 @@ void SpaceState::initClient()
 
 void SpaceState::initHUD()
 {
+    using HudClock = std::chrono::steady_clock;
+    const auto hudBegin = HudClock::now();
+    auto hudStageBegin = hudBegin;
+    const auto traceHudStage = [&](const char* stage)
+    {
+        const auto now = HudClock::now();
+        const double stageMs = std::chrono::duration<double, std::milli>(
+            now - hudStageBegin
+        ).count();
+        const double totalMs = std::chrono::duration<double, std::milli>(
+            now - hudBegin
+        ).count();
+        std::cerr
+            << "[M8E-STARTUP][hud] stage=" << stage
+            << " duration_ms=" << stageMs
+            << " total_ms=" << totalMs
+            << " thread=" << std::this_thread::get_id()
+            << "\n";
+        hudStageBegin = now;
+    };
+
     if (!m_client)
         throw std::runtime_error("SpaceState has no game client");
 
@@ -91,6 +114,7 @@ void SpaceState::initHUD()
     }
 
     const ShipDescriptor& desc = *playerShip->descriptor;
+    traceHudStage("resolve-player");
 
     // One-shot M8E graphical-client bootstrap telemetry. This is emitted at
     // the presentation boundary so we can distinguish bad replicated spatial
@@ -136,12 +160,14 @@ void SpaceState::initHUD()
                 << "\n";
         }
     }
+    traceHudStage("bootstrap-telemetry");
 
     ShipTransform initialTransform = playerShip->transform;
     m_playerView = std::make_unique<PlayerShipView>();
     m_playerView->init(context(), &desc, initialTransform);
 
     m_playerView->setAttachmentOverrides(&m_attachmentEditorOverrides);
+    traceHudStage("player-view");
 
 
 
@@ -317,16 +343,22 @@ void SpaceState::initHUD()
     }
 
 
+    traceHudStage("ui-tree");
+
     // =======================================================================
     // инициализация параметров рендера
     // =======================================================================
     m_hudRenderer.init(context());
+    traceHudStage("hud-renderer");
+
     m_worldLabelRenderer.init(context());
+    traceHudStage("world-label-renderer");
+
     m_flightVectorIndicatorRenderer.init();
-
-
+    traceHudStage("flight-vector-renderer");
 
     initServerAndClient();
+    traceHudStage("server-client-hooks");
 
 
     

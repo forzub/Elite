@@ -235,6 +235,10 @@ private:
     void populateClientSessionSnapshot(
         SimulationSnapshot& snapshot
     ) const;
+    void resetSessionControlState(
+        EntityId controlledEntityId,
+        const char* reason
+    );
     world::celestial::PlayerNavigationState navigationStateForEntity(
         EntityId entityId
     ) const;

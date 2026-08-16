@@ -406,6 +406,54 @@ player/entity CLI switch.
 
 ---
 
+## 10.1. M8E.1 — текущий recovery gate: reconnect control epoch и Win32 modal stalls
+
+На ручном two-process прогоне 2026-08-16 подтверждены две независимые проблемы,
+которые нельзя диагностировать как один общий «фриз двух клиентов»:
+
+1. **P0 — reconnect control epoch.** Новый `GameClient` начинает
+   `ShipControlState::controlTick` с `1`, но серверная
+   `FixedStepControlQueue` до исправления переживала disconnect по тому же
+   materialized `EntityId`. Bootstrap нового клиента поэтому мог получить старый
+   `acknowledgedControlTick`; новые ticks считались `Stale`, local prediction
+   кратко показывала поворот, следующий authoritative snapshot откатывал его,
+   а нормальное управление начиналось только после догоняния старого номера.
+   Session boundary обязан уничтожать старый numbered-input stream, удалять
+   pending one-shot commands и neutralize непрерывный `ShipControlState`.
+
+2. **P1 — Win32 non-client modal loop.** Native `PeekMessageW/DispatchMessageW`
+   остаётся правильной защитой от GLFW 3.4 foreign-HWND AV, но обычный
+   `WM_NCLBUTTONDOWN` с `HTCAPTION` может законно удерживать `DispatchMessageW`
+   внутри Windows move/size loop до отпускания мыши. Логи показывали паузы до
+   ~2.5 s. Это UI-thread responsiveness issue конкретного процесса, а не
+   shared-server/session cross-talk. Исправлять его надо отдельно после P0.
+
+### Обязательный порядок проверки
+
+После любого изменения session/control lifecycle:
+
+```bash
+bash tests/architecture_contracts/run_mingw64.sh
+bash tests/multiplayer_client_acceptance/run_mingw64.sh
+bash tests/network_process_acceptance/run_mingw64.sh
+bash tests/run_all_mingw64.sh
+```
+
+Затем ручной gate без рестарта `EliteServer`:
+
+1. Подключить `pilot-a`, поуправлять и закрыть только клиент.
+2. Повторно подключить `pilot-a` к тому же серверу и сразу дать yaw/thrust.
+   Новый stream должен начинаться с fresh epoch без периода rollback/«прорыва».
+3. Не закрывая `pilot-a`, запустить `pilot-b`; во время его загрузки вернуть
+   foreground `pilot-a` и проверить непрерывное управление.
+4. В логах различать `[M8E-CONTROL]` session reset/ACK и
+   `[M8E-XPROC][dispatch] msg=0xa1 wparam=0x2` (оконный modal loop).
+
+Только после зелёного automated + manual gate M8E.1 можно продолжать
+authorization/resume/persistence.
+
+---
+
 ## 11. Следующий этап — authorization / persistent identity foundation
 
 Текущий код уже имеет правильный in-memory backbone:

@@ -5,8 +5,6 @@
 #include <algorithm>
 #include <cmath>
 
-// #define TINYOBJLOADER_IMPLEMENTATION
-#include "render/tiny_obj_loader.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include "ObjectAssemblyRegistry.h"
 #include "ObjLoader.h"
@@ -88,14 +86,29 @@ namespace
 std::unordered_map<uint16_t, ObjectAssembly>
 AssemblyMeshLibrary::s_cache;
 
+std::mutex AssemblyMeshLibrary::s_cacheMutex;
+
 bool AssemblyMeshLibrary::has(ObjectType typeId)
 {
     return ObjectAssemblyRegistry::has(typeId);
 }
 
+bool AssemblyMeshLibrary::isLoaded(ObjectType typeId)
+{
+    const uint16_t key = static_cast<uint16_t>(typeId);
+    std::lock_guard<std::mutex> lock(s_cacheMutex);
+    return s_cache.find(key) != s_cache.end();
+}
+
 ObjectAssembly& AssemblyMeshLibrary::getMutable(ObjectType typeId)
 {
     const uint16_t key = static_cast<uint16_t>(typeId);
+
+    // OBJ hydration is intentionally CPU-only and may run on the client's
+    // bootstrap worker while the UI thread continues pumping Win32/WebView.
+    // The same cache is also touched by the embedded authoritative worker in
+    // local play, so every map access and first-load transition is serialized.
+    std::lock_guard<std::mutex> lock(s_cacheMutex);
 
     auto it = s_cache.find(key);
     if (it != s_cache.end())
@@ -161,13 +174,19 @@ ObjectAssembly AssemblyMeshLibrary::loadAssembly(ObjectType typeId)
             // part.localOffset = meshDesc.localOffset;
             part.localOffset = transformPoint(meshToLogical, meshDesc.localOffset);
 
-            computeRawBoundsFromObj(
-                part.lod0Path,
-                part.rawMinBounds,
-                part.rawMaxBounds,
-                part.rawCenter
-            );
+            if (!ObjLoader::load(part.lod0Path, part.lod0Mesh, false))
+            {
+                throw std::runtime_error(
+                    "[AssemblyMeshLibrary] failed to load lod0 mesh part: " + part.lod0Path
+                );
+            }
 
+            // ObjLoader has already parsed the LOD0 vertices and computed their
+            // bounds. Re-parsing the same OBJ only to recover raw bounds used to
+            // make large stations pay for every LOD0 file twice during startup.
+            part.rawMinBounds = part.lod0Mesh.minBounds;
+            part.rawMaxBounds = part.lod0Mesh.maxBounds;
+            part.rawCenter = part.lod0Mesh.boundCenter;
 
             {
                 glm::vec3 rotatedMin(0.0f);
@@ -186,16 +205,13 @@ ObjectAssembly AssemblyMeshLibrary::loadAssembly(ObjectType typeId)
                 part.rawCenter = (rotatedMin + rotatedMax) * 0.5f;
             }
 
-
-
-            if (!ObjLoader::load(part.lod0Path, part.lod0Mesh, false))
+            if (part.lod1Path == part.lod0Path)
             {
-                throw std::runtime_error(
-                    "[AssemblyMeshLibrary] failed to load lod0 mesh part: " + part.lod0Path
-                );
+                // `sameMesh` definitions (currently many ship modules) do not
+                // need to parse, weld and rebuild the exact same OBJ twice.
+                part.lod1Mesh = part.lod0Mesh;
             }
-
-            if (!ObjLoader::load(part.lod1Path, part.lod1Mesh, false))
+            else if (!ObjLoader::load(part.lod1Path, part.lod1Mesh, false))
             {
                 throw std::runtime_error(
                     "[AssemblyMeshLibrary] failed to load lod1 mesh part: " + part.lod1Path
@@ -270,66 +286,6 @@ ObjectAssembly AssemblyMeshLibrary::loadAssembly(ObjectType typeId)
 
 
 
-
-
-void AssemblyMeshLibrary::computeRawBoundsFromObj(
-    const std::string& path,
-    glm::vec3& outMin,
-    glm::vec3& outMax,
-    glm::vec3& outCenter
-)
-{
-    tinyobj::attrib_t attrib;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-
-    std::string warn;
-    std::string err;
-
-    bool ok = tinyobj::LoadObj(
-        &attrib,
-        &shapes,
-        &materials,
-        &warn,
-        &err,
-        path.c_str(),
-        nullptr,
-        false
-    );
-
-    // if (!warn.empty())
-    //     std::cout << "[AssemblyMeshLibrary] OBJ WARNING: " << warn << std::endl;
-
-    if (!err.empty())
-        std::cout << "[AssemblyMeshLibrary] OBJ ERROR: " << err << std::endl;
-
-    if (!ok)
-        throw std::runtime_error(
-            "[AssemblyMeshLibrary] raw bounds load failed: " + path
-        );
-
-    if (attrib.vertices.empty())
-        throw std::runtime_error(
-            "[AssemblyMeshLibrary] OBJ has no vertices: " + path
-        );
-
-    outMin = glm::vec3( 1e9f);
-    outMax = glm::vec3(-1e9f);
-
-    for (size_t i = 0; i < attrib.vertices.size() / 3; ++i)
-    {
-        glm::vec3 p(
-            attrib.vertices[i * 3 + 0],
-            attrib.vertices[i * 3 + 1],
-            attrib.vertices[i * 3 + 2]
-        );
-
-        outMin = glm::min(outMin, p);
-        outMax = glm::max(outMax, p);
-    }
-
-    outCenter = (outMin + outMax) * 0.5f;
-}
 
 
 void AssemblyMeshLibrary::computeModuleBounds(AssemblyModule& module)

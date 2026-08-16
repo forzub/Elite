@@ -9,6 +9,11 @@
 #include <functional>
 #include <filesystem>
 #include <new>
+#include <thread>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #include <fstream>
 #include <iomanip>
@@ -72,6 +77,57 @@
 
 namespace
 {
+    using ClientStartupClock = std::chrono::steady_clock;
+
+    double startupElapsedMs(const ClientStartupClock::time_point& begin)
+    {
+        return std::chrono::duration<double, std::milli>(
+            ClientStartupClock::now() - begin
+        ).count();
+    }
+
+    unsigned long startupProcessId()
+    {
+#ifdef _WIN32
+        return static_cast<unsigned long>(GetCurrentProcessId());
+#else
+        return 0ul;
+#endif
+    }
+
+    unsigned long startupForegroundProcessId()
+    {
+#ifdef _WIN32
+        const HWND foreground = GetForegroundWindow();
+        if (!foreground)
+            return 0ul;
+
+        DWORD pid = 0;
+        GetWindowThreadProcessId(foreground, &pid);
+        return static_cast<unsigned long>(pid);
+#else
+        return 0ul;
+#endif
+    }
+
+    void traceStartupStage(
+        const char* stage,
+        const ClientStartupClock::time_point& stageBegin,
+        const ClientStartupClock::time_point& totalBegin)
+    {
+        std::cerr
+            << "[M8E-STARTUP][space] pid=" << startupProcessId()
+            << " stage=" << stage
+            << " duration_ms=" << startupElapsedMs(stageBegin)
+            << " total_ms=" << startupElapsedMs(totalBegin)
+#ifdef _WIN32
+            << " uptime_ms=" << static_cast<unsigned long long>(GetTickCount64())
+#endif
+            << " foreground_pid=" << startupForegroundProcessId()
+            << " thread=" << std::this_thread::get_id()
+            << "\n";
+    }
+
     double stableBodyPhaseRadians(const std::string& id)
     {
         uint32_t h = 2166136261u;
@@ -367,102 +423,227 @@ namespace
 // =====================================================================================
 // Constructor
 // =====================================================================================
-SpaceState::SpaceState(StateStack& states)
+SpaceState::SpaceState(
+    StateStack& states,
+    StartupMode startupMode
+)
     : GameState(states)
 {
+    m_startupTotalBegin = ClientStartupClock::now();
 
-    initServer();
-    initClient();
-    loadDebugControlDefaults();
+    std::cerr
+        << "[M8E-STARTUP][space] pid=" << startupProcessId()
+        << " stage=constructor-begin"
+#ifdef _WIN32
+        << " uptime_ms=" << static_cast<unsigned long long>(GetTickCount64())
+#endif
+        << " foreground_pid=" << startupForegroundProcessId()
+        << " thread=" << std::this_thread::get_id()
+        << "\n";
 
-    InitShaders();
-
-    std::cerr << "[HubMotionLab][startup] shaders-ready\n";
-
-    // Важно: после InitShaders(), потому что starfield renderer использует
-    // galaxy_starfield / galaxy_haze shader paths.
-    try
+    if (startupMode == StartupMode::Immediate)
     {
-        m_sceneRenderer.initializeStaticResources();
+        while (!advanceStartupInitialization())
+        {
+        }
     }
-    catch (const std::bad_alloc&)
-    {
-        std::cerr << "[HubMotionLab][bad_alloc] phase=scene-renderer-initialize\n";
-        throw;
-    }
-    std::cerr << "[HubMotionLab][startup] scene-renderer-ready\n";
-
-    if (context().app)
-        m_sceneRenderer.setUiLocale(context().app->localization().locale());
-
-    try
-    {
-        m_systemMapRenderer.init();
-    }
-    catch (const std::bad_alloc&)
-    {
-        std::cerr << "[HubMotionLab][bad_alloc] phase=system-map-renderer-init\n";
-        throw;
-    }
-    std::cerr << "[HubMotionLab][startup] system-map-renderer-ready\n";
-
-    try
-    {
-        requestGalaxyMapSnapshotOnce();
-    }
-    catch (const std::bad_alloc&)
-    {
-        std::cerr << "[HubMotionLab][bad_alloc] phase=galaxy-snapshot-request\n";
-        throw;
-    }
-    std::cerr << "[HubMotionLab][startup] galaxy-request-ready\n";
-
-    try
-    {
-        initHUD();
-    }
-    catch (const std::bad_alloc&)
-    {
-        std::cerr << "[HubMotionLab][bad_alloc] phase=hud-init\n";
-        throw;
-    }
-    std::cerr << "[HubMotionLab][startup] hud-ready\n";
-
-
-    /*
-        The legacy political GalaxyDatabase is intentionally not loaded here.
-        It is a separate, currently unused population/politics layer whose
-        numeric system IDs do not match the physical StarAtlas IDs. Loading it
-        only for startup counters created the false impression that it was part
-        of the active server world. It can be reintroduced later behind an
-        explicit server-owned world service and a stable cross-catalog key.
-    */
-
-
-
-
-    // InterferenceSource jammer;
-    // jammer.type     = InterferenceType::Active;
-    // jammer.position = {0, 0, 155};
-    // jammer.power    = 300.0f;
-    // jammer.radius   = 100.0f;
-    // jammer.enabled  = false;
-
-    // m_interferenceSources.push_back(jammer);
-
-
-
-    // m_simulation->planets().clear();
-
-    // m_planets.push_back({
-    //     {0, 00, -50},
-    //     20
-    // });
-
-    testDamageSystem();
-
-
 }
+
+bool SpaceState::advanceStartupInitialization()
+{
+    if (m_startupStage == StartupStage::Complete)
+        return true;
+
+    const auto stageBegin = ClientStartupClock::now();
+
+    switch (m_startupStage)
+    {
+        case StartupStage::InitServer:
+            initServer();
+            traceStartupStage(
+                "init-server",
+                stageBegin,
+                m_startupTotalBegin
+            );
+            m_startupStage = StartupStage::InitClient;
+            return false;
+
+        case StartupStage::InitClient:
+            initClient();
+            traceStartupStage(
+                "init-client",
+                stageBegin,
+                m_startupTotalBegin
+            );
+            m_startupStage = StartupStage::DebugDefaults;
+            return false;
+
+        case StartupStage::DebugDefaults:
+            loadDebugControlDefaults();
+            traceStartupStage(
+                "debug-defaults",
+                stageBegin,
+                m_startupTotalBegin
+            );
+            m_startupStage = StartupStage::Shaders;
+            return false;
+
+        case StartupStage::Shaders:
+            InitShaders();
+            traceStartupStage(
+                "shaders",
+                stageBegin,
+                m_startupTotalBegin
+            );
+            std::cerr << "[HubMotionLab][startup] shaders-ready\n";
+            m_startupStage = StartupStage::SceneRenderer;
+            return false;
+
+        case StartupStage::SceneRenderer:
+            try
+            {
+                m_sceneRenderer.initializeStaticResources();
+            }
+            catch (const std::bad_alloc&)
+            {
+                std::cerr
+                    << "[HubMotionLab][bad_alloc] phase=scene-renderer-initialize\n";
+                throw;
+            }
+            traceStartupStage(
+                "scene-renderer",
+                stageBegin,
+                m_startupTotalBegin
+            );
+            std::cerr << "[HubMotionLab][startup] scene-renderer-ready\n";
+            m_startupStage = StartupStage::SceneLocale;
+            return false;
+
+        case StartupStage::SceneLocale:
+            if (context().app)
+            {
+                m_sceneRenderer.setUiLocale(
+                    context().app->localization().locale()
+                );
+            }
+            traceStartupStage(
+                "scene-locale",
+                stageBegin,
+                m_startupTotalBegin
+            );
+            m_startupStage = StartupStage::SystemMapRenderer;
+            return false;
+
+        case StartupStage::SystemMapRenderer:
+            try
+            {
+                m_systemMapRenderer.init();
+            }
+            catch (const std::bad_alloc&)
+            {
+                std::cerr
+                    << "[HubMotionLab][bad_alloc] phase=system-map-renderer-init\n";
+                throw;
+            }
+            traceStartupStage(
+                "system-map-renderer",
+                stageBegin,
+                m_startupTotalBegin
+            );
+            std::cerr
+                << "[HubMotionLab][startup] system-map-renderer-ready\n";
+            m_startupStage = StartupStage::GalaxyRequest;
+            return false;
+
+        case StartupStage::GalaxyRequest:
+            try
+            {
+                requestGalaxyMapSnapshotOnce();
+            }
+            catch (const std::bad_alloc&)
+            {
+                std::cerr
+                    << "[HubMotionLab][bad_alloc] phase=galaxy-snapshot-request\n";
+                throw;
+            }
+            traceStartupStage(
+                "galaxy-request",
+                stageBegin,
+                m_startupTotalBegin
+            );
+            std::cerr << "[HubMotionLab][startup] galaxy-request-ready\n";
+            m_startupStage = StartupStage::Hud;
+            return false;
+
+        case StartupStage::Hud:
+            try
+            {
+                initHUD();
+            }
+            catch (const std::bad_alloc&)
+            {
+                std::cerr
+                    << "[HubMotionLab][bad_alloc] phase=hud-init\n";
+                throw;
+            }
+            traceStartupStage(
+                "hud",
+                stageBegin,
+                m_startupTotalBegin
+            );
+            std::cerr << "[HubMotionLab][startup] hud-ready\n";
+            m_startupStage = StartupStage::Finalize;
+            return false;
+
+        case StartupStage::Finalize:
+            std::cerr
+                << "[M8E-STARTUP][space] pid=" << startupProcessId()
+                << " stage=constructor-end"
+                << " total_ms=" << startupElapsedMs(m_startupTotalBegin)
+#ifdef _WIN32
+                << " uptime_ms="
+                << static_cast<unsigned long long>(GetTickCount64())
+#endif
+                << " foreground_pid=" << startupForegroundProcessId()
+                << " thread=" << std::this_thread::get_id()
+                << "\n";
+
+            /*
+                The legacy political GalaxyDatabase is intentionally not
+                loaded here. It is a separate, currently unused population/
+                politics layer whose numeric system IDs do not match the
+                physical StarAtlas IDs. Loading it only for startup counters
+                created the false impression that it was part of the active
+                server world. It can be reintroduced later behind an explicit
+                server-owned world service and a stable cross-catalog key.
+            */
+
+            // InterferenceSource jammer;
+            // jammer.type     = InterferenceType::Active;
+            // jammer.position = {0, 0, 155};
+            // jammer.power    = 300.0f;
+            // jammer.radius   = 100.0f;
+            // jammer.enabled  = false;
+
+            // m_interferenceSources.push_back(jammer);
+
+            // m_simulation->planets().clear();
+
+            // m_planets.push_back({
+            //     {0, 00, -50},
+            //     20
+            // });
+
+            testDamageSystem();
+            m_startupStage = StartupStage::Complete;
+            return true;
+
+        case StartupStage::Complete:
+        default:
+            return true;
+    }
+}
+
 
 
 bool SpaceState::resolvePlayerGalacticPositionLy(

@@ -50,6 +50,8 @@ public:
 
     server::ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
+    bool ready() const;
+    void rethrowIfFailed() const;
 
 private:
     std::unique_ptr<LocalLoopbackTransport> m_transport;

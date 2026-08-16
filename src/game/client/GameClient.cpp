@@ -1,10 +1,14 @@
 #include <algorithm>
 #include <cmath>
+#include <chrono>
+#include <iostream>
+#include <unordered_set>
 #include <utility>
 #include "GameClient.h"
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/network/ClientMessage.h"
 #include "src/game/geometry/ObjectAssemblyRegistry.h"
+#include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 
 GameClient::GameClient(ITransport& transport)
@@ -20,6 +24,91 @@ GameClient::GameClient(ITransport& transport)
     game::ship::geometry::ObjectAssemblyRegistry::ensureInitialized();
 
     m_connectionState = ClientConnectionState::Connecting;
+}
+
+
+std::vector<ObjectType> GameClient::unloadedAssemblyTypes(
+    const SimulationSnapshot& snapshot
+) const
+{
+    using game::ship::geometry::AssemblyMeshLibrary;
+
+    std::unordered_set<std::uint16_t> seen;
+    std::vector<ObjectType> result;
+
+    const auto collect = [&](ObjectType typeId) {
+        const auto key = static_cast<std::uint16_t>(typeId);
+        if (!seen.insert(key).second)
+            return;
+        if (!AssemblyMeshLibrary::has(typeId))
+            return;
+        if (!AssemblyMeshLibrary::isLoaded(typeId))
+            result.push_back(typeId);
+    };
+
+    for (const auto& ship : snapshot.ships)
+        collect(ship.typeId);
+    for (const auto& object : snapshot.objects)
+        collect(object.type);
+
+    return result;
+}
+
+void GameClient::startAssemblyPreload(
+    const SimulationSnapshot& snapshot,
+    std::vector<ObjectType> types
+)
+{
+    if (types.empty() || m_assemblyPreloadFuture.valid())
+        return;
+
+    m_deferredAssemblySnapshot = snapshot;
+
+    std::cerr
+        << "[M8E-ASSET] preload-begin types=" << types.size()
+        << "\n";
+
+    m_assemblyPreloadFuture = std::async(
+        std::launch::async,
+        [types = std::move(types)]() {
+            for (const auto typeId : types)
+                game::ship::geometry::AssemblyMeshLibrary::get(typeId);
+        }
+    );
+}
+
+bool GameClient::pollAssemblyPreload()
+{
+    if (!m_assemblyPreloadFuture.valid())
+        return true;
+
+    if (m_assemblyPreloadFuture.wait_for(std::chrono::milliseconds(0)) !=
+        std::future_status::ready)
+    {
+        return false;
+    }
+
+    try
+    {
+        m_assemblyPreloadFuture.get();
+    }
+    catch (const std::exception& ex)
+    {
+        failSynchronization(
+            std::string("Client assembly preload failed: ") + ex.what()
+        );
+        m_deferredAssemblySnapshot.reset();
+        return false;
+    }
+    catch (...)
+    {
+        failSynchronization("Client assembly preload failed");
+        m_deferredAssemblySnapshot.reset();
+        return false;
+    }
+
+    std::cerr << "[M8E-ASSET] preload-ready\n";
+    return true;
 }
 
 void GameClient::beginSynchronization()
@@ -48,6 +137,7 @@ void GameClient::beginSynchronization()
     m_nextTimeSyncLocalSeconds = 0.0;
     m_gameplayFramePrepared = false;
     m_preparedAcceptedSnapshot = false;
+    m_deferredAssemblySnapshot.reset();
 
     if (!m_catalogs.loadLocalStarAtlas())
     {
@@ -471,6 +561,7 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             return false;
         }
 
+        const bool firstWelcome = !m_serverSessionId;
         m_serverSessionId = welcome.sessionId;
         m_playerIdentityId = welcome.playerId;
         m_controlledShipInstanceId = welcome.controlledShipInstanceId;
@@ -478,6 +569,16 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
         m_playerId = welcome.controlledEntityId;
         m_world.setLocalControlledEntity(m_playerId);
         m_hasPlayerIdentity = true;
+
+        if (firstWelcome)
+        {
+            std::cerr << "[M8E-CONNECT][client] welcome session="
+                      << welcome.sessionId.value
+                      << " player=" << welcome.playerId.value
+                      << " ship_instance=" << welcome.controlledShipInstanceId
+                      << " entity=" << welcome.controlledEntityId.value
+                      << "\n";
+        }
     }
 
     /*
@@ -490,8 +591,7 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
 
     bool acceptedSnapshot = false;
 
-    SimulationSnapshot snapshot;
-    while (m_transport.receiveSnapshot(snapshot))
+    const auto acceptSnapshot = [&](const SimulationSnapshot& snapshot) -> bool
     {
         if (snapshot.metadata.universeTimelineRevision !=
             snapshot.session.universeTimelineRevision)
@@ -505,7 +605,7 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
         if (m_hasAcceptedSnapshot &&
             snapshot.metadata.serverTick <= m_lastAcceptedSnapshotTick)
         {
-            continue;
+            return false;
         }
 
         const bool timelineRevisionChanged =
@@ -518,7 +618,7 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             snapshot.session.playerNavigation.currentSystemId !=
                 m_sessionSnapshot.playerNavigation.currentSystemId;
 
-        acceptedSnapshot = true;
+        const bool firstAcceptedSnapshot = !m_hasAcceptedSnapshot;
         m_lastAcceptedSnapshotTick = snapshot.metadata.serverTick;
         m_lastSimulationMetadata = snapshot.metadata;
         m_hasAcceptedSnapshot = true;
@@ -531,9 +631,6 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
 
         if (timelineRevisionChanged || playerSystemChanged)
         {
-            // Prediction history belongs to one universe-time branch and one
-            // system-local coordinate domain. Rewind and inter-system transfer
-            // are both hard reconciliation boundaries.
             m_pendingInputs.clear();
             m_predictionSuspended = false;
             m_accumulator = 0.0f;
@@ -561,6 +658,16 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
 
         m_lastAcknowledgedControlTick = acknowledgedControlTick;
 
+        if (firstAcceptedSnapshot)
+        {
+            std::cerr << "[M8E-CONNECT][client] first-snapshot tick="
+                      << snapshot.metadata.serverTick
+                      << " ships=" << snapshot.ships.size()
+                      << " objects=" << snapshot.objects.size()
+                      << " hubs=" << snapshot.hubs.size()
+                      << "\n";
+        }
+
         while (!m_pendingInputs.empty() &&
                m_pendingInputs.front().controlTick <= acknowledgedControlTick)
         {
@@ -572,6 +679,67 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
             m_pendingInputs.clear();
             m_predictionSuspended = false;
         }
+
+        return true;
+    };
+
+    // Never parse large endpoint-local OBJ assemblies from the Win32/UI thread.
+    // While this future is running, Application continues pumping the loading
+    // WebView and other EliteGame windows remain independently activatable.
+    if (m_deferredAssemblySnapshot)
+    {
+        if (!pollAssemblyPreload())
+        {
+            // Keep servicing the transport while static CPU assets load, but
+            // collapse bootstrap traffic to the newest authoritative snapshot.
+            // Otherwise a six-second station OBJ load can leave hundreds of
+            // obsolete snapshots queued for the UI thread to replay afterwards.
+            SimulationSnapshot newerSnapshot;
+            while (m_transport.receiveSnapshot(newerSnapshot))
+            {
+                if (newerSnapshot.metadata.serverTick >
+                    m_deferredAssemblySnapshot->metadata.serverTick)
+                {
+                    *m_deferredAssemblySnapshot = std::move(newerSnapshot);
+                }
+            }
+
+            refreshConnectionState();
+            return false;
+        }
+
+        if (m_connectionState == ClientConnectionState::Failed)
+            return false;
+
+        // A newer snapshot may have introduced another object type while the
+        // first preload batch was running. Start a second batch before touching
+        // ClientWorldState rather than falling back to a synchronous get().
+        auto stillUnloaded =
+            unloadedAssemblyTypes(*m_deferredAssemblySnapshot);
+        if (!stillUnloaded.empty())
+        {
+            const SimulationSnapshot latest = *m_deferredAssemblySnapshot;
+            startAssemblyPreload(latest, std::move(stillUnloaded));
+            return false;
+        }
+
+        acceptedSnapshot |= acceptSnapshot(*m_deferredAssemblySnapshot);
+        m_deferredAssemblySnapshot.reset();
+    }
+
+    SimulationSnapshot snapshot;
+    while (m_transport.receiveSnapshot(snapshot))
+    {
+        const auto unloadedTypes = unloadedAssemblyTypes(snapshot);
+        if (!unloadedTypes.empty())
+        {
+            startAssemblyPreload(snapshot, unloadedTypes);
+            break;
+        }
+
+        acceptedSnapshot |= acceptSnapshot(snapshot);
+        if (m_connectionState == ClientConnectionState::Failed)
+            return false;
     }
 
     /*
@@ -594,9 +762,26 @@ bool GameClient::updateSynchronization(double wallDeltaSeconds)
         Map responses are branch-tagged too. Pump them only after the newest
         simulation snapshot has selected the active revision.
     */
+    const auto mapsBegin = std::chrono::steady_clock::now();
     m_maps.update(serviceDt);
+    const double mapsMs =
+        std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - mapsBegin
+        ).count();
+    if (mapsMs >= 100.0)
+        std::cerr << "[M8E-XPROC][client-sync] stage=maps-update duration_ms="
+                  << mapsMs << "\n";
 
+    const auto celestialBegin = std::chrono::steady_clock::now();
     (void)resolveCelestialSnapshot(acceptedSnapshot);
+    const double celestialMs =
+        std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - celestialBegin
+        ).count();
+    if (celestialMs >= 100.0)
+        std::cerr << "[M8E-XPROC][client-sync] stage=celestial-resolve duration_ms="
+                  << celestialMs << "\n";
+
     refreshConnectionState();
     return acceptedSnapshot;
 }

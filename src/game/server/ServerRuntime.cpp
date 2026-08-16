@@ -1,6 +1,9 @@
 #include "src/game/server/ServerRuntime.h"
 
+#include <chrono>
+#include <iostream>
 #include <stdexcept>
+#include <thread>
 
 #include "src/game/debug/DebugSessionMessage.h"
 #include "src/game/debug/IServerDebugChannel.h"
@@ -127,9 +130,16 @@ bool ServerRuntime::publishSessionBootstrap(
         world::celestial::StarAtlasDatabase::CatalogSchemaVersion;
     welcome.starAtlasCatalog.contentFingerprint =
         m_server->starAtlas().contentFingerprint();
+    using Clock = std::chrono::steady_clock;
+
+    const auto welcomeBegin = Clock::now();
     transport.publishSessionWelcomeImmediately(welcome);
+    const double welcomeMs = std::chrono::duration<double, std::milli>(
+        Clock::now() - welcomeBegin
+    ).count();
 
     SimulationSnapshot bootstrapSnapshot;
+    const auto copyBegin = Clock::now();
     if (!m_server->copyHydratedSnapshotForSession(
             sessionId,
             bootstrapSnapshot))
@@ -137,9 +147,14 @@ bool ServerRuntime::publishSessionBootstrap(
         return false;
     }
 
+    const double copyMs = std::chrono::duration<double, std::milli>(
+        Clock::now() - copyBegin
+    ).count();
+
     // Seed the connection's sparse-publication memory from the exact full
     // baseline that is about to be delivered. A late join therefore starts
     // with complete retained graph/runtime state before any omission is legal.
+    const auto seedBegin = Clock::now();
     if (!m_runner->seedTransportReplicationBaseline(
             sessionId,
             bootstrapSnapshot))
@@ -147,10 +162,29 @@ bool ServerRuntime::publishSessionBootstrap(
         return false;
     }
 
+    const double seedMs = std::chrono::duration<double, std::milli>(
+        Clock::now() - seedBegin
+    ).count();
+
     // The first authoritative snapshot for each connection is bootstrap data,
     // not a latency-simulated gameplay packet. Its session navigation view is
     // already composed from that connection's controlled entity.
+    const auto sendBegin = Clock::now();
     transport.publishSnapshotImmediately(bootstrapSnapshot);
+    const double sendMs = std::chrono::duration<double, std::milli>(
+        Clock::now() - sendBegin
+    ).count();
+
+    std::cerr << "[M8E-CONNECT][server] bootstrap-detail session="
+              << sessionId.value
+              << " welcome_ms=" << welcomeMs
+              << " copy_ms=" << copyMs
+              << " seed_ms=" << seedMs
+              << " queue_snapshot_ms=" << sendMs
+              << " ships=" << bootstrapSnapshot.ships.size()
+              << " objects=" << bootstrapSnapshot.objects.size()
+              << " hubs=" << bootstrapSnapshot.hubs.size()
+              << "\n";
     return true;
 }
 
@@ -167,7 +201,10 @@ PlayerId ServerRuntime::resolveOrBindAccount(
     const auto credentialDigest =
         game::identity::authTokenDigest(hello.authToken);
     if (!credentialDigest.valid())
+    {
+        std::cerr << "[M8E-CONNECT][server] auth rejected: invalid digest\n";
         return {};
+    }
 
     AccountId resolvedAccount {};
     PlayerId resolvedPlayer {};
@@ -178,7 +215,11 @@ PlayerId ServerRuntime::resolveOrBindAccount(
     );
 
     if (result == game::server::AccountRegistry::ResolveResult::Bound)
+    {
+        std::cerr << "[M8E-CONNECT][server] auth resolved existing player="
+                  << resolvedPlayer.value << "\n";
         return resolvedPlayer;
+    }
 
     // First contact with an unknown strong token enrolls one unbound bootstrap
     // player. AccountId is created by the server and never supplied by the
@@ -195,9 +236,16 @@ PlayerId ServerRuntime::resolveOrBindAccount(
             accountId = AccountId{m_nextAccountId++};
 
         if (m_accounts.bind(credentialDigest, accountId, candidate))
+        {
+            std::cerr << "[M8E-CONNECT][server] auth enrolled account="
+                      << accountId.value
+                      << " player=" << candidate.value << "\n";
             return candidate;
+        }
     }
 
+    std::cerr << "[M8E-CONNECT][server] auth rejected: "
+              << "no unbound bootstrap player slot\n";
     return {};
 }
 
@@ -207,11 +255,28 @@ ServerRuntime::attachResolvedPlayerSessionTransport(
     PlayerId playerId
 )
 {
+    using Clock = std::chrono::steady_clock;
+
+    const auto createBegin = Clock::now();
     const auto sessionId =
         m_server->createPlayerSession(playerId);
+    const double createMs = std::chrono::duration<double, std::milli>(
+        Clock::now() - createBegin
+    ).count();
 
     if (!sessionId)
+    {
+        std::cerr << "[M8E-CONNECT][server] session rejected player="
+                  << playerId.value
+                  << " reason=already-active-or-invalid"
+                  << " create_ms=" << createMs << "\n";
         return {};
+    }
+
+    std::cerr << "[M8E-CONNECT][server] session created player="
+              << playerId.value
+              << " session=" << sessionId.value
+              << " create_ms=" << createMs << "\n";
 
     if (!m_runner->attachTransport(transport, sessionId))
     {
@@ -219,12 +284,23 @@ ServerRuntime::attachResolvedPlayerSessionTransport(
         return {};
     }
 
+    const auto bootstrapBegin = Clock::now();
     if (!publishSessionBootstrap(transport, sessionId))
     {
         m_runner->detachTransport(sessionId);
         m_server->disconnectPlayerSession(sessionId);
+        std::cerr << "[M8E-CONNECT][server] bootstrap failed session="
+                  << sessionId.value << "\n";
         return {};
     }
+    const double bootstrapMs = std::chrono::duration<double, std::milli>(
+        Clock::now() - bootstrapBegin
+    ).count();
+
+    std::cerr << "[M8E-CONNECT][server] bootstrap queued session="
+              << sessionId.value
+              << " duration_ms=" << bootstrapMs
+              << " thread=" << std::this_thread::get_id() << "\n";
 
     return sessionId;
 }

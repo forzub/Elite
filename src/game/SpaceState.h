@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <deque>
 #include <mutex>
+#include <chrono>
 #include <glm/gtc/quaternion.hpp>
 
 #include "core/GameState.h"
@@ -72,7 +73,17 @@ enum class ScreenLayout
 class SpaceState : public GameState, public game::ui::ISystemMapUiTarget
 {
 public:
-    explicit SpaceState(StateStack& states);
+    enum class StartupMode
+    {
+        Immediate,
+        Deferred
+    };
+
+    explicit SpaceState(
+        StateStack& states,
+        StartupMode startupMode = StartupMode::Immediate
+    );
+    bool advanceStartupInitialization();
     ~SpaceState();
 
     void renderUI() override;
@@ -171,7 +182,23 @@ public:
     void setSystemMapHubMode() override;
     void setSystemMapLoadedDetailMode() override;
 private:
+    enum class StartupStage
+    {
+        InitServer,
+        InitClient,
+        DebugDefaults,
+        Shaders,
+        SceneRenderer,
+        SceneLocale,
+        SystemMapRenderer,
+        GalaxyRequest,
+        Hud,
+        Finalize,
+        Complete
+    };
 
+    StartupStage m_startupStage = StartupStage::InitServer;
+    std::chrono::steady_clock::time_point m_startupTotalBegin{};
 
 
     WorldParams                                 m_world;

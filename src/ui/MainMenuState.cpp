@@ -35,7 +35,7 @@ namespace
 MainMenuState::MainMenuState(StateStack& states)
     : GameState(states)
     , m_shouldExit(false)
-    , m_selected(MenuItem::NewGame)
+    , m_selected(MenuItem::NewLocalGame)
 {
     const float y = 0.0f;
     const float w = 0.45f;
@@ -43,9 +43,10 @@ MainMenuState::MainMenuState(StateStack& states)
 
     m_buttons =
     {
-        { "NEW GAME",  -0.6f, y, w, h },
-        { "LOAD GAME",  0.0f, y, w, h },
-        { "EXIT",       0.6f, y, w, h }
+        { "NEW LOCAL GAME", -0.75f, y, w, h },
+        { "LOAD LOCAL GAME", -0.25f, y, w, h },
+        { "MULTIPLAYER", 0.25f, y, w, h },
+        { "EXIT", 0.75f, y, w, h }
     };
 
     assert(m_buttons.size() == static_cast<size_t>(MenuItem::Count));
@@ -174,14 +175,21 @@ void MainMenuState::activateSelected()
 
     switch (m_selected)
     {
-        case MenuItem::NewGame:
+        case MenuItem::NewLocalGame:
             context().app->startLocalGameSession();
             m_states.pop();
             m_states.push(std::make_unique<SpaceState>(m_states));
             break;
 
-        case MenuItem::LoadGame:
+        case MenuItem::LoadLocalGame:
             // заглушка
+            break;
+
+        case MenuItem::Multiplayer:
+            // The native fallback UI has no endpoint editor yet. Windows uses
+            // the WebView main menu, where MULTIPLAYER opens the connection
+            // form. A preconfigured --connect endpoint is handled by
+            // Application before the menu becomes interactive.
             break;
 
         case MenuItem::Exit:
@@ -238,12 +246,16 @@ void MainMenuState::pushMainMenuState()
     payload["title"] = "ELITE GAME";
     payload["items"] = json::array({
         {
-            { "id", "new_game" },
-            { "label", loc.text("main.new_game", "NEW GAME") }
+            { "id", "new_local_game" },
+            { "label", loc.text("main.new_local_game", "NEW LOCAL GAME") }
         },
         {
-            { "id", "load_game" },
-            { "label", loc.text("main.load_game", "LOAD GAME") }
+            { "id", "load_local_game" },
+            { "label", loc.text("main.load_local_game", "LOAD LOCAL GAME") }
+        },
+        {
+            { "id", "multiplayer" },
+            { "label", loc.text("main.multiplayer", "MULTIPLAYER") }
         },
         {
             { "id", "exit" },
@@ -280,7 +292,7 @@ void MainMenuState::processHtmlCommands()
         if (msg.type != HtmlUiMessageType::Command)
             continue;
 
-        if (msg.command == "new_game")
+        if (msg.command == "new_local_game")
         {
             context().app->startLocalGameSession();
             m_states.pop();
@@ -288,9 +300,15 @@ void MainMenuState::processHtmlCommands()
             return;
         }
 
-        if (msg.command == "load_game")
+        if (msg.command == "load_local_game")
         {
             // TODO
+            return;
+        }
+
+        if (msg.command == "multiplayer")
+        {
+            // Endpoint entry is implemented by the Windows WebView.
             return;
         }
 

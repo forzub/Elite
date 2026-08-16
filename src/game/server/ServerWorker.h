@@ -43,6 +43,9 @@ public:
     ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
 
+    bool ready() const;
+    void rethrowIfFailed() const;
+
 private:
     void threadMain(
         WorldParams worldParams,

@@ -9,19 +9,47 @@
       "es": "PROTOTIPO DE INTERFAZ",
       "ja": "ゲームUIプロトタイプ"
     },
-    "main.new_game": {
-      "en": "NEW GAME",
-      "ru": "НОВАЯ ИГРА",
-      "zh-Hans": "新游戏",
-      "es": "NUEVA PARTIDA",
-      "ja": "ニューゲーム"
+    "main.new_local_game": {
+      "en": "NEW LOCAL GAME",
+      "ru": "НОВАЯ ЛОКАЛЬНАЯ ИГРА",
+      "zh-Hans": "新建本地游戏",
+      "es": "NUEVA PARTIDA LOCAL",
+      "ja": "新しいローカルゲーム"
     },
-    "main.load_game": {
-      "en": "LOAD GAME",
-      "ru": "ЗАГРУЗИТЬ ИГРУ",
-      "zh-Hans": "载入游戏",
-      "es": "CARGAR PARTIDA",
-      "ja": "ロード"
+    "main.load_local_game": {
+      "en": "LOAD LOCAL GAME",
+      "ru": "ЗАГРУЗИТЬ ЛОКАЛЬНУЮ ИГРУ",
+      "zh-Hans": "载入本地游戏",
+      "es": "CARGAR PARTIDA LOCAL",
+      "ja": "ローカルゲームをロード"
+    },
+    "main.multiplayer": {
+      "en": "MULTIPLAYER",
+      "ru": "СЕТЕВАЯ ИГРА",
+      "zh-Hans": "多人游戏",
+      "es": "MULTIJUGADOR",
+      "ja": "マルチプレイヤー"
+    },
+    "main.server_address": {
+      "en": "SERVER ADDRESS",
+      "ru": "АДРЕС СЕРВЕРА",
+      "zh-Hans": "服务器地址",
+      "es": "DIRECCIÓN DEL SERVIDOR",
+      "ja": "サーバーアドレス"
+    },
+    "main.connect": {
+      "en": "CONNECT",
+      "ru": "ПОДКЛЮЧИТЬСЯ",
+      "zh-Hans": "连接",
+      "es": "CONECTAR",
+      "ja": "接続"
+    },
+    "main.back": {
+      "en": "BACK",
+      "ru": "НАЗАД",
+      "zh-Hans": "返回",
+      "es": "ATRÁS",
+      "ja": "戻る"
     },
     "main.shipyard": {
       "en": "SHIPYARD",

@@ -60,6 +60,7 @@ public:
 private:
     struct Connection
     {
+        std::uint64_t traceId = 0;
         std::unique_ptr<game::network::TcpServerTransport> transport;
         game::network::ServerSessionId sessionId {};
     };
@@ -71,6 +72,7 @@ private:
     std::unique_ptr<game::network::TcpServerListener> m_listener;
     std::unique_ptr<ServerRuntime> m_runtime;
     std::vector<Connection> m_connections;
+    std::uint64_t m_nextConnectionTraceId = 1;
     std::uint64_t m_acceptedConnectionCount = 0;
     std::string m_error;
 };

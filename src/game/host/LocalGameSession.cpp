@@ -1,5 +1,7 @@
 #include "src/game/host/LocalGameSession.h"
 
+#include <exception>
+
 #include "src/game/client/GameClient.h"
 #include "src/game/debug/IDebugSessionControl.h"
 #include "src/game/host/LocalGameHost.h"
@@ -29,8 +31,30 @@ void LocalGameSession::updateSynchronization(double elapsedSeconds)
     if (state() != game::session::GameSessionState::Synchronizing)
         return;
 
-    m_host->advance(elapsedSeconds);
-    m_client->updateSynchronization(elapsedSeconds);
+    try
+    {
+        // ServerRuntime may spend seconds loading the initial authoritative
+        // world. That work already lives on ServerWorker; do not defeat the
+        // thread boundary by synchronously waiting for it from the UI thread.
+        m_host->rethrowIfFailed();
+        if (!m_host->ready())
+            return;
+
+        m_host->advance(elapsedSeconds);
+        m_client->updateSynchronization(elapsedSeconds);
+    }
+    catch (const std::exception& ex)
+    {
+        m_client->failSynchronization(
+            std::string("Local authoritative startup failed: ") + ex.what()
+        );
+    }
+    catch (...)
+    {
+        m_client->failSynchronization(
+            "Local authoritative startup failed"
+        );
+    }
 }
 
 game::session::GameSessionState LocalGameSession::state() const

@@ -38,7 +38,7 @@ for token in (
         fail(f"retryable client-before-server state missing: {token}")
 
 for token in (
-    "if (m_transport->connect(m_config.host, m_config.port))",
+    "m_transport->connect(m_config.host, m_config.port);",
     "m_waitingForServer = true;",
     "std::max(0.10, m_config.retryIntervalSeconds)",
 ):

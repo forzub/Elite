@@ -29,6 +29,13 @@ enum class GameUiMode
     SystemMap
 };
 
+enum class GameSessionLaunchKind
+{
+    None,
+    LocalNewGame,
+    RemoteMultiplayer
+};
+
 enum class GameUiNavigationAction
 {
     OpenOrSwitch,
@@ -209,7 +216,7 @@ public:
     const game::localization::LocalizationService& localization() const { return m_localization; }
     void cycleUiLanguage();
 
-    void updatePendingNewGameLoad();
+    void updatePendingSessionStart();
     void openGameUi(GameUiMode mode);
     void closeGameUi();
     void toggleSystemMapUi();
@@ -223,8 +230,9 @@ public:
         const game::network::SessionHello& hello
     );
     void configureRemoteServer(std::string host, std::uint16_t port);
-    void startConfiguredGameSession();
+    bool hasConfiguredRemoteServer() const;
     void startLocalGameSession();
+    void startRemoteGameSession();
     void stopGameSession();
     game::session::IGameSession& gameSession();
     const game::session::IGameSession& gameSession() const;
@@ -234,6 +242,9 @@ private:
     void mainLoop();
     void shutdown();
     void navigateGameUi(GameUiMode mode);
+    void requestSessionStart(GameSessionLaunchKind kind);
+    void showMultiplayerConnectionForm();
+    void showMainMenu();
 
 private:
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -255,17 +266,19 @@ private:
     HtmlUiManager m_htmlUi;
     game::localization::LocalizationService m_localization;
 
-    enum class NewGameLoadStage
+    enum class SessionStartStage
     {
         Idle,
         WaitingForLoadingScreen,
-        SynchronizingSession
+        SynchronizingSession,
+        BuildingSpaceState
     };
 
-    bool m_pendingNewGameLoad = false;
-    double m_newGameLoadStartTime = 0.0;
-    double m_newGameLoadLastUpdateTime = 0.0;
-    NewGameLoadStage m_newGameLoadStage = NewGameLoadStage::Idle;
+    GameSessionLaunchKind m_pendingSessionLaunch = GameSessionLaunchKind::None;
+    double m_sessionStartTime = 0.0;
+    double m_sessionStartLastUpdateTime = 0.0;
+    double m_spaceStateBuildStartTime = 0.0;
+    SessionStartStage m_sessionStartStage = SessionStartStage::Idle;
 
     GameUiController m_gameUi;
 

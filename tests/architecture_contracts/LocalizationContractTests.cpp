@@ -33,13 +33,13 @@ int main()
            "categorized localization tree unexpectedly lost files");
 
     expect(localization.locale() == "en", "English must remain the initial locale");
-    expect(localization.text("main.new_game", "BAD") == "NEW GAME",
+    expect(localization.text("main.new_local_game", "BAD") == "NEW LOCAL GAME",
            "English UI lookup changed");
     expect(localization.catalogName("systems", "0", "BAD") == "Sol",
            "English system catalog lookup changed");
 
     expect(localization.setLocale("ru"), "Russian locale must be selectable");
-    expect(localization.text("main.new_game", "BAD") == "НОВАЯ ИГРА",
+    expect(localization.text("main.new_local_game", "BAD") == "НОВАЯ ЛОКАЛЬНАЯ ИГРА",
            "Russian UI lookup changed");
     expect(localization.catalogName("systems", "0", "BAD") == "Солнечная система",
            "Russian system catalog lookup changed");
@@ -63,7 +63,7 @@ int main()
            "unsupported global locale must be rejected");
 
     const std::string webBundle = localization.webUiBundleJson();
-    expect(webBundle.find("main.new_game") != std::string::npos &&
+    expect(webBundle.find("main.new_local_game") != std::string::npos &&
            webBundle.find("locale_order") != std::string::npos,
            "WebUI runtime bundle lost shared localization data");
 

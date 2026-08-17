@@ -205,14 +205,23 @@ void Application::configureClientIdentity(
     const game::network::SessionHello& hello
 )
 {
-    if (!hello.authToken.valid())
-        throw std::invalid_argument("invalid client authentication token");
+    if (!game::identity::isValidAccountHandle(profileName))
+        throw std::invalid_argument("invalid client account handle");
+    if (!hello.authToken.valid() || hello.accountHandle != profileName)
+        throw std::invalid_argument("invalid client authentication identity");
 
     m_clientIdentityProfileName = std::move(profileName);
-    if (m_clientIdentityProfileName.empty())
-        m_clientIdentityProfileName = "default";
     m_clientIdentityHello = hello;
     m_clientIdentityHello.intent = game::network::AuthenticationIntent::SignIn;
+}
+
+void Application::configureClientIdentityProfileHint(std::string profileName)
+{
+    if (!profileName.empty() && !game::identity::isValidAccountHandle(profileName))
+        throw std::invalid_argument("invalid client account-handle hint");
+
+    m_clientIdentityProfileName = std::move(profileName);
+    m_clientIdentityHello = {};
 }
 
 bool Application::prepareRemoteIdentity(
@@ -254,6 +263,12 @@ void Application::startRemoteGameSession()
 {
     if (!hasConfiguredRemoteServer())
         throw std::runtime_error("remote server endpoint is not configured");
+    if (!game::identity::isValidAccountHandle(
+            m_clientIdentityHello.accountHandle) ||
+        !m_clientIdentityHello.authToken.valid())
+    {
+        throw std::runtime_error("remote authentication identity is not prepared");
+    }
 
     game::session::RemoteGameSessionConfig config;
     config.host = m_remoteServerHost;
@@ -267,13 +282,10 @@ void Application::startRemoteGameSession()
 
 void Application::startLocalGameSession()
 {
-    game::host::LocalGameSessionConfig config;
-    config.identityHello = m_clientIdentityHello;
-    // Local play owns a fresh private authoritative runtime, so its account
-    // bootstrap is an explicit local registration rather than a remote login.
-    config.identityHello.intent = game::network::AuthenticationIntent::Register;
-    m_gameSession =
-        std::make_unique<game::host::LocalGameSession>(config);
+    // Local play owns a private authoritative runtime and therefore uses its
+    // own local bootstrap identity. Remote credential slots are neither read
+    // nor created as a side effect of starting a local game.
+    m_gameSession = std::make_unique<game::host::LocalGameSession>();
 }
 
 void Application::stopGameSession()
@@ -488,7 +500,7 @@ void Application::init()
                 << "\n";
         xprocInitStageBegin = XprocTraceClock::now();
         m_gameUi.forceMode(GameUiMode::MainMenu);
-        m_gameUi.markLoaded(GameUiMode::MainMenu);
+        m_gameUi.clearLoaded();
         m_htmlUi.setActivePanel(HtmlUiPanelId::None);
     #endif
 
@@ -512,9 +524,19 @@ void Application::init()
     // exists and this client only authenticates and attaches to it.
     if (hasConfiguredRemoteServer())
     {
-        std::cout << "[App] --connect shortcut: entering multiplayer endpoint="
-                  << m_remoteServerHost << ':' << m_remoteServerPort << "\n";
-        requestSessionStart(GameSessionLaunchKind::RemoteMultiplayer);
+        if (m_clientIdentityHello.authToken.valid())
+        {
+            std::cout << "[App] --connect shortcut: entering multiplayer endpoint="
+                      << m_remoteServerHost << ':' << m_remoteServerPort << "\n";
+            requestSessionStart(GameSessionLaunchKind::RemoteMultiplayer);
+        }
+        else
+        {
+            // Endpoint-only launch is not authorization. Keep the configured
+            // endpoint as a UI default and require an explicit SIGN IN or
+            // REGISTER before creating a remote game session.
+            showMultiplayerConnectionForm();
+        }
     }
 
 }
@@ -788,6 +810,16 @@ void Application::mainLoop()
                         std::cout << "[App] load local game not implemented yet\n";
                     }
 
+                    if (webCommand == "main_menu_ready")
+                    {
+                        if (m_gameUi.isMode(GameUiMode::MainMenu))
+                        {
+                            m_gameUi.markLoaded(GameUiMode::MainMenu);
+                            applyMainMenuView();
+                        }
+                        continue;
+                    }
+
                     if (webCommand == "multiplayer")
                     {
                         showMultiplayerConnectionForm();
@@ -814,7 +846,7 @@ void Application::mainLoop()
                         if (separator == std::string::npos)
                         {
                             m_gameWebView.evalScript(
-                                "setConnectionError('INVALID AUTHORIZATION REQUEST');"
+                                "setConnectionError('INVALID_ACCOUNT_HANDLE');"
                             );
                             continue;
                         }
@@ -832,7 +864,7 @@ void Application::mainLoop()
                             std::cerr << "[App] invalid multiplayer endpoint: "
                                       << endpointError << "\n";
                             m_gameWebView.evalScript(
-                                "setConnectionError('INVALID SERVER ADDRESS');"
+                                "setConnectionError('INVALID_SERVER_ADDRESS');"
                             );
                             continue;
                         }
@@ -1285,10 +1317,7 @@ void Application::openGameUi(GameUiMode mode)
 
 #ifdef _WIN32
             if (!m_gameUi.isLoaded(GameUiMode::MainMenu))
-            {
                 navigateGameUi(GameUiMode::MainMenu);
-                m_gameUi.markLoaded(GameUiMode::MainMenu);
-            }
 
             int w = 1280;
             int h = 720;
@@ -1434,6 +1463,7 @@ void Application::requestSessionStart(GameSessionLaunchKind kind)
 #ifdef _WIN32
     m_gameUi.forceMode(GameUiMode::Loading);
     m_gameUi.markLoaded(GameUiMode::Loading);
+    m_mainMenuConnectionError.clear();
     m_htmlUi.setActivePanel(HtmlUiPanelId::None);
 
     m_gameWebView.setVisible(true);
@@ -1467,39 +1497,70 @@ void Application::requestSessionStart(GameSessionLaunchKind kind)
     m_sessionStartStage = SessionStartStage::WaitingForLoadingScreen;
 }
 
-void Application::showMultiplayerConnectionForm()
+void Application::showMultiplayerConnectionForm(
+    const std::string& errorCode
+)
 {
 #ifdef _WIN32
+    m_mainMenuView = MainMenuView::MultiplayerAuthorization;
+    m_mainMenuConnectionError = errorCode;
     m_gameUi.forceMode(GameUiMode::MainMenu);
-    if (!m_gameUi.isLoaded(GameUiMode::MainMenu))
-    {
-        navigateGameUi(GameUiMode::MainMenu);
-        m_gameUi.markLoaded(GameUiMode::MainMenu);
-    }
     m_gameWebView.setVisible(true);
 
-    const std::string endpoint = hasConfiguredRemoteServer()
-        ? m_remoteServerHost + ":" + std::to_string(m_remoteServerPort)
-        : "127.0.0.1:27351";
-    m_gameWebView.evalScript(
-        "setMultiplayerDefaults(" +
-        nlohmann::json(endpoint).dump() + "," +
-        nlohmann::json(m_clientIdentityProfileName).dump() +
-        ");showMultiplayerForm();"
-    );
+    if (m_gameUi.isLoaded(GameUiMode::MainMenu))
+    {
+        applyMainMenuView();
+    }
+    else
+    {
+        // main_menu.html is loaded asynchronously by WebView2. Do not eval
+        // showMultiplayerForm() against the outgoing loading.html document.
+        // The page sends main_menu_ready once its DOM and bridge are ready;
+        // applyMainMenuView() then applies this pending sub-view atomically.
+        navigateGameUi(GameUiMode::MainMenu);
+    }
+#else
+    (void)errorCode;
 #endif
 }
 
 void Application::showMainMenu()
 {
 #ifdef _WIN32
+    m_mainMenuView = MainMenuView::MainActions;
+    m_mainMenuConnectionError.clear();
     m_gameUi.forceMode(GameUiMode::MainMenu);
-    if (!m_gameUi.isLoaded(GameUiMode::MainMenu))
-    {
-        navigateGameUi(GameUiMode::MainMenu);
-        m_gameUi.markLoaded(GameUiMode::MainMenu);
-    }
     m_gameWebView.setVisible(true);
+
+    if (m_gameUi.isLoaded(GameUiMode::MainMenu))
+        applyMainMenuView();
+    else
+        navigateGameUi(GameUiMode::MainMenu);
+#endif
+}
+
+void Application::applyMainMenuView()
+{
+#ifdef _WIN32
+    if (!m_gameUi.isLoaded(GameUiMode::MainMenu))
+        return;
+
+    if (m_mainMenuView == MainMenuView::MultiplayerAuthorization)
+    {
+        const std::string endpoint = hasConfiguredRemoteServer()
+            ? m_remoteServerHost + ":" + std::to_string(m_remoteServerPort)
+            : "127.0.0.1:27351";
+        m_gameWebView.evalScript(
+            "setMultiplayerDefaults(" +
+            nlohmann::json(endpoint).dump() + "," +
+            nlohmann::json(m_clientIdentityProfileName).dump() +
+            ");showMultiplayerForm();setConnectionError(" +
+            nlohmann::json(m_mainMenuConnectionError).dump() +
+            ");"
+        );
+        return;
+    }
+
     m_gameWebView.evalScript("showMainMenu();");
 #endif
 }
@@ -1677,14 +1738,9 @@ void Application::updatePendingSessionStart()
 
         if (remoteLaunch)
         {
-            showMultiplayerConnectionForm();
             const std::string message =
-                sessionError.empty() ? "SESSION FAILED" : sessionError;
-            m_gameWebView.evalScript(
-                "setConnectionError(" +
-                nlohmann::json(message).dump() +
-                ");"
-            );
+                sessionError.empty() ? "SESSION_UNAVAILABLE" : sessionError;
+            showMultiplayerConnectionForm(message);
         }
         else
         {

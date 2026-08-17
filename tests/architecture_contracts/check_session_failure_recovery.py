@@ -27,14 +27,27 @@ for token in (
     "const std::string sessionError = m_gameSession->error();",
     "stopGameSession();",
     "m_gameUi.clearLoaded();",
-    "showMultiplayerConnectionForm();",
-    "setConnectionError(",
+    "showMultiplayerConnectionForm(message);",
     "showMainMenu();",
 ):
     if token not in failed_block:
         fail(f"failed session can strand loading UI or lacks recovery path: {token}")
 
-if "function setConnectionError(message)" not in menu_html:
-    fail("multiplayer form no longer exposes a connection-error surface")
+for token in (
+    "main_menu_ready",
+    "applyMainMenuView();",
+    "MainMenuView::MultiplayerAuthorization",
+    "m_mainMenuConnectionError",
+):
+    if token not in app_cpp:
+        fail(f"menu recovery can still race asynchronous WebView navigation: {token}")
 
-print("[PASS] failed local/remote session leaves loading.html through recoverable menu UI")
+for token in (
+    "function setConnectionError(message)",
+    "DOMContentLoaded",
+    "sendCommand('main_menu_ready')",
+):
+    if token not in menu_html:
+        fail(f"multiplayer form/page-ready recovery surface missing: {token}")
+
+print("[PASS] failed remote session returns to Multiplayer form after main_menu.html is actually ready")

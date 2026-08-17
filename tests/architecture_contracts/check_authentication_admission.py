@@ -24,6 +24,9 @@ host = read("src/game/server/NetworkServerHost.cpp")
 client = read("src/game/client/GameClient.cpp")
 remote = read("src/game/session/RemoteGameSession.cpp")
 application = read("src/core/Application.cpp")
+application_h = read("src/core/Application.h")
+main_cpp = read("src/main.cpp")
+local_session_h = read("src/game/host/LocalGameSession.h")
 profile = read("src/game/identity/ClientIdentityProfile.cpp")
 menu = read("src/assets/webui/main_menu.html")
 localization = read("src/assets/localization/ui/common/main_menu.json")
@@ -34,7 +37,9 @@ for token in (
     "SignIn",
     "Register",
     "SessionRejectReason",
-    "UnknownCredential",
+    "UnknownAccount",
+    "InvalidAccountHandle",
+    "AccountHandleTaken",
     "RegistrationUnavailable",
     "AlreadyActive",
     "struct SessionReject",
@@ -66,7 +71,9 @@ for token in ("WireMessageKind::SessionReject", "receiveSessionReject"):
 for token in (
     "resolveOrRegisterAccount",
     "hello.intent != game::network::AuthenticationIntent::Register",
-    "SessionRejectReason::UnknownCredential",
+    "SessionRejectReason::UnknownAccount",
+    "SessionRejectReason::AccountHandleTaken",
+    "hello.accountHandle",
     "m_accounts.bind",
     "transport.publishSessionRejectImmediately(reject)",
 ):
@@ -107,8 +114,36 @@ for token in (
     if token not in application:
         fail(f"Application authentication state machine missing: {token}")
 
-if "config.identityHello.intent = game::network::AuthenticationIntent::Register" not in application:
-    fail("local private runtime does not explicitly register its own ephemeral account")
+for token in (
+    "std::make_unique<game::host::LocalGameSession>()",
+    "Remote credential slots are neither read",
+):
+    if token not in application:
+        fail(f"local game is still coupled to remote credential identity: {token}")
+
+if "AuthenticationIntent::Register" not in local_session_h:
+    fail("local private runtime lost its explicit private registration bootstrap")
+
+if 'std::string m_clientIdentityProfileName = "default"' in application_h:
+    fail("Application still invents a remote profile named default")
+if "AuthToken{{1u}}" in application_h:
+    fail("Application still carries a fake default remote bearer token")
+
+if 'std::string clientProfileName = "default"' in main_cpp:
+    fail("process startup still invents a default remote credential profile")
+if "ClientIdentityProfileStore::loadOrCreate(" in main_cpp and "clientProfileName" in main_cpp:
+    # loadOrCreate is allowed in process self-tests and registration helpers,
+    # but normal startup must not pair it with the CLI profile name.
+    startup_tail = main_cpp.split('std::setlocale(LC_ALL, "");', 1)[1]
+    if "ClientIdentityProfileStore::loadOrCreate(" in startup_tail:
+        fail("process startup still creates a remote credential slot implicitly")
+for token in (
+    "bool clientProfileExplicit = false",
+    "ClientIdentityProfileStore::loadExisting",
+    "configureClientIdentityProfileHint",
+):
+    if token not in main_cpp:
+        fail(f"explicit process-profile boundary missing: {token}")
 
 for token in ("loadExisting(", "loadOrCreate("):
     if token not in profile:
@@ -125,9 +160,16 @@ for token in (
     if token not in menu:
         fail(f"multiplayer authorization UI missing: {token}")
 
+if 'id="credential-profile" value="default"' in menu:
+    fail("Multiplayer form still invents a default remote credential profile")
+if "value = profile || ''" not in menu:
+    fail("Multiplayer form cannot clear an absent remote profile hint")
+
 for token in (
     "main.auth.invalid_credential",
-    "main.auth.unknown_credential",
+    "main.auth.unknown_account",
+    "main.auth.invalid_account_handle",
+    "main.auth.account_handle_taken",
     "main.auth.registration_unavailable",
     "main.auth.already_active",
     "main.auth.session_unavailable",
@@ -140,7 +182,9 @@ if "sessionRejectMessage" in session:
     fail("network protocol header contains presentation-language rejection text")
 
 for token in (
-    "UnknownCredential",
+    "UnknownAccount",
+    "InvalidAccountHandle",
+    "AccountHandleTaken",
     "AlreadyActive",
     "reconnect_ack",
 ):

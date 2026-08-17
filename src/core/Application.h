@@ -42,6 +42,12 @@ enum class GameUiNavigationAction
     Close
 };
 
+enum class MainMenuView
+{
+    MainActions,
+    MultiplayerAuthorization
+};
+
 
 class GameUiController
 {
@@ -230,6 +236,7 @@ public:
         std::string profileName,
         const game::network::SessionHello& hello
     );
+    void configureClientIdentityProfileHint(std::string profileName);
     void configureRemoteServer(std::string host, std::uint16_t port);
     bool hasConfiguredRemoteServer() const;
     void startLocalGameSession();
@@ -244,8 +251,11 @@ private:
     void shutdown();
     void navigateGameUi(GameUiMode mode);
     void requestSessionStart(GameSessionLaunchKind kind);
-    void showMultiplayerConnectionForm();
+    void showMultiplayerConnectionForm(
+        const std::string& errorCode = std::string()
+    );
     void showMainMenu();
+    void applyMainMenuView();
     bool prepareRemoteIdentity(
         const std::string& profileName,
         game::network::AuthenticationIntent intent,
@@ -264,11 +274,10 @@ private:
     std::string m_remoteServerHost;
     std::uint16_t m_remoteServerPort = 0;
     std::uint16_t m_gameUiHttpPort = 0;
-    std::string m_clientIdentityProfileName = "default";
-    game::network::SessionHello m_clientIdentityHello {
-        game::identity::AuthToken{{1u}},
-        game::network::AuthenticationIntent::SignIn
-    };
+    std::string m_clientIdentityProfileName;
+    game::network::SessionHello m_clientIdentityHello {};
+    MainMenuView m_mainMenuView = MainMenuView::MainActions;
+    std::string m_mainMenuConnectionError;
     StateStack   m_states;
     RenderContext renderContext;
     HtmlUiManager m_htmlUi;

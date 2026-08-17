@@ -27,7 +27,9 @@ struct RemoteGameSessionConfig
     std::uint16_t port = 27351;
     double retryIntervalSeconds = 1.0;
     game::network::SessionHello identityHello {
-        game::identity::AuthToken{{1u}}
+        "remote-test",
+        game::identity::AuthToken{{1u}},
+        game::network::AuthenticationIntent::SignIn
     };
 };
 

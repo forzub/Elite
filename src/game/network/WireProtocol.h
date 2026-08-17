@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 7u;
+inline constexpr std::uint16_t WireProtocolVersion = 8u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -296,10 +296,13 @@ public:
         return true;
     }
 
-    bool string(std::string& value)
+    bool string(
+        std::string& value,
+        std::uint32_t maxBytes = MaxWireStringBytes)
     {
         std::uint32_t size = 0;
-        if (!u32(size) || size > MaxWireStringBytes || !require(size))
+        if (!u32(size) || size > maxBytes ||
+            size > MaxWireStringBytes || !require(size))
         {
             m_good = false;
             return false;
@@ -456,10 +459,15 @@ inline bool encodeSessionHello(
     std::vector<std::uint8_t>& outPayload
 )
 {
-    if (!value.authToken.valid())
+    if (!game::identity::isValidAccountHandle(value.accountHandle) ||
+        !value.authToken.valid())
+    {
         return false;
+    }
 
     WireWriter writer;
+    if (!writer.string(value.accountHandle))
+        return false;
     for (const auto byte : value.authToken.bytes)
         writer.u8(byte);
     writer.u8(static_cast<std::uint8_t>(value.intent));
@@ -473,6 +481,13 @@ inline bool decodeSessionHello(
 )
 {
     WireReader reader(payload);
+    if (!reader.string(
+            outValue.accountHandle,
+            static_cast<std::uint32_t>(game::identity::AccountHandleMaxLength)))
+    {
+        return false;
+    }
+
     for (auto& byte : outValue.authToken.bytes)
     {
         if (!reader.u8(byte))
@@ -511,7 +526,7 @@ inline bool decodeSessionReject(
     std::uint8_t reason = 0;
     if (!reader.u8(reason) ||
         reason < static_cast<std::uint8_t>(SessionRejectReason::InvalidCredential) ||
-        reason > static_cast<std::uint8_t>(SessionRejectReason::BootstrapFailed) ||
+        reason > static_cast<std::uint8_t>(SessionRejectReason::AccountHandleTaken) ||
         !reader.boolean(outValue.retryable) ||
         !finishDecode(reader))
     {

@@ -4,6 +4,14 @@
   <meta charset="utf-8">
   <title>EliteGame Main Menu</title>
   <style>
+    :root {
+      --panel-width: 548px;
+      --panel-pad-x: clamp(18px, 4.5vw, 44px);
+      --panel-pad-y: clamp(16px, 4vh, 44px);
+      --button-pad-y: clamp(10px, 1.9vh, 16px);
+      --control-gap: clamp(7px, 1.35vh, 14px);
+    }
+
     html, body {
       margin: 0;
       width: 100%;
@@ -17,47 +25,58 @@
     }
 
     .screen {
+      box-sizing: border-box;
       width: 100vw;
       height: 100vh;
+      padding: clamp(8px, 2vh, 22px);
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
     .panel {
-      width: 460px;
-      padding: 44px;
+      box-sizing: border-box;
+      width: min(var(--panel-width), calc(100vw - 16px));
+      max-height: calc(100vh - 16px);
+      padding: var(--panel-pad-y) var(--panel-pad-x);
+      overflow-y: auto;
+      overflow-x: hidden;
       border: 1px solid rgba(140, 180, 255, 0.35);
-      border-radius: 18px;
+      border-radius: clamp(10px, 2vh, 18px);
       background: rgba(5, 10, 20, 0.88);
       box-shadow: 0 0 80px rgba(60, 120, 255, 0.18);
       text-align: center;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(110, 150, 210, 0.45) transparent;
     }
 
     h1 {
-      margin: 0 0 8px;
+      margin: 0 0 clamp(4px, 1vh, 8px);
       letter-spacing: 0.28em;
-      font-size: 44px;
+      font-size: clamp(30px, 6.2vh, 44px);
+      line-height: 1;
       font-weight: 500;
     }
 
     .subtitle {
-      margin-bottom: 34px;
+      margin-bottom: clamp(12px, 3.8vh, 34px);
       color: #7f8da8;
-      font-size: 13px;
+      font-size: clamp(10px, 1.8vh, 13px);
       letter-spacing: 0.12em;
     }
 
     button {
       display: block;
+      box-sizing: border-box;
       width: 100%;
-      margin: 14px 0;
-      padding: 16px 20px;
+      margin: var(--control-gap) 0;
+      padding: var(--button-pad-y) 20px;
       border: 1px solid rgba(150, 190, 255, 0.45);
       border-radius: 10px;
       background: rgba(18, 35, 65, 0.9);
       color: #e8eefc;
-      font-size: 17px;
+      font-size: clamp(14px, 2.35vh, 17px);
+      line-height: 1.35;
       letter-spacing: 0.08em;
       cursor: pointer;
     }
@@ -68,42 +87,67 @@
     }
 
     .hint {
-      margin-top: 28px;
+      margin-top: clamp(10px, 2.6vh, 28px);
       color: #58647a;
-      font-size: 12px;
+      font-size: clamp(9px, 1.55vh, 12px);
     }
 
     .connection {
       display: none;
-      margin-top: 18px;
+      margin-top: clamp(8px, 2vh, 18px);
       text-align: left;
     }
 
     .connection label {
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: clamp(4px, 0.9vh, 8px);
       color: #9eb2d6;
-      font-size: 12px;
+      font-size: clamp(10px, 1.7vh, 12px);
       letter-spacing: 0.08em;
     }
 
     .connection input {
       box-sizing: border-box;
       width: 100%;
-      padding: 14px 16px;
+      padding: clamp(10px, 1.8vh, 14px) 16px;
       border: 1px solid rgba(150, 190, 255, 0.45);
       border-radius: 8px;
       background: rgba(4, 9, 18, 0.95);
       color: #e8eefc;
-      font-size: 16px;
+      font-size: clamp(14px, 2.2vh, 16px);
+    }
+
+    .field-hint {
+      margin-top: 6px;
+      color: #71809a;
+      font-size: clamp(9px, 1.55vh, 11px);
+      line-height: 1.35;
     }
 
     .connection-error {
-      min-height: 18px;
-      margin-top: 10px;
+      min-height: clamp(16px, 2.4vh, 20px);
+      margin-top: clamp(7px, 1.5vh, 10px);
       color: #ff9b9b;
-      font-size: 12px;
+      font-size: clamp(10px, 1.65vh, 12px);
+      line-height: 1.35;
       text-align: center;
+    }
+
+    @media (max-height: 680px) {
+      :root {
+        --panel-pad-y: 12px;
+        --button-pad-y: 8px;
+        --control-gap: 5px;
+      }
+      .subtitle { margin-bottom: 8px; }
+      .connection { margin-top: 6px; }
+      .hint { display: none; }
+    }
+
+    @media (max-height: 520px) {
+      h1 { font-size: 26px; }
+      .subtitle { display: none; }
+      .panel { align-self: stretch; }
     }
   </style>
 </head>
@@ -124,8 +168,9 @@
       <div id="multiplayer-connection" class="connection">
         <label for="server-endpoint" data-i18n="main.server_address">SERVER ADDRESS</label>
         <input id="server-endpoint" value="127.0.0.1:27351" spellcheck="false" autocomplete="off">
-        <label for="credential-profile" data-i18n="main.credential_profile" style="margin-top:14px">CREDENTIAL PROFILE</label>
-        <input id="credential-profile" value="default" spellcheck="false" autocomplete="off" maxlength="64">
+        <label for="credential-profile" data-i18n="main.account_handle" style="margin-top:clamp(8px,1.8vh,14px)">ACCOUNT HANDLE</label>
+        <input id="credential-profile" value="" spellcheck="false" autocomplete="username" inputmode="text" minlength="3" maxlength="24" pattern="[a-z0-9][a-z0-9_-]{2,23}">
+        <div class="field-hint" data-i18n="main.account_handle_rules">3-24 characters: lowercase a-z, digits, _ and -. Start with a letter or digit.</div>
         <div id="connection-error" class="connection-error"></div>
         <button data-i18n="main.sign_in" onclick="authorizeMultiplayer(false)">SIGN IN</button>
         <button data-i18n="main.register" onclick="authorizeMultiplayer(true)">REGISTER</button>
@@ -148,7 +193,7 @@
 
     function setMultiplayerDefaults(endpoint, profile) {
       if (endpoint) document.getElementById('server-endpoint').value = endpoint;
-      if (profile) document.getElementById('credential-profile').value = profile;
+      document.getElementById('credential-profile').value = profile || '';
     }
 
     function showMultiplayerForm() {
@@ -168,7 +213,13 @@
 
     const connectionErrorI18nKeys = {
       INVALID_CREDENTIAL: 'main.auth.invalid_credential',
-      UNKNOWN_CREDENTIAL: 'main.auth.unknown_credential',
+      UNKNOWN_ACCOUNT: 'main.auth.unknown_account',
+      INVALID_ACCOUNT_HANDLE: 'main.auth.invalid_account_handle',
+      ACCOUNT_HANDLE_TAKEN: 'main.auth.account_handle_taken',
+      ACCOUNT_HANDLE_REQUIRED: 'main.auth.account_handle_required',
+      SERVER_ADDRESS_REQUIRED: 'main.auth.server_address_required',
+      INVALID_SERVER_ADDRESS: 'main.auth.invalid_server_address',
+      LOCAL_CREDENTIAL_MISSING: 'main.auth.local_credential_missing',
       REGISTRATION_UNAVAILABLE: 'main.auth.registration_unavailable',
       ALREADY_ACTIVE: 'main.auth.already_active',
       SESSION_UNAVAILABLE: 'main.auth.session_unavailable',
@@ -193,15 +244,15 @@
       const endpoint = document.getElementById('server-endpoint').value.trim();
       const profile = document.getElementById('credential-profile').value.trim();
       if (!endpoint) {
-        setConnectionError('SERVER ADDRESS REQUIRED');
+        setConnectionError('SERVER_ADDRESS_REQUIRED');
         return;
       }
       if (!profile) {
-        setConnectionError('CREDENTIAL PROFILE REQUIRED');
+        setConnectionError('ACCOUNT_HANDLE_REQUIRED');
         return;
       }
-      if (!/^[A-Za-z0-9_-]{1,64}$/.test(profile)) {
-        setConnectionError('PROFILE MAY USE ONLY A-Z, 0-9, _ AND -');
+      if (!/^[a-z0-9][a-z0-9_-]{2,23}$/.test(profile)) {
+        setConnectionError('INVALID_ACCOUNT_HANDLE');
         return;
       }
       setConnectionError('');
@@ -211,6 +262,13 @@
       );
     }
 
+    document.getElementById('credential-profile').addEventListener('input', event => {
+      const input = event.target;
+      let value = input.value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      value = value.replace(/^[^a-z0-9]+/, '').slice(0, 24);
+      if (input.value !== value) input.value = value;
+    });
+
     for (const id of ['server-endpoint', 'credential-profile']) {
       document.getElementById(id).addEventListener('keydown', event => {
         if (event.key === 'Enter') {
@@ -219,10 +277,18 @@
         }
         if (event.key === 'Escape') {
           event.preventDefault();
-          showMainMenu();
+          sendCommand('multiplayer_back');
         }
       });
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // C++ may have navigated here from loading.html after an auth/session
+      // rejection. Signal that this document is now the active menu page so
+      // the pending Multiplayer sub-view and typed rejection can be applied
+      // without racing WebView2 navigation.
+      sendCommand('main_menu_ready');
+    });
   </script>
 </body>
 </html>

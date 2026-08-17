@@ -27,6 +27,7 @@ game::network::SessionHello makeAcceptanceIdentity(
 )
 {
     game::network::SessionHello hello;
+    hello.accountHandle = "accept-" + std::to_string(tokenSeed);
     for (std::size_t i = 0; i < hello.authToken.bytes.size(); ++i)
     {
         const unsigned shift = static_cast<unsigned>((i % 8u) * 8u);
@@ -240,6 +241,22 @@ void requireAccountReconnectReturnsSamePersistentPlayer()
     auto signInIdentity = registrationIdentity;
     signInIdentity.intent = game::network::AuthenticationIntent::SignIn;
 
+    auto invalidHandleIdentity = signInIdentity;
+    invalidHandleIdentity.accountHandle = "-bad";
+    LocalLoopbackTransport invalidHandleTransport;
+    const auto invalidHandleSession = runtime.attachPlayerSessionTransport(
+        invalidHandleTransport,
+        invalidHandleIdentity
+    );
+    require(!invalidHandleSession, "invalid account handle was admitted");
+    game::network::SessionReject invalidHandleReject;
+    require(
+        invalidHandleTransport.receiveSessionReject(invalidHandleReject) &&
+        invalidHandleReject.reason ==
+            game::network::SessionRejectReason::InvalidAccountHandle,
+        "invalid account handle did not receive typed InvalidAccountHandle rejection"
+    );
+
     LocalLoopbackTransport unknownSignInTransport;
     const auto unknownSession = runtime.attachPlayerSessionTransport(
         unknownSignInTransport,
@@ -250,8 +267,8 @@ void requireAccountReconnectReturnsSamePersistentPlayer()
     game::network::SessionReject unknownReject;
     require(
         unknownSignInTransport.receiveSessionReject(unknownReject) &&
-        unknownReject.reason == game::network::SessionRejectReason::UnknownCredential,
-        "unknown sign-in did not receive typed UnknownCredential rejection"
+        unknownReject.reason == game::network::SessionRejectReason::UnknownAccount,
+        "unknown sign-in did not receive typed UnknownAccount rejection"
     );
 
     LocalLoopbackTransport transportFirst;
@@ -260,6 +277,23 @@ void requireAccountReconnectReturnsSamePersistentPlayer()
         registrationIdentity
     );
     require(static_cast<bool>(firstSession), "first account enrollment failed");
+
+    auto conflictingRegistration = makeAcceptanceIdentity(3999u, 91u);
+    conflictingRegistration.accountHandle = registrationIdentity.accountHandle;
+    LocalLoopbackTransport conflictingTransport;
+    const auto conflictingSession = runtime.attachPlayerSessionTransport(
+        conflictingTransport,
+        conflictingRegistration
+    );
+    require(!conflictingSession,
+            "duplicate account handle was rebound to another credential");
+    game::network::SessionReject conflictingReject;
+    require(
+        conflictingTransport.receiveSessionReject(conflictingReject) &&
+        conflictingReject.reason ==
+            game::network::SessionRejectReason::AccountHandleTaken,
+        "duplicate account handle did not receive AccountHandleTaken rejection"
+    );
 
     GameClient firstClient(transportFirst);
     firstClient.beginSynchronization();

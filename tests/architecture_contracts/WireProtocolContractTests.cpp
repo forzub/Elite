@@ -182,17 +182,20 @@ void testFrameValidation()
 void testSessionHelloRoundTrip()
 {
     SessionHello hello;
+    hello.accountHandle = "pilot-a";
     for (std::size_t i = 0; i < hello.authToken.bytes.size(); ++i)
         hello.authToken.bytes[i] = static_cast<std::uint8_t>(i + 1u);
     hello.intent = AuthenticationIntent::Register;
 
     std::vector<std::uint8_t> payload;
     require(encodeSessionHello(hello, payload), "SessionHello encode failed");
-    require(payload.size() == game::identity::AuthTokenBytes + 1u,
-        "SessionHello must contain only opaque auth token + auth intent");
+    require(payload.size() == 4u + hello.accountHandle.size() +
+            game::identity::AuthTokenBytes + 1u,
+        "SessionHello must contain handle + opaque auth token + auth intent");
 
     SessionHello decoded;
     require(decodeSessionHello(payload, decoded), "SessionHello decode failed");
+    require(decoded.accountHandle == hello.accountHandle, "SessionHello account handle mismatch");
     require(decoded.authToken == hello.authToken, "SessionHello auth token mismatch");
     require(decoded.intent == hello.intent, "SessionHello auth intent mismatch");
 }

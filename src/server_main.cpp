@@ -38,6 +38,7 @@ void printUsage()
         << "Usage:\n"
         << "  EliteServer.exe                         Run headless without remote clients\n"
         << "  EliteServer.exe --listen HOST:PORT      Accept remote TCP game sessions\n"
+        << "  EliteServer.exe --reset-auth-state      Clear server account registrations before start (development/test)\n"
         << "  EliteServer.exe --self-test             Boot and advance the real server, then exit\n"
         << "  EliteServer.exe --help                  Show this help\n";
 }
@@ -78,6 +79,7 @@ game::network::SessionHello makeSelfTestIdentity(
 )
 {
     game::network::SessionHello hello;
+    hello.accountHandle = "selftest-" + std::to_string(tokenSeed);
     for (std::size_t i = 0; i < hello.authToken.bytes.size(); ++i)
     {
         const unsigned shift = static_cast<unsigned>((i % 8u) * 8u);
@@ -422,7 +424,8 @@ int runHeadlessSelfTest()
 
 int runNetworkServer(
     const game::network::NetworkEndpoint& endpoint,
-    bool oneClientSelfTest)
+    bool oneClientSelfTest,
+    bool resetAuthState)
 {
     // The authoritative server has a large amount of legacy subsystem/debug
     // stdout noise (mesh normalization, hit/seam construction, power-bus
@@ -433,6 +436,16 @@ int runNetworkServer(
     game::server::HeadlessDebugChannel debugChannel;
     WorldParams worldParams;
     game::server::NetworkServerHost host(worldParams, debugChannel);
+
+    if (resetAuthState)
+    {
+        if (!host.resetAuthenticationStateForDevelopment())
+        {
+            std::cerr << "[EliteServer] cannot reset auth state while sessions are active\n";
+            return 7;
+        }
+        std::cerr << "[EliteServer] development auth registrations reset\n";
+    }
 
     if (!host.listen(endpoint.host, endpoint.port))
     {
@@ -495,7 +508,7 @@ int runNetworkServer(
     return 0;
 }
 
-int runHeadlessServer()
+int runHeadlessServer(bool resetAuthState)
 {
     core::disableRuntimeStdoutNoise();
 
@@ -508,6 +521,12 @@ int runHeadlessServer()
         transport,
         debugChannel
     );
+
+    if (resetAuthState && !runtime.resetAuthenticationStateForDevelopment())
+    {
+        std::cerr << "[EliteServer] cannot reset auth state while sessions are active\n";
+        return 7;
+    }
 
     std::signal(SIGINT, handleTerminationSignal);
 #ifdef SIGTERM
@@ -556,6 +575,7 @@ int main(int argc, char** argv)
 
     bool headlessSelfTest = false;
     bool oneClientSelfTest = false;
+    bool resetAuthState = false;
     bool haveListenEndpoint = false;
     game::network::NetworkEndpoint listenEndpoint;
 
@@ -572,6 +592,12 @@ int main(int argc, char** argv)
         if (arg == "--self-test-one-client")
         {
             oneClientSelfTest = true;
+            continue;
+        }
+
+        if (arg == "--reset-auth-state")
+        {
+            resetAuthState = true;
             continue;
         }
 
@@ -639,7 +665,14 @@ int main(int argc, char** argv)
         return runHeadlessSelfTest();
 
     if (haveListenEndpoint)
-        return runNetworkServer(listenEndpoint, oneClientSelfTest);
+        return runNetworkServer(listenEndpoint, oneClientSelfTest, resetAuthState);
 
-    return runHeadlessServer();
+    if (resetAuthState)
+    {
+        std::cerr << "[EliteServer] --reset-auth-state currently requires --listen; "
+                  << "M8E.3 will apply it to durable storage before any runtime session exists\n";
+        return 1;
+    }
+
+    return runHeadlessServer(false);
 }

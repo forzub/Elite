@@ -23,29 +23,16 @@ namespace
 {
 namespace fs = std::filesystem;
 
-std::string sanitizeProfileName(const std::string& requested)
+bool validateProfileName(
+    const std::string& requested,
+    std::string* outError)
 {
-    std::string out;
-    out.reserve(requested.size());
+    if (game::identity::isValidAccountHandle(requested))
+        return true;
 
-    for (const unsigned char c : requested)
-    {
-        const bool accepted =
-            (c >= 'a' && c <= 'z') ||
-            (c >= 'A' && c <= 'Z') ||
-            (c >= '0' && c <= '9') ||
-            c == '-' || c == '_';
-        if (accepted)
-            out.push_back(static_cast<char>(c));
-    }
-
-    if (out.empty())
-        out = "default";
-
-    if (out.size() > 64)
-        out.resize(64);
-
-    return out;
+    if (outError)
+        *outError = "INVALID_ACCOUNT_HANDLE";
+    return false;
 }
 
 bool generateToken(AuthToken& outToken)
@@ -233,7 +220,10 @@ bool ClientIdentityProfileStore::loadExisting(
     if (outError)
         outError->clear();
 
-    const std::string profileName = sanitizeProfileName(requestedProfileName);
+    if (!validateProfileName(requestedProfileName, outError))
+        return false;
+
+    const std::string profileName = requestedProfileName;
     ClientIdentityProfile profile;
     profile.profileName = profileName;
 
@@ -244,7 +234,7 @@ bool ClientIdentityProfileStore::loadExisting(
 #endif
     {
         if (outError && outError->empty())
-            *outError = "credential slot does not exist: " + profileName;
+            *outError = "LOCAL_CREDENTIAL_MISSING";
         return false;
     }
 
@@ -260,7 +250,10 @@ bool ClientIdentityProfileStore::loadOrCreate(
     if (outError)
         outError->clear();
 
-    const std::string profileName = sanitizeProfileName(requestedProfileName);
+    if (!validateProfileName(requestedProfileName, outError))
+        return false;
+
+    const std::string profileName = requestedProfileName;
 
     ClientIdentityProfile profile;
     profile.profileName = profileName;

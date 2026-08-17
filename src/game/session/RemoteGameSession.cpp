@@ -117,11 +117,13 @@ bool RemoteGameSession::connectOrWait()
 
     if (connected)
     {
-        if (!m_config.identityHello.authToken.valid())
+        if (!game::identity::isValidAccountHandle(
+                m_config.identityHello.accountHandle) ||
+            !m_config.identityHello.authToken.valid())
         {
             m_transport->disconnect();
             m_failed = true;
-            m_error = "client authentication token is invalid";
+            m_error = "client authentication identity is invalid";
             return false;
         }
 

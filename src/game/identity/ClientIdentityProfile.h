@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "src/game/identity/AccountHandle.h"
 #include "src/game/identity/AuthToken.h"
 #include "src/game/network/SessionMessage.h"
 
@@ -14,12 +15,13 @@ struct ClientIdentityProfile
 
     bool valid() const noexcept
     {
-        return authToken.valid();
+        return isValidAccountHandle(profileName) && authToken.valid();
     }
 
     game::network::SessionHello sessionHello() const noexcept
     {
         game::network::SessionHello hello;
+        hello.accountHandle = profileName;
         hello.authToken = authToken;
         return hello;
     }
@@ -33,9 +35,10 @@ struct ClientIdentityProfile
     kept by Windows Credential Manager. The server hashes the presented token
     and owns every gameplay identity/ownership binding.
 
-    profileName is only a local credential-slot selector so developers can run
-    two accounts on one workstation. "default" is the normal automatic-login
-    slot and no server-side identity is derived from this string.
+    profileName is the same stable account handle sent to the server and is
+    also used as the local OS credential-slot selector. The server verifies
+    handle + bearer token together; no gameplay identity is derived from the
+    string and the client still never stores server-owned gameplay IDs.
 */
 class ClientIdentityProfileStore
 {

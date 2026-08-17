@@ -56,6 +56,7 @@ public:
     double fixedStepSeconds() const;
     const std::string& lastError() const noexcept;
 
+    bool resetAuthenticationStateForDevelopment();
     void close();
 
 private:

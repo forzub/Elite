@@ -148,6 +148,7 @@ int runRemoteClientProcessSelfTest(
     game::session::RemoteGameSessionConfig config;
     config.host = endpoint.host;
     config.port = endpoint.port;
+    config.identityHello.accountHandle = "process-test";
 
     // Process acceptance clients use distinct ephemeral bearer tokens without
     // touching the workstation's persistent Windows credential slots.
@@ -626,7 +627,8 @@ int main(int argc, char** argv)
 
     bool useRemoteServer = false;
     game::network::NetworkEndpoint remoteEndpoint;
-    std::string clientProfileName = "default";
+    std::string clientProfileName;
+    bool clientProfileExplicit = false;
 
     try
     {
@@ -643,6 +645,13 @@ int main(int argc, char** argv)
                     return -2;
                 }
                 clientProfileName = argv[++i];
+                if (!game::identity::isValidAccountHandle(clientProfileName))
+                {
+                    std::cerr << "[App] invalid --profile account handle: "
+                              << game::identity::accountHandleRulesText() << "\n";
+                    return -2;
+                }
+                clientProfileExplicit = true;
                 continue;
             }
 
@@ -717,43 +726,61 @@ int main(int argc, char** argv)
         std::setlocale(LC_ALL, "");
         core::disableRuntimeStdoutNoise();
 
-        game::identity::ClientIdentityProfile identityProfile;
-        std::string identityError;
-#ifdef _WIN32
-        const auto xprocIdentityBegin = std::chrono::steady_clock::now();
-#endif
-        if (!game::identity::ClientIdentityProfileStore::loadOrCreate(
-                clientProfileName,
-                identityProfile,
-                &identityError))
+        Application app;
+
+        // Merely starting EliteGame (especially a local game) must not create
+        // a remote credential slot. --profile is an explicit profile hint; if
+        // the slot already exists it can support the --connect sign-in
+        // shortcut, otherwise the Multiplayer form remains the authority for
+        // choosing SIGN IN versus REGISTER.
+        if (clientProfileExplicit)
         {
-            std::cerr << "[Identity] " << identityError << "\n";
-            return -2;
+            game::identity::ClientIdentityProfile identityProfile;
+            std::string identityError;
+#ifdef _WIN32
+            const auto xprocIdentityBegin = std::chrono::steady_clock::now();
+#endif
+            if (game::identity::ClientIdentityProfileStore::loadExisting(
+                    clientProfileName,
+                    identityProfile,
+                    &identityError))
+            {
+                app.configureClientIdentity(
+                    identityProfile.profileName,
+                    identityProfile.sessionHello()
+                );
+                if (core::runtimeTraceEnabled())
+                    std::cerr << "[Identity] credential_slot="
+                              << identityProfile.profileName
+                              << " source=os-store\n";
+            }
+            else
+            {
+                app.configureClientIdentityProfileHint(clientProfileName);
+                if (core::runtimeTraceEnabled())
+                    std::cerr << "[Identity] credential_slot="
+                              << clientProfileName
+                              << " source=missing-register-required\n";
+            }
+#ifdef _WIN32
+            if (core::runtimeTraceEnabled())
+                std::cerr
+                    << "[M8E-XPROC][process] pid=" << GetCurrentProcessId()
+                    << " stage=credential"
+                    << " duration_ms="
+                    << std::chrono::duration<double, std::milli>(
+                           std::chrono::steady_clock::now() - xprocIdentityBegin
+                       ).count()
+                    << " uptime_ms=" << GetTickCount64()
+                    << " tid=" << GetCurrentThreadId()
+                    << "\n";
+#endif
+        }
+        else
+        {
+            app.configureClientIdentityProfileHint({});
         }
 
-        if (core::runtimeTraceEnabled())
-            std::cerr << "[Identity] credential_slot="
-                      << identityProfile.profileName
-                      << " source=os-store\n";
-#ifdef _WIN32
-        if (core::runtimeTraceEnabled())
-            std::cerr
-                << "[M8E-XPROC][process] pid=" << GetCurrentProcessId()
-                << " stage=credential"
-                << " duration_ms="
-                << std::chrono::duration<double, std::milli>(
-                       std::chrono::steady_clock::now() - xprocIdentityBegin
-                   ).count()
-                << " uptime_ms=" << GetTickCount64()
-                << " tid=" << GetCurrentThreadId()
-                << "\n";
-#endif
-
-        Application app;
-        app.configureClientIdentity(
-            identityProfile.profileName,
-            identityProfile.sessionHello()
-        );
         if (useRemoteServer)
         {
             app.configureRemoteServer(

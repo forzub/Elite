@@ -56,8 +56,8 @@ public:
     ServerAdvanceResult advance(double elapsedSeconds);
     double fixedStepSeconds() const;
 
-    // Admission uses an opaque bearer token plus explicit SignIn/Register
-    // intent. SignIn never creates identity implicitly; all AccountId /
+    // Admission uses stable AccountHandle + opaque bearer token + explicit
+    // SignIn/Register intent. SignIn never creates identity implicitly; all AccountId /
     // PlayerId / ShipInstanceId / EntityId authority remains server-owned.
     game::network::ServerSessionId attachPlayerSessionTransport(
         IServerTransport& transport,
@@ -67,6 +67,11 @@ public:
         game::network::ServerSessionId sessionId
     );
     std::size_t connectedPlayerSessionCount() const noexcept;
+
+    // Development/test maintenance seam. It is intentionally unavailable
+    // while gameplay sessions are connected. M8E.3 will route this through
+    // the durable account repository so the CLI reset keeps the same contract.
+    bool resetAuthenticationStateForDevelopment();
 
 private:
     ServerRuntime(

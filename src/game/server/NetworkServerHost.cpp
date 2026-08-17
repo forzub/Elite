@@ -217,6 +217,11 @@ const std::string& NetworkServerHost::lastError() const noexcept
     return m_error;
 }
 
+bool NetworkServerHost::resetAuthenticationStateForDevelopment()
+{
+    return m_runtime && m_runtime->resetAuthenticationStateForDevelopment();
+}
+
 void NetworkServerHost::close()
 {
     for (auto& connection : m_connections)

@@ -118,7 +118,7 @@ for required in (
     "m_accounts.resolve",
     "m_accounts.bind",
     "AuthenticationIntent::Register",
-    "SessionRejectReason::UnknownCredential",
+    "SessionRejectReason::UnknownAccount",
     "m_server->createPlayerSession(playerId)",
     "welcome.sessionId = sessionId",
     "welcome.playerId = playerId",

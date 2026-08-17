@@ -141,7 +141,7 @@ cd /d/__elite/work/build
 `TcpClientTransport + GameClient`. Он **не создаёт** `ServerRuntime`,
 `ServerWorker` или `GameServer`. Authoritative world продолжает идти в
 `EliteServer`, а клиент выполняет только prediction/presentation и отправляет
-intent/control messages. `--connect` использует выбранный `--profile` как local credential slot и сначала выполняет `SIGN IN`. На fresh server неизвестный credential будет отклонён и UI вернётся в authorization form; для первичной регистрации нужно нажать `REGISTER`, после чего последующие подключения к тому же server runtime используют `SIGN IN`.
+intent/control messages. `--connect` использует выбранный `--profile` как AccountHandle/local credential-slot key и сначала выполняет `SIGN IN`. На fresh server неизвестный handle будет отклонён и UI вернётся в authorization form; для первичной регистрации нужно нажать `REGISTER`, после чего последующие подключения к тому же server runtime используют `SIGN IN`.
 
 
 ---
@@ -183,37 +183,48 @@ boundary проверяется отдельно.
 
 ## 4. Authentication и authoritative session bootstrap
 
-Remote connection теперь имеет явный authorization step. Локальное имя профиля (`pilot-a`, `pilot-b`, `default`) — это **только selector credential slot на конкретном компьютере**; оно не является `PlayerId`, не передаётся как gameplay authority и не даёт права выбрать корабль. В credential slot хранится opaque bearer token.
+Remote connection теперь имеет явный authorization step. `pilot-a` / `pilot-b` — это **stable AccountHandle**, одновременно используемый как имя local OS credential slot. Handle передаётся серверу как login identifier, но никогда не является `PlayerId` и не даёт права выбрать корабль. В credential slot хранится opaque bearer token; gameplay authority IDs остаются только server-owned.
+
+AccountHandle имеет единый shared контракт (см. `src/game/identity/AccountHandle.h`): 3–24 символа, только lowercase ASCII `a-z`, цифры, `_`, `-`, первый символ — буква или цифра. Это именно технический login identifier. Будущее отображаемое имя игрока отделено от login и сможет использовать полный Unicode.
 
 Multiplayer form содержит:
 
 ```text
 SERVER ADDRESS
-CREDENTIAL PROFILE
+ACCOUNT HANDLE
+<локализованные правила ввода>
 
 SIGN IN
 REGISTER
 BACK
 ```
 
-`SIGN IN` загружает уже существующий local credential slot и отправляет `SessionHello{authToken, SignIn}`. Если digest неизвестен серверу, admission возвращает typed `SessionReject::UnknownCredential`; **никакого implicit enrollment больше нет**.
+`SIGN IN` загружает уже существующий local credential slot и отправляет `SessionHello{accountHandle, authToken, SignIn}`. Если handle неизвестен серверу, admission возвращает typed `SessionReject::UnknownAccount`; если handle существует, но bearer token не совпадает — `InvalidCredential`. **Никакого implicit enrollment больше нет**.
 
-`REGISTER` является единственным first-contact path: local credential slot может быть создан явно, сервер хэширует bearer token, создаёт `AccountId` и связывает его с server-owned `PlayerId`. Клиент не передаёт и не выбирает `AccountId`, `PlayerId`, `ShipInstanceId` или `EntityId`.
+`REGISTER` является единственным first-contact path: local credential slot может быть создан явно, сервер проверяет уникальность AccountHandle, хэширует bearer token, создаёт `AccountId` и связывает его с server-owned `PlayerId`. Повторная регистрация занятого handle с другим credential получает `AccountHandleTaken`. Клиент не передаёт и не выбирает `AccountId`, `PlayerId`, `ShipInstanceId` или `EntityId`.
 
 После успешного credential resolution server-side последовательность такая:
 
 1. `NetworkServerHost` принимает TCP connection и ограничивает pending authentication count.
 2. Connection обязан прислать `SessionHello` до authentication deadline; иначе server disconnect.
-3. `ServerRuntime` хэширует token и либо resolve'ит существующий `AccountId -> PlayerId`, либо — только при `Register` — создаёт binding к свободной authoritative bootstrap player identity.
+3. `ServerRuntime` проверяет AccountHandle, хэширует token и resolve'ит пару `handle + digest`; только при `Register` неизвестный handle может создать binding к свободной authoritative bootstrap player identity.
 4. Duplicate live session для того же `PlayerId` получает typed `SessionReject::AlreadyActive`; rejected transport получает короткий flush grace, чтобы причина гарантированно дошла до клиента до закрытия TCP.
 5. `PlayerRegistry` разрешает `PlayerId -> current ShipInstanceId`; `ShipInstanceRegistry` — `ShipInstanceId -> materialized EntityId`; `ControlRegistry` подтверждает human control binding.
 6. Создаётся transient `ServerSessionId`; `ServerSessionRegistry` хранит `session -> PlayerId`.
 7. `SessionWelcome` возвращает server-assigned `playerId`, `controlledShipInstanceId`, `controlledEntityId`, authoritative `fixedStepSeconds` и StarAtlas fingerprint.
 8. Hydrated bootstrap snapshot завершает synchronization; только затем `GameClient` становится `Ready`.
 
-При любом remote auth/session reject loading page не является terminal state: `Application` возвращает пользователя на multiplayer authorization form, показывает server-provided reason и оставляет доступными `SIGN IN`, `REGISTER` и `BACK`. Это также относится к переходу **Local -> Multiplayer**: local session не наследуется как remote identity и перед remote attach пользователь явно выбирает credential profile/action.
+При любом remote auth/session reject loading page не является terminal state: `Application` возвращает пользователя на ту же multiplayer authorization form, показывает server-provided reason и оставляет введённый handle доступным для исправления/повтора. Это также относится к переходу **Local -> Multiplayer**: local session не наследуется как remote identity и перед remote attach пользователь явно выбирает account/action.
 
-Текущая важная граница: `AccountRegistry` пока in-memory. После restart dedicated server не знает прежних token digests, поэтому первый вход на fresh server требует `REGISTER`; после регистрации reconnect к тому же живому серверу использует `SIGN IN`. Устранение этой границы — M8E.3 durable account/character store.
+Для тестов dedicated server принимает `--reset-auth-state`. Reset разрешён только до admission gameplay sessions. Пока `AccountRegistry` in-memory, restart и так создаёт пустой registry; флаг фиксирует будущий admin/test contract, который M8E.3 перенесёт на durable repository.
+
+Тестовый запуск с явным сбросом:
+
+```bash
+./build/headless_server/EliteServer.exe --reset-auth-state --listen 127.0.0.1:27351
+```
+
+Текущая важная граница: `AccountRegistry` пока in-memory. После restart dedicated server не знает прежних handle/token bindings, поэтому первый вход на fresh server требует `REGISTER`; после регистрации reconnect к тому же живому серверу использует `SIGN IN`. M8E.3 расширен до durable authoritative universe persistence: identity/player/ship ownership является первым slice того же persistence subsystem, который затем хранит изменяемое состояние мира. Формальный password/recovery contract описан в `src/game/identity/AUTHENTICATION_ARCHITECTURE.md`.
 
 ### Runtime logging policy
 
@@ -487,7 +498,7 @@ bash tests/run_all_mingw64.sh
 
 Automated ready suite и ручной `A -> reconnect A -> B -> reconnect B` gate на canonical binaries 2026-08-16 зелёные; M8E.1 закрыт. Короткие loading-screen stalls остались presentation/responsiveness debt и больше не сопровождаются control anomalies.
 
-M8E.2 authentication/admission layer закрывает этот recovery seam: remote failure возвращается в authorization form, `SIGN IN` и `REGISTER` разделены, implicit enrollment запрещён, а server-owned typed `SessionReject` сохраняет причину отказа до UI. Следующий identity layer — M8E.3 durable account/character storage across server restart.
+M8E.2 authentication/admission layer разделяет `SIGN IN`/`REGISTER`, запрещает implicit enrollment и сохраняет server-owned typed `SessionReject` до `Application`. Ручной acceptance выявил ещё одну presentation race: C++ пытался вызвать `showMultiplayerForm()/setConnectionError()` сразу после `navigate(main_menu.html)`, когда WebView2 всё ещё исполнял `loading.html`. M8E.2f вводит page-ready handshake `main_menu_ready`: pending Multiplayer sub-view и reject code применяются только после готовности нового DOM, поэтому ошибка остаётся в authorization form вместо падения в main actions.
 
 ---
 
@@ -513,14 +524,67 @@ ServerSessionId
     -> EntityId
 ```
 
-M8E.2 теперь фиксирует explicit authentication/admission boundary: bearer token хранится только в local credential slot, server хранит SHA-256 digest, `SIGN IN` не создаёт account, `REGISTER` является явной операцией, duplicate login rejected typed reason'ом, а gameplay authority IDs остаются server-owned.
+M8E.2 теперь фиксирует explicit authentication/admission boundary: стабильный AccountHandle + bearer token хранятся/выбираются на клиенте, server хранит handle + SHA-256 token digest, `SIGN IN` не создаёт account, `REGISTER` является явной операцией, duplicate login rejected typed reason'ом, а gameplay authority IDs остаются server-owned.
 
-Следующий этап — **M8E.3 durable identity storage**, а не новый selector hack:
+Следующий этап — **M8E.3 durable authoritative universe persistence**, а не отдельная временная account DB или новый selector hack:
 
-1. вынести account binding за `IAccountStore`/эквивалентный storage boundary;
-2. сохранять `credential digest -> AccountId -> PlayerId` атомарно и восстанавливать после restart server;
-3. сохранить ownership/current-ship model отдельно от control authority;
-4. определить production registration lifecycle (создание/удаление/rotation credential), не смешивая его с gameplay session;
-5. определить explicit resume/takeover policy поверх уже работающего ordinary reconnect;
-6. сделать persistent ship registry пригодным для кораблей без materialized `EntityId`;
-7. после durable identity/ownership boundary начать реальное население вселенной и `Scheduled <-> Coarse <-> Prewarm <-> Active` materialization/collapse.
+1. общий `PersistenceCoordinator` задаёт schema/version/checkpoint/recovery lifecycle, но identity/player/ship/world остаются раздельными repositories;
+2. первый slice сохраняет `credential digest -> AccountId -> PlayerId -> owned/current ShipInstanceId` атомарно и восстанавливает ownership после restart server;
+3. `IUniverseStore` сохраняет `UniverseId`, save sequence, authoritative universe epoch и mutable world records; static catalogs остаются endpoint-local и проверяются fingerprints;
+4. ownership/current-ship model хранится отдельно от control authority; runtime `EntityId` никогда не является durable key;
+5. persistent ship/object records должны существовать и без materialized `EntityId`, чтобы `Scheduled <-> Coarse <-> Prewarm <-> Active` были lifecycle states одной persistent сущности;
+6. checkpoint снимается на authoritative fixed-step boundary как immutable image, а disk I/O выполняется вне simulation thread;
+7. файловый backend обязан иметь versioned schema, atomic temp->replace, last-known-good backup и fail-loud corruption policy; позднее append journal позволяет crash recovery без full rewrite на каждый tick;
+8. password/auth storage проектируется через отдельный `IPasswordHasher`: plaintext password не сохраняется, fast unsalted SHA-256 для паролей запрещён; первый UI policy — 12–64 printable ASCII, CSPRNG generator предлагает 20+ символов;
+9. account recovery является отдельным `AccountRecoveryService`: high-entropy recovery secret показывается один раз, server хранит только digest, успешное recovery ротирует password/device tokens и инвалидирует live sessions; внешняя почта/provider позже подключается через `IRecoveryChannel`;
+10. определить production registration lifecycle (создание/удаление/rotation credential), rate limits и explicit resume/takeover policy отдельно от gameplay session;
+11. Local game использует тот же persistence schema/code с отдельным save root, чтобы не возникла вторая несовместимая модель мира.
+
+---
+
+## 12. Near-term session/menu and persistence semantics
+
+### Multiplayer ESC / account semantics
+
+Multiplayer cannot pause the authoritative world. `Esc` opens an in-session menu/overlay with at least:
+
+- Resume;
+- Settings;
+- Return to Main Menu / Disconnect (keeps remembered-device credential);
+- Sign out and Return to Main Menu (disconnects, revokes/removes remembered-device credential, next login requires password/recovery);
+- Quit.
+
+Returning to the main menu must make session ownership explicit; it must not leave a hidden local authoritative world running behind a remote menu.
+
+### Local-game menu and manual save policy
+
+Local game uses the same persistence schema/backend code as dedicated multiplayer but has user-visible save slots. `Esc` exposes at least Resume, New Game, Save, Load, Return to Main Menu and Quit.
+
+Manual Save **and Load** are allowed only when the authoritative local world reports a safe-save condition (base/docked/safe zone according to gameplay policy). The WebUI button state is only presentation: authoritative `SavePermissionService`/equivalent performs the same check and rejects attempts outside a safe-save state.
+
+Dedicated multiplayer has no player-controlled load/rollback. It persists authoritative state continuously.
+
+### Offline player ship continuity
+
+Disconnecting a human does not despawn, stop or reset the owned ship. Session/control state is transient; physical ship state is universe state.
+
+On disconnect:
+
+```text
+human session ends
+  -> manual continuous control input is neutralized
+  -> current velocity / angular velocity / orientation / damage / cargo remain
+  -> explicit durable autopilot/flight-plan task may continue
+  -> ship remains Active while observed/interacting
+  -> otherwise it may collapse to Prewarm/Coarse/Scheduled state
+```
+
+A player may accelerate a ship, log out, and later find it far from the logout point. Manual held thrust does not remain magically pressed after disconnect; inertial velocity continues. A durable autopilot/order is a separate persistent command and may continue by design.
+
+Offline-owned ships remain part of the world for other players and NPCs. They can be detected, collide, take damage or participate in interactions according to the same Active/Coarse lifecycle rules. Logout is not invulnerability.
+
+Durable `ShipContinuityRecord` is keyed by `ShipInstanceId`, never by transient `EntityId`, and includes at minimum stable location/reference frame, position, velocity, orientation, angular velocity, condition/resources/cargo, lifecycle state and `lastSimulatedUniverseTime`.
+
+When no observer requires full simulation, coarse propagation advances state from the persisted timestamp rather than simulating every render/physics tick. A simple inertial leg can be advanced analytically; gravity/autopilot/interaction cases use the appropriate coarse propagator or scheduled events. Re-entry into interest creates a new runtime `EntityId` from the same `ShipInstanceId`.
+
+Dedicated persistent worlds target wall-clock catch-up for coarse/scheduled state after server downtime once M8E.3d is ready; local save slots default to paused universe time while the local game is closed. These are explicit `UniverseClockPolicy` choices, not accidental consequences of process uptime.

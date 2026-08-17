@@ -61,14 +61,16 @@ int main()
     const auto digestA = game::identity::authTokenDigest(tokenA);
     const auto digestB = game::identity::authTokenDigest(tokenB);
 
-    require(accounts.bind(digestA, accountA, playerA),
-        "first token/account/player binding failed");
-    require(!accounts.bind(digestB, accountB, playerA),
+    require(accounts.bind("pilot-a", digestA, accountA, playerA),
+        "first handle/token/account/player binding failed");
+    require(!accounts.bind("pilot-b", digestB, accountB, playerA),
         "two accounts were allowed to own one PlayerId");
+    require(!accounts.bind("pilot-a", digestB, accountB, playerB),
+        "duplicate account handle was accepted");
 
     AccountId resolvedAccount {};
     PlayerId resolvedPlayer {};
-    require(accounts.resolve(digestA, resolvedAccount, resolvedPlayer) ==
+    require(accounts.resolve("pilot-a", digestA, resolvedAccount, resolvedPlayer) ==
             game::server::AccountRegistry::ResolveResult::Bound &&
             resolvedAccount == accountA &&
             resolvedPlayer == playerA,
@@ -76,24 +78,39 @@ int main()
 
     resolvedAccount = {};
     resolvedPlayer = {};
-    require(accounts.resolve(digestB, resolvedAccount, resolvedPlayer) ==
-            game::server::AccountRegistry::ResolveResult::UnknownCredential &&
+    require(accounts.resolve("pilot-b", digestB, resolvedAccount, resolvedPlayer) ==
+            game::server::AccountRegistry::ResolveResult::UnknownAccount &&
             !resolvedAccount && !resolvedPlayer,
-        "unknown token digest was accepted");
+        "unknown account handle was accepted");
 
-    require(accounts.bind(digestB, accountB, playerB),
-        "second independent token/account/player binding failed");
+    resolvedAccount = {};
+    resolvedPlayer = {};
+    require(accounts.resolve("pilot-a", digestB, resolvedAccount, resolvedPlayer) ==
+            game::server::AccountRegistry::ResolveResult::InvalidCredential &&
+            !resolvedAccount && !resolvedPlayer,
+        "wrong credential was accepted for a known account handle");
+
+    require(accounts.bind("pilot-b", digestB, accountB, playerB),
+        "second independent handle/token/account/player binding failed");
     require(accounts.isPlayerBound(playerA) && accounts.isPlayerBound(playerB),
         "bound PlayerIds were not retained");
     require(accounts.findByAccountId(accountA) != nullptr,
         "server-owned AccountId lookup failed");
+    require(accounts.findByHandle("pilot-a") != nullptr,
+        "stable account-handle lookup failed");
     require(accounts.size() == 2u,
         "account registry size mismatch");
 
     require(accounts.findByAccountId(accountA)->credentialDigest == digestA,
         "AccountRegistry did not retain the hashed credential digest");
+    require(accounts.findByAccountId(accountA)->accountHandle == "pilot-a",
+        "AccountRegistry did not retain the stable account handle");
+
+    accounts.reset();
+    require(accounts.size() == 0u && accounts.findByHandle("pilot-a") == nullptr,
+        "development auth reset did not clear account bindings");
 
     std::cout
-        << "[PASS] opaque token -> SHA-256 digest -> server AccountId/PlayerId binding\n";
+        << "[PASS] account handle + opaque token digest -> server AccountId/PlayerId binding\n";
     return 0;
 }

@@ -198,6 +198,12 @@ PlayerId ServerRuntime::resolveOrRegisterAccount(
 {
     outReject = {};
 
+    if (!game::identity::isValidAccountHandle(hello.accountHandle))
+    {
+        outReject.reason = game::network::SessionRejectReason::InvalidAccountHandle;
+        return {};
+    }
+
     if (!hello.authToken.valid())
     {
         outReject.reason = game::network::SessionRejectReason::InvalidCredential;
@@ -217,6 +223,7 @@ PlayerId ServerRuntime::resolveOrRegisterAccount(
     AccountId resolvedAccount {};
     PlayerId resolvedPlayer {};
     const auto result = m_accounts.resolve(
+        hello.accountHandle,
         credentialDigest,
         resolvedAccount,
         resolvedPlayer
@@ -225,16 +232,33 @@ PlayerId ServerRuntime::resolveOrRegisterAccount(
     if (result == game::server::AccountRegistry::ResolveResult::Bound)
     {
         if (core::runtimeTraceEnabled())
-            std::cerr << "[M8E-AUTH][server] sign-in accepted account="
-                      << resolvedAccount.value
+            std::cerr << "[M8E-AUTH][server] sign-in accepted handle="
+                      << hello.accountHandle
+                      << " account=" << resolvedAccount.value
                       << " player=" << resolvedPlayer.value << "\n";
         return resolvedPlayer;
     }
 
     if (hello.intent != game::network::AuthenticationIntent::Register)
     {
-        outReject.reason = game::network::SessionRejectReason::UnknownCredential;
-        std::cerr << "[M8E-AUTH][server] sign-in rejected reason="
+        outReject.reason =
+            result == game::server::AccountRegistry::ResolveResult::InvalidCredential
+                ? game::network::SessionRejectReason::InvalidCredential
+                : game::network::SessionRejectReason::UnknownAccount;
+        std::cerr << "[M8E-AUTH][server] sign-in rejected handle="
+                  << hello.accountHandle
+                  << " reason="
+                  << game::network::sessionRejectCode(outReject.reason)
+                  << "\n";
+        return {};
+    }
+
+    if (result == game::server::AccountRegistry::ResolveResult::InvalidCredential)
+    {
+        outReject.reason = game::network::SessionRejectReason::AccountHandleTaken;
+        std::cerr << "[M8E-AUTH][server] registration rejected handle="
+                  << hello.accountHandle
+                  << " reason="
                   << game::network::sessionRejectCode(outReject.reason)
                   << "\n";
         return {};
@@ -251,11 +275,16 @@ PlayerId ServerRuntime::resolveOrRegisterAccount(
         if (!accountId)
             accountId = AccountId{m_nextAccountId++};
 
-        if (m_accounts.bind(credentialDigest, accountId, candidate))
+        if (m_accounts.bind(
+                hello.accountHandle,
+                credentialDigest,
+                accountId,
+                candidate))
         {
             if (core::runtimeTraceEnabled())
-                std::cerr << "[M8E-AUTH][server] registration accepted account="
-                          << accountId.value
+                std::cerr << "[M8E-AUTH][server] registration accepted handle="
+                          << hello.accountHandle
+                          << " account=" << accountId.value
                           << " player=" << candidate.value << "\n";
             return candidate;
         }
@@ -375,6 +404,16 @@ bool ServerRuntime::detachPlayerSessionTransport(
 std::size_t ServerRuntime::connectedPlayerSessionCount() const noexcept
 {
     return m_server->connectedPlayerSessionCount();
+}
+
+bool ServerRuntime::resetAuthenticationStateForDevelopment()
+{
+    if (connectedPlayerSessionCount() != 0u)
+        return false;
+
+    m_accounts.reset();
+    m_nextAccountId = 1;
+    return true;
 }
 
 void ServerRuntime::receiveDebugCommands()

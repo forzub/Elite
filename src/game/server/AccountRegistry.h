@@ -2,8 +2,11 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <unordered_map>
+#include <utility>
 
+#include "src/game/identity/AccountHandle.h"
 #include "src/game/identity/AccountId.h"
 #include "src/game/identity/AuthToken.h"
 #include "src/game/identity/PlayerId.h"
@@ -13,6 +16,7 @@ namespace game::server
 struct AccountBindingRecord
 {
     AccountId accountId {};
+    std::string accountHandle;
     game::identity::AuthTokenDigest credentialDigest {};
     PlayerId playerId {};
 };
@@ -36,7 +40,7 @@ struct AuthTokenDigestHash
 };
 
 /*
-    Server-side authentication-token -> persistent player binding.
+    Server-side account-handle + authentication-token -> persistent player binding.
 
     Raw bearer tokens never live in this registry. The server hashes a token at
     the admission boundary and stores only SHA-256 digest + server-owned
@@ -53,25 +57,34 @@ public:
     enum class ResolveResult
     {
         Bound,
-        UnknownCredential
+        UnknownAccount,
+        InvalidCredential
     };
 
     bool bind(
+        std::string accountHandle,
         game::identity::AuthTokenDigest credentialDigest,
         AccountId accountId,
         PlayerId playerId)
     {
-        if (!credentialDigest.valid() || !accountId || !playerId)
+        if (!game::identity::isValidAccountHandle(accountHandle) ||
+            !credentialDigest.valid() || !accountId || !playerId)
+        {
             return false;
+        }
 
-        if (m_accounts.find(credentialDigest) != m_accounts.end())
+        if (m_accounts.find(credentialDigest) != m_accounts.end() ||
+            findByHandle(accountHandle) != nullptr)
+        {
             return false;
+        }
 
         if (findByAccountId(accountId) || isPlayerBound(playerId))
             return false;
 
         AccountBindingRecord record;
         record.accountId = accountId;
+        record.accountHandle = std::move(accountHandle);
         record.credentialDigest = credentialDigest;
         record.playerId = playerId;
         m_accounts.emplace(credentialDigest, record);
@@ -79,6 +92,7 @@ public:
     }
 
     ResolveResult resolve(
+        const std::string& accountHandle,
         game::identity::AuthTokenDigest credentialDigest,
         AccountId& outAccountId,
         PlayerId& outPlayerId) const noexcept
@@ -86,12 +100,15 @@ public:
         outAccountId = {};
         outPlayerId = {};
 
-        const auto it = m_accounts.find(credentialDigest);
-        if (it == m_accounts.end())
-            return ResolveResult::UnknownCredential;
+        const auto* record = findByHandle(accountHandle);
+        if (!record)
+            return ResolveResult::UnknownAccount;
 
-        outAccountId = it->second.accountId;
-        outPlayerId = it->second.playerId;
+        if (record->credentialDigest != credentialDigest)
+            return ResolveResult::InvalidCredential;
+
+        outAccountId = record->accountId;
+        outPlayerId = record->playerId;
         return ResolveResult::Bound;
     }
 
@@ -107,6 +124,23 @@ public:
                 return true;
         }
         return false;
+    }
+
+
+    const AccountBindingRecord* findByHandle(
+        const std::string& accountHandle
+    ) const noexcept
+    {
+        if (!game::identity::isValidAccountHandle(accountHandle))
+            return nullptr;
+
+        for (const auto& [digest, record] : m_accounts)
+        {
+            (void)digest;
+            if (record.accountHandle == accountHandle)
+                return &record;
+        }
+        return nullptr;
     }
 
     const AccountBindingRecord* findByAccountId(
@@ -136,6 +170,11 @@ public:
     std::size_t size() const noexcept
     {
         return m_accounts.size();
+    }
+
+    void reset() noexcept
+    {
+        m_accounts.clear();
     }
 
 private:

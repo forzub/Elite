@@ -31,11 +31,13 @@ for required in (
     "SignIn = 0",
     "Register = 1",
     "struct SessionHello",
+    "std::string accountHandle",
     "AuthToken authToken",
     "AuthenticationIntent intent = AuthenticationIntent::SignIn",
     "struct SessionReject",
     "enum class SessionRejectReason",
-    "UnknownCredential",
+    "UnknownAccount",
+    "AccountHandleTaken",
     "AlreadyActive",
 ):
     if required not in session:
@@ -52,10 +54,12 @@ if "resolveOrRegisterAccount" not in runtime_cpp:
     fail("ServerRuntime does not resolve explicit sign-in/registration intent")
 for required in (
     "m_accounts.resolve",
+    "hello.accountHandle",
     "m_accounts.bind",
     "authTokenDigest(hello.authToken)",
     "AuthenticationIntent::Register",
-    "SessionRejectReason::UnknownCredential",
+    "SessionRejectReason::UnknownAccount",
+    "SessionRejectReason::AccountHandleTaken",
     "SessionRejectReason::RegistrationUnavailable",
     "playerIdentities()",
 ):
@@ -69,8 +73,8 @@ unknown_guard = runtime_cpp.find(
 bind_call = runtime_cpp.find("m_accounts.bind", unknown_guard)
 if unknown_guard < 0 or bind_call < 0 or unknown_guard > bind_call:
     fail("registration is not gated behind explicit AuthenticationIntent::Register")
-if "SessionRejectReason::UnknownCredential" not in runtime_cpp[unknown_guard:bind_call]:
-    fail("unknown SignIn does not receive a typed UnknownCredential rejection")
+if "SessionRejectReason::UnknownAccount" not in runtime_cpp[unknown_guard:bind_call]:
+    fail("unknown SignIn does not receive a typed UnknownAccount rejection")
 
 if "receiveSessionHello(hello)" not in host_cpp:
     fail("TCP host does not wait for client identity before gameplay admission")
@@ -137,4 +141,4 @@ for forbidden in (
 if "ShipOwnerRef::player(playerId)" not in game_server_cpp:
     fail("bootstrap player starter ship is not explicitly self-owned")
 
-print("[PASS] explicit credential sign-in/register -> server hash -> AccountId/PlayerId authority seam")
+print("[PASS] explicit account-handle + credential sign-in/register -> server AccountId/PlayerId authority seam")

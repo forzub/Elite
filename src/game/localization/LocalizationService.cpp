@@ -104,6 +104,7 @@ bool LocalizationService::loadDirectory(const std::string& rootPath)
     m_localeOrder = {"en"};
     m_uiStrings.clear();
     m_languages.clear();
+    m_localeMetadata.clear();
     m_catalogNames.clear();
     m_uiSources.clear();
     m_catalogSources.clear();
@@ -235,8 +236,58 @@ bool LocalizationService::loadDirectory(const std::string& rootPath)
             }
 
             TranslationTable languages;
+            std::unordered_map<std::string, LocaleMetadata> localeMetadata;
+            bool metadataValid =
+                fileRoot.contains("locale_metadata") &&
+                fileRoot["locale_metadata"].is_object();
+            if (metadataValid)
+            {
+                for (auto it = fileRoot["locale_metadata"].begin();
+                     it != fileRoot["locale_metadata"].end(); ++it)
+                {
+                    if (!it.value().is_object())
+                    {
+                        metadataValid = false;
+                        break;
+                    }
+
+                    LocaleMetadata metadata;
+                    metadata.nativeName =
+                        it.value().value("native_name", std::string());
+                    metadata.englishName =
+                        it.value().value("english_name", std::string());
+                    metadata.direction =
+                        it.value().value("direction", std::string());
+                    metadata.script =
+                        it.value().value("script", std::string());
+
+                    if (metadata.nativeName.empty() ||
+                        metadata.englishName.empty() ||
+                        metadata.script.empty() ||
+                        (metadata.direction != "ltr" && metadata.direction != "rtl"))
+                    {
+                        metadataValid = false;
+                        break;
+                    }
+                    localeMetadata.emplace(it.key(), std::move(metadata));
+                }
+            }
+
+            if (metadataValid)
+            {
+                for (const std::string& enabledLocale : localeOrder)
+                {
+                    if (localeMetadata.find(enabledLocale) == localeMetadata.end())
+                    {
+                        metadataValid = false;
+                        break;
+                    }
+                }
+            }
+
             const bool validLanguages =
                 localeOrderValid &&
+                metadataValid &&
                 !defaultLocale.empty() &&
                 !localeOrder.empty() &&
                 std::find(localeOrder.begin(), localeOrder.end(), "en") != localeOrder.end() &&
@@ -245,7 +296,7 @@ bool LocalizationService::loadDirectory(const std::string& rootPath)
 
             if (!validLanguages)
             {
-                reject(path, "invalid language registry or missing English fallback");
+                reject(path, "invalid language/locale metadata registry or missing English fallback");
                 continue;
             }
 
@@ -263,6 +314,7 @@ bool LocalizationService::loadDirectory(const std::string& rootPath)
             m_defaultLocale = defaultLocale;
             m_localeOrder = std::move(localeOrder);
             m_languages = std::move(languages);
+            m_localeMetadata = std::move(localeMetadata);
             languagesLoaded = true;
             ++m_loadedFileCount;
             continue;
@@ -569,13 +621,65 @@ std::string LocalizationService::languageIndicator() const
     return value;
 }
 
+std::string LocalizationService::localeDirection() const
+{
+    auto find = [&](const std::string& locale) -> const LocaleMetadata*
+    {
+        const auto it = m_localeMetadata.find(locale);
+        return it == m_localeMetadata.end() ? nullptr : &it->second;
+    };
+
+    if (const LocaleMetadata* exact = find(m_locale))
+        return exact->direction;
+
+    const std::string base = baseLocale(m_locale);
+    if (base != m_locale)
+    {
+        if (const LocaleMetadata* value = find(base))
+            return value->direction;
+    }
+    return "ltr";
+}
+
+std::string LocalizationService::localeScript() const
+{
+    auto find = [&](const std::string& locale) -> const LocaleMetadata*
+    {
+        const auto it = m_localeMetadata.find(locale);
+        return it == m_localeMetadata.end() ? nullptr : &it->second;
+    };
+
+    if (const LocaleMetadata* exact = find(m_locale))
+        return exact->script;
+
+    const std::string base = baseLocale(m_locale);
+    if (base != m_locale)
+    {
+        if (const LocaleMetadata* value = find(base))
+            return value->script;
+    }
+    return std::string();
+}
+
 std::string LocalizationService::webUiBundleJson() const
 {
     json root;
-    root["version"] = 1;
+    root["version"] = 2;
     root["default_locale"] = m_defaultLocale;
     root["locale_order"] = m_localeOrder;
     root["languages"] = m_languages;
+
+    json metadata = json::object();
+    for (const auto& [locale, value] : m_localeMetadata)
+    {
+        metadata[locale] = {
+            {"native_name", value.nativeName},
+            {"english_name", value.englishName},
+            {"direction", value.direction},
+            {"script", value.script}
+        };
+    }
+    root["locale_metadata"] = std::move(metadata);
     root["strings"] = m_uiStrings;
     return root.dump();
 }

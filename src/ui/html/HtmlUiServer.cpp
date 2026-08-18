@@ -41,6 +41,19 @@ std::uint16_t HtmlUiServer::start(
 )
 {
     m_rootDir = rootDir;
+    m_resourcePack.clear();
+
+    const std::filesystem::path packPath =
+        std::filesystem::path(m_rootDir).parent_path() / "ui" / "elite_ui.pak";
+    if (std::filesystem::exists(packPath))
+    {
+        std::string packError;
+        if (!m_resourcePack.load(packPath.string(), &packError))
+        {
+            std::cerr << "[HtmlUiServer] failed to load UI resource pack: "
+                      << packError << '\n';
+        }
+    }
 
     // Port 0 delegates allocation to the OS. This is required for true
     // multi-process clients on one machine: every EliteGame instance owns its
@@ -170,6 +183,16 @@ void HtmlUiServer::onHttp(websocketpp::connection_hdl hdl)
         con->set_status(websocketpp::http::status_code::ok);
         con->replace_header("Content-Type", virtualIt->second.contentType);
         con->set_body(virtualIt->second.content);
+        return;
+    }
+
+    std::string packedContent;
+    std::string packedContentType;
+    if (m_resourcePack.read(resource, packedContent, packedContentType))
+    {
+        con->set_status(websocketpp::http::status_code::ok);
+        con->replace_header("Content-Type", packedContentType);
+        con->set_body(packedContent);
         return;
     }
 

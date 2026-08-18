@@ -33,6 +33,10 @@ int main()
            "categorized localization tree unexpectedly lost files");
 
     expect(localization.locale() == "en", "English must remain the initial locale");
+    expect(localization.localeDirection() == "ltr",
+           "English locale direction must be LTR");
+    expect(localization.localeScript() == "Latn",
+           "English locale script metadata must be Latin");
     expect(localization.text("main.new_local_game", "BAD") == "NEW LOCAL GAME",
            "English UI lookup changed");
     expect(localization.catalogName("systems", "0", "BAD") == "Sol",
@@ -57,6 +61,8 @@ int main()
            "native cockpit-service UI lookup changed");
 
     expect(localization.setLocale("ja"), "Japanese locale must be selectable");
+    expect(localization.localeDirection() == "ltr" && localization.localeScript() == "Jpan",
+           "Japanese locale metadata must reach the native localization service");
     expect(localization.catalogName("systems", "3", "BAD") == "Wolf 359",
            "missing catalog translation must fall back to English");
     expect(!localization.setLocale("xx-not-supported"),
@@ -64,8 +70,10 @@ int main()
 
     const std::string webBundle = localization.webUiBundleJson();
     expect(webBundle.find("main.new_local_game") != std::string::npos &&
-           webBundle.find("locale_order") != std::string::npos,
-           "WebUI runtime bundle lost shared localization data");
+           webBundle.find("locale_order") != std::string::npos &&
+           webBundle.find("locale_metadata") != std::string::npos &&
+           webBundle.find("\"direction\":\"rtl\"") != std::string::npos,
+           "WebUI runtime bundle lost shared localization/direction metadata");
 
     // Runtime resilience contract: one broken JSON file must not poison valid
     // siblings in the same recursively scanned localization root.
@@ -76,7 +84,7 @@ int main()
     fs::create_directories(tempRoot / "ui", ec);
     {
         std::ofstream out(tempRoot / "languages.json");
-        out << R"({"schema_version":1,"kind":"languages","default_locale":"en","locale_order":["en"],"languages":{"en":{"en":"English"}}})";
+        out << R"({"schema_version":1,"kind":"languages","default_locale":"en","locale_order":["en"],"languages":{"en":{"en":"English"}},"locale_metadata":{"en":{"native_name":"English","english_name":"English","direction":"ltr","script":"Latn"}}})";
     }
     {
         std::ofstream out(tempRoot / "ui" / "good.json");

@@ -32,7 +32,7 @@
     Object.assign(el.style, {
       position: 'fixed', right: '10px', bottom: '8px', zIndex: '99999',
       opacity: '0.52', fontSize: '11px', letterSpacing: '0.08em',
-      pointerEvents: 'none', color: '#9bb8d7', fontFamily: 'Arial, sans-serif'
+      pointerEvents: 'none', color: '#9bb8d7', fontFamily: 'var(--elite-ui-font)'
     });
     document.body.appendChild(el);
     return el;
@@ -44,12 +44,21 @@
       const key = el.getAttribute('data-i18n');
       el.textContent = t(key, el.textContent);
     });
+    const metadata = data?.locale_metadata?.[locale]
+      || data?.locale_metadata?.[baseLocale(locale)]
+      || { direction: 'ltr', script: 'Latn' };
+    const direction = metadata.direction === 'rtl' ? 'rtl' : 'ltr';
+    const script = metadata.script || '';
+
     document.documentElement.lang = locale;
+    document.documentElement.dir = direction;
+    document.documentElement.dataset.script = script;
+
     const indicator = ensureIndicator();
     const langMap = data?.languages?.[locale];
-    indicator.textContent = `UI: ${resolve(langMap, locale)}`;
+    indicator.textContent = `UI: ${resolve(langMap, metadata.native_name || locale)}`;
     window.dispatchEvent(new CustomEvent('game-ui-language-changed', {
-      detail: { locale }
+      detail: { locale, direction, script }
     }));
   }
 

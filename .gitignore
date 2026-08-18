@@ -2,7 +2,14 @@
 /build/
 /out/
 /bin/
-/third_party/
+/third_party/*
+!/third_party/fonts/
+/third_party/fonts/*
+!/third_party/fonts/noto/
+/third_party/fonts/noto/*
+!/third_party/fonts/noto/README.md
+!/third_party/fonts/noto/font-lock.json
+
 
 # cmake
 CMakeFiles/

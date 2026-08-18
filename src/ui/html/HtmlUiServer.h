@@ -18,6 +18,8 @@
 #include <sstream>
 #include <set>
 
+#include "src/ui/platform/UiResourcePack.h"
+
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
@@ -63,6 +65,7 @@ private:
     };
 
     std::string m_rootDir;
+    ui::platform::UiResourcePack m_resourcePack;
     std::unordered_map<std::string, VirtualFile> m_virtualFiles;
     std::function<void(const std::string&)> m_onMessage;
 

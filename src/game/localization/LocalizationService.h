@@ -10,6 +10,14 @@ namespace game::localization
 class LocalizationService
 {
 public:
+    struct LocaleMetadata
+    {
+        std::string nativeName;
+        std::string englishName;
+        std::string direction = "ltr";
+        std::string script;
+    };
+
     using TranslationMap = std::unordered_map<std::string, std::string>;
     using TranslationTable = std::unordered_map<std::string, TranslationMap>;
 
@@ -37,6 +45,12 @@ public:
 
     std::string languageDisplayName() const;
     std::string languageIndicator() const;
+    std::string localeDirection() const;
+    std::string localeScript() const;
+    const std::unordered_map<std::string, LocaleMetadata>& localeMetadata() const
+    {
+        return m_localeMetadata;
+    }
 
     // WebUI receives a generated in-memory bundle from this same service; there
     // is no second editable UI translation table under assets/webui.
@@ -58,6 +72,7 @@ private:
 
     TranslationTable m_uiStrings;
     TranslationTable m_languages;
+    std::unordered_map<std::string, LocaleMetadata> m_localeMetadata;
     std::unordered_map<std::string, TranslationTable> m_catalogNames;
 
     // Sources are retained only for deterministic duplicate diagnostics.

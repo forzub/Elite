@@ -5,6 +5,7 @@ include(FetchContent)
 
 option(ELITE_BUILD_CLIENT "Build the graphical EliteGame client" ON)
 option(ELITE_BUILD_SERVER "Build the headless EliteServer executable" OFF)
+option(ELITE_REQUIRE_BUNDLED_UI_FONTS "Fail client UI pack build when declared bundled fonts are missing" OFF)
 
 if(ELITE_BUILD_CLIENT)
     set(WEBVIEW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -263,6 +264,7 @@ add_executable(EliteGame
     src/game/ship/view/ShipAttachmentResolver.cpp
 
     src/ui/html/HtmlUiServer.cpp
+    src/ui/platform/UiResourcePack.cpp
     src/ui/html/HtmlUiCommandQueue.cpp
     src/ui/html/HtmlUiBridge.cpp
     src/ui/html/HtmlUiManager.cpp
@@ -580,7 +582,83 @@ add_custom_target(
 )
 
 if(TARGET EliteGame)
-    add_dependencies(EliteGame copy_assets)
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+    set(ELITE_UI_FONT_DIR
+        "${CMAKE_SOURCE_DIR}/third_party/fonts/noto"
+    )
+    set(ELITE_UI_PACK_FILE
+        "${ELITE_RUNTIME_ASSETS_DIR}/ui/elite_ui.pak"
+    )
+    set(ELITE_THIRD_PARTY_LICENSE_INDEX
+        "${CMAKE_SOURCE_DIR}/THIRD_PARTY_LICENSES.md"
+    )
+    set(ELITE_RUNTIME_THIRD_PARTY_LICENSE_INDEX
+        "${ELITE_RUNTIME_ASSETS_DIR}/licenses/THIRD_PARTY_LICENSES.md"
+    )
+
+    set(ELITE_UI_PACK_FONT_REQUIRE_ARG)
+    if(ELITE_REQUIRE_BUNDLED_UI_FONTS)
+        set(ELITE_UI_PACK_FONT_REQUIRE_ARG --require-fonts)
+    endif()
+
+    file(GLOB_RECURSE ELITE_UI_WEB_FILES CONFIGURE_DEPENDS
+        "${ELITE_STATIC_ASSETS_DIR}/webui/*"
+    )
+    file(GLOB_RECURSE ELITE_UI_LICENSE_FILES CONFIGURE_DEPENDS
+        "${ELITE_STATIC_ASSETS_DIR}/licenses/*"
+    )
+    file(GLOB_RECURSE ELITE_UI_FONT_FILES CONFIGURE_DEPENDS
+        "${ELITE_UI_FONT_DIR}/*.ttf"
+        "${ELITE_UI_FONT_DIR}/*.otf"
+        "${ELITE_UI_FONT_DIR}/*.woff2"
+        "${ELITE_UI_FONT_DIR}/font-lock.json"
+    )
+
+    add_custom_command(
+        OUTPUT "${ELITE_UI_PACK_FILE}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+                "${ELITE_RUNTIME_ASSETS_DIR}/ui"
+        COMMAND "${Python3_EXECUTABLE}"
+                "${CMAKE_SOURCE_DIR}/tools/build_ui_pack.py"
+                --webui "${ELITE_STATIC_ASSETS_DIR}/webui"
+                --fonts "${ELITE_UI_FONT_DIR}"
+                --licenses "${ELITE_STATIC_ASSETS_DIR}/licenses"
+                --font-manifest "${ELITE_STATIC_ASSETS_DIR}/ui/font_manifest.json"
+                --license-index "${ELITE_THIRD_PARTY_LICENSE_INDEX}"
+                ${ELITE_UI_PACK_FONT_REQUIRE_ARG}
+                --output "${ELITE_UI_PACK_FILE}"
+        DEPENDS
+            "${CMAKE_SOURCE_DIR}/tools/build_ui_pack.py"
+            "${ELITE_STATIC_ASSETS_DIR}/ui/font_manifest.json"
+            "${ELITE_THIRD_PARTY_LICENSE_INDEX}"
+            ${ELITE_UI_WEB_FILES}
+            ${ELITE_UI_LICENSE_FILES}
+            ${ELITE_UI_FONT_FILES}
+        COMMENT "Building binary Elite UI resource pack"
+        VERBATIM
+    )
+    add_custom_target(build_ui_pack DEPENDS "${ELITE_UI_PACK_FILE}")
+
+    add_custom_command(
+        OUTPUT "${ELITE_RUNTIME_THIRD_PARTY_LICENSE_INDEX}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+                "${ELITE_RUNTIME_ASSETS_DIR}/licenses"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${ELITE_THIRD_PARTY_LICENSE_INDEX}"
+                "${ELITE_RUNTIME_THIRD_PARTY_LICENSE_INDEX}"
+        DEPENDS "${ELITE_THIRD_PARTY_LICENSE_INDEX}"
+        COMMENT "Copying third-party license index"
+        VERBATIM
+    )
+    add_custom_target(copy_third_party_license_index
+        DEPENDS "${ELITE_RUNTIME_THIRD_PARTY_LICENSE_INDEX}")
+
+    add_dependencies(EliteGame
+        copy_assets
+        build_ui_pack
+        copy_third_party_license_index
+    )
 endif()
 
 if(TARGET EliteServer)

@@ -1,0 +1,39 @@
+/* Elite UI platform font layer. Runtime binaries are fetched from pinned Noto commits. */
+@font-face{font-family:"Elite Noto";src:url("/ui/fonts/NotoSans-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Elite Noto";src:url("/ui/fonts/NotoSans-Medium.ttf") format("truetype");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Elite Noto Arabic";src:url("/ui/fonts/NotoSansArabic-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Hebrew";src:url("/ui/fonts/NotoSansHebrew-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Devanagari";src:url("/ui/fonts/NotoSansDevanagari-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Bengali";src:url("/ui/fonts/NotoSansBengali-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Gujarati";src:url("/ui/fonts/NotoSansGujarati-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Gurmukhi";src:url("/ui/fonts/NotoSansGurmukhi-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Tamil";src:url("/ui/fonts/NotoSansTamil-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Telugu";src:url("/ui/fonts/NotoSansTelugu-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Kannada";src:url("/ui/fonts/NotoSansKannada-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Malayalam";src:url("/ui/fonts/NotoSansMalayalam-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Sinhala";src:url("/ui/fonts/NotoSansSinhala-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Thai";src:url("/ui/fonts/NotoSansThai-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Lao";src:url("/ui/fonts/NotoSansLao-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Khmer";src:url("/ui/fonts/NotoSansKhmer-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Myanmar";src:url("/ui/fonts/NotoSansMyanmar-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Armenian";src:url("/ui/fonts/NotoSansArmenian-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Georgian";src:url("/ui/fonts/NotoSansGeorgian-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Ethiopic";src:url("/ui/fonts/NotoSansEthiopic-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto Symbols";src:url("/ui/fonts/NotoSansSymbols2-Regular.ttf") format("truetype");font-display:swap}
+@font-face{font-family:"Elite Noto CJK SC";src:url("/ui/fonts/NotoSansSC-Regular.otf") format("opentype");font-display:swap}
+@font-face{font-family:"Elite Noto CJK TC";src:url("/ui/fonts/NotoSansTC-Regular.otf") format("opentype");font-display:swap}
+@font-face{font-family:"Elite Noto CJK HK";src:url("/ui/fonts/NotoSansHK-Regular.otf") format("opentype");font-display:swap}
+@font-face{font-family:"Elite Noto CJK JP";src:url("/ui/fonts/NotoSansJP-Regular.otf") format("opentype");font-display:swap}
+@font-face{font-family:"Elite Noto CJK KR";src:url("/ui/fonts/NotoSansKR-Regular.otf") format("opentype");font-display:swap}
+@font-face{font-family:"Elite Noto Emoji";src:url("/ui/fonts/NotoColorEmoji_WindowsCompatible.ttf") format("truetype");font-display:swap}
+
+:root{--elite-ui-font:"Elite Noto","Elite Noto Arabic","Elite Noto Hebrew","Elite Noto Devanagari","Elite Noto Bengali","Elite Noto Gujarati","Elite Noto Gurmukhi","Elite Noto Tamil","Elite Noto Telugu","Elite Noto Kannada","Elite Noto Malayalam","Elite Noto Sinhala","Elite Noto Thai","Elite Noto Lao","Elite Noto Khmer","Elite Noto Myanmar","Elite Noto Armenian","Elite Noto Georgian","Elite Noto Ethiopic","Elite Noto CJK SC","Elite Noto CJK TC","Elite Noto CJK HK","Elite Noto CJK JP","Elite Noto CJK KR","Elite Noto Symbols","Elite Noto Emoji",sans-serif}
+html[lang^="zh-HK"]{--elite-ui-font:"Elite Noto CJK HK","Elite Noto",sans-serif}
+html[lang^="zh-Hant"]{--elite-ui-font:"Elite Noto CJK TC","Elite Noto",sans-serif}
+html[lang^="zh"]{--elite-ui-font:"Elite Noto CJK SC","Elite Noto",sans-serif}
+html[lang^="ja"]{--elite-ui-font:"Elite Noto CJK JP","Elite Noto",sans-serif}
+html[lang^="ko"]{--elite-ui-font:"Elite Noto CJK KR","Elite Noto",sans-serif}
+html[lang^="ar"],html[lang^="fa"],html[lang^="ur"]{--elite-ui-font:"Elite Noto Arabic","Elite Noto",sans-serif}
+html[lang^="he"]{--elite-ui-font:"Elite Noto Hebrew","Elite Noto",sans-serif}
+html,body,button,input,select,textarea{font-family:var(--elite-ui-font)}
+html[dir="rtl"] body{text-align:start}

@@ -26,14 +26,19 @@ EliteGame
 
 System fonts are never used as the compatibility guarantee. Supported scripts are guaranteed only by fonts redistributed with the game under compatible licenses.
 
-Initial declared glyph coverage:
+Initial declared WebUI glyph coverage is deliberately broader than the currently translated locale set:
 
-- Latin + extended Latin (English/Spanish and common European text);
-- Cyrillic;
-- Simplified/Traditional Han coverage required by supported Chinese localization;
-- Japanese kana + required Japanese Han coverage.
+- Latin / extended Latin, Cyrillic and Greek;
+- Simplified Chinese, Traditional Chinese (Taiwan and Hong Kong), Japanese and Korean CJK variants;
+- Arabic-script UI fallback plus Hebrew;
+- major Indic scripts: Devanagari, Bengali, Gujarati, Gurmukhi, Tamil, Telugu, Kannada, Malayalam and Sinhala;
+- Thai, Lao, Khmer and Myanmar;
+- Armenian, Georgian and Ethiopic;
+- symbols and emoji fallback.
 
-WebView consumes packaged WOFF2 faces through the resource provider. Native FreeType/UI text uses packaged native font faces through a shared `FontRegistry`. Locale/script fallback order is explicit; Chinese and Japanese may use different CJK faces because Han glyph design differs by locale.
+The first implementation uses pinned, unmodified Noto binaries fetched from immutable upstream commits by `tools/fetch_ui_fonts.ps1`. `tools/fetch_ui_fonts_mingw64.sh` keeps those fetched binaries out of the current checkout via `.git/info/exclude`; UI tooling must not create, replace or assume the contents of the repository root `.gitignore`. The repository stores the manifest/license metadata, not redistributed font binaries; release/build preparation fetches them into `third_party/fonts/noto`, then `tools/build_ui_pack.py` places them in `elite_ui.pak`. `THIRD_PARTY_LICENSES.md` is the central external-content license/provenance index.
+
+WebView consumes packaged faces through `/ui/fonts/...` from the resource pack. Locale/script fallback order is explicit; Chinese regional variants and Japanese/Korean use separate CJK faces because Han glyph design differs by locale. Native FreeType/HUD text remains a separate follow-up: broad Unicode glyph files alone are not enough for complex-script shaping (Arabic/Indic/etc.), so native global-text support must use a shaping layer (for example HarfBuzz) behind the future shared `FontRegistry` instead of pretending raw FreeType glyph lookup is sufficient.
 
 CI must include glyph-coverage smoke strings such as:
 
@@ -44,6 +49,22 @@ CI must include glyph-coverage smoke strings such as:
 ```
 
 The platform guarantees supported scripts, not every Unicode code point in existence. Unsupported scripts must fail validation/display capability explicitly rather than depending on whichever fonts happen to be installed on the host OS.
+
+## Current implementation slice
+
+The first UI-platform slice now establishes the resource and internationalization substrate:
+
+- `src/assets/ui/font_manifest.json` is the authoritative pinned font manifest;
+- `tools/fetch_ui_fonts.ps1` downloads the declared binaries and records SHA-256 in a generated local lock file;
+- `tools/build_ui_pack.py` builds versioned `ELITEUI1` binary `elite_ui.pak`;
+- `UiResourcePack` validates the binary index and `HtmlUiServer` serves pack resources before the filesystem development fallback;
+- every current WebUI page imports shared `elite_ui.css`;
+- `languages.json` carries locale script/direction metadata beyond the currently enabled translations;
+- `game_i18n.js` applies `lang`, `dir` and script metadata so RTL is an architectural property, not page-specific CSS;
+- font/license assets are indexed centrally and the pack includes human-readable notices;
+- development builds may run before the font cache is fetched, but release/CI packaging enables `ELITE_REQUIRE_BUNDLED_UI_FONTS=ON` so missing declared faces fail closed.
+
+The next UI-platform slice is reusable page/form/dialog components and `ClientPreferencesStore`; full registration/password/recovery screens should be built on those components rather than adding another standalone page style.
 
 ## First shared Web components
 

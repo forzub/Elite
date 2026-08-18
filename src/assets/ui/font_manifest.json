@@ -1,0 +1,282 @@
+{
+  "schema_version": 1,
+  "distribution": {
+    "noto_dashboard_commit": "113d8e66a13a47d514be6c07e616842258982f42",
+    "noto_cjk_commit": "523d033d6cb47f4a80c58a35753646f5c3608a78",
+    "noto_emoji_commit": "8998f5dd683424a73e2314a8c1f1e359c19e8742"
+  },
+  "license": "OFL-1.1",
+  "destination": "third_party/fonts/noto",
+  "fonts": [
+    {
+      "id": "noto-sans-regular",
+      "family": "NotoSans",
+      "file": "NotoSans-Regular.ttf",
+      "script": "Latn/Cyrl/Grek",
+      "role": "primary",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSans/hinted/ttf/NotoSans-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "noto-sans-medium",
+      "family": "NotoSans",
+      "file": "NotoSans-Medium.ttf",
+      "script": "Latn/Cyrl/Grek",
+      "role": "primary",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSans/hinted/ttf/NotoSans-Medium.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosansarabic",
+      "family": "NotoSansArabic",
+      "file": "NotoSansArabic-Regular.ttf",
+      "script": "Arab",
+      "role": "fallback",
+      "direction": "rtl",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansArabic/hinted/ttf/NotoSansArabic-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosanshebrew",
+      "family": "NotoSansHebrew",
+      "file": "NotoSansHebrew-Regular.ttf",
+      "script": "Hebr",
+      "role": "fallback",
+      "direction": "rtl",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansHebrew/hinted/ttf/NotoSansHebrew-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosansarmenian",
+      "family": "NotoSansArmenian",
+      "file": "NotoSansArmenian-Regular.ttf",
+      "script": "Armn",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansArmenian/hinted/ttf/NotoSansArmenian-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosansgeorgian",
+      "family": "NotoSansGeorgian",
+      "file": "NotoSansGeorgian-Regular.ttf",
+      "script": "Geor",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansGeorgian/hinted/ttf/NotoSansGeorgian-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosansethiopic",
+      "family": "NotoSansEthiopic",
+      "file": "NotoSansEthiopic-Regular.ttf",
+      "script": "Ethi",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansEthiopic/hinted/ttf/NotoSansEthiopic-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosansdevanagari",
+      "family": "NotoSansDevanagari",
+      "file": "NotoSansDevanagari-Regular.ttf",
+      "script": "Deva",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansDevanagari/hinted/ttf/NotoSansDevanagari-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosansbengali",
+      "family": "NotoSansBengali",
+      "file": "NotoSansBengali-Regular.ttf",
+      "script": "Beng",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansBengali/hinted/ttf/NotoSansBengali-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosansgujarati",
+      "family": "NotoSansGujarati",
+      "file": "NotoSansGujarati-Regular.ttf",
+      "script": "Gujr",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansGujarati/hinted/ttf/NotoSansGujarati-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosansgurmukhi",
+      "family": "NotoSansGurmukhi",
+      "file": "NotoSansGurmukhi-Regular.ttf",
+      "script": "Guru",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansGurmukhi/hinted/ttf/NotoSansGurmukhi-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosanstamil",
+      "family": "NotoSansTamil",
+      "file": "NotoSansTamil-Regular.ttf",
+      "script": "Taml",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansTamil/hinted/ttf/NotoSansTamil-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosanstelugu",
+      "family": "NotoSansTelugu",
+      "file": "NotoSansTelugu-Regular.ttf",
+      "script": "Telu",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansTelugu/hinted/ttf/NotoSansTelugu-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosanskannada",
+      "family": "NotoSansKannada",
+      "file": "NotoSansKannada-Regular.ttf",
+      "script": "Knda",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansKannada/hinted/ttf/NotoSansKannada-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosansmalayalam",
+      "family": "NotoSansMalayalam",
+      "file": "NotoSansMalayalam-Regular.ttf",
+      "script": "Mlym",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansMalayalam/hinted/ttf/NotoSansMalayalam-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosanssinhala",
+      "family": "NotoSansSinhala",
+      "file": "NotoSansSinhala-Regular.ttf",
+      "script": "Sinh",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansSinhala/hinted/ttf/NotoSansSinhala-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosansthai",
+      "family": "NotoSansThai",
+      "file": "NotoSansThai-Regular.ttf",
+      "script": "Thai",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansThai/hinted/ttf/NotoSansThai-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosanslao",
+      "family": "NotoSansLao",
+      "file": "NotoSansLao-Regular.ttf",
+      "script": "Laoo",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansLao/hinted/ttf/NotoSansLao-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosanskhmer",
+      "family": "NotoSansKhmer",
+      "file": "NotoSansKhmer-Regular.ttf",
+      "script": "Khmr",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansKhmer/hinted/ttf/NotoSansKhmer-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosansmyanmar",
+      "family": "NotoSansMyanmar",
+      "file": "NotoSansMyanmar-Regular.ttf",
+      "script": "Mymr",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansMyanmar/hinted/ttf/NotoSansMyanmar-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "notosanssymbols2",
+      "family": "NotoSansSymbols2",
+      "file": "NotoSansSymbols2-Regular.ttf",
+      "script": "Zsym",
+      "role": "fallback",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansSymbols2/hinted/ttf/NotoSansSymbols2-Regular.ttf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "noto-sans-sc",
+      "family": "NotoSansSC",
+      "file": "NotoSansSC-Regular.otf",
+      "script": "Hans",
+      "role": "cjk",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/noto-cjk/523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/SubsetOTF/SC/NotoSansSC-Regular.otf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "noto-sans-tc",
+      "family": "NotoSansTC",
+      "file": "NotoSansTC-Regular.otf",
+      "script": "Hant",
+      "role": "cjk",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/noto-cjk/523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/SubsetOTF/TC/NotoSansTC-Regular.otf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "noto-sans-hk",
+      "family": "NotoSansHK",
+      "file": "NotoSansHK-Regular.otf",
+      "script": "Hant-HK",
+      "role": "cjk",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/noto-cjk/523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/SubsetOTF/HK/NotoSansHK-Regular.otf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "noto-sans-jp",
+      "family": "NotoSansJP",
+      "file": "NotoSansJP-Regular.otf",
+      "script": "Jpan",
+      "role": "cjk",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/noto-cjk/523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "noto-sans-kr",
+      "family": "NotoSansKR",
+      "file": "NotoSansKR-Regular.otf",
+      "script": "Kore",
+      "role": "cjk",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/notofonts/noto-cjk/523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/SubsetOTF/KR/NotoSansKR-Regular.otf",
+      "license": "OFL-1.1"
+    },
+    {
+      "id": "noto-color-emoji",
+      "family": "NotoColorEmoji",
+      "file": "NotoColorEmoji_WindowsCompatible.ttf",
+      "script": "Emoji",
+      "role": "emoji",
+      "direction": "ltr",
+      "source": "https://raw.githubusercontent.com/googlefonts/noto-emoji/8998f5dd683424a73e2314a8c1f1e359c19e8742/fonts/NotoColorEmoji_WindowsCompatible.ttf",
+      "license": "OFL-1.1"
+    }
+  ]
+}

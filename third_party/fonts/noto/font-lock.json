@@ -1,0 +1,223 @@
+﻿{
+    "schema_version":  1,
+    "generated_utc":  "2026-08-18T10:22:39.7130113Z",
+    "manifest":  "src/assets/ui/font_manifest.json",
+    "fonts":  [
+                  {
+                      "id":  "noto-sans-regular",
+                      "file":  "NotoSans-Regular.ttf",
+                      "sha256":  "478c558ea716033cd60c03438f628dfa75694dcf6b5f6d505a2f05fd2b4f3823",
+                      "bytes":  621572,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSans/hinted/ttf/NotoSans-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "noto-sans-medium",
+                      "file":  "NotoSans-Medium.ttf",
+                      "sha256":  "635d93d1131d791f2576de90b3bb0f7cdf61929906e8420a61b5f7f8e76420bb",
+                      "bytes":  619976,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSans/hinted/ttf/NotoSans-Medium.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosansarabic",
+                      "file":  "NotoSansArabic-Regular.ttf",
+                      "sha256":  "bdff3e5659d67e67def05b33f749683b9376ae819d65d3dd62ac4640b3aaef48",
+                      "bytes":  234892,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansArabic/hinted/ttf/NotoSansArabic-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosanshebrew",
+                      "file":  "NotoSansHebrew-Regular.ttf",
+                      "sha256":  "cdefaf8efd47045f6820928eba84db5bed7557539328952b5f828315485e02ee",
+                      "bytes":  26860,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansHebrew/hinted/ttf/NotoSansHebrew-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosansarmenian",
+                      "file":  "NotoSansArmenian-Regular.ttf",
+                      "sha256":  "720df88c332417a235b4d6209d14ec2e2bf4bfe2a954b7453d869ea593bfce1e",
+                      "bytes":  30752,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansArmenian/hinted/ttf/NotoSansArmenian-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosansgeorgian",
+                      "file":  "NotoSansGeorgian-Regular.ttf",
+                      "sha256":  "d3e33254b09e7bb2c5cf0f17e554b80462056c5a107097f258d495168c3a9346",
+                      "bytes":  52888,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansGeorgian/hinted/ttf/NotoSansGeorgian-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosansethiopic",
+                      "file":  "NotoSansEthiopic-Regular.ttf",
+                      "sha256":  "f6f7fc379db9438959a2b0527e7a2cf36ea9c84626d56ec444fff37fc24c3c10",
+                      "bytes":  376804,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansEthiopic/hinted/ttf/NotoSansEthiopic-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosansdevanagari",
+                      "file":  "NotoSansDevanagari-Regular.ttf",
+                      "sha256":  "306b53ecfb182a504dd8a7446093c316387d2fd8dc350d0792ed1753fe0996cd",
+                      "bytes":  244284,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansDevanagari/hinted/ttf/NotoSansDevanagari-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosansbengali",
+                      "file":  "NotoSansBengali-Regular.ttf",
+                      "sha256":  "b55c62ee531e3214da6c0701daecea89a52ba42db7d8206b92e6b51f397a3193",
+                      "bytes":  143072,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansBengali/hinted/ttf/NotoSansBengali-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosansgujarati",
+                      "file":  "NotoSansGujarati-Regular.ttf",
+                      "sha256":  "9b5a7aaeeb649a2e75a49d8b006a1f87db1b61c0df3b001609f4e0725d88dbf6",
+                      "bytes":  200704,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansGujarati/hinted/ttf/NotoSansGujarati-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosansgurmukhi",
+                      "file":  "NotoSansGurmukhi-Regular.ttf",
+                      "sha256":  "658d0207da305a1411c539a8b0bbeda64d4146e54fb4827facddb890b6b90d74",
+                      "bytes":  55172,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansGurmukhi/hinted/ttf/NotoSansGurmukhi-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosanstamil",
+                      "file":  "NotoSansTamil-Regular.ttf",
+                      "sha256":  "3c0a186feb3c63c7f6d63e1511dcdc144e745ae09b98e217c83f3e317974f6f9",
+                      "bytes":  73992,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansTamil/hinted/ttf/NotoSansTamil-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosanstelugu",
+                      "file":  "NotoSansTelugu-Regular.ttf",
+                      "sha256":  "b274780b69d1d23fe84b55e809a152cb2ac5306d33864b1f87622f6971871aae",
+                      "bytes":  235176,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansTelugu/hinted/ttf/NotoSansTelugu-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosanskannada",
+                      "file":  "NotoSansKannada-Regular.ttf",
+                      "sha256":  "9ad74dc64838c6855b96f671fc08e425a58921b9d0c71712ea79c328a27e6e38",
+                      "bytes":  182416,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansKannada/hinted/ttf/NotoSansKannada-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosansmalayalam",
+                      "file":  "NotoSansMalayalam-Regular.ttf",
+                      "sha256":  "c08de7fa8d032a5d6a4d120fb82c78cec60b362a4e73fa26360d89759ff2a7f9",
+                      "bytes":  112936,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansMalayalam/hinted/ttf/NotoSansMalayalam-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosanssinhala",
+                      "file":  "NotoSansSinhala-Regular.ttf",
+                      "sha256":  "9e32612d47004552f3125e78648a9e2e7899a216ccd3cefbb93a9b5f4c809feb",
+                      "bytes":  154912,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansSinhala/hinted/ttf/NotoSansSinhala-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosansthai",
+                      "file":  "NotoSansThai-Regular.ttf",
+                      "sha256":  "61cf814eec46b294d6ea4401ac295d0cecd5207bd2331dcc5a15e7301d30ee44",
+                      "bytes":  37780,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansThai/hinted/ttf/NotoSansThai-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosanslao",
+                      "file":  "NotoSansLao-Regular.ttf",
+                      "sha256":  "0a86e5e1ccfe34ca78c43fac6829dc751b42bcc469272a9a55325aae587bfbe7",
+                      "bytes":  35884,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansLao/hinted/ttf/NotoSansLao-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosanskhmer",
+                      "file":  "NotoSansKhmer-Regular.ttf",
+                      "sha256":  "e66675f2082788f0511a714bef5a1748928294b38c8e286a96ea73a864b5e605",
+                      "bytes":  114576,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansKhmer/hinted/ttf/NotoSansKhmer-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosansmyanmar",
+                      "file":  "NotoSansMyanmar-Regular.ttf",
+                      "sha256":  "fafce4db400bc0b214907ccdbfb0ad2f18a57bfefd08c8a571830b84088cf2fc",
+                      "bytes":  195088,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansMyanmar/hinted/ttf/NotoSansMyanmar-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "notosanssymbols2",
+                      "file":  "NotoSansSymbols2-Regular.ttf",
+                      "sha256":  "c4a0a80f0041ce4be81e2478faad22776d23edb98ae3f0d19bd37044820ecf9d",
+                      "bytes":  671568,
+                      "source":  "https://raw.githubusercontent.com/notofonts/notofonts.github.io/113d8e66a13a47d514be6c07e616842258982f42/fonts/NotoSansSymbols2/hinted/ttf/NotoSansSymbols2-Regular.ttf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "noto-sans-sc",
+                      "file":  "NotoSansSC-Regular.otf",
+                      "sha256":  "faa6c9df652116dde789d351359f3d7e5d2285a2b2a1f04a2d7244df706d5ea9",
+                      "bytes":  8331336,
+                      "source":  "https://raw.githubusercontent.com/notofonts/noto-cjk/523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/SubsetOTF/SC/NotoSansSC-Regular.otf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "noto-sans-tc",
+                      "file":  "NotoSansTC-Regular.otf",
+                      "sha256":  "5bab0cb3c1cf89dde07c4a95a4054b195afbcfe784d69d75c340780712237537",
+                      "bytes":  5683368,
+                      "source":  "https://raw.githubusercontent.com/notofonts/noto-cjk/523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/SubsetOTF/TC/NotoSansTC-Regular.otf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "noto-sans-hk",
+                      "file":  "NotoSansHK-Regular.otf",
+                      "sha256":  "8a43afea92bb58dfd9027bd7ac6f5b0b2662e2ffb3e7c1edc02c62b2b21924f1",
+                      "bytes":  5688384,
+                      "source":  "https://raw.githubusercontent.com/notofonts/noto-cjk/523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/SubsetOTF/HK/NotoSansHK-Regular.otf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "noto-sans-jp",
+                      "file":  "NotoSansJP-Regular.otf",
+                      "sha256":  "dff723ba59d57d136764a04b9b2d03205544f7cd785a711442d6d2d085ac5073",
+                      "bytes":  4533028,
+                      "source":  "https://raw.githubusercontent.com/notofonts/noto-cjk/523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "noto-sans-kr",
+                      "file":  "NotoSansKR-Regular.otf",
+                      "sha256":  "69975a0ac8472717870aefeab0a4d52739308d90856b9955313b2ad5e0148d68",
+                      "bytes":  4644748,
+                      "source":  "https://raw.githubusercontent.com/notofonts/noto-cjk/523d033d6cb47f4a80c58a35753646f5c3608a78/Sans/SubsetOTF/KR/NotoSansKR-Regular.otf",
+                      "license":  "OFL-1.1"
+                  },
+                  {
+                      "id":  "noto-color-emoji",
+                      "file":  "NotoColorEmoji_WindowsCompatible.ttf",
+                      "sha256":  "19473341d23f8fdf90e91ffca381d727c43f7bc05b2758dec9687a58fbb81150",
+                      "bytes":  10682364,
+                      "source":  "https://raw.githubusercontent.com/googlefonts/noto-emoji/8998f5dd683424a73e2314a8c1f1e359c19e8742/fonts/NotoColorEmoji_WindowsCompatible.ttf",
+                      "license":  "OFL-1.1"
+                  }
+              ]
+}

@@ -45,5 +45,229 @@
       "es": "Japonés",
       "ja": "日本語"
     }
+  },
+  "locale_metadata": {
+    "en": {
+      "native_name": "English",
+      "english_name": "English",
+      "direction": "ltr",
+      "script": "Latn"
+    },
+    "ru": {
+      "native_name": "Русский",
+      "english_name": "Russian",
+      "direction": "ltr",
+      "script": "Cyrl"
+    },
+    "uk": {
+      "native_name": "Українська",
+      "english_name": "Ukrainian",
+      "direction": "ltr",
+      "script": "Cyrl"
+    },
+    "es": {
+      "native_name": "Español",
+      "english_name": "Spanish",
+      "direction": "ltr",
+      "script": "Latn"
+    },
+    "fr": {
+      "native_name": "Français",
+      "english_name": "French",
+      "direction": "ltr",
+      "script": "Latn"
+    },
+    "de": {
+      "native_name": "Deutsch",
+      "english_name": "German",
+      "direction": "ltr",
+      "script": "Latn"
+    },
+    "pt-BR": {
+      "native_name": "Português (Brasil)",
+      "english_name": "Portuguese (Brazil)",
+      "direction": "ltr",
+      "script": "Latn"
+    },
+    "it": {
+      "native_name": "Italiano",
+      "english_name": "Italian",
+      "direction": "ltr",
+      "script": "Latn"
+    },
+    "pl": {
+      "native_name": "Polski",
+      "english_name": "Polish",
+      "direction": "ltr",
+      "script": "Latn"
+    },
+    "tr": {
+      "native_name": "Türkçe",
+      "english_name": "Turkish",
+      "direction": "ltr",
+      "script": "Latn"
+    },
+    "vi": {
+      "native_name": "Tiếng Việt",
+      "english_name": "Vietnamese",
+      "direction": "ltr",
+      "script": "Latn"
+    },
+    "id": {
+      "native_name": "Bahasa Indonesia",
+      "english_name": "Indonesian",
+      "direction": "ltr",
+      "script": "Latn"
+    },
+    "zh-Hans": {
+      "native_name": "简体中文",
+      "english_name": "Chinese (Simplified)",
+      "direction": "ltr",
+      "script": "Hans"
+    },
+    "zh-Hant": {
+      "native_name": "繁體中文",
+      "english_name": "Chinese (Traditional)",
+      "direction": "ltr",
+      "script": "Hant"
+    },
+    "zh-HK": {
+      "native_name": "繁體中文（香港）",
+      "english_name": "Chinese (Hong Kong)",
+      "direction": "ltr",
+      "script": "Hant"
+    },
+    "ja": {
+      "native_name": "日本語",
+      "english_name": "Japanese",
+      "direction": "ltr",
+      "script": "Jpan"
+    },
+    "ko": {
+      "native_name": "한국어",
+      "english_name": "Korean",
+      "direction": "ltr",
+      "script": "Kore"
+    },
+    "ar": {
+      "native_name": "العربية",
+      "english_name": "Arabic",
+      "direction": "rtl",
+      "script": "Arab"
+    },
+    "he": {
+      "native_name": "עברית",
+      "english_name": "Hebrew",
+      "direction": "rtl",
+      "script": "Hebr"
+    },
+    "fa": {
+      "native_name": "فارسی",
+      "english_name": "Persian",
+      "direction": "rtl",
+      "script": "Arab"
+    },
+    "ur": {
+      "native_name": "اردو",
+      "english_name": "Urdu",
+      "direction": "rtl",
+      "script": "Arab"
+    },
+    "hi": {
+      "native_name": "हिन्दी",
+      "english_name": "Hindi",
+      "direction": "ltr",
+      "script": "Deva"
+    },
+    "bn": {
+      "native_name": "বাংলা",
+      "english_name": "Bengali",
+      "direction": "ltr",
+      "script": "Beng"
+    },
+    "gu": {
+      "native_name": "ગુજરાતી",
+      "english_name": "Gujarati",
+      "direction": "ltr",
+      "script": "Gujr"
+    },
+    "pa-Guru": {
+      "native_name": "ਪੰਜਾਬੀ",
+      "english_name": "Punjabi",
+      "direction": "ltr",
+      "script": "Guru"
+    },
+    "ta": {
+      "native_name": "தமிழ்",
+      "english_name": "Tamil",
+      "direction": "ltr",
+      "script": "Taml"
+    },
+    "te": {
+      "native_name": "తెలుగు",
+      "english_name": "Telugu",
+      "direction": "ltr",
+      "script": "Telu"
+    },
+    "kn": {
+      "native_name": "ಕನ್ನಡ",
+      "english_name": "Kannada",
+      "direction": "ltr",
+      "script": "Knda"
+    },
+    "ml": {
+      "native_name": "മലയാളം",
+      "english_name": "Malayalam",
+      "direction": "ltr",
+      "script": "Mlym"
+    },
+    "si": {
+      "native_name": "සිංහල",
+      "english_name": "Sinhala",
+      "direction": "ltr",
+      "script": "Sinh"
+    },
+    "th": {
+      "native_name": "ไทย",
+      "english_name": "Thai",
+      "direction": "ltr",
+      "script": "Thai"
+    },
+    "lo": {
+      "native_name": "ລາວ",
+      "english_name": "Lao",
+      "direction": "ltr",
+      "script": "Laoo"
+    },
+    "km": {
+      "native_name": "ខ្មែរ",
+      "english_name": "Khmer",
+      "direction": "ltr",
+      "script": "Khmr"
+    },
+    "my": {
+      "native_name": "မြန်မာ",
+      "english_name": "Myanmar (Burmese)",
+      "direction": "ltr",
+      "script": "Mymr"
+    },
+    "hy": {
+      "native_name": "Հայերեն",
+      "english_name": "Armenian",
+      "direction": "ltr",
+      "script": "Armn"
+    },
+    "ka": {
+      "native_name": "ქართული",
+      "english_name": "Georgian",
+      "direction": "ltr",
+      "script": "Geor"
+    },
+    "am": {
+      "native_name": "አማርኛ",
+      "english_name": "Amharic",
+      "direction": "ltr",
+      "script": "Ethi"
+    }
   }
 }

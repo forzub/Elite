@@ -265,6 +265,7 @@ add_executable(EliteGame
 
     src/ui/html/HtmlUiServer.cpp
     src/ui/platform/UiResourcePack.cpp
+    src/ui/platform/ClientPreferencesStore.cpp
     src/ui/html/HtmlUiCommandQueue.cpp
     src/ui/html/HtmlUiBridge.cpp
     src/ui/html/HtmlUiManager.cpp

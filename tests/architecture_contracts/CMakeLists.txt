@@ -1280,3 +1280,40 @@ set_tests_properties(
     ui_resource_pack_contracts
     PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
+
+find_package(nlohmann_json REQUIRED)
+
+add_executable(
+    client_preferences_store_contract_tests
+    ClientPreferencesStoreContractTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/ui/platform/ClientPreferencesStore.cpp"
+)
+
+target_include_directories(
+    client_preferences_store_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+target_link_libraries(
+    client_preferences_store_contract_tests
+    PRIVATE
+        nlohmann_json::nlohmann_json
+)
+
+if(MSVC)
+    target_compile_options(client_preferences_store_contract_tests PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(client_preferences_store_contract_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+add_test(
+    NAME client_preferences_store_contracts
+    COMMAND client_preferences_store_contract_tests
+)
+
+set_tests_properties(
+    client_preferences_store_contracts
+    PROPERTIES WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
+)

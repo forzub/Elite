@@ -36,16 +36,18 @@ for token in (
 for token in (
     "main_menu_ready",
     "applyMainMenuView();",
-    "MainMenuView::MultiplayerAuthorization",
-    "m_mainMenuConnectionError",
+    "UiShellRoute::MultiplayerAuthorization",
+    "m_uiNavigationState",
+    "window.applyMainMenuState(",
 ):
     if token not in app_cpp:
         fail(f"menu recovery can still race asynchronous WebView navigation: {token}")
 
 for token in (
-    "function setConnectionError(message)",
+    "function setConnectionError(code)",
     "DOMContentLoaded",
     "sendCommand('main_menu_ready')",
+    "window.applyMainMenuState",
 ):
     if token not in menu_html:
         fail(f"multiplayer form/page-ready recovery surface missing: {token}")

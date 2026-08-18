@@ -21,6 +21,7 @@ host_h = read("src/game/server/NetworkServerHost.h")
 server_main = read("src/server_main.cpp")
 profile = read("src/game/identity/ClientIdentityProfile.cpp")
 menu = read("src/assets/webui/main_menu.html")
+ui_css = read("src/assets/webui/elite_ui.css")
 localization = read("src/assets/localization/ui/common/main_menu.json")
 auth_doc = read("src/game/identity/AUTHENTICATION_ARCHITECTURE.md")
 
@@ -91,13 +92,18 @@ for token in (
     'maxlength="24"',
     "^[a-z0-9][a-z0-9_-]{2,23}$",
     "toLowerCase()",
+):
+    if token not in menu:
+        fail(f"validated authorization UI missing: {token}")
+
+for token in (
     "max-height: calc(100vh - 16px)",
     "overflow-y: auto",
     "@media (max-height: 680px)",
     "clamp(",
 ):
-    if token not in menu:
-        fail(f"responsive/validated authorization UI missing: {token}")
+    if token not in ui_css:
+        fail(f"shared responsive UI primitive missing: {token}")
 
 for token in (
     "main.account_handle_rules",

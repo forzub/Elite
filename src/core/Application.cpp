@@ -354,6 +354,18 @@ void Application::init()
 {
     std::cout << "Application init\n";
 
+    {
+        std::string preferencesError;
+        if (!ui::platform::ClientPreferencesStore::load(
+                m_clientPreferences,
+                &preferencesError))
+        {
+            std::cerr << "[ClientPreferences] ignored invalid preferences: "
+                      << preferencesError << "\n";
+            m_clientPreferences = {};
+        }
+    }
+
 #ifdef _WIN32
     const auto xprocInitTotalBegin = XprocTraceClock::now();
     auto xprocInitStageBegin = xprocInitTotalBegin;
@@ -400,6 +412,13 @@ void Application::init()
                 if (!m_localization.loadDirectory(localizationRoot.string()))
                 {
                     std::cerr << "[Localization] core tables incomplete; English/key fallback remains active\n";
+                }
+
+                if (!m_clientPreferences.preferredLocale.empty() &&
+                    !m_localization.setLocale(m_clientPreferences.preferredLocale))
+                {
+                    std::cerr << "[ClientPreferences] preferred locale is not enabled: "
+                              << m_clientPreferences.preferredLocale << "\n";
                 }
 
                 // WebUI consumes an in-memory bundle generated from the exact
@@ -1386,6 +1405,17 @@ void Application::evalGameUiScript(const std::string& script)
 void Application::cycleUiLanguage()
 {
     const std::string locale = m_localization.cycleLocale();
+    m_clientPreferences.preferredLocale = locale;
+    {
+        std::string preferencesError;
+        if (!ui::platform::ClientPreferencesStore::save(
+                m_clientPreferences,
+                &preferencesError))
+        {
+            std::cerr << "[ClientPreferences] cannot persist locale: "
+                      << preferencesError << "\n";
+        }
+    }
 
 #ifdef _WIN32
     // C++ owns the global locale. WebUI receives the same value and stores it
@@ -1463,7 +1493,7 @@ void Application::requestSessionStart(GameSessionLaunchKind kind)
 #ifdef _WIN32
     m_gameUi.forceMode(GameUiMode::Loading);
     m_gameUi.markLoaded(GameUiMode::Loading);
-    m_mainMenuConnectionError.clear();
+    m_uiNavigationState.clearTransientMessage();
     m_htmlUi.setActivePanel(HtmlUiPanelId::None);
 
     m_gameWebView.setVisible(true);
@@ -1502,8 +1532,7 @@ void Application::showMultiplayerConnectionForm(
 )
 {
 #ifdef _WIN32
-    m_mainMenuView = MainMenuView::MultiplayerAuthorization;
-    m_mainMenuConnectionError = errorCode;
+    m_uiNavigationState.showMultiplayerAuthorization(errorCode);
     m_gameUi.forceMode(GameUiMode::MainMenu);
     m_gameWebView.setVisible(true);
 
@@ -1527,8 +1556,7 @@ void Application::showMultiplayerConnectionForm(
 void Application::showMainMenu()
 {
 #ifdef _WIN32
-    m_mainMenuView = MainMenuView::MainActions;
-    m_mainMenuConnectionError.clear();
+    m_uiNavigationState.showMainMenuHome();
     m_gameUi.forceMode(GameUiMode::MainMenu);
     m_gameWebView.setVisible(true);
 
@@ -1545,23 +1573,50 @@ void Application::applyMainMenuView()
     if (!m_gameUi.isLoaded(GameUiMode::MainMenu))
         return;
 
-    if (m_mainMenuView == MainMenuView::MultiplayerAuthorization)
+    nlohmann::json state = nlohmann::json::object();
+
+    if (m_uiNavigationState.route() ==
+        ui::platform::UiShellRoute::MultiplayerAuthorization)
     {
-        const std::string endpoint = hasConfiguredRemoteServer()
-            ? m_remoteServerHost + ":" + std::to_string(m_remoteServerPort)
-            : "127.0.0.1:27351";
-        m_gameWebView.evalScript(
-            "setMultiplayerDefaults(" +
-            nlohmann::json(endpoint).dump() + "," +
-            nlohmann::json(m_clientIdentityProfileName).dump() +
-            ");showMultiplayerForm();setConnectionError(" +
-            nlohmann::json(m_mainMenuConnectionError).dump() +
-            ");"
-        );
-        return;
+        std::string endpoint;
+        if (hasConfiguredRemoteServer())
+        {
+            endpoint = m_remoteServerHost + ":" +
+                std::to_string(m_remoteServerPort);
+        }
+        else
+        {
+            game::network::NetworkEndpoint rememberedEndpoint;
+            if (!m_clientPreferences.lastServerEndpoint.empty() &&
+                game::network::parseNetworkEndpoint(
+                    m_clientPreferences.lastServerEndpoint,
+                    rememberedEndpoint))
+            {
+                endpoint = m_clientPreferences.lastServerEndpoint;
+            }
+            else
+            {
+                endpoint = "127.0.0.1:27351";
+            }
+        }
+
+        std::string accountHandle = m_clientIdentityProfileName;
+        if (accountHandle.empty())
+            accountHandle = m_clientPreferences.lastSuccessfulAccountFor(endpoint);
+
+        state["view"] = "multiplayer";
+        state["endpoint"] = endpoint;
+        state["accountHandle"] = accountHandle;
+        state["errorCode"] = m_uiNavigationState.transientMessageCode();
+    }
+    else
+    {
+        state["view"] = "home";
     }
 
-    m_gameWebView.evalScript("showMainMenu();");
+    m_gameWebView.evalScript(
+        "window.applyMainMenuState(" + state.dump() + ");"
+    );
 #endif
 }
 
@@ -1593,6 +1648,26 @@ void Application::updatePendingSessionStart()
 
         const bool remote =
             m_pendingSessionLaunch == GameSessionLaunchKind::RemoteMultiplayer;
+        if (remote && hasConfiguredRemoteServer() &&
+            game::identity::isValidAccountHandle(m_clientIdentityProfileName))
+        {
+            const std::string endpoint =
+                m_remoteServerHost + ":" + std::to_string(m_remoteServerPort);
+            m_clientPreferences.rememberSuccessfulMultiplayer(
+                endpoint,
+                m_clientIdentityProfileName
+            );
+
+            std::string preferencesError;
+            if (!ui::platform::ClientPreferencesStore::save(
+                    m_clientPreferences,
+                    &preferencesError))
+            {
+                std::cerr << "[ClientPreferences] cannot remember multiplayer account: "
+                          << preferencesError << "\n";
+            }
+        }
+
         m_pendingSessionLaunch = GameSessionLaunchKind::None;
         m_sessionStartStage = SessionStartStage::Idle;
         m_spaceStateBuildStartTime = 0.0;

@@ -8,6 +8,8 @@
 #include "ui/html/HtmlUiManager.h"
 #include "game/localization/LocalizationService.h"
 #include "game/network/SessionMessage.h"
+#include "src/ui/platform/ClientPreferencesStore.h"
+#include "src/ui/platform/UiNavigationState.h"
 #include <string>
 #include <memory>
 #include <cstdint>
@@ -41,13 +43,6 @@ enum class GameUiNavigationAction
     OpenOrSwitch,
     Close
 };
-
-enum class MainMenuView
-{
-    MainActions,
-    MultiplayerAuthorization
-};
-
 
 class GameUiController
 {
@@ -276,8 +271,8 @@ private:
     std::uint16_t m_gameUiHttpPort = 0;
     std::string m_clientIdentityProfileName;
     game::network::SessionHello m_clientIdentityHello {};
-    MainMenuView m_mainMenuView = MainMenuView::MainActions;
-    std::string m_mainMenuConnectionError;
+    ui::platform::UiNavigationState m_uiNavigationState;
+    ui::platform::ClientPreferences m_clientPreferences;
     StateStack   m_states;
     RenderContext renderContext;
     HtmlUiManager m_htmlUi;

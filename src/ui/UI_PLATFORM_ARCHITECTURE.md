@@ -64,11 +64,20 @@ The first UI-platform slice now establishes the resource and internationalizatio
 - font/license assets are indexed centrally and the pack includes human-readable notices;
 - development builds may run before the font cache is fetched, but release/CI packaging enables `ELITE_REQUIRE_BUNDLED_UI_FONTS=ON` so missing declared faces fail closed.
 
-The next UI-platform slice is reusable page/form/dialog components and `ClientPreferencesStore`; full registration/password/recovery screens should be built on those components rather than adding another standalone page style.
+The second UI-platform slice now establishes the reusable service-shell/component layer:
+
+- `elite_ui.js` owns the shared navigation shell, banner/validation, modal/dialog and password-field behaviors; secure generated-password support uses Web Crypto rather than `Math.random()`;
+- `elite_ui.css` owns responsive page/panel/button/form/field/banner/dialog/password/consent primitives, focus-visible states, compact-height behavior and RTL-safe layout;
+- every current WebUI page imports the same shared CSS/JS runtime; `main_menu.html` is the first page migrated off its private inline component stylesheet;
+- native `UiNavigationState` represents which main-menu sub-view is intended, while the page sends `main_menu_ready` before native state is applied, preserving race-free WebView navigation;
+- `ClientPreferencesStore` persists only non-secret UX context under the per-user application-data/config root using a versioned bounded JSON document and atomic replacement;
+- the last successfully entered multiplayer world records `server endpoint -> AccountHandle` only at the session-ready boundary, and the selected locale is also remembered; auth tokens/passwords/recovery material remain outside this store.
+
+Full registration/password/recovery/account screens are the next service-shell slice and must be composed from these primitives rather than reintroducing page-local form systems.
 
 ## First shared Web components
 
-The first reusable component set should cover the surfaces currently being changed most often:
+The initial reusable component set now covers the surfaces currently being changed most often:
 
 - responsive page shell / safe viewport / scroll fallback;
 - title/subtitle block;

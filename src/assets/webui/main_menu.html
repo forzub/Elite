@@ -3,213 +3,62 @@
 <head>
   <meta charset="utf-8">
   <title>EliteGame Main Menu</title>
-  <style>
-    :root {
-      --panel-width: 548px;
-      --panel-pad-x: clamp(18px, 4.5vw, 44px);
-      --panel-pad-y: clamp(16px, 4vh, 44px);
-      --button-pad-y: clamp(10px, 1.9vh, 16px);
-      --control-gap: clamp(7px, 1.35vh, 14px);
-    }
-
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background:
-        radial-gradient(circle at 50% 35%, rgba(55, 95, 155, 0.25), transparent 34%),
-        linear-gradient(180deg, #070a10 0%, #010208 100%);
-      color: #dce7ff;
-      font-family: Arial, sans-serif;
-    }
-
-    .screen {
-      box-sizing: border-box;
-      width: 100vw;
-      height: 100vh;
-      padding: clamp(8px, 2vh, 22px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .panel {
-      box-sizing: border-box;
-      width: min(var(--panel-width), calc(100vw - 16px));
-      max-height: calc(100vh - 16px);
-      padding: var(--panel-pad-y) var(--panel-pad-x);
-      overflow-y: auto;
-      overflow-x: hidden;
-      border: 1px solid rgba(140, 180, 255, 0.35);
-      border-radius: clamp(10px, 2vh, 18px);
-      background: rgba(5, 10, 20, 0.88);
-      box-shadow: 0 0 80px rgba(60, 120, 255, 0.18);
-      text-align: center;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(110, 150, 210, 0.45) transparent;
-    }
-
-    h1 {
-      margin: 0 0 clamp(4px, 1vh, 8px);
-      letter-spacing: 0.28em;
-      font-size: clamp(30px, 6.2vh, 44px);
-      line-height: 1;
-      font-weight: 500;
-    }
-
-    .subtitle {
-      margin-bottom: clamp(12px, 3.8vh, 34px);
-      color: #7f8da8;
-      font-size: clamp(10px, 1.8vh, 13px);
-      letter-spacing: 0.12em;
-    }
-
-    button {
-      display: block;
-      box-sizing: border-box;
-      width: 100%;
-      margin: var(--control-gap) 0;
-      padding: var(--button-pad-y) 20px;
-      border: 1px solid rgba(150, 190, 255, 0.45);
-      border-radius: 10px;
-      background: rgba(18, 35, 65, 0.9);
-      color: #e8eefc;
-      font-size: clamp(14px, 2.35vh, 17px);
-      line-height: 1.35;
-      letter-spacing: 0.08em;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: rgba(45, 80, 135, 0.98);
-      box-shadow: 0 0 24px rgba(70, 130, 255, 0.25);
-    }
-
-    .hint {
-      margin-top: clamp(10px, 2.6vh, 28px);
-      color: #58647a;
-      font-size: clamp(9px, 1.55vh, 12px);
-    }
-
-    .connection {
-      display: none;
-      margin-top: clamp(8px, 2vh, 18px);
-      text-align: left;
-    }
-
-    .connection label {
-      display: block;
-      margin-bottom: clamp(4px, 0.9vh, 8px);
-      color: #9eb2d6;
-      font-size: clamp(10px, 1.7vh, 12px);
-      letter-spacing: 0.08em;
-    }
-
-    .connection input {
-      box-sizing: border-box;
-      width: 100%;
-      padding: clamp(10px, 1.8vh, 14px) 16px;
-      border: 1px solid rgba(150, 190, 255, 0.45);
-      border-radius: 8px;
-      background: rgba(4, 9, 18, 0.95);
-      color: #e8eefc;
-      font-size: clamp(14px, 2.2vh, 16px);
-    }
-
-    .field-hint {
-      margin-top: 6px;
-      color: #71809a;
-      font-size: clamp(9px, 1.55vh, 11px);
-      line-height: 1.35;
-    }
-
-    .connection-error {
-      min-height: clamp(16px, 2.4vh, 20px);
-      margin-top: clamp(7px, 1.5vh, 10px);
-      color: #ff9b9b;
-      font-size: clamp(10px, 1.65vh, 12px);
-      line-height: 1.35;
-      text-align: center;
-    }
-
-    @media (max-height: 680px) {
-      :root {
-        --panel-pad-y: 12px;
-        --button-pad-y: 8px;
-        --control-gap: 5px;
-      }
-      .subtitle { margin-bottom: 8px; }
-      .connection { margin-top: 6px; }
-      .hint { display: none; }
-    }
-
-    @media (max-height: 520px) {
-      h1 { font-size: 26px; }
-      .subtitle { display: none; }
-      .panel { align-self: stretch; }
-    }
-  </style>
   <link rel="stylesheet" href="/elite_ui.css">
+  <script src="/elite_ui.js"></script>
 </head>
+<body class="elite-ui-body">
+  <div class="elite-screen">
+    <main id="main-shell" class="elite-panel elite-panel--centered" data-elite-shell aria-live="polite">
+      <header>
+        <h1 class="elite-title">ELITE</h1>
+        <div class="elite-subtitle" data-i18n="main.subtitle">HTML GAME UI PROTOTYPE</div>
+      </header>
 
-<body>
-  <div class="screen">
-    <div class="panel">
-      <h1>ELITE</h1>
-      <div class="subtitle" data-i18n="main.subtitle">HTML GAME UI PROTOTYPE</div>
+      <section id="main-actions" class="elite-view elite-actions" data-elite-view="home" aria-label="Main menu">
+        <button class="elite-button" data-elite-autofocus data-i18n="main.new_local_game" onclick="sendCommand('new_local_game')">NEW LOCAL GAME</button>
+        <button class="elite-button" data-i18n="main.load_local_game" onclick="sendCommand('load_local_game')">LOAD LOCAL GAME</button>
+        <button class="elite-button" data-i18n="main.multiplayer" onclick="sendCommand('multiplayer')">MULTIPLAYER</button>
+        <button class="elite-button elite-button--secondary" data-i18n="main.exit" onclick="sendCommand('exit')">EXIT</button>
+      </section>
 
-      <div id="main-actions">
-        <button data-i18n="main.new_local_game" onclick="sendCommand('new_local_game')">NEW LOCAL GAME</button>
-        <button data-i18n="main.load_local_game" onclick="sendCommand('load_local_game')">LOAD LOCAL GAME</button>
-        <button data-i18n="main.multiplayer" onclick="sendCommand('multiplayer')">MULTIPLAYER</button>
-        <button data-i18n="main.exit" onclick="sendCommand('exit')">EXIT</button>
-      </div>
+      <section id="multiplayer-connection" class="elite-view" data-elite-view="multiplayer" aria-label="Multiplayer authorization" hidden>
+        <div class="elite-form">
+          <div class="elite-field">
+            <label class="elite-field-label" for="server-endpoint" data-i18n="main.server_address">SERVER ADDRESS</label>
+            <input class="elite-input" id="server-endpoint" value="127.0.0.1:27351" spellcheck="false" autocomplete="off">
+          </div>
 
-      <div id="multiplayer-connection" class="connection">
-        <label for="server-endpoint" data-i18n="main.server_address">SERVER ADDRESS</label>
-        <input id="server-endpoint" value="127.0.0.1:27351" spellcheck="false" autocomplete="off">
-        <label for="credential-profile" data-i18n="main.account_handle" style="margin-top:clamp(8px,1.8vh,14px)">ACCOUNT HANDLE</label>
-        <input id="credential-profile" value="" spellcheck="false" autocomplete="username" inputmode="text" minlength="3" maxlength="24" pattern="[a-z0-9][a-z0-9_-]{2,23}">
-        <div class="field-hint" data-i18n="main.account_handle_rules">3-24 characters: lowercase a-z, digits, _ and -. Start with a letter or digit.</div>
-        <div id="connection-error" class="connection-error"></div>
-        <button data-i18n="main.sign_in" onclick="authorizeMultiplayer(false)">SIGN IN</button>
-        <button data-i18n="main.register" onclick="authorizeMultiplayer(true)">REGISTER</button>
-        <button data-i18n="main.back" onclick="sendCommand('multiplayer_back')">BACK</button>
-      </div>
+          <div class="elite-field" id="account-handle-field">
+            <label class="elite-field-label" for="credential-profile" data-i18n="main.account_handle">ACCOUNT HANDLE</label>
+            <input class="elite-input" id="credential-profile" value="" spellcheck="false" autocomplete="username" inputmode="text" minlength="3" maxlength="24" pattern="[a-z0-9][a-z0-9_-]{2,23}" data-elite-autofocus>
+            <div class="elite-field-help" data-i18n="main.account_handle_rules">3-24 characters: lowercase a-z, digits, _ and -. Start with a letter or digit.</div>
+          </div>
 
-      <div class="hint" data-i18n="main.hint">WebView layer. Not the debug browser.</div>
-    </div>
+          <div id="connection-error" class="elite-banner" role="alert" aria-live="assertive" aria-hidden="true" hidden></div>
+
+          <div class="elite-actions">
+            <button class="elite-button" data-i18n="main.sign_in" onclick="authorizeMultiplayer(false)">SIGN IN</button>
+            <button class="elite-button" data-i18n="main.register" onclick="authorizeMultiplayer(true)">REGISTER</button>
+            <button class="elite-button elite-button--secondary" data-i18n="main.back" onclick="sendCommand('multiplayer_back')">BACK</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="elite-hint" data-i18n="main.hint">WebView layer. Not the debug browser.</div>
+    </main>
   </div>
 
   <script src="/game_i18n.js"></script>
   <script>
+    let mainMenuShell = null;
+    let connectionErrorCode = '';
+
     async function sendCommand(command) {
       if (window.gameCommand) {
         await window.gameCommand(command);
       } else {
-        console.log("gameCommand bridge not found:", command);
+        console.log('gameCommand bridge not found:', command);
       }
-    }
-
-    function setMultiplayerDefaults(endpoint, profile) {
-      if (endpoint) document.getElementById('server-endpoint').value = endpoint;
-      document.getElementById('credential-profile').value = profile || '';
-    }
-
-    function showMultiplayerForm() {
-      document.getElementById('main-actions').style.display = 'none';
-      document.getElementById('multiplayer-connection').style.display = 'block';
-      setConnectionError('');
-      const input = document.getElementById('credential-profile');
-      input.focus();
-      input.select();
-    }
-
-    function showMainMenu() {
-      document.getElementById('multiplayer-connection').style.display = 'none';
-      document.getElementById('main-actions').style.display = 'block';
-      setConnectionError('');
     }
 
     const connectionErrorI18nKeys = {
@@ -227,19 +76,51 @@
       BOOTSTRAP_FAILED: 'main.auth.bootstrap_failed'
     };
 
-    let connectionErrorCode = '';
-
-    function setConnectionError(message) {
-      connectionErrorCode = message || '';
+    function setConnectionError(code) {
+      connectionErrorCode = code || '';
       const key = connectionErrorI18nKeys[connectionErrorCode];
-      document.getElementById('connection-error').textContent = key
-        ? window.GameI18n.t(key, connectionErrorCode)
-        : connectionErrorCode;
+      const text = connectionErrorCode
+        ? (key ? window.GameI18n.t(key, connectionErrorCode) : connectionErrorCode)
+        : '';
+      window.EliteUiKit.setBanner('#connection-error', text, 'error');
     }
 
-    window.addEventListener('game-ui-language-changed', () => {
-      if (connectionErrorCode) setConnectionError(connectionErrorCode);
-    });
+    function applyMainMenuState(state) {
+      if (!mainMenuShell) return;
+      const next = state || {};
+      const endpoint = document.getElementById('server-endpoint');
+      const account = document.getElementById('credential-profile');
+
+      if (typeof next.endpoint === 'string' && next.endpoint) endpoint.value = next.endpoint;
+      if (typeof next.accountHandle === 'string') account.value = next.accountHandle;
+      setConnectionError(next.errorCode || '');
+
+      if (next.view === 'multiplayer') {
+        mainMenuShell.show('multiplayer', { focus: account, select: true });
+      } else {
+        mainMenuShell.show('home', { focus: '#main-actions [data-elite-autofocus]' });
+      }
+    }
+
+    // Compatibility wrappers for tooling and old call sites while native code
+    // migrates to the single applyMainMenuState() navigation contract.
+    function showMultiplayerForm() {
+      applyMainMenuState({
+        view: 'multiplayer',
+        endpoint: document.getElementById('server-endpoint').value,
+        accountHandle: document.getElementById('credential-profile').value,
+        errorCode: connectionErrorCode
+      });
+    }
+
+    function showMainMenu() {
+      applyMainMenuState({ view: 'home' });
+    }
+
+    function setMultiplayerDefaults(endpoint, profile) {
+      if (endpoint) document.getElementById('server-endpoint').value = endpoint;
+      document.getElementById('credential-profile').value = profile || '';
+    }
 
     async function authorizeMultiplayer(register) {
       const endpoint = document.getElementById('server-endpoint').value.trim();
@@ -256,6 +137,7 @@
         setConnectionError('INVALID_ACCOUNT_HANDLE');
         return;
       }
+
       setConnectionError('');
       await sendCommand(
         (register ? 'multiplayer_register|' : 'multiplayer_signin|') +
@@ -268,6 +150,7 @@
       let value = input.value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
       value = value.replace(/^[^a-z0-9]+/, '').slice(0, 24);
       if (input.value !== value) input.value = value;
+      window.EliteUiKit.setFieldError('#account-handle-field', '');
     });
 
     for (const id of ['server-endpoint', 'credential-profile']) {
@@ -283,13 +166,21 @@
       });
     }
 
+    window.addEventListener('game-ui-language-changed', () => {
+      if (connectionErrorCode) setConnectionError(connectionErrorCode);
+    });
+
     window.addEventListener('DOMContentLoaded', () => {
+      window.EliteUiKit.initialize(document);
+      mainMenuShell = window.EliteUiKit.createNavigationShell('#main-shell');
+      mainMenuShell.show('home');
+
       // C++ may have navigated here from loading.html after an auth/session
-      // rejection. Signal that this document is now the active menu page so
-      // the pending Multiplayer sub-view and typed rejection can be applied
-      // without racing WebView2 navigation.
+      // rejection. Native state is applied only after this shell is ready.
       sendCommand('main_menu_ready');
     });
+
+    window.applyMainMenuState = applyMainMenuState;
   </script>
 </body>
 </html>

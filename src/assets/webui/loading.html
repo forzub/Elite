@@ -1,8 +1,9 @@
 <!doctype html>
-<html>
+<html class="elite-ui-boot">
 <head>
   <meta charset="utf-8">
   <title>EliteGame Loading</title>
+  <style id="elite-critical-boot">html,body{margin:0;background:#010208}html.elite-ui-boot body{visibility:hidden;opacity:0}</style>
   <style>
     html, body {
       margin: 0;
@@ -91,6 +92,15 @@
       0%, 54% { opacity: 1; }
       55%, 100% { opacity: 0; }
     }
+
+    .cancelRow {
+      width: min(620px, 70vw);
+      margin-top: 18px;
+    }
+
+    .cancelRow .elite-button {
+      width: min(260px, 100%);
+    }
   </style>
   <link rel="stylesheet" href="/elite_ui.css">
   <script src="/elite_ui.js"></script>
@@ -114,11 +124,17 @@
       </span>
       <span id="percent">0%</span>
     </div>
+
+    <div id="cancelRow" class="cancelRow" hidden>
+      <button id="cancelConnection" class="elite-button elite-button--secondary" data-i18n="loading.cancel_connection">CANCEL CONNECTION</button>
+    </div>
   </div>
 
   <script src="/game_i18n.js"></script>
   <script>
+    const sessionKind = new URLSearchParams(location.search).get("session") || "unknown";
     let currentStageKey = "loading.boot";
+    let loadingPreparedSent = false;
     let currentStageFallback = "BOOT";
     let stageAnimationGeneration = 0;
 
@@ -137,6 +153,21 @@
 
     function waitingForServer() {
       return currentStageKey === "loading.stage.waiting_server";
+    }
+
+    function connectionCancelable() {
+      if (sessionKind !== "remote") return false;
+      return currentStageKey === "loading.stage.connecting" ||
+        currentStageKey === "loading.stage.waiting_server" ||
+        currentStageKey === "loading.stage.sync";
+    }
+
+    function updateCancelConnection() {
+      const row = document.getElementById("cancelRow");
+      const button = document.getElementById("cancelConnection");
+      const visible = connectionCancelable();
+      row.hidden = !visible;
+      if (visible) button.disabled = false;
     }
 
     async function runPc286Typewriter(generation, text) {
@@ -219,7 +250,7 @@
         void runPc286Typewriter(generation, text);
     }
 
-    function setLoadingProgress(value, stageKey, englishFallback) {
+    async function setLoadingProgress(value, stageKey, englishFallback) {
       const p = Math.max(0, Math.min(100, Math.round(value * 100)));
       document.getElementById("bar").style.width = p + "%";
       document.getElementById("percent").textContent = p + "%";
@@ -231,13 +262,32 @@
       }
 
       renderLoadingStage(stageChanged);
+      updateCancelConnection();
+
+      if (!loadingPreparedSent) {
+        await window.EliteUiKit.waitForDocumentDependencies();
+        await window.EliteUiKit.settlePreparedLayout();
+        loadingPreparedSent = true;
+        if (window.gameCommand) await window.gameCommand("loading_ui_prepared");
+      }
     }
 
     window.addEventListener("game-ui-language-changed", () => {
       renderLoadingStage(true);
     });
 
-    setLoadingProgress(0.05, "loading.boot", "BOOT");
+    document.getElementById("cancelConnection").addEventListener("click", async () => {
+      const button = document.getElementById("cancelConnection");
+      button.disabled = true;
+      if (window.gameCommand) await window.gameCommand("session_cancel");
+    });
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await window.EliteUiKit.waitForDocumentDependencies();
+      // Native owns the authoritative stage/progress. Keep this page hidden
+      // until it explicitly applies the first cached progress state.
+      if (window.gameCommand) await window.gameCommand("loading_ui_ready");
+    }, { once: true });
   </script>
 </body>
 </html>

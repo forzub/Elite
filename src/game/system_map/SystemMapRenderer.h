@@ -138,6 +138,14 @@ public:
         const MapTransitionSpec& spec,
         std::function<void()> applyNewState
     );
+    void cancelMapTransition();
+    bool capturePresentationSource(const Viewport& viewport);
+    void beginPresentationCrossfade();
+    void cancelPresentationCrossfade();
+    void drawPresentationCrossfadeOverlay(
+        const Viewport& viewport,
+        double nowSeconds
+    );
 
     const HubMapPerformanceStats&
     hubMapPerformanceStats() const
@@ -597,6 +605,17 @@ private:
     int m_mapTransitionSnapshotHeight = 0;
 
     bool m_mapTransitionSnapshotReady = false;
+
+    enum class PresentationCrossfadePhase
+    {
+        Idle,
+        AwaitingIncomingFrame,
+        Blending
+    };
+
+    PresentationCrossfadePhase m_presentationCrossfadePhase =
+        PresentationCrossfadePhase::Idle;
+    double m_presentationCrossfadeStartedAtSeconds = 0.0;
 
     MapTransitionController m_mapTransition;
 };

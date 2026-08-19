@@ -133,6 +133,13 @@ public:
     void setSystemMapPlayerSystemMode();
     void setSystemMapPlayerDetailMode();
     void setSystemMapPlayerLocalMode();
+    void beginPlayerNavigationMapEntry(PlayerNavigationMapLevel level);
+    bool playerNavigationMapEntryPending() const;
+    bool playerNavigationMapEntryTargetReady() const;
+    void armPlayerNavigationMapEntryPresentation();
+    bool consumePreparedPlayerNavigationMapEntry();
+    void beginPlayerNavigationMapExit();
+    bool consumePreparedPlayerNavigationMapExit();
     bool isPlayerNavigationMapLevel(PlayerNavigationMapLevel level) const;
     void toggleConstellationOverlay();
     void cycleSkyCulture();
@@ -178,6 +185,8 @@ public:
         int systemId,
         const std::string& hubId
     );
+    void completePlayerNavigationMapEntry();
+    void cancelPlayerNavigationMapEntry();
 
     void setSystemMapHubMode() override;
     void setSystemMapLoadedDetailMode() override;
@@ -203,9 +212,6 @@ private:
 
     WorldParams                                 m_world;
 
-    bool wantsConfirmExit() const override;
-    bool onGlobalEscape() override;
-    bool isInSafeZone() const;
     bool resolvePlayerGalacticPositionLy(glm::dvec3& outPositionLy) const;
     bool buildPlayerDetailTarget(
         world::celestial::DetailTarget& outTarget,
@@ -348,6 +354,14 @@ private:
     double m_hubMapLiveRefreshTimer = 0.0;
 
     bool m_systemMapVisible = false;
+    bool m_playerNavigationMapEntryPending = false;
+    bool m_playerNavigationMapEntryReady = false;
+    bool m_playerNavigationMapEntryPresentationArmed = false;
+    bool m_playerNavigationMapEntrySourceCaptured = false;
+    bool m_playerNavigationMapExitPending = false;
+    bool m_playerNavigationMapExitReady = false;
+    PlayerNavigationMapLevel m_pendingPlayerNavigationMapLevel =
+        PlayerNavigationMapLevel::Galaxy;
     bool m_systemMapLiveSnapshotsEnabled = false;
     int m_liveSystemMapId = -1;
 

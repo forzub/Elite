@@ -105,6 +105,14 @@ shared celestial render services no longer depend on privileged facade access.
 Galaxy/System still use the shared facade/low-level `.inl` backend pipeline, so
 the map decomposition is not finished.
 
+### Map presentation atomicity
+
+Map data readiness and map visibility are separate states. A first F9-F12 entry while gameplay is visible resolves the exact requested player-navigation target before `GameUiMode::SystemMap` becomes active; it must never expose Galaxy merely as a default intermediate mode. The target-agnostic WebView side panel is preloaded while hidden and acknowledges a fully applied authoritative payload before presentation is armed.
+
+Framebuffer crossfades are renderer-owned transactions. The renderer that produced the outgoing image captures that exact completed framebuffer before ownership changes; after the outgoing frame is swapped, the destination renders one full warmup frame beneath an opaque snapshot and only then begins the smootherstep blend. The same rule applies to visible map-to-map switches and symmetrically to map -> gameplay exit. Capturing an arbitrary back buffer at the beginning of a later frame is not a valid source-frame contract.
+
+The System Map side panel remains a child-HWND GameWebView and therefore cannot be alpha-composited pixel-perfectly inside the OpenGL framebuffer. Its guarantee is **prepare while native-hidden -> show only complete state**, synchronized with the OpenGL transition. A future requirement for one compositor-level alpha blend across panel + map would require a native/OpenGL panel or WebView2 composition/offscreen path rather than timing hacks.
+
 ## Render-style boundary
 
 Render style is a client-side presentation policy, not world state. The planned

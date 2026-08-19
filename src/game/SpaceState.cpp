@@ -32,7 +32,6 @@
 #include "src/game/player/ActorIdProvider.h"
 #include "src/game/player/ActorCodeGenerator.h"
 
-#include "ui/ConfirmExitState.h"
 
 #include "src/render/camera/RenderCameraViewport.h"
 #include "src/debug/DebugSettings.h"
@@ -999,6 +998,22 @@ void SpaceState::beginSystemMapHubTransition(
     const std::string& hubId
 )
 {
+    if (m_playerNavigationMapEntryPending)
+    {
+        if (!m_client ||
+            !m_hasHubMapSnapshot ||
+            m_loadedHubMapSystemId != systemId ||
+            m_loadedHubMapHubId != hubId)
+        {
+            cancelPlayerNavigationMapEntry();
+            return;
+        }
+
+        m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Hub);
+        completePlayerNavigationMapEntry();
+        return;
+    }
+
     m_systemMapRenderer.beginMapTransition(
         MapTransitionPresets::modeChange(),
         [this, systemId, hubId]()
@@ -1057,13 +1072,35 @@ void SpaceState::setSystemMapHubMode()
 
 void SpaceState::updatePendingMapTransition(float /*dt*/)
 {
-    if (!m_mapTransitions.pending() || !m_client)
+    if (!m_client)
+        return;
+
+    if (m_playerNavigationMapEntryPending &&
+        !m_playerNavigationMapEntryReady &&
+        m_pendingPlayerNavigationMapLevel == PlayerNavigationMapLevel::Galaxy)
+    {
+        requestGalaxyMapSnapshotOnce();
+        if (m_hasGalaxyMapSnapshot)
+        {
+            m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Galaxy);
+            m_systemMapRenderer.onGalaxyMapEntered(
+                m_galaxyMapSnapshot,
+                m_client->playerNavigation()
+            );
+            completePlayerNavigationMapEntry();
+        }
+        return;
+    }
+
+    if (!m_mapTransitions.pending())
         return;
 
     auto cancelTransition = [this](const char* message)
     {
         std::cerr << "[SystemMap] " << message << std::endl;
         m_mapTransitions.clear();
+        if (m_playerNavigationMapEntryPending)
+            cancelPlayerNavigationMapEntry();
     };
 
     using Transition = game::client::MapTransitionController;
@@ -1342,12 +1379,23 @@ void SpaceState::updateSystemMapLiveFlags()
     */
     if (m_systemMapVisible &&
         !wasSystemMapVisible &&
-        m_client)
+        m_client &&
+        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Galaxy)
     {
+        // Galaxy camera entry belongs only to an actual Galaxy presentation.
+        // F10-F12 may now prepare another mode before the map is revealed.
         m_systemMapRenderer.onGalaxyMapEntered(
             m_galaxyMapSnapshot,
             m_client->playerNavigation()
         );
+    }
+
+    if (!m_systemMapVisible && wasSystemMapVisible)
+    {
+        // A hidden map must not retain a half-finished crossfade or an
+        // asynchronous user-navigation request that can mutate its mode later.
+        m_systemMapRenderer.cancelMapTransition();
+        m_mapTransitions.clear();
     }
 
     m_systemMapLiveSnapshotsEnabled =
@@ -2322,6 +2370,15 @@ m_systemMapRenderer.render(
 
         renderUniverseTimeSimulationOverlay(vp);
 
+        if (m_playerNavigationMapExitPending &&
+            !m_playerNavigationMapExitReady)
+        {
+            // Capture the map from the framebuffer that rendered it, never
+            // from a later/unknown back buffer after ownership has changed.
+            m_playerNavigationMapExitReady =
+                m_systemMapRenderer.capturePresentationSource(mapVp);
+        }
+
         m_perfHudMs = nowMs() - hudStartMs;
         return;
     }
@@ -2478,6 +2535,33 @@ m_systemMapRenderer.render(
     renderUniverseTimeSimulationOverlay(vp);
     renderUiLanguageIndicator(vp);
 
+    Viewport mapTransitionViewport = vp;
+    mapTransitionViewport.width = static_cast<int>(
+        static_cast<float>(vp.width) * 0.72f
+    );
+
+    if (m_playerNavigationMapEntryPending &&
+        m_playerNavigationMapEntryReady &&
+        m_playerNavigationMapEntryPresentationArmed &&
+        !m_playerNavigationMapEntrySourceCaptured)
+    {
+        // The requested F9-F12 destination is already resolved, but gameplay
+        // remains the visible owner for this frame. Capture this exact final
+        // gameplay frame before Application switches presentation ownership.
+        m_playerNavigationMapEntrySourceCaptured =
+            m_systemMapRenderer.capturePresentationSource(
+                mapTransitionViewport
+            );
+    }
+
+    // Symmetric map -> gameplay transition: the map snapshot captured on its
+    // outgoing frame stays opaque over the first complete gameplay frame, then
+    // dissolves. The same primitive is used for gameplay -> map in map render.
+    m_systemMapRenderer.drawPresentationCrossfadeOverlay(
+        mapTransitionViewport,
+        glfwGetTime()
+    );
+
     m_perfHudMs = nowMs() - hudStartMs;
 }
 
@@ -2574,48 +2658,6 @@ void SpaceState::renderUniverseTimeSimulationOverlay(
     );
 
     text.endFrame();
-}
-
-
-
-// =====================================================================================
-// wantsConfirmExit
-// =====================================================================================
-
-bool SpaceState::wantsConfirmExit() const
-{
-
-    return true; // есть активная игровая сессия
-}
-
-
-// =====================================================================================
-// onGlobalEscape
-// =====================================================================================
-
-bool SpaceState::onGlobalEscape()
-{
-
-
-
-    ConfirmExitOptions opts;
-    opts.canSave = isInSafeZone();
-    opts.canLoad = isInSafeZone();
-
-    m_states.push(std::make_unique<ConfirmExitState>(m_states, opts));
-    return true;
-}
-
-
-// =====================================================================================
-// isInSafeZone
-// =====================================================================================
-
-bool SpaceState::isInSafeZone() const
-{
-    // ВРЕМЕННО:
-    // пока считаем, что игрок ВСЕГДА в безопасной зоне
-    return true;
 }
 
 
@@ -4018,6 +4060,17 @@ void SpaceState::setSystemMapEmptySectorMode(
     emptySector.systemPositionLy =
         positionLy;
 
+    if (m_playerNavigationMapEntryPending)
+    {
+        m_systemMapSnapshot = emptySector;
+        m_loadedSystemMapId = emptySector.systemId;
+        m_hasSystemMapSnapshot = true;
+        m_systemMapShowsEmptySector = true;
+        m_systemMapRenderer.setMode(SystemMapRenderer::Mode::System);
+        completePlayerNavigationMapEntry();
+        return;
+    }
+
     m_systemMapRenderer.beginMapTransition(
         MapTransitionPresets::modeChange(),
 
@@ -4053,6 +4106,23 @@ void SpaceState::setSystemMapEmptySectorMode(
 
 void SpaceState::beginSystemMapSystemTransition(int systemId)
 {
+    if (m_playerNavigationMapEntryPending)
+    {
+        if (!m_client ||
+            !m_hasSystemMapSnapshot ||
+            m_loadedSystemMapId != systemId)
+        {
+            cancelPlayerNavigationMapEntry();
+            return;
+        }
+
+        m_systemMapShowsEmptySector = false;
+        m_systemMapRenderer.focusGalaxySystem(systemId, m_galaxyMapSnapshot);
+        m_systemMapRenderer.setMode(SystemMapRenderer::Mode::System);
+        completePlayerNavigationMapEntry();
+        return;
+    }
+
     m_systemMapRenderer.beginMapTransition(
         MapTransitionPresets::modeChange(),
         [this, systemId]()
@@ -4130,6 +4200,138 @@ void SpaceState::setSystemMapCurrentSystemMode()
 
 
 
+void SpaceState::beginPlayerNavigationMapEntry(
+    PlayerNavigationMapLevel level
+)
+{
+    if (!m_client || m_systemMapVisible)
+        return;
+
+    // A new direct-selector request replaces any hidden in-flight request.
+    // Renderer crossfades are meaningful only while a map is already visible.
+    m_mapTransitions.clear();
+    m_systemMapRenderer.cancelMapTransition();
+    m_playerNavigationMapExitPending = false;
+    m_playerNavigationMapExitReady = false;
+    m_systemMapRenderer.cancelPresentationCrossfade();
+    m_playerNavigationMapEntryPending = true;
+    m_playerNavigationMapEntryReady = false;
+    m_playerNavigationMapEntryPresentationArmed = false;
+    m_playerNavigationMapEntrySourceCaptured = false;
+    m_pendingPlayerNavigationMapLevel = level;
+
+    switch (level)
+    {
+        case PlayerNavigationMapLevel::Galaxy:
+            requestGalaxyMapSnapshotOnce();
+            if (m_hasGalaxyMapSnapshot)
+            {
+                m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Galaxy);
+                m_systemMapRenderer.onGalaxyMapEntered(
+                    m_galaxyMapSnapshot,
+                    m_client->playerNavigation()
+                );
+                completePlayerNavigationMapEntry();
+            }
+            break;
+
+        case PlayerNavigationMapLevel::System:
+            setSystemMapPlayerSystemMode();
+            break;
+
+        case PlayerNavigationMapLevel::Detail:
+            setSystemMapPlayerDetailMode();
+            break;
+
+        case PlayerNavigationMapLevel::Local:
+            setSystemMapPlayerLocalMode();
+            break;
+    }
+}
+
+bool SpaceState::playerNavigationMapEntryPending() const
+{
+    return m_playerNavigationMapEntryPending;
+}
+
+bool SpaceState::playerNavigationMapEntryTargetReady() const
+{
+    return m_playerNavigationMapEntryPending &&
+        m_playerNavigationMapEntryReady;
+}
+
+void SpaceState::armPlayerNavigationMapEntryPresentation()
+{
+    if (playerNavigationMapEntryTargetReady())
+        m_playerNavigationMapEntryPresentationArmed = true;
+}
+
+bool SpaceState::consumePreparedPlayerNavigationMapEntry()
+{
+    if (!m_playerNavigationMapEntryReady ||
+        !m_playerNavigationMapEntrySourceCaptured)
+    {
+        return false;
+    }
+
+    m_playerNavigationMapEntryReady = false;
+    m_playerNavigationMapEntryPending = false;
+    m_playerNavigationMapEntryPresentationArmed = false;
+    m_playerNavigationMapEntrySourceCaptured = false;
+    m_systemMapRenderer.beginPresentationCrossfade();
+    return true;
+}
+
+void SpaceState::beginPlayerNavigationMapExit()
+{
+    if (!m_systemMapVisible || m_playerNavigationMapExitPending)
+        return;
+
+    // Exit is a presentation transaction too: finish/cancel any internal map
+    // crossfade, render one stable outgoing map frame, capture that exact frame,
+    // then let gameplay render beneath the captured map while it dissolves.
+    m_systemMapRenderer.cancelMapTransition();
+    m_systemMapRenderer.cancelPresentationCrossfade();
+    m_playerNavigationMapEntryPending = false;
+    m_playerNavigationMapEntryReady = false;
+    m_playerNavigationMapEntryPresentationArmed = false;
+    m_playerNavigationMapEntrySourceCaptured = false;
+    m_mapTransitions.clear();
+    m_playerNavigationMapExitPending = true;
+    m_playerNavigationMapExitReady = false;
+}
+
+bool SpaceState::consumePreparedPlayerNavigationMapExit()
+{
+    if (!m_playerNavigationMapExitPending ||
+        !m_playerNavigationMapExitReady)
+    {
+        return false;
+    }
+
+    m_playerNavigationMapExitPending = false;
+    m_playerNavigationMapExitReady = false;
+    m_systemMapRenderer.beginPresentationCrossfade();
+    return true;
+}
+
+void SpaceState::completePlayerNavigationMapEntry()
+{
+    if (!m_playerNavigationMapEntryPending)
+        return;
+
+    m_playerNavigationMapEntryReady = true;
+}
+
+void SpaceState::cancelPlayerNavigationMapEntry()
+{
+    m_playerNavigationMapEntryPending = false;
+    m_playerNavigationMapEntryReady = false;
+    m_playerNavigationMapEntryPresentationArmed = false;
+    m_playerNavigationMapEntrySourceCaptured = false;
+}
+
+
 bool SpaceState::isPlayerNavigationMapLevel(
     PlayerNavigationMapLevel level
 ) const
@@ -4180,7 +4382,13 @@ void SpaceState::setSystemMapPlayerSystemMode()
 
     glm::dvec3 playerGalacticPositionLy {0.0};
     if (resolvePlayerGalacticPositionLy(playerGalacticPositionLy))
+    {
         setSystemMapEmptySectorMode(playerGalacticPositionLy);
+        return;
+    }
+
+    if (m_playerNavigationMapEntryPending)
+        cancelPlayerNavigationMapEntry();
 }
 
 
@@ -4267,7 +4475,11 @@ void SpaceState::setSystemMapPlayerLocalMode()
     requestGalaxyMapSnapshotOnce();
     world::celestial::DetailTarget target;
     if (!buildPlayerDetailTarget(target, false))
+    {
+        if (m_playerNavigationMapEntryPending)
+            cancelPlayerNavigationMapEntry();
         return;
+    }
 
     if (requestDetailMapSnapshot(target, true) &&
         game::client::MapTransitionController::simulationHasReached(
@@ -4384,6 +4596,21 @@ void SpaceState::beginSystemMapDetailTransition(
     const world::celestial::DetailTarget& target
 )
 {
+    if (m_playerNavigationMapEntryPending)
+    {
+        if (!m_client ||
+            !m_hasDetailMapSnapshot ||
+            m_loadedDetailTarget != target)
+        {
+            cancelPlayerNavigationMapEntry();
+            return;
+        }
+
+        m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Detail);
+        completePlayerNavigationMapEntry();
+        return;
+    }
+
     m_systemMapRenderer.beginMapTransition(
         MapTransitionPresets::modeChange(),
         [this, target]()

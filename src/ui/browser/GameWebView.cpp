@@ -148,6 +148,14 @@ void GameWebView::start(
         m_webviewObject = w;
         m_running = true;
 
+        // WebView2's controller surface is white before the first document
+        // paints. Keep the child HWND physically hidden from creation until
+        // the destination page has applied localization/native state and the
+        // application explicitly presents it. CSS boot-hiding alone cannot
+        // suppress a pre-navigation controller frame.
+        EnableWindow(widgetHwnd, FALSE);
+        ShowWindow(widgetHwnd, SW_HIDE);
+
         if (core::runtimeTraceEnabled())
             std::cerr << "[GameWebView] embedded pid=" << GetCurrentProcessId()
                       << " parent_hwnd=" << static_cast<HWND>(parentHwnd)
@@ -375,6 +383,19 @@ void GameWebView::setVisible(bool visible)
     }
 }
 
+void GameWebView::focus()
+{
+    HWND hwnd = static_cast<HWND>(m_webviewHwnd);
+    if (!hwnd || !IsWindowVisible(hwnd))
+        return;
+
+    // Keep the service/session surface as the keyboard owner while it is
+    // visible. Application-level ESC capture is independent of child-process
+    // focus, so focusing WebView2 does not sacrifice the global Escape command.
+    SetFocus(hwnd);
+}
+
+
 void GameWebView::navigate(const std::string& htmlFile)
 {
     auto* w = static_cast<webview::webview*>(m_webviewObject);
@@ -394,6 +415,12 @@ void GameWebView::navigate(const std::string& htmlFile)
     }
 
     std::cout << "[GameWebView] navigate request: " << uri << "\n";
+
+    // Cross-document navigation is prepared off-screen. Leaving a visible
+    // child controller up while WebView2 replaces its document exposes the
+    // controller/default-background frame and partially constructed DOM.
+    setVisible(false);
+
     const auto xprocBegin = std::chrono::steady_clock::now();
     w->navigate(uri);
     const double xprocDurationMs = std::chrono::duration<double, std::milli>(

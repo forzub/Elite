@@ -342,8 +342,13 @@ for token in (
     if token not in map_panel_presentation:
         fail(f"map panel payload contract disappeared: {token}")
 
+# The entry point may be synchronous or asynchronous. The presentation
+# transaction now awaits layout/transition readiness, so pinning this guard
+# to the exact function spelling would reject a valid async implementation.
+if "window.setSystemMapPanel =" not in map_panel_html:
+    fail("WebView map panel entry point disappeared: window.setSystemMapPanel")
+
 for token in (
-    "window.setSystemMapPanel = function(payload)",
     "payload.mode",
     "payload.currentSystemName",
     "payload.systems",

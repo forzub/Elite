@@ -46,6 +46,12 @@ Window::Window(int width, int height, const char* title)
 
     glfwWindowHint(GLFW_SAMPLES, 4);
 
+    // Do not expose the native HWND before the first dark framebuffer exists.
+    // A visible GLFW window is otherwise allowed to show the Win32 default
+    // background for one compositor frame while OpenGL/WebView2 are still
+    // initializing, which is the white startup rectangle seen by users.
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
@@ -54,7 +60,20 @@ Window::Window(int width, int height, const char* title)
     m_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 
     if (m_window)
+    {
         glfwSetWindowCloseCallback(m_window, glfwDiagnosticCloseCallback);
+        // The service/account shell is height-responsive, but below this
+        // baseline forms become a usability problem rather than a layout
+        // problem. Keep the ordinary desktop client within the supported
+        // interactive envelope and let WebUI scale proportionally above it.
+        glfwSetWindowSizeLimits(
+            m_window,
+            800,
+            600,
+            GLFW_DONT_CARE,
+            GLFW_DONT_CARE
+        );
+    }
 
 
 
@@ -126,6 +145,12 @@ void Window::pollEvents()
             continue;
         }
 
+        if ((message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN) &&
+            message.wParam == VK_ESCAPE)
+        {
+            m_escapePressed = true;
+        }
+
         TranslateMessage(&message);
 
         const ULONGLONG dispatchBeginMs = GetTickCount64();
@@ -165,6 +190,21 @@ void Window::pollEvents()
         }
     }
 
+    // WebView2 may keep keyboard focus on a child HWND whose key routing does
+    // not update GLFW's key table. Poll the physical Escape key for this
+    // foreground process as a second source and edge-latch it exactly once.
+    if (ownsForegroundInput())
+    {
+        const bool escapeDown = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
+        if (escapeDown && !m_escapeDown)
+            m_escapePressed = true;
+        m_escapeDown = escapeDown;
+    }
+    else
+    {
+        m_escapeDown = false;
+    }
+
     const ULONGLONG xprocDurationMs = GetTickCount64() - xprocBeginMs;
     if (xprocDurationMs >= 100)
     {
@@ -181,12 +221,42 @@ void Window::pollEvents()
 #endif
 }
 
+bool Window::consumeEscapePressed()
+{
+#ifdef _WIN32
+    const bool pressed = m_escapePressed;
+    m_escapePressed = false;
+    return pressed;
+#else
+    return false;
+#endif
+}
+
+
 bool Window::ownsForegroundInput() const
 {
 #ifdef _WIN32
     const HWND foreground = GetForegroundWindow();
-    if (!foreground)
+    if (!foreground || !m_window)
         return false;
+
+    const HWND gameHwnd = glfwGetWin32Window(m_window);
+    if (!gameHwnd)
+        return false;
+
+    // WebView2 can place keyboard focus on a child HWND owned by a helper
+    // process. In that case comparing only foregroundPid with EliteGame's PID
+    // incorrectly says that this client has no foreground input until the user
+    // clicks the GLFW surface. Treat any foreground window rooted in our game
+    // HWND as belonging to this graphical client, regardless of which WebView2
+    // helper process owns the focused child.
+    if (foreground == gameHwnd ||
+        IsChild(gameHwnd, foreground) ||
+        GetAncestor(foreground, GA_ROOT) == gameHwnd ||
+        GetAncestor(foreground, GA_ROOTOWNER) == gameHwnd)
+    {
+        return true;
+    }
 
     DWORD foregroundPid = 0;
     GetWindowThreadProcessId(foreground, &foregroundPid);
@@ -204,6 +274,21 @@ void Window::swapBuffers()
 #endif
     glfwSwapBuffers(m_window);
 #ifdef _WIN32
+    // WebView2 may keep keyboard focus on a child HWND whose key routing does
+    // not update GLFW's key table. Poll the physical Escape key for this
+    // foreground process as a second source and edge-latch it exactly once.
+    if (ownsForegroundInput())
+    {
+        const bool escapeDown = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
+        if (escapeDown && !m_escapeDown)
+            m_escapePressed = true;
+        m_escapeDown = escapeDown;
+    }
+    else
+    {
+        m_escapeDown = false;
+    }
+
     const ULONGLONG xprocDurationMs = GetTickCount64() - xprocBeginMs;
     if (xprocDurationMs >= 100)
     {
@@ -217,6 +302,14 @@ void Window::swapBuffers()
 #endif
 }
 
+
+void Window::show()
+{
+    if (!m_window)
+        return;
+
+    glfwShowWindow(m_window);
+}
 
 void Window::focus()
 {

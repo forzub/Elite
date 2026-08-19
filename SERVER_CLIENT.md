@@ -546,19 +546,24 @@ M8E.2 теперь фиксирует explicit authentication/admission boundary
 
 ### Multiplayer ESC / account semantics
 
+Current client status: `Esc` opens a mode-specific GameWebView shell instead of pushing the old `ConfirmExitState`: `local_session_menu.html` contains only Resume/Save/Load/Main/Quit, while `multiplayer_session_menu.html` contains only Resume/Disconnect-to-main/Sign-out-to-main/Quit. Sign out is intentionally disabled until server-side device-credential revocation/password fallback exists. After manual testing exposed unreliable ESC when WebView2 owned keyboard focus, the input contract is dual-path: the Win32 physical-key latch recognises child/helper HWND ancestry as foreground ownership, and the focused session WebView forwards Escape to the same native command. The native service-transition latch makes the two sources idempotent. Main-menu/service navigation is owned by `Application + UiNavigationState + GameWebView`; the legacy MainMenu `HtmlUiManager` command path has been removed.
+
 Multiplayer cannot pause the authoritative world. `Esc` opens an in-session menu/overlay with at least:
 
 - Resume;
-- Settings;
 - Return to Main Menu / Disconnect (keeps remembered-device credential);
 - Sign out and Return to Main Menu (disconnects, revokes/removes remembered-device credential, next login requires password/recovery);
 - Quit.
 
 Returning to the main menu must make session ownership explicit; it must not leave a hidden local authoritative world running behind a remote menu.
 
+The visible login surface exposes one `SIGN IN` action. It first tries the Windows remembered-device credential. If that local credential is absent, or the server rejects it as `INVALID_CREDENTIAL`, the client routes to the password view instead of presenting a second competing “sign in with password” button. Password verification itself remains fail-closed until M8E.3b. Recovery lives in the password/account flow, but the password-form recovery action remains hidden until a real server-side password rejection can be distinguished from a rejected remembered-device token. `ACCOUNT` belongs to the Multiplayer shell, never the root/local main menu, and is shown there only after a successful authentication in the current client process. While the loading page is still connecting/waiting/synchronizing a remote session, `CANCEL CONNECTION` aborts that pending session and returns to Multiplayer. Service navigation uses one visual contract: the outgoing document/view fades out, state/navigation changes only after that phase, and the destination reveals only after localization/native state/fonts are ready before fading in.
+
 ### Local-game menu and manual save policy
 
-Local game uses the same persistence schema/backend code as dedicated multiplayer but has user-visible save slots. `Esc` exposes at least Resume, New Game, Save, Load, Return to Main Menu and Quit.
+Current client status: the same ESC shell presents exactly Local Resume / Save / Load / Main / Quit. Save/Load buttons are visible but disabled, because exposing them before the persistence repository and authoritative safe-save policy would create a false save contract. New Game and Settings are intentionally main-menu concerns and are not duplicated inside the in-session overlay. Local destructive Main/Quit actions confirm that the current temporary session is not saved.
+
+Starting a new local game from the main menu first asks for a local-only Unicode player name. It is deliberately not passed through multiplayer display-name moderation. Local game uses the same persistence schema/backend code as dedicated multiplayer but will have user-visible save slots. `Esc` exposes Resume, Save, Load, Return to Main Menu and Quit.
 
 Manual Save **and Load** are allowed only when the authoritative local world reports a safe-save condition (base/docked/safe zone according to gameplay policy). The WebUI button state is only presentation: authoritative `SavePermissionService`/equivalent performs the same check and rejects attempts outside a safe-save state.
 

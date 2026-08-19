@@ -29,6 +29,7 @@ public:
     void evalScript(const std::string& script);
 
     void setVisible(bool visible);
+    void focus();
 
 private:
     static std::string filePathToUri(const std::string& path);

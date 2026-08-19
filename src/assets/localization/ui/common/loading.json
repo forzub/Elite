@@ -65,6 +65,20 @@
       "es": "APLICANDO ESTADO DE JUEGO",
       "ja": "ゲーム状態を適用中"
     },
+    "loading.stage.connecting": {
+      "en": "CONNECTING TO SERVER",
+      "ru": "ПОДКЛЮЧЕНИЕ К СЕРВЕРУ",
+      "zh-Hans": "正在连接服务器",
+      "es": "CONECTANDO AL SERVIDOR",
+      "ja": "サーバーに接続中"
+    },
+    "loading.cancel_connection": {
+      "en": "CANCEL CONNECTION",
+      "ru": "ОТМЕНИТЬ ПОДКЛЮЧЕНИЕ",
+      "zh-Hans": "取消连接",
+      "es": "CANCELAR CONEXIÓN",
+      "ja": "接続をキャンセル"
+    },
     "loading.stage.ready": {
       "en": "READY",
       "ru": "ГОТОВО",

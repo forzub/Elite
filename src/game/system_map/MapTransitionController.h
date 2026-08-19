@@ -22,7 +22,7 @@ namespace MapTransitionPresets
     inline MapTransitionSpec selectionJump()
     {
         return {
-            0.30,
+            0.18,
             MapTransitionCurve::SmootherStep
         };
     }
@@ -30,7 +30,7 @@ namespace MapTransitionPresets
     inline MapTransitionSpec modeChange()
     {
         return {
-            0.72,
+            0.24,
             MapTransitionCurve::SmootherStep
         };
     }
@@ -67,6 +67,7 @@ public:
 
     void outgoingCaptured(double nowSeconds)
     {
+        (void)nowSeconds;
         if (m_phase != Phase::AwaitingCapture)
             return;
 
@@ -74,13 +75,37 @@ public:
             std::move(m_applyNewState);
 
         m_applyNewState = {};
+        m_outgoingAlpha = 1.0f;
+        m_phase = Phase::AwaitingIncomingFrame;
+
+        // Состояние меняется только после сохранения старого кадра. Новый
+        // режим получает один полный скрытый render-frame под непрозрачным
+        // outgoing snapshot прежде чем crossfade вообще начнётся.
+        if (action)
+            action();
+    }
+
+    bool needsIncomingWarmup() const
+    {
+        return m_phase == Phase::AwaitingIncomingFrame;
+    }
+
+    void incomingFrameRendered(double nowSeconds)
+    {
+        if (m_phase != Phase::AwaitingIncomingFrame)
+            return;
+
         m_startedAtSeconds = nowSeconds;
         m_outgoingAlpha = 1.0f;
         m_phase = Phase::Blending;
+    }
 
-        // Состояние меняется только после сохранения старого кадра.
-        if (action)
-            action();
+    void cancel()
+    {
+        m_phase = Phase::Idle;
+        m_applyNewState = {};
+        m_startedAtSeconds = 0.0;
+        m_outgoingAlpha = 0.0f;
     }
 
     void update(double nowSeconds)
@@ -131,6 +156,7 @@ private:
     {
         Idle,
         AwaitingCapture,
+        AwaitingIncomingFrame,
         Blending
     };
 

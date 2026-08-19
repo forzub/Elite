@@ -1161,7 +1161,15 @@ void completeTransition(
     transition.outgoingCaptured(startedAt);
     REQUIRE(transition.active());
     REQUIRE(transition.blocksInput());
+    REQUIRE(transition.needsIncomingWarmup());
     REQUIRE_NEAR(transition.outgoingAlpha(), 1.0f, 1.0e-7);
+
+    // One complete incoming frame stays fully covered by the captured
+    // outgoing image before blend timing starts.
+    transition.update(startedAt + 0.5);
+    REQUIRE_NEAR(transition.outgoingAlpha(), 1.0f, 1.0e-7);
+    transition.incomingFrameRendered(startedAt);
+    REQUIRE(!transition.needsIncomingWarmup());
 
     const double durationSeconds =
         MapTransitionPresets::modeChange().durationSeconds;

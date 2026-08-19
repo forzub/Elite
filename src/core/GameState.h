@@ -42,12 +42,9 @@ public:
     virtual void onUiLanguageChanged() {}
 
 
-    // === ГЛОБАЛЬНЫЙ ESC ===
-
-    // Нужно ли вообще предлагать ConfirmExitState
-    virtual bool wantsConfirmExit() const { return false; }
-
-    // Если состояние САМО обработало ESC
+    // Global ESC fallback for states that own their own transient UI.
+    // Active SpaceState sessions are routed by Application to the shared
+    // GameWebView session menu instead of pushing a second modal GameState.
     virtual bool onGlobalEscape() { return false; }
 
 protected:

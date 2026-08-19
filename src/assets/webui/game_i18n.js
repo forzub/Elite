@@ -1,6 +1,8 @@
 (function () {
   const STORAGE_KEY = 'elite.ui.locale';
   let data = null;
+  let readyResolve = null;
+  const readyPromise = new Promise(resolve => { readyResolve = resolve; });
   let allowedLocales = ['en'];
   const queryLocale = new URLSearchParams(location.search).get('locale');
   let locale = queryLocale || localStorage.getItem(STORAGE_KEY) || 'en';
@@ -74,6 +76,10 @@
       console.warn('GameI18n load failed:', e);
     }
     apply(document);
+    if (readyResolve) {
+      readyResolve();
+      readyResolve = null;
+    }
   }
 
   function setLocale(nextLocale) {
@@ -85,7 +91,7 @@
     apply(document);
   }
 
-  window.GameI18n = { load, t, apply, setLocale, locale: () => locale };
+  window.GameI18n = { load, t, apply, setLocale, locale: () => locale, ready: () => readyPromise };
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', load, { once: true });
   } else {

@@ -934,10 +934,90 @@ bool SystemMapRenderer::beginMapTransition(
     std::function<void()> applyNewState
 )
 {
+    cancelPresentationCrossfade();
     return m_mapTransition.begin(
         spec,
         std::move(applyNewState)
     );
+}
+
+void SystemMapRenderer::cancelMapTransition()
+{
+    m_mapTransition.cancel();
+}
+
+bool SystemMapRenderer::capturePresentationSource(
+    const Viewport& viewport
+)
+{
+    captureMapTransitionSnapshot(viewport);
+    return m_mapTransitionSnapshotReady;
+}
+
+void SystemMapRenderer::beginPresentationCrossfade()
+{
+    // The outgoing source is captured by the renderer that actually produced
+    // it (gameplay or map) before mode ownership changes. The first incoming
+    // frame then remains fully covered; blending starts only afterwards.
+    m_mapTransition.cancel();
+    if (!m_mapTransitionSnapshotReady)
+    {
+        cancelPresentationCrossfade();
+        return;
+    }
+
+    m_presentationCrossfadeStartedAtSeconds = 0.0;
+    m_presentationCrossfadePhase =
+        PresentationCrossfadePhase::AwaitingIncomingFrame;
+}
+
+void SystemMapRenderer::cancelPresentationCrossfade()
+{
+    m_presentationCrossfadePhase = PresentationCrossfadePhase::Idle;
+    m_presentationCrossfadeStartedAtSeconds = 0.0;
+}
+
+void SystemMapRenderer::drawPresentationCrossfadeOverlay(
+    const Viewport& viewport,
+    double nowSeconds
+)
+{
+    if (m_presentationCrossfadePhase == PresentationCrossfadePhase::Idle ||
+        !m_mapTransitionSnapshotReady ||
+        m_mapTransition.active())
+    {
+        return;
+    }
+
+    if (m_presentationCrossfadePhase ==
+        PresentationCrossfadePhase::AwaitingIncomingFrame)
+    {
+        // The destination has now produced one complete frame. Keep it fully
+        // covered this frame; time-based blending begins on the next frame.
+        drawMapTransitionSnapshot(viewport, 1.0f);
+        m_presentationCrossfadeStartedAtSeconds = nowSeconds;
+        m_presentationCrossfadePhase = PresentationCrossfadePhase::Blending;
+        return;
+    }
+
+    constexpr double PresentationFadeSeconds = 0.20;
+    const double linear = std::clamp(
+        (nowSeconds - m_presentationCrossfadeStartedAtSeconds) /
+            PresentationFadeSeconds,
+        0.0,
+        1.0
+    );
+    const double smooth =
+        linear * linear * linear *
+        (linear * (linear * 6.0 - 15.0) + 10.0);
+
+    drawMapTransitionSnapshot(
+        viewport,
+        static_cast<float>(1.0 - smooth)
+    );
+
+    if (linear >= 1.0)
+        cancelPresentationCrossfade();
 }
 
 

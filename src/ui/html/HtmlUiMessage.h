@@ -61,9 +61,7 @@ struct HtmlUiMessage
         else msg.type = HtmlUiMessageType::Event;
 
         const std::string panel = j.value("panel", "none");
-        if      (panel == "main_menu")        msg.panel = HtmlUiPanelId::MainMenu;
-        else if (panel == "confirm_exit")     msg.panel = HtmlUiPanelId::ConfirmExit;
-        else if (panel == "ship_core")        msg.panel = HtmlUiPanelId::ShipCore;
+        if      (panel == "ship_core")        msg.panel = HtmlUiPanelId::ShipCore;
         else if (panel == "frustum_debug")    msg.panel = HtmlUiPanelId::FrustumDebug;
         else if (panel == "trade")            msg.panel = HtmlUiPanelId::Trade;
         else if (panel == "shipyard")         msg.panel = HtmlUiPanelId::Shipyard;

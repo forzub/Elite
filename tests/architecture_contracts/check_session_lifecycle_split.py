@@ -35,7 +35,7 @@ for forbidden in [
         raise SystemExit(f"ambiguous legacy game lifecycle survived: {forbidden}")
 
 for token in [
-    'webCommand == "new_local_game"',
+    'NewLocalGamePrefix = "new_local_game|"',
     'webCommand == "multiplayer"',
     '"multiplayer_signin|"',
     '"multiplayer_register|"',
@@ -49,6 +49,7 @@ for token in [
 
 for token in [
     "main.new_local_game",
+    "new_local_game|",
     "main.load_local_game",
     "main.multiplayer",
     "multiplayer_signin|",
@@ -63,13 +64,13 @@ for forbidden in ["main.new_game", "sendCommand('new_game')"]:
     if forbidden in menu_html:
         raise SystemExit(f"main menu still exposes ambiguous NEW GAME route: {forbidden}")
 
-for token in [
-    '"id", "new_local_game"',
-    '"id", "load_local_game"',
-    '"id", "multiplayer"',
+for forbidden in [
+    "HtmlUiPanelId::MainMenu",
+    "pushMainMenuState",
+    "processHtmlCommands",
 ]:
-    if token not in menu_cpp:
-        raise SystemExit(f"native menu lifecycle route missing: {token}")
+    if forbidden in menu_cpp:
+        raise SystemExit(f"main-menu lifecycle is still duplicated through legacy HtmlUiManager: {forbidden}")
 
 # --connect is a shortcut into an already-existing remote universe. It must
 # configure the endpoint before Application::run(), and Application::init()

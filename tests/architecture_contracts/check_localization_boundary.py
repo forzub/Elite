@@ -183,7 +183,13 @@ def main() -> int:
             "navigation-region translations are not in the unified localization tree")
 
     # Active player-facing WebUI pages stay on the shared runtime bundle.
-    for rel in ("main_menu.html", "loading.html", "system_map_panel.html", "confirm_exit.html"):
+    for rel in (
+        "main_menu.html",
+        "loading.html",
+        "system_map_panel.html",
+        "local_session_menu.html",
+        "multiplayer_session_menu.html",
+    ):
         html = text(f"src/assets/webui/{rel}")
         require('/game_i18n.js' in html, f"{rel} bypasses global localization")
         for key in re.findall(r'data-i18n=["\']([^"\']+)["\']', html):

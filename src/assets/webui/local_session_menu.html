@@ -1,0 +1,68 @@
+<!doctype html>
+<html class="elite-ui-boot">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style id="elite-critical-boot">html,body{margin:0;background:#010208}html.elite-ui-boot body{visibility:hidden;opacity:0}</style>
+  <title>EliteGame Local Session Menu</title>
+  <link rel="stylesheet" href="/elite_ui.css">
+  <script src="/elite_ui.js"></script>
+</head>
+<body class="elite-ui-body">
+  <div class="elite-screen">
+    <main class="elite-panel elite-panel--centered" aria-live="polite">
+      <header>
+        <h1 class="elite-title" data-i18n="session_menu.title">SESSION</h1>
+        <div id="session-subtitle" class="elite-subtitle"></div>
+      </header>
+      <div id="session-message" class="elite-banner" role="status" aria-live="polite" hidden></div>
+      <div id="session-note" class="elite-session-note"></div>
+      <section class="elite-actions">
+        <button class="elite-button" data-i18n="session_menu.resume" onclick="sendCommand('session_resume')">RESUME</button>
+        <button id="local-save" class="elite-button elite-button--secondary" disabled data-pending="true" data-i18n="session_menu.save">SAVE</button>
+        <button id="local-load" class="elite-button elite-button--secondary" disabled data-pending="true" data-i18n="session_menu.load">LOAD</button>
+        <button class="elite-button" data-i18n="session_menu.main_menu" onclick="sendCommand('session_return_main')">RETURN TO MAIN MENU</button>
+        <button class="elite-button elite-button--danger" data-i18n="session_menu.quit" onclick="sendCommand('session_quit')">QUIT GAME</button>
+      </section>
+      <div class="elite-hint" data-i18n="session_menu.escape_hint">ESC resumes the session.</div>
+    </main>
+  </div>
+
+
+  <script src="/game_i18n.js"></script>
+  <script>
+    let currentState = {};
+    async function sendCommand(command) {
+      if (window.gameCommand) await window.gameCommand(command);
+    }
+    function t(key, fallback) { return window.GameI18n ? window.GameI18n.t(key, fallback) : fallback; }
+    async function applyLocalSessionMenuState(state) {
+      currentState = state || {};
+      const localName = String(currentState.playerDisplayName || '').trim();
+      document.getElementById('session-subtitle').textContent =
+        t('session_menu.local_subtitle', 'LOCAL SESSION') + (localName ? ' · ' + localName : '');
+      document.getElementById('session-note').textContent = currentState.persistenceReady
+        ? t('session_menu.local_safe_note', 'Save/load availability follows the current safe-zone policy.')
+        : t('session_menu.local_persistence_pending', 'Local save/load is not enabled until the persistence stage.');
+      document.getElementById('local-save').disabled = !currentState.canSave;
+      document.getElementById('local-load').disabled = !currentState.canLoad;
+      await window.EliteUiKit.waitForDocumentDependencies();
+      await window.EliteUiKit.settlePreparedLayout();
+      await sendCommand('session_menu_prepared');
+    }
+    window.addEventListener('game-ui-language-changed', () => { void applyLocalSessionMenuState(currentState); });
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || event.repeat) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void sendCommand('session_escape');
+    }, true);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      window.EliteUiKit.initialize(document);
+      sendCommand('session_menu_ready');
+    });
+    window.applyLocalSessionMenuState = applyLocalSessionMenuState;
+  </script>
+</body>
+</html>

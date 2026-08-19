@@ -6,8 +6,6 @@ enum class HtmlUiPanelId
 {
     None = 0,
 
-    MainMenu,
-    ConfirmExit,
     ShipCore,
     FrustumDebug,
     Trade,
@@ -26,8 +24,6 @@ inline std::string_view toString(HtmlUiPanelId id)
 {
     switch (id)
     {
-        case HtmlUiPanelId::MainMenu:     return "main_menu";
-        case HtmlUiPanelId::ConfirmExit:  return "confirm_exit";
         case HtmlUiPanelId::ShipCore:     return "ship_core";
         case HtmlUiPanelId::FrustumDebug: return "frustum_debug";
         case HtmlUiPanelId::Trade:        return "trade";

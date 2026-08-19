@@ -1,24 +1,28 @@
 <!doctype html>
-<html>
+<html class="elite-ui-boot">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>EliteGame Main Menu</title>
+  <style id="elite-critical-boot">html,body{margin:0;background:#010208}html.elite-ui-boot body{visibility:hidden;opacity:0}</style>
   <link rel="stylesheet" href="/elite_ui.css">
   <script src="/elite_ui.js"></script>
 </head>
 <body class="elite-ui-body">
   <div class="elite-screen">
-    <main id="main-shell" class="elite-panel elite-panel--centered" data-elite-shell aria-live="polite">
+    <main id="main-shell" class="elite-panel elite-panel--centered elite-panel--shell" data-elite-shell aria-live="polite">
       <header>
         <h1 class="elite-title">ELITE</h1>
-        <div class="elite-subtitle" data-i18n="main.subtitle">HTML GAME UI PROTOTYPE</div>
+        <div class="elite-subtitle" data-i18n="main.subtitle">GAME CLIENT</div>
       </header>
 
       <section id="main-actions" class="elite-view elite-actions" data-elite-view="home" aria-label="Main menu">
-        <button class="elite-button" data-elite-autofocus data-i18n="main.new_local_game" onclick="sendCommand('new_local_game')">NEW LOCAL GAME</button>
-        <button class="elite-button" data-i18n="main.load_local_game" onclick="sendCommand('load_local_game')">LOAD LOCAL GAME</button>
-        <button class="elite-button" data-i18n="main.multiplayer" onclick="sendCommand('multiplayer')">MULTIPLAYER</button>
-        <button class="elite-button elite-button--secondary" data-i18n="main.exit" onclick="sendCommand('exit')">EXIT</button>
+        <button class="elite-button" data-elite-autofocus data-i18n="main.new_local_game" onclick="openLocalNewGameDialog()">NEW LOCAL GAME</button>
+        <button class="elite-button" data-i18n="main.load_local_game" disabled data-pending="true">LOAD LOCAL GAME</button>
+        <button class="elite-button" data-i18n="main.multiplayer" onclick="navigateRoute('multiplayer')">MULTIPLAYER</button>
+        <button class="elite-button elite-button--secondary" data-i18n="main.settings" disabled data-pending="true">SETTINGS</button>
+        <button class="elite-button elite-button--danger" data-i18n="main.exit" onclick="sendCommand('exit')">EXIT</button>
+        <div class="elite-banner" data-tone="info" data-i18n="main.local_save_pending">Local save/load becomes available with the persistence layer and safe-zone policy.</div>
       </section>
 
       <section id="multiplayer-connection" class="elite-view" data-elite-view="multiplayer" aria-label="Multiplayer authorization" hidden>
@@ -36,15 +40,185 @@
 
           <div id="connection-error" class="elite-banner" role="alert" aria-live="assertive" aria-hidden="true" hidden></div>
 
+          <div id="remembered-device-note" class="elite-banner" data-tone="info" data-i18n="main.auth.remembered_device_note">SIGN IN uses the device credential stored by Windows when one exists. Password fallback is enabled with durable account security.</div>
+
           <div class="elite-actions">
             <button class="elite-button" data-i18n="main.sign_in" onclick="authorizeMultiplayer(false)">SIGN IN</button>
-            <button class="elite-button" data-i18n="main.register" onclick="authorizeMultiplayer(true)">REGISTER</button>
-            <button class="elite-button elite-button--secondary" data-i18n="main.back" onclick="sendCommand('multiplayer_back')">BACK</button>
+            <button class="elite-button" data-i18n="main.register" onclick="navigateRoute('register')">REGISTER</button>
+            <button id="multiplayer-account-button" class="elite-button elite-button--secondary" data-i18n="main.account" onclick="navigateRoute('account')" hidden>ACCOUNT</button>
+            <button class="elite-button elite-button--secondary" data-i18n="main.back" onclick="navigateRoute('home')">BACK</button>
           </div>
         </div>
       </section>
 
-      <div class="elite-hint" data-i18n="main.hint">WebView layer. Not the debug browser.</div>
+
+      <section id="signin-view" class="elite-view" data-elite-view="signin" aria-label="Password sign in" hidden>
+        <div class="elite-form">
+          <h2 class="elite-section-title" data-i18n="main.signin.title">SIGN IN</h2>
+          <div id="signin-error" class="elite-banner" role="alert" aria-live="assertive" hidden></div>
+          <div class="elite-banner" data-tone="warning" data-i18n="main.signin.pending">No usable remembered-device credential is available. Password verification will become active with durable account security on the server.</div>
+          <div class="elite-meta">
+            <div class="elite-meta-row">
+              <span class="elite-meta-key" data-i18n="main.server_address">SERVER ADDRESS</span>
+              <span class="elite-meta-value" id="signin-server-value">—</span>
+            </div>
+            <div class="elite-meta-row">
+              <span class="elite-meta-key" data-i18n="main.account_handle">ACCOUNT HANDLE</span>
+              <span class="elite-meta-value" id="signin-account-value">—</span>
+            </div>
+          </div>
+          <div class="elite-field" data-elite-password>
+            <label class="elite-field-label" for="signin-password" data-i18n="main.password">PASSWORD</label>
+            <div class="elite-password-row">
+              <input class="elite-input" id="signin-password" type="password" autocomplete="current-password" disabled>
+              <button class="elite-button elite-button--secondary elite-password-action" type="button" data-elite-password-toggle disabled data-i18n="main.show">SHOW</button>
+            </div>
+          </div>
+          <label class="elite-checkbox-row">
+            <input class="elite-checkbox" id="signin-remember-device" type="checkbox" checked disabled>
+            <span data-i18n="main.remember_device">Remember this device after successful password sign-in.</span>
+          </label>
+          <div class="elite-actions">
+            <button class="elite-button" disabled data-pending="true" data-i18n="main.sign_in">SIGN IN</button>
+            <button id="signin-recovery-button" class="elite-button elite-button--secondary" data-i18n="main.recover_account" onclick="navigateRoute('recovery')" hidden>RECOVER ACCOUNT</button>
+            <button class="elite-button elite-button--secondary" data-i18n="main.back" onclick="navigateRoute('multiplayer')">BACK</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="registration-view" class="elite-view" data-elite-view="register" aria-label="Registration" hidden>
+        <div class="elite-form">
+          <h2 class="elite-section-title" data-i18n="main.registration.title">CREATE ACCOUNT</h2>
+          <div class="elite-banner" data-tone="warning" data-i18n="main.registration.development_warning">The current development server still registers AccountHandle + remembered-device credential only. Password, recovery, profile and consent fields below define the final account contract but are not transmitted until durable account security is implemented.</div>
+
+          <div class="elite-field">
+            <label class="elite-field-label" for="registration-display-name" data-i18n="main.display_name">DISPLAY NAME</label>
+            <input class="elite-input" id="registration-display-name" maxlength="40" autocomplete="nickname" placeholder="刘柏辛 / Капитан Козлодоев / 山田太郎" disabled>
+            <div class="elite-field-help" data-i18n="main.registration.display_name_pending">Unicode display names and moderation become authoritative with the account repository.</div>
+          </div>
+
+          <div class="elite-field" id="registration-handle-field">
+            <label class="elite-field-label" for="registration-account-handle" data-i18n="main.account_handle">ACCOUNT HANDLE</label>
+            <input class="elite-input" id="registration-account-handle" spellcheck="false" autocomplete="username" minlength="3" maxlength="24" pattern="[a-z0-9][a-z0-9_-]{2,23}" data-elite-autofocus>
+            <div class="elite-field-help" data-i18n="main.account_handle_rules">3-24 characters: lowercase a-z, digits, _ and -. Start with a letter or digit.</div>
+          </div>
+
+          <div class="elite-field" data-elite-password>
+            <label class="elite-field-label" for="registration-password" data-i18n="main.password">PASSWORD</label>
+            <div class="elite-password-row">
+              <input class="elite-input" id="registration-password" type="password" autocomplete="new-password" disabled>
+              <button class="elite-button elite-button--secondary elite-password-action" type="button" data-elite-password-toggle disabled data-i18n="main.show">SHOW</button>
+            </div>
+            <div class="elite-button-row">
+              <button class="elite-button elite-button--secondary" type="button" data-elite-password-generate data-elite-password-length="20" disabled data-i18n="main.generate_password">GENERATE PASSWORD</button>
+            </div>
+          </div>
+
+          <div class="elite-field">
+            <label class="elite-field-label" for="registration-password-confirm" data-i18n="main.confirm_password">CONFIRM PASSWORD</label>
+            <input class="elite-input" id="registration-password-confirm" type="password" autocomplete="new-password" disabled>
+          </div>
+
+          <div class="elite-field">
+            <label class="elite-field-label" for="registration-recovery-method" data-i18n="main.recovery_method">RECOVERY METHOD</label>
+            <select class="elite-select" id="registration-recovery-method" disabled>
+              <option value="recovery-code" data-i18n="main.recovery_code">RECOVERY CODE</option>
+              <option value="email" data-i18n="main.email">EMAIL</option>
+              <option value="phone" data-i18n="main.phone">PHONE</option>
+            </select>
+          </div>
+
+          <div class="elite-field">
+            <label class="elite-field-label" for="registration-recovery-contact" data-i18n="main.recovery_contact">EMAIL OR PHONE</label>
+            <input class="elite-input" id="registration-recovery-contact" autocomplete="off" disabled>
+          </div>
+
+          <div class="elite-field">
+            <label class="elite-field-label" for="registration-locale" data-i18n="main.language">LANGUAGE</label>
+            <select class="elite-select" id="registration-locale" onchange="selectLocale(this.value)"></select>
+          </div>
+
+          <label class="elite-checkbox-row">
+            <input class="elite-checkbox" type="checkbox" disabled>
+            <span data-i18n="main.telemetry_consent">Allow optional anonymous diagnostic/statistical telemetry.</span>
+          </label>
+
+          <div id="registration-error" class="elite-banner" role="alert" aria-live="assertive" hidden></div>
+
+          <div class="elite-actions">
+            <button class="elite-button" data-i18n="main.registration.dev_create" onclick="developmentRegister()">REGISTER DEVELOPMENT ACCOUNT</button>
+            <button class="elite-button elite-button--secondary" data-i18n="main.back" onclick="navigateRoute('multiplayer')">BACK</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="recovery-view" class="elite-view" data-elite-view="recovery" aria-label="Account recovery" hidden>
+        <div class="elite-form">
+          <h2 class="elite-section-title" data-i18n="main.recovery.title">RECOVER ACCOUNT</h2>
+          <div class="elite-banner" data-tone="warning" data-i18n="main.recovery.pending">Recovery is architected but not enabled until password/recovery records are durable on the server. No fake local recovery is performed.</div>
+          <div class="elite-field">
+            <label class="elite-field-label" for="recovery-account-handle" data-i18n="main.account_handle">ACCOUNT HANDLE</label>
+            <input class="elite-input" id="recovery-account-handle" autocomplete="username" disabled>
+          </div>
+          <div class="elite-field">
+            <label class="elite-field-label" for="recovery-proof" data-i18n="main.recovery_proof">RECOVERY CODE / VERIFIED CONTACT</label>
+            <input class="elite-input" id="recovery-proof" disabled>
+          </div>
+          <div class="elite-field">
+            <label class="elite-field-label" for="recovery-new-password" data-i18n="main.new_password">NEW PASSWORD</label>
+            <input class="elite-input" id="recovery-new-password" type="password" disabled>
+          </div>
+          <div class="elite-actions">
+            <button class="elite-button" disabled data-pending="true" data-i18n="main.recovery.reset_password">RESET PASSWORD</button>
+            <button class="elite-button elite-button--secondary" data-i18n="main.back" onclick="navigateRoute('multiplayer')">BACK</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="account-view" class="elite-view" data-elite-view="account" aria-label="Account" hidden>
+        <div class="elite-form">
+          <h2 class="elite-section-title" data-i18n="main.account">ACCOUNT</h2>
+          <div class="elite-meta">
+            <div class="elite-meta-row">
+              <span class="elite-meta-key" data-i18n="main.server_address">SERVER ADDRESS</span>
+              <span class="elite-meta-value" id="account-server-value">—</span>
+            </div>
+            <div class="elite-meta-row">
+              <span class="elite-meta-key" data-i18n="main.account_handle">ACCOUNT HANDLE</span>
+              <span class="elite-meta-value" id="account-handle-value">—</span>
+            </div>
+          </div>
+          <div class="elite-banner" data-tone="info" data-i18n="main.account.security_pending">Password changes, recovery methods and explicit device-token revocation become active with durable account security.</div>
+          <div class="elite-field">
+            <label class="elite-field-label" for="account-locale" data-i18n="main.language">LANGUAGE</label>
+            <select class="elite-select" id="account-locale" onchange="selectLocale(this.value)"></select>
+          </div>
+          <div class="elite-actions">
+            <button class="elite-button elite-button--danger" disabled data-pending="true" data-i18n="main.sign_out">SIGN OUT</button>
+            <button class="elite-button elite-button--secondary" data-i18n="main.back" onclick="navigateRoute('multiplayer')">BACK</button>
+          </div>
+        </div>
+      </section>
+
+
+      <dialog id="local-new-game-dialog" class="elite-dialog">
+        <div class="elite-dialog-body">
+          <h2 class="elite-section-title" data-i18n="main.local_new_game.title">NEW LOCAL GAME</h2>
+          <div class="elite-field">
+            <label class="elite-field-label" for="local-player-name" data-i18n="main.local_player_name">PLAYER NAME</label>
+            <input class="elite-input" id="local-player-name" maxlength="48" autocomplete="off" spellcheck="false" placeholder="Player">
+            <div class="elite-field-help" data-i18n="main.local_player_name_help">Local player names stay on this machine and are not moderated.</div>
+          </div>
+          <div id="local-player-name-error" class="elite-banner" role="alert" aria-live="assertive" hidden></div>
+          <div class="elite-divider"></div>
+          <div class="elite-button-row">
+            <button class="elite-button" id="local-new-game-start" data-i18n="main.start">START</button>
+            <button class="elite-button elite-button--secondary" data-i18n="main.cancel" onclick="window.EliteUiKit.closeDialog('#local-new-game-dialog')">CANCEL</button>
+          </div>
+        </div>
+      </dialog>
+
+      <div class="elite-hint" data-i18n="main.hint">Client service shell</div>
     </main>
   </div>
 
@@ -52,6 +226,8 @@
   <script>
     let mainMenuShell = null;
     let connectionErrorCode = '';
+    let currentState = {};
+    let mainMenuPresented = false;
 
     async function sendCommand(command) {
       if (window.gameCommand) {
@@ -76,45 +252,129 @@
       BOOTSTRAP_FAILED: 'main.auth.bootstrap_failed'
     };
 
-    function setConnectionError(code) {
-      connectionErrorCode = code || '';
-      const key = connectionErrorI18nKeys[connectionErrorCode];
-      const text = connectionErrorCode
-        ? (key ? window.GameI18n.t(key, connectionErrorCode) : connectionErrorCode)
-        : '';
-      window.EliteUiKit.setBanner('#connection-error', text, 'error');
+    function localizedError(code) {
+      const key = connectionErrorI18nKeys[code];
+      return code ? (key ? window.GameI18n.t(key, code) : code) : '';
     }
 
-    function applyMainMenuState(state) {
-      if (!mainMenuShell) return;
-      const next = state || {};
-      const endpoint = document.getElementById('server-endpoint');
-      const account = document.getElementById('credential-profile');
+    function setConnectionError(code) {
+      connectionErrorCode = code || '';
+      window.EliteUiKit.setBanner('#connection-error', localizedError(connectionErrorCode), 'error');
+    }
 
-      if (typeof next.endpoint === 'string' && next.endpoint) endpoint.value = next.endpoint;
-      if (typeof next.accountHandle === 'string') account.value = next.accountHandle;
-      setConnectionError(next.errorCode || '');
+    function setRegistrationError(code) {
+      const errorCode = code || '';
+      window.EliteUiKit.setBanner('#registration-error', localizedError(errorCode), 'error');
+    }
 
-      if (next.view === 'multiplayer') {
-        mainMenuShell.show('multiplayer', { focus: account, select: true });
-      } else {
-        mainMenuShell.show('home', { focus: '#main-actions [data-elite-autofocus]' });
+    function setSignInError(code) {
+      const errorCode = code || '';
+      window.EliteUiKit.setBanner('#signin-error', localizedError(errorCode), 'error');
+    }
+
+    function setAuthError(code) {
+      const route = mainMenuShell ? mainMenuShell.current() : 'multiplayer';
+      setConnectionError('');
+      setRegistrationError('');
+      setSignInError('');
+      if (route === 'register') setRegistrationError(code);
+      else if (route === 'signin') setSignInError(code);
+      else setConnectionError(code);
+    }
+
+    function populateLocaleSelect(id, locales, selected) {
+      const select = document.getElementById(id);
+      if (!select) return;
+      select.innerHTML = '';
+      for (const locale of (locales || [])) {
+        const option = document.createElement('option');
+        option.value = locale.id;
+        option.textContent = locale.nativeName || locale.id;
+        option.selected = locale.id === selected;
+        select.appendChild(option);
       }
     }
 
-    // Compatibility wrappers for tooling and old call sites while native code
-    // migrates to the single applyMainMenuState() navigation contract.
-    function showMultiplayerForm() {
-      applyMainMenuState({
-        view: 'multiplayer',
-        endpoint: document.getElementById('server-endpoint').value,
-        accountHandle: document.getElementById('credential-profile').value,
-        errorCode: connectionErrorCode
+    async function applyMainMenuState(state) {
+      if (!mainMenuShell) return;
+      currentState = state || {};
+      const next = currentState;
+      const endpoint = document.getElementById('server-endpoint');
+      const account = document.getElementById('credential-profile');
+      const registrationAccount = document.getElementById('registration-account-handle');
+
+      if (typeof next.endpoint === 'string' && next.endpoint) endpoint.value = next.endpoint;
+      if (typeof next.accountHandle === 'string') account.value = next.accountHandle;
+      if (typeof next.accountHandle === 'string') registrationAccount.value = next.accountHandle;
+      document.getElementById('recovery-account-handle').value = next.accountHandle || '';
+      document.getElementById('signin-server-value').textContent = next.endpoint || '—';
+      document.getElementById('signin-account-value').textContent = next.accountHandle || '—';
+      document.getElementById('account-server-value').textContent = next.authenticatedEndpoint || next.endpoint || '—';
+      document.getElementById('account-handle-value').textContent = next.authenticatedAccountHandle || '—';
+      const accountButton = document.getElementById('multiplayer-account-button');
+      accountButton.hidden = !next.accountAvailable;
+      accountButton.disabled = !next.accountAvailable;
+      document.getElementById('signin-recovery-button').hidden = !next.passwordRecoveryAvailable;
+      document.getElementById('local-player-name').value = next.localPlayerName || '';
+
+      populateLocaleSelect('registration-locale', next.locales, next.locale);
+      populateLocaleSelect('account-locale', next.locales, next.locale);
+
+      const route = ['home', 'multiplayer', 'signin', 'register', 'recovery', 'account'].includes(next.view)
+        ? next.view
+        : 'home';
+      setConnectionError('');
+      setRegistrationError('');
+      setSignInError('');
+      if (route === 'register') setRegistrationError(next.errorCode || '');
+      else if (route === 'signin') setSignInError(next.errorCode || '');
+      else if (route === 'multiplayer') setConnectionError(next.errorCode || '');
+      const focus = route === 'multiplayer'
+        ? account
+        : route === 'register'
+          ? registrationAccount
+          : undefined;
+
+      const firstPresentation = !mainMenuPresented;
+      if (firstPresentation)
+        await window.EliteUiKit.waitForDocumentDependencies();
+
+      // First mount is assembled while the whole document is invisible.
+      // Same-document navigation after that keeps the normal route crossfade.
+      await mainMenuShell.show(route, {
+        focus,
+        select: route === 'multiplayer',
+        animate: !firstPresentation
       });
+
+      if (firstPresentation) {
+        await window.EliteUiKit.settlePreparedLayout();
+        mainMenuPresented = true;
+        // Native owns the child-HWND visibility boundary. Tell it the page is
+        // fully assembled while still physically hidden; native then shows the
+        // dark prepared surface and starts the fade-in.
+        await sendCommand('main_menu_prepared');
+      }
+    }
+
+    function navigateRoute(route) {
+      const endpoint = document.getElementById('server-endpoint').value.trim();
+      const activeRoute = mainMenuShell ? mainMenuShell.current() : '';
+      const source = activeRoute === 'register'
+        ? document.getElementById('registration-account-handle')
+        : document.getElementById('credential-profile');
+      const account = normalizedHandle(source ? source.value : '');
+      document.getElementById('credential-profile').value = account;
+      document.getElementById('registration-account-handle').value = account;
+      sendCommand('main_route|' + route + '|' + endpoint + '|' + account);
+    }
+
+    function showMultiplayerForm() {
+      navigateRoute('multiplayer');
     }
 
     function showMainMenu() {
-      applyMainMenuState({ view: 'home' });
+      navigateRoute('home');
     }
 
     function setMultiplayerDefaults(endpoint, profile) {
@@ -122,9 +382,20 @@
       document.getElementById('credential-profile').value = profile || '';
     }
 
+    function normalizedHandle(value) {
+      let result = String(value || '').toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      result = result.replace(/^[^a-z0-9]+/, '').slice(0, 24);
+      return result;
+    }
+
+    function currentEndpoint() {
+      return document.getElementById('server-endpoint').value.trim();
+    }
+
     async function authorizeMultiplayer(register) {
-      const endpoint = document.getElementById('server-endpoint').value.trim();
-      const profile = document.getElementById('credential-profile').value.trim();
+      const endpoint = currentEndpoint();
+      const profile = normalizedHandle(document.getElementById('credential-profile').value);
+      document.getElementById('credential-profile').value = profile;
       if (!endpoint) {
         setConnectionError('SERVER_ADDRESS_REQUIRED');
         return;
@@ -139,48 +410,108 @@
       }
 
       setConnectionError('');
-      await sendCommand(
-        (register ? 'multiplayer_register|' : 'multiplayer_signin|') +
-        endpoint + '|' + profile
-      );
+      await sendCommand((register ? 'multiplayer_register|' : 'multiplayer_signin|') + endpoint + '|' + profile);
     }
 
-    document.getElementById('credential-profile').addEventListener('input', event => {
-      const input = event.target;
-      let value = input.value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
-      value = value.replace(/^[^a-z0-9]+/, '').slice(0, 24);
-      if (input.value !== value) input.value = value;
-      window.EliteUiKit.setFieldError('#account-handle-field', '');
-    });
+    async function developmentRegister() {
+      const endpoint = currentEndpoint();
+      const input = document.getElementById('registration-account-handle');
+      const profile = normalizedHandle(input.value);
+      input.value = profile;
+      window.EliteUiKit.setBanner('#registration-error', '', 'error');
+      if (!endpoint) {
+        window.EliteUiKit.setBanner('#registration-error', localizedError('SERVER_ADDRESS_REQUIRED'), 'error');
+        return;
+      }
+      if (!/^[a-z0-9][a-z0-9_-]{2,23}$/.test(profile)) {
+        window.EliteUiKit.setBanner('#registration-error', localizedError('INVALID_ACCOUNT_HANDLE'), 'error');
+        return;
+      }
+      document.getElementById('credential-profile').value = profile;
+      await sendCommand('multiplayer_register|' + endpoint + '|' + profile);
+    }
 
-    for (const id of ['server-endpoint', 'credential-profile']) {
-      document.getElementById(id).addEventListener('keydown', event => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          authorizeMultiplayer(false);
-        }
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          sendCommand('multiplayer_back');
-        }
+    function openLocalNewGameDialog() {
+      const input = document.getElementById('local-player-name');
+      window.EliteUiKit.setBanner('#local-player-name-error', '', 'error');
+      window.EliteUiKit.showDialog('#local-new-game-dialog');
+      requestAnimationFrame(() => {
+        input.focus();
+        input.select();
       });
     }
 
+    async function startLocalNewGame() {
+      const input = document.getElementById('local-player-name');
+      const name = String(input.value || '').trim();
+      if (!name) {
+        window.EliteUiKit.setBanner(
+          '#local-player-name-error',
+          window.GameI18n.t('main.local_player_name_required', 'Enter a player name.'),
+          'error'
+        );
+        input.focus();
+        return;
+      }
+      window.EliteUiKit.setBanner('#local-player-name-error', '', 'error');
+      window.EliteUiKit.closeDialog('#local-new-game-dialog');
+      await sendCommand('new_local_game|' + encodeURIComponent(name));
+    }
+
+    function selectLocale(locale) {
+      if (locale) sendCommand('set_ui_locale|' + locale);
+    }
+
+    for (const id of ['credential-profile', 'registration-account-handle']) {
+      document.getElementById(id).addEventListener('input', event => {
+        const value = normalizedHandle(event.target.value);
+        if (event.target.value !== value) event.target.value = value;
+      });
+    }
+
+    document.getElementById('credential-profile').addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        authorizeMultiplayer(false);
+      }
+    });
+
+    document.getElementById('local-new-game-start').addEventListener('click', startLocalNewGame);
+    document.getElementById('local-player-name').addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        startLocalNewGame();
+      }
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || !mainMenuShell) return;
+      const localDialog = document.getElementById('local-new-game-dialog');
+      if (localDialog.open) {
+        event.preventDefault();
+        window.EliteUiKit.closeDialog(localDialog);
+        return;
+      }
+      const route = mainMenuShell.current();
+      if (route === 'home') return;
+      event.preventDefault();
+      navigateRoute(route === 'multiplayer' ? 'home' : 'multiplayer');
+    });
+
     window.addEventListener('game-ui-language-changed', () => {
-      if (connectionErrorCode) setConnectionError(connectionErrorCode);
+      if (currentState && currentState.errorCode) setAuthError(currentState.errorCode);
     });
 
     window.addEventListener('DOMContentLoaded', () => {
       window.EliteUiKit.initialize(document);
       mainMenuShell = window.EliteUiKit.createNavigationShell('#main-shell');
-      mainMenuShell.show('home');
-
-      // C++ may have navigated here from loading.html after an auth/session
-      // rejection. Native state is applied only after this shell is ready.
+      // No default route is made visible here. Native state chooses and fully
+      // assembles the first route while elite-ui-boot keeps the page hidden.
       sendCommand('main_menu_ready');
     });
 
     window.applyMainMenuState = applyMainMenuState;
+    window.setAuthError = setAuthError;
   </script>
 </body>
 </html>

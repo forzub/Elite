@@ -105,7 +105,6 @@ add_executable(EliteGame
     src/window/Window.cpp
 
     src/ui/MainMenuState.cpp
-    src/ui/ConfirmExitState.cpp
     src/ui/HudRenderer.cpp
     src/ui/hud/HudEdgeMapper.cpp
 

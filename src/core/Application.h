@@ -13,10 +13,13 @@
 #include <string>
 #include <memory>
 #include <cstdint>
+#include <functional>
 
 #ifdef _WIN32
 #include "ui/browser/GameWebView.h"
 #endif
+
+class SpaceState;
 
 namespace game::session
 {
@@ -28,7 +31,8 @@ enum class GameUiMode
     None,
     MainMenu,
     Loading,
-    SystemMap
+    SystemMap,
+    SessionMenu
 };
 
 enum class GameSessionLaunchKind
@@ -72,6 +76,22 @@ public:
     void clearLoaded()
     {
         m_loadedMode = GameUiMode::None;
+        m_preparedMode = GameUiMode::None;
+    }
+
+    bool isPrepared(GameUiMode mode) const
+    {
+        return m_preparedMode == mode;
+    }
+
+    void markPrepared(GameUiMode mode)
+    {
+        m_preparedMode = mode;
+    }
+
+    void clearPrepared()
+    {
+        m_preparedMode = GameUiMode::None;
     }
 
     bool isOpen() const
@@ -192,6 +212,7 @@ public:
 private:
     GameUiMode m_mode = GameUiMode::None;
     GameUiMode m_loadedMode = GameUiMode::None;
+    GameUiMode m_preparedMode = GameUiMode::None;
 
     bool m_f9Latch = false;
     bool m_f10Latch = false;
@@ -220,7 +241,11 @@ public:
     void updatePendingSessionStart();
     void openGameUi(GameUiMode mode);
     void closeGameUi();
-    void toggleSystemMapUi();
+    void requestSystemMapClose();
+    void invalidatePreparedSystemMapUi();
+    void prepareSystemMapUiForEntry(SpaceState& space);
+    void prewarmSystemMapPanel();
+    void presentPreparedGameUi(GameUiMode mode);
 
     GameUiMode gameUiMode() const;
     bool isGameUiOpen() const;
@@ -246,11 +271,33 @@ private:
     void shutdown();
     void navigateGameUi(GameUiMode mode);
     void requestSessionStart(GameSessionLaunchKind kind);
+    void startSessionNow(GameSessionLaunchKind kind);
     void showMultiplayerConnectionForm(
+        const std::string& errorCode = std::string()
+    );
+    void showRegistrationForm(
+        const std::string& errorCode = std::string()
+    );
+    void showPasswordSignInForm(
         const std::string& errorCode = std::string()
     );
     void showMainMenu();
     void applyMainMenuView();
+    void showSessionMenu();
+    void resumeSessionFromMenu();
+    void applySessionMenuView();
+    void returnSessionToMainMenu();
+    void cancelPendingSessionStart();
+    void setUiLanguage(const std::string& locale);
+    void beginServiceUiTransition(std::function<void()> completion);
+    void completeServiceUiTransition(std::uint64_t serial);
+    void updateServiceUiTransition();
+    bool serviceUiTransitionPending() const;
+    void setLoadingUiProgress(
+        double progress,
+        std::string stageKey,
+        std::string englishFallback
+    );
     bool prepareRemoteIdentity(
         const std::string& profileName,
         game::network::AuthenticationIntent intent,
@@ -271,6 +318,9 @@ private:
     std::uint16_t m_gameUiHttpPort = 0;
     std::string m_clientIdentityProfileName;
     game::network::SessionHello m_clientIdentityHello {};
+    std::string m_localPlayerDisplayName;
+    std::string m_authenticatedRemoteAccountHandle;
+    std::string m_authenticatedRemoteEndpoint;
     ui::platform::UiNavigationState m_uiNavigationState;
     ui::platform::ClientPreferences m_clientPreferences;
     StateStack   m_states;
@@ -287,14 +337,28 @@ private:
     };
 
     GameSessionLaunchKind m_pendingSessionLaunch = GameSessionLaunchKind::None;
+    GameSessionLaunchKind m_activeSessionKind = GameSessionLaunchKind::None;
     double m_sessionStartTime = 0.0;
     double m_sessionStartLastUpdateTime = 0.0;
     double m_spaceStateBuildStartTime = 0.0;
     SessionStartStage m_sessionStartStage = SessionStartStage::Idle;
 
+    std::function<void()> m_serviceUiTransitionCompletion;
+    std::uint64_t m_serviceUiTransitionSerial = 0;
+    std::uint64_t m_nextServiceUiTransitionSerial = 1;
+    double m_serviceUiTransitionFailSafeDeadline = 0.0;
+
+    double m_loadingUiProgress = 0.05;
+    std::string m_loadingUiStageKey = "loading.boot";
+    std::string m_loadingUiEnglishFallback = "BOOT";
+
     GameUiController m_gameUi;
 
     #ifdef _WIN32
         GameWebView m_gameWebView;
+        bool m_systemMapPanelPrepared = false;
+        bool m_systemMapPanelNavigationPending = false;
+        bool m_systemMapPanelStateRequested = false;
+        bool m_systemMapPanelPrewarmPending = false;
     #endif
 };

@@ -1,0 +1,52 @@
+<!doctype html>
+<html class="elite-ui-boot">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style id="elite-critical-boot">html,body{margin:0;background:#010208}html.elite-ui-boot body{visibility:hidden;opacity:0}</style>
+  <title>EliteGame Multiplayer Session Menu</title>
+  <link rel="stylesheet" href="/elite_ui.css">
+  <script src="/elite_ui.js"></script>
+</head>
+<body class="elite-ui-body">
+  <div class="elite-screen">
+    <main class="elite-panel elite-panel--centered" aria-live="polite">
+      <header>
+        <h1 class="elite-title" data-i18n="session_menu.title">SESSION</h1>
+        <div class="elite-subtitle" data-i18n="session_menu.remote_subtitle">MULTIPLAYER SESSION</div>
+      </header>
+      <div class="elite-session-note" data-i18n="session_menu.remote_world_continues">The authoritative multiplayer world continues running while this menu is open.</div>
+      <section class="elite-actions">
+        <button class="elite-button" data-i18n="session_menu.resume" onclick="sendCommand('session_resume')">RESUME</button>
+        <button class="elite-button" data-i18n="session_menu.disconnect" onclick="sendCommand('session_return_main')">DISCONNECT TO MAIN MENU</button>
+        <button class="elite-button elite-button--danger" disabled data-pending="true" data-i18n="session_menu.sign_out">SIGN OUT & RETURN TO MENU</button>
+        <button class="elite-button elite-button--danger" data-i18n="session_menu.quit" onclick="sendCommand('session_quit')">QUIT GAME</button>
+      </section>
+      <div class="elite-hint" data-i18n="session_menu.escape_hint">ESC resumes the session.</div>
+    </main>
+  </div>
+  <script src="/game_i18n.js"></script>
+  <script>
+    async function sendCommand(command) {
+      if (window.gameCommand) await window.gameCommand(command);
+    }
+    async function applyMultiplayerSessionMenuState() {
+      await window.EliteUiKit.waitForDocumentDependencies();
+      await window.EliteUiKit.settlePreparedLayout();
+      await sendCommand('session_menu_prepared');
+    }
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || event.repeat) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void sendCommand('session_escape');
+    }, true);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      window.EliteUiKit.initialize(document);
+      sendCommand('session_menu_ready');
+    });
+    window.applyMultiplayerSessionMenuState = applyMultiplayerSessionMenuState;
+  </script>
+</body>
+</html>

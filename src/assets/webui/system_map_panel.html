@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="elite-ui-boot">
 <head>
 <meta charset="utf-8">
 <title>System Map Panel</title>
+<style id="elite-critical-boot">html,body{margin:0;background:#040912}html.elite-ui-boot body{visibility:hidden;opacity:0}</style>
 
 <style>
 html, body {
@@ -23,6 +24,18 @@ html, body {
     background:
         radial-gradient(circle at 20% 0%, rgba(42, 147, 190, 0.10), transparent 42%),
         linear-gradient(180deg, rgba(9, 22, 41, 0.96), rgba(3, 7, 15, 0.98));
+}
+
+#panelContent {
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    transition: opacity 140ms ease-in-out;
+}
+
+#panelContent.map-panel-content--leaving {
+    opacity: 0;
+    pointer-events: none;
 }
 
 #header {
@@ -240,6 +253,7 @@ button:hover {
 
 <body>
 <div id="panel">
+  <div id="panelContent">
     <div id="header">
         <div id="title" data-i18n="map.title">STAR ATLAS</div>
         <div id="subtitle" data-i18n="map.subtitle">Navigation interface</div>
@@ -326,6 +340,7 @@ button:hover {
         <button id="btnHub" data-i18n="map.hub">HUB</button>
         <button id="btnClose" data-i18n="map.close">CLOSE</button>
     </div>
+  </div>
 </div>
 
 <script src="/game_i18n.js"></script>
@@ -352,6 +367,7 @@ function closeMap() {
 document.getElementById("btnClose").addEventListener("click", closeMap);
 
 let currentMode = "Galaxy";
+let systemMapPanelPresented = false;
 
 function sendGameCommand(command) {
     if (window.gameCommand) {
@@ -516,7 +532,7 @@ function renderSystemDropdown() {
     }
 }
 
-window.setSystemMapPanel = function(payload) {
+function applySystemMapPanelPayload(payload) {
     if (!payload) return;
     window.__lastSystemMapPanel = payload;
 
@@ -666,8 +682,48 @@ if ((currentMode === "Planet" ||
         }
     }
 
+}
 
+let panelStateSerial = 0;
+window.setSystemMapPanel = async function(payload) {
+    if (!payload) return;
+    const serial = ++panelStateSerial;
+    const nextMode = payload.mode || "Galaxy";
+    const modeChanged = systemMapPanelPresented && nextMode !== currentMode;
+    const content = document.getElementById("panelContent");
+
+    if (modeChanged) {
+        content.classList.add("map-panel-content--leaving");
+        await window.EliteUiKit.waitForCssTransition(content, "opacity", 260);
+        if (serial !== panelStateSerial) return;
+    }
+
+    applySystemMapPanelPayload(payload);
+    await window.EliteUiKit.settlePreparedLayout();
+    if (serial !== panelStateSerial) return;
+
+    if (!systemMapPanelPresented) {
+        await window.EliteUiKit.waitForDocumentDependencies();
+        await window.EliteUiKit.settlePreparedLayout();
+        if (serial !== panelStateSerial) return;
+        systemMapPanelPresented = true;
+    }
+
+    content.classList.remove("map-panel-content--leaving");
+
+    // A hidden/preloaded panel can receive a newer F9-F12 target before it is
+    // ever presented. Acknowledge every fully applied hidden payload, not only
+    // the first DOM payload, so native presentation always waits for the latest
+    // authoritative target state.
+    if (document.documentElement.classList.contains("elite-ui-boot"))
+        sendGameCommand("system_map_panel_prepared");
 };
+
+window.addEventListener("DOMContentLoaded", async () => {
+    window.EliteUiKit.initialize(document);
+    await window.EliteUiKit.waitForDocumentDependencies();
+    sendGameCommand("system_map_panel_ready");
+}, { once: true });
 
 window.addEventListener("game-ui-language-changed", () => {
     if (window.setSystemMapPanel && window.__lastSystemMapPanel)

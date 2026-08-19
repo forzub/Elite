@@ -1805,8 +1805,6 @@ void SystemMapRenderer::render(
 
 
 
-
-
     const Viewport& vp = viewport;
 
     glViewport(vp.x, vp.y, vp.width, vp.height);
@@ -1941,6 +1939,19 @@ void SystemMapRenderer::render(
             glfwGetTime()
         );
     }
+    else if (m_mapTransition.needsIncomingWarmup())
+    {
+        // The new mode has now rendered one complete frame, but it remains
+        // fully covered by the outgoing snapshot. Lazy presentation builders,
+        // geometry and shader state therefore cannot flash half-prepared.
+        drawMapTransitionSnapshot(
+            viewport,
+            1.0f
+        );
+        m_mapTransition.incomingFrameRendered(
+            glfwGetTime()
+        );
+    }
     else if (m_mapTransition.active())
     {
         drawMapTransitionSnapshot(
@@ -1949,7 +1960,7 @@ void SystemMapRenderer::render(
         );
     }
 
-
+    drawPresentationCrossfadeOverlay(viewport, nowSeconds);
 
 
 

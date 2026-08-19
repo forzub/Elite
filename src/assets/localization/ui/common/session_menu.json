@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "session_menu.title": {"en":"SESSION","ru":"СЕССИЯ","zh-Hans":"会话","es":"SESIÓN","ja":"セッション"},
+    "session_menu.local_subtitle": {"en":"LOCAL SESSION","ru":"ЛОКАЛЬНАЯ ИГРА","zh-Hans":"本地会话","es":"SESIÓN LOCAL","ja":"ローカルセッション"},
+    "session_menu.remote_subtitle": {"en":"MULTIPLAYER SESSION","ru":"СЕТЕВАЯ ИГРА","zh-Hans":"多人会话","es":"SESIÓN MULTIJUGADOR","ja":"マルチプレイヤーセッション"},
+    "session_menu.resume": {"en":"RESUME","ru":"ПРОДОЛЖИТЬ","zh-Hans":"继续","es":"CONTINUAR","ja":"再開"},
+    "session_menu.new_game": {"en":"NEW GAME","ru":"НОВАЯ ИГРА","zh-Hans":"新游戏","es":"NUEVA PARTIDA","ja":"新しいゲーム"},
+    "session_menu.save": {"en":"SAVE","ru":"СОХРАНИТЬ","zh-Hans":"保存","es":"GUARDAR","ja":"セーブ"},
+    "session_menu.load": {"en":"LOAD","ru":"ЗАГРУЗИТЬ","zh-Hans":"载入","es":"CARGAR","ja":"ロード"},
+    "session_menu.settings": {"en":"SETTINGS","ru":"НАСТРОЙКИ","zh-Hans":"设置","es":"AJUSTES","ja":"設定"},
+    "session_menu.main_menu": {"en":"RETURN TO MAIN MENU","ru":"В ГЛАВНОЕ МЕНЮ","zh-Hans":"返回主菜单","es":"VOLVER AL MENÚ PRINCIPAL","ja":"メインメニューへ"},
+    "session_menu.disconnect": {"en":"DISCONNECT TO MAIN MENU","ru":"ОТКЛЮЧИТЬСЯ И ВЫЙТИ В МЕНЮ","zh-Hans":"断开并返回主菜单","es":"DESCONECTAR Y VOLVER AL MENÚ","ja":"切断してメインメニューへ"},
+    "session_menu.sign_out": {"en":"SIGN OUT & RETURN TO MENU","ru":"ВЫЙТИ ИЗ АККАУНТА И В МЕНЮ","zh-Hans":"退出账户并返回主菜单","es":"CERRAR SESIÓN Y VOLVER AL MENÚ","ja":"サインアウトしてメインメニューへ"},
+    "session_menu.quit": {"en":"QUIT GAME","ru":"ВЫЙТИ ИЗ ИГРЫ","zh-Hans":"退出游戏","es":"SALIR DEL JUEGO","ja":"ゲームを終了"},
+    "session_menu.escape_hint": {"en":"ESC resumes the session.","ru":"ESC — вернуться в игру.","zh-Hans":"按 ESC 返回游戏。","es":"ESC reanuda la sesión.","ja":"ESC でゲームに戻ります。"},
+    "session_menu.local_persistence_pending": {"en":"Local save/load is not enabled until the persistence stage.","ru":"Локальные Save/Load не включаются до реализации persistence-слоя.","zh-Hans":"在持久化阶段完成前，本地保存/载入不可用。","es":"Guardar/cargar localmente no estará disponible hasta la etapa de persistencia.","ja":"永続化段階の実装まではローカルのセーブ/ロードは無効です。"},
+    "session_menu.local_safe_note": {"en":"Save/load availability follows the current safe-zone policy.","ru":"Доступность Save/Load определяется текущей политикой безопасной зоны.","zh-Hans":"保存/载入可用性由当前安全区域策略决定。","es":"La disponibilidad de guardar/cargar sigue la política de zona segura.","ja":"セーブ/ロード可否は現在のセーフゾーン規則に従います。"},
+    "session_menu.remote_world_continues": {"en":"The authoritative multiplayer world continues running while this menu is open.","ru":"Сетевой мир продолжает жить, пока это меню открыто.","zh-Hans":"打开此菜单时，多人权威世界仍会继续运行。","es":"El mundo multijugador autoritativo sigue ejecutándose mientras este menú está abierto.","ja":"このメニューを開いている間もマルチプレイヤー世界は動き続けます。"},
+    "session_menu.confirm_title": {"en":"CONFIRM","ru":"ПОДТВЕРЖДЕНИЕ","zh-Hans":"确认","es":"CONFIRMAR","ja":"確認"},
+    "session_menu.confirm_yes": {"en":"CONFIRM","ru":"ПОДТВЕРДИТЬ","zh-Hans":"确认","es":"CONFIRMAR","ja":"確認"},
+    "session_menu.confirm_no": {"en":"CANCEL","ru":"ОТМЕНА","zh-Hans":"取消","es":"CANCELAR","ja":"キャンセル"},
+    "session_menu.confirm_new_game": {"en":"The current local session is not saved. Start a new local game anyway?","ru":"Текущая локальная сессия не сохранена. Всё равно начать новую игру?","zh-Hans":"当前本地会话尚未保存。仍要开始新游戏吗？","es":"La sesión local actual no está guardada. ¿Iniciar una nueva partida de todos modos?","ja":"現在のローカルセッションは保存されていません。それでも新しいゲームを開始しますか？"},
+    "session_menu.confirm_return_local": {"en":"The current local session is not saved. Return to the main menu anyway?","ru":"Текущая локальная сессия не сохранена. Всё равно выйти в главное меню?","zh-Hans":"当前本地会话尚未保存。仍要返回主菜单吗？","es":"La sesión local actual no está guardada. ¿Volver al menú principal de todos modos?","ja":"現在のローカルセッションは保存されていません。それでもメインメニューへ戻りますか？"},
+    "session_menu.confirm_quit_local": {"en":"The current local session is not saved. Quit the game anyway?","ru":"Текущая локальная сессия не сохранена. Всё равно выйти из игры?","zh-Hans":"当前本地会话尚未保存。仍要退出游戏吗？","es":"La sesión local actual no está guardada. ¿Salir del juego de todos modos?","ja":"現在のローカルセッションは保存されていません。それでもゲームを終了しますか？"}
+  }
+}

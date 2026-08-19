@@ -1,0 +1,237 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "main.settings": {
+      "en": "SETTINGS",
+      "ru": "НАСТРОЙКИ",
+      "zh-Hans": "设置",
+      "es": "AJUSTES",
+      "ja": "設定"
+    },
+    "main.local_save_pending": {
+      "en": "Local save/load becomes available with the persistence layer and safe-zone policy.",
+      "ru": "Локальные сохранения и загрузка появятся вместе с persistence-слоем и правилом безопасной зоны.",
+      "zh-Hans": "本地保存/载入将在持久化层和安全区域规则完成后启用。",
+      "es": "Guardar/cargar localmente estará disponible con la capa de persistencia y la política de zona segura.",
+      "ja": "ローカルのセーブ/ロードは永続化層とセーフゾーン規則の実装後に有効になります。"
+    },
+    "main.auth.remembered_device_note": {
+      "en": "SIGN IN uses the device credential stored by Windows when one exists. Password fallback is enabled with durable account security.",
+      "ru": "SIGN IN использует сохранённый Windows ключ устройства, если он есть. Вход по паролю появится вместе с постоянной системой безопасности аккаунта.",
+      "zh-Hans": "存在 Windows 保存的设备凭据时，SIGN IN 会优先使用它。密码登录将在持久化账户安全系统完成后启用。",
+      "es": "SIGN IN usa la credencial de dispositivo guardada por Windows cuando existe. El acceso por contraseña se habilitará con la seguridad persistente de cuentas.",
+      "ja": "Windows に保存済みのデバイス認証情報がある場合、SIGN IN はそれを使用します。パスワードログインは永続的なアカウントセキュリティ実装後に有効になります。"
+    },
+    "main.recover_account": {
+      "en": "RECOVER ACCOUNT",
+      "ru": "ВОССТАНОВИТЬ АККАУНТ",
+      "zh-Hans": "恢复账户",
+      "es": "RECUPERAR CUENTA",
+      "ja": "アカウントを復旧"
+    },
+    "main.account": {
+      "en": "ACCOUNT",
+      "ru": "АККАУНТ",
+      "zh-Hans": "账户",
+      "es": "CUENTA",
+      "ja": "アカウント"
+    },
+    "main.registration.title": {
+      "en": "CREATE ACCOUNT",
+      "ru": "СОЗДАТЬ АККАУНТ",
+      "zh-Hans": "创建账户",
+      "es": "CREAR CUENTA",
+      "ja": "アカウント作成"
+    },
+    "main.registration.development_warning": {
+      "en": "The current development server still registers AccountHandle + remembered-device credential only. Password, recovery, profile and consent fields below define the final account contract but are not transmitted until durable account security is implemented.",
+      "ru": "Текущий сервер разработки пока регистрирует только AccountHandle и ключ устройства. Поля пароля, восстановления, профиля и согласий ниже задают будущий контракт аккаунта, но не передаются до реализации постоянной системы безопасности.",
+      "zh-Hans": "当前开发服务器仍只注册 AccountHandle 和设备凭据。下方密码、恢复、资料和同意字段用于定义最终账户结构，在持久化账户安全实现前不会发送。",
+      "es": "El servidor de desarrollo actual todavía registra solo AccountHandle y la credencial del dispositivo. Los campos de contraseña, recuperación, perfil y consentimientos definen el contrato final, pero no se transmiten hasta implementar la seguridad persistente.",
+      "ja": "現在の開発サーバーは AccountHandle とデバイス認証情報のみを登録します。以下のパスワード、復旧、プロフィール、同意項目は最終仕様を示すもので、永続的なアカウントセキュリティ実装までは送信されません。"
+    },
+    "main.display_name": {
+      "en": "DISPLAY NAME",
+      "ru": "ИМЯ ИГРОКА",
+      "zh-Hans": "显示名称",
+      "es": "NOMBRE VISIBLE",
+      "ja": "表示名"
+    },
+    "main.registration.display_name_pending": {
+      "en": "Unicode display names and moderation become authoritative with the account repository.",
+      "ru": "Unicode-имена и их модерация станут авторитетными после появления постоянного хранилища аккаунтов.",
+      "zh-Hans": "Unicode 显示名称及其审核将在账户仓库实现后成为权威数据。",
+      "es": "Los nombres Unicode y su moderación serán autoritativos con el repositorio de cuentas.",
+      "ja": "Unicode 表示名とモデレーションはアカウントリポジトリ実装後に正式なデータになります。"
+    },
+    "main.password": {
+      "en": "PASSWORD",
+      "ru": "ПАРОЛЬ",
+      "zh-Hans": "密码",
+      "es": "CONTRASEÑA",
+      "ja": "パスワード"
+    },
+    "main.confirm_password": {
+      "en": "CONFIRM PASSWORD",
+      "ru": "ПОВТОРИТЕ ПАРОЛЬ",
+      "zh-Hans": "确认密码",
+      "es": "CONFIRMAR CONTRASEÑA",
+      "ja": "パスワード確認"
+    },
+    "main.show": {
+      "en": "SHOW",
+      "ru": "ПОКАЗАТЬ",
+      "zh-Hans": "显示",
+      "es": "MOSTRAR",
+      "ja": "表示"
+    },
+    "main.generate_password": {
+      "en": "GENERATE PASSWORD",
+      "ru": "СГЕНЕРИРОВАТЬ ПАРОЛЬ",
+      "zh-Hans": "生成密码",
+      "es": "GENERAR CONTRASEÑA",
+      "ja": "パスワード生成"
+    },
+    "main.recovery_method": {
+      "en": "RECOVERY METHOD",
+      "ru": "СПОСОБ ВОССТАНОВЛЕНИЯ",
+      "zh-Hans": "恢复方式",
+      "es": "MÉTODO DE RECUPERACIÓN",
+      "ja": "復旧方法"
+    },
+    "main.recovery_code": {
+      "en": "RECOVERY CODE",
+      "ru": "КОД ВОССТАНОВЛЕНИЯ",
+      "zh-Hans": "恢复代码",
+      "es": "CÓDIGO DE RECUPERACIÓN",
+      "ja": "復旧コード"
+    },
+    "main.email": {
+      "en": "EMAIL",
+      "ru": "EMAIL",
+      "zh-Hans": "电子邮件",
+      "es": "EMAIL",
+      "ja": "メール"
+    },
+    "main.phone": {
+      "en": "PHONE",
+      "ru": "ТЕЛЕФОН",
+      "zh-Hans": "电话",
+      "es": "TELÉFONO",
+      "ja": "電話"
+    },
+    "main.recovery_contact": {
+      "en": "EMAIL OR PHONE",
+      "ru": "EMAIL ИЛИ ТЕЛЕФОН",
+      "zh-Hans": "电子邮件或电话",
+      "es": "EMAIL O TELÉFONO",
+      "ja": "メールまたは電話"
+    },
+    "main.language": {
+      "en": "LANGUAGE",
+      "ru": "ЯЗЫК",
+      "zh-Hans": "语言",
+      "es": "IDIOMA",
+      "ja": "言語"
+    },
+    "main.telemetry_consent": {
+      "en": "Allow optional anonymous diagnostic/statistical telemetry.",
+      "ru": "Разрешить необязательную анонимную диагностическую и статистическую телеметрию.",
+      "zh-Hans": "允许可选的匿名诊断/统计遥测。",
+      "es": "Permitir telemetría diagnóstica/estadística anónima opcional.",
+      "ja": "任意の匿名診断・統計テレメトリを許可する。"
+    },
+    "main.registration.dev_create": {
+      "en": "REGISTER DEVELOPMENT ACCOUNT",
+      "ru": "ЗАРЕГИСТРИРОВАТЬ ТЕСТОВЫЙ АККАУНТ",
+      "zh-Hans": "注册开发账户",
+      "es": "REGISTRAR CUENTA DE DESARROLLO",
+      "ja": "開発用アカウントを登録"
+    },
+    "main.recovery.title": {
+      "en": "RECOVER ACCOUNT",
+      "ru": "ВОССТАНОВЛЕНИЕ АККАУНТА",
+      "zh-Hans": "恢复账户",
+      "es": "RECUPERAR CUENTA",
+      "ja": "アカウント復旧"
+    },
+    "main.recovery.pending": {
+      "en": "Recovery is architected but not enabled until password/recovery records are durable on the server. No fake local recovery is performed.",
+      "ru": "Архитектура восстановления уже заложена, но функция не включается до постоянного хранения пароля и recovery-данных на сервере. Локальная имитация восстановления не используется.",
+      "zh-Hans": "恢复架构已经定义，但在服务器持久保存密码/恢复记录前不会启用，也不会进行伪本地恢复。",
+      "es": "La recuperación está diseñada, pero no se habilita hasta que contraseña y recuperación sean persistentes en el servidor. No se simula una recuperación local falsa.",
+      "ja": "復旧アーキテクチャは定義済みですが、パスワード/復旧情報がサーバーで永続化されるまで有効化しません。ローカルの擬似復旧も行いません。"
+    },
+    "main.recovery_proof": {
+      "en": "RECOVERY CODE / VERIFIED CONTACT",
+      "ru": "КОД ВОССТАНОВЛЕНИЯ / ПОДТВЕРЖДЁННЫЙ КОНТАКТ",
+      "zh-Hans": "恢复代码 / 已验证联系方式",
+      "es": "CÓDIGO DE RECUPERACIÓN / CONTACTO VERIFICADO",
+      "ja": "復旧コード / 確認済み連絡先"
+    },
+    "main.new_password": {
+      "en": "NEW PASSWORD",
+      "ru": "НОВЫЙ ПАРОЛЬ",
+      "zh-Hans": "新密码",
+      "es": "NUEVA CONTRASEÑA",
+      "ja": "新しいパスワード"
+    },
+    "main.recovery.reset_password": {
+      "en": "RESET PASSWORD",
+      "ru": "СМЕНИТЬ ПАРОЛЬ",
+      "zh-Hans": "重置密码",
+      "es": "RESTABLECER CONTRASEÑA",
+      "ja": "パスワードを再設定"
+    },
+    "main.account.security_pending": {
+      "en": "Password changes, recovery methods and explicit device-token revocation become active with durable account security.",
+      "ru": "Смена пароля, методы восстановления и явный отзыв ключа устройства станут доступны вместе с постоянной системой безопасности аккаунта.",
+      "zh-Hans": "密码更改、恢复方式和显式撤销设备令牌将在持久化账户安全实现后启用。",
+      "es": "El cambio de contraseña, los métodos de recuperación y la revocación del token del dispositivo se activarán con la seguridad persistente de cuentas.",
+      "ja": "パスワード変更、復旧方法、デバイストークンの明示的失効は永続的なアカウントセキュリティ実装後に有効になります。"
+    },
+    "main.sign_out": {
+      "en": "SIGN OUT",
+      "ru": "ВЫЙТИ ИЗ АККАУНТА",
+      "zh-Hans": "退出账户",
+      "es": "CERRAR SESIÓN",
+      "ja": "サインアウト"
+    },
+    "main.sign_in_password": {
+      "en": "SIGN IN WITH PASSWORD",
+      "ru": "ВОЙТИ ПО ПАРОЛЮ",
+      "zh-Hans": "使用密码登录",
+      "es": "INICIAR SESIÓN CON CONTRASEÑA",
+      "ja": "パスワードでサインイン"
+    },
+    "main.signin.title": {
+      "en": "SIGN IN",
+      "ru": "ВХОД В АККАУНТ",
+      "zh-Hans": "登录",
+      "es": "INICIAR SESIÓN",
+      "ja": "サインイン"
+    },
+    "main.signin.pending": {
+      "en": "No usable remembered-device credential is available. Password verification becomes active with durable account security on the server.",
+      "ru": "Подходящего сохранённого ключа устройства нет. Вход по паролю станет доступен вместе с постоянной серверной системой безопасности аккаунта.",
+      "zh-Hans": "没有可用的已记住设备凭据。服务器持久化账户安全实现后将启用密码验证。",
+      "es": "No hay una credencial de dispositivo recordada utilizable. La verificación por contraseña se activará con la seguridad persistente de cuentas del servidor.",
+      "ja": "使用可能な保存済みデバイス認証情報がありません。パスワード認証はサーバー側の永続的なアカウントセキュリティ実装後に有効になります。"
+    },
+    "main.remember_device": {
+      "en": "Remember this device after successful password sign-in.",
+      "ru": "Запомнить это устройство после успешного входа по паролю.",
+      "zh-Hans": "密码登录成功后记住此设备。",
+      "es": "Recordar este dispositivo después de iniciar sesión correctamente con contraseña.",
+      "ja": "パスワード認証成功後、このデバイスを記憶する。"
+    },
+    "main.use_remembered_device": {
+      "en": "USE REMEMBERED DEVICE",
+      "ru": "ИСПОЛЬЗОВАТЬ СОХРАНЁННЫЙ КЛЮЧ",
+      "zh-Hans": "使用已记住的设备",
+      "es": "USAR DISPOSITIVO RECORDADO",
+      "ja": "保存済みデバイスを使用"
+    }
+  }
+}

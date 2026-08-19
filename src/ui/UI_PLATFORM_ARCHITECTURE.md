@@ -73,7 +73,48 @@ The second UI-platform slice now establishes the reusable service-shell/componen
 - `ClientPreferencesStore` persists only non-secret UX context under the per-user application-data/config root using a versioned bounded JSON document and atomic replacement;
 - the last successfully entered multiplayer world records `server endpoint -> AccountHandle` only at the session-ready boundary, and the selected locale is also remembered; auth tokens/passwords/recovery material remain outside this store.
 
-Full registration/password/recovery/account screens are the next service-shell slice and must be composed from these primitives rather than reintroducing page-local form systems.
+The third client-service-shell slice now composes the visible account/session surfaces on top of that foundation:
+
+- `main_menu.html` owns one native-routed service shell with Home, Multiplayer, password fallback, Registration, Recovery and Account views; `UiNavigationState` carries the route plus non-secret endpoint/account drafts so WebView navigation does not invent a second source of truth. `ACCOUNT` is scoped to the Multiplayer view and is hidden until a successful remote authentication exists in the current client process. `SIGN IN` is a single user action: the client first tries the remembered-device credential and routes to the password view only when the credential is missing/rejected;
+- Registration exposes the final DisplayName/AccountHandle/password/recovery/locale/consent shape, but password/recovery/profile/consent controls are explicitly fail-closed while the server still lacks durable credential/profile storage. The only live registration action is labelled as a development AccountHandle + remembered-device credential bootstrap and never transmits password/recovery material;
+- Recovery belongs to the password/account flow, but its password-form action remains hidden until M8E.3b can distinguish a real password rejection from remembered-device rejection;
+- Recovery is reached from the password/account flow rather than being a peer of the primary multiplayer actions. Explicit Sign out remains visible but disabled until M8E.3b can revoke the server-side device credential safely. `ACCOUNT` is not exposed before a successful multiplayer authentication in the current client process;
+- locale selection is live now and persists through `ClientPreferencesStore`;
+- Local and multiplayer ESC menus are separate service documents: `local_session_menu.html` contains only Resume / Save / Load / Main / Quit, while `multiplayer_session_menu.html` contains only Resume / Disconnect-to-main / Sign-out-to-main / Quit. Save/Load and Sign out remain fail-closed until their backend slices. New Game and Settings deliberately do not duplicate the in-session menus;
+- Local New Game first asks for an unrestricted local-only Unicode player name; no public-name moderation is applied because the value belongs to the local save. The current pre-persistence client carries it as launch/session UX state until M8E.3e gives it a durable local record;
+- service/session WebView surfaces use the full client window rather than the cinematic 16:9 render viewport, scale typography/control geometry primarily from viewport height, and the desktop window has an 800×600 minimum usability envelope;
+- the loading surface receives explicit `session=local|remote` context. Cancel is exposed only for a remote connection/synchronization attempt and returns to Multiplayer without terminating the client;
+- the obsolete `ConfirmExitState` and duplicate MainMenu `HtmlUiManager` command path are removed. GameWebView/Application now own service/session menu interaction, while `MainMenuState` is only the lightweight native render-loop backdrop. A visible service/session WebView keeps ordinary keyboard focus for controls; Win32 foreground ownership recognises WebView2 child/helper HWND ancestry, and each session document also forwards DOM Escape into the same native `session_escape` command. One native transition latch deduplicates both sources. `EliteUiKit` owns same-document view crossfades, while `Application::beginServiceUiTransition()` sequences cross-document/service transitions as fade-out -> state/navigation change -> destination fade-in.
+
+## Presentation transaction contract
+
+A UI or map destination is not allowed to become visible merely because a navigation call was accepted or a renderer mode enum changed. Production presentation follows an explicit **prepare -> present** transaction.
+
+For GameWebView service documents:
+
+```text
+outgoing visible document
+  -> CSS fade-out completes (`transitionend`)
+  -> browser acknowledges `service_ui_fade_out_complete|serial`
+  -> native navigation changes document/state
+  -> destination remains `elite-ui-boot` / invisible
+  -> localization + packaged fonts + native route/state + layout settle
+  -> destination is revealed
+```
+
+The C++ timeout is fault recovery only; it is not the normal transition clock. `navigate()` acceptance is likewise not DOM readiness. Main menu has no temporary Home route while native state is unresolved, Loading receives its first cached authoritative progress only after `loading_ui_ready`, and hidden documents are discarded when their UI mode closes instead of being treated as reusable presentation state. Same-document service routes use a serialized last-destination-wins transition runner so a superseded async route cannot leave the only active view half-hidden.
+
+Native visibility is part of the same contract, not an implementation detail. On Windows the top-level GLFW HWND is created hidden and receives one defined dark OpenGL frame before `glfwShowWindow`; the embedded WebView2 child is hidden immediately after controller creation and on every cross-document `navigate()`. Service documents emit a page-specific `*_prepared` acknowledgement only after localization/fonts/native state and a forced hidden layout pass; native code then exposes the child HWND and starts the CSS fade-in. This is required because boot CSS cannot suppress WebView2's white controller/default-background frame before a document has painted.
+
+During gameplay the target-agnostic SystemMap side-panel document is prewarmed off-screen and retained across ordinary map close/reopen. F9-F12 therefore does not pay another HTML/CSS/font navigation barrier; only the target-specific authoritative payload must be applied before the outgoing gameplay frame is captured. A service/session document temporarily replaces this hidden panel in the single GameWebView and the panel is prewarmed again when gameplay resumes.
+
+The System Map spans two presentation technologies (OpenGL map + a child-HWND GameWebView side panel), so its transaction has an additional barrier. F9-F12 first resolve the requested Galaxy/System/Detail/Local target while gameplay remains visible. The side panel loads native-hidden and acknowledges a fully applied authoritative payload (`system_map_panel_prepared`). Only then does the outgoing renderer capture the exact frame it just rendered; ownership changes after that frame is swapped. The first incoming OpenGL frame stays fully covered by the captured source, then crossfades. Visible map-to-map mode changes use the same rule: capture old map -> switch state -> render one complete incoming frame under opaque old snapshot -> blend. Map exit is symmetric: panel fades out, current map frame is captured, gameplay renders one complete covered frame, then the map snapshot dissolves.
+
+This deliberately removes several previous shortcuts: guessed native 180 ms navigation deadlines, `markLoaded()` immediately after `navigate()`, default-Galaxy-first F9-F12 opening, the hotkey-only unrendered `swapBuffers()`, and capture of an unspecified next-frame back buffer.
+
+`GameWebView` remains the production service/session UI boundary. `HtmlUiManager`/WebSocket panels remain legacy/developer/debug tooling and must not become a second production main-menu/session navigation path. The System Map side panel is still a separate OS child window; its prepare-before-show barrier guarantees complete content, but a pixel-perfect single-frame alpha blend of that HWND with the OpenGL framebuffer would require either migrating that panel to native/OpenGL UI or a future WebView2 composition/offscreen integration.
+
+Password-backed registration/recovery/sign-out becomes the next server-security integration, not another client-only imitation.
 
 ## First shared Web components
 

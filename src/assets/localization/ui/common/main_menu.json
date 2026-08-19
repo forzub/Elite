@@ -178,11 +178,53 @@
       "ja": "サーバーアドレスが無効です。"
     },
     "main.auth.local_credential_missing": {
-      "en": "No local credential is stored for this account on this device. Register only for a new account; an existing account requires recovery.",
-      "ru": "На этом устройстве нет локальных учётных данных для этой записи. REGISTER используйте только для новой записи; существующая запись требует восстановления.",
-      "zh-Hans": "此设备没有保存该账户的本地凭据。REGISTER 仅用于新账户；已有账户需要恢复流程。",
-      "es": "No hay una credencial local guardada para esta cuenta en este dispositivo. Usa REGISTER solo para una cuenta nueva; una cuenta existente requiere recuperación.",
-      "ja": "この端末にはこのアカウントのローカル認証情報がありません。REGISTER は新規アカウント専用で、既存アカウントには復旧が必要です。"
+      "en": "No remembered-device credential is stored for this account. Enter the account password to continue.",
+      "ru": "Для этой учётной записи нет сохранённого ключа устройства. Для продолжения введите пароль аккаунта.",
+      "zh-Hans": "此账户没有保存的设备凭据。请输入账户密码继续。",
+      "es": "No hay una credencial de dispositivo recordada para esta cuenta. Introduce la contraseña de la cuenta para continuar.",
+      "ja": "このアカウントの保存済みデバイス認証情報がありません。続行するにはアカウントのパスワードを入力してください。"
+    },
+    "main.local_new_game.title": {
+      "en": "NEW LOCAL GAME",
+      "ru": "НОВАЯ ЛОКАЛЬНАЯ ИГРА",
+      "zh-Hans": "新建本地游戏",
+      "es": "NUEVA PARTIDA LOCAL",
+      "ja": "新しいローカルゲーム"
+    },
+    "main.local_player_name": {
+      "en": "PLAYER NAME",
+      "ru": "ИМЯ ИГРОКА",
+      "zh-Hans": "玩家名称",
+      "es": "NOMBRE DEL JUGADOR",
+      "ja": "プレイヤー名"
+    },
+    "main.local_player_name_help": {
+      "en": "This name belongs only to the local save and is not moderated.",
+      "ru": "Это имя относится только к локальному сохранению и не проходит модерацию.",
+      "zh-Hans": "此名称仅属于本地存档，不进行内容审核。",
+      "es": "Este nombre pertenece solo a la partida local y no se modera.",
+      "ja": "この名前はローカルセーブ専用で、モデレーション対象外です。"
+    },
+    "main.local_player_name_required": {
+      "en": "Enter a player name.",
+      "ru": "Введите имя игрока.",
+      "zh-Hans": "请输入玩家名称。",
+      "es": "Introduce un nombre de jugador.",
+      "ja": "プレイヤー名を入力してください。"
+    },
+    "main.start": {
+      "en": "START",
+      "ru": "НАЧАТЬ",
+      "zh-Hans": "开始",
+      "es": "INICIAR",
+      "ja": "開始"
+    },
+    "main.cancel": {
+      "en": "CANCEL",
+      "ru": "ОТМЕНА",
+      "zh-Hans": "取消",
+      "es": "CANCELAR",
+      "ja": "キャンセル"
     }
   }
 }

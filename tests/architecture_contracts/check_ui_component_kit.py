@@ -119,10 +119,13 @@ for token in (
 if "ClientPreferencesStore.cpp" not in cmake:
     fail("EliteGame does not compile ClientPreferencesStore")
 
-finish_marker = "const bool remote =\n            m_pendingSessionLaunch == GameSessionLaunchKind::RemoteMultiplayer;"
-if finish_marker not in app_cpp:
+finish_start = app_cpp.find("const auto finishReadySession = [this]()")
+if finish_start < 0:
     fail("cannot locate successful-session persistence boundary")
-finish_tail = app_cpp.split(finish_marker, 1)[1].split("m_pendingSessionLaunch = GameSessionLaunchKind::None;", 1)[0]
+finish_end = app_cpp.find("m_pendingSessionLaunch = GameSessionLaunchKind::None;", finish_start)
+if finish_end < 0:
+    fail("cannot locate successful-session completion boundary")
+finish_tail = app_cpp[finish_start:finish_end]
 for token in (
     "rememberSuccessfulMultiplayer",
     "ClientPreferencesStore::save",

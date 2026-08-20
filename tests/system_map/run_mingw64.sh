@@ -14,6 +14,7 @@ fi
 PYTHON_BIN="${ELITE_PYTHON_BIN}"
 
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/system_map/check_architecture.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/system_map/check_navigation_context.py"
 
 cmake \
     -S "${ROOT_DIR}/tests/system_map" \

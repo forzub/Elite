@@ -21,6 +21,7 @@
 #include "src/game/navigation/CubicNavigationInteraction.h"
 #include "src/game/navigation/GalaxyNavigationGrid.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
+#include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/system_map/DetailMapView.h"
 #include "src/game/system_map/HubMapView.h"
 #include "src/game/system_map/GalaxyMapView.h"
@@ -43,6 +44,10 @@ using game::navigation::CubicNavigationGridDefinition;
 using game::navigation::CubicNavigationLevelAction;
 using game::navigation::GalaxyNavigationGrid;
 using game::navigation::SystemNavigationGrid;
+using game::presentation::SystemMapPanelAction;
+using game::presentation::SystemMapPanelActionType;
+using game::presentation::SystemMapPanelCommandType;
+using game::presentation::SystemMapPanelPresentation;
 using game::system_map::DetailMapView;
 using game::system_map::HubMapView;
 using game::system_map::GalaxyMapView;
@@ -1637,6 +1642,151 @@ void testGalaxyTerminalCubeEntersSystemOrEmptySector()
     REQUIRE(foundEmpty);
 }
 
+void requireNavigationAction(
+    const game::presentation::SystemMapPanelNavigationAction& actual,
+    SystemMapPanelActionType action,
+    bool enabled
+)
+{
+    REQUIRE(actual.action == action);
+    REQUIRE(actual.enabled == enabled);
+}
+
+void testSystemMapPanelNavigationActionMatrix()
+{
+    using game::presentation::buildSystemMapPanelNavigationActions;
+
+    SystemMapPanelPresentation panel;
+
+    panel.mode = MapMode::Galaxy;
+    {
+        const auto actions = buildSystemMapPanelNavigationActions(panel);
+        requireNavigationAction(actions[0], SystemMapPanelActionType::OpenSystem, true);
+        requireNavigationAction(actions[1], SystemMapPanelActionType::OpenDetail, false);
+        requireNavigationAction(actions[2], SystemMapPanelActionType::OpenHub, false);
+    }
+
+    panel.mode = MapMode::System;
+    panel.canOpenDetail = false;
+    panel.canOpenHub = false;
+    {
+        const auto actions = buildSystemMapPanelNavigationActions(panel);
+        requireNavigationAction(actions[0], SystemMapPanelActionType::OpenGalaxy, true);
+        requireNavigationAction(actions[1], SystemMapPanelActionType::OpenDetail, false);
+        requireNavigationAction(actions[2], SystemMapPanelActionType::OpenHub, false);
+    }
+
+    panel.canOpenDetail = true;
+    panel.canOpenHub = true;
+    {
+        const auto actions = buildSystemMapPanelNavigationActions(panel);
+        requireNavigationAction(actions[0], SystemMapPanelActionType::OpenGalaxy, true);
+        requireNavigationAction(actions[1], SystemMapPanelActionType::OpenDetail, true);
+        requireNavigationAction(actions[2], SystemMapPanelActionType::OpenHub, true);
+    }
+
+    panel.mode = MapMode::Detail;
+    panel.canOpenHub = false;
+    {
+        const auto actions = buildSystemMapPanelNavigationActions(panel);
+        requireNavigationAction(actions[0], SystemMapPanelActionType::OpenSystem, true);
+        requireNavigationAction(actions[1], SystemMapPanelActionType::OpenGalaxy, true);
+        requireNavigationAction(actions[2], SystemMapPanelActionType::OpenHub, false);
+    }
+
+    panel.canOpenHub = true;
+    {
+        const auto actions = buildSystemMapPanelNavigationActions(panel);
+        requireNavigationAction(actions[0], SystemMapPanelActionType::OpenSystem, true);
+        requireNavigationAction(actions[1], SystemMapPanelActionType::OpenGalaxy, true);
+        requireNavigationAction(actions[2], SystemMapPanelActionType::OpenHub, true);
+    }
+
+    panel.mode = MapMode::Hub;
+    {
+        const auto actions = buildSystemMapPanelNavigationActions(panel);
+        requireNavigationAction(actions[0], SystemMapPanelActionType::OpenDetail, true);
+        requireNavigationAction(actions[1], SystemMapPanelActionType::OpenSystem, true);
+        requireNavigationAction(actions[2], SystemMapPanelActionType::OpenGalaxy, true);
+    }
+}
+
+void requirePanelCommand(
+    const SystemMapPanelAction& action,
+    MapMode mode,
+    SystemMapPanelCommandType expected,
+    int expectedSystemId = -1
+)
+{
+    const auto command = game::presentation::resolveSystemMapPanelAction(
+        action,
+        mode
+    );
+    REQUIRE(command.type == expected);
+    REQUIRE(command.systemId == expectedSystemId);
+}
+
+void testSystemMapPanelCommandSemantics()
+{
+    const SystemMapPanelAction select{
+        SystemMapPanelActionType::SelectSystem,
+        42
+    };
+    for (MapMode mode : {
+             MapMode::Galaxy,
+             MapMode::System,
+             MapMode::Detail,
+             MapMode::Hub})
+    {
+        requirePanelCommand(
+            select,
+            mode,
+            SystemMapPanelCommandType::SelectSystem,
+            42
+        );
+    }
+
+    const SystemMapPanelAction galaxy{
+        SystemMapPanelActionType::OpenGalaxy,
+        -1
+    };
+    requirePanelCommand(galaxy, MapMode::Galaxy, SystemMapPanelCommandType::None);
+    requirePanelCommand(galaxy, MapMode::System, SystemMapPanelCommandType::Galaxy);
+    requirePanelCommand(galaxy, MapMode::Detail, SystemMapPanelCommandType::Galaxy);
+    requirePanelCommand(galaxy, MapMode::Hub, SystemMapPanelCommandType::Galaxy);
+
+    const SystemMapPanelAction system{
+        SystemMapPanelActionType::OpenSystem,
+        -1
+    };
+    requirePanelCommand(
+        system,
+        MapMode::Galaxy,
+        SystemMapPanelCommandType::OpenSelectedGalaxyTarget
+    );
+    requirePanelCommand(system, MapMode::System, SystemMapPanelCommandType::None);
+    requirePanelCommand(system, MapMode::Detail, SystemMapPanelCommandType::LoadedSystem);
+    requirePanelCommand(system, MapMode::Hub, SystemMapPanelCommandType::LoadedSystem);
+
+    const SystemMapPanelAction detail{
+        SystemMapPanelActionType::OpenDetail,
+        -1
+    };
+    requirePanelCommand(detail, MapMode::Galaxy, SystemMapPanelCommandType::None);
+    requirePanelCommand(detail, MapMode::System, SystemMapPanelCommandType::SelectedDetail);
+    requirePanelCommand(detail, MapMode::Detail, SystemMapPanelCommandType::None);
+    requirePanelCommand(detail, MapMode::Hub, SystemMapPanelCommandType::LoadedDetail);
+
+    const SystemMapPanelAction hub{
+        SystemMapPanelActionType::OpenHub,
+        -1
+    };
+    requirePanelCommand(hub, MapMode::Galaxy, SystemMapPanelCommandType::None);
+    requirePanelCommand(hub, MapMode::System, SystemMapPanelCommandType::Hub);
+    requirePanelCommand(hub, MapMode::Detail, SystemMapPanelCommandType::Hub);
+    requirePanelCommand(hub, MapMode::Hub, SystemMapPanelCommandType::None);
+}
+
 void testGalaxySystemDetailHubTransitionSequence()
 {
     MapMode mode = MapMode::Galaxy;
@@ -1812,6 +1962,8 @@ int main()
         {"prepared frame drives System picking", testPreparedFrameDrivesSystemPicking},
         {"camera snapshots own projection contracts", testCameraSnapshotsOwnProjectionContracts},
         {"Galaxy terminal cube enters System/empty sector", testGalaxyTerminalCubeEntersSystemOrEmptySector},
+        {"semantic map-panel navigation action matrix", testSystemMapPanelNavigationActionMatrix},
+        {"semantic map-panel command routing", testSystemMapPanelCommandSemantics},
         {"Galaxy -> System -> Detail -> Hub transition sequence", testGalaxySystemDetailHubTransitionSequence},
         {"mouse and scroll trace is repeatable", testMouseAndScrollTraceIsRepeatable}
     };

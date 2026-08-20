@@ -32,6 +32,8 @@ add_executable(
     "${ELITE_SOURCE_ROOT}/src/game/navigation/GalaxyNavigationConfig.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/GalaxyNavigationGrid.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/SystemNavigationGrid.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/presentation/GalaxyNavigationPresentation.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/presentation/SystemMapPanelPresentation.cpp"
 )
 
 target_include_directories(

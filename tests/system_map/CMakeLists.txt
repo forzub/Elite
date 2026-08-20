@@ -27,6 +27,7 @@ add_executable(
     "${ELITE_SOURCE_ROOT}/src/game/system_map/LocalMapPresentationBuilder.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/system_map/DetailMapSceneRenderer.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/system_map/HubMapSceneRenderer.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/system_map/GalaxyMapView.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/CubicNavigationGrid.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/GalaxyNavigationConfig.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/GalaxyNavigationGrid.cpp"

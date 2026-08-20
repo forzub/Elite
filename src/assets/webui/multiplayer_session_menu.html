@@ -33,7 +33,7 @@
     async function applyMultiplayerSessionMenuState() {
       await window.EliteUiKit.waitForDocumentDependencies();
       await window.EliteUiKit.settlePreparedLayout();
-      await sendCommand('session_menu_prepared');
+      await window.EliteUiKit.sendPresentationCommand('session_menu_prepared');
     }
     document.addEventListener('keydown', event => {
       if (event.key !== 'Escape' || event.repeat) return;
@@ -44,7 +44,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       window.EliteUiKit.initialize(document);
-      sendCommand('session_menu_ready');
+      void window.EliteUiKit.sendPresentationCommand('session_menu_ready');
     });
     window.applyMultiplayerSessionMenuState = applyMultiplayerSessionMenuState;
   </script>

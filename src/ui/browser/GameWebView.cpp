@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <chrono>
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -164,7 +165,7 @@ void GameWebView::start(
 
         // The backend creates the widget as a real WS_CHILD of parentHwnd.
         // Do not create/re-style/re-parent a second top-level window.
-        MoveWindow(widgetHwnd, 0, 0, width, height, TRUE);
+        setBounds(0, 0, width, height);
 
         w->bind(
             "gameCommand",
@@ -319,11 +320,7 @@ bool GameWebView::pollCommand(std::string& outCommand)
 
 void GameWebView::resize(int width, int height)
 {
-    HWND hwnd = static_cast<HWND>(m_webviewHwnd);
-    if (!hwnd)
-        return;
-
-    MoveWindow(hwnd, 0, 0, width, height, TRUE);
+    setBounds(0, 0, width, height);
 }
 
 void GameWebView::setBounds(int x, int y, int width, int height)
@@ -332,7 +329,19 @@ void GameWebView::setBounds(int x, int y, int width, int height)
     if (!hwnd)
         return;
 
-    MoveWindow(hwnd, x, y, width, height, TRUE);
+    // Child-window coordinates are native parent-client coordinates, not
+    // OpenGL framebuffer pixels. Application supplies those coordinates.
+    // SWP_NOCOPYBITS is intentional: Windows must not preserve/copy pixels
+    // from the previous child geometry while WebView2's compositor catches up.
+    SetWindowPos(
+        hwnd,
+        nullptr,
+        x,
+        y,
+        std::max(1, width),
+        std::max(1, height),
+        SWP_NOZORDER | SWP_NOACTIVATE | SWP_NOCOPYBITS
+    );
 }
 
 void GameWebView::setVisible(bool visible)
@@ -344,43 +353,35 @@ void GameWebView::setVisible(bool visible)
     EnableWindow(hwnd, visible ? TRUE : FALSE);
     ShowWindow(hwnd, visible ? SW_SHOW : SW_HIDE);
 
-    if (!visible)
-    {
-        SetWindowPos(
-            hwnd,
-            HWND_BOTTOM,
-            0,
-            0,
-            0,
-            0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE
-        );
-
-        HWND parent = static_cast<HWND>(m_parentHwnd);
-        if (parent && currentProcessOwnsForegroundWindow())
-        {
-            SetActiveWindow(parent);
-            SetFocus(parent);
-        }
-    }
-    else
+    if (visible && currentProcessOwnsForegroundWindow())
     {
         // Showing/loading UI in a background client must not activate that
-        // process. This is especially important while another EliteGame window
-        // is already in gameplay and a second client is authenticating.
-        SetWindowPos(
-            hwnd,
-            HWND_TOP,
-            0,
-            0,
-            0,
-            0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE
-        );
-
-        if (currentProcessOwnsForegroundWindow())
-            SetFocus(hwnd);
+        // process. Focus only follows the already-foreground client. Hiding a
+        // sibling surface deliberately does not move focus: the presentation
+        // coordinator may already have shown the incoming sibling.
+        SetFocus(hwnd);
     }
+}
+
+void GameWebView::bringToFront()
+{
+    HWND hwnd = static_cast<HWND>(m_webviewHwnd);
+    if (!hwnd)
+        return;
+
+    // Z-order changes are a presentation-commit operation, not a side effect
+    // of generic visibility. With the fullscreen front/back WebView pair the
+    // prepared incoming sibling must become the compositor owner before the
+    // outgoing sibling is hidden. Never activate the process here.
+    SetWindowPos(
+        hwnd,
+        HWND_TOP,
+        0,
+        0,
+        0,
+        0,
+        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE
+    );
 }
 
 void GameWebView::focus()

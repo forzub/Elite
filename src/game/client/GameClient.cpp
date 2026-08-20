@@ -222,24 +222,34 @@ bool GameClient::requestGalaxyMapSnapshot(bool forceRefresh)
     return m_maps.requestGalaxy(forceRefresh);
 }
 
-bool GameClient::requestSystemMapSnapshot(int systemId, bool forceRefresh)
+bool GameClient::composeSystemMapSnapshot(int systemId)
 {
-    return m_maps.requestSystem(systemId, forceRefresh);
+    if (!m_hasAcceptedSnapshot || !m_hasSessionSnapshot)
+        return false;
+
+    return m_maps.composeSystem(
+        systemId,
+        m_lastSimulationMetadata,
+        m_sessionSnapshot.universeTimeScale,
+        m_sessionSnapshot.universeDate
+    );
 }
 
-bool GameClient::requestDetailMapSnapshot(
-    const world::celestial::DetailTarget& target,
-    bool forceRefresh)
+bool GameClient::composeDetailMapSnapshot(
+    const world::celestial::DetailTarget& target)
 {
-    return m_maps.requestDetail(target, forceRefresh);
+    if (!m_hasAcceptedSnapshot)
+        return false;
+    return m_maps.composeDetail(target, m_lastSimulationMetadata);
 }
 
-bool GameClient::requestHubMapSnapshot(
+bool GameClient::composeHubMapSnapshot(
     int systemId,
-    const std::string& hubId,
-    bool forceRefresh)
+    const std::string& hubId)
 {
-    return m_maps.requestHub(systemId, hubId, forceRefresh);
+    if (!m_hasAcceptedSnapshot)
+        return false;
+    return m_maps.composeHub(systemId, hubId, m_lastSimulationMetadata);
 }
 
 game::client::ClientRequestStatus GameClient::galaxyMapRequestStatus() const
@@ -247,20 +257,6 @@ game::client::ClientRequestStatus GameClient::galaxyMapRequestStatus() const
     return m_maps.galaxyStatus();
 }
 
-game::client::ClientRequestStatus GameClient::systemMapRequestStatus() const
-{
-    return m_maps.systemStatus();
-}
-
-game::client::ClientRequestStatus GameClient::detailMapRequestStatus() const
-{
-    return m_maps.detailStatus();
-}
-
-game::client::ClientRequestStatus GameClient::hubMapRequestStatus() const
-{
-    return m_maps.hubStatus();
-}
 
 const world::celestial::GalaxyMapSnapshot*
 GameClient::galaxyMapSnapshot() const

@@ -33,12 +33,25 @@ if not visible_match:
     failures.append("GameWebView::setVisible(bool) was not found")
 else:
     body = visible_match.group("body")
-    if "SWP_NOACTIVATE" not in body:
-        failures.append("GameWebView visibility changes must use SWP_NOACTIVATE")
+    if re.search(r"\bSetWindowPos\s*\(", body):
+        failures.append("GameWebView visibility must not reorder the child HWND")
     if "currentProcessOwnsForegroundWindow()" not in body:
         failures.append("GameWebView may move keyboard focus only inside the foreground client")
     if re.search(r"\bSetForegroundWindow\s*\(", body):
         failures.append("GameWebView visibility must not steal foreground from another client")
+
+
+bounds_match = re.search(
+    r"void\s+GameWebView::setBounds\s*\([^)]*\)\s*\{(?P<body>.*?)\n\}",
+    webview_cpp,
+    re.S,
+)
+if not bounds_match:
+    failures.append("GameWebView::setBounds() was not found")
+else:
+    body = bounds_match.group("body")
+    if "SWP_NOACTIVATE" not in body or "SWP_NOZORDER" not in body:
+        failures.append("GameWebView geometry changes must be non-activating and z-order neutral")
 
 if failures:
     for failure in failures:

@@ -244,7 +244,10 @@ if game_state_header.is_file():
 
 if application_cpp.is_file():
     text = application_cpp.read_text(encoding="utf-8", errors="replace")
-    prepare_pos = text.find("state->prepareFrame(dt);")
+    # The Local ESC pause policy may pass 0 dt into frame preparation while
+    # multiplayer and all F1-F12 targets keep normal time. The architecture
+    # contract is the lifecycle order, not the exact argument spelling.
+    prepare_pos = text.find("state->prepareFrame(")
     input_pos = text.find("state->handleInput();")
     update_pos = text.find("state->update(dt);")
     if (

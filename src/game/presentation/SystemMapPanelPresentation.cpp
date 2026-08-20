@@ -1,116 +1,146 @@
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 
-#include <cmath>
+#include <glm/geometric.hpp>
+#include <utility>
 
 #include "src/game/presentation/GalaxyNavigationPresentation.h"
 
 namespace game::presentation
 {
-namespace
-{
-const char* modeName(game::system_map::MapMode mode)
+SystemMapPanelCommand resolveSystemMapPanelAction(
+    const SystemMapPanelAction& action,
+    game::system_map::MapMode mode)
 {
     using game::system_map::MapMode;
 
-    switch (mode)
+    switch (action.type)
     {
-        case MapMode::Galaxy: return "Galaxy";
-        case MapMode::System: return "System";
-        case MapMode::Detail: return "Detail";
-        case MapMode::Hub: return "Hub";
+        case SystemMapPanelActionType::SelectSystem:
+            return {SystemMapPanelCommandType::SelectSystem, action.systemId};
+
+        case SystemMapPanelActionType::OpenGalaxy:
+            return mode == MapMode::Galaxy
+                ? SystemMapPanelCommand{}
+                : SystemMapPanelCommand{SystemMapPanelCommandType::Galaxy, -1};
+
+        case SystemMapPanelActionType::OpenSystem:
+            if (mode == MapMode::Galaxy)
+            {
+                return {
+                    SystemMapPanelCommandType::OpenSelectedGalaxyTarget,
+                    -1
+                };
+            }
+            if (mode == MapMode::Detail || mode == MapMode::Hub)
+            {
+                return {SystemMapPanelCommandType::LoadedSystem, -1};
+            }
+            return {};
+
+        case SystemMapPanelActionType::OpenDetail:
+            if (mode == MapMode::System)
+                return {SystemMapPanelCommandType::SelectedDetail, -1};
+            if (mode == MapMode::Hub)
+                return {SystemMapPanelCommandType::LoadedDetail, -1};
+            return {};
+
+        case SystemMapPanelActionType::OpenHub:
+            if (mode == MapMode::System || mode == MapMode::Detail)
+                return {SystemMapPanelCommandType::Hub, -1};
+            return {};
     }
 
-    return "Galaxy";
-}
+    return {};
 }
 
-nlohmann::json buildSystemMapPanelPayload(
-    const SystemMapPanelPresentationInput& input
-)
+SystemMapPanelNavigationActions buildSystemMapPanelNavigationActions(
+    const SystemMapPanelPresentation& panel)
 {
-    using nlohmann::json;
+    using game::system_map::MapMode;
 
-    json payload;
-    payload["universeTimeSeconds"] = input.universeTimeSeconds;
-    payload["universeDate"] = input.universeDate;
-    payload["universeTimeScale"] = input.universeTimeScale;
-    payload["mode"] = modeName(input.mode);
-
-    const auto* galaxy = input.galaxy;
-    const auto* system = input.system;
-    const auto* nav = input.navigation;
-
-    payload["systemsCount"] = galaxy ? galaxy->systems.size() : 0;
-    payload["currentSystemId"] = nav ? nav->currentSystemId : -1;
-    payload["currentSystemName"] = input.currentSystemName;
-    payload["selectedSystemId"] = input.selectedSystemId;
-    payload["selectedEmptySector"] = input.selectedEmptySector;
-
-    if (input.selectedEmptySector && system)
+    switch (panel.mode)
     {
-        payload["selectedEmptySectorPositionLy"] = {
-            {"x", system->systemPositionLy.x},
-            {"y", system->systemPositionLy.y},
-            {"z", system->systemPositionLy.z}
-        };
+        case MapMode::Galaxy:
+            return {{{SystemMapPanelActionType::OpenSystem, true},
+                     {SystemMapPanelActionType::OpenDetail, false},
+                     {SystemMapPanelActionType::OpenHub, false}}};
+
+        case MapMode::System:
+            return {{{SystemMapPanelActionType::OpenGalaxy, true},
+                     {SystemMapPanelActionType::OpenDetail, panel.canOpenDetail},
+                     {SystemMapPanelActionType::OpenHub, panel.canOpenHub}}};
+
+        case MapMode::Detail:
+            return {{{SystemMapPanelActionType::OpenSystem, true},
+                     {SystemMapPanelActionType::OpenGalaxy, true},
+                     {SystemMapPanelActionType::OpenHub, panel.canOpenHub}}};
+
+        case MapMode::Hub:
+            return {{{SystemMapPanelActionType::OpenDetail, true},
+                     {SystemMapPanelActionType::OpenSystem, true},
+                     {SystemMapPanelActionType::OpenGalaxy, true}}};
     }
 
-    payload["systems"] = json::array();
-    payload["selectedBodyId"] = input.selectedBodyId;
-    payload["selectedHubId"] = input.selectedHubId;
-    payload["canOpenDetail"] = input.canOpenDetail;
-    payload["canOpenHub"] = input.canOpenHub;
+    return {};
+}
 
-    if (input.selectedDetailCell)
+SystemMapPanelPresentation buildSystemMapPanelPresentation(
+    const SystemMapPanelPresentationInput& input)
+{
+    SystemMapPanelPresentation panel;
+    panel.universeTimeSeconds = input.universeTimeSeconds;
+    panel.universeDate = input.universeDate;
+    panel.universeTimeScale = input.universeTimeScale;
+    panel.mode = input.mode;
+    panel.currentSystemId = input.navigation
+        ? input.navigation->currentSystemId
+        : -1;
+    panel.currentSystemName = input.currentSystemName;
+    panel.selectedSystemId = input.selectedSystemId;
+    panel.selectedEmptySector = input.selectedEmptySector;
+    panel.selectedBodyId = input.selectedBodyId;
+    panel.selectedHubId = input.selectedHubId;
+    panel.systemLayerIsSpace = input.systemLayerIsSpace;
+    panel.canOpenDetail = input.canOpenDetail;
+    panel.selectedDetailCell = input.selectedDetailCell;
+    panel.canOpenHub = input.canOpenHub;
+
+    if (input.selectedEmptySector && input.system)
+        panel.selectedEmptySectorPositionLy = input.system->systemPositionLy;
+
+    if (!input.galaxy)
+        return panel;
+
+    panel.systemsCount = input.galaxy->systems.size();
+    panel.systems.reserve(input.galaxy->systems.size());
+
+    const auto playerMarker = input.navigation
+        ? resolveGalaxyPlayerMarkerPosition(*input.galaxy, *input.navigation)
+        : GalaxyPlayerMarkerPosition{};
+
+    for (const auto& candidate : input.galaxy->systems)
     {
-        const auto& cell = *input.selectedDetailCell;
-        payload["selectedDetailCell"] = {
-            {"level", cell.level},
-            {"maximumLevel", cell.maximumLevel},
-            {"x", cell.x},
-            {"y", cell.y},
-            {"z", cell.z},
-            {"edgeAu", cell.edgeAu}
-        };
-    }
+        SystemMapPanelSystemItem item;
+        item.id = candidate.id;
+        item.name = candidate.name;
+        item.starType = candidate.starType;
+        item.jurisdiction = candidate.jurisdiction.empty()
+            ? "Unregistered"
+            : candidate.jurisdiction;
+        item.current = input.navigation &&
+            candidate.id == input.navigation->currentSystemId;
+        item.selected = candidate.id == input.selectedSystemId;
 
-    if (!galaxy)
-        return payload;
-
-    const auto playerMarker =
-        nav
-            ? resolveGalaxyPlayerMarkerPosition(*galaxy, *nav)
-            : GalaxyPlayerMarkerPosition{};
-
-    for (const auto& candidate : galaxy->systems)
-    {
-        double distanceFromPlayerLy = 0.0;
-        if (nav)
+        if (input.navigation)
         {
             const glm::dvec3 delta =
                 candidate.positionLy - playerMarker.positionLy;
-            distanceFromPlayerLy = glm::length(delta);
+            item.distanceFromPlayerLy = glm::length(delta);
         }
 
-        json item;
-        item["id"] = candidate.id;
-        item["name"] = candidate.name;
-        item["starType"] = candidate.starType;
-        item["starsCount"] = candidate.starsCount;
-        item["xLy"] = candidate.positionLy.x;
-        item["yLy"] = candidate.positionLy.y;
-        item["zLy"] = candidate.positionLy.z;
-        item["current"] = nav && candidate.id == nav->currentSystemId;
-        item["selected"] = candidate.id == input.selectedSystemId;
-        item["distanceFromPlayerLy"] = distanceFromPlayerLy;
-        item["jurisdiction"] =
-            candidate.jurisdiction.empty()
-                ? "Unregistered"
-                : candidate.jurisdiction;
-
-        payload["systems"].push_back(std::move(item));
+        panel.systems.push_back(std::move(item));
     }
 
-    return payload;
+    return panel;
 }
 }

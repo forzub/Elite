@@ -186,7 +186,6 @@ def main() -> int:
     for rel in (
         "main_menu.html",
         "loading.html",
-        "system_map_panel.html",
         "local_session_menu.html",
         "multiplayer_session_menu.html",
     ):

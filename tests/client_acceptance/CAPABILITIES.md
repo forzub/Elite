@@ -23,7 +23,8 @@ comparisons are deliberately outside this matrix.
 | Remote NPC presentation | Hub Motion Lab ships move through authoritative snapshot/interpolation path | client acceptance + presentation pipeline | protected |
 | HUD coordinates/speed data | Client render state -> canonical travel-frame `VREL` -> production formatter -> exact `main_coord_*` UIText bindings | client acceptance + architecture guard | protected |
 | Cockpit flight-vector instrument | One circular instrument consumes canonical VREL, bounded speed fraction, hull-vs-velocity basis, localized/preformatted speed + mode text | client acceptance + architecture guard | protected |
-| F9-F12 navigation layout | F9 Galaxy, F10 current System/sector, F11 current Details context, F12 current Hub/local cube; same-level repeat closes, another key switches in-place | client acceptance + architecture guard | protected |
+| F9-F12 navigation layout | F9 Galaxy, F10 current System/sector, F11 current Details context, F12 current Hub/local cube; direct selectors are idempotent and the latest pending selector wins | client acceptance + architecture guard | protected |
+| Galaxy terminal cube drill | Refining/zooming past the terminal Galaxy cube enters the selected known system or empty System-space sector and synchronizes the global Navigation target | system_map behavior + architecture guard | protected |
 | Ctrl+F11 coordinate format | Ctrl+F11 cycles `CoordinateDisplayService`; map footer advertises the chord | client acceptance + architecture guard | protected |
 | Ctrl+F12 constellations | Ctrl+F12 toggles the gameplay starfield constellation overlay | client acceptance + architecture guard | protected |
 | Alt+F12 sky culture | Alt+F12 cycles the selected star-culture topology without changing overlay visibility | architecture + catalog contracts | protected |
@@ -32,13 +33,13 @@ comparisons are deliberately outside this matrix.
 | Galaxy player navigation marker | Real player navigation position -> shared Galaxy marker resolver -> Galaxy map/panel | client acceptance + architecture guard | protected |
 | Interstellar navigation presentation | Outside configured system-membership radius, navigation publishes `currentSystemId = -1` with galactic-absolute position; entering another catalog system rebases local coordinates | architecture contracts | protected |
 | Map distance from player | `distanceFromPlayerLy` uses actual Galaxy player-marker position, not merely current-system center | client acceptance + architecture guard | protected |
-| System-map WebView commands | Actual HTML command vocabulary -> production parser -> production command dispatcher | client acceptance + architecture guard | protected |
-| Map command meaning | Select/open/Galaxy/System/Details/Hub/close commands dispatch the expected actions | client acceptance | protected |
+| Native STAR ATLAS controls | Single-surface dropdown + semantic GALAXY/SYSTEM-or-SPACE/DETAIL/HUB navigation controls emit typed panel actions; the obsolete CLOSE slot is gone and no browser command transport participates | client acceptance + architecture guard | protected |
+| Map action meaning | Select/open/Galaxy/System-or-Space/Details/Hub typed actions preserve the loaded navigation context and parent/child layer semantics | client acceptance + architecture guard | protected |
 | Galaxy map data | Live client/server request and timeline-consistent snapshot | client acceptance | protected |
 | System map data | Live request for current system and selectable hub inventory | client acceptance | protected |
 | Details map data | Semantic Details target survives live request/response path | client acceptance | protected |
 | Hub map data | Selected hub survives live request/response path | client acceptance | protected |
-| Map panel displayed data | Live map/navigation state -> production JSON payload -> `window.setSystemMapPanel` consumed fields | client acceptance + architecture guard | protected |
+| Map panel displayed data | Live map/navigation state -> typed `SystemMapPanelPresentation` -> native OpenGL STAR ATLAS panel | client acceptance + architecture guard | protected |
 | Map camera/grid/picking | Camera, cubic navigation, picking and presentation contracts | system_map | protected |
 | Radar simulation/HUD | Both runtime feature flags are currently `false`; the subsystem is intentionally inactive | runtime feature flags | disabled, not claimed |
 | Jump flight mode | `jumpActive` exists in control state but has no current keyboard mapping in `PlayerInputMapper` | none | not claimed working |
@@ -64,7 +65,7 @@ The navigation layout is now the product contract:
 - `F10` opens the player's current System, or the highest meaningful interstellar sector.
 - `F11` opens the player's current Details context (body/hub/local spatial volume).
 - `F12` opens the currently matched Hub, otherwise the player's terminal local cube.
-- Repeating the function key for the currently visible map level returns to gameplay; pressing another F9-F12 switches directly to that map level.
+- Repeating the function key for the currently visible map level is a no-op; pressing another F9-F12 switches directly to that map level, and a newer pending selector replaces an older one.
 - `Ctrl+F10` switches Newtonian / Assisted local flight laws on a debounced F10 release.
 - `HOME` remains nose-to-VREL alignment in Newtonian; in Assisted it installs a persistent 100% local-speed target until +/- or END overrides it.
 - Cobra Mk.I linear acceleration envelope is 7.5 g (angular/load envelope remains 5 g), giving 1.5x the previous longitudinal speed-change response in both local flight laws.

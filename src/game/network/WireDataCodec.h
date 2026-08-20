@@ -16,7 +16,7 @@ namespace game::network::wire
     how many entities or fields it contains.
 */
 inline constexpr std::uint16_t SimulationSnapshotWireSchemaVersion = 2u;
-inline constexpr std::uint16_t MapResponseWireSchemaVersion = 1u;
+inline constexpr std::uint16_t MapResponseWireSchemaVersion = 2u;
 
 inline bool encodeSimulationSnapshot(
     const SimulationSnapshot& value,

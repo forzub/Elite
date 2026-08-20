@@ -29,6 +29,7 @@ public:
     void evalScript(const std::string& script);
 
     void setVisible(bool visible);
+    void bringToFront();
     void focus();
 
 private:

@@ -127,17 +127,17 @@ struct DetailTarget
 
     bool valid() const
     {
-        if (systemId < 0)
-            return false;
-
         switch (sceneKind)
         {
             case DetailSceneKind::SpatialVolume:
+                // A spatial address may belong to a synthetic empty-sector
+                // System/Space map. Such maps intentionally use negative
+                // runtime ids because no authored star system owns them.
                 return spatialCell.terminal();
 
             case DetailSceneKind::CelestialBody:
             case DetailSceneKind::LocalObject:
-                return !anchorId.empty();
+                return systemId >= 0 && !anchorId.empty();
 
             default:
                 return false;

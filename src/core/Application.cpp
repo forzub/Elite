@@ -4,6 +4,7 @@
 #include "Application.h"
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <thread>
 #include <utility>
@@ -15,16 +16,17 @@
 #include "ui/MainMenuState.h"
 #include "game/SpaceState.h"
 #include "src/game/ui/GameUiHotkeyPolicy.h"
+#include "src/ui/presentation/PresentationFunctionKeyRouter.h"
 #include "src/game/host/LocalGameSession.h"
 #include "src/game/session/RemoteGameSession.h"
 #include "src/game/session/IGameSession.h"
 #include "src/game/network/NetworkEndpoint.h"
 #include "src/game/identity/ClientIdentityProfile.h"
 #include "src/game/navigation/CoordinateDisplayService.h"
-#include "src/game/ui/SystemMapUiCommandRouter.h"
 #include "input/Input.h"
 #include "render/HUD/TextRenderer.h"
 #include <windows.h>
+#include <dwmapi.h>
 #include <filesystem>
 #include "ui/html/HtmlUiPanelId.h"
 
@@ -58,6 +60,23 @@ double xprocElapsedMs(const XprocTraceClock::time_point& begin)
     return std::chrono::duration<double, std::milli>(
         XprocTraceClock::now() - begin
     ).count();
+}
+
+bool flushDesktopCompositor()
+{
+    // glfwSwapBuffers()/ShowWindow()/SetWindowPos submit work to surfaces that
+    // DWM composes asynchronously. A logical presentation commit must not
+    // retire the old child HWND until the new GL/WebView generation has reached
+    // the desktop compositor.
+    const HRESULT hr = DwmFlush();
+    if (FAILED(hr))
+    {
+        std::cerr << "[Presentation] DwmFlush failed hr=0x"
+                  << std::hex << static_cast<unsigned long>(hr)
+                  << std::dec << "\n";
+        return false;
+    }
+    return true;
 }
 
 void traceSlowMainPhase(
@@ -116,6 +135,37 @@ bool decodeWebComponent(std::string_view encoded, std::string& out)
 
     return true;
 }
+
+bool parsePresentationSerialCommand(
+    const std::string& command,
+    std::string_view prefix,
+    std::uint64_t& outSerial)
+{
+    if (command.size() < prefix.size() ||
+        command.compare(0, prefix.size(), prefix) != 0)
+    {
+        return false;
+    }
+
+    const std::string payload = command.substr(prefix.size());
+    if (payload.empty())
+        return false;
+
+    try
+    {
+        std::size_t consumed = 0;
+        const unsigned long long parsed = std::stoull(payload, &consumed);
+        if (consumed != payload.size() || parsed == 0)
+            return false;
+        outSerial = static_cast<std::uint64_t>(parsed);
+        return true;
+    }
+    catch (const std::exception&)
+    {
+        return false;
+    }
+}
+
 
 bool normalizeLocalPlayerDisplayName(std::string& value)
 {
@@ -236,34 +286,29 @@ static std::string findGameUiRoot()
 static std::string makeGameUiHttpUrl(
     std::uint16_t localPort,
     const std::string& relativeFile,
-    const std::string& locale = std::string()
+    const std::string& locale = std::string(),
+    std::uint64_t presentationSerial = 0
 )
 {
     std::string url =
         "http://localhost:" + std::to_string(localPort) + "/" + relativeFile;
+    char separator = '?';
     if (!locale.empty())
-        url += "?locale=" + locale;
+    {
+        url += separator;
+        url += "locale=" + locale;
+        separator = '&';
+    }
+    if (presentationSerial != 0)
+    {
+        url += separator;
+        url += "presentation=" + std::to_string(presentationSerial);
+    }
     return url;
 }
 
 
 static constexpr float TargetGameAspect = 16.0f / 9.0f;
-
-
-static int systemMapPanelWidth(int framebufferWidth)
-{
-    const float w = static_cast<float>(framebufferWidth);
-
-    // 28% экрана, но с разумными границами.
-    // 1280 -> ~358
-    // 1920 -> ~538
-    // 2560 -> ~716, но ограничим.
-    return std::clamp(
-        static_cast<int>(w * 0.28f),
-        360,
-        640
-    );
-}
 
 
 void Application::configureClientIdentity(
@@ -526,6 +571,7 @@ void Application::init()
 
     glfwSetWindowUserPointer(m_window->nativeHandle(), this);
     glfwSetFramebufferSizeCallback(m_window->nativeHandle(), framebuffer_size_callback);
+    glfwSetWindowSizeCallback(m_window->nativeHandle(), window_size_callback);
 
     m_running = true;
 
@@ -567,15 +613,36 @@ void Application::init()
      #ifdef _WIN32
         int uiW = 1280;
         int uiH = 720;
-        glfwGetFramebufferSize(m_window->nativeHandle(), &uiW, &uiH);
+        m_window->clientSize(uiW, uiH);
 
-        m_gameWebView.start(
+        const GameUiTarget initialUi = GameUiTarget::forMode(GameUiMode::MainMenu);
+        m_gameUi.requestTarget(initialUi);
+        const std::uint64_t initialNavigationSerial =
+            m_gameUi.beginDocumentPreparation(0, initialUi);
+
+        m_documentWebViews[0].start(
             m_window->nativeWin32Handle(),
-            "EliteGame UI",
+            "EliteGame Document UI A",
             uiW,
             uiH,
-            makeGameUiHttpUrl(m_gameUiHttpPort, "main_menu.html", m_localization.locale())
+            makeGameUiHttpUrl(
+                m_gameUiHttpPort,
+                "main_menu.html",
+                m_localization.locale(),
+                initialNavigationSerial)
         );
+        m_documentWebViews[1].start(
+            m_window->nativeWin32Handle(),
+            "EliteGame Document UI B",
+            uiW,
+            uiH,
+            makeGameUiHttpUrl(
+                m_gameUiHttpPort,
+                "presentation_blank.html",
+                m_localization.locale(),
+                0)
+        );
+
         if (core::runtimeTraceEnabled())
             std::cerr
                 << "[M8E-XPROC][init] pid=" << GetCurrentProcessId()
@@ -585,8 +652,6 @@ void Application::init()
                 << " uptime_ms=" << xprocTraceTickMs()
                 << "\n";
         xprocInitStageBegin = XprocTraceClock::now();
-        m_gameUi.forceMode(GameUiMode::MainMenu);
-        m_gameUi.clearLoaded();
         m_htmlUi.setActivePanel(HtmlUiPanelId::None);
     #endif
 
@@ -715,579 +780,79 @@ void Application::mainLoop()
         else
             Input::instance().reset();
 
-        updateServiceUiTransition();
+        updateGameUiPresentation();
         if (!m_running)
             break;
 
 
         #ifdef _WIN32
         {
-            /*
-                Navigation function keys are polled at the Windows level so
-                they remain deterministic even when the embedded WebView has
-                keyboard focus.
-
-                F9  = Galaxy
-                F10 = current System / highest-level current sector
-                F11 = current Details context
-                F12 = current Hub / local spatial cube
-
-                Ctrl+F10 is reserved for local flight-law switching and must
-                reach PlayerInputMapper. Ctrl+F11 cycles coordinate display;
-                Ctrl+F12 toggles gameplay constellations.
-                Alt+F12 cycles the active sky culture.
-                Ctrl+Alt+F12 cycles the global player-facing UI language.
-            */
-            const bool ctrlDown =
-                ownsForegroundInput &&
-                (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
-            const bool altDown =
-                ownsForegroundInput &&
-                (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
-
-            const bool f9Down =
-                ownsForegroundInput &&
-                (GetAsyncKeyState(VK_F9) & 0x8000) != 0;
-            const bool f10Down =
-                ownsForegroundInput &&
-                (GetAsyncKeyState(VK_F10) & 0x8000) != 0;
-            const bool f11Down =
-                ownsForegroundInput &&
-                (GetAsyncKeyState(VK_F11) & 0x8000) != 0;
-            const bool f12Down =
-                ownsForegroundInput &&
-                (GetAsyncKeyState(VK_F12) & 0x8000) != 0;
-
+            // F1-F12 edges are captured by Window::pollEvents from the Win32
+            // message queue with a GetAsyncKeyState pressed-since-last-poll
+            // fallback. Presentation code consumes events; it never polls
+            // physical key levels itself. This survives short taps across a
+            // temporarily slow WebView/compositor frame.
             auto* space = dynamic_cast<SpaceState*>(m_states.current());
-            if (m_gameUi.isMode(GameUiMode::SessionMenu) ||
-                m_gameUi.isMode(GameUiMode::MainMenu) ||
-                m_gameUi.isMode(GameUiMode::Loading))
+            const bool sessionReady =
+                space && m_activeSessionKind != GameSessionLaunchKind::None;
+
+            Window::FunctionKeyPress press;
+            while (m_window->pollFunctionKeyPress(press))
             {
-                space = nullptr;
-            }
-            bool consumedNavigationHotkey = false;
+                const int functionKey = press.functionKey;
+                const bool ctrlDown = press.ctrlDown;
+                const bool altDown = press.altDown;
 
-            auto requestNavigationLevel =
-                [&](PlayerNavigationMapLevel level, auto&& openLevel)
+                if (sessionReady && !ctrlDown && !altDown)
                 {
-                    // Function keys are direct selectors and same-level
-                    // toggles. The result depends only on the map currently
-                    // visible, never on how the player reached it.
-                    const auto action = m_gameUi.navigationAction(
-                        space->isPlayerNavigationMapLevel(level)
-                    );
-
-                    if (action == GameUiNavigationAction::Close)
+                    if (const auto target =
+                            ui::presentation::directTargetForFunctionKey(functionKey))
                     {
-                        requestSystemMapClose();
+                        requestPresentationTarget(*target);
                     }
-                    else if (m_gameUi.isMode(GameUiMode::SystemMap))
+                }
+
+                if (sessionReady && functionKey == 11 && ctrlDown && !altDown)
+                {
+                    game::navigation::CoordinateDisplayService::instance().cycle();
+                }
+
+                if (functionKey == 12)
+                {
+                    using game::ui::F12HotkeyAction;
+                    const F12HotkeyAction action =
+                        game::ui::resolveF12HotkeyAction(ctrlDown, altDown, sessionReady);
+                    switch (action)
                     {
-                        // Visible-map switches keep the renderer-owned
-                        // old-frame -> incoming-frame crossfade.
-                        openLevel();
+                        case F12HotkeyAction::CycleUiLanguage:
+                            cycleUiLanguage();
+                            break;
+                        case F12HotkeyAction::CycleSkyCulture:
+                            if (space) space->cycleSkyCulture();
+                            break;
+                        case F12HotkeyAction::ToggleConstellations:
+                            if (space) space->toggleConstellationOverlay();
+                            break;
+                        case F12HotkeyAction::NavigateLocal:
+                        case F12HotkeyAction::None:
+                        default:
+                            break;
                     }
-                    else
-                    {
-                        // First entry is different: prepare the requested map
-                        // completely while gameplay remains visible. Only a
-                        // ready target may make SystemMap presentation visible.
-                        invalidatePreparedSystemMapUi();
-                        space->beginPlayerNavigationMapEntry(level);
-                    }
-
-                    consumedNavigationHotkey = true;
-                };
-
-            if (m_gameUi.consumeF9Press(f9Down) && space && !ctrlDown)
-            {
-                requestNavigationLevel(
-                    PlayerNavigationMapLevel::Galaxy,
-                    [&]() { space->setSystemMapGalaxyMode(); }
-                );
-            }
-
-            // Ctrl+F10 belongs to PlayerInputMapper. Still latch the physical
-            // F10 press here so releasing Ctrl before F10 cannot accidentally
-            // turn the same chord into a plain-F10 map command.
-            const bool f10PressedEdge =
-                m_gameUi.consumeF10Press(f10Down);
-            if (f10PressedEdge && space && !ctrlDown)
-            {
-                requestNavigationLevel(
-                    PlayerNavigationMapLevel::System,
-                    [&]() { space->setSystemMapPlayerSystemMode(); }
-                );
-            }
-
-            if (m_gameUi.consumeF11Press(f11Down) && space)
-            {
-                if (ctrlDown)
-                {
-                    game::navigation::CoordinateDisplayService::instance()
-                        .cycle();
-                    consumedNavigationHotkey = true;
                 }
-                else
-                {
-                    requestNavigationLevel(
-                        PlayerNavigationMapLevel::Detail,
-                        [&]() { space->setSystemMapPlayerDetailMode(); }
-                    );
-                }
-            }
-
-            const bool f12PressedEdge =
-                m_gameUi.consumeF12Press(f12Down);
-
-            if (f12PressedEdge)
-            {
-                using game::ui::F12HotkeyAction;
-                const F12HotkeyAction action =
-                    game::ui::resolveF12HotkeyAction(
-                        ctrlDown,
-                        altDown,
-                        space != nullptr
-                    );
-
-                switch (action)
-                {
-                    case F12HotkeyAction::CycleUiLanguage:
-                        cycleUiLanguage();
-                        consumedNavigationHotkey = true;
-                        break;
-
-                    case F12HotkeyAction::CycleSkyCulture:
-                        space->cycleSkyCulture();
-                        consumedNavigationHotkey = true;
-                        break;
-
-                    case F12HotkeyAction::ToggleConstellations:
-                        space->toggleConstellationOverlay();
-                        consumedNavigationHotkey = true;
-                        break;
-
-                    case F12HotkeyAction::NavigateLocal:
-                        requestNavigationLevel(
-                            PlayerNavigationMapLevel::Local,
-                            [&]() { space->setSystemMapPlayerLocalMode(); }
-                        );
-                        break;
-
-                    case F12HotkeyAction::None:
-                    default:
-                        break;
-                }
-            }
-
-            if (consumedNavigationHotkey)
-            {
-                // Do not swap an unrendered back buffer here. The normal
-                // frame below either keeps gameplay visible while a target
-                // map is prepared or renders the already-selected map mode.
-                Input::instance().reset();
             }
         }
         #endif
 
 
 
-        bool stateChangedFromWebView = false;
-
         #ifdef _WIN32
-                std::string webCommand;
-                while (m_gameWebView.pollCommand(webCommand))
-                {
-                    if (const auto mapCommand =
-                            game::ui::parseSystemMapUiCommand(webCommand))
-                    {
-                        auto* space = dynamic_cast<SpaceState*>(
-                            m_states.current()
-                        );
-
-                        game::ui::dispatchSystemMapUiCommand(
-                            *mapCommand,
-                            space,
-                            [this]()
-                            {
-                                requestSystemMapClose();
-                            }
-                        );
-
-                        continue;
-                    }
-
-                    constexpr const char* NewLocalGamePrefix = "new_local_game|";
-                    if (webCommand.rfind(NewLocalGamePrefix, 0) == 0)
-                    {
-                        const std::string encodedName = webCommand.substr(
-                            std::char_traits<char>::length(NewLocalGamePrefix)
-                        );
-                        std::string localPlayerName;
-                        if (!decodeWebComponent(encodedName, localPlayerName) ||
-                            !normalizeLocalPlayerDisplayName(localPlayerName))
-                        {
-                            m_gameWebView.evalScript(
-                                "window.EliteUiKit.restoreDocument();"
-                                "window.EliteUiKit.setBanner("
-                                "'#local-player-name-error',"
-                                "window.GameI18n.t('main.local_player_name_required','Enter a player name.'),"
-                                "'error');"
-                            );
-                            continue;
-                        }
-
-                        m_localPlayerDisplayName = std::move(localPlayerName);
-                        std::cout << "[App] local new game requested player_name_bytes="
-                                  << m_localPlayerDisplayName.size() << "\n";
-                        requestSessionStart(GameSessionLaunchKind::LocalNewGame);
-                        break;
-                    }
-
-                    if (webCommand == "load_local_game")
-                    {
-                        std::cout << "[App] load local game not implemented yet\n";
-                    }
-
-                    constexpr const char* FadeCompletePrefix =
-                        "service_ui_fade_out_complete|";
-                    if (webCommand.rfind(FadeCompletePrefix, 0) == 0)
-                    {
-                        const std::string serialText = webCommand.substr(
-                            std::char_traits<char>::length(FadeCompletePrefix)
-                        );
-                        try
-                        {
-                            completeServiceUiTransition(
-                                static_cast<std::uint64_t>(std::stoull(serialText))
-                            );
-                        }
-                        catch (const std::exception&)
-                        {
-                            // Ignore malformed/stale browser acknowledgements.
-                        }
-                        stateChangedFromWebView = true;
-                        break;
-                    }
-
-                    if (webCommand == "main_menu_ready")
-                    {
-                        if (m_gameUi.isMode(GameUiMode::MainMenu))
-                        {
-                            m_gameUi.markLoaded(GameUiMode::MainMenu);
-                            applyMainMenuView();
-                        }
-                        continue;
-                    }
-
-                    if (webCommand == "main_menu_prepared")
-                    {
-                        if (m_gameUi.isMode(GameUiMode::MainMenu) &&
-                            m_gameUi.isLoaded(GameUiMode::MainMenu))
-                        {
-                            presentPreparedGameUi(GameUiMode::MainMenu);
-                        }
-                        continue;
-                    }
-
-                    if (webCommand == "loading_ui_ready")
-                    {
-                        if (m_gameUi.isMode(GameUiMode::Loading))
-                        {
-                            m_gameUi.markLoaded(GameUiMode::Loading);
-                            setLoadingUiProgress(
-                                m_loadingUiProgress,
-                                m_loadingUiStageKey,
-                                m_loadingUiEnglishFallback
-                            );
-                        }
-                        continue;
-                    }
-
-                    if (webCommand == "loading_ui_prepared")
-                    {
-                        if (m_gameUi.isMode(GameUiMode::Loading) &&
-                            m_gameUi.isLoaded(GameUiMode::Loading))
-                        {
-                            presentPreparedGameUi(GameUiMode::Loading);
-                        }
-                        continue;
-                    }
-
-                    if (webCommand == "system_map_panel_ready")
-                    {
-                        auto* currentSpace = dynamic_cast<SpaceState*>(
-                            m_states.current()
-                        );
-                        const bool expectedPanel =
-                            m_systemMapPanelPrewarmPending ||
-                            m_gameUi.isMode(GameUiMode::SystemMap) ||
-                            (currentSpace &&
-                             currentSpace->playerNavigationMapEntryPending());
-
-                        if (expectedPanel)
-                        {
-                            m_systemMapPanelNavigationPending = false;
-                            m_systemMapPanelPrewarmPending = false;
-                            m_gameUi.markLoaded(GameUiMode::SystemMap);
-                            const bool stateReady =
-                                m_gameUi.isMode(GameUiMode::SystemMap) ||
-                                (currentSpace &&
-                                 currentSpace->playerNavigationMapEntryTargetReady());
-                            if (currentSpace && stateReady &&
-                                !m_systemMapPanelStateRequested)
-                            {
-                                m_systemMapPanelStateRequested = true;
-                                currentSpace->pushSystemMapPanelState();
-                            }
-                        }
-                        continue;
-                    }
-
-                    if (webCommand == "system_map_panel_prepared")
-                    {
-                        auto* currentSpace = dynamic_cast<SpaceState*>(
-                            m_states.current()
-                        );
-                        const bool expectedPanel =
-                            m_gameUi.isMode(GameUiMode::SystemMap) ||
-                            (currentSpace &&
-                             currentSpace->playerNavigationMapEntryPending());
-
-                        if (expectedPanel &&
-                            m_gameUi.isLoaded(GameUiMode::SystemMap))
-                        {
-                            m_systemMapPanelStateRequested = false;
-                            m_systemMapPanelPrepared = true;
-                            if (m_gameUi.isMode(GameUiMode::SystemMap))
-                                presentPreparedGameUi(GameUiMode::SystemMap);
-                        }
-                        continue;
-                    }
-
-                    if (webCommand == "session_menu_ready")
-                    {
-                        if (m_gameUi.isMode(GameUiMode::SessionMenu))
-                        {
-                            m_gameUi.markLoaded(GameUiMode::SessionMenu);
-                            applySessionMenuView();
-                        }
-                        continue;
-                    }
-
-                    if (webCommand == "session_menu_prepared")
-                    {
-                        if (m_gameUi.isMode(GameUiMode::SessionMenu) &&
-                            m_gameUi.isLoaded(GameUiMode::SessionMenu))
-                        {
-                            presentPreparedGameUi(GameUiMode::SessionMenu);
-                        }
-                        continue;
-                    }
-
-                    constexpr const char* MainRoutePrefix = "main_route|";
-                    if (webCommand.rfind(MainRoutePrefix, 0) == 0)
-                    {
-                        const std::string payload = webCommand.substr(
-                            std::char_traits<char>::length(MainRoutePrefix)
-                        );
-                        const auto first = payload.find('|');
-                        const auto second = first == std::string::npos
-                            ? std::string::npos
-                            : payload.find('|', first + 1);
-                        if (first == std::string::npos || second == std::string::npos)
-                            continue;
-
-                        const std::string route = payload.substr(0, first);
-                        const std::string endpoint = payload.substr(first + 1, second - first - 1);
-                        const std::string account = payload.substr(second + 1);
-                        if (endpoint.size() <= 255u && account.size() <= game::identity::AccountHandleMaxLength)
-                            m_uiNavigationState.setConnectionDraft(endpoint, account);
-
-                        if (route == "home")
-                            m_uiNavigationState.showMainMenuHome();
-                        else if (route == "multiplayer")
-                            m_uiNavigationState.showMultiplayerAuthorization();
-                        else if (route == "signin")
-                            m_uiNavigationState.showSignInPassword();
-                        else if (route == "register")
-                            m_uiNavigationState.showRegistration();
-                        else if (route == "recovery")
-                            m_uiNavigationState.showRecovery();
-                        else if (route == "account")
-                        {
-                            if (m_authenticatedRemoteAccountHandle.empty())
-                            {
-                                m_uiNavigationState.showMultiplayerAuthorization();
-                            }
-                            else
-                            {
-                                m_uiNavigationState.showAccount();
-                            }
-                        }
-                        else
-                            continue;
-
-                        applyMainMenuView();
-                        continue;
-                    }
-
-                    constexpr const char* SetLocalePrefix = "set_ui_locale|";
-                    if (webCommand.rfind(SetLocalePrefix, 0) == 0)
-                    {
-                        const std::string locale = webCommand.substr(
-                            std::char_traits<char>::length(SetLocalePrefix)
-                        );
-                        setUiLanguage(locale);
-                        if (m_gameUi.isMode(GameUiMode::MainMenu))
-                            applyMainMenuView();
-                        continue;
-                    }
-
-                    if (webCommand == "session_cancel")
-                    {
-                        cancelPendingSessionStart();
-                        stateChangedFromWebView = true;
-                        break;
-                    }
-
-                    if (webCommand == "session_resume" ||
-                        webCommand == "session_escape")
-                    {
-                        if (m_gameUi.isMode(GameUiMode::SessionMenu))
-                            resumeSessionFromMenu();
-                        continue;
-                    }
-
-                    if (webCommand == "session_return_main")
-                    {
-                        returnSessionToMainMenu();
-                        stateChangedFromWebView = true;
-                        break;
-                    }
-
-                    if (webCommand == "session_quit")
-                    {
-                        beginServiceUiTransition([this]() { m_running = false; });
-                        continue;
-                    }
-
-                    if (webCommand == "multiplayer")
-                    {
-                        showMultiplayerConnectionForm();
-                        continue;
-                    }
-
-                    constexpr const char* MultiplayerSignInPrefix =
-                        "multiplayer_signin|";
-                    constexpr const char* MultiplayerRegisterPrefix =
-                        "multiplayer_register|";
-                    const bool isSignIn =
-                        webCommand.rfind(MultiplayerSignInPrefix, 0) == 0;
-                    const bool isRegister =
-                        webCommand.rfind(MultiplayerRegisterPrefix, 0) == 0;
-                    if (isSignIn || isRegister)
-                    {
-                        const char* prefix = isRegister
-                            ? MultiplayerRegisterPrefix
-                            : MultiplayerSignInPrefix;
-                        const std::string payload = webCommand.substr(
-                            std::char_traits<char>::length(prefix)
-                        );
-                        const auto separator = payload.rfind('|');
-                        if (separator == std::string::npos)
-                        {
-                            m_gameWebView.evalScript(
-                                "setAuthError('INVALID_ACCOUNT_HANDLE');"
-                            );
-                            continue;
-                        }
-
-                        const std::string endpointText = payload.substr(0, separator);
-                        const std::string profileName = payload.substr(separator + 1);
-                        m_uiNavigationState.setConnectionDraft(endpointText, profileName);
-
-                        game::network::NetworkEndpoint endpoint;
-                        std::string endpointError;
-                        if (!game::network::parseNetworkEndpoint(
-                                endpointText,
-                                endpoint,
-                                &endpointError))
-                        {
-                            std::cerr << "[App] invalid multiplayer endpoint: "
-                                      << endpointError << "\n";
-                            m_gameWebView.evalScript(
-                                "setAuthError('INVALID_SERVER_ADDRESS');"
-                            );
-                            continue;
-                        }
-
-                        std::string identityError;
-                        const auto intent = isRegister
-                            ? game::network::AuthenticationIntent::Register
-                            : game::network::AuthenticationIntent::SignIn;
-                        if (!prepareRemoteIdentity(
-                                profileName,
-                                intent,
-                                identityError))
-                        {
-                            if (isSignIn && identityError == "LOCAL_CREDENTIAL_MISSING")
-                            {
-                                showPasswordSignInForm(identityError);
-                            }
-                            else
-                            {
-                                m_gameWebView.evalScript(
-                                    "setAuthError(" +
-                                    nlohmann::json(identityError).dump() +
-                                    ");"
-                                );
-                            }
-                            continue;
-                        }
-
-                        configureRemoteServer(endpoint.host, endpoint.port);
-                        std::cout << "[App] multiplayer "
-                                  << (isRegister ? "register" : "sign-in")
-                                  << " requested endpoint="
-                                  << endpoint.host << ':' << endpoint.port
-                                  << " credential_slot="
-                                  << m_clientIdentityProfileName << "\n";
-                        requestSessionStart(
-                            GameSessionLaunchKind::RemoteMultiplayer
-                        );
-                        break;
-                    }
-
-                    if (webCommand == "multiplayer_back")
-                    {
-                        showMainMenu();
-                        continue;
-                    }
-
-                    if (webCommand == "shipyard")
-                    {
-                        std::cout << "[App] shipyard not implemented yet\n";
-                    }
-
-                    if (webCommand == "exit")
-                    {
-                        beginServiceUiTransition([this]()
-                        {
-                            m_states.clear();
-                            m_states.applyPendingChanges();
-                            m_running = false;
-                        });
-                        continue;
-                    }
-                }
+        processDocumentWebViewCommands(0);
+        processDocumentWebViewCommands(1);
         #endif
 
         if (!m_running)
             break;
 
-        if (stateChangedFromWebView)
-            continue;
 
 #ifdef _WIN32
         xprocPhaseBegin = XprocTraceClock::now();
@@ -1340,16 +905,20 @@ void Application::mainLoop()
 #else
         const bool escapePressed = Input::instance().isKeyPressedOnce(GLFW_KEY_ESCAPE);
 #endif
-        if (escapePressed && !serviceUiTransitionPending())
+        if (escapePressed)
         {
-            if (dynamic_cast<SpaceState*>(state) != nullptr)
+            if (dynamic_cast<SpaceState*>(state) != nullptr &&
+                m_activeSessionKind != GameSessionLaunchKind::None)
             {
-                if (m_gameUi.isMode(GameUiMode::SystemMap))
-                    requestSystemMapClose();
-                else if (m_gameUi.isMode(GameUiMode::SessionMenu))
+                if (m_gameUi.committedTarget().mode == GameUiMode::SessionMenu ||
+                    m_gameUi.requestedTarget().mode == GameUiMode::SessionMenu)
+                {
                     resumeSessionFromMenu();
+                }
                 else
+                {
                     showSessionMenu();
+                }
 
                 Input::instance().reset();
                 continue;
@@ -1366,14 +935,42 @@ void Application::mainLoop()
 #ifdef _WIN32
             xprocPhaseBegin = XprocTraceClock::now();
 #endif
-            state->prepareFrame(dt);
-            state->handleInput();
-            state->update(dt);
+            const bool localPaused = localSessionMenuPaused();
+            state->prepareFrame(localPaused ? 0.0f : dt);
+
+            const GameUiMode visibleMode = m_gameUi.committedTarget().mode;
+            const bool presentationConsumesGameplayInput =
+                visibleMode == GameUiMode::ServicePanel ||
+                visibleMode == GameUiMode::SessionMenu;
+            if (localPaused)
+            {
+                Input::instance().reset();
+            }
+            else if (presentationConsumesGameplayInput)
+            {
+                // Service/session overlays consume manual controls, but the
+                // simulation keeps running. Feed one neutral input sample per
+                // frame so a multiplayer server never retains thrust/rotation
+                // from the last flight frame merely because WebView owns focus.
+                Input::instance().reset();
+                state->handleInput();
+            }
+            else
+            {
+                state->handleInput();
+            }
+
+            // ESC in Local freezes the authoritative embedded session because
+            // SpaceState::update owns LocalGameSession::advance(). Multiplayer
+            // never takes this branch: its transport/world keeps advancing
+            // behind the menu. F1-F12 do not set the pause flag.
+            if (!localPaused)
+                state->update(dt);
+
+            if (auto* activeSpace = dynamic_cast<SpaceState*>(state))
+                prepareRequestedPresentation(*activeSpace);
 
 #ifdef _WIN32
-            if (auto* activeSpace = dynamic_cast<SpaceState*>(state))
-                prepareSystemMapUiForEntry(*activeSpace);
-
             traceSlowMainPhase("state-update", xprocPhaseBegin);
             xprocPhaseBegin = XprocTraceClock::now();
 #endif
@@ -1418,121 +1015,69 @@ void Application::mainLoop()
 GameState* top = m_states.current();
 GameState* below = m_states.previous();
 
-const bool systemMapMode =
-    m_gameUi.isMode(GameUiMode::SystemMap);
-
-bool openPreparedSystemMapAfterSwap = false;
-bool closePreparedSystemMapAfterSwap = false;
+const GameUiMode sceneMode = sceneGameUiMode();
+const bool flightMode = sceneMode == GameUiMode::Flight;
+const bool systemMapMode = sceneMode == GameUiMode::SystemMap;
+const bool serviceMode = sceneMode == GameUiMode::ServicePanel;
 /*
     Копируем live-настройки из debug panel в Renderer.
-
-    Это дешёвая операция: только bool и несколько float.
-    GL-ресурсы при этом не пересоздаются.
 */
 {
-    const auto& debugRender =
-        debug::get().render;
-
-    PostProcessSettings& post =
-        m_renderer.postProcessSettings();
-
-    post.enabled =
-        debugRender.postProcessEnabled;
-
-    post.bloomThreshold =
-        debugRender.postBloomThreshold;
-
-    post.bloomKnee =
-        debugRender.postBloomKnee;
-
-    post.bloomIntensity =
-        debugRender.postBloomIntensity;
-
-    post.softening =
-        debugRender.postSoftening;
-
-    post.saturation =
-        debugRender.postSaturation;
-
-    post.contrast =
-        debugRender.postContrast;
-
-    post.vignette =
-        debugRender.postVignette;
-
-    post.grain =
-        debugRender.postGrain;
-
-    post.haze =
-        debugRender.postHaze;
+    const auto& debugRender = debug::get().render;
+    PostProcessSettings& post = m_renderer.postProcessSettings();
+    post.enabled = debugRender.postProcessEnabled;
+    post.bloomThreshold = debugRender.postBloomThreshold;
+    post.bloomKnee = debugRender.postBloomKnee;
+    post.bloomIntensity = debugRender.postBloomIntensity;
+    post.softening = debugRender.postSoftening;
+    post.saturation = debugRender.postSaturation;
+    post.contrast = debugRender.postContrast;
+    post.vignette = debugRender.postVignette;
+    post.grain = debugRender.postGrain;
+    post.haze = debugRender.postHaze;
 }
-// В режиме System Map справа находится нативная WebView-панель.
-// Центрируем vignette/haze только по видимой OpenGL-части.
-int postProcessViewportWidth = lb.width;
 
+// Only 3D scene domains use the cinematic off-screen chain. F5-F8 are native
+// 2D presentation and draw directly to the already-cleared default framebuffer.
+int postProcessViewportWidth = lb.width;
 if (systemMapMode)
 {
-    postProcessViewportWidth =
-        static_cast<int>(
-            static_cast<float>(lb.width) * 0.72f
-        );
+    postProcessViewportWidth = static_cast<int>(
+        static_cast<float>(lb.width) * 0.72f);
 }
 
+const bool scene3dActive = flightMode || systemMapMode;
 const bool postProcessActive =
+    scene3dActive &&
     m_renderer.beginPostProcess(
-        fbW,
-        fbH,
-        lb.x,
-        lb.y,
-        postProcessViewportWidth,
-        lb.height
-    );
+        fbW, fbH, lb.x, lb.y,
+        postProcessViewportWidth, lb.height);
 
-// Обычная 3D-сцена.
-if (top)
+// Flight is the only domain that renders game cameras through renderUI().
+if (top && flightMode)
 {
     if (top->isModal() && below)
         below->renderUI();
-
     top->renderUI();
 }
 
-// В текущей архитектуре SystemMapRenderer вызывается из renderHUD().
-// Поэтому в режиме карты его нужно выполнить ДО завершения post-process.
+// Navigation scene is rendered before cinematic composition; its native STAR
+// ATLAS side panel is intentionally rendered later as crisp 2D UI.
 if (systemMapMode && top)
-{
     top->renderHUD();
-}
 
-// Финальный cinematic composite.
 if (postProcessActive)
-{
-    m_renderer.endPostProcess(
-        static_cast<float>(currentTime)
-    );
-}
+    m_renderer.endPostProcess(static_cast<float>(currentTime));
 
-// В обычном игровом режиме HUD оставляем чистым и резким.
-if (!systemMapMode && top)
-{
+if (flightMode && top)
     top->renderHUD();
+
+if ((systemMapMode || serviceMode))
+{
+    if (auto* activeSpace = dynamic_cast<SpaceState*>(top))
+        activeSpace->renderInSessionPresentationOverlay();
 }
 
-#ifdef _WIN32
-if (auto* activeSpace = dynamic_cast<SpaceState*>(top))
-{
-    if (!systemMapMode &&
-        activeSpace->consumePreparedPlayerNavigationMapEntry())
-    {
-        openPreparedSystemMapAfterSwap = true;
-    }
-    else if (systemMapMode &&
-             activeSpace->consumePreparedPlayerNavigationMapExit())
-    {
-        closePreparedSystemMapAfterSwap = true;
-    }
-}
-#endif
 
         m_renderer.endFrame();
         glDisable(GL_SCISSOR_TEST);
@@ -1545,15 +1090,9 @@ if (auto* activeSpace = dynamic_cast<SpaceState*>(top))
         m_window->swapBuffers();
 #ifdef _WIN32
         traceSlowMainPhase("swap-buffers", xprocPhaseBegin);
-
-        // Presentation ownership changes only after the outgoing framebuffer
-        // has actually been presented. The next frame therefore starts with
-        // a fully prepared destination under an opaque captured source.
-        if (openPreparedSystemMapAfterSwap)
-            openGameUi(GameUiMode::SystemMap);
-        else if (closePreparedSystemMapAfterSwap)
-            closeGameUi();
 #endif
+        if (auto* activeSpace = dynamic_cast<SpaceState*>(m_states.current()))
+            commitPreparedPresentationAfterSwap(*activeSpace);
     }
 
     std::cerr << "[App] main loop exit pid=" << GetCurrentProcessId()
@@ -1570,12 +1109,23 @@ void Application::shutdown()
 {
     std::cout << "Application shutdown\n";
 
+    // Terminal presentation boundary comes first. Destroying the WebView child
+    // while the GLFW top-level remains visible uncovers the last gameplay back
+    // buffer for one DWM frame (the observed quit flash).
+    if (m_window)
+        m_window->hide();
+#ifdef _WIN32
+    for (auto& surface : m_documentWebViews)
+        surface.setVisible(false);
+#endif
+
     stopGameSession();
     m_states.clear();
     m_states.applyPendingChanges();
 
     #ifdef _WIN32
-        m_gameWebView.stop();
+        for (auto& surface : m_documentWebViews)
+            surface.stop();
     #endif
 
 
@@ -1586,281 +1136,385 @@ void Application::shutdown()
 }
 
 
-// Добавьте в начало файла или после других методов
+// GLFW framebuffer pixels belong to OpenGL only. Native child HWND geometry
+// is synchronized from the parent client rect by window_size_callback below.
 void Application::framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    // Получаем указатель на Application из GLFW window user pointer
     Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
     if (app)
-    {
-        app->handleResize(width, height);
-    }
+        app->handleFramebufferResize(width, height);
 }
 
-void Application::handleResize(int width, int height)
+void Application::window_size_callback(GLFWwindow* window, int, int)
 {
-    const auto lb =
-        makeLetterboxedViewport(width, height, TargetGameAspect);
+    Application* app = static_cast<Application*>(glfwGetWindowUserPointer(window));
+    if (app)
+        app->handleWindowResize();
+}
+
+void Application::handleFramebufferResize(int width, int height)
+{
+    const auto lb = makeLetterboxedViewport(width, height, TargetGameAspect);
 
     glViewport(lb.x, lb.y, lb.width, lb.height);
 
-    GameState* currentState = m_states.current();
-    if (currentState)
-    {
+    if (GameState* currentState = m_states.current())
         currentState->handleResize(lb.width, lb.height);
-    }
 
     m_htmlUi.setViewport(lb.width, lb.height);
+}
 
+void Application::handleWindowResize()
+{
 #ifdef _WIN32
-    if (m_gameUi.isMode(GameUiMode::SystemMap))
-    {
-        const int panelW =
-            systemMapPanelWidth(lb.width);
+    // A GLFW top-level resize and a WebView2 child resize are two independent
+    // compositor operations. Never expose their intermediate geometries.
+    // Hide the already-prepared child during the live resize, keep updating
+    // its native client-area bounds, and restore it only after geometry settles.
+    m_gameUi.noteGeometryChange(glfwGetTime());
 
-        m_gameWebView.setBounds(
-            lb.x + std::max(0, lb.width - panelW),
-            lb.y,
-            panelW,
-            lb.height
-        );
-    }
-    else if (m_gameUi.isMode(GameUiMode::MainMenu) ||
-             m_gameUi.isMode(GameUiMode::Loading) ||
-             m_gameUi.isMode(GameUiMode::SessionMenu))
-    {
-        // Service/session UI is not part of the cinematic 16:9 render frame.
-        // Give responsive HTML the real window dimensions so tall/narrow
-        // windows do not throw away usable vertical space to letterboxing.
-        m_gameWebView.setBounds(0, 0, width, height);
-    }
-    else
-    {
-        m_gameWebView.setBounds(lb.x, lb.y, lb.width, lb.height);
-    }
+    for (auto& surface : m_documentWebViews)
+        surface.setVisible(false);
+    syncDocumentWebViewBounds();
 #endif
 }
 
-
-
-
-
-void Application::navigateGameUi(GameUiMode mode)
-{
-#ifndef _WIN32
-    (void)mode;
-    return;
-#else
-    // A navigation request invalidates the previous document immediately.
-    // "Loaded" means the destination DOM has explicitly acknowledged its
-    // readiness, never merely that WebView2 accepted navigate().
-    m_gameUi.clearLoaded();
-    m_systemMapPanelPrewarmPending = false;
-
-    switch (mode)
-    {
-        case GameUiMode::MainMenu:
-            m_gameWebView.navigate(makeGameUiHttpUrl(m_gameUiHttpPort, "main_menu.html", m_localization.locale()));
-            break;
-
-        case GameUiMode::Loading:
-            m_gameWebView.navigate(makeGameUiHttpUrl(m_gameUiHttpPort, "loading.html", m_localization.locale()));
-            break;
-
-        case GameUiMode::SystemMap:
-            m_systemMapPanelPrepared = false;
-            m_systemMapPanelNavigationPending = true;
-            m_systemMapPanelStateRequested = false;
-            m_gameWebView.navigate(makeGameUiHttpUrl(m_gameUiHttpPort, "system_map_panel.html", m_localization.locale()));
-            break;
-
-        case GameUiMode::SessionMenu:
-            m_gameWebView.navigate(makeGameUiHttpUrl(
-                m_gameUiHttpPort,
-                m_activeSessionKind == GameSessionLaunchKind::LocalNewGame
-                    ? "local_session_menu.html"
-                    : "multiplayer_session_menu.html",
-                m_localization.locale()));
-            break;
-
-        case GameUiMode::None:
-        default:
-            break;
-    }
-#endif
-}
-
-void Application::presentPreparedGameUi(GameUiMode mode)
+void Application::syncDocumentWebViewBounds()
 {
 #ifdef _WIN32
-    if (!m_gameUi.isMode(mode) || !m_gameUi.isLoaded(mode))
+    if (!m_window)
         return;
 
-    int w = 1280;
-    int h = 720;
-    glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
+    int clientW = 1;
+    int clientH = 1;
+    m_window->clientSize(clientW, clientH);
+    for (auto& webView : m_documentWebViews)
+        webView.setBounds(0, 0, clientW, clientH);
+#endif
+}
 
-    if (mode == GameUiMode::SystemMap)
+
+void Application::updateGameUiPresentation()
+{
+#ifdef _WIN32
+    if (!m_gameUi.consumeSettledGeometryChange(glfwGetTime()))
+        return;
+
+    syncDocumentWebViewBounds();
+
+    const GameUiTarget committed = m_gameUi.committedTarget();
+    if (committed.isFullScreenWebDocument())
     {
-        const auto lb = makeLetterboxedViewport(w, h, TargetGameAspect);
-        const int panelW = systemMapPanelWidth(lb.width);
-        m_gameWebView.setBounds(
-            lb.x + std::max(0, lb.width - panelW),
-            lb.y,
-            panelW,
-            lb.height
+        auto& active = m_documentWebViews[m_activeDocumentSurface];
+        active.setVisible(true);
+        active.bringToFront();
+        active.evalScript(
+            "if(window.EliteUiKit&&window.EliteUiKit.revealPreparedDocument)"
+            "window.EliteUiKit.revealPreparedDocument();"
         );
     }
-    else
+#endif
+}
+
+void Application::navigateDocumentSurface(int surfaceIndex, GameUiTarget target)
+{
+#ifndef _WIN32
+    (void)surfaceIndex;
+    (void)target;
+#else
+    if (surfaceIndex < 0 || surfaceIndex > 1 || !target.isFullScreenWebDocument())
+        return;
+
+    std::string document;
+    switch (target.mode)
     {
-        m_gameWebView.setBounds(0, 0, w, h);
+        case GameUiMode::MainMenu:
+            document = "main_menu.html";
+            break;
+        case GameUiMode::Loading:
+            document = "loading.html";
+            break;
+        case GameUiMode::SessionMenu:
+            document =
+                m_activeSessionKind == GameSessionLaunchKind::LocalNewGame
+                    ? "local_session_menu.html"
+                    : "multiplayer_session_menu.html";
+            break;
+        default:
+            return;
     }
 
-    m_gameUi.markPrepared(mode);
-    m_gameWebView.setVisible(true);
-    m_gameWebView.evalScript(
+    const std::uint64_t serial =
+        m_gameUi.beginDocumentPreparation(surfaceIndex, target);
+
+    syncDocumentWebViewBounds();
+    auto& surface = m_documentWebViews[surfaceIndex];
+    surface.setVisible(false);
+
+    std::string url = makeGameUiHttpUrl(
+        m_gameUiHttpPort,
+        document,
+        m_localization.locale(),
+        serial);
+    if (target.mode == GameUiMode::Loading)
+    {
+        url += m_pendingSessionLaunch == GameSessionLaunchKind::RemoteMultiplayer
+            ? "&session=remote"
+            : "&session=local";
+    }
+    surface.navigate(url);
+#endif
+}
+
+void Application::prepareFullScreenDocument(GameUiTarget target)
+{
+#ifdef _WIN32
+    if (!target.isFullScreenWebDocument())
+        return;
+
+    // Browser surfaces are reserved for non-game-session documents only:
+    // Main Menu, Loading and ESC Session Menu. F1-F12 never navigate WebView.
+    const int staging = m_activeDocumentSurface == 0 ? 1 : 0;
+    m_stagingDocumentSurface = staging;
+    navigateDocumentSurface(staging, target);
+#else
+    (void)target;
+#endif
+}
+
+void Application::commitFullScreenDocument(int surfaceIndex, GameUiTarget target)
+{
+#ifdef _WIN32
+    if (surfaceIndex < 0 || surfaceIndex > 1 ||
+        m_gameUi.requestedTarget() != target)
+    {
+        return;
+    }
+
+    const auto& state = m_gameUi.documentSurface(surfaceIndex);
+    if (state.target != target || !state.prepared)
+        return;
+
+    syncDocumentWebViewBounds();
+    auto& incoming = m_documentWebViews[surfaceIndex];
+
+    // Reveal the prepared child before retiring the previous owner. Because
+    // both are real sibling HWNDs, this is a presentation double buffer rather
+    // than a navigate-then-pray sequence.
+    incoming.setVisible(true);
+    incoming.bringToFront();
+    incoming.evalScript(
         "if(window.EliteUiKit&&window.EliteUiKit.revealPreparedDocument)"
         "window.EliteUiKit.revealPreparedDocument();"
     );
-#else
-    (void)mode;
+
+    // ShowWindow/SetWindowPos and WebView2 composition are asynchronous with
+    // the GLFW/OpenGL parent. Do not retire the previous owner until DWM has
+    // actually composed the prepared incoming child. Without this fence a
+    // sibling hide can uncover an older parent/front-buffer generation for one
+    // desktop frame even though our logical presentation state is correct.
+    flushDesktopCompositor();
+
+    if (m_activeDocumentSurface != surfaceIndex)
+        m_documentWebViews[m_activeDocumentSurface].setVisible(false);
+
+    m_activeDocumentSurface = surfaceIndex;
+    m_stagingDocumentSurface = surfaceIndex == 0 ? 1 : 0;
+    if (m_gameUi.commitRequested(target))
+        m_gameUi.parkScene();
+
+    if (target.mode == GameUiMode::SessionMenu)
+        incoming.focus();
+
+    if (m_afterPresentationCommit)
+    {
+        auto completion = std::move(m_afterPresentationCommit);
+        m_afterPresentationCommit = {};
+        completion();
+    }
 #endif
 }
 
 
-void Application::openGameUi(GameUiMode mode)
+void Application::requestPresentationTarget(GameUiTarget target)
 {
-    if (!m_gameUi.open(mode))
+    if (!target.valid() || target.mode == GameUiMode::None)
         return;
 
-    switch (mode)
+    const bool sessionPresentation =
+        target.mode == GameUiMode::Flight ||
+        target.mode == GameUiMode::SystemMap ||
+        target.mode == GameUiMode::ServicePanel ||
+        target.mode == GameUiMode::SessionMenu;
+    if (sessionPresentation && m_activeSessionKind == GameSessionLaunchKind::None)
+        return;
+
+    if (!m_gameUi.requestTarget(target))
+        return;
+
+    if (target.mode != GameUiMode::SessionMenu)
+        setLocalSessionMenuPause(false);
+
+    if (m_gameUi.committedTarget() == target)
+        return;
+
+    m_htmlUi.setActivePanel(HtmlUiPanelId::None);
+
+#ifdef _WIN32
+    if (target.isFullScreenWebDocument())
     {
-        case GameUiMode::SystemMap:
-        {
-            m_htmlUi.setActivePanel(HtmlUiPanelId::None);
-
-#ifdef _WIN32
-            int w = 1280;
-            int h = 720;
-
-            glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
-
-            const auto lb =
-                makeLetterboxedViewport(w, h, TargetGameAspect);
-
-            const int panelW =
-                systemMapPanelWidth(lb.width);
-
-            if (!m_gameUi.isLoaded(GameUiMode::SystemMap) &&
-                !m_systemMapPanelNavigationPending)
-            {
-                navigateGameUi(GameUiMode::SystemMap);
-            }
-
-            m_gameWebView.setBounds(
-                lb.x + std::max(0, lb.width - panelW),
-                lb.y,
-                panelW,
-                lb.height
-            );
-
-            const bool panelReady =
-                m_gameUi.isLoaded(GameUiMode::SystemMap) &&
-                m_systemMapPanelPrepared;
-            if (panelReady)
-                presentPreparedGameUi(GameUiMode::SystemMap);
-            else
-                m_gameWebView.setVisible(false);
+        prepareFullScreenDocument(target);
+        Input::instance().reset();
+        return;
+    }
 #endif
-            break;
-        }
 
-        case GameUiMode::MainMenu:
+    auto* space = dynamic_cast<SpaceState*>(m_states.current());
+    if (!space)
+        return;
+
+    if (target.mode == GameUiMode::Flight)
+    {
+        ScreenLayout layout = ScreenLayout::Front_Main_Rear_Mini;
+        switch (target.flight)
         {
-            m_htmlUi.setActivePanel(HtmlUiPanelId::None);
-
-#ifdef _WIN32
-            if (!m_gameUi.isLoaded(GameUiMode::MainMenu))
-            {
-                navigateGameUi(GameUiMode::MainMenu);
-                break;
-            }
-
-            if (m_gameUi.isPrepared(GameUiMode::MainMenu))
-                presentPreparedGameUi(GameUiMode::MainMenu);
-            else
-                applyMainMenuView();
-#endif
-            break;
+            case FlightPresentationView::Front: layout = ScreenLayout::Front_Main_Rear_Mini; break;
+            case FlightPresentationView::Rear: layout = ScreenLayout::Rear_Main_Front_Mini; break;
+            case FlightPresentationView::FrontDrone: layout = ScreenLayout::Front_Main_Drone_Mini; break;
+            case FlightPresentationView::Drone: layout = ScreenLayout::Drone_Main_Front_Mini; break;
         }
+        space->setFlightScreenLayout(layout);
+        m_gameUi.armSceneTarget(target);
+        Input::instance().reset();
+        return;
+    }
 
-        case GameUiMode::Loading:
-        {
-            m_htmlUi.setActivePanel(HtmlUiPanelId::None);
+    if (target.mode == GameUiMode::ServicePanel)
+    {
+        // F5-F8 are native scene-backed presentation targets. No browser
+        // navigation, HWND visibility or DWM sibling ordering participates.
+        m_gameUi.armSceneTarget(target);
+        Input::instance().reset();
+        return;
+    }
 
-#ifdef _WIN32
-            if (!m_gameUi.isLoaded(GameUiMode::Loading))
-            {
-                navigateGameUi(GameUiMode::Loading);
-                break;
-            }
-
-            if (m_gameUi.isPrepared(GameUiMode::Loading))
-                presentPreparedGameUi(GameUiMode::Loading);
-            else
-                setLoadingUiProgress(
-                    m_loadingUiProgress,
-                    m_loadingUiStageKey,
-                    m_loadingUiEnglishFallback
-                );
-#endif
-            break;
-        }
-
-        case GameUiMode::SessionMenu:
-        {
-            m_htmlUi.setActivePanel(HtmlUiPanelId::None);
-#ifdef _WIN32
-            if (!m_gameUi.isLoaded(GameUiMode::SessionMenu))
-            {
-                navigateGameUi(GameUiMode::SessionMenu);
-                break;
-            }
-
-            if (m_gameUi.isPrepared(GameUiMode::SessionMenu))
-                presentPreparedGameUi(GameUiMode::SessionMenu);
-            else
-                applySessionMenuView();
-#endif
-            break;
-        }
-
-        case GameUiMode::None:
-        default:
-            closeGameUi();
-            break;
+    if (target.mode == GameUiMode::SystemMap)
+    {
+        // Navigation data is prepared by prepareRequestedPresentation() from
+        // the latest accepted client snapshot. The side panel is rendered in
+        // the same OpenGL frame, so there is no separate readiness handshake.
+        Input::instance().reset();
     }
 }
 
-
-
-
-
-
-void Application::evalGameUiScript(const std::string& script)
+void Application::requestFlightView(FlightPresentationView view)
 {
-#ifdef _WIN32
-    m_gameWebView.evalScript(script);
-#else
-    (void)script;
-#endif
+    m_lastFlightTarget = GameUiTarget::forFlight(view);
+    requestPresentationTarget(m_lastFlightTarget);
 }
 
+void Application::requestLastFlightView()
+{
+    requestPresentationTarget(m_lastFlightTarget);
+}
 
+void Application::requestNavigationView(NavigationPresentationView view)
+{
+    requestPresentationTarget(GameUiTarget::forNavigation(view));
+}
 
+void Application::adoptNavigationView(NavigationPresentationView view)
+{
+    // Internal map drill/navigation already prepared the scene on the same
+    // OpenGL surface. Synchronize the global presentation target without
+    // re-running F9-F12 preparation. Never override a newer direct request.
+    if (m_gameUi.requestPending() ||
+        m_gameUi.committedTarget().mode != GameUiMode::SystemMap)
+    {
+        return;
+    }
 
+    const GameUiTarget target = GameUiTarget::forNavigation(view);
+    if (m_gameUi.committedTarget() == target &&
+        m_gameUi.sceneTarget() == target)
+    {
+        return;
+    }
 
+    m_gameUi.forceCommit(target);
+}
 
+void Application::requestServicePanel(ui::services::ServiceUiId service)
+{
+    if (service == ui::services::ServiceUiId::None)
+        return;
+    requestPresentationTarget(GameUiTarget::forService(service));
+}
+
+void Application::prepareRequestedPresentation(SpaceState& space)
+{
+    const GameUiTarget requested = m_gameUi.requestedTarget();
+    if (requested.mode != GameUiMode::SystemMap || !m_gameUi.requestPending())
+        return;
+
+    PlayerNavigationMapLevel level = PlayerNavigationMapLevel::Galaxy;
+    switch (requested.navigation)
+    {
+        case NavigationPresentationView::Galaxy: level = PlayerNavigationMapLevel::Galaxy; break;
+        case NavigationPresentationView::System: level = PlayerNavigationMapLevel::System; break;
+        case NavigationPresentationView::Detail: level = PlayerNavigationMapLevel::Detail; break;
+        case NavigationPresentationView::Local: level = PlayerNavigationMapLevel::Local; break;
+    }
+
+    if (!space.preparePlayerNavigationMapLevel(level))
+        return;
+
+    m_gameUi.armSceneTarget(requested);
+}
+
+void Application::commitPreparedPresentationAfterSwap(SpaceState& space)
+{
+    (void)space;
+    const GameUiTarget requested = m_gameUi.requestedTarget();
+    const GameUiTarget scene = m_gameUi.sceneTarget();
+    if (requested != scene ||
+        (requested.mode != GameUiMode::Flight &&
+         requested.mode != GameUiMode::SystemMap &&
+         requested.mode != GameUiMode::ServicePanel))
+    {
+        return;
+    }
+
+    if (m_gameUi.committedTarget() == requested)
+        return;
+
+#ifdef _WIN32
+    const bool outgoingFullScreen =
+        m_gameUi.committedTarget().isFullScreenWebDocument();
+    if (outgoingFullScreen)
+    {
+        // This is the only session handoff that still crosses native surfaces:
+        // leaving the explicit ESC menu/loading document for the one OpenGL
+        // in-session presentation surface. F1-F12 transitions among themselves
+        // never execute WebView show/hide/z-order operations.
+        flushDesktopCompositor();
+        m_documentWebViews[m_activeDocumentSurface].setVisible(false);
+    }
+#endif
+
+    if (m_gameUi.commitRequested(requested))
+    {
+        if (m_window)
+            m_window->focus();
+
+        if (m_afterPresentationCommit)
+        {
+            auto completion = std::move(m_afterPresentationCommit);
+            m_afterPresentationCommit = {};
+            completion();
+        }
+    }
+}
 
 void Application::cycleUiLanguage()
 {
@@ -1878,12 +1532,11 @@ void Application::cycleUiLanguage()
     }
 
 #ifdef _WIN32
-    // C++ owns the global locale. WebUI receives the same value and stores it
-    // only as a page-navigation convenience; it never owns gameplay state.
-    m_gameWebView.evalScript(
+    const std::string script =
         "localStorage.setItem('elite.ui.locale','" + locale + "');"
-        "if (window.GameI18n) window.GameI18n.setLocale('" + locale + "');"
-    );
+        "if (window.GameI18n) window.GameI18n.setLocale('" + locale + "');";
+    for (auto& surface : m_documentWebViews)
+        surface.evalScript(script);
 #endif
 
     if (GameState* state = m_states.current())
@@ -1892,170 +1545,338 @@ void Application::cycleUiLanguage()
     std::cout << "[Localization] UI locale=" << locale << std::endl;
 }
 
-void Application::closeGameUi()
+void Application::requestApplicationQuit()
 {
-    const GameUiMode closingMode = m_gameUi.mode();
-    const bool preserveSystemMapPanel =
-        closingMode == GameUiMode::SystemMap &&
-        m_gameUi.isLoaded(GameUiMode::SystemMap);
-
-    if (!m_gameUi.close())
-        return;
-
-    // The map side panel is a reusable, target-agnostic document. Throwing it
-    // away on every F9-F12 close forced a fresh WebView navigation/font/layout
-    // barrier on the next key press and accounted for most of the visible
-    // gameplay->map latency. Keep its DOM warm while gameplay owns the screen;
-    // only the target-specific payload/prepared bit is invalidated.
-    if (preserveSystemMapPanel)
-    {
-        m_gameUi.clearPrepared();
-        m_systemMapPanelPrepared = false;
-        m_systemMapPanelNavigationPending = false;
-        m_systemMapPanelStateRequested = false;
-        m_systemMapPanelPrewarmPending = false;
-    }
-    else
-    {
-        m_gameUi.clearLoaded();
-        m_systemMapPanelPrepared = false;
-        m_systemMapPanelNavigationPending = false;
-        m_systemMapPanelStateRequested = false;
-        m_systemMapPanelPrewarmPending = false;
-    }
-
-    m_htmlUi.setActivePanel(HtmlUiPanelId::None);
-
+    if (m_window)
+        m_window->hide();
 #ifdef _WIN32
-    m_gameWebView.setVisible(false);
+    for (auto& surface : m_documentWebViews)
+        surface.setVisible(false);
 #endif
-}
-
-void Application::invalidatePreparedSystemMapUi()
-{
-#ifdef _WIN32
-    if (m_gameUi.isMode(GameUiMode::SystemMap))
-        return;
-
-    // The panel document is target-agnostic and may keep loading invisibly
-    // while F9-F12 changes the requested destination. Only its authoritative
-    // payload preparation is invalidated; this avoids restart/navigation races.
-    m_systemMapPanelPrepared = false;
-    m_systemMapPanelStateRequested = false;
-    m_gameWebView.setVisible(false);
-#endif
-}
-
-void Application::prewarmSystemMapPanel()
-{
-#ifdef _WIN32
-    if (m_activeSessionKind == GameSessionLaunchKind::None ||
-        m_gameUi.isOpen() ||
-        m_gameUi.isLoaded(GameUiMode::SystemMap) ||
-        m_systemMapPanelNavigationPending)
-    {
-        return;
-    }
-
-    // One GameWebView is reused for service UI and the map panel. As soon as
-    // gameplay becomes the visible owner, load the target-agnostic panel DOM
-    // off-screen. F9-F12 then waits only for the current payload, not another
-    // HTML/CSS/font navigation.
-    m_gameWebView.setVisible(false);
-    navigateGameUi(GameUiMode::SystemMap);
-    m_systemMapPanelPrewarmPending = true;
-#endif
-}
-
-void Application::prepareSystemMapUiForEntry(SpaceState& space)
-{
-#ifdef _WIN32
-    if (m_gameUi.isMode(GameUiMode::SystemMap) ||
-        !space.playerNavigationMapEntryTargetReady())
-    {
-        return;
-    }
-
-    if (!m_gameUi.isLoaded(GameUiMode::SystemMap))
-    {
-        if (!m_systemMapPanelNavigationPending)
-        {
-            int w = 1280;
-            int h = 720;
-            glfwGetFramebufferSize(m_window->nativeHandle(), &w, &h);
-            const auto lb = makeLetterboxedViewport(w, h, TargetGameAspect);
-            const int panelW = systemMapPanelWidth(lb.width);
-            m_gameWebView.setBounds(
-                lb.x + std::max(0, lb.width - panelW),
-                lb.y,
-                panelW,
-                lb.height
-            );
-            m_gameWebView.setVisible(false);
-            navigateGameUi(GameUiMode::SystemMap);
-        }
-        return;
-    }
-
-    if (!m_systemMapPanelPrepared)
-    {
-        if (!m_systemMapPanelStateRequested)
-        {
-            m_systemMapPanelStateRequested = true;
-            space.pushSystemMapPanelState();
-        }
-        return;
-    }
-
-    space.armPlayerNavigationMapEntryPresentation();
-#endif
-}
-
-void Application::requestSystemMapClose()
-{
-#ifdef _WIN32
-    if (!m_gameUi.isMode(GameUiMode::SystemMap) ||
-        serviceUiTransitionPending())
-    {
-        return;
-    }
-
-    beginServiceUiTransition([this]()
-    {
-        if (!m_gameUi.isMode(GameUiMode::SystemMap))
-            return;
-
-        if (auto* space = dynamic_cast<SpaceState*>(m_states.current()))
-            space->beginPlayerNavigationMapExit();
-        else
-            closeGameUi();
-    });
-#else
-    closeGameUi();
-#endif
+    m_gameUi.clearForShutdown();
+    m_running = false;
 }
 
 GameUiMode Application::gameUiMode() const
 {
-    return m_gameUi.mode();
+    // Semantic presentation state: input/live-map policy must follow what the
+    // user can actually see, never a destination being prepared underneath it.
+    return m_gameUi.committedTarget().mode;
+}
+
+GameUiTarget Application::gameUiTarget() const
+{
+    return m_gameUi.committedTarget();
+}
+
+GameUiMode Application::sceneGameUiMode() const
+{
+    // Render-only state. This may temporarily differ from committedTarget while
+    // a Flight/Navigation destination is prepared under an opaque outgoing UI.
+    return m_gameUi.sceneTarget().mode;
+}
+
+GameUiTarget Application::sceneGameUiTarget() const
+{
+    return m_gameUi.sceneTarget();
 }
 
 bool Application::isGameUiOpen() const
 {
-    return m_gameUi.isOpen();
+    return m_gameUi.committedTarget().mode != GameUiMode::Flight &&
+           m_gameUi.committedTarget().mode != GameUiMode::None;
 }
 
 
+void Application::setLocalSessionMenuPause(bool paused)
+{
+    m_localSessionPausedByMenu =
+        paused && m_activeSessionKind == GameSessionLaunchKind::LocalNewGame;
+}
 
+bool Application::localSessionMenuPaused() const
+{
+    return m_localSessionPausedByMenu &&
+           m_activeSessionKind == GameSessionLaunchKind::LocalNewGame;
+}
 
+void Application::processDocumentWebViewCommands(int surfaceIndex)
+{
+#ifdef _WIN32
+    if (surfaceIndex < 0 || surfaceIndex > 1)
+        return;
 
+    auto& webView = m_documentWebViews[surfaceIndex];
+    std::string webCommand;
+    while (webView.pollCommand(webCommand))
+    {
+        std::uint64_t presentationSerial = 0;
+        const GameUiTarget mainMenuTarget =
+            GameUiTarget::forMode(GameUiMode::MainMenu);
+        const GameUiTarget loadingTarget =
+            GameUiTarget::forMode(GameUiMode::Loading);
+        const GameUiTarget sessionMenuTarget =
+            GameUiTarget::forMode(GameUiMode::SessionMenu);
 
+        if (webCommand.rfind("main_menu_ready|", 0) == 0)
+        {
+            if (parsePresentationSerialCommand(
+                    webCommand, "main_menu_ready|", presentationSerial) &&
+                m_gameUi.acknowledgeDocumentLoaded(
+                    surfaceIndex, mainMenuTarget, presentationSerial))
+            {
+                applyMainMenuView();
+            }
+            continue;
+        }
 
+        if (webCommand.rfind("main_menu_prepared|", 0) == 0)
+        {
+            if (parsePresentationSerialCommand(
+                    webCommand, "main_menu_prepared|", presentationSerial) &&
+                m_gameUi.acknowledgeDocumentPrepared(
+                    surfaceIndex, mainMenuTarget, presentationSerial))
+            {
+                commitFullScreenDocument(surfaceIndex, mainMenuTarget);
+            }
+            continue;
+        }
 
+        if (webCommand.rfind("loading_ui_ready|", 0) == 0)
+        {
+            if (parsePresentationSerialCommand(
+                    webCommand, "loading_ui_ready|", presentationSerial) &&
+                m_gameUi.acknowledgeDocumentLoaded(
+                    surfaceIndex, loadingTarget, presentationSerial))
+            {
+                setLoadingUiProgress(
+                    m_loadingUiProgress,
+                    m_loadingUiStageKey,
+                    m_loadingUiEnglishFallback);
+            }
+            continue;
+        }
 
+        if (webCommand.rfind("loading_ui_prepared|", 0) == 0)
+        {
+            if (parsePresentationSerialCommand(
+                    webCommand, "loading_ui_prepared|", presentationSerial) &&
+                m_gameUi.acknowledgeDocumentPrepared(
+                    surfaceIndex, loadingTarget, presentationSerial))
+            {
+                commitFullScreenDocument(surfaceIndex, loadingTarget);
+            }
+            continue;
+        }
 
+        if (webCommand.rfind("session_menu_ready|", 0) == 0)
+        {
+            if (parsePresentationSerialCommand(
+                    webCommand, "session_menu_ready|", presentationSerial) &&
+                m_gameUi.acknowledgeDocumentLoaded(
+                    surfaceIndex, sessionMenuTarget, presentationSerial))
+            {
+                applySessionMenuView();
+            }
+            continue;
+        }
 
+        if (webCommand.rfind("session_menu_prepared|", 0) == 0)
+        {
+            if (parsePresentationSerialCommand(
+                    webCommand, "session_menu_prepared|", presentationSerial) &&
+                m_gameUi.acknowledgeDocumentPrepared(
+                    surfaceIndex, sessionMenuTarget, presentationSerial))
+            {
+                commitFullScreenDocument(surfaceIndex, sessionMenuTarget);
+            }
+            continue;
+        }
 
+        // A hidden back surface is allowed to prepare documents but can never
+        // issue player commands before it becomes the committed front surface.
+        if (surfaceIndex != m_activeDocumentSurface)
+            continue;
+
+        constexpr const char* NewLocalGamePrefix = "new_local_game|";
+        if (webCommand.rfind(NewLocalGamePrefix, 0) == 0)
+        {
+            const std::string encodedName = webCommand.substr(
+                std::char_traits<char>::length(NewLocalGamePrefix));
+            std::string localPlayerName;
+            if (!decodeWebComponent(encodedName, localPlayerName) ||
+                !normalizeLocalPlayerDisplayName(localPlayerName))
+            {
+                webView.evalScript(
+                    "window.EliteUiKit.restoreDocument();"
+                    "window.EliteUiKit.setBanner("
+                    "'#local-player-name-error',"
+                    "window.GameI18n.t('main.local_player_name_required','Enter a player name.'),"
+                    "'error');");
+                continue;
+            }
+
+            m_localPlayerDisplayName = std::move(localPlayerName);
+            requestSessionStart(GameSessionLaunchKind::LocalNewGame);
+            continue;
+        }
+
+        if (webCommand == "load_local_game")
+        {
+            std::cout << "[App] load local game not implemented yet\n";
+            continue;
+        }
+
+        constexpr const char* MainRoutePrefix = "main_route|";
+        if (webCommand.rfind(MainRoutePrefix, 0) == 0)
+        {
+            const std::string payload = webCommand.substr(
+                std::char_traits<char>::length(MainRoutePrefix));
+            const auto first = payload.find('|');
+            const auto second = first == std::string::npos
+                ? std::string::npos
+                : payload.find('|', first + 1);
+            if (first == std::string::npos || second == std::string::npos)
+                continue;
+
+            const std::string route = payload.substr(0, first);
+            const std::string endpoint =
+                payload.substr(first + 1, second - first - 1);
+            const std::string account = payload.substr(second + 1);
+            if (endpoint.size() <= 255u &&
+                account.size() <= game::identity::AccountHandleMaxLength)
+            {
+                m_uiNavigationState.setConnectionDraft(endpoint, account);
+            }
+
+            if (route == "home")
+                m_uiNavigationState.showMainMenuHome();
+            else if (route == "multiplayer")
+                m_uiNavigationState.showMultiplayerAuthorization();
+            else if (route == "signin")
+                m_uiNavigationState.showSignInPassword();
+            else if (route == "register")
+                m_uiNavigationState.showRegistration();
+            else if (route == "recovery")
+                m_uiNavigationState.showRecovery();
+            else if (route == "account")
+            {
+                if (m_authenticatedRemoteAccountHandle.empty())
+                    m_uiNavigationState.showMultiplayerAuthorization();
+                else
+                    m_uiNavigationState.showAccount();
+            }
+            else
+                continue;
+
+            applyMainMenuView();
+            continue;
+        }
+
+        constexpr const char* SetLocalePrefix = "set_ui_locale|";
+        if (webCommand.rfind(SetLocalePrefix, 0) == 0)
+        {
+            setUiLanguage(webCommand.substr(
+                std::char_traits<char>::length(SetLocalePrefix)));
+            if (m_gameUi.committedTarget().mode == GameUiMode::MainMenu)
+                applyMainMenuView();
+            continue;
+        }
+
+        if (webCommand == "session_cancel")
+        {
+            cancelPendingSessionStart();
+            continue;
+        }
+
+        if (webCommand == "session_resume" || webCommand == "session_escape")
+        {
+            resumeSessionFromMenu();
+            continue;
+        }
+
+        if (webCommand == "session_return_main")
+        {
+            returnSessionToMainMenu();
+            continue;
+        }
+
+        if (webCommand == "session_quit" || webCommand == "exit")
+        {
+            requestApplicationQuit();
+            continue;
+        }
+
+        if (webCommand == "multiplayer")
+        {
+            showMultiplayerConnectionForm();
+            continue;
+        }
+
+        constexpr const char* MultiplayerSignInPrefix = "multiplayer_signin|";
+        constexpr const char* MultiplayerRegisterPrefix = "multiplayer_register|";
+        const bool isSignIn =
+            webCommand.rfind(MultiplayerSignInPrefix, 0) == 0;
+        const bool isRegister =
+            webCommand.rfind(MultiplayerRegisterPrefix, 0) == 0;
+        if (isSignIn || isRegister)
+        {
+            const char* prefix = isRegister
+                ? MultiplayerRegisterPrefix
+                : MultiplayerSignInPrefix;
+            const std::string payload = webCommand.substr(
+                std::char_traits<char>::length(prefix));
+            const auto separator = payload.rfind('|');
+            if (separator == std::string::npos)
+            {
+                webView.evalScript("setAuthError('INVALID_ACCOUNT_HANDLE');");
+                continue;
+            }
+
+            const std::string endpointText = payload.substr(0, separator);
+            const std::string profileName = payload.substr(separator + 1);
+            m_uiNavigationState.setConnectionDraft(endpointText, profileName);
+
+            game::network::NetworkEndpoint endpoint;
+            std::string endpointError;
+            if (!game::network::parseNetworkEndpoint(
+                    endpointText, endpoint, &endpointError))
+            {
+                std::cerr << "[App] invalid multiplayer endpoint: "
+                          << endpointError << "\n";
+                webView.evalScript("setAuthError('INVALID_SERVER_ADDRESS');");
+                continue;
+            }
+
+            std::string identityError;
+            const auto intent = isRegister
+                ? game::network::AuthenticationIntent::Register
+                : game::network::AuthenticationIntent::SignIn;
+            if (!prepareRemoteIdentity(profileName, intent, identityError))
+            {
+                if (isSignIn && identityError == "LOCAL_CREDENTIAL_MISSING")
+                    showPasswordSignInForm(identityError);
+                else
+                    webView.evalScript(
+                        "setAuthError(" + nlohmann::json(identityError).dump() + ");");
+                continue;
+            }
+
+            configureRemoteServer(endpoint.host, endpoint.port);
+            requestSessionStart(GameSessionLaunchKind::RemoteMultiplayer);
+            continue;
+        }
+
+        if (webCommand == "multiplayer_back")
+        {
+            showMainMenu();
+            continue;
+        }
+    }
+#else
+    (void)surfaceIndex;
+#endif
+}
 
 
 void Application::requestSessionStart(GameSessionLaunchKind kind)
@@ -2070,31 +1891,20 @@ void Application::requestSessionStart(GameSessionLaunchKind kind)
         return;
     }
 
-    beginServiceUiTransition([this, kind]() { startSessionNow(kind); });
+    startSessionNow(kind);
 }
 
 void Application::startSessionNow(GameSessionLaunchKind kind)
 {
-#ifdef _WIN32
-    m_gameUi.forceMode(GameUiMode::Loading);
-    m_gameUi.clearLoaded();
-    m_uiNavigationState.clearTransientMessage();
-    m_htmlUi.setActivePanel(HtmlUiPanelId::None);
+    m_pendingSessionLaunch = kind;
+    setLocalSessionMenuPause(false);
 
+#ifdef _WIN32
+    m_uiNavigationState.clearTransientMessage();
     m_loadingUiProgress = 0.10;
     m_loadingUiStageKey = "loading.stage.opening";
     m_loadingUiEnglishFallback = "OPENING LOADING SCREEN";
-
-    m_gameWebView.setVisible(false);
-    std::string loadingUrl = makeGameUiHttpUrl(
-        m_gameUiHttpPort,
-        "loading.html",
-        m_localization.locale()
-    );
-    loadingUrl += kind == GameSessionLaunchKind::RemoteMultiplayer
-        ? "&session=remote"
-        : "&session=local";
-    m_gameWebView.navigate(loadingUrl);
+    requestPresentationTarget(GameUiTarget::forMode(GameUiMode::Loading));
 #endif
 
     if (core::runtimeTraceEnabled())
@@ -2109,66 +1919,48 @@ void Application::startSessionNow(GameSessionLaunchKind kind)
         std::cerr << "\n";
     }
 
-    m_pendingSessionLaunch = kind;
     m_sessionStartTime = glfwGetTime();
     m_sessionStartLastUpdateTime = m_sessionStartTime;
     m_sessionStartStage = SessionStartStage::WaitingForLoadingScreen;
 }
 
-void Application::showMultiplayerConnectionForm(
-    const std::string& errorCode
-)
+void Application::showMultiplayerConnectionForm(const std::string& errorCode)
 {
 #ifdef _WIN32
     m_uiNavigationState.showMultiplayerAuthorization(errorCode);
-    m_gameUi.forceMode(GameUiMode::MainMenu);
-
-    if (m_gameUi.isLoaded(GameUiMode::MainMenu))
-    {
+    const GameUiTarget target = GameUiTarget::forMode(GameUiMode::MainMenu);
+    if (m_gameUi.committedTarget() == target)
         applyMainMenuView();
-    }
     else
-    {
-        // main_menu.html is loaded asynchronously by WebView2. Do not eval
-        // showMultiplayerForm() against the outgoing loading.html document.
-        // The page sends main_menu_ready once its DOM and bridge are ready;
-        // applyMainMenuView() then applies this pending sub-view atomically.
-        navigateGameUi(GameUiMode::MainMenu);
-    }
+        requestPresentationTarget(target);
 #else
     (void)errorCode;
 #endif
 }
 
-void Application::showRegistrationForm(
-    const std::string& errorCode
-)
+void Application::showRegistrationForm(const std::string& errorCode)
 {
 #ifdef _WIN32
     m_uiNavigationState.showRegistration(errorCode);
-    m_gameUi.forceMode(GameUiMode::MainMenu);
-
-    if (m_gameUi.isLoaded(GameUiMode::MainMenu))
+    const GameUiTarget target = GameUiTarget::forMode(GameUiMode::MainMenu);
+    if (m_gameUi.committedTarget() == target)
         applyMainMenuView();
     else
-        navigateGameUi(GameUiMode::MainMenu);
+        requestPresentationTarget(target);
 #else
     (void)errorCode;
 #endif
 }
 
-void Application::showPasswordSignInForm(
-    const std::string& errorCode
-)
+void Application::showPasswordSignInForm(const std::string& errorCode)
 {
 #ifdef _WIN32
     m_uiNavigationState.showSignInPassword(errorCode);
-    m_gameUi.forceMode(GameUiMode::MainMenu);
-
-    if (m_gameUi.isLoaded(GameUiMode::MainMenu))
+    const GameUiTarget target = GameUiTarget::forMode(GameUiMode::MainMenu);
+    if (m_gameUi.committedTarget() == target)
         applyMainMenuView();
     else
-        navigateGameUi(GameUiMode::MainMenu);
+        requestPresentationTarget(target);
 #else
     (void)errorCode;
 #endif
@@ -2178,19 +1970,29 @@ void Application::showMainMenu()
 {
 #ifdef _WIN32
     m_uiNavigationState.showMainMenuHome();
-    m_gameUi.forceMode(GameUiMode::MainMenu);
-
-    if (m_gameUi.isLoaded(GameUiMode::MainMenu))
+    const GameUiTarget target = GameUiTarget::forMode(GameUiMode::MainMenu);
+    if (m_gameUi.committedTarget() == target)
         applyMainMenuView();
     else
-        navigateGameUi(GameUiMode::MainMenu);
+        requestPresentationTarget(target);
 #endif
 }
 
 void Application::applyMainMenuView()
 {
 #ifdef _WIN32
-    if (!m_gameUi.isLoaded(GameUiMode::MainMenu))
+    const GameUiTarget target = GameUiTarget::forMode(GameUiMode::MainMenu);
+    int surfaceIndex = -1;
+    for (int i : {m_stagingDocumentSurface, m_activeDocumentSurface})
+    {
+        const auto& surface = m_gameUi.documentSurface(i);
+        if (surface.target == target && surface.loaded)
+        {
+            surfaceIndex = i;
+            break;
+        }
+    }
+    if (surfaceIndex < 0)
         return;
 
     std::string endpoint = m_uiNavigationState.endpointDraft();
@@ -2254,8 +2056,6 @@ void Application::applyMainMenuView()
     state["locale"] = m_localization.locale();
     state["localPlayerName"] = m_localPlayerDisplayName;
     state["accountAvailable"] = !m_authenticatedRemoteAccountHandle.empty();
-    // Recovery is intentionally exposed from password sign-in only after a
-    // real server-side password rejection exists. M8E.3b will own that proof.
     state["passwordRecoveryAvailable"] = false;
     state["authenticatedAccountHandle"] = m_authenticatedRemoteAccountHandle;
     state["authenticatedEndpoint"] = m_authenticatedRemoteEndpoint;
@@ -2271,9 +2071,8 @@ void Application::applyMainMenuView()
         state["locales"].push_back(std::move(localeState));
     }
 
-    m_gameWebView.evalScript(
-        "window.applyMainMenuState(" + state.dump() + ");"
-    );
+    m_documentWebViews[surfaceIndex].evalScript(
+        "window.applyMainMenuState(" + state.dump() + ");");
 #endif
 }
 
@@ -2283,70 +2082,59 @@ void Application::showSessionMenu()
     if (!m_gameSession || m_activeSessionKind == GameSessionLaunchKind::None)
         return;
 
-    m_gameUi.forceMode(GameUiMode::SessionMenu);
-    m_htmlUi.setActivePanel(HtmlUiPanelId::None);
+    const GameUiTarget committed = m_gameUi.committedTarget();
+    if (committed.mode != GameUiMode::SessionMenu &&
+        committed.mode != GameUiMode::None)
+    {
+        m_sessionResumeTarget = committed;
+    }
+    else if (m_gameUi.requestedTarget().mode != GameUiMode::SessionMenu)
+    {
+        m_sessionResumeTarget = m_gameUi.requestedTarget();
+    }
 
-    // SystemMap owns a narrow right-side WebView viewport. ESC closes that
-    // overlay first; the next ESC must open the session menu over the full
-    // full client window rather than reusing the stale map-panel bounds.
-    int framebufferWidth = 1280;
-    int framebufferHeight = 720;
-    glfwGetFramebufferSize(
-        m_window->nativeHandle(),
-        &framebufferWidth,
-        &framebufferHeight
-    );
-    m_gameWebView.setBounds(
-        0,
-        0,
-        framebufferWidth,
-        framebufferHeight
-    );
-    m_gameWebView.setVisible(false);
+    if (m_sessionResumeTarget.mode == GameUiMode::MainMenu ||
+        m_sessionResumeTarget.mode == GameUiMode::Loading ||
+        m_sessionResumeTarget.mode == GameUiMode::SessionMenu ||
+        m_sessionResumeTarget.mode == GameUiMode::None)
+    {
+        m_sessionResumeTarget = m_lastFlightTarget;
+    }
 
-    // The visible menu owns normal keyboard navigation. Escape remains an
-    // application-level command even if WebView2 focus lives in a helper
-    // process, so there is no reason to steal focus back to the GLFW surface.
+    setLocalSessionMenuPause(true);
+    requestPresentationTarget(GameUiTarget::forMode(GameUiMode::SessionMenu));
     Input::instance().reset();
-
-    if (m_gameUi.isLoaded(GameUiMode::SessionMenu))
-        applySessionMenuView();
-    else
-        navigateGameUi(GameUiMode::SessionMenu);
 #endif
 }
 
 void Application::resumeSessionFromMenu()
 {
 #ifdef _WIN32
-    if (!m_gameUi.isMode(GameUiMode::SessionMenu) ||
-        serviceUiTransitionPending())
-    {
+    if (m_activeSessionKind == GameSessionLaunchKind::None)
         return;
-    }
 
-    beginServiceUiTransition([this]()
-    {
-        if (!m_gameUi.isMode(GameUiMode::SessionMenu))
-            return;
-
-        closeGameUi();
-        Input::instance().reset();
-        if (m_window)
-            m_window->focus();
-        prewarmSystemMapPanel();
-    });
+    setLocalSessionMenuPause(false);
+    requestPresentationTarget(m_sessionResumeTarget);
+    Input::instance().reset();
 #endif
 }
 
 void Application::applySessionMenuView()
 {
 #ifdef _WIN32
-    if (!m_gameUi.isMode(GameUiMode::SessionMenu) ||
-        !m_gameUi.isLoaded(GameUiMode::SessionMenu))
+    const GameUiTarget target = GameUiTarget::forMode(GameUiMode::SessionMenu);
+    int surfaceIndex = -1;
+    for (int i : {m_stagingDocumentSurface, m_activeDocumentSurface})
     {
-        return;
+        const auto& surface = m_gameUi.documentSurface(i);
+        if (surface.target == target && surface.loaded)
+        {
+            surfaceIndex = i;
+            break;
+        }
     }
+    if (surfaceIndex < 0)
+        return;
 
     const bool local =
         m_activeSessionKind == GameSessionLaunchKind::LocalNewGame;
@@ -2356,74 +2144,32 @@ void Application::applySessionMenuView()
     if (local)
     {
         state["safeZone"] = safeZone;
-        // Manual local save/load is intentionally fail-closed until M8E.3e
-        // owns the persistence backend and authoritative safe-save policy.
         state["persistenceReady"] = false;
         state["canSave"] = false;
         state["canLoad"] = false;
         state["playerDisplayName"] = m_localPlayerDisplayName;
-        m_gameWebView.evalScript(
-            "window.applyLocalSessionMenuState(" + state.dump() + ");"
-        );
+        m_documentWebViews[surfaceIndex].evalScript(
+            "window.applyLocalSessionMenuState(" + state.dump() + ");");
     }
     else
     {
         state["accountHandle"] = m_clientIdentityProfileName;
-        m_gameWebView.evalScript(
-            "window.applyMultiplayerSessionMenuState(" + state.dump() + ");"
-        );
+        m_documentWebViews[surfaceIndex].evalScript(
+            "window.applyMultiplayerSessionMenuState(" + state.dump() + ");");
     }
-
-    Input::instance().reset();
-    m_gameWebView.focus();
 #endif
 }
 
 void Application::returnSessionToMainMenu()
 {
-    if (serviceUiTransitionPending())
-        return;
-
-    beginServiceUiTransition([this]()
-    {
-    stopGameSession();
-    m_pendingSessionLaunch = GameSessionLaunchKind::None;
-    m_sessionStartStage = SessionStartStage::Idle;
-    m_spaceStateBuildStartTime = 0.0;
-
-    m_states.clear();
-    m_states.applyPendingChanges();
-    m_states.push(std::make_unique<MainMenuState>(m_states));
-    m_states.applyPendingChanges();
-
 #ifdef _WIN32
-    m_gameUi.clearLoaded();
-    showMainMenu();
-#endif
-    });
-}
-
-void Application::cancelPendingSessionStart()
-{
-    if (m_pendingSessionLaunch == GameSessionLaunchKind::None ||
-        serviceUiTransitionPending())
+    setLocalSessionMenuPause(false);
+    m_uiNavigationState.showMainMenuHome();
+    m_afterPresentationCommit = [this]()
     {
-        return;
-    }
-
-    // Cancel is intentionally limited to the connection/synchronization part
-    // of startup. Once SpaceState materialization begins the loading page hides
-    // the button and startup finishes through the normal deterministic path.
-    if (m_sessionStartStage == SessionStartStage::BuildingSpaceState)
-        return;
-
-    beginServiceUiTransition([this]()
-    {
-        const bool remote =
-            m_pendingSessionLaunch == GameSessionLaunchKind::RemoteMultiplayer;
-
         stopGameSession();
         m_pendingSessionLaunch = GameSessionLaunchKind::None;
+        m_activeSessionKind = GameSessionLaunchKind::None;
         m_sessionStartStage = SessionStartStage::Idle;
         m_spaceStateBuildStartTime = 0.0;
 
@@ -2431,106 +2177,41 @@ void Application::cancelPendingSessionStart()
         m_states.applyPendingChanges();
         m_states.push(std::make_unique<MainMenuState>(m_states));
         m_states.applyPendingChanges();
+    };
+    requestPresentationTarget(GameUiTarget::forMode(GameUiMode::MainMenu));
+#endif
+}
+
+void Application::cancelPendingSessionStart()
+{
+    if (m_pendingSessionLaunch == GameSessionLaunchKind::None ||
+        m_sessionStartStage == SessionStartStage::BuildingSpaceState)
+    {
+        return;
+    }
 
 #ifdef _WIN32
-        m_gameUi.clearLoaded();
-        if (remote)
-            showMultiplayerConnectionForm();
-        else
-            showMainMenu();
+    const bool remote =
+        m_pendingSessionLaunch == GameSessionLaunchKind::RemoteMultiplayer;
+    m_afterPresentationCommit = [this]()
+    {
+        stopGameSession();
+        m_pendingSessionLaunch = GameSessionLaunchKind::None;
+        m_activeSessionKind = GameSessionLaunchKind::None;
+        m_sessionStartStage = SessionStartStage::Idle;
+        m_spaceStateBuildStartTime = 0.0;
+
+        m_states.clear();
+        m_states.applyPendingChanges();
+        m_states.push(std::make_unique<MainMenuState>(m_states));
+        m_states.applyPendingChanges();
+    };
+
+    if (remote)
+        showMultiplayerConnectionForm();
+    else
+        showMainMenu();
 #endif
-    });
-}
-
-bool Application::serviceUiTransitionPending() const
-{
-    return static_cast<bool>(m_serviceUiTransitionCompletion);
-}
-
-void Application::beginServiceUiTransition(std::function<void()> completion)
-{
-    if (!completion || serviceUiTransitionPending())
-        return;
-
-#ifdef _WIN32
-    const GameUiMode mode = m_gameUi.mode();
-    const bool serviceDocument =
-        mode == GameUiMode::MainMenu ||
-        mode == GameUiMode::Loading ||
-        mode == GameUiMode::SessionMenu ||
-        mode == GameUiMode::SystemMap;
-
-    // Cross-document transitions are acknowledgement driven. A fixed timer is
-    // not a presentation boundary: WebView2 can be busy with layout/font/JS
-    // work and the old DOM may still be visible when the timer expires.
-    if (serviceDocument &&
-        m_gameUi.isLoaded(mode) &&
-        m_gameUi.isPrepared(mode))
-    {
-        m_serviceUiTransitionCompletion = std::move(completion);
-        m_serviceUiTransitionSerial = m_nextServiceUiTransitionSerial++;
-        m_serviceUiTransitionFailSafeDeadline = glfwGetTime() + 2.0;
-
-        const std::string command =
-            "service_ui_fade_out_complete|" +
-            std::to_string(m_serviceUiTransitionSerial);
-
-        m_gameWebView.evalScript(
-            "(async()=>{"
-            "try{"
-            "if(window.EliteUiKit&&window.EliteUiKit.fadeOutDocument)"
-            "await window.EliteUiKit.fadeOutDocument();"
-            "}finally{"
-            "if(window.gameCommand)await window.gameCommand(" +
-            nlohmann::json(command).dump() +
-            ");"
-            "}"
-            "})();"
-        );
-        return;
-    }
-#endif
-
-    completion();
-}
-
-void Application::completeServiceUiTransition(std::uint64_t serial)
-{
-    if (!m_serviceUiTransitionCompletion ||
-        serial == 0 ||
-        serial != m_serviceUiTransitionSerial)
-    {
-        return;
-    }
-
-    auto completion = std::move(m_serviceUiTransitionCompletion);
-    m_serviceUiTransitionCompletion = {};
-    m_serviceUiTransitionSerial = 0;
-    m_serviceUiTransitionFailSafeDeadline = 0.0;
-    completion();
-}
-
-void Application::updateServiceUiTransition()
-{
-    if (!m_serviceUiTransitionCompletion ||
-        m_serviceUiTransitionFailSafeDeadline <= 0.0 ||
-        glfwGetTime() < m_serviceUiTransitionFailSafeDeadline)
-    {
-        return;
-    }
-
-    // This is a fault-recovery path only. Normal sequencing is completed by
-    // service_ui_fade_out_complete from the outgoing document.
-    std::cerr
-        << "[GameUI] service fade acknowledgement timed out; "
-        << "forcing transition serial=" << m_serviceUiTransitionSerial
-        << "\n";
-
-    auto completion = std::move(m_serviceUiTransitionCompletion);
-    m_serviceUiTransitionCompletion = {};
-    m_serviceUiTransitionSerial = 0;
-    m_serviceUiTransitionFailSafeDeadline = 0.0;
-    completion();
 }
 
 void Application::setLoadingUiProgress(
@@ -2544,20 +2225,22 @@ void Application::setLoadingUiProgress(
     m_loadingUiEnglishFallback = std::move(englishFallback);
 
 #ifdef _WIN32
-    if (!m_gameUi.isMode(GameUiMode::Loading) ||
-        !m_gameUi.isLoaded(GameUiMode::Loading))
+    const GameUiTarget loadingTarget = GameUiTarget::forMode(GameUiMode::Loading);
+    for (int i = 0; i < 2; ++i)
     {
-        return;
-    }
+        const auto& surface = m_gameUi.documentSurface(i);
+        if (surface.target != loadingTarget || !surface.loaded)
+            continue;
 
-    m_gameWebView.evalScript(
-        "if(window.setLoadingProgress){"
-        "window.setLoadingProgress(" + std::to_string(m_loadingUiProgress) + "," +
-        nlohmann::json(m_loadingUiStageKey).dump() + "," +
-        nlohmann::json(m_loadingUiEnglishFallback).dump() +
-        ");"
-        "}"
-    );
+        m_documentWebViews[i].evalScript(
+            "if(window.setLoadingProgress){"
+            "window.setLoadingProgress(" + std::to_string(m_loadingUiProgress) + "," +
+            nlohmann::json(m_loadingUiStageKey).dump() + "," +
+            nlohmann::json(m_loadingUiEnglishFallback).dump() +
+            ");"
+            "}"
+        );
+    }
 #endif
 }
 
@@ -2578,12 +2261,13 @@ void Application::setUiLanguage(const std::string& locale)
 
 #ifdef _WIN32
     const std::string activeLocale = m_localization.locale();
-    m_gameWebView.evalScript(
+    const std::string script =
         "localStorage.setItem('elite.ui.locale'," +
         nlohmann::json(activeLocale).dump() + ");"
         "if (window.GameI18n) window.GameI18n.setLocale(" +
-        nlohmann::json(activeLocale).dump() + ");"
-    );
+        nlohmann::json(activeLocale).dump() + ");";
+    for (auto& surface : m_documentWebViews)
+        surface.evalScript(script);
 #endif
 
     if (GameState* state = m_states.current())
@@ -2592,19 +2276,14 @@ void Application::setUiLanguage(const std::string& locale)
 
 void Application::updatePendingSessionStart()
 {
-    if (m_pendingSessionLaunch == GameSessionLaunchKind::None ||
-        serviceUiTransitionPending())
-    {
+    if (m_pendingSessionLaunch == GameSessionLaunchKind::None)
         return;
-    }
 
     const double now = glfwGetTime();
 
     const auto finishReadySession = [this]()
     {
-        closeGameUi();
         Input::instance().reset();
-        m_window->focus();
 
         glfwSetInputMode(
             m_window->nativeHandle(),
@@ -2640,11 +2319,19 @@ void Application::updatePendingSessionStart()
         m_pendingSessionLaunch = GameSessionLaunchKind::None;
         m_sessionStartStage = SessionStartStage::Idle;
         m_spaceStateBuildStartTime = 0.0;
-        prewarmSystemMapPanel();
+        m_lastFlightTarget =
+            GameUiTarget::forFlight(FlightPresentationView::Front);
+        m_sessionResumeTarget = m_lastFlightTarget;
+        setLocalSessionMenuPause(false);
+
+        // Loading remains physically visible while the first complete flight
+        // framebuffer is rendered. commitPreparedPresentationAfterSwap() then
+        // retires the loading surface on the exact swap boundary.
+        requestPresentationTarget(m_lastFlightTarget);
 
         std::cout << "[App] "
                   << (remote ? "multiplayer world entered" : "local game loaded")
-                  << ", UI hidden\n";
+                  << ", flight presentation requested\n";
         if (core::runtimeTraceEnabled())
             std::cerr << "[M8E-CONNECT][client-ui] session-ready mode="
                       << (remote ? "remote" : "local")
@@ -2680,7 +2367,7 @@ void Application::updatePendingSessionStart()
 #ifdef _WIN32
         setLoadingUiProgress(1.00, "loading.stage.ready", "READY");
 #endif
-        beginServiceUiTransition(finishReadySession);
+        finishReadySession();
         return;
     }
 
@@ -2689,11 +2376,9 @@ void Application::updatePendingSessionStart()
         // The loading DOM is a presentation prerequisite. Do not start
         // networking/world bootstrap until the destination document has
         // acknowledged DOM/i18n/font readiness and received its first state.
-        if (!m_gameUi.isLoaded(GameUiMode::Loading) ||
-            !m_gameUi.isPrepared(GameUiMode::Loading))
-        {
+        const GameUiTarget loadingTarget = GameUiTarget::forMode(GameUiMode::Loading);
+        if (m_gameUi.committedTarget() != loadingTarget)
             return;
-        }
 
         const bool remote =
             m_pendingSessionLaunch == GameSessionLaunchKind::RemoteMultiplayer;
@@ -2771,44 +2456,39 @@ void Application::updatePendingSessionStart()
         setLoadingUiProgress(1.00, "loading.stage.failed", "SESSION FAILED");
 #endif
 
-        beginServiceUiTransition([this, remoteLaunch, sessionError]()
+        m_afterPresentationCommit = [this]()
         {
             stopGameSession();
             m_pendingSessionLaunch = GameSessionLaunchKind::None;
+            m_activeSessionKind = GameSessionLaunchKind::None;
             m_sessionStartStage = SessionStartStage::Idle;
             m_spaceStateBuildStartTime = 0.0;
+        };
 
 #ifdef _WIN32
-            // Loading is a transient document. The outgoing document fades
-            // before navigation; the destination main-menu document stays
-            // hidden until localization/native route/fonts are ready and then
-            // fades in. No default-language intermediate frame is exposed.
-            m_gameUi.clearLoaded();
-
-            if (remoteLaunch)
+        if (remoteLaunch)
+        {
+            const std::string message =
+                sessionError.empty() ? "SESSION_UNAVAILABLE" : sessionError;
+            if (m_uiNavigationState.route() ==
+                ui::platform::UiShellRoute::Registration)
             {
-                const std::string message =
-                    sessionError.empty() ? "SESSION_UNAVAILABLE" : sessionError;
-                if (m_uiNavigationState.route() ==
-                    ui::platform::UiShellRoute::Registration)
-                {
-                    showRegistrationForm(message);
-                }
-                else if (message == "INVALID_CREDENTIAL")
-                {
-                    showPasswordSignInForm(message);
-                }
-                else
-                {
-                    showMultiplayerConnectionForm(message);
-                }
+                showRegistrationForm(message);
+            }
+            else if (message == "INVALID_CREDENTIAL")
+            {
+                showPasswordSignInForm(message);
             }
             else
             {
-                showMainMenu();
+                showMultiplayerConnectionForm(message);
             }
+        }
+        else
+        {
+            showMainMenu();
+        }
 #endif
-        });
         return;
     }
 

@@ -45,7 +45,13 @@ PYTHON_BIN="${ELITE_PYTHON_BIN}"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_account_social_shell.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_session_menu_shell.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_client_service_ui_polish.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_service_panel_shell.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_presentation_transition_atomicity.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_render_surface_ownership.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_native_compositor_handoff.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_single_surface_session_presentation.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_function_key_presentation_route.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_direct_navigation_no_crossfade.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_headless_server_boundary.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_headless_server_executable.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_transport_boundary.py"
@@ -90,3 +96,5 @@ cmake --build "${BUILD_DIR}"
 ctest \
     --test-dir "${BUILD_DIR}" \
     --output-on-failure
+
+python3 tests/architecture_contracts/check_navigation_panel_functionality.py

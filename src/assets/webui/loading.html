@@ -21,14 +21,14 @@
       width: 100vw;
       height: 100vh;
       box-sizing: border-box;
-      padding: 56px;
+      padding: clamp(24px, 7vh, 56px);
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
     }
 
     .title {
-      font-size: 30px;
+      font-size: clamp(20px, 4vh, 30px);
       letter-spacing: 0.16em;
       text-transform: uppercase;
       margin-bottom: 12px;
@@ -53,7 +53,6 @@
       height: 100%;
       width: 0%;
       background: rgba(110, 220, 255, 0.88);
-      transition: width 0.18s ease;
     }
 
     .row {
@@ -137,6 +136,11 @@
     let loadingPreparedSent = false;
     let currentStageFallback = "BOOT";
     let stageAnimationGeneration = 0;
+    let currentProgress = 0;
+    let targetProgress = 0;
+    let progressPresented = false;
+    let progressAnimationFrame = 0;
+    let animatedProgressTarget = 0;
 
     const stageText = document.getElementById("stageText");
     const stageCursor = document.getElementById("stageCursor");
@@ -227,6 +231,65 @@
       }
     }
 
+    function renderProgress(value) {
+      const p = Math.max(0, Math.min(100, value));
+      document.getElementById("bar").style.width = p.toFixed(3) + "%";
+      document.getElementById("percent").textContent = Math.round(p) + "%";
+    }
+
+    function animateProgress(startValue, endValue) {
+      if (progressAnimationFrame) cancelAnimationFrame(progressAnimationFrame);
+      animatedProgressTarget = endValue;
+      const startedAt = performance.now();
+      const durationMs = 220;
+
+      const step = now => {
+        const t = Math.max(0, Math.min(1, (now - startedAt) / durationMs));
+        const eased = 1 - Math.pow(1 - t, 3);
+        currentProgress = startValue + (endValue - startValue) * eased;
+        renderProgress(currentProgress);
+        if (t < 1 && progressPresented) {
+          progressAnimationFrame = requestAnimationFrame(step);
+        } else {
+          currentProgress = endValue;
+          renderProgress(currentProgress);
+          progressAnimationFrame = 0;
+        }
+      };
+
+      progressAnimationFrame = requestAnimationFrame(step);
+    }
+
+    function setProgressTarget(percent) {
+      targetProgress = Math.max(
+        targetProgress,
+        currentProgress,
+        Math.max(0, Math.min(100, percent))
+      );
+      if (!progressPresented) {
+        // Hidden preparation is a state application, not an animation. The
+        // first visible frame therefore has one deterministic progress value.
+        currentProgress = targetProgress;
+        animatedProgressTarget = targetProgress;
+        renderProgress(currentProgress);
+        return;
+      }
+
+      // Synchronization may publish the same stage every render frame. Never
+      // restart an in-flight animation toward an unchanged target: doing so
+      // makes progress speed FPS-dependent and can asymptotically stall.
+      if (progressAnimationFrame &&
+          Math.abs(animatedProgressTarget - targetProgress) < 0.001) {
+        return;
+      }
+      if (Math.abs(currentProgress - targetProgress) < 0.001) {
+        renderProgress(targetProgress);
+        return;
+      }
+
+      animateProgress(currentProgress, targetProgress);
+    }
+
     function renderLoadingStage(restartAnimation = false) {
       const text = localizedStageText();
       const activeWaiting = waitingForServer();
@@ -251,9 +314,8 @@
     }
 
     async function setLoadingProgress(value, stageKey, englishFallback) {
-      const p = Math.max(0, Math.min(100, Math.round(value * 100)));
-      document.getElementById("bar").style.width = p + "%";
-      document.getElementById("percent").textContent = p + "%";
+      const p = Math.max(0, Math.min(100, value * 100));
+      setProgressTarget(p);
 
       const stageChanged = !!stageKey && stageKey !== currentStageKey;
       if (stageKey) {
@@ -268,9 +330,16 @@
         await window.EliteUiKit.waitForDocumentDependencies();
         await window.EliteUiKit.settlePreparedLayout();
         loadingPreparedSent = true;
-        if (window.gameCommand) await window.gameCommand("loading_ui_prepared");
+        await window.EliteUiKit.sendPresentationCommand("loading_ui_prepared");
       }
     }
+
+    window.addEventListener("elite-ui-presented", () => {
+      progressPresented = true;
+      currentProgress = targetProgress;
+      animatedProgressTarget = targetProgress;
+      renderProgress(currentProgress);
+    }, { once: true });
 
     window.addEventListener("game-ui-language-changed", () => {
       renderLoadingStage(true);
@@ -286,7 +355,7 @@
       await window.EliteUiKit.waitForDocumentDependencies();
       // Native owns the authoritative stage/progress. Keep this page hidden
       // until it explicitly applies the first cached progress state.
-      if (window.gameCommand) await window.gameCommand("loading_ui_ready");
+      await window.EliteUiKit.sendPresentationCommand("loading_ui_ready");
     }, { once: true });
   </script>
 </body>

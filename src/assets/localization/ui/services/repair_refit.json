@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "service.repair_refit.title": {
+      "en": "REPAIR & REFIT",
+      "ru": "РЕМОНТ И ПЕРЕОБОРУДОВАНИЕ",
+      "zh-Hans": "维修与改装",
+      "es": "REPARACIÓN Y REEQUIPAMIENTO",
+      "ja": "修理・改装"
+    }
+  }
+}

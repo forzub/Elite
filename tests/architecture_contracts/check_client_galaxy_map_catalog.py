@@ -85,7 +85,12 @@ for required in (
     if required not in bridge:
         fail(f"Galaxy client bridge lost catalog/overlay composition: {required}")
 
-if "Stage 3C protocol seam" not in protocol:
-    fail("Galaxy response protocol no longer documents the client-catalog/server-overlay seam")
+for required in (
+    "Only Galaxy still needs a dedicated map RPC",
+    "server-owned jurisdiction/world-knowledge overlays",
+    "local StarAtlas",
+):
+    if required not in protocol:
+        fail(f"Galaxy protocol seam is not documented: {required}")
 
 print("[PASS] Galaxy-map static catalog is client-owned; server publishes world overlays only")

@@ -501,7 +501,7 @@ def check_map_feature_surface() -> None:
     space_h = read("src/game/SpaceState.h")
     space_cpp = read("src/game/SpaceState.cpp")
     app_cpp = read("src/core/Application.cpp")
-    map_router = read("src/game/ui/SystemMapUiCommandRouter.cpp")
+    function_key_router = read("src/ui/presentation/PresentationFunctionKeyRouter.cpp")
     map_tests = read("tests/system_map/SystemMapBehaviorTests.cpp")
 
     for mode in ("Galaxy", "System", "Detail", "Hub"):
@@ -529,31 +529,38 @@ def check_map_feature_surface() -> None:
         require(route in space_cpp, f"SpaceState map route has no implementation: {route}")
 
     require(
-        "parseSystemMapUiCommand(webCommand)" in app_cpp
-        and "dispatchSystemMapUiCommand(" in app_cpp,
-        "Application no longer routes map UI commands through the production router",
+        "preparePlayerNavigationMapLevel" in space_cpp
+        and "m_gameUi.armSceneTarget(requested)" in app_cpp,
+        "Application no longer prepares direct navigation targets on the scene surface",
     )
-
-    for command in (
-        "system_map_galaxy",
-        "system_map_current_system",
-        "system_map_detail",
-        "system_map_hub",
-        "close_system_map",
+    for forbidden in (
+        "parseSystemMapUiCommand(webCommand)",
+        "dispatchSystemMapUiCommand(",
+        "m_mapPanelWebView",
+        "system_map_panel_state_prepared|",
     ):
         require(
-            f'"{command}"' in map_router,
-            f"production map UI router lost command '{command}'",
+            forbidden not in app_cpp,
+            f"obsolete WebView map path returned to Application: {forbidden}",
         )
 
-    for hotkey, route in (
-        ("VK_F9", "setSystemMapGalaxyMode()"),
-        ("VK_F10", "setSystemMapPlayerSystemMode()"),
-        ("VK_F11", "setSystemMapPlayerDetailMode()"),
-        ("VK_F12", "setSystemMapPlayerLocalMode()"),
+    for function_key, view in (
+        (9, "NavigationPresentationView::Galaxy"),
+        (10, "NavigationPresentationView::System"),
+        (11, "NavigationPresentationView::Detail"),
+        (12, "NavigationPresentationView::Local"),
     ):
-        require(hotkey in app_cpp, f"{hotkey} navigation hotkey route disappeared")
-        require(route in app_cpp, f"{hotkey} no longer reaches {route}")
+        require(
+            f"case {function_key}: return GameUiTarget::forNavigation({view});"
+            in function_key_router,
+            f"F{function_key} direct navigation selector disappeared",
+        )
+
+    require(
+        "pollFunctionKeyPress(press)" in app_cpp
+        and "ui::presentation::directTargetForFunctionKey(functionKey)" in app_cpp,
+        "Application no longer drains message-backed F-key presses through the presentation router",
+    )
 
     require(
         "CoordinateDisplayService::instance()" in app_cpp and ".cycle();" in app_cpp,

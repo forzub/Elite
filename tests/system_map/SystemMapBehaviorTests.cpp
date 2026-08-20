@@ -23,6 +23,7 @@
 #include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/system_map/DetailMapView.h"
 #include "src/game/system_map/HubMapView.h"
+#include "src/game/system_map/GalaxyMapView.h"
 #include "src/game/system_map/LocalMapPresentationBuilder.h"
 #include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/MapMode.h"
@@ -44,6 +45,7 @@ using game::navigation::GalaxyNavigationGrid;
 using game::navigation::SystemNavigationGrid;
 using game::system_map::DetailMapView;
 using game::system_map::HubMapView;
+using game::system_map::GalaxyMapView;
 using game::system_map::LocalMapCameraSnapshot;
 using game::system_map::LocalMapPresentationBuilder;
 using game::system_map::MapMode;
@@ -1556,6 +1558,85 @@ void testCameraSnapshotsOwnProjectionContracts()
     REQUIRE(nearOffset > farOffset);
 }
 
+void testGalaxyTerminalCubeEntersSystemOrEmptySector()
+{
+    world::celestial::GalaxyMapSnapshot galaxy;
+    world::celestial::GalaxyMapSystem known;
+    known.id = 42;
+    known.name = "Known";
+    known.starType = "G";
+    known.positionLy = glm::dvec3(0.25, 0.10, -0.05);
+    galaxy.systems.push_back(known);
+
+    world::celestial::PlayerNavigationState navigation;
+    navigation.currentSystemId = known.id;
+    navigation.systemLocalAu = glm::dvec3(0.0);
+
+    GalaxyMapView view;
+    view.onEntered(galaxy, navigation);
+
+    auto& grid = view.state().navigationGrid;
+    const auto setAnchor = [](
+        game::navigation::GalaxyNavigationGrid& targetGrid,
+        const glm::dvec3& position)
+    {
+        targetGrid.setAnchorFromPositionLy(position);
+    };
+
+    while (grid.canRefine())
+    {
+        REQUIRE(
+            game::navigation::applyCubicNavigationLevelActionAtPosition(
+                CubicNavigationLevelAction::Refine,
+                grid,
+                known.positionLy,
+                setAnchor,
+                true));
+    }
+
+    REQUIRE(grid.level() == grid.maximumLevel());
+    REQUIRE(
+        game::navigation::cubicNavigationWheelAction(
+            1.0f,
+            10000.0f,
+            1200,
+            800,
+            grid.canRefine(),
+            grid.canCoarsen(),
+            true) == CubicNavigationLevelAction::EnterChildMap);
+
+    const auto knownIntent = view.entryIntentForPosition(
+        galaxy,
+        known.positionLy,
+        known.id);
+    REQUIRE(knownIntent.entersKnownSystem());
+    REQUIRE(knownIntent.systemId == known.id);
+
+    const auto knownIndex = grid.nearestIndexForPositionLy(
+        known.positionLy,
+        grid.maximumLevel());
+    bool foundEmpty = false;
+    for (int dx = 1; dx <= 4 && !foundEmpty; ++dx)
+    {
+        auto candidateIndex = knownIndex;
+        candidateIndex.x += dx;
+        if (!grid.isCellNavigable(candidateIndex, grid.maximumLevel()))
+            continue;
+
+        const auto candidateCell = grid.cell(candidateIndex, grid.maximumLevel());
+        const auto emptyIntent = view.entryIntentForPosition(
+            galaxy,
+            candidateCell.center,
+            -1);
+        if (emptyIntent.entersEmptySector())
+        {
+            foundEmpty = true;
+            REQUIRE_VEC_NEAR(emptyIntent.positionLy, candidateCell.center, 1.0e-12);
+        }
+    }
+    REQUIRE(foundEmpty);
+}
+
 void testGalaxySystemDetailHubTransitionSequence()
 {
     MapMode mode = MapMode::Galaxy;
@@ -1730,6 +1811,7 @@ int main()
         {"local presentation builder prepares Detail and Hub", testLocalPresentationBuilderPreparesDetailAndHub},
         {"prepared frame drives System picking", testPreparedFrameDrivesSystemPicking},
         {"camera snapshots own projection contracts", testCameraSnapshotsOwnProjectionContracts},
+        {"Galaxy terminal cube enters System/empty sector", testGalaxyTerminalCubeEntersSystemOrEmptySector},
         {"Galaxy -> System -> Detail -> Hub transition sequence", testGalaxySystemDetailHubTransitionSequence},
         {"mouse and scroll trace is repeatable", testMouseAndScrollTraceIsRepeatable}
     };

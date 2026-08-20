@@ -57,6 +57,7 @@
 #include "src/core/Application.h"
 #include "src/game/session/IGameSession.h"
 #include "src/game/client/ClientCelestialMapBridge.h"
+#include "src/game/client/ClientGalaxyMapBridge.h"
 #include "src/game/client/ClientModuleViewBuilder.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "src/game/presentation/ClientHudPresentation.h"
@@ -658,16 +659,25 @@ bool SpaceState::resolvePlayerGalacticPositionLy(
     glm::dvec3& outPositionLy
 ) const
 {
-    if (!m_client || !m_hasGalaxyMapSnapshot)
+    if (!m_client)
         return false;
 
-    const auto marker =
-        game::presentation::resolveGalaxyPlayerMarkerPosition(
-            m_galaxyMapSnapshot,
-            m_client->playerNavigation()
+    const auto& navigation = m_client->playerNavigation();
+    if (navigation.currentSystemId < 0)
+    {
+        outPositionLy = world::coordinates::toGalacticLy(
+            navigation.worldPosition
         );
+        return true;
+    }
 
-    outPositionLy = marker.positionLy;
+    if (!m_hasGalaxyMapSnapshot)
+        return false;
+
+    outPositionLy = game::presentation::resolveGalaxyPlayerMarkerPosition(
+        m_galaxyMapSnapshot,
+        navigation
+    ).positionLy;
     return true;
 }
 
@@ -712,8 +722,6 @@ void SpaceState::onUiLanguageChanged()
     m_sceneRenderer.setUiLocale(context().app->localization().locale());
     applyClientCatalogLocalization();
 
-    if (context().app->gameUiMode() == GameUiMode::SystemMap)
-        pushSystemMapPanelState();
 }
 
 
@@ -735,21 +743,12 @@ bool SpaceState::buildPlayerDetailTarget(
 
     outTarget.systemId = nav.currentSystemId;
 
-    // This value is presentation metadata. Resolve it from the authoritative
-    // galaxy catalog when available; Detail request identity itself is the
-    // system id + anchor/cell below.
-    if (m_hasGalaxyMapSnapshot)
+    // Galactocentric placement is static endpoint-local catalog data. Detail
+    // composition must not depend on the Galaxy overlay RPC having run first.
+    if (const auto* atlas = m_client->starAtlas())
     {
-        const auto systemIt = std::find_if(
-            m_galaxyMapSnapshot.systems.begin(),
-            m_galaxyMapSnapshot.systems.end(),
-            [&](const auto& system)
-            {
-                return system.id == nav.currentSystemId;
-            }
-        );
-        if (systemIt != m_galaxyMapSnapshot.systems.end())
-            outTarget.systemPositionLy = systemIt->positionLy;
+        if (const auto* summary = atlas->findSystemSummary(nav.currentSystemId))
+            outTarget.systemPositionLy = summary->positionLy;
     }
 
     const auto& ships = m_client->world().ships();
@@ -826,57 +825,58 @@ void SpaceState::requestGalaxyMapSnapshotOnce()
     if (!m_client)
         return;
 
-    if (m_hasGalaxyMapSnapshot)
+    // Galaxy presentation must never wait for the jurisdiction overlay RPC.
+    // Build the deterministic catalog layer immediately from the endpoint-local
+    // StarAtlas, then merge the authoritative overlay whenever it arrives.
+    if (!m_hasGalaxyMapSnapshot)
+    {
+        if (const auto* atlas = m_client->starAtlas())
+        {
+            world::celestial::GalaxyMapSnapshot local;
+            local.universeTimeSeconds = m_client->universeTimeSeconds();
+            local.universeDate = m_client->sessionSnapshot().universeDate;
+            game::client::rebuildGalaxyMapCatalogLayer(local, *atlas);
+            m_galaxyMapSnapshot = std::move(local);
+            m_hasGalaxyMapSnapshot = true;
+        }
+    }
+
+    if (m_hasGalaxyMapOverlay)
         return;
 
-    if (!m_client->requestGalaxyMapSnapshot())
-        return;
-
-    const auto* snapshot =
-        m_client->galaxyMapSnapshot();
-
+    // The request is an asynchronous overlay refresh, not an opening barrier.
+    m_client->requestGalaxyMapSnapshot();
+    const auto* snapshot = m_client->galaxyMapSnapshot();
     if (!snapshot)
         return;
 
     m_galaxyMapSnapshot = *snapshot;
     m_hasGalaxyMapSnapshot = true;
+    m_hasGalaxyMapOverlay = true;
 }
 
 
 
 
-
-bool SpaceState::requestSystemMapSnapshot(
-    int systemId,
-    bool forceRefresh
-)
+bool SpaceState::composeSystemMapSnapshot(int systemId)
 {
     if (!m_client)
         return false;
 
     m_systemMapShowsEmptySector = false;
-
-    const bool requestReady =
-        m_client->requestSystemMapSnapshot(systemId, forceRefresh);
-
-    const auto* snapshot =
-        m_client->systemMapSnapshot(systemId);
-
-    const auto& metadata =
-        m_client->systemMapMetadata();
+    const bool composed = m_client->composeSystemMapSnapshot(systemId);
+    const auto* snapshot = m_client->systemMapSnapshot(systemId);
+    const auto& metadata = m_client->systemMapMetadata();
 
     const bool sameTarget =
-        m_hasSystemMapSnapshot &&
-        m_loadedSystemMapId == systemId;
-
+        m_hasSystemMapSnapshot && m_loadedSystemMapId == systemId;
     const bool newerSnapshot =
-        snapshot != nullptr &&
-        metadata.serverTick > m_appliedSystemMapServerTick;
+        snapshot != nullptr && metadata.serverTick > m_appliedSystemMapServerTick;
 
     if (newerSnapshot || !sameTarget)
     {
         if (!snapshot)
-            return requestReady && sameTarget;
+            return composed && sameTarget;
 
         m_systemMapSnapshot = *snapshot;
         m_loadedSystemMapId = systemId;
@@ -884,101 +884,78 @@ bool SpaceState::requestSystemMapSnapshot(
         m_appliedSystemMapServerTick = metadata.serverTick;
     }
 
-    return m_hasSystemMapSnapshot &&
-           m_loadedSystemMapId == systemId;
+    return m_hasSystemMapSnapshot && m_loadedSystemMapId == systemId;
 }
 
 
 
 
-bool SpaceState::requestDetailMapSnapshot(
-    const world::celestial::DetailTarget& target,
-    bool forceRefresh
-)
+
+bool SpaceState::composeDetailMapSnapshot(
+    const world::celestial::DetailTarget& target)
 {
     if (!m_client || !target.valid())
         return false;
 
-    const bool requestReady =
-        m_client->requestDetailMapSnapshot(target, forceRefresh);
-
-    const auto* snapshot =
-        m_client->detailMapSnapshot(target);
-
-    const auto& metadata =
-        m_client->detailMapMetadata();
+    const bool composed = m_client->composeDetailMapSnapshot(target);
+    const auto* snapshot = m_client->detailMapSnapshot(target);
+    const auto& metadata = m_client->detailMapMetadata();
 
     const bool sameTarget =
-        m_hasDetailMapSnapshot &&
-        m_loadedDetailTarget == target;
-
+        m_hasDetailMapSnapshot && m_loadedDetailTarget == target;
     const bool newerSnapshot =
-        snapshot != nullptr &&
-        metadata.serverTick > m_appliedDetailMapServerTick;
+        snapshot != nullptr && metadata.serverTick > m_appliedDetailMapServerTick;
 
     if (newerSnapshot || !sameTarget)
     {
         if (!snapshot)
-            return requestReady && sameTarget;
+            return composed && sameTarget;
 
         m_authoritativeMapInterpolator.acceptDetail(
             *snapshot,
             metadata.serverTimeSeconds,
             metadata.universeTimelineRevision
         );
-
-        m_detailMapSnapshot =
-            m_authoritativeMapInterpolator.detail();
+        m_detailMapSnapshot = m_authoritativeMapInterpolator.detail();
         m_loadedDetailTarget = target;
         m_hasDetailMapSnapshot = m_detailMapSnapshot.valid;
         m_appliedDetailMapServerTick = metadata.serverTick;
     }
 
-    return m_hasDetailMapSnapshot &&
-           m_loadedDetailTarget == target;
+    return m_hasDetailMapSnapshot && m_loadedDetailTarget == target;
 }
 
 
-bool SpaceState::requestHubMapSnapshot(
+
+bool SpaceState::composeHubMapSnapshot(
     int systemId,
-    const std::string& hubId,
-    bool forceRefresh
-)
+    const std::string& hubId)
 {
     if (!m_client || systemId < 0 || hubId.empty())
         return false;
 
-    const bool requestReady =
-        m_client->requestHubMapSnapshot(systemId, hubId, forceRefresh);
-
-    const auto* snapshot =
-        m_client->hubMapSnapshot(systemId, hubId);
-
-    const auto& metadata =
-        m_client->hubMapMetadata();
+    const bool composed = m_client->composeHubMapSnapshot(systemId, hubId);
+    const auto* snapshot = m_client->hubMapSnapshot(systemId, hubId);
+    const auto& metadata = m_client->hubMapMetadata();
 
     const bool sameTarget =
         m_hasHubMapSnapshot &&
         m_loadedHubMapSystemId == systemId &&
         m_loadedHubMapHubId == hubId;
-
     const bool newerSnapshot =
-        snapshot != nullptr &&
-        metadata.serverTick > m_appliedHubMapServerTick;
+        snapshot != nullptr && metadata.serverTick > m_appliedHubMapServerTick;
 
     if (newerSnapshot || !sameTarget)
     {
         if (!snapshot)
-            return requestReady && sameTarget;
+            return composed && sameTarget;
 
         m_authoritativeMapInterpolator.acceptHub(
             *snapshot,
             metadata.serverTimeSeconds,
             metadata.universeTimelineRevision
         );
-
-        m_hubMapSnapshot =
-            m_authoritativeMapInterpolator.hub();
+        m_hubMapSnapshot = m_authoritativeMapInterpolator.hub();
         m_loadedHubMapSystemId = systemId;
         m_loadedHubMapHubId = hubId;
         m_hasHubMapSnapshot = m_hubMapSnapshot.valid;
@@ -993,27 +970,12 @@ bool SpaceState::requestHubMapSnapshot(
 
 
 
+
 void SpaceState::beginSystemMapHubTransition(
     int systemId,
     const std::string& hubId
 )
 {
-    if (m_playerNavigationMapEntryPending)
-    {
-        if (!m_client ||
-            !m_hasHubMapSnapshot ||
-            m_loadedHubMapSystemId != systemId ||
-            m_loadedHubMapHubId != hubId)
-        {
-            cancelPlayerNavigationMapEntry();
-            return;
-        }
-
-        m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Hub);
-        completePlayerNavigationMapEntry();
-        return;
-    }
-
     m_systemMapRenderer.beginMapTransition(
         MapTransitionPresets::modeChange(),
         [this, systemId, hubId]()
@@ -1029,7 +991,9 @@ void SpaceState::beginSystemMapHubTransition(
             m_systemMapRenderer.setMode(
                 SystemMapRenderer::Mode::Hub
             );
-            pushSystemMapPanelState();
+            if (context().app)
+                context().app->adoptNavigationView(
+                    NavigationPresentationView::Local);
         }
     );
 }
@@ -1037,160 +1001,47 @@ void SpaceState::beginSystemMapHubTransition(
 
 void SpaceState::setSystemMapHubMode()
 {
-    if (!m_client)
-        return;
-
-    if (m_systemMapRenderer.mode() ==
-        SystemMapRenderer::Mode::Hub)
+    const auto mode = m_systemMapRenderer.mode();
+    if (!m_client ||
+        (mode != SystemMapRenderer::Mode::System &&
+         mode != SystemMapRenderer::Mode::Detail))
     {
         return;
     }
 
-    const int selectedId =
-        m_systemMapRenderer.selectedSystemId() >= 0
-            ? m_systemMapRenderer.selectedSystemId()
-            : m_client->playerNavigation().currentSystemId;
-
-    const std::string hubId =
-        m_systemMapRenderer.selectedHubId();
-
-    if (hubId.empty())
+    // A local-map drill belongs to the map context that is already loaded,
+    // never to the player's unrelated current navigation membership.
+    const int selectedId = m_loadedSystemMapId;
+    const std::string hubId = m_systemMapRenderer.selectedHubId();
+    if (selectedId < 0 || hubId.empty())
         return;
 
-    if (requestHubMapSnapshot(selectedId, hubId, true) &&
-        game::client::MapTransitionController::simulationHasReached(
-            m_client->hubMapMetadata(),
-            m_client->lastSimulationMetadata()))
+    // System -> Hub is a shortcut, not a hierarchy bypass. Prepare the exact
+    // parent Details scene as well, so the Hub panel can always navigate back
+    // to Details even when the user never opened that layer first.
+    if (mode == SystemMapRenderer::Mode::System)
     {
-        beginSystemMapHubTransition(selectedId, hubId);
-        return;
+        world::celestial::DetailTarget detailTarget;
+        if (!buildSelectedMapDetailTarget(detailTarget) ||
+            !composeDetailMapSnapshot(detailTarget))
+        {
+            return;
+        }
     }
 
-    m_mapTransitions.beginHub(selectedId, hubId);
+    if (!composeHubMapSnapshot(selectedId, hubId))
+        return;
+
+    beginSystemMapHubTransition(selectedId, hubId);
 }
 
-
-void SpaceState::updatePendingMapTransition(float /*dt*/)
-{
-    if (!m_client)
-        return;
-
-    if (m_playerNavigationMapEntryPending &&
-        !m_playerNavigationMapEntryReady &&
-        m_pendingPlayerNavigationMapLevel == PlayerNavigationMapLevel::Galaxy)
-    {
-        requestGalaxyMapSnapshotOnce();
-        if (m_hasGalaxyMapSnapshot)
-        {
-            m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Galaxy);
-            m_systemMapRenderer.onGalaxyMapEntered(
-                m_galaxyMapSnapshot,
-                m_client->playerNavigation()
-            );
-            completePlayerNavigationMapEntry();
-        }
-        return;
-    }
-
-    if (!m_mapTransitions.pending())
-        return;
-
-    auto cancelTransition = [this](const char* message)
-    {
-        std::cerr << "[SystemMap] " << message << std::endl;
-        m_mapTransitions.clear();
-        if (m_playerNavigationMapEntryPending)
-            cancelPlayerNavigationMapEntry();
-    };
-
-    using Transition = game::client::MapTransitionController;
-
-    switch (m_mapTransitions.kind())
-    {
-        case Transition::Kind::System:
-        {
-            if (Transition::requestFailed(
-                    m_client->systemMapRequestStatus()))
-            {
-                cancelTransition("system map request failed");
-                return;
-            }
-
-            const int systemId = m_mapTransitions.systemId();
-            if (!requestSystemMapSnapshot(systemId, false))
-                return;
-
-            if (!Transition::simulationHasReached(
-                    m_client->systemMapMetadata(),
-                    m_client->lastSimulationMetadata()))
-            {
-                return;
-            }
-
-            m_mapTransitions.clear();
-            beginSystemMapSystemTransition(systemId);
-            return;
-        }
-
-        case Transition::Kind::Detail:
-        {
-            if (Transition::requestFailed(
-                    m_client->detailMapRequestStatus()))
-            {
-                cancelTransition("detail map request failed");
-                return;
-            }
-
-            const auto target = m_mapTransitions.detailTarget();
-            if (!requestDetailMapSnapshot(target, false))
-                return;
-
-            if (!Transition::simulationHasReached(
-                    m_client->detailMapMetadata(),
-                    m_client->lastSimulationMetadata()))
-            {
-                return;
-            }
-
-            m_mapTransitions.clear();
-            beginSystemMapDetailTransition(target);
-            return;
-        }
-
-        case Transition::Kind::Hub:
-        {
-            if (Transition::requestFailed(
-                    m_client->hubMapRequestStatus()))
-            {
-                cancelTransition("hub map request failed");
-                return;
-            }
-
-            const int systemId = m_mapTransitions.systemId();
-            const std::string hubId = m_mapTransitions.hubId();
-            if (!requestHubMapSnapshot(systemId, hubId, false))
-                return;
-
-            if (!Transition::simulationHasReached(
-                    m_client->hubMapMetadata(),
-                    m_client->lastSimulationMetadata()))
-            {
-                return;
-            }
-
-            m_mapTransitions.clear();
-            beginSystemMapHubTransition(systemId, hubId);
-            return;
-        }
-
-        case Transition::Kind::None:
-            return;
-    }
-}
 
 
 void SpaceState::updateLiveMapSnapshots(float dt)
 {
+    if (m_client && !m_hasGalaxyMapOverlay)
+        requestGalaxyMapSnapshotOnce();
+
     if (!m_client || !m_systemMapVisible)
     {
         m_systemMapLiveRefreshTimer = 0.0;
@@ -1208,90 +1059,52 @@ void SpaceState::updateLiveMapSnapshots(float dt)
     switch (m_systemMapRenderer.mode())
     {
         case Mode::System:
-        {
             m_detailMapLiveRefreshTimer = 0.0;
             m_hubMapLiveRefreshTimer = 0.0;
-
             if (!shouldRefreshSystemMapSnapshot())
             {
                 m_systemMapLiveRefreshTimer = 0.0;
                 return;
             }
-
-            // First consume a completed response, if one arrived.
-            requestSystemMapSnapshot(m_liveSystemMapId, false);
-
             m_systemMapLiveRefreshTimer += dt;
-            if (m_systemMapLiveRefreshTimer >= refreshSeconds &&
-                m_client->systemMapRequestStatus() !=
-                    game::client::ClientRequestStatus::Pending)
+            if (m_systemMapLiveRefreshTimer >= refreshSeconds)
             {
                 m_systemMapLiveRefreshTimer = 0.0;
-                requestSystemMapSnapshot(m_liveSystemMapId, true);
+                composeSystemMapSnapshot(m_liveSystemMapId);
             }
             return;
-        }
 
         case Mode::Detail:
-        {
             m_systemMapLiveRefreshTimer = 0.0;
             m_hubMapLiveRefreshTimer = 0.0;
-
             if (!m_loadedDetailTarget.valid())
             {
                 m_detailMapLiveRefreshTimer = 0.0;
                 return;
             }
-
-            // Consume before scheduling the next refresh. This guarantees
-            // that a completed response is copied into SpaceState exactly
-            // once instead of being hidden by an immediate force-refresh.
-            requestDetailMapSnapshot(m_loadedDetailTarget, false);
-
             m_detailMapLiveRefreshTimer += dt;
-            if (m_detailMapLiveRefreshTimer >= refreshSeconds &&
-                m_client->detailMapRequestStatus() !=
-                    game::client::ClientRequestStatus::Pending)
+            if (m_detailMapLiveRefreshTimer >= refreshSeconds)
             {
                 m_detailMapLiveRefreshTimer = 0.0;
-                requestDetailMapSnapshot(m_loadedDetailTarget, true);
+                composeDetailMapSnapshot(m_loadedDetailTarget);
             }
             return;
-        }
 
         case Mode::Hub:
         {
             m_systemMapLiveRefreshTimer = 0.0;
             m_detailMapLiveRefreshTimer = 0.0;
-
-            const int systemId =
-                m_systemMapRenderer.focusedSystemId() >= 0
-                    ? m_systemMapRenderer.focusedSystemId()
-                    : m_client->playerNavigation().currentSystemId;
-
+            const int systemId = m_loadedHubMapSystemId;
             if (systemId < 0 || m_loadedHubMapHubId.empty())
             {
                 m_hubMapLiveRefreshTimer = 0.0;
                 return;
             }
-
-            requestHubMapSnapshot(
-                systemId,
-                m_loadedHubMapHubId,
-                false
-            );
-
             m_hubMapLiveRefreshTimer += dt;
-            if (m_hubMapLiveRefreshTimer >= refreshSeconds &&
-                m_client->hubMapRequestStatus() !=
-                    game::client::ClientRequestStatus::Pending)
+            if (m_hubMapLiveRefreshTimer >= refreshSeconds)
             {
                 m_hubMapLiveRefreshTimer = 0.0;
-                requestHubMapSnapshot(
-                    systemId,
-                    m_loadedHubMapHubId,
-                    true
-                );
+                composeHubMapSnapshot(systemId, m_loadedHubMapHubId);
             }
             return;
         }
@@ -1303,6 +1116,7 @@ void SpaceState::updateLiveMapSnapshots(float dt)
             return;
     }
 }
+
 
 
 void SpaceState::updateLocalMapPresentationSnapshots(float /*dt*/)
@@ -1395,7 +1209,6 @@ void SpaceState::updateSystemMapLiveFlags()
         // A hidden map must not retain a half-finished crossfade or an
         // asynchronous user-navigation request that can mutate its mode later.
         m_systemMapRenderer.cancelMapTransition();
-        m_mapTransitions.clear();
     }
 
     m_systemMapLiveSnapshotsEnabled =
@@ -1552,8 +1365,7 @@ void SpaceState::prepareFrame(float dt)
             m_detailMapLiveRefreshTimer = 0.0;
             m_hubMapLiveRefreshTimer = 0.0;
 
-            m_mapTransitions.clear();
-            m_authoritativeMapInterpolator = {};
+                m_authoritativeMapInterpolator = {};
         }
 
         m_mapUniverseTimelineRevision = revision;
@@ -1587,6 +1399,12 @@ void SpaceState::handleInput()
         if (m_client)
         {
             const Viewport& fullVp = context().viewport();
+
+            // The native STAR ATLAS panel owns the right-hand 28% of the
+            // single OpenGL surface. Handle it before the map viewport so a
+            // button/list gesture can never leak through to camera/picking.
+            if (handleNativeSystemMapPanelInput(fullVp))
+                return;
 
             const float panelRatio = 0.28f;
 
@@ -1661,32 +1479,10 @@ void SpaceState::handleInput()
         return;
     }
 
-    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F1)){
-        PlayerShipView::g_debugLogNextFrame = true;
-        m_layout = ScreenLayout::Front_Main_Rear_Mini;
-    }
-
-    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F2)){
-        PlayerShipView::g_debugLogNextFrame = true;
-        m_layout = ScreenLayout::Rear_Main_Front_Mini;
-    }
-
-    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F3)){
-        PlayerShipView::g_debugLogNextFrame = true;
-        m_layout = ScreenLayout::Front_Main_Drone_Mini;
-    }
-
-    if (Input::instance().isKeyPressedOnce(GLFW_KEY_F4)){
-        PlayerShipView::g_debugLogNextFrame = true;
-        m_layout = ScreenLayout::Drone_Main_Front_Mini;
-    }
-
-
-
-    // дебажная обработка F8
-if (Input::instance().isKeyPressedOnce(GLFW_KEY_F8)) {
-    pushAttachmentEditorState();
-}
+    // F1-F12 are application-level presentation selectors. SpaceState no
+    // longer owns F1-F4 camera switching or the old debug F8 shortcut; this
+    // keeps flight, service and navigation destinations on one deterministic
+    // routing layer even while WebView2 owns keyboard focus.
 
 // if (Input::instance().isKeyPressedOnce(GLFW_KEY_F11))
 // {
@@ -1771,6 +1567,21 @@ if (ctrlDown && Input::instance().isKeyPressedOnce(GLFW_KEY_R))
 //           ####
 
 
+void SpaceState::setFlightScreenLayout(ScreenLayout layout)
+{
+    // F1-F4 leave the Navigation presentation domain immediately. Do not let
+    // an unfinished map-to-map snapshot/crossfade survive behind the next
+    // Flight frame, even when the selected flight layout is already active.
+    m_systemMapRenderer.cancelMapTransition();
+
+    if (m_layout == layout)
+        return;
+
+    PlayerShipView::g_debugLogNextFrame = true;
+    m_layout = layout;
+}
+
+
 // =====================================================================================
 // Update
 // =====================================================================================
@@ -1845,7 +1656,6 @@ void SpaceState::update(float dt)
         throw;
     }
 
-    updatePendingMapTransition(clientFrameDt);
 
     if constexpr (game::promo::PromoSceneScenario::Enabled)
     {
@@ -2026,7 +1836,6 @@ m_playerView->updateCockpitStateFromSnapshot(
         if (context().app &&
             context().app->gameUiMode() == GameUiMode::SystemMap)
         {
-            pushSystemMapPanelState();
         }
     }
 
@@ -2059,10 +1868,10 @@ void SpaceState::renderUI()
 
 
         if (context().app &&
-            context().app->gameUiMode() == GameUiMode::SystemMap)
+            context().app->sceneGameUiMode() != GameUiMode::Flight)
         {
             /*
-                В режиме карты обычные игровые камеры не рендерятся.
+                Navigation/Service presentation owns the frame; gameplay cameras are not rendered underneath it.
 
                 Обнуляем их профайлеры, иначе debug panel показывает
                 значения от последнего кадра игрового режима.
@@ -2331,7 +2140,7 @@ void SpaceState::renderHUD()
     const Viewport& vp = context().viewport();
 
         if (context().app &&
-        context().app->gameUiMode() == GameUiMode::SystemMap &&
+        context().app->sceneGameUiMode() == GameUiMode::SystemMap &&
         m_client)
     {
         glDisable(GL_DEPTH_TEST);
@@ -2368,16 +2177,6 @@ m_systemMapRenderer.render(
 
         glEnable(GL_DEPTH_TEST);
 
-        renderUniverseTimeSimulationOverlay(vp);
-
-        if (m_playerNavigationMapExitPending &&
-            !m_playerNavigationMapExitReady)
-        {
-            // Capture the map from the framebuffer that rendered it, never
-            // from a later/unknown back buffer after ownership has changed.
-            m_playerNavigationMapExitReady =
-                m_systemMapRenderer.capturePresentationSource(mapVp);
-        }
 
         m_perfHudMs = nowMs() - hudStartMs;
         return;
@@ -2535,34 +2334,229 @@ m_systemMapRenderer.render(
     renderUniverseTimeSimulationOverlay(vp);
     renderUiLanguageIndicator(vp);
 
-    Viewport mapTransitionViewport = vp;
-    mapTransitionViewport.width = static_cast<int>(
-        static_cast<float>(vp.width) * 0.72f
+    m_perfHudMs = nowMs() - hudStartMs;
+}
+
+game::presentation::SystemMapPanelPresentation
+SpaceState::buildNativeSystemMapPanelPresentation()
+{
+    game::presentation::SystemMapPanelPresentation empty;
+    if (!context().app || !m_client)
+        return empty;
+
+    const auto& nav = m_client->playerNavigation();
+    const auto& loc = context().app->localization();
+    std::string currentSystemName = loc.text(
+        "map.interstellar",
+        "INTERSTELLAR"
     );
 
-    if (m_playerNavigationMapEntryPending &&
-        m_playerNavigationMapEntryReady &&
-        m_playerNavigationMapEntryPresentationArmed &&
-        !m_playerNavigationMapEntrySourceCaptured)
+    if (nav.currentSystemId >= 0 && m_client->resolveCelestialSnapshot())
     {
-        // The requested F9-F12 destination is already resolved, but gameplay
-        // remains the visible owner for this frame. Capture this exact final
-        // gameplay frame before Application switches presentation ownership.
-        m_playerNavigationMapEntrySourceCaptured =
-            m_systemMapRenderer.capturePresentationSource(
-                mapTransitionViewport
+        if (const auto* celestial = m_client->celestialSnapshot())
+        {
+            currentSystemName = loc.catalogName(
+                "systems",
+                std::to_string(nav.currentSystemId),
+                celestial->systemName
             );
+        }
     }
 
-    // Symmetric map -> gameplay transition: the map snapshot captured on its
-    // outgoing frame stays opaque over the first complete gameplay frame, then
-    // dissolves. The same primitive is used for gameplay -> map in map render.
-    m_systemMapRenderer.drawPresentationCrossfadeOverlay(
-        mapTransitionViewport,
-        glfwGetTime()
-    );
+    int selectedId = -1;
+    if (!m_systemMapShowsEmptySector)
+    {
+        selectedId = m_systemMapRenderer.selectedSystemId() >= 0
+            ? m_systemMapRenderer.selectedSystemId()
+            : nav.currentSystemId;
+    }
 
-    m_perfHudMs = nowMs() - hudStartMs;
+    game::presentation::SystemMapPanelPresentationInput input;
+    input.universeTimeSeconds = m_client->universeTimeSeconds();
+    input.universeDate = m_client->sessionSnapshot().universeDate;
+    input.universeTimeScale = m_client->sessionSnapshot().universeTimeScale;
+    input.mode = m_systemMapRenderer.mode();
+    input.galaxy = m_hasGalaxyMapSnapshot ? &m_galaxyMapSnapshot : nullptr;
+    input.system = &m_systemMapSnapshot;
+    input.navigation = &nav;
+    input.currentSystemName = currentSystemName;
+    input.selectedEmptySector = m_systemMapShowsEmptySector;
+    input.selectedSystemId = selectedId;
+    input.selectedBodyId = m_systemMapRenderer.selectedBodyId();
+    input.selectedHubId = m_systemMapRenderer.selectedHubId();
+
+    input.systemLayerIsSpace = m_systemMapShowsEmptySector;
+    if (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Galaxy)
+    {
+        const auto entryIntent =
+            m_systemMapRenderer.selectedGalaxyEntryIntent(m_galaxyMapSnapshot);
+        if (entryIntent.has_value())
+        {
+            input.systemLayerIsSpace =
+                entryIntent->type == game::system_map::MapIntentType::EnterEmptySector;
+        }
+        else
+        {
+            input.systemLayerIsSpace = nav.currentSystemId < 0;
+        }
+    }
+
+    input.canOpenDetail =
+        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System &&
+        m_systemMapRenderer.canOpenSelectedDetail();
+    input.selectedDetailCell = m_systemMapRenderer.selectedTerminalDetailCell();
+    input.canOpenHub =
+        (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System ||
+         m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Detail) &&
+        !m_systemMapRenderer.selectedHubId().empty();
+
+    return game::presentation::buildSystemMapPanelPresentation(input);
+}
+
+void SpaceState::openSelectedGalaxyMapTarget()
+{
+    if (!m_client)
+        return;
+
+    const auto intent = m_systemMapRenderer.selectedGalaxyEntryIntent(
+        m_galaxyMapSnapshot);
+
+    if (intent.has_value())
+    {
+        using game::system_map::MapIntentType;
+        if (intent->type == MapIntentType::EnterKnownSystem)
+        {
+            setSystemMapKnownSystemMode(intent->systemId);
+            return;
+        }
+        if (intent->type == MapIntentType::EnterEmptySector)
+        {
+            setSystemMapEmptySectorMode(intent->positionLy);
+            return;
+        }
+    }
+
+    // No explicit Galaxy target: preserve the old panel behavior and open the
+    // player's current system (or current interstellar sector).
+    setSystemMapPlayerSystemMode();
+}
+
+void SpaceState::applyNativeSystemMapPanelAction(
+    const game::presentation::SystemMapPanelAction& action)
+{
+    using game::presentation::SystemMapPanelCommandType;
+
+    const auto command = game::presentation::resolveSystemMapPanelAction(
+        action,
+        m_systemMapRenderer.mode());
+
+    switch (command.type)
+    {
+        case SystemMapPanelCommandType::None:
+            return;
+
+        case SystemMapPanelCommandType::OpenSelectedGalaxyTarget:
+            openSelectedGalaxyMapTarget();
+            return;
+
+        case SystemMapPanelCommandType::SelectSystem:
+            if (command.systemId >= 0)
+                selectSystemMapSystem(command.systemId);
+            return;
+
+        case SystemMapPanelCommandType::Galaxy:
+            setSystemMapGalaxyMode();
+            return;
+
+        case SystemMapPanelCommandType::LoadedSystem:
+            setSystemMapLoadedSystemMode();
+            return;
+
+        case SystemMapPanelCommandType::LoadedDetail:
+            setSystemMapLoadedDetailMode();
+            return;
+
+        case SystemMapPanelCommandType::SelectedDetail:
+            setSystemMapDetailMode();
+            return;
+
+        case SystemMapPanelCommandType::Hub:
+            setSystemMapHubMode();
+            return;
+    }
+}
+
+bool SpaceState::handleNativeSystemMapPanelInput(const Viewport& viewport)
+{
+    if (!m_client)
+        return false;
+
+    GLFWwindow* window = glfwGetCurrentContext();
+    if (!window)
+        return false;
+
+    double mouseX = 0.0;
+    double mouseY = 0.0;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+
+    const bool insidePanel =
+        m_inSessionPresentationRenderer.systemMapPanelContains(
+            viewport,
+            mouseX,
+            mouseY);
+
+    const bool leftDown =
+        glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+
+    // Scroll belongs to exactly one owner. The old WebView panel naturally
+    // swallowed wheel input; the native panel must preserve that boundary.
+    const double scrollY = insidePanel
+        ? Input::instance().consumeScrollY()
+        : 0.0;
+
+    const auto panel = buildNativeSystemMapPanelPresentation();
+    const auto action =
+        m_inSessionPresentationRenderer.handleSystemMapPanelInput(
+            viewport,
+            panel,
+            mouseX,
+            mouseY,
+            leftDown,
+            scrollY);
+
+    if (action.has_value())
+        applyNativeSystemMapPanelAction(*action);
+
+    return insidePanel;
+}
+
+void SpaceState::renderInSessionPresentationOverlay()
+{
+    if (!context().app)
+        return;
+
+    const Viewport& vp = context().viewport();
+    const GameUiTarget target = context().app->sceneGameUiTarget();
+    const auto& loc = context().app->localization();
+
+    if (target.mode == GameUiMode::ServicePanel)
+    {
+        m_inSessionPresentationRenderer.renderServicePanel(
+            vp,
+            loc,
+            target.service
+        );
+        renderUiLanguageIndicator(vp);
+        return;
+    }
+
+    if (target.mode != GameUiMode::SystemMap || !m_client)
+        return;
+
+    const auto panel = buildNativeSystemMapPanelPresentation();
+    m_inSessionPresentationRenderer.renderSystemMapPanel(vp, loc, panel);
+    renderUniverseTimeSimulationOverlay(vp);
+    renderUiLanguageIndicator(vp);
 }
 
 void SpaceState::renderUiLanguageIndicator(const Viewport& viewport)
@@ -2779,7 +2773,12 @@ void SpaceState::processHtmlCommands()
                 {
                     if (Application* app = context().app)
                     {
-                        app->closeGameUi();
+                        // Legacy HtmlUi SystemMap close follows the same
+                        // explicit presentation-router contract as the
+                        // persistent map panel: return to the last selected
+                        // F1-F4 flight view, never to an implicit UI-none
+                        // gameplay fallback.
+                        app->requestLastFlightView();
                     }
 
                     continue;
@@ -3947,8 +3946,6 @@ void SpaceState::selectSystemMapSystem(
     if (!m_client)
         return;
 
-    requestGalaxyMapSnapshotOnce();
-
     /*
         В Galaxy выбор системы является движением внутри
         одной сцены. Здесь используется плавный перелёт камеры,
@@ -3965,7 +3962,6 @@ void SpaceState::selectSystemMapSystem(
             m_galaxyMapSnapshot
         );
 
-        pushSystemMapPanelState();
         return;
     }
 
@@ -4011,8 +4007,10 @@ void SpaceState::setSystemMapGalaxyMode()
                 m_galaxyMapSnapshot,
                 m_client->playerNavigation()
             );
+            if (context().app)
+                context().app->adoptNavigationView(
+                    NavigationPresentationView::Galaxy);
 
-            pushSystemMapPanelState();
         }
     );
 }
@@ -4060,17 +4058,6 @@ void SpaceState::setSystemMapEmptySectorMode(
     emptySector.systemPositionLy =
         positionLy;
 
-    if (m_playerNavigationMapEntryPending)
-    {
-        m_systemMapSnapshot = emptySector;
-        m_loadedSystemMapId = emptySector.systemId;
-        m_hasSystemMapSnapshot = true;
-        m_systemMapShowsEmptySector = true;
-        m_systemMapRenderer.setMode(SystemMapRenderer::Mode::System);
-        completePlayerNavigationMapEntry();
-        return;
-    }
-
     m_systemMapRenderer.beginMapTransition(
         MapTransitionPresets::modeChange(),
 
@@ -4094,8 +4081,10 @@ void SpaceState::setSystemMapEmptySectorMode(
             m_systemMapRenderer.setMode(
                 SystemMapRenderer::Mode::System
             );
+            if (context().app)
+                context().app->adoptNavigationView(
+                    NavigationPresentationView::System);
 
-            pushSystemMapPanelState();
         }
     );
 }
@@ -4106,23 +4095,6 @@ void SpaceState::setSystemMapEmptySectorMode(
 
 void SpaceState::beginSystemMapSystemTransition(int systemId)
 {
-    if (m_playerNavigationMapEntryPending)
-    {
-        if (!m_client ||
-            !m_hasSystemMapSnapshot ||
-            m_loadedSystemMapId != systemId)
-        {
-            cancelPlayerNavigationMapEntry();
-            return;
-        }
-
-        m_systemMapShowsEmptySector = false;
-        m_systemMapRenderer.focusGalaxySystem(systemId, m_galaxyMapSnapshot);
-        m_systemMapRenderer.setMode(SystemMapRenderer::Mode::System);
-        completePlayerNavigationMapEntry();
-        return;
-    }
-
     m_systemMapRenderer.beginMapTransition(
         MapTransitionPresets::modeChange(),
         [this, systemId]()
@@ -4142,34 +4114,62 @@ void SpaceState::beginSystemMapSystemTransition(int systemId)
             m_systemMapRenderer.setMode(
                 SystemMapRenderer::Mode::System
             );
-            pushSystemMapPanelState();
+            if (context().app)
+                context().app->adoptNavigationView(
+                    NavigationPresentationView::System);
         }
     );
 }
 
 
-void SpaceState::setSystemMapKnownSystemMode(
-    int systemId
-)
+void SpaceState::setSystemMapKnownSystemMode(int systemId)
 {
     if (!m_client || systemId < 0)
         return;
 
-    requestGalaxyMapSnapshotOnce();
-
-    if (requestSystemMapSnapshot(systemId, true) &&
-        game::client::MapTransitionController::simulationHasReached(
-            m_client->systemMapMetadata(),
-            m_client->lastSimulationMetadata()))
-    {
-        beginSystemMapSystemTransition(systemId);
+    if (!composeSystemMapSnapshot(systemId))
         return;
-    }
 
-    m_mapTransitions.beginSystem(systemId);
+    beginSystemMapSystemTransition(systemId);
 }
 
 
+
+
+
+void SpaceState::setSystemMapLoadedSystemMode()
+{
+    if (!m_client ||
+        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System ||
+        !m_hasSystemMapSnapshot)
+    {
+        return;
+    }
+
+    const int loadedSystemMapId = m_loadedSystemMapId;
+    const bool loadedMapIsEmptySector = m_systemMapShowsEmptySector;
+
+    m_systemMapRenderer.beginMapTransition(
+        MapTransitionPresets::modeChange(),
+        [this, loadedSystemMapId, loadedMapIsEmptySector]()
+        {
+            if (!m_client ||
+                !m_hasSystemMapSnapshot ||
+                m_loadedSystemMapId != loadedSystemMapId)
+            {
+                return;
+            }
+
+            m_systemMapShowsEmptySector = loadedMapIsEmptySector;
+            m_systemMapRenderer.setMode(SystemMapRenderer::Mode::System);
+            if (context().app)
+            {
+                context().app->adoptNavigationView(
+                    NavigationPresentationView::System);
+            }
+        }
+    );
+}
 
 
 void SpaceState::setSystemMapCurrentSystemMode()
@@ -4200,169 +4200,111 @@ void SpaceState::setSystemMapCurrentSystemMode()
 
 
 
-void SpaceState::beginPlayerNavigationMapEntry(
-    PlayerNavigationMapLevel level
-)
+bool SpaceState::preparePlayerNavigationMapLevel(PlayerNavigationMapLevel level)
 {
-    if (!m_client || m_systemMapVisible)
-        return;
+    if (!m_client)
+        return false;
 
-    // A new direct-selector request replaces any hidden in-flight request.
-    // Renderer crossfades are meaningful only while a map is already visible.
-    m_mapTransitions.clear();
+    // Direct F9-F12 selection is presentation preparation, not an internal
+    // map animation. The global coordinator keeps the committed owner until
+    // this concrete Navigation scene is ready. Cancel any renderer-internal
+    // drill/crossfade so an outgoing map snapshot can never be painted over a
+    // direct function-key destination.
     m_systemMapRenderer.cancelMapTransition();
-    m_playerNavigationMapExitPending = false;
-    m_playerNavigationMapExitReady = false;
-    m_systemMapRenderer.cancelPresentationCrossfade();
-    m_playerNavigationMapEntryPending = true;
-    m_playerNavigationMapEntryReady = false;
-    m_playerNavigationMapEntryPresentationArmed = false;
-    m_playerNavigationMapEntrySourceCaptured = false;
-    m_pendingPlayerNavigationMapLevel = level;
 
     switch (level)
     {
         case PlayerNavigationMapLevel::Galaxy:
+        {
             requestGalaxyMapSnapshotOnce();
-            if (m_hasGalaxyMapSnapshot)
+            if (!m_hasGalaxyMapSnapshot)
+                return false;
+            m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Galaxy);
+            m_systemMapRenderer.onGalaxyMapEntered(
+                m_galaxyMapSnapshot,
+                m_client->playerNavigation()
+            );
+            return true;
+        }
+
+        case PlayerNavigationMapLevel::System:
+        {
+            const auto& nav = m_client->playerNavigation();
+            if (nav.currentSystemId >= 0)
             {
-                m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Galaxy);
-                m_systemMapRenderer.onGalaxyMapEntered(
-                    m_galaxyMapSnapshot,
-                    m_client->playerNavigation()
+                if (!composeSystemMapSnapshot(nav.currentSystemId))
+                    return false;
+                m_systemMapShowsEmptySector = false;
+                m_systemMapRenderer.focusGalaxySystem(
+                    nav.currentSystemId,
+                    m_galaxyMapSnapshot
                 );
-                completePlayerNavigationMapEntry();
+                m_systemMapRenderer.setMode(SystemMapRenderer::Mode::System);
+                return true;
             }
-            break;
 
-        case PlayerNavigationMapLevel::System:
-            setSystemMapPlayerSystemMode();
-            break;
+            glm::dvec3 playerGalacticPositionLy {0.0};
+            if (!resolvePlayerGalacticPositionLy(playerGalacticPositionLy))
+                return false;
 
-        case PlayerNavigationMapLevel::Detail:
-            setSystemMapPlayerDetailMode();
-            break;
-
-        case PlayerNavigationMapLevel::Local:
-            setSystemMapPlayerLocalMode();
-            break;
-    }
-}
-
-bool SpaceState::playerNavigationMapEntryPending() const
-{
-    return m_playerNavigationMapEntryPending;
-}
-
-bool SpaceState::playerNavigationMapEntryTargetReady() const
-{
-    return m_playerNavigationMapEntryPending &&
-        m_playerNavigationMapEntryReady;
-}
-
-void SpaceState::armPlayerNavigationMapEntryPresentation()
-{
-    if (playerNavigationMapEntryTargetReady())
-        m_playerNavigationMapEntryPresentationArmed = true;
-}
-
-bool SpaceState::consumePreparedPlayerNavigationMapEntry()
-{
-    if (!m_playerNavigationMapEntryReady ||
-        !m_playerNavigationMapEntrySourceCaptured)
-    {
-        return false;
-    }
-
-    m_playerNavigationMapEntryReady = false;
-    m_playerNavigationMapEntryPending = false;
-    m_playerNavigationMapEntryPresentationArmed = false;
-    m_playerNavigationMapEntrySourceCaptured = false;
-    m_systemMapRenderer.beginPresentationCrossfade();
-    return true;
-}
-
-void SpaceState::beginPlayerNavigationMapExit()
-{
-    if (!m_systemMapVisible || m_playerNavigationMapExitPending)
-        return;
-
-    // Exit is a presentation transaction too: finish/cancel any internal map
-    // crossfade, render one stable outgoing map frame, capture that exact frame,
-    // then let gameplay render beneath the captured map while it dissolves.
-    m_systemMapRenderer.cancelMapTransition();
-    m_systemMapRenderer.cancelPresentationCrossfade();
-    m_playerNavigationMapEntryPending = false;
-    m_playerNavigationMapEntryReady = false;
-    m_playerNavigationMapEntryPresentationArmed = false;
-    m_playerNavigationMapEntrySourceCaptured = false;
-    m_mapTransitions.clear();
-    m_playerNavigationMapExitPending = true;
-    m_playerNavigationMapExitReady = false;
-}
-
-bool SpaceState::consumePreparedPlayerNavigationMapExit()
-{
-    if (!m_playerNavigationMapExitPending ||
-        !m_playerNavigationMapExitReady)
-    {
-        return false;
-    }
-
-    m_playerNavigationMapExitPending = false;
-    m_playerNavigationMapExitReady = false;
-    m_systemMapRenderer.beginPresentationCrossfade();
-    return true;
-}
-
-void SpaceState::completePlayerNavigationMapEntry()
-{
-    if (!m_playerNavigationMapEntryPending)
-        return;
-
-    m_playerNavigationMapEntryReady = true;
-}
-
-void SpaceState::cancelPlayerNavigationMapEntry()
-{
-    m_playerNavigationMapEntryPending = false;
-    m_playerNavigationMapEntryReady = false;
-    m_playerNavigationMapEntryPresentationArmed = false;
-    m_playerNavigationMapEntrySourceCaptured = false;
-}
-
-
-bool SpaceState::isPlayerNavigationMapLevel(
-    PlayerNavigationMapLevel level
-) const
-{
-    using Mode = SystemMapRenderer::Mode;
-    using world::celestial::DetailSceneKind;
-
-    const Mode mode = m_systemMapRenderer.mode();
-
-    switch (level)
-    {
-        case PlayerNavigationMapLevel::Galaxy:
-            return mode == Mode::Galaxy;
-
-        case PlayerNavigationMapLevel::System:
-            return mode == Mode::System;
+            world::celestial::SystemMapSnapshot emptySector;
+            emptySector.systemId = m_nextEmptySystemMapId--;
+            emptySector.systemName = "Deep Space Sector";
+            emptySector.universeTimeSeconds = m_client->universeTimeSeconds();
+            emptySector.universeTimeScale = m_client->sessionSnapshot().universeTimeScale;
+            emptySector.universeDate = m_client->sessionSnapshot().universeDate;
+            emptySector.systemPositionLy = playerGalacticPositionLy;
+            m_systemMapSnapshot = std::move(emptySector);
+            m_loadedSystemMapId = m_systemMapSnapshot.systemId;
+            m_hasSystemMapSnapshot = true;
+            m_systemMapShowsEmptySector = true;
+            m_systemMapRenderer.setMode(SystemMapRenderer::Mode::System);
+            return true;
+        }
 
         case PlayerNavigationMapLevel::Detail:
-            return
-                mode == Mode::Detail &&
-                m_loadedDetailTarget.sceneKind != DetailSceneKind::SpatialVolume;
+        {
+            world::celestial::DetailTarget target;
+            if (!buildPlayerDetailTarget(target, true))
+                return preparePlayerNavigationMapLevel(PlayerNavigationMapLevel::System);
+            if (!composeDetailMapSnapshot(target))
+                return false;
+            m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Detail);
+            return true;
+        }
 
         case PlayerNavigationMapLevel::Local:
-            return
-                mode == Mode::Hub ||
-                (mode == Mode::Detail &&
-                 m_loadedDetailTarget.sceneKind == DetailSceneKind::SpatialVolume);
+        {
+            const auto& nav = m_client->playerNavigation();
+            if (nav.currentSystemId < 0)
+                return preparePlayerNavigationMapLevel(PlayerNavigationMapLevel::System);
 
-        default:
-            return false;
+            const auto& ships = m_client->world().ships();
+            const auto playerIt = ships.find(m_playerId.value);
+            if (playerIt != ships.end())
+            {
+                const auto& motion = playerIt->second.transform.motion;
+                if (motion.matchedToReferenceFrame && !motion.hubId.empty())
+                {
+                    if (!composeHubMapSnapshot(nav.currentSystemId, motion.hubId))
+                        return false;
+                    m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Hub);
+                    return true;
+                }
+            }
+
+            world::celestial::DetailTarget target;
+            if (!buildPlayerDetailTarget(target, false) ||
+                !composeDetailMapSnapshot(target))
+            {
+                return false;
+            }
+            m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Detail);
+            return true;
+        }
     }
+
+    return false;
 }
 
 
@@ -4378,8 +4320,6 @@ void SpaceState::setSystemMapPlayerSystemMode()
         return;
     }
 
-    requestGalaxyMapSnapshotOnce();
-
     glm::dvec3 playerGalacticPositionLy {0.0};
     if (resolvePlayerGalacticPositionLy(playerGalacticPositionLy))
     {
@@ -4387,8 +4327,6 @@ void SpaceState::setSystemMapPlayerSystemMode()
         return;
     }
 
-    if (m_playerNavigationMapEntryPending)
-        cancelPlayerNavigationMapEntry();
 }
 
 
@@ -4396,8 +4334,6 @@ void SpaceState::setSystemMapPlayerDetailMode()
 {
     if (!m_client)
         return;
-
-    requestGalaxyMapSnapshotOnce();
 
     world::celestial::DetailTarget target;
     if (!buildPlayerDetailTarget(target, true))
@@ -4408,17 +4344,12 @@ void SpaceState::setSystemMapPlayerDetailMode()
         return;
     }
 
-    if (requestDetailMapSnapshot(target, true) &&
-        game::client::MapTransitionController::simulationHasReached(
-            m_client->detailMapMetadata(),
-            m_client->lastSimulationMetadata()))
-    {
-        beginSystemMapDetailTransition(target);
+    if (!composeDetailMapSnapshot(target))
         return;
-    }
 
-    m_mapTransitions.beginDetail(target);
+    beginSystemMapDetailTransition(target);
 }
+
 
 
 void SpaceState::setSystemMapPlayerLocalMode()
@@ -4435,182 +4366,113 @@ void SpaceState::setSystemMapPlayerLocalMode()
 
     const auto& ships = m_client->world().ships();
     const auto playerIt = ships.find(m_playerId.value);
-
     if (playerIt != ships.end())
     {
         const auto& motion = playerIt->second.transform.motion;
-
-        // A hub is the current local frame only while player is actually
-        // matched to it. A future detached/J-travel ship may keep the hub id as
-        // navigation metadata, but F12 must not jump back to an old hub.
         if (motion.matchedToReferenceFrame && !motion.hubId.empty())
         {
-            if (requestHubMapSnapshot(
-                    nav.currentSystemId,
-                    motion.hubId,
-                    true) &&
-                game::client::MapTransitionController::simulationHasReached(
-                    m_client->hubMapMetadata(),
-                    m_client->lastSimulationMetadata()))
-            {
-                beginSystemMapHubTransition(
-                    nav.currentSystemId,
-                    motion.hubId
-                );
+            if (!composeHubMapSnapshot(nav.currentSystemId, motion.hubId))
                 return;
-            }
-
-            m_mapTransitions.beginHub(
-                nav.currentSystemId,
-                motion.hubId
-            );
+            beginSystemMapHubTransition(nav.currentSystemId, motion.hubId);
             return;
         }
     }
 
-    // No active hub: F12 is the exact terminal navigation cube containing the
-    // player. The existing Detail SpatialVolume backend is the current local
-    // cube renderer; it can later be promoted to a dedicated Local mode without
-    // changing this hotkey meaning.
-    requestGalaxyMapSnapshotOnce();
     world::celestial::DetailTarget target;
     if (!buildPlayerDetailTarget(target, false))
-    {
-        if (m_playerNavigationMapEntryPending)
-            cancelPlayerNavigationMapEntry();
         return;
-    }
 
-    if (requestDetailMapSnapshot(target, true) &&
-        game::client::MapTransitionController::simulationHasReached(
-            m_client->detailMapMetadata(),
-            m_client->lastSimulationMetadata()))
-    {
-        beginSystemMapDetailTransition(target);
+    if (!composeDetailMapSnapshot(target))
         return;
-    }
 
-    m_mapTransitions.beginDetail(target);
+    beginSystemMapDetailTransition(target);
 }
 
 
 
-void SpaceState::setSystemMapDetailMode()
+
+bool SpaceState::buildSelectedMapDetailTarget(
+    world::celestial::DetailTarget& target
+) const
 {
     using namespace world::celestial;
 
-    if (!m_client)
-        return;
+    target = {};
+    if (!m_client || !m_hasSystemMapSnapshot)
+        return false;
 
-    if (m_systemMapRenderer.mode() ==
-        SystemMapRenderer::Mode::Detail)
-    {
-        return;
-    }
+    // Details is a refinement of the currently displayed System/Space map.
+    // The loaded map context is authoritative for this drill; the player's
+    // current physical membership may point at a completely different system.
+    target.systemId = m_loadedSystemMapId;
+    target.systemPositionLy = m_systemMapSnapshot.systemPositionLy;
 
-    const int selectedId =
-        m_systemMapRenderer.selectedSystemId() >= 0
-            ? m_systemMapRenderer.selectedSystemId()
-            : m_client->playerNavigation().currentSystemId;
-
-    const std::string selectedBodyId =
-        m_systemMapRenderer.selectedBodyId();
-    const std::string selectedHubId =
-        m_systemMapRenderer.selectedHubId();
+    const std::string selectedBodyId = m_systemMapRenderer.selectedBodyId();
+    const std::string selectedHubId = m_systemMapRenderer.selectedHubId();
     const std::string selectedHubParentBodyId =
-        m_systemMapRenderer
-            .selectedHubParentBodyId();
-
-    DetailTarget target;
-    target.systemId = selectedId;
-    target.systemPositionLy =
-        m_systemMapSnapshot.systemPositionLy;
+        m_systemMapRenderer.selectedHubParentBodyId();
 
     if (!selectedBodyId.empty())
     {
-        target.sceneKind =
-            DetailSceneKind::CelestialBody;
-        target.focusClass =
-            DetailObjectClass::CelestialBody;
+        target.sceneKind = DetailSceneKind::CelestialBody;
+        target.focusClass = DetailObjectClass::CelestialBody;
         target.anchorId = selectedBodyId;
         target.focusId = selectedBodyId;
     }
-    else if (!selectedHubId.empty() &&
-        !selectedHubParentBodyId.empty())
+    else if (!selectedHubId.empty() && !selectedHubParentBodyId.empty())
     {
-        /*
-            An orbital hub is infrastructure, but Details keeps the parent
-            body as the scene anchor so the existing planet/hub workflow and
-            the HUB button remain intact.
-        */
-        target.sceneKind =
-            DetailSceneKind::CelestialBody;
-        target.focusClass =
-            DetailObjectClass::Hub;
-        target.anchorId =
-            selectedHubParentBodyId;
+        target.sceneKind = DetailSceneKind::CelestialBody;
+        target.focusClass = DetailObjectClass::Hub;
+        target.anchorId = selectedHubParentBodyId;
         target.focusId = selectedHubId;
     }
     else if (!selectedHubId.empty())
     {
-        target.sceneKind =
-            DetailSceneKind::LocalObject;
-        target.focusClass =
-            DetailObjectClass::Hub;
+        target.sceneKind = DetailSceneKind::LocalObject;
+        target.focusClass = DetailObjectClass::Hub;
         target.anchorId = selectedHubId;
         target.focusId = selectedHubId;
     }
     else
     {
         const auto selectedCell =
-            m_systemMapRenderer
-                .selectedTerminalDetailCell();
-
+            m_systemMapRenderer.selectedTerminalDetailCell();
         if (!selectedCell)
-            return;
+            return false;
 
-        target.sceneKind =
-            DetailSceneKind::SpatialVolume;
-        target.focusClass =
-            DetailObjectClass::None;
+        target.sceneKind = DetailSceneKind::SpatialVolume;
+        target.focusClass = DetailObjectClass::None;
         target.spatialCell = *selectedCell;
     }
 
-    if (!target.valid())
-        return;
+    return target.valid();
+}
 
-    if (requestDetailMapSnapshot(target, true) &&
-        game::client::MapTransitionController::simulationHasReached(
-            m_client->detailMapMetadata(),
-            m_client->lastSimulationMetadata()))
+
+void SpaceState::setSystemMapDetailMode()
+{
+    if (!m_client ||
+        m_systemMapRenderer.mode() != SystemMapRenderer::Mode::System)
     {
-        beginSystemMapDetailTransition(target);
         return;
     }
 
-    m_mapTransitions.beginDetail(target);
+    world::celestial::DetailTarget target;
+    if (!buildSelectedMapDetailTarget(target) ||
+        !composeDetailMapSnapshot(target))
+    {
+        return;
+    }
+
+    beginSystemMapDetailTransition(target);
 }
+
 
 
 void SpaceState::beginSystemMapDetailTransition(
     const world::celestial::DetailTarget& target
 )
 {
-    if (m_playerNavigationMapEntryPending)
-    {
-        if (!m_client ||
-            !m_hasDetailMapSnapshot ||
-            m_loadedDetailTarget != target)
-        {
-            cancelPlayerNavigationMapEntry();
-            return;
-        }
-
-        m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Detail);
-        completePlayerNavigationMapEntry();
-        return;
-    }
-
     m_systemMapRenderer.beginMapTransition(
         MapTransitionPresets::modeChange(),
         [this, target]()
@@ -4625,7 +4487,9 @@ void SpaceState::beginSystemMapDetailTransition(
             m_systemMapRenderer.setMode(
                 SystemMapRenderer::Mode::Detail
             );
-            pushSystemMapPanelState();
+            if (context().app)
+                context().app->adoptNavigationView(
+                    NavigationPresentationView::Detail);
         }
     );
 }
@@ -4635,45 +4499,19 @@ void SpaceState::beginSystemMapDetailTransition(
 
 void SpaceState::setSystemMapLoadedDetailMode()
 {
-    if (!m_client)
+    if (!m_client || m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Detail)
         return;
 
-    if (m_systemMapRenderer.mode() ==
-        SystemMapRenderer::Mode::Detail)
-    {
-        return;
-    }
-
-    /*
-        Hub -> Detail returns to the semantic Detail target that opened this
-        Hub. A timeline-revision fence invalidates the cached snapshot bytes,
-        but deliberately preserves m_loadedDetailTarget. If the cache is gone,
-        reacquire the same target on the active revision instead of disabling
-        navigation.
-    */
-    const world::celestial::DetailTarget target =
-        m_loadedDetailTarget;
-
+    const world::celestial::DetailTarget target = m_loadedDetailTarget;
     if (!target.valid())
         return;
 
-    if (m_hasDetailMapSnapshot)
-    {
-        beginSystemMapDetailTransition(target);
+    if (!m_hasDetailMapSnapshot && !composeDetailMapSnapshot(target))
         return;
-    }
 
-    if (requestDetailMapSnapshot(target, true) &&
-        game::client::MapTransitionController::simulationHasReached(
-            m_client->detailMapMetadata(),
-            m_client->lastSimulationMetadata()))
-    {
-        beginSystemMapDetailTransition(target);
-        return;
-    }
-
-    m_mapTransitions.beginDetail(target);
+    beginSystemMapDetailTransition(target);
 }
+
 
 
 
@@ -4832,76 +4670,4 @@ void SpaceState::applyClientCatalogLocalization()
         loc.text("nav.format.packed", "VERY SECRET CODE");
     m_systemMapRenderer.setNavigationOverlayTextProfile(overlayText);
     m_systemMapRenderer.setNavigationNamingLocale(loc.locale());
-}
-
-void SpaceState::pushSystemMapPanelState()
-{
-    requestGalaxyMapSnapshotOnce();
-
-    if (!m_client || !context().app)
-        return;
-
-    const auto& nav = m_client->playerNavigation();
-
-    std::string currentSystemName =
-        context().app->localization().text(
-            "map.interstellar",
-            "INTERSTELLAR"
-        );
-    if (nav.currentSystemId >= 0)
-    {
-        if (!m_client->resolveCelestialSnapshot())
-            return;
-
-        const auto* celestialPtr = m_client->celestialSnapshot();
-        if (!celestialPtr)
-            return;
-
-        currentSystemName = context().app->localization().catalogName(
-            "systems",
-            std::to_string(nav.currentSystemId),
-            celestialPtr->systemName
-        );
-    }
-
-    int selectedId = -1;
-    if (!m_systemMapShowsEmptySector)
-    {
-        selectedId =
-            m_systemMapRenderer.selectedSystemId() >= 0
-                ? m_systemMapRenderer.selectedSystemId()
-                : nav.currentSystemId;
-    }
-
-    game::presentation::SystemMapPanelPresentationInput input;
-    input.universeTimeSeconds = m_client->universeTimeSeconds();
-    input.universeDate = m_client->sessionSnapshot().universeDate;
-    input.universeTimeScale =
-        m_client->sessionSnapshot().universeTimeScale;
-    input.mode = m_systemMapRenderer.mode();
-    input.galaxy = &m_galaxyMapSnapshot;
-    input.system = &m_systemMapSnapshot;
-    input.navigation = &nav;
-    input.currentSystemName = currentSystemName;
-    input.selectedEmptySector = m_systemMapShowsEmptySector;
-    input.selectedSystemId = selectedId;
-    input.selectedBodyId = m_systemMapRenderer.selectedBodyId();
-    input.selectedHubId = m_systemMapRenderer.selectedHubId();
-    input.canOpenDetail =
-        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System &&
-        m_systemMapRenderer.canOpenSelectedDetail();
-    input.selectedDetailCell =
-        m_systemMapRenderer.selectedTerminalDetailCell();
-    input.canOpenHub =
-        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Detail &&
-        !m_systemMapRenderer.selectedHubId().empty();
-
-    const json payload =
-        game::presentation::buildSystemMapPanelPayload(input);
-
-    context().app->evalGameUiScript(
-        "if (window.setSystemMapPanel) window.setSystemMapPanel(" +
-        payload.dump() +
-        ");"
-    );
 }

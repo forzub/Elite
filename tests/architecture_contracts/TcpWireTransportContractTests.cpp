@@ -246,10 +246,7 @@ void testFullProtocolAcrossKernelTcp()
     clientMessage.payload = control;
     client.sendClientMessage(clientMessage);
 
-    SystemMapRequest systemRequest;
-    systemRequest.requestId = 6002u;
-    systemRequest.systemId = 3;
-    MapRequest request = systemRequest;
+    MapRequest request = GalaxyMapRequest{6002u};
     client.sendMapRequest(request);
 
     TimeSyncRequest timeRequest;
@@ -289,10 +286,9 @@ void testFullProtocolAcrossKernelTcp()
     require(receivedControl.controlTick == 501u &&
             std::abs(receivedControl.forwardInput - 0.75f) < 1.0e-6f,
         "ShipControlState changed across TCP");
-    require(std::holds_alternative<SystemMapRequest>(receivedRequest) &&
-            std::get<SystemMapRequest>(receivedRequest).requestId == 6002u &&
-            std::get<SystemMapRequest>(receivedRequest).systemId == 3,
-        "MapRequest changed across TCP");
+    require(std::holds_alternative<GalaxyMapRequest>(receivedRequest) &&
+            std::get<GalaxyMapRequest>(receivedRequest).requestId == 6002u,
+        "Galaxy MapRequest changed across TCP");
     require(receivedTimeRequest.sequence == 7003u &&
             std::abs(receivedTimeRequest.clientSendTimeSeconds - 9.25) < 1.0e-12,
         "TimeSyncRequest changed across TCP");

@@ -240,6 +240,39 @@ bool Renderer::beginPostProcess(
     m_gameViewportHeight = gameViewportHeight;
 
     glBindFramebuffer(GL_FRAMEBUFFER, m_sceneFramebuffer);
+
+    // The post-process scene FBO is persistent across frames. Clearing only
+    // framebuffer 0 before beginPostProcess() leaves old Flight/Map pixels in
+    // this off-screen buffer, which then reappear as "background windows"
+    // whenever the current scene draws only part of the viewport (System Map)
+    // or no scene at all under an opaque WebUI surface.
+    const GLboolean scissorWasEnabled = glIsEnabled(GL_SCISSOR_TEST);
+    if (scissorWasEnabled)
+        glDisable(GL_SCISSOR_TEST);
+
+    glViewport(0, 0, framebufferWidth, framebufferHeight);
+    glClearColor(0.002f, 0.006f, 0.014f, 1.0f);
+    glClear(
+        GL_COLOR_BUFFER_BIT |
+        GL_DEPTH_BUFFER_BIT |
+        GL_STENCIL_BUFFER_BIT
+    );
+
+    glViewport(
+        gameViewportX,
+        gameViewportY,
+        gameViewportWidth,
+        gameViewportHeight
+    );
+    glScissor(
+        gameViewportX,
+        gameViewportY,
+        gameViewportWidth,
+        gameViewportHeight
+    );
+    if (scissorWasEnabled)
+        glEnable(GL_SCISSOR_TEST);
+
     m_postProcessActive = true;
     return true;
 }

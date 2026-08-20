@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "service.shipyard.title": {
+      "en": "SHIPYARD",
+      "ru": "ВЕРФЬ — ПОКУПКА КОРАБЛЕЙ",
+      "zh-Hans": "船坞 — 舰船购买",
+      "es": "ASTILLERO — COMPRA DE NAVES",
+      "ja": "造船所 — 船舶購入"
+    }
+  }
+}

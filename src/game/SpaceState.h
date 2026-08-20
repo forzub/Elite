@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <unordered_map>
 #include <deque>
 #include <mutex>
@@ -21,10 +23,10 @@
 #include "game/ship/view/PlayerShipView.h"
 #include "src/game/debug/IDebugSessionControl.h"
 #include "src/game/client/GameClient.h"
-#include "src/game/client/MapTransitionController.h"
 #include "src/scene/SceneRenderer.h"
 #include "src/render/cockpit/FlightVectorIndicatorRenderer.h"
 #include "src/ui/components/radar/RadarWidgetBase.h"
+#include "src/ui/presentation/InSessionPresentationRenderer.h"
 
 // #include "src/WebSocket/DebugServer.h"
 #include "src/debug/FrustumDebugData.h"
@@ -38,7 +40,6 @@
 #include "src/game/traffic/StationTrafficSystem.h"
 #include "src/game/system_map/SystemMapRenderer.h"
 #include "src/game/system_map/AuthoritativeMapInterpolator.h"
-#include "src/game/ui/SystemMapUiCommandRouter.h"
 #include "src/world/celestial/SystemMapTypes.h"
 
 #include <nlohmann/json.hpp>
@@ -70,7 +71,7 @@ enum class ScreenLayout
 };
 
 
-class SpaceState : public GameState, public game::ui::ISystemMapUiTarget
+class SpaceState : public GameState
 {
 public:
     enum class StartupMode
@@ -88,6 +89,7 @@ public:
 
     void renderUI() override;
     void renderHUD() override;
+    void renderInSessionPresentationOverlay();
 
     void prepareFrame(float dt) override;
     void handleInput() override;
@@ -107,6 +109,8 @@ public:
     void testDamageSystem();
 
     void handleResize(int width, int height);
+    void setFlightScreenLayout(ScreenLayout layout);
+    ScreenLayout flightScreenLayout() const { return m_layout; }
 
     const ShipAttachmentOverrideMap& attachmentEditorOverrides() const { return m_attachmentEditorOverrides; }
     ShipAttachmentOverrideMap& attachmentEditorOverrides() { return m_attachmentEditorOverrides; }
@@ -125,22 +129,15 @@ public:
     bool saveDebugControlDefaults(const nlohmann::json& payload);
     void resetDebugControlSettings();
     void pushSystemMapState();
-    void pushSystemMapPanelState();
-    void selectSystemMapSystem(int systemId) override;
-    void setSystemMapGalaxyMode() override;
+    void selectSystemMapSystem(int systemId);
+    void setSystemMapGalaxyMode();
     void setSystemMapKnownSystemMode(int systemId);
-    void setSystemMapCurrentSystemMode() override;
+    void setSystemMapLoadedSystemMode();
+    void setSystemMapCurrentSystemMode();
     void setSystemMapPlayerSystemMode();
     void setSystemMapPlayerDetailMode();
     void setSystemMapPlayerLocalMode();
-    void beginPlayerNavigationMapEntry(PlayerNavigationMapLevel level);
-    bool playerNavigationMapEntryPending() const;
-    bool playerNavigationMapEntryTargetReady() const;
-    void armPlayerNavigationMapEntryPresentation();
-    bool consumePreparedPlayerNavigationMapEntry();
-    void beginPlayerNavigationMapExit();
-    bool consumePreparedPlayerNavigationMapExit();
-    bool isPlayerNavigationMapLevel(PlayerNavigationMapLevel level) const;
+    bool preparePlayerNavigationMapLevel(PlayerNavigationMapLevel level);
     void toggleConstellationOverlay();
     void cycleSkyCulture();
     void onUiLanguageChanged() override;
@@ -153,30 +150,24 @@ public:
     void applyDebugControlPayload(const nlohmann::json& payload);
 
     void requestGalaxyMapSnapshotOnce();
-    bool requestSystemMapSnapshot(
-        int systemId,
-        bool forceRefresh = false
-    );
+    bool composeSystemMapSnapshot(int systemId);
 
     void updateSystemMapLiveFlags();
     void updateLiveMapSnapshots(float dt);
     void updateLocalMapPresentationSnapshots(float dt);
     bool shouldRefreshSystemMapSnapshot() const;
 
-    bool requestDetailMapSnapshot(
-        const world::celestial::DetailTarget& target,
-        bool forceRefresh = false
+    bool composeDetailMapSnapshot(
+        const world::celestial::DetailTarget& target
     );
 
-    void setSystemMapDetailMode() override;
+    void setSystemMapDetailMode();
 
-    bool requestHubMapSnapshot(
+    bool composeHubMapSnapshot(
         int systemId,
-        const std::string& hubId,
-        bool forceRefresh = false
+        const std::string& hubId
     );
 
-    void updatePendingMapTransition(float dt);
     void beginSystemMapSystemTransition(int systemId);
     void beginSystemMapDetailTransition(
         const world::celestial::DetailTarget& target
@@ -185,11 +176,8 @@ public:
         int systemId,
         const std::string& hubId
     );
-    void completePlayerNavigationMapEntry();
-    void cancelPlayerNavigationMapEntry();
-
-    void setSystemMapHubMode() override;
-    void setSystemMapLoadedDetailMode() override;
+    void setSystemMapHubMode();
+    void setSystemMapLoadedDetailMode();
 private:
     enum class StartupStage
     {
@@ -217,10 +205,20 @@ private:
         world::celestial::DetailTarget& outTarget,
         bool preferReferenceContext
     ) const;
+    bool buildSelectedMapDetailTarget(
+        world::celestial::DetailTarget& outTarget
+    ) const;
     void renderUniverseTimeSimulationOverlay(
         const Viewport& viewport
     );
     void renderUiLanguageIndicator(const Viewport& viewport);
+    game::presentation::SystemMapPanelPresentation
+    buildNativeSystemMapPanelPresentation();
+    bool handleNativeSystemMapPanelInput(const Viewport& viewport);
+    void applyNativeSystemMapPanelAction(
+        const game::presentation::SystemMapPanelAction& action
+    );
+    void openSelectedGalaxyMapTarget();
     void applyClientCatalogLocalization();
 
     // std::vector<Planet>                         m_planets;                  // "world/Planet.h"
@@ -264,6 +262,7 @@ private:
     SceneRenderer m_sceneRenderer;
     PreparedScene m_preparedScene;
     SystemMapRenderer m_systemMapRenderer;
+    ui::presentation::InSessionPresentationRenderer m_inSessionPresentationRenderer;
     bool m_constellationOverlayEnabled = false;
 
 
@@ -346,6 +345,7 @@ private:
     int m_loadedSystemMapId = -1;
     std::uint64_t m_appliedSystemMapServerTick = 0;
     bool m_hasGalaxyMapSnapshot = false;
+    bool m_hasGalaxyMapOverlay = false;
     bool m_hasSystemMapSnapshot = false;
     bool m_systemMapShowsEmptySector = false;
     int m_nextEmptySystemMapId = -2;
@@ -354,18 +354,9 @@ private:
     double m_hubMapLiveRefreshTimer = 0.0;
 
     bool m_systemMapVisible = false;
-    bool m_playerNavigationMapEntryPending = false;
-    bool m_playerNavigationMapEntryReady = false;
-    bool m_playerNavigationMapEntryPresentationArmed = false;
-    bool m_playerNavigationMapEntrySourceCaptured = false;
-    bool m_playerNavigationMapExitPending = false;
-    bool m_playerNavigationMapExitReady = false;
-    PlayerNavigationMapLevel m_pendingPlayerNavigationMapLevel =
-        PlayerNavigationMapLevel::Galaxy;
     bool m_systemMapLiveSnapshotsEnabled = false;
     int m_liveSystemMapId = -1;
 
-    game::client::MapTransitionController m_mapTransitions;
     game::system_map::AuthoritativeMapInterpolator
         m_authoritativeMapInterpolator;
     std::uint64_t m_mapUniverseTimelineRevision = 0;

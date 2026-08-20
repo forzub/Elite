@@ -48,7 +48,7 @@
       document.getElementById('local-load').disabled = !currentState.canLoad;
       await window.EliteUiKit.waitForDocumentDependencies();
       await window.EliteUiKit.settlePreparedLayout();
-      await sendCommand('session_menu_prepared');
+      await window.EliteUiKit.sendPresentationCommand('session_menu_prepared');
     }
     window.addEventListener('game-ui-language-changed', () => { void applyLocalSessionMenuState(currentState); });
     document.addEventListener('keydown', event => {
@@ -60,7 +60,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       window.EliteUiKit.initialize(document);
-      sendCommand('session_menu_ready');
+      void window.EliteUiKit.sendPresentationCommand('session_menu_ready');
     });
     window.applyLocalSessionMenuState = applyLocalSessionMenuState;
   </script>

@@ -121,7 +121,8 @@ for token in (
     'message == "INVALID_CREDENTIAL"',
     'state["accountAvailable"]',
     'm_authenticatedRemoteAccountHandle = m_clientIdentityProfileName',
-    "setUiLanguage(locale)",
+    "void Application::setUiLanguage(const std::string& locale)",
+    'SetLocalePrefix = "set_ui_locale|"',
 ):
     if token not in app:
         fail(f"Application does not own unified auth/account-shell state bridge: {token}")

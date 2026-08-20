@@ -57,6 +57,10 @@ for token in (
         fail(f"elite_ui.css lost shared/responsive/RTL primitive: {token}")
 
 for html in sorted((ROOT / "src/assets/webui").glob("*.html")):
+    # presentation_blank.html is an intentionally non-visible bootstrap page
+    # for the second physical WebView surface; it has no UI/component surface.
+    if html.name == "presentation_blank.html":
+        continue
     text = html.read_text(encoding="utf-8", errors="replace")
     if '/elite_ui.css' not in text or '/elite_ui.js' not in text:
         fail(f"WebUI page does not import the shared UI kit: {html.name}")

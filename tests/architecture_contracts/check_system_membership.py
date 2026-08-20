@@ -360,16 +360,21 @@ else:
         "server per-session navigation is not derived from session authority",
     )
 
-system_snapshot = function_body(server_text, "GameServer::buildSystemMapSnapshot(")
-if system_snapshot is None:
-    fail(server_cpp, "could not locate buildSystemMapSnapshot")
-else:
-    for forbidden in (
-        "m_simulation.staticObjects()",
-        "m_simulation.orbitalHubs()",
-    ):
-        if forbidden in system_snapshot:
-            fail(server_cpp, f"System-map infrastructure returned to server composition: {forbidden}")
+if "GameServer::buildSystemMapSnapshot(" in server_text:
+    fail(server_cpp, "obsolete server System-map composition survived client-local map migration")
+
+client_map_service = ROOT / "src/game/client/ClientMapService.cpp"
+client_map_service_text = read(client_map_service)
+require_text(
+    client_map_service,
+    client_map_service_text,
+    (
+        "sampleSystemMapInfrastructureAtServerTime(",
+        "sampleSystemMapShipsAtServerTime(",
+        "sourceMetadata.serverTimeSeconds",
+    ),
+    "client-local System-map composition lost coherent accepted-snapshot membership sampling",
+)
 
 client_infrastructure_sampler = ROOT / "src/game/client/ClientSystemMapInfrastructureSampler.h"
 client_infrastructure_sampler_text = client_infrastructure_sampler.read_text(encoding="utf-8")

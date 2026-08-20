@@ -353,62 +353,18 @@ void testTimeSyncRoundTrip()
 
 void testMapRequestRoundTrip()
 {
-    std::vector<MapRequest> requests;
-    requests.emplace_back(GalaxyMapRequest{1001u});
-    requests.emplace_back(SystemMapRequest{1002u, 17});
-
-    DetailMapRequest detail;
-    detail.requestId = 1003u;
-    detail.target.sceneKind = world::celestial::DetailSceneKind::SpatialVolume;
-    detail.target.focusClass = world::celestial::DetailObjectClass::Ship;
-    detail.target.systemId = 23;
-    detail.target.systemPositionLy = glm::dvec3(1.5, -2.25, 3.75);
-    detail.target.anchorId = "anchor";
-    detail.target.focusId = "focus";
-    detail.target.spatialCell.level = 6;
-    detail.target.spatialCell.maximumLevel = 6;
-    detail.target.spatialCell.x = -11;
-    detail.target.spatialCell.y = 22;
-    detail.target.spatialCell.z = 33;
-    detail.target.spatialCell.centerAu = glm::dvec3(0.01, 0.02, 0.03);
-    detail.target.spatialCell.edgeAu = 0.004;
-    requests.emplace_back(detail);
-
-    HubMapRequest hub;
-    hub.requestId = 1004u;
-    hub.systemId = 31;
-    hub.hubId = "hub:alpha";
-    requests.emplace_back(hub);
-
-    for (std::size_t i = 0; i < requests.size(); ++i)
-    {
-        std::vector<std::uint8_t> payload;
-        require(encodeMapRequest(requests[i], payload), "map request encode failed");
-        MapRequest decoded;
-        require(decodeMapRequest(payload, decoded), "map request decode failed");
-        require(decoded.index() == requests[i].index(), "map request variant mismatch");
-    }
-
-    const auto& decodedDetailSource = std::get<DetailMapRequest>(requests[2]);
+    MapRequest request = GalaxyMapRequest{1001u};
     std::vector<std::uint8_t> payload;
-    require(encodeMapRequest(requests[2], payload), "detail request re-encode failed");
-    MapRequest decodedDetailVariant;
-    require(decodeMapRequest(payload, decodedDetailVariant), "detail request re-decode failed");
-    const auto& decodedDetail = std::get<DetailMapRequest>(decodedDetailVariant);
-    require(decodedDetail.requestId == decodedDetailSource.requestId,
-        "detail request id mismatch");
-    require(decodedDetail.target == decodedDetailSource.target,
-        "detail target mismatch");
+    require(encodeMapRequest(request, payload), "Galaxy map request encode failed");
 
-    require(encodeMapRequest(requests[3], payload), "hub request re-encode failed");
-    MapRequest decodedHubVariant;
-    require(decodeMapRequest(payload, decodedHubVariant), "hub request re-decode failed");
-    const auto& decodedHub = std::get<HubMapRequest>(decodedHubVariant);
-    const auto& sourceHub = std::get<HubMapRequest>(requests[3]);
-    require(decodedHub.requestId == sourceHub.requestId, "hub request id mismatch");
-    require(decodedHub.systemId == sourceHub.systemId, "hub request system mismatch");
-    require(decodedHub.hubId == sourceHub.hubId, "hub request id string mismatch");
+    MapRequest decoded;
+    require(decodeMapRequest(payload, decoded), "Galaxy map request decode failed");
+    require(std::holds_alternative<GalaxyMapRequest>(decoded),
+        "MapRequest must remain Galaxy-only");
+    require(std::get<GalaxyMapRequest>(decoded).requestId == 1001u,
+        "Galaxy request id mismatch");
 }
+
 
 void testTrailingAndInvalidPayloadRejection()
 {

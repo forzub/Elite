@@ -26,10 +26,10 @@ Current acceptance coverage:
   `ShipSnapshot -> ClientWorldState -> renderTransform`;
 - HUD coordinate/speed calculation and writes to the exact production
   `main_coord_*` UIText bindings;
-- F9/F10/F11/F12 navigation-key latch semantics plus Ctrl+F11, Ctrl+F12, Alt+F12 and Ctrl+Alt+F12 service chords;
-- actual `system_map_panel.html` command vocabulary tied by architecture guard
+- F9/F10/F11/F12 message-backed direct-selector semantics plus Ctrl+F11, Ctrl+F12, Alt+F12 and Ctrl+Alt+F12 service chords;
+- typed native `SystemMapPanelPresentation` + interactive OpenGL STAR ATLAS dropdown/actions tied by acceptance + architecture guards
   to the same parser/dispatcher exercised by the headless suite;
-- command meaning for Galaxy/System/Details/Hub/select/open/close actions;
+- typed native action meaning for Galaxy/System-or-Space/Details/Hub/select/open, with no fixed Close slot;
 - live Galaxy -> System -> Details -> Hub data requests through
   `GameClient -> LocalLoopbackTransport -> GameServer -> ClientMapService`;
 - universe-timeline revision parity between gameplay and all accepted map

@@ -40,15 +40,20 @@ for token in (
     "ObjectSnapshot,",
     "game::simulation::OrbitalHubSnapshot,",
     "game::network::GalaxyMapResponse,",
-    "game::network::SystemMapResponse,",
-    "game::network::DetailMapResponse,",
-    "game::network::HubMapResponse,",
     "v.replication",
     "v.graph",
     "v.session",
 ):
     if token not in schema:
         fail(f"canonical ordered schema is incomplete: {token}")
+
+for token in (
+    "game::network::SystemMapResponse",
+    "game::network::DetailMapResponse",
+    "game::network::HubMapResponse",
+):
+    if token in schema:
+        fail(f"obsolete client-composed map response remains in wire schema: {token}")
 
 for token in (
     "SimulationSnapshotWireSchemaVersion",

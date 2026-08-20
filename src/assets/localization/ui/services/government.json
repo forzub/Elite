@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "service.government.title": {
+      "en": "CIVIC & GOVERNMENT SERVICES",
+      "ru": "ГОСУДАРСТВЕННЫЕ СЛУЖБЫ",
+      "zh-Hans": "政府服务",
+      "es": "SERVICIOS GUBERNAMENTALES",
+      "ja": "行政・公共サービス"
+    }
+  }
+}

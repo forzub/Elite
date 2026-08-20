@@ -17,7 +17,6 @@ get_filename_component(
 add_executable(
     architecture_contract_tests
     ArchitectureContractTests.cpp
-    "${ELITE_SOURCE_ROOT}/src/game/client/MapTransitionController.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DynamicMotionSystem.cpp"
 )
 
@@ -48,6 +47,53 @@ endif()
 add_test(
     NAME architecture_contracts
     COMMAND architecture_contract_tests
+)
+
+add_executable(
+    presentation_coordinator_contract_tests
+    PresentationCoordinatorContractTests.cpp
+    "${ELITE_SOURCE_ROOT}/src/ui/presentation/GamePresentationCoordinator.cpp"
+    "${ELITE_SOURCE_ROOT}/src/ui/presentation/PresentationFunctionKeyRouter.cpp"
+    "${ELITE_SOURCE_ROOT}/src/ui/services/ServiceUiRegistry.cpp"
+    "${ELITE_SOURCE_ROOT}/src/ui/services/GovernmentServicesUi.cpp"
+    "${ELITE_SOURCE_ROOT}/src/ui/services/ShipyardUi.cpp"
+    "${ELITE_SOURCE_ROOT}/src/ui/services/RepairRefitUi.cpp"
+    "${ELITE_SOURCE_ROOT}/src/ui/services/TradeUi.cpp"
+)
+
+target_include_directories(
+    presentation_coordinator_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        presentation_coordinator_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        presentation_coordinator_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME presentation_coordinator_contracts
+    COMMAND presentation_coordinator_contract_tests
+)
+
+set_tests_properties(
+    presentation_coordinator_contracts
+    PROPERTIES
+        WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )
 
 add_executable(

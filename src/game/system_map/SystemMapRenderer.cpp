@@ -1049,6 +1049,48 @@ int SystemMapRenderer::selectedSystemId() const
     return m_galaxyView.state().selectedSystemId;
 }
 
+std::optional<game::system_map::MapIntent>
+SystemMapRenderer::selectedGalaxyEntryIntent(
+    const world::celestial::GalaxyMapSnapshot& galaxy) const
+{
+    if (m_mode != Mode::Galaxy)
+        return std::nullopt;
+
+    const auto& state = m_galaxyView.state();
+
+    // A named system selected from the native list can be opened at any
+    // Galaxy grid level, matching the old STAR ATLAS dropdown semantics.
+    if (state.selectedSystemId >= 0)
+    {
+        const auto system = std::find_if(
+            galaxy.systems.begin(),
+            galaxy.systems.end(),
+            [&](const auto& candidate)
+            {
+                return candidate.id == state.selectedSystemId;
+            });
+        if (system != galaxy.systems.end())
+        {
+            return game::system_map::MapIntent::enterKnownSystem(
+                system->id,
+                system->positionLy);
+        }
+    }
+
+    // Empty-space entry is meaningful only at the terminal Galaxy cube.
+    if (!state.navigationFocusValid ||
+        state.navigationGrid.level() != state.navigationGrid.maximumLevel())
+    {
+        return std::nullopt;
+    }
+
+    const auto intent = m_galaxyView.entryIntentForPosition(
+        galaxy,
+        state.navigationFocusLy);
+    return intent.valid() ? std::optional<game::system_map::MapIntent>(intent)
+                          : std::nullopt;
+}
+
 int SystemMapRenderer::focusedSystemId() const
 {
     return m_galaxyView.state().focusedSystemId;
@@ -1959,9 +2001,6 @@ void SystemMapRenderer::render(
             m_mapTransition.outgoingAlpha()
         );
     }
-
-    drawPresentationCrossfadeOverlay(viewport, nowSeconds);
-
 
 
     if (depthWasEnabled) glEnable(GL_DEPTH_TEST);

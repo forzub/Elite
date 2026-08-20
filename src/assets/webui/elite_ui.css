@@ -80,6 +80,10 @@ body.elite-ui-body {
   color: var(--elite-text);
 }
 
+body.elite-ui-body--service {
+  background: linear-gradient(180deg, var(--elite-bg-1) 0%, var(--elite-bg-0) 100%);
+}
+
 .elite-screen {
   box-sizing: border-box;
   width: 100vw;
@@ -178,12 +182,6 @@ html.elite-ui-boot body {
 html.elite-ui-ready body {
   visibility: visible;
   opacity: 1;
-  transition: opacity 180ms ease-in-out;
-}
-
-html.elite-ui-ready.elite-ui-leaving body {
-  opacity: 0;
-  pointer-events: none;
 }
 
 .elite-view {
@@ -434,8 +432,7 @@ html[dir="rtl"] .elite-password-row {
 
 @media (prefers-reduced-motion: reduce) {
   .elite-button,
-  .elite-view,
-  html.elite-ui-ready body { transition: none; }
+  .elite-view { transition: none; }
 }
 
 /* Account/social shell and in-session menu composition helpers. */
@@ -518,4 +515,50 @@ html[dir="rtl"] .elite-password-row {
 @media (max-width: 520px) {
   .elite-button-row { grid-template-columns: minmax(0, 1fr); }
   .elite-meta-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
+
+/* In-session service-module shell (F5-F8). The presentation frame is shared,
+   while each mechanic owns a separate document/descriptor and can evolve
+   without growing Application-specific layout logic. */
+.elite-screen--service {
+  align-items: stretch;
+  justify-content: stretch;
+  padding: clamp(14px, 2.8vh, 30px);
+}
+
+.elite-panel--service {
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+.elite-service-header {
+  display: flex;
+  align-items: baseline;
+  gap: clamp(12px, 2vw, 24px);
+  border-bottom: 1px solid rgba(140, 180, 255, 0.18);
+  padding-bottom: clamp(10px, 1.8vh, 18px);
+}
+
+.elite-service-key {
+  flex: 0 0 auto;
+  color: var(--elite-text-dim);
+  font-size: clamp(10px, 1.7vh, 13px);
+  letter-spacing: 0.12em;
+}
+
+.elite-service-title {
+  margin: 0;
+  color: var(--elite-text-strong);
+  font-size: clamp(18px, 3.4vh, 32px);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+html[dir="rtl"] .elite-service-title {
+  letter-spacing: normal;
 }

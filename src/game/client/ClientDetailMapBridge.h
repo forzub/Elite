@@ -577,6 +577,42 @@ inline bool buildClientCelestialBodyDetail(
     return true;
 }
 
+inline bool rebuildUnboundSpatialDetailMap(
+    world::celestial::DetailMapSnapshot& out,
+    const world::celestial::DetailTarget& target,
+    double universeTimeSeconds
+)
+{
+    using namespace world::celestial;
+
+    if (target.sceneKind != DetailSceneKind::SpatialVolume ||
+        target.systemId >= 0 ||
+        !target.valid())
+    {
+        out = {};
+        return false;
+    }
+
+    out = {};
+    out.valid = true;
+    out.hasCentralBody = false;
+    out.systemId = target.systemId;
+    out.systemPositionLy = target.systemPositionLy;
+    out.detailTarget = target;
+    out.detailHalfExtentMeters =
+        target.spatialCell.edgeAu * MetersPerAu * 0.5;
+    out.planetName = "Local Space";
+    out.universeTimeSeconds = universeTimeSeconds;
+    out.planetCenterMeters =
+        target.spatialCell.centerAu * MetersPerAu;
+
+    out.scene.anchorClass = DetailObjectClass::None;
+    out.scene.coordinateSpace = LocalSceneCoordinateSpace::SystemWorldMeters;
+    out.scene.originWorldMeters = out.planetCenterMeters;
+    out.scene.halfExtentMeters = out.detailHalfExtentMeters;
+    return out.detailHalfExtentMeters > 0.0;
+}
+
 inline bool rebuildDetailMapFromClientState(
     world::celestial::DetailMapSnapshot& out,
     const world::celestial::DetailTarget& requestedTarget,

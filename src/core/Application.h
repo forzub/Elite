@@ -10,6 +10,7 @@
 #include "game/network/SessionMessage.h"
 #include "src/ui/platform/ClientPreferencesStore.h"
 #include "src/ui/platform/UiNavigationState.h"
+#include "src/ui/presentation/GamePresentationCoordinator.h"
 #include <string>
 #include <memory>
 #include <cstdint>
@@ -26,201 +27,12 @@ namespace game::session
 class IGameSession;
 }
 
-enum class GameUiMode
-{
-    None,
-    MainMenu,
-    Loading,
-    SystemMap,
-    SessionMenu
-};
-
 enum class GameSessionLaunchKind
 {
     None,
     LocalNewGame,
     RemoteMultiplayer
 };
-
-enum class GameUiNavigationAction
-{
-    OpenOrSwitch,
-    Close
-};
-
-class GameUiController
-{
-public:
-    GameUiMode mode() const
-    {
-        return m_mode;
-    }
-
-
-
-    GameUiMode loadedMode() const
-    {
-        return m_loadedMode;
-    }
-
-    bool isLoaded(GameUiMode mode) const
-    {
-        return m_loadedMode == mode;
-    }
-
-    void markLoaded(GameUiMode mode)
-    {
-        m_loadedMode = mode;
-    }
-
-    void clearLoaded()
-    {
-        m_loadedMode = GameUiMode::None;
-        m_preparedMode = GameUiMode::None;
-    }
-
-    bool isPrepared(GameUiMode mode) const
-    {
-        return m_preparedMode == mode;
-    }
-
-    void markPrepared(GameUiMode mode)
-    {
-        m_preparedMode = mode;
-    }
-
-    void clearPrepared()
-    {
-        m_preparedMode = GameUiMode::None;
-    }
-
-    bool isOpen() const
-    {
-        return m_mode != GameUiMode::None;
-    }
-
-    bool isMode(GameUiMode mode) const
-    {
-        return m_mode == mode;
-    }
-
-    void forceMode(GameUiMode mode)
-    {
-        m_mode = mode;
-    }
-
-    bool open(GameUiMode mode)
-    {
-        if (mode == GameUiMode::None)
-            return close();
-
-        if (m_mode == mode)
-            return false;
-
-        m_mode = mode;
-        return true;
-    }
-
-    bool close()
-    {
-        if (m_mode == GameUiMode::None)
-            return false;
-
-        m_mode = GameUiMode::None;
-        return true;
-    }
-
-    bool toggle(GameUiMode mode)
-    {
-        if (m_mode == mode)
-            return close();
-
-        return open(mode);
-    }
-
-    GameUiNavigationAction navigationAction(
-        bool requestedLevelIsCurrentlyVisible
-    ) const
-    {
-        return
-            isMode(GameUiMode::SystemMap) &&
-            requestedLevelIsCurrentlyVisible
-                ? GameUiNavigationAction::Close
-                : GameUiNavigationAction::OpenOrSwitch;
-    }
-
-    bool consumeF9Press(bool physicallyDown)
-    {
-        if (!physicallyDown)
-        {
-            m_f9Latch = false;
-            return false;
-        }
-
-        if (m_f9Latch)
-            return false;
-
-        m_f9Latch = true;
-        return true;
-    }
-
-    bool consumeF11Press(bool physicallyDown)
-    {
-        if (!physicallyDown)
-        {
-            m_f11Latch = false;
-            return false;
-        }
-
-        if (m_f11Latch)
-            return false;
-
-        m_f11Latch = true;
-        return true;
-    }
-
-    bool consumeF10Press(bool physicallyDown)
-    {
-        if (!physicallyDown)
-        {
-            m_f10Latch = false;
-            return false;
-        }
-
-        if (m_f10Latch)
-            return false;
-
-        m_f10Latch = true;
-        return true;
-    }
-
-    bool consumeF12Press(bool physicallyDown)
-    {
-        if (!physicallyDown)
-        {
-            m_f12Latch = false;
-            return false;
-        }
-
-        if (m_f12Latch)
-            return false;
-
-        m_f12Latch = true;
-        return true;
-    }
-
-private:
-    GameUiMode m_mode = GameUiMode::None;
-    GameUiMode m_loadedMode = GameUiMode::None;
-    GameUiMode m_preparedMode = GameUiMode::None;
-
-    bool m_f9Latch = false;
-    bool m_f10Latch = false;
-    bool m_f11Latch = false;
-    bool m_f12Latch = false;
-};
-
-
 
 class Application
 {
@@ -239,18 +51,22 @@ public:
     void cycleUiLanguage();
 
     void updatePendingSessionStart();
-    void openGameUi(GameUiMode mode);
-    void closeGameUi();
-    void requestSystemMapClose();
-    void invalidatePreparedSystemMapUi();
-    void prepareSystemMapUiForEntry(SpaceState& space);
-    void prewarmSystemMapPanel();
-    void presentPreparedGameUi(GameUiMode mode);
+    void requestPresentationTarget(GameUiTarget target);
+    void requestFlightView(FlightPresentationView view);
+    void requestLastFlightView();
+    void requestNavigationView(NavigationPresentationView view);
+    void adoptNavigationView(NavigationPresentationView view);
+    void requestServicePanel(ui::services::ServiceUiId service);
+    void prepareRequestedPresentation(SpaceState& space);
+    void commitPreparedPresentationAfterSwap(SpaceState& space);
 
+    // Committed presentation visible to the user. Never exposes a staged scene.
     GameUiMode gameUiMode() const;
+    GameUiTarget gameUiTarget() const;
+    // Internal OpenGL scene currently allowed to render behind an opaque/staging surface.
+    GameUiMode sceneGameUiMode() const;
+    GameUiTarget sceneGameUiTarget() const;
     bool isGameUiOpen() const;
-
-    void evalGameUiScript(const std::string& script);
 
     void configureClientIdentity(
         std::string profileName,
@@ -269,7 +85,9 @@ private:
     void init();
     void mainLoop();
     void shutdown();
-    void navigateGameUi(GameUiMode mode);
+    void prepareFullScreenDocument(GameUiTarget target);
+    void navigateDocumentSurface(int surfaceIndex, GameUiTarget target);
+    void commitFullScreenDocument(int surfaceIndex, GameUiTarget target);
     void requestSessionStart(GameSessionLaunchKind kind);
     void startSessionNow(GameSessionLaunchKind kind);
     void showMultiplayerConnectionForm(
@@ -289,10 +107,12 @@ private:
     void returnSessionToMainMenu();
     void cancelPendingSessionStart();
     void setUiLanguage(const std::string& locale);
-    void beginServiceUiTransition(std::function<void()> completion);
-    void completeServiceUiTransition(std::uint64_t serial);
-    void updateServiceUiTransition();
-    bool serviceUiTransitionPending() const;
+    void updateGameUiPresentation();
+    void syncDocumentWebViewBounds();
+    void processDocumentWebViewCommands(int surfaceIndex);
+    void setLocalSessionMenuPause(bool paused);
+    bool localSessionMenuPaused() const;
+    void requestApplicationQuit();
     void setLoadingUiProgress(
         double progress,
         std::string stageKey,
@@ -306,7 +126,9 @@ private:
 
 private:
     static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-    void handleResize(int width, int height);
+    static void window_size_callback(GLFWwindow* window, int width, int height);
+    void handleFramebufferResize(int width, int height);
+    void handleWindowResize();
 
     bool m_running;
     Renderer m_renderer;
@@ -343,22 +165,21 @@ private:
     double m_spaceStateBuildStartTime = 0.0;
     SessionStartStage m_sessionStartStage = SessionStartStage::Idle;
 
-    std::function<void()> m_serviceUiTransitionCompletion;
-    std::uint64_t m_serviceUiTransitionSerial = 0;
-    std::uint64_t m_nextServiceUiTransitionSerial = 1;
-    double m_serviceUiTransitionFailSafeDeadline = 0.0;
-
     double m_loadingUiProgress = 0.05;
     std::string m_loadingUiStageKey = "loading.boot";
     std::string m_loadingUiEnglishFallback = "BOOT";
 
-    GameUiController m_gameUi;
+    GamePresentationCoordinator m_gameUi;
+    GameUiTarget m_sessionResumeTarget =
+        GameUiTarget::forFlight(FlightPresentationView::Front);
+    GameUiTarget m_lastFlightTarget =
+        GameUiTarget::forFlight(FlightPresentationView::Front);
+    bool m_localSessionPausedByMenu = false;
+    std::function<void()> m_afterPresentationCommit;
 
     #ifdef _WIN32
-        GameWebView m_gameWebView;
-        bool m_systemMapPanelPrepared = false;
-        bool m_systemMapPanelNavigationPending = false;
-        bool m_systemMapPanelStateRequested = false;
-        bool m_systemMapPanelPrewarmPending = false;
+        GameWebView m_documentWebViews[2];
+        int m_activeDocumentSurface = 0;
+        int m_stagingDocumentSurface = 1;
     #endif
 };

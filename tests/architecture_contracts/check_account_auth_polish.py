@@ -43,7 +43,7 @@ for token in (
     if token not in session:
         fail(f"wire/session account-handle contract missing: {token}")
 
-if "WireProtocolVersion = 8u" not in wire:
+if "WireProtocolVersion = 9u" not in wire:
     fail("SessionHello schema changed without wire protocol version bump")
 if "AccountHandleMaxLength" not in wire:
     fail("wire decoder does not bound AccountHandle before authoritative validation")

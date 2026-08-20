@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
 #include <string>
 
 #include "src/game/client/ClientRequestStatus.h"
@@ -29,20 +28,30 @@ public:
     void resetPendingRequests();
     void setUniverseTimelineRevision(std::uint64_t revision);
 
+    // Galaxy remains an RPC because the response still carries server-owned
+    // jurisdiction/world-knowledge overlays not present in SimulationSnapshot.
     bool requestGalaxy(bool forceRefresh = false);
-    bool requestSystem(int systemId, bool forceRefresh = false);
-    bool requestDetail(
+
+    // System/Detail/Hub are endpoint-local presentation composition. The epoch
+    // is the metadata of an already accepted SimulationSnapshot; no map RPC or
+    // second server-time handshake is allowed on this path.
+    bool composeSystem(
+        int systemId,
+        const game::network::SnapshotMetadata& sourceMetadata,
+        double universeTimeScale,
+        const std::string& universeDate
+    );
+    bool composeDetail(
         const world::celestial::DetailTarget& target,
-        bool forceRefresh = false);
-    bool requestHub(
+        const game::network::SnapshotMetadata& sourceMetadata
+    );
+    bool composeHub(
         int systemId,
         const std::string& hubId,
-        bool forceRefresh = false);
+        const game::network::SnapshotMetadata& sourceMetadata
+    );
 
     ClientRequestStatus galaxyStatus() const;
-    ClientRequestStatus systemStatus() const;
-    ClientRequestStatus detailStatus() const;
-    ClientRequestStatus hubStatus() const;
 
     const game::network::SnapshotMetadata& galaxyMetadata() const;
     const game::network::SnapshotMetadata& systemMetadata() const;
@@ -75,53 +84,8 @@ private:
     void fail(RequestState& state);
     void cancel(RequestState& state);
     bool advanceTimeout(RequestState& state, float dt);
-
     void sendGalaxyRequest();
-    void sendSystemRequest();
-    void sendDetailRequest();
-    void sendHubRequest();
-    bool acceptsTimeline(
-        const game::network::SnapshotMetadata& metadata
-    ) const;
-
-    enum class SystemResponseResult
-    {
-        Ready,
-        AwaitingSimulationHistory,
-        RetryFreshResponse,
-        Failed
-    };
-
-    SystemResponseResult tryCompleteSystemResponse(
-        game::network::SystemMapResponse& response
-    );
-    void retrySystemRequestOrFail();
-
-    enum class DetailResponseResult
-    {
-        Ready,
-        AwaitingSimulationHistory,
-        RetryFreshResponse,
-        Failed
-    };
-
-    DetailResponseResult tryCompleteDetailResponse(
-        game::network::DetailMapResponse& response
-    );
-    void retryDetailRequestOrFail();
-
-    enum class HubResponseResult
-    {
-        Ready,
-        AwaitingSimulationHistory,
-        RetryFreshResponse,
-        Failed
-    };
-
-    HubResponseResult tryCompleteHubResponse(
-        game::network::HubMapResponse& response
-    );
-    void retryHubRequestOrFail();
+    bool acceptsTimeline(const game::network::SnapshotMetadata& metadata) const;
 
 private:
     ITransport& m_transport;
@@ -131,20 +95,6 @@ private:
     std::uint64_t m_universeTimelineRevision = 0;
 
     RequestState m_galaxyRequest;
-    RequestState m_systemRequest;
-    RequestState m_detailRequest;
-    RequestState m_hubRequest;
-
-    int m_requestedSystemId = -1;
-    world::celestial::DetailTarget m_requestedDetailTarget;
-    int m_requestedHubSystemId = -1;
-    std::string m_requestedHubId;
-    std::optional<game::network::SystemMapResponse>
-        m_deferredSystemResponse;
-    std::optional<game::network::DetailMapResponse>
-        m_deferredDetailResponse;
-    std::optional<game::network::HubMapResponse>
-        m_deferredHubResponse;
 
     bool m_hasGalaxy = false;
     bool m_hasSystem = false;

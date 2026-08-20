@@ -105,6 +105,13 @@ add_executable(EliteGame
     src/window/Window.cpp
 
     src/ui/MainMenuState.cpp
+    src/ui/presentation/GamePresentationCoordinator.cpp
+    src/ui/presentation/PresentationFunctionKeyRouter.cpp
+    src/ui/services/ServiceUiRegistry.cpp
+    src/ui/services/GovernmentServicesUi.cpp
+    src/ui/services/ShipyardUi.cpp
+    src/ui/services/RepairRefitUi.cpp
+    src/ui/services/TradeUi.cpp
     src/ui/HudRenderer.cpp
     src/ui/hud/HudEdgeMapper.cpp
 
@@ -181,7 +188,7 @@ add_executable(EliteGame
     src/game/presentation/GalaxyNavigationPresentation.cpp
     src/game/presentation/StarSystemLabelPresentation.cpp
     src/game/presentation/SystemMapPanelPresentation.cpp
-    src/game/ui/SystemMapUiCommandRouter.cpp
+    src/ui/presentation/InSessionPresentationRenderer.cpp
 
     src/game/client/ClientWorldState.cpp
     src/game/server/GameServer.cpp
@@ -373,7 +380,6 @@ add_executable(EliteGame
     src/game/client/ClientMapService.cpp
     src/game/client/ClientCatalogService.cpp
 
-    src/game/client/MapTransitionController.cpp
     src/game/system_map/AuthoritativeMapInterpolator.cpp
     src/world/celestial/CelestialRuntimeRegistry.cpp
 )
@@ -702,6 +708,7 @@ target_link_libraries(EliteGame PRIVATE
     shlwapi
     user32
     version
+    dwmapi
 
     # Порядок важен - сначала наши, потом системные
     ${FREETYPE_LIBRARY}

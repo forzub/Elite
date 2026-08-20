@@ -13,7 +13,6 @@
 #include "src/game/client/ClientHubTacticalPrediction.h"
 #include "src/game/client/HubFramePresentation.h"
 #include "src/game/client/ReferenceFramePresentation.h"
-#include "src/game/client/MapTransitionController.h"
 #include "src/game/navigation/DynamicMotionState.h"
 #include "src/game/navigation/HubNavigationFrame.h"
 #include "src/game/navigation/ReferenceFrame.h"
@@ -225,29 +224,20 @@ void testRuntimeSystemPolicyRejectsCoordinateAliasingAcrossSystems()
     REQUIRE(!canCreateInActiveRuntimeSystem(-1, 0));
 }
 
-void testTimelineRevisionIsInterpolationFence()
+void testSnapshotMetadataEpochIsSelfContained()
 {
-    game::network::SnapshotMetadata map;
-    game::network::SnapshotMetadata simulation;
+    game::network::SnapshotMetadata metadata;
+    metadata.serverTick = 101;
+    metadata.serverTimeSeconds = 12.5;
+    metadata.universeTimeSeconds = 42.0;
+    metadata.universeTimelineRevision = 7;
 
-    map.serverTick = 100;
-    simulation.serverTick = 101;
-    map.universeTimelineRevision = 7;
-    simulation.universeTimelineRevision = 7;
-
-    REQUIRE(
-        game::client::MapTransitionController::simulationHasReached(
-            map,
-            simulation));
-
-    simulation.universeTimelineRevision = 8;
-    simulation.serverTick = 1000000;
-
-    REQUIRE(
-        !game::client::MapTransitionController::simulationHasReached(
-            map,
-            simulation));
+    REQUIRE(metadata.serverTick == 101);
+    REQUIRE_NEAR(metadata.serverTimeSeconds, 12.5, 1.0e-12);
+    REQUIRE_NEAR(metadata.universeTimeSeconds, 42.0, 1.0e-12);
+    REQUIRE(metadata.universeTimelineRevision == 7);
 }
+
 
 void testCloudMotionPolicyHasObservableDebugContract()
 {
@@ -670,8 +660,8 @@ int main()
             testRuntimeSystemPolicyRejectsCoordinateAliasingAcrossSystems
         },
         {
-            "timeline revision is interpolation fence",
-            testTimelineRevisionIsInterpolationFence
+            "simulation snapshot metadata is a complete map epoch",
+            testSnapshotMetadataEpochIsSelfContained
         },
         {
             "cloud debug speed has observable behavior",

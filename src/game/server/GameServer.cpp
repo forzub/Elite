@@ -5,8 +5,6 @@
 #include "src/game/network/ClientMessage.h"
 #include <algorithm>
 #include <iostream>
-#include <fstream>
-#include <iomanip>
 #include <stdexcept>
 
 #include "src/world/coordinates/WorldPosition.h"
@@ -16,7 +14,6 @@
 #include <utility>
 
 #include "src/world/celestial/SystemMapTypes.h"
-#include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/world_state/InitialWorldState.h"
 #include "src/game/navigation/GalaxyNavigationConfig.h"
 #include "src/game/navigation/PlayerSpatialDomainResolver.h"
@@ -29,90 +26,7 @@ namespace {
 
 
 
-    void appendSystemMapMotionDebugCsv(
-        const world::celestial::CelestialSystemDefinition& system,
-        const world::celestial::CelestialSystemSnapshot& celestial,
-        double universeTimeSeconds,
-        game::diagnostics::ServerDiagnostics& diagnostics
-    )
-    {
-        if (!diagnostics.settings.systemMapMotionCsv)
-            return;
 
-        double& lastLoggedUniverseTime =
-            diagnostics.server.systemMapLastLoggedUniverseTime;
-
-        // This diagnostic is explicitly opt-in. Normal System-map requests no
-        // longer resolve/build deterministic celestial presentation on the
-        // authoritative server just so the client can draw it.
-        if (lastLoggedUniverseTime >= 0.0 &&
-            std::abs(universeTimeSeconds - lastLoggedUniverseTime) < 1.0)
-        {
-            return;
-        }
-
-        lastLoggedUniverseTime = universeTimeSeconds;
-
-        const char* path = "system_map_motion.csv";
-        std::ifstream check(path);
-        const bool needHeader = !check.good();
-        check.close();
-
-        std::ofstream out(path, std::ios::app);
-        if (!out.is_open())
-            return;
-
-        if (needHeader)
-        {
-            out
-                << "universe_time,system_id,body_id,body_name,type,"
-                << "x_au,y_au,z_au,orbit_radius_au,draw_orbit\n";
-        }
-
-        for (const auto& body : system.bodies)
-        {
-            if (body.type != world::celestial::BodyType::Planet &&
-                body.type != world::celestial::BodyType::Moon)
-            {
-                continue;
-            }
-
-            glm::dvec3 positionAu = body.staticPositionAu;
-            for (const auto& state : celestial.bodies)
-            {
-                if (state.id == body.id)
-                {
-                    positionAu = state.positionAu;
-                    break;
-                }
-            }
-
-            out
-                << std::fixed
-                << std::setprecision(6)
-                << universeTimeSeconds
-                << ","
-                << system.systemId
-                << ",\""
-                << body.id
-                << "\",\""
-                << body.name
-                << "\","
-                << world::celestial::toString(body.type)
-                << ","
-                << std::setprecision(12)
-                << positionAu.x
-                << ","
-                << positionAu.y
-                << ","
-                << positionAu.z
-                << ","
-                << body.distanceAu
-                << ","
-                << (body.distanceAu > 0.0 ? 1 : 0)
-                << "\n";
-        }
-    }
 
 
 
@@ -903,41 +817,16 @@ void GameServer::processPendingMapRequests()
             {
                 using RequestT = std::decay_t<decltype(typedRequest)>;
 
-                if constexpr (std::is_same_v<RequestT, game::network::GalaxyMapRequest>)
-                {
-                    game::network::GalaxyMapResponse response;
-                    response.requestId = typedRequest.requestId;
-                    response.metadata = metadata;
-                    response.snapshot = buildGalaxyMapSnapshot();
-                    queueMapResponse(sessionId, std::move(response));
-                }
-                else if constexpr (std::is_same_v<RequestT, game::network::SystemMapRequest>)
-                {
-                    game::network::SystemMapResponse response;
-                    response.requestId = typedRequest.requestId;
-                    response.metadata = metadata;
-                    response.systemId = typedRequest.systemId;
-                    response.snapshot =
-                        buildSystemMapSnapshot(typedRequest.systemId);
-                    queueMapResponse(sessionId, std::move(response));
-                }
-                else if constexpr (std::is_same_v<RequestT, game::network::DetailMapRequest>)
-                {
-                    game::network::DetailMapResponse response;
-                    response.requestId = typedRequest.requestId;
-                    response.metadata = metadata;
-                    response.target = typedRequest.target;
-                    queueMapResponse(sessionId, std::move(response));
-                }
-                else if constexpr (std::is_same_v<RequestT, game::network::HubMapRequest>)
-                {
-                    game::network::HubMapResponse response;
-                    response.requestId = typedRequest.requestId;
-                    response.metadata = metadata;
-                    response.systemId = typedRequest.systemId;
-                    response.hubId = typedRequest.hubId;
-                    queueMapResponse(sessionId, std::move(response));
-                }
+                static_assert(
+                    std::is_same_v<RequestT, game::network::GalaxyMapRequest>,
+                    "MapRequest must remain Galaxy-only until another map RPC carries unique authoritative data"
+                );
+
+                game::network::GalaxyMapResponse response;
+                response.requestId = typedRequest.requestId;
+                response.metadata = metadata;
+                response.snapshot = buildGalaxyMapSnapshot();
+                queueMapResponse(sessionId, std::move(response));
             },
             pending.request
         );
@@ -1626,139 +1515,6 @@ namespace
 
 
 }
-
-
-
-
-
-
-
-
-
-
-
-world::celestial::SystemMapSnapshot
-GameServer::buildSystemMapSnapshot(
-    int systemId
-) const
-{
-    world::celestial::SystemMapSnapshot out;
-
-    const auto* system =
-        m_starAtlas.findSystem(systemId);
-
-    if (!system)
-        return out;
-
-    // The physical system id and authoritative epoch are enough for the
-    // client to compose static System-map identity/placement from its local
-    // StarAtlas.
-    out.systemId = system->systemId;
-
-    out.universeTimeSeconds =
-        m_universeClock.timeSeconds();
-
-    out.universeTimeScale =
-        m_universeClock.timeScale();
-
-    out.universeDate =
-        m_universeClock.dateTimeString();
-
-
-
-
-
-
-
-
-    /*
-        System-map celestial bodies are deterministic catalog presentation.
-        ClientMapService reconstructs them from its local StarAtlas and
-        CelestialRuntimeRegistry at this response's universe-time epoch. This
-        keeps predictable map geometry off the authoritative server. Production
-        dynamic ships/hubs/infrastructure are joined from ordinary replication
-        on the client at this response epoch.
-
-        The motion CSV is an explicit server diagnostic, so it may resolve the
-        celestial state on demand only when that diagnostic is enabled.
-    */
-    if (m_diagnostics.settings.systemMapMotionCsv)
-    {
-        if (const auto* celestial = celestialSnapshotForSystem(systemId))
-        {
-            appendSystemMapMotionDebugCsv(
-                *system,
-                *celestial,
-                out.universeTimeSeconds,
-                m_diagnostics
-            );
-        }
-    }
-
-    /*
-        Production infrastructure/hubs are intentionally absent here. Their
-        authoritative identity, ownership, bindings and transforms leave the
-        server through ordinary SimulationSnapshot replication. ClientMapService
-        samples that retained history at this response's exact server-time epoch
-        and composes the System-map infrastructure layer locally.
-    */
-
-    /*
-        Ordinary player/NPC ships are intentionally absent here. Their
-        authoritative transforms already leave the server through the normal
-        SimulationSnapshot stream. ClientMapService samples that retained
-        replication history at this response's exact server-time epoch and
-        constructs the System-map ship layer locally, avoiding a second
-        network channel for the same moving entities.
-    */
-
-
-    // Presentation-only analytic reference used by Hub Motion Lab. It is not a
-    // gameplay entity and has no physics state; maps evaluate the same shared
-    // time function only so the reference remains visible while diagnosing
-    // spatial-domain transitions.
-    if (game::diagnostics::HubMotionLabEnabled &&
-        systemId == game::diagnostics::HubMotionLabSystemId)
-    {
-        const auto* frame =
-            m_simulation.hubNavigationFrame(
-                std::string(game::diagnostics::HubMotionLabHubId)
-            );
-
-        if (frame && frame->valid)
-        {
-            const auto pose =
-                game::diagnostics::evaluateHubMotionLabCube(
-                    m_simulation.serverTime()
-                );
-
-            world::celestial::SystemMapObject cube;
-            cube.stableId = "diagnostic:hub_motion_lab_cube";
-            cube.name = "LAB ANALYTIC CUBE";
-            cube.parentBodyId = frame->parentBodyId;
-            cube.kind = world::celestial::SystemMapObjectKind::Ship;
-            cube.positionAu =
-                frame->localToWorldPosition(pose.localPositionMeters) /
-                world::celestial::MetersPerAu;
-            cube.systemId = frame->systemId;
-            cube.hasOrbit = false;
-            out.objects.push_back(std::move(cube));
-        }
-    }
-
-
-
-    return out;
-}
-
-
-
-
-
-
-
-
-
 
 
 

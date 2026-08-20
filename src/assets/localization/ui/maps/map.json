@@ -149,6 +149,13 @@
       "es": "SISTEMA",
       "ja": "星系"
     },
+    "map.space": {
+      "en": "SPACE",
+      "ru": "ПРОСТРАНСТВО",
+      "zh-Hans": "空间",
+      "es": "ESPACIO",
+      "ja": "空間"
+    },
     "map.detail": {
       "en": "DETAIL",
       "ru": "ДЕТАЛИ",

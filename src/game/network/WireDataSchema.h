@@ -669,28 +669,6 @@ ELITE_WIRE_SCHEMA(
 // this schema only serializes the fields that actually exist in MapResponse.
 // -------------------------------------------------------------------------
 ELITE_WIRE_SCHEMA(
-    world::celestial::DetailSpatialCell,
-    v.level,
-    v.maximumLevel,
-    v.x,
-    v.y,
-    v.z,
-    v.centerAu,
-    v.edgeAu
-);
-
-ELITE_WIRE_SCHEMA(
-    world::celestial::DetailTarget,
-    v.sceneKind,
-    v.focusClass,
-    v.systemId,
-    v.systemPositionLy,
-    v.anchorId,
-    v.focusId,
-    v.spatialCell
-);
-
-ELITE_WIRE_SCHEMA(
     world::celestial::GalaxyMapSystem,
     v.id,
     v.name,
@@ -719,152 +697,14 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
-    world::celestial::CelestialBodyDisplayName,
-    v.name,
-    v.actors
-);
-
-ELITE_WIRE_SCHEMA(
-    world::celestial::SystemMapRingVisualProfile,
-    v.displayProfile,
-    v.renderMode,
-    v.recognizabilityPriority,
-    v.artisticWidthScale,
-    v.mainBandEmphasis,
-    v.secondaryBandEmphasis,
-    v.faintBandEmphasis,
-    v.diffuseBandEmphasis,
-    v.gapContrast,
-    v.radialStructureStrength,
-    v.fineStructureStrength,
-    v.edgeSoftnessScale,
-    v.brightnessVariation,
-    v.minimumVisibleWidthPx,
-    v.minimumMainBandWidthPx,
-    v.continuousFill,
-    v.particleDensity,
-    v.particleOpacityScale,
-    v.particleSizePxRange,
-    v.radialJitter,
-    v.azimuthalClumping,
-    v.clusterScale,
-    v.softness,
-    v.artisticOcclusionEnabled,
-    v.backHalfBrightness,
-    v.innerEdgeDarkening
-);
-
-ELITE_WIRE_SCHEMA(
-    world::celestial::SystemMapRing,
-    v.name,
-    v.innerRadiusKm,
-    v.outerRadiusKm,
-    v.composition,
-    v.tint,
-    v.opacity,
-    v.opticalDepth,
-    v.radialNoiseStrength,
-    v.radialBrightnessVariation,
-    v.azimuthalAsymmetry,
-    v.edgeSoftness,
-    v.visibilityClass,
-    v.displayMode,
-    v.visualOpacityScale,
-    v.radialStructureScale,
-    v.particleDensityScale,
-    v.particleClumpiness,
-    v.particleRadialJitter,
-    v.particleSizePxRange,
-    v.castsShadow
-);
-
-ELITE_WIRE_SCHEMA(
-    world::celestial::SystemMapBody,
-    v.id,
-    v.name,
-    v.alternativeNames,
-    v.parentId,
-    v.environmentPresetId,
-    v.type,
-    v.positionAu,
-    v.orbitCenterAu,
-    v.orbitRadiusAu,
-    v.drawOrbit,
-    v.orbitalPeriodDays,
-    v.orbitalDirection,
-    v.orbitalPhaseOffsetRad,
-    v.radiusKm,
-    v.rotationPhaseRad,
-    v.dayLengthHours,
-    v.rotationDirection,
-    v.axialTiltDeg,
-    v.axisNodeDeg,
-    v.textureLongitudeOffsetDeg,
-    v.color,
-    v.ringPlaneInclinationOffsetDeg,
-    v.ringVisual,
-    v.rings
-);
-
-ELITE_WIRE_SCHEMA(
-    world::celestial::SystemMapObject,
-    v.id,
-    v.stableId,
-    v.name,
-    v.owner,
-    v.parentBodyId,
-    v.kind,
-    v.positionAu,
-    v.systemId,
-    v.hasOrbit,
-    v.orbitCenterAu,
-    v.orbitRadiusAu,
-    v.orbitInclinationDeg,
-    v.orbitLongitudeOfAscendingNodeDeg,
-    v.orbitArgumentOfPeriapsisDeg
-);
-
-ELITE_WIRE_SCHEMA(
-    world::celestial::SystemMapSnapshot,
-    v.systemId,
-    v.systemName,
-    v.universeTimeSeconds,
-    v.universeTimeScale,
-    v.universeDate,
-    v.bodies,
-    v.objects,
-    v.systemPositionLy
-);
-
-ELITE_WIRE_SCHEMA(
     game::network::GalaxyMapResponse,
     v.requestId,
     v.metadata,
     v.snapshot
 );
 
-ELITE_WIRE_SCHEMA(
-    game::network::SystemMapResponse,
-    v.requestId,
-    v.metadata,
-    v.systemId,
-    v.snapshot
-);
 
-ELITE_WIRE_SCHEMA(
-    game::network::DetailMapResponse,
-    v.requestId,
-    v.metadata,
-    v.target
-);
 
-ELITE_WIRE_SCHEMA(
-    game::network::HubMapResponse,
-    v.requestId,
-    v.metadata,
-    v.systemId,
-    v.hubId
-);
 
 #undef ELITE_WIRE_ENUM_RANGE
 #undef ELITE_WIRE_SCHEMA

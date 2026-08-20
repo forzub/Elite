@@ -186,13 +186,7 @@ public:
     ) const;
 
     world::celestial::GalaxyMapSnapshot buildGalaxyMapSnapshot() const;
-
-    world::celestial::SystemMapSnapshot buildSystemMapSnapshot(
-        int systemId
-    ) const;
-
-
-    void setDiagnosticsSettings(
+void setDiagnosticsSettings(
         const game::diagnostics::ServerDiagnosticsSettings& settings
     );
 

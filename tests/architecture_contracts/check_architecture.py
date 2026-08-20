@@ -51,7 +51,6 @@ diagnostic_session = SRC / "game/simulation/UniverseDiagnosticTrajectorySession.
 client_cpp = SRC / "game/client/GameClient.cpp"
 client_world_cpp = SRC / "game/client/ClientWorldState.cpp"
 client_map_cpp = SRC / "game/client/ClientMapService.cpp"
-transition_cpp = SRC / "game/client/MapTransitionController.cpp"
 interpolator_h = SRC / "game/system_map/AuthoritativeMapInterpolator.h"
 space_cpp = SRC / "game/SpaceState.cpp"
 space_h = SRC / "game/SpaceState.h"
@@ -211,10 +210,6 @@ for required in (
 ):
     if required not in client_map_text:
         fail(client_map_cpp, f"map cache revision fence is incomplete: {required}")
-
-transition_text = text(transition_cpp)
-if "mapMetadata.universeTimelineRevision !=" not in transition_text:
-    fail(transition_cpp, "map transition can bridge different timeline revisions")
 
 interpolator_text = text(interpolator_h)
 for required in (

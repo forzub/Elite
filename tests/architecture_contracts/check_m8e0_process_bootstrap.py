@@ -50,7 +50,8 @@ if "m_failed = true;\n        m_error = m_transport->lastError();" in remote_cpp
 
 for token in (
     "m_gameUiHttpPort = m_htmlUi.start(0, webUiRoot);",
-    "makeGameUiHttpUrl(m_gameUiHttpPort",
+    "makeGameUiHttpUrl(",
+    "m_gameUiHttpPort",
     "std::uint16_t m_gameUiHttpPort = 0",
 ):
     if token not in app_cpp + app_h:

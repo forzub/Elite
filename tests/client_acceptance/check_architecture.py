@@ -14,8 +14,7 @@ HUD_PRESENTATION = ROOT / "src/game/presentation/ClientHudPresentation.cpp"
 GALAXY_NAV_PRESENTATION = ROOT / "src/game/presentation/GalaxyNavigationPresentation.cpp"
 SKY_LABEL_PRESENTATION = ROOT / "src/game/presentation/StarSystemLabelPresentation.cpp"
 MAP_PANEL_PRESENTATION = ROOT / "src/game/presentation/SystemMapPanelPresentation.cpp"
-MAP_ROUTER = ROOT / "src/game/ui/SystemMapUiCommandRouter.cpp"
-MAP_PANEL_HTML = ROOT / "src/assets/webui/system_map_panel.html"
+IN_SESSION_RENDERER = ROOT / "src/ui/presentation/InSessionPresentationRenderer.cpp"
 GALAXY_MAP_RENDERER = ROOT / "src/game/system_map/GalaxyMapRenderer.cpp"
 SYSTEM_MAP_COMMON = ROOT / "src/game/system_map/SystemMapRendererCommon.inl"
 STARFIELD_RENDERER = ROOT / "src/render/starfield/GalaxyStarfieldRenderer.cpp"
@@ -44,8 +43,7 @@ hud_presentation = read(HUD_PRESENTATION)
 galaxy_nav_presentation = read(GALAXY_NAV_PRESENTATION)
 sky_label_presentation = read(SKY_LABEL_PRESENTATION)
 map_panel_presentation = read(MAP_PANEL_PRESENTATION)
-map_router = read(MAP_ROUTER)
-map_panel_html = read(MAP_PANEL_HTML)
+in_session_renderer = read(IN_SESSION_RENDERER)
 galaxy_map_renderer = read(GALAXY_MAP_RENDERER)
 system_map_common = read(SYSTEM_MAP_COMMON)
 starfield_renderer = read(STARFIELD_RENDERER)
@@ -61,29 +59,33 @@ required_harness_tokens = (
     "session.advance",
     "client.update",
     "requestGalaxyMapSnapshot",
-    "requestSystemMapSnapshot",
-    "requestDetailMapSnapshot",
-    "requestHubMapSnapshot",
+    "composeSystemMapSnapshot",
+    "composeDetailMapSnapshot",
+    "composeHubMapSnapshot",
     "acknowledgedControlTick",
     "buildPlayerHudTelemetry",
     "buildFlightVectorIndicatorPresentation",
     "applyPlayerHudTelemetry",
-    "parseSystemMapUiCommand",
-    "dispatchSystemMapUiCommand",
-    "buildSystemMapPanelPayload",
+    "buildSystemMapPanelPresentation",
     "resolveGalaxyPlayerMarkerPosition",
     "buildGameSystemSkyLabel",
     "CoordinateDisplayService",
-    "consumeF9Press",
-    "consumeF10Press",
-    "consumeF11Press",
-    "consumeF12Press",
+    "directTargetForFunctionKey",
+    "F1-F12 DIRECT SELECTOR + F9-F12 GENERATION ROUTING",
     "constellationOverlayEnabled",
 )
 
 for token in required_harness_tokens:
     if token not in harness:
         fail(f"production-path token disappeared: {token}")
+
+for stale_map_rpc in (
+    "requestSystemMapSnapshot",
+    "requestDetailMapSnapshot",
+    "requestHubMapSnapshot",
+):
+    if stale_map_rpc in harness:
+        fail(f"client acceptance harness still exercises removed map RPC: {stale_map_rpc}")
 
 for forbidden in (
     ".world().predict(",
@@ -99,32 +101,58 @@ for forbidden in (
 if "updateFromKeyState(control, keys, currentLocalControlLaw)" not in mapper:
     fail("runtime PlayerInputMapper no longer shares the injectable mapping path")
 
-# Function-key map layout is now a protected player-facing contract.
-for token in (
-    "VK_F9",
-    "VK_F10",
-    "VK_F11",
-    "VK_F12",
-    "consumeF9Press",
-    "consumeF10Press",
-    "consumeF11Press",
-    "consumeF12Press",
-    "setSystemMapGalaxyMode()",
-    "setSystemMapPlayerSystemMode()",
-    "setSystemMapPlayerDetailMode()",
-    "setSystemMapPlayerLocalMode()",
-):
-    if token not in application:
-        fail(f"current F9-F12 navigation layout no longer uses: {token}")
+# F1-F12 are one protected player-facing presentation keyboard. Flight is an
+# explicit peer target (F1-F4), services are F5-F8 and maps are F9-F12. The
+# same selector is a no-op; a later selector replaces a still-pending request.
+window = read(ROOT / "src/window/Window.cpp")
+function_router = read(ROOT / "src/ui/presentation/PresentationFunctionKeyRouter.cpp")
 
 for token in (
-    "navigationAction(",
-    "isPlayerNavigationMapLevel(level)",
-    "GameUiNavigationAction::Close",
-    "closeGameUi()",
+    "pollFunctionKeyPress", "FunctionKeyPress", "WM_KEYDOWN", "WM_SYSKEYDOWN",
+    "VK_F1", "VK_F12", "pressedSincePoll", "0x0001",
+):
+    if token not in window:
+        fail(f"message-backed F-key edge capture lost: {token}")
+
+for token in (
+    "directTargetForFunctionKey(functionKey)",
+    "requestPresentationTarget(*target)",
 ):
     if token not in application:
-        fail(f"same-level map close / cross-level switch contract lost: {token}")
+        fail(f"Application no longer consumes direct F1-F12 target events: {token}")
+
+for token in (
+    "case 9: return GameUiTarget::forNavigation(NavigationPresentationView::Galaxy)",
+    "case 10: return GameUiTarget::forNavigation(NavigationPresentationView::System)",
+    "case 11: return GameUiTarget::forNavigation(NavigationPresentationView::Detail)",
+    "case 12: return GameUiTarget::forNavigation(NavigationPresentationView::Local)",
+):
+    if token not in function_router:
+        fail(f"F9-F12 direct route lost: {token}")
+
+for token in (
+    "preparePlayerNavigationMapLevel",
+    "m_gameUi.armSceneTarget(requested)",
+    "commitPreparedPresentationAfterSwap",
+):
+    if token not in application + space + space_header:
+        fail(f"F9-F12 one-surface prepare-to-commit chain lost: {token}")
+for obsolete in (
+    "m_mapPanelExpectedStateSerial",
+    "m_mapPanelPreparedStateSerial",
+    "system_map_panel_state_prepared|",
+    "m_mapPanelWebView",
+):
+    if obsolete in application + space + space_header:
+        fail(f"obsolete F9-F12 WebView readiness path returned: {obsolete}")
+
+for forbidden in (
+    "GameUiNavigationAction::Close",
+    "navigationAction(",
+    "closeGameUi()",
+):
+    if forbidden in application:
+        fail(f"function-key routing regressed to toggle/gameplay fallback: {forbidden}")
 
 for token in (
     "PlayerNavigationMapLevel::Galaxy",
@@ -136,16 +164,17 @@ for token in (
     if token not in space:
         fail(f"map hotkey level classifier lost: {token}")
 
-# Ctrl+F10 must remain available to the production flight mapper instead of
-# being consumed as an F10 map command. Application still latches physical F10
-# so releasing Ctrl first cannot turn one chord into a second map command.
+# Ctrl+F10 remains available to the production flight mapper. The application
+# latches every physical F-key edge, but plain F10 navigation is only selected
+# inside the !ctrlDown && !altDown block, so releasing Ctrl cannot create a
+# second map command from the same physical press.
 for token in (
-    "f10PressedEdge",
-    "consumeF10Press(f10Down)",
-    "f10PressedEdge && space && !ctrlDown",
+    "if (sessionReady && !ctrlDown && !altDown)",
+    "functionKey == 11 && ctrlDown && !altDown",
+    "resolveF12HotkeyAction(ctrlDown, altDown, sessionReady)",
 ):
     if token not in application:
-        fail(f"F10/Ctrl+F10 edge separation lost: {token}")
+        fail(f"modified F-key chord separation lost: {token}")
 
 for token in (
     "const bool f10Down = keys.isKeyPressed(GLFW_KEY_F10)",
@@ -169,13 +198,13 @@ for token in (
 for token in (
     "CoordinateDisplayService::instance()",
     ".cycle()",
-    "if (ctrlDown)",
+    "functionKey == 11 && ctrlDown && !altDown",
 ):
     if token not in application:
         fail(f"Ctrl+F11 coordinate-format path no longer uses: {token}")
 
 for token in (
-    "consumeF12Press",
+    "functionKey == 12",
     "resolveF12HotkeyAction",
     "F12HotkeyAction::ToggleConstellations",
     "toggleConstellationOverlay()",
@@ -251,42 +280,16 @@ for forbidden in (
 if "src/render/cockpit/FlightVectorIndicatorRenderer.cpp" not in cmake:
     fail("flight-vector cockpit renderer disappeared from production build")
 
-# Browser command parsing + dispatch must be the exact production seam exercised by acceptance.
-for token in (
-    "parseSystemMapUiCommand(webCommand)",
-    "dispatchSystemMapUiCommand(",
+# The old WebView map-command router was removed with the in-session map panel.
+# F9-F12 and direct map picking now exercise the production map routes without
+# serializing commands through a browser bridge.
+for forbidden in (
+    "parseSystemMapUiCommand",
+    "dispatchSystemMapUiCommand",
+    "ISystemMapUiTarget",
 ):
-    if token not in application:
-        fail(f"Application no longer uses tested map UI seam: {token}")
-
-if "public game::ui::ISystemMapUiTarget" not in space_header:
-    fail("SpaceState no longer implements the tested map UI action target")
-
-for token in (
-    "target->selectSystemMapSystem(command.systemId)",
-    "target->setSystemMapCurrentSystemMode()",
-    "target->setSystemMapGalaxyMode()",
-    "target->setSystemMapHubMode()",
-    "target->setSystemMapLoadedDetailMode()",
-    "target->setSystemMapDetailMode()",
-    "closeSystemMap()",
-):
-    if token not in map_router:
-        fail(f"map command dispatch action disappeared: {token}")
-
-# The actual HTML controls must keep speaking the command vocabulary that the router tests.
-for token in (
-    '"close_system_map"',
-    "`system_map_open_selected:${selectedSystemId}`",
-    '"system_map_current_system"',
-    '"system_map_galaxy"',
-    '"system_map_detail"',
-    '"system_map_planet"',
-    '"system_map_hub"',
-    "`system_map_select:${s.id}`",
-):
-    if token not in map_panel_html:
-        fail(f"system-map panel stopped emitting production command: {token}")
+    if forbidden in application + space + space_header:
+        fail(f"obsolete browser map-command router returned: {forbidden}")
 
 # HUD data must be built from ClientWorldState and applied to the same five UIText IDs
 # created by SpaceState initialization. The architecture guard catches a renamed/missing
@@ -322,43 +325,83 @@ for token in (
     if token not in hud_presentation:
         fail(f"HUD formatting contract disappeared from presenter: {token}")
 
-# Map snapshots -> JSON -> WebView panel is also a tested presentation seam.
+# Map snapshots -> typed native panel presentation is also a tested seam.
+# The in-session side panel must not serialize through JSON or a WebView HWND.
 for token in (
-    "buildSystemMapPanelPayload(input)",
-    '"if (window.setSystemMapPanel) window.setSystemMapPanel("',
+    "buildSystemMapPanelPresentation(input)",
+    "renderInSessionPresentationOverlay()",
 ):
     if token not in space:
-        fail(f"SpaceState map panel no longer uses tested output seam: {token}")
+        fail(f"SpaceState native map-panel seam missing: {token}")
 
 for token in (
-    'payload["mode"]',
-    'payload["currentSystemId"]',
-    'payload["currentSystemName"]',
-    'payload["selectedSystemId"]',
-    'payload["systems"]',
-    'payload["canOpenDetail"]',
-    'payload["canOpenHub"]',
+    "SystemMapPanelPresentation",
+    "SystemMapPanelSystemItem",
+    "panel.currentSystemId",
+    "panel.currentSystemName",
+    "panel.selectedSystemId",
+    "panel.systems",
+    "panel.canOpenDetail",
+    "panel.canOpenHub",
+    "panel.systemLayerIsSpace",
 ):
-    if token not in map_panel_presentation:
-        fail(f"map panel payload contract disappeared: {token}")
-
-# The entry point may be synchronous or asynchronous. The presentation
-# transaction now awaits layout/transition readiness, so pinning this guard
-# to the exact function spelling would reject a valid async implementation.
-if "window.setSystemMapPanel =" not in map_panel_html:
-    fail("WebView map panel entry point disappeared: window.setSystemMapPanel")
+    if token not in map_panel_presentation + harness:
+        fail(f"typed native map panel contract disappeared: {token}")
 
 for token in (
-    "payload.mode",
-    "payload.currentSystemName",
-    "payload.systems",
-    "payload.currentSystemId",
-    "payload.selectedSystemId",
-    "payload.canOpenDetail",
-    "payload.canOpenHub",
+    "testNativeSystemMapPanelActionContract",
+    "resolveSystemMapPanelAction",
+    "SystemMapPanelCommandType::OpenSelectedGalaxyTarget",
+    "SystemMapPanelCommandType::SelectSystem",
+    "SystemMapPanelCommandType::LoadedSystem",
+    "SystemMapPanelCommandType::SelectedDetail",
+    "SystemMapPanelCommandType::Hub",
+    "buildSystemMapPanelNavigationActions",
 ):
-    if token not in map_panel_html:
-        fail(f"WebView map panel stopped consuming tested payload field: {token}")
+    if token not in map_panel_presentation + harness:
+        fail(f"native map panel action contract disappeared: {token}")
+
+for token in (
+    "rebuildUnboundSpatialDetailMap",
+    "empty-sector Details did not compose without a celestial system",
+    "const int selectedId = m_loadedSystemMapId",
+    "setSystemMapLoadedSystemMode()",
+):
+    if token not in game_client + space + harness + read(ROOT / "src/game/client/ClientDetailMapBridge.h"):
+        fail(f"selected empty-space Details regression guard disappeared: {token}")
+
+for forbidden in (
+    "SystemMapPanelActionType::Close",
+    "layout.closeButton",
+    "ToggleMode",
+):
+    if forbidden in map_panel_presentation + in_session_renderer:
+        fail(f"obsolete fixed-slot/close map-panel behavior returned: {forbidden}")
+
+for token in (
+    "renderSystemMapPanel(",
+    "solidRectPx(",
+    "PanelRatio",
+):
+    if token not in in_session_renderer:
+        fail(f"native map panel renderer missing: {token}")
+
+for obsolete_path in (
+    ROOT / "src/assets/webui/system_map_panel.html",
+    ROOT / "src/assets/webui/service_shell.html",
+    ROOT / "src/assets/webui/service_panel.js",
+):
+    if obsolete_path.exists():
+        fail(f"obsolete in-session browser asset survived: {obsolete_path.relative_to(ROOT)}")
+
+for forbidden in (
+    "buildSystemMapPanelPayload",
+    "window.setSystemMapPanel",
+    "system_map_panel_state_prepared|",
+    "m_mapPanelWebView",
+):
+    if forbidden in application + space + map_panel_presentation + in_session_renderer:
+        fail(f"obsolete map-panel browser seam returned: {forbidden}")
 
 # The Galaxy player marker and the side-panel distance must share one production
 # position resolver. Otherwise a ship can move correctly while map navigation
@@ -376,9 +419,9 @@ if "resolveGalaxyPlayerMarkerPosition(" not in galaxy_map_renderer:
     fail("GalaxyMapRenderer no longer uses the tested player-marker resolver")
 
 for token in (
-    "resolveGalaxyPlayerMarkerPosition(*galaxy, *nav)",
+    "resolveGalaxyPlayerMarkerPosition(*input.galaxy, *input.navigation)",
     "candidate.positionLy - playerMarker.positionLy",
-    'item["distanceFromPlayerLy"]',
+    "item.distanceFromPlayerLy",
 ):
     if token not in map_panel_presentation:
         fail(f"map-panel player-distance path no longer uses live player position: {token}")
@@ -409,9 +452,8 @@ for source in (
     "src/game/presentation/GalaxyNavigationPresentation.cpp",
     "src/game/presentation/StarSystemLabelPresentation.cpp",
     "src/game/presentation/SystemMapPanelPresentation.cpp",
-    "src/game/ui/SystemMapUiCommandRouter.cpp",
 ):
     if source not in cmake:
-        fail(f"production presenter/router is not compiled by EliteGame: {source}")
+        fail(f"production presenter is not compiled by EliteGame: {source}")
 
 print("[PASS] client acceptance architecture guard")

@@ -488,137 +488,29 @@ void testMapResponsesRoundTrip()
     galaxy.metadata = metadata;
     galaxy.snapshot.universeTimeSeconds = 20.0;
     galaxy.snapshot.universeDate = "3026-08-14";
+
     world::celestial::GalaxyMapSystem system;
     system.id = 4;
     system.name = "Tau Ceti";
-    system.starType = "G8V";
-    system.starsCount = 1;
     system.positionLy = glm::dvec3(11.0, 12.0, 13.0);
     system.jurisdiction = "independent";
     galaxy.snapshot.systems.push_back(system);
-    world::celestial::GalaxyMapObject galaxyObject;
-    galaxyObject.id = "overlay:test";
-    galaxyObject.name = "Overlay";
-    galaxyObject.objectType = "event";
-    galaxyObject.positionLy = glm::dvec3(1.0, 2.0, 3.0);
-    galaxyObject.description = "runtime overlay";
-    galaxyObject.tags = {"runtime", "test"};
-    galaxy.snapshot.objects.push_back(galaxyObject);
 
-    SystemMapResponse systemResponse;
-    systemResponse.requestId = 1002u;
-    systemResponse.metadata = metadata;
-    systemResponse.systemId = 4;
-    systemResponse.snapshot.systemId = 4;
-    systemResponse.snapshot.systemName = "Tau Ceti";
-    systemResponse.snapshot.universeTimeSeconds = 20.0;
-    systemResponse.snapshot.universeTimeScale = 5.0;
-    systemResponse.snapshot.universeDate = "3026-08-14";
-    systemResponse.snapshot.systemPositionLy = glm::dvec3(11.0, 12.0, 13.0);
-
-    world::celestial::SystemMapBody body;
-    body.id = "tau_ceti_b";
-    body.name = "Tau Ceti b";
-    body.alternativeNames.push_back({"TC-b", {"iau", "local"}});
-    body.parentId = "tau_ceti";
-    body.environmentPresetId = "terrestrial_temperate";
-    body.type = world::celestial::BodyType::Planet;
-    body.positionAu = glm::dvec3(0.1, 0.2, 0.3);
-    body.orbitCenterAu = glm::dvec3(0.0);
-    body.orbitRadiusAu = 0.3;
-    body.drawOrbit = true;
-    body.color = glm::vec4(0.1f, 0.2f, 0.3f, 1.0f);
-    body.ringVisual.displayProfile = "faint";
-    body.ringVisual.renderMode = world::celestial::SystemMapRingDisplayMode::ParticleCloud;
-    world::celestial::SystemMapRing ring;
-    ring.name = "R1";
-    ring.innerRadiusKm = 1000.0;
-    ring.outerRadiusKm = 2000.0;
-    ring.composition = "ice";
-    ring.visibilityClass = world::celestial::SystemMapRingVisibilityClass::Secondary;
-    ring.displayMode = world::celestial::SystemMapRingDisplayMode::LayeredBands;
-    body.rings.push_back(ring);
-    systemResponse.snapshot.bodies.push_back(body);
-
-    world::celestial::SystemMapObject mapObject;
-    mapObject.id = EntityId{123u};
-    mapObject.stableId = "entity:123";
-    mapObject.name = "Remote ship";
-    mapObject.owner = "player-b";
-    mapObject.parentBodyId = "tau_ceti_b";
-    mapObject.kind = world::celestial::SystemMapObjectKind::Ship;
-    mapObject.positionAu = glm::dvec3(0.01, 0.02, 0.03);
-    mapObject.systemId = 4;
-    mapObject.hasOrbit = true;
-    mapObject.orbitCenterAu = glm::dvec3(0.0);
-    mapObject.orbitRadiusAu = 0.05;
-    systemResponse.snapshot.objects.push_back(mapObject);
-
-    DetailMapResponse detail;
-    detail.requestId = 1003u;
-    detail.metadata = metadata;
-    detail.target.sceneKind = world::celestial::DetailSceneKind::SpatialVolume;
-    detail.target.focusClass = world::celestial::DetailObjectClass::Ship;
-    detail.target.systemId = 4;
-    detail.target.systemPositionLy = glm::dvec3(11.0, 12.0, 13.0);
-    detail.target.anchorId = "anchor";
-    detail.target.focusId = "entity:123";
-    detail.target.spatialCell.level = 6;
-    detail.target.spatialCell.maximumLevel = 6;
-    detail.target.spatialCell.x = 1;
-    detail.target.spatialCell.y = 2;
-    detail.target.spatialCell.z = 3;
-    detail.target.spatialCell.centerAu = glm::dvec3(0.1, 0.2, 0.3);
-    detail.target.spatialCell.edgeAu = 0.001;
-
-    HubMapResponse hub;
-    hub.requestId = 1004u;
-    hub.metadata = metadata;
-    hub.systemId = 4;
-    hub.hubId = "tau_hub";
-
-    std::vector<MapResponse> responses;
-    responses.emplace_back(galaxy);
-    responses.emplace_back(systemResponse);
-    responses.emplace_back(detail);
-    responses.emplace_back(hub);
-
-    for (std::size_t i = 0; i < responses.size(); ++i)
-    {
-        std::vector<std::uint8_t> payload;
-        require(encodeMapResponse(responses[i], payload), "MapResponse encode failed");
-        MapResponse decoded;
-        require(decodeMapResponse(payload, decoded), "MapResponse decode failed");
-        require(decoded.index() == responses[i].index(), "MapResponse variant mismatch");
-    }
-
+    MapResponse response = galaxy;
     std::vector<std::uint8_t> payload;
-    require(encodeMapResponse(responses[0], payload), "GalaxyMapResponse encode failed");
-    MapResponse decodedGalaxyVariant;
-    require(decodeMapResponse(payload, decodedGalaxyVariant), "GalaxyMapResponse decode failed");
-    const auto& decodedGalaxy = std::get<GalaxyMapResponse>(decodedGalaxyVariant);
+    require(encodeMapResponse(response, payload), "GalaxyMapResponse encode failed");
+    MapResponse decoded;
+    require(decodeMapResponse(payload, decoded), "GalaxyMapResponse decode failed");
+    require(std::holds_alternative<GalaxyMapResponse>(decoded),
+        "MapResponse must remain Galaxy-only");
+    const auto& decodedGalaxy = std::get<GalaxyMapResponse>(decoded);
+    require(decodedGalaxy.requestId == 1001u, "GalaxyMapResponse request id mismatch");
     require(decodedGalaxy.snapshot.systems.size() == 1u,
         "GalaxyMapResponse system payload mismatch");
-    require(decodedGalaxy.snapshot.objects[0].tags.size() == 2u,
-        "GalaxyMapResponse nested tags mismatch");
-
-    require(encodeMapResponse(responses[1], payload), "SystemMapResponse encode failed");
-    MapResponse decodedSystemVariant;
-    require(decodeMapResponse(payload, decodedSystemVariant), "SystemMapResponse decode failed");
-    const auto& decodedSystem = std::get<SystemMapResponse>(decodedSystemVariant);
-    require(decodedSystem.snapshot.bodies.size() == 1u,
-        "SystemMapResponse body payload mismatch");
-    require(decodedSystem.snapshot.bodies[0].rings.size() == 1u,
-        "SystemMapResponse ring payload mismatch");
-    require(decodedSystem.snapshot.objects[0].stableId == "entity:123",
-        "SystemMapResponse object payload mismatch");
-
-    require(encodeMapResponse(responses[2], payload), "DetailMapResponse encode failed");
-    MapResponse decodedDetailVariant;
-    require(decodeMapResponse(payload, decodedDetailVariant), "DetailMapResponse decode failed");
-    require(std::get<DetailMapResponse>(decodedDetailVariant).target == detail.target,
-        "DetailMapResponse target mismatch");
+    require(decodedGalaxy.snapshot.systems.front().jurisdiction == "independent",
+        "GalaxyMapResponse jurisdiction overlay mismatch");
 }
+
 
 void testContainerAndEnumValidation()
 {

@@ -353,7 +353,7 @@
         // Native owns the child-HWND visibility boundary. Tell it the page is
         // fully assembled while still physically hidden; native then shows the
         // dark prepared surface and starts the fade-in.
-        await sendCommand('main_menu_prepared');
+        await window.EliteUiKit.sendPresentationCommand('main_menu_prepared');
       }
     }
 
@@ -507,7 +507,7 @@
       mainMenuShell = window.EliteUiKit.createNavigationShell('#main-shell');
       // No default route is made visible here. Native state chooses and fully
       // assembles the first route while elite-ui-boot keeps the page hidden.
-      sendCommand('main_menu_ready');
+      void window.EliteUiKit.sendPresentationCommand('main_menu_ready');
     });
 
     window.applyMainMenuState = applyMainMenuState;

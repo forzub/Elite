@@ -227,7 +227,7 @@ and cross-system/cross-epoch composition is rejected.
 Stage 3B removes ordinary player/NPC ships from `GameServer::buildSystemMapSnapshot`.
 Those transforms already arrive through normal `SimulationSnapshot` replication,
 so `ClientMapService` samples retained authoritative history at the exact
-`SystemMapResponse::metadata.serverTimeSeconds` and composes the map ship layer
+the latest accepted `SimulationSnapshot::metadata.serverTimeSeconds` and composes the map ship layer
 locally. A response that falls between replication publications waits until a
 newer snapshot forms an interpolation bracket; stale responses are rejected
 instead of being silently clamped to another epoch. Cross-system coordinates

@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "strings": {
+    "service.trade.title": {
+      "en": "TRADE",
+      "ru": "ТОРГОВЛЯ",
+      "zh-Hans": "贸易",
+      "es": "COMERCIO",
+      "ja": "交易"
+    }
+  }
+}

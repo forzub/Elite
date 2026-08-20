@@ -35,7 +35,7 @@ namespace game::network::wire
     treat that payload as opaque bytes.
 */
 inline constexpr std::uint32_t WireMagic = 0x454C4954u; // "ELIT"
-inline constexpr std::uint16_t WireProtocolVersion = 8u;
+inline constexpr std::uint16_t WireProtocolVersion = 9u;
 inline constexpr std::uint32_t MaxWirePayloadBytes = 16u * 1024u * 1024u;
 inline constexpr std::uint32_t MaxWireStringBytes = 1024u * 1024u;
 inline constexpr std::size_t WireHeaderBytes = 20u;
@@ -789,74 +789,6 @@ inline bool decodeTimeSyncResponse(
         finishDecode(reader);
 }
 
-inline bool encodeDetailTarget(
-    WireWriter& writer,
-    const world::celestial::DetailTarget& value
-)
-{
-    writer.u8(static_cast<std::uint8_t>(value.sceneKind));
-    writer.u8(static_cast<std::uint8_t>(value.focusClass));
-    writer.i32(value.systemId);
-    writer.dvec3(value.systemPositionLy);
-    if (!writer.string(value.anchorId) || !writer.string(value.focusId))
-        return false;
-
-    writer.i32(value.spatialCell.level);
-    writer.i32(value.spatialCell.maximumLevel);
-    writer.i64(value.spatialCell.x);
-    writer.i64(value.spatialCell.y);
-    writer.i64(value.spatialCell.z);
-    writer.dvec3(value.spatialCell.centerAu);
-    writer.f64(value.spatialCell.edgeAu);
-    return true;
-}
-
-inline bool decodeDetailTarget(
-    WireReader& reader,
-    world::celestial::DetailTarget& outValue
-)
-{
-    std::uint8_t sceneKind = 0;
-    std::uint8_t focusClass = 0;
-    std::int32_t systemId = -1;
-    std::int32_t level = -1;
-    std::int32_t maximumLevel = -1;
-
-    if (!reader.u8(sceneKind) ||
-        !reader.u8(focusClass) ||
-        !reader.i32(systemId) ||
-        !reader.dvec3(outValue.systemPositionLy) ||
-        !reader.string(outValue.anchorId) ||
-        !reader.string(outValue.focusId) ||
-        !reader.i32(level) ||
-        !reader.i32(maximumLevel) ||
-        !reader.i64(outValue.spatialCell.x) ||
-        !reader.i64(outValue.spatialCell.y) ||
-        !reader.i64(outValue.spatialCell.z) ||
-        !reader.dvec3(outValue.spatialCell.centerAu) ||
-        !reader.f64(outValue.spatialCell.edgeAu))
-    {
-        return false;
-    }
-
-    if (sceneKind > static_cast<std::uint8_t>(
-            world::celestial::DetailSceneKind::LocalObject) ||
-        focusClass > static_cast<std::uint8_t>(
-            world::celestial::DetailObjectClass::Hub))
-    {
-        return false;
-    }
-
-    outValue.sceneKind =
-        static_cast<world::celestial::DetailSceneKind>(sceneKind);
-    outValue.focusClass =
-        static_cast<world::celestial::DetailObjectClass>(focusClass);
-    outValue.systemId = systemId;
-    outValue.spatialCell.level = level;
-    outValue.spatialCell.maximumLevel = maximumLevel;
-    return true;
-}
-
 inline bool encodeMapRequest(
     const MapRequest& value,
     std::vector<std::uint8_t>& outPayload
@@ -864,36 +796,12 @@ inline bool encodeMapRequest(
 {
     WireWriter writer;
 
-    if (const auto* request = std::get_if<GalaxyMapRequest>(&value))
-    {
-        writer.u8(0u);
-        writer.u64(request->requestId);
-    }
-    else if (const auto* request = std::get_if<SystemMapRequest>(&value))
-    {
-        writer.u8(1u);
-        writer.u64(request->requestId);
-        writer.i32(request->systemId);
-    }
-    else if (const auto* request = std::get_if<DetailMapRequest>(&value))
-    {
-        writer.u8(2u);
-        writer.u64(request->requestId);
-        if (!encodeDetailTarget(writer, request->target))
-            return false;
-    }
-    else if (const auto* request = std::get_if<HubMapRequest>(&value))
-    {
-        writer.u8(3u);
-        writer.u64(request->requestId);
-        writer.i32(request->systemId);
-        if (!writer.string(request->hubId))
-            return false;
-    }
-    else
-    {
+    const auto* request = std::get_if<GalaxyMapRequest>(&value);
+    if (!request)
         return false;
-    }
+
+    writer.u8(0u);
+    writer.u64(request->requestId);
 
     outPayload = writer.take();
     return outPayload.size() <= MaxWirePayloadBytes;
@@ -906,62 +814,16 @@ inline bool decodeMapRequest(
 {
     WireReader reader(payload);
     std::uint8_t variantTag = 0;
-    if (!reader.u8(variantTag))
-        return false;
+    GalaxyMapRequest request;
 
-    switch (variantTag)
+    if (!reader.u8(variantTag) ||
+        variantTag != 0u ||
+        !reader.u64(request.requestId))
     {
-        case 0u:
-        {
-            GalaxyMapRequest request;
-            if (!reader.u64(request.requestId))
-                return false;
-            outValue = std::move(request);
-            break;
-        }
-
-        case 1u:
-        {
-            SystemMapRequest request;
-            std::int32_t systemId = -1;
-            if (!reader.u64(request.requestId) || !reader.i32(systemId))
-                return false;
-            request.systemId = systemId;
-            outValue = std::move(request);
-            break;
-        }
-
-        case 2u:
-        {
-            DetailMapRequest request;
-            if (!reader.u64(request.requestId) ||
-                !decodeDetailTarget(reader, request.target))
-            {
-                return false;
-            }
-            outValue = std::move(request);
-            break;
-        }
-
-        case 3u:
-        {
-            HubMapRequest request;
-            std::int32_t systemId = -1;
-            if (!reader.u64(request.requestId) ||
-                !reader.i32(systemId) ||
-                !reader.string(request.hubId))
-            {
-                return false;
-            }
-            request.systemId = systemId;
-            outValue = std::move(request);
-            break;
-        }
-
-        default:
-            return false;
+        return false;
     }
 
+    outValue = std::move(request);
     return finishDecode(reader);
 }
 

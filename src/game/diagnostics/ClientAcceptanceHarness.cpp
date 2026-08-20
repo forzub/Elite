@@ -23,7 +23,6 @@
 #include "src/game/presentation/GalaxyNavigationPresentation.h"
 #include "src/game/presentation/StarSystemLabelPresentation.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
-#include "src/game/ui/SystemMapUiCommandRouter.h"
 #include "src/game/debug/IDebugSessionControl.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/host/LocalGameSession.h"
@@ -35,6 +34,7 @@
 #include "src/world/celestial/SystemMapTypes.h"
 #include "src/ui/components/UIContainer.h"
 #include "src/ui/components/UIText.h"
+#include "src/ui/presentation/PresentationFunctionKeyRouter.h"
 
 namespace game::diagnostics
 {
@@ -158,44 +158,62 @@ ShipControlState mapKeys(
 
 void testGameUiToggleContract()
 {
-    GameUiController ui;
+    GamePresentationCoordinator ui;
 
-    require(!ui.isOpen(), "game UI controller no longer starts closed");
+    require(
+        ui.committedTarget() == GameUiTarget::none(),
+        "presentation coordinator no longer starts in boot/none"
+    );
 
-    auto checkLatch = [&](auto consume, const char* name)
+    using ::ui::presentation::directTargetForFunctionKey;
+
+    const GameUiTarget front =
+        GameUiTarget::forFlight(FlightPresentationView::Front);
+    const GameUiTarget galaxy =
+        GameUiTarget::forNavigation(NavigationPresentationView::Galaxy);
+    const GameUiTarget system =
+        GameUiTarget::forNavigation(NavigationPresentationView::System);
+    const GameUiTarget detail =
+        GameUiTarget::forNavigation(NavigationPresentationView::Detail);
+    const GameUiTarget local =
+        GameUiTarget::forNavigation(NavigationPresentationView::Local);
+
+    require(directTargetForFunctionKey(1) == front, "F1 no longer selects Front flight view");
+    require(directTargetForFunctionKey(9) == galaxy, "F9 no longer selects Galaxy");
+    require(directTargetForFunctionKey(10) == system, "F10 no longer selects System");
+    require(directTargetForFunctionKey(11) == detail, "F11 no longer selects Detail");
+    require(directTargetForFunctionKey(12) == local, "F12 no longer selects Local");
+
+    for (int key = 5; key <= 8; ++key)
     {
-        require((ui.*consume)(true), std::string("first ") + name + " press is no longer consumed");
-        require(!(ui.*consume)(true), std::string("held ") + name + " now retriggers instead of latching");
-        require(!(ui.*consume)(false), std::string(name) + " release unexpectedly triggers an action");
-        require((ui.*consume)(true), std::string(name) + " latch did not reset after release");
-        (ui.*consume)(false);
-    };
+        const auto target = directTargetForFunctionKey(key);
+        require(target.has_value(), "F5-F8 service key lost its direct target");
+        require(target->mode == GameUiMode::ServicePanel, "F5-F8 no longer select ServicePanel");
+    }
 
-    checkLatch(&GameUiController::consumeF9Press, "F9");
-    checkLatch(&GameUiController::consumeF10Press, "F10");
-    checkLatch(&GameUiController::consumeF11Press, "F11");
-    checkLatch(&GameUiController::consumeF12Press, "F12");
+    require(ui.requestTarget(front), "F1 flight target was not requestable");
+    require(ui.armSceneTarget(front), "flight scene target was not armed");
+    require(ui.commitRequested(front), "flight target was not committed");
+    require(!ui.requestTarget(front), "same direct selector retriggered instead of no-op");
 
-    require(
-        ui.navigationAction(true) == GameUiNavigationAction::OpenOrSwitch,
-        "closed map UI now treats a function key as close instead of open"
-    );
+    // Every Navigation key must be independently requestable from Flight. A
+    // later physical selector replaces an unpublished destination rather than
+    // being lost behind a separate map-entry latch/state machine.
+    require(ui.requestTarget(galaxy), "F9 galaxy target was not requestable");
+    const std::uint64_t f9Serial = ui.requestedSerial();
+    require(ui.requestTarget(system), "latest F10 request did not replace pending F9");
+    const std::uint64_t f10Serial = ui.requestedSerial();
+    require(f10Serial != f9Serial, "F10 did not create a new presentation generation");
+    require(ui.requestTarget(detail), "latest F11 request did not replace pending F10");
+    require(ui.requestTarget(local), "latest F12 request did not replace pending F11");
+    require(ui.requestedTarget() == local, "F9-F12 latest-request-wins contract failed");
+    require(ui.armSceneTarget(local), "F12 navigation scene target was not armed");
+    require(ui.commitRequested(local), "F12 navigation target was not committed");
 
-    require(ui.open(GameUiMode::SystemMap), "SystemMap UI did not open through direct-open contract");
-    require(ui.isMode(GameUiMode::SystemMap), "SystemMap UI mode was not recorded as open");
-    require(!ui.open(GameUiMode::SystemMap), "opening the same SystemMap mode retriggered state change");
-    require(
-        ui.navigationAction(true) == GameUiNavigationAction::Close,
-        "same F9-F12 level no longer closes an already-visible map"
-    );
-    require(
-        ui.navigationAction(false) == GameUiNavigationAction::OpenOrSwitch,
-        "different F9-F12 level now closes instead of switching maps"
-    );
-    require(ui.close(), "SystemMap UI did not close through close contract");
-    require(!ui.isOpen(), "SystemMap UI remained open after close");
+    // A Navigation target is a direct selector, never a close/toggle action.
+    require(!ui.requestTarget(local), "repeated F12 became a toggle");
 
-    pass("F9-F12 SAME-LEVEL CLOSE + CROSS-LEVEL SWITCH");
+    pass("F1-F12 DIRECT SELECTOR + F9-F12 GENERATION ROUTING");
 }
 
 void testCoordinateDisplayHotkeyContract()
@@ -238,135 +256,110 @@ void testConstellationOverlayContract()
     pass("CTRL+F12 + CONSTELLATION OVERLAY STATE");
 }
 
-class SystemMapUiTargetSpy final : public game::ui::ISystemMapUiTarget
+void testNativeSystemMapPanelActionContract()
 {
-public:
-    void reset()
-    {
-        actions.clear();
-    }
+    using game::presentation::SystemMapPanelActionType;
+    using game::presentation::SystemMapPanelCommandType;
+    using game::presentation::SystemMapPanelPresentation;
+    using game::presentation::buildSystemMapPanelNavigationActions;
+    using game::presentation::resolveSystemMapPanelAction;
+    using game::system_map::MapMode;
 
-    void selectSystemMapSystem(int systemId) override
-    {
-        actions.push_back("select:" + std::to_string(systemId));
-    }
-
-    void setSystemMapGalaxyMode() override
-    {
-        actions.push_back("galaxy");
-    }
-
-    void setSystemMapCurrentSystemMode() override
-    {
-        actions.push_back("current-system");
-    }
-
-    void setSystemMapHubMode() override
-    {
-        actions.push_back("hub");
-    }
-
-    void setSystemMapLoadedDetailMode() override
-    {
-        actions.push_back("loaded-detail");
-    }
-
-    void setSystemMapDetailMode() override
-    {
-        actions.push_back("selected-detail");
-    }
-
-    std::vector<std::string> actions;
-};
-
-void testSystemMapUiCommandContract()
-{
-    using game::ui::SystemMapUiCommandType;
-
-    auto expect = [](
-        const char* text,
-        SystemMapUiCommandType expectedType,
-        int expectedSystemId = -1
-    )
-    {
-        const auto command = game::ui::parseSystemMapUiCommand(text);
-        require(command.has_value(), std::string("map UI command no longer parses: ") + text);
-        require(command->type == expectedType, std::string("map UI command changed meaning: ") + text);
-        require(command->systemId == expectedSystemId, std::string("map UI command changed system id: ") + text);
-    };
-
-    expect("system_map_open_selected:42", SystemMapUiCommandType::OpenSelectedSystem, 42);
-    expect("system_map_select:17", SystemMapUiCommandType::SelectSystem, 17);
-    expect("system_map_galaxy", SystemMapUiCommandType::Galaxy);
-    expect("system_map_current_system", SystemMapUiCommandType::CurrentSystem);
-    expect("system_map_hub", SystemMapUiCommandType::Hub);
-    expect("system_map_detail", SystemMapUiCommandType::LoadedDetail);
-    expect("system_map_planet", SystemMapUiCommandType::SelectedDetail);
-    expect("close_system_map", SystemMapUiCommandType::Close);
-
-    require(!game::ui::parseSystemMapUiCommand("system_map_select:not-a-number"), "malformed map selection command is accepted");
-    require(!game::ui::parseSystemMapUiCommand("system_map_open_selected:-1"), "negative map system id is accepted");
-    require(!game::ui::parseSystemMapUiCommand("unrelated_command"), "unrelated UI command was captured by map router");
-
-    pass("SYSTEM MAP UI COMMAND CONTRACT");
-}
-
-void testSystemMapUiCommandDispatchContract()
-{
-    SystemMapUiTargetSpy target;
-    bool closed = false;
-
-    auto dispatch = [&](const char* text)
-    {
-        target.reset();
-        closed = false;
-
-        const auto command = game::ui::parseSystemMapUiCommand(text);
-        require(command.has_value(), std::string("dispatch input no longer parses: ") + text);
-
-        game::ui::dispatchSystemMapUiCommand(
-            *command,
-            &target,
-            [&]()
-            {
-                closed = true;
-            }
-        );
-    };
-
-    dispatch("system_map_open_selected:42");
     require(
-        target.actions == std::vector<std::string>{"select:42", "current-system"},
-        "open-selected no longer selects a system before entering System mode"
+        resolveSystemMapPanelAction(
+            {SystemMapPanelActionType::OpenSystem, -1},
+            MapMode::Galaxy).type ==
+                SystemMapPanelCommandType::OpenSelectedGalaxyTarget,
+        "Galaxy SYSTEM/SPACE action no longer opens selected system/sector"
     );
-    require(!closed, "open-selected unexpectedly closes map UI");
-
-    dispatch("system_map_select:17");
     require(
-        target.actions == std::vector<std::string>{"select:17"},
-        "system selection command changed action"
+        resolveSystemMapPanelAction(
+            {SystemMapPanelActionType::OpenGalaxy, -1},
+            MapMode::System).type == SystemMapPanelCommandType::Galaxy,
+        "System GALAXY action no longer returns to Galaxy"
+    );
+    require(
+        resolveSystemMapPanelAction(
+            {SystemMapPanelActionType::OpenSystem, -1},
+            MapMode::Detail).type == SystemMapPanelCommandType::LoadedSystem,
+        "Detail SYSTEM/SPACE action no longer returns to loaded map context"
+    );
+    require(
+        resolveSystemMapPanelAction(
+            {SystemMapPanelActionType::OpenDetail, -1},
+            MapMode::Hub).type == SystemMapPanelCommandType::LoadedDetail,
+        "Hub DETAIL action no longer returns to loaded Details scene"
     );
 
-    dispatch("system_map_galaxy");
-    require(target.actions == std::vector<std::string>{"galaxy"}, "Galaxy command changed action");
+    const auto select = resolveSystemMapPanelAction(
+        {SystemMapPanelActionType::SelectSystem, 42},
+        MapMode::Galaxy);
+    require(
+        select.type == SystemMapPanelCommandType::SelectSystem &&
+        select.systemId == 42,
+        "native system dropdown changed selected-system semantics"
+    );
+    require(
+        resolveSystemMapPanelAction(
+            {SystemMapPanelActionType::OpenDetail, -1},
+            MapMode::System).type == SystemMapPanelCommandType::SelectedDetail,
+        "native DETAIL button changed selected-detail semantics"
+    );
+    require(
+        resolveSystemMapPanelAction(
+            {SystemMapPanelActionType::OpenHub, -1},
+            MapMode::System).type == SystemMapPanelCommandType::Hub,
+        "System HUB shortcut no longer opens the selected hub"
+    );
+    require(
+        resolveSystemMapPanelAction(
+            {SystemMapPanelActionType::OpenHub, -1},
+            MapMode::Detail).type == SystemMapPanelCommandType::Hub,
+        "Details HUB button changed Hub semantics"
+    );
+    require(
+        resolveSystemMapPanelAction(
+            {SystemMapPanelActionType::OpenHub, -1},
+            MapMode::Hub).type == SystemMapPanelCommandType::None,
+        "current Hub layer must not resolve to another Hub navigation action"
+    );
 
-    dispatch("system_map_current_system");
-    require(target.actions == std::vector<std::string>{"current-system"}, "current-system command changed action");
+    SystemMapPanelPresentation panel;
+    panel.mode = MapMode::System;
+    panel.canOpenDetail = true;
+    panel.canOpenHub = false;
+    auto navigation = buildSystemMapPanelNavigationActions(panel);
+    require(
+        navigation[0].action == SystemMapPanelActionType::OpenGalaxy &&
+        navigation[0].enabled &&
+        navigation[1].action == SystemMapPanelActionType::OpenDetail &&
+        navigation[1].enabled &&
+        navigation[2].action == SystemMapPanelActionType::OpenHub &&
+        !navigation[2].enabled,
+        "plain System/Space selection must expose Details but not Hub"
+    );
 
-    dispatch("system_map_hub");
-    require(target.actions == std::vector<std::string>{"hub"}, "Hub command changed action");
+    panel.canOpenHub = true;
+    navigation = buildSystemMapPanelNavigationActions(panel);
+    require(
+        navigation[1].enabled && navigation[2].enabled,
+        "selected Hub must expose both Details and Hub from System mode"
+    );
 
-    dispatch("system_map_detail");
-    require(target.actions == std::vector<std::string>{"loaded-detail"}, "loaded Details command changed action");
+    panel.mode = MapMode::Hub;
+    panel.systemLayerIsSpace = true;
+    navigation = buildSystemMapPanelNavigationActions(panel);
+    require(
+        navigation[0].action == SystemMapPanelActionType::OpenDetail &&
+        navigation[0].enabled &&
+        navigation[1].action == SystemMapPanelActionType::OpenSystem &&
+        navigation[1].enabled &&
+        navigation[2].action == SystemMapPanelActionType::OpenGalaxy &&
+        navigation[2].enabled,
+        "Hub navigation hierarchy is not Details -> System/Space -> Galaxy"
+    );
 
-    dispatch("system_map_planet");
-    require(target.actions == std::vector<std::string>{"selected-detail"}, "selected Details command changed action");
-
-    dispatch("close_system_map");
-    require(target.actions.empty(), "close command touched map state target");
-    require(closed, "close command no longer closes map UI");
-
-    pass("SYSTEM MAP UI COMMAND DISPATCH");
+    pass("NATIVE SYSTEM MAP PANEL ACTIONS");
 }
 
 void runFrame(
@@ -1212,11 +1205,9 @@ void testMapDataPipeline(game::host::LocalGameSession& session)
         );
     }
 
-    client.requestSystemMapSnapshot(currentSystemId, true);
-    waitFor(
-        session,
-        [&]() { return client.systemMapSnapshot(currentSystemId) != nullptr; },
-        "System map request did not complete through client/server transport"
+    require(
+        client.composeSystemMapSnapshot(currentSystemId),
+        "System map did not compose from the latest accepted simulation snapshot"
     );
 
     const auto* system = client.systemMapSnapshot(currentSystemId);
@@ -1254,11 +1245,9 @@ void testMapDataPipeline(game::host::LocalGameSession& session)
 
     require(detailTarget.valid(), "derived Details target for selected hub is invalid");
 
-    client.requestDetailMapSnapshot(detailTarget, true);
-    waitFor(
-        session,
-        [&]() { return client.detailMapSnapshot(detailTarget) != nullptr; },
-        "Details map request did not complete through client/server transport"
+    require(
+        client.composeDetailMapSnapshot(detailTarget),
+        "Details map did not compose from the latest accepted simulation snapshot"
     );
 
     const auto* detail = client.detailMapSnapshot(detailTarget);
@@ -1266,14 +1255,52 @@ void testMapDataPipeline(game::host::LocalGameSession& session)
     require(detail->systemId == currentSystemId, "Details map crossed system boundary");
     require(detail->detailTarget == detailTarget, "Details map lost semantic navigation target");
 
-    client.requestHubMapSnapshot(currentSystemId, hubIt->stableId, true);
-    waitFor(
-        session,
-        [&]()
-        {
-            return client.hubMapSnapshot(currentSystemId, hubIt->stableId) != nullptr;
-        },
-        "Hub map request did not complete through client/server transport"
+    // A selected empty Galaxy sector is intentionally not a star system.
+    // Details must preserve that synthetic map context instead of falling
+    // back to the player's current system (which historically jumped to Sol).
+    world::celestial::DetailTarget emptySpaceTarget;
+    emptySpaceTarget.sceneKind =
+        world::celestial::DetailSceneKind::SpatialVolume;
+    emptySpaceTarget.focusClass =
+        world::celestial::DetailObjectClass::None;
+    emptySpaceTarget.systemId = -700001;
+    emptySpaceTarget.systemPositionLy = glm::dvec3(12.5, -4.0, 7.25);
+    emptySpaceTarget.spatialCell.level = 6;
+    emptySpaceTarget.spatialCell.maximumLevel = 6;
+    emptySpaceTarget.spatialCell.x = 81;
+    emptySpaceTarget.spatialCell.y = -27;
+    emptySpaceTarget.spatialCell.z = 9;
+    emptySpaceTarget.spatialCell.centerAu = glm::dvec3(0.25, -0.5, 0.75);
+    emptySpaceTarget.spatialCell.edgeAu = 100.0 / 149597870.7;
+
+    require(
+        emptySpaceTarget.valid(),
+        "terminal empty-sector Details address is rejected as invalid"
+    );
+    require(
+        client.composeDetailMapSnapshot(emptySpaceTarget),
+        "empty-sector Details did not compose without a celestial system"
+    );
+
+    const auto* emptyDetail = client.detailMapSnapshot(emptySpaceTarget);
+    require(emptyDetail && emptyDetail->valid, "empty-sector Details snapshot is invalid");
+    require(!emptyDetail->hasCentralBody, "empty-sector Details fabricated a central body");
+    require(
+        emptyDetail->systemId == emptySpaceTarget.systemId,
+        "empty-sector Details replaced the selected synthetic map id"
+    );
+    require(
+        emptyDetail->systemPositionLy == emptySpaceTarget.systemPositionLy,
+        "empty-sector Details lost the selected Galaxy-sector position"
+    );
+    require(
+        emptyDetail->detailTarget == emptySpaceTarget,
+        "empty-sector Details lost the selected terminal cube address"
+    );
+
+    require(
+        client.composeHubMapSnapshot(currentSystemId, hubIt->stableId),
+        "Hub map did not compose from the latest accepted simulation snapshot"
     );
 
     const auto* hub = client.hubMapSnapshot(currentSystemId, hubIt->stableId);
@@ -1299,52 +1326,56 @@ void testMapDataPipeline(game::host::LocalGameSession& session)
     panelInput.selectedSystemId = currentSystemId;
     panelInput.selectedHubId = hubIt->stableId;
     panelInput.canOpenDetail = true;
+    panelInput.canOpenHub = true;
 
     auto panel =
-        game::presentation::buildSystemMapPanelPayload(panelInput);
+        game::presentation::buildSystemMapPanelPresentation(panelInput);
 
-    require(panel.at("mode") == "System", "map panel lost System mode");
-    require(panel.at("currentSystemId") == currentSystemId, "map panel displays wrong current system");
-    require(panel.at("currentSystemName") == system->systemName, "map panel displays wrong current system name");
-    require(panel.at("selectedSystemId") == currentSystemId, "map panel displays wrong selected system");
-    require(panel.at("selectedHubId") == hubIt->stableId, "map panel displays wrong selected hub");
-    require(panel.at("canOpenDetail") == true, "map panel lost Details availability state");
+    require(panel.mode == game::system_map::MapMode::System, "map panel lost System mode");
+    require(panel.currentSystemId == currentSystemId, "map panel displays wrong current system");
+    require(panel.currentSystemName == system->systemName, "map panel displays wrong current system name");
+    require(panel.selectedSystemId == currentSystemId, "map panel displays wrong selected system");
+    require(panel.selectedHubId == hubIt->stableId, "map panel displays wrong selected hub");
+    require(panel.canOpenDetail, "map panel lost Details availability state");
+    require(panel.canOpenHub, "selected Hub is not directly reachable from System mode");
     require(
-        panel.at("systemsCount").get<std::size_t>() == galaxy->systems.size(),
+        panel.systemsCount == galaxy->systems.size(),
         "map panel systems count differs from Galaxy snapshot"
     );
     require(
-        panel.at("systems").size() == galaxy->systems.size(),
+        panel.systems.size() == galaxy->systems.size(),
         "map panel systems list differs from Galaxy snapshot"
     );
 
     const auto selectedItem = std::find_if(
-        panel.at("systems").begin(),
-        panel.at("systems").end(),
-        [currentSystemId](const nlohmann::json& item)
+        panel.systems.begin(),
+        panel.systems.end(),
+        [currentSystemId](const game::presentation::SystemMapPanelSystemItem& item)
         {
-            return item.at("id").get<int>() == currentSystemId;
+            return item.id == currentSystemId;
         }
     );
-    require(selectedItem != panel.at("systems").end(), "map panel omitted current system row");
-    require(selectedItem->at("current") == true, "map panel current-system marker disappeared");
-    require(selectedItem->at("selected") == true, "map panel selected-system marker disappeared");
+    require(selectedItem != panel.systems.end(), "map panel omitted current system row");
+    require(selectedItem->current, "map panel current-system marker disappeared");
+    require(selectedItem->selected, "map panel selected-system marker disappeared");
 
     panelInput.mode = game::system_map::MapMode::Detail;
     panelInput.canOpenDetail = false;
     panelInput.canOpenHub = true;
-    panel = game::presentation::buildSystemMapPanelPayload(panelInput);
-    require(panel.at("mode") == "Detail", "map panel lost Details mode");
-    require(panel.at("canOpenHub") == true, "map panel lost Hub availability state");
+    panel = game::presentation::buildSystemMapPanelPresentation(panelInput);
+    require(panel.mode == game::system_map::MapMode::Detail, "map panel lost Details mode");
+    require(panel.canOpenHub, "map panel lost Hub availability state");
 
     panelInput.mode = game::system_map::MapMode::Hub;
     panelInput.canOpenHub = false;
-    panel = game::presentation::buildSystemMapPanelPayload(panelInput);
-    require(panel.at("mode") == "Hub", "map panel lost Hub mode");
+    panelInput.systemLayerIsSpace = true;
+    panel = game::presentation::buildSystemMapPanelPresentation(panelInput);
+    require(panel.mode == game::system_map::MapMode::Hub, "map panel lost Hub mode");
+    require(panel.systemLayerIsSpace, "map panel lost System-versus-Space layer identity");
 
     panelInput.mode = game::system_map::MapMode::Galaxy;
-    panel = game::presentation::buildSystemMapPanelPayload(panelInput);
-    require(panel.at("mode") == "Galaxy", "map panel lost Galaxy mode");
+    panel = game::presentation::buildSystemMapPanelPresentation(panelInput);
+    require(panel.mode == game::system_map::MapMode::Galaxy, "map panel lost Galaxy mode");
 
     pass("MAP DATA + PANEL PRESENTATION");
 }
@@ -1479,23 +1510,22 @@ void testGalaxyNavigationFlightPresentation(
     panelInput.currentSystemName = "navigation-flight";
 
     const auto panel =
-        game::presentation::buildSystemMapPanelPayload(panelInput);
+        game::presentation::buildSystemMapPanelPresentation(panelInput);
 
     const auto targetRow =
         std::find_if(
-            panel.at("systems").begin(),
-            panel.at("systems").end(),
-            [&](const nlohmann::json& item)
+            panel.systems.begin(),
+            panel.systems.end(),
+            [&](const game::presentation::SystemMapPanelSystemItem& item)
             {
-                return item.at("id").get<int>() == target->id;
+                return item.id == target->id;
             }
         );
 
-    require(targetRow != panel.at("systems").end(), "selected navigation star disappeared from map panel");
-    require(targetRow->at("selected") == true, "selected navigation star lost its selected marker");
+    require(targetRow != panel.systems.end(), "selected navigation star disappeared from map panel");
+    require(targetRow->selected, "selected navigation star lost its selected marker");
 
-    const double panelDistanceLy =
-        targetRow->at("distanceFromPlayerLy").get<double>();
+    const double panelDistanceLy = targetRow->distanceFromPlayerLy;
 
     require(
         std::abs(panelDistanceLy - afterDistanceLy) < 1.0e-9,
@@ -1522,10 +1552,7 @@ int runClientAcceptanceSelfTest()
         std::cerr << "[SELFTEST] client-acceptance stage=current-function-hotkeys\n";
         testCoordinateDisplayHotkeyContract();
         testConstellationOverlayContract();
-
-        std::cerr << "[SELFTEST] client-acceptance stage=map-ui-command-contract\n";
-        testSystemMapUiCommandContract();
-        testSystemMapUiCommandDispatchContract();
+        testNativeSystemMapPanelActionContract();
 
         std::cerr << "[SELFTEST] client-acceptance stage=construct-local-session\n";
         game::host::LocalGameSession session;

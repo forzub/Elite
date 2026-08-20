@@ -26,7 +26,6 @@ for token in (
     "const bool remoteLaunch =",
     "const std::string sessionError = m_gameSession->error();",
     "stopGameSession();",
-    "m_gameUi.clearLoaded();",
     "showMultiplayerConnectionForm(message);",
     "showMainMenu();",
 ):
@@ -46,7 +45,7 @@ for token in (
 for token in (
     "function setConnectionError(code)",
     "DOMContentLoaded",
-    "sendCommand('main_menu_ready')",
+    "sendPresentationCommand('main_menu_ready')",
     "window.applyMainMenuState",
 ):
     if token not in menu_html:

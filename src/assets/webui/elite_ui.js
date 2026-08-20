@@ -3,10 +3,30 @@
 
   const VERSION = 1;
   const DEFAULT_PASSWORD_LENGTH = 20;
-  const DOCUMENT_TRANSITION_MS = 180;
   const VIEW_TRANSITION_MS = 140;
+  const PRESENTATION_SERIAL = (() => {
+    const raw = new URLSearchParams(window.location.search).get('presentation') || '';
+    return /^[1-9][0-9]*$/.test(raw) ? raw : '';
+  })();
   const PASSWORD_ALPHABET =
     'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*-_=+';
+
+  function presentationSerial() {
+    return PRESENTATION_SERIAL;
+  }
+
+  async function sendPresentationCommand(command) {
+    if (!PRESENTATION_SERIAL || !window.gameCommand) return false;
+    await window.gameCommand(`${command}|${PRESENTATION_SERIAL}`);
+    return true;
+  }
+
+  // F1-F12 belong to the native game shell. In particular, F1/F5 browser
+  // defaults must never win while the embedded child has keyboard focus;
+  // native GetAsyncKeyState routing still observes the physical key.
+  document.addEventListener('keydown', event => {
+    if (/^F(?:[1-9]|1[0-2])$/.test(event.key)) event.preventDefault();
+  }, true);
 
   function asElement(target) {
     if (!target) return null;
@@ -298,21 +318,8 @@
     const html = document.documentElement;
     if (!force && html.classList.contains('elite-ui-boot'))
       return;
-    html.classList.remove('elite-ui-boot', 'elite-ui-leaving');
-    html.classList.add('elite-ui-ready');
-  }
-
-  async function fadeOutDocument() {
-    const html = document.documentElement;
-    if (html.classList.contains('elite-ui-leaving')) {
-      await waitForCssTransition(document.body, 'opacity', DOCUMENT_TRANSITION_MS + 150);
-      return;
-    }
     html.classList.remove('elite-ui-boot');
     html.classList.add('elite-ui-ready');
-    await nextAnimationFrame();
-    html.classList.add('elite-ui-leaving');
-    await waitForCssTransition(document.body, 'opacity', DOCUMENT_TRANSITION_MS + 150);
   }
 
   async function waitForDocumentDependencies() {
@@ -338,6 +345,9 @@
   }
 
   async function settlePreparedLayout() {
+    // The native back-surface is still hidden here. Make the document fully
+    // opaque before *_prepared so ShowWindow() never exposes an opacity ramp.
+    restoreDocument(true);
     forcePreparedLayout();
     await Promise.resolve();
     await new Promise(resolve => window.setTimeout(resolve, 0));
@@ -346,6 +356,10 @@
 
   function revealPreparedDocument() {
     restoreDocument(true);
+    const html = document.documentElement;
+    if (html.dataset.elitePresented === 'true') return;
+    html.dataset.elitePresented = 'true';
+    window.dispatchEvent(new CustomEvent('elite-ui-presented'));
   }
 
   async function revealDocumentWhenReady() {
@@ -362,6 +376,8 @@
 
   window.EliteUiKit = Object.freeze({
     version: VERSION,
+    presentationSerial,
+    sendPresentationCommand,
     initialize,
     focusElement,
     setBanner,
@@ -372,7 +388,6 @@
     bindDialogs,
     bindPasswordFields,
     generatePassword,
-    fadeOutDocument,
     restoreDocument,
     waitForDocumentDependencies,
     settleLayout,

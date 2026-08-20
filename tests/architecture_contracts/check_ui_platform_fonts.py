@@ -111,6 +111,11 @@ for token in (
 html_files = sorted((ROOT / "src/assets/webui").rglob("*.html"))
 require(html_files, "no WebUI HTML files found")
 for html in html_files:
+    # presentation_blank.html is a deliberately non-visible staging page
+    # for the back WebView surface. It must stay dependency-light and has
+    # no text/UI surface that requires the shared font layer.
+    if html.name == "presentation_blank.html":
+        continue
     require('/elite_ui.css' in html.read_text(encoding="utf-8"),
             f"WebUI page does not import shared font layer: {html.relative_to(ROOT)}")
 

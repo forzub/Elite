@@ -8,6 +8,7 @@
 
 #include "Window.h"
 #include <iostream>
+#include <algorithm>
 #include <cstdint>
 #include <stdexcept>
 #include "input/Input.h"
@@ -134,6 +135,7 @@ void Window::pollEvents()
     // GLFW's installed WndProc for this process, preserving ordinary window,
     // keyboard, mouse, focus, resize and close callbacks while avoiding the
     // unsafe GLFW 3.4 post-poll foreign-pointer path entirely.
+    std::array<bool, 12> functionKeyCapturedByMessage{};
     MSG message{};
     while (PeekMessageW(&message, nullptr, 0, 0, PM_REMOVE))
     {
@@ -145,10 +147,25 @@ void Window::pollEvents()
             continue;
         }
 
-        if ((message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN) &&
-            message.wParam == VK_ESCAPE)
+        if (message.message == WM_KEYDOWN || message.message == WM_SYSKEYDOWN)
         {
-            m_escapePressed = true;
+            if (message.wParam == VK_ESCAPE)
+                m_escapePressed = true;
+
+            if (message.wParam >= VK_F1 && message.wParam <= VK_F12)
+            {
+                const int index = static_cast<int>(message.wParam - VK_F1);
+                const bool repeated = (message.lParam & (1LL << 30)) != 0;
+                if (!repeated)
+                {
+                    FunctionKeyPress press;
+                    press.functionKey = index + 1;
+                    press.ctrlDown = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+                    press.altDown = (GetKeyState(VK_MENU) & 0x8000) != 0;
+                    m_functionKeyPresses.push_back(press);
+                    functionKeyCapturedByMessage[static_cast<std::size_t>(index)] = true;
+                }
+            }
         }
 
         TranslateMessage(&message);
@@ -195,14 +212,38 @@ void Window::pollEvents()
     // foreground process as a second source and edge-latch it exactly once.
     if (ownsForegroundInput())
     {
-        const bool escapeDown = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
-        if (escapeDown && !m_escapeDown)
+        const SHORT escapeState = GetAsyncKeyState(VK_ESCAPE);
+        const bool escapeDown = (escapeState & 0x8000) != 0;
+        if ((escapeState & 0x0001) != 0 || (escapeDown && !m_escapeDown))
             m_escapePressed = true;
         m_escapeDown = escapeDown;
+
+        // WebView2 can receive the actual key message on a child/helper HWND.
+        // Preserve message edges when we see them, but also consume the Win32
+        // "pressed since last query" bit so a short F-key tap cannot vanish
+        // merely because a WebView/navigation frame stalled the main loop.
+        for (int i = 0; i < 12; ++i)
+        {
+            const SHORT state = GetAsyncKeyState(VK_F1 + i);
+            const bool down = (state & 0x8000) != 0;
+            const bool pressedSincePoll = (state & 0x0001) != 0;
+            if (!functionKeyCapturedByMessage[static_cast<std::size_t>(i)] &&
+                (pressedSincePoll || (down && !m_functionKeyDown[static_cast<std::size_t>(i)])))
+            {
+                FunctionKeyPress press;
+                press.functionKey = i + 1;
+                press.ctrlDown = (GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0;
+                press.altDown = (GetAsyncKeyState(VK_MENU) & 0x8000) != 0;
+                m_functionKeyPresses.push_back(press);
+            }
+            m_functionKeyDown[static_cast<std::size_t>(i)] = down;
+        }
     }
     else
     {
         m_escapeDown = false;
+        m_functionKeyDown.fill(false);
+        m_functionKeyPresses.clear();
     }
 
     const ULONGLONG xprocDurationMs = GetTickCount64() - xprocBeginMs;
@@ -232,6 +273,21 @@ bool Window::consumeEscapePressed()
 #endif
 }
 
+
+
+bool Window::pollFunctionKeyPress(FunctionKeyPress& outPress)
+{
+#ifdef _WIN32
+    if (m_functionKeyPresses.empty())
+        return false;
+    outPress = m_functionKeyPresses.front();
+    m_functionKeyPresses.pop_front();
+    return true;
+#else
+    (void)outPress;
+    return false;
+#endif
+}
 
 bool Window::ownsForegroundInput() const
 {
@@ -279,8 +335,9 @@ void Window::swapBuffers()
     // foreground process as a second source and edge-latch it exactly once.
     if (ownsForegroundInput())
     {
-        const bool escapeDown = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
-        if (escapeDown && !m_escapeDown)
+        const SHORT escapeState = GetAsyncKeyState(VK_ESCAPE);
+        const bool escapeDown = (escapeState & 0x8000) != 0;
+        if ((escapeState & 0x0001) != 0 || (escapeDown && !m_escapeDown))
             m_escapePressed = true;
         m_escapeDown = escapeDown;
     }
@@ -309,6 +366,40 @@ void Window::show()
         return;
 
     glfwShowWindow(m_window);
+}
+
+void Window::hide()
+{
+    if (!m_window)
+        return;
+
+    // Hiding the top-level HWND is the terminal presentation boundary. Child
+    // WebView/GL resources may be destroyed only after this point so shutdown
+    // can never briefly uncover the last gameplay framebuffer.
+    glfwHideWindow(m_window);
+}
+
+void Window::clientSize(int& width, int& height) const
+{
+    width = 1;
+    height = 1;
+    if (!m_window)
+        return;
+
+#ifdef _WIN32
+    const HWND hwnd = glfwGetWin32Window(m_window);
+    RECT client{};
+    if (hwnd && GetClientRect(hwnd, &client))
+    {
+        width = std::max(1, static_cast<int>(client.right - client.left));
+        height = std::max(1, static_cast<int>(client.bottom - client.top));
+        return;
+    }
+#endif
+
+    glfwGetWindowSize(m_window, &width, &height);
+    width = std::max(1, width);
+    height = std::max(1, height);
 }
 
 void Window::focus()

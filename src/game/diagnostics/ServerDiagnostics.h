@@ -13,7 +13,6 @@ struct ServerDiagnosticsSettings
     // normal simulation hot path unless explicitly enabled for diagnostics.
     bool playerMotionCsv = false;
     bool gravityCsv = false;
-    bool systemMapMotionCsv = false;
     bool serverNavigationCsv = false;
     bool hubPlayerChainCsv = false;
 };
@@ -38,7 +37,6 @@ struct SimulationDiagnosticsState
 
 struct GameServerDiagnosticsState
 {
-    double systemMapLastLoggedUniverseTime = -1.0;
     std::uint32_t hubPlayerRoundTripWarnings = 0;
     std::uint32_t hubGeometryWarnings = 0;
 };

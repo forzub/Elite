@@ -60,8 +60,9 @@ require(
 )
 
 require(
-    "src/game/server/GameServer.cpp",
-    "diagnostic:hub_motion_lab_cube"
+    "src/game/client/ClientMapService.cpp",
+    "diagnostic:hub_motion_lab_cube",
+    "evaluateHubMotionLabCube"
 )
 
 require(

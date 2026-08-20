@@ -61,15 +61,13 @@ public:
     void sendMessage(const game::network::ClientMessage& msg);
 
     bool requestGalaxyMapSnapshot(bool forceRefresh = false);
-    bool requestSystemMapSnapshot(int systemId, bool forceRefresh = false);
-    bool requestDetailMapSnapshot(
-        const world::celestial::DetailTarget& target,
-        bool forceRefresh = false
+    bool composeSystemMapSnapshot(int systemId);
+    bool composeDetailMapSnapshot(
+        const world::celestial::DetailTarget& target
     );
-    bool requestHubMapSnapshot(
+    bool composeHubMapSnapshot(
         int systemId,
-        const std::string& hubId,
-        bool forceRefresh = false
+        const std::string& hubId
     );
 
     const world::celestial::GalaxyMapSnapshot*
@@ -86,9 +84,6 @@ public:
             const std::string& hubId) const;
 
     game::client::ClientRequestStatus galaxyMapRequestStatus() const;
-    game::client::ClientRequestStatus systemMapRequestStatus() const;
-    game::client::ClientRequestStatus detailMapRequestStatus() const;
-    game::client::ClientRequestStatus hubMapRequestStatus() const;
 
     const game::network::SnapshotMetadata& lastSimulationMetadata() const;
     const game::network::SnapshotMetadata& galaxyMapMetadata() const;

@@ -13,8 +13,10 @@ Covered contracts:
 - wheel zoom uses only the cursor body or the current camera target;
 - refine/coarsen preserves the navigation point;
 - an implicit root selection is not an explicit user selection;
-- explicit cells resolve to a deterministic terminal descendant;
+- explicit cells resolve to a deterministic central terminal descendant;
 - body selection clears explicit cell selection and reanchors navigation;
+- native panel buttons follow the Galaxy/System-or-Space/Details/Hub action matrix;
+- typed panel actions route to selected-context versus loaded-parent commands correctly;
 - mode changes are applied only after outgoing-frame capture;
 - a fixed mouse/scroll trace produces the same state after every replay;
 - semantic System picking reads a supplied CPU presentation frame;
@@ -34,6 +36,14 @@ CTest.
 
 The project already needs GLM and nlohmann/json. The test target uses the same
 headers and does not add another dependency or test framework.
+
+
+`check_navigation_context.py` runs before the C++ target and locks the production
+`SpaceState`/client composition boundary that unit tests cannot instantiate
+without the full game: selected Details uses `m_loadedSystemMapId`, empty-sector
+Details remains a negative-id `SpatialVolume`, System -> Hub prepares its parent
+Details target, and Hub/Details parent navigation restores loaded targets rather
+than the player's unrelated current system.
 
 The suite also verifies that `SystemMapPresentationBuilder` owns system-change
 reset, one-time camera fitting, presentation-time advancement and stale

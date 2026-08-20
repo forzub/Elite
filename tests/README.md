@@ -81,11 +81,18 @@ python tests/hub_motion_lab/verify_capture.py hub_motion_lab_presentation.csv
 
 `tests/system_map/run_mingw64.sh`
 
-Locks down the existing map camera/navigation/picking/presentation contracts.
+Locks down the existing map camera/navigation/picking/presentation contracts,
+including semantic native-panel button/action routing, deterministic central
+terminal-cell resolution and the loaded-context rule for System/Space -> Details
+-> Hub. A dedicated static guard rejects the specific regression where an
+inspected empty/remote map silently falls back to the player's current system.
 Wall-clock presentation time may not locally advance world snapshots, and production
-cloud motion may not apply tooling-only debug wind multipliers.
-Local map data is now resolved in `GameState::prepareFrame()` before input, and
-must not be replaced again between map input and rendering.
+cloud motion may not apply tooling-only debug wind multipliers. Local map data is
+resolved in `GameState::prepareFrame()` before input and must not be replaced
+again between map input and rendering.
+
+The canonical human-readable behavior inventory lives in
+`src/game/system_map/MAP_NAVIGATION_CONTRACT.md`.
 
 When another subsystem is considered stable, add its runner here and to
 `tests/run_all_mingw64.sh` instead of creating another top-level command.

@@ -330,29 +330,83 @@ SignalIdentity
 
 ## 12. Карты
 
-**Статус: `[~]` presentation ownership migration основных карт завершена; остаются отдельные функциональные возможности карт.**
+**Статус: `[x]` базовая навигационная и presentation-архитектура Galaxy / System-or-Space / Details / Hub зафиксирована regression-контрактами.**
 
-- `[x]` Есть Galaxy / System / Details / Hub modes.
-- `[x]` Navigation grid/cube hierarchy является базовой системой адресации/навигации.
-- `[x]` Galaxy/System/Details/Hub production presentation собирается клиентом из local catalogs/celestial state + authoritative replicated facts/epochs.
-- `[x]` Map-specific production infrastructure/hub state не является параллельным world-state каналом.
-- `[x]` Тяжёлые server-built Detail/Hub presentation DTO удалены.
-- `[ ]` Полноценная selection кораблей на System Map -> Details.
-- `[ ]` После завершения migration добавить trajectory presentation как отдельный независимый слой карт.
+Каноническое подробное описание текущей механики:
+`src/game/system_map/MAP_NAVIGATION_CONTRACT.md`.
 
-Целевая схема:
+### `[x]` То, что считаем важной рабочей механикой
+
+- Есть четыре внутренних режима: `Galaxy`, `System`, `Detail`, `Hub`.
+- Пользовательская иерархия: `Galaxy -> System/Space -> Details -> Hub`.
+- `SPACE` сейчас является presentation-именем `MapMode::System` для пустого межзвёздного сектора; отдельного `MapMode::Space` пока нет.
+- Galaxy cubic navigation умеет входить как в известную систему, так и в выбранный пустой сектор.
+- Пустой сектор получает уникальный отрицательный runtime `systemId`; это временное представление, но пока оно является защищённой частью механики адресации.
+- System/Space Details строится из **загруженного контекста карты**, а не из `playerNavigation().currentSystemId`.
+- Выбранный непредельный System-куб автоматически разрешается в центрального потомка на максимальном уровне; вручную проходить все уровни перед Details не требуется.
+- Terminal spatial cube в пустом секторе открывает настоящий пустой `SpatialVolume`; реальная система/Солнце не подставляются.
+- В известной системе terminal spatial cube остаётся spatial volume, кроме случая, когда центр адреса физически находится внутри celestial body: тогда Details семантически становится Details этого body.
+- Details поддерживает `CelestialBody`, `LocalObject` и `SpatialVolume` targets.
+- Выбранный Hub может открывать и `Details`, и `Hub`; прямой `System -> Hub` сначала готовит точный parent Details target, поэтому `Hub -> Details` возвращается туда же.
+- Native STAR ATLAS panel использует typed actions; `Close` и старый fixed toggle-slot удалены.
+- Матрица панели:
+  - Galaxy: `SYSTEM/SPACE`, `DETAIL disabled`, `HUB disabled`;
+  - System/Space: `GALAXY`, `DETAIL conditional`, `HUB conditional`;
+  - Details: `SYSTEM/SPACE`, `GALAXY`, `HUB conditional`;
+  - Hub: `DETAIL`, `SYSTEM/SPACE`, `GALAXY`.
+- Для обычного выбранного cube/body активен `DETAIL`; `HUB` активируется только при выбранном Hub.
+- F9-F12 являются **player-relative direct selectors**, а не contextual drill:
+  - F9 Galaxy;
+  - F10 current System / meaningful interstellar Space sector;
+  - F11 current player Details context, либо fallback к System/Space когда Details адреса нет;
+  - F12 matched Hub либо существующий player-local fallback.
+- Повторный direct selector текущего navigation-level — no-op; более новый pending selector вытесняет старый.
+- `Ctrl+F11` меняет глобальный формат координат; `Ctrl+Alt+F12` меняет UI locale.
+- Camera / picking / cubic-grid состояние и map presentation готовятся до input; input и render одного application frame используют одну подготовленную snapshot/presentation границу.
+- Внутренние map-to-map transitions deferred: outgoing frame не должен преждевременно стать destination-mode.
+- Galaxy/System/Details/Hub production presentation собирается клиентом из local catalogs/celestial state + ordinary authoritative replication/epochs. System/Details/Hub не имеют отдельного authoritative world-state канала.
+- Timeline revision сбрасывает старые snapshot/interpolation данные, но сохраняет semantic loaded target для восстановления той же карты на новой ветке времени.
+
+### `[~]` Временные / legacy механики, которые пока оставлены
+
+- `MapMode::System` одновременно обслуживает известную систему и пустой `SPACE`; это naming/model debt, а не две разные реализации.
+- Отрицательные synthetic empty-sector ids — временный runtime-механизм до появления first-class spatial-domain address/type.
+- В map input всё ещё есть legacy `P -> setSystemMapDetailMode()`.
+- В map input всё ещё есть legacy `Backspace -> setSystemMapCurrentSystemMode()`; это **не** canonical parent-navigation path. Native panel возвращается через `setSystemMapLoadedSystemMode()` и сохраняет inspected context.
+- `SystemMapRenderer` ещё остаётся facade/coordinator для Galaxy/System и часть low-level backend всё ещё лежит в `.inl`; Detail/Hub ownership уже вынесен отдельно.
+
+### `[ ]` Чего пока нет / что не считать готовой механикой
+
+- Полноценная ship selection на System Map -> Details.
+- Historical/planned/predicted trajectory presentation.
+- First-class durable `SpaceSectorId` / spatial-domain type вместо negative synthetic ids.
+- Отдельный публичный `MapMode::Space`.
+- Browser/WebView command transport для STAR ATLAS — удалён и не должен возвращаться как параллельный navigation path.
+- Кнопка `Close` — удалена и не является частью дизайна.
+
+### Regression gates
+
+```bash
+bash tests/system_map/run_mingw64.sh
+bash tests/architecture_contracts/run_mingw64.sh
+bash tests/client_acceptance/run_mingw64.sh
+```
+
+`tests/system_map` теперь отдельно фиксирует semantic panel action matrix/command routing и архитектурно запрещает потерю loaded navigation context. Любое намеренное изменение пунктов `[x]` должно менять одновременно код, тест и `MAP_NAVIGATION_CONTRACT.md`; тест нельзя ослаблять только ради того, чтобы случайный behavioral drift снова стал зелёным.
+
+Целевая ownership-схема остаётся:
 
 ```text
 SERVER
-authoritative facts / IDs / state
+authoritative facts / IDs / state / epochs
 
         ↓
 
 CLIENT
 local catalogs
 + replicated runtime
-+ metadata
 + deterministic celestial state
++ loaded navigation context
 
         ↓
 

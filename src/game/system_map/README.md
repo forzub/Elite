@@ -8,6 +8,12 @@ This directory implements four map modes over one authoritative world model:
   terminal spatial volume.
 - **Hub** renders the local environment of stationary infrastructure.
 
+The canonical description of **current navigation behavior** is
+[`MAP_NAVIGATION_CONTRACT.md`](MAP_NAVIGATION_CONTRACT.md). It distinguishes
+regression-protected mechanics from temporary/legacy paths and from features
+that are not implemented. Update that contract whenever map behavior changes
+intentionally.
+
 ## Ownership boundaries
 
 Each mode follows the same ownership split:
@@ -154,8 +160,15 @@ bash tests/system_map/run_mingw64.sh
 
 The standalone test target does not initialize GLFW or OpenGL. It verifies the
 camera invariants, pivot priority, refine/coarsen behavior, anchor versus
-explicit selection semantics, deferred mode transitions and deterministic
-mouse/scroll replay against the production interaction code.
+explicit selection semantics, deterministic central-terminal cube resolution,
+deferred mode transitions, semantic native-panel action routing and
+deterministic mouse/scroll replay against production code.
+
+Before the C++ target is configured, `check_navigation_context.py` also rejects
+regressions in loaded-context ownership: Details/Hub drill-down may not fall
+back to the player's physical `currentSystemId`, empty-sector Details must remain
+a first-class negative-id spatial target, and System -> Hub must preserve the
+exact parent Details context.
 
 ## Detail and Hub presentation lifecycle
 

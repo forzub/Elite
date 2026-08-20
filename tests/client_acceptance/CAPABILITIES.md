@@ -9,6 +9,9 @@ The acceptance gate protects behavior and displayed data, not visual styling.
 Fonts, colors, antialiasing, decorative layout and pixel-perfect framebuffer
 comparisons are deliberately outside this matrix.
 
+The detailed current STAR ATLAS navigation semantics are maintained in
+`src/game/system_map/MAP_NAVIGATION_CONTRACT.md`.
+
 | Capability | Current runtime interpretation | Regression owner | State |
 |---|---|---|---|
 | Local session boot/sync | Real `LocalGameSession` reaches gameplay-ready client state | client acceptance | protected |
@@ -35,10 +38,10 @@ comparisons are deliberately outside this matrix.
 | Map distance from player | `distanceFromPlayerLy` uses actual Galaxy player-marker position, not merely current-system center | client acceptance + architecture guard | protected |
 | Native STAR ATLAS controls | Single-surface dropdown + semantic GALAXY/SYSTEM-or-SPACE/DETAIL/HUB navigation controls emit typed panel actions; the obsolete CLOSE slot is gone and no browser command transport participates | client acceptance + architecture guard | protected |
 | Map action meaning | Select/open/Galaxy/System-or-Space/Details/Hub typed actions preserve the loaded navigation context and parent/child layer semantics | client acceptance + architecture guard | protected |
-| Galaxy map data | Live client/server request and timeline-consistent snapshot | client acceptance | protected |
-| System map data | Live request for current system and selectable hub inventory | client acceptance | protected |
-| Details map data | Semantic Details target survives live request/response path | client acceptance | protected |
-| Hub map data | Selected hub survives live request/response path | client acceptance | protected |
+| Galaxy map data | Client-local atlas/catalog layer + authoritative Galaxy overlay/epoch | client acceptance + architecture guard | protected |
+| System map data | Client-composed from endpoint-local celestial/catalog state + retained ordinary replication at an accepted snapshot epoch; no System map RPC | client acceptance + architecture guard | protected |
+| Details map data | Semantic Details target is client-composed from loaded context + local celestial/catalog state + retained ordinary replication; empty interstellar SpatialVolume needs no celestial system | client acceptance + system_map guard | protected |
+| Hub map data | Selected hub is client-composed from loaded system/hub context + retained ordinary replication; System -> Hub preserves parent Details | client acceptance + system_map guard | protected |
 | Map panel displayed data | Live map/navigation state -> typed `SystemMapPanelPresentation` -> native OpenGL STAR ATLAS panel | client acceptance + architecture guard | protected |
 | Map camera/grid/picking | Camera, cubic navigation, picking and presentation contracts | system_map | protected |
 | Radar simulation/HUD | Both runtime feature flags are currently `false`; the subsystem is intentionally inactive | runtime feature flags | disabled, not claimed |
@@ -50,8 +53,8 @@ comparisons are deliberately outside this matrix.
 "Displayed data" means that the value reaches the real UI binding/API used by
 the game. The suite does **not** compare screenshots or colors. A renamed HUD
 node, severed `SpaceState` presenter call, missing map-panel payload field,
-broken HTML command, wrong map command dispatch, stale client state, or dead
-server/client path must fail the gate.
+wrong typed map action dispatch, stale client state, or dead server/client path
+must fail the gate.
 
 When a protected mechanic later regresses, add the smallest reproduction to
 this suite before fixing it. This keeps the harness growing from real failures

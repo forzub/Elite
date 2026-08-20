@@ -12,7 +12,8 @@ mutating simulation objects directly.
 
 The functional inventory is maintained in `CAPABILITIES.md`. If a row is
 `protected`, the project is allowed to treat that mechanic as working until the
-gate says otherwise.
+gate says otherwise. Detailed map-navigation behavior is separately frozen in
+`src/game/system_map/MAP_NAVIGATION_CONTRACT.md`.
 
 Current acceptance coverage:
 
@@ -30,12 +31,10 @@ Current acceptance coverage:
 - typed native `SystemMapPanelPresentation` + interactive OpenGL STAR ATLAS dropdown/actions tied by acceptance + architecture guards
   to the same parser/dispatcher exercised by the headless suite;
 - typed native action meaning for Galaxy/System-or-Space/Details/Hub/select/open, with no fixed Close slot;
-- live Galaxy -> System -> Details -> Hub data requests through
-  `GameClient -> LocalLoopbackTransport -> GameServer -> ClientMapService`;
+- production Galaxy/System/Details/Hub composition through `ClientMapService`: Galaxy merges its authoritative overlay while System/Details/Hub reuse endpoint-local celestial/catalog state plus ordinary retained replication at the accepted snapshot epoch;
 - universe-timeline revision parity between gameplay and all accepted map
   snapshots;
-- map/navigation state -> production JSON panel payload, including the fields
-  consumed by `window.setSystemMapPanel`.
+- map/navigation state -> typed `SystemMapPanelPresentation` consumed by the native OpenGL STAR ATLAS renderer.
 
 This is intentionally a **functional**, not visual, acceptance suite. It does
 not care about button color, font rendering, antialiasing, decorative layout or

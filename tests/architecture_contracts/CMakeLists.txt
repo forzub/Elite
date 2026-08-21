@@ -166,10 +166,45 @@ add_test(
     COMMAND hub_motion_lab_contract_tests
 )
 
+add_executable(
+    interplanetary_transfer_lab_contract_tests
+    InterplanetaryTransferLabContractTests.cpp
+)
+
+target_include_directories(
+    interplanetary_transfer_lab_contract_tests
+    PRIVATE
+        "${ELITE_SOURCE_ROOT}"
+        "${ELITE_SOURCE_ROOT}/src"
+)
+
+if(MSVC)
+    target_compile_options(
+        interplanetary_transfer_lab_contract_tests
+        PRIVATE
+            /W4
+            /permissive-
+    )
+else()
+    target_compile_options(
+        interplanetary_transfer_lab_contract_tests
+        PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+    )
+endif()
+
+add_test(
+    NAME interplanetary_transfer_lab_contracts
+    COMMAND interplanetary_transfer_lab_contract_tests
+)
+
 set_tests_properties(
     architecture_contracts
     runtime_policy_contracts
     hub_motion_lab_contracts
+    interplanetary_transfer_lab_contracts
     PROPERTIES
         WORKING_DIRECTORY "${ELITE_SOURCE_ROOT}"
 )

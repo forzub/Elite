@@ -121,13 +121,15 @@ inline ResolvedTacticalKinematics resolveHubFromPlayerPresentationFrame(
     ResolvedTacticalKinematics out;
     const auto& frame = player.renderReferenceFrame;
 
-    const std::string& frameId =
-        frame.frameId.empty() ? frame.hubId : frame.frameId;
-
+    // frameId identifies the ship-owned travel frame (for example
+    // "ship_travel_1").  Hub membership is carried separately by hubId.
+    // Comparing frameId with hub.id silently rejects the co-frame path and
+    // falls back to the newest discrete Hub snapshot, producing the visible
+    // every-other-frame/snapshot staircase in the cockpit marker.
     if (!frame.valid ||
         frame.type != game::navigation::MotionMode::HubTactical ||
         frame.systemId != hub.systemId ||
-        frameId != hub.id)
+        frame.hubId != hub.id)
     {
         return out;
     }

@@ -25,6 +25,7 @@
 
 #include "game/equipment/radar/RadarModule.h"
 #include "src/game/RuntimeFeatureFlags.h"
+#include "src/game/diagnostics/InterplanetaryTransferLab.h"
 // #include "src/world/modules/ObjectHitBuilder.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 
@@ -1354,6 +1355,9 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (isHubMotionLabShip(id))
                 continue;
 
+            if (isInterplanetaryTransferLabShip(id))
+                continue;
+
             Ship& ship = *shipPtr;
             if (isPlayerControlled(id) ||
                 ship.core().role() == ShipRole::Player)
@@ -1404,6 +1408,9 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (isHubMotionLabShip(id))
                 continue;
 
+            if (isInterplanetaryTransferLabShip(id))
+                continue;
+
             Ship& ship = *shipPtr;
             ship.applyControl();
         }
@@ -1419,6 +1426,9 @@ m_hubVelocityMetersPerSecond[hubId] =
             }
 
             if (isHubMotionLabShip(id))
+                continue;
+
+            if (isInterplanetaryTransferLabShip(id))
                 continue;
 
             Ship& ship = *shipPtr;
@@ -1507,6 +1517,9 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (isHubMotionLabShip(id))
                 continue;
 
+            if (isInterplanetaryTransferLabShip(id))
+                continue;
+
             auto& tr = shipPtr->core().transform();
 
             if (tr.motion.mode !=
@@ -1593,6 +1606,9 @@ m_hubVelocityMetersPerSecond[hubId] =
             if (isHubMotionLabShip(id))
                 continue;
 
+            if (isInterplanetaryTransferLabShip(id))
+                continue;
+
             auto& tr = shipPtr->core().transform();
 
             if (tr.motion.mode !=
@@ -1616,6 +1632,10 @@ m_hubVelocityMetersPerSecond[hubId] =
                 tr.motion.referenceVelocityMps;
         }
 
+        // The interplanetary diagnostic actor owns an analytic Sun-centered
+        // transfer trajectory. Place it before the final navigation-context
+        // sample so gravity/primary-body metadata belongs to this exact pose.
+        updateInterplanetaryTransferLabActor();
         updateDynamicNavigationContext(dt);
 
         // Controlled server-time samples for the Hub Motion Lab. They are
@@ -2355,6 +2375,24 @@ GameSimulation::hubMotionLabActorKind(
         : it->second.kind;
 }
 
+void GameSimulation::registerInterplanetaryTransferLabShip(EntityId shipId)
+{
+    if (shipId.value == 0)
+        return;
+
+    m_interplanetaryTransferLabShipId = shipId;
+}
+
+bool GameSimulation::isInterplanetaryTransferLabShip(
+    EntityId shipId
+) const noexcept
+{
+    return
+        m_interplanetaryTransferLabShipId.value != 0 &&
+        shipId == m_interplanetaryTransferLabShipId;
+}
+
+
 void GameSimulation::registerActivationCadenceLabShip(EntityId shipId)
 {
     if (shipId.value == 0)
@@ -2512,7 +2550,8 @@ void GameSimulation::debugLogActivationShadow(double dt)
         const bool npcAiEligible =
             !isPlayerControlled(id) &&
             ship->core().role() != ShipRole::Player &&
-            !isHubMotionLabShip(id);
+            !isHubMotionLabShip(id) &&
+            !isInterplanetaryTransferLabShip(id);
         const bool npcAiLab = isActivationCadenceLabShip(id);
         const auto npcAiLabDemand =
             npcAiLab
@@ -2940,6 +2979,80 @@ void GameSimulation::updateHubMotionLabActors()
     }
 }
 
+
+
+void GameSimulation::updateInterplanetaryTransferLabActor()
+{
+    if (m_interplanetaryTransferLabShipId.value == 0 ||
+        m_activeCelestialSystemId != 0)
+    {
+        return;
+    }
+
+    Ship* ship = getShip(m_interplanetaryTransferLabShipId);
+    if (!ship)
+        return;
+
+    const auto state =
+        game::diagnostics::evaluateInterplanetaryTransferLab(
+            m_orbitalUniverseTimeSeconds
+        );
+
+    const auto sunPositionIt =
+        m_celestialBodyPositionsAu.find(
+            game::diagnostics::InterplanetaryTransferLabSunBodyId
+        );
+    const auto sunVelocityIt =
+        m_celestialBodyVelocitiesMetersPerSecond.find(
+            game::diagnostics::InterplanetaryTransferLabSunBodyId
+        );
+
+    if (sunPositionIt == m_celestialBodyPositionsAu.end() ||
+        sunVelocityIt ==
+            m_celestialBodyVelocitiesMetersPerSecond.end())
+    {
+        return;
+    }
+
+    const glm::dvec3 sunMeters =
+        sunPositionIt->second * world::celestial::MetersPerAu;
+    const glm::dvec3 worldVelocityMetersPerSecond =
+        sunVelocityIt->second +
+        state.relativeVelocityMetersPerSecond;
+
+    auto& tr = ship->core().transform();
+    tr.setWorldPositionMeters(
+        sunMeters + state.relativePositionMeters
+    );
+
+    tr.motion.mode =
+        game::navigation::MotionMode::PassiveTrajectory;
+    tr.motion.systemId = 0;
+    tr.motion.parentBodyId =
+        game::diagnostics::InterplanetaryTransferLabSunBodyId;
+    tr.motion.hubId.clear();
+    tr.motion.worldVelocityMps =
+        worldVelocityMetersPerSecond;
+    tr.motion.referenceVelocityMps = sunVelocityIt->second;
+    tr.motion.localPositionMeters =
+        state.relativePositionMeters;
+    tr.motion.localVelocityMps =
+        state.relativeVelocityMetersPerSecond;
+    tr.motion.engineAccelerationMps2 = glm::dvec3(0.0);
+    tr.motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
+    tr.motion.desiredRelativeVelocityMps = glm::dvec3(0.0);
+    tr.referenceVelocityMetersPerSecond = sunVelocityIt->second;
+
+    if (state.heliocentricSpeedMetersPerSecond > 0.001)
+    {
+        tr.orientation = makePromoLookOrientation(
+            glm::normalize(
+                glm::vec3(state.relativeVelocityMetersPerSecond)
+            ),
+            glm::vec3(0.0f, 1.0f, 0.0f)
+        );
+    }
+}
 
 
 EntityId GameSimulation::spawnShip(

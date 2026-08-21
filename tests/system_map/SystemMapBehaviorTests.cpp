@@ -2012,7 +2012,9 @@ void testCockpitHubMarkerUsesPlayerPresentationFrame()
     player.renderReferenceFrame.type =
         game::navigation::MotionMode::HubTactical;
     player.renderReferenceFrame.systemId = 0;
-    player.renderReferenceFrame.frameId = hub.id;
+    // Production uses a ship-owned travel-frame identity here; Hub identity
+    // is a separate field and must be the one used by HUD co-frame matching.
+    player.renderReferenceFrame.frameId = "ship_travel_42";
     player.renderReferenceFrame.hubId = hub.id;
     player.renderReferenceFrame.originMeters =
         glm::dvec3(1250.0, 40.0, -20.0);
@@ -2042,7 +2044,7 @@ void testCockpitHubMarkerUsesPlayerPresentationFrame()
         ) > 200.0
     );
 
-    player.renderReferenceFrame.frameId = "another_hub";
+    player.renderReferenceFrame.hubId = "another_hub";
     const auto mismatched =
         game::presentation::detail::resolveHubFromPlayerPresentationFrame(
             hub,

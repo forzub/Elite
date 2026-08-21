@@ -259,6 +259,9 @@ public:
         EntityId shipId
     ) const noexcept;
 
+    void registerInterplanetaryTransferLabShip(EntityId shipId);
+    bool isInterplanetaryTransferLabShip(EntityId shipId) const noexcept;
+
     void registerActivationCadenceLabShip(EntityId shipId);
     bool isActivationCadenceLabShip(EntityId shipId) const noexcept;
 
@@ -309,6 +312,7 @@ private:
     void rebuildNavigationGravityContext();
     void updateDynamicNavigationContext(double dt);
     void updateHubMotionLabActors();
+    void updateInterplanetaryTransferLabActor();
     void updateActivationCadenceLabClaim(double serverTimeSeconds);
     void updateActivationShadow();
     game::simulation::SimulationMode activationExecutionMode(
@@ -369,6 +373,7 @@ private:
     std::unordered_map<EntityId, HubMotionLabRegistration>
         m_hubMotionLabShips;
 
+    EntityId m_interplanetaryTransferLabShipId {0};
     EntityId m_activationCadenceLabShipId {0};
 
     // Stage 4A/4B: the stabilized activation plan controls real materialized

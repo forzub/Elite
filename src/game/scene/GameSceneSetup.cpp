@@ -20,6 +20,7 @@
 #include "src/game/player/ActorIdProvider.h"
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/diagnostics/ActivationCadenceLab.h"
+#include "src/game/diagnostics/InterplanetaryTransferLab.h"
 
 #include "src/world/types/ObjectType.h"
 #include "src/world/orbits/OrbitalMotion.h"
@@ -570,6 +571,99 @@ void spawnHubMotionLabNpcs(
     );
 }
 
+EntityId spawnInterplanetaryTransferLabNpc(GameSimulation& sim)
+{
+    using namespace game::diagnostics;
+
+    glm::dvec3 sunCenterMeters {0.0};
+    double sunRadiusMeters = 0.0;
+    if (!sim.resolveCelestialBodyMeters(
+            0,
+            InterplanetaryTransferLabSunBodyId,
+            sunCenterMeters,
+            sunRadiusMeters))
+    {
+        std::cerr
+            << "[InterplanetaryTransferLab] cannot resolve Sol body\n";
+        return EntityId{};
+    }
+
+    const auto state =
+        evaluateInterplanetaryTransferLab(0.0);
+
+    ShipVisualIdentity visual {
+        .shipType = "Cobra MK1",
+        .shipName = InterplanetaryTransferLabLabel
+    };
+
+    ShipRegistry registry {
+        .instanceId = InterplanetaryTransferLabInstanceId,
+        .ownerName = "Interplanetary Flight Test",
+        .ownerActor = ActorIds::Unknown(),
+        .registrationId = "TRN-ME-9020",
+        .homePort = "Mars departure corridor",
+        .shipRole = ShipRoleType::Civilian
+    };
+
+    ShipInitData initData;
+    initData.visual = visual;
+    initData.registry = registry;
+
+    const glm::dvec3 spawnPosition =
+        sunCenterMeters + state.relativePositionMeters;
+    const glm::vec3 lookDirection =
+        glm::normalize(glm::vec3(state.relativeVelocityMetersPerSecond));
+
+    const EntityId id =
+        sim.spawnShip(
+            ShipRole::NPC,
+            0,
+            EliteCobraMk1::EliteCobraMk1Descriptor(),
+            spawnPosition,
+            initData,
+            makeLookOrientation(lookDirection)
+        );
+
+    glm::dvec3 sunVelocityMetersPerSecond {0.0};
+    sim.resolveCelestialBodyVelocityMetersPerSecond(
+        0,
+        InterplanetaryTransferLabSunBodyId,
+        sunVelocityMetersPerSecond
+    );
+
+    if (Ship* ship = sim.getShip(id))
+    {
+        auto& tr = ship->core().transform();
+        tr.motion.mode = game::navigation::MotionMode::PassiveTrajectory;
+        tr.motion.systemId = 0;
+        tr.motion.parentBodyId = InterplanetaryTransferLabSunBodyId;
+        tr.motion.worldVelocityMps =
+            sunVelocityMetersPerSecond +
+            state.relativeVelocityMetersPerSecond;
+        tr.motion.referenceVelocityMps = sunVelocityMetersPerSecond;
+        tr.motion.localPositionMeters = state.relativePositionMeters;
+        tr.motion.localVelocityMps = state.relativeVelocityMetersPerSecond;
+        tr.referenceVelocityMetersPerSecond = sunVelocityMetersPerSecond;
+    }
+
+    sim.registerInterplanetaryTransferLabShip(id);
+
+    std::cout
+        << "[InterplanetaryTransferLab] spawned Mars->Earth test ship"
+        << " radius_au="
+        << state.heliocentricRadiusMeters / InterplanetaryAuMeters
+        << " speed_km_s="
+        << state.heliocentricSpeedMetersPerSecond / 1000.0
+        << " transfer_day="
+        << state.transferElapsedSeconds / InterplanetarySecondsPerDay
+        << "/"
+        << state.transferDurationSeconds / InterplanetarySecondsPerDay
+        << "\n";
+
+    return id;
+}
+
+
 EntityId spawnActivationCadenceLabNpc(
     GameSimulation& sim,
     const glm::dvec3& stationPos
@@ -717,6 +811,12 @@ EntityId buildGameScene(
     {
         if (diagnosticHubAvailable)
             spawnActivationCadenceLabNpc(sim, stationPos);
+    }
+
+    if constexpr (game::diagnostics::InterplanetaryTransferLabEnabled)
+    {
+        if (initialSystemId == 0)
+            spawnInterplanetaryTransferLabNpc(sim);
     }
 
     return playerId;

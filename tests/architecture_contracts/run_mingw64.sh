@@ -84,6 +84,7 @@ PYTHON_BIN="${ELITE_PYTHON_BIN}"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_server_worker_thread.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_runtime_policy_boundaries.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_hub_motion_lab.py"
+"${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_interplanetary_transfer_lab.py"
 "${PYTHON_BIN}" "${ROOT_DIR}/tests/architecture_contracts/check_signal_reception_snapshot.py"
 
 cmake \

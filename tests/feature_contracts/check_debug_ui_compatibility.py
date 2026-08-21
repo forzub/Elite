@@ -16,7 +16,7 @@ def main() -> int:
 
     required = (
         "m_gameUiHttpPort = m_htmlUi.start(0, webUiRoot);",
-        '"[App] debug UI: http://localhost:"',
+        '[DEBUG CONTROL] http://localhost:',
         '<< "/debug_control.html\\n";',
         "startDebugUiCompatibilityRedirect(",
         "CompatibilityPort = 8090",

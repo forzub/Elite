@@ -113,8 +113,39 @@ struct ResolvedTacticalKinematics
     bool valid = false;
 };
 
+inline ResolvedTacticalKinematics resolveHubFromPlayerPresentationFrame(
+    const ClientHubState& hub,
+    const ClientShipState& player
+)
+{
+    ResolvedTacticalKinematics out;
+    const auto& frame = player.renderReferenceFrame;
+
+    const std::string& frameId =
+        frame.frameId.empty() ? frame.hubId : frame.frameId;
+
+    if (!frame.valid ||
+        frame.type != game::navigation::MotionMode::HubTactical ||
+        frame.systemId != hub.systemId ||
+        frameId != hub.id)
+    {
+        return out;
+    }
+
+    // The local player has already been rebased through this render-time
+    // reference frame.  Resolve the Hub origin from that exact same sample.
+    // Mixing this player pose with hub.worldPosition (the newest replication
+    // snapshot) produces a snapshot-rate sawtooth in the cockpit marker.
+    out.worldPosition =
+        world::coordinates::makeWorldPositionFromMeters(frame.originMeters);
+    out.worldVelocityMps = frame.velocityMetersPerSecond;
+    out.valid = true;
+    return out;
+}
+
 inline ResolvedTacticalKinematics resolveTacticalKinematics(
     const ClientWorldState& world,
+    const ClientShipState& player,
     const std::string& objectId
 )
 {
@@ -149,6 +180,16 @@ inline ResolvedTacticalKinematics resolveTacticalKinematics(
     const auto hub = world.hubs().find(objectId);
     if (hub != world.hubs().end())
     {
+        // Current Hub: use the same delayed/interpolated reference-frame
+        // sample that produced the local player's renderTransform.  This is
+        // the strongest co-frame guarantee and removes the visible staircase.
+        out = resolveHubFromPlayerPresentationFrame(hub->second, player);
+        if (out.valid)
+            return out;
+
+        // A Hub outside the player's current co-frame keeps the ordinary
+        // replicated fallback.  HUD presentation must not acquire a second
+        // timeline/transport dependency merely to resolve a marker.
         out.worldPosition = hub->second.worldPosition;
         out.worldVelocityMps = hub->second.worldVelocityMps;
         out.valid = true;
@@ -176,7 +217,8 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
 
     for (const auto& [id, tracked] : tracking.tacticalObjects())
     {
-        const auto resolved = detail::resolveTacticalKinematics(world, id);
+        const auto resolved =
+            detail::resolveTacticalKinematics(world, player, id);
         if (!resolved.valid)
             continue;
 

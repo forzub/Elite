@@ -246,6 +246,8 @@ def main() -> int:
         "src/game/presentation/NavigationHudPresentation.h",
         "cockpitNavigationUsesGlobalSpeed",
         "resolveCockpitNavigationTargetSpeed",
+        "resolveHubFromPlayerPresentationFrame",
+        "player.renderReferenceFrame",
         "MotionMode::Cruise",
         "MotionMode::JumpTransit",
         "playerMotion.travelFrame.worldToLocalVelocity",

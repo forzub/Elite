@@ -1996,6 +1996,61 @@ void testCockpitNavigationTargetSpeedUsesCommonTravelFrame()
     REQUIRE_NEAR(noFrame.speedMps, 1180.0, 1.0e-9);
 }
 
+void testCockpitHubMarkerUsesPlayerPresentationFrame()
+{
+    ClientHubState hub;
+    hub.id = "earth_orbital_hub";
+    hub.systemId = 0;
+    hub.worldPosition =
+        world::coordinates::makeWorldPositionFromMeters(
+            glm::dvec3(1000.0, 0.0, 0.0)
+        );
+    hub.worldVelocityMps = glm::dvec3(10.0, 0.0, 0.0);
+
+    ClientShipState player;
+    player.renderReferenceFrame.valid = true;
+    player.renderReferenceFrame.type =
+        game::navigation::MotionMode::HubTactical;
+    player.renderReferenceFrame.systemId = 0;
+    player.renderReferenceFrame.frameId = hub.id;
+    player.renderReferenceFrame.hubId = hub.id;
+    player.renderReferenceFrame.originMeters =
+        glm::dvec3(1250.0, 40.0, -20.0);
+    player.renderReferenceFrame.velocityMetersPerSecond =
+        glm::dvec3(30.0, 4.0, 2.0);
+
+    const auto resolved =
+        game::presentation::detail::resolveHubFromPlayerPresentationFrame(
+            hub,
+            player
+        );
+
+    REQUIRE(resolved.valid);
+    const glm::dvec3 resolvedMeters =
+        world::coordinates::fullMeters(resolved.worldPosition);
+    REQUIRE_NEAR(resolvedMeters.x, 1250.0, 1.0e-9);
+    REQUIRE_NEAR(resolvedMeters.y, 40.0, 1.0e-9);
+    REQUIRE_NEAR(resolvedMeters.z, -20.0, 1.0e-9);
+    REQUIRE_NEAR(resolved.worldVelocityMps.x, 30.0, 1.0e-9);
+
+    // The replicated Hub snapshot is deliberately stale by 250 metres.
+    // Reusing it would reintroduce the snapshot-rate HUD marker staircase.
+    REQUIRE(
+        glm::length(
+            resolvedMeters -
+            world::coordinates::fullMeters(hub.worldPosition)
+        ) > 200.0
+    );
+
+    player.renderReferenceFrame.frameId = "another_hub";
+    const auto mismatched =
+        game::presentation::detail::resolveHubFromPlayerPresentationFrame(
+            hub,
+            player
+        );
+    REQUIRE(!mismatched.valid);
+}
+
 void testTacticalOverlayGlyphScaleAndAngles()
 {
     REQUIRE_NEAR(mapObjectGlyphScale(100.0, 0.01), 1.0, 1.0e-12);
@@ -2579,6 +2634,7 @@ int main()
         {"Galaxy -> System -> Detail -> Hub transition sequence", testGalaxySystemDetailHubTransitionSequence},
         {"mouse and scroll trace is repeatable", testMouseAndScrollTraceIsRepeatable},
         {"cockpit target speed uses common travel frame", testCockpitNavigationTargetSpeedUsesCommonTravelFrame},
+        {"cockpit Hub marker uses player presentation frame", testCockpitHubMarkerUsesPlayerPresentationFrame},
         {"tactical overlay glyph scale and stellar angles", testTacticalOverlayGlyphScaleAndAngles},
         {"client navigation tracking owns cards bodies and waypoint panels", testClientNavigationTrackingOwnsCardsBodiesAndWaypointPanels},
         {"waypoint info affordance wins without auto opening card", testWaypointInfoAffordanceWinsWithoutAutoOpeningCard},

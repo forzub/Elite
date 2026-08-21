@@ -613,9 +613,9 @@ void Application::init()
             }
 
             m_gameUiHttpPort = m_htmlUi.start(0, webUiRoot);
-            std::cout << "[App] debug UI: http://localhost:"
+            std::cout << "\n[DEBUG CONTROL] http://localhost:"
                       << m_gameUiHttpPort
-                      << "/debug_control.html\n";
+                      << "/debug_control.html\n\n";
             startDebugUiCompatibilityRedirect(
                 m_gameUiHttpPort,
                 webUiRoot

@@ -72,6 +72,18 @@ std::uint16_t HtmlUiServer::start(
     }
 
     m_localPort = endpoint.port();
+
+    // Port 0 means the OS selected a process-local dynamic port.
+    // Print the resolved value immediately and flush it to the console.
+    if (port == 0)
+    {
+        std::cerr << "[DEBUG CONTROL] port=" << m_localPort << '\n'
+                  << "[DEBUG CONTROL] url=http://localhost:"
+                  << m_localPort
+                  << "/debug_control.html"
+                  << std::endl;
+    }
+
     m_server.start_accept();
 
     m_running = true;

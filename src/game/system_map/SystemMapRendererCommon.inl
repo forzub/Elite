@@ -1488,10 +1488,12 @@ void SystemMapRenderer::handleDetailAndHubInput(
             result.hubId,
             result.parentBodyId
         );
+        m_objectOverlayState.activate(result.hubId);
     }
     else if (result.selectionAction == SelectionAction::ClearHub)
     {
         m_detailView.clearHubSelection();
+        m_objectOverlayState.clearActive();
     }
 }
 

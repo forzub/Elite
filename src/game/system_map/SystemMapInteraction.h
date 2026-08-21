@@ -115,6 +115,13 @@ namespace game::system_map
             focusHub(view, context, hub, nowSeconds);
         }
 
+        // Ships/infrastructure are tactical selections, not body/cube/Hub
+        // navigation selections. Activating one must therefore clear the old
+        // semantic map focus without moving the camera/navigation anchor.
+        void focusTacticalObjectSelection(
+            SystemMapView& view
+        ) const;
+
     private:
         void updateNavigationHoverFromCursor(
             SystemMapView& view,

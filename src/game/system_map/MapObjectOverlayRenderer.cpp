@@ -120,16 +120,46 @@ void drawRectOutline(
     const glm::dvec2& topLeft,
     double width,
     double height,
-    const glm::vec4& color
+    const glm::vec4& color,
+    float lineWidth = 1.0f
 )
 {
     glColor4f(color.r, color.g, color.b, color.a);
+    glLineWidth(lineWidth);
     glBegin(GL_LINE_LOOP);
     glVertex2d(topLeft.x, topLeft.y);
     glVertex2d(topLeft.x + width, topLeft.y);
     glVertex2d(topLeft.x + width, topLeft.y + height);
     glVertex2d(topLeft.x, topLeft.y + height);
     glEnd();
+    glLineWidth(1.0f);
+}
+
+void drawActiveObjectRing(
+    const MapObjectOverlayItem& item
+)
+{
+    constexpr int segments = 28;
+    const double radius = 13.0 * item.glyphScale;
+    glm::vec4 color = item.factionColor;
+    color.a = 0.92f;
+
+    glColor4f(color.r, color.g, color.b, color.a);
+    glLineWidth(1.8f);
+    glBegin(GL_LINE_LOOP);
+    for (int i = 0; i < segments; ++i)
+    {
+        const double angle =
+            6.28318530717958647692 *
+            static_cast<double>(i) /
+            static_cast<double>(segments);
+        glVertex2d(
+            item.screenPx.x + std::cos(angle) * radius,
+            item.screenPx.y + std::sin(angle) * radius
+        );
+    }
+    glEnd();
+    glLineWidth(1.0f);
 }
 
 void drawTriangle(
@@ -281,8 +311,16 @@ void drawVelocityArrow(
     const glm::dvec2 perpendicular(-direction.y, direction.x);
 
     const double baseLength = item.wideVelocityArrow ? 42.0 : 19.0;
-    const double length = baseLength * item.glyphScale;
-    const double head = (item.wideVelocityArrow ? 9.0 : 5.0) * item.glyphScale;
+    const double magnitudeScale = mapObjectVelocityArrowLengthScale(
+        speed,
+        item.arrowVelocityMode
+    );
+    const double length =
+        baseLength * item.glyphScale * magnitudeScale;
+    const double headScale = 0.70 + 0.30 * magnitudeScale;
+    const double head =
+        (item.wideVelocityArrow ? 9.0 : 5.0) *
+        item.glyphScale * headScale;
     const glm::dvec2 start = item.screenPx + direction * (10.0 * item.glyphScale);
     const glm::dvec2 end = start + direction * length;
 
@@ -379,6 +417,9 @@ void MapObjectOverlayRenderer::render(
 
         if (item.drawGlyph)
         {
+            if (state.isActive(item.objectId))
+                drawActiveObjectRing(item);
+
             if (item.kind == MapObjectGlyphKind::Hub)
                 drawHubCube(item);
             else
@@ -421,11 +462,20 @@ void MapObjectOverlayRenderer::render(
             MapObjectOverlayState::PanelHeaderHeightPx,
             kPanelHeader
         );
+        const bool activePanel = state.isActive(item->objectId);
+        glm::vec4 panelBorder =
+            activePanel
+                ? item->factionColor
+                : kPanelBorder;
+        if (activePanel)
+            panelBorder.a = 1.0f;
+
         drawRectOutline(
             panel.topLeftPx,
             MapObjectOverlayState::PanelWidthPx,
             MapObjectOverlayState::PanelHeightPx,
-            kPanelBorder
+            panelBorder,
+            activePanel ? 2.0f : 1.0f
         );
 
         const std::string track = state.trackLabelFor(item->objectId);
@@ -445,6 +495,8 @@ void MapObjectOverlayRenderer::render(
         );
 
         const double speed = glm::length(item->displayedVelocityMps);
+        const double bearingSpeed = glm::length(item->stellarVelocityMps);
+        const bool hasBearing = bearingSpeed > 1.0e-9;
         const auto [azimuth, elevation] = stellarAzimuthElevationDeg(item->stellarVelocityMps);
         const char* speedKey =
             item->velocityMode == MapObjectVelocityMode::Local
@@ -494,8 +546,8 @@ void MapObjectOverlayRenderer::render(
 
         drawField(text(locale, "type"), item->typeName.empty() ? "—" : item->typeName);
         drawField(text(locale, speedKey), formatSpeed(speed) + " m/s");
-        drawField(text(locale, "azimuth"), formatAngle(azimuth));
-        drawField(text(locale, "elevation"), formatAngle(elevation));
+        drawField(text(locale, "azimuth"), hasBearing ? formatAngle(azimuth) : "—");
+        drawField(text(locale, "elevation"), hasBearing ? formatAngle(elevation) : "—");
         if (!item->owner.empty())
             drawField(text(locale, "owner"), item->owner);
 

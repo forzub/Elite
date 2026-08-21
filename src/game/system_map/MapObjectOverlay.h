@@ -98,6 +98,10 @@ struct MapObjectOverlayFrame
 struct MapObjectOverlayPointerResult
 {
     bool consumed = false;
+    // A card/glyph click activates the object independently from whether the
+    // information card was just opened or closed. Navigation consumes this
+    // as the canonical tactical selection signal.
+    std::string activatedObjectId;
     std::string toggledObjectId;
     std::string closedObjectId;
 };
@@ -144,6 +148,45 @@ inline double mapObjectGlyphScale(
     );
 }
 
+inline double mapObjectVelocityArrowLengthScale(
+    double speedMps,
+    MapObjectVelocityMode mode
+)
+{
+    if (!std::isfinite(speedMps) || speedMps <= 1.0e-9)
+        return 0.0;
+
+    // Arrow length carries speed magnitude, but uses a logarithmic scale so
+    // local manoeuvring speeds and orbital/interplanetary speeds can remain
+    // readable in the same compact tactical vocabulary.  The upper bound is
+    // exactly 1.0, preserving the previous maximum arrow length.
+    const double minReadableSpeedMps =
+        mode == MapObjectVelocityMode::Local ? 1.0 : 10.0;
+    const double maxReferenceSpeedMps =
+        mode == MapObjectVelocityMode::Local ? 1000.0 : 100000.0;
+    // Keep very slow vectors visible, but let large speed differences read as
+    // obviously different arrow lengths instead of collapsing into the same
+    // tiny stub.  Local manoeuvring vectors get the widest spread because they
+    // often differ by two orders of magnitude inside one Hub/Detail scene.
+    const double minVisibleScale =
+        mode == MapObjectVelocityMode::Local ? 0.08 : 0.14;
+
+    const double clampedSpeed = std::clamp(
+        speedMps,
+        minReadableSpeedMps,
+        maxReferenceSpeedMps
+    );
+    const double logMin = std::log10(minReadableSpeedMps);
+    const double logMax = std::log10(maxReferenceSpeedMps);
+    const double t = std::clamp(
+        (std::log10(clampedSpeed) - logMin) / (logMax - logMin),
+        0.0,
+        1.0
+    );
+
+    return minVisibleScale + (1.0 - minVisibleScale) * t;
+}
+
 inline std::pair<double, double> stellarAzimuthElevationDeg(
     const glm::dvec3& velocityMps
 )
@@ -180,6 +223,27 @@ public:
         const int assigned = m_nextTrackNumber++;
         m_trackNumbers.emplace(objectId, assigned);
         return std::to_string(assigned);
+    }
+
+    const std::string& activeObjectId() const noexcept
+    {
+        return m_activeObjectId;
+    }
+
+    bool isActive(const std::string& objectId) const
+    {
+        return !objectId.empty() && objectId == m_activeObjectId;
+    }
+
+    void activate(const std::string& objectId)
+    {
+        if (!objectId.empty())
+            m_activeObjectId = objectId;
+    }
+
+    void clearActive()
+    {
+        m_activeObjectId.clear();
     }
 
     bool isOpen(const std::string& objectId) const
@@ -246,11 +310,17 @@ public:
                     close(id);
                     result.closedObjectId = id;
                 }
-                else if (local.y >= 0.0 &&
-                         local.y <= PanelHeaderHeightPx)
+                else
                 {
-                    panel->dragging = true;
-                    panel->dragOffsetPx = mousePx - panel->topLeftPx;
+                    activate(panel->objectId);
+                    result.activatedObjectId = panel->objectId;
+
+                    if (local.y >= 0.0 &&
+                        local.y <= PanelHeaderHeightPx)
+                    {
+                        panel->dragging = true;
+                        panel->dragOffsetPx = mousePx - panel->topLeftPx;
+                    }
                 }
             }
             else
@@ -302,6 +372,8 @@ public:
                             dominantExternalPhysicalSizeMeters
                         ))
                 {
+                    activate(picked->objectId);
+                    result.activatedObjectId = picked->objectId;
                     toggle(*picked, viewportSizePx);
                     result.toggledObjectId = picked->objectId;
                     m_pointerCaptured = true;
@@ -411,6 +483,7 @@ private:
 private:
     std::unordered_map<std::string, int> m_trackNumbers;
     std::unordered_map<std::string, MapObjectInfoPanelState> m_panels;
+    std::string m_activeObjectId;
     int m_nextTrackNumber = 1;
     std::uint64_t m_zCounter = 0;
     bool m_leftWasDown = false;

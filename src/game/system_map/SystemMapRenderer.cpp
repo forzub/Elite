@@ -2348,14 +2348,14 @@ SystemMapRenderer::handleInput(
 
         if (overlayPointer.consumed)
         {
-            if (!overlayPointer.toggledObjectId.empty())
+            if (!overlayPointer.activatedObjectId.empty())
             {
                 const auto hubPoint = std::find_if(
                     m_systemSceneFrame.interaction.hubScreenPoints.begin(),
                     m_systemSceneFrame.interaction.hubScreenPoints.end(),
                     [&](const auto& point)
                     {
-                        return point.hubId == overlayPointer.toggledObjectId;
+                        return point.hubId == overlayPointer.activatedObjectId;
                     }
                 );
 
@@ -2370,6 +2370,12 @@ SystemMapRenderer::handleInput(
                         interactionContext,
                         hubSelection,
                         inputNowSeconds
+                    );
+                }
+                else
+                {
+                    m_systemInteraction.focusTacticalObjectSelection(
+                        m_systemView
                     );
                 }
             }
@@ -2391,6 +2397,19 @@ SystemMapRenderer::handleInput(
                 frame,
                 m_pendingScrollY
             );
+
+        const auto& semanticSelection = m_systemView.state();
+        if (!semanticSelection.selectedHubId.empty())
+        {
+            m_objectOverlayState.activate(
+                semanticSelection.selectedHubId
+            );
+        }
+        else if (!semanticSelection.selectedBodyId.empty() ||
+                 semanticSelection.navigationCellExplicitlySelected)
+        {
+            m_objectOverlayState.clearActive();
+        }
 
         if (m_systemView.state().navigationGrid.enabled() &&
             m_systemPresentation.systemScale > 0.0f)
@@ -2474,14 +2493,14 @@ SystemMapRenderer::handleInput(
         if (overlayPointer.consumed)
         {
             if (m_mode == Mode::Detail &&
-                !overlayPointer.toggledObjectId.empty())
+                !overlayPointer.activatedObjectId.empty())
             {
                 const auto hubPoint = std::find_if(
                     m_detailPresentation.frame.hubScreenPoints.begin(),
                     m_detailPresentation.frame.hubScreenPoints.end(),
                     [&](const auto& point)
                     {
-                        return point.hubId == overlayPointer.toggledObjectId;
+                        return point.hubId == overlayPointer.activatedObjectId;
                     }
                 );
 
@@ -2492,6 +2511,10 @@ SystemMapRenderer::handleInput(
                         hubPoint->hubId,
                         hubPoint->parentBodyId
                     );
+                }
+                else
+                {
+                    m_detailView.clearHubSelection();
                 }
             }
 

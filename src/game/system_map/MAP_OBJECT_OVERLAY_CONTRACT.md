@@ -104,12 +104,26 @@ glyph and velocity arrow grow with the object.
 - close objects grow smoothly;
 - the symbol cannot become an unbounded screen-filling arrow.
 
-The same scale is used for the glyph, velocity-arrow length/head and hit radius.
+The same physical/zoom scale is used for the glyph and hit radius. Velocity-arrow
+length additionally carries speed magnitude through a bounded logarithmic scale:
 
-## PROTECTED: multiple information cards
+- zero velocity draws no arrow;
+- local arrows use a local-speed reference range with a very small minimum so
+  `1 m/s` and `100+ m/s` remain visibly different;
+- global arrows use a wider stellar-speed reference range;
+- increasing speed always increases arrow length until the protected maximum;
+- the maximum remains the pre-log tactical arrow length, so this change cannot
+  create longer screen-space spears than the previous overlay.
+
+`mapObjectVelocityArrowLengthScale()` owns this policy. Do not substitute raw
+linear metres-per-second scaling; orbital and manoeuvring regimes differ by too
+many orders of magnitude for that to remain readable.
+
+## PROTECTED: multiple information cards and one active tactical object
 
 The map supports any practical number of simultaneously open object cards.
-There is no single-active-card invariant.
+Opening a card and selecting an object are deliberately different states: many
+cards may remain open, but at most one tactical object is active at a time.
 
 Each card owns independent state:
 
@@ -121,16 +135,45 @@ Each card owns independent state:
 
 Interaction rules:
 
-- clicking a visible object glyph toggles that object's card;
-- clicking the same glyph again closes only that card;
-- clicking the card `X` closes only that card;
-- dragging the header moves only that card;
+- clicking a visible object glyph activates that object and toggles its card;
+- clicking the same glyph again closes only that card but leaves the object as
+  the current tactical selection;
+- clicking anywhere on an already-open card except `X` reactivates that object
+  without toggling the card;
+- the active card/object receives a visible selection treatment;
+- clicking the card `X` closes only that card; closing information does not
+  silently choose another object;
+- dragging the header also activates that card's object and then moves only
+  that card;
 - clicking/dragging a card or glyph captures the left-button gesture until
   release, so the underlying map camera cannot accidentally begin rotating or
   panning during the same mouse gesture;
 - multiple other cards remain open when one card is toggled or closed.
 
 Card positions are screen-space positions. They do not orbit in 3D.
+
+### Tactical selection and navigation focus
+
+`MapObjectOverlayState::activeObjectId()` is the presentation-level tactical
+selection seam. It is intentionally **not** a trajectory solver and it does not
+manufacture a route. It only provides an unambiguous selected moving/static
+object for future navigation work.
+
+Selection synchronization rules are protected:
+
+- activating a Hub glyph/card restores the canonical Hub selection on System or
+  Detail maps, therefore the `HUB` navigation action becomes available again;
+- activating a ship/infrastructure object clears stale body/cube/Hub semantic
+  focus without moving the camera/navigation anchor;
+- selecting a body or explicit navigation cube through the ordinary map clears
+  the tactical-object focus;
+- selecting a Hub through the ordinary map synchronizes the tactical active ID
+  back to that Hub;
+- open cards are not closed merely because another target becomes active.
+
+This gives future route planning one explicit target endpoint while preserving
+all existing map selection contracts. Route generation, drive choice, path
+validation and trajectory rendering remain outside this baseline.
 
 ## PROTECTED: crowded-object click arbitration
 
@@ -211,8 +254,12 @@ Current standard fields are:
 Adding a new information source must not require redesigning card ownership,
 dragging or object anchoring.
 
-Azimuth/elevation are derived from the global stellar velocity vector, not from
-ship nose orientation or the currently rotated camera.
+Azimuth/elevation are derived from the same motion regime as the displayed
+speed, expressed in stellar/world axes when necessary. They therefore describe
+local relative motion on Hub/terminal-local views and global motion on larger
+maps. They are not derived from ship nose orientation or the currently rotated
+camera. If the displayed speed is zero, the card shows an em dash instead of
+inventing a bearing.
 
 ## PROTECTED: short track numbers
 

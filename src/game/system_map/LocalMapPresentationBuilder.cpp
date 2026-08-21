@@ -418,9 +418,16 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
                 std::max(item.physicalSizeMeters, 1000.0)
             );
         }
-        item.stellarVelocityMps = object.hasGlobalVelocity
-            ? object.globalVelocityMps
-            : object.velocityMps;
+        // Card azimuth/elevation must describe the same motion regime as the
+        // displayed speed.  When the Detail scene is a terminal spatial/local
+        // view, use the relative motion vector re-expressed in world axes
+        // instead of the dominant orbital/global drift.
+        item.stellarVelocityMps =
+            (wantsLocalVelocity && object.hasRelativeVelocity)
+                ? object.relativeVelocityWorldMps
+                : (object.hasGlobalVelocity
+                    ? object.globalVelocityMps
+                    : object.velocityMps);
 
         presentation.frame.objectOverlay.items.push_back(std::move(item));
     }
@@ -564,7 +571,10 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
         hubItem.arrowVelocityMode = MapObjectVelocityMode::Global;
         hubItem.displayedVelocityMps = glm::dvec3(0.0);
         hubItem.velocityArrowMps = snapshot.hubWorldVelocityMps;
-        hubItem.stellarVelocityMps = snapshot.hubWorldVelocityMps;
+        // The Hub card on Hub Map reports local speed (which is zero for the
+        // reference hub), so its bearing fields should not silently inherit the
+        // hub's global orbital drift.
+        hubItem.stellarVelocityMps = glm::dvec3(0.0);
         hubItem.factionColor = glm::vec4(0.34f, 0.88f, 1.00f, 0.96f);
         hubItem.physicalSizeMeters = std::max(1.0, maxDistance * 2.0);
         hubItem.screenPx = presentation.camera.project(glm::dvec3(0.0));
@@ -624,9 +634,14 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
             ? object.relativeVelocityMps
             : object.velocityMps;
         item.velocityArrowMps = item.displayedVelocityMps;
-        item.stellarVelocityMps = object.hasGlobalVelocity
-            ? object.globalVelocityMps
-            : glm::dvec3(0.0);
+        // Keep card bearing/elevation tied to the displayed local motion for
+        // tactical Hub scenes; otherwise all orbiting ships inherit nearly the
+        // same stellar azimuth from the shared hub/orbit drift.
+        item.stellarVelocityMps = object.hasRelativeVelocity
+            ? object.relativeVelocityWorldMps
+            : (object.hasGlobalVelocity
+                ? object.globalVelocityMps
+                : object.velocityMps);
         item.velocityScreenDirection = projectDirection(
             presentation.camera,
             object.positionMeters,

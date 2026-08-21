@@ -36,6 +36,12 @@ def main() -> int:
         "m_pointerCaptured",
         "bestPhysicalSizeMeters",
         "dominantExternalPhysicalSizeMeters",
+        "mapObjectVelocityArrowLengthScale",
+        "std::log10",
+        "std::string activatedObjectId",
+        "std::string m_activeObjectId",
+        "result.activatedObjectId = panel->objectId",
+        "result.activatedObjectId = picked->objectId",
     )
     require("std::optional<MapObjectInfoPanelState>" not in overlay,
             "overlay regressed to a single-card state")
@@ -48,6 +54,9 @@ def main() -> int:
         "wrapLabelForWidth",
         "measureTextPx",
         "drawVelocityArrow(item)",
+        "mapObjectVelocityArrowLengthScale",
+        "drawActiveObjectRing(item)",
+        "activePanel ? 2.0f : 1.0f",
         "kGlobalVelocityColor",
         "kLocalVelocityColor",
         "drawLine(item->screenPx, panelCenter",
@@ -130,11 +139,31 @@ def main() -> int:
         "m_objectOverlayState.handlePointer",
         "m_objectOverlayRenderer.render",
         "focusHubSelection",
+        "focusTacticalObjectSelection",
+        "overlayPointer.activatedObjectId",
+        "m_objectOverlayState.activate",
+        "m_objectOverlayState.clearActive",
         "m_detailView.selectHub",
+        "m_detailView.clearHubSelection",
         "largestDirectBodyPhysicalSizeMetersAt",
     )
     require("overlayPointer.consumed" in renderer_facade,
             "overlay input must suppress underlying map-camera gestures")
+
+    require_text(
+        "src/game/system_map/SystemMapInteraction.cpp",
+        "focusTacticalObjectSelection",
+        "state.selectedBodyId.clear()",
+        "state.selectedHubId.clear()",
+        "state.navigationGrid.clearSelectedCell()",
+        "state.navigationCellExplicitlySelected = false",
+    )
+
+    require_text(
+        "src/game/system_map/SystemMapRendererCommon.inl",
+        "m_objectOverlayState.activate(result.hubId)",
+        "m_objectOverlayState.clearActive()",
+    )
 
     pick_context = require_text(
         "src/game/system_map/SystemMapFrameInteractionContext.cpp",
@@ -177,7 +206,21 @@ def main() -> int:
         "glm::slerp",
     )
 
-    print("[PASS] tactical glyphs, distinct Hub cubes, size-ranked crowded picking, wrapped cards, multi-cards, velocity policy, Hub zoom and trajectory seam are locked")
+    require_text(
+        "src/game/system_map/LocalMapPresentationBuilder.cpp",
+        "object.relativeVelocityWorldMps",
+        "hubItem.stellarVelocityMps = glm::dvec3(0.0)",
+        "wantsLocalVelocity && object.hasRelativeVelocity",
+        "Keep card bearing/elevation tied to the displayed local motion",
+    )
+    require_text(
+        "src/game/system_map/MAP_OBJECT_OVERLAY_CONTRACT.md",
+        "1 m/s` and `100+ m/s` remain visibly different",
+        "the card shows an em dash instead of",
+        "same motion regime as the displayed",
+    )
+
+    print("[PASS] tactical glyphs, stronger logarithmic velocity vectors, displayed-motion bearings, active-card selection, distinct Hub cubes, size-ranked crowded picking, wrapped multi-cards, Hub zoom and trajectory seam are locked")
     return 0
 
 

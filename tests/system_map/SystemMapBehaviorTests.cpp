@@ -60,6 +60,8 @@ using game::system_map::MapObjectOverlayFrame;
 using game::system_map::MapObjectOverlayItem;
 using game::system_map::MapObjectOverlayState;
 using game::system_map::mapObjectGlyphScale;
+using game::system_map::mapObjectVelocityArrowLengthScale;
+using game::system_map::MapObjectVelocityMode;
 using game::system_map::stellarAzimuthElevationDeg;
 using game::system_map::SystemMapCameraBodyTarget;
 using game::system_map::SystemMapHubSelection;
@@ -1953,6 +1955,49 @@ void testTacticalOverlayGlyphScaleAndAngles()
     REQUIRE(closeScale <= 4.0);
     REQUIRE_NEAR(mapObjectGlyphScale(1000.0, 100.0), 4.0, 1.0e-12);
 
+    REQUIRE_NEAR(
+        mapObjectVelocityArrowLengthScale(0.0, MapObjectVelocityMode::Global),
+        0.0,
+        1.0e-12
+    );
+    const double globalSlow = mapObjectVelocityArrowLengthScale(
+        100.0,
+        MapObjectVelocityMode::Global
+    );
+    const double globalMedium = mapObjectVelocityArrowLengthScale(
+        1000.0,
+        MapObjectVelocityMode::Global
+    );
+    const double globalFast = mapObjectVelocityArrowLengthScale(
+        10000.0,
+        MapObjectVelocityMode::Global
+    );
+    REQUIRE(globalSlow > 0.0);
+    REQUIRE(globalSlow < globalMedium);
+    REQUIRE(globalMedium < globalFast);
+    REQUIRE(globalFast < 1.0);
+    REQUIRE_NEAR(
+        mapObjectVelocityArrowLengthScale(100000.0, MapObjectVelocityMode::Global),
+        1.0,
+        1.0e-12
+    );
+    REQUIRE_NEAR(
+        mapObjectVelocityArrowLengthScale(1000.0, MapObjectVelocityMode::Local),
+        1.0,
+        1.0e-12
+    );
+
+    const double localCrawl = mapObjectVelocityArrowLengthScale(
+        1.0,
+        MapObjectVelocityMode::Local
+    );
+    const double localFast = mapObjectVelocityArrowLengthScale(
+        180.0,
+        MapObjectVelocityMode::Local
+    );
+    REQUIRE(localCrawl > 0.0);
+    REQUIRE(localFast > localCrawl * 5.0);
+
     const auto [azForward, elForward] =
         stellarAzimuthElevationDeg(glm::dvec3(0.0, 0.0, 10.0));
     REQUIRE_NEAR(azForward, 0.0, 1.0e-9);
@@ -2017,7 +2062,9 @@ void testTacticalOverlayPointerToggleAndDragAreCaptured()
     auto result = state.handlePointer(
         frame, viewport, item.screenPx, true, true);
     REQUIRE(result.consumed);
+    REQUIRE(result.activatedObjectId == item.objectId);
     REQUIRE(result.toggledObjectId == item.objectId);
+    REQUIRE(state.isActive(item.objectId));
     REQUIRE(state.isOpen(item.objectId));
 
     // Holding the click remains captured by the overlay so map-camera input
@@ -2049,6 +2096,89 @@ void testTacticalOverlayPointerToggleAndDragAreCaptured()
     REQUIRE(result.toggledObjectId == item.objectId);
     REQUIRE(!state.isOpen(item.objectId));
     state.handlePointer(frame, viewport, item.screenPx, true, false);
+}
+
+void testTacticalOverlayCardClickReactivatesObjectWithoutTogglingCard()
+{
+    MapObjectOverlayState state;
+    MapObjectOverlayFrame frame;
+    const glm::dvec2 viewport(1000.0, 700.0);
+
+    MapObjectOverlayItem hub;
+    hub.objectId = "hub:earth";
+    hub.screenPx = glm::dvec2(220.0, 220.0);
+    hub.visible = true;
+    frame.items.push_back(hub);
+
+    MapObjectOverlayItem ship;
+    ship.objectId = "ship:other";
+    ship.screenPx = glm::dvec2(620.0, 420.0);
+    ship.visible = true;
+    frame.items.push_back(ship);
+
+    state.toggle(hub, viewport);
+    state.toggle(ship, viewport);
+    state.activate(ship.objectId);
+    REQUIRE(state.isActive(ship.objectId));
+    REQUIRE(!state.isActive(hub.objectId));
+
+    const auto panels = state.orderedPanels();
+    const auto hubPanel = std::find_if(
+        panels.begin(),
+        panels.end(),
+        [&](const auto& panel)
+        {
+            return panel.objectId == hub.objectId;
+        }
+    );
+    REQUIRE(hubPanel != panels.end());
+
+    const glm::dvec2 bodyPoint =
+        hubPanel->topLeftPx + glm::dvec2(80.0, 70.0);
+    auto result = state.handlePointer(
+        frame,
+        viewport,
+        bodyPoint,
+        true,
+        true
+    );
+    REQUIRE(result.consumed);
+    REQUIRE(result.activatedObjectId == hub.objectId);
+    REQUIRE(result.toggledObjectId.empty());
+    REQUIRE(state.isActive(hub.objectId));
+    REQUIRE(state.isOpen(hub.objectId));
+    REQUIRE(state.isOpen(ship.objectId));
+
+    state.handlePointer(frame, viewport, bodyPoint, true, false);
+}
+
+void testTacticalObjectSelectionClearsBodyCubeAndHubFocus()
+{
+    SystemMapView view = makeSystemView();
+    auto& state = view.state();
+
+    state.selectedBodyId = "earth";
+    state.selectedHubId = "hub:earth";
+    state.selectedHubParentBodyId = "earth";
+    state.navigationGrid.selectCell(state.navigationGrid.anchorCell());
+    state.navigationCellExplicitlySelected = true;
+    state.selectedBodyTrackingEnabled = true;
+    state.trackedBodyId = "earth";
+    state.trackedBodyPositionValid = true;
+    state.orbitPivotActive = true;
+
+    SystemMapInteraction interaction;
+    interaction.focusTacticalObjectSelection(view);
+
+    REQUIRE(state.selectedBodyId.empty());
+    REQUIRE(state.selectedHubId.empty());
+    REQUIRE(state.selectedHubParentBodyId.empty());
+    REQUIRE(!state.navigationGrid.hasSelectedCell());
+    REQUIRE(!state.navigationCellExplicitlySelected);
+    REQUIRE(!state.selectedBodyTrackingEnabled);
+    REQUIRE(state.trackedBodyId.empty());
+    REQUIRE(!state.trackedBodyPositionValid);
+    REQUIRE(!state.orbitPivotActive);
 }
 
 void testTacticalOverlayCrowdedPickPrefersLargestObject()
@@ -2236,6 +2366,8 @@ int main()
         {"tactical overlay glyph scale and stellar angles", testTacticalOverlayGlyphScaleAndAngles},
         {"tactical overlay supports multiple independent cards", testTacticalOverlaySupportsMultipleIndependentCards},
         {"tactical overlay pointer toggle and drag are captured", testTacticalOverlayPointerToggleAndDragAreCaptured},
+        {"tactical overlay card click reactivates object without toggling card", testTacticalOverlayCardClickReactivatesObjectWithoutTogglingCard},
+        {"tactical object selection clears body cube and Hub focus", testTacticalObjectSelectionClearsBodyCubeAndHubFocus},
         {"tactical overlay crowded pick prefers largest object", testTacticalOverlayCrowdedPickPrefersLargestObject},
         {"tactical overlay trajectory seam does not invent samples", testTacticalOverlayTrajectorySeamDoesNotInventSamples},
         {"Hub map allows close tactical inspection", testHubMapAllowsCloseTacticalInspection}

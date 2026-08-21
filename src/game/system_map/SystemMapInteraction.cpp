@@ -311,6 +311,24 @@ void SystemMapInteraction::focusHub(
     (void)nowSeconds;
 }
 
+void SystemMapInteraction::focusTacticalObjectSelection(
+    SystemMapView& view
+) const
+{
+    auto& state = view.state();
+
+    state.selectedBodyId.clear();
+    state.selectedHubId.clear();
+    state.selectedHubParentBodyId.clear();
+    state.navigationGrid.clearSelectedCell();
+    state.navigationCellExplicitlySelected = false;
+
+    state.selectedBodyTrackingEnabled = false;
+    state.trackedBodyId.clear();
+    state.trackedBodyPositionValid = false;
+    state.orbitPivotActive = false;
+}
+
 SystemMapInputResult SystemMapInteraction::handleInput(
     SystemMapView& view,
     const SystemMapInteractionContext& context,

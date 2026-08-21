@@ -7,6 +7,8 @@
 #include <utility>
 #include <vector>
 
+#include <glm/gtc/quaternion.hpp>
+
 #include "src/game/client/ClientSpatialDomain.h"
 #include "src/game/client/SnapshotPresentationWindow.h"
 #include "src/game/simulation/SimulationSnapshot.h"
@@ -37,6 +39,8 @@ struct SystemMapStaticObjectSample
 
     std::string hubId;
     world::coordinates::WorldPosition worldPosition;
+    glm::dvec3 linearVelocityMps {0.0};
+    glm::mat4 orientation {1.0f};
     world::orbits::OrbitalMotion orbitalMotion;
 };
 
@@ -48,6 +52,8 @@ struct SystemMapHubSample
     int systemId = -1;
     std::string parentBodyId;
     world::coordinates::WorldPosition worldPosition;
+    glm::dvec3 worldVelocityMps {0.0};
+    glm::mat4 orientation {1.0f};
     world::orbits::OrbitalMotion motion;
 };
 
@@ -113,6 +119,8 @@ inline SystemMapStaticObjectSample makeSystemMapStaticObjectSample(
         ? object.hubAttachment.hubId
         : std::string{};
     out.worldPosition = object.worldPosition;
+    out.linearVelocityMps = object.linearVelocityMps;
+    out.orientation = object.orientation;
     out.orbitalMotion = object.orbitalMotion;
     return out;
 }
@@ -128,6 +136,8 @@ inline SystemMapHubSample makeSystemMapHubSample(
     out.systemId = hub.systemId;
     out.parentBodyId = hub.parentBodyId;
     out.worldPosition = hub.worldPosition;
+    out.worldVelocityMps = hub.worldVelocityMps;
+    out.orientation = hub.orientation;
     out.motion = hub.motion;
     return out;
 }
@@ -274,6 +284,25 @@ sampleSystemMapInfrastructureAtServerTime(
             olderObject.worldPosition,
             deltaMeters * alpha
         );
+        sample.linearVelocityMps =
+            olderObject.linearVelocityMps * (1.0 - alpha) +
+            newerObject->linearVelocityMps * alpha;
+
+        glm::quat olderOrientation = glm::normalize(
+            glm::quat_cast(glm::mat3(olderObject.orientation))
+        );
+        glm::quat newerOrientation = glm::normalize(
+            glm::quat_cast(glm::mat3(newerObject->orientation))
+        );
+        if (glm::dot(olderOrientation, newerOrientation) < 0.0f)
+            newerOrientation = -newerOrientation;
+        sample.orientation = glm::mat4_cast(
+            glm::normalize(glm::slerp(
+                olderOrientation,
+                newerOrientation,
+                static_cast<float>(alpha)
+            ))
+        );
 
         // Orbit centers can follow moving parent bodies. Keep the exact map
         // epoch coherent instead of taking an arbitrary endpoint center.
@@ -311,6 +340,26 @@ sampleSystemMapInfrastructureAtServerTime(
             olderHub.worldPosition,
             deltaMeters * alpha
         );
+        sample.worldVelocityMps =
+            olderHub.worldVelocityMps * (1.0 - alpha) +
+            newerHub->worldVelocityMps * alpha;
+
+        glm::quat olderOrientation = glm::normalize(
+            glm::quat_cast(glm::mat3(olderHub.orientation))
+        );
+        glm::quat newerOrientation = glm::normalize(
+            glm::quat_cast(glm::mat3(newerHub->orientation))
+        );
+        if (glm::dot(olderOrientation, newerOrientation) < 0.0f)
+            newerOrientation = -newerOrientation;
+        sample.orientation = glm::mat4_cast(
+            glm::normalize(glm::slerp(
+                olderOrientation,
+                newerOrientation,
+                static_cast<float>(alpha)
+            ))
+        );
+
         sample.motion.centerMeters =
             olderHub.motion.centerMeters * (1.0 - alpha) +
             newerHub->motion.centerMeters * alpha;

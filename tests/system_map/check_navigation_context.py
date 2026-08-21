@@ -97,6 +97,7 @@ for token in (
     "m_loadedSystemMapId != loadedSystemMapId",
     "m_systemMapShowsEmptySector = loadedMapIsEmptySector;",
     "SystemMapRenderer::Mode::System",
+    "setSystemMapPlayerSystemMode();",
 ):
     require(loaded_system, token, "setSystemMapLoadedSystemMode")
 forbid(
@@ -135,8 +136,37 @@ for token in (
     "target.valid()",
     "composeDetailMapSnapshot(target)",
     "beginSystemMapDetailTransition(target)",
+    "setSystemMapPlayerDetailMode();",
 ):
     require(loaded_detail, token, "setSystemMapLoadedDetailMode")
+
+# Direct F12/local entry at the player's Hub must materialize the parent
+# System and Details contexts first. Parent buttons then restore loaded
+# navigation rather than becoming decorative; if a loaded parent is genuinely
+# absent, the player-context fallback above remains authoritative.
+prepare_level = function_body(
+    space,
+    "bool SpaceState::preparePlayerNavigationMapLevel("
+)
+for token in (
+    "composeSystemMapSnapshot(nav.currentSystemId)",
+    "buildPlayerDetailTarget(parentTarget, true)",
+    "composeDetailMapSnapshot(parentTarget)",
+    "composeHubMapSnapshot(nav.currentSystemId, motion.hubId)",
+):
+    require(prepare_level, token, "preparePlayerNavigationMapLevel")
+
+player_local = function_body(
+    space,
+    "void SpaceState::setSystemMapPlayerLocalMode()"
+)
+for token in (
+    "composeSystemMapSnapshot(nav.currentSystemId)",
+    "buildPlayerDetailTarget(parentTarget, true)",
+    "composeDetailMapSnapshot(parentTarget)",
+    "composeHubMapSnapshot(nav.currentSystemId, motion.hubId)",
+):
+    require(player_local, token, "setSystemMapPlayerLocalMode")
 
 # Empty interstellar sectors are first-class map contexts with synthetic
 # negative ids. Details must be composable locally from their terminal cube;
@@ -215,4 +245,4 @@ for token in (
     if token not in renderer + localization:
         fail(f"System/Space naming contract missing: {token}")
 
-print("[PASS] selected map context, empty-space Details and parent-layer navigation are locked")
+print("[PASS] selected map context, player fallback parents, empty-space Details and parent-layer navigation are locked")

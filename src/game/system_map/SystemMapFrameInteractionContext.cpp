@@ -24,6 +24,7 @@ int SystemMapFrameInteractionContext::pickHub(
 ) const
 {
     int bestIndex = -1;
+    double bestPhysicalSizeMeters = -1.0;
     float bestDistance = std::numeric_limits<float>::max();
     const glm::vec2 mouse(
         static_cast<float>(x),
@@ -46,13 +47,36 @@ int SystemMapFrameInteractionContext::pickHub(
         const float distance =
             glm::length(point.screen - mouse);
 
-        if (distance <= point.screenRadiusPx &&
-            distance < bestDistance)
+        if (distance > point.screenRadiusPx)
+            continue;
+
+        const double size =
+            std::max(0.0, point.physicalSizeMeters);
+        const bool larger =
+            size > bestPhysicalSizeMeters + 1.0e-6;
+        const bool sameSize =
+            std::abs(size - bestPhysicalSizeMeters) <= 1.0e-6;
+        const bool nearer =
+            sameSize && distance < bestDistance - 0.01f;
+
+        if (bestIndex < 0 || larger || nearer)
         {
+            bestPhysicalSizeMeters = size;
             bestDistance = distance;
             bestIndex = index;
         }
     }
+
+    if (bestIndex < 0)
+        return -1;
+
+    // A body whose visible disk/marker is directly under the pointer is part
+    // of the same semantic click cluster. The physically larger object wins,
+    // so a dense pile of tiny ship/Hub glyphs cannot hide a planet or moon.
+    const double bodySize =
+        largestDirectBodyPhysicalSizeMetersAt(x, y);
+    if (bodySize > bestPhysicalSizeMeters + 1.0e-6)
+        return -1;
 
     return bestIndex;
 }
@@ -63,6 +87,8 @@ int SystemMapFrameInteractionContext::pickBody(
 ) const
 {
     int bestIndex = -1;
+    int bestHitTier = 2;
+    double bestPhysicalSizeMeters = -1.0;
     float bestScore = std::numeric_limits<float>::max();
     const glm::vec2 mouse(
         static_cast<float>(x),
@@ -117,23 +143,78 @@ int SystemMapFrameInteractionContext::pickBody(
 
         const bool insideDisk =
             centerDistance <= realBodyRadiusPx;
+        const int hitTier = insideDisk ? 0 : 1;
+        const double physicalSizeMeters =
+            std::max(0.0, point.physicalSizeMeters);
 
         const float score =
             insideDisk
-                ? centerDistance * 0.001f
-                : 1000000.0f +
-                    distanceToRealDisk *
-                        m_controls.pickScoreDiskWeight +
+                ? centerDistance
+                : distanceToRealDisk *
+                    m_controls.pickScoreDiskWeight +
                     centerDistance;
 
-        if (score < bestScore)
+        const bool betterTier = hitTier < bestHitTier;
+        const bool sameTier = hitTier == bestHitTier;
+        const bool larger =
+            sameTier &&
+            physicalSizeMeters >
+                bestPhysicalSizeMeters + 1.0e-6;
+        const bool sameSize =
+            sameTier &&
+            std::abs(
+                physicalSizeMeters -
+                bestPhysicalSizeMeters
+            ) <= 1.0e-6;
+        const bool betterScore =
+            sameSize && score < bestScore;
+
+        if (bestIndex < 0 || betterTier || larger || betterScore)
         {
-            bestScore = score;
             bestIndex = index;
+            bestHitTier = hitTier;
+            bestPhysicalSizeMeters = physicalSizeMeters;
+            bestScore = score;
         }
     }
 
     return bestIndex;
+}
+
+double
+SystemMapFrameInteractionContext::largestDirectBodyPhysicalSizeMetersAt(
+    double x,
+    double y
+) const
+{
+    double best = 0.0;
+    const glm::vec2 mouse(
+        static_cast<float>(x),
+        static_cast<float>(y)
+    );
+
+    for (const auto& point : m_frame.bodyScreenPoints)
+    {
+        if (!point.visible ||
+            !std::isfinite(point.screen.x) ||
+            !std::isfinite(point.screen.y) ||
+            !std::isfinite(point.screenRadiusPx))
+        {
+            continue;
+        }
+
+        const float distance =
+            glm::length(point.screen - mouse);
+        if (distance > std::max(0.0f, point.screenRadiusPx))
+            continue;
+
+        best = std::max(
+            best,
+            std::max(0.0, point.physicalSizeMeters)
+        );
+    }
+
+    return best;
 }
 
 int SystemMapFrameInteractionContext::pickCameraBody(

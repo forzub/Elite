@@ -20,7 +20,13 @@ Covered contracts:
 - mode changes are applied only after outgoing-frame capture;
 - a fixed mouse/scroll trace produces the same state after every replay;
 - semantic System picking reads a supplied CPU presentation frame;
-- immutable camera snapshots own System and local-map projection math.
+- immutable camera snapshots own System and local-map projection math;
+- tactical glyph scale remains bounded and responds to projected physical size;
+- stellar velocity azimuth/elevation are camera-independent;
+- multiple object information cards coexist and close independently;
+- overlay pointer gestures are captured and draggable cards remain independent;
+- current velocity never manufactures trajectory history/prediction samples;
+- Hub Map keeps the close-inspection zoom range.
 
 ## Run from MSYS2 MinGW64
 
@@ -44,6 +50,12 @@ without the full game: selected Details uses `m_loadedSystemMapId`, empty-sector
 Details remains a negative-id `SpatialVolume`, System -> Hub prepares its parent
 Details target, and Hub/Details parent navigation restores loaded targets rather
 than the player's unrelated current system.
+
+`check_object_overlay.py` runs in the same pre-build phase and locks production
+wiring for tactical triangle glyphs, separate facing/velocity semantics,
+global-blue versus local-green velocity policy, correct travel-frame conversion
+in empty-space Details, multiple draggable cards, stable session track labels,
+Hub close-inspection controls, localization keys and the trajectory data seam.
 
 The suite also verifies that `SystemMapPresentationBuilder` owns system-change
 reset, one-time camera fitting, presentation-time advancement and stale

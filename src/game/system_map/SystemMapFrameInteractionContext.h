@@ -42,6 +42,11 @@ namespace game::system_map
             const std::string& objectId
         ) const override;
 
+        double largestDirectBodyPhysicalSizeMetersAt(
+            double localMouseX,
+            double localMouseY
+        ) const;
+
     private:
         int pickBody(double x, double y) const;
         int pickHub(double x, double y) const;

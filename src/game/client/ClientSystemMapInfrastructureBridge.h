@@ -85,6 +85,14 @@ inline void rebuildSystemMapInfrastructureLayer(
             world::coordinates::fullMeters(objectState.worldPosition) /
             world::celestial::MetersPerAu;
         object.systemId = objectState.systemId;
+        object.velocityMps = objectState.linearVelocityMps;
+        object.forwardWorld = glm::dvec3(glm::vec3(
+            objectState.orientation * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)
+        ));
+        object.sizeMeters = glm::dvec3(120.0, 80.0, 120.0);
+        object.typeName = objectState.type == ObjectType::Station
+            ? "Station"
+            : "Infrastructure";
 
         if (!objectState.hubId.empty())
         {
@@ -117,6 +125,12 @@ inline void rebuildSystemMapInfrastructureLayer(
             world::coordinates::fullMeters(hubState.worldPosition) /
             world::celestial::MetersPerAu;
         hub.systemId = hubState.systemId;
+        hub.velocityMps = hubState.worldVelocityMps;
+        hub.forwardWorld = glm::dvec3(glm::vec3(
+            hubState.orientation * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)
+        ));
+        hub.sizeMeters = glm::dvec3(4000.0, 1500.0, 4000.0);
+        hub.typeName = "Hub";
         applySystemMapOrbit(hub, hubState.motion);
 
         map.objects.push_back(std::move(hub));

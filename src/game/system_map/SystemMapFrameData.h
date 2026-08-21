@@ -6,6 +6,8 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/system_map/MapObjectOverlay.h"
+
 namespace game::system_map
 {
     struct SystemMapBodyScreenPoint
@@ -16,6 +18,7 @@ namespace game::system_map
         float depth = 0.0f;
         bool visible = false;
         float screenRadiusPx = 0.0f;
+        double physicalSizeMeters = 0.0;
     };
 
     struct SystemMapOrbitPivotScreenPoint
@@ -37,6 +40,7 @@ namespace game::system_map
         float depth = 0.0f;
         bool visible = false;
         float screenRadiusPx = 12.0f;
+        double physicalSizeMeters = 0.0;
     };
 
     /*
@@ -52,6 +56,7 @@ namespace game::system_map
         std::vector<SystemMapBodyScreenPoint> bodyScreenPoints;
         std::vector<SystemMapOrbitPivotScreenPoint> orbitPivotScreenPoints;
         std::vector<SystemMapHubScreenPoint> hubScreenPoints;
+        MapObjectOverlayFrame objectOverlay;
 
         std::unordered_map<std::string, glm::dvec3>
             bodyAbsolutePositionById;
@@ -67,6 +72,8 @@ namespace game::system_map
             bodyScreenPoints.clear();
             orbitPivotScreenPoints.clear();
             hubScreenPoints.clear();
+            objectOverlay.items.clear();
+            objectOverlay.trajectories.clear();
             bodyAbsolutePositionById.clear();
             bodyPhysicalRadiusWorldById.clear();
             objectAbsolutePositionById.clear();

@@ -14,6 +14,11 @@ regression-protected mechanics from temporary/legacy paths and from features
 that are not implemented. Update that contract whenever map behavior changes
 intentionally.
 
+Tactical ship/hub glyphs, velocity semantics, multi-card interaction, short
+track numbers, close Hub inspection and the trajectory-ready presentation seam
+are specified separately in
+[`MAP_OBJECT_OVERLAY_CONTRACT.md`](MAP_OBJECT_OVERLAY_CONTRACT.md).
+
 ## Ownership boundaries
 
 Each mode follows the same ownership split:
@@ -169,6 +174,11 @@ regressions in loaded-context ownership: Details/Hub drill-down may not fall
 back to the player's physical `currentSystemId`, empty-sector Details must remain
 a first-class negative-id spatial target, and System -> Hub must preserve the
 exact parent Details context.
+
+`check_object_overlay.py` locks the tactical presentation boundary: compact
+glyph ownership, global/local velocity policy, travel-frame conversion for
+empty-space relative velocity, multi-card state/input capture, Hub close zoom,
+localization keys and the no-synthesized-trajectory rule.
 
 ## Detail and Hub presentation lifecycle
 

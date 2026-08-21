@@ -4140,9 +4140,14 @@ void SpaceState::setSystemMapKnownSystemMode(int systemId)
 void SpaceState::setSystemMapLoadedSystemMode()
 {
     if (!m_client ||
-        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System ||
-        !m_hasSystemMapSnapshot)
+        m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System)
     {
+        return;
+    }
+
+    if (!m_hasSystemMapSnapshot)
+    {
+        setSystemMapPlayerSystemMode();
         return;
     }
 
@@ -4286,8 +4291,16 @@ bool SpaceState::preparePlayerNavigationMapLevel(PlayerNavigationMapLevel level)
                 const auto& motion = playerIt->second.transform.motion;
                 if (motion.matchedToReferenceFrame && !motion.hubId.empty())
                 {
-                    if (!composeHubMapSnapshot(nav.currentSystemId, motion.hubId))
+                    if (!composeSystemMapSnapshot(nav.currentSystemId))
                         return false;
+
+                    world::celestial::DetailTarget parentTarget;
+                    if (!buildPlayerDetailTarget(parentTarget, true) ||
+                        !composeDetailMapSnapshot(parentTarget) ||
+                        !composeHubMapSnapshot(nav.currentSystemId, motion.hubId))
+                    {
+                        return false;
+                    }
                     m_systemMapRenderer.setMode(SystemMapRenderer::Mode::Hub);
                     return true;
                 }
@@ -4371,8 +4384,16 @@ void SpaceState::setSystemMapPlayerLocalMode()
         const auto& motion = playerIt->second.transform.motion;
         if (motion.matchedToReferenceFrame && !motion.hubId.empty())
         {
-            if (!composeHubMapSnapshot(nav.currentSystemId, motion.hubId))
+            if (!composeSystemMapSnapshot(nav.currentSystemId))
                 return;
+
+            world::celestial::DetailTarget parentTarget;
+            if (!buildPlayerDetailTarget(parentTarget, true) ||
+                !composeDetailMapSnapshot(parentTarget) ||
+                !composeHubMapSnapshot(nav.currentSystemId, motion.hubId))
+            {
+                return;
+            }
             beginSystemMapHubTransition(nav.currentSystemId, motion.hubId);
             return;
         }
@@ -4504,7 +4525,10 @@ void SpaceState::setSystemMapLoadedDetailMode()
 
     const world::celestial::DetailTarget target = m_loadedDetailTarget;
     if (!target.valid())
+    {
+        setSystemMapPlayerDetailMode();
         return;
+    }
 
     if (!m_hasDetailMapSnapshot && !composeDetailMapSnapshot(target))
         return;

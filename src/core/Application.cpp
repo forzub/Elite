@@ -283,6 +283,75 @@ static std::string findGameUiRoot()
     return (cwd / "assets" / "webui").string();
 }
 
+void startDebugUiCompatibilityRedirect(
+    std::uint16_t processLocalPort,
+    const std::string& webUiRoot
+)
+{
+    constexpr std::uint16_t CompatibilityPort = 8090;
+
+    // The real WebView/WS endpoint remains process-local and ephemeral. This
+    // best-effort launcher only restores the old human-facing debug bookmark.
+    // The first graphical client that can bind 8090 redirects the browser to
+    // its real endpoint; later clients keep their isolated ephemeral servers.
+    if (processLocalPort == 0 || processLocalPort == CompatibilityPort)
+        return;
+
+    static bool attempted = false;
+    static HtmlUiServer redirectServer;
+    if (attempted)
+        return;
+    attempted = true;
+
+    const std::string redirectHtml =
+        "<!doctype html><meta charset=\"utf-8\">"
+        "<title>Elite debug redirect</title>"
+        "<script>"
+        "location.replace(location.protocol+'//'+location.hostname+':" +
+        std::to_string(processLocalPort) +
+        "'+location.pathname+location.search+location.hash);"
+        "</script>"
+        "<p>Redirecting to the active Elite debug endpoint...</p>";
+
+    for (const char* resource : {
+        "/debug_control.html",
+        "/attachment_editor.html",
+        "/volume_viewer.html",
+        "/frustum_debug.html",
+        "/ship_core.html",
+        "/structure_debug.html",
+        "/system_map.html"
+    })
+    {
+        redirectServer.setVirtualFile(
+            resource,
+            redirectHtml,
+            "text/html; charset=utf-8"
+        );
+    }
+
+    try
+    {
+        redirectServer.start(CompatibilityPort, webUiRoot);
+        std::cout << "[App] debug compatibility URL: "
+                  << "http://localhost:"
+                  << CompatibilityPort
+                  << "/ -> process-local port "
+                  << processLocalPort
+                  << "\n";
+    }
+    catch (const std::exception& e)
+    {
+        // Port 8090 may already belong to another EliteGame instance. That is
+        // expected in multi-process acceptance; never disturb the real server.
+        std::cout << "[App] debug compatibility port "
+                  << CompatibilityPort
+                  << " unavailable: "
+                  << e.what()
+                  << "\n";
+    }
+}
+
 static std::string makeGameUiHttpUrl(
     std::uint16_t localPort,
     const std::string& relativeFile,
@@ -543,6 +612,10 @@ void Application::init()
             }
 
             m_gameUiHttpPort = m_htmlUi.start(0, webUiRoot);
+            startDebugUiCompatibilityRedirect(
+                m_gameUiHttpPort,
+                webUiRoot
+            );
 
 #ifdef _WIN32
             if (core::runtimeTraceEnabled())

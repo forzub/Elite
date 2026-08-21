@@ -1986,22 +1986,9 @@ void SystemMapRenderer::drawSystemObjectOverlays(
 
 
 
-        const float markerSize =
-            static_cast<float>(
-                std::max(
-                    worldUnitsPerPixel * 7.0,
-                    worldUnitsPerPixel
-                )
-            );
-
-        addMapObjectCube(
-            objectPos,
-            markerSize,
-            glm::vec4(
-                objectColor,
-                alpha
-            )
-        );
+        // The object itself is rendered by the shared tactical overlay.
+        // This pass intentionally retains only authored orbit geometry.
+        (void)worldUnitsPerPixel;
     }
 
     flushLines(
@@ -2053,94 +2040,15 @@ void SystemMapRenderer::drawSystemObjectLabels(
     const std::unordered_map<std::string, float>& drawRadiusById
 )
 {
-    auto& text =
-        TextRenderer::instance();
-
-    text.beginFrameForViewport(
-        vp.width,
-        vp.height
-    );
-
-    for (const auto& obj : system.objects)
-    {
-        auto posIt =
-            objectVisualPosById.find(
-                systemMapObjectStableKey(obj)
-            );
-
-        if (posIt == objectVisualPosById.end())
-            continue;
-
-        const glm::vec3 p =
-            posIt->second;
-
-        bool visible =
-            false;
-
-        float depth =
-            1.0f;
-
-        const glm::vec2 screen =
-            projectToScreen(
-                p,
-                mvp,
-                vp,
-                visible,
-                depth
-            );
-
-        if (!visible)
-            continue;
-
-        const float alpha =
-            systemObjectOcclusionAlpha(
-                obj,
-                p,
-                view,
-                bodyVisualPosById,
-                drawRadiusById
-            );
-
-        const bool isHub =
-            obj.kind ==
-            world::celestial::
-                SystemMapObjectKind::Hub;
-
-        const glm::vec3 labelColor =
-            isHub
-                ? m_systemView.visuals().scene.hubObjectLabelColor
-                : m_systemView.visuals().scene.otherObjectLabelColor;
-
-        text.textDrawPx(
-            obj.name,
-            screen.x + 8.0f,
-            screen.y - 7.0f,
-            13,
-            glm::vec4(
-                labelColor,
-                alpha
-            )
-        );
-
-        if (!obj.owner.empty())
-        {
-            text.textDrawPx(
-                "(" + obj.owner + ")",
-                screen.x + 8.0f,
-                screen.y + 9.0f,
-                10,
-                glm::vec4(
-                    glm::vec3(
-                        m_systemView.visuals().scene.objectOwnerLabelColor
-                    ),
-                    alpha *
-                        m_systemView.visuals().scene.objectOwnerAlphaScale
-                )
-            );
-        }
-    }
-
-    text.endFrame();
+    // Object names/owners moved into click-open tactical cards. Persistent
+    // screen clutter is now limited to the stable short track number.
+    (void)vp;
+    (void)system;
+    (void)mvp;
+    (void)view;
+    (void)objectVisualPosById;
+    (void)bodyVisualPosById;
+    (void)drawRadiusById;
 }
 
 

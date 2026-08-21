@@ -66,6 +66,7 @@
 #include "src/game/system_map/DetailMapBackend.h"
 #include "src/game/system_map/HubMapBackend.h"
 #include "src/game/system_map/MapCelestialRenderResources.h"
+#include "src/game/system_map/MapObjectOverlayRenderer.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
@@ -192,6 +193,8 @@ private:
         m_localMapPresentationBuilder;
     game::system_map::DetailMapPresentation m_detailPresentation;
     game::system_map::HubMapPresentation m_hubPresentation;
+    game::system_map::MapObjectOverlayState m_objectOverlayState;
+    game::system_map::MapObjectOverlayRenderer m_objectOverlayRenderer;
     game::system_map::DetailMapSceneRenderer m_detailSceneRenderer;
     game::system_map::HubMapSceneRenderer m_hubSceneRenderer;
     game::system_map::MapCelestialRenderResources m_mapResources;

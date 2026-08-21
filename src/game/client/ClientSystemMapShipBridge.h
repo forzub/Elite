@@ -60,6 +60,7 @@ inline void rebuildSystemMapShipLayer(
 
         SystemMapObject object;
         object.id = ship.id;
+        const auto& descriptor = ShipDescriptorRegistry::get(ship.typeId);
         const bool isLocalPlayer = game::client::isLocalControlledEntity(
             ship.id,
             localControlledEntityId
@@ -81,7 +82,6 @@ inline void rebuildSystemMapShipLayer(
         }
         else
         {
-            const auto& descriptor = ShipDescriptorRegistry::get(ship.typeId);
             object.name = descriptor.identity.shipName.empty()
                 ? "Ship " + std::to_string(ship.id.value)
                 : descriptor.identity.shipName;
@@ -93,6 +93,14 @@ inline void rebuildSystemMapShipLayer(
             world::coordinates::fullMeters(ship.worldPosition) /
             world::celestial::MetersPerAu;
         object.systemId = ship.systemId;
+        object.velocityMps = ship.worldVelocityMps;
+        object.forwardWorld = glm::dvec3(glm::vec3(
+            ship.orientation * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)
+        ));
+        object.sizeMeters = glm::dvec3(descriptor.getMeshSizeMeters());
+        object.typeName = descriptor.identity.shipType.empty()
+            ? "Ship"
+            : descriptor.identity.shipType;
         object.hasOrbit = false;
 
         map.objects.push_back(std::move(object));

@@ -117,7 +117,15 @@ Repeating the selector for the already visible navigation level is a no-op.
 A newer pending selector supersedes an older pending selector.
 
 Contextual panel buttons and direct F-key selectors are therefore **not the same
-operation** and must not share player-relative fallback logic.
+operation**. Panel navigation restores the loaded parent context first. If a
+parent context genuinely does not exist — notably after a direct/local entry
+path — the panel falls back to the player's current System/Details context
+instead of presenting an enabled no-op button.
+
+Direct F12 entry at a Hub proactively composes the player's parent System and
+Details contexts before committing Hub mode. Therefore the normal path is
+`Hub -> loaded Details -> loaded System`; the player fallback above is a safety
+net, not a replacement for preserving the loaded hierarchy.
 
 ## 3. Empty Galaxy sectors
 

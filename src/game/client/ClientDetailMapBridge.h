@@ -205,6 +205,11 @@ inline world::celestial::LocalSceneObject makeDetailShipObject(
         identifyLocalPlayer,
         localControlledEntityId
     );
+    const auto& descriptor = ShipDescriptorRegistry::get(ship.typeId);
+    object.typeName = descriptor.identity.shipType.empty()
+        ? "Ship"
+        : descriptor.identity.shipType;
+    object.sizeMeters = glm::dvec3(descriptor.getMeshSizeMeters());
     object.kind = playerPresentation ? "player" : "ship";
     object.parentStableId = ship.hubId;
     object.objectClass = world::celestial::DetailObjectClass::Ship;
@@ -213,6 +218,15 @@ inline world::celestial::LocalSceneObject makeDetailShipObject(
     object.positionMeters =
         world::coordinates::fullMeters(ship.worldPosition);
     object.velocityMps = ship.worldVelocityMps;
+    object.globalVelocityMps = ship.worldVelocityMps;
+    object.hasGlobalVelocity = true;
+    object.relativeVelocityMps = ship.localVelocityMps;
+    if (ship.travelFrame.valid)
+    {
+        object.relativeVelocityWorldMps =
+            ship.travelFrame.localToWorldVector(ship.localVelocityMps);
+        object.hasRelativeVelocity = true;
+    }
     object.axes = detailAxesFromOrientation(ship.orientation);
     object.valid = true;
     return object;
@@ -230,9 +244,18 @@ inline world::celestial::LocalSceneObject makeDetailHubObject(
     object.parentStableId = parentBodyId;
     object.objectClass = world::celestial::DetailObjectClass::Hub;
     object.origin = world::celestial::DetailObjectOrigin::Runtime;
+    // Hub runtime replication currently carries transform/orbit facts but not
+    // an authored aggregate envelope. Keep the Detail presentation envelope
+    // aligned with the existing System-map Hub envelope until aggregate Hub
+    // bounds become a first-class replicated/static-definition fact. Besides
+    // glyph scaling, this value is the semantic size used when several map
+    // objects collapse into the same click cluster.
+    object.sizeMeters = glm::dvec3(4000.0, 1500.0, 4000.0);
     object.positionMeters =
         world::coordinates::fullMeters(hub.worldPosition);
     object.velocityMps = hub.worldVelocityMps;
+    object.globalVelocityMps = hub.worldVelocityMps;
+    object.hasGlobalVelocity = true;
     object.axes = detailAxesFromOrientation(hub.orientation);
     object.valid = true;
     return object;
@@ -266,6 +289,8 @@ inline world::celestial::LocalSceneObject makeDetailStaticObject(
     object.positionMeters =
         world::coordinates::fullMeters(source.worldPosition);
     object.velocityMps = source.linearVelocityMps;
+    object.globalVelocityMps = source.linearVelocityMps;
+    object.hasGlobalVelocity = true;
     // Planet Details historically showed authoritative station orientation.
     // Free-space/local-volume context kept the neutral axis glyph; preserve
     // that presentation while moving ownership to the client.

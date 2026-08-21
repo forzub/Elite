@@ -75,6 +75,86 @@ glm::dvec3 visualSizeForHubShip(
     return physicalSizeMeters * factor;
 }
 
+double localObjectPhysicalSizeMeters(
+    const world::celestial::LocalSceneObject& object
+)
+{
+    return std::max({
+        std::abs(object.sizeMeters.x),
+        std::abs(object.sizeMeters.y),
+        std::abs(object.sizeMeters.z),
+        object.boundingRadiusMeters * 2.0,
+        1.0
+    });
+}
+
+std::string localObjectTypeName(
+    const world::celestial::LocalSceneObject& object
+)
+{
+    if (!object.typeName.empty())
+        return object.typeName;
+    if (object.objectClass == world::celestial::DetailObjectClass::Ship)
+        return object.player ? "Player ship" : "Ship";
+    if (object.kind == "hub")
+        return "Hub";
+    if (object.objectClass == world::celestial::DetailObjectClass::Hub)
+        return object.kind.empty() ? "Infrastructure" : object.kind;
+    return object.kind.empty() ? "Object" : object.kind;
+}
+
+glm::vec4 localObjectColor(
+    const world::celestial::LocalSceneObject& object
+)
+{
+    if (object.player)
+        return glm::vec4(1.00f, 0.78f, 0.28f, 0.98f);
+    if (object.kind == "hub")
+        return glm::vec4(0.34f, 0.88f, 1.00f, 0.96f);
+    return glm::vec4(0.78f, 0.86f, 0.94f, 0.96f);
+}
+
+MapObjectGlyphKind localObjectGlyphKind(
+    const world::celestial::LocalSceneObject& object
+)
+{
+    if (object.objectClass == world::celestial::DetailObjectClass::Ship)
+        return MapObjectGlyphKind::Ship;
+    if (object.kind == "hub")
+        return MapObjectGlyphKind::Hub;
+    return MapObjectGlyphKind::Infrastructure;
+}
+
+glm::dvec2 projectDirection(
+    const LocalMapCameraSnapshot& camera,
+    const glm::dvec3& position,
+    const glm::dvec3& direction,
+    double stepMeters
+)
+{
+    if (glm::length(direction) <= 1.0e-12)
+        return glm::dvec2(0.0, -1.0);
+
+    const glm::dvec2 start = camera.project(position);
+    const glm::dvec2 end = camera.project(
+        position + glm::normalize(direction) * std::max(stepMeters, 1.0)
+    );
+    return normalizedScreenDirection(end - start);
+}
+
+bool visibleInViewport(
+    const glm::dvec2& point,
+    const Viewport& viewport,
+    double margin = 20.0
+)
+{
+    return
+        point.x >= -margin &&
+        point.y >= -margin &&
+        point.x <= static_cast<double>(viewport.width) + margin &&
+        point.y <= static_cast<double>(viewport.height) + margin;
+}
+
 } // namespace
 
 
@@ -270,6 +350,84 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
     for (const auto& object : snapshot.scene.objects)
     {
         if (!object.valid ||
+            (object.objectClass != world::celestial::DetailObjectClass::Ship &&
+             object.objectClass != world::celestial::DetailObjectClass::Hub))
+        {
+            continue;
+        }
+
+        MapObjectOverlayItem item;
+        item.objectId = object.stableId.empty()
+            ? "entity:" + std::to_string(object.id.value)
+            : object.stableId;
+        item.name = object.name;
+        item.typeName = localObjectTypeName(object);
+        item.kind = localObjectGlyphKind(object);
+        item.factionColor = localObjectColor(object);
+        item.screenPx = presentation.camera.project(object.positionMeters);
+        item.visible = visibleInViewport(item.screenPx, viewport);
+        item.physicalSizeMeters = localObjectPhysicalSizeMeters(object);
+
+        const double perspective = presentation.camera.perspectiveFactor(
+            presentation.camera.pointToCamera(object.positionMeters).z
+        );
+        const double pixelsPerMeter =
+            presentation.scale *
+            presentation.camera.state.zoom *
+            perspective;
+        item.glyphScale = mapObjectGlyphScale(
+            item.physicalSizeMeters,
+            pixelsPerMeter
+        );
+        item.hitRadiusPx = 15.0 * item.glyphScale;
+
+        const glm::dvec3 forwardWorld = -object.axes.z;
+        item.facingScreenDirection = projectDirection(
+            presentation.camera,
+            object.positionMeters,
+            forwardWorld,
+            std::max(item.physicalSizeMeters, 1000.0)
+        );
+
+        const bool wantsLocalVelocity = state.sceneIsSpatialVolume;
+        if (wantsLocalVelocity && object.hasRelativeVelocity)
+        {
+            item.velocityMode = MapObjectVelocityMode::Local;
+            item.arrowVelocityMode = MapObjectVelocityMode::Local;
+            item.displayedVelocityMps = object.relativeVelocityMps;
+            item.velocityArrowMps = object.relativeVelocityMps;
+            item.velocityScreenDirection = projectDirection(
+                presentation.camera,
+                object.positionMeters,
+                object.relativeVelocityWorldMps,
+                std::max(item.physicalSizeMeters, 1000.0)
+            );
+        }
+        else
+        {
+            item.velocityMode = MapObjectVelocityMode::Global;
+            item.arrowVelocityMode = MapObjectVelocityMode::Global;
+            item.displayedVelocityMps = object.hasGlobalVelocity
+                ? object.globalVelocityMps
+                : object.velocityMps;
+            item.velocityArrowMps = item.displayedVelocityMps;
+            item.velocityScreenDirection = projectDirection(
+                presentation.camera,
+                object.positionMeters,
+                item.displayedVelocityMps,
+                std::max(item.physicalSizeMeters, 1000.0)
+            );
+        }
+        item.stellarVelocityMps = object.hasGlobalVelocity
+            ? object.globalVelocityMps
+            : object.velocityMps;
+
+        presentation.frame.objectOverlay.items.push_back(std::move(item));
+    }
+
+    for (const auto& object : snapshot.scene.objects)
+    {
+        if (!object.valid ||
             object.objectClass !=
                 world::celestial::DetailObjectClass::Hub ||
             object.kind != "hub")
@@ -391,6 +549,92 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
 
     const double finalScale =
         presentation.scale * presentation.camera.state.zoom;
+
+    // The hub itself keeps the existing geometry on Hub Map. Only its broad,
+    // translucent global-motion arrow is added to the tactical overlay.
+    {
+        MapObjectOverlayItem hubItem;
+        hubItem.objectId = snapshot.hubId;
+        hubItem.name = snapshot.displayName.empty()
+            ? snapshot.hubId
+            : snapshot.displayName;
+        hubItem.typeName = "Hub";
+        hubItem.kind = MapObjectGlyphKind::Hub;
+        hubItem.velocityMode = MapObjectVelocityMode::Local;
+        hubItem.arrowVelocityMode = MapObjectVelocityMode::Global;
+        hubItem.displayedVelocityMps = glm::dvec3(0.0);
+        hubItem.velocityArrowMps = snapshot.hubWorldVelocityMps;
+        hubItem.stellarVelocityMps = snapshot.hubWorldVelocityMps;
+        hubItem.factionColor = glm::vec4(0.34f, 0.88f, 1.00f, 0.96f);
+        hubItem.physicalSizeMeters = std::max(1.0, maxDistance * 2.0);
+        hubItem.screenPx = presentation.camera.project(glm::dvec3(0.0));
+        hubItem.visible = visibleInViewport(hubItem.screenPx, viewport);
+        hubItem.drawGlyph = false;
+        hubItem.wideVelocityArrow = true;
+        hubItem.hitRadiusPx = 26.0;
+
+        const glm::dvec3 hubVelocityLocal(
+            glm::dot(snapshot.hubWorldVelocityMps, snapshot.hubWorldAxes.x),
+            glm::dot(snapshot.hubWorldVelocityMps, snapshot.hubWorldAxes.y),
+            glm::dot(snapshot.hubWorldVelocityMps, snapshot.hubWorldAxes.z)
+        );
+        hubItem.velocityScreenDirection = projectDirection(
+            presentation.camera,
+            glm::dvec3(0.0),
+            hubVelocityLocal,
+            1000.0
+        );
+        hubItem.facingScreenDirection = glm::dvec2(0.0, -1.0);
+        presentation.frame.objectOverlay.items.push_back(std::move(hubItem));
+    }
+
+    for (const auto& object : snapshot.scene.objects)
+    {
+        if (!object.valid ||
+            object.objectClass != world::celestial::DetailObjectClass::Ship)
+        {
+            continue;
+        }
+
+        MapObjectOverlayItem item;
+        item.objectId = object.stableId.empty()
+            ? "entity:" + std::to_string(object.id.value)
+            : object.stableId;
+        item.name = object.name;
+        item.typeName = localObjectTypeName(object);
+        item.kind = MapObjectGlyphKind::Ship;
+        item.factionColor = localObjectColor(object);
+        item.screenPx = presentation.camera.project(object.positionMeters);
+        item.visible = visibleInViewport(item.screenPx, viewport);
+        item.physicalSizeMeters = localObjectPhysicalSizeMeters(object);
+        item.glyphScale = mapObjectGlyphScale(
+            item.physicalSizeMeters,
+            finalScale
+        );
+        item.hitRadiusPx = 15.0 * item.glyphScale;
+        item.facingScreenDirection = projectDirection(
+            presentation.camera,
+            object.positionMeters,
+            -object.axes.z,
+            std::max(item.physicalSizeMeters, 100.0)
+        );
+        item.velocityMode = MapObjectVelocityMode::Local;
+        item.arrowVelocityMode = MapObjectVelocityMode::Local;
+        item.displayedVelocityMps = object.hasRelativeVelocity
+            ? object.relativeVelocityMps
+            : object.velocityMps;
+        item.velocityArrowMps = item.displayedVelocityMps;
+        item.stellarVelocityMps = object.hasGlobalVelocity
+            ? object.globalVelocityMps
+            : glm::dvec3(0.0);
+        item.velocityScreenDirection = projectDirection(
+            presentation.camera,
+            object.positionMeters,
+            object.velocityMps,
+            std::max(item.physicalSizeMeters, 100.0)
+        );
+        presentation.frame.objectOverlay.items.push_back(std::move(item));
+    }
 
     const auto addPickable =
         [&](

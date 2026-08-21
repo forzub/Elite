@@ -995,6 +995,7 @@ void SystemMapRenderer::resetView()
     m_navigationLevelZeroButtonHovered = false;
     m_navigationTrackButtonHovered = false;
     m_navigationOverlayLeftWasDown = false;
+    m_objectOverlayState.clearTransientDrag();
 
 }
 
@@ -1147,6 +1148,7 @@ void SystemMapRenderer::setMode(Mode mode)
     m_detailFrameDirty = true;
     m_hubFramePrepared = false;
     m_hubFrameDirty = true;
+    m_objectOverlayState.clearTransientDrag();
 
     /*
         Если пользователь открыл другую карту во время перелёта,
@@ -1940,6 +1942,34 @@ void SystemMapRenderer::render(
         );
     }
 
+    if (m_mode == Mode::System)
+    {
+        m_objectOverlayRenderer.render(
+            vp,
+            m_systemSceneFrame.interaction.objectOverlay,
+            m_objectOverlayState,
+            m_navigationNamingLocale
+        );
+    }
+    else if (m_mode == Mode::Detail)
+    {
+        m_objectOverlayRenderer.render(
+            vp,
+            m_detailPresentation.frame.objectOverlay,
+            m_objectOverlayState,
+            m_navigationNamingLocale
+        );
+    }
+    else if (m_mode == Mode::Hub)
+    {
+        m_objectOverlayRenderer.render(
+            vp,
+            m_hubPresentation.frame.objectOverlay,
+            m_objectOverlayState,
+            m_navigationNamingLocale
+        );
+    }
+
     drawNavigationCoordinateOverlay(
         vp,
         galaxy,
@@ -2299,6 +2329,61 @@ SystemMapRenderer::handleInput(
                 m_systemView.controls()
             );
 
+        const auto overlayPointer =
+            m_objectOverlayState.handlePointer(
+                m_systemSceneFrame.interaction.objectOverlay,
+                glm::dvec2(
+                    static_cast<double>(vp.width),
+                    static_cast<double>(vp.height)
+                ),
+                glm::dvec2(localMx, localMy),
+                inside,
+                leftDown,
+                interactionContext
+                    .largestDirectBodyPhysicalSizeMetersAt(
+                        localMx,
+                        localMy
+                    )
+            );
+
+        if (overlayPointer.consumed)
+        {
+            if (!overlayPointer.toggledObjectId.empty())
+            {
+                const auto hubPoint = std::find_if(
+                    m_systemSceneFrame.interaction.hubScreenPoints.begin(),
+                    m_systemSceneFrame.interaction.hubScreenPoints.end(),
+                    [&](const auto& point)
+                    {
+                        return point.hubId == overlayPointer.toggledObjectId;
+                    }
+                );
+
+                if (hubPoint !=
+                    m_systemSceneFrame.interaction.hubScreenPoints.end())
+                {
+                    game::system_map::SystemMapHubSelection hubSelection;
+                    hubSelection.hubId = hubPoint->hubId;
+                    hubSelection.parentBodyId = hubPoint->parentBodyId;
+                    m_systemInteraction.focusHubSelection(
+                        m_systemView,
+                        interactionContext,
+                        hubSelection,
+                        inputNowSeconds
+                    );
+                }
+            }
+
+            m_systemView.suppressCameraGesture(
+                leftDown,
+                rightDown,
+                mx,
+                my
+            );
+            m_pendingScrollY = 0.0;
+            return std::nullopt;
+        }
+
         const auto result =
             m_systemInteraction.handleInput(
                 m_systemView,
@@ -2368,6 +2453,59 @@ SystemMapRenderer::handleInput(
             m_mode == Mode::Hub
                 ? m_hubView.camera()
                 : m_detailView.camera();
+
+        const auto& objectOverlay =
+            m_mode == Mode::Hub
+                ? m_hubPresentation.frame.objectOverlay
+                : m_detailPresentation.frame.objectOverlay;
+
+        const auto overlayPointer =
+            m_objectOverlayState.handlePointer(
+                objectOverlay,
+                glm::dvec2(
+                    static_cast<double>(vp.width),
+                    static_cast<double>(vp.height)
+                ),
+                glm::dvec2(localMx, localMy),
+                inside,
+                leftDown
+            );
+
+        if (overlayPointer.consumed)
+        {
+            if (m_mode == Mode::Detail &&
+                !overlayPointer.toggledObjectId.empty())
+            {
+                const auto hubPoint = std::find_if(
+                    m_detailPresentation.frame.hubScreenPoints.begin(),
+                    m_detailPresentation.frame.hubScreenPoints.end(),
+                    [&](const auto& point)
+                    {
+                        return point.hubId == overlayPointer.toggledObjectId;
+                    }
+                );
+
+                if (hubPoint !=
+                    m_detailPresentation.frame.hubScreenPoints.end())
+                {
+                    m_detailView.selectHub(
+                        hubPoint->hubId,
+                        hubPoint->parentBodyId
+                    );
+                }
+            }
+
+            auto& camera =
+                m_mode == Mode::Hub
+                    ? m_hubView.camera()
+                    : m_detailView.camera();
+            camera.rotating = false;
+            camera.panning = false;
+            camera.lastMouseX = mx;
+            camera.lastMouseY = my;
+            m_pendingScrollY = 0.0;
+            return std::nullopt;
+        }
 
         handleDetailAndHubInput(
             vp,

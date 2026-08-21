@@ -333,7 +333,8 @@ SignalIdentity
 **Статус: `[x]` базовая навигационная и presentation-архитектура Galaxy / System-or-Space / Details / Hub зафиксирована regression-контрактами.**
 
 Каноническое подробное описание текущей механики:
-`src/game/system_map/MAP_NAVIGATION_CONTRACT.md`.
+- `src/game/system_map/MAP_NAVIGATION_CONTRACT.md` — адресация и переходы между слоями;
+- `src/game/system_map/MAP_OBJECT_OVERLAY_CONTRACT.md` — корабли/хабы, velocity vectors, карточки, track IDs и trajectory seam.
 
 ### `[x]` То, что считаем важной рабочей механикой
 
@@ -366,6 +367,15 @@ SignalIdentity
 - Внутренние map-to-map transitions deferred: outgoing frame не должен преждевременно стать destination-mode.
 - Galaxy/System/Details/Hub production presentation собирается клиентом из local catalogs/celestial state + ordinary authoritative replication/epochs. System/Details/Hub не имеют отдельного authoritative world-state канала.
 - Timeline revision сбрасывает старые snapshot/interpolation данные, но сохраняет semantic loaded target для восстановления той же карты на новой ветке времени.
+- Tactical object overlay заменяет debug axes/cross/cube markers кораблей и map-scale хабов компактными треугольными glyphs: нос показывает ориентацию, отдельная стрелка — фактический velocity vector.
+- Global velocity показывается синей стрелкой на System и обычных Details; local/relative velocity — зелёной на Hub Map и terminal empty-space SpatialVolume. В empty-space local travel-frame vector обязательно переводится обратно в world/reference direction перед экранной проекцией.
+- Центральный Hub на Hub Map сохраняет существующую структурную геометрию и получает широкую полупрозрачную стрелку глобального движения; его карточка при этом остаётся в локальной системе отсчёта.
+- Одновременно можно открыть несколько независимых карточек объектов; каждая перетаскивается, имеет собственный z-order и leader line к текущей screen projection объекта, повторный клик по glyph или `X` закрывает только эту карточку.
+- Клик/drag tactical overlay захватывает gesture до release и не должен одновременно запускать camera orbit/pan; выбор Hub при этом продолжает обновлять canonical map selection для кнопок `DETAIL/HUB`.
+- Объекты получают короткие стабильные в пределах текущего overlay-state track numbers для визуальной идентификации во времени.
+- Glyph/velocity arrow имеют clamped zoom-aware scale: вдали остаются читаемыми, вблизи растут вместе с projected physical size объекта.
+- Hub Map допускает close inspection (`maxZoom >= 64`) и zoom-dependent pan allowance, поэтому к летающим вокруг станции кораблям можно приблизиться.
+- `MapObjectTrajectory` уже выделен отдельным presentation-контрактом для history/prediction/planned samples, но текущий velocity **не превращается автоматически в выдуманную траекторию**.
 
 ### `[~]` Временные / legacy механики, которые пока оставлены
 
@@ -378,7 +388,9 @@ SignalIdentity
 ### `[ ]` Чего пока нет / что не считать готовой механикой
 
 - Полноценная ship selection на System Map -> Details.
-- Historical/planned/predicted trajectory presentation.
+- Historical/planned/predicted trajectory **rendering and data producers**; presentation seam уже существует, но реальных trajectory samples пока нет.
+- Persistent track numbers между reconnect/restart; текущие short IDs стабильны только в lifetime overlay-state.
+- Authoritative/player-known faction source; `factionColor` seam существует, текущие цвета — presentation defaults.
 - First-class durable `SpaceSectorId` / spatial-domain type вместо negative synthetic ids.
 - Отдельный публичный `MapMode::Space`.
 - Browser/WebView command transport для STAR ATLAS — удалён и не должен возвращаться как параллельный navigation path.
@@ -392,7 +404,7 @@ bash tests/architecture_contracts/run_mingw64.sh
 bash tests/client_acceptance/run_mingw64.sh
 ```
 
-`tests/system_map` теперь отдельно фиксирует semantic panel action matrix/command routing и архитектурно запрещает потерю loaded navigation context. Любое намеренное изменение пунктов `[x]` должно менять одновременно код, тест и `MAP_NAVIGATION_CONTRACT.md`; тест нельзя ослаблять только ради того, чтобы случайный behavioral drift снова стал зелёным.
+`tests/system_map` отдельно фиксирует semantic panel action matrix/command routing, запрещает потерю loaded navigation context и охраняет tactical object overlay (`check_object_overlay.py` + C++ behavioral tests). Любое намеренное изменение пунктов `[x]` должно менять одновременно код, тест и соответствующий MD-контракт; тест нельзя ослаблять только ради того, чтобы случайный behavioral drift снова стал зелёным.
 
 Целевая ownership-схема остаётся:
 
@@ -489,6 +501,7 @@ Local game и dedicated server должны использовать тот же
 
 - `[x]` **UI platform / binary resource pack:** `ELITEUI1` + `UiResourcePack`, global Noto/font-license layer, reusable `EliteUiKit`, native `UiNavigationState`, non-secret `ClientPreferencesStore` и общий GameWebView service/session shell готовы. MainMenu больше не дублируется через legacy `HtmlUiManager`, старый `ConfirmExitState` удалён.
 - `[~]` **Presentation atomicity / UI-map stability:** после покадровой Windows/DWM трассировки отказались от самой многослойной модели F1-F12. Теперь **вся активная игровая presentation domain использует один GLFW/OpenGL surface**: F1-F4 Flight, F5-F8 нативные service panels, F9-F12 Navigation вместе с правой STAR ATLAS панелью. `service_shell.html`, `service_panel.js`, `system_map_panel.html`, отдельный MapPanel `GameWebView`, JSON/`*_prepared` map-panel handshake и browser route для F5-F8 удалены. `SystemMapPanelPresentation` стал типизированной C++ presentation model, которую `InSessionPresentationRenderer` рисует в том же кадре; service placeholders также рисуются им напрямую. После первой single-surface миграции была выявлена функциональная регрессия: вместе с WebView ошибочно исчезли STAR ATLAS dropdown + map actions, а `prepareRequestedPresentation()` переигрывал committed F9 target каждый кадр и отменял terminal Galaxy cube -> System/empty-sector drill. Панель теперь использует semantic layer actions вместо фиксированных `toggle/DETAIL/HUB/CLOSE` слотов: Close удалён, текущий слой не дублируется, Hub показывает родительские `DETAIL -> SYSTEM/SPACE -> GALAXY`, а в System/Space выбор Hub активирует DETAIL и HUB. Empty-sector System layer называется SPACE; Details строится строго из `m_loadedSystemMapId`/selected terminal spatial cell и больше не подменяет отрицательный synthetic empty-sector id текущей системой игрока. Для непредельного выбранного куба сохраняется центральный terminal descendant. Direct System->Hub предварительно сохраняет точный parent Detail target, чтобы возврат Hub->Detail не зависел от истории переходов. `SystemMapPanelPresentation` выдаёт typed semantic actions, terminal Galaxy `MapIntent` сохраняется, а внутренние Galaxy/System/Detail/Hub переходы синхронизируют `GamePresentationCoordinator` через `adoptNavigationView()` без повторной F-key preparation. Добавлены acceptance/architecture/system-map guards именно на эти функции. Два `m_documentWebViews` остаются только для Main Menu / Loading / ESC Session Menu и больше не участвуют в F1-F12. Direct-selector/latest-request-wins, message-backed physical F-key edges, post-process full-clear и frame-bound `request -> prepare -> render -> swap -> commit` сохранены. Direct F9-F12 не используют outgoing map crossfade. Добавлен архитектурный invariant: активные F1-F12 не имеют права зависеть от WebView show/hide/navigation/z-order/DWM. Пункт остаётся `[~]` до полного MinGW gate и ручной проверки rapid F1-F12, Service<->Map, Map<->Flight, ESC->F, native map-panel actions, terminal cube drill и resize; native complex-script font fallback для перенесённых C++ панелей остаётся отдельным UI follow-up.
+- `[x]` **Map tactical overlay follow-up:** crowded tactical picks are now size-ranked rather than insertion/nearest-first: within one direct hit cluster the physically largest object wins, so Hub beats overlapping ships and a directly hit planet/moon can beat overlapping Hub/ship glyphs on System Map. Direct player-Hub entry now materializes parent System + Details context before Hub; Hub panel parent buttons restore loaded context first and fall back to player context only when a parent was never available. Detail now gives Hub the same temporary kilometre-scale presentation envelope as System, so the diagnostic analytic cube/ships cannot outrank it merely because Hub size was missing. Hub glyphs are visually distinct compact cubes outside Hub Map, localized card labels wrap by measured width, and the legacy browser debug launcher is again reachable through best-effort `localhost:8090` redirection while the actual per-process WebView endpoint remains ephemeral for multiplayer isolation. Guards/tests lock these rules.
 - `[~]` **Bundled font coverage:** добавлены pinned Noto manifest/fetcher, OFL/license registry, WebUI fallback chain для Latin/Cyrillic/Greek, CJK SC/TC/HK/JP/KR, Arabic/Hebrew, major Indic/SE Asian/Armenian/Georgian/Ethiopic + symbols/emoji и RTL locale metadata. Font binaries fetchятся локально перед release и пакуются в `elite_ui.pak`; native complex-script shaping/FontRegistry остаются отдельным follow-up.
 - `[~]` **Full registration form:** отдельный REGISTER view уже содержит целевой DisplayName, AccountHandle, password/confirmation, recovery, locale и consent shape. Пока server-side durable account security отсутствует, security/profile/consent поля fail-closed и не передаются; live остаётся только явно помеченный development AccountHandle + remembered-device bootstrap.
 - `[x]` **Remembered device + last account:** `ClientPreferencesStore` запоминает последний успешно вошедший AccountHandle на конкретном server endpoint и preferred locale, а Windows Credential Manager хранит секретный remembered-device credential. Password/recovery в preferences не пишутся.

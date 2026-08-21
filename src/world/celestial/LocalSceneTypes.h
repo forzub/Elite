@@ -58,6 +58,7 @@ struct LocalSceneObject
     std::string parentStableId;
     std::string name;
     std::string kind;
+    std::string typeName;
 
     LocalSceneObjectClass objectClass = LocalSceneObjectClass::None;
     LocalSceneObjectOrigin origin = LocalSceneObjectOrigin::Runtime;
@@ -68,7 +69,15 @@ struct LocalSceneObject
     std::optional<ProceduralObjectKey> proceduralKey;
 
     glm::dvec3 positionMeters {0.0};
+    // velocityMps remains the velocity expressed in coordinateSpace for
+    // existing local-map rendering. The explicit fields below let the
+    // tactical overlay choose local vs global semantics without guessing.
     glm::dvec3 velocityMps {0.0};
+    glm::dvec3 globalVelocityMps {0.0};
+    glm::dvec3 relativeVelocityMps {0.0};
+    glm::dvec3 relativeVelocityWorldMps {0.0};
+    bool hasGlobalVelocity = false;
+    bool hasRelativeVelocity = false;
     LocalSceneAxes axes;
 
     glm::dvec3 sizeMeters {1.0, 1.0, 1.0};

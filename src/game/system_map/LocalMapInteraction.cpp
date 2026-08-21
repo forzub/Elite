@@ -276,13 +276,21 @@ LocalMapInteractionResult LocalMapInteraction::handle(
                 controls.maximumPitchRad
             );
 
+        // Hub zoom may now approach individual craft. Pan allowance grows
+        // with zoom so a ship does not become unreachable merely because the
+        // camera is magnifying a small portion of the station neighbourhood.
+        const double panZoomAllowance =
+            std::max(1.0, camera.zoom * 2.0);
+
         const double panLimitX =
             static_cast<double>(viewport.width) *
-            controls.panLimitViewportFractionX;
+            controls.panLimitViewportFractionX *
+            panZoomAllowance;
 
         const double panLimitY =
             static_cast<double>(viewport.height) *
-            controls.panLimitViewportFractionY;
+            controls.panLimitViewportFractionY *
+            panZoomAllowance;
 
         camera.pan.x =
             std::clamp(

@@ -27,7 +27,7 @@ public:
         m_controls.rotateSensitivityScale = 0.65;
         m_controls.zoomStep = 1.06;
         m_controls.minZoom = 0.15;
-        m_controls.maxZoom = 8.0;
+        m_controls.maxZoom = 64.0;
         m_controls.constrainPitch = true;
     }
 

@@ -246,6 +246,14 @@ namespace world::celestial
         glm::dvec3 positionAu {0.0};
         int systemId = -1;
 
+        // Client-composed presentation facts sampled from ordinary
+        // replication at the same epoch as positionAu. They are not a
+        // second authoritative map-state channel.
+        glm::dvec3 velocityMps {0.0};
+        glm::dvec3 forwardWorld {0.0, 0.0, -1.0};
+        glm::dvec3 sizeMeters {1.0};
+        std::string typeName;
+
         // Optional orbital metadata for map rendering.
         // Renderer must not invent this from a single current position.
         bool hasOrbit = false;

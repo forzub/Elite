@@ -102,6 +102,19 @@ namespace game::system_map
             double& pendingScrollY
         ) const;
 
+        // Tactical object overlays use the same canonical Hub-selection path
+        // as ordinary System-map picking so opening an info card cannot break
+        // the existing Details/Hub navigation contract.
+        void focusHubSelection(
+            SystemMapView& view,
+            const SystemMapInteractionContext& context,
+            const SystemMapHubSelection& hub,
+            double nowSeconds
+        ) const
+        {
+            focusHub(view, context, hub, nowSeconds);
+        }
+
     private:
         void updateNavigationHoverFromCursor(
             SystemMapView& view,

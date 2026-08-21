@@ -28,6 +28,7 @@
 #include "src/game/system_map/LocalMapPresentationBuilder.h"
 #include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/MapMode.h"
+#include "src/game/system_map/MapObjectOverlay.h"
 #include "src/game/system_map/MapTransitionController.h"
 #include "src/game/system_map/SystemMapInteraction.h"
 #include "src/game/system_map/SystemMapFrameInteractionContext.h"
@@ -54,6 +55,12 @@ using game::system_map::GalaxyMapView;
 using game::system_map::LocalMapCameraSnapshot;
 using game::system_map::LocalMapPresentationBuilder;
 using game::system_map::MapMode;
+using game::system_map::MapObjectInfoPanelState;
+using game::system_map::MapObjectOverlayFrame;
+using game::system_map::MapObjectOverlayItem;
+using game::system_map::MapObjectOverlayState;
+using game::system_map::mapObjectGlyphScale;
+using game::system_map::stellarAzimuthElevationDeg;
 using game::system_map::SystemMapCameraBodyTarget;
 using game::system_map::SystemMapHubSelection;
 using game::system_map::SystemMapInputFrame;
@@ -1936,6 +1943,265 @@ void testMouseAndScrollTraceIsRepeatable()
     REQUIRE(first[8].distance > first[7].distance);
 }
 
+
+void testTacticalOverlayGlyphScaleAndAngles()
+{
+    REQUIRE_NEAR(mapObjectGlyphScale(100.0, 0.01), 1.0, 1.0e-12);
+
+    const double closeScale = mapObjectGlyphScale(100.0, 0.50);
+    REQUIRE(closeScale > 1.0);
+    REQUIRE(closeScale <= 4.0);
+    REQUIRE_NEAR(mapObjectGlyphScale(1000.0, 100.0), 4.0, 1.0e-12);
+
+    const auto [azForward, elForward] =
+        stellarAzimuthElevationDeg(glm::dvec3(0.0, 0.0, 10.0));
+    REQUIRE_NEAR(azForward, 0.0, 1.0e-9);
+    REQUIRE_NEAR(elForward, 0.0, 1.0e-9);
+
+    const auto [azRight, elRight] =
+        stellarAzimuthElevationDeg(glm::dvec3(10.0, 0.0, 0.0));
+    REQUIRE_NEAR(azRight, 90.0, 1.0e-9);
+    REQUIRE_NEAR(elRight, 0.0, 1.0e-9);
+
+    const auto [azUp, elUp] =
+        stellarAzimuthElevationDeg(glm::dvec3(0.0, 10.0, 0.0));
+    REQUIRE_NEAR(azUp, 0.0, 1.0e-9);
+    REQUIRE_NEAR(elUp, 90.0, 1.0e-9);
+}
+
+void testTacticalOverlaySupportsMultipleIndependentCards()
+{
+    MapObjectOverlayState state;
+    const glm::dvec2 viewport(1280.0, 720.0);
+
+    MapObjectOverlayItem first;
+    first.objectId = "ship:alpha";
+    first.screenPx = glm::dvec2(300.0, 260.0);
+    first.visible = true;
+
+    MapObjectOverlayItem second;
+    second.objectId = "ship:beta";
+    second.screenPx = glm::dvec2(700.0, 420.0);
+    second.visible = true;
+
+    state.toggle(first, viewport);
+    state.toggle(second, viewport);
+
+    REQUIRE(state.isOpen(first.objectId));
+    REQUIRE(state.isOpen(second.objectId));
+    REQUIRE(state.orderedPanels().size() == 2);
+
+    const std::string firstTrack = state.trackLabelFor(first.objectId);
+    REQUIRE(firstTrack == state.trackLabelFor(first.objectId));
+    REQUIRE(firstTrack != state.trackLabelFor(second.objectId));
+
+    state.close(first.objectId);
+    REQUIRE(!state.isOpen(first.objectId));
+    REQUIRE(state.isOpen(second.objectId));
+    REQUIRE(state.orderedPanels().size() == 1);
+}
+
+void testTacticalOverlayPointerToggleAndDragAreCaptured()
+{
+    MapObjectOverlayState state;
+    MapObjectOverlayFrame frame;
+    MapObjectOverlayItem item;
+    item.objectId = "ship:17";
+    item.screenPx = glm::dvec2(260.0, 220.0);
+    item.hitRadiusPx = 18.0;
+    item.visible = true;
+    frame.items.push_back(item);
+
+    const glm::dvec2 viewport(1000.0, 700.0);
+
+    auto result = state.handlePointer(
+        frame, viewport, item.screenPx, true, true);
+    REQUIRE(result.consumed);
+    REQUIRE(result.toggledObjectId == item.objectId);
+    REQUIRE(state.isOpen(item.objectId));
+
+    // Holding the click remains captured by the overlay so map-camera input
+    // cannot start underneath a card/object click.
+    result = state.handlePointer(
+        frame, viewport, item.screenPx, true, true);
+    REQUIRE(result.consumed);
+    state.handlePointer(frame, viewport, item.screenPx, true, false);
+
+    auto panels = state.orderedPanels();
+    REQUIRE(panels.size() == 1);
+    const glm::dvec2 originalTopLeft = panels.front().topLeftPx;
+    const glm::dvec2 headerPoint = originalTopLeft + glm::dvec2(12.0, 10.0);
+
+    result = state.handlePointer(frame, viewport, headerPoint, true, true);
+    REQUIRE(result.consumed);
+    const glm::dvec2 draggedPoint = headerPoint + glm::dvec2(80.0, 45.0);
+    result = state.handlePointer(frame, viewport, draggedPoint, true, true);
+    REQUIRE(result.consumed);
+    state.handlePointer(frame, viewport, draggedPoint, true, false);
+
+    panels = state.orderedPanels();
+    REQUIRE(panels.size() == 1);
+    REQUIRE(glm::length(panels.front().topLeftPx - originalTopLeft) > 1.0);
+
+    // Repeated click on the glyph closes exactly that card.
+    result = state.handlePointer(frame, viewport, item.screenPx, true, true);
+    REQUIRE(result.consumed);
+    REQUIRE(result.toggledObjectId == item.objectId);
+    REQUIRE(!state.isOpen(item.objectId));
+    state.handlePointer(frame, viewport, item.screenPx, true, false);
+}
+
+void testTacticalOverlayCrowdedPickPrefersLargestObject()
+{
+    MapObjectOverlayState state;
+    MapObjectOverlayFrame frame;
+
+    MapObjectOverlayItem smallShip;
+    smallShip.objectId = "ship:small";
+    smallShip.screenPx = glm::dvec2(260.0, 220.0);
+    smallShip.hitRadiusPx = 18.0;
+    smallShip.physicalSizeMeters = 36.0;
+    smallShip.visible = true;
+    frame.items.push_back(smallShip);
+
+    MapObjectOverlayItem largeHub;
+    largeHub.objectId = "hub:large";
+    largeHub.screenPx = glm::dvec2(266.0, 220.0);
+    largeHub.hitRadiusPx = 18.0;
+    largeHub.physicalSizeMeters = 4200.0;
+    largeHub.visible = true;
+    frame.items.push_back(largeHub);
+
+    const glm::dvec2 viewport(1000.0, 700.0);
+    const glm::dvec2 crowdedClick(260.0, 220.0);
+
+    const auto result = state.handlePointer(
+        frame,
+        viewport,
+        crowdedClick,
+        true,
+        true
+    );
+
+    REQUIRE(result.consumed);
+    REQUIRE(result.toggledObjectId == largeHub.objectId);
+    REQUIRE(state.isOpen(largeHub.objectId));
+    REQUIRE(!state.isOpen(smallShip.objectId));
+
+    state.handlePointer(
+        frame,
+        viewport,
+        crowdedClick,
+        true,
+        false
+    );
+
+    // A larger body in the same direct System-map hit cluster owns the click
+    // before tactical ship/Hub glyphs.
+    MapObjectOverlayState bodyDominatedState;
+    const auto suppressed = bodyDominatedState.handlePointer(
+        frame,
+        viewport,
+        crowdedClick,
+        true,
+        true,
+        12000000.0
+    );
+    REQUIRE(!suppressed.consumed);
+    REQUIRE(!bodyDominatedState.isOpen(largeHub.objectId));
+    REQUIRE(!bodyDominatedState.isOpen(smallShip.objectId));
+}
+
+void testPreparedSystemPickingPrefersLargestDirectSemanticObject()
+{
+    SystemMapFrameData frame;
+    SystemMapView view = makeSystemView();
+
+    game::system_map::SystemMapBodyScreenPoint largeBody;
+    largeBody.bodyId = "planet-large";
+    largeBody.name = "Large Planet";
+    largeBody.screen = glm::vec2(420.0f, 260.0f);
+    largeBody.depth = 0.0f;
+    largeBody.visible = true;
+    largeBody.screenRadiusPx = 14.0f;
+    largeBody.physicalSizeMeters = 12000000.0;
+    frame.bodyScreenPoints.push_back(largeBody);
+
+    game::system_map::SystemMapBodyScreenPoint smallBody;
+    smallBody.bodyId = "moon-small";
+    smallBody.name = "Small Moon";
+    smallBody.screen = glm::vec2(418.0f, 260.0f);
+    smallBody.depth = 0.0f;
+    smallBody.visible = true;
+    smallBody.screenRadiusPx = 14.0f;
+    smallBody.physicalSizeMeters = 3000000.0;
+    frame.bodyScreenPoints.push_back(smallBody);
+
+    game::system_map::SystemMapHubScreenPoint hub;
+    hub.hubId = "hub-clustered";
+    hub.parentBodyId = "planet-large";
+    hub.name = "Clustered Hub";
+    hub.screen = glm::vec2(419.0f, 260.0f);
+    hub.depth = 0.0f;
+    hub.visible = true;
+    hub.screenRadiusPx = 15.0f;
+    hub.physicalSizeMeters = 5000.0;
+    frame.hubScreenPoints.push_back(hub);
+
+    const SystemMapFrameInteractionContext context(
+        frame,
+        view.controls()
+    );
+
+    REQUIRE(
+        context.pickSystemBodyId(419.0, 260.0) ==
+        std::optional<std::string>("planet-large")
+    );
+    REQUIRE(
+        !context.pickSystemHubSelection(419.0, 260.0).has_value()
+    );
+    REQUIRE_NEAR(
+        context.largestDirectBodyPhysicalSizeMetersAt(419.0, 260.0),
+        12000000.0,
+        1.0e-9
+    );
+
+    // If only a smaller body competes with a physically larger Hub, the Hub
+    // remains the semantic winner.
+    frame.bodyScreenPoints[0].visible = false;
+    frame.hubScreenPoints[0].physicalSizeMeters = 5000000.0;
+
+    const SystemMapFrameInteractionContext hubWinsContext(
+        frame,
+        view.controls()
+    );
+    const auto hubPick =
+        hubWinsContext.pickSystemHubSelection(419.0, 260.0);
+    REQUIRE(hubPick.has_value());
+    REQUIRE(hubPick->hubId == "hub-clustered");
+}
+
+void testTacticalOverlayTrajectorySeamDoesNotInventSamples()
+{
+    MapObjectOverlayFrame frame;
+    REQUIRE(frame.trajectories.empty());
+
+    MapObjectOverlayItem item;
+    item.objectId = "ship:trajectory-test";
+    item.velocityArrowMps = glm::dvec3(25.0, 0.0, 0.0);
+    frame.items.push_back(item);
+
+    // Current velocity is presentation data only; merely adding a moving
+    // object must never manufacture history/prediction points.
+    REQUIRE(frame.trajectories.empty());
+}
+
+void testHubMapAllowsCloseTacticalInspection()
+{
+    HubMapView view;
+    REQUIRE(view.controls().maxZoom >= 64.0);
+}
+
 using TestFunction = void (*)();
 
 struct TestCase
@@ -1960,12 +2226,19 @@ int main()
         {"presentation builder prepares state before render", testPresentationBuilderPreparesStateBeforeRender},
         {"local presentation builder prepares Detail and Hub", testLocalPresentationBuilderPreparesDetailAndHub},
         {"prepared frame drives System picking", testPreparedFrameDrivesSystemPicking},
+        {"prepared System crowded picking prefers largest direct semantic object", testPreparedSystemPickingPrefersLargestDirectSemanticObject},
         {"camera snapshots own projection contracts", testCameraSnapshotsOwnProjectionContracts},
         {"Galaxy terminal cube enters System/empty sector", testGalaxyTerminalCubeEntersSystemOrEmptySector},
         {"semantic map-panel navigation action matrix", testSystemMapPanelNavigationActionMatrix},
         {"semantic map-panel command routing", testSystemMapPanelCommandSemantics},
         {"Galaxy -> System -> Detail -> Hub transition sequence", testGalaxySystemDetailHubTransitionSequence},
-        {"mouse and scroll trace is repeatable", testMouseAndScrollTraceIsRepeatable}
+        {"mouse and scroll trace is repeatable", testMouseAndScrollTraceIsRepeatable},
+        {"tactical overlay glyph scale and stellar angles", testTacticalOverlayGlyphScaleAndAngles},
+        {"tactical overlay supports multiple independent cards", testTacticalOverlaySupportsMultipleIndependentCards},
+        {"tactical overlay pointer toggle and drag are captured", testTacticalOverlayPointerToggleAndDragAreCaptured},
+        {"tactical overlay crowded pick prefers largest object", testTacticalOverlayCrowdedPickPrefersLargestObject},
+        {"tactical overlay trajectory seam does not invent samples", testTacticalOverlayTrajectorySeamDoesNotInventSamples},
+        {"Hub map allows close tactical inspection", testHubMapAllowsCloseTacticalInspection}
     };
 
     int failed = 0;

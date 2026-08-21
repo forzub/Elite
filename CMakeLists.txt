@@ -323,6 +323,7 @@ add_executable(EliteGame
     src/game/system_map/LocalMapPresentationBuilder.cpp
     src/game/system_map/LocalMapAtmosphereRenderer.cpp
     src/game/system_map/LocalMapPrimitiveRenderer.cpp
+    src/game/system_map/MapObjectOverlayRenderer.cpp
     src/game/system_map/MapCelestialRenderResources.cpp
     src/game/system_map/DetailMapSceneRenderer.cpp
     src/game/system_map/HubMapSceneRenderer.cpp

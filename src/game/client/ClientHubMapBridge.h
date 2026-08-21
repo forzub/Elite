@@ -53,6 +53,14 @@ struct ClientHubMapFrame
         };
     }
 
+    glm::dvec3 localToWorldVector(const glm::dvec3& localVector) const
+    {
+        return
+            progradeAxis * localVector.x +
+            radialAxis * localVector.y +
+            normalAxis * localVector.z;
+    }
+
     glm::dvec3 worldToLocalVelocity(
         const glm::dvec3& worldPositionMeters,
         const glm::dvec3& worldVelocity
@@ -372,6 +380,10 @@ inline bool rebuildHubMapFromClientState(
             ? "player"
             : "entity:" + std::to_string(source.id.value);
         ship.name = hubMapShipDisplayName(source, isLocalPlayer);
+        const auto& shipDescriptor = ShipDescriptorRegistry::get(source.typeId);
+        ship.typeName = shipDescriptor.identity.shipType.empty()
+            ? "Ship"
+            : shipDescriptor.identity.shipType;
         ship.kind = "ship";
         ship.objectClass = DetailObjectClass::Ship;
         ship.origin = DetailObjectOrigin::Runtime;
@@ -385,6 +397,12 @@ inline bool rebuildHubMapFromClientState(
             // Local HubTactical state is authoritative in this exact frame.
             ship.positionMeters = source.localPositionMeters;
             ship.velocityMps = source.localVelocityMps;
+            ship.relativeVelocityMps = source.localVelocityMps;
+            ship.relativeVelocityWorldMps =
+                frame.localToWorldVector(source.localVelocityMps);
+            ship.hasRelativeVelocity = true;
+            ship.globalVelocityMps = source.worldVelocityMps;
+            ship.hasGlobalVelocity = true;
         }
         else
         {
@@ -397,6 +415,12 @@ inline bool rebuildHubMapFromClientState(
                         worldMeters,
                         source.worldVelocityMps
                     );
+            ship.relativeVelocityMps = ship.velocityMps;
+            ship.relativeVelocityWorldMps =
+                frame.localToWorldVector(ship.velocityMps);
+            ship.hasRelativeVelocity = true;
+            ship.globalVelocityMps = source.worldVelocityMps;
+            ship.hasGlobalVelocity = true;
         }
 
         ship.axes = hubMapAxesToLocal(source.orientation, frame);

@@ -57,6 +57,28 @@ namespace
 
         return result;
     }
+
+    glm::vec4 tacticalObjectColor(
+        const world::celestial::SystemMapObject& object
+    )
+    {
+        if (object.stableId == "player")
+            return glm::vec4(1.00f, 0.78f, 0.28f, 0.98f);
+        if (object.kind == world::celestial::SystemMapObjectKind::Hub)
+            return glm::vec4(0.34f, 0.88f, 1.00f, 0.96f);
+        return glm::vec4(0.78f, 0.86f, 0.94f, 0.96f);
+    }
+
+    MapObjectGlyphKind tacticalGlyphKind(
+        world::celestial::SystemMapObjectKind kind
+    )
+    {
+        if (kind == world::celestial::SystemMapObjectKind::Ship)
+            return MapObjectGlyphKind::Ship;
+        if (kind == world::celestial::SystemMapObjectKind::Hub)
+            return MapObjectGlyphKind::Hub;
+        return MapObjectGlyphKind::Infrastructure;
+    }
 }
 
 SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
@@ -219,6 +241,8 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
             point.bodyId = body.id;
             point.name = body.name;
             point.screenRadiusPx = pickRadiusPx;
+            point.physicalSizeMeters =
+                std::max(0.0, body.radiusKm) * 2000.0;
             point.screen =
                 context.projectToScreen(
                     positionIt->second,
@@ -276,6 +300,87 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
         frame.interaction.objectAbsolutePositionById[key] =
             absolute;
 
+        MapObjectOverlayItem overlay;
+        overlay.objectId = key;
+        overlay.name = object.name;
+        overlay.typeName = object.typeName.empty()
+            ? (object.kind == world::celestial::SystemMapObjectKind::Ship
+                ? "Ship"
+                : object.kind == world::celestial::SystemMapObjectKind::Hub
+                    ? "Hub"
+                    : "Infrastructure")
+            : object.typeName;
+        overlay.owner = object.owner;
+        overlay.kind = tacticalGlyphKind(object.kind);
+        overlay.velocityMode = MapObjectVelocityMode::Global;
+        overlay.arrowVelocityMode = MapObjectVelocityMode::Global;
+        overlay.displayedVelocityMps = object.velocityMps;
+        overlay.velocityArrowMps = object.velocityMps;
+        overlay.stellarVelocityMps = object.velocityMps;
+        overlay.factionColor = tacticalObjectColor(object);
+        overlay.physicalSizeMeters = std::max({
+            std::abs(object.sizeMeters.x),
+            std::abs(object.sizeMeters.y),
+            std::abs(object.sizeMeters.z),
+            1.0
+        });
+
+        float overlayDepth = 1.0f;
+        overlay.screenPx = glm::dvec2(
+            context.projectToScreen(
+                visual,
+                frame.mvp,
+                viewport,
+                overlay.visible,
+                overlayDepth
+            )
+        );
+
+        const double pixelsPerMeter =
+            frame.worldUnitsPerPixel > 0.0
+                ? (static_cast<double>(frame.systemScale) /
+                   world::celestial::MetersPerAu) /
+                    frame.worldUnitsPerPixel
+                : 0.0;
+        overlay.glyphScale = mapObjectGlyphScale(
+            overlay.physicalSizeMeters,
+            pixelsPerMeter
+        );
+        overlay.hitRadiusPx = 15.0 * overlay.glyphScale;
+
+        const auto projectedDirection =
+            [&](const glm::dvec3& direction) -> glm::dvec2
+            {
+                if (glm::length(direction) <= 1.0e-12)
+                    return glm::dvec2(0.0, -1.0);
+                const glm::vec3 endpoint =
+                    visual +
+                    glm::vec3(glm::normalize(direction)) *
+                    static_cast<float>(frame.worldUnitsPerPixel * 30.0);
+                bool endVisible = false;
+                float endDepth = 1.0f;
+                const glm::vec2 end = context.projectToScreen(
+                    endpoint,
+                    frame.mvp,
+                    viewport,
+                    endVisible,
+                    endDepth
+                );
+                (void)endVisible;
+                (void)endDepth;
+                return normalizedScreenDirection(
+                    glm::dvec2(end) - overlay.screenPx
+                );
+            };
+
+        overlay.facingScreenDirection =
+            projectedDirection(object.forwardWorld);
+        overlay.velocityScreenDirection =
+            projectedDirection(object.velocityMps);
+        frame.interaction.objectOverlay.items.push_back(
+            std::move(overlay)
+        );
+
         if (object.kind !=
             world::celestial::SystemMapObjectKind::Hub)
         {
@@ -286,6 +391,12 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
         point.hubId = key;
         point.parentBodyId = object.parentBodyId;
         point.name = object.name;
+        point.physicalSizeMeters = std::max({
+            std::abs(object.sizeMeters.x),
+            std::abs(object.sizeMeters.y),
+            std::abs(object.sizeMeters.z),
+            1.0
+        });
         point.screen =
             context.projectToScreen(
                 visual,

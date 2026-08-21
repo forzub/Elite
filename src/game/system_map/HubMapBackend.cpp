@@ -707,116 +707,8 @@ m_performanceStats.cpuPlanetBackdropMs =
 
 
 
-    // Игрок / корабли.
-    for (const auto& ship : hub.scene.objects)
-    {
-        if (!ship.valid ||
-            ship.objectClass !=
-                world::celestial::DetailObjectClass::Ship)
-        {
-            continue;
-        }
-
-        const glm::dvec2 shipScreen =
-            activeCamera().project(ship.positionMeters);
-
-        const glm::dvec3 shipVisualSize =
-            m_geometryPass.visualSizeForHubShip(
-                ship,
-                scale
-            );
-
-        const double shipRadiusMeters =
-            glm::length(
-                shipVisualSize
-            ) * 0.5;
-
-        const double shipRadiusPx =
-            shipRadiusMeters *
-            finalScale;
-
-       const glm::vec4 shipWireColor =
-        ship.player
-            ? m_resources.hubVisuals().playerShipWireColor
-            : m_resources.hubVisuals().regularShipWireColor;
-
-        // Если корабль на карте слишком маленький, wire-модель будет шумом.
-        // Тогда рисуем fallback box с увеличенным visual size.
-        const bool allowWireModel =
-            shipRadiusPx >= 10.0;
-
-        bool shipModelDrawn =
-            false;
-
-        if (allowWireModel)
-        {
-            shipModelDrawn =
-                m_geometryPass.drawHubMapAssemblyWire(
-                    ship.typeId,
-                    ship.positionMeters,
-                    ship.axes,
-                    shipWireColor
-                );
-        }
-
-        if (!shipModelDrawn)
-        {
-            m_geometryPass.drawHubMapBox(
-                ship.positionMeters,
-                ship.axes,
-                shipVisualSize,
-                shipWireColor,
-                scale,
-                centerPx
-            );
-        }
-
-        const double shipAxisLen =
-            std::max(
-                ship.player ? 26.0 : 16.0,
-                glm::length(shipVisualSize) * 0.65
-            );
-
-        m_geometryPass.drawHubMapAxes(
-            ship.positionMeters,
-            ship.axes,
-            shipAxisLen,
-            scale,
-            centerPx
-        );
-
-        m_geometryPass.drawHubMapVelocityArrow(
-            ship.positionMeters,
-            ship.velocityMps,
-            std::max(
-                80.0,
-                shipAxisLen * 2.0
-            ),
-            scale,
-            centerPx
-        );
-
-        // Экранный маркер поверх корабля.
-        // PLAYER виден всегда, остальные — когда мелкие.
-        if (ship.player ||
-            shipRadiusPx < m_resources.hubVisuals().shipMarkerThresholdPx)
-        {
-            const glm::vec4 markerColor =
-                ship.player
-                    ? m_resources.hubVisuals().playerShipMarkerColor
-                    : m_resources.hubVisuals().regularShipMarkerColor;
-
-            m_geometryPass.drawHubMapScreenMarker(
-                shipScreen,
-                ship.player
-                    ? m_resources.hubVisuals().playerShipMarkerRadiusPx
-                    : m_resources.hubVisuals().regularShipMarkerRadiusPx,
-                markerColor,
-                true,
-                m_resources.hubVisuals().shipMarkerSegments
-            );
-        }
-    }
+    // Ships are rendered by the shared tactical overlay. Hub/module geometry
+    // remains unchanged so the Hub map keeps its existing station silhouette.
 
 
         m_geometryPass.flush();
@@ -884,51 +776,9 @@ m_performanceStats.cpuPlanetBackdropMs =
                 }
             }
 
-            for (const auto& ship : hub.scene.objects)
-            {
-                if (!ship.valid ||
-                    ship.objectClass !=
-                        world::celestial::DetailObjectClass::Ship)
-                {
-                    continue;
-                }
-
-                const glm::dvec2 p =
-                    activeCamera().project(ship.positionMeters);
-
-
-
-
-
-                if (p.x < -160.0 ||
-                    p.y < -80.0 ||
-                    p.x > static_cast<double>(viewport.width) + 160.0 ||
-                    p.y > static_cast<double>(viewport.height) + 80.0)
-                {
-                    continue;
-                }
-
-
-
-
-
-
-
-
-
-                const std::string label =
-                    ship.player
-                        ? m_playerLabel
-                        : ship.name;
-
-                text.textDrawPx(
-                    label,
-                    static_cast<float>(p.x + 10.0),
-                    static_cast<float>(p.y - 8.0),
-                    m_resources.hubVisuals().primaryLabelPx,
-                    m_resources.hubVisuals().shipLabelColor
-                );
-            }
+            // Ship identity is carried by stable tactical track numbers and
+            // click-open cards; persistent ship-name labels are intentionally
+            // suppressed to keep the map compact.
 
             text.endFrame();
         }

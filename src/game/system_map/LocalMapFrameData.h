@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 
+#include "src/game/system_map/MapObjectOverlay.h"
+
 namespace game::system_map
 {
 
@@ -22,6 +24,7 @@ struct DetailHubScreenPoint
 struct DetailMapFrameData
 {
     std::vector<DetailHubScreenPoint> hubScreenPoints;
+    MapObjectOverlayFrame objectOverlay;
 };
 
 struct HubMapPickable
@@ -38,6 +41,7 @@ struct HubMapFrameData
     double scale = 1.0;
     glm::dvec2 centerPx {0.0};
     std::vector<HubMapPickable> pickables;
+    MapObjectOverlayFrame objectOverlay;
 };
 
 } // namespace game::system_map

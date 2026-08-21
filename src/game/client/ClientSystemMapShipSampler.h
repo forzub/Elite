@@ -8,6 +8,8 @@
 #include <utility>
 #include <vector>
 
+#include <glm/gtc/quaternion.hpp>
+
 #include "src/game/client/ClientSpatialDomain.h"
 #include "src/game/client/SnapshotPresentationWindow.h"
 #include "src/game/diagnostics/HubMotionLab.h"
@@ -36,6 +38,8 @@ struct SystemMapShipSample
     int systemId = -1;
     std::string parentBodyId;
     world::coordinates::WorldPosition worldPosition;
+    glm::dvec3 worldVelocityMps {0.0};
+    glm::mat4 orientation {1.0f};
 };
 
 struct SystemMapShipSampleResult
@@ -76,6 +80,8 @@ inline SystemMapShipSample makeSystemMapShipSample(
     out.systemId = ship.transform.motion.systemId;
     out.parentBodyId = ship.transform.motion.parentBodyId;
     out.worldPosition = ship.transform.worldPosition;
+    out.worldVelocityMps = ship.transform.motion.worldVelocityMps;
+    out.orientation = ship.transform.orientation;
     return out;
 }
 
@@ -221,6 +227,27 @@ inline SystemMapShipSampleResult sampleSystemMapShipsAtServerTime(
                 olderShip.transform.worldPosition,
                 deltaMeters * alpha
             );
+        sample.worldVelocityMps =
+            olderShip.transform.motion.worldVelocityMps * (1.0 - alpha) +
+            newerShip->transform.motion.worldVelocityMps * alpha;
+
+        glm::quat olderOrientation = glm::normalize(
+            glm::quat_cast(glm::mat3(olderShip.transform.orientation))
+        );
+        glm::quat newerOrientation = glm::normalize(
+            glm::quat_cast(glm::mat3(newerShip->transform.orientation))
+        );
+        if (glm::dot(olderOrientation, newerOrientation) < 0.0f)
+            newerOrientation = -newerOrientation;
+        sample.orientation = glm::mat4_cast(
+            glm::normalize(
+                glm::slerp(
+                    olderOrientation,
+                    newerOrientation,
+                    static_cast<float>(alpha)
+                )
+            )
+        );
 
         if (olderShip.transform.motion.parentBodyId !=
             newerShip->transform.motion.parentBodyId)

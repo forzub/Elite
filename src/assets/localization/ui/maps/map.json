@@ -190,6 +190,55 @@
       "zh-Hans": "星际空间",
       "es": "ESPACIO INTERESTELAR",
       "ja": "星間空間"
+    },
+    "map.object_info.type": {
+      "en": "Type",
+      "ru": "Тип",
+      "zh-Hans": "类型",
+      "es": "Tipo",
+      "ja": "種類"
+    },
+    "map.object_info.name": {
+      "en": "Name",
+      "ru": "Название",
+      "zh-Hans": "名称",
+      "es": "Nombre",
+      "ja": "名称"
+    },
+    "map.object_info.local_speed": {
+      "en": "Local speed",
+      "ru": "Локальная скорость",
+      "zh-Hans": "局部速度",
+      "es": "Velocidad local",
+      "ja": "ローカル速度"
+    },
+    "map.object_info.global_speed": {
+      "en": "Global speed",
+      "ru": "Глобальная скорость",
+      "zh-Hans": "全局速度",
+      "es": "Velocidad global",
+      "ja": "グローバル速度"
+    },
+    "map.object_info.azimuth": {
+      "en": "Azimuth",
+      "ru": "Азимут",
+      "zh-Hans": "方位角",
+      "es": "Acimut",
+      "ja": "方位角"
+    },
+    "map.object_info.elevation": {
+      "en": "Elevation",
+      "ru": "Элевация",
+      "zh-Hans": "仰角",
+      "es": "Elevación",
+      "ja": "仰角"
+    },
+    "map.object_info.owner": {
+      "en": "Faction/owner",
+      "ru": "Фракция/владелец",
+      "zh-Hans": "阵营/所有者",
+      "es": "Facción/propietario",
+      "ja": "勢力/所有者"
     }
   }
 }

@@ -43,6 +43,16 @@ int main()
             "Mars->Earth transfer must move inward toward Earth's orbit");
     require(initialSpeedKmS > 20.0 && initialSpeedKmS < 35.0,
             "heliocentric transfer speed must remain modern interplanetary scale");
+    require(glm::cross(initial.relativePositionMeters,
+                       initial.relativeVelocityMetersPerSecond).y > 0.0,
+            "Mars->Earth transfer must use the same prograde handedness as Sol planets");
+
+    const double departurePhase = 0.73;
+    const auto rotated = evaluateInterplanetaryTransferLab(0.0, departurePhase);
+    require(near(rotated.heliocentricRadiusMeters,
+                 initial.heliocentricRadiusMeters,
+                 1.0e-3),
+            "phase anchoring must rotate the transfer without changing radius");
     require(initial.transferDurationSeconds /
                 InterplanetarySecondsPerDay > 240.0,
             "transfer must not be an implausibly short radial sprint");

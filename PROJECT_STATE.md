@@ -163,7 +163,7 @@ Server runtime принимает несколько transport/session endpoints
 
 ## 6. Навигация и определение положения
 
-**Статус: `[~]` появилась первая рабочая client-side navigation memory; route physics/autopilot впереди.**
+**Статус: `[~]` Route Plan UI/model собран; trajectory predictor/solver/autopilot впереди.**
 
 ### Client navigation tracking
 
@@ -171,10 +171,13 @@ Server runtime принимает несколько transport/session endpoints
 - `[x]` Cockpit-marker использует HUD safe-frame/off-screen projection: размер метки не зависит от дальности, направление сохраняется за границей экрана, показываются тип/имя/скорость/расстояние.
 - `[x]` В маневровых/non-cruise режимах tactical marker показывает собственную скорость цели в текущем travel frame игрока — в той же системе, что `|localVelocityMps|` HUD самого игрока, а не скорость сближения; в `Cruise`/`JumpTransit` показывается global speed, а без валидного общего frame используется честный global fallback.
 - `[x]` System Map поддерживает несколько одновременно открытых карточек звёзд/планет/лун; они являются client-only tracked celestial targets и дают cockpit markers без speed/azimuth/elevation rows.
-- `[x]` Galaxy/System пустой navigation cube может быть явно превращён в `Finish` waypoint. Waypoint model сразу множественная (`Finish` + future `Intermediate`), хотя текущий UI разрешает только один Finish.
+- `[x]` Galaxy/System пустой navigation cube, а также карточки физических объектов могут добавлять route intent; корабль как промежуточная динамическая цель имеет отдельный смысл `ROUTE RENDEZVOUS` (перехват + match velocity + продолжение), а не замороженную координату. `FINISH` единственный: пока он существует, другие карточки не предлагают второй Finish, а карточка самого Finish не предлагает `WAYPOINT`.
+- `[x]` Единый Route Container присутствует на Galaxy/System/Detail/Hub: сворачивается, хранит Finish последним, поддерживает drag reorder промежуточных точек с короткой settle-анимацией, master/per-point HUD toggles и двухшаговое подтверждение удаления точки/маршрута. Double-click по route card возвращает authored Galaxy/System/Detail/Hub context, при необходимости сначала загружая другую систему/пустой сектор, и раскрывает соответствующую инфокарточку.
+- `[x]` Route point на карте — зелёный квадрат с центральной точкой и route-order number; cockpit route marker также всегда показывает порядковый номер, включая Finish как последнюю точку.
+- `[x]` Finish хранит простой Arrival Profile с четырьмя квадратными локализованными режимами: `SAFE`, `FOLLOW`, `FORMATION`, `PARADE`; динамические Ship/Hub/Infrastructure цели сохраняют semantic target ID, а текущая WorldPosition служит обновляемым fallback.
 - `[x]` Tracking/cards/waypoints не реплицируются на сервер: это персональная навигационная память клиента. Серверный command boundary понадобится только при реальном исполнении маршрута/autopilot.
 - `[~]` Позиция tracked celestial body вне открытой System Map пока хранится последним client-composed sample; отдельный continuous ephemeris resolver для произвольных отслеживаемых систем ещё не сделан.
-- `[ ]` Рассчитать route/intercept trajectories и формализовать выбор manoeuvring/J/jump propulsion. Текущий tracking layer только задаёт корректные endpoints.
+- `[ ]` Следующий слой: общий trajectory predictor (включая пунктир выбранного объекта), route/intercept solver с obstacle/safety constraints и terminal state matching; после solver — прямое drag-перемещение route points между соседними равноразмерными кубами/3D trajectory constraints, затем autopilot/formation controller. Финальный продуктовый контракт: `src/game/navigation/ROUTE_NAVIGATION_CONTRACT.md`.
 
 ### Космический компас
 
@@ -387,7 +390,7 @@ SignalIdentity
 - Длина local/global velocity arrows кодирует модуль скорости линейно с отдельным local/global saturation и прежним максимальным экранным размером.
 - Объекты получают короткие стабильные в пределах текущего overlay-state track numbers для визуальной идентификации во времени; игрок зарезервирован как `0`, но этот номер не рисуется. Cockpit navigation marker использует тот же map track number, а не отдельную нумерацию.
 - Cockpit tracked-object marker снова является фиксированным полупрозрачным контурным треугольником, всегда направленным вверх и не зависящим от расстояния. Track number вынесен из символа в левую текстовую колонку под speed и выровнен с ней по правому краю.
-- Пространственные route cards живут независимо от текущего focus выбранного cube, могут сворачиваться и закрытием удаляют соответствующую client-only route point. Одновременно разрешён один Finish и несколько Intermediate; промежуточные точки имеют непрерывные номера `1..N` и автоматически перенумеровываются после удаления/смены роли.
+- Route intent теперь живёт независимо и от cube focus, и от source-card lifetime. Единый Route Container на всех четырёх картах держит один Finish последним и несколько нумеруемых Waypoint, поддерживает анимированный drag reorder, HUD visibility, double-click authored-context recall и подтверждаемое удаление; закрытие исходной инфокарточки маршрут больше не меняет. Ship waypoint трактуется как rendezvous checkpoint, а не как старая координата корабля.
 - Glyph/velocity arrow имеют clamped zoom-aware scale: вдали остаются читаемыми, вблизи растут вместе с projected physical size объекта.
 - Hub Map допускает close inspection (`maxZoom >= 64`) и zoom-dependent pan allowance, поэтому к летающим вокруг станции кораблям можно приблизиться.
 - `MapObjectTrajectory` уже выделен отдельным presentation-контрактом для history/prediction/planned samples, но текущий velocity **не превращается автоматически в выдуманную траекторию**.

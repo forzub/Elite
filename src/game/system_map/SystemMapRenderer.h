@@ -68,6 +68,7 @@
 #include "src/game/system_map/HubMapBackend.h"
 #include "src/game/system_map/MapCelestialRenderResources.h"
 #include "src/game/system_map/MapObjectOverlayRenderer.h"
+#include "src/game/system_map/NavigationRouteOverlay.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
@@ -206,7 +207,11 @@ private:
     game::system_map::HubMapPresentation m_hubPresentation;
     game::system_map::MapObjectOverlayState m_objectOverlayState;
     game::system_map::MapObjectOverlayRenderer m_objectOverlayRenderer;
+    game::system_map::NavigationRouteOverlayState m_routeOverlayState;
+    game::system_map::NavigationRouteOverlayRenderer m_routeOverlayRenderer;
     game::navigation::NavigationTrackingState m_navigationTrackingState;
+    std::string m_pendingRouteFocusSourceObjectId;
+    bool m_pendingRouteFocusContextApplied = false;
     game::system_map::MapObjectOverlayFrame m_galaxyInfoOverlayFrame;
     std::optional<game::system_map::MapObjectOverlayItem>
         m_galaxyWaypointCandidate;
@@ -257,7 +262,7 @@ private:
     );
 
     void synchronizeNavigationTracking(
-        const game::system_map::MapObjectOverlayFrame& frame
+        game::system_map::MapObjectOverlayFrame& frame
     );
 
     void refreshGalaxyWaypointCandidate(
@@ -274,6 +279,29 @@ private:
         const std::string& objectId,
         const std::string& actionKey
     );
+
+    std::optional<game::system_map::MapIntent> focusRouteWaypoint(
+        const std::string& sourceObjectId,
+        const Viewport& viewport,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::SystemMapSnapshot& system,
+        double nowSeconds
+    );
+
+    std::optional<game::system_map::MapIntent> advancePendingRouteFocus(
+        const Viewport& viewport,
+        const world::celestial::GalaxyMapSnapshot& galaxy,
+        const world::celestial::SystemMapSnapshot& system,
+        double nowSeconds
+    );
+
+    void revealPendingRouteFocus(
+        const game::system_map::MapObjectOverlayFrame& frame,
+        const Viewport& viewport
+    );
+
+    const game::system_map::MapObjectOverlayItem*
+    currentOverlayItem(const std::string& objectId) const;
 
     void updateActiveTacticalLocalContext(
         const game::system_map::MapObjectOverlayItem& item

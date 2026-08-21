@@ -53,8 +53,19 @@ PanelLayout makePanelLayout(const Viewport& viewport)
     layout.panelW = w - layout.panelX;
     layout.pad = std::max(14.0f, layout.panelW * 0.055f);
 
-    const float contentW = layout.panelW - layout.pad * 2.0f;
-    const float dropdownY = std::clamp(h * 0.49f, 300.0f, h - 220.0f);
+    const float contentW = std::max(0.0f, layout.panelW - layout.pad * 2.0f);
+
+    // Minimize/restore and very small Windows resize states may temporarily
+    // expose a viewport shorter than the normal STAR ATLAS layout. Never feed
+    // std::clamp an inverted [lo, hi] interval: MinGW's debug STL correctly
+    // asserts on that contract violation.
+    const float dropdownMaxY = std::max(0.0f, h - 220.0f);
+    const float dropdownMinY = std::min(300.0f, dropdownMaxY);
+    const float dropdownY = std::clamp(
+        h * 0.49f,
+        dropdownMinY,
+        dropdownMaxY
+    );
     layout.dropdownButton = {
         layout.panelX + layout.pad,
         dropdownY,
@@ -214,6 +225,9 @@ void InSessionPresentationRenderer::renderServicePanel(
     const game::localization::LocalizationService& localization,
     ui::services::ServiceUiId service) const
 {
+    if (viewport.width <= 0 || viewport.height <= 0)
+        return;
+
     const auto* definition = ui::services::findServiceUiDefinition(service);
     if (!definition)
         return;
@@ -262,6 +276,9 @@ bool InSessionPresentationRenderer::systemMapPanelContains(
     double mouseX,
     double mouseY) const
 {
+    if (viewport.width <= 0 || viewport.height <= 0)
+        return false;
+
     const auto layout = makePanelLayout(viewport);
     const double localX = mouseX - static_cast<double>(viewport.x);
     const double localY = mouseY - static_cast<double>(viewport.y);
@@ -281,6 +298,12 @@ InSessionPresentationRenderer::handleSystemMapPanelInput(
 {
     using game::presentation::SystemMapPanelAction;
     using game::presentation::SystemMapPanelActionType;
+
+    if (viewport.width <= 0 || viewport.height <= 0)
+    {
+        m_systemPanelLeftWasDown = leftDown;
+        return std::nullopt;
+    }
 
     const auto layout = makePanelLayout(viewport);
     const double localX = mouseX - static_cast<double>(viewport.x);
@@ -373,6 +396,9 @@ void InSessionPresentationRenderer::renderSystemMapPanel(
     const game::localization::LocalizationService& localization,
     const game::presentation::SystemMapPanelPresentation& panel)
 {
+    if (viewport.width <= 0 || viewport.height <= 0)
+        return;
+
     glViewport(viewport.x, viewport.y, viewport.width, viewport.height);
     glScissor(viewport.x, viewport.y, viewport.width, viewport.height);
     glDisable(GL_DEPTH_TEST);

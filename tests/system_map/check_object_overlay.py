@@ -238,7 +238,10 @@ def main() -> int:
         "NavigationTrackedCelestialBody",
         "std::vector<NavigationWaypoint> m_waypoints",
         "NavigationWaypointRole::Finish",
-        "setFinishWaypoint",
+        "NavigationArrivalMode",
+        "orderedRouteWaypoints",
+        "moveIntermediateWaypoint",
+        "routeVisibleOnHud",
         "reconcileOpenCards",
     )
 
@@ -325,7 +328,9 @@ def main() -> int:
         "candidate.pointerInteractive = true",
         "candidate.drawGlyph = true",
         "applyWaypointAction",
-        "setFinishWaypoint",
+        "setWaypointRouteMetadata",
+        "set_waypoint",
+        "set_finish",
         "updateActiveTacticalLocalContext",
         "navigationHubId",
         "m_activeTacticalDetailCell",
@@ -370,16 +375,37 @@ def main() -> int:
 
 
     require_text(
+        "src/game/system_map/NavigationRouteOverlay.cpp",
+        "SHOW ON HUD",
+        "moveIntermediateWaypoint",
+        "setFinishArrivalMode",
+        "removeRouteWaypoint",
+        "clearRoute",
+    )
+    require_text(
+        "src/game/system_map/SystemMapRenderer.cpp",
+        "m_routeOverlayState.handlePointer",
+        "m_routeOverlayRenderer.render",
+    )
+    require_text(
+        "src/game/presentation/NavigationHudPresentation.h",
+        "routeVisibleOnHud",
+        "waypoint.showOnHud",
+        "waypoint.dynamicTarget",
+        "resolveTacticalKinematics",
+    )
+
+    require_text(
         "src/game/navigation/NAVIGATION_TRACKING_CONTRACT.md",
         "client-only ownership",
-        "finish waypoint",
+        "persistent route-plan baseline",
         "HudEdgeMapper",
         "MotionMode::Cruise",
         "MotionMode::JumpTransit",
         "NOT IMPLEMENTED",
     )
 
-    print("[PASS] tactical/body cards, linear velocity vectors, client-only tracking, cockpit markers, finish waypoint seam, displayed-motion bearings and existing map overlay contracts are locked")
+    print("[PASS] tactical/body cards, linear velocity vectors, client-only tracking, cockpit markers, persistent route-plan seam, displayed-motion bearings and existing map overlay contracts are locked")
     return 0
 
 

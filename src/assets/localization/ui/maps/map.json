@@ -261,6 +261,20 @@
       "es": "Objetivo espacial",
       "ja": "空間目標"
     },
+    "map.object_info.set_waypoint": {
+      "en": "ADD WAYPOINT",
+      "ru": "ДОБАВИТЬ В МАРШРУТ",
+      "zh-Hans": "加入航线",
+      "es": "AÑADIR A RUTA",
+      "ja": "ルートに追加"
+    },
+    "map.object_info.cancel_waypoint": {
+      "en": "REMOVE WAYPOINT",
+      "ru": "УБРАТЬ ИЗ МАРШРУТА",
+      "zh-Hans": "从航线移除",
+      "es": "QUITAR DE RUTA",
+      "ja": "ルートから削除"
+    },
     "map.object_info.set_finish": {
       "en": "SET AS FINISH",
       "ru": "СДЕЛАТЬ ФИНИШЕМ",

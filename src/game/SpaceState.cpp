@@ -1474,6 +1474,33 @@ void SpaceState::handleInput()
 
                     return;
                 }
+
+                if (mapIntent->type == MapIntentType::RecallRouteMap)
+                {
+                    if (mapIntent->requestedMapMode ==
+                        game::system_map::MapMode::Galaxy)
+                    {
+                        setSystemMapGalaxyMode();
+                    }
+                    else if (mapIntent->requestedMapMode ==
+                             game::system_map::MapMode::System)
+                    {
+                        setSystemMapLoadedSystemMode();
+                    }
+                    return;
+                }
+
+                if (mapIntent->type == MapIntentType::OpenBody)
+                {
+                    setSystemMapDetailMode();
+                    return;
+                }
+
+                if (mapIntent->type == MapIntentType::OpenHub)
+                {
+                    setSystemMapHubMode();
+                    return;
+                }
             }
         }
 

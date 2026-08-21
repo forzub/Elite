@@ -212,13 +212,20 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
     out.reserve(
         tracking.tacticalObjects().size() +
         tracking.celestialBodies().size() +
-        tracking.waypoints().size()
+        tracking.routeSize()
     );
 
     const auto& playerPosition = player.renderTransform.worldPosition;
 
     for (const auto& [id, tracked] : tracking.tacticalObjects())
     {
+        if (const auto* route = tracking.findWaypoint(id);
+            route && route->role !=
+                game::navigation::NavigationWaypointRole::None)
+        {
+            continue;
+        }
+
         const auto resolved =
             detail::resolveTacticalKinematics(world, player, id);
         if (!resolved.valid)
@@ -261,6 +268,13 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
 
     for (const auto& [id, tracked] : tracking.celestialBodies())
     {
+        if (const auto* route = tracking.findWaypoint(id);
+            route && route->role !=
+                game::navigation::NavigationWaypointRole::None)
+        {
+            continue;
+        }
+
         NavigationHudMarker marker;
         marker.stableId = id;
         marker.shape = NavigationHudMarkerShape::CelestialDiamond;
@@ -281,28 +295,75 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
             out.push_back(std::move(marker));
     }
 
-    for (const auto& waypoint : tracking.waypoints())
+    if (!tracking.routeVisibleOnHud())
+        return out;
+
+    for (const auto* waypointPtr : tracking.orderedRouteWaypoints())
     {
+        const auto& waypoint = *waypointPtr;
+        if (!waypoint.showOnHud)
+            continue;
+
+        world::coordinates::WorldPosition routeTargetPosition =
+            waypoint.worldPosition;
+        glm::dvec3 routeTargetVelocityMps {0.0};
+        bool hasLiveRouteKinematics = false;
+        if (waypoint.dynamicTarget && !waypoint.targetEntityId.empty())
+        {
+            const auto resolved = detail::resolveTacticalKinematics(
+                world,
+                player,
+                waypoint.targetEntityId
+            );
+            if (resolved.valid)
+            {
+                routeTargetPosition = resolved.worldPosition;
+                routeTargetVelocityMps = resolved.worldVelocityMps;
+                hasLiveRouteKinematics = true;
+            }
+        }
+
         NavigationHudMarker marker;
         marker.stableId = "waypoint:" + std::to_string(waypoint.id);
         marker.shape = NavigationHudMarkerShape::WaypointCorners;
         marker.relativePositionMeters = world::coordinates::relativeMeters(
-            waypoint.worldPosition,
+            routeTargetPosition,
             playerPosition
         );
         marker.distanceMeters = glm::length(marker.relativePositionMeters);
+        // Route order is cockpit-critical. FINISH is still the last route
+        // point, so it receives the next visible number instead of becoming
+        // an anonymous symbol.
         marker.displayIndex =
             waypoint.role == game::navigation::NavigationWaypointRole::Intermediate
                 ? waypoint.sequence
-                : 0;
+                : waypoint.role == game::navigation::NavigationWaypointRole::Finish
+                    ? static_cast<int>(tracking.routeSize())
+                    : 0;
         marker.typeText =
-            waypoint.role == game::navigation::NavigationWaypointRole::Finish
+            (waypoint.role == game::navigation::NavigationWaypointRole::Finish
                 ? vocabulary.finishText
-                : vocabulary.waypointText;
+                : vocabulary.waypointText) +
+            std::string(" ") +
+            std::to_string(marker.displayIndex);
         marker.nameText = waypoint.address.empty()
             ? waypoint.displayName
             : waypoint.address;
         marker.speedMode = NavigationHudSpeedMode::None;
+        if (hasLiveRouteKinematics)
+        {
+            const auto speed = resolveCockpitNavigationTargetSpeed(
+                player.renderTransform.motion,
+                marker.relativePositionMeters,
+                routeTargetVelocityMps
+            );
+            marker.speedMode = speed.mode;
+            marker.speedPrefixText =
+                speed.mode == NavigationHudSpeedMode::Relative
+                    ? vocabulary.relativeSpeedShort
+                    : vocabulary.globalSpeedShort;
+            marker.speedMps = speed.speedMps;
+        }
         marker.color =
             waypoint.role == game::navigation::NavigationWaypointRole::Finish
                 ? glm::vec4(1.00f, 0.82f, 0.30f, 0.88f)

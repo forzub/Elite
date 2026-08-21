@@ -196,6 +196,31 @@ void drawTriangle(
     glEnd();
 }
 
+
+void drawRoutePoint(
+    const MapObjectOverlayItem& item
+)
+{
+    // Route intent should read like a simple map pin, not like another ship.
+    // Keep it deliberately cartoon-simple: green square + center dot.
+    const double half = 7.0 * item.glyphScale;
+    const glm::vec4 color(0.38f, 0.96f, 0.58f, 0.96f);
+    drawRectOutline(
+        item.screenPx - glm::dvec2(half),
+        half * 2.0,
+        half * 2.0,
+        color,
+        1.8f
+    );
+    const double dotHalf = std::max(1.5, 1.8 * item.glyphScale);
+    drawRect(
+        item.screenPx - glm::dvec2(dotHalf),
+        dotHalf * 2.0,
+        dotHalf * 2.0,
+        color
+    );
+}
+
 void drawHubCube(
     const MapObjectOverlayItem& item
 )
@@ -386,6 +411,9 @@ std::string MapObjectOverlayRenderer::text(
     if (k == "owner") return ru ? "Фракция/владелец" : zh ? "阵营/所有者" : es ? "Facción/propietario" : ja ? "勢力/所有者" : "Faction/owner";
     if (k == "radius") return ru ? "Радиус" : zh ? "半径" : es ? "Radio" : ja ? "半径" : "Radius";
     if (k == "address") return ru ? "Адрес" : zh ? "地址" : es ? "Dirección" : ja ? "アドレス" : "Address";
+    if (k == "set_waypoint") return ru ? "ДОБАВИТЬ В МАРШРУТ" : zh ? "加入航线" : es ? "AÑADIR A RUTA" : ja ? "ルートに追加" : "ADD WAYPOINT";
+    if (k == "set_rendezvous") return ru ? "ВСТРЕЧА НА МАРШРУТЕ" : zh ? "航线会合" : es ? "ENCUENTRO EN RUTA" : ja ? "航路上で合流" : "ROUTE RENDEZVOUS";
+    if (k == "cancel_waypoint") return ru ? "УБРАТЬ ИЗ МАРШРУТА" : zh ? "从航线移除" : es ? "QUITAR DE RUTA" : ja ? "ルートから削除" : "REMOVE WAYPOINT";
     if (k == "set_finish") return ru ? "СДЕЛАТЬ ФИНИШЕМ" : zh ? "设为终点" : es ? "FIJAR DESTINO" : ja ? "目的地に設定" : "SET AS FINISH";
     if (k == "cancel_finish") return ru ? "ОТМЕНИТЬ ФИНИШ" : zh ? "取消终点" : es ? "CANCELAR DESTINO" : ja ? "終点を解除" : "CANCEL FINISH";
     if (k == "set_intermediate") return ru ? "СДЕЛАТЬ ПРОМЕЖУТОЧНОЙ" : zh ? "设为中间点" : es ? "FIJAR INTERMEDIA" : ja ? "中継点に設定" : "SET INTERMEDIATE";
@@ -424,12 +452,20 @@ void MapObjectOverlayRenderer::render(
         if (!item.visible)
             continue;
 
-        if (item.drawGlyph)
+        if (item.routeDisplayIndex > 0)
+        {
+            if (state.isActive(item.objectId))
+                drawActiveObjectRing(item);
+            drawRoutePoint(item);
+        }
+        else if (item.drawGlyph)
         {
             if (state.isActive(item.objectId))
                 drawActiveObjectRing(item);
 
-            if (item.kind == MapObjectGlyphKind::Hub)
+            if (item.infoKind == MapObjectInfoKind::WaypointCandidate)
+                drawRoutePoint(item);
+            else if (item.kind == MapObjectGlyphKind::Hub)
                 drawHubCube(item);
             else
                 drawTriangle(item);
@@ -440,8 +476,11 @@ void MapObjectOverlayRenderer::render(
             drawVelocityArrow(item);
         }
 
-        const std::string track = state.trackLabelFor(item.objectId);
-        if (track != "0")
+        const std::string track =
+            item.routeDisplayIndex > 0
+                ? std::to_string(item.routeDisplayIndex)
+                : state.trackLabelFor(item.objectId);
+        if (!track.empty() && track != "0")
         {
             const float trackWidth = textRenderer.measureTextPx(track, 12);
             textRenderer.textDrawPx(
@@ -449,7 +488,9 @@ void MapObjectOverlayRenderer::render(
                 static_cast<float>(item.screenPx.x - trackWidth * 0.5f),
                 static_cast<float>(item.screenPx.y + 4.0f),
                 12,
-                glm::vec4(0.96f, 0.98f, 1.0f, 1.0f)
+                item.routeDisplayIndex > 0
+                    ? glm::vec4(0.72f, 1.0f, 0.78f, 1.0f)
+                    : glm::vec4(0.96f, 0.98f, 1.0f, 1.0f)
             );
         }
     }
@@ -464,7 +505,7 @@ void MapObjectOverlayRenderer::render(
         const double panelHeight =
             panel.collapsed
                 ? MapObjectOverlayState::PanelCollapsedHeightPx
-                : MapObjectOverlayState::PanelHeightPx;
+                : panel.expandedHeightPx;
         const glm::dvec2 panelCenter(
             panel.topLeftPx.x + MapObjectOverlayState::PanelWidthPx * 0.5,
             panel.topLeftPx.y + panelHeight * 0.5
@@ -606,8 +647,6 @@ void MapObjectOverlayRenderer::render(
 
         for (const auto& field : item->extraFields)
         {
-            if (y > panel.topLeftPx.y + panelHeight - 64.0)
-                break;
             const std::string label = text(locale, field.labelKey.c_str());
             const std::string value = field.unit.empty()
                 ? field.value

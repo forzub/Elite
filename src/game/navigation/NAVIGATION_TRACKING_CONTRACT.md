@@ -129,75 +129,59 @@ The ordinary single semantic System-map body selection still exists for
 navigation/Details actions. Multiple open body cards are a separate player
 tracking memory and do not turn the core map selection into a multi-select.
 
-## PROTECTED: spatial route waypoints
+## PROTECTED: persistent route-plan baseline
 
-A route waypoint is a navigation entity, not a physical universe object.
+Route intent is no longer owned by the lifetime of its source card. A closed
+ship/Hub/body/cube card may stop ordinary cockpit *tracking*, but an explicit
+`WAYPOINT`/`FINISH` remains in the player-private Route Plan until the player
+removes it.
 
-`NavigationTrackingState` owns waypoints as a vector and each waypoint has:
+Current route-node data includes:
 
-- stable client-local waypoint ID;
-- semantic role (`Finish`, `Intermediate`, or unassigned candidate);
-- sequence slot for intermediate route ordering;
-- precise `WorldPosition`;
-- navigation address/display name.
+- stable client-local route-node ID and source object/card identity;
+- semantic role (`Finish`, `Intermediate`, or unassigned transient candidate);
+- intermediate sequence number;
+- precise `WorldPosition` fallback;
+- navigation address/display name;
+- semantic anchor kind (free space/body/Hub/ship/infrastructure);
+- authored map/system/body/Hub context for future map recall;
+- stable semantic target identity for dynamic targets;
+- master/per-node HUD visibility;
+- terminal `NavigationArrivalProfile` for Finish.
 
-The collection is deliberately plural. The current UI supports exactly one
-Finish plus multiple Intermediate points. Intermediate points are numbered
-`1..N` in collection/route order and are renumbered after an intermediate point
-is removed or changes role. This avoids encoding route identity in a stale
-display number.
+Exactly one Finish may exist. `orderedRouteWaypoints()` always exposes
+Intermediate nodes by sequence and then Finish last, regardless of the internal
+storage order. Intermediate nodes may be reordered without changing their stable
+identity.
 
 ### Selected-cube information affordance
 
 Selecting an empty Galaxy/System navigation cube keeps the existing central cube
-marker dedicated to selection/drill semantics. Selection alone does **not** open
-a route card. Instead, the selected cube gets a small translucent blue triangle
-next to its centre marker:
-
-- the central marker continues to mean "this cube is selected";
-- the blue triangle is a screen-space information affordance;
-- clicking the triangle opens/closes the cube's route-information card;
-- clicking the triangle must win inside its compact hit area even if projected
-  world geometry lies behind it;
-- changing the selected cube moves the blue affordance to the new selection,
-  but already opened route cards remain open and keep their own spatial target.
-
-This separation prevents one click from simultaneously changing cubic
-navigation selection and opening route UI.
-
-### Current Finish / Intermediate workflow
-
-The route still has exactly one **finish waypoint** at a time, plus zero or more
-numbered Intermediate points.
-
-On Galaxy or System Map:
-
-1. the player explicitly selects a navigation cube rather than a physical
-   object;
-2. the blue information affordance opens a persistent card for that spatial
-   target; losing cube focus does not close that card;
-3. `SET AS FINISH` / `CANCEL FINISH` is a toggle for the one allowed Finish;
-4. while another Finish exists, other route cards do not offer a second Finish
-   action;
-5. `SET INTERMEDIATE` / `CANCEL INTERMEDIATE` toggles an intermediate route
-   point;
-6. intermediate points are numbered `1..N` and renumber immediately after
-   add/remove/role changes;
-7. route cards may be collapsed without removing their target;
-8. closing a route card removes that spatial target from client tracking and
-   therefore cancels its Finish/Intermediate role.
-
-Finish itself is not route-sequence numbered; only intermediate points use the
-contiguous sequence.
+marker dedicated to selection/drill semantics. Selection alone does **not** add
+the cube to the route. The small information affordance opens the ordinary card,
+from which `WAYPOINT` or `FINISH` creates explicit route intent.
 
 Galaxy cube centres are converted from galactic light-year coordinates to
 `WorldPosition`. System cube centres combine the loaded system root with the
-selected AU-space cell centre. The waypoint therefore identifies actual space,
-not the player's current position and not whichever object happens to be near
-the cursor.
+selected AU-space cell centre. A spatial waypoint therefore identifies actual
+space rather than whichever object happens to be near the cursor.
 
-Selecting a known Galaxy star/system is not treated as an empty-space waypoint
-candidate.
+### Shared Route container
+
+Galaxy/System/Detail/Hub render the same `NavigationRouteOverlay` state. The
+container is intentionally simple and visual:
+
+- collapse state survives map switching;
+- intermediate rows are drag-reorderable;
+- Finish is always last;
+- one master HUD checkbox gates route markers while each row has its own HUD
+  checkbox;
+- node deletion and whole-route deletion use a second-click confirmation;
+- Finish exposes four square arrival-mode pictograms: SAFE, FOLLOW, FORMATION,
+  PARADE.
+
+The full end-state (prediction, solver, arrival constraints and autopilot) is
+defined in `ROUTE_NAVIGATION_CONTRACT.md`.
 
 ## PROTECTED: map velocity arrows are linear
 
@@ -222,6 +206,8 @@ asset/service. Current localization keys include:
 - `map.object_info.radius`
 - `map.object_info.address`
 - `map.object_info.space_target`
+- `map.object_info.set_waypoint`
+- `map.object_info.cancel_waypoint`
 - `map.object_info.set_finish`
 - `map.navigation_hud.object`
 - `map.navigation_hud.celestial`
@@ -254,7 +240,6 @@ The following are current implementation choices, not permanent product rules:
 The following must not be inferred merely because waypoint/tracking structures
 exist:
 
-- route ordering/reordering controls;
 - trajectory calculation;
 - intercept calculation for moving ships/Hubs;
 - choosing manoeuvring vs J/jump propulsion for a route;

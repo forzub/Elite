@@ -1052,11 +1052,22 @@ void Application::mainLoop()
             xprocPhaseBegin = XprocTraceClock::now();
 #endif
 
-        m_renderer.beginFrame();
-
         int fbW = 1;
         int fbH = 1;
         glfwGetFramebufferSize(m_window->nativeHandle(), &fbW, &fbH);
+
+        // A minimized GLFW window may report a 0x0 framebuffer for one or
+        // more event-loop iterations. Do not run any OpenGL/UI presentation
+        // against that transient surface; several layouts legitimately assume
+        // a positive drawable extent. Simulation/update above keeps running,
+        // and rendering resumes naturally after restore.
+        if (fbW <= 0 || fbH <= 0)
+        {
+            m_states.applyPendingChanges();
+            continue;
+        }
+
+        m_renderer.beginFrame();
 
         const auto lb =
             makeLetterboxedViewport(fbW, fbH, TargetGameAspect);

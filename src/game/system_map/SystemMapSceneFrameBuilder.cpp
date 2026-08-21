@@ -368,6 +368,13 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
         overlay.navigationHubParentBodyId = object.parentBodyId;
         overlay.navigationSystemPositionAu = object.positionAu;
         overlay.hasNavigationSystemPositionAu = true;
+        overlay.trackingWorldPosition =
+            world::coordinates::makeWorldPositionFromMeters(
+                system.systemPositionLy *
+                    world::coordinates::MetersPerLightYear +
+                object.positionAu * world::celestial::MetersPerAu
+            );
+        overlay.hasTrackingWorldPosition = true;
         overlay.kind = tacticalGlyphKind(object.kind);
         overlay.velocityMode = MapObjectVelocityMode::Global;
         overlay.arrowVelocityMode = MapObjectVelocityMode::Global;

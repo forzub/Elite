@@ -13,6 +13,7 @@ namespace game::system_map
 struct DetailMapPresentation
 {
     bool valid = false;
+    int systemId = -1;
     bool sceneIsSpatialVolume = false;
     double minimumZoom = 0.15;
     double maxRadiusMeters = 1.0;

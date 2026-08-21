@@ -2381,6 +2381,9 @@ void GameSimulation::registerInterplanetaryTransferLabShip(EntityId shipId)
         return;
 
     m_interplanetaryTransferLabShipId = shipId;
+    m_interplanetaryTransferLabStartUniverseTimeSeconds =
+        m_orbitalUniverseTimeSeconds;
+    m_interplanetaryTransferLabDeparturePhaseInitialized = false;
 }
 
 bool GameSimulation::isInterplanetaryTransferLabShip(
@@ -2993,11 +2996,6 @@ void GameSimulation::updateInterplanetaryTransferLabActor()
     if (!ship)
         return;
 
-    const auto state =
-        game::diagnostics::evaluateInterplanetaryTransferLab(
-            m_orbitalUniverseTimeSeconds
-        );
-
     const auto sunPositionIt =
         m_celestialBodyPositionsAu.find(
             game::diagnostics::InterplanetaryTransferLabSunBodyId
@@ -3006,13 +3004,57 @@ void GameSimulation::updateInterplanetaryTransferLabActor()
         m_celestialBodyVelocitiesMetersPerSecond.find(
             game::diagnostics::InterplanetaryTransferLabSunBodyId
         );
+    const auto marsPositionIt =
+        m_celestialBodyPositionsAu.find(
+            game::diagnostics::InterplanetaryTransferLabMarsBodyId
+        );
 
     if (sunPositionIt == m_celestialBodyPositionsAu.end() ||
         sunVelocityIt ==
-            m_celestialBodyVelocitiesMetersPerSecond.end())
+            m_celestialBodyVelocitiesMetersPerSecond.end() ||
+        marsPositionIt == m_celestialBodyPositionsAu.end())
     {
         return;
     }
+
+    const double transferElapsedSinceSpawnSeconds = std::max(
+        0.0,
+        m_orbitalUniverseTimeSeconds -
+            m_interplanetaryTransferLabStartUniverseTimeSeconds
+    );
+
+    if (!m_interplanetaryTransferLabDeparturePhaseInitialized)
+    {
+        constexpr double twoPi = 6.28318530717958647692;
+        const glm::dvec3 currentMarsRelativeAu =
+            marsPositionIt->second - sunPositionIt->second;
+        const double currentMarsPhaseRad = std::atan2(
+            -currentMarsRelativeAu.z,
+            currentMarsRelativeAu.x
+        );
+        const double syntheticElapsedSeconds =
+            game::diagnostics::InterplanetaryInitialElapsedDays *
+                game::diagnostics::InterplanetarySecondsPerDay +
+            transferElapsedSinceSpawnSeconds;
+        const double marsAngularVelocityRadPerSecond =
+            twoPi /
+            (game::diagnostics::InterplanetaryMarsOrbitPeriodDays *
+             game::diagnostics::InterplanetarySecondsPerDay);
+
+        // The actor is spawned partway through the transfer. Recover the Mars
+        // phase at that synthetic departure epoch so the diagnostic ellipse is
+        // attached to the real Sol-system phase instead of the global +X axis.
+        m_interplanetaryTransferLabDeparturePhaseRad =
+            currentMarsPhaseRad -
+            marsAngularVelocityRadPerSecond * syntheticElapsedSeconds;
+        m_interplanetaryTransferLabDeparturePhaseInitialized = true;
+    }
+
+    const auto state =
+        game::diagnostics::evaluateInterplanetaryTransferLab(
+            transferElapsedSinceSpawnSeconds,
+            m_interplanetaryTransferLabDeparturePhaseRad
+        );
 
     const glm::dvec3 sunMeters =
         sunPositionIt->second * world::celestial::MetersPerAu;

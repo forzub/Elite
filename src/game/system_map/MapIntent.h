@@ -1,8 +1,11 @@
 #pragma once
 
 #include <string>
+#include <utility>
 
 #include <glm/glm.hpp>
+
+#include "src/game/system_map/MapMode.h"
 
 namespace game::system_map
 {
@@ -14,9 +17,10 @@ namespace game::system_map
         EnterKnownSystem,
         EnterEmptySector,
 
-        // Reserved common intents for the next map extraction phases.
+        // Common cross-layer presentation/navigation intents.
         OpenBody,
         OpenHub,
+        RecallRouteMap,
         SelectObject,
         SetNavigationTarget,
         PlotRoute
@@ -39,6 +43,10 @@ namespace game::system_map
 
         std::string objectId;
         std::string secondaryObjectId;
+
+        // Renderer requests only the presentation destination; SpaceState owns
+        // the actual mode transition and snapshot lifecycle.
+        MapMode requestedMapMode = MapMode::System;
 
         bool valid() const noexcept
         {
@@ -66,6 +74,32 @@ namespace game::system_map
             result.type = MapIntentType::EnterKnownSystem;
             result.systemId = destinationSystemId;
             result.positionLy = destinationPositionLy;
+            return result;
+        }
+
+
+        static MapIntent recallRouteMap(MapMode destinationMode)
+        {
+            MapIntent result;
+            result.type = MapIntentType::RecallRouteMap;
+            result.requestedMapMode = destinationMode;
+            return result;
+        }
+
+        static MapIntent openBody(std::string bodyId)
+        {
+            MapIntent result;
+            result.type = MapIntentType::OpenBody;
+            result.objectId = std::move(bodyId);
+            return result;
+        }
+
+        static MapIntent openHub(std::string hubId, std::string parentBodyId)
+        {
+            MapIntent result;
+            result.type = MapIntentType::OpenHub;
+            result.objectId = std::move(hubId);
+            result.secondaryObjectId = std::move(parentBodyId);
             return result;
         }
 

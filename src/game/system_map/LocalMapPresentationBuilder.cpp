@@ -181,6 +181,30 @@ glm::dvec2 projectDirection(
     return normalizedScreenDirection(end - start);
 }
 
+glm::dvec3 localSceneObjectWorldMeters(
+    const world::celestial::LocalSceneInventory& scene,
+    const world::celestial::LocalSceneObject& object
+)
+{
+    if (object.coordinateSpace ==
+        world::celestial::LocalSceneCoordinateSpace::SystemWorldMeters)
+    {
+        return object.positionMeters;
+    }
+    return scene.originWorldMeters + object.positionMeters;
+}
+
+glm::dvec3 hubLocalToWorldMeters(
+    const world::celestial::HubMapSnapshot& snapshot,
+    const glm::dvec3& localMeters
+)
+{
+    return snapshot.hubWorldPositionMeters +
+        snapshot.hubWorldAxes.x * localMeters.x +
+        snapshot.hubWorldAxes.y * localMeters.y +
+        snapshot.hubWorldAxes.z * localMeters.z;
+}
+
 bool visibleInViewport(
     const glm::dvec2& point,
     const Viewport& viewport,
@@ -227,6 +251,7 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
 
     DetailMapPresentation presentation;
     presentation.valid = snapshot.valid;
+    presentation.systemId = snapshot.systemId;
     presentation.sceneIsSpatialVolume =
         state.sceneIsSpatialVolume;
     presentation.minimumZoom = state.minimumZoom;
@@ -408,6 +433,11 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
         );
         item.navigationHubId = navigationHub.hubId;
         item.navigationHubParentBodyId = navigationHub.parentBodyId;
+        item.trackingWorldPosition =
+            world::coordinates::makeWorldPositionFromMeters(
+                localSceneObjectWorldMeters(snapshot.scene, object)
+            );
+        item.hasTrackingWorldPosition = true;
         item.factionColor = localObjectColor(object);
         item.screenPx = presentation.camera.project(object.positionMeters);
         item.visible = visibleInViewport(item.screenPx, viewport);
@@ -614,6 +644,11 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
         hubItem.kind = MapObjectGlyphKind::Hub;
         hubItem.navigationHubId = snapshot.hubId;
         hubItem.navigationHubParentBodyId = snapshot.parentBodyId;
+        hubItem.trackingWorldPosition =
+            world::coordinates::makeWorldPositionFromMeters(
+                snapshot.hubWorldPositionMeters
+            );
+        hubItem.hasTrackingWorldPosition = true;
         hubItem.velocityMode = MapObjectVelocityMode::Local;
         hubItem.arrowVelocityMode = MapObjectVelocityMode::Global;
         hubItem.displayedVelocityMps = glm::dvec3(0.0);
@@ -662,6 +697,11 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
         item.kind = MapObjectGlyphKind::Ship;
         item.navigationHubId = snapshot.hubId;
         item.navigationHubParentBodyId = snapshot.parentBodyId;
+        item.trackingWorldPosition =
+            world::coordinates::makeWorldPositionFromMeters(
+                hubLocalToWorldMeters(snapshot, object.positionMeters)
+            );
+        item.hasTrackingWorldPosition = true;
         item.factionColor = localObjectColor(object);
         item.screenPx = presentation.camera.project(object.positionMeters);
         item.visible = visibleInViewport(item.screenPx, viewport);

@@ -374,6 +374,12 @@ private:
         m_hubMotionLabShips;
 
     EntityId m_interplanetaryTransferLabShipId {0};
+    // evaluateInterplanetaryTransferLab() consumes elapsed transfer time, not
+    // the world's absolute universe epoch. Without this fence a late epoch
+    // clamps the diagnostic ship straight onto Earth's orbital radius.
+    double m_interplanetaryTransferLabStartUniverseTimeSeconds = 0.0;
+    double m_interplanetaryTransferLabDeparturePhaseRad = 0.0;
+    bool m_interplanetaryTransferLabDeparturePhaseInitialized = false;
     EntityId m_activationCadenceLabShipId {0};
 
     // Stage 4A/4B: the stabilized activation plan controls real materialized

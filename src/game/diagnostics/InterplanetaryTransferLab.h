@@ -19,11 +19,14 @@ inline constexpr const char* InterplanetaryTransferLabLabel =
     "MARS-EARTH TRANSFER TEST";
 inline constexpr const char* InterplanetaryTransferLabSunBodyId =
     "system_0.Sol";
+inline constexpr const char* InterplanetaryTransferLabMarsBodyId =
+    "system_0.Sol.Марс";
 
 inline constexpr double InterplanetaryAuMeters = 149597870700.0;
 inline constexpr double InterplanetarySunMuM3s2 = 1.3271244e20;
 inline constexpr double InterplanetaryEarthOrbitAu = 1.0;
 inline constexpr double InterplanetaryMarsOrbitAu = 1.52;
+inline constexpr double InterplanetaryMarsOrbitPeriodDays = 687.0;
 inline constexpr double InterplanetaryInitialElapsedDays = 120.0;
 inline constexpr double InterplanetarySecondsPerDay = 86400.0;
 
@@ -62,8 +65,23 @@ inline double solveTransferEccentricAnomaly(
     return eccentricAnomaly;
 }
 
+inline glm::dvec3 rotateTransferPhase(
+    const glm::dvec3& value,
+    double phaseOffsetRad
+)
+{
+    const double c = std::cos(phaseOffsetRad);
+    const double s = std::sin(phaseOffsetRad);
+    return glm::dvec3(
+        c * value.x + s * value.z,
+        value.y,
+        -s * value.x + c * value.z
+    );
+}
+
 inline InterplanetaryTransferLabState evaluateInterplanetaryTransferLab(
-    double universeTimeSeconds
+    double elapsedSinceSpawnSeconds,
+    double departurePhaseRad = 3.14159265358979323846
 )
 {
     constexpr double pi = 3.14159265358979323846;
@@ -87,7 +105,7 @@ inline InterplanetaryTransferLabState evaluateInterplanetaryTransferLab(
 
     const double elapsedSeconds = std::clamp(
         InterplanetaryInitialElapsedDays * InterplanetarySecondsPerDay +
-            std::max(0.0, universeTimeSeconds),
+            std::max(0.0, elapsedSinceSpawnSeconds),
         0.0,
         transferDurationSeconds
     );
@@ -106,20 +124,31 @@ inline InterplanetaryTransferLabState evaluateInterplanetaryTransferLab(
         std::sqrt(1.0 - eccentricity * eccentricity);
 
     InterplanetaryTransferLabState out;
-    out.relativePositionMeters = glm::dvec3(
+    // CelestialSystemRuntime defines prograde motion as increasing orbital
+    // phase: +X -> -Z.  The diagnostic transfer must use the same handedness;
+    // the old +sin(E) Z term made the Mars->Earth actor retrograde.
+    const glm::dvec3 unrotatedPosition(
         semiMajorAxisMeters *
             (std::cos(eccentricAnomaly) - eccentricity),
         0.0,
-        semiMajorAxisMeters * minorScale *
+        -semiMajorAxisMeters * minorScale *
             std::sin(eccentricAnomaly)
     );
-    out.relativeVelocityMetersPerSecond = glm::dvec3(
+    const glm::dvec3 unrotatedVelocity(
         -semiMajorAxisMeters *
             std::sin(eccentricAnomaly) * eccentricAnomalyRate,
         0.0,
-        semiMajorAxisMeters * minorScale *
+        -semiMajorAxisMeters * minorScale *
             std::cos(eccentricAnomaly) * eccentricAnomalyRate
     );
+
+    // The canonical ellipse starts at aphelion phase pi. Rotate it so its
+    // synthetic departure point coincides with Mars' phase at departure.
+    const double phaseOffsetRad = departurePhaseRad - pi;
+    out.relativePositionMeters =
+        rotateTransferPhase(unrotatedPosition, phaseOffsetRad);
+    out.relativeVelocityMetersPerSecond =
+        rotateTransferPhase(unrotatedVelocity, phaseOffsetRad);
     out.heliocentricRadiusMeters =
         glm::length(out.relativePositionMeters);
     out.heliocentricSpeedMetersPerSecond =

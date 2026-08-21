@@ -98,6 +98,9 @@ struct MapObjectOverlayItem
     bool hasNavigationSystemPositionAu = false;
     world::coordinates::WorldPosition trackingWorldPosition;
     bool hasTrackingWorldPosition = false;
+    // Route markers use route order rather than the unrelated tactical track
+    // allocator. Zero means no route number is rendered.
+    int routeDisplayIndex = 0;
     bool pointerInteractive = true;
     // Screen-space UI affordances (currently the selected-empty-cube info
     // triangle) must win their own small hit area before semantic world-object
@@ -157,6 +160,7 @@ struct MapObjectInfoPanelState
     glm::dvec2 topLeftPx {0.0};
     glm::dvec2 dragOffsetPx {0.0};
     std::uint64_t zOrder = 0;
+    double expandedHeightPx = 170.0;
     bool dragging = false;
     bool collapsed = false;
 };
@@ -234,9 +238,55 @@ class MapObjectOverlayState
 {
 public:
     static constexpr double PanelWidthPx = 238.0;
-    static constexpr double PanelHeightPx = 170.0;
+    static constexpr double PanelHeightPx = 170.0; // legacy/default seed only
     static constexpr double PanelHeaderHeightPx = 26.0;
     static constexpr double PanelCollapsedHeightPx = 30.0;
+    static constexpr double PanelMinimumExpandedHeightPx = 104.0;
+
+    static double expandedPanelHeight(const MapObjectOverlayItem& item)
+    {
+        int fieldRows = 1; // type
+        if (item.infoKind == MapObjectInfoKind::Tactical)
+        {
+            fieldRows += 3; // speed, azimuth, elevation
+            if (!item.owner.empty())
+                ++fieldRows;
+        }
+
+        const int extraRows = static_cast<int>(item.extraFields.size());
+        fieldRows += extraRows;
+
+        int visibleActions = 0;
+        for (const auto& action : item.panelActions)
+        {
+            if (action.visible)
+                ++visibleActions;
+        }
+
+        // Field labels may wrap (Russian "global speed" is the common case),
+        // so reserve one extra wrapped line for tactical cards and a little
+        // breathing room for custom fields. The result is content-driven, not
+        // a fixed 170 px box.
+        double height =
+            43.0 +
+            static_cast<double>(fieldRows) * 18.0 +
+            (item.infoKind == MapObjectInfoKind::Tactical ? 12.0 : 0.0) +
+            static_cast<double>(extraRows) * 4.0 +
+            10.0;
+
+        if (visibleActions > 0)
+        {
+            constexpr double actionHeight = 23.0;
+            constexpr double actionGap = 5.0;
+            height +=
+                8.0 +
+                static_cast<double>(visibleActions) * actionHeight +
+                static_cast<double>(visibleActions - 1) * actionGap +
+                8.0;
+        }
+
+        return std::max(PanelMinimumExpandedHeightPx, height);
+    }
 
     int trackNumberFor(const std::string& objectId)
     {
@@ -334,9 +384,10 @@ public:
         MapObjectInfoPanelState panel;
         panel.objectId = item.objectId;
         panel.zOrder = ++m_zCounter;
+        panel.expandedHeightPx = expandedPanelHeight(item);
         panel.topLeftPx = glm::dvec2(
             item.screenPx.x + 36.0,
-            item.screenPx.y - PanelHeightPx * 0.5
+            item.screenPx.y - panel.expandedHeightPx * 0.5
         );
         clampPanel(panel, viewportSizePx);
         m_panels[panel.objectId] = std::move(panel);
@@ -352,6 +403,25 @@ public:
     )
     {
         MapObjectOverlayPointerResult result;
+
+        // Panel actions/fields are presentation data and may change while a
+        // card stays open (for example when a route FINISH already exists).
+        // Refresh geometry from current content before hit-testing/rendering.
+        for (auto& [id, panel] : m_panels)
+        {
+            const auto itemIt = std::find_if(
+                frame.items.begin(),
+                frame.items.end(),
+                [&](const MapObjectOverlayItem& item)
+                {
+                    return item.objectId == id;
+                }
+            );
+            if (itemIt == frame.items.end())
+                continue;
+            panel.expandedHeightPx = expandedPanelHeight(*itemIt);
+            clampPanel(panel, viewportSizePx);
+        }
 
         if (leftDown && !m_leftWasDown && inside)
         {
@@ -390,7 +460,7 @@ public:
                     constexpr double buttonHeight = 22.0;
                     constexpr double buttonGap = 5.0;
                     double buttonTop =
-                        PanelHeightPx - 8.0 - buttonHeight;
+                        panelHeight(*panel) - 8.0 - buttonHeight;
 
                     for (auto it = panelItem->panelActions.rbegin();
                          it != panelItem->panelActions.rend();
@@ -611,7 +681,9 @@ public:
 private:
     static double panelHeight(const MapObjectInfoPanelState& panel)
     {
-        return panel.collapsed ? PanelCollapsedHeightPx : PanelHeightPx;
+        return panel.collapsed
+            ? PanelCollapsedHeightPx
+            : panel.expandedHeightPx;
     }
 
     void clampPanel(

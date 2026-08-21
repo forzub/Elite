@@ -2166,7 +2166,10 @@ void testClientNavigationTrackingOwnsCardsBodiesAndWaypointPanels()
     );
     const std::uint64_t finishId = finish.id;
     const std::string finishSourceId = finish.sourceObjectId;
-    state.toggleWaypointRole(finishSourceId, game::navigation::NavigationWaypointRole::Finish);
+    state.toggleWaypointRole(
+        finishSourceId,
+        game::navigation::NavigationWaypointRole::Finish
+    );
 
     auto& intermediate = state.rememberWaypointCandidate(
         "waypoint_candidate:G:4:4:5:6",
@@ -2176,7 +2179,10 @@ void testClientNavigationTrackingOwnsCardsBodiesAndWaypointPanels()
         "G4[4,5,6]"
     );
     const std::string intermediateSourceId = intermediate.sourceObjectId;
-    state.toggleWaypointRole(intermediateSourceId, game::navigation::NavigationWaypointRole::Intermediate);
+    state.toggleWaypointRole(
+        intermediateSourceId,
+        game::navigation::NavigationWaypointRole::Intermediate
+    );
 
     auto& intermediateTwo = state.rememberWaypointCandidate(
         "waypoint_candidate:G:4:7:8:9",
@@ -2191,33 +2197,79 @@ void testClientNavigationTrackingOwnsCardsBodiesAndWaypointPanels()
         game::navigation::NavigationWaypointRole::Intermediate
     );
 
-    state.reconcileOpenCards({
-        "entity:42",
-        "body:0:earth",
-        finishSourceId,
-        intermediateSourceId,
-        intermediateTwoSourceId
-    });
-    REQUIRE(state.tacticalObjects().size() == 1);
-    REQUIRE(state.celestialBodies().size() == 1);
-    REQUIRE(state.waypoints().size() == 3);
-    REQUIRE(state.waypoints().front().id == finishId);
-    REQUIRE(state.waypoints().front().role == game::navigation::NavigationWaypointRole::Finish);
-    REQUIRE(state.waypoints()[1].role == game::navigation::NavigationWaypointRole::Intermediate);
-    REQUIRE(state.waypoints()[1].sequence == 1);
-    REQUIRE(state.waypoints()[2].role == game::navigation::NavigationWaypointRole::Intermediate);
-    REQUIRE(state.waypoints()[2].sequence == 2);
+    REQUIRE(state.hasRoute());
+    REQUIRE(state.routeSize() == 3);
+    auto ordered = state.orderedRouteWaypoints();
+    REQUIRE(ordered.size() == 3);
+    REQUIRE(ordered[0]->sourceObjectId == intermediateSourceId);
+    REQUIRE(ordered[0]->sequence == 1);
+    REQUIRE(ordered[1]->sourceObjectId == intermediateTwoSourceId);
+    REQUIRE(ordered[1]->sequence == 2);
+    REQUIRE(ordered[2]->id == finishId);
+    REQUIRE(ordered[2]->role == game::navigation::NavigationWaypointRole::Finish);
 
-    state.reconcileOpenCards({
-        "body:0:earth",
-        finishSourceId,
-        intermediateTwoSourceId
-    });
+    // Closing source cards must stop transient tactical/celestial tracking but
+    // must not erase explicit route intent.
+    state.reconcileOpenCards({"body:0:earth"});
     REQUIRE(state.tacticalObjects().empty());
     REQUIRE(state.celestialBodies().size() == 1);
-    REQUIRE(state.waypoints().size() == 2);
-    REQUIRE(state.waypoints()[1].sourceObjectId == intermediateTwoSourceId);
-    REQUIRE(state.waypoints()[1].sequence == 1);
+    REQUIRE(state.routeSize() == 3);
+
+    state.moveIntermediateWaypoint(intermediateTwoSourceId, 1);
+    ordered = state.orderedRouteWaypoints();
+    REQUIRE(ordered[0]->sourceObjectId == intermediateTwoSourceId);
+    REQUIRE(ordered[0]->sequence == 1);
+    REQUIRE(ordered[1]->sourceObjectId == intermediateSourceId);
+    REQUIRE(ordered[1]->sequence == 2);
+    REQUIRE(ordered[2]->sourceObjectId == finishSourceId);
+
+    state.setWaypointHudVisible(intermediateTwoSourceId, false);
+    REQUIRE(!state.findWaypoint(intermediateTwoSourceId)->showOnHud);
+    state.setRouteVisibleOnHud(false);
+    REQUIRE(!state.routeVisibleOnHud());
+
+    state.setFinishArrivalMode(
+        game::navigation::NavigationArrivalMode::ParadeFormation
+    );
+    const auto* finishAfter = state.findWaypoint(finishSourceId);
+    REQUIRE(finishAfter != nullptr);
+    REQUIRE(
+        finishAfter->arrival.mode ==
+        game::navigation::NavigationArrivalMode::ParadeFormation
+    );
+    REQUIRE(finishAfter->arrival.matchVelocity);
+    REQUIRE(finishAfter->arrival.formationMotionLock);
+
+    // A ship used as an intermediate node is a semantic rendezvous checkpoint,
+    // never a frozen pass-through coordinate.
+    state.setWaypointRouteMetadata(
+        intermediateTwoSourceId,
+        game::navigation::NavigationRouteAnchorKind::Ship,
+        game::navigation::NavigationRouteMapKind::System,
+        0,
+        {},
+        {},
+        "ship:transfer-test",
+        true
+    );
+    const auto* rendezvous = state.findWaypoint(intermediateTwoSourceId);
+    REQUIRE(rendezvous != nullptr);
+    REQUIRE(rendezvous->dynamicTarget);
+    REQUIRE(
+        rendezvous->transitKind ==
+        game::navigation::NavigationWaypointTransitKind::Rendezvous
+    );
+
+    state.removeRouteWaypoint(intermediateSourceId);
+    ordered = state.orderedRouteWaypoints();
+    REQUIRE(ordered.size() == 2);
+    REQUIRE(ordered[0]->sourceObjectId == intermediateTwoSourceId);
+    REQUIRE(ordered[0]->sequence == 1);
+    REQUIRE(ordered[1]->role == game::navigation::NavigationWaypointRole::Finish);
+
+    state.clearRoute();
+    REQUIRE(!state.hasRoute());
+    REQUIRE(state.routeSize() == 0);
 }
 
 

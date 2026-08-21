@@ -996,6 +996,7 @@ void SystemMapRenderer::resetView()
     m_navigationTrackButtonHovered = false;
     m_navigationOverlayLeftWasDown = false;
     m_objectOverlayState.clearTransientDrag();
+    m_routeOverlayState.clearTransientDrag();
 
 }
 
@@ -1149,6 +1150,7 @@ void SystemMapRenderer::setMode(Mode mode)
     m_hubFramePrepared = false;
     m_hubFrameDirty = true;
     m_objectOverlayState.clearTransientDrag();
+    m_routeOverlayState.clearTransientDrag();
 
     /*
         Если пользователь открыл другую карту во время перелёта,
@@ -1991,6 +1993,13 @@ void SystemMapRenderer::render(
         );
     }
 
+    m_routeOverlayRenderer.render(
+        vp,
+        m_navigationTrackingState,
+        m_routeOverlayState,
+        m_navigationNamingLocale
+    );
+
     drawNavigationCoordinateOverlay(
         vp,
         galaxy,
@@ -2114,14 +2123,90 @@ glm::vec2 SystemMapRenderer::projectToScreen(
 
 
 void SystemMapRenderer::synchronizeNavigationTracking(
-    const game::system_map::MapObjectOverlayFrame& frame
+    game::system_map::MapObjectOverlayFrame& frame
 )
 {
     const auto openIds = m_objectOverlayState.openObjectIds();
     m_navigationTrackingState.reconcileOpenCards(openIds);
 
-    for (const auto& item : frame.items)
+    const auto routeActionsFor =
+        [&](const game::system_map::MapObjectOverlayItem& item)
+        {
+            std::vector<game::system_map::MapObjectPanelAction> actions;
+            if (item.objectId == "player" || !item.hasTrackingWorldPosition)
+                return actions;
+
+            const auto* route =
+                m_navigationTrackingState.findWaypoint(item.objectId);
+            const bool isWaypoint =
+                route && route->role ==
+                    game::navigation::NavigationWaypointRole::Intermediate;
+            const bool isFinish =
+                route && route->role ==
+                    game::navigation::NavigationWaypointRole::Finish;
+
+            // A FINISH target is already the terminal route node, therefore
+            // offering "add waypoint" on the same card is contradictory.
+            if (!isFinish)
+            {
+                game::system_map::MapObjectPanelAction waypointAction;
+                waypointAction.key = "toggle_intermediate";
+                waypointAction.labelKey =
+                    isWaypoint
+                        ? "cancel_waypoint"
+                        : item.kind == game::system_map::MapObjectGlyphKind::Ship
+                            ? "set_rendezvous"
+                            : "set_waypoint";
+                waypointAction.active = isWaypoint;
+                actions.push_back(std::move(waypointAction));
+            }
+
+            // Exactly one FINISH exists. Once selected, other cards stop
+            // advertising a competing FINISH button; the active finish keeps
+            // only its explicit cancel action.
+            if (isFinish || !m_navigationTrackingState.hasFinishWaypoint())
+            {
+                game::system_map::MapObjectPanelAction finishAction;
+                finishAction.key = "toggle_finish";
+                finishAction.labelKey =
+                    isFinish ? "cancel_finish" : "set_finish";
+                finishAction.active = isFinish;
+                actions.push_back(std::move(finishAction));
+            }
+            return actions;
+        };
+
+    for (auto& item : frame.items)
     {
+        // Route nodes are semantic intent and survive card closure.  Whenever
+        // their live object is present, refresh only the presentation fallback
+        // position/name; target identity remains stable for the future predictor.
+        if (item.hasTrackingWorldPosition)
+        {
+            if (auto* route = m_navigationTrackingState.findWaypoint(item.objectId);
+                route && route->role !=
+                    game::navigation::NavigationWaypointRole::None)
+            {
+                route->worldPosition = item.trackingWorldPosition;
+                if (!item.name.empty())
+                    route->displayName = item.name;
+
+                // Route semantics visually win over the object's ordinary
+                // tactical/celestial glyph. Keep panel identity intact, but
+                // show one universal green numbered route pin on the map.
+                item.routeDisplayIndex =
+                    route->role == game::navigation::NavigationWaypointRole::Finish
+                        ? static_cast<int>(m_navigationTrackingState.routeSize())
+                        : route->sequence;
+            }
+        }
+
+        if (item.infoKind == game::system_map::MapObjectInfoKind::Tactical ||
+            item.infoKind == game::system_map::MapObjectInfoKind::Celestial)
+        {
+            item.panelActions = routeActionsFor(item);
+        }
+
         if (!m_objectOverlayState.isOpen(item.objectId))
             continue;
 
@@ -2163,19 +2248,12 @@ void SystemMapRenderer::synchronizeNavigationTracking(
                     break;
                 }
             }
-            auto& waypoint =
-                m_navigationTrackingState.rememberWaypointCandidate(
-                    item.objectId,
-                    item.trackingWorldPosition,
-                    std::move(address),
-                    item.name.empty() ? "Space target" : item.name
-                );
-            if (const auto* existing =
-                    m_navigationTrackingState.findWaypoint(item.objectId);
-                existing)
-            {
-                waypoint.role = existing->role;
-            }
+            m_navigationTrackingState.rememberWaypointCandidate(
+                item.objectId,
+                item.trackingWorldPosition,
+                std::move(address),
+                item.name.empty() ? "Space target" : item.name
+            );
         }
     }
 }
@@ -2223,9 +2301,9 @@ glm::vec4 waypointRoleColor(game::navigation::NavigationWaypointRole role)
     switch (role)
     {
         case game::navigation::NavigationWaypointRole::Finish:
-            return glm::vec4(1.00f, 0.82f, 0.30f, 0.90f);
+            return glm::vec4(0.44f, 1.00f, 0.62f, 0.96f);
         case game::navigation::NavigationWaypointRole::Intermediate:
-            return glm::vec4(0.40f, 0.92f, 0.60f, 0.88f);
+            return glm::vec4(0.40f, 0.92f, 0.60f, 0.94f);
         default:
             return glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
     }
@@ -2253,9 +2331,20 @@ std::vector<game::system_map::MapObjectPanelAction> waypointPanelActions(
 
     const bool isFinish =
         waypoint.role == game::navigation::NavigationWaypointRole::Finish;
-    const bool hasOtherFinish =
-        tracking.hasFinishWaypoint() && !isFinish;
-    if (!hasOtherFinish || isFinish)
+    const bool isWaypoint =
+        waypoint.role == game::navigation::NavigationWaypointRole::Intermediate;
+
+    if (!isFinish)
+    {
+        game::system_map::MapObjectPanelAction intermediate;
+        intermediate.key = "toggle_intermediate";
+        intermediate.labelKey =
+            isWaypoint ? "cancel_waypoint" : "set_waypoint";
+        intermediate.active = isWaypoint;
+        actions.push_back(std::move(intermediate));
+    }
+
+    if (isFinish || !tracking.hasFinishWaypoint())
     {
         game::system_map::MapObjectPanelAction finish;
         finish.key = "toggle_finish";
@@ -2263,16 +2352,6 @@ std::vector<game::system_map::MapObjectPanelAction> waypointPanelActions(
         finish.active = isFinish;
         actions.push_back(std::move(finish));
     }
-
-    game::system_map::MapObjectPanelAction intermediate;
-    intermediate.key = "toggle_intermediate";
-    intermediate.labelKey =
-        waypoint.role == game::navigation::NavigationWaypointRole::Intermediate
-            ? "cancel_intermediate"
-            : "set_intermediate";
-    intermediate.active =
-        waypoint.role == game::navigation::NavigationWaypointRole::Intermediate;
-    actions.push_back(std::move(intermediate));
 
     return actions;
 }
@@ -2293,7 +2372,8 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
 
     for (const auto& waypoint : m_navigationTrackingState.waypoints())
     {
-        if (!waypointHasPrefix(waypoint, 'G'))
+        if (waypoint.role == game::navigation::NavigationWaypointRole::None ||
+            !waypointHasPrefix(waypoint, 'G'))
             continue;
 
         game::system_map::MapObjectOverlayItem item;
@@ -2308,6 +2388,10 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
         item.hitRadiusPx = 12.0;
         item.facingScreenDirection = glm::dvec2(0.0, -1.0);
         item.factionColor = waypointRoleColor(waypoint.role);
+        item.routeDisplayIndex =
+            waypoint.role == game::navigation::NavigationWaypointRole::Finish
+                ? static_cast<int>(m_navigationTrackingState.routeSize())
+                : waypoint.sequence;
         item.panelActions = waypointPanelActions(m_navigationTrackingState, waypoint);
         item.extraFields.push_back({"address", waypoint.address, ""});
         item.trackingWorldPosition = waypoint.worldPosition;
@@ -2360,6 +2444,10 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
         item.typeName = waypointRoleTypeName(waypoint->role);
         item.name = waypoint->address.empty() ? waypoint->displayName : waypoint->address;
         item.factionColor = waypointRoleColor(waypoint->role);
+        item.routeDisplayIndex =
+            waypoint->role == game::navigation::NavigationWaypointRole::Finish
+                ? static_cast<int>(m_navigationTrackingState.routeSize())
+                : waypoint->sequence;
         item.panelActions = waypointPanelActions(m_navigationTrackingState, *waypoint);
         item.extraFields.clear();
         item.extraFields.push_back({"address", waypoint->address, ""});
@@ -2399,7 +2487,8 @@ void SystemMapRenderer::refreshSystemWaypointCandidate(
 
     for (const auto& waypoint : m_navigationTrackingState.waypoints())
     {
-        if (!waypointHasPrefix(waypoint, 'S'))
+        if (waypoint.role == game::navigation::NavigationWaypointRole::None ||
+            !waypointHasPrefix(waypoint, 'S'))
             continue;
 
         game::system_map::MapObjectOverlayItem item;
@@ -2414,6 +2503,10 @@ void SystemMapRenderer::refreshSystemWaypointCandidate(
         item.hitRadiusPx = 12.0;
         item.facingScreenDirection = glm::dvec2(0.0, -1.0);
         item.factionColor = waypointRoleColor(waypoint.role);
+        item.routeDisplayIndex =
+            waypoint.role == game::navigation::NavigationWaypointRole::Finish
+                ? static_cast<int>(m_navigationTrackingState.routeSize())
+                : waypoint.sequence;
         item.panelActions = waypointPanelActions(m_navigationTrackingState, waypoint);
         item.extraFields.push_back({"address", waypoint.address, ""});
         item.trackingWorldPosition = waypoint.worldPosition;
@@ -2483,6 +2576,10 @@ void SystemMapRenderer::refreshSystemWaypointCandidate(
         item.typeName = waypointRoleTypeName(waypoint->role);
         item.name = waypoint->address.empty() ? waypoint->displayName : waypoint->address;
         item.factionColor = waypointRoleColor(waypoint->role);
+        item.routeDisplayIndex =
+            waypoint->role == game::navigation::NavigationWaypointRole::Finish
+                ? static_cast<int>(m_navigationTrackingState.routeSize())
+                : waypoint->sequence;
         item.panelActions = waypointPanelActions(m_navigationTrackingState, *waypoint);
         item.extraFields.clear();
         item.extraFields.push_back({"address", waypoint->address, ""});
@@ -2501,45 +2598,119 @@ void SystemMapRenderer::refreshSystemWaypointCandidate(
         items.push_back(std::move(item));
 }
 
+const game::system_map::MapObjectOverlayItem*
+SystemMapRenderer::currentOverlayItem(const std::string& objectId) const
+{
+    const game::system_map::MapObjectOverlayFrame* frame = nullptr;
+    if (m_mode == Mode::Galaxy)
+        frame = &m_galaxyInfoOverlayFrame;
+    else if (m_mode == Mode::System)
+        frame = &m_systemSceneFrame.interaction.objectOverlay;
+    else if (m_mode == Mode::Detail)
+        frame = &m_detailPresentation.frame.objectOverlay;
+    else if (m_mode == Mode::Hub)
+        frame = &m_hubPresentation.frame.objectOverlay;
+
+    if (!frame)
+        return nullptr;
+    const auto found = std::find_if(
+        frame->items.begin(),
+        frame->items.end(),
+        [&](const game::system_map::MapObjectOverlayItem& item)
+        {
+            return item.objectId == objectId;
+        }
+    );
+    return found == frame->items.end() ? nullptr : &(*found);
+}
+
 void SystemMapRenderer::applyWaypointAction(
     const std::string& objectId,
     const std::string& actionKey
 )
 {
-    // Legacy seam note: the original single-button flow called
-    // NavigationTrackingState::setFinishWaypoint().  The richer waypoint-card
-    // UI now routes finish/intermediate toggles through client-only roles.
     auto* waypoint = m_navigationTrackingState.findWaypoint(objectId);
-    if (!waypoint)
+    const auto* item = currentOverlayItem(objectId);
+
+    if (!waypoint && item && item->hasTrackingWorldPosition)
     {
-        const auto apply = [&](const auto& candidate) -> bool
+        std::string address;
+        for (const auto& field : item->extraFields)
         {
-            if (!candidate.has_value() ||
-                candidate->objectId != objectId ||
-                !candidate->hasTrackingWorldPosition)
+            if (field.labelKey == "address")
             {
-                return false;
+                address = field.value;
+                break;
             }
-
-            std::string address;
-            if (!candidate->extraFields.empty())
-                address = candidate->extraFields.front().value;
-
-            waypoint = &m_navigationTrackingState.rememberWaypointCandidate(
-                candidate->objectId,
-                candidate->trackingWorldPosition,
-                std::move(address),
-                "Space target"
-            );
-            return true;
-        };
-
-        if (!apply(m_systemWaypointCandidate))
-            (void)apply(m_galaxyWaypointCandidate);
+        }
+        waypoint = &m_navigationTrackingState.rememberWaypointCandidate(
+            item->objectId,
+            item->trackingWorldPosition,
+            std::move(address),
+            item->name.empty() ? item->typeName : item->name
+        );
     }
 
     if (!waypoint)
         return;
+
+    if (item)
+    {
+        using Anchor = game::navigation::NavigationRouteAnchorKind;
+        Anchor anchor = Anchor::FreeSpace;
+        bool dynamic = false;
+        if (item->infoKind == game::system_map::MapObjectInfoKind::Celestial)
+            anchor = Anchor::CelestialBody;
+        else if (item->infoKind == game::system_map::MapObjectInfoKind::Tactical)
+        {
+            dynamic = true;
+            if (item->kind == game::system_map::MapObjectGlyphKind::Hub)
+                anchor = Anchor::Hub;
+            else if (item->kind == game::system_map::MapObjectGlyphKind::Ship)
+                anchor = Anchor::Ship;
+            else
+                anchor = Anchor::Infrastructure;
+        }
+
+        using Context = game::navigation::NavigationRouteMapKind;
+        Context context = Context::System;
+        int systemId = -1;
+        std::string bodyId;
+        std::string hubId = item->navigationHubId;
+        if (m_mode == Mode::Galaxy)
+            context = Context::Galaxy;
+        else if (m_mode == Mode::System)
+        {
+            context = Context::System;
+            systemId = m_systemPresentation.systemId;
+            bodyId = m_systemView.state().selectedBodyId;
+        }
+        else if (m_mode == Mode::Detail)
+        {
+            context = Context::Detail;
+            systemId = m_detailPresentation.systemId;
+            bodyId = m_systemView.state().selectedBodyId;
+        }
+        else if (m_mode == Mode::Hub)
+        {
+            context = Context::Hub;
+            systemId = m_hubPresentation.systemId;
+            bodyId = m_systemView.state().selectedHubParentBodyId;
+            if (hubId.empty())
+                hubId = m_hubPresentation.hubId;
+        }
+
+        m_navigationTrackingState.setWaypointRouteMetadata(
+            objectId,
+            anchor,
+            context,
+            systemId,
+            std::move(bodyId),
+            std::move(hubId),
+            dynamic ? objectId : std::string{},
+            dynamic
+        );
+    }
 
     if (actionKey == "toggle_finish")
     {
@@ -2555,6 +2726,274 @@ void SystemMapRenderer::applyWaypointAction(
             game::navigation::NavigationWaypointRole::Intermediate
         );
     }
+}
+
+std::optional<game::system_map::MapIntent>
+SystemMapRenderer::focusRouteWaypoint(
+    const std::string& sourceObjectId,
+    const Viewport& viewport,
+    const world::celestial::GalaxyMapSnapshot& galaxy,
+    const world::celestial::SystemMapSnapshot& system,
+    double nowSeconds
+)
+{
+    const auto* waypoint =
+        m_navigationTrackingState.findWaypoint(sourceObjectId);
+    if (!waypoint ||
+        waypoint->role == game::navigation::NavigationWaypointRole::None)
+    {
+        return std::nullopt;
+    }
+
+    m_pendingRouteFocusSourceObjectId = sourceObjectId;
+    m_pendingRouteFocusContextApplied = false;
+    return advancePendingRouteFocus(
+        viewport,
+        galaxy,
+        system,
+        nowSeconds
+    );
+}
+
+std::optional<game::system_map::MapIntent>
+SystemMapRenderer::advancePendingRouteFocus(
+    const Viewport& viewport,
+    const world::celestial::GalaxyMapSnapshot& galaxy,
+    const world::celestial::SystemMapSnapshot& system,
+    double nowSeconds
+)
+{
+    if (m_pendingRouteFocusSourceObjectId.empty())
+        return std::nullopt;
+
+    const auto* waypoint = m_navigationTrackingState.findWaypoint(
+        m_pendingRouteFocusSourceObjectId
+    );
+    if (!waypoint ||
+        waypoint->role == game::navigation::NavigationWaypointRole::None)
+    {
+        m_pendingRouteFocusSourceObjectId.clear();
+        m_pendingRouteFocusContextApplied = false;
+        return std::nullopt;
+    }
+
+    if (m_pendingRouteFocusContextApplied)
+        return std::nullopt;
+
+    using Context = game::navigation::NavigationRouteMapKind;
+    using game::system_map::MapIntent;
+
+    // The route remembers where the node was authored.  The renderer may
+    // prepare selection/camera state, but changing map mode stays a SpaceState
+    // responsibility and therefore leaves this class as a MapIntent.
+    if (waypoint->authoredMap == Context::Galaxy)
+    {
+        if (m_mode != Mode::Galaxy)
+            return MapIntent::recallRouteMap(Mode::Galaxy);
+
+        const glm::dvec3 targetLy =
+            world::coordinates::toGalacticLy(waypoint->worldPosition);
+        m_galaxyView.state().navigationGrid.setAnchorFromPositionLy(targetLy);
+        m_galaxyView.state().navigationFocusLy = targetLy;
+        m_galaxyView.state().navigationFocusValid = true;
+        m_galaxyView.beginCameraFlight(
+            m_galaxyView.positionLyToRender(targetLy),
+            m_galaxyView.state().camera.distance,
+            nowSeconds
+        );
+        m_pendingRouteFocusContextApplied = true;
+        (void)viewport;
+        return std::nullopt;
+    }
+
+    // Known systems retain stable ids.  Empty-space System maps use ephemeral
+    // negative ids, so recall them by their spatial anchor instead.
+    if (waypoint->authoredSystemId >= 0 &&
+        system.systemId != waypoint->authoredSystemId)
+    {
+        const auto found = std::find_if(
+            galaxy.systems.begin(),
+            galaxy.systems.end(),
+            [&](const auto& candidate)
+            {
+                return candidate.id == waypoint->authoredSystemId;
+            }
+        );
+        if (found != galaxy.systems.end())
+        {
+            return MapIntent::enterKnownSystem(
+                found->id,
+                found->positionLy
+            );
+        }
+        return std::nullopt;
+    }
+
+    if (waypoint->authoredSystemId < 0)
+    {
+        const glm::dvec3 targetLy =
+            world::coordinates::toGalacticLy(waypoint->worldPosition);
+        const bool wrongEmptyContext =
+            system.systemId >= 0 ||
+            glm::length(system.systemPositionLy - targetLy) > 1.0e-9;
+        if (wrongEmptyContext)
+            return MapIntent::enterEmptySector(targetLy);
+    }
+
+    if (waypoint->authoredMap == Context::System)
+    {
+        if (m_mode != Mode::System)
+            return MapIntent::recallRouteMap(Mode::System);
+
+        const glm::dvec3 relativeMeters =
+            world::coordinates::fullMeters(waypoint->worldPosition) -
+            system.systemPositionLy * world::coordinates::MetersPerLightYear;
+        const glm::dvec3 relativeAu =
+            relativeMeters / world::celestial::MetersPerAu;
+        m_systemView.state().navigationGrid.setAnchorFromPosition(relativeAu);
+        const double scale = std::max(
+            1.0e-12,
+            static_cast<double>(m_systemView.state().lastScale)
+        );
+        m_systemView.beginCameraFlight(
+            relativeAu * scale,
+            m_systemView.state().camera.distance,
+            nowSeconds
+        );
+        m_pendingRouteFocusContextApplied = true;
+        return std::nullopt;
+    }
+
+    if (waypoint->authoredMap == Context::Detail)
+    {
+        if (m_mode == Mode::Detail)
+        {
+            m_pendingRouteFocusContextApplied = true;
+            return std::nullopt;
+        }
+
+        if (m_mode != Mode::System)
+            return MapIntent::recallRouteMap(Mode::System);
+
+        auto& state = m_systemView.state();
+        if (!waypoint->authoredHubId.empty())
+        {
+            state.selectedBodyId.clear();
+            state.selectedHubId = waypoint->authoredHubId;
+            state.selectedHubParentBodyId = waypoint->authoredBodyId;
+        }
+        else if (!waypoint->authoredBodyId.empty())
+        {
+            state.selectedBodyId = waypoint->authoredBodyId;
+            state.selectedHubId.clear();
+            state.selectedHubParentBodyId.clear();
+        }
+        else if (state.navigationGrid.enabled())
+        {
+            const glm::dvec3 relativeMeters =
+                world::coordinates::fullMeters(waypoint->worldPosition) -
+                system.systemPositionLy * world::coordinates::MetersPerLightYear;
+            const glm::dvec3 relativeAu =
+                relativeMeters / world::celestial::MetersPerAu;
+            const int maximumLevel = state.navigationGrid.definition().maximumLevel;
+            const auto index = state.navigationGrid.nearestIndexForPosition(
+                relativeAu,
+                maximumLevel
+            );
+            state.selectedBodyId.clear();
+            state.selectedHubId.clear();
+            state.selectedHubParentBodyId.clear();
+            state.navigationGrid.selectCell(
+                state.navigationGrid.cell(index, maximumLevel)
+            );
+            state.navigationCellExplicitlySelected = true;
+        }
+
+        return MapIntent::openBody(waypoint->authoredBodyId);
+    }
+
+    if (waypoint->authoredMap == Context::Hub)
+    {
+        if (m_mode == Mode::Hub)
+        {
+            m_pendingRouteFocusContextApplied = true;
+            return std::nullopt;
+        }
+
+        if (m_mode != Mode::System && m_mode != Mode::Detail)
+            return MapIntent::recallRouteMap(Mode::System);
+
+        if (waypoint->authoredHubId.empty())
+            return std::nullopt;
+
+        auto& state = m_systemView.state();
+        state.selectedBodyId.clear();
+        state.selectedHubId = waypoint->authoredHubId;
+        state.selectedHubParentBodyId = waypoint->authoredBodyId;
+        if (m_mode == Mode::Detail)
+        {
+            m_detailView.selectHub(
+                waypoint->authoredHubId,
+                waypoint->authoredBodyId
+            );
+        }
+
+        return MapIntent::openHub(
+            waypoint->authoredHubId,
+            waypoint->authoredBodyId
+        );
+    }
+
+    (void)viewport;
+    return std::nullopt;
+}
+
+void SystemMapRenderer::revealPendingRouteFocus(
+    const game::system_map::MapObjectOverlayFrame& frame,
+    const Viewport& viewport
+)
+{
+    if (m_pendingRouteFocusSourceObjectId.empty())
+        return;
+
+    const auto found = std::find_if(
+        frame.items.begin(),
+        frame.items.end(),
+        [&](const auto& item)
+        {
+            return item.objectId == m_pendingRouteFocusSourceObjectId;
+        }
+    );
+    if (found == frame.items.end())
+        return;
+
+    if (!found->visible && (m_mode == Mode::Detail || m_mode == Mode::Hub))
+    {
+        // Local maps pan in screen space. Use the already-projected target as
+        // a one-frame correction, then let the normal builder reproject it at
+        // the center on the next frame.
+        auto& camera =
+            m_mode == Mode::Hub ? m_hubView.camera() : m_detailView.camera();
+        camera.pan +=
+            glm::dvec2(viewport.width * 0.5, viewport.height * 0.5) -
+            found->screenPx;
+        if (m_mode == Mode::Hub)
+            m_hubFrameDirty = true;
+        else
+            m_detailFrameDirty = true;
+        return;
+    }
+
+    if (!found->visible)
+        return;
+
+    m_objectOverlayState.activate(found->objectId);
+    m_objectOverlayState.ensureOpen(
+        *found,
+        glm::dvec2(viewport.width, viewport.height)
+    );
+    m_pendingRouteFocusSourceObjectId.clear();
+    m_pendingRouteFocusContextApplied = false;
 }
 
 void SystemMapRenderer::updateActiveTacticalLocalContext(
@@ -2652,9 +3091,18 @@ SystemMapRenderer::handleInput(
         return std::nullopt;
     }
 
-
-
-
+    // Cross-map route recall is a small intent-driven state machine.  A prior
+    // frame may have asked SpaceState to switch map/system; once that canonical
+    // transition commits, continue toward the authored layer here.
+    if (!m_pendingRouteFocusSourceObjectId.empty())
+    {
+        if (const auto intent = advancePendingRouteFocus(
+                vp, galaxy, system, inputNowSeconds);
+            intent.has_value())
+        {
+            return intent;
+        }
+    }
 
 
     GLFWwindow* window =
@@ -2695,6 +3143,49 @@ SystemMapRenderer::handleInput(
             window,
             GLFW_MOUSE_BUTTON_RIGHT
         ) == GLFW_PRESS;
+
+    const auto routePointer =
+        m_routeOverlayState.handlePointer(
+            m_navigationTrackingState,
+            glm::dvec2(vp.width, vp.height),
+            glm::dvec2(localMx, localMy),
+            inside,
+            leftDown
+        );
+    if (!routePointer.selectedSourceObjectId.empty())
+        m_objectOverlayState.activate(routePointer.selectedSourceObjectId);
+    if (routePointer.consumed)
+    {
+        std::optional<game::system_map::MapIntent> routeFocusIntent;
+        if (!routePointer.focusSourceObjectId.empty())
+        {
+            routeFocusIntent = focusRouteWaypoint(
+                routePointer.focusSourceObjectId,
+                vp,
+                galaxy,
+                system,
+                inputNowSeconds
+            );
+        }
+
+
+        m_pendingScrollY = 0.0;
+        m_galaxyView.suppressCameraGesture(
+            leftDown,
+            rightDown,
+            mx,
+            my
+        );
+        m_systemView.suppressCameraGesture(
+            leftDown,
+            rightDown,
+            mx,
+            my
+        );
+        if (routeFocusIntent.has_value())
+            return routeFocusIntent;
+        return std::nullopt;
+    }
 
     const bool showLevelZeroButton =
         m_mode == Mode::Galaxy ||
@@ -2826,6 +3317,13 @@ SystemMapRenderer::handleInput(
         frame.nowSeconds = inputNowSeconds;
 
         refreshSystemWaypointCandidate(vp, system);
+        synchronizeNavigationTracking(
+            m_systemSceneFrame.interaction.objectOverlay
+        );
+        revealPendingRouteFocus(
+            m_systemSceneFrame.interaction.objectOverlay,
+            vp
+        );
 
         const game::system_map::SystemMapFrameInteractionContext
             interactionContext(
@@ -3098,10 +3596,12 @@ SystemMapRenderer::handleInput(
                 ? m_hubView.camera()
                 : m_detailView.camera();
 
-        const auto& objectOverlay =
+        auto& objectOverlay =
             m_mode == Mode::Hub
                 ? m_hubPresentation.frame.objectOverlay
                 : m_detailPresentation.frame.objectOverlay;
+        synchronizeNavigationTracking(objectOverlay);
+        revealPendingRouteFocus(objectOverlay, vp);
 
         const auto overlayPointer =
             m_objectOverlayState.handlePointer(
@@ -3117,6 +3617,12 @@ SystemMapRenderer::handleInput(
 
         if (overlayPointer.consumed)
         {
+            if (!overlayPointer.actionObjectId.empty())
+                applyWaypointAction(
+                    overlayPointer.actionObjectId,
+                    overlayPointer.actionKey
+                );
+
             if (m_mode == Mode::Detail &&
                 !overlayPointer.activatedObjectId.empty())
             {
@@ -3192,6 +3698,8 @@ SystemMapRenderer::handleInput(
     if (m_mode == Mode::Galaxy)
     {
         refreshGalaxyWaypointCandidate(vp, galaxy);
+        synchronizeNavigationTracking(m_galaxyInfoOverlayFrame);
+        revealPendingRouteFocus(m_galaxyInfoOverlayFrame, vp);
 
         const auto overlayPointer =
             m_objectOverlayState.handlePointer(

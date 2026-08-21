@@ -7,6 +7,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -28,6 +29,49 @@ enum class NavigationWaypointRole
     None = 0,
     Finish,
     Intermediate
+};
+
+enum class NavigationRouteAnchorKind
+{
+    FreeSpace = 0,
+    CelestialBody,
+    Hub,
+    Ship,
+    Infrastructure
+};
+
+enum class NavigationRouteMapKind
+{
+    Galaxy = 0,
+    System,
+    Detail,
+    Hub
+};
+
+enum class NavigationWaypointTransitKind
+{
+    PassThrough = 0,
+    Rendezvous
+};
+
+enum class NavigationArrivalMode
+{
+    SafeZone = 0,
+    Follow,
+    Formation,
+    ParadeFormation
+};
+
+struct NavigationArrivalProfile
+{
+    NavigationArrivalMode mode = NavigationArrivalMode::SafeZone;
+    // Zero means that the future trajectory solver chooses the safe radius
+    // from target size / exclusion envelope rather than exposing engineering
+    // detail in the normal route UI.
+    double safeDistanceMeters = 0.0;
+    glm::dvec3 relativeOffsetMeters {0.0};
+    bool matchVelocity = true;
+    bool formationMotionLock = false;
 };
 
 struct NavigationTrackedTacticalObject
@@ -58,6 +102,29 @@ struct NavigationWaypoint
     NavigationWaypointRole role = NavigationWaypointRole::None;
     int sequence = 0;
     int displayIndex = 0;
+
+    NavigationRouteAnchorKind anchorKind =
+        NavigationRouteAnchorKind::FreeSpace;
+    NavigationRouteMapKind authoredMap =
+        NavigationRouteMapKind::System;
+    int authoredSystemId = -1;
+    std::string authoredBodyId;
+    std::string authoredHubId;
+
+    // Dynamic targets retain semantic identity. worldPosition is merely the
+    // latest presentation fallback and may be refreshed while the object is
+    // visible; the future predictor resolves targetEntityId at arrival time.
+    std::string targetEntityId;
+    bool dynamicTarget = false;
+    // A moving ship used as an intermediate route node is not a geometric
+    // point. It is a rendezvous checkpoint: the future solver intercepts the
+    // predicted ship state, matches velocity, then continues to the next node.
+    NavigationWaypointTransitKind transitKind =
+        NavigationWaypointTransitKind::PassThrough;
+
+    bool showOnHud = true;
+    NavigationArrivalProfile arrival;
+
     world::coordinates::WorldPosition worldPosition;
     std::string address;
     std::string displayName;
@@ -283,6 +350,195 @@ public:
         return waypoint;
     }
 
+    void setWaypointRouteMetadata(
+        const std::string& sourceObjectId,
+        NavigationRouteAnchorKind anchorKind,
+        NavigationRouteMapKind authoredMap,
+        int authoredSystemId,
+        std::string authoredBodyId = {},
+        std::string authoredHubId = {},
+        std::string targetEntityId = {},
+        bool dynamicTarget = false
+    )
+    {
+        auto* waypoint = findWaypoint(sourceObjectId);
+        if (!waypoint)
+            return;
+        waypoint->anchorKind = anchorKind;
+        waypoint->authoredMap = authoredMap;
+        waypoint->authoredSystemId = authoredSystemId;
+        waypoint->authoredBodyId = std::move(authoredBodyId);
+        waypoint->authoredHubId = std::move(authoredHubId);
+        waypoint->targetEntityId = std::move(targetEntityId);
+        waypoint->dynamicTarget = dynamicTarget;
+        waypoint->transitKind =
+            anchorKind == NavigationRouteAnchorKind::Ship && dynamicTarget
+                ? NavigationWaypointTransitKind::Rendezvous
+                : NavigationWaypointTransitKind::PassThrough;
+    }
+
+    bool routeVisibleOnHud() const noexcept
+    {
+        return m_routeVisibleOnHud;
+    }
+
+    void setRouteVisibleOnHud(bool visible) noexcept
+    {
+        m_routeVisibleOnHud = visible;
+    }
+
+    bool hasRoute() const noexcept
+    {
+        return std::any_of(
+            m_waypoints.begin(),
+            m_waypoints.end(),
+            [](const NavigationWaypoint& waypoint)
+            {
+                return waypoint.role != NavigationWaypointRole::None;
+            }
+        );
+    }
+
+    std::size_t routeSize() const noexcept
+    {
+        return static_cast<std::size_t>(std::count_if(
+            m_waypoints.begin(),
+            m_waypoints.end(),
+            [](const NavigationWaypoint& waypoint)
+            {
+                return waypoint.role != NavigationWaypointRole::None;
+            }
+        ));
+    }
+
+    std::vector<const NavigationWaypoint*> orderedRouteWaypoints() const
+    {
+        std::vector<const NavigationWaypoint*> ordered;
+        ordered.reserve(routeSize());
+        const NavigationWaypoint* finish = nullptr;
+        for (const auto& waypoint : m_waypoints)
+        {
+            if (waypoint.role == NavigationWaypointRole::Intermediate)
+                ordered.push_back(&waypoint);
+            else if (waypoint.role == NavigationWaypointRole::Finish)
+                finish = &waypoint;
+        }
+        std::sort(
+            ordered.begin(),
+            ordered.end(),
+            [](const NavigationWaypoint* a, const NavigationWaypoint* b)
+            {
+                return a->sequence < b->sequence;
+            }
+        );
+        if (finish)
+            ordered.push_back(finish);
+        return ordered;
+    }
+
+    void setWaypointHudVisible(
+        const std::string& sourceObjectId,
+        bool visible
+    )
+    {
+        if (auto* waypoint = findWaypoint(sourceObjectId))
+            waypoint->showOnHud = visible;
+    }
+
+    void setFinishArrivalMode(NavigationArrivalMode mode)
+    {
+        for (auto& waypoint : m_waypoints)
+        {
+            if (waypoint.role != NavigationWaypointRole::Finish)
+                continue;
+            waypoint.arrival.mode = mode;
+            // Even SAFE arrives co-moving with a dynamic target; otherwise
+            // the player would cross the safety envelope immediately after
+            // autopilot completion. SAFE changes distance/authority, not the
+            // terminal velocity-match requirement.
+            waypoint.arrival.matchVelocity = true;
+            waypoint.arrival.formationMotionLock =
+                mode == NavigationArrivalMode::ParadeFormation;
+            return;
+        }
+    }
+
+    void moveIntermediateWaypoint(
+        const std::string& sourceObjectId,
+        int targetSequence
+    )
+    {
+        std::vector<NavigationWaypoint*> intermediates;
+        for (auto& waypoint : m_waypoints)
+        {
+            if (waypoint.role == NavigationWaypointRole::Intermediate)
+                intermediates.push_back(&waypoint);
+        }
+        std::sort(
+            intermediates.begin(),
+            intermediates.end(),
+            [](const NavigationWaypoint* a, const NavigationWaypoint* b)
+            {
+                return a->sequence < b->sequence;
+            }
+        );
+        const auto found = std::find_if(
+            intermediates.begin(),
+            intermediates.end(),
+            [&](const NavigationWaypoint* waypoint)
+            {
+                return waypoint->sourceObjectId == sourceObjectId;
+            }
+        );
+        if (found == intermediates.end())
+            return;
+
+        NavigationWaypoint* moving = *found;
+        intermediates.erase(found);
+        const int bounded = std::clamp(
+            targetSequence,
+            1,
+            static_cast<int>(intermediates.size()) + 1
+        );
+        intermediates.insert(
+            intermediates.begin() + (bounded - 1),
+            moving
+        );
+        for (std::size_t i = 0; i < intermediates.size(); ++i)
+            intermediates[i]->sequence = static_cast<int>(i) + 1;
+    }
+
+    void removeRouteWaypoint(const std::string& sourceObjectId)
+    {
+        m_waypoints.erase(
+            std::remove_if(
+                m_waypoints.begin(),
+                m_waypoints.end(),
+                [&](const NavigationWaypoint& waypoint)
+                {
+                    return waypoint.sourceObjectId == sourceObjectId;
+                }
+            ),
+            m_waypoints.end()
+        );
+        renumberIntermediateWaypoints();
+    }
+
+    void clearRoute()
+    {
+        m_waypoints.erase(
+            std::remove_if(
+                m_waypoints.begin(),
+                m_waypoints.end(),
+                [](const NavigationWaypoint& waypoint)
+                {
+                    return waypoint.role != NavigationWaypointRole::None;
+                }
+            ),
+            m_waypoints.end()
+        );
+    }
+
     const std::unordered_map<std::string, NavigationTrackedTacticalObject>&
     tacticalObjects() const noexcept
     {
@@ -318,13 +574,17 @@ private:
 
     void eraseMissingWaypoints(const std::unordered_set<std::string>& open)
     {
+        // Open cards are transient presentation. Route intent is not. Once a
+        // candidate becomes WAYPOINT/FINISH it survives card closure and map
+        // changes until the user explicitly removes it from the route.
         m_waypoints.erase(
             std::remove_if(
                 m_waypoints.begin(),
                 m_waypoints.end(),
                 [&](const NavigationWaypoint& waypoint)
                 {
-                    return open.find(waypoint.sourceObjectId) == open.end();
+                    return waypoint.role == NavigationWaypointRole::None &&
+                           open.find(waypoint.sourceObjectId) == open.end();
                 }
             ),
             m_waypoints.end()
@@ -333,14 +593,40 @@ private:
 
     void renumberIntermediateWaypoints()
     {
-        int nextSequence = 1;
+        std::vector<NavigationWaypoint*> ordered;
+        int nextUnassigned = 1;
         for (auto& waypoint : m_waypoints)
         {
             if (waypoint.role == NavigationWaypointRole::Intermediate)
-                waypoint.sequence = nextSequence++;
+            {
+                ordered.push_back(&waypoint);
+                nextUnassigned = std::max(
+                    nextUnassigned,
+                    waypoint.sequence + 1
+                );
+            }
             else
+            {
                 waypoint.sequence = 0;
+            }
         }
+
+        for (auto* waypoint : ordered)
+        {
+            if (waypoint->sequence <= 0)
+                waypoint->sequence = nextUnassigned++;
+        }
+
+        std::stable_sort(
+            ordered.begin(),
+            ordered.end(),
+            [](const NavigationWaypoint* a, const NavigationWaypoint* b)
+            {
+                return a->sequence < b->sequence;
+            }
+        );
+        for (std::size_t i = 0; i < ordered.size(); ++i)
+            ordered[i]->sequence = static_cast<int>(i) + 1;
     }
 
     int adoptDisplayIndex(const std::string& stableId, int preferred)
@@ -374,6 +660,7 @@ private:
     std::unordered_map<std::string, int> m_displayIndices;
     std::uint64_t m_nextWaypointId = 1;
     int m_nextDisplayIndex = 1;
+    bool m_routeVisibleOnHud = true;
 };
 
 } // namespace game::navigation

@@ -26,6 +26,7 @@
 #include "world/WorldSignal.h"
 
 #include "render/HUD/WorldLabel.h"
+#include "src/render/HUD/NavigationHudMarker.h"
 #include "render/ScreenUtils.h"
 
 #include "src/game/ship/view/ShipCameraMode.h"
@@ -90,6 +91,13 @@ struct PlayerShipView
     void renderWorldLabels(
         const std::vector<WorldLabel>& labels,
         const glm::vec3& shipPosition,
+        const glm::mat4& viewMatrix,
+        const glm::mat4& projectionMatrix,
+        const Viewport& vp
+    );
+
+    void renderNavigationMarkers(
+        const std::vector<game::presentation::NavigationHudMarker>& markers,
         const glm::mat4& viewMatrix,
         const glm::mat4& projectionMatrix,
         const Viewport& vp

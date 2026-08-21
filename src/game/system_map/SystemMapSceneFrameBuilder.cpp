@@ -9,6 +9,7 @@
 #include "src/game/system_map/SystemMapPresentation.h"
 #include "src/game/system_map/SystemMapView.h"
 #include "src/world/celestial/SystemMapTypes.h"
+#include "src/world/coordinates/WorldPosition.h"
 
 namespace game::system_map
 {
@@ -78,6 +79,18 @@ namespace
         if (kind == world::celestial::SystemMapObjectKind::Hub)
             return MapObjectGlyphKind::Hub;
         return MapObjectGlyphKind::Infrastructure;
+    }
+
+    const char* celestialTypeName(world::celestial::BodyType type)
+    {
+        switch (type)
+        {
+            case world::celestial::BodyType::Planet: return "Planet";
+            case world::celestial::BodyType::Moon: return "Moon";
+            case world::celestial::BodyType::Star: return "Star";
+            case world::celestial::BodyType::AsteroidBelt: return "Asteroid belt";
+            default: return "Celestial body";
+        }
     }
 }
 
@@ -234,7 +247,8 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
                 )
             );
 
-        if (body.type == BodyType::Planet ||
+        if (body.type == BodyType::Star ||
+            body.type == BodyType::Planet ||
             body.type == BodyType::Moon)
         {
             SystemMapBodyScreenPoint point;
@@ -252,8 +266,44 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
                     point.depth
                 );
 
+            const glm::vec2 bodyScreen = point.screen;
+            const bool bodyVisible = point.visible;
+
             frame.interaction.bodyScreenPoints.push_back(
                 std::move(point)
+            );
+
+            MapObjectOverlayItem bodyInfo;
+            bodyInfo.objectId =
+                "body:" + std::to_string(system.systemId) + ":" + body.id;
+            bodyInfo.semanticTargetId = body.id;
+            bodyInfo.trackingSystemId = system.systemId;
+            bodyInfo.name = body.name;
+            bodyInfo.typeName = celestialTypeName(body.type);
+            bodyInfo.infoKind = MapObjectInfoKind::Celestial;
+            bodyInfo.kind = MapObjectGlyphKind::Infrastructure;
+            bodyInfo.drawGlyph = false;
+            bodyInfo.pointerInteractive = false;
+            bodyInfo.visible = bodyVisible;
+            bodyInfo.screenPx = glm::dvec2(bodyScreen);
+            bodyInfo.hitRadiusPx = 0.0;
+            bodyInfo.physicalSizeMeters =
+                std::max(1.0, body.radiusKm * 2000.0);
+            bodyInfo.factionColor = body.color;
+            bodyInfo.extraFields.push_back({
+                "radius",
+                std::to_string(static_cast<long long>(std::llround(body.radiusKm))),
+                "km"
+            });
+            bodyInfo.trackingWorldPosition =
+                world::coordinates::makeWorldPositionFromMeters(
+                    system.systemPositionLy *
+                        world::coordinates::MetersPerLightYear +
+                    body.positionAu * world::celestial::MetersPerAu
+                );
+            bodyInfo.hasTrackingWorldPosition = true;
+            frame.interaction.objectOverlay.items.push_back(
+                std::move(bodyInfo)
             );
         }
 
@@ -311,6 +361,13 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
                     : "Infrastructure")
             : object.typeName;
         overlay.owner = object.owner;
+        overlay.navigationHubId =
+            object.kind == world::celestial::SystemMapObjectKind::Hub
+                ? key
+                : object.parentHubId;
+        overlay.navigationHubParentBodyId = object.parentBodyId;
+        overlay.navigationSystemPositionAu = object.positionAu;
+        overlay.hasNavigationSystemPositionAu = true;
         overlay.kind = tacticalGlyphKind(object.kind);
         overlay.velocityMode = MapObjectVelocityMode::Global;
         overlay.arrowVelocityMode = MapObjectVelocityMode::Global;

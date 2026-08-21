@@ -61,6 +61,7 @@
 #include "src/game/client/ClientModuleViewBuilder.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "src/game/presentation/ClientHudPresentation.h"
+#include "src/game/presentation/NavigationHudPresentation.h"
 #include "src/game/presentation/GalaxyNavigationPresentation.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
@@ -1013,7 +1014,25 @@ void SpaceState::setSystemMapHubMode()
     // never to the player's unrelated current navigation membership.
     const int selectedId = m_loadedSystemMapId;
     const std::string hubId = m_systemMapRenderer.selectedHubId();
-    if (selectedId < 0 || hubId.empty())
+
+    // For a free-space tactical target, HUB means "open this object's local
+    // neighborhood".  The renderer has already resolved the object's current
+    // position to a terminal System cube, so the correct local view is Details
+    // rather than a fictitious Hub snapshot.
+    if (hubId.empty())
+    {
+        if (mode == SystemMapRenderer::Mode::System &&
+            m_systemMapRenderer.canOpenSelectedLocalContext() &&
+            m_systemMapRenderer.selectedTerminalDetailCell().has_value())
+        {
+            setSystemMapDetailMode();
+        }
+        return;
+    }
+
+    // Physical Hub composition requires a real system. Synthetic negative
+    // empty-sector ids remain valid for the terminal-cube branch above.
+    if (selectedId < 0)
         return;
 
     // System -> Hub is a shortcut, not a hierarchy bypass. Prepare the exact
@@ -2262,6 +2281,39 @@ m_systemMapRenderer.render(
                     m_activeMainCamera->projectionMatrix(),
                     vp
                 );
+
+                game::presentation::NavigationHudVocabulary navVocabulary;
+                if (context().app)
+                {
+                    const auto& loc = context().app->localization();
+                    navVocabulary.objectText =
+                        loc.text("map.navigation_hud.object", "Object");
+                    navVocabulary.celestialText =
+                        loc.text("map.navigation_hud.celestial", "Celestial");
+                    navVocabulary.finishText =
+                        loc.text("map.navigation_hud.finish", "FINISH");
+                    navVocabulary.waypointText =
+                        loc.text("map.navigation_hud.waypoint", "WAYPOINT");
+                    navVocabulary.relativeSpeedShort =
+                        loc.text("map.navigation_hud.relative_speed_short", "REL");
+                    navVocabulary.globalSpeedShort =
+                        loc.text("map.navigation_hud.global_speed_short", "GLOB");
+                }
+
+                const auto navigationMarkers =
+                    game::presentation::buildNavigationHudMarkers(
+                        m_systemMapRenderer.navigationTrackingState(),
+                        m_client->world(),
+                        ship,
+                        navVocabulary
+                    );
+
+                m_playerView->renderNavigationMarkers(
+                    navigationMarkers,
+                    m_activeMainCamera->viewMatrix(),
+                    m_activeMainCamera->projectionMatrix(),
+                    vp
+                );
             }
         }
 
@@ -2408,7 +2460,7 @@ SpaceState::buildNativeSystemMapPanelPresentation()
     input.canOpenHub =
         (m_systemMapRenderer.mode() == SystemMapRenderer::Mode::System ||
          m_systemMapRenderer.mode() == SystemMapRenderer::Mode::Detail) &&
-        !m_systemMapRenderer.selectedHubId().empty();
+        m_systemMapRenderer.canOpenSelectedLocalContext();
 
     return game::presentation::buildSystemMapPanelPresentation(input);
 }

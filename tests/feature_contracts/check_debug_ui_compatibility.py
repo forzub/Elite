@@ -16,6 +16,8 @@ def main() -> int:
 
     required = (
         "m_gameUiHttpPort = m_htmlUi.start(0, webUiRoot);",
+        '"[App] debug UI: http://localhost:"',
+        '<< "/debug_control.html\\n";',
         "startDebugUiCompatibilityRedirect(",
         "CompatibilityPort = 8090",
         "static HtmlUiServer redirectServer",
@@ -33,7 +35,7 @@ def main() -> int:
     if 'resource = "/debug_control.html"' not in server:
         fail("real process-local server root no longer resolves to debug_control.html")
 
-    print("[PASS] process-local WebUI remains ephemeral and localhost:8090 redirects debug pages to the active client")
+    print("[PASS] process-local debug URL is logged explicitly and localhost:8090 remains a compatibility redirect")
     return 0
 
 

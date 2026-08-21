@@ -10,6 +10,8 @@
 
 #include <glm/glm.hpp>
 
+#include "src/world/coordinates/WorldPosition.h"
+
 namespace game::system_map
 {
 
@@ -24,6 +26,13 @@ enum class MapObjectGlyphKind
     Ship = 0,
     Hub,
     Infrastructure
+};
+
+enum class MapObjectInfoKind
+{
+    Tactical = 0,
+    Celestial,
+    WaypointCandidate
 };
 
 enum class MapTrajectoryKind
@@ -55,6 +64,15 @@ struct MapObjectInfoField
     std::string unit;
 };
 
+struct MapObjectPanelAction
+{
+    std::string key;
+    std::string labelKey;
+    bool visible = true;
+    bool active = false;
+    bool enabled = true;
+};
+
 struct MapObjectOverlayItem
 {
     std::string objectId;
@@ -62,8 +80,31 @@ struct MapObjectOverlayItem
     std::string typeName;
     std::string owner;
     std::vector<MapObjectInfoField> extraFields;
+    std::vector<MapObjectPanelAction> panelActions;
 
     MapObjectGlyphKind kind = MapObjectGlyphKind::Ship;
+    MapObjectInfoKind infoKind = MapObjectInfoKind::Tactical;
+    // Semantic target behind a non-tactical card, for example the System body
+    // id represented by a client-only celestial information panel.
+    std::string semanticTargetId;
+    int trackingSystemId = -1;
+    // Local-neighborhood semantic binding for tactical targets.  A ship or
+    // infrastructure object may live inside a Hub even though the clicked
+    // object itself is not that Hub.  System/Details navigation can therefore
+    // keep the object active while enabling the HUB drill to its parent.
+    std::string navigationHubId;
+    std::string navigationHubParentBodyId;
+    glm::dvec3 navigationSystemPositionAu {0.0};
+    bool hasNavigationSystemPositionAu = false;
+    world::coordinates::WorldPosition trackingWorldPosition;
+    bool hasTrackingWorldPosition = false;
+    bool pointerInteractive = true;
+    // Screen-space UI affordances (currently the selected-empty-cube info
+    // triangle) must win their own small hit area before semantic world-object
+    // size arbitration. They are explicit controls, not physical targets.
+    bool screenAffordance = false;
+    std::string actionKey;
+
     // Card speed semantics and arrow-color semantics are separate because the
     // Hub reference object reports zero local speed while its broad arrow
     // still visualizes the hub's global motion.
@@ -102,8 +143,12 @@ struct MapObjectOverlayPointerResult
     // information card was just opened or closed. Navigation consumes this
     // as the canonical tactical selection signal.
     std::string activatedObjectId;
+    MapObjectInfoKind activatedInfoKind = MapObjectInfoKind::Tactical;
+    std::string activatedSemanticTargetId;
     std::string toggledObjectId;
     std::string closedObjectId;
+    std::string actionObjectId;
+    std::string actionKey;
 };
 
 struct MapObjectInfoPanelState
@@ -113,6 +158,7 @@ struct MapObjectInfoPanelState
     glm::dvec2 dragOffsetPx {0.0};
     std::uint64_t zOrder = 0;
     bool dragging = false;
+    bool collapsed = false;
 };
 
 inline glm::dvec2 normalizedScreenDirection(
@@ -156,35 +202,15 @@ inline double mapObjectVelocityArrowLengthScale(
     if (!std::isfinite(speedMps) || speedMps <= 1.0e-9)
         return 0.0;
 
-    // Arrow length carries speed magnitude, but uses a logarithmic scale so
-    // local manoeuvring speeds and orbital/interplanetary speeds can remain
-    // readable in the same compact tactical vocabulary.  The upper bound is
-    // exactly 1.0, preserving the previous maximum arrow length.
-    const double minReadableSpeedMps =
-        mode == MapObjectVelocityMode::Local ? 1.0 : 10.0;
+    // Navigation arrows deliberately use a linear scale.  A target moving
+    // twice as fast should read as approximately twice the arrow length until
+    // the protected screen-space maximum is reached.  Local and global motion
+    // keep separate reference ranges because their physical regimes differ by
+    // orders of magnitude.
     const double maxReferenceSpeedMps =
-        mode == MapObjectVelocityMode::Local ? 1000.0 : 100000.0;
-    // Keep very slow vectors visible, but let large speed differences read as
-    // obviously different arrow lengths instead of collapsing into the same
-    // tiny stub.  Local manoeuvring vectors get the widest spread because they
-    // often differ by two orders of magnitude inside one Hub/Detail scene.
-    const double minVisibleScale =
-        mode == MapObjectVelocityMode::Local ? 0.08 : 0.14;
+        mode == MapObjectVelocityMode::Local ? 250.0 : 100000.0;
 
-    const double clampedSpeed = std::clamp(
-        speedMps,
-        minReadableSpeedMps,
-        maxReferenceSpeedMps
-    );
-    const double logMin = std::log10(minReadableSpeedMps);
-    const double logMax = std::log10(maxReferenceSpeedMps);
-    const double t = std::clamp(
-        (std::log10(clampedSpeed) - logMin) / (logMax - logMin),
-        0.0,
-        1.0
-    );
-
-    return minVisibleScale + (1.0 - minVisibleScale) * t;
+    return std::clamp(speedMps / maxReferenceSpeedMps, 0.0, 1.0);
 }
 
 inline std::pair<double, double> stellarAzimuthElevationDeg(
@@ -210,19 +236,28 @@ public:
     static constexpr double PanelWidthPx = 238.0;
     static constexpr double PanelHeightPx = 170.0;
     static constexpr double PanelHeaderHeightPx = 26.0;
+    static constexpr double PanelCollapsedHeightPx = 30.0;
 
-    std::string trackLabelFor(const std::string& objectId)
+    int trackNumberFor(const std::string& objectId)
     {
         if (objectId.empty())
-            return "?";
+            return -1;
+        if (objectId == "player")
+            return 0;
 
         const auto found = m_trackNumbers.find(objectId);
         if (found != m_trackNumbers.end())
-            return std::to_string(found->second);
+            return found->second;
 
         const int assigned = m_nextTrackNumber++;
         m_trackNumbers.emplace(objectId, assigned);
-        return std::to_string(assigned);
+        return assigned;
+    }
+
+    std::string trackLabelFor(const std::string& objectId)
+    {
+        const int number = trackNumberFor(objectId);
+        return number < 0 ? "?" : std::to_string(number);
     }
 
     const std::string& activeObjectId() const noexcept
@@ -251,6 +286,27 @@ public:
         return m_panels.find(objectId) != m_panels.end();
     }
 
+    std::vector<std::string> openObjectIds() const
+    {
+        std::vector<std::string> ids;
+        ids.reserve(m_panels.size());
+        for (const auto& [id, panel] : m_panels)
+        {
+            (void)panel;
+            ids.push_back(id);
+        }
+        return ids;
+    }
+
+    void ensureOpen(
+        const MapObjectOverlayItem& item,
+        const glm::dvec2& viewportSizePx
+    )
+    {
+        if (!isOpen(item.objectId))
+            open(item, viewportSizePx);
+    }
+
     void close(const std::string& objectId)
     {
         m_panels.erase(objectId);
@@ -267,6 +323,14 @@ public:
             return;
         }
 
+        open(item, viewportSizePx);
+    }
+
+    void open(
+        const MapObjectOverlayItem& item,
+        const glm::dvec2& viewportSizePx
+    )
+    {
         MapObjectInfoPanelState panel;
         panel.objectId = item.objectId;
         panel.zOrder = ++m_zCounter;
@@ -275,7 +339,7 @@ public:
             item.screenPx.y - PanelHeightPx * 0.5
         );
         clampPanel(panel, viewportSizePx);
-        m_panels.emplace(panel.objectId, std::move(panel));
+        m_panels[panel.objectId] = std::move(panel);
     }
 
     MapObjectOverlayPointerResult handlePointer(
@@ -303,6 +367,50 @@ public:
                     local.x <= PanelWidthPx - 5.0 &&
                     local.y >= 4.0 &&
                     local.y <= 24.0;
+                const bool collapseHit =
+                    local.x >= PanelWidthPx - 45.0 &&
+                    local.x <= PanelWidthPx - 27.0 &&
+                    local.y >= 4.0 &&
+                    local.y <= 24.0;
+
+                const auto panelItem = std::find_if(
+                    frame.items.begin(),
+                    frame.items.end(),
+                    [&](const MapObjectOverlayItem& item)
+                    {
+                        return item.objectId == panel->objectId;
+                    }
+                );
+
+                auto hitAction = [&]() -> const MapObjectPanelAction*
+                {
+                    if (panel->collapsed || panelItem == frame.items.end())
+                        return nullptr;
+
+                    constexpr double buttonHeight = 22.0;
+                    constexpr double buttonGap = 5.0;
+                    double buttonTop =
+                        PanelHeightPx - 8.0 - buttonHeight;
+
+                    for (auto it = panelItem->panelActions.rbegin();
+                         it != panelItem->panelActions.rend();
+                         ++it)
+                    {
+                        if (!it->visible)
+                            continue;
+
+                        const bool hit =
+                            local.x >= 8.0 &&
+                            local.x <= PanelWidthPx - 8.0 &&
+                            local.y >= buttonTop &&
+                            local.y <= buttonTop + buttonHeight;
+                        if (hit)
+                            return &(*it);
+
+                        buttonTop -= buttonHeight + buttonGap;
+                    }
+                    return nullptr;
+                };
 
                 if (closeHit)
                 {
@@ -310,8 +418,28 @@ public:
                     close(id);
                     result.closedObjectId = id;
                 }
+                else if (collapseHit)
+                {
+                    panel->collapsed = !panel->collapsed;
+                    clampPanel(*panel, viewportSizePx);
+                }
+                else if (const auto* action = hitAction())
+                {
+                    if (action->enabled)
+                    {
+                        panel->zOrder = ++m_zCounter;
+                        result.actionObjectId = panel->objectId;
+                        result.actionKey = action->key;
+                    }
+                }
                 else
                 {
+                    if (panelItem != frame.items.end())
+                    {
+                        result.activatedInfoKind = panelItem->infoKind;
+                        result.activatedSemanticTargetId =
+                            panelItem->semanticTargetId;
+                    }
                     activate(panel->objectId);
                     result.activatedObjectId = panel->objectId;
 
@@ -329,51 +457,88 @@ public:
                 double bestPhysicalSizeMeters = -1.0;
                 double bestDistance = 1.0e30;
 
+                // Explicit screen controls get first refusal inside their own
+                // compact hit circle. This keeps the selected-cube info
+                // triangle clickable even when a large projected body sits
+                // behind it, without weakening physical-size arbitration for
+                // normal map objects.
                 for (const auto& item : frame.items)
                 {
-                    if (!item.visible || item.objectId.empty())
+                    if (!item.visible || item.objectId.empty() ||
+                        !item.pointerInteractive || !item.screenAffordance)
+                    {
                         continue;
+                    }
 
                     const double distance =
                         glm::length(mousePx - item.screenPx);
                     if (distance > item.hitRadiusPx)
                         continue;
 
-                    const double physicalSizeMeters =
-                        std::max(0.0, item.physicalSizeMeters);
-                    const bool larger =
-                        physicalSizeMeters >
-                        bestPhysicalSizeMeters + 1.0e-6;
-                    const bool sameSize =
-                        std::abs(
-                            physicalSizeMeters -
-                            bestPhysicalSizeMeters
-                        ) <= 1.0e-6;
-                    const bool nearer =
-                        sameSize && distance < bestDistance - 1.0e-6;
-                    const bool deterministicTie =
-                        sameSize &&
-                        std::abs(distance - bestDistance) <= 1.0e-6 &&
-                        picked &&
-                        item.objectId < picked->objectId;
-
-                    if (!picked || larger || nearer || deterministicTie)
+                    if (!picked || distance < bestDistance)
                     {
                         picked = &item;
-                        bestPhysicalSizeMeters = physicalSizeMeters;
                         bestDistance = distance;
                     }
                 }
 
+                if (!picked)
+                {
+                    for (const auto& item : frame.items)
+                    {
+                        if (!item.visible || item.objectId.empty() ||
+                            !item.pointerInteractive || item.screenAffordance)
+                        {
+                            continue;
+                        }
+
+                        const double distance =
+                            glm::length(mousePx - item.screenPx);
+                        if (distance > item.hitRadiusPx)
+                            continue;
+
+                        const double physicalSizeMeters =
+                            std::max(0.0, item.physicalSizeMeters);
+                        const bool larger =
+                            physicalSizeMeters >
+                            bestPhysicalSizeMeters + 1.0e-6;
+                        const bool sameSize =
+                            std::abs(
+                                physicalSizeMeters -
+                                bestPhysicalSizeMeters
+                            ) <= 1.0e-6;
+                        const bool nearer =
+                            sameSize && distance < bestDistance - 1.0e-6;
+                        const bool deterministicTie =
+                            sameSize &&
+                            std::abs(distance - bestDistance) <= 1.0e-6 &&
+                            picked &&
+                            item.objectId < picked->objectId;
+
+                        if (!picked || larger || nearer || deterministicTie)
+                        {
+                            picked = &item;
+                            bestPhysicalSizeMeters = physicalSizeMeters;
+                            bestDistance = distance;
+                        }
+                    }
+                }
+
+                const bool pickedScreenAffordance =
+                    picked && picked->screenAffordance;
                 if (picked &&
-                    bestPhysicalSizeMeters + 1.0e-6 >=
+                    (pickedScreenAffordance ||
+                     bestPhysicalSizeMeters + 1.0e-6 >=
                         std::max(
                             0.0,
                             dominantExternalPhysicalSizeMeters
-                        ))
+                        )))
                 {
                     activate(picked->objectId);
                     result.activatedObjectId = picked->objectId;
+                    result.activatedInfoKind = picked->infoKind;
+                    result.activatedSemanticTargetId =
+                        picked->semanticTargetId;
                     toggle(*picked, viewportSizePx);
                     result.toggledObjectId = picked->objectId;
                     m_pointerCaptured = true;
@@ -444,6 +609,11 @@ public:
     }
 
 private:
+    static double panelHeight(const MapObjectInfoPanelState& panel)
+    {
+        return panel.collapsed ? PanelCollapsedHeightPx : PanelHeightPx;
+    }
+
     void clampPanel(
         MapObjectInfoPanelState& panel,
         const glm::dvec2& viewportSizePx
@@ -457,7 +627,7 @@ private:
         panel.topLeftPx.y = std::clamp(
             panel.topLeftPx.y,
             4.0,
-            std::max(4.0, viewportSizePx.y - PanelHeightPx - 4.0)
+            std::max(4.0, viewportSizePx.y - panelHeight(panel) - 4.0)
         );
     }
 
@@ -471,7 +641,7 @@ private:
                 mousePx.x >= panel.topLeftPx.x &&
                 mousePx.x <= panel.topLeftPx.x + PanelWidthPx &&
                 mousePx.y >= panel.topLeftPx.y &&
-                mousePx.y <= panel.topLeftPx.y + PanelHeightPx;
+                mousePx.y <= panel.topLeftPx.y + panelHeight(panel);
             if (!hit)
                 continue;
             if (!best || panel.zOrder > best->zOrder)

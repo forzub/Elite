@@ -336,9 +336,10 @@ void startDebugUiCompatibilityRedirect(
         std::cout << "[App] debug compatibility URL: "
                   << "http://localhost:"
                   << CompatibilityPort
-                  << "/ -> process-local port "
+                  << "/debug_control.html"
+                  << " -> process-local http://localhost:"
                   << processLocalPort
-                  << "\n";
+                  << "/debug_control.html\n";
     }
     catch (const std::exception& e)
     {
@@ -612,6 +613,9 @@ void Application::init()
             }
 
             m_gameUiHttpPort = m_htmlUi.start(0, webUiRoot);
+            std::cout << "[App] debug UI: http://localhost:"
+                      << m_gameUiHttpPort
+                      << "/debug_control.html\n";
             startDebugUiCompatibilityRedirect(
                 m_gameUiHttpPort,
                 webUiRoot

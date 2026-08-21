@@ -6,6 +6,8 @@
 #include <cmath>
 #include <cstdio>
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 
 #include "core/StateContext.h"
 
@@ -38,6 +40,80 @@ void drawLine(
 );
 
 
+
+namespace
+{
+std::string truncateHudText(Font* font, const std::string& text, float maxWidth)
+{
+    if (!font || text.empty() || font->measureText(text) <= maxWidth)
+        return text;
+
+    std::string clipped = text;
+    constexpr const char* ellipsis = "...";
+    while (!clipped.empty())
+    {
+        clipped.pop_back();
+        while (!clipped.empty() &&
+               (static_cast<unsigned char>(clipped.back()) & 0xC0u) == 0x80u)
+        {
+            clipped.pop_back();
+        }
+        const std::string candidate = clipped + ellipsis;
+        if (font->measureText(candidate) <= maxWidth)
+            return candidate;
+    }
+    return ellipsis;
+}
+
+std::string navigationDistanceText(double meters)
+{
+    constexpr double metersPerAu = 149597870700.0;
+    constexpr double metersPerLightYear = 9460730472580800.0;
+    std::ostringstream out;
+
+    if (meters >= 0.10 * metersPerLightYear)
+    {
+        out << std::fixed << std::setprecision(meters < 10.0 * metersPerLightYear ? 2 : 1)
+            << meters / metersPerLightYear << " ly";
+    }
+    else if (meters >= 0.05 * metersPerAu)
+    {
+        out << std::fixed << std::setprecision(meters < 10.0 * metersPerAu ? 2 : 1)
+            << meters / metersPerAu << " AU";
+    }
+    else if (meters >= 1000.0)
+    {
+        out << std::fixed << std::setprecision(meters < 100000.0 ? 1 : 0)
+            << meters / 1000.0 << " km";
+    }
+    else
+    {
+        out << std::fixed << std::setprecision(meters < 100.0 ? 1 : 0)
+            << meters << " m";
+    }
+    return out.str();
+}
+
+std::string navigationSpeedText(const game::presentation::NavigationHudMarker& marker)
+{
+    if (marker.speedMode == game::presentation::NavigationHudSpeedMode::None)
+        return {};
+
+    std::ostringstream out;
+    const char* fallback =
+        marker.speedMode == game::presentation::NavigationHudSpeedMode::Relative
+            ? "REL"
+            : "GLOB";
+    out << (marker.speedPrefixText.empty() ? fallback : marker.speedPrefixText)
+        << " ";
+    if (marker.speedMps >= 1000.0)
+        out << std::fixed << std::setprecision(1) << marker.speedMps / 1000.0 << " km/s";
+    else
+        out << std::fixed << std::setprecision(marker.speedMps < 100.0 ? 1 : 0)
+            << marker.speedMps << " m/s";
+    return out.str();
+}
+}
 
 // ===========================================================================
 // INIT
@@ -413,6 +489,163 @@ void WorldLabelRenderer::renderHUDBatch(const std::vector<WorldLabel>& labels)
 
 
 
+
+
+void WorldLabelRenderer::renderNavigationMarkers(
+    const std::vector<game::presentation::NavigationHudMarker>& markers
+)
+{
+    if (markers.empty() || !m_labelFont || !m_distFont)
+        return;
+
+    beginPrimitiveBatch();
+    TextRenderer::instance().beginFrame();
+
+    for (const auto& marker : markers)
+    {
+        glm::vec2 direction = marker.edgeDir;
+        if (glm::dot(direction, direction) <= 1.0e-6f)
+            direction = glm::vec2(0.0f, -1.0f);
+        direction = glm::normalize(direction);
+        const glm::vec2 anchor = marker.screenPos;
+
+        glm::vec4 color = marker.color;
+        color.a = std::clamp(color.a, 0.18f, 0.72f);
+        glm::vec4 faint = color;
+        faint.a *= 0.46f;
+
+        const bool tacticalMarker =
+            marker.shape ==
+                game::presentation::NavigationHudMarkerShape::TacticalTriangle;
+
+        if (tacticalMarker)
+        {
+            // Fixed screen-space navigation symbol. It deliberately does not
+            // rotate with target motion; the marker only identifies direction
+            // to the tracked target, while velocity remains textual data.
+            glm::vec4 triangleColor = color;
+            triangleColor.a = std::min(triangleColor.a, 0.46f);
+            const glm::vec2 tip = anchor + glm::vec2(0.0f, -10.0f);
+            const glm::vec2 left = anchor + glm::vec2(-8.0f, 7.0f);
+            const glm::vec2 right = anchor + glm::vec2(8.0f, 7.0f);
+            emitLinePx(tip, left, 1.35f, triangleColor);
+            emitLinePx(left, right, 1.35f, triangleColor);
+            emitLinePx(right, tip, 1.35f, triangleColor);
+        }
+        else if (marker.shape == game::presentation::NavigationHudMarkerShape::CelestialDiamond)
+        {
+            const glm::vec2 top = anchor + glm::vec2(0.0f, -8.0f);
+            const glm::vec2 right = anchor + glm::vec2(8.0f, 0.0f);
+            const glm::vec2 bottom = anchor + glm::vec2(0.0f, 8.0f);
+            const glm::vec2 left = anchor + glm::vec2(-8.0f, 0.0f);
+            emitLinePx(top, right, 1.5f, color);
+            emitLinePx(right, bottom, 1.5f, color);
+            emitLinePx(bottom, left, 1.5f, color);
+            emitLinePx(left, top, 1.5f, color);
+        }
+        else if (marker.shape == game::presentation::NavigationHudMarkerShape::WaypointCorners)
+        {
+            constexpr float r = 9.0f;
+            constexpr float c = 4.0f;
+            emitLinePx(anchor + glm::vec2(0.0f, -r), anchor + glm::vec2(c, -c), 1.8f, color);
+            emitLinePx(anchor + glm::vec2(r, 0.0f), anchor + glm::vec2(c, c), 1.8f, color);
+            emitLinePx(anchor + glm::vec2(0.0f, r), anchor + glm::vec2(-c, c), 1.8f, color);
+            emitLinePx(anchor + glm::vec2(-r, 0.0f), anchor + glm::vec2(-c, -c), 1.8f, color);
+        }
+
+        // Celestial/route indices may still live in the symbol. Tactical track
+        // numbers belong to the left information column below speed instead.
+        if (!tacticalMarker && marker.displayIndex > 0)
+        {
+            const std::string indexText = std::to_string(marker.displayIndex);
+            const float indexWidth = m_distFont->measureText(indexText);
+            TextRenderer::instance().textDrawBatched(
+                *m_distFont,
+                indexText,
+                anchor.x - indexWidth * 0.5f,
+                anchor.y + 4.0f,
+                glm::vec4(0.92f, 0.96f, 1.0f, 0.95f)
+            );
+        }
+
+        const bool edgeRight = !marker.onScreen && direction.x > 0.25f;
+        const bool edgeLeft = !marker.onScreen && direction.x < -0.25f;
+        const std::string typeText = truncateHudText(m_labelFont, marker.typeText, 124.0f);
+        const std::string nameText = truncateHudText(m_distFont, marker.nameText, 132.0f);
+        const std::string speedText = navigationSpeedText(marker);
+        const std::string distanceText = navigationDistanceText(marker.distanceMeters);
+        const std::string indexText =
+            tacticalMarker && marker.displayIndex > 0
+                ? std::to_string(marker.displayIndex)
+                : std::string();
+
+        float rightX = anchor.x + 14.0f;
+        if (edgeRight)
+            rightX = anchor.x - 14.0f - m_labelFont->measureText(typeText);
+
+        TextRenderer::instance().textDrawBatched(
+            *m_labelFont,
+            typeText,
+            rightX,
+            anchor.y - 3.0f,
+            color
+        );
+        if (!nameText.empty())
+        {
+            TextRenderer::instance().textDrawBatched(
+                *m_distFont,
+                nameText,
+                rightX,
+                anchor.y + 11.0f,
+                faint
+            );
+        }
+
+        const float speedWidth = speedText.empty()
+            ? 0.0f
+            : m_distFont->measureText(speedText);
+        const float indexWidth = indexText.empty()
+            ? 0.0f
+            : m_distFont->measureText(indexText);
+
+        // Normal/right-edge markers keep the data column to the left of the
+        // symbol. At the left HUD boundary it flips to the right, but speed and
+        // target number still share one right edge.
+        float leftColumnRight = anchor.x - 14.0f;
+        if (edgeLeft)
+            leftColumnRight = rightX + std::max(speedWidth, indexWidth);
+
+        if (!speedText.empty())
+        {
+            TextRenderer::instance().textDrawBatched(
+                *m_distFont,
+                speedText,
+                leftColumnRight - speedWidth,
+                anchor.y - 3.0f,
+                faint
+            );
+        }
+
+        if (!indexText.empty())
+        {
+            TextRenderer::instance().textDrawBatched(
+                *m_distFont,
+                indexText,
+                leftColumnRight - indexWidth,
+                anchor.y + 11.0f,
+                glm::vec4(0.92f, 0.96f, 1.0f, 0.72f)
+            );
+        }
+
+        const float distanceWidth = m_distFont->measureText(distanceText);
+        TextRenderer::instance().textDrawBatched(
+            *m_distFont, distanceText, anchor.x - distanceWidth * 0.5f, anchor.y + 25.0f, faint
+        );
+    }
+
+    flushPrimitiveBatch();
+    TextRenderer::instance().endFrame();
+}
 
 
 void WorldLabelRenderer::renderTextLabelsBatch(

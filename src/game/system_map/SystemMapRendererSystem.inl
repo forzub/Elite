@@ -2104,22 +2104,55 @@ SystemMapRenderer::selectedTerminalDetailCell() const
     const auto terminalCell =
         m_systemView.resolvedTerminalSelection();
 
-    if (!terminalCell)
-        return std::nullopt;
+    if (terminalCell)
+    {
+        world::celestial::DetailSpatialCell result;
+        result.level = terminalCell->level;
+        result.maximumLevel =
+            m_systemView.state().navigationGrid
+                .definition()
+                .maximumLevel;
+        result.x = terminalCell->index.x;
+        result.y = terminalCell->index.y;
+        result.z = terminalCell->index.z;
+        result.centerAu = terminalCell->center;
+        result.edgeAu = terminalCell->size;
+        return result;
+    }
 
-    world::celestial::DetailSpatialCell result;
-    result.level = terminalCell->level;
-    result.maximumLevel =
-        m_systemView.state().navigationGrid
-            .definition()
-            .maximumLevel;
-    result.x = terminalCell->index.x;
-    result.y = terminalCell->index.y;
-    result.z = terminalCell->index.z;
-    result.centerAu = terminalCell->center;
-    result.edgeAu = terminalCell->size;
+    // A free tactical target can provide a local-neighborhood address without
+    // pretending the user explicitly selected the cubic-navigation marker.
+    // The address remains valid only while that same tactical object is active.
+    if (m_mode == Mode::System &&
+        !m_activeTacticalLocalTargetObjectId.empty() &&
+        m_objectOverlayState.activeObjectId() ==
+            m_activeTacticalLocalTargetObjectId &&
+        m_activeTacticalDetailCell.has_value())
+    {
+        return m_activeTacticalDetailCell;
+    }
 
-    return result;
+    return std::nullopt;
+}
+
+
+bool SystemMapRenderer::canOpenSelectedLocalContext() const
+{
+    if (m_mode == Mode::System)
+    {
+        if (!m_systemView.state().selectedHubId.empty())
+            return true;
+
+        return !m_activeTacticalLocalTargetObjectId.empty() &&
+               m_objectOverlayState.activeObjectId() ==
+                   m_activeTacticalLocalTargetObjectId &&
+               m_activeTacticalDetailCell.has_value();
+    }
+
+    if (m_mode == Mode::Detail)
+        return !m_detailView.state().selectedHubId.empty();
+
+    return false;
 }
 
 

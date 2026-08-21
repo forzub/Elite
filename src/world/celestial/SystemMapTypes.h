@@ -242,6 +242,10 @@ namespace world::celestial
         std::string name;
         std::string owner;
         std::string parentBodyId;
+        // Optional local-neighborhood binding. Ships/infrastructure attached
+        // to a hub retain that hub identity on the client-composed System map
+        // so the native HUB action can drill to the object's real vicinity.
+        std::string parentHubId;
         SystemMapObjectKind kind = SystemMapObjectKind::Unknown;
         glm::dvec3 positionAu {0.0};
         int systemId = -1;

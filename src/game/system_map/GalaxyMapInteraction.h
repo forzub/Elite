@@ -46,6 +46,11 @@ namespace game::system_map
 
         // World or mode transition executed by SpaceState.
         std::optional<MapIntent> mapIntent;
+
+        // Client-only navigation memory can turn an explicitly clicked empty
+        // cube into a route waypoint without coupling that intent to server
+        // simulation or to camera refinement.
+        std::optional<navigation::GalaxyNavigationCell> clickedNavigationCell;
     };
 
     /*

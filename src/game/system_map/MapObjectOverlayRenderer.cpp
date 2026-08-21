@@ -384,6 +384,15 @@ std::string MapObjectOverlayRenderer::text(
     if (k == "azimuth") return ru ? "Азимут" : zh ? "方位角" : es ? "Acimut" : ja ? "方位角" : "Azimuth";
     if (k == "elevation") return ru ? "Элевация" : zh ? "仰角" : es ? "Elevación" : ja ? "仰角" : "Elevation";
     if (k == "owner") return ru ? "Фракция/владелец" : zh ? "阵营/所有者" : es ? "Facción/propietario" : ja ? "勢力/所有者" : "Faction/owner";
+    if (k == "radius") return ru ? "Радиус" : zh ? "半径" : es ? "Radio" : ja ? "半径" : "Radius";
+    if (k == "address") return ru ? "Адрес" : zh ? "地址" : es ? "Dirección" : ja ? "アドレス" : "Address";
+    if (k == "set_finish") return ru ? "СДЕЛАТЬ ФИНИШЕМ" : zh ? "设为终点" : es ? "FIJAR DESTINO" : ja ? "目的地に設定" : "SET AS FINISH";
+    if (k == "cancel_finish") return ru ? "ОТМЕНИТЬ ФИНИШ" : zh ? "取消终点" : es ? "CANCELAR DESTINO" : ja ? "終点を解除" : "CANCEL FINISH";
+    if (k == "set_intermediate") return ru ? "СДЕЛАТЬ ПРОМЕЖУТОЧНОЙ" : zh ? "设为中间点" : es ? "FIJAR INTERMEDIA" : ja ? "中継点に設定" : "SET INTERMEDIATE";
+    if (k == "cancel_intermediate") return ru ? "ОТМЕНИТЬ ПРОМЕЖУТОЧНУЮ" : zh ? "取消中间点" : es ? "CANCELAR INTERMEDIA" : ja ? "中継点を解除" : "CANCEL INTERMEDIATE";
+    if (k == "space_target") return ru ? "Точка пространства" : zh ? "空间目标" : es ? "Objetivo espacial" : ja ? "空間目標" : "Space target";
+    if (k == "finish_target") return ru ? "Финиш" : zh ? "终点" : es ? "Destino" : ja ? "終点" : "Finish";
+    if (k == "intermediate_target") return ru ? "Промежуточная" : zh ? "中间点" : es ? "Intermedia" : ja ? "中継点" : "Intermediate";
     return k;
 }
 
@@ -425,16 +434,24 @@ void MapObjectOverlayRenderer::render(
             else
                 drawTriangle(item);
         }
-        drawVelocityArrow(item);
+
+        if (item.infoKind == MapObjectInfoKind::Tactical)
+        {
+            drawVelocityArrow(item);
+        }
 
         const std::string track = state.trackLabelFor(item.objectId);
-        textRenderer.textDrawPx(
-            track,
-            static_cast<float>(item.screenPx.x + 10.0 * item.glyphScale),
-            static_cast<float>(item.screenPx.y - 12.0 * item.glyphScale),
-            12,
-            glm::vec4(item.factionColor.r, item.factionColor.g, item.factionColor.b, 1.0f)
-        );
+        if (track != "0")
+        {
+            const float trackWidth = textRenderer.measureTextPx(track, 12);
+            textRenderer.textDrawPx(
+                track,
+                static_cast<float>(item.screenPx.x - trackWidth * 0.5f),
+                static_cast<float>(item.screenPx.y + 4.0f),
+                12,
+                glm::vec4(0.96f, 0.98f, 1.0f, 1.0f)
+            );
+        }
     }
 
     const auto panels = state.orderedPanels();
@@ -444,16 +461,20 @@ void MapObjectOverlayRenderer::render(
         if (!item || !item->visible)
             continue;
 
+        const double panelHeight =
+            panel.collapsed
+                ? MapObjectOverlayState::PanelCollapsedHeightPx
+                : MapObjectOverlayState::PanelHeightPx;
         const glm::dvec2 panelCenter(
             panel.topLeftPx.x + MapObjectOverlayState::PanelWidthPx * 0.5,
-            panel.topLeftPx.y + MapObjectOverlayState::PanelHeightPx * 0.5
+            panel.topLeftPx.y + panelHeight * 0.5
         );
         drawLine(item->screenPx, panelCenter, glm::vec4(0.84f, 0.88f, 0.95f, 0.72f), 1.0f);
 
         drawRect(
             panel.topLeftPx,
             MapObjectOverlayState::PanelWidthPx,
-            MapObjectOverlayState::PanelHeightPx,
+            panelHeight,
             kPanelBackground
         );
         drawRect(
@@ -473,18 +494,41 @@ void MapObjectOverlayRenderer::render(
         drawRectOutline(
             panel.topLeftPx,
             MapObjectOverlayState::PanelWidthPx,
-            MapObjectOverlayState::PanelHeightPx,
+            panelHeight,
             panelBorder,
             activePanel ? 2.0f : 1.0f
         );
 
-        const std::string track = state.trackLabelFor(item->objectId);
+        std::string panelTitle;
+        if (item->infoKind == MapObjectInfoKind::Tactical)
+        {
+            const std::string track = state.trackLabelFor(item->objectId);
+            panelTitle =
+                (track == "0" ? std::string() : track + "  ") +
+                (item->name.empty() ? item->typeName : item->name);
+        }
+        else if (item->infoKind == MapObjectInfoKind::WaypointCandidate)
+        {
+            panelTitle = item->name.empty() ? text(locale, "space_target") : item->name;
+        }
+        else
+        {
+            panelTitle = item->name.empty() ? item->typeName : item->name;
+        }
+
         textRenderer.textDrawPx(
-            track + "  " + (item->name.empty() ? item->typeName : item->name),
+            panelTitle,
             static_cast<float>(panel.topLeftPx.x + 9.0),
             static_cast<float>(panel.topLeftPx.y + 18.0),
             12,
             glm::vec4(item->factionColor.r, item->factionColor.g, item->factionColor.b, 1.0f)
+        );
+        textRenderer.textDrawPx(
+            panel.collapsed ? "+" : "−",
+            static_cast<float>(panel.topLeftPx.x + MapObjectOverlayState::PanelWidthPx - 38.0),
+            static_cast<float>(panel.topLeftPx.y + 18.0),
+            13,
+            kPanelText
         );
         textRenderer.textDrawPx(
             "×",
@@ -493,6 +537,9 @@ void MapObjectOverlayRenderer::render(
             13,
             kPanelText
         );
+
+        if (panel.collapsed)
+            continue;
 
         const double speed = glm::length(item->displayedVelocityMps);
         const double bearingSpeed = glm::length(item->stellarVelocityMps);
@@ -544,22 +591,64 @@ void MapObjectOverlayRenderer::render(
                     static_cast<double>(lines.size() - 1u);
         };
 
-        drawField(text(locale, "type"), item->typeName.empty() ? "—" : item->typeName);
-        drawField(text(locale, speedKey), formatSpeed(speed) + " m/s");
-        drawField(text(locale, "azimuth"), hasBearing ? formatAngle(azimuth) : "—");
-        drawField(text(locale, "elevation"), hasBearing ? formatAngle(elevation) : "—");
-        if (!item->owner.empty())
-            drawField(text(locale, "owner"), item->owner);
+        const std::string typeValue =
+            item->typeName.empty() ? "—" : item->typeName;
+        drawField(text(locale, "type"), typeValue);
+
+        if (item->infoKind == MapObjectInfoKind::Tactical)
+        {
+            drawField(text(locale, speedKey), formatSpeed(speed) + " m/s");
+            drawField(text(locale, "azimuth"), hasBearing ? formatAngle(azimuth) : "—");
+            drawField(text(locale, "elevation"), hasBearing ? formatAngle(elevation) : "—");
+            if (!item->owner.empty())
+                drawField(text(locale, "owner"), item->owner);
+        }
 
         for (const auto& field : item->extraFields)
         {
-            if (y > panel.topLeftPx.y + MapObjectOverlayState::PanelHeightPx - 8.0)
+            if (y > panel.topLeftPx.y + panelHeight - 64.0)
                 break;
             const std::string label = text(locale, field.labelKey.c_str());
             const std::string value = field.unit.empty()
                 ? field.value
                 : field.value + " " + field.unit;
             drawField(label, value);
+        }
+
+        constexpr double actionWidth = MapObjectOverlayState::PanelWidthPx - 16.0;
+        constexpr double actionHeight = 23.0;
+        constexpr double actionGap = 5.0;
+        double actionTop = panel.topLeftPx.y + panelHeight - 8.0 - actionHeight;
+        for (auto it = item->panelActions.rbegin(); it != item->panelActions.rend(); ++it)
+        {
+            if (!it->visible)
+                continue;
+
+            const glm::dvec2 actionTopLeft(
+                panel.topLeftPx.x + 8.0,
+                actionTop
+            );
+            glm::vec4 fill = glm::vec4(0.10f, 0.18f, 0.24f, 0.92f);
+            glm::vec4 border = it->active
+                ? item->factionColor
+                : glm::vec4(item->factionColor.r, item->factionColor.g, item->factionColor.b, 0.55f);
+            glm::vec4 textColor =
+                it->enabled
+                    ? glm::vec4(item->factionColor.r, item->factionColor.g, item->factionColor.b, 1.0f)
+                    : glm::vec4(kPanelMuted.r, kPanelMuted.g, kPanelMuted.b, 0.82f);
+            if (it->active)
+                fill = glm::vec4(item->factionColor.r * 0.22f, item->factionColor.g * 0.22f, item->factionColor.b * 0.22f, 0.96f);
+            drawRect(actionTopLeft, actionWidth, actionHeight, fill);
+            drawRectOutline(actionTopLeft, actionWidth, actionHeight, border, it->active ? 1.4f : 1.0f);
+            const std::string actionText = text(locale, it->labelKey.c_str());
+            textRenderer.textDrawPx(
+                actionText,
+                static_cast<float>(actionTopLeft.x + 8.0),
+                static_cast<float>(actionTopLeft.y + 16.0),
+                10,
+                textColor
+            );
+            actionTop -= actionHeight + actionGap;
         }
     }
 

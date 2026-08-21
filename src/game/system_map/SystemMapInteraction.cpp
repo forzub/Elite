@@ -312,14 +312,18 @@ void SystemMapInteraction::focusHub(
 }
 
 void SystemMapInteraction::focusTacticalObjectSelection(
-    SystemMapView& view
+    SystemMapView& view,
+    const std::string& navigationHubId,
+    const std::string& navigationHubParentBodyId
 ) const
 {
     auto& state = view.state();
 
     state.selectedBodyId.clear();
-    state.selectedHubId.clear();
-    state.selectedHubParentBodyId.clear();
+    state.selectedHubId = navigationHubId;
+    state.selectedHubParentBodyId = navigationHubId.empty()
+        ? std::string{}
+        : navigationHubParentBodyId;
     state.navigationGrid.clearSelectedCell();
     state.navigationCellExplicitlySelected = false;
 
@@ -574,6 +578,7 @@ SystemMapInputResult SystemMapInteraction::handleInput(
                         *pickedBodyId,
                         frame.nowSeconds
                     );
+                    result.clickedBodyId = *pickedBodyId;
                 }
                 else if (state.navigationGrid.enabled())
                 {
@@ -601,6 +606,7 @@ SystemMapInputResult SystemMapInteraction::handleInput(
                             cubeCenterCell
                         );
                         state.navigationCellExplicitlySelected = true;
+                        result.clickedNavigationCell = cubeCenterCell;
 
                         if (isCubeDoubleClick)
                         {

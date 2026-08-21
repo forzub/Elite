@@ -105,19 +105,18 @@ glyph and velocity arrow grow with the object.
 - the symbol cannot become an unbounded screen-filling arrow.
 
 The same physical/zoom scale is used for the glyph and hit radius. Velocity-arrow
-length additionally carries speed magnitude through a bounded logarithmic scale:
+length additionally carries speed magnitude through a bounded **linear** scale:
 
 - zero velocity draws no arrow;
-- local arrows use a local-speed reference range with a very small minimum so
-  `1 m/s` and `100+ m/s` remain visibly different;
-- global arrows use a wider stellar-speed reference range;
-- increasing speed always increases arrow length until the protected maximum;
-- the maximum remains the pre-log tactical arrow length, so this change cannot
-  create longer screen-space spears than the previous overlay.
+- local and global velocity modes use separate reference maxima;
+- below saturation, twice the speed produces approximately twice the arrow
+  length;
+- values above the mode reference maximum clamp at the protected screen-space
+  maximum.
 
-`mapObjectVelocityArrowLengthScale()` owns this policy. Do not substitute raw
-linear metres-per-second scaling; orbital and manoeuvring regimes differ by too
-many orders of magnitude for that to remain readable.
+`mapObjectVelocityArrowLengthScale()` owns this policy. The current reference
+maxima are presentation tuning rather than propulsion limits; see
+`../navigation/NAVIGATION_TRACKING_CONTRACT.md`.
 
 ## PROTECTED: multiple information cards and one active tactical object
 
@@ -163,8 +162,13 @@ Selection synchronization rules are protected:
 
 - activating a Hub glyph/card restores the canonical Hub selection on System or
   Detail maps, therefore the `HUB` navigation action becomes available again;
-- activating a ship/infrastructure object clears stale body/cube/Hub semantic
-  focus without moving the camera/navigation anchor;
+- activating a ship/infrastructure object clears stale body/cube focus without
+  moving the camera/navigation anchor; if that object is attached to a Hub, the
+  parent Hub remains the semantic local-neighborhood target while the tactical
+  object itself remains active;
+- a free-space tactical target on System Map resolves a private terminal cube
+  around its current position; the `HUB` panel action may use that cube as the
+  target's local neighborhood without pretending that a physical Hub exists;
 - selecting a body or explicit navigation cube through the ordinary map clears
   the tactical-object focus;
 - selecting a Hub through the ordinary map synchronizes the tactical active ID
@@ -264,7 +268,14 @@ inventing a bearing.
 ## PROTECTED: short track numbers
 
 `MapObjectOverlayState` assigns a short numeric label the first time it sees an
-object ID and reuses it for that ID for the lifetime of the overlay state.
+object ID and reuses it for that ID for the lifetime of the overlay state. The
+player is reserved as track `0`, but `0` is not rendered.
+
+The cockpit navigation tracking layer mirrors this exact map track number for
+tactical/celestial targets rather than allocating a second unrelated sequence.
+For tactical cockpit markers the number is drawn as right-aligned text beneath
+the speed column; it is not packed inside the outline triangle, so increasing
+track-number width cannot distort marker geometry.
 
 The purpose is rapid visual identification of moving targets over time. The
 number is presentation identity, not authoritative entity identity.
@@ -279,6 +290,14 @@ Hub Map permits substantially closer tactical inspection than the old
   nearby ships unreachable behind a fixed central pan clamp;
 - the Hub remains the map's coordinate origin; this change does not convert Hub
   Map into a ship-owned camera mode.
+
+## PROTECTED: navigation tracking hand-off
+
+Open tactical cards, System-only celestial-body cards and explicit spatial
+waypoints now feed a separate **client-only navigation tracking** layer. That
+layer owns cockpit safe-frame markers and the future route-target seam; it does
+not change server authority or the map selection hierarchy. The canonical
+contract is `../navigation/NAVIGATION_TRACKING_CONTRACT.md`.
 
 ## PROTECTED: trajectory-ready data boundary
 
@@ -322,6 +341,10 @@ The map localization asset reserves these keys:
 - `map.object_info.azimuth`
 - `map.object_info.elevation`
 - `map.object_info.owner`
+- `map.object_info.radius`
+- `map.object_info.address`
+- `map.object_info.space_target`
+- `map.object_info.set_finish`
 
 English, Russian, Simplified Chinese, Spanish and Japanese entries exist in the
 current asset set.

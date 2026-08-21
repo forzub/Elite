@@ -43,6 +43,7 @@ ShipSnapshot makeShip(
     ship.typeId = ObjectType::CobraMk1;
     ship.transform.motion.systemId = systemId;
     ship.transform.motion.parentBodyId = "parent";
+    ship.transform.motion.hubId = "hub:test";
     ship.transform.setWorldPositionMeters(glm::dvec3(xMeters, 0.0, 0.0));
     return ship;
 }
@@ -92,6 +93,10 @@ int main()
             "in-range System-map ship sample was not ready"
         );
         require(middle.ships.size() == 2, "ship set changed during interpolation");
+        require(
+            middle.ships.front().hubId == "hub:test",
+            "System-map ship sample lost replicated Hub membership"
+        );
 
         const double playerX =
             world::coordinates::fullMeters(middle.ships[0].worldPosition).x;

@@ -836,6 +836,7 @@ namespace game::system_map
                                 и при переходе к новому пустому кубу.
                             */
                             view.state().navigationGrid.selectCell(pickedCell);
+                            result.clickedNavigationCell = pickedCell;
 
 
 

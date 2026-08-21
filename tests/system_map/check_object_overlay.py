@@ -37,7 +37,12 @@ def main() -> int:
         "bestPhysicalSizeMeters",
         "dominantExternalPhysicalSizeMeters",
         "mapObjectVelocityArrowLengthScale",
-        "std::log10",
+        "speedMps / maxReferenceSpeedMps",
+        "MapObjectInfoKind",
+        "WaypointCandidate",
+        "screenAffordance",
+        "std::vector<std::string> openObjectIds() const",
+        "std::string actionObjectId",
         "std::string activatedObjectId",
         "std::string m_activeObjectId",
         "result.activatedObjectId = panel->objectId",
@@ -186,6 +191,16 @@ def main() -> int:
         "map.object_info.azimuth",
         "map.object_info.elevation",
         "map.object_info.owner",
+        "map.object_info.radius",
+        "map.object_info.address",
+        "map.object_info.space_target",
+        "map.object_info.set_finish",
+        "map.navigation_hud.object",
+        "map.navigation_hud.celestial",
+        "map.navigation_hud.finish",
+        "map.navigation_hud.waypoint",
+        "map.navigation_hud.relative_speed_short",
+        "map.navigation_hud.global_speed_short",
     ):
         require(key in raw, f"localization missing {key}")
     require(data is not None, "map localization JSON failed to parse")
@@ -213,14 +228,156 @@ def main() -> int:
         "wantsLocalVelocity && object.hasRelativeVelocity",
         "Keep card bearing/elevation tied to the displayed local motion",
     )
+    require("std::log10" not in overlay,
+            "velocity-vector scale regressed to logarithmic mapping")
+
     require_text(
-        "src/game/system_map/MAP_OBJECT_OVERLAY_CONTRACT.md",
-        "1 m/s` and `100+ m/s` remain visibly different",
-        "the card shows an em dash instead of",
-        "same motion regime as the displayed",
+        "src/game/navigation/NavigationTrackingState.h",
+        "class NavigationTrackingState",
+        "NavigationTrackedTacticalObject",
+        "NavigationTrackedCelestialBody",
+        "std::vector<NavigationWaypoint> m_waypoints",
+        "NavigationWaypointRole::Finish",
+        "setFinishWaypoint",
+        "reconcileOpenCards",
     )
 
-    print("[PASS] tactical glyphs, stronger logarithmic velocity vectors, displayed-motion bearings, active-card selection, distinct Hub cubes, size-ranked crowded picking, wrapped multi-cards, Hub zoom and trajectory seam are locked")
+    hud_presentation = require_text(
+        "src/game/presentation/NavigationHudPresentation.h",
+        "cockpitNavigationUsesGlobalSpeed",
+        "resolveCockpitNavigationTargetSpeed",
+        "MotionMode::Cruise",
+        "MotionMode::JumpTransit",
+        "playerMotion.travelFrame.worldToLocalVelocity",
+        "glm::length(targetLocalVelocity)",
+        "NavigationHudVocabulary",
+        "NavigationHudMarkerShape::TacticalTriangle",
+        "NavigationHudMarkerShape::CelestialDiamond",
+        "NavigationHudMarkerShape::WaypointCorners",
+    )
+    require("targetLocalVelocity - motion.localVelocityMps" not in hud_presentation,
+            "cockpit target speed regressed to player-target closing speed")
+    require("resolved.worldVelocityMps - playerWorldVelocity" not in hud_presentation,
+            "cockpit target speed regressed to raw world-vector subtraction")
+    require("server" not in hud_presentation.lower(),
+            "client HUD navigation presentation should not acquire server ownership")
+
+    require_text(
+        "src/game/ship/view/PlayerShipView.cpp",
+        "renderNavigationMarkers",
+        "hudEdgeMapper.isInsideBoundary",
+        "hudEdgeMapper.projectDirection",
+        "Direction-only projection deliberately ignores target distance",
+    )
+    world_label = require_text(
+        "src/render/HUD/WorldLabelRenderer.cpp",
+        "renderNavigationMarkers",
+        "TacticalTriangle",
+        "leftColumnRight",
+        "target number still share one right edge",
+        "CelestialDiamond",
+        "WaypointCorners",
+        "truncateHudText",
+        "navigationDistanceText",
+        "navigationSpeedText",
+    )
+    require("TacticalPlate" not in world_label,
+            "cockpit tactical marker regressed to the wide rectangular plate")
+    require_text(
+        "src/game/SpaceState.cpp",
+        "buildNavigationHudMarkers",
+        "navigationTrackingState()",
+        "renderNavigationMarkers",
+        "canOpenSelectedLocalContext()",
+        "setSystemMapDetailMode();",
+    )
+
+    require_text(
+        "src/game/system_map/SystemMapSceneFrameBuilder.cpp",
+        "MapObjectInfoKind::Celestial",
+        '"body:" + std::to_string(system.systemId)',
+        "trackingWorldPosition",
+        "body.radiusKm * 2000.0",
+    )
+    require_text(
+        "src/world/celestial/SystemMapTypes.h",
+        "std::string parentHubId",
+    )
+    require_text(
+        "src/game/client/ClientSystemMapShipSampler.h",
+        "std::string hubId",
+        "out.hubId = ship.transform.motion.hubId",
+    )
+    require_text(
+        "src/game/system_map/SystemMapSceneFrameBuilder.cpp",
+        "overlay.navigationHubId",
+        "overlay.navigationSystemPositionAu",
+        "overlay.hasNavigationSystemPositionAu = true",
+    )
+    renderer_facade = require_text(
+        "src/game/system_map/SystemMapRenderer.cpp",
+        "synchronizeNavigationTracking",
+        "refreshGalaxyWaypointCandidate",
+        "refreshSystemWaypointCandidate",
+        "candidate.screenAffordance = true",
+        "candidate.pointerInteractive = true",
+        "candidate.drawGlyph = true",
+        "applyWaypointAction",
+        "setFinishWaypoint",
+        "updateActiveTacticalLocalContext",
+        "navigationHubId",
+        "m_activeTacticalDetailCell",
+        "clickedBodyId",
+        "clickedNavigationCell",
+    )
+    require("m_navigationTrackingState" in renderer_facade,
+            "map facade lost client-only navigation memory")
+    require_text(
+        "src/game/system_map/SystemMapRenderer.h",
+        "void applyWaypointAction(",
+        "const std::string& objectId,",
+        "const std::string& actionKey",
+        "bool canOpenSelectedLocalContext() const",
+        "m_activeTacticalDetailCell",
+    )
+    require_text(
+        "src/game/system_map/SystemMapRendererSystem.inl",
+        "canOpenSelectedLocalContext() const",
+        "m_activeTacticalLocalTargetObjectId",
+        "m_activeTacticalDetailCell",
+    )
+    require_text(
+        "tests/system_map/SystemMapBehaviorTests.cpp",
+        "const std::string finishSourceId = finish.sourceObjectId",
+        "const std::string intermediateSourceId = intermediate.sourceObjectId",
+    )
+
+    require_text(
+        "src/game/system_map/MAP_OBJECT_OVERLAY_CONTRACT.md",
+        "bounded **linear** scale",
+        "client-only navigation tracking",
+        "same motion regime as the displayed",
+    )
+    renderer_source = (ROOT / "src/game/system_map/SystemMapRenderer.cpp").read_text(encoding="utf-8")
+    require('''m_objectOverlayState.ensureOpen(
+                *m_galaxyWaypointCandidate''' not in renderer_source,
+            "Galaxy cube selection must not auto-open waypoint card")
+    require('''m_objectOverlayState.ensureOpen(
+                *m_systemWaypointCandidate''' not in renderer_source,
+            "System cube selection must not auto-open waypoint card")
+
+
+    require_text(
+        "src/game/navigation/NAVIGATION_TRACKING_CONTRACT.md",
+        "client-only ownership",
+        "finish waypoint",
+        "HudEdgeMapper",
+        "MotionMode::Cruise",
+        "MotionMode::JumpTransit",
+        "NOT IMPLEMENTED",
+    )
+
+    print("[PASS] tactical/body cards, linear velocity vectors, client-only tracking, cockpit markers, finish waypoint seam, displayed-motion bearings and existing map overlay contracts are locked")
     return 0
 
 

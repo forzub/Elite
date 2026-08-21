@@ -125,6 +125,45 @@ MapObjectGlyphKind localObjectGlyphKind(
     return MapObjectGlyphKind::Infrastructure;
 }
 
+struct LocalNavigationHubBinding
+{
+    std::string hubId;
+    std::string parentBodyId;
+};
+
+LocalNavigationHubBinding resolveLocalNavigationHubBinding(
+    const world::celestial::LocalSceneInventory& scene,
+    const world::celestial::LocalSceneObject& object
+)
+{
+    if (object.objectClass == world::celestial::DetailObjectClass::Hub &&
+        object.kind == "hub" && !object.stableId.empty())
+    {
+        return {object.stableId, object.parentStableId};
+    }
+
+    if (object.parentStableId.empty())
+        return {};
+
+    const auto parentHub = std::find_if(
+        scene.objects.begin(),
+        scene.objects.end(),
+        [&](const world::celestial::LocalSceneObject& candidate)
+        {
+            return candidate.valid &&
+                   candidate.objectClass ==
+                       world::celestial::DetailObjectClass::Hub &&
+                   candidate.kind == "hub" &&
+                   candidate.stableId == object.parentStableId;
+        }
+    );
+
+    if (parentHub == scene.objects.end())
+        return {};
+
+    return {parentHub->stableId, parentHub->parentStableId};
+}
+
 glm::dvec2 projectDirection(
     const LocalMapCameraSnapshot& camera,
     const glm::dvec3& position,
@@ -363,6 +402,12 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
         item.name = object.name;
         item.typeName = localObjectTypeName(object);
         item.kind = localObjectGlyphKind(object);
+        const auto navigationHub = resolveLocalNavigationHubBinding(
+            snapshot.scene,
+            object
+        );
+        item.navigationHubId = navigationHub.hubId;
+        item.navigationHubParentBodyId = navigationHub.parentBodyId;
         item.factionColor = localObjectColor(object);
         item.screenPx = presentation.camera.project(object.positionMeters);
         item.visible = visibleInViewport(item.screenPx, viewport);
@@ -567,6 +612,8 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
             : snapshot.displayName;
         hubItem.typeName = "Hub";
         hubItem.kind = MapObjectGlyphKind::Hub;
+        hubItem.navigationHubId = snapshot.hubId;
+        hubItem.navigationHubParentBodyId = snapshot.parentBodyId;
         hubItem.velocityMode = MapObjectVelocityMode::Local;
         hubItem.arrowVelocityMode = MapObjectVelocityMode::Global;
         hubItem.displayedVelocityMps = glm::dvec3(0.0);
@@ -613,6 +660,8 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
         item.name = object.name;
         item.typeName = localObjectTypeName(object);
         item.kind = MapObjectGlyphKind::Ship;
+        item.navigationHubId = snapshot.hubId;
+        item.navigationHubParentBodyId = snapshot.parentBodyId;
         item.factionColor = localObjectColor(object);
         item.screenPx = presentation.camera.project(object.positionMeters);
         item.visible = visibleInViewport(item.screenPx, viewport);

@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "render/HUD/WorldLabel.h"
+#include "src/render/HUD/NavigationHudMarker.h"
 
 
 class Font;
@@ -20,6 +21,9 @@ public:
 
     void renderHUD(const WorldLabel& label);
     void renderHUDBatch(const std::vector<WorldLabel>& labels);
+    void renderNavigationMarkers(
+        const std::vector<game::presentation::NavigationHudMarker>& markers
+    );
 
 private: 
 

@@ -21,7 +21,9 @@
 #include "src/game/navigation/CubicNavigationInteraction.h"
 #include "src/game/navigation/GalaxyNavigationGrid.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
+#include "src/game/navigation/NavigationTrackingState.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
+#include "src/game/presentation/NavigationHudPresentation.h"
 #include "src/game/system_map/DetailMapView.h"
 #include "src/game/system_map/HubMapView.h"
 #include "src/game/system_map/GalaxyMapView.h"
@@ -55,6 +57,7 @@ using game::system_map::GalaxyMapView;
 using game::system_map::LocalMapCameraSnapshot;
 using game::system_map::LocalMapPresentationBuilder;
 using game::system_map::MapMode;
+using game::system_map::MapObjectInfoKind;
 using game::system_map::MapObjectInfoPanelState;
 using game::system_map::MapObjectOverlayFrame;
 using game::system_map::MapObjectOverlayItem;
@@ -1946,6 +1949,53 @@ void testMouseAndScrollTraceIsRepeatable()
 }
 
 
+void testCockpitNavigationTargetSpeedUsesCommonTravelFrame()
+{
+    game::navigation::DynamicMotionState motion;
+    motion.mode = game::navigation::MotionMode::HubTactical;
+    motion.travelFrame.valid = true;
+    motion.travelFrame.systemId = 0;
+    motion.travelFrame.originMeters = glm::dvec3(0.0);
+    motion.travelFrame.linearVelocityMps = glm::dvec3(1000.0, 0.0, 0.0);
+    motion.localPositionMeters = glm::dvec3(0.0);
+    motion.localVelocityMps = glm::dvec3(45.0, 0.0, 0.0);
+
+    const auto local =
+        game::presentation::resolveCockpitNavigationTargetSpeed(
+            motion,
+            glm::dvec3(200.0, 0.0, 0.0),
+            glm::dvec3(1180.0, 0.0, 0.0)
+        );
+
+    REQUIRE(local.mode == game::presentation::NavigationHudSpeedMode::Relative);
+    REQUIRE_NEAR(local.speedMps, 180.0, 1.0e-9);
+
+    // Closing speed would be 135 m/s here. The HUD must instead show the
+    // target's own 180 m/s in the same frame as the player's 45 m/s HUD value.
+    REQUIRE(std::abs(local.speedMps - 135.0) > 1.0);
+
+    motion.mode = game::navigation::MotionMode::Cruise;
+    const auto global =
+        game::presentation::resolveCockpitNavigationTargetSpeed(
+            motion,
+            glm::dvec3(200.0, 0.0, 0.0),
+            glm::dvec3(1180.0, 0.0, 0.0)
+        );
+    REQUIRE(global.mode == game::presentation::NavigationHudSpeedMode::Global);
+    REQUIRE_NEAR(global.speedMps, 1180.0, 1.0e-9);
+
+    motion.mode = game::navigation::MotionMode::HubTactical;
+    motion.travelFrame.valid = false;
+    const auto noFrame =
+        game::presentation::resolveCockpitNavigationTargetSpeed(
+            motion,
+            glm::dvec3(200.0, 0.0, 0.0),
+            glm::dvec3(1180.0, 0.0, 0.0)
+        );
+    REQUIRE(noFrame.mode == game::presentation::NavigationHudSpeedMode::Global);
+    REQUIRE_NEAR(noFrame.speedMps, 1180.0, 1.0e-9);
+}
+
 void testTacticalOverlayGlyphScaleAndAngles()
 {
     REQUIRE_NEAR(mapObjectGlyphScale(100.0, 0.01), 1.0, 1.0e-12);
@@ -1997,6 +2047,16 @@ void testTacticalOverlayGlyphScaleAndAngles()
     );
     REQUIRE(localCrawl > 0.0);
     REQUIRE(localFast > localCrawl * 5.0);
+    REQUIRE_NEAR(
+        mapObjectVelocityArrowLengthScale(125.0, MapObjectVelocityMode::Local),
+        0.5,
+        1.0e-12
+    );
+    REQUIRE_NEAR(
+        mapObjectVelocityArrowLengthScale(50000.0, MapObjectVelocityMode::Global),
+        0.5,
+        1.0e-12
+    );
 
     const auto [azForward, elForward] =
         stellarAzimuthElevationDeg(glm::dvec3(0.0, 0.0, 10.0));
@@ -2012,6 +2072,145 @@ void testTacticalOverlayGlyphScaleAndAngles()
         stellarAzimuthElevationDeg(glm::dvec3(0.0, 10.0, 0.0));
     REQUIRE_NEAR(azUp, 0.0, 1.0e-9);
     REQUIRE_NEAR(elUp, 90.0, 1.0e-9);
+}
+
+
+void testClientNavigationTrackingOwnsCardsBodiesAndWaypointPanels()
+{
+    game::navigation::NavigationTrackingState state;
+
+    state.rememberTacticalObject(
+        "entity:42",
+        "Scout",
+        "Needle",
+        glm::vec4(0.4f, 0.8f, 1.0f, 1.0f)
+    );
+
+    const auto earthPosition =
+        world::coordinates::makeWorldPositionFromMeters(
+            glm::dvec3(1000.0, 2000.0, 3000.0)
+        );
+    state.rememberCelestialBody(
+        "body:0:earth",
+        0,
+        "earth",
+        "Planet",
+        "Earth",
+        earthPosition,
+        glm::vec4(0.4f, 0.7f, 1.0f, 1.0f)
+    );
+
+    auto& finish = state.rememberWaypointCandidate(
+        "waypoint_candidate:S:6:1:2:3",
+        world::coordinates::makeWorldPositionFromMeters(
+            glm::dvec3(5000.0, 0.0, 0.0)
+        ),
+        "S6[1,2,3]"
+    );
+    const std::uint64_t finishId = finish.id;
+    const std::string finishSourceId = finish.sourceObjectId;
+    state.toggleWaypointRole(finishSourceId, game::navigation::NavigationWaypointRole::Finish);
+
+    auto& intermediate = state.rememberWaypointCandidate(
+        "waypoint_candidate:G:4:4:5:6",
+        world::coordinates::makeWorldPositionFromMeters(
+            glm::dvec3(9000.0, 0.0, 0.0)
+        ),
+        "G4[4,5,6]"
+    );
+    const std::string intermediateSourceId = intermediate.sourceObjectId;
+    state.toggleWaypointRole(intermediateSourceId, game::navigation::NavigationWaypointRole::Intermediate);
+
+    auto& intermediateTwo = state.rememberWaypointCandidate(
+        "waypoint_candidate:G:4:7:8:9",
+        world::coordinates::makeWorldPositionFromMeters(
+            glm::dvec3(12000.0, 0.0, 0.0)
+        ),
+        "G4[7,8,9]"
+    );
+    const std::string intermediateTwoSourceId = intermediateTwo.sourceObjectId;
+    state.toggleWaypointRole(
+        intermediateTwoSourceId,
+        game::navigation::NavigationWaypointRole::Intermediate
+    );
+
+    state.reconcileOpenCards({
+        "entity:42",
+        "body:0:earth",
+        finishSourceId,
+        intermediateSourceId,
+        intermediateTwoSourceId
+    });
+    REQUIRE(state.tacticalObjects().size() == 1);
+    REQUIRE(state.celestialBodies().size() == 1);
+    REQUIRE(state.waypoints().size() == 3);
+    REQUIRE(state.waypoints().front().id == finishId);
+    REQUIRE(state.waypoints().front().role == game::navigation::NavigationWaypointRole::Finish);
+    REQUIRE(state.waypoints()[1].role == game::navigation::NavigationWaypointRole::Intermediate);
+    REQUIRE(state.waypoints()[1].sequence == 1);
+    REQUIRE(state.waypoints()[2].role == game::navigation::NavigationWaypointRole::Intermediate);
+    REQUIRE(state.waypoints()[2].sequence == 2);
+
+    state.reconcileOpenCards({
+        "body:0:earth",
+        finishSourceId,
+        intermediateTwoSourceId
+    });
+    REQUIRE(state.tacticalObjects().empty());
+    REQUIRE(state.celestialBodies().size() == 1);
+    REQUIRE(state.waypoints().size() == 2);
+    REQUIRE(state.waypoints()[1].sourceObjectId == intermediateTwoSourceId);
+    REQUIRE(state.waypoints()[1].sequence == 1);
+}
+
+
+void testWaypointInfoAffordanceWinsWithoutAutoOpeningCard()
+{
+    MapObjectOverlayState state;
+    MapObjectOverlayFrame frame;
+    const glm::dvec2 viewport(1280.0, 720.0);
+
+    MapObjectOverlayItem largeBodyLikeObject;
+    largeBodyLikeObject.objectId = "body:earth";
+    largeBodyLikeObject.infoKind = MapObjectInfoKind::Celestial;
+    largeBodyLikeObject.screenPx = glm::dvec2(500.0, 300.0);
+    largeBodyLikeObject.hitRadiusPx = 30.0;
+    largeBodyLikeObject.physicalSizeMeters = 12000000.0;
+    largeBodyLikeObject.visible = true;
+    frame.items.push_back(largeBodyLikeObject);
+
+    MapObjectOverlayItem waypoint;
+    waypoint.objectId = "waypoint_candidate:S:6:1:2:3";
+    waypoint.infoKind = MapObjectInfoKind::WaypointCandidate;
+    waypoint.screenPx = glm::dvec2(500.0, 300.0);
+    waypoint.hitRadiusPx = 12.0;
+    waypoint.physicalSizeMeters = 1.0;
+    waypoint.screenAffordance = true;
+    waypoint.visible = true;
+    frame.items.push_back(waypoint);
+
+    REQUIRE(!state.isOpen(waypoint.objectId));
+
+    const auto down = state.handlePointer(
+        frame,
+        viewport,
+        waypoint.screenPx,
+        true,
+        true,
+        largeBodyLikeObject.physicalSizeMeters
+    );
+    REQUIRE(down.consumed);
+    REQUIRE(down.toggledObjectId == waypoint.objectId);
+    REQUIRE(state.isOpen(waypoint.objectId));
+
+    (void)state.handlePointer(
+        frame,
+        viewport,
+        waypoint.screenPx,
+        true,
+        false,
+        largeBodyLikeObject.physicalSizeMeters
+    );
 }
 
 void testTacticalOverlaySupportsMultipleIndependentCards()
@@ -2179,6 +2378,22 @@ void testTacticalObjectSelectionClearsBodyCubeAndHubFocus()
     REQUIRE(state.trackedBodyId.empty());
     REQUIRE(!state.trackedBodyPositionValid);
     REQUIRE(!state.orbitPivotActive);
+
+    state.selectedBodyId = "earth";
+    state.navigationGrid.selectCell(state.navigationGrid.anchorCell());
+    state.navigationCellExplicitlySelected = true;
+
+    interaction.focusTacticalObjectSelection(
+        view,
+        "hub:earth",
+        "earth"
+    );
+
+    REQUIRE(state.selectedBodyId.empty());
+    REQUIRE(state.selectedHubId == "hub:earth");
+    REQUIRE(state.selectedHubParentBodyId == "earth");
+    REQUIRE(!state.navigationGrid.hasSelectedCell());
+    REQUIRE(!state.navigationCellExplicitlySelected);
 }
 
 void testTacticalOverlayCrowdedPickPrefersLargestObject()
@@ -2363,7 +2578,10 @@ int main()
         {"semantic map-panel command routing", testSystemMapPanelCommandSemantics},
         {"Galaxy -> System -> Detail -> Hub transition sequence", testGalaxySystemDetailHubTransitionSequence},
         {"mouse and scroll trace is repeatable", testMouseAndScrollTraceIsRepeatable},
+        {"cockpit target speed uses common travel frame", testCockpitNavigationTargetSpeedUsesCommonTravelFrame},
         {"tactical overlay glyph scale and stellar angles", testTacticalOverlayGlyphScaleAndAngles},
+        {"client navigation tracking owns cards bodies and waypoint panels", testClientNavigationTrackingOwnsCardsBodiesAndWaypointPanels},
+        {"waypoint info affordance wins without auto opening card", testWaypointInfoAffordanceWinsWithoutAutoOpeningCard},
         {"tactical overlay supports multiple independent cards", testTacticalOverlaySupportsMultipleIndependentCards},
         {"tactical overlay pointer toggle and drag are captured", testTacticalOverlayPointerToggleAndDragAreCaptured},
         {"tactical overlay card click reactivates object without toggling card", testTacticalOverlayCardClickReactivatesObjectWithoutTogglingCard},

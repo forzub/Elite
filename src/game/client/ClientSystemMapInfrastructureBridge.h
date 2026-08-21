@@ -80,6 +80,7 @@ inline void rebuildSystemMapInfrastructureLayer(
         object.name = objectState.displayName;
         object.owner = objectState.ownerName;
         object.parentBodyId = objectState.parentBodyId;
+        object.parentHubId = objectState.hubId;
         object.kind = systemMapObjectKindFor(objectState.type);
         object.positionAu =
             world::coordinates::fullMeters(objectState.worldPosition) /
@@ -120,6 +121,7 @@ inline void rebuildSystemMapInfrastructureLayer(
             : hubState.name;
         hub.owner = hubState.owner;
         hub.parentBodyId = hubState.parentBodyId;
+        hub.parentHubId = hubState.id;
         hub.kind = SystemMapObjectKind::Hub;
         hub.positionAu =
             world::coordinates::fullMeters(hubState.worldPosition) /

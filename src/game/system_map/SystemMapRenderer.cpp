@@ -1932,6 +1932,7 @@ void SystemMapRenderer::render(
             galaxy,
             nav
         );
+        refreshGalaxyWaypointCandidate(vp, galaxy);
     }
     else if (m_mode == Mode::System)
     {
@@ -1940,10 +1941,24 @@ void SystemMapRenderer::render(
             system,
             nav
         );
+        refreshSystemWaypointCandidate(vp, system);
     }
 
-    if (m_mode == Mode::System)
+    if (m_mode == Mode::Galaxy)
     {
+        synchronizeNavigationTracking(m_galaxyInfoOverlayFrame);
+        m_objectOverlayRenderer.render(
+            vp,
+            m_galaxyInfoOverlayFrame,
+            m_objectOverlayState,
+            m_navigationNamingLocale
+        );
+    }
+    else if (m_mode == Mode::System)
+    {
+        synchronizeNavigationTracking(
+            m_systemSceneFrame.interaction.objectOverlay
+        );
         m_objectOverlayRenderer.render(
             vp,
             m_systemSceneFrame.interaction.objectOverlay,
@@ -1953,6 +1968,9 @@ void SystemMapRenderer::render(
     }
     else if (m_mode == Mode::Detail)
     {
+        synchronizeNavigationTracking(
+            m_detailPresentation.frame.objectOverlay
+        );
         m_objectOverlayRenderer.render(
             vp,
             m_detailPresentation.frame.objectOverlay,
@@ -1962,6 +1980,9 @@ void SystemMapRenderer::render(
     }
     else if (m_mode == Mode::Hub)
     {
+        synchronizeNavigationTracking(
+            m_hubPresentation.frame.objectOverlay
+        );
         m_objectOverlayRenderer.render(
             vp,
             m_hubPresentation.frame.objectOverlay,
@@ -2089,6 +2110,487 @@ glm::vec2 SystemMapRenderer::projectToScreen(
 
 
 
+
+
+
+void SystemMapRenderer::synchronizeNavigationTracking(
+    const game::system_map::MapObjectOverlayFrame& frame
+)
+{
+    const auto openIds = m_objectOverlayState.openObjectIds();
+    m_navigationTrackingState.reconcileOpenCards(openIds);
+
+    for (const auto& item : frame.items)
+    {
+        if (!m_objectOverlayState.isOpen(item.objectId))
+            continue;
+
+        if (item.infoKind == game::system_map::MapObjectInfoKind::Tactical)
+        {
+            m_navigationTrackingState.rememberTacticalObject(
+                item.objectId,
+                item.typeName,
+                item.name,
+                item.factionColor,
+                m_objectOverlayState.trackNumberFor(item.objectId)
+            );
+        }
+        else if (
+            item.infoKind == game::system_map::MapObjectInfoKind::Celestial &&
+            item.hasTrackingWorldPosition)
+        {
+            m_navigationTrackingState.rememberCelestialBody(
+                item.objectId,
+                item.trackingSystemId,
+                item.semanticTargetId,
+                item.typeName,
+                item.name,
+                item.trackingWorldPosition,
+                item.factionColor,
+                m_objectOverlayState.trackNumberFor(item.objectId)
+            );
+        }
+        else if (
+            item.infoKind == game::system_map::MapObjectInfoKind::WaypointCandidate &&
+            item.hasTrackingWorldPosition)
+        {
+            std::string address;
+            for (const auto& field : item.extraFields)
+            {
+                if (field.labelKey == "address")
+                {
+                    address = field.value;
+                    break;
+                }
+            }
+            auto& waypoint =
+                m_navigationTrackingState.rememberWaypointCandidate(
+                    item.objectId,
+                    item.trackingWorldPosition,
+                    std::move(address),
+                    item.name.empty() ? "Space target" : item.name
+                );
+            if (const auto* existing =
+                    m_navigationTrackingState.findWaypoint(item.objectId);
+                existing)
+            {
+                waypoint.role = existing->role;
+            }
+        }
+    }
+}
+
+namespace
+{
+std::string navigationCellAddress(
+    char prefix,
+    const game::navigation::CubicNavigationCell& cell
+)
+{
+    std::ostringstream out;
+    out << prefix << cell.level << "["
+        << cell.index.x << ","
+        << cell.index.y << ","
+        << cell.index.z << "]";
+    return out.str();
+}
+
+std::string waypointCandidateId(
+    char prefix,
+    const game::navigation::CubicNavigationCell& cell
+)
+{
+    std::ostringstream out;
+    out << "waypoint_candidate:" << prefix << ":"
+        << cell.level << ":"
+        << cell.index.x << ":"
+        << cell.index.y << ":"
+        << cell.index.z;
+    return out.str();
+}
+
+bool waypointHasPrefix(
+    const game::navigation::NavigationWaypoint& waypoint,
+    char prefix
+)
+{
+    const std::string expected = std::string("waypoint_candidate:") + prefix + ":";
+    return waypoint.sourceObjectId.rfind(expected, 0) == 0;
+}
+
+glm::vec4 waypointRoleColor(game::navigation::NavigationWaypointRole role)
+{
+    switch (role)
+    {
+        case game::navigation::NavigationWaypointRole::Finish:
+            return glm::vec4(1.00f, 0.82f, 0.30f, 0.90f);
+        case game::navigation::NavigationWaypointRole::Intermediate:
+            return glm::vec4(0.40f, 0.92f, 0.60f, 0.88f);
+        default:
+            return glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
+    }
+}
+
+const char* waypointRoleTypeName(game::navigation::NavigationWaypointRole role)
+{
+    switch (role)
+    {
+        case game::navigation::NavigationWaypointRole::Finish:
+            return "Finish";
+        case game::navigation::NavigationWaypointRole::Intermediate:
+            return "Intermediate";
+        default:
+            return "Space target";
+    }
+}
+
+std::vector<game::system_map::MapObjectPanelAction> waypointPanelActions(
+    const game::navigation::NavigationTrackingState& tracking,
+    const game::navigation::NavigationWaypoint& waypoint
+)
+{
+    std::vector<game::system_map::MapObjectPanelAction> actions;
+
+    const bool isFinish =
+        waypoint.role == game::navigation::NavigationWaypointRole::Finish;
+    const bool hasOtherFinish =
+        tracking.hasFinishWaypoint() && !isFinish;
+    if (!hasOtherFinish || isFinish)
+    {
+        game::system_map::MapObjectPanelAction finish;
+        finish.key = "toggle_finish";
+        finish.labelKey = isFinish ? "cancel_finish" : "set_finish";
+        finish.active = isFinish;
+        actions.push_back(std::move(finish));
+    }
+
+    game::system_map::MapObjectPanelAction intermediate;
+    intermediate.key = "toggle_intermediate";
+    intermediate.labelKey =
+        waypoint.role == game::navigation::NavigationWaypointRole::Intermediate
+            ? "cancel_intermediate"
+            : "set_intermediate";
+    intermediate.active =
+        waypoint.role == game::navigation::NavigationWaypointRole::Intermediate;
+    actions.push_back(std::move(intermediate));
+
+    return actions;
+}
+}
+
+void SystemMapRenderer::refreshGalaxyWaypointCandidate(
+    const Viewport& viewport,
+    const world::celestial::GalaxyMapSnapshot& galaxy
+)
+{
+    (void)galaxy;
+    m_galaxyInfoOverlayFrame.items.clear();
+    m_galaxyInfoOverlayFrame.trajectories.clear();
+
+    const glm::mat4 mvp =
+        m_galaxyView.projectionMatrix(viewport) *
+        m_galaxyView.viewMatrix();
+
+    for (const auto& waypoint : m_navigationTrackingState.waypoints())
+    {
+        if (!waypointHasPrefix(waypoint, 'G'))
+            continue;
+
+        game::system_map::MapObjectOverlayItem item;
+        item.objectId = waypoint.sourceObjectId;
+        item.infoKind = game::system_map::MapObjectInfoKind::WaypointCandidate;
+        item.typeName = waypointRoleTypeName(waypoint.role);
+        item.name = waypoint.address.empty() ? waypoint.displayName : waypoint.address;
+        item.drawGlyph = true;
+        item.pointerInteractive = true;
+        item.screenAffordance = true;
+        item.glyphScale = 0.78;
+        item.hitRadiusPx = 12.0;
+        item.facingScreenDirection = glm::dvec2(0.0, -1.0);
+        item.factionColor = waypointRoleColor(waypoint.role);
+        item.panelActions = waypointPanelActions(m_navigationTrackingState, waypoint);
+        item.extraFields.push_back({"address", waypoint.address, ""});
+        item.trackingWorldPosition = waypoint.worldPosition;
+        item.hasTrackingWorldPosition = true;
+
+        const glm::vec3 renderPosition =
+            m_galaxyView.positionLyToRender(
+                world::coordinates::toGalacticLy(waypoint.worldPosition)
+            );
+        bool visible = false;
+        float depth = 1.0f;
+        item.screenPx = glm::dvec2(
+            projectToScreen(renderPosition, mvp, viewport, visible, depth)
+        ) + glm::dvec2(20.0, -2.0);
+        item.visible = visible;
+        m_galaxyInfoOverlayFrame.items.push_back(std::move(item));
+    }
+
+    if (!m_galaxyWaypointCandidate.has_value() ||
+        m_galaxyView.state().selectedSystemId >= 0)
+    {
+        return;
+    }
+
+    auto item = *m_galaxyWaypointCandidate;
+    const auto& grid = m_galaxyView.state().navigationGrid;
+    if (!grid.hasSelectedCell())
+        return;
+
+    const auto& cell = grid.selectedCell();
+    if (item.objectId != waypointCandidateId('G', cell))
+        return;
+
+    const glm::vec3 renderPosition =
+        m_galaxyView.positionLyToRender(cell.center);
+    bool visible = false;
+    float depth = 1.0f;
+    item.screenPx = glm::dvec2(
+        projectToScreen(renderPosition, mvp, viewport, visible, depth)
+    ) + glm::dvec2(20.0, -2.0);
+    item.visible = visible;
+    item.drawGlyph = true;
+    item.pointerInteractive = true;
+    item.screenAffordance = true;
+    item.facingScreenDirection = glm::dvec2(0.0, -1.0);
+    item.factionColor = glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
+    const auto* waypoint = m_navigationTrackingState.findWaypoint(item.objectId);
+    if (waypoint)
+    {
+        item.typeName = waypointRoleTypeName(waypoint->role);
+        item.name = waypoint->address.empty() ? waypoint->displayName : waypoint->address;
+        item.factionColor = waypointRoleColor(waypoint->role);
+        item.panelActions = waypointPanelActions(m_navigationTrackingState, *waypoint);
+        item.extraFields.clear();
+        item.extraFields.push_back({"address", waypoint->address, ""});
+    }
+    m_galaxyWaypointCandidate = item;
+
+    const auto duplicate = std::find_if(
+        m_galaxyInfoOverlayFrame.items.begin(),
+        m_galaxyInfoOverlayFrame.items.end(),
+        [&](const game::system_map::MapObjectOverlayItem& existing)
+        {
+            return existing.objectId == item.objectId;
+        }
+    );
+    if (duplicate == m_galaxyInfoOverlayFrame.items.end())
+        m_galaxyInfoOverlayFrame.items.push_back(std::move(item));
+}
+
+void SystemMapRenderer::refreshSystemWaypointCandidate(
+    const Viewport& viewport,
+    const world::celestial::SystemMapSnapshot& system
+)
+{
+    auto& items = m_systemSceneFrame.interaction.objectOverlay.items;
+    items.erase(
+        std::remove_if(
+            items.begin(),
+            items.end(),
+            [](const game::system_map::MapObjectOverlayItem& candidate)
+            {
+                return candidate.infoKind ==
+                    game::system_map::MapObjectInfoKind::WaypointCandidate;
+            }
+        ),
+        items.end()
+    );
+
+    for (const auto& waypoint : m_navigationTrackingState.waypoints())
+    {
+        if (!waypointHasPrefix(waypoint, 'S'))
+            continue;
+
+        game::system_map::MapObjectOverlayItem item;
+        item.objectId = waypoint.sourceObjectId;
+        item.infoKind = game::system_map::MapObjectInfoKind::WaypointCandidate;
+        item.typeName = waypointRoleTypeName(waypoint.role);
+        item.name = waypoint.address.empty() ? waypoint.displayName : waypoint.address;
+        item.drawGlyph = true;
+        item.pointerInteractive = true;
+        item.screenAffordance = true;
+        item.glyphScale = 0.78;
+        item.hitRadiusPx = 12.0;
+        item.facingScreenDirection = glm::dvec2(0.0, -1.0);
+        item.factionColor = waypointRoleColor(waypoint.role);
+        item.panelActions = waypointPanelActions(m_navigationTrackingState, waypoint);
+        item.extraFields.push_back({"address", waypoint.address, ""});
+        item.trackingWorldPosition = waypoint.worldPosition;
+        item.hasTrackingWorldPosition = true;
+
+        const glm::dvec3 relativeMeters =
+            world::coordinates::fullMeters(waypoint.worldPosition) -
+            (system.systemPositionLy * world::coordinates::MetersPerLightYear);
+        const glm::dvec3 relativeAu =
+            relativeMeters / world::celestial::MetersPerAu;
+        const glm::dvec3 absoluteMap =
+            relativeAu * static_cast<double>(m_systemSceneFrame.systemScale);
+        const glm::vec3 renderPosition =
+            m_systemSceneFrame.camera.relativePosition(absoluteMap);
+
+        bool visible = false;
+        float depth = 1.0f;
+        item.screenPx = glm::dvec2(
+            projectToScreen(
+                renderPosition,
+                m_systemSceneFrame.mvp,
+                viewport,
+                visible,
+                depth
+            )
+        ) + glm::dvec2(20.0, -2.0);
+        item.visible = visible;
+        items.push_back(std::move(item));
+    }
+
+    if (!m_systemWaypointCandidate.has_value() ||
+        !m_systemView.state().navigationGrid.hasSelectedCell())
+    {
+        return;
+    }
+
+    const auto& cell = m_systemView.state().navigationGrid.selectedCell();
+    if (m_systemWaypointCandidate->objectId != waypointCandidateId('S', cell))
+        return;
+
+    auto item = *m_systemWaypointCandidate;
+    const glm::dvec3 absoluteMap =
+        cell.center * static_cast<double>(m_systemSceneFrame.systemScale);
+    const glm::vec3 renderPosition =
+        m_systemSceneFrame.camera.relativePosition(absoluteMap);
+
+    bool visible = false;
+    float depth = 1.0f;
+    item.screenPx = glm::dvec2(
+        projectToScreen(
+            renderPosition,
+            m_systemSceneFrame.mvp,
+            viewport,
+            visible,
+            depth
+        )
+    ) + glm::dvec2(20.0, -2.0);
+    item.visible = visible;
+    item.drawGlyph = true;
+    item.pointerInteractive = true;
+    item.screenAffordance = true;
+    item.facingScreenDirection = glm::dvec2(0.0, -1.0);
+    item.factionColor = glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
+    const auto* waypoint = m_navigationTrackingState.findWaypoint(item.objectId);
+    if (waypoint)
+    {
+        item.typeName = waypointRoleTypeName(waypoint->role);
+        item.name = waypoint->address.empty() ? waypoint->displayName : waypoint->address;
+        item.factionColor = waypointRoleColor(waypoint->role);
+        item.panelActions = waypointPanelActions(m_navigationTrackingState, *waypoint);
+        item.extraFields.clear();
+        item.extraFields.push_back({"address", waypoint->address, ""});
+    }
+    m_systemWaypointCandidate = item;
+
+    const auto duplicate = std::find_if(
+        items.begin(),
+        items.end(),
+        [&](const game::system_map::MapObjectOverlayItem& existing)
+        {
+            return existing.objectId == item.objectId;
+        }
+    );
+    if (duplicate == items.end())
+        items.push_back(std::move(item));
+}
+
+void SystemMapRenderer::applyWaypointAction(
+    const std::string& objectId,
+    const std::string& actionKey
+)
+{
+    // Legacy seam note: the original single-button flow called
+    // NavigationTrackingState::setFinishWaypoint().  The richer waypoint-card
+    // UI now routes finish/intermediate toggles through client-only roles.
+    auto* waypoint = m_navigationTrackingState.findWaypoint(objectId);
+    if (!waypoint)
+    {
+        const auto apply = [&](const auto& candidate) -> bool
+        {
+            if (!candidate.has_value() ||
+                candidate->objectId != objectId ||
+                !candidate->hasTrackingWorldPosition)
+            {
+                return false;
+            }
+
+            std::string address;
+            if (!candidate->extraFields.empty())
+                address = candidate->extraFields.front().value;
+
+            waypoint = &m_navigationTrackingState.rememberWaypointCandidate(
+                candidate->objectId,
+                candidate->trackingWorldPosition,
+                std::move(address),
+                "Space target"
+            );
+            return true;
+        };
+
+        if (!apply(m_systemWaypointCandidate))
+            (void)apply(m_galaxyWaypointCandidate);
+    }
+
+    if (!waypoint)
+        return;
+
+    if (actionKey == "toggle_finish")
+    {
+        m_navigationTrackingState.toggleWaypointRole(
+            objectId,
+            game::navigation::NavigationWaypointRole::Finish
+        );
+    }
+    else if (actionKey == "toggle_intermediate")
+    {
+        m_navigationTrackingState.toggleWaypointRole(
+            objectId,
+            game::navigation::NavigationWaypointRole::Intermediate
+        );
+    }
+}
+
+void SystemMapRenderer::updateActiveTacticalLocalContext(
+    const game::system_map::MapObjectOverlayItem& item
+)
+{
+    m_activeTacticalLocalTargetObjectId = item.objectId;
+    m_activeTacticalDetailCell.reset();
+
+    // A real Hub binding wins. The System/Detail semantic selection carries
+    // that identity; no synthetic cubic address is needed.
+    if (!item.navigationHubId.empty() ||
+        !item.hasNavigationSystemPositionAu ||
+        !m_systemView.state().navigationGrid.enabled())
+    {
+        return;
+    }
+
+    const auto& grid = m_systemView.state().navigationGrid;
+    const int maximumLevel = grid.definition().maximumLevel;
+    const auto index = grid.nearestIndexForPosition(
+        item.navigationSystemPositionAu,
+        maximumLevel
+    );
+    const auto cell = grid.cell(index, maximumLevel);
+
+    world::celestial::DetailSpatialCell detailCell;
+    detailCell.level = cell.level;
+    detailCell.maximumLevel = maximumLevel;
+    detailCell.x = cell.index.x;
+    detailCell.y = cell.index.y;
+    detailCell.z = cell.index.z;
+    detailCell.centerAu = cell.center;
+    detailCell.edgeAu = cell.size;
+    m_activeTacticalDetailCell = detailCell;
+}
 
 
 std::optional<game::system_map::MapIntent>
@@ -2323,6 +2825,8 @@ SystemMapRenderer::handleInput(
             glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS;
         frame.nowSeconds = inputNowSeconds;
 
+        refreshSystemWaypointCandidate(vp, system);
+
         const game::system_map::SystemMapFrameInteractionContext
             interactionContext(
                 m_systemSceneFrame.interaction,
@@ -2348,37 +2852,86 @@ SystemMapRenderer::handleInput(
 
         if (overlayPointer.consumed)
         {
+            if (!overlayPointer.actionObjectId.empty())
+                applyWaypointAction(overlayPointer.actionObjectId, overlayPointer.actionKey);
+
             if (!overlayPointer.activatedObjectId.empty())
             {
-                const auto hubPoint = std::find_if(
-                    m_systemSceneFrame.interaction.hubScreenPoints.begin(),
-                    m_systemSceneFrame.interaction.hubScreenPoints.end(),
-                    [&](const auto& point)
-                    {
-                        return point.hubId == overlayPointer.activatedObjectId;
-                    }
-                );
-
-                if (hubPoint !=
-                    m_systemSceneFrame.interaction.hubScreenPoints.end())
+                if (overlayPointer.activatedInfoKind ==
+                        game::system_map::MapObjectInfoKind::Celestial &&
+                    !overlayPointer.activatedSemanticTargetId.empty())
                 {
-                    game::system_map::SystemMapHubSelection hubSelection;
-                    hubSelection.hubId = hubPoint->hubId;
-                    hubSelection.parentBodyId = hubPoint->parentBodyId;
-                    m_systemInteraction.focusHubSelection(
+                    m_systemInteraction.focusBodySelection(
                         m_systemView,
                         interactionContext,
-                        hubSelection,
+                        overlayPointer.activatedSemanticTargetId,
                         inputNowSeconds
                     );
                 }
-                else
+                else if (overlayPointer.activatedInfoKind ==
+                         game::system_map::MapObjectInfoKind::Tactical)
                 {
-                    m_systemInteraction.focusTacticalObjectSelection(
-                        m_systemView
+                    const auto overlayItem = std::find_if(
+                        m_systemSceneFrame.interaction.objectOverlay.items.begin(),
+                        m_systemSceneFrame.interaction.objectOverlay.items.end(),
+                        [&](const auto& item)
+                        {
+                            return item.objectId ==
+                                overlayPointer.activatedObjectId;
+                        }
                     );
+
+                    const auto hubPoint = std::find_if(
+                        m_systemSceneFrame.interaction.hubScreenPoints.begin(),
+                        m_systemSceneFrame.interaction.hubScreenPoints.end(),
+                        [&](const auto& point)
+                        {
+                            return point.hubId == overlayPointer.activatedObjectId;
+                        }
+                    );
+
+                    if (hubPoint !=
+                        m_systemSceneFrame.interaction.hubScreenPoints.end())
+                    {
+                        game::system_map::SystemMapHubSelection hubSelection;
+                        hubSelection.hubId = hubPoint->hubId;
+                        hubSelection.parentBodyId = hubPoint->parentBodyId;
+                        m_systemInteraction.focusHubSelection(
+                            m_systemView,
+                            interactionContext,
+                            hubSelection,
+                            inputNowSeconds
+                        );
+                        if (overlayItem !=
+                            m_systemSceneFrame.interaction.objectOverlay.items.end())
+                        {
+                            updateActiveTacticalLocalContext(*overlayItem);
+                        }
+                    }
+                    else if (overlayItem !=
+                             m_systemSceneFrame.interaction.objectOverlay.items.end())
+                    {
+                        m_systemInteraction.focusTacticalObjectSelection(
+                            m_systemView,
+                            overlayItem->navigationHubId,
+                            overlayItem->navigationHubParentBodyId
+                        );
+                        updateActiveTacticalLocalContext(*overlayItem);
+                    }
+                    else
+                    {
+                        m_systemInteraction.focusTacticalObjectSelection(
+                            m_systemView
+                        );
+                        m_activeTacticalLocalTargetObjectId.clear();
+                        m_activeTacticalDetailCell.reset();
+                    }
                 }
             }
+
+            synchronizeNavigationTracking(
+                m_systemSceneFrame.interaction.objectOverlay
+            );
 
             m_systemView.suppressCameraGesture(
                 leftDown,
@@ -2398,12 +2951,84 @@ SystemMapRenderer::handleInput(
                 m_pendingScrollY
             );
 
+        if (result.clickedBodyId.has_value())
+        {
+            const std::string cardId =
+                "body:" + std::to_string(system.systemId) + ":" +
+                *result.clickedBodyId;
+            const auto bodyInfo = std::find_if(
+                m_systemSceneFrame.interaction.objectOverlay.items.begin(),
+                m_systemSceneFrame.interaction.objectOverlay.items.end(),
+                [&](const game::system_map::MapObjectOverlayItem& item)
+                {
+                    return item.objectId == cardId;
+                }
+            );
+            if (bodyInfo !=
+                m_systemSceneFrame.interaction.objectOverlay.items.end())
+            {
+                m_objectOverlayState.toggle(
+                    *bodyInfo,
+                    glm::dvec2(vp.width, vp.height)
+                );
+            }
+        }
+
+        if (result.clickedNavigationCell.has_value())
+        {
+            const auto& cell = *result.clickedNavigationCell;
+
+            game::system_map::MapObjectOverlayItem candidate;
+            candidate.objectId = waypointCandidateId('S', cell);
+            candidate.infoKind =
+                game::system_map::MapObjectInfoKind::WaypointCandidate;
+            candidate.typeName = "Navigation point";
+            candidate.name = "Space target";
+            candidate.drawGlyph = true;
+            candidate.pointerInteractive = true;
+            candidate.screenAffordance = true;
+            candidate.glyphScale = 0.78;
+            candidate.hitRadiusPx = 12.0;
+            candidate.facingScreenDirection = glm::dvec2(0.0, -1.0);
+            candidate.factionColor = glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
+            candidate.extraFields.push_back({
+                "address",
+                navigationCellAddress('S', cell),
+                ""
+            });
+            candidate.trackingWorldPosition =
+                world::coordinates::makeWorldPositionFromMeters(
+                    system.systemPositionLy *
+                        world::coordinates::MetersPerLightYear +
+                    cell.center * world::celestial::MetersPerAu
+                );
+            candidate.hasTrackingWorldPosition = true;
+            candidate.screenPx = glm::dvec2(localMx, localMy);
+            candidate.visible = true;
+            m_systemWaypointCandidate = candidate;
+            refreshSystemWaypointCandidate(vp, system);
+        }
+
+        synchronizeNavigationTracking(
+            m_systemSceneFrame.interaction.objectOverlay
+        );
+
         const auto& semanticSelection = m_systemView.state();
         if (!semanticSelection.selectedHubId.empty())
         {
-            m_objectOverlayState.activate(
-                semanticSelection.selectedHubId
-            );
+            // A tactical ship may intentionally retain its parent Hub only as
+            // the local-neighborhood drill target. Do not replace the active
+            // ship with that Hub on the following frame.
+            const bool tacticalObjectOwnsHubContext =
+                !m_activeTacticalLocalTargetObjectId.empty() &&
+                m_objectOverlayState.activeObjectId() ==
+                    m_activeTacticalLocalTargetObjectId;
+            if (!tacticalObjectOwnsHubContext)
+            {
+                m_objectOverlayState.activate(
+                    semanticSelection.selectedHubId
+                );
+            }
         }
         else if (!semanticSelection.selectedBodyId.empty() ||
                  semanticSelection.navigationCellExplicitlySelected)
@@ -2495,21 +3120,22 @@ SystemMapRenderer::handleInput(
             if (m_mode == Mode::Detail &&
                 !overlayPointer.activatedObjectId.empty())
             {
-                const auto hubPoint = std::find_if(
-                    m_detailPresentation.frame.hubScreenPoints.begin(),
-                    m_detailPresentation.frame.hubScreenPoints.end(),
-                    [&](const auto& point)
+                const auto item = std::find_if(
+                    objectOverlay.items.begin(),
+                    objectOverlay.items.end(),
+                    [&](const auto& candidate)
                     {
-                        return point.hubId == overlayPointer.activatedObjectId;
+                        return candidate.objectId ==
+                            overlayPointer.activatedObjectId;
                     }
                 );
 
-                if (hubPoint !=
-                    m_detailPresentation.frame.hubScreenPoints.end())
+                if (item != objectOverlay.items.end() &&
+                    !item->navigationHubId.empty())
                 {
                     m_detailView.selectHub(
-                        hubPoint->hubId,
-                        hubPoint->parentBodyId
+                        item->navigationHubId,
+                        item->navigationHubParentBodyId
                     );
                 }
                 else
@@ -2565,6 +3191,33 @@ SystemMapRenderer::handleInput(
 
     if (m_mode == Mode::Galaxy)
     {
+        refreshGalaxyWaypointCandidate(vp, galaxy);
+
+        const auto overlayPointer =
+            m_objectOverlayState.handlePointer(
+                m_galaxyInfoOverlayFrame,
+                glm::dvec2(vp.width, vp.height),
+                glm::dvec2(localMx, localMy),
+                inside,
+                leftDown
+            );
+
+        if (overlayPointer.consumed)
+        {
+            if (!overlayPointer.actionObjectId.empty())
+                applyWaypointAction(overlayPointer.actionObjectId, overlayPointer.actionKey);
+
+            synchronizeNavigationTracking(m_galaxyInfoOverlayFrame);
+            m_galaxyView.suppressCameraGesture(
+                leftDown,
+                rightDown,
+                mx,
+                my
+            );
+            m_pendingScrollY = 0.0;
+            return std::nullopt;
+        }
+
         game::system_map::GalaxyMapInputFrame frame;
         frame.viewport = vp;
         frame.mouseX = mx;
@@ -2590,6 +3243,42 @@ SystemMapRenderer::handleInput(
                 frame,
                 m_pendingScrollY
             );
+
+        if (result.clickedNavigationCell.has_value() &&
+            m_galaxyView.state().selectedSystemId < 0)
+        {
+            const auto& cell = *result.clickedNavigationCell;
+
+            game::system_map::MapObjectOverlayItem candidate;
+            candidate.objectId = waypointCandidateId('G', cell);
+            candidate.infoKind =
+                game::system_map::MapObjectInfoKind::WaypointCandidate;
+            candidate.typeName = "Navigation point";
+            candidate.name = "Space target";
+            candidate.drawGlyph = true;
+            candidate.pointerInteractive = true;
+            candidate.screenAffordance = true;
+            candidate.glyphScale = 0.78;
+            candidate.hitRadiusPx = 12.0;
+            candidate.facingScreenDirection = glm::dvec2(0.0, -1.0);
+            candidate.factionColor = glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
+            candidate.extraFields.push_back({
+                "address",
+                navigationCellAddress('G', cell),
+                ""
+            });
+            candidate.trackingWorldPosition =
+                world::coordinates::makeWorldPositionFromMeters(
+                    cell.center * world::coordinates::MetersPerLightYear
+                );
+            candidate.hasTrackingWorldPosition = true;
+            candidate.screenPx = glm::dvec2(localMx, localMy);
+            candidate.visible = true;
+            m_galaxyWaypointCandidate = candidate;
+            refreshGalaxyWaypointCandidate(vp, galaxy);
+        }
+
+        synchronizeNavigationTracking(m_galaxyInfoOverlayFrame);
 
         if (result.requestWindowFocus)
             glfwFocusWindow(window);

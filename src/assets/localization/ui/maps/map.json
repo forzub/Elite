@@ -239,6 +239,76 @@
       "zh-Hans": "阵营/所有者",
       "es": "Facción/propietario",
       "ja": "勢力/所有者"
+    },
+    "map.object_info.radius": {
+      "en": "Radius",
+      "ru": "Радиус",
+      "zh-Hans": "半径",
+      "es": "Radio",
+      "ja": "半径"
+    },
+    "map.object_info.address": {
+      "en": "Address",
+      "ru": "Адрес",
+      "zh-Hans": "地址",
+      "es": "Dirección",
+      "ja": "アドレス"
+    },
+    "map.object_info.space_target": {
+      "en": "Space target",
+      "ru": "Точка пространства",
+      "zh-Hans": "空间目标",
+      "es": "Objetivo espacial",
+      "ja": "空間目標"
+    },
+    "map.object_info.set_finish": {
+      "en": "SET AS FINISH",
+      "ru": "СДЕЛАТЬ ФИНИШЕМ",
+      "zh-Hans": "设为终点",
+      "es": "FIJAR COMO DESTINO",
+      "ja": "目的地に設定"
+    },
+    "map.navigation_hud.object": {
+      "en": "Object",
+      "ru": "Объект",
+      "zh-Hans": "目标",
+      "es": "Objeto",
+      "ja": "対象"
+    },
+    "map.navigation_hud.celestial": {
+      "en": "Celestial",
+      "ru": "Небесное тело",
+      "zh-Hans": "天体",
+      "es": "Cuerpo celeste",
+      "ja": "天体"
+    },
+    "map.navigation_hud.finish": {
+      "en": "FINISH",
+      "ru": "ФИНИШ",
+      "zh-Hans": "终点",
+      "es": "DESTINO",
+      "ja": "目的地"
+    },
+    "map.navigation_hud.waypoint": {
+      "en": "WAYPOINT",
+      "ru": "ТОЧКА МАРШРУТА",
+      "zh-Hans": "航路点",
+      "es": "PUNTO DE RUTA",
+      "ja": "ウェイポイント"
+    },
+    "map.navigation_hud.relative_speed_short": {
+      "en": "REL",
+      "ru": "ОТН",
+      "zh-Hans": "相对",
+      "es": "REL",
+      "ja": "相対"
+    },
+    "map.navigation_hud.global_speed_short": {
+      "en": "GLOB",
+      "ru": "ГЛОБ",
+      "zh-Hans": "全局",
+      "es": "GLOB",
+      "ja": "全局"
     }
   }
 }

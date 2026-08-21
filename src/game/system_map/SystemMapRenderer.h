@@ -28,6 +28,7 @@
 
 #include "src/game/navigation/NavigationAddressFormatter.h"
 #include "src/game/navigation/NavigationRegionCatalog.h"
+#include "src/game/navigation/NavigationTrackingState.h"
 
 #include "src/render/celestial/CelestialShapeMesh.h"
 
@@ -155,9 +156,19 @@ public:
     const std::string& selectedHubParentBodyId() const;
 
     bool canOpenSelectedDetail() const;
+    // Context-sensitive local drill used by the native HUB button: an actual
+    // parent Hub when the tactical target is attached, otherwise the terminal
+    // System cube containing the active free-space target.
+    bool canOpenSelectedLocalContext() const;
 
     std::optional<world::celestial::DetailSpatialCell>
     selectedTerminalDetailCell() const;
+
+    const game::navigation::NavigationTrackingState&
+    navigationTrackingState() const noexcept
+    {
+        return m_navigationTrackingState;
+    }
 
 private:
 
@@ -195,6 +206,15 @@ private:
     game::system_map::HubMapPresentation m_hubPresentation;
     game::system_map::MapObjectOverlayState m_objectOverlayState;
     game::system_map::MapObjectOverlayRenderer m_objectOverlayRenderer;
+    game::navigation::NavigationTrackingState m_navigationTrackingState;
+    game::system_map::MapObjectOverlayFrame m_galaxyInfoOverlayFrame;
+    std::optional<game::system_map::MapObjectOverlayItem>
+        m_galaxyWaypointCandidate;
+    std::optional<game::system_map::MapObjectOverlayItem>
+        m_systemWaypointCandidate;
+    std::string m_activeTacticalLocalTargetObjectId;
+    std::optional<world::celestial::DetailSpatialCell>
+        m_activeTacticalDetailCell;
     game::system_map::DetailMapSceneRenderer m_detailSceneRenderer;
     game::system_map::HubMapSceneRenderer m_hubSceneRenderer;
     game::system_map::MapCelestialRenderResources m_mapResources;
@@ -234,6 +254,29 @@ private:
 
     void updateSelectedBodyTracking(
         const game::system_map::SystemMapPresentation& presentation
+    );
+
+    void synchronizeNavigationTracking(
+        const game::system_map::MapObjectOverlayFrame& frame
+    );
+
+    void refreshGalaxyWaypointCandidate(
+        const Viewport& viewport,
+        const world::celestial::GalaxyMapSnapshot& galaxy
+    );
+
+    void refreshSystemWaypointCandidate(
+        const Viewport& viewport,
+        const world::celestial::SystemMapSnapshot& system
+    );
+
+    void applyWaypointAction(
+        const std::string& objectId,
+        const std::string& actionKey
+    );
+
+    void updateActiveTacticalLocalContext(
+        const game::system_map::MapObjectOverlayItem& item
     );
 
 private:

@@ -37,6 +37,7 @@ struct SystemMapShipSample
         game::diagnostics::HubMotionLabActorKind::None;
     int systemId = -1;
     std::string parentBodyId;
+    std::string hubId;
     world::coordinates::WorldPosition worldPosition;
     glm::dvec3 worldVelocityMps {0.0};
     glm::mat4 orientation {1.0f};
@@ -79,6 +80,7 @@ inline SystemMapShipSample makeSystemMapShipSample(
     out.motionLabKind = ship.motionLabKind;
     out.systemId = ship.transform.motion.systemId;
     out.parentBodyId = ship.transform.motion.parentBodyId;
+    out.hubId = ship.transform.motion.hubId;
     out.worldPosition = ship.transform.worldPosition;
     out.worldVelocityMps = ship.transform.motion.worldVelocityMps;
     out.orientation = ship.transform.orientation;
@@ -256,6 +258,15 @@ inline SystemMapShipSampleResult sampleSystemMapShipsAtServerTime(
                 alpha < 0.5
                     ? olderShip.transform.motion.parentBodyId
                     : newerShip->transform.motion.parentBodyId;
+        }
+
+        if (olderShip.transform.motion.hubId !=
+            newerShip->transform.motion.hubId)
+        {
+            sample.hubId =
+                alpha < 0.5
+                    ? olderShip.transform.motion.hubId
+                    : newerShip->transform.motion.hubId;
         }
 
         out.ships.push_back(std::move(sample));

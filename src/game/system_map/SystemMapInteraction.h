@@ -47,6 +47,8 @@ namespace game::system_map
     struct SystemMapInputResult
     {
         std::optional<int> systemLevelChanged;
+        std::optional<std::string> clickedBodyId;
+        std::optional<navigation::CubicNavigationCell> clickedNavigationCell;
     };
 
     /*
@@ -115,11 +117,24 @@ namespace game::system_map
             focusHub(view, context, hub, nowSeconds);
         }
 
-        // Ships/infrastructure are tactical selections, not body/cube/Hub
-        // navigation selections. Activating one must therefore clear the old
-        // semantic map focus without moving the camera/navigation anchor.
+        void focusBodySelection(
+            SystemMapView& view,
+            const SystemMapInteractionContext& context,
+            const std::string& bodyId,
+            double nowSeconds
+        ) const
+        {
+            focusBody(view, context, bodyId, nowSeconds);
+        }
+
+        // Ships/infrastructure remain tactical selections.  Activating one
+        // clears body/cube focus without moving the camera, but may preserve a
+        // parent Hub as the semantic local-neighborhood target for the HUB
+        // drill button.
         void focusTacticalObjectSelection(
-            SystemMapView& view
+            SystemMapView& view,
+            const std::string& navigationHubId = {},
+            const std::string& navigationHubParentBodyId = {}
         ) const;
 
     private:

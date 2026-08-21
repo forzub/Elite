@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <utility>
 
 bool PlayerShipView::g_debugLogNextFrame = false;
 
@@ -361,6 +362,87 @@ void PlayerShipView::renderWorldLabels(
 
 
 }
+
+void PlayerShipView::renderNavigationMarkers(
+    const std::vector<game::presentation::NavigationHudMarker>& markers,
+    const glm::mat4& viewMatrix,
+    const glm::mat4& projectionMatrix,
+    const Viewport& vp
+)
+{
+    if (markers.empty())
+        return;
+
+    std::vector<game::presentation::NavigationHudMarker> prepared;
+    prepared.reserve(markers.size());
+
+    const glm::vec2 screenCenter(
+        static_cast<float>(vp.width) * 0.5f,
+        static_cast<float>(vp.height) * 0.5f
+    );
+
+    for (const auto& marker : markers)
+    {
+        const double distance = glm::length(marker.relativePositionMeters);
+        if (!std::isfinite(distance) || distance <= 0.01)
+            continue;
+
+        const glm::dvec3 directionWorldD =
+            marker.relativePositionMeters / distance;
+        const glm::vec3 directionWorld(directionWorldD);
+        const glm::vec4 viewDirection4 =
+            viewMatrix * glm::vec4(directionWorld, 0.0f);
+
+        glm::vec2 direction2D(viewDirection4.x, -viewDirection4.y);
+        if (glm::dot(direction2D, direction2D) <= 1.0e-6f)
+            direction2D = glm::vec2(0.0f, -1.0f);
+        else
+            direction2D = glm::normalize(direction2D);
+
+        bool projected = false;
+        glm::vec2 projectedPos = screenCenter;
+
+        // Direction-only projection deliberately ignores target distance. A
+        // navigation marker must remain stable from kilometres to light-years.
+        if (viewDirection4.z < -1.0e-5f)
+        {
+            const glm::vec4 clip = projectionMatrix *
+                glm::vec4(viewDirection4.x, viewDirection4.y, viewDirection4.z, 1.0f);
+            if (std::abs(clip.w) > 1.0e-6f)
+            {
+                const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+                projectedPos = glm::vec2(
+                    (ndc.x * 0.5f + 0.5f) * static_cast<float>(vp.width),
+                    (1.0f - (ndc.y * 0.5f + 0.5f)) * static_cast<float>(vp.height)
+                );
+                projected = std::isfinite(projectedPos.x) &&
+                            std::isfinite(projectedPos.y);
+            }
+        }
+
+        auto renderMarker = marker;
+        renderMarker.edgeDir = direction2D;
+
+        if (projected && hudEdgeMapper.isInsideBoundary(projectedPos))
+        {
+            renderMarker.onScreen = true;
+            renderMarker.screenPos = projectedPos;
+        }
+        else
+        {
+            glm::vec2 edgePos;
+            if (!hudEdgeMapper.projectDirection(screenCenter, direction2D, edgePos))
+                continue;
+            renderMarker.onScreen = false;
+            renderMarker.screenPos = edgePos;
+        }
+
+        prepared.push_back(std::move(renderMarker));
+    }
+
+    m_worldLabelRenderer.renderNavigationMarkers(prepared);
+}
+
 
 //                                      ###                                    ###
 //                                       ##                                     ##

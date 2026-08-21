@@ -88,6 +88,7 @@ inline void rebuildSystemMapShipLayer(
         }
 
         object.parentBodyId = ship.parentBodyId;
+        object.parentHubId = ship.hubId;
         object.kind = SystemMapObjectKind::Ship;
         object.positionAu =
             world::coordinates::fullMeters(ship.worldPosition) /

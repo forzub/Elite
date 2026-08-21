@@ -43,6 +43,16 @@ target_include_directories(
         "${ELITE_SOURCE_ROOT}/src"
 )
 
+# The main game target enables GLM GTX extensions globally. Patch 1 added
+# NavigationHudPresentation to this standalone behavior target, which reaches
+# shared geometry headers using glm/gtx/norm.hpp. Keep this isolated build on
+# the same GLM language contract as EliteGame and the architecture contracts.
+target_compile_definitions(
+    system_map_behavior_tests
+    PRIVATE
+        GLM_ENABLE_EXPERIMENTAL
+)
+
 if(MSVC)
     target_compile_options(
         system_map_behavior_tests

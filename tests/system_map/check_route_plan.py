@@ -41,12 +41,14 @@ def main() -> int:
 
     overlay = require(
         "src/game/system_map/NavigationRouteOverlay.cpp",
-        "SHOW ON HUD",
-        "DRAG WAYPOINTS LIVE",
-        "DELETE ROUTE?",
-        "DELETE WAYPOINT?",
-        "localizedYes",
-        "localizedNo",
+        "NavigationMapTextProfile",
+        "textProfile.routeTitle",
+        "textProfile.showOnHud",
+        "textProfile.dragWaypoints",
+        "textProfile.deleteRoute",
+        "textProfile.deleteWaypoint",
+        "textProfile.yes",
+        "textProfile.no",
         "m_liveNodeDrag",
         "selectedSourceObjectId",
         "moveIntermediateWaypoint",
@@ -56,11 +58,37 @@ def main() -> int:
         "drawArrivalGlyph",
         "reorderOffsetPx",
         "focusSourceObjectId",
-        "БЕЗОП. ЗОНА",
-        "ЗВЕНО",
+        "textProfile.arrivalSafeZone",
+        "textProfile.arrivalFormation",
     )
     if "Trajectory" in overlay or "delta" in overlay.lower():
         raise AssertionError("route authoring UI should not expose solver complexity")
+    for token in ("locale.rfind", 'ru ? "', 'zh ? "', 'es ? "', 'ja ? "'):
+        if token in overlay:
+            raise AssertionError(f"route renderer bypasses localization storage: {token}")
+
+    map_localization = text("src/assets/localization/ui/maps/map.json")
+    confirmation_localization = text("src/assets/localization/ui/common/confirmation.json")
+    for key in (
+        "map.route.title",
+        "map.route.show_on_hud",
+        "map.route.waypoint",
+        "map.route.finish",
+        "map.route.drag_waypoints",
+        "map.route.delete_route",
+        "map.route.delete_waypoint",
+        "map.route.arrival.safe_zone",
+        "map.route.arrival.follow",
+        "map.route.arrival.formation",
+        "map.route.arrival.parade",
+        "map.object_info.set_rendezvous",
+        "map.object_info.cancel_finish",
+    ):
+        if key not in map_localization:
+            raise AssertionError(f"route/map localization missing {key}")
+    for key in ("confirm.yes", "confirm.no"):
+        if key not in confirmation_localization:
+            raise AssertionError(f"confirmation localization missing {key}")
 
     require(
         "src/game/system_map/SystemMapRenderer.cpp",

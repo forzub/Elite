@@ -69,6 +69,7 @@
 #include "src/game/system_map/MapCelestialRenderResources.h"
 #include "src/game/system_map/MapObjectOverlayRenderer.h"
 #include "src/game/system_map/NavigationRouteOverlay.h"
+#include "src/game/system_map/NavigationMapTextProfile.h"
 
 struct GLFWwindow;
 class SystemMapRenderer
@@ -101,6 +102,12 @@ public:
     void setNavigationNamingLocale(const std::string& locale)
     {
         m_navigationNamingLocale = locale;
+    }
+    void setNavigationMapTextProfile(
+        const game::system_map::NavigationMapTextProfile& profile
+    )
+    {
+        m_navigationMapTextProfile = profile;
     }
     void render(
         const Viewport& viewport,
@@ -661,6 +668,7 @@ private:
 
     std::string m_navigationNamingFactionId = "sol_authority";
     std::string m_navigationNamingLocale = "ru";
+    game::system_map::NavigationMapTextProfile m_navigationMapTextProfile;
 
 
 

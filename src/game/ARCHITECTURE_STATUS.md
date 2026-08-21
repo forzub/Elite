@@ -107,11 +107,17 @@ the map decomposition is not finished.
 
 ### Map presentation atomicity
 
-Map data readiness and presentation ownership are separate states. Flight is an explicit F1-F4 presentation target rather than the absence of UI; F5-F8 services and F9-F12 navigation are peer direct selectors under one `GamePresentationCoordinator`. Physical F1-F12 presses are message-backed `Window` events rather than frame-polled presentation latches. A first F9-F12 request resolves the exact player-navigation target before `sceneTarget` is armed, and the committed outgoing presentation remains visible until the requested map scene and the persistent side-panel payload for the same request generation are both prepared. The map panel owns a WebView separate from the fullscreen service front/back pair, so service navigation cannot evict or re-prewarm it. The former `playerNavigationMapEntry*` state machine is removed; `SpaceState` is only the Navigation scene producer.
+Map data readiness and presentation ownership are separate states. Flight is an explicit F1-F4 presentation target rather than the absence of UI; F5-F8 services and F9-F12 navigation are peer direct selectors under one `GamePresentationCoordinator`. Physical F1-F12 presses are message-backed `Window` events rather than frame-polled presentation latches. A first F9-F12 request resolves the exact player-navigation target before `sceneTarget` is armed, and the committed outgoing presentation remains visible until the requested map scene and persistent native side-panel model for the same request generation are both prepared. The former map-panel WebView is gone: STAR ATLAS/services/navigation render on the same GLFW/OpenGL surface, while document WebViews are confined to Main Menu/Loading/ESC session boundaries. The former `playerNavigationMapEntry*` state machine is removed; `SpaceState` is only the Navigation scene producer/coordinator.
 
 Framebuffer crossfades that remain inside the Navigation domain are renderer-owned transactions. The renderer that produced the outgoing map image captures that exact completed framebuffer before an internal map-to-map mode change; after the outgoing frame is swapped, the destination renders one full warmup frame beneath an opaque snapshot and only then begins the smootherstep blend. Cross-domain Flight/Service/Navigation ownership is not a renderer crossfade and belongs exclusively to `GamePresentationCoordinator`. Capturing an arbitrary back buffer at the beginning of a later frame is not a valid source-frame contract.
 
 The STAR ATLAS side panel is now native OpenGL presentation on the same surface as the map. The old child-HWND/WebView panel, browser command strings and fixed Close/toggle slot are removed. `SystemMapPanelPresentation` owns typed panel data/actions, `InSessionPresentationRenderer` owns the native panel, and panel input is consumed before map viewport input so button/list gestures cannot leak into camera/picking. The canonical current navigation semantics, including System-vs-Space naming, loaded-context ownership and temporary/legacy leftovers, are documented in `src/game/system_map/MAP_NAVIGATION_CONTRACT.md`.
+
+### Client navigation ownership debt
+
+The Route Plan baseline is functional, but its ownership is not yet the intended final architecture. `SystemMapRenderer` currently owns `NavigationTrackingState`, including persistent client route intent, because the first implementation was built directly from map cards/picking/HUD. This state must move to a renderer-independent client navigation workspace **before** trajectory predictor/solver/autopilot code is added. Maps then become editors/presenters of navigation state rather than its owner.
+
+Dynamic route identity has the same temporary seam: a moving ship can still be referenced through a materialized runtime object/`EntityId` path. `EntityId` is not durable. The ownership patch must introduce typed route target references using `ShipInstanceId` for ships, stable Hub/body IDs for authored objects, and spatial addresses for free-space nodes; current `EntityId` remains only a transient resolution handle.
 
 ## Render-style boundary
 
@@ -444,8 +450,11 @@ localization categories and may grow without a manifest edit.
 WebUI does not own a second translation file. `Application` loads the unified
 localization tree once and exposes an in-memory `runtime_ui.json` bundle through
 `HtmlUiServer`; native OpenGL UI and WebUI therefore share the same source and
-fallback rules. Release packaging may later compile the development JSON tree
-into a single binary/obfuscated localization package without changing callers.
+fallback rules. Native map/object/Route overlays are also resolved through this
+service: `SpaceState` builds a `NavigationMapTextProfile` from localization keys
+and renderers consume that profile without `ru/zh/es/ja` branches. Release
+packaging may later compile the development JSON tree into a single
+binary/obfuscated localization package without changing callers.
 
 Manufacturer-specific cockpit legends remain a distinct future presentation
 language domain from the global UI locale. The current global cockpit/service
@@ -536,7 +545,7 @@ language.
 - `WireBinaryCodec.h` is generic machinery only: primitives, bounded strings/vectors, variants, GLM vectors/matrices, validated enums and registered schemas. It has no ship/map-specific field list.
 - `WireDataCodec.h` serializes one complete logical `SimulationSnapshot` or `MapResponse` to one raw byte buffer with an explicit data-schema version. Adding normal replicated fields should not require changes to framing, TCP, ServerRunner or compression.
 - Compression is a separate byte-to-byte seam (`IWireCompressor`). It never sees entity/module counts or DTO types. M8B ships a `NoWireCompression` passthrough plus compression envelope metadata so M8C can transport the exact same pipeline and a future LZ4/Zstd implementation can be swapped in below serialization.
-- The data-plane contract test exercises a sparse snapshot with lifecycle removals, kinematics, reference frames, signal/radar/damage state, ship systems, module/repair/detached-fragment graphs, objects, hubs, session navigation and all four MapResponse variants. It also checks schema-version rejection, vector/enum bounds, compression opacity and fragmented frame reconstruction.
+- The data-plane contract test exercises a sparse snapshot with lifecycle removals, kinematics, reference frames, signal/radar/damage state, ship systems, module/repair/detached-fragment graphs, objects, hubs, session navigation and the remaining Galaxy-only `MapResponse` variant. System/Detail/Hub no longer have dedicated map responses. It also checks schema-version rejection, vector/enum bounds, compression opacity and fragmented frame reconstruction.
 
 ### Multiplayer Stage M8C — real Asio TCP transport boundary
 
@@ -590,6 +599,9 @@ language.
 ### Multiplayer Stage M8E.3 — durable authoritative universe persistence
 
 M8E.3 owns one persistence architecture for identity **and** mutable universe state. It must not create a short-lived account database that later has to be merged with a different world-save system. The planned shape is a `PersistenceCoordinator` over separate account/player/ship/universe repositories, with a common versioned checkpoint/recovery contract.
+
+
+**Current implementation status:** this is still a planned boundary, not a partially hidden storage implementation. No `PersistenceCoordinator`, account/player/ship/universe store interfaces, durable `UniverseId`, checkpoint worker, password hasher/recovery backend or ship-continuity record exists in runtime code yet. Existing account/player/ship registries and mutable universe facts remain process-memory state. The preparatory work that *is* implemented is identity separation, explicit auth/admission, materialized-vs-stable ship identity and Scheduled/Coarse/Prewarm/Active lifecycle vocabulary.
 
 Durable keys are stable domain IDs (`AccountId`, `PlayerId`, `ShipInstanceId`, authored/static IDs and future stable dynamic-object IDs). Materialized `EntityId` is deliberately transient and is reconstructed when a durable record enters `Prewarm/Active`. This keeps Scheduled/Coarse/Prewarm/Active as lifecycle states of one persistent object rather than independent identities.
 

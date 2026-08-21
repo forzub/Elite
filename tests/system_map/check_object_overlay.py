@@ -194,7 +194,16 @@ def main() -> int:
         "map.object_info.radius",
         "map.object_info.address",
         "map.object_info.space_target",
+        "map.object_info.navigation_point",
+        "map.object_info.set_waypoint",
+        "map.object_info.set_rendezvous",
+        "map.object_info.cancel_waypoint",
         "map.object_info.set_finish",
+        "map.object_info.cancel_finish",
+        "map.object_info.set_intermediate",
+        "map.object_info.cancel_intermediate",
+        "map.object_info.finish_target",
+        "map.object_info.intermediate_target",
         "map.navigation_hud.object",
         "map.navigation_hud.celestial",
         "map.navigation_hud.finish",
@@ -204,6 +213,12 @@ def main() -> int:
     ):
         require(key in raw, f"localization missing {key}")
     require(data is not None, "map localization JSON failed to parse")
+    overlay_renderer = (ROOT / "src/game/system_map/MapObjectOverlayRenderer.cpp").read_text(encoding="utf-8")
+    require("NavigationMapTextProfile" in overlay_renderer,
+            "native object overlay does not consume shared map text profile")
+    for token in ("locale.rfind", 'ru ? "', 'zh ? "', 'es ? "', 'ja ? "'):
+        require(token not in overlay_renderer,
+                f"object overlay renderer bypasses localization storage: {token}")
 
     require_text(
         "src/game/client/ClientSystemMapShipSampler.h",
@@ -376,7 +391,7 @@ def main() -> int:
 
     require_text(
         "src/game/system_map/NavigationRouteOverlay.cpp",
-        "SHOW ON HUD",
+        "textProfile.showOnHud",
         "moveIntermediateWaypoint",
         "setFinishArrivalMode",
         "removeRouteWaypoint",

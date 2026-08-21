@@ -37,6 +37,7 @@
 - `[x]` Звёздные системы изолированы по отдельным файлам; имя файла не является authoritative ID.
 - `[x]` Повреждённый JSON пропускается без падения всей локализации; конфликты/ошибки должны диагностироваться.
 - `[x]` WebUI и native OpenGL UI используют общий источник локализации.
+- `[x]` Native map/object/Route overlays получают разрешённый `NavigationMapTextProfile` из `LocalizationService`; route actions, delete confirmations и Arrival Profile больше не содержат `ru/zh/es/ja` ветвлений в renderer C++.
 - `[x]` Работают English / Russian / Simplified Chinese / Spanish / Japanese и fallback на English.
 - `[x]` CJK font fallback работает в native renderer.
 - `[x]` Три системы созвездий: Western/IAU, curated Traditional Chinese, Hawaiian Star Lines.
@@ -122,7 +123,7 @@ Operational contract, режимы запуска и ручная проверк
 
 ### Multiplayer / session authority foundation
 
-**Статус: `[x]` transport/process + reconnect-control + explicit authentication/admission baseline и M8E.2g polish защищены automated/manual acceptance. Текущий приоритет — UI/auth platform до server persistence: global font/resource-pack foundation готов, второй slice добавляет shared `EliteUiKit`, explicit navigation shell и `ClientPreferencesStore`; после полного service/account/social shell возвращаемся к M8E.3 durable authoritative universe persistence.**
+**Статус: `[x]` transport/process + reconnect-control + explicit authentication/admission baseline защищены automated/manual acceptance. Identity/runtime backbone готов, но M8E.3 storage implementation ещё не начат. Текущий активный client-navigation track дошёл до Route Plan baseline; перед predictor нужен короткий ownership/stable-identity cleanup. Server/world persistence остаётся отдельным незакрытым фундаментальным track и понадобится до durable offline orders/autopilot/cross-restart universe continuity.**
 
 Server runtime принимает несколько transport/session endpoints в одном authoritative execution context. Session больше не является идентичностью корабля: текущая authority chain — `ServerSessionId -> PlayerId -> ControlRegistry -> EntityId`, а persistent assignment игрока хранит `PlayerId -> ShipInstanceId`; `ShipInstanceRegistry` связывает стабильный экземпляр корабля с текущей materialized `EntityId`. `m_playerNavigation` удалён; legacy `m_playerId` остаётся compatibility alias старых single-player/debug paths. **Один global active celestial-system context** всё ещё остаётся отдельным ограничением world runtime до multi-system stage.
 
@@ -172,12 +173,15 @@ Server runtime принимает несколько transport/session endpoints
 - `[x]` В маневровых/non-cruise режимах tactical marker показывает собственную скорость цели в текущем travel frame игрока — в той же системе, что `|localVelocityMps|` HUD самого игрока, а не скорость сближения; в `Cruise`/`JumpTransit` показывается global speed, а без валидного общего frame используется честный global fallback.
 - `[x]` System Map поддерживает несколько одновременно открытых карточек звёзд/планет/лун; они являются client-only tracked celestial targets и дают cockpit markers без speed/azimuth/elevation rows.
 - `[x]` Galaxy/System пустой navigation cube, а также карточки физических объектов могут добавлять route intent; корабль как промежуточная динамическая цель имеет отдельный смысл `ROUTE RENDEZVOUS` (перехват + match velocity + продолжение), а не замороженную координату. `FINISH` единственный: пока он существует, другие карточки не предлагают второй Finish, а карточка самого Finish не предлагает `WAYPOINT`.
-- `[x]` Единый Route Container присутствует на Galaxy/System/Detail/Hub: сворачивается, хранит Finish последним, поддерживает drag reorder промежуточных точек с короткой settle-анимацией, master/per-point HUD toggles и двухшаговое подтверждение удаления точки/маршрута. Double-click по route card возвращает authored Galaxy/System/Detail/Hub context, при необходимости сначала загружая другую систему/пустой сектор, и раскрывает соответствующую инфокарточку.
+- `[x]` Единый Route Container присутствует на Galaxy/System/Detail/Hub: сворачивается, хранит Finish последним, поддерживает **live drag reorder** промежуточных точек (строка следует за мышью и порядок меняется до отпускания), master/per-point HUD toggles и явное подтверждение удаления в footer (`удалить маршрут/точку? -> да/нет`). Single-click/drag выделяет строку и соответствующий видимый map marker; double-click возвращает authored Galaxy/System/Detail/Hub context, при необходимости сначала загружая другую систему/пустой сектор, и раскрывает соответствующую инфокарточку.
 - `[x]` Route point на карте — зелёный квадрат с центральной точкой и route-order number; cockpit route marker также всегда показывает порядковый номер, включая Finish как последнюю точку.
-- `[x]` Finish хранит простой Arrival Profile с четырьмя квадратными локализованными режимами: `SAFE`, `FOLLOW`, `FORMATION`, `PARADE`; динамические Ship/Hub/Infrastructure цели сохраняют semantic target ID, а текущая WorldPosition служит обновляемым fallback.
+- `[x]` Finish хранит простой Arrival Profile с четырьмя квадратными локализованными режимами: `SAFE`, `FOLLOW`, `FORMATION`, `PARADE`; текущая WorldPosition служит обновляемым fallback. **Текущий долг:** ship-target identity ещё может сводиться к materialized runtime `EntityId`; это недостаточно для долговечного маршрута и должно быть заменено typed `ShipInstanceId` в следующем ownership patch.
 - `[x]` Tracking/cards/waypoints не реплицируются на сервер: это персональная навигационная память клиента. Серверный command boundary понадобится только при реальном исполнении маршрута/autopilot.
+- `[~]` **Ownership debt:** `NavigationTrackingState`/Route Plan пока физически принадлежит `SystemMapRenderer`. Это допустило быстрый map/HUD prototype, но predictor/solver/autopilot не должны зависеть от renderer. Следующий PATCH A выносит state в отдельный client navigation workspace и оставляет карты только editor/presentation layer.
+- `[x]` Native map/route UI снова подчиняется единому localization contract: строки Route Container, Arrival Profile, object-card actions и confirmations хранятся в `assets/localization`, а C++ renderers получают уже разрешённый `NavigationMapTextProfile` без `ru/zh/es/ja` ветвлений.
 - `[~]` Позиция tracked celestial body вне открытой System Map пока хранится последним client-composed sample; отдельный continuous ephemeris resolver для произвольных отслеживаемых систем ещё не сделан.
-- `[ ]` Следующий слой: общий trajectory predictor (включая пунктир выбранного объекта), route/intercept solver с obstacle/safety constraints и terminal state matching; после solver — прямое drag-перемещение route points между соседними равноразмерными кубами/3D trajectory constraints, затем autopilot/formation controller. Финальный продуктовый контракт: `src/game/navigation/ROUTE_NAVIGATION_CONTRACT.md`.
+- `[ ]` **Ближайший шаг перед predictor:** PATCH A — renderer-independent navigation ownership + typed stable route target identity (`ShipInstanceId`/Hub/body/spatial address).
+- `[ ]` После PATCH A: общий trajectory predictor (включая пунктир выбранного объекта), route/intercept solver с obstacle/safety constraints и terminal state matching; после solver — прямое drag-перемещение route points между соседними равноразмерными кубами/3D trajectory constraints, затем autopilot/formation controller. Финальный продуктовый контракт: `src/game/navigation/ROUTE_NAVIGATION_CONTRACT.md`.
 
 ### Космический компас
 
@@ -215,7 +219,7 @@ Server runtime принимает несколько transport/session endpoints
 
 ## 8. Траектории на картах
 
-**Статус: `[ ]` отдельная крупная механика, практически ещё не реализована.**
+**Статус: `[~]` data seam уже существует (`MapObjectTrajectory` + History/Prediction/Planned), но predictor/query producers и реальная отрисовка trajectory samples ещё не реализованы.**
 
 Карты должны уметь по запросу отвечать на вопросы:
 
@@ -485,6 +489,8 @@ both clients are observers/predictors
 
 M8E.3 не делится на «сохранение аккаунтов» и отдельную позднюю «базу мира». Нужен один persistence subsystem с общими правилами версии/атомарности/восстановления, но с раздельными repositories, чтобы identity, player/ship ownership и universe state не слиплись в god-object.
 
+**Фактический статус текущего кода:** M8E.3 пока **не начат как storage implementation**. В runtime ещё нет `PersistenceCoordinator`, `IAccountStore`, `IPlayerStore`, `IShipStore`, `IUniverseStore`, `IPasswordHasher`, durable `UniverseId` или `ShipContinuityRecord`. `AccountRegistry`, player/ship ownership и mutable universe state живут в памяти процесса; restart dedicated server не является восстановлением того же authoritative universe. То, что уже готово перед M8E.3 — только правильные domain IDs/registry boundaries, explicit auth protocol/UI, runtime lifecycle modes и client preferences/remembered-device seam.
+
 Планируемая граница:
 
 - `PersistenceCoordinator` — lifecycle checkpoint/load/recovery, не владеет gameplay rules;
@@ -535,12 +541,12 @@ Local game и dedicated server должны использовать тот же
 
 ## 15. Крупные будущие блоки и текущий приоритет
 
-Локализация и sky cultures на текущем этапе уже закрыты. Крупная дорожная карта содержит несколько связанных архитектурных направлений плюс отдельные будущие gameplay/content blocks; первый архитектурный блок уже закрыт на текущем уровне:
+Базовая localization platform и sky cultures закрыты, но новые native UI функции обязаны сразу идти через общий localization storage; после Route Plan был устранён кратковременный regression с hardcoded map/route translations. Крупная дорожная карта содержит несколько связанных архитектурных направлений плюс отдельные будущие gameplay/content blocks:
 
 1. `[x]` **Client/server presentation migration основных карт + headless server boundary** — StarAtlas ownership, Galaxy/System/Details/Hub composition и отдельный `EliteServer` target готовы.
 2. `[~]` **Multiplayer transport/session foundation** — M1–M8E.2f готовы, graphical two-client/reconnect/auth-form baseline вручную подтверждён. M8E.2g закрывает account-handle validation, dev reset и responsive authorization UI перед persistence.
 3. `[~]` **UI/auth client platform + single-surface in-session presentation — финальный client-side polish перед M8E.3.** Binary `elite_ui.pak`, WebUI font/license registry, `EliteUiKit`, `ClientPreferencesStore` и `GamePresentationCoordinator` готовы. F1-F12 проходят через message-backed `Window` queue -> direct router -> one OpenGL scene surface: Flight F1-F4, native Services F5-F8, Navigation F9-F12. Browser front/back surfaces теперь ограничены Main Menu / Loading / ESC и не участвуют в игровых F-переходах. Local ESC pause и Multiplayer non-pause остаются отдельной session policy. Текущая acceptance-задача — полный MinGW gate и ручная Windows проверка отсутствия split-generation/background кадров на rapid F1-F12/Service<->Map/ESC transitions, а также native font coverage для перенесённых C++ панелей. Password/recovery/sign-out backend ждёт M8E.3b.
-4. `[ ]` **M8E.3 durable authoritative universe persistence — главный следующий архитектурный блок.** Persistence проектируется сразу для identity + world, а не как отдельная временная account DB: stable AccountHandle/password/device/recovery records + `AccountId/PlayerId/ShipInstanceId` ownership, universe epoch, dynamic ship/object/NPC records и lifecycle state живут за versioned storage boundary; transient `EntityId` не сохраняется как durable key.
+4. `[ ]` **M8E.3 durable authoritative universe persistence — главный незакрытый server/world фундаментальный track.** Он идёт отдельно от ближайшего client-navigation PATCH A. Persistence проектируется сразу для identity + world, а не как отдельная временная account DB: stable AccountHandle/password/device/recovery records + `AccountId/PlayerId/ShipInstanceId` ownership, universe epoch, dynamic ship/object/NPC records и lifecycle state живут за versioned storage boundary; transient `EntityId` не сохраняется как durable key.
 5. `[~]` **Persistent universe execution: реальные корабли + Scheduled/Coarse/Prewarm/Active materialization** — Stage 4A/4B materialized execution и coarse motion-control cadences готовы; M8E.3 даст durable records/checkpoints, после чего Scheduled lifecycle/materialize-collapse сможет работать поверх постоянного universe state.
 6. `[ ]` **Навигационный compass / azimuth / elevation + модель определения абсолютных координат**.
 7. `[ ]` **J и полноценный inter-system / multi-system runtime**.
@@ -553,7 +559,7 @@ Local game и dedicated server должны использовать тот же
 
 На текущем этапе:
 
-1. Локализация — **закрыта**.
+1. Локализация — **platform закрыта; Route/map cleanup синхронизирован**: все текущие native Route/Object overlay строки снова берутся из `assets/localization`, renderer-side language branches запрещены guard'ами.
 2. Звёздное небо/созвездия — **закрыты**.
 3. `Ctrl+F10` flight-mode switching — **исправлено**.
 4. Client/server presentation ownership основных карт — **закрыт на текущем этапе**.
@@ -566,7 +572,9 @@ Local game и dedicated server должны использовать тот же
 11. Stage M8E graphical baseline — **ручная проверка пройдена**: два отдельных `EliteGame --connect` одновременно работают на одном dedicated server, получают разные persistent player/ship identities и видят друг друга на расстоянии 50 м. Process-local WebUI/WebView2 и Win32 GLFW event-pump issue закрыты на текущем Windows runtime уровне.
 12. Persistent identity Phase 1 — **готов как in-memory backbone**: `PlayerId`, `ShipInstanceId`, `ServerSessionId`, `EntityId`, `PlayerRegistry`, `ShipInstanceRegistry`, `ControlRegistry`, session welcome/snapshot identity fields. M8E.2 добавил explicit account sign-in/register поверх этого backbone; durable authoritative universe storage всё ещё отсутствует.
 13. Canonical build/runtime recovery — **закрыт**: runtime paths единичны (`build/EliteGame.exe`, `build/headless_server/EliteServer.exe`), scratch builds изолированы под `build/tests/`, полный MinGW ready gate и ручной reconnect/two-client acceptance зелёные.
-14. Stage M8E.2 explicit authentication/admission — **protocol/auth boundary готов; M8E.2g закрывает polish перед persistence**: AccountHandle становится server-known stable login identifier с shared validation, typed rejection остаётся в Multiplayer form, short-window UI адаптивен, а `--reset-auth-state` фиксирует dev/test reset contract. Password/recovery не имитируются времянкой и формально описаны до storage implementation. После этого рабочий блок — **M8E.3 durable authoritative universe persistence**, начиная с `AccountHandle + password/device/recovery records -> AccountId -> PlayerId -> owned/current ShipInstanceId` и продолжая mutable world state/lifecycle.
+14. Stage M8E.2 explicit authentication/admission — **protocol/auth boundary готов**: AccountHandle server-known, typed rejection/REGISTER/SIGN IN работают; password/recovery/sign-out durability ждут M8E.3b.
+15. Route Plan — **рабочий client-side baseline готов**, включая live reorder, cross-map recall, selected-route highlight, numbered map/HUD markers и Arrival Profile. Перед trajectory predictor нужен короткий **PATCH A: Navigation ownership + stable route identity**, потому что Route Plan пока принадлежит `SystemMapRenderer`, а dynamic ship route target не гарантирует durable `ShipInstanceId`.
+16. **M8E.3 durable authoritative universe persistence остаётся незакрытым server/world фундаментом и кодом ещё не начат.** Он не блокирует client-side ownership cleanup/predictor prototype, но должен быть завершён до того, как durable autopilot/orders, offline ship continuity и cross-restart route/formation state будут считаться production-механикой.
 
 ---
 

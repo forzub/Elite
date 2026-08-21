@@ -526,7 +526,11 @@ ServerSessionId
 
 M8E.2 теперь фиксирует explicit authentication/admission boundary: стабильный AccountHandle + bearer token хранятся/выбираются на клиенте, server хранит handle + SHA-256 token digest, `SIGN IN` не создаёт account, `REGISTER` является явной операцией, duplicate login rejected typed reason'ом, а gameplay authority IDs остаются server-owned.
 
-Следующий этап — **M8E.3 durable authoritative universe persistence**, а не отдельная временная account DB или новый selector hack:
+Следующий этап — **M8E.3 durable authoritative universe persistence**, а не отдельная временная account DB или новый selector hack.
+
+**Что ещё реально отсутствует в коде:** storage/coordinator/repository layer пока не создан вообще: нет `PersistenceCoordinator`, `IAccountStore`, `IPlayerStore`, `IShipStore`, `IUniverseStore`, schema migrations/checkpoint worker, durable `UniverseId`, password KDF/recovery backend или ship continuity records. Текущие account/player/ship/world registries — in-memory. Поэтому restart сервера сегодня не является persistence acceptance и не должен трактоваться как восстановление того же мира.
+
+План M8E.3:
 
 1. общий `PersistenceCoordinator` задаёт schema/version/checkpoint/recovery lifecycle, но identity/player/ship/world остаются раздельными repositories;
 2. первый slice сохраняет `credential digest -> AccountId -> PlayerId -> owned/current ShipInstanceId` атомарно и восстанавливает ownership после restart server;

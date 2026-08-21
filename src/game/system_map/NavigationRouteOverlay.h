@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/NavigationTrackingState.h"
+#include "src/game/system_map/NavigationMapTextProfile.h"
 #include "src/render/types/Viewport.h"
 
 namespace game::system_map
@@ -102,7 +103,7 @@ public:
         const Viewport& viewport,
         const game::navigation::NavigationTrackingState& tracking,
         const NavigationRouteOverlayState& state,
-        const std::string& locale
+        const NavigationMapTextProfile& textProfile
     ) const;
 };
 

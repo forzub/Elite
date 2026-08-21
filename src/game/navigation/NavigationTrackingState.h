@@ -206,7 +206,7 @@ public:
         std::string sourceObjectId,
         const world::coordinates::WorldPosition& worldPosition,
         std::string address,
-        std::string displayName = "Space target"
+        std::string displayName = {}
     )
     {
         if (sourceObjectId.empty())
@@ -331,7 +331,7 @@ public:
     NavigationWaypoint& setFinishWaypoint(
         const world::coordinates::WorldPosition& worldPosition,
         std::string address,
-        std::string displayName = "Finish"
+        std::string displayName = {}
     )
     {
         auto& waypoint = rememberWaypointCandidate(

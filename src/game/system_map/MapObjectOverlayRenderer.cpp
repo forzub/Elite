@@ -392,43 +392,41 @@ const MapObjectOverlayItem* findItem(
 } // namespace
 
 std::string MapObjectOverlayRenderer::text(
-    const std::string& locale,
-    const char* key
+    const NavigationMapTextProfile& textProfile,
+    const std::string& key
 )
 {
-    const bool ru = locale.rfind("ru", 0) == 0;
-    const bool zh = locale.rfind("zh", 0) == 0;
-    const bool es = locale.rfind("es", 0) == 0;
-    const bool ja = locale.rfind("ja", 0) == 0;
+    if (key == "type") return textProfile.type;
+    if (key == "name") return textProfile.name;
+    if (key == "local_speed") return textProfile.localSpeed;
+    if (key == "global_speed") return textProfile.globalSpeed;
+    if (key == "azimuth") return textProfile.azimuth;
+    if (key == "elevation") return textProfile.elevation;
+    if (key == "owner") return textProfile.owner;
+    if (key == "radius") return textProfile.radius;
+    if (key == "address") return textProfile.address;
+    if (key == "set_waypoint") return textProfile.setWaypoint;
+    if (key == "set_rendezvous") return textProfile.setRendezvous;
+    if (key == "cancel_waypoint") return textProfile.cancelWaypoint;
+    if (key == "set_finish") return textProfile.setFinish;
+    if (key == "cancel_finish") return textProfile.cancelFinish;
+    if (key == "set_intermediate") return textProfile.setIntermediate;
+    if (key == "cancel_intermediate") return textProfile.cancelIntermediate;
+    if (key == "space_target") return textProfile.spaceTarget;
+    if (key == "finish_target") return textProfile.finishTarget;
+    if (key == "intermediate_target") return textProfile.intermediateTarget;
 
-    const std::string k(key);
-    if (k == "type") return ru ? "Тип" : zh ? "类型" : es ? "Tipo" : ja ? "種類" : "Type";
-    if (k == "name") return ru ? "Название" : zh ? "名称" : es ? "Nombre" : ja ? "名称" : "Name";
-    if (k == "local_speed") return ru ? "Локальная скорость" : zh ? "局部速度" : es ? "Velocidad local" : ja ? "ローカル速度" : "Local speed";
-    if (k == "global_speed") return ru ? "Глобальная скорость" : zh ? "全局速度" : es ? "Velocidad global" : ja ? "グローバル速度" : "Global speed";
-    if (k == "azimuth") return ru ? "Азимут" : zh ? "方位角" : es ? "Acimut" : ja ? "方位角" : "Azimuth";
-    if (k == "elevation") return ru ? "Элевация" : zh ? "仰角" : es ? "Elevación" : ja ? "仰角" : "Elevation";
-    if (k == "owner") return ru ? "Фракция/владелец" : zh ? "阵营/所有者" : es ? "Facción/propietario" : ja ? "勢力/所有者" : "Faction/owner";
-    if (k == "radius") return ru ? "Радиус" : zh ? "半径" : es ? "Radio" : ja ? "半径" : "Radius";
-    if (k == "address") return ru ? "Адрес" : zh ? "地址" : es ? "Dirección" : ja ? "アドレス" : "Address";
-    if (k == "set_waypoint") return ru ? "ДОБАВИТЬ В МАРШРУТ" : zh ? "加入航线" : es ? "AÑADIR A RUTA" : ja ? "ルートに追加" : "ADD WAYPOINT";
-    if (k == "set_rendezvous") return ru ? "ВСТРЕЧА НА МАРШРУТЕ" : zh ? "航线会合" : es ? "ENCUENTRO EN RUTA" : ja ? "航路上で合流" : "ROUTE RENDEZVOUS";
-    if (k == "cancel_waypoint") return ru ? "УБРАТЬ ИЗ МАРШРУТА" : zh ? "从航线移除" : es ? "QUITAR DE RUTA" : ja ? "ルートから削除" : "REMOVE WAYPOINT";
-    if (k == "set_finish") return ru ? "СДЕЛАТЬ ФИНИШЕМ" : zh ? "设为终点" : es ? "FIJAR DESTINO" : ja ? "目的地に設定" : "SET AS FINISH";
-    if (k == "cancel_finish") return ru ? "ОТМЕНИТЬ ФИНИШ" : zh ? "取消终点" : es ? "CANCELAR DESTINO" : ja ? "終点を解除" : "CANCEL FINISH";
-    if (k == "set_intermediate") return ru ? "СДЕЛАТЬ ПРОМЕЖУТОЧНОЙ" : zh ? "设为中间点" : es ? "FIJAR INTERMEDIA" : ja ? "中継点に設定" : "SET INTERMEDIATE";
-    if (k == "cancel_intermediate") return ru ? "ОТМЕНИТЬ ПРОМЕЖУТОЧНУЮ" : zh ? "取消中间点" : es ? "CANCELAR INTERMEDIA" : ja ? "中継点を解除" : "CANCEL INTERMEDIATE";
-    if (k == "space_target") return ru ? "Точка пространства" : zh ? "空间目标" : es ? "Objetivo espacial" : ja ? "空間目標" : "Space target";
-    if (k == "finish_target") return ru ? "Финиш" : zh ? "终点" : es ? "Destino" : ja ? "終点" : "Finish";
-    if (k == "intermediate_target") return ru ? "Промежуточная" : zh ? "中间点" : es ? "Intermedia" : ja ? "中継点" : "Intermediate";
-    return k;
+    // Internal semantic keys are never intended as user-facing strings. If a
+    // producer introduces a new key without extending the profile, show the
+    // key loudly rather than silently selecting a language in the renderer.
+    return key;
 }
 
 void MapObjectOverlayRenderer::render(
     const Viewport& viewport,
     const MapObjectOverlayFrame& frame,
     MapObjectOverlayState& state,
-    const std::string& locale
+    const NavigationMapTextProfile& textProfile
 ) const
 {
     const ScreenSpaceState previousGlState = beginScreenSpace(viewport);
@@ -550,7 +548,7 @@ void MapObjectOverlayRenderer::render(
         }
         else if (item->infoKind == MapObjectInfoKind::WaypointCandidate)
         {
-            panelTitle = item->name.empty() ? text(locale, "space_target") : item->name;
+            panelTitle = item->name.empty() ? text(textProfile, "space_target") : item->name;
         }
         else
         {
@@ -634,20 +632,20 @@ void MapObjectOverlayRenderer::render(
 
         const std::string typeValue =
             item->typeName.empty() ? "—" : item->typeName;
-        drawField(text(locale, "type"), typeValue);
+        drawField(text(textProfile, "type"), typeValue);
 
         if (item->infoKind == MapObjectInfoKind::Tactical)
         {
-            drawField(text(locale, speedKey), formatSpeed(speed) + " m/s");
-            drawField(text(locale, "azimuth"), hasBearing ? formatAngle(azimuth) : "—");
-            drawField(text(locale, "elevation"), hasBearing ? formatAngle(elevation) : "—");
+            drawField(text(textProfile, speedKey), formatSpeed(speed) + " m/s");
+            drawField(text(textProfile, "azimuth"), hasBearing ? formatAngle(azimuth) : "—");
+            drawField(text(textProfile, "elevation"), hasBearing ? formatAngle(elevation) : "—");
             if (!item->owner.empty())
-                drawField(text(locale, "owner"), item->owner);
+                drawField(text(textProfile, "owner"), item->owner);
         }
 
         for (const auto& field : item->extraFields)
         {
-            const std::string label = text(locale, field.labelKey.c_str());
+            const std::string label = text(textProfile, field.labelKey);
             const std::string value = field.unit.empty()
                 ? field.value
                 : field.value + " " + field.unit;
@@ -679,7 +677,7 @@ void MapObjectOverlayRenderer::render(
                 fill = glm::vec4(item->factionColor.r * 0.22f, item->factionColor.g * 0.22f, item->factionColor.b * 0.22f, 0.96f);
             drawRect(actionTopLeft, actionWidth, actionHeight, fill);
             drawRectOutline(actionTopLeft, actionWidth, actionHeight, border, it->active ? 1.4f : 1.0f);
-            const std::string actionText = text(locale, it->labelKey.c_str());
+            const std::string actionText = text(textProfile, it->labelKey);
             textRenderer.textDrawPx(
                 actionText,
                 static_cast<float>(actionTopLeft.x + 8.0),

@@ -323,6 +323,132 @@
       "zh-Hans": "全局",
       "es": "GLOB",
       "ja": "全局"
+    },
+    "map.object_info.set_rendezvous": {
+      "en": "ROUTE RENDEZVOUS",
+      "ru": "ВСТРЕЧА НА МАРШРУТЕ",
+      "zh-Hans": "航线会合",
+      "es": "ENCUENTRO EN RUTA",
+      "ja": "航路上で合流"
+    },
+    "map.object_info.cancel_finish": {
+      "en": "CANCEL FINISH",
+      "ru": "ОТМЕНИТЬ ФИНИШ",
+      "zh-Hans": "取消终点",
+      "es": "CANCELAR DESTINO",
+      "ja": "終点を解除"
+    },
+    "map.object_info.set_intermediate": {
+      "en": "SET INTERMEDIATE",
+      "ru": "СДЕЛАТЬ ПРОМЕЖУТОЧНОЙ",
+      "zh-Hans": "设为中间点",
+      "es": "FIJAR INTERMEDIA",
+      "ja": "中継点に設定"
+    },
+    "map.object_info.cancel_intermediate": {
+      "en": "CANCEL INTERMEDIATE",
+      "ru": "ОТМЕНИТЬ ПРОМЕЖУТОЧНУЮ",
+      "zh-Hans": "取消中间点",
+      "es": "CANCELAR INTERMEDIA",
+      "ja": "中継点を解除"
+    },
+    "map.object_info.finish_target": {
+      "en": "Finish",
+      "ru": "Финиш",
+      "zh-Hans": "终点",
+      "es": "Destino",
+      "ja": "終点"
+    },
+    "map.object_info.intermediate_target": {
+      "en": "Intermediate",
+      "ru": "Промежуточная",
+      "zh-Hans": "中间点",
+      "es": "Intermedia",
+      "ja": "中継点"
+    },
+    "map.route.title": {
+      "en": "ROUTE",
+      "ru": "МАРШРУТ",
+      "zh-Hans": "路线",
+      "es": "RUTA",
+      "ja": "ルート"
+    },
+    "map.route.show_on_hud": {
+      "en": "SHOW ON HUD",
+      "ru": "ПОКАЗЫВАТЬ НА HUD",
+      "zh-Hans": "在 HUD 显示",
+      "es": "MOSTRAR EN HUD",
+      "ja": "HUDに表示"
+    },
+    "map.route.waypoint": {
+      "en": "WAYPOINT",
+      "ru": "ТОЧКА",
+      "zh-Hans": "航路点",
+      "es": "PUNTO",
+      "ja": "ウェイポイント"
+    },
+    "map.route.finish": {
+      "en": "FINISH",
+      "ru": "ФИНИШ",
+      "zh-Hans": "终点",
+      "es": "DESTINO",
+      "ja": "目的地"
+    },
+    "map.route.drag_waypoints": {
+      "en": "DRAG WAYPOINTS LIVE",
+      "ru": "ПЕРЕТАСКИВАЙ ТОЧКИ МЫШЬЮ",
+      "zh-Hans": "拖动航路点调整顺序",
+      "es": "ARRASTRA LOS PUNTOS",
+      "ja": "ポイントをドラッグ"
+    },
+    "map.route.delete_route": {
+      "en": "DELETE ROUTE?",
+      "ru": "УДАЛИТЬ МАРШРУТ?",
+      "zh-Hans": "删除路线？",
+      "es": "¿ELIMINAR RUTA?",
+      "ja": "ルートを削除？"
+    },
+    "map.route.delete_waypoint": {
+      "en": "DELETE WAYPOINT?",
+      "ru": "УДАЛИТЬ ТОЧКУ?",
+      "zh-Hans": "删除航点？",
+      "es": "¿ELIMINAR PUNTO?",
+      "ja": "ポイントを削除？"
+    },
+    "map.route.arrival.safe_zone": {
+      "en": "SAFE ZONE",
+      "ru": "БЕЗОП. ЗОНА",
+      "zh-Hans": "安全区",
+      "es": "ZONA SEGURA",
+      "ja": "安全圏"
+    },
+    "map.route.arrival.follow": {
+      "en": "FOLLOW",
+      "ru": "СЛЕДОМ",
+      "zh-Hans": "跟随",
+      "es": "SEGUIR",
+      "ja": "追従"
+    },
+    "map.route.arrival.formation": {
+      "en": "FORMATION",
+      "ru": "В ЗВЕНО",
+      "zh-Hans": "编队",
+      "es": "FORMACIÓN",
+      "ja": "編隊"
+    },
+    "map.route.arrival.parade": {
+      "en": "PARADE",
+      "ru": "ПАРАД",
+      "zh-Hans": "齐飞",
+      "es": "DESFILE",
+      "ja": "隊列"
+    },
+    "map.object_info.navigation_point": {
+      "en": "Navigation point",
+      "ru": "Навигационная точка",
+      "zh-Hans": "导航点",
+      "es": "Punto de navegación",
+      "ja": "航法ポイント"
     }
   }
 }

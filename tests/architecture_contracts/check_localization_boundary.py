@@ -181,6 +181,27 @@ def main() -> int:
     require("LocalizationService m_localization" in app_h, "Application lost global localization owner")
     require("assets/localization/world/navigation_regions" in map_cpp and "loadFromDirectory" in nav_cpp,
             "navigation-region translations are not in the unified localization tree")
+    route_overlay = text("src/game/system_map/NavigationRouteOverlay.cpp")
+    object_overlay = text("src/game/system_map/MapObjectOverlayRenderer.cpp")
+    space_state = text("src/game/SpaceState.cpp")
+    require("NavigationMapTextProfile" in route_overlay + object_overlay + space_state,
+            "native map UI lost localization-profile handoff")
+    for required in (
+        "map.route.title",
+        "map.route.delete_route",
+        "map.route.arrival.safe_zone",
+        "map.object_info.set_rendezvous",
+        "confirm.yes",
+        "confirm.no",
+    ):
+        require(required in ui, f"native map localization key disappeared: {required}")
+    for renderer_name, renderer_body in (
+        ("NavigationRouteOverlay.cpp", route_overlay),
+        ("MapObjectOverlayRenderer.cpp", object_overlay),
+    ):
+        for token in ("locale.rfind", 'ru ? "', 'zh ? "', 'es ? "', 'ja ? "'):
+            require(token not in renderer_body,
+                    f"{renderer_name} contains per-language presentation branch {token!r}")
 
     # Active player-facing WebUI pages stay on the shared runtime bundle.
     for rel in (

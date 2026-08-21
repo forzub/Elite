@@ -158,9 +158,11 @@ The first Route Plan layer now provides:
 - persistent waypoint/Finish intent independent of source-card lifetime;
 - one Finish plus ordered intermediate waypoints;
 - Finish-last route ordering;
-- drag reorder for intermediate waypoints with a short settle animation;
+- live drag reorder for intermediate waypoints: the row follows the pointer and
+  route order updates while the button is held;
 - master and per-node HUD visibility;
-- two-step deletion confirmation for nodes and whole route;
+- explicit footer confirmation for deletion (`DELETE ROUTE/WAYPOINT?` + localized
+  `YES/NO`) rather than a hidden second-click gesture;
 - a shared collapsible route container rendered on Galaxy/System/Detail/Hub;
 - contextual `WAYPOINT` / ship `ROUTE RENDEZVOUS` / single `FINISH` actions on
   eligible physical-object/body cards and existing empty-space cube cards;
@@ -169,17 +171,38 @@ The first Route Plan layer now provides:
 - four localized arrival-profile pictograms/data modes: SAFE, FOLLOW,
   FORMATION, PARADE;
 - green square-with-center-dot route glyphs and explicit route order on map/HUD;
-- double-click authored-context recall across Galaxy/System/Detail/Hub.
+- single-click/drag selection is highlighted both in the Route Container and on
+  the visible map object; double-click recalls authored context across
+  Galaxy/System/Detail/Hub;
+- native route/map labels are resolved by the global `LocalizationService` from
+  `assets/localization`; renderers contain no per-language text branches.
+
+### IMPLEMENTATION DEBT BEFORE THE SOLVER
+
+The current baseline is intentionally not yet the final ownership boundary:
+
+- `NavigationTrackingState` (including Route Plan data) is still owned by
+  `SystemMapRenderer`, which made the first map/HUD implementation fast but is
+  the wrong dependency direction for predictor/solver/autopilot code;
+- dynamic route targets currently use the map/runtime object identity path and
+  may resolve to a materialized `EntityId`. This is not sufficient as durable
+  ship identity because `EntityId` may change after dematerialization/restart;
+- the next architecture patch must move route/tracking ownership into a
+  renderer-independent client navigation workspace and introduce typed stable
+  target references (`ShipInstanceId`, Hub/body IDs, or spatial address).
 
 ## NEXT
 
 The next implementation layers are intentionally separate:
 
-1. common trajectory predictor and projected/dashed trajectory rendering;
-2. route/intercept solver with obstacle/safety constraints and arrival-state
+1. **navigation ownership + stable route identity cleanup**: move Route Plan /
+   tracking out of `SystemMapRenderer`, introduce typed stable target refs and
+   keep renderer/map code as editor/presentation only;
+2. common trajectory predictor and projected/dashed trajectory rendering;
+3. route/intercept solver with obstacle/safety constraints and arrival-state
    matching;
-3. direct map dragging between equal-level neighbouring cubes and later 3D
+4. direct map dragging between equal-level neighbouring cubes and later 3D
    trajectory bending through solver constraints;
-4. autopilot execution;
-5. formation controller using leader-relative slots rather than copied thruster
+5. autopilot execution;
+6. formation controller using leader-relative slots rather than copied thruster
    commands.

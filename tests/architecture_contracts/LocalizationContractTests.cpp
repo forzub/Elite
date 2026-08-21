@@ -45,6 +45,10 @@ int main()
     expect(localization.setLocale("ru"), "Russian locale must be selectable");
     expect(localization.text("main.new_local_game", "BAD") == "НОВАЯ ЛОКАЛЬНАЯ ИГРА",
            "Russian UI lookup changed");
+    expect(localization.text("map.route.delete_route", "BAD") == "УДАЛИТЬ МАРШРУТ?",
+           "Russian native route UI lookup changed");
+    expect(localization.text("map.object_info.set_rendezvous", "BAD") == "ВСТРЕЧА НА МАРШРУТЕ",
+           "Russian native map action lookup changed");
     expect(localization.catalogName("systems", "0", "BAD") == "Солнечная система",
            "Russian system catalog lookup changed");
 
@@ -57,6 +61,8 @@ int main()
            "Chinese hub catalog lookup changed");
     expect(localization.text("overlay.player", "BAD") == "玩家",
            "native map-overlay UI lookup changed");
+    expect(localization.text("map.route.arrival.safe_zone", "BAD") == "安全区",
+           "Chinese route-arrival UI lookup changed");
     expect(localization.text("cockpit.mode.newtonian", "BAD") == "牛顿模式",
            "native cockpit-service UI lookup changed");
 

@@ -36,6 +36,20 @@
       "zh-Hans": "退出到菜单",
       "es": "SALIR AL MENÚ",
       "ja": "メニューへ戻る"
+    },
+    "confirm.yes": {
+      "en": "YES",
+      "ru": "ДА",
+      "zh-Hans": "是",
+      "es": "SÍ",
+      "ja": "はい"
+    },
+    "confirm.no": {
+      "en": "NO",
+      "ru": "НЕТ",
+      "zh-Hans": "否",
+      "es": "NO",
+      "ja": "いいえ"
     }
   }
 }

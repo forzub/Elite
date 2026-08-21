@@ -1953,7 +1953,7 @@ void SystemMapRenderer::render(
             vp,
             m_galaxyInfoOverlayFrame,
             m_objectOverlayState,
-            m_navigationNamingLocale
+            m_navigationMapTextProfile
         );
     }
     else if (m_mode == Mode::System)
@@ -1965,7 +1965,7 @@ void SystemMapRenderer::render(
             vp,
             m_systemSceneFrame.interaction.objectOverlay,
             m_objectOverlayState,
-            m_navigationNamingLocale
+            m_navigationMapTextProfile
         );
     }
     else if (m_mode == Mode::Detail)
@@ -1977,7 +1977,7 @@ void SystemMapRenderer::render(
             vp,
             m_detailPresentation.frame.objectOverlay,
             m_objectOverlayState,
-            m_navigationNamingLocale
+            m_navigationMapTextProfile
         );
     }
     else if (m_mode == Mode::Hub)
@@ -1989,7 +1989,7 @@ void SystemMapRenderer::render(
             vp,
             m_hubPresentation.frame.objectOverlay,
             m_objectOverlayState,
-            m_navigationNamingLocale
+            m_navigationMapTextProfile
         );
     }
 
@@ -1997,7 +1997,7 @@ void SystemMapRenderer::render(
         vp,
         m_navigationTrackingState,
         m_routeOverlayState,
-        m_navigationNamingLocale
+        m_navigationMapTextProfile
     );
 
     drawNavigationCoordinateOverlay(
@@ -2252,7 +2252,7 @@ void SystemMapRenderer::synchronizeNavigationTracking(
                 item.objectId,
                 item.trackingWorldPosition,
                 std::move(address),
-                item.name.empty() ? "Space target" : item.name
+                item.name.empty() ? m_navigationMapTextProfile.spaceTarget : item.name
             );
         }
     }
@@ -2309,16 +2309,19 @@ glm::vec4 waypointRoleColor(game::navigation::NavigationWaypointRole role)
     }
 }
 
-const char* waypointRoleTypeName(game::navigation::NavigationWaypointRole role)
+const std::string& waypointRoleTypeName(
+    game::navigation::NavigationWaypointRole role,
+    const game::system_map::NavigationMapTextProfile& textProfile
+)
 {
     switch (role)
     {
         case game::navigation::NavigationWaypointRole::Finish:
-            return "Finish";
+            return textProfile.finishTarget;
         case game::navigation::NavigationWaypointRole::Intermediate:
-            return "Intermediate";
+            return textProfile.intermediateTarget;
         default:
-            return "Space target";
+            return textProfile.spaceTarget;
     }
 }
 
@@ -2379,7 +2382,7 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
         game::system_map::MapObjectOverlayItem item;
         item.objectId = waypoint.sourceObjectId;
         item.infoKind = game::system_map::MapObjectInfoKind::WaypointCandidate;
-        item.typeName = waypointRoleTypeName(waypoint.role);
+        item.typeName = waypointRoleTypeName(waypoint.role, m_navigationMapTextProfile);
         item.name = waypoint.address.empty() ? waypoint.displayName : waypoint.address;
         item.drawGlyph = true;
         item.pointerInteractive = true;
@@ -2441,7 +2444,7 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
     const auto* waypoint = m_navigationTrackingState.findWaypoint(item.objectId);
     if (waypoint)
     {
-        item.typeName = waypointRoleTypeName(waypoint->role);
+        item.typeName = waypointRoleTypeName(waypoint->role, m_navigationMapTextProfile);
         item.name = waypoint->address.empty() ? waypoint->displayName : waypoint->address;
         item.factionColor = waypointRoleColor(waypoint->role);
         item.routeDisplayIndex =
@@ -2494,7 +2497,7 @@ void SystemMapRenderer::refreshSystemWaypointCandidate(
         game::system_map::MapObjectOverlayItem item;
         item.objectId = waypoint.sourceObjectId;
         item.infoKind = game::system_map::MapObjectInfoKind::WaypointCandidate;
-        item.typeName = waypointRoleTypeName(waypoint.role);
+        item.typeName = waypointRoleTypeName(waypoint.role, m_navigationMapTextProfile);
         item.name = waypoint.address.empty() ? waypoint.displayName : waypoint.address;
         item.drawGlyph = true;
         item.pointerInteractive = true;
@@ -2573,7 +2576,7 @@ void SystemMapRenderer::refreshSystemWaypointCandidate(
     const auto* waypoint = m_navigationTrackingState.findWaypoint(item.objectId);
     if (waypoint)
     {
-        item.typeName = waypointRoleTypeName(waypoint->role);
+        item.typeName = waypointRoleTypeName(waypoint->role, m_navigationMapTextProfile);
         item.name = waypoint->address.empty() ? waypoint->displayName : waypoint->address;
         item.factionColor = waypointRoleColor(waypoint->role);
         item.routeDisplayIndex =
@@ -3480,8 +3483,8 @@ SystemMapRenderer::handleInput(
             candidate.objectId = waypointCandidateId('S', cell);
             candidate.infoKind =
                 game::system_map::MapObjectInfoKind::WaypointCandidate;
-            candidate.typeName = "Navigation point";
-            candidate.name = "Space target";
+            candidate.typeName = m_navigationMapTextProfile.navigationPoint;
+            candidate.name = m_navigationMapTextProfile.spaceTarget;
             candidate.drawGlyph = true;
             candidate.pointerInteractive = true;
             candidate.screenAffordance = true;
@@ -3761,8 +3764,8 @@ SystemMapRenderer::handleInput(
             candidate.objectId = waypointCandidateId('G', cell);
             candidate.infoKind =
                 game::system_map::MapObjectInfoKind::WaypointCandidate;
-            candidate.typeName = "Navigation point";
-            candidate.name = "Space target";
+            candidate.typeName = m_navigationMapTextProfile.navigationPoint;
+            candidate.name = m_navigationMapTextProfile.spaceTarget;
             candidate.drawGlyph = true;
             candidate.pointerInteractive = true;
             candidate.screenAffordance = true;

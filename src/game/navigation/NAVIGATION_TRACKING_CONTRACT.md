@@ -145,7 +145,10 @@ Current route-node data includes:
 - navigation address/display name;
 - semantic anchor kind (free space/body/Hub/ship/infrastructure);
 - authored map/system/body/Hub context for future map recall;
-- stable semantic target identity for dynamic targets;
+- semantic target identity for dynamic targets; **current implementation debt:**
+  ship targets can still resolve through materialized runtime `EntityId`, so the
+  next ownership patch must replace this with a typed durable `ShipInstanceId`
+  reference while retaining `EntityId` only as a transient presentation handle;
 - master/per-node HUD visibility;
 - terminal `NavigationArrivalProfile` for Finish.
 
@@ -172,13 +175,20 @@ Galaxy/System/Detail/Hub render the same `NavigationRouteOverlay` state. The
 container is intentionally simple and visual:
 
 - collapse state survives map switching;
-- intermediate rows are drag-reorderable;
+- intermediate rows use live drag-reorder while the mouse button is held;
 - Finish is always last;
 - one master HUD checkbox gates route markers while each row has its own HUD
   checkbox;
-- node deletion and whole-route deletion use a second-click confirmation;
+- node/route deletion is confirmed in the footer with localized `YES / NO`;
+- clicking or dragging a row selects it and highlights the corresponding visible
+  map point/object;
 - Finish exposes four square arrival-mode pictograms: SAFE, FOLLOW, FORMATION,
   PARADE.
+
+Current ownership is temporary: `SystemMapRenderer` still owns
+`NavigationTrackingState`. Predictor/solver/autopilot must not depend on a
+renderer, so the next architecture patch moves this state into a dedicated
+client navigation workspace and lets maps/HUD consume/edit it.
 
 The full end-state (prediction, solver, arrival constraints and autopilot) is
 defined in `ROUTE_NAVIGATION_CONTRACT.md`.
@@ -207,8 +217,12 @@ asset/service. Current localization keys include:
 - `map.object_info.address`
 - `map.object_info.space_target`
 - `map.object_info.set_waypoint`
+- `map.object_info.set_rendezvous`
 - `map.object_info.cancel_waypoint`
 - `map.object_info.set_finish`
+- `map.object_info.cancel_finish`
+- `map.route.*` (Route Container labels, deletion prompts and arrival modes)
+- `confirm.yes` / `confirm.no`
 - `map.navigation_hud.object`
 - `map.navigation_hud.celestial`
 - `map.navigation_hud.finish`
@@ -217,7 +231,8 @@ asset/service. Current localization keys include:
 - `map.navigation_hud.global_speed_short`
 
 Dynamic object/body names remain sourced from the existing localized/catalog
-presentation data where available.
+presentation data where available. Native map renderers receive a resolved
+`NavigationMapTextProfile`; they do not branch on `ru/zh/es/ja` themselves.
 
 ## TEMPORARY
 

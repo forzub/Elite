@@ -4772,5 +4772,41 @@ void SpaceState::applyClientCatalogLocalization()
     overlayText.packedFormat =
         loc.text("nav.format.packed", "VERY SECRET CODE");
     m_systemMapRenderer.setNavigationOverlayTextProfile(overlayText);
+
+    game::system_map::NavigationMapTextProfile mapText;
+    mapText.type = loc.text("map.object_info.type");
+    mapText.name = loc.text("map.object_info.name");
+    mapText.localSpeed = loc.text("map.object_info.local_speed");
+    mapText.globalSpeed = loc.text("map.object_info.global_speed");
+    mapText.azimuth = loc.text("map.object_info.azimuth");
+    mapText.elevation = loc.text("map.object_info.elevation");
+    mapText.owner = loc.text("map.object_info.owner");
+    mapText.radius = loc.text("map.object_info.radius");
+    mapText.address = loc.text("map.object_info.address");
+    mapText.setWaypoint = loc.text("map.object_info.set_waypoint");
+    mapText.setRendezvous = loc.text("map.object_info.set_rendezvous");
+    mapText.cancelWaypoint = loc.text("map.object_info.cancel_waypoint");
+    mapText.setFinish = loc.text("map.object_info.set_finish");
+    mapText.cancelFinish = loc.text("map.object_info.cancel_finish");
+    mapText.setIntermediate = loc.text("map.object_info.set_intermediate");
+    mapText.cancelIntermediate = loc.text("map.object_info.cancel_intermediate");
+    mapText.spaceTarget = loc.text("map.object_info.space_target");
+    mapText.finishTarget = loc.text("map.object_info.finish_target");
+    mapText.intermediateTarget = loc.text("map.object_info.intermediate_target");
+    mapText.navigationPoint = loc.text("map.object_info.navigation_point");
+    mapText.routeTitle = loc.text("map.route.title");
+    mapText.showOnHud = loc.text("map.route.show_on_hud");
+    mapText.waypoint = loc.text("map.route.waypoint");
+    mapText.finish = loc.text("map.route.finish");
+    mapText.dragWaypoints = loc.text("map.route.drag_waypoints");
+    mapText.deleteRoute = loc.text("map.route.delete_route");
+    mapText.deleteWaypoint = loc.text("map.route.delete_waypoint");
+    mapText.yes = loc.text("confirm.yes");
+    mapText.no = loc.text("confirm.no");
+    mapText.arrivalSafeZone = loc.text("map.route.arrival.safe_zone");
+    mapText.arrivalFollow = loc.text("map.route.arrival.follow");
+    mapText.arrivalFormation = loc.text("map.route.arrival.formation");
+    mapText.arrivalParade = loc.text("map.route.arrival.parade");
+    m_systemMapRenderer.setNavigationMapTextProfile(mapText);
     m_systemMapRenderer.setNavigationNamingLocale(loc.locale());
 }

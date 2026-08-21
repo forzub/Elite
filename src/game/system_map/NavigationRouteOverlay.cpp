@@ -113,66 +113,20 @@ bool contains(const glm::dvec2& p, const glm::dvec2& tl, double w, double h)
     return p.x >= tl.x && p.x <= tl.x + w && p.y >= tl.y && p.y <= tl.y + h;
 }
 
-std::string arrivalLabel(
+const std::string& arrivalLabel(
     game::navigation::NavigationArrivalMode mode,
-    const std::string& locale
+    const NavigationMapTextProfile& textProfile
 )
 {
-    const bool ru = locale.rfind("ru", 0) == 0;
-    const bool zh = locale.rfind("zh", 0) == 0;
-    const bool es = locale.rfind("es", 0) == 0;
-    const bool ja = locale.rfind("ja", 0) == 0;
     using Mode = game::navigation::NavigationArrivalMode;
     switch (mode)
     {
-        case Mode::SafeZone:
-            return ru ? "БЕЗОП. ЗОНА" : zh ? "安全区" : es ? "ZONA SEGURA" : ja ? "安全圏" : "SAFE ZONE";
-        case Mode::Follow:
-            return ru ? "СЛЕДОМ" : zh ? "跟随" : es ? "SEGUIR" : ja ? "追従" : "FOLLOW";
-        case Mode::Formation:
-            return ru ? "В ЗВЕНО" : zh ? "编队" : es ? "FORMACIÓN" : ja ? "編隊" : "FORMATION";
-        case Mode::ParadeFormation:
-            return ru ? "ПАРАД" : zh ? "齐飞" : es ? "DESFILE" : ja ? "隊列" : "PARADE";
+        case Mode::SafeZone: return textProfile.arrivalSafeZone;
+        case Mode::Follow: return textProfile.arrivalFollow;
+        case Mode::Formation: return textProfile.arrivalFormation;
+        case Mode::ParadeFormation: return textProfile.arrivalParade;
     }
-    return ru ? "БЕЗОП. ЗОНА" : "SAFE ZONE";
-}
-
-
-
-std::string localizedYes(const std::string& locale)
-{
-    const bool ru = locale.rfind("ru", 0) == 0;
-    const bool zh = locale.rfind("zh", 0) == 0;
-    const bool es = locale.rfind("es", 0) == 0;
-    const bool ja = locale.rfind("ja", 0) == 0;
-    return ru ? "ДА" : zh ? "是" : es ? "SÍ" : ja ? "はい" : "YES";
-}
-
-std::string localizedNo(const std::string& locale)
-{
-    const bool ru = locale.rfind("ru", 0) == 0;
-    const bool zh = locale.rfind("zh", 0) == 0;
-    const bool es = locale.rfind("es", 0) == 0;
-    const bool ja = locale.rfind("ja", 0) == 0;
-    return ru ? "НЕТ" : zh ? "否" : es ? "NO" : ja ? "いいえ" : "NO";
-}
-
-std::string deleteRoutePrompt(const std::string& locale)
-{
-    const bool ru = locale.rfind("ru", 0) == 0;
-    const bool zh = locale.rfind("zh", 0) == 0;
-    const bool es = locale.rfind("es", 0) == 0;
-    const bool ja = locale.rfind("ja", 0) == 0;
-    return ru ? "УДАЛИТЬ МАРШРУТ?" : zh ? "删除路线？" : es ? "¿ELIMINAR RUTA?" : ja ? "ルートを削除？" : "DELETE ROUTE?";
-}
-
-std::string deleteWaypointPrompt(const std::string& locale)
-{
-    const bool ru = locale.rfind("ru", 0) == 0;
-    const bool zh = locale.rfind("zh", 0) == 0;
-    const bool es = locale.rfind("es", 0) == 0;
-    const bool ja = locale.rfind("ja", 0) == 0;
-    return ru ? "УДАЛИТЬ ТОЧКУ?" : zh ? "删除航点？" : es ? "¿ELIMINAR PUNTO?" : ja ? "ポイントを削除？" : "DELETE WAYPOINT?";
+    return textProfile.arrivalSafeZone;
 }
 
 void drawArrivalGlyph(
@@ -637,13 +591,12 @@ void NavigationRouteOverlayRenderer::render(
     const Viewport& viewport,
     const game::navigation::NavigationTrackingState& tracking,
     const NavigationRouteOverlayState& state,
-    const std::string& locale
+    const NavigationMapTextProfile& textProfile
 ) const
 {
     if (!tracking.hasRoute())
         return;
 
-    const bool ru = locale.rfind("ru", 0) == 0;
     const auto& top = state.topLeftPx();
     const double height = state.panelHeight(tracking);
     const ScreenSpaceState previous = beginScreenSpace(viewport);
@@ -655,7 +608,7 @@ void NavigationRouteOverlayRenderer::render(
     outline(top, NavigationRouteOverlayState::WidthPx, height, kBorder, 1.2f);
 
     text.textDrawPx(
-        ru ? "МАРШРУТ" : "ROUTE",
+        textProfile.routeTitle,
         static_cast<float>(top.x + 10.0),
         static_cast<float>(top.y + 20.0),
         12,
@@ -697,7 +650,7 @@ void NavigationRouteOverlayRenderer::render(
     if (tracking.routeVisibleOnHud())
         rect(masterBox + glm::dvec2(3.0), 8.0, 8.0, kWaypoint);
     text.textDrawPx(
-        ru ? "ПОКАЗЫВАТЬ НА HUD" : "SHOW ON HUD",
+        textProfile.showOnHud,
         static_cast<float>(top.x + 31.0),
         static_cast<float>(y + 19.0),
         10,
@@ -744,7 +697,7 @@ void NavigationRouteOverlayRenderer::render(
             accent
         );
         text.textDrawPx(
-            finish ? (ru ? "ФИНИШ" : "FINISH") : (ru ? "ТОЧКА" : "WAYPOINT"),
+            finish ? textProfile.finish : textProfile.waypoint,
             static_cast<float>(top.x + 54.0),
             static_cast<float>(visualY + 17.0),
             10,
@@ -791,7 +744,7 @@ void NavigationRouteOverlayRenderer::render(
                 drawArrivalGlyph(iconTop, iconSize, modes[i], active ? accent : kMuted);
             }
             text.textDrawPx(
-                arrivalLabel(waypoint->arrival.mode, locale),
+                arrivalLabel(waypoint->arrival.mode, textProfile),
                 static_cast<float>(top.x + 186.0),
                 static_cast<float>(iconsTop + 19.0),
                 9,
@@ -808,8 +761,8 @@ void NavigationRouteOverlayRenderer::render(
     if (deleteRouteArmed || deleteNodeArmed)
     {
         const std::string prompt = deleteRouteArmed
-            ? deleteRoutePrompt(locale)
-            : deleteWaypointPrompt(locale);
+            ? textProfile.deleteRoute
+            : textProfile.deleteWaypoint;
         text.textDrawPx(
             prompt,
             static_cast<float>(top.x + 9.0),
@@ -822,14 +775,14 @@ void NavigationRouteOverlayRenderer::render(
         outline(yesTop, 28.0, 18.0, kDanger, 1.0f);
         outline(noTop, 28.0, 18.0, kMuted, 1.0f);
         text.textDrawPx(
-            localizedYes(locale),
+            textProfile.yes,
             static_cast<float>(yesTop.x + 4.0),
             static_cast<float>(yesTop.y + 13.0),
             8,
             kDanger
         );
         text.textDrawPx(
-            localizedNo(locale),
+            textProfile.no,
             static_cast<float>(noTop.x + 5.0),
             static_cast<float>(noTop.y + 13.0),
             8,
@@ -839,7 +792,7 @@ void NavigationRouteOverlayRenderer::render(
     else
     {
         text.textDrawPx(
-            ru ? "ПЕРЕТАСКИВАЙ ТОЧКИ МЫШЬЮ" : "DRAG WAYPOINTS LIVE",
+            textProfile.dragWaypoints,
             static_cast<float>(top.x + 9.0),
             static_cast<float>(top.y + height - 10.0),
             9,

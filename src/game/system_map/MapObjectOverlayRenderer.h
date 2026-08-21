@@ -3,6 +3,7 @@
 #include <string>
 
 #include "src/game/system_map/MapObjectOverlay.h"
+#include "src/game/system_map/NavigationMapTextProfile.h"
 #include "src/render/types/Viewport.h"
 
 namespace game::system_map
@@ -15,13 +16,13 @@ public:
         const Viewport& viewport,
         const MapObjectOverlayFrame& frame,
         MapObjectOverlayState& state,
-        const std::string& locale
+        const NavigationMapTextProfile& textProfile
     ) const;
 
 private:
     static std::string text(
-        const std::string& locale,
-        const char* key
+        const NavigationMapTextProfile& textProfile,
+        const std::string& key
     );
 };
 

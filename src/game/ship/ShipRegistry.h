@@ -1,12 +1,9 @@
 #pragma once
 #include <string>
-#include <cstdint>
 
 #include "src/galaxy/Actors.h"   // ActorId / ActorCode
 #include "src/game/ship/ShipRoleType.h"   // ActorId / ActorCode
-
-
-using ShipInstanceId = uint64_t;
+#include "src/game/identity/ShipInstanceId.h"
 
 // Юридическая и социальная идентичность корабля
 struct ShipRegistry

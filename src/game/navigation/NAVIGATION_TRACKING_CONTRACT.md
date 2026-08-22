@@ -13,17 +13,18 @@ Status labels:
 - **NOT IMPLEMENTED** — architecture seam exists, but behaviour must not be
   inferred from it.
 
-## PROTECTED: client-only ownership
+## PROTECTED: renderer-independent client navigation ownership
 
-`NavigationTrackingState` is player-private client state.
+`SpaceState` owns one `ClientNavigationWorkspace`; `SystemMapRenderer`, cockpit
+HUD presentation and future predictor/solver/autopilot layers receive/use that
+workspace but do not own it.
 
-It owns three navigation-memory classes:
+The workspace deliberately separates two lifetimes:
 
-1. tracked tactical objects — ships, Hubs and other map tactical objects;
-2. tracked celestial bodies — stars, planets and moons selected through System
-   Map body cards;
-3. route waypoints — spatial destinations which do not have to correspond to a
-   physical object.
+1. `TargetTrackingState` — transient tracked tactical/celestial targets derived
+   from open information cards;
+2. `RoutePlan` — persistent player route intent, independent from card lifetime
+   and renderer lifetime.
 
 This state is presentation/navigation intent. It is not authoritative world
 state and must not be replicated to the server merely because the player opens,
@@ -37,7 +38,7 @@ not become server state.
 
 Tactical object cards continue to be owned by `MapObjectOverlayState`.
 `SystemMapRenderer::synchronizeNavigationTracking()` reconciles the open-card
-set into `NavigationTrackingState`.
+set into `ClientNavigationWorkspace::targets()`.
 
 Consequences:
 
@@ -92,8 +93,8 @@ Marker invariants:
 Current visual vocabulary:
 
 - tactical object — fixed-size translucent outline triangle, always pointing
-  upward in screen space and never scaling with distance; its map track number
-  is textual metadata rather than geometry inside the symbol;
+  upward in screen space and never scaling with distance; for ships only, the
+  map target/track number is textual metadata rather than geometry inside the symbol;
 - celestial body — diamond marker;
 - route waypoint — open/corner marker, visually distinct from physical objects;
   intermediate route markers carry their current route sequence number.
@@ -104,7 +105,8 @@ For tactical markers the current text layout is:
 - optional object name below the type;
 - relative/global speed to the left;
 - target track number directly below speed, sharing the same right-aligned data
-  column;
+  column **for ships only**; Hubs and celestial bodies never receive target
+  numbers;
 - distance below the marker.
 
 Exact pixel dimensions and artwork are presentation tuning, not navigation
@@ -138,17 +140,19 @@ removes it.
 
 Current route-node data includes:
 
-- stable client-local route-node ID and source object/card identity;
+- stable client-local route-node ID plus a separate mutable presentation/card
+  binding; drag/delete/HUD/reorder operations use the route-node ID, not the
+  presentation object ID;
 - semantic role (`Finish`, `Intermediate`, or unassigned transient candidate);
 - intermediate sequence number;
 - precise `WorldPosition` fallback;
 - navigation address/display name;
-- semantic anchor kind (free space/body/Hub/ship/infrastructure);
+- typed `RouteTargetRef`: free space uses canonical `WorldPosition`, ships use
+  durable `ShipInstanceId`, Hubs/bodies use stable domain IDs, and infrastructure
+  must have a stable domain ID before it can become route intent;
 - authored map/system/body/Hub context for future map recall;
-- semantic target identity for dynamic targets; **current implementation debt:**
-  ship targets can still resolve through materialized runtime `EntityId`, so the
-  next ownership patch must replace this with a typed durable `ShipInstanceId`
-  reference while retaining `EntityId` only as a transient presentation handle;
+- `EntityId` is never route identity; it remains only a transient materialized
+  presentation handle which may change while the route node stays the same;
 - master/per-node HUD visibility;
 - terminal `NavigationArrivalProfile` for Finish.
 
@@ -185,10 +189,10 @@ container is intentionally simple and visual:
 - Finish exposes four square arrival-mode pictograms: SAFE, FOLLOW, FORMATION,
   PARADE.
 
-Current ownership is temporary: `SystemMapRenderer` still owns
-`NavigationTrackingState`. Predictor/solver/autopilot must not depend on a
-renderer, so the next architecture patch moves this state into a dedicated
-client navigation workspace and lets maps/HUD consume/edit it.
+Ownership is now final for the current stage: `ClientNavigationWorkspace` is
+renderer-independent. Maps edit/present it, HUD reads it, and future
+predictor/solver/autopilot code must depend on the workspace/domain models rather
+than on `SystemMapRenderer`.
 
 The full end-state (prediction, solver, arrival constraints and autopilot) is
 defined in `ROUTE_NAVIGATION_CONTRACT.md`.

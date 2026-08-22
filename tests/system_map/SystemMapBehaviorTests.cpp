@@ -21,7 +21,7 @@
 #include "src/game/navigation/CubicNavigationInteraction.h"
 #include "src/game/navigation/GalaxyNavigationGrid.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
-#include "src/game/navigation/NavigationTrackingState.h"
+#include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/presentation/NavigationHudPresentation.h"
 #include "src/game/system_map/DetailMapView.h"
@@ -2132,22 +2132,25 @@ void testTacticalOverlayGlyphScaleAndAngles()
 }
 
 
-void testClientNavigationTrackingOwnsCardsBodiesAndWaypointPanels()
+void testClientNavigationWorkspaceSeparatesTrackingAndRoutePlan()
 {
-    game::navigation::NavigationTrackingState state;
+    game::navigation::ClientNavigationWorkspace workspace;
+    auto& targets = workspace.targets();
+    auto& routePlan = workspace.routePlan();
 
-    state.rememberTacticalObject(
+    targets.rememberTacticalObject(
         "entity:42",
         "Scout",
         "Needle",
-        glm::vec4(0.4f, 0.8f, 1.0f, 1.0f)
+        glm::vec4(0.4f, 0.8f, 1.0f, 1.0f),
+        true
     );
 
     const auto earthPosition =
         world::coordinates::makeWorldPositionFromMeters(
             glm::dvec3(1000.0, 2000.0, 3000.0)
         );
-    state.rememberCelestialBody(
+    targets.rememberCelestialBody(
         "body:0:earth",
         0,
         "earth",
@@ -2157,81 +2160,101 @@ void testClientNavigationTrackingOwnsCardsBodiesAndWaypointPanels()
         glm::vec4(0.4f, 0.7f, 1.0f, 1.0f)
     );
 
-    auto& finish = state.rememberWaypointCandidate(
+    auto freeTarget = [](const world::coordinates::WorldPosition& position)
+    {
+        game::navigation::RouteTargetRef target;
+        target.kind = game::navigation::NavigationRouteAnchorKind::FreeSpace;
+        target.spatialWorldPosition = position;
+        return target;
+    };
+
+    const auto finishPosition = world::coordinates::makeWorldPositionFromMeters(
+        glm::dvec3(5000.0, 0.0, 0.0)
+    );
+    auto& finish = routePlan.rememberCandidate(
+        freeTarget(finishPosition),
         "waypoint_candidate:S:6:1:2:3",
-        world::coordinates::makeWorldPositionFromMeters(
-            glm::dvec3(5000.0, 0.0, 0.0)
-        ),
+        finishPosition,
         "S6[1,2,3]"
     );
     const std::uint64_t finishId = finish.id;
-    const std::string finishSourceId = finish.sourceObjectId;
-    state.toggleWaypointRole(
-        finishSourceId,
+    routePlan.toggleRole(
+        finishId,
         game::navigation::NavigationWaypointRole::Finish
     );
 
-    auto& intermediate = state.rememberWaypointCandidate(
+    const auto intermediatePosition = world::coordinates::makeWorldPositionFromMeters(
+        glm::dvec3(9000.0, 0.0, 0.0)
+    );
+    auto& intermediate = routePlan.rememberCandidate(
+        freeTarget(intermediatePosition),
         "waypoint_candidate:G:4:4:5:6",
-        world::coordinates::makeWorldPositionFromMeters(
-            glm::dvec3(9000.0, 0.0, 0.0)
-        ),
+        intermediatePosition,
         "G4[4,5,6]"
     );
-    const std::string intermediateSourceId = intermediate.sourceObjectId;
-    state.toggleWaypointRole(
-        intermediateSourceId,
+    const std::uint64_t intermediateId = intermediate.id;
+    routePlan.toggleRole(
+        intermediateId,
         game::navigation::NavigationWaypointRole::Intermediate
     );
 
-    auto& intermediateTwo = state.rememberWaypointCandidate(
-        "waypoint_candidate:G:4:7:8:9",
-        world::coordinates::makeWorldPositionFromMeters(
-            glm::dvec3(12000.0, 0.0, 0.0)
-        ),
-        "G4[7,8,9]"
+    game::navigation::RouteTargetRef shipTarget;
+    shipTarget.kind = game::navigation::NavigationRouteAnchorKind::Ship;
+    shipTarget.shipInstanceId = 7001;
+    const auto shipPosition = world::coordinates::makeWorldPositionFromMeters(
+        glm::dvec3(12000.0, 0.0, 0.0)
     );
-    const std::string intermediateTwoSourceId = intermediateTwo.sourceObjectId;
-    state.toggleWaypointRole(
-        intermediateTwoSourceId,
+    auto& rendezvousNode = routePlan.rememberCandidate(
+        shipTarget,
+        "entity:77",
+        shipPosition,
+        "Transfer test"
+    );
+    const std::uint64_t rendezvousId = rendezvousNode.id;
+    rendezvousNode.dynamicTarget = true;
+    rendezvousNode.transitKind =
+        game::navigation::NavigationWaypointTransitKind::Rendezvous;
+    routePlan.toggleRole(
+        rendezvousId,
         game::navigation::NavigationWaypointRole::Intermediate
     );
 
-    REQUIRE(state.hasRoute());
-    REQUIRE(state.routeSize() == 3);
-    auto ordered = state.orderedRouteWaypoints();
+    REQUIRE(routePlan.hasRoute());
+    REQUIRE(routePlan.routeSize() == 3);
+    auto ordered = routePlan.orderedRouteWaypoints();
     REQUIRE(ordered.size() == 3);
-    REQUIRE(ordered[0]->sourceObjectId == intermediateSourceId);
+    REQUIRE(ordered[0]->id == intermediateId);
     REQUIRE(ordered[0]->sequence == 1);
-    REQUIRE(ordered[1]->sourceObjectId == intermediateTwoSourceId);
+    REQUIRE(ordered[1]->id == rendezvousId);
     REQUIRE(ordered[1]->sequence == 2);
     REQUIRE(ordered[2]->id == finishId);
     REQUIRE(ordered[2]->role == game::navigation::NavigationWaypointRole::Finish);
 
-    // Closing source cards must stop transient tactical/celestial tracking but
-    // must not erase explicit route intent.
-    state.reconcileOpenCards({"body:0:earth"});
-    REQUIRE(state.tacticalObjects().empty());
-    REQUIRE(state.celestialBodies().size() == 1);
-    REQUIRE(state.routeSize() == 3);
+    // Transient card tracking and persistent route intent have separate
+    // lifetimes.
+    targets.reconcileOpenCards({"body:0:earth"});
+    routePlan.pruneTransientCandidates({"body:0:earth"});
+    REQUIRE(targets.tacticalObjects().empty());
+    REQUIRE(targets.celestialBodies().size() == 1);
+    REQUIRE(routePlan.routeSize() == 3);
 
-    state.moveIntermediateWaypoint(intermediateTwoSourceId, 1);
-    ordered = state.orderedRouteWaypoints();
-    REQUIRE(ordered[0]->sourceObjectId == intermediateTwoSourceId);
+    routePlan.moveIntermediateWaypoint(rendezvousId, 1);
+    ordered = routePlan.orderedRouteWaypoints();
+    REQUIRE(ordered[0]->id == rendezvousId);
     REQUIRE(ordered[0]->sequence == 1);
-    REQUIRE(ordered[1]->sourceObjectId == intermediateSourceId);
+    REQUIRE(ordered[1]->id == intermediateId);
     REQUIRE(ordered[1]->sequence == 2);
-    REQUIRE(ordered[2]->sourceObjectId == finishSourceId);
+    REQUIRE(ordered[2]->id == finishId);
 
-    state.setWaypointHudVisible(intermediateTwoSourceId, false);
-    REQUIRE(!state.findWaypoint(intermediateTwoSourceId)->showOnHud);
-    state.setRouteVisibleOnHud(false);
-    REQUIRE(!state.routeVisibleOnHud());
+    routePlan.setWaypointHudVisible(rendezvousId, false);
+    REQUIRE(!routePlan.findById(rendezvousId)->showOnHud);
+    routePlan.setRouteVisibleOnHud(false);
+    REQUIRE(!routePlan.routeVisibleOnHud());
 
-    state.setFinishArrivalMode(
+    routePlan.setFinishArrivalMode(
         game::navigation::NavigationArrivalMode::ParadeFormation
     );
-    const auto* finishAfter = state.findWaypoint(finishSourceId);
+    const auto* finishAfter = routePlan.findById(finishId);
     REQUIRE(finishAfter != nullptr);
     REQUIRE(
         finishAfter->arrival.mode ==
@@ -2240,36 +2263,36 @@ void testClientNavigationTrackingOwnsCardsBodiesAndWaypointPanels()
     REQUIRE(finishAfter->arrival.matchVelocity);
     REQUIRE(finishAfter->arrival.formationMotionLock);
 
-    // A ship used as an intermediate node is a semantic rendezvous checkpoint,
-    // never a frozen pass-through coordinate.
-    state.setWaypointRouteMetadata(
-        intermediateTwoSourceId,
-        game::navigation::NavigationRouteAnchorKind::Ship,
-        game::navigation::NavigationRouteMapKind::System,
-        0,
-        {},
-        {},
-        "ship:transfer-test",
-        true
+    // Rematerialization changes EntityId/presentation binding but not route
+    // identity: the same ShipInstanceId must reuse the same route node.
+    const auto rematerializedPosition = world::coordinates::makeWorldPositionFromMeters(
+        glm::dvec3(12500.0, 0.0, 0.0)
     );
-    const auto* rendezvous = state.findWaypoint(intermediateTwoSourceId);
-    REQUIRE(rendezvous != nullptr);
-    REQUIRE(rendezvous->dynamicTarget);
+    auto& rematerialized = routePlan.rememberCandidate(
+        shipTarget,
+        "entity:991",
+        rematerializedPosition,
+        "Transfer test"
+    );
+    REQUIRE(rematerialized.id == rendezvousId);
+    REQUIRE(rematerialized.sourceObjectId == "entity:991");
+    REQUIRE(rematerialized.target.shipInstanceId == 7001);
+    REQUIRE(rematerialized.dynamicTarget);
     REQUIRE(
-        rendezvous->transitKind ==
+        rematerialized.transitKind ==
         game::navigation::NavigationWaypointTransitKind::Rendezvous
     );
 
-    state.removeRouteWaypoint(intermediateSourceId);
-    ordered = state.orderedRouteWaypoints();
+    routePlan.removeRouteWaypoint(intermediateId);
+    ordered = routePlan.orderedRouteWaypoints();
     REQUIRE(ordered.size() == 2);
-    REQUIRE(ordered[0]->sourceObjectId == intermediateTwoSourceId);
+    REQUIRE(ordered[0]->id == rendezvousId);
     REQUIRE(ordered[0]->sequence == 1);
     REQUIRE(ordered[1]->role == game::navigation::NavigationWaypointRole::Finish);
 
-    state.clearRoute();
-    REQUIRE(!state.hasRoute());
-    REQUIRE(state.routeSize() == 0);
+    routePlan.clearRoute();
+    REQUIRE(!routePlan.hasRoute());
+    REQUIRE(routePlan.routeSize() == 0);
 }
 
 
@@ -2344,9 +2367,9 @@ void testTacticalOverlaySupportsMultipleIndependentCards()
     REQUIRE(state.isOpen(second.objectId));
     REQUIRE(state.orderedPanels().size() == 2);
 
-    const std::string firstTrack = state.trackLabelFor(first.objectId);
-    REQUIRE(firstTrack == state.trackLabelFor(first.objectId));
-    REQUIRE(firstTrack != state.trackLabelFor(second.objectId));
+    const std::string firstTrack = state.shipTargetLabelFor(first.objectId);
+    REQUIRE(firstTrack == state.shipTargetLabelFor(first.objectId));
+    REQUIRE(firstTrack != state.shipTargetLabelFor(second.objectId));
 
     state.close(first.objectId);
     REQUIRE(!state.isOpen(first.objectId));
@@ -2690,7 +2713,7 @@ int main()
         {"cockpit target speed uses common travel frame", testCockpitNavigationTargetSpeedUsesCommonTravelFrame},
         {"cockpit Hub marker uses player presentation frame", testCockpitHubMarkerUsesPlayerPresentationFrame},
         {"tactical overlay glyph scale and stellar angles", testTacticalOverlayGlyphScaleAndAngles},
-        {"client navigation tracking owns cards bodies and waypoint panels", testClientNavigationTrackingOwnsCardsBodiesAndWaypointPanels},
+        {"client navigation workspace separates tracking from route plan", testClientNavigationWorkspaceSeparatesTrackingAndRoutePlan},
         {"waypoint info affordance wins without auto opening card", testWaypointInfoAffordanceWinsWithoutAutoOpeningCard},
         {"tactical overlay supports multiple independent cards", testTacticalOverlaySupportsMultipleIndependentCards},
         {"tactical overlay pointer toggle and drag are captured", testTacticalOverlayPointerToggleAndDragAreCaptured},

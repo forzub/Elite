@@ -113,11 +113,11 @@ Framebuffer crossfades that remain inside the Navigation domain are renderer-own
 
 The STAR ATLAS side panel is now native OpenGL presentation on the same surface as the map. The old child-HWND/WebView panel, browser command strings and fixed Close/toggle slot are removed. `SystemMapPanelPresentation` owns typed panel data/actions, `InSessionPresentationRenderer` owns the native panel, and panel input is consumed before map viewport input so button/list gestures cannot leak into camera/picking. The canonical current navigation semantics, including System-vs-Space naming, loaded-context ownership and temporary/legacy leftovers, are documented in `src/game/system_map/MAP_NAVIGATION_CONTRACT.md`.
 
-### Client navigation ownership debt
+### Client navigation workspace ownership
 
-The Route Plan baseline is functional, but its ownership is not yet the intended final architecture. `SystemMapRenderer` currently owns `NavigationTrackingState`, including persistent client route intent, because the first implementation was built directly from map cards/picking/HUD. This state must move to a renderer-independent client navigation workspace **before** trajectory predictor/solver/autopilot code is added. Maps then become editors/presenters of navigation state rather than its owner.
+The Route Plan baseline now uses the intended renderer-independent ownership boundary. `SpaceState` owns one `ClientNavigationWorkspace`; `TargetTrackingState` contains transient open-card tracking while `RoutePlan` contains persistent player route intent. `SystemMapRenderer` and cockpit HUD consume/edit this workspace but do not own it, leaving future predictor/solver/autopilot code independent from renderer lifetime.
 
-Dynamic route identity has the same temporary seam: a moving ship can still be referenced through a materialized runtime object/`EntityId` path. `EntityId` is not durable. The ownership patch must introduce typed route target references using `ShipInstanceId` for ships, stable Hub/body IDs for authored objects, and spatial addresses for free-space nodes; current `EntityId` remains only a transient resolution handle.
+Route identity is typed and semantic. `RouteTargetRef` uses `ShipInstanceId` for ships, stable Hub/body IDs for authored objects and canonical `WorldPosition` for free space. Materialized `EntityId` remains only a transient presentation handle and is not stored as route identity; rematerializing one `ShipInstanceId` under another `EntityId` rebinds the existing route node rather than creating a new target. Route-container operations use stable route-node IDs rather than presentation object IDs.
 
 ## Render-style boundary
 

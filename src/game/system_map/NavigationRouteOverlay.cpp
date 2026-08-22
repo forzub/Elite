@@ -189,14 +189,14 @@ std::string shortName(const game::navigation::NavigationWaypoint& waypoint)
 } // namespace
 
 double NavigationRouteOverlayState::panelHeight(
-    const game::navigation::NavigationTrackingState& tracking
+    const game::navigation::RoutePlan& routePlan
 ) const
 {
     if (m_collapsed)
         return HeaderHeightPx;
 
     double h = HeaderHeightPx + MasterRowHeightPx + FooterHeightPx + 8.0;
-    for (const auto* waypoint : tracking.orderedRouteWaypoints())
+    for (const auto* waypoint : routePlan.orderedRouteWaypoints())
     {
         h += waypoint->role == game::navigation::NavigationWaypointRole::Finish
             ? FinishRowHeightPx
@@ -237,8 +237,8 @@ void NavigationRouteOverlayState::clampToViewport(
 void NavigationRouteOverlayState::clearTransientDrag() noexcept
 {
     m_draggingPanel = false;
-    m_draggingNodeId.clear();
-    m_pressedRowId.clear();
+    m_draggingNodeId = 0;
+    m_pressedRowId = 0;
     m_liveNodeDrag = false;
 }
 
@@ -246,7 +246,7 @@ double NavigationRouteOverlayState::reorderOffsetPx(
     const game::navigation::NavigationWaypoint& waypoint
 ) const
 {
-    if (m_liveNodeDrag && waypoint.sourceObjectId == m_draggingNodeId)
+    if (m_liveNodeDrag && waypoint.id == m_draggingNodeId)
         return 0.0;
 
     if (!m_reorderAnimationActive ||
@@ -255,7 +255,7 @@ double NavigationRouteOverlayState::reorderOffsetPx(
         return 0.0;
     }
 
-    const auto found = m_reorderFromSequence.find(waypoint.sourceObjectId);
+    const auto found = m_reorderFromSequence.find(waypoint.id);
     if (found == m_reorderFromSequence.end())
         return 0.0;
 
@@ -278,7 +278,7 @@ double NavigationRouteOverlayState::draggingVisualOffsetPx(
     double nominalTopPx
 ) const
 {
-    if (!m_liveNodeDrag || waypoint.sourceObjectId != m_draggingNodeId)
+    if (!m_liveNodeDrag || waypoint.id != m_draggingNodeId)
         return 0.0;
 
     const double draggedTop = m_dragPointerViewportY - m_dragGrabOffsetY;
@@ -286,7 +286,7 @@ double NavigationRouteOverlayState::draggingVisualOffsetPx(
 }
 
 NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
-    game::navigation::NavigationTrackingState& tracking,
+    game::navigation::RoutePlan& routePlan,
     const glm::dvec2& viewportSizePx,
     const glm::dvec2& mousePx,
     bool inside,
@@ -295,19 +295,19 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
 {
     NavigationRouteOverlayPointerResult result;
     ensurePlaced(viewportSizePx);
-    const double height = panelHeight(tracking);
+    const double height = panelHeight(routePlan);
     clampToViewport(viewportSizePx, height);
 
     const bool press = leftDown && !m_leftWasDown;
     const bool release = !leftDown && m_leftWasDown;
     m_leftWasDown = leftDown;
 
-    if (!tracking.hasRoute())
+    if (!routePlan.hasRoute())
     {
         clearTransientDrag();
         m_deleteRouteArmed = false;
-        m_deleteNodeArmedId.clear();
-        m_selectedNodeId.clear();
+        m_deleteNodeArmedId = 0;
+        m_selectedNodeId = 0;
         return result;
     }
 
@@ -327,7 +327,7 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
         return result;
     }
 
-    if (!m_draggingNodeId.empty() && leftDown)
+    if (m_draggingNodeId != 0 && leftDown)
     {
         const double distance = glm::length(mousePx - m_pressedAtPx);
         if (distance >= 6.0)
@@ -338,46 +338,46 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
             m_dragPointerViewportY = mousePx.y;
             int targetSequence = 1;
             double y = m_topLeftPx.y + HeaderHeightPx + MasterRowHeightPx + 4.0;
-            for (const auto* waypoint : tracking.orderedRouteWaypoints())
+            for (const auto* waypoint : routePlan.orderedRouteWaypoints())
             {
                 if (waypoint->role != game::navigation::NavigationWaypointRole::Intermediate)
                     break;
-                if (waypoint->sourceObjectId == m_draggingNodeId)
+                if (waypoint->id == m_draggingNodeId)
                     continue;
                 const double mid = y + WaypointRowHeightPx * 0.5;
                 if (mousePx.y > mid)
                     ++targetSequence;
                 y += WaypointRowHeightPx;
             }
-            tracking.moveIntermediateWaypoint(m_draggingNodeId, targetSequence);
+            routePlan.moveIntermediateWaypoint(m_draggingNodeId, targetSequence);
             result.consumed = true;
-            result.selectedSourceObjectId = m_draggingNodeId;
+            result.selectedRouteNodeId = m_draggingNodeId;
             return result;
         }
     }
 
-    if (release && !m_pressedRowId.empty())
+    if (release && m_pressedRowId != 0)
     {
-        const std::string releasedId = m_pressedRowId;
-        const bool dragged = m_liveNodeDrag && !m_draggingNodeId.empty();
+        const std::uint64_t releasedId = m_pressedRowId;
+        const bool dragged = m_liveNodeDrag && m_draggingNodeId != 0;
 
         if (dragged)
         {
             m_reorderFromSequence.clear();
-            for (const auto* waypoint : tracking.orderedRouteWaypoints())
+            for (const auto* waypoint : routePlan.orderedRouteWaypoints())
             {
                 if (waypoint->role ==
                     game::navigation::NavigationWaypointRole::Intermediate)
                 {
                     m_reorderFromSequence.emplace(
-                        waypoint->sourceObjectId,
+                        waypoint->id,
                         waypoint->sequence
                     );
                 }
             }
             m_reorderAnimationStartedAt = std::chrono::steady_clock::now();
             m_reorderAnimationActive = true;
-            m_lastClickedRowId.clear();
+            m_lastClickedRowId = 0;
         }
         else
         {
@@ -387,8 +387,8 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
             ).count();
             if (m_lastClickedRowId == releasedId && sinceLast <= 0.38)
             {
-                result.focusSourceObjectId = releasedId;
-                m_lastClickedRowId.clear();
+                result.focusRouteNodeId = releasedId;
+                m_lastClickedRowId = 0;
             }
             else
             {
@@ -397,10 +397,10 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
             }
         }
 
-        result.selectedSourceObjectId = releasedId;
+        result.selectedRouteNodeId = releasedId;
         m_selectedNodeId = releasedId;
-        m_draggingNodeId.clear();
-        m_pressedRowId.clear();
+        m_draggingNodeId = 0;
+        m_pressedRowId = 0;
         m_liveNodeDrag = false;
         result.consumed = true;
         return result;
@@ -408,19 +408,19 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
 
     if (!press)
     {
-        if (overPanel || !m_draggingNodeId.empty())
-            result.consumed = overPanel || !m_draggingNodeId.empty();
-        if (!m_selectedNodeId.empty())
-            result.selectedSourceObjectId = m_selectedNodeId;
+        if (overPanel || m_draggingNodeId != 0)
+            result.consumed = overPanel || m_draggingNodeId != 0;
+        if (m_selectedNodeId != 0)
+            result.selectedRouteNodeId = m_selectedNodeId;
         return result;
     }
 
     if (!overPanel)
     {
         m_deleteRouteArmed = false;
-        m_deleteNodeArmedId.clear();
-        if (!m_selectedNodeId.empty())
-            result.selectedSourceObjectId = m_selectedNodeId;
+        m_deleteNodeArmedId = 0;
+        if (m_selectedNodeId != 0)
+            result.selectedRouteNodeId = m_selectedNodeId;
         return result;
     }
 
@@ -440,7 +440,7 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
         noTop = glm::dvec2(WidthPx - 40.0, footerTop + 6.0);
     };
 
-    if (m_deleteRouteArmed || !m_deleteNodeArmedId.empty())
+    if (m_deleteRouteArmed || m_deleteNodeArmedId != 0)
     {
         double footerTop = 0.0;
         glm::dvec2 yesTop{0.0}, noTop{0.0};
@@ -451,23 +451,23 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
         {
             if (m_deleteRouteArmed)
             {
-                tracking.clearRoute();
-                m_selectedNodeId.clear();
+                routePlan.clearRoute();
+                m_selectedNodeId = 0;
                 m_deleteRouteArmed = false;
             }
-            else if (!m_deleteNodeArmedId.empty())
+            else if (m_deleteNodeArmedId != 0)
             {
                 if (m_selectedNodeId == m_deleteNodeArmedId)
-                    m_selectedNodeId.clear();
-                tracking.removeRouteWaypoint(m_deleteNodeArmedId);
-                m_deleteNodeArmedId.clear();
+                    m_selectedNodeId = 0;
+                routePlan.removeRouteWaypoint(m_deleteNodeArmedId);
+                m_deleteNodeArmedId = 0;
             }
             return result;
         }
         if (noHit || local.y >= footerTop)
         {
             m_deleteRouteArmed = false;
-            m_deleteNodeArmedId.clear();
+            m_deleteNodeArmedId = 0;
             return result;
         }
     }
@@ -476,13 +476,13 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
     {
         m_collapsed = !m_collapsed;
         m_deleteRouteArmed = false;
-        m_deleteNodeArmedId.clear();
+        m_deleteNodeArmedId = 0;
         return result;
     }
     if (deleteRouteHit)
     {
         m_deleteRouteArmed = true;
-        m_deleteNodeArmedId.clear();
+        m_deleteNodeArmedId = 0;
         return result;
     }
     if (local.y <= HeaderHeightPx)
@@ -490,7 +490,7 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
         m_draggingPanel = true;
         m_panelDragOffsetPx = mousePx - m_topLeftPx;
         m_deleteRouteArmed = false;
-        m_deleteNodeArmedId.clear();
+        m_deleteNodeArmedId = 0;
         return result;
     }
     if (m_collapsed)
@@ -499,16 +499,16 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
     double rowTop = HeaderHeightPx;
     if (local.y >= rowTop && local.y <= rowTop + MasterRowHeightPx)
     {
-        tracking.setRouteVisibleOnHud(!tracking.routeVisibleOnHud());
+        routePlan.setRouteVisibleOnHud(!routePlan.routeVisibleOnHud());
         m_deleteRouteArmed = false;
-        m_deleteNodeArmedId.clear();
-        if (!m_selectedNodeId.empty())
-            result.selectedSourceObjectId = m_selectedNodeId;
+        m_deleteNodeArmedId = 0;
+        if (m_selectedNodeId != 0)
+            result.selectedRouteNodeId = m_selectedNodeId;
         return result;
     }
     rowTop += MasterRowHeightPx + 4.0;
 
-    for (const auto* waypoint : tracking.orderedRouteWaypoints())
+    for (const auto* waypoint : routePlan.orderedRouteWaypoints())
     {
         const double rowHeight =
             waypoint->role == game::navigation::NavigationWaypointRole::Finish
@@ -520,8 +520,8 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
             continue;
         }
 
-        m_selectedNodeId = waypoint->sourceObjectId;
-        result.selectedSourceObjectId = m_selectedNodeId;
+        m_selectedNodeId = waypoint->id;
+        result.selectedRouteNodeId = m_selectedNodeId;
 
         const bool hudHit = local.x >= 8.0 && local.x <= 28.0 &&
                             local.y >= rowTop + 8.0 && local.y <= rowTop + 28.0;
@@ -529,14 +529,14 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
                                    local.y >= rowTop + 8.0 && local.y <= rowTop + 28.0;
         if (hudHit)
         {
-            tracking.setWaypointHudVisible(waypoint->sourceObjectId, !waypoint->showOnHud);
-            m_deleteNodeArmedId.clear();
+            routePlan.setWaypointHudVisible(waypoint->id, !waypoint->showOnHud);
+            m_deleteNodeArmedId = 0;
             m_deleteRouteArmed = false;
             return result;
         }
         if (deleteNodeHit)
         {
-            m_deleteNodeArmedId = waypoint->sourceObjectId;
+            m_deleteNodeArmedId = waypoint->id;
             m_deleteRouteArmed = false;
             return result;
         }
@@ -560,45 +560,45 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
                 if (local.x >= x && local.x <= x + iconSize &&
                     local.y >= iconsTop && local.y <= iconsTop + iconSize)
                 {
-                    tracking.setFinishArrivalMode(modes[i]);
-                    m_deleteNodeArmedId.clear();
+                    routePlan.setFinishArrivalMode(modes[i]);
+                    m_deleteNodeArmedId = 0;
                     m_deleteRouteArmed = false;
                     return result;
                 }
             }
         }
 
-        m_deleteNodeArmedId.clear();
+        m_deleteNodeArmedId = 0;
         m_deleteRouteArmed = false;
-        m_pressedRowId = waypoint->sourceObjectId;
+        m_pressedRowId = waypoint->id;
         m_pressedAtPx = mousePx;
         m_dragPointerViewportY = mousePx.y;
         m_dragGrabOffsetY = local.y - rowTop;
         m_liveNodeDrag = false;
         if (waypoint->role == game::navigation::NavigationWaypointRole::Intermediate)
-            m_draggingNodeId = waypoint->sourceObjectId;
+            m_draggingNodeId = waypoint->id;
         return result;
     }
 
     m_deleteRouteArmed = false;
-    m_deleteNodeArmedId.clear();
-    if (!m_selectedNodeId.empty())
-        result.selectedSourceObjectId = m_selectedNodeId;
+    m_deleteNodeArmedId = 0;
+    if (m_selectedNodeId != 0)
+        result.selectedRouteNodeId = m_selectedNodeId;
     return result;
 }
 
 void NavigationRouteOverlayRenderer::render(
     const Viewport& viewport,
-    const game::navigation::NavigationTrackingState& tracking,
+    const game::navigation::RoutePlan& routePlan,
     const NavigationRouteOverlayState& state,
     const NavigationMapTextProfile& textProfile
 ) const
 {
-    if (!tracking.hasRoute())
+    if (!routePlan.hasRoute())
         return;
 
     const auto& top = state.topLeftPx();
-    const double height = state.panelHeight(tracking);
+    const double height = state.panelHeight(routePlan);
     const ScreenSpaceState previous = beginScreenSpace(viewport);
     auto& text = TextRenderer::instance();
     text.beginFrameForViewport(viewport.width, viewport.height);
@@ -614,7 +614,7 @@ void NavigationRouteOverlayRenderer::render(
         12,
         kText
     );
-    const std::string count = std::to_string(tracking.routeSize());
+    const std::string count = std::to_string(routePlan.routeSize());
     text.textDrawPx(
         count,
         static_cast<float>(top.x + 76.0),
@@ -646,27 +646,27 @@ void NavigationRouteOverlayRenderer::render(
 
     double y = top.y + NavigationRouteOverlayState::HeaderHeightPx;
     const glm::dvec2 masterBox(top.x + 9.0, y + 7.0);
-    outline(masterBox, 14.0, 14.0, tracking.routeVisibleOnHud() ? kWaypoint : kMuted, 1.2f);
-    if (tracking.routeVisibleOnHud())
+    outline(masterBox, 14.0, 14.0, routePlan.routeVisibleOnHud() ? kWaypoint : kMuted, 1.2f);
+    if (routePlan.routeVisibleOnHud())
         rect(masterBox + glm::dvec2(3.0), 8.0, 8.0, kWaypoint);
     text.textDrawPx(
         textProfile.showOnHud,
         static_cast<float>(top.x + 31.0),
         static_cast<float>(y + 19.0),
         10,
-        tracking.routeVisibleOnHud() ? kText : kMuted
+        routePlan.routeVisibleOnHud() ? kText : kMuted
     );
     y += NavigationRouteOverlayState::MasterRowHeightPx + 4.0;
 
-    for (const auto* waypoint : tracking.orderedRouteWaypoints())
+    for (const auto* waypoint : routePlan.orderedRouteWaypoints())
     {
         const bool finish = waypoint->role == game::navigation::NavigationWaypointRole::Finish;
         const double rowHeight = finish
             ? NavigationRouteOverlayState::FinishRowHeightPx
             : NavigationRouteOverlayState::WaypointRowHeightPx;
         const glm::vec4 accent = finish ? kFinish : kWaypoint;
-        const bool dragging = state.draggingNodeId() == waypoint->sourceObjectId;
-        const bool selected = state.isNodeSelected(waypoint->sourceObjectId);
+        const bool dragging = state.draggingNodeId() == waypoint->id;
+        const bool selected = state.isNodeSelected(waypoint->id);
         const double visualY =
             y +
             state.reorderOffsetPx(*waypoint) +
@@ -711,7 +711,7 @@ void NavigationRouteOverlayRenderer::render(
             kText
         );
 
-        const bool armed = state.deleteNodeArmedId() == waypoint->sourceObjectId;
+        const bool armed = state.deleteNodeArmedId() == waypoint->id;
         text.textDrawPx(
             "×",
             static_cast<float>(top.x + NavigationRouteOverlayState::WidthPx - 21.0),
@@ -756,7 +756,7 @@ void NavigationRouteOverlayRenderer::render(
     }
 
     const bool deleteRouteArmed = state.deleteRouteArmed();
-    const bool deleteNodeArmed = !state.deleteNodeArmedId().empty();
+    const bool deleteNodeArmed = state.deleteNodeArmedId() != 0;
     const double footerTop = top.y + height - NavigationRouteOverlayState::FooterHeightPx;
     if (deleteRouteArmed || deleteNodeArmed)
     {

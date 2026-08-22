@@ -430,7 +430,8 @@ SpaceState::SpaceState(
     StateStack& states,
     StartupMode startupMode
 )
-    : GameState(states)
+    : GameState(states),
+      m_systemMapRenderer(m_navigationWorkspace)
 {
     m_startupTotalBegin = ClientStartupClock::now();
 
@@ -2329,7 +2330,7 @@ m_systemMapRenderer.render(
 
                 const auto navigationMarkers =
                     game::presentation::buildNavigationHudMarkers(
-                        m_systemMapRenderer.navigationTrackingState(),
+                        m_navigationWorkspace,
                         m_client->world(),
                         ship,
                         navVocabulary

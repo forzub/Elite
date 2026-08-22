@@ -474,10 +474,16 @@ void MapObjectOverlayRenderer::render(
             drawVelocityArrow(item);
         }
 
+        const bool numberedShipTarget =
+            item.infoKind == MapObjectInfoKind::Tactical &&
+            item.kind == MapObjectGlyphKind::Ship &&
+            item.objectId != "player";
         const std::string track =
             item.routeDisplayIndex > 0
                 ? std::to_string(item.routeDisplayIndex)
-                : state.trackLabelFor(item.objectId);
+                : numberedShipTarget
+                    ? state.shipTargetLabelFor(item.objectId)
+                    : std::string();
         if (!track.empty() && track != "0")
         {
             const float trackWidth = textRenderer.measureTextPx(track, 12);
@@ -541,9 +547,14 @@ void MapObjectOverlayRenderer::render(
         std::string panelTitle;
         if (item->infoKind == MapObjectInfoKind::Tactical)
         {
-            const std::string track = state.trackLabelFor(item->objectId);
+            const bool numberedShipTarget =
+                item->kind == MapObjectGlyphKind::Ship &&
+                item->objectId != "player";
+            const std::string track = numberedShipTarget
+                ? state.shipTargetLabelFor(item->objectId)
+                : std::string();
             panelTitle =
-                (track == "0" ? std::string() : track + "  ") +
+                (track.empty() || track == "0" ? std::string() : track + "  ") +
                 (item->name.empty() ? item->typeName : item->name);
         }
         else if (item->infoKind == MapObjectInfoKind::WaypointCandidate)

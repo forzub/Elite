@@ -38,6 +38,7 @@
 
 #include "src/game/promo/PromoSceneScenario.h"
 #include "src/game/traffic/StationTrafficSystem.h"
+#include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/game/system_map/SystemMapRenderer.h"
 #include "src/game/system_map/AuthoritativeMapInterpolator.h"
 #include "src/world/celestial/SystemMapTypes.h"
@@ -261,6 +262,7 @@ private:
     RadarWidgetBase* m_radarWidget = nullptr;
     SceneRenderer m_sceneRenderer;
     PreparedScene m_preparedScene;
+    game::navigation::ClientNavigationWorkspace m_navigationWorkspace;
     SystemMapRenderer m_systemMapRenderer;
     ui::presentation::InSessionPresentationRenderer m_inSessionPresentationRenderer;
     bool m_constellationOverlayEnabled = false;

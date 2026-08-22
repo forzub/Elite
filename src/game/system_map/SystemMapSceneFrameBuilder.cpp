@@ -352,6 +352,8 @@ SystemMapSceneFrame SystemMapSceneFrameBuilder::build(
 
         MapObjectOverlayItem overlay;
         overlay.objectId = key;
+        overlay.shipInstanceId = object.shipInstanceId;
+        overlay.trackingSystemId = system.systemId;
         overlay.name = object.name;
         overlay.typeName = object.typeName.empty()
             ? (object.kind == world::celestial::SystemMapObjectKind::Ship

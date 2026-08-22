@@ -424,6 +424,8 @@ DetailMapPresentation LocalMapPresentationBuilder::buildDetail(
         item.objectId = object.stableId.empty()
             ? "entity:" + std::to_string(object.id.value)
             : object.stableId;
+        item.shipInstanceId = object.shipInstanceId;
+        item.trackingSystemId = presentation.systemId;
         item.name = object.name;
         item.typeName = localObjectTypeName(object);
         item.kind = localObjectGlyphKind(object);
@@ -642,6 +644,7 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
             : snapshot.displayName;
         hubItem.typeName = "Hub";
         hubItem.kind = MapObjectGlyphKind::Hub;
+        hubItem.trackingSystemId = presentation.systemId;
         hubItem.navigationHubId = snapshot.hubId;
         hubItem.navigationHubParentBodyId = snapshot.parentBodyId;
         hubItem.trackingWorldPosition =
@@ -692,6 +695,8 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
         item.objectId = object.stableId.empty()
             ? "entity:" + std::to_string(object.id.value)
             : object.stableId;
+        item.shipInstanceId = object.shipInstanceId;
+        item.trackingSystemId = presentation.systemId;
         item.name = object.name;
         item.typeName = localObjectTypeName(object);
         item.kind = MapObjectGlyphKind::Ship;

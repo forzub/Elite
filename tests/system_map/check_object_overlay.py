@@ -247,17 +247,23 @@ def main() -> int:
             "velocity-vector scale regressed to logarithmic mapping")
 
     require_text(
-        "src/game/navigation/NavigationTrackingState.h",
-        "class NavigationTrackingState",
+        "src/game/navigation/TargetTrackingState.h",
+        "class TargetTrackingState",
         "NavigationTrackedTacticalObject",
         "NavigationTrackedCelestialBody",
-        "std::vector<NavigationWaypoint> m_waypoints",
+        "numberedShipTarget",
+        "reconcileOpenCards",
+    )
+    require_text(
+        "src/game/navigation/RoutePlan.h",
+        "class RoutePlan",
+        "RouteTargetRef",
+        "ShipInstanceId shipInstanceId",
         "NavigationWaypointRole::Finish",
         "NavigationArrivalMode",
         "orderedRouteWaypoints",
-        "moveIntermediateWaypoint",
+        "moveIntermediateWaypoint(std::uint64_t nodeId",
         "routeVisibleOnHud",
-        "reconcileOpenCards",
     )
 
     hud_presentation = require_text(
@@ -306,7 +312,7 @@ def main() -> int:
     require_text(
         "src/game/SpaceState.cpp",
         "buildNavigationHudMarkers",
-        "navigationTrackingState()",
+        "m_navigationWorkspace",
         "renderNavigationMarkers",
         "canOpenSelectedLocalContext()",
         "setSystemMapDetailMode();",
@@ -343,7 +349,8 @@ def main() -> int:
         "candidate.pointerInteractive = true",
         "candidate.drawGlyph = true",
         "applyWaypointAction",
-        "setWaypointRouteMetadata",
+        "routeTargetRefForOverlayItem",
+        "findByTarget",
         "set_waypoint",
         "set_finish",
         "updateActiveTacticalLocalContext",
@@ -352,8 +359,10 @@ def main() -> int:
         "clickedBodyId",
         "clickedNavigationCell",
     )
-    require("m_navigationTrackingState" in renderer_facade,
-            "map facade lost client-only navigation memory")
+    require("m_navigationTrackingState" not in renderer_facade,
+            "map facade regained ownership of navigation state")
+    require("m_navigationWorkspace.routePlan()" in renderer_facade,
+            "map facade is not editing the shared client navigation workspace")
     require_text(
         "src/game/system_map/SystemMapRenderer.h",
         "void applyWaypointAction(",
@@ -370,8 +379,10 @@ def main() -> int:
     )
     require_text(
         "tests/system_map/SystemMapBehaviorTests.cpp",
-        "const std::string finishSourceId = finish.sourceObjectId",
-        "const std::string intermediateSourceId = intermediate.sourceObjectId",
+        "ClientNavigationWorkspace workspace",
+        "ShipInstanceId",
+        '"entity:991"',
+        "rematerialized.id == rendezvousId",
     )
 
     require_text(
@@ -412,8 +423,8 @@ def main() -> int:
 
     require_text(
         "src/game/navigation/NAVIGATION_TRACKING_CONTRACT.md",
-        "client-only ownership",
-        "persistent route-plan baseline",
+        "renderer-independent client navigation ownership",
+        "RoutePlan` — persistent player route intent",
         "HudEdgeMapper",
         "MotionMode::Cruise",
         "MotionMode::JumpTransit",

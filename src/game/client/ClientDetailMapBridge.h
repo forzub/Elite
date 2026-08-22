@@ -190,6 +190,7 @@ inline world::celestial::LocalSceneObject makeDetailShipObject(
 {
     world::celestial::LocalSceneObject object;
     object.id = ship.id;
+    object.shipInstanceId = ship.instanceId;
     object.typeId = ship.typeId;
     const bool playerPresentation =
         identifyLocalPlayer &&

@@ -31,6 +31,7 @@ enum class SystemMapShipSampleStatus
 struct SystemMapShipSample
 {
     EntityId id {};
+    ShipInstanceId instanceId = 0;
     ShipRole role = ShipRole::NPC;
     ObjectType typeId = ObjectType::None;
     game::diagnostics::HubMotionLabActorKind motionLabKind =
@@ -75,6 +76,7 @@ inline SystemMapShipSample makeSystemMapShipSample(
 {
     SystemMapShipSample out;
     out.id = ship.id;
+    out.instanceId = ship.instanceId;
     out.role = ship.role;
     out.typeId = ship.typeId;
     out.motionLabKind = ship.motionLabKind;

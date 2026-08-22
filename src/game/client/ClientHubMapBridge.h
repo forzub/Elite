@@ -375,6 +375,7 @@ inline bool rebuildHubMapFromClientState(
 
         HubMapShip ship;
         ship.id = source.id;
+        ship.shipInstanceId = source.instanceId;
         ship.typeId = source.typeId;
         ship.stableId = isLocalPlayer
             ? "player"

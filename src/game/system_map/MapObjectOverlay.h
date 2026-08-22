@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 
 #include "src/world/coordinates/WorldPosition.h"
+#include "src/game/identity/ShipInstanceId.h"
 
 namespace game::system_map
 {
@@ -76,6 +77,7 @@ struct MapObjectPanelAction
 struct MapObjectOverlayItem
 {
     std::string objectId;
+    ShipInstanceId shipInstanceId = 0;
     std::string name;
     std::string typeName;
     std::string owner;
@@ -288,7 +290,7 @@ public:
         return std::max(PanelMinimumExpandedHeightPx, height);
     }
 
-    int trackNumberFor(const std::string& objectId)
+    int shipTargetNumberFor(const std::string& objectId)
     {
         if (objectId.empty())
             return -1;
@@ -304,9 +306,9 @@ public:
         return assigned;
     }
 
-    std::string trackLabelFor(const std::string& objectId)
+    std::string shipTargetLabelFor(const std::string& objectId)
     {
-        const int number = trackNumberFor(objectId);
+        const int number = shipTargetNumberFor(objectId);
         return number < 0 ? "?" : std::to_string(number);
     }
 

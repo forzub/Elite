@@ -265,20 +265,26 @@ maps. They are not derived from ship nose orientation or the currently rotated
 camera. If the displayed speed is zero, the card shows an em dash instead of
 inventing a bearing.
 
-## PROTECTED: short track numbers
+## PROTECTED: ship-only short target numbers
 
-`MapObjectOverlayState` assigns a short numeric label the first time it sees an
-object ID and reuses it for that ID for the lifetime of the overlay state. The
-player is reserved as track `0`, but `0` is not rendered.
+`MapObjectOverlayState` assigns a short numeric target/track label only to
+ships. The player is reserved as track `0`, but `0` is not rendered. Stars,
+planets, moons and Hubs never receive target numbers on System Map or cockpit
+HUD merely because they are selectable/tracked.
 
-The cockpit navigation tracking layer mirrors this exact map track number for
-tactical/celestial targets rather than allocating a second unrelated sequence.
-For tactical cockpit markers the number is drawn as right-aligned text beneath
-the speed column; it is not packed inside the outline triangle, so increasing
-track-number width cannot distort marker geometry.
+The cockpit navigation tracking layer mirrors the same ship map track number
+rather than allocating a second unrelated ship sequence. For ship tactical
+markers the number is drawn as right-aligned text beneath the speed column; it
+is not packed inside the outline triangle, so increasing track-number width
+cannot distort marker geometry.
 
-The purpose is rapid visual identification of moving targets over time. The
-number is presentation identity, not authoritative entity identity.
+Route-order numbering is a separate namespace: waypoint/Finish numbers encode
+route order and remain visible even when the route target is a Hub or celestial
+body. A route number must never be confused with a tactical target number.
+
+The purpose of target numbers is rapid visual identification of moving ships
+over time. The number is presentation identity, not authoritative entity
+identity.
 
 ## PROTECTED: Hub close-inspection camera
 
@@ -356,12 +362,12 @@ is not a product contract:
 
 - faction colors currently come from local presentation defaults (player, Hub,
   neutral object); there is no authoritative/player-known faction pipeline yet;
-- short track numbers are session/overlay-state local and are not durable
+- ship target/track numbers are session/overlay-state local and are not durable
   across process restart or reconnect;
 - some System infrastructure physical sizes use conservative presentation
   defaults where no static descriptor is available;
-- the native OpenGL overlay currently mirrors the small localization vocabulary
-  internally while the JSON keys reserve the public localization contract;
+- native map/route overlays receive a `NavigationMapTextProfile` populated by
+  `LocalizationService`; renderer code does not branch on locale or embed translated strings;
 - panel dimensions and typography are first-pass compact values and may be
   tuned without changing card semantics;
 - card auto-layout is intentionally minimal: a newly opened card is offset from
@@ -389,7 +395,7 @@ These features are intentionally **not** claimed by the current baseline:
 - rendered predicted trajectories;
 - rendered planned/navigation trajectories;
 - authoritative trajectory-history storage/source;
-- persistent track numbers across sessions;
+- persistent ship target/track numbers across sessions;
 - authoritative or sensor-derived faction/affiliation coloring;
 - fog-of-war / identification-confidence-driven card fields;
 - automatic non-overlapping placement/routing of many cards and leader lines;

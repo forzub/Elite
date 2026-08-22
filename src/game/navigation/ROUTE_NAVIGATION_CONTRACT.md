@@ -177,32 +177,35 @@ The first Route Plan layer now provides:
 - native route/map labels are resolved by the global `LocalizationService` from
   `assets/localization`; renderers contain no per-language text branches.
 
-### IMPLEMENTATION DEBT BEFORE THE SOLVER
+### IMPLEMENTED NAVIGATION OWNERSHIP BOUNDARY
 
-The current baseline is intentionally not yet the final ownership boundary:
+The current baseline now uses the intended ownership direction:
 
-- `NavigationTrackingState` (including Route Plan data) is still owned by
-  `SystemMapRenderer`, which made the first map/HUD implementation fast but is
-  the wrong dependency direction for predictor/solver/autopilot code;
-- dynamic route targets currently use the map/runtime object identity path and
-  may resolve to a materialized `EntityId`. This is not sufficient as durable
-  ship identity because `EntityId` may change after dematerialization/restart;
-- the next architecture patch must move route/tracking ownership into a
-  renderer-independent client navigation workspace and introduce typed stable
-  target references (`ShipInstanceId`, Hub/body IDs, or spatial address).
+- `SpaceState` owns one renderer-independent `ClientNavigationWorkspace`;
+- transient open-card target tracking lives in `TargetTrackingState`;
+- persistent route intent lives in a separate `RoutePlan`;
+- maps and HUD are consumers/editors, not owners of navigation state;
+- `RouteTargetRef` stores semantic identity: `ShipInstanceId` for ships, stable
+  Hub/body IDs for authored objects, and canonical `WorldPosition` for free
+  space;
+- `EntityId` is never durable route identity and may change after
+  dematerialization/rematerialization without changing the route node;
+- route-container editing uses stable route-node IDs; presentation object IDs
+  are only mutable bindings used to highlight/reveal the current map object.
+
+Target/track numbering is also presentation-scoped: only ships receive target
+numbers. Hubs and celestial bodies are unnumbered; route-order numbers remain a
+separate concept and continue to label route points/Finish.
 
 ## NEXT
 
 The next implementation layers are intentionally separate:
 
-1. **navigation ownership + stable route identity cleanup**: move Route Plan /
-   tracking out of `SystemMapRenderer`, introduce typed stable target refs and
-   keep renderer/map code as editor/presentation only;
-2. common trajectory predictor and projected/dashed trajectory rendering;
-3. route/intercept solver with obstacle/safety constraints and arrival-state
+1. common trajectory predictor and projected/dashed trajectory rendering;
+2. route/intercept solver with obstacle/safety constraints and arrival-state
    matching;
-4. direct map dragging between equal-level neighbouring cubes and later 3D
+3. direct map dragging between equal-level neighbouring cubes and later 3D
    trajectory bending through solver constraints;
-5. autopilot execution;
-6. formation controller using leader-relative slots rather than copied thruster
+4. autopilot execution;
+5. formation controller using leader-relative slots rather than copied thruster
    commands.

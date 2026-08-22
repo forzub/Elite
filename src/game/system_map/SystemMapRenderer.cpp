@@ -709,8 +709,11 @@ void SystemMapRenderer::endTextFrame()
 }
 
 
-SystemMapRenderer::SystemMapRenderer()
-    : m_detailBackend(m_mapResources),
+SystemMapRenderer::SystemMapRenderer(
+    game::navigation::ClientNavigationWorkspace& navigationWorkspace
+)
+    : m_navigationWorkspace(navigationWorkspace),
+      m_detailBackend(m_mapResources),
       m_hubBackend(m_mapResources)
 {
 }
@@ -1995,7 +1998,7 @@ void SystemMapRenderer::render(
 
     m_routeOverlayRenderer.render(
         vp,
-        m_navigationTrackingState,
+        m_navigationWorkspace.routePlan(),
         m_routeOverlayState,
         m_navigationMapTextProfile
     );
@@ -2122,12 +2125,64 @@ glm::vec2 SystemMapRenderer::projectToScreen(
 
 
 
+namespace
+{
+game::navigation::RouteTargetRef routeTargetRefForOverlayItem(
+    const game::system_map::MapObjectOverlayItem& item
+)
+{
+    using Anchor = game::navigation::NavigationRouteAnchorKind;
+    game::navigation::RouteTargetRef target;
+    target.systemId = item.trackingSystemId;
+    target.spatialWorldPosition = item.trackingWorldPosition;
+
+    if (item.infoKind == game::system_map::MapObjectInfoKind::WaypointCandidate)
+    {
+        target.kind = Anchor::FreeSpace;
+        return target;
+    }
+
+    if (item.infoKind == game::system_map::MapObjectInfoKind::Celestial)
+    {
+        target.kind = Anchor::CelestialBody;
+        target.stableObjectId = item.semanticTargetId;
+        return target;
+    }
+
+    if (item.kind == game::system_map::MapObjectGlyphKind::Ship)
+    {
+        target.kind = Anchor::Ship;
+        target.shipInstanceId = item.shipInstanceId;
+        return target;
+    }
+
+    if (item.kind == game::system_map::MapObjectGlyphKind::Hub)
+    {
+        target.kind = Anchor::Hub;
+        target.stableObjectId = !item.navigationHubId.empty()
+            ? item.navigationHubId
+            : item.objectId;
+        return target;
+    }
+
+    target.kind = Anchor::Infrastructure;
+    // Runtime EntityId-backed object ids are presentation handles, not durable
+    // route identity. Fail closed until the object has a stable domain id.
+    if (item.objectId.rfind("entity:", 0) != 0)
+        target.stableObjectId = item.objectId;
+    return target;
+}
+}
+
 void SystemMapRenderer::synchronizeNavigationTracking(
     game::system_map::MapObjectOverlayFrame& frame
 )
 {
+    auto& targets = m_navigationWorkspace.targets();
+    auto& routePlan = m_navigationWorkspace.routePlan();
     const auto openIds = m_objectOverlayState.openObjectIds();
-    m_navigationTrackingState.reconcileOpenCards(openIds);
+    targets.reconcileOpenCards(openIds);
+    routePlan.pruneTransientCandidates(openIds);
 
     const auto routeActionsFor =
         [&](const game::system_map::MapObjectOverlayItem& item)
@@ -2136,8 +2191,11 @@ void SystemMapRenderer::synchronizeNavigationTracking(
             if (item.objectId == "player" || !item.hasTrackingWorldPosition)
                 return actions;
 
-            const auto* route =
-                m_navigationTrackingState.findWaypoint(item.objectId);
+            const auto target = routeTargetRefForOverlayItem(item);
+            if (!target.valid())
+                return actions;
+
+            const auto* route = routePlan.findByTarget(target);
             const bool isWaypoint =
                 route && route->role ==
                     game::navigation::NavigationWaypointRole::Intermediate;
@@ -2145,8 +2203,6 @@ void SystemMapRenderer::synchronizeNavigationTracking(
                 route && route->role ==
                     game::navigation::NavigationWaypointRole::Finish;
 
-            // A FINISH target is already the terminal route node, therefore
-            // offering "add waypoint" on the same card is contradictory.
             if (!isFinish)
             {
                 game::system_map::MapObjectPanelAction waypointAction;
@@ -2161,10 +2217,7 @@ void SystemMapRenderer::synchronizeNavigationTracking(
                 actions.push_back(std::move(waypointAction));
             }
 
-            // Exactly one FINISH exists. Once selected, other cards stop
-            // advertising a competing FINISH button; the active finish keeps
-            // only its explicit cancel action.
-            if (isFinish || !m_navigationTrackingState.hasFinishWaypoint())
+            if (isFinish || !routePlan.hasFinishWaypoint())
             {
                 game::system_map::MapObjectPanelAction finishAction;
                 finishAction.key = "toggle_finish";
@@ -2178,26 +2231,25 @@ void SystemMapRenderer::synchronizeNavigationTracking(
 
     for (auto& item : frame.items)
     {
-        // Route nodes are semantic intent and survive card closure.  Whenever
-        // their live object is present, refresh only the presentation fallback
-        // position/name; target identity remains stable for the future predictor.
         if (item.hasTrackingWorldPosition)
         {
-            if (auto* route = m_navigationTrackingState.findWaypoint(item.objectId);
-                route && route->role !=
-                    game::navigation::NavigationWaypointRole::None)
+            const auto target = routeTargetRefForOverlayItem(item);
+            if (target.valid())
             {
-                route->worldPosition = item.trackingWorldPosition;
-                if (!item.name.empty())
-                    route->displayName = item.name;
+                if (auto* route = routePlan.findByTarget(target);
+                    route && route->role !=
+                        game::navigation::NavigationWaypointRole::None)
+                {
+                    routePlan.bindPresentationSource(route->id, item.objectId);
+                    route->worldPosition = item.trackingWorldPosition;
+                    if (!item.name.empty())
+                        route->displayName = item.name;
 
-                // Route semantics visually win over the object's ordinary
-                // tactical/celestial glyph. Keep panel identity intact, but
-                // show one universal green numbered route pin on the map.
-                item.routeDisplayIndex =
-                    route->role == game::navigation::NavigationWaypointRole::Finish
-                        ? static_cast<int>(m_navigationTrackingState.routeSize())
-                        : route->sequence;
+                    item.routeDisplayIndex =
+                        route->role == game::navigation::NavigationWaypointRole::Finish
+                            ? static_cast<int>(routePlan.routeSize())
+                            : route->sequence;
+                }
             }
         }
 
@@ -2212,27 +2264,32 @@ void SystemMapRenderer::synchronizeNavigationTracking(
 
         if (item.infoKind == game::system_map::MapObjectInfoKind::Tactical)
         {
-            m_navigationTrackingState.rememberTacticalObject(
+            const bool numberedShipTarget =
+                item.kind == game::system_map::MapObjectGlyphKind::Ship &&
+                item.objectId != "player";
+            targets.rememberTacticalObject(
                 item.objectId,
                 item.typeName,
                 item.name,
                 item.factionColor,
-                m_objectOverlayState.trackNumberFor(item.objectId)
+                numberedShipTarget,
+                numberedShipTarget
+                    ? m_objectOverlayState.shipTargetNumberFor(item.objectId)
+                    : 0
             );
         }
         else if (
             item.infoKind == game::system_map::MapObjectInfoKind::Celestial &&
             item.hasTrackingWorldPosition)
         {
-            m_navigationTrackingState.rememberCelestialBody(
+            targets.rememberCelestialBody(
                 item.objectId,
                 item.trackingSystemId,
                 item.semanticTargetId,
                 item.typeName,
                 item.name,
                 item.trackingWorldPosition,
-                item.factionColor,
-                m_objectOverlayState.trackNumberFor(item.objectId)
+                item.factionColor
             );
         }
         else if (
@@ -2248,7 +2305,9 @@ void SystemMapRenderer::synchronizeNavigationTracking(
                     break;
                 }
             }
-            m_navigationTrackingState.rememberWaypointCandidate(
+            const auto target = routeTargetRefForOverlayItem(item);
+            routePlan.rememberCandidate(
+                target,
                 item.objectId,
                 item.trackingWorldPosition,
                 std::move(address),
@@ -2326,7 +2385,7 @@ const std::string& waypointRoleTypeName(
 }
 
 std::vector<game::system_map::MapObjectPanelAction> waypointPanelActions(
-    const game::navigation::NavigationTrackingState& tracking,
+    const game::navigation::RoutePlan& routePlan,
     const game::navigation::NavigationWaypoint& waypoint
 )
 {
@@ -2347,7 +2406,7 @@ std::vector<game::system_map::MapObjectPanelAction> waypointPanelActions(
         actions.push_back(std::move(intermediate));
     }
 
-    if (isFinish || !tracking.hasFinishWaypoint())
+    if (isFinish || !routePlan.hasFinishWaypoint())
     {
         game::system_map::MapObjectPanelAction finish;
         finish.key = "toggle_finish";
@@ -2373,7 +2432,7 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
         m_galaxyView.projectionMatrix(viewport) *
         m_galaxyView.viewMatrix();
 
-    for (const auto& waypoint : m_navigationTrackingState.waypoints())
+    for (const auto& waypoint : m_navigationWorkspace.routePlan().waypoints())
     {
         if (waypoint.role == game::navigation::NavigationWaypointRole::None ||
             !waypointHasPrefix(waypoint, 'G'))
@@ -2393,9 +2452,9 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
         item.factionColor = waypointRoleColor(waypoint.role);
         item.routeDisplayIndex =
             waypoint.role == game::navigation::NavigationWaypointRole::Finish
-                ? static_cast<int>(m_navigationTrackingState.routeSize())
+                ? static_cast<int>(m_navigationWorkspace.routePlan().routeSize())
                 : waypoint.sequence;
-        item.panelActions = waypointPanelActions(m_navigationTrackingState, waypoint);
+        item.panelActions = waypointPanelActions(m_navigationWorkspace.routePlan(), waypoint);
         item.extraFields.push_back({"address", waypoint.address, ""});
         item.trackingWorldPosition = waypoint.worldPosition;
         item.hasTrackingWorldPosition = true;
@@ -2441,7 +2500,9 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
     item.screenAffordance = true;
     item.facingScreenDirection = glm::dvec2(0.0, -1.0);
     item.factionColor = glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
-    const auto* waypoint = m_navigationTrackingState.findWaypoint(item.objectId);
+    const auto* waypoint = m_navigationWorkspace.routePlan().findByTarget(
+        routeTargetRefForOverlayItem(item)
+    );
     if (waypoint)
     {
         item.typeName = waypointRoleTypeName(waypoint->role, m_navigationMapTextProfile);
@@ -2449,9 +2510,9 @@ void SystemMapRenderer::refreshGalaxyWaypointCandidate(
         item.factionColor = waypointRoleColor(waypoint->role);
         item.routeDisplayIndex =
             waypoint->role == game::navigation::NavigationWaypointRole::Finish
-                ? static_cast<int>(m_navigationTrackingState.routeSize())
+                ? static_cast<int>(m_navigationWorkspace.routePlan().routeSize())
                 : waypoint->sequence;
-        item.panelActions = waypointPanelActions(m_navigationTrackingState, *waypoint);
+        item.panelActions = waypointPanelActions(m_navigationWorkspace.routePlan(), *waypoint);
         item.extraFields.clear();
         item.extraFields.push_back({"address", waypoint->address, ""});
     }
@@ -2488,7 +2549,7 @@ void SystemMapRenderer::refreshSystemWaypointCandidate(
         items.end()
     );
 
-    for (const auto& waypoint : m_navigationTrackingState.waypoints())
+    for (const auto& waypoint : m_navigationWorkspace.routePlan().waypoints())
     {
         if (waypoint.role == game::navigation::NavigationWaypointRole::None ||
             !waypointHasPrefix(waypoint, 'S'))
@@ -2508,9 +2569,9 @@ void SystemMapRenderer::refreshSystemWaypointCandidate(
         item.factionColor = waypointRoleColor(waypoint.role);
         item.routeDisplayIndex =
             waypoint.role == game::navigation::NavigationWaypointRole::Finish
-                ? static_cast<int>(m_navigationTrackingState.routeSize())
+                ? static_cast<int>(m_navigationWorkspace.routePlan().routeSize())
                 : waypoint.sequence;
-        item.panelActions = waypointPanelActions(m_navigationTrackingState, waypoint);
+        item.panelActions = waypointPanelActions(m_navigationWorkspace.routePlan(), waypoint);
         item.extraFields.push_back({"address", waypoint.address, ""});
         item.trackingWorldPosition = waypoint.worldPosition;
         item.hasTrackingWorldPosition = true;
@@ -2573,7 +2634,9 @@ void SystemMapRenderer::refreshSystemWaypointCandidate(
     item.screenAffordance = true;
     item.facingScreenDirection = glm::dvec2(0.0, -1.0);
     item.factionColor = glm::vec4(0.20f, 0.66f, 1.00f, 0.78f);
-    const auto* waypoint = m_navigationTrackingState.findWaypoint(item.objectId);
+    const auto* waypoint = m_navigationWorkspace.routePlan().findByTarget(
+        routeTargetRefForOverlayItem(item)
+    );
     if (waypoint)
     {
         item.typeName = waypointRoleTypeName(waypoint->role, m_navigationMapTextProfile);
@@ -2581,9 +2644,9 @@ void SystemMapRenderer::refreshSystemWaypointCandidate(
         item.factionColor = waypointRoleColor(waypoint->role);
         item.routeDisplayIndex =
             waypoint->role == game::navigation::NavigationWaypointRole::Finish
-                ? static_cast<int>(m_navigationTrackingState.routeSize())
+                ? static_cast<int>(m_navigationWorkspace.routePlan().routeSize())
                 : waypoint->sequence;
-        item.panelActions = waypointPanelActions(m_navigationTrackingState, *waypoint);
+        item.panelActions = waypointPanelActions(m_navigationWorkspace.routePlan(), *waypoint);
         item.extraFields.clear();
         item.extraFields.push_back({"address", waypoint->address, ""});
     }
@@ -2632,11 +2695,16 @@ void SystemMapRenderer::applyWaypointAction(
     const std::string& actionKey
 )
 {
-    auto* waypoint = m_navigationTrackingState.findWaypoint(objectId);
+    auto& routePlan = m_navigationWorkspace.routePlan();
     const auto* item = currentOverlayItem(objectId);
+    game::navigation::NavigationWaypoint* waypoint = nullptr;
 
-    if (!waypoint && item && item->hasTrackingWorldPosition)
+    if (item && item->hasTrackingWorldPosition)
     {
+        const auto target = routeTargetRefForOverlayItem(*item);
+        if (!target.valid())
+            return;
+
         std::string address;
         for (const auto& field : item->extraFields)
         {
@@ -2646,42 +2714,24 @@ void SystemMapRenderer::applyWaypointAction(
                 break;
             }
         }
-        waypoint = &m_navigationTrackingState.rememberWaypointCandidate(
+
+        waypoint = &routePlan.rememberCandidate(
+            target,
             item->objectId,
             item->trackingWorldPosition,
             std::move(address),
             item->name.empty() ? item->typeName : item->name
         );
-    }
-
-    if (!waypoint)
-        return;
-
-    if (item)
-    {
-        using Anchor = game::navigation::NavigationRouteAnchorKind;
-        Anchor anchor = Anchor::FreeSpace;
-        bool dynamic = false;
-        if (item->infoKind == game::system_map::MapObjectInfoKind::Celestial)
-            anchor = Anchor::CelestialBody;
-        else if (item->infoKind == game::system_map::MapObjectInfoKind::Tactical)
-        {
-            dynamic = true;
-            if (item->kind == game::system_map::MapObjectGlyphKind::Hub)
-                anchor = Anchor::Hub;
-            else if (item->kind == game::system_map::MapObjectGlyphKind::Ship)
-                anchor = Anchor::Ship;
-            else
-                anchor = Anchor::Infrastructure;
-        }
 
         using Context = game::navigation::NavigationRouteMapKind;
         Context context = Context::System;
-        int systemId = -1;
+        int systemId = item->trackingSystemId;
         std::string bodyId;
         std::string hubId = item->navigationHubId;
         if (m_mode == Mode::Galaxy)
+        {
             context = Context::Galaxy;
+        }
         else if (m_mode == Mode::System)
         {
             context = Context::System;
@@ -2703,29 +2753,37 @@ void SystemMapRenderer::applyWaypointAction(
                 hubId = m_hubPresentation.hubId;
         }
 
-        m_navigationTrackingState.setWaypointRouteMetadata(
-            objectId,
-            anchor,
-            context,
-            systemId,
-            std::move(bodyId),
-            std::move(hubId),
-            dynamic ? objectId : std::string{},
-            dynamic
-        );
+        waypoint->authoredMap = context;
+        waypoint->authoredSystemId = systemId;
+        waypoint->authoredBodyId = std::move(bodyId);
+        waypoint->authoredHubId = std::move(hubId);
+        waypoint->dynamicTarget =
+            target.kind == game::navigation::NavigationRouteAnchorKind::Ship ||
+            target.kind == game::navigation::NavigationRouteAnchorKind::Hub;
+        waypoint->transitKind =
+            target.kind == game::navigation::NavigationRouteAnchorKind::Ship
+                ? game::navigation::NavigationWaypointTransitKind::Rendezvous
+                : game::navigation::NavigationWaypointTransitKind::PassThrough;
     }
+    else
+    {
+        waypoint = routePlan.findBySourceObjectId(objectId);
+    }
+
+    if (!waypoint)
+        return;
 
     if (actionKey == "toggle_finish")
     {
-        m_navigationTrackingState.toggleWaypointRole(
-            objectId,
+        routePlan.toggleRole(
+            waypoint->id,
             game::navigation::NavigationWaypointRole::Finish
         );
     }
     else if (actionKey == "toggle_intermediate")
     {
-        m_navigationTrackingState.toggleWaypointRole(
-            objectId,
+        routePlan.toggleRole(
+            waypoint->id,
             game::navigation::NavigationWaypointRole::Intermediate
         );
     }
@@ -2733,7 +2791,7 @@ void SystemMapRenderer::applyWaypointAction(
 
 std::optional<game::system_map::MapIntent>
 SystemMapRenderer::focusRouteWaypoint(
-    const std::string& sourceObjectId,
+    std::uint64_t routeNodeId,
     const Viewport& viewport,
     const world::celestial::GalaxyMapSnapshot& galaxy,
     const world::celestial::SystemMapSnapshot& system,
@@ -2741,14 +2799,14 @@ SystemMapRenderer::focusRouteWaypoint(
 )
 {
     const auto* waypoint =
-        m_navigationTrackingState.findWaypoint(sourceObjectId);
+        m_navigationWorkspace.routePlan().findById(routeNodeId);
     if (!waypoint ||
         waypoint->role == game::navigation::NavigationWaypointRole::None)
     {
         return std::nullopt;
     }
 
-    m_pendingRouteFocusSourceObjectId = sourceObjectId;
+    m_pendingRouteFocusNodeId = routeNodeId;
     m_pendingRouteFocusContextApplied = false;
     return advancePendingRouteFocus(
         viewport,
@@ -2766,16 +2824,16 @@ SystemMapRenderer::advancePendingRouteFocus(
     double nowSeconds
 )
 {
-    if (m_pendingRouteFocusSourceObjectId.empty())
+    if (m_pendingRouteFocusNodeId == 0)
         return std::nullopt;
 
-    const auto* waypoint = m_navigationTrackingState.findWaypoint(
-        m_pendingRouteFocusSourceObjectId
+    const auto* waypoint = m_navigationWorkspace.routePlan().findById(
+        m_pendingRouteFocusNodeId
     );
     if (!waypoint ||
         waypoint->role == game::navigation::NavigationWaypointRole::None)
     {
-        m_pendingRouteFocusSourceObjectId.clear();
+        m_pendingRouteFocusNodeId = 0;
         m_pendingRouteFocusContextApplied = false;
         return std::nullopt;
     }
@@ -2956,7 +3014,12 @@ void SystemMapRenderer::revealPendingRouteFocus(
     const Viewport& viewport
 )
 {
-    if (m_pendingRouteFocusSourceObjectId.empty())
+    if (m_pendingRouteFocusNodeId == 0)
+        return;
+
+    const auto* routeNode =
+        m_navigationWorkspace.routePlan().findById(m_pendingRouteFocusNodeId);
+    if (!routeNode || routeNode->sourceObjectId.empty())
         return;
 
     const auto found = std::find_if(
@@ -2964,7 +3027,7 @@ void SystemMapRenderer::revealPendingRouteFocus(
         frame.items.end(),
         [&](const auto& item)
         {
-            return item.objectId == m_pendingRouteFocusSourceObjectId;
+            return item.objectId == routeNode->sourceObjectId;
         }
     );
     if (found == frame.items.end())
@@ -2995,7 +3058,7 @@ void SystemMapRenderer::revealPendingRouteFocus(
         *found,
         glm::dvec2(viewport.width, viewport.height)
     );
-    m_pendingRouteFocusSourceObjectId.clear();
+    m_pendingRouteFocusNodeId = 0;
     m_pendingRouteFocusContextApplied = false;
 }
 
@@ -3097,7 +3160,7 @@ SystemMapRenderer::handleInput(
     // Cross-map route recall is a small intent-driven state machine.  A prior
     // frame may have asked SpaceState to switch map/system; once that canonical
     // transition commits, continue toward the authored layer here.
-    if (!m_pendingRouteFocusSourceObjectId.empty())
+    if (m_pendingRouteFocusNodeId != 0)
     {
         if (const auto intent = advancePendingRouteFocus(
                 vp, galaxy, system, inputNowSeconds);
@@ -3149,21 +3212,28 @@ SystemMapRenderer::handleInput(
 
     const auto routePointer =
         m_routeOverlayState.handlePointer(
-            m_navigationTrackingState,
+            m_navigationWorkspace.routePlan(),
             glm::dvec2(vp.width, vp.height),
             glm::dvec2(localMx, localMy),
             inside,
             leftDown
         );
-    if (!routePointer.selectedSourceObjectId.empty())
-        m_objectOverlayState.activate(routePointer.selectedSourceObjectId);
+    if (routePointer.selectedRouteNodeId != 0)
+    {
+        const auto* selectedNode =
+            m_navigationWorkspace.routePlan().findById(
+                routePointer.selectedRouteNodeId
+            );
+        if (selectedNode && !selectedNode->sourceObjectId.empty())
+            m_objectOverlayState.activate(selectedNode->sourceObjectId);
+    }
     if (routePointer.consumed)
     {
         std::optional<game::system_map::MapIntent> routeFocusIntent;
-        if (!routePointer.focusSourceObjectId.empty())
+        if (routePointer.focusRouteNodeId != 0)
         {
             routeFocusIntent = focusRouteWaypoint(
-                routePointer.focusSourceObjectId,
+                routePointer.focusRouteNodeId,
                 vp,
                 galaxy,
                 system,

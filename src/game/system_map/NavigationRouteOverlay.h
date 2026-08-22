@@ -1,12 +1,12 @@
 #pragma once
 
 #include <chrono>
-#include <string>
+#include <cstdint>
 #include <unordered_map>
 
 #include <glm/glm.hpp>
 
-#include "src/game/navigation/NavigationTrackingState.h"
+#include "src/game/navigation/RoutePlan.h"
 #include "src/game/system_map/NavigationMapTextProfile.h"
 #include "src/render/types/Viewport.h"
 
@@ -16,8 +16,8 @@ namespace game::system_map
 struct NavigationRouteOverlayPointerResult
 {
     bool consumed = false;
-    std::string focusSourceObjectId;
-    std::string selectedSourceObjectId;
+    std::uint64_t focusRouteNodeId = 0;
+    std::uint64_t selectedRouteNodeId = 0;
 };
 
 class NavigationRouteOverlayState
@@ -33,10 +33,10 @@ public:
     bool collapsed() const noexcept { return m_collapsed; }
     const glm::dvec2& topLeftPx() const noexcept { return m_topLeftPx; }
 
-    double panelHeight(const game::navigation::NavigationTrackingState& tracking) const;
+    double panelHeight(const game::navigation::RoutePlan& routePlan) const;
 
     NavigationRouteOverlayPointerResult handlePointer(
-        game::navigation::NavigationTrackingState& tracking,
+        game::navigation::RoutePlan& routePlan,
         const glm::dvec2& viewportSizePx,
         const glm::dvec2& mousePx,
         bool inside,
@@ -46,16 +46,14 @@ public:
     void clearTransientDrag() noexcept;
 
     bool deleteRouteArmed() const noexcept { return m_deleteRouteArmed; }
-    const std::string& deleteNodeArmedId() const noexcept { return m_deleteNodeArmedId; }
-    const std::string& draggingNodeId() const noexcept { return m_draggingNodeId; }
-    const std::string& selectedNodeId() const noexcept { return m_selectedNodeId; }
-    bool isNodeSelected(const std::string& sourceObjectId) const noexcept
+    std::uint64_t deleteNodeArmedId() const noexcept { return m_deleteNodeArmedId; }
+    std::uint64_t draggingNodeId() const noexcept { return m_draggingNodeId; }
+    std::uint64_t selectedNodeId() const noexcept { return m_selectedNodeId; }
+    bool isNodeSelected(std::uint64_t routeNodeId) const noexcept
     {
-        return !sourceObjectId.empty() && sourceObjectId == m_selectedNodeId;
+        return routeNodeId != 0 && routeNodeId == m_selectedNodeId;
     }
 
-    // After a drop, rows glide from their previous order into the new order so
-    // reordering has unmistakable visual feedback without adding UI chrome.
     double reorderOffsetPx(
         const game::navigation::NavigationWaypoint& waypoint
     ) const;
@@ -77,23 +75,23 @@ private:
     bool m_draggingPanel = false;
     glm::dvec2 m_panelDragOffsetPx {0.0};
 
-    std::string m_pressedRowId;
+    std::uint64_t m_pressedRowId = 0;
     glm::dvec2 m_pressedAtPx {0.0};
-    std::string m_draggingNodeId;
-    std::string m_selectedNodeId;
-    std::string m_lastClickedRowId;
+    std::uint64_t m_draggingNodeId = 0;
+    std::uint64_t m_selectedNodeId = 0;
+    std::uint64_t m_lastClickedRowId = 0;
     std::chrono::steady_clock::time_point m_lastClickedAt {};
 
     double m_dragPointerViewportY = 0.0;
     double m_dragGrabOffsetY = 0.0;
     bool m_liveNodeDrag = false;
 
-    std::unordered_map<std::string, int> m_reorderFromSequence;
+    std::unordered_map<std::uint64_t, int> m_reorderFromSequence;
     std::chrono::steady_clock::time_point m_reorderAnimationStartedAt {};
     bool m_reorderAnimationActive = false;
 
     bool m_deleteRouteArmed = false;
-    std::string m_deleteNodeArmedId;
+    std::uint64_t m_deleteNodeArmedId = 0;
 };
 
 class NavigationRouteOverlayRenderer
@@ -101,7 +99,7 @@ class NavigationRouteOverlayRenderer
 public:
     void render(
         const Viewport& viewport,
-        const game::navigation::NavigationTrackingState& tracking,
+        const game::navigation::RoutePlan& routePlan,
         const NavigationRouteOverlayState& state,
         const NavigationMapTextProfile& textProfile
     ) const;

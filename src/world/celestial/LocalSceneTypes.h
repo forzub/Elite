@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "src/scene/EntityID.h"
+#include "src/game/identity/ShipInstanceId.h"
 #include "src/world/celestial/DetailMapTypes.h"
 #include "src/world/types/ObjectType.h"
 
@@ -52,6 +53,7 @@ struct LocalSceneAxes
 struct LocalSceneObject
 {
     EntityId id {};
+    ShipInstanceId shipInstanceId = 0;
     ObjectType typeId = ObjectType::None;
 
     std::string stableId;

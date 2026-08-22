@@ -10,7 +10,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/client/ClientWorldState.h"
-#include "src/game/navigation/NavigationTrackingState.h"
+#include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/render/HUD/NavigationHudMarker.h"
 
@@ -199,10 +199,42 @@ inline ResolvedTacticalKinematics resolveTacticalKinematics(
 
     return out;
 }
+
+inline ResolvedTacticalKinematics resolveRouteTargetKinematics(
+    const ClientWorldState& world,
+    const ClientShipState& player,
+    const game::navigation::RouteTargetRef& target
+)
+{
+    if (target.kind == game::navigation::NavigationRouteAnchorKind::Ship &&
+        target.shipInstanceId != 0)
+    {
+        for (const auto& [entityId, ship] : world.ships())
+        {
+            (void)entityId;
+            if (ship.instanceId != target.shipInstanceId)
+                continue;
+            ResolvedTacticalKinematics out;
+            out.worldPosition = ship.renderTransform.worldPosition;
+            out.worldVelocityMps = ship.renderTransform.motion.worldVelocityMps;
+            out.valid = true;
+            return out;
+        }
+        return {};
+    }
+
+    if (target.kind == game::navigation::NavigationRouteAnchorKind::Hub &&
+        !target.stableObjectId.empty())
+    {
+        return resolveTacticalKinematics(world, player, target.stableObjectId);
+    }
+
+    return {};
+}
 } // namespace detail
 
 inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
-    const game::navigation::NavigationTrackingState& tracking,
+    const game::navigation::ClientNavigationWorkspace& navigation,
     const ClientWorldState& world,
     const ClientShipState& player,
     const NavigationHudVocabulary& vocabulary = NavigationHudVocabulary{}
@@ -210,16 +242,16 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
 {
     std::vector<NavigationHudMarker> out;
     out.reserve(
-        tracking.tacticalObjects().size() +
-        tracking.celestialBodies().size() +
-        tracking.routeSize()
+        navigation.targets().tacticalObjects().size() +
+        navigation.targets().celestialBodies().size() +
+        navigation.routePlan().routeSize()
     );
 
     const auto& playerPosition = player.renderTransform.worldPosition;
 
-    for (const auto& [id, tracked] : tracking.tacticalObjects())
+    for (const auto& [id, tracked] : navigation.targets().tacticalObjects())
     {
-        if (const auto* route = tracking.findWaypoint(id);
+        if (const auto* route = navigation.routePlan().findBySourceObjectId(id);
             route && route->role !=
                 game::navigation::NavigationWaypointRole::None)
         {
@@ -266,9 +298,9 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
         out.push_back(std::move(marker));
     }
 
-    for (const auto& [id, tracked] : tracking.celestialBodies())
+    for (const auto& [id, tracked] : navigation.targets().celestialBodies())
     {
-        if (const auto* route = tracking.findWaypoint(id);
+        if (const auto* route = navigation.routePlan().findBySourceObjectId(id);
             route && route->role !=
                 game::navigation::NavigationWaypointRole::None)
         {
@@ -288,17 +320,17 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
             : tracked.typeName;
         marker.nameText = tracked.displayName;
         marker.speedMode = NavigationHudSpeedMode::None;
-        marker.displayIndex = tracked.displayIndex;
+        marker.displayIndex = 0;
         marker.color = tracked.color;
 
         if (marker.distanceMeters > 0.01)
             out.push_back(std::move(marker));
     }
 
-    if (!tracking.routeVisibleOnHud())
+    if (!navigation.routePlan().routeVisibleOnHud())
         return out;
 
-    for (const auto* waypointPtr : tracking.orderedRouteWaypoints())
+    for (const auto* waypointPtr : navigation.routePlan().orderedRouteWaypoints())
     {
         const auto& waypoint = *waypointPtr;
         if (!waypoint.showOnHud)
@@ -308,12 +340,12 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
             waypoint.worldPosition;
         glm::dvec3 routeTargetVelocityMps {0.0};
         bool hasLiveRouteKinematics = false;
-        if (waypoint.dynamicTarget && !waypoint.targetEntityId.empty())
+        if (waypoint.dynamicTarget)
         {
-            const auto resolved = detail::resolveTacticalKinematics(
+            const auto resolved = detail::resolveRouteTargetKinematics(
                 world,
                 player,
-                waypoint.targetEntityId
+                waypoint.target
             );
             if (resolved.valid)
             {
@@ -338,7 +370,7 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
             waypoint.role == game::navigation::NavigationWaypointRole::Intermediate
                 ? waypoint.sequence
                 : waypoint.role == game::navigation::NavigationWaypointRole::Finish
-                    ? static_cast<int>(tracking.routeSize())
+                    ? static_cast<int>(navigation.routePlan().routeSize())
                     : 0;
         marker.typeText =
             (waypoint.role == game::navigation::NavigationWaypointRole::Finish

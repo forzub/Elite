@@ -28,7 +28,7 @@
 
 #include "src/game/navigation/NavigationAddressFormatter.h"
 #include "src/game/navigation/NavigationRegionCatalog.h"
-#include "src/game/navigation/NavigationTrackingState.h"
+#include "src/game/navigation/ClientNavigationWorkspace.h"
 
 #include "src/render/celestial/CelestialShapeMesh.h"
 
@@ -83,7 +83,7 @@ public:
         game::system_map::HubMapPerformanceStats;
 
 public:
-    SystemMapRenderer();
+    explicit SystemMapRenderer(game::navigation::ClientNavigationWorkspace& navigationWorkspace);
 
     void init();
 
@@ -172,11 +172,7 @@ public:
     std::optional<world::celestial::DetailSpatialCell>
     selectedTerminalDetailCell() const;
 
-    const game::navigation::NavigationTrackingState&
-    navigationTrackingState() const noexcept
-    {
-        return m_navigationTrackingState;
-    }
+
 
 private:
 
@@ -216,8 +212,8 @@ private:
     game::system_map::MapObjectOverlayRenderer m_objectOverlayRenderer;
     game::system_map::NavigationRouteOverlayState m_routeOverlayState;
     game::system_map::NavigationRouteOverlayRenderer m_routeOverlayRenderer;
-    game::navigation::NavigationTrackingState m_navigationTrackingState;
-    std::string m_pendingRouteFocusSourceObjectId;
+    game::navigation::ClientNavigationWorkspace& m_navigationWorkspace;
+    std::uint64_t m_pendingRouteFocusNodeId = 0;
     bool m_pendingRouteFocusContextApplied = false;
     game::system_map::MapObjectOverlayFrame m_galaxyInfoOverlayFrame;
     std::optional<game::system_map::MapObjectOverlayItem>
@@ -288,7 +284,7 @@ private:
     );
 
     std::optional<game::system_map::MapIntent> focusRouteWaypoint(
-        const std::string& sourceObjectId,
+        std::uint64_t routeNodeId,
         const Viewport& viewport,
         const world::celestial::GalaxyMapSnapshot& galaxy,
         const world::celestial::SystemMapSnapshot& system,

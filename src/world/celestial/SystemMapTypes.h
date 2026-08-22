@@ -6,6 +6,7 @@
 
 #include <glm/glm.hpp>
 #include "src/scene/EntityID.h"
+#include "src/game/identity/ShipInstanceId.h"
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/celestial/DetailMapTypes.h"
 #include "src/world/celestial/LocalSceneTypes.h"
@@ -236,6 +237,7 @@ namespace world::celestial
     struct SystemMapObject
     {
         EntityId id {};
+        ShipInstanceId shipInstanceId = 0;
         // Stable runtime/catalog identifier. Unlike EntityId, it also exists
         // for composite objects such as orbital hubs.
         std::string stableId;

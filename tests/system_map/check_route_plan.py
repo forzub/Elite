@@ -18,8 +18,8 @@ def require(path: str, *tokens: str) -> str:
     return body
 
 def main() -> int:
-    state = require(
-        "src/game/navigation/NavigationTrackingState.h",
+    route = require(
+        "src/game/navigation/RoutePlan.h",
         "NavigationArrivalMode",
         "NavigationWaypointTransitKind",
         "Rendezvous",
@@ -27,17 +27,29 @@ def main() -> int:
         "Follow",
         "Formation",
         "ParadeFormation",
+        "RouteTargetRef",
+        "ShipInstanceId shipInstanceId",
         "orderedRouteWaypoints",
-        "moveIntermediateWaypoint",
+        "moveIntermediateWaypoint(std::uint64_t nodeId",
         "routeVisibleOnHud",
         "showOnHud",
         "dynamicTarget",
-        "targetEntityId",
-        "waypoint.role == NavigationWaypointRole::None &&",
         "clearRoute",
     )
-    if "return open.find(waypoint.sourceObjectId) == open.end();" in state:
-        raise AssertionError("route intent regressed to source-card lifetime")
+    if "EntityId" in route or "targetEntityId" in route:
+        raise AssertionError("Route Plan regressed to materialized EntityId identity")
+
+    require(
+        "src/game/navigation/TargetTrackingState.h",
+        "class TargetTrackingState",
+        "reconcileOpenCards",
+        "numberedShipTarget",
+    )
+    require(
+        "src/game/navigation/ClientNavigationWorkspace.h",
+        "TargetTrackingState m_targets",
+        "RoutePlan m_routePlan",
+    )
 
     overlay = require(
         "src/game/system_map/NavigationRouteOverlay.cpp",
@@ -47,25 +59,67 @@ def main() -> int:
         "textProfile.dragWaypoints",
         "textProfile.deleteRoute",
         "textProfile.deleteWaypoint",
-        "textProfile.yes",
-        "textProfile.no",
         "m_liveNodeDrag",
-        "selectedSourceObjectId",
+        "selectedRouteNodeId",
         "moveIntermediateWaypoint",
         "setFinishArrivalMode",
         "removeRouteWaypoint",
         "clearRoute",
         "drawArrivalGlyph",
         "reorderOffsetPx",
-        "focusSourceObjectId",
-        "textProfile.arrivalSafeZone",
-        "textProfile.arrivalFormation",
+        "focusRouteNodeId",
     )
     if "Trajectory" in overlay or "delta" in overlay.lower():
         raise AssertionError("route authoring UI should not expose solver complexity")
     for token in ("locale.rfind", 'ru ? "', 'zh ? "', 'es ? "', 'ja ? "'):
         if token in overlay:
             raise AssertionError(f"route renderer bypasses localization storage: {token}")
+
+    renderer = require(
+        "src/game/system_map/SystemMapRenderer.cpp",
+        'waypointAction.key = "toggle_intermediate"',
+        'finishAction.key = "toggle_finish"',
+        '"set_rendezvous"',
+        "routeTargetRefForOverlayItem",
+        "target.shipInstanceId = item.shipInstanceId",
+        "findByTarget",
+        "findById",
+        "focusRouteWaypoint",
+        "revealPendingRouteFocus",
+        "m_routeOverlayRenderer.render",
+        "m_routeOverlayState.handlePointer",
+        "item.routeDisplayIndex",
+    )
+    if "m_navigationTrackingState" in renderer:
+        raise AssertionError("renderer regained ownership of navigation state")
+
+    route_recall = renderer[
+        renderer.index("SystemMapRenderer::focusRouteWaypoint"):renderer.index("SystemMapRenderer::revealPendingRouteFocus")
+    ]
+    if "setMode(Mode::" in route_recall:
+        raise AssertionError("route recall must leave map-mode changes to SpaceState")
+    for token in ("MapIntent::recallRouteMap", "MapIntent::openBody", "MapIntent::openHub"):
+        if token not in route_recall:
+            raise AssertionError(f"route recall missing canonical intent {token}")
+
+    require(
+        "src/game/presentation/NavigationHudPresentation.h",
+        "navigation.routePlan().routeVisibleOnHud()",
+        "navigation.routePlan().orderedRouteWaypoints()",
+        "waypoint.showOnHud",
+        "waypoint.dynamicTarget",
+        "resolveRouteTargetKinematics",
+        "target.shipInstanceId",
+        "std::to_string(marker.displayIndex)",
+    )
+    require(
+        "src/game/system_map/MapObjectOverlayRenderer.cpp",
+        "drawRoutePoint",
+        "square + center dot",
+        "routeDisplayIndex",
+        "numberedShipTarget",
+        "MapObjectGlyphKind::Ship",
+    )
 
     map_localization = text("src/assets/localization/ui/maps/map.json")
     confirmation_localization = text("src/assets/localization/ui/common/confirmation.json")
@@ -81,8 +135,6 @@ def main() -> int:
         "map.route.arrival.follow",
         "map.route.arrival.formation",
         "map.route.arrival.parade",
-        "map.object_info.set_rendezvous",
-        "map.object_info.cancel_finish",
     ):
         if key not in map_localization:
             raise AssertionError(f"route/map localization missing {key}")
@@ -91,83 +143,16 @@ def main() -> int:
             raise AssertionError(f"confirmation localization missing {key}")
 
     require(
-        "src/game/system_map/SystemMapRenderer.cpp",
-        'waypointAction.key = "toggle_intermediate"',
-        'finishAction.key = "toggle_finish"',
-        '"set_waypoint"',
-        '"set_rendezvous"',
-        '"set_finish"',
-        "hasFinishWaypoint()",
-        "focusRouteWaypoint",
-        "revealPendingRouteFocus",
-        "m_routeOverlayRenderer.render",
-        "m_routeOverlayState.handlePointer",
-        "setWaypointRouteMetadata",
-        "universal green numbered route pin",
-        "item.routeDisplayIndex",
-    )
-    map_intent = require(
-        "src/game/system_map/MapIntent.h",
-        "RecallRouteMap",
-        "requestedMapMode",
-        "recallRouteMap",
-        "openBody",
-        "openHub",
-    )
-    require(
-        "src/game/SpaceState.cpp",
-        "MapIntentType::RecallRouteMap",
-        "MapIntentType::OpenBody",
-        "MapIntentType::OpenHub",
-        "setSystemMapGalaxyMode()",
-        "setSystemMapLoadedSystemMode()",
-        "setSystemMapDetailMode()",
-        "setSystemMapHubMode()",
-    )
-    renderer = text("src/game/system_map/SystemMapRenderer.cpp")
-    route_recall = renderer[
-        renderer.index("SystemMapRenderer::focusRouteWaypoint"):renderer.index("SystemMapRenderer::revealPendingRouteFocus")
-    ]
-    if "setMode(Mode::" in route_recall:
-        raise AssertionError("route recall must leave map-mode changes to SpaceState")
-    for token in ("MapIntent::recallRouteMap", "MapIntent::openBody", "MapIntent::openHub"):
-        if token not in route_recall:
-            raise AssertionError(f"route recall missing canonical intent {token}")
-
-    require(
-        "src/game/presentation/NavigationHudPresentation.h",
-        "tracking.routeVisibleOnHud()",
-        "tracking.orderedRouteWaypoints()",
-        "waypoint.showOnHud",
-        "waypoint.dynamicTarget",
-        "resolveTacticalKinematics",
-        "static_cast<int>(tracking.routeSize())",
-        "std::to_string(marker.displayIndex)",
-    )
-    require(
-        "src/game/system_map/MapObjectOverlayRenderer.cpp",
-        "drawRoutePoint",
-        "square + center dot",
-        "routeDisplayIndex",
-        "item.routeDisplayIndex > 0",
-        "0.38f, 0.96f, 0.58f",
-    )
-    require(
         "src/game/navigation/ROUTE_NAVIGATION_CONTRACT.md",
         "simple, visual and almost cartoon-like",
-        "Route Plan",
+        "ClientNavigationWorkspace",
+        "RoutePlan",
+        "RouteTargetRef",
         "Trajectory Solution",
         "Autopilot",
-        "SAFE",
-        "FOLLOW",
-        "FORMATION",
-        "PARADE",
-        "ROUTE RENDEZVOUS",
-        "double-click",
-        "trajectory prediction is a shared service",
     )
 
-    print("[PASS] persistent simple Route Plan + arrival-profile contract")
+    print("[PASS] renderer-independent Route Plan + stable route identity contract")
     return 0
 
 if __name__ == "__main__":

@@ -404,6 +404,32 @@ SimulationSnapshot makeSnapshot()
     ownedAsset.kinematicsValid = true;
     ownedAsset.commandable = true;
     snapshot.session.ownedNavigationAssets.push_back(ownedAsset);
+
+    snapshot.session.navigationSensors.radarInstalled = true;
+    snapshot.session.navigationSensors.radarOperational = true;
+    snapshot.session.navigationSensors.hasRadarScan = true;
+    snapshot.session.navigationSensors.latestRadarScan.scanSequence = 17u;
+    snapshot.session.navigationSensors.latestRadarScan.measuredAtUniverseTimeSeconds = 4567.0;
+    snapshot.session.navigationSensors.latestRadarScan.availableAtUniverseTimeSeconds = 4567.08;
+    game::radar::RadarTrackReport radarTrack;
+    radarTrack.trackId.value = 9u;
+    radarTrack.relativePositionMeters = glm::dvec3(10.0, 20.0, 30.0);
+    radarTrack.relativeVelocityMps = glm::dvec3(1.0, 2.0, 3.0);
+    radarTrack.rangeMeters = 37.4165738677;
+    radarTrack.positionUncertaintyMeters = 12.0;
+    radarTrack.velocityUncertaintyMps = 0.2;
+    radarTrack.confidence = 1.0;
+    snapshot.session.navigationSensors.latestRadarScan.tracks.push_back(radarTrack);
+    snapshot.session.navigationSensors.hasNavigationSolution = true;
+    snapshot.session.navigationSensors.navigationSolution.estimatedWorldPosition =
+        position(3, 4, 5, 101.0, 202.0, 303.0);
+    snapshot.session.navigationSensors.navigationSolution.estimatedWorldVelocityMps =
+        glm::dvec3(4.1, 5.2, 6.3);
+    snapshot.session.navigationSensors.navigationSolution.epochUniverseTimeSeconds = 4567.25;
+    snapshot.session.navigationSensors.navigationSolution.positionUncertaintyMeters = 250.0;
+    snapshot.session.navigationSensors.navigationSolution.velocityUncertaintyMps = 0.5;
+    snapshot.session.navigationSensors.navigationSolution.fixRevision = 1u;
+
     snapshot.session.predictionWorldParams.linearDrag = 0.02f;
     snapshot.session.predictionWorldParams.maxSafeDecel = 45.0f;
     snapshot.session.universeTimeSeconds = 4567.25;
@@ -468,6 +494,26 @@ void testSnapshotRoundTrip()
         "owned navigation asset stable ship identity did not round-trip");
     require(decoded.session.ownedNavigationAssets[0].commandable,
         "owned navigation asset command authority did not round-trip");
+    require(decoded.session.navigationSensors.radarInstalled &&
+            decoded.session.navigationSensors.radarOperational,
+        "session radar equipment state did not round-trip");
+    require(decoded.session.navigationSensors.hasRadarScan &&
+            decoded.session.navigationSensors.latestRadarScan.scanSequence == 17u,
+        "discrete radar scan metadata did not round-trip");
+    require(decoded.session.navigationSensors.latestRadarScan.tracks.size() == 1u &&
+            decoded.session.navigationSensors.latestRadarScan.tracks[0].trackId.value == 9u,
+        "radar track identity did not round-trip");
+    require(near(
+            decoded.session.navigationSensors.latestRadarScan.availableAtUniverseTimeSeconds,
+            4567.08),
+        "radar processing latency epoch did not round-trip");
+    require(decoded.session.navigationSensors.hasNavigationSolution &&
+            decoded.session.navigationSensors.navigationSolution.fixRevision == 1u,
+        "navigation solution did not round-trip");
+    require(near(
+            decoded.session.navigationSensors.navigationSolution.positionUncertaintyMeters,
+            250.0),
+        "navigation uncertainty did not round-trip");
     require(decoded.session.universeDate == "3026-08-14",
         "session universe date mismatch");
 

@@ -626,6 +626,50 @@ ELITE_WIRE_SCHEMA(
 // Per-session authoritative state.
 // -------------------------------------------------------------------------
 ELITE_WIRE_SCHEMA(
+    game::radar::RadarTrackId,
+    v.value
+);
+
+ELITE_WIRE_SCHEMA(
+    game::radar::RadarTrackReport,
+    v.trackId,
+    v.relativePositionMeters,
+    v.relativeVelocityMps,
+    v.rangeMeters,
+    v.positionUncertaintyMeters,
+    v.velocityUncertaintyMps,
+    v.confidence
+);
+
+ELITE_WIRE_SCHEMA(
+    game::radar::RadarScanReport,
+    v.scanSequence,
+    v.measuredAtUniverseTimeSeconds,
+    v.availableAtUniverseTimeSeconds,
+    v.tracks
+);
+
+ELITE_WIRE_SCHEMA(
+    game::navigation::NavigationSolution,
+    v.estimatedWorldPosition,
+    v.estimatedWorldVelocityMps,
+    v.epochUniverseTimeSeconds,
+    v.positionUncertaintyMeters,
+    v.velocityUncertaintyMps,
+    v.fixRevision
+);
+
+ELITE_WIRE_SCHEMA(
+    game::simulation::ClientNavigationSensorSnapshot,
+    v.radarInstalled,
+    v.radarOperational,
+    v.hasRadarScan,
+    v.latestRadarScan,
+    v.hasNavigationSolution,
+    v.navigationSolution
+);
+
+ELITE_WIRE_SCHEMA(
     world::celestial::PlayerNavigationState,
     v.currentSystemId,
     v.worldPosition,
@@ -646,6 +690,7 @@ ELITE_WIRE_SCHEMA(
     game::simulation::ClientSessionSnapshot,
     v.playerNavigation,
     v.ownedNavigationAssets,
+    v.navigationSensors,
     v.predictionWorldParams,
     v.universeTimeSeconds,
     v.universeTimeScale,

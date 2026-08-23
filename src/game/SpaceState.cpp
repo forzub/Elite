@@ -2626,10 +2626,10 @@ m_systemMapRenderer.render(
             }
         }
 
-        // World-anchored guidance is projected onto the windshield before the
-        // cockpit overlay.  The cockpit frame therefore occludes parts of the
-        // corridor that are physically outside the visible glass instead of
-        // letting navigation graphics paint over the dashboard/frame.
+        // World-anchored navigation presentation is projected onto the glass
+        // before the cockpit overlay.  The cockpit frame therefore occludes
+        // corridor/compass pixels outside the visible windshield instead of
+        // letting them paint over the dashboard or canopy frame.
         if (debug::get().render.shouldRenderCockpit() &&
             m_activeCameraMode != ShipCameraMode::Drone &&
             m_activeMainCamera)
@@ -2647,21 +2647,12 @@ m_systemMapRenderer.render(
                 m_activeMainCamera->projectionMatrix(),
                 vp
             );
-        }
 
-        if (debug::get().render.shouldRenderCockpit())
-        {
-            m_playerView->renderCockpit();
-        }
+            TextRenderer::instance().beginFrameForViewport(
+                vp.width,
+                vp.height
+            );
 
-        TextRenderer::instance().beginFrameForViewport(
-            vp.width,
-            vp.height
-        );
-
-        if (debug::get().render.shouldRenderCockpit() &&
-            m_activeCameraMode != ShipCameraMode::Drone)
-        {
             game::presentation::GalacticCompassVocabulary compassVocabulary;
             compassVocabulary.galacticCenter =
                 localizedUiText(
@@ -2712,7 +2703,21 @@ m_systemMapRenderer.render(
                     compassVocabulary
                 );
             m_galacticCompassRenderer.render(galacticCompass, vp);
+        }
 
+        if (debug::get().render.shouldRenderCockpit())
+        {
+            m_playerView->renderCockpit();
+        }
+
+        TextRenderer::instance().beginFrameForViewport(
+            vp.width,
+            vp.height
+        );
+
+        if (debug::get().render.shouldRenderCockpit() &&
+            m_activeCameraMode != ShipCameraMode::Drone)
+        {
             game::presentation::FlightInstrumentTextProfile textProfile;
             textProfile.newtonianModeLabel =
                 localizedUiText(context().app, "cockpit.mode.newtonian", "NEWTONIAN");

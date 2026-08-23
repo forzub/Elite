@@ -93,6 +93,7 @@ if(ELITE_BUILD_CLIENT)
 add_executable(EliteGame
     src/main.cpp
     src/platform/RuntimeRoot.cpp
+    src/platform/ProcessSingleInstanceGuard.cpp
 
     glad/src/gl.c
 
@@ -207,6 +208,7 @@ add_executable(EliteGame
 
     src/game/equipment/DamageModel.cpp
     src/game/equipment/radar/RadarModule.cpp
+    src/game/equipment/radar/TestIdealRadarUnit.cpp
 
     src/game/equipment/signalNode/ReceiverModule.cpp
     src/game/equipment/EquipmentModule.cpp
@@ -442,6 +444,7 @@ if(ELITE_BUILD_SERVER)
 
         src/game/equipment/DamageModel.cpp
         src/game/equipment/radar/RadarModule.cpp
+        src/game/equipment/radar/TestIdealRadarUnit.cpp
         src/game/equipment/signalNode/ReceiverModule.cpp
         src/game/equipment/signalNode/SignalTransmitterModule.cpp
         src/game/equipment/EquipmentModule.cpp

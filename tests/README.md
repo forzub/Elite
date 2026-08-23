@@ -131,8 +131,19 @@ publication now consumes that cadence: Controlled/Tactical rows publish at the
 normal snapshot rate, Nearby/Coarse rows less often, and interest exit/destruction
 uses explicit removals. Full bootstrap and first publication after re-entry are
 hydrated from canonical retained server state so sparse nested graph fields cannot
-leave a late client with a partial runtime baseline. Objects/hubs remain full-cadence
-in M7 but use explicit lifecycle removal under the sparse envelope.
+leave a late client with a partial runtime baseline. A retained moving ship is also
+advanced to the incoming packet epoch from its last velocity/acceleration rather than
+re-stamping an old position with a newer time; this locks the >100 km HUD/map jitter
+regression. Objects/hubs remain full-cadence in M7 but use explicit lifecycle removal
+under the sparse envelope.
+
+### Recent navigation presentation regressions
+
+`check_recent_navigation_regressions.py` protects the manually accepted presentation
+contracts that are easy to break without compile errors: guidance corridor and galactic
+compass render below the cockpit/canopy mask, the compass remains decade-only without a
+precise jumping coordinate readout, guidance test docks keep their slow local-Z/gate-axis
+spin, and the rear camera reuses the already-prepared scene with the cheap LOD policy.
 
 ### Hub co-frame presentation
 

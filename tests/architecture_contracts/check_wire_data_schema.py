@@ -43,6 +43,10 @@ for token in (
     "v.replication",
     "v.graph",
     "v.session",
+    "game::radar::RadarScanReport,",
+    "game::navigation::NavigationSolution,",
+    "game::simulation::ClientNavigationSensorSnapshot,",
+    "v.navigationSensors",
 ):
     if token not in schema:
         fail(f"canonical ordered schema is incomplete: {token}")

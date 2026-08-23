@@ -275,6 +275,25 @@ const RadarDesc PPI_LCD_RADAR = []()
 
 
 
+const RadarDesc TEST_IDEAL_RADAR = []()
+{
+    // Reuse the current LCD presentation metadata only so the equipment slot
+    // stays compatible. Runtime radar HUD remains disabled; this descriptor is
+    // a sensor producer, not a presentation feature.
+    RadarDesc desc = PPI_LCD_RADAR;
+    desc.backendKind = RadarBackendKind::TestIdeal;
+    desc.maxRange = 2'000'000.0;
+    desc.scanInterval = 0.50;
+    desc.processingLatencySeconds = 0.08;
+    desc.trackHoldSeconds = 5.0;
+    desc.positionUncertaintyMeters = 12.0;
+    desc.velocityUncertaintyMps = 0.20;
+    desc.ownPositionUncertaintyMeters = 250.0;
+    desc.ownVelocityUncertaintyMps = 0.50;
+    return desc;
+}();
+
+
 // const RadarDesc PPI_CRT_RADAR = []()
 // {
 //     auto ppi_cfg = std::make_shared<PPIVisualConfig>();

@@ -53,6 +53,10 @@ run_suite \
     "tests/navigation_guidance/run_mingw64.sh"
 
 run_suite \
+    "NAVIGATION SENSOR + IDEAL RADAR" \
+    "tests/navigation_sensors/run_mingw64.sh"
+
+run_suite \
     "CLIENT PRESENTATION PIPELINE" \
     "tests/presentation_pipeline/run_mingw64.sh"
 

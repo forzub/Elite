@@ -49,13 +49,17 @@ if "m_failed = true;\n        m_error = m_transport->lastError();" in remote_cpp
     fail("initial TCP refusal still marks the remote session Failed")
 
 for token in (
-    "m_gameUiHttpPort = m_htmlUi.start(0, webUiRoot);",
+    "PrimaryDebugUiPort = 8090",
+    "primaryDebugUiLease",
+    "primaryDebugUiLease.ownsInstance()",
+    "requestedWebUiPort",
+    "m_gameUiHttpPort = m_htmlUi.start(requestedWebUiPort, webUiRoot);",
     "makeGameUiHttpUrl(",
     "m_gameUiHttpPort",
     "std::uint16_t m_gameUiHttpPort = 0",
 ):
     if token not in app_cpp + app_h:
-        fail(f"Application WebUI is not process-local/ephemeral: {token}")
+        fail(f"Application WebUI first-fixed/rest-dynamic port contract missing: {token}")
 
 for token in (
     "m_server.listen(port);",

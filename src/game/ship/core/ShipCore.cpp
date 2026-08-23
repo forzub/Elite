@@ -5,6 +5,7 @@
 #include "core/log.h"
 #include "src/game/shared/SharedShipPhysics.h"
 #include "src/game/equipment/radar/RadarDesc.h"
+#include "src/game/equipment/data/radars.h"
 
 #include "src/world/modules/ObjectHitBuilder.h"
 #include "src/world/modules/ObjectRuntimeHitBuilder.h"
@@ -443,7 +444,14 @@ void ShipCore::initShipSlotsFromDescriptor(const ShipDescriptor& descriptor)
 
         if (presets.radar.has_value())
         {
-            const RadarDesc& radarDesc = *presets.radar;
+            // Development contract: the player radar slot is occupied by the
+            // synthetic ideal sensor until a production radar backend is ready.
+            // Consumers see only RadarScanReport and therefore do not change
+            // when TEST_IDEAL_RADAR is replaced later.
+            const RadarDesc& radarDesc =
+                m_role == ShipRole::Player
+                    ? game::TEST_IDEAL_RADAR
+                    : *presets.radar;
 
             if (canInstallRadar(descriptor, radarDesc))
             {

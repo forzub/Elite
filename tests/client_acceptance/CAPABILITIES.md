@@ -44,7 +44,7 @@ The detailed current STAR ATLAS navigation semantics are maintained in
 | Hub map data | Selected hub is client-composed from loaded system/hub context + retained ordinary replication; System -> Hub preserves parent Details | client acceptance + system_map guard | protected |
 | Map panel displayed data | Live map/navigation state -> typed `SystemMapPanelPresentation` -> native OpenGL STAR ATLAS panel | client acceptance + architecture guard | protected |
 | Map camera/grid/picking | Camera, cubic navigation, picking and presentation contracts | system_map | protected |
-| Radar simulation/HUD | Both runtime feature flags are currently `false`; the subsystem is intentionally inactive | runtime feature flags | disabled, not claimed |
+| Radar HUD / legacy perception simulation | Legacy radar/HUD flags remain `false`; player navigation uses a session-private `TEST_IDEAL_RADAR` sensor backend with no HUD | runtime feature flags + navigation sensor contract | sensor feed active, legacy HUD disabled |
 | Jump flight mode | `jumpActive` exists in control state but has no current keyboard mapping in `PlayerInputMapper` | none | not claimed working |
 | Cruise as a runtime motion mode | J currently gates controls via `cruiseActive`; initial player runtime mode remains `HubTactical` | input acceptance | control flag only |
 

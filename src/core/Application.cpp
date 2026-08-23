@@ -23,6 +23,7 @@
 #include "src/game/network/NetworkEndpoint.h"
 #include "src/game/identity/ClientIdentityProfile.h"
 #include "src/game/navigation/CoordinateDisplayService.h"
+#include "src/platform/ProcessSingleInstanceGuard.h"
 #include "input/Input.h"
 #include "render/HUD/TextRenderer.h"
 #include <windows.h>
@@ -290,10 +291,9 @@ void startDebugUiCompatibilityRedirect(
 {
     constexpr std::uint16_t CompatibilityPort = 8090;
 
-    // The real WebView/WS endpoint remains process-local and ephemeral. This
-    // best-effort launcher only restores the old human-facing debug bookmark.
-    // The first graphical client that can bind 8090 redirects the browser to
-    // its real endpoint; later clients keep their isolated ephemeral servers.
+    // The primary graphical client normally owns 8090 directly. Dynamic
+    // secondary clients keep this best-effort compatibility redirect so the
+    // human-facing bookmark can be reclaimed if the primary process exits.
     if (processLocalPort == 0 || processLocalPort == CompatibilityPort)
         return;
 
@@ -612,7 +612,21 @@ void Application::init()
                 );
             }
 
-            m_gameUiHttpPort = m_htmlUi.start(0, webUiRoot);
+            // The first graphical client owns the long-lived human-facing
+            // Debug Control port. Additional EliteGame processes keep the
+            // existing isolated OS-assigned endpoints. The cross-process lease
+            // decides who is "first"; the actual terminal URL line below is
+            // intentionally unchanged.
+            constexpr std::uint16_t PrimaryDebugUiPort = 8090;
+            static platform::ProcessSingleInstanceGuard primaryDebugUiLease(
+                "EliteGamePrimaryDebugUiPort"
+            );
+            const std::uint16_t requestedWebUiPort =
+                primaryDebugUiLease.ownsInstance()
+                    ? PrimaryDebugUiPort
+                    : 0;
+
+            m_gameUiHttpPort = m_htmlUi.start(requestedWebUiPort, webUiRoot);
             std::cout << "\n[DEBUG CONTROL] http://localhost:"
                       << m_gameUiHttpPort
                       << "/debug_control.html\n\n";

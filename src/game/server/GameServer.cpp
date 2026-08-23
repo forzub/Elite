@@ -710,6 +710,11 @@ if (simulationContextSystemId >= 0)
 
 m_simulation.update(time);
 
+// Navigation sensors observe the completed authoritative epoch. Their cadence
+// is device-owned and uses universe time; render/snapshot FPS cannot create a
+// measurement. The synthetic radar asks for truth rows only when a scan is due.
+updateNavigationSensorDevices(universeTime);
+
 
 
 
@@ -856,6 +861,7 @@ void GameServer::populateClientSessionSnapshot(
     // ServerRunner must compose that field for the destination session.
     snapshot.session.playerNavigation = {};
     snapshot.session.ownedNavigationAssets.clear();
+    snapshot.session.navigationSensors = {};
     snapshot.session.predictionWorldParams = m_simulation.world();
     snapshot.session.universeTimeSeconds =
         m_universeClock.timeSeconds();
@@ -979,6 +985,33 @@ game::network::ServerSessionId GameServer::createPlayerSession(
     resetSessionControlState(controlledEntityId, "session-create");
 
     m_simulation.setPlayerControlled(controlledEntityId, true);
+
+    if (Ship* ship = m_simulation.getShip(controlledEntityId))
+    {
+        const auto& radar = ship->core().radar();
+        const auto& desc = radar.getDesc();
+        if (desc.backendKind == game::RadarBackendKind::TestIdeal)
+        {
+            auto& runtime = m_playerRadarRuntimes[controlledShipInstanceId];
+            if (!runtime.configured)
+            {
+                runtime.unit.configure(desc, controlledShipInstanceId);
+                runtime.configured = true;
+            }
+
+            runtime.radarOperational =
+                radar.isOperational() &&
+                radar.getAvailablePower() + 1.0e-9 >= desc.powerConsumption;
+            const auto& transform = ship->core().transform();
+            runtime.navigationSolution = runtime.unit.navigationSolution(
+                m_universeClock.timeSeconds(),
+                transform.worldPosition,
+                transform.motion.worldVelocityMps
+            );
+            runtime.hasNavigationSolution = true;
+        }
+    }
+
     return sessionId;
 }
 
@@ -1120,6 +1153,166 @@ void GameServer::debugRefreshSnapshot()
 }
 
 
+void GameServer::updateNavigationSensorDevices(double universeTimeSeconds)
+{
+    constexpr std::uint64_t ShipTruthKeyPrefix = 0x1000000000000000ULL;
+    constexpr std::uint64_t StaticTruthKeyPrefix = 0x2000000000000000ULL;
+    constexpr std::uint64_t TruthKeyPayloadMask = 0x0FFFFFFFFFFFFFFFULL;
+
+    for (const EntityId observerId : m_simulation.playerControlledShipIds())
+    {
+        Ship* observer = m_simulation.getShip(observerId);
+        if (!observer)
+            continue;
+
+        const ShipInstanceId observerInstanceId =
+            m_shipInstances.instanceForEntity(observerId);
+        if (observerInstanceId == 0)
+            continue;
+
+        const auto& installedRadar = observer->core().radar();
+        const auto& desc = installedRadar.getDesc();
+        if (desc.backendKind != game::RadarBackendKind::TestIdeal)
+            continue;
+
+        auto& runtime = m_playerRadarRuntimes[observerInstanceId];
+        if (!runtime.configured)
+        {
+            runtime.unit.configure(desc, observerInstanceId);
+            runtime.configured = true;
+        }
+
+        const bool powered =
+            installedRadar.isOperational() &&
+            installedRadar.getAvailablePower() + 1.0e-9 >=
+                desc.powerConsumption;
+        runtime.radarOperational = powered;
+
+        const auto& observerTransform = observer->core().transform();
+        runtime.navigationSolution = runtime.unit.navigationSolution(
+            universeTimeSeconds,
+            observerTransform.worldPosition,
+            observerTransform.motion.worldVelocityMps
+        );
+        runtime.hasNavigationSolution = true;
+
+        if (powered && runtime.unit.measurementDue(universeTimeSeconds))
+        {
+            std::vector<game::radar::TestIdealRadarTruthContact> truth;
+            truth.reserve(
+                m_simulation.ships().size() +
+                m_simulation.staticObjects().size()
+            );
+
+            const int observerSystemId = observerTransform.motion.systemId;
+
+            for (const auto& [targetId, targetPtr] : m_simulation.ships())
+            {
+                if (!targetPtr || targetId == observerId)
+                    continue;
+
+                const auto& targetTransform = targetPtr->core().transform();
+                if (targetTransform.motion.systemId != observerSystemId)
+                    continue;
+
+                const ShipInstanceId targetInstanceId =
+                    m_shipInstances.instanceForEntity(targetId);
+                const std::uint64_t stableTargetKey =
+                    targetInstanceId != 0
+                        ? static_cast<std::uint64_t>(targetInstanceId)
+                        : static_cast<std::uint64_t>(targetId.value);
+
+                game::radar::TestIdealRadarTruthContact row;
+                row.sourceKey = ShipTruthKeyPrefix |
+                    (stableTargetKey & TruthKeyPayloadMask);
+                row.worldPosition = targetTransform.worldPosition;
+                row.worldVelocityMps =
+                    targetTransform.motion.worldVelocityMps;
+                row.radarCrossSection =
+                    targetPtr->core().desc().radarCrossSection;
+                truth.push_back(row);
+            }
+
+            for (const auto& [targetId, object] : m_simulation.staticObjects())
+            {
+                if (object.systemId != observerSystemId)
+                    continue;
+
+                game::radar::TestIdealRadarTruthContact row;
+                row.sourceKey = StaticTruthKeyPrefix |
+                    (static_cast<std::uint64_t>(targetId.value) &
+                     TruthKeyPayloadMask);
+                row.worldPosition = object.worldPosition;
+                row.worldVelocityMps = glm::dvec3(object.linearVelocity);
+                row.radarCrossSection = 1.0;
+                truth.push_back(row);
+            }
+
+            runtime.unit.captureMeasurement(
+                universeTimeSeconds,
+                observerTransform.worldPosition,
+                observerTransform.motion.worldVelocityMps,
+                observerTransform.orientation,
+                truth
+            );
+        }
+
+        // Processing latency is independent from measurement cadence. A report
+        // becomes visible only after availableAt even if no new scan is due.
+        runtime.unit.advanceAvailability(universeTimeSeconds);
+    }
+}
+
+
+game::simulation::ClientNavigationSensorSnapshot
+GameServer::navigationSensorsForSession(
+    game::network::ServerSessionId sessionId
+) const
+{
+    game::simulation::ClientNavigationSensorSnapshot out;
+
+    const EntityId controlledEntityId =
+        controlledEntityForSession(sessionId);
+    if (controlledEntityId.value == 0)
+        return out;
+
+    const Ship* ship = m_simulation.getShip(controlledEntityId);
+    if (!ship)
+        return out;
+
+    const auto& installedRadar = ship->core().radar();
+    const auto& desc = installedRadar.getDesc();
+    out.radarInstalled =
+        desc.backendKind == game::RadarBackendKind::TestIdeal;
+
+    const ShipInstanceId shipInstanceId =
+        m_shipInstances.instanceForEntity(controlledEntityId);
+    const auto runtimeIt = m_playerRadarRuntimes.find(shipInstanceId);
+    if (runtimeIt == m_playerRadarRuntimes.end() ||
+        !runtimeIt->second.configured)
+    {
+        return out;
+    }
+
+    const auto& runtime = runtimeIt->second;
+    out.radarOperational = out.radarInstalled && runtime.radarOperational;
+
+    const auto& unit = runtime.unit;
+    if (unit.hasAvailableScan())
+    {
+        out.hasRadarScan = true;
+        out.latestRadarScan = unit.latestAvailableScan();
+    }
+
+    if (runtime.hasNavigationSolution)
+    {
+        out.hasNavigationSolution = true;
+        out.navigationSolution = runtime.navigationSolution;
+    }
+    return out;
+}
+
+
 std::vector<game::navigation::OwnedNavigationAsset>
 GameServer::ownedNavigationAssetsForSession(
     game::network::ServerSessionId sessionId
@@ -1212,6 +1405,8 @@ bool GameServer::copySnapshotForSession(
     outSnapshot.session.playerNavigation = sessionNavigation;
     outSnapshot.session.ownedNavigationAssets =
         ownedNavigationAssetsForSession(sessionId);
+    outSnapshot.session.navigationSensors =
+        navigationSensorsForSession(sessionId);
 
     // Full copy remains available for diagnostics/contracts. Production normal
     // publication switches to copySparseSnapshotForSession in Stage M7; initial
@@ -1241,6 +1436,8 @@ bool GameServer::copyHydratedSnapshotForSession(
     outSnapshot.session.playerNavigation = sessionNavigation;
     outSnapshot.session.ownedNavigationAssets =
         ownedNavigationAssetsForSession(sessionId);
+    outSnapshot.session.navigationSensors =
+        navigationSensorsForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
     outSnapshot.replication.removedShipIds.clear();
@@ -1263,6 +1460,8 @@ bool GameServer::copySparseSnapshotForSession(
     outSnapshot.session.playerNavigation = sessionNavigation;
     outSnapshot.session.ownedNavigationAssets =
         ownedNavigationAssetsForSession(sessionId);
+    outSnapshot.session.navigationSensors =
+        navigationSensorsForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::SparseRetainMissing;
     outSnapshot.replication.removedShipIds = selection.removedShipIds;

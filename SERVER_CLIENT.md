@@ -255,11 +255,12 @@ same per-session projection.
 ## 5. Multi-process client preflight: WebUI и ожидание сервера
 
 Каждый `EliteGame` process должен владеть собственным локальным WebUI endpoint.
-`HtmlUiServer` запускается на port `0`, операционная система выбирает свободный
-ephemeral port, а `Application` строит URL WebView из фактически назначенного
-порта. Поэтому два клиента на одном PC не делят `localhost:8090` и не могут
-случайно открыть WebUI другого процесса. WebView2 user-data folder также изолирован
-по PID.
+Первый graphical client получает cross-process lease и слушает фиксированный
+`localhost:8090`; все дополнительные клиенты запускают `HtmlUiServer` на port `0`,
+где операционная система выбирает свободный ephemeral port. `Application` строит
+URL WebView из фактически назначенного порта, а WebView2 user-data folder остаётся
+изолирован по PID. Поэтому первый Debug Control имеет стабильный адрес, но второй
+и последующие процессы всё равно не разделяют HTTP/WebSocket runtime первого.
 
 При реальном запуске двух graphical clients был отдельно диагностирован Win32
 crash внутри GLFW 3.4: `_glfwPollEventsWin32()` мог получить active HWND другого

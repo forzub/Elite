@@ -355,6 +355,13 @@ GameClient::sessionSnapshot() const
 }
 
 
+const game::simulation::ClientNavigationSensorSnapshot&
+GameClient::navigationSensors() const
+{
+    return m_sessionSnapshot.navigationSensors;
+}
+
+
 const world::celestial::PlayerNavigationState&
 GameClient::playerNavigation() const
 {

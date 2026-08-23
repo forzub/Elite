@@ -132,6 +132,8 @@ public:
     bool readyForGameplay() const;
     const game::simulation::ClientSessionSnapshot&
         sessionSnapshot() const;
+    const game::simulation::ClientNavigationSensorSnapshot&
+        navigationSensors() const;
     const world::celestial::PlayerNavigationState&
         playerNavigation() const;
 

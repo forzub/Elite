@@ -30,6 +30,8 @@
 #include "src/game/server/ReplicationInterestPolicy.h"
 #include "src/game/server/ReplicationPublicationPolicy.h"
 #include "src/world/celestial/SystemMapTypes.h"
+#include "src/game/equipment/radar/TestIdealRadarUnit.h"
+#include "src/game/simulation/ClientNavigationSensorSnapshot.h"
 
 struct ServerQueueDiagnostics
 {
@@ -71,6 +73,11 @@ public:
 
     std::vector<game::navigation::OwnedNavigationAsset>
     ownedNavigationAssetsForSession(
+        game::network::ServerSessionId sessionId
+    ) const;
+
+    game::simulation::ClientNavigationSensorSnapshot
+    navigationSensorsForSession(
         game::network::ServerSessionId sessionId
     ) const;
 
@@ -213,6 +220,18 @@ void setDiagnosticsSettings(
     double debugUniverseTimeConfiguredScale() const;
 
 private:
+    void updateNavigationSensorDevices(double universeTimeSeconds);
+
+    struct PlayerRadarRuntime
+    {
+        game::radar::TestIdealRadarUnit unit;
+        bool configured = false;
+        bool radarOperational = false;
+        bool hasNavigationSolution = false;
+        game::navigation::NavigationSolution navigationSolution;
+    };
+
+
     struct PendingSessionMapRequest
     {
         game::network::ServerSessionId sessionId {};
@@ -251,6 +270,7 @@ private:
     game::server::ServerSessionRegistry m_sessions;
     PlayerId m_primaryPlayerId {};
     game::server::ReplicationInterestPolicy m_replicationInterestPolicy;
+    std::unordered_map<std::uint64_t, PlayerRadarRuntime> m_playerRadarRuntimes;
 
 
     static constexpr std::size_t MaxShipCommandsPerShip = 32;

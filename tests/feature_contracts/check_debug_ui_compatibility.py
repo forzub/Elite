@@ -13,9 +13,16 @@ def fail(message: str) -> None:
 def main() -> int:
     app = (ROOT / "src/core/Application.cpp").read_text(encoding="utf-8")
     server = (ROOT / "src/ui/html/HtmlUiServer.cpp").read_text(encoding="utf-8", errors="replace")
+    cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8", errors="replace")
 
     required = (
-        "m_gameUiHttpPort = m_htmlUi.start(0, webUiRoot);",
+        "PrimaryDebugUiPort = 8090",
+        "ProcessSingleInstanceGuard primaryDebugUiLease(",
+        '"EliteGamePrimaryDebugUiPort"',
+        "primaryDebugUiLease.ownsInstance()",
+        "? PrimaryDebugUiPort",
+        ": 0",
+        "m_gameUiHttpPort = m_htmlUi.start(requestedWebUiPort, webUiRoot);",
         '[DEBUG CONTROL] http://localhost:',
         '<< "/debug_control.html\\n";',
         "startDebugUiCompatibilityRedirect(",
@@ -35,7 +42,12 @@ def main() -> int:
     if 'resource = "/debug_control.html"' not in server:
         fail("real process-local server root no longer resolves to debug_control.html")
 
-    print("[PASS] process-local debug URL is logged explicitly and localhost:8090 remains a compatibility redirect")
+    client_start = cmake.find("add_executable(EliteGame")
+    client_end = cmake.find(")", client_start)
+    if client_start < 0 or client_end < 0 or "src/platform/ProcessSingleInstanceGuard.cpp" not in cmake[client_start:client_end]:
+        fail("EliteGame does not link the cross-process primary Debug Control lease implementation")
+
+    print("[PASS] first client owns fixed localhost:8090 Debug Control; later clients remain process-local/dynamic")
     return 0
 
 

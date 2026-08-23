@@ -2,12 +2,12 @@
 
 namespace game::runtime
 {
-// Radar simulation is temporarily disabled until the perception pipeline is
-// rebuilt around scan intervals and spatial broad-phase queries.
+// Legacy all-ships perception radar remains disabled. The player radar slot is
+// temporarily backed by TEST_IDEAL_RADAR, whose server-side device publishes
+// discrete session-private RadarScanReport data without using this old path.
 inline constexpr bool RadarSimulationEnabled = false;
 
-// Keep the HUD side disabled with the server side so no radar render targets,
-// shaders, or contact buffers are created while the subsystem is offline.
+// The test sensor intentionally has no radar HUD/presentation.
 inline constexpr bool RadarHudEnabled = false;
 
 // Activation diagnostics remain enabled while the staged runtime execution

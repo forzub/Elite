@@ -1,11 +1,18 @@
 #pragma once
 #include <memory>
+#include <cstdint>
 #include "src/game/equipment/types/RadarVisualProfile.h"
 #include "src/game/equipment/radar/IRadarEffectsConfig.h"
 #include "src/game/equipment/types/RadarType.h"
 #include "IRadarVisualConfig.h"
 
 namespace game {
+
+enum class RadarBackendKind : std::uint8_t
+{
+    Legacy = 0,
+    TestIdeal = 1
+};
 
 struct RadarDesc
 {
@@ -14,7 +21,16 @@ struct RadarDesc
     double maxRange;           // базовая дальность (км или ваши единицы)
     double trackingSpeed;      // скорость накопления lock
     double jamResistance;      // устойчивость к помехам
-    double scanInterval;        // частота обновления экрана
+    double scanInterval;        // physical sensor scan period for sensor backends
+
+    // Sensor-backend contract. Legacy visual radar ignores these fields.
+    RadarBackendKind backendKind = RadarBackendKind::Legacy;
+    double processingLatencySeconds = 0.0;
+    double trackHoldSeconds = 0.0;
+    double positionUncertaintyMeters = 0.0;
+    double velocityUncertaintyMps = 0.0;
+    double ownPositionUncertaintyMeters = 0.0;
+    double ownVelocityUncertaintyMps = 0.0;
     
     // требования к платформе
     double requiredPowerCapacity;

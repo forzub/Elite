@@ -502,6 +502,7 @@ void testHubAttachedPresentationUsesOneSharedFrameSample()
     attachment.moduleId = "station";
     attachment.localOffsetMeters = glm::dvec3(120.0, 30.0, -45.0);
     attachment.localRotationDeg = glm::dvec3(0.0);
+    attachment.localAngularVelocityDegPerSecond = glm::dvec3(0.0, 0.0, 45.0);
     attachment.inheritHubOrientation = true;
     attachment.valid = true;
 
@@ -513,6 +514,7 @@ void testHubAttachedPresentationUsesOneSharedFrameSample()
     frameA.progradeAxis = glm::dvec3(1.0, 0.0, 0.0);
     frameA.radialAxis = glm::dvec3(0.0, 1.0, 0.0);
     frameA.normalAxis = glm::dvec3(0.0, 0.0, 1.0);
+    frameA.universeTimeSeconds = 0.0;
 
     game::simulation::ShipReferenceFrameSnapshot frameB = frameA;
     frameB.originMeters = glm::dvec3(9000.0, -4000.0, 7000.0);
@@ -520,6 +522,7 @@ void testHubAttachedPresentationUsesOneSharedFrameSample()
     frameB.progradeAxis = glm::dvec3(0.0, 0.0, -1.0);
     frameB.radialAxis = glm::dvec3(0.0, 1.0, 0.0);
     frameB.normalAxis = glm::dvec3(1.0, 0.0, 0.0);
+    frameB.universeTimeSeconds = 2.0;
 
     const auto poseA =
         game::client::resolveHubAttachedObjectPresentation(attachment, frameA);

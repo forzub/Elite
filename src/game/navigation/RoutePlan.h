@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/identity/ShipInstanceId.h"
+#include "src/game/navigation/NavigationAssetRef.h"
 #include "src/world/coordinates/WorldPosition.h"
 
 namespace game::navigation
@@ -136,6 +137,16 @@ inline bool sameRouteTarget(
     return false;
 }
 
+struct NavigationRouteStart
+{
+    NavigationAssetRef executor;
+
+    bool valid() const noexcept
+    {
+        return executor.valid();
+    }
+};
+
 struct NavigationWaypoint
 {
     std::uint64_t id = 0;
@@ -169,6 +180,21 @@ struct NavigationWaypoint
 class RoutePlan
 {
 public:
+    const NavigationRouteStart& start() const noexcept { return m_start; }
+    bool hasStart() const noexcept { return m_start.valid(); }
+
+    void setStartExecutor(const NavigationAssetRef& executor)
+    {
+        if (!executor.valid())
+            throw std::runtime_error("route START executor identity is invalid");
+        m_start.executor = executor;
+    }
+
+    void clearStart() noexcept
+    {
+        m_start = {};
+    }
+
     NavigationWaypoint& rememberCandidate(
         const RouteTargetRef& target,
         std::string sourceObjectId,
@@ -309,7 +335,7 @@ public:
 
     bool hasRoute() const noexcept
     {
-        return std::any_of(
+        return hasStart() && std::any_of(
             m_waypoints.begin(), m_waypoints.end(),
             [](const NavigationWaypoint& waypoint)
             {
@@ -497,6 +523,7 @@ private:
     }
 
 private:
+    NavigationRouteStart m_start;
     std::vector<NavigationWaypoint> m_waypoints;
     std::uint64_t m_nextWaypointId = 1;
     bool m_routeVisibleOnHud = true;

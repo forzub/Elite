@@ -621,6 +621,62 @@ void ObjectAssemblyRegistry::init()
         s_registry[static_cast<uint16_t>(drone.typeId)] = std::move(drone);
     }
 
+    // =========================================================
+    // HUB GUIDANCE TEST MODULES
+    // External diagnostic meshes; semantic docking elements live in JSON.
+    // =========================================================
+    {
+        ObjectAssemblyDesc dockCube;
+        dockCube.typeId = ObjectType::GuidanceDockCube;
+        dockCube.lodSwitchDistance = 20000.0f;
+        dockCube.modules = {
+            module(
+                "guidance_dock_cube_body",
+                {
+                    sameMesh(
+                        "guidance_dock_cube",
+                        "assets/models/hub/guidance_test/guidance_dock_cube.obj"
+                    )
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "guidance_test"
+            )
+        };
+        s_registry[static_cast<uint16_t>(dockCube.typeId)] =
+            std::move(dockCube);
+    }
+
+    {
+        ObjectAssemblyDesc dockCylinder;
+        dockCylinder.typeId = ObjectType::GuidanceDockCylinder;
+        dockCylinder.lodSwitchDistance = 24000.0f;
+        dockCylinder.modules = {
+            module(
+                "guidance_dock_cylinder_body",
+                {
+                    sameMesh(
+                        "guidance_dock_cylinder",
+                        "assets/models/hub/guidance_test/guidance_dock_cylinder.obj"
+                    )
+                },
+                false,
+                glm::vec3(0.0f, 0.0f, 1.0f),
+                0.0f,
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                glm::vec3(0.0f),
+                "guidance_test"
+            )
+        };
+        s_registry[static_cast<uint16_t>(dockCylinder.typeId)] =
+            std::move(dockCylinder);
+    }
+
 
 
 

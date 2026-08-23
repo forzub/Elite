@@ -296,6 +296,13 @@
       "es": "Cuerpo celeste",
       "ja": "天体"
     },
+    "map.navigation_hud.start": {
+      "en": "START",
+      "ru": "СТАРТ",
+      "zh-Hans": "起点",
+      "es": "INICIO",
+      "ja": "開始"
+    },
     "map.navigation_hud.finish": {
       "en": "FINISH",
       "ru": "ФИНИШ",
@@ -323,6 +330,48 @@
       "zh-Hans": "全局",
       "es": "GLOB",
       "ja": "全局"
+    },
+    "map.navigation_hud.galactic_center": {
+      "en": "GC",
+      "ru": "ГЦ",
+      "zh-Hans": "银心",
+      "es": "CG",
+      "ja": "銀心"
+    },
+    "map.navigation_hud.galactic_anticenter": {
+      "en": "GAC",
+      "ru": "АГЦ",
+      "zh-Hans": "反银心",
+      "es": "ACG",
+      "ja": "反銀心"
+    },
+    "map.navigation_hud.galactic_l90": {
+      "en": "L90",
+      "ru": "L90",
+      "zh-Hans": "L90",
+      "es": "L90",
+      "ja": "L90"
+    },
+    "map.navigation_hud.galactic_l270": {
+      "en": "L270",
+      "ru": "L270",
+      "zh-Hans": "L270",
+      "es": "L270",
+      "ja": "L270"
+    },
+    "map.navigation_hud.north_galactic_pole": {
+      "en": "NGP",
+      "ru": "СГП",
+      "zh-Hans": "北银极",
+      "es": "PNG",
+      "ja": "北銀極"
+    },
+    "map.navigation_hud.south_galactic_pole": {
+      "en": "SGP",
+      "ru": "ЮГП",
+      "zh-Hans": "南银极",
+      "es": "PSG",
+      "ja": "南銀極"
     },
     "map.object_info.set_rendezvous": {
       "en": "ROUTE RENDEZVOUS",
@@ -379,6 +428,13 @@
       "zh-Hans": "在 HUD 显示",
       "es": "MOSTRAR EN HUD",
       "ja": "HUDに表示"
+    },
+    "map.route.start": {
+      "en": "START",
+      "ru": "СТАРТ",
+      "zh-Hans": "起点",
+      "es": "INICIO",
+      "ja": "開始"
     },
     "map.route.waypoint": {
       "en": "WAYPOINT",

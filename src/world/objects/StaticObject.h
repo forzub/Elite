@@ -49,6 +49,11 @@ struct StaticObject
     // Degrees. Applied after hub orientation.
     glm::dvec3 hubLocalRotationDeg {0.0};
 
+    // Optional self-rotation in the hub-local visual basis. This is part of
+    // kinematic infrastructure state, not mesh animation. Diagnostic docking
+    // modules use local Z so their rotation axis follows orbital prograde.
+    glm::dvec3 hubLocalAngularVelocityDegPerSecond {0.0};
+
     bool inheritHubOrientation = true;
 
 

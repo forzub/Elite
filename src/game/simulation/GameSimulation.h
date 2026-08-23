@@ -126,7 +126,8 @@ public:
         const std::string& hubModuleId,
         const glm::dvec3& localOffsetMeters,
         const glm::dvec3& localRotationDeg = glm::dvec3(0.0),
-        bool inheritHubOrientation = true
+        bool inheritHubOrientation = true,
+        const glm::dvec3& localAngularVelocityDegPerSecond = glm::dvec3(0.0)
     );
 
     void updateStaticObjectOrbitParentParameters(
@@ -166,6 +167,11 @@ public:
         const std::string& parentBodyId = {},
         const std::string& hubId = {},
         const std::string& hubModuleId = {}
+    );
+    bool setStaticObjectIdentity(
+        EntityId id,
+        const std::string& name,
+        const std::string& owner
     );
 
     void setCelestialBodyKinematicStateAu(

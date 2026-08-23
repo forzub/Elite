@@ -107,6 +107,7 @@ struct ClientObjectState
     // glm::vec3                                       renderRotation;
     glm::mat4 orientation {1.0f};
     glm::dvec3 linearVelocityMps {0.0};
+    glm::dvec3 angularVelocityWorldRadPerSecond {0.0};
     glm::mat4 renderOrientation {1.0f};
     game::simulation::HubAttachmentSnapshot hubAttachment;
 

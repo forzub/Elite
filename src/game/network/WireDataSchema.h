@@ -53,7 +53,7 @@ ELITE_WIRE_ENUM_RANGE(
     game::network::ReplicatedEntitySetMode::SparseRetainMissing
 );
 ELITE_WIRE_ENUM_RANGE(ShipRole, ShipRole::Player, ShipRole::NPC);
-ELITE_WIRE_ENUM_RANGE(ObjectType, ObjectType::None, ObjectType::RepairDroneDebug);
+ELITE_WIRE_ENUM_RANGE(ObjectType, ObjectType::None, ObjectType::GuidanceDockCylinder);
 ELITE_WIRE_ENUM_RANGE(
     game::diagnostics::HubMotionLabActorKind,
     game::diagnostics::HubMotionLabActorKind::None,
@@ -70,19 +70,14 @@ ELITE_WIRE_ENUM_RANGE(
     game::navigation::LocalFlightControlLaw::Assisted
 );
 ELITE_WIRE_ENUM_RANGE(
+    game::navigation::NavigationAssetKind,
+    game::navigation::NavigationAssetKind::None,
+    game::navigation::NavigationAssetKind::Drone
+);
+ELITE_WIRE_ENUM_RANGE(
     game::navigation::VelocityAlignmentMode,
     game::navigation::VelocityAlignmentMode::None,
     game::navigation::VelocityAlignmentMode::BrakeToStop
-);
-ELITE_WIRE_ENUM_RANGE(
-    game::navigation::NavigationPlanType,
-    game::navigation::NavigationPlanType::None,
-    game::navigation::NavigationPlanType::JumpRoute
-);
-ELITE_WIRE_ENUM_RANGE(
-    game::navigation::NavigationPlanState,
-    game::navigation::NavigationPlanState::Empty,
-    game::navigation::NavigationPlanState::Failed
 );
 ELITE_WIRE_ENUM_RANGE(
     SignalType,
@@ -144,6 +139,26 @@ ELITE_WIRE_ENUM_RANGE(
 // Identity / coordinates / generic runtime primitives.
 // -------------------------------------------------------------------------
 ELITE_WIRE_SCHEMA(EntityId, v.value);
+ELITE_WIRE_SCHEMA(DroneInstanceId, v.value);
+
+ELITE_WIRE_SCHEMA(
+    game::navigation::NavigationAssetRef,
+    v.kind,
+    v.shipInstanceId,
+    v.droneInstanceId
+);
+
+ELITE_WIRE_SCHEMA(
+    game::navigation::OwnedNavigationAsset,
+    v.asset,
+    v.materializedEntityId,
+    v.typeId,
+    v.displayName,
+    v.worldPosition,
+    v.worldVelocityMps,
+    v.kinematicsValid,
+    v.commandable
+);
 
 ELITE_WIRE_SCHEMA(
     world::coordinates::GalacticCell,
@@ -188,21 +203,6 @@ ELITE_WIRE_SCHEMA(
 );
 
 ELITE_WIRE_SCHEMA(
-    game::navigation::NavigationPlan,
-    v.type,
-    v.state,
-    v.targetSystemId,
-    v.targetBodyId,
-    v.targetHubId,
-    v.plannedExitPositionMeters,
-    v.plannedExitVelocityMps,
-    v.plannedExitTimeSeconds,
-    v.arrivalErrorMeters,
-    v.arrivalAngleErrorDeg,
-    v.valid
-);
-
-ELITE_WIRE_SCHEMA(
     game::navigation::DynamicMotionState,
     v.mode,
     v.systemId,
@@ -242,7 +242,6 @@ ELITE_WIRE_SCHEMA(
     v.orbitalTangentialSpeedMps,
     v.orbitalRadialSpeedMps,
     v.orbitalSpeedErrorMps,
-    v.navigationPlan,
     v.altitudeMeters,
     v.orbitalPhaseRadians,
     v.planeOffsetMeters,
@@ -568,6 +567,7 @@ ELITE_WIRE_SCHEMA(
     v.moduleId,
     v.localOffsetMeters,
     v.localRotationDeg,
+    v.localAngularVelocityDegPerSecond,
     v.inheritHubOrientation,
     v.valid
 );
@@ -597,6 +597,7 @@ ELITE_WIRE_SCHEMA(
     v.position,
     v.orientation,
     v.linearVelocityMps,
+    v.angularVelocityWorldRadPerSecond,
     v.hubAttachment,
     v.displayName,
     v.ownerName,
@@ -644,6 +645,7 @@ ELITE_WIRE_SCHEMA(
 ELITE_WIRE_SCHEMA(
     game::simulation::ClientSessionSnapshot,
     v.playerNavigation,
+    v.ownedNavigationAssets,
     v.predictionWorldParams,
     v.universeTimeSeconds,
     v.universeTimeScale,

@@ -182,10 +182,13 @@ int main()
     // Full-authoritative-set preserves the legacy omission=remove contract.
     SimulationSnapshot baseline;
     baseline.metadata.serverTick = 10;
+    baseline.metadata.serverTimeSeconds = 10.0;
     baseline.replication.entitySetMode =
         ReplicatedEntitySetMode::FullAuthoritativeSet;
     baseline.ships.push_back(makeShip(1, 0, 0.0));
     baseline.ships.push_back(makeShip(2, 0, 100.0));
+    baseline.ships.back().transform.motion.worldVelocityMps =
+        glm::dvec3(40.0, 0.0, 0.0);
 
     // Bootstrap carries the heavy structural graph. Later full-presence
     // publications may omit these fields while the entity itself remains.
@@ -217,6 +220,7 @@ int main()
     // Sparse omission retains entity 2/object/hub while ship 1 is updated.
     SimulationSnapshot sparse;
     sparse.metadata.serverTick = 11;
+    sparse.metadata.serverTimeSeconds = 10.1;
     sparse.replication.entitySetMode =
         ReplicatedEntitySetMode::SparseRetainMissing;
     sparse.ships.push_back(makeShip(1, 0, 250.0));
@@ -236,6 +240,14 @@ int main()
         "sparse omission deleted retained infrastructure"
     );
     require(
+        std::abs(
+            world::coordinates::fullMeters(
+                requireShipSnapshot(retained, 2).transform.worldPosition
+            ).x - 104.0
+        ) < 1.0e-6,
+        "sparse omission stamped an old ship position onto a newer packet epoch"
+    );
+    require(
         retained.replication.entitySetMode ==
             ReplicatedEntitySetMode::FullAuthoritativeSet,
         "canonical history sample must materialize as a full entity set"
@@ -250,6 +262,7 @@ int main()
     // Explicit lifecycle remove is the only sparse deletion mechanism.
     SimulationSnapshot remove;
     remove.metadata.serverTick = 12;
+    remove.metadata.serverTimeSeconds = 10.2;
     remove.replication.entitySetMode =
         ReplicatedEntitySetMode::SparseRetainMissing;
     remove.replication.removedShipIds.push_back(EntityId{2});
@@ -269,6 +282,7 @@ int main()
     // A later full set intentionally returns to omission=remove semantics.
     SimulationSnapshot fullAgain;
     fullAgain.metadata.serverTick = 13;
+    fullAgain.metadata.serverTimeSeconds = 10.3;
     fullAgain.replication.entitySetMode =
         ReplicatedEntitySetMode::FullAuthoritativeSet;
     fullAgain.ships.push_back(makeShip(1, 0, 300.0));

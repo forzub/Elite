@@ -201,7 +201,7 @@ separate concept and continue to label route points/Finish.
 
 The next implementation layers are intentionally separate:
 
-1. common trajectory predictor and projected/dashed trajectory rendering;
+1. projected/dashed trajectory rendering fed by the shared predictor;
 2. route/intercept solver with obstacle/safety constraints and arrival-state
    matching;
 3. direct map dragging between equal-level neighbouring cubes and later 3D
@@ -209,3 +209,53 @@ The next implementation layers are intentionally separate:
 4. autopilot execution;
 5. formation controller using leader-relative slots rather than copied thruster
    commands.
+
+## Execution asset / START contract (Wave 2)
+
+`START` is not inferred from the cockpit ship. `RoutePlan` stores an explicit
+`NavigationRouteStart` whose `NavigationAssetRef` identifies the ship or future
+durable drone that will execute the route. START is logically first, fixed, not
+deletable/reorderable as a waypoint, and survives route clearing so the player
+may author several routes for the same executor.
+
+The server is authoritative for route-capable ownership. Each session receives
+`ClientSessionSnapshot::ownedNavigationAssets`; the client may select a START
+executor only from assets marked `commandable`. Current direct player-owned
+ships come from `ShipOwnershipRegistry`. Current repair/visual drones are not
+durable owned assets and therefore are deliberately not advertised as route
+executors; a future persistent drone ownership registry will project through the
+same `NavigationAssetRef::drone(DroneInstanceId)` seam.
+
+The cockpit suppresses START only when START equals the locally controlled
+asset. A remotely dispatched owned ship/drone remains a visible START marker.
+
+
+## Shared trajectory predictor baseline (Wave 3)
+
+`TrajectoryPredictor` is a renderer/server-neutral translational propagation
+service. It consumes only data: system-local `WorldKinematicState`, universe
+time, static gravity sources, an optional piecewise-linear proper-acceleration
+program, sampling/integration cadence and a caller-selected motion envelope.
+
+The reusable result keeps more than a drawable polyline: each sample contains
+position, velocity, total acceleration, gravity acceleration, non-gravitational
+proper acceleration, translational proper load in G and cumulative proper
+`delta-v`. `TrajectoryPredictionDiagnostics` also reports peak speed/load/jerk,
+travel distance and whether acceleration or jerk had to be constrained.
+
+Crew load is deliberately based on **proper acceleration only**. Gravity still
+changes the predicted world trajectory but free fall does not masquerade as a
+seat load. The predictor also does not choose a product G limit. Manual flight,
+automatic route execution and uncrewed craft may pass different envelopes; the
+future solver owns that policy and must still respect structural/equipment
+limits.
+
+`TrajectoryMapAdapter` is a one-way presentation adapter from the rich shared
+result into the existing `MapObjectTrajectory` position/time seam. The predictor
+itself has no dependency on maps, renderers, `RoutePlan`, `SpaceState`, server
+sessions or autopilot execution.
+
+This baseline intentionally uses static gravity-body centers. Continuous moving
+celestial ephemerides remain a later source/provider extension; they must extend
+the acceleration/environment input without changing the prediction result
+contract.

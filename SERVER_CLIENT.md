@@ -226,6 +226,26 @@ BACK
 
 Текущая важная граница: `AccountRegistry` пока in-memory. После restart dedicated server не знает прежних handle/token bindings, поэтому первый вход на fresh server требует `REGISTER`; после регистрации reconnect к тому же живому серверу использует `SIGN IN`. M8E.3 расширен до durable authoritative universe persistence: identity/player/ship ownership является первым slice того же persistence subsystem, который затем хранит изменяемое состояние мира. Формальный password/recovery contract описан в `src/game/identity/AUTHENTICATION_ARCHITECTURE.md`.
 
+### Owned navigation assets / remote route executors
+
+Route authoring no longer assumes that the executor is the ship occupied by the
+local client. Legal ship ownership is authoritative in `ShipOwnershipRegistry`
+(`ShipInstanceId -> ShipOwnerRef`) and remains separate from current control in
+`ControlRegistry`. For each session `GameServer` derives
+`ClientSessionSnapshot::ownedNavigationAssets` from the authenticated `PlayerId`
+and sends only directly player-owned assets that may currently be offered as
+Route Plan executors. The projection carries stable `NavigationAssetRef`, display
+name, transient materialized `EntityId` only as a binding, and latest
+authoritative world position/velocity when available.
+
+At this milestone direct player ownership implies `commandable=true`.
+Organization/fleet delegation will be a separate command-authority policy; the
+client must never obtain route command authority by merely submitting a ship ID.
+`NavigationAssetRef` also reserves `DroneInstanceId`, but current visual repair
+drones are not durable player assets and are therefore not published as route
+executors. A future persistent drone registry/ownership layer plugs into the
+same per-session projection.
+
 ### Runtime logging policy
 
 Нормальный `EliteGame`/`EliteServer` запуск должен оставлять консоль пригодной для эксплуатации, а не воспроизводить всю M8E-трассировку. Подробные успешные startup/process/WebView/connect/auth/bootstrap/control события являются opt-in diagnostics и включаются через `ELITE_TRACE_RUNTIME=1`. Ошибки авторизации/session admission, handshake timeout, crash/GLFW failures и threshold-based slow-path события остаются безусловными. Self-test output (`[SELFTEST]`, `[PASS]`, `[FAIL]`) всегда остаётся доступным. Это позволяет вернуть глубокую трассировку без нового патча, но не маскирует реальные runtime failures.
@@ -597,3 +617,26 @@ Durable `ShipContinuityRecord` is keyed by `ShipInstanceId`, never by transient 
 When no observer requires full simulation, coarse propagation advances state from the persisted timestamp rather than simulating every render/physics tick. A simple inertial leg can be advanced analytically; gravity/autopilot/interaction cases use the appropriate coarse propagator or scheduled events. Re-entry into interest creates a new runtime `EntityId` from the same `ShipInstanceId`.
 
 Dedicated persistent worlds target wall-clock catch-up for coarse/scheduled state after server downtime once M8E.3d is ready; local save slots default to paused universe time while the local game is closed. These are explicit `UniverseClockPolicy` choices, not accidental consequences of process uptime.
+
+### Navigation planning / traffic / ATC boundary (Wave 4)
+
+`TrajectoryPredictor` remains a pure shared physics service and never performs
+network I/O. Before route solving, the planning layer obtains a bounded
+`NavigationPlanningSnapshot` for the relevant system region/cubes and universe-
+time interval. The future authoritative response owns official navigation lanes,
+beacon service, restricted/closed volumes and published large-vessel traffic
+intents. Client radar/transponder/beacon observations refine that snapshot
+through the fusion seam without shrinking authoritative physical/separation
+safety envelopes.
+
+Traffic planning is four-dimensional: a published vessel intent is evaluated at
+the same passage time as the candidate ship trajectory and expires outside its
+published time window plus declared timing uncertainty. Large vessels are
+therefore moving swept safety volumes, not static points or objects frozen at
+the last schedule sample.
+
+Server/ATC may also publish a universal `GuidanceCorridor`. The cockpit uses the
+same corridor presentation for local planning, docking, mission/fleet guidance
+and long-range automatic transit. `NavigationModuleState` independently gates
+server guidance, local guidance, safety/traffic computation and individual HUD
+layers; hiding a corridor on the HUD does not disable collision/safety logic.

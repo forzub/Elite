@@ -10,5 +10,8 @@ enum class ObjectType : uint16_t
     Asteroid,
     Planet,
 
-    RepairDroneDebug
+    RepairDroneDebug,
+
+    GuidanceDockCube,
+    GuidanceDockCylinder
 };

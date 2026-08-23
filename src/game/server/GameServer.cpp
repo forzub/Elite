@@ -855,6 +855,7 @@ void GameServer::populateClientSessionSnapshot(
     // Shared publication state has no player/session navigation identity.
     // ServerRunner must compose that field for the destination session.
     snapshot.session.playerNavigation = {};
+    snapshot.session.ownedNavigationAssets.clear();
     snapshot.session.predictionWorldParams = m_simulation.world();
     snapshot.session.universeTimeSeconds =
         m_universeClock.timeSeconds();
@@ -1119,6 +1120,65 @@ void GameServer::debugRefreshSnapshot()
 }
 
 
+std::vector<game::navigation::OwnedNavigationAsset>
+GameServer::ownedNavigationAssetsForSession(
+    game::network::ServerSessionId sessionId
+) const
+{
+    std::vector<game::navigation::OwnedNavigationAsset> out;
+    const PlayerId playerId = m_sessions.player(sessionId);
+    if (!playerId)
+        return out;
+
+    for (const auto& [shipInstanceId, ownership] : m_shipOwnership.all())
+    {
+        if (ownership.owner.kind != game::server::ShipOwnerKind::Player ||
+            ownership.owner.playerId != playerId)
+        {
+            continue;
+        }
+
+        const auto* instance = m_shipInstances.find(shipInstanceId);
+        if (!instance)
+            continue;
+
+        game::navigation::OwnedNavigationAsset asset;
+        asset.asset = game::navigation::NavigationAssetRef::ship(shipInstanceId);
+        asset.materializedEntityId = instance->materializedEntityId;
+        asset.typeId = instance->typeId;
+        asset.displayName = instance->name;
+
+        // Direct personal ownership is the command policy for this milestone.
+        // Fleet/organization delegation must be added as an explicit authority
+        // policy later; knowing an instance ID is never enough by itself.
+        asset.commandable = true;
+
+        if (instance->materialized())
+        {
+            if (const Ship* ship = m_simulation.getShip(instance->materializedEntityId))
+            {
+                const auto& transform = ship->core().transform();
+                asset.worldPosition = transform.worldPosition;
+                asset.worldVelocityMps = transform.motion.worldVelocityMps;
+                asset.kinematicsValid = true;
+            }
+        }
+
+        out.push_back(std::move(asset));
+    }
+
+    std::sort(
+        out.begin(),
+        out.end(),
+        [](const game::navigation::OwnedNavigationAsset& a,
+           const game::navigation::OwnedNavigationAsset& b)
+        {
+            return a.asset.shipInstanceId < b.asset.shipInstanceId;
+        }
+    );
+    return out;
+}
+
 const SimulationSnapshot& GameServer::snapshot() const
 {
     return m_lastSnapshot;
@@ -1150,6 +1210,8 @@ bool GameServer::copySnapshotForSession(
 
     outSnapshot = m_lastSnapshot;
     outSnapshot.session.playerNavigation = sessionNavigation;
+    outSnapshot.session.ownedNavigationAssets =
+        ownedNavigationAssetsForSession(sessionId);
 
     // Full copy remains available for diagnostics/contracts. Production normal
     // publication switches to copySparseSnapshotForSession in Stage M7; initial
@@ -1177,6 +1239,8 @@ bool GameServer::copyHydratedSnapshotForSession(
     // recent authoritative value for every sparse nested graph field.
     outSnapshot = m_canonicalReplicationSnapshot;
     outSnapshot.session.playerNavigation = sessionNavigation;
+    outSnapshot.session.ownedNavigationAssets =
+        ownedNavigationAssetsForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::FullAuthoritativeSet;
     outSnapshot.replication.removedShipIds.clear();
@@ -1197,6 +1261,8 @@ bool GameServer::copySparseSnapshotForSession(
 
     outSnapshot = m_lastSnapshot;
     outSnapshot.session.playerNavigation = sessionNavigation;
+    outSnapshot.session.ownedNavigationAssets =
+        ownedNavigationAssetsForSession(sessionId);
     outSnapshot.replication.entitySetMode =
         game::network::ReplicatedEntitySetMode::SparseRetainMissing;
     outSnapshot.replication.removedShipIds = selection.removedShipIds;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include <utility>
 
@@ -130,6 +131,73 @@ inline ObjectSnapshot materializeObjectSnapshot(
     );
     return canonical;
 }
+
+inline void advanceRetainedShipPresentation(
+    ShipSnapshot& ship,
+    double deltaSeconds
+)
+{
+    if (!std::isfinite(deltaSeconds) || deltaSeconds <= 0.0)
+        return;
+
+    // Sparse publication deliberately omits a ship for several transport
+    // epochs.  A retained row must not pretend that its old position belongs
+    // to each newer packet time: that creates A,A,A,B presentation history
+    // and visible stop/jump motion at replication-tier boundaries.  Advance
+    // the retained presentation row with the last authoritative kinematics;
+    // the next real publication replaces this estimate completely.
+    const auto& motion = ship.transform.motion;
+    const glm::dvec3 accelerationMps2 =
+        motion.engineAccelerationMps2 + motion.gravityAccelerationMps2;
+    const glm::dvec3 displacementMeters =
+        motion.worldVelocityMps * deltaSeconds +
+        0.5 * accelerationMps2 * deltaSeconds * deltaSeconds;
+
+    ship.transform.addWorldMeters(displacementMeters);
+    ship.transform.motion.worldVelocityMps +=
+        accelerationMps2 * deltaSeconds;
+
+    // Keep remote attitude smooth across the same sparse interval. Angular
+    // rates are already authoritative body-control state and use radians/sec.
+    const float dt = static_cast<float>(deltaSeconds);
+    const glm::vec3 right = ship.transform.right();
+    const glm::vec3 up = ship.transform.up();
+    const glm::vec3 forward = ship.transform.forward();
+    const glm::mat4 yawRot = glm::rotate(
+        glm::mat4(1.0f),
+        ship.transform.yawRate * dt,
+        up
+    );
+    const glm::mat4 pitchRot = glm::rotate(
+        glm::mat4(1.0f),
+        ship.transform.pitchRate * dt,
+        right
+    );
+    const glm::mat4 rollRot = glm::rotate(
+        glm::mat4(1.0f),
+        ship.transform.rollRate * dt,
+        forward
+    );
+    ship.transform.orientation =
+        yawRot * pitchRot * rollRot * ship.transform.orientation;
+
+    // Preserve a useful local-frame estimate for Detail/Hub presentation.
+    ship.transform.motion.localPositionMeters +=
+        ship.transform.motion.localVelocityMps * deltaSeconds;
+
+    if (ship.referenceFrame.valid)
+    {
+        ship.referenceFrame.originMeters +=
+            ship.referenceFrame.velocityMetersPerSecond * deltaSeconds +
+            0.5 * ship.referenceFrame.accelerationMetersPerSecond2 *
+                deltaSeconds * deltaSeconds;
+        ship.referenceFrame.velocityMetersPerSecond +=
+            ship.referenceFrame.accelerationMetersPerSecond2 * deltaSeconds;
+        ship.referenceFrame.localPositionMeters +=
+            ship.referenceFrame.localVelocityMetersPerSecond * deltaSeconds;
+        ship.referenceFrame.universeTimeSeconds += deltaSeconds;
+    }
+}
 } // namespace detail
 
 /*
@@ -225,6 +293,21 @@ inline SimulationSnapshot materializeCanonicalReplicationSnapshot(
     }
 
     SimulationSnapshot canonical = *previousCanonical;
+
+    const double retainedDeltaSeconds =
+        incoming.metadata.serverTimeSeconds -
+        previousCanonical->metadata.serverTimeSeconds;
+    if (std::isfinite(retainedDeltaSeconds) && retainedDeltaSeconds > 0.0)
+    {
+        for (auto& retainedShip : canonical.ships)
+        {
+            detail::advanceRetainedShipPresentation(
+                retainedShip,
+                retainedDeltaSeconds
+            );
+        }
+    }
+
     canonical.metadata = incoming.metadata;
     canonical.session = incoming.session;
     canonical.signals = incoming.signals;

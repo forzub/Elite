@@ -571,6 +571,77 @@ void spawnHubMotionLabNpcs(
     );
 }
 
+void spawnHubGuidanceTestModules(
+    GameSimulation& sim,
+    int systemId,
+    const std::string& hubId,
+    const glm::dvec3& hubReferencePositionMeters
+)
+{
+    struct Spec
+    {
+        ObjectType type;
+        const char* moduleId;
+        const char* displayName;
+        glm::dvec3 localOffsetMeters;
+        glm::dvec3 localRotationDeg;
+        glm::dvec3 localAngularVelocityDegPerSecond;
+    };
+
+    // Hub visual-local basis is X=normal, Y=radial, Z=-prograde. Both test
+    // meshes have their through corridor along local Z, so their docking axis
+    // is collinear with orbital prograde as requested. They are deliberately
+    // several kilometres apart to create a useful short-range guidance lab.
+    const Spec specs[] = {
+        {
+            ObjectType::GuidanceDockCube,
+            "guidance_dock_cube_a",
+            "GUIDANCE DOCK CUBE A",
+            glm::dvec3(3000.0, 350.0, 0.0),
+            glm::dvec3(0.0),
+            glm::dvec3(0.0, 0.0, 2.0)
+        },
+        {
+            ObjectType::GuidanceDockCylinder,
+            "guidance_dock_cylinder_b",
+            "GUIDANCE DOCK CYLINDER B",
+            glm::dvec3(-3000.0, -250.0, 0.0),
+            glm::dvec3(0.0),
+            glm::dvec3(0.0, 0.0, -1.5)
+        }
+    };
+
+    for (const Spec& spec : specs)
+    {
+        const EntityId id = sim.spawnStation(
+            spec.type,
+            systemId,
+            hubReferencePositionMeters,
+            glm::mat4(1.0f)
+        );
+
+        if (id.value == 0)
+            continue;
+
+        sim.setStaticObjectIdentity(id, spec.displayName, "Hub Motion Lab");
+
+        if (!sim.attachStaticObjectToHub(
+                id,
+                hubId,
+                spec.moduleId,
+                spec.localOffsetMeters,
+                spec.localRotationDeg,
+                true,
+                spec.localAngularVelocityDegPerSecond))
+        {
+            std::cerr
+                << "[HubGuidanceLab] failed to attach "
+                << spec.moduleId << " to " << hubId << "\n";
+        }
+    }
+}
+
+
 EntityId spawnInterplanetaryTransferLabNpc(GameSimulation& sim)
 {
     using namespace game::diagnostics;
@@ -804,7 +875,15 @@ EntityId buildGameScene(
     if constexpr (game::diagnostics::HubMotionLabEnabled)
     {
         if (diagnosticHubAvailable)
+        {
             spawnHubMotionLabNpcs(sim, stationPos);
+            spawnHubGuidanceTestModules(
+                sim,
+                initialSystemId,
+                playerHub->id,
+                stationPos
+            );
+        }
     }
 
     if constexpr (game::diagnostics::ActivationCadenceLabEnabled)

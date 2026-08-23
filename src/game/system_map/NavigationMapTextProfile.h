@@ -34,6 +34,7 @@ struct NavigationMapTextProfile
 
     std::string routeTitle;
     std::string showOnHud;
+    std::string start;
     std::string waypoint;
     std::string finish;
     std::string dragWaypoints;

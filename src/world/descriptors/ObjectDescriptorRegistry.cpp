@@ -5,6 +5,7 @@
 #include "game/station/descriptors/Station01.h"
 
 #include "src/game/drone/descriptors/RepairDroneDescriptor.h"
+#include "src/game/station/descriptors/GuidanceTestDockDescriptor.h"
 
 #include <mutex>
 
@@ -50,5 +51,15 @@ void ObjectDescriptorRegistry::init()
     {
         auto desc = std::make_unique<game::drone::RepairDroneDescriptor>();
         registry[ObjectType::RepairDroneDebug] = std::move(desc);
+    }
+
+    // ===== GUIDANCE / DOCKING TEST MODULES =====
+    {
+        auto desc = std::make_unique<game::station::GuidanceDockCubeDescriptor>();
+        registry[ObjectType::GuidanceDockCube] = std::move(desc);
+    }
+    {
+        auto desc = std::make_unique<game::station::GuidanceDockCylinderDescriptor>();
+        registry[ObjectType::GuidanceDockCylinder] = std::move(desc);
     }
 }

@@ -25,6 +25,8 @@
 #include "src/game/client/GameClient.h"
 #include "src/scene/SceneRenderer.h"
 #include "src/render/cockpit/FlightVectorIndicatorRenderer.h"
+#include "src/render/cockpit/GuidanceCorridorRenderer.h"
+#include "src/render/cockpit/GalacticCompassRenderer.h"
 #include "src/ui/components/radar/RadarWidgetBase.h"
 #include "src/ui/presentation/InSessionPresentationRenderer.h"
 
@@ -39,6 +41,9 @@
 #include "src/game/promo/PromoSceneScenario.h"
 #include "src/game/traffic/StationTrafficSystem.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
+#include "src/game/navigation/GalacticReferenceFrame.h"
+#include "src/game/navigation/HubSemanticAnchorCatalog.h"
+#include "src/game/navigation/NavigationModuleState.h"
 #include "src/game/system_map/SystemMapRenderer.h"
 #include "src/game/system_map/AuthoritativeMapInterpolator.h"
 #include "src/world/celestial/SystemMapTypes.h"
@@ -140,6 +145,21 @@ public:
     void setSystemMapPlayerLocalMode();
     bool preparePlayerNavigationMapLevel(PlayerNavigationMapLevel level);
     void toggleConstellationOverlay();
+
+    // Navigation equipment/control seam. Cockpit buttons, debug controls or
+    // future ship equipment can switch computation and presentation modules
+    // independently without reaching into individual renderers/planners.
+    bool navigationModuleEnabled(
+        game::navigation::NavigationModuleId module
+    ) const noexcept;
+    void setNavigationModuleEnabled(
+        game::navigation::NavigationModuleId module,
+        bool enabled
+    ) noexcept;
+    bool toggleNavigationModule(
+        game::navigation::NavigationModuleId module
+    ) noexcept;
+    void setAllNavigationHudLayersEnabled(bool enabled) noexcept;
     void cycleSkyCulture();
     void onUiLanguageChanged() override;
     void setSystemMapEmptySectorMode(
@@ -213,6 +233,7 @@ private:
         const Viewport& viewport
     );
     void renderUiLanguageIndicator(const Viewport& viewport);
+    void updateGuidanceTestLab(float dt);
     game::presentation::SystemMapPanelPresentation
     buildNativeSystemMapPanelPresentation();
     bool handleNativeSystemMapPanelInput(const Viewport& viewport);
@@ -232,6 +253,8 @@ private:
     HudMessage*                                 m_activeMessage = nullptr;
     HudRenderer                                 m_hudRenderer;
     render::cockpit::FlightVectorIndicatorRenderer m_flightVectorIndicatorRenderer;
+    render::cockpit::GuidanceCorridorRenderer m_guidanceCorridorRenderer;
+    render::cockpit::GalacticCompassRenderer m_galacticCompassRenderer;
 
     WorldLabelRenderer                          m_worldLabelRenderer;
 
@@ -263,6 +286,9 @@ private:
     SceneRenderer m_sceneRenderer;
     PreparedScene m_preparedScene;
     game::navigation::ClientNavigationWorkspace m_navigationWorkspace;
+    game::navigation::GalacticReferenceFrame m_galacticReferenceFrame;
+    game::navigation::HubSemanticAnchorCatalog m_hubSemanticAnchorCatalog;
+    double m_guidanceLabReplanAccumulatorSeconds = 0.0;
     SystemMapRenderer m_systemMapRenderer;
     ui::presentation::InSessionPresentationRenderer m_inSessionPresentationRenderer;
     bool m_constellationOverlayEnabled = false;

@@ -21,6 +21,7 @@ struct ObjectSnapshot
     
     glm::mat4 orientation {1.0f};
     glm::dvec3 linearVelocityMps {0.0};
+    glm::dvec3 angularVelocityWorldRadPerSecond {0.0};
     game::simulation::HubAttachmentSnapshot hubAttachment;
 
     // Authoritative instance/navigation facts. These are not map DTO fields:

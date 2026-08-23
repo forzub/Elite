@@ -2,7 +2,6 @@
 
 #include <string>
 #include <glm/glm.hpp>
-#include "src/game/navigation/NavigationPlan.h"
 #include "src/game/navigation/KinematicFrame.h"
 #include "src/game/navigation/LocalFlightControlLaw.h"
 
@@ -124,7 +123,6 @@ struct DynamicMotionState
     double orbitalSpeedErrorMps = 0.0;
 
     // Будущий Cruise/Jump слой.
-    NavigationPlan navigationPlan;
 
     // Орбитальный слой.
     double altitudeMeters = 0.0;

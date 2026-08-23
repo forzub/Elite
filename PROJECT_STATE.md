@@ -123,7 +123,7 @@ Operational contract, режимы запуска и ручная проверк
 
 ### Multiplayer / session authority foundation
 
-**Статус: `[x]` transport/process + reconnect-control + explicit authentication/admission baseline защищены automated/manual acceptance. Identity/runtime backbone готов, но M8E.3 storage implementation ещё не начат. Client-navigation ownership/stable-identity cleanup закрыт: Route Plan вынесен из renderer в `ClientNavigationWorkspace`, ship route identity использует `ShipInstanceId`. Следующий navigation layer — trajectory predictor. Server/world persistence остаётся отдельным незакрытым фундаментальным track и понадобится до durable offline orders/autopilot/cross-restart universe continuity.**
+**Статус: `[x]` transport/process + reconnect-control + explicit authentication/admission baseline защищены automated/manual acceptance. Identity/runtime backbone готов, но M8E.3 storage implementation ещё не начат. Client-navigation executor/ownership cleanup закрыт: Route Plan вынесен из renderer в `ClientNavigationWorkspace`, ship route identity использует `ShipInstanceId`, START хранит явный `NavigationAssetRef`, а server session публикует только принадлежащие игроку commandable navigation assets. Shared trajectory predictor implementation добавлен как PATCH C и ждёт полного ready gate; после зелёного gate следующий navigation layer — projected/dashed trajectory presentation и route/intercept solver. Server/world persistence остаётся отдельным незакрытым фундаментальным track и понадобится до durable offline orders/autopilot/cross-restart universe continuity.**
 
 Server runtime принимает несколько transport/session endpoints в одном authoritative execution context. Session больше не является идентичностью корабля: текущая authority chain — `ServerSessionId -> PlayerId -> ControlRegistry -> EntityId`, а persistent assignment игрока хранит `PlayerId -> ShipInstanceId`; `ShipInstanceRegistry` связывает стабильный экземпляр корабля с текущей materialized `EntityId`. `m_playerNavigation` удалён; legacy `m_playerId` остаётся compatibility alias старых single-player/debug paths. **Один global active celestial-system context** всё ещё остаётся отдельным ограничением world runtime до multi-system stage.
 
@@ -164,7 +164,7 @@ Server runtime принимает несколько transport/session endpoints
 
 ## 6. Навигация и определение положения
 
-**Статус: `[~]` Route Plan UI/model собран; trajectory predictor/solver/autopilot впереди.**
+**Статус: `[~]` Route Plan закрыт; shared trajectory predictor PATCH C реализован и ждёт полного ready gate; trajectory rendering/solver/autopilot впереди.**
 
 ### Client navigation tracking
 
@@ -183,7 +183,9 @@ Server runtime принимает несколько transport/session endpoints
 - `[x]` Native map/route UI снова подчиняется единому localization contract: строки Route Container, Arrival Profile, object-card actions и confirmations хранятся в `assets/localization`, а C++ renderers получают уже разрешённый `NavigationMapTextProfile` без `ru/zh/es/ja` ветвлений.
 - `[~]` Позиция tracked celestial body вне открытой System Map пока хранится последним client-composed sample; отдельный continuous ephemeris resolver для произвольных отслеживаемых систем ещё не сделан.
 - `[x]` PATCH A: renderer-independent navigation ownership + typed stable route target identity (`ShipInstanceId`/Hub/body/spatial address) закрыт и защищён architecture guards.
-- `[ ]` **Ближайший шаг:** общий trajectory predictor (включая пунктир выбранного объекта), route/intercept solver с obstacle/safety constraints и terminal state matching; после solver — прямое drag-перемещение route points между соседними равноразмерными кубами/3D trajectory constraints, затем autopilot/formation controller. Финальный продуктовый контракт: `src/game/navigation/ROUTE_NAVIGATION_CONTRACT.md`.
+- `[x]` PATCH B: Route Plan получил обязательный explicit START/execution asset; START не участвует в reorder/delete, содержит stable `NavigationAssetRef` и не рисуется в cockpit HUD, когда executor совпадает с локально управляемым кораблём. Серверная `ownedNavigationAssets` projection строится из authoritative `ShipOwnershipRegistry`, отдельно от `ControlRegistry`; `DroneInstanceId` зарезервирован для будущих durable owned drones. Мёртвый `NavigationPlan` удалён из `DynamicMotionState`/wire schema.
+- `[~]` PATCH C: общий renderer/server-neutral `TrajectoryPredictor` реализован и покрыт отдельным test block/architecture guard; полный MinGW ready gate ещё должен подтвердить интеграцию. Predictor принимает system-local kinematic seed, gravity sources, proper-acceleration program и caller-selected acceleration/jerk envelope; выдаёт time-series position/velocity/acceleration, отдельно gravity/proper acceleration, proper crew G-load и accumulated delta-v. `TrajectoryMapAdapter` переводит результат в существующий `MapObjectTrajectory` seam без обратной зависимости predictor -> renderer.
+- `[ ]` **Ближайший шаг:** projected/dashed trajectory presentation для выбранного объекта, затем route/intercept solver с obstacle/safety constraints и terminal state matching; после solver — прямое drag-перемещение route points между соседними равноразмерными кубами/3D trajectory constraints, затем autopilot/formation controller. Финальный продуктовый контракт: `src/game/navigation/ROUTE_NAVIGATION_CONTRACT.md`.
 
 ### Космический компас
 
@@ -575,7 +577,7 @@ Local game и dedicated server должны использовать тот же
 12. Persistent identity Phase 1 — **готов как in-memory backbone**: `PlayerId`, `ShipInstanceId`, `ServerSessionId`, `EntityId`, `PlayerRegistry`, `ShipInstanceRegistry`, `ControlRegistry`, session welcome/snapshot identity fields. M8E.2 добавил explicit account sign-in/register поверх этого backbone; durable authoritative universe storage всё ещё отсутствует.
 13. Canonical build/runtime recovery — **закрыт**: runtime paths единичны (`build/EliteGame.exe`, `build/headless_server/EliteServer.exe`), scratch builds изолированы под `build/tests/`, полный MinGW ready gate и ручной reconnect/two-client acceptance зелёные.
 14. Stage M8E.2 explicit authentication/admission — **protocol/auth boundary готов**: AccountHandle server-known, typed rejection/REGISTER/SIGN IN работают; password/recovery/sign-out durability ждут M8E.3b.
-15. Route Plan — **рабочий client-side baseline + PATCH A готовы**: live reorder, cross-map recall, selected-route highlight, numbered route markers, Arrival Profile, renderer-independent `ClientNavigationWorkspace`, отдельные `TargetTrackingState`/`RoutePlan` и stable `RouteTargetRef` (`ShipInstanceId`/Hub/body/WorldPosition). Следующий шаг — общий trajectory predictor.
+15. Route Plan — **PATCH A/PATCH B закрыты**. PATCH C shared `TrajectoryPredictor` реализован и ждёт полного ready gate: reusable kinematic samples, gravity/proper-acceleration split и G/jerk diagnostics отделены от Route Plan/server/render. После зелёного gate следующий шаг — projected/dashed trajectory presentation и route/intercept solver.
 16. **M8E.3 durable authoritative universe persistence остаётся незакрытым server/world фундаментом и кодом ещё не начат.** Он не блокирует client-side ownership cleanup/predictor prototype, но должен быть завершён до того, как durable autopilot/orders, offline ship continuity и cross-restart route/formation state будут считаться production-механикой.
 
 ---
@@ -591,3 +593,48 @@ Local game и dedicated server должны использовать тот же
 - обнаружено новое архитектурное ограничение, которое будущая работа не должна забыть.
 
 Подробности реализации должны оставаться в коде, специализированных MD и regression/architecture/acceptance tests. Этот файл отвечает только на вопрос: **«где сейчас проект и куда мы идём дальше?»**
+
+### Navigation Guidance Layer — Wave 4
+
+- `[x]` Navigation features have a shared modular enable/disable seam via
+  `NavigationModuleState`: physics/planning/source modules and HUD layers are
+  independent. Target markers, Route markers, Guidance Corridor, Galactic
+  Compass and flight-vector HUD can be hidden independently without disabling
+  safety computation; `SpaceState` exposes stable set/toggle methods for future
+  cockpit controls rather than consuming new arbitrary hotkeys.
+- `[x]` `NavigationPlanningSnapshot` formalizes official lanes/beacon coverage,
+  moving obstacles, restricted volumes, scheduled large-vessel traffic and
+  uncertainty. `NavigationPlanningSnapshotBuilder` is the radar/transponder/
+  beacon refinement seam; sensor precision may improve kinematics but cannot
+  shrink authoritative physical/separation envelopes.
+- `[x]` `TrajectorySafetyEvaluator` performs time-aware closest-approach checks
+  against moving obstacles, restricted volumes and scheduled traffic. Traffic
+  exists only in its published window plus timing uncertainty and is not frozen
+  forever at its final schedule point.
+- `[x]` `GuidanceCorridor` is the universal time-aware visual/operational path
+  product for RouteSolver, local planner, docking computer, server ATC,
+  mission/fleet and emergency sources. HUD presentation uses a short sliding
+  time window, making the same frames useful as docking guidance and as motion
+  feedback during long autopilot flight.
+- `[x]` `LocalGuidancePlanner` V1 reuses `TrajectoryPredictor` +
+  `TrajectorySafetyEvaluator` for a direct moving-target candidate and, on a
+  conflict, tries simple left/right lateral detour candidates through that same
+  prediction+safety pipeline. If neither candidate is safe it returns `Blocked`;
+  more advanced obstacle search remains a planner strategy, never predictor logic.
+- `[x]` Hub docking/landing/attack/etc. construction semantics are separated
+  from mesh geometry through `HubSemanticAnchor`. Diagnostic rotating cube and
+  cylinder dock meshes live only in `assets/models/hub/guidance_test/`; semantic
+  gates live in `assets/data/navigation/hub_semantic_anchors.json` and can
+  survive future mesh replacement.
+- `[x]` Galactic Compass foundation uses standard galactic longitude `l` and
+  latitude `b`, GC/GAC and NGP/SGP, reading the same Milky Way orientation data
+  as the galaxy renderer. It reports ship-nose orientation; actual velocity
+  remains the separate flight-vector instrument.
+- `[x]` Hub Motion Lab now has a live local-guidance producer: rotating semantic
+  docking gates are resolved from replicated module pose/angular velocity, a
+  short-lived planning snapshot is built, and accepted local corridors are
+  republished about every 0.2 s. Known blocking diagnostic modules participate
+  as moving conservative obstacles.
+- `[ ]` **Next:** long-range RouteSolver over official lanes/schedules and a
+  closed-loop `TrajectoryFollower`; then real radar/transponder/beacon fusion and
+  server planning-query/ATC corridor transport plug into the existing contracts.

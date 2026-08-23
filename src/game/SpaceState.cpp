@@ -62,9 +62,12 @@
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "src/game/presentation/ClientHudPresentation.h"
 #include "src/game/presentation/NavigationHudPresentation.h"
+#include "src/game/presentation/GuidanceHudPresentation.h"
+#include "src/game/presentation/GalacticCompassPresentation.h"
 #include "src/game/presentation/GalaxyNavigationPresentation.h"
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
+#include "src/game/navigation/LocalGuidancePlanner.h"
 
 #include <chrono>
 #include <algorithm>
@@ -697,6 +700,34 @@ void SpaceState::toggleConstellationOverlay()
         << "[Constellations] gameplay layer "
         << (m_constellationOverlayEnabled ? "enabled" : "disabled")
         << std::endl;
+}
+
+
+bool SpaceState::navigationModuleEnabled(
+    game::navigation::NavigationModuleId module
+) const noexcept
+{
+    return m_navigationWorkspace.modules().enabled(module);
+}
+
+void SpaceState::setNavigationModuleEnabled(
+    game::navigation::NavigationModuleId module,
+    bool enabled
+) noexcept
+{
+    m_navigationWorkspace.modules().setEnabled(module, enabled);
+}
+
+bool SpaceState::toggleNavigationModule(
+    game::navigation::NavigationModuleId module
+) noexcept
+{
+    return m_navigationWorkspace.modules().toggle(module);
+}
+
+void SpaceState::setAllNavigationHudLayersEnabled(bool enabled) noexcept
+{
+    m_navigationWorkspace.modules().setAllHudLayers(enabled);
 }
 
 
@@ -1632,6 +1663,201 @@ void SpaceState::setFlightScreenLayout(ScreenLayout layout)
 // =====================================================================================
 // Update
 // =====================================================================================
+void SpaceState::updateGuidanceTestLab(float dt)
+{
+    constexpr const char* CorridorId =
+        "lab:guidance_dock_cube_a:dock_gate_front";
+
+    if (!m_client)
+        return;
+
+    auto& modules = m_navigationWorkspace.modules();
+    const bool computationEnabled =
+        modules.enabled(game::navigation::NavigationModuleId::TrajectoryPrediction) &&
+        modules.enabled(game::navigation::NavigationModuleId::SafetyEvaluation) &&
+        modules.enabled(game::navigation::NavigationModuleId::LocalGuidance);
+
+    if (!computationEnabled)
+    {
+        m_navigationWorkspace.guidance().erase(CorridorId);
+        return;
+    }
+
+    m_guidanceLabReplanAccumulatorSeconds +=
+        static_cast<double>(std::max(0.0f, dt));
+    if (m_guidanceLabReplanAccumulatorSeconds < 0.20)
+        return;
+    m_guidanceLabReplanAccumulatorSeconds = 0.0;
+
+    const auto playerIt =
+        m_client->world().ships().find(m_playerId.value);
+    if (playerIt == m_client->world().ships().end())
+        return;
+
+    const ClientShipState& player = playerIt->second;
+    const int systemId = player.renderTransform.motion.systemId;
+    if (systemId < 0)
+    {
+        m_navigationWorkspace.guidance().erase(CorridorId);
+        return;
+    }
+
+    const ClientObjectState* targetObject = nullptr;
+    for (const auto& [id, object] : m_client->world().objects())
+    {
+        (void)id;
+        if (object.systemId == systemId &&
+            object.type == ObjectType::GuidanceDockCube &&
+            object.hubAttachment.valid &&
+            object.hubAttachment.moduleId == "guidance_dock_cube_a")
+        {
+            targetObject = &object;
+            break;
+        }
+    }
+
+    const auto* anchorDefinition = m_hubSemanticAnchorCatalog.find(
+        "guidance_dock_cube_a",
+        "dock_gate_front"
+    );
+    if (!targetObject || !anchorDefinition)
+    {
+        m_navigationWorkspace.guidance().erase(CorridorId);
+        return;
+    }
+
+    const double now = m_client->universeTimeSeconds();
+    const auto targetAnchor = game::navigation::resolveHubSemanticAnchor(
+        *anchorDefinition,
+        systemId,
+        now,
+        world::coordinates::fullMeters(targetObject->renderWorldPosition),
+        targetObject->linearVelocityMps,
+        targetObject->renderOrientation,
+        targetObject->angularVelocityWorldRadPerSecond
+    );
+
+    game::navigation::NavigationPlanningSnapshot environment;
+    environment.systemId = systemId;
+    environment.generatedAtUniverseTimeSeconds = now;
+    environment.validUntilUniverseTimeSeconds = now + 2.0;
+
+    // The client and server share the same packaged celestial catalog. Combine
+    // current celestial kinematics with catalog GM/radius so the local lab uses
+    // the same nearby-body gravity terms as the shared predictor contract.
+    const auto* atlas = m_client->starAtlas();
+    const auto* celestial = m_client->celestialSnapshot();
+    if (atlas && celestial && celestial->systemId == systemId)
+    {
+        if (const auto* definition = atlas->findSystem(systemId))
+        {
+            for (const auto& state : celestial->bodies)
+            {
+                const world::celestial::CelestialBodyDefinition* bodyDef = nullptr;
+                for (const auto& candidate : definition->bodies)
+                {
+                    if (candidate.id == state.id)
+                    {
+                        bodyDef = &candidate;
+                        break;
+                    }
+                }
+
+                if (!bodyDef || bodyDef->gravitationalParameterM3s2 <= 0.0)
+                    continue;
+
+                game::navigation::GravityBody gravity;
+                gravity.id = state.id;
+                gravity.centerMeters = state.worldMeters;
+                gravity.radiusMeters = state.radiusKm * 1000.0;
+                gravity.gravitationalParameterM3s2 =
+                    bodyDef->gravitationalParameterM3s2;
+                environment.gravityBodies.push_back(std::move(gravity));
+            }
+        }
+    }
+
+    // Diagnostic infrastructure other than the selected docking module becomes
+    // known local traffic/obstacle geometry. V1 uses conservative spheres; the
+    // semantic target itself is excluded because crossing its gate is intended.
+    for (const auto& [id, object] : m_client->world().objects())
+    {
+        if (&object == targetObject || object.systemId != systemId)
+            continue;
+        if (object.type != ObjectType::GuidanceDockCube &&
+            object.type != ObjectType::GuidanceDockCylinder)
+        {
+            continue;
+        }
+
+        game::navigation::NavigationObstacle obstacle;
+        obstacle.id = "object:" + std::to_string(id);
+        obstacle.systemId = systemId;
+        obstacle.epochUniverseTimeSeconds = now;
+        obstacle.positionMeters =
+            world::coordinates::fullMeters(object.renderWorldPosition);
+        obstacle.velocityMps = object.linearVelocityMps;
+        obstacle.physicalRadiusMeters =
+            object.type == ObjectType::GuidanceDockCylinder ? 650.0 : 520.0;
+        obstacle.requiredClearanceMeters = 80.0;
+        obstacle.positionUncertaintyMeters = 1.0;
+        obstacle.velocityUncertaintyMps = 0.05;
+        obstacle.validFromUniverseTimeSeconds = now - 1.0;
+        obstacle.validUntilUniverseTimeSeconds = now + 60.0;
+        obstacle.source =
+            game::navigation::NavigationKnowledgeSource::AuthoritativeWorld;
+        environment.obstacles.push_back(std::move(obstacle));
+    }
+
+    const glm::dvec3 playerMeters = world::coordinates::fullMeters(
+        player.renderTransform.worldPosition
+    );
+    const double distanceToGate = glm::length(
+        targetAnchor.positionMeters - playerMeters
+    );
+
+    game::navigation::LocalGuidanceRequest request;
+    request.corridorId = CorridorId;
+    request.systemId = systemId;
+    request.startUniverseTimeSeconds = now;
+    request.actorState.positionMeters = playerMeters;
+    request.actorState.velocityMps = player.renderTransform.motion.worldVelocityMps;
+    request.actorState.accelerationMps2 = glm::dvec3(0.0);
+    request.actorProperAccelerationMps2 = glm::dvec3(0.0);
+    request.target = targetAnchor;
+    request.environment = std::move(environment);
+    request.profile.purpose = game::navigation::GuidancePurpose::Docking;
+    request.profile.horizonSeconds = std::clamp(
+        distanceToGate / 120.0,
+        8.0,
+        30.0
+    );
+    request.profile.frameIntervalSeconds = 0.5;
+    request.profile.predictorIntegrationStepSeconds = 0.05;
+    request.profile.shipSafetyRadiusMeters = 24.0;
+    request.profile.recommendedSpeedMps = targetAnchor.maxEntrySpeedMps;
+    request.profile.maxClosureRateMps = targetAnchor.maxEntrySpeedMps;
+    request.profile.motionEnvelope.maxProperAccelerationMps2 =
+        6.0 * game::navigation::StandardGravityMps2;
+    request.profile.motionEnvelope.maxProperJerkMps3 =
+        1.5 * game::navigation::StandardGravityMps2;
+
+    const auto result = game::navigation::LocalGuidancePlanner::plan(request);
+    if (result.ready())
+    {
+        m_navigationWorkspace.guidance().publish(result.corridor);
+    }
+    else
+    {
+        // Never keep presenting a stale unsafe lab corridor. A future warning
+        // layer can expose the conflict while an alternate planner searches.
+        m_navigationWorkspace.guidance().erase(CorridorId);
+    }
+
+    m_navigationWorkspace.guidance().pruneExpired(now);
+}
+
+
 void SpaceState::update(float dt)
 {
     const double updateStartMs = nowMs();
@@ -1703,6 +1929,16 @@ void SpaceState::update(float dt)
         throw;
     }
 
+    if (m_client->hasSessionSnapshot())
+    {
+        m_navigationWorkspace.syncOwnedAssets(
+            m_client->sessionSnapshot().ownedNavigationAssets,
+            m_client->controlledShipInstanceId()
+        );
+    }
+
+
+    updateGuidanceTestLab(clientFrameDt);
 
     if constexpr (game::promo::PromoSceneScenario::Enabled)
     {
@@ -2150,7 +2386,50 @@ if (debug::get().render.shouldRenderRearCamera())
         const double rearStartMs = nowMs();
 
         rearView->camera = miniCam;
-        rearView->renderToTexture(vp, rearView->drawCallback);
+
+        // Secondary camera consumes the scene already prepared for this frame.
+        // Calling rearView->drawCallback here would invoke SceneRenderer::render
+        // and prepare the whole nearby station/ship scene a second time.
+        SceneRenderPolicy rearPolicy;
+        const auto& rearDbg = debug::get().render;
+        rearPolicy.drawLabels = false;
+        rearPolicy.drawDebug = false;
+        rearPolicy.drawStarfield = rearDbg.renderStarfield;
+        rearPolicy.drawCelestial = rearDbg.renderCelestialBodies;
+        rearPolicy.drawFarStationProxy = rearDbg.renderHubs;
+        rearPolicy.drawHubs = rearDbg.renderHubs;
+        rearPolicy.drawLargeObjects = rearDbg.renderLargeObjects;
+        rearPolicy.drawObjects =
+            rearDbg.renderHubs ||
+            rearDbg.renderLargeObjects ||
+            rearDbg.renderCelestialBodies;
+        rearPolicy.drawRealShips = rearDbg.renderRealShips;
+        rearPolicy.drawPlayerShip = rearDbg.renderPlayerShip;
+        rearPolicy.drawNpcShips = rearDbg.renderNpcShips;
+        rearPolicy.drawVisualShips = rearDbg.renderVisualShips;
+        rearPolicy.drawTrafficShips = rearDbg.renderTrafficShips;
+        rearPolicy.drawVisualDrones = rearDbg.renderVisualShips;
+        rearPolicy.maxVisualShipsToDraw = 24;
+        rearPolicy.forceAssemblyLod1 = true;
+
+        rearView->renderToTexture(
+            vp,
+            [&](const glm::mat4& view, const glm::mat4& proj)
+            {
+                SceneCameraParams rearCamera;
+                rearCamera.view = view;
+                rearCamera.proj = proj;
+                rearCamera.cameraId = 1;
+                rearCamera.cameraName = "secondCam";
+
+                m_sceneRenderer.renderPrepared(
+                    m_preparedScene,
+                    rearCamera,
+                    rearPolicy
+                );
+                m_perfRearStats = m_sceneRenderer.lastStats();
+            }
+        );
 
         m_perfRearCameraMs = nowMs() - rearStartMs;
     }
@@ -2318,6 +2597,8 @@ m_systemMapRenderer.render(
                         loc.text("map.navigation_hud.object", "Object");
                     navVocabulary.celestialText =
                         loc.text("map.navigation_hud.celestial", "Celestial");
+                    navVocabulary.startText =
+                        loc.text("map.navigation_hud.start", "START");
                     navVocabulary.finishText =
                         loc.text("map.navigation_hud.finish", "FINISH");
                     navVocabulary.waypointText =
@@ -2345,6 +2626,29 @@ m_systemMapRenderer.render(
             }
         }
 
+        // World-anchored guidance is projected onto the windshield before the
+        // cockpit overlay.  The cockpit frame therefore occludes parts of the
+        // corridor that are physically outside the visible glass instead of
+        // letting navigation graphics paint over the dashboard/frame.
+        if (debug::get().render.shouldRenderCockpit() &&
+            m_activeCameraMode != ShipCameraMode::Drone &&
+            m_activeMainCamera)
+        {
+            const auto guidance =
+                game::presentation::buildGuidanceCorridorHudPresentation(
+                    m_navigationWorkspace,
+                    playerShip,
+                    m_client->universeTimeSeconds()
+                );
+
+            m_guidanceCorridorRenderer.render(
+                guidance,
+                m_activeMainCamera->viewMatrix(),
+                m_activeMainCamera->projectionMatrix(),
+                vp
+            );
+        }
+
         if (debug::get().render.shouldRenderCockpit())
         {
             m_playerView->renderCockpit();
@@ -2358,6 +2662,57 @@ m_systemMapRenderer.render(
         if (debug::get().render.shouldRenderCockpit() &&
             m_activeCameraMode != ShipCameraMode::Drone)
         {
+            game::presentation::GalacticCompassVocabulary compassVocabulary;
+            compassVocabulary.galacticCenter =
+                localizedUiText(
+                    context().app,
+                    "map.navigation_hud.galactic_center",
+                    "GC"
+                );
+            compassVocabulary.galacticAnticenter =
+                localizedUiText(
+                    context().app,
+                    "map.navigation_hud.galactic_anticenter",
+                    "GAC"
+                );
+            compassVocabulary.longitude90 =
+                localizedUiText(
+                    context().app,
+                    "map.navigation_hud.galactic_l90",
+                    "L90"
+                );
+            compassVocabulary.longitude270 =
+                localizedUiText(
+                    context().app,
+                    "map.navigation_hud.galactic_l270",
+                    "L270"
+                );
+            compassVocabulary.northGalacticPole =
+                localizedUiText(
+                    context().app,
+                    "map.navigation_hud.north_galactic_pole",
+                    "NGP"
+                );
+            compassVocabulary.southGalacticPole =
+                localizedUiText(
+                    context().app,
+                    "map.navigation_hud.south_galactic_pole",
+                    "SGP"
+                );
+
+            const bool compassVisible =
+                m_navigationWorkspace.modules().enabled(
+                    game::navigation::NavigationModuleId::HudGalacticCompass
+                );
+            const auto galacticCompass =
+                game::presentation::buildGalacticCompassPresentation(
+                    m_galacticReferenceFrame,
+                    glm::dvec3(playerShip.renderTransform.forward()),
+                    compassVisible,
+                    compassVocabulary
+                );
+            m_galacticCompassRenderer.render(galacticCompass, vp);
+
             game::presentation::FlightInstrumentTextProfile textProfile;
             textProfile.newtonianModeLabel =
                 localizedUiText(context().app, "cockpit.mode.newtonian", "NEWTONIAN");
@@ -2370,16 +2725,20 @@ m_systemMapRenderer.render(
             textProfile.brakingLabel =
                 localizedUiText(context().app, "cockpit.action.brake", "BRAKE");
 
-            const auto flightInstrument =
-                game::presentation::buildFlightVectorIndicatorPresentation(
-                    playerShip,
-                    textProfile
-                );
+            if (m_navigationWorkspace.modules().enabled(
+                    game::navigation::NavigationModuleId::HudFlightVector))
+            {
+                const auto flightInstrument =
+                    game::presentation::buildFlightVectorIndicatorPresentation(
+                        playerShip,
+                        textProfile
+                    );
 
-            m_flightVectorIndicatorRenderer.render(
-                flightInstrument,
-                vp
-            );
+                m_flightVectorIndicatorRenderer.render(
+                    flightInstrument,
+                    vp
+                );
+            }
         }
 
         uiRoot->render(vp);
@@ -4797,6 +5156,7 @@ void SpaceState::applyClientCatalogLocalization()
     mapText.navigationPoint = loc.text("map.object_info.navigation_point");
     mapText.routeTitle = loc.text("map.route.title");
     mapText.showOnHud = loc.text("map.route.show_on_hud");
+    mapText.start = loc.text("map.route.start");
     mapText.waypoint = loc.text("map.route.waypoint");
     mapText.finish = loc.text("map.route.finish");
     mapText.dragWaypoints = loc.text("map.route.drag_waypoints");

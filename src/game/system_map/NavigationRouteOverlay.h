@@ -26,6 +26,7 @@ public:
     static constexpr double WidthPx = 274.0;
     static constexpr double HeaderHeightPx = 30.0;
     static constexpr double MasterRowHeightPx = 28.0;
+    static constexpr double StartRowHeightPx = 48.0;
     static constexpr double WaypointRowHeightPx = 48.0;
     static constexpr double FinishRowHeightPx = 84.0;
     static constexpr double FooterHeightPx = 30.0;

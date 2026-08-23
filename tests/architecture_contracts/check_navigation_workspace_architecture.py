@@ -155,7 +155,7 @@ def main() -> int:
     )
     celestial_loop = hud_numbering[
         hud_numbering.index("navigation.targets().celestialBodies()"):
-        hud_numbering.index("if (!navigation.routePlan().routeVisibleOnHud())")
+        hud_numbering.index("if (!showRouteMarkers || !navigation.routePlan().routeVisibleOnHud())")
     ]
     if "marker.displayIndex = 0" not in celestial_loop:
         raise AssertionError("celestial HUD markers regained target numbers")

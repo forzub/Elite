@@ -27,7 +27,10 @@ struct HubAttachmentSnapshot
     std::string moduleId;
 
     glm::dvec3 localOffsetMeters {0.0};
+    // Base module rotation at universe epoch 0. Keep it stable on the wire;
+    // presentation advances it from the shared hub-frame universe time.
     glm::dvec3 localRotationDeg {0.0};
+    glm::dvec3 localAngularVelocityDegPerSecond {0.0};
 
     bool inheritHubOrientation = true;
     bool valid = false;

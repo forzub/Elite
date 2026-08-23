@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "description": "Semantic navigation elements are data, not mesh geometry. Local basis: +X right, +Y up, -Z forward.",
+  "modules": [
+    {
+      "module_id": "guidance_dock_cube_a",
+      "anchors": [
+        {
+          "id": "dock_gate_front",
+          "kind": "docking_port",
+          "local_position_m": [0, 0, -450],
+          "local_forward": [0, 0, -1],
+          "local_up": [0, 1, 0],
+          "extent_m": [110, 190, 900],
+          "required_clearance_m": 18,
+          "max_entry_speed_mps": 18,
+          "enabled": true
+        },
+        {
+          "id": "dock_gate_rear",
+          "kind": "docking_port",
+          "local_position_m": [0, 0, 450],
+          "local_forward": [0, 0, 1],
+          "local_up": [0, 1, 0],
+          "extent_m": [110, 190, 900],
+          "required_clearance_m": 18,
+          "max_entry_speed_mps": 18,
+          "enabled": true
+        },
+        {
+          "id": "attack_reference_core",
+          "kind": "attack_point",
+          "local_position_m": [0, 150, 0],
+          "local_forward": [0, 1, 0],
+          "local_up": [0, 0, -1],
+          "extent_m": [60, 60, 60],
+          "required_clearance_m": 0,
+          "max_entry_speed_mps": 0,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "module_id": "guidance_dock_cylinder_b",
+      "anchors": [
+        {
+          "id": "dock_gate_front",
+          "kind": "docking_port",
+          "local_position_m": [0, 0, -600],
+          "local_forward": [0, 0, -1],
+          "local_up": [0, 1, 0],
+          "extent_m": [120, 200, 1200],
+          "required_clearance_m": 22,
+          "max_entry_speed_mps": 14,
+          "enabled": true
+        },
+        {
+          "id": "dock_gate_rear",
+          "kind": "docking_port",
+          "local_position_m": [0, 0, 600],
+          "local_forward": [0, 0, 1],
+          "local_up": [0, 1, 0],
+          "extent_m": [120, 200, 1200],
+          "required_clearance_m": 22,
+          "max_entry_speed_mps": 14,
+          "enabled": true
+        }
+      ]
+    }
+  ]
+}

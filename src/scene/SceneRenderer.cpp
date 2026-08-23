@@ -2079,6 +2079,7 @@ profileAfterSetupMs = renderProfileNowMs();
                 glm::length(partLocalPos - cameraLocalPosition);
 
             const bool useLod1 =
+                policy.forceAssemblyLod1 ||
                 distToPart >= item.lodSwitchDistance;
 
             const render::MeshGPU* gpu =
@@ -2378,6 +2379,7 @@ profileAfterSetupMs = renderProfileNowMs();
                         glm::length(partLocalPosition - cameraLocalPosition);
 
                     bool useLod1 =
+                        policy.forceAssemblyLod1 ||
                         distToPart >= prepared.visualShips[part.shipIndex].lodSwitchDistance;
 
                     if (distToPart > 350.0f)
@@ -2778,6 +2780,7 @@ if (policy.drawObjects)
                 glm::length(partLocalPos - cameraLocalPosition);
 
             const bool useLod1 =
+                policy.forceAssemblyLod1 ||
                 distToPart >= item.lodSwitchDistance;
 
             const render::MeshGPU* gpu =

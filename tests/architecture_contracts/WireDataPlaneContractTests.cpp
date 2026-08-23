@@ -141,17 +141,6 @@ SimulationSnapshot makeSnapshot()
     motion.orbitalTangentialSpeedMps = 41.0;
     motion.orbitalRadialSpeedMps = 42.0;
     motion.orbitalSpeedErrorMps = 43.0;
-    motion.navigationPlan.type = game::navigation::NavigationPlanType::JumpRoute;
-    motion.navigationPlan.state = game::navigation::NavigationPlanState::Active;
-    motion.navigationPlan.targetSystemId = "tau_ceti";
-    motion.navigationPlan.targetBodyId = "tau_ceti_b";
-    motion.navigationPlan.targetHubId = "tau_hub";
-    motion.navigationPlan.plannedExitPositionMeters = glm::dvec3(44.0, 45.0, 46.0);
-    motion.navigationPlan.plannedExitVelocityMps = glm::dvec3(47.0, 48.0, 49.0);
-    motion.navigationPlan.plannedExitTimeSeconds = 50.0;
-    motion.navigationPlan.arrivalErrorMeters = 51.0;
-    motion.navigationPlan.arrivalAngleErrorDeg = 52.0;
-    motion.navigationPlan.valid = true;
     motion.altitudeMeters = 53.0;
     motion.orbitalPhaseRadians = 0.54;
     motion.planeOffsetMeters = 55.0;
@@ -359,6 +348,8 @@ SimulationSnapshot makeSnapshot()
     object.hubAttachment.moduleId = "station:prime";
     object.hubAttachment.localOffsetMeters = glm::dvec3(10.0, 20.0, 30.0);
     object.hubAttachment.localRotationDeg = glm::dvec3(0.0, 90.0, 0.0);
+    object.hubAttachment.localAngularVelocityDegPerSecond =
+        glm::dvec3(0.0, 0.0, 12.5);
     object.hubAttachment.inheritHubOrientation = true;
     object.hubAttachment.valid = true;
     object.displayName = "Station Alpha";
@@ -402,6 +393,17 @@ SimulationSnapshot makeSnapshot()
     snapshot.session.playerNavigation.systemLocalAu = glm::dvec3(0.1, 0.2, 0.3);
     snapshot.session.playerNavigation.forward = glm::vec3(0.0f, 0.0f, -1.0f);
     snapshot.session.playerNavigation.up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    game::navigation::OwnedNavigationAsset ownedAsset;
+    ownedAsset.asset = game::navigation::NavigationAssetRef::ship(4242);
+    ownedAsset.materializedEntityId = EntityId{77u};
+    ownedAsset.typeId = ObjectType::CobraMk1;
+    ownedAsset.displayName = "Courier One";
+    ownedAsset.worldPosition = position(3, 4, 5, 100.0, 200.0, 300.0);
+    ownedAsset.worldVelocityMps = glm::dvec3(4.0, 5.0, 6.0);
+    ownedAsset.kinematicsValid = true;
+    ownedAsset.commandable = true;
+    snapshot.session.ownedNavigationAssets.push_back(ownedAsset);
     snapshot.session.predictionWorldParams.linearDrag = 0.02f;
     snapshot.session.predictionWorldParams.maxSafeDecel = 45.0f;
     snapshot.session.universeTimeSeconds = 4567.25;
@@ -438,8 +440,6 @@ void testSnapshotRoundTrip()
         "removed hub lifecycle mismatch");
     require(decoded.ships.size() == 1u, "ship count mismatch");
     require(decoded.ships[0].id == EntityId{42u}, "ship identity mismatch");
-    require(decoded.ships[0].transform.motion.navigationPlan.targetSystemId == "tau_ceti",
-        "nested navigation plan was not preserved");
     require(near(decoded.ships[0].transform.motion.travelFrame.localToWorldBasis[1][2], 0.125),
         "double matrix state mismatch");
     require(decoded.ships[0].graph.modules.size() == 1u,
@@ -454,10 +454,20 @@ void testSnapshotRoundTrip()
         "world signal payload mismatch");
     require(decoded.objects.size() == 1u && decoded.objects[0].displayName == "Station Alpha",
         "object payload mismatch");
+    require(
+        decoded.objects[0].hubAttachment.localAngularVelocityDegPerSecond.z == 12.5,
+        "hub attachment local angular velocity did not round-trip"
+    );
     require(decoded.hubs.size() == 1u && decoded.hubs[0].id == "earth_orbital_hub",
         "hub payload mismatch");
     require(decoded.session.playerNavigation.currentSystemId == 3,
         "per-session navigation mismatch");
+    require(decoded.session.ownedNavigationAssets.size() == 1u,
+        "owned navigation asset list did not round-trip");
+    require(decoded.session.ownedNavigationAssets[0].asset.shipInstanceId == 4242,
+        "owned navigation asset stable ship identity did not round-trip");
+    require(decoded.session.ownedNavigationAssets[0].commandable,
+        "owned navigation asset command authority did not round-trip");
     require(decoded.session.universeDate == "3026-08-14",
         "session universe date mismatch");
 

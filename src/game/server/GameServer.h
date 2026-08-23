@@ -69,6 +69,11 @@ public:
         SimulationSnapshot& outSnapshot
     ) const;
 
+    std::vector<game::navigation::OwnedNavigationAsset>
+    ownedNavigationAssetsForSession(
+        game::network::ServerSessionId sessionId
+    ) const;
+
     game::server::ShipReplicationInterestPlan
     shipReplicationInterestPlanForSession(
         game::network::ServerSessionId sessionId

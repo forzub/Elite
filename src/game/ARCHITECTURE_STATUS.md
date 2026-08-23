@@ -513,6 +513,9 @@ language.
   omission=remove, while `SparseRetainMissing` means omission=no update and requires explicit
   ship/object/hub removal rows. `ClientWorldState` honors that distinction and materializes canonical
   retained history samples so existing interpolation/map samplers do not consume sparse holes directly.
+  Retained sparse ship rows are advanced to each packet epoch from their last known velocity/acceleration
+  instead of copying an old position under a newer timestamp; this prevents the `A,A,A,B` stop/jump
+  presentation artifact when a ship crosses from Tactical to Nearby/Coarse publication cadence.
 - M7 makes the policy operational. `ServerRunner` owns per-connection publication memory and sends
   Controlled/Tactical ship rows at normal snapshot cadence, Nearby/Coarse rows at their target interval,
   and `None`/destruction as explicit removal. The first packet after interest re-entry is marked for

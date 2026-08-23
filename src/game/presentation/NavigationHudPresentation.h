@@ -244,11 +244,20 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
     out.reserve(
         navigation.targets().tacticalObjects().size() +
         navigation.targets().celestialBodies().size() +
-        navigation.routePlan().routeSize()
+        navigation.routePlan().routeSize() +
+        (navigation.routePlan().hasStart() ? 1u : 0u)
     );
 
     const auto& playerPosition = player.renderTransform.worldPosition;
 
+    const bool showTargetMarkers = navigation.modules().enabled(
+        game::navigation::NavigationModuleId::HudTargetMarkers
+    );
+    const bool showRouteMarkers = navigation.modules().enabled(
+        game::navigation::NavigationModuleId::HudRouteMarkers
+    );
+
+    if (showTargetMarkers)
     for (const auto& [id, tracked] : navigation.targets().tacticalObjects())
     {
         if (const auto* route = navigation.routePlan().findBySourceObjectId(id);
@@ -298,6 +307,7 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
         out.push_back(std::move(marker));
     }
 
+    if (showTargetMarkers)
     for (const auto& [id, tracked] : navigation.targets().celestialBodies())
     {
         if (const auto* route = navigation.routePlan().findBySourceObjectId(id);
@@ -327,8 +337,50 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
             out.push_back(std::move(marker));
     }
 
-    if (!navigation.routePlan().routeVisibleOnHud())
+    if (!showRouteMarkers || !navigation.routePlan().routeVisibleOnHud())
         return out;
+
+    // START is part of the route model, but drawing the occupied player ship as
+    // its own navigation target is pure noise. A remote owned ship/drone stays
+    // visible because that is exactly the executor the player is dispatching.
+    if (navigation.routePlan().hasStart() &&
+        !game::navigation::sameNavigationAsset(
+            navigation.routePlan().start().executor,
+            navigation.localControlledAsset()))
+    {
+        const auto* startAsset = navigation.ownedAssets().find(
+            navigation.routePlan().start().executor
+        );
+        if (startAsset && startAsset->kinematicsValid)
+        {
+            NavigationHudMarker marker;
+            marker.stableId = "route:start";
+            marker.shape = NavigationHudMarkerShape::WaypointCorners;
+            marker.relativePositionMeters = world::coordinates::relativeMeters(
+                startAsset->worldPosition,
+                playerPosition
+            );
+            marker.distanceMeters = glm::length(marker.relativePositionMeters);
+            marker.typeText = vocabulary.startText;
+            marker.nameText = startAsset->displayName;
+            marker.displayIndex = 0;
+            const auto speed = resolveCockpitNavigationTargetSpeed(
+                player.renderTransform.motion,
+                marker.relativePositionMeters,
+                startAsset->worldVelocityMps
+            );
+            marker.speedMode = speed.mode;
+            marker.speedPrefixText =
+                speed.mode == NavigationHudSpeedMode::Relative
+                    ? vocabulary.relativeSpeedShort
+                    : vocabulary.globalSpeedShort;
+            marker.speedMps = speed.speedMps;
+            marker.color = glm::vec4(0.40f, 0.72f, 1.00f, 0.88f);
+
+            if (marker.distanceMeters > 0.01)
+                out.push_back(std::move(marker));
+        }
+    }
 
     for (const auto* waypointPtr : navigation.routePlan().orderedRouteWaypoints())
     {

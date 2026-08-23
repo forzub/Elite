@@ -26,6 +26,11 @@ struct SceneRenderPolicy
 
     int maxVisualShipsToDraw = -1;
 
+    // Secondary/miniview cameras may trade nearby assembly detail for stable
+    // frame pacing. This is presentation-only and never changes simulation or
+    // the prepared scene itself.
+    bool forceAssemblyLod1 = false;
+
     bool shouldDrawRealShip(ShipRole role) const noexcept
     {
         if (!drawRealShips)

@@ -1233,16 +1233,38 @@ m_hubVelocityMetersPerSecond[hubId] =
                 obj.linearVelocity =
                     glm::vec3(objectVelocityMetersPerSecond);
 
+                glm::dvec3 objectAngularVelocityWorldRadPerSecond {0.0};
+                if (hubFrame && hubFrame->valid)
+                {
+                    objectAngularVelocityWorldRadPerSecond =
+                        hubFrame->angularVelocityWorldRadPerSecond;
+                    objectAngularVelocityWorldRadPerSecond +=
+                        game::navigation::hubVisualLocalToWorldVector(
+                            hubFrame->progradeAxis,
+                            hubFrame->radialAxis,
+                            hubFrame->normalAxis,
+                            glm::radians(
+                                obj.hubLocalAngularVelocityDegPerSecond
+                            )
+                        );
+                }
+                obj.angularVelocity =
+                    glm::vec3(objectAngularVelocityWorldRadPerSecond);
+
                 if (obj.inheritHubOrientation)
                 {
                     if (hubFrame && hubFrame->valid)
                     {
+                        const glm::dvec3 currentLocalRotationDeg =
+                            obj.hubLocalRotationDeg +
+                            obj.hubLocalAngularVelocityDegPerSecond *
+                                m_orbitalUniverseTimeSeconds;
                         obj.orientation =
                             game::navigation::hubAttachedVisualOrientation(
                                 hubFrame->progradeAxis,
                                 hubFrame->radialAxis,
                                 hubFrame->normalAxis,
-                                obj.hubLocalRotationDeg
+                                currentLocalRotationDeg
                             );
                     }
                 }
@@ -2138,6 +2160,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         o.setWorldPosition(obj.worldPosition);
         o.orientation = obj.orientation;
         o.linearVelocityMps = glm::dvec3(obj.linearVelocity);
+        o.angularVelocityWorldRadPerSecond = glm::dvec3(obj.angularVelocity);
         o.displayName = obj.displayName;
         o.ownerName = obj.ownerName;
         o.navigationVisible = obj.systemMapVisible;
@@ -2153,6 +2176,8 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
             o.hubAttachment.moduleId = obj.hubModuleId;
             o.hubAttachment.localOffsetMeters = obj.hubLocalOffsetMeters;
             o.hubAttachment.localRotationDeg = obj.hubLocalRotationDeg;
+            o.hubAttachment.localAngularVelocityDegPerSecond =
+                obj.hubLocalAngularVelocityDegPerSecond;
             o.hubAttachment.inheritHubOrientation = obj.inheritHubOrientation;
             o.hubAttachment.valid = true;
         }
@@ -3717,16 +3742,36 @@ void GameSimulation::prepareReferenceFramesForSpawn()
             hubMeters + rotatedOffset
         );
 
+        if (hubFrame && hubFrame->valid)
+        {
+            const glm::dvec3 objectAngularVelocityWorldRadPerSecond =
+                hubFrame->angularVelocityWorldRadPerSecond +
+                game::navigation::hubVisualLocalToWorldVector(
+                    hubFrame->progradeAxis,
+                    hubFrame->radialAxis,
+                    hubFrame->normalAxis,
+                    glm::radians(
+                        obj.hubLocalAngularVelocityDegPerSecond
+                    )
+                );
+            obj.angularVelocity =
+                glm::vec3(objectAngularVelocityWorldRadPerSecond);
+        }
+
         if (obj.inheritHubOrientation)
         {
             if (hubFrame && hubFrame->valid)
             {
+                const glm::dvec3 currentLocalRotationDeg =
+                    obj.hubLocalRotationDeg +
+                    obj.hubLocalAngularVelocityDegPerSecond *
+                        m_orbitalUniverseTimeSeconds;
                 obj.orientation =
                     game::navigation::hubAttachedVisualOrientation(
                         hubFrame->progradeAxis,
                         hubFrame->radialAxis,
                         hubFrame->normalAxis,
-                        obj.hubLocalRotationDeg
+                        currentLocalRotationDeg
                     );
             }
         }
@@ -3751,6 +3796,22 @@ void GameSimulation::prepareReferenceFramesForSpawn()
 
 
 
+
+
+bool GameSimulation::setStaticObjectIdentity(
+    EntityId id,
+    const std::string& name,
+    const std::string& owner
+)
+{
+    auto it = m_staticObjects.find(id);
+    if (it == m_staticObjects.end())
+        return false;
+
+    it->second.displayName = name;
+    it->second.ownerName = owner;
+    return true;
+}
 
 
 bool GameSimulation::setStaticObjectMapInfo(
@@ -3864,7 +3925,8 @@ bool GameSimulation::attachStaticObjectToHub(
     const std::string& hubModuleId,
     const glm::dvec3& localOffsetMeters,
     const glm::dvec3& localRotationDeg,
-    bool inheritHubOrientation
+    bool inheritHubOrientation,
+    const glm::dvec3& localAngularVelocityDegPerSecond
 )
 {
     auto objIt =
@@ -3893,6 +3955,8 @@ bool GameSimulation::attachStaticObjectToHub(
     obj.hubModuleId = hubModuleId;
     obj.hubLocalOffsetMeters = localOffsetMeters;
     obj.hubLocalRotationDeg = localRotationDeg;
+    obj.hubLocalAngularVelocityDegPerSecond =
+        localAngularVelocityDegPerSecond;
     obj.inheritHubOrientation = inheritHubOrientation;
 
     obj.orbitalMotion.enabled = false;

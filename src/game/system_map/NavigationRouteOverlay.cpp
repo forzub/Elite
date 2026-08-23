@@ -176,6 +176,16 @@ void drawArrivalGlyph(
     }
 }
 
+std::string shortAssetName(const game::navigation::NavigationAssetRef& asset)
+{
+    using Kind = game::navigation::NavigationAssetKind;
+    if (asset.kind == Kind::Ship)
+        return "SHIP #" + std::to_string(asset.shipInstanceId);
+    if (asset.kind == Kind::Drone)
+        return "DRONE #" + std::to_string(asset.droneInstanceId.value);
+    return "UNASSIGNED";
+}
+
 std::string shortName(const game::navigation::NavigationWaypoint& waypoint)
 {
     const std::string source = waypoint.displayName.empty()
@@ -195,7 +205,7 @@ double NavigationRouteOverlayState::panelHeight(
     if (m_collapsed)
         return HeaderHeightPx;
 
-    double h = HeaderHeightPx + MasterRowHeightPx + FooterHeightPx + 8.0;
+    double h = HeaderHeightPx + MasterRowHeightPx + StartRowHeightPx + FooterHeightPx + 8.0;
     for (const auto* waypoint : routePlan.orderedRouteWaypoints())
     {
         h += waypoint->role == game::navigation::NavigationWaypointRole::Finish
@@ -337,7 +347,7 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
         {
             m_dragPointerViewportY = mousePx.y;
             int targetSequence = 1;
-            double y = m_topLeftPx.y + HeaderHeightPx + MasterRowHeightPx + 4.0;
+            double y = m_topLeftPx.y + HeaderHeightPx + MasterRowHeightPx + StartRowHeightPx + 4.0;
             for (const auto* waypoint : routePlan.orderedRouteWaypoints())
             {
                 if (waypoint->role != game::navigation::NavigationWaypointRole::Intermediate)
@@ -508,6 +518,19 @@ NavigationRouteOverlayPointerResult NavigationRouteOverlayState::handlePointer(
     }
     rowTop += MasterRowHeightPx + 4.0;
 
+    // START is immutable and always first. It is route execution identity, not
+    // a draggable waypoint, so clicks in this row are consumed without changing
+    // waypoint selection/reorder state.
+    if (local.y >= rowTop && local.y <= rowTop + StartRowHeightPx)
+    {
+        m_deleteRouteArmed = false;
+        m_deleteNodeArmedId = 0;
+        if (m_selectedNodeId != 0)
+            result.selectedRouteNodeId = m_selectedNodeId;
+        return result;
+    }
+    rowTop += StartRowHeightPx;
+
     for (const auto* waypoint : routePlan.orderedRouteWaypoints())
     {
         const double rowHeight =
@@ -657,6 +680,45 @@ void NavigationRouteOverlayRenderer::render(
         routePlan.routeVisibleOnHud() ? kText : kMuted
     );
     y += NavigationRouteOverlayState::MasterRowHeightPx + 4.0;
+
+    // START is a fixed semantic node. It identifies the vehicle executing the
+    // route and never participates in waypoint drag/delete ordering.
+    const glm::vec4 startAccent(0.40f, 0.72f, 1.00f, 0.94f);
+    rect(
+        glm::dvec2(top.x + 5.0, y),
+        NavigationRouteOverlayState::WidthPx - 10.0,
+        NavigationRouteOverlayState::StartRowHeightPx - 2.0,
+        glm::vec4(0.10f, 0.13f, 0.17f, 0.94f)
+    );
+    outline(
+        glm::dvec2(top.x + 5.0, y),
+        NavigationRouteOverlayState::WidthPx - 10.0,
+        NavigationRouteOverlayState::StartRowHeightPx - 2.0,
+        startAccent,
+        1.0f
+    );
+    text.textDrawPx(
+        "S",
+        static_cast<float>(top.x + 31.0),
+        static_cast<float>(y + 18.0),
+        11,
+        startAccent
+    );
+    text.textDrawPx(
+        textProfile.start,
+        static_cast<float>(top.x + 54.0),
+        static_cast<float>(y + 17.0),
+        10,
+        startAccent
+    );
+    text.textDrawPx(
+        shortAssetName(routePlan.start().executor),
+        static_cast<float>(top.x + 54.0),
+        static_cast<float>(y + 34.0),
+        10,
+        kText
+    );
+    y += NavigationRouteOverlayState::StartRowHeightPx;
 
     for (const auto* waypoint : routePlan.orderedRouteWaypoints())
     {

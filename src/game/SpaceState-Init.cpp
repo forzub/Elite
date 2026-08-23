@@ -282,6 +282,31 @@ void SpaceState::initHUD()
     m_worldLabelRenderer.init(context());
 
     m_flightVectorIndicatorRenderer.init();
+    m_guidanceCorridorRenderer.init();
+    m_galacticCompassRenderer.init();
+
+    if (!m_hubSemanticAnchorCatalog.load())
+    {
+        std::cerr
+            << "[Navigation] failed to load hub semantic anchors; "
+            << "guidance lab disabled\n";
+        m_navigationWorkspace.modules().setEnabled(
+            game::navigation::NavigationModuleId::LocalGuidance,
+            false
+        );
+    }
+
+    if (!game::navigation::loadGalacticReferenceFrame(
+            m_galacticReferenceFrame))
+    {
+        std::cerr
+            << "[Navigation] failed to load galactic reference frame; "
+            << "galactic compass disabled\n";
+        m_navigationWorkspace.modules().setEnabled(
+            game::navigation::NavigationModuleId::HudGalacticCompass,
+            false
+        );
+    }
 
     initServerAndClient();
 

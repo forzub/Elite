@@ -676,6 +676,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
 
             state.orientation = o.orientation;
             state.linearVelocityMps = o.linearVelocityMps;
+            state.angularVelocityWorldRadPerSecond =
+                o.angularVelocityWorldRadPerSecond;
             state.renderOrientation = o.orientation;
             state.hubAttachment = o.hubAttachment;
             state.displayName = o.displayName;
@@ -740,6 +742,8 @@ void ClientWorldState::applySnapshot(const SimulationSnapshot& snapshot)
             state.setWorldPosition(o.worldPosition);
             state.orientation = o.orientation;
             state.linearVelocityMps = o.linearVelocityMps;
+            state.angularVelocityWorldRadPerSecond =
+                o.angularVelocityWorldRadPerSecond;
             state.hubAttachment = o.hubAttachment;
             state.displayName = o.displayName;
             state.ownerName = o.ownerName;

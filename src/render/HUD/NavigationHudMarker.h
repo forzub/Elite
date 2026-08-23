@@ -25,6 +25,7 @@ struct NavigationHudVocabulary
 {
     std::string objectText = "Object";
     std::string celestialText = "Celestial";
+    std::string startText = "START";
     std::string finishText = "FINISH";
     std::string waypointText = "WAYPOINT";
     std::string relativeSpeedShort = "REL";

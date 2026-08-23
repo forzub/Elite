@@ -2138,6 +2138,23 @@ void testClientNavigationWorkspaceSeparatesTrackingAndRoutePlan()
     auto& targets = workspace.targets();
     auto& routePlan = workspace.routePlan();
 
+    // A route is executable only when START names a server-authorized asset.
+    // Mirror the real client/session path instead of constructing an impossible
+    // workspace with waypoints but no owned executor.
+    game::navigation::OwnedNavigationAsset localAsset;
+    localAsset.asset = game::navigation::NavigationAssetRef::ship(9001);
+    localAsset.displayName = "Test route executor";
+    localAsset.commandable = true;
+    workspace.syncOwnedAssets({localAsset}, 9001);
+
+    REQUIRE(routePlan.hasStart());
+    REQUIRE(
+        game::navigation::sameNavigationAsset(
+            routePlan.start().executor,
+            localAsset.asset
+        )
+    );
+
     targets.rememberTacticalObject(
         "entity:42",
         "Scout",
@@ -2293,6 +2310,7 @@ void testClientNavigationWorkspaceSeparatesTrackingAndRoutePlan()
     routePlan.clearRoute();
     REQUIRE(!routePlan.hasRoute());
     REQUIRE(routePlan.routeSize() == 0);
+    REQUIRE(routePlan.hasStart());
 }
 
 

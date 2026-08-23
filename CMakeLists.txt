@@ -171,6 +171,9 @@ add_executable(EliteGame
     src/render/RenderCockpitPass.cpp
     src/render/RenderCockpitBitmapPass.cpp
     src/render/cockpit/FlightVectorIndicatorRenderer.cpp
+    src/render/cockpit/GuidanceCorridorRenderer.cpp
+    src/render/cockpit/GalacticCompassRenderer.cpp
+    src/render/HUD/HudPrimitiveBatch.cpp
     src/render/bitmap/TextureLoader.cpp
     src/render/camera/RenderCameraViewport.cpp
 
@@ -338,6 +341,11 @@ add_executable(EliteGame
     src/game/system_map/GalaxyMapInteraction.cpp
     src/game/system_map/GalaxyMapRenderer.cpp
     src/game/navigation/DynamicMotionSystem.cpp
+    src/game/navigation/TrajectoryPredictor.cpp
+    src/game/navigation/TrajectorySafetyEvaluator.cpp
+    src/game/navigation/LocalGuidancePlanner.cpp
+    src/game/navigation/HubSemanticAnchorCatalog.cpp
+    src/game/navigation/GalacticReferenceFrame.cpp
     src/game/navigation/CoordinateDisplayService.cpp
     src/game/navigation/PlayerSpatialDomainResolver.cpp
 
@@ -470,6 +478,10 @@ if(ELITE_BUILD_SERVER)
         src/world/celestial/CelestialRuntimeRegistry.cpp
 
         src/game/navigation/DynamicMotionSystem.cpp
+        src/game/navigation/TrajectoryPredictor.cpp
+        src/game/navigation/TrajectorySafetyEvaluator.cpp
+        src/game/navigation/LocalGuidancePlanner.cpp
+        src/game/navigation/HubSemanticAnchorCatalog.cpp
         src/game/navigation/GalaxyNavigationConfig.cpp
         src/game/navigation/PlayerSpatialDomainResolver.cpp
 

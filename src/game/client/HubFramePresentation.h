@@ -73,12 +73,17 @@ inline HubAttachedPresentationPose resolveHubAttachedObjectPresentation(
             attachment.localOffsetMeters
         );
 
+    const glm::dvec3 currentLocalRotationDeg =
+        attachment.localRotationDeg +
+        attachment.localAngularVelocityDegPerSecond *
+            frame.universeTimeSeconds;
+
     pose.worldOrientation =
         game::navigation::hubAttachedVisualOrientation(
             frame.progradeAxis,
             frame.radialAxis,
             frame.normalAxis,
-            attachment.localRotationDeg
+            currentLocalRotationDeg
         );
     pose.valid = true;
     return pose;

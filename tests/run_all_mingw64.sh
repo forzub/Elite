@@ -45,6 +45,14 @@ run_suite \
     "tests/architecture_contracts/run_mingw64.sh"
 
 run_suite \
+    "SHARED TRAJECTORY PREDICTOR" \
+    "tests/trajectory_prediction/run_mingw64.sh"
+
+run_suite \
+    "NAVIGATION GUIDANCE LAYER" \
+    "tests/navigation_guidance/run_mingw64.sh"
+
+run_suite \
     "CLIENT PRESENTATION PIPELINE" \
     "tests/presentation_pipeline/run_mingw64.sh"
 

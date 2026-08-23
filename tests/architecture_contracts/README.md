@@ -281,3 +281,21 @@ while the server response carries only authoritative world-state overlays
 (currently jurisdiction) plus the authoritative universe epoch/date. Galaxy-map
 requests must not become a second transport for catalog names, types, positions,
 descriptions, or tags.
+
+
+## Navigation execution asset / START ownership
+
+`check_navigation_execution_asset.py` locks the pre-trajectory executor seam:
+Route Plan owns an explicit stable START asset, per-session commandable assets
+come from server ownership rather than current control, the occupied player ship
+START is suppressed on cockpit HUD, and the dead pre-route `NavigationPlan` does
+not re-enter `DynamicMotionState` or the wire schema.
+
+## Shared trajectory predictor boundary
+
+`check_trajectory_predictor_boundary.py` locks the Wave 3 direction: the shared
+`TrajectoryPredictor` may depend on generic kinematics and gravity, but not on
+`RoutePlan`, `SpaceState`, server sessions, maps or renderers. It exposes rich
+position/velocity/acceleration samples with gravity separated from proper
+acceleration/crew load. `TrajectoryMapAdapter` is deliberately one-way from that
+shared result into the System Map trajectory seam.

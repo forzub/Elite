@@ -1663,42 +1663,85 @@ void SpaceState::setFlightScreenLayout(ScreenLayout layout)
 // =====================================================================================
 // Update
 // =====================================================================================
-void SpaceState::updateGuidanceTestLab(float dt)
+void SpaceState::updateDockingGuidance(float dt)
 {
-    constexpr const char* CorridorId =
-        "lab:guidance_dock_cube_a:dock_gate_front";
-
     if (!m_client)
         return;
 
+    auto& guidanceState = m_navigationWorkspace.guidance();
     auto& modules = m_navigationWorkspace.modules();
     const bool computationEnabled =
         modules.enabled(game::navigation::NavigationModuleId::TrajectoryPrediction) &&
         modules.enabled(game::navigation::NavigationModuleId::SafetyEvaluation) &&
         modules.enabled(game::navigation::NavigationModuleId::LocalGuidance);
 
+    const auto eraseActiveDockingCorridor = [&]()
+    {
+        if (!m_activeDockingGuidanceCorridorId.empty())
+        {
+            guidanceState.erase(m_activeDockingGuidanceCorridorId);
+            m_activeDockingGuidanceCorridorId.clear();
+        }
+    };
+
     if (!computationEnabled)
     {
-        m_navigationWorkspace.guidance().erase(CorridorId);
+        eraseActiveDockingCorridor();
+        m_noSafeDockingGuidanceSolution = false;
         return;
     }
 
-    m_guidanceLabReplanAccumulatorSeconds +=
-        static_cast<double>(std::max(0.0f, dt));
-    if (m_guidanceLabReplanAccumulatorSeconds < 0.20)
+    const auto& dockingRequest =
+        m_navigationWorkspace.dockingRouteRequests().pending();
+    if (!dockingRequest.valid())
+    {
+        eraseActiveDockingCorridor();
+        m_noSafeDockingGuidanceSolution = false;
         return;
-    m_guidanceLabReplanAccumulatorSeconds = 0.0;
+    }
+
+    const std::string corridorId =
+        "dock:" + dockingRequest.target.stableObjectId + ":" +
+        dockingRequest.target.semanticAnchorId;
+    if (m_activeDockingGuidanceCorridorId != corridorId)
+    {
+        eraseActiveDockingCorridor();
+        m_activeDockingGuidanceCorridorId = corridorId;
+        m_dockingGuidanceReplanAccumulatorSeconds = 0.20;
+    }
+
+    m_dockingGuidanceReplanAccumulatorSeconds +=
+        static_cast<double>(std::max(0.0f, dt));
+    if (m_dockingGuidanceReplanAccumulatorSeconds < 0.20)
+        return;
+    m_dockingGuidanceReplanAccumulatorSeconds = 0.0;
 
     const auto playerIt =
         m_client->world().ships().find(m_playerId.value);
     if (playerIt == m_client->world().ships().end())
+    {
+        guidanceState.erase(corridorId);
         return;
+    }
 
     const ClientShipState& player = playerIt->second;
     const int systemId = player.renderTransform.motion.systemId;
-    if (systemId < 0)
+    if (systemId < 0 || dockingRequest.target.systemId != systemId)
     {
-        m_navigationWorkspace.guidance().erase(CorridorId);
+        guidanceState.erase(corridorId);
+        return;
+    }
+
+    const auto* anchorDefinition = m_hubSemanticAnchorCatalog.find(
+        dockingRequest.target.stableObjectId,
+        dockingRequest.target.semanticAnchorId
+    );
+    if (!anchorDefinition ||
+        !anchorDefinition->enabled ||
+        anchorDefinition->kind !=
+            game::navigation::HubSemanticAnchorKind::DockingPort)
+    {
+        guidanceState.erase(corridorId);
         return;
     }
 
@@ -1707,22 +1750,63 @@ void SpaceState::updateGuidanceTestLab(float dt)
     {
         (void)id;
         if (object.systemId == systemId &&
-            object.type == ObjectType::GuidanceDockCube &&
             object.hubAttachment.valid &&
-            object.hubAttachment.moduleId == "guidance_dock_cube_a")
+            object.hubAttachment.moduleId ==
+                dockingRequest.target.stableObjectId)
         {
             targetObject = &object;
             break;
         }
     }
-
-    const auto* anchorDefinition = m_hubSemanticAnchorCatalog.find(
-        "guidance_dock_cube_a",
-        "dock_gate_front"
-    );
-    if (!targetObject || !anchorDefinition)
+    if (!targetObject)
     {
-        m_navigationWorkspace.guidance().erase(CorridorId);
+        guidanceState.erase(corridorId);
+        return;
+    }
+
+    game::navigation::ShipDockingEnvelope dockingEnvelope;
+    game::navigation::VehicleGuidanceEnvelope vehicleEnvelope;
+    if (player.descriptor)
+    {
+        const auto& dimensions = player.descriptor->logicalDimensions();
+        if (dimensions.enabled &&
+            dimensions.length > 0.0f &&
+            dimensions.width > 0.0f &&
+            dimensions.height > 0.0f)
+        {
+            dockingEnvelope.lengthMeters = dimensions.length;
+            dockingEnvelope.widthMeters = dimensions.width;
+            dockingEnvelope.heightMeters = dimensions.height;
+            dockingEnvelope.valid = true;
+
+            vehicleEnvelope.lengthMeters = dimensions.length;
+            vehicleEnvelope.widthMeters = dimensions.width;
+            vehicleEnvelope.heightMeters = dimensions.height;
+            vehicleEnvelope.valid = true;
+        }
+    }
+
+    game::navigation::DockingPortRuntimeState unavailableState;
+    unavailableState.hubModuleId = dockingRequest.target.stableObjectId;
+    unavailableState.anchorId = dockingRequest.target.semanticAnchorId;
+    const auto* runtimeState = m_dockingPortRuntimeStateCatalog.find(
+        dockingRequest.target.stableObjectId,
+        dockingRequest.target.semanticAnchorId
+    );
+    const auto& effectiveRuntime = runtimeState
+        ? *runtimeState
+        : unavailableState;
+    const auto compatibility = game::navigation::evaluateDockingCompatibility(
+        dockingEnvelope,
+        *anchorDefinition,
+        effectiveRuntime
+    );
+    if (!compatibility.routeAvailable)
+    {
+        m_noSafeDockingGuidanceSolution = false;
+        // The request remains alive. If occupancy/access/operational state
+        // becomes valid again, rolling replanning resumes automatically.
+        guidanceState.erase(corridorId);
         return;
     }
 
@@ -1742,9 +1826,9 @@ void SpaceState::updateGuidanceTestLab(float dt)
     environment.generatedAtUniverseTimeSeconds = now;
     environment.validUntilUniverseTimeSeconds = now + 2.0;
 
-    // The client and server share the same packaged celestial catalog. Combine
-    // current celestial kinematics with catalog GM/radius so the local lab uses
-    // the same nearby-body gravity terms as the shared predictor contract.
+    // Celestial gravity remains a deterministic local input to the shared
+    // predictor. Sensor observations later refine the planning snapshot; they
+    // do not alter the authoritative physical envelopes used here.
     const auto* atlas = m_client->starAtlas();
     const auto* celestial = m_client->celestialSnapshot();
     if (atlas && celestial && celestial->systemId == systemId)
@@ -1777,9 +1861,10 @@ void SpaceState::updateGuidanceTestLab(float dt)
         }
     }
 
-    // Diagnostic infrastructure other than the selected docking module becomes
-    // known local traffic/obstacle geometry. V1 uses conservative spheres; the
-    // semantic target itself is excluded because crossing its gate is intended.
+    // Known diagnostic infrastructure other than the selected docking module
+    // is treated as moving conservative obstacle geometry. The target module
+    // itself is excluded because the planned terminal state intentionally
+    // crosses its semantic entrance plane.
     for (const auto& [id, object] : m_client->world().objects())
     {
         if (&object == targetObject || object.systemId != systemId)
@@ -1817,13 +1902,24 @@ void SpaceState::updateGuidanceTestLab(float dt)
     );
 
     game::navigation::LocalGuidanceRequest request;
-    request.corridorId = CorridorId;
+    request.corridorId = corridorId;
     request.systemId = systemId;
     request.startUniverseTimeSeconds = now;
     request.actorState.positionMeters = playerMeters;
-    request.actorState.velocityMps = player.renderTransform.motion.worldVelocityMps;
+    request.actorState.velocityMps =
+        player.renderTransform.motion.worldVelocityMps;
     request.actorState.accelerationMps2 = glm::dvec3(0.0);
     request.actorProperAccelerationMps2 = glm::dvec3(0.0);
+    request.actorOrientation = glm::normalize(glm::quat_cast(
+        glm::dmat3(player.renderTransform.orientation)
+    ));
+    request.actorAngularVelocityWorldRadPerSecond =
+        glm::dvec3(player.renderTransform.right()) *
+            static_cast<double>(player.renderTransform.pitchRate) +
+        glm::dvec3(player.renderTransform.up()) *
+            static_cast<double>(player.renderTransform.yawRate) +
+        glm::dvec3(player.renderTransform.forward()) *
+            static_cast<double>(player.renderTransform.rollRate);
     request.target = targetAnchor;
     request.environment = std::move(environment);
     request.profile.purpose = game::navigation::GuidancePurpose::Docking;
@@ -1834,7 +1930,10 @@ void SpaceState::updateGuidanceTestLab(float dt)
     );
     request.profile.frameIntervalSeconds = 0.5;
     request.profile.predictorIntegrationStepSeconds = 0.05;
-    request.profile.shipSafetyRadiusMeters = 24.0;
+    request.profile.vehicleEnvelope = vehicleEnvelope;
+    request.profile.shipSafetyRadiusMeters = vehicleEnvelope.valid
+        ? 0.0
+        : 24.0;
     request.profile.recommendedSpeedMps = targetAnchor.maxEntrySpeedMps;
     request.profile.maxClosureRateMps = targetAnchor.maxEntrySpeedMps;
     request.profile.motionEnvelope.maxProperAccelerationMps2 =
@@ -1843,19 +1942,26 @@ void SpaceState::updateGuidanceTestLab(float dt)
         1.5 * game::navigation::StandardGravityMps2;
 
     const auto result = game::navigation::LocalGuidancePlanner::plan(request);
-    if (result.ready())
+    if (result.hasGuidance())
     {
-        m_navigationWorkspace.guidance().publish(result.corridor);
+        guidanceState.publish(result.corridor);
+        m_noSafeDockingGuidanceSolution =
+            result.status ==
+                game::navigation::LocalGuidanceStatus::EmergencyEscapeReady;
     }
     else
     {
-        // Never keep presenting a stale unsafe lab corridor. A future warning
-        // layer can expose the conflict while an alternate planner searches.
-        m_navigationWorkspace.guidance().erase(CorridorId);
+        m_noSafeDockingGuidanceSolution =
+            result.status == game::navigation::LocalGuidanceStatus::Blocked;
+        // No stale corridor is allowed to survive a failed replan. The typed
+        // docking request stays active, so the next 0.2 s cycle can recover as
+        // soon as a safe solution exists again.
+        guidanceState.erase(corridorId);
     }
 
-    m_navigationWorkspace.guidance().pruneExpired(now);
+    guidanceState.pruneExpired(now);
 }
+
 
 
 void SpaceState::update(float dt)
@@ -1938,7 +2044,7 @@ void SpaceState::update(float dt)
     }
 
 
-    updateGuidanceTestLab(clientFrameDt);
+    updateDockingGuidance(clientFrameDt);
 
     if constexpr (game::promo::PromoSceneScenario::Enabled)
     {
@@ -2654,6 +2760,43 @@ m_systemMapRenderer.render(
                 vp.width,
                 vp.height
             );
+
+            if (guidance.noSafePrimarySolution ||
+                m_noSafeDockingGuidanceSolution)
+            {
+                const double blinkPhase = std::fmod(
+                    std::max(0.0, m_client->universeTimeSeconds()) * 2.0,
+                    1.0
+                );
+                if (blinkPhase < 0.58)
+                {
+                    const std::string warning = localizedUiText(
+                        context().app,
+                        "map.navigation_hud.no_safe_guidance_solution",
+                        "NO SAFE GUIDANCE SOLUTION"
+                    );
+                    constexpr int warningPx = 22;
+                    auto& text = TextRenderer::instance();
+                    const float width = text.measureTextPx(warning, warningPx);
+                    const float x =
+                        static_cast<float>(vp.width) * 0.5f - width * 0.5f;
+                    const float y = 62.0f;
+                    text.solidRectPx(
+                        x - 12.0f,
+                        y - 5.0f,
+                        width + 24.0f,
+                        warningPx + 12.0f,
+                        glm::vec4(0.14f, 0.015f, 0.01f, 0.78f)
+                    );
+                    text.textDrawPx(
+                        warning,
+                        x,
+                        y,
+                        warningPx,
+                        glm::vec4(1.0f, 0.38f, 0.24f, 1.0f)
+                    );
+                }
+            }
 
             game::presentation::GalacticCompassVocabulary compassVocabulary;
             compassVocabulary.galacticCenter =

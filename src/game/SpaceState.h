@@ -234,7 +234,7 @@ private:
         const Viewport& viewport
     );
     void renderUiLanguageIndicator(const Viewport& viewport);
-    void updateGuidanceTestLab(float dt);
+    void updateDockingGuidance(float dt);
     game::presentation::SystemMapPanelPresentation
     buildNativeSystemMapPanelPresentation();
     bool handleNativeSystemMapPanelInput(const Viewport& viewport);
@@ -290,7 +290,9 @@ private:
     game::navigation::GalacticReferenceFrame m_galacticReferenceFrame;
     game::navigation::HubSemanticAnchorCatalog m_hubSemanticAnchorCatalog;
     game::navigation::DockingPortRuntimeStateCatalog m_dockingPortRuntimeStateCatalog;
-    double m_guidanceLabReplanAccumulatorSeconds = 0.0;
+    double m_dockingGuidanceReplanAccumulatorSeconds = 0.0;
+    std::string m_activeDockingGuidanceCorridorId;
+    bool m_noSafeDockingGuidanceSolution = false;
     SystemMapRenderer m_systemMapRenderer;
     ui::presentation::InSessionPresentationRenderer m_inSessionPresentationRenderer;
     bool m_constellationOverlayEnabled = false;

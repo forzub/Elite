@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <cstdint>
 #include <string>
 
@@ -65,6 +66,13 @@ struct ResolvedHubSemanticAnchor
 
     glm::dvec3 positionMeters {0.0};
     glm::dvec3 velocityMps {0.0};
+
+    // The semantic anchor may be offset from a rotating module origin.  Keep
+    // that origin explicitly so future anchor positions follow the rotation
+    // instead of incorrectly extrapolating the instantaneous tangent velocity.
+    glm::dvec3 rotationCenterMeters {0.0};
+    glm::dvec3 rotationCenterVelocityMps {0.0};
+    bool hasRotationCenterKinematics = false;
     glm::dquat orientation {1.0, 0.0, 0.0, 0.0};
     glm::dvec3 angularVelocityWorldRadPerSecond {0.0};
 
@@ -83,6 +91,46 @@ struct ResolvedHubSemanticAnchor
         return orientation * glm::dvec3(0.0, 1.0, 0.0);
     }
 };
+
+inline ResolvedHubSemanticAnchor predictHubSemanticAnchorAt(
+    const ResolvedHubSemanticAnchor& anchor,
+    double universeTimeSeconds
+)
+{
+    ResolvedHubSemanticAnchor out = anchor;
+    const double dt = universeTimeSeconds - anchor.epochUniverseTimeSeconds;
+    const glm::dvec3 omega = anchor.angularVelocityWorldRadPerSecond;
+    const double angularSpeed = glm::length(omega);
+
+    glm::dquat rotationDelta(1.0, 0.0, 0.0, 0.0);
+    if (angularSpeed > 1.0e-9 && std::abs(dt) > 1.0e-9)
+    {
+        rotationDelta = glm::normalize(
+            glm::angleAxis(angularSpeed * dt, omega / angularSpeed)
+        );
+    }
+
+    out.epochUniverseTimeSeconds = universeTimeSeconds;
+    out.orientation = glm::normalize(rotationDelta * anchor.orientation);
+
+    if (!anchor.hasRotationCenterKinematics)
+    {
+        out.positionMeters = anchor.positionMeters + anchor.velocityMps * dt;
+        return out;
+    }
+
+    const glm::dvec3 center =
+        anchor.rotationCenterMeters + anchor.rotationCenterVelocityMps * dt;
+    const glm::dvec3 epochOffset =
+        anchor.positionMeters - anchor.rotationCenterMeters;
+    const glm::dvec3 rotatedOffset = rotationDelta * epochOffset;
+
+    out.rotationCenterMeters = center;
+    out.positionMeters = center + rotatedOffset;
+    out.velocityMps = anchor.rotationCenterVelocityMps +
+        glm::cross(anchor.angularVelocityWorldRadPerSecond, rotatedOffset);
+    return out;
+}
 
 inline ResolvedHubSemanticAnchor resolveHubSemanticAnchor(
     const HubSemanticAnchorDefinition& definition,
@@ -112,6 +160,9 @@ inline ResolvedHubSemanticAnchor resolveHubSemanticAnchor(
     const glm::dmat3 objectBasis(objectOrientation);
     const glm::dvec3 worldOffset =
         objectBasis * definition.localPositionMeters;
+    out.rotationCenterMeters = objectPositionMeters;
+    out.rotationCenterVelocityMps = objectVelocityMps;
+    out.hasRotationCenterKinematics = true;
     out.positionMeters = objectPositionMeters + worldOffset;
     out.velocityMps = objectVelocityMps +
         glm::cross(objectAngularVelocityWorldRadPerSecond, worldOffset);

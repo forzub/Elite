@@ -44,9 +44,10 @@ enum class GuidancePurpose : std::uint8_t
     One time-aware cross-section of a visual/operational flight corridor.
 
     Position is system-local full metres, consistent with TrajectoryPredictor.
-    Orientation describes the desired corridor frame, not necessarily the
-    ship's required hull attitude. A follower may later derive attitude from
-    ship-specific thruster capability.
+    Orientation always describes the visible corridor frame. For docking/other
+    6-DOF terminal guidance, requiredVehiclePose=true upgrades that orientation
+    to an explicit desired hull attitude: +X right, +Y top, -Z nose. No control
+    is implied; the corridor remains advisory until a follower is added later.
 */
 struct GuidanceFrame
 {
@@ -62,6 +63,8 @@ struct GuidanceFrame
 
     double lateralToleranceMeters = 0.0;
     double verticalToleranceMeters = 0.0;
+
+    bool requiredVehiclePose = false;
 };
 
 struct GuidanceCorridor
@@ -79,6 +82,10 @@ struct GuidanceCorridor
     double confidence = 1.0;
     int priority = 0;
     bool advisoryOnly = true;
+
+    // EmergencyEscape is still a corridor, not an autopilot command.  The
+    // presentation layer may flash a warning while this flag is active.
+    bool noSafePrimarySolution = false;
 
     std::vector<GuidanceFrame> frames;
 

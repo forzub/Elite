@@ -8,6 +8,7 @@
 #include "src/game/navigation/NavigationPlanningSnapshot.h"
 #include "src/game/navigation/TrajectoryPredictor.h"
 #include "src/game/navigation/TrajectorySafetyEvaluator.h"
+#include "src/game/navigation/VehicleGuidanceEnvelope.h"
 
 namespace game::navigation
 {
@@ -15,6 +16,7 @@ namespace game::navigation
 enum class LocalGuidanceStatus : std::uint8_t
 {
     Ready = 0,
+    EmergencyEscapeReady,
     Blocked,
     InvalidRequest,
     PredictionFailure
@@ -34,7 +36,18 @@ struct LocalGuidanceProfile
     // useful opening from the target semantic anchor plus clearance.
     double corridorWidthMeters = 0.0;
     double corridorHeightMeters = 0.0;
+
+    // Canonical body dimensions for terminal docking pose and conservative
+    // swept-volume safety. shipSafetyRadiusMeters remains a compatibility
+    // fallback when the caller has no physical vehicle envelope yet.
+    VehicleGuidanceEnvelope vehicleEnvelope;
     double shipSafetyRadiusMeters = 0.0;
+
+    // Zero means derive from vehicle length + dock clearance.  Standoff is
+    // outside the entrance plane; terminal depth is inside the dock.
+    double dockingApproachStandoffMeters = 0.0;
+    double dockingTerminalDepthMeters = 0.0;
+    double emergencyEscapeDistanceMeters = 0.0;
 
     double recommendedSpeedMps = 0.0;
     double maxClosureRateMps = 0.0;
@@ -50,6 +63,8 @@ struct LocalGuidanceRequest
 
     WorldKinematicState actorState;
     glm::dvec3 actorProperAccelerationMps2 {0.0};
+    glm::dquat actorOrientation {1.0, 0.0, 0.0, 0.0};
+    glm::dvec3 actorAngularVelocityWorldRadPerSecond {0.0};
 
     ResolvedHubSemanticAnchor target;
     NavigationPlanningSnapshot environment;
@@ -65,22 +80,32 @@ struct LocalGuidanceResult
     TrajectoryPredictionResult prediction;
     TrajectorySafetyReport safety;
     bool detourUsed = false;
+    bool emergencyEscapeUsed = false;
 
     bool ready() const noexcept
     {
         return status == LocalGuidanceStatus::Ready;
+    }
+
+    bool hasGuidance() const noexcept
+    {
+        return status == LocalGuidanceStatus::Ready ||
+               status == LocalGuidanceStatus::EmergencyEscapeReady;
     }
 };
 
 /*
     Short-range guidance producer for docking/approach/transit operations.
 
-    V1 first plans one direct time-parameterized candidate, predicts it through
-    the shared TrajectoryPredictor and validates it through the shared 4D safety
-    evaluator. If a known spherical hazard blocks that candidate, it tries a
-    small pair of lateral detour candidates through the same predictor+safety
-    pipeline. More sophisticated graph/continuous optimization remains a later
-    planner strategy and is never hidden inside TrajectoryPredictor.
+    Docking mode is 6-DOF advisory guidance: it plans an approach point outside
+    the moving entrance plane, then an ingress leg whose terminal velocity is
+    perpendicular to that plane. Corridor frames carry the required hull pose
+    and converge on dock up/down orientation. The planner never moves the ship.
+
+    Every translational candidate is predicted by TrajectoryPredictor and
+    validated by TrajectorySafetyEvaluator. If docking cannot be made safe, the
+    planner tries a separate EmergencyEscape corridor while leaving the primary
+    docking intent intact for rolling replanning.
 */
 class LocalGuidancePlanner
 {

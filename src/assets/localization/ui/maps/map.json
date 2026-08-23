@@ -331,6 +331,13 @@
       "es": "GLOB",
       "ja": "全局"
     },
+    "map.navigation_hud.no_safe_guidance_solution": {
+      "en": "NO SAFE GUIDANCE SOLUTION",
+      "ru": "НЕТ БЕЗОПАСНОЙ ТРАЕКТОРИИ",
+      "zh-Hans": "无安全引导路径",
+      "es": "NO HAY TRAYECTORIA SEGURA",
+      "ja": "安全な誘導経路なし"
+    },
     "map.navigation_hud.galactic_center": {
       "en": "GC",
       "ru": "ГЦ",

@@ -300,6 +300,17 @@ private:
         const std::string& actionKey
     );
 
+    void cancelDockingTaskForClosedCard(
+        const std::string& objectId
+    );
+
+    void decorateActiveGuidanceTrajectory(
+        const Viewport& viewport,
+        const world::celestial::SystemMapSnapshot& system,
+        const world::celestial::DetailMapSnapshot& detail,
+        const world::celestial::HubMapSnapshot& hub
+    );
+
     void applyWaypointAction(
         const std::string& objectId,
         const std::string& actionKey

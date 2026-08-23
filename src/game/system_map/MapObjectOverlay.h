@@ -52,12 +52,20 @@ struct MapTrajectoryPoint
 {
     double universeTimeSeconds = 0.0;
     glm::dvec3 position {0.0};
+
+    // Projection is supplied by the current map presentation because the same
+    // world-space trajectory may be shown on System, Detail or Hub with very
+    // different coordinate frames. The trajectory producer never owns camera
+    // state; it only supplies physical samples.
+    glm::dvec2 screenPx {0.0};
+    bool screenProjected = false;
 };
 
 struct MapObjectTrajectory
 {
     std::string objectId;
     MapTrajectoryKind kind = MapTrajectoryKind::History;
+    bool noSafePrimarySolution = false;
     std::vector<MapTrajectoryPoint> points;
 };
 

@@ -100,6 +100,90 @@ void drawLine(
     glLineWidth(1.0f);
 }
 
+glm::dvec2 cubicBezierPoint(
+    const glm::dvec2& p0,
+    const glm::dvec2& p1,
+    const glm::dvec2& p2,
+    const glm::dvec2& p3,
+    double t
+)
+{
+    const double u = 1.0 - t;
+    return
+        p0 * (u * u * u) +
+        p1 * (3.0 * u * u * t) +
+        p2 * (3.0 * u * t * t) +
+        p3 * (t * t * t);
+}
+
+void drawProjectedTrajectory(const MapObjectTrajectory& trajectory)
+{
+    std::vector<glm::dvec2> points;
+    points.reserve(trajectory.points.size());
+    for (const auto& point : trajectory.points)
+    {
+        if (point.screenProjected &&
+            std::isfinite(point.screenPx.x) &&
+            std::isfinite(point.screenPx.y))
+        {
+            points.push_back(point.screenPx);
+        }
+    }
+
+    if (points.size() < 2)
+        return;
+
+    glm::vec4 color;
+    float width = 1.6f;
+    switch (trajectory.kind)
+    {
+        case MapTrajectoryKind::History:
+            color = glm::vec4(0.64f, 0.70f, 0.78f, 0.46f);
+            width = 1.2f;
+            break;
+        case MapTrajectoryKind::Prediction:
+            color = glm::vec4(0.34f, 0.68f, 1.00f, 0.70f);
+            break;
+        case MapTrajectoryKind::Planned:
+        default:
+            color = trajectory.noSafePrimarySolution
+                ? glm::vec4(1.00f, 0.38f, 0.24f, 0.88f)
+                : glm::vec4(0.36f, 1.00f, 0.72f, 0.86f);
+            width = 2.0f;
+            break;
+    }
+
+    // Each Catmull-Rom span is rendered as its equivalent cubic Bezier. The
+    // physical planner still owns the samples; smoothing is presentation-only
+    // and passes through every supplied point. A dashed stroke keeps it visually
+    // distinct from instantaneous velocity arrows and orbit geometry.
+    int dashPhase = 0;
+    constexpr int subdivisions = 12;
+    for (std::size_t i = 0; i + 1 < points.size(); ++i)
+    {
+        const glm::dvec2& p1 = points[i];
+        const glm::dvec2& p2 = points[i + 1];
+        const glm::dvec2& p0 = i > 0 ? points[i - 1] : p1;
+        const glm::dvec2& p3 = i + 2 < points.size() ? points[i + 2] : p2;
+
+        const glm::dvec2 c1 = p1 + (p2 - p0) / 6.0;
+        const glm::dvec2 c2 = p2 - (p3 - p1) / 6.0;
+
+        glm::dvec2 previous = p1;
+        for (int step = 1; step <= subdivisions; ++step)
+        {
+            const double t = static_cast<double>(step) / subdivisions;
+            const glm::dvec2 current = cubicBezierPoint(
+                p1, c1, c2, p2, t
+            );
+            if ((dashPhase / 4) % 2 == 0)
+                drawLine(previous, current, color, width);
+            previous = current;
+            ++dashPhase;
+        }
+    }
+}
+
 void drawRect(
     const glm::dvec2& topLeft,
     double width,
@@ -471,16 +555,12 @@ void MapObjectOverlayRenderer::render(
 {
     const ScreenSpaceState previousGlState = beginScreenSpace(viewport);
 
-    // Trajectory seam: nothing is synthesized here. Only authoritative or
-    // explicitly predicted samples supplied by a future producer are drawn.
+    // Never invent samples here. The active planner/history producer supplies
+    // world-space points and the current map presentation supplies projection.
+    // This renderer only smooths the already supplied points into dashed cubic
+    // Bezier spans.
     for (const auto& trajectory : frame.trajectories)
-    {
-        if (trajectory.points.size() < 2)
-            continue;
-        // Projection belongs to the producer; current trajectory model is a
-        // data contract only. Rendering activates when projected samples are
-        // added to the frame without changing object/card ownership.
-    }
+        drawProjectedTrajectory(trajectory);
 
     auto& textRenderer = TextRenderer::instance();
     textRenderer.beginFrameForViewport(viewport.width, viewport.height);

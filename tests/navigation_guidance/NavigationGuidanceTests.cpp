@@ -6,6 +6,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/constants.hpp>
 
 #include "src/game/navigation/DockingCompatibility.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
@@ -442,6 +443,175 @@ void testLocalPlannerUsesPredictorAndSafetyEvaluator()
     require(!blocked.safety.safe, "blocked local candidate lost safety conflict");
 }
 
+
+void testDockingGuidanceEndsNormalToGateWithRequiredHullPose()
+{
+    LocalGuidanceRequest request;
+    request.corridorId = "dock-6dof";
+    request.systemId = 0;
+    request.startUniverseTimeSeconds = 100.0;
+    request.actorState.positionMeters = glm::dvec3(0.0, 0.0, 0.0);
+    request.actorState.velocityMps = glm::dvec3(0.0);
+    request.actorOrientation = glm::dquat(1.0, 0.0, 0.0, 0.0);
+
+    request.target.id = "gate";
+    request.target.hubModuleId = "dock-module";
+    request.target.kind = HubSemanticAnchorKind::DockingPort;
+    request.target.orientationPolicy = DockOrientationPolicy::Upright;
+    request.target.systemId = 0;
+    request.target.epochUniverseTimeSeconds = 100.0;
+    request.target.positionMeters = glm::dvec3(0.0, 0.0, 200.0);
+    request.target.orientation = glm::dquat(1.0, 0.0, 0.0, 0.0);
+    request.target.extentMeters = glm::dvec3(40.0, 24.0, 1.0);
+    request.target.requiredClearanceMeters = 2.0;
+    request.target.maxEntrySpeedMps = 8.0;
+
+    request.profile.purpose = GuidancePurpose::Docking;
+    request.profile.horizonSeconds = 10.0;
+    request.profile.frameIntervalSeconds = 0.25;
+    request.profile.predictorIntegrationStepSeconds = 0.02;
+    request.profile.vehicleEnvelope = {
+        20.0, 8.0, 4.0, 0.0, true
+    };
+    request.profile.recommendedSpeedMps = 8.0;
+
+    const auto result = LocalGuidancePlanner::plan(request);
+    require(result.status == LocalGuidanceStatus::Ready,
+            "clear 6-DOF docking guidance was not ready");
+    require(!result.corridor.frames.empty(),
+            "6-DOF docking guidance did not create tunnel frames");
+
+    const auto& first = result.corridor.frames.front();
+    const auto& last = result.corridor.frames.back();
+    require(glm::length(first.centerMeters - request.actorState.positionMeters) < 1.0e-6,
+            "first docking frame is not the actual ship position");
+    require(first.requiredVehiclePose && last.requiredVehiclePose,
+            "docking tunnel does not carry required hull pose semantics");
+
+    const glm::dvec3 finalForward = glm::normalize(
+        last.orientation * glm::dvec3(0.0, 0.0, -1.0)
+    );
+    const glm::dvec3 finalUp = glm::normalize(
+        last.orientation * glm::dvec3(0.0, 1.0, 0.0)
+    );
+    const glm::dvec3 inbound(0.0, 0.0, 1.0);
+    require(glm::dot(finalForward, inbound) > 0.999,
+            "terminal ship nose is not perpendicular/inbound to dock plane");
+    require(glm::dot(finalUp, glm::dvec3(0.0, 1.0, 0.0)) > 0.999,
+            "terminal ship top is not aligned with dock top");
+
+    const double expectedDepth = 12.0; // half length 10 + dock clearance 2
+    require(std::abs(last.centerMeters.z - (200.0 + expectedDepth)) < 1.0e-6,
+            "terminal ship center does not place the hull inside the gate");
+
+    const glm::dvec3 terminalRelativeVelocity =
+        result.prediction.samples.back().state.velocityMps;
+    require(glm::dot(glm::normalize(terminalRelativeVelocity), inbound) > 0.995,
+            "terminal trajectory velocity is not normal to the entrance plane");
+}
+
+void testRotatingSemanticAnchorPredictsCircularGateMotion()
+{
+    HubSemanticAnchorDefinition definition;
+    definition.id = "rotating-gate";
+    definition.hubModuleId = "rotor";
+    definition.kind = HubSemanticAnchorKind::NavigationReference;
+    definition.localPositionMeters = glm::dvec3(10.0, 0.0, 0.0);
+
+    const double start = 100.0;
+    const auto target = resolveHubSemanticAnchor(
+        definition,
+        0,
+        start,
+        glm::dvec3(100.0, 0.0, 0.0),
+        glm::dvec3(2.0, 0.0, 0.0),
+        glm::mat4(1.0f),
+        glm::dvec3(0.0, 0.0, glm::half_pi<double>())
+    );
+
+    // Two seconds at pi/2 rad/s rotates the +X offset by pi. The module origin
+    // also translates +4 m along X, so the gate ends at x = 100 + 4 - 10 = 94.
+    // Test the semantic-anchor kinematics directly: the vehicle predictor is
+    // allowed to have finite tracking error while obeying acceleration/jerk
+    // envelopes and must not be used as a proxy for target motion.
+    const auto predicted = predictHubSemanticAnchorAt(target, start + 2.0);
+    const glm::dvec3 expectedPosition(94.0, 0.0, 0.0);
+    const glm::dvec3 expectedVelocity(
+        2.0,
+        -5.0 * glm::pi<double>(),
+        0.0
+    );
+    require(glm::length(predicted.positionMeters - expectedPosition) < 1.0e-9,
+            "rotating gate position did not follow circular motion");
+    require(glm::length(predicted.velocityMps - expectedVelocity) < 1.0e-9,
+            "rotating gate velocity did not remain tangent to circular motion");
+
+    const glm::dvec3 predictedUp = glm::normalize(predicted.up());
+    const glm::dvec3 expectedUp(0.0, -1.0, 0.0);
+    require(glm::dot(predictedUp, expectedUp) > 0.999999,
+            "rotating gate orientation did not advance with module rotation");
+}
+
+void testUnsafeDockingPublishesEscapeThenRecoversPrimaryRoute()
+{
+    LocalGuidanceRequest request;
+    request.corridorId = "dock-replan";
+    request.systemId = 0;
+    request.startUniverseTimeSeconds = 100.0;
+    request.actorState.positionMeters = glm::dvec3(0.0, 0.0, 0.0);
+    request.actorOrientation = glm::dquat(1.0, 0.0, 0.0, 0.0);
+    request.target.id = "gate";
+    request.target.hubModuleId = "dock-module";
+    request.target.kind = HubSemanticAnchorKind::DockingPort;
+    request.target.orientationPolicy = DockOrientationPolicy::Upright;
+    request.target.systemId = 0;
+    request.target.epochUniverseTimeSeconds = 100.0;
+    request.target.positionMeters = glm::dvec3(0.0, 0.0, 200.0);
+    request.target.orientation = glm::dquat(1.0, 0.0, 0.0, 0.0);
+    request.target.extentMeters = glm::dvec3(40.0, 24.0, 1.0);
+    request.target.requiredClearanceMeters = 2.0;
+    request.target.maxEntrySpeedMps = 8.0;
+    request.profile.purpose = GuidancePurpose::Docking;
+    request.profile.horizonSeconds = 10.0;
+    request.profile.frameIntervalSeconds = 0.25;
+    request.profile.predictorIntegrationStepSeconds = 0.02;
+    request.profile.vehicleEnvelope = {
+        20.0, 8.0, 4.0, 0.0, true
+    };
+
+    RestrictedNavigationVolume blockedGate;
+    blockedGate.id = "temporary-closed-volume";
+    blockedGate.systemId = 0;
+    blockedGate.centerMeters = glm::dvec3(0.0, 0.0, 200.0);
+    blockedGate.radiusMeters = 70.0;
+    request.environment.restrictedVolumes.push_back(blockedGate);
+
+    const auto escape = LocalGuidancePlanner::plan(request);
+    require(escape.status == LocalGuidanceStatus::EmergencyEscapeReady,
+            "blocked docking did not produce emergency escape guidance");
+    require(escape.emergencyEscapeUsed,
+            "emergency escape status lost its explicit diagnostic flag");
+    require(escape.corridor.purpose == GuidancePurpose::EmergencyEscape,
+            "unsafe docking did not switch tunnel purpose to emergency escape");
+    require(escape.corridor.noSafePrimarySolution,
+            "emergency tunnel did not request NO SAFE GUIDANCE warning");
+    require(escape.safety.safe,
+            "published emergency escape corridor is not safety-evaluator clear");
+
+    // The caller keeps the same typed docking request. Once the temporary
+    // hazard disappears, the next rolling replan must resume the original dock.
+    request.startUniverseTimeSeconds += 0.2;
+    request.target.epochUniverseTimeSeconds += 0.2;
+    request.environment.restrictedVolumes.clear();
+    const auto recovered = LocalGuidancePlanner::plan(request);
+    require(recovered.status == LocalGuidanceStatus::Ready,
+            "docking route did not recover after the hazard cleared");
+    require(recovered.corridor.purpose == GuidancePurpose::Docking,
+            "recovered guidance did not return to the original docking task");
+    require(!recovered.corridor.noSafePrimarySolution,
+            "NO SAFE GUIDANCE warning survived a recovered docking solution");
+}
+
 } // namespace
 
 int main()
@@ -459,6 +629,9 @@ int main()
         {"galactic compass uses standard l/b basis", testGalacticCompassUsesStandardLBasis},
         {"guidance priority and expiry", testGuidanceStateChoosesPriorityAndExpiry},
         {"local planner uses predictor and safety", testLocalPlannerUsesPredictorAndSafetyEvaluator},
+        {"docking guidance terminal 6-DOF pose", testDockingGuidanceEndsNormalToGateWithRequiredHullPose},
+        {"rotating semantic anchor follows circular motion", testRotatingSemanticAnchorPredictsCircularGateMotion},
+        {"unsafe docking escapes and rolling replan recovers", testUnsafeDockingPublishesEscapeThenRecoversPrimaryRoute},
     };
 
     std::size_t passed = 0;

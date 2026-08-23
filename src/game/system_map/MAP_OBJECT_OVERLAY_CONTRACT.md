@@ -312,14 +312,36 @@ contract is `../navigation/NAVIGATION_TRACKING_CONTRACT.md`.
 
 - stable object ID;
 - semantic kind: history, prediction or planned;
-- time-stamped spatial samples.
+- time-stamped spatial samples;
+- map-owned screen projection for samples that are visible in the current
+  System/Detail/Hub camera.
 
 Current velocity and trajectory are different facts. The renderer/builder must
 **not manufacture a flight path from one position + one velocity vector** merely
-so that a line can be drawn.
+so that a line can be drawn. The active local-guidance producer is the first
+real planned-trajectory source: its `GuidanceCorridor` frames are projected by
+the current map presentation and rendered as a dashed, presentation-only cubic
+Bezier smoothing that passes through the supplied samples. Smoothing must not
+create physics samples or feed back into the planner.
 
-This distinction is protected now so a future authoritative/history/predictive
-producer can be attached without changing glyph/card ownership.
+Historical and arbitrary prediction producers may be attached later without
+changing glyph/card ownership or this producer/renderer boundary.
+
+
+## PROTECTED: docking-card task lifetime and direct port selection
+
+On Hub Map an authored enabled docking port is an interaction target in its own
+right. Its projected entrance rectangle receives semantic pointer priority over
+the much larger parent module, so clicking the visible opening must not require a
+preliminary module selection. The parent module remains selectable through its
+actual CPU mesh outside the port opening.
+
+A docking guidance request is deliberately scoped to its dock information card.
+`CALCULATE ROUTE` starts/refreshes the typed semantic request; closing that dock
+card (including toggling the same dock closed) cancels the request. On the next
+client update the active guidance corridor disappears, and normal open-card
+tracking reconciliation removes the corresponding cockpit marker. Closing some
+other independent card does not cancel the docking task.
 
 ## PROTECTED: existing navigation must survive overlay interaction
 
@@ -392,8 +414,9 @@ file.
 These features are intentionally **not** claimed by the current baseline:
 
 - rendered historical trails;
-- rendered predicted trajectories;
-- rendered planned/navigation trajectories;
+- arbitrary selected-object predicted trajectories;
+- general Route Plan / long-range planned-trajectory rendering beyond the
+  currently active local `GuidanceCorridor`;
 - authoritative trajectory-history storage/source;
 - persistent ship target/track numbers across sessions;
 - authoritative or sensor-derived faction/affiliation coloring;
@@ -402,7 +425,9 @@ These features are intentionally **not** claimed by the current baseline:
 - minimizing/pinning/grouping cards;
 - automatic camera lock/follow on a selected ship.
 
-The trajectory data seam is present; the trajectory product feature is not.
+The trajectory data seam is now visibly exercised by active local guidance on
+System/Detail/Hub maps; the broader history/prediction/long-range trajectory
+product remains future work.
 
 ## Regression gates
 

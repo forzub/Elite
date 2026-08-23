@@ -127,6 +127,17 @@ try:
         "rememberInfrastructure",
         "rememberSemanticAnchor",
         "dockingRouteRequests().request",
+        "cancelDockingTaskForClosedCard",
+        "dockingRouteRequests().clear",
+        "decorateActiveGuidanceTrajectory",
+        "anchorsForModule(module.stableId)",
+        "item.hitPolygonPx",
+    )
+    require(
+        "src/game/system_map/MapObjectOverlayRenderer.cpp",
+        "drawProjectedTrajectory",
+        "cubicBezierPoint",
+        "MapTrajectoryKind::Planned",
     )
     require(
         "src/assets/data/navigation/hub_docking_runtime_test.json",

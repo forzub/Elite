@@ -113,12 +113,19 @@ void GuidanceCorridorRenderer::render(
         0.15,
         1.0
     ));
-    const glm::vec4 frameColor(
-        0.34f,
-        0.92f,
-        1.0f,
-        0.06f + confidence * 0.20f
-    );
+    const glm::vec4 frameColor = presentation.noSafePrimarySolution
+        ? glm::vec4(
+            1.0f,
+            0.38f,
+            0.24f,
+            0.08f + confidence * 0.28f
+          )
+        : glm::vec4(
+            0.34f,
+            0.92f,
+            1.0f,
+            0.06f + confidence * 0.20f
+          );
     const glm::vec4 connectorColor(
         frameColor.r,
         frameColor.g,

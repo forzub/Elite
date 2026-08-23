@@ -24,6 +24,7 @@ struct GuidanceHudFramePresentation
     double widthMeters = 0.0;
     double heightMeters = 0.0;
     double recommendedSpeedMps = 0.0;
+    bool requiredVehiclePose = false;
 };
 
 struct GuidanceCorridorHudPresentation
@@ -36,6 +37,7 @@ struct GuidanceCorridorHudPresentation
         game::navigation::GuidancePurpose::Transit;
     double confidence = 1.0;
     bool advisoryOnly = true;
+    bool noSafePrimarySolution = false;
     std::vector<GuidanceHudFramePresentation> frames;
 };
 
@@ -114,6 +116,7 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
         item.widthMeters = frame.widthMeters;
         item.heightMeters = frame.heightMeters;
         item.recommendedSpeedMps = frame.recommendedSpeedMps;
+        item.requiredVehiclePose = frame.requiredVehiclePose;
         out.frames.push_back(std::move(item));
         if (out.frames.size() >= maxFrames)
             break;
@@ -134,6 +137,7 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
             item.widthMeters = last->widthMeters;
             item.heightMeters = last->heightMeters;
             item.recommendedSpeedMps = last->recommendedSpeedMps;
+            item.requiredVehiclePose = last->requiredVehiclePose;
             out.frames.push_back(std::move(item));
         }
     }
@@ -144,6 +148,7 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
     out.purpose = corridor->purpose;
     out.confidence = corridor->confidence;
     out.advisoryOnly = corridor->advisoryOnly;
+    out.noSafePrimarySolution = corridor->noSafePrimarySolution;
     return out;
 }
 

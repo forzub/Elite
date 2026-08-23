@@ -119,20 +119,33 @@ computed.
 select the active one, while `NavigationModuleState` can suppress an entire
 source class independently from the HUD layer switch.
 
-## 6. Local guidance Wave 4 behavior
+## 6. Local guidance: docking 6-DOF + rolling emergency fallback
 
 `LocalGuidancePlanner` is deliberately small-distance and rolling-replan ready.
-V1 creates one deterministic direct candidate to a moving semantic target,
-propagates it through `TrajectoryPredictor`, validates it through
-`TrajectorySafetyEvaluator`, and emits corridor frames that progressively align
-to the predicted moving/rotating target.
+For generic approach/transit it retains the predictor + 4D safety pipeline. For
+`Docking` it now builds a two-stage terminal candidate against the predicted
+moving/rotating semantic gate:
 
-If that direct candidate conflicts with a known conservative hazard envelope,
-V1 tries two simple lateral detour candidates around the first conflict. Each
-detour is itself built from predicted legs and is accepted only after the same
-4D safety evaluator reports it clear. If neither side is safe the result is
-`Blocked`. This is intentionally a small local fallback; later graph/continuous
-optimization extends the planner rather than moving avoidance into predictor.
+1. an approach state outside the entrance plane;
+2. an ingress state inside the dock whose terminal velocity is along the inward
+   entrance normal.
+
+`VehicleGuidanceEnvelope` carries canonical ship length/width/height. The
+current safety evaluator uses its circumscribed radius as a conservative
+swept-volume bound; the type is intentionally separate so oriented-box/mesh
+sweeps can replace that first conservative implementation without changing the
+planner/HUD contract. Docking `GuidanceFrame.orientation` is an explicit desired
+hull pose (`requiredVehiclePose=true`): ship nose follows the tunnel and the
+terminal pose aligns nose with the inward dock normal and top/belly with the
+dock up direction. This remains advisory presentation only; no follower or
+autopilot control is executed.
+
+The planner still tries lateral detours through the same predictor+safety
+pipeline. If no docking candidate is safe it attempts a separately validated
+`EmergencyEscape` corridor. That corridor sets `noSafePrimarySolution`; the HUD
+shows a flashing warning and the primary typed docking request remains intact.
+A later rolling replan therefore replaces the escape tunnel with the original
+docking tunnel automatically as soon as a safe solution exists again.
 
 ## 7. Hub construction semantics are not mesh geometry
 
@@ -187,18 +200,40 @@ None of that changes `TrajectoryPredictor` or HUD rendering contracts.
 
 ## 10. Wave 4 live laboratory and next implementation layers
 
-Wave 4 already includes a live Hub Motion Lab producer. It repeatedly resolves
-the rotating cube docking gate, builds a short-lived local planning snapshot,
-runs `LocalGuidancePlanner -> TrajectoryPredictor -> TrajectorySafetyEvaluator`,
-and publishes the accepted `GuidanceCorridor` to the cockpit HUD. The local
-planner also contains the first deliberately simple left/right lateral detour
-strategy for a known blocking hazard.
+The live client producer is now request-driven rather than hard-wired to one
+Hub Motion Lab gate. `CALCULATE ROUTE` stores a stable semantic docking request;
+`SpaceState` resolves that module/anchor from ordinary replicated state, checks
+current dock compatibility, and replans about every 0.2 s from the ship's actual
+position/velocity/orientation/angular-rate state. The selected rotating anchor
+keeps its module rotation center, so future gate positions follow circular
+rotation instead of tangent-line extrapolation.
 
-After the Wave 4 ready harness is green, the next layers are:
+The request is scoped to the selected dock information card. Closing that card
+means **cancel docking guidance**: the typed request is cleared, the active
+corridor expires/gets erased on the next update, and tracking reconciliation
+removes its cockpit marker. Hub docking ports are projected as direct semantic
+interaction targets for every authored enabled port, with the exact projected
+opening rectangle taking priority over parent-module CPU-mesh selection.
 
-1. long-range `RouteSolver` using preferred official lanes, schedules,
-   restrictions and terminal-state matching;
-2. richer local alternate-candidate search / continuous corridor replanning;
-3. `TrajectoryFollower` closed-loop execution/autopilot;
-4. real radar/transponder/beacon fusion into `NavigationPlanningSnapshot`;
-5. server planning-query and ATC `GuidanceCorridor` transport/protocol.
+The same active corridor has two presentation consumers and neither owns
+planning physics:
+
+- System/Detail/Hub maps project the supplied corridor centers and draw a dashed
+  cubic-Bezier-smoothed planned path through those samples;
+- the Flight cockpit HUD consumes the full `GuidanceFrame` pose sequence and
+  renders the 6-DOF GuidanceTunnel.
+
+The Galaxy map intentionally does not draw local docking guidance: at galactic
+scale the metre/kilometre corridor has no useful screen extent.
+
+Current order after this docking-guidance slice:
+
+1. validate/tune the 6-DOF GuidanceTunnel and emergency recovery in the live Hub
+   Motion Lab;
+2. replace the conservative spherical vehicle sweep with oriented/swept-volume
+   collision checking and richer alternate-candidate search;
+3. connect real radar/transponder/beacon fusion into `NavigationPlanningSnapshot`;
+4. build long-range `RouteSolver` and server planning-query/ATC corridor transport.
+
+`TrajectoryFollower` / autopilot is explicitly **not** part of this stage. It
+comes only after the displayed docking trajectory and GuidanceTunnel are stable.

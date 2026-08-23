@@ -164,7 +164,7 @@ Server runtime принимает несколько transport/session endpoints
 
 ## 6. Навигация и определение положения
 
-**Статус: `[~]` Route Plan закрыт; shared trajectory predictor PATCH C реализован и ждёт полного ready gate; trajectory rendering/solver/autopilot впереди.**
+**Статус: `[~]` Route Plan закрыт; shared trajectory predictor PATCH C реализован. Активный local-guidance corridor уже имеет map + cockpit presentation; общие history/prediction/long-range route producers, solver и autopilot впереди.**
 
 ### Client navigation tracking
 
@@ -185,7 +185,7 @@ Server runtime принимает несколько transport/session endpoints
 - `[x]` PATCH A: renderer-independent navigation ownership + typed stable route target identity (`ShipInstanceId`/Hub/body/spatial address) закрыт и защищён architecture guards.
 - `[x]` PATCH B: Route Plan получил обязательный explicit START/execution asset; START не участвует в reorder/delete, содержит stable `NavigationAssetRef` и не рисуется в cockpit HUD, когда executor совпадает с локально управляемым кораблём. Серверная `ownedNavigationAssets` projection строится из authoritative `ShipOwnershipRegistry`, отдельно от `ControlRegistry`; `DroneInstanceId` зарезервирован для будущих durable owned drones. Мёртвый `NavigationPlan` удалён из `DynamicMotionState`/wire schema.
 - `[~]` PATCH C: общий renderer/server-neutral `TrajectoryPredictor` реализован и покрыт отдельным test block/architecture guard; полный MinGW ready gate ещё должен подтвердить интеграцию. Predictor принимает system-local kinematic seed, gravity sources, proper-acceleration program и caller-selected acceleration/jerk envelope; выдаёт time-series position/velocity/acceleration, отдельно gravity/proper acceleration, proper crew G-load и accumulated delta-v. `TrajectoryMapAdapter` переводит результат в существующий `MapObjectTrajectory` seam без обратной зависимости predictor -> renderer.
-- `[ ]` **Ближайший шаг:** projected/dashed trajectory presentation для выбранного объекта, затем route/intercept solver с obstacle/safety constraints и terminal state matching; после solver — прямое drag-перемещение route points между соседними равноразмерными кубами/3D trajectory constraints, затем autopilot/formation controller. Финальный продуктовый контракт: `src/game/navigation/ROUTE_NAVIGATION_CONTRACT.md`.
+- `[~]` **Ближайший шаг:** live-валидация docking guidance: direct dock selection, card-scoped task cancellation, dashed planned path на System/Detail/Hub и 6-DOF GuidanceTunnel в Flight HUD. Затем oriented swept-volume collision checking/richer local avoidance. Общий route/intercept solver и long-range trajectory layer идут после стабилизации этого local-guidance vertical slice; autopilot остаётся позже. Финальный продуктовый контракт: `src/game/navigation/ROUTE_NAVIGATION_CONTRACT.md`.
 
 ### Космический компас
 
@@ -223,7 +223,7 @@ Server runtime принимает несколько transport/session endpoints
 
 ## 8. Траектории на картах
 
-**Статус: `[~]` data seam уже существует (`MapObjectTrajectory` + History/Prediction/Planned), но predictor/query producers и реальная отрисовка trajectory samples ещё не реализованы.**
+**Статус: `[~]` data seam существует (`MapObjectTrajectory` + History/Prediction/Planned); первый реальный producer/consumer slice готов для активного local `GuidanceCorridor`: System/Detail/Hub проецируют его samples и рисуют dashed planned path. Общие history/prediction/on-demand producers ещё впереди.**
 
 Карты должны уметь по запросу отвечать на вопросы:
 
@@ -414,7 +414,7 @@ SignalIdentity
 ### `[ ]` Чего пока нет / что не считать готовой механикой
 
 - Полноценная ship selection на System Map -> Details.
-- Historical/planned/predicted trajectory **rendering and data producers**; presentation seam уже существует, но реальных trajectory samples пока нет.
+- Historical и произвольные selected-object predicted trajectory producers/rendering; active local planned `GuidanceCorridor` уже является первым реальным trajectory producer и рисуется на System/Detail/Hub.
 - Persistent ship target/track numbers между reconnect/restart; текущие ship short IDs стабильны только в lifetime overlay-state.
 - Authoritative/player-known faction source; `factionColor` seam существует, текущие цвета — presentation defaults.
 - First-class durable `SpaceSectorId` / spatial-domain type вместо negative synthetic ids.
@@ -577,7 +577,7 @@ Local game и dedicated server должны использовать тот же
 12. Persistent identity Phase 1 — **готов как in-memory backbone**: `PlayerId`, `ShipInstanceId`, `ServerSessionId`, `EntityId`, `PlayerRegistry`, `ShipInstanceRegistry`, `ControlRegistry`, session welcome/snapshot identity fields. M8E.2 добавил explicit account sign-in/register поверх этого backbone; durable authoritative universe storage всё ещё отсутствует.
 13. Canonical build/runtime recovery — **закрыт**: runtime paths единичны (`build/EliteGame.exe`, `build/headless_server/EliteServer.exe`), scratch builds изолированы под `build/tests/`, полный MinGW ready gate и ручной reconnect/two-client acceptance зелёные.
 14. Stage M8E.2 explicit authentication/admission — **protocol/auth boundary готов**: AccountHandle server-known, typed rejection/REGISTER/SIGN IN работают; password/recovery/sign-out durability ждут M8E.3b.
-15. Route Plan — **PATCH A/PATCH B закрыты**. PATCH C shared `TrajectoryPredictor` реализован и ждёт полного ready gate: reusable kinematic samples, gravity/proper-acceleration split и G/jerk diagnostics отделены от Route Plan/server/render. После зелёного gate следующий шаг — projected/dashed trajectory presentation и route/intercept solver.
+15. Route Plan — **PATCH A/PATCH B закрыты**. PATCH C shared `TrajectoryPredictor` реализован: reusable kinematic samples, gravity/proper-acceleration split и G/jerk diagnostics отделены от Route Plan/server/render. Текущий vertical slice использует эти контракты для request-driven docking guidance с map planned-path + cockpit GuidanceTunnel; после его live-валидации идут swept-volume/local avoidance, затем общий route/intercept solver.
 16. **M8E.3 durable authoritative universe persistence остаётся незакрытым server/world фундаментом и кодом ещё не начат.** Он не блокирует client-side ownership cleanup/predictor prototype, но должен быть завершён до того, как durable autopilot/orders, offline ship continuity и cross-restart route/formation state будут считаться production-механикой.
 
 ---
@@ -635,6 +635,23 @@ Local game и dedicated server должны использовать тот же
   short-lived planning snapshot is built, and accepted local corridors are
   republished about every 0.2 s. Known blocking diagnostic modules participate
   as moving conservative obstacles.
-- `[ ]` **Next:** long-range RouteSolver over official lanes/schedules and a
-  closed-loop `TrajectoryFollower`; then real radar/transponder/beacon fusion and
-  server planning-query/ATC corridor transport plug into the existing contracts.
+- `[~]` **Current docking-guidance slice:** `CALCULATE ROUTE` is being connected
+  to the real rolling local planner rather than the hard-wired Motion Lab gate.
+  Docking guidance is explicitly 6-DOF/advisory: the terminal trajectory enters
+  along the inward normal of the moving dock plane, ship top/belly is aligned to
+  dock up/down, and `VehicleGuidanceEnvelope` supplies real hull dimensions for
+  conservative safety. A blocked primary docking solution attempts a validated
+  `EmergencyEscape` tunnel with flashing `NO SAFE GUIDANCE SOLUTION`; the typed
+  docking intent remains active and automatically resumes when rolling replanning
+  finds the dock safe again. Presentation wiring now makes the active corridor
+  visible in both places required for live validation: System/Detail/Hub maps
+  draw a dashed Bezier-smoothed planned path through the planner samples, while
+  Flight HUD renders the existing 6-DOF GuidanceTunnel. Authored dock openings
+  are directly clickable before parent-module selection, and closing the active
+  dock information card cancels its docking request/corridor/tracking marker.
+  No `TrajectoryFollower`/autopilot is connected.
+- `[ ]` **Next after live validation:** oriented/swept-volume collision checking
+  beyond the first conservative vehicle sphere, richer local avoidance, then
+  long-range RouteSolver + real radar/transponder/beacon fusion/server ATC seams.
+  `TrajectoryFollower` stays deferred until the displayed docking trajectory and
+  GuidanceTunnel are accepted.

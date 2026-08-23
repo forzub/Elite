@@ -78,7 +78,71 @@ try:
         "HubSemanticAnchorKind",
         "DockingPort",
         "AttackPoint",
+        "DockOrientationPolicy",
+        "Upright",
         "resolveHubSemanticAnchor",
+    )
+    require(
+        "src/game/navigation/DockingCompatibility.h",
+        "ShipDockingEnvelope",
+        "DockingPortRuntimeState",
+        "evaluateDockingCompatibility",
+        "result.routeAvailable",
+        "result.geometryFits",
+        "result.free",
+        "result.accessAllowed",
+        "result.operational",
+    )
+    require(
+        "src/game/navigation/DockingRouteRequest.h",
+        "DockingRouteRequestState",
+        "NavigationRouteAnchorKind::SemanticAnchor",
+    )
+    require(
+        "src/game/client/ClientHubMapBridge.h",
+        "source.hubAttachment.moduleId",
+    )
+    require(
+        "src/game/system_map/LocalMapPresentationBuilder.cpp",
+        'item.objectId = "hub-module:" + object.stableId',
+        "MapObjectInfoKind::Infrastructure",
+        "item.pickPriority = 20",
+        "item.pointerInteractive = false",
+    )
+    require(
+        "src/game/system_map/MapObjectOverlay.h",
+        "primaryPressStarted",
+        "if (m_activeObjectId == objectId)",
+    )
+    require(
+        "src/game/system_map/SystemMapRenderer.cpp",
+        "decorateHubDockingOverlay",
+        "MapObjectInfoKind::DockingPort",
+        'calculate.key = "calculate_docking_route"',
+        "calculate.enabled = compatibility.routeAvailable",
+        "item.pickPriority = 200",
+        "pickHubInfrastructureBody",
+        "hubInfrastructureBodyHitDepth",
+        "actual assembly",
+        "rememberInfrastructure",
+        "rememberSemanticAnchor",
+        "dockingRouteRequests().request",
+    )
+    require(
+        "src/assets/data/navigation/hub_docking_runtime_test.json",
+        '"occupancy": "occupied"',
+        '"access": "denied"',
+        '"access": "allowed"',
+    )
+    require(
+        "src/assets/models/hub/guidance_test/guidance_dock_cube.obj",
+        "Front lower docking apron",
+        "Rear lower docking apron",
+    )
+    require(
+        "src/assets/models/hub/guidance_test/guidance_dock_cylinder.obj",
+        "Front lower docking apron",
+        "Rear lower docking apron",
     )
     require(
         "src/game/navigation/GalacticReferenceFrame.cpp",

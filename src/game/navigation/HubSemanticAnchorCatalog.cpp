@@ -11,6 +11,14 @@ namespace
 {
 using json = nlohmann::json;
 
+DockOrientationPolicy parseOrientationPolicy(const std::string& value)
+{
+    if (value == "upright") return DockOrientationPolicy::Upright;
+    if (value == "inverted") return DockOrientationPolicy::Inverted;
+    if (value == "custom") return DockOrientationPolicy::Custom;
+    return DockOrientationPolicy::FreeRoll;
+}
+
 HubSemanticAnchorKind parseKind(const std::string& value)
 {
     if (value == "docking_port") return HubSemanticAnchorKind::DockingPort;
@@ -92,7 +100,11 @@ bool HubSemanticAnchorCatalog::load(const std::string& path)
             HubSemanticAnchorDefinition anchor;
             anchor.id = item.value("id", "");
             anchor.hubModuleId = moduleId;
+            anchor.displayName = item.value("display_name", anchor.id);
             anchor.kind = parseKind(item.value("kind", "navigation_reference"));
+            anchor.orientationPolicy = parseOrientationPolicy(
+                item.value("orientation_policy", "free_roll")
+            );
             anchor.localPositionMeters = readVec3(
                 item,
                 "local_position_m",

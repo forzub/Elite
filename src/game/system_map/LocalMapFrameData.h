@@ -32,6 +32,7 @@ struct HubMapPickable
     glm::dvec3 localCenterMeters {0.0};
     glm::dvec2 screenCenterPx {0.0};
     double screenRadiusPx = 16.0;
+    std::vector<glm::dvec2> hitPolygonPx;
     int priority = 0;
     std::string label;
 };

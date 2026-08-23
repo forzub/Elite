@@ -14,6 +14,7 @@ namespace game::system_map
 namespace
 {
 
+
 double detailSpatialCameraDistanceMeters(
     const world::celestial::DetailMapSnapshot& snapshot
 )
@@ -683,6 +684,53 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
         presentation.frame.objectOverlay.items.push_back(std::move(hubItem));
     }
 
+    // Hub infrastructure remains rendered by the geometry pass, but it also
+    // participates in the shared overlay interaction/card system.  The
+    // presentation id is namespaced while semanticTargetId keeps the durable
+    // authored hub-module identity.
+    for (const auto& object : snapshot.scene.objects)
+    {
+        if (!object.valid ||
+            object.objectClass != world::celestial::DetailObjectClass::Hub)
+        {
+            continue;
+        }
+
+        MapObjectOverlayItem item;
+        item.objectId = "hub-module:" + object.stableId;
+        item.semanticTargetId = object.stableId;
+        item.trackingSystemId = presentation.systemId;
+        item.name = object.name;
+        item.typeName = localObjectTypeName(object);
+        item.kind = MapObjectGlyphKind::Infrastructure;
+        item.infoKind = MapObjectInfoKind::Infrastructure;
+        item.navigationHubId = snapshot.hubId;
+        item.navigationHubParentBodyId = snapshot.parentBodyId;
+        item.trackingWorldPosition =
+            world::coordinates::makeWorldPositionFromMeters(
+                hubLocalToWorldMeters(snapshot, object.positionMeters)
+            );
+        item.hasTrackingWorldPosition = true;
+        item.factionColor = localObjectColor(object);
+        item.screenPx = presentation.camera.project(object.positionMeters);
+        item.visible = visibleInViewport(item.screenPx, viewport);
+        item.physicalSizeMeters = localObjectPhysicalSizeMeters(object);
+        item.glyphScale = mapObjectGlyphScale(
+            item.physicalSizeMeters,
+            finalScale
+        );
+        // Infrastructure body selection is resolved against the actual CPU
+        // assembly mesh on the pointer press.  Keeping the broad glyph radius
+        // here would make empty space around long/concave modules clickable.
+        item.hitRadiusPx = 0.0;
+        item.pickPriority = 20;
+        // The real module mesh is already visible underneath; overlay draws
+        // only the active-selection ring and information card.
+        item.drawGlyph = false;
+        item.pointerInteractive = false;
+        presentation.frame.objectOverlay.items.push_back(std::move(item));
+    }
+
     for (const auto& object : snapshot.scene.objects)
     {
         if (!object.valid ||
@@ -745,11 +793,8 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
         presentation.frame.objectOverlay.items.push_back(std::move(item));
     }
 
-    const auto addPickable =
-        [&](
-            const world::celestial::LocalSceneObject& object,
-            bool ship
-        )
+    const auto addShipPickable =
+        [&](const world::celestial::LocalSceneObject& object)
         {
             HubMapPickable pickable;
             pickable.localCenterMeters = object.positionMeters;
@@ -757,63 +802,38 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
                 presentation.camera.project(
                     object.positionMeters
                 );
-            pickable.label = object.name;
 
-            if (!ship)
-            {
-                const double moduleRadiusMeters =
-                    glm::length(object.sizeMeters) * 0.5;
+            const glm::dvec3 visualSize =
+                visualSizeForHubShip(
+                    object,
+                    presentation.scale,
+                    presentation.camera.state.zoom
+                );
 
-                pickable.screenRadiusPx =
-                    std::max(
-                        18.0,
-                        moduleRadiusMeters * finalScale
-                    );
-                pickable.priority = object.prime ? 20 : 10;
-            }
-            else
-            {
-                const glm::dvec3 visualSize =
-                    visualSizeForHubShip(
-                        object,
-                        presentation.scale,
-                        presentation.camera.state.zoom
-                    );
-
-                pickable.screenRadiusPx =
-                    std::max(
-                        object.player ? 22.0 : 18.0,
-                        glm::length(visualSize) * 0.5 * finalScale
-                    );
-                pickable.priority = object.player ? 100 : 50;
-                pickable.label =
-                    object.player ? m_playerLabel : object.name;
-            }
+            pickable.screenRadiusPx =
+                std::max(
+                    object.player ? 22.0 : 18.0,
+                    glm::length(visualSize) * 0.5 * finalScale
+                );
+            pickable.priority = object.player ? 100 : 50;
+            pickable.label =
+                object.player ? m_playerLabel : object.name;
 
             presentation.frame.pickables.push_back(
                 std::move(pickable)
             );
         };
 
-    // Preserve the old render-path insertion order exactly: modules first,
-    // ships second. This keeps equal-score picking deterministic.
-    for (const auto& object : snapshot.scene.objects)
-    {
-        if (object.valid &&
-            object.objectClass ==
-                world::celestial::DetailObjectClass::Hub)
-        {
-            addPickable(object, false);
-        }
-    }
-
+    // Infrastructure is selected by exact mesh-body hit testing in the Hub
+    // interaction layer, not by an orbit-pivot proxy. Ships alone retain the
+    // legacy orbit-pivot affordance.
     for (const auto& object : snapshot.scene.objects)
     {
         if (object.valid &&
             object.objectClass ==
                 world::celestial::DetailObjectClass::Ship)
         {
-            addPickable(object, true);
+            addShipPickable(object);
         }
     }
 

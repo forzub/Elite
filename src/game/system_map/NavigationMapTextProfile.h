@@ -32,6 +32,30 @@ struct NavigationMapTextProfile
     std::string intermediateTarget;
     std::string navigationPoint;
 
+    std::string dockingPorts;
+    std::string dockOpening;
+    std::string shipEnvelope;
+    std::string dockFit;
+    std::string dockStatus;
+    std::string dockAccess;
+    std::string dockOperational;
+    std::string dockClearance;
+    std::string dockMaxEntrySpeed;
+    std::string calculateRoute;
+
+    std::string statusAvailable;
+    std::string statusUnavailable;
+    std::string statusFree;
+    std::string statusOccupied;
+    std::string statusReserved;
+    std::string statusAllowed;
+    std::string statusDenied;
+    std::string statusClearanceRequired;
+    std::string statusOnline;
+    std::string statusOffline;
+    std::string statusDamaged;
+    std::string statusUnknown;
+
     std::string routeTitle;
     std::string showOnHud;
     std::string start;

@@ -18,6 +18,8 @@
 #include "src/game/navigation/NavigationAddressFormatter.h"
 #include "src/render/ShaderLibrary.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
+#include "src/game/ship/ShipDescriptorRegistry.h"
+#include "src/game/navigation/DockingCompatibility.h"
 #include "src/world/modules/ObjectAssemblyTransformUtils.h"
 #include "src/debug/DebugSettings.h"
 
@@ -72,6 +74,244 @@ namespace
 
 
 
+
+
+    bool lineTriangleIntersection(
+        const glm::dvec3& lineOrigin,
+        const glm::dvec3& lineDirection,
+        const glm::dvec3& a,
+        const glm::dvec3& b,
+        const glm::dvec3& c,
+        double& outT
+    )
+    {
+        constexpr double epsilon = 1.0e-9;
+        const glm::dvec3 edge1 = b - a;
+        const glm::dvec3 edge2 = c - a;
+        const glm::dvec3 p = glm::cross(lineDirection, edge2);
+        const double det = glm::dot(edge1, p);
+        if (std::abs(det) <= epsilon)
+            return false;
+
+        const double invDet = 1.0 / det;
+        const glm::dvec3 tvec = lineOrigin - a;
+        const double u = glm::dot(tvec, p) * invDet;
+        if (u < -epsilon || u > 1.0 + epsilon)
+            return false;
+
+        const glm::dvec3 q = glm::cross(tvec, edge1);
+        const double v = glm::dot(lineDirection, q) * invDet;
+        if (v < -epsilon || u + v > 1.0 + epsilon)
+            return false;
+
+        outT = glm::dot(edge2, q) * invDet;
+        return true;
+    }
+
+    glm::dvec3 objectMeshPointToHub(
+        const world::celestial::LocalSceneObject& object,
+        const glm::mat4& meshToObject,
+        const glm::vec3& meshPoint
+    )
+    {
+        const glm::vec4 objectPoint4 =
+            meshToObject * glm::vec4(meshPoint, 1.0f);
+        const glm::dvec3 objectPoint(objectPoint4);
+        return object.positionMeters +
+            object.axes.x * objectPoint.x +
+            object.axes.y * objectPoint.y +
+            object.axes.z * objectPoint.z;
+    }
+
+    bool hubMeshBodyHitDepth(
+        const game::system_map::HubMapCameraSnapshot& camera,
+        const world::celestial::LocalSceneObject& object,
+        const game::ship::geometry::MeshData& mesh,
+        const glm::mat4& meshToObject,
+        const glm::dvec3& lineOrigin,
+        const glm::dvec3& lineDirection,
+        double& ioNearestCameraDepth
+    )
+    {
+        bool hit = false;
+        for (const auto& triangle : mesh.triangles)
+        {
+            if (triangle.v0 < 0 || triangle.v1 < 0 || triangle.v2 < 0 ||
+                triangle.v0 >= static_cast<int>(mesh.vertices.size()) ||
+                triangle.v1 >= static_cast<int>(mesh.vertices.size()) ||
+                triangle.v2 >= static_cast<int>(mesh.vertices.size()))
+            {
+                continue;
+            }
+
+            const glm::dvec3 a = objectMeshPointToHub(
+                object,
+                meshToObject,
+                mesh.vertices[triangle.v0].position
+            );
+            const glm::dvec3 b = objectMeshPointToHub(
+                object,
+                meshToObject,
+                mesh.vertices[triangle.v1].position
+            );
+            const glm::dvec3 c = objectMeshPointToHub(
+                object,
+                meshToObject,
+                mesh.vertices[triangle.v2].position
+            );
+
+            double t = 0.0;
+            if (!lineTriangleIntersection(
+                    lineOrigin,
+                    lineDirection,
+                    a,
+                    b,
+                    c,
+                    t))
+            {
+                continue;
+            }
+
+            const glm::dvec3 hitPoint = lineOrigin + lineDirection * t;
+            const double cameraDepth = camera.pointToCamera(hitPoint).z;
+            ioNearestCameraDepth = std::max(
+                ioNearestCameraDepth,
+                cameraDepth
+            );
+            hit = true;
+        }
+        return hit;
+    }
+
+    bool hubInfrastructureBodyHitDepth(
+        const game::system_map::HubMapCameraSnapshot& camera,
+        const world::celestial::LocalSceneObject& object,
+        const glm::dvec2& mousePx,
+        double& outNearestCameraDepth
+    )
+    {
+        using game::ship::geometry::AssemblyMeshLibrary;
+
+        if (!object.valid ||
+            object.objectClass != world::celestial::DetailObjectClass::Hub ||
+            object.typeId == ObjectType::None ||
+            !AssemblyMeshLibrary::has(object.typeId))
+        {
+            return false;
+        }
+
+        // Cheap broad phase only. It never authorizes selection; the final
+        // answer always comes from triangle intersections with the same CPU
+        // mesh definition used by the Hub geometry pass.
+        const double finalScale = camera.scale * camera.state.zoom;
+        const double broadRadiusPx =
+            glm::length(object.sizeMeters) * 0.5 * finalScale + 4.0;
+        if (glm::length(mousePx - camera.project(object.positionMeters)) >
+            broadRadiusPx)
+        {
+            return false;
+        }
+
+        glm::dvec3 lineDirection =
+            camera.vectorFromCamera(glm::dvec3(0.0, 0.0, 1.0));
+        const double directionLength = glm::length(lineDirection);
+        if (directionLength <= 1.0e-12)
+            return false;
+        lineDirection /= directionLength;
+        const glm::dvec3 lineOrigin = camera.unprojectPlane(mousePx);
+
+        const auto& assembly = AssemblyMeshLibrary::get(object.typeId);
+        double nearestDepth = -std::numeric_limits<double>::infinity();
+        bool hit = false;
+
+        if (assembly.hasWholeShipProxy &&
+            !assembly.wholeShipProxyMesh.triangles.empty())
+        {
+            hit = hubMeshBodyHitDepth(
+                camera,
+                object,
+                assembly.wholeShipProxyMesh,
+                glm::mat4(1.0f),
+                lineOrigin,
+                lineDirection,
+                nearestDepth
+            );
+        }
+        else
+        {
+            for (const auto& module : assembly.modules)
+            {
+                const glm::mat4 moduleToObject =
+                    world::modules::
+                        buildAssemblyModuleStaticHierarchicalLocalModel(
+                            assembly,
+                            module.id
+                        );
+
+                for (const auto& part : module.meshes)
+                {
+                    const auto& mesh = !part.lod1Mesh.triangles.empty()
+                        ? part.lod1Mesh
+                        : part.lod0Mesh;
+                    if (mesh.triangles.empty())
+                        continue;
+
+                    const glm::mat4 partToModule =
+                        glm::translate(
+                            glm::mat4(1.0f),
+                            part.localOffset
+                        );
+
+                    hit = hubMeshBodyHitDepth(
+                        camera,
+                        object,
+                        mesh,
+                        moduleToObject * partToModule,
+                        lineOrigin,
+                        lineDirection,
+                        nearestDepth
+                    ) || hit;
+                }
+            }
+        }
+
+        if (hit)
+            outNearestCameraDepth = nearestDepth;
+        return hit;
+    }
+
+    const world::celestial::LocalSceneObject* pickHubInfrastructureBody(
+        const game::system_map::HubMapCameraSnapshot& camera,
+        const world::celestial::HubMapSnapshot& hub,
+        const glm::dvec2& mousePx
+    )
+    {
+        const world::celestial::LocalSceneObject* best = nullptr;
+        double bestDepth = -std::numeric_limits<double>::infinity();
+
+        for (const auto& object : hub.scene.objects)
+        {
+            double depth = -std::numeric_limits<double>::infinity();
+            if (!hubInfrastructureBodyHitDepth(
+                    camera,
+                    object,
+                    mousePx,
+                    depth))
+            {
+                continue;
+            }
+
+            if (!best || depth > bestDepth + 1.0e-6 ||
+                (std::abs(depth - bestDepth) <= 1.0e-6 &&
+                 object.stableId < best->stableId))
+            {
+                best = &object;
+                bestDepth = depth;
+            }
+        }
+
+        return best;
+    }
 
     std::string fmt2(double v)
     {
@@ -1914,6 +2154,7 @@ void SystemMapRenderer::render(
                     viewport,
                     hub
                 );
+            decorateHubDockingOverlay(hub);
 
             m_hubFrameDirty = false;
         }
@@ -2149,6 +2390,14 @@ game::navigation::RouteTargetRef routeTargetRefForOverlayItem(
         return target;
     }
 
+    if (item.infoKind == game::system_map::MapObjectInfoKind::DockingPort)
+    {
+        target.kind = Anchor::SemanticAnchor;
+        target.stableObjectId = item.semanticTargetId;
+        target.semanticAnchorId = item.semanticAnchorId;
+        return target;
+    }
+
     if (item.kind == game::system_map::MapObjectGlyphKind::Ship)
     {
         target.kind = Anchor::Ship;
@@ -2166,13 +2415,445 @@ game::navigation::RouteTargetRef routeTargetRefForOverlayItem(
     }
 
     target.kind = Anchor::Infrastructure;
-    // Runtime EntityId-backed object ids are presentation handles, not durable
-    // route identity. Fail closed until the object has a stable domain id.
-    if (item.objectId.rfind("entity:", 0) != 0)
+    // Hub-map infrastructure uses a namespaced presentation id while
+    // semanticTargetId carries the durable authored module identity.
+    if (!item.semanticTargetId.empty())
+        target.stableObjectId = item.semanticTargetId;
+    else if (item.objectId.rfind("entity:", 0) != 0)
         target.stableObjectId = item.objectId;
     return target;
 }
 }
+
+namespace
+{
+constexpr const char* HubModuleOverlayPrefix = "hub-module:";
+constexpr const char* HubDockOverlayPrefix = "hub-dock:";
+
+std::string hubDockOverlayId(
+    const std::string& moduleId,
+    const std::string& anchorId
+)
+{
+    return std::string(HubDockOverlayPrefix) + moduleId + "/" + anchorId;
+}
+
+bool parseHubDockOverlayId(
+    const std::string& objectId,
+    std::string& moduleId,
+    std::string& anchorId
+)
+{
+    if (objectId.rfind(HubDockOverlayPrefix, 0) != 0)
+        return false;
+
+    const std::string rest = objectId.substr(
+        std::char_traits<char>::length(HubDockOverlayPrefix)
+    );
+    const auto separator = rest.find('/');
+    if (separator == std::string::npos ||
+        separator == 0 ||
+        separator + 1 >= rest.size())
+    {
+        return false;
+    }
+
+    moduleId = rest.substr(0, separator);
+    anchorId = rest.substr(separator + 1);
+    return true;
+}
+
+std::string formatDockPair(double a, double b)
+{
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(0) << a << " × " << b;
+    return out.str();
+}
+
+std::string formatDockScalar(double value, int precision = 0)
+{
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(precision) << value;
+    return out.str();
+}
+
+glm::dvec3 hubLocalToWorldMetersForOverlay(
+    const world::celestial::HubMapSnapshot& hub,
+    const glm::dvec3& localMeters
+)
+{
+    return hub.hubWorldPositionMeters +
+        hub.hubWorldAxes.x * localMeters.x +
+        hub.hubWorldAxes.y * localMeters.y +
+        hub.hubWorldAxes.z * localMeters.z;
+}
+
+const world::celestial::LocalSceneObject* findHubModule(
+    const world::celestial::HubMapSnapshot& hub,
+    const std::string& moduleId
+)
+{
+    const auto found = std::find_if(
+        hub.scene.objects.begin(),
+        hub.scene.objects.end(),
+        [&](const world::celestial::LocalSceneObject& object)
+        {
+            return object.valid &&
+                   object.objectClass ==
+                       world::celestial::DetailObjectClass::Hub &&
+                   object.stableId == moduleId;
+        }
+    );
+    return found == hub.scene.objects.end() ? nullptr : &*found;
+}
+
+} // namespace
+
+void SystemMapRenderer::decorateHubDockingOverlay(
+    const world::celestial::HubMapSnapshot& hub
+)
+{
+    if (!hub.valid || !m_hubSemanticAnchors)
+        return;
+
+    auto& frame = m_hubPresentation.frame.objectOverlay;
+
+    // Module cards expose how many authored docking ports they own.  The
+    // module itself remains selectable even when it has zero ports.
+    for (auto& item : frame.items)
+    {
+        if (item.infoKind != game::system_map::MapObjectInfoKind::Infrastructure ||
+            item.semanticTargetId.empty())
+        {
+            continue;
+        }
+
+        int dockingPortCount = 0;
+        for (const auto& anchor :
+             m_hubSemanticAnchors->anchorsForModule(item.semanticTargetId))
+        {
+            if (anchor.enabled &&
+                anchor.kind == game::navigation::HubSemanticAnchorKind::DockingPort)
+            {
+                ++dockingPortCount;
+            }
+        }
+
+        game::system_map::MapObjectInfoField docks;
+        docks.labelKey = "docking_ports";
+        docks.value = std::to_string(dockingPortCount);
+        item.extraFields.push_back(std::move(docks));
+    }
+
+    std::string selectedModuleId;
+    const std::string activeId = m_objectOverlayState.activeObjectId();
+    if (activeId.rfind(HubModuleOverlayPrefix, 0) == 0)
+    {
+        selectedModuleId = activeId.substr(
+            std::char_traits<char>::length(HubModuleOverlayPrefix)
+        );
+    }
+    else
+    {
+        std::string anchorId;
+        parseHubDockOverlayId(activeId, selectedModuleId, anchorId);
+    }
+
+    if (selectedModuleId.empty())
+        return;
+
+    const auto* module = findHubModule(hub, selectedModuleId);
+    if (!module)
+        return;
+
+    // Resolve the local player's logical docking envelope once per ship type.
+    // LogicalDimensions are defined in the canonical ship basis:
+    // width=left/right, height=belly/top, length=nose/tail.
+    for (const auto& object : hub.scene.objects)
+    {
+        if (!object.valid ||
+            object.objectClass != world::celestial::DetailObjectClass::Ship ||
+            !object.player)
+        {
+            continue;
+        }
+
+        if (object.typeId != m_cachedDockingEnvelopeShipType)
+        {
+            m_cachedDockingEnvelopeShipType = object.typeId;
+            m_cachedDockingEnvelope = {};
+            try
+            {
+                const auto& descriptor = ShipDescriptorRegistry::get(object.typeId);
+                const auto& dimensions = descriptor.logicalDimensions();
+                if (dimensions.enabled)
+                {
+                    m_cachedDockingEnvelope.lengthMeters = dimensions.length;
+                    m_cachedDockingEnvelope.widthMeters = dimensions.width;
+                    m_cachedDockingEnvelope.heightMeters = dimensions.height;
+                    m_cachedDockingEnvelope.valid =
+                        dimensions.length > 0.0f &&
+                        dimensions.width > 0.0f &&
+                        dimensions.height > 0.0f;
+                }
+            }
+            catch (...)
+            {
+                m_cachedDockingEnvelope = {};
+            }
+        }
+        break;
+    }
+
+    const glm::dmat3 moduleBasis(
+        module->axes.x,
+        module->axes.y,
+        module->axes.z
+    );
+    const double finalScale =
+        m_hubPresentation.scale * m_hubPresentation.camera.state.zoom;
+
+    const glm::vec4 good(0.42f, 1.00f, 0.58f, 1.00f);
+    const glm::vec4 warn(1.00f, 0.78f, 0.30f, 1.00f);
+    const glm::vec4 bad(1.00f, 0.34f, 0.30f, 1.00f);
+
+    const auto runtimeText = [&](game::navigation::DockingOperationalState state)
+    {
+        switch (state)
+        {
+            case game::navigation::DockingOperationalState::Online:
+                return m_navigationMapTextProfile.statusOnline;
+            case game::navigation::DockingOperationalState::Offline:
+                return m_navigationMapTextProfile.statusOffline;
+            case game::navigation::DockingOperationalState::Damaged:
+                return m_navigationMapTextProfile.statusDamaged;
+            case game::navigation::DockingOperationalState::Unknown:
+                return m_navigationMapTextProfile.statusUnknown;
+        }
+        return m_navigationMapTextProfile.statusUnknown;
+    };
+    const auto occupancyText = [&](game::navigation::DockingOccupancyState state)
+    {
+        switch (state)
+        {
+            case game::navigation::DockingOccupancyState::Free:
+                return m_navigationMapTextProfile.statusFree;
+            case game::navigation::DockingOccupancyState::Occupied:
+                return m_navigationMapTextProfile.statusOccupied;
+            case game::navigation::DockingOccupancyState::Reserved:
+                return m_navigationMapTextProfile.statusReserved;
+            case game::navigation::DockingOccupancyState::Unknown:
+                return m_navigationMapTextProfile.statusUnknown;
+        }
+        return m_navigationMapTextProfile.statusUnknown;
+    };
+    const auto accessText = [&](game::navigation::DockingAccessState state)
+    {
+        switch (state)
+        {
+            case game::navigation::DockingAccessState::Allowed:
+                return m_navigationMapTextProfile.statusAllowed;
+            case game::navigation::DockingAccessState::ClearanceRequired:
+                return m_navigationMapTextProfile.statusClearanceRequired;
+            case game::navigation::DockingAccessState::Denied:
+                return m_navigationMapTextProfile.statusDenied;
+            case game::navigation::DockingAccessState::Unknown:
+                return m_navigationMapTextProfile.statusUnknown;
+        }
+        return m_navigationMapTextProfile.statusUnknown;
+    };
+
+    for (const auto& anchor :
+         m_hubSemanticAnchors->anchorsForModule(selectedModuleId))
+    {
+        if (!anchor.enabled ||
+            anchor.kind != game::navigation::HubSemanticAnchorKind::DockingPort)
+        {
+            continue;
+        }
+
+        game::navigation::DockingPortRuntimeState unavailableState;
+        unavailableState.hubModuleId = selectedModuleId;
+        unavailableState.anchorId = anchor.id;
+        const auto* runtime = m_dockingPortRuntimeStates
+            ? m_dockingPortRuntimeStates->find(selectedModuleId, anchor.id)
+            : nullptr;
+        const auto& effectiveRuntime = runtime ? *runtime : unavailableState;
+
+        const auto compatibility = game::navigation::evaluateDockingCompatibility(
+            m_cachedDockingEnvelope,
+            anchor,
+            effectiveRuntime
+        );
+
+        const glm::dvec3 localPosition =
+            module->positionMeters + moduleBasis * anchor.localPositionMeters;
+
+        game::system_map::MapObjectOverlayItem item;
+        item.objectId = hubDockOverlayId(selectedModuleId, anchor.id);
+        item.semanticTargetId = selectedModuleId;
+        item.semanticAnchorId = anchor.id;
+        item.trackingSystemId = hub.systemId;
+        item.name = anchor.displayName.empty() ? anchor.id : anchor.displayName;
+        item.typeName = "Docking port";
+        item.kind = game::system_map::MapObjectGlyphKind::DockingPort;
+        item.infoKind = game::system_map::MapObjectInfoKind::DockingPort;
+        item.navigationHubId = hub.hubId;
+        item.navigationHubParentBodyId = hub.parentBodyId;
+        item.trackingWorldPosition = world::coordinates::makeWorldPositionFromMeters(
+            hubLocalToWorldMetersForOverlay(hub, localPosition)
+        );
+        item.hasTrackingWorldPosition = true;
+        item.factionColor = compatibility.routeAvailable
+            ? glm::vec4(0.42f, 0.96f, 0.72f, 0.94f)
+            : glm::vec4(0.96f, 0.68f, 0.30f, 0.92f);
+        item.screenPx = m_hubPresentation.camera.project(localPosition);
+        const glm::dvec2 hubViewportSize =
+            m_hubPresentation.centerPx * 2.0;
+        item.visible =
+            item.screenPx.x >= -20.0 &&
+            item.screenPx.y >= -20.0 &&
+            item.screenPx.x <= hubViewportSize.x + 20.0 &&
+            item.screenPx.y <= hubViewportSize.y + 20.0;
+        item.physicalSizeMeters = std::max(
+            1.0,
+            std::max(anchor.extentMeters.x, anchor.extentMeters.y)
+        );
+        item.glyphScale = game::system_map::mapObjectGlyphScale(
+            item.physicalSizeMeters,
+            finalScale
+        );
+        item.hitRadiusPx = std::max(
+            15.0,
+            0.5 * item.physicalSizeMeters * finalScale
+        );
+        item.pickPriority = 200;
+        item.pointerInteractive = true;
+        item.drawGlyph = true;
+
+        auto addField = [&](
+            const std::string& key,
+            std::string value,
+            const glm::vec4* color = nullptr,
+            std::string unit = {})
+        {
+            game::system_map::MapObjectInfoField field;
+            field.labelKey = key;
+            field.value = std::move(value);
+            field.unit = std::move(unit);
+            if (color)
+            {
+                field.valueColor = *color;
+                field.hasValueColor = true;
+            }
+            item.extraFields.push_back(std::move(field));
+        };
+
+        addField(
+            "dock_opening",
+            formatDockPair(
+                compatibility.openingWidthMeters,
+                compatibility.openingHeightMeters
+            ),
+            nullptr,
+            "m"
+        );
+        addField(
+            "ship_envelope",
+            m_cachedDockingEnvelope.valid
+                ? formatDockPair(
+                    m_cachedDockingEnvelope.widthMeters,
+                    m_cachedDockingEnvelope.heightMeters
+                  )
+                : "—",
+            nullptr,
+            m_cachedDockingEnvelope.valid ? "m" : ""
+        );
+        addField(
+            "dock_clearance",
+            formatDockScalar(compatibility.requiredClearanceMeters),
+            nullptr,
+            "m"
+        );
+        addField(
+            "dock_fit",
+            compatibility.geometryFits
+                ? m_navigationMapTextProfile.statusAvailable
+                : m_navigationMapTextProfile.statusUnavailable,
+            compatibility.geometryFits ? &good : &bad
+        );
+        addField(
+            "dock_operational",
+            runtimeText(effectiveRuntime.operational),
+            compatibility.operational ? &good : &bad
+        );
+        addField(
+            "dock_status",
+            occupancyText(effectiveRuntime.occupancy),
+            compatibility.free
+                ? &good
+                : effectiveRuntime.occupancy ==
+                    game::navigation::DockingOccupancyState::Reserved
+                    ? &warn
+                    : &bad
+        );
+        addField(
+            "dock_access",
+            accessText(effectiveRuntime.access),
+            compatibility.accessAllowed
+                ? &good
+                : effectiveRuntime.access ==
+                    game::navigation::DockingAccessState::ClearanceRequired
+                    ? &warn
+                    : &bad
+        );
+        addField(
+            "dock_max_entry_speed",
+            formatDockScalar(anchor.maxEntrySpeedMps),
+            nullptr,
+            "m/s"
+        );
+
+        game::system_map::MapObjectPanelAction calculate;
+        calculate.key = "calculate_docking_route";
+        calculate.labelKey = "calculate_route";
+        calculate.enabled = compatibility.routeAvailable;
+        const auto& pending =
+            m_navigationWorkspace.dockingRouteRequests().pending();
+        const auto target = routeTargetRefForOverlayItem(item);
+        calculate.active = pending.valid() &&
+            game::navigation::sameRouteTarget(pending.target, target);
+        item.panelActions.push_back(std::move(calculate));
+
+        frame.items.push_back(std::move(item));
+    }
+}
+
+void SystemMapRenderer::applyDockingAction(
+    const std::string& objectId,
+    const std::string& actionKey
+)
+{
+    if (actionKey != "calculate_docking_route")
+        return;
+
+    const auto* item = currentOverlayItem(objectId);
+    if (!item ||
+        item->infoKind != game::system_map::MapObjectInfoKind::DockingPort)
+    {
+        return;
+    }
+
+    const auto target = routeTargetRefForOverlayItem(*item);
+    if (!target.valid() ||
+        target.kind != game::navigation::NavigationRouteAnchorKind::SemanticAnchor)
+    {
+        return;
+    }
+
+    m_navigationWorkspace.dockingRouteRequests().request(target);
+}
+
 
 void SystemMapRenderer::synchronizeNavigationTracking(
     game::system_map::MapObjectOverlayFrame& frame
@@ -2289,6 +2970,34 @@ void SystemMapRenderer::synchronizeNavigationTracking(
                 item.typeName,
                 item.name,
                 item.trackingWorldPosition,
+                item.factionColor
+            );
+        }
+        else if (
+            item.infoKind == game::system_map::MapObjectInfoKind::Infrastructure &&
+            !item.semanticTargetId.empty())
+        {
+            targets.rememberInfrastructure(
+                item.objectId,
+                item.trackingSystemId,
+                item.semanticTargetId,
+                item.typeName,
+                item.name,
+                item.factionColor
+            );
+        }
+        else if (
+            item.infoKind == game::system_map::MapObjectInfoKind::DockingPort &&
+            !item.semanticTargetId.empty() &&
+            !item.semanticAnchorId.empty())
+        {
+            targets.rememberSemanticAnchor(
+                item.objectId,
+                item.trackingSystemId,
+                item.semanticTargetId,
+                item.semanticAnchorId,
+                item.typeName,
+                item.name,
                 item.factionColor
             );
         }
@@ -3660,6 +4369,7 @@ SystemMapRenderer::handleInput(
                     vp,
                     hub
                 );
+            decorateHubDockingOverlay(hub);
             m_hubFramePrepared = true;
             m_hubFrameDirty = false;
         }
@@ -3688,13 +4398,98 @@ SystemMapRenderer::handleInput(
                 leftDown
             );
 
+        // Hub infrastructure is not selected through a screen-space radius or
+        // convex proxy.  Dock markers/cards get first refusal above; only an
+        // otherwise-unconsumed press is tested against actual assembly
+        // triangles.  Empty space remains available to the orbit gesture.
+        if (m_mode == Mode::Hub &&
+            overlayPointer.primaryPressStarted &&
+            !overlayPointer.consumed)
+        {
+            const glm::dvec2 mousePx(localMx, localMy);
+            const auto* body = pickHubInfrastructureBody(
+                m_hubPresentation.camera,
+                hub,
+                mousePx
+            );
+
+            if (body && !body->stableId.empty())
+            {
+                const std::string objectId =
+                    std::string(HubModuleOverlayPrefix) + body->stableId;
+                const auto item = std::find_if(
+                    objectOverlay.items.begin(),
+                    objectOverlay.items.end(),
+                    [&](const auto& candidate)
+                    {
+                        return candidate.objectId == objectId;
+                    }
+                );
+
+                if (item != objectOverlay.items.end())
+                {
+                    const bool closeCurrent =
+                        m_objectOverlayState.isActive(objectId) &&
+                        m_objectOverlayState.isOpen(objectId);
+                    if (closeCurrent)
+                    {
+                        m_objectOverlayState.close(objectId);
+                    }
+                    else
+                    {
+                        m_objectOverlayState.activate(objectId);
+                        m_objectOverlayState.ensureOpen(
+                            *item,
+                            glm::dvec2(
+                                static_cast<double>(vp.width),
+                                static_cast<double>(vp.height)
+                            )
+                        );
+                    }
+
+                    m_hubFrameDirty = true;
+                    auto& camera = m_hubView.camera();
+                    camera.rotating = false;
+                    camera.panning = false;
+                    camera.lastMouseX = mx;
+                    camera.lastMouseY = my;
+                    m_pendingScrollY = 0.0;
+                    return std::nullopt;
+                }
+            }
+            else if (!m_objectOverlayState.activeObjectId().empty())
+            {
+                // Empty Hub-map press means deselect, but it deliberately does
+                // not consume the pointer: the same press may start rotating
+                // the map. Closing the active card also clears target tracking
+                // on the next reconciliation pass.
+                const std::string activeId =
+                    m_objectOverlayState.activeObjectId();
+                m_objectOverlayState.close(activeId);
+                m_objectOverlayState.clearActive();
+                m_hubFrameDirty = true;
+            }
+        }
+
         if (overlayPointer.consumed)
         {
             if (!overlayPointer.actionObjectId.empty())
-                applyWaypointAction(
-                    overlayPointer.actionObjectId,
-                    overlayPointer.actionKey
-                );
+            {
+                if (overlayPointer.actionKey == "calculate_docking_route")
+                {
+                    applyDockingAction(
+                        overlayPointer.actionObjectId,
+                        overlayPointer.actionKey
+                    );
+                }
+                else
+                {
+                    applyWaypointAction(
+                        overlayPointer.actionObjectId,
+                        overlayPointer.actionKey
+                    );
+                }
+            }
 
             if (m_mode == Mode::Detail &&
                 !overlayPointer.activatedObjectId.empty())
@@ -3721,6 +4516,14 @@ SystemMapRenderer::handleInput(
                 {
                     m_detailView.clearHubSelection();
                 }
+            }
+
+            if (m_mode == Mode::Hub &&
+                (!overlayPointer.closedObjectId.empty() ||
+                 (!overlayPointer.toggledObjectId.empty() &&
+                  m_objectOverlayState.activeObjectId().empty())))
+            {
+                m_hubFrameDirty = true;
             }
 
             auto& camera =

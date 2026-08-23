@@ -29,7 +29,8 @@ enum class NavigationRouteAnchorKind
     CelestialBody,
     Hub,
     Ship,
-    Infrastructure
+    Infrastructure,
+    SemanticAnchor
 };
 
 enum class NavigationRouteMapKind
@@ -77,6 +78,7 @@ struct RouteTargetRef
     int systemId = -1;
     ShipInstanceId shipInstanceId = 0;
     std::string stableObjectId;
+    std::string semanticAnchorId;
     world::coordinates::WorldPosition spatialWorldPosition;
 
     bool valid() const noexcept
@@ -89,6 +91,8 @@ struct RouteTargetRef
             case NavigationRouteAnchorKind::Hub:
             case NavigationRouteAnchorKind::Infrastructure:
                 return !stableObjectId.empty();
+            case NavigationRouteAnchorKind::SemanticAnchor:
+                return !stableObjectId.empty() && !semanticAnchorId.empty();
             case NavigationRouteAnchorKind::FreeSpace:
                 return true;
         }
@@ -128,6 +132,12 @@ inline bool sameRouteTarget(
             return a.systemId == b.systemId &&
                    !a.stableObjectId.empty() &&
                    a.stableObjectId == b.stableObjectId;
+        case NavigationRouteAnchorKind::SemanticAnchor:
+            return a.systemId == b.systemId &&
+                   !a.stableObjectId.empty() &&
+                   a.stableObjectId == b.stableObjectId &&
+                   !a.semanticAnchorId.empty() &&
+                   a.semanticAnchorId == b.semanticAnchorId;
         case NavigationRouteAnchorKind::FreeSpace:
             return sameWorldPosition(
                 a.spatialWorldPosition,

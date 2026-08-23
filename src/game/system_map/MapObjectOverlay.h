@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -12,6 +13,7 @@
 
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/game/identity/ShipInstanceId.h"
+#include "src/game/system_map/ScreenHitTest.h"
 
 namespace game::system_map
 {
@@ -26,14 +28,17 @@ enum class MapObjectGlyphKind
 {
     Ship = 0,
     Hub,
-    Infrastructure
+    Infrastructure,
+    DockingPort
 };
 
 enum class MapObjectInfoKind
 {
     Tactical = 0,
     Celestial,
-    WaypointCandidate
+    WaypointCandidate,
+    Infrastructure,
+    DockingPort
 };
 
 enum class MapTrajectoryKind
@@ -63,6 +68,8 @@ struct MapObjectInfoField
     std::string labelKey;
     std::string value;
     std::string unit;
+    glm::vec4 valueColor {0.0f};
+    bool hasValueColor = false;
 };
 
 struct MapObjectPanelAction
@@ -89,6 +96,7 @@ struct MapObjectOverlayItem
     // Semantic target behind a non-tactical card, for example the System body
     // id represented by a client-only celestial information panel.
     std::string semanticTargetId;
+    std::string semanticAnchorId;
     int trackingSystemId = -1;
     // Local-neighborhood semantic binding for tactical targets.  A ship or
     // infrastructure object may live inside a Hub even though the clicked
@@ -129,6 +137,14 @@ struct MapObjectOverlayItem
     double physicalSizeMeters = 1.0;
     double glyphScale = 1.0;
     double hitRadiusPx = 14.0;
+    // Optional precise screen-space footprint. When present, pointer picking
+    // uses the projected physical footprint instead of the broad circular
+    // glyph radius. This is used by Hub infrastructure whose visual mesh can
+    // be long/thin and must not be selectable from empty surrounding space.
+    std::vector<glm::dvec2> hitPolygonPx;
+    // Semantic subtargets such as docking ports must win over their much
+    // larger parent module when their screen-space hit areas overlap.
+    int pickPriority = 0;
 
     bool visible = false;
     bool drawGlyph = true;
@@ -144,6 +160,9 @@ struct MapObjectOverlayFrame
 struct MapObjectOverlayPointerResult
 {
     bool consumed = false;
+    // True only on the press edge inside the map. Hub interaction uses this
+    // to distinguish an empty-space orbit gesture from a held mouse button.
+    bool primaryPressStarted = false;
     // A card/glyph click activates the object independently from whether the
     // information card was just opened or closed. Navigation consumes this
     // as the canonical tactical selection signal.
@@ -362,6 +381,8 @@ public:
     void close(const std::string& objectId)
     {
         m_panels.erase(objectId);
+        if (m_activeObjectId == objectId)
+            m_activeObjectId.clear();
     }
 
     void toggle(
@@ -405,6 +426,8 @@ public:
     )
     {
         MapObjectOverlayPointerResult result;
+        result.primaryPressStarted =
+            inside && leftDown && !m_leftWasDown;
 
         // Panel actions/fields are presentation data and may change while a
         // card stays open (for example when a route FINISH already exists).
@@ -526,6 +549,7 @@ public:
             else
             {
                 const MapObjectOverlayItem* picked = nullptr;
+                int bestPickPriority = std::numeric_limits<int>::min();
                 double bestPhysicalSizeMeters = -1.0;
                 double bestDistance = 1.0e30;
 
@@ -566,15 +590,33 @@ public:
 
                         const double distance =
                             glm::length(mousePx - item.screenPx);
-                        if (distance > item.hitRadiusPx)
+                        const bool preciseHit = !item.hitPolygonPx.empty();
+                        if (preciseHit)
+                        {
+                            if (!screenPointInsideConvexPolygon(
+                                    mousePx,
+                                    item.hitPolygonPx))
+                            {
+                                continue;
+                            }
+                        }
+                        else if (distance > item.hitRadiusPx)
+                        {
                             continue;
+                        }
 
                         const double physicalSizeMeters =
                             std::max(0.0, item.physicalSizeMeters);
+                        const bool higherPriority =
+                            item.pickPriority > bestPickPriority;
+                        const bool samePriority =
+                            item.pickPriority == bestPickPriority;
                         const bool larger =
+                            samePriority &&
                             physicalSizeMeters >
-                            bestPhysicalSizeMeters + 1.0e-6;
+                                bestPhysicalSizeMeters + 1.0e-6;
                         const bool sameSize =
+                            samePriority &&
                             std::abs(
                                 physicalSizeMeters -
                                 bestPhysicalSizeMeters
@@ -587,9 +629,10 @@ public:
                             picked &&
                             item.objectId < picked->objectId;
 
-                        if (!picked || larger || nearer || deterministicTie)
+                        if (!picked || higherPriority || larger || nearer || deterministicTie)
                         {
                             picked = &item;
+                            bestPickPriority = item.pickPriority;
                             bestPhysicalSizeMeters = physicalSizeMeters;
                             bestDistance = distance;
                         }

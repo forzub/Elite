@@ -347,6 +347,7 @@ add_executable(EliteGame
     src/game/navigation/TrajectorySafetyEvaluator.cpp
     src/game/navigation/LocalGuidancePlanner.cpp
     src/game/navigation/HubSemanticAnchorCatalog.cpp
+    src/game/navigation/DockingPortRuntimeStateCatalog.cpp
     src/game/navigation/GalacticReferenceFrame.cpp
     src/game/navigation/CoordinateDisplayService.cpp
     src/game/navigation/PlayerSpatialDomainResolver.cpp

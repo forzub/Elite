@@ -29,6 +29,8 @@
 #include "src/game/navigation/NavigationAddressFormatter.h"
 #include "src/game/navigation/NavigationRegionCatalog.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
+#include "src/game/navigation/HubSemanticAnchorCatalog.h"
+#include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
 
 #include "src/render/celestial/CelestialShapeMesh.h"
 
@@ -97,6 +99,16 @@ public:
         m_galaxyRenderer.setPlayerLabel(profile.player);
         m_hubBackend.setPlayerLabel(profile.player);
         m_localMapPresentationBuilder.setPlayerLabel(profile.player);
+    }
+
+
+    void setHubDockingDataSources(
+        const game::navigation::HubSemanticAnchorCatalog* anchors,
+        const game::navigation::DockingPortRuntimeStateCatalog* runtimeStates
+    ) noexcept
+    {
+        m_hubSemanticAnchors = anchors;
+        m_dockingPortRuntimeStates = runtimeStates;
     }
 
     void setNavigationNamingLocale(const std::string& locale)
@@ -276,6 +288,16 @@ private:
     void refreshSystemWaypointCandidate(
         const Viewport& viewport,
         const world::celestial::SystemMapSnapshot& system
+    );
+
+
+    void decorateHubDockingOverlay(
+        const world::celestial::HubMapSnapshot& hub
+    );
+
+    void applyDockingAction(
+        const std::string& objectId,
+        const std::string& actionKey
     );
 
     void applyWaypointAction(
@@ -665,6 +687,13 @@ private:
     std::string m_navigationNamingFactionId = "sol_authority";
     std::string m_navigationNamingLocale = "ru";
     game::system_map::NavigationMapTextProfile m_navigationMapTextProfile;
+
+    const game::navigation::HubSemanticAnchorCatalog*
+        m_hubSemanticAnchors = nullptr;
+    const game::navigation::DockingPortRuntimeStateCatalog*
+        m_dockingPortRuntimeStates = nullptr;
+    ObjectType m_cachedDockingEnvelopeShipType = ObjectType::None;
+    game::navigation::ShipDockingEnvelope m_cachedDockingEnvelope;
 
 
 

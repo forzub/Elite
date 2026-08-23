@@ -21,11 +21,21 @@ enum class HubSemanticAnchorKind : std::uint8_t
     NavigationReference
 };
 
+enum class DockOrientationPolicy : std::uint8_t
+{
+    FreeRoll = 0,
+    Upright,
+    Inverted,
+    Custom
+};
+
 struct HubSemanticAnchorDefinition
 {
     std::string id;
     std::string hubModuleId;
+    std::string displayName;
     HubSemanticAnchorKind kind = HubSemanticAnchorKind::NavigationReference;
+    DockOrientationPolicy orientationPolicy = DockOrientationPolicy::FreeRoll;
 
     glm::dvec3 localPositionMeters {0.0};
     glm::dvec3 localForward {0.0, 0.0, -1.0};
@@ -46,7 +56,9 @@ struct ResolvedHubSemanticAnchor
 {
     std::string id;
     std::string hubModuleId;
+    std::string displayName;
     HubSemanticAnchorKind kind = HubSemanticAnchorKind::NavigationReference;
+    DockOrientationPolicy orientationPolicy = DockOrientationPolicy::FreeRoll;
 
     int systemId = -1;
     double epochUniverseTimeSeconds = 0.0;
@@ -85,7 +97,9 @@ inline ResolvedHubSemanticAnchor resolveHubSemanticAnchor(
     ResolvedHubSemanticAnchor out;
     out.id = definition.id;
     out.hubModuleId = definition.hubModuleId;
+    out.displayName = definition.displayName;
     out.kind = definition.kind;
+    out.orientationPolicy = definition.orientationPolicy;
     out.systemId = systemId;
     out.epochUniverseTimeSeconds = universeTimeSeconds;
     out.extentMeters = definition.extentMeters;

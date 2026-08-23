@@ -8,6 +8,7 @@
 #include "src/game/system_map/LocalMapFrameData.h"
 #include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/MapCameraState.h"
+#include "src/game/system_map/ScreenHitTest.h"
 
 namespace game::system_map
 {
@@ -105,16 +106,31 @@ public:
         {
             const double distance =
                 glm::length(mousePx - pickable.screenCenterPx);
-            const double pickRadius =
-                std::clamp(
-                    pickable.screenRadiusPx,
-                    m_controls.pivotPickMinimumRadiusPx,
-                    m_controls.pivotPickMaximumRadiusPx
-                );
 
-            if (distance >
-                pickRadius + m_controls.pivotPickMarginPx)
-                continue;
+            if (!pickable.hitPolygonPx.empty())
+            {
+                if (!screenPointInsideConvexPolygon(
+                        mousePx,
+                        pickable.hitPolygonPx))
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                const double pickRadius =
+                    std::clamp(
+                        pickable.screenRadiusPx,
+                        m_controls.pivotPickMinimumRadiusPx,
+                        m_controls.pivotPickMaximumRadiusPx
+                    );
+
+                if (distance >
+                    pickRadius + m_controls.pivotPickMarginPx)
+                {
+                    continue;
+                }
+            }
 
             const double score =
                 distance -

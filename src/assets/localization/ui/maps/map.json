@@ -505,6 +505,160 @@
       "zh-Hans": "导航点",
       "es": "Punto de navegación",
       "ja": "航法ポイント"
+    },
+    "map.object_info.docking_ports": {
+      "en": "Docking ports",
+      "ru": "Доки",
+      "zh-Hans": "对接口",
+      "es": "Puertos de atraque",
+      "ja": "ドッキングポート"
+    },
+    "map.object_info.dock_opening": {
+      "en": "Opening W×H",
+      "ru": "Проём Ш×В",
+      "zh-Hans": "入口宽×高",
+      "es": "Abertura An×Al",
+      "ja": "開口 幅×高"
+    },
+    "map.object_info.ship_envelope": {
+      "en": "Ship W×H",
+      "ru": "Корабль Ш×В",
+      "zh-Hans": "飞船宽×高",
+      "es": "Nave An×Al",
+      "ja": "船体 幅×高"
+    },
+    "map.object_info.dock_fit": {
+      "en": "Dimensions",
+      "ru": "По габаритам",
+      "zh-Hans": "尺寸适配",
+      "es": "Dimensiones",
+      "ja": "寸法適合"
+    },
+    "map.object_info.dock_status": {
+      "en": "Occupancy",
+      "ru": "Занятость",
+      "zh-Hans": "占用状态",
+      "es": "Ocupación",
+      "ja": "使用状態"
+    },
+    "map.object_info.dock_access": {
+      "en": "Access",
+      "ru": "Доступ",
+      "zh-Hans": "权限",
+      "es": "Acceso",
+      "ja": "アクセス"
+    },
+    "map.object_info.dock_operational": {
+      "en": "Operation",
+      "ru": "Состояние",
+      "zh-Hans": "运行状态",
+      "es": "Operación",
+      "ja": "稼働状態"
+    },
+    "map.object_info.dock_clearance": {
+      "en": "Safety clearance",
+      "ru": "Безопасный зазор",
+      "zh-Hans": "安全余量",
+      "es": "Margen de seguridad",
+      "ja": "安全余裕"
+    },
+    "map.object_info.dock_max_entry_speed": {
+      "en": "Max entry speed",
+      "ru": "Макс. скорость входа",
+      "zh-Hans": "最大进入速度",
+      "es": "Vel. máx. de entrada",
+      "ja": "最大進入速度"
+    },
+    "map.object_info.calculate_route": {
+      "en": "CALCULATE ROUTE",
+      "ru": "РАССЧИТАТЬ ПУТЬ",
+      "zh-Hans": "计算航路",
+      "es": "CALCULAR RUTA",
+      "ja": "経路を計算"
+    },
+    "map.status.available": {
+      "en": "AVAILABLE",
+      "ru": "ДОСТУПЕН",
+      "zh-Hans": "可用",
+      "es": "DISPONIBLE",
+      "ja": "利用可能"
+    },
+    "map.status.unavailable": {
+      "en": "UNAVAILABLE",
+      "ru": "НЕ ДОСТУПЕН",
+      "zh-Hans": "不可用",
+      "es": "NO DISPONIBLE",
+      "ja": "利用不可"
+    },
+    "map.status.free": {
+      "en": "FREE",
+      "ru": "СВОБОДЕН",
+      "zh-Hans": "空闲",
+      "es": "LIBRE",
+      "ja": "空き"
+    },
+    "map.status.occupied": {
+      "en": "OCCUPIED",
+      "ru": "ЗАНЯТ",
+      "zh-Hans": "占用",
+      "es": "OCUPADO",
+      "ja": "使用中"
+    },
+    "map.status.reserved": {
+      "en": "RESERVED",
+      "ru": "ЗАРЕЗЕРВИРОВАН",
+      "zh-Hans": "已预留",
+      "es": "RESERVADO",
+      "ja": "予約済み"
+    },
+    "map.status.allowed": {
+      "en": "ALLOWED",
+      "ru": "РАЗРЕШЁН",
+      "zh-Hans": "允许",
+      "es": "PERMITIDO",
+      "ja": "許可"
+    },
+    "map.status.denied": {
+      "en": "DENIED",
+      "ru": "ЗАПРЕЩЁН",
+      "zh-Hans": "禁止",
+      "es": "DENEGADO",
+      "ja": "禁止"
+    },
+    "map.status.clearance_required": {
+      "en": "CLEARANCE REQUIRED",
+      "ru": "НУЖНО РАЗРЕШЕНИЕ",
+      "zh-Hans": "需要许可",
+      "es": "REQUIERE AUTORIZACIÓN",
+      "ja": "許可が必要"
+    },
+    "map.status.online": {
+      "en": "ONLINE",
+      "ru": "РАБОТАЕТ",
+      "zh-Hans": "在线",
+      "es": "OPERATIVO",
+      "ja": "稼働中"
+    },
+    "map.status.offline": {
+      "en": "OFFLINE",
+      "ru": "ОТКЛЮЧЕН",
+      "zh-Hans": "离线",
+      "es": "FUERA DE SERVICIO",
+      "ja": "停止中"
+    },
+    "map.status.damaged": {
+      "en": "DAMAGED",
+      "ru": "ПОВРЕЖДЁН",
+      "zh-Hans": "受损",
+      "es": "DAÑADO",
+      "ja": "損傷"
+    },
+    "map.status.unknown": {
+      "en": "UNKNOWN",
+      "ru": "НЕИЗВЕСТНО",
+      "zh-Hans": "未知",
+      "es": "DESCONOCIDO",
+      "ja": "不明"
     }
   }
 }

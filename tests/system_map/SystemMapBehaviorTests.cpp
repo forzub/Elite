@@ -1322,6 +1322,7 @@ void testLocalPresentationBuilderPreparesDetailAndHub()
     LocalSceneObject module;
     module.valid = true;
     module.objectClass = DetailObjectClass::Hub;
+    module.stableId = "module-prime";
     module.name = "Prime module";
     module.prime = true;
     module.positionMeters = glm::dvec3(300.0, 0.0, 0.0);
@@ -1349,9 +1350,27 @@ void testLocalPresentationBuilderPreparesDetailAndHub()
     REQUIRE(hubPresentation.systemId == 77);
     REQUIRE(hubPresentation.hubId == "hub-alpha");
     REQUIRE(hubPresentation.scale > 0.0);
-    REQUIRE(hubPresentation.frame.pickables.size() == 2);
-    REQUIRE(hubPresentation.frame.pickables[0].priority == 20);
-    REQUIRE(hubPresentation.frame.pickables[1].priority == 100);
+
+    // Hub infrastructure is deliberately absent from the broad screen-space
+    // pivot list. It remains represented in the overlay for cards/selection,
+    // but actual selection is authorized only by exact assembly-mesh hits.
+    REQUIRE(hubPresentation.frame.pickables.size() == 1);
+    REQUIRE(hubPresentation.frame.pickables[0].priority == 100);
+
+    const auto moduleOverlay =
+        std::find_if(
+            hubPresentation.frame.objectOverlay.items.begin(),
+            hubPresentation.frame.objectOverlay.items.end(),
+            [](const auto& item)
+            {
+                return item.objectId == "hub-module:module-prime";
+            }
+        );
+    REQUIRE(moduleOverlay != hubPresentation.frame.objectOverlay.items.end());
+    REQUIRE(moduleOverlay->semanticTargetId == "module-prime");
+    REQUIRE(moduleOverlay->pickPriority == 20);
+    REQUIRE(!moduleOverlay->pointerInteractive);
+    REQUIRE_NEAR(moduleOverlay->hitRadiusPx, 0.0, 1.0e-12);
 }
 
 
@@ -2607,6 +2626,91 @@ void testTacticalOverlayCrowdedPickPrefersLargestObject()
     REQUIRE(!bodyDominatedState.isOpen(smallShip.objectId));
 }
 
+
+void testHubSelectionLifecycleAndDockPriority()
+{
+    const glm::dvec2 viewport(1000.0, 700.0);
+
+    // Infrastructure body picking is performed by the Hub renderer against
+    // actual mesh triangles, so the generic overlay item is deliberately not
+    // pointer-interactive. A semantic dock marker at the same screen position
+    // therefore gets first refusal.
+    MapObjectOverlayItem module;
+    module.objectId = "hub-module:test";
+    module.infoKind = MapObjectInfoKind::Infrastructure;
+    module.screenPx = glm::dvec2(150.0, 150.0);
+    module.hitRadiusPx = 250.0;
+    module.physicalSizeMeters = 900.0;
+    module.pickPriority = 20;
+    module.visible = true;
+    module.pointerInteractive = false;
+
+    MapObjectOverlayItem dock;
+    dock.objectId = "hub-dock:test:front";
+    dock.infoKind = MapObjectInfoKind::DockingPort;
+    dock.screenPx = glm::dvec2(150.0, 150.0);
+    dock.hitRadiusPx = 16.0;
+    dock.physicalSizeMeters = 100.0;
+    dock.pickPriority = 200;
+    dock.visible = true;
+    dock.pointerInteractive = true;
+
+    MapObjectOverlayState state;
+    MapObjectOverlayFrame frame;
+    frame.items.push_back(module);
+    frame.items.push_back(dock);
+
+    const auto selected = state.handlePointer(
+        frame,
+        viewport,
+        glm::dvec2(150.0, 150.0),
+        true,
+        true
+    );
+    REQUIRE(selected.consumed);
+    REQUIRE(selected.primaryPressStarted);
+    REQUIRE(selected.toggledObjectId == dock.objectId);
+    REQUIRE(state.isActive(dock.objectId));
+    REQUIRE(state.isOpen(dock.objectId));
+    REQUIRE(!state.isOpen(module.objectId));
+
+    // Release, then click the selected dock again. Closing a selected card is
+    // also deselection; no active ring/semantic markers may survive it.
+    (void)state.handlePointer(
+        frame,
+        viewport,
+        glm::dvec2(150.0, 150.0),
+        true,
+        false
+    );
+    const auto deselected = state.handlePointer(
+        frame,
+        viewport,
+        glm::dvec2(150.0, 150.0),
+        true,
+        true
+    );
+    REQUIRE(deselected.consumed);
+    REQUIRE(!state.isOpen(dock.objectId));
+    REQUIRE(state.activeObjectId().empty());
+
+    (void)state.handlePointer(
+        frame,
+        viewport,
+        glm::dvec2(150.0, 150.0),
+        true,
+        false
+    );
+    const auto emptyPress = state.handlePointer(
+        frame,
+        viewport,
+        glm::dvec2(500.0, 500.0),
+        true,
+        true
+    );
+    REQUIRE(emptyPress.primaryPressStarted);
+    REQUIRE(!emptyPress.consumed);
+}
 void testPreparedSystemPickingPrefersLargestDirectSemanticObject()
 {
     SystemMapFrameData frame;
@@ -2738,6 +2842,7 @@ int main()
         {"tactical overlay card click reactivates object without toggling card", testTacticalOverlayCardClickReactivatesObjectWithoutTogglingCard},
         {"tactical object selection clears body cube and Hub focus", testTacticalObjectSelectionClearsBodyCubeAndHubFocus},
         {"tactical overlay crowded pick prefers largest object", testTacticalOverlayCrowdedPickPrefersLargestObject},
+        {"Hub exact-body selection lifecycle and dock priority", testHubSelectionLifecycleAndDockPriority},
         {"tactical overlay trajectory seam does not invent samples", testTacticalOverlayTrajectorySeamDoesNotInventSamples},
         {"Hub map allows close tactical inspection", testHubMapAllowsCloseTacticalInspection}
     };

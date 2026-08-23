@@ -34,6 +34,27 @@ struct NavigationTrackedCelestialBody
     glm::vec4 color {0.70f, 0.86f, 1.00f, 0.82f};
 };
 
+struct NavigationTrackedInfrastructure
+{
+    std::string trackingId;
+    int systemId = -1;
+    std::string stableObjectId;
+    std::string typeName;
+    std::string displayName;
+    glm::vec4 color {0.70f, 0.86f, 1.00f, 0.82f};
+};
+
+struct NavigationTrackedSemanticAnchor
+{
+    std::string trackingId;
+    int systemId = -1;
+    std::string hubModuleId;
+    std::string anchorId;
+    std::string typeName;
+    std::string displayName;
+    glm::vec4 color {0.42f, 0.96f, 0.72f, 0.86f};
+};
+
 /*
     Transient client presentation tracking.
 
@@ -53,6 +74,8 @@ public:
         );
         eraseMissing(m_tacticalObjects, open);
         eraseMissing(m_celestialBodies, open);
+        eraseMissing(m_infrastructure, open);
+        eraseMissing(m_semanticAnchors, open);
     }
 
     void rememberTacticalObject(
@@ -109,10 +132,69 @@ public:
         return m_tacticalObjects;
     }
 
+
+    void rememberInfrastructure(
+        std::string trackingId,
+        int systemId,
+        std::string stableObjectId,
+        std::string typeName,
+        std::string displayName,
+        const glm::vec4& color
+    )
+    {
+        if (trackingId.empty() || stableObjectId.empty())
+            return;
+
+        NavigationTrackedInfrastructure tracked;
+        tracked.trackingId = std::move(trackingId);
+        tracked.systemId = systemId;
+        tracked.stableObjectId = std::move(stableObjectId);
+        tracked.typeName = std::move(typeName);
+        tracked.displayName = std::move(displayName);
+        tracked.color = color;
+        m_infrastructure[tracked.trackingId] = std::move(tracked);
+    }
+
+    void rememberSemanticAnchor(
+        std::string trackingId,
+        int systemId,
+        std::string hubModuleId,
+        std::string anchorId,
+        std::string typeName,
+        std::string displayName,
+        const glm::vec4& color
+    )
+    {
+        if (trackingId.empty() || hubModuleId.empty() || anchorId.empty())
+            return;
+
+        NavigationTrackedSemanticAnchor tracked;
+        tracked.trackingId = std::move(trackingId);
+        tracked.systemId = systemId;
+        tracked.hubModuleId = std::move(hubModuleId);
+        tracked.anchorId = std::move(anchorId);
+        tracked.typeName = std::move(typeName);
+        tracked.displayName = std::move(displayName);
+        tracked.color = color;
+        m_semanticAnchors[tracked.trackingId] = std::move(tracked);
+    }
+
     const std::unordered_map<std::string, NavigationTrackedCelestialBody>&
     celestialBodies() const noexcept
     {
         return m_celestialBodies;
+    }
+
+    const std::unordered_map<std::string, NavigationTrackedInfrastructure>&
+    infrastructure() const noexcept
+    {
+        return m_infrastructure;
+    }
+
+    const std::unordered_map<std::string, NavigationTrackedSemanticAnchor>&
+    semanticAnchors() const noexcept
+    {
+        return m_semanticAnchors;
     }
 
 private:
@@ -158,6 +240,10 @@ private:
         m_tacticalObjects;
     std::unordered_map<std::string, NavigationTrackedCelestialBody>
         m_celestialBodies;
+    std::unordered_map<std::string, NavigationTrackedInfrastructure>
+        m_infrastructure;
+    std::unordered_map<std::string, NavigationTrackedSemanticAnchor>
+        m_semanticAnchors;
     std::unordered_map<std::string, int> m_displayIndices;
     int m_nextDisplayIndex = 1;
 };

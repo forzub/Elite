@@ -12,3 +12,9 @@ Both current test bodies use a narrow rectangular docking slot on each end face
 and a through corridor along local Z.  They rotate slowly around that same Z
 axis; the mesh files remain replaceable presentation assets and do not own the
 semantic docking-port definitions.
+
+Each docking opening now has a short platform/apron projecting from its local
+`-Y` edge. This is a deliberately geometric DOWN cue: an upright docking
+approach aligns the ship belly toward that apron. The semantic `local_up` /
+`orientation_policy` remains authoritative; the apron is its visible physical
+expression.

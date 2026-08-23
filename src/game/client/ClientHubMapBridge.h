@@ -302,7 +302,11 @@ inline bool rebuildHubMapFromClientState(
         HubMapModule module;
         module.id = source.id;
         module.typeId = source.type;
-        module.stableId = std::to_string(source.id.value);
+        // Hub attachment moduleId is the durable infrastructure identity.
+        // EntityId is only the current materialized runtime binding.
+        module.stableId = source.hubAttachment.moduleId.empty()
+            ? std::to_string(source.id.value)
+            : source.hubAttachment.moduleId;
         module.name = source.displayName.empty()
             ? "Hub module"
             : source.displayName;

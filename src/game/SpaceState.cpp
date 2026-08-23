@@ -2614,7 +2614,9 @@ m_systemMapRenderer.render(
                         m_navigationWorkspace,
                         m_client->world(),
                         ship,
-                        navVocabulary
+                        navVocabulary,
+                        &m_hubSemanticAnchorCatalog,
+                        m_client->universeTimeSeconds()
                     );
 
                 m_playerView->renderNavigationMarkers(
@@ -5159,6 +5161,28 @@ void SpaceState::applyClientCatalogLocalization()
     mapText.finishTarget = loc.text("map.object_info.finish_target");
     mapText.intermediateTarget = loc.text("map.object_info.intermediate_target");
     mapText.navigationPoint = loc.text("map.object_info.navigation_point");
+    mapText.dockingPorts = loc.text("map.object_info.docking_ports");
+    mapText.dockOpening = loc.text("map.object_info.dock_opening");
+    mapText.shipEnvelope = loc.text("map.object_info.ship_envelope");
+    mapText.dockFit = loc.text("map.object_info.dock_fit");
+    mapText.dockStatus = loc.text("map.object_info.dock_status");
+    mapText.dockAccess = loc.text("map.object_info.dock_access");
+    mapText.dockOperational = loc.text("map.object_info.dock_operational");
+    mapText.dockClearance = loc.text("map.object_info.dock_clearance");
+    mapText.dockMaxEntrySpeed = loc.text("map.object_info.dock_max_entry_speed");
+    mapText.calculateRoute = loc.text("map.object_info.calculate_route");
+    mapText.statusAvailable = loc.text("map.status.available");
+    mapText.statusUnavailable = loc.text("map.status.unavailable");
+    mapText.statusFree = loc.text("map.status.free");
+    mapText.statusOccupied = loc.text("map.status.occupied");
+    mapText.statusReserved = loc.text("map.status.reserved");
+    mapText.statusAllowed = loc.text("map.status.allowed");
+    mapText.statusDenied = loc.text("map.status.denied");
+    mapText.statusClearanceRequired = loc.text("map.status.clearance_required");
+    mapText.statusOnline = loc.text("map.status.online");
+    mapText.statusOffline = loc.text("map.status.offline");
+    mapText.statusDamaged = loc.text("map.status.damaged");
+    mapText.statusUnknown = loc.text("map.status.unknown");
     mapText.routeTitle = loc.text("map.route.title");
     mapText.showOnHud = loc.text("map.route.show_on_hud");
     mapText.start = loc.text("map.route.start");

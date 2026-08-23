@@ -296,6 +296,18 @@ void SpaceState::initHUD()
         );
     }
 
+    if (!m_dockingPortRuntimeStateCatalog.load())
+    {
+        std::cerr
+            << "[Navigation] failed to load diagnostic docking-port state; "
+            << "Hub docking route actions will fail closed\n";
+    }
+
+    m_systemMapRenderer.setHubDockingDataSources(
+        &m_hubSemanticAnchorCatalog,
+        &m_dockingPortRuntimeStateCatalog
+    );
+
     if (!game::navigation::loadGalacticReferenceFrame(
             m_galacticReferenceFrame))
     {

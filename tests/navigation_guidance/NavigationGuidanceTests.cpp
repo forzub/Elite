@@ -7,6 +7,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "src/game/navigation/DockingCompatibility.h"
+#include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
+#include "src/game/navigation/DockingRouteRequest.h"
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/GuidanceCorridor.h"
 #include "src/game/navigation/HubSemanticAnchor.h"
@@ -247,6 +250,96 @@ void testSemanticAnchorIsIndependentFromMesh()
             "rotating semantic gate did not inherit omega cross r velocity");
 }
 
+
+void testDockingCompatibilityGatesRouteAction()
+{
+    HubSemanticAnchorDefinition dock;
+    dock.id = "dock_gate_front";
+    dock.hubModuleId = "guidance_dock_cube_a";
+    dock.kind = HubSemanticAnchorKind::DockingPort;
+    dock.orientationPolicy = DockOrientationPolicy::Upright;
+    dock.extentMeters = glm::dvec3(110.0, 190.0, 900.0);
+    dock.requiredClearanceMeters = 18.0;
+
+    ShipDockingEnvelope cobra;
+    cobra.lengthMeters = 22.2;
+    cobra.widthMeters = 26.0;
+    cobra.heightMeters = 5.0;
+    cobra.valid = true;
+
+    DockingPortRuntimeState state;
+    state.hubModuleId = dock.hubModuleId;
+    state.anchorId = dock.id;
+    state.operational = DockingOperationalState::Online;
+    state.occupancy = DockingOccupancyState::Free;
+    state.access = DockingAccessState::Allowed;
+
+    const auto available = evaluateDockingCompatibility(cobra, dock, state);
+    require(available.geometryFits, "Cobra logical envelope should fit diagnostic dock");
+    require(available.routeAvailable, "green docking state did not enable route availability");
+    require(near(available.usableWidthMeters, 74.0), "dock width clearance was not applied");
+    require(near(available.usableHeightMeters, 154.0), "dock height clearance was not applied");
+
+    state.occupancy = DockingOccupancyState::Occupied;
+    require(!evaluateDockingCompatibility(cobra, dock, state).routeAvailable,
+            "occupied dock still allowed route calculation");
+
+    state.occupancy = DockingOccupancyState::Free;
+    state.access = DockingAccessState::Denied;
+    require(!evaluateDockingCompatibility(cobra, dock, state).routeAvailable,
+            "denied dock still allowed route calculation");
+
+    state.access = DockingAccessState::Allowed;
+    ShipDockingEnvelope tooWide = cobra;
+    tooWide.widthMeters = 90.0;
+    const auto rejected = evaluateDockingCompatibility(tooWide, dock, state);
+    require(!rejected.geometryFits && !rejected.routeAvailable,
+            "oversize ship still allowed docking route");
+}
+
+void testSemanticDockRouteRequestUsesStableIdentity()
+{
+    RouteTargetRef front;
+    front.kind = NavigationRouteAnchorKind::SemanticAnchor;
+    front.systemId = 0;
+    front.stableObjectId = "guidance_dock_cube_a";
+    front.semanticAnchorId = "dock_gate_front";
+
+    RouteTargetRef rear = front;
+    rear.semanticAnchorId = "dock_gate_rear";
+
+    require(front.valid(), "semantic dock target is not valid");
+    require(!sameRouteTarget(front, rear), "two docks on one module collapsed to one route target");
+
+    DockingRouteRequestState requests;
+    const auto serial = requests.request(front);
+    const auto& request = requests.pending();
+    require(serial != 0 && request.valid(), "typed docking route request was not created");
+    require(request.target.stableObjectId == "guidance_dock_cube_a",
+            "docking request lost stable module identity");
+    require(request.target.semanticAnchorId == "dock_gate_front",
+            "docking request lost stable anchor identity");
+}
+
+void testDiagnosticDockRuntimeStatesCoverDecisionCases()
+{
+    DockingPortRuntimeStateCatalog states;
+    require(
+        states.load("src/assets/data/navigation/hub_docking_runtime_test.json"),
+        "diagnostic docking state catalog did not load"
+    );
+
+    const auto* green = states.find("guidance_dock_cube_a", "dock_gate_front");
+    const auto* occupied = states.find("guidance_dock_cube_a", "dock_gate_rear");
+    const auto* denied = states.find("guidance_dock_cylinder_b", "dock_gate_front");
+    require(green && green->operationalNow() && green->freeNow() && green->accessAllowedNow(),
+            "diagnostic catalog lacks free/allowed docking case");
+    require(occupied && !occupied->freeNow(),
+            "diagnostic catalog lacks occupied docking case");
+    require(denied && !denied->accessAllowedNow(),
+            "diagnostic catalog lacks denied docking case");
+}
+
 void testGalacticCompassUsesStandardLBasis()
 {
     const auto frame = makeGalacticReferenceFrame(
@@ -360,6 +453,9 @@ int main()
         {"scheduled traffic is 4D and expires", testScheduledTrafficIsFourDimensionalAndExpires},
         {"scheduled traffic honors intermediate samples", testScheduledTrafficHonorsIntermediateSamples},
         {"semantic anchor is independent from mesh", testSemanticAnchorIsIndependentFromMesh},
+        {"docking compatibility gates route action", testDockingCompatibilityGatesRouteAction},
+        {"semantic dock request uses stable identity", testSemanticDockRouteRequestUsesStableIdentity},
+        {"diagnostic dock runtime decision cases", testDiagnosticDockRuntimeStatesCoverDecisionCases},
         {"galactic compass uses standard l/b basis", testGalacticCompassUsesStandardLBasis},
         {"guidance priority and expiry", testGuidanceStateChoosesPriorityAndExpiry},
         {"local planner uses predictor and safety", testLocalPlannerUsesPredictorAndSafetyEvaluator},

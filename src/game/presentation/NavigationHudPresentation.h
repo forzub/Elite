@@ -11,6 +11,7 @@
 
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/navigation/ClientNavigationWorkspace.h"
+#include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/world/coordinates/WorldPosition.h"
 #include "src/render/HUD/NavigationHudMarker.h"
 
@@ -200,6 +201,80 @@ inline ResolvedTacticalKinematics resolveTacticalKinematics(
     return out;
 }
 
+inline ResolvedTacticalKinematics resolveInfrastructureKinematics(
+    const ClientWorldState& world,
+    int systemId,
+    const std::string& stableObjectId
+)
+{
+    ResolvedTacticalKinematics out;
+    if (stableObjectId.empty())
+        return out;
+
+    for (const auto& [entityId, object] : world.objects())
+    {
+        (void)entityId;
+        if (object.systemId != systemId ||
+            !object.hubAttachment.valid ||
+            object.hubAttachment.moduleId != stableObjectId)
+        {
+            continue;
+        }
+
+        out.worldPosition = object.renderWorldPosition;
+        out.worldVelocityMps = object.linearVelocityMps;
+        out.valid = true;
+        return out;
+    }
+    return out;
+}
+
+inline ResolvedTacticalKinematics resolveSemanticAnchorKinematics(
+    const ClientWorldState& world,
+    const game::navigation::HubSemanticAnchorCatalog* catalog,
+    int systemId,
+    const std::string& hubModuleId,
+    const std::string& anchorId,
+    double universeTimeSeconds
+)
+{
+    ResolvedTacticalKinematics out;
+    if (!catalog || hubModuleId.empty() || anchorId.empty())
+        return out;
+
+    const auto* definition = catalog->find(hubModuleId, anchorId);
+    if (!definition)
+        return out;
+
+    for (const auto& [entityId, object] : world.objects())
+    {
+        (void)entityId;
+        if (object.systemId != systemId ||
+            !object.hubAttachment.valid ||
+            object.hubAttachment.moduleId != hubModuleId)
+        {
+            continue;
+        }
+
+        const auto resolved = game::navigation::resolveHubSemanticAnchor(
+            *definition,
+            systemId,
+            universeTimeSeconds,
+            world::coordinates::fullMeters(object.renderWorldPosition),
+            object.linearVelocityMps,
+            object.renderOrientation,
+            object.angularVelocityWorldRadPerSecond
+        );
+        out.worldPosition = world::coordinates::makeWorldPositionFromMeters(
+            resolved.positionMeters
+        );
+        out.worldVelocityMps = resolved.velocityMps;
+        out.valid = true;
+        return out;
+    }
+    return out;
+}
+
 inline ResolvedTacticalKinematics resolveRouteTargetKinematics(
     const ClientWorldState& world,
     const ClientShipState& player,
@@ -237,13 +312,17 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
     const game::navigation::ClientNavigationWorkspace& navigation,
     const ClientWorldState& world,
     const ClientShipState& player,
-    const NavigationHudVocabulary& vocabulary = NavigationHudVocabulary{}
+    const NavigationHudVocabulary& vocabulary = NavigationHudVocabulary{},
+    const game::navigation::HubSemanticAnchorCatalog* semanticAnchors = nullptr,
+    double universeTimeSeconds = 0.0
 )
 {
     std::vector<NavigationHudMarker> out;
     out.reserve(
         navigation.targets().tacticalObjects().size() +
         navigation.targets().celestialBodies().size() +
+        navigation.targets().infrastructure().size() +
+        navigation.targets().semanticAnchors().size() +
         navigation.routePlan().routeSize() +
         (navigation.routePlan().hasStart() ? 1u : 0u)
     );
@@ -333,6 +412,69 @@ inline std::vector<NavigationHudMarker> buildNavigationHudMarkers(
         marker.displayIndex = 0;
         marker.color = tracked.color;
 
+        if (marker.distanceMeters > 0.01)
+            out.push_back(std::move(marker));
+    }
+
+    if (showTargetMarkers)
+    for (const auto& [id, tracked] : navigation.targets().infrastructure())
+    {
+        const auto resolved = detail::resolveInfrastructureKinematics(
+            world,
+            tracked.systemId,
+            tracked.stableObjectId
+        );
+        if (!resolved.valid)
+            continue;
+
+        NavigationHudMarker marker;
+        marker.stableId = id;
+        marker.shape = NavigationHudMarkerShape::CelestialDiamond;
+        marker.relativePositionMeters = world::coordinates::relativeMeters(
+            resolved.worldPosition,
+            playerPosition
+        );
+        marker.distanceMeters = glm::length(marker.relativePositionMeters);
+        marker.typeText = tracked.typeName.empty()
+            ? vocabulary.objectText
+            : tracked.typeName;
+        marker.nameText = tracked.displayName;
+        marker.speedMode = NavigationHudSpeedMode::None;
+        marker.displayIndex = 0;
+        marker.color = tracked.color;
+        if (marker.distanceMeters > 0.01)
+            out.push_back(std::move(marker));
+    }
+
+    if (showTargetMarkers)
+    for (const auto& [id, tracked] : navigation.targets().semanticAnchors())
+    {
+        const auto resolved = detail::resolveSemanticAnchorKinematics(
+            world,
+            semanticAnchors,
+            tracked.systemId,
+            tracked.hubModuleId,
+            tracked.anchorId,
+            universeTimeSeconds
+        );
+        if (!resolved.valid)
+            continue;
+
+        NavigationHudMarker marker;
+        marker.stableId = id;
+        marker.shape = NavigationHudMarkerShape::WaypointCorners;
+        marker.relativePositionMeters = world::coordinates::relativeMeters(
+            resolved.worldPosition,
+            playerPosition
+        );
+        marker.distanceMeters = glm::length(marker.relativePositionMeters);
+        marker.typeText = tracked.typeName.empty()
+            ? vocabulary.objectText
+            : tracked.typeName;
+        marker.nameText = tracked.displayName;
+        marker.speedMode = NavigationHudSpeedMode::None;
+        marker.displayIndex = 0;
+        marker.color = tracked.color;
         if (marker.distanceMeters > 0.01)
             out.push_back(std::move(marker));
     }

@@ -261,6 +261,36 @@ void drawHubCube(
     }
 }
 
+void drawDockGate(
+    const MapObjectOverlayItem& item
+)
+{
+    const double halfW = 7.0 * item.glyphScale;
+    const double halfH = 10.0 * item.glyphScale;
+    glm::vec4 color = item.factionColor;
+    color.a = std::max(color.a, 0.88f);
+
+    drawRectOutline(
+        item.screenPx - glm::dvec2(halfW, halfH),
+        halfW * 2.0,
+        halfH * 2.0,
+        color,
+        1.5f
+    );
+
+    // Small lower apron repeats the physical dock's unmistakable DOWN cue.
+    const glm::dvec2 apronTopLeft(
+        item.screenPx.x - halfW * 0.72,
+        item.screenPx.y + halfH + 2.0
+    );
+    drawRect(
+        apronTopLeft,
+        halfW * 1.44,
+        2.4 * item.glyphScale,
+        color
+    );
+}
+
 std::vector<std::string> wrapLabelForWidth(
     TextRenderer& textRenderer,
     const std::string& label,
@@ -415,6 +445,16 @@ std::string MapObjectOverlayRenderer::text(
     if (key == "space_target") return textProfile.spaceTarget;
     if (key == "finish_target") return textProfile.finishTarget;
     if (key == "intermediate_target") return textProfile.intermediateTarget;
+    if (key == "docking_ports") return textProfile.dockingPorts;
+    if (key == "dock_opening") return textProfile.dockOpening;
+    if (key == "ship_envelope") return textProfile.shipEnvelope;
+    if (key == "dock_fit") return textProfile.dockFit;
+    if (key == "dock_status") return textProfile.dockStatus;
+    if (key == "dock_access") return textProfile.dockAccess;
+    if (key == "dock_operational") return textProfile.dockOperational;
+    if (key == "dock_clearance") return textProfile.dockClearance;
+    if (key == "dock_max_entry_speed") return textProfile.dockMaxEntrySpeed;
+    if (key == "calculate_route") return textProfile.calculateRoute;
 
     // Internal semantic keys are never intended as user-facing strings. If a
     // producer introduces a new key without extending the profile, show the
@@ -450,21 +490,21 @@ void MapObjectOverlayRenderer::render(
         if (!item.visible)
             continue;
 
+        if (state.isActive(item.objectId))
+            drawActiveObjectRing(item);
+
         if (item.routeDisplayIndex > 0)
         {
-            if (state.isActive(item.objectId))
-                drawActiveObjectRing(item);
             drawRoutePoint(item);
         }
         else if (item.drawGlyph)
         {
-            if (state.isActive(item.objectId))
-                drawActiveObjectRing(item);
-
             if (item.infoKind == MapObjectInfoKind::WaypointCandidate)
                 drawRoutePoint(item);
             else if (item.kind == MapObjectGlyphKind::Hub)
                 drawHubCube(item);
+            else if (item.kind == MapObjectGlyphKind::DockingPort)
+                drawDockGate(item);
             else
                 drawTriangle(item);
         }
@@ -605,7 +645,11 @@ void MapObjectOverlayRenderer::render(
         constexpr float kLabelColumnWidthPx = 96.0f;
         constexpr double kWrappedLineStepPx = 12.0;
         double y = panel.topLeftPx.y + 43.0;
-        auto drawField = [&](const std::string& label, const std::string& value)
+        auto drawField = [&](
+            const std::string& label,
+            const std::string& value,
+            const glm::vec4& valueColor = kPanelText
+        )
         {
             const std::string punctuated = label + ":";
             const auto lines = wrapLabelForWidth(
@@ -634,7 +678,7 @@ void MapObjectOverlayRenderer::render(
                 static_cast<float>(x + kValueColumnOffsetPx),
                 static_cast<float>(valueY),
                 10,
-                kPanelText
+                valueColor
             );
             y += 18.0 +
                 kWrappedLineStepPx *
@@ -660,7 +704,11 @@ void MapObjectOverlayRenderer::render(
             const std::string value = field.unit.empty()
                 ? field.value
                 : field.value + " " + field.unit;
-            drawField(label, value);
+            drawField(
+                label,
+                value,
+                field.hasValueColor ? field.valueColor : kPanelText
+            );
         }
 
         constexpr double actionWidth = MapObjectOverlayState::PanelWidthPx - 16.0;

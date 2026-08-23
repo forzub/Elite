@@ -43,6 +43,7 @@
 #include "src/game/navigation/ClientNavigationWorkspace.h"
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
+#include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
 #include "src/game/navigation/NavigationModuleState.h"
 #include "src/game/system_map/SystemMapRenderer.h"
 #include "src/game/system_map/AuthoritativeMapInterpolator.h"
@@ -288,6 +289,7 @@ private:
     game::navigation::ClientNavigationWorkspace m_navigationWorkspace;
     game::navigation::GalacticReferenceFrame m_galacticReferenceFrame;
     game::navigation::HubSemanticAnchorCatalog m_hubSemanticAnchorCatalog;
+    game::navigation::DockingPortRuntimeStateCatalog m_dockingPortRuntimeStateCatalog;
     double m_guidanceLabReplanAccumulatorSeconds = 0.0;
     SystemMapRenderer m_systemMapRenderer;
     ui::presentation::InSessionPresentationRenderer m_inSessionPresentationRenderer;

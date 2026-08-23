@@ -4,6 +4,7 @@
 
 #include "src/game/navigation/OwnedNavigationAssetState.h"
 #include "src/game/navigation/GuidanceCorridor.h"
+#include "src/game/navigation/DockingRouteRequest.h"
 #include "src/game/navigation/NavigationModuleState.h"
 #include "src/game/navigation/RoutePlan.h"
 #include "src/game/navigation/TargetTrackingState.h"
@@ -35,6 +36,15 @@ public:
     const NavigationGuidanceState& guidance() const noexcept
     {
         return m_guidance;
+    }
+
+    DockingRouteRequestState& dockingRouteRequests() noexcept
+    {
+        return m_dockingRouteRequests;
+    }
+    const DockingRouteRequestState& dockingRouteRequests() const noexcept
+    {
+        return m_dockingRouteRequests;
     }
 
     NavigationModuleState& modules() noexcept { return m_modules; }
@@ -96,6 +106,7 @@ private:
     RoutePlan m_routePlan;
     OwnedNavigationAssetState m_ownedAssets;
     NavigationGuidanceState m_guidance;
+    DockingRouteRequestState m_dockingRouteRequests;
     NavigationModuleState m_modules;
     NavigationAssetRef m_localControlledAsset;
 };

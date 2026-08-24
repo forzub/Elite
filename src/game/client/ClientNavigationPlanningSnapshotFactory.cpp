@@ -6,12 +6,14 @@
 #include "src/game/client/ClientWorldState.h"
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/world/coordinates/WorldPosition.h"
+#include "src/world/navigation/NavigationObstacleFactory.h"
 
 namespace game::client
 {
 namespace
 {
 constexpr double CoordinateRoundTripToleranceMeters = 1.0e-3;
+constexpr double DiagnosticHubInfrastructureClearanceMeters = 80.0;
 
 bool finiteVec(const glm::dvec3& value) noexcept
 {
@@ -321,6 +323,41 @@ ClientNavigationPlanningSnapshotFactory::buildPredictedHubSnapshot(
         out.status =
             ClientNavigationPlanningSnapshotStatus::TargetModulePredictionFailed;
         return out;
+    }
+
+    // Build route geometry from the same predicted object poses. Geometry
+    // construction is shared with future server-side planning; SpaceState must
+    // never invent per-object collision radii.
+    out.navigationObstacles.clear();
+    for (const auto& object : out.objects)
+    {
+        if (object.systemId != requestedSystemId)
+            continue;
+
+        const std::string obstacleId =
+            "object:" + std::to_string(object.id.value);
+        const auto obstacle =
+            world::navigation::makeNavigationObstacleForObject(
+                object.type,
+                obstacleId,
+                object.id.value,
+                world::coordinates::fullMeters(object.worldPosition),
+                glm::dmat3(glm::mat3(object.orientation)),
+                DiagnosticHubInfrastructureClearanceMeters
+            );
+        if (!obstacle)
+            continue;
+
+        auto localObstacle = *obstacle;
+        localObstacle.centerMeters =
+            out.planningFrame.worldToLocalPosition(localObstacle.centerMeters);
+        localObstacle.localToWorldBasis =
+            glm::transpose(out.planningFrame.localToWorldBasis) *
+            localObstacle.localToWorldBasis;
+        out.navigationObstacles.push_back(std::move(localObstacle));
+
+        if (object.id == out.targetObject.id)
+            out.targetNavigationObstacleId = obstacleId;
     }
 
     out.controlledShip = *shipIt;

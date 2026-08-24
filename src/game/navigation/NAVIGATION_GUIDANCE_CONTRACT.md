@@ -81,12 +81,37 @@ For Hub-local planning the replicated source Hub pose uses the shared
 composition and route planning therefore retain the same prograde/radial/normal
 permutation even though their presentation/planning epochs may differ.
 
-Orbital Hub kinematics themselves have one shared CPU implementation:
-`evaluateOrbitalHubKinematicFrameAt()`. Authoritative server simulation, spawn
-initialization and client planning prediction use that evaluator rather than
-rebuilding position/velocity/basis independently. `OrbitalMotion` position and
-velocity are evaluated analytically from the same phase/plane transform; no
-finite-difference velocity is allowed to become a second orbital clock.
+Navigation prediction is deliberately separate from authoritative simulation
+integration. `NavigationWorldPredictor` may evaluate the known Hub orbit at the
+planning epoch, but it must not replace `GameSimulation`'s production update or
+change the global `OrbitalMotion` velocity semantics merely to satisfy route
+planning. The same navigation predictor is reusable by a client-local planner or
+a server-shared planner; execution placement changes, not the production world
+state contract.
+
+### 3.2 Navigation foundation lock
+
+The time/frame foundation is a frozen dependency boundary before route-planner
+replacement. Regression tests must preserve all of these invariants:
+
+- one canonical authoritative source epoch seeds a calculation; the complete
+  problem is then resolved to one planning epoch and one planning frame;
+- world/local position, velocity and acceleration transforms remain reversible
+  at large system-local coordinates;
+- route calculation is input-pure with respect to simulation, replication, map
+  resources and cloud presentation; only navigation workspace/output may change;
+- navigation prediction reads production world semantics but does not replace
+  `GameSimulation` integration or global orbit semantics;
+- Hub attachment phase is evaluated at the consumer epoch with periodic angles
+  reduced before float conversion, so large universe times cannot produce
+  freeze-then-snap rotation;
+- the Hub Motion Lab keeps the box as a slow 2 deg/s rotation probe and the
+  cylinder static;
+- client-local versus server-shared execution placement may change who executes
+  the deterministic planner, never the planning contract or world authority.
+
+Stage 4 may replace strategic path-search internals, obstacle geometry and route
+costs. It must not weaken these foundation invariants.
 
 Official lanes are preferred planning infrastructure, not rails. An open,
 beacon-served lane normally carries a planning-cost advantage because position
@@ -175,30 +200,45 @@ shows a flashing warning and the primary typed docking request remains intact.
 A later rolling replan therefore replaces the escape tunnel with the original
 docking tunnel automatically as soon as a safe solution exists again.
 
-## 6a. Snapshot strategic trajectory validation
+## 6a. Shared geometric path planning
 
-The current `CALCULATE ROUTE` validation path deliberately separates strategic
-geometry from the older rolling physical docking candidate. One button press
-creates one immutable `StrategicTrajectoryPlanner` snapshot in the current
-Hub-local frame. No future target ephemeris, gravity integration or automatic
-rolling replan is used in this validation stage.
+`CALCULATE ROUTE` now consumes one immutable current planning snapshot and
+composes docking semantics around the shared `world::navigation::GeometricPathPlanner`.
+The repair drone uses the same planner. There is no second visibility-graph
+implementation for small craft and no client-only strategic obstacle type.
 
-The strategic centerline has hard endpoint invariants:
+The canonical obstacle geometry is `world::navigation::NavigationObstacle`:
 
-- point 0 is the ship's actual current Hub-local position;
-- its first segment is parallel to the ship's current Hub-relative velocity
-  when that velocity is meaningful;
-- large already-known infrastructure is represented by conservative static
-  obstacle spheres for this snapshot and bypassed through a small deterministic
-  3D visibility graph;
-- an explicit approach point exists outside the docking entrance plane;
-- the final segment from approach point to terminal point is exactly parallel
-  to the inward dock normal.
+- `Sphere`;
+- oriented `Box` / OBB;
+- `Capsule`.
 
-This product is advisory route geometry only. It does not choose thrust, execute
-controls or perform tactical avoidance. The intended next stage is a
-receding-horizon strategic replan that preserves continuity with the previous
-centerline; `TrajectoryFollower` remains a separate future consumer.
+Geometry uses double-precision positions/bases and carries authored clearance.
+Dynamic motion/observation data wraps this geometry in `NavigationObstacleState`;
+it does not redefine physical size or shape. The client planning snapshot builds
+Hub module geometry from the predicted object pose at the same planning epoch.
+The future server-shared execution path must call the same geometry adapter and
+planner; computation placement may change, the algorithm may not.
+
+`GeometricPathPlanner` owns only spatial collision-free path search:
+
+1. direct line-of-sight when clear;
+2. deterministic support nodes for sphere/OBB/capsule geometry;
+3. a 3D visibility graph searched with A*;
+4. line-of-sight shortcutting of the resulting polyline.
+
+It has no velocity, thrust, arrival-time or autopilot semantics. Current ship
+velocity was deliberately removed from geometric planning; dynamic feasibility
+belongs to the later `TrajectoryGenerator` stage.
+
+`DockingPathPlanner` is a thin semantic composer. It asks the generic planner
+for a path from the ship to the authored approach point, while treating the
+target module as solid during transit. Only the final semantic docking ingress
+may enter the target obstacle; every other obstacle remains active. The final
+segment is exactly parallel to the inward dock normal.
+
+Legacy `StrategicTrajectoryPlanner`, `ObstaclePathPlanner` and
+`buildSimpleAvoidancePath` implementations are removed.
 
 ## 7. Hub construction semantics are not mesh geometry
 
@@ -220,11 +260,12 @@ and semantic anchors under:
 
 `assets/data/navigation/hub_semantic_anchors.json`.
 
-The Hub Motion Lab currently adds external-mesh rotating cube/cylinder docking
-modules several kilometres apart. Their authored corridor axis is local Z,
-which the hub visual basis aligns with orbital prograde/retrograde. Both meshes
-use narrow rectangular end slots leading into a through corridor and rotate
-slowly around that same local-Z/docking axis.
+The Hub Motion Lab currently adds an external-mesh box/parallelepiped and
+cylinder docking module several kilometres apart. Their authored corridor axis
+is local Z, which the hub visual basis aligns with orbital prograde/retrograde.
+The box is the single slow-rotation geometry probe and rotates at 2 deg/s around
+that local-Z/docking axis. The cylinder is deliberately non-rotating. Both
+meshes use narrow rectangular end slots leading into a through corridor.
 
 ## 8. Galactic compass
 

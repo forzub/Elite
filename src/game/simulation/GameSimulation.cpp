@@ -1,6 +1,5 @@
 #include "GameSimulation.h"
 #include "src/game/navigation/HubFrameBasis.h"
-#include "src/game/navigation/HubKinematicEvaluator.h"
 #include "src/game/simulation/RuntimeSystemPolicy.h"
 #include "src/game/simulation/activation/ActivationSpatialIndex.h"
 #include <iostream>
@@ -910,7 +909,7 @@ void GameSimulation::update(
         m_npcRepairThinkTimerSeconds = 0.0;
 
     // Режим 1: нормальная мощность
-      
+
     float fdt = static_cast<float>(dt);
     m_serverTimelineClock.advance(time.serverDeltaSeconds);
 
@@ -1042,9 +1041,124 @@ void GameSimulation::update(
 
 
 
-    // One shared Hub evaluator owns authoritative orbital position, velocity
-    // and tactical basis.  Attached infrastructure is resolved only after this
-    // coherent frame has been rebuilt for the current universe epoch.
+    for (auto& [hubId, hub] : m_orbitalHubs)
+    {
+        if (hub.systemId != m_activeCelestialSystemId ||
+            !hub.motion.enabled)
+        {
+            continue;
+        }
+
+        if (!hub.parentBodyId.empty())
+        {
+            auto parentIt =
+                m_celestialBodyPositionsAu.find(hub.parentBodyId);
+
+            if (parentIt != m_celestialBodyPositionsAu.end())
+            {
+                hub.motion.centerMeters =
+                    parentIt->second *
+                    world::celestial::MetersPerAu;
+            }
+        }
+
+        const glm::dvec3 hubPosMeters =
+            world::orbits::computeOrbitPositionMeters(
+                hub.motion,
+                m_orbitalUniverseTimeSeconds
+            );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Скорость хаба должна соответствовать фактическому смещению
+// позиции хаба в текущей серверной симуляции.
+//
+// ВАЖНО:
+// hub.worldPosition считается через m_orbitalUniverseTimeSeconds.
+// Если universe time ускорен или дискретен, аналитическая орбитальная
+// скорость может не совпасть с реальным смещением хаба между кадрами.
+// Тогда корабль получает один вектор, а станция уезжает по другому.
+//
+// Поэтому для NavigationFrame используем производную фактической позиции.
+const glm::dvec3 localOrbitVelocityMetersPerSecond =
+    world::orbits::computeOrbitVelocityMetersPerSecond(
+        hub.motion,
+        m_orbitalUniverseTimeSeconds
+    );
+
+glm::dvec3 parentVelocityMetersPerSecond {0.0};
+
+auto parentVelocityIt =
+    m_celestialBodyVelocitiesMetersPerSecond.find(
+        hub.parentBodyId
+    );
+
+if (parentVelocityIt !=
+    m_celestialBodyVelocitiesMetersPerSecond.end())
+{
+    parentVelocityMetersPerSecond =
+        parentVelocityIt->second;
+}
+
+// Полная мировая скорость хаба:
+// скорость родительского тела + локальная орбитальная скорость хаба.
+const glm::dvec3 hubVelocityMetersPerSecond =
+    parentVelocityMetersPerSecond +
+    localOrbitVelocityMetersPerSecond;
+
+m_hubVelocityMetersPerSecond[hubId] =
+    hubVelocityMetersPerSecond;
+
+
+
+
+
+
+
+
+
+        hub.worldPosition =
+            world::coordinates::makeWorldPositionFromMeters(
+                hubPosMeters
+            );
+
+        // Хаб НЕ вращается вокруг собственной оси.
+        // Его orientation задаётся позже из HubNavigationFrame:
+        // X = normal, Y = radial, Z = -prograde.
+        hub.orientation = glm::mat4(1.0f);
+
+    }
+
+
+
+
     rebuildHubNavigationFrames(trajectoryDeltaSeconds);
 
     if (!trajectoryDebugMode)
@@ -1588,10 +1702,10 @@ void GameSimulation::update(
 
 
 
-    
 
 
-            
+
+
 
 
 
@@ -1620,7 +1734,7 @@ void GameSimulation::update(
 
 
 
-    
+
     if (m_diagnostics.settings.hubPlayerChainCsv)
         debugLogHubPlayerChain(dt);
 
@@ -1873,9 +1987,9 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         }
 
 
- 
+
         s.receptions = ship.core().signalResults();
-        
+
 
         s.radarContacts = ship.core().radar().getContacts();
         s.shipCoreStatus = ship.core().getCoreStatus();
@@ -1890,7 +2004,7 @@ SimulationSnapshot GameSimulation::buildReplicationSnapshot(
         //     s.modules.push_back(std::move(ms));
         // }
 
-                
+
         auto& graph = s.graph;
 
         const bool motionLabProbe = isHubMotionLabShip(id);
@@ -3199,72 +3313,206 @@ GameSimulation::hubNavigationFrame(
 
 void GameSimulation::rebuildHubNavigationFrames(double frameDeltaSeconds)
 {
-    // This is the sole authoritative Hub-orbit evaluation path.  Spawn
-    // preparation and normal simulation updates both arrive here, and the
-    // client predictor consumes the same server-neutral evaluator.
+    // Keep the previous kinematic epoch long enough to derive frame
+    // acceleration. The current production motion path still consumes the
+    // legacy HubNavigationFrame fields; acceleration is shadow state only in
+    // this migration stage.
     const auto previousFrames = m_hubNavigationFrames;
     m_hubNavigationFrames.clear();
 
     for (auto& [hubId, hub] : m_orbitalHubs)
     {
-        if (hub.systemId != m_activeCelestialSystemId ||
-            !hub.motion.enabled)
-        {
+        if (hub.systemId != m_activeCelestialSystemId)
             continue;
-        }
-
-        glm::dvec3 parentPositionMeters = hub.motion.centerMeters;
-        const auto parentPositionIt =
-            m_celestialBodyPositionsAu.find(hub.parentBodyId);
-        if (parentPositionIt != m_celestialBodyPositionsAu.end())
-        {
-            parentPositionMeters =
-                parentPositionIt->second * world::celestial::MetersPerAu;
-        }
-
-        glm::dvec3 parentVelocityMetersPerSecond {0.0};
-        const auto parentVelocityIt =
-            m_celestialBodyVelocitiesMetersPerSecond.find(hub.parentBodyId);
-        if (parentVelocityIt !=
-            m_celestialBodyVelocitiesMetersPerSecond.end())
-        {
-            parentVelocityMetersPerSecond = parentVelocityIt->second;
-        }
-
-        const game::navigation::KinematicFrame evaluated =
-            game::navigation::evaluateOrbitalHubKinematicFrameAt(
-                hub.systemId,
-                hub.id,
-                hub.motion,
-                parentPositionMeters,
-                parentVelocityMetersPerSecond,
-                m_orbitalUniverseTimeSeconds
-            );
-        if (!evaluated.valid)
-            continue;
-
-        // Replicate the same parent center that produced this evaluation so a
-        // client can recover the parent translation from one authoritative
-        // snapshot and advance the exact same orbital definition locally.
-        hub.motion.centerMeters = parentPositionMeters;
-        hub.worldPosition =
-            world::coordinates::makeWorldPositionFromMeters(
-                evaluated.originMeters
-            );
-        m_hubVelocityMetersPerSecond[hubId] =
-            evaluated.linearVelocityMps;
-
         game::navigation::HubNavigationFrame frame;
+
         frame.systemId = hub.systemId;
         frame.hubId = hub.id;
         frame.parentBodyId = hub.parentBodyId;
-        frame.originMeters = evaluated.originMeters;
-        frame.velocityMetersPerSecond = evaluated.linearVelocityMps;
+
+        frame.originMeters =
+            world::coordinates::fullMeters(
+                hub.worldPosition
+            );
+
+        glm::dvec3 parentMeters {0.0};
+
+        auto parentIt =
+            m_celestialBodyPositionsAu.find(hub.parentBodyId);
+
+        if (parentIt != m_celestialBodyPositionsAu.end())
+        {
+            parentMeters =
+                parentIt->second *
+                world::celestial::MetersPerAu;
+        }
+
+        const glm::dvec3 radial =
+            safeNormalizeD(
+                frame.originMeters - parentMeters,
+                glm::dvec3(0.0, 1.0, 0.0)
+            );
+
+        // Скорость хаба.
+        auto velIt =
+            m_hubVelocityMetersPerSecond.find(hubId);
+
+        if (velIt != m_hubVelocityMetersPerSecond.end())
+        {
+            frame.velocityMetersPerSecond =
+                velIt->second;
+        }
+        else
+        {
+            frame.velocityMetersPerSecond =
+                world::orbits::computeOrbitVelocityMetersPerSecond(
+                    hub.motion,
+                    m_orbitalUniverseTimeSeconds
+                );
+        }
+
+
+
+
+
+
+
+        /*
+            frame.velocityMetersPerSecond — полная мировая скорость хаба:
+
+                parent planet world velocity
+                +
+                hub orbital velocity relative to planet.
+
+            Для построения orbital frame нужна только скорость
+            хаба относительно родительской планеты.
+
+            Иначе движение планеты вокруг звезды поворачивает
+            prograde/normal и Hub Map получает другую плоскость орбиты,
+            чем Planet Details.
+        */
+        glm::dvec3 parentVelocityMetersPerSecond {
+            0.0
+        };
+
+        bool parentVelocityResolved =
+            false;
+
+        const auto parentVelocityIt =
+            m_celestialBodyVelocitiesMetersPerSecond.find(
+                hub.parentBodyId
+            );
+
+        if (parentVelocityIt !=
+            m_celestialBodyVelocitiesMetersPerSecond.end())
+        {
+            parentVelocityMetersPerSecond =
+                parentVelocityIt->second;
+
+            parentVelocityResolved =
+                true;
+        }
+
+        glm::dvec3 relativeOrbitalVelocityMetersPerSecond;
+
+        if (parentVelocityResolved)
+        {
+            relativeOrbitalVelocityMetersPerSecond =
+                frame.velocityMetersPerSecond -
+                parentVelocityMetersPerSecond;
+        }
+        else
+        {
+            /*
+                При стартовой инициализации velocity cache теоретически
+                может быть ещё не заполнен. Аналитическая локальная
+                орбитальная скорость остаётся корректным fallback.
+            */
+            relativeOrbitalVelocityMetersPerSecond =
+                world::orbits::
+                    computeOrbitVelocityMetersPerSecond(
+                        hub.motion,
+                        m_orbitalUniverseTimeSeconds
+                    );
+        }
+
+        glm::dvec3 prograde =
+            safeNormalizeD(
+                relativeOrbitalVelocityMetersPerSecond,
+                glm::dvec3(1.0, 0.0, 0.0)
+            );
+
+            /*
+                Убираем возможную радиальную составляющую.
+                Для круговой орбиты она практически нулевая,
+                но frame должен оставаться ортогональным.
+            */
+            prograde =
+                safeNormalizeD(
+                    prograde -
+                        radial *
+                        glm::dot(
+                            prograde,
+                            radial
+                        ),
+
+                    glm::dvec3(
+                        1.0,
+                        0.0,
+                        0.0
+                    )
+                );
+
+
+
+
+
+
+
+
+
+        const glm::dvec3 normal =
+            safeNormalizeD(
+                glm::cross(prograde, radial),
+                glm::dvec3(0.0, 0.0, 1.0)
+            );
+
+        // Пересобираем prograde через normal/radial,
+        // чтобы оси были ортогональными.
+        prograde =
+            safeNormalizeD(
+                glm::cross(radial, normal),
+                prograde
+            );
+
+        frame.radialAxis = radial;
+        frame.progradeAxis = prograde;
+        frame.normalAxis = normal;
+
+        const double orbitRadiusMeters =
+            glm::length(frame.originMeters - parentMeters);
+
+        const glm::dvec3 tangentialVelocityMetersPerSecond =
+            relativeOrbitalVelocityMetersPerSecond -
+            radial *
+                glm::dot(
+                    relativeOrbitalVelocityMetersPerSecond,
+                    radial
+                );
+
+        const double angularSpeedRadPerSecond =
+            orbitRadiusMeters > 1.0
+                ? glm::length(tangentialVelocityMetersPerSecond) /
+                    orbitRadiusMeters
+                : 0.0;
+
+        /*
+            Basis convention is X=prograde, Y=radial, Z=normal with
+            normal = cross(prograde, radial). Therefore the orbital frame
+            rotates around -normal for positive prograde motion.
+        */
         frame.angularVelocityWorldRadPerSecond =
-            evaluated.angularVelocityWorldRadPerSecond;
-        frame.progradeAxis = glm::dvec3(evaluated.localToWorldBasis[0]);
-        frame.radialAxis = glm::dvec3(evaluated.localToWorldBasis[1]);
-        frame.normalAxis = glm::dvec3(evaluated.localToWorldBasis[2]);
+            -normal * angularSpeedRadPerSecond;
 
         const auto previousFrameIt = previousFrames.find(hubId);
         if (std::abs(frameDeltaSeconds) > 1.0e-9 &&
@@ -3284,38 +3532,51 @@ void GameSimulation::rebuildHubNavigationFrames(double frameDeltaSeconds)
         }
         else if (!m_gravityBodies.empty())
         {
-            // The first production epoch has no previous frame.  Preserve the
-            // existing physical gravity fallback; subsequent epochs derive the
-            // actual authoritative acceleration from consecutive evaluations.
+            // First-epoch fallback: for an orbital hub the physical frame
+            // acceleration is gravity-driven. Subsequent ticks use the actual
+            // derivative of the authoritative frame velocity above.
             frame.accelerationMetersPerSecond2 =
                 game::navigation::GravityFieldSystem::sample(
                     frame.originMeters,
                     m_gravityBodies
                 ).accelerationMps2;
         }
-        else
-        {
-            frame.accelerationMetersPerSecond2 =
-                evaluated.linearAccelerationMps2;
-        }
 
-        // Prime module identity remains authored/runtime metadata rather than
-        // orbital kinematics. Keep the existing first-module fallback until
-        // initial_world_state stores it explicitly.
+        // Пока prime ищем как первый модуль.
+        // Позже лучше сохранить явно из initial_world_state.json.
         if (!hub.modules.empty())
         {
-            const EntityId primeObjectId = hub.modules.front();
-            const auto objectIt = m_staticObjects.find(primeObjectId);
-            if (objectIt != m_staticObjects.end())
-                frame.primeModuleId = objectIt->second.hubModuleId;
+            const EntityId primeObjectId =
+                hub.modules.front();
+
+            auto objIt =
+                m_staticObjects.find(primeObjectId);
+
+            if (objIt != m_staticObjects.end())
+                frame.primeModuleId = objIt->second.hubModuleId;
         }
 
         frame.valid = true;
-        hub.orientation = game::navigation::hubVisualOrientation(
-            frame.progradeAxis,
-            frame.radialAxis,
-            frame.normalAxis
-        );
+
+
+
+
+
+        hub.orientation =
+            game::navigation::hubVisualOrientation(
+                frame.progradeAxis,
+                frame.radialAxis,
+                frame.normalAxis
+            );
+
+
+
+
+
+
+
+
+
         m_hubNavigationFrames[hubId] = frame;
     }
 }
@@ -3340,8 +3601,71 @@ void GameSimulation::prepareReferenceFramesForSpawn()
     // в корректное стартовое состояние.
     // ------------------------------------------------------------
 
-    // Spawn uses the same Hub kinematic evaluator as normal authoritative
-    // updates; there is no second bootstrap-only orbit implementation.
+    for (auto& [hubId, hub] : m_orbitalHubs)
+    {
+        if (hub.systemId != m_activeCelestialSystemId ||
+            !hub.motion.enabled)
+        {
+            continue;
+        }
+
+        if (!hub.parentBodyId.empty())
+        {
+            auto parentIt =
+                m_celestialBodyPositionsAu.find(
+                    hub.parentBodyId
+                );
+
+            if (parentIt != m_celestialBodyPositionsAu.end())
+            {
+                hub.motion.centerMeters =
+                    parentIt->second *
+                    world::celestial::MetersPerAu;
+            }
+        }
+
+        const glm::dvec3 hubPosMeters =
+            world::orbits::computeOrbitPositionMeters(
+                hub.motion,
+                m_orbitalUniverseTimeSeconds
+            );
+
+        const glm::dvec3 localOrbitVelocityMetersPerSecond =
+            world::orbits::computeOrbitVelocityMetersPerSecond(
+                hub.motion,
+                m_orbitalUniverseTimeSeconds
+            );
+
+        glm::dvec3 parentVelocityMetersPerSecond {0.0};
+
+        auto parentVelocityIt =
+            m_celestialBodyVelocitiesMetersPerSecond.find(
+                hub.parentBodyId
+            );
+
+        if (parentVelocityIt !=
+            m_celestialBodyVelocitiesMetersPerSecond.end())
+        {
+            parentVelocityMetersPerSecond =
+                parentVelocityIt->second;
+        }
+
+        const glm::dvec3 hubVelocityMetersPerSecond =
+            parentVelocityMetersPerSecond +
+            localOrbitVelocityMetersPerSecond;
+
+        m_hubVelocityMetersPerSecond[hubId] =
+            hubVelocityMetersPerSecond;
+
+        hub.worldPosition =
+            world::coordinates::makeWorldPositionFromMeters(
+                hubPosMeters
+            );
+
+        hub.orientation =
+            glm::mat4(1.0f);
+    }
+
     rebuildHubNavigationFrames(0.0);
 
     /*
@@ -4278,7 +4602,7 @@ glm::mat4 GameSimulation::makePromoLookOrientation(
 
 void GameSimulation::updatePromoPlayerTracking(float dt)
 {
-   
+
 
     auto it =
         m_ships.find(m_playerId);
@@ -4615,7 +4939,7 @@ bool GameSimulation::placeShipInReferenceFrame(
 
     tr.motion.referenceVelocityMps =
         resolved.velocityMetersPerSecond;
-    
+
     // TEST SCENARIO:
     // игрок появляется уже с орбитальным вектором хаба.
     // В будущем сюда будет приходить результат навигации/прыжка:
@@ -4628,7 +4952,7 @@ bool GameSimulation::placeShipInReferenceFrame(
     tr.motion.desiredRelativeVelocityMps =
         glm::dvec3(0.0);
 
-    
+
     tr.motion.localPositionMeters =
         frame.localOffsetMeters;
 
@@ -5221,7 +5545,7 @@ void GameSimulation::debugLogServerNavState(double dt)
     {
         const auto& tr =
             player->core().transform();
-        
+
         const auto& c =
             player->core().control();
 

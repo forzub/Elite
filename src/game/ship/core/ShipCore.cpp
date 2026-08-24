@@ -1732,18 +1732,18 @@ ShipCore::buildNavigationObstaclesForRepair(
         o.shape =
             world::navigation::NavigationObstacleShape::Box;
 
-        o.center =
-            glm::vec3(ownerModel * glm::vec4(body.center, 1.0f));
+        o.centerMeters =
+            glm::dvec3(ownerModel * glm::vec4(body.center, 1.0f));
 
-        o.halfExtents =
-            body.halfExtents;
+        o.halfExtentsMeters =
+            glm::dvec3(body.halfExtents);
 
-        o.rotation =
-            ownerRotation;
+        o.localToWorldBasis =
+            glm::dmat3(ownerRotation);
 
-        // Fallback sphere radius for old code/debug.
-        o.radius =
-            glm::length(body.halfExtents);
+        // Conservative radius retained for contact/debug consumers.
+        o.radiusMeters =
+            glm::length(glm::dvec3(body.halfExtents));
 
         o.entityId = body.entityId;
 
@@ -1754,8 +1754,8 @@ ShipCore::buildNavigationObstaclesForRepair(
     {
         world::navigation::NavigationObstacle o;
         o.shape = world::navigation::NavigationObstacleShape::Sphere;
-        o.center = glm::vec3(ownerModel * glm::vec4(0, 0, 0, 1));
-        o.radius = 8.0f;
+        o.centerMeters = glm::dvec3(ownerModel * glm::vec4(0, 0, 0, 1));
+        o.radiusMeters = 8.0;
         out.push_back(o);
     }
 

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -15,7 +16,6 @@
 #include "src/game/navigation/GuidanceCorridor.h"
 #include "src/game/navigation/HubCoMovingFrame.h"
 #include "src/game/navigation/HubFrameBasis.h"
-#include "src/game/navigation/HubKinematicEvaluator.h"
 #include "src/game/navigation/HubSemanticAnchor.h"
 #include "src/game/navigation/LocalGuidancePlanner.h"
 #include "src/game/navigation/NavigationModuleState.h"
@@ -23,7 +23,9 @@
 #include "src/game/navigation/NavigationPlanningEpoch.h"
 #include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/navigation/ReplicatedHubFrame.h"
-#include "src/game/navigation/StrategicTrajectoryPlanner.h"
+#include "src/game/navigation/DockingPathPlanner.h"
+#include "src/world/navigation/GeometricPathPlanner.h"
+#include "src/world/navigation/NavigationObstacleGeometry.h"
 #include "src/game/navigation/TrajectoryPredictor.h"
 #include "src/game/navigation/TrajectorySafetyEvaluator.h"
 
@@ -80,18 +82,18 @@ void testModuleSwitchesAreIndependent()
 void testSensorFusionNeverShrinksPhysicalEnvelope()
 {
     NavigationPlanningSnapshot base;
-    NavigationObstacle official;
-    official.id = "debris-7";
-    official.physicalRadiusMeters = 20.0;
-    official.requiredClearanceMeters = 60.0;
+    NavigationObstacleState official;
+    official.geometry.id = "debris-7";
+    official.geometry.radiusMeters = 20.0;
+    official.geometry.requiredClearanceMeters = 60.0;
     official.positionUncertaintyMeters = 100.0;
     official.source = NavigationKnowledgeSource::AuthoritativeWorld;
     base.obstacles.push_back(official);
 
-    NavigationObstacle radar = official;
-    radar.positionMeters = glm::dvec3(1000.0, 0.0, 0.0);
-    radar.physicalRadiusMeters = 5.0;
-    radar.requiredClearanceMeters = 10.0;
+    NavigationObstacleState radar = official;
+    radar.geometry.centerMeters = glm::dvec3(1000.0, 0.0, 0.0);
+    radar.geometry.radiusMeters = 5.0;
+    radar.geometry.requiredClearanceMeters = 10.0;
     radar.positionUncertaintyMeters = 2.0;
     radar.source = NavigationKnowledgeSource::Radar;
 
@@ -102,8 +104,10 @@ void testSensorFusionNeverShrinksPhysicalEnvelope()
     require(merged.obstacles.size() == 1, "fusion duplicated obstacle identity");
     const auto& result = merged.obstacles.front();
     require(near(result.positionUncertaintyMeters, 2.0), "radar did not refine position uncertainty");
-    require(near(result.physicalRadiusMeters, 20.0), "radar shrank authoritative physical radius");
-    require(near(result.requiredClearanceMeters, 60.0), "radar shrank authoritative clearance");
+    require(near(result.geometry.conservativeRadiusMeters(), 20.0),
+        "radar shrank authoritative physical radius");
+    require(near(result.geometry.requiredClearanceMeters, 60.0),
+        "radar shrank authoritative clearance");
 }
 
 void testMovingObstacleIsCheckedAtPassageTime()
@@ -118,14 +122,14 @@ void testMovingObstacleIsCheckedAtPassageTime()
 
     NavigationPlanningSnapshot environment;
     environment.systemId = 0;
-    NavigationObstacle obstacle;
-    obstacle.id = "crossing-rock";
+    NavigationObstacleState obstacle;
+    obstacle.geometry.id = "crossing-rock";
     obstacle.systemId = 0;
     obstacle.epochUniverseTimeSeconds = 100.0;
-    obstacle.positionMeters = glm::dvec3(50.0, 50.0, 0.0);
+    obstacle.geometry.centerMeters = glm::dvec3(50.0, 50.0, 0.0);
     obstacle.velocityMps = glm::dvec3(0.0, -10.0, 0.0);
-    obstacle.physicalRadiusMeters = 2.0;
-    obstacle.requiredClearanceMeters = 2.0;
+    obstacle.geometry.radiusMeters = 2.0;
+    obstacle.geometry.requiredClearanceMeters = 2.0;
     environment.obstacles.push_back(obstacle);
 
     const auto safety = TrajectorySafetyEvaluator::evaluate(
@@ -421,13 +425,13 @@ void testLocalPlannerUsesPredictorAndSafetyEvaluator()
     require(result.corridor.source == GuidanceSource::LocalPlanner,
             "local corridor source was not preserved");
 
-    NavigationObstacle blocking;
-    blocking.id = "blocking-debris";
+    NavigationObstacleState blocking;
+    blocking.geometry.id = "blocking-debris";
     blocking.systemId = 0;
     blocking.epochUniverseTimeSeconds = 100.0;
-    blocking.positionMeters = glm::dvec3(100.0, 0.0, 0.0);
-    blocking.physicalRadiusMeters = 25.0;
-    blocking.requiredClearanceMeters = 10.0;
+    blocking.geometry.centerMeters = glm::dvec3(100.0, 0.0, 0.0);
+    blocking.geometry.radiusMeters = 25.0;
+    blocking.geometry.requiredClearanceMeters = 10.0;
     request.environment.obstacles.push_back(blocking);
 
     const auto detour = LocalGuidancePlanner::plan(request);
@@ -759,81 +763,205 @@ void testUnsafeDockingPublishesEscapeThenRecoversPrimaryRoute()
 
 
 
-void testOrbitalVelocityUsesTheSameAnalyticCurveAsPosition()
+
+void testHubLocalRotationKeepsPrecisionAtLargeUniverseEpoch()
 {
-    world::orbits::OrbitalMotion motion;
-    motion.enabled = true;
-    motion.centerMeters = glm::dvec3(700.0, -1200.0, 330.0);
-    motion.parentRadiusMeters = 1400.0;
-    motion.altitudeMeters = 8600.0;
-    motion.orbitalPeriodSeconds = 173.0;
-    motion.inclinationDeg = 27.0;
-    motion.longitudeOfAscendingNodeDeg = 41.0;
-    motion.argumentOfPeriapsisDeg = -13.0;
-    motion.initialPhaseDeg = 63.0;
-    motion.epochSeconds = 2.0;
+    constexpr double universeTimeSeconds = 8.73395e8;
+    constexpr double angularSpeedDegPerSecond = 2.0;
 
-    const double time = 19.25;
-    constexpr double h = 1.0e-4;
-    const glm::dvec3 numeric =
-        (world::orbits::computeOrbitPositionMeters(motion, time + h) -
-         world::orbits::computeOrbitPositionMeters(motion, time - h)) /
-        (2.0 * h);
-    const glm::dvec3 analytic =
-        world::orbits::computeOrbitVelocityMetersPerSecond(motion, time);
+    const double phase0 = angularSpeedDegPerSecond * universeTimeSeconds;
+    const double phase1 =
+        angularSpeedDegPerSecond * (universeTimeSeconds + 0.25);
 
-    require(glm::length(analytic - numeric) < 1.0e-4,
-        "orbital velocity diverged from the position curve");
-}
-
-void testSharedHubEvaluatorIncludesParentTranslation()
-{
-    world::orbits::OrbitalMotion motion;
-    motion.enabled = true;
-    motion.parentRadiusMeters = 2000.0;
-    motion.altitudeMeters = 18000.0;
-    motion.orbitalPeriodSeconds = 240.0;
-    motion.inclinationDeg = 11.0;
-    motion.longitudeOfAscendingNodeDeg = 17.0;
-    motion.initialPhaseDeg = 23.0;
-
-    const glm::dvec3 parentPosition(5.0e6, -7.0e6, 2.0e6);
-    const glm::dvec3 parentVelocity(120.0, -31.0, 44.0);
-    const double time = 33.0;
-
-    const auto frame = evaluateOrbitalHubKinematicFrameAt(
-        4,
-        "shared-evaluator-hub",
-        motion,
-        parentPosition,
-        parentVelocity,
-        time
+    const glm::mat4 orientation0 = hubLocalEulerDegToMatrix(
+        glm::dvec3(0.0, 0.0, phase0)
     );
-    require(frame.valid, "shared Hub kinematic evaluator returned invalid frame");
+    const glm::mat4 orientation1 = hubLocalEulerDegToMatrix(
+        glm::dvec3(0.0, 0.0, phase1)
+    );
 
-    world::orbits::OrbitalMotion expectedMotion = motion;
-    expectedMotion.centerMeters = parentPosition;
-    const glm::dvec3 expectedPosition =
-        world::orbits::computeOrbitPositionMeters(expectedMotion, time);
-    const glm::dvec3 expectedVelocity =
-        parentVelocity +
-        world::orbits::computeOrbitVelocityMetersPerSecond(expectedMotion, time);
+    const glm::vec3 x0(orientation0[0]);
+    const glm::vec3 x1(orientation1[0]);
+    const double observedStep = glm::length(x1 - x0);
 
-    require(glm::length(frame.originMeters - expectedPosition) < 1.0e-9,
-        "shared Hub evaluator changed analytic orbital position");
-    require(glm::length(frame.linearVelocityMps - expectedVelocity) < 1.0e-9,
-        "shared Hub evaluator lost parent translation velocity");
+    // 2 deg/s over 0.25 s is a 0.5 degree step.  At the project's large
+    // universe epoch this must remain a small continuous rotation, not freeze
+    // until float precision jumps by tens/hundreds of degrees.
+    require(observedStep > 0.005 && observedStep < 0.02,
+        "Hub-local rotation lost sub-degree precision at large universe epoch");
 
-    const glm::dvec3 prograde(frame.localToWorldBasis[0]);
-    const glm::dvec3 radial(frame.localToWorldBasis[1]);
-    const glm::dvec3 normal(frame.localToWorldBasis[2]);
-    require(std::abs(glm::dot(prograde, radial)) < 1.0e-12,
-        "shared Hub evaluator produced non-orthogonal prograde/radial basis");
-    require(std::abs(glm::dot(prograde, normal)) < 1.0e-12,
-        "shared Hub evaluator produced non-orthogonal prograde/normal basis");
-    require(std::abs(glm::dot(radial, normal)) < 1.0e-12,
-        "shared Hub evaluator produced non-orthogonal radial/normal basis");
+    const double wrapped0 = std::remainder(phase0, 360.0);
+    const glm::mat4 expected0 = hubLocalEulerDegToMatrix(
+        glm::dvec3(0.0, 0.0, wrapped0)
+    );
+    require(glm::length(glm::vec3(expected0[0]) - x0) < 1.0e-6f,
+        "Hub-local rotation is not periodic after phase wrapping");
 }
+
+
+void testPlanningFrameRoundTripsCompleteKinematicState()
+{
+    const glm::dvec3 prograde = glm::normalize(glm::dvec3(0.71, 0.42, -0.55));
+    const glm::dvec3 radialSeed = glm::normalize(glm::dvec3(-0.18, 0.90, 0.40));
+    const glm::dvec3 normal = glm::normalize(glm::cross(prograde, radialSeed));
+    const glm::dvec3 radial = glm::normalize(glm::cross(normal, prograde));
+
+    KinematicFrame frame;
+    frame.systemId = 7;
+    frame.frameId = "foundation-lock-frame";
+    frame.originMeters = glm::dvec3(8.2e10, -3.7e10, 1.9e10);
+    frame.linearVelocityMps = glm::dvec3(3120.0, -880.0, 147.0);
+    frame.linearAccelerationMps2 = glm::dvec3(-0.03, 0.017, 0.002);
+    frame.localToWorldBasis = glm::dmat3(prograde, radial, normal);
+    frame.angularVelocityWorldRadPerSecond = glm::dvec3(0.0007, -0.0011, 0.0004);
+    frame.angularAccelerationWorldRadPerSecond2 = glm::dvec3(1.0e-6, -2.0e-6, 0.5e-6);
+    frame.valid = true;
+
+    const LocalKinematicState samples[] = {
+        {glm::dvec3(0.0), glm::dvec3(0.0), glm::dvec3(0.0)},
+        {glm::dvec3(1200.0, -75.0, 430.0), glm::dvec3(9.0, -2.0, 0.5), glm::dvec3(0.2, -0.04, 0.01)},
+        {glm::dvec3(-5400.0, 2300.0, 17.0), glm::dvec3(-35.0, 11.0, 4.0), glm::dvec3(-0.7, 0.3, -0.02)}
+    };
+
+    constexpr double positionToleranceMeters = 1.0e-5;
+
+    // At ~1e11 m world coordinates, worldPosition-origin necessarily loses a
+    // few micrometres even in double precision.  In a rotating frame that
+    // position quantisation propagates into velocity as omega x delta-r.
+    // Derive the velocity/acceleration bounds from the accepted position
+    // precision instead of demanding an impossible absolute 1e-9 m/s.
+    const double velocityToleranceMps =
+        2.0 * glm::length(frame.angularVelocityWorldRadPerSecond) *
+            positionToleranceMeters +
+        1.0e-10;
+    const double accelerationToleranceMps2 =
+        2.0 * (
+            glm::length(frame.angularAccelerationWorldRadPerSecond2) +
+            glm::dot(
+                frame.angularVelocityWorldRadPerSecond,
+                frame.angularVelocityWorldRadPerSecond
+            )
+        ) * positionToleranceMeters +
+        2.0 * glm::length(frame.angularVelocityWorldRadPerSecond) *
+            velocityToleranceMps +
+        1.0e-10;
+
+    for (const auto& local : samples)
+    {
+        const WorldKinematicState world = localToWorldKinematics(frame, local);
+        const LocalKinematicState restored = worldToLocalKinematics(frame, world);
+
+        require(glm::length(restored.positionMeters - local.positionMeters) <
+                positionToleranceMeters,
+            "planning frame position round trip drifted");
+        require(glm::length(restored.velocityMps - local.velocityMps) <
+                velocityToleranceMps,
+            "planning frame velocity round trip exceeded position-precision bound");
+        require(glm::length(restored.accelerationMps2 - local.accelerationMps2) <
+                accelerationToleranceMps2,
+            "planning frame acceleration round trip exceeded kinematic precision bound");
+    }
+}
+
+void testHubAttachmentPredictionIsContinuousAtLargeUniverseEpoch()
+{
+    KinematicFrame frame;
+    frame.systemId = 3;
+    frame.frameId = "earth_orbital_hub";
+    frame.originMeters = glm::dvec3(1000.0, 2000.0, -3000.0);
+    frame.linearVelocityMps = glm::dvec3(12.0, -7.0, 2.0);
+    frame.localToWorldBasis = glm::dmat3(1.0);
+    frame.angularVelocityWorldRadPerSecond = glm::dvec3(0.0, 0.0, 0.001);
+    frame.valid = true;
+
+    constexpr double t0 = 8.73398e8;
+    constexpr double dt = 0.25;
+
+    const auto cube0 = NavigationWorldPredictor::resolveHubAttachmentAt(
+        frame, t0, glm::dvec3(1700.0, 0.0, 0.0), glm::dvec3(0.0), glm::dvec3(0.0, 0.0, 2.0));
+    const auto cube1 = NavigationWorldPredictor::resolveHubAttachmentAt(
+        frame, t0 + dt, glm::dvec3(1700.0, 0.0, 0.0), glm::dvec3(0.0), glm::dvec3(0.0, 0.0, 2.0));
+
+    require(cube0.valid && cube1.valid,
+        "slow rotating Hub attachment prediction is invalid");
+    require(glm::length(cube1.positionMeters - cube0.positionMeters) < 1.0e-9,
+        "local module spin changed the attachment center");
+
+    const glm::dvec3 x0 = glm::normalize(glm::dvec3(cube0.orientation[0]));
+    const glm::dvec3 x1 = glm::normalize(glm::dvec3(cube1.orientation[0]));
+    const double dotValue = std::clamp(glm::dot(x0, x1), -1.0, 1.0);
+    const double observedStepDeg = glm::degrees(std::acos(dotValue));
+    require(std::abs(observedStepDeg - 0.5) < 0.01,
+        "slow Hub box rotation snapped or lost phase at large universe epoch");
+
+    const auto cylinder0 = NavigationWorldPredictor::resolveHubAttachmentAt(
+        frame, t0, glm::dvec3(-3000.0, -250.0, 0.0), glm::dvec3(12.0, 7.0, -3.0), glm::dvec3(0.0));
+    const auto cylinder1 = NavigationWorldPredictor::resolveHubAttachmentAt(
+        frame, t0 + 1000.0, glm::dvec3(-3000.0, -250.0, 0.0), glm::dvec3(12.0, 7.0, -3.0), glm::dvec3(0.0));
+
+    require(cylinder0.valid && cylinder1.valid,
+        "static Hub cylinder prediction is invalid");
+    for (int column = 0; column < 3; ++column)
+    {
+        require(glm::length(
+            glm::dvec3(cylinder1.orientation[column]) -
+            glm::dvec3(cylinder0.orientation[column])
+        ) < 1.0e-7, "static Hub cylinder orientation drifted");
+    }
+}
+
+void testGeometricPlannerIsDeterministicAndInputPure()
+{
+    world::navigation::NavigationObstacle box;
+    box.id = "box";
+    box.shape = world::navigation::NavigationObstacleShape::Box;
+    box.centerMeters = glm::dvec3(-200.0, 0.0, 0.0);
+    box.halfExtentsMeters = glm::dvec3(180.0, 260.0, 220.0);
+    const double angle = glm::radians(28.0);
+    box.localToWorldBasis = glm::dmat3(
+        glm::rotate(glm::dmat4(1.0), angle, glm::dvec3(0.0, 0.0, 1.0))
+    );
+
+    world::navigation::NavigationObstacle capsule;
+    capsule.id = "capsule";
+    capsule.shape = world::navigation::NavigationObstacleShape::Capsule;
+    capsule.centerMeters = glm::dvec3(500.0, -120.0, 0.0);
+    capsule.radiusMeters = 130.0;
+    capsule.capsuleHalfLengthMeters = 260.0;
+
+    world::navigation::GeometricPathRequest request;
+    request.startMeters = glm::dvec3(-1400.0, 0.0, 0.0);
+    request.goalMeters = glm::dvec3(1400.0, 0.0, 0.0);
+    request.params.agentRadiusMeters = 24.0;
+    request.obstacles = {box, capsule};
+
+    const auto before = request;
+    const auto baseline = world::navigation::GeometricPathPlanner::plan(request);
+    require(baseline.valid, "determinism fixture did not produce a geometric path");
+
+    for (int run = 0; run < 5; ++run)
+    {
+        const auto repeated = world::navigation::GeometricPathPlanner::plan(request);
+        require(repeated.valid == baseline.valid,
+            "repeated geometric plan changed validity");
+        require(repeated.obstacleDetourUsed == baseline.obstacleDetourUsed,
+            "repeated geometric plan changed topology flag");
+        require(repeated.pointsMeters.size() == baseline.pointsMeters.size(),
+            "repeated geometric plan changed waypoint count");
+        for (std::size_t i = 0; i < baseline.pointsMeters.size(); ++i)
+        {
+            require(glm::length(repeated.pointsMeters[i] - baseline.pointsMeters[i]) < 1.0e-12,
+                "repeated geometric plan changed waypoint geometry");
+        }
+    }
+
+    require(glm::length(request.startMeters - before.startMeters) < 1.0e-12 &&
+            glm::length(request.goalMeters - before.goalMeters) < 1.0e-12 &&
+            request.obstacles.size() == before.obstacles.size() &&
+            glm::length(request.obstacles[0].centerMeters - before.obstacles[0].centerMeters) < 1.0e-12,
+        "geometric route calculation mutated its input snapshot");
+}
+
 
 void testNavigationPlanningEpochPreservesAuthoritativeIdentity()
 {
@@ -972,53 +1100,135 @@ void testReplicatedHubFrameSharesMapNavigationBasis()
         "replicated hub frame world/local round trip drifted");
 }
 
-void testStrategicSnapshotTrajectoryHasPhysicalEndpoints()
+void testDockingPathPreservesPhysicalEndpointsAndIngress()
 {
-    StrategicTrajectoryRequest request;
-    request.startPositionMeters = glm::dvec3(0.0, 0.0, 0.0);
-    request.startVelocityMps = glm::dvec3(20.0, 5.0, 0.0);
+    DockingPathRequest request;
+    // Start behind the target module so transit must route around the
+    // solid OBB before the final authored ingress is allowed through it.
+    request.startPositionMeters = glm::dvec3(1400.0, 300.0, 0.0);
     request.dockCenterMeters = glm::dvec3(1000.0, 300.0, 0.0);
     request.dockOutward = glm::dvec3(-1.0, 0.0, 0.0);
     request.approachStandoffMeters = 250.0;
     request.terminalDepthMeters = 25.0;
+    request.vehicleSafetyRadiusMeters = 20.0;
 
-    const auto plan = StrategicTrajectoryPlanner::plan(request);
-    require(plan.valid, "strategic snapshot path was not built");
-    require(plan.pointsMeters.size() >= 4, "strategic snapshot path is incomplete");
+    world::navigation::NavigationObstacle target;
+    target.id = "target-module";
+    target.shape = world::navigation::NavigationObstacleShape::Box;
+    target.centerMeters = request.dockCenterMeters;
+    target.halfExtentsMeters = glm::dvec3(200.0, 200.0, 200.0);
+    request.targetObstacleId = target.id;
+    request.obstacles.push_back(target);
+
+    const auto plan = DockingPathPlanner::plan(request);
+    require(plan.valid, "docking geometric path was not built");
+    require(plan.obstacleDetourUsed,
+        "target module was incorrectly ignored during docking transit");
+    require(plan.pointsMeters.size() >= 4, "docking geometric path is incomplete");
     require(glm::length(plan.pointsMeters.front() - request.startPositionMeters) < 1.0e-9,
-        "strategic path does not start at the ship");
-
-    const glm::dvec3 first = glm::normalize(
-        plan.pointsMeters[1] - plan.pointsMeters[0]);
-    require(glm::dot(first, glm::normalize(request.startVelocityMps)) > 0.999999,
-        "strategic path does not leave along current relative velocity");
+        "docking path does not start at the ship");
 
     const glm::dvec3 inbound = -glm::normalize(request.dockOutward);
     const glm::dvec3 last = glm::normalize(
         plan.pointsMeters.back() - plan.pointsMeters[plan.pointsMeters.size() - 2]);
     require(glm::dot(last, inbound) > 0.999999,
-        "strategic docking ingress is not perpendicular to entrance plane");
+        "docking ingress is not perpendicular to entrance plane");
     require(glm::length(plan.pointsMeters.back() - plan.terminalPointMeters) < 1.0e-9,
-        "strategic path does not end at terminal docking point");
+        "docking path does not end at terminal point");
 }
 
-void testStrategicSnapshotTrajectoryDetoursStaticObstacle()
+
+void testGeometricPlannerKeepsClearDirectPath()
 {
-    StrategicTrajectoryRequest request;
-    request.startPositionMeters = glm::dvec3(0.0, 0.0, 0.0);
-    request.startVelocityMps = glm::dvec3(20.0, 0.0, 0.0);
-    request.dockCenterMeters = glm::dvec3(2000.0, 0.0, 0.0);
-    request.dockOutward = glm::dvec3(-1.0, 0.0, 0.0);
-    request.approachStandoffMeters = 250.0;
-    request.terminalDepthMeters = 25.0;
-    request.shipSafetyRadiusMeters = 20.0;
-    request.obstacles.push_back({"block", glm::dvec3(900.0, 0.0, 0.0), 180.0});
+    world::navigation::GeometricPathRequest request;
+    request.startMeters = glm::dvec3(-500.0, 20.0, 10.0);
+    request.goalMeters = glm::dvec3(700.0, -30.0, 80.0);
+    request.params.agentRadiusMeters = 15.0;
 
-    const auto plan = StrategicTrajectoryPlanner::plan(request);
-    require(plan.valid, "strategic static-obstacle detour was not built");
-    require(plan.obstacleDetourUsed, "strategic planner ignored blocking obstacle");
-    require(plan.pointsMeters.size() > 4, "strategic detour has no bypass waypoint");
+    const auto plan = world::navigation::GeometricPathPlanner::plan(request);
+    require(plan.valid, "clear geometric path was rejected");
+    require(!plan.obstacleDetourUsed, "clear geometric path invented a detour");
+    require(plan.pointsMeters.size() == 2, "clear geometric path gained extra waypoints");
+    require(glm::length(plan.pointsMeters.front() - request.startMeters) < 1.0e-12,
+        "clear geometric path changed its start");
+    require(glm::length(plan.pointsMeters.back() - request.goalMeters) < 1.0e-12,
+        "clear geometric path changed its goal");
 }
+
+
+void testGeometricPlannerDetoursRotatedObb()
+{
+    world::navigation::NavigationObstacle obstacle;
+    obstacle.id = "rotated-box";
+    obstacle.shape = world::navigation::NavigationObstacleShape::Box;
+    obstacle.centerMeters = glm::dvec3(0.0, 0.0, 0.0);
+    obstacle.halfExtentsMeters = glm::dvec3(180.0, 420.0, 240.0);
+    obstacle.localToWorldBasis = glm::dmat3(
+        glm::rotate(
+            glm::dmat4(1.0),
+            glm::radians(35.0),
+            glm::dvec3(0.0, 0.0, 1.0)
+        )
+    );
+
+    world::navigation::GeometricPathRequest request;
+    request.startMeters = glm::dvec3(-1200.0, 0.0, 0.0);
+    request.goalMeters = glm::dvec3(1200.0, 0.0, 0.0);
+    request.params.agentRadiusMeters = 20.0;
+    request.obstacles.push_back(obstacle);
+
+    const auto plan = world::navigation::GeometricPathPlanner::plan(request);
+    require(plan.valid, "rotated OBB detour was not built");
+    require(plan.obstacleDetourUsed, "geometric planner ignored rotated OBB");
+    require(plan.pointsMeters.size() >= 3, "rotated OBB detour has no bypass waypoint");
+    for (std::size_t i = 1; i < plan.pointsMeters.size(); ++i)
+    {
+        require(world::navigation::segmentClearOfNavigationObstacles(
+            plan.pointsMeters[i - 1],
+            plan.pointsMeters[i],
+            request.obstacles,
+            request.params.agentRadiusMeters),
+            "geometric planner emitted a segment through rotated OBB");
+    }
+}
+
+void testGeometricPlannerUsesSphereBoxAndCapsuleKernel()
+{
+    world::navigation::NavigationObstacle sphere;
+    sphere.id = "sphere";
+    sphere.shape = world::navigation::NavigationObstacleShape::Sphere;
+    sphere.centerMeters = glm::dvec3(0.0);
+    sphere.radiusMeters = 100.0;
+    require(world::navigation::segmentIntersectsNavigationObstacle(
+        glm::dvec3(-300.0, 0.0, 0.0), glm::dvec3(300.0, 0.0, 0.0), sphere),
+        "canonical sphere collision was lost");
+
+    world::navigation::NavigationObstacle box;
+    box.id = "box";
+    box.shape = world::navigation::NavigationObstacleShape::Box;
+    box.centerMeters = glm::dvec3(0.0);
+    box.halfExtentsMeters = glm::dvec3(50.0, 120.0, 80.0);
+    box.localToWorldBasis = glm::dmat3(
+        glm::rotate(glm::dmat4(1.0), glm::radians(45.0), glm::dvec3(0.0, 0.0, 1.0))
+    );
+    require(world::navigation::segmentIntersectsNavigationObstacle(
+        glm::dvec3(-300.0, 0.0, 0.0), glm::dvec3(300.0, 0.0, 0.0), box),
+        "canonical OBB collision was lost");
+
+    world::navigation::NavigationObstacle capsule;
+    capsule.id = "capsule";
+    capsule.shape = world::navigation::NavigationObstacleShape::Capsule;
+    capsule.centerMeters = glm::dvec3(0.0);
+    capsule.radiusMeters = 60.0;
+    capsule.capsuleHalfLengthMeters = 250.0;
+    require(world::navigation::segmentIntersectsNavigationObstacle(
+        glm::dvec3(-200.0, 0.0, 0.0), glm::dvec3(200.0, 0.0, 0.0), capsule),
+        "canonical capsule collision was lost");
+    require(!world::navigation::segmentIntersectsNavigationObstacle(
+        glm::dvec3(-200.0, 200.0, 0.0), glm::dvec3(200.0, 200.0, 0.0), capsule),
+        "canonical capsule collision is over-inflated without clearance");
+}
+
 
 int main()
 {
@@ -1040,14 +1250,18 @@ int main()
         {"orbital docking converges to co-moving target", testDockingPlannerConvergesAgainstCoMovingOrbitalTarget},
         {"rotating semantic anchor follows circular motion", testRotatingSemanticAnchorPredictsCircularGateMotion},
         {"unsafe docking escapes and rolling replan recovers", testUnsafeDockingPublishesEscapeThenRecoversPrimaryRoute},
-        {"orbital velocity shares analytic position curve", testOrbitalVelocityUsesTheSameAnalyticCurveAsPosition},
-        {"shared Hub evaluator includes parent translation", testSharedHubEvaluatorIncludesParentTranslation},
+        {"Hub-local rotation keeps precision at large universe epoch", testHubLocalRotationKeepsPrecisionAtLargeUniverseEpoch},
+        {"planning frame round trips complete kinematic state", testPlanningFrameRoundTripsCompleteKinematicState},
+        {"Hub attachment prediction is continuous at large universe epoch", testHubAttachmentPredictionIsContinuousAtLargeUniverseEpoch},
+        {"geometric planner is deterministic and input-pure", testGeometricPlannerIsDeterministicAndInputPure},
         {"planning epoch preserves authoritative identity", testNavigationPlanningEpochPreservesAuthoritativeIdentity},
         {"navigation world predictor advances orbital Hub to planning epoch", testNavigationWorldPredictorAdvancesOrbitalHubToPlanningEpoch},
         {"navigation world predictor keeps Hub attachments in one frame", testNavigationWorldPredictorKeepsHubAttachmentsInOneFrame},
         {"replicated Hub frame shares map/navigation basis", testReplicatedHubFrameSharesMapNavigationBasis},
-        {"strategic snapshot preserves start and docking normals", testStrategicSnapshotTrajectoryHasPhysicalEndpoints},
-        {"strategic snapshot detours static obstacle", testStrategicSnapshotTrajectoryDetoursStaticObstacle},
+        {"docking path preserves endpoints and ingress", testDockingPathPreservesPhysicalEndpointsAndIngress},
+        {"geometric planner keeps clear direct path", testGeometricPlannerKeepsClearDirectPath},
+        {"geometric planner detours rotated OBB", testGeometricPlannerDetoursRotatedObb},
+        {"geometric collision kernel covers sphere box capsule", testGeometricPlannerUsesSphereBoxAndCapsuleKernel},
     };
 
     std::size_t passed = 0;

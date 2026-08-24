@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "src/world/navigation/NavigationContact.h"
-#include "src/world/navigation/ObstacleAvoidance.h"
+#include "src/world/navigation/NavigationObstacle.h"
 
 namespace world::navigation
 {

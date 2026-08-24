@@ -9,6 +9,7 @@
 #include "src/game/navigation/NavigationWorldPredictor.h"
 #include "src/game/network/ProtocolMetadata.h"
 #include "src/scene/EntityID.h"
+#include "src/world/navigation/NavigationObstacle.h"
 
 class ClientWorldState;
 
@@ -59,6 +60,8 @@ struct ClientNavigationPlanningSnapshot
     game::navigation::HubAttachedKinematicState targetModuleKinematics;
 
     std::vector<DetailMapObjectRuntimeSample> objects;
+    std::vector<world::navigation::NavigationObstacle> navigationObstacles;
+    std::string targetNavigationObstacleId;
 
     bool ready() const noexcept
     {

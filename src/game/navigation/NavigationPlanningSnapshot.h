@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/navigation/GravityFieldSystem.h"
+#include "src/world/navigation/NavigationObstacle.h"
 
 namespace game::navigation
 {
@@ -62,20 +63,14 @@ struct NavigationLane
     double planningCostMultiplier = 0.75;
 };
 
-struct NavigationObstacle
+struct NavigationObstacleState
 {
-    std::string id;
     int systemId = -1;
 
     double epochUniverseTimeSeconds = 0.0;
-    glm::dvec3 positionMeters {0.0};
+    world::navigation::NavigationObstacle geometry;
     glm::dvec3 velocityMps {0.0};
     glm::dvec3 accelerationMps2 {0.0};
-
-    // V1 safety uses a conservative sphere. Future shape detail can be added
-    // without changing the planning/sensor ownership boundary.
-    double physicalRadiusMeters = 0.0;
-    double requiredClearanceMeters = 0.0;
 
     double positionUncertaintyMeters = 0.0;
     double velocityUncertaintyMps = 0.0;
@@ -85,7 +80,6 @@ struct NavigationObstacle
 
     NavigationKnowledgeSource source = NavigationKnowledgeSource::Unknown;
 };
-
 struct KnownTrafficSample
 {
     double universeTimeSeconds = 0.0;
@@ -149,7 +143,7 @@ struct NavigationPlanningSnapshot
 
     std::vector<GravityBody> gravityBodies;
     std::vector<NavigationLane> officialLanes;
-    std::vector<NavigationObstacle> obstacles;
+    std::vector<NavigationObstacleState> obstacles;
     std::vector<KnownTrafficIntent> scheduledTraffic;
     std::vector<RestrictedNavigationVolume> restrictedVolumes;
 };
@@ -170,14 +164,14 @@ public:
     {
     }
 
-    void mergeObstacleObservation(const NavigationObstacle& observation)
+    void mergeObstacleObservation(const NavigationObstacleState& observation)
     {
-        if (observation.id.empty())
+        if (observation.geometry.id.empty())
             return;
 
-        for (NavigationObstacle& existing : m_snapshot.obstacles)
+        for (NavigationObstacleState& existing : m_snapshot.obstacles)
         {
-            if (existing.id != observation.id)
+            if (existing.geometry.id != observation.geometry.id)
                 continue;
 
             const bool observationMorePrecise =
@@ -190,7 +184,9 @@ public:
             {
                 existing.epochUniverseTimeSeconds =
                     observation.epochUniverseTimeSeconds;
-                existing.positionMeters = observation.positionMeters;
+                existing.geometry.centerMeters = observation.geometry.centerMeters;
+                existing.geometry.localToWorldBasis =
+                    observation.geometry.localToWorldBasis;
                 existing.velocityMps = observation.velocityMps;
                 existing.accelerationMps2 = observation.accelerationMps2;
                 existing.positionUncertaintyMeters =
@@ -200,13 +196,52 @@ public:
                 existing.source = observation.source;
             }
 
-            existing.physicalRadiusMeters = std::max(
-                existing.physicalRadiusMeters,
-                observation.physicalRadiusMeters
-            );
-            existing.requiredClearanceMeters = std::max(
-                existing.requiredClearanceMeters,
-                observation.requiredClearanceMeters
+            // Sensor fusion may refine pose but must never shrink the
+            // authoritative physical envelope. If shape classifications disagree,
+            // retain the larger conservative envelope as a sphere.
+            const double existingRadius =
+                existing.geometry.conservativeRadiusMeters();
+            const double observationRadius =
+                observation.geometry.conservativeRadiusMeters();
+            if (existing.geometry.shape == observation.geometry.shape)
+            {
+                if (existing.geometry.shape ==
+                    world::navigation::NavigationObstacleShape::Box)
+                {
+                    existing.geometry.halfExtentsMeters = glm::max(
+                        existing.geometry.halfExtentsMeters,
+                        observation.geometry.halfExtentsMeters
+                    );
+                }
+                else if (existing.geometry.shape ==
+                    world::navigation::NavigationObstacleShape::Capsule)
+                {
+                    existing.geometry.radiusMeters = std::max(
+                        existing.geometry.radiusMeters,
+                        observation.geometry.radiusMeters
+                    );
+                    existing.geometry.capsuleHalfLengthMeters = std::max(
+                        existing.geometry.capsuleHalfLengthMeters,
+                        observation.geometry.capsuleHalfLengthMeters
+                    );
+                }
+                else
+                {
+                    existing.geometry.radiusMeters = std::max(
+                        existing.geometry.radiusMeters,
+                        observation.geometry.radiusMeters
+                    );
+                }
+            }
+            else if (observationRadius > existingRadius)
+            {
+                existing.geometry.shape =
+                    world::navigation::NavigationObstacleShape::Sphere;
+                existing.geometry.radiusMeters = observationRadius;
+            }
+            existing.geometry.requiredClearanceMeters = std::max(
+                existing.geometry.requiredClearanceMeters,
+                observation.geometry.requiredClearanceMeters
             );
             return;
         }

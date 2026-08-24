@@ -292,12 +292,13 @@ add_executable(EliteGame
     src/world/modules/ObjectStructuralLinkRuntime.cpp
     src/world/modules/ObjectDetachedFragmentRuntime.cpp
     src/world/modules/ObjectRepairJobRuntime.cpp
-    src/world/navigation/ObstacleAvoidance.cpp
     src/world/navigation/SmallCraftNavigation.cpp
+    src/world/navigation/NavigationObstacleGeometry.cpp
+    src/world/navigation/NavigationObstacleFactory.cpp
+    src/world/navigation/GeometricPathPlanner.cpp
 
     src/world/navigation/TacticalCollisionMonitor.cpp
     src/world/navigation/NavigationContactAdapters.cpp
-    src/world/navigation/ObstaclePathPlanner.cpp
 
     src/world/navigation/NavigationBodyAdapter.cpp
     
@@ -347,7 +348,7 @@ add_executable(EliteGame
     src/game/navigation/TrajectoryPredictor.cpp
     src/game/navigation/TrajectorySafetyEvaluator.cpp
     src/game/navigation/NavigationWorldPredictor.cpp
-    src/game/navigation/HubKinematicEvaluator.cpp
+    src/game/navigation/DockingPathPlanner.cpp
     src/game/navigation/LocalGuidancePlanner.cpp
     src/game/navigation/HubSemanticAnchorCatalog.cpp
     src/game/navigation/DockingPortRuntimeStateCatalog.cpp
@@ -470,11 +471,12 @@ if(ELITE_BUILD_SERVER)
         src/world/modules/ObjectDetachedFragmentRuntime.cpp
         src/world/modules/ObjectRepairJobRuntime.cpp
 
-        src/world/navigation/ObstacleAvoidance.cpp
         src/world/navigation/SmallCraftNavigation.cpp
+        src/world/navigation/NavigationObstacleGeometry.cpp
+        src/world/navigation/NavigationObstacleFactory.cpp
+        src/world/navigation/GeometricPathPlanner.cpp
         src/world/navigation/TacticalCollisionMonitor.cpp
         src/world/navigation/NavigationContactAdapters.cpp
-        src/world/navigation/ObstaclePathPlanner.cpp
         src/world/navigation/NavigationBodyAdapter.cpp
 
         src/game/promo/PromoFlybyScenario.cpp
@@ -487,7 +489,7 @@ if(ELITE_BUILD_SERVER)
         src/game/navigation/DynamicMotionSystem.cpp
         src/game/navigation/TrajectoryPredictor.cpp
         src/game/navigation/TrajectorySafetyEvaluator.cpp
-        src/game/navigation/HubKinematicEvaluator.cpp
+        src/game/navigation/DockingPathPlanner.cpp
         src/game/navigation/LocalGuidancePlanner.cpp
         src/game/navigation/HubSemanticAnchorCatalog.cpp
         src/game/navigation/GalaxyNavigationConfig.cpp

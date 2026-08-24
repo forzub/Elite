@@ -32,19 +32,19 @@ glm::dvec3 lerpPosition(
 }
 
 glm::dvec3 obstaclePositionAt(
-    const NavigationObstacle& obstacle,
+    const NavigationObstacleState& obstacle,
     double universeTimeSeconds
 )
 {
     const double dt =
         universeTimeSeconds - obstacle.epochUniverseTimeSeconds;
-    return obstacle.positionMeters +
+    return obstacle.geometry.centerMeters +
         obstacle.velocityMps * dt +
         0.5 * obstacle.accelerationMps2 * dt * dt;
 }
 
 double obstacleUncertaintyAt(
-    const NavigationObstacle& obstacle,
+    const NavigationObstacleState& obstacle,
     double universeTimeSeconds
 )
 {
@@ -240,7 +240,7 @@ TrajectorySafetyReport TrajectorySafetyEvaluator::evaluate(
         if (t1 <= t0 + TimeEpsilon)
             continue;
 
-        for (const NavigationObstacle& obstacle : environment.obstacles)
+        for (const NavigationObstacleState& obstacle : environment.obstacles)
         {
             if (obstacle.systemId >= 0 &&
                 trajectory.systemId >= 0 &&
@@ -280,14 +280,14 @@ TrajectorySafetyReport TrajectorySafetyEvaluator::evaluate(
 
             const double required =
                 shipRadius +
-                std::max(0.0, obstacle.physicalRadiusMeters) +
-                std::max(0.0, obstacle.requiredClearanceMeters) +
+                std::max(0.0, obstacle.geometry.conservativeRadiusMeters()) +
+                std::max(0.0, obstacle.geometry.requiredClearanceMeters) +
                 obstacleUncertaintyAt(obstacle, closest.time);
 
             recordConflict(
                 report,
                 TrajectoryConflictKind::Obstacle,
-                obstacle.id,
+                obstacle.geometry.id,
                 closest,
                 required
             );

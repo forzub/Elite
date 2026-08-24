@@ -9,13 +9,13 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-#include "src/world/navigation/ObstacleAvoidance.h"
+#include "src/world/navigation/GeometricPathPlanner.h"
+#include "src/world/navigation/NavigationObstacleGeometry.h"
 #include "src/world/navigation/SmallCraftNavigation.h"
 
 #include "src/world/navigation/NavigationAgentProfile.h"
 #include "src/world/navigation/NavigationContactAdapters.h"
 #include "src/world/navigation/TacticalCollisionMonitor.h"
-#include "src/world/navigation/ObstaclePathPlanner.h"
 
 #include "src/world/coordinates/WorldPosition.h"
 
@@ -312,21 +312,55 @@ static void debugEvaluateRepairDroneTacticalRisk(
 
 
 
-static world::navigation::ObstaclePathPlannerParams makeRepairDronePathParams(
+static world::navigation::GeometricPathPlannerParams makeRepairDronePathParams(
     bool towing
 )
 {
-    world::navigation::ObstaclePathPlannerParams p;
-
-    p.clearance = towing ? 6.0f : 3.0f;
-    p.maxBypassDistance = towing ? 120.0f : 80.0f;
-    p.radialSamples = towing ? 24 : 18;
-    p.corridorRadius = towing ? 160.0f : 120.0f;
+    world::navigation::GeometricPathPlannerParams p;
+    p.additionalClearanceMeters = towing ? 6.0 : 3.0;
+    p.supportMarginMeters = towing ? 2.0 : 1.0;
+    p.sphereRadialSamples = towing ? 24 : 18;
+    p.capsuleRadialSamples = towing ? 20 : 14;
     p.maxConsideredObstacles = 32;
-    p.endpointIgnoreRadius = towing ? 4.0f : 2.0f;
-    p.allowTwoPointBypass = true;
-
+    p.allowStartEscape = true;
+    p.allowGoalEscape = true;
+    p.simplifyLineOfSight = true;
     return p;
+}
+
+static std::vector<world::navigation::SmallCraftWaypoint>
+buildRepairDroneGeometricPath(
+    const glm::vec3& start,
+    const glm::vec3& target,
+    const std::vector<world::navigation::NavigationObstacle>& obstacles,
+    bool towing,
+    world::navigation::SmallCraftWaypointKind finalKind
+)
+{
+    world::navigation::GeometricPathRequest request;
+    request.startMeters = glm::dvec3(start);
+    request.goalMeters = glm::dvec3(target);
+    request.obstacles = obstacles;
+    request.params = makeRepairDronePathParams(towing);
+
+    const auto result =
+        world::navigation::GeometricPathPlanner::plan(request);
+    if (!result.valid || result.pointsMeters.size() < 2)
+        return {};
+
+    std::vector<world::navigation::SmallCraftWaypoint> out;
+    out.reserve(result.pointsMeters.size() - 1);
+    for (std::size_t i = 1; i < result.pointsMeters.size(); ++i)
+    {
+        const bool last = i + 1 == result.pointsMeters.size();
+        out.push_back({
+            glm::vec3(result.pointsMeters[i]),
+            last
+                ? finalKind
+                : world::navigation::SmallCraftWaypointKind::Transit
+        });
+    }
+    return out;
 }
 
 
@@ -433,11 +467,11 @@ static bool rebuildRepairDronePathThroughGoals(
             i + 1 == goals.size();
 
         auto segment =
-            world::navigation::buildObstacleAwarePath(
+            buildRepairDroneGeometricPath(
                 segmentStart,
                 goals[i].position,
                 obstacles,
-                makeRepairDronePathParams(towing),
+                towing,
                 last
                     ? goals[i].kind
                     : world::navigation::SmallCraftWaypointKind::Transit
@@ -485,11 +519,11 @@ static bool rebuildRepairDronePath(
 )
 {
     auto path =
-        world::navigation::buildObstacleAwarePath(
+        buildRepairDroneGeometricPath(
             start,
             target,
             obstacles,
-            makeRepairDronePathParams(towing),
+            towing,
             world::navigation::SmallCraftWaypointKind::WorkPoint
         );
 
@@ -526,11 +560,11 @@ static bool tryReplaceRepairDronePath(
 )
 {
     auto path =
-        world::navigation::buildObstacleAwarePath(
+        buildRepairDroneGeometricPath(
             start,
             target,
             obstacles,
-            makeRepairDronePathParams(towing),
+            towing,
             finalKind
         );
 
@@ -667,13 +701,12 @@ static bool updateFlyToPoint(
         if (useObstacleAvoidance && ctx.obstacles)
         {
             job.droneNav.setPath(
-                world::navigation::buildSimpleAvoidancePath(
+                buildRepairDroneGeometricPath(
                     job.dronePosition,
                     targetPoint,
                     *ctx.obstacles,
-                    3.0f,
-                    finalKind,
-                    0.0f
+                    false,
+                    finalKind
                 )
             );
 
@@ -744,11 +777,12 @@ static bool updateDroneAlongCurrentPath(
     if (ctx.obstacles)
     {
         const bool blocked =
-            world::navigation::debugSegmentBlockedByNavigationObstacles(
-                oldPosition,
-                job.dronePosition,
+            !world::navigation::segmentClearOfNavigationObstacles(
+                glm::dvec3(oldPosition),
+                glm::dvec3(job.dronePosition),
                 *ctx.obstacles,
-                1.0f
+                0.0,
+                1.0
             );
 
         if (blocked)
@@ -870,13 +904,12 @@ static bool updateTowFragmentToPoint(
         if (useObstacleAvoidance && ctx.obstacles)
         {
             job.droneNav.setPath(
-                world::navigation::buildSimpleAvoidancePath(
+                buildRepairDroneGeometricPath(
                     job.dronePosition,
                     droneTargetPoint,
                     *ctx.obstacles,
-                    3.0f,
-                    world::navigation::SmallCraftWaypointKind::WorkPoint,
-                    4.0f
+                    true,
+                    world::navigation::SmallCraftWaypointKind::WorkPoint
                 )
             );
             debugPrintDronePath("имя-фазы", job);
@@ -1228,11 +1261,11 @@ for (auto& job : m_jobs)
             job.droneNav.clear();
 
             job.droneNav.setPath(
-                world::navigation::buildObstacleAwarePath(
+                buildRepairDroneGeometricPath(
                     job.dronePosition,
                     job.recoveryWorldPosition,
                     obstacles,
-                    makeRepairDronePathParams(false),
+                    false,
                     world::navigation::SmallCraftWaypointKind::WorkPoint
                 )
             );
@@ -1264,11 +1297,11 @@ for (auto& job : m_jobs)
                 job.droneNav.clear();
 
                 job.droneNav.setPath(
-                    world::navigation::buildObstacleAwarePath(
+                    buildRepairDroneGeometricPath(
                         job.dronePosition,
                         job.recoveryWorldPosition,
                         obstacles,
-                        makeRepairDronePathParams(false),
+                        false,
                         world::navigation::SmallCraftWaypointKind::WorkPoint
                     )
                 );

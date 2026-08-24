@@ -61,31 +61,47 @@ inline glm::mat4 hubVisualOrientation(
     return orientation;
 }
 
+inline double wrapHubLocalDegrees(double degrees) noexcept
+{
+    // Hub-local authored rotations are periodic.  Never cast the unbounded
+    // universe-time phase to float: at ~1e9 degrees a float advances in huge
+    // angular steps and a slowly rotating module appears to freeze, then snap.
+    if (!std::isfinite(degrees))
+        return 0.0;
+    return std::remainder(degrees, 360.0);
+}
+
 inline glm::mat4 hubLocalEulerDegToMatrix(const glm::dvec3& degrees)
 {
     glm::mat4 rotation(1.0f);
 
-    if (std::abs(degrees.x) > 0.000001)
+    const glm::dvec3 wrapped(
+        wrapHubLocalDegrees(degrees.x),
+        wrapHubLocalDegrees(degrees.y),
+        wrapHubLocalDegrees(degrees.z)
+    );
+
+    if (std::abs(wrapped.x) > 0.000001)
     {
         rotation = glm::rotate(
             rotation,
-            glm::radians(static_cast<float>(degrees.x)),
+            glm::radians(static_cast<float>(wrapped.x)),
             glm::vec3(1.0f, 0.0f, 0.0f));
     }
 
-    if (std::abs(degrees.y) > 0.000001)
+    if (std::abs(wrapped.y) > 0.000001)
     {
         rotation = glm::rotate(
             rotation,
-            glm::radians(static_cast<float>(degrees.y)),
+            glm::radians(static_cast<float>(wrapped.y)),
             glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
-    if (std::abs(degrees.z) > 0.000001)
+    if (std::abs(wrapped.z) > 0.000001)
     {
         rotation = glm::rotate(
             rotation,
-            glm::radians(static_cast<float>(degrees.z)),
+            glm::radians(static_cast<float>(wrapped.z)),
             glm::vec3(0.0f, 0.0f, 1.0f));
     }
 

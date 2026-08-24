@@ -590,8 +590,9 @@ void spawnHubGuidanceTestModules(
 
     // Hub visual-local basis is X=normal, Y=radial, Z=-prograde. Both test
     // meshes have their through corridor along local Z, so their docking axis
-    // is collinear with orbital prograde as requested. They are deliberately
-    // several kilometres apart to create a useful short-range guidance lab.
+    // is collinear with orbital prograde as requested. The box is the single
+    // slow rotation probe (2 deg/s); the cylinder is deliberately static. They
+    // are several kilometres apart to create a useful short-range guidance lab.
     const Spec specs[] = {
         {
             ObjectType::GuidanceDockCube,
@@ -607,7 +608,7 @@ void spawnHubGuidanceTestModules(
             "GUIDANCE DOCK CYLINDER B",
             glm::dvec3(-3000.0, -250.0, 0.0),
             glm::dvec3(0.0),
-            glm::dvec3(0.0, 0.0, -1.5)
+            glm::dvec3(0.0, 0.0, 0.0)
         }
     };
 

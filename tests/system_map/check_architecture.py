@@ -90,6 +90,21 @@ hub_scene_header = MAP_DIR / "HubMapSceneRenderer.h"
 hub_scene_cpp = MAP_DIR / "HubMapSceneRenderer.cpp"
 detail_backend = MAP_DIR / "DetailMapBackend.cpp"
 hub_backend = MAP_DIR / "HubMapBackend.cpp"
+authoritative_interpolator = MAP_DIR / "AuthoritativeMapInterpolator.cpp"
+
+if authoritative_interpolator.is_file():
+    interpolator_text = authoritative_interpolator.read_text(encoding="utf-8", errors="replace")
+    for forbidden in (
+        "HubFrameBasis.h",
+        "hubAttachedVisualOrientation",
+        "analyticHubAttachmentAxesAt",
+        "hasAnalyticLocalEulerRotation",
+    ):
+        if forbidden in interpolator_text:
+            fail(
+                authoritative_interpolator,
+                f"Hub-specific motion leaked into generic map interpolation: {forbidden}",
+            )
 
 for required in (
     local_builder_header,

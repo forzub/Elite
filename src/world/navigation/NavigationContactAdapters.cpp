@@ -15,8 +15,8 @@ NavigationContact makeContactFromObstacle(
     c.ownerEntityId = 0;
     c.kind = kind;
 
-    c.center = obstacle.center;
-    c.radius = obstacle.radius;
+    c.center = glm::vec3(obstacle.centerMeters);
+    c.radius = static_cast<float>(obstacle.conservativeRadiusMeters());
 
     c.linearVelocity = glm::vec3(0.0f);
     c.angularVelocity = glm::vec3(0.0f);

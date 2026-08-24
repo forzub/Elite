@@ -68,7 +68,7 @@
 #include "src/game/presentation/SystemMapPanelPresentation.h"
 #include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/navigation/LocalGuidancePlanner.h"
-#include "src/game/navigation/StrategicTrajectoryPlanner.h"
+#include "src/game/navigation/DockingPathPlanner.h"
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/client/ClientNavigationPlanningSnapshotFactory.h"
 
@@ -2051,7 +2051,7 @@ void SpaceState::updateDockingGuidance(float dt)
     if (!computationEnabled)
     {
         eraseActiveDockingCorridor();
-        m_lastStrategicDockingRequestSerial = 0;
+        m_lastDockingPathRequestSerial = 0;
         m_noSafeDockingGuidanceSolution = false;
         return;
     }
@@ -2061,7 +2061,7 @@ void SpaceState::updateDockingGuidance(float dt)
     if (!dockingRequest.valid())
     {
         eraseActiveDockingCorridor();
-        m_lastStrategicDockingRequestSerial = 0;
+        m_lastDockingPathRequestSerial = 0;
         m_noSafeDockingGuidanceSolution = false;
         return;
     }
@@ -2079,15 +2079,15 @@ void SpaceState::updateDockingGuidance(float dt)
     // snapshot.  No rolling replan is allowed to move this line underneath us
     // while we verify geometry and coordinate frames.  Pressing the button
     // again creates a new request serial and therefore a new snapshot plan.
-    if (m_lastStrategicDockingRequestSerial == dockingRequest.serial)
+    if (m_lastDockingPathRequestSerial == dockingRequest.serial)
         return;
-    m_lastStrategicDockingRequestSerial = dockingRequest.serial;
+    m_lastDockingPathRequestSerial = dockingRequest.serial;
 
     const auto failSnapshot = [&](const char* reason)
     {
         guidanceState.erase(corridorId);
         m_noSafeDockingGuidanceSolution = true;
-        std::cerr << "[StrategicTrajectory] request="
+        std::cerr << "[GeometricPath] request="
                   << dockingRequest.serial << " failed=" << reason << '\n';
     };
 
@@ -2212,21 +2212,19 @@ void SpaceState::updateDockingGuidance(float dt)
     const glm::dvec3 playerWorld = world::coordinates::fullMeters(
         playerSample.worldPosition
     );
-    const glm::dvec3 playerVelocityWorld = playerSample.worldVelocityMps;
-
-    game::navigation::StrategicTrajectoryRequest request;
+    game::navigation::DockingPathRequest request;
     request.startPositionMeters =
         hubFrame.worldToLocalPosition(playerWorld);
-    request.startVelocityMps =
-        hubFrame.worldToLocalVelocity(playerWorld, playerVelocityWorld);
     request.dockCenterMeters =
         hubFrame.worldToLocalPosition(targetAnchor.positionMeters);
     request.dockOutward = glm::normalize(
         hubFrame.worldToLocalVector(targetAnchor.forward())
     );
-    request.shipSafetyRadiusMeters = vehicleEnvelope.valid
+    request.vehicleSafetyRadiusMeters = vehicleEnvelope.valid
         ? vehicleEnvelope.conservativeSafetyRadiusMeters()
         : 24.0;
+    request.obstacles = planningSnapshot.navigationObstacles;
+    request.targetObstacleId = planningSnapshot.targetNavigationObstacleId;
 
     const double distanceToDock = glm::length(
         request.dockCenterMeters - request.startPositionMeters
@@ -2239,9 +2237,8 @@ void SpaceState::updateDockingGuidance(float dt)
         ? vehicleEnvelope.lengthMeters
         : 20.0;
 
-    // Make the mandatory straight ingress long enough to be visually and
-    // operationally meaningful on the Hub map, but never consume a large
-    // fraction of a short starting separation.
+    // Keep docking approach semantics here, while obstacle geometry and search
+    // are shared by every vehicle through GeometricPathPlanner.
     const double desiredApproach = std::max(
         300.0,
         vehicleLength * 10.0 + authoredClearance * 4.0
@@ -2255,30 +2252,6 @@ void SpaceState::updateDockingGuidance(float dt)
         ? vehicleEnvelope.terminalCenterDepthMeters(authoredClearance)
         : std::max(10.0, authoredClearance);
 
-    // Strategic obstacles are a current-planning-epoch abstraction. Only large,
-    // already-known infrastructure belongs here; moving debris belongs to the
-    // later tactical/autopilot layer until receding-horizon planning is added.
-    for (const auto& object : planningSnapshot.objects)
-    {
-        if (object.id == targetObject.id || object.systemId != systemId)
-            continue;
-        if (object.type != ObjectType::GuidanceDockCube &&
-            object.type != ObjectType::GuidanceDockCylinder)
-        {
-            continue;
-        }
-
-        game::navigation::StrategicTrajectoryObstacle obstacle;
-        obstacle.id = "object:" + std::to_string(object.id.value);
-        obstacle.centerMeters = hubFrame.worldToLocalPosition(
-            world::coordinates::fullMeters(object.worldPosition)
-        );
-        obstacle.radiusMeters =
-            (object.type == ObjectType::GuidanceDockCylinder ? 650.0 : 520.0) +
-            80.0;
-        request.obstacles.push_back(std::move(obstacle));
-    }
-
     const glm::dvec3 roundTripWorld = hubFrame.localToWorldPosition(
         request.startPositionMeters
     );
@@ -2286,7 +2259,7 @@ void SpaceState::updateDockingGuidance(float dt)
         roundTripWorld - playerWorld
     );
     std::cerr
-        << "[StrategicTrajectory] request=" << dockingRequest.serial
+        << "[GeometricPath] request=" << dockingRequest.serial
         << " source_server_time="
         << planningSnapshot.sourceEpoch.serverTimeSeconds
         << " planning_server_time="
@@ -2301,9 +2274,7 @@ void SpaceState::updateDockingGuidance(float dt)
         << " start_roundtrip_error_m=" << roundTripErrorMeters
         << '\n';
 
-    const auto plan = game::navigation::StrategicTrajectoryPlanner::plan(
-        request
-    );
+    const auto plan = game::navigation::DockingPathPlanner::plan(request);
     if (!plan.valid)
     {
         failSnapshot(plan.message.c_str());
@@ -2351,29 +2322,23 @@ void SpaceState::updateDockingGuidance(float dt)
     guidanceState.publish(std::move(corridor));
     m_noSafeDockingGuidanceSolution = false;
 
-    const glm::dvec3 firstDirection = glm::normalize(
-        plan.pointsMeters[1] - plan.pointsMeters[0]
-    );
     const glm::dvec3 finalDirection = glm::normalize(
         plan.pointsMeters.back() -
         plan.pointsMeters[plan.pointsMeters.size() - 2]
     );
     std::cout
-        << "[StrategicTrajectory] request=" << dockingRequest.serial
+        << "[GeometricPath] request=" << dockingRequest.serial
         << " points=" << plan.pointsMeters.size()
         << " detour=" << (plan.obstacleDetourUsed ? 1 : 0)
-        << " vrel=" << glm::length(request.startVelocityMps)
+        << " obstacles=" << request.obstacles.size()
         << " start=" << request.startPositionMeters.x << ','
             << request.startPositionMeters.y << ','
             << request.startPositionMeters.z
         << " dock=" << request.dockCenterMeters.x << ','
             << request.dockCenterMeters.y << ','
             << request.dockCenterMeters.z
-        << " start_dot_v=" << glm::dot(
-            firstDirection,
-            glm::length(request.startVelocityMps) > 0.25
-                ? glm::normalize(request.startVelocityMps)
-                : firstDirection
+        << " first_leg_m=" << glm::length(
+            plan.pointsMeters[1] - plan.pointsMeters[0]
            )
         << " final_dot_inbound=" << glm::dot(
             finalDirection,

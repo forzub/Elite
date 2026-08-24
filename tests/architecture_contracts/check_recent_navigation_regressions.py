@@ -41,14 +41,12 @@ for forbidden in (
     if forbidden in compass_renderer:
         fail("galactic compass regained a noisy precise coordinate readout")
 
-# The Hub guidance lab docks rotate slowly around local Z, which is also their
-# through-gate/docking axis. This protects the intended gravity-like spin lab.
-for spin in (
-    "glm::dvec3(0.0, 0.0, 2.0)",
-    "glm::dvec3(0.0, 0.0, -1.5)",
-):
-    if spin not in scene_setup:
-        fail("guidance test docks no longer rotate slowly around gate/local-Z axis")
+# The Hub guidance lab has one deliberate rotation probe and one static
+# reference object: box = +2 deg/s around local Z, cylinder = 0 deg/s.
+if "glm::dvec3(0.0, 0.0, 2.0)" not in scene_setup:
+    fail("guidance box no longer rotates slowly around gate/local-Z axis")
+if "glm::dvec3(0.0, 0.0, 0.0)" not in scene_setup:
+    fail("guidance cylinder is no longer a static reference object")
 
 # Rear camera must consume the scene already prepared for the main camera and
 # retain the deliberately cheaper LOD policy. Reintroducing a second full scene

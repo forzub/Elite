@@ -4,7 +4,7 @@
 
 #include <glm/gtc/quaternion.hpp>
 
-#include "src/game/navigation/HubKinematicEvaluator.h"
+#include "src/game/navigation/HubCoMovingFrame.h"
 #include "src/game/navigation/HubFrameBasis.h"
 #include "src/game/navigation/ReplicatedHubFrame.h"
 
@@ -59,11 +59,13 @@ KinematicFrame NavigationWorldPredictor::predictHubFrameAt(
         return out;
     }
 
-    // OrbitalMotion is the canonical curve definition.  Recover only the
-    // parent body's translation from the replicated total Hub velocity, bring
-    // that parent to the target epoch, then delegate the actual orbital state
-    // and tactical basis to the same evaluator used by authoritative server
-    // simulation.
+    // OrbitalMotion is already the canonical curve definition. Do not infer
+    // the future orbital angle by integrating the numerically differentiated
+    // source velocity: doing so introduces a small but systematic phase error
+    // even though period/phase are known exactly. Recover only the parent's
+    // translational velocity from the replicated total velocity, advance the
+    // parent linearly over this short horizon, and evaluate the same orbital
+    // model used by the authoritative simulation at the planning epoch.
     const glm::dvec3 sourceLocalOrbitVelocity =
         world::orbits::computeOrbitVelocityMetersPerSecond(
             source.orbitalMotion,
@@ -77,15 +79,75 @@ KinematicFrame NavigationWorldPredictor::predictHubFrameAt(
     const glm::dvec3 targetParentPosition =
         source.orbitalMotion.centerMeters + parentVelocity * dt;
 
-    return evaluateOrbitalHubKinematicFrameAt(
-        source.systemId,
-        source.hubId,
-        source.orbitalMotion,
-        targetParentPosition,
-        parentVelocity,
-        targetUniverseTimeSeconds
+    world::orbits::OrbitalMotion targetMotion = source.orbitalMotion;
+    targetMotion.centerMeters = targetParentPosition;
+
+    const glm::dvec3 targetPosition =
+        world::orbits::computeOrbitPositionMeters(
+            targetMotion,
+            targetUniverseTimeSeconds
+        );
+    const glm::dvec3 targetLocalOrbitVelocity =
+        world::orbits::computeOrbitVelocityMetersPerSecond(
+            targetMotion,
+            targetUniverseTimeSeconds
+        );
+    const glm::dvec3 targetVelocity =
+        parentVelocity + targetLocalOrbitVelocity;
+
+    const glm::dvec3 relativePosition =
+        targetPosition - targetParentPosition;
+    const double radiusMeters = glm::length(relativePosition);
+    if (!std::isfinite(radiusMeters) || radiusMeters <= 1.0)
+        return invalid;
+
+    const glm::dvec3 radial = normalizedHubFrameAxis(
+        relativePosition,
+        glm::dvec3(replicatedFrame.localToWorldBasis[1])
     );
 
+    glm::dvec3 tangentialVelocity =
+        targetLocalOrbitVelocity -
+        radial * glm::dot(targetLocalOrbitVelocity, radial);
+    const glm::dvec3 prograde = normalizedHubFrameAxis(
+        tangentialVelocity,
+        glm::dvec3(replicatedFrame.localToWorldBasis[0])
+    );
+    const glm::dvec3 normal = normalizedHubFrameAxis(
+        glm::cross(prograde, radial),
+        glm::dvec3(replicatedFrame.localToWorldBasis[2])
+    );
+    const glm::dvec3 orthogonalPrograde = normalizedHubFrameAxis(
+        glm::cross(radial, normal),
+        prograde
+    );
+
+    const double tangentialSpeedMps = glm::length(tangentialVelocity);
+    const double angularSpeedRadPerSecond =
+        tangentialSpeedMps / radiusMeters;
+    const glm::dvec3 angularVelocity =
+        -normal * angularSpeedRadPerSecond;
+
+    KinematicFrame out;
+    out.systemId = source.systemId;
+    out.frameId = source.hubId;
+    out.originMeters = targetPosition;
+    out.linearVelocityMps = targetVelocity;
+    out.linearAccelerationMps2 = glm::cross(
+        angularVelocity,
+        glm::cross(angularVelocity, relativePosition)
+    );
+    out.angularVelocityWorldRadPerSecond = angularVelocity;
+    out.localToWorldBasis = glm::dmat3(
+        orthogonalPrograde,
+        radial,
+        normal
+    );
+    out.valid =
+        finiteVec(out.originMeters) &&
+        finiteVec(out.linearVelocityMps) &&
+        finiteVec(out.angularVelocityWorldRadPerSecond);
+    return out;
 }
 
 WorldKinematicState NavigationWorldPredictor::predictConstantVelocity(

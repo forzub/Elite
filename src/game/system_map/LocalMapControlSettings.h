@@ -25,7 +25,6 @@ struct LocalMapControlSettings
     double pivotPickMinimumRadiusPx = 18.0;
     double pivotPickMaximumRadiusPx = 140.0;
     double pivotPickMarginPx = 80.0;
-    double pivotPriorityBiasPx = 18.0;
 };
 
 } // namespace game::system_map

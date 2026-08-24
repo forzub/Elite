@@ -13,10 +13,17 @@
 #include "src/game/navigation/DockingRouteRequest.h"
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/GuidanceCorridor.h"
+#include "src/game/navigation/HubCoMovingFrame.h"
+#include "src/game/navigation/HubFrameBasis.h"
+#include "src/game/navigation/HubKinematicEvaluator.h"
 #include "src/game/navigation/HubSemanticAnchor.h"
 #include "src/game/navigation/LocalGuidancePlanner.h"
 #include "src/game/navigation/NavigationModuleState.h"
 #include "src/game/navigation/NavigationPlanningSnapshot.h"
+#include "src/game/navigation/NavigationPlanningEpoch.h"
+#include "src/game/navigation/NavigationWorldPredictor.h"
+#include "src/game/navigation/ReplicatedHubFrame.h"
+#include "src/game/navigation/StrategicTrajectoryPlanner.h"
 #include "src/game/navigation/TrajectoryPredictor.h"
 #include "src/game/navigation/TrajectorySafetyEvaluator.h"
 
@@ -501,13 +508,149 @@ void testDockingGuidanceEndsNormalToGateWithRequiredHullPose()
             "terminal ship top is not aligned with dock top");
 
     const double expectedDepth = 12.0; // half length 10 + dock clearance 2
-    require(std::abs(last.centerMeters.z - (200.0 + expectedDepth)) < 1.0e-6,
-            "terminal ship center does not place the hull inside the gate");
+    require(result.terminal.evaluated && result.terminal.matched,
+            "docking planner accepted a trajectory that misses terminal state");
+    require(std::abs(last.centerMeters.z - (200.0 + expectedDepth)) <=
+                result.terminal.positionToleranceMeters,
+            "physical terminal sample does not place the hull inside the gate");
+    require(glm::length(
+                last.centerMeters -
+                result.prediction.samples.back().state.positionMeters) < 1.0e-9,
+            "corridor snapped its last frame away from the physical prediction");
+    require(result.corridor.hasTerminalTarget,
+            "docking corridor lost its separate terminal target marker");
 
     const glm::dvec3 terminalRelativeVelocity =
         result.prediction.samples.back().state.velocityMps;
     require(glm::dot(glm::normalize(terminalRelativeVelocity), inbound) > 0.995,
             "terminal trajectory velocity is not normal to the entrance plane");
+}
+
+void testHubCoMovingFrameRemovesOrbitalTangentFromLocalMotion()
+{
+    constexpr double radiusMeters = 7000000.0;
+    constexpr double speedMps = 7500.0;
+    const double start = 100.0;
+
+    const auto seed = makeHubCoMovingFrameSeed(
+        0,
+        "hub-a",
+        start,
+        glm::dvec3(0.0, radiusMeters, 0.0),
+        glm::dvec3(speedMps, 0.0, 0.0),
+        glm::dvec3(0.0),
+        glm::dvec3(0.0)
+    );
+    require(seed.valid, "Hub co-moving frame seed is invalid");
+
+    const auto now = predictHubCoMovingFrameAt(seed, start);
+    const auto future = predictHubCoMovingFrameAt(seed, start + 30.0);
+    require(now.valid && future.valid, "Hub co-moving prediction failed");
+
+    const glm::dvec3 fixedLocal(-10000.0, 250.0, 40.0);
+    const glm::dvec3 futureWorld = future.localToWorldPosition(fixedLocal);
+    require(glm::length(future.worldToLocalPosition(futureWorld) - fixedLocal) < 1.0e-6,
+            "future Hub frame did not preserve a fixed local point");
+
+    const glm::dvec3 localVelocity = future.worldToLocalVelocity(
+        futureWorld,
+        future.localToWorldVelocity(fixedLocal, glm::dvec3(0.0))
+    );
+    require(glm::length(localVelocity) < 1.0e-6,
+            "common orbital tangent leaked into Hub-local velocity");
+}
+
+void testDockingPlannerConvergesAgainstCoMovingOrbitalTarget()
+{
+    constexpr double mu = 3.986004418e14;
+    constexpr double radiusMeters = 7000000.0;
+    const double speedMps = std::sqrt(mu / radiusMeters);
+    const double start = 100.0;
+
+    const auto seed = makeHubCoMovingFrameSeed(
+        0,
+        "hub-orbit",
+        start,
+        glm::dvec3(0.0, radiusMeters, 0.0),
+        glm::dvec3(speedMps, 0.0, 0.0),
+        glm::dvec3(0.0),
+        glm::dvec3(0.0)
+    );
+    const auto initialFrame = predictHubCoMovingFrameAt(seed, start);
+    require(initialFrame.valid, "orbital Hub frame seed did not resolve");
+
+    LocalGuidanceRequest request;
+    request.corridorId = "orbital-dock";
+    request.systemId = 0;
+    request.startUniverseTimeSeconds = start;
+    const glm::dvec3 initialLocalPosition(-10000.0, 0.0, 0.0);
+    request.actorState.positionMeters =
+        initialFrame.localToWorldPosition(initialLocalPosition);
+    request.actorState.velocityMps = initialFrame.localToWorldVelocity(
+        initialLocalPosition,
+        glm::dvec3(0.0)
+    );
+    request.actorOrientation = glm::dquat(1.0, 0.0, 0.0, 0.0);
+
+    request.target.id = "orbital-gate";
+    request.target.hubModuleId = "orbital-module";
+    request.target.kind = HubSemanticAnchorKind::DockingPort;
+    request.target.orientationPolicy = DockOrientationPolicy::Upright;
+    request.target.systemId = 0;
+    request.target.epochUniverseTimeSeconds = start;
+    request.target.orientation = glm::dquat(1.0, 0.0, 0.0, 0.0);
+    request.target.extentMeters = glm::dvec3(110.0, 190.0, 900.0);
+    request.target.requiredClearanceMeters = 18.0;
+    request.target.maxEntrySpeedMps = 18.0;
+
+    request.profile.purpose = GuidancePurpose::Docking;
+    request.profile.horizonSeconds = 60.0;
+    request.profile.frameIntervalSeconds = 0.5;
+    request.profile.predictorIntegrationStepSeconds = 0.05;
+    request.profile.vehicleEnvelope = {
+        22.2, 26.0, 5.0, 0.0, true
+    };
+    request.profile.recommendedSpeedMps = 18.0;
+    request.profile.motionEnvelope.maxProperAccelerationMps2 =
+        6.0 * StandardGravityMps2;
+    request.profile.motionEnvelope.maxProperJerkMps3 =
+        1.5 * StandardGravityMps2;
+
+    GravityBody parent;
+    parent.id = "parent";
+    parent.centerMeters = glm::dvec3(0.0);
+    parent.radiusMeters = 6370000.0;
+    parent.gravitationalParameterM3s2 = mu;
+    request.environment.gravityBodies.push_back(parent);
+
+    for (int i = 0; i <= 120; ++i)
+    {
+        const double time = start + static_cast<double>(i) * 0.5;
+        const auto frame = predictHubCoMovingFrameAt(seed, time);
+        ResolvedHubSemanticAnchor sample = request.target;
+        sample.epochUniverseTimeSeconds = time;
+        sample.positionMeters = frame.originMeters;
+        sample.velocityMps = frame.linearVelocityMps;
+        sample.hasRotationCenterKinematics = false;
+        request.targetMotionSamples.push_back(sample);
+    }
+    request.target = request.targetMotionSamples.front();
+
+    const auto result = LocalGuidancePlanner::plan(request);
+    require(result.status == LocalGuidanceStatus::Ready,
+            "orbital docking candidate did not converge to moving terminal state");
+    require(result.terminal.evaluated && result.terminal.matched,
+            "orbital docking candidate was accepted without terminal match");
+    require(result.terminal.positionErrorMeters <=
+                result.terminal.positionToleranceMeters,
+            "orbital docking terminal position miss exceeded tolerance");
+    require(result.terminal.velocityErrorMps <=
+                result.terminal.velocityToleranceMps,
+            "orbital docking terminal relative velocity exceeded tolerance");
+    require(glm::length(
+                result.corridor.frames.back().centerMeters -
+                result.prediction.samples.back().state.positionMeters) < 1.0e-9,
+            "orbital docking corridor snapped away from physical prediction");
 }
 
 void testRotatingSemanticAnchorPredictsCircularGateMotion()
@@ -614,6 +757,269 @@ void testUnsafeDockingPublishesEscapeThenRecoversPrimaryRoute()
 
 } // namespace
 
+
+
+void testOrbitalVelocityUsesTheSameAnalyticCurveAsPosition()
+{
+    world::orbits::OrbitalMotion motion;
+    motion.enabled = true;
+    motion.centerMeters = glm::dvec3(700.0, -1200.0, 330.0);
+    motion.parentRadiusMeters = 1400.0;
+    motion.altitudeMeters = 8600.0;
+    motion.orbitalPeriodSeconds = 173.0;
+    motion.inclinationDeg = 27.0;
+    motion.longitudeOfAscendingNodeDeg = 41.0;
+    motion.argumentOfPeriapsisDeg = -13.0;
+    motion.initialPhaseDeg = 63.0;
+    motion.epochSeconds = 2.0;
+
+    const double time = 19.25;
+    constexpr double h = 1.0e-4;
+    const glm::dvec3 numeric =
+        (world::orbits::computeOrbitPositionMeters(motion, time + h) -
+         world::orbits::computeOrbitPositionMeters(motion, time - h)) /
+        (2.0 * h);
+    const glm::dvec3 analytic =
+        world::orbits::computeOrbitVelocityMetersPerSecond(motion, time);
+
+    require(glm::length(analytic - numeric) < 1.0e-4,
+        "orbital velocity diverged from the position curve");
+}
+
+void testSharedHubEvaluatorIncludesParentTranslation()
+{
+    world::orbits::OrbitalMotion motion;
+    motion.enabled = true;
+    motion.parentRadiusMeters = 2000.0;
+    motion.altitudeMeters = 18000.0;
+    motion.orbitalPeriodSeconds = 240.0;
+    motion.inclinationDeg = 11.0;
+    motion.longitudeOfAscendingNodeDeg = 17.0;
+    motion.initialPhaseDeg = 23.0;
+
+    const glm::dvec3 parentPosition(5.0e6, -7.0e6, 2.0e6);
+    const glm::dvec3 parentVelocity(120.0, -31.0, 44.0);
+    const double time = 33.0;
+
+    const auto frame = evaluateOrbitalHubKinematicFrameAt(
+        4,
+        "shared-evaluator-hub",
+        motion,
+        parentPosition,
+        parentVelocity,
+        time
+    );
+    require(frame.valid, "shared Hub kinematic evaluator returned invalid frame");
+
+    world::orbits::OrbitalMotion expectedMotion = motion;
+    expectedMotion.centerMeters = parentPosition;
+    const glm::dvec3 expectedPosition =
+        world::orbits::computeOrbitPositionMeters(expectedMotion, time);
+    const glm::dvec3 expectedVelocity =
+        parentVelocity +
+        world::orbits::computeOrbitVelocityMetersPerSecond(expectedMotion, time);
+
+    require(glm::length(frame.originMeters - expectedPosition) < 1.0e-9,
+        "shared Hub evaluator changed analytic orbital position");
+    require(glm::length(frame.linearVelocityMps - expectedVelocity) < 1.0e-9,
+        "shared Hub evaluator lost parent translation velocity");
+
+    const glm::dvec3 prograde(frame.localToWorldBasis[0]);
+    const glm::dvec3 radial(frame.localToWorldBasis[1]);
+    const glm::dvec3 normal(frame.localToWorldBasis[2]);
+    require(std::abs(glm::dot(prograde, radial)) < 1.0e-12,
+        "shared Hub evaluator produced non-orthogonal prograde/radial basis");
+    require(std::abs(glm::dot(prograde, normal)) < 1.0e-12,
+        "shared Hub evaluator produced non-orthogonal prograde/normal basis");
+    require(std::abs(glm::dot(radial, normal)) < 1.0e-12,
+        "shared Hub evaluator produced non-orthogonal radial/normal basis");
+}
+
+void testNavigationPlanningEpochPreservesAuthoritativeIdentity()
+{
+    NavigationPlanningEpoch epoch;
+    epoch.sourceTick = 77;
+    epoch.serverTimeSeconds = 12.5;
+    epoch.universeTimeSeconds = 9123.25;
+    epoch.universeTimelineRevision = 4;
+
+    require(epoch.valid(), "authoritative planning epoch is invalid");
+    require(epoch.sourceTick == 77,
+        "planning epoch changed source tick");
+    require(near(epoch.serverTimeSeconds, 12.5),
+        "planning epoch changed server time");
+    require(near(epoch.universeTimeSeconds, 9123.25),
+        "planning epoch changed universe time");
+    require(epoch.universeTimelineRevision == 4,
+        "planning epoch changed timeline revision");
+}
+
+void testNavigationWorldPredictorAdvancesOrbitalHubToPlanningEpoch()
+{
+    world::orbits::OrbitalMotion motion;
+    motion.enabled = true;
+    motion.centerMeters = glm::dvec3(0.0);
+    motion.parentRadiusMeters = 1000.0;
+    motion.altitudeMeters = 9000.0;
+    motion.orbitalPeriodSeconds = 120.0;
+    motion.initialPhaseDeg = 15.0;
+    motion.epochSeconds = 0.0;
+
+    const double sourceTime = 10.0;
+    const double targetTime = 10.35;
+    const glm::dvec3 sourcePosition =
+        world::orbits::computeOrbitPositionMeters(motion, sourceTime);
+    const glm::dvec3 sourceVelocity =
+        world::orbits::computeOrbitVelocityMetersPerSecond(motion, sourceTime);
+
+    const glm::dvec3 radial = glm::normalize(sourcePosition);
+    const glm::dvec3 prograde = glm::normalize(sourceVelocity);
+    const glm::dvec3 normal = glm::normalize(glm::cross(prograde, radial));
+
+    HubPredictionSource source;
+    source.systemId = 3;
+    source.hubId = "hub-predict";
+    source.sourceUniverseTimeSeconds = sourceTime;
+    source.positionMeters = sourcePosition;
+    source.velocityMps = sourceVelocity;
+    source.orientation = hubVisualOrientation(prograde, radial, normal);
+    source.orbitalMotion = motion;
+
+    const auto frame = NavigationWorldPredictor::predictHubFrameAt(
+        source,
+        targetTime
+    );
+    require(frame.valid, "predicted orbital Hub frame is invalid");
+
+    const glm::dvec3 expectedPosition =
+        world::orbits::computeOrbitPositionMeters(motion, targetTime);
+    const glm::dvec3 expectedVelocity =
+        world::orbits::computeOrbitVelocityMetersPerSecond(motion, targetTime);
+
+    require(glm::length(frame.originMeters - expectedPosition) < 1.0e-3,
+        "Hub predictor did not advance orbital position to planning epoch");
+    require(glm::length(frame.linearVelocityMps - expectedVelocity) < 1.0e-2,
+        "Hub predictor did not advance orbital velocity to planning epoch");
+}
+
+void testNavigationWorldPredictorKeepsHubAttachmentsInOneFrame()
+{
+    KinematicFrame frame;
+    frame.systemId = 5;
+    frame.frameId = "hub-attached";
+    frame.originMeters = glm::dvec3(1000.0, 2000.0, -3000.0);
+    frame.linearVelocityMps = glm::dvec3(7.0, -2.0, 3.0);
+    frame.localToWorldBasis = glm::dmat3(1.0);
+    frame.angularVelocityWorldRadPerSecond = glm::dvec3(0.0, 0.0, 0.02);
+    frame.valid = true;
+
+    const glm::dvec3 localOffset(20.0, 30.0, 40.0);
+    const glm::dvec3 localSpinDegPerSecond(0.0, 10.0, 0.0);
+    const auto attached = NavigationWorldPredictor::resolveHubAttachmentAt(
+        frame,
+        12.0,
+        localOffset,
+        glm::dvec3(0.0),
+        localSpinDegPerSecond
+    );
+    require(attached.valid, "Hub attachment prediction is invalid");
+
+    // Hub visual X/Y/Z map to tactical normal/radial/-prograde.
+    const glm::dvec3 expectedTactical(-localOffset.z, localOffset.y, localOffset.x);
+    require(glm::length(
+        frame.worldToLocalPosition(attached.positionMeters) - expectedTactical
+    ) < 1.0e-9, "Hub attachment drifted out of the predicted Hub frame");
+
+    require(glm::length(
+        attached.angularVelocityWorldRadPerSecond -
+        (frame.angularVelocityWorldRadPerSecond +
+         glm::dvec3(0.0, glm::radians(10.0), 0.0))
+    ) < 1.0e-9, "module local spin was lost from attachment angular velocity");
+}
+
+void testReplicatedHubFrameSharesMapNavigationBasis()
+{
+    const glm::dvec3 prograde(0.0, 1.0, 0.0);
+    const glm::dvec3 radial(1.0, 0.0, 0.0);
+    const glm::dvec3 normal(0.0, 0.0, -1.0);
+    const glm::mat4 visualOrientation = hubVisualOrientation(
+        prograde, radial, normal
+    );
+
+    const glm::dvec3 origin(1000.0, -2000.0, 3000.0);
+    const auto frame = makeReplicatedHubKinematicFrame(
+        2,
+        "hub-test",
+        origin,
+        glm::dvec3(4.0, 5.0, 6.0),
+        glm::dvec3(0.0, 0.0, 0.01),
+        visualOrientation
+    );
+
+    require(frame.valid, "replicated hub frame is invalid");
+    require(glm::length(glm::dvec3(frame.localToWorldBasis[0]) - prograde) < 1.0e-9,
+        "replicated hub frame changed prograde axis");
+    require(glm::length(glm::dvec3(frame.localToWorldBasis[1]) - radial) < 1.0e-9,
+        "replicated hub frame changed radial axis");
+    require(glm::length(glm::dvec3(frame.localToWorldBasis[2]) - normal) < 1.0e-9,
+        "replicated hub frame changed normal axis");
+
+    const glm::dvec3 world = origin +
+        prograde * 130.0 + radial * -40.0 + normal * 17.0;
+    const glm::dvec3 local = frame.worldToLocalPosition(world);
+    const glm::dvec3 restored = frame.localToWorldPosition(local);
+    require(glm::length(restored - world) < 1.0e-9,
+        "replicated hub frame world/local round trip drifted");
+}
+
+void testStrategicSnapshotTrajectoryHasPhysicalEndpoints()
+{
+    StrategicTrajectoryRequest request;
+    request.startPositionMeters = glm::dvec3(0.0, 0.0, 0.0);
+    request.startVelocityMps = glm::dvec3(20.0, 5.0, 0.0);
+    request.dockCenterMeters = glm::dvec3(1000.0, 300.0, 0.0);
+    request.dockOutward = glm::dvec3(-1.0, 0.0, 0.0);
+    request.approachStandoffMeters = 250.0;
+    request.terminalDepthMeters = 25.0;
+
+    const auto plan = StrategicTrajectoryPlanner::plan(request);
+    require(plan.valid, "strategic snapshot path was not built");
+    require(plan.pointsMeters.size() >= 4, "strategic snapshot path is incomplete");
+    require(glm::length(plan.pointsMeters.front() - request.startPositionMeters) < 1.0e-9,
+        "strategic path does not start at the ship");
+
+    const glm::dvec3 first = glm::normalize(
+        plan.pointsMeters[1] - plan.pointsMeters[0]);
+    require(glm::dot(first, glm::normalize(request.startVelocityMps)) > 0.999999,
+        "strategic path does not leave along current relative velocity");
+
+    const glm::dvec3 inbound = -glm::normalize(request.dockOutward);
+    const glm::dvec3 last = glm::normalize(
+        plan.pointsMeters.back() - plan.pointsMeters[plan.pointsMeters.size() - 2]);
+    require(glm::dot(last, inbound) > 0.999999,
+        "strategic docking ingress is not perpendicular to entrance plane");
+    require(glm::length(plan.pointsMeters.back() - plan.terminalPointMeters) < 1.0e-9,
+        "strategic path does not end at terminal docking point");
+}
+
+void testStrategicSnapshotTrajectoryDetoursStaticObstacle()
+{
+    StrategicTrajectoryRequest request;
+    request.startPositionMeters = glm::dvec3(0.0, 0.0, 0.0);
+    request.startVelocityMps = glm::dvec3(20.0, 0.0, 0.0);
+    request.dockCenterMeters = glm::dvec3(2000.0, 0.0, 0.0);
+    request.dockOutward = glm::dvec3(-1.0, 0.0, 0.0);
+    request.approachStandoffMeters = 250.0;
+    request.terminalDepthMeters = 25.0;
+    request.shipSafetyRadiusMeters = 20.0;
+    request.obstacles.push_back({"block", glm::dvec3(900.0, 0.0, 0.0), 180.0});
+
+    const auto plan = StrategicTrajectoryPlanner::plan(request);
+    require(plan.valid, "strategic static-obstacle detour was not built");
+    require(plan.obstacleDetourUsed, "strategic planner ignored blocking obstacle");
+    require(plan.pointsMeters.size() > 4, "strategic detour has no bypass waypoint");
+}
+
 int main()
 {
     const struct { const char* name; void (*fn)(); } tests[] = {
@@ -630,8 +1036,18 @@ int main()
         {"guidance priority and expiry", testGuidanceStateChoosesPriorityAndExpiry},
         {"local planner uses predictor and safety", testLocalPlannerUsesPredictorAndSafetyEvaluator},
         {"docking guidance terminal 6-DOF pose", testDockingGuidanceEndsNormalToGateWithRequiredHullPose},
+        {"Hub co-moving frame removes orbital tangent", testHubCoMovingFrameRemovesOrbitalTangentFromLocalMotion},
+        {"orbital docking converges to co-moving target", testDockingPlannerConvergesAgainstCoMovingOrbitalTarget},
         {"rotating semantic anchor follows circular motion", testRotatingSemanticAnchorPredictsCircularGateMotion},
         {"unsafe docking escapes and rolling replan recovers", testUnsafeDockingPublishesEscapeThenRecoversPrimaryRoute},
+        {"orbital velocity shares analytic position curve", testOrbitalVelocityUsesTheSameAnalyticCurveAsPosition},
+        {"shared Hub evaluator includes parent translation", testSharedHubEvaluatorIncludesParentTranslation},
+        {"planning epoch preserves authoritative identity", testNavigationPlanningEpochPreservesAuthoritativeIdentity},
+        {"navigation world predictor advances orbital Hub to planning epoch", testNavigationWorldPredictorAdvancesOrbitalHubToPlanningEpoch},
+        {"navigation world predictor keeps Hub attachments in one frame", testNavigationWorldPredictorKeepsHubAttachmentsInOneFrame},
+        {"replicated Hub frame shares map/navigation basis", testReplicatedHubFrameSharesMapNavigationBasis},
+        {"strategic snapshot preserves start and docking normals", testStrategicSnapshotTrajectoryHasPhysicalEndpoints},
+        {"strategic snapshot detours static obstacle", testStrategicSnapshotTrajectoryDetoursStaticObstacle},
     };
 
     std::size_t passed = 0;

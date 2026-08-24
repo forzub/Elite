@@ -66,6 +66,14 @@ struct MapObjectTrajectory
     std::string objectId;
     MapTrajectoryKind kind = MapTrajectoryKind::History;
     bool noSafePrimarySolution = false;
+
+    // Diagnostic terminal marker for planned local manoeuvres. The raw end is
+    // always points.back(); this separate marker is the actual requested
+    // docking point and must never replace the physical sample.
+    bool terminalTargetProjected = false;
+    glm::dvec2 terminalTargetScreenPx {0.0};
+    double terminalPositionErrorMeters = 0.0;
+
     std::vector<MapTrajectoryPoint> points;
 };
 
@@ -393,18 +401,16 @@ public:
             m_activeObjectId.clear();
     }
 
+    // Legacy call-site compatibility: object/glyph interaction is now
+    // strictly open-or-activate. User-visible information cards are closed
+    // only by the card X control; selecting the same object again must never
+    // change card lifetime.
     void toggle(
         const MapObjectOverlayItem& item,
         const glm::dvec2& viewportSizePx
     )
     {
-        if (isOpen(item.objectId))
-        {
-            close(item.objectId);
-            return;
-        }
-
-        open(item, viewportSizePx);
+        ensureOpen(item, viewportSizePx);
     }
 
     void open(
@@ -662,8 +668,10 @@ public:
                     result.activatedInfoKind = picked->infoKind;
                     result.activatedSemanticTargetId =
                         picked->semanticTargetId;
-                    toggle(*picked, viewportSizePx);
-                    result.toggledObjectId = picked->objectId;
+                    const bool wasOpen = isOpen(picked->objectId);
+                    ensureOpen(*picked, viewportSizePx);
+                    if (!wasOpen)
+                        result.toggledObjectId = picked->objectId;
                     m_pointerCaptured = true;
                     result.consumed = true;
                 }

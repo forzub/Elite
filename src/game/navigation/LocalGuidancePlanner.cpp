@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 
 #include <glm/gtc/quaternion.hpp>
 #include <utility>
@@ -44,58 +45,108 @@ bool validRequest(const LocalGuidanceRequest& request)
 }
 
 ResolvedHubSemanticAnchor anchorAt(
-    const ResolvedHubSemanticAnchor& target,
+    const LocalGuidanceRequest& request,
     double universeTimeSeconds
 )
 {
-    return predictHubSemanticAnchorAt(target, universeTimeSeconds);
+    const auto& samples = request.targetMotionSamples;
+    if (samples.empty())
+        return predictHubSemanticAnchorAt(request.target, universeTimeSeconds);
+
+    if (universeTimeSeconds <= samples.front().epochUniverseTimeSeconds)
+        return samples.front();
+    if (universeTimeSeconds >= samples.back().epochUniverseTimeSeconds)
+        return samples.back();
+
+    const auto upper = std::upper_bound(
+        samples.begin(),
+        samples.end(),
+        universeTimeSeconds,
+        [](double time, const ResolvedHubSemanticAnchor& sample)
+        {
+            return time < sample.epochUniverseTimeSeconds;
+        }
+    );
+    if (upper == samples.begin() || upper == samples.end())
+        return request.target;
+
+    const auto& b = *upper;
+    const auto& a = *(upper - 1);
+    const double span =
+        b.epochUniverseTimeSeconds - a.epochUniverseTimeSeconds;
+    if (span <= Epsilon)
+        return b;
+
+    const double t = std::clamp(
+        (universeTimeSeconds - a.epochUniverseTimeSeconds) / span,
+        0.0,
+        1.0
+    );
+
+    ResolvedHubSemanticAnchor out = request.target;
+    out.epochUniverseTimeSeconds = universeTimeSeconds;
+    out.positionMeters = a.positionMeters +
+        (b.positionMeters - a.positionMeters) * t;
+    out.velocityMps = a.velocityMps +
+        (b.velocityMps - a.velocityMps) * t;
+    out.orientation = glm::normalize(glm::slerp(
+        a.orientation,
+        b.orientation,
+        t
+    ));
+    out.angularVelocityWorldRadPerSecond =
+        a.angularVelocityWorldRadPerSecond +
+        (b.angularVelocityWorldRadPerSecond -
+         a.angularVelocityWorldRadPerSecond) * t;
+    out.hasRotationCenterKinematics = false;
+    return out;
 }
 
 glm::dquat orientationAt(
-    const ResolvedHubSemanticAnchor& target,
+    const LocalGuidanceRequest& request,
     double universeTimeSeconds
 )
 {
-    return anchorAt(target, universeTimeSeconds).orientation;
+    return anchorAt(request, universeTimeSeconds).orientation;
 }
 
 glm::dvec3 positionAt(
-    const ResolvedHubSemanticAnchor& target,
+    const LocalGuidanceRequest& request,
     double universeTimeSeconds
 )
 {
-    return anchorAt(target, universeTimeSeconds).positionMeters;
+    return anchorAt(request, universeTimeSeconds).positionMeters;
 }
 
 glm::dvec3 velocityAt(
-    const ResolvedHubSemanticAnchor& target,
+    const LocalGuidanceRequest& request,
     double universeTimeSeconds
 )
 {
-    return anchorAt(target, universeTimeSeconds).velocityMps;
+    return anchorAt(request, universeTimeSeconds).velocityMps;
 }
 
 glm::dvec3 outwardAt(
-    const ResolvedHubSemanticAnchor& target,
+    const LocalGuidanceRequest& request,
     double universeTimeSeconds
 )
 {
     return glm::normalize(
-        orientationAt(target, universeTimeSeconds) *
+        orientationAt(request, universeTimeSeconds) *
         glm::dvec3(0.0, 0.0, -1.0)
     );
 }
 
 glm::dvec3 dockUpAt(
-    const ResolvedHubSemanticAnchor& target,
+    const LocalGuidanceRequest& request,
     double universeTimeSeconds
 )
 {
     glm::dvec3 up = glm::normalize(
-        orientationAt(target, universeTimeSeconds) *
+        orientationAt(request, universeTimeSeconds) *
         glm::dvec3(0.0, 1.0, 0.0)
     );
-    if (target.orientationPolicy == DockOrientationPolicy::Inverted)
+    if (request.target.orientationPolicy == DockOrientationPolicy::Inverted)
         up = -up;
     return up;
 }
@@ -150,8 +201,8 @@ glm::dquat dockingOrientationAt(
     double universeTimeSeconds
 )
 {
-    const glm::dvec3 inbound = -outwardAt(request.target, universeTimeSeconds);
-    glm::dvec3 up = dockUpAt(request.target, universeTimeSeconds);
+    const glm::dvec3 inbound = -outwardAt(request, universeTimeSeconds);
+    glm::dvec3 up = dockUpAt(request, universeTimeSeconds);
 
     if (request.target.orientationPolicy == DockOrientationPolicy::FreeRoll)
     {
@@ -214,8 +265,8 @@ glm::dvec3 dockingApproachPointAt(
     double universeTimeSeconds
 )
 {
-    return positionAt(request.target, universeTimeSeconds) +
-        outwardAt(request.target, universeTimeSeconds) *
+    return positionAt(request, universeTimeSeconds) +
+        outwardAt(request, universeTimeSeconds) *
         dockingStandoffMeters(request);
 }
 
@@ -224,8 +275,8 @@ glm::dvec3 dockingTerminalPointAt(
     double universeTimeSeconds
 )
 {
-    return positionAt(request.target, universeTimeSeconds) -
-        outwardAt(request.target, universeTimeSeconds) *
+    return positionAt(request, universeTimeSeconds) -
+        outwardAt(request, universeTimeSeconds) *
         dockingTerminalDepthMeters(request);
 }
 
@@ -234,8 +285,8 @@ glm::dvec3 dockingIngressVelocityAt(
     double universeTimeSeconds
 )
 {
-    return velocityAt(request.target, universeTimeSeconds) -
-        outwardAt(request.target, universeTimeSeconds) *
+    return velocityAt(request, universeTimeSeconds) -
+        outwardAt(request, universeTimeSeconds) *
         dockingEntrySpeedMps(request);
 }
 
@@ -254,14 +305,20 @@ void makeTwoLegAccelerationProgram(
 {
     const double total = request.profile.horizonSeconds;
     const double half = total * 0.5;
-    const glm::dvec3 displacement =
-        targetPosition - request.actorState.positionMeters;
+    // Solve the endpoint in a co-moving translational frame whose velocity is
+    // the requested terminal velocity. Algebraically this is equivalent to
+    // the old absolute formula, but it never subtracts two ~orbital-scale
+    // world displacements to discover a kilometre-scale local manoeuvre.
+    const glm::dvec3 targetLinearStart =
+        targetPosition - targetVelocity * total;
+    const glm::dvec3 relativePosition0 =
+        request.actorState.positionMeters - targetLinearStart;
+    const glm::dvec3 relativeVelocity0 =
+        request.actorState.velocityMps - targetVelocity;
 
-    const glm::dvec3 velocityDelta =
-        targetVelocity - request.actorState.velocityMps;
-    const glm::dvec3 D = velocityDelta / half;
+    const glm::dvec3 D = -relativeVelocity0 / half;
     const glm::dvec3 S =
-        displacement - request.actorState.velocityMps * total;
+        -relativePosition0 - relativeVelocity0 * total;
 
     const glm::dvec3 first = S / (half * half) - 0.5 * D;
     const glm::dvec3 second = D - first;
@@ -280,7 +337,7 @@ void makeTwoLegAccelerationProgram(
     };
 }
 
-TrajectoryPredictionResult predictLeg(
+TrajectoryPredictionResult predictLegOnce(
     const LocalGuidanceRequest& request,
     const WorldKinematicState& initialState,
     const glm::dvec3& initialProperAccelerationMps2,
@@ -317,6 +374,74 @@ TrajectoryPredictionResult predictLeg(
         predictionRequest
     );
     return TrajectoryPredictor::predict(predictionRequest);
+}
+
+TrajectoryPredictionResult predictLeg(
+    const LocalGuidanceRequest& request,
+    const WorldKinematicState& initialState,
+    const glm::dvec3& initialProperAccelerationMps2,
+    double startUniverseTimeSeconds,
+    double durationSeconds,
+    const glm::dvec3& targetPosition,
+    const glm::dvec3& targetVelocity
+)
+{
+    // Shooting correction closes the endpoint after real gravity and the
+    // acceleration/jerk envelope have been applied by TrajectoryPredictor.
+    // This is still only a candidate generator: it never moves the ship.
+    glm::dvec3 commandPosition = targetPosition;
+    glm::dvec3 commandVelocity = targetVelocity;
+
+    TrajectoryPredictionResult best;
+    double bestScore = std::numeric_limits<double>::infinity();
+
+    constexpr int MaxIterations = 6;
+    constexpr double PositionToleranceMeters = 0.25;
+    constexpr double VelocityToleranceMps = 0.10;
+
+    for (int iteration = 0; iteration < MaxIterations; ++iteration)
+    {
+        auto candidate = predictLegOnce(
+            request,
+            initialState,
+            initialProperAccelerationMps2,
+            startUniverseTimeSeconds,
+            durationSeconds,
+            commandPosition,
+            commandVelocity
+        );
+        if (!candidate.ok() || candidate.samples.empty())
+            return candidate;
+
+        const auto& end = candidate.samples.back().state;
+        const glm::dvec3 positionError = targetPosition - end.positionMeters;
+        const glm::dvec3 velocityError = targetVelocity - end.velocityMps;
+        const double positionErrorMeters = glm::length(positionError);
+        const double velocityErrorMps = glm::length(velocityError);
+        const double score = positionErrorMeters + velocityErrorMps * durationSeconds;
+
+        if (score < bestScore)
+        {
+            bestScore = score;
+            best = candidate;
+        }
+
+        if (positionErrorMeters <= PositionToleranceMeters &&
+            velocityErrorMps <= VelocityToleranceMps)
+        {
+            return candidate;
+        }
+
+        // Endpoint response is close to linear for this short local candidate.
+        // Bias the authored endpoint by the observed miss and let the shared
+        // predictor apply gravity/envelopes again. If the envelope saturates,
+        // the best physically achieved candidate is returned and terminal
+        // validation below rejects it instead of snapping the corridor.
+        commandPosition += positionError;
+        commandVelocity += velocityError;
+    }
+
+    return best;
 }
 
 TrajectoryPredictionResult concatenatePredictions(
@@ -577,7 +702,7 @@ bool tryDockingLateralDetour(
     lateral -= pathDirection * glm::dot(lateral, pathDirection);
     if (glm::length(lateral) <= Epsilon)
     {
-        const glm::dvec3 dockUp = dockUpAt(request.target, detourTime);
+        const glm::dvec3 dockUp = dockUpAt(request, detourTime);
         lateral = glm::cross(pathDirection, dockUp);
     }
     if (glm::length(lateral) <= Epsilon)
@@ -676,6 +801,66 @@ double smoothStep(double edge0, double edge1, double x)
         return x >= edge1 ? 1.0 : 0.0;
     const double t = std::clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
     return t * t * (3.0 - 2.0 * t);
+}
+
+DockingTerminalStateReport evaluateDockingTerminalState(
+    const LocalGuidanceRequest& request,
+    const TrajectoryPredictionResult& prediction
+)
+{
+    DockingTerminalStateReport report;
+    if (prediction.samples.empty())
+        return report;
+
+    report.evaluated = true;
+    const auto& end = prediction.samples.back();
+    const double endTime = end.universeTimeSeconds;
+    report.requiredPositionMeters = dockingTerminalPointAt(request, endTime);
+    report.requiredVelocityMps = dockingIngressVelocityAt(request, endTime);
+
+    const glm::dvec3 worldPositionError =
+        end.state.positionMeters - report.requiredPositionMeters;
+    const glm::dvec3 worldVelocityError =
+        end.state.velocityMps - report.requiredVelocityMps;
+
+    const glm::dquat terminalPose = dockingOrientationAt(request, endTime);
+    const glm::dvec3 right = glm::normalize(
+        terminalPose * glm::dvec3(1.0, 0.0, 0.0)
+    );
+    const glm::dvec3 up = glm::normalize(
+        terminalPose * glm::dvec3(0.0, 1.0, 0.0)
+    );
+    const glm::dvec3 inbound = glm::normalize(
+        terminalPose * glm::dvec3(0.0, 0.0, -1.0)
+    );
+
+    report.positionErrorDockMeters = {
+        glm::dot(worldPositionError, right),
+        glm::dot(worldPositionError, up),
+        glm::dot(worldPositionError, inbound)
+    };
+    report.velocityErrorDockMps = {
+        glm::dot(worldVelocityError, right),
+        glm::dot(worldVelocityError, up),
+        glm::dot(worldVelocityError, inbound)
+    };
+
+    report.positionErrorMeters = glm::length(worldPositionError);
+    report.velocityErrorMps = glm::length(worldVelocityError);
+    report.positionToleranceMeters = std::clamp(
+        std::max(0.5, request.target.requiredClearanceMeters * 0.15),
+        0.5,
+        5.0
+    );
+    report.velocityToleranceMps = std::clamp(
+        std::max(0.25, request.target.maxEntrySpeedMps * 0.10),
+        0.25,
+        2.0
+    );
+    report.matched =
+        report.positionErrorMeters <= report.positionToleranceMeters &&
+        report.velocityErrorMps <= report.velocityToleranceMps;
+    return report;
 }
 
 GuidanceCorridor buildCorridor(
@@ -809,10 +994,15 @@ GuidanceCorridor buildCorridor(
 
     if (!corridor.frames.empty() && purpose == GuidancePurpose::Docking)
     {
+        const auto terminal = evaluateDockingTerminalState(request, prediction);
+        corridor.hasTerminalTarget = terminal.evaluated;
+        corridor.terminalTargetMeters = terminal.requiredPositionMeters;
+        corridor.terminalPositionErrorMeters = terminal.positionErrorMeters;
+
+        // Never move the last frame onto the dock by presentation fiat. The
+        // final frame is the physical predictor sample. A docking corridor is
+        // published only after terminal validation accepts that sample.
         auto& last = corridor.frames.back();
-        const double endTime = last.universeTimeSeconds;
-        last.centerMeters = dockingTerminalPointAt(request, endTime);
-        last.orientation = dockingOrientationAt(request, endTime);
         last.widthMeters = baseWidth;
         last.heightMeters = baseHeight;
         last.requiredVehiclePose = true;
@@ -853,7 +1043,7 @@ bool tryEmergencyEscape(
         request.actorOrientation * glm::dvec3(0.0, 1.0, 0.0)
     );
     const glm::dvec3 dockOutward = outwardAt(
-        request.target,
+        request,
         request.startUniverseTimeSeconds
     );
 
@@ -943,10 +1133,10 @@ LocalGuidanceResult LocalGuidancePlanner::plan(
 
     const glm::dvec3 targetEndPosition = docking
         ? dockingTerminalPointAt(request, endTime)
-        : positionAt(request.target, endTime);
+        : positionAt(request, endTime);
     const glm::dvec3 targetEndVelocity = docking
         ? dockingIngressVelocityAt(request, endTime)
-        : velocityAt(request.target, endTime);
+        : velocityAt(request, endTime);
 
     out.prediction = docking
         ? predictDockingCandidate(request)
@@ -1000,6 +1190,17 @@ LocalGuidanceResult LocalGuidancePlanner::plan(
             out.prediction = std::move(detourPrediction);
             out.safety = std::move(detourSafety);
             out.detourUsed = true;
+        }
+    }
+
+    if (out.safety.safe && docking)
+    {
+        out.terminal = evaluateDockingTerminalState(request, out.prediction);
+        if (!out.terminal.matched)
+        {
+            out.status = LocalGuidanceStatus::NoTerminalSolution;
+            out.message = "docking prediction does not satisfy terminal state";
+            return out;
         }
     }
 

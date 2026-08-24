@@ -107,10 +107,7 @@ LocalMapInteractionResult LocalMapInteraction::handle(
 
         if (hubMode)
         {
-            const glm::dvec2 centerPx(
-                static_cast<double>(viewport.width) * 0.5,
-                static_cast<double>(viewport.height) * 0.5
-            );
+            const glm::dvec2 centerPx = hubFrame.centerPx;
             const glm::dvec2 mousePx(localMouseX, localMouseY);
             const double safeScale =
                 std::max(0.000001, hubFrame.scale);
@@ -125,9 +122,11 @@ LocalMapInteractionResult LocalMapInteraction::handle(
                 );
             }
 
-            hubView.state().orbitPivotLocalMeters = pivot;
-            hubView.state().orbitPivotScreenPx =
-                hubView.project(pivot, safeScale, centerPx);
+            hubView.captureOrbitPivot(
+                pivot,
+                safeScale,
+                centerPx
+            );
         }
     }
 
@@ -169,6 +168,8 @@ LocalMapInteractionResult LocalMapInteraction::handle(
         }
 
         camera.rotating = false;
+        if (hubMode)
+            hubView.clearOrbitPivot();
     }
 
     if (inside &&
@@ -213,6 +214,14 @@ LocalMapInteractionResult LocalMapInteraction::handle(
                 wrapLocalMapAngle(
                     camera.pitch
                 );
+        }
+
+        if (hubMode)
+        {
+            hubView.stabilizeCapturedOrbitPivot(
+                std::max(0.000001, hubFrame.scale),
+                hubFrame.centerPx
+            );
         }
     }
 

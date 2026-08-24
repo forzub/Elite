@@ -28,6 +28,7 @@
 #include "src/game/system_map/HubMapView.h"
 #include "src/game/system_map/GalaxyMapView.h"
 #include "src/game/system_map/LocalMapPresentationBuilder.h"
+#include "src/game/system_map/LocalMapInteraction.h"
 #include "src/game/system_map/MapCameraSnapshot.h"
 #include "src/game/system_map/MapMode.h"
 #include "src/game/system_map/MapObjectOverlay.h"
@@ -56,6 +57,10 @@ using game::system_map::HubMapView;
 using game::system_map::GalaxyMapView;
 using game::system_map::LocalMapCameraSnapshot;
 using game::system_map::LocalMapPresentationBuilder;
+using game::system_map::LocalMapInteraction;
+using game::system_map::DetailMapFrameData;
+using game::system_map::HubMapFrameData;
+using game::system_map::HubMapPickable;
 using game::system_map::MapMode;
 using game::system_map::MapObjectInfoKind;
 using game::system_map::MapObjectInfoPanelState;
@@ -1351,11 +1356,29 @@ void testLocalPresentationBuilderPreparesDetailAndHub()
     REQUIRE(hubPresentation.hubId == "hub-alpha");
     REQUIRE(hubPresentation.scale > 0.0);
 
-    // Hub infrastructure is deliberately absent from the broad screen-space
-    // pivot list. It remains represented in the overlay for cards/selection,
-    // but actual selection is authorized only by exact assembly-mesh hits.
-    REQUIRE(hubPresentation.frame.pickables.size() == 1);
-    REQUIRE(hubPresentation.frame.pickables[0].priority == 100);
+    // Orbit-pivot candidates are independent from card/selection hit tests.
+    // Both infrastructure and ships may anchor a drag, while infrastructure
+    // selection itself remains exact assembly-mesh based.
+    REQUIRE(hubPresentation.frame.pickables.size() == 2);
+    const auto modulePivot = std::find_if(
+        hubPresentation.frame.pickables.begin(),
+        hubPresentation.frame.pickables.end(),
+        [](const auto& pickable)
+        {
+            return pickable.label == "Prime module";
+        }
+    );
+    const auto playerPivot = std::find_if(
+        hubPresentation.frame.pickables.begin(),
+        hubPresentation.frame.pickables.end(),
+        [](const auto& pickable)
+        {
+            return pickable.priority == 100;
+        }
+    );
+    REQUIRE(modulePivot != hubPresentation.frame.pickables.end());
+    REQUIRE(playerPivot != hubPresentation.frame.pickables.end());
+    REQUIRE(modulePivot->priority == 20);
 
     const auto moduleOverlay =
         std::find_if(
@@ -2414,7 +2437,7 @@ void testTacticalOverlaySupportsMultipleIndependentCards()
     REQUIRE(state.orderedPanels().size() == 1);
 }
 
-void testTacticalOverlayPointerToggleAndDragAreCaptured()
+void testTacticalOverlayPointerOpenAndDragAreCaptured()
 {
     MapObjectOverlayState state;
     MapObjectOverlayFrame frame;
@@ -2458,12 +2481,25 @@ void testTacticalOverlayPointerToggleAndDragAreCaptured()
     REQUIRE(panels.size() == 1);
     REQUIRE(glm::length(panels.front().topLeftPx - originalTopLeft) > 1.0);
 
-    // Repeated click on the glyph closes exactly that card.
+    // Repeated glyph clicks may reactivate the object, but card lifetime is
+    // independent from selection. Only the card X control can close it.
     result = state.handlePointer(frame, viewport, item.screenPx, true, true);
     REQUIRE(result.consumed);
-    REQUIRE(result.toggledObjectId == item.objectId);
-    REQUIRE(!state.isOpen(item.objectId));
+    REQUIRE(result.toggledObjectId.empty());
+    REQUIRE(state.isActive(item.objectId));
+    REQUIRE(state.isOpen(item.objectId));
     state.handlePointer(frame, viewport, item.screenPx, true, false);
+
+    panels = state.orderedPanels();
+    REQUIRE(panels.size() == 1);
+    const glm::dvec2 closePoint =
+        panels.front().topLeftPx +
+        glm::dvec2(MapObjectOverlayState::PanelWidthPx - 15.0, 14.0);
+    result = state.handlePointer(frame, viewport, closePoint, true, true);
+    REQUIRE(result.consumed);
+    REQUIRE(result.closedObjectId == item.objectId);
+    REQUIRE(!state.isOpen(item.objectId));
+    state.handlePointer(frame, viewport, closePoint, true, false);
 }
 
 void testTacticalOverlayCardClickReactivatesObjectWithoutTogglingCard()
@@ -2674,8 +2710,8 @@ void testHubSelectionLifecycleAndDockPriority()
     REQUIRE(state.isOpen(dock.objectId));
     REQUIRE(!state.isOpen(module.objectId));
 
-    // Release, then click the selected dock again. Closing a selected card is
-    // also deselection; no active ring/semantic markers may survive it.
+    // Release, then click the selected dock again. Selection must not own
+    // information-card lifetime: the already-open dock card stays open.
     (void)state.handlePointer(
         frame,
         viewport,
@@ -2683,16 +2719,17 @@ void testHubSelectionLifecycleAndDockPriority()
         true,
         false
     );
-    const auto deselected = state.handlePointer(
+    const auto reselected = state.handlePointer(
         frame,
         viewport,
         glm::dvec2(150.0, 150.0),
         true,
         true
     );
-    REQUIRE(deselected.consumed);
-    REQUIRE(!state.isOpen(dock.objectId));
-    REQUIRE(state.activeObjectId().empty());
+    REQUIRE(reselected.consumed);
+    REQUIRE(reselected.toggledObjectId.empty());
+    REQUIRE(state.isOpen(dock.objectId));
+    REQUIRE(state.isActive(dock.objectId));
 
     (void)state.handlePointer(
         frame,
@@ -2710,6 +2747,25 @@ void testHubSelectionLifecycleAndDockPriority()
     );
     REQUIRE(emptyPress.primaryPressStarted);
     REQUIRE(!emptyPress.consumed);
+    REQUIRE(state.isOpen(dock.objectId));
+
+    (void)state.handlePointer(
+        frame,
+        viewport,
+        glm::dvec2(500.0, 500.0),
+        true,
+        false
+    );
+    const auto panels = state.orderedPanels();
+    REQUIRE(panels.size() == 1);
+    const glm::dvec2 closePoint =
+        panels.front().topLeftPx +
+        glm::dvec2(MapObjectOverlayState::PanelWidthPx - 15.0, 14.0);
+    const auto closed = state.handlePointer(
+        frame, viewport, closePoint, true, true);
+    REQUIRE(closed.consumed);
+    REQUIRE(closed.closedObjectId == dock.objectId);
+    REQUIRE(!state.isOpen(dock.objectId));
 }
 void testPreparedSystemPickingPrefersLargestDirectSemanticObject()
 {
@@ -2795,6 +2851,135 @@ void testTacticalOverlayTrajectorySeamDoesNotInventSamples()
     REQUIRE(frame.trajectories.empty());
 }
 
+void testHubMapOrbitKeepsCapturedPivotOnScreen()
+{
+    HubMapView hubView;
+    hubView.beginScene();
+    DetailMapView detailView;
+
+    const Viewport viewport{800, 600, 0, 0};
+    HubMapFrameData hubFrame;
+    hubFrame.scale = 0.25;
+    hubFrame.centerPx = glm::dvec2(400.0, 300.0);
+
+    const glm::dvec3 pivotLocal(900.0, 150.0, -420.0);
+    HubMapPickable pivot;
+    pivot.localCenterMeters = pivotLocal;
+    pivot.screenCenterPx = hubView.project(
+        pivotLocal,
+        hubFrame.scale,
+        hubFrame.centerPx
+    );
+    pivot.screenRadiusPx = 24.0;
+    pivot.priority = 20;
+    pivot.label = "test-module";
+    hubFrame.pickables.push_back(pivot);
+
+    DetailMapFrameData detailFrame;
+    LocalMapInteraction interaction;
+    double pendingScroll = 0.0;
+
+    const glm::dvec2 capturedScreen = pivot.screenCenterPx;
+    (void)interaction.handle(
+        MapMode::Hub,
+        detailView,
+        hubView,
+        detailFrame,
+        hubFrame,
+        viewport,
+        nullptr,
+        capturedScreen.x,
+        capturedScreen.y,
+        capturedScreen.x,
+        capturedScreen.y,
+        true,
+        true,
+        false,
+        pendingScroll
+    );
+    REQUIRE(hubView.state().orbitPivotActive);
+
+    (void)interaction.handle(
+        MapMode::Hub,
+        detailView,
+        hubView,
+        detailFrame,
+        hubFrame,
+        viewport,
+        nullptr,
+        capturedScreen.x + 42.0,
+        capturedScreen.y + 23.0,
+        capturedScreen.x + 42.0,
+        capturedScreen.y + 23.0,
+        true,
+        true,
+        false,
+        pendingScroll
+    );
+
+    const glm::dvec2 after = hubView.project(
+        pivotLocal,
+        hubFrame.scale,
+        hubFrame.centerPx
+    );
+    REQUIRE_NEAR(after.x, capturedScreen.x, 1.0e-6);
+    REQUIRE_NEAR(after.y, capturedScreen.y, 1.0e-6);
+
+    (void)interaction.handle(
+        MapMode::Hub,
+        detailView,
+        hubView,
+        detailFrame,
+        hubFrame,
+        viewport,
+        nullptr,
+        capturedScreen.x + 42.0,
+        capturedScreen.y + 23.0,
+        capturedScreen.x + 42.0,
+        capturedScreen.y + 23.0,
+        true,
+        false,
+        false,
+        pendingScroll
+    );
+    REQUIRE(!hubView.state().orbitPivotActive);
+}
+
+void testHubMapOrbitPivotPrefersDirectThenNearestObject()
+{
+    HubMapView view;
+    view.beginScene();
+
+    HubMapFrameData frame;
+    frame.scale = 1.0;
+    frame.centerPx = glm::dvec2(400.0, 300.0);
+
+    HubMapPickable directModule;
+    directModule.localCenterMeters = glm::dvec3(10.0, 0.0, 0.0);
+    directModule.screenCenterPx = glm::dvec2(300.0, 300.0);
+    directModule.screenRadiusPx = 20.0;
+    directModule.priority = 20;
+    directModule.label = "module";
+    frame.pickables.push_back(directModule);
+
+    HubMapPickable nearbyPlayer;
+    nearbyPlayer.localCenterMeters = glm::dvec3(20.0, 0.0, 0.0);
+    nearbyPlayer.screenCenterPx = glm::dvec2(355.0, 300.0);
+    nearbyPlayer.screenRadiusPx = 18.0;
+    nearbyPlayer.priority = 100;
+    nearbyPlayer.label = "player";
+    frame.pickables.push_back(nearbyPlayer);
+
+    glm::dvec3 picked(0.0);
+    REQUIRE(view.pickOrbitPivot(frame, glm::dvec2(300.0, 300.0), picked));
+    REQUIRE_NEAR(glm::length(picked - directModule.localCenterMeters), 0.0, 1.0e-9);
+
+    // No direct hit: nearest scene object wins. Priority may only break a true
+    // proximity tie; it must not pull rotation to a remote high-priority ship.
+    REQUIRE(view.pickOrbitPivot(frame, glm::dvec2(326.0, 300.0), picked));
+    REQUIRE_NEAR(glm::length(picked - directModule.localCenterMeters), 0.0, 1.0e-9);
+}
+
 void testHubMapAllowsCloseTacticalInspection()
 {
     HubMapView view;
@@ -2838,12 +3023,14 @@ int main()
         {"client navigation workspace separates tracking from route plan", testClientNavigationWorkspaceSeparatesTrackingAndRoutePlan},
         {"waypoint info affordance wins without auto opening card", testWaypointInfoAffordanceWinsWithoutAutoOpeningCard},
         {"tactical overlay supports multiple independent cards", testTacticalOverlaySupportsMultipleIndependentCards},
-        {"tactical overlay pointer toggle and drag are captured", testTacticalOverlayPointerToggleAndDragAreCaptured},
+        {"tactical overlay cards are X-only and drag is captured", testTacticalOverlayPointerOpenAndDragAreCaptured},
         {"tactical overlay card click reactivates object without toggling card", testTacticalOverlayCardClickReactivatesObjectWithoutTogglingCard},
         {"tactical object selection clears body cube and Hub focus", testTacticalObjectSelectionClearsBodyCubeAndHubFocus},
         {"tactical overlay crowded pick prefers largest object", testTacticalOverlayCrowdedPickPrefersLargestObject},
         {"Hub exact-body selection lifecycle and dock priority", testHubSelectionLifecycleAndDockPriority},
         {"tactical overlay trajectory seam does not invent samples", testTacticalOverlayTrajectorySeamDoesNotInventSamples},
+        {"Hub map orbit keeps captured pivot on screen", testHubMapOrbitKeepsCapturedPivotOnScreen},
+        {"Hub map orbit pivot prefers direct then nearest object", testHubMapOrbitPivotPrefersDirectThenNearestObject},
         {"Hub map allows close tactical inspection", testHubMapAllowsCloseTacticalInspection}
     };
 

@@ -14,6 +14,7 @@
 #include "src/game/simulation/EntityRuntimeTransition.h"
 #include "src/game/simulation/SimulationMode.h"
 #include "src/game/simulation/TimelineDomain.h"
+#include "src/game/shared/SpatialComputationPlacement.h"
 
 namespace
 {
@@ -333,6 +334,42 @@ void testSimulationLifecycleRequiresMaterializationFence()
     );
 }
 
+
+void testSpatialComputationPlacementSeparatesWorkFromStateAuthority()
+{
+    using game::shared::SpatialComputationContext;
+    using game::shared::SpatialComputationPlacement;
+    using game::shared::chooseSpatialComputationPlacement;
+
+    SpatialComputationContext local;
+    local.humanParticipantCount = 1;
+    REQUIRE(
+        chooseSpatialComputationPlacement(local) ==
+        SpatialComputationPlacement::ClientLocal
+    );
+
+    SpatialComputationContext shared = local;
+    shared.humanParticipantCount = 2;
+    REQUIRE(
+        chooseSpatialComputationPlacement(shared) ==
+        SpatialComputationPlacement::ServerShared
+    );
+
+    SpatialComputationContext forcedServer = local;
+    forcedServer.serverExecutionRequired = true;
+    REQUIRE(
+        chooseSpatialComputationPlacement(forcedServer) ==
+        SpatialComputationPlacement::ServerShared
+    );
+
+    SpatialComputationContext incapableClient = local;
+    incapableClient.clientExecutionAvailable = false;
+    REQUIRE(
+        chooseSpatialComputationPlacement(incapableClient) ==
+        SpatialComputationPlacement::ServerShared
+    );
+}
+
 using TestFunction = void (*)();
 
 struct TestCase
@@ -360,7 +397,11 @@ int main()
         {
             "simulation lifecycle requires materialization fence",
             testSimulationLifecycleRequiresMaterializationFence
-        }
+        },
+        {
+            "spatial computation placement separates work from state authority",
+            testSpatialComputationPlacementSeparatesWorkFromStateAuthority
+        },
     };
 
     int failed = 0;

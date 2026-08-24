@@ -185,7 +185,7 @@ Server runtime принимает несколько transport/session endpoints
 - `[x]` PATCH A: renderer-independent navigation ownership + typed stable route target identity (`ShipInstanceId`/Hub/body/spatial address) закрыт и защищён architecture guards.
 - `[x]` PATCH B: Route Plan получил обязательный explicit START/execution asset; START не участвует в reorder/delete, содержит stable `NavigationAssetRef` и не рисуется в cockpit HUD, когда executor совпадает с локально управляемым кораблём. Серверная `ownedNavigationAssets` projection строится из authoritative `ShipOwnershipRegistry`, отдельно от `ControlRegistry`; `DroneInstanceId` зарезервирован для будущих durable owned drones. Мёртвый `NavigationPlan` удалён из `DynamicMotionState`/wire schema.
 - `[~]` PATCH C: общий renderer/server-neutral `TrajectoryPredictor` реализован и покрыт отдельным test block/architecture guard; полный MinGW ready gate ещё должен подтвердить интеграцию. Predictor принимает system-local kinematic seed, gravity sources, proper-acceleration program и caller-selected acceleration/jerk envelope; выдаёт time-series position/velocity/acceleration, отдельно gravity/proper acceleration, proper crew G-load и accumulated delta-v. `TrajectoryMapAdapter` переводит результат в существующий `MapObjectTrajectory` seam без обратной зависимости predictor -> renderer.
-- `[~]` **Ближайший шаг:** live-валидация docking guidance: direct dock selection, card-scoped task cancellation, dashed planned path на System/Detail/Hub и 6-DOF GuidanceTunnel в Flight HUD. Затем oriented swept-volume collision checking/richer local avoidance. Общий route/intercept solver и long-range trajectory layer идут после стабилизации этого local-guidance vertical slice; autopilot остаётся позже. Финальный продуктовый контракт: `src/game/navigation/ROUTE_NAVIGATION_CONTRACT.md`.
+- `[~]` **Ближайший шаг:** live-валидация docking guidance: direct dock selection, X-only information-card lifetime, dock-card-scoped task cancellation, dashed planned path на System/Detail/Hub и 6-DOF GuidanceTunnel в Flight HUD. Selection/empty-map clicks никогда не закрывают карточки; только `X` dock-card отменяет docking guidance. Затем oriented swept-volume collision checking/richer local avoidance. Общий route/intercept solver и long-range trajectory layer идут после стабилизации этого local-guidance vertical slice; autopilot остаётся позже. Финальный продуктовый контракт: `src/game/navigation/ROUTE_NAVIGATION_CONTRACT.md`.
 
 ### Космический компас
 
@@ -223,7 +223,7 @@ Server runtime принимает несколько transport/session endpoints
 
 ## 8. Траектории на картах
 
-**Статус: `[~]` data seam существует (`MapObjectTrajectory` + History/Prediction/Planned); первый реальный producer/consumer slice готов для активного local `GuidanceCorridor`: System/Detail/Hub проецируют его samples и рисуют dashed planned path. Общие history/prediction/on-demand producers ещё впереди.**
+**Статус: `[~]` data seam существует (`MapObjectTrajectory` + History/Prediction/Planned); первый реальный producer/consumer slice готов для активного local `GuidanceCorridor`: System/Detail/Hub проецируют его samples и рисуют plain solid planned path. Общие history/prediction/on-demand producers ещё впереди.**
 
 Карты должны уметь по запросу отвечать на вопросы:
 
@@ -635,21 +635,27 @@ Local game и dedicated server должны использовать тот же
   short-lived planning snapshot is built, and accepted local corridors are
   republished about every 0.2 s. Known blocking diagnostic modules participate
   as moving conservative obstacles.
-- `[~]` **Current docking-guidance slice:** `CALCULATE ROUTE` is being connected
-  to the real rolling local planner rather than the hard-wired Motion Lab gate.
-  Docking guidance is explicitly 6-DOF/advisory: the terminal trajectory enters
-  along the inward normal of the moving dock plane, ship top/belly is aligned to
-  dock up/down, and `VehicleGuidanceEnvelope` supplies real hull dimensions for
-  conservative safety. A blocked primary docking solution attempts a validated
-  `EmergencyEscape` tunnel with flashing `NO SAFE GUIDANCE SOLUTION`; the typed
-  docking intent remains active and automatically resumes when rolling replanning
-  finds the dock safe again. Presentation wiring now makes the active corridor
-  visible in both places required for live validation: System/Detail/Hub maps
-  draw a dashed Bezier-smoothed planned path through the planner samples, while
-  Flight HUD renders the existing 6-DOF GuidanceTunnel. Authored dock openings
-  are directly clickable before parent-module selection, and closing the active
-  dock information card cancels its docking request/corridor/tracking marker.
-  No `TrajectoryFollower`/autopilot is connected.
+- `[~]` **Current docking-guidance slice:** live trace exposed two concrete
+  calculation/presentation errors and the current work is intentionally narrowed
+  to **solver + map trajectory**; HUD is not being changed in this slice. The old
+  30-second solution integrated the ship through system gravity while extrapolating
+  the moving Hub/dock along its instantaneous world-space tangent, then declared
+  `Ready` on collision safety alone and visually snapped the last corridor frame
+  to the dock despite a kilometre-scale physical miss. The target now receives a
+  short-horizon Hub co-moving ephemeris, the local planning horizon can extend to
+  120 seconds, iterative shooting corrects the candidate after real predictor
+  integration, and `Ready` additionally requires terminal position/relative-speed
+  convergence. The raw predictor end is never teleported to the target. For live
+  validation System/Detail/Hub maps render literal planner samples as one plain
+  solid non-blinking line without Bezier smoothing or sample/endpoint decorations;
+  Hub Map transforms each future sample through the predicted Hub frame at the
+  same time, removing common orbital motion. The first physical sample is retained,
+  rotating attached modules now use the same universe-time phase as the planner,
+  and a single near-threshold `NoTerminalSolution` replan receives only a bounded
+  0.65 s presentation grace instead of blinking the last accepted path off. Raw
+  terminal diagnostics remain in `docking_guidance_trace.txt`. Existing info-card/
+  selection lifecycle is not part of this change. No `TrajectoryFollower`/autopilot
+  is connected.
 - `[ ]` **Next after live validation:** oriented/swept-volume collision checking
   beyond the first conservative vehicle sphere, richer local avoidance, then
   long-range RouteSolver + real radar/transponder/beacon fusion/server ATC seams.

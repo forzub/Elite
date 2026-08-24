@@ -20,6 +20,7 @@
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/game/navigation/DockingCompatibility.h"
+#include "src/game/navigation/HubCoMovingFrame.h"
 #include "src/world/modules/ObjectAssemblyTransformUtils.h"
 #include "src/debug/DebugSettings.h"
 
@@ -2964,19 +2965,34 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
     const glm::dvec3 systemOriginMeters =
         system.systemPositionLy * world::coordinates::MetersPerLightYear;
 
-    for (const auto& guidanceFrame : corridor->frames)
+    game::navigation::HubCoMovingFrameSeed hubFrameSeed;
+    if (m_mode == Mode::Hub)
     {
-        if (guidanceFrame.universeTimeSeconds + 0.25 < universeTimeSeconds)
-            continue;
+        hubFrameSeed = game::navigation::makeHubCoMovingFrameSeed(
+            hub.systemId,
+            hub.hubId,
+            hub.universeTimeSeconds,
+            hub.hubWorldPositionMeters,
+            hub.hubWorldVelocityMps,
+            hub.parentPlanetWorldPositionMeters,
+            hub.parentPlanetWorldVelocityMps,
+            hub.hubWorldAxes.x,
+            hub.hubWorldAxes.y,
+            hub.hubWorldAxes.z
+        );
+    }
 
-        game::system_map::MapTrajectoryPoint point;
-        point.universeTimeSeconds = guidanceFrame.universeTimeSeconds;
-        point.position = guidanceFrame.centerMeters;
-
+    const auto projectWorldPoint = [&]
+    (
+        const glm::dvec3& worldMeters,
+        double sampleUniverseTimeSeconds,
+        glm::dvec2& screenPx
+    ) -> bool
+    {
         if (m_mode == Mode::System)
         {
             const glm::dvec3 systemRelativeAu =
-                (guidanceFrame.centerMeters - systemOriginMeters) /
+                (worldMeters - systemOriginMeters) /
                 world::celestial::MetersPerAu;
             const glm::dvec3 absoluteMapUnits =
                 systemRelativeAu *
@@ -2986,49 +3002,93 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
             );
             const glm::vec4 clip =
                 m_systemSceneFrame.mvp * glm::vec4(renderPosition, 1.0f);
-            if (clip.w > 1.0e-6f)
+            if (clip.w <= 1.0e-6f)
+                return false;
+
+            const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+            if (!std::isfinite(ndc.x) || !std::isfinite(ndc.y) ||
+                !std::isfinite(ndc.z) || ndc.z < -1.2f || ndc.z > 1.2f)
             {
-                const glm::vec3 ndc = glm::vec3(clip) / clip.w;
-                if (std::isfinite(ndc.x) && std::isfinite(ndc.y) &&
-                    std::isfinite(ndc.z) && ndc.z >= -1.2f && ndc.z <= 1.2f)
-                {
-                    point.screenPx = glm::dvec2(
-                        (ndc.x * 0.5 + 0.5) * viewport.width,
-                        (1.0 - (ndc.y * 0.5 + 0.5)) * viewport.height
-                    );
-                    point.screenProjected = true;
-                }
+                return false;
             }
+
+            screenPx = glm::dvec2(
+                (ndc.x * 0.5 + 0.5) * viewport.width,
+                (1.0 - (ndc.y * 0.5 + 0.5)) * viewport.height
+            );
+            return true;
         }
-        else if (m_mode == Mode::Detail)
+
+        if (m_mode == Mode::Detail)
         {
-            // Current Detail scenes use SystemWorldMeters. Keeping the branch
-            // explicit makes a future AnchorLocalMeters scene fail locally
-            // instead of silently projecting absolute coordinates as local.
-            glm::dvec3 detailPoint = guidanceFrame.centerMeters;
+            glm::dvec3 detailPoint = worldMeters;
             if (detail.scene.coordinateSpace ==
                 world::celestial::LocalSceneCoordinateSpace::AnchorLocalMeters)
             {
                 detailPoint -= detail.scene.originWorldMeters;
             }
-            point.screenPx = m_detailPresentation.camera.project(detailPoint);
-            point.screenProjected = true;
+            screenPx = m_detailPresentation.camera.project(detailPoint);
+            return std::isfinite(screenPx.x) && std::isfinite(screenPx.y);
         }
-        else if (m_mode == Mode::Hub)
+
+        if (m_mode == Mode::Hub)
         {
-            const glm::dvec3 delta =
-                guidanceFrame.centerMeters - hub.hubWorldPositionMeters;
-            const glm::dvec3 local(
-                glm::dot(delta, hub.hubWorldAxes.x),
-                glm::dot(delta, hub.hubWorldAxes.y),
-                glm::dot(delta, hub.hubWorldAxes.z)
-            );
-            point.screenPx = m_hubPresentation.camera.project(local);
-            point.screenProjected = true;
+            if (!hubFrameSeed.valid)
+                return false;
+
+            // The Hub map is a co-moving rotating coordinate domain. Project
+            // each future sample against the Hub frame at that same future
+            // time. Subtracting hub NOW from ship FUTURE is what produced the
+            // previous hundreds-of-kilometres tangent/"laser".
+            const auto futureFrame =
+                game::navigation::predictHubCoMovingFrameAt(
+                    hubFrameSeed,
+                    sampleUniverseTimeSeconds
+                );
+            if (!futureFrame.valid)
+                return false;
+
+            const glm::dvec3 local =
+                futureFrame.worldToLocalPosition(worldMeters);
+            screenPx = m_hubPresentation.camera.project(local);
+            return std::isfinite(screenPx.x) && std::isfinite(screenPx.y);
         }
+
+        return false;
+    };
+
+    // Keep the first physical sample.  A rolling corridor is regenerated from
+    // the ship state roughly every 0.2 s; dropping samples merely because they
+    // are a fraction of a second behind the render snapshot detached the visible
+    // line from the ship.  Projection may move the whole raw corridor into the
+    // current map view, but it must not silently trim its start.
+    for (const auto& guidanceFrame : corridor->frames)
+    {
+        game::system_map::MapTrajectoryPoint point;
+        point.universeTimeSeconds = guidanceFrame.universeTimeSeconds;
+        point.position = guidanceFrame.centerMeters;
+        point.screenProjected = projectWorldPoint(
+            point.position,
+            point.universeTimeSeconds,
+            point.screenPx
+        );
 
         if (point.screenProjected)
             trajectory.points.push_back(std::move(point));
+    }
+
+    trajectory.terminalPositionErrorMeters =
+        corridor->terminalPositionErrorMeters;
+    if (corridor->hasTerminalTarget)
+    {
+        const double terminalTime = corridor->frames.empty()
+            ? universeTimeSeconds
+            : corridor->frames.back().universeTimeSeconds;
+        trajectory.terminalTargetProjected = projectWorldPoint(
+            corridor->terminalTargetMeters,
+            terminalTime,
+            trajectory.terminalTargetScreenPx
+        );
     }
 
     if (trajectory.points.size() >= 2)
@@ -4428,7 +4488,8 @@ SystemMapRenderer::handleInput(
             if (bodyInfo !=
                 m_systemSceneFrame.interaction.objectOverlay.items.end())
             {
-                m_objectOverlayState.toggle(
+                m_objectOverlayState.activate(bodyInfo->objectId);
+                m_objectOverlayState.ensureOpen(
                     *bodyInfo,
                     glm::dvec2(vp.width, vp.height)
                 );
@@ -4609,24 +4670,14 @@ SystemMapRenderer::handleInput(
 
                 if (item != objectOverlay.items.end())
                 {
-                    const bool closeCurrent =
-                        m_objectOverlayState.isActive(objectId) &&
-                        m_objectOverlayState.isOpen(objectId);
-                    if (closeCurrent)
-                    {
-                        m_objectOverlayState.close(objectId);
-                    }
-                    else
-                    {
-                        m_objectOverlayState.activate(objectId);
-                        m_objectOverlayState.ensureOpen(
-                            *item,
-                            glm::dvec2(
-                                static_cast<double>(vp.width),
-                                static_cast<double>(vp.height)
-                            )
-                        );
-                    }
+                    m_objectOverlayState.activate(objectId);
+                    m_objectOverlayState.ensureOpen(
+                        *item,
+                        glm::dvec2(
+                            static_cast<double>(vp.width),
+                            static_cast<double>(vp.height)
+                        )
+                    );
 
                     m_hubFrameDirty = true;
                     auto& camera = m_hubView.camera();
@@ -4640,14 +4691,10 @@ SystemMapRenderer::handleInput(
             }
             else if (!m_objectOverlayState.activeObjectId().empty())
             {
-                // Empty Hub-map press means deselect, but it deliberately does
-                // not consume the pointer: the same press may start rotating
-                // the map. Closing the active card also clears target tracking
-                // on the next reconciliation pass.
-                const std::string activeId =
-                    m_objectOverlayState.activeObjectId();
-                cancelDockingTaskForClosedCard(activeId);
-                m_objectOverlayState.close(activeId);
+                // Empty Hub-map press only deselects. Information-card
+                // lifetime is independent from selection and is controlled
+                // exclusively by the card X button. The same press remains
+                // available to start orbit/pan.
                 m_objectOverlayState.clearActive();
                 m_hubFrameDirty = true;
             }
@@ -4657,11 +4704,6 @@ SystemMapRenderer::handleInput(
         {
             if (!overlayPointer.closedObjectId.empty())
                 cancelDockingTaskForClosedCard(overlayPointer.closedObjectId);
-            if (!overlayPointer.toggledObjectId.empty() &&
-                !m_objectOverlayState.isOpen(overlayPointer.toggledObjectId))
-            {
-                cancelDockingTaskForClosedCard(overlayPointer.toggledObjectId);
-            }
 
             if (!overlayPointer.actionObjectId.empty())
             {
@@ -4709,9 +4751,7 @@ SystemMapRenderer::handleInput(
             }
 
             if (m_mode == Mode::Hub &&
-                (!overlayPointer.closedObjectId.empty() ||
-                 (!overlayPointer.toggledObjectId.empty() &&
-                  m_objectOverlayState.activeObjectId().empty())))
+                !overlayPointer.closedObjectId.empty())
             {
                 m_hubFrameDirty = true;
             }

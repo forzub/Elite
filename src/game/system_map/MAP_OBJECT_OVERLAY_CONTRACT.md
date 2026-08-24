@@ -134,20 +134,26 @@ Each card owns independent state:
 
 Interaction rules:
 
-- clicking a visible object glyph activates that object and toggles its card;
-- clicking the same glyph again closes only that card but leaves the object as
-  the current tactical selection;
+- clicking a visible object glyph activates that object and opens its card if
+  needed;
+- clicking the same glyph again reactivates the same object but **never closes**
+  its already-open card;
 - clicking anywhere on an already-open card except `X` reactivates that object
   without toggling the card;
 - the active card/object receives a visible selection treatment;
-- clicking the card `X` closes only that card; closing information does not
-  silently choose another object;
+- clicking the card `X` is the **only user interaction that closes a card**;
+  closing information does not silently choose another object;
+- clicking empty map space may clear the active tactical selection so camera
+  orbit/pan can begin, but it never changes the set of open cards;
+- selecting another body, Hub, module, ship or docking port never closes any
+  previously open card;
 - dragging the header also activates that card's object and then moves only
   that card;
 - clicking/dragging a card or glyph captures the left-button gesture until
   release, so the underlying map camera cannot accidentally begin rotating or
   panning during the same mouse gesture;
-- multiple other cards remain open when one card is toggled or closed.
+- multiple other cards remain open when another object is selected or one
+  card is explicitly closed with its own `X`.
 
 Card positions are screen-space positions. They do not orbit in 3D.
 
@@ -319,10 +325,23 @@ contract is `../navigation/NAVIGATION_TRACKING_CONTRACT.md`.
 Current velocity and trajectory are different facts. The renderer/builder must
 **not manufacture a flight path from one position + one velocity vector** merely
 so that a line can be drawn. The active local-guidance producer is the first
-real planned-trajectory source: its `GuidanceCorridor` frames are projected by
-the current map presentation and rendered as a dashed, presentation-only cubic
-Bezier smoothing that passes through the supplied samples. Smoothing must not
-create physics samples or feed back into the planner.
+real planned-trajectory source. During the current solver-validation slice its
+`GuidanceCorridor` frames are rendered as one **literal supplied raw sample
+polyline**. During solver validation it is deliberately a plain solid,
+non-blinking line: no dash pattern, sample dots, endpoint decoration or
+Bezier/Catmull-Rom smoothing may obscure what the planner actually supplied.
+The trace file remains the authoritative source for raw-end/terminal error
+diagnostics while the visual path is being stabilized.
+
+Hub Map is a co-moving local navigation domain: every future guidance sample is
+projected through the predicted Hub pose at the **same sample time**. Subtracting
+Hub-NOW from ship-FUTURE is forbidden because it exposes the common orbital
+translation as a false hundreds-of-kilometres tangent line. The first raw
+corridor sample is never time-trimmed away merely because render time has moved
+a fraction of a second beyond the rolling-plan epoch. Rotating attached modules
+are reconstructed on Hub Map at `localRotation + localAngularVelocity *
+universeTime`, matching the semantic-anchor/planner phase. System/Detail keep
+their existing system/global presentation contracts.
 
 Historical and arbitrary prediction producers may be attached later without
 changing glyph/card ownership or this producer/renderer boundary.
@@ -338,8 +357,9 @@ actual CPU mesh outside the port opening.
 
 A docking guidance request is deliberately scoped to its dock information card.
 `CALCULATE ROUTE` starts/refreshes the typed semantic request; closing that dock
-card (including toggling the same dock closed) cancels the request. On the next
-client update the active guidance corridor disappears, and normal open-card
+card **with that card's own `X`** cancels the request. Selection changes, empty
+map clicks and repeated clicks on the dock do not cancel it. On the next client
+update the active guidance corridor disappears, and normal open-card
 tracking reconciliation removes the corresponding cockpit marker. Closing some
 other independent card does not cancel the docking task.
 

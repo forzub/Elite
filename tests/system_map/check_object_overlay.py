@@ -69,14 +69,34 @@ def main() -> int:
         "kLocalVelocityColor",
         "drawLine(item->screenPx, panelCenter",
         "drawProjectedTrajectory",
-        "cubicBezierPoint",
         "point.screenProjected",
         "MapTrajectoryKind::Planned",
+        "GL_LINE_STRIP",
+        "continuous and time-invariant",
         "Never invent samples here",
         "previousGlState",
     )
     require("frame.trajectories.push_back" not in renderer,
             "renderer must not synthesize trajectory samples")
+    require("cubicBezierPoint" not in renderer,
+            "debug trajectory rendering must expose raw planner samples without smoothing")
+    require("GL_POINTS" not in renderer,
+            "solver-validation trajectory must stay a plain solid line without sample-dot decoration")
+
+    map_renderer = require_text(
+        "src/game/system_map/SystemMapRenderer.cpp",
+        "Keep the first physical sample",
+        "futureFrame.worldToLocalPosition",
+    )
+    require("guidanceFrame.universeTimeSeconds + 0.25" not in map_renderer,
+            "map trajectory regressed to trimming the first rolling-guidance sample")
+
+    hub_bridge = require_text(
+        "src/game/client/ClientHubMapBridge.h",
+        "currentLocalRotationDeg",
+        "localAngularVelocityDegPerSecond",
+        "universeTimeSeconds",
+    )
 
     detail_bridge = require_text(
         "src/game/client/ClientDetailMapBridge.h",

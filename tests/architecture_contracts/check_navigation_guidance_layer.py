@@ -48,6 +48,8 @@ try:
         "GuidancePurpose",
         "ObstacleBypass",
         "GuidanceFrame",
+        "hasTerminalTarget",
+        "terminalTargetMeters",
         "NavigationGuidanceState",
     )
     require(
@@ -70,8 +72,20 @@ try:
         "src/game/navigation/LocalGuidancePlanner.cpp",
         "TrajectoryPredictor::predict",
         "TrajectorySafetyEvaluator::evaluate",
+        "evaluateDockingTerminalState",
+        "LocalGuidanceStatus::NoTerminalSolution",
         "GuidanceSource::LocalPlanner",
         "LocalGuidanceStatus::Blocked",
+    )
+    forbid(
+        "src/game/navigation/LocalGuidancePlanner.cpp",
+        "last.centerMeters = dockingTerminalPointAt",
+    )
+    require(
+        "src/game/navigation/HubCoMovingFrame.h",
+        "HubCoMovingFrameSeed",
+        "makeHubCoMovingFrameSeed",
+        "predictHubCoMovingFrameAt",
     )
     require(
         "src/game/navigation/HubSemanticAnchor.h",
@@ -101,6 +115,9 @@ try:
     require(
         "src/game/client/ClientHubMapBridge.h",
         "source.hubAttachment.moduleId",
+        "currentLocalRotationDeg",
+        "localAngularVelocityDegPerSecond",
+        "universeTimeSeconds",
     )
     require(
         "src/game/system_map/LocalMapPresentationBuilder.cpp",
@@ -130,14 +147,21 @@ try:
         "cancelDockingTaskForClosedCard",
         "dockingRouteRequests().clear",
         "decorateActiveGuidanceTrajectory",
+        "predictHubCoMovingFrameAt",
+        "futureFrame.worldToLocalPosition",
         "anchorsForModule(module.stableId)",
         "item.hitPolygonPx",
     )
     require(
         "src/game/system_map/MapObjectOverlayRenderer.cpp",
         "drawProjectedTrajectory",
-        "cubicBezierPoint",
         "MapTrajectoryKind::Planned",
+        "GL_LINE_STRIP",
+        "continuous and time-invariant",
+    )
+    forbid(
+        "src/game/system_map/MapObjectOverlayRenderer.cpp",
+        "cubicBezierPoint",
     )
     require(
         "src/assets/data/navigation/hub_docking_runtime_test.json",
@@ -165,7 +189,20 @@ try:
         "src/game/SpaceState.cpp",
         "buildGuidanceCorridorHudPresentation",
         "buildGalacticCompassPresentation",
+        "StrategicTrajectoryPlanner::plan",
+        "ClientNavigationPlanningSnapshotFactory",
+        "planningUniverseTime",
+        "m_lastStrategicDockingRequestSerial",
+        "GuidanceSource::RouteSolver",
         "toggleNavigationModule",
+    )
+    require(
+        "src/game/navigation/StrategicTrajectoryPlanner.h",
+        "startVelocityMps",
+        "visibilityPath",
+        "approachPointMeters",
+        "terminalPointMeters",
+        "segmentClear",
     )
     require(
         "src/game/SpaceState.h",
@@ -186,11 +223,135 @@ try:
         "docking_port",
     )
 
+    require(
+        "src/game/navigation/NavigationPlanningEpoch.h",
+        "NavigationPlanningEpoch",
+        "serverTimeSeconds",
+        "universeTimeSeconds",
+        "universeTimelineRevision",
+    )
+    require(
+        "src/game/navigation/ReplicatedHubFrame.h",
+        "makeReplicatedHubKinematicFrame",
+        "X = normal, Y = radial, Z = -prograde",
+        "X = prograde, Y = radial, Z = normal",
+    )
+    require(
+        "src/game/navigation/NavigationWorldPredictor.h",
+        "NavigationWorldPredictor",
+        "predictHubFrameAt",
+        "resolveHubAttachmentAt",
+        "predictHubLocalConstantVelocity",
+    )
+    require(
+        "src/game/navigation/HubKinematicEvaluator.h",
+        "evaluateOrbitalHubKinematicFrameAt",
+        "Server simulation and client-side planning prediction",
+        "X = prograde, Y = radial, Z = normal",
+    )
+    require(
+        "src/game/navigation/HubKinematicEvaluator.cpp",
+        "computeOrbitPositionMeters",
+        "computeOrbitVelocityMetersPerSecond",
+        "angularVelocityWorldRadPerSecond",
+    )
+    require(
+        "src/game/shared/SpatialComputationPlacement.h",
+        "SpatialComputationPlacement",
+        "ClientLocal",
+        "ServerShared",
+        "humanParticipantCount > 1",
+        "server-resolved consistency domain",
+    )
+    require(
+        "src/game/client/ClientNavigationPlanningSnapshotFactory.cpp",
+        "sampleHubMapRuntimeAtServerTime",
+        "NavigationWorldPredictor::predictHubFrameAt",
+        "sourceEpoch",
+        "planningServerTimeSeconds",
+        "CoordinateRoundTripToleranceMeters",
+    )
+    forbid(
+        "src/game/client/ClientNavigationPlanningSnapshotFactory.cpp",
+        "renderTransform",
+        "renderWorldPosition",
+        "renderOrientation",
+        "universeTimeSeconds()",
+        "renderServerTimeSeconds()",
+    )
+
+    simulation = text("src/game/simulation/GameSimulation.cpp")
+    rebuild_begin = simulation.index(
+        "void GameSimulation::rebuildHubNavigationFrames"
+    )
+    rebuild_end = simulation.index(
+        "void GameSimulation::prepareReferenceFramesForSpawn",
+        rebuild_begin,
+    )
+    rebuild_hubs = simulation[rebuild_begin:rebuild_end]
+    if "evaluateOrbitalHubKinematicFrameAt" not in rebuild_hubs:
+        raise AssertionError(
+            "authoritative Hub runtime no longer uses the shared kinematic evaluator"
+        )
+    for duplicate in (
+        "computeOrbitPositionMeters(",
+        "computeOrbitVelocityMetersPerSecond(",
+    ):
+        if duplicate in rebuild_hubs:
+            raise AssertionError(
+                "GameSimulation::rebuildHubNavigationFrames reintroduced duplicate Hub orbit math: "
+                + repr(duplicate)
+            )
+
+    spawn_begin = simulation.index(
+        "void GameSimulation::prepareReferenceFramesForSpawn"
+    )
+    spawn_end = simulation.find("\nvoid GameSimulation::", spawn_begin + 1)
+    if spawn_end < 0:
+        spawn_end = len(simulation)
+    spawn_frames = simulation[spawn_begin:spawn_end]
+    if "rebuildHubNavigationFrames(0.0)" not in spawn_frames:
+        raise AssertionError(
+            "spawn preparation no longer reuses the authoritative Hub evaluator path"
+        )
+    for duplicate in (
+        "computeOrbitPositionMeters(",
+        "computeOrbitVelocityMetersPerSecond(",
+    ):
+        if duplicate in spawn_frames:
+            raise AssertionError(
+                "prepareReferenceFramesForSpawn reintroduced bootstrap-only Hub orbit math: "
+                + repr(duplicate)
+            )
+
+    space_state = text("src/game/SpaceState.cpp")
+    guidance_begin = space_state.index("void SpaceState::updateDockingGuidance")
+    guidance_end = space_state.find("\nvoid SpaceState::", guidance_begin + 1)
+    if guidance_end < 0:
+        guidance_end = len(space_state)
+    docking_guidance = space_state[guidance_begin:guidance_end]
+    for forbidden in (
+        "renderTransform",
+        "renderWorldPosition",
+        "celestialSnapshot()",
+        "world().hubs()",
+        "m_client->universeTimeSeconds()",
+        "hubVisualLocalToWorldPosition(",
+        "hubAttachedVisualOrientation(",
+    ):
+        if forbidden in docking_guidance:
+            raise AssertionError(
+                "SpaceState::updateDockingGuidance: forbidden planning source "
+                + repr(forbidden)
+            )
+
     # Core physics/planning components must remain reusable on server/headless.
     for path in (
         "src/game/navigation/TrajectoryPredictor.cpp",
         "src/game/navigation/TrajectorySafetyEvaluator.cpp",
         "src/game/navigation/LocalGuidancePlanner.cpp",
+        "src/game/navigation/NavigationWorldPredictor.cpp",
+        "src/game/navigation/HubKinematicEvaluator.cpp",
     ):
         forbid(
             path,

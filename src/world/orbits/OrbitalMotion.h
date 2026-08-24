@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 
 #include <glm/glm.hpp>
@@ -71,28 +72,29 @@ inline double computeCircularOrbitPeriodSeconds(
 
 
 
-inline glm::dvec3 computeOrbitPositionMeters(
+inline double computeOrbitRadiusMeters(
+    const OrbitalMotion& motion
+)
+{
+    return motion.parentRadiusMeters + motion.altitudeMeters;
+}
+
+inline double computeOrbitPhaseRadians(
     const OrbitalMotion& motion,
     double universeTimeSeconds
 )
 {
-    const double radius =
-        motion.parentRadiusMeters + motion.altitudeMeters;
-
-    const double period =
-        std::max(1.0, motion.orbitalPeriodSeconds);
-
-    const double phase =
+    const double period = std::max(1.0, motion.orbitalPeriodSeconds);
+    return
         degToRad(motion.initialPhaseDeg) +
         2.0 * 3.14159265358979323846 *
         ((universeTimeSeconds - motion.epochSeconds) / period);
+}
 
-    const glm::dvec3 local {
-        std::cos(phase) * radius,
-        0.0,
-        std::sin(phase) * radius
-    };
-
+inline glm::dmat4 computeOrbitPlaneRotation(
+    const OrbitalMotion& motion
+)
+{
     glm::dmat4 rot(1.0);
 
     rot = glm::rotate(
@@ -113,44 +115,57 @@ inline glm::dvec3 computeOrbitPositionMeters(
         glm::dvec3(0.0, 1.0, 0.0)
     );
 
-    return motion.centerMeters + glm::dvec3(rot * glm::dvec4(local, 1.0));
+    return rot;
 }
 
+inline glm::dvec3 computeOrbitPositionMeters(
+    const OrbitalMotion& motion,
+    double universeTimeSeconds
+)
+{
+    const double radius = computeOrbitRadiusMeters(motion);
+    const double phase = computeOrbitPhaseRadians(
+        motion,
+        universeTimeSeconds
+    );
 
+    const glm::dvec3 local {
+        std::cos(phase) * radius,
+        0.0,
+        std::sin(phase) * radius
+    };
 
-
-
-
+    const glm::dmat4 rot = computeOrbitPlaneRotation(motion);
+    return motion.centerMeters + glm::dvec3(rot * glm::dvec4(local, 1.0));
+}
 
 inline glm::dvec3 computeOrbitVelocityMetersPerSecond(
     const OrbitalMotion& motion,
     double universeTimeSeconds
 )
 {
-    // Численная производная.
-    // Так мы не дублируем математику наклонов/узлов/аргумента перицентра.
-    // Для игровой симуляции этого достаточно и архитектурно безопасно.
-    constexpr double h = 0.25;
+    // Circular-orbit velocity is known analytically from the same phase and
+    // plane transform as position.  Keeping position/velocity on one formula
+    // avoids phase drift from finite-difference derivatives and gives server,
+    // client prediction and navigation exactly the same orbital state.
+    const double radius = computeOrbitRadiusMeters(motion);
+    const double period = std::max(1.0, motion.orbitalPeriodSeconds);
+    const double angularSpeed =
+        2.0 * 3.14159265358979323846 / period;
+    const double phase = computeOrbitPhaseRadians(
+        motion,
+        universeTimeSeconds
+    );
 
-    const glm::dvec3 p0 =
-        computeOrbitPositionMeters(
-            motion,
-            universeTimeSeconds - h
-        );
+    const glm::dvec3 localVelocity {
+        -std::sin(phase) * radius * angularSpeed,
+        0.0,
+         std::cos(phase) * radius * angularSpeed
+    };
 
-    const glm::dvec3 p1 =
-        computeOrbitPositionMeters(
-            motion,
-            universeTimeSeconds + h
-        );
-
-    return (p1 - p0) / (2.0 * h);
+    const glm::dmat4 rot = computeOrbitPlaneRotation(motion);
+    return glm::dvec3(rot * glm::dvec4(localVelocity, 0.0));
 }
-
-
-
-
-
 
 
 

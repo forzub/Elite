@@ -793,7 +793,7 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
         presentation.frame.objectOverlay.items.push_back(std::move(item));
     }
 
-    const auto addShipPickable =
+    const auto addOrbitPivotPickable =
         [&](const world::celestial::LocalSceneObject& object)
         {
             HubMapPickable pickable;
@@ -803,37 +803,53 @@ HubMapPresentation LocalMapPresentationBuilder::buildHub(
                     object.positionMeters
                 );
 
-            const glm::dvec3 visualSize =
-                visualSizeForHubShip(
+            if (object.objectClass ==
+                world::celestial::DetailObjectClass::Ship)
+            {
+                const glm::dvec3 visualSize = visualSizeForHubShip(
                     object,
                     presentation.scale,
                     presentation.camera.state.zoom
                 );
-
-            pickable.screenRadiusPx =
-                std::max(
+                pickable.screenRadiusPx = std::max(
                     object.player ? 22.0 : 18.0,
                     glm::length(visualSize) * 0.5 * finalScale
                 );
-            pickable.priority = object.player ? 100 : 50;
-            pickable.label =
-                object.player ? m_playerLabel : object.name;
+                pickable.priority = object.player ? 100 : 50;
+                pickable.label = object.player ? m_playerLabel : object.name;
+            }
+            else
+            {
+                // Infrastructure remains selected by exact assembly-mesh hits;
+                // this radius is only an orbit-pivot affordance. It lets a
+                // drag near a station module orbit around that module instead
+                // of silently falling back to the remote Hub origin.
+                pickable.screenRadiusPx = std::max(
+                    18.0,
+                    std::max(1.0, object.boundingRadiusMeters) * finalScale
+                );
+                pickable.priority = 20;
+                pickable.label = object.name;
+            }
 
             presentation.frame.pickables.push_back(
                 std::move(pickable)
             );
         };
 
-    // Infrastructure is selected by exact mesh-body hit testing in the Hub
-    // interaction layer, not by an orbit-pivot proxy. Ships alone retain the
-    // legacy orbit-pivot affordance.
+    // Orbit pivot candidates are deliberately separate from card/selection
+    // hit testing. Information windows never participate. Infrastructure uses
+    // a broad proximity affordance here while actual selection remains exact
+    // mesh-body based in SystemMapRenderer.
     for (const auto& object : snapshot.scene.objects)
     {
         if (object.valid &&
-            object.objectClass ==
-                world::celestial::DetailObjectClass::Ship)
+            (object.objectClass ==
+                world::celestial::DetailObjectClass::Ship ||
+             object.objectClass ==
+                world::celestial::DetailObjectClass::Hub))
         {
-            addShipPickable(object);
+            addOrbitPivotPickable(object);
         }
     }
 

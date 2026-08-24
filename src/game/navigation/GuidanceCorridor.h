@@ -87,6 +87,13 @@ struct GuidanceCorridor
     // presentation layer may flash a warning while this flag is active.
     bool noSafePrimarySolution = false;
 
+    // For terminal manoeuvres the accepted physical prediction and the
+    // required endpoint stay separate. Render/debug code can therefore show
+    // the actual raw end and the requested docking point without moving either.
+    bool hasTerminalTarget = false;
+    glm::dvec3 terminalTargetMeters {0.0};
+    double terminalPositionErrorMeters = 0.0;
+
     std::vector<GuidanceFrame> frames;
 
     bool validAt(double universeTimeSeconds) const noexcept

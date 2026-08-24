@@ -195,6 +195,7 @@ add_executable(EliteGame
     src/ui/presentation/InSessionPresentationRenderer.cpp
 
     src/game/client/ClientWorldState.cpp
+    src/game/client/ClientNavigationPlanningSnapshotFactory.cpp
     src/game/server/GameServer.cpp
     src/game/server/ServerRunner.cpp
     src/game/server/ServerRuntime.cpp
@@ -345,6 +346,8 @@ add_executable(EliteGame
     src/game/navigation/DynamicMotionSystem.cpp
     src/game/navigation/TrajectoryPredictor.cpp
     src/game/navigation/TrajectorySafetyEvaluator.cpp
+    src/game/navigation/NavigationWorldPredictor.cpp
+    src/game/navigation/HubKinematicEvaluator.cpp
     src/game/navigation/LocalGuidancePlanner.cpp
     src/game/navigation/HubSemanticAnchorCatalog.cpp
     src/game/navigation/DockingPortRuntimeStateCatalog.cpp
@@ -484,6 +487,7 @@ if(ELITE_BUILD_SERVER)
         src/game/navigation/DynamicMotionSystem.cpp
         src/game/navigation/TrajectoryPredictor.cpp
         src/game/navigation/TrajectorySafetyEvaluator.cpp
+        src/game/navigation/HubKinematicEvaluator.cpp
         src/game/navigation/LocalGuidancePlanner.cpp
         src/game/navigation/HubSemanticAnchorCatalog.cpp
         src/game/navigation/GalaxyNavigationConfig.cpp

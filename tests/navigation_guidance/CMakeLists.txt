@@ -22,6 +22,8 @@ add_executable(
     "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectoryPredictor.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/TrajectorySafetyEvaluator.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/LocalGuidancePlanner.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/NavigationWorldPredictor.cpp"
+    "${ELITE_SOURCE_ROOT}/src/game/navigation/HubKinematicEvaluator.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/GalacticReferenceFrame.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/HubSemanticAnchorCatalog.cpp"
     "${ELITE_SOURCE_ROOT}/src/game/navigation/DockingPortRuntimeStateCatalog.cpp"

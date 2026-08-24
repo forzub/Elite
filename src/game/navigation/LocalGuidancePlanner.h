@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "src/game/navigation/GuidanceCorridor.h"
 #include "src/game/navigation/HubSemanticAnchor.h"
@@ -18,6 +19,7 @@ enum class LocalGuidanceStatus : std::uint8_t
     Ready = 0,
     EmergencyEscapeReady,
     Blocked,
+    NoTerminalSolution,
     InvalidRequest,
     PredictionFailure
 };
@@ -67,8 +69,35 @@ struct LocalGuidanceRequest
     glm::dvec3 actorAngularVelocityWorldRadPerSecond {0.0};
 
     ResolvedHubSemanticAnchor target;
+
+    // Optional short-horizon target ephemeris in world coordinates. Hub docking
+    // producers populate this from the same co-moving hub/orbital model used by
+    // the local map. The planner interpolates it instead of extending the dock
+    // forever on its instantaneous world-space tangent.
+    std::vector<ResolvedHubSemanticAnchor> targetMotionSamples;
+
     NavigationPlanningSnapshot environment;
     LocalGuidanceProfile profile;
+};
+
+
+struct DockingTerminalStateReport
+{
+    bool evaluated = false;
+    bool matched = false;
+
+    // Errors resolved in required terminal hull axes:
+    // X=right, Y=top, Z=nose/inbound.
+    glm::dvec3 positionErrorDockMeters {0.0};
+    glm::dvec3 velocityErrorDockMps {0.0};
+
+    double positionErrorMeters = 0.0;
+    double velocityErrorMps = 0.0;
+    double positionToleranceMeters = 0.0;
+    double velocityToleranceMps = 0.0;
+
+    glm::dvec3 requiredPositionMeters {0.0};
+    glm::dvec3 requiredVelocityMps {0.0};
 };
 
 struct LocalGuidanceResult
@@ -79,6 +108,7 @@ struct LocalGuidanceResult
     GuidanceCorridor corridor;
     TrajectoryPredictionResult prediction;
     TrajectorySafetyReport safety;
+    DockingTerminalStateReport terminal;
     bool detourUsed = false;
     bool emergencyEscapeUsed = false;
 

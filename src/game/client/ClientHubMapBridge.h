@@ -12,6 +12,7 @@
 #include "src/game/diagnostics/HubMotionLab.h"
 #include "src/game/geometry/AssemblyMeshLibrary.h"
 #include "src/game/navigation/HubFrameBasis.h"
+#include "src/game/navigation/ReplicatedHubFrame.h"
 #include "src/game/ship/ShipDescriptorRegistry.h"
 #include "src/world/celestial/CelestialTypes.h"
 #include "src/world/celestial/StarAtlasDatabase.h"
@@ -77,55 +78,28 @@ struct ClientHubMapFrame
     }
 };
 
-inline glm::dvec3 normalizeHubMapAxis(
-    const glm::dvec3& value,
-    const glm::dvec3& fallback
-)
-{
-    const double len2 = glm::dot(value, value);
-    if (len2 <= 1.0e-18)
-        return fallback;
-    return value / std::sqrt(len2);
-}
-
 inline ClientHubMapFrame makeClientHubMapFrame(
     const DetailMapHubRuntimeSample& hub
 )
 {
+    const auto canonical = game::navigation::makeReplicatedHubKinematicFrame(
+        hub.systemId,
+        hub.id,
+        world::coordinates::fullMeters(hub.worldPosition),
+        hub.worldVelocityMps,
+        hub.angularVelocityWorldRadPerSecond,
+        hub.orientation
+    );
+
     ClientHubMapFrame frame;
-    frame.originMeters = world::coordinates::fullMeters(hub.worldPosition);
-    frame.velocityMps = hub.worldVelocityMps;
+    frame.originMeters = canonical.originMeters;
+    frame.velocityMps = canonical.linearVelocityMps;
     frame.angularVelocityWorldRadPerSecond =
-        hub.angularVelocityWorldRadPerSecond;
-
-    // Replicated hub.orientation is the visual/model basis:
-    // X=normal, Y=radial, Z=-prograde. Hub Map and HubTactical coordinates
-    // use X=prograde, Y=radial, Z=normal.
-    frame.normalAxis = normalizeHubMapAxis(
-        glm::dvec3(hub.orientation[0]),
-        glm::dvec3(0.0, 0.0, 1.0)
-    );
-    frame.radialAxis = normalizeHubMapAxis(
-        glm::dvec3(hub.orientation[1]),
-        glm::dvec3(0.0, 1.0, 0.0)
-    );
-    frame.progradeAxis = normalizeHubMapAxis(
-        -glm::dvec3(hub.orientation[2]),
-        glm::dvec3(1.0, 0.0, 0.0)
-    );
-
-    // Quaternion interpolation preserves orthogonality, but normalize the
-    // cross-product relationship explicitly so the coordinate contract is
-    // stable even if a future source has small numeric drift.
-    frame.normalAxis = normalizeHubMapAxis(
-        glm::cross(frame.progradeAxis, frame.radialAxis),
-        frame.normalAxis
-    );
-    frame.progradeAxis = normalizeHubMapAxis(
-        glm::cross(frame.radialAxis, frame.normalAxis),
-        frame.progradeAxis
-    );
-    frame.valid = true;
+        canonical.angularVelocityWorldRadPerSecond;
+    frame.progradeAxis = canonical.localToWorldBasis[0];
+    frame.radialAxis = canonical.localToWorldBasis[1];
+    frame.normalAxis = canonical.localToWorldBasis[2];
+    frame.valid = canonical.valid;
     return frame;
 }
 
@@ -333,12 +307,20 @@ inline bool rebuildHubMapFromClientState(
                     frame.normalAxis,
                     source.hubAttachment.localOffsetMeters
                 );
+            // localRotationDeg is the authored epoch-0 pose.  Advance the
+            // attachment by the same shared Hub-frame universe time used by
+            // normal flight presentation; otherwise the map can draw a rotating
+            // module/dock at a different phase from the semantic anchor planner.
+            const glm::dvec3 currentLocalRotationDeg =
+                source.hubAttachment.localRotationDeg +
+                source.hubAttachment.localAngularVelocityDegPerSecond *
+                    universeTimeSeconds;
             const glm::mat4 worldOrientation =
                 game::navigation::hubAttachedVisualOrientation(
                     frame.progradeAxis,
                     frame.radialAxis,
                     frame.normalAxis,
-                    source.hubAttachment.localRotationDeg
+                    currentLocalRotationDeg
                 );
             module.positionMeters = frame.worldToLocalPosition(worldMeters);
             module.axes = hubMapAxesToLocal(worldOrientation, frame);

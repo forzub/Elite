@@ -60,6 +60,34 @@ and time interval that a candidate route will traverse. Expected producers are:
 The predictor never fetches this data itself. This makes a calculation
 reproducible, testable offline and reusable by client and headless server.
 
+### 3.1 One planning epoch, never presentation state
+
+Every concrete plan has one `NavigationPlanningEpoch`. Client planning also
+keeps a separate authoritative `sourceEpoch`: the source tick/server/universe
+time identifies the canonical replication seed, while the planning epoch is the
+single current time to which that complete seed has been resolved. Both remain
+on the same universe-timeline revision. `renderTransform`, `renderWorldPosition`
+and other presentation-interpolated values are not legal planning inputs.
+
+`NavigationWorldPredictor` owns prediction from the authoritative seed to the
+planning epoch. Orbital Hub motion is advanced as a curved co-moving frame;
+Hub-attached modules are reconstructed from that predicted frame, Hub-tactical
+ships advance in Hub-local coordinates, and unattached current-snapshot objects
+use a bounded/simple constant-velocity model until richer dynamics are wired in.
+No planner or `SpaceState` caller may advance only one participant independently.
+
+For Hub-local planning the replicated source Hub pose uses the shared
+`makeReplicatedHubKinematicFrame()` axis contract before prediction. Hub Map
+composition and route planning therefore retain the same prograde/radial/normal
+permutation even though their presentation/planning epochs may differ.
+
+Orbital Hub kinematics themselves have one shared CPU implementation:
+`evaluateOrbitalHubKinematicFrameAt()`. Authoritative server simulation, spawn
+initialization and client planning prediction use that evaluator rather than
+rebuilding position/velocity/basis independently. `OrbitalMotion` position and
+velocity are evaluated analytically from the same phase/plane transform; no
+finite-difference velocity is allowed to become a second orbital clock.
+
 Official lanes are preferred planning infrastructure, not rails. An open,
 beacon-served lane normally carries a planning-cost advantage because position
 is more predictable and traffic/safety policy is managed. A solver may still
@@ -147,6 +175,31 @@ shows a flashing warning and the primary typed docking request remains intact.
 A later rolling replan therefore replaces the escape tunnel with the original
 docking tunnel automatically as soon as a safe solution exists again.
 
+## 6a. Snapshot strategic trajectory validation
+
+The current `CALCULATE ROUTE` validation path deliberately separates strategic
+geometry from the older rolling physical docking candidate. One button press
+creates one immutable `StrategicTrajectoryPlanner` snapshot in the current
+Hub-local frame. No future target ephemeris, gravity integration or automatic
+rolling replan is used in this validation stage.
+
+The strategic centerline has hard endpoint invariants:
+
+- point 0 is the ship's actual current Hub-local position;
+- its first segment is parallel to the ship's current Hub-relative velocity
+  when that velocity is meaningful;
+- large already-known infrastructure is represented by conservative static
+  obstacle spheres for this snapshot and bypassed through a small deterministic
+  3D visibility graph;
+- an explicit approach point exists outside the docking entrance plane;
+- the final segment from approach point to terminal point is exactly parallel
+  to the inward dock normal.
+
+This product is advisory route geometry only. It does not choose thrust, execute
+controls or perform tactical avoidance. The intended next stage is a
+receding-horizon strategic replan that preserves continuity with the previous
+centerline; `TrajectoryFollower` remains a separate future consumer.
+
 ## 7. Hub construction semantics are not mesh geometry
 
 Docking/landing/attack/service/navigation elements use `HubSemanticAnchor` data.
@@ -189,14 +242,40 @@ The compass uses the same `galactic_center_dir` / `galactic_north_dir` from
 **ship-nose orientation**, while the existing flight-vector instrument continues
 to display actual motion. Those may legitimately disagree in Newtonian flight.
 
+## 8a. Spatial computation placement is not entity authority
+
+Expensive deterministic spatial work is placed as close to the only consumer as
+possible. A server-resolved **consistency domain** supplies the number of human
+participants that must observe the same result:
+
+- one human participant: run eligible route/prediction/autopilot calculation on
+  that client;
+- two or more human participants: run the calculation on the server and publish
+  the shared result;
+- explicit security/persistence/ATC/fleet policy or missing client capability may
+  require server execution even for one participant.
+
+This applies to any spatial domain in the universe, not only Hub maps. The same
+server-neutral planner/predictor/evaluator implementation is used in either
+placement; only the executor changes. The client must never infer "I am alone"
+from render visibility or its replication-interest set. The participant count or
+final placement decision is server-resolved.
+
+`SpatialComputationPlacement` is deliberately separate from
+`simulation::AuthorityPolicy`: physical entity state may remain server-authoritative
+while a deterministic calculation is executed client-side.
+
 ## 9. Network/server boundary
 
-The authoritative server will eventually answer a planning query with relevant
-official lanes, restrictions and scheduled traffic for the candidate cubes and
-time window. It may also publish ATC `GuidanceCorridor` products directly.
-Local sensors later refine the client's planning snapshot.
+For a shared consistency domain the authoritative server answers planning
+queries with relevant official lanes, restrictions and scheduled traffic for the
+candidate cubes/time window and may publish ATC `GuidanceCorridor` products
+directly. For an eligible single-participant domain the same data contract can
+be hydrated to the client and the common solver executes there instead. Local
+sensors may then refine the client's planning snapshot.
 
-None of that changes `TrajectoryPredictor` or HUD rendering contracts.
+None of that changes `TrajectoryPredictor`, solver or HUD rendering contracts;
+network placement chooses an executor, not a different navigation algorithm.
 
 ## 10. Wave 4 live laboratory and next implementation layers
 
@@ -209,31 +288,58 @@ keeps its module rotation center, so future gate positions follow circular
 rotation instead of tangent-line extrapolation.
 
 The request is scoped to the selected dock information card. Closing that card
-means **cancel docking guidance**: the typed request is cleared, the active
+**with its own `X`** means **cancel docking guidance**: the typed request is cleared, the active
 corridor expires/gets erased on the next update, and tracking reconciliation
-removes its cockpit marker. Hub docking ports are projected as direct semantic
-interaction targets for every authored enabled port, with the exact projected
+removes its cockpit marker. Repeated dock clicks, empty-map deselection and
+selection of another object do not close the card and therefore do not cancel
+the request. Hub docking ports are projected as direct semantic interaction
+targets for every authored enabled port, with the exact projected
 opening rectangle taking priority over parent-module CPU-mesh selection.
 
-The same active corridor has two presentation consumers and neither owns
-planning physics:
+The active corridor remains a shared planning product, but the current live
+validation slice is deliberately narrowed to **calculation + map trajectory**.
+Cockpit GuidanceTunnel code is not modified by this slice.
 
-- System/Detail/Hub maps project the supplied corridor centers and draw a dashed
-  cubic-Bezier-smoothed planned path through those samples;
-- the Flight cockpit HUD consumes the full `GuidanceFrame` pose sequence and
-  renders the 6-DOF GuidanceTunnel.
+Docking target motion is sampled in a short-horizon Hub co-moving frame. A Hub
+attached to an orbiting parent therefore follows the curved Hub motion instead
+of being extrapolated forever along its instantaneous world-space tangent. The
+planner may integrate the ship in the inertial/system frame, but terminal
+position/velocity are compared against the moving dock at the same future time.
+A candidate is not `Ready` merely because it is collision-free: it must satisfy
+terminal position and relative-velocity tolerances. The physical predictor end
+is never snapped to the requested dock point for presentation.
+
+During solver validation, System/Detail/Hub maps render the supplied **raw
+planner samples as one solid non-blinking polyline**, without dashes, sample
+dots, endpoint decoration or Bezier smoothing. On Hub Map each future world
+sample is transformed through the Hub co-moving pose for that sample time, so
+common orbital translation/rotation does not appear as a hundreds-of-kilometres
+tangent laser. The first physical sample remains in the line so the path stays
+attached to its rolling-plan start. Rotating attached modules advance from their
+epoch-0 local rotation with the shared Hub universe time, so the visible dock
+and semantic/planner dock use the same phase. Raw-end/required-terminal errors
+remain available in `docking_guidance_trace.txt` instead of being decorated onto
+the validation line.
+
+A single `NoTerminalSolution` result between successful 0.2 s replans does not
+immediately erase the last accepted map corridor. Presentation may retain that
+accepted corridor for at most 0.65 s from its original generation time; repeated
+failures cannot extend the grace. `Blocked`, invalid and prediction-failure
+results still remove guidance immediately. This hysteresis changes only map
+stability, never planner acceptance or collision safety.
 
 The Galaxy map intentionally does not draw local docking guidance: at galactic
 scale the metre/kilometre corridor has no useful screen extent.
 
 Current order after this docking-guidance slice:
 
-1. validate/tune the 6-DOF GuidanceTunnel and emergency recovery in the live Hub
-   Motion Lab;
-2. replace the conservative spherical vehicle sweep with oriented/swept-volume
+1. validate/tune terminal convergence and the raw Hub-local map trajectory in
+   the live Hub Motion Lab;
+2. after the map calculation is trusted, return to live GuidanceTunnel/HUD
+   validation;
+3. replace the conservative spherical vehicle sweep with oriented/swept-volume
    collision checking and richer alternate-candidate search;
-3. connect real radar/transponder/beacon fusion into `NavigationPlanningSnapshot`;
-4. build long-range `RouteSolver` and server planning-query/ATC corridor transport.
+4. connect real radar/transponder/beacon fusion into `NavigationPlanningSnapshot`;
+5. build long-range `RouteSolver` and server planning-query/ATC corridor transport.
 
-`TrajectoryFollower` / autopilot is explicitly **not** part of this stage. It
-comes only after the displayed docking trajectory and GuidanceTunnel are stable.
+`TrajectoryFollower` / autopilot is explicitly **not** part of this stage.

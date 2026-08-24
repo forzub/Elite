@@ -174,6 +174,36 @@ if hub_backend.is_file():
                     f"Hub render mutates persistent/pick state: {forbidden}",
                 )
 
+# Hub orbit must use a captured scene pivot, not the Hub/world origin.
+hub_view_header = MAP_DIR / "HubMapView.h"
+local_interaction_cpp = MAP_DIR / "LocalMapInteraction.cpp"
+
+if hub_view_header.is_file():
+    hub_view_text = hub_view_header.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "captureOrbitPivot",
+        "stabilizeCapturedOrbitPivot",
+        "pickOrbitPivot",
+        "orbitPivotActive",
+    ):
+        if required not in hub_view_text:
+            fail(hub_view_header, f"Hub orbit-pivot contract missing: {required}")
+
+if local_interaction_cpp.is_file():
+    interaction_text = local_interaction_cpp.read_text(encoding="utf-8", errors="replace")
+    for required in (
+        "hubView.captureOrbitPivot",
+        "hubView.stabilizeCapturedOrbitPivot",
+        "hubFrame.centerPx",
+    ):
+        if required not in interaction_text:
+            fail(local_interaction_cpp, f"Hub interaction lost cursor/object pivot: {required}")
+
+if local_builder_cpp.is_file():
+    builder_text = local_builder_cpp.read_text(encoding="utf-8", errors="replace")
+    if "addOrbitPivotPickable" not in builder_text or "DetailObjectClass::Hub" not in builder_text:
+        fail(local_builder_cpp, "Hub infrastructure is not exposed as an orbit-pivot candidate")
+
 # Stage 3: one prepared CPU frame for picking and System rendering.
 scene_frame_header = MAP_DIR / "SystemMapSceneFrame.h"
 scene_frame_builder_header = MAP_DIR / "SystemMapSceneFrameBuilder.h"

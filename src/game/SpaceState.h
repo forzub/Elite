@@ -290,7 +290,7 @@ private:
     game::navigation::GalacticReferenceFrame m_galacticReferenceFrame;
     game::navigation::HubSemanticAnchorCatalog m_hubSemanticAnchorCatalog;
     game::navigation::DockingPortRuntimeStateCatalog m_dockingPortRuntimeStateCatalog;
-    double m_dockingGuidanceReplanAccumulatorSeconds = 0.0;
+    std::uint64_t m_lastStrategicDockingRequestSerial = 0;
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;
     SystemMapRenderer m_systemMapRenderer;

@@ -26,6 +26,11 @@
 #include "src/game/navigation/DockingPathPlanner.h"
 #include "src/world/navigation/GeometricPathPlanner.h"
 #include "src/world/navigation/NavigationObstacleGeometry.h"
+#include "src/world/navigation/NavigationVehicleProfile.h"
+#include "src/world/navigation/TrajectoryGenerator.h"
+#include "src/world/navigation/GuidanceTunnel.h"
+#include "src/world/navigation/NavigationOrientation.h"
+#include "src/world/navigation/SmoothPathOptimizer.h"
 #include "src/game/navigation/TrajectoryPredictor.h"
 #include "src/game/navigation/TrajectorySafetyEvaluator.h"
 
@@ -388,6 +393,19 @@ void testGuidanceStateChoosesPriorityAndExpiry()
 
     require(state.active(0, 120.0) && state.active(0, 120.0)->id == "atc",
             "guidance source priority was ignored");
+
+    GuidanceCorridor manual = high;
+    manual.id = "atc:manual";
+    manual.priority = 70;
+    manual.spatialManualTunnel = true;
+    state.publish(manual);
+    require(state.activeSpatialManualTunnel(0, 120.0) &&
+            state.activeSpatialManualTunnel(0, 120.0)->id == "atc:manual",
+        "cockpit manual tunnel selection lost the spatial product");
+    require(state.activePredictive(0, 120.0) &&
+            state.activePredictive(0, 120.0)->id == "atc",
+        "map predictive selection was deformed by manual tunnel priority");
+
     state.pruneExpired(250.0);
     require(state.corridors().empty(), "expired corridors were not pruned");
 }
@@ -1108,6 +1126,7 @@ void testDockingPathPreservesPhysicalEndpointsAndIngress()
     request.startPositionMeters = glm::dvec3(1400.0, 300.0, 0.0);
     request.dockCenterMeters = glm::dvec3(1000.0, 300.0, 0.0);
     request.dockOutward = glm::dvec3(-1.0, 0.0, 0.0);
+    request.alignmentStandoffMeters = 500.0;
     request.approachStandoffMeters = 250.0;
     request.terminalDepthMeters = 25.0;
     request.vehicleSafetyRadiusMeters = 20.0;
@@ -1129,8 +1148,13 @@ void testDockingPathPreservesPhysicalEndpointsAndIngress()
         "docking path does not start at the ship");
 
     const glm::dvec3 inbound = -glm::normalize(request.dockOutward);
+    const glm::dvec3 alignmentLeg = glm::normalize(
+        plan.pointsMeters[plan.pointsMeters.size() - 2] -
+        plan.pointsMeters[plan.pointsMeters.size() - 3]);
     const glm::dvec3 last = glm::normalize(
         plan.pointsMeters.back() - plan.pointsMeters[plan.pointsMeters.size() - 2]);
+    require(glm::dot(alignmentLeg, inbound) > 0.999999,
+        "docking alignment leg is not locked to entrance axis");
     require(glm::dot(last, inbound) > 0.999999,
         "docking ingress is not perpendicular to entrance plane");
     require(glm::length(plan.pointsMeters.back() - plan.terminalPointMeters) < 1.0e-9,
@@ -1230,6 +1254,637 @@ void testGeometricPlannerUsesSphereBoxAndCapsuleKernel()
 }
 
 
+
+world::navigation::NavigationVehicleProfile testVehicleProfile()
+{
+    world::navigation::NavigationVehicleProfile profile;
+    profile.collisionRadiusMeters = 5.0;
+    profile.maxSpeedMps = 100.0;
+    profile.maxForwardAccelerationMps2 = 10.0;
+    profile.maxBrakingAccelerationMps2 = 12.0;
+    profile.maxLateralAccelerationMps2 = 8.0;
+    profile.maxAngularVelocityRadPerSecond = 2.0;
+    profile.maxAngularAccelerationRadPerSecond2 = 2.0;
+    return profile;
+}
+
+void testTrajectoryGeneratorParameterizesStraightPath()
+{
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "test-frame";
+    request.startUniverseTimeSeconds = 1000.0;
+    request.universeTimeScale = 12.0;
+    request.pathPointsMeters = {
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(500.0, 0.0, 0.0)
+    };
+    request.vehicle = testVehicleProfile();
+    request.sampleSpacingMeters = 20.0;
+    request.pointSpeedConstraints.push_back({500.0, 0.0});
+
+    const auto result = world::navigation::TrajectoryGenerator::generate(request);
+    require(result.ready(), "straight trajectory generation failed");
+    require(result.trajectory.samples.size() > 2,
+        "straight trajectory was not spatially sampled");
+    require(glm::length(result.trajectory.samples.front().positionMeters) < 1.0e-12,
+        "straight trajectory changed start position");
+    require(glm::length(
+        result.trajectory.samples.back().positionMeters -
+        glm::dvec3(500.0, 0.0, 0.0)) < 1.0e-9,
+        "straight trajectory changed terminal position");
+    require(near(result.trajectory.samples.front().speedMps, 0.0, 1.0e-9),
+        "straight trajectory did not start from rest");
+    require(near(result.trajectory.samples.back().speedMps, 0.0, 1.0e-9),
+        "straight trajectory did not brake to terminal constraint");
+    require(result.trajectory.durationSeconds > 0.0,
+        "straight trajectory has no duration");
+    require(near(
+        result.trajectory.samples.back().universeTimeSeconds -
+            request.startUniverseTimeSeconds,
+        result.trajectory.durationSeconds * request.universeTimeScale,
+        1.0e-8),
+        "trajectory mixed gameplay duration with universe-time scale");
+    for (std::size_t i = 1; i < result.trajectory.samples.size(); ++i)
+    {
+        require(result.trajectory.samples[i].universeTimeSeconds >
+                result.trajectory.samples[i - 1].universeTimeSeconds,
+            "trajectory timestamps are not strictly monotonic");
+        require(result.trajectory.samples[i].speedMps <=
+                request.vehicle.maxSpeedMps + 1.0e-6,
+            "trajectory exceeded vehicle speed envelope");
+    }
+}
+
+void testTrajectoryGeneratorSmoothsCornerWithoutCuttingObstacle()
+{
+    world::navigation::NavigationObstacle box;
+    box.id = "box";
+    box.shape = world::navigation::NavigationObstacleShape::Box;
+    box.centerMeters = glm::dvec3(0.0, 0.0, 0.0);
+    box.halfExtentsMeters = glm::dvec3(120.0, 120.0, 120.0);
+
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "test-frame";
+    request.startUniverseTimeSeconds = 2000.0;
+    request.pathPointsMeters = {
+        glm::dvec3(-600.0, 0.0, 0.0),
+        glm::dvec3(-250.0, -250.0, 0.0),
+        glm::dvec3(250.0, -250.0, 0.0),
+        glm::dvec3(600.0, 0.0, 0.0)
+    };
+    request.obstacles.push_back(box);
+    request.vehicle = testVehicleProfile();
+    request.maxSmoothSupportLevel = 5;
+    request.sampleSpacingMeters = 20.0;
+    request.pointSpeedConstraints.push_back({
+        0.0, 0.0
+    });
+    double rawLength = 0.0;
+    for (std::size_t i = 1; i < request.pathPointsMeters.size(); ++i)
+        rawLength += glm::length(request.pathPointsMeters[i] - request.pathPointsMeters[i - 1]);
+    request.pointSpeedConstraints.push_back({rawLength, 0.0});
+
+    const auto result = world::navigation::TrajectoryGenerator::generate(request);
+    require(result.ready(), "corner trajectory generation failed");
+    require(result.diagnostics.smoothSafeCandidates > 0 &&
+            !result.diagnostics.smoothingFellBackToPolyline,
+        "safe route did not produce a global smooth candidate");
+    for (std::size_t i = 1; i < result.trajectory.samples.size(); ++i)
+    {
+        require(!world::navigation::segmentIntersectsNavigationObstacle(
+            result.trajectory.samples[i - 1].positionMeters,
+            result.trajectory.samples[i].positionMeters,
+            box,
+            request.vehicle.collisionRadiusMeters),
+            "trajectory smoothing cut through canonical OBB");
+    }
+}
+
+void testTrajectoryGeneratorHonorsHardDockingIngress()
+{
+    world::navigation::NavigationObstacle target;
+    target.id = "dock-module";
+    target.shape = world::navigation::NavigationObstacleShape::Box;
+    target.centerMeters = glm::dvec3(800.0, 0.0, 0.0);
+    target.halfExtentsMeters = glm::dvec3(100.0, 100.0, 100.0);
+
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "hub";
+    request.startUniverseTimeSeconds = 3000.0;
+    request.pathPointsMeters = {
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(600.0, 0.0, 0.0),
+        glm::dvec3(800.0, 0.0, 0.0)
+    };
+    request.obstacles.push_back(target);
+    request.vehicle = testVehicleProfile();
+    request.pointSpeedConstraints.push_back({800.0, 0.0});
+    request.speedLimitRanges.push_back({600.0, 800.0, 18.0});
+    request.terminalAllowedObstacleId = target.id;
+    request.terminalObstacleEntrySourceProgressMeters = 600.0;
+
+    const auto result = world::navigation::TrajectoryGenerator::generate(request);
+    require(result.ready(), "legal docking ingress trajectory was rejected");
+
+    for (const auto& sample : result.trajectory.samples)
+    {
+        if (sample.sourcePathProgressMeters >= 600.0 - 1.0e-7)
+        {
+            require(sample.speedMps <= 18.0 + 1.0e-6,
+                "docking ingress exceeded semantic max-entry speed");
+        }
+    }
+    require(result.trajectory.samples.back().speedMps <= 1.0e-8,
+        "docking trajectory did not stop at the terminal constraint");
+}
+
+void testTrajectoryGeneratorRejectsImpossibleInitialBraking()
+{
+    auto profile = testVehicleProfile();
+    profile.maxBrakingAccelerationMps2 = 1.0;
+
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "test-frame";
+    request.startUniverseTimeSeconds = 4000.0;
+    request.pathPointsMeters = {
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(20.0, 0.0, 0.0)
+    };
+    request.vehicle = profile;
+    request.initialVelocityMps = glm::dvec3(50.0, 0.0, 0.0);
+    request.pointSpeedConstraints.push_back({20.0, 0.0});
+
+    const auto result = world::navigation::TrajectoryGenerator::generate(request);
+    require(!result.ready(), "impossible braking state was silently accepted");
+    require(result.trajectory.status ==
+            world::navigation::TrajectoryStatus::InitialStateInfeasible,
+        "impossible braking state reported the wrong failure class");
+}
+
+void testTrajectoryGeneratorIsDeterministicAndInputPure()
+{
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "test-frame";
+    request.startUniverseTimeSeconds = 5000.0;
+    request.pathPointsMeters = {
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(300.0, 100.0, 0.0),
+        glm::dvec3(600.0, 100.0, 0.0)
+    };
+    request.vehicle = testVehicleProfile();
+    request.maxSmoothSupportLevel = 5;
+    request.pointSpeedConstraints.push_back({0.0, 0.0});
+    const double endProgress =
+        glm::length(request.pathPointsMeters[1] - request.pathPointsMeters[0]) +
+        glm::length(request.pathPointsMeters[2] - request.pathPointsMeters[1]);
+    request.pointSpeedConstraints.push_back({endProgress, 0.0});
+    const auto originalPoints = request.pathPointsMeters;
+
+    const auto first = world::navigation::TrajectoryGenerator::generate(request);
+    const auto second = world::navigation::TrajectoryGenerator::generate(request);
+    require(first.ready() && second.ready(), "deterministic trajectory fixture failed");
+    require(request.pathPointsMeters.size() == originalPoints.size(),
+        "trajectory generator mutated source path size");
+    for (std::size_t i = 0; i < originalPoints.size(); ++i)
+    {
+        require(glm::length(request.pathPointsMeters[i] - originalPoints[i]) <= 1.0e-12,
+            "trajectory generator mutated source path");
+    }
+    require(first.trajectory.samples.size() == second.trajectory.samples.size(),
+        "trajectory generator changed sample count for identical input");
+    for (std::size_t i = 0; i < first.trajectory.samples.size(); ++i)
+    {
+        const auto& a = first.trajectory.samples[i];
+        const auto& b = second.trajectory.samples[i];
+        require(glm::length(a.positionMeters - b.positionMeters) <= 1.0e-12,
+            "trajectory positions are non-deterministic");
+        require(std::abs(a.timeOffsetSeconds - b.timeOffsetSeconds) <= 1.0e-12,
+            "trajectory timestamps are non-deterministic");
+        require(std::abs(a.speedMps - b.speedMps) <= 1.0e-12,
+            "trajectory speed profile is non-deterministic");
+    }
+}
+
+void testTrajectoryGeneratorUsesGlobalBSplineSmoothing()
+{
+    world::navigation::TrajectoryGenerationRequest request;
+    request.systemId = 0;
+    request.frameId = "global-spline";
+    request.startUniverseTimeSeconds = 6000.0;
+    request.pathPointsMeters = {
+        glm::dvec3(-300.0, 0.0, 0.0),
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(0.0, 300.0, 0.0),
+        glm::dvec3(250.0, 550.0, 0.0)
+    };
+    request.vehicle = testVehicleProfile();
+    request.sampleSpacingMeters = 6.0;
+    request.maxCurveChordErrorMeters = 0.04;
+    request.maxSmoothSupportLevel = 5;
+
+    const auto result = world::navigation::TrajectoryGenerator::generate(request);
+    require(result.ready(), "global B-spline trajectory generation failed");
+    require(result.diagnostics.smoothSafeCandidates > 0,
+        "global B-spline optimizer produced no safe candidate");
+    require(!result.diagnostics.smoothingFellBackToPolyline,
+        "unobstructed global curve unexpectedly fell back to polyline");
+    require(result.diagnostics.maxCurvaturePerMeter > 0.0,
+        "global spline reported no curvature through a bent route");
+
+    double worstTangentJump = 0.0;
+    for (std::size_t i = 2; i < result.trajectory.samples.size(); ++i)
+    {
+        const glm::dvec3 a = glm::normalize(
+            result.trajectory.samples[i - 1].positionMeters -
+            result.trajectory.samples[i - 2].positionMeters
+        );
+        const glm::dvec3 b = glm::normalize(
+            result.trajectory.samples[i].positionMeters -
+            result.trajectory.samples[i - 1].positionMeters
+        );
+        worstTangentJump = std::max(
+            worstTangentJump,
+            std::acos(std::clamp(glm::dot(a, b), -1.0, 1.0))
+        );
+    }
+    require(worstTangentJump < glm::radians(8.0),
+        "global spline still contains a local corner-like tangent jump");
+
+    bool leftRawCorner = false;
+    for (const auto& sample : result.trajectory.samples)
+    {
+        if (sample.positionMeters.x < -1.0 && sample.positionMeters.y > 1.0)
+        {
+            leftRawCorner = true;
+            break;
+        }
+    }
+    require(leftRawCorner,
+        "global spline only rounded the raw vertex instead of flowing globally");
+}
+
+world::navigation::Trajectory makeGuidanceTunnelFixture()
+{
+    world::navigation::Trajectory trajectory;
+    trajectory.status = world::navigation::TrajectoryStatus::Ready;
+    trajectory.systemId = 0;
+    trajectory.frameId = "hub";
+    trajectory.startUniverseTimeSeconds = 7000.0;
+    trajectory.lengthMeters = 400.0;
+    trajectory.durationSeconds = 8.0;
+
+    for (int i = 0; i <= 4; ++i)
+    {
+        world::navigation::TrajectorySample sample;
+        sample.pathProgressMeters = static_cast<double>(i) * 100.0;
+        sample.sourcePathProgressMeters = sample.pathProgressMeters;
+        sample.positionMeters = glm::dvec3(sample.pathProgressMeters, 0.0, 0.0);
+        sample.orientation = glm::dquat(1.0, 0.0, 0.0, 0.0);
+        sample.speedMps = 50.0 - static_cast<double>(i) * 5.0;
+        sample.timeOffsetSeconds = static_cast<double>(i) * 2.0;
+        sample.universeTimeSeconds = 7000.0 + sample.timeOffsetSeconds;
+        trajectory.samples.push_back(sample);
+    }
+    return trajectory;
+}
+
+void testNavigationVehicleOrientationUsesNoseMinusZConvention()
+{
+    const glm::dvec3 dockOutward = glm::normalize(glm::dvec3(0.3, -0.2, 0.9));
+    const glm::dvec3 dockUpHint = glm::normalize(glm::dvec3(0.1, 1.0, 0.2));
+    const glm::dvec3 desiredVehicleForward = -dockOutward;
+
+    const glm::dquat orientation =
+        world::navigation::orientationForForwardUp(
+            desiredVehicleForward,
+            dockUpHint
+        );
+    const glm::dvec3 actualForward = glm::normalize(
+        orientation * glm::dvec3(0.0, 0.0, -1.0)
+    );
+    const glm::dvec3 actualUp = glm::normalize(
+        orientation * glm::dvec3(0.0, 1.0, 0.0)
+    );
+
+    require(glm::dot(actualForward, desiredVehicleForward) >= 1.0 - 1.0e-12,
+        "navigation vehicle orientation points nose away from desired forward");
+    require(glm::dot(actualForward, dockOutward) <= -1.0 + 1.0e-12,
+        "docking vehicle terminal pose follows dock outward instead of inbound");
+    require(std::abs(glm::dot(actualForward, actualUp)) <= 1.0e-12,
+        "navigation vehicle orientation forward/up basis is not orthogonal");
+}
+
+void testManualGuidanceTunnelMorphsShipPoseToDockPose()
+{
+    const auto trajectory = makeGuidanceTunnelFixture();
+    world::navigation::GuidanceTunnelRequest request;
+    request.trajectory = &trajectory;
+    request.currentPositionMeters = glm::dvec3(0.0, 40.0, 0.0);
+    const glm::dvec3 forward(1.0, 0.0, 0.0);
+    const glm::dvec3 currentUp = glm::angleAxis(
+        glm::radians(25.0), forward
+    ) * glm::dvec3(0.0, 1.0, 0.0);
+    request.currentOrientation = world::navigation::orientationForForwardUp(
+        forward, currentUp
+    );
+    request.terminalPositionMeters = glm::dvec3(400.0, 10.0, 0.0);
+    const glm::dvec3 terminalUp = glm::angleAxis(
+        glm::radians(90.0), forward
+    ) * glm::dvec3(0.0, 1.0, 0.0);
+    request.terminalOrientation = world::navigation::orientationForForwardUp(
+        forward, terminalUp
+    );
+    request.gateSpacingMeters = 25.0;
+    request.gateWidthMeters = 90.0;
+    request.gateHeightMeters = 150.0;
+    request.lateralToleranceMeters = 20.0;
+    request.verticalToleranceMeters = 35.0;
+    request.startCaptureDistanceMeters = 150.0;
+    request.terminalAlignmentDistanceMeters = 150.0;
+
+    const auto tunnel = world::navigation::GuidanceTunnelBuilder::build(request);
+    require(tunnel.valid && tunnel.gates.size() > 8,
+        "manual guidance tunnel was not built");
+    require(glm::length(tunnel.gates.front().positionMeters - request.currentPositionMeters) <= 1.0e-9,
+        "manual tunnel does not start at actual ship position");
+    require(std::abs(glm::dot(
+        tunnel.gates.front().orientation,
+        request.currentOrientation)) >= 1.0 - 1.0e-9,
+        "manual tunnel does not start at actual ship orientation");
+    require(glm::length(tunnel.gates.back().positionMeters - request.terminalPositionMeters) <= 1.0e-9,
+        "manual tunnel does not end at live dock entrance");
+    require(std::abs(glm::dot(
+        tunnel.gates.back().orientation,
+        request.terminalOrientation)) >= 1.0 - 1.0e-9,
+        "manual tunnel does not end at dock orientation");
+
+    const glm::dvec3 terminalForward = glm::normalize(
+        request.terminalOrientation * glm::dvec3(0.0, 0.0, -1.0)
+    );
+    const glm::dvec3 lastGateDirection = glm::normalize(
+        tunnel.gates.back().positionMeters -
+        tunnel.gates[tunnel.gates.size() - 2].positionMeters
+    );
+    require(glm::dot(lastGateDirection, terminalForward) > 0.98,
+        "manual tunnel does not converge onto the live docking axis");
+
+    const glm::dvec3 expectedDockUp = glm::normalize(
+        request.terminalOrientation * glm::dvec3(0.0, 1.0, 0.0)
+    );
+    const glm::dvec3 actualDockUp = glm::normalize(
+        tunnel.gates.back().orientation * glm::dvec3(0.0, 1.0, 0.0)
+    );
+    require(glm::dot(expectedDockUp, actualDockUp) >= 1.0 - 1.0e-9,
+        "terminal gate lost dock top/bottom orientation");
+
+    for (std::size_t i = 0; i < tunnel.gates.size(); ++i)
+    {
+        const auto& gate = tunnel.gates[i];
+        require(near(gate.widthMeters, 90.0, 1.0e-9) &&
+                near(gate.heightMeters, 150.0, 1.0e-9),
+            "manual tunnel changed frame size along its length");
+        require(near(gate.lateralToleranceMeters, 20.0, 1.0e-9) &&
+                near(gate.verticalToleranceMeters, 35.0, 1.0e-9),
+            "manual tunnel changed safe centre envelope along its length");
+        if (i > 0)
+        {
+            const auto& previous = tunnel.gates[i - 1];
+            const double arcSpacing =
+                gate.distanceAlongTunnelMeters - previous.distanceAlongTunnelMeters;
+            if (i + 1 < tunnel.gates.size())
+            {
+                require(std::abs(arcSpacing - 25.0) <= 1.0e-9,
+                    "manual guidance gates are not equidistant by tunnel arc length");
+            }
+            else
+            {
+                require(arcSpacing > 0.0 && arcSpacing <= 25.0 + 1.0e-9,
+                    "manual guidance final gate remainder exceeds gate spacing");
+            }
+
+            const double chord = glm::length(
+                gate.positionMeters - previous.positionMeters
+            );
+            require(chord > 1.0e-9 && chord <= arcSpacing + 1.0e-6,
+                "manual guidance gate chord violates arc-length spacing");
+        }
+        if (i > 0)
+        {
+            require(std::abs(glm::dot(
+                tunnel.gates[i - 1].orientation,
+                gate.orientation)) > 0.90,
+                "manual guidance orientation snapped between adjacent gates");
+        }
+    }
+}
+
+void testManualGuidanceTunnelUsesAcceptedTrajectoryBackbone()
+{
+    auto trajectory = makeGuidanceTunnelFixture();
+    // Make the accepted trajectory visibly non-collinear so the test can
+    // distinguish sampling it from a fresh current-pose reconnect spline.
+    trajectory.samples[1].positionMeters.y = 80.0;
+    trajectory.samples[2].positionMeters.y = 120.0;
+    trajectory.samples[3].positionMeters.y = 80.0;
+
+    world::navigation::GuidanceTunnelRequest request;
+    request.trajectory = &trajectory;
+    request.buildMode =
+        world::navigation::GuidanceTunnelBuildMode::TrajectoryBackbone;
+    request.currentPositionMeters = glm::dvec3(0.0, -120.0, 0.0);
+    request.currentOrientation = trajectory.samples.front().orientation;
+    request.terminalPositionMeters = trajectory.samples.back().positionMeters;
+    request.terminalOrientation = trajectory.samples.back().orientation;
+    request.gateSpacingMeters = 25.0;
+    request.gateWidthMeters = 100.0;
+    request.gateHeightMeters = 180.0;
+
+    const auto tunnel = world::navigation::GuidanceTunnelBuilder::build(request);
+    require(tunnel.valid && tunnel.gates.size() > 4,
+        "trajectory-backbone manual tunnel was not built");
+
+    // The ship is deliberately far below the accepted route. A backbone build
+    // must stay on that route instead of pulling the first gate to the ship.
+    require(tunnel.gates.front().positionMeters.y > -1.0,
+        "initial manual tunnel re-smoothed the accepted trajectory toward the ship");
+    require(tunnel.gates.front().positionMeters.y >
+            request.currentPositionMeters.y + 50.0,
+        "trajectory-backbone mode still anchors gate zero to current ship pose");
+
+    bool sawAcceptedArc = false;
+    for (const auto& gate : tunnel.gates)
+    {
+        if (gate.positionMeters.y > 40.0)
+        {
+            sawAcceptedArc = true;
+            break;
+        }
+    }
+    require(sawAcceptedArc,
+        "manual tunnel did not sample the already accepted curved trajectory");
+}
+
+void testManualGuidanceTunnelReactsToCurrentShipWithoutMovingDock()
+{
+    const auto trajectory = makeGuidanceTunnelFixture();
+    world::navigation::GuidanceTunnelRequest first;
+    first.trajectory = &trajectory;
+    first.currentPositionMeters = glm::dvec3(0.0, 0.0, 0.0);
+    const glm::dvec3 routeForward(1.0, 0.0, 0.0);
+    first.currentOrientation = world::navigation::orientationForForwardUp(
+        routeForward, glm::dvec3(0.0, 1.0, 0.0)
+    );
+    first.terminalPositionMeters = glm::dvec3(400.0, 0.0, 0.0);
+    const glm::dvec3 terminalUp = glm::angleAxis(
+        glm::radians(45.0), routeForward
+    ) * glm::dvec3(0.0, 1.0, 0.0);
+    first.terminalOrientation = world::navigation::orientationForForwardUp(
+        routeForward, terminalUp
+    );
+    first.gateSpacingMeters = 20.0;
+    first.gateWidthMeters = 100.0;
+    first.gateHeightMeters = 180.0;
+    first.startCaptureDistanceMeters = 120.0;
+    first.terminalAlignmentDistanceMeters = 120.0;
+
+    auto second = first;
+    second.currentPositionMeters = glm::dvec3(0.0, 30.0, 10.0);
+    const glm::dvec3 secondUp = glm::angleAxis(
+        glm::radians(-30.0), routeForward
+    ) * glm::dvec3(0.0, 1.0, 0.0);
+    second.currentOrientation = world::navigation::orientationForForwardUp(
+        routeForward, secondUp
+    );
+
+    const auto a = world::navigation::GuidanceTunnelBuilder::build(first);
+    const auto b = world::navigation::GuidanceTunnelBuilder::build(second);
+    require(a.valid && b.valid, "dynamic tunnel fixtures failed");
+    require(glm::length(a.gates.front().positionMeters - b.gates.front().positionMeters) > 20.0,
+        "manual tunnel ignored changed current ship position");
+    require(std::abs(glm::dot(a.gates.front().orientation, b.gates.front().orientation)) < 0.99,
+        "manual tunnel ignored changed current ship orientation");
+    require(a.gates.size() > 4 && b.gates.size() > 4,
+        "dynamic tunnel fixture did not emit enough downstream gates");
+    require(glm::length(a.gates[2].positionMeters - b.gates[2].positionMeters) > 2.0,
+        "leaving the route only moved the on-ship gate instead of rebuilding the corridor");
+    require(std::abs(glm::dot(a.gates[2].orientation, b.gates[2].orientation)) < 0.9995,
+        "ship attitude correction did not begin near the current ship");
+    require(glm::length(a.gates.back().positionMeters - b.gates.back().positionMeters) <= 1.0e-9,
+        "changing ship pose moved the dock endpoint");
+    require(std::abs(glm::dot(a.gates.back().orientation, b.gates.back().orientation)) >= 1.0 - 1.0e-9,
+        "changing ship pose rotated the dock endpoint");
+}
+
+void testManualGuidanceTunnelDropsPassedGates()
+{
+    const auto trajectory = makeGuidanceTunnelFixture();
+    world::navigation::GuidanceTunnelRequest request;
+    request.trajectory = &trajectory;
+    request.currentPositionMeters = glm::dvec3(235.0, 25.0, 0.0);
+    request.currentOrientation = world::navigation::orientationForForwardUp(
+        glm::dvec3(1.0, 0.0, 0.0),
+        glm::dvec3(0.0, 1.0, 0.0)
+    );
+    request.terminalPositionMeters = glm::dvec3(400.0, 0.0, 0.0);
+    request.terminalOrientation = request.currentOrientation;
+    request.gateSpacingMeters = 35.0;
+    request.gateWidthMeters = 100.0;
+    request.gateHeightMeters = 180.0;
+    request.startCaptureDistanceMeters = 90.0;
+    request.terminalAlignmentDistanceMeters = 100.0;
+
+    const auto tunnel = world::navigation::GuidanceTunnelBuilder::build(request);
+    require(tunnel.valid, "advanced-ship dynamic tunnel failed");
+    require(tunnel.passedTrajectoryProgressMeters > 180.0,
+        "dynamic tunnel did not advance past already flown route progress");
+    require(glm::length(
+        tunnel.gates.front().positionMeters - request.currentPositionMeters) <= 1.0e-9,
+        "dynamic tunnel retained old gates behind the current ship");
+    for (const auto& gate : tunnel.gates)
+    {
+        require(gate.positionMeters.x > 150.0,
+            "dynamic tunnel emitted a gate from the already passed route");
+    }
+}
+
+
+
+void testSmoothPathRejectsCurvatureViolationWithoutPolylineFallback()
+{
+    world::navigation::SmoothPathRequest request;
+    request.pathPointsMeters = {
+        glm::dvec3(0.0, 0.0, 0.0),
+        glm::dvec3(100.0, 0.0, 0.0),
+        glm::dvec3(100.0, 100.0, 0.0),
+        glm::dvec3(200.0, 100.0, 0.0)
+    };
+    request.vehicle = testVehicleProfile();
+    request.maxSampleSpacingMeters = 4.0;
+    request.maxChordErrorMeters = 0.02;
+    request.maxSupportLevel = 2;
+    request.maxCurvaturePerMeter = 1.0 / 2000.0;
+    request.allowPolylineFallback = false;
+
+    const auto bounded = world::navigation::SmoothPathOptimizer::optimize(request);
+    require(!bounded.valid,
+        "hard curvature contract accepted an implausibly tight smooth path");
+    require(!bounded.diagnostics.fellBackToPolyline,
+        "manual curvature failure fell back to a kinked polyline");
+
+    request.maxCurvaturePerMeter = 0.0;
+    const auto unbounded = world::navigation::SmoothPathOptimizer::optimize(request);
+    require(unbounded.valid,
+        "unbounded smooth fixture unexpectedly failed");
+}
+
+void testManualGuidanceTunnelUsesCurrentVelocityDirection()
+{
+    auto trajectory = makeGuidanceTunnelFixture();
+    for (auto& sample : trajectory.samples)
+    {
+        sample.pathProgressMeters *= 10.0;
+        sample.sourcePathProgressMeters *= 10.0;
+        sample.positionMeters.x *= 10.0;
+    }
+    trajectory.lengthMeters *= 10.0;
+
+    world::navigation::GuidanceTunnelRequest request;
+    request.trajectory = &trajectory;
+    request.buildMode =
+        world::navigation::GuidanceTunnelBuildMode::ReconnectCurrentPose;
+    request.currentPositionMeters = glm::dvec3(0.0, 0.0, 0.0);
+    request.currentOrientation = world::navigation::orientationForForwardUp(
+        glm::dvec3(1.0, 0.0, 0.0),
+        glm::dvec3(0.0, 1.0, 0.0)
+    );
+    request.currentVelocityMps = glm::dvec3(0.0, 120.0, 0.0);
+    request.terminalPositionMeters = glm::dvec3(4000.0, 0.0, 0.0);
+    request.terminalOrientation = request.currentOrientation;
+    request.gateSpacingMeters = 50.0;
+    request.gateWidthMeters = 100.0;
+    request.gateHeightMeters = 180.0;
+    request.lateralToleranceMeters = 20.0;
+    request.verticalToleranceMeters = 35.0;
+    request.startCaptureDistanceMeters = 500.0;
+    request.terminalAlignmentDistanceMeters = 1000.0;
+    request.vehicle = testVehicleProfile();
+
+    const auto tunnel = world::navigation::GuidanceTunnelBuilder::build(request);
+    require(tunnel.valid && tunnel.gates.size() > 4,
+        "velocity-boundary manual tunnel failed");
+    const glm::dvec3 initialDirection = glm::normalize(
+        tunnel.gates[1].positionMeters - tunnel.gates[0].positionMeters
+    );
+    require(glm::dot(initialDirection, glm::dvec3(0.0, 1.0, 0.0)) > 0.70,
+        "manual tunnel followed hull nose instead of actual velocity course");
+}
+
+
 int main()
 {
     const struct { const char* name; void (*fn)(); } tests[] = {
@@ -1261,6 +1916,19 @@ int main()
         {"docking path preserves endpoints and ingress", testDockingPathPreservesPhysicalEndpointsAndIngress},
         {"geometric planner keeps clear direct path", testGeometricPlannerKeepsClearDirectPath},
         {"geometric planner detours rotated OBB", testGeometricPlannerDetoursRotatedObb},
+        {"trajectory generator parameterizes straight path", testTrajectoryGeneratorParameterizesStraightPath},
+        {"trajectory generator smooths without cutting OBB", testTrajectoryGeneratorSmoothsCornerWithoutCuttingObstacle},
+        {"trajectory generator honors hard docking ingress", testTrajectoryGeneratorHonorsHardDockingIngress},
+        {"trajectory generator rejects impossible braking", testTrajectoryGeneratorRejectsImpossibleInitialBraking},
+        {"trajectory generator is deterministic and input-pure", testTrajectoryGeneratorIsDeterministicAndInputPure},
+        {"trajectory generator uses global B-spline smoothing", testTrajectoryGeneratorUsesGlobalBSplineSmoothing},
+        {"smooth path hard curvature contract", testSmoothPathRejectsCurvatureViolationWithoutPolylineFallback},
+        {"navigation vehicle orientation uses nose -Z convention", testNavigationVehicleOrientationUsesNoseMinusZConvention},
+        {"manual guidance tunnel morphs ship pose to dock pose", testManualGuidanceTunnelMorphsShipPoseToDockPose},
+        {"manual guidance tunnel uses accepted trajectory backbone", testManualGuidanceTunnelUsesAcceptedTrajectoryBackbone},
+        {"manual guidance tunnel reacts to current ship", testManualGuidanceTunnelReactsToCurrentShipWithoutMovingDock},
+        {"manual guidance tunnel follows actual velocity course", testManualGuidanceTunnelUsesCurrentVelocityDirection},
+        {"manual guidance tunnel drops passed gates", testManualGuidanceTunnelDropsPassedGates},
         {"geometric collision kernel covers sphere box capsule", testGeometricPlannerUsesSphereBoxAndCapsuleKernel},
     };
 

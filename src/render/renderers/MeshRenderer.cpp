@@ -1,10 +1,30 @@
 #include "MeshRenderer.h"
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <string>
+#include <unordered_map>
 
 #include "src/render/ShaderProgram.h"
 #include "src/render/ShaderLibrary.h"
 #include "src/game/geometry/MeshGPU.h"
+
+namespace
+{
+GLint cachedUniformLocation(GLuint program, const char* name)
+{
+    using ProgramCache = std::unordered_map<std::string, GLint>;
+    static std::unordered_map<GLuint, ProgramCache> cache;
+
+    ProgramCache& uniforms = cache[program];
+    const auto found = uniforms.find(name);
+    if (found != uniforms.end())
+        return found->second;
+
+    const GLint location = glGetUniformLocation(program, name);
+    uniforms.emplace(name, location);
+    return location;
+}
+}
 
 void MeshRenderer::setupMeshPass(GLuint shader, const glm::mat4& mvp,
                                  const glm::mat4& model, const LightingParams& lighting,
@@ -31,10 +51,17 @@ void MeshRenderer::setupEdgePass(GLuint shader, const LightingParams& lighting,
 
     if (viewportWidth <= 0 || viewportHeight <= 0)
     {
-        GLint vp[4] = {0, 0, 800, 600};
-        glGetIntegerv(GL_VIEWPORT, vp);
-        viewportWidth = vp[2];
-        viewportHeight = vp[3];
+        viewportWidth = m_viewportWidth;
+        viewportHeight = m_viewportHeight;
+    }
+
+    if (viewportWidth <= 0 || viewportHeight <= 0)
+    {
+        // Conservative fallback for callers that did not establish a render
+        // viewport. SceneRenderer sets this once per camera pass, so the hot
+        // per-part edge path never performs a GL state query.
+        viewportWidth = 800;
+        viewportHeight = 600;
     }
 
     lighting.applyEdgeUniforms(shader, mvp, model, cameraPos, viewportWidth, viewportHeight);
@@ -127,7 +154,7 @@ void MeshRenderer::drawInstanced(
     glUseProgram(meshShader);
 
     GLint vpLoc =
-        glGetUniformLocation(meshShader, "VP");
+        cachedUniformLocation(meshShader, "VP");
 
     if (vpLoc != -1)
     {
@@ -172,7 +199,7 @@ void MeshRenderer::drawEdgesInstanced(
     glUseProgram(edgeShader);
 
     GLint vpLoc =
-        glGetUniformLocation(edgeShader, "VP");
+        cachedUniformLocation(edgeShader, "VP");
 
     if (vpLoc != -1)
     {
@@ -185,7 +212,7 @@ void MeshRenderer::drawEdgesInstanced(
     }
 
     GLint cameraLoc =
-        glGetUniformLocation(edgeShader, "cameraPos");
+        cachedUniformLocation(edgeShader, "cameraPos");
 
     if (cameraLoc != -1)
     {
@@ -197,7 +224,7 @@ void MeshRenderer::drawEdgesInstanced(
     }
 
     GLint fadeStartLoc =
-        glGetUniformLocation(edgeShader, "edgeFadeStart");
+        cachedUniformLocation(edgeShader, "edgeFadeStart");
 
     if (fadeStartLoc != -1)
     {
@@ -205,7 +232,7 @@ void MeshRenderer::drawEdgesInstanced(
     }
 
     GLint fadeEndLoc =
-        glGetUniformLocation(edgeShader, "edgeFadeEnd");
+        cachedUniformLocation(edgeShader, "edgeFadeEnd");
 
     if (fadeEndLoc != -1)
     {
@@ -213,7 +240,7 @@ void MeshRenderer::drawEdgesInstanced(
     }
 
     GLint colorLoc =
-        glGetUniformLocation(edgeShader, "edgeColor");
+        cachedUniformLocation(edgeShader, "edgeColor");
 
     if (colorLoc != -1)
     {
@@ -225,7 +252,7 @@ void MeshRenderer::drawEdgesInstanced(
     }
 
     GLint intensityLoc =
-        glGetUniformLocation(edgeShader, "edgeIntensity");
+        cachedUniformLocation(edgeShader, "edgeIntensity");
 
     if (intensityLoc != -1)
     {

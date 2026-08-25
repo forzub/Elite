@@ -24,8 +24,8 @@
             0
           ],
           "extent_m": [
-            110,
             190,
+            110,
             900
           ],
           "required_clearance_m": 18,
@@ -53,8 +53,8 @@
             0
           ],
           "extent_m": [
-            110,
             190,
+            110,
             900
           ],
           "required_clearance_m": 18,
@@ -115,8 +115,8 @@
             0
           ],
           "extent_m": [
-            120,
             200,
+            120,
             1200
           ],
           "required_clearance_m": 22,
@@ -144,8 +144,8 @@
             0
           ],
           "extent_m": [
-            120,
             200,
+            120,
             1200
           ],
           "required_clearance_m": 22,

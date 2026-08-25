@@ -24,6 +24,9 @@ struct GuidanceHudFramePresentation
     double widthMeters = 0.0;
     double heightMeters = 0.0;
     double recommendedSpeedMps = 0.0;
+    // Manual tunnel frames fade with distance so nearby geometry guides the
+    // pilot without turning the far corridor into a bright wire cage.
+    float opacity = 1.0f;
     bool requiredVehiclePose = false;
 };
 
@@ -37,6 +40,7 @@ struct GuidanceCorridorHudPresentation
         game::navigation::GuidancePurpose::Transit;
     double confidence = 1.0;
     bool advisoryOnly = true;
+    bool spatialManualTunnel = false;
     bool noSafePrimarySolution = false;
     std::vector<GuidanceHudFramePresentation> frames;
 };
@@ -46,7 +50,7 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
     const ClientShipState& player,
     double universeTimeSeconds,
     double lookAheadSeconds = 15.0,
-    std::size_t maxFrames = 18
+    std::size_t maxFrames = 40
 )
 {
     GuidanceCorridorHudPresentation out;
@@ -57,11 +61,19 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
     }
 
     const int systemId = player.renderTransform.motion.systemId;
-    const auto* corridor = navigation.guidance().active(
+    const auto* corridor = navigation.guidance().activeSpatialManualTunnel(
         systemId,
         universeTimeSeconds,
         &navigation.modules()
     );
+    if (!corridor)
+    {
+        corridor = navigation.guidance().active(
+            systemId,
+            universeTimeSeconds,
+            &navigation.modules()
+        );
+    }
     if (!corridor)
         return out;
 
@@ -70,6 +82,7 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
 
     std::vector<const game::navigation::GuidanceFrame*> candidates;
     candidates.reserve(corridor->frames.size());
+    const bool spatialTunnel = corridor->spatialManualTunnel;
     const double maxTime = universeTimeSeconds + std::max(0.5, lookAheadSeconds);
 
     for (const auto& frame : corridor->frames)
@@ -83,12 +96,17 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
             std::max(frame.widthMeters, frame.heightMeters)
         );
 
-        // The predictor contains a t=0 frame at the ship. Projecting frames
-        // almost on top of the camera creates a giant square/central blob and
-        // conveys no useful guidance. Start the HUD corridor visibly ahead.
-        if (timeAheadSeconds < 0.75 ||
-            frameDistanceMeters < std::max(30.0, frameScaleMeters * 0.75) ||
-            frame.universeTimeSeconds > maxTime)
+        // A spatial manual tunnel is regenerated from the actual ship pose,
+        // so its gates intentionally share the current epoch.  Time filtering
+        // is only meaningful for predictive corridors.  The first gate still
+        // lives on the ship and is suppressed to avoid a giant cockpit blob.
+        const double nearCullMeters = spatialTunnel
+            ? 30.0
+            : std::max(30.0, frameScaleMeters * 0.75);
+        if (frameDistanceMeters < nearCullMeters)
+            continue;
+        if (!spatialTunnel &&
+            (timeAheadSeconds < 0.75 || frame.universeTimeSeconds > maxTime))
         {
             continue;
         }
@@ -98,13 +116,15 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
     if (candidates.empty())
         return out;
 
+    const std::size_t frameLimit = spatialTunnel
+        ? std::max<std::size_t>(maxFrames, 96)
+        : std::max<std::size_t>(1, maxFrames);
     const std::size_t stride = std::max<std::size_t>(
         1,
-        (candidates.size() + std::max<std::size_t>(1, maxFrames) - 1) /
-            std::max<std::size_t>(1, maxFrames)
+        (candidates.size() + frameLimit - 1) / frameLimit
     );
 
-    out.frames.reserve(std::min(maxFrames, candidates.size()));
+    out.frames.reserve(std::min(frameLimit, candidates.size()));
     for (std::size_t i = 0; i < candidates.size(); i += stride)
     {
         const auto& frame = *candidates[i];
@@ -118,27 +138,47 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
         item.recommendedSpeedMps = frame.recommendedSpeedMps;
         item.requiredVehiclePose = frame.requiredVehiclePose;
         out.frames.push_back(std::move(item));
-        if (out.frames.size() >= maxFrames)
+        if (out.frames.size() >= frameLimit)
             break;
     }
 
-    // Preserve the final visible frame even when decimation skipped it.
-    if (out.frames.size() < maxFrames && candidates.size() > 1)
+    // Preserve the final dock gate even when decimation skipped it.
+    if (candidates.size() > 1)
     {
         const auto* last = candidates.back();
-        const double lastTime = last->universeTimeSeconds - universeTimeSeconds;
-        if (out.frames.empty() ||
-            std::abs(out.frames.back().timeAheadSeconds - lastTime) > 1.0e-6)
+        const glm::dvec3 lastRelative = last->centerMeters - playerMeters;
+        const bool alreadyLast = !out.frames.empty() &&
+            glm::length(out.frames.back().relativeCenterMeters - lastRelative) <= 1.0e-6;
+        if (!alreadyLast)
         {
             GuidanceHudFramePresentation item;
-            item.timeAheadSeconds = lastTime;
-            item.relativeCenterMeters = last->centerMeters - playerMeters;
+            item.timeAheadSeconds =
+                last->universeTimeSeconds - universeTimeSeconds;
+            item.relativeCenterMeters = lastRelative;
             item.orientation = last->orientation;
             item.widthMeters = last->widthMeters;
             item.heightMeters = last->heightMeters;
             item.recommendedSpeedMps = last->recommendedSpeedMps;
             item.requiredVehiclePose = last->requiredVehiclePose;
-            out.frames.push_back(std::move(item));
+            if (out.frames.size() >= frameLimit && !out.frames.empty())
+                out.frames.back() = std::move(item);
+            else
+                out.frames.push_back(std::move(item));
+        }
+    }
+
+    if (spatialTunnel && !out.frames.empty())
+    {
+        const std::size_t lastIndex = out.frames.size() - 1;
+        for (std::size_t i = 0; i < out.frames.size(); ++i)
+        {
+            const double u = lastIndex > 0
+                ? static_cast<double>(i) / static_cast<double>(lastIndex)
+                : 0.0;
+            const double smooth = u * u * (3.0 - 2.0 * u);
+            out.frames[i].opacity = static_cast<float>(
+                0.34 * (1.0 - smooth) + 0.07 * smooth
+            );
         }
     }
 
@@ -148,6 +188,7 @@ inline GuidanceCorridorHudPresentation buildGuidanceCorridorHudPresentation(
     out.purpose = corridor->purpose;
     out.confidence = corridor->confidence;
     out.advisoryOnly = corridor->advisoryOnly;
+    out.spatialManualTunnel = corridor->spatialManualTunnel;
     out.noSafePrimarySolution = corridor->noSafePrimarySolution;
     return out;
 }

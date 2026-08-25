@@ -4,6 +4,8 @@
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <cstdio>
+#include <string>
+#include <unordered_map>
 
 #include "src/render/ShaderProgram.h"
 
@@ -214,33 +216,48 @@ struct LightingParams {
             }
 
 private:
+    static GLint cachedUniformLocation(GLuint shader, const char* name)
+    {
+        using ProgramCache = std::unordered_map<std::string, GLint>;
+        static std::unordered_map<GLuint, ProgramCache> cache;
+
+        ProgramCache& program = cache[shader];
+        const auto found = program.find(name);
+        if (found != program.end())
+            return found->second;
+
+        const GLint location = glGetUniformLocation(shader, name);
+        program.emplace(name, location);
+        return location;
+    }
+
     void setUniform1i(GLuint shader, const char* name, int value) const {
-        GLint loc = glGetUniformLocation(shader, name);
+        GLint loc = cachedUniformLocation(shader, name);
         if (loc != -1) glUniform1i(loc, value);
     }
     
     void setUniform1f(GLuint shader, const char* name, float value) const {
-        GLint loc = glGetUniformLocation(shader, name);
+        GLint loc = cachedUniformLocation(shader, name);
         if (loc != -1) glUniform1f(loc, value);
     }
     
     void setUniform2f(GLuint shader, const char* name, float x, float y) const {
-        GLint loc = glGetUniformLocation(shader, name);
+        GLint loc = cachedUniformLocation(shader, name);
         if (loc != -1) glUniform2f(loc, x, y);
     }
     
     void setUniformVec3(GLuint shader, const char* name, const glm::vec3& value) const {
-        GLint loc = glGetUniformLocation(shader, name);
+        GLint loc = cachedUniformLocation(shader, name);
         if (loc != -1) glUniform3fv(loc, 1, glm::value_ptr(value));
     }
     
     void setUniformMat3(GLuint shader, const char* name, const glm::mat3& value) const {
-        GLint loc = glGetUniformLocation(shader, name);
+        GLint loc = cachedUniformLocation(shader, name);
         if (loc != -1) glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(value));
     }
     
     void setUniformMat4(GLuint shader, const char* name, const glm::mat4& value) const {
-        GLint loc = glGetUniformLocation(shader, name);
+        GLint loc = cachedUniformLocation(shader, name);
         if (loc != -1) glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(value));
     }
 

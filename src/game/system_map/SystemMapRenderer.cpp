@@ -2948,7 +2948,7 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
         overlay->trajectories.end()
     );
 
-    const auto* corridor = m_navigationWorkspace.guidance().active(
+    const auto* corridor = m_navigationWorkspace.guidance().activePredictive(
         systemId,
         universeTimeSeconds,
         &m_navigationWorkspace.modules()
@@ -3057,11 +3057,11 @@ void SystemMapRenderer::decorateActiveGuidanceTrajectory(
         return false;
     };
 
-    // Keep the first physical sample.  A rolling corridor is regenerated from
-    // the ship state roughly every 0.2 s; dropping samples merely because they
-    // are a fraction of a second behind the render snapshot detached the visible
-    // line from the ship.  Projection may move the whole raw corridor into the
-    // current map view, but it must not silently trim its start.
+    // Map presentation consumes only the accepted predictive trajectory.  A
+    // separate spatialManualTunnel may be regenerated from the live ship/dock
+    // pose for the cockpit, but it must never bend the map trajectory.  Keep
+    // every supplied physical sample here; projection may move samples into the
+    // current map view but must not silently trim the route start.
     for (const auto& guidanceFrame : corridor->frames)
     {
         game::system_map::MapTrajectoryPoint point;

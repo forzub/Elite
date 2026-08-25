@@ -393,33 +393,77 @@ namespace
 
 
 
-        void drawQueuedVisualShipMeshPasses(
+        uint32_t drawQueuedVisualShipMeshPasses(
             MeshRenderer& meshRenderer,
             const std::vector<QueuedMeshDraw>& draws,
             GLuint fillShader,
             GLuint edgeShader,
+            const glm::mat4& vp,
             const LightingParams& params,
             const glm::vec3& cameraLocalPosition
         )
         {
-            // Fill рисуем всегда.
+            uint32_t drawCalls = 0;
+
+            // Full visual ships frequently share the same MeshGPU across many
+            // traffic instances. Batch those fill passes so model transforms
+            // and vertex work happen through the existing instanced GPU path
+            // instead of one CPU/driver submission per ship part.
+            const GLuint instancedFillShader =
+                ShaderLibrary::instance().get("mesh_fill_instanced");
+
+            std::unordered_map<
+                const render::MeshGPU*,
+                std::vector<glm::mat4>
+            > fillGroups;
+            fillGroups.reserve(draws.size());
+
             for (const QueuedMeshDraw& draw : draws)
             {
-                if (!draw.gpu)
-                    continue;
-
-                meshRenderer.draw(
-                    *draw.gpu,
-                    fillShader,
-                    0,
-                    draw.mvp,
-                    draw.model,
-                    params,
-                    cameraLocalPosition
-                );
+                if (draw.gpu)
+                    fillGroups[draw.gpu].push_back(draw.model);
             }
 
-            // Edges рисуем только в ближней зоне и с плавной прозрачностью.
+            for (const auto& group : fillGroups)
+            {
+                const render::MeshGPU* gpu = group.first;
+                const auto& models = group.second;
+                if (!gpu || models.empty())
+                    continue;
+
+                if (instancedFillShader != 0 && models.size() > 1)
+                {
+                    meshRenderer.drawInstanced(
+                        *gpu,
+                        instancedFillShader,
+                        vp,
+                        models,
+                        params,
+                        cameraLocalPosition
+                    );
+                    ++drawCalls;
+                }
+                else
+                {
+                    for (const glm::mat4& model : models)
+                    {
+                        meshRenderer.draw(
+                            *gpu,
+                            fillShader,
+                            0,
+                            vp * model,
+                            model,
+                            params,
+                            cameraLocalPosition
+                        );
+                        ++drawCalls;
+                    }
+                }
+            }
+
+            // Keep the current thick/faded edge shader for now. Its geometry
+            // shader presentation differs from the thin instanced edge path;
+            // batching edges is a separate visual-preserving step.
             for (const QueuedMeshDraw& draw : draws)
             {
                 if (!draw.gpu)
@@ -449,7 +493,10 @@ namespace
                     edgeParams,
                     cameraLocalPosition
                 );
+                ++drawCalls;
             }
+
+            return drawCalls;
         }
 
 
@@ -955,6 +1002,26 @@ PreparedScene SceneRenderer::prepareScene(
 )
 {
     PreparedScene prepared;
+    prepareScene(prepared, world, playerId, observerGalacticPositionLy);
+    return prepared;
+}
+
+void SceneRenderer::prepareScene(
+    PreparedScene& prepared,
+    const ClientWorldState& world,
+    EntityId playerId,
+    const glm::dvec3* observerGalacticPositionLy
+)
+{
+    // Preserve vector capacities across frames. Only logical contents and
+    // scalar metadata are reset here.
+    prepared.realShipMeshes.clear();
+    prepared.objectMeshes.clear();
+    prepared.visualShips.clear();
+    prepared.visualShipParts.clear();
+    prepared.debugAssemblies.clear();
+    prepared.observerGalacticPositionLy = glm::dvec3(0.0);
+    prepared.observerGalacticPositionValid = false;
     prepared.world = &world;
     prepared.playerId = playerId;
     prepared.valid = false;
@@ -963,13 +1030,13 @@ PreparedScene SceneRenderer::prepareScene(
 
     auto itPlayer = ships.find(playerId.value);
     if (itPlayer == ships.end())
-        return prepared;
+        return;
 
     prepared.activeSystemId =
         itPlayer->second.renderTransform.motion.systemId;
 
     if (prepared.activeSystemId < 0)
-        return prepared;
+        return;
 
     prepared.frame =
         world::coordinates::makeRenderFrameFromCamera(
@@ -1338,7 +1405,7 @@ PreparedScene SceneRenderer::prepareScene(
 
 
     prepared.valid = true;
-    return prepared;
+    return;
 }
 
 void SceneRenderer::renderPrepared(
@@ -1461,7 +1528,11 @@ void SceneRenderer::renderInternal(
 
     m_lastStats.reset();
 
-
+    // Query viewport once per camera pass. MeshRenderer reuses it for every
+    // edge draw instead of issuing glGetIntegerv(GL_VIEWPORT) per part.
+    GLint renderViewport[4] = {0, 0, 800, 600};
+    glGetIntegerv(GL_VIEWPORT, renderViewport);
+    m_meshRenderer.setViewportSize(renderViewport[2], renderViewport[3]);
 
     const double profileStartMs = renderProfileNowMs();
 
@@ -2404,14 +2475,14 @@ profileAfterSetupMs = renderProfileNowMs();
 
                     m_lastStats.partsDrawn++;
                     m_lastStats.visualShipPartsDrawn++;
-                    m_lastStats.drawCalls += 2;
                 }
 
-                drawQueuedVisualShipMeshPasses(
+                m_lastStats.drawCalls += drawQueuedVisualShipMeshPasses(
                     m_meshRenderer,
                     queuedVisualShipMeshDraws,
                     fillShader,
                     edgeShader,
+                    proj * renderViewForVisual,
                     shipParams,
                     cameraLocalPosition
                 );
@@ -3093,6 +3164,43 @@ if (policy.drawObjects)
         farPassesMs > 6.0 ||
         labelsMs > 4.0 ||
         debugCallbackMs > 4.0;
+
+    // Publish the phase breakdown instead of calculating and discarding it.
+    // These are CPU-side submission timings, not GPU execution timings.
+    m_lastStats.cpuTotalMs = totalMs;
+    m_lastStats.cpuSetupMs = setupMs;
+    m_lastStats.cpuStarfieldMs = starfieldMs;
+    m_lastStats.cpuFarPassesMs = farPassesMs;
+    m_lastStats.cpuLabelsMs = labelsMs;
+    m_lastStats.cpuRealShipsMs = realShipsMs;
+    m_lastStats.cpuVisualShipsMs = visualShipsMs;
+    m_lastStats.cpuVisualDronesMs = visualDronesMs;
+    m_lastStats.cpuObjectsMs = objectsMs;
+    m_lastStats.cpuDebugCallbackMs = debugCallbackMs;
+
+    if (suspicious && cameraName == "mainCam")
+    {
+        static double lastScenePerfReportMs = -1.0e9;
+        const double now = renderProfileNowMs();
+        if (now - lastScenePerfReportMs >= 500.0)
+        {
+            std::cerr
+                << "[ScenePerf] total_ms=" << totalMs
+                << " setup_ms=" << setupMs
+                << " starfield_ms=" << starfieldMs
+                << " far_ms=" << farPassesMs
+                << " labels_ms=" << labelsMs
+                << " real_ships_ms=" << realShipsMs
+                << " visual_ships_ms=" << visualShipsMs
+                << " visual_drones_ms=" << visualDronesMs
+                << " objects_ms=" << objectsMs
+                << " debug_ms=" << debugCallbackMs
+                << " draw_calls=" << m_lastStats.drawCalls
+                << " parts=" << m_lastStats.partsDrawn
+                << '\n';
+            lastScenePerfReportMs = now;
+        }
+    }
 
     
 

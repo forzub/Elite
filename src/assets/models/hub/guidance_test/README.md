@@ -8,7 +8,7 @@ Both meshes use the project logical authoring basis: `+X` right, `+Y` up, `-Z`
 forward. The through corridor is along Z so a hub attachment whose visual -Z
 axis is orbital prograde exposes its docking axis along the direction of travel.
 
-Both current test bodies use a narrow rectangular docking slot on each end face
+Both current test bodies use a wide horizontal rectangular docking slot on each end face
 and a through corridor along local Z.  They rotate slowly around that same Z
 axis; the mesh files remain replaceable presentation assets and do not own the
 semantic docking-port definitions.

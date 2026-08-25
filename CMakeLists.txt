@@ -296,6 +296,9 @@ add_executable(EliteGame
     src/world/navigation/NavigationObstacleGeometry.cpp
     src/world/navigation/NavigationObstacleFactory.cpp
     src/world/navigation/GeometricPathPlanner.cpp
+    src/world/navigation/SmoothPathOptimizer.cpp
+    src/world/navigation/TrajectoryGenerator.cpp
+    src/world/navigation/GuidanceTunnel.cpp
 
     src/world/navigation/TacticalCollisionMonitor.cpp
     src/world/navigation/NavigationContactAdapters.cpp
@@ -475,6 +478,9 @@ if(ELITE_BUILD_SERVER)
         src/world/navigation/NavigationObstacleGeometry.cpp
         src/world/navigation/NavigationObstacleFactory.cpp
         src/world/navigation/GeometricPathPlanner.cpp
+        src/world/navigation/SmoothPathOptimizer.cpp
+        src/world/navigation/TrajectoryGenerator.cpp
+        src/world/navigation/GuidanceTunnel.cpp
         src/world/navigation/TacticalCollisionMonitor.cpp
         src/world/navigation/NavigationContactAdapters.cpp
         src/world/navigation/NavigationBodyAdapter.cpp

@@ -47,11 +47,19 @@ public:
 
 
     
+    void setViewportSize(int width, int height) noexcept
+    {
+        m_viewportWidth = width;
+        m_viewportHeight = height;
+    }
+
     void setDefaultParams(const LightingParams& params) { m_defaultParams = params; }
     const LightingParams& getDefaultParams() const { return m_defaultParams; }
     
 private:
     LightingParams m_defaultParams;
+    int m_viewportWidth = 0;
+    int m_viewportHeight = 0;
     
     void setupMeshPass(GLuint shader, const glm::mat4& mvp, 
                        const glm::mat4& model, const LightingParams& lighting,

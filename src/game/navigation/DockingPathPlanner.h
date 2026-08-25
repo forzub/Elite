@@ -25,6 +25,10 @@ struct DockingPathRequest
     glm::dvec3 dockOutward {0.0, 0.0, 1.0};
 
     double vehicleSafetyRadiusMeters = 0.0;
+    // Alignment starts farther out on the authored docking axis.  Transit is
+    // planned to this point so trajectory smoothing can happen before the
+    // locked approach/ingress line instead of rounding the mouth of the dock.
+    double alignmentStandoffMeters = 650.0;
     double approachStandoffMeters = 300.0;
     double terminalDepthMeters = 20.0;
 
@@ -39,8 +43,12 @@ struct DockingPathPlan
     std::string message;
 
     glm::dvec3 startPointMeters {0.0};
+    glm::dvec3 alignmentPointMeters {0.0};
     glm::dvec3 approachPointMeters {0.0};
     glm::dvec3 terminalPointMeters {0.0};
+    double alignmentSourceProgressMeters = 0.0;
+    double approachSourceProgressMeters = 0.0;
+    double terminalSourceProgressMeters = 0.0;
     std::vector<glm::dvec3> pointsMeters;
 };
 

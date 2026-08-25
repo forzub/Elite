@@ -56,6 +56,7 @@ struct ClientNavigationPlanningSnapshot
     DetailMapShipRuntimeSample controlledShip;
     DetailMapObjectRuntimeSample targetObject;
     DetailMapHubRuntimeSample hub;
+    game::navigation::HubPredictionSource hubPredictionSource;
     game::navigation::KinematicFrame planningFrame;
     game::navigation::HubAttachedKinematicState targetModuleKinematics;
 

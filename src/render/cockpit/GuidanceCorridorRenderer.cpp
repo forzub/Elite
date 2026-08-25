@@ -113,25 +113,32 @@ void GuidanceCorridorRenderer::render(
         0.15,
         1.0
     ));
-    const glm::vec4 frameColor = presentation.noSafePrimarySolution
+    const bool manualTunnel = presentation.spatialManualTunnel;
+    const glm::vec4 baseFrameColor = presentation.noSafePrimarySolution
         ? glm::vec4(
             1.0f,
             0.38f,
             0.24f,
-            0.08f + confidence * 0.28f
+            manualTunnel
+                ? 0.18f + confidence * 0.42f
+                : 0.08f + confidence * 0.28f
           )
         : glm::vec4(
             0.34f,
             0.92f,
             1.0f,
-            0.06f + confidence * 0.20f
+            manualTunnel
+                ? 0.16f + confidence * 0.40f
+                : 0.06f + confidence * 0.20f
           );
     const glm::vec4 connectorColor(
-        frameColor.r,
-        frameColor.g,
-        frameColor.b,
-        frameColor.a * 0.18f
+        baseFrameColor.r,
+        baseFrameColor.g,
+        baseFrameColor.b,
+        baseFrameColor.a * (manualTunnel ? 0.34f : 0.18f)
     );
+    const float frameWidth = manualTunnel ? 1.25f : 0.85f;
+    const float connectorWidth = manualTunnel ? 0.60f : 0.45f;
 
     m_batch.begin(viewport.width, viewport.height);
 
@@ -148,12 +155,27 @@ void GuidanceCorridorRenderer::render(
         if (!projected.valid)
             continue;
 
+        const float frameOpacity = manualTunnel
+            ? std::clamp(frame.opacity, 0.02f, 1.0f)
+            : 1.0f;
+        const glm::vec4 frameColor(
+            baseFrameColor.r,
+            baseFrameColor.g,
+            baseFrameColor.b,
+            baseFrameColor.a * frameOpacity
+        );
+        const glm::vec4 localConnectorColor(
+            connectorColor.r,
+            connectorColor.g,
+            connectorColor.b,
+            connectorColor.a * frameOpacity
+        );
         for (int edge = 0; edge < 4; ++edge)
         {
             m_batch.line(
                 projected.corners[edge],
                 projected.corners[(edge + 1) % 4],
-                0.85f,
+                frameWidth,
                 frameColor
             );
         }
@@ -165,8 +187,8 @@ void GuidanceCorridorRenderer::render(
                 m_batch.line(
                     previous.corners[corner],
                     projected.corners[corner],
-                    0.45f,
-                    connectorColor
+                    connectorWidth,
+                    localConnectorColor
                 );
             }
         }

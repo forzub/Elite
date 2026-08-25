@@ -92,6 +92,7 @@ try:
         "DockingPathPlanner",
         "StrategicTrajectoryPlanner",
         "GeometricPathPlanner",
+        "TrajectoryGenerator",
     )
 
     # Route calculation is allowed to mutate only navigation workspace/output.
@@ -176,6 +177,7 @@ try:
             path,
             "DockingPathPlanner",
             "GeometricPathPlanner",
+            "TrajectoryGenerator",
             "NavigationWorldPredictor",
             "ClientNavigationPlanningSnapshotFactory",
             "NavigationPlanningEpoch",

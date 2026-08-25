@@ -34,6 +34,20 @@ struct SceneRenderStats
 {
     uint32_t drawCalls = 0;
 
+    // CPU submission timings for the most recent renderPrepared() call.
+    // These are deliberately separate from SpaceState::mainRenderMs because
+    // mainRenderMs also includes prepareScene().
+    double cpuTotalMs = 0.0;
+    double cpuSetupMs = 0.0;
+    double cpuStarfieldMs = 0.0;
+    double cpuFarPassesMs = 0.0;
+    double cpuLabelsMs = 0.0;
+    double cpuRealShipsMs = 0.0;
+    double cpuVisualShipsMs = 0.0;
+    double cpuVisualDronesMs = 0.0;
+    double cpuObjectsMs = 0.0;
+    double cpuDebugCallbackMs = 0.0;
+
     uint32_t modulesDrawn = 0;
     uint32_t modulesCulled = 0;
 
@@ -53,6 +67,17 @@ struct SceneRenderStats
     void reset()
     {
         drawCalls = 0;
+
+        cpuTotalMs = 0.0;
+        cpuSetupMs = 0.0;
+        cpuStarfieldMs = 0.0;
+        cpuFarPassesMs = 0.0;
+        cpuLabelsMs = 0.0;
+        cpuRealShipsMs = 0.0;
+        cpuVisualShipsMs = 0.0;
+        cpuVisualDronesMs = 0.0;
+        cpuObjectsMs = 0.0;
+        cpuDebugCallbackMs = 0.0;
 
         modulesDrawn = 0;
         modulesCulled = 0;
@@ -74,6 +99,17 @@ struct SceneRenderStats
     void add(const SceneRenderStats& other)
     {
         drawCalls += other.drawCalls;
+
+        cpuTotalMs += other.cpuTotalMs;
+        cpuSetupMs += other.cpuSetupMs;
+        cpuStarfieldMs += other.cpuStarfieldMs;
+        cpuFarPassesMs += other.cpuFarPassesMs;
+        cpuLabelsMs += other.cpuLabelsMs;
+        cpuRealShipsMs += other.cpuRealShipsMs;
+        cpuVisualShipsMs += other.cpuVisualShipsMs;
+        cpuVisualDronesMs += other.cpuVisualDronesMs;
+        cpuObjectsMs += other.cpuObjectsMs;
+        cpuDebugCallbackMs += other.cpuDebugCallbackMs;
 
         modulesDrawn += other.modulesDrawn;
         modulesCulled += other.modulesCulled;
@@ -145,6 +181,16 @@ public:
 
 
     PreparedScene prepareScene(
+        const ClientWorldState& world,
+        EntityId playerId,
+        const glm::dvec3* observerGalacticPositionLy = nullptr
+    );
+
+    // Hot-path overload: refill an existing PreparedScene while preserving the
+    // backing capacity of its vectors. SpaceState uses this every frame to
+    // avoid heap churn from rebuilding a large station scene.
+    void prepareScene(
+        PreparedScene& prepared,
         const ClientWorldState& world,
         EntityId playerId,
         const glm::dvec3* observerGalacticPositionLy = nullptr

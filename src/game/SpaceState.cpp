@@ -6,6 +6,7 @@
 #include <cmath>
 
 #include <chrono>
+#include <limits>
 #include <algorithm>
 #include <functional>
 #include <filesystem>
@@ -69,7 +70,11 @@
 #include "src/game/navigation/SystemNavigationGrid.h"
 #include "src/game/navigation/LocalGuidancePlanner.h"
 #include "src/game/navigation/DockingPathPlanner.h"
+#include "src/game/navigation/NavigationVehicleProfileAdapters.h"
 #include "src/game/navigation/HubFrameBasis.h"
+#include "src/world/navigation/TrajectoryGenerator.h"
+#include "src/world/navigation/GuidanceTunnel.h"
+#include "src/world/navigation/NavigationOrientation.h"
 #include "src/game/client/ClientNavigationPlanningSnapshotFactory.h"
 
 #include <chrono>
@@ -2025,6 +2030,532 @@ void SpaceState::setFlightScreenLayout(ScreenLayout layout)
 
 
 // =====================================================================================
+// Dynamic manual docking tunnel
+// =====================================================================================
+bool SpaceState::refreshActiveManualDockingGuidance(bool forceRebuild)
+{
+    if (!m_client || !m_manualDockingGuidancePlan.valid)
+        return false;
+
+    const auto playerIt = m_client->world().ships().find(m_playerId.value);
+    if (playerIt == m_client->world().ships().end())
+        return false;
+
+    const ClientShipState& player = playerIt->second;
+    if (player.transform.motion.systemId != m_manualDockingGuidancePlan.systemId)
+        return false;
+
+    // The fixed corridor lives in Hub-local coordinates. Only the cheap
+    // Hub-local -> presentation-world conversion is refreshed every frame;
+    // the spline/gates themselves move only on an explicit replan event.
+    const double presentationUniverseTimeSeconds =
+        m_client->renderUniverseTimeSeconds();
+    const auto hubFrame =
+        game::navigation::NavigationWorldPredictor::predictHubFrameAt(
+            m_manualDockingGuidancePlan.hubPredictionSource,
+            presentationUniverseTimeSeconds
+        );
+    if (!hubFrame.valid)
+        return false;
+
+    const glm::dvec3 playerWorldMeters = world::coordinates::fullMeters(
+        player.renderTransform.worldPosition
+    );
+    const glm::dvec3 playerLocalMeters = hubFrame.worldToLocalPosition(
+        playerWorldMeters
+    );
+    const glm::dmat3 playerWorldBasis(
+        glm::mat3(player.renderTransform.orientation)
+    );
+    const glm::dmat3 playerLocalBasis =
+        glm::transpose(hubFrame.localToWorldBasis) * playerWorldBasis;
+    const glm::dquat playerLocalOrientation = glm::normalize(
+        glm::quat_cast(playerLocalBasis)
+    );
+    const game::navigation::WorldKinematicState playerRenderWorldKinematics {
+        playerWorldMeters,
+        glm::dvec3(player.renderTransform.motion.worldVelocityMps),
+        glm::dvec3(0.0)
+    };
+    const auto playerRenderLocalKinematics =
+        game::navigation::worldToLocalKinematics(
+            hubFrame,
+            playerRenderWorldKinematics
+        );
+    const glm::dvec3 playerLocalVelocityMps =
+        playerRenderLocalKinematics.velocityMps;
+
+    auto& manualPlan = m_manualDockingGuidancePlan;
+    bool rebuild = forceRebuild ||
+        !manualPlan.fixedTunnel.valid ||
+        manualPlan.fixedTunnel.gates.size() < 2;
+
+    const char* replanReason = forceRebuild ? "initial" : "none";
+
+    // Track against one immutable generation. This runs every frame but does
+    // no spline/path work: it only projects one or two points onto nearby gate
+    // segments, retires passed gates, and decides whether a low-rate replan is
+    // warranted. Gate coordinates never slide with the ship inside a
+    // generation.
+    struct TunnelTrack
+    {
+        bool valid = false;
+        double distanceAlongMeters = 0.0;
+        double lateralMeters = 0.0;
+        double verticalMeters = 0.0;
+        glm::dvec3 tangent {0.0, 0.0, -1.0};
+        glm::dvec3 right {1.0, 0.0, 0.0};
+        glm::dvec3 up {0.0, 1.0, 0.0};
+    };
+
+    auto trackPoint = [&](const glm::dvec3& pointMeters) -> TunnelTrack
+    {
+        TunnelTrack track;
+        const auto& gates = manualPlan.fixedTunnel.gates;
+        if (gates.size() < 2)
+            return track;
+
+        const std::size_t first = std::min(
+            manualPlan.firstActiveGateIndex,
+            gates.size() - 1
+        );
+        const std::size_t segBegin = first > 0 ? first - 1 : 0;
+        const std::size_t segEnd = std::min(
+            gates.size() - 1,
+            segBegin + std::size_t(96)
+        );
+        double bestDistance2 = std::numeric_limits<double>::infinity();
+
+        for (std::size_t i = segBegin; i < segEnd; ++i)
+        {
+            const auto& a = gates[i];
+            const auto& b = gates[i + 1];
+            const glm::dvec3 segment = b.positionMeters - a.positionMeters;
+            const double length2 = glm::dot(segment, segment);
+            if (length2 <= 1.0e-12)
+                continue;
+
+            const double u = std::clamp(
+                glm::dot(pointMeters - a.positionMeters, segment) / length2,
+                0.0,
+                1.0
+            );
+            const glm::dvec3 projected = a.positionMeters + segment * u;
+            const glm::dvec3 delta = pointMeters - projected;
+            const double distance2 = glm::dot(delta, delta);
+            if (distance2 >= bestDistance2)
+                continue;
+
+            bestDistance2 = distance2;
+            glm::dquat qa = a.orientation;
+            glm::dquat qb = b.orientation;
+            if (glm::dot(qa, qb) < 0.0)
+                qb = -qb;
+            const glm::dquat orientation = glm::normalize(glm::slerp(
+                qa,
+                qb,
+                u
+            ));
+            const glm::dvec3 right = glm::normalize(
+                orientation * glm::dvec3(1.0, 0.0, 0.0)
+            );
+            const glm::dvec3 up = glm::normalize(
+                orientation * glm::dvec3(0.0, 1.0, 0.0)
+            );
+
+            track.valid = true;
+            track.distanceAlongMeters =
+                a.distanceAlongTunnelMeters +
+                (b.distanceAlongTunnelMeters - a.distanceAlongTunnelMeters) * u;
+            track.lateralMeters = std::abs(glm::dot(delta, right));
+            track.verticalMeters = std::abs(glm::dot(delta, up));
+            track.tangent = glm::normalize(segment);
+            track.right = right;
+            track.up = up;
+        }
+        return track;
+    };
+
+    if (!rebuild)
+    {
+        const auto& gates = manualPlan.fixedTunnel.gates;
+        const TunnelTrack track = trackPoint(playerLocalMeters);
+        if (track.valid)
+        {
+            manualPlan.passedTunnelDistanceMeters = std::max(
+                manualPlan.passedTunnelDistanceMeters,
+                track.distanceAlongMeters
+            );
+
+            // Once a gate is behind the ship it never reappears, even if a
+            // later corridor self-intersects or the pilot backs up.
+            const double retireMargin = manualPlan.gateSpacingMeters * 0.10;
+            while (manualPlan.firstActiveGateIndex + 1 < gates.size() &&
+                   gates[manualPlan.firstActiveGateIndex].distanceAlongTunnelMeters +
+                       retireMargin < manualPlan.passedTunnelDistanceMeters)
+            {
+                ++manualPlan.firstActiveGateIndex;
+            }
+
+            const auto& referenceGate = gates[std::min(
+                manualPlan.firstActiveGateIndex,
+                gates.size() - 1
+            )];
+            const double lateralBase = std::max(
+                1.0,
+                referenceGate.lateralToleranceMeters
+            );
+            const double verticalBase = std::max(
+                1.0,
+                referenceGate.verticalToleranceMeters
+            );
+
+            // Crossing the hard envelope is an immediate event; no 4 Hz wait.
+            const bool outsideHard =
+                track.lateralMeters >
+                    lateralBase * manualPlan.hardToleranceScale ||
+                track.verticalMeters >
+                    verticalBase * manualPlan.hardToleranceScale;
+            if (outsideHard)
+            {
+                rebuild = true;
+                replanReason = "outside";
+            }
+
+            const double serverNow = m_client->estimatedServerTimeSeconds();
+            if (!rebuild &&
+                serverNow >= manualPlan.nextReplanCheckServerTimeSeconds)
+            {
+                manualPlan.nextReplanCheckServerTimeSeconds =
+                    serverNow + manualPlan.replanCheckIntervalSeconds;
+
+                // Replan before leaving the tunnel, but predict only the
+                // cross-track component of momentum. Projecting the full
+                // velocity vector as a straight line would falsely reject a
+                // correctly-followed curved corridor simply because the pilot
+                // has not yet reached the next bend.
+                const double predictedLateral =
+                    track.lateralMeters +
+                    std::abs(glm::dot(playerLocalVelocityMps, track.right)) *
+                        manualPlan.predictedLookAheadSeconds;
+                const double predictedVertical =
+                    track.verticalMeters +
+                    std::abs(glm::dot(playerLocalVelocityMps, track.up)) *
+                        manualPlan.predictedLookAheadSeconds;
+                const bool predictedOutside =
+                    predictedLateral >
+                        lateralBase * manualPlan.preemptiveToleranceScale ||
+                    predictedVertical >
+                        verticalBase * manualPlan.preemptiveToleranceScale;
+
+                double courseError = 0.0;
+                const double speed = glm::length(playerLocalVelocityMps);
+                if (speed > 2.0)
+                {
+                    const glm::dvec3 velocityDirection =
+                        playerLocalVelocityMps / speed;
+                    courseError = std::acos(std::clamp(
+                        glm::dot(velocityDirection, track.tangent),
+                        -1.0,
+                        1.0
+                    ));
+                }
+
+                // Hull attitude is a useful intent signal at low speed and in
+                // Elite-like control laws, while actual velocity remains the
+                // geometric boundary condition for the replanned curve.
+                const glm::dvec3 hullForward = glm::normalize(
+                    playerLocalOrientation * glm::dvec3(0.0, 0.0, -1.0)
+                );
+                const double attitudeError = std::acos(std::clamp(
+                    glm::dot(hullForward, track.tangent),
+                    -1.0,
+                    1.0
+                ));
+
+                bool targetMoved = false;
+                if (manualPlan.targetAttachment.valid)
+                {
+                    const auto targetModule =
+                        game::navigation::NavigationWorldPredictor::
+                            resolveHubAttachmentAt(
+                                hubFrame,
+                                presentationUniverseTimeSeconds,
+                                manualPlan.targetAttachment.localOffsetMeters,
+                                manualPlan.targetAttachment.localRotationDeg,
+                                manualPlan.targetAttachment.
+                                    localAngularVelocityDegPerSecond
+                            );
+                    if (targetModule.valid)
+                    {
+                        const auto targetAnchor =
+                            game::navigation::resolveHubSemanticAnchor(
+                                manualPlan.targetAnchor,
+                                manualPlan.systemId,
+                                presentationUniverseTimeSeconds,
+                                targetModule.positionMeters,
+                                targetModule.velocityMps,
+                                targetModule.orientation,
+                                targetModule.angularVelocityWorldRadPerSecond
+                            );
+                        const glm::dvec3 liveTerminal =
+                            hubFrame.worldToLocalPosition(
+                                targetAnchor.positionMeters
+                            );
+                        const glm::dvec3 liveForward = glm::normalize(
+                            hubFrame.worldToLocalVector(-targetAnchor.forward())
+                        );
+                        const glm::dvec3 liveUp = glm::normalize(
+                            hubFrame.worldToLocalVector(targetAnchor.up())
+                        );
+                        const glm::dquat liveOrientation =
+                            world::navigation::orientationForForwardUp(
+                                liveForward,
+                                liveUp
+                            );
+                        const auto& oldTerminal = gates.back();
+                        const double positionError = glm::length(
+                            liveTerminal - oldTerminal.positionMeters
+                        );
+                        const double qdot = std::clamp(
+                            std::abs(glm::dot(
+                                liveOrientation,
+                                oldTerminal.orientation
+                            )),
+                            0.0,
+                            1.0
+                        );
+                        const double angleError = 2.0 * std::acos(qdot);
+                        targetMoved =
+                            positionError > manualPlan.targetPositionReplanMeters ||
+                            angleError > manualPlan.targetAngleReplanRadians;
+                    }
+                }
+
+                if (predictedOutside)
+                {
+                    rebuild = true;
+                    replanReason = "predicted_exit";
+                }
+                else if (courseError >
+                         manualPlan.courseChangeThresholdRadians)
+                {
+                    rebuild = true;
+                    replanReason = "course";
+                }
+                else if (speed <= 2.0 && attitudeError >
+                         manualPlan.courseChangeThresholdRadians * 1.5)
+                {
+                    rebuild = true;
+                    replanReason = "attitude";
+                }
+                else if (targetMoved)
+                {
+                    rebuild = true;
+                    replanReason = "target_motion";
+                }
+            }
+        }
+    }
+
+    if (rebuild)
+    {
+        // The info-card defines a persistent destination, not a frozen path.
+        // Every published manual generation is therefore rebuilt from the
+        // current ship state toward the live dock. The accepted trajectory is
+        // only a collision-safe topology hint for the reconnect candidates.
+        const bool reconnectCurrentPose = true;
+
+        glm::dvec3 terminalLocalMeters =
+            manualPlan.trajectory.samples.back().positionMeters;
+        glm::dquat terminalLocalOrientation =
+            manualPlan.trajectory.samples.back().orientation;
+        auto liveObstacles = manualPlan.obstacles;
+
+        if (reconnectCurrentPose)
+        {
+            const auto& attachment = manualPlan.targetAttachment;
+            if (!attachment.valid)
+                return false;
+
+            const auto targetModule =
+                game::navigation::NavigationWorldPredictor::resolveHubAttachmentAt(
+                    hubFrame,
+                    presentationUniverseTimeSeconds,
+                    attachment.localOffsetMeters,
+                    attachment.localRotationDeg,
+                    attachment.localAngularVelocityDegPerSecond
+                );
+            if (!targetModule.valid)
+                return false;
+
+            const auto targetAnchor = game::navigation::resolveHubSemanticAnchor(
+                manualPlan.targetAnchor,
+                manualPlan.systemId,
+                presentationUniverseTimeSeconds,
+                targetModule.positionMeters,
+                targetModule.velocityMps,
+                targetModule.orientation,
+                targetModule.angularVelocityWorldRadPerSecond
+            );
+
+            terminalLocalMeters = hubFrame.worldToLocalPosition(
+                targetAnchor.positionMeters
+            );
+            const glm::dvec3 dockVehicleForwardLocal = glm::normalize(
+                hubFrame.worldToLocalVector(-targetAnchor.forward())
+            );
+            const glm::dvec3 dockVehicleUpLocal = glm::normalize(
+                hubFrame.worldToLocalVector(targetAnchor.up())
+            );
+            terminalLocalOrientation =
+                world::navigation::orientationForForwardUp(
+                    dockVehicleForwardLocal,
+                    dockVehicleUpLocal
+                );
+
+            for (auto& obstacle : liveObstacles)
+            {
+                if (obstacle.id != manualPlan.targetObstacleId)
+                    continue;
+                obstacle.centerMeters = hubFrame.worldToLocalPosition(
+                    targetModule.positionMeters
+                );
+                obstacle.localToWorldBasis =
+                    glm::transpose(hubFrame.localToWorldBasis) *
+                    glm::dmat3(glm::mat3(targetModule.orientation));
+            }
+        }
+
+        world::navigation::GuidanceTunnelRequest tunnelRequest;
+        tunnelRequest.trajectory = &manualPlan.trajectory;
+        tunnelRequest.buildMode = reconnectCurrentPose
+            ? world::navigation::GuidanceTunnelBuildMode::ReconnectCurrentPose
+            : world::navigation::GuidanceTunnelBuildMode::TrajectoryBackbone;
+        tunnelRequest.currentPositionMeters = playerLocalMeters;
+        tunnelRequest.currentOrientation = playerLocalOrientation;
+        tunnelRequest.currentVelocityMps = playerLocalVelocityMps;
+        tunnelRequest.terminalPositionMeters = terminalLocalMeters;
+        tunnelRequest.terminalOrientation = terminalLocalOrientation;
+        tunnelRequest.gateSpacingMeters = manualPlan.gateSpacingMeters;
+        tunnelRequest.gateWidthMeters = manualPlan.gateWidthMeters;
+        tunnelRequest.gateHeightMeters = manualPlan.gateHeightMeters;
+        tunnelRequest.lateralToleranceMeters = manualPlan.lateralToleranceMeters;
+        tunnelRequest.verticalToleranceMeters = manualPlan.verticalToleranceMeters;
+        tunnelRequest.startCaptureDistanceMeters = manualPlan.startCaptureDistanceMeters;
+        tunnelRequest.terminalAlignmentDistanceMeters =
+            manualPlan.terminalAlignmentDistanceMeters;
+        tunnelRequest.obstacles = std::move(liveObstacles);
+        tunnelRequest.vehicle = manualPlan.vehicle;
+        tunnelRequest.terminalAllowedObstacleId = manualPlan.targetObstacleId;
+        tunnelRequest.terminalObstacleEntrySourceProgressMeters =
+            manualPlan.terminalObstacleEntrySourceProgressMeters;
+        tunnelRequest.curveSampleSpacingMeters = 14.0;
+        tunnelRequest.curveChordErrorMeters = 0.15;
+        tunnelRequest.maxSmoothSupportLevel = 1;
+        const double speedMps = glm::length(playerLocalVelocityMps);
+        const double lateralAccelerationMps2 = std::max(
+            1.0,
+            manualPlan.vehicle.maxLateralAccelerationMps2
+        );
+        const double dynamicTurnRadiusMeters =
+            speedMps * speedMps / lateralAccelerationMps2;
+        tunnelRequest.minimumTurnRadiusMeters = std::max(
+            manualPlan.minimumVisualTurnRadiusMeters,
+            dynamicTurnRadiusMeters
+        );
+
+        ++m_perfDockingTunnelBuilds;
+        auto tunnel = world::navigation::GuidanceTunnelBuilder::build(
+            tunnelRequest
+        );
+        if (!tunnel.valid || tunnel.gates.size() < 2)
+            return false;
+
+        manualPlan.fixedTunnel = std::move(tunnel);
+        manualPlan.firstActiveGateIndex = 0;
+        manualPlan.passedTunnelDistanceMeters = 0.0;
+        manualPlan.lastReplanServerTimeSeconds =
+            m_client->estimatedServerTimeSeconds();
+        manualPlan.nextReplanCheckServerTimeSeconds =
+            manualPlan.lastReplanServerTimeSeconds +
+            manualPlan.replanCheckIntervalSeconds;
+        ++manualPlan.tunnelGeneration;
+        std::cerr
+            << "[GuidanceReplan] request=" << manualPlan.requestSerial
+            << " generation=" << manualPlan.tunnelGeneration
+            << " reason=" << replanReason
+            << " speed_mps=" << speedMps
+            << " min_turn_radius_m="
+                << manualPlan.fixedTunnel.minimumTurnRadiusMeters
+            << " max_curvature_1pm="
+                << manualPlan.fixedTunnel.maxCurvaturePerMeter
+            << " gates=" << manualPlan.fixedTunnel.gates.size()
+            << '\n';
+    }
+
+    const auto& tunnel = manualPlan.fixedTunnel;
+    if (!tunnel.valid || tunnel.gates.empty())
+        return false;
+
+    game::navigation::GuidanceCorridor corridor;
+    corridor.id = manualPlan.corridorId;
+    corridor.systemId = manualPlan.systemId;
+    corridor.source = game::navigation::GuidanceSource::DockingComputer;
+    corridor.purpose = game::navigation::GuidancePurpose::Docking;
+    corridor.generatedAtUniverseTimeSeconds = presentationUniverseTimeSeconds;
+    corridor.validUntilUniverseTimeSeconds = 0.0;
+    corridor.confidence = 1.0;
+    corridor.priority = 70;
+    corridor.advisoryOnly = true;
+    corridor.spatialManualTunnel = true;
+    corridor.noSafePrimarySolution = false;
+    corridor.hasTerminalTarget = true;
+    corridor.terminalTargetMeters = hubFrame.localToWorldPosition(
+        tunnel.gates.back().positionMeters
+    );
+    corridor.terminalPositionErrorMeters = 0.0;
+
+    const std::size_t firstGate = std::min(
+        manualPlan.firstActiveGateIndex,
+        tunnel.gates.size() - 1
+    );
+    corridor.frames.reserve(tunnel.gates.size() - firstGate);
+
+    const double tunnelLength = tunnel.gates.back().distanceAlongTunnelMeters;
+    const double terminalAlignmentStart = std::max(
+        0.0,
+        tunnelLength - manualPlan.terminalAlignmentDistanceMeters
+    );
+
+    for (std::size_t i = firstGate; i < tunnel.gates.size(); ++i)
+    {
+        const auto& gate = tunnel.gates[i];
+        game::navigation::GuidanceFrame frame;
+        frame.universeTimeSeconds = presentationUniverseTimeSeconds;
+        frame.centerMeters = hubFrame.localToWorldPosition(gate.positionMeters);
+        const glm::dmat3 localAttitude = glm::mat3_cast(gate.orientation);
+        frame.orientation = glm::normalize(glm::quat_cast(
+            hubFrame.localToWorldBasis * localAttitude
+        ));
+        frame.requiredVehiclePose = true;
+        frame.widthMeters = gate.widthMeters;
+        frame.heightMeters = gate.heightMeters;
+        frame.lateralToleranceMeters = gate.lateralToleranceMeters;
+        frame.verticalToleranceMeters = gate.verticalToleranceMeters;
+        frame.recommendedSpeedMps = gate.recommendedSpeedMps;
+        frame.maxClosureRateMps =
+            gate.distanceAlongTunnelMeters + 1.0e-7 >= terminalAlignmentStart
+                ? manualPlan.dockingMaxClosureRateMps
+                : manualPlan.transitMaxClosureRateMps;
+        corridor.frames.push_back(std::move(frame));
+    }
+
+    m_navigationWorkspace.guidance().publish(std::move(corridor));
+    return true;
+}
+
+// =====================================================================================
 // Update
 // =====================================================================================
 void SpaceState::updateDockingGuidance(float dt)
@@ -2044,8 +2575,12 @@ void SpaceState::updateDockingGuidance(float dt)
         if (!m_activeDockingGuidanceCorridorId.empty())
         {
             guidanceState.erase(m_activeDockingGuidanceCorridorId);
+            guidanceState.erase(
+                m_activeDockingGuidanceCorridorId + ":manual"
+            );
             m_activeDockingGuidanceCorridorId.clear();
         }
+        m_manualDockingGuidancePlan = {};
     };
 
     if (!computationEnabled)
@@ -2060,7 +2595,15 @@ void SpaceState::updateDockingGuidance(float dt)
         m_navigationWorkspace.dockingRouteRequests().pending();
     if (!dockingRequest.valid())
     {
-        eraseActiveDockingCorridor();
+        // No task means no navigation planning work. Cleanup is performed only
+        // on the transition from active -> inactive; subsequent frames return
+        // after the cheap pending-request check.
+        if (!m_activeDockingGuidanceCorridorId.empty() ||
+            m_manualDockingGuidancePlan.valid ||
+            m_lastDockingPathRequestSerial != 0)
+        {
+            eraseActiveDockingCorridor();
+        }
         m_lastDockingPathRequestSerial = 0;
         m_noSafeDockingGuidanceSolution = false;
         return;
@@ -2075,17 +2618,22 @@ void SpaceState::updateDockingGuidance(float dt)
         m_activeDockingGuidanceCorridorId = corridorId;
     }
 
-    // Validation stage: one CALCULATE ROUTE press means one immutable current
-    // snapshot.  No rolling replan is allowed to move this line underneath us
-    // while we verify geometry and coordinate frames.  Pressing the button
-    // again creates a new request serial and therefore a new snapshot plan.
+    // The request serial owns the destination task. The expensive canonical
+    // route/trajectory snapshot is built once per button press; the manual HUD
+    // corridor is a rolling low-rate solution on top of that topology. Each
+    // published gate generation is immutable, but course/predicted-deviation
+    // checks may replace it before the ship leaves the tunnel.
     if (m_lastDockingPathRequestSerial == dockingRequest.serial)
+    {
+        refreshActiveManualDockingGuidance(false);
         return;
+    }
     m_lastDockingPathRequestSerial = dockingRequest.serial;
 
     const auto failSnapshot = [&](const char* reason)
     {
         guidanceState.erase(corridorId);
+        guidanceState.erase(corridorId + ":manual");
         m_noSafeDockingGuidanceSolution = true;
         std::cerr << "[GeometricPath] request="
                   << dockingRequest.serial << " failed=" << reason << '\n';
@@ -2248,6 +2796,20 @@ void SpaceState::updateDockingGuidance(float dt)
         100.0,
         std::max(100.0, distanceToDock * 0.35)
     );
+    // Give the smoother room to turn onto the docking axis before the authored
+    // approach point.  Alignment/approach/terminal are then collinear, so the
+    // final ingress itself never contains a geometric corner.
+    // Stage 5C deliberately buys smoothness with distance.  The outer
+    // alignment point may be kilometres beyond the shortest route so the
+    // global spline can make a broad readable approach instead of shaving a
+    // corner immediately before the aperture.
+    const double preferredTurnRoom = std::max({
+        1800.0,
+        vehicleLength * 80.0,
+        request.approachStandoffMeters * 3.0
+    });
+    request.alignmentStandoffMeters =
+        request.approachStandoffMeters + preferredTurnRoom;
     request.terminalDepthMeters = vehicleEnvelope.valid
         ? vehicleEnvelope.terminalCenterDepthMeters(authoredClearance)
         : std::max(10.0, authoredClearance);
@@ -2281,52 +2843,265 @@ void SpaceState::updateDockingGuidance(float dt)
         return;
     }
 
-    game::navigation::GuidanceCorridor corridor;
-    corridor.id = corridorId;
-    corridor.systemId = systemId;
-    corridor.source = game::navigation::GuidanceSource::RouteSolver;
-    corridor.purpose = game::navigation::GuidancePurpose::Docking;
-    corridor.generatedAtUniverseTimeSeconds = planningUniverseTime;
-    // This is an immutable geometric snapshot.  It stays visible until the
-    // card/task is closed or CALCULATE ROUTE creates a newer snapshot.
-    corridor.validUntilUniverseTimeSeconds = 0.0;
-    corridor.confidence = 1.0;
-    corridor.priority = 60;
-    corridor.advisoryOnly = true;
-    corridor.noSafePrimarySolution = false;
-    corridor.hasTerminalTarget = true;
-    corridor.terminalTargetMeters =
-        hubFrame.localToWorldPosition(plan.terminalPointMeters);
-    corridor.terminalPositionErrorMeters = 0.0;
-    corridor.frames.reserve(plan.pointsMeters.size());
-
-    for (const glm::dvec3& localPoint : plan.pointsMeters)
+    world::navigation::NavigationVehicleProfile vehicleProfile;
+    if (playerDescriptorState && playerDescriptorState->descriptor)
     {
-        game::navigation::GuidanceFrame guidanceFrame;
-        // Every point belongs to the same current snapshot.  Equal timestamps
-        // intentionally force Hub-map projection through one identical frame.
-        guidanceFrame.universeTimeSeconds = planningUniverseTime;
-        guidanceFrame.centerMeters = hubFrame.localToWorldPosition(localPoint);
-        guidanceFrame.requiredVehiclePose = false;
-        guidanceFrame.widthMeters = std::max(
+        vehicleProfile = game::navigation::makeNavigationVehicleProfile(
+            playerDescriptorState->descriptor->physics,
+            vehicleEnvelope
+        );
+    }
+    else
+    {
+        // Descriptor-less fallback keeps the diagnostic route usable without
+        // smuggling a live transform/control object into trajectory planning.
+        vehicleProfile.collisionRadiusMeters = request.vehicleSafetyRadiusMeters;
+        vehicleProfile.maxSpeedMps = 150.0;
+        vehicleProfile.maxForwardAccelerationMps2 = 20.0;
+        vehicleProfile.maxBrakingAccelerationMps2 = 20.0;
+        vehicleProfile.maxLateralAccelerationMps2 = 10.0;
+        vehicleProfile.maxAngularVelocityRadPerSecond = 1.0;
+        vehicleProfile.maxAngularAccelerationRadPerSecond2 = 1.0;
+    }
+    vehicleProfile.collisionRadiusMeters = request.vehicleSafetyRadiusMeters;
+
+    const game::navigation::WorldKinematicState playerWorldKinematics {
+        playerWorld,
+        playerSample.worldVelocityMps,
+        glm::dvec3(0.0)
+    };
+    const auto playerLocalKinematics =
+        game::navigation::worldToLocalKinematics(
+            hubFrame,
+            playerWorldKinematics
+        );
+
+    world::navigation::TrajectoryGenerationRequest trajectoryRequest;
+    trajectoryRequest.systemId = systemId;
+    trajectoryRequest.frameId = hubFrame.frameId;
+    trajectoryRequest.startUniverseTimeSeconds = planningUniverseTime;
+    trajectoryRequest.universeTimeScale =
+        m_client->sessionSnapshot().universeTimeScale;
+    trajectoryRequest.pathPointsMeters = plan.pointsMeters;
+    trajectoryRequest.obstacles = request.obstacles;
+    trajectoryRequest.vehicle = vehicleProfile;
+    trajectoryRequest.initialVelocityMps = playerLocalKinematics.velocityMps;
+    trajectoryRequest.maxSmoothSupportLevel = 5;
+    trajectoryRequest.sampleSpacingMeters = std::clamp(
+        vehicleLength * 0.25,
+        3.0,
+        7.0
+    );
+    trajectoryRequest.maxCurveChordErrorMeters = 0.03;
+
+    // DockingPathPlanner now supplies an outer alignment point followed by a
+    // collinear approach/terminal ingress.  The only turn is therefore at the
+    // alignment point, far enough from the mouth to be rounded and validated
+    // against the target obstacle.  Do not re-introduce a hard approach corner.
+    trajectoryRequest.pointSpeedConstraints.push_back({
+        plan.terminalSourceProgressMeters,
+        0.0
+    });
+
+    const double maxEntrySpeed = targetAnchor.maxEntrySpeedMps > 0.0
+        ? targetAnchor.maxEntrySpeedMps
+        : 18.0;
+    trajectoryRequest.speedLimitRanges.push_back({
+        plan.approachSourceProgressMeters,
+        plan.terminalSourceProgressMeters,
+        maxEntrySpeed
+    });
+    trajectoryRequest.terminalAllowedObstacleId = request.targetObstacleId;
+    trajectoryRequest.terminalObstacleEntrySourceProgressMeters =
+        plan.approachSourceProgressMeters;
+    trajectoryRequest.hasTerminalOrientation = true;
+    trajectoryRequest.terminalForward = -request.dockOutward;
+    trajectoryRequest.terminalUp = glm::normalize(
+        hubFrame.worldToLocalVector(targetAnchor.up())
+    );
+    trajectoryRequest.terminalOrientationBlendDistanceMeters = std::max(
+        100.0,
+        request.alignmentStandoffMeters
+    );
+
+    const auto trajectoryPlan =
+        world::navigation::TrajectoryGenerator::generate(trajectoryRequest);
+    if (!trajectoryPlan.ready())
+    {
+        failSnapshot(trajectoryPlan.trajectory.message.c_str());
+        return;
+    }
+
+    // Publish the accepted physical trajectory as its own immutable product.
+    // Hub/System maps consume this corridor.  The live cockpit tunnel is a
+    // separate higher-priority spatial product and must never deform the map
+    // trajectory underneath the pilot.
+    game::navigation::GuidanceCorridor trajectoryCorridor;
+    trajectoryCorridor.id = corridorId;
+    trajectoryCorridor.systemId = systemId;
+    trajectoryCorridor.source = game::navigation::GuidanceSource::RouteSolver;
+    trajectoryCorridor.purpose = game::navigation::GuidancePurpose::Docking;
+    trajectoryCorridor.generatedAtUniverseTimeSeconds = planningUniverseTime;
+    trajectoryCorridor.validUntilUniverseTimeSeconds = 0.0;
+    trajectoryCorridor.confidence = 1.0;
+    trajectoryCorridor.priority = 60;
+    trajectoryCorridor.advisoryOnly = true;
+    trajectoryCorridor.spatialManualTunnel = false;
+    trajectoryCorridor.noSafePrimarySolution = false;
+    trajectoryCorridor.hasTerminalTarget = true;
+    trajectoryCorridor.terminalPositionErrorMeters = 0.0;
+    trajectoryCorridor.frames.reserve(trajectoryPlan.trajectory.samples.size());
+
+    for (std::size_t i = 0;
+         i < trajectoryPlan.trajectory.samples.size();
+         ++i)
+    {
+        const auto& sample = trajectoryPlan.trajectory.samples[i];
+        const auto sampleFrame =
+            game::navigation::NavigationWorldPredictor::predictHubFrameAt(
+                planningSnapshot.hubPredictionSource,
+                sample.universeTimeSeconds
+            );
+        if (!sampleFrame.valid)
+        {
+            failSnapshot("trajectory_sample_frame_invalid");
+            return;
+        }
+
+        const game::navigation::LocalKinematicState localState {
+            sample.positionMeters,
+            sample.velocityMps,
+            sample.accelerationMps2
+        };
+        const auto worldState = game::navigation::localToWorldKinematics(
+            sampleFrame,
+            localState
+        );
+
+        game::navigation::GuidanceFrame frame;
+        frame.universeTimeSeconds = sample.universeTimeSeconds;
+        frame.centerMeters = worldState.positionMeters;
+        const glm::dmat3 localAttitude = glm::mat3_cast(sample.orientation);
+        frame.orientation = glm::normalize(glm::quat_cast(
+            sampleFrame.localToWorldBasis * localAttitude
+        ));
+        frame.requiredVehiclePose =
+            trajectoryRequest.hasTerminalOrientation &&
+            i + 1 == trajectoryPlan.trajectory.samples.size();
+        frame.widthMeters = std::max(
             10.0,
             vehicleEnvelope.valid ? vehicleEnvelope.widthMeters : 20.0
         );
-        guidanceFrame.heightMeters = std::max(
+        frame.heightMeters = std::max(
             10.0,
             vehicleEnvelope.valid ? vehicleEnvelope.heightMeters : 10.0
         );
-        corridor.frames.push_back(std::move(guidanceFrame));
+        frame.lateralToleranceMeters = frame.widthMeters * 0.45;
+        frame.verticalToleranceMeters = frame.heightMeters * 0.45;
+        frame.recommendedSpeedMps = sample.speedMps;
+        frame.maxClosureRateMps =
+            sample.sourcePathProgressMeters + 1.0e-7 >=
+                    plan.approachSourceProgressMeters
+                ? maxEntrySpeed
+                : vehicleProfile.maxSpeedMps;
+        trajectoryCorridor.frames.push_back(std::move(frame));
     }
 
-    guidanceState.publish(std::move(corridor));
+    const auto& terminalSample = trajectoryPlan.trajectory.samples.back();
+    const auto terminalFrame =
+        game::navigation::NavigationWorldPredictor::predictHubFrameAt(
+            planningSnapshot.hubPredictionSource,
+            terminalSample.universeTimeSeconds
+        );
+    if (!terminalFrame.valid)
+    {
+        failSnapshot("trajectory_terminal_frame_invalid");
+        return;
+    }
+    trajectoryCorridor.terminalTargetMeters =
+        terminalFrame.localToWorldPosition(plan.terminalPointMeters);
+    guidanceState.publish(std::move(trajectoryCorridor));
+
+    game::navigation::ManualDockingGuidancePlan manualPlan;
+    manualPlan.valid = true;
+    manualPlan.requestSerial = dockingRequest.serial;
+    manualPlan.systemId = systemId;
+    manualPlan.corridorId = corridorId + ":manual";
+    manualPlan.hubPredictionSource = planningSnapshot.hubPredictionSource;
+    manualPlan.targetAttachment = planningSnapshot.targetObject.hubAttachment;
+    manualPlan.targetAnchor = *anchorDefinition;
+    manualPlan.trajectory = trajectoryPlan.trajectory;
+    manualPlan.obstacles = request.obstacles;
+    manualPlan.vehicle = vehicleProfile;
+    manualPlan.targetObstacleId = request.targetObstacleId;
+    manualPlan.terminalObstacleEntrySourceProgressMeters =
+        plan.approachSourceProgressMeters;
+
+    // All gates use one constant rectangle matching the physical dock opening.
+    // Safety is carried separately by the centre tolerances below, so the HUD
+    // shows the hole the pilot is actually trying to thread rather than a
+    // misleading funnel that changes size with distance.
+    manualPlan.gateWidthMeters = std::max(
+        1.0,
+        compatibility.openingWidthMeters > 0.0
+            ? compatibility.openingWidthMeters
+            : compatibility.usableWidthMeters
+    );
+    manualPlan.gateHeightMeters = std::max(
+        1.0,
+        compatibility.openingHeightMeters > 0.0
+            ? compatibility.openingHeightMeters
+            : compatibility.usableHeightMeters
+    );
+    manualPlan.lateralToleranceMeters = std::max(
+        0.0,
+        compatibility.widthMarginMeters * 0.5
+    );
+    manualPlan.verticalToleranceMeters = std::max(
+        0.0,
+        compatibility.heightMarginMeters * 0.5
+    );
+    manualPlan.gateSpacingMeters = std::clamp(
+        vehicleLength * 2.5,
+        50.0,
+        80.0
+    );
+    manualPlan.startCaptureDistanceMeters = std::max(
+        300.0,
+        manualPlan.gateSpacingMeters * 4.0
+    );
+    manualPlan.minimumVisualTurnRadiusMeters = std::max(
+        1500.0,
+        vehicleLength * 60.0
+    );
+    manualPlan.terminalAlignmentDistanceMeters = std::max(
+        request.alignmentStandoffMeters,
+        manualPlan.gateSpacingMeters * 8.0
+    );
+    manualPlan.transitMaxClosureRateMps = vehicleProfile.maxSpeedMps;
+    manualPlan.dockingMaxClosureRateMps = maxEntrySpeed;
+    m_manualDockingGuidancePlan = std::move(manualPlan);
+
+    if (!refreshActiveManualDockingGuidance(true))
+    {
+        m_manualDockingGuidancePlan = {};
+        failSnapshot("manual_guidance_tunnel_unavailable");
+        return;
+    }
+    // CALCULATE ROUTE is an explicit request for manual flight guidance.  Keep
+    // the module default opt-in semantics, but make this action enable the HUD
+    // layer so a successfully built tunnel is actually visible.
+    modules.setEnabled(
+        game::navigation::NavigationModuleId::HudGuidanceCorridor,
+        true
+    );
     m_noSafeDockingGuidanceSolution = false;
 
     const glm::dvec3 finalDirection = glm::normalize(
         plan.pointsMeters.back() -
         plan.pointsMeters[plan.pointsMeters.size() - 2]
     );
-    std::cout
+    std::cerr
         << "[GeometricPath] request=" << dockingRequest.serial
         << " points=" << plan.pointsMeters.size()
         << " detour=" << (plan.obstacleDetourUsed ? 1 : 0)
@@ -2345,8 +3120,55 @@ void SpaceState::updateDockingGuidance(float dt)
             -request.dockOutward
            )
         << '\n';
+    std::cerr
+        << "[Trajectory] request=" << dockingRequest.serial
+        << " samples=" << trajectoryPlan.trajectory.samples.size()
+        << " length_m=" << trajectoryPlan.trajectory.lengthMeters
+        << " duration_s=" << trajectoryPlan.trajectory.durationSeconds
+        << " smooth_candidates="
+            << trajectoryPlan.diagnostics.smoothCandidatesEvaluated
+        << " safe_candidates="
+            << trajectoryPlan.diagnostics.smoothSafeCandidates
+        << " support_level="
+            << trajectoryPlan.diagnostics.selectedSmoothSupportLevel
+        << " max_curvature_1pm="
+            << trajectoryPlan.diagnostics.maxCurvaturePerMeter
+        << " max_speed_mps=" << trajectoryPlan.diagnostics.maxSpeedMps
+        << " max_accel_mps2="
+            << trajectoryPlan.diagnostics.maxAccelerationMps2
+        << " initial_cross_track_mps="
+            << trajectoryPlan.diagnostics.initialCrossTrackSpeedMps
+        << " capture_required="
+            << (trajectoryPlan.diagnostics.pathCaptureRequired ? 1 : 0)
+        << '\n';
+    std::size_t liveTunnelGateCount = 0;
+    for (const auto& published : guidanceState.corridors())
+    {
+        if (published.id == m_manualDockingGuidancePlan.corridorId)
+        {
+            liveTunnelGateCount = published.frames.size();
+            break;
+        }
+    }
+    std::cerr
+        << "[GuidanceTunnel] request=" << dockingRequest.serial
+        << " gates=" << liveTunnelGateCount
+        << " gate_spacing_m=" << m_manualDockingGuidancePlan.gateSpacingMeters
+        << " gate_w_m=" << m_manualDockingGuidancePlan.gateWidthMeters
+        << " gate_h_m=" << m_manualDockingGuidancePlan.gateHeightMeters
+        << " lateral_center_tol_m="
+            << m_manualDockingGuidancePlan.lateralToleranceMeters
+        << " vertical_center_tol_m="
+            << m_manualDockingGuidancePlan.verticalToleranceMeters
+        << " hud_enabled="
+            << (modules.enabled(
+                    game::navigation::NavigationModuleId::HudGuidanceCorridor
+                ) ? 1 : 0)
+        << " map_product=trajectory"
+        << " fixed=1"
+        << " build_mode=trajectory_backbone"
+        << '\n';
 }
-
 
 
 void SpaceState::update(float dt)
@@ -2429,7 +3251,13 @@ void SpaceState::update(float dt)
     }
 
 
+    m_perfDockingTunnelBuilds = 0;
+    const double dockingGuidanceStartMs = nowMs();
     updateDockingGuidance(clientFrameDt);
+    m_perfDockingGuidanceMs = nowMs() - dockingGuidanceStartMs;
+    m_perfDockingRequestActive =
+        m_navigationWorkspace.dockingRouteRequests().pending().valid();
+    m_perfManualGuidancePlanActive = m_manualDockingGuidancePlan.valid;
 
     if constexpr (game::promo::PromoSceneScenario::Enabled)
     {
@@ -2820,12 +3648,14 @@ void SpaceState::renderUI()
     if (resolvePlayerGalacticPositionLy(observerGalacticPositionLy))
         observerGalacticPositionPtr = &observerGalacticPositionLy;
 
-    m_preparedScene =
-        m_sceneRenderer.prepareScene(
-            m_client->world(),
-            m_playerId,
-            observerGalacticPositionPtr
-        );
+    const double scenePrepareStartMs = nowMs();
+    m_sceneRenderer.prepareScene(
+        m_preparedScene,
+        m_client->world(),
+        m_playerId,
+        observerGalacticPositionPtr
+    );
+    m_perfScenePrepareMs = nowMs() - scenePrepareStartMs;
 
 
 
@@ -2929,6 +3759,37 @@ else
 {
     m_perfRearCameraMs = 0.0;
     m_perfRearStats.reset();
+}
+
+{
+    const double observedRenderMs =
+        m_perfMainRenderMs + m_perfRearCameraMs;
+    if (observedRenderMs > 18.0 ||
+        m_perfFixedSimMs > 8.0 ||
+        m_perfClientUpdateMs > 8.0 ||
+        m_perfDockingGuidanceMs > 2.0)
+    {
+        static double lastFramePerfReportMs = -1.0e9;
+        const double now = nowMs();
+        if (now - lastFramePerfReportMs >= 500.0)
+        {
+            std::cerr
+                << "[FramePerf] main_ms=" << m_perfMainRenderMs
+                << " prepare_ms=" << m_perfScenePrepareMs
+                << " scene_submit_ms=" << m_perfMainStats.cpuTotalMs
+                << " rear_ms=" << m_perfRearCameraMs
+                << " fixed_sim_ms=" << m_perfFixedSimMs
+                << " client_ms=" << m_perfClientUpdateMs
+                << " dock_ms=" << m_perfDockingGuidanceMs
+                << " dock_request=" << (m_perfDockingRequestActive ? 1 : 0)
+                << " dock_plan=" << (m_perfManualGuidancePlanActive ? 1 : 0)
+                << " tunnel_builds=" << m_perfDockingTunnelBuilds
+                << " draw_calls=" << m_perfMainStats.drawCalls
+                << " parts=" << m_perfMainStats.partsDrawn
+                << '\n';
+            lastFramePerfReportMs = now;
+        }
+    }
 }
 
 // ------------------------------------------------------------
@@ -4463,6 +5324,11 @@ void SpaceState::pushDebugControlState()
     perf["serverTotalDiscardedMs"] = m_perfServerTotalDiscardedMs;
     perf["serverCatchUpLimited"] = m_perfServerCatchUpLimited;
     perf["clientUpdateMs"] = m_perfClientUpdateMs;
+    perf["dockingGuidanceMs"] = m_perfDockingGuidanceMs;
+    perf["dockingRequestActive"] = m_perfDockingRequestActive;
+    perf["manualGuidancePlanActive"] = m_perfManualGuidancePlanActive;
+    perf["dockingTunnelBuilds"] = m_perfDockingTunnelBuilds;
+    perf["scenePrepareMs"] = m_perfScenePrepareMs;
     perf["playerViewMs"] = m_perfPlayerViewMs;
     perf["uiRootUpdateMs"] = m_perfUiRootUpdateMs;
 
@@ -4470,6 +5336,17 @@ void SpaceState::pushDebugControlState()
     perf["rearCameraMs"] = m_perfRearCameraMs;
     perf["renderUiMs"] = m_perfRenderUiMs;
     perf["hudMs"] = m_perfHudMs;
+
+    perf["sceneCpuTotalMs"] = m_perfMainStats.cpuTotalMs;
+    perf["sceneCpuSetupMs"] = m_perfMainStats.cpuSetupMs;
+    perf["sceneCpuStarfieldMs"] = m_perfMainStats.cpuStarfieldMs;
+    perf["sceneCpuFarPassesMs"] = m_perfMainStats.cpuFarPassesMs;
+    perf["sceneCpuLabelsMs"] = m_perfMainStats.cpuLabelsMs;
+    perf["sceneCpuRealShipsMs"] = m_perfMainStats.cpuRealShipsMs;
+    perf["sceneCpuVisualShipsMs"] = m_perfMainStats.cpuVisualShipsMs;
+    perf["sceneCpuVisualDronesMs"] = m_perfMainStats.cpuVisualDronesMs;
+    perf["sceneCpuObjectsMs"] = m_perfMainStats.cpuObjectsMs;
+    perf["sceneCpuDebugCallbackMs"] = m_perfMainStats.cpuDebugCallbackMs;
 
     const auto& hubPerf =
         m_systemMapRenderer

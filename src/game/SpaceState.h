@@ -44,6 +44,7 @@
 #include "src/game/navigation/GalacticReferenceFrame.h"
 #include "src/game/navigation/HubSemanticAnchorCatalog.h"
 #include "src/game/navigation/DockingPortRuntimeStateCatalog.h"
+#include "src/game/navigation/ManualDockingGuidancePlan.h"
 #include "src/game/navigation/NavigationModuleState.h"
 #include "src/game/system_map/SystemMapRenderer.h"
 #include "src/game/system_map/AuthoritativeMapInterpolator.h"
@@ -235,6 +236,7 @@ private:
     );
     void renderUiLanguageIndicator(const Viewport& viewport);
     void updateDockingGuidance(float dt);
+    bool refreshActiveManualDockingGuidance(bool forceRebuild = false);
     game::presentation::SystemMapPanelPresentation
     buildNativeSystemMapPanelPresentation();
     bool handleNativeSystemMapPanelInput(const Viewport& viewport);
@@ -293,6 +295,7 @@ private:
     std::uint64_t m_lastDockingPathRequestSerial = 0;
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;
+    game::navigation::ManualDockingGuidancePlan m_manualDockingGuidancePlan;
     SystemMapRenderer m_systemMapRenderer;
     ui::presentation::InSessionPresentationRenderer m_inSessionPresentationRenderer;
     bool m_constellationOverlayEnabled = false;
@@ -351,6 +354,11 @@ private:
     double m_perfServerTotalDiscardedMs = 0.0;
     bool m_perfServerCatchUpLimited = false;
     double m_perfClientUpdateMs = 0.0;
+    double m_perfDockingGuidanceMs = 0.0;
+    double m_perfScenePrepareMs = 0.0;
+    bool m_perfDockingRequestActive = false;
+    bool m_perfManualGuidancePlanActive = false;
+    std::uint32_t m_perfDockingTunnelBuilds = 0;
     double m_perfPlayerViewMs = 0.0;
     double m_perfUiRootUpdateMs = 0.0;
     double m_perfHudMs = 0.0;

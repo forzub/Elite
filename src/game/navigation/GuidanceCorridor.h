@@ -83,6 +83,10 @@ struct GuidanceCorridor
     int priority = 0;
     bool advisoryOnly = true;
 
+    // Manual docking tunnels are rebuilt at the current guidance epoch. Their
+    // frames are spatial/equidistant gates rather than future-time samples.
+    bool spatialManualTunnel = false;
+
     // EmergencyEscape is still a corridor, not an autopilot command.  The
     // presentation layer may flash a warning while this flag is active.
     bool noSafePrimarySolution = false;
@@ -188,25 +192,50 @@ public:
         const NavigationModuleState* modules = nullptr
     ) const noexcept
     {
-        const GuidanceCorridor* best = nullptr;
-        for (const GuidanceCorridor& corridor : m_corridors)
-        {
-            if (corridor.systemId != systemId ||
-                !corridor.validAt(universeTimeSeconds) ||
-                (modules && !sourceEnabled(corridor.source, *modules)))
-            {
-                continue;
-            }
+        return activeFiltered(
+            systemId,
+            universeTimeSeconds,
+            modules,
+            [](const GuidanceCorridor&) { return true; }
+        );
+    }
 
-            if (!best || corridor.priority > best->priority ||
-                (corridor.priority == best->priority &&
-                 corridor.generatedAtUniverseTimeSeconds >
-                     best->generatedAtUniverseTimeSeconds))
+    // Map trajectory and cockpit manual guidance are different products.
+    // The map must keep showing the accepted time-parameterized trajectory
+    // while a higher-priority spatial tunnel is regenerated from live ship
+    // and dock poses for the HUD.
+    const GuidanceCorridor* activePredictive(
+        int systemId,
+        double universeTimeSeconds,
+        const NavigationModuleState* modules = nullptr
+    ) const noexcept
+    {
+        return activeFiltered(
+            systemId,
+            universeTimeSeconds,
+            modules,
+            [](const GuidanceCorridor& corridor)
             {
-                best = &corridor;
+                return !corridor.spatialManualTunnel;
             }
-        }
-        return best;
+        );
+    }
+
+    const GuidanceCorridor* activeSpatialManualTunnel(
+        int systemId,
+        double universeTimeSeconds,
+        const NavigationModuleState* modules = nullptr
+    ) const noexcept
+    {
+        return activeFiltered(
+            systemId,
+            universeTimeSeconds,
+            modules,
+            [](const GuidanceCorridor& corridor)
+            {
+                return corridor.spatialManualTunnel;
+            }
+        );
     }
 
     void pruneExpired(double universeTimeSeconds)
@@ -228,6 +257,36 @@ public:
     }
 
 private:
+    template <typename Predicate>
+    const GuidanceCorridor* activeFiltered(
+        int systemId,
+        double universeTimeSeconds,
+        const NavigationModuleState* modules,
+        Predicate predicate
+    ) const noexcept
+    {
+        const GuidanceCorridor* best = nullptr;
+        for (const GuidanceCorridor& corridor : m_corridors)
+        {
+            if (corridor.systemId != systemId ||
+                !corridor.validAt(universeTimeSeconds) ||
+                !predicate(corridor) ||
+                (modules && !sourceEnabled(corridor.source, *modules)))
+            {
+                continue;
+            }
+
+            if (!best || corridor.priority > best->priority ||
+                (corridor.priority == best->priority &&
+                 corridor.generatedAtUniverseTimeSeconds >
+                     best->generatedAtUniverseTimeSeconds))
+            {
+                best = &corridor;
+            }
+        }
+        return best;
+    }
+
     std::vector<GuidanceCorridor> m_corridors;
 };
 

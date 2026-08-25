@@ -229,9 +229,10 @@ ClientNavigationPlanningSnapshotFactory::buildPredictedHubSnapshot(
     hubSource.orientation = sourceHubIt->orientation;
     hubSource.orbitalMotion = sourceHubIt->motion;
 
+    out.hubPredictionSource = hubSource;
     out.planningFrame =
         game::navigation::NavigationWorldPredictor::predictHubFrameAt(
-            hubSource,
+            out.hubPredictionSource,
             out.epoch.universeTimeSeconds
         );
     if (!out.planningFrame.valid)

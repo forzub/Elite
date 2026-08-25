@@ -16,7 +16,8 @@ std::optional<NavigationObstacle> makeNavigationObstacleForObject(
     double requiredClearanceMeters
 )
 {
-    if (type != ObjectType::GuidanceDockCube &&
+    if (type != ObjectType::Station &&
+        type != ObjectType::GuidanceDockCube &&
         type != ObjectType::GuidanceDockCylinder)
     {
         return std::nullopt;
@@ -24,7 +25,23 @@ std::optional<NavigationObstacle> makeNavigationObstacleForObject(
 
     ObjectDescriptorRegistry::ensureInitialized();
     const IObjectDescriptor& descriptor = ObjectDescriptorRegistry::get(type);
-    const glm::dvec3 sizeMeters(descriptor.getMeshSizeMeters());
+
+    // Navigation geometry follows the normalized logical object basis:
+    // +X width, +Y height, +Z length.  Raw mesh extents are an authoring
+    // detail and are not reliable for the assembled station.
+    glm::dvec3 sizeMeters(descriptor.getMeshSizeMeters());
+    const auto& logical = descriptor.logicalDimensions();
+    if (logical.enabled &&
+        logical.width > 0.0f &&
+        logical.height > 0.0f &&
+        logical.length > 0.0f)
+    {
+        sizeMeters = glm::dvec3(
+            logical.width,
+            logical.height,
+            logical.length
+        );
+    }
 
     NavigationObstacle obstacle;
     obstacle.id = id;
@@ -33,7 +50,8 @@ std::optional<NavigationObstacle> makeNavigationObstacleForObject(
     obstacle.localToWorldBasis = localToWorldBasis;
     obstacle.requiredClearanceMeters = std::max(0.0, requiredClearanceMeters);
 
-    if (type == ObjectType::GuidanceDockCube)
+    if (type == ObjectType::Station ||
+        type == ObjectType::GuidanceDockCube)
     {
         obstacle.shape = NavigationObstacleShape::Box;
         obstacle.halfExtentsMeters = glm::max(

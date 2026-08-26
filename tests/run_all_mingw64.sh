@@ -37,6 +37,10 @@ run_suite() {
 }
 
 run_suite \
+    "MODEL ASSET BINARY CONTRACT" \
+    "tests/model_asset/run_mingw64.sh"
+
+run_suite \
     "WORLD RUNTIME + GLOBAL TIME CONTRACT" \
     "tests/world_runtime/run_mingw64.sh"
 

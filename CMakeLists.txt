@@ -5,9 +5,10 @@ include(FetchContent)
 
 option(ELITE_BUILD_CLIENT "Build the graphical EliteGame client" ON)
 option(ELITE_BUILD_SERVER "Build the headless EliteServer executable" OFF)
+option(ELITE_BUILD_ASSET_EDITOR "Build the standalone model asset editor" OFF)
 option(ELITE_REQUIRE_BUNDLED_UI_FONTS "Fail client UI pack build when declared bundled fonts are missing" OFF)
 
-if(ELITE_BUILD_CLIENT)
+if(ELITE_BUILD_CLIENT OR ELITE_BUILD_ASSET_EDITOR)
     set(WEBVIEW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(WEBVIEW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(WEBVIEW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
@@ -38,6 +39,59 @@ if(ELITE_BUILD_CLIENT)
     find_package(glfw3 CONFIG REQUIRED)
     find_package(Freetype REQUIRED)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/glad)
+endif()
+
+# Shared compiled-model format. This is the single binary asset implementation
+# consumed by the standalone editor now and by the game runtime after the
+# offline-asset migration gate.
+add_library(EliteModelAsset STATIC
+    src/model_asset/ModelAssetBinary.cpp
+)
+target_include_directories(EliteModelAsset PUBLIC
+    "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_SOURCE_DIR}/src"
+)
+
+if(ELITE_BUILD_ASSET_EDITOR)
+    add_executable(EliteAssetEditor
+        tools/model_asset_editor/main.cpp
+        tools/model_asset_editor/ModelAssetEditorSession.cpp
+        tools/model_asset_editor/RuntimeAssemblyImporter.cpp
+        tools/model_asset_editor/NativeObjImporter.cpp
+
+        src/platform/RuntimeRoot.cpp
+        src/ui/html/HtmlUiServer.cpp
+        src/ui/platform/UiResourcePack.cpp
+
+        src/game/geometry/ObjectAssemblyRegistry.cpp
+        src/world/descriptors/ObjectDescriptorRegistry.cpp
+        src/game/ship/descriptors/EliteCobraMk1.cpp
+        src/game/equipment/data/receivers.cpp
+        src/game/equipment/data/transmitters.cpp
+        src/game/equipment/data/radars.cpp
+    )
+
+    target_include_directories(EliteAssetEditor PRIVATE
+        "${CMAKE_SOURCE_DIR}"
+        "${CMAKE_SOURCE_DIR}/src"
+    )
+    target_compile_definitions(EliteAssetEditor PRIVATE
+        ELITE_SOURCE_ROOT=\"${CMAKE_SOURCE_DIR}\"
+    )
+    target_link_libraries(EliteAssetEditor PRIVATE
+        EliteModelAsset
+        nlohmann_json::nlohmann_json
+        Threads::Threads
+        webview::core_static
+    )
+    if(WIN32)
+        target_link_libraries(EliteAssetEditor PRIVATE
+            ws2_32
+            mswsock
+            iphlpapi
+            shell32
+        )
+    endif()
 endif()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -459,9 +513,7 @@ if(ELITE_BUILD_SERVER)
 
         src/game/damage/DamageSystem.cpp
 
-        src/game/geometry/ObjLoader.cpp
         src/game/geometry/ObjectAssemblyRegistry.cpp
-        src/game/geometry/AssemblyMeshLibrary.cpp
 
         src/world/descriptors/ObjectDescriptorRegistry.cpp
         src/world/objects/StaticObjectDamage.cpp
@@ -617,6 +669,10 @@ add_custom_target(
         copy_external_assets
 )
 
+if(TARGET EliteAssetEditor)
+    add_dependencies(EliteAssetEditor copy_assets)
+endif()
+
 if(TARGET EliteGame)
     find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
@@ -757,4 +813,8 @@ endif()
 
 if(TARGET EliteServer)
     elite_configure_executable_runtime(EliteServer)
+endif()
+
+if(TARGET EliteAssetEditor)
+    elite_configure_executable_runtime(EliteAssetEditor)
 endif()

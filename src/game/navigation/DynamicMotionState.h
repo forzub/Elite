@@ -42,10 +42,11 @@ struct DynamicMotionState
     bool matchedToReferenceFrame = false;
     std::string matchedReferenceFrameId;
 
-    // Pilot control law for motion *inside* travelFrame. Both laws obey the
-    // same propulsion/control envelope. External impulses remain physical and
-    // may push linear/angular motion beyond those normal control limits.
-    // The laws differ only in how pilot input becomes engine acceleration.
+    // Pilot control law for motion *inside* travelFrame. Ordinary/main
+    // propulsion keeps the shared control envelope. The small body-axis RCS is
+    // deliberately law-independent: Assisted bounds the resulting controlled
+    // motion, while Newtonian may accumulate its tiny delta-v beyond the normal
+    // speed envelope. External impulses remain physical in either law.
     LocalFlightControlLaw localControlLaw =
         LocalFlightControlLaw::Newtonian;
 
@@ -75,14 +76,29 @@ struct DynamicMotionState
     // reached speed on the next frame; any later +/- trim or END cancels it.
     bool assistedTargetSpeedHold = false;
 
+    // True only while/after a real +/- Assisted trim. It lets the release edge
+    // capture reached forward speed once without allowing keypad RCS or an
+    // external impulse to silently rewrite the longitudinal setpoint.
+    bool assistedThrottleTrimWasActive = false;
+
     double forwardSpeedMps = 0.0;
     double strafeSpeedMps = 0.0;
     double liftSpeedMps = 0.0;
 
-    // Tactical engine intent.
-    // Это ускорение от двигателей в мировых координатах.
-    // Оно меняет worldVelocityMps, но не заменяет его.
+    // Main/local-control-law acceleration request and the independent
+    // body-axis manoeuvre-thruster request. They stay separate until the fixed
+    // kinematic step so Newtonian RCS can bypass the ordinary controlled-speed
+    // envelope without granting that exemption to the main engine.
+    glm::dvec3 mainEngineAccelerationMps2 {0.0};
+    glm::dvec3 manoeuvreAccelerationMps2 {0.0};
+
+    // Actual combined propulsion acceleration after gas availability and the
+    // active control-law speed envelope have been applied.
     glm::dvec3 engineAccelerationMps2 {0.0};
+
+    // 0..1 normalized pressure in the replenished manoeuvre-gas accumulator.
+    double manoeuvreGasPressure01 = 1.0;
+    bool manoeuvreGasDepleted = false;
 
     // Диагностика: желаемая локальная тактическая скорость,
     // не глобальная скорость корабля.

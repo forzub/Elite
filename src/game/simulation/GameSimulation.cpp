@@ -770,6 +770,8 @@ bool GameSimulation::applyDiagnosticTrajectoryTransform(
     motion.parentBodyId = state->parentBodyId;
     motion.hubId = state->hubId;
     motion.worldVelocityMps = worldVelocityMps;
+    motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
+    motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
     motion.engineAccelerationMps2 = glm::dvec3(0.0);
     motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
     motion.desiredRelativeVelocityMps = glm::dvec3(0.0);
@@ -3105,6 +3107,8 @@ void GameSimulation::updateInterplanetaryTransferLabActor()
         state.relativePositionMeters;
     tr.motion.localVelocityMps =
         state.relativeVelocityMetersPerSecond;
+    tr.motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
+    tr.motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
     tr.motion.engineAccelerationMps2 = glm::dvec3(0.0);
     tr.motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
     tr.motion.desiredRelativeVelocityMps = glm::dvec3(0.0);

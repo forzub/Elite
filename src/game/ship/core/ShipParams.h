@@ -23,10 +23,26 @@ struct ShipParams
     // --- стабилизация ---
     float autoLevelStrength; // 0 = выкл
     
-    // манёвровые двигатели
-    float strafeAccel;      // ускорение манёвровых
-    float strafeDamping;    // затухание манёвровых
-    float maxStrafeSpeed;   // ограничение
+    // Манёвровые/RCS. Legacy strafe* fields are retained because the current
+    // navigation envelope still consumes them; direct keypad thrusters use the
+    // dedicated authority/resource values below.
+    float strafeAccel;      // legacy/navigation lateral acceleration
+    float strafeDamping;    // assisted lateral stabilization response
+    float maxStrafeSpeed;   // legacy assisted translation envelope
+
+    // Physical keypad manoeuvre thrusters. The same six body-axis jets are
+    // available in both local control laws. Newtonian may accumulate their
+    // delta-v without a controlled-speed cap; Assisted keeps the normal local
+    // speed envelope and stabilization.
+    float manoeuvreThrusterAccel = 0.0f;
+
+    // Normalized high-pressure manoeuvre-gas accumulator. Full manual RCS use
+    // drains faster than the pump can replenish it. A depleted accumulator is
+    // latched off until pressure reaches the restart fraction, preventing a
+    // held key from degenerating into frame-rate-scale chatter.
+    float manoeuvreGasUsePerSecond = 0.0f;
+    float manoeuvreGasRechargePerSecond = 0.0f;
+    float manoeuvreGasRestartFraction = 0.20f;
 
     // Common local-flight acceleration envelope. For crewed craft this is
     // normally the lower of crew tolerance and structural limit. Uncrewed

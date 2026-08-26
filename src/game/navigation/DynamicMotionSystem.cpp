@@ -34,6 +34,18 @@ inline double linearAccelerationLimit(const ShipParams& params)
     return std::max(0.0, linearGs * StandardGravityMps2);
 }
 
+inline double manoeuvreAccelerationLimit(const ShipParams& params)
+{
+    const double dedicated =
+        static_cast<double>(params.manoeuvreThrusterAccel);
+    if (dedicated > 0.0)
+        return dedicated;
+
+    // Legacy/test descriptors that predate the dedicated RCS field still get
+    // their historical authority until every ship profile has migrated.
+    return std::max(0.0, static_cast<double>(params.strafeAccel));
+}
+
 inline glm::dvec3 clampMagnitude(
     glm::dvec3 value,
     double maxLength
@@ -100,49 +112,127 @@ void DynamicMotionSystem::updateLocalFrameMotion(
     if (dt <= 0.0)
         return;
 
-    // Local translation is authoritative in the ship-owned travel frame. The
-    // travel frame carries large-scale motion; ordinary engines only change
-    // motion inside it. Future J propulsion owns travel-frame acceleration.
-    const glm::dvec3 requestedLocalAcceleration =
-        frame.worldToLocalVector(
-            motion.engineAccelerationMps2
+    // The main propulsion request and the RCS request are deliberately kept
+    // separate until this fixed kinematic step. The ordinary controlled-speed
+    // envelope still applies to the main engine in both laws. In Newtonian,
+    // manual RCS is a real small force and may accumulate delta-v beyond that
+    // envelope; Assisted applies the envelope to the combined controlled motion.
+    const glm::dvec3 requestedMainLocalAcceleration =
+        frame.worldToLocalVector(motion.mainEngineAccelerationMps2);
+
+    glm::dvec3 actualManoeuvreWorldAcceleration =
+        motion.manoeuvreAccelerationMps2;
+
+    const double manoeuvreAuthority = manoeuvreAccelerationLimit(params);
+    const double gasUsePerSecond = std::max(
+        0.0,
+        static_cast<double>(params.manoeuvreGasUsePerSecond)
+    );
+    const double gasRechargePerSecond = std::max(
+        0.0,
+        static_cast<double>(params.manoeuvreGasRechargePerSecond)
+    );
+    const double restartFraction = std::clamp(
+        static_cast<double>(params.manoeuvreGasRestartFraction),
+        0.0,
+        1.0
+    );
+
+    motion.manoeuvreGasPressure01 = std::clamp(
+        motion.manoeuvreGasPressure01,
+        0.0,
+        1.0
+    );
+
+    const double requestedManoeuvreMagnitude =
+        glm::length(actualManoeuvreWorldAcceleration);
+    const double normalizedManoeuvreUse = manoeuvreAuthority > 1.0e-12
+        ? requestedManoeuvreMagnitude / manoeuvreAuthority
+        : 0.0;
+
+    if (motion.manoeuvreGasDepleted)
+    {
+        actualManoeuvreWorldAcceleration = glm::dvec3(0.0);
+        motion.manoeuvreGasPressure01 = std::min(
+            1.0,
+            motion.manoeuvreGasPressure01 + gasRechargePerSecond * dt
         );
 
-    // maxCombatSpeed is a propulsion/control envelope, never a hard physical
-    // velocity cap. Only this frame's engine-produced delta-V is limited. A
-    // collision, explosion or other external impulse may leave VREL above the
-    // envelope and that overspeed persists until real forces remove it.
-    const glm::dvec3 localAcceleration =
-        limitPropulsionAccelerationToControlledSpeed(
+        if (motion.manoeuvreGasPressure01 >= restartFraction - 1.0e-12)
+            motion.manoeuvreGasDepleted = false;
+    }
+    else
+    {
+        const double pressureDelta =
+            gasRechargePerSecond -
+            gasUsePerSecond * normalizedManoeuvreUse;
+
+        motion.manoeuvreGasPressure01 = std::clamp(
+            motion.manoeuvreGasPressure01 + pressureDelta * dt,
+            0.0,
+            1.0
+        );
+
+        if (normalizedManoeuvreUse > 1.0e-12 &&
+            motion.manoeuvreGasPressure01 <= 1.0e-12)
+        {
+            motion.manoeuvreGasPressure01 = 0.0;
+            motion.manoeuvreGasDepleted = true;
+            actualManoeuvreWorldAcceleration = glm::dvec3(0.0);
+        }
+    }
+
+    const glm::dvec3 actualManoeuvreLocalAcceleration =
+        frame.worldToLocalVector(actualManoeuvreWorldAcceleration);
+
+    glm::dvec3 localAcceleration(0.0);
+    if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
+    {
+        const glm::dvec3 controlledMainAcceleration =
+            limitPropulsionAccelerationToControlledSpeed(
+                motion.localVelocityMps,
+                requestedMainLocalAcceleration,
+                localSpeedLimit(params),
+                dt
+            );
+
+        // Deliberate exception: RCS is not a second main engine, but neither is
+        // it a velocity setpoint. With enough time and replenished gas it can
+        // continue adding tiny Newtonian delta-v past maxCombatSpeed.
+        localAcceleration =
+            controlledMainAcceleration + actualManoeuvreLocalAcceleration;
+    }
+    else
+    {
+        localAcceleration = limitPropulsionAccelerationToControlledSpeed(
             motion.localVelocityMps,
-            requestedLocalAcceleration,
+            requestedMainLocalAcceleration + actualManoeuvreLocalAcceleration,
             localSpeedLimit(params),
             dt
         );
+    }
 
     motion.engineAccelerationMps2 =
         frame.localToWorldVector(localAcceleration);
 
-    motion.localVelocityMps +=
-        localAcceleration * dt;
+    motion.localVelocityMps += localAcceleration * dt;
 
     if (motion.velocityAlignmentMode ==
             VelocityAlignmentMode::BrakeToStop &&
         glm::length(motion.localVelocityMps) <= StopSpeedEpsilonMps)
     {
         motion.localVelocityMps = glm::dvec3(0.0);
+        motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
+        motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
         motion.engineAccelerationMps2 = glm::dvec3(0.0);
         motion.velocityAlignmentMode = VelocityAlignmentMode::None;
         motion.targetForwardSpeedMps = 0.0;
     }
 
-    motion.localPositionMeters +=
-        motion.localVelocityMps * dt;
+    motion.localPositionMeters += motion.localVelocityMps * dt;
 
     const glm::dvec3 worldMeters =
-        frame.localToWorldPosition(
-            motion.localPositionMeters
-        );
+        frame.localToWorldPosition(motion.localPositionMeters);
 
     motion.referenceVelocityMps =
         frame.localToWorldVelocity(
@@ -157,9 +247,7 @@ void DynamicMotionSystem::updateLocalFrameMotion(
         );
 
     worldPosition =
-        world::coordinates::makeWorldPositionFromMeters(
-            worldMeters
-        );
+        world::coordinates::makeWorldPositionFromMeters(worldMeters);
 }
 
 void DynamicMotionSystem::applyLocalFrameInput(
@@ -180,21 +268,19 @@ void DynamicMotionSystem::applyLocalFrameInput(
     const double dtD = std::max(0.0, static_cast<double>(dt));
     const double maxSpeed = localSpeedLimit(params);
     const double maxAccel = linearAccelerationLimit(params);
-    const double manoeuvreAccel =
-        positiveOr(static_cast<double>(params.strafeAccel), 0.0);
-    const double maxStrafeSpeed =
-        std::max(0.0, static_cast<double>(params.maxStrafeSpeed));
-    const double strafeDamping =
-        std::max(0.0, static_cast<double>(params.strafeDamping));
+    const double manoeuvreAccel = manoeuvreAccelerationLimit(params);
 
     const glm::dvec3 f = glm::normalize(glm::dvec3(shipForward));
     const glm::dvec3 r = glm::normalize(glm::dvec3(shipRight));
     const glm::dvec3 u = glm::normalize(glm::dvec3(shipUp));
 
+    motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
+    motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
+
     if (cruiseActive)
     {
-        // Stage 3 deliberately leaves J/cruise semantics untouched. The next
-        // propulsion stage will detach/accelerate the travel frame itself.
+        // J/cruise owns a different propulsion layer. Local RCS is suppressed
+        // by the input mapper and explicitly cleared here as a second guard.
         motion.engineAccelerationMps2 = glm::dvec3(0.0);
         motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
         return;
@@ -203,14 +289,23 @@ void DynamicMotionSystem::applyLocalFrameInput(
     const glm::dvec3 relativeWorldVelocity =
         frame.localToWorldVector(motion.localVelocityMps);
 
-    motion.forwardSpeedMps =
-        glm::dot(relativeWorldVelocity, f);
+    motion.forwardSpeedMps = glm::dot(relativeWorldVelocity, f);
+    motion.strafeSpeedMps = glm::dot(relativeWorldVelocity, r);
+    motion.liftSpeedMps = glm::dot(relativeWorldVelocity, u);
+
+    // The grey-keypad controls one physical six-direction RCS system in both
+    // flight laws. No axis is promoted to a throttle or a hidden velocity
+    // setpoint. Assisted may stabilize the result afterwards; Newtonian keeps
+    // every tiny impulse as inertial delta-v.
+    motion.manoeuvreAccelerationMps2 =
+        f * (static_cast<double>(forwardInput) * manoeuvreAccel) +
+        r * (static_cast<double>(strafeInput) * manoeuvreAccel) +
+        u * (static_cast<double>(liftInput) * manoeuvreAccel);
 
     if (motion.localControlLaw == LocalFlightControlLaw::Newtonian)
     {
         // END: rotate tail-to-velocity via ShipController, then use bounded
-        // main-engine deceleration. The translation vector itself is never
-        // rotated merely because the hull turned.
+        // main-engine deceleration. RCS remains an independent body-axis force.
         if (motion.velocityAlignmentMode ==
                 VelocityAlignmentMode::BrakeToStop)
         {
@@ -218,56 +313,43 @@ void DynamicMotionSystem::applyLocalFrameInput(
             if (speed <= StopSpeedEpsilonMps || dtD <= 0.0)
             {
                 motion.localVelocityMps = glm::dvec3(0.0);
+                motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
+                motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
                 motion.engineAccelerationMps2 = glm::dvec3(0.0);
                 motion.velocityAlignmentMode = VelocityAlignmentMode::None;
                 motion.targetForwardSpeedMps = 0.0;
                 return;
             }
 
-            const glm::dvec3 antiVelocity =
-                -relativeWorldVelocity / speed;
+            const glm::dvec3 antiVelocity = -relativeWorldVelocity / speed;
 
             if (glm::dot(f, antiVelocity) >= BrakeAlignmentCos)
             {
-                const double brakeAccel = std::min(
-                    maxAccel,
-                    speed / dtD
-                );
-                // The automatic brake uses the same main-engine direction as
-                // manual '+'. Alignment guarantees that forward is already
-                // almost anti-parallel to VREL; do not inject a magic force
-                // directly along -velocity.
-                motion.engineAccelerationMps2 =
-                    f * brakeAccel;
-            }
-            else
-            {
-                motion.engineAccelerationMps2 = glm::dvec3(0.0);
+                const double brakeAccel = std::min(maxAccel, speed / dtD);
+                motion.mainEngineAccelerationMps2 = f * brakeAccel;
             }
 
+            motion.engineAccelerationMps2 =
+                motion.mainEngineAccelerationMps2 +
+                motion.manoeuvreAccelerationMps2;
             motion.desiredTacticalVelocityMps = glm::dvec3(0.0);
             return;
         }
 
-        // Newtonian main propulsion is intentionally one-directional from the
-        // pilot's +/- control: '+' applies the main engine, '-' is a no-op.
-        // To reduce VREL the pilot turns the hull so its nose points opposite
-        // the velocity vector and applies the same '+'. Releasing thrust leaves
-        // the inertial velocity vector untouched.
+        // Newtonian main propulsion remains one-directional: '+' applies the
+        // main engine and '-' is a no-op. This controlled propulsion is separate
+        // from keypad RCS and retains its ordinary combat-speed envelope.
         const double mainThrustCommand = std::clamp(
             static_cast<double>(targetSpeedRate),
             0.0,
             1.0
         );
 
-        glm::dvec3 desiredAcceleration =
-            f * (mainThrustCommand * maxAccel) +
-            f * (static_cast<double>(forwardInput) * manoeuvreAccel) +
-            r * (static_cast<double>(strafeInput) * manoeuvreAccel) +
-            u * (static_cast<double>(liftInput) * manoeuvreAccel);
-
+        motion.mainEngineAccelerationMps2 =
+            f * (mainThrustCommand * maxAccel);
         motion.engineAccelerationMps2 =
-            clampMagnitude(desiredAcceleration, maxAccel);
+            motion.mainEngineAccelerationMps2 +
+            motion.manoeuvreAccelerationMps2;
 
         motion.desiredTacticalVelocityMps = relativeWorldVelocity;
         motion.targetForwardSpeedMps = glm::length(motion.localVelocityMps);
@@ -275,15 +357,11 @@ void DynamicMotionSystem::applyLocalFrameInput(
     }
 
     // ---------------- Assisted / Elite-style law ----------------
-    // +/- is a throttle/setpoint trim, not a request that keeps running after
-    // the key is released. While the pilot holds a key we move the requested
-    // VREL setpoint. As soon as the input returns to neutral, capture the
-    // *actually reached* local speed as the new setpoint. This prevents the
-    // ship from continuing to accelerate/decelerate toward an old setpoint
-    // after the pilot has released the throttle trim. The direction controller
-    // remains active, so VREL may still bend toward the nose at bounded G.
-    const double targetSpeedChangeRate =
-        std::max(50.0, maxSpeed * 0.6);
+    // +/- remains the persistent forward-speed controller. Keypad RCS is not
+    // folded into that setpoint: while a body-axis RCS key is held, stabilization
+    // yields on that axis and the small physical thruster moves the ship. On
+    // release, the Assisted controller resumes correcting that axis.
+    const double targetSpeedChangeRate = std::max(50.0, maxSpeed * 0.6);
     const bool throttleTrimActive =
         std::abs(static_cast<double>(targetSpeedRate)) > 1.0e-6;
 
@@ -291,86 +369,66 @@ void DynamicMotionSystem::applyLocalFrameInput(
     {
         motion.targetForwardSpeedMps = 0.0;
         motion.assistedTargetSpeedHold = false;
-        motion.strafeSpeedMps = 0.0;
-        motion.liftSpeedMps = 0.0;
+        motion.assistedThrottleTrimWasActive = false;
     }
     else if (throttleTrimActive)
     {
         motion.assistedTargetSpeedHold = false;
+        motion.assistedThrottleTrimWasActive = true;
         motion.targetForwardSpeedMps +=
             static_cast<double>(targetSpeedRate) *
-            targetSpeedChangeRate *
-            dtD;
+            targetSpeedChangeRate * dtD;
     }
-    else if (!motion.assistedTargetSpeedHold)
+    else if (motion.assistedThrottleTrimWasActive)
     {
-        motion.targetForwardSpeedMps =
-            glm::length(relativeWorldVelocity);
-    }
-
-    motion.targetForwardSpeedMps =
-        std::clamp(
-            motion.targetForwardSpeedMps,
+        // Capture exactly once on the +/- release edge. Keypad RCS is a
+        // temporary body-axis translation command and must not become a new
+        // longitudinal cruise setpoint merely because the trim is neutral.
+        motion.targetForwardSpeedMps = std::max(
             0.0,
-            maxSpeed
+            glm::dot(relativeWorldVelocity, f)
         );
-
-    motion.strafeSpeedMps +=
-        static_cast<double>(strafeInput) *
-        manoeuvreAccel * dtD;
-
-    motion.liftSpeedMps +=
-        static_cast<double>(liftInput) *
-        manoeuvreAccel * dtD;
-
-    motion.strafeSpeedMps =
-        std::clamp(
-            motion.strafeSpeedMps,
-            -maxStrafeSpeed,
-            maxStrafeSpeed
-        );
-
-    motion.liftSpeedMps =
-        std::clamp(
-            motion.liftSpeedMps,
-            -maxStrafeSpeed,
-            maxStrafeSpeed
-        );
-
-    if (strafeDamping > 0.0)
-    {
-        const double damp = std::exp(-strafeDamping * dtD);
-        motion.strafeSpeedMps *= damp;
-        motion.liftSpeedMps *= damp;
+        motion.assistedThrottleTrimWasActive = false;
     }
+
+    motion.targetForwardSpeedMps = std::clamp(
+        motion.targetForwardSpeedMps,
+        0.0,
+        maxSpeed
+    );
 
     const glm::dvec3 desiredWorldVelocity =
-        f * motion.targetForwardSpeedMps +
-        r * motion.strafeSpeedMps +
-        u * motion.liftSpeedMps;
-
+        f * motion.targetForwardSpeedMps;
     motion.desiredTacticalVelocityMps = desiredWorldVelocity;
 
-    // Crucially this runs even with no fresh +/- input: the Assisted law is a
-    // persistent velocity controller, so rotating the hull makes the velocity
-    // vector follow at a bounded acceleration instead of snapping instantly.
-    const glm::dvec3 velocityError =
+    glm::dvec3 velocityError =
         desiredWorldVelocity - relativeWorldVelocity;
+
+    auto yieldAxisToManualRcs = [&](const glm::dvec3& axis, float input)
+    {
+        if (std::abs(static_cast<double>(input)) > 1.0e-6)
+            velocityError -= axis * glm::dot(velocityError, axis);
+    };
+
+    yieldAxisToManualRcs(f, forwardInput);
+    yieldAxisToManualRcs(r, strafeInput);
+    yieldAxisToManualRcs(u, liftInput);
 
     const double response =
         positiveOr(static_cast<double>(params.throttleAccel), 1.0);
 
+    motion.mainEngineAccelerationMps2 =
+        clampMagnitude(velocityError * response, maxAccel);
     motion.engineAccelerationMps2 =
-        clampMagnitude(
-            velocityError * response +
-                f * (static_cast<double>(forwardInput) * manoeuvreAccel),
-            maxAccel
-        );
+        motion.mainEngineAccelerationMps2 +
+        motion.manoeuvreAccelerationMps2;
 
     if (motion.velocityAlignmentMode == VelocityAlignmentMode::BrakeToStop &&
         glm::length(motion.localVelocityMps) <= StopSpeedEpsilonMps)
     {
         motion.localVelocityMps = glm::dvec3(0.0);
+        motion.mainEngineAccelerationMps2 = glm::dvec3(0.0);
+        motion.manoeuvreAccelerationMps2 = glm::dvec3(0.0);
         motion.engineAccelerationMps2 = glm::dvec3(0.0);
         motion.velocityAlignmentMode = VelocityAlignmentMode::None;
     }

@@ -528,13 +528,36 @@ void PlayerShipView::update(
 void PlayerShipView::updateCockpitStateFromSnapshot(
     float forwardVelocity,
     float targetSpeed,
+    float manoeuvreGasPressure01,
     bool cruiseActive,
     const std::vector<WorldLabel>& labels
 )
 {
     m_cockpitState.forwardVelocity = forwardVelocity;
     m_cockpitState.targetSpeed     = targetSpeed;
+    m_cockpitState.manoeuvreGasPressure01 = glm::clamp(
+        manoeuvreGasPressure01,
+        0.0f,
+        1.0f
+    );
     m_cockpitState.cruiseActive    = cruiseActive;
+
+    if (m_shipDesc && m_shipDesc->physics.maxCombatSpeed > 0.0f)
+    {
+        auto& speed = m_cockpitState.overrides["speed_bar_fill"];
+        speed.visible = true;
+        speed.overrideFill = true;
+        speed.fill01 = glm::clamp(
+            std::abs(forwardVelocity) / m_shipDesc->physics.maxCombatSpeed,
+            0.0f,
+            1.0f
+        );
+    }
+
+    auto& gas = m_cockpitState.overrides["manoeuvre_gas_fill"];
+    gas.visible = true;
+    gas.overrideFill = true;
+    gas.fill01 = m_cockpitState.manoeuvreGasPressure01;
 
     m_worldLabels = labels;
 }

@@ -47,6 +47,10 @@ for token in (
     "game::navigation::NavigationSolution,",
     "game::simulation::ClientNavigationSensorSnapshot,",
     "v.navigationSensors",
+    "v.mainEngineAccelerationMps2",
+    "v.manoeuvreAccelerationMps2",
+    "v.manoeuvreGasPressure01",
+    "v.manoeuvreGasDepleted",
 ):
     if token not in schema:
         fail(f"canonical ordered schema is incomplete: {token}")

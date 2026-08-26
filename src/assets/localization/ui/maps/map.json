@@ -338,6 +338,13 @@
       "es": "NO HAY TRAYECTORIA SEGURA",
       "ja": "安全な誘導経路なし"
     },
+    "map.navigation_hud.guidance_unavailable": {
+      "en": "GUIDANCE UNAVAILABLE",
+      "ru": "НАВИГАЦИЯ НЕДОСТУПНА",
+      "zh-Hans": "引导不可用",
+      "es": "GUÍA NO DISPONIBLE",
+      "ja": "誘導利用不可"
+    },
     "map.navigation_hud.galactic_center": {
       "en": "GC",
       "ru": "ГЦ",

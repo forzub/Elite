@@ -26,10 +26,16 @@ params = read("src/game/ship/core/ShipParams.h")
 controller = read("src/game/ship/ShipController.cpp")
 impulse = read("src/game/ship/physics/ShipImpulseSystem.cpp")
 cobra = read("src/game/ship/descriptors/EliteCobraMk1.cpp")
+cockpit = read("src/game/ship/descriptors/EliteCobraMk1_Cockpit.cpp")
+player_view = read("src/game/ship/view/PlayerShipView.cpp")
 
 for token in (
     "LocalFlightControlLaw localControlLaw",
     "VelocityAlignmentMode velocityAlignmentMode",
+    "mainEngineAccelerationMps2",
+    "manoeuvreAccelerationMps2",
+    "manoeuvreGasPressure01",
+    "manoeuvreGasDepleted",
 ):
     if token not in state:
         fail(f"persistent motion state lost: {token}")
@@ -44,8 +50,23 @@ for token in (
     if token not in system:
         fail(f"shared local motion law lost: {token}")
 
-# Local speed and acceleration must be ship-profile limits, not a second J-like
-# unbounded propulsion path hidden in one control law.
+for token in (
+    "manoeuvreAccelerationLimit",
+    "controlledMainAcceleration + actualManoeuvreLocalAcceleration",
+    "requestedMainLocalAcceleration + actualManoeuvreLocalAcceleration",
+    "manoeuvreGasPressure01",
+    "manoeuvreGasUsePerSecond",
+    "manoeuvreGasRechargePerSecond",
+    "manoeuvreGasRestartFraction",
+    "yieldAxisToManualRcs",
+):
+    if token not in system:
+        fail(f"law-independent keypad RCS contract lost: {token}")
+
+# Ordinary/main propulsion retains the ship-profile control envelope. The only
+# deliberate exception is the tiny gas-limited keypad RCS in Newtonian mode; it
+# may accumulate delta-v past maxCombatSpeed without turning the main engine
+# into a second J-like propulsion path.
 for forbidden in (
     "const double maxCombatSpeed =\n        500.0",
     "maxTacticalAccel =\n        49.0",
@@ -103,6 +124,15 @@ if "float maxGs" not in params:
     fail("ship profile lost the shared acceleration envelope")
 
 for token in (
+    "manoeuvreThrusterAccel",
+    "manoeuvreGasUsePerSecond",
+    "manoeuvreGasRechargePerSecond",
+    "manoeuvreGasRestartFraction",
+):
+    if token not in params:
+        fail(f"ship profile lost manoeuvre/RCS resource parameter: {token}")
+
+for token in (
     "angularAccelerationEnvelope",
     "angularRateEnvelope",
     "params.maxGs",
@@ -156,5 +186,23 @@ if "desc.physics.maxGs                  = 5.0f" not in cobra:
     fail("Cobra angular/load envelope is no longer the accepted 5 g")
 if "desc.physics.maxLinearGs            = 7.5f" not in cobra:
     fail("Cobra linear acceleration envelope is no longer the accepted 7.5 g")
+for token in (
+    "desc.physics.manoeuvreThrusterAccel = 2.0f",
+    "desc.physics.manoeuvreGasUsePerSecond = 0.20f",
+    "desc.physics.manoeuvreGasRechargePerSecond = 0.08f",
+    "desc.physics.manoeuvreGasRestartFraction = 0.20f",
+):
+    if token not in cobra:
+        fail(f"Cobra manoeuvre/RCS tuning disappeared: {token}")
+
+
+for token, text, label in (
+    ("manoeuvre_gas_fill", cockpit, "cockpit geometry"),
+    ("manoeuvre_gas_fill", player_view, "cockpit state update"),
+    ("manoeuvreGasPressure01", player_view, "cockpit state update"),
+    ("ship.transform.motion.manoeuvreGasPressure01", space, "replicated cockpit feed"),
+):
+    if token not in text:
+        fail(f"manoeuvre-gas cockpit contract lost in {label}: {token}")
 
 print("Local-flight-control architecture check passed.")

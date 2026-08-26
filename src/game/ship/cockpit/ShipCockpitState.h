@@ -28,6 +28,7 @@ struct ShipCockpitState
 {
     float forwardVelocity = 0.0f;
     float targetSpeed     = 0.0f;
+    float manoeuvreGasPressure01 = 1.0f;
     bool  cruiseActive    = false;
     
     std::unordered_map<std::string, CockpitVisualOverride> overrides;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include <unordered_map>
 #include <deque>
@@ -295,6 +296,7 @@ private:
     std::uint64_t m_lastDockingPathRequestSerial = 0;
     std::string m_activeDockingGuidanceCorridorId;
     bool m_noSafeDockingGuidanceSolution = false;
+    std::string m_dockingGuidanceFailureReason;
     game::navigation::ManualDockingGuidancePlan m_manualDockingGuidancePlan;
     SystemMapRenderer m_systemMapRenderer;
     ui::presentation::InSessionPresentationRenderer m_inSessionPresentationRenderer;

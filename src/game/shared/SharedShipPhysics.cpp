@@ -51,6 +51,7 @@ void evaluateControl(
         if (oldLaw != motion.localControlLaw)
         {
             motion.assistedTargetSpeedHold = false;
+            motion.assistedThrottleTrimWasActive = false;
 
             if (motion.localControlLaw ==
                     game::navigation::LocalFlightControlLaw::Assisted)
@@ -79,6 +80,7 @@ void evaluateControl(
                     game::navigation::VelocityAlignmentMode::BrakeToStop)
             {
                 motion.assistedTargetSpeedHold = false;
+                motion.assistedThrottleTrimWasActive = false;
             }
         }
     }
@@ -90,6 +92,7 @@ void evaluateControl(
         motion.targetForwardSpeedMps =
             std::max(0.0f, params.maxCombatSpeed);
         motion.assistedTargetSpeedHold = true;
+        motion.assistedThrottleTrimWasActive = false;
         motion.velocityAlignmentMode =
             game::navigation::VelocityAlignmentMode::None;
     }

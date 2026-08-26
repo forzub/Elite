@@ -118,10 +118,15 @@ SimulationSnapshot makeSnapshot()
     motion.localVelocityMps = glm::dvec3(17.0, 18.0, 19.0);
     motion.targetForwardSpeedMps = 20.0;
     motion.assistedTargetSpeedHold = true;
+    motion.assistedThrottleTrimWasActive = true;
     motion.forwardSpeedMps = 21.0;
     motion.strafeSpeedMps = 22.0;
     motion.liftSpeedMps = 23.0;
+    motion.mainEngineAccelerationMps2 = glm::dvec3(0.31, 0.32, 0.33);
+    motion.manoeuvreAccelerationMps2 = glm::dvec3(0.21, 0.22, 0.23);
     motion.engineAccelerationMps2 = glm::dvec3(0.4, 0.5, 0.6);
+    motion.manoeuvreGasPressure01 = 0.42;
+    motion.manoeuvreGasDepleted = true;
     motion.desiredTacticalVelocityMps = glm::dvec3(24.0, 25.0, 26.0);
     motion.worldVelocityMps = glm::dvec3(27.0, 28.0, 29.0);
     motion.desiredRelativeVelocityMps = glm::dvec3(30.0, 31.0, 32.0);
@@ -468,6 +473,12 @@ void testSnapshotRoundTrip()
     require(decoded.ships[0].id == EntityId{42u}, "ship identity mismatch");
     require(near(decoded.ships[0].transform.motion.travelFrame.localToWorldBasis[1][2], 0.125),
         "double matrix state mismatch");
+    require(near(decoded.ships[0].transform.motion.manoeuvreGasPressure01, 0.42),
+        "ship manoeuvre-gas pressure did not round-trip");
+    require(decoded.ships[0].transform.motion.manoeuvreGasDepleted,
+        "ship manoeuvre-gas depletion latch did not round-trip");
+    require(near(decoded.ships[0].transform.motion.manoeuvreAccelerationMps2.y, 0.22),
+        "ship manoeuvre-thruster acceleration did not round-trip");
     require(decoded.ships[0].graph.modules.size() == 1u,
         "module graph mismatch");
     require(decoded.ships[0].graph.detachedFragments.size() == 1u,

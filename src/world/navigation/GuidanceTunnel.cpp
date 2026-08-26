@@ -211,13 +211,14 @@ DynamicCurve buildTrajectoryBackboneCurve(
     // cut across a newly-added obstacle (for example the station hull) and
     // incorrectly turn a valid trajectory into NO SAFE GUIDANCE SOLUTION.
     //
-    // The current ship is used only to retire already-passed trajectory
-    // progress. The remaining centreline itself is never pulled toward the
-    // ship, so fixed gates stay fixed in Hub-local space.
-    const double startProgress = nearestTrajectoryProgress(
-        trajectory,
-        request.currentPositionMeters
-    );
+    // TrajectoryBackbone is used for the initial CALCULATE ROUTE publication.
+    // Keep the complete accepted trajectory here.  Using the render-time ship
+    // position to retire progress during this first build mixes a later
+    // presentation sample into the planning-epoch backbone and can, on a
+    // curved/looping path, select the terminal segment and collapse the tunnel
+    // to a single point. Passed gates are retired by the rolling tracker after
+    // publication instead.
+    const double startProgress = trajectory.samples.front().pathProgressMeters;
     out.passedTrajectoryProgressMeters = startProgress;
 
     const TrajectoryPoint first = sampleTrajectoryAtProgress(
@@ -320,7 +321,7 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
         0.0,
         request.minimumTurnRadiusMeters
     );
-    const double startLead = std::min(
+    double startLead = std::min(
         std::max({
             request.gateSpacingMeters * 4.0,
             request.startCaptureDistanceMeters,
@@ -328,7 +329,7 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
         }),
         std::max(request.gateSpacingMeters * 4.0, remaining * 0.35)
     );
-    const double terminalLineDistance = std::min(
+    double terminalLineDistance = std::min(
         std::max({
             request.terminalAlignmentDistanceMeters,
             request.gateSpacingMeters * 10.0,
@@ -336,6 +337,31 @@ DynamicCurve buildDynamicCurve(const GuidanceTunnelRequest& request)
         }),
         std::max(request.gateSpacingMeters * 10.0, remaining * 0.55)
     );
+
+    // Capture and terminal alignment are boundary conditions, not permission
+    // to collapse the route interior. On a short remaining path the nominal
+    // 35% + 55% caps can leave only a few metres between both transition
+    // zones; the five route supports then bunch into that sliver and create a
+    // high-curvature B-spline with visibly snapping gate frames. Reserve an
+    // interior span of up to four gates (or 20% of the remaining source path)
+    // and scale both boundary zones together when necessary.
+    const double minimumInteriorSupportDistance = std::min(
+        remaining * 0.20,
+        request.gateSpacingMeters * 4.0
+    );
+    const double transitionBudget = std::max(
+        0.0,
+        remaining - minimumInteriorSupportDistance
+    );
+    const double requestedTransitionDistance =
+        startLead + terminalLineDistance;
+    if (requestedTransitionDistance > transitionBudget + Epsilon &&
+        requestedTransitionDistance > Epsilon)
+    {
+        const double scale = transitionBudget / requestedTransitionDistance;
+        startLead *= scale;
+        terminalLineDistance *= scale;
+    }
     const double terminalPathStart = std::max(
         startProgress,
         endProgress - terminalLineDistance

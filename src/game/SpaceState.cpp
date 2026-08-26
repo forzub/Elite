@@ -2360,11 +2360,14 @@ bool SpaceState::refreshActiveManualDockingGuidance(bool forceRebuild)
 
     if (rebuild)
     {
-        // The info-card defines a persistent destination, not a frozen path.
-        // Every published manual generation is therefore rebuilt from the
-        // current ship state toward the live dock. The accepted trajectory is
-        // only a collision-safe topology hint for the reconnect candidates.
-        const bool reconnectCurrentPose = true;
+        // CALCULATE ROUTE already produced a canonical collision-safe
+        // trajectory. The initial HUD tunnel must sample that accepted
+        // backbone instead of solving a second geometric problem that can
+        // disagree with the route planner. Only an established tunnel that is
+        // being replaced by a rolling deviation/target-motion event may build
+        // a new current-pose reconnect curve.
+        const bool reconnectCurrentPose =
+            manualPlan.fixedTunnel.valid && !forceRebuild;
 
         glm::dvec3 terminalLocalMeters =
             manualPlan.trajectory.samples.back().positionMeters;
@@ -2454,16 +2457,19 @@ bool SpaceState::refreshActiveManualDockingGuidance(bool forceRebuild)
         tunnelRequest.curveChordErrorMeters = 0.15;
         tunnelRequest.maxSmoothSupportLevel = 1;
         const double speedMps = glm::length(playerLocalVelocityMps);
-        const double lateralAccelerationMps2 = std::max(
-            1.0,
-            manualPlan.vehicle.maxLateralAccelerationMps2
-        );
-        const double dynamicTurnRadiusMeters =
-            speedMps * speedMps / lateralAccelerationMps2;
-        tunnelRequest.minimumTurnRadiusMeters = std::max(
-            manualPlan.minimumVisualTurnRadiusMeters,
-            dynamicTurnRadiusMeters
-        );
+        if (reconnectCurrentPose)
+        {
+            const double lateralAccelerationMps2 = std::max(
+                1.0,
+                manualPlan.vehicle.maxLateralAccelerationMps2
+            );
+            const double dynamicTurnRadiusMeters =
+                speedMps * speedMps / lateralAccelerationMps2;
+            tunnelRequest.minimumTurnRadiusMeters = std::max(
+                manualPlan.minimumVisualTurnRadiusMeters,
+                dynamicTurnRadiusMeters
+            );
+        }
 
         ++m_perfDockingTunnelBuilds;
         auto tunnel = world::navigation::GuidanceTunnelBuilder::build(
@@ -2588,6 +2594,7 @@ void SpaceState::updateDockingGuidance(float dt)
         eraseActiveDockingCorridor();
         m_lastDockingPathRequestSerial = 0;
         m_noSafeDockingGuidanceSolution = false;
+        m_dockingGuidanceFailureReason.clear();
         return;
     }
 
@@ -2606,6 +2613,7 @@ void SpaceState::updateDockingGuidance(float dt)
         }
         m_lastDockingPathRequestSerial = 0;
         m_noSafeDockingGuidanceSolution = false;
+        m_dockingGuidanceFailureReason.clear();
         return;
     }
 
@@ -2630,13 +2638,37 @@ void SpaceState::updateDockingGuidance(float dt)
     }
     m_lastDockingPathRequestSerial = dockingRequest.serial;
 
-    const auto failSnapshot = [&](const char* reason)
+    // A failed planning snapshot is not automatically a safety failure.
+    // Keep failure cause and safety classification separate so HUD does not
+    // claim "NO SAFE GUIDANCE" for missing metadata, frame/prediction errors
+    // or a presentation-only tunnel failure.
+    const auto failSnapshot = [&](const char* reason, bool safetyFailure)
     {
         guidanceState.erase(corridorId);
         guidanceState.erase(corridorId + ":manual");
-        m_noSafeDockingGuidanceSolution = true;
+        m_noSafeDockingGuidanceSolution = safetyFailure;
+        m_dockingGuidanceFailureReason = reason ? reason : "unknown";
         std::cerr << "[GeometricPath] request="
-                  << dockingRequest.serial << " failed=" << reason << '\n';
+                  << dockingRequest.serial
+                  << " failed=" << m_dockingGuidanceFailureReason
+                  << " safety_failure=" << (safetyFailure ? 1 : 0)
+                  << '\n';
+    };
+
+    const auto isGeometricSafetyFailure = [](const std::string& reason)
+    {
+        return reason == "geometric path start is inside obstacle" ||
+            reason == "geometric path goal is inside obstacle" ||
+            reason == "no collision-free geometric path" ||
+            reason == "docking alignment leg is blocked" ||
+            reason == "docking ingress is blocked by non-target obstacle";
+    };
+
+    const auto isTrajectorySafetyFailure = [](const std::string& reason)
+    {
+        return reason == "no collision-free globally smooth trajectory path" ||
+            reason ==
+                "initial along-path speed cannot meet downstream constraints";
     };
 
     const auto* anchorDefinition = m_hubSemanticAnchorCatalog.find(
@@ -2648,7 +2680,7 @@ void SpaceState::updateDockingGuidance(float dt)
         anchorDefinition->kind !=
             game::navigation::HubSemanticAnchorKind::DockingPort)
     {
-        failSnapshot("anchor_definition_unavailable");
+        failSnapshot("anchor_definition_unavailable", false);
         return;
     }
 
@@ -2671,7 +2703,8 @@ void SpaceState::updateDockingGuidance(float dt)
         failSnapshot(
             game::client::clientNavigationPlanningSnapshotStatusName(
                 planningSnapshot.status
-            )
+            ),
+            false
         );
         return;
     }
@@ -2731,7 +2764,7 @@ void SpaceState::updateDockingGuidance(float dt)
     );
     if (!compatibility.routeAvailable)
     {
-        failSnapshot("docking_compatibility_rejected");
+        failSnapshot("docking_compatibility_rejected", false);
         return;
     }
 
@@ -2740,7 +2773,7 @@ void SpaceState::updateDockingGuidance(float dt)
     // one participant independently inside SpaceState.
     if (!hubFrame.valid)
     {
-        failSnapshot("hub_frame_invalid");
+        failSnapshot("hub_frame_invalid", false);
         return;
     }
 
@@ -2839,7 +2872,10 @@ void SpaceState::updateDockingGuidance(float dt)
     const auto plan = game::navigation::DockingPathPlanner::plan(request);
     if (!plan.valid)
     {
-        failSnapshot(plan.message.c_str());
+        failSnapshot(
+            plan.message.c_str(),
+            isGeometricSafetyFailure(plan.message)
+        );
         return;
     }
 
@@ -2928,7 +2964,10 @@ void SpaceState::updateDockingGuidance(float dt)
         world::navigation::TrajectoryGenerator::generate(trajectoryRequest);
     if (!trajectoryPlan.ready())
     {
-        failSnapshot(trajectoryPlan.trajectory.message.c_str());
+        failSnapshot(
+            trajectoryPlan.trajectory.message.c_str(),
+            isTrajectorySafetyFailure(trajectoryPlan.trajectory.message)
+        );
         return;
     }
 
@@ -2964,7 +3003,7 @@ void SpaceState::updateDockingGuidance(float dt)
             );
         if (!sampleFrame.valid)
         {
-            failSnapshot("trajectory_sample_frame_invalid");
+            failSnapshot("trajectory_sample_frame_invalid", false);
             return;
         }
 
@@ -3015,7 +3054,7 @@ void SpaceState::updateDockingGuidance(float dt)
         );
     if (!terminalFrame.valid)
     {
-        failSnapshot("trajectory_terminal_frame_invalid");
+        failSnapshot("trajectory_terminal_frame_invalid", false);
         return;
     }
     trajectoryCorridor.terminalTargetMeters =
@@ -3084,8 +3123,19 @@ void SpaceState::updateDockingGuidance(float dt)
 
     if (!refreshActiveManualDockingGuidance(true))
     {
+        // The physical trajectory above is already accepted and published. A
+        // failure to derive the cockpit presentation tunnel must not erase that
+        // route or re-label it as unsafe. Keep the immutable route visible and
+        // expose the presentation failure separately.
         m_manualDockingGuidancePlan = {};
-        failSnapshot("manual_guidance_tunnel_unavailable");
+        guidanceState.erase(corridorId + ":manual");
+        m_noSafeDockingGuidanceSolution = false;
+        m_dockingGuidanceFailureReason =
+            "manual_guidance_tunnel_unavailable";
+        std::cerr
+            << "[GuidanceTunnel] request=" << dockingRequest.serial
+            << " failed=" << m_dockingGuidanceFailureReason
+            << " physical_trajectory_preserved=1\n";
         return;
     }
     // CALCULATE ROUTE is an explicit request for manual flight guidance.  Keep
@@ -3096,6 +3146,7 @@ void SpaceState::updateDockingGuidance(float dt)
         true
     );
     m_noSafeDockingGuidanceSolution = false;
+    m_dockingGuidanceFailureReason.clear();
 
     const glm::dvec3 finalDirection = glm::normalize(
         plan.pointsMeters.back() -
@@ -3334,6 +3385,7 @@ m_playerView->update(
 m_playerView->updateCockpitStateFromSnapshot(
     ship.transform.forwardVelocity,
     ship.transform.targetSpeed,
+    static_cast<float>(ship.transform.motion.manoeuvreGasPressure01),
     ship.transform.cruiseActive,
     ship.signalPresentation.labelsVector()
 );
@@ -4007,8 +4059,12 @@ m_systemMapRenderer.render(
                 vp.height
             );
 
-            if (guidance.noSafePrimarySolution ||
-                m_noSafeDockingGuidanceSolution)
+            const bool noSafeGuidance =
+                guidance.noSafePrimarySolution ||
+                m_noSafeDockingGuidanceSolution;
+            const bool guidanceUnavailable =
+                !noSafeGuidance && !m_dockingGuidanceFailureReason.empty();
+            if (noSafeGuidance || guidanceUnavailable)
             {
                 const double blinkPhase = std::fmod(
                     std::max(0.0, m_client->universeTimeSeconds()) * 2.0,
@@ -4016,11 +4072,22 @@ m_systemMapRenderer.render(
                 );
                 if (blinkPhase < 0.58)
                 {
-                    const std::string warning = localizedUiText(
-                        context().app,
-                        "map.navigation_hud.no_safe_guidance_solution",
-                        "NO SAFE GUIDANCE SOLUTION"
-                    );
+                    std::string warning = noSafeGuidance
+                        ? localizedUiText(
+                            context().app,
+                            "map.navigation_hud.no_safe_guidance_solution",
+                            "NO SAFE GUIDANCE SOLUTION"
+                          )
+                        : localizedUiText(
+                            context().app,
+                            "map.navigation_hud.guidance_unavailable",
+                            "GUIDANCE UNAVAILABLE"
+                          );
+                    if (!m_dockingGuidanceFailureReason.empty())
+                    {
+                        warning += " [" +
+                            m_dockingGuidanceFailureReason + "]";
+                    }
                     constexpr int warningPx = 22;
                     auto& text = TextRenderer::instance();
                     const float width = text.measureTextPx(warning, warningPx);

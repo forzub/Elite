@@ -123,6 +123,46 @@ CockpitGeometry EliteCobraMk1::createCockpitGeometry(const ShipDescriptor& desc)
     };
     geo.drawList.push_back(SPEED_EDGE);
 
+    // Tactical/local-speed bar and the manoeuvre-gas accumulator share the
+    // existing SPEED panel. The second, thinner amber bar is intentionally
+    // close to the tactical-speed indication: a pilot sees immediately that
+    // repeated keypad translation is spending a replenished RCS resource.
+    CockpitDrawCommand SPEED_FILL;
+    SPEED_FILL.type = CockpitDrawType::Fill;
+    SPEED_FILL.id = "speed_bar_fill";
+    SPEED_FILL.polygon = {
+        {
+            {0.194141f, 0.916400f},
+            {0.305859f, 0.916400f},
+            {0.305859f, 0.921700f},
+            {0.194141f, 0.921700f},
+        },
+        CockpitFillType::Solid,
+        {0.15f, 0.65f, 0.95f, 0.85f},
+        colorB,
+        gradFrom,
+        gradTo
+    };
+    geo.drawList.push_back(SPEED_FILL);
+
+    CockpitDrawCommand MANOEUVRE_GAS_FILL;
+    MANOEUVRE_GAS_FILL.type = CockpitDrawType::Fill;
+    MANOEUVRE_GAS_FILL.id = "manoeuvre_gas_fill";
+    MANOEUVRE_GAS_FILL.polygon = {
+        {
+            {0.194141f, 0.923500f},
+            {0.305859f, 0.923500f},
+            {0.305859f, 0.927300f},
+            {0.194141f, 0.927300f},
+        },
+        CockpitFillType::Solid,
+        {0.95f, 0.55f, 0.10f, 0.90f},
+        colorB,
+        gradFrom,
+        gradTo
+    };
+    geo.drawList.push_back(MANOEUVRE_GAS_FILL);
+
     CockpitDrawCommand LASER_PAN;
     LASER_PAN.type = CockpitDrawType::Fill;
     LASER_PAN.polygon = {

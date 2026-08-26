@@ -115,6 +115,7 @@ struct PlayerShipView
     void updateCockpitStateFromSnapshot(
         float forwardVelocity,
         float targetSpeed,
+        float manoeuvreGasPressure01,
         bool cruiseActive,
         const std::vector<WorldLabel>& labels
     );

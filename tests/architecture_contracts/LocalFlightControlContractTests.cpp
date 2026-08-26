@@ -55,6 +55,10 @@ ShipParams makeParams()
     params.strafeAccel = 20.0f;
     params.strafeDamping = 6.0f;
     params.maxStrafeSpeed = 40.0f;
+    params.manoeuvreThrusterAccel = 2.0f;
+    params.manoeuvreGasUsePerSecond = 0.0f;
+    params.manoeuvreGasRechargePerSecond = 0.0f;
+    params.manoeuvreGasRestartFraction = 0.20f;
     params.maxGs = 2.0f;
     params.angularAccel = 2.0f;
     params.maxPitchRate = 2.0f;
@@ -99,6 +103,185 @@ void step(
         frame,
         params,
         static_cast<double>(dt)
+    );
+}
+
+
+void stepRcs(
+    game::navigation::DynamicMotionState& motion,
+    world::coordinates::WorldPosition& position,
+    const game::navigation::KinematicFrame& frame,
+    const ShipParams& params,
+    float dt,
+    float forwardInput,
+    float liftInput,
+    float strafeInput
+)
+{
+    game::navigation::DynamicMotionSystem::applyLocalFrameInput(
+        motion,
+        frame,
+        params,
+        dt,
+        0.0f,
+        false,
+        forwardInput,
+        liftInput,
+        strafeInput,
+        glm::vec3(0.0f, 0.0f, -1.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f)
+    );
+
+    game::navigation::DynamicMotionSystem::updateLocalFrameMotion(
+        motion,
+        position,
+        frame,
+        params,
+        static_cast<double>(dt)
+    );
+}
+
+void testNewtonianRcsCanCreepPastControlledSpeedEnvelope()
+{
+    const auto frame = makeFrame();
+    ShipParams params = makeParams();
+    params.maxCombatSpeed = 10.0f;
+    params.manoeuvreThrusterAccel = 2.0f;
+
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw = game::navigation::LocalFlightControlLaw::Newtonian;
+    motion.localVelocityMps = glm::dvec3(0.0, 0.0, -10.0);
+
+    auto position = world::coordinates::makeWorldPositionFromMeters(
+        frame.localToWorldPosition(glm::dvec3(0.0))
+    );
+
+    stepRcs(motion, position, frame, params, 1.0f, 1.0f, 0.0f, 0.0f);
+
+    require(
+        glm::length(motion.localVelocityMps) > 11.5,
+        "Newtonian keypad RCS was still clipped by maxCombatSpeed"
+    );
+}
+
+void testAssistedRcsIsSpeedBoundAndStabilizedAfterRelease()
+{
+    const auto frame = makeFrame();
+    ShipParams params = makeParams();
+    params.maxCombatSpeed = 10.0f;
+    params.manoeuvreThrusterAccel = 2.0f;
+
+    game::navigation::DynamicMotionState capped;
+    capped.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    capped.localVelocityMps = glm::dvec3(0.0, 0.0, -9.5);
+    capped.targetForwardSpeedMps = 0.0;
+
+    auto cappedPosition = world::coordinates::makeWorldPositionFromMeters(
+        frame.localToWorldPosition(glm::dvec3(0.0))
+    );
+    stepRcs(capped, cappedPosition, frame, params, 1.0f, 1.0f, 0.0f, 0.0f);
+    require(
+        glm::length(capped.localVelocityMps) <= 10.0 + 1.0e-9,
+        "Assisted keypad RCS escaped the local controlled-speed envelope"
+    );
+
+    game::navigation::DynamicMotionState stabilized;
+    stabilized.localControlLaw = game::navigation::LocalFlightControlLaw::Assisted;
+    stabilized.targetForwardSpeedMps = 0.0;
+
+    auto stabilizedPosition = world::coordinates::makeWorldPositionFromMeters(
+        frame.localToWorldPosition(glm::dvec3(0.0))
+    );
+    stepRcs(
+        stabilized,
+        stabilizedPosition,
+        frame,
+        params,
+        0.5f,
+        -1.0f,
+        0.0f,
+        0.0f
+    );
+    const double pushedSpeed = glm::length(stabilized.localVelocityMps);
+    require(pushedSpeed > 0.5, "Assisted reverse RCS did not move the ship");
+    requireNear(
+        stabilized.targetForwardSpeedMps,
+        0.0,
+        1.0e-9,
+        "keypad RCS silently rewrote the Assisted forward-speed setpoint"
+    );
+
+    for (int i = 0; i < 20; ++i)
+    {
+        stepRcs(
+            stabilized,
+            stabilizedPosition,
+            frame,
+            params,
+            0.05f,
+            0.0f,
+            0.0f,
+            0.0f
+        );
+    }
+
+    require(
+        glm::length(stabilized.localVelocityMps) < pushedSpeed * 0.25,
+        "Assisted stabilization did not remove released keypad translation"
+    );
+}
+
+void testManoeuvreGasDrainsLocksAndRecharges()
+{
+    const auto frame = makeFrame();
+    ShipParams params = makeParams();
+    params.manoeuvreThrusterAccel = 2.0f;
+    params.manoeuvreGasUsePerSecond = 0.50f;
+    params.manoeuvreGasRechargePerSecond = 0.10f;
+    params.manoeuvreGasRestartFraction = 0.20f;
+
+    game::navigation::DynamicMotionState motion;
+    motion.localControlLaw = game::navigation::LocalFlightControlLaw::Newtonian;
+
+    auto position = world::coordinates::makeWorldPositionFromMeters(
+        frame.localToWorldPosition(glm::dvec3(0.0))
+    );
+
+    for (int i = 0; i < 8 && !motion.manoeuvreGasDepleted; ++i)
+        stepRcs(motion, position, frame, params, 0.5f, 1.0f, 0.0f, 0.0f);
+
+    require(motion.manoeuvreGasDepleted, "manoeuvre gas never reached depletion lockout");
+    requireNear(
+        motion.manoeuvreGasPressure01,
+        0.0,
+        1.0e-9,
+        "depleted manoeuvre gas did not clamp to zero"
+    );
+
+    const glm::dvec3 velocityAtDepletion = motion.localVelocityMps;
+    stepRcs(motion, position, frame, params, 0.5f, 1.0f, 0.0f, 0.0f);
+    requireNear(
+        glm::length(motion.localVelocityMps - velocityAtDepletion),
+        0.0,
+        1.0e-9,
+        "depleted manoeuvre thrusters still produced delta-v"
+    );
+
+    for (int i = 0; i < 10 && motion.manoeuvreGasDepleted; ++i)
+        stepRcs(motion, position, frame, params, 0.5f, 0.0f, 0.0f, 0.0f);
+
+    require(!motion.manoeuvreGasDepleted, "manoeuvre gas did not restart after repressurization");
+    require(
+        motion.manoeuvreGasPressure01 >= params.manoeuvreGasRestartFraction - 1.0e-9,
+        "manoeuvre gas restart ignored the configured pressure threshold"
+    );
+
+    const double speedBeforeRestart = glm::length(motion.localVelocityMps);
+    stepRcs(motion, position, frame, params, 0.1f, 1.0f, 0.0f, 0.0f);
+    require(
+        glm::length(motion.localVelocityMps) > speedBeforeRestart + 0.1,
+        "repressurized manoeuvre thrusters did not resume"
     );
 }
 
@@ -745,6 +928,9 @@ int main()
 {
     try
     {
+        testNewtonianRcsCanCreepPastControlledSpeedEnvelope();
+        testAssistedRcsIsSpeedBoundAndStabilizedAfterRelease();
+        testManoeuvreGasDrainsLocksAndRecharges();
         testNewtonianCoastsWithoutInput();
         testNewtonianHullDirectionDoesNotRotateVelocity();
         testNewtonianThrustAndLocalSpeedCap();

@@ -48,6 +48,8 @@ try:
         "currentVelocityMps",
         "terminalForward",
         "minimumTurnRadiusMeters",
+        "minimumInteriorSupportDistance",
+        "transitionBudget",
         "allowPolylineFallback = false",
         "rotationMinimizingOrientations",
         "terminalTwist",
@@ -115,6 +117,15 @@ try:
             raise AssertionError(
                 f"manual guidance refresh mixes planning/authoritative frame {token!r}"
             )
+
+    if "manualPlan.fixedTunnel.valid && !forceRebuild" not in refresh:
+        raise AssertionError(
+            "initial CALCULATE ROUTE no longer reuses the accepted trajectory backbone"
+        )
+    if "const bool reconnectCurrentPose = true;" in refresh:
+        raise AssertionError(
+            "initial manual tunnel was regressed into unconditional reconnect planning"
+        )
 
     for token in (
         "forceRebuild",

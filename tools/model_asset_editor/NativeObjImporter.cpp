@@ -21,6 +21,7 @@ namespace elite::model_asset::editor
 namespace
 {
 constexpr float Epsilon = 1.0e-7f;
+constexpr double RelativeTriangleAreaEpsilon = 1.0e-14;
 constexpr float CreaseCos = 0.906307787f; // cos(25 deg)
 
 struct CornerKey
@@ -56,6 +57,42 @@ SourceEdge edgeKey(int a, int b)
 {
     if (a > b) std::swap(a, b);
     return {a, b};
+}
+
+bool usableTriangle(
+    const glm::vec3& a,
+    const glm::vec3& b,
+    const glm::vec3& c,
+    glm::vec3& normal
+)
+{
+    // Degeneracy is scale-relative. A fixed world-space area threshold rejects
+    // perfectly valid small meshes (notably thin/small LOD parts). Compare
+    // area^2 against edgeLength^4 and use double precision for the predicate.
+    const glm::dvec3 ad(a);
+    const glm::dvec3 bd(b);
+    const glm::dvec3 cd(c);
+    const glm::dvec3 ab = bd - ad;
+    const glm::dvec3 ac = cd - ad;
+    const glm::dvec3 bc = cd - bd;
+    const double maxEdge2 = std::max({
+        glm::dot(ab, ab),
+        glm::dot(ac, ac),
+        glm::dot(bc, bc)
+    });
+    if (!std::isfinite(maxEdge2) || maxEdge2 <= 0.0)
+        return false;
+
+    const glm::dvec3 areaVector = glm::cross(ab, ac);
+    const double area2 = glm::dot(areaVector, areaVector);
+    if (!std::isfinite(area2) ||
+        area2 <= maxEdge2 * maxEdge2 * RelativeTriangleAreaEpsilon)
+    {
+        return false;
+    }
+
+    normal = glm::normalize(glm::vec3(areaVector));
+    return true;
 }
 
 std::string semanticId(std::string name)
@@ -165,6 +202,9 @@ bool importObjNative(
     };
 
     std::int32_t polygonId = 0;
+    std::size_t sourceFaces = 0;
+    std::size_t candidateTriangles = 0;
+    std::size_t rejectedDegenerateTriangles = 0;
     struct EdgeBuild
     {
         Edge edge;
@@ -181,6 +221,7 @@ bool importObjNative(
         std::size_t offset = 0;
         for (std::size_t face = 0; face < shape.mesh.num_face_vertices.size(); ++face, ++polygonId)
         {
+            ++sourceFaces;
             const int fv = shape.mesh.num_face_vertices[face];
             if (fv < 3) { offset += static_cast<std::size_t>(std::max(fv, 0)); continue; }
 
@@ -194,6 +235,7 @@ bool importObjNative(
             const tinyobj::index_t i0 = shape.mesh.indices[offset];
             for (int k = 1; k < fv - 1; ++k)
             {
+                ++candidateTriangles;
                 tinyobj::index_t corners[3] {
                     i0,
                     shape.mesh.indices[offset + static_cast<std::size_t>(k)],
@@ -207,9 +249,12 @@ bool importObjNative(
                 const glm::vec3 a = out.vertices[vi[0]].position;
                 const glm::vec3 b = out.vertices[vi[1]].position;
                 const glm::vec3 c = out.vertices[vi[2]].position;
-                const glm::vec3 cross = glm::cross(b - a, c - a);
-                if (glm::dot(cross, cross) <= Epsilon) continue;
-                const glm::vec3 faceNormal = glm::normalize(cross);
+                glm::vec3 faceNormal(0.0f);
+                if (!usableTriangle(a, b, c, faceNormal))
+                {
+                    ++rejectedDegenerateTriangles;
+                    continue;
+                }
 
                 const std::int32_t triangleIndex = static_cast<std::int32_t>(out.triangles.size());
                 out.triangles.push_back({vi[0], vi[1], vi[2], polygonId, materialIndex, smoothingGroup});
@@ -244,7 +289,13 @@ bool importObjNative(
 
     if (out.vertices.empty() || out.triangles.empty())
     {
-        setError(error, "OBJ contains no usable triangles: " + path.string());
+        std::ostringstream message;
+        message << "OBJ contains no usable triangles: " << path.string()
+                << " [vertices=" << out.vertices.size()
+                << ", faces=" << sourceFaces
+                << ", candidates=" << candidateTriangles
+                << ", degenerate=" << rejectedDegenerateTriangles << ']';
+        setError(error, message.str());
         return false;
     }
 

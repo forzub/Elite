@@ -3,8 +3,11 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <sstream>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include <glm/glm.hpp>
 
@@ -70,10 +73,13 @@ bool importRuntimeAssembly(
     const std::string& assetId,
     const std::string& displayName,
     ModelAsset& out,
-    std::string* error
+    std::string* error,
+    std::string* warning,
+    ImportProgressCallback progress
 )
 {
     if (error) error->clear();
+    if (warning) warning->clear();
     try
     {
         game::ship::geometry::ObjectAssemblyRegistry::ensureInitialized();
@@ -90,6 +96,32 @@ bool importRuntimeAssembly(
 
         std::unordered_map<std::string, std::int32_t> geometryBySource;
         std::unordered_map<std::string, std::int32_t> moduleNodeById;
+        std::vector<std::string> warnings;
+
+        std::unordered_set<std::string> countedGeometrySources;
+        std::size_t totalObjLoads = 0;
+        for (const auto& module : assembly.modules)
+        {
+            for (const auto& part : module.meshes)
+            {
+                const std::string sourceKey = part.lod0Path + "\n" + part.lod1Path;
+                if (!countedGeometrySources.insert(sourceKey).second)
+                    continue;
+                if (!part.lod0Path.empty())
+                    ++totalObjLoads;
+                if (!part.lod1Path.empty() && part.lod1Path != part.lod0Path)
+                    ++totalObjLoads;
+            }
+        }
+        std::size_t completedObjLoads = 0;
+        auto report = [&](
+            const std::string& stage,
+            const std::filesystem::path& path = std::filesystem::path())
+        {
+            if (progress)
+                progress(ImportProgress{stage, completedObjLoads, totalObjLoads, path});
+        };
+        report("ASSEMBLY");
 
         for (const auto& module : assembly.modules)
         {
@@ -142,16 +174,34 @@ bool importRuntimeAssembly(
 
                     MeshLod lod0;
                     std::string importError;
-                    if (!importObjNative(sourceMeshPath(sourceRoot, part.lod0Path), asset, lod0, &importError))
+                    const auto lod0Path = sourceMeshPath(sourceRoot, part.lod0Path);
+                    report("READ / PARSE / TOPOLOGY", lod0Path);
+                    if (!importObjNative(lod0Path, asset, lod0, &importError))
                         throw std::runtime_error(importError);
+                    ++completedObjLoads;
+                    report("ASSEMBLE", lod0Path);
                     geometry.lods.push_back(std::move(lod0));
 
                     if (!part.lod1Path.empty() && part.lod1Path != part.lod0Path)
                     {
                         MeshLod lod1;
-                        if (!importObjNative(sourceMeshPath(sourceRoot, part.lod1Path), asset, lod1, &importError))
-                            throw std::runtime_error(importError);
-                        geometry.lods.push_back(std::move(lod1));
+                        const auto lod1Path = sourceMeshPath(sourceRoot, part.lod1Path);
+                        report("READ / PARSE / TOPOLOGY", lod1Path);
+                        const bool lod1Ok = importObjNative(
+                            lod1Path, asset, lod1, &importError);
+                        ++completedObjLoads;
+                        report("ASSEMBLE", lod1Path);
+                        if (!lod1Ok)
+                        {
+                            // The editor is a repair tool. A broken optional LOD1
+                            // must not make the whole assembly impossible to open;
+                            // keep the valid LOD0 and surface the exact diagnostic.
+                            warnings.push_back(part.meshId + " LOD1 skipped: " + importError);
+                        }
+                        else
+                        {
+                            geometry.lods.push_back(std::move(lod1));
+                        }
                     }
 
                     geometryIndex = static_cast<std::int32_t>(asset.geometries.size());
@@ -207,7 +257,19 @@ bool importRuntimeAssembly(
 
         asset.minBounds = haveBounds ? minBounds : glm::vec3(-1.0f);
         asset.maxBounds = haveBounds ? maxBounds : glm::vec3(1.0f);
+        completedObjLoads = totalObjLoads;
+        report("ASSEMBLY");
         out = std::move(asset);
+        if (warning && !warnings.empty())
+        {
+            std::ostringstream text;
+            for (std::size_t i = 0; i < warnings.size(); ++i)
+            {
+                if (i) text << " | ";
+                text << warnings[i];
+            }
+            *warning = text.str();
+        }
         return true;
     }
     catch (const std::exception& ex)

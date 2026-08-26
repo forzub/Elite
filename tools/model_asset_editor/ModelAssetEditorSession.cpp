@@ -4,8 +4,14 @@
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <iterator>
+#include <map>
+#include <set>
 #include <limits>
 #include <stdexcept>
+#include <vector>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -14,6 +20,7 @@
 
 #include "src/model_asset/ModelAssetBinary.h"
 #include "tools/model_asset_editor/RuntimeAssemblyImporter.h"
+#include "tools/model_asset_editor/GeometryInstanceFitter.h"
 
 namespace elite::model_asset::editor
 {
@@ -29,6 +36,174 @@ glm::vec3 jsonVec3(const json& value, const glm::vec3& fallback)
 {
     if (!value.is_array() || value.size() != 3) return fallback;
     return glm::vec3(value[0].get<float>(), value[1].get<float>(), value[2].get<float>());
+}
+
+double diagnosticTriangleArea(const MeshLod& lod, const Triangle& triangle)
+{
+    if (triangle.a >= lod.vertices.size() ||
+        triangle.b >= lod.vertices.size() ||
+        triangle.c >= lod.vertices.size())
+        return 0.0;
+    const glm::dvec3 a(lod.vertices[triangle.a].position);
+    const glm::dvec3 b(lod.vertices[triangle.b].position);
+    const glm::dvec3 c(lod.vertices[triangle.c].position);
+    return 0.5 * glm::length(glm::cross(b - a, c - a));
+}
+
+std::uint64_t estimatedGeometryBinaryBytes(const GeometryDefinition& geometry)
+{
+    // Mirrors the v2 GEOM payload layout. This is intentionally an estimate of
+    // the geometry payload only; chunk headers and the other asset chunks are
+    // accounted for by the actual saved file size shown separately.
+    std::uint64_t bytes = 0;
+    const auto stringBytes = [](const std::string& value) -> std::uint64_t {
+        return sizeof(std::uint32_t) + static_cast<std::uint64_t>(value.size());
+    };
+    bytes += stringBytes(geometry.id);
+    bytes += stringBytes(geometry.sourceLod0);
+    bytes += stringBytes(geometry.sourceLod1);
+    bytes += sizeof(std::uint8_t);
+    bytes += sizeof(std::uint32_t);
+    for (const auto& lod : geometry.lods)
+    {
+        bytes += 6u * sizeof(float); // min/max bounds
+        bytes += sizeof(std::uint32_t);
+        bytes += static_cast<std::uint64_t>(lod.vertices.size()) * 8u * sizeof(float);
+        bytes += sizeof(std::uint32_t);
+        bytes += static_cast<std::uint64_t>(lod.triangles.size()) *
+            (5u * sizeof(std::uint32_t) + sizeof(std::int32_t));
+        bytes += sizeof(std::uint32_t);
+        bytes += static_cast<std::uint64_t>(lod.edges.size()) *
+            (2u * sizeof(std::uint32_t) + 2u * sizeof(std::int32_t) +
+             sizeof(std::uint32_t) + sizeof(std::uint8_t));
+    }
+    return bytes;
+}
+
+std::filesystem::path editorSourceFilePath(
+    const std::filesystem::path& sourceRoot,
+    const std::string& runtimePath)
+{
+    if (runtimePath.empty()) return {};
+    std::filesystem::path path(runtimePath);
+    if (path.is_absolute()) return path;
+    const auto direct = sourceRoot / path;
+    if (std::filesystem::exists(direct)) return direct;
+    return sourceRoot / "src" / path;
+}
+
+std::uint64_t safeFileBytes(const std::filesystem::path& path)
+{
+    if (path.empty()) return 0;
+    std::error_code ec;
+    const auto bytes = std::filesystem::file_size(path, ec);
+    return ec ? 0 : static_cast<std::uint64_t>(bytes);
+}
+
+std::size_t diagnosticUniquePositionCount(const MeshLod& lod)
+{
+    std::vector<glm::vec3> positions;
+    positions.reserve(lod.vertices.size());
+    for (const auto& vertex : lod.vertices)
+        positions.push_back(vertex.position);
+    std::sort(positions.begin(), positions.end(), [](const glm::vec3& a, const glm::vec3& b) {
+        if (a.x != b.x) return a.x < b.x;
+        if (a.y != b.y) return a.y < b.y;
+        return a.z < b.z;
+    });
+    return static_cast<std::size_t>(std::distance(
+        positions.begin(),
+        std::unique(positions.begin(), positions.end(), [](const glm::vec3& a, const glm::vec3& b) {
+            return a.x == b.x && a.y == b.y && a.z == b.z;
+        })));
+}
+
+void appendInstanceFitDiagnostic(
+    const ModelAsset& asset,
+    std::size_t referenceNodeIndex,
+    std::size_t targetNodeIndex,
+    const GeometryInstanceFit& fit) noexcept
+{
+    try
+    {
+        if (referenceNodeIndex >= asset.nodes.size() || targetNodeIndex >= asset.nodes.size())
+            return;
+        const Node& referenceNode = asset.nodes[referenceNodeIndex];
+        const Node& targetNode = asset.nodes[targetNodeIndex];
+        if (referenceNode.geometryIndex < 0 || targetNode.geometryIndex < 0)
+            return;
+        const auto referenceGeometryIndex = static_cast<std::size_t>(referenceNode.geometryIndex);
+        const auto targetGeometryIndex = static_cast<std::size_t>(targetNode.geometryIndex);
+        if (referenceGeometryIndex >= asset.geometries.size() ||
+            targetGeometryIndex >= asset.geometries.size())
+            return;
+
+        const std::filesystem::path logPath =
+            std::filesystem::path("build") / "logs" / "model_asset_instance_fit.log";
+        std::filesystem::create_directories(logPath.parent_path());
+        std::ofstream out(logPath, std::ios::app);
+        if (!out)
+            return;
+
+        const auto materialName = [&](std::int32_t index) -> std::string {
+            if (index < 0 || static_cast<std::size_t>(index) >= asset.materials.size())
+                return std::string("<none:") + std::to_string(index) + ">";
+            const auto& material = asset.materials[static_cast<std::size_t>(index)];
+            return material.id + " [" + material.sourceName + "]";
+        };
+        const auto dumpGeometry = [&](const char* label, const GeometryDefinition& geometry) {
+            out << label << " id=" << geometry.id
+                << " lod0=" << geometry.sourceLod0
+                << " lod1=" << geometry.sourceLod1 << '\n';
+            for (std::size_t li = 0; li < geometry.lods.size(); ++li)
+            {
+                const MeshLod& lod = geometry.lods[li];
+                std::map<std::int32_t, double> materialArea;
+                double totalArea = 0.0;
+                for (const Triangle& triangle : lod.triangles)
+                {
+                    const double area = diagnosticTriangleArea(lod, triangle);
+                    totalArea += area;
+                    materialArea[triangle.materialIndex] += area;
+                }
+                out << "  LOD" << li
+                    << " vertices=" << lod.vertices.size()
+                    << " unique_positions=" << diagnosticUniquePositionCount(lod)
+                    << " triangles=" << lod.triangles.size()
+                    << " edges=" << lod.edges.size()
+                    << " area=" << std::setprecision(12) << totalArea
+                    << " bounds_min=(" << lod.minBounds.x << ',' << lod.minBounds.y << ',' << lod.minBounds.z << ')'
+                    << " bounds_max=(" << lod.maxBounds.x << ',' << lod.maxBounds.y << ',' << lod.maxBounds.z << ")\n";
+                for (const auto& [materialIndex, area] : materialArea)
+                    out << "    material " << materialIndex << " " << materialName(materialIndex)
+                        << " area=" << std::setprecision(12) << area << '\n';
+            }
+        };
+
+        out << "\n=== INSTANCE FIT ===\n";
+        out << "reference node=" << referenceNode.id << " G" << referenceGeometryIndex << '\n';
+        out << "target    node=" << targetNode.id << " G" << targetGeometryIndex << '\n';
+        out << "identity_basis=LOD0; lower_lods_are_independent_and_not_fit_gates\n";
+        out << "result valid=" << fit.valid
+            << " geometry_matched=" << fit.geometryMatched
+            << " material_compatible=" << fit.materialCompatible
+            << " message=" << fit.message << '\n';
+        out << "rms_m=" << fit.rmsErrorMeters
+            << " max_m=" << fit.maxErrorMeters
+            << " tolerance_m=" << fit.toleranceMeters
+            << " compared_vertices=" << fit.comparedVertices << '\n';
+        out << "translation=(" << fit.translation.x << ',' << fit.translation.y << ',' << fit.translation.z << ")\n";
+        out << "rotation_columns:\n";
+        for (int column = 0; column < 3; ++column)
+            out << "  (" << fit.rotation[column].x << ',' << fit.rotation[column].y << ',' << fit.rotation[column].z << ")\n";
+        dumpGeometry("REFERENCE", asset.geometries[referenceGeometryIndex]);
+        dumpGeometry("TARGET", asset.geometries[targetGeometryIndex]);
+        out << "=== END INSTANCE FIT ===\n";
+    }
+    catch (...)
+    {
+        // Diagnostics must never alter editor behaviour.
+    }
 }
 
 
@@ -122,6 +297,130 @@ glm::mat3 eulerRotation(const glm::vec3& deg)
 glm::vec3 eulerDegrees(const glm::quat& q)
 {
     return glm::degrees(glm::eulerAngles(glm::normalize(q)));
+}
+
+
+struct RigidTransform
+{
+    glm::mat3 rotation {1.0f};
+    glm::vec3 translation {0.0f};
+};
+
+RigidTransform nodeRigidTransform(const Node& node)
+{
+    RigidTransform out;
+    out.rotation = eulerRotation(node.localRotationDeg);
+    out.translation = node.localPosition + node.pivot - out.rotation * node.pivot;
+    return out;
+}
+
+RigidTransform composeRigid(const RigidTransform& a, const RigidTransform& b)
+{
+    return {
+        a.rotation * b.rotation,
+        a.rotation * b.translation + a.translation
+    };
+}
+
+RigidTransform inverseRigid(const RigidTransform& value)
+{
+    const glm::mat3 r = glm::transpose(value.rotation);
+    return {r, -(r * value.translation)};
+}
+
+glm::vec3 transformPoint(const RigidTransform& transform, const glm::vec3& point)
+{
+    return transform.rotation * point + transform.translation;
+}
+
+glm::vec3 transformDirection(const RigidTransform& transform, const glm::vec3& direction)
+{
+    const glm::vec3 mapped = transform.rotation * direction;
+    const float n2 = glm::dot(mapped, mapped);
+    return n2 > 1.0e-12f ? mapped / std::sqrt(n2) : direction;
+}
+
+void setNodeRigidTransform(Node& node, const RigidTransform& transform, const glm::vec3& pivot)
+{
+    node.pivot = pivot;
+    node.localRotationDeg = eulerDegrees(glm::quat_cast(transform.rotation));
+    node.localPosition = transform.translation - pivot + transform.rotation * pivot;
+}
+
+glm::mat3 inertiaMatrix(const RigidBodyProperties& physics)
+{
+    glm::mat3 out(0.0f);
+    out[0][0] = physics.inertiaDiagonal.x;
+    out[1][1] = physics.inertiaDiagonal.y;
+    out[2][2] = physics.inertiaDiagonal.z;
+    out[0][1] = out[1][0] = physics.inertiaProducts.x;
+    out[0][2] = out[2][0] = physics.inertiaProducts.y;
+    out[1][2] = out[2][1] = physics.inertiaProducts.z;
+    return out;
+}
+
+void storeInertiaMatrix(RigidBodyProperties& physics, const glm::mat3& inertia)
+{
+    physics.inertiaDiagonal = {
+        inertia[0][0],
+        inertia[1][1],
+        inertia[2][2]
+    };
+    physics.inertiaProducts = {
+        inertia[0][1],
+        inertia[0][2],
+        inertia[1][2]
+    };
+}
+
+// Re-express node-local authoring data after a baked geometry transform F has
+// been moved from the mesh into the node transform. World-space placement must
+// remain unchanged: newLocal = inverse(F) * oldLocal.
+void rebaseNodeLocalData(ModelAsset& asset, std::size_t nodeIndex, const RigidTransform& inverseFit)
+{
+    auto& node = asset.nodes[nodeIndex];
+
+    node.joint.pivot = transformPoint(inverseFit, node.joint.pivot);
+    node.joint.axis = transformDirection(inverseFit, node.joint.axis);
+
+    node.physics.centerOfMass = transformPoint(inverseFit, node.physics.centerOfMass);
+    const glm::mat3 oldInertia = inertiaMatrix(node.physics);
+    const glm::mat3 newInertia =
+        inverseFit.rotation * oldInertia * glm::transpose(inverseFit.rotation);
+    storeInertiaMatrix(node.physics, newInertia);
+
+    for (auto& collision : asset.collisionVolumes)
+    {
+        if (collision.parentNodeIndex != static_cast<std::int32_t>(nodeIndex))
+            continue;
+        collision.localPosition = transformPoint(inverseFit, collision.localPosition);
+        const glm::mat3 oldRotation = eulerRotation(collision.localRotationDeg);
+        collision.localRotationDeg = eulerDegrees(
+            glm::quat_cast(inverseFit.rotation * oldRotation));
+    }
+
+    for (auto& socket : asset.sockets)
+    {
+        if (socket.parentNodeIndex != static_cast<std::int32_t>(nodeIndex))
+            continue;
+        socket.localPosition = transformPoint(inverseFit, socket.localPosition);
+        const glm::mat3 oldRotation = eulerRotation(socket.localRotationDeg);
+        socket.localRotationDeg = eulerDegrees(
+            glm::quat_cast(inverseFit.rotation * oldRotation));
+    }
+
+    // Direct child transforms are expressed in this node's local coordinate
+    // system. Rebase only their relationship to the parent; their own local
+    // collision/socket/joint metadata remains in the child's unchanged frame.
+    for (std::size_t childIndex = 0; childIndex < asset.nodes.size(); ++childIndex)
+    {
+        auto& child = asset.nodes[childIndex];
+        if (child.parentIndex != static_cast<std::int32_t>(nodeIndex))
+            continue;
+        const RigidTransform rebased =
+            composeRigid(inverseFit, nodeRigidTransform(child));
+        setNodeRigidTransform(child, rebased, child.pivot);
+    }
 }
 
 struct PrimitiveMass
@@ -396,6 +695,26 @@ void ModelAssetEditorSession::sendStatus(
     m_server.broadcastText(payload.dump());
 }
 
+
+void ModelAssetEditorSession::sendProgress(
+    const std::string& activity,
+    const std::string& stage,
+    std::size_t completed,
+    std::size_t total,
+    const std::filesystem::path& path
+)
+{
+    m_server.broadcastText(json({
+        {"type", "progress"},
+        {"activity", activity},
+        {"stage", stage},
+        {"completed", completed},
+        {"total", total},
+        {"path", path.empty() ? std::string() : path.generic_string()},
+        {"dirty", m_dirty}
+    }).dump());
+}
+
 void ModelAssetEditorSession::sendCatalog()
 {
     json items = json::array();
@@ -412,17 +731,26 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     m_selectedId = id;
     ModelAsset loaded;
     std::string error;
+    std::string warning;
     const auto binary = compiledPath(id);
+    const auto importProgress = [&](const ImportProgress& update)
+    {
+        sendProgress(
+            "reading", update.stage, update.completed, update.total, update.path);
+    };
 
     if (!forceReimport && std::filesystem::exists(binary))
     {
         sendStatus("Reading " + binary.filename().string() + "...", false, "reading");
+        sendProgress("reading", "READ BINARY", 0, 1, binary);
         if (!ModelAssetBinary::load(binary.string(), loaded, &error))
         {
             if (error == "unsupported model asset version")
             {
                 sendStatus("Compiled asset format is obsolete; reimporting source...", false, "reading");
-                if (!importRuntimeAssembly(m_sourceRoot, it->type, it->id, it->displayName, loaded, &error))
+                if (!importRuntimeAssembly(
+                        m_sourceRoot, it->type, it->id, it->displayName, loaded,
+                        &error, &warning, importProgress))
                 {
                     sendStatus("Cannot reimport obsolete compiled asset: " + error, true);
                     return false;
@@ -437,13 +765,16 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         }
         else
         {
+            sendProgress("reading", "READ BINARY", 1, 1, binary);
             m_dirty = false;
         }
     }
     else
     {
         sendStatus("Importing source OBJ/assembly...", false, "reading");
-        if (!importRuntimeAssembly(m_sourceRoot, it->type, it->id, it->displayName, loaded, &error))
+        if (!importRuntimeAssembly(
+                m_sourceRoot, it->type, it->id, it->displayName, loaded,
+                &error, &warning, importProgress))
         {
             sendStatus("Cannot import source assembly: " + error, true);
             return false;
@@ -452,8 +783,12 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     }
 
     m_asset = std::move(loaded);
+    sendProgress("reading", "LOAD VIEW", 0, 1, binary);
     sendAsset();
-    sendStatus(forceReimport ? "Source assembly imported" : "Asset loaded");
+    if (!warning.empty())
+        sendStatus("Source imported with warning: " + warning);
+    else
+        sendStatus(forceReimport ? "Source assembly imported" : "Asset loaded");
     return true;
 }
 
@@ -463,13 +798,15 @@ bool ModelAssetEditorSession::saveAsset()
     std::string error;
     const auto path = compiledPath(m_selectedId);
     sendStatus("Writing " + path.filename().string() + "...", false, "writing");
+    sendProgress("writing", "SERIALIZE / WRITE", 0, 1, path);
     if (!ModelAssetBinary::save(path.string(), m_asset, &error))
     {
         sendStatus("Save failed: " + error, true);
         return false;
     }
+    sendProgress("writing", "SERIALIZE / WRITE", 1, 1, path);
     m_dirty = false;
-    sendStatus("Saved " + path.filename().string());
+    sendStatus("Saved binary; source OBJ/assembly unchanged");
     sendCatalog();
     return true;
 }
@@ -498,7 +835,11 @@ nlohmann::json ModelAssetEditorSession::serializeAsset() const
     for (std::size_t gi = 0; gi < m_asset.geometries.size(); ++gi)
     {
         const auto& geometry = m_asset.geometries[gi];
-        json g = {{"index", gi}, {"id", geometry.id}, {"sourceLod0", geometry.sourceLod0}, {"sourceLod1", geometry.sourceLod1}, {"surfaceMode", surfaceModeName(geometry.surfaceMode)}};
+        json usedBy = json::array();
+        for (const auto& node : m_asset.nodes)
+            if (node.geometryIndex == static_cast<std::int32_t>(gi))
+                usedBy.push_back(node.id);
+        json g = {{"index", gi}, {"id", geometry.id}, {"sourceLod0", geometry.sourceLod0}, {"sourceLod1", geometry.sourceLod1}, {"surfaceMode", surfaceModeName(geometry.surfaceMode)}, {"usageCount", usedBy.size()}, {"usedBy", std::move(usedBy)}, {"estimatedBinaryBytes", estimatedGeometryBinaryBytes(geometry)}};
         g["lods"] = json::array();
         for (std::size_t li = 0; li < geometry.lods.size(); ++li)
         {
@@ -550,6 +891,41 @@ nlohmann::json ModelAssetEditorSession::serializeAsset() const
         const auto& s = m_asset.sockets[si];
         out["sockets"].push_back({{"index", si}, {"id", s.id}, {"kind", s.kind}, {"moduleId", s.moduleId}, {"parentNodeIndex", s.parentNodeIndex}, {"localPosition", vec3Json(s.localPosition)}, {"localRotationDeg", vec3Json(s.localRotationDeg)}, {"extent", vec3Json(s.extent)}, {"enabled", s.enabled}, {"light", {{"type", lightTypeName(s.light.type)}, {"color", vec3Json(s.light.color)}, {"intensity", s.light.intensity}, {"rangeMeters", s.light.rangeMeters}, {"outerConeDeg", s.light.outerConeDeg}}}});
     }
+
+    std::uint64_t sourceBytes = 0;
+    std::uint64_t estimatedGeometryBytes = 0;
+    std::uint64_t estimatedUnusedGeometryBytes = 0;
+    std::size_t unusedGeometryCount = 0;
+    std::set<std::string> countedSourceFiles;
+    for (std::size_t gi = 0; gi < m_asset.geometries.size(); ++gi)
+    {
+        const auto& geometry = m_asset.geometries[gi];
+        const auto geometryBytes = estimatedGeometryBinaryBytes(geometry);
+        estimatedGeometryBytes += geometryBytes;
+        const bool used = std::any_of(
+            m_asset.nodes.begin(), m_asset.nodes.end(),
+            [gi](const Node& node) { return node.geometryIndex == static_cast<std::int32_t>(gi); });
+        if (!used)
+        {
+            ++unusedGeometryCount;
+            estimatedUnusedGeometryBytes += geometryBytes;
+        }
+        for (const std::string* source : {&geometry.sourceLod0, &geometry.sourceLod1})
+        {
+            if (source->empty() || !countedSourceFiles.insert(*source).second) continue;
+            sourceBytes += safeFileBytes(editorSourceFilePath(m_sourceRoot, *source));
+        }
+    }
+    const auto binary = compiledPath(m_asset.assetId);
+    out["storage"] = {
+        {"binaryPath", binary.generic_string()},
+        {"savedBinaryBytes", safeFileBytes(binary)},
+        {"sourceMeshBytes", sourceBytes},
+        {"estimatedGeometryPayloadBytes", estimatedGeometryBytes},
+        {"estimatedUnusedGeometryBytes", estimatedUnusedGeometryBytes},
+        {"unusedGeometryCount", unusedGeometryCount},
+        {"sourceFilesReadOnly", true}
+    };
     return out;
 }
 
@@ -590,7 +966,7 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             if (message.contains("position")) n.localPosition = jsonVec3(message["position"], n.localPosition);
             if (message.contains("rotationDeg")) n.localRotationDeg = jsonVec3(message["rotationDeg"], n.localRotationDeg);
             if (message.contains("pivot")) n.pivot = jsonVec3(message["pivot"], n.pivot);
-            m_dirty = true; sendAsset(); return;
+            m_dirty = true; sendAsset(); sendStatus("Updated node transform: " + n.id); return;
         }
         if (command == "set_node_geometry")
         {
@@ -598,7 +974,61 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             const auto geometryIndex = message.value("geometryIndex", std::int32_t(-1));
             if (nodeIndex >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
             if (geometryIndex < NoIndex || geometryIndex >= static_cast<std::int32_t>(m_asset.geometries.size())) throw std::runtime_error("invalid geometry index");
-            m_asset.nodes[nodeIndex].geometryIndex = geometryIndex; m_dirty = true; sendAsset(); return;
+            m_asset.nodes[nodeIndex].geometryIndex = geometryIndex; m_dirty = true; sendAsset();
+            sendStatus("Node " + m_asset.nodes[nodeIndex].id + " now references " + (geometryIndex < 0 ? std::string("no geometry") : std::string("G") + std::to_string(geometryIndex))); return;
+        }
+        if (command == "fit_node_as_instance")
+        {
+            const auto nodeIndex = message.value("nodeIndex", std::size_t(-1));
+            const auto referenceNodeIndex = message.value("referenceNodeIndex", std::size_t(-1));
+            if (nodeIndex >= m_asset.nodes.size() || referenceNodeIndex >= m_asset.nodes.size())
+                throw std::runtime_error("invalid node/reference index");
+            if (nodeIndex == referenceNodeIndex)
+                throw std::runtime_error("select a different reference node");
+
+            auto& node = m_asset.nodes[nodeIndex];
+            const auto& referenceNode = m_asset.nodes[referenceNodeIndex];
+            if (node.geometryIndex < 0 || referenceNode.geometryIndex < 0)
+                throw std::runtime_error("both nodes must have geometry");
+            if (node.geometryIndex == referenceNode.geometryIndex)
+                throw std::runtime_error("nodes already share one geometry definition");
+
+            const auto targetGeometryIndex = static_cast<std::size_t>(node.geometryIndex);
+            const auto referenceGeometryIndex = static_cast<std::size_t>(referenceNode.geometryIndex);
+            const GeometryInstanceFit fit = fitGeometryAsRigidInstance(
+                m_asset.geometries[referenceGeometryIndex],
+                m_asset.geometries[targetGeometryIndex]);
+            appendInstanceFitDiagnostic(m_asset, referenceNodeIndex, nodeIndex, fit);
+            if (!fit.valid)
+                throw std::runtime_error(
+                    "cannot consolidate as instance: " + fit.message +
+                    "; see build/logs/model_asset_instance_fit.log");
+
+            const RigidTransform bakedFit {fit.rotation, fit.translation};
+            const RigidTransform inverseFit = inverseRigid(bakedFit);
+            const RigidTransform oldNodeTransform = nodeRigidTransform(node);
+            const glm::vec3 newPivot = transformPoint(inverseFit, node.pivot);
+
+            // All node-local semantic data must be expressed in the reference
+            // geometry frame before F moves from vertex data into Node.
+            rebaseNodeLocalData(m_asset, nodeIndex, inverseFit);
+            setNodeRigidTransform(
+                m_asset.nodes[nodeIndex],
+                composeRigid(oldNodeTransform, bakedFit),
+                newPivot);
+            m_asset.nodes[nodeIndex].geometryIndex =
+                static_cast<std::int32_t>(referenceGeometryIndex);
+
+            m_dirty = true;
+            sendAsset();
+            sendStatus(
+                "Consolidated " + m_asset.nodes[nodeIndex].id +
+                " as instance of " + referenceNode.id +
+                "; RMS=" + std::to_string(fit.rmsErrorMeters) +
+                " m, max=" + std::to_string(fit.maxErrorMeters) +
+                " m; old G" + std::to_string(targetGeometryIndex) +
+                " retained for review");
+            return;
         }
         if (command == "duplicate_node_instance")
         {
@@ -606,7 +1036,9 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             if (index >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
             Node clone = m_asset.nodes[index];
             clone.id = message.value("id", clone.id + "_instance");
-            m_asset.nodes.push_back(std::move(clone)); m_dirty = true; sendAsset(); return;
+            const std::string createdId = clone.id;
+            m_asset.nodes.push_back(std::move(clone)); m_dirty = true; sendAsset();
+            sendStatus("Created node instance: " + createdId); return;
         }
         if (command == "break_node_instance")
         {
@@ -617,12 +1049,15 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             auto geometry = m_asset.geometries[static_cast<std::size_t>(node.geometryIndex)];
             geometry.id = message.value("geometryId", geometry.id + "_unique");
             node.geometryIndex = static_cast<std::int32_t>(m_asset.geometries.size());
-            m_asset.geometries.push_back(std::move(geometry)); m_dirty = true; sendAsset(); return;
+            const auto newGeometryIndex = node.geometryIndex;
+            m_asset.geometries.push_back(std::move(geometry)); m_dirty = true; sendAsset();
+            sendStatus("Broke instance " + node.id + " into unique G" + std::to_string(newGeometryIndex)); return;
         }
         if (command == "delete_node")
         {
             const auto index = message.value("nodeIndex", std::size_t(-1));
             if (index >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
+            const std::string deletedId = m_asset.nodes[index].id;
             for (const auto& n : m_asset.nodes) if (n.parentIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("cannot delete node with children");
             for (const auto& c : m_asset.collisionVolumes) if (c.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent collision volumes first");
             for (const auto& s : m_asset.sockets) if (s.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent sockets first");
@@ -630,16 +1065,39 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             for (auto& n : m_asset.nodes) if (n.parentIndex > static_cast<std::int32_t>(index)) --n.parentIndex;
             for (auto& c : m_asset.collisionVolumes) if (c.parentNodeIndex > static_cast<std::int32_t>(index)) --c.parentNodeIndex;
             for (auto& s : m_asset.sockets) if (s.parentNodeIndex > static_cast<std::int32_t>(index)) --s.parentNodeIndex;
-            m_dirty = true; sendAsset(); return;
+            m_dirty = true; sendAsset(); sendStatus("Deleted node: " + deletedId); return;
         }
         if (command == "delete_unused_geometries")
         {
+            std::vector<std::string> deleted;
+            std::uint64_t estimatedBytes = 0;
             for (std::size_t gi = m_asset.geometries.size(); gi-- > 0; )
             {
                 const bool used = std::any_of(m_asset.nodes.begin(), m_asset.nodes.end(), [&](const Node& n) { return n.geometryIndex == static_cast<std::int32_t>(gi); });
-                if (!used) { m_asset.geometries.erase(m_asset.geometries.begin() + static_cast<std::ptrdiff_t>(gi)); remapGeometryAfterErase(m_asset, gi); }
+                if (!used)
+                {
+                    deleted.push_back("G" + std::to_string(gi) + " " + m_asset.geometries[gi].id);
+                    estimatedBytes += estimatedGeometryBinaryBytes(m_asset.geometries[gi]);
+                    m_asset.geometries.erase(m_asset.geometries.begin() + static_cast<std::ptrdiff_t>(gi));
+                    remapGeometryAfterErase(m_asset, gi);
+                }
             }
-            m_dirty = true; sendAsset(); return;
+            if (deleted.empty())
+            {
+                sendStatus("NO CHANGES: no unused geometry definitions");
+                return;
+            }
+            std::reverse(deleted.begin(), deleted.end());
+            std::string names;
+            for (std::size_t i = 0; i < deleted.size(); ++i)
+            {
+                if (i) names += ", ";
+                names += deleted[i];
+            }
+            m_dirty = true; sendAsset();
+            sendStatus("Deleted " + std::to_string(deleted.size()) + " unused geometries: " + names +
+                       "; estimated GEOM payload removed " + std::to_string(estimatedBytes) + " B; Save binary to update the file on disk");
+            return;
         }
         if (command == "create_radial_instances")
         {
@@ -661,7 +1119,8 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
                 clone.localRotationDeg = eulerDegrees(q * glm::quat(glm::radians(base.localRotationDeg)));
                 m_asset.nodes.push_back(std::move(clone));
             }
-            m_dirty = true; sendAsset(); return;
+            m_dirty = true; sendAsset();
+            sendStatus("Created " + std::to_string(count - 1) + " radial instances from " + base.id); return;
         }
         if (command == "set_joint")
         {
@@ -674,7 +1133,7 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             j.defaultRateDegPerSec = message.value("defaultRateDegPerSec", j.defaultRateDegPerSec);
             j.minAngleDeg = message.value("minAngleDeg", j.minAngleDeg); j.maxAngleDeg = message.value("maxAngleDeg", j.maxAngleDeg);
             j.breakable = message.value("breakable", j.breakable); j.breakForceN = message.value("breakForceN", j.breakForceN); j.breakTorqueNm = message.value("breakTorqueNm", j.breakTorqueNm);
-            m_dirty = true; sendAsset(); return;
+            m_dirty = true; sendAsset(); sendStatus("Updated joint: " + m_asset.nodes[index].id); return;
         }
         if (command == "set_physics")
         {
@@ -687,26 +1146,28 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             if (message.contains("centerOfMass")) p.centerOfMass = jsonVec3(message["centerOfMass"], p.centerOfMass);
             if (message.contains("inertiaDiagonal")) p.inertiaDiagonal = glm::max(jsonVec3(message["inertiaDiagonal"], p.inertiaDiagonal), glm::vec3(0.0f));
             if (message.contains("inertiaProducts")) p.inertiaProducts = jsonVec3(message["inertiaProducts"], p.inertiaProducts);
-            m_dirty = true; sendAsset(); return;
+            m_dirty = true; sendAsset(); sendStatus("Updated rigid-body properties: " + m_asset.nodes[index].id); return;
         }
         if (command == "estimate_physics")
         {
             const auto index = message.value("nodeIndex", std::size_t(-1));
             const float density = std::max(0.001f, message.value("densityKgM3", 780.0f));
             if (!estimatePhysicsFromCollision(m_asset, index, density)) throw std::runtime_error("node has no enabled local collision volumes");
-            m_dirty = true; sendAsset(); return;
+            m_dirty = true; sendAsset(); sendStatus("Estimated rigid-body properties from collision: " + m_asset.nodes[index].id); return;
         }
         if (command == "set_surface_mode")
         {
             const auto gi = message.value("geometryIndex", std::size_t(-1));
             if (gi >= m_asset.geometries.size()) throw std::runtime_error("invalid geometry index");
-            m_asset.geometries[gi].surfaceMode = surfaceModeFromName(message.value("surfaceMode", "closed")); m_dirty = true; sendAsset(); return;
+            m_asset.geometries[gi].surfaceMode = surfaceModeFromName(message.value("surfaceMode", "closed")); m_dirty = true; sendAsset();
+            sendStatus("Set G" + std::to_string(gi) + " surface mode to " + std::string(surfaceModeName(m_asset.geometries[gi].surfaceMode))); return;
         }
         if (command == "set_edge_render_mask")
         {
             const auto gi = message.value("geometryIndex", std::size_t(-1)), li = message.value("lodIndex", std::size_t(0)), ei = message.value("edgeIndex", std::size_t(-1));
             if (gi >= m_asset.geometries.size() || li >= m_asset.geometries[gi].lods.size() || ei >= m_asset.geometries[gi].lods[li].edges.size()) throw std::runtime_error("invalid edge index");
-            m_asset.geometries[gi].lods[li].edges[ei].renderMask = static_cast<std::uint8_t>(message.value("renderMask", 0) & 0xff); m_dirty = true; sendAsset(); return;
+            m_asset.geometries[gi].lods[li].edges[ei].renderMask = static_cast<std::uint8_t>(message.value("renderMask", 0) & 0xff); m_dirty = true; sendAsset();
+            sendStatus("Updated G" + std::to_string(gi) + " LOD" + std::to_string(li) + " edge " + std::to_string(ei)); return;
         }
         if (command == "add_collision")
         {
@@ -715,17 +1176,19 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             c.shape = collisionShapeFromName(message.value("shape", std::string("box")));
             c.localPosition = jsonVec3(message.value("position", json::array()), glm::vec3(0.0f)); c.localRotationDeg = jsonVec3(message.value("rotationDeg", json::array()), glm::vec3(0.0f));
             c.halfSize = glm::max(jsonVec3(message.value("halfSize", json::array()), glm::vec3(1.0f)), glm::vec3(0.001f)); c.radius = std::max(0.001f, message.value("radius", 1.0f)); c.halfHeight = std::max(0.0f, message.value("halfHeight", 1.0f));
-            m_asset.collisionVolumes.push_back(std::move(c)); m_dirty = true; sendAsset(); return;
+            const std::string createdId = c.id;
+            m_asset.collisionVolumes.push_back(std::move(c)); m_dirty = true; sendAsset(); sendStatus("Added collision volume: " + createdId); return;
         }
         if (command == "delete_collision")
         {
             const auto index = message.value("collisionIndex", std::size_t(-1)); if (index >= m_asset.collisionVolumes.size()) throw std::runtime_error("invalid collision index");
-            m_asset.collisionVolumes.erase(m_asset.collisionVolumes.begin() + static_cast<std::ptrdiff_t>(index)); m_dirty = true; sendAsset(); return;
+            const std::string deletedId = m_asset.collisionVolumes[index].id;
+            m_asset.collisionVolumes.erase(m_asset.collisionVolumes.begin() + static_cast<std::ptrdiff_t>(index)); m_dirty = true; sendAsset(); sendStatus("Deleted collision volume: " + deletedId); return;
         }
         if (command == "duplicate_collision")
         {
             const auto index = message.value("collisionIndex", std::size_t(-1)); if (index >= m_asset.collisionVolumes.size()) throw std::runtime_error("invalid collision index");
-            auto c = m_asset.collisionVolumes[index]; c.id += "_copy"; m_asset.collisionVolumes.push_back(std::move(c)); m_dirty = true; sendAsset(); return;
+            auto c = m_asset.collisionVolumes[index]; c.id += "_copy"; const std::string createdId = c.id; m_asset.collisionVolumes.push_back(std::move(c)); m_dirty = true; sendAsset(); sendStatus("Duplicated collision volume: " + createdId); return;
         }
         if (command == "set_collision")
         {
@@ -733,7 +1196,7 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             auto& c = m_asset.collisionVolumes[index]; c.shape = collisionShapeFromName(message.value("shape", std::string(collisionShapeName(c.shape))));
             if (message.contains("position")) c.localPosition = jsonVec3(message["position"], c.localPosition); if (message.contains("rotationDeg")) c.localRotationDeg = jsonVec3(message["rotationDeg"], c.localRotationDeg); if (message.contains("halfSize")) c.halfSize = glm::max(jsonVec3(message["halfSize"], c.halfSize), glm::vec3(0.001f));
             c.radius = std::max(0.001f, message.value("radius", c.radius)); c.halfHeight = std::max(0.0f, message.value("halfHeight", c.halfHeight)); if (message.contains("enabled")) c.enabled = message["enabled"].get<bool>();
-            m_dirty = true; sendAsset(); return;
+            m_dirty = true; sendAsset(); sendStatus("Updated collision volume: " + c.id); return;
         }
         if (command == "generate_radial_capsules")
         {
@@ -751,7 +1214,7 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
                 CollisionVolume c; c.id = "hit." + m_asset.nodes[nodeIndex].id + ".ring." + std::to_string(i + 1); c.moduleId = m_asset.nodes[nodeIndex].moduleId; c.parentNodeIndex = static_cast<std::int32_t>(nodeIndex); c.shape = CollisionShape::Capsule; c.localPosition = center + radial * ringRadius; c.radius = capsuleRadius; c.halfHeight = halfHeight;
                 c.localRotationDeg = eulerDegrees(glm::rotation(glm::vec3(0,1,0), glm::normalize(tangent))); m_asset.collisionVolumes.push_back(std::move(c));
             }
-            (void)ringAxis; m_dirty = true; sendAsset(); return;
+            (void)ringAxis; m_dirty = true; sendAsset(); sendStatus("Generated " + std::to_string(count) + " radial collision capsules for " + m_asset.nodes[nodeIndex].id); return;
         }
         if (command == "add_socket")
         {
@@ -759,19 +1222,21 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             if (s.parentNodeIndex < NoIndex || s.parentNodeIndex >= static_cast<std::int32_t>(m_asset.nodes.size())) throw std::runtime_error("invalid socket parent node");
             s.localPosition = jsonVec3(message.value("position", json::array()), glm::vec3(0.0f)); s.localRotationDeg = jsonVec3(message.value("rotationDeg", json::array()), glm::vec3(0.0f));
             if (s.kind == "light" || s.kind == "light_point") s.light.type = LightType::Point; else if (s.kind == "light_spot") s.light.type = LightType::Spot;
-            m_asset.sockets.push_back(std::move(s)); m_dirty = true; sendAsset(); return;
+            const std::string createdId = s.id;
+            m_asset.sockets.push_back(std::move(s)); m_dirty = true; sendAsset(); sendStatus("Added socket: " + createdId); return;
         }
         if (command == "delete_socket")
         {
             const auto index = message.value("socketIndex", std::size_t(-1)); if (index >= m_asset.sockets.size()) throw std::runtime_error("invalid socket index");
-            m_asset.sockets.erase(m_asset.sockets.begin() + static_cast<std::ptrdiff_t>(index)); m_dirty = true; sendAsset(); return;
+            const std::string deletedId = m_asset.sockets[index].id;
+            m_asset.sockets.erase(m_asset.sockets.begin() + static_cast<std::ptrdiff_t>(index)); m_dirty = true; sendAsset(); sendStatus("Deleted socket: " + deletedId); return;
         }
         if (command == "set_socket")
         {
             const auto index = message.value("socketIndex", std::size_t(-1)); if (index >= m_asset.sockets.size()) throw std::runtime_error("invalid socket index");
             auto& s = m_asset.sockets[index]; if (message.contains("position")) s.localPosition = jsonVec3(message["position"], s.localPosition); if (message.contains("rotationDeg")) s.localRotationDeg = jsonVec3(message["rotationDeg"], s.localRotationDeg); if (message.contains("enabled")) s.enabled = message["enabled"].get<bool>();
             if (message.contains("lightType")) s.light.type = lightTypeFromName(message["lightType"].get<std::string>()); if (message.contains("lightColor")) s.light.color = jsonVec3(message["lightColor"], s.light.color); s.light.intensity = message.value("lightIntensity", s.light.intensity); s.light.rangeMeters = message.value("lightRangeMeters", s.light.rangeMeters); s.light.outerConeDeg = message.value("lightOuterConeDeg", s.light.outerConeDeg);
-            m_dirty = true; sendAsset(); return;
+            m_dirty = true; sendAsset(); sendStatus("Updated socket: " + s.id); return;
         }
 
         sendStatus("Unknown editor command: " + command, true);

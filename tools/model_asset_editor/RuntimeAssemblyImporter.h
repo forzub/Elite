@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
+#include <functional>
 #include <string>
 
 #include "src/model_asset/ModelAsset.h"
@@ -8,6 +10,16 @@
 
 namespace elite::model_asset::editor
 {
+
+struct ImportProgress
+{
+    std::string stage;
+    std::size_t completed = 0;
+    std::size_t total = 0;
+    std::filesystem::path path;
+};
+
+using ImportProgressCallback = std::function<void(const ImportProgress&)>;
 
 // Transitional assembly importer: hierarchy still comes from the current
 // descriptor registry, but mesh data is parsed directly from source OBJ files
@@ -19,7 +31,9 @@ bool importRuntimeAssembly(
     const std::string& assetId,
     const std::string& displayName,
     ModelAsset& out,
-    std::string* error = nullptr
+    std::string* error = nullptr,
+    std::string* warning = nullptr,
+    ImportProgressCallback progress = {}
 );
 
 } // namespace elite::model_asset::editor

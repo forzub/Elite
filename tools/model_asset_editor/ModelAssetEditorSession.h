@@ -33,6 +33,12 @@ private:
     void sendCatalog();
     void sendAsset();
     void sendStatus(const std::string& message, bool error = false, const std::string& activity = "idle");
+    void sendProgress(
+        const std::string& activity,
+        const std::string& stage,
+        std::size_t completed,
+        std::size_t total,
+        const std::filesystem::path& path = {});
     bool selectAsset(const std::string& id, bool forceReimport);
     bool saveAsset();
     std::filesystem::path compiledPath(const std::string& id) const;

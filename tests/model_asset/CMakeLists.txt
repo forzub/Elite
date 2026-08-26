@@ -8,6 +8,8 @@ get_filename_component(ELITE_SOURCE_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOL
 add_executable(model_asset_tests
     ModelAssetBinaryTests.cpp
     "${ELITE_SOURCE_ROOT}/src/model_asset/ModelAssetBinary.cpp"
+    "${ELITE_SOURCE_ROOT}/tools/model_asset_editor/NativeObjImporter.cpp"
+    "${ELITE_SOURCE_ROOT}/tools/model_asset_editor/GeometryInstanceFitter.cpp"
 )
 target_include_directories(model_asset_tests PRIVATE "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")
 if(MSVC)

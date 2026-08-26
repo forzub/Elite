@@ -69,6 +69,8 @@ require(
     "moduleNodeById",
     "ShipAttachmentPoint",
     "JointType::Revolute",
+    "ImportProgressCallback",
+    "READ / PARSE / TOPOLOGY",
 )
 require(
     "src/assets/webui/model_asset_editor.html",
@@ -85,23 +87,51 @@ require(
     "Materials",
     "Light payload",
     "ioStatusBar",
+    "ioProgressOverlay",
+    "progressFill",
+    "LOAD VIEW",
     "Blender axes → Game",
     "ioActivity",
     "set_node_geometry",
+    "Fit as instance",
+    "fit_node_as_instance",
+    "Geometry definitions",
+    "Asset storage",
+    "requestDeleteUnusedGeometry",
+    "NO CHANGES",
+    "Source OBJ / assembly files are not modified",
 )
 require(
     "tools/model_asset_editor/ModelAssetEditorSession.cpp",
     '"reading"',
     '"writing"',
+    '"progress"',
+    "sendProgress",
     "generate_radial_capsules",
     "create_radial_instances",
     "estimatePhysicsFromCollision",
     "convertAssetBasisToCanonical",
     "delete_unused_geometries",
+    "fit_node_as_instance",
+    "rebaseNodeLocalData",
+    "estimatedGeometryBinaryBytes",
+    '"usageCount"',
+    '"sourceMeshBytes"',
+    "source OBJ/assembly unchanged",
+)
+
+require(
+    "tools/model_asset_editor/GeometryInstanceFitter.cpp",
+    "sameIndexedTopology",
+    "coarsePointCloudFit",
+    "principalFrame",
+    "validateBidirectionalPointCloud",
+    "fitGeometryAsRigidInstance",
+    "topology-independent point-cloud match",
 )
 
 cmake = text("CMakeLists.txt")
-if "ELITE_BUILD_ASSET_EDITOR" not in cmake or "EliteModelAsset" not in cmake or "NativeObjImporter.cpp" not in cmake:
+if "ELITE_BUILD_ASSET_EDITOR" not in cmake or "EliteModelAsset" not in cmake or "NativeObjImporter.cpp" not in cmake or "GeometryInstanceFitter.cpp" not in cmake:
     raise AssertionError("standalone asset-editor/native compiler targets are not wired")
 
 # Editor-first gate remains intact: no runtime model migration in this patch.

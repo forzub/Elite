@@ -1,10 +1,13 @@
 #include "src/model_asset/ModelAssetBinary.h"
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <limits>
+#include <map>
+#include <set>
 #include <sstream>
 #include <type_traits>
 
@@ -12,7 +15,10 @@ namespace elite::model_asset
 {
 namespace
 {
-constexpr std::array<char, 8> Magic {{'E','L','M','D','L','0','0','2'}};
+constexpr std::array<char, 8> ManifestMagicV3 {{'E','L','M','D','L','0','0','3'}};
+constexpr std::array<char, 8> LegacyMagicV2   {{'E','L','M','D','L','0','0','2'}};
+constexpr std::array<char, 8> MeshMagicV2     {{'E','L','M','S','H','0','0','2'}};
+constexpr std::uint32_t MeshPayloadFormatVersion = 2;
 constexpr std::uint32_t MaxCollectionCount = 50'000'000u;
 constexpr std::uint32_t MaxStringBytes = 16u * 1024u * 1024u;
 
@@ -90,6 +96,11 @@ struct Reader
 using ChunkWriter = void (*)(Writer&, const ModelAsset&);
 using ChunkReader = void (*)(Reader&, ModelAsset&);
 
+void setError(std::string* error, const std::string& value)
+{
+    if (error) *error = value;
+}
+
 void writeMeta(Writer& w, const ModelAsset& a)
 {
     w.string(a.assetId);
@@ -117,7 +128,9 @@ void readMeta(Reader& r, ModelAsset& a)
     a.sourceBasis.right = static_cast<AxisDirection>(right);
     a.sourceBasis.up = static_cast<AxisDirection>(up);
     a.sourceBasis.forward = static_cast<AxisDirection>(forward);
-    std::uint8_t canonicalized = 0; r.pod(canonicalized); a.sourceBasis.canonicalized = canonicalized != 0;
+    std::uint8_t canonicalized = 0;
+    r.pod(canonicalized);
+    a.sourceBasis.canonicalized = canonicalized != 0;
     r.vec3(a.minBounds);
     r.vec3(a.maxBounds);
 }
@@ -145,48 +158,35 @@ void readMaterials(Reader& r, ModelAsset& a)
         r.string(m.id); r.string(m.sourceName);
         r.vec4(m.baseColor); r.vec3(m.emissiveColor);
         r.pod(m.emissiveStrength); r.pod(m.metallic); r.pod(m.roughness);
-        std::uint8_t twoSided = 0; r.pod(twoSided); m.twoSided = twoSided != 0;
+        std::uint8_t twoSided = 0;
+        r.pod(twoSided);
+        m.twoSided = twoSided != 0;
         r.string(m.baseColorTexture); r.string(m.emissiveTexture);
     }
 }
 
-void writeGeom(Writer& w, const ModelAsset& a)
+// v3 GEOM is a lightweight manifest. Heavy MeshLod arrays live in one
+// <asset>.lodN.elmesh payload per LOD level.
+void writeGeomManifest(Writer& w, const ModelAsset& a)
 {
     w.pod(static_cast<std::uint32_t>(a.geometries.size()));
     for (const auto& g : a.geometries)
     {
         w.string(g.id);
-        w.string(g.sourceLod0);
-        w.string(g.sourceLod1);
         w.pod(static_cast<std::uint8_t>(g.surfaceMode));
+        w.pod(static_cast<std::uint32_t>(g.sourceLods.size()));
+        for (const auto& source : g.sourceLods)
+            w.string(source);
         w.pod(static_cast<std::uint32_t>(g.lods.size()));
         for (const auto& lod : g.lods)
         {
             w.vec3(lod.minBounds);
             w.vec3(lod.maxBounds);
-            w.pod(static_cast<std::uint32_t>(lod.vertices.size()));
-            for (const auto& v : lod.vertices)
-            {
-                w.vec3(v.position);
-                w.vec3(v.normal);
-                w.vec2(v.uv);
-            }
-            w.pod(static_cast<std::uint32_t>(lod.triangles.size()));
-            for (const auto& t : lod.triangles)
-            {
-                w.pod(t.a); w.pod(t.b); w.pod(t.c); w.pod(t.sourcePolygonId); w.pod(t.materialIndex); w.pod(t.smoothingGroupId);
-            }
-            w.pod(static_cast<std::uint32_t>(lod.edges.size()));
-            for (const auto& e : lod.edges)
-            {
-                w.pod(e.a); w.pod(e.b); w.pod(e.triangleA); w.pod(e.triangleB);
-                w.pod(e.flags); w.pod(e.renderMask);
-            }
         }
     }
 }
 
-void readGeom(Reader& r, ModelAsset& a)
+void readGeomManifest(Reader& r, ModelAsset& a)
 {
     std::uint32_t geometryCount = 0;
     if (!r.count(geometryCount)) return;
@@ -194,11 +194,16 @@ void readGeom(Reader& r, ModelAsset& a)
     for (auto& g : a.geometries)
     {
         r.string(g.id);
-        r.string(g.sourceLod0);
-        r.string(g.sourceLod1);
         std::uint8_t surface = 0;
         r.pod(surface);
         g.surfaceMode = static_cast<SurfaceMode>(surface);
+
+        std::uint32_t sourceCount = 0;
+        if (!r.count(sourceCount)) return;
+        g.sourceLods.resize(sourceCount);
+        for (auto& source : g.sourceLods)
+            r.string(source);
+
         std::uint32_t lodCount = 0;
         if (!r.count(lodCount)) return;
         g.lods.resize(lodCount);
@@ -206,29 +211,88 @@ void readGeom(Reader& r, ModelAsset& a)
         {
             r.vec3(lod.minBounds);
             r.vec3(lod.maxBounds);
-            std::uint32_t vertexCount = 0;
-            if (!r.count(vertexCount)) return;
-            lod.vertices.resize(vertexCount);
-            for (auto& v : lod.vertices)
-            {
-                r.vec3(v.position); r.vec3(v.normal); r.vec2(v.uv);
-            }
-            std::uint32_t triangleCount = 0;
-            if (!r.count(triangleCount)) return;
-            lod.triangles.resize(triangleCount);
-            for (auto& t : lod.triangles)
-            {
-                r.pod(t.a); r.pod(t.b); r.pod(t.c); r.pod(t.sourcePolygonId); r.pod(t.materialIndex); r.pod(t.smoothingGroupId);
-            }
-            std::uint32_t edgeCount = 0;
-            if (!r.count(edgeCount)) return;
-            lod.edges.resize(edgeCount);
-            for (auto& e : lod.edges)
-            {
-                r.pod(e.a); r.pod(e.b); r.pod(e.triangleA); r.pod(e.triangleB);
-                r.pod(e.flags); r.pod(e.renderMask);
-            }
         }
+    }
+}
+
+void writeMeshLod(Writer& w, const MeshLod& lod)
+{
+    w.vec3(lod.minBounds);
+    w.vec3(lod.maxBounds);
+    w.pod(static_cast<std::uint32_t>(lod.vertices.size()));
+    for (const auto& v : lod.vertices)
+    {
+        w.vec3(v.position);
+        w.vec3(v.normal);
+        w.vec2(v.uv);
+    }
+    w.pod(static_cast<std::uint32_t>(lod.triangles.size()));
+    for (const auto& t : lod.triangles)
+    {
+        w.pod(t.a); w.pod(t.b); w.pod(t.c);
+        w.pod(t.sourcePolygonId); w.pod(t.materialIndex); w.pod(t.smoothingGroupId);
+    }
+    w.pod(static_cast<std::uint32_t>(lod.edges.size()));
+    for (const auto& e : lod.edges)
+    {
+        w.pod(e.a); w.pod(e.b); w.pod(e.triangleA); w.pod(e.triangleB);
+        w.pod(e.flags); w.pod(e.renderMask);
+    }
+}
+
+void readMeshLod(Reader& r, MeshLod& lod)
+{
+    r.vec3(lod.minBounds);
+    r.vec3(lod.maxBounds);
+    std::uint32_t vertexCount = 0;
+    if (!r.count(vertexCount)) return;
+    lod.vertices.resize(vertexCount);
+    for (auto& v : lod.vertices)
+    {
+        r.vec3(v.position); r.vec3(v.normal); r.vec2(v.uv);
+    }
+    std::uint32_t triangleCount = 0;
+    if (!r.count(triangleCount)) return;
+    lod.triangles.resize(triangleCount);
+    for (auto& t : lod.triangles)
+    {
+        r.pod(t.a); r.pod(t.b); r.pod(t.c);
+        r.pod(t.sourcePolygonId); r.pod(t.materialIndex); r.pod(t.smoothingGroupId);
+    }
+    std::uint32_t edgeCount = 0;
+    if (!r.count(edgeCount)) return;
+    lod.edges.resize(edgeCount);
+    for (auto& e : lod.edges)
+    {
+        r.pod(e.a); r.pod(e.b); r.pod(e.triangleA); r.pod(e.triangleB);
+        r.pod(e.flags); r.pod(e.renderMask);
+    }
+}
+
+// Legacy v2 GEOM reader exists only so authored editor state can be migrated to
+// the v3 split package. New saves never write this layout.
+void readGeomLegacyV2(Reader& r, ModelAsset& a)
+{
+    std::uint32_t geometryCount = 0;
+    if (!r.count(geometryCount)) return;
+    a.geometries.resize(geometryCount);
+    for (auto& g : a.geometries)
+    {
+        r.string(g.id);
+        std::string sourceLod0;
+        std::string sourceLod1;
+        r.string(sourceLod0);
+        r.string(sourceLod1);
+        if (!sourceLod0.empty()) g.sourceLods.push_back(sourceLod0);
+        if (!sourceLod1.empty()) g.sourceLods.push_back(sourceLod1);
+        std::uint8_t surface = 0;
+        r.pod(surface);
+        g.surfaceMode = static_cast<SurfaceMode>(surface);
+        std::uint32_t lodCount = 0;
+        if (!r.count(lodCount)) return;
+        g.lods.resize(lodCount);
+        for (auto& lod : g.lods)
+            readMeshLod(r, lod);
     }
 }
 
@@ -330,7 +394,8 @@ void readSockets(Reader& r, ModelAsset& a)
     {
         r.string(s.id); r.string(s.kind); r.string(s.moduleId); r.pod(s.parentNodeIndex);
         r.vec3(s.localPosition); r.vec3(s.localRotationDeg); r.vec3(s.extent);
-        std::uint8_t lightType = 0; r.pod(lightType); s.light.type = static_cast<LightType>(lightType);
+        std::uint8_t lightType = 0;
+        r.pod(lightType); s.light.type = static_cast<LightType>(lightType);
         r.vec3(s.light.color); r.pod(s.light.intensity); r.pod(s.light.rangeMeters); r.pod(s.light.outerConeDeg);
         std::uint8_t enabled = 0;
         r.pod(enabled); s.enabled = enabled != 0;
@@ -344,113 +409,194 @@ struct ChunkSpec
     ChunkReader reader;
 };
 
-constexpr std::array<ChunkSpec, 6> Chunks {{
+constexpr std::array<ChunkSpec, 6> ManifestChunks {{
     {{{'M','E','T','A'}}, writeMeta, readMeta},
     {{{'M','A','T','L'}}, writeMaterials, readMaterials},
-    {{{'G','E','O','M'}}, writeGeom, readGeom},
+    {{{'G','E','O','M'}}, writeGeomManifest, readGeomManifest},
     {{{'N','O','D','E'}}, writeNodes, readNodes},
     {{{'C','O','L','L'}}, writeCollisions, readCollisions},
     {{{'S','O','C','K'}}, writeSockets, readSockets}
 }};
 
-const ChunkSpec* findChunk(const std::array<char, 4>& id)
+const ChunkSpec* findManifestChunk(const std::array<char, 4>& id)
 {
-    for (const auto& chunk : Chunks)
+    for (const auto& chunk : ManifestChunks)
         if (chunk.id == id)
             return &chunk;
     return nullptr;
 }
 
-void setError(std::string* error, const std::string& value)
+ChunkReader findLegacyChunkReader(const std::array<char, 4>& id)
 {
-    if (error) *error = value;
-}
+    if (id == std::array<char,4>{{'M','E','T','A'}}) return readMeta;
+    if (id == std::array<char,4>{{'M','A','T','L'}}) return readMaterials;
+    if (id == std::array<char,4>{{'G','E','O','M'}}) return readGeomLegacyV2;
+    if (id == std::array<char,4>{{'N','O','D','E'}}) return readNodes;
+    if (id == std::array<char,4>{{'C','O','L','L'}}) return readCollisions;
+    if (id == std::array<char,4>{{'S','O','C','K'}}) return readSockets;
+    return nullptr;
 }
 
-bool ModelAssetBinary::save(const std::string& path, const ModelAsset& asset, std::string* error)
+std::filesystem::path packageLodPayloadPath(const std::filesystem::path& manifestPath, std::size_t lodIndex)
 {
-    if (error) error->clear();
-    try
+    const std::string stem = manifestPath.stem().string();
+    return manifestPath.parent_path() /
+        (stem + ".lod" + std::to_string(lodIndex) + ".elmesh");
+}
+
+std::size_t maxLodCount(const ModelAsset& asset)
+{
+    std::size_t count = 0;
+    for (const auto& geometry : asset.geometries)
+        count = std::max(count, geometry.lods.size());
+    return count;
+}
+
+bool validateStableGeometryIds(const ModelAsset& asset, std::string* error)
+{
+    std::set<std::string> ids;
+    for (const auto& geometry : asset.geometries)
     {
-        const std::filesystem::path filePath(path);
-        if (filePath.has_parent_path())
-            std::filesystem::create_directories(filePath.parent_path());
-
-        std::ofstream file(path, std::ios::binary | std::ios::trunc);
-        if (!file)
+        if (geometry.id.empty())
         {
-            setError(error, "cannot open output file: " + path);
+            setError(error, "geometry has empty stable id");
             return false;
         }
-
-        file.write(Magic.data(), static_cast<std::streamsize>(Magic.size()));
-        Writer header {file};
-        header.pod(ModelAssetFormatVersion);
-        header.pod(static_cast<std::uint32_t>(Chunks.size()));
-        if (!header.ok) return false;
-
-        for (const auto& chunk : Chunks)
+        if (!ids.insert(geometry.id).second)
         {
-            std::ostringstream payload(std::ios::binary);
-            Writer writer {payload};
-            chunk.writer(writer, asset);
-            if (!writer.ok)
-            {
-                setError(error, "failed to serialize model asset chunk");
-                return false;
-            }
-            const std::string bytes = payload.str();
-            file.write(chunk.id.data(), 4);
-            const std::uint64_t size = static_cast<std::uint64_t>(bytes.size());
-            file.write(reinterpret_cast<const char*>(&size), sizeof(size));
-            file.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
-            if (!file)
-            {
-                setError(error, "failed writing model asset: " + path);
-                return false;
-            }
+            setError(error, "duplicate stable geometry id: " + geometry.id);
+            return false;
         }
-        return true;
     }
-    catch (const std::exception& ex)
-    {
-        setError(error, ex.what());
-        return false;
-    }
+    return true;
 }
 
-bool ModelAssetBinary::load(const std::string& path, ModelAsset& asset, std::string* error)
+bool writeLodPayload(
+    const std::filesystem::path& path,
+    const ModelAsset& asset,
+    std::size_t lodIndex,
+    std::string* error)
 {
-    if (error) error->clear();
+    if (!validateStableGeometryIds(asset, error))
+        return false;
+
+    std::ofstream file(path, std::ios::binary | std::ios::trunc);
+    if (!file)
+    {
+        setError(error, "cannot open LOD payload: " + path.string());
+        return false;
+    }
+
+    file.write(MeshMagicV2.data(), static_cast<std::streamsize>(MeshMagicV2.size()));
+    Writer w {file};
+    w.pod(MeshPayloadFormatVersion);
+    w.pod(static_cast<std::uint32_t>(lodIndex));
+    std::uint32_t entryCount = 0;
+    for (const auto& geometry : asset.geometries)
+        if (lodIndex < geometry.lods.size())
+            ++entryCount;
+    w.pod(entryCount);
+
+    // Payload identity is semantic, not positional. G0/G1/... are editor labels
+    // and may change after deleting/reordering GeometryDefinitions; the stable
+    // id is what binds one LOD representation back to the manifest.
+    for (const auto& geometry : asset.geometries)
+    {
+        if (lodIndex >= geometry.lods.size()) continue;
+        w.string(geometry.id);
+        writeMeshLod(w, geometry.lods[lodIndex]);
+    }
+    if (!w.ok)
+    {
+        setError(error, "failed writing LOD payload: " + path.string());
+        return false;
+    }
+    return true;
+}
+
+bool readLodPayload(
+    const std::filesystem::path& path,
+    ModelAsset& asset,
+    std::size_t expectedLodIndex,
+    std::string* error)
+{
+    if (!validateStableGeometryIds(asset, error))
+        return false;
+
     std::ifstream file(path, std::ios::binary);
     if (!file)
     {
-        setError(error, "cannot open model asset: " + path);
+        setError(error, "missing LOD payload: " + path.string());
         return false;
     }
 
     std::array<char, 8> magic {};
     file.read(magic.data(), static_cast<std::streamsize>(magic.size()));
-    if (!file || magic != Magic)
+    if (!file || magic != MeshMagicV2)
     {
-        setError(error, "invalid model asset magic");
+        setError(error, "invalid LOD payload magic: " + path.string());
         return false;
     }
 
-    Reader header {file};
+    Reader r {file};
     std::uint32_t version = 0;
-    std::uint32_t chunkCount = 0;
-    header.pod(version);
-    header.pod(chunkCount);
-    if (!header.ok || version != ModelAssetFormatVersion || chunkCount > 1024u)
+    std::uint32_t lodIndex = 0;
+    std::uint32_t entryCount = 0;
+    r.pod(version);
+    r.pod(lodIndex);
+    if (!r.count(entryCount) || version != MeshPayloadFormatVersion || lodIndex != expectedLodIndex)
     {
-        setError(error, "unsupported model asset version");
+        setError(error, "unsupported or mismatched LOD payload: " + path.string());
         return false;
     }
 
-    ModelAsset result;
-    result.formatVersion = version;
+    std::map<std::string, std::size_t> geometryById;
+    for (std::size_t i = 0; i < asset.geometries.size(); ++i)
+        geometryById.emplace(asset.geometries[i].id, i);
 
+    std::set<std::string> seen;
+    for (std::uint32_t entry = 0; entry < entryCount; ++entry)
+    {
+        std::string geometryId;
+        r.string(geometryId);
+        const auto it = geometryById.find(geometryId);
+        if (!r.ok || it == geometryById.end() || !seen.insert(geometryId).second)
+        {
+            setError(error, "LOD payload contains unknown/duplicate geometry id: " + geometryId);
+            return false;
+        }
+        auto& geometry = asset.geometries[it->second];
+        if (expectedLodIndex >= geometry.lods.size())
+        {
+            setError(error, "LOD payload representation is not declared by manifest for: " + geometryId);
+            return false;
+        }
+        readMeshLod(r, geometry.lods[expectedLodIndex]);
+        if (!r.ok)
+        {
+            setError(error, "corrupt LOD payload: " + path.string());
+            return false;
+        }
+    }
+
+    for (const auto& geometry : asset.geometries)
+    {
+        if (expectedLodIndex < geometry.lods.size() && seen.count(geometry.id) == 0)
+        {
+            setError(error, "LOD payload is missing geometry id: " + geometry.id);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool readChunks(
+    std::istream& file,
+    std::uint32_t chunkCount,
+    ModelAsset& result,
+    bool legacyV2,
+    std::string* error)
+{
     for (std::uint32_t i = 0; i < chunkCount; ++i)
     {
         std::array<char, 4> id {};
@@ -472,26 +618,251 @@ bool ModelAssetBinary::load(const std::string& path, ModelAsset& asset, std::str
             return false;
         }
 
-        const ChunkSpec* spec = findChunk(id);
-        if (!spec)
+        ChunkReader readerFn = nullptr;
+        if (legacyV2)
+            readerFn = findLegacyChunkReader(id);
+        else if (const ChunkSpec* spec = findManifestChunk(id))
+            readerFn = spec->reader;
+        if (!readerFn)
             continue;
 
         std::istringstream payload(bytes, std::ios::binary);
         Reader reader {payload};
-        spec->reader(reader, result);
+        readerFn(reader, result);
         if (!reader.ok)
         {
             setError(error, "corrupt model asset chunk payload");
             return false;
         }
     }
+    return true;
+}
 
+void removeStaleLodPayloadFiles(
+    const std::filesystem::path& manifestPath,
+    const std::set<std::filesystem::path>& keep)
+{
+    std::error_code ec;
+    const auto directory = manifestPath.parent_path();
+    if (!std::filesystem::exists(directory, ec)) return;
+    const std::string prefix = manifestPath.stem().string() + ".lod";
+    for (const auto& entry : std::filesystem::directory_iterator(directory, ec))
+    {
+        if (ec || !entry.is_regular_file()) continue;
+        const auto name = entry.path().filename().string();
+        if (name.rfind(prefix, 0) != 0 || entry.path().extension() != ".elmesh") continue;
+        if (keep.count(entry.path()) == 0)
+            std::filesystem::remove(entry.path(), ec);
+    }
+}
+}
+
+std::filesystem::path ModelAssetBinary::lodPayloadPath(
+    const std::string& manifestPath,
+    std::size_t lodIndex)
+{
+    return packageLodPayloadPath(std::filesystem::path(manifestPath), lodIndex);
+}
+
+bool ModelAssetBinary::saveManifest(
+    const std::string& path,
+    const ModelAsset& asset,
+    std::string* error)
+{
+    if (error) error->clear();
+    try
+    {
+        if (!validateStableGeometryIds(asset, error))
+            return false;
+        const std::filesystem::path manifestPath(path);
+        if (manifestPath.has_parent_path())
+            std::filesystem::create_directories(manifestPath.parent_path());
+
+        std::ofstream file(manifestPath, std::ios::binary | std::ios::trunc);
+        if (!file)
+        {
+            setError(error, "cannot open output manifest: " + path);
+            return false;
+        }
+
+        file.write(ManifestMagicV3.data(), static_cast<std::streamsize>(ManifestMagicV3.size()));
+        Writer header {file};
+        header.pod(ModelAssetFormatVersion);
+        header.pod(static_cast<std::uint32_t>(ManifestChunks.size()));
+        if (!header.ok)
+        {
+            setError(error, "failed writing model asset manifest header");
+            return false;
+        }
+
+        for (const auto& chunk : ManifestChunks)
+        {
+            std::ostringstream payload(std::ios::binary);
+            Writer writer {payload};
+            chunk.writer(writer, asset);
+            if (!writer.ok)
+            {
+                setError(error, "failed to serialize model asset manifest chunk");
+                return false;
+            }
+            const std::string bytes = payload.str();
+            file.write(chunk.id.data(), 4);
+            const std::uint64_t size = static_cast<std::uint64_t>(bytes.size());
+            file.write(reinterpret_cast<const char*>(&size), sizeof(size));
+            file.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+            if (!file)
+            {
+                setError(error, "failed writing model asset manifest: " + path);
+                return false;
+            }
+        }
+        return true;
+    }
+    catch (const std::exception& ex)
+    {
+        setError(error, ex.what());
+        return false;
+    }
+}
+
+bool ModelAssetBinary::loadManifest(
+    const std::string& path,
+    ModelAsset& asset,
+    bool* legacyV2,
+    std::string* error)
+{
+    if (error) error->clear();
+    if (legacyV2) *legacyV2 = false;
+    std::ifstream file(path, std::ios::binary);
+    if (!file)
+    {
+        setError(error, "cannot open model asset: " + path);
+        return false;
+    }
+
+    std::array<char, 8> magic {};
+    file.read(magic.data(), static_cast<std::streamsize>(magic.size()));
+    if (!file || (magic != ManifestMagicV3 && magic != LegacyMagicV2))
+    {
+        setError(error, "invalid model asset magic");
+        return false;
+    }
+
+    Reader header {file};
+    std::uint32_t version = 0;
+    std::uint32_t chunkCount = 0;
+    header.pod(version);
+    header.pod(chunkCount);
+    const bool isLegacyV2 = magic == LegacyMagicV2 && version == 2u;
+    const bool splitV3 = magic == ManifestMagicV3 && version == ModelAssetFormatVersion;
+    if (!header.ok || (!isLegacyV2 && !splitV3) || chunkCount > 1024u)
+    {
+        setError(error, "unsupported model asset version");
+        return false;
+    }
+
+    ModelAsset result;
+    result.formatVersion = version;
+    if (!readChunks(file, chunkCount, result, isLegacyV2, error))
+        return false;
     if (result.assetId.empty())
     {
         setError(error, "model asset has no asset id");
         return false;
     }
+    if (!validateStableGeometryIds(result, error))
+        return false;
 
+    if (legacyV2) *legacyV2 = isLegacyV2;
+    asset = std::move(result);
+    return true;
+}
+
+bool ModelAssetBinary::saveLod(
+    const std::string& manifestPath,
+    const ModelAsset& asset,
+    std::size_t lodIndex,
+    std::string* error)
+{
+    if (error) error->clear();
+    try
+    {
+        const auto path = packageLodPayloadPath(std::filesystem::path(manifestPath), lodIndex);
+        if (path.has_parent_path())
+            std::filesystem::create_directories(path.parent_path());
+        return writeLodPayload(path, asset, lodIndex, error);
+    }
+    catch (const std::exception& ex)
+    {
+        setError(error, ex.what());
+        return false;
+    }
+}
+
+bool ModelAssetBinary::loadLod(
+    const std::string& manifestPath,
+    ModelAsset& asset,
+    std::size_t lodIndex,
+    std::string* error)
+{
+    if (error) error->clear();
+    return readLodPayload(
+        packageLodPayloadPath(std::filesystem::path(manifestPath), lodIndex),
+        asset,
+        lodIndex,
+        error);
+}
+
+bool ModelAssetBinary::pruneStaleLods(
+    const std::string& manifestPath,
+    const ModelAsset& asset,
+    std::string* error)
+{
+    if (error) error->clear();
+    try
+    {
+        const std::filesystem::path path(manifestPath);
+        std::set<std::filesystem::path> keep;
+        for (std::size_t lodIndex = 0; lodIndex < maxLodCount(asset); ++lodIndex)
+            keep.insert(packageLodPayloadPath(path, lodIndex));
+        removeStaleLodPayloadFiles(path, keep);
+        return true;
+    }
+    catch (const std::exception& ex)
+    {
+        setError(error, ex.what());
+        return false;
+    }
+}
+
+bool ModelAssetBinary::save(const std::string& path, const ModelAsset& asset, std::string* error)
+{
+    if (error) error->clear();
+    const std::size_t lodCount = maxLodCount(asset);
+    for (std::size_t lodIndex = 0; lodIndex < lodCount; ++lodIndex)
+        if (!saveLod(path, asset, lodIndex, error))
+            return false;
+
+    // Manifest is committed last: it never advertises a new package until all
+    // payloads have been written successfully.
+    if (!saveManifest(path, asset, error))
+        return false;
+    return pruneStaleLods(path, asset, error);
+}
+
+bool ModelAssetBinary::load(const std::string& path, ModelAsset& asset, std::string* error)
+{
+    bool legacyV2 = false;
+    ModelAsset result;
+    if (!loadManifest(path, result, &legacyV2, error))
+        return false;
+    if (!legacyV2)
+    {
+        const std::size_t lodCount = maxLodCount(result);
+        for (std::size_t lodIndex = 0; lodIndex < lodCount; ++lodIndex)
+            if (!loadLod(path, result, lodIndex, error))
+                return false;
+    }
     asset = std::move(result);
     return true;
 }

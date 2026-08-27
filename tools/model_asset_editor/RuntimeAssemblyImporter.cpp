@@ -169,8 +169,13 @@ bool importRuntimeAssembly(
                 {
                     GeometryDefinition geometry;
                     geometry.id = part.meshId;
-                    geometry.sourceLod0 = part.lod0Path;
-                    geometry.sourceLod1 = part.lod1Path;
+                    if (geometry.id.empty()) geometry.id = "geometry";
+                    const std::string baseGeometryId = geometry.id;
+                    for (std::size_t suffix = 2; std::any_of(
+                             asset.geometries.begin(), asset.geometries.end(),
+                             [&](const GeometryDefinition& existingGeometry) { return existingGeometry.id == geometry.id; }); ++suffix)
+                        geometry.id = baseGeometryId + "_" + std::to_string(suffix);
+                    geometry.sourceLods.push_back(part.lod0Path);
 
                     MeshLod lod0;
                     std::string importError;
@@ -201,6 +206,7 @@ bool importRuntimeAssembly(
                         else
                         {
                             geometry.lods.push_back(std::move(lod1));
+                            geometry.sourceLods.push_back(part.lod1Path);
                         }
                     }
 

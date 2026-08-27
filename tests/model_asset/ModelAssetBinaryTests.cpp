@@ -3,8 +3,10 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <stdexcept>
+#include <vector>
 
 #include "src/model_asset/ModelAsset.h"
 #include "src/model_asset/ModelAssetBinary.h"
@@ -25,6 +27,13 @@ void require(bool condition, const char* message)
 bool near(float a, float b, float eps = 1.0e-6f)
 {
     return std::abs(a - b) <= eps;
+}
+
+
+std::vector<char> readFileBytes(const std::filesystem::path& path)
+{
+    std::ifstream in(path, std::ios::binary);
+    return std::vector<char>(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
 }
 
 
@@ -431,7 +440,7 @@ int main()
 
         GeometryDefinition geometry;
         geometry.id = "habitat_segment";
-        geometry.sourceLod0 = "segment.obj";
+        geometry.sourceLods = {"segment_lod0.obj", "segment_lod1.obj"};
         geometry.surfaceMode = SurfaceMode::ThinTwoSided;
         MeshLod lod;
         lod.vertices = {
@@ -442,6 +451,16 @@ int main()
         lod.triangles.push_back({0,1,2,7,0,42});
         lod.edges.push_back({0,1,0,-1,EdgeBoundary,EdgeRenderElite});
         geometry.lods.push_back(lod);
+        MeshLod independentLod1;
+        independentLod1.vertices = {
+            {{-2,0,0},{0,1,0},{0,0}},
+            {{ 2,0,0},{0,1,0},{1,0}},
+            {{ 0,0,3},{0,1,0},{0.5f,1}}
+        };
+        independentLod1.triangles.push_back({0,1,2,99,0,0});
+        independentLod1.minBounds = {-2.0f, 0.0f, 0.0f};
+        independentLod1.maxBounds = { 2.0f, 0.0f, 3.0f};
+        geometry.lods.push_back(independentLod1);
         asset.geometries.push_back(geometry);
 
         Node a;
@@ -493,7 +512,65 @@ int main()
 
         ModelAsset loaded;
         require(ModelAssetBinary::load(path.string(), loaded, &error), error.c_str());
+        const auto lod0Path = ModelAssetBinary::lodPayloadPath(path.string(), 0);
+        const auto lod1Path = ModelAssetBinary::lodPayloadPath(path.string(), 1);
+        require(std::filesystem::exists(lod0Path), "v3 LOD0 payload was not written");
+        require(std::filesystem::exists(lod1Path), "v3 independent LOD1 payload was not written");
+
+        // The editor/runtime can now open only the manifest and page individual
+        // LOD files in/out without reading or rewriting sibling representations.
+        ModelAsset manifestOnly;
+        bool legacyV2 = true;
+        require(ModelAssetBinary::loadManifest(path.string(), manifestOnly, &legacyV2, &error), error.c_str());
+        require(!legacyV2, "v3 manifest was misclassified as legacy v2");
+        require(manifestOnly.geometries.size() == 1 && manifestOnly.geometries[0].lods.size() == 2,
+            "manifest did not preserve independent LOD descriptors");
+        require(manifestOnly.geometries[0].lods[0].vertices.empty() && manifestOnly.geometries[0].lods[1].vertices.empty(),
+            "manifest-only load eagerly pulled heavy mesh payloads");
+        require(ModelAssetBinary::loadLod(path.string(), manifestOnly, 0, &error), error.c_str());
+        require(!manifestOnly.geometries[0].lods[0].vertices.empty() && manifestOnly.geometries[0].lods[1].vertices.empty(),
+            "LOD0-only load also loaded a sibling LOD");
+
+        const auto lod1Before = readFileBytes(lod1Path);
+        manifestOnly.geometries[0].lods[0].vertices[0].position.x += 0.125f;
+        require(ModelAssetBinary::saveLod(path.string(), manifestOnly, 0, &error), error.c_str());
+        require(readFileBytes(lod1Path) == lod1Before,
+            "saving LOD0 rewrote or changed LOD1 payload");
+
+        const auto lod0BeforeManifestSave = readFileBytes(lod0Path);
+        manifestOnly.nodes[0].localPosition.x += 3.0f;
+        require(ModelAssetBinary::saveManifest(path.string(), manifestOnly, &error), error.c_str());
+        require(readFileBytes(lod0Path) == lod0BeforeManifestSave,
+            "saving manifest rewrote LOD0 payload");
+        require(readFileBytes(lod1Path) == lod1Before,
+            "saving manifest rewrote LOD1 payload");
+
+        // LOD payload binding is by stable GeometryDefinition::id, never by the
+        // transient G# vector index. Reordering descriptors in memory must not
+        // cause geometry data to attach to the wrong semantic geometry.
+        ModelAsset stableIds = asset;
+        GeometryDefinition second = asset.geometries[0];
+        second.id = "antenna_segment";
+        second.lods[0].vertices[0].position.x = 77.0f;
+        stableIds.geometries.push_back(second);
+        const auto stablePath = std::filesystem::temp_directory_path() / "elite_model_asset_stable_id.elmodel";
+        require(ModelAssetBinary::save(stablePath.string(), stableIds, &error), error.c_str());
+        ModelAsset stableManifest;
+        require(ModelAssetBinary::loadManifest(stablePath.string(), stableManifest, nullptr, &error), error.c_str());
+        std::swap(stableManifest.geometries[0], stableManifest.geometries[1]);
+        require(ModelAssetBinary::loadLod(stablePath.string(), stableManifest, 0, &error), error.c_str());
+        require(stableManifest.geometries[0].id == "antenna_segment" && near(stableManifest.geometries[0].lods[0].vertices[0].position.x, 77.0f),
+            "LOD payload depended on transient geometry vector index instead of stable id");
+        std::filesystem::remove(stablePath);
+        std::filesystem::remove(ModelAssetBinary::lodPayloadPath(stablePath.string(), 0));
+        std::filesystem::remove(ModelAssetBinary::lodPayloadPath(stablePath.string(), 1));
+
+        ModelAsset oneLod = loaded;
+        oneLod.geometries[0].lods.resize(1);
+        require(ModelAssetBinary::save(path.string(), oneLod, &error), error.c_str());
+        require(!std::filesystem::exists(lod1Path), "stale LOD1 payload survived a one-LOD save");
         std::filesystem::remove(path);
+        std::filesystem::remove(lod0Path);
 
         require(loaded.assetId == asset.assetId, "asset id lost");
         require(loaded.sourceBasis.preset == "blender_model" && loaded.sourceBasis.up == AxisDirection::PositiveZ,
@@ -501,6 +578,10 @@ int main()
         require(loaded.materials.size() == 1 && loaded.materials[0].id == "emit_nav_red" && near(loaded.materials[0].emissiveStrength, 2.0f),
             "material semantic id/emissive data lost");
         require(loaded.geometries.size() == 1, "geometry count changed");
+        require(loaded.geometries[0].sourceLods.size() == 2 && loaded.geometries[0].sourceLods[1] == "segment_lod1.obj",
+            "independent LOD source metadata lost");
+        require(loaded.geometries[0].lods.size() == 2 && loaded.geometries[0].lods[1].triangles.size() == 1 && near(loaded.geometries[0].lods[1].maxBounds.z, 3.0f),
+            "independent LOD1 mesh payload lost");
         require(loaded.geometries[0].lods[0].triangles[0].materialIndex == 0 && loaded.geometries[0].lods[0].triangles[0].smoothingGroupId == 42,
             "triangle material/smoothing data lost");
         require(loaded.nodes.size() == 2, "node count changed");
@@ -519,7 +600,7 @@ int main()
         require(loaded.sockets.size() == 1 && loaded.sockets[0].light.type == LightType::Point && near(loaded.sockets[0].light.intensity, 12.0f),
             "typed light anchor lost");
 
-        std::cout << "[PASS] model asset v2 roundtrip preserves materials/instances/collision/joints/mass/lights\n";
+        std::cout << "[PASS] model asset v3 manifest + independently editable stable-id LOD payloads preserve asset semantics\n";
         return 0;
     }
     catch (const std::exception& ex)

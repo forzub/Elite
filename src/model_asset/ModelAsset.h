@@ -9,7 +9,7 @@
 namespace elite::model_asset
 {
 
-constexpr std::uint32_t ModelAssetFormatVersion = 2;
+constexpr std::uint32_t ModelAssetFormatVersion = 3;
 constexpr std::int32_t NoIndex = -1;
 
 enum class SurfaceMode : std::uint8_t
@@ -138,9 +138,14 @@ struct MeshLod
 
 struct GeometryDefinition
 {
+    // Stable semantic geometry id. UI labels such as G0/G1 are transient vector
+    // indices only; external .elmesh payloads bind to this id so LOD files can
+    // be saved/reloaded independently without depending on geometry order.
     std::string id;
-    std::string sourceLod0;
-    std::string sourceLod1;
+    // Source files are metadata only and align by index with lods when the LOD
+    // originated from an imported source mesh. Generated LODs may leave the
+    // corresponding entry empty. LOD representations are otherwise independent.
+    std::vector<std::string> sourceLods;
     SurfaceMode surfaceMode = SurfaceMode::Closed;
     std::vector<MeshLod> lods;
 };

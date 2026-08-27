@@ -1,0 +1,4 @@
+# Compiled model packages are derived from source assets by EliteAssetEditor.
+# Keep the directory, not generated binary payloads.
+*
+!.gitignore

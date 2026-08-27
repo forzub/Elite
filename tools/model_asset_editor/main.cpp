@@ -9,6 +9,7 @@
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
 #include "src/game/geometry/ObjectAssemblyRegistry.h"
 #include "tools/model_asset_editor/ModelAssetEditorSession.h"
+#include "tools/model_asset_editor/EditorVersion.h"
 
 #ifndef ELITE_SOURCE_ROOT
 #define ELITE_SOURCE_ROOT "."
@@ -36,7 +37,7 @@ int main()
         );
 
         webview::webview editor(false, nullptr);
-        editor.set_title("Elite Model Asset Editor");
+        editor.set_title(std::string("Elite Model Asset Editor ") + elite::model_asset::editor::ModelAssetEditorVersion);
         editor.set_size(1600, 950, WEBVIEW_HINT_NONE);
 
         server.setOnMessage([&session, &editor](const std::string& message) {
@@ -47,7 +48,7 @@ int main()
 
         const std::string url = "http://localhost:" + std::to_string(port) +
             "/model_asset_editor.html";
-        std::cerr << "[MODEL ASSET EDITOR] " << url << std::endl;
+        std::cerr << "[MODEL ASSET EDITOR " << elite::model_asset::editor::ModelAssetEditorVersion << "] " << url << std::endl;
         editor.navigate(url);
         editor.run();
 

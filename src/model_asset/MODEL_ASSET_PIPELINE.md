@@ -38,21 +38,66 @@ transforms/pivots, joints, collision, sockets and inertia to canonical game
 coordinates. Basis conversion is a deliberate one-time authoring operation, not
 runtime correction.
 
-## Binary format v2
+## Binary format v3: manifest + independent LOD payloads
 
-Extension: `.elmodel`
+A compiled asset is a small semantic manifest plus one heavy mesh payload per
+LOD level. For asset `station` the package is:
 
-The shared and only compiled C++ data contract is
-`src/model_asset/ModelAsset.h`. Version 2 contains:
+```text
+src/assets/compiled/models/station/
+    station.elmodel
+    station.lod0.elmesh
+    station.lod1.elmesh
+    station.lod2.elmesh   # when authored/generated
+    ...
+```
+
+`station.elmodel` is the semantic manifest. It contains:
 
 - `META` — identity, source basis, bounds, LOD switch distance;
 - `MATL` — stable semantic material ids and style-agnostic material properties;
-- `GEOM` — indexed LOD geometry, source polygon ids, material ids and topology;
+- `GEOM` — GeometryDefinition descriptors, source-LOD metadata and per-LOD bounds,
+  but not vertex/index/topology arrays;
 - `NODE` — hierarchy, instances, pivots, joints/break metadata and rigid mass properties;
 - `COLL` — compound collision primitives;
 - `SOCK` — typed semantic anchors, including optional light payloads.
 
-Old v1 editor output is intentionally rejected; reimport the source asset.
+Each `<asset>.lodN.elmesh` contains the heavy `MeshLod` arrays for every unique
+GeometryDefinition that has representation `N`: vertices, indices, normals, UVs,
+polygon/material/smoothing metadata, topology and authored/render edge masks.
+This makes later runtime streaming possible without reading LOD0 simply to show
+a distant object.
+
+LOD0, LOD1, LOD2 and later representations are independent meshes of the same
+semantic GeometryDefinition. They do **not** need equal topology, vertex/triangle
+counts, tessellated area or identical decimation. LOD0 is the canonical identity
+basis for baked-duplicate -> instance consolidation; after consolidation every
+instance uses the reference GeometryDefinition and therefore its complete LOD set.
+
+Existing monolithic `.elmodel` v2 files remain readable only as a migration path.
+The editor loads authored v2 state in memory, marks it dirty, and the next
+`Save all` writes the v3 split package. The old v2 file is not overwritten.
+
+The shared C++ data contract remains `src/model_asset/ModelAsset.h`; file splitting
+is a storage concern and does not create separate semantic assets per ship part.
+
+### Independent LOD editor documents
+
+The editor does not treat the v3 package as one monolithic save unit. On open it
+loads the semantic manifest and LOD0 by default. Other LOD payloads can remain
+unloaded until needed. Each LOD has independent resident/dirty state and can be
+`Load`ed, `Reload`ed from disk, `Unload`ed from memory or `Save`d without touching
+the manifest or sibling LOD files. `Save manifest` writes semantic metadata only;
+`Save all` writes only dirty or missing package members.
+
+External `.elmesh` entries are keyed by stable `GeometryDefinition::id`. Labels
+such as `G2` are editor vector indices only and may change after cleanup; they are
+not persistent cross-file identity. Operations that structurally add/remove a
+GeometryDefinition first make every declared LOD resident, then mark every
+affected `.elmesh` dirty so no unloaded payload can silently retain stale entries.
+
+This separation is also the intended runtime streaming boundary: a distant ship
+can load its manifest plus a coarse LOD without reading LOD0.
 
 ## Native OBJ compilation
 

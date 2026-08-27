@@ -21,10 +21,11 @@ for forbidden in ("glad/", "GLFW", "MeshGPU", "SceneRenderer", "SpaceState"):
 
 require(
     "src/model_asset/ModelAsset.h",
-    "ModelAssetFormatVersion = 2",
+    "ModelAssetFormatVersion = 3",
     "struct SourceBasis",
     "struct MaterialDefinition",
     "struct GeometryDefinition",
+    "std::vector<std::string> sourceLods",
     "struct NodeJoint",
     "struct RigidBodyProperties",
     "inertiaProducts",
@@ -44,6 +45,16 @@ require(
     "{'N','O','D','E'}",
     "{'C','O','L','L'}",
     "{'S','O','C','K'}",
+    "ManifestMagicV3",
+    "MeshMagicV2",
+    ".lod",
+    ".elmesh",
+    "readGeomLegacyV2",
+    "saveManifest",
+    "loadManifest",
+    "saveLod",
+    "loadLod",
+    "stable geometry id",
 )
 
 # Stage 2 mesh compilation must bypass the old runtime ObjLoader so source
@@ -100,6 +111,18 @@ require(
     "requestDeleteUnusedGeometry",
     "NO CHANGES",
     "Source OBJ / assembly files are not modified",
+    "versionBadge",
+    "v3 manifest",
+    ".elmesh",
+    "LOD files",
+    "Save manifest",
+    "renderLodFiles",
+    "LOADED · DIRTY",
+    "UNLOADED",
+    "save_lod",
+    "load_lod",
+    "reload_lod",
+    "unload_lod",
 )
 require(
     "tools/model_asset_editor/ModelAssetEditorSession.cpp",
@@ -118,6 +141,15 @@ require(
     '"usageCount"',
     '"sourceMeshBytes"',
     "source OBJ/assembly unchanged",
+    "legacyCompiledPath",
+    "savedPackageBytes",
+    "lodPayloads",
+    "saveManifestOnly",
+    "saveLodOnly",
+    "loadLodOnly",
+    "unloadLod",
+    "markLodDirty",
+    "ModelAssetEditorVersion",
 )
 
 require(
@@ -128,6 +160,20 @@ require(
     "validateBidirectionalPointCloud",
     "fitGeometryAsRigidInstance",
     "topology-independent point-cloud match",
+)
+
+require(
+    "tools/model_asset_editor/EditorVersion.h",
+    'ModelAssetEditorVersion = "0.4.0"',
+)
+require(
+    "tools/model_asset_editor/CHANGELOG.md",
+    "0.4.0",
+    "independently editable LOD package",
+)
+require(
+    "src/assets/compiled/models/.gitignore",
+    "Compiled model packages",
 )
 
 cmake = text("CMakeLists.txt")

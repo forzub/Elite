@@ -1,12 +1,193 @@
 # Elite Model Asset Editor — рабочая инструкция / архитектурный контекст
 
-**Актуально:** 2026-08-28 · после metadata-sync/checkpoint pass 0.9.3  
-**Редактор:** `Elite Model Asset Editor 0.9.3`  
-**Asset format:** v4  
-**Текущий production pipeline:** wizard; реально рабочие стадии `SOURCE`, `LODS`, `GEOMETRY`. Последующие стадии пока должны считаться видимыми capability slots, а не завершённым workflow.
+**Актуально:** 2026-08-28 · canonical mesh contract завершён в 0.10.8
+**Редактор:** `Elite Model Asset Editor 0.10.8`
+**Asset format:** v4
+**Текущий production pipeline:** wizard; реально рабочие стадии `SOURCE`, `LODS`, `GEOMETRY`. В `LODS` перед необязательным генератором теперь обязателен этап подготовки мешей к каноническому render-контракту. Последующие стадии пока остаются capability slots.
 
-> Этот файл является источником контекста для продолжения работы над Model Asset Editor.  
+> Этот файл является источником контекста для продолжения работы над Model Asset Editor.
 > Старые предположения из эпохи format v2/v3 о единой `Node -> GeometryDefinition -> LOD0/LOD1` структуре больше не применять к v4.
+
+---
+
+# 0A. Текущее состояние 0.10.8 — Canonical Mesh Builder
+
+`0.10.7` считать переходной реализацией. Начиная с `0.10.8`, Model Preflight в стадии `LODS` имеет реальный контракт **mesh preparation**, а не набор диагностических safe-fix операций.
+
+Главный поток:
+
+```text
+RAW / imported MeshLod
+    ↓
+positional weld 1e-4 → geometric points
+    ↓
+index / finite-position validation
+    ↓
+remove collapsed + duplicate geometric triangles
+    ↓
+build canonical edge topology
+    ↓
+solve consistent winding
+    ↓
+closed shells outward
+    ↓
+normal islands (polygon / smoothing group / 25° crease)
+    ↓
+rebuild render vertices
+    ↓
+rebuild triangles + MeshLod.edges
+    ↓
+classify geometry contract
+    ↓
+CANONICAL ASSET GEOMETRY
+```
+
+## 0A.1 Geometric point != render vertex
+
+`positional weld = 1e-4` задаёт только **геометрическую идентичность**. Он не означает, что совпавшие OBJ/GPU vertices надо физически схлопнуть в одну вершину.
+
+Одна geometric point может иметь несколько render vertices из-за:
+
+- UV seam;
+- material/render split;
+- hard normal;
+- других render-only атрибутов.
+
+Canonical builder сохраняет существующие UV/material splits. Hard normals не копируются из грязного OBJ: они реконструируются как отдельные **normal islands** по source polygon, smoothing group и автоматическому crease `25°`. Поэтому shared render vertex при необходимости разделяется, а UV seam при сглаженной поверхности остаётся двумя GPU vertices с одинаковой вычисленной normal.
+
+Это обязательный контракт для дальнейших `LOD`, `SURFACES` и `DAMAGE`. Нельзя снова вводить алгоритм «одна welded point → одна normal».
+
+## 0A.2 Что именно меняет подготовка
+
+Canonical builder:
+
+1. проверяет finite positions и triangle indices;
+2. строит geometric points через quantized weld `1e-4`;
+3. удаляет triangles, схлопнувшиеся после weld или имеющие практически нулевую площадь;
+4. удаляет duplicate geometric triangles независимо от их winding, сохраняя coincident face с другим material как отдельную authored поверхность;
+5. согласует winding на однозначной two-face adjacency;
+6. разворачивает целиком замкнутую inside-out оболочку наружу;
+7. **никогда не заделывает boundary loops**;
+8. полностью перестраивает render vertices/normals;
+9. полностью перестраивает `MeshLod.edges`, включая актуальные `triangleA/triangleB` и seam/crease/boundary flags;
+10. сохраняет authored edge render-mask metadata по геометрическим концам ребра, где это возможно.
+
+После операции старые authored normals/winding больше не считаются authoritative. Source OBJ остаётся read-only input.
+
+## 0A.3 Geometry contracts
+
+Каждый подготовленный mesh должен закончить стадию одним из контрактов:
+
+- `ClosedVolume` — закрытый manifold volume, normals наружу, `SurfaceMode::Closed`;
+- `ThinTwoSided` — поверхность без толщины, штатные boundary edges, `SurfaceMode::ThinTwoSided`;
+- `BreachedVolume` — намеренно открытый объём; boundary пробоины сохраняется, `SurfaceMode::Closed`;
+- `Invalid` — только реальная структурная поломка, которую canonical builder не имеет права угадывать/чинить.
+
+`Invalid` включает как минимум:
+
+- triangle index вне массива render vertices;
+- non-finite position;
+- настоящий source edge, использованный более чем двумя faces и помеченный importer как `EdgeNonManifold`;
+- topology, которую невозможно согласованно ориентировать;
+- отсутствие usable triangles после cleanup.
+
+Важно: `canonical multi-use` после positional weld **не равен автоматически source non-manifold**. Он может появиться у двух независимых coincident/touching shells и остаётся warning. Настоящий source non-manifold importer фиксирует отдельно.
+
+## 0A.4 Автоклассификация
+
+После preparation:
+
+- однозначный closed mesh автоматически принимает `ClosedVolume`;
+- уверенная тонкая открытая геометрия (`ThinTwoSided`, confidence >= 0.90) принимается автоматически;
+- неоднозначная open geometry требует **одного** решения пользователя: `ThinTwoSided` или `BreachedVolume`;
+- `Invalid` не маскируется ручным выбором класса — сначала нужна реальная правка geometry/source.
+
+Boundary у `ThinTwoSided` и `BreachedVolume` — штатная геометрия, а не ошибка.
+
+## 0A.5 Persistent preparation state
+
+`wizard_state.json` schema `5` хранит для каждого `LOD + geometryId` запись подготовки:
+
+- algorithm id: `canonical_mesh_builder_v2`;
+- source render-vertex / triangle counts;
+- canonical geometric-point count;
+- output render-vertex / triangle counts;
+- removed degenerate / duplicate triangles;
+- normal-island count;
+- rebuilt-edge count;
+- fingerprint итогового mesh payload.
+
+Preparation считается действительной только если fingerprint текущего `MeshLod` совпадает с записью. Любое последующее структурное изменение mesh payload/topology автоматически делает запись stale и снова блокирует LOD Generator до повторной подготовки. Изменение только authoring `edge.renderMask` не инвалидирует preparation. Поэтому факт «mesh когда-то анализировали» больше не подменяет факт «этот payload канонически подготовлен».
+
+## 0A.6 Preflight UI
+
+Целевой смысл таблицы:
+
+```text
+mesh
+    source:       render V / T
+    canonical:    geometric P · render V / T
+    cleanup:      removed degenerate / duplicate
+    topology:     boundary / canonical multi-use / source non-manifold
+    type:         Closed / ThinTwoSided / Breached / Invalid
+    state:        READY / PREPARE / SET TYPE / FIX MESH
+```
+
+Основные и дополнительные meshes показываются отдельными группами. Кнопка `ПОДГОТОВИТЬ МЕШИ` активна, пока хотя бы у одного загруженного mesh нет актуальной preparation record.
+
+Режим `КАК В ИГРЕ` остаётся **read-only сравнением** со старым runtime OBJ-loader: positional weld `1e-4`, runtime-style normals, two-sided rendering. Он не является canonical builder и ничего не пишет в asset.
+
+## 0A.7 Gate для LOD Generator
+
+LOD Generator можно запускать только если используемая базовая геометрия `LOD0`:
+
+- имеет актуальную preparation record;
+- не `Invalid`;
+- после canonicalization не содержит cleanup/orientation leftovers;
+- имеет разрешённый geometry contract;
+- имеет `SurfaceMode`, соответствующий этому контракту.
+
+**Не добавлять новые LOD algorithms, пока этот gate не подтверждён на реальной station/ship geometry.**
+
+Поведенческие regression contracts canonical builder:
+
+```text
+closed cube
+    → remains closed / outward / rebuilt edges
+
+single plate
+    → remains open; hole/boundary is not filled
+
+breached cube
+    → authored opening survives
+
+dirty UV-seam quad
+    → degenerate + duplicate removed
+    → UV render splits survive
+
+hard edge
+    → one geometric point may own multiple render vertices/normals
+
+broken indices / real source non-manifold
+    → Invalid
+```
+
+Правильный рабочий порядок:
+
+```text
+SOURCE
+  → load complete authoring set
+LODS / MESH PREPARATION
+  → ANALYZE
+  → PREPARE MESHES
+  → classify only ambiguous open meshes
+  → verify READY для всех загруженных meshes
+  → checkpoint (LODS не завершится при незаконченной canonical preparation)
+LOD GENERATOR (optional, downstream)
+GEOMETRY
+  → instances / replacements / placement
+```
+
 
 ---
 
@@ -814,7 +995,7 @@ producer + validator + regression test
 
 ---
 
-# 20. Следующий конкретный фикс после 2026-08-27
+# 20. Исторический фикс после 2026-08-27 — закрыт в 0.9.1
 
 Приоритет:
 
@@ -829,7 +1010,7 @@ producer + validator + regression test
 9. reimport Orbital Station;
 10. повторить SOURCE -> LODS -> GEOMETRY checkpoints.
 
-Только после этого продолжать wizard дальше.
+Этот список закрыт в `0.9.1`; он сохранён ниже только как история архитектурного решения.
 
 ---
 
@@ -980,3 +1161,37 @@ UI явно сообщает, что копии используют общую 
 Автоматический `Generate LOD1 from LOD0` **намеренно отложен**. Не начинать его до стабилизации editor workflow, damage/state variants и понятного LOD authoring UI.
 
 Текущий UI cleanup не меняет v4 boundary: каждый RenderLod остаётся независимым render document, semantic/gameplay graph остаётся shared.
+
+
+---
+
+# 24. Состояние после 0.10.8 и следующий шаг
+
+Canonical geometry contract считается **реализованным на уровне редактора и покрытым поведенческими regression tests в source tree**. `LOD Generator` в 0.10.8 намеренно не развивается.
+
+Перед возобновлением LOD-pass'ов провести acceptance на реальных моделях:
+
+1. reimport Orbital Station из source;
+2. `ANALYZE → ПОДГОТОВИТЬ МЕШИ`;
+3. проверить несколько больших `ClosedVolume`;
+4. проверить отдельную `ThinTwoSided` plate;
+5. проверить authored `BreachedVolume` с удалёнными полигонами;
+6. визуально подтвердить сценарий **detached plate → настоящая дыра → видимые внутренности**;
+7. сохранить/перезапустить editor и убедиться, что preparation records восстанавливаются и `READY` не теряется;
+8. изменить mesh payload и убедиться, что fingerprint делает preparation stale;
+9. только после этого продолжать LOD Generator.
+
+План дальнейших LOD-pass'ов остаётся:
+
+```text
+1. Coplanar Region Collapse
+2. Thin Shell Collapse
+   thin box → ThinTwoSided sheet
+3. Thin/Small Component Cull
+4. Surface Detail Cull
+5. general simplifier — только если действительно понадобится
+```
+
+Каждый LOD строится **независимо из canonical LOD0**, а не цепочкой `LOD0 → LOD1 → LOD2`.
+
+После стабилизации LOD Generator pipeline продолжается: `SURFACES → SEMANTICS → PHYSICS → DAMAGE → VALIDATE → BUILD`.

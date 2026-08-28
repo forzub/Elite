@@ -65,7 +65,11 @@ enum EdgeFlag : std::uint32_t
     EdgeTriangulationInternal = 1u << 3,
     EdgeNormalSeam = 1u << 4,
     EdgeMaterialSeam = 1u << 5,
-    EdgeAuthored = 1u << 6
+    EdgeAuthored = 1u << 6,
+    // Source edge is used by more than two triangles. Persisted as a generic
+    // flag so Preflight can distinguish real author-topology non-manifold
+    // edges from coincident-but-separate positional seams.
+    EdgeNonManifold = 1u << 7
 };
 
 enum EdgeRenderMask : std::uint8_t

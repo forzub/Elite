@@ -57,6 +57,7 @@ if(ELITE_BUILD_ASSET_EDITOR)
     add_executable(EliteAssetEditor
         tools/model_asset_editor/main.cpp
         tools/model_asset_editor/ModelAssetEditorSession.cpp
+        tools/model_asset_editor/CanonicalMeshBuilder.cpp
         tools/model_asset_editor/GeometryInstanceFitter.cpp
         tools/model_asset_editor/RuntimeAssemblyImporter.cpp
         tools/model_asset_editor/NativeObjImporter.cpp

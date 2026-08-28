@@ -15,6 +15,7 @@
 #include "src/model_asset/ModelAssetMigration.h"
 #include "src/model_asset/ModelAssetVariantNaming.h"
 #include "tools/model_asset_editor/NativeObjImporter.h"
+#include "tools/model_asset_editor/CanonicalMeshBuilder.h"
 #include "tools/model_asset_editor/GeometryInstanceFitter.h"
 
 #include <glm/gtc/quaternion.hpp>
@@ -413,11 +414,191 @@ void testNativeImporterKeepsSmallValidTriangles()
 }
 }
 
+
+MeshLod makeCanonicalCube(bool removeTop = false)
+{
+    MeshLod mesh;
+    mesh.vertices = {
+        {{-1,-1,-1},{0,0,0},{0,0}}, {{ 1,-1,-1},{0,0,0},{1,0}},
+        {{ 1, 1,-1},{0,0,0},{1,1}}, {{-1, 1,-1},{0,0,0},{0,1}},
+        {{-1,-1, 1},{0,0,0},{0,0}}, {{ 1,-1, 1},{0,0,0},{1,0}},
+        {{ 1, 1, 1},{0,0,0},{1,1}}, {{-1, 1, 1},{0,0,0},{0,1}}
+    };
+    // Outward winding.
+    mesh.triangles = {
+        {0,2,1,0,0,0},{0,3,2,0,0,0},       // -Z
+        {4,5,6,1,0,0},{4,6,7,1,0,0},       // +Z
+        {0,1,5,2,0,0},{0,5,4,2,0,0},       // -Y
+        {3,7,6,3,0,0},{3,6,2,3,0,0},       // +Y
+        {0,4,7,4,0,0},{0,7,3,4,0,0},       // -X
+        {1,2,6,5,0,0},{1,6,5,5,0,0}        // +X
+    };
+    if (removeTop)
+        mesh.triangles.erase(mesh.triangles.begin() + 6, mesh.triangles.begin() + 8);
+    mesh.minBounds = {-1,-1,-1};
+    mesh.maxBounds = { 1, 1, 1};
+    return mesh;
+}
+
+void testCanonicalBuilderClosedPlateBreachContracts()
+{
+    using namespace elite::model_asset::editor;
+
+    auto cube = makeCanonicalCube(false);
+    const auto cubeBuild = canonicalizeMesh(cube);
+    require(cubeBuild.success, cubeBuild.error.c_str());
+    const auto cubeAudit = analyzeCanonicalMesh(cube);
+    require(!cubeAudit.structuralInvalid && cubeAudit.closedComponents == 1 &&
+            cubeAudit.openComponents == 0 && cubeAudit.boundaryEdges == 0,
+        "canonical closed cube did not remain one closed volume");
+    require(cube.edges.size() == 18,
+        "canonical builder did not rebuild cube edge topology from final triangles");
+
+    MeshLod plate;
+    plate.vertices = {
+        {{0,0,0},{0,0,0},{0,0}}, {{2,0,0},{0,0,0},{1,0}},
+        {{2,2,0},{0,0,0},{1,1}}, {{0,2,0},{0,0,0},{0,1}}
+    };
+    plate.triangles = {{0,1,2,0,0,1},{0,2,3,0,0,1}};
+    plate.minBounds = {0,0,0}; plate.maxBounds = {2,2,0};
+    const auto plateBuild = canonicalizeMesh(plate);
+    require(plateBuild.success, plateBuild.error.c_str());
+    const auto plateAudit = analyzeCanonicalMesh(plate);
+    require(!plateAudit.structuralInvalid && plateAudit.openComponents == 1 &&
+            plateAudit.boundaryEdges == 4,
+        "canonical thin sheet was incorrectly closed or rejected");
+
+    auto breached = makeCanonicalCube(true);
+    const std::size_t before = breached.triangles.size();
+    const auto breachedBuild = canonicalizeMesh(breached);
+    require(breachedBuild.success, breachedBuild.error.c_str());
+    const auto breachedAudit = analyzeCanonicalMesh(breached);
+    require(!breachedAudit.structuralInvalid && breachedAudit.openComponents == 1 &&
+            breachedAudit.boundaryEdges == 4,
+        "canonical breached volume did not preserve its authored opening");
+    require(breached.triangles.size() == before,
+        "canonical builder filled an authored breach");
+}
+
+void testCanonicalBuilderRemovesGarbageAndPreservesUvSeams()
+{
+    using namespace elite::model_asset::editor;
+    MeshLod mesh;
+    mesh.vertices = {
+        {{0,0,0},{0,0,-1},{0,0}}, {{2,0,0},{0,0,-1},{1,0}}, {{2,2,0},{0,0,-1},{1,1}},
+        // Same geometric corners, deliberately split by UVs for triangle two.
+        {{0,0,0},{0,0,1},{0.25f,0}}, {{2,2,0},{0,0,1},{0.75f,1}}, {{0,2,0},{0,0,1},{0,1}}
+    };
+    mesh.triangles = {
+        {0,1,2,0,3,7},
+        {3,4,5,0,3,7},
+        {2,1,0,9,3,7}, // reversed duplicate of the first triangle
+        {0,0,1,10,3,7} // degenerate garbage
+    };
+    mesh.minBounds = {0,0,0}; mesh.maxBounds = {2,2,0};
+
+    const auto built = canonicalizeMesh(mesh);
+    require(built.success, built.error.c_str());
+    require(built.removedDuplicateTriangles == 1,
+        "canonical builder did not remove a duplicate geometric triangle");
+    require(built.removedDegenerateTriangles == 1,
+        "canonical builder did not remove a collapsed triangle");
+    require(mesh.triangles.size() == 2,
+        "canonical cleanup produced the wrong triangle count");
+    const auto audit = analyzeCanonicalMesh(mesh);
+    require(audit.geometricPoints == 4,
+        "canonical point weld did not merge coincident OBJ corners");
+    require(mesh.vertices.size() == 6,
+        "canonical builder destroyed UV render-vertex seams");
+    require(glm::dot(mesh.vertices[0].normal, mesh.vertices[3].normal) > 0.999f,
+        "UV seam vertices did not receive the same canonical smooth normal");
+}
+
+void testCanonicalBuilderPreservesHardNormalSplit()
+{
+    using namespace elite::model_asset::editor;
+    MeshLod mesh;
+    mesh.vertices = {
+        {{0,0,0},{0,0,0},{0,0}},
+        {{1,0,0},{0,0,0},{1,0}},
+        {{0,1,0},{0,0,0},{0,1}},
+        {{0,0,1},{0,0,0},{1,1}}
+    };
+    // Two polygons meet at 90 degrees on edge 0-1. smoothingGroup=0 means
+    // canonical auto-crease logic may create a hard normal island boundary.
+    mesh.triangles = {
+        {0,1,2,0,0,0},
+        {0,3,1,1,0,0}
+    };
+    mesh.minBounds = {0,0,0}; mesh.maxBounds = {1,1,1};
+    const auto built = canonicalizeMesh(mesh);
+    require(built.success, built.error.c_str());
+    require(analyzeCanonicalMesh(mesh).geometricPoints == 4,
+        "hard-edge test lost geometric vertex identity");
+    require(mesh.vertices.size() == 6,
+        "hard edge did not split shared render vertices into separate normal islands");
+
+    std::vector<glm::vec3> originNormals;
+    for (const auto& v : mesh.vertices)
+        if (glm::length(v.position) < 1.0e-6f) originNormals.push_back(v.normal);
+    require(originNormals.size() == 2 && glm::dot(originNormals[0], originNormals[1]) < 0.1f,
+        "hard-normal render splits were flattened to one welded normal");
+}
+
+void testCanonicalBuilderFingerprintTracksStructuralPayload()
+{
+    using namespace elite::model_asset::editor;
+    auto mesh = makeCanonicalCube(false);
+    const auto built = canonicalizeMesh(mesh);
+    require(built.success, built.error.c_str());
+    const auto original = canonicalMeshFingerprint(mesh);
+    require(!mesh.edges.empty(), "canonical fingerprint test has no rebuilt edges");
+
+    mesh.edges[0].renderMask ^= EdgeRenderElite;
+    require(canonicalMeshFingerprint(mesh) == original,
+        "authoring-only edge render mask invalidated canonical preparation");
+
+    mesh.edges[0].triangleA = mesh.edges[0].triangleA == 0 ? 1 : 0;
+    require(canonicalMeshFingerprint(mesh) != original,
+        "structural edge adjacency did not invalidate canonical preparation fingerprint");
+}
+
+void testCanonicalBuilderRejectsTrueInvalidTopology()
+{
+    using namespace elite::model_asset::editor;
+    MeshLod broken = makeCanonicalCube(false);
+    broken.triangles[0].a = 9999;
+    const auto indexAudit = analyzeCanonicalMesh(broken);
+    require(indexAudit.structuralInvalid && indexAudit.invalidTriangles == 1,
+        "broken triangle indexing was not classified Invalid");
+    const auto indexBuild = canonicalizeMesh(broken);
+    require(!indexBuild.success,
+        "canonical builder silently repaired broken indexing");
+
+    MeshLod nonManifold;
+    nonManifold.vertices = {
+        {{0,0,0},{0,0,0},{0,0}}, {{1,0,0},{0,0,0},{0,0}},
+        {{0,1,0},{0,0,0},{0,0}}, {{0,-1,0},{0,0,0},{0,0}}, {{0,0,1},{0,0,0},{0,0}}
+    };
+    nonManifold.triangles = {{0,1,2,0,0,0},{1,0,3,1,0,0},{0,1,4,2,0,0}};
+    Edge sourceEdge; sourceEdge.a=0; sourceEdge.b=1; sourceEdge.triangleA=0; sourceEdge.triangleB=1; sourceEdge.flags=EdgeNonManifold;
+    nonManifold.edges.push_back(sourceEdge);
+    nonManifold.minBounds={0,-1,0}; nonManifold.maxBounds={1,1,1};
+    const auto nmAudit = analyzeCanonicalMesh(nonManifold);
+    require(nmAudit.structuralInvalid && nmAudit.sourceNonManifoldEdges == 1,
+        "real source non-manifold edge was downgraded to a canonical weld warning");
+}
+
 int main()
 {
     try
     {
         testNativeImporterKeepsSmallValidTriangles();
+        testCanonicalBuilderClosedPlateBreachContracts();
+        testCanonicalBuilderRemovesGarbageAndPreservesUvSeams();
+        testCanonicalBuilderPreservesHardNormalSplit();
+        testCanonicalBuilderFingerprintTracksStructuralPayload();
+        testCanonicalBuilderRejectsTrueInvalidTopology();
         testRigidInstanceFitRecoversBakedTransform();
         testRigidInstanceFitIgnoresLegacyObjIndexOrder();
         testRigidInstanceFitIgnoresDuplicatedSeamVertices();

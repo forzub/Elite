@@ -266,9 +266,23 @@ require(
     "Source OBJ/assembly files are read-only",
 )
 
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.9.9"')
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.10.8"')
 require(
     "tools/model_asset_editor/CHANGELOG.md",
+    "0.10.8",
+    "canonical mesh builder / explicit preparation contract",
+    "0.10.7",
+    "runtime-equivalent canonical mesh preparation",
+    "0.10.5",
+    "SOURCE owns complete authoring set / actionable preflight / Russian UI sweep",
+    "0.10.4",
+    "model preflight / topology intent / safe normals repair",
+    "0.10.3",
+    "diagnostic LOD preview / coplanar region collapse",
+    "0.10.2",
+    "explicit LOD0 comparison row",
+    "0.10.0",
+    "optional LOD analysis / disconnected-detail preview",
     "0.9.3",
     "metadata-only UI sync / linear checkpoint pruning",
     "0.9.9",
@@ -294,10 +308,48 @@ require(
     "Opening",
     "RepairTarget",
 )
+
+require(
+    "src/model_asset/ModelAsset.h",
+    "EdgeNonManifold",
+)
+require(
+    "tools/model_asset_editor/NativeObjImporter.cpp",
+    "useCount",
+    "EdgeNonManifold",
+)
+require(
+    "tools/model_asset_editor/CanonicalMeshBuilder.h",
+    "CanonicalMeshWeldEpsilon",
+    "CanonicalMeshAlgorithmId",
+    "CanonicalMeshAnalysis",
+    "CanonicalMeshBuildResult",
+    "canonicalizeMesh",
+    "canonicalMeshFingerprint",
+)
+require(
+    "tools/model_asset_editor/CanonicalMeshBuilder.cpp",
+    "buildPointMap",
+    "duplicateTriangles",
+    "solveOrientation",
+    "flipInsideOutClosedComponents",
+    "rebuildRenderVertices",
+    "normalIslands",
+    "rebuildEdges",
+    "EdgeNonManifold",
+)
+require(
+    "src/assets/webui/model_asset_editor.html",
+    "modelPreflightRuntimeBtn",
+    "runtimeNormalizedThreeGeometry",
+    "preflightGroup",
+    "model_editor.preflight.runtime_note",
+)
+
 require("src/assets/compiled/models/.gitignore", "Compiled model packages")
 
 cmake = text("CMakeLists.txt")
-for token in ("ELITE_BUILD_ASSET_EDITOR", "EliteModelAsset", "NativeObjImporter.cpp", "GeometryInstanceFitter.cpp", "ModelAssetMigration.cpp"):
+for token in ("ELITE_BUILD_ASSET_EDITOR", "EliteModelAsset", "NativeObjImporter.cpp", "CanonicalMeshBuilder.cpp", "GeometryInstanceFitter.cpp", "ModelAssetMigration.cpp"):
     if token not in cmake:
         raise AssertionError(f"asset editor v4 target missing {token!r}")
 
@@ -383,6 +435,13 @@ if "const bool protectedVariant = isRenderVariantGeometryId" not in session_cpp:
 for token in ("refreshSourceVariants", 'command == "refresh_source_variants"', "discoverAdditionalLodMeshes", "runtimeAssemblyLodSourcePaths"):
     if token not in session_cpp:
         raise AssertionError(f"source-variant refresh workflow missing {token!r}")
+for token in ("loadAllDeclaredLodsForSource", "refreshSourceVariants(true, false)", 'sourceOwned ? "source" : "geometry"'):
+    if token not in session_cpp:
+        raise AssertionError(f"SOURCE complete-authoring-set contract missing {token!r}")
+source_ui = text("src/assets/webui/model_asset_editor.html")
+for token in ("wizardSourceRefreshBtn", "sourceInventoryRow", "model_editor.source.loaded"):
+    if token not in source_ui:
+        raise AssertionError(f"SOURCE inventory UI contract missing {token!r}")
 for token in (
     'serializeAsset(bool includeGeometryPayload)',
     'if (includeGeometryPayload)',
@@ -442,6 +501,107 @@ for command in metadata_only_commands:
     if "sendAssetMetadata" not in block:
         raise AssertionError(f"command {command!r} does not publish metadata update")
 
+# Model Preflight is now a real canonical-preparation gate before LOD processing.
+# It persists proof for the exact payload, while the dedicated builder owns
+# cleanup/orientation/normal-island/render-edge reconstruction.
+for token in (
+    "analyzeModelPreflight",
+    "safeFixModelPreflight",
+    "setGeometryTopologyClass",
+    "modelPreflightReadyForLod",
+    "modelPreflightAllLoadedReady",
+    "canonicalizeMesh",
+    "canonicalMeshFingerprint",
+    "CanonicalMeshAlgorithmId",
+    "m_meshPreparationRecords",
+    "meshPreparationRecords",
+    "geometryTopologyClasses",
+    '"schemaVersion", 5',
+):
+    if token not in session_cpp:
+        raise AssertionError(f"model_preflight backend contract missing {token!r}")
+canonical_cpp = text("tools/model_asset_editor/CanonicalMeshBuilder.cpp")
+for token in (
+    "buildPointMap",
+    "duplicateTriangles",
+    "solveOrientation",
+    "flipInsideOutClosedComponents",
+    "rebuildRenderVertices",
+    "normalIslands",
+    "rebuildEdges",
+    "sourceNonManifoldEdgeCount",
+):
+    if token not in canonical_cpp:
+        raise AssertionError(f"canonical mesh builder contract missing {token!r}")
+model_asset_tests = text("tests/model_asset/ModelAssetBinaryTests.cpp")
+for token in (
+    "testCanonicalBuilderClosedPlateBreachContracts",
+    "testCanonicalBuilderRemovesGarbageAndPreservesUvSeams",
+    "testCanonicalBuilderPreservesHardNormalSplit",
+    "testCanonicalBuilderFingerprintTracksStructuralPayload",
+    "testCanonicalBuilderRejectsTrueInvalidTopology",
+):
+    if token not in model_asset_tests:
+        raise AssertionError(f"canonical mesh behavioral regression missing {token!r}")
+for token in (
+    "modelPreflightCheckBtn",
+    "modelPreflightFixBtn",
+    "renderModelPreflightPanel",
+    "model_preflight_result",
+    "set_geometry_topology_class",
+    "model_editor.preflight.class_thin",
+    "model_editor.preflight.class_breached",
+    "apply_mesh_preparation",
+    "model_editor.preflight.workflow",
+):
+    if token not in web_sync:
+        raise AssertionError(f"model_preflight Web UI contract missing {token!r}")
+
+# LOD generator v1 is deliberately preview-only. It must use the fixed project
+# authoring ceiling, analyze component thickness rather than filename/triangle
+# count heuristics, and reuse resident browser mesh payloads via removal ranges.
+require(
+    "src/render/RenderResolutionPolicy.h",
+    "MaximumSupportedRenderWidth = 2560",
+    "MaximumSupportedRenderHeight = 1440",
+)
+require(
+    "src/window/Window.cpp",
+    "elite::render::MaximumSupportedRenderWidth",
+    "elite::render::MaximumSupportedRenderHeight",
+)
+for token in (
+    "LodReferenceWidthPx = render::MaximumSupportedRenderWidth",
+    "LodReferenceHeightPx = render::MaximumSupportedRenderHeight",
+    "LodReferenceVerticalFovDeg = 70.0",
+    "LodVisibilityCutoffPx = 2.0",
+    "analyzeConnectedComponents",
+    "component.featureMeters = component.principalExtents.y",
+    "compressTriangleRanges",
+    "analyzeLodRequirements",
+    "previewLodComponentCull",
+    "previewLodCoplanarCollapse",
+    "analyzeCoplanarCollapse",
+):
+    if token not in session_cpp:
+        raise AssertionError(f"LOD generator preview contract missing {token!r}")
+for token in (
+    "lodGeneratorAnalyzeBtn",
+    "renderLodGeneratorPanel",
+    "lodGeneratorPreviewGeometry",
+    "model_editor.lod_generator.show_lod0",
+    "state.lodGeneratorLevel=0",
+    "lod_analysis_result",
+    "lod_generator_preview_result",
+    "removedTriangleRanges",
+    "addedTriangles",
+    "preview_lod_coplanar_collapse",
+    "lodDiagnosticActive",
+    "lodDiagnosticFaceNormalsBtn",
+):
+    if token not in web_sync:
+        raise AssertionError(f"LOD generator Web UI contract missing {token!r}")
+
 # Protected editor capabilities are a hard four-layer contract. A feature is not
 # considered preserved merely because its C++ implementation still exists: the
 # data model, backend command, visible UI entry point and regression test must all
@@ -471,8 +631,10 @@ for protected_id in (
     "wizard_checkpoints",
     "incremental_editor_sync",
     "source_render_variants",
+    "lod_generator_preview",
+    "model_preflight",
 ):
     if protected_id not in {c.get("id") for c in capability_doc.get("protected_capabilities", [])}:
         raise AssertionError(f"protected editor capability disappeared: {protected_id}")
 
-print("[PASS] model asset editor v0.9.9 checkpoint resume / geometry finish / recursive extras / stable ids / world XYZ / metadata sync / wizard / v4 boundary")
+print("[PASS] model asset editor v0.10.8 canonical mesh builder / explicit preparation state / SOURCE / diagnostic LOD preview / v4 boundary")

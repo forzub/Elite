@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>
@@ -48,6 +49,7 @@ private:
     bool unloadLod(std::size_t lodIndex);
     bool ensureLodLoaded(std::size_t lodIndex);
     bool ensureAllLodsLoaded();
+    bool loadAllDeclaredLodsForSource();
     void resetLodState(bool loaded, bool dirty);
     void markManifestDirty();
     void markLodDirty(std::size_t lodIndex);
@@ -71,6 +73,20 @@ private:
         std::string status = "not_started"; // not_started / complete / stale
         std::filesystem::path checkpointManifest;
     };
+    struct MeshPreparationRecord
+    {
+        std::string algorithm;
+        std::size_t sourceRenderVertices = 0;
+        std::size_t sourceTriangles = 0;
+        std::size_t geometricPoints = 0;
+        std::size_t outputRenderVertices = 0;
+        std::size_t outputTriangles = 0;
+        std::size_t removedDegenerateTriangles = 0;
+        std::size_t removedDuplicateTriangles = 0;
+        std::size_t normalIslands = 0;
+        std::size_t rebuiltEdges = 0;
+        std::uint64_t outputFingerprint = 0;
+    };
     std::filesystem::path wizardWorkspacePath() const;
     std::filesystem::path wizardStatePath() const;
     std::filesystem::path wizardCheckpointPath(const std::string& stage) const;
@@ -85,7 +101,18 @@ private:
         std::size_t lodIndex,
         std::size_t referenceRenderNodeIndex = std::size_t(-1),
         const std::vector<std::size_t>& targetRenderNodeIndices = {});
-    bool refreshSourceVariants();
+    bool analyzeModelPreflight();
+    bool safeFixModelPreflight();
+    bool modelPreflightAllLoadedReady(std::string* reason = nullptr) const;
+    bool setGeometryTopologyClass(
+        std::size_t lodIndex,
+        std::size_t geometryIndex,
+        const std::string& topologyClass);
+    bool modelPreflightReadyForLod(std::string* reason = nullptr) const;
+    bool analyzeLodRequirements(std::size_t lodIndex);
+    bool previewLodComponentCull(std::size_t lodIndex, double thresholdMeters);
+    bool previewLodCoplanarCollapse(std::size_t lodIndex);
+    bool refreshSourceVariants(bool sourceOwned = false, bool broadcastUpdates = true);
     bool setSourceVariantReplacement(
         std::size_t lodIndex,
         const std::string& variantId,
@@ -132,6 +159,15 @@ private:
     std::map<std::size_t, std::map<std::string, std::string>> m_baseVisualIds; // geometry id -> base visual id
     std::map<std::size_t, std::map<std::string, std::string>> m_sourceExtraMeshIds; // source path -> variant id
     std::map<std::string, std::vector<std::string>> m_sourceVariantReplacements; // variant id -> base visual ids
+    // Preflight topology intent is authoring metadata. Runtime rendering still
+    // uses SurfaceMode; breached and closed volumes both render as front-sided
+    // shells, while explicit thin sheets map to ThinTwoSided.
+    std::map<std::size_t, std::map<std::string, std::string>> m_geometryTopologyClasses; // geometry id -> explicit class
+    // Proof that a mesh has passed the destructive canonical builder. The mesh
+    // payload remains in .elmesh/checkpoints; this record only preserves the
+    // before/after preparation facts and a fingerprint so stale records cannot
+    // unlock the LOD generator.
+    std::map<std::size_t, std::map<std::string, MeshPreparationRecord>> m_meshPreparationRecords;
     std::map<std::size_t, std::map<std::string, std::vector<std::string>>> m_legacySourceVariantReplacements;
     std::size_t m_nextBaseVisualOrdinal = 1;
     std::size_t m_nextSourceVariantOrdinal = 1;

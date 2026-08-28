@@ -661,3 +661,15 @@ Local game и dedicated server должны использовать тот же
   long-range RouteSolver + real radar/transponder/beacon fusion/server ATC seams.
   `TrajectoryFollower` stays deferred until the displayed docking trajectory and
   GuidanceTunnel are accepted.
+
+---
+
+## Model Asset Editor — canonical mesh preparation 0.10.7
+
+- `[x]` SOURCE загружает полный authoring-набор: все declared Render LOD и дополнительные OBJ; имена дополнительных файлов/папок не являются semantic identity.
+- `[x]` Перед генерацией LOD введена подготовка мешей с геометрической идентичностью как в рабочем игровом OBJ-loader: positional weld `1e-4`, удаление схлопнувшихся треугольников, согласование winding и пересчёт normals.
+- `[x]` UV/material render-vertex splits не уничтожаются физической сваркой: несколько GPU-вершин могут представлять одну каноническую геометрическую точку.
+- `[x]` Целевые authoring-типы геометрии: `ClosedVolume`, `ThinTwoSided`, `BreachedVolume`; `Invalid` должен оставаться редким случаем, который автоматическая подготовка действительно не может нормализовать.
+- `[x]` Для корабельной скорлупы принят контракт: внутренние агрегаты могут быть `ClosedVolume`, наружные отрываемые листы — `ThinTwoSided`; удаление листа оставляет настоящую дыру с видимыми внутренностями. Повреждённый объём с намеренно удалёнными полигонами — `BreachedVolume`.
+- `[~]` Текущая задача: проверить подготовку на Orbital Station и одном повреждённом extra mesh, затем зафиксировать checkpoint LOD. LOD Generator остаётся downstream/optional и не должен заново угадывать тип геометрии.
+- `[D]` Дальнейшие LOD passes (`Thin Shell Collapse`, `Surface Detail Cull`, общий simplifier) отложены до принятия canonical mesh preparation.

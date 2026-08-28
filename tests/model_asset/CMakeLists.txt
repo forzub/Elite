@@ -10,6 +10,7 @@ add_executable(model_asset_tests
     "${ELITE_SOURCE_ROOT}/src/model_asset/ModelAssetBinary.cpp"
     "${ELITE_SOURCE_ROOT}/src/model_asset/ModelAssetMigration.cpp"
     "${ELITE_SOURCE_ROOT}/tools/model_asset_editor/NativeObjImporter.cpp"
+    "${ELITE_SOURCE_ROOT}/tools/model_asset_editor/CanonicalMeshBuilder.cpp"
     "${ELITE_SOURCE_ROOT}/tools/model_asset_editor/GeometryInstanceFitter.cpp"
 )
 target_include_directories(model_asset_tests PRIVATE "${ELITE_SOURCE_ROOT}" "${ELITE_SOURCE_ROOT}/src")

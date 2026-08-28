@@ -102,6 +102,23 @@ transforms/pivots, render transforms, joints, collision, sockets and inertia to
 canonical game coordinates. Basis conversion is a deliberate one-time authoring
 operation, not runtime correction.
 
+## Canonical render-mesh preparation
+
+Imported OBJ topology is source input, not a sacred runtime topology. Before LOD generation the editor runs a dedicated `CanonicalMeshBuilder` over every loaded render geometry. A positional weld at `1e-4` defines **geometric points** for topology, but does not destructively merge GPU/render vertices. UV/material seams stay split, and hard-normal continuity is reconstructed as normal islands from source polygon identity, smoothing groups and a 25-degree crease policy.
+
+Canonical preparation:
+
+- rejects invalid indices, non-finite positions, genuine source non-manifold edges and non-orientable topology as `Invalid`;
+- removes triangles collapsed by the geometric weld and duplicate geometric triangles;
+- solves consistent winding and turns closed inside-out shells outward;
+- never caps authored open boundaries;
+- rebuilds render vertices/normals and then rebuilds `MeshLod.edges` against the final triangle indices;
+- preserves `ThinTwoSided` sheets and authored `BreachedVolume` openings as valid geometry contracts.
+
+A canonical multi-use edge created only by positional weld is a warning, not automatically a true source non-manifold failure: independent touching/coincident shells may share geometric positions. The importer persists genuine source non-manifold evidence separately through `EdgeNonManifold`.
+
+Editor preparation state is fingerprinted. LOD processing is allowed only when the current LOD0 mesh payload still matches its canonical-preparation record and its final geometry contract/surface mode is resolved. Render LODs remain independent documents; generated LOD1/LOD2/... will be derived independently from canonical LOD0 rather than chained from one simplified LOD to the next.
+
 ## Binary format v4: semantic manifest + independent render LOD payloads
 
 A compiled asset is a small semantic manifest plus one independent render document
@@ -156,10 +173,26 @@ only; `Save all` writes only dirty/missing package members.
 This is also the intended runtime streaming boundary: a distant ship can load its
 semantic manifest plus only a coarse render LOD without reading LOD0.
 
-Future `Generate LOD` is an offline authoring operation, not a structural contract.
-It may weld meshes, remove small parts, collapse topology, replace assemblies with
-proxies or otherwise create a completely new render graph while preserving silhouette,
-material intent and any explicit semantic mappings needed for damage presentation.
+`Generate LOD` is an optional offline authoring operation, not a required wizard gate or
+a structural contract. The project maximum supported render resolution is
+**2560x1440** and desktop window sizing uses the same central policy. LOD analysis
+therefore never preserves geometry solely for a target above that ceiling. It currently
+assumes a 70 degree vertical FOV and treats a feature below 2 screen pixels as a
+candidate for removal. Smaller runtime resolutions may simplify earlier.
+
+The first generator pass is conservative and read-only. It welds coincident positions
+for analysis only (so OBJ UV/normal seams do not create false islands), finds connected
+components, estimates principal-axis extents, and uses the **middle principal extent**
+as a visual thickness proxy: for a long tube it behaves like diameter; for a flat sheet
+it behaves like the smaller in-plane width rather than sheet thickness. The largest
+structural island and any island carrying at least 25% of one geometry are protected.
+`Preview Cull` sends only compressed triangle-removal ranges to the browser and never
+changes the asset or checkpoint state.
+
+Later generator passes may remove surface detail embedded in a carrier patch, collapse
+bevels, simplify topology or replace assemblies with proxies. Any generated result must
+remain a preview until the author explicitly assigns it to replace/add a target LOD;
+LOD identity must never be inferred from filenames.
 
 ### Web UI synchronization is metadata-first
 

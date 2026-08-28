@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include "input/Input.h"
+#include "render/RenderResolutionPolicy.h"
 
 namespace
 {
@@ -71,8 +72,8 @@ Window::Window(int width, int height, const char* title)
             m_window,
             800,
             600,
-            GLFW_DONT_CARE,
-            GLFW_DONT_CARE
+            elite::render::MaximumSupportedRenderWidth,
+            elite::render::MaximumSupportedRenderHeight
         );
     }
 

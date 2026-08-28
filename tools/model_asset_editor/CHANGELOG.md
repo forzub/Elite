@@ -1,3 +1,65 @@
+## 0.10.8 — canonical mesh builder / explicit preparation contract
+
+- Replaced the transitional Preflight repair path with a dedicated `CanonicalMeshBuilder`. Positional weld at `1e-4` now defines geometric points while render vertices remain independently split by UV/material identity and by reconstructed hard-normal islands.
+- Canonical preparation now removes both collapsed and duplicate geometric triangles, solves orientable winding, turns closed inside-out shells outward, rebuilds normals from polygon/smoothing/25° crease continuity, and completely rebuilds final `MeshLod.edges` against the rewritten triangle indices. Authored breach boundaries are never capped.
+- True source non-manifold edges, invalid triangle indices, non-finite positions and non-orientable topology are classified `Invalid`; canonical multi-use caused only by the positional weld remains a warning so touching/coincident authored shells are not rejected by accident.
+- Preparation is now explicit editor state (`wizard_state.json` schema 5): every prepared geometry stores the builder algorithm id, before/after counts, cleanup statistics and a fingerprint of its canonical render payload. Any later mesh mutation invalidates the record automatically by fingerprint mismatch.
+- Model Preflight now reports source render vertices → geometric points → canonical render vertices/triangles, separates default and additional meshes, and enables `Prepare meshes` whenever a loaded mesh lacks a current preparation record. Closed volumes and high-confidence thin sheets resolve automatically; ambiguous open geometry is classified once by the author.
+- Added behavioral model-asset tests for a closed cube, a two-sided plate, an authored breached cube, degenerate/duplicate cleanup with UV seams, hard-normal render splitting and genuine `Invalid` topology. LOD generation remains downstream and deliberately unchanged.
+
+## 0.10.7 — runtime-equivalent canonical mesh preparation
+
+- Model Preflight is now a preparation stage instead of an author-topology purity checker. The canonical geometric identity follows the proven game OBJ-loader policy: positional weld at `1e-4`.
+- Preparation preserves UV/material render-vertex splits, but treats coincident positions as one geometric point for topology, winding and normal generation. This gives game-parity geometry without destroying future texture seams.
+- Applying preparation removes triangles collapsed by the weld, normalizes winding where adjacency is unambiguous, flips closed inside-out shells, and recomputes normals on welded geometric points before copying them back to render-vertex splits.
+- Canonical multi-use edges are diagnostic warnings rather than automatic manual-repair blockers. Open/mixed geometry instead requires an explicit final target class: `ClosedVolume`, `ThinTwoSided` or `BreachedVolume`.
+- The LOD Generator remains downstream and unchanged; it is unlocked only after LOD0 has been prepared and its target geometry classes are resolved.
+
+## 0.10.6 — author topology / runtime parity preflight
+
+- Model Preflight no longer treats coincident positions as true author adjacency. It now audits the source-edge topology preserved by `NativeObjImporter`, so UV/normal seams remain connected while separate touching panels are not fused into one non-manifold object.
+- `NativeObjImporter` now preserves a real source non-manifold marker when one source edge is used by more than two triangles. This uses a new generic edge flag and does not change the binary layout.
+- Preflight separately reports the legacy game-loader normalization footprint: source vertices → vertices after the runtime 1e-4 positional weld. Runtime weld is diagnostic evidence, not asset topology.
+- Added a read-only `As in game` viewport mode that emulates the current runtime OBJ path locally: 1e-4 positional weld, recomputed vertex normals and two-sided rendering. `Author view` returns to the asset surface modes without mutating geometry or checkpoints.
+- Preflight rows are visually grouped by LOD and split with a double separator into default and additional meshes, so variants are no longer mixed into the base-model list.
+- Orientation repair now follows author source-edge adjacency instead of positional-weld adjacency, preventing safe-fix from propagating winding across merely coincident independent pieces.
+
+## 0.10.5 — SOURCE owns complete authoring set / actionable preflight / Russian UI sweep
+
+- SOURCE now materializes the complete authoring working set before later wizard stages: every declared render LOD is loaded into memory and every additional OBJ discovered recursively below those LOD source trees is imported with its existing stable authoring id. Initial discovery belongs to SOURCE; later LOD/GEOMETRY stages consume that snapshot instead of silently discovering missing meshes.
+- The SOURCE stage now shows a per-LOD inventory (loaded state, base meshes, additional meshes and source-backed geometry). `Refresh source set` rescans only additional OBJ files without rebuilding the base assembly; full source reimport still deliberately discards in-memory edits.
+- Model Preflight still audits every loaded geometry, including additional meshes and pre-existing lower LODs, but its output is now actionable: each row says READY, AUTO FIX, SET TYPE, FIX → TYPE or FIX MESH, and the summary separates automatic repairs, explicit open-surface classification and manual topology repair. LOD0 generator readiness remains a separate gate so an unwanted bad lower LOD may later be replaced instead of blocking LOD0 analysis.
+- Expanded Russian localization across SOURCE/Preflight, asset metadata, common geometry labels and frequent editor status messages. Raw English preflight reason text is no longer shown in the Russian UI.
+
+## 0.10.4 — model preflight / topology intent / safe normals repair
+
+- Added a required Model Preflight block before the optional LOD Generator. It audits every loaded render geometry by connected component for open boundaries, non-manifold edges, degenerate triangles, winding conflicts, closed components that are globally inside-out, and authored normals that point against triangle winding.
+- Open geometry is no longer treated as one ambiguous category. Preflight distinguishes `ClosedVolume`, `ThinTwoSided`, `BreachedVolume`, `Mixed` and `Invalid`; open meshes receive a conservative suggestion but require an explicit authoring choice before used LOD0 geometry may enter the generator.
+- Explicit topology intent is persisted as editor authoring metadata in `wizard_state.json` schema 4 and is independent of OBJ filenames. `ThinTwoSided` maps to the existing two-sided surface render mode; closed and intentionally breached volumes remain front-sided shells.
+- `Safe Auto Fix` only touches unambiguous orientation data: it propagates consistent winding across manifold adjacency, flips an entire closed component when signed volume proves it is inside-out, and recomputes normals after an orientation repair. It never fills holes, joins surfaces or guesses whether an open mesh is a plate or a breach.
+- The LOD Generator backend is now gated by preflight readiness for used non-variant LOD0 geometry. Existing component-cull and coplanar previews remain otherwise unchanged.
+
+## 0.10.3 — diagnostic LOD preview / coplanar region collapse
+
+- LOD comparison switches to an opaque depth-writing diagnostic material after analysis, removing the translucent "x-ray" ambiguity that made cull results hard to judge. Optional wireframe and sampled face-normal overlays are available directly in the LOD Generator block.
+- Added a second, independent `Coplanar Preview` pass. It only merges topologically connected triangle regions that share a plane and compatible material/smoothing/UV/normal boundaries; holes, non-manifold boundaries, multiple loops and regions that do not reduce triangle count are skipped.
+- Coplanar preview is non-destructive. The backend sends compressed removed-triangle ranges plus only the small replacement boundary triangulations; the browser reuses resident vertex/normal/UV payloads instead of retransmitting meshes.
+- LOD rows now show the practical rendered-triangle budget as `LOD0 → remaining`, including the explicit LOD0 baseline. The existing disconnected-component Cull algorithm is unchanged.
+
+## 0.10.2 — explicit LOD0 comparison row
+
+- Added LOD0 as an explicit first row in the optional LOD Generator table so the untouched authored model is available beside every cull-preview level.
+- Selecting LOD0 and pressing `Show LOD0` clears any active cull preview and restores the authored LOD0 locally. This is presentation-only and does not change asset data, checkpoints or the analyzer/cull algorithm.
+- LOD analysis now selects LOD0 by default after every analysis. This patch is based directly on the retained 0.10.0 disconnected-component cull; the rejected 0.10.1 planar-guard experiment is not included.
+
+## 0.10.0 — optional LOD analysis / disconnected-detail preview
+
+- Added an optional LOD Generator block to the LOD stage. Its first pass is deliberately read-only: `Analyze LOD0` measures used default geometry without dirtying the asset, saving files or replacing any LOD.
+- Fixed the project maximum supported render resolution at 2560×1440 through a shared policy used by desktop window sizing and LOD visibility analysis, with a 70° vertical FOV and a default 2 px feature cutoff. The analyzer reports recommended total LOD count, feature-size bands and estimated 2 px disappearance distances.
+- The first practical simplification pass analyzes geometrically connected components after an analysis-only positional weld across OBJ UV/normal seams. Principal-axis extents are used so the middle extent behaves as tube diameter for rods and in-plane width for sheets; filename/folder identity is irrelevant.
+- `Preview Cull` is non-destructive and transfers only compressed triangle-removal ranges. The browser reuses already resident vertices/normals and constructs temporary index buffers locally, so the preview does not reintroduce full-mesh WebSocket churn.
+- Safety for this first experiment is intentionally conservative: the largest connected island of each geometry and any island carrying at least 25% of that geometry's triangles are protected. Only disconnected thin/small components are preview-culled. No generated LOD is committed yet; assignment/replacement of LOD slots remains a later explicit action.
+
 ## 0.9.9 — resume latest wizard checkpoint
 
 - Selecting an asset now resumes the highest existing wizard checkpoint before consulting the production `.elmodel` package. A checkpoint is a complete authoring snapshot, so additional meshes and other Geometry-stage edits survive editor restart without requiring `Refresh additional LOD meshes`.

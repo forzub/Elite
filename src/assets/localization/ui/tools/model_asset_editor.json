@@ -1253,7 +1253,7 @@
     },
     "model_editor.v4.action.hit": {
       "en": "+ HIT",
-      "ru": "+ HIT",
+      "ru": "+ ОБЛАСТЬ ПОПАДАНИЯ",
       "zh-Hans": "+ 命中区",
       "es": "+ HIT",
       "ja": "+ HIT"
@@ -1588,8 +1588,8 @@
       "ja": "アセットを選択して処理ウィザードを開始してください。"
     },
     "model_editor.wizard.source.desc": {
-      "en": "Verify the source root and rebuild the in-memory asset from read-only OBJ/assembly data.",
-      "ru": "Проверьте путь к исходникам и пересоберите asset в памяти из OBJ/assembly только для чтения.",
+      "en": "SOURCE loads the complete authoring set: every declared LOD plus every additional OBJ discovered recursively under its LOD tree. Later stages process this loaded snapshot.",
+      "ru": "SOURCE загружает полный рабочий набор: все объявленные LOD и все дополнительные OBJ, найденные рекурсивно в их каталогах. Следующие этапы работают только с этим загруженным снимком.",
       "zh-Hans": "确认源路径，并从只读 OBJ/装配数据重建内存中的资源。",
       "es": "Verifica la ruta de origen y reconstruye el asset en memoria desde OBJ/assembly de solo lectura.",
       "ja": "ソースルートを確認し、読み取り専用 OBJ/assembly からメモリ上のアセットを再構築します。"
@@ -1623,8 +1623,8 @@
       "ja": "保存済み LOD ペイロード"
     },
     "model_editor.wizard.source.reimport": {
-      "en": "REIMPORT SOURCE",
-      "ru": "ПЕРЕИМПОРТИРОВАТЬ ИСХОДНИК",
+      "en": "RELOAD ALL SOURCE MESHES",
+      "ru": "ПЕРЕЗАГРУЗИТЬ ВСЕ ИСХОДНЫЕ МЕШИ",
       "zh-Hans": "重新导入源模型",
       "es": "REIMPORTAR ORIGEN",
       "ja": "ソース再インポート"
@@ -1687,7 +1687,7 @@
     },
     "model_editor.wizard.geometry.render_nodes": {
       "en": "render nodes",
-      "ru": "render nodes",
+      "ru": "render-узлов",
       "zh-Hans": "RenderNode",
       "es": "render nodes",
       "ja": "RenderNode"
@@ -1941,7 +1941,7 @@
     },
     "model_editor.geometry_inspector.pivot": {
       "en": "Pivot XYZ",
-      "ru": "Pivot XYZ"
+      "ru": "Опорная точка XYZ"
     },
     "model_editor.geometry_inspector.apply_placement": {
       "en": "Apply placement",
@@ -2128,12 +2128,12 @@
       "ru": "Возвращает редактор в точное состояние, сохранённое при последнем завершении этого этапа. Изменения после этой точки отбрасываются, более поздние контрольные точки удаляются. Исходные OBJ и production-пакет не меняются до сохранения."
     },
     "model_editor.wizard.source.reimport_tip.title": {
-      "en": "Reimport source",
-      "ru": "Повторно загрузить исходники"
+      "en": "Reload all source meshes",
+      "ru": "Перезагрузить все исходные меши"
     },
     "model_editor.wizard.source.reimport_tip.desc": {
-      "en": "Re-reads the configured source OBJ/assembly into editor memory. Source files remain read-only.",
-      "ru": "Заново читает настроенные OBJ/assembly в память редактора. Исходные файлы остаются только для чтения."
+      "en": "Rebuilds the base assembly, loads every declared LOD and recursively imports every additional OBJ. Source files remain read-only.",
+      "ru": "Пересобирает основную модель, загружает все объявленные LOD и рекурсивно импортирует каждый дополнительный OBJ. Исходные файлы остаются только для чтения."
     },
     "model_editor.geometry_compare.select_all_tip.title": {
       "en": "Select all",
@@ -2282,6 +2282,594 @@
     "model_editor.geometry_compare.unused_none": {
       "en": "Nothing to delete in the active LOD.",
       "ru": "В активном LOD удалять нечего."
+    },
+    "model_editor.lod_generator.title": {
+      "en": "LOD GENERATOR · OPTIONAL",
+      "ru": "ГЕНЕРАТОР LOD · НЕОБЯЗАТЕЛЬНО"
+    },
+    "model_editor.lod_generator.analyze": {
+      "en": "ANALYZE LOD0",
+      "ru": "АНАЛИЗ LOD0"
+    },
+    "model_editor.lod_generator.analyze_tip.title": {
+      "en": "Analyze LOD0",
+      "ru": "Анализировать LOD0"
+    },
+    "model_editor.lod_generator.analyze_tip.desc": {
+      "en": "Read-only feature analysis. It does not generate, replace, save or dirty any LOD.",
+      "ru": "Анализ только для чтения. Он ничего не генерирует, не заменяет, не сохраняет и не делает LOD изменённым."
+    },
+    "model_editor.lod_generator.empty": {
+      "en": "Analysis is read-only. It measures disconnected component thickness using a 2560×1440 maximum render target, 70° vertical FOV and a 2 px visibility cutoff.",
+      "ru": "Анализ ничего не меняет. Толщина отдельных связных компонентов оценивается для максимального рендера 2560×1440, вертикального FOV 70° и порога видимости 2 px."
+    },
+    "model_editor.lod_generator.reference": {
+      "en": "maximum render target",
+      "ru": "максимальный рендер"
+    },
+    "model_editor.lod_generator.optics": {
+      "en": "analysis optics",
+      "ru": "параметры видимости"
+    },
+    "model_editor.lod_generator.recommended": {
+      "en": "recommended total LODs",
+      "ru": "рекомендуется LOD всего"
+    },
+    "model_editor.lod_generator.components": {
+      "en": "connected / removable components",
+      "ru": "связных / кандидатов на удаление"
+    },
+    "model_editor.lod_generator.feature_band": {
+      "en": "detail feature band",
+      "ru": "диапазон толщины деталей"
+    },
+    "model_editor.lod_generator.threshold": {
+      "en": "min. feature",
+      "ru": "мин. деталь"
+    },
+    "model_editor.lod_generator.distance": {
+      "en": "2 px distance",
+      "ru": "дистанция 2 px"
+    },
+    "model_editor.lod_generator.candidates": {
+      "en": "first-pass candidates",
+      "ru": "кандидаты первого прохода"
+    },
+    "model_editor.lod_generator.preview": {
+      "en": "PREVIEW CULL",
+      "ru": "ПОКАЗАТЬ ОТСЕЧЕНИЕ"
+    },
+    "model_editor.lod_generator.show_lod0": {
+      "en": "SHOW LOD0",
+      "ru": "ПОКАЗАТЬ LOD0"
+    },
+    "model_editor.lod_generator.show_lod0_status": {
+      "en": "LOD0 authored geometry shown; generator preview disabled.",
+      "ru": "Показан исходный LOD0; просмотр генератора выключен."
+    },
+    "model_editor.lod_generator.clear": {
+      "en": "CLEAR PREVIEW",
+      "ru": "УБРАТЬ ПРОСМОТР"
+    },
+    "model_editor.lod_generator.scope": {
+      "en": "Component Cull only hides disconnected thin/small components. Coplanar Preview separately collapses topologically connected coplanar triangle regions without crossing material, smoothing, UV or normal seams. Both are preview-only; asset data is unchanged.",
+      "ru": "Отсечение компонентов скрывает только отдельные тонкие/мелкие компоненты. Просмотр плоскостей отдельно объединяет топологически связанные копланарные треугольники, не переходя через границы материала, smoothing, UV или нормалей. Оба режима только для просмотра; данные asset не изменяются."
+    },
+    "model_editor.lod_generator.preview_active": {
+      "en": "Preview active",
+      "ru": "Просмотр активен"
+    },
+    "model_editor.lod_generator.rendered_triangles": {
+      "en": "rendered triangles",
+      "ru": "отрисовываемых треугольников"
+    },
+    "model_editor.lod_generator.no_preview": {
+      "en": "NO CHANGES: no LOD generator preview is active",
+      "ru": "БЕЗ ИЗМЕНЕНИЙ: просмотр генератора LOD не включён"
+    },
+    "model_editor.lod_generator.preview_cleared": {
+      "en": "LOD generator preview cleared; authored geometry restored.",
+      "ru": "Просмотр генератора LOD выключен; авторская геометрия восстановлена."
+    },
+    "model_editor.lod_generator.command.analyze": {
+      "en": "Analyze LOD requirements",
+      "ru": "Анализ требований LOD"
+    },
+    "model_editor.lod_generator.command.preview": {
+      "en": "Build LOD cull preview",
+      "ru": "Построение просмотра отсечения LOD"
+    },
+    "model_editor.lod_generator.triangles_lod0": {
+      "en": "LOD0 triangles",
+      "ru": "треугольников LOD0"
+    },
+    "model_editor.lod_generator.remaining": {
+      "en": "triangles: LOD0 → remaining",
+      "ru": "треугольники: LOD0 → останется"
+    },
+    "model_editor.lod_generator.coplanar": {
+      "en": "COPLANAR PREVIEW",
+      "ru": "ПРОСМОТР ПЛОСКОСТЕЙ"
+    },
+    "model_editor.lod_generator.wireframe": {
+      "en": "WIREFRAME",
+      "ru": "КАРКАС"
+    },
+    "model_editor.lod_generator.face_normals": {
+      "en": "FACE NORMALS",
+      "ru": "НОРМАЛИ ГРАНЕЙ"
+    },
+    "model_editor.lod_generator.diagnostic_opaque": {
+      "en": "LOD comparison uses an opaque depth-writing diagnostic material.",
+      "ru": "Сравнение LOD использует непрозрачный диагностический материал с записью глубины."
+    },
+    "model_editor.lod_generator.coplanar_active": {
+      "en": "Coplanar preview",
+      "ru": "Просмотр плоскостей"
+    },
+    "model_editor.lod_generator.regions": {
+      "en": "regions",
+      "ru": "областей"
+    },
+    "model_editor.lod_generator.command.coplanar": {
+      "en": "Build coplanar collapse preview",
+      "ru": "Построение просмотра объединения плоскостей"
+    },
+    "model_editor.lod_generator.coplanar_tip.title": {
+      "en": "Coplanar collapse preview",
+      "ru": "Просмотр объединения плоскостей"
+    },
+    "model_editor.lod_generator.coplanar_tip.desc": {
+      "en": "Read-only: retriangulates only topologically connected coplanar regions with compatible material, smoothing, UV and normal boundaries. The asset is not changed.",
+      "ru": "Только просмотр: перетриангулирует лишь топологически связанные копланарные области с совместимыми границами материала, smoothing, UV и нормалей. Asset не изменяется."
+    },
+    "model_editor.lod_generator.wireframe_tip.title": {
+      "en": "Diagnostic wireframe",
+      "ru": "Диагностический каркас"
+    },
+    "model_editor.lod_generator.wireframe_tip.desc": {
+      "en": "Shows the actual triangle tessellation of the currently displayed authored or preview geometry.",
+      "ru": "Показывает фактическую триангуляцию текущей исходной или preview-геометрии."
+    },
+    "model_editor.lod_generator.face_normals_tip.title": {
+      "en": "Sampled face normals",
+      "ru": "Выборочные нормали граней"
+    },
+    "model_editor.lod_generator.face_normals_tip.desc": {
+      "en": "Draws sampled normals computed from triangle winding, independent of authored vertex normals. Useful for finding flipped/back-facing geometry.",
+      "ru": "Рисует выборочные нормали, вычисленные из порядка вершин треугольников независимо от авторских vertex normals. Помогает находить перевёрнутые грани."
+    },
+    "model_editor.preflight.title": {
+      "en": "MESH PREPARATION",
+      "ru": "ПОДГОТОВКА МЕШЕЙ"
+    },
+    "model_editor.preflight.check": {
+      "en": "ANALYZE",
+      "ru": "АНАЛИЗИРОВАТЬ"
+    },
+    "model_editor.preflight.fix": {
+      "en": "APPLY PREPARATION",
+      "ru": "ПРИМЕНИТЬ ПОДГОТОВКУ"
+    },
+    "model_editor.preflight.help": {
+      "en": "Prepare every loaded mesh before LOD generation. Canonical output keeps geometric points separate from GPU render vertices and resolves to Closed volume, Thin two-sided, Breached volume or genuine Invalid.",
+      "ru": "Перед генерацией LOD подготовьте каждый загруженный меш. Канонический результат различает геометрические точки и GPU render-вершины и приводит mesh к «Замкнутому объёму», «Тонкой двусторонней», «Пробитому объёму» либо к настоящему Invalid."
+    },
+    "model_editor.preflight.geometry": {
+      "en": "geometries / components",
+      "ru": "геометрий / компонентов"
+    },
+    "model_editor.preflight.closed_open": {
+      "en": "closed / open components",
+      "ru": "замкнутых / открытых компонентов"
+    },
+    "model_editor.preflight.orientation": {
+      "en": "winding / inside-out / inverted normals",
+      "ru": "winding / вывернутых объёмов / обратных нормалей"
+    },
+    "model_editor.preflight.topology": {
+      "en": "boundary / non-manifold / degenerate",
+      "ru": "границ / non-manifold / вырожденных"
+    },
+    "model_editor.preflight.ready": {
+      "en": "LOD0 READY FOR LOD PROCESSING",
+      "ru": "LOD0 ГОТОВ К ОБРАБОТКЕ LOD"
+    },
+    "model_editor.preflight.not_ready": {
+      "en": "LOD0 NOT READY",
+      "ru": "LOD0 НЕ ГОТОВ"
+    },
+    "model_editor.preflight.mesh": {
+      "en": "mesh",
+      "ru": "меш"
+    },
+    "model_editor.preflight.form": {
+      "en": "form",
+      "ru": "форма"
+    },
+    "model_editor.preflight.edges": {
+      "en": "edges",
+      "ru": "рёбра"
+    },
+    "model_editor.preflight.normals": {
+      "en": "orientation",
+      "ru": "ориентация"
+    },
+    "model_editor.preflight.class": {
+      "en": "authoring class",
+      "ru": "тип геометрии"
+    },
+    "model_editor.preflight.legend": {
+      "en": "P = geometric points; V = render vertices; T = triangles; B = authored/open boundary; MU = multi-use only after positional weld (warning); NM/Invalid = genuine source non-manifold or another structural failure. ThinTwoSided and BreachedVolume boundaries are intentional and are never capped.",
+      "ru": "P — геометрические точки; V — render-вершины; T — треугольники; B — открытая граница; MU — multi-use только после positional weld (предупреждение); NM/Invalid — настоящий source non-manifold или другая структурная поломка. Границы ThinTwoSided и BreachedVolume штатны и никогда автоматически не заделываются."
+    },
+    "model_editor.preflight.command.check": {
+      "en": "check model preflight",
+      "ru": "проверка модели"
+    },
+    "model_editor.preflight.command.fix": {
+      "en": "build canonical meshes",
+      "ru": "построение канонических мешей"
+    },
+    "model_editor.preflight.command.classify": {
+      "en": "set topology class",
+      "ru": "назначение типа геометрии"
+    },
+    "model_editor.preflight.check_tip.title": {
+      "en": "Analyze meshes",
+      "ru": "Анализировать меши"
+    },
+    "model_editor.preflight.check_tip.desc": {
+      "en": "Analyze canonical geometric-point topology, preparation state, cleanup requirements and target geometry class before LOD processing.",
+      "ru": "Проверить topology геометрических точек, состояние подготовки, требуемую очистку и конечный тип geometry перед обработкой LOD."
+    },
+    "model_editor.preflight.fix_tip.title": {
+      "en": "Apply mesh preparation",
+      "ru": "Применить подготовку"
+    },
+    "model_editor.preflight.fix_tip.desc": {
+      "en": "Build canonical meshes: 1e-4 positional geometric weld, degenerate/duplicate cleanup, consistent outward winding, normal islands and complete edge-topology rebuild. UV/material/hard-normal render splits are preserved.",
+      "ru": "Построить canonical mesh: positional weld 1e-4 для геометрических точек, удалить degenerate/duplicate мусор, согласовать наружный winding, построить normal islands и полностью перестроить edge topology. UV/material/hard-normal render-разрывы сохраняются."
+    },
+    "model_editor.source.state": {
+      "en": "state",
+      "ru": "состояние"
+    },
+    "model_editor.source.base": {
+      "en": "base",
+      "ru": "основных"
+    },
+    "model_editor.source.extra": {
+      "en": "extra",
+      "ru": "доп."
+    },
+    "model_editor.source.sources": {
+      "en": "source meshes",
+      "ru": "исходные меши"
+    },
+    "model_editor.source.loaded": {
+      "en": "loaded",
+      "ru": "загружен"
+    },
+    "model_editor.source.not_loaded": {
+      "en": "not loaded",
+      "ru": "не загружен"
+    },
+    "model_editor.source.source_files_short": {
+      "en": "from source",
+      "ru": "из исходников"
+    },
+    "model_editor.preflight.action": {
+      "en": "action",
+      "ru": "действие"
+    },
+    "model_editor.preflight.action.ready": {
+      "en": "READY",
+      "ru": "ГОТОВО"
+    },
+    "model_editor.preflight.action.safe_fix": {
+      "en": "PREPARE",
+      "ru": "ПОДГОТОВИТЬ"
+    },
+    "model_editor.preflight.action.classify": {
+      "en": "SET TYPE",
+      "ru": "НАЗНАЧИТЬ ТИП"
+    },
+    "model_editor.preflight.action.fix_classify": {
+      "en": "PREPARE → TYPE",
+      "ru": "ПОДГОТОВИТЬ → ТИП"
+    },
+    "model_editor.preflight.action.manual": {
+      "en": "FIX MESH",
+      "ru": "ПРАВИТЬ МЕШ"
+    },
+    "model_editor.preflight.class_auto": {
+      "en": "AUTO",
+      "ru": "АВТО"
+    },
+    "model_editor.preflight.class_closed": {
+      "en": "Closed volume",
+      "ru": "Замкнутый объём"
+    },
+    "model_editor.preflight.class_thin": {
+      "en": "Thin two-sided",
+      "ru": "Тонкая двусторонняя"
+    },
+    "model_editor.preflight.class_breached": {
+      "en": "Breached volume",
+      "ru": "Пробитый объём"
+    },
+    "model_editor.preflight.open_short": {
+      "en": "open",
+      "ru": "откр."
+    },
+    "model_editor.preflight.closed_short": {
+      "en": "closed",
+      "ru": "замкн."
+    },
+    "model_editor.preflight.ok": {
+      "en": "OK",
+      "ru": "OK"
+    },
+    "model_editor.preflight.extra_short": {
+      "en": "extra",
+      "ru": "доп."
+    },
+    "model_editor.preflight.all_ready": {
+      "en": "ALL LOADED GEOMETRY IS CANONICALLY PREPARED",
+      "ru": "ВСЯ ЗАГРУЖЕННАЯ ГЕОМЕТРИЯ КАНОНИЧЕСКИ ПОДГОТОВЛЕНА"
+    },
+    "model_editor.preflight.actions_needed": {
+      "en": "ACTIONS REQUIRED",
+      "ru": "ТРЕБУЮТ ДЕЙСТВИЙ"
+    },
+    "model_editor.preflight.auto_count": {
+      "en": "auto",
+      "ru": "авто"
+    },
+    "model_editor.preflight.classify_count": {
+      "en": "type",
+      "ru": "тип"
+    },
+    "model_editor.preflight.manual_count": {
+      "en": "manual",
+      "ru": "ручная правка"
+    },
+    "model_editor.preflight.reason.topology": {
+      "en": "manual topology repair required",
+      "ru": "требуется ручная правка топологии"
+    },
+    "model_editor.preflight.reason.orientation": {
+      "en": "winding/normals must be fixed",
+      "ru": "нужно исправить winding/нормали"
+    },
+    "model_editor.preflight.reason.classify": {
+      "en": "open geometry needs an explicit type",
+      "ru": "нужно явно назначить тип открытой геометрии"
+    },
+    "model_editor.preflight.reason.surface": {
+      "en": "surface mode does not match classification",
+      "ru": "тип поверхности не соответствует классификации"
+    },
+    "model_editor.preflight.workflow": {
+      "en": "Workflow: 1) Prepare meshes; 2) ClosedVolume and high-confidence ThinTwoSided resolve automatically; 3) choose ThinTwoSided or BreachedVolume once only for ambiguous open geometry. Invalid is reserved for genuine structural failure. LOD generation starts only after this contract is complete.",
+      "ru": "Порядок: 1) «ПОДГОТОВИТЬ МЕШИ»; 2) ClosedVolume и уверенный ThinTwoSided принимаются автоматически; 3) только неоднозначному открытому mesh один раз назначить ThinTwoSided или BreachedVolume. Invalid оставлен для настоящей структурной поломки. Генерация LOD начинается только после выполнения этого контракта."
+    },
+    "model_editor.meta.semantic_parts": {
+      "en": "semantic parts",
+      "ru": "семантических частей"
+    },
+    "model_editor.meta.geometries": {
+      "en": "geometries",
+      "ru": "геометрий"
+    },
+    "model_editor.meta.render_nodes": {
+      "en": "render nodes",
+      "ru": "render-узлов"
+    },
+    "model_editor.meta.source_basis": {
+      "en": "source basis",
+      "ru": "исходные оси"
+    },
+    "model_editor.common.lod_not_loaded": {
+      "en": "LOD not loaded",
+      "ru": "LOD не загружен"
+    },
+    "model_editor.common.generated": {
+      "en": "generated",
+      "ru": "сгенерировано"
+    },
+    "model_editor.common.used_by": {
+      "en": "used by",
+      "ru": "используется"
+    },
+    "model_editor.common.used": {
+      "en": "USED",
+      "ru": "ИСПОЛЬЗУЕТСЯ"
+    },
+    "model_editor.common.unused": {
+      "en": "UNUSED",
+      "ru": "НЕ ИСПОЛЬЗУЕТСЯ"
+    },
+    "model_editor.common.variant": {
+      "en": "VARIANT",
+      "ru": "ВАРИАНТ"
+    },
+    "model_editor.status.no_asset": {
+      "en": "NO CHANGES: no asset loaded",
+      "ru": "БЕЗ ИЗМЕНЕНИЙ: модель не загружена"
+    },
+    "model_editor.status.show_all": {
+      "en": "Show all: viewport visibility reset",
+      "ru": "Показано всё: скрытие и изоляция во viewport сброшены"
+    },
+    "model_editor.status.edge_enabled": {
+      "en": "Edge edit enabled",
+      "ru": "Редактирование рёбер включено"
+    },
+    "model_editor.status.edge_disabled": {
+      "en": "Edge edit disabled",
+      "ru": "Редактирование рёбер выключено"
+    },
+    "model_editor.status.normals_shown": {
+      "en": "Normals overlay shown",
+      "ru": "Нормали показаны"
+    },
+    "model_editor.status.normals_hidden": {
+      "en": "Normals overlay hidden",
+      "ru": "Нормали скрыты"
+    },
+    "model_editor.status.hit_shown": {
+      "en": "Hit volumes shown",
+      "ru": "Объёмы попаданий показаны"
+    },
+    "model_editor.status.hit_hidden": {
+      "en": "Hit volumes hidden",
+      "ru": "Объёмы попаданий скрыты"
+    },
+    "model_editor.status.sockets_shown": {
+      "en": "Sockets shown",
+      "ru": "Сокеты показаны"
+    },
+    "model_editor.status.sockets_hidden": {
+      "en": "Sockets hidden",
+      "ru": "Сокеты скрыты"
+    },
+    "model_editor.server.preflight_running": {
+      "en": "Analyzing meshes for canonical preparation...",
+      "ru": "Анализ мешей перед канонической подготовкой..."
+    },
+    "model_editor.server.preflight_fixing": {
+      "en": "Applying runtime-equivalent mesh preparation...",
+      "ru": "Применение подготовки мешей по правилам игрового загрузчика..."
+    },
+    "model_editor.server.preflight_no_changes": {
+      "en": "NO CHANGES: no unambiguous preflight fixes were needed",
+      "ru": "БЕЗ ИЗМЕНЕНИЙ: однозначных исправлений preflight не требуется"
+    },
+    "model_editor.server.source_importing": {
+      "en": "Importing source OBJ/assembly...",
+      "ru": "Загрузка исходных OBJ/assembly..."
+    },
+    "model_editor.server.source_loaded": {
+      "en": "Source assembly imported into independent render LODs",
+      "ru": "Исходная сборка загружена в независимые Render LOD"
+    },
+    "model_editor.server.asset_loaded": {
+      "en": "Asset loaded; semantic state is shared, render LOD graphs are independent",
+      "ru": "Модель загружена: семантическое состояние общее, Render LOD независимы"
+    },
+    "model_editor.wizard.source.refresh": {
+      "en": "REFRESH SOURCE SET",
+      "ru": "ОБНОВИТЬ ИСХОДНЫЙ НАБОР"
+    },
+    "model_editor.wizard.source.refresh_tip.title": {
+      "en": "Refresh source set",
+      "ru": "Обновить исходный набор"
+    },
+    "model_editor.wizard.source.refresh_tip.desc": {
+      "en": "Rescans all loaded LOD source trees for additional OBJ meshes without rebuilding the base assembly. Any change invalidates SOURCE and later checkpoints.",
+      "ru": "Повторно просматривает все загруженные деревья LOD и подхватывает дополнительные OBJ без пересборки основной модели. Любое изменение помечает SOURCE устаревшим и удаляет более поздние контрольные точки."
+    },
+    "model_editor.server.extras_refreshed": {
+      "en": "Source set refreshed",
+      "ru": "Исходный набор обновлён"
+    },
+    "model_editor.server.updated": {
+      "en": "updated",
+      "ru": "обновлено"
+    },
+    "model_editor.server.unchanged": {
+      "en": "unchanged",
+      "ru": "без изменений"
+    },
+    "model_editor.server.failed": {
+      "en": "failed",
+      "ru": "ошибок"
+    },
+    "model_editor.preflight.runtime_view": {
+      "en": "AS IN GAME",
+      "ru": "КАК В ИГРЕ"
+    },
+    "model_editor.preflight.author_view": {
+      "en": "AUTHOR VIEW",
+      "ru": "АВТОРСКИЙ ВИД"
+    },
+    "model_editor.preflight.runtime_tip.title": {
+      "en": "Game runtime view",
+      "ru": "Вид как в игре"
+    },
+    "model_editor.preflight.runtime_tip.desc": {
+      "en": "Read-only simulation of the current game OBJ loader: 1e-4 positional weld, recomputed normals and two-sided rendering.",
+      "ru": "Только просмотр: имитация текущего загрузчика OBJ игры — positional weld 1e-4, пересчёт нормалей и двусторонний рендер."
+    },
+    "model_editor.preflight.runtime_status": {
+      "en": "Game runtime normalization shown: positional weld 1e-4, recomputed normals, two-sided rendering.",
+      "ru": "Показана runtime-нормализация игры: positional weld 1e-4, пересчитанные нормали, двусторонний рендер."
+    },
+    "model_editor.preflight.author_status": {
+      "en": "Author asset geometry shown without runtime normalization.",
+      "ru": "Показана авторская геометрия asset без runtime-нормализации."
+    },
+    "model_editor.preflight.group_base": {
+      "en": "DEFAULT MESHES",
+      "ru": "ОСНОВНЫЕ МЕШИ"
+    },
+    "model_editor.preflight.group_extra": {
+      "en": "ADDITIONAL MESHES",
+      "ru": "ДОПОЛНИТЕЛЬНЫЕ МЕШИ"
+    },
+    "model_editor.preflight.topology_author": {
+      "en": "canonical boundaries / multi-use / collapsed",
+      "ru": "канонические границы / multi-use / схлопнутые"
+    },
+    "model_editor.preflight.runtime_weld": {
+      "en": "render vertices → geometric points",
+      "ru": "render-вершины → геометрические точки"
+    },
+    "model_editor.preflight.runtime_note": {
+      "en": "Canonical preparation uses the game-proven 1e-4 positional weld only as geometric identity. It removes collapsed/duplicate triangles, solves winding, rebuilds edge topology and reconstructs normals as smoothing/hard-edge islands. UV/material render splits remain distinct GPU vertices.",
+      "ru": "Canonical preparation использует проверенный игрой positional weld 1e-4 только как геометрическую идентичность. Она удаляет collapsed/duplicate triangles, согласует winding, перестраивает edge topology и нормали как smoothing/hard-edge islands. UV/material render-разрывы остаются отдельными GPU-вершинами."
+    },
+    "model_editor.preflight.action.apply_class": {
+      "en": "APPLY TYPE",
+      "ru": "ПРИМЕНИТЬ ТИП"
+    },
+    "model_editor.preflight.class_invalid": {
+      "en": "Invalid",
+      "ru": "Invalid"
+    },
+    "model_editor.preflight.source": {
+      "en": "source",
+      "ru": "исходник"
+    },
+    "model_editor.preflight.canonical": {
+      "en": "after preparation",
+      "ru": "после подготовки"
+    },
+    "model_editor.preflight.not_prepared_short": {
+      "en": "not prepared",
+      "ru": "не подготовлен"
+    },
+    "model_editor.preflight.prepared_summary": {
+      "en": "prepared / total meshes",
+      "ru": "подготовлено / всего meshes"
+    },
+    "model_editor.preflight.cleanup_summary": {
+      "en": "degenerate / duplicate to remove",
+      "ru": "degenerate / duplicate к удалению"
+    },
+    "model_editor.preflight.topology_summary": {
+      "en": "boundary / canonical multi-use / source non-manifold",
+      "ru": "boundary / canonical multi-use / source non-manifold"
+    },
+    "model_editor.preflight.invalid_summary": {
+      "en": "Invalid meshes / need type choice",
+      "ru": "Invalid meshes / требуют выбора типа"
+    },
+    "model_editor.preflight.prepare_count": {
+      "en": "prepare",
+      "ru": "подготовить"
     }
   }
 }

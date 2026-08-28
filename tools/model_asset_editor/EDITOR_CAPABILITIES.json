@@ -36,8 +36,8 @@
       "description": "Reimport reads source OBJ/assembly without modifying it.",
       "contracts": {
         "data_model": {"path": "src/model_asset/MODEL_ASSET_PIPELINE.md", "tokens": ["Source OBJ/assembly files are read-only"]},
-        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["reimport_asset", "importRuntimeAssembly", "sourceFilesReadOnly"]},
-        "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["wizardSourceReimportBtn", "source OBJ", "reimport_asset"]},
+        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["reimport_asset", "importRuntimeAssembly", "sourceFilesReadOnly", "loadAllDeclaredLodsForSource", "refreshSourceVariants(true, false)"]},
+        "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["wizardSourceReimportBtn", "wizardSourceRefreshBtn", "sourceInventoryRow", "source OBJ", "reimport_asset"]},
         "test": {"path": "tests/architecture_contracts/check_model_asset_editor.py", "tokens": ["source_reimport_read_only"]}
       }
     },
@@ -69,6 +69,26 @@
         "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["refreshSourceVariants", "discoverAdditionalLodMeshes", "runtimeAssemblyLodSourcePaths", "reconcileAuthoringVisualRegistry", "m_baseVisualIds", "m_sourceExtraMeshIds", "setSourceVariantReplacement"]},
         "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["renderVariantAssignment", "geometryVariantSelected", "baseVisualId", "set_source_variant_replacement", "variantPreviewByNode", "initWorldAxes"]},
         "test": {"path": "tests/architecture_contracts/check_model_asset_editor.py", "tokens": ["stable extra-mesh authoring ids", "renderVariantAssignment", "initWorldAxes"]}
+      }
+    },
+    {
+      "id": "model_preflight",
+      "description": "LOD-stage canonical mesh preparation separates geometric points from render vertices, rebuilds cleanup/winding/normals/edges, persists a fingerprinted preparation record, and resolves ClosedVolume, ThinTwoSided, BreachedVolume or genuine Invalid before LOD generation.",
+      "contracts": {
+        "data_model": {"path": "src/model_asset/ModelAsset.h", "tokens": ["enum class SurfaceMode", "ThinTwoSided", "EdgeNonManifold"]},
+        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["analyzeModelPreflight", "safeFixModelPreflight", "apply_mesh_preparation", "setGeometryTopologyClass", "modelPreflightReadyForLod", "modelPreflightAllLoadedReady", "canonicalizeMesh", "CanonicalMeshAlgorithmId", "meshPreparationRecords", "geometryTopologyClasses"]},
+        "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["modelPreflightCheckBtn", "modelPreflightFixBtn", "modelPreflightRuntimeBtn", "runtimeNormalizedThreeGeometry", "renderModelPreflightPanel", "set_geometry_topology_class", "model_preflight_result", "model_editor.preflight.group_extra", "model_editor.preflight.runtime_note"]},
+        "test": {"path": "tests/model_asset/ModelAssetBinaryTests.cpp", "tokens": ["testCanonicalBuilderClosedPlateBreachContracts", "testCanonicalBuilderRemovesGarbageAndPreservesUvSeams", "testCanonicalBuilderPreservesHardNormalSplit", "testCanonicalBuilderFingerprintTracksStructuralPayload", "testCanonicalBuilderRejectsTrueInvalidTopology"]}
+      }
+    },
+    {
+      "id": "lod_generator_preview",
+      "description": "Optional LOD analysis uses the fixed 2560x1440 authoring ceiling and previews independent disconnected-detail culling and conservative coplanar-region collapse without mutating or retransmitting source mesh payloads; used LOD0 geometry must pass Model Preflight first.",
+      "contracts": {
+        "data_model": {"path": "src/render/RenderResolutionPolicy.h", "tokens": ["MaximumSupportedRenderWidth = 2560", "MaximumSupportedRenderHeight = 1440"]},
+        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["analyzeLodRequirements", "previewLodComponentCull", "previewLodCoplanarCollapse", "analyzeCoplanarCollapse", "compressTriangleRanges"]},
+        "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["lodGeneratorAnalyzeBtn", "renderLodGeneratorPanel", "lod_generator_preview_result", "lodGeneratorPreviewGeometry", "lodDiagnosticActive", "lodDiagnosticFaceNormalsBtn", "preview_lod_coplanar_collapse"]},
+        "test": {"path": "tests/architecture_contracts/check_model_asset_editor.py", "tokens": ["lod_generator_preview", "MaximumSupportedRenderWidth = 2560"]}
       }
     }
   ]

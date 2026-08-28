@@ -1,16 +1,19 @@
 #include "tools/model_asset_editor/ModelAssetEditorSession.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <iterator>
 #include <map>
 #include <set>
 #include <limits>
 #include <stdexcept>
+#include <sstream>
 #include <vector>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -19,6 +22,7 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include "src/model_asset/ModelAssetBinary.h"
+#include "src/model_asset/ModelAssetMigration.h"
 #include "tools/model_asset_editor/RuntimeAssemblyImporter.h"
 #include "tools/model_asset_editor/GeometryInstanceFitter.h"
 #include "tools/model_asset_editor/EditorVersion.h"
@@ -39,6 +43,29 @@ glm::vec3 jsonVec3(const json& value, const glm::vec3& fallback)
     return glm::vec3(value[0].get<float>(), value[1].get<float>(), value[2].get<float>());
 }
 
+std::vector<std::string> jsonStrings(const json& value)
+{
+    std::vector<std::string> out;
+    if (!value.is_array()) return out;
+    for (const auto& item : value) if (item.is_string()) out.push_back(item.get<std::string>());
+    return out;
+}
+
+std::vector<std::size_t> jsonIndices(const json& value)
+{
+    std::vector<std::size_t> out;
+    if (!value.is_array()) return out;
+    for (const auto& item : value)
+    {
+        if (!item.is_number_integer() && !item.is_number_unsigned()) continue;
+        const auto raw = item.get<std::int64_t>();
+        if (raw >= 0) out.push_back(static_cast<std::size_t>(raw));
+    }
+    std::sort(out.begin(), out.end());
+    out.erase(std::unique(out.begin(), out.end()), out.end());
+    return out;
+}
+
 double diagnosticTriangleArea(const MeshLod& lod, const Triangle& triangle)
 {
     if (triangle.a >= lod.vertices.size() ||
@@ -51,30 +78,42 @@ double diagnosticTriangleArea(const MeshLod& lod, const Triangle& triangle)
     return 0.5 * glm::length(glm::cross(b - a, c - a));
 }
 
-std::uint64_t estimatedGeometryBinaryBytes(const GeometryDefinition& geometry)
+std::uint64_t estimatedLodBinaryBytes(const GeometryDefinition& geometry, const MeshLod& lod)
 {
-    // Estimates the heavy .elmesh payload contribution of one geometry across all LODs.
-    // Manifest metadata and file headers are intentionally excluded.
-    std::uint64_t bytes = 0;
+    // Estimates this geometry's contribution to one independent .lodN.elmesh payload.
+    // File headers are intentionally excluded.
     const auto stringBytes = [](const std::string& value) -> std::uint64_t {
         return sizeof(std::uint32_t) + static_cast<std::uint64_t>(value.size());
     };
-    for (const auto& lod : geometry.lods)
-    {
-        bytes += sizeof(std::uint32_t); // geometry index
-        bytes += stringBytes(geometry.id);
-        bytes += 6u * sizeof(float); // min/max bounds
-        bytes += sizeof(std::uint32_t);
-        bytes += static_cast<std::uint64_t>(lod.vertices.size()) * 8u * sizeof(float);
-        bytes += sizeof(std::uint32_t);
-        bytes += static_cast<std::uint64_t>(lod.triangles.size()) *
-            (5u * sizeof(std::uint32_t) + sizeof(std::int32_t));
-        bytes += sizeof(std::uint32_t);
-        bytes += static_cast<std::uint64_t>(lod.edges.size()) *
-            (2u * sizeof(std::uint32_t) + 2u * sizeof(std::int32_t) +
-             sizeof(std::uint32_t) + sizeof(std::uint8_t));
-    }
+    std::uint64_t bytes = 0;
+    bytes += sizeof(std::uint32_t); // geometry index
+    bytes += stringBytes(geometry.id);
+    bytes += 6u * sizeof(float); // min/max bounds
+    bytes += sizeof(std::uint32_t);
+    bytes += static_cast<std::uint64_t>(lod.vertices.size()) * 8u * sizeof(float);
+    bytes += sizeof(std::uint32_t);
+    bytes += static_cast<std::uint64_t>(lod.triangles.size()) *
+        (5u * sizeof(std::uint32_t) + sizeof(std::int32_t));
+    bytes += sizeof(std::uint32_t);
+    bytes += static_cast<std::uint64_t>(lod.edges.size()) *
+        (2u * sizeof(std::uint32_t) + 2u * sizeof(std::int32_t) +
+         sizeof(std::uint32_t) + sizeof(std::uint8_t));
     return bytes;
+}
+
+std::uint64_t estimatedGeometryBinaryBytes(const GeometryDefinition& geometry)
+{
+    std::uint64_t bytes = 0;
+    for (const auto& lod : geometry.lods)
+        bytes += estimatedLodBinaryBytes(geometry, lod);
+    return bytes;
+}
+
+std::uint64_t estimatedRenderGeometryBinaryBytes(const RenderGeometryDefinition& geometry)
+{
+    GeometryDefinition legacy;
+    legacy.id = geometry.id;
+    return estimatedLodBinaryBytes(legacy, geometry.mesh);
 }
 
 std::filesystem::path editorSourceFilePath(
@@ -84,9 +123,27 @@ std::filesystem::path editorSourceFilePath(
     if (runtimePath.empty()) return {};
     std::filesystem::path path(runtimePath);
     if (path.is_absolute()) return path;
+
     const auto direct = sourceRoot / path;
     if (std::filesystem::exists(direct)) return direct;
-    return sourceRoot / "src" / path;
+
+    const auto fromProjectRoot = sourceRoot / "src" / path;
+    if (std::filesystem::exists(fromProjectRoot)) return fromProjectRoot;
+
+    const std::string generic = path.generic_string();
+    constexpr const char* AssetsPrefix = "assets/";
+    constexpr const char* ModelsPrefix = "assets/models/";
+    if (generic.rfind(ModelsPrefix, 0) == 0)
+    {
+        const auto fromModelsRoot = sourceRoot / generic.substr(std::char_traits<char>::length(ModelsPrefix));
+        if (std::filesystem::exists(fromModelsRoot)) return fromModelsRoot;
+    }
+    if (generic.rfind(AssetsPrefix, 0) == 0)
+    {
+        const auto fromAssetsRoot = sourceRoot / generic.substr(std::char_traits<char>::length(AssetsPrefix));
+        if (std::filesystem::exists(fromAssetsRoot)) return fromAssetsRoot;
+    }
+    return direct;
 }
 
 std::uint64_t safeFileBytes(const std::filesystem::path& path)
@@ -95,6 +152,31 @@ std::uint64_t safeFileBytes(const std::filesystem::path& path)
     std::error_code ec;
     const auto bytes = std::filesystem::file_size(path, ec);
     return ec ? 0 : static_cast<std::uint64_t>(bytes);
+}
+
+std::map<std::size_t, std::filesystem::path> discoverSavedLodPayloads(
+    const std::filesystem::path& manifestPath)
+{
+    std::map<std::size_t, std::filesystem::path> out;
+    const auto directory = manifestPath.parent_path();
+    std::error_code ec;
+    if (!std::filesystem::is_directory(directory, ec) || ec) return out;
+    const std::string prefix = manifestPath.stem().string() + ".lod";
+    constexpr const char* suffix = ".elmesh";
+    for (std::filesystem::directory_iterator it(directory, ec), end; !ec && it != end; it.increment(ec))
+    {
+        if (!it->is_regular_file(ec) || ec) { ec.clear(); continue; }
+        const std::string name = it->path().filename().string();
+        if (name.rfind(prefix, 0) != 0 || name.size() <= prefix.size() + std::char_traits<char>::length(suffix))
+            continue;
+        if (name.compare(name.size() - std::char_traits<char>::length(suffix), std::char_traits<char>::length(suffix), suffix) != 0)
+            continue;
+        const std::string digits = name.substr(prefix.size(), name.size() - prefix.size() - std::char_traits<char>::length(suffix));
+        if (digits.empty() || !std::all_of(digits.begin(), digits.end(), [](unsigned char c) { return c >= '0' && c <= '9'; }))
+            continue;
+        try { out[static_cast<std::size_t>(std::stoull(digits))] = it->path(); } catch (...) {}
+    }
+    return out;
 }
 
 std::size_t diagnosticUniquePositionCount(const MeshLod& lod)
@@ -115,32 +197,30 @@ std::size_t diagnosticUniquePositionCount(const MeshLod& lod)
         })));
 }
 
-void appendInstanceFitDiagnostic(
+void appendRenderInstanceFitDiagnostic(
     const ModelAsset& asset,
-    std::size_t referenceNodeIndex,
-    std::size_t targetNodeIndex,
+    std::size_t lodIndex,
+    std::size_t referenceRenderNodeIndex,
+    std::size_t targetRenderNodeIndex,
     const GeometryInstanceFit& fit) noexcept
 {
     try
     {
-        if (referenceNodeIndex >= asset.nodes.size() || targetNodeIndex >= asset.nodes.size())
-            return;
-        const Node& referenceNode = asset.nodes[referenceNodeIndex];
-        const Node& targetNode = asset.nodes[targetNodeIndex];
-        if (referenceNode.geometryIndex < 0 || targetNode.geometryIndex < 0)
-            return;
+        if (lodIndex >= asset.renderLods.size()) return;
+        const auto& lod = asset.renderLods[lodIndex];
+        if (referenceRenderNodeIndex >= lod.nodes.size() || targetRenderNodeIndex >= lod.nodes.size()) return;
+        const auto& referenceNode = lod.nodes[referenceRenderNodeIndex];
+        const auto& targetNode = lod.nodes[targetRenderNodeIndex];
+        if (referenceNode.geometryIndex < 0 || targetNode.geometryIndex < 0) return;
         const auto referenceGeometryIndex = static_cast<std::size_t>(referenceNode.geometryIndex);
         const auto targetGeometryIndex = static_cast<std::size_t>(targetNode.geometryIndex);
-        if (referenceGeometryIndex >= asset.geometries.size() ||
-            targetGeometryIndex >= asset.geometries.size())
-            return;
+        if (referenceGeometryIndex >= lod.geometries.size() || targetGeometryIndex >= lod.geometries.size()) return;
 
         const std::filesystem::path logPath =
             std::filesystem::path("build") / "logs" / "model_asset_instance_fit.log";
         std::filesystem::create_directories(logPath.parent_path());
         std::ofstream out(logPath, std::ios::app);
-        if (!out)
-            return;
+        if (!out) return;
 
         const auto materialName = [&](std::int32_t index) -> std::string {
             if (index < 0 || static_cast<std::size_t>(index) >= asset.materials.size())
@@ -148,40 +228,33 @@ void appendInstanceFitDiagnostic(
             const auto& material = asset.materials[static_cast<std::size_t>(index)];
             return material.id + " [" + material.sourceName + "]";
         };
-        const auto dumpGeometry = [&](const char* label, const GeometryDefinition& geometry) {
-            out << label << " id=" << geometry.id;
-            for (std::size_t sourceIndex = 0; sourceIndex < geometry.sourceLods.size(); ++sourceIndex)
-                out << " lod" << sourceIndex << '=' << geometry.sourceLods[sourceIndex];
-            out << '\n';
-            for (std::size_t li = 0; li < geometry.lods.size(); ++li)
+        const auto dumpGeometry = [&](const char* label, const RenderGeometryDefinition& geometry) {
+            const MeshLod& mesh = geometry.mesh;
+            std::map<std::int32_t, double> materialArea;
+            double totalArea = 0.0;
+            for (const Triangle& triangle : mesh.triangles)
             {
-                const MeshLod& lod = geometry.lods[li];
-                std::map<std::int32_t, double> materialArea;
-                double totalArea = 0.0;
-                for (const Triangle& triangle : lod.triangles)
-                {
-                    const double area = diagnosticTriangleArea(lod, triangle);
-                    totalArea += area;
-                    materialArea[triangle.materialIndex] += area;
-                }
-                out << "  LOD" << li
-                    << " vertices=" << lod.vertices.size()
-                    << " unique_positions=" << diagnosticUniquePositionCount(lod)
-                    << " triangles=" << lod.triangles.size()
-                    << " edges=" << lod.edges.size()
-                    << " area=" << std::setprecision(12) << totalArea
-                    << " bounds_min=(" << lod.minBounds.x << ',' << lod.minBounds.y << ',' << lod.minBounds.z << ')'
-                    << " bounds_max=(" << lod.maxBounds.x << ',' << lod.maxBounds.y << ',' << lod.maxBounds.z << ")\n";
-                for (const auto& [materialIndex, area] : materialArea)
-                    out << "    material " << materialIndex << " " << materialName(materialIndex)
-                        << " area=" << std::setprecision(12) << area << '\n';
+                const double area = diagnosticTriangleArea(mesh, triangle);
+                totalArea += area;
+                materialArea[triangle.materialIndex] += area;
             }
+            out << label << " id=" << geometry.id << " source=" << geometry.sourcePath << '\n';
+            out << "  vertices=" << mesh.vertices.size()
+                << " unique_positions=" << diagnosticUniquePositionCount(mesh)
+                << " triangles=" << mesh.triangles.size()
+                << " edges=" << mesh.edges.size()
+                << " area=" << std::setprecision(12) << totalArea
+                << " bounds_min=(" << mesh.minBounds.x << ',' << mesh.minBounds.y << ',' << mesh.minBounds.z << ')'
+                << " bounds_max=(" << mesh.maxBounds.x << ',' << mesh.maxBounds.y << ',' << mesh.maxBounds.z << ")\n";
+            for (const auto& [materialIndex, area] : materialArea)
+                out << "    material " << materialIndex << ' ' << materialName(materialIndex)
+                    << " area=" << std::setprecision(12) << area << '\n';
         };
 
-        out << "\n=== INSTANCE FIT ===\n";
-        out << "reference node=" << referenceNode.id << " G" << referenceGeometryIndex << '\n';
-        out << "target    node=" << targetNode.id << " G" << targetGeometryIndex << '\n';
-        out << "identity_basis=LOD0; lower_lods_are_independent_and_not_fit_gates\n";
+        out << "\n=== RENDER INSTANCE FIT ===\n";
+        out << "lod=" << lodIndex << '\n';
+        out << "reference render node=" << referenceNode.id << " G" << referenceGeometryIndex << '\n';
+        out << "target    render node=" << targetNode.id << " G" << targetGeometryIndex << '\n';
         out << "result valid=" << fit.valid
             << " geometry_matched=" << fit.geometryMatched
             << " material_compatible=" << fit.materialCompatible
@@ -194,9 +267,9 @@ void appendInstanceFitDiagnostic(
         out << "rotation_columns:\n";
         for (int column = 0; column < 3; ++column)
             out << "  (" << fit.rotation[column].x << ',' << fit.rotation[column].y << ',' << fit.rotation[column].z << ")\n";
-        dumpGeometry("REFERENCE", asset.geometries[referenceGeometryIndex]);
-        dumpGeometry("TARGET", asset.geometries[targetGeometryIndex]);
-        out << "=== END INSTANCE FIT ===\n";
+        dumpGeometry("REFERENCE", lod.geometries[referenceGeometryIndex]);
+        dumpGeometry("TARGET", lod.geometries[targetGeometryIndex]);
+        out << "=== END RENDER INSTANCE FIT ===\n";
     }
     catch (...)
     {
@@ -343,6 +416,47 @@ void setNodeRigidTransform(Node& node, const RigidTransform& transform, const gl
     node.pivot = pivot;
     node.localRotationDeg = eulerDegrees(glm::quat_cast(transform.rotation));
     node.localPosition = transform.translation - pivot + transform.rotation * pivot;
+}
+
+RigidTransform renderNodeRigidTransform(const RenderNode& node)
+{
+    return {eulerRotation(node.localRotationDeg), node.localPosition + node.pivot - eulerRotation(node.localRotationDeg) * node.pivot};
+}
+
+void setRenderNodeRigidTransform(RenderNode& node, const RigidTransform& transform, const glm::vec3& pivot)
+{
+    node.pivot = pivot;
+    node.localRotationDeg = eulerDegrees(glm::quat_cast(transform.rotation));
+    node.localPosition = transform.translation - pivot + transform.rotation * pivot;
+}
+
+void applyRenderInstanceFit(
+    RenderLod& lod,
+    std::size_t renderNodeIndex,
+    std::size_t referenceNodeIndex,
+    const GeometryInstanceFit& fit)
+{
+    auto& node = lod.nodes.at(renderNodeIndex);
+    const auto& referenceNode = lod.nodes.at(referenceNodeIndex);
+    if (node.geometryIndex < 0 || referenceNode.geometryIndex < 0)
+        throw std::runtime_error("both render nodes must have geometry");
+
+    const auto referenceGeometryIndex = static_cast<std::size_t>(referenceNode.geometryIndex);
+    const RigidTransform bakedFit {fit.rotation, fit.translation};
+    const RigidTransform inverseFit = inverseRigid(bakedFit);
+    const RigidTransform oldTransform = renderNodeRigidTransform(node);
+    const glm::vec3 newPivot = transformPoint(inverseFit, node.pivot);
+
+    for (std::size_t childIndex = 0; childIndex < lod.nodes.size(); ++childIndex)
+    {
+        auto& child = lod.nodes[childIndex];
+        if (child.parentIndex != static_cast<std::int32_t>(renderNodeIndex)) continue;
+        const RigidTransform rebased = composeRigid(inverseFit, renderNodeRigidTransform(child));
+        setRenderNodeRigidTransform(child, rebased, child.pivot);
+    }
+
+    setRenderNodeRigidTransform(node, composeRigid(oldTransform, bakedFit), newPivot);
+    node.geometryIndex = static_cast<std::int32_t>(referenceGeometryIndex);
 }
 
 glm::mat3 inertiaMatrix(const RigidBodyProperties& physics)
@@ -597,6 +711,29 @@ void convertAssetBasisToCanonical(ModelAsset& asset, const SourceBasis& source)
         }
     }
 
+    for (auto& renderLod : asset.renderLods)
+    {
+        for (auto& geometry : renderLod.geometries)
+        {
+            auto& lod = geometry.mesh;
+            for (auto& v : lod.vertices)
+            {
+                v.position = basis * v.position;
+                const glm::vec3 n = basis * v.normal;
+                if (glm::dot(n, n) > 1.0e-12f) v.normal = glm::normalize(n);
+            }
+            if (flipWinding)
+                for (auto& t : lod.triangles) std::swap(t.b, t.c);
+            recomputeLodBounds(lod);
+        }
+        for (auto& renderNode : renderLod.nodes)
+        {
+            renderNode.localPosition = basis * renderNode.localPosition;
+            renderNode.localRotationDeg = convertEuler(renderNode.localRotationDeg, basis);
+            renderNode.pivot = basis * renderNode.pivot;
+        }
+    }
+
     for (auto& n : asset.nodes)
     {
         n.localPosition = basis * n.localPosition;
@@ -626,6 +763,31 @@ void convertAssetBasisToCanonical(ModelAsset& asset, const SourceBasis& source)
         socket.localPosition = basis * socket.localPosition;
         socket.localRotationDeg = convertEuler(socket.localRotationDeg, basis);
     }
+    for (auto& state : asset.stateVariants)
+    {
+        if (state.transformOverride)
+        {
+            state.localPosition = basis * state.localPosition;
+            state.localRotationDeg = convertEuler(state.localRotationDeg, basis);
+            state.pivot = basis * state.pivot;
+        }
+        if (state.physicsOverride) state.physics.centerOfMass = basis * state.physics.centerOfMass;
+    }
+    for (auto& hit : asset.hitRegions)
+    {
+        hit.localPosition = basis * hit.localPosition;
+        hit.localRotationDeg = convertEuler(hit.localRotationDeg, basis);
+    }
+    for (auto& opening : asset.openings)
+    {
+        opening.localPosition = basis * opening.localPosition;
+        opening.localRotationDeg = convertEuler(opening.localRotationDeg, basis);
+    }
+    for (auto& repair : asset.repairTargets)
+    {
+        repair.localPosition = basis * repair.localPosition;
+        repair.localRotationDeg = convertEuler(repair.localRotationDeg, basis);
+    }
 
     if (!asset.geometries.empty())
     {
@@ -651,6 +813,15 @@ void remapGeometryAfterErase(ModelAsset& asset, std::size_t erased)
     }
 }
 
+void remapRenderGeometryAfterErase(RenderLod& lod, std::size_t erased)
+{
+    for (auto& node : lod.nodes)
+    {
+        if (node.geometryIndex == static_cast<std::int32_t>(erased)) node.geometryIndex = NoIndex;
+        else if (node.geometryIndex > static_cast<std::int32_t>(erased)) --node.geometryIndex;
+    }
+}
+
 
 std::string uniqueGeometryId(const ModelAsset& asset, std::string desired)
 {
@@ -667,6 +838,103 @@ std::string uniqueGeometryId(const ModelAsset& asset, std::string desired)
         if (!exists(desired)) return desired;
     }
 }
+
+std::string uniqueRenderGeometryId(const RenderLod& lod, std::string desired)
+{
+    if (desired.empty()) desired = "geometry";
+    const auto exists = [&](const std::string& id) {
+        return std::any_of(lod.geometries.begin(), lod.geometries.end(), [&](const RenderGeometryDefinition& geometry) { return geometry.id == id; });
+    };
+    if (!exists(desired)) return desired;
+    const std::string base = desired;
+    for (std::size_t suffix = 2; ; ++suffix)
+    {
+        desired = base + "_" + std::to_string(suffix);
+        if (!exists(desired)) return desired;
+    }
+}
+
+std::string uniqueRenderNodeId(const RenderLod& lod, std::string desired)
+{
+    if (desired.empty()) desired = "render_node";
+    const auto exists = [&](const std::string& id) {
+        return std::any_of(lod.nodes.begin(), lod.nodes.end(), [&](const RenderNode& node) { return node.id == id; });
+    };
+    if (!exists(desired)) return desired;
+    const std::string base = desired;
+    for (std::size_t suffix = 2; ; ++suffix)
+    {
+        desired = base + "_" + std::to_string(suffix);
+        if (!exists(desired)) return desired;
+    }
+}
+
+
+bool semanticStateDeclared(const ModelAsset& asset, std::int32_t nodeIndex, const std::string& stateId)
+{
+    if (stateId == "intact") return true;
+    return std::any_of(asset.stateVariants.begin(), asset.stateVariants.end(), [&](const StateVariant& variant) {
+        return variant.nodeIndex == nodeIndex && variant.id == stateId;
+    });
+}
+
+void requireSemanticStates(
+    const ModelAsset& asset,
+    std::int32_t nodeIndex,
+    const std::vector<std::string>& stateIds,
+    const std::string& owner)
+{
+    if (stateIds.empty()) return;
+    if (nodeIndex < 0 || nodeIndex >= static_cast<std::int32_t>(asset.nodes.size()))
+        throw std::runtime_error(owner + " has state scope but no semantic node binding");
+    for (const auto& stateId : stateIds)
+        if (!semanticStateDeclared(asset, nodeIndex, stateId))
+            throw std::runtime_error(owner + " references undeclared state '" + stateId + "'");
+}
+
+std::filesystem::path defaultEditorSourceAssetsRoot(const std::filesystem::path& projectRoot)
+{
+    std::error_code ec;
+    const auto projectModels = projectRoot / "assets" / "models";
+    if (std::filesystem::is_directory(projectModels, ec) && !ec)
+        return projectModels;
+
+    ec.clear();
+    const auto legacySrcModels = projectRoot / "src" / "assets" / "models";
+    if (std::filesystem::is_directory(legacySrcModels, ec) && !ec)
+        return projectRoot / "src";
+
+    // Prefer the current project layout even before the directory is populated.
+    return projectModels;
+}
+
+std::uint32_t packageFormatVersion(const std::filesystem::path& path)
+{
+    std::ifstream in(path, std::ios::binary);
+    if (!in) return 0;
+    std::array<char, 8> magic {};
+    std::uint32_t version = 0;
+    in.read(magic.data(), static_cast<std::streamsize>(magic.size()));
+    in.read(reinterpret_cast<char*>(&version), sizeof(version));
+    return in ? version : 0;
+}
+
+const std::array<const char*, 9>& wizardStageOrder()
+{
+    static const std::array<const char*, 9> stages {
+        "source", "lods", "geometry", "surfaces", "semantics",
+        "physics", "damage", "validate", "build"
+    };
+    return stages;
+}
+
+std::size_t wizardStageIndex(const std::string& stage)
+{
+    const auto& stages = wizardStageOrder();
+    const auto it = std::find(stages.begin(), stages.end(), stage);
+    return it == stages.end() ? stages.size() : static_cast<std::size_t>(std::distance(stages.begin(), it));
+}
+
 }
 
 ModelAssetEditorSession::ModelAssetEditorSession(
@@ -675,6 +943,11 @@ ModelAssetEditorSession::ModelAssetEditorSession(
 )
     : m_sourceRoot(std::move(sourceRoot)), m_server(server)
 {
+    m_sourceAssetsRoot = defaultEditorSourceAssetsRoot(m_sourceRoot);
+    m_compiledModelsRoot = m_sourceRoot / "src" / "assets" / "compiled" / "models";
+    loadSettings();
+    installLocalizationBundle();
+
     m_catalog = {
         {"cobra_mk1", "Cobra Mk.I", ObjectType::CobraMk1},
         {"station", "Orbital Station", ObjectType::Station},
@@ -686,21 +959,555 @@ ModelAssetEditorSession::ModelAssetEditorSession(
 
 std::filesystem::path ModelAssetEditorSession::compiledPath(const std::string& id) const
 {
-    return m_sourceRoot / "src" / "assets" / "compiled" / "models" / id / (id + ".elmodel");
+    return m_compiledModelsRoot / id / (id + ".elmodel");
 }
 
 std::filesystem::path ModelAssetEditorSession::legacyCompiledPath(const std::string& id) const
 {
-    return m_sourceRoot / "src" / "assets" / "compiled" / "models" / (id + ".elmodel");
+    return m_compiledModelsRoot / (id + ".elmodel");
+}
+
+std::filesystem::path ModelAssetEditorSession::settingsPath() const
+{
+    return m_sourceRoot / "build" / "tools" / "model_asset_editor" / "model_asset_editor.settings.json";
+}
+
+void ModelAssetEditorSession::loadSettings()
+{
+    const auto path = settingsPath();
+    std::ifstream in(path);
+    if (!in) return;
+    try
+    {
+        json settings;
+        in >> settings;
+        const auto source = settings.value("sourceAssetsRoot", std::string());
+        const auto compiled = settings.value("compiledModelsRoot", std::string());
+        const auto locale = settings.value("locale", std::string("en"));
+        if (!source.empty()) m_sourceAssetsRoot = std::filesystem::path(source);
+        if (!compiled.empty()) m_compiledModelsRoot = std::filesystem::path(compiled);
+        static const std::array<const char*, 5> supportedLocales {"en", "ru", "zh-Hans", "es", "ja"};
+        if (std::find(supportedLocales.begin(), supportedLocales.end(), locale) != supportedLocales.end())
+            m_locale = locale;
+    }
+    catch (const std::exception& ex)
+    {
+        std::cerr << "[ModelAssetEditor] settings ignored: " << ex.what() << '\n';
+    }
+}
+
+std::filesystem::path ModelAssetEditorSession::wizardWorkspacePath() const
+{
+    if (m_selectedId.empty())
+        return m_sourceRoot / "build" / "tools" / "model_asset_editor" / "workspaces" / "_none";
+    return m_sourceRoot / "build" / "tools" / "model_asset_editor" / "workspaces" / m_selectedId;
+}
+
+std::filesystem::path ModelAssetEditorSession::wizardStatePath() const
+{
+    return wizardWorkspacePath() / "wizard_state.json";
+}
+
+std::filesystem::path ModelAssetEditorSession::wizardCheckpointPath(const std::string& stage) const
+{
+    return wizardWorkspacePath() / ("checkpoint-" + stage) / (m_selectedId + ".elmodel");
+}
+
+void ModelAssetEditorSession::loadWizardState()
+{
+    m_wizardStages.clear();
+    for (const char* id : wizardStageOrder())
+        m_wizardStages.emplace(id, WizardStageState{});
+
+    std::ifstream in(wizardStatePath());
+    if (!in) return;
+    try
+    {
+        json state;
+        in >> state;
+        if (state.value("schemaVersion", 0) != 1) return;
+        const auto stages = state.value("stages", json::object());
+        for (auto& [id, value] : m_wizardStages)
+        {
+            if (!stages.contains(id) || !stages[id].is_object()) continue;
+            const auto status = stages[id].value("status", std::string("not_started"));
+            if (status == "complete" || status == "stale" || status == "not_started")
+                value.status = status;
+            const auto checkpoint = stages[id].value("checkpoint", std::string());
+            if (!checkpoint.empty()) value.checkpointManifest = std::filesystem::path(checkpoint);
+        }
+    }
+    catch (const std::exception& ex)
+    {
+        std::cerr << "[ModelAssetEditor] wizard state ignored: " << ex.what() << '\n';
+    }
+}
+
+bool ModelAssetEditorSession::writeWizardState() const
+{
+    try
+    {
+        std::filesystem::create_directories(wizardWorkspacePath());
+        json stages = json::object();
+        for (const auto& [id, value] : m_wizardStages)
+        {
+            stages[id] = {
+                {"status", value.status},
+                {"checkpoint", value.checkpointManifest.empty() ? std::string() : value.checkpointManifest.generic_string()}
+            };
+        }
+        json state = {
+            {"schemaVersion", 1},
+            {"assetId", m_selectedId},
+            {"editorVersion", ModelAssetEditorVersion},
+            {"stages", std::move(stages)}
+        };
+        std::ofstream out(wizardStatePath(), std::ios::trunc);
+        if (!out) return false;
+        out << std::setw(2) << state << '\n';
+        return static_cast<bool>(out);
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+void ModelAssetEditorSession::pruneWizardAfter(const std::string& stage)
+{
+    const auto first = wizardStageIndex(stage);
+    const auto& order = wizardStageOrder();
+    if (first >= order.size()) return;
+
+    for (std::size_t i = first + 1; i < order.size(); ++i)
+    {
+        const std::string laterId = order[i];
+        auto& later = m_wizardStages[laterId];
+        std::error_code ec;
+        std::filesystem::remove_all(wizardCheckpointPath(laterId).parent_path(), ec);
+        if (ec)
+        {
+            std::cerr << "[ModelAssetEditor] cannot prune later wizard checkpoint "
+                      << laterId << ": " << ec.message() << '\n';
+        }
+        later.status = "not_started";
+        later.checkpointManifest.clear();
+    }
+}
+
+void ModelAssetEditorSession::invalidateWizardFrom(const std::string& stage)
+{
+    const auto first = wizardStageIndex(stage);
+    const auto& order = wizardStageOrder();
+    if (first >= order.size()) return;
+
+    auto& current = m_wizardStages[order[first]];
+    if (current.status == "complete") current.status = "stale";
+    else if (current.status != "stale") current.status = "not_started";
+
+    // A linear wizard cannot keep checkpoints produced from a future state once
+    // an earlier stage changes. Keep only the current stage's previous checkpoint
+    // as an explicit rollback point; physically remove every later branch.
+    pruneWizardAfter(stage);
+    (void)writeWizardState();
+}
+
+nlohmann::json ModelAssetEditorSession::serializeWizard() const
+{
+    json stages = json::array();
+    const auto& order = wizardStageOrder();
+    for (std::size_t i = 0; i < order.size(); ++i)
+    {
+        const std::string id = order[i];
+        const auto it = m_wizardStages.find(id);
+        const WizardStageState value = it == m_wizardStages.end() ? WizardStageState{} : it->second;
+        const bool implemented = i < 3;
+        const bool previousComplete = i == 0 ||
+            (m_wizardStages.count(order[i - 1]) && m_wizardStages.at(order[i - 1]).status == "complete");
+        stages.push_back({
+            {"id", id}, {"index", i}, {"status", value.status},
+            {"implemented", implemented}, {"unlocked", implemented && previousComplete},
+            {"checkpointPath", value.checkpointManifest.empty() ? std::string() : value.checkpointManifest.generic_string()},
+            {"checkpointExists", !value.checkpointManifest.empty() && std::filesystem::exists(value.checkpointManifest)}
+        });
+    }
+    return {
+        {"workspacePath", wizardWorkspacePath().generic_string()},
+        {"statePath", wizardStatePath().generic_string()},
+        {"stages", std::move(stages)}
+    };
+}
+
+bool ModelAssetEditorSession::completeWizardStage(const std::string& stage)
+{
+    const auto stageIndex = wizardStageIndex(stage);
+    if (stageIndex >= 3)
+    {
+        sendStatus("Wizard stage '" + stage + "' is visible but not implemented yet", true);
+        return false;
+    }
+    if (stageIndex > 0)
+    {
+        const std::string previous = wizardStageOrder()[stageIndex - 1];
+        if (m_wizardStages[previous].status != "complete")
+        {
+            sendStatus("Complete wizard stage '" + previous + "' first", true);
+            return false;
+        }
+    }
+    if (m_asset.assetId.empty())
+    {
+        sendStatus("No asset selected", true);
+        return false;
+    }
+    if (!ensureAllLodsLoaded())
+        return false;
+
+    if (stage == "source")
+    {
+        std::size_t sourceBacked = 0;
+        std::size_t missing = 0;
+        for (const auto& lod : m_asset.renderLods)
+            for (const auto& geometry : lod.geometries)
+                if (!geometry.sourcePath.empty())
+                {
+                    ++sourceBacked;
+                    if (!std::filesystem::exists(editorSourceFilePath(m_sourceAssetsRoot, geometry.sourcePath))) ++missing;
+                }
+        if (sourceBacked == 0 || missing != 0)
+        {
+            sendStatus("SOURCE validation failed: source meshes=" + std::to_string(sourceBacked) +
+                ", missing=" + std::to_string(missing), true);
+            return false;
+        }
+    }
+    else if (stage == "lods")
+    {
+        if (m_asset.renderLods.empty())
+        {
+            sendStatus("LOD validation failed: asset has no render LOD documents", true);
+            return false;
+        }
+        for (const auto& lod : m_asset.renderLods)
+            if (lod.nodes.empty() || lod.geometries.empty())
+            {
+                sendStatus("LOD validation failed: LOD" + std::to_string(lod.level) + " has an empty render graph", true);
+                return false;
+            }
+        const auto savedPayloads = discoverSavedLodPayloads(compiledPath(m_selectedId));
+        for (const auto& [savedIndex, savedPath] : savedPayloads)
+            if (savedIndex >= m_asset.renderLods.size())
+            {
+                sendStatus("LOD validation failed: saved " + savedPath.filename().string() +
+                    " exists, but the current asset declares only " + std::to_string(m_asset.renderLods.size()) +
+                    " render LOD document(s). Reimport/migration lost an LOD or the saved payload is stale.", true);
+                return false;
+            }
+    }
+    else if (stage == "geometry")
+    {
+        for (const auto& lod : m_asset.renderLods)
+            for (const auto& node : lod.nodes)
+                if (node.geometryIndex >= static_cast<std::int32_t>(lod.geometries.size()))
+                {
+                    sendStatus("GEOMETRY validation failed: invalid render-node geometry binding", true);
+                    return false;
+                }
+    }
+
+    std::string error;
+    if (!ModelAssetBinary::validate(m_asset, &error))
+    {
+        sendStatus("Wizard " + stage + " preflight failed: " + error, true);
+        return false;
+    }
+
+    const auto checkpoint = wizardCheckpointPath(stage);
+    std::filesystem::create_directories(checkpoint.parent_path());
+    sendStatus("Writing wizard checkpoint for " + stage + "...", false, "writing");
+    sendProgress("writing", "CHECKPOINT " + stage, 0, 1, checkpoint);
+    if (!ModelAssetBinary::save(checkpoint.string(), m_asset, &error))
+    {
+        sendStatus("Cannot write wizard checkpoint: " + error, true);
+        return false;
+    }
+    auto& value = m_wizardStages[stage];
+    value.status = "complete";
+    value.checkpointManifest = checkpoint;
+    pruneWizardAfter(stage);
+    if (!writeWizardState())
+    {
+        sendStatus("Checkpoint was written, but wizard_state.json could not be saved", true);
+        return false;
+    }
+    sendProgress("writing", "CHECKPOINT " + stage, 1, 1, checkpoint);
+    sendAssetMetadata();
+    const std::string next = stageIndex + 1 < 3 ? wizardStageOrder()[stageIndex + 1] : std::string();
+    m_server.broadcastText(json({{"type", "wizard_stage_completed"}, {"stage", stage}, {"nextStage", next}, {"checkpoint", checkpoint.generic_string()}}).dump());
+    sendStatus("Wizard stage complete: " + stage + "; checkpoint saved outside the production package");
+    return true;
+}
+
+bool ModelAssetEditorSession::restoreWizardCheckpoint(const std::string& stage)
+{
+    const auto it = m_wizardStages.find(stage);
+    if (it == m_wizardStages.end() || it->second.checkpointManifest.empty() ||
+        !std::filesystem::exists(it->second.checkpointManifest))
+    {
+        sendStatus("No checkpoint exists for wizard stage '" + stage + "'", true);
+        return false;
+    }
+    ModelAsset restored;
+    std::string error;
+    sendStatus("Restoring wizard checkpoint " + stage + "...", false, "reading");
+    sendProgress("reading", "RESTORE CHECKPOINT", 0, 1, it->second.checkpointManifest);
+    if (!ModelAssetBinary::load(it->second.checkpointManifest.string(), restored, &error))
+    {
+        sendStatus("Cannot restore wizard checkpoint: " + error, true);
+        return false;
+    }
+    m_asset = std::move(restored);
+    resetLodState(true, true); // restored work is intentionally unsaved relative to production output
+    auto& restoredStage = m_wizardStages[stage];
+    restoredStage.status = "complete";
+    pruneWizardAfter(stage);
+    (void)writeWizardState();
+    sendProgress("reading", "RESTORE CHECKPOINT", 1, 1, it->second.checkpointManifest);
+    sendAsset();
+    m_server.broadcastText(json({{"type", "wizard_checkpoint_restored"}, {"stage", stage}}).dump());
+    sendStatus("Restored " + stage + " checkpoint into editor memory; production package and source OBJ are unchanged");
+    return true;
+}
+
+bool ModelAssetEditorSession::scanRenderDuplicates(
+    std::size_t lodIndex,
+    std::size_t referenceRenderNodeIndex,
+    const std::vector<std::size_t>& targetRenderNodeIndices)
+{
+    if (!ensureLodLoaded(lodIndex)) return false;
+    const auto& lod = m_asset.renderLods.at(lodIndex);
+
+    // Interactive editor mode: compare one explicit reference against only the
+    // checked rows. This keeps the UI deterministic and also returns negative
+    // results, so the table can show both matches and non-matches.
+    if (referenceRenderNodeIndex != std::size_t(-1))
+    {
+        if (referenceRenderNodeIndex >= lod.nodes.size())
+        {
+            sendStatus("Duplicate comparison reference is outside LOD" + std::to_string(lodIndex), true);
+            return false;
+        }
+        const auto& referenceNode = lod.nodes[referenceRenderNodeIndex];
+        if (referenceNode.geometryIndex < 0 ||
+            static_cast<std::size_t>(referenceNode.geometryIndex) >= lod.geometries.size())
+        {
+            sendStatus("Duplicate comparison reference has no geometry: " + referenceNode.id, true);
+            return false;
+        }
+
+        std::vector<std::size_t> targets;
+        targets.reserve(targetRenderNodeIndices.size());
+        for (const auto target : targetRenderNodeIndices)
+        {
+            if (target == referenceRenderNodeIndex || target >= lod.nodes.size()) continue;
+            if (lod.nodes[target].geometryIndex < 0) continue;
+            targets.push_back(target);
+        }
+        std::sort(targets.begin(), targets.end());
+        targets.erase(std::unique(targets.begin(), targets.end()), targets.end());
+
+        const auto referenceGi = static_cast<std::size_t>(referenceNode.geometryIndex);
+        GeometryDefinition referenceGeometry;
+        referenceGeometry.id = lod.geometries[referenceGi].id;
+        referenceGeometry.lods.push_back(lod.geometries[referenceGi].mesh);
+
+        json results = json::array();
+        json candidates = json::array();
+        std::size_t matches = 0;
+        std::size_t done = 0;
+        sendStatus(
+            "Comparing selected LOD" + std::to_string(lodIndex) +
+            " geometry against reference " + referenceNode.id + "...",
+            false,
+            "working");
+
+        for (const auto targetNodeIndex : targets)
+        {
+            sendProgress("working", "COMPARE GEOMETRY", done, targets.size());
+            const auto& targetNode = lod.nodes[targetNodeIndex];
+            const auto targetGi = static_cast<std::size_t>(targetNode.geometryIndex);
+            const bool alreadyInstance = targetGi == referenceGi;
+
+            GeometryInstanceFit fit;
+            if (alreadyInstance)
+            {
+                fit.valid = true;
+                fit.geometryMatched = true;
+                fit.materialCompatible = true;
+                fit.message = "already shares reference geometry";
+            }
+            else
+            {
+                GeometryDefinition targetGeometry;
+                targetGeometry.id = lod.geometries[targetGi].id;
+                targetGeometry.lods.push_back(lod.geometries[targetGi].mesh);
+                fit = fitGeometryAsRigidInstance(referenceGeometry, targetGeometry);
+            }
+
+            json row = {
+                {"referenceGeometryIndex", referenceGi},
+                {"targetGeometryIndex", targetGi},
+                {"referenceRenderNodeIndex", referenceRenderNodeIndex},
+                {"targetRenderNodeIndex", targetNodeIndex},
+                {"referenceGeometryId", lod.geometries[referenceGi].id},
+                {"targetGeometryId", lod.geometries[targetGi].id},
+                {"referenceRenderNodeId", referenceNode.id},
+                {"targetRenderNodeId", targetNode.id},
+                {"match", fit.valid},
+                {"alreadyInstance", alreadyInstance},
+                {"rmsErrorMeters", fit.rmsErrorMeters},
+                {"maxErrorMeters", fit.maxErrorMeters},
+                {"toleranceMeters", fit.toleranceMeters},
+                {"comparedVertices", fit.comparedVertices},
+                {"message", fit.message}
+            };
+            results.push_back(row);
+            if (fit.valid)
+            {
+                ++matches;
+                if (!alreadyInstance) candidates.push_back(row);
+            }
+            ++done;
+        }
+
+        sendProgress("working", "COMPARE GEOMETRY", targets.size(), targets.size());
+        m_server.broadcastText(json({
+            {"type", "geometry_scan_result"},
+            {"mode", "reference"},
+            {"lodIndex", lodIndex},
+            {"referenceRenderNodeIndex", referenceRenderNodeIndex},
+            {"testedPairs", targets.size()},
+            {"matches", matches},
+            {"results", std::move(results)},
+            {"candidates", std::move(candidates)}
+        }).dump());
+        sendStatus(
+            "Geometry comparison complete: " + std::to_string(matches) +
+            " of " + std::to_string(targets.size()) + " selected elements match " + referenceNode.id);
+        return true;
+    }
+
+    // Compatibility mode retained for capability/tests and older UI clients.
+    // New UI intentionally avoids this all-pairs O(n^2) workflow.
+    std::vector<std::size_t> representative(lod.geometries.size(), std::size_t(-1));
+    for (std::size_t ni = 0; ni < lod.nodes.size(); ++ni)
+    {
+        const auto gi = lod.nodes[ni].geometryIndex;
+        if (gi >= 0 && static_cast<std::size_t>(gi) < representative.size() && representative[static_cast<std::size_t>(gi)] == std::size_t(-1))
+            representative[static_cast<std::size_t>(gi)] = ni;
+    }
+    std::vector<std::pair<std::size_t, std::size_t>> pairs;
+    for (std::size_t a = 0; a < representative.size(); ++a)
+        if (representative[a] != std::size_t(-1))
+            for (std::size_t b = a + 1; b < representative.size(); ++b)
+                if (representative[b] != std::size_t(-1)) pairs.emplace_back(a, b);
+
+    json candidates = json::array();
+    std::size_t done = 0;
+    sendStatus("Scanning LOD" + std::to_string(lodIndex) + " for exact rigid duplicate geometry...", false, "working");
+    for (const auto& [referenceGi, targetGi] : pairs)
+    {
+        sendProgress("working", "SCAN DUPLICATE GEOMETRY", done, pairs.size());
+        GeometryDefinition referenceGeometry, targetGeometry;
+        referenceGeometry.id = lod.geometries[referenceGi].id;
+        referenceGeometry.lods.push_back(lod.geometries[referenceGi].mesh);
+        targetGeometry.id = lod.geometries[targetGi].id;
+        targetGeometry.lods.push_back(lod.geometries[targetGi].mesh);
+        const GeometryInstanceFit fit = fitGeometryAsRigidInstance(referenceGeometry, targetGeometry);
+        if (fit.valid)
+        {
+            candidates.push_back({
+                {"referenceGeometryIndex", referenceGi}, {"targetGeometryIndex", targetGi},
+                {"referenceRenderNodeIndex", representative[referenceGi]}, {"targetRenderNodeIndex", representative[targetGi]},
+                {"referenceGeometryId", lod.geometries[referenceGi].id}, {"targetGeometryId", lod.geometries[targetGi].id},
+                {"referenceRenderNodeId", lod.nodes[representative[referenceGi]].id}, {"targetRenderNodeId", lod.nodes[representative[targetGi]].id},
+                {"rmsErrorMeters", fit.rmsErrorMeters}, {"maxErrorMeters", fit.maxErrorMeters},
+                {"toleranceMeters", fit.toleranceMeters}, {"comparedVertices", fit.comparedVertices}
+            });
+        }
+        ++done;
+    }
+    sendProgress("working", "SCAN DUPLICATE GEOMETRY", pairs.size(), pairs.size());
+    m_server.broadcastText(json({
+        {"type", "geometry_scan_result"}, {"mode", "all_pairs"}, {"lodIndex", lodIndex},
+        {"testedPairs", pairs.size()}, {"candidates", std::move(candidates)}
+    }).dump());
+    sendStatus("Duplicate scan complete for LOD" + std::to_string(lodIndex));
+    return true;
+}
+
+bool ModelAssetEditorSession::saveSettings(
+    const std::filesystem::path& sourceAssetsRoot,
+    const std::filesystem::path& compiledModelsRoot,
+    const std::string& locale)
+{
+    static const std::array<const char*, 5> supportedLocales {"en", "ru", "zh-Hans", "es", "ja"};
+    if (std::find(supportedLocales.begin(), supportedLocales.end(), locale) == supportedLocales.end())
+    {
+        sendStatus("Unsupported editor locale: " + locale, true);
+        return false;
+    }
+    if (sourceAssetsRoot.empty() || compiledModelsRoot.empty())
+    {
+        sendStatus("Settings paths cannot be empty", true);
+        return false;
+    }
+    std::error_code ec;
+    if (!std::filesystem::is_directory(sourceAssetsRoot, ec) || ec)
+    {
+        sendStatus("Source model root does not exist or is not a directory: " + sourceAssetsRoot.generic_string(), true);
+        return false;
+    }
+    ec.clear();
+    std::filesystem::create_directories(compiledModelsRoot, ec);
+    if (ec)
+    {
+        sendStatus("Cannot create compiled model output directory: " + compiledModelsRoot.generic_string(), true);
+        return false;
+    }
+
+    m_sourceAssetsRoot = sourceAssetsRoot.lexically_normal();
+    m_compiledModelsRoot = compiledModelsRoot.lexically_normal();
+    m_locale = locale;
+
+    if (!writeSettingsFile())
+        return false;
+
+    // Acknowledge the write first. Catalog/asset refreshes can be comparatively
+    // expensive in the Web UI and must never hide the result of pressing Save.
+    m_server.broadcastText(json({
+        {"type", "settings_saved"},
+        {"sourceAssetsRoot", m_sourceAssetsRoot.generic_string()},
+        {"compiledModelsRoot", m_compiledModelsRoot.generic_string()},
+        {"settingsPath", settingsPath().generic_string()},
+        {"locale", m_locale}
+    }).dump());
+    std::cerr << "[ModelAssetEditor] settings saved: "
+              << settingsPath().generic_string()
+              << " source=" << m_sourceAssetsRoot.generic_string()
+              << " compiled=" << m_compiledModelsRoot.generic_string()
+              << " locale=" << m_locale << '\n';
+    sendStatus("Editor settings saved. Paths affect subsequent reimport/load/save operations; existing files are not moved.");
+    sendSettings();
+    sendCatalog();
+    if (!m_asset.assetId.empty()) sendAssetMetadata();
+    return true;
 }
 
 
 std::size_t ModelAssetEditorSession::lodCount() const
 {
-    std::size_t count = 0;
-    for (const auto& geometry : m_asset.geometries)
-        count = std::max(count, geometry.lods.size());
-    return count;
+    return m_asset.renderLods.size();
 }
 
 void ModelAssetEditorSession::syncDirty()
@@ -766,7 +1573,7 @@ bool ModelAssetEditorSession::loadLodOnly(std::size_t lodIndex, bool forceReload
     const auto manifest = compiledPath(m_selectedId);
     if (!std::filesystem::exists(manifest))
     {
-        sendStatus("Cannot load independent LOD before the v3 package has been saved", true);
+        sendStatus("Cannot load independent LOD before the v4 package has been saved", true);
         return false;
     }
     std::string error;
@@ -822,17 +1629,15 @@ bool ModelAssetEditorSession::unloadLod(std::size_t lodIndex)
         sendStatus("Cannot unload dirty LOD" + std::to_string(lodIndex) + "; save or reload it first", true);
         return false;
     }
-    for (auto& geometry : m_asset.geometries)
+    if (lodIndex < m_asset.renderLods.size())
     {
-        if (lodIndex >= geometry.lods.size()) continue;
-        auto& lod = geometry.lods[lodIndex];
-        lod.vertices.clear();
-        lod.triangles.clear();
-        lod.edges.clear();
+        auto& lod = m_asset.renderLods[lodIndex];
+        lod.geometries.clear();
+        lod.nodes.clear();
     }
     state.loaded = false;
     syncDirty();
-    sendAsset();
+    sendAssetMetadata();
     sendStatus("Unloaded LOD" + std::to_string(lodIndex) + " from editor memory; file on disk unchanged");
     return true;
 }
@@ -870,7 +1675,7 @@ bool ModelAssetEditorSession::saveManifestOnly()
     m_manifestDirty = false;
     syncDirty();
     sendProgress("writing", "SAVE MANIFEST", 1, 1, path);
-    sendAsset();
+    sendAssetMetadata();
     sendStatus("Saved manifest only; LOD payload files and source OBJ/assembly unchanged");
     sendCatalog();
     return true;
@@ -912,7 +1717,7 @@ bool ModelAssetEditorSession::saveLodOnly(std::size_t lodIndex)
     state.dirty = false;
     syncDirty();
     sendProgress("writing", "SAVE LOD" + std::to_string(lodIndex), 1, 1, lodPath);
-    sendAsset();
+    sendAssetMetadata();
     sendStatus("Saved LOD" + std::to_string(lodIndex) + " only; manifest, other LOD files and source OBJ/assembly unchanged");
     return true;
 }
@@ -958,19 +1763,102 @@ void ModelAssetEditorSession::sendProgress(
     }).dump());
 }
 
+bool ModelAssetEditorSession::writeSettingsFile()
+{
+    const auto path = settingsPath();
+    std::error_code ec;
+    std::filesystem::create_directories(path.parent_path(), ec);
+    if (ec)
+    {
+        sendStatus("Cannot create editor settings directory: " + path.parent_path().generic_string(), true);
+        return false;
+    }
+    std::ofstream out(path, std::ios::trunc);
+    if (!out)
+    {
+        sendStatus("Cannot write editor settings: " + path.generic_string(), true);
+        return false;
+    }
+    out << json({
+        {"version", 2},
+        {"sourceAssetsRoot", m_sourceAssetsRoot.generic_string()},
+        {"compiledModelsRoot", m_compiledModelsRoot.generic_string()},
+        {"locale", m_locale}
+    }).dump(2) << '\n';
+    if (!out)
+    {
+        sendStatus("Cannot finish writing editor settings: " + path.generic_string(), true);
+        return false;
+    }
+    return true;
+}
+
+bool ModelAssetEditorSession::setLocale(const std::string& locale)
+{
+    static const std::array<const char*, 5> supportedLocales {"en", "ru", "zh-Hans", "es", "ja"};
+    if (std::find(supportedLocales.begin(), supportedLocales.end(), locale) == supportedLocales.end())
+    {
+        sendStatus("Unsupported editor locale: " + locale, true);
+        return false;
+    }
+    m_locale = locale;
+    if (!writeSettingsFile())
+        return false;
+    sendSettings();
+    sendStatus("Editor locale: " + m_locale);
+    return true;
+}
+
+void ModelAssetEditorSession::installLocalizationBundle()
+{
+    const auto path = m_sourceRoot / "src" / "assets" / "localization" / "ui" / "tools" / "model_asset_editor.json";
+    std::ifstream in(path, std::ios::binary);
+    if (!in)
+    {
+        std::cerr << "[ModelAssetEditor] localization file not found: " << path << '\n';
+        return;
+    }
+    std::ostringstream content;
+    content << in.rdbuf();
+    m_server.setVirtualFile(
+        "/model_asset_editor_i18n.json",
+        content.str(),
+        "application/json; charset=utf-8");
+}
+
+void ModelAssetEditorSession::sendSettings()
+{
+    m_server.broadcastText(json({
+        {"type", "settings"},
+        {"editorVersion", ModelAssetEditorVersion},
+        {"projectRoot", m_sourceRoot.generic_string()},
+        {"sourceAssetsRoot", m_sourceAssetsRoot.generic_string()},
+        {"compiledModelsRoot", m_compiledModelsRoot.generic_string()},
+        {"defaultSourceAssetsRoot", defaultEditorSourceAssetsRoot(m_sourceRoot).generic_string()},
+        {"defaultCompiledModelsRoot", (m_sourceRoot / "src" / "assets" / "compiled" / "models").generic_string()},
+        {"settingsPath", settingsPath().generic_string()},
+        {"locale", m_locale}
+    }).dump());
+}
+
 void ModelAssetEditorSession::sendCatalog()
 {
     json items = json::array();
     for (const auto& entry : m_catalog)
     {
-        const bool splitV3 = std::filesystem::exists(compiledPath(entry.id));
-        const bool legacyV2 = std::filesystem::exists(legacyCompiledPath(entry.id));
+        const auto packagePath = compiledPath(entry.id);
+        const auto legacyPath = legacyCompiledPath(entry.id);
+        const bool havePackage = std::filesystem::exists(packagePath);
+        const bool haveLegacyV2 = std::filesystem::exists(legacyPath);
+        const std::uint32_t packageVersion = havePackage ? packageFormatVersion(packagePath) : 0u;
+        const std::uint32_t legacyVersion = havePackage ? packageVersion : (haveLegacyV2 ? packageFormatVersion(legacyPath) : 0u);
         items.push_back({
             {"id", entry.id},
             {"displayName", entry.displayName},
-            {"compiled", splitV3 || legacyV2},
-            {"compiledV3", splitV3},
-            {"legacyV2", !splitV3 && legacyV2}
+            {"compiled", havePackage || haveLegacyV2},
+            {"compiledV4", havePackage && packageVersion == ModelAssetFormatVersion},
+            {"legacyPackage", (havePackage && packageVersion > 0u && packageVersion < ModelAssetFormatVersion) || (!havePackage && haveLegacyV2)},
+            {"legacyVersion", legacyVersion}
         });
     }
     m_server.broadcastText(json({
@@ -987,39 +1875,38 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     if (it == m_catalog.end()) { sendStatus("Unknown asset id: " + id, true); return false; }
 
     m_selectedId = id;
+    loadWizardState();
     ModelAsset loaded;
     std::string error;
     std::string warning;
     const auto binary = compiledPath(id);
     const auto legacyBinary = legacyCompiledPath(id);
-    const bool haveV3 = std::filesystem::exists(binary);
-    const bool haveLegacyV2 = !haveV3 && std::filesystem::exists(legacyBinary);
-    const auto readPath = haveV3 ? binary : legacyBinary;
+    const bool havePackage = std::filesystem::exists(binary);
+    const bool haveLegacyV2 = !havePackage && std::filesystem::exists(legacyBinary);
+    const auto readPath = havePackage ? binary : legacyBinary;
     const auto importProgress = [&](const ImportProgress& update)
     {
         sendProgress("reading", update.stage, update.completed, update.total, update.path);
     };
 
-    if (!forceReimport && (haveV3 || haveLegacyV2))
+    if (!forceReimport && (havePackage || haveLegacyV2))
     {
-        sendStatus(
-            std::string(haveLegacyV2 ? "Reading legacy v2 " : "Reading v3 manifest ") +
-                readPath.filename().string() + "...",
-            false, "reading");
-        sendProgress("reading", haveLegacyV2 ? "READ LEGACY V2" : "READ V3 MANIFEST", 0, 1, readPath);
-        bool loadedLegacyV2 = false;
-        if (!ModelAssetBinary::loadManifest(readPath.string(), loaded, &loadedLegacyV2, &error))
+        sendStatus("Reading compiled model asset " + readPath.filename().string() + "...", false, "reading");
+        sendProgress("reading", "READ MANIFEST", 0, 1, readPath);
+        bool legacyPackage = false;
+        if (!ModelAssetBinary::loadManifest(readPath.string(), loaded, &legacyPackage, &error))
         {
             if (error == "unsupported model asset version")
             {
                 sendStatus("Compiled asset format is obsolete; reimporting source...", false, "reading");
                 if (!importRuntimeAssembly(
-                        m_sourceRoot, it->type, it->id, it->displayName, loaded,
+                        m_sourceAssetsRoot, it->type, it->id, it->displayName, loaded,
                         &error, &warning, importProgress))
                 {
                     sendStatus("Cannot reimport obsolete compiled asset: " + error, true);
                     return false;
                 }
+                buildIndependentRenderLodsFromLegacy(loaded);
                 loaded.formatVersion = ModelAssetFormatVersion;
                 m_asset = std::move(loaded);
                 resetLodState(true, true);
@@ -1030,62 +1917,75 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
                 return false;
             }
         }
-        else
+        else if (legacyPackage)
         {
-            sendProgress("reading", haveLegacyV2 ? "READ LEGACY V2" : "READ V3 MANIFEST", 1, 1, readPath);
-            m_asset = std::move(loaded);
-            if (loadedLegacyV2)
+            const std::uint32_t oldVersion = loaded.formatVersion;
+            sendProgress("reading", "MIGRATE LEGACY PACKAGE", 0, 1, readPath);
+            if (!ModelAssetBinary::load(readPath.string(), loaded, &error))
             {
-                // v2 is monolithic, therefore every imported LOD is resident.
-                // The first v3 Save all writes independent files and leaves v2 untouched.
-                m_asset.formatVersion = ModelAssetFormatVersion;
-                resetLodState(true, true);
-                warning = "Legacy .elmodel v2 loaded for migration. Save all writes a v3 manifest + independent LOD files; the legacy v2 file is left unchanged.";
+                sendStatus("Cannot migrate legacy compiled asset: " + error, true);
+                return false;
+            }
+            loaded.formatVersion = ModelAssetFormatVersion;
+            m_asset = std::move(loaded);
+            resetLodState(true, true);
+            if (oldVersion == 3u && havePackage)
+            {
+                warning = "Legacy asset v3 loaded and converted in memory to asset v4. Save all upgrades the compiled package in place to independent render LOD graphs; source OBJ/assembly files remain unchanged.";
             }
             else
             {
-                // v3 opens the semantic manifest first. Only LOD0 is pulled into
-                // memory by default; every other .elmesh remains independently loadable.
-                resetLodState(false, false);
-                if (!m_lodState.empty())
-                {
-                    const auto lod0Path = ModelAssetBinary::lodPayloadPath(binary.string(), 0);
-                    sendProgress("reading", "LOAD LOD0", 0, 1, lod0Path);
-                    if (!ModelAssetBinary::loadLod(binary.string(), m_asset, 0, &error))
-                    {
-                        sendStatus("Cannot load LOD0 payload: " + error, true);
-                        return false;
-                    }
-                    m_lodState[0].loaded = true;
-                    sendProgress("reading", "LOAD LOD0", 1, 1, lod0Path);
-                }
-                syncDirty();
+                warning = "Legacy asset v" + std::to_string(oldVersion) +
+                    " loaded and converted in memory to asset v4. Save all writes the v4 package beside the untouched legacy monolithic binary; source OBJ/assembly files remain unchanged.";
             }
+            sendProgress("reading", "MIGRATE LEGACY PACKAGE", 1, 1, readPath);
+        }
+        else
+        {
+            sendProgress("reading", "READ V4 MANIFEST", 1, 1, readPath);
+            m_asset = std::move(loaded);
+            resetLodState(false, false);
+            if (!m_lodState.empty())
+            {
+                const auto lod0Path = ModelAssetBinary::lodPayloadPath(binary.string(), 0);
+                sendProgress("reading", "LOAD RENDER LOD0", 0, 1, lod0Path);
+                if (!ModelAssetBinary::loadLod(binary.string(), m_asset, 0, &error))
+                {
+                    sendStatus("Cannot load LOD0 render graph: " + error, true);
+                    return false;
+                }
+                m_lodState[0].loaded = true;
+                sendProgress("reading", "LOAD RENDER LOD0", 1, 1, lod0Path);
+            }
+            syncDirty();
         }
     }
     else
     {
         sendStatus("Importing source OBJ/assembly...", false, "reading");
         if (!importRuntimeAssembly(
-                m_sourceRoot, it->type, it->id, it->displayName, loaded,
+                m_sourceAssetsRoot, it->type, it->id, it->displayName, loaded,
                 &error, &warning, importProgress))
         {
             sendStatus("Cannot import source assembly: " + error, true);
             return false;
         }
+        buildIndependentRenderLodsFromLegacy(loaded);
         loaded.formatVersion = ModelAssetFormatVersion;
         m_asset = std::move(loaded);
-        // Source import has no v3 package yet: all imported representations are
-        // resident and dirty until explicitly saved.
         resetLodState(true, true);
     }
 
+    if (forceReimport)
+    {
+        invalidateWizardFrom("source");
+        (void)writeWizardState();
+    }
     sendProgress("reading", "LOAD VIEW", 0, 1, readPath.empty() ? binary : readPath);
     sendAsset();
-    if (!warning.empty())
-        sendStatus(warning);
-    else
-        sendStatus(forceReimport ? "Source assembly imported" : "Asset loaded; LOD files can be loaded/saved independently");
+    if (!warning.empty()) sendStatus(warning);
+    else sendStatus(forceReimport ? "Source assembly imported into independent render LODs" :
+        "Asset loaded; semantic state is shared, render LOD graphs are independent");
     return true;
 }
 
@@ -1126,7 +2026,7 @@ bool ModelAssetEditorSession::saveAsset()
     }
     std::size_t completed = 0;
     std::string error;
-    sendStatus("Saving dirty v3 package members...", false, "writing");
+    sendStatus("Saving dirty v4 package members...", false, "writing");
 
     for (std::size_t i = 0; i < m_lodState.size(); ++i)
     {
@@ -1162,13 +2062,13 @@ bool ModelAssetEditorSession::saveAsset()
     }
     syncDirty();
     sendProgress("writing", "SAVE ALL", completed, std::max<std::size_t>(work, completed), path);
-    sendAsset();
+    sendAssetMetadata();
     sendStatus("Saved dirty package members only; clean LOD files and source OBJ/assembly were not rewritten");
     sendCatalog();
     return true;
 }
 
-nlohmann::json ModelAssetEditorSession::serializeAsset() const
+nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPayload) const
 {
     json out;
     out["assetId"] = m_asset.assetId;
@@ -1181,6 +2081,8 @@ nlohmann::json ModelAssetEditorSession::serializeAsset() const
     out["binaryPath"] = compiledPath(m_asset.assetId).generic_string();
     out["sourceBasis"] = {{"preset", m_asset.sourceBasis.preset}, {"right", static_cast<int>(m_asset.sourceBasis.right)}, {"up", static_cast<int>(m_asset.sourceBasis.up)}, {"forward", static_cast<int>(m_asset.sourceBasis.forward)}, {"canonicalized", m_asset.sourceBasis.canonicalized}};
     out["manifestDirty"] = m_manifestDirty;
+    out["geometryPayloadIncluded"] = includeGeometryPayload;
+    out["wizard"] = serializeWizard();
 
     out["materials"] = json::array();
     for (std::size_t i = 0; i < m_asset.materials.size(); ++i)
@@ -1189,123 +2091,172 @@ nlohmann::json ModelAssetEditorSession::serializeAsset() const
         out["materials"].push_back({{"index", i}, {"id", m.id}, {"sourceName", m.sourceName}, {"baseColor", vec4Json(m.baseColor)}, {"emissiveColor", vec3Json(m.emissiveColor)}, {"emissiveStrength", m.emissiveStrength}, {"metallic", m.metallic}, {"roughness", m.roughness}, {"twoSided", m.twoSided}, {"baseColorTexture", m.baseColorTexture}, {"emissiveTexture", m.emissiveTexture}});
     }
 
-    out["geometries"] = json::array();
-    for (std::size_t gi = 0; gi < m_asset.geometries.size(); ++gi)
-    {
-        const auto& geometry = m_asset.geometries[gi];
-        json usedBy = json::array();
-        for (const auto& node : m_asset.nodes)
-            if (node.geometryIndex == static_cast<std::int32_t>(gi))
-                usedBy.push_back(node.id);
-        json g = {{"index", gi}, {"id", geometry.id}, {"sourceLods", geometry.sourceLods}, {"surfaceMode", surfaceModeName(geometry.surfaceMode)}, {"usageCount", usedBy.size()}, {"usedBy", std::move(usedBy)}, {"estimatedBinaryBytes", estimatedGeometryBinaryBytes(geometry)}};
-        g["lods"] = json::array();
-        for (std::size_t li = 0; li < geometry.lods.size(); ++li)
-        {
-            const auto& lod = geometry.lods[li];
-            json l = {{"index", li}, {"minBounds", vec3Json(lod.minBounds)}, {"maxBounds", vec3Json(lod.maxBounds)}, {"loaded", li < m_lodState.size() && m_lodState[li].loaded}, {"dirty", li < m_lodState.size() && m_lodState[li].dirty}};
-            l["positions"] = json::array(); l["normals"] = json::array(); l["indices"] = json::array(); l["triangleMaterials"] = json::array(); l["smoothingGroups"] = json::array(); l["edges"] = json::array();
-            for (const auto& v : lod.vertices)
-            {
-                l["positions"].push_back(v.position.x); l["positions"].push_back(v.position.y); l["positions"].push_back(v.position.z);
-                l["normals"].push_back(v.normal.x); l["normals"].push_back(v.normal.y); l["normals"].push_back(v.normal.z);
-            }
-            for (const auto& t : lod.triangles)
-            {
-                l["indices"].push_back(t.a); l["indices"].push_back(t.b); l["indices"].push_back(t.c);
-                l["triangleMaterials"].push_back(t.materialIndex); l["smoothingGroups"].push_back(t.smoothingGroupId);
-            }
-            for (std::size_t ei = 0; ei < lod.edges.size(); ++ei)
-            {
-                const auto& e = lod.edges[ei];
-                l["edges"].push_back({{"index", ei}, {"a", e.a}, {"b", e.b}, {"triangleA", e.triangleA}, {"triangleB", e.triangleB}, {"flags", e.flags}, {"renderMask", e.renderMask}});
-            }
-            g["lods"].push_back(std::move(l));
-        }
-        out["geometries"].push_back(std::move(g));
-    }
-
+    // Semantic assembly is deliberately render-LOD agnostic.
     out["nodes"] = json::array();
     for (std::size_t ni = 0; ni < m_asset.nodes.size(); ++ni)
     {
         const auto& n = m_asset.nodes[ni];
+        std::size_t variantCount = 0;
+        for (const auto& variant : m_asset.stateVariants)
+            if (variant.nodeIndex == static_cast<std::int32_t>(ni)) ++variantCount;
         out["nodes"].push_back({
-            {"index", ni}, {"id", n.id}, {"moduleId", n.moduleId}, {"parentIndex", n.parentIndex}, {"geometryIndex", n.geometryIndex},
+            {"index", ni}, {"id", n.id}, {"moduleId", n.moduleId}, {"parentIndex", n.parentIndex},
+            {"defaultStateId", n.defaultStateId}, {"stateVariantCount", variantCount},
             {"localPosition", vec3Json(n.localPosition)}, {"localRotationDeg", vec3Json(n.localRotationDeg)}, {"pivot", vec3Json(n.pivot)}, {"enabled", n.enabled},
             {"joint", {{"type", jointTypeName(n.joint.type)}, {"pivot", vec3Json(n.joint.pivot)}, {"axis", vec3Json(n.joint.axis)}, {"defaultRateDegPerSec", n.joint.defaultRateDegPerSec}, {"minAngleDeg", n.joint.minAngleDeg}, {"maxAngleDeg", n.joint.maxAngleDeg}, {"breakable", n.joint.breakable}, {"breakForceN", n.joint.breakForceN}, {"breakTorqueNm", n.joint.breakTorqueNm}}},
             {"physics", {{"mode", massModeName(n.physics.mode)}, {"densityKgM3", n.physics.densityKgM3}, {"massKg", n.physics.massKg}, {"centerOfMass", vec3Json(n.physics.centerOfMass)}, {"inertiaDiagonal", vec3Json(n.physics.inertiaDiagonal)}, {"inertiaProducts", vec3Json(n.physics.inertiaProducts)}}}
         });
     }
 
+    out["stateVariants"] = json::array();
+    for (std::size_t i = 0; i < m_asset.stateVariants.size(); ++i)
+    {
+        const auto& v = m_asset.stateVariants[i];
+        out["stateVariants"].push_back({
+            {"index", i}, {"id", v.id}, {"displayName", v.displayName}, {"nodeIndex", v.nodeIndex},
+            {"transformOverride", v.transformOverride}, {"localPosition", vec3Json(v.localPosition)},
+            {"localRotationDeg", vec3Json(v.localRotationDeg)}, {"pivot", vec3Json(v.pivot)},
+            {"physicsOverride", v.physicsOverride}, {"detached", v.detached}, {"enabled", v.enabled},
+            {"physics", {{"mode", massModeName(v.physics.mode)}, {"densityKgM3", v.physics.densityKgM3}, {"massKg", v.physics.massKg}, {"centerOfMass", vec3Json(v.physics.centerOfMass)}, {"inertiaDiagonal", vec3Json(v.physics.inertiaDiagonal)}, {"inertiaProducts", vec3Json(v.physics.inertiaProducts)}}}
+        });
+    }
+
+    out["renderLods"] = json::array();
+    for (std::size_t li = 0; li < m_asset.renderLods.size(); ++li)
+    {
+        const auto& lod = m_asset.renderLods[li];
+        json jl = {
+            {"index", li}, {"level", lod.level}, {"sourceKind", lod.sourceKind}, {"generatedFromLod", lod.generatedFromLod},
+            {"minBounds", vec3Json(lod.minBounds)}, {"maxBounds", vec3Json(lod.maxBounds)},
+            {"loaded", li < m_lodState.size() && m_lodState[li].loaded},
+            {"dirty", li < m_lodState.size() && m_lodState[li].dirty}
+        };
+        jl["geometries"] = json::array();
+        for (std::size_t gi = 0; gi < lod.geometries.size(); ++gi)
+        {
+            const auto& geometry = lod.geometries[gi];
+            json usedBy = json::array();
+            for (const auto& renderNode : lod.nodes)
+                if (renderNode.geometryIndex == static_cast<std::int32_t>(gi)) usedBy.push_back(renderNode.id);
+            const auto& mesh = geometry.mesh;
+            json g = {
+                {"index", gi}, {"id", geometry.id}, {"sourcePath", geometry.sourcePath},
+                {"surfaceMode", surfaceModeName(geometry.surfaceMode)}, {"usageCount", usedBy.size()}, {"usedBy", std::move(usedBy)},
+                {"minBounds", vec3Json(mesh.minBounds)}, {"maxBounds", vec3Json(mesh.maxBounds)},
+                {"vertexCount", mesh.vertices.size()}, {"triangleCount", mesh.triangles.size()}, {"edgeCount", mesh.edges.size()},
+                {"estimatedBinaryBytes", estimatedRenderGeometryBinaryBytes(geometry)}
+            };
+            if (includeGeometryPayload)
+            {
+                g["positions"] = json::array(); g["normals"] = json::array(); g["indices"] = json::array(); g["triangleMaterials"] = json::array(); g["smoothingGroups"] = json::array(); g["edges"] = json::array();
+                for (const auto& vertex : mesh.vertices)
+                {
+                    g["positions"].push_back(vertex.position.x); g["positions"].push_back(vertex.position.y); g["positions"].push_back(vertex.position.z);
+                    g["normals"].push_back(vertex.normal.x); g["normals"].push_back(vertex.normal.y); g["normals"].push_back(vertex.normal.z);
+                }
+                for (const auto& triangle : mesh.triangles)
+                {
+                    g["indices"].push_back(triangle.a); g["indices"].push_back(triangle.b); g["indices"].push_back(triangle.c);
+                    g["triangleMaterials"].push_back(triangle.materialIndex); g["smoothingGroups"].push_back(triangle.smoothingGroupId);
+                }
+                for (std::size_t ei = 0; ei < mesh.edges.size(); ++ei)
+                {
+                    const auto& edge = mesh.edges[ei];
+                    g["edges"].push_back({{"index", ei}, {"a", edge.a}, {"b", edge.b}, {"triangleA", edge.triangleA}, {"triangleB", edge.triangleB}, {"flags", edge.flags}, {"renderMask", edge.renderMask}});
+                }
+            }
+            jl["geometries"].push_back(std::move(g));
+        }
+        jl["nodes"] = json::array();
+        for (std::size_t ri = 0; ri < lod.nodes.size(); ++ri)
+        {
+            const auto& node = lod.nodes[ri];
+            jl["nodes"].push_back({
+                {"index", ri}, {"id", node.id}, {"parentIndex", node.parentIndex}, {"geometryIndex", node.geometryIndex},
+                {"semanticNodeIndex", node.semanticNodeIndex}, {"activeStates", node.activeStates},
+                {"localPosition", vec3Json(node.localPosition)}, {"localRotationDeg", vec3Json(node.localRotationDeg)},
+                {"pivot", vec3Json(node.pivot)}, {"enabled", node.enabled}
+            });
+        }
+        out["renderLods"].push_back(std::move(jl));
+    }
+
     out["collisionVolumes"] = json::array();
     for (std::size_t ci = 0; ci < m_asset.collisionVolumes.size(); ++ci)
     {
         const auto& c = m_asset.collisionVolumes[ci];
-        out["collisionVolumes"].push_back({{"index", ci}, {"id", c.id}, {"moduleId", c.moduleId}, {"parentNodeIndex", c.parentNodeIndex}, {"shape", collisionShapeName(c.shape)}, {"localPosition", vec3Json(c.localPosition)}, {"localRotationDeg", vec3Json(c.localRotationDeg)}, {"halfSize", vec3Json(c.halfSize)}, {"radius", c.radius}, {"halfHeight", c.halfHeight}, {"enabled", c.enabled}});
+        out["collisionVolumes"].push_back({{"index", ci}, {"id", c.id}, {"moduleId", c.moduleId}, {"parentNodeIndex", c.parentNodeIndex}, {"shape", collisionShapeName(c.shape)}, {"activeStates", c.activeStates}, {"localPosition", vec3Json(c.localPosition)}, {"localRotationDeg", vec3Json(c.localRotationDeg)}, {"halfSize", vec3Json(c.halfSize)}, {"radius", c.radius}, {"halfHeight", c.halfHeight}, {"enabled", c.enabled}});
     }
-
     out["sockets"] = json::array();
     for (std::size_t si = 0; si < m_asset.sockets.size(); ++si)
     {
-        const auto& s = m_asset.sockets[si];
-        out["sockets"].push_back({{"index", si}, {"id", s.id}, {"kind", s.kind}, {"moduleId", s.moduleId}, {"parentNodeIndex", s.parentNodeIndex}, {"localPosition", vec3Json(s.localPosition)}, {"localRotationDeg", vec3Json(s.localRotationDeg)}, {"extent", vec3Json(s.extent)}, {"enabled", s.enabled}, {"light", {{"type", lightTypeName(s.light.type)}, {"color", vec3Json(s.light.color)}, {"intensity", s.light.intensity}, {"rangeMeters", s.light.rangeMeters}, {"outerConeDeg", s.light.outerConeDeg}}}});
+        const auto& socket = m_asset.sockets[si];
+        out["sockets"].push_back({{"index", si}, {"id", socket.id}, {"kind", socket.kind}, {"moduleId", socket.moduleId}, {"parentNodeIndex", socket.parentNodeIndex}, {"activeStates", socket.activeStates}, {"localPosition", vec3Json(socket.localPosition)}, {"localRotationDeg", vec3Json(socket.localRotationDeg)}, {"extent", vec3Json(socket.extent)}, {"enabled", socket.enabled}, {"light", {{"type", lightTypeName(socket.light.type)}, {"color", vec3Json(socket.light.color)}, {"intensity", socket.light.intensity}, {"rangeMeters", socket.light.rangeMeters}, {"outerConeDeg", socket.light.outerConeDeg}}}});
     }
 
-    std::uint64_t sourceBytes = 0;
-    std::uint64_t estimatedGeometryBytes = 0;
-    std::uint64_t estimatedUnusedGeometryBytes = 0;
+    out["hitRegions"] = json::array();
+    for (std::size_t i = 0; i < m_asset.hitRegions.size(); ++i)
+    {
+        const auto& h = m_asset.hitRegions[i];
+        out["hitRegions"].push_back({{"index", i}, {"id", h.id}, {"parentNodeIndex", h.parentNodeIndex}, {"activeStates", h.activeStates}, {"localPosition", vec3Json(h.localPosition)}, {"localRotationDeg", vec3Json(h.localRotationDeg)}, {"halfSize", vec3Json(h.halfSize)}, {"enabled", h.enabled}});
+    }
+    out["openings"] = json::array();
+    for (std::size_t i = 0; i < m_asset.openings.size(); ++i)
+    {
+        const auto& o = m_asset.openings[i];
+        out["openings"].push_back({{"index", i}, {"id", o.id}, {"parentNodeIndex", o.parentNodeIndex}, {"activeStates", o.activeStates}, {"localPosition", vec3Json(o.localPosition)}, {"localRotationDeg", vec3Json(o.localRotationDeg)}, {"halfSize", vec3Json(o.halfSize)}, {"traversable", o.traversable}, {"lineOfFire", o.lineOfFire}, {"enabled", o.enabled}});
+    }
+    out["repairTargets"] = json::array();
+    for (std::size_t i = 0; i < m_asset.repairTargets.size(); ++i)
+    {
+        const auto& t = m_asset.repairTargets[i];
+        out["repairTargets"].push_back({{"index", i}, {"id", t.id}, {"kind", t.kind}, {"parentNodeIndex", t.parentNodeIndex}, {"activeStates", t.activeStates}, {"localPosition", vec3Json(t.localPosition)}, {"localRotationDeg", vec3Json(t.localRotationDeg)}, {"repairedStateId", t.repairedStateId}, {"enabled", t.enabled}});
+    }
+
+    std::uint64_t sourceBytes = 0, estimatedGeometryBytes = 0, estimatedUnusedGeometryBytes = 0;
     std::size_t unusedGeometryCount = 0;
     std::set<std::string> countedSourceFiles;
-    for (std::size_t gi = 0; gi < m_asset.geometries.size(); ++gi)
+    for (const auto& lod : m_asset.renderLods)
     {
-        const auto& geometry = m_asset.geometries[gi];
-        const auto geometryBytes = estimatedGeometryBinaryBytes(geometry);
-        estimatedGeometryBytes += geometryBytes;
-        const bool used = std::any_of(
-            m_asset.nodes.begin(), m_asset.nodes.end(),
-            [gi](const Node& node) { return node.geometryIndex == static_cast<std::int32_t>(gi); });
-        if (!used)
+        for (std::size_t gi = 0; gi < lod.geometries.size(); ++gi)
         {
-            ++unusedGeometryCount;
-            estimatedUnusedGeometryBytes += geometryBytes;
-        }
-        for (const auto& source : geometry.sourceLods)
-        {
-            if (source.empty() || !countedSourceFiles.insert(source).second) continue;
-            sourceBytes += safeFileBytes(editorSourceFilePath(m_sourceRoot, source));
+            const auto& geometry = lod.geometries[gi];
+            const auto geometryBytes = estimatedRenderGeometryBinaryBytes(geometry);
+            estimatedGeometryBytes += geometryBytes;
+            const bool used = std::any_of(lod.nodes.begin(), lod.nodes.end(), [gi](const RenderNode& node) { return node.geometryIndex == static_cast<std::int32_t>(gi); });
+            if (!used) { ++unusedGeometryCount; estimatedUnusedGeometryBytes += geometryBytes; }
+            if (!geometry.sourcePath.empty() && countedSourceFiles.insert(geometry.sourcePath).second)
+                sourceBytes += safeFileBytes(editorSourceFilePath(m_sourceAssetsRoot, geometry.sourcePath));
         }
     }
+
     const auto binary = compiledPath(m_asset.assetId);
     const auto legacyBinary = legacyCompiledPath(m_asset.assetId);
     json lodPayloads = json::array();
     std::uint64_t savedPackageBytes = safeFileBytes(binary);
-    std::size_t maxLodCount = 0;
-    for (const auto& geometry : m_asset.geometries)
-        maxLodCount = std::max(maxLodCount, geometry.lods.size());
-    for (std::size_t lodIndex = 0; lodIndex < maxLodCount; ++lodIndex)
+    const auto savedLodPayloads = discoverSavedLodPayloads(binary);
+    std::set<std::size_t> lodIndices;
+    for (std::size_t lodIndex = 0; lodIndex < m_asset.renderLods.size(); ++lodIndex) lodIndices.insert(lodIndex);
+    for (const auto& [lodIndex, unusedPath] : savedLodPayloads) { (void)unusedPath; lodIndices.insert(lodIndex); }
+    for (const std::size_t lodIndex : lodIndices)
     {
-        const auto lodPath = ModelAssetBinary::lodPayloadPath(binary.string(), lodIndex);
+        const auto saved = savedLodPayloads.find(lodIndex);
+        const auto lodPath = saved != savedLodPayloads.end() ? saved->second : ModelAssetBinary::lodPayloadPath(binary.string(), lodIndex);
         const auto bytes = safeFileBytes(lodPath);
-        savedPackageBytes += bytes;
+        if (saved != savedLodPayloads.end()) savedPackageBytes += bytes;
         lodPayloads.push_back({
-            {"lod", lodIndex},
-            {"path", lodPath.generic_string()},
-            {"bytes", bytes},
+            {"lod", lodIndex}, {"path", lodPath.generic_string()}, {"bytes", bytes},
+            {"declared", lodIndex < m_asset.renderLods.size()},
             {"loaded", lodIndex < m_lodState.size() && m_lodState[lodIndex].loaded},
             {"dirty", lodIndex < m_lodState.size() && m_lodState[lodIndex].dirty}
         });
     }
     out["storage"] = {
-        {"binaryPath", binary.generic_string()},
-        {"manifestBytes", safeFileBytes(binary)},
-        {"manifestDirty", m_manifestDirty},
-        {"savedPackageBytes", savedPackageBytes},
-        {"lodPayloads", std::move(lodPayloads)},
-        {"legacyBinaryPath", legacyBinary.generic_string()},
-        {"legacyBinaryBytes", safeFileBytes(legacyBinary)},
-        {"sourceMeshBytes", sourceBytes},
-        {"estimatedGeometryPayloadBytes", estimatedGeometryBytes},
-        {"estimatedUnusedGeometryBytes", estimatedUnusedGeometryBytes},
-        {"unusedGeometryCount", unusedGeometryCount},
+        {"binaryPath", binary.generic_string()}, {"manifestBytes", safeFileBytes(binary)}, {"manifestDirty", m_manifestDirty},
+        {"savedPackageBytes", savedPackageBytes}, {"lodPayloads", std::move(lodPayloads)},
+        {"legacyBinaryPath", legacyBinary.generic_string()}, {"legacyBinaryBytes", safeFileBytes(legacyBinary)},
+        {"sourceMeshBytes", sourceBytes}, {"estimatedGeometryPayloadBytes", estimatedGeometryBytes},
+        {"estimatedUnusedGeometryBytes", estimatedUnusedGeometryBytes}, {"unusedGeometryCount", unusedGeometryCount},
         {"sourceFilesReadOnly", true}
     };
     return out;
@@ -1313,7 +2264,16 @@ nlohmann::json ModelAssetEditorSession::serializeAsset() const
 
 void ModelAssetEditorSession::sendAsset()
 {
-    m_server.broadcastText(json({{"type", "asset"}, {"dirty", m_dirty}, {"asset", serializeAsset()}}).dump());
+    m_server.broadcastText(json({{"type", "asset"}, {"dirty", m_dirty}, {"asset", serializeAsset(true)}}).dump());
+}
+
+void ModelAssetEditorSession::sendAssetMetadata(const nlohmann::json& hints)
+{
+    json payload = {{"type", "asset_metadata"}, {"dirty", m_dirty}, {"asset", serializeAsset(false)}};
+    if (hints.is_object())
+        for (const auto& [key, value] : hints.items())
+            payload[key] = value;
+    m_server.broadcastText(payload.dump());
 }
 
 void ModelAssetEditorSession::handleMessage(const std::string& payload)
@@ -1324,6 +2284,20 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         const std::string command = message.value("command", "");
 
         if (command == "request_catalog") { sendCatalog(); if (!m_selectedId.empty()) sendAsset(); return; }
+        if (command == "request_settings") { sendSettings(); return; }
+        if (command == "save_settings")
+        {
+            const auto source = std::filesystem::path(message.value("sourceAssetsRoot", std::string()));
+            const auto compiled = std::filesystem::path(message.value("compiledModelsRoot", std::string()));
+            const auto locale = message.value("locale", m_locale);
+            std::cerr << "[ModelAssetEditor] save_settings requested: source="
+                      << source.generic_string()
+                      << " compiled=" << compiled.generic_string()
+                      << " locale=" << locale << '\n';
+            saveSettings(source, compiled, locale);
+            return;
+        }
+        if (command == "set_locale") { setLocale(message.value("locale", m_locale)); return; }
         if (command == "select_asset") { selectAsset(message.value("assetId", ""), false); return; }
         if (command == "reimport_asset") { selectAsset(m_selectedId, true); return; }
         if (command == "save_asset") { saveAsset(); return; }
@@ -1332,7 +2306,16 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         if (command == "load_lod") { loadLodOnly(message.value("lodIndex", std::size_t(-1)), false); return; }
         if (command == "reload_lod") { loadLodOnly(message.value("lodIndex", std::size_t(-1)), true); return; }
         if (command == "unload_lod") { unloadLod(message.value("lodIndex", std::size_t(-1))); return; }
-        if (command == "quit_editor") { m_quitRequested.store(true); return; }
+        if (command == "complete_wizard_stage") { completeWizardStage(message.value("stage", std::string())); return; }
+        if (command == "restore_wizard_checkpoint") { restoreWizardCheckpoint(message.value("stage", std::string())); return; }
+        if (command == "scan_render_duplicates")
+        {
+            scanRenderDuplicates(
+                message.value("lodIndex", std::size_t(-1)),
+                message.value("referenceRenderNodeIndex", std::size_t(-1)),
+                jsonIndices(message.value("targetRenderNodeIndices", json::array())));
+            return;
+        }
 
         if (m_asset.assetId.empty()) { sendStatus("No asset loaded", true); return; }
 
@@ -1354,164 +2337,368 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             if (message.contains("position")) n.localPosition = jsonVec3(message["position"], n.localPosition);
             if (message.contains("rotationDeg")) n.localRotationDeg = jsonVec3(message["rotationDeg"], n.localRotationDeg);
             if (message.contains("pivot")) n.pivot = jsonVec3(message["pivot"], n.pivot);
-            markManifestDirty(); sendAsset(); sendStatus("Updated node transform: " + n.id); return;
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Updated node transform: " + n.id); return;
         }
-        if (command == "set_node_geometry")
+        if (command == "set_node_default_state")
         {
             const auto nodeIndex = message.value("nodeIndex", std::size_t(-1));
-            const auto geometryIndex = message.value("geometryIndex", std::int32_t(-1));
+            const std::string stateId = message.value("stateId", std::string("intact"));
             if (nodeIndex >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
-            if (geometryIndex < NoIndex || geometryIndex >= static_cast<std::int32_t>(m_asset.geometries.size())) throw std::runtime_error("invalid geometry index");
-            m_asset.nodes[nodeIndex].geometryIndex = geometryIndex; markManifestDirty(); sendAsset();
-            sendStatus("Node " + m_asset.nodes[nodeIndex].id + " now references " + (geometryIndex < 0 ? std::string("no geometry") : std::string("G") + std::to_string(geometryIndex))); return;
+            if (stateId != "intact")
+            {
+                const bool exists = std::any_of(m_asset.stateVariants.begin(), m_asset.stateVariants.end(), [&](const StateVariant& variant) {
+                    return variant.nodeIndex == static_cast<std::int32_t>(nodeIndex) && variant.id == stateId;
+                });
+                if (!exists) throw std::runtime_error("default state is not declared for this semantic node");
+            }
+            m_asset.nodes[nodeIndex].defaultStateId = stateId;
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Updated default semantic state: " + m_asset.nodes[nodeIndex].id + " / " + stateId); return;
         }
-        if (command == "fit_node_as_instance")
+        if (command == "add_state_variant")
         {
             const auto nodeIndex = message.value("nodeIndex", std::size_t(-1));
-            const auto referenceNodeIndex = message.value("referenceNodeIndex", std::size_t(-1));
-            if (nodeIndex >= m_asset.nodes.size() || referenceNodeIndex >= m_asset.nodes.size())
-                throw std::runtime_error("invalid node/reference index");
-            if (nodeIndex == referenceNodeIndex)
-                throw std::runtime_error("select a different reference node");
+            if (nodeIndex >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
+            StateVariant variant;
+            variant.nodeIndex = static_cast<std::int32_t>(nodeIndex);
+            variant.id = message.value("id", std::string());
+            if (variant.id.empty()) throw std::runtime_error("state id cannot be empty");
+            if (variant.id == "intact") throw std::runtime_error("intact is the implicit base state and cannot be added as a variant");
+            for (const auto& existing : m_asset.stateVariants)
+                if (existing.nodeIndex == variant.nodeIndex && existing.id == variant.id)
+                    throw std::runtime_error("state id already exists for this semantic node");
+            variant.displayName = message.value("displayName", variant.id);
+            variant.transformOverride = message.value("transformOverride", false);
+            variant.localPosition = jsonVec3(message.value("position", json::array()), m_asset.nodes[nodeIndex].localPosition);
+            variant.localRotationDeg = jsonVec3(message.value("rotationDeg", json::array()), m_asset.nodes[nodeIndex].localRotationDeg);
+            variant.pivot = jsonVec3(message.value("pivot", json::array()), m_asset.nodes[nodeIndex].pivot);
+            variant.physicsOverride = message.value("physicsOverride", false);
+            variant.physics = m_asset.nodes[nodeIndex].physics;
+            variant.detached = message.value("detached", false);
+            m_asset.stateVariants.push_back(std::move(variant));
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Added semantic state variant: " + m_asset.nodes[nodeIndex].id + " / " + m_asset.stateVariants.back().id); return;
+        }
+        if (command == "set_state_variant")
+        {
+            const auto index = message.value("variantIndex", std::size_t(-1));
+            if (index >= m_asset.stateVariants.size()) throw std::runtime_error("invalid state variant index");
+            auto& variant = m_asset.stateVariants[index];
+            if (message.contains("displayName")) variant.displayName = message.value("displayName", variant.displayName);
+            if (message.contains("transformOverride")) variant.transformOverride = message.value("transformOverride", variant.transformOverride);
+            if (message.contains("position")) variant.localPosition = jsonVec3(message["position"], variant.localPosition);
+            if (message.contains("rotationDeg")) variant.localRotationDeg = jsonVec3(message["rotationDeg"], variant.localRotationDeg);
+            if (message.contains("pivot")) variant.pivot = jsonVec3(message["pivot"], variant.pivot);
+            if (message.contains("physicsOverride")) variant.physicsOverride = message.value("physicsOverride", variant.physicsOverride);
+            if (message.contains("massMode")) variant.physics.mode = massModeFromName(message.value("massMode", std::string(massModeName(variant.physics.mode))));
+            variant.physics.densityKgM3 = message.value("densityKgM3", variant.physics.densityKgM3);
+            variant.physics.massKg = message.value("massKg", variant.physics.massKg);
+            if (message.contains("centerOfMass")) variant.physics.centerOfMass = jsonVec3(message["centerOfMass"], variant.physics.centerOfMass);
+            if (message.contains("inertiaDiagonal")) variant.physics.inertiaDiagonal = jsonVec3(message["inertiaDiagonal"], variant.physics.inertiaDiagonal);
+            if (message.contains("inertiaProducts")) variant.physics.inertiaProducts = jsonVec3(message["inertiaProducts"], variant.physics.inertiaProducts);
+            if (message.contains("detached")) variant.detached = message.value("detached", variant.detached);
+            if (message.contains("enabled")) variant.enabled = message.value("enabled", variant.enabled);
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Updated semantic state variant: " + variant.id); return;
+        }
+        if (command == "delete_state_variant")
+        {
+            if (!ensureAllLodsLoaded()) return;
+            const auto index = message.value("variantIndex", std::size_t(-1));
+            if (index >= m_asset.stateVariants.size()) throw std::runtime_error("invalid state variant index");
+            const auto variant = m_asset.stateVariants[index];
+            const auto referencesState = [&](std::int32_t parentNodeIndex, const std::vector<std::string>& activeStates) {
+                return parentNodeIndex == variant.nodeIndex && std::find(activeStates.begin(), activeStates.end(), variant.id) != activeStates.end();
+            };
+            for (const auto& lod : m_asset.renderLods)
+                for (const auto& renderNode : lod.nodes)
+                    if (referencesState(renderNode.semanticNodeIndex, renderNode.activeStates))
+                        throw std::runtime_error("state variant is still referenced by a render node");
+            for (const auto& c : m_asset.collisionVolumes) if (referencesState(c.parentNodeIndex, c.activeStates)) throw std::runtime_error("state variant is still referenced by collision");
+            for (const auto& socket : m_asset.sockets) if (referencesState(socket.parentNodeIndex, socket.activeStates)) throw std::runtime_error("state variant is still referenced by socket");
+            for (const auto& hit : m_asset.hitRegions) if (referencesState(hit.parentNodeIndex, hit.activeStates)) throw std::runtime_error("state variant is still referenced by hit region");
+            for (const auto& opening : m_asset.openings) if (referencesState(opening.parentNodeIndex, opening.activeStates)) throw std::runtime_error("state variant is still referenced by opening");
+            for (const auto& repair : m_asset.repairTargets)
+            {
+                if (referencesState(repair.parentNodeIndex, repair.activeStates))
+                    throw std::runtime_error("state variant is still referenced by repair target");
+                if (repair.parentNodeIndex == variant.nodeIndex && repair.repairedStateId == variant.id)
+                    throw std::runtime_error("state variant is still a repair target result state");
+            }
+            if (variant.nodeIndex >= 0 && static_cast<std::size_t>(variant.nodeIndex) < m_asset.nodes.size() && m_asset.nodes[static_cast<std::size_t>(variant.nodeIndex)].defaultStateId == variant.id)
+                throw std::runtime_error("state variant is the semantic node default state");
+            m_asset.stateVariants.erase(m_asset.stateVariants.begin() + static_cast<std::ptrdiff_t>(index));
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Deleted semantic state variant: " + variant.id); return;
+        }
+        if (command == "set_render_node_transform")
+        {
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const auto renderNodeIndex = message.value("renderNodeIndex", std::size_t(-1));
+            if (!ensureLodLoaded(lodIndex)) return;
+            auto& lod = m_asset.renderLods.at(lodIndex);
+            if (renderNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
+            auto& node = lod.nodes[renderNodeIndex];
+            if (message.contains("position")) node.localPosition = jsonVec3(message["position"], node.localPosition);
+            if (message.contains("rotationDeg")) node.localRotationDeg = jsonVec3(message["rotationDeg"], node.localRotationDeg);
+            if (message.contains("pivot")) node.pivot = jsonVec3(message["pivot"], node.pivot);
+            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata(); sendStatus("Updated LOD" + std::to_string(lodIndex) + " placement: " + node.id); return;
+        }
+        if (command == "set_render_node_geometry")
+        {
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const auto renderNodeIndex = message.value("renderNodeIndex", std::size_t(-1));
+            const auto geometryIndex = message.value("geometryIndex", std::int32_t(NoIndex));
+            if (!ensureLodLoaded(lodIndex)) return;
+            if (lodIndex >= m_asset.renderLods.size()) throw std::runtime_error("invalid render LOD index");
+            auto& lod = m_asset.renderLods[lodIndex];
+            if (renderNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
+            if (geometryIndex < NoIndex || geometryIndex >= static_cast<std::int32_t>(lod.geometries.size())) throw std::runtime_error("invalid render geometry index");
+            lod.nodes[renderNodeIndex].geometryIndex = geometryIndex;
+            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata(); sendStatus("Updated LOD" + std::to_string(lodIndex) + " geometry assignment: " + lod.nodes[renderNodeIndex].id); return;
+        }
+        if (command == "set_render_node_states")
+        {
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const auto renderNodeIndex = message.value("renderNodeIndex", std::size_t(-1));
+            if (!ensureLodLoaded(lodIndex)) return;
+            auto& lod = m_asset.renderLods.at(lodIndex);
+            if (renderNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
+            const auto stateIds = jsonStrings(message.value("activeStates", json::array()));
+            requireSemanticStates(m_asset, lod.nodes[renderNodeIndex].semanticNodeIndex, stateIds, "render node " + lod.nodes[renderNodeIndex].id);
+            lod.nodes[renderNodeIndex].activeStates = stateIds;
+            markLodDirty(lodIndex); sendAssetMetadata(); sendStatus("Updated render state selector: " + lod.nodes[renderNodeIndex].id); return;
+        }
+        if (command == "fit_render_node_as_instance")
+        {
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const auto renderNodeIndex = message.value("renderNodeIndex", std::size_t(-1));
+            const auto referenceNodeIndex = message.value("referenceRenderNodeIndex", std::size_t(-1));
+            if (!ensureLodLoaded(lodIndex)) return;
+            auto& lod = m_asset.renderLods.at(lodIndex);
+            if (renderNodeIndex >= lod.nodes.size() || referenceNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
+            auto& node = lod.nodes[renderNodeIndex]; const auto& referenceNode = lod.nodes[referenceNodeIndex];
+            if (node.geometryIndex < 0 || referenceNode.geometryIndex < 0) throw std::runtime_error("both render nodes must have geometry");
+            if (node.geometryIndex == referenceNode.geometryIndex) throw std::runtime_error("render nodes already share one geometry");
+            const auto targetGi = static_cast<std::size_t>(node.geometryIndex), referenceGi = static_cast<std::size_t>(referenceNode.geometryIndex);
+            GeometryDefinition referenceGeometry, targetGeometry;
+            referenceGeometry.id = lod.geometries[referenceGi].id; referenceGeometry.lods.push_back(lod.geometries[referenceGi].mesh);
+            targetGeometry.id = lod.geometries[targetGi].id; targetGeometry.lods.push_back(lod.geometries[targetGi].mesh);
+            const GeometryInstanceFit fit = fitGeometryAsRigidInstance(referenceGeometry, targetGeometry);
+            appendRenderInstanceFitDiagnostic(m_asset, lodIndex, referenceNodeIndex, renderNodeIndex, fit);
+            if (!fit.valid) throw std::runtime_error(
+                "cannot consolidate render instance: " + fit.message +
+                "; see build/logs/model_asset_instance_fit.log");
+            applyRenderInstanceFit(lod, renderNodeIndex, referenceNodeIndex, fit);
+            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata();
+            sendStatus("Consolidated LOD" + std::to_string(lodIndex) + " element " + node.id + " as an instance of " + referenceNode.id + "; RMS=" + std::to_string(fit.rmsErrorMeters) + " m"); return;
+        }
+        if (command == "consolidate_render_duplicates")
+        {
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const auto referenceNodeIndex = message.value("referenceRenderNodeIndex", std::size_t(-1));
+            auto targets = jsonIndices(message.value("targetRenderNodeIndices", json::array()));
+            if (!ensureLodLoaded(lodIndex)) return;
+            auto& lod = m_asset.renderLods.at(lodIndex);
+            if (referenceNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid reference render node index");
+            const auto& referenceNode = lod.nodes[referenceNodeIndex];
+            if (referenceNode.geometryIndex < 0) throw std::runtime_error("reference render node has no geometry");
+            const auto referenceGi = static_cast<std::size_t>(referenceNode.geometryIndex);
 
-            auto& node = m_asset.nodes[nodeIndex];
-            const auto& referenceNode = m_asset.nodes[referenceNodeIndex];
-            if (node.geometryIndex < 0 || referenceNode.geometryIndex < 0)
-                throw std::runtime_error("both nodes must have geometry");
-            if (node.geometryIndex == referenceNode.geometryIndex)
-                throw std::runtime_error("nodes already share one geometry definition");
+            struct PendingFit { std::size_t nodeIndex; GeometryInstanceFit fit; };
+            std::vector<PendingFit> pending;
+            GeometryDefinition referenceGeometry;
+            referenceGeometry.id = lod.geometries[referenceGi].id;
+            referenceGeometry.lods.push_back(lod.geometries[referenceGi].mesh);
 
-            if (!ensureLodLoaded(0)) return;
-            const auto targetGeometryIndex = static_cast<std::size_t>(node.geometryIndex);
-            const auto referenceGeometryIndex = static_cast<std::size_t>(referenceNode.geometryIndex);
-            const GeometryInstanceFit fit = fitGeometryAsRigidInstance(
-                m_asset.geometries[referenceGeometryIndex],
-                m_asset.geometries[targetGeometryIndex]);
-            appendInstanceFitDiagnostic(m_asset, referenceNodeIndex, nodeIndex, fit);
-            if (!fit.valid)
-                throw std::runtime_error(
-                    "cannot consolidate as instance: " + fit.message +
-                    "; see build/logs/model_asset_instance_fit.log");
+            for (const auto targetNodeIndex : targets)
+            {
+                if (targetNodeIndex == referenceNodeIndex || targetNodeIndex >= lod.nodes.size()) continue;
+                const auto& targetNode = lod.nodes[targetNodeIndex];
+                if (targetNode.geometryIndex < 0) continue;
+                const auto targetGi = static_cast<std::size_t>(targetNode.geometryIndex);
+                if (targetGi == referenceGi) continue; // already an instance of the selected geometry
 
-            const RigidTransform bakedFit {fit.rotation, fit.translation};
-            const RigidTransform inverseFit = inverseRigid(bakedFit);
-            const RigidTransform oldNodeTransform = nodeRigidTransform(node);
-            const glm::vec3 newPivot = transformPoint(inverseFit, node.pivot);
+                GeometryDefinition targetGeometry;
+                targetGeometry.id = lod.geometries[targetGi].id;
+                targetGeometry.lods.push_back(lod.geometries[targetGi].mesh);
+                const GeometryInstanceFit fit = fitGeometryAsRigidInstance(referenceGeometry, targetGeometry);
+                appendRenderInstanceFitDiagnostic(m_asset, lodIndex, referenceNodeIndex, targetNodeIndex, fit);
+                if (!fit.valid)
+                {
+                    throw std::runtime_error(
+                        "cannot consolidate selected element '" + targetNode.id + "': " + fit.message +
+                        "; comparison is stale or geometry changed");
+                }
+                pending.push_back({targetNodeIndex, fit});
+            }
 
-            // All node-local semantic data must be expressed in the reference
-            // geometry frame before F moves from vertex data into Node.
-            rebaseNodeLocalData(m_asset, nodeIndex, inverseFit);
-            setNodeRigidTransform(
-                m_asset.nodes[nodeIndex],
-                composeRigid(oldNodeTransform, bakedFit),
-                newPivot);
-            m_asset.nodes[nodeIndex].geometryIndex =
-                static_cast<std::int32_t>(referenceGeometryIndex);
+            if (pending.empty())
+            {
+                sendStatus("No selected elements need consolidation; they already use the reference geometry");
+                return;
+            }
 
-            markManifestDirty();
-            sendAsset();
+            for (const auto& item : pending)
+                applyRenderInstanceFit(lod, item.nodeIndex, referenceNodeIndex, item.fit);
+
+            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata();
             sendStatus(
-                "Consolidated " + m_asset.nodes[nodeIndex].id +
-                " as instance of " + referenceNode.id +
-                "; RMS=" + std::to_string(fit.rmsErrorMeters) +
-                " m, max=" + std::to_string(fit.maxErrorMeters) +
-                " m; old G" + std::to_string(targetGeometryIndex) +
-                " retained for review");
+                "Consolidated " + std::to_string(pending.size()) + " selected LOD" + std::to_string(lodIndex) +
+                " elements as instances of " + referenceNode.id);
             return;
         }
-        if (command == "duplicate_node_instance")
+        if (command == "break_render_node_instance")
         {
-            const auto index = message.value("nodeIndex", std::size_t(-1));
-            if (index >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
-            Node clone = m_asset.nodes[index];
-            clone.id = message.value("id", clone.id + "_instance");
-            const std::string createdId = clone.id;
-            m_asset.nodes.push_back(std::move(clone)); markManifestDirty(); sendAsset();
-            sendStatus("Created node instance: " + createdId); return;
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const auto renderNodeIndex = message.value("renderNodeIndex", std::size_t(-1));
+            if (!ensureLodLoaded(lodIndex)) return;
+            auto& lod = m_asset.renderLods.at(lodIndex);
+            if (renderNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
+            auto& node = lod.nodes[renderNodeIndex];
+            if (node.geometryIndex < 0) throw std::runtime_error("render node has no geometry");
+            const auto sourceGeometryIndex = static_cast<std::size_t>(node.geometryIndex);
+            auto geometry = lod.geometries[sourceGeometryIndex];
+            geometry.id = uniqueRenderGeometryId(lod, message.value("geometryId", geometry.id + "_unique"));
+            const auto newGeometryIndex = lod.geometries.size();
+            node.geometryIndex = static_cast<std::int32_t>(newGeometryIndex);
+            lod.geometries.push_back(std::move(geometry));
+            markLodDirty(lodIndex);
+            invalidateWizardFrom("geometry");
+            sendAssetMetadata({
+                {"geometryClones", json::array({{
+                    {"lodIndex", lodIndex},
+                    {"sourceGeometryIndex", sourceGeometryIndex},
+                    {"newGeometryIndex", newGeometryIndex}
+                }})}
+            });
+            sendStatus("Broke LOD" + std::to_string(lodIndex) + " render instance into unique geometry");
+            return;
         }
-        if (command == "break_node_instance")
+        if (command == "set_render_node_semantic")
         {
-            const auto index = message.value("nodeIndex", std::size_t(-1));
-            if (index >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
-            auto& node = m_asset.nodes[index];
-            if (node.geometryIndex < 0) throw std::runtime_error("node has no geometry");
-            if (!ensureAllLodsLoaded()) return;
-            auto geometry = m_asset.geometries[static_cast<std::size_t>(node.geometryIndex)];
-            geometry.id = uniqueGeometryId(m_asset, message.value("geometryId", geometry.id + "_unique"));
-            node.geometryIndex = static_cast<std::int32_t>(m_asset.geometries.size());
-            const auto newGeometryIndex = node.geometryIndex;
-            m_asset.geometries.push_back(std::move(geometry)); markManifestDirty(); markAllLoadedLodsDirty(); sendAsset();
-            sendStatus("Broke instance " + node.id + " into unique G" + std::to_string(newGeometryIndex)); return;
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const auto renderNodeIndex = message.value("renderNodeIndex", std::size_t(-1));
+            const auto semanticNodeIndex = message.value("semanticNodeIndex", std::int32_t(NoIndex));
+            if (!ensureLodLoaded(lodIndex)) return;
+            auto& lod = m_asset.renderLods.at(lodIndex);
+            if (renderNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
+            if (semanticNodeIndex < NoIndex || semanticNodeIndex >= static_cast<std::int32_t>(m_asset.nodes.size()))
+                throw std::runtime_error("invalid semantic node index");
+            requireSemanticStates(m_asset, semanticNodeIndex, lod.nodes[renderNodeIndex].activeStates, "render node " + lod.nodes[renderNodeIndex].id);
+            lod.nodes[renderNodeIndex].semanticNodeIndex = semanticNodeIndex;
+            markLodDirty(lodIndex); sendAssetMetadata();
+            sendStatus("Updated LOD" + std::to_string(lodIndex) + " semantic binding: " + lod.nodes[renderNodeIndex].id); return;
         }
+        if (command == "duplicate_render_node_instance")
+        {
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const auto renderNodeIndex = message.value("renderNodeIndex", std::size_t(-1));
+            if (!ensureLodLoaded(lodIndex)) return;
+            auto& lod = m_asset.renderLods.at(lodIndex);
+            if (renderNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
+            RenderNode clone = lod.nodes[renderNodeIndex];
+            clone.id = uniqueRenderNodeId(lod, message.value("id", clone.id + "_instance"));
+            lod.nodes.push_back(std::move(clone));
+            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata();
+            sendStatus("Created LOD" + std::to_string(lodIndex) + " render instance: " + lod.nodes.back().id); return;
+        }
+        if (command == "create_radial_render_instances")
+        {
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const auto renderNodeIndex = message.value("renderNodeIndex", std::size_t(-1));
+            const int count = std::clamp(message.value("count", 3), 2, 64);
+            const float totalAngle = message.value("totalAngleDeg", 360.0f);
+            const std::string axisName = message.value("axis", std::string("y"));
+            const glm::vec3 pivot = jsonVec3(message.value("pivot", json::array()), glm::vec3(0.0f));
+            if (!ensureLodLoaded(lodIndex)) return;
+            auto& lod = m_asset.renderLods.at(lodIndex);
+            if (renderNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
+            const RenderNode base = lod.nodes[renderNodeIndex];
+            const glm::vec3 axis = axisName == "x" ? glm::vec3(1,0,0) : axisName == "z" ? glm::vec3(0,0,1) : glm::vec3(0,1,0);
+            for (int i = 1; i < count; ++i)
+            {
+                const float angleDeg = totalAngle * static_cast<float>(i) / static_cast<float>(count);
+                const glm::quat q = glm::angleAxis(glm::radians(angleDeg), axis);
+                const RigidTransform orbit {glm::mat3_cast(q), pivot - glm::mat3_cast(q) * pivot};
+                RenderNode clone = base;
+                clone.id = uniqueRenderNodeId(lod, base.id + "_radial_" + std::to_string(i + 1));
+                const RigidTransform transformed = composeRigid(orbit, renderNodeRigidTransform(base));
+                setRenderNodeRigidTransform(clone, transformed, base.pivot);
+                lod.nodes.push_back(std::move(clone));
+            }
+            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata();
+            sendStatus("Created " + std::to_string(count - 1) + " LOD" + std::to_string(lodIndex) + " radial render instances"); return;
+        }
+        if (command == "delete_render_node")
+        {
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            const auto renderNodeIndex = message.value("renderNodeIndex", std::size_t(-1));
+            if (!ensureLodLoaded(lodIndex)) return;
+            auto& lod = m_asset.renderLods.at(lodIndex);
+            if (renderNodeIndex >= lod.nodes.size()) throw std::runtime_error("invalid render node index");
+            for (const auto& child : lod.nodes)
+                if (child.parentIndex == static_cast<std::int32_t>(renderNodeIndex))
+                    throw std::runtime_error("cannot delete render node with children");
+            const std::string id = lod.nodes[renderNodeIndex].id;
+            lod.nodes.erase(lod.nodes.begin() + static_cast<std::ptrdiff_t>(renderNodeIndex));
+            for (auto& node : lod.nodes)
+                if (node.parentIndex > static_cast<std::int32_t>(renderNodeIndex)) --node.parentIndex;
+            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata(); sendStatus("Deleted LOD" + std::to_string(lodIndex) + " render node: " + id); return;
+        }
+
         if (command == "delete_node")
         {
+            if (!ensureAllLodsLoaded()) return;
             const auto index = message.value("nodeIndex", std::size_t(-1));
             if (index >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
             const std::string deletedId = m_asset.nodes[index].id;
             for (const auto& n : m_asset.nodes) if (n.parentIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("cannot delete node with children");
             for (const auto& c : m_asset.collisionVolumes) if (c.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent collision volumes first");
             for (const auto& s : m_asset.sockets) if (s.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent sockets first");
+            for (const auto& v : m_asset.stateVariants) if (v.nodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete semantic state variants first");
+            for (const auto& h : m_asset.hitRegions) if (h.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent hit regions first");
+            for (const auto& o : m_asset.openings) if (o.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent openings first");
+            for (const auto& r : m_asset.repairTargets) if (r.parentNodeIndex == static_cast<std::int32_t>(index)) throw std::runtime_error("delete/reparent repair targets first");
             m_asset.nodes.erase(m_asset.nodes.begin() + static_cast<std::ptrdiff_t>(index));
             for (auto& n : m_asset.nodes) if (n.parentIndex > static_cast<std::int32_t>(index)) --n.parentIndex;
             for (auto& c : m_asset.collisionVolumes) if (c.parentNodeIndex > static_cast<std::int32_t>(index)) --c.parentNodeIndex;
             for (auto& s : m_asset.sockets) if (s.parentNodeIndex > static_cast<std::int32_t>(index)) --s.parentNodeIndex;
-            markManifestDirty(); sendAsset(); sendStatus("Deleted node: " + deletedId); return;
+            for (auto& v : m_asset.stateVariants) if (v.nodeIndex > static_cast<std::int32_t>(index)) --v.nodeIndex;
+            for (auto& h : m_asset.hitRegions) if (h.parentNodeIndex > static_cast<std::int32_t>(index)) --h.parentNodeIndex;
+            for (auto& o : m_asset.openings) if (o.parentNodeIndex > static_cast<std::int32_t>(index)) --o.parentNodeIndex;
+            for (auto& r : m_asset.repairTargets) if (r.parentNodeIndex > static_cast<std::int32_t>(index)) --r.parentNodeIndex;
+            for (auto& lod : m_asset.renderLods) for (auto& rn : lod.nodes) { if (rn.semanticNodeIndex == static_cast<std::int32_t>(index)) rn.semanticNodeIndex = NoIndex; else if (rn.semanticNodeIndex > static_cast<std::int32_t>(index)) --rn.semanticNodeIndex; }
+            markManifestDirty(); markAllLoadedLodsDirty(); sendAssetMetadata(); sendStatus("Deleted semantic node: " + deletedId + "; all render LOD bindings were remapped"); return;
         }
         if (command == "delete_unused_geometries")
         {
-            if (!ensureAllLodsLoaded()) return;
+            const auto lodIndex = message.value("lodIndex", std::size_t(0));
+            if (!ensureLodLoaded(lodIndex)) return;
+            if (lodIndex >= m_asset.renderLods.size()) throw std::runtime_error("invalid render LOD index");
+            auto& lod = m_asset.renderLods[lodIndex];
             std::vector<std::string> deleted;
             std::uint64_t estimatedBytes = 0;
-            for (std::size_t gi = m_asset.geometries.size(); gi-- > 0; )
+            for (std::size_t gi = lod.geometries.size(); gi-- > 0; )
             {
-                const bool used = std::any_of(m_asset.nodes.begin(), m_asset.nodes.end(), [&](const Node& n) { return n.geometryIndex == static_cast<std::int32_t>(gi); });
+                const bool used = std::any_of(lod.nodes.begin(), lod.nodes.end(), [&](const RenderNode& n) { return n.geometryIndex == static_cast<std::int32_t>(gi); });
                 if (!used)
                 {
-                    deleted.push_back("G" + std::to_string(gi) + " " + m_asset.geometries[gi].id);
-                    estimatedBytes += estimatedGeometryBinaryBytes(m_asset.geometries[gi]);
-                    m_asset.geometries.erase(m_asset.geometries.begin() + static_cast<std::ptrdiff_t>(gi));
-                    remapGeometryAfterErase(m_asset, gi);
+                    deleted.push_back("G" + std::to_string(gi) + " " + lod.geometries[gi].id);
+                    estimatedBytes += estimatedRenderGeometryBinaryBytes(lod.geometries[gi]);
+                    lod.geometries.erase(lod.geometries.begin() + static_cast<std::ptrdiff_t>(gi));
+                    remapRenderGeometryAfterErase(lod, gi);
                 }
             }
             if (deleted.empty())
             {
-                sendStatus("NO CHANGES: no unused geometry definitions");
+                sendStatus("NO CHANGES: no unused geometry definitions in LOD" + std::to_string(lodIndex));
                 return;
             }
             std::reverse(deleted.begin(), deleted.end());
             std::string names;
-            for (std::size_t i = 0; i < deleted.size(); ++i)
-            {
-                if (i) names += ", ";
-                names += deleted[i];
-            }
-            markManifestDirty(); markAllLoadedLodsDirty(); sendAsset();
-            sendStatus("Deleted " + std::to_string(deleted.size()) + " unused geometries: " + names +
-                       "; estimated .elmesh payload removed " + std::to_string(estimatedBytes) + " B; all loaded LOD payloads are now DIRTY; use Save all to update the package on disk");
+            for (std::size_t i = 0; i < deleted.size(); ++i) { if (i) names += ", "; names += deleted[i]; }
+            markLodDirty(lodIndex); invalidateWizardFrom("geometry"); sendAssetMetadata();
+            sendStatus("Deleted " + std::to_string(deleted.size()) + " unused LOD" + std::to_string(lodIndex) +
+                       " render geometries: " + names + "; estimated payload removed " + std::to_string(estimatedBytes) +
+                       " B. Other LODs and source OBJ files were not changed.");
             return;
-        }
-        if (command == "create_radial_instances")
-        {
-            const auto index = message.value("nodeIndex", std::size_t(-1));
-            const int count = std::clamp(message.value("count", 3), 2, 64);
-            const float totalAngle = message.value("totalAngleDeg", 360.0f);
-            const std::string axisName = message.value("axis", std::string("y"));
-            const glm::vec3 pivot = jsonVec3(message.value("pivot", json::array()), glm::vec3(0.0f));
-            if (index >= m_asset.nodes.size()) throw std::runtime_error("invalid node index");
-            const Node base = m_asset.nodes[index];
-            const glm::vec3 axis = axisName == "x" ? glm::vec3(1,0,0) : axisName == "z" ? glm::vec3(0,0,1) : glm::vec3(0,1,0);
-            for (int i = 1; i < count; ++i)
-            {
-                const float angleDeg = totalAngle * static_cast<float>(i) / static_cast<float>(count);
-                const glm::quat q = glm::angleAxis(glm::radians(angleDeg), axis);
-                Node clone = base;
-                clone.id = base.id + "_" + std::to_string(i + 1);
-                clone.localPosition = pivot + q * (base.localPosition - pivot);
-                clone.localRotationDeg = eulerDegrees(q * glm::quat(glm::radians(base.localRotationDeg)));
-                m_asset.nodes.push_back(std::move(clone));
-            }
-            markManifestDirty(); sendAsset();
-            sendStatus("Created " + std::to_string(count - 1) + " radial instances from " + base.id); return;
         }
         if (command == "set_joint")
         {
@@ -1524,7 +2711,7 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             j.defaultRateDegPerSec = message.value("defaultRateDegPerSec", j.defaultRateDegPerSec);
             j.minAngleDeg = message.value("minAngleDeg", j.minAngleDeg); j.maxAngleDeg = message.value("maxAngleDeg", j.maxAngleDeg);
             j.breakable = message.value("breakable", j.breakable); j.breakForceN = message.value("breakForceN", j.breakForceN); j.breakTorqueNm = message.value("breakTorqueNm", j.breakTorqueNm);
-            markManifestDirty(); sendAsset(); sendStatus("Updated joint: " + m_asset.nodes[index].id); return;
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Updated joint: " + m_asset.nodes[index].id); return;
         }
         if (command == "set_physics")
         {
@@ -1537,29 +2724,39 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             if (message.contains("centerOfMass")) p.centerOfMass = jsonVec3(message["centerOfMass"], p.centerOfMass);
             if (message.contains("inertiaDiagonal")) p.inertiaDiagonal = glm::max(jsonVec3(message["inertiaDiagonal"], p.inertiaDiagonal), glm::vec3(0.0f));
             if (message.contains("inertiaProducts")) p.inertiaProducts = jsonVec3(message["inertiaProducts"], p.inertiaProducts);
-            markManifestDirty(); sendAsset(); sendStatus("Updated rigid-body properties: " + m_asset.nodes[index].id); return;
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Updated rigid-body properties: " + m_asset.nodes[index].id); return;
         }
         if (command == "estimate_physics")
         {
             const auto index = message.value("nodeIndex", std::size_t(-1));
             const float density = std::max(0.001f, message.value("densityKgM3", 780.0f));
             if (!estimatePhysicsFromCollision(m_asset, index, density)) throw std::runtime_error("node has no enabled local collision volumes");
-            markManifestDirty(); sendAsset(); sendStatus("Estimated rigid-body properties from collision: " + m_asset.nodes[index].id); return;
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Estimated rigid-body properties from collision: " + m_asset.nodes[index].id); return;
         }
         if (command == "set_surface_mode")
         {
+            const auto li = message.value("lodIndex", std::size_t(0));
             const auto gi = message.value("geometryIndex", std::size_t(-1));
-            if (gi >= m_asset.geometries.size()) throw std::runtime_error("invalid geometry index");
-            m_asset.geometries[gi].surfaceMode = surfaceModeFromName(message.value("surfaceMode", "closed")); markManifestDirty(); sendAsset();
-            sendStatus("Set G" + std::to_string(gi) + " surface mode to " + std::string(surfaceModeName(m_asset.geometries[gi].surfaceMode))); return;
+            if (!ensureLodLoaded(li)) return;
+            if (li >= m_asset.renderLods.size() || gi >= m_asset.renderLods[li].geometries.size()) throw std::runtime_error("invalid render geometry index");
+            auto& geometry = m_asset.renderLods[li].geometries[gi];
+            geometry.surfaceMode = surfaceModeFromName(message.value("surfaceMode", "closed")); markLodDirty(li); sendAssetMetadata();
+            sendStatus("Set LOD" + std::to_string(li) + " G" + std::to_string(gi) + " surface mode to " + std::string(surfaceModeName(geometry.surfaceMode))); return;
         }
         if (command == "set_edge_render_mask")
         {
             const auto gi = message.value("geometryIndex", std::size_t(-1)), li = message.value("lodIndex", std::size_t(0)), ei = message.value("edgeIndex", std::size_t(-1));
-            if (gi >= m_asset.geometries.size() || li >= m_asset.geometries[gi].lods.size() || ei >= m_asset.geometries[gi].lods[li].edges.size()) throw std::runtime_error("invalid edge index");
             if (!ensureLodLoaded(li)) return;
-            m_asset.geometries[gi].lods[li].edges[ei].renderMask = static_cast<std::uint8_t>(message.value("renderMask", 0) & 0xff); markLodDirty(li); sendAsset();
-            sendStatus("Updated G" + std::to_string(gi) + " LOD" + std::to_string(li) + " edge " + std::to_string(ei)); return;
+            if (li >= m_asset.renderLods.size() || gi >= m_asset.renderLods[li].geometries.size() || ei >= m_asset.renderLods[li].geometries[gi].mesh.edges.size()) throw std::runtime_error("invalid edge index");
+            const auto renderMask = static_cast<std::uint8_t>(message.value("renderMask", 0) & 0xff);
+            m_asset.renderLods[li].geometries[gi].mesh.edges[ei].renderMask = renderMask;
+            markLodDirty(li);
+            sendAssetMetadata({
+                {"edgePatches", json::array({{
+                    {"lodIndex", li}, {"geometryIndex", gi}, {"edgeIndex", ei}, {"renderMask", renderMask}
+                }})}
+            });
+            sendStatus("Updated LOD" + std::to_string(li) + " G" + std::to_string(gi) + " edge " + std::to_string(ei)); return;
         }
         if (command == "add_collision")
         {
@@ -1568,19 +2765,20 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             c.shape = collisionShapeFromName(message.value("shape", std::string("box")));
             c.localPosition = jsonVec3(message.value("position", json::array()), glm::vec3(0.0f)); c.localRotationDeg = jsonVec3(message.value("rotationDeg", json::array()), glm::vec3(0.0f));
             c.halfSize = glm::max(jsonVec3(message.value("halfSize", json::array()), glm::vec3(1.0f)), glm::vec3(0.001f)); c.radius = std::max(0.001f, message.value("radius", 1.0f)); c.halfHeight = std::max(0.0f, message.value("halfHeight", 1.0f));
+            c.activeStates = jsonStrings(message.value("activeStates", json::array()));
             const std::string createdId = c.id;
-            m_asset.collisionVolumes.push_back(std::move(c)); markManifestDirty(); sendAsset(); sendStatus("Added collision volume: " + createdId); return;
+            m_asset.collisionVolumes.push_back(std::move(c)); markManifestDirty(); sendAssetMetadata(); sendStatus("Added collision volume: " + createdId); return;
         }
         if (command == "delete_collision")
         {
             const auto index = message.value("collisionIndex", std::size_t(-1)); if (index >= m_asset.collisionVolumes.size()) throw std::runtime_error("invalid collision index");
             const std::string deletedId = m_asset.collisionVolumes[index].id;
-            m_asset.collisionVolumes.erase(m_asset.collisionVolumes.begin() + static_cast<std::ptrdiff_t>(index)); markManifestDirty(); sendAsset(); sendStatus("Deleted collision volume: " + deletedId); return;
+            m_asset.collisionVolumes.erase(m_asset.collisionVolumes.begin() + static_cast<std::ptrdiff_t>(index)); markManifestDirty(); sendAssetMetadata(); sendStatus("Deleted collision volume: " + deletedId); return;
         }
         if (command == "duplicate_collision")
         {
             const auto index = message.value("collisionIndex", std::size_t(-1)); if (index >= m_asset.collisionVolumes.size()) throw std::runtime_error("invalid collision index");
-            auto c = m_asset.collisionVolumes[index]; c.id += "_copy"; const std::string createdId = c.id; m_asset.collisionVolumes.push_back(std::move(c)); markManifestDirty(); sendAsset(); sendStatus("Duplicated collision volume: " + createdId); return;
+            auto c = m_asset.collisionVolumes[index]; c.id += "_copy"; const std::string createdId = c.id; m_asset.collisionVolumes.push_back(std::move(c)); markManifestDirty(); sendAssetMetadata(); sendStatus("Duplicated collision volume: " + createdId); return;
         }
         if (command == "set_collision")
         {
@@ -1588,7 +2786,13 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             auto& c = m_asset.collisionVolumes[index]; c.shape = collisionShapeFromName(message.value("shape", std::string(collisionShapeName(c.shape))));
             if (message.contains("position")) c.localPosition = jsonVec3(message["position"], c.localPosition); if (message.contains("rotationDeg")) c.localRotationDeg = jsonVec3(message["rotationDeg"], c.localRotationDeg); if (message.contains("halfSize")) c.halfSize = glm::max(jsonVec3(message["halfSize"], c.halfSize), glm::vec3(0.001f));
             c.radius = std::max(0.001f, message.value("radius", c.radius)); c.halfHeight = std::max(0.0f, message.value("halfHeight", c.halfHeight)); if (message.contains("enabled")) c.enabled = message["enabled"].get<bool>();
-            markManifestDirty(); sendAsset(); sendStatus("Updated collision volume: " + c.id); return;
+            if (message.contains("activeStates"))
+            {
+                const auto states = jsonStrings(message["activeStates"]);
+                requireSemanticStates(m_asset, c.parentNodeIndex, states, "collision " + c.id);
+                c.activeStates = states;
+            }
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Updated collision volume: " + c.id); return;
         }
         if (command == "generate_radial_capsules")
         {
@@ -1606,29 +2810,127 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
                 CollisionVolume c; c.id = "hit." + m_asset.nodes[nodeIndex].id + ".ring." + std::to_string(i + 1); c.moduleId = m_asset.nodes[nodeIndex].moduleId; c.parentNodeIndex = static_cast<std::int32_t>(nodeIndex); c.shape = CollisionShape::Capsule; c.localPosition = center + radial * ringRadius; c.radius = capsuleRadius; c.halfHeight = halfHeight;
                 c.localRotationDeg = eulerDegrees(glm::rotation(glm::vec3(0,1,0), glm::normalize(tangent))); m_asset.collisionVolumes.push_back(std::move(c));
             }
-            (void)ringAxis; markManifestDirty(); sendAsset(); sendStatus("Generated " + std::to_string(count) + " radial collision capsules for " + m_asset.nodes[nodeIndex].id); return;
+            (void)ringAxis; markManifestDirty(); sendAssetMetadata(); sendStatus("Generated " + std::to_string(count) + " radial collision capsules for " + m_asset.nodes[nodeIndex].id); return;
         }
         if (command == "add_socket")
         {
             Socket s; s.id = message.value("id", std::string("socket.new")); s.kind = message.value("kind", std::string("generic")); s.moduleId = message.value("moduleId", std::string()); s.parentNodeIndex = message.value("parentNodeIndex", NoIndex);
             if (s.parentNodeIndex < NoIndex || s.parentNodeIndex >= static_cast<std::int32_t>(m_asset.nodes.size())) throw std::runtime_error("invalid socket parent node");
             s.localPosition = jsonVec3(message.value("position", json::array()), glm::vec3(0.0f)); s.localRotationDeg = jsonVec3(message.value("rotationDeg", json::array()), glm::vec3(0.0f));
+            s.activeStates = jsonStrings(message.value("activeStates", json::array()));
             if (s.kind == "light" || s.kind == "light_point") s.light.type = LightType::Point; else if (s.kind == "light_spot") s.light.type = LightType::Spot;
             const std::string createdId = s.id;
-            m_asset.sockets.push_back(std::move(s)); markManifestDirty(); sendAsset(); sendStatus("Added socket: " + createdId); return;
+            m_asset.sockets.push_back(std::move(s)); markManifestDirty(); sendAssetMetadata(); sendStatus("Added socket: " + createdId); return;
         }
         if (command == "delete_socket")
         {
             const auto index = message.value("socketIndex", std::size_t(-1)); if (index >= m_asset.sockets.size()) throw std::runtime_error("invalid socket index");
             const std::string deletedId = m_asset.sockets[index].id;
-            m_asset.sockets.erase(m_asset.sockets.begin() + static_cast<std::ptrdiff_t>(index)); markManifestDirty(); sendAsset(); sendStatus("Deleted socket: " + deletedId); return;
+            m_asset.sockets.erase(m_asset.sockets.begin() + static_cast<std::ptrdiff_t>(index)); markManifestDirty(); sendAssetMetadata(); sendStatus("Deleted socket: " + deletedId); return;
         }
         if (command == "set_socket")
         {
             const auto index = message.value("socketIndex", std::size_t(-1)); if (index >= m_asset.sockets.size()) throw std::runtime_error("invalid socket index");
-            auto& s = m_asset.sockets[index]; if (message.contains("position")) s.localPosition = jsonVec3(message["position"], s.localPosition); if (message.contains("rotationDeg")) s.localRotationDeg = jsonVec3(message["rotationDeg"], s.localRotationDeg); if (message.contains("enabled")) s.enabled = message["enabled"].get<bool>();
+            auto& s = m_asset.sockets[index]; if (message.contains("position")) s.localPosition = jsonVec3(message["position"], s.localPosition); if (message.contains("rotationDeg")) s.localRotationDeg = jsonVec3(message["rotationDeg"], s.localRotationDeg); if (message.contains("enabled")) s.enabled = message["enabled"].get<bool>(); if (message.contains("activeStates")) { const auto states = jsonStrings(message["activeStates"]); requireSemanticStates(m_asset, s.parentNodeIndex, states, "socket " + s.id); s.activeStates = states; }
             if (message.contains("lightType")) s.light.type = lightTypeFromName(message["lightType"].get<std::string>()); if (message.contains("lightColor")) s.light.color = jsonVec3(message["lightColor"], s.light.color); s.light.intensity = message.value("lightIntensity", s.light.intensity); s.light.rangeMeters = message.value("lightRangeMeters", s.light.rangeMeters); s.light.outerConeDeg = message.value("lightOuterConeDeg", s.light.outerConeDeg);
-            markManifestDirty(); sendAsset(); sendStatus("Updated socket: " + s.id); return;
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Updated socket: " + s.id); return;
+        }
+        if (command == "add_hit_region")
+        {
+            HitRegion hit;
+            hit.id = message.value("id", std::string("hit_region.new"));
+            hit.parentNodeIndex = message.value("parentNodeIndex", NoIndex);
+            if (hit.parentNodeIndex < 0 || hit.parentNodeIndex >= static_cast<std::int32_t>(m_asset.nodes.size())) throw std::runtime_error("invalid hit-region parent node");
+            hit.activeStates = jsonStrings(message.value("activeStates", json::array()));
+            requireSemanticStates(m_asset, hit.parentNodeIndex, hit.activeStates, "hit region " + hit.id);
+            hit.localPosition = jsonVec3(message.value("position", json::array()), glm::vec3(0.0f));
+            hit.localRotationDeg = jsonVec3(message.value("rotationDeg", json::array()), glm::vec3(0.0f));
+            hit.halfSize = glm::max(jsonVec3(message.value("halfSize", json::array()), glm::vec3(0.5f)), glm::vec3(0.001f));
+            m_asset.hitRegions.push_back(std::move(hit)); markManifestDirty(); sendAssetMetadata(); sendStatus("Added state-scoped hit region"); return;
+        }
+        if (command == "set_hit_region")
+        {
+            const auto index = message.value("hitRegionIndex", std::size_t(-1)); if (index >= m_asset.hitRegions.size()) throw std::runtime_error("invalid hit-region index");
+            auto& hit = m_asset.hitRegions[index];
+            if (message.contains("activeStates")) { const auto states = jsonStrings(message["activeStates"]); requireSemanticStates(m_asset, hit.parentNodeIndex, states, "hit region " + hit.id); hit.activeStates = states; }
+            if (message.contains("position")) hit.localPosition = jsonVec3(message["position"], hit.localPosition);
+            if (message.contains("rotationDeg")) hit.localRotationDeg = jsonVec3(message["rotationDeg"], hit.localRotationDeg);
+            if (message.contains("halfSize")) hit.halfSize = glm::max(jsonVec3(message["halfSize"], hit.halfSize), glm::vec3(0.001f));
+            if (message.contains("enabled")) hit.enabled = message.value("enabled", hit.enabled);
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Updated hit region: " + hit.id); return;
+        }
+        if (command == "delete_hit_region")
+        {
+            const auto index = message.value("hitRegionIndex", std::size_t(-1)); if (index >= m_asset.hitRegions.size()) throw std::runtime_error("invalid hit-region index");
+            const auto id = m_asset.hitRegions[index].id; m_asset.hitRegions.erase(m_asset.hitRegions.begin() + static_cast<std::ptrdiff_t>(index)); markManifestDirty(); sendAssetMetadata(); sendStatus("Deleted hit region: " + id); return;
+        }
+        if (command == "add_opening")
+        {
+            Opening opening;
+            opening.id = message.value("id", std::string("opening.new"));
+            opening.parentNodeIndex = message.value("parentNodeIndex", NoIndex);
+            if (opening.parentNodeIndex < 0 || opening.parentNodeIndex >= static_cast<std::int32_t>(m_asset.nodes.size())) throw std::runtime_error("invalid opening parent node");
+            opening.activeStates = jsonStrings(message.value("activeStates", json::array()));
+            requireSemanticStates(m_asset, opening.parentNodeIndex, opening.activeStates, "opening " + opening.id);
+            opening.localPosition = jsonVec3(message.value("position", json::array()), glm::vec3(0.0f));
+            opening.localRotationDeg = jsonVec3(message.value("rotationDeg", json::array()), glm::vec3(0.0f));
+            opening.halfSize = glm::max(jsonVec3(message.value("halfSize", json::array()), glm::vec3(0.5f)), glm::vec3(0.001f));
+            opening.traversable = message.value("traversable", true); opening.lineOfFire = message.value("lineOfFire", true);
+            m_asset.openings.push_back(std::move(opening)); markManifestDirty(); sendAssetMetadata(); sendStatus("Added state-scoped opening"); return;
+        }
+        if (command == "set_opening")
+        {
+            const auto index = message.value("openingIndex", std::size_t(-1)); if (index >= m_asset.openings.size()) throw std::runtime_error("invalid opening index");
+            auto& opening = m_asset.openings[index];
+            if (message.contains("activeStates")) { const auto states = jsonStrings(message["activeStates"]); requireSemanticStates(m_asset, opening.parentNodeIndex, states, "opening " + opening.id); opening.activeStates = states; }
+            if (message.contains("position")) opening.localPosition = jsonVec3(message["position"], opening.localPosition);
+            if (message.contains("rotationDeg")) opening.localRotationDeg = jsonVec3(message["rotationDeg"], opening.localRotationDeg);
+            if (message.contains("halfSize")) opening.halfSize = glm::max(jsonVec3(message["halfSize"], opening.halfSize), glm::vec3(0.001f));
+            if (message.contains("traversable")) opening.traversable = message.value("traversable", opening.traversable);
+            if (message.contains("lineOfFire")) opening.lineOfFire = message.value("lineOfFire", opening.lineOfFire);
+            if (message.contains("enabled")) opening.enabled = message.value("enabled", opening.enabled);
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Updated opening: " + opening.id); return;
+        }
+        if (command == "delete_opening")
+        {
+            const auto index = message.value("openingIndex", std::size_t(-1)); if (index >= m_asset.openings.size()) throw std::runtime_error("invalid opening index");
+            const auto id = m_asset.openings[index].id; m_asset.openings.erase(m_asset.openings.begin() + static_cast<std::ptrdiff_t>(index)); markManifestDirty(); sendAssetMetadata(); sendStatus("Deleted opening: " + id); return;
+        }
+        if (command == "add_repair_target")
+        {
+            RepairTarget target; target.id = message.value("id", std::string("repair.new")); target.kind = message.value("kind", std::string("hull_patch")); target.parentNodeIndex = message.value("parentNodeIndex", NoIndex);
+            if (target.parentNodeIndex < 0 || target.parentNodeIndex >= static_cast<std::int32_t>(m_asset.nodes.size())) throw std::runtime_error("invalid repair target parent node");
+            target.activeStates = jsonStrings(message.value("activeStates", json::array()));
+            requireSemanticStates(m_asset, target.parentNodeIndex, target.activeStates, "repair target " + target.id);
+            target.localPosition = jsonVec3(message.value("position", json::array()), glm::vec3(0.0f));
+            target.localRotationDeg = jsonVec3(message.value("rotationDeg", json::array()), glm::vec3(0.0f));
+            target.repairedStateId = message.value("repairedStateId", std::string("intact"));
+            if (!target.repairedStateId.empty() && !semanticStateDeclared(m_asset, target.parentNodeIndex, target.repairedStateId))
+                throw std::runtime_error("repair target result state is not declared for this semantic node");
+            m_asset.repairTargets.push_back(std::move(target)); markManifestDirty(); sendAssetMetadata(); sendStatus("Added repair target"); return;
+        }
+        if (command == "set_repair_target")
+        {
+            const auto index = message.value("repairTargetIndex", std::size_t(-1)); if (index >= m_asset.repairTargets.size()) throw std::runtime_error("invalid repair target index");
+            auto& target = m_asset.repairTargets[index];
+            if (message.contains("kind")) target.kind = message.value("kind", target.kind);
+            if (message.contains("activeStates")) { const auto states = jsonStrings(message["activeStates"]); requireSemanticStates(m_asset, target.parentNodeIndex, states, "repair target " + target.id); target.activeStates = states; }
+            if (message.contains("position")) target.localPosition = jsonVec3(message["position"], target.localPosition);
+            if (message.contains("rotationDeg")) target.localRotationDeg = jsonVec3(message["rotationDeg"], target.localRotationDeg);
+            if (message.contains("repairedStateId"))
+            {
+                const auto repairedStateId = message.value("repairedStateId", target.repairedStateId);
+                if (!repairedStateId.empty() && !semanticStateDeclared(m_asset, target.parentNodeIndex, repairedStateId))
+                    throw std::runtime_error("repair target result state is not declared for this semantic node");
+                target.repairedStateId = repairedStateId;
+            }
+            if (message.contains("enabled")) target.enabled = message.value("enabled", target.enabled);
+            markManifestDirty(); sendAssetMetadata(); sendStatus("Updated repair target: " + target.id); return;
+        }
+        if (command == "delete_repair_target")
+        {
+            const auto index = message.value("repairTargetIndex", std::size_t(-1)); if (index >= m_asset.repairTargets.size()) throw std::runtime_error("invalid repair target index");
+            const auto id = m_asset.repairTargets[index].id; m_asset.repairTargets.erase(m_asset.repairTargets.begin() + static_cast<std::ptrdiff_t>(index)); markManifestDirty(); sendAssetMetadata(); sendStatus("Deleted repair target: " + id); return;
         }
 
         sendStatus("Unknown editor command: " + command, true);

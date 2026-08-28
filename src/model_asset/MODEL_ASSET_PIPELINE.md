@@ -10,18 +10,82 @@ OBJ/render geometry.
 The migration remains editor-first. `EliteGame` keeps its current renderer/model
 loading path until the production catalog has been converted and validated.
 
-## One asset = geometry definitions + assembly instances
+## One asset = semantic assembly + independent render documents
 
-A ship/station is an assembly, not one monolithic mesh.
+A ship/station has one gameplay/semantic identity, but its visual representation
+is not required to have the same assembly at every LOD. Asset format v4 therefore
+separates two layers:
 
-- `GeometryDefinition` stores reusable indexed mesh/topology data.
-- `Node` stores hierarchy, transform, pivot, joint and rigid-body metadata.
-- many nodes may reference one `geometryIndex`.
+- `Node` is a semantic/gameplay part: hierarchy, base transform/pivot, joint,
+  rigid-body metadata and default gameplay state.
+- each `RenderLod` is an independent visual document with its own `RenderNode`
+  hierarchy, geometry pool, transforms and instancing.
 
-Repeated station sectors therefore use one geometry definition plus several
-node transforms. The editor supports re-pointing a node to another geometry,
-`Duplicate instance`, `Break instance`, radial instance arrays, node deletion
-(with dependency guards) and removal of unused geometry definitions.
+This means a detailed ship can legitimately be represented as:
+
+```text
+LOD0: hull + wings + engines + repeated modules + detachable visual parts
+LOD1: one welded outer shell
+LOD2: a few coarse proxy meshes
+LOD3: one or two cylinders/boxes
+```
+
+No geometry id, G-index, topology, node count or instance relationship is required
+to exist in another LOD. Instancing is local to one render document. For example,
+three station habitat sectors may share one geometry in LOD0 while LOD1 contains
+only a single welded station shell.
+
+Gameplay semantics do not disappear when a coarse LOD is active. Collision, damage,
+repair, sockets, joints and physical state remain attached to the semantic asset,
+not to the currently visible render proxy.
+
+## Semantic damage states and live structural substitution
+
+A semantic `Node` has an implicit `intact` state plus optional `StateVariant` records
+such as `damaged`, `breached`, `destroyed` or project-specific states. A variant may
+override:
+
+- local position, rotation and pivot (for a bent/partly detached section);
+- rigid-body mass/centre-of-mass/inertia;
+- detached state.
+
+State-scoped records provide the rest of the live substitution contract:
+
+- `RenderNode::activeStates` selects which visual nodes exist for a state in each LOD;
+- `CollisionVolume::activeStates` swaps physical hit/navigation volumes;
+- `Socket::activeStates` enables state-specific VFX/lights/attachments;
+- `HitRegion` exposes damageable internal regions;
+- `Opening` describes a breach that may be traversable and/or permit line of fire;
+- `RepairTarget` exposes drone/repair work and the semantic state reached after repair.
+
+A hit can therefore switch one habitat sector from `intact` to `breached` and, on
+the same simulation tick, select torn render geometry, remove the old solid collision,
+activate collision around the new hole, expose interior hit regions/VFX and register a
+traversable/line-of-fire opening. Two still-intact sectors may continue sharing their
+LOD0 geometry while only the damaged sector uses a replacement mesh.
+
+State is independent of render LOD. `breached/LOD0` may show torn rooms, bulkheads
+and consoles; `breached/LOD1` may use a simplified torn shell; a very distant LOD may
+keep the same coarse proxy and communicate damage only through other presentation.
+
+The runtime must apply a semantic state transition atomically: render selection,
+collision/hit regions, openings, sockets/VFX, repair targets and any transform/physics
+overrides become active together. Render LOD switching must never own gameplay state.
+
+## Stable identity invariants
+
+Stable IDs are authored identity, not display labels. Invalid identity must be rejected or repaired at the producer boundary, not discovered only when a checkpoint is serialized.
+
+Hard rules:
+
+- every semantic `Node::id` is non-empty and globally unique inside the asset;
+- every `RenderNode::id` is non-empty and unique inside its own `RenderLod`;
+- every render-geometry ID is non-empty and unique inside its own `RenderLod`;
+- the same render ID may exist in different LOD documents because those documents are independent.
+
+Source registries are allowed to reuse a human-facing token for different roles. In particular, a module and its child mesh may both be named `station_solar_panels`. The importer must qualify the child deterministically (for example `station_solar_panels.mesh`) instead of creating duplicate semantic Nodes. Legacy v2/v3 migration also normalizes old empty/duplicate IDs before copying semantic identity into v4 RenderNodes.
+
+Wizard checkpoints run the same reusable `ModelAssetBinary::validate` preflight as production serialization. Diagnostics must identify the offending ID and indices, e.g. `LOD0 duplicate RenderNode id 'x': node[2] and node[7]`. The serializer remains the final safety net, not the first user-visible validator.
 
 ## Canonical coordinates / source basis
 
@@ -33,15 +97,15 @@ Compiled runtime data is canonical:
 
 `SourceBasis` records the source convention. Existing runtime assemblies import
 as `game_current`. The editor also provides an explicit Blender-model conversion
-(+X right, +Z up, -Y forward) that converts geometry, normals, winding, node
-transforms/pivots, joints, collision, sockets and inertia to canonical game
-coordinates. Basis conversion is a deliberate one-time authoring operation, not
-runtime correction.
+(+X right, +Z up, -Y forward) that converts geometry, normals, winding, semantic
+transforms/pivots, render transforms, joints, collision, sockets and inertia to
+canonical game coordinates. Basis conversion is a deliberate one-time authoring
+operation, not runtime correction.
 
-## Binary format v3: manifest + independent LOD payloads
+## Binary format v4: semantic manifest + independent render LOD payloads
 
-A compiled asset is a small semantic manifest plus one heavy mesh payload per
-LOD level. For asset `station` the package is:
+A compiled asset is a small semantic manifest plus one independent render document
+per LOD. For asset `station` the package is:
 
 ```text
 src/assets/compiled/models/station/
@@ -52,52 +116,74 @@ src/assets/compiled/models/station/
     ...
 ```
 
-`station.elmodel` is the semantic manifest. It contains:
+`station.elmodel` contains gameplay/semantic data and lightweight LOD descriptors:
 
-- `META` — identity, source basis, bounds, LOD switch distance;
-- `MATL` — stable semantic material ids and style-agnostic material properties;
-- `GEOM` — GeometryDefinition descriptors, source-LOD metadata and per-LOD bounds,
-  but not vertex/index/topology arrays;
-- `NODE` — hierarchy, instances, pivots, joints/break metadata and rigid mass properties;
-- `COLL` — compound collision primitives;
-- `SOCK` — typed semantic anchors, including optional light payloads.
+- `META` — identity, source basis, bounds and LOD switch distance;
+- `MATL` — stable style-agnostic material definitions;
+- `SEMN` — semantic Node hierarchy, transforms, joints and base rigid-body data;
+- `STAT` — state variants including transform/pivot/physics/detach overrides;
+- `COLL` — state-scoped compound collision primitives;
+- `SOCK` — state-scoped typed anchors/lights/VFX attachment points;
+- `HITR` — state-scoped damage regions;
+- `OPEN` — breach/opening semantics;
+- `REPR` — repair targets and repaired state;
+- `LODS` — available render-document descriptors only.
 
-Each `<asset>.lodN.elmesh` contains the heavy `MeshLod` arrays for every unique
-GeometryDefinition that has representation `N`: vertices, indices, normals, UVs,
-polygon/material/smoothing metadata, topology and authored/render edge masks.
-This makes later runtime streaming possible without reading LOD0 simply to show
-a distant object.
+Each `<asset>.lodN.elmesh` owns an entire independent visual graph:
 
-LOD0, LOD1, LOD2 and later representations are independent meshes of the same
-semantic GeometryDefinition. They do **not** need equal topology, vertex/triangle
-counts, tessellated area or identical decimation. LOD0 is the canonical identity
-basis for baked-duplicate -> instance consolidation; after consolidation every
-instance uses the reference GeometryDefinition and therefore its complete LOD set.
+- its own `RenderNode` hierarchy and transforms;
+- its own geometry definitions and LOD-local instances;
+- vertices, indices, normals and UVs;
+- polygon/material/smoothing metadata;
+- topology and authored Technical/Elite edge masks;
+- optional semantic-node/state bindings used for damage-state visualization.
 
-Existing monolithic `.elmodel` v2 files remain readable only as a migration path.
-The editor loads authored v2 state in memory, marks it dirty, and the next
-`Save all` writes the v3 split package. The old v2 file is not overwritten.
+No cross-LOD `GeometryDefinition` identity is required. `G0/G1/...` labels are local
+to the currently active `.elmesh` and have no persistent meaning in another LOD.
 
-The shared C++ data contract remains `src/model_asset/ModelAsset.h`; file splitting
-is a storage concern and does not create separate semantic assets per ship part.
+Existing v2/v3 assets remain readable only as migration input. The migration creates
+one initial independent render graph per legacy LOD, preserving old per-LOD mesh data
+and old instance relations *inside that LOD*. Semantic Nodes then drop the legacy
+`geometryIndex`. Source OBJ/assembly files are read-only and are never rewritten.
 
 ### Independent LOD editor documents
 
-The editor does not treat the v3 package as one monolithic save unit. On open it
-loads the semantic manifest and LOD0 by default. Other LOD payloads can remain
-unloaded until needed. Each LOD has independent resident/dirty state and can be
-`Load`ed, `Reload`ed from disk, `Unload`ed from memory or `Save`d without touching
-the manifest or sibling LOD files. `Save manifest` writes semantic metadata only;
-`Save all` writes only dirty or missing package members.
+The editor loads the semantic manifest and selected render documents independently.
+Each LOD has `LOADED`/`UNLOADED` and `CLEAN`/`DIRTY` state and can be loaded, reloaded,
+unloaded or saved without touching siblings. `Save manifest` writes semantic state
+only; `Save all` writes only dirty/missing package members.
 
-External `.elmesh` entries are keyed by stable `GeometryDefinition::id`. Labels
-such as `G2` are editor vector indices only and may change after cleanup; they are
-not persistent cross-file identity. Operations that structurally add/remove a
-GeometryDefinition first make every declared LOD resident, then mark every
-affected `.elmesh` dirty so no unloaded payload can silently retain stale entries.
+This is also the intended runtime streaming boundary: a distant ship can load its
+semantic manifest plus only a coarse render LOD without reading LOD0.
 
-This separation is also the intended runtime streaming boundary: a distant ship
-can load its manifest plus a coarse LOD without reading LOD0.
+Future `Generate LOD` is an offline authoring operation, not a structural contract.
+It may weld meshes, remove small parts, collapse topology, replace assemblies with
+proxies or otherwise create a completely new render graph while preserving silhouette,
+material intent and any explicit semantic mappings needed for damage presentation.
+
+### Web UI synchronization is metadata-first
+
+The browser viewport receives full render-mesh payloads only when geometry is actually
+loaded or replaced: initial asset open, source reimport, checkpoint restore, LOD
+load/reload, or an operation that changes vertex/index payloads. Ordinary authoring
+commands must use metadata-only synchronization. Position/pivot edits, instance
+consolidation, geometry bindings, semantic/damage metadata, collision and socket edits
+must not retransmit unchanged vertices, normals, indices or edge lists.
+
+The browser retains source mesh arrays and `THREE.BufferGeometry` objects in a cache
+keyed by stable `LOD + render-geometry id`. A metadata refresh may rebuild the light
+scene graph around those cached GPU buffers, but it must not recreate or retransmit
+unchanged mesh payloads. A newly broken instance may clone an already-resident geometry
+locally; an edge-mask edit transmits only the changed mask.
+
+### Wizard checkpoints form one linear history
+
+Wizard checkpoints are stage snapshots, not independent branches. When an earlier stage
+is edited, restored, or completed, every later stage checkpoint is invalid for the new
+asset state and must be physically removed from the workspace and reset to
+`not_started`. The current stage's previous checkpoint may remain while that stage is
+`stale`, providing one explicit rollback point. Restoring that checkpoint makes the
+stage `complete` again and removes all later checkpoints.
 
 ## Native OBJ compilation
 

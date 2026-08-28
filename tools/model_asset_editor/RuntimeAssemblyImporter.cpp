@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <set>
 #include <sstream>
 #include <unordered_map>
 #include <unordered_set>
@@ -12,6 +13,7 @@
 #include <glm/glm.hpp>
 
 #include "src/game/geometry/ObjectAssemblyRegistry.h"
+#include "src/model_asset/ModelAssetIdentity.h"
 #include "src/game/ship/ShipAttachmentPoint.h"
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
@@ -50,9 +52,27 @@ std::filesystem::path sourceMeshPath(
 {
     std::filesystem::path p(runtimePath);
     if (p.is_absolute()) return p;
+
     const auto direct = sourceRoot / p;
     if (std::filesystem::exists(direct)) return direct;
-    return sourceRoot / "src" / p;
+
+    const auto fromProjectRoot = sourceRoot / "src" / p;
+    if (std::filesystem::exists(fromProjectRoot)) return fromProjectRoot;
+
+    const std::string generic = p.generic_string();
+    constexpr const char* AssetsPrefix = "assets/";
+    constexpr const char* ModelsPrefix = "assets/models/";
+    if (generic.rfind(ModelsPrefix, 0) == 0)
+    {
+        const auto fromModelsRoot = sourceRoot / generic.substr(std::char_traits<char>::length(ModelsPrefix));
+        if (std::filesystem::exists(fromModelsRoot)) return fromModelsRoot;
+    }
+    if (generic.rfind(AssetsPrefix, 0) == 0)
+    {
+        const auto fromAssetsRoot = sourceRoot / generic.substr(std::char_traits<char>::length(AssetsPrefix));
+        if (std::filesystem::exists(fromAssetsRoot)) return fromAssetsRoot;
+    }
+    return direct;
 }
 
 void setError(std::string* error, const std::string& text)
@@ -96,6 +116,7 @@ bool importRuntimeAssembly(
 
         std::unordered_map<std::string, std::int32_t> geometryBySource;
         std::unordered_map<std::string, std::int32_t> moduleNodeById;
+        std::set<std::string> semanticNodeIds;
         std::vector<std::string> warnings;
 
         std::unordered_set<std::string> countedGeometrySources;
@@ -125,8 +146,14 @@ bool importRuntimeAssembly(
 
         for (const auto& module : assembly.modules)
         {
+            if (module.moduleId.empty())
+                throw std::runtime_error("source assembly contains a module with empty moduleId");
+            if (moduleNodeById.find(module.moduleId) != moduleNodeById.end())
+                throw std::runtime_error("source assembly contains duplicate moduleId: " + module.moduleId);
+
             Node node;
-            node.id = module.moduleId;
+            node.id = allocateStableId(module.moduleId, "module", semanticNodeIds);
+            semanticNodeIds.insert(node.id);
             node.moduleId = module.moduleId;
             node.localPosition = module.localPosition;
             node.localRotationDeg = module.localRotationDeg;
@@ -138,7 +165,7 @@ bool importRuntimeAssembly(
             // Legacy assembly rotationSpeed is radians/second (runtime integrates rotationAngleRad).
             node.joint.defaultRateDegPerSec = glm::degrees(module.rotationSpeed);
             const auto index = static_cast<std::int32_t>(asset.nodes.size());
-            moduleNodeById[module.moduleId] = index;
+            moduleNodeById.emplace(module.moduleId, index);
             asset.nodes.push_back(std::move(node));
         }
 
@@ -216,7 +243,10 @@ bool importRuntimeAssembly(
                 }
 
                 Node meshNode;
-                meshNode.id = part.meshId;
+                meshNode.id = allocateChildStableId(
+                    module.moduleId, part.meshId, "mesh", semanticNodeIds);
+                semanticNodeIds.insert(meshNode.id);
+                const std::string meshNodeId = meshNode.id;
                 meshNode.moduleId = module.moduleId;
                 meshNode.parentIndex = static_cast<std::int32_t>(mi);
                 meshNode.geometryIndex = geometryIndex;
@@ -228,7 +258,7 @@ bool importRuntimeAssembly(
                 // with capsules/spheres/compound shapes before production export.
                 const auto& lod = asset.geometries[static_cast<std::size_t>(geometryIndex)].lods.front();
                 CollisionVolume collision;
-                collision.id = "hit." + part.meshId;
+                collision.id = "hit." + meshNodeId;
                 collision.moduleId = module.moduleId;
                 collision.parentNodeIndex = static_cast<std::int32_t>(mi);
                 collision.shape = CollisionShape::Box;

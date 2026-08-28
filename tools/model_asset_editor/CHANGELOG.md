@@ -1,4 +1,81 @@
+## 0.9.3 — metadata-only UI sync / linear checkpoint pruning
+
+- Ordinary editor commands no longer retransmit every render mesh. Full vertex/normal/index/edge payloads are sent only for initial asset load, source reimport, checkpoint restore, LOD load/reload, and other operations that actually replace geometry data.
+- Added metadata-only `asset_metadata` synchronization. The browser retains geometry arrays and cached `THREE.BufferGeometry` objects by stable `LOD + geometry id`, then rebuilds only the lightweight scene graph around those cached buffers. `break instance` clones its already-resident mesh locally; edge-mask edits send only the changed edge mask.
+- Wizard checkpoints are now linear. Editing/restoring/completing an earlier stage physically removes every later checkpoint directory and resets those stages to `not_started`; only the current stage's previous checkpoint may remain as a rollback point while that stage is stale.
+
+## 0.9.2 — geometry workflow / UI clarity
+
+- Replaced the all-pairs duplicate-card workflow with a reference-based comparison table: choose one reference, check target rows, compare once, and see matches in green and differences in pink. Table selection and viewport selection are synchronized.
+- Added one-shot bulk consolidation for checked matching rows. Comparison itself is read-only; only the explicit consolidation command changes geometry bindings. Existing instances of the reference geometry are identified without re-testing.
+- Simplified the Geometry stage sidebar: technical render-tree/geometry-pool/storage sections no longer compete with the active task. The selected-element inspector is grouped into Element, Placement, Instance tools, Advanced/manual and Destructive sections. Semantic-state and surface controls no longer appear in the Geometry-stage inspector.
+- Inspector actions now have explicit availability rules and contextual hints. Break Instance is disabled for unique geometry, destructive deletion is disabled for parent nodes with children, and manual fit stays collapsed under Advanced.
+- Replaced the radial-array prompt chain with a parameter dialog for count, total angle, axis and rotation center.
+- Widened the working sidebar and restored the missing dynamic-tooltip binding used by LOD controls.
+- Automatic LOD generation remains intentionally deferred; this release is UI/workflow cleanup only.
+
+## 0.9.1 — stable ID preflight / station import repair
+
+- Source import now allocates deterministic semantic Node IDs and qualifies child mesh identity when a module and mesh share the same source name (the Orbital Station `station_solar_panels` case). Legacy v2/v3 migration also repairs empty/duplicate semantic and render-geometry IDs before building v4 RenderNodes.
+- Added reusable `ModelAssetBinary::validate` preflight. Wizard checkpoints validate before I/O, while serializer diagnostics now name the duplicate/empty ID and both offending indices.
+- The status bar now renders an explicit separator between diagnostic text and the asset path, so copied errors can no longer collapse into strings such as `LOD0D:/...`.
+
+## 0.9.0 — wizard pipeline / capability gate / LOD manager
+
+- Added a top-level asset-processing wizard. Source, LOD review and Geometry are working stages; later stages are visible but locked until their tools are migrated.
+- Completing a working stage writes a non-production checkpoint below `build/tools/model_asset_editor/workspaces/<asset>/` and unlocks the next stage.
+- Render LOD discovery now uses the union of declared render documents and saved payloads, so an existing LOD can no longer disappear from the UI merely because it is not loaded.
+- Geometry duplicate detection is a first-class wizard operation and uses the existing topology-independent `GeometryInstanceFitter`; accepted candidates can be consolidated directly from the stage.
+- Added `EDITOR_CAPABILITIES.json` plus architecture checks that require every protected editor capability to have a data-model/backend/UI/test contract. This prevents working tools from silently disappearing during later UI/data-model rewrites.
+
 # Elite Model Asset Editor changelog
+
+## 0.8.2 — reliable settings save / native window close
+
+- Settings Save now enters the visible saving state before any locale/UI refresh and waits for an explicit backend acknowledgement; a timeout reports a missing acknowledgement instead of leaving a dead-looking button.
+- The backend acknowledges a successful settings-file write before broadcasting catalog/asset refresh messages, so UI refresh errors cannot hide the save result. Settings requests and successful writes are logged to the editor console with their resolved paths.
+- Removed the redundant in-page Quit command/button. The editor closes through the native window close button; the old WebSocket-thread `webview::terminate()` path was unreliable and unnecessary.
+
+## 0.8.1 — source-root defaults / settings acknowledgement
+
+- Source-model root now auto-detects the current project layout (`<project>/assets/models`) instead of defaulting blindly to `<project>/src`; the legacy `src/assets/models` layout remains supported.
+- Saving Settings is now an acknowledged operation: the dialog stays open and shows a saving state until C++ confirms the settings file was written, then closes and reports the applied source/compiled paths. Errors keep the dialog open.
+- `Defaults` now resolves to the detected source-model root, avoiding a valid-but-wrong `src` directory that causes reimport failures.
+
+## 0.8.0 — semantic states / independent render LOD graphs
+
+- Asset format v4 separates the shared gameplay/semantic assembly from render representation.
+- Every render LOD now owns its own RenderNode hierarchy, geometry pool and instancing; no G-index or geometry dependency crosses LOD boundaries. LOD0 may be a detailed assembly while LOD1 is one welded shell and distant LODs may be only a few proxy primitives.
+- Added semantic StateVariant records for damaged/breached/destroyed states, including optional transform/pivot, rigid-body and detached overrides. A damaged section may therefore bend or pull away from the intact pose without modifying the base Node.
+- Collision volumes and sockets can be state-scoped. Added state-scoped HitRegion, Opening and RepairTarget semantics so a breach can atomically change collision/hit behaviour, expose a traversable/line-of-fire hole and create repair work.
+- RenderNodes may bind to a semantic part and a set of active states. Damage-state visualization is independent for every render LOD.
+- v2/v3 assets migrate in memory into independent v4 render graphs. Source OBJ/assembly files remain read-only.
+
+## 0.7.0 — shared assembly / active LOD clarity
+
+- Assembly hierarchy and Node -> GeometryDefinition instance links are labelled explicitly as SHARED across every LOD. Creating instances once in the manifest therefore applies automatically to LOD0/LOD1/LOD2/etc.
+- GeometryDefinition rows are now semantic/shared IDs only; misleading all-LOD byte estimates were removed from that list.
+- Added an Active LOD details section with per-geometry AVAILABLE/MISSING state, instance usage, vertex/triangle/edge counts and per-LOD payload estimate. A missing representation is now visible instead of looking like an uncreated instance.
+- Replaced LOD text commands (View/Reload/Save/Unload and Save manifest) with compact icon buttons using the same structured localized tooltips as the main toolbar.
+- Narrow sidebar layouts no longer require a horizontal scrollbar for the LOD command row.
+
+## 0.6.0 — localized commands + modal command activity
+
+- Added editor UI localization JSON for the same enabled locales as the game UI: English, Russian, Simplified Chinese, Spanish and Japanese.
+- Interface language is selectable in Settings, persists in the editor-local settings JSON, and cycles with `Ctrl+Alt+F12`.
+- Toolbar command names/descriptions, LOD I/O controls, settings labels and editor action buttons resolve through localization keys rather than hard-coded language branches.
+- Reworked toolbar hints into a structured popup with a prominent uppercase command title and a smaller explanatory description.
+- Mutating editor commands now open a true modal busy overlay, not only a status-bar `WORKING` message; the overlay includes a continuously rotating umbrella-style activity indicator and blocks accidental concurrent edits until the command reports completion/error.
+- Source OBJ/assembly files remain read-only; reimport only reloads them into editor state.
+
+## 0.5.0 — icon toolbar + persistent editor paths
+
+- Replaced the long top-row text commands with grouped icon buttons and hover hints.
+- Normals, hit volumes and sockets are explicit toolbar toggle icons with active-state feedback.
+- Added a gear/settings dialog for the source-model root and compiled-model output root.
+- Editor path settings persist in `build/tools/model_asset_editor/model_asset_editor.settings.json`; changing them does not move or overwrite existing source/compiled files.
+- LOD rows now mark source-backed representations with a `SOURCE` provenance badge and explicitly state that automatic LOD generation is not implemented yet.
+- Source-path resolution accepts the project root, `src`, `assets`, or `assets/models` as a practical source-model root.
 
 ## 0.4.0 — independently editable LOD package / `.elmodel` v3
 

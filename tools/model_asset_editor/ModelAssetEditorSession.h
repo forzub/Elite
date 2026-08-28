@@ -1,9 +1,9 @@
 #pragma once
 
-#include <atomic>
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <map>
 
 #include <nlohmann/json.hpp>
 
@@ -20,7 +20,6 @@ public:
     ModelAssetEditorSession(std::filesystem::path sourceRoot, HtmlUiServer& server);
 
     void handleMessage(const std::string& payload);
-    bool quitRequested() const noexcept { return m_quitRequested.load(); }
 
 private:
     struct CatalogEntry
@@ -31,7 +30,9 @@ private:
     };
 
     void sendCatalog();
+    void sendSettings();
     void sendAsset();
+    void sendAssetMetadata(const nlohmann::json& hints = nlohmann::json::object());
     void sendStatus(const std::string& message, bool error = false, const std::string& activity = "idle");
     void sendProgress(
         const std::string& activity,
@@ -55,8 +56,37 @@ private:
     std::size_t lodCount() const;
     std::filesystem::path compiledPath(const std::string& id) const;
     std::filesystem::path legacyCompiledPath(const std::string& id) const;
+    std::filesystem::path settingsPath() const;
+    void loadSettings();
+    bool saveSettings(
+        const std::filesystem::path& sourceAssetsRoot,
+        const std::filesystem::path& compiledModelsRoot,
+        const std::string& locale);
+    void installLocalizationBundle();
+    bool writeSettingsFile();
+    bool setLocale(const std::string& locale);
 
-    nlohmann::json serializeAsset() const;
+    struct WizardStageState
+    {
+        std::string status = "not_started"; // not_started / complete / stale
+        std::filesystem::path checkpointManifest;
+    };
+    std::filesystem::path wizardWorkspacePath() const;
+    std::filesystem::path wizardStatePath() const;
+    std::filesystem::path wizardCheckpointPath(const std::string& stage) const;
+    void loadWizardState();
+    bool writeWizardState() const;
+    void invalidateWizardFrom(const std::string& stage);
+    void pruneWizardAfter(const std::string& stage);
+    bool completeWizardStage(const std::string& stage);
+    bool restoreWizardCheckpoint(const std::string& stage);
+    bool scanRenderDuplicates(
+        std::size_t lodIndex,
+        std::size_t referenceRenderNodeIndex = std::size_t(-1),
+        const std::vector<std::size_t>& targetRenderNodeIndices = {});
+    nlohmann::json serializeWizard() const;
+
+    nlohmann::json serializeAsset(bool includeGeometryPayload = true) const;
 
 private:
     struct LodEditState
@@ -66,6 +96,9 @@ private:
     };
 
     std::filesystem::path m_sourceRoot;
+    std::filesystem::path m_sourceAssetsRoot;
+    std::filesystem::path m_compiledModelsRoot;
+    std::string m_locale = "en";
     HtmlUiServer& m_server;
     std::vector<CatalogEntry> m_catalog;
     ModelAsset m_asset;
@@ -73,7 +106,7 @@ private:
     bool m_dirty = false;
     bool m_manifestDirty = false;
     std::vector<LodEditState> m_lodState;
-    std::atomic<bool> m_quitRequested {false};
+    std::map<std::string, WizardStageState> m_wizardStages;
 };
 
 } // namespace elite::model_asset::editor

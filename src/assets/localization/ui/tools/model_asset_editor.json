@@ -1,0 +1,2167 @@
+{
+  "schema_version": 1,
+  "kind": "ui_strings",
+  "default_locale": "en",
+  "locale_order": [
+    "en",
+    "ru",
+    "zh-Hans",
+    "es",
+    "ja"
+  ],
+  "languages": {
+    "en": {
+      "en": "English",
+      "ru": "Английский",
+      "zh-Hans": "英语",
+      "es": "Inglés",
+      "ja": "英語"
+    },
+    "ru": {
+      "en": "Russian",
+      "ru": "Русский",
+      "zh-Hans": "俄语",
+      "es": "Ruso",
+      "ja": "ロシア語"
+    },
+    "zh-Hans": {
+      "en": "Chinese",
+      "ru": "Китайский",
+      "zh-Hans": "中文",
+      "es": "Chino",
+      "ja": "中国語"
+    },
+    "es": {
+      "en": "Spanish",
+      "ru": "Испанский",
+      "zh-Hans": "西班牙语",
+      "es": "Español",
+      "ja": "スペイン語"
+    },
+    "ja": {
+      "en": "Japanese",
+      "ru": "Японский",
+      "zh-Hans": "日语",
+      "es": "Japonés",
+      "ja": "日本語"
+    }
+  },
+  "strings": {
+    "model_editor.brand": {
+      "en": "MODEL ASSET EDITOR",
+      "ru": "РЕДАКТОР МОДЕЛЕЙ",
+      "zh-Hans": "模型资源编辑器",
+      "es": "EDITOR DE MODELOS",
+      "ja": "モデルアセットエディター"
+    },
+    "model_editor.select_model": {
+      "en": "Select model…",
+      "ru": "Выберите модель…",
+      "zh-Hans": "选择模型…",
+      "es": "Seleccionar modelo…",
+      "ja": "モデルを選択…"
+    },
+    "model_editor.no_asset": {
+      "en": "No asset",
+      "ru": "Модель не выбрана",
+      "zh-Hans": "未选择资源",
+      "es": "Sin recurso",
+      "ja": "アセット未選択"
+    },
+    "model_editor.connecting": {
+      "en": "connecting…",
+      "ru": "подключение…",
+      "zh-Hans": "正在连接…",
+      "es": "conectando…",
+      "ja": "接続中…"
+    },
+    "model_editor.ready": {
+      "en": "Ready",
+      "ru": "Готово",
+      "zh-Hans": "就绪",
+      "es": "Listo",
+      "ja": "準備完了"
+    },
+    "model_editor.connected": {
+      "en": "connected",
+      "ru": "подключено",
+      "zh-Hans": "已连接",
+      "es": "conectado",
+      "ja": "接続済み"
+    },
+    "model_editor.disconnected": {
+      "en": "disconnected",
+      "ru": "соединение потеряно",
+      "zh-Hans": "连接已断开",
+      "es": "desconectado",
+      "ja": "切断"
+    },
+    "model_editor.section.assembly": {
+      "en": "Assembly",
+      "ru": "Сборка",
+      "zh-Hans": "装配",
+      "es": "Ensamblaje",
+      "ja": "アセンブリ"
+    },
+    "model_editor.section.geometry": {
+      "en": "Geometry definitions",
+      "ru": "Геометрия",
+      "zh-Hans": "几何定义",
+      "es": "Definiciones de geometría",
+      "ja": "ジオメトリ定義"
+    },
+    "model_editor.section.lod": {
+      "en": "LOD files",
+      "ru": "Файлы LOD",
+      "zh-Hans": "LOD 文件",
+      "es": "Archivos LOD",
+      "ja": "LOD ファイル"
+    },
+    "model_editor.section.storage": {
+      "en": "Asset storage",
+      "ru": "Хранилище модели",
+      "zh-Hans": "资源存储",
+      "es": "Almacenamiento",
+      "ja": "アセット保存領域"
+    },
+    "model_editor.section.selected_node": {
+      "en": "Selected node",
+      "ru": "Выбранный узел",
+      "zh-Hans": "所选节点",
+      "es": "Nodo seleccionado",
+      "ja": "選択ノード"
+    },
+    "model_editor.section.hit_volumes": {
+      "en": "Hit volumes",
+      "ru": "Объёмы столкновений",
+      "zh-Hans": "碰撞体积",
+      "es": "Volúmenes de colisión",
+      "ja": "ヒットボリューム"
+    },
+    "model_editor.section.sockets": {
+      "en": "Sockets / attachment points",
+      "ru": "Сокеты / точки крепления",
+      "zh-Hans": "插槽 / 挂点",
+      "es": "Sockets / puntos de anclaje",
+      "ja": "ソケット / 取付点"
+    },
+    "model_editor.section.materials": {
+      "en": "Materials",
+      "ru": "Материалы",
+      "zh-Hans": "材质",
+      "es": "Materiales",
+      "ja": "マテリアル"
+    },
+    "model_editor.click_submodel": {
+      "en": "Click a submodel.",
+      "ru": "Выберите подмодель.",
+      "zh-Hans": "单击子模型。",
+      "es": "Haz clic en un submodelo.",
+      "ja": "サブモデルをクリック。"
+    },
+    "model_editor.toolbar.reimport.title": {
+      "en": "REIMPORT SOURCE",
+      "ru": "ПЕРЕИМПОРТ ИСХОДНИКА",
+      "zh-Hans": "重新导入源文件",
+      "es": "REIMPORTAR ORIGEN",
+      "ja": "ソース再インポート"
+    },
+    "model_editor.toolbar.reimport.desc": {
+      "en": "Reload from source OBJ/assembly. Discards current in-memory edits. Source files are read-only.",
+      "ru": "Заново загрузить OBJ/assembly. Текущие изменения в памяти будут отброшены. Исходники только читаются.",
+      "zh-Hans": "从 OBJ/装配源重新加载。丢弃当前内存编辑；源文件只读。",
+      "es": "Recarga desde OBJ/ensamblaje. Descarta cambios en memoria; los archivos fuente son de solo lectura.",
+      "ja": "OBJ/アセンブリから再読込。メモリ上の編集を破棄。ソースは読み取り専用。"
+    },
+    "model_editor.toolbar.save.title": {
+      "en": "SAVE ALL",
+      "ru": "СОХРАНИТЬ ВСЁ",
+      "zh-Hans": "全部保存",
+      "es": "GUARDAR TODO",
+      "ja": "すべて保存"
+    },
+    "model_editor.toolbar.save.desc": {
+      "en": "Save all dirty v3 package members. Clean LOD files are not rewritten.",
+      "ru": "Сохранить все изменённые части пакета v3. Неизменённые LOD не переписываются.",
+      "zh-Hans": "保存所有已修改的 v3 包成员；未修改的 LOD 不会重写。",
+      "es": "Guarda los miembros modificados del paquete v3. Los LOD limpios no se reescriben.",
+      "ja": "変更された v3 パッケージのみ保存。未変更 LOD は書き換えない。"
+    },
+    "model_editor.toolbar.fit.title": {
+      "en": "FIT VIEW",
+      "ru": "ВПИСАТЬ В ВИД",
+      "zh-Hans": "适配视图",
+      "es": "AJUSTAR VISTA",
+      "ja": "ビューに合わせる"
+    },
+    "model_editor.toolbar.fit.desc": {
+      "en": "Fit all visible geometry into the viewport.",
+      "ru": "Вписать всю видимую геометрию в окно просмотра.",
+      "zh-Hans": "将所有可见几何体适配到视口。",
+      "es": "Ajusta toda la geometría visible a la vista.",
+      "ja": "表示中の全ジオメトリをビューに収める。"
+    },
+    "model_editor.toolbar.show_all.title": {
+      "en": "SHOW ALL",
+      "ru": "ПОКАЗАТЬ ВСЁ",
+      "zh-Hans": "全部显示",
+      "es": "MOSTRAR TODO",
+      "ja": "すべて表示"
+    },
+    "model_editor.toolbar.show_all.desc": {
+      "en": "Clear viewport-only hide/isolate state and show every assembly node.",
+      "ru": "Сбросить скрытие/изоляцию только во viewport и показать все узлы сборки.",
+      "zh-Hans": "清除仅视口的隐藏/隔离状态并显示所有装配节点。",
+      "es": "Restablece ocultar/aislar de la vista y muestra todos los nodos.",
+      "ja": "ビューだけの非表示/分離を解除し全ノードを表示。"
+    },
+    "model_editor.toolbar.clean.title": {
+      "en": "DELETE UNUSED GEOMETRY",
+      "ru": "УДАЛИТЬ НЕИСПОЛЬЗУЕМУЮ ГЕОМЕТРИЮ",
+      "zh-Hans": "删除未使用几何体",
+      "es": "BORRAR GEOMETRÍA NO USADA",
+      "ja": "未使用ジオメトリ削除"
+    },
+    "model_editor.toolbar.clean.desc": {
+      "en": "Delete GeometryDefinitions referenced by no Node. The exact list is shown before deletion.",
+      "ru": "Удалить GeometryDefinition, на которые не ссылается ни один Node. Перед удалением показывается точный список.",
+      "zh-Hans": "删除没有节点引用的 GeometryDefinition。删除前显示完整列表。",
+      "es": "Elimina GeometryDefinition sin referencias de nodos. Muestra la lista exacta antes de borrar.",
+      "ja": "どの Node からも参照されない GeometryDefinition を削除。事前に一覧表示。"
+    },
+    "model_editor.toolbar.axes.title": {
+      "en": "BLENDER AXES → GAME",
+      "ru": "ОСИ BLENDER → GAME",
+      "zh-Hans": "BLENDER 坐标轴 → 游戏",
+      "es": "EJES BLENDER → JUEGO",
+      "ja": "BLENDER 軸 → GAME"
+    },
+    "model_editor.toolbar.axes.desc": {
+      "en": "Convert Blender model axes to canonical game +X/+Y/-Z. Do not use on game_current assets.",
+      "ru": "Преобразовать оси Blender в канонические игровые +X/+Y/-Z. Не применять к game_current.",
+      "zh-Hans": "将 Blender 模型坐标轴转换为游戏标准 +X/+Y/-Z。不要用于 game_current。",
+      "es": "Convierte ejes Blender a +X/+Y/-Z del juego. No usar en game_current.",
+      "ja": "Blender 軸をゲーム標準 +X/+Y/-Z に変換。game_current には使用しない。"
+    },
+    "model_editor.toolbar.edges.title": {
+      "en": "EDIT EDGES",
+      "ru": "РЕДАКТИРОВАТЬ РЁБРА",
+      "zh-Hans": "编辑边",
+      "es": "EDITAR ARISTAS",
+      "ja": "エッジ編集"
+    },
+    "model_editor.toolbar.edges.desc": {
+      "en": "Toggle edge-edit mode for the selected render-style mask.",
+      "ru": "Включить режим редактирования маски рёбер выбранного стиля рендера.",
+      "zh-Hans": "切换所选渲染样式的边掩码编辑模式。",
+      "es": "Activa la edición de máscara de aristas del estilo seleccionado.",
+      "ja": "選択レンダースタイルのエッジマスク編集を切替。"
+    },
+    "model_editor.toolbar.normals.title": {
+      "en": "NORMALS",
+      "ru": "НОРМАЛИ",
+      "zh-Hans": "法线",
+      "es": "NORMALES",
+      "ja": "法線"
+    },
+    "model_editor.toolbar.normals.desc": {
+      "en": "Show or hide authored vertex normals.",
+      "ru": "Показать или скрыть сохранённые нормали вершин.",
+      "zh-Hans": "显示或隐藏已创作的顶点法线。",
+      "es": "Muestra u oculta las normales de vértice.",
+      "ja": "頂点法線を表示/非表示。"
+    },
+    "model_editor.toolbar.hit.title": {
+      "en": "HIT VOLUMES",
+      "ru": "ОБЪЁМЫ СТОЛКНОВЕНИЙ",
+      "zh-Hans": "碰撞体积",
+      "es": "VOLÚMENES DE COLISIÓN",
+      "ja": "ヒットボリューム"
+    },
+    "model_editor.toolbar.hit.desc": {
+      "en": "Show or hide collision / hit-volume primitives.",
+      "ru": "Показать или скрыть примитивы collision/hit-volume.",
+      "zh-Hans": "显示或隐藏碰撞/命中体积图元。",
+      "es": "Muestra u oculta primitivas de colisión.",
+      "ja": "コリジョン/ヒットボリュームを表示/非表示。"
+    },
+    "model_editor.toolbar.sockets.title": {
+      "en": "SOCKETS",
+      "ru": "СОКЕТЫ",
+      "zh-Hans": "插槽",
+      "es": "SOCKETS",
+      "ja": "ソケット"
+    },
+    "model_editor.toolbar.sockets.desc": {
+      "en": "Show or hide sockets and attachment points.",
+      "ru": "Показать или скрыть сокеты и точки крепления.",
+      "zh-Hans": "显示或隐藏插槽与挂点。",
+      "es": "Muestra u oculta sockets y puntos de anclaje.",
+      "ja": "ソケット/取付点を表示/非表示。"
+    },
+    "model_editor.toolbar.settings.title": {
+      "en": "SETTINGS",
+      "ru": "НАСТРОЙКИ",
+      "zh-Hans": "设置",
+      "es": "AJUSTES",
+      "ja": "設定"
+    },
+    "model_editor.toolbar.settings.desc": {
+      "en": "Editor language, source model root and compiled output root.",
+      "ru": "Язык редактора, путь к исходным моделям и путь вывода бинарников.",
+      "zh-Hans": "编辑器语言、源模型路径和编译输出路径。",
+      "es": "Idioma, raíz de modelos fuente y salida compilada.",
+      "ja": "言語、ソースモデルルート、コンパイル出力先。"
+    },
+    "model_editor.edge.elite": {
+      "en": "Elite edges",
+      "ru": "Рёбра Elite",
+      "zh-Hans": "Elite 边",
+      "es": "Aristas Elite",
+      "ja": "Elite エッジ"
+    },
+    "model_editor.edge.technical": {
+      "en": "Technical edges",
+      "ru": "Технические рёбра",
+      "zh-Hans": "技术边",
+      "es": "Aristas técnicas",
+      "ja": "Technical エッジ"
+    },
+    "model_editor.edge.selector_hint": {
+      "en": "Choose which authored edge mask is being edited.",
+      "ru": "Выберите маску рёбер, которую редактируете.",
+      "zh-Hans": "选择要编辑的边掩码。",
+      "es": "Elige la máscara de aristas que se editará.",
+      "ja": "編集するエッジマスクを選択。"
+    },
+    "model_editor.settings.title": {
+      "en": "Editor settings",
+      "ru": "Настройки редактора",
+      "zh-Hans": "编辑器设置",
+      "es": "Ajustes del editor",
+      "ja": "エディター設定"
+    },
+    "model_editor.settings.project_root": {
+      "en": "Project root (read only)",
+      "ru": "Корень проекта (только чтение)",
+      "zh-Hans": "项目根目录（只读）",
+      "es": "Raíz del proyecto (solo lectura)",
+      "ja": "プロジェクトルート（読取専用）"
+    },
+    "model_editor.settings.source_root": {
+      "en": "Source model root",
+      "ru": "Путь к исходным моделям",
+      "zh-Hans": "源模型根目录",
+      "es": "Raíz de modelos fuente",
+      "ja": "ソースモデルルート"
+    },
+    "model_editor.settings.source_hint": {
+      "en": "Resolves source paths such as assets/models/.... The project root, src, assets, or assets/models are accepted.",
+      "ru": "Разрешает пути вида assets/models/.... Можно указать корень проекта, src, assets или assets/models.",
+      "zh-Hans": "解析 assets/models/... 等源路径。可指定项目根目录、src、assets 或 assets/models。",
+      "es": "Resuelve rutas como assets/models/.... Acepta raíz del proyecto, src, assets o assets/models.",
+      "ja": "assets/models/... を解決。プロジェクトルート、src、assets、assets/models を指定可能。"
+    },
+    "model_editor.settings.compiled_root": {
+      "en": "Compiled model output root",
+      "ru": "Путь для готовых бинарников",
+      "zh-Hans": "编译模型输出目录",
+      "es": "Raíz de salida compilada",
+      "ja": "コンパイル出力ルート"
+    },
+    "model_editor.settings.compiled_hint": {
+      "en": "v3 packages are written here as <asset>/<asset>.elmodel plus independent .lodN.elmesh files. Existing files are not moved when this path changes.",
+      "ru": "Пакеты v3 записываются сюда как <asset>/<asset>.elmodel плюс независимые .lodN.elmesh. При смене пути существующие файлы не перемещаются.",
+      "zh-Hans": "v3 包以 <asset>/<asset>.elmodel 加独立 .lodN.elmesh 写入此处。修改路径不会移动已有文件。",
+      "es": "Los paquetes v3 se escriben como <asset>/<asset>.elmodel más .lodN.elmesh independientes. Cambiar la ruta no mueve archivos existentes.",
+      "ja": "v3 は <asset>/<asset>.elmodel と独立 .lodN.elmesh として保存。パス変更で既存ファイルは移動しない。"
+    },
+    "model_editor.settings.language": {
+      "en": "Interface language",
+      "ru": "Язык интерфейса",
+      "zh-Hans": "界面语言",
+      "es": "Idioma de interfaz",
+      "ja": "UI 言語"
+    },
+    "model_editor.settings.language_hint": {
+      "en": "Also cycles with Ctrl+Alt+F12. The selection is stored in this editor's local settings JSON.",
+      "ru": "Также переключается Ctrl+Alt+F12. Выбор сохраняется в локальном JSON настроек редактора.",
+      "zh-Hans": "也可用 Ctrl+Alt+F12 循环切换。选择保存在编辑器本地设置 JSON 中。",
+      "es": "También cambia con Ctrl+Alt+F12. Se guarda en el JSON local del editor.",
+      "ja": "Ctrl+Alt+F12 でも切替。選択はエディターのローカル設定 JSON に保存。"
+    },
+    "model_editor.settings.file": {
+      "en": "Local settings file (not an asset)",
+      "ru": "Локальный файл настроек (не asset)",
+      "zh-Hans": "本地设置文件（非资源）",
+      "es": "Archivo local de ajustes (no es un asset)",
+      "ja": "ローカル設定ファイル（アセットではない）"
+    },
+    "model_editor.settings.general_hint": {
+      "en": "Path changes affect subsequent reimport/load/save operations. Reopen the current asset after changing roots. Save never modifies source OBJ files.",
+      "ru": "Новые пути действуют для последующих reimport/load/save. После смены корней переоткройте модель. Save никогда не изменяет исходные OBJ.",
+      "zh-Hans": "路径修改影响后续重新导入/加载/保存。修改根目录后重新打开资源。Save 永不修改源 OBJ。",
+      "es": "Las rutas afectan operaciones posteriores. Reabre el asset tras cambiar raíces. Save nunca modifica OBJ fuente.",
+      "ja": "パス変更は以後の再インポート/ロード/保存に適用。変更後はアセットを再度開く。Save は OBJ を変更しない。"
+    },
+    "model_editor.settings.defaults": {
+      "en": "Defaults",
+      "ru": "По умолчанию",
+      "zh-Hans": "默认值",
+      "es": "Predeterminados",
+      "ja": "既定値"
+    },
+    "model_editor.settings.cancel": {
+      "en": "Cancel",
+      "ru": "Отмена",
+      "zh-Hans": "取消",
+      "es": "Cancelar",
+      "ja": "キャンセル"
+    },
+    "model_editor.settings.save": {
+      "en": "Save settings",
+      "ru": "Сохранить настройки",
+      "zh-Hans": "保存设置",
+      "es": "Guardar ajustes",
+      "ja": "設定を保存"
+    },
+    "model_editor.action.save_manifest": {
+      "en": "Save manifest",
+      "ru": "Сохранить manifest",
+      "zh-Hans": "保存清单",
+      "es": "Guardar manifiesto",
+      "ja": "manifest 保存"
+    },
+    "model_editor.action.ring": {
+      "en": "+ RING",
+      "ru": "+ КОЛЬЦО",
+      "zh-Hans": "+ 环",
+      "es": "+ ANILLO",
+      "ja": "+ リング"
+    },
+    "model_editor.action.shape": {
+      "en": "+ SHAPE",
+      "ru": "+ ФОРМА",
+      "zh-Hans": "+ 形状",
+      "es": "+ FORMA",
+      "ja": "+ 形状"
+    },
+    "model_editor.action.socket": {
+      "en": "+ SOCKET",
+      "ru": "+ СОКЕТ",
+      "zh-Hans": "+ 插槽",
+      "es": "+ SOCKET",
+      "ja": "+ ソケット"
+    },
+    "model_editor.action.view": {
+      "en": "View",
+      "ru": "Показать",
+      "zh-Hans": "查看",
+      "es": "Ver",
+      "ja": "表示"
+    },
+    "model_editor.action.active": {
+      "en": "ACTIVE",
+      "ru": "АКТИВЕН",
+      "zh-Hans": "当前",
+      "es": "ACTIVO",
+      "ja": "アクティブ"
+    },
+    "model_editor.action.load": {
+      "en": "Load",
+      "ru": "Загрузить",
+      "zh-Hans": "加载",
+      "es": "Cargar",
+      "ja": "ロード"
+    },
+    "model_editor.action.reload": {
+      "en": "Reload",
+      "ru": "Перезагрузить",
+      "zh-Hans": "重新加载",
+      "es": "Recargar",
+      "ja": "再読込"
+    },
+    "model_editor.action.save": {
+      "en": "Save",
+      "ru": "Сохранить",
+      "zh-Hans": "保存",
+      "es": "Guardar",
+      "ja": "保存"
+    },
+    "model_editor.action.unload": {
+      "en": "Unload",
+      "ru": "Выгрузить",
+      "zh-Hans": "卸载",
+      "es": "Descargar",
+      "ja": "アンロード"
+    },
+    "model_editor.lod.source": {
+      "en": "SOURCE",
+      "ru": "ИСХОДНЫЙ",
+      "zh-Hans": "源",
+      "es": "ORIGEN",
+      "ja": "SOURCE"
+    },
+    "model_editor.lod.source_tip": {
+      "en": "This LOD came from source mesh paths in the original assembly; it was not generated by the editor.",
+      "ru": "Этот LOD пришёл из исходных mesh-файлов assembly; редактор его не генерировал.",
+      "zh-Hans": "此 LOD 来自原始装配的源网格路径，并非编辑器生成。",
+      "es": "Este LOD proviene de las mallas fuente del ensamblaje; no lo generó el editor.",
+      "ja": "元アセンブリのソースメッシュ由来。エディター生成ではない。"
+    },
+    "model_editor.lod.loaded_dirty": {
+      "en": "LOADED · DIRTY",
+      "ru": "ЗАГРУЖЕН · ИЗМЕНЁН",
+      "zh-Hans": "已加载 · 已修改",
+      "es": "CARGADO · MODIFICADO",
+      "ja": "LOADED · DIRTY"
+    },
+    "model_editor.lod.loaded_clean": {
+      "en": "LOADED · CLEAN",
+      "ru": "ЗАГРУЖЕН · ЧИСТ",
+      "zh-Hans": "已加载 · 未修改",
+      "es": "CARGADO · LIMPIO",
+      "ja": "LOADED · CLEAN"
+    },
+    "model_editor.lod.unloaded": {
+      "en": "UNLOADED",
+      "ru": "ВЫГРУЖЕН",
+      "zh-Hans": "未加载",
+      "es": "NO CARGADO",
+      "ja": "UNLOADED"
+    },
+    "model_editor.lod.none": {
+      "en": "No LOD representations.",
+      "ru": "LOD-представлений нет.",
+      "zh-Hans": "没有 LOD 表示。",
+      "es": "No hay representaciones LOD.",
+      "ja": "LOD 表現なし。"
+    },
+    "model_editor.lod.note": {
+      "en": "Each LOD is a separate .elmesh document. SOURCE means it came from the original source assembly. The editor does not generate LODs automatically yet. Save/Reload/Unload affects only that LOD; .elmesh entries bind by stable geometry id.",
+      "ru": "Каждый LOD — отдельный .elmesh. ИСХОДНЫЙ означает, что он пришёл из исходной assembly. Автогенерации LOD пока нет. Save/Reload/Unload затрагивает только этот LOD; записи .elmesh связаны стабильным geometry id.",
+      "zh-Hans": "每个 LOD 都是独立 .elmesh。SOURCE 表示来自原始装配。编辑器目前不会自动生成 LOD。保存/重载/卸载只影响该 LOD；.elmesh 通过稳定 geometry id 绑定。",
+      "es": "Cada LOD es un .elmesh independiente. ORIGEN indica que viene del ensamblaje original. Aún no hay generación automática. Guardar/Recargar/Descargar solo afecta ese LOD; .elmesh usa geometry id estable.",
+      "ja": "各 LOD は独立 .elmesh。SOURCE は元アセンブリ由来。自動 LOD 生成は未実装。保存/再読込/アンロードはその LOD のみ。安定 geometry id で紐付け。"
+    },
+    "model_editor.busy.working": {
+      "en": "WORKING",
+      "ru": "ВЫПОЛНЯЕТСЯ",
+      "zh-Hans": "处理中",
+      "es": "PROCESANDO",
+      "ja": "処理中"
+    },
+    "model_editor.busy.reading": {
+      "en": "READING",
+      "ru": "ЧТЕНИЕ",
+      "zh-Hans": "读取",
+      "es": "LEYENDO",
+      "ja": "読込中"
+    },
+    "model_editor.busy.writing": {
+      "en": "WRITING",
+      "ru": "ЗАПИСЬ",
+      "zh-Hans": "写入",
+      "es": "ESCRIBIENDO",
+      "ja": "書込中"
+    },
+    "model_editor.status.idle": {
+      "en": "IDLE",
+      "ru": "ГОТОВО",
+      "zh-Hans": "空闲",
+      "es": "LISTO",
+      "ja": "待機"
+    },
+    "model_editor.status.error": {
+      "en": "ERROR",
+      "ru": "ОШИБКА",
+      "zh-Hans": "错误",
+      "es": "ERROR",
+      "ja": "エラー"
+    },
+    "model_editor.status.success": {
+      "en": "SUCCESS",
+      "ru": "УСПЕШНО",
+      "zh-Hans": "成功",
+      "es": "ÉXITO",
+      "ja": "成功"
+    },
+    "model_editor.status.no_changes": {
+      "en": "NO CHANGES",
+      "ru": "БЕЗ ИЗМЕНЕНИЙ",
+      "zh-Hans": "无更改",
+      "es": "SIN CAMBIOS",
+      "ja": "変更なし"
+    },
+    "model_editor.status.cancelled": {
+      "en": "CANCELLED",
+      "ru": "ОТМЕНЕНО",
+      "zh-Hans": "已取消",
+      "es": "CANCELADO",
+      "ja": "キャンセル"
+    },
+    "model_editor.status.cannot_send": {
+      "en": "Cannot send command: editor connection is not open",
+      "ru": "Команда не отправлена: соединение с редактором не открыто",
+      "zh-Hans": "无法发送命令：编辑器连接未打开",
+      "es": "No se puede enviar: la conexión del editor no está abierta",
+      "ja": "コマンド送信不可: エディター接続が開いていません"
+    },
+    "model_editor.command.convert_source_basis": {
+      "en": "convert source basis",
+      "ru": "преобразование осей исходника",
+      "zh-Hans": "转换源坐标系",
+      "es": "convertir base del origen",
+      "ja": "ソース座標系変換"
+    },
+    "model_editor.command.set_node_transform": {
+      "en": "apply node transform",
+      "ru": "применение transform узла",
+      "zh-Hans": "应用节点变换",
+      "es": "aplicar transformación de nodo",
+      "ja": "ノード変換適用"
+    },
+    "model_editor.command.set_node_geometry": {
+      "en": "change node geometry",
+      "ru": "смена геометрии узла",
+      "zh-Hans": "更改节点几何体",
+      "es": "cambiar geometría del nodo",
+      "ja": "ノードジオメトリ変更"
+    },
+    "model_editor.command.fit_node_as_instance": {
+      "en": "fit node as instance",
+      "ru": "сведение узла к instance",
+      "zh-Hans": "将节点拟合为实例",
+      "es": "ajustar nodo como instancia",
+      "ja": "ノードをインスタンス化"
+    },
+    "model_editor.command.duplicate_node_instance": {
+      "en": "duplicate node instance",
+      "ru": "дублирование instance узла",
+      "zh-Hans": "复制节点实例",
+      "es": "duplicar instancia de nodo",
+      "ja": "ノードインスタンス複製"
+    },
+    "model_editor.command.break_node_instance": {
+      "en": "break node instance",
+      "ru": "разрыв instance узла",
+      "zh-Hans": "断开节点实例",
+      "es": "separar instancia de nodo",
+      "ja": "ノードインスタンス解除"
+    },
+    "model_editor.command.delete_node": {
+      "en": "delete node",
+      "ru": "удаление узла",
+      "zh-Hans": "删除节点",
+      "es": "borrar nodo",
+      "ja": "ノード削除"
+    },
+    "model_editor.command.delete_unused_geometries": {
+      "en": "delete unused geometry",
+      "ru": "удаление неиспользуемой геометрии",
+      "zh-Hans": "删除未使用几何体",
+      "es": "borrar geometría no usada",
+      "ja": "未使用ジオメトリ削除"
+    },
+    "model_editor.command.create_radial_instances": {
+      "en": "create radial instances",
+      "ru": "создание радиального массива instances",
+      "zh-Hans": "创建径向实例",
+      "es": "crear instancias radiales",
+      "ja": "放射状インスタンス作成"
+    },
+    "model_editor.command.set_joint": {
+      "en": "apply joint",
+      "ru": "применение joint",
+      "zh-Hans": "应用关节",
+      "es": "aplicar articulación",
+      "ja": "ジョイント適用"
+    },
+    "model_editor.command.set_physics": {
+      "en": "apply rigid-body properties",
+      "ru": "применение параметров rigid body",
+      "zh-Hans": "应用刚体属性",
+      "es": "aplicar propiedades de cuerpo rígido",
+      "ja": "剛体プロパティ適用"
+    },
+    "model_editor.command.estimate_physics": {
+      "en": "estimate rigid-body properties",
+      "ru": "расчёт параметров rigid body",
+      "zh-Hans": "估算刚体属性",
+      "es": "estimar propiedades de cuerpo rígido",
+      "ja": "剛体プロパティ推定"
+    },
+    "model_editor.command.set_surface_mode": {
+      "en": "change surface mode",
+      "ru": "смена режима поверхности",
+      "zh-Hans": "更改表面模式",
+      "es": "cambiar modo de superficie",
+      "ja": "サーフェスモード変更"
+    },
+    "model_editor.command.set_edge_render_mask": {
+      "en": "edit edge mask",
+      "ru": "изменение маски рёбер",
+      "zh-Hans": "编辑边掩码",
+      "es": "editar máscara de aristas",
+      "ja": "エッジマスク編集"
+    },
+    "model_editor.command.add_collision": {
+      "en": "add collision volume",
+      "ru": "добавление collision volume",
+      "zh-Hans": "添加碰撞体积",
+      "es": "añadir volumen de colisión",
+      "ja": "コリジョン追加"
+    },
+    "model_editor.command.delete_collision": {
+      "en": "delete collision volume",
+      "ru": "удаление collision volume",
+      "zh-Hans": "删除碰撞体积",
+      "es": "borrar volumen de colisión",
+      "ja": "コリジョン削除"
+    },
+    "model_editor.command.duplicate_collision": {
+      "en": "duplicate collision volume",
+      "ru": "дублирование collision volume",
+      "zh-Hans": "复制碰撞体积",
+      "es": "duplicar volumen de colisión",
+      "ja": "コリジョン複製"
+    },
+    "model_editor.command.set_collision": {
+      "en": "apply collision volume",
+      "ru": "применение collision volume",
+      "zh-Hans": "应用碰撞体积",
+      "es": "aplicar volumen de colisión",
+      "ja": "コリジョン適用"
+    },
+    "model_editor.command.generate_radial_capsules": {
+      "en": "generate radial collision",
+      "ru": "создание радиального collision",
+      "zh-Hans": "生成径向碰撞体",
+      "es": "generar colisión radial",
+      "ja": "放射状コリジョン生成"
+    },
+    "model_editor.command.add_socket": {
+      "en": "add socket",
+      "ru": "добавление сокета",
+      "zh-Hans": "添加插槽",
+      "es": "añadir socket",
+      "ja": "ソケット追加"
+    },
+    "model_editor.command.delete_socket": {
+      "en": "delete socket",
+      "ru": "удаление сокета",
+      "zh-Hans": "删除插槽",
+      "es": "borrar socket",
+      "ja": "ソケット削除"
+    },
+    "model_editor.command.set_socket": {
+      "en": "apply socket",
+      "ru": "применение сокета",
+      "zh-Hans": "应用插槽",
+      "es": "aplicar socket",
+      "ja": "ソケット適用"
+    },
+    "model_editor.command.save_manifest": {
+      "en": "save manifest",
+      "ru": "сохранение manifest",
+      "zh-Hans": "保存清单",
+      "es": "guardar manifiesto",
+      "ja": "manifest 保存"
+    },
+    "model_editor.command.save_lod": {
+      "en": "save LOD",
+      "ru": "сохранение LOD",
+      "zh-Hans": "保存 LOD",
+      "es": "guardar LOD",
+      "ja": "LOD 保存"
+    },
+    "model_editor.command.load_lod": {
+      "en": "load LOD",
+      "ru": "загрузка LOD",
+      "zh-Hans": "加载 LOD",
+      "es": "cargar LOD",
+      "ja": "LOD ロード"
+    },
+    "model_editor.command.reload_lod": {
+      "en": "reload LOD",
+      "ru": "перезагрузка LOD",
+      "zh-Hans": "重新加载 LOD",
+      "es": "recargar LOD",
+      "ja": "LOD 再読込"
+    },
+    "model_editor.command.unload_lod": {
+      "en": "unload LOD",
+      "ru": "выгрузка LOD",
+      "zh-Hans": "卸载 LOD",
+      "es": "descargar LOD",
+      "ja": "LOD アンロード"
+    },
+    "model_editor.command.save_settings": {
+      "en": "save editor settings",
+      "ru": "сохранение настроек редактора",
+      "zh-Hans": "保存编辑器设置",
+      "es": "guardar ajustes del editor",
+      "ja": "エディター設定保存"
+    },
+    "model_editor.confirm.reimport": {
+      "en": "Reload the current asset from source OBJ/assembly?\n\nThis discards the current in-memory authored state. The existing compiled package on disk is NOT overwritten unless you later press Save all. Source OBJ/assembly files are read-only.",
+      "ru": "Заново загрузить текущую модель из исходных OBJ/assembly?\n\nТекущие изменения в памяти будут отброшены. Сохранённый compiled-пакет НЕ перезаписывается, пока вы позже явно не нажмёте «Сохранить всё». Исходные OBJ/assembly доступны только для чтения.",
+      "zh-Hans": "从源 OBJ/装配重新加载当前资源？\n\n这会丢弃当前内存编辑。磁盘上的编译包不会被覆盖，除非之后明确执行“全部保存”。源 OBJ/装配只读。",
+      "es": "¿Recargar el asset desde OBJ/ensamblaje fuente?\n\nSe descartarán los cambios en memoria. El paquete compilado no se sobrescribe hasta pulsar después Guardar todo. Los archivos fuente son de solo lectura.",
+      "ja": "現在のアセットを OBJ/アセンブリから再読込しますか？\n\nメモリ上の編集は破棄されます。後で「すべて保存」を明示するまでコンパイル済みパッケージは上書きされません。ソースは読取専用です。"
+    },
+    "model_editor.confirm.axes": {
+      "en": "Interpret the loaded asset as Blender axes (+X right, +Z up, -Y forward) and convert geometry, normals, nodes, joints, collision, sockets and inertia to game +X/+Y/-Z?\n\nThis edits only the current in-memory asset. Source files remain unchanged.",
+      "ru": "Интерпретировать загруженную модель в осях Blender (+X вправо, +Z вверх, -Y вперёд) и преобразовать геометрию, нормали, nodes, joints, collision, sockets и inertia в игровые +X/+Y/-Z?\n\nМеняется только текущая модель в памяти. Исходники остаются неизменными.",
+      "zh-Hans": "将已加载资源按 Blender 坐标轴（+X 右、+Z 上、-Y 前）解释，并把几何、法线、节点、关节、碰撞、插槽和惯性转换到游戏 +X/+Y/-Z？\n\n仅修改当前内存资源，源文件不变。",
+      "es": "¿Interpretar el asset con ejes Blender (+X derecha, +Z arriba, -Y delante) y convertir geometría, normales, nodos, articulaciones, colisión, sockets e inercia a +X/+Y/-Z?\n\nSolo modifica el asset en memoria. Los fuentes no cambian.",
+      "ja": "Blender 軸（+X右、+Z上、-Y前）として解釈し、ジオメトリ、法線、Node、Joint、Collision、Socket、慣性をゲーム +X/+Y/-Z に変換しますか？\n\n変更はメモリ上のみ。ソースは変更されません。"
+    },
+    "model_editor.confirm.reload_lod": {
+      "en": "Reload LOD{lod} from disk and DISCARD its unsaved geometry edits?",
+      "ru": "Перезагрузить LOD{lod} с диска и ОТБРОСИТЬ его несохранённые изменения геометрии?",
+      "zh-Hans": "从磁盘重新加载 LOD{lod} 并丢弃其未保存几何编辑？",
+      "es": "¿Recargar LOD{lod} y DESCARTAR sus cambios de geometría sin guardar?",
+      "ja": "LOD{lod} をディスクから再読込し、未保存のジオメトリ編集を破棄しますか？"
+    },
+    "model_editor.help.main": {
+      "en": "Left click selects a submodel. Orbit: left drag, pan: right drag, wheel: zoom. Hide/isolate are viewport-only. In Edit edges mode click an edge of the selected submodel to toggle it for the selected render style. Multiple assembly nodes may reference one geometry definition: those are real instances, not duplicated meshes.",
+      "ru": "ЛКМ выбирает подмодель. Вращение: ЛКМ+перетаскивание, панорама: ПКМ, колесо: масштаб. Hide/isolate действуют только во viewport. В режиме редактирования рёбер клик по ребру переключает его для выбранного стиля рендера. Несколько assembly nodes могут ссылаться на одну geometry definition — это настоящие instances, а не копии mesh.",
+      "zh-Hans": "左键选择子模型。左拖旋转，右拖平移，滚轮缩放。隐藏/隔离仅影响视口。编辑边模式下点击边可切换其在所选渲染样式中的状态。多个装配节点可引用同一几何定义：它们是真正的实例，而非重复网格。",
+      "es": "Clic izquierdo selecciona submodelo. Arrastrar izquierdo orbita, derecho desplaza, rueda acerca. Ocultar/aislar solo afecta la vista. En Editar aristas, clic en una arista la alterna para el estilo elegido. Varios nodos pueden compartir una geometría: son instancias reales.",
+      "ja": "左クリックでサブモデル選択。左ドラッグ回転、右ドラッグ移動、ホイールズーム。Hide/Isolate はビューのみ。エッジ編集では選択サブモデルのエッジをクリックしてスタイル用マスクを切替。複数 Node が同一 GeometryDefinition を参照する場合は実インスタンスです。"
+    },
+    "model_editor.action.fit_instance": {
+      "en": "Fit as instance",
+      "ru": "Свести к instance",
+      "zh-Hans": "拟合为实例",
+      "es": "Ajustar como instancia",
+      "ja": "インスタンス化"
+    },
+    "model_editor.action.apply_joint": {
+      "en": "Apply joint",
+      "ru": "Применить joint",
+      "zh-Hans": "应用关节",
+      "es": "Aplicar articulación",
+      "ja": "ジョイント適用"
+    },
+    "model_editor.action.estimate": {
+      "en": "Estimate",
+      "ru": "Рассчитать",
+      "zh-Hans": "估算",
+      "es": "Estimar",
+      "ja": "推定"
+    },
+    "model_editor.action.apply_physics": {
+      "en": "Apply physics",
+      "ru": "Применить физику",
+      "zh-Hans": "应用物理参数",
+      "es": "Aplicar física",
+      "ja": "物理適用"
+    },
+    "model_editor.action.apply_transform": {
+      "en": "Apply transform",
+      "ru": "Применить transform",
+      "zh-Hans": "应用变换",
+      "es": "Aplicar transformación",
+      "ja": "変換適用"
+    },
+    "model_editor.action.duplicate_instance": {
+      "en": "Duplicate instance",
+      "ru": "Дублировать instance",
+      "zh-Hans": "复制实例",
+      "es": "Duplicar instancia",
+      "ja": "インスタンス複製"
+    },
+    "model_editor.action.break_instance": {
+      "en": "Break instance",
+      "ru": "Разорвать instance",
+      "zh-Hans": "断开实例",
+      "es": "Separar instancia",
+      "ja": "インスタンス解除"
+    },
+    "model_editor.action.radial_array": {
+      "en": "Radial array",
+      "ru": "Радиальный массив",
+      "zh-Hans": "径向阵列",
+      "es": "Matriz radial",
+      "ja": "放射状配列"
+    },
+    "model_editor.action.delete_node": {
+      "en": "Delete node",
+      "ru": "Удалить узел",
+      "zh-Hans": "删除节点",
+      "es": "Borrar nodo",
+      "ja": "ノード削除"
+    },
+    "model_editor.action.hide": {
+      "en": "Hide",
+      "ru": "Скрыть",
+      "zh-Hans": "隐藏",
+      "es": "Ocultar",
+      "ja": "非表示"
+    },
+    "model_editor.action.isolate": {
+      "en": "Isolate",
+      "ru": "Изолировать",
+      "zh-Hans": "隔离",
+      "es": "Aislar",
+      "ja": "分離"
+    },
+    "model_editor.action.apply_volume": {
+      "en": "Apply volume",
+      "ru": "Применить объём",
+      "zh-Hans": "应用体积",
+      "es": "Aplicar volumen",
+      "ja": "ボリューム適用"
+    },
+    "model_editor.action.duplicate": {
+      "en": "Duplicate",
+      "ru": "Дублировать",
+      "zh-Hans": "复制",
+      "es": "Duplicar",
+      "ja": "複製"
+    },
+    "model_editor.action.delete": {
+      "en": "Delete",
+      "ru": "Удалить",
+      "zh-Hans": "删除",
+      "es": "Borrar",
+      "ja": "削除"
+    },
+    "model_editor.action.apply_socket": {
+      "en": "Apply socket",
+      "ru": "Применить сокет",
+      "zh-Hans": "应用插槽",
+      "es": "Aplicar socket",
+      "ja": "ソケット適用"
+    },
+    "model_editor.shared": {
+      "en": "SHARED",
+      "ru": "ОБЩЕЕ",
+      "zh-Hans": "共享",
+      "es": "COMPARTIDO",
+      "ja": "共有"
+    },
+    "model_editor.shared_ids": {
+      "en": "SHARED IDs",
+      "ru": "ОБЩИЕ ID",
+      "zh-Hans": "共享 ID",
+      "es": "ID COMPARTIDOS",
+      "ja": "共有 ID"
+    },
+    "model_editor.shared.assembly_hint": {
+      "en": "Node hierarchy and Node → Geometry links are shared by every LOD.",
+      "ru": "Иерархия Node и связи Node → Geometry общие для всех LOD.",
+      "zh-Hans": "Node 层级和 Node → Geometry 关联由所有 LOD 共用。",
+      "es": "La jerarquía Node y los enlaces Node → Geometry se comparten entre todos los LOD.",
+      "ja": "Node 階層と Node → Geometry の関連は全 LOD で共有されます。"
+    },
+    "model_editor.shared.geometry_hint": {
+      "en": "G# identifies one semantic geometry used by all LOD representations.",
+      "ru": "G# — общий семантический ID геометрии для всех её LOD-представлений.",
+      "zh-Hans": "G# 是所有 LOD 表示共用的语义几何 ID。",
+      "es": "G# es el ID semántico compartido por todas las representaciones LOD.",
+      "ja": "G# は全 LOD 表現で共有されるジオメトリのセマンティック ID です。"
+    },
+    "model_editor.section.active_lod": {
+      "en": "Active LOD details",
+      "ru": "Активный LOD",
+      "zh-Hans": "活动 LOD 详情",
+      "es": "Detalles del LOD activo",
+      "ja": "アクティブ LOD 詳細"
+    },
+    "model_editor.lod.active_hint": {
+      "en": "Only the geometry payload below is LOD-specific. Instance links above remain shared.",
+      "ru": "Только геометрия ниже относится к выбранному LOD. Связи экземпляров выше остаются общими.",
+      "zh-Hans": "只有下方几何数据属于当前 LOD；上方实例关联保持共享。",
+      "es": "Solo la geometría inferior pertenece al LOD activo. Los enlaces de instancia superiores siguen compartidos.",
+      "ja": "下のジオメトリだけが選択 LOD 固有です。上のインスタンス関連は共有のままです。"
+    },
+    "model_editor.lod.shared_note": {
+      "en": "Each LOD is a separate .elmesh document. Node → Geometry instance links are stored in the shared manifest and automatically apply to every LOD.",
+      "ru": "Каждый LOD — отдельный .elmesh. Связи экземпляров Node → Geometry хранятся в общем manifest и автоматически действуют для всех LOD.",
+      "zh-Hans": "每个 LOD 都是独立的 .elmesh。Node → Geometry 实例关联存于共享 manifest，并自动应用到所有 LOD。",
+      "es": "Cada LOD es un .elmesh independiente. Los enlaces Node → Geometry se guardan en el manifest compartido y se aplican automáticamente a todos los LOD.",
+      "ja": "各 LOD は独立した .elmesh です。Node → Geometry のインスタンス関連は共有 manifest に保存され、全 LOD に自動適用されます。"
+    },
+    "model_editor.geometry.used": {
+      "en": "USED",
+      "ru": "ИСП.",
+      "zh-Hans": "使用中",
+      "es": "USADO",
+      "ja": "使用中"
+    },
+    "model_editor.geometry.unused": {
+      "en": "UNUSED",
+      "ru": "НЕ ИСП.",
+      "zh-Hans": "未使用",
+      "es": "NO USADO",
+      "ja": "未使用"
+    },
+    "model_editor.geometry.used_by": {
+      "en": "used by",
+      "ru": "используется",
+      "zh-Hans": "使用者",
+      "es": "usado por",
+      "ja": "使用元"
+    },
+    "model_editor.geometry.available": {
+      "en": "AVAILABLE",
+      "ru": "ЕСТЬ",
+      "zh-Hans": "可用",
+      "es": "DISPONIBLE",
+      "ja": "あり"
+    },
+    "model_editor.geometry.missing": {
+      "en": "MISSING",
+      "ru": "НЕТ",
+      "zh-Hans": "缺失",
+      "es": "FALTA",
+      "ja": "欠落"
+    },
+    "model_editor.geometry.instances": {
+      "en": "instances",
+      "ru": "экз.",
+      "zh-Hans": "实例",
+      "es": "instancias",
+      "ja": "インスタンス"
+    },
+    "model_editor.geometry.vertices": {
+      "en": "verts",
+      "ru": "вершин",
+      "zh-Hans": "顶点",
+      "es": "vértices",
+      "ja": "頂点"
+    },
+    "model_editor.geometry.triangles": {
+      "en": "tris",
+      "ru": "треуг.",
+      "zh-Hans": "三角形",
+      "es": "triáng.",
+      "ja": "三角形"
+    },
+    "model_editor.geometry.edges": {
+      "en": "edges",
+      "ru": "рёбер",
+      "zh-Hans": "边",
+      "es": "aristas",
+      "ja": "エッジ"
+    },
+    "model_editor.geometry.missing_instance_warning": {
+      "en": "Shared instances exist, but this GeometryDefinition has no representation for the active LOD.",
+      "ru": "Общие экземпляры существуют, но у этой GeometryDefinition нет геометрии для активного LOD.",
+      "zh-Hans": "共享实例存在，但此 GeometryDefinition 没有当前 LOD 的几何表示。",
+      "es": "Existen instancias compartidas, pero esta GeometryDefinition no tiene representación para el LOD activo.",
+      "ja": "共有インスタンスはありますが、この GeometryDefinition にはアクティブ LOD の表現がありません。"
+    },
+    "model_editor.lod.view.title": {
+      "en": "VIEW LOD",
+      "ru": "ПОКАЗАТЬ LOD",
+      "zh-Hans": "查看 LOD",
+      "es": "VER LOD",
+      "ja": "LOD 表示"
+    },
+    "model_editor.lod.view.desc": {
+      "en": "Make this loaded LOD the active viewport/edit representation. Shared Node/instance links do not change.",
+      "ru": "Сделать загруженный LOD активным для просмотра и редактирования. Общие Node/instance-связи не меняются.",
+      "zh-Hans": "将已加载 LOD 设为当前查看/编辑表示；共享 Node/实例关联不变。",
+      "es": "Activa este LOD cargado para vista/edición. Los enlaces Node/instancia compartidos no cambian.",
+      "ja": "読み込み済み LOD を表示・編集対象にします。共有 Node/インスタンス関連は変わりません。"
+    },
+    "model_editor.lod.load.title": {
+      "en": "LOAD LOD",
+      "ru": "ЗАГРУЗИТЬ LOD",
+      "zh-Hans": "加载 LOD",
+      "es": "CARGAR LOD",
+      "ja": "LOD 読込"
+    },
+    "model_editor.lod.load.desc": {
+      "en": "Load only this .elmesh from disk. Other LOD files remain untouched.",
+      "ru": "Загрузить с диска только этот .elmesh. Остальные LOD не затрагиваются.",
+      "zh-Hans": "仅从磁盘加载此 .elmesh；其他 LOD 文件不受影响。",
+      "es": "Carga solo este .elmesh. Los demás LOD no se modifican.",
+      "ja": "この .elmesh だけを読み込みます。他の LOD は変更しません。"
+    },
+    "model_editor.lod.reload.title": {
+      "en": "RELOAD LOD",
+      "ru": "ПЕРЕЗАГРУЗИТЬ LOD",
+      "zh-Hans": "重新加载 LOD",
+      "es": "RECARGAR LOD",
+      "ja": "LOD 再読込"
+    },
+    "model_editor.lod.reload.desc": {
+      "en": "Reload this .elmesh from disk. Unsaved edits in this LOD are discarded after confirmation.",
+      "ru": "Заново прочитать этот .elmesh с диска. Несохранённые правки этого LOD будут отброшены после подтверждения.",
+      "zh-Hans": "从磁盘重新加载此 .elmesh；确认后丢弃该 LOD 的未保存修改。",
+      "es": "Recarga este .elmesh. Tras confirmar, descarta cambios no guardados de este LOD.",
+      "ja": "この .elmesh を再読込します。確認後、この LOD の未保存編集は破棄されます。"
+    },
+    "model_editor.lod.save.title": {
+      "en": "SAVE LOD",
+      "ru": "СОХРАНИТЬ LOD",
+      "zh-Hans": "保存 LOD",
+      "es": "GUARDAR LOD",
+      "ja": "LOD 保存"
+    },
+    "model_editor.lod.save.desc": {
+      "en": "Write only this active/loaded LOD .elmesh. Manifest and other LOD files are not rewritten.",
+      "ru": "Записать только этот .elmesh. Manifest и остальные LOD-файлы не переписываются.",
+      "zh-Hans": "仅写入此 LOD 的 .elmesh；manifest 与其他 LOD 不会重写。",
+      "es": "Guarda solo este .elmesh. El manifest y los demás LOD no se reescriben.",
+      "ja": "この LOD の .elmesh だけを書き込みます。manifest と他 LOD は書き換えません。"
+    },
+    "model_editor.lod.unload.title": {
+      "en": "UNLOAD LOD",
+      "ru": "ВЫГРУЗИТЬ LOD",
+      "zh-Hans": "卸载 LOD",
+      "es": "DESCARGAR LOD",
+      "ja": "LOD 解放"
+    },
+    "model_editor.lod.unload.desc": {
+      "en": "Release this clean LOD geometry from editor memory. The file on disk is unchanged.",
+      "ru": "Выгрузить чистую геометрию этого LOD из памяти редактора. Файл на диске не меняется.",
+      "zh-Hans": "从编辑器内存释放此干净 LOD；磁盘文件不变。",
+      "es": "Libera este LOD limpio de la memoria. El archivo en disco no cambia.",
+      "ja": "このクリーンな LOD をメモリから解放します。ディスク上のファイルは変わりません。"
+    },
+    "model_editor.lod.manifest.title": {
+      "en": "SAVE MANIFEST",
+      "ru": "СОХРАНИТЬ MANIFEST",
+      "zh-Hans": "保存 MANIFEST",
+      "es": "GUARDAR MANIFEST",
+      "ja": "MANIFEST 保存"
+    },
+    "model_editor.lod.manifest.desc": {
+      "en": "Write only shared semantic metadata: Nodes, instance links, transforms, collision, sockets, materials and LOD descriptors. Geometry .elmesh files are not rewritten.",
+      "ru": "Записать только общие семантические данные: Node, instance-связи, transforms, collision, sockets, materials и описания LOD. Геометрия .elmesh не переписывается.",
+      "zh-Hans": "仅写入共享语义数据：Node、实例关联、变换、碰撞体、插槽、材质与 LOD 描述；不会重写 .elmesh。",
+      "es": "Guarda solo metadatos compartidos: Nodes, instancias, transformaciones, colisión, sockets, materiales y descriptores LOD. No reescribe .elmesh.",
+      "ja": "共有セマンティック情報（Node、インスタンス関連、変換、collision、socket、material、LOD 記述）のみ保存。.elmesh は書き換えません。"
+    },
+    "model_editor.v4.section.semantic": {
+      "en": "Semantic assembly",
+      "ru": "Семантическая сборка",
+      "zh-Hans": "语义装配",
+      "es": "Ensamblaje semántico",
+      "ja": "セマンティック構成"
+    },
+    "model_editor.v4.semantic.badge": {
+      "en": "GAMEPLAY",
+      "ru": "ИГРОВАЯ",
+      "zh-Hans": "玩法",
+      "es": "JUEGO",
+      "ja": "ゲーム"
+    },
+    "model_editor.v4.semantic.hint": {
+      "en": "Gameplay structure, transforms, joints, physics and state live here. Render LOD graphs are independent.",
+      "ru": "Здесь живут игровая структура, трансформы, шарниры, физика и состояния. Render LOD независимы.",
+      "zh-Hans": "游戏结构、变换、关节、物理和状态位于此处。各 Render LOD 图彼此独立。",
+      "es": "Aquí viven la estructura de juego, transformaciones, articulaciones, física y estados. Los Render LOD son independientes.",
+      "ja": "ゲーム用構造、変換、ジョイント、物理、状態を保持します。各 Render LOD グラフは独立です。"
+    },
+    "model_editor.v4.section.states": {
+      "en": "Part states",
+      "ru": "Состояния частей",
+      "zh-Hans": "部件状态",
+      "es": "Estados de piezas",
+      "ja": "パーツ状態"
+    },
+    "model_editor.v4.states.hint": {
+      "en": "Damage/repair states may override transform, pivot and physics and select state-scoped render, collision, openings and repair data.",
+      "ru": "Состояния повреждения/ремонта могут переопределять transform, pivot и физику, а также выбирать render, collision, отверстия и ремонтные данные для состояния.",
+      "zh-Hans": "损伤/维修状态可覆盖变换、枢轴和物理，并选择该状态专用的渲染、碰撞、开口和维修数据。",
+      "es": "Los estados de daño/reparación pueden sobrescribir transformación, pivote y física, y seleccionar render, colisión, aberturas y reparación por estado.",
+      "ja": "損傷/修理状態は変換・ピボット・物理を上書きし、状態別の描画、衝突、開口、修理データを選択できます。"
+    },
+    "model_editor.v4.states.none": {
+      "en": "No damage/repair variants yet. Select a semantic node to add one.",
+      "ru": "Вариантов повреждения/ремонта пока нет. Выберите семантический узел, чтобы добавить состояние.",
+      "zh-Hans": "尚无损伤/维修变体。选择语义节点以添加状态。",
+      "es": "Aún no hay variantes de daño/reparación. Selecciona un nodo semántico para añadir una.",
+      "ja": "損傷/修理バリアントはまだありません。セマンティックノードを選択して追加します。"
+    },
+    "model_editor.v4.section.lods": {
+      "en": "Render LOD files",
+      "ru": "Файлы Render LOD",
+      "zh-Hans": "Render LOD 文件",
+      "es": "Archivos Render LOD",
+      "ja": "Render LOD ファイル"
+    },
+    "model_editor.v4.section.render_assembly": {
+      "en": "Render assembly",
+      "ru": "Render-сборка",
+      "zh-Hans": "渲染装配",
+      "es": "Ensamblaje render",
+      "ja": "レンダー構成"
+    },
+    "model_editor.v4.render_assembly.hint": {
+      "en": "This hierarchy belongs only to the active LOD. Other LODs may have a completely different graph.",
+      "ru": "Эта иерархия принадлежит только активному LOD. У других LOD может быть совершенно другая сборка.",
+      "zh-Hans": "此层级仅属于当前 LOD。其他 LOD 可以拥有完全不同的图。",
+      "es": "Esta jerarquía pertenece solo al LOD activo. Otros LOD pueden tener un grafo completamente distinto.",
+      "ja": "この階層はアクティブ LOD 専用です。他の LOD は完全に異なるグラフを持てます。"
+    },
+    "model_editor.v4.section.geometry": {
+      "en": "Active LOD geometry",
+      "ru": "Геометрия активного LOD",
+      "zh-Hans": "当前 LOD 几何体",
+      "es": "Geometría del LOD activo",
+      "ja": "アクティブ LOD ジオメトリ"
+    },
+    "model_editor.v4.geometry.hint": {
+      "en": "G# is local to this LOD only. Geometry IDs and instances do not propagate to another LOD.",
+      "ru": "G# существует только внутри этого LOD. Geometry ID и экземпляры не распространяются на другие LOD.",
+      "zh-Hans": "G# 仅在此 LOD 内有效。几何 ID 和实例不会传播到其他 LOD。",
+      "es": "G# es local a este LOD. Los ID de geometría y las instancias no se propagan a otros LOD.",
+      "ja": "G# はこの LOD 内だけの番号です。Geometry ID とインスタンスは他の LOD に伝播しません。"
+    },
+    "model_editor.v4.lod.active_hint": {
+      "en": "Statistics below describe only the active render document.",
+      "ru": "Статистика ниже относится только к активному render-документу.",
+      "zh-Hans": "以下统计仅描述当前渲染文档。",
+      "es": "Las estadísticas siguientes describen solo el documento render activo.",
+      "ja": "以下の統計はアクティブなレンダードキュメントだけを示します。"
+    },
+    "model_editor.v4.lod.independent_note": {
+      "en": "Every LOD is an independent render document: its own hierarchy, geometry pool and instances. Semantic gameplay parts stay in the manifest.",
+      "ru": "Каждый LOD — независимый render-документ со своей иерархией, набором геометрии и экземплярами. Игровые семантические части остаются в manifest.",
+      "zh-Hans": "每个 LOD 都是独立渲染文档，拥有自己的层级、几何池和实例。游戏语义部件保留在 manifest 中。",
+      "es": "Cada LOD es un documento render independiente con su propia jerarquía, geometría e instancias. Las piezas semánticas quedan en el manifest.",
+      "ja": "各 LOD は独立したレンダードキュメントで、独自の階層・ジオメトリプール・インスタンスを持ちます。ゲーム用セマンティック部品は manifest に残ります。"
+    },
+    "model_editor.v4.section.selected_semantic": {
+      "en": "Selected semantic node",
+      "ru": "Выбранный семантический узел",
+      "zh-Hans": "已选语义节点",
+      "es": "Nodo semántico seleccionado",
+      "ja": "選択中のセマンティックノード"
+    },
+    "model_editor.v4.section.selected_render": {
+      "en": "Selected LOD element",
+      "ru": "Выбранный элемент LOD",
+      "zh-Hans": "已选渲染节点",
+      "es": "Nodo render seleccionado",
+      "ja": "選択中のレンダーノード"
+    },
+    "model_editor.v4.section.damage": {
+      "en": "Damage / repair semantics",
+      "ru": "Повреждения / ремонт",
+      "zh-Hans": "损伤 / 维修语义",
+      "es": "Semántica de daño / reparación",
+      "ja": "損傷 / 修理セマンティクス"
+    },
+    "model_editor.v4.action.hit": {
+      "en": "+ HIT",
+      "ru": "+ HIT",
+      "zh-Hans": "+ 命中区",
+      "es": "+ HIT",
+      "ja": "+ HIT"
+    },
+    "model_editor.v4.action.opening": {
+      "en": "+ OPEN",
+      "ru": "+ ДЫРА",
+      "zh-Hans": "+ 开口",
+      "es": "+ ABERTURA",
+      "ja": "+ 開口"
+    },
+    "model_editor.v4.action.repair": {
+      "en": "+ REPAIR",
+      "ru": "+ РЕМОНТ",
+      "zh-Hans": "+ 维修",
+      "es": "+ REPARAR",
+      "ja": "+ 修理"
+    },
+    "model_editor.v4.command.set_default_state": {
+      "en": "SET DEFAULT STATE",
+      "ru": "СОСТОЯНИЕ ПО УМОЛЧАНИЮ",
+      "zh-Hans": "设置默认状态",
+      "es": "ESTADO PREDETERMINADO",
+      "ja": "既定状態を設定"
+    },
+    "model_editor.v4.command.add_state": {
+      "en": "ADD STATE VARIANT",
+      "ru": "ДОБАВИТЬ СОСТОЯНИЕ",
+      "zh-Hans": "添加状态变体",
+      "es": "AÑADIR ESTADO",
+      "ja": "状態バリアント追加"
+    },
+    "model_editor.v4.command.set_state": {
+      "en": "UPDATE STATE VARIANT",
+      "ru": "ИЗМЕНИТЬ СОСТОЯНИЕ",
+      "zh-Hans": "更新状态变体",
+      "es": "ACTUALIZAR ESTADO",
+      "ja": "状態バリアント更新"
+    },
+    "model_editor.v4.command.delete_state": {
+      "en": "DELETE STATE VARIANT",
+      "ru": "УДАЛИТЬ СОСТОЯНИЕ",
+      "zh-Hans": "删除状态变体",
+      "es": "ELIMINAR ESTADO",
+      "ja": "状態バリアント削除"
+    },
+    "model_editor.v4.command.render_transform": {
+      "en": "Apply LOD element placement",
+      "ru": "Применить положение элемента LOD",
+      "zh-Hans": "设置渲染变换",
+      "es": "TRANSFORMACIÓN RENDER",
+      "ja": "レンダー変換設定"
+    },
+    "model_editor.v4.command.render_geometry": {
+      "en": "SET RENDER GEOMETRY",
+      "ru": "ГЕОМЕТРИЯ RENDER-УЗЛА",
+      "zh-Hans": "设置渲染几何体",
+      "es": "GEOMETRÍA RENDER",
+      "ja": "レンダージオメトリ設定"
+    },
+    "model_editor.v4.command.render_semantic": {
+      "en": "BIND SEMANTIC PART",
+      "ru": "ПРИВЯЗАТЬ СЕМАНТИЧЕСКУЮ ЧАСТЬ",
+      "zh-Hans": "绑定语义部件",
+      "es": "VINCULAR PIEZA SEMÁNTICA",
+      "ja": "セマンティック部品を関連付け"
+    },
+    "model_editor.v4.command.render_states": {
+      "en": "SET RENDER STATES",
+      "ru": "СОСТОЯНИЯ RENDER-УЗЛА",
+      "zh-Hans": "设置渲染状态",
+      "es": "ESTADOS RENDER",
+      "ja": "レンダー状態設定"
+    },
+    "model_editor.v4.command.delete_render_node": {
+      "en": "DELETE RENDER NODE",
+      "ru": "УДАЛИТЬ RENDER-УЗЕЛ",
+      "zh-Hans": "删除渲染节点",
+      "es": "ELIMINAR NODO RENDER",
+      "ja": "レンダーノード削除"
+    },
+    "model_editor.v4.command.add_hit": {
+      "en": "ADD HIT REGION",
+      "ru": "ДОБАВИТЬ HIT-REGION",
+      "zh-Hans": "添加命中区域",
+      "es": "AÑADIR REGIÓN DE IMPACTO",
+      "ja": "ヒット領域追加"
+    },
+    "model_editor.v4.command.set_hit": {
+      "en": "UPDATE HIT REGION",
+      "ru": "ИЗМЕНИТЬ HIT-REGION",
+      "zh-Hans": "更新命中区域",
+      "es": "ACTUALIZAR REGIÓN DE IMPACTO",
+      "ja": "ヒット領域更新"
+    },
+    "model_editor.v4.command.delete_hit": {
+      "en": "DELETE HIT REGION",
+      "ru": "УДАЛИТЬ HIT-REGION",
+      "zh-Hans": "删除命中区域",
+      "es": "ELIMINAR REGIÓN DE IMPACTO",
+      "ja": "ヒット領域削除"
+    },
+    "model_editor.v4.command.add_opening": {
+      "en": "ADD OPENING",
+      "ru": "ДОБАВИТЬ ОТВЕРСТИЕ",
+      "zh-Hans": "添加开口",
+      "es": "AÑADIR ABERTURA",
+      "ja": "開口追加"
+    },
+    "model_editor.v4.command.set_opening": {
+      "en": "UPDATE OPENING",
+      "ru": "ИЗМЕНИТЬ ОТВЕРСТИЕ",
+      "zh-Hans": "更新开口",
+      "es": "ACTUALIZAR ABERTURA",
+      "ja": "開口更新"
+    },
+    "model_editor.v4.command.delete_opening": {
+      "en": "DELETE OPENING",
+      "ru": "УДАЛИТЬ ОТВЕРСТИЕ",
+      "zh-Hans": "删除开口",
+      "es": "ELIMINAR ABERTURA",
+      "ja": "開口削除"
+    },
+    "model_editor.v4.command.add_repair": {
+      "en": "ADD REPAIR TARGET",
+      "ru": "ДОБАВИТЬ ЦЕЛЬ РЕМОНТА",
+      "zh-Hans": "添加维修目标",
+      "es": "AÑADIR OBJETIVO DE REPARACIÓN",
+      "ja": "修理対象追加"
+    },
+    "model_editor.v4.command.set_repair": {
+      "en": "UPDATE REPAIR TARGET",
+      "ru": "ИЗМЕНИТЬ ЦЕЛЬ РЕМОНТА",
+      "zh-Hans": "更新维修目标",
+      "es": "ACTUALIZAR OBJETIVO DE REPARACIÓN",
+      "ja": "修理対象更新"
+    },
+    "model_editor.v4.command.delete_repair": {
+      "en": "DELETE REPAIR TARGET",
+      "ru": "УДАЛИТЬ ЦЕЛЬ РЕМОНТА",
+      "zh-Hans": "删除维修目标",
+      "es": "ELIMINAR OBJETIVO DE REPARACIÓN",
+      "ja": "修理対象削除"
+    },
+    "model_editor.v4.command.fit_instance": {
+      "en": "FIT RENDER INSTANCE",
+      "ru": "СВЕСТИ RENDER-ЭКЗЕМПЛЯР",
+      "zh-Hans": "拟合渲染实例",
+      "es": "AJUSTAR INSTANCIA RENDER",
+      "ja": "レンダーインスタンス適合"
+    },
+    "model_editor.v4.command.duplicate_render_instance": {
+      "en": "DUPLICATE RENDER INSTANCE",
+      "ru": "ДУБЛИРОВАТЬ RENDER-ЭКЗЕМПЛЯР",
+      "zh-Hans": "复制渲染实例",
+      "es": "DUPLICAR INSTANCIA RENDER",
+      "ja": "レンダーインスタンス複製"
+    },
+    "model_editor.v4.command.break_render_instance": {
+      "en": "BREAK RENDER INSTANCE",
+      "ru": "РАЗОРВАТЬ RENDER-ЭКЗЕМПЛЯР",
+      "zh-Hans": "拆分渲染实例",
+      "es": "SEPARAR INSTANCIA RENDER",
+      "ja": "レンダーインスタンス分離"
+    },
+    "model_editor.v4.command.radial_render_instances": {
+      "en": "RADIAL RENDER ARRAY",
+      "ru": "РАДИАЛЬНЫЙ МАССИВ RENDER",
+      "zh-Hans": "径向渲染阵列",
+      "es": "MATRIZ RADIAL RENDER",
+      "ja": "レンダー放射配列"
+    },
+    "model_editor.settings.saving": {
+      "en": "Saving…",
+      "ru": "Сохранение…",
+      "zh-Hans": "正在保存…",
+      "es": "Guardando…",
+      "ja": "保存中…"
+    },
+    "model_editor.settings.saved": {
+      "en": "Settings saved",
+      "ru": "Настройки сохранены",
+      "zh-Hans": "设置已保存",
+      "es": "Ajustes guardados",
+      "ja": "設定を保存しました"
+    },
+    "model_editor.settings.save_timeout": {
+      "en": "No acknowledgement from the editor backend. Settings were not confirmed as saved.",
+      "ru": "Нет подтверждения от редактора. Сохранение настроек не подтверждено.",
+      "zh-Hans": "编辑器后端没有返回确认。无法确认设置已保存。",
+      "es": "El editor no devolvió confirmación. No se confirmó que los ajustes se hayan guardado.",
+      "ja": "エディターから確認応答がありません。設定の保存は確認されていません。"
+    },
+    "model_editor.wizard.source": {
+      "en": "SOURCE",
+      "ru": "ИСТОЧНИК",
+      "zh-Hans": "源模型",
+      "es": "ORIGEN",
+      "ja": "ソース"
+    },
+    "model_editor.wizard.lods": {
+      "en": "LODs",
+      "ru": "LOD",
+      "zh-Hans": "LOD",
+      "es": "LOD",
+      "ja": "LOD"
+    },
+    "model_editor.wizard.geometry": {
+      "en": "GEOMETRY",
+      "ru": "ГЕОМЕТРИЯ",
+      "zh-Hans": "几何体",
+      "es": "GEOMETRÍA",
+      "ja": "ジオメトリ"
+    },
+    "model_editor.wizard.surfaces": {
+      "en": "SURFACES",
+      "ru": "ПОВЕРХНОСТИ",
+      "zh-Hans": "表面",
+      "es": "SUPERFICIES",
+      "ja": "サーフェス"
+    },
+    "model_editor.wizard.semantics": {
+      "en": "SEMANTICS",
+      "ru": "СЕМАНТИКА",
+      "zh-Hans": "语义",
+      "es": "SEMÁNTICA",
+      "ja": "セマンティクス"
+    },
+    "model_editor.wizard.physics": {
+      "en": "PHYSICS",
+      "ru": "ФИЗИКА",
+      "zh-Hans": "物理",
+      "es": "FÍSICA",
+      "ja": "物理"
+    },
+    "model_editor.wizard.damage": {
+      "en": "DAMAGE",
+      "ru": "ПОВРЕЖДЕНИЯ",
+      "zh-Hans": "损伤",
+      "es": "DAÑOS",
+      "ja": "ダメージ"
+    },
+    "model_editor.wizard.validate": {
+      "en": "VALIDATE",
+      "ru": "ПРОВЕРКА",
+      "zh-Hans": "验证",
+      "es": "VALIDAR",
+      "ja": "検証"
+    },
+    "model_editor.wizard.build": {
+      "en": "BUILD",
+      "ru": "СБОРКА",
+      "zh-Hans": "构建",
+      "es": "COMPILAR",
+      "ja": "ビルド"
+    },
+    "model_editor.wizard.status.not_started": {
+      "en": "NOT STARTED",
+      "ru": "НЕ НАЧАТО",
+      "zh-Hans": "未开始",
+      "es": "NO INICIADO",
+      "ja": "未開始"
+    },
+    "model_editor.wizard.status.complete": {
+      "en": "COMPLETE",
+      "ru": "ГОТОВО",
+      "zh-Hans": "已完成",
+      "es": "COMPLETO",
+      "ja": "完了"
+    },
+    "model_editor.wizard.status.stale": {
+      "en": "STALE",
+      "ru": "УСТАРЕЛО",
+      "zh-Hans": "已失效",
+      "es": "DESACTUALIZADO",
+      "ja": "要更新"
+    },
+    "model_editor.wizard.planned": {
+      "en": "PLANNED",
+      "ru": "ЗАПЛАНИРОВАНО",
+      "zh-Hans": "计划中",
+      "es": "PLANIFICADO",
+      "ja": "予定"
+    },
+    "model_editor.wizard.locked": {
+      "en": "LOCKED",
+      "ru": "ЗАБЛОКИРОВАНО",
+      "zh-Hans": "已锁定",
+      "es": "BLOQUEADO",
+      "ja": "ロック中"
+    },
+    "model_editor.wizard.complete": {
+      "en": "COMPLETE STAGE + CHECKPOINT",
+      "ru": "ЗАВЕРШИТЬ ЭТАП + КОНТРОЛЬНАЯ ТОЧКА",
+      "zh-Hans": "完成阶段并保存检查点",
+      "es": "COMPLETAR ETAPA + PUNTO DE CONTROL",
+      "ja": "工程完了 + チェックポイント"
+    },
+    "model_editor.wizard.restore": {
+      "en": "RESTORE CHECKPOINT",
+      "ru": "ВОССТАНОВИТЬ КОНТРОЛЬНУЮ ТОЧКУ",
+      "zh-Hans": "恢复检查点",
+      "es": "RESTAURAR PUNTO DE CONTROL",
+      "ja": "チェックポイント復元"
+    },
+    "model_editor.wizard.restore_confirm": {
+      "en": "Restore this checkpoint into editor memory? Production binary and source OBJ remain unchanged.",
+      "ru": "Восстановить эту контрольную точку в память редактора? Готовый binary и исходные OBJ останутся без изменений.",
+      "zh-Hans": "将此检查点恢复到编辑器内存？正式二进制包和源 OBJ 不会改变。",
+      "es": "¿Restaurar este punto de control en la memoria del editor? El binario de producción y los OBJ fuente no cambiarán.",
+      "ja": "このチェックポイントをエディターのメモリへ復元しますか？本番バイナリとソース OBJ は変更されません。"
+    },
+    "model_editor.wizard.completed_notice": {
+      "en": "Checkpoint saved",
+      "ru": "Контрольная точка сохранена",
+      "zh-Hans": "检查点已保存",
+      "es": "Punto de control guardado",
+      "ja": "チェックポイント保存済み"
+    },
+    "model_editor.wizard.not_implemented": {
+      "en": "This stage is reserved in the pipeline but its tools have not been migrated yet. Earlier completed stages remain protected by checkpoints and capability tests.",
+      "ru": "Этот этап уже зарезервирован в конвейере, но его инструменты ещё не перенесены. Завершённые ранее этапы защищены контрольными точками и тестами возможностей.",
+      "zh-Hans": "该阶段已在流程中预留，但工具尚未迁移。之前完成的阶段由检查点和能力测试保护。",
+      "es": "Esta etapa está reservada en el flujo, pero sus herramientas aún no se han migrado. Las etapas anteriores quedan protegidas por puntos de control y pruebas de capacidades.",
+      "ja": "この工程はパイプラインに予約済みですが、ツールはまだ移行されていません。完了済み工程はチェックポイントと機能テストで保護されます。"
+    },
+    "model_editor.wizard.no_asset": {
+      "en": "Select an asset to start the processing wizard.",
+      "ru": "Выберите asset, чтобы начать работу мастера.",
+      "zh-Hans": "请选择资源以启动处理向导。",
+      "es": "Selecciona un asset para iniciar el asistente.",
+      "ja": "アセットを選択して処理ウィザードを開始してください。"
+    },
+    "model_editor.wizard.source.desc": {
+      "en": "Verify the source root and rebuild the in-memory asset from read-only OBJ/assembly data.",
+      "ru": "Проверьте путь к исходникам и пересоберите asset в памяти из OBJ/assembly только для чтения.",
+      "zh-Hans": "确认源路径，并从只读 OBJ/装配数据重建内存中的资源。",
+      "es": "Verifica la ruta de origen y reconstruye el asset en memoria desde OBJ/assembly de solo lectura.",
+      "ja": "ソースルートを確認し、読み取り専用 OBJ/assembly からメモリ上のアセットを再構築します。"
+    },
+    "model_editor.wizard.source.root": {
+      "en": "source root",
+      "ru": "путь исходников",
+      "zh-Hans": "源路径",
+      "es": "ruta de origen",
+      "ja": "ソースルート"
+    },
+    "model_editor.wizard.source.lods": {
+      "en": "declared render LODs",
+      "ru": "объявлено Render LOD",
+      "zh-Hans": "已声明 Render LOD",
+      "es": "Render LOD declarados",
+      "ja": "宣言済み Render LOD"
+    },
+    "model_editor.wizard.source.meshes": {
+      "en": "source-backed geometries",
+      "ru": "геометрий из исходников",
+      "zh-Hans": "源几何体",
+      "es": "geometrías desde origen",
+      "ja": "ソース由来ジオメトリ"
+    },
+    "model_editor.wizard.source.saved": {
+      "en": "saved LOD payloads",
+      "ru": "сохранённых LOD payload",
+      "zh-Hans": "已保存 LOD 数据",
+      "es": "payloads LOD guardados",
+      "ja": "保存済み LOD ペイロード"
+    },
+    "model_editor.wizard.source.reimport": {
+      "en": "REIMPORT SOURCE",
+      "ru": "ПЕРЕИМПОРТИРОВАТЬ ИСХОДНИК",
+      "zh-Hans": "重新导入源模型",
+      "es": "REIMPORTAR ORIGEN",
+      "ja": "ソース再インポート"
+    },
+    "model_editor.wizard.lods.desc": {
+      "en": "Review every independent render document. Saved-only or missing LODs are shown explicitly instead of disappearing from the UI.",
+      "ru": "Проверьте каждый независимый render-документ. LOD, существующие только на диске или отсутствующие в текущем asset, показываются явно и больше не исчезают из интерфейса.",
+      "zh-Hans": "检查每个独立渲染文档。仅存在于磁盘或缺失的 LOD 会明确显示，不再从界面消失。",
+      "es": "Revisa cada documento de render independiente. Los LOD solo guardados o ausentes se muestran explícitamente en vez de desaparecer.",
+      "ja": "各独立レンダードキュメントを確認します。保存済みのみ／欠落 LOD も明示し、UI から消えません。"
+    },
+    "model_editor.wizard.lods.declared": {
+      "en": "declared",
+      "ru": "объявлено",
+      "zh-Hans": "已声明",
+      "es": "declarados",
+      "ja": "宣言済み"
+    },
+    "model_editor.wizard.lods.saved": {
+      "en": "saved payloads",
+      "ru": "файлов на диске",
+      "zh-Hans": "已保存数据",
+      "es": "payloads guardados",
+      "ja": "保存済み"
+    },
+    "model_editor.wizard.lods.missing": {
+      "en": "missing/unavailable",
+      "ru": "недоступно/отсутствует",
+      "zh-Hans": "缺失/不可用",
+      "es": "ausentes/no disponibles",
+      "ja": "欠落/利用不可"
+    },
+    "model_editor.wizard.lods.saved_only": {
+      "en": "SAVED ONLY · NOT DECLARED",
+      "ru": "ЕСТЬ НА ДИСКЕ · НЕ ОБЪЯВЛЕН",
+      "zh-Hans": "仅磁盘存在 · 当前资源未声明",
+      "es": "SOLO GUARDADO · NO DECLARADO",
+      "ja": "保存のみ · 未宣言"
+    },
+    "model_editor.wizard.lods.not_declared": {
+      "en": "NOT DECLARED",
+      "ru": "НЕ ОБЪЯВЛЕН",
+      "zh-Hans": "未声明",
+      "es": "NO DECLARADO",
+      "ja": "未宣言"
+    },
+    "model_editor.wizard.lods.no_payload": {
+      "en": "NO SAVED PAYLOAD",
+      "ru": "НЕТ СОХРАНЁННОГО ФАЙЛА",
+      "zh-Hans": "无已保存数据",
+      "es": "SIN PAYLOAD GUARDADO",
+      "ja": "保存ペイロードなし"
+    },
+    "model_editor.wizard.geometry.desc": {
+      "en": "Detect baked rigid duplicates, consolidate true instances and clean unused LOD-local geometry. This is the same rigid-fit mechanism used before v4, now exposed as a first-class stage.",
+      "ru": "Найдите запечённые жёсткие дубликаты, сведите настоящие экземпляры и удалите неиспользуемую геометрию текущего LOD. Это тот же rigid-fit, которым мы пользовались до v4, теперь он вынесен в отдельный этап.",
+      "zh-Hans": "检测烘焙的刚性重复体、合并真实实例并清理当前 LOD 的未使用几何体。这里使用的就是 v4 之前同一套刚性拟合机制。",
+      "es": "Detecta duplicados rígidos horneados, consolida instancias reales y limpia geometría no usada del LOD activo. Es el mismo rigid-fit anterior a v4, ahora como etapa principal.",
+      "ja": "焼き込み済み剛体重複を検出し、実インスタンスへ統合して現在 LOD の未使用ジオメトリを整理します。v4 前と同じ rigid-fit を正式工程として公開します。"
+    },
+    "model_editor.wizard.geometry.render_nodes": {
+      "en": "render nodes",
+      "ru": "render nodes",
+      "zh-Hans": "RenderNode",
+      "es": "render nodes",
+      "ja": "RenderNode"
+    },
+    "model_editor.wizard.geometry.geometries": {
+      "en": "geometries",
+      "ru": "геометрий",
+      "zh-Hans": "几何体",
+      "es": "geometrías",
+      "ja": "ジオメトリ"
+    },
+    "model_editor.wizard.geometry.unused": {
+      "en": "unused",
+      "ru": "не используется",
+      "zh-Hans": "未使用",
+      "es": "sin usar",
+      "ja": "未使用"
+    },
+    "model_editor.wizard.geometry.scan": {
+      "en": "SCAN DUPLICATES",
+      "ru": "НАЙТИ ДУБЛИКАТЫ",
+      "zh-Hans": "扫描重复体",
+      "es": "BUSCAR DUPLICADOS",
+      "ja": "重複を検索"
+    },
+    "model_editor.wizard.geometry.clean": {
+      "en": "CLEAN UNUSED",
+      "ru": "УДАЛИТЬ НЕИСПОЛЬЗУЕМОЕ",
+      "zh-Hans": "清理未使用项",
+      "es": "LIMPIAR NO USADO",
+      "ja": "未使用を削除"
+    },
+    "model_editor.wizard.geometry.scan_needed": {
+      "en": "Run duplicate scan for the active LOD. Existing rigid-fit functionality is exposed here as a protected pipeline step.",
+      "ru": "Запустите поиск дубликатов для активного LOD. Рабочий rigid-fit теперь явно вынесен сюда и защищён как обязательная возможность редактора.",
+      "zh-Hans": "请扫描当前 LOD 的重复体。现有 rigid-fit 功能现在作为受保护的流程步骤显示在这里。",
+      "es": "Ejecuta el escaneo de duplicados para el LOD activo. El rigid-fit existente queda expuesto aquí como capacidad protegida.",
+      "ja": "現在の LOD で重複スキャンを実行してください。既存 rigid-fit は保護対象の工程としてここに表示されます。"
+    },
+    "model_editor.wizard.geometry.none": {
+      "en": "No exact rigid duplicate geometry pairs found in this LOD.",
+      "ru": "В этом LOD не найдено точных жёстких дубликатов геометрии.",
+      "zh-Hans": "此 LOD 未发现精确刚性重复几何体。",
+      "es": "No se encontraron pares de geometría rígidamente idénticos en este LOD.",
+      "ja": "この LOD では厳密な剛体重複ジオメトリは見つかりませんでした。"
+    },
+    "model_editor.wizard.geometry.select": {
+      "en": "SELECT TARGET",
+      "ru": "ВЫБРАТЬ ЦЕЛЬ",
+      "zh-Hans": "选择目标",
+      "es": "SELECCIONAR OBJETIVO",
+      "ja": "ターゲット選択"
+    },
+    "model_editor.wizard.geometry.consolidate": {
+      "en": "CONSOLIDATE",
+      "ru": "ОБЪЕДИНИТЬ В INSTANCE",
+      "zh-Hans": "合并为实例",
+      "es": "CONSOLIDAR",
+      "ja": "統合"
+    },
+    "model_editor.wizard.geometry.ignore": {
+      "en": "IGNORE",
+      "ru": "ИГНОРИРОВАТЬ",
+      "zh-Hans": "忽略",
+      "es": "IGNORAR",
+      "ja": "無視"
+    },
+    "model_editor.wizard.geometry.consolidate_confirm": {
+      "en": "Consolidate exact rigid duplicate?",
+      "ru": "Свести точный жёсткий дубликат в instance?",
+      "zh-Hans": "将精确刚性重复体合并为实例？",
+      "es": "¿Consolidar el duplicado rígido exacto?",
+      "ja": "厳密な剛体重複をインスタンスへ統合しますか？"
+    },
+    "model_editor.wizard.command.complete": {
+      "en": "COMPLETE WIZARD STAGE",
+      "ru": "ЗАВЕРШИТЬ ЭТАП МАСТЕРА",
+      "zh-Hans": "完成向导阶段",
+      "es": "COMPLETAR ETAPA DEL ASISTENTE",
+      "ja": "ウィザード工程を完了"
+    },
+    "model_editor.wizard.command.restore": {
+      "en": "RESTORE WIZARD CHECKPOINT",
+      "ru": "ВОССТАНОВИТЬ КОНТРОЛЬНУЮ ТОЧКУ",
+      "zh-Hans": "恢复向导检查点",
+      "es": "RESTAURAR PUNTO DE CONTROL",
+      "ja": "ウィザードチェックポイント復元"
+    },
+    "model_editor.wizard.command.scan_duplicates": {
+      "en": "SCAN DUPLICATE GEOMETRY",
+      "ru": "ПОИСК ДУБЛИКАТОВ ГЕОМЕТРИИ",
+      "zh-Hans": "扫描重复几何体",
+      "es": "BUSCAR GEOMETRÍA DUPLICADA",
+      "ja": "重複ジオメトリ検索"
+    },
+    "model_editor.geometry_compare.help": {
+      "en": "Choose one reference element, check only the elements you want to compare, then run Compare. Comparison does not modify the asset: matches turn green and differences turn pink.",
+      "ru": "Выберите один эталон, отметьте галочками элементы для сравнения и нажмите «Проверить выбранные». Проверка ничего не меняет: совпавшие строки станут зелёными, отличающиеся — розовыми."
+    },
+    "model_editor.geometry_compare.reference_label": {
+      "en": "Reference element",
+      "ru": "Эталон"
+    },
+    "model_editor.geometry_compare.select_all": {
+      "en": "Select all",
+      "ru": "Выбрать все"
+    },
+    "model_editor.geometry_compare.clear": {
+      "en": "Clear",
+      "ru": "Снять все"
+    },
+    "model_editor.geometry_compare.result": {
+      "en": "Result",
+      "ru": "Результат"
+    },
+    "model_editor.geometry_compare.element": {
+      "en": "Element",
+      "ru": "Элемент"
+    },
+    "model_editor.geometry_compare.triangles": {
+      "en": "Triangles",
+      "ru": "Треуг."
+    },
+    "model_editor.geometry_compare.reference": {
+      "en": "Reference",
+      "ru": "Эталон"
+    },
+    "model_editor.geometry_compare.instance": {
+      "en": "Instance",
+      "ru": "Экземпляр"
+    },
+    "model_editor.geometry_compare.match": {
+      "en": "Match",
+      "ru": "Совпал"
+    },
+    "model_editor.geometry_compare.no_match": {
+      "en": "Different",
+      "ru": "Отличается"
+    },
+    "model_editor.geometry_compare.selected": {
+      "en": "selected",
+      "ru": "выбрано"
+    },
+    "model_editor.geometry_compare.matches": {
+      "en": "matches",
+      "ru": "совпало"
+    },
+    "model_editor.geometry_compare.different": {
+      "en": "different",
+      "ru": "отличается"
+    },
+    "model_editor.geometry_compare.compare": {
+      "en": "Compare selected",
+      "ru": "Проверить выбранные"
+    },
+    "model_editor.geometry_compare.consolidate": {
+      "en": "Make matches instances",
+      "ru": "Сделать совпавшие экземплярами"
+    },
+    "model_editor.geometry_compare.consolidate_confirm": {
+      "en": "Replace geometry of all checked green rows with the reference geometry?",
+      "ru": "Заменить геометрию всех отмеченных зелёных строк геометрией эталона?"
+    },
+    "model_editor.geometry_compare.reference_tip.title": {
+      "en": "Reference element",
+      "ru": "Эталон"
+    },
+    "model_editor.geometry_compare.reference_tip.desc": {
+      "en": "The reference stays unchanged. Matching checked elements can later share its geometry while keeping their own placement.",
+      "ru": "Эталон не изменяется. Совпавшие отмеченные элементы затем смогут использовать его геометрию, сохраняя собственное положение."
+    },
+    "model_editor.geometry_compare.compare_tip.title": {
+      "en": "Compare selected",
+      "ru": "Проверить выбранные"
+    },
+    "model_editor.geometry_compare.compare_tip.desc": {
+      "en": "Checks the reference against the checked rows. This operation changes nothing in the asset.",
+      "ru": "Сравнивает эталон только с отмеченными строками. Эта операция ничего не меняет в модели."
+    },
+    "model_editor.geometry_compare.consolidate_tip.title": {
+      "en": "Make matches instances",
+      "ru": "Сделать совпавшие экземплярами"
+    },
+    "model_editor.geometry_compare.consolidate_tip.desc": {
+      "en": "Only checked green rows are changed. Their placement stays intact; they start sharing the reference geometry.",
+      "ru": "Изменяются только отмеченные зелёные строки. Их положение сохраняется, но геометрия становится общей с эталоном."
+    },
+    "model_editor.geometry_compare.clean_tip.title": {
+      "en": "Clean unused geometry",
+      "ru": "Удалить неиспользуемую геометрию"
+    },
+    "model_editor.geometry_compare.clean_tip.desc": {
+      "en": "Deletes geometry definitions that no LOD element uses. Normally run this after consolidation.",
+      "ru": "Удаляет определения геометрии, которые больше не использует ни один элемент LOD. Обычно выполняется после создания экземпляров."
+    },
+    "model_editor.geometry_compare.command.consolidate": {
+      "en": "Consolidate selected duplicate geometry",
+      "ru": "Свести выбранные совпадения в экземпляры"
+    },
+    "model_editor.wizard.geometry.no_lod": {
+      "en": "Load a render LOD first.",
+      "ru": "Сначала загрузите render LOD."
+    },
+    "model_editor.wizard.geometry.no_rows": {
+      "en": "This LOD has no render elements with geometry.",
+      "ru": "В этом LOD нет элементов с геометрией."
+    },
+    "model_editor.geometry_inspector.select": {
+      "en": "Select an element in the table or click it in the viewport.",
+      "ru": "Выберите элемент в таблице или щёлкните по нему в окне просмотра."
+    },
+    "model_editor.geometry_inspector.info": {
+      "en": "Element",
+      "ru": "Элемент"
+    },
+    "model_editor.geometry_inspector.geometry": {
+      "en": "Geometry",
+      "ru": "Геометрия"
+    },
+    "model_editor.geometry_inspector.none": {
+      "en": "none",
+      "ru": "нет"
+    },
+    "model_editor.geometry_inspector.mesh": {
+      "en": "Mesh",
+      "ru": "Меш"
+    },
+    "model_editor.geometry_inspector.source": {
+      "en": "Source",
+      "ru": "Источник"
+    },
+    "model_editor.geometry_inspector.usage": {
+      "en": "Uses",
+      "ru": "Использований"
+    },
+    "model_editor.geometry_inspector.placement": {
+      "en": "Placement in this LOD",
+      "ru": "Положение в этом LOD"
+    },
+    "model_editor.geometry_inspector.placement_help": {
+      "en": "Position, rotation and pivot place this element inside the active LOD. Applying them does not edit the source OBJ.",
+      "ru": "Position, Rotation и Pivot задают положение этого элемента внутри активного LOD. Применение не изменяет исходный OBJ."
+    },
+    "model_editor.geometry_inspector.position": {
+      "en": "Position XYZ",
+      "ru": "Позиция XYZ"
+    },
+    "model_editor.geometry_inspector.rotation": {
+      "en": "Rotation XYZ, deg",
+      "ru": "Поворот XYZ, градусы"
+    },
+    "model_editor.geometry_inspector.pivot": {
+      "en": "Pivot XYZ",
+      "ru": "Pivot XYZ"
+    },
+    "model_editor.geometry_inspector.apply_placement": {
+      "en": "Apply placement",
+      "ru": "Применить положение"
+    },
+    "model_editor.geometry_inspector.instances": {
+      "en": "Instance tools",
+      "ru": "Экземпляры"
+    },
+    "model_editor.geometry_inspector.instances_help": {
+      "en": "These commands change how this element shares geometry. They do not change other semantic/gameplay parts.",
+      "ru": "Эти команды управляют совместным использованием геометрии. Они не меняют semantic/gameplay-части модели."
+    },
+    "model_editor.geometry_inspector.advanced": {
+      "en": "Advanced / manual tools",
+      "ru": "Дополнительно / вручную"
+    },
+    "model_editor.geometry_inspector.manual_geometry": {
+      "en": "Geometry assignment",
+      "ru": "Назначение геометрии"
+    },
+    "model_editor.geometry_inspector.manual_fit": {
+      "en": "Manual fit as instance",
+      "ru": "Ручное сведение в экземпляр"
+    },
+    "model_editor.geometry_inspector.advanced_help": {
+      "en": "Normally use the comparison table above. Manual assignment is kept for repair/debug work.",
+      "ru": "Обычно используйте таблицу сравнения выше. Ручные команды оставлены для исправления и отладки."
+    },
+    "model_editor.geometry_inspector.destructive": {
+      "en": "Destructive",
+      "ru": "Удаление"
+    },
+    "model_editor.geometry_inspector.delete": {
+      "en": "Delete element",
+      "ru": "Удалить элемент"
+    },
+    "model_editor.geometry_inspector.delete_confirm": {
+      "en": "Delete this LOD element?",
+      "ru": "Удалить этот элемент LOD?"
+    },
+    "model_editor.geometry_inspector.manual_fit_confirm": {
+      "en": "Fit selected element as an instance of this reference?",
+      "ru": "Свести выбранный элемент в экземпляр указанного эталона?"
+    },
+    "model_editor.geometry_inspector.surface_group": {
+      "en": "Surface type",
+      "ru": "Тип поверхности"
+    },
+    "model_editor.geometry_inspector.surface_help": {
+      "en": "Describe how this mesh behaves as a surface. This changes rendering/collision interpretation, not the mesh shape.",
+      "ru": "Определяет, как трактовать меш как поверхность. Форма геометрии при этом не меняется."
+    },
+    "model_editor.geometry_inspector.surface_tip.title": {
+      "en": "Surface type",
+      "ru": "Тип поверхности"
+    },
+    "model_editor.geometry_inspector.surface_tip.desc": {
+      "en": "Closed volume is a solid shell. Thin modes are for sheets/panels that do not enclose volume.",
+      "ru": "Closed volume — замкнутый объём. Thin — листы и панели, которые не образуют замкнутого объёма."
+    },
+    "model_editor.geometry_inspector.placement_tip.title": {
+      "en": "Apply placement",
+      "ru": "Применить положение"
+    },
+    "model_editor.geometry_inspector.placement_tip.desc": {
+      "en": "Writes Position, Rotation and Pivot to this LOD element.",
+      "ru": "Записывает Position, Rotation и Pivot выбранного элемента LOD."
+    },
+    "model_editor.geometry_inspector.duplicate_tip.title": {
+      "en": "Duplicate instance",
+      "ru": "Дублировать экземпляр"
+    },
+    "model_editor.geometry_inspector.duplicate_tip.desc": {
+      "en": "Creates another element that shares this geometry. Placement can then be edited independently.",
+      "ru": "Создаёт ещё один элемент с той же общей геометрией. Его положение затем меняется независимо."
+    },
+    "model_editor.geometry_inspector.break_tip.title": {
+      "en": "Break instance",
+      "ru": "Разорвать экземпляр"
+    },
+    "model_editor.geometry_inspector.break_tip.desc": {
+      "en": "Creates a private copy of the shared geometry for this element. Disabled when geometry is already unique.",
+      "ru": "Создаёт для этого элемента отдельную копию общей геометрии. Недоступно, если геометрия уже уникальна."
+    },
+    "model_editor.geometry_inspector.radial_tip.title": {
+      "en": "Radial array",
+      "ru": "Радиальный массив"
+    },
+    "model_editor.geometry_inspector.radial_tip.desc": {
+      "en": "Opens parameters for repeated instances around a selected axis and center.",
+      "ru": "Открывает параметры создания повторяющихся экземпляров вокруг выбранной оси и центра."
+    },
+    "model_editor.geometry_inspector.delete_tip.title": {
+      "en": "Delete element",
+      "ru": "Удалить элемент"
+    },
+    "model_editor.geometry_inspector.delete_tip.desc": {
+      "en": "Removes only this render element from the active LOD. Disabled while it has child elements.",
+      "ru": "Удаляет только этот элемент активного LOD. Недоступно, пока у элемента есть дочерние элементы."
+    },
+    "model_editor.geometry_inspector.manual_fit_tip.title": {
+      "en": "Manual fit",
+      "ru": "Ручное сведение"
+    },
+    "model_editor.geometry_inspector.manual_fit_tip.desc": {
+      "en": "Runs the rigid geometry fit for this one pair. Prefer the comparison table for normal cleanup.",
+      "ru": "Проверяет и сводит только эту пару. Для обычной чистки лучше использовать таблицу сравнения."
+    },
+    "model_editor.radial.title": {
+      "en": "Radial instance array",
+      "ru": "Радиальный массив экземпляров"
+    },
+    "model_editor.radial.count": {
+      "en": "Instances including selected",
+      "ru": "Количество, включая выбранный"
+    },
+    "model_editor.radial.angle": {
+      "en": "Total angle, degrees",
+      "ru": "Общий угол, градусы"
+    },
+    "model_editor.radial.axis": {
+      "en": "Rotation axis",
+      "ru": "Ось вращения"
+    },
+    "model_editor.radial.center_mode": {
+      "en": "Rotation center",
+      "ru": "Центр вращения"
+    },
+    "model_editor.radial.center": {
+      "en": "Center XYZ",
+      "ru": "Центр XYZ"
+    },
+    "model_editor.radial.help": {
+      "en": "Copies share the selected element geometry. The chosen axis defines rotation; the array lies in the plane perpendicular to that axis.",
+      "ru": "Копии используют ту же геометрию, что выбранный элемент. Выбранная ось задаёт вращение; массив располагается в плоскости, перпендикулярной этой оси."
+    },
+    "model_editor.radial.create": {
+      "en": "Create array",
+      "ru": "Создать массив"
+    },
+    "model_editor.radial.center_pivot": {
+      "en": "Selected element pivot",
+      "ru": "Pivot выбранного элемента"
+    },
+    "model_editor.radial.center_origin": {
+      "en": "Parent origin (0,0,0)",
+      "ru": "Начало координат родителя (0,0,0)"
+    },
+    "model_editor.radial.center_custom": {
+      "en": "Custom",
+      "ru": "Задать вручную"
+    },
+    "model_editor.radial.invalid_angle": {
+      "en": "Invalid radial-array angle",
+      "ru": "Некорректный угол радиального массива"
+    },
+    "model_editor.wizard.complete_tip.title": {
+      "en": "Complete stage + checkpoint",
+      "ru": "Завершить этап + контрольная точка"
+    },
+    "model_editor.wizard.complete_tip.desc": {
+      "en": "Validates the current stage, writes an internal restorable checkpoint and unlocks the next implemented stage. Production files are not overwritten.",
+      "ru": "Проверяет текущий этап, сохраняет внутреннюю восстанавливаемую контрольную точку и открывает следующий реализованный этап. Production-файлы не перезаписываются."
+    },
+    "model_editor.wizard.restore_tip.title": {
+      "en": "Restore checkpoint",
+      "ru": "Восстановить контрольную точку"
+    },
+    "model_editor.wizard.restore_tip.desc": {
+      "en": "Loads this stage checkpoint back into editor memory. Source OBJ and production package remain unchanged.",
+      "ru": "Возвращает контрольную точку этапа в память редактора. Исходные OBJ и production-пакет не изменяются."
+    },
+    "model_editor.wizard.source.reimport_tip.title": {
+      "en": "Reimport source",
+      "ru": "Повторно загрузить исходники"
+    },
+    "model_editor.wizard.source.reimport_tip.desc": {
+      "en": "Re-reads the configured source OBJ/assembly into editor memory. Source files remain read-only.",
+      "ru": "Заново читает настроенные OBJ/assembly в память редактора. Исходные файлы остаются только для чтения."
+    },
+    "model_editor.geometry_compare.select_all_tip.title": {
+      "en": "Select all",
+      "ru": "Выбрать все"
+    },
+    "model_editor.geometry_compare.select_all_tip.desc": {
+      "en": "Checks every geometry-bearing element that is not already an instance of the reference.",
+      "ru": "Отмечает все элементы с геометрией, которые ещё не используют геометрию эталона."
+    },
+    "model_editor.geometry_compare.clear_tip.title": {
+      "en": "Clear selection",
+      "ru": "Снять все"
+    },
+    "model_editor.geometry_compare.clear_tip.desc": {
+      "en": "Clears comparison checkboxes. It does not change the model.",
+      "ru": "Снимает флажки сравнения. Модель при этом не изменяется."
+    },
+    "model_editor.geometry_inspector.manual_geometry_tip.title": {
+      "en": "Manual geometry assignment",
+      "ru": "Ручное назначение геометрии"
+    },
+    "model_editor.geometry_inspector.manual_geometry_tip.desc": {
+      "en": "Advanced repair tool: directly changes which LOD-local geometry this element uses. Normal duplicate cleanup should use the comparison table.",
+      "ru": "Расширенный инструмент ремонта: напрямую меняет LOD-local geometry выбранного элемента. Для обычной чистки дубликатов используйте таблицу сравнения."
+    },
+    "model_editor.radial.create_tip.title": {
+      "en": "Create radial array",
+      "ru": "Создать радиальный массив"
+    },
+    "model_editor.radial.create_tip.desc": {
+      "en": "Creates the requested copies as instances sharing the selected geometry.",
+      "ru": "Создаёт указанное количество копий как экземпляры с общей геометрией выбранного элемента."
+    },
+    "model_editor.radial.cancel_tip.title": {
+      "en": "Cancel",
+      "ru": "Отмена"
+    },
+    "model_editor.radial.cancel_tip.desc": {
+      "en": "Closes this dialog without changing the asset.",
+      "ru": "Закрывает окно без изменений asset."
+    }
+  }
+}

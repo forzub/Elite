@@ -1,4 +1,5 @@
 #include "src/model_asset/ModelAssetBinary.h"
+#include "src/model_asset/ModelAssetMigration.h"
 
 #include <algorithm>
 #include <array>
@@ -15,10 +16,12 @@ namespace elite::model_asset
 {
 namespace
 {
+constexpr std::array<char, 8> ManifestMagicV4 {{'E','L','M','D','L','0','0','4'}};
 constexpr std::array<char, 8> ManifestMagicV3 {{'E','L','M','D','L','0','0','3'}};
 constexpr std::array<char, 8> LegacyMagicV2   {{'E','L','M','D','L','0','0','2'}};
+constexpr std::array<char, 8> MeshMagicV4     {{'E','L','M','S','H','0','0','4'}};
 constexpr std::array<char, 8> MeshMagicV2     {{'E','L','M','S','H','0','0','2'}};
-constexpr std::uint32_t MeshPayloadFormatVersion = 2;
+constexpr std::uint32_t MeshPayloadFormatVersion = 4;
 constexpr std::uint32_t MaxCollectionCount = 50'000'000u;
 constexpr std::uint32_t MaxStringBytes = 16u * 1024u * 1024u;
 
@@ -92,6 +95,20 @@ struct Reader
     void vec3(glm::vec3& v) { pod(v.x); pod(v.y); pod(v.z); }
     void vec4(glm::vec4& v) { pod(v.x); pod(v.y); pod(v.z); pod(v.w); }
 };
+
+void writeStrings(Writer& w, const std::vector<std::string>& values)
+{
+    w.pod(static_cast<std::uint32_t>(values.size()));
+    for (const auto& value : values) w.string(value);
+}
+
+void readStrings(Reader& r, std::vector<std::string>& values)
+{
+    std::uint32_t count = 0;
+    if (!r.count(count)) return;
+    values.resize(count);
+    for (auto& value : values) r.string(value);
+}
 
 using ChunkWriter = void (*)(Writer&, const ModelAsset&);
 using ChunkReader = void (*)(Reader&, ModelAsset&);
@@ -402,6 +419,240 @@ void readSockets(Reader& r, ModelAsset& a)
     }
 }
 
+
+void writeSemanticNodesV4(Writer& w, const ModelAsset& a)
+{
+    w.pod(static_cast<std::uint32_t>(a.nodes.size()));
+    for (const auto& n : a.nodes)
+    {
+        w.string(n.id); w.string(n.moduleId); w.pod(n.parentIndex); w.string(n.defaultStateId);
+        w.vec3(n.localPosition); w.vec3(n.localRotationDeg); w.vec3(n.pivot);
+        w.pod(static_cast<std::uint8_t>(n.joint.type));
+        w.vec3(n.joint.pivot); w.vec3(n.joint.axis);
+        w.pod(n.joint.defaultRateDegPerSec); w.pod(n.joint.minAngleDeg); w.pod(n.joint.maxAngleDeg);
+        w.pod(static_cast<std::uint8_t>(n.joint.breakable ? 1 : 0));
+        w.pod(n.joint.breakForceN); w.pod(n.joint.breakTorqueNm);
+        w.pod(static_cast<std::uint8_t>(n.physics.mode));
+        w.pod(n.physics.densityKgM3); w.pod(n.physics.massKg);
+        w.vec3(n.physics.centerOfMass); w.vec3(n.physics.inertiaDiagonal); w.vec3(n.physics.inertiaProducts);
+        w.pod(static_cast<std::uint8_t>(n.enabled ? 1 : 0));
+    }
+}
+
+void readSemanticNodesV4(Reader& r, ModelAsset& a)
+{
+    std::uint32_t count = 0;
+    if (!r.count(count)) return;
+    a.nodes.resize(count);
+    for (auto& n : a.nodes)
+    {
+        r.string(n.id); r.string(n.moduleId); r.pod(n.parentIndex); r.string(n.defaultStateId);
+        n.geometryIndex = NoIndex;
+        r.vec3(n.localPosition); r.vec3(n.localRotationDeg); r.vec3(n.pivot);
+        std::uint8_t jointType = 0; r.pod(jointType); n.joint.type = static_cast<JointType>(jointType);
+        r.vec3(n.joint.pivot); r.vec3(n.joint.axis);
+        r.pod(n.joint.defaultRateDegPerSec); r.pod(n.joint.minAngleDeg); r.pod(n.joint.maxAngleDeg);
+        std::uint8_t breakable = 0; r.pod(breakable); n.joint.breakable = breakable != 0;
+        r.pod(n.joint.breakForceN); r.pod(n.joint.breakTorqueNm);
+        std::uint8_t massMode = 0; r.pod(massMode); n.physics.mode = static_cast<MassPropertyMode>(massMode);
+        r.pod(n.physics.densityKgM3); r.pod(n.physics.massKg);
+        r.vec3(n.physics.centerOfMass); r.vec3(n.physics.inertiaDiagonal); r.vec3(n.physics.inertiaProducts);
+        std::uint8_t enabled = 0; r.pod(enabled); n.enabled = enabled != 0;
+        if (n.defaultStateId.empty()) n.defaultStateId = "intact";
+    }
+}
+
+void writeStateVariantsV4(Writer& w, const ModelAsset& a)
+{
+    w.pod(static_cast<std::uint32_t>(a.stateVariants.size()));
+    for (const auto& s : a.stateVariants)
+    {
+        w.string(s.id); w.string(s.displayName); w.pod(s.nodeIndex);
+        w.pod(static_cast<std::uint8_t>(s.transformOverride ? 1 : 0));
+        w.vec3(s.localPosition); w.vec3(s.localRotationDeg); w.vec3(s.pivot);
+        w.pod(static_cast<std::uint8_t>(s.physicsOverride ? 1 : 0));
+        w.pod(static_cast<std::uint8_t>(s.physics.mode));
+        w.pod(s.physics.densityKgM3); w.pod(s.physics.massKg);
+        w.vec3(s.physics.centerOfMass); w.vec3(s.physics.inertiaDiagonal); w.vec3(s.physics.inertiaProducts);
+        w.pod(static_cast<std::uint8_t>(s.detached ? 1 : 0));
+        w.pod(static_cast<std::uint8_t>(s.enabled ? 1 : 0));
+    }
+}
+
+void readStateVariantsV4(Reader& r, ModelAsset& a)
+{
+    std::uint32_t count = 0;
+    if (!r.count(count)) return;
+    a.stateVariants.resize(count);
+    for (auto& s : a.stateVariants)
+    {
+        r.string(s.id); r.string(s.displayName); r.pod(s.nodeIndex);
+        std::uint8_t transformOverride = 0; r.pod(transformOverride); s.transformOverride = transformOverride != 0;
+        r.vec3(s.localPosition); r.vec3(s.localRotationDeg); r.vec3(s.pivot);
+        std::uint8_t physicsOverride = 0; r.pod(physicsOverride); s.physicsOverride = physicsOverride != 0;
+        std::uint8_t massMode = 0; r.pod(massMode); s.physics.mode = static_cast<MassPropertyMode>(massMode);
+        r.pod(s.physics.densityKgM3); r.pod(s.physics.massKg);
+        r.vec3(s.physics.centerOfMass); r.vec3(s.physics.inertiaDiagonal); r.vec3(s.physics.inertiaProducts);
+        std::uint8_t detached = 0, enabled = 0;
+        r.pod(detached); r.pod(enabled); s.detached = detached != 0; s.enabled = enabled != 0;
+    }
+}
+
+void writeCollisionsV4(Writer& w, const ModelAsset& a)
+{
+    w.pod(static_cast<std::uint32_t>(a.collisionVolumes.size()));
+    for (const auto& c : a.collisionVolumes)
+    {
+        w.string(c.id); w.string(c.moduleId); w.pod(c.parentNodeIndex);
+        w.pod(static_cast<std::uint8_t>(c.shape));
+        w.vec3(c.localPosition); w.vec3(c.localRotationDeg); w.vec3(c.halfSize);
+        w.pod(c.radius); w.pod(c.halfHeight); writeStrings(w, c.activeStates);
+        w.pod(static_cast<std::uint8_t>(c.enabled ? 1 : 0));
+    }
+}
+
+void readCollisionsV4(Reader& r, ModelAsset& a)
+{
+    std::uint32_t count = 0;
+    if (!r.count(count)) return;
+    a.collisionVolumes.resize(count);
+    for (auto& c : a.collisionVolumes)
+    {
+        r.string(c.id); r.string(c.moduleId); r.pod(c.parentNodeIndex);
+        std::uint8_t shape = 0; r.pod(shape); c.shape = static_cast<CollisionShape>(shape);
+        r.vec3(c.localPosition); r.vec3(c.localRotationDeg); r.vec3(c.halfSize);
+        r.pod(c.radius); r.pod(c.halfHeight); readStrings(r, c.activeStates);
+        std::uint8_t enabled = 0; r.pod(enabled); c.enabled = enabled != 0;
+    }
+}
+
+void writeSocketsV4(Writer& w, const ModelAsset& a)
+{
+    w.pod(static_cast<std::uint32_t>(a.sockets.size()));
+    for (const auto& s : a.sockets)
+    {
+        w.string(s.id); w.string(s.kind); w.string(s.moduleId); w.pod(s.parentNodeIndex);
+        w.vec3(s.localPosition); w.vec3(s.localRotationDeg); w.vec3(s.extent);
+        w.pod(static_cast<std::uint8_t>(s.light.type)); w.vec3(s.light.color);
+        w.pod(s.light.intensity); w.pod(s.light.rangeMeters); w.pod(s.light.outerConeDeg);
+        writeStrings(w, s.activeStates);
+        w.pod(static_cast<std::uint8_t>(s.enabled ? 1 : 0));
+    }
+}
+
+void readSocketsV4(Reader& r, ModelAsset& a)
+{
+    std::uint32_t count = 0;
+    if (!r.count(count)) return;
+    a.sockets.resize(count);
+    for (auto& s : a.sockets)
+    {
+        r.string(s.id); r.string(s.kind); r.string(s.moduleId); r.pod(s.parentNodeIndex);
+        r.vec3(s.localPosition); r.vec3(s.localRotationDeg); r.vec3(s.extent);
+        std::uint8_t lightType = 0; r.pod(lightType); s.light.type = static_cast<LightType>(lightType);
+        r.vec3(s.light.color); r.pod(s.light.intensity); r.pod(s.light.rangeMeters); r.pod(s.light.outerConeDeg);
+        readStrings(r, s.activeStates);
+        std::uint8_t enabled = 0; r.pod(enabled); s.enabled = enabled != 0;
+    }
+}
+
+void writeHitRegionsV4(Writer& w, const ModelAsset& a)
+{
+    w.pod(static_cast<std::uint32_t>(a.hitRegions.size()));
+    for (const auto& h : a.hitRegions)
+    {
+        w.string(h.id); w.pod(h.parentNodeIndex); writeStrings(w, h.activeStates);
+        w.vec3(h.localPosition); w.vec3(h.localRotationDeg); w.vec3(h.halfSize);
+        w.pod(static_cast<std::uint8_t>(h.enabled ? 1 : 0));
+    }
+}
+
+void readHitRegionsV4(Reader& r, ModelAsset& a)
+{
+    std::uint32_t count = 0; if (!r.count(count)) return; a.hitRegions.resize(count);
+    for (auto& h : a.hitRegions)
+    {
+        r.string(h.id); r.pod(h.parentNodeIndex); readStrings(r, h.activeStates);
+        r.vec3(h.localPosition); r.vec3(h.localRotationDeg); r.vec3(h.halfSize);
+        std::uint8_t enabled = 0; r.pod(enabled); h.enabled = enabled != 0;
+    }
+}
+
+void writeOpeningsV4(Writer& w, const ModelAsset& a)
+{
+    w.pod(static_cast<std::uint32_t>(a.openings.size()));
+    for (const auto& o : a.openings)
+    {
+        w.string(o.id); w.pod(o.parentNodeIndex); writeStrings(w, o.activeStates);
+        w.vec3(o.localPosition); w.vec3(o.localRotationDeg); w.vec3(o.halfSize);
+        w.pod(static_cast<std::uint8_t>(o.traversable ? 1 : 0));
+        w.pod(static_cast<std::uint8_t>(o.lineOfFire ? 1 : 0));
+        w.pod(static_cast<std::uint8_t>(o.enabled ? 1 : 0));
+    }
+}
+
+void readOpeningsV4(Reader& r, ModelAsset& a)
+{
+    std::uint32_t count = 0; if (!r.count(count)) return; a.openings.resize(count);
+    for (auto& o : a.openings)
+    {
+        r.string(o.id); r.pod(o.parentNodeIndex); readStrings(r, o.activeStates);
+        r.vec3(o.localPosition); r.vec3(o.localRotationDeg); r.vec3(o.halfSize);
+        std::uint8_t traversable = 0, lineOfFire = 0, enabled = 0;
+        r.pod(traversable); r.pod(lineOfFire); r.pod(enabled);
+        o.traversable = traversable != 0; o.lineOfFire = lineOfFire != 0; o.enabled = enabled != 0;
+    }
+}
+
+void writeRepairTargetsV4(Writer& w, const ModelAsset& a)
+{
+    w.pod(static_cast<std::uint32_t>(a.repairTargets.size()));
+    for (const auto& t : a.repairTargets)
+    {
+        w.string(t.id); w.string(t.kind); w.pod(t.parentNodeIndex); writeStrings(w, t.activeStates);
+        w.vec3(t.localPosition); w.vec3(t.localRotationDeg); w.string(t.repairedStateId);
+        w.pod(static_cast<std::uint8_t>(t.enabled ? 1 : 0));
+    }
+}
+
+void readRepairTargetsV4(Reader& r, ModelAsset& a)
+{
+    std::uint32_t count = 0; if (!r.count(count)) return; a.repairTargets.resize(count);
+    for (auto& t : a.repairTargets)
+    {
+        r.string(t.id); r.string(t.kind); r.pod(t.parentNodeIndex); readStrings(r, t.activeStates);
+        r.vec3(t.localPosition); r.vec3(t.localRotationDeg); r.string(t.repairedStateId);
+        std::uint8_t enabled = 0; r.pod(enabled); t.enabled = enabled != 0;
+    }
+}
+
+void writeLodManifestV4(Writer& w, const ModelAsset& a)
+{
+    w.pod(static_cast<std::uint32_t>(a.renderLods.size()));
+    for (const auto& lod : a.renderLods)
+    {
+        w.pod(lod.level); w.string(lod.sourceKind); w.pod(lod.generatedFromLod);
+        w.vec3(lod.minBounds); w.vec3(lod.maxBounds);
+        // Counts are diagnostics only; heavy graph content remains in .elmesh.
+        w.pod(static_cast<std::uint32_t>(lod.geometries.size()));
+        w.pod(static_cast<std::uint32_t>(lod.nodes.size()));
+    }
+}
+
+void readLodManifestV4(Reader& r, ModelAsset& a)
+{
+    std::uint32_t count = 0; if (!r.count(count)) return; a.renderLods.resize(count);
+    for (auto& lod : a.renderLods)
+    {
+        std::uint32_t geometryCount = 0, nodeCount = 0;
+        r.pod(lod.level); r.string(lod.sourceKind); r.pod(lod.generatedFromLod);
+        r.vec3(lod.minBounds); r.vec3(lod.maxBounds); r.pod(geometryCount); r.pod(nodeCount);
+        // reserve() communicates expected size without pretending payload arrays
+        // are loaded from the manifest.
+        lod.geometries.reserve(geometryCount); lod.nodes.reserve(nodeCount);
+    }
+}
+
 struct ChunkSpec
 {
     std::array<char, 4> id;
@@ -409,7 +660,20 @@ struct ChunkSpec
     ChunkReader reader;
 };
 
-constexpr std::array<ChunkSpec, 6> ManifestChunks {{
+constexpr std::array<ChunkSpec, 10> ManifestChunksV4 {{
+    {{{'M','E','T','A'}}, writeMeta, readMeta},
+    {{{'M','A','T','L'}}, writeMaterials, readMaterials},
+    {{{'S','E','M','N'}}, writeSemanticNodesV4, readSemanticNodesV4},
+    {{{'S','T','A','T'}}, writeStateVariantsV4, readStateVariantsV4},
+    {{{'C','O','L','L'}}, writeCollisionsV4, readCollisionsV4},
+    {{{'S','O','C','K'}}, writeSocketsV4, readSocketsV4},
+    {{{'H','I','T','R'}}, writeHitRegionsV4, readHitRegionsV4},
+    {{{'O','P','E','N'}}, writeOpeningsV4, readOpeningsV4},
+    {{{'R','E','P','R'}}, writeRepairTargetsV4, readRepairTargetsV4},
+    {{{'L','O','D','S'}}, writeLodManifestV4, readLodManifestV4}
+}};
+
+constexpr std::array<ChunkSpec, 6> ManifestChunksV3 {{
     {{{'M','E','T','A'}}, writeMeta, readMeta},
     {{{'M','A','T','L'}}, writeMaterials, readMaterials},
     {{{'G','E','O','M'}}, writeGeomManifest, readGeomManifest},
@@ -418,11 +682,16 @@ constexpr std::array<ChunkSpec, 6> ManifestChunks {{
     {{{'S','O','C','K'}}, writeSockets, readSockets}
 }};
 
-const ChunkSpec* findManifestChunk(const std::array<char, 4>& id)
+const ChunkSpec* findChunk(const std::array<char, 4>& id, bool v4)
 {
-    for (const auto& chunk : ManifestChunks)
-        if (chunk.id == id)
-            return &chunk;
+    if (v4)
+    {
+        for (const auto& chunk : ManifestChunksV4) if (chunk.id == id) return &chunk;
+    }
+    else
+    {
+        for (const auto& chunk : ManifestChunksV3) if (chunk.id == id) return &chunk;
+    }
     return nullptr;
 }
 
@@ -446,26 +715,165 @@ std::filesystem::path packageLodPayloadPath(const std::filesystem::path& manifes
 
 std::size_t maxLodCount(const ModelAsset& asset)
 {
-    std::size_t count = 0;
-    for (const auto& geometry : asset.geometries)
-        count = std::max(count, geometry.lods.size());
-    return count;
+    if (!asset.renderLods.empty())
+        return asset.renderLods.size();
+    return legacyRenderLodCount(asset);
 }
 
-bool validateStableGeometryIds(const ModelAsset& asset, std::string* error)
+bool validateRenderLod(const RenderLod& lod, std::size_t semanticNodeCount, std::string* error)
 {
-    std::set<std::string> ids;
-    for (const auto& geometry : asset.geometries)
+    std::map<std::string, std::size_t> geometryIds;
+    for (std::size_t geometryIndex = 0; geometryIndex < lod.geometries.size(); ++geometryIndex)
     {
+        const auto& geometry = lod.geometries[geometryIndex];
         if (geometry.id.empty())
         {
-            setError(error, "geometry has empty stable id");
+            setError(error, "LOD" + std::to_string(lod.level) + " render geometry[" +
+                std::to_string(geometryIndex) + "] has empty stable id");
             return false;
         }
-        if (!ids.insert(geometry.id).second)
+        const auto [it, inserted] = geometryIds.emplace(geometry.id, geometryIndex);
+        if (!inserted)
         {
-            setError(error, "duplicate stable geometry id: " + geometry.id);
+            setError(error, "LOD" + std::to_string(lod.level) + " duplicate RenderGeometryDefinition id '" +
+                geometry.id + "': geometry[" + std::to_string(it->second) + "] and geometry[" +
+                std::to_string(geometryIndex) + "]");
             return false;
+        }
+    }
+    std::map<std::string, std::size_t> nodeIds;
+    for (std::size_t nodeIndex = 0; nodeIndex < lod.nodes.size(); ++nodeIndex)
+    {
+        const auto& node = lod.nodes[nodeIndex];
+        if (node.id.empty())
+        {
+            setError(error, "LOD" + std::to_string(lod.level) + " RenderNode[" +
+                std::to_string(nodeIndex) + "] has empty id");
+            return false;
+        }
+        const auto [it, inserted] = nodeIds.emplace(node.id, nodeIndex);
+        if (!inserted)
+        {
+            setError(error, "LOD" + std::to_string(lod.level) + " duplicate RenderNode id '" + node.id +
+                "': node[" + std::to_string(it->second) + "] and node[" + std::to_string(nodeIndex) + "]");
+            return false;
+        }
+        if (node.parentIndex < NoIndex ||
+            node.parentIndex >= static_cast<std::int32_t>(lod.nodes.size()) ||
+            node.geometryIndex < NoIndex ||
+            node.geometryIndex >= static_cast<std::int32_t>(lod.geometries.size()) ||
+            node.semanticNodeIndex < NoIndex ||
+            node.semanticNodeIndex >= static_cast<std::int32_t>(semanticNodeCount))
+        {
+            setError(error, "render node index out of range in LOD" + std::to_string(lod.level) + ": " + node.id);
+            return false;
+        }
+        if (node.parentIndex == static_cast<std::int32_t>(nodeIndex))
+        {
+            setError(error, "render node cannot parent itself in LOD" + std::to_string(lod.level) + ": " + node.id);
+            return false;
+        }
+    }
+    return true;
+}
+
+bool validateSemanticAsset(const ModelAsset& asset, std::string* error)
+{
+    std::map<std::string, std::size_t> semanticNodeIds;
+    for (std::size_t i = 0; i < asset.nodes.size(); ++i)
+    {
+        const auto& node = asset.nodes[i];
+        if (node.id.empty())
+        {
+            setError(error, "semantic Node[" + std::to_string(i) + "] has empty id");
+            return false;
+        }
+        const auto [it, inserted] = semanticNodeIds.emplace(node.id, i);
+        if (!inserted)
+        {
+            setError(error, "duplicate semantic Node id '" + node.id + "': node[" +
+                std::to_string(it->second) + "] and node[" + std::to_string(i) + "]");
+            return false;
+        }
+        if (node.parentIndex < NoIndex || node.parentIndex >= static_cast<std::int32_t>(asset.nodes.size()) ||
+            node.parentIndex == static_cast<std::int32_t>(i))
+        {
+            setError(error, "semantic node parent index out of range: " + node.id);
+            return false;
+        }
+    }
+
+    std::set<std::pair<std::int32_t, std::string>> stateIds;
+    for (const auto& state : asset.stateVariants)
+    {
+        if (state.nodeIndex < 0 || state.nodeIndex >= static_cast<std::int32_t>(asset.nodes.size()) || state.id.empty() || state.id == "intact")
+        {
+            setError(error, "invalid semantic state variant");
+            return false;
+        }
+        if (!stateIds.emplace(state.nodeIndex, state.id).second)
+        {
+            setError(error, "duplicate semantic state variant: " + state.id);
+            return false;
+        }
+    }
+    const auto stateDeclared = [&](std::int32_t nodeIndex, const std::string& stateId) {
+        if (stateId == "intact") return true;
+        return stateIds.count({nodeIndex, stateId}) != 0;
+    };
+    for (std::size_t i = 0; i < asset.nodes.size(); ++i)
+    {
+        if (!stateDeclared(static_cast<std::int32_t>(i), asset.nodes[i].defaultStateId))
+        {
+            setError(error, "semantic node default state is not declared: " + asset.nodes[i].id + " / " + asset.nodes[i].defaultStateId);
+            return false;
+        }
+    }
+
+    const auto validParent = [&](std::int32_t parent) {
+        return parent >= NoIndex && parent < static_cast<std::int32_t>(asset.nodes.size());
+    };
+    const auto validateScopedStates = [&](std::int32_t parent, const std::vector<std::string>& states, const std::string& label) {
+        if (!validParent(parent)) { setError(error, label + " parent index out of range"); return false; }
+        if (!states.empty() && parent == NoIndex) { setError(error, label + " has state scope but no semantic parent"); return false; }
+        for (const auto& stateId : states)
+        {
+            if (!stateDeclared(parent, stateId)) { setError(error, label + " references undeclared state: " + stateId); return false; }
+        }
+        return true;
+    };
+    for (const auto& c : asset.collisionVolumes) if (!validateScopedStates(c.parentNodeIndex, c.activeStates, "collision " + c.id)) return false;
+    for (const auto& socket : asset.sockets) if (!validateScopedStates(socket.parentNodeIndex, socket.activeStates, "socket " + socket.id)) return false;
+    for (const auto& h : asset.hitRegions) if (!validateScopedStates(h.parentNodeIndex, h.activeStates, "hit region " + h.id)) return false;
+    for (const auto& o : asset.openings) if (!validateScopedStates(o.parentNodeIndex, o.activeStates, "opening " + o.id)) return false;
+    for (const auto& r : asset.repairTargets)
+    {
+        if (!validateScopedStates(r.parentNodeIndex, r.activeStates, "repair target " + r.id)) return false;
+        if (!r.repairedStateId.empty() && r.parentNodeIndex >= 0 && !stateDeclared(r.parentNodeIndex, r.repairedStateId))
+        {
+            setError(error, "repair target references undeclared repaired state: " + r.id + " / " + r.repairedStateId);
+            return false;
+        }
+    }
+
+    for (const auto& lod : asset.renderLods)
+    {
+        if (!validateRenderLod(lod, asset.nodes.size(), error)) return false;
+        for (const auto& renderNode : lod.nodes)
+        {
+            if (!renderNode.activeStates.empty() && renderNode.semanticNodeIndex == NoIndex)
+            {
+                setError(error, "state-scoped render node has no semantic binding in LOD" + std::to_string(lod.level) + ": " + renderNode.id);
+                return false;
+            }
+            for (const auto& stateId : renderNode.activeStates)
+            {
+                if (!stateDeclared(renderNode.semanticNodeIndex, stateId))
+                {
+                    setError(error, "render node references undeclared semantic state in LOD" + std::to_string(lod.level) + ": " + renderNode.id + " / " + stateId);
+                    return false;
+                }
+            }
         }
     }
     return true;
@@ -477,8 +885,13 @@ bool writeLodPayload(
     std::size_t lodIndex,
     std::string* error)
 {
-    if (!validateStableGeometryIds(asset, error))
+    if (lodIndex >= asset.renderLods.size())
+    {
+        setError(error, "render LOD is not declared: " + std::to_string(lodIndex));
         return false;
+    }
+    const auto& lod = asset.renderLods[lodIndex];
+    if (!validateRenderLod(lod, asset.nodes.size(), error)) return false;
 
     std::ofstream file(path, std::ios::binary | std::ios::trunc);
     if (!file)
@@ -487,29 +900,71 @@ bool writeLodPayload(
         return false;
     }
 
-    file.write(MeshMagicV2.data(), static_cast<std::streamsize>(MeshMagicV2.size()));
+    file.write(MeshMagicV4.data(), static_cast<std::streamsize>(MeshMagicV4.size()));
     Writer w {file};
     w.pod(MeshPayloadFormatVersion);
     w.pod(static_cast<std::uint32_t>(lodIndex));
-    std::uint32_t entryCount = 0;
-    for (const auto& geometry : asset.geometries)
-        if (lodIndex < geometry.lods.size())
-            ++entryCount;
-    w.pod(entryCount);
+    w.string(lod.sourceKind); w.pod(lod.generatedFromLod);
+    w.vec3(lod.minBounds); w.vec3(lod.maxBounds);
 
-    // Payload identity is semantic, not positional. G0/G1/... are editor labels
-    // and may change after deleting/reordering GeometryDefinitions; the stable
-    // id is what binds one LOD representation back to the manifest.
-    for (const auto& geometry : asset.geometries)
+    w.pod(static_cast<std::uint32_t>(lod.geometries.size()));
+    for (const auto& geometry : lod.geometries)
     {
-        if (lodIndex >= geometry.lods.size()) continue;
-        w.string(geometry.id);
-        writeMeshLod(w, geometry.lods[lodIndex]);
+        w.string(geometry.id); w.string(geometry.sourcePath);
+        w.pod(static_cast<std::uint8_t>(geometry.surfaceMode));
+        writeMeshLod(w, geometry.mesh);
+    }
+
+    w.pod(static_cast<std::uint32_t>(lod.nodes.size()));
+    for (const auto& node : lod.nodes)
+    {
+        w.string(node.id); w.pod(node.parentIndex); w.pod(node.geometryIndex); w.pod(node.semanticNodeIndex);
+        writeStrings(w, node.activeStates);
+        w.vec3(node.localPosition); w.vec3(node.localRotationDeg); w.vec3(node.pivot);
+        w.pod(static_cast<std::uint8_t>(node.enabled ? 1 : 0));
     }
     if (!w.ok)
     {
         setError(error, "failed writing LOD payload: " + path.string());
         return false;
+    }
+    return true;
+}
+
+bool readLegacyLodPayloadV3(
+    std::istream& file,
+    ModelAsset& asset,
+    std::size_t expectedLodIndex,
+    std::string* error)
+{
+    Reader r {file};
+    std::uint32_t version = 0, lodIndex = 0, entryCount = 0;
+    r.pod(version); r.pod(lodIndex);
+    if (!r.count(entryCount) || version != 2u || lodIndex != expectedLodIndex)
+    {
+        setError(error, "unsupported or mismatched legacy LOD payload");
+        return false;
+    }
+    std::map<std::string, std::size_t> geometryById;
+    for (std::size_t i = 0; i < asset.geometries.size(); ++i)
+        geometryById.emplace(asset.geometries[i].id, i);
+    for (std::uint32_t entry = 0; entry < entryCount; ++entry)
+    {
+        std::string geometryId; r.string(geometryId);
+        const auto it = geometryById.find(geometryId);
+        if (!r.ok || it == geometryById.end())
+        {
+            setError(error, "legacy LOD payload contains unknown geometry id: " + geometryId);
+            return false;
+        }
+        auto& geometry = asset.geometries[it->second];
+        if (expectedLodIndex >= geometry.lods.size())
+        {
+            setError(error, "legacy LOD representation not declared for: " + geometryId);
+            return false;
+        }
+        readMeshLod(r, geometry.lods[expectedLodIndex]);
+        if (!r.ok) { setError(error, "corrupt legacy LOD payload"); return false; }
     }
     return true;
 }
@@ -520,73 +975,66 @@ bool readLodPayload(
     std::size_t expectedLodIndex,
     std::string* error)
 {
-    if (!validateStableGeometryIds(asset, error))
-        return false;
-
     std::ifstream file(path, std::ios::binary);
     if (!file)
     {
         setError(error, "missing LOD payload: " + path.string());
         return false;
     }
-
     std::array<char, 8> magic {};
     file.read(magic.data(), static_cast<std::streamsize>(magic.size()));
-    if (!file || magic != MeshMagicV2)
+    if (!file) { setError(error, "invalid LOD payload header: " + path.string()); return false; }
+
+    if (magic == MeshMagicV2)
+        return readLegacyLodPayloadV3(file, asset, expectedLodIndex, error);
+    if (magic != MeshMagicV4)
     {
         setError(error, "invalid LOD payload magic: " + path.string());
         return false;
     }
 
     Reader r {file};
-    std::uint32_t version = 0;
-    std::uint32_t lodIndex = 0;
-    std::uint32_t entryCount = 0;
-    r.pod(version);
-    r.pod(lodIndex);
-    if (!r.count(entryCount) || version != MeshPayloadFormatVersion || lodIndex != expectedLodIndex)
+    std::uint32_t version = 0, lodIndex = 0;
+    r.pod(version); r.pod(lodIndex);
+    if (!r.ok || version != MeshPayloadFormatVersion || lodIndex != expectedLodIndex)
     {
         setError(error, "unsupported or mismatched LOD payload: " + path.string());
         return false;
     }
-
-    std::map<std::string, std::size_t> geometryById;
-    for (std::size_t i = 0; i < asset.geometries.size(); ++i)
-        geometryById.emplace(asset.geometries[i].id, i);
-
-    std::set<std::string> seen;
-    for (std::uint32_t entry = 0; entry < entryCount; ++entry)
+    if (expectedLodIndex >= asset.renderLods.size())
     {
-        std::string geometryId;
-        r.string(geometryId);
-        const auto it = geometryById.find(geometryId);
-        if (!r.ok || it == geometryById.end() || !seen.insert(geometryId).second)
-        {
-            setError(error, "LOD payload contains unknown/duplicate geometry id: " + geometryId);
-            return false;
-        }
-        auto& geometry = asset.geometries[it->second];
-        if (expectedLodIndex >= geometry.lods.size())
-        {
-            setError(error, "LOD payload representation is not declared by manifest for: " + geometryId);
-            return false;
-        }
-        readMeshLod(r, geometry.lods[expectedLodIndex]);
-        if (!r.ok)
-        {
-            setError(error, "corrupt LOD payload: " + path.string());
-            return false;
-        }
+        setError(error, "LOD payload is not declared by v4 manifest");
+        return false;
     }
 
-    for (const auto& geometry : asset.geometries)
+    RenderLod loaded;
+    loaded.level = lodIndex;
+    r.string(loaded.sourceKind); r.pod(loaded.generatedFromLod);
+    r.vec3(loaded.minBounds); r.vec3(loaded.maxBounds);
+    std::uint32_t geometryCount = 0; if (!r.count(geometryCount)) return false;
+    loaded.geometries.resize(geometryCount);
+    for (auto& geometry : loaded.geometries)
     {
-        if (expectedLodIndex < geometry.lods.size() && seen.count(geometry.id) == 0)
-        {
-            setError(error, "LOD payload is missing geometry id: " + geometry.id);
-            return false;
-        }
+        r.string(geometry.id); r.string(geometry.sourcePath);
+        std::uint8_t surface = 0; r.pod(surface); geometry.surfaceMode = static_cast<SurfaceMode>(surface);
+        readMeshLod(r, geometry.mesh);
     }
+    std::uint32_t nodeCount = 0; if (!r.count(nodeCount)) return false;
+    loaded.nodes.resize(nodeCount);
+    for (auto& node : loaded.nodes)
+    {
+        r.string(node.id); r.pod(node.parentIndex); r.pod(node.geometryIndex); r.pod(node.semanticNodeIndex);
+        readStrings(r, node.activeStates);
+        r.vec3(node.localPosition); r.vec3(node.localRotationDeg); r.vec3(node.pivot);
+        std::uint8_t enabled = 0; r.pod(enabled); node.enabled = enabled != 0;
+    }
+    if (!r.ok || !validateRenderLod(loaded, asset.nodes.size(), error))
+    {
+        if (r.ok && error && error->empty()) *error = "invalid render LOD graph";
+        else if (!r.ok) setError(error, "corrupt LOD payload: " + path.string());
+        return false;
+    }
+    asset.renderLods[expectedLodIndex] = std::move(loaded);
     return true;
 }
 
@@ -594,7 +1042,7 @@ bool readChunks(
     std::istream& file,
     std::uint32_t chunkCount,
     ModelAsset& result,
-    bool legacyV2,
+    std::uint32_t formatVersion,
     std::string* error)
 {
     for (std::uint32_t i = 0; i < chunkCount; ++i)
@@ -619,9 +1067,9 @@ bool readChunks(
         }
 
         ChunkReader readerFn = nullptr;
-        if (legacyV2)
+        if (formatVersion == 2u)
             readerFn = findLegacyChunkReader(id);
-        else if (const ChunkSpec* spec = findManifestChunk(id))
+        else if (const ChunkSpec* spec = findChunk(id, formatVersion >= 4u))
             readerFn = spec->reader;
         if (!readerFn)
             continue;
@@ -664,6 +1112,12 @@ std::filesystem::path ModelAssetBinary::lodPayloadPath(
     return packageLodPayloadPath(std::filesystem::path(manifestPath), lodIndex);
 }
 
+bool ModelAssetBinary::validate(const ModelAsset& asset, std::string* error)
+{
+    if (error) error->clear();
+    return validateSemanticAsset(asset, error);
+}
+
 bool ModelAssetBinary::saveManifest(
     const std::string& path,
     const ModelAsset& asset,
@@ -672,8 +1126,12 @@ bool ModelAssetBinary::saveManifest(
     if (error) error->clear();
     try
     {
-        if (!validateStableGeometryIds(asset, error))
+        if (asset.renderLods.empty())
+        {
+            setError(error, "v4 asset has no independent render LODs");
             return false;
+        }
+        if (!validateSemanticAsset(asset, error)) return false;
         const std::filesystem::path manifestPath(path);
         if (manifestPath.has_parent_path())
             std::filesystem::create_directories(manifestPath.parent_path());
@@ -685,17 +1143,17 @@ bool ModelAssetBinary::saveManifest(
             return false;
         }
 
-        file.write(ManifestMagicV3.data(), static_cast<std::streamsize>(ManifestMagicV3.size()));
+        file.write(ManifestMagicV4.data(), static_cast<std::streamsize>(ManifestMagicV4.size()));
         Writer header {file};
         header.pod(ModelAssetFormatVersion);
-        header.pod(static_cast<std::uint32_t>(ManifestChunks.size()));
+        header.pod(static_cast<std::uint32_t>(ManifestChunksV4.size()));
         if (!header.ok)
         {
             setError(error, "failed writing model asset manifest header");
             return false;
         }
 
-        for (const auto& chunk : ManifestChunks)
+        for (const auto& chunk : ManifestChunksV4)
         {
             std::ostringstream payload(std::ios::binary);
             Writer writer {payload};
@@ -728,11 +1186,11 @@ bool ModelAssetBinary::saveManifest(
 bool ModelAssetBinary::loadManifest(
     const std::string& path,
     ModelAsset& asset,
-    bool* legacyV2,
+    bool* legacyPackage,
     std::string* error)
 {
     if (error) error->clear();
-    if (legacyV2) *legacyV2 = false;
+    if (legacyPackage) *legacyPackage = false;
     std::ifstream file(path, std::ios::binary);
     if (!file)
     {
@@ -742,20 +1200,19 @@ bool ModelAssetBinary::loadManifest(
 
     std::array<char, 8> magic {};
     file.read(magic.data(), static_cast<std::streamsize>(magic.size()));
-    if (!file || (magic != ManifestMagicV3 && magic != LegacyMagicV2))
+    if (!file || (magic != ManifestMagicV4 && magic != ManifestMagicV3 && magic != LegacyMagicV2))
     {
         setError(error, "invalid model asset magic");
         return false;
     }
 
     Reader header {file};
-    std::uint32_t version = 0;
-    std::uint32_t chunkCount = 0;
-    header.pod(version);
-    header.pod(chunkCount);
-    const bool isLegacyV2 = magic == LegacyMagicV2 && version == 2u;
-    const bool splitV3 = magic == ManifestMagicV3 && version == ModelAssetFormatVersion;
-    if (!header.ok || (!isLegacyV2 && !splitV3) || chunkCount > 1024u)
+    std::uint32_t version = 0, chunkCount = 0;
+    header.pod(version); header.pod(chunkCount);
+    const bool isV4 = magic == ManifestMagicV4 && version == 4u;
+    const bool isV3 = magic == ManifestMagicV3 && version == 3u;
+    const bool isV2 = magic == LegacyMagicV2 && version == 2u;
+    if (!header.ok || (!isV4 && !isV3 && !isV2) || chunkCount > 1024u)
     {
         setError(error, "unsupported model asset version");
         return false;
@@ -763,17 +1220,20 @@ bool ModelAssetBinary::loadManifest(
 
     ModelAsset result;
     result.formatVersion = version;
-    if (!readChunks(file, chunkCount, result, isLegacyV2, error))
+    if (!readChunks(file, chunkCount, result, version, error))
         return false;
     if (result.assetId.empty())
     {
         setError(error, "model asset has no asset id");
         return false;
     }
-    if (!validateStableGeometryIds(result, error))
-        return false;
 
-    if (legacyV2) *legacyV2 = isLegacyV2;
+    if (isV4)
+    {
+        for (std::size_t i = 0; i < result.renderLods.size(); ++i)
+            result.renderLods[i].level = static_cast<std::uint32_t>(i);
+    }
+    if (legacyPackage) *legacyPackage = !isV4;
     asset = std::move(result);
     return true;
 }
@@ -838,30 +1298,46 @@ bool ModelAssetBinary::pruneStaleLods(
 bool ModelAssetBinary::save(const std::string& path, const ModelAsset& asset, std::string* error)
 {
     if (error) error->clear();
-    const std::size_t lodCount = maxLodCount(asset);
+    ModelAsset working = asset;
+    if (working.renderLods.empty())
+        buildIndependentRenderLodsFromLegacy(working);
+    working.formatVersion = ModelAssetFormatVersion;
+    const std::size_t lodCount = maxLodCount(working);
     for (std::size_t lodIndex = 0; lodIndex < lodCount; ++lodIndex)
-        if (!saveLod(path, asset, lodIndex, error))
+        if (!saveLod(path, working, lodIndex, error))
             return false;
 
     // Manifest is committed last: it never advertises a new package until all
     // payloads have been written successfully.
-    if (!saveManifest(path, asset, error))
+    if (!saveManifest(path, working, error))
         return false;
-    return pruneStaleLods(path, asset, error);
+    return pruneStaleLods(path, working, error);
 }
 
 bool ModelAssetBinary::load(const std::string& path, ModelAsset& asset, std::string* error)
 {
-    bool legacyV2 = false;
+    bool legacyPackage = false;
     ModelAsset result;
-    if (!loadManifest(path, result, &legacyV2, error))
+    if (!loadManifest(path, result, &legacyPackage, error))
         return false;
-    if (!legacyV2)
+
+    if (result.formatVersion == 3u)
     {
-        const std::size_t lodCount = maxLodCount(result);
-        for (std::size_t lodIndex = 0; lodIndex < lodCount; ++lodIndex)
-            if (!loadLod(path, result, lodIndex, error))
-                return false;
+        const std::size_t count = legacyRenderLodCount(result);
+        for (std::size_t lodIndex = 0; lodIndex < count; ++lodIndex)
+            if (!loadLod(path, result, lodIndex, error)) return false;
+        buildIndependentRenderLodsFromLegacy(result);
+        result.formatVersion = ModelAssetFormatVersion;
+    }
+    else if (result.formatVersion == 2u)
+    {
+        buildIndependentRenderLodsFromLegacy(result);
+        result.formatVersion = ModelAssetFormatVersion;
+    }
+    else
+    {
+        for (std::size_t lodIndex = 0; lodIndex < result.renderLods.size(); ++lodIndex)
+            if (!loadLod(path, result, lodIndex, error)) return false;
     }
     asset = std::move(result);
     return true;

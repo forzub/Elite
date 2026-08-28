@@ -46,6 +46,7 @@ endif()
 # offline-asset migration gate.
 add_library(EliteModelAsset STATIC
     src/model_asset/ModelAssetBinary.cpp
+    src/model_asset/ModelAssetMigration.cpp
 )
 target_include_directories(EliteModelAsset PUBLIC
     "${CMAKE_SOURCE_DIR}"

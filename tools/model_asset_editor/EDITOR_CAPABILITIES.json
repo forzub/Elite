@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "protected_capabilities": [
+    {
+      "id": "geometry_instance_fit",
+      "description": "Detect and consolidate baked rigid duplicates inside one render LOD.",
+      "contracts": {
+        "data_model": {"path": "src/model_asset/ModelAsset.h", "tokens": ["struct RenderGeometryDefinition", "struct RenderNode", "struct RenderLod"]},
+        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["fit_render_node_as_instance", "scan_render_duplicates", "fitGeometryAsRigidInstance"]},
+        "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["wizardGeometryScanBtn", "wizardGeometryCandidates", "fit_render_node_as_instance"]},
+        "test": {"path": "tests/model_asset/ModelAssetBinaryTests.cpp", "tokens": ["testRigidInstanceFitHandlesDegeneratePrincipalPlane", "fitGeometryAsRigidInstance"]}
+      }
+    },
+    {
+      "id": "independent_render_lods",
+      "description": "Each render LOD owns an independent graph and can be loaded/saved separately.",
+      "contracts": {
+        "data_model": {"path": "src/model_asset/ModelAsset.h", "tokens": ["struct RenderLod", "std::vector<RenderLod> renderLods"]},
+        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["load_lod", "save_lod", "unload_lod", "renderLods"]},
+        "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["renderLodManager", "model_editor.wizard.lods", "load_lod"]},
+        "test": {"path": "tests/model_asset/ModelAssetBinaryTests.cpp", "tokens": ["independent LOD1 payload", "saving LOD0 rewrote or changed independent LOD1 payload"]}
+      }
+    },
+    {
+      "id": "semantic_damage_states",
+      "description": "Semantic state, openings and repair data remain independent from render LOD.",
+      "contracts": {
+        "data_model": {"path": "src/model_asset/ModelAsset.h", "tokens": ["struct StateVariant", "struct Opening", "struct RepairTarget"]},
+        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["add_state_variant", "add_opening", "add_repair_target"]},
+        "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["renderStateVariants", "renderDamageSemantics"]},
+        "test": {"path": "tests/model_asset/ModelAssetBinaryTests.cpp", "tokens": ["breached", "RepairTarget"]}
+      }
+    },
+    {
+      "id": "source_reimport_read_only",
+      "description": "Reimport reads source OBJ/assembly without modifying it.",
+      "contracts": {
+        "data_model": {"path": "src/model_asset/MODEL_ASSET_PIPELINE.md", "tokens": ["Source OBJ/assembly files are read-only"]},
+        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["reimport_asset", "importRuntimeAssembly", "sourceFilesReadOnly"]},
+        "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["wizardSourceReimportBtn", "source OBJ", "reimport_asset"]},
+        "test": {"path": "tests/architecture_contracts/check_model_asset_editor.py", "tokens": ["source_reimport_read_only"]}
+      }
+    },
+    {
+      "id": "wizard_checkpoints",
+      "description": "Finished wizard stages create restorable non-production checkpoints in one linear history; later checkpoints are pruned when an earlier stage changes.",
+      "contracts": {
+        "data_model": {"path": "tools/model_asset_editor/ModelAssetEditorSession.h", "tokens": ["WizardStageState", "wizardCheckpointPath"]},
+        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["complete_wizard_stage", "restore_wizard_checkpoint", "pruneWizardAfter", "remove_all(wizardCheckpointPath"]},
+        "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["wizardCompleteBtn", "wizardRestoreBtn", "wizardBar"]},
+        "test": {"path": "tests/architecture_contracts/check_model_asset_editor.py", "tokens": ["wizard_checkpoints"]}
+      }
+    },
+    {
+      "id": "incremental_editor_sync",
+      "description": "Ordinary Web UI edits synchronize metadata without retransmitting unchanged mesh payloads or rebuilding GPU geometry buffers.",
+      "contracts": {
+        "data_model": {"path": "src/model_asset/MODEL_ASSET_PIPELINE.md", "tokens": ["Web UI synchronization is metadata-first", "must not retransmit unchanged vertices"]},
+        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["sendAssetMetadata", "serializeAsset(false)", "includeGeometryPayload", "asset_metadata"]},
+        "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["asset_metadata", "mergeAssetMetadata", "geometryCacheKey", "rebuildScene(true)"]},
+        "test": {"path": "tests/architecture_contracts/check_model_asset_editor.py", "tokens": ["incremental_editor_sync", "geometryPayloadIncluded"]}
+      }
+    }
+  ]
+}

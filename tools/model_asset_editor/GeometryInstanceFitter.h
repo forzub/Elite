@@ -25,12 +25,11 @@ struct GeometryInstanceFit
 };
 
 // Finds a proper rigid transform that maps reference geometry coordinates into
-// target geometry coordinates. The indexed path is kept as a cheap fast path.
-// Legacy OBJ copies with reordered vertices/triangles fall back to a
-// topology-independent LOD0 point-cloud alignment. LODs are independent
-// authored representations: LOD1/LOD2 topology never blocks LOD0 instance
-// identity. Consolidated nodes intentionally share the reference geometry's
-// complete LOD set.
+// target geometry coordinates. The indexed path is kept as a cheap fast path;
+// reordered OBJ vertices/triangles fall back to topology-independent point-cloud
+// alignment. In asset v4 the caller passes exactly one active RenderLod
+// representation, so instance identity is strictly LOD-local and this fitter
+// never creates or assumes a relationship with another render LOD.
 GeometryInstanceFit fitGeometryAsRigidInstance(
     const GeometryDefinition& reference,
     const GeometryDefinition& target);

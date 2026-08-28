@@ -40,10 +40,8 @@ int main()
         editor.set_title(std::string("Elite Model Asset Editor ") + elite::model_asset::editor::ModelAssetEditorVersion);
         editor.set_size(1600, 950, WEBVIEW_HINT_NONE);
 
-        server.setOnMessage([&session, &editor](const std::string& message) {
+        server.setOnMessage([&session](const std::string& message) {
             session.handleMessage(message);
-            if (session.quitRequested())
-                editor.terminate();
         });
 
         const std::string url = "http://localhost:" + std::to_string(port) +

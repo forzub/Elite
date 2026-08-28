@@ -6,10 +6,13 @@
 #include <iterator>
 #include <limits>
 #include <stdexcept>
+#include <set>
 #include <vector>
 
 #include "src/model_asset/ModelAsset.h"
+#include "src/model_asset/ModelAssetIdentity.h"
 #include "src/model_asset/ModelAssetBinary.h"
+#include "src/model_asset/ModelAssetMigration.h"
 #include "tools/model_asset_editor/NativeObjImporter.h"
 #include "tools/model_asset_editor/GeometryInstanceFitter.h"
 
@@ -335,7 +338,7 @@ void testRigidInstanceFitHandlesDegeneratePrincipalPlane()
     for (std::uint32_t i = 0; i < 8; ++i)
     {
         const std::uint32_t next = (i + 1) % 8;
-        lod.triangles.push_back({0, 1 + i, 1 + next, i, NoIndex, 0});
+        lod.triangles.push_back({0, 1 + i, 1 + next, static_cast<std::int32_t>(i), NoIndex, 0});
     }
     lod.minBounds = {0.0f,-1.0f,-1.0f};
     lod.maxBounds = {0.0f, 1.0f, 1.0f};
@@ -425,47 +428,20 @@ int main()
         asset.assetId = "station_test";
         asset.displayName = "Station Test";
         asset.sourceObjectType = 2;
-        asset.sourceBasis.preset = "blender_model";
-        asset.sourceBasis.up = AxisDirection::PositiveZ;
-        asset.sourceBasis.forward = AxisDirection::NegativeY;
+        asset.sourceBasis.preset = "game_current";
         asset.minBounds = {-10.0f, -20.0f, -30.0f};
         asset.maxBounds = {10.0f, 20.0f, 30.0f};
 
         MaterialDefinition material;
-        material.id = "emit_nav_red";
-        material.sourceName = "Emit.Nav.Red";
-        material.emissiveColor = {1.0f, 0.1f, 0.05f};
-        material.emissiveStrength = 2.0f;
+        material.id = "hull_outer";
+        material.sourceName = "Hull.Outer";
+        material.baseColor = {0.4f, 0.45f, 0.5f, 1.0f};
         asset.materials.push_back(material);
 
-        GeometryDefinition geometry;
-        geometry.id = "habitat_segment";
-        geometry.sourceLods = {"segment_lod0.obj", "segment_lod1.obj"};
-        geometry.surfaceMode = SurfaceMode::ThinTwoSided;
-        MeshLod lod;
-        lod.vertices = {
-            {{0,0,0},{0,1,0},{0,0}},
-            {{1,0,0},{0,1,0},{1,0}},
-            {{0,0,1},{0,1,0},{0,1}}
-        };
-        lod.triangles.push_back({0,1,2,7,0,42});
-        lod.edges.push_back({0,1,0,-1,EdgeBoundary,EdgeRenderElite});
-        geometry.lods.push_back(lod);
-        MeshLod independentLod1;
-        independentLod1.vertices = {
-            {{-2,0,0},{0,1,0},{0,0}},
-            {{ 2,0,0},{0,1,0},{1,0}},
-            {{ 0,0,3},{0,1,0},{0.5f,1}}
-        };
-        independentLod1.triangles.push_back({0,1,2,99,0,0});
-        independentLod1.minBounds = {-2.0f, 0.0f, 0.0f};
-        independentLod1.maxBounds = { 2.0f, 0.0f, 3.0f};
-        geometry.lods.push_back(independentLod1);
-        asset.geometries.push_back(geometry);
-
         Node a;
-        a.id = "segment_a";
-        a.geometryIndex = 0;
+        a.id = "habitat_a";
+        a.moduleId = "habitat";
+        a.defaultStateId = "intact";
         a.joint.type = JointType::Revolute;
         a.joint.axis = {0.0f, 1.0f, 0.0f};
         a.joint.defaultRateDegPerSec = 2.0f;
@@ -477,130 +453,321 @@ int main()
         a.physics.inertiaDiagonal = {4.0f, 5.0f, 6.0f};
         a.physics.inertiaProducts = {0.1f, 0.2f, 0.3f};
         asset.nodes.push_back(a);
-        Node b;
-        b.id = "segment_b";
-        b.geometryIndex = 0; // explicit instance of the same geometry definition
+
+        Node b = a;
+        b.id = "habitat_b";
         b.localRotationDeg = {0.0f, 120.0f, 0.0f};
         asset.nodes.push_back(b);
 
-        CollisionVolume box;
-        box.id = "hit.segment.box";
-        box.halfSize = {2.0f, 3.0f, 4.0f};
-        asset.collisionVolumes.push_back(box);
-        CollisionVolume capsule;
-        capsule.id = "hit.segment.capsule";
-        capsule.shape = CollisionShape::Capsule;
-        capsule.radius = 1.25f;
-        capsule.halfHeight = 3.5f;
-        capsule.localRotationDeg = {0.0f, 0.0f, 45.0f};
-        asset.collisionVolumes.push_back(capsule);
+        StateVariant breached;
+        breached.id = "breached";
+        breached.displayName = "Breached";
+        breached.nodeIndex = 1;
+        breached.transformOverride = true;
+        breached.localPosition = {0.15f, -0.02f, 0.08f};
+        breached.localRotationDeg = {3.0f, 120.0f, -1.0f};
+        breached.pivot = {-0.5f, 0.0f, 0.0f};
+        breached.physicsOverride = true;
+        breached.physics = b.physics;
+        breached.physics.massKg = 980.0f;
+        breached.detached = false;
+        asset.stateVariants.push_back(breached);
 
-        Socket socket;
-        socket.id = "light.nav.red";
-        socket.kind = "light_point";
-        socket.parentNodeIndex = 0;
-        socket.localPosition = {0.0f, 1.0f, 2.0f};
-        socket.light.type = LightType::Point;
-        socket.light.color = {1.0f, 0.0f, 0.0f};
-        socket.light.intensity = 12.0f;
-        socket.light.rangeMeters = 40.0f;
-        asset.sockets.push_back(socket);
+        CollisionVolume intactCollision;
+        intactCollision.id = "hit.habitat_b.intact";
+        intactCollision.parentNodeIndex = 1;
+        intactCollision.shape = CollisionShape::Box;
+        intactCollision.halfSize = {2.0f, 3.0f, 4.0f};
+        intactCollision.activeStates = {"intact"};
+        asset.collisionVolumes.push_back(intactCollision);
 
-        const auto path = std::filesystem::temp_directory_path() / "elite_model_asset_roundtrip.elmodel";
+        CollisionVolume breachedCollision = intactCollision;
+        breachedCollision.id = "hit.habitat_b.breached";
+        breachedCollision.halfSize = {1.2f, 3.0f, 4.0f};
+        breachedCollision.activeStates = {"breached"};
+        asset.collisionVolumes.push_back(breachedCollision);
+
+        Socket sparks;
+        sparks.id = "vfx.breach.sparks";
+        sparks.kind = "vfx";
+        sparks.parentNodeIndex = 1;
+        sparks.localPosition = {0.0f, 0.5f, 1.0f};
+        sparks.activeStates = {"breached"};
+        asset.sockets.push_back(sparks);
+
+        HitRegion hit;
+        hit.id = "damage.exposed_interior";
+        hit.parentNodeIndex = 1;
+        hit.activeStates = {"breached"};
+        hit.localPosition = {0.0f, 0.0f, 0.5f};
+        hit.halfSize = {1.0f, 1.5f, 1.0f};
+        asset.hitRegions.push_back(hit);
+
+        Opening opening;
+        opening.id = "breach.main";
+        opening.parentNodeIndex = 1;
+        opening.activeStates = {"breached"};
+        opening.localPosition = {0.0f, 0.0f, 1.0f};
+        opening.halfSize = {0.8f, 1.0f, 0.6f};
+        opening.traversable = true;
+        opening.lineOfFire = true;
+        asset.openings.push_back(opening);
+
+        RepairTarget repair;
+        repair.id = "repair.breach.main";
+        repair.kind = "hull_patch";
+        repair.parentNodeIndex = 1;
+        repair.activeStates = {"breached"};
+        repair.localPosition = {0.0f, 0.0f, 1.0f};
+        repair.repairedStateId = "intact";
+        asset.repairTargets.push_back(repair);
+
+        auto makeMesh = [](float scale, std::int32_t polygonId) {
+            MeshLod mesh;
+            mesh.vertices = {
+                {{0,0,0},{0,1,0},{0,0}},
+                {{scale,0,0},{0,1,0},{1,0}},
+                {{0,0,scale},{0,1,0},{0,1}}
+            };
+            mesh.triangles.push_back({0,1,2,polygonId,0,42});
+            mesh.edges.push_back({0,1,0,-1,EdgeBoundary,EdgeRenderElite});
+            mesh.minBounds = {0.0f, 0.0f, 0.0f};
+            mesh.maxBounds = {scale, 0.0f, scale};
+            return mesh;
+        };
+
+        // LOD0: detailed assembly. Two render nodes instance the same intact
+        // habitat geometry; the breached state substitutes a different mesh.
+        RenderLod lod0;
+        lod0.level = 0;
+        lod0.sourceKind = "source";
+        RenderGeometryDefinition detail;
+        detail.id = "habitat_detail";
+        detail.sourcePath = "assets/models/stations/LOD0/habitat.obj";
+        detail.surfaceMode = SurfaceMode::ThinTwoSided;
+        detail.mesh = makeMesh(1.0f, 7);
+        lod0.geometries.push_back(detail);
+        RenderGeometryDefinition breachGeometry;
+        breachGeometry.id = "habitat_breached_detail";
+        breachGeometry.sourcePath = "assets/models/stations/damage/habitat_breached.obj";
+        breachGeometry.mesh = makeMesh(1.25f, 8);
+        lod0.geometries.push_back(breachGeometry);
+        RenderNode ra;
+        ra.id = "habitat_a.render";
+        ra.geometryIndex = 0;
+        ra.semanticNodeIndex = 0;
+        lod0.nodes.push_back(ra);
+        RenderNode rb;
+        rb.id = "habitat_b.intact.render";
+        rb.geometryIndex = 0; // true LOD-local instance of habitat_a geometry
+        rb.semanticNodeIndex = 1;
+        rb.activeStates = {"intact"};
+        rb.localRotationDeg = {0.0f, 120.0f, 0.0f};
+        lod0.nodes.push_back(rb);
+        RenderNode rbDamaged = rb;
+        rbDamaged.id = "habitat_b.breached.render";
+        rbDamaged.geometryIndex = 1;
+        rbDamaged.activeStates = {"breached"};
+        lod0.nodes.push_back(rbDamaged);
+        asset.renderLods.push_back(lod0);
+
+        // LOD1: deliberately unrelated render graph: one welded shell.
+        RenderLod lod1;
+        lod1.level = 1;
+        lod1.sourceKind = "source";
+        RenderGeometryDefinition shell;
+        shell.id = "station_welded_shell";
+        shell.sourcePath = "assets/models/stations/LOD1/station_shell.obj";
+        shell.mesh = makeMesh(4.0f, 99);
+        lod1.geometries.push_back(shell);
+        RenderNode shellNode;
+        shellNode.id = "station_shell.render";
+        shellNode.geometryIndex = 0;
+        shellNode.semanticNodeIndex = NoIndex;
+        lod1.nodes.push_back(shellNode);
+        asset.renderLods.push_back(lod1);
+
+        // LOD2: a couple of coarse proxy primitives, again with no structural
+        // dependency on either LOD0 or LOD1.
+        RenderLod lod2;
+        lod2.level = 2;
+        lod2.sourceKind = "manual";
+        RenderGeometryDefinition proxyA;
+        proxyA.id = "proxy_core";
+        proxyA.mesh = makeMesh(8.0f, 200);
+        lod2.geometries.push_back(proxyA);
+        RenderGeometryDefinition proxyB;
+        proxyB.id = "proxy_ring";
+        proxyB.mesh = makeMesh(12.0f, 201);
+        lod2.geometries.push_back(proxyB);
+        RenderNode proxyNodeA;
+        proxyNodeA.id = "proxy_core.render";
+        proxyNodeA.geometryIndex = 0;
+        lod2.nodes.push_back(proxyNodeA);
+        RenderNode proxyNodeB;
+        proxyNodeB.id = "proxy_ring.render";
+        proxyNodeB.geometryIndex = 1;
+        lod2.nodes.push_back(proxyNodeB);
+        asset.renderLods.push_back(lod2);
+
+        const auto path = std::filesystem::temp_directory_path() / "elite_model_asset_v4_roundtrip.elmodel";
         std::string error;
         require(ModelAssetBinary::save(path.string(), asset, &error), error.c_str());
-
-        ModelAsset loaded;
-        require(ModelAssetBinary::load(path.string(), loaded, &error), error.c_str());
         const auto lod0Path = ModelAssetBinary::lodPayloadPath(path.string(), 0);
         const auto lod1Path = ModelAssetBinary::lodPayloadPath(path.string(), 1);
-        require(std::filesystem::exists(lod0Path), "v3 LOD0 payload was not written");
-        require(std::filesystem::exists(lod1Path), "v3 independent LOD1 payload was not written");
+        const auto lod2Path = ModelAssetBinary::lodPayloadPath(path.string(), 2);
+        require(std::filesystem::exists(lod0Path), "v4 LOD0 payload was not written");
+        require(std::filesystem::exists(lod1Path), "v4 LOD1 payload was not written");
+        require(std::filesystem::exists(lod2Path), "v4 LOD2 payload was not written");
 
-        // The editor/runtime can now open only the manifest and page individual
-        // LOD files in/out without reading or rewriting sibling representations.
         ModelAsset manifestOnly;
-        bool legacyV2 = true;
-        require(ModelAssetBinary::loadManifest(path.string(), manifestOnly, &legacyV2, &error), error.c_str());
-        require(!legacyV2, "v3 manifest was misclassified as legacy v2");
-        require(manifestOnly.geometries.size() == 1 && manifestOnly.geometries[0].lods.size() == 2,
-            "manifest did not preserve independent LOD descriptors");
-        require(manifestOnly.geometries[0].lods[0].vertices.empty() && manifestOnly.geometries[0].lods[1].vertices.empty(),
-            "manifest-only load eagerly pulled heavy mesh payloads");
+        bool legacyPackage = true;
+        require(ModelAssetBinary::loadManifest(path.string(), manifestOnly, &legacyPackage, &error), error.c_str());
+        require(!legacyPackage, "v4 manifest was misclassified as legacy");
+        require(manifestOnly.formatVersion == 4 && manifestOnly.renderLods.size() == 3,
+            "v4 manifest did not preserve render LOD descriptors");
+        require(manifestOnly.renderLods[0].geometries.empty() && manifestOnly.renderLods[1].geometries.empty(),
+            "manifest-only load eagerly pulled heavy render graphs");
         require(ModelAssetBinary::loadLod(path.string(), manifestOnly, 0, &error), error.c_str());
-        require(!manifestOnly.geometries[0].lods[0].vertices.empty() && manifestOnly.geometries[0].lods[1].vertices.empty(),
-            "LOD0-only load also loaded a sibling LOD");
+        require(manifestOnly.renderLods[0].geometries.size() == 2 && manifestOnly.renderLods[1].geometries.empty(),
+            "LOD0-only load also loaded sibling render graphs");
+        require(manifestOnly.renderLods[0].nodes[0].geometryIndex == manifestOnly.renderLods[0].nodes[1].geometryIndex,
+            "LOD0 render instancing was lost");
 
         const auto lod1Before = readFileBytes(lod1Path);
-        manifestOnly.geometries[0].lods[0].vertices[0].position.x += 0.125f;
+        manifestOnly.renderLods[0].geometries[0].mesh.vertices[0].position.x += 0.125f;
         require(ModelAssetBinary::saveLod(path.string(), manifestOnly, 0, &error), error.c_str());
         require(readFileBytes(lod1Path) == lod1Before,
-            "saving LOD0 rewrote or changed LOD1 payload");
+            "saving LOD0 rewrote or changed independent LOD1 payload");
 
         const auto lod0BeforeManifestSave = readFileBytes(lod0Path);
         manifestOnly.nodes[0].localPosition.x += 3.0f;
         require(ModelAssetBinary::saveManifest(path.string(), manifestOnly, &error), error.c_str());
         require(readFileBytes(lod0Path) == lod0BeforeManifestSave,
-            "saving manifest rewrote LOD0 payload");
+            "saving semantic manifest rewrote LOD0 payload");
         require(readFileBytes(lod1Path) == lod1Before,
-            "saving manifest rewrote LOD1 payload");
+            "saving semantic manifest rewrote LOD1 payload");
 
-        // LOD payload binding is by stable GeometryDefinition::id, never by the
-        // transient G# vector index. Reordering descriptors in memory must not
-        // cause geometry data to attach to the wrong semantic geometry.
-        ModelAsset stableIds = asset;
-        GeometryDefinition second = asset.geometries[0];
-        second.id = "antenna_segment";
-        second.lods[0].vertices[0].position.x = 77.0f;
-        stableIds.geometries.push_back(second);
-        const auto stablePath = std::filesystem::temp_directory_path() / "elite_model_asset_stable_id.elmodel";
-        require(ModelAssetBinary::save(stablePath.string(), stableIds, &error), error.c_str());
-        ModelAsset stableManifest;
-        require(ModelAssetBinary::loadManifest(stablePath.string(), stableManifest, nullptr, &error), error.c_str());
-        std::swap(stableManifest.geometries[0], stableManifest.geometries[1]);
-        require(ModelAssetBinary::loadLod(stablePath.string(), stableManifest, 0, &error), error.c_str());
-        require(stableManifest.geometries[0].id == "antenna_segment" && near(stableManifest.geometries[0].lods[0].vertices[0].position.x, 77.0f),
-            "LOD payload depended on transient geometry vector index instead of stable id");
-        std::filesystem::remove(stablePath);
-        std::filesystem::remove(ModelAssetBinary::lodPayloadPath(stablePath.string(), 0));
-        std::filesystem::remove(ModelAssetBinary::lodPayloadPath(stablePath.string(), 1));
+        ModelAsset loaded;
+        require(ModelAssetBinary::load(path.string(), loaded, &error), error.c_str());
+        require(loaded.assetId == asset.assetId, "asset id lost");
+        require(loaded.nodes.size() == 2 && loaded.nodes[0].geometryIndex == NoIndex,
+            "semantic nodes retained a render-LOD geometry dependency");
+        require(loaded.stateVariants.size() == 1 && loaded.stateVariants[0].id == "breached",
+            "semantic damage state lost");
+        require(loaded.stateVariants[0].transformOverride && near(loaded.stateVariants[0].localPosition.x, 0.15f) &&
+                near(loaded.stateVariants[0].pivot.x, -0.5f),
+            "state transform/pivot override lost");
+        require(loaded.stateVariants[0].physicsOverride && near(loaded.stateVariants[0].physics.massKg, 980.0f),
+            "state rigid-body override lost");
+        require(loaded.collisionVolumes.size() == 2 && loaded.collisionVolumes[1].activeStates.size() == 1 &&
+                loaded.collisionVolumes[1].activeStates[0] == "breached",
+            "state-scoped collision lost");
+        require(loaded.hitRegions.size() == 1 && loaded.hitRegions[0].activeStates[0] == "breached",
+            "state-scoped hit region lost");
+        require(loaded.openings.size() == 1 && loaded.openings[0].traversable && loaded.openings[0].lineOfFire,
+            "breach opening semantics lost");
+        require(loaded.repairTargets.size() == 1 && loaded.repairTargets[0].repairedStateId == "intact",
+            "repair target semantics lost");
+        require(loaded.renderLods.size() == 3, "independent render LOD count changed");
+        require(loaded.renderLods[0].geometries.size() == 2 && loaded.renderLods[0].nodes.size() == 3,
+            "detailed LOD0 render graph lost");
+        require(loaded.renderLods[0].nodes[0].geometryIndex == loaded.renderLods[0].nodes[1].geometryIndex,
+            "LOD-local geometry instancing was expanded or lost");
+        require(loaded.renderLods[1].geometries.size() == 1 && loaded.renderLods[1].nodes.size() == 1 &&
+                loaded.renderLods[1].geometries[0].id == "station_welded_shell",
+            "unrelated welded LOD1 graph was forced into LOD0 structure");
+        require(loaded.renderLods[2].geometries.size() == 2 && loaded.renderLods[2].nodes.size() == 2,
+            "coarse LOD2 proxy graph was lost");
+
+        // Legacy v2/v3-style shared geometry migrates once into independent
+        // render graphs; after migration each LOD can diverge freely.
+        ModelAsset legacy;
+        legacy.assetId = "legacy_station";
+        GeometryDefinition legacyGeometry;
+        legacyGeometry.id = "legacy_habitat";
+        legacyGeometry.sourceLods = {"lod0.obj", "lod1.obj"};
+        legacyGeometry.lods = {makeMesh(1.0f, 1), makeMesh(3.0f, 2)};
+        legacy.geometries.push_back(legacyGeometry);
+        Node legacyA; legacyA.id = "legacy_a"; legacyA.geometryIndex = 0;
+        Node legacyB; legacyB.id = "legacy_b"; legacyB.geometryIndex = 0; legacyB.localRotationDeg = {0.0f, 120.0f, 0.0f};
+        legacy.nodes = {legacyA, legacyB};
+        buildIndependentRenderLodsFromLegacy(legacy);
+        require(legacy.renderLods.size() == 2, "legacy migration did not create one independent graph per LOD");
+        require(legacy.renderLods[0].geometries.size() == 1 && legacy.renderLods[1].geometries.size() == 1,
+            "legacy migration did not split per-LOD geometry pools");
+        require(legacy.renderLods[0].nodes.size() == 2 && legacy.renderLods[1].nodes.size() == 2,
+            "legacy migration did not seed per-LOD render hierarchies");
+        require(legacy.renderLods[0].nodes[0].geometryIndex == legacy.renderLods[0].nodes[1].geometryIndex,
+            "legacy instance relation was not preserved inside migrated LOD0");
+        require(legacy.nodes[0].geometryIndex == NoIndex && legacy.nodes[1].geometryIndex == NoIndex,
+            "legacy render binding leaked into semantic nodes after migration");
+
+        // Stable source identity: a module and its child mesh are allowed to use
+        // the same source-facing name, but they must not become the same Node ID.
+        std::set<std::string> stationNodeIds {"station_solar_panels"};
+        const auto solarMeshId = allocateChildStableId(
+            "station_solar_panels", "station_solar_panels", "mesh", stationNodeIds);
+        require(solarMeshId == "station_solar_panels.mesh",
+            "moduleId == meshId did not receive deterministic child-qualified identity");
+        stationNodeIds.insert(solarMeshId);
+        require(allocateChildStableId(
+            "station_solar_panels", "station_solar_panels", "mesh", stationNodeIds) ==
+            "station_solar_panels.mesh.2",
+            "repeated child identity did not receive deterministic numeric suffix");
+
+        // Legacy assets may already contain duplicate semantic IDs. Migration must
+        // repair those before copying semantic identity into independent RenderNodes.
+        ModelAsset legacyDuplicateIds;
+        legacyDuplicateIds.assetId = "legacy_duplicate_ids";
+        GeometryDefinition duplicateGeometry = legacyGeometry;
+        duplicateGeometry.lods.resize(1);
+        duplicateGeometry.sourceLods.resize(1);
+        legacyDuplicateIds.geometries.push_back(duplicateGeometry);
+        Node duplicateModule; duplicateModule.id = "station_solar_panels";
+        Node duplicateMesh; duplicateMesh.id = "station_solar_panels"; duplicateMesh.parentIndex = 0; duplicateMesh.geometryIndex = 0;
+        legacyDuplicateIds.nodes = {duplicateModule, duplicateMesh};
+        buildIndependentRenderLodsFromLegacy(legacyDuplicateIds);
+        require(legacyDuplicateIds.nodes[0].id == "station_solar_panels" &&
+                legacyDuplicateIds.nodes[1].id == "station_solar_panels.2",
+            "legacy migration did not deterministically repair duplicate semantic Node IDs");
+        require(legacyDuplicateIds.renderLods[0].nodes[0].id == "station_solar_panels" &&
+                legacyDuplicateIds.renderLods[0].nodes[1].id == "station_solar_panels.2",
+            "legacy migration copied duplicate semantic IDs into LOD0 RenderNodes");
+        error.clear();
+        require(ModelAssetBinary::validate(legacyDuplicateIds, &error),
+            "legacy duplicate-ID repair still produced an invalid v4 asset");
+
+        // Preflight diagnostics must identify the actual duplicate and both indices.
+        ModelAsset invalidRenderIds = loaded;
+        invalidRenderIds.renderLods[0].nodes[1].id = invalidRenderIds.renderLods[0].nodes[0].id;
+        const std::string duplicateRenderId = invalidRenderIds.renderLods[0].nodes[0].id;
+        error.clear();
+        require(!ModelAssetBinary::validate(invalidRenderIds, &error),
+            "duplicate RenderNode ID unexpectedly passed v4 preflight");
+        require(error.find("LOD0 duplicate RenderNode id '") != std::string::npos &&
+                error.find(duplicateRenderId) != std::string::npos &&
+                error.find("node[0]") != std::string::npos && error.find("node[1]") != std::string::npos,
+            "duplicate RenderNode diagnostic does not identify ID and both indices");
+
+        ModelAsset invalidSemanticIds = loaded;
+        invalidSemanticIds.nodes[1].id = invalidSemanticIds.nodes[0].id;
+        error.clear();
+        require(!ModelAssetBinary::validate(invalidSemanticIds, &error),
+            "duplicate semantic Node ID unexpectedly passed v4 preflight");
+        require(error.find("duplicate semantic Node id '") != std::string::npos &&
+                error.find("node[0]") != std::string::npos && error.find("node[1]") != std::string::npos,
+            "duplicate semantic Node diagnostic does not identify both indices");
 
         ModelAsset oneLod = loaded;
-        oneLod.geometries[0].lods.resize(1);
+        oneLod.renderLods.resize(1);
         require(ModelAssetBinary::save(path.string(), oneLod, &error), error.c_str());
-        require(!std::filesystem::exists(lod1Path), "stale LOD1 payload survived a one-LOD save");
+        require(!std::filesystem::exists(lod1Path) && !std::filesystem::exists(lod2Path),
+            "stale render LOD payloads survived a reduced-LOD save");
+
         std::filesystem::remove(path);
         std::filesystem::remove(lod0Path);
-
-        require(loaded.assetId == asset.assetId, "asset id lost");
-        require(loaded.sourceBasis.preset == "blender_model" && loaded.sourceBasis.up == AxisDirection::PositiveZ,
-            "source basis metadata lost");
-        require(loaded.materials.size() == 1 && loaded.materials[0].id == "emit_nav_red" && near(loaded.materials[0].emissiveStrength, 2.0f),
-            "material semantic id/emissive data lost");
-        require(loaded.geometries.size() == 1, "geometry count changed");
-        require(loaded.geometries[0].sourceLods.size() == 2 && loaded.geometries[0].sourceLods[1] == "segment_lod1.obj",
-            "independent LOD source metadata lost");
-        require(loaded.geometries[0].lods.size() == 2 && loaded.geometries[0].lods[1].triangles.size() == 1 && near(loaded.geometries[0].lods[1].maxBounds.z, 3.0f),
-            "independent LOD1 mesh payload lost");
-        require(loaded.geometries[0].lods[0].triangles[0].materialIndex == 0 && loaded.geometries[0].lods[0].triangles[0].smoothingGroupId == 42,
-            "triangle material/smoothing data lost");
-        require(loaded.nodes.size() == 2, "node count changed");
-        require(loaded.nodes[0].geometryIndex == loaded.nodes[1].geometryIndex,
-            "geometry instancing was expanded or lost");
-        require(loaded.nodes[0].joint.type == JointType::Revolute && loaded.nodes[0].joint.breakable,
-            "joint/break metadata lost");
-        require(loaded.nodes[0].physics.mode == MassPropertyMode::Manual && near(loaded.nodes[0].physics.massKg, 1200.0f) && near(loaded.nodes[0].physics.inertiaProducts.z, 0.3f),
-            "rigid mass properties lost");
-        require(loaded.geometries[0].surfaceMode == SurfaceMode::ThinTwoSided,
-            "thin-surface mode lost");
-        require(loaded.geometries[0].lods[0].edges[0].renderMask == EdgeRenderElite,
-            "edge render mask lost");
-        require(loaded.collisionVolumes.size() == 2 && loaded.collisionVolumes[1].shape == CollisionShape::Capsule && near(loaded.collisionVolumes[1].halfHeight, 3.5f),
-            "compound collision primitives lost");
-        require(loaded.sockets.size() == 1 && loaded.sockets[0].light.type == LightType::Point && near(loaded.sockets[0].light.intensity, 12.0f),
-            "typed light anchor lost");
-
-        std::cout << "[PASS] model asset v3 manifest + independently editable stable-id LOD payloads preserve asset semantics\n";
+        std::cout << "[PASS] model asset v4 semantic states + independent render LOD graphs preserve damage/repair semantics\n";
         return 0;
     }
     catch (const std::exception& ex)

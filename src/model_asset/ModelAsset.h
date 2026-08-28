@@ -9,7 +9,7 @@
 namespace elite::model_asset
 {
 
-constexpr std::uint32_t ModelAssetFormatVersion = 3;
+constexpr std::uint32_t ModelAssetFormatVersion = 4;
 constexpr std::int32_t NoIndex = -1;
 
 enum class SurfaceMode : std::uint8_t
@@ -136,18 +136,26 @@ struct MeshLod
     glm::vec3 maxBounds {0.0f};
 };
 
+// Legacy v2/v3 authoring representation. New v4 assets do not require one
+// GeometryDefinition to exist in every LOD; this container is retained only for
+// source import and migration of old packages.
 struct GeometryDefinition
 {
-    // Stable semantic geometry id. UI labels such as G0/G1 are transient vector
-    // indices only; external .elmesh payloads bind to this id so LOD files can
-    // be saved/reloaded independently without depending on geometry order.
     std::string id;
-    // Source files are metadata only and align by index with lods when the LOD
-    // originated from an imported source mesh. Generated LODs may leave the
-    // corresponding entry empty. LOD representations are otherwise independent.
     std::vector<std::string> sourceLods;
     SurfaceMode surfaceMode = SurfaceMode::Closed;
     std::vector<MeshLod> lods;
+};
+
+// One geometry inside one render LOD. Unlike legacy GeometryDefinition this has
+// exactly one mesh representation and does not imply any relationship to a
+// geometry in another LOD.
+struct RenderGeometryDefinition
+{
+    std::string id;
+    std::string sourcePath;
+    SurfaceMode surfaceMode = SurfaceMode::Closed;
+    MeshLod mesh;
 };
 
 // Resolved rigid-body properties are authored offline. Runtime must never need
@@ -186,7 +194,10 @@ struct Node
     std::string id;
     std::string moduleId;
     std::int32_t parentIndex = NoIndex;
+    // Legacy v2/v3 render binding only. v4 render bindings live in RenderNode
+    // inside each independent RenderLod.
     std::int32_t geometryIndex = NoIndex;
+    std::string defaultStateId = "intact";
 
     glm::vec3 localPosition {0.0f};
     glm::vec3 localRotationDeg {0.0f};
@@ -195,6 +206,65 @@ struct Node
     NodeJoint joint;
     RigidBodyProperties physics;
     bool enabled = true;
+};
+
+
+
+// Optional semantic state of one assembly part. Simulation owns the current
+// state id; the asset describes what changes when that state is active. A state
+// transition is a single semantic switch: runtime must select state-scoped
+// render bindings, collision, hit regions, openings, sockets and repair targets
+// atomically on the same simulation tick. A state may override the part
+// transform/pivot (for a bent or partially detached section) without forcing it
+// to become a separate world actor. Full detach is represented explicitly by
+// detached=true.
+struct StateVariant
+{
+    std::string id;
+    std::string displayName;
+    std::int32_t nodeIndex = NoIndex;
+
+    bool transformOverride = false;
+    glm::vec3 localPosition {0.0f};
+    glm::vec3 localRotationDeg {0.0f};
+    glm::vec3 pivot {0.0f};
+
+    bool physicsOverride = false;
+    RigidBodyProperties physics;
+    bool detached = false;
+    bool enabled = true;
+};
+
+// Render graph node local to one LOD. Different LODs may have completely
+// different node counts, hierarchy, geometry pools and instancing. A render
+// node can optionally bind to a semantic Node and to one or more semantic state
+// ids. Empty activeStates means the render node is state-independent.
+struct RenderNode
+{
+    std::string id;
+    std::int32_t parentIndex = NoIndex;
+    std::int32_t geometryIndex = NoIndex;
+    std::int32_t semanticNodeIndex = NoIndex;
+    std::vector<std::string> activeStates;
+
+    glm::vec3 localPosition {0.0f};
+    glm::vec3 localRotationDeg {0.0f};
+    glm::vec3 pivot {0.0f};
+    bool enabled = true;
+};
+
+// Each render LOD is an independent visual document. LOD0 may be a detailed
+// assembly with instances, LOD1 a welded shell, and distant LODs may be a few
+// coarse primitives. No G-index or topology dependency crosses LOD boundaries.
+struct RenderLod
+{
+    std::uint32_t level = 0;
+    std::string sourceKind = "source"; // source / generated / manual
+    std::int32_t generatedFromLod = NoIndex;
+    glm::vec3 minBounds {0.0f};
+    glm::vec3 maxBounds {0.0f};
+    std::vector<RenderGeometryDefinition> geometries;
+    std::vector<RenderNode> nodes;
 };
 
 struct CollisionVolume
@@ -210,6 +280,9 @@ struct CollisionVolume
     float radius = 0.5f;
     float halfHeight = 0.5f; // Capsule cylindrical half-length; local +Y axis.
 
+    // Empty means active in every semantic state. For destructive variants,
+    // intact and breached collision sets can coexist and switch atomically.
+    std::vector<std::string> activeStates;
     bool enabled = true;
 };
 
@@ -237,7 +310,52 @@ struct Socket
     glm::vec3 localRotationDeg {0.0f};
     glm::vec3 extent {0.0f};
     LightProperties light;
+    std::vector<std::string> activeStates;
 
+    bool enabled = true;
+};
+
+
+
+// State-scoped damage target. It is intentionally separate from collision so
+// gameplay can map health/repair logic to a semantic region without making the
+// renderer or physics own damage state.
+struct HitRegion
+{
+    std::string id;
+    std::int32_t parentNodeIndex = NoIndex;
+    std::vector<std::string> activeStates;
+    glm::vec3 localPosition {0.0f};
+    glm::vec3 localRotationDeg {0.0f};
+    glm::vec3 halfSize {0.5f};
+    bool enabled = true;
+};
+
+// Explicit traversable/line-of-fire opening created by a state such as
+// "breached". Collision still determines exact physical contact; this semantic
+// portal lets navigation, sensors and gameplay reason about the new hole.
+struct Opening
+{
+    std::string id;
+    std::int32_t parentNodeIndex = NoIndex;
+    std::vector<std::string> activeStates;
+    glm::vec3 localPosition {0.0f};
+    glm::vec3 localRotationDeg {0.0f};
+    glm::vec3 halfSize {0.5f};
+    bool traversable = true;
+    bool lineOfFire = true;
+    bool enabled = true;
+};
+
+struct RepairTarget
+{
+    std::string id;
+    std::string kind;
+    std::int32_t parentNodeIndex = NoIndex;
+    std::vector<std::string> activeStates;
+    glm::vec3 localPosition {0.0f};
+    glm::vec3 localRotationDeg {0.0f};
+    std::string repairedStateId;
     bool enabled = true;
 };
 
@@ -254,10 +372,22 @@ struct ModelAsset
     glm::vec3 maxBounds {0.0f};
 
     std::vector<MaterialDefinition> materials;
-    std::vector<GeometryDefinition> geometries;
+
+    // Semantic/gameplay assembly shared by every visual representation.
     std::vector<Node> nodes;
+    std::vector<StateVariant> stateVariants;
     std::vector<CollisionVolume> collisionVolumes;
     std::vector<Socket> sockets;
+    std::vector<HitRegion> hitRegions;
+    std::vector<Opening> openings;
+    std::vector<RepairTarget> repairTargets;
+
+    // Independent render documents. Their hierarchy/geometry/instances do not
+    // need to correspond across LOD levels.
+    std::vector<RenderLod> renderLods;
+
+    // Migration-only v2/v3 source representation. New v4 saves ignore this.
+    std::vector<GeometryDefinition> geometries;
 };
 
 } // namespace elite::model_asset

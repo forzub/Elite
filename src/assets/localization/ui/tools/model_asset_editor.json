@@ -1553,18 +1553,18 @@
       "ja": "工程完了 + チェックポイント"
     },
     "model_editor.wizard.restore": {
-      "en": "RESTORE CHECKPOINT",
-      "ru": "ВОССТАНОВИТЬ КОНТРОЛЬНУЮ ТОЧКУ",
-      "zh-Hans": "恢复检查点",
-      "es": "RESTAURAR PUNTO DE CONTROL",
-      "ja": "チェックポイント復元"
+      "en": "RESTORE LAST CHECKPOINT",
+      "ru": "ВОССТАНОВИТЬ ПОСЛЕДНЮЮ КОНТРОЛЬНУЮ ТОЧКУ",
+      "zh-Hans": "恢复上次检查点",
+      "es": "RESTAURAR ÚLTIMO PUNTO DE CONTROL",
+      "ja": "最後のチェックポイントを復元"
     },
     "model_editor.wizard.restore_confirm": {
-      "en": "Restore this checkpoint into editor memory? Production binary and source OBJ remain unchanged.",
-      "ru": "Восстановить эту контрольную точку в память редактора? Готовый binary и исходные OBJ останутся без изменений.",
-      "zh-Hans": "将此检查点恢复到编辑器内存？正式二进制包和源 OBJ 不会改变。",
-      "es": "¿Restaurar este punto de control en la memoria del editor? El binario de producción y los OBJ fuente no cambiarán.",
-      "ja": "このチェックポイントをエディターのメモリへ復元しますか？本番バイナリとソース OBJ は変更されません。"
+      "en": "Return editor memory to the exact state saved at the last checkpoint for this stage? Changes made after that checkpoint will be discarded and later-stage checkpoints will be removed. Source OBJ and the production package remain unchanged until an explicit save.",
+      "ru": "Вернуть редактор в точное состояние, сохранённое в последней контрольной точке этого этапа? Все изменения после неё будут отброшены, а контрольные точки более поздних этапов удалены. Исходные OBJ и production-пакет не изменятся до явного сохранения.",
+      "zh-Hans": "将编辑器恢复到本阶段上次检查点保存的精确状态？该检查点之后的更改将被丢弃，后续阶段的检查点将被删除。源 OBJ 和正式包在显式保存前不会改变。",
+      "es": "¿Volver al estado exacto guardado en el último punto de control de esta etapa? Se descartarán los cambios posteriores y se eliminarán los puntos de control de etapas posteriores. Los OBJ fuente y el paquete de producción no cambiarán hasta guardar explícitamente.",
+      "ja": "この工程で最後に保存したチェックポイントの正確な状態へ戻しますか？それ以降の変更は破棄され、後続工程のチェックポイントは削除されます。明示的に保存するまでソース OBJ と本番パッケージは変更されません。"
     },
     "model_editor.wizard.completed_notice": {
       "en": "Checkpoint saved",
@@ -2107,13 +2107,25 @@
       "en": "Validates the current stage, writes an internal restorable checkpoint and unlocks the next implemented stage. Production files are not overwritten.",
       "ru": "Проверяет текущий этап, сохраняет внутреннюю восстанавливаемую контрольную точку и открывает следующий реализованный этап. Production-файлы не перезаписываются."
     },
+    "model_editor.wizard.complete_current_tip.title": {
+      "en": "Checkpoint is current",
+      "ru": "Контрольная точка актуальна"
+    },
+    "model_editor.wizard.complete_current_tip.desc": {
+      "en": "No changes have been made in this stage since the last checkpoint. The button becomes active as soon as this stage changes.",
+      "ru": "После последней контрольной точки этот этап не менялся. Кнопка станет активной сразу после изменения этапа."
+    },
+    "model_editor.wizard.checkpoint_current": {
+      "en": "Checkpoint is current: this stage has no changes since it was recorded.",
+      "ru": "Контрольная точка актуальна: после её записи этот этап не изменялся."
+    },
     "model_editor.wizard.restore_tip.title": {
-      "en": "Restore checkpoint",
-      "ru": "Восстановить контрольную точку"
+      "en": "Restore last checkpoint",
+      "ru": "Восстановить последнюю контрольную точку"
     },
     "model_editor.wizard.restore_tip.desc": {
-      "en": "Loads this stage checkpoint back into editor memory. Source OBJ and production package remain unchanged.",
-      "ru": "Возвращает контрольную точку этапа в память редактора. Исходные OBJ и production-пакет не изменяются."
+      "en": "Returns the editor to the exact state stored when this stage was last completed. Changes made after that checkpoint are discarded and later-stage checkpoints are pruned. Source OBJ and the production package are not changed until Save.",
+      "ru": "Возвращает редактор в точное состояние, сохранённое при последнем завершении этого этапа. Изменения после этой точки отбрасываются, более поздние контрольные точки удаляются. Исходные OBJ и production-пакет не меняются до сохранения."
     },
     "model_editor.wizard.source.reimport_tip.title": {
       "en": "Reimport source",
@@ -2162,6 +2174,114 @@
     "model_editor.radial.cancel_tip.desc": {
       "en": "Closes this dialog without changing the asset.",
       "ru": "Закрывает окно без изменений asset."
+    },
+    "model_editor.geometry_inspector.variants": {
+      "en": "Replacement variants",
+      "ru": "Варианты замены"
+    },
+    "model_editor.geometry_inspector.variants_help": {
+      "en": "Variants are independent source meshes. Check which ones may replace the selected intact geometry. This is authoring compatibility only; the later DAMAGE stage decides when and why a replacement is selected.",
+      "ru": "Варианты — независимые исходные меши. Галочками укажите, какие из них могут заменять выбранную целую геометрию. Это только совместимость; позже этап DAMAGE определит, когда и по какой причине выбирать конкретную замену."
+    },
+    "model_editor.geometry_inspector.variant_replace_tip": {
+      "en": "Allow this variant to replace the selected intact geometry.",
+      "ru": "Разрешить этому варианту заменять выбранную целую геометрию."
+    },
+    "model_editor.geometry_inspector.variant_intact": {
+      "en": "Authored / intact",
+      "ru": "Основной / целый"
+    },
+    "model_editor.geometry_variants.refresh": {
+      "en": "Refresh additional LOD meshes",
+      "ru": "Обновить дополнительные меши LOD"
+    },
+    "model_editor.geometry_variants.refresh_tip.title": {
+      "en": "Refresh additional LOD meshes",
+      "ru": "Обновить дополнительные меши LOD"
+    },
+    "model_editor.geometry_variants.refresh_tip.desc": {
+      "en": "Recursively scans every OBJ anywhere under each loaded LOD directory. Registered default source OBJ files are ignored; every other OBJ is imported as an additional mesh. Folder and file names carry no authoring meaning.",
+      "ru": "Рекурсивно просматривает все OBJ во всём дереве каждого загруженного LOD. Зарегистрированные основные OBJ пропускаются; любой другой OBJ импортируется как дополнительный меш. Имена файлов и папок не несут авторского смысла."
+    },
+    "model_editor.geometry_variants.command.refresh": {
+      "en": "Refresh additional LOD meshes",
+      "ru": "Обновить дополнительные меши LOD"
+    },
+    "model_editor.geometry_variants.command.set_replacement": {
+      "en": "Change additional mesh compatibility",
+      "ru": "Изменить совместимость дополнительного меша"
+    },
+    "model_editor.geometry_variants.assignment": {
+      "en": "Additional mesh replacements",
+      "ru": "Замены дополнительными мешами"
+    },
+    "model_editor.geometry_variants.assignment_help": {
+      "en": "Select one additional mesh above. Below, check which default geometry families it may replace. Preview is temporary and may be used before compatibility is checked; DAMAGE later decides why a replacement happens.",
+      "ru": "Выберите один дополнительный меш в верхней таблице. Ниже галочками отметьте, какие основные геометрии он может заменять. Предпросмотр временный и работает до назначения совместимости; позже этап DAMAGE определит причину конкретной замены."
+    },
+    "model_editor.geometry_variants.extra_table": {
+      "en": "Additional meshes",
+      "ru": "Дополнительные меши"
+    },
+    "model_editor.geometry_variants.base_table": {
+      "en": "May replace default meshes",
+      "ru": "Может заменять основные меши"
+    },
+    "model_editor.geometry_variants.extra_mesh": {
+      "en": "Additional mesh",
+      "ru": "Допмеш"
+    },
+    "model_editor.geometry_variants.default_mesh": {
+      "en": "Default mesh",
+      "ru": "Основной меш"
+    },
+    "model_editor.geometry_variants.allow": {
+      "en": "Allow",
+      "ru": "Можно"
+    },
+    "model_editor.geometry_variants.preview": {
+      "en": "View",
+      "ru": "Вид"
+    },
+    "model_editor.geometry_variants.extra": {
+      "en": "Extra",
+      "ru": "Допмеш"
+    },
+    "model_editor.geometry_variants.instances": {
+      "en": "instances",
+      "ru": "экз."
+    },
+    "model_editor.geometry_variants.none": {
+      "en": "No additional OBJ meshes loaded for this LOD. Press Refresh after placing OBJ files anywhere under the LOD directory.",
+      "ru": "Для этого LOD дополнительные OBJ пока не загружены. Положите OBJ в любую папку внутри каталога LOD и нажмите «Обновить дополнительные меши LOD»."
+    },
+    "model_editor.geometry_variants.original": {
+      "en": "Original",
+      "ru": "Основной"
+    },
+    "model_editor.geometry_variants.original_tip.title": {
+      "en": "Restore original preview",
+      "ru": "Вернуть основной меш"
+    },
+    "model_editor.geometry_variants.original_tip.desc": {
+      "en": "Turns off the temporary additional-mesh preview. This does not modify the asset.",
+      "ru": "Выключает временный просмотр дополнительного меша и возвращает основной. Asset при этом не изменяется."
+    },
+    "model_editor.geometry_variants.preview_on": {
+      "en": "Temporarily show this additional mesh on one representative instance.",
+      "ru": "Временно показать выбранный дополнительный меш на одном экземпляре основной геометрии."
+    },
+    "model_editor.geometry_variants.preview_off": {
+      "en": "Click again to restore the original mesh.",
+      "ru": "Нажмите ещё раз, чтобы вернуть основной меш."
+    },
+    "model_editor.geometry_compare.unused_label": {
+      "en": "Unused ordinary geometry",
+      "ru": "Неиспользуемая обычная геометрия"
+    },
+    "model_editor.geometry_compare.unused_none": {
+      "en": "Nothing to delete in the active LOD.",
+      "ru": "В активном LOD удалять нечего."
     }
   }
 }

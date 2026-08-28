@@ -74,6 +74,7 @@ private:
     std::filesystem::path wizardWorkspacePath() const;
     std::filesystem::path wizardStatePath() const;
     std::filesystem::path wizardCheckpointPath(const std::string& stage) const;
+    std::filesystem::path latestWizardCheckpoint(std::string* stage = nullptr) const;
     void loadWizardState();
     bool writeWizardState() const;
     void invalidateWizardFrom(const std::string& stage);
@@ -84,6 +85,23 @@ private:
         std::size_t lodIndex,
         std::size_t referenceRenderNodeIndex = std::size_t(-1),
         const std::vector<std::size_t>& targetRenderNodeIndices = {});
+    bool refreshSourceVariants();
+    bool setSourceVariantReplacement(
+        std::size_t lodIndex,
+        const std::string& variantId,
+        const std::string& baseVisualId,
+        bool allowed);
+    std::vector<std::string> sourceVariantReplacementIds(
+        const std::string& variantId) const;
+    void reconcileAuthoringVisualRegistry();
+    std::string sourceVariantAuthoringId(
+        std::size_t lodIndex,
+        const RenderGeometryDefinition& geometry) const;
+    std::string baseVisualId(
+        std::size_t lodIndex,
+        const std::string& geometryId) const;
+    std::string allocateBaseVisualId();
+    std::string allocateSourceVariantId();
     nlohmann::json serializeWizard() const;
 
     nlohmann::json serializeAsset(bool includeGeometryPayload = true) const;
@@ -107,6 +125,16 @@ private:
     bool m_manifestDirty = false;
     std::vector<LodEditState> m_lodState;
     std::map<std::string, WizardStageState> m_wizardStages;
+    // Authoring identities are intentionally independent of OBJ filenames and
+    // ephemeral G# indices. A base visual id identifies an intact render family;
+    // an extra/variant id identifies an alternate visual. Future generated LODs
+    // may reuse those ids without relying on source file names.
+    std::map<std::size_t, std::map<std::string, std::string>> m_baseVisualIds; // geometry id -> base visual id
+    std::map<std::size_t, std::map<std::string, std::string>> m_sourceExtraMeshIds; // source path -> variant id
+    std::map<std::string, std::vector<std::string>> m_sourceVariantReplacements; // variant id -> base visual ids
+    std::map<std::size_t, std::map<std::string, std::vector<std::string>>> m_legacySourceVariantReplacements;
+    std::size_t m_nextBaseVisualOrdinal = 1;
+    std::size_t m_nextSourceVariantOrdinal = 1;
 };
 
 } // namespace elite::model_asset::editor

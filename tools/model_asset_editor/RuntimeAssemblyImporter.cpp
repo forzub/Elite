@@ -1,7 +1,9 @@
 #include "tools/model_asset_editor/RuntimeAssemblyImporter.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
+#include <map>
 #include <limits>
 #include <set>
 #include <sstream>
@@ -14,6 +16,7 @@
 
 #include "src/game/geometry/ObjectAssemblyRegistry.h"
 #include "src/model_asset/ModelAssetIdentity.h"
+#include "src/model_asset/ModelAssetVariantNaming.h"
 #include "src/game/ship/ShipAttachmentPoint.h"
 #include "src/game/ship/ShipDescriptor.h"
 #include "src/world/descriptors/ObjectDescriptorRegistry.h"
@@ -85,6 +88,178 @@ void expandBounds(glm::vec3& minB, glm::vec3& maxB, const glm::vec3& p)
     minB = glm::min(minB, p);
     maxB = glm::max(maxB, p);
 }
+
+bool isLodDirectoryName(std::string name)
+{
+    std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+    if (name.size() <= 3 || name.rfind("lod", 0) != 0)
+        return false;
+    return std::all_of(name.begin() + 3, name.end(), [](unsigned char c) {
+        return std::isdigit(c) != 0;
+    });
+}
+
+std::string sourcePathKey(const std::filesystem::path& path)
+{
+    std::error_code ec;
+    auto normalized = std::filesystem::weakly_canonical(path, ec);
+    if (ec) normalized = std::filesystem::absolute(path, ec).lexically_normal();
+    std::string key = normalized.generic_string();
+#ifdef _WIN32
+    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
+#endif
+    return key;
+}
+
+std::filesystem::path lodRootForSourceFile(const std::filesystem::path& sourceFile)
+{
+    auto directory = sourceFile.parent_path();
+    while (!directory.empty())
+    {
+        if (isLodDirectoryName(directory.filename().string()))
+            return directory;
+        const auto parent = directory.parent_path();
+        if (parent == directory) break;
+        directory = parent;
+    }
+    return {};
+}
+
+std::filesystem::path runtimeLodRootForPath(const std::string& runtimePath)
+{
+    if (runtimePath.empty()) return {};
+    const std::filesystem::path path(runtimePath);
+    if (path.is_absolute()) return {};
+    std::filesystem::path prefix;
+    for (const auto& component : path)
+    {
+        prefix /= component;
+        if (isLodDirectoryName(component.string()))
+            return prefix;
+    }
+    return {};
+}
+
+std::string additionalMeshRuntimePath(
+    const std::filesystem::path& lodRoot,
+    const std::filesystem::path& file,
+    const std::string& representativeRuntimePath)
+{
+    const std::filesystem::path runtime(representativeRuntimePath);
+    if (runtime.is_absolute())
+        return file.generic_string();
+
+    const auto runtimeRoot = runtimeLodRootForPath(representativeRuntimePath);
+    if (runtimeRoot.empty())
+        return file.generic_string();
+
+    std::error_code ec;
+    const auto relative = std::filesystem::relative(file, lodRoot, ec);
+    if (ec || relative.empty())
+        return file.generic_string();
+    return (runtimeRoot / relative).lexically_normal().generic_string();
+}
+
+}
+
+std::vector<std::string> runtimeAssemblyLodSourcePaths(
+    ObjectType typeId,
+    std::size_t lodIndex)
+{
+    game::ship::geometry::ObjectAssemblyRegistry::ensureInitialized();
+    const ObjectAssemblyDesc& assembly = game::ship::geometry::ObjectAssemblyRegistry::get(typeId);
+    std::set<std::string> paths;
+    for (const auto& module : assembly.modules)
+    {
+        for (const auto& part : module.meshes)
+        {
+            const std::string path = lodIndex == 0 ? part.lod0Path :
+                (lodIndex == 1 ? part.lod1Path : std::string());
+            if (path.empty()) continue;
+            if (lodIndex == 1 && path == part.lod0Path) continue;
+            paths.insert(path);
+        }
+    }
+    return std::vector<std::string>(paths.begin(), paths.end());
+}
+
+std::vector<SourceAdditionalMesh> discoverAdditionalLodMeshes(
+    const std::filesystem::path& sourceRoot,
+    const std::vector<std::string>& knownRuntimePaths,
+    std::vector<std::string>* warnings)
+{
+    std::set<std::string> knownFiles;
+    struct ScanRoot
+    {
+        std::filesystem::path path;
+        std::string representativeRuntimePath;
+    };
+    std::map<std::string, ScanRoot> roots;
+
+    for (const auto& runtimePath : knownRuntimePaths)
+    {
+        if (runtimePath.empty()) continue;
+        const auto sourceFile = sourceMeshPath(sourceRoot, runtimePath);
+        knownFiles.insert(sourcePathKey(sourceFile));
+        const auto lodRoot = lodRootForSourceFile(sourceFile);
+        if (lodRoot.empty())
+        {
+            if (warnings)
+                warnings->push_back(
+                    "cannot discover additional meshes for source outside a LOD<N> directory: " +
+                    sourceFile.generic_string());
+            continue;
+        }
+        roots.emplace(sourcePathKey(lodRoot), ScanRoot{lodRoot, runtimePath});
+    }
+
+    std::map<std::string, SourceAdditionalMesh> byPath;
+    for (const auto& [rootKey, root] : roots)
+    {
+        (void)rootKey;
+        std::error_code ec;
+        std::filesystem::recursive_directory_iterator it(
+            root.path, std::filesystem::directory_options::skip_permission_denied, ec);
+        const std::filesystem::recursive_directory_iterator end;
+        for (; !ec && it != end; it.increment(ec))
+        {
+            const auto& entry = *it;
+            if (!entry.is_regular_file(ec)) continue;
+
+            auto ext = entry.path().extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) {
+                return static_cast<char>(std::tolower(c));
+            });
+            if (ext != ".obj") continue;
+
+            const auto fileKey = sourcePathKey(entry.path());
+            if (knownFiles.find(fileKey) != knownFiles.end())
+                continue;
+
+            SourceAdditionalMesh candidate;
+            candidate.file = entry.path();
+            candidate.runtimePath = additionalMeshRuntimePath(
+                root.path, entry.path(), root.representativeRuntimePath);
+            byPath.emplace(fileKey, std::move(candidate));
+        }
+        if (ec && warnings)
+            warnings->push_back(
+                "cannot fully scan LOD directory tree " + root.path.generic_string() + ": " +
+                ec.message());
+    }
+
+    std::vector<SourceAdditionalMesh> result;
+    result.reserve(byPath.size());
+    for (auto& [pathKey, mesh] : byPath)
+    {
+        (void)pathKey;
+        result.push_back(std::move(mesh));
+    }
+    return result;
 }
 
 bool importRuntimeAssembly(
@@ -128,12 +303,14 @@ bool importRuntimeAssembly(
                 const std::string sourceKey = part.lod0Path + "\n" + part.lod1Path;
                 if (!countedGeometrySources.insert(sourceKey).second)
                     continue;
-                if (!part.lod0Path.empty())
-                    ++totalObjLoads;
-                if (!part.lod1Path.empty() && part.lod1Path != part.lod0Path)
-                    ++totalObjLoads;
+                if (!part.lod0Path.empty()) ++totalObjLoads;
+                if (!part.lod1Path.empty() && part.lod1Path != part.lod0Path) ++totalObjLoads;
             }
         }
+
+        // Additional sibling OBJ files are intentionally not imported here.
+        // Their authoring identity is created by the editor session, where it can
+        // be persisted independently of filenames and independently for every LOD.
         std::size_t completedObjLoads = 0;
         auto report = [&](
             const std::string& stage,
@@ -240,6 +417,8 @@ bool importRuntimeAssembly(
                     geometryIndex = static_cast<std::int32_t>(asset.geometries.size());
                     geometryBySource[sourceKey] = geometryIndex;
                     asset.geometries.push_back(std::move(geometry));
+
+
                 }
 
                 Node meshNode;
@@ -273,6 +452,7 @@ bool importRuntimeAssembly(
                 haveBounds = true;
             }
         }
+
 
         if (const auto* ship = dynamic_cast<const ShipDescriptor*>(&descriptor))
         {

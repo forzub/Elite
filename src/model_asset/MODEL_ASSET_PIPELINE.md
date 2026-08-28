@@ -311,3 +311,48 @@ format:
 
 Only after the converted catalog survives editor round-trip and validation does
 `EliteGame` switch from OBJ to `.elmodel`.
+
+## Authored alternate render geometry
+
+Additional authored visual meshes are discovered by recursively scanning each real
+`LOD<N>` source directory tree. Registered assembly OBJ files are the default set
+and are excluded from the scan. Every other OBJ below the LOD root is additional;
+directory and filename conventions do not encode damage semantics.
+
+At first discovery the editor creates an opaque authoring identity such as
+`extra.000001`. The OBJ path is only a reload pointer. Ordinary geometry receives
+a separate stable `base.000001` authoring identity. `G#` is an ephemeral LOD-local
+UI index and is never used as a persisted replacement contract.
+
+The workspace persists a many-to-many relation:
+
+```text
+extra visual id -> [base visual id, ...]
+```
+
+The Geometry stage presents this as a master/detail table: select one extra mesh,
+then check the default geometry families it may replace. A default GeometryDefinition
+appears once even when many RenderNodes instance it. Preview temporarily swaps the
+selected extra onto one representative instance and is allowed before compatibility
+is committed; preview does not mutate semantic/gameplay data.
+
+No LOD relationship is inferred from filenames. A future LOD generator may
+explicitly copy the same base/extra visual identity into its generated LOD
+representation, so generated file names can be arbitrary.
+
+Compatibility answers only **what may replace what**. DAMAGE later answers
+**when/why which compatible visual is selected**. For stations the intended first
+use is a small authored set of catastrophic structural variants, while ordinary
+hits remain VFX/decal/integrity events and detachable equipment remains separate
+semantic Nodes.
+
+Unused-geometry cleanup must never delete authored extra meshes merely because
+they are not yet referenced by a RenderNode.
+
+## View orientation
+
+The model viewport must label the **ends of the world grid/axes** with `+X/-X`,
+`+Y/-Y` and `+Z/-Z`. These labels live in world space with the grid, not beneath a
+status overlay or in a corner-only camera widget. Numeric transforms and radial-
+array controls must never require the user to infer axis orientation from the
+model silhouette.

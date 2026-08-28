@@ -23,7 +23,9 @@
 
 #include "src/model_asset/ModelAssetBinary.h"
 #include "src/model_asset/ModelAssetMigration.h"
+#include "src/model_asset/ModelAssetVariantNaming.h"
 #include "tools/model_asset_editor/RuntimeAssemblyImporter.h"
+#include "tools/model_asset_editor/NativeObjImporter.h"
 #include "tools/model_asset_editor/GeometryInstanceFitter.h"
 #include "tools/model_asset_editor/EditorVersion.h"
 
@@ -152,6 +154,56 @@ std::uint64_t safeFileBytes(const std::filesystem::path& path)
     std::error_code ec;
     const auto bytes = std::filesystem::file_size(path, ec);
     return ec ? 0 : static_cast<std::uint64_t>(bytes);
+}
+
+bool sameVec2Exact(const glm::vec2& a, const glm::vec2& b)
+{
+    return a.x == b.x && a.y == b.y;
+}
+
+bool sameVec3Exact(const glm::vec3& a, const glm::vec3& b)
+{
+    return a.x == b.x && a.y == b.y && a.z == b.z;
+}
+
+bool sameMeshLodExact(const MeshLod& a, const MeshLod& b)
+{
+    if (a.vertices.size() != b.vertices.size() ||
+        a.triangles.size() != b.triangles.size() ||
+        a.edges.size() != b.edges.size() ||
+        !sameVec3Exact(a.minBounds, b.minBounds) ||
+        !sameVec3Exact(a.maxBounds, b.maxBounds))
+        return false;
+
+    for (std::size_t i = 0; i < a.vertices.size(); ++i)
+    {
+        const auto& av = a.vertices[i];
+        const auto& bv = b.vertices[i];
+        if (!sameVec3Exact(av.position, bv.position) ||
+            !sameVec3Exact(av.normal, bv.normal) ||
+            !sameVec2Exact(av.uv, bv.uv))
+            return false;
+    }
+    for (std::size_t i = 0; i < a.triangles.size(); ++i)
+    {
+        const auto& at = a.triangles[i];
+        const auto& bt = b.triangles[i];
+        if (at.a != bt.a || at.b != bt.b || at.c != bt.c ||
+            at.sourcePolygonId != bt.sourcePolygonId ||
+            at.materialIndex != bt.materialIndex ||
+            at.smoothingGroupId != bt.smoothingGroupId)
+            return false;
+    }
+    for (std::size_t i = 0; i < a.edges.size(); ++i)
+    {
+        const auto& ae = a.edges[i];
+        const auto& be = b.edges[i];
+        if (ae.a != be.a || ae.b != be.b ||
+            ae.triangleA != be.triangleA || ae.triangleB != be.triangleB ||
+            ae.flags != be.flags || ae.renderMask != be.renderMask)
+            return false;
+    }
+    return true;
 }
 
 std::map<std::size_t, std::filesystem::path> discoverSavedLodPayloads(
@@ -690,6 +742,30 @@ void recomputeLodBounds(MeshLod& lod)
     }
 }
 
+void recomputeRenderLodBounds(RenderLod& lod)
+{
+    bool haveBounds = false;
+    glm::vec3 minBounds(std::numeric_limits<float>::max());
+    glm::vec3 maxBounds(-std::numeric_limits<float>::max());
+    for (const auto& geometry : lod.geometries)
+    {
+        if (geometry.mesh.vertices.empty()) continue;
+        if (!haveBounds)
+        {
+            minBounds = geometry.mesh.minBounds;
+            maxBounds = geometry.mesh.maxBounds;
+            haveBounds = true;
+        }
+        else
+        {
+            minBounds = glm::min(minBounds, geometry.mesh.minBounds);
+            maxBounds = glm::max(maxBounds, geometry.mesh.maxBounds);
+        }
+    }
+    lod.minBounds = haveBounds ? minBounds : glm::vec3(0.0f);
+    lod.maxBounds = haveBounds ? maxBounds : glm::vec3(0.0f);
+}
+
 void convertAssetBasisToCanonical(ModelAsset& asset, const SourceBasis& source)
 {
     const glm::mat3 basis = sourceToCanonical(source);
@@ -1013,9 +1089,38 @@ std::filesystem::path ModelAssetEditorSession::wizardCheckpointPath(const std::s
     return wizardWorkspacePath() / ("checkpoint-" + stage) / (m_selectedId + ".elmodel");
 }
 
+std::filesystem::path ModelAssetEditorSession::latestWizardCheckpoint(std::string* stage) const
+{
+    const auto& order = wizardStageOrder();
+    for (auto it = order.rbegin(); it != order.rend(); ++it)
+    {
+        const auto state = m_wizardStages.find(*it);
+        if (state == m_wizardStages.end() ||
+            (state->second.status != "complete" && state->second.status != "stale"))
+            continue;
+
+        // Checkpoints are editor-owned files at canonical workspace paths. Do
+        // not trust a persisted arbitrary path when deciding what to resume.
+        const auto checkpoint = wizardCheckpointPath(*it);
+        if (!std::filesystem::exists(checkpoint))
+            continue;
+
+        if (stage) *stage = *it;
+        return checkpoint;
+    }
+    if (stage) stage->clear();
+    return {};
+}
+
 void ModelAssetEditorSession::loadWizardState()
 {
     m_wizardStages.clear();
+    m_baseVisualIds.clear();
+    m_sourceExtraMeshIds.clear();
+    m_sourceVariantReplacements.clear();
+    m_legacySourceVariantReplacements.clear();
+    m_nextBaseVisualOrdinal = 1;
+    m_nextSourceVariantOrdinal = 1;
     for (const char* id : wizardStageOrder())
         m_wizardStages.emplace(id, WizardStageState{});
 
@@ -1025,7 +1130,8 @@ void ModelAssetEditorSession::loadWizardState()
     {
         json state;
         in >> state;
-        if (state.value("schemaVersion", 0) != 1) return;
+        const int schemaVersion = state.value("schemaVersion", 0);
+        if (schemaVersion < 1 || schemaVersion > 3) return;
         const auto stages = state.value("stages", json::object());
         for (auto& [id, value] : m_wizardStages)
         {
@@ -1035,6 +1141,98 @@ void ModelAssetEditorSession::loadWizardState()
                 value.status = status;
             const auto checkpoint = stages[id].value("checkpoint", std::string());
             if (!checkpoint.empty()) value.checkpointManifest = std::filesystem::path(checkpoint);
+        }
+
+        if (schemaVersion >= 3)
+        {
+            m_nextBaseVisualOrdinal = std::max<std::size_t>(
+                1, state.value("nextBaseVisualOrdinal", std::size_t(1)));
+            m_nextSourceVariantOrdinal = std::max<std::size_t>(
+                1, state.value("nextSourceVariantOrdinal", std::size_t(1)));
+
+            for (const auto& item : state.value("baseVisuals", json::array()))
+            {
+                if (!item.is_object()) continue;
+                const auto lodIndex = item.value("lod", std::size_t(-1));
+                const auto geometryId = item.value("geometryId", std::string());
+                const auto id = item.value("id", std::string());
+                if (lodIndex == std::size_t(-1) || geometryId.empty() || id.empty()) continue;
+                m_baseVisualIds[lodIndex][geometryId] = id;
+            }
+            for (const auto& item : state.value("sourceExtraMeshes", json::array()))
+            {
+                if (!item.is_object()) continue;
+                const auto lodIndex = item.value("lod", std::size_t(-1));
+                const auto sourcePath = item.value("sourcePath", std::string());
+                const auto id = item.value("id", std::string());
+                if (lodIndex == std::size_t(-1) || sourcePath.empty() || id.empty()) continue;
+                m_sourceExtraMeshIds[lodIndex][sourcePath] = id;
+            }
+            for (const auto& item : state.value("sourceVariantReplacements", json::array()))
+            {
+                if (!item.is_object()) continue;
+                const auto variantId = item.value("variantId", std::string());
+                if (variantId.empty()) continue;
+                std::vector<std::string> replaces;
+                for (const auto& value : item.value("replacesBaseVisualIds", json::array()))
+                    if (value.is_string() && !value.get<std::string>().empty())
+                        replaces.push_back(value.get<std::string>());
+                std::sort(replaces.begin(), replaces.end());
+                replaces.erase(std::unique(replaces.begin(), replaces.end()), replaces.end());
+                if (!replaces.empty())
+                    m_sourceVariantReplacements[variantId] = std::move(replaces);
+            }
+            // Pending v0.9.5/v0.9.6 records can survive a v3 state write until
+            // their LOD is actually loaded and can be migrated without guessing.
+            for (const auto& item : state.value("legacySourceVariantReplacements", json::array()))
+            {
+                if (!item.is_object()) continue;
+                const auto lodIndex = item.value("lod", std::size_t(-1));
+                const auto variantId = item.value("variantId", std::string());
+                if (lodIndex == std::size_t(-1) || variantId.empty()) continue;
+                std::vector<std::string> replaces;
+                for (const auto& value : item.value("replaces", json::array()))
+                    if (value.is_string() && !value.get<std::string>().empty())
+                        replaces.push_back(value.get<std::string>());
+                std::sort(replaces.begin(), replaces.end());
+                replaces.erase(std::unique(replaces.begin(), replaces.end()), replaces.end());
+                if (!replaces.empty())
+                    m_legacySourceVariantReplacements[lodIndex][variantId] = std::move(replaces);
+            }
+        }
+        else if (schemaVersion >= 2)
+        {
+            // v0.9.5/v0.9.6 stored filename-derived variant ids and LOD-local
+            // geometry ids. Keep them only as migration input; once a LOD is
+            // loaded reconcileAuthoringVisualRegistry() converts them to opaque
+            // authoring ids and stable base visual ids.
+            for (const auto& item : state.value("sourceVariantReplacements", json::array()))
+            {
+                if (!item.is_object()) continue;
+                const auto lodIndex = item.value("lod", std::size_t(-1));
+                const auto variantId = item.value("variantId", std::string());
+                if (lodIndex == std::size_t(-1) || variantId.empty()) continue;
+                std::vector<std::string> replaces;
+                for (const auto& value : item.value("replaces", json::array()))
+                    if (value.is_string() && !value.get<std::string>().empty())
+                        replaces.push_back(value.get<std::string>());
+                std::sort(replaces.begin(), replaces.end());
+                replaces.erase(std::unique(replaces.begin(), replaces.end()), replaces.end());
+                if (!replaces.empty())
+                    m_legacySourceVariantReplacements[lodIndex][variantId] = std::move(replaces);
+            }
+        }
+
+        // The workspace owns checkpoint locations. Rebind persisted records to
+        // the current canonical workspace path and discard records whose files
+        // no longer exist (for example after linear-history pruning).
+        for (auto& [id, value] : m_wizardStages)
+        {
+            const auto checkpoint = wizardCheckpointPath(id);
+            if (std::filesystem::exists(checkpoint))
+                value.checkpointManifest = checkpoint;
+            else
+                value.checkpointManifest.clear();
         }
     }
     catch (const std::exception& ex)
@@ -1056,11 +1254,46 @@ bool ModelAssetEditorSession::writeWizardState() const
                 {"checkpoint", value.checkpointManifest.empty() ? std::string() : value.checkpointManifest.generic_string()}
             };
         }
+
+        json baseVisuals = json::array();
+        for (const auto& [lodIndex, byGeometry] : m_baseVisualIds)
+            for (const auto& [geometryId, id] : byGeometry)
+                if (!geometryId.empty() && !id.empty())
+                    baseVisuals.push_back({{"lod", lodIndex}, {"geometryId", geometryId}, {"id", id}});
+
+        json sourceExtraMeshes = json::array();
+        for (const auto& [lodIndex, byPath] : m_sourceExtraMeshIds)
+            for (const auto& [sourcePath, id] : byPath)
+                if (!sourcePath.empty() && !id.empty())
+                    sourceExtraMeshes.push_back({{"lod", lodIndex}, {"sourcePath", sourcePath}, {"id", id}});
+
+        json sourceVariantReplacements = json::array();
+        for (const auto& [variantId, replaces] : m_sourceVariantReplacements)
+            if (!variantId.empty() && !replaces.empty())
+                sourceVariantReplacements.push_back({
+                    {"variantId", variantId},
+                    {"replacesBaseVisualIds", replaces}
+                });
+
+        json legacySourceVariantReplacements = json::array();
+        for (const auto& [lodIndex, byVariant] : m_legacySourceVariantReplacements)
+            for (const auto& [variantId, replaces] : byVariant)
+                if (!variantId.empty() && !replaces.empty())
+                    legacySourceVariantReplacements.push_back({
+                        {"lod", lodIndex}, {"variantId", variantId}, {"replaces", replaces}
+                    });
+
         json state = {
-            {"schemaVersion", 1},
+            {"schemaVersion", 3},
             {"assetId", m_selectedId},
             {"editorVersion", ModelAssetEditorVersion},
-            {"stages", std::move(stages)}
+            {"stages", std::move(stages)},
+            {"nextBaseVisualOrdinal", m_nextBaseVisualOrdinal},
+            {"nextSourceVariantOrdinal", m_nextSourceVariantOrdinal},
+            {"baseVisuals", std::move(baseVisuals)},
+            {"sourceExtraMeshes", std::move(sourceExtraMeshes)},
+            {"sourceVariantReplacements", std::move(sourceVariantReplacements)},
+            {"legacySourceVariantReplacements", std::move(legacySourceVariantReplacements)}
         };
         std::ofstream out(wizardStatePath(), std::ios::trunc);
         if (!out) return false;
@@ -1071,6 +1304,179 @@ bool ModelAssetEditorSession::writeWizardState() const
     {
         return false;
     }
+}
+
+std::string ModelAssetEditorSession::allocateBaseVisualId()
+{
+    for (;;)
+    {
+        std::ostringstream out;
+        out << "base." << std::setw(6) << std::setfill('0') << m_nextBaseVisualOrdinal++;
+        const std::string candidate = out.str();
+        bool used = false;
+        for (const auto& [lodIndex, byGeometry] : m_baseVisualIds)
+        {
+            (void)lodIndex;
+            if (std::any_of(byGeometry.begin(), byGeometry.end(), [&](const auto& item) {
+                    return item.second == candidate;
+                }))
+            {
+                used = true;
+                break;
+            }
+        }
+        if (!used) return candidate;
+    }
+}
+
+std::string ModelAssetEditorSession::allocateSourceVariantId()
+{
+    for (;;)
+    {
+        std::ostringstream out;
+        out << "extra." << std::setw(6) << std::setfill('0') << m_nextSourceVariantOrdinal++;
+        const std::string candidate = out.str();
+        bool used = m_sourceVariantReplacements.find(candidate) != m_sourceVariantReplacements.end();
+        if (!used)
+        {
+            for (const auto& [lodIndex, byPath] : m_sourceExtraMeshIds)
+            {
+                (void)lodIndex;
+                if (std::any_of(byPath.begin(), byPath.end(), [&](const auto& item) {
+                        return item.second == candidate;
+                    }))
+                {
+                    used = true;
+                    break;
+                }
+            }
+        }
+        if (!used) return candidate;
+    }
+}
+
+std::string ModelAssetEditorSession::baseVisualId(
+    std::size_t lodIndex,
+    const std::string& geometryId) const
+{
+    const auto lodIt = m_baseVisualIds.find(lodIndex);
+    if (lodIt == m_baseVisualIds.end()) return {};
+    const auto geometryIt = lodIt->second.find(geometryId);
+    return geometryIt == lodIt->second.end() ? std::string() : geometryIt->second;
+}
+
+std::string ModelAssetEditorSession::sourceVariantAuthoringId(
+    std::size_t lodIndex,
+    const RenderGeometryDefinition& geometry) const
+{
+    if (!geometry.sourcePath.empty())
+    {
+        const auto lodIt = m_sourceExtraMeshIds.find(lodIndex);
+        if (lodIt != m_sourceExtraMeshIds.end())
+        {
+            const auto sourceIt = lodIt->second.find(geometry.sourcePath);
+            if (sourceIt != lodIt->second.end()) return sourceIt->second;
+        }
+    }
+    return renderVariantIdentity(geometry.id).variantId;
+}
+
+void ModelAssetEditorSession::reconcileAuthoringVisualRegistry()
+{
+    if (m_asset.assetId.empty()) return;
+    bool changed = false;
+
+    for (std::size_t lodIndex = 0; lodIndex < m_asset.renderLods.size(); ++lodIndex)
+    {
+        if (lodIndex >= m_lodState.size() || !m_lodState[lodIndex].loaded)
+            continue;
+        const auto& lod = m_asset.renderLods[lodIndex];
+        for (const auto& geometry : lod.geometries)
+        {
+            const auto identity = renderVariantIdentity(geometry.id);
+            if (!identity.isVariant)
+            {
+                auto& id = m_baseVisualIds[lodIndex][geometry.id];
+                if (id.empty())
+                {
+                    id = allocateBaseVisualId();
+                    changed = true;
+                }
+                continue;
+            }
+
+            if (geometry.sourcePath.empty()) continue;
+            auto& id = m_sourceExtraMeshIds[lodIndex][geometry.sourcePath];
+            if (id.empty())
+            {
+                // Existing v0.9.4-v0.9.6 checkpoints encoded a filename stem in
+                // geometry.id. Do not preserve that as semantic identity: assign
+                // a new opaque authoring id while keeping sourcePath only as the
+                // reload pointer.
+                id = allocateSourceVariantId();
+                changed = true;
+            }
+        }
+    }
+
+    if (!m_legacySourceVariantReplacements.empty())
+    {
+        // v0.9.5/v0.9.6 replacement records were LOD-local and referred to
+        // filename-derived variant ids plus transient geometry ids. Migrate a
+        // legacy record only while that LOD is actually loaded; otherwise keep
+        // it pending so opening another LOD later cannot silently discard it.
+        decltype(m_legacySourceVariantReplacements) pendingLegacy;
+        for (const auto& [lodIndex, byVariant] : m_legacySourceVariantReplacements)
+        {
+            if (lodIndex >= m_asset.renderLods.size() ||
+                lodIndex >= m_lodState.size() || !m_lodState[lodIndex].loaded)
+            {
+                pendingLegacy[lodIndex] = byVariant;
+                continue;
+            }
+
+            const auto& lod = m_asset.renderLods[lodIndex];
+            for (const auto& [legacyVariantId, baseGeometryIds] : byVariant)
+            {
+                std::string stableVariantId;
+                for (const auto& geometry : lod.geometries)
+                {
+                    const auto identity = renderVariantIdentity(geometry.id);
+                    if (identity.isVariant && identity.variantId == legacyVariantId)
+                    {
+                        stableVariantId = sourceVariantAuthoringId(lodIndex, geometry);
+                        break;
+                    }
+                }
+
+                if (stableVariantId.empty())
+                {
+                    // The source variant is not present in this loaded document
+                    // anymore. Preserve the old record rather than inventing a
+                    // new semantic identity from its former filename.
+                    pendingLegacy[lodIndex][legacyVariantId] = baseGeometryIds;
+                    continue;
+                }
+
+                auto& replacements = m_sourceVariantReplacements[stableVariantId];
+                for (const auto& geometryId : baseGeometryIds)
+                {
+                    const auto stableBaseId = baseVisualId(lodIndex, geometryId);
+                    if (!stableBaseId.empty() &&
+                        std::find(replacements.begin(), replacements.end(), stableBaseId) == replacements.end())
+                        replacements.push_back(stableBaseId);
+                }
+                std::sort(replacements.begin(), replacements.end());
+                replacements.erase(std::unique(replacements.begin(), replacements.end()), replacements.end());
+                if (replacements.empty()) m_sourceVariantReplacements.erase(stableVariantId);
+                changed = true;
+            }
+        }
+        m_legacySourceVariantReplacements = std::move(pendingLegacy);
+    }
+
+    if (changed && !writeWizardState())
+        std::cerr << "[ModelAssetEditor] authoring visual registry could not be persisted\n";
 }
 
 void ModelAssetEditorSession::pruneWizardAfter(const std::string& stage)
@@ -1889,7 +2295,37 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
         sendProgress("reading", update.stage, update.completed, update.total, update.path);
     };
 
-    if (!forceReimport && (havePackage || haveLegacyV2))
+    std::string resumedCheckpointStage;
+    const auto resumeCheckpoint = forceReimport ? std::filesystem::path{} :
+        latestWizardCheckpoint(&resumedCheckpointStage);
+    const bool resumeWorkspace = !resumeCheckpoint.empty();
+
+    if (resumeWorkspace)
+    {
+        sendStatus("Resuming editor workspace from " + resumedCheckpointStage + " checkpoint...", false, "reading");
+        sendProgress("reading", "RESUME CHECKPOINT", 0, 1, resumeCheckpoint);
+        if (!ModelAssetBinary::load(resumeCheckpoint.string(), loaded, &error))
+        {
+            // Never silently fall back to an older production package: that
+            // would make saved editor work appear to have vanished.
+            sendStatus("Cannot resume latest wizard checkpoint '" + resumedCheckpointStage +
+                "': " + error + ". Production package was not loaded instead.", true);
+            return false;
+        }
+        if (!loaded.assetId.empty() && loaded.assetId != id)
+        {
+            sendStatus("Cannot resume wizard checkpoint: checkpoint asset id '" + loaded.assetId +
+                "' does not match selected asset '" + id + "'", true);
+            return false;
+        }
+        m_asset = std::move(loaded);
+        // Checkpoints are complete authoring snapshots. They are current with
+        // respect to the wizard checkpoint, but intentionally dirty relative
+        // to the production package until the user explicitly saves output.
+        resetLodState(true, true);
+        sendProgress("reading", "RESUME CHECKPOINT", 1, 1, resumeCheckpoint);
+    }
+    else if (!forceReimport && (havePackage || haveLegacyV2))
     {
         sendStatus("Reading compiled model asset " + readPath.filename().string() + "...", false, "reading");
         sendProgress("reading", "READ MANIFEST", 0, 1, readPath);
@@ -1984,6 +2420,9 @@ bool ModelAssetEditorSession::selectAsset(const std::string& id, bool forceReimp
     sendProgress("reading", "LOAD VIEW", 0, 1, readPath.empty() ? binary : readPath);
     sendAsset();
     if (!warning.empty()) sendStatus(warning);
+    else if (resumeWorkspace)
+        sendStatus("Workspace resumed from the latest " + resumedCheckpointStage +
+            " checkpoint; production package and source OBJ are unchanged");
     else sendStatus(forceReimport ? "Source assembly imported into independent render LODs" :
         "Asset loaded; semantic state is shared, render LOD graphs are independent");
     return true;
@@ -2139,9 +2578,21 @@ nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPaylo
             for (const auto& renderNode : lod.nodes)
                 if (renderNode.geometryIndex == static_cast<std::int32_t>(gi)) usedBy.push_back(renderNode.id);
             const auto& mesh = geometry.mesh;
+            const auto variantIdentity = renderVariantIdentity(geometry.id);
+            const std::string authoringVariantId = variantIdentity.isVariant
+                ? sourceVariantAuthoringId(li, geometry) : std::string();
+            const std::string stableBaseVisualId = variantIdentity.isVariant
+                ? std::string() : baseVisualId(li, geometry.id);
+            const auto replacementIds = variantIdentity.isVariant
+                ? sourceVariantReplacementIds(authoringVariantId) : std::vector<std::string>{};
             json g = {
                 {"index", gi}, {"id", geometry.id}, {"sourcePath", geometry.sourcePath},
+                {"sourceFileName", std::filesystem::path(geometry.sourcePath).filename().string()},
                 {"surfaceMode", surfaceModeName(geometry.surfaceMode)}, {"usageCount", usedBy.size()}, {"usedBy", std::move(usedBy)},
+                {"isSourceVariant", variantIdentity.isVariant},
+                {"variantId", authoringVariantId},
+                {"baseVisualId", stableBaseVisualId},
+                {"replacesBaseVisualIds", replacementIds},
                 {"minBounds", vec3Json(mesh.minBounds)}, {"maxBounds", vec3Json(mesh.maxBounds)},
                 {"vertexCount", mesh.vertices.size()}, {"triangleCount", mesh.triangles.size()}, {"edgeCount", mesh.edges.size()},
                 {"estimatedBinaryBytes", estimatedRenderGeometryBinaryBytes(geometry)}
@@ -2214,7 +2665,7 @@ nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPaylo
     }
 
     std::uint64_t sourceBytes = 0, estimatedGeometryBytes = 0, estimatedUnusedGeometryBytes = 0;
-    std::size_t unusedGeometryCount = 0;
+    std::size_t unusedGeometryCount = 0, sourceVariantGeometryCount = 0;
     std::set<std::string> countedSourceFiles;
     for (const auto& lod : m_asset.renderLods)
     {
@@ -2224,7 +2675,9 @@ nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPaylo
             const auto geometryBytes = estimatedRenderGeometryBinaryBytes(geometry);
             estimatedGeometryBytes += geometryBytes;
             const bool used = std::any_of(lod.nodes.begin(), lod.nodes.end(), [gi](const RenderNode& node) { return node.geometryIndex == static_cast<std::int32_t>(gi); });
-            if (!used) { ++unusedGeometryCount; estimatedUnusedGeometryBytes += geometryBytes; }
+            const bool sourceVariant = isRenderVariantGeometryId(geometry.id);
+            if (sourceVariant) ++sourceVariantGeometryCount;
+            if (!used && !sourceVariant) { ++unusedGeometryCount; estimatedUnusedGeometryBytes += geometryBytes; }
             if (!geometry.sourcePath.empty() && countedSourceFiles.insert(geometry.sourcePath).second)
                 sourceBytes += safeFileBytes(editorSourceFilePath(m_sourceAssetsRoot, geometry.sourcePath));
         }
@@ -2257,23 +2710,298 @@ nlohmann::json ModelAssetEditorSession::serializeAsset(bool includeGeometryPaylo
         {"legacyBinaryPath", legacyBinary.generic_string()}, {"legacyBinaryBytes", safeFileBytes(legacyBinary)},
         {"sourceMeshBytes", sourceBytes}, {"estimatedGeometryPayloadBytes", estimatedGeometryBytes},
         {"estimatedUnusedGeometryBytes", estimatedUnusedGeometryBytes}, {"unusedGeometryCount", unusedGeometryCount},
-        {"sourceFilesReadOnly", true}
+        {"sourceVariantGeometryCount", sourceVariantGeometryCount}, {"sourceFilesReadOnly", true}
     };
     return out;
 }
 
 void ModelAssetEditorSession::sendAsset()
 {
+    reconcileAuthoringVisualRegistry();
     m_server.broadcastText(json({{"type", "asset"}, {"dirty", m_dirty}, {"asset", serializeAsset(true)}}).dump());
 }
 
 void ModelAssetEditorSession::sendAssetMetadata(const nlohmann::json& hints)
 {
+    reconcileAuthoringVisualRegistry();
     json payload = {{"type", "asset_metadata"}, {"dirty", m_dirty}, {"asset", serializeAsset(false)}};
     if (hints.is_object())
         for (const auto& [key, value] : hints.items())
             payload[key] = value;
     m_server.broadcastText(payload.dump());
+}
+
+std::vector<std::string> ModelAssetEditorSession::sourceVariantReplacementIds(
+    const std::string& variantId) const
+{
+    const auto variantIt = m_sourceVariantReplacements.find(variantId);
+    return variantIt == m_sourceVariantReplacements.end()
+        ? std::vector<std::string>{} : variantIt->second;
+}
+
+bool ModelAssetEditorSession::setSourceVariantReplacement(
+    std::size_t lodIndex,
+    const std::string& variantId,
+    const std::string& requestedBaseVisualId,
+    bool allowed)
+{
+    if (lodIndex >= m_asset.renderLods.size())
+        throw std::runtime_error("invalid LOD index");
+    if (variantId.empty() || requestedBaseVisualId.empty())
+        throw std::runtime_error("variant/base visual id cannot be empty");
+
+    reconcileAuthoringVisualRegistry();
+    const auto& lod = m_asset.renderLods[lodIndex];
+    const bool haveVariant = std::any_of(
+        lod.geometries.begin(), lod.geometries.end(), [&](const RenderGeometryDefinition& geometry)
+        {
+            return isRenderVariantGeometryId(geometry.id) &&
+                sourceVariantAuthoringId(lodIndex, geometry) == variantId;
+        });
+    if (!haveVariant)
+        throw std::runtime_error("additional mesh is not loaded in LOD" + std::to_string(lodIndex));
+
+    const bool haveBase = std::any_of(
+        lod.geometries.begin(), lod.geometries.end(), [&](const RenderGeometryDefinition& geometry)
+        {
+            return !isRenderVariantGeometryId(geometry.id) &&
+                baseVisualId(lodIndex, geometry.id) == requestedBaseVisualId;
+        });
+    if (!haveBase)
+        throw std::runtime_error("replacement target base visual is not loaded in LOD" + std::to_string(lodIndex));
+
+    auto& values = m_sourceVariantReplacements[variantId];
+    const auto it = std::find(values.begin(), values.end(), requestedBaseVisualId);
+    if (allowed)
+    {
+        if (it == values.end()) values.push_back(requestedBaseVisualId);
+        std::sort(values.begin(), values.end());
+    }
+    else if (it != values.end())
+    {
+        values.erase(it);
+    }
+    if (values.empty()) m_sourceVariantReplacements.erase(variantId);
+
+    // Compatibility is authoring data. DAMAGE later decides which compatible
+    // visual is chosen for a concrete hit/state; GEOMETRY only defines the set.
+    invalidateWizardFrom("geometry");
+    sendAssetMetadata();
+    sendStatus(
+        std::string(allowed ? "Allowed " : "Disallowed ") + variantId +
+        " as replacement for " + requestedBaseVisualId +
+        " in LOD" + std::to_string(lodIndex));
+    return true;
+}
+
+bool ModelAssetEditorSession::refreshSourceVariants()
+{
+    if (m_asset.assetId.empty())
+    {
+        sendStatus("No asset loaded", true);
+        return false;
+    }
+
+    reconcileAuthoringVisualRegistry();
+    struct VariantJob
+    {
+        std::size_t lodIndex = 0;
+        SourceAdditionalMesh source;
+        std::string variantId;
+    };
+
+    std::map<std::pair<std::size_t, std::string>, VariantJob> discovered;
+    std::vector<std::string> discoveryWarnings;
+    std::vector<std::string> scannedLodRoots;
+    bool registryChanged = false;
+    for (std::size_t lodIndex = 0; lodIndex < m_asset.renderLods.size(); ++lodIndex)
+    {
+        if (lodIndex >= m_lodState.size() || !m_lodState[lodIndex].loaded)
+            continue;
+        const auto& lod = m_asset.renderLods[lodIndex];
+        std::vector<std::string> knownRuntimePaths = runtimeAssemblyLodSourcePaths(
+            static_cast<ObjectType>(m_asset.sourceObjectType), lodIndex);
+        if (knownRuntimePaths.empty())
+        {
+            for (const auto& geometry : lod.geometries)
+            {
+                if (!geometry.sourcePath.empty() && !isRenderVariantGeometryId(geometry.id))
+                    knownRuntimePaths.push_back(geometry.sourcePath);
+            }
+        }
+        if (knownRuntimePaths.empty()) continue;
+
+        std::vector<std::string> lodWarnings;
+        const auto additional = discoverAdditionalLodMeshes(
+            m_sourceAssetsRoot, knownRuntimePaths, &lodWarnings);
+        discoveryWarnings.insert(
+            discoveryWarnings.end(), lodWarnings.begin(), lodWarnings.end());
+
+        std::set<std::string> roots;
+        for (const auto& runtimePath : knownRuntimePaths)
+        {
+            const auto resolved = editorSourceFilePath(m_sourceAssetsRoot, runtimePath);
+            auto directory = resolved.parent_path();
+            while (!directory.empty())
+            {
+                std::string name = directory.filename().string();
+                std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) {
+                    return static_cast<char>(std::tolower(c));
+                });
+                const bool isLod = name.size() > 3 && name.rfind("lod", 0) == 0 &&
+                    std::all_of(name.begin() + 3, name.end(), [](unsigned char c) {
+                        return std::isdigit(c) != 0;
+                    });
+                if (isLod)
+                {
+                    roots.insert(directory.generic_string());
+                    break;
+                }
+                const auto parent = directory.parent_path();
+                if (parent == directory) break;
+                directory = parent;
+            }
+        }
+        for (const auto& root : roots)
+            scannedLodRoots.push_back("LOD" + std::to_string(lodIndex) + "=" + root);
+
+        for (const auto& source : additional)
+        {
+            auto& id = m_sourceExtraMeshIds[lodIndex][source.runtimePath];
+            if (id.empty())
+            {
+                id = allocateSourceVariantId();
+                registryChanged = true;
+            }
+            const auto key = std::make_pair(lodIndex, source.runtimePath);
+            discovered.emplace(key, VariantJob{lodIndex, source, id});
+        }
+    }
+
+    const auto joinedRoots = [&]()
+    {
+        std::ostringstream out;
+        for (std::size_t i = 0; i < scannedLodRoots.size(); ++i)
+        {
+            if (i) out << ", ";
+            out << scannedLodRoots[i];
+        }
+        return out.str();
+    };
+
+    std::vector<VariantJob> jobs;
+    jobs.reserve(discovered.size());
+    for (auto& [key, job] : discovered)
+    {
+        (void)key;
+        jobs.push_back(std::move(job));
+    }
+
+    if (jobs.empty())
+    {
+        if (registryChanged) (void)writeWizardState();
+        sendStatus(
+            "NO CHANGES: no additional OBJ files found recursively under loaded LOD directories" +
+            (scannedLodRoots.empty() ? std::string() : "; scanned " + joinedRoots()));
+        return true;
+    }
+
+    std::size_t added = 0, updated = 0, unchanged = 0, failed = 0, completed = 0;
+    bool manifestChanged = false;
+    std::set<std::size_t> changedLods;
+    std::vector<std::string> failures = discoveryWarnings;
+    for (const auto& job : jobs)
+    {
+        if (job.lodIndex >= m_asset.renderLods.size()) continue;
+        auto& lod = m_asset.renderLods[job.lodIndex];
+        const std::string variantGeometryId = makeRenderVariantGeometryId(job.variantId);
+
+        sendProgress(
+            "reading", "REFRESH EXTRA LOD MESHES", completed, jobs.size(),
+            job.source.file);
+        MeshLod mesh;
+        std::string importError;
+        const std::size_t materialsBefore = m_asset.materials.size();
+        const bool imported = importObjNative(
+            job.source.file, m_asset, mesh, &importError);
+        manifestChanged = manifestChanged || m_asset.materials.size() != materialsBefore;
+        if (!imported)
+        {
+            ++failed;
+            ++completed;
+            failures.push_back(job.variantId + ": " + importError);
+            sendProgress(
+                "reading", "REFRESH EXTRA LOD MESHES", completed, jobs.size(),
+                job.source.file);
+            continue;
+        }
+
+        auto existing = std::find_if(
+            lod.geometries.begin(), lod.geometries.end(),
+            [&](const RenderGeometryDefinition& geometry)
+            {
+                if (!isRenderVariantGeometryId(geometry.id)) return false;
+                if (!geometry.sourcePath.empty() && geometry.sourcePath == job.source.runtimePath)
+                    return true;
+                return sourceVariantAuthoringId(job.lodIndex, geometry) == job.variantId;
+            });
+        if (existing == lod.geometries.end())
+        {
+            RenderGeometryDefinition variant;
+            variant.id = variantGeometryId;
+            variant.sourcePath = job.source.runtimePath;
+            variant.mesh = std::move(mesh);
+            lod.geometries.push_back(std::move(variant));
+            changedLods.insert(job.lodIndex);
+            ++added;
+        }
+        else if (existing->id == variantGeometryId &&
+                 existing->sourcePath == job.source.runtimePath &&
+                 sameMeshLodExact(existing->mesh, mesh))
+        {
+            ++unchanged;
+        }
+        else
+        {
+            existing->id = variantGeometryId;
+            existing->sourcePath = job.source.runtimePath;
+            existing->mesh = std::move(mesh);
+            changedLods.insert(job.lodIndex);
+            ++updated;
+        }
+        ++completed;
+        sendProgress(
+            "reading", "REFRESH EXTRA LOD MESHES", completed, jobs.size(),
+            job.source.file);
+    }
+
+    for (const auto lodIndex : changedLods)
+    {
+        recomputeRenderLodBounds(m_asset.renderLods[lodIndex]);
+        markLodDirty(lodIndex);
+    }
+    if (manifestChanged) markManifestDirty();
+    if (registryChanged && !writeWizardState())
+    {
+        sendStatus("Extra meshes were refreshed, but their stable authoring ids could not be saved", true);
+        return false;
+    }
+    if (!changedLods.empty() || manifestChanged)
+        invalidateWizardFrom("geometry");
+    if (!changedLods.empty())
+        sendAsset(); // Geometry payload really changed; refresh browser cache once.
+    else if (manifestChanged || registryChanged)
+        sendAssetMetadata();
+
+    std::string message =
+        "Additional LOD meshes refreshed: " +
+        std::to_string(added) + " added, " + std::to_string(updated) +
+        " updated, " + std::to_string(unchanged) + " unchanged, " +
+        std::to_string(failed) + " failed across " +
+        std::to_string(changedLods.size()) + " loaded LOD(s)";
+    if (!failures.empty()) message += "; first note: " + failures.front();
+    sendStatus(message, failed != 0);
+    return failed == 0;
 }
 
 void ModelAssetEditorSession::handleMessage(const std::string& payload)
@@ -2318,6 +3046,21 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
         }
 
         if (m_asset.assetId.empty()) { sendStatus("No asset loaded", true); return; }
+        if (command == "refresh_source_variants") { refreshSourceVariants(); return; }
+        if (command == "set_source_variant_replacement")
+        {
+            const auto lodIndex = message.value("lodIndex", std::size_t(-1));
+            std::string requestedBaseId = message.value("baseVisualId", std::string());
+            if (requestedBaseId.empty())
+                requestedBaseId = baseVisualId(
+                    lodIndex, message.value("baseGeometryId", std::string()));
+            setSourceVariantReplacement(
+                lodIndex,
+                message.value("variantId", std::string()),
+                requestedBaseId,
+                message.value("allowed", false));
+            return;
+        }
 
         if (command == "convert_source_basis")
         {
@@ -2678,7 +3421,8 @@ void ModelAssetEditorSession::handleMessage(const std::string& payload)
             for (std::size_t gi = lod.geometries.size(); gi-- > 0; )
             {
                 const bool used = std::any_of(lod.nodes.begin(), lod.nodes.end(), [&](const RenderNode& n) { return n.geometryIndex == static_cast<std::int32_t>(gi); });
-                if (!used)
+                const bool protectedVariant = isRenderVariantGeometryId(lod.geometries[gi].id);
+                if (!used && !protectedVariant)
                 {
                     deleted.push_back("G" + std::to_string(gi) + " " + lod.geometries[gi].id);
                     estimatedBytes += estimatedRenderGeometryBinaryBytes(lod.geometries[gi]);

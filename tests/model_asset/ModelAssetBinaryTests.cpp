@@ -13,6 +13,7 @@
 #include "src/model_asset/ModelAssetIdentity.h"
 #include "src/model_asset/ModelAssetBinary.h"
 #include "src/model_asset/ModelAssetMigration.h"
+#include "src/model_asset/ModelAssetVariantNaming.h"
 #include "tools/model_asset_editor/NativeObjImporter.h"
 #include "tools/model_asset_editor/GeometryInstanceFitter.h"
 
@@ -715,6 +716,23 @@ int main()
             "station_solar_panels", "station_solar_panels", "mesh", stationNodeIds) ==
             "station_solar_panels.mesh.2",
             "repeated child identity did not receive deterministic numeric suffix");
+
+        const auto damagedGeometryId = makeRenderVariantGeometryId("breached_01");
+        require(damagedGeometryId == "source_variant.breached_01",
+            "source variant geometry ID convention changed unexpectedly");
+        const auto damagedIdentity = renderVariantIdentity(damagedGeometryId);
+        require(damagedIdentity.isVariant &&
+                damagedIdentity.legacyBaseGeometryId.empty() &&
+                damagedIdentity.variantId == "breached_01",
+            "flat source variant geometry ID did not round-trip variant identity");
+        const auto legacyDamagedIdentity = renderVariantIdentity(
+            "station_habitat_s1.variant.breached_01");
+        require(legacyDamagedIdentity.isVariant &&
+                legacyDamagedIdentity.legacyBaseGeometryId == "station_habitat_s1" &&
+                legacyDamagedIdentity.variantId == "breached_01",
+            "v0.9.4 source variant identity is no longer readable");
+        require(!renderVariantIdentity("station_habitat_s1").isVariant,
+            "ordinary geometry was misclassified as a source variant");
 
         // Legacy assets may already contain duplicate semantic IDs. Migration must
         // repair those before copying semantic identity into independent RenderNodes.

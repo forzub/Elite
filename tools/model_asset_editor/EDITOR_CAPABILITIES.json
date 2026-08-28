@@ -43,10 +43,10 @@
     },
     {
       "id": "wizard_checkpoints",
-      "description": "Finished wizard stages create restorable non-production checkpoints in one linear history; later checkpoints are pruned when an earlier stage changes.",
+      "description": "Finished wizard stages create restorable non-production checkpoints in one linear history; later checkpoints are pruned when an earlier stage changes, and reopening an asset resumes the latest surviving checkpoint before production output.",
       "contracts": {
         "data_model": {"path": "tools/model_asset_editor/ModelAssetEditorSession.h", "tokens": ["WizardStageState", "wizardCheckpointPath"]},
-        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["complete_wizard_stage", "restore_wizard_checkpoint", "pruneWizardAfter", "remove_all(wizardCheckpointPath"]},
+        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["complete_wizard_stage", "restore_wizard_checkpoint", "pruneWizardAfter", "remove_all(wizardCheckpointPath", "latestWizardCheckpoint", "RESUME CHECKPOINT"]},
         "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["wizardCompleteBtn", "wizardRestoreBtn", "wizardBar"]},
         "test": {"path": "tests/architecture_contracts/check_model_asset_editor.py", "tokens": ["wizard_checkpoints"]}
       }
@@ -59,6 +59,16 @@
         "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["sendAssetMetadata", "serializeAsset(false)", "includeGeometryPayload", "asset_metadata"]},
         "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["asset_metadata", "mergeAssetMetadata", "geometryCacheKey", "rebuildScene(true)"]},
         "test": {"path": "tests/architecture_contracts/check_model_asset_editor.py", "tokens": ["incremental_editor_sync", "geometryPayloadIncluded"]}
+      }
+    },
+    {
+      "id": "source_render_variants",
+      "description": "Additional OBJ meshes discovered recursively below each LOD root receive opaque authoring identities, are assigned to stable base visual families through a Geometry master/detail table, remain hidden until preview/state binding, and are protected from unused-geometry cleanup.",
+      "contracts": {
+        "data_model": {"path": "src/model_asset/ModelAssetVariantNaming.h", "tokens": ["SourceRenderVariantPrefix", "LegacyRenderVariantMarker", "makeRenderVariantGeometryId", "renderVariantIdentity"]},
+        "backend": {"path": "tools/model_asset_editor/ModelAssetEditorSession.cpp", "tokens": ["refreshSourceVariants", "discoverAdditionalLodMeshes", "runtimeAssemblyLodSourcePaths", "reconcileAuthoringVisualRegistry", "m_baseVisualIds", "m_sourceExtraMeshIds", "setSourceVariantReplacement"]},
+        "ui": {"path": "src/assets/webui/model_asset_editor.html", "tokens": ["renderVariantAssignment", "geometryVariantSelected", "baseVisualId", "set_source_variant_replacement", "variantPreviewByNode", "initWorldAxes"]},
+        "test": {"path": "tests/architecture_contracts/check_model_asset_editor.py", "tokens": ["stable extra-mesh authoring ids", "renderVariantAssignment", "initWorldAxes"]}
       }
     }
   ]

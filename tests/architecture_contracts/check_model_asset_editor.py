@@ -266,11 +266,21 @@ require(
     "Source OBJ/assembly files are read-only",
 )
 
-require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.9.3"')
+require("tools/model_asset_editor/EditorVersion.h", 'ModelAssetEditorVersion = "0.9.9"')
 require(
     "tools/model_asset_editor/CHANGELOG.md",
     "0.9.3",
     "metadata-only UI sync / linear checkpoint pruning",
+    "0.9.9",
+    "resume latest wizard checkpoint",
+    "0.9.8",
+    "Geometry finish pass",
+    "0.9.7",
+    "stable extra-mesh assignment",
+    "0.9.5",
+    "flat source variants / explicit replacement compatibility",
+    "0.9.4",
+    "source render variants / XYZ orientation",
     "0.9.1",
     "stable ID preflight / station import repair",
     "0.9.0",
@@ -302,18 +312,95 @@ for game_path in (
 
 
 
+# Additional replacement meshes are discovered recursively below each real
+# LOD<N> directory. Filenames/folder names are reload/organization pointers only;
+# persistent authoring ids and replacement compatibility live in wizard_state.json.
+require(
+    "src/model_asset/ModelAssetVariantNaming.h",
+    "SourceRenderVariantPrefix",
+    "LegacyRenderVariantMarker",
+    "makeRenderVariantGeometryId",
+    "renderVariantIdentity",
+)
+require(
+    "src/assets/models/VARIANTS.md",
+    "recursively scans the whole",
+    "opaque persistent",
+    "base visual id",
+    "No LOD association is inferred from matching filenames",
+    "wizard_state.json",
+)
+require(
+    "tools/model_asset_editor/RuntimeAssemblyImporter.cpp",
+    "discoverAdditionalLodMeshes",
+    "runtimeAssemblyLodSourcePaths",
+    "recursive_directory_iterator",
+)
+require(
+    "tools/model_asset_editor/ModelAssetEditorSession.cpp",
+    "reconcileAuthoringVisualRegistry",
+    "allocateBaseVisualId",
+    "allocateSourceVariantId",
+    '"baseVisuals"',
+    '"sourceExtraMeshes"',
+    '"replacesBaseVisualIds"',
+    'command == "set_source_variant_replacement"',
+    "sameMeshLodExact",
+    "unchanged",
+)
+require(
+    "src/assets/webui/model_asset_editor.html",
+    "variantPreviewByNode",
+    "geometryVariantSelected",
+    "renderVariantAssignment",
+    "baseVisualId",
+    "set_source_variant_replacement",
+    "wizardExtraMeshTable",
+    "wizardBaseReplacementTable",
+    "previewToggle",
+    "wizardUnusedGeometrySummary",
+    "checkpointCurrent",
+    "updateActionAvailability",
+    "initWorldAxes",
+    "['+X'",
+    "['-X'",
+    "['+Y'",
+    "['-Y'",
+    "['+Z'",
+    "['-Z'",
+)
+# stable extra-mesh authoring ids: source filename stems must not define ids or
+# cross-LOD pairing in the importer/session refresh path.
+importer_cpp = text("tools/model_asset_editor/RuntimeAssemblyImporter.cpp")
+if "entry.path().stem().string()" in importer_cpp:
+    raise AssertionError("additional mesh authoring identity still depends on OBJ filename stem")
+
 # Metadata-only synchronization must remain an actual transport boundary, not merely
 # a UI label. Full mesh payloads are allowed on full asset snapshots only.
 session_cpp = text("tools/model_asset_editor/ModelAssetEditorSession.cpp")
+if "const bool protectedVariant = isRenderVariantGeometryId" not in session_cpp:
+    raise AssertionError("source variants can be deleted by unused-geometry cleanup")
+for token in ("refreshSourceVariants", 'command == "refresh_source_variants"', "discoverAdditionalLodMeshes", "runtimeAssemblyLodSourcePaths"):
+    if token not in session_cpp:
+        raise AssertionError(f"source-variant refresh workflow missing {token!r}")
 for token in (
     'serializeAsset(bool includeGeometryPayload)',
     'if (includeGeometryPayload)',
     '"type", "asset_metadata"',
     'serializeAsset(false)',
     'std::filesystem::remove_all(wizardCheckpointPath(laterId).parent_path()',
+    'latestWizardCheckpoint',
+    '"RESUME CHECKPOINT"',
+    'ModelAssetBinary::load(resumeCheckpoint.string()',
+    'Production package was not loaded instead.',
 ):
     if token not in session_cpp:
         raise AssertionError(f"metadata/checkpoint architecture missing {token!r}")
+
+resume_branch = session_cpp.find("if (resumeWorkspace)")
+compiled_branch = session_cpp.find("else if (!forceReimport && (havePackage || haveLegacyV2))")
+if resume_branch < 0 or compiled_branch < 0 or resume_branch > compiled_branch:
+    raise AssertionError("asset selection no longer resumes wizard checkpoint before production package")
 
 web_sync = text("src/assets/webui/model_asset_editor.html")
 for token in (
@@ -383,8 +470,9 @@ for protected_id in (
     "source_reimport_read_only",
     "wizard_checkpoints",
     "incremental_editor_sync",
+    "source_render_variants",
 ):
     if protected_id not in {c.get("id") for c in capability_doc.get("protected_capabilities", [])}:
         raise AssertionError(f"protected editor capability disappeared: {protected_id}")
 
-print("[PASS] model asset editor v0.9.3 metadata-only UI sync / linear checkpoints / v4 boundary")
+print("[PASS] model asset editor v0.9.9 checkpoint resume / geometry finish / recursive extras / stable ids / world XYZ / metadata sync / wizard / v4 boundary")

@@ -2,5 +2,5 @@
 
 namespace elite::model_asset::editor
 {
-inline constexpr const char* ModelAssetEditorVersion = "0.9.3";
+inline constexpr const char* ModelAssetEditorVersion = "0.9.9";
 }

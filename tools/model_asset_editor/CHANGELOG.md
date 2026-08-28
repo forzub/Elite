@@ -1,3 +1,48 @@
+## 0.9.9 — resume latest wizard checkpoint
+
+- Selecting an asset now resumes the highest existing wizard checkpoint before consulting the production `.elmodel` package. A checkpoint is a complete authoring snapshot, so additional meshes and other Geometry-stage edits survive editor restart without requiring `Refresh additional LOD meshes`.
+- Resume uses only canonical editor-owned checkpoint paths below the asset workspace; stale persisted checkpoint paths are rebound to the current workspace or cleared when their files were pruned.
+- A checkpoint that exists but cannot be loaded is treated as an error. The editor deliberately refuses to silently fall back to an older production package, because doing so would make saved authoring work appear to have vanished.
+- Explicit `Reimport Source` still bypasses checkpoint resume and rebuilds from read-only source assembly/OBJ data. Resumed checkpoint data is marked dirty relative to production output until the user explicitly saves the production package.
+
+## 0.9.8 — Geometry finish pass / recursive extras / truthful actions
+
+- Additional OBJ discovery is recursive again across each loaded `LOD<N>` directory tree. Runtime-registered source meshes remain the default set; every other OBJ is an additional mesh. Folder and filename names remain organizational only and do not encode authoring semantics. Refresh now detects byte-for-byte authoring-equivalent mesh content and does not mark GEOMETRY stale merely because an unchanged OBJ was re-read.
+- Replacement preview is now explicitly toggleable: clicking the active preview dot again, or `Original`, restores the authored mesh without mutating the asset. `Original` is disabled when no preview is active.
+- Geometry now shows the exact ordinary unused-geometry count and list before cleanup. Both cleanup buttons are disabled when the active LOD has nothing deletable; additional replacement meshes remain protected.
+- Wizard checkpoint actions now reflect stage state: `Complete stage + checkpoint` is disabled while the current checkpoint is already up to date and re-enables after that stage becomes stale/changed. Restore wording now states precisely that it returns to the exact state recorded at the last checkpoint, discards later edits, and prunes later-stage checkpoints.
+- Obvious save actions now expose meaningful disabled states: clean LOD payloads are not offered for redundant save, manifest save is disabled while clean, and Save All is disabled only when the package is complete and nothing is dirty.
+
+## 0.9.7 — stable extra-mesh assignment / world axis labels
+
+- Extra meshes are now discovered only as sibling OBJ files directly inside each loaded `LOD<N>` directory; registered/default OBJ files are excluded. Subfolder and filename naming conventions no longer carry authoring semantics.
+- Added persistent opaque authoring ids for additional meshes (`extra.XXXXXX`) and default visual families (`base.XXXXXX`) in `wizard_state.json`. Replacement compatibility is stored `extra -> base visual ids`, never by filename stem or ephemeral `G#`. Existing v0.9.5/v0.9.6 compatibility is migrated when the relevant LOD is loaded.
+- Replaced the per-element replacement list with a Geometry-stage master/detail UI: upper table selects one additional mesh, lower table lists each used default geometry once, checkboxes author compatibility, and radio preview temporarily swaps one representative instance before or after compatibility is checked.
+- Source reimport no longer auto-pairs additional LOD meshes by matching filenames. Future generated LODs can explicitly reuse the same authoring ids without any naming convention.
+- Replaced the corner-only XYZ widget with world-space `+X/-X`, `+Y/-Y`, `+Z/-Z` labels at the ends of the viewport grid/axes.
+
+## 0.9.6 — recursive LOD extra-mesh discovery
+
+- Removed the special meaning of `LOD*/variants/`. Refresh now resolves each real `LOD<N>` source directory and recursively scans all subfolders for OBJ files. Folder names are organizational only.
+- Every OBJ declared by the runtime assembly is excluded from the extra-mesh scan even if its GeometryDefinition was later removed by duplicate/instance cleanup, preventing baked source duplicates from being rediscovered as damage variants.
+- Extra-mesh identity remains the OBJ filename stem; duplicate extra stems inside one LOD produce an explicit rename diagnostic. Empty scans now report the actual resolved LOD roots that were checked.
+- Geometry UI wording now says `Refresh additional LOD meshes`; existing replacement compatibility and hidden variant geometry behavior are unchanged.
+
+## 0.9.5 — flat source variants / explicit replacement compatibility
+
+- Fixed the v0.9.4 MinGW build failure caused by a duplicate `baseGeometryId` declaration in `RuntimeAssemblyImporter.cpp`.
+- Source variants now live directly in `LOD*/variants/<variant-id>.obj`; the source directory no longer pretends that one damaged mesh belongs to one precisely named intact module.
+- Variant geometry identity is now independent (`source_variant.<variant-id>`). Existing v0.9.4 `<base>.variant.<variant>` IDs remain readable for editor-checkpoint migration.
+- Added explicit many-to-many replacement compatibility in the Geometry inspector. Select an intact element and check which source variants may replace its geometry; preview is enabled only for compatible variants.
+- Replacement compatibility is authoring metadata persisted in `wizard_state.json`. It intentionally does not decide damage behavior: the later DAMAGE stage will choose among compatible variants from hit region/energy/penetration/accumulated-damage/randomness rules.
+
+## 0.9.4 — source render variants / XYZ orientation
+
+- Source reimport now discovers authored alternate OBJ meshes from `LOD*/variants/<base-mesh-id>/<variant-id>.obj`. The Geometry stage can also refresh those variant files into already-cleaned loaded LODs without rebuilding the intact assembly or losing instance consolidation. Variants enter the LOD-local geometry pool without RenderNodes, so they remain hidden until explicitly previewed or later bound to semantic state.
+- Variant geometry identity is deterministic (`<base>.variant.<variant>`), LOD0 is required, LOD1 is optional, and source variants are protected from `Clean unused geometry`.
+- The Geometry inspector exposes viewport-only radio preview for variants of the selected intact element. Preview swaps only that element and never changes gameplay state, collision or the asset.
+- Added a persistent camera-orientation widget with labelled X/Y/Z axes in the viewport.
+
 ## 0.9.3 — metadata-only UI sync / linear checkpoint pruning
 
 - Ordinary editor commands no longer retransmit every render mesh. Full vertex/normal/index/edge payloads are sent only for initial asset load, source reimport, checkpoint restore, LOD load/reload, and other operations that actually replace geometry data.
